@@ -1,0 +1,2226 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Huy Hoàng Piano</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07070d;
+      --surface: #10111a;
+      --panel: #151520;
+      --panel2: #1d1b2a;
+      --field: #0b0c13;
+      --ink: #fff9fe;
+      --muted: #b9afc8;
+      --soft: #7f758e;
+      --pink: #ff3fb4;
+      --pink2: #ff8dd8;
+      --violet: #8f5cff;
+      --cyan: #63e8ff;
+      --gold: #ffd166;
+      --line: rgba(255,255,255,.105);
+      --line-strong: rgba(255,141,216,.34);
+      --ok: #a8ff78;
+      --bad: #ff708f;
+      --shadow: 0 18px 56px rgba(0,0,0,.42);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    ::selection { background: rgba(255,63,180,.34); color: #fff; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 18% -8%, rgba(255,63,180,.22), transparent 34%),
+        radial-gradient(circle at 88% 0%, rgba(99,232,255,.15), transparent 30%),
+        linear-gradient(180deg, #0b0b13 0%, #07070d 42%, #050509 100%),
+        var(--bg);
+      color: var(--ink);
+      letter-spacing: 0;
+      min-height: 100vh;
+    }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+      min-height: 42px;
+      padding: 9px 14px;
+      cursor: pointer;
+      color: #fdf8ff;
+      font-weight: 700;
+      transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease, background .14s ease;
+    }
+    button:hover { border-color: var(--pink2); box-shadow: 0 0 0 3px rgba(255,63,180,.10), 0 14px 30px rgba(0,0,0,.28); transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled { cursor: not-allowed; opacity: .48; transform: none; box-shadow: none; }
+    .primary {
+      background: linear-gradient(135deg, var(--pink), var(--violet));
+      border-color: rgba(255,255,255,.18);
+      box-shadow: 0 10px 28px rgba(255,63,180,.24);
+      color: #fff;
+      font-weight: 900;
+    }
+    .cyan { background: rgba(99,232,255,.095); border-color: rgba(99,232,255,.42); color: #e9fcff; }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(0,0,0,.13)), var(--field);
+      min-height: 44px;
+      padding: 10px 12px;
+      color: #fff;
+      outline: none;
+      transition: border-color .14s ease, box-shadow .14s ease, background .14s ease;
+    }
+    input:focus, textarea:focus, select:focus { border-color: rgba(99,232,255,.62); box-shadow: 0 0 0 3px rgba(99,232,255,.10); }
+    textarea { min-height: 116px; resize: vertical; line-height: 1.5; }
+    header {
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(255,255,255,.09);
+      background: rgba(9,9,15,.82);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 36px rgba(0,0,0,.28);
+    }
+    .top {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    h1, h2, h3 { margin: 0; line-height: 1.08; }
+    h1 {
+      font-size: clamp(30px, 4vw, 54px);
+      text-transform: uppercase;
+      letter-spacing: 0;
+      color: #fff;
+      text-shadow: 0 0 28px rgba(255,63,180,.42);
+    }
+    h1::after {
+      content: "HH";
+      display: inline-grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin-left: 12px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--pink), var(--cyan));
+      color: #090913;
+      font-size: 16px;
+      font-weight: 950;
+      vertical-align: middle;
+      box-shadow: 0 0 24px rgba(255,63,180,.28);
+    }
+    h2 { font-size: 22px; color: #fff; display: flex; align-items: center; gap: 10px; }
+    h2::before {
+      content: "";
+      width: 4px;
+      height: 22px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--pink), var(--cyan));
+      box-shadow: 0 0 18px rgba(255,63,180,.38);
+      flex: 0 0 auto;
+    }
+    h3 { font-size: 15px; color: #f9f4ff; }
+    p { color: var(--muted); line-height: 1.56; margin: 8px 0 0; }
+    main {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+    }
+    section, .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.025)),
+        rgba(18,18,29,.86);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    section::before, .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,141,216,.45), rgba(99,232,255,.36), transparent);
+      pointer-events: none;
+    }
+    .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+    .span-12 { grid-column: span 12; }
+    .span-8 { grid-column: span 8; }
+    .span-6 { grid-column: span 6; }
+    .span-4 { grid-column: span 4; }
+    .span-3 { grid-column: span 3; }
+    label { display: grid; gap: 7px; color: #d7cfe2; font-size: 13px; font-weight: 650; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .steps { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 10px; }
+    .step {
+      background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.025));
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: var(--radius);
+      padding: 13px;
+    }
+    .step b { color: var(--pink2); display: block; margin-bottom: 5px; font-weight: 900; }
+    .step span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: rgba(5,6,10,.72);
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: var(--radius);
+      padding: 12px;
+      min-height: 120px;
+      max-height: 330px;
+      overflow: auto;
+      line-height: 1.52;
+      color: #f6f1fa;
+      font-size: 13px;
+    }
+    .preview {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+      gap: 12px;
+    }
+    canvas, img, video {
+      width: 100%;
+      border-radius: var(--radius);
+      background: #020104;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 16px 46px rgba(0,0,0,.38);
+    }
+    #stage { aspect-ratio: 16 / 9; }
+    .status { color: var(--muted); font-size: 13px; }
+    .ok { color: var(--ok); }
+    .bad { color: var(--bad); }
+    .progress {
+      height: 12px;
+      background: rgba(255,255,255,.075);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--pink), var(--gold), var(--cyan)); transition: width .2s; }
+    .small { font-size: 12px; color: var(--muted); }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; }
+    .metric {
+      border: 1px solid rgba(255,255,255,.105);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025));
+      padding: 13px;
+      min-height: 88px;
+    }
+    .metric b { display: block; color: var(--cyan); font-size: 13px; margin-bottom: 8px; font-weight: 850; }
+    .metric strong { display: block; font-size: 30px; line-height: 1; color: #fff; letter-spacing: 0; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,.055);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .output-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .mini-output pre { min-height: 160px; max-height: 250px; }
+    .sticky-actions {
+      position: sticky;
+      top: 104px;
+      z-index: 4;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,.105);
+      border-radius: var(--radius);
+      background: rgba(10,10,16,.76);
+      backdrop-filter: blur(16px);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid rgba(255,255,255,.09); padding: 11px; text-align: left; vertical-align: top; font-size: 13px; line-height: 1.45; }
+    th { color: #ffd8f0; background: rgba(255,63,180,.105); font-weight: 850; }
+    tr:hover td { background: rgba(255,255,255,.025); }
+    .hidden { display: none; }
+    @media (max-width: 980px) {
+      .span-8, .span-6, .span-4, .span-3 { grid-column: span 12; }
+      .preview, .steps, .metrics, .output-grid { grid-template-columns: 1fr; }
+      header { position: static; }
+      .sticky-actions { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top">
+      <div>
+        <h1>Huy Hoàng Piano</h1>
+        <p>Tool tối giản: nhập ý tưởng -> tạo ảnh AI -> biến ảnh tĩnh thành video động -> tạo thumbnail -> SEO -> xuất file.</p>
+      </div>
+      <div class="row">
+        <button class="primary" id="runAll">Làm nhanh 1 gói</button>
+        <button class="cyan" id="saveProject">Xuất JSON</button>
+        <button id="loadProjectBtn">Nhập JSON</button>
+        <input id="loadProject" type="file" accept="application/json" class="hidden">
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Benchmark 5 kênh lớn</h2>
+      <p>Chỉ dùng để học cấu trúc sản phẩm, không sao chép thương hiệu/nội dung. Chọn preset ở phần dưới để áp dụng nhanh.</p>
+      <div style="overflow:auto; margin-top:12px">
+        <table>
+          <thead>
+            <tr><th>Kênh / nhóm</th><th>Công thức thắng</th><th>Nên học gì</th><th>Preset trong tool</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Relaxing Piano Alex Minh</td>
+              <td>Phòng ngủ ấm, mưa cửa sổ, piano mềm, video 3 giờ.</td>
+              <td>Thumbnail chữ lớn, promise ngủ rõ, motion mưa cực chậm.</td>
+              <td>Relaxing Piano Alex Minh</td>
+            </tr>
+            <tr>
+              <td>The Soul of Wind</td>
+              <td>Mưa mềm, piano hoài niệm, focus/reading/calm mind.</td>
+              <td>Title thơ hơn, visual bàn đọc sách/cafe mưa, motion sương/khói.</td>
+              <td>The Soul of Wind</td>
+            </tr>
+            <tr>
+              <td>Soothing Relaxation / Peder B. Helland</td>
+              <td>Piano đẹp + nước chảy/thiên nhiên, sleep/meditation/spa/yoga.</td>
+              <td>Visual thiên nhiên rộng, nước chảy, SEO broad relaxation.</td>
+              <td>Soothing Relaxation</td>
+            </tr>
+            <tr>
+              <td>Kno Music</td>
+              <td>Piano collection dài, deep sleep/study/calm, ít gián đoạn.</td>
+              <td>Collection dài, tiêu đề rõ "collection", dùng sao/trăng/anime room.</td>
+              <td>Kno Music</td>
+            </tr>
+            <tr>
+              <td>BGM / cafe piano</td>
+              <td>Cafe, jazz/piano, work/study/sleep, live/playlist dài.</td>
+              <td>Không gian cafe ấm, dùng cho work-study hơn insomnia.</td>
+              <td>Fresh Morning / cafe-study hướng sáng</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="steps">
+        <div class="step"><b>1 Ý tưởng</b><span>Nhập hướng sản phẩm sleep piano.</span></div>
+        <div class="step"><b>2 Ảnh</b><span>Tạo ảnh AI hoặc tải ảnh lên.</span></div>
+        <div class="step"><b>3 Chuyển động</b><span>Render ảnh tĩnh thành video động.</span></div>
+        <div class="step"><b>4 Thumbnail + SEO</b><span>Tạo thumbnail và metadata.</span></div>
+        <div class="step"><b>5 Upload</b><span>Dùng file video, thumbnail và SEO pack.</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>0. Bảng điều khiển sản xuất</h2>
+      <p>Tự kiểm tra nhanh sản phẩm trước khi render dài: ý tưởng, nhạc piano, visual, motion, thumbnail, SEO và lịch đăng.</p>
+      <div class="sticky-actions" style="margin-top:12px">
+        <button class="primary" id="refreshStudio">Cập nhật studio pack</button>
+        <button id="copyDescription">Copy mô tả</button>
+        <button id="copyChapters">Copy timestamp</button>
+        <button id="copyChecklist">Copy checklist</button>
+        <button id="downloadStudio">Tải studio pack</button>
+      </div>
+      <div class="metrics" style="margin-top:12px">
+        <div class="metric"><b>Điểm sẵn sàng</b><strong id="readyScore">0%</strong><span id="readyNote" class="small">Đang kiểm tra...</span></div>
+        <div class="metric"><b>Định dạng</b><strong id="formatNote">16:9</strong><span class="small">Chuẩn YouTube ngang</span></div>
+        <div class="metric"><b>Loop đề xuất</b><strong id="loopNote">60s</strong><span class="small">Render test trước bản dài</span></div>
+        <div class="metric"><b>Thumbnail</b><strong id="thumbNote">A/B</strong><span class="small">Có chữ lớn và bản tối giản</span></div>
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <label class="span-3">Tần suất đăng
+          <select id="publishCadence">
+            <option>3 video / tuần</option>
+            <option>5 video / tuần</option>
+            <option>1 video / ngày</option>
+            <option>2 video / ngày</option>
+          </select>
+        </label>
+        <label class="span-3">Mẫu sản phẩm
+          <select id="productFormat">
+            <option>Video thường 3 giờ</option>
+            <option>Video ngủ 8-10 giờ</option>
+            <option>Playlist collection</option>
+            <option>Livestream loop</option>
+          </select>
+        </label>
+        <label class="span-3">Giọng thương hiệu
+          <select id="brandVoice">
+            <option>Êm dịu, chữa lành, cao cấp</option>
+            <option>Tối giản, tập trung vào giấc ngủ</option>
+            <option>Thiên nhiên, thiền, spa</option>
+            <option>Cafe, học tập, làm việc</option>
+          </select>
+        </label>
+        <label class="span-3">Mức tối giản
+          <select id="simplicityLevel">
+            <option>Tối giản nhất để ra video nhanh</option>
+            <option>Cân bằng nhanh và đẹp</option>
+            <option>Đầu tư thumbnail + SEO nhiều hơn</option>
+          </select>
+        </label>
+      </div>
+      <div class="output-grid" style="margin-top:12px">
+        <div class="mini-output">
+          <h3>Checklist xuất bản</h3>
+          <pre id="checklistPack"></pre>
+        </div>
+        <div class="mini-output">
+          <h3>Lịch sản xuất 7 ngày</h3>
+          <pre id="schedulePack"></pre>
+        </div>
+        <div class="mini-output">
+          <h3>Mô tả YouTube hoàn chỉnh</h3>
+          <pre id="descriptionPack"></pre>
+        </div>
+        <div class="mini-output">
+          <h3>Timestamp + tên file</h3>
+          <pre id="chaptersPack"></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>1. Ý tưởng nhanh</h2>
+      <p>Preset mặc định bám theo format: piano ngủ + tiếng mưa + hỗ trợ mất ngủ.</p>
+      <div class="grid" style="margin-top:12px">
+        <label class="span-4">Preset theo kênh tham khảo
+          <select id="channelPreset">
+            <option value="alex">Relaxing Piano Alex Minh: phòng ngủ + mưa + piano</option>
+            <option value="soul">The Soul of Wind: mưa mềm + hoài niệm + focus</option>
+            <option value="soothing">Soothing Relaxation: piano + nước + thiên nhiên</option>
+            <option value="kno">Kno Music: collection piano dài, ngủ/study</option>
+            <option value="morning">Fresh Morning Piano: sáng nhẹ, học tập, thiên nhiên</option>
+            <option value="bgm">BGM/Cafe: piano cafe, học tập, làm việc</option>
+          </select>
+        </label>
+        <label class="span-4">Mục tiêu video
+          <select id="videoGoal">
+            <option>Ngủ nhanh / mất ngủ</option>
+            <option>Ngủ sâu qua đêm</option>
+            <option>Giảm stress / lo âu</option>
+            <option>Học tập / tập trung</option>
+            <option>Thiền / thư giãn</option>
+          </select>
+        </label>
+        <label class="span-4">Độ dài sản phẩm cuối
+          <select id="finalLength">
+            <option>3 giờ</option>
+            <option>8 giờ</option>
+            <option>10 giờ</option>
+            <option>11 giờ 59 phút</option>
+            <option>Livestream / loop dài</option>
+          </select>
+        </label>
+        <label class="span-6">Tên video / ý tưởng
+          <input id="concept" value="Fall into sleep instantly with rain sounds and soft piano">
+        </label>
+        <label class="span-3">Thời lượng render
+          <select id="duration">
+            <option value="30">30 giây test</option>
+            <option value="60" selected>60 giây loop</option>
+            <option value="180">3 phút</option>
+            <option value="600">10 phút</option>
+            <option value="1800">30 phút</option>
+          </select>
+        </label>
+        <label class="span-3">Độ phân giải
+          <select id="resolution">
+            <option value="1280x720" selected>1280x720 nhanh</option>
+            <option value="1920x1080">1920x1080 đẹp hơn</option>
+          </select>
+        </label>
+        <label class="span-3">Phong cách piano
+          <select id="pianoStyle">
+            <option>Piano ngủ</option>
+            <option>Piano solo mềm</option>
+            <option>Piano felt lofi</option>
+            <option>Piano tối giản nền drone</option>
+            <option>Piano mưa đêm rất chậm</option>
+            <option>Piano deep sleep 8 giờ</option>
+            <option>Piano chữa lành / healing</option>
+            <option>Piano thiền spa</option>
+            <option>Piano thiên nhiên nước chảy</option>
+            <option>Piano cinematic êm dịu</option>
+            <option>Piano emotional buồn nhẹ</option>
+            <option>Piano nostalgic hoài niệm</option>
+            <option>Piano study focus</option>
+            <option>Piano cafe ấm áp</option>
+            <option>Piano morning fresh</option>
+            <option>Piano winter fireplace</option>
+            <option>Piano fantasy dream</option>
+            <option>Piano neoclassical mềm</option>
+            <option>Piano ambient pad</option>
+            <option>Piano lullaby ru ngủ</option>
+            <option>Piano dark sleep tối giản</option>
+            <option>Piano no melody sleep bed</option>
+            <option>Piano sad rain</option>
+            <option>Piano midnight insomnia</option>
+            <option>Piano warm room ambience</option>
+            <option>Piano crystal soft</option>
+            <option>Piano ambient cinematic pad</option>
+            <option>Piano forest meditation</option>
+            <option>Piano ocean sleep waves</option>
+            <option>Piano prayer healing</option>
+            <option>Piano binaural sleep bed</option>
+            <option>Piano no-drama focus</option>
+            <option>Piano soft romantic sleep</option>
+            <option>Piano lonely cabin night</option>
+            <option>Piano moonlight lake</option>
+            <option>Piano Japanese garden calm</option>
+            <option>Piano soft anime night</option>
+            <option>Piano library study rain</option>
+            <option>Piano fireplace Christmas calm</option>
+            <option>Piano angelic soft pad</option>
+            <option>Piano ultra sparse meditation</option>
+            <option>Piano brown noise layer</option>
+          </select>
+        </label>
+        <label class="span-3">Tempo
+          <select id="tempo">
+            <option>Rất chậm 45-55 BPM</option>
+            <option>Chậm 56-68 BPM</option>
+            <option>Rubato tự do</option>
+          </select>
+        </label>
+        <label class="span-3">Tông / thang âm
+          <select id="keySig">
+            <option>F trưởng / D thứ</option>
+            <option>C trưởng / A thứ</option>
+            <option>Quãng năm mở / modal</option>
+            <option>Ngũ cung êm dịu</option>
+          </select>
+        </label>
+        <label class="span-3">Mưa / ambience
+          <select id="rainMood">
+            <option>Mưa nhẹ bên cửa sổ</option>
+            <option>Mưa rừng mềm</option>
+            <option>Mưa đêm trên mặt hồ</option>
+            <option>Không mưa, room tone nhẹ</option>
+          </select>
+        </label>
+        <label class="span-6">Phong cách hình ảnh
+          <input id="visualStyle" value="cozy dark bedroom, rainy window, moonlight, forest lake view, soft bedside lamp, neon pink-blue glow">
+        </label>
+        <label class="span-3">Chữ thumbnail 1
+          <input id="thumbA" value="FALL ASLEEP FAST">
+        </label>
+        <label class="span-3">Chữ thumbnail 2
+          <input id="thumbB" value="RAIN + PIANO">
+        </label>
+        <label class="span-3">Kiểu thumbnail
+          <select id="thumbStyle">
+            <option value="big">Lời hứa ngủ rõ, chữ lớn</option>
+            <option value="minimal">Tối giản, tối, cao cấp</option>
+            <option value="split">Chia bố cục piano + mưa</option>
+          </select>
+        </label>
+        <label class="span-3">Vị trí chữ
+          <select id="thumbPos">
+            <option value="left">Vùng an toàn bên trái</option>
+            <option value="center">Giữa ảnh</option>
+            <option value="bottom">Dải chữ phía dưới</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="makePack">Tạo prompt + SEO</button>
+        <button id="copyPack">Copy toàn bộ gói</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Tạo ảnh AI trong tool</h2>
+      <p>Chạy bằng local proxy trong file <code>server.py</code>. Nếu không có API, hãy tải ảnh riêng ở bước 3.</p>
+      <div class="grid" style="margin-top:12px">
+        <label class="span-4">Preset nhà cung cấp
+          <select id="provider">
+            <option value="openai">OpenAI Images API</option>
+            <option value="gemini">Google Gemini / Nano Banana</option>
+            <option value="stability">Stability AI</option>
+            <option value="replicate">Replicate</option>
+            <option value="huggingface">Hugging Face Inference</option>
+            <option value="sd">Local Stable Diffusion WebUI</option>
+            <option value="custom">Custom JSON endpoint</option>
+          </select>
+        </label>
+        <label class="span-4">API endpoint
+          <input id="endpoint" value="https://api.openai.com/v1/images/generations">
+        </label>
+        <label class="span-4">API key
+          <input id="apiKey" type="password" placeholder="Dán API key nếu cần">
+        </label>
+        <label class="span-12">Prompt tạo ảnh nền AI
+          <textarea id="imagePrompt"></textarea>
+        </label>
+        <label class="span-12">Negative prompt
+          <textarea id="negativePrompt">text, watermark, logo, scary, horror, harsh contrast, deformed hands, distorted face, over sharp, busy composition, thunder, birds, people staring at camera</textarea>
+        </label>
+        <label class="span-12">Mẫu JSON body
+          <textarea id="bodyTemplate"></textarea>
+        </label>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="generateImage">Tạo ảnh AI</button>
+        <span class="status" id="imageStatus">Sẵn sàng.</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Render ảnh tĩnh thành video động</h2>
+      <p>Tải ảnh lên nếu không tạo AI. Có thể thêm audio piano/mưa WAV/MP3; tool sẽ ghi video từ canvas.</p>
+      <div class="grid" style="margin-top:12px">
+        <label class="span-4">Ảnh nền
+          <input id="imageFile" type="file" accept="image/*">
+        </label>
+        <label class="span-4">Audio piano/mưa tùy chọn
+          <input id="audioFile" type="file" accept="audio/*">
+        </label>
+        <label class="span-2">Zoom
+          <input id="zoom" type="number" min="0" max="12" step="0.5" value="3">
+        </label>
+        <label class="span-2">Mức hiệu ứng
+          <input id="rainFx" type="number" min="0" max="100" step="5" value="55">
+        </label>
+        <label class="span-4">Preset motion
+          <select id="motionPreset">
+            <option value="rain">Mưa cửa sổ + zoom chậm</option>
+            <option value="candle">Ánh nến + hạt sáng</option>
+            <option value="lake">Mặt hồ phản chiếu</option>
+            <option value="fog">Sương / khói trôi</option>
+            <option value="leaves">Lá bay + ánh sáng mềm</option>
+            <option value="piano">Xung sáng phím piano</option>
+            <option value="stars">Sao lấp lánh chậm</option>
+            <option value="aurora">Cực quang mềm</option>
+            <option value="waterfall">Nước chảy / thác xa</option>
+            <option value="fireflies">Đom đóm đêm</option>
+            <option value="clouds">Mây trôi qua trăng</option>
+            <option value="dust">Bụi sáng trong phòng</option>
+          </select>
+        </label>
+        <label class="span-4">Độ an toàn loop
+          <select id="loopSafety">
+            <option value="very">Rất mượt, an toàn cho ngủ</option>
+            <option value="normal">Mượt bình thường</option>
+            <option value="visible">Chuyển động rõ hơn</option>
+          </select>
+        </label>
+      </div>
+      <div class="preview" style="margin-top:12px">
+        <div>
+          <canvas id="stage" width="1280" height="720"></canvas>
+          <div class="progress" style="margin-top:10px"><div class="bar" id="renderBar"></div></div>
+          <p class="status" id="renderStatus">Tải ảnh lên hoặc tạo ảnh AI để bắt đầu render.</p>
+        </div>
+        <div class="card">
+          <h3>Video đầu ra</h3>
+          <video id="videoOut" controls></video>
+          <div class="row" style="margin-top:10px">
+            <button class="primary" id="renderVideo">Render video</button>
+            <button id="stopRender" disabled>Dừng render</button>
+            <button id="downloadVideo" disabled>Tải video</button>
+          </div>
+          <p class="small">Nếu trình duyệt không hỗ trợ MP4, file sẽ là WebM. YouTube vẫn nhận WebM.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>3B. Render video dài 3-10 tiếng bằng CUDA/NVENC</h2>
+      <p>Dùng trình duyệt để test motion ngắn. Khi làm bản dài, hãy dùng FFmpeg + NVIDIA NVENC để render ổn định, ít tốn RAM và không sợ tab trình duyệt bị treo.</p>
+      <div class="grid" style="margin-top:12px">
+        <label class="span-3">Độ dài video dài
+          <select id="longHours">
+            <option value="3">3 tiếng</option>
+            <option value="6">6 tiếng</option>
+            <option value="8">8 tiếng</option>
+            <option value="10">10 tiếng</option>
+          </select>
+        </label>
+        <label class="span-3">Độ phân giải xuất
+          <select id="exportResolution">
+            <option value="1280x720">720p - nhẹ máy</option>
+            <option value="1920x1080" selected>1080p - chuẩn YouTube</option>
+            <option value="2560x1440">1440p - đẹp hơn</option>
+            <option value="3840x2160">4K - nặng hơn</option>
+          </select>
+        </label>
+        <label class="span-3">FPS
+          <select id="exportFps">
+            <option value="24">24 fps - điện ảnh, nhẹ</option>
+            <option value="30" selected>30 fps - chuẩn video thư giãn</option>
+            <option value="60">60 fps - mượt hơn, file lớn</option>
+          </select>
+        </label>
+        <label class="span-3">Định dạng
+          <select id="exportContainer">
+            <option value="mp4" selected>MP4 - YouTube/tương thích nhất</option>
+            <option value="mov">MOV - workflow editor</option>
+            <option value="mkv">MKV - an toàn khi render rất dài</option>
+          </select>
+        </label>
+        <label class="span-3">Codec GPU
+          <select id="gpuCodec">
+            <option value="h264_nvenc">H.264 NVENC - tương thích nhất</option>
+            <option value="hevc_nvenc" selected>H.265 NVENC - file nhỏ hơn</option>
+            <option value="av1_nvenc">AV1 NVENC - RTX 40+, file nhỏ đẹp</option>
+            <option value="libx264">CPU H.264 - dự phòng, chậm hơn</option>
+          </select>
+        </label>
+        <label class="span-3">Preset tốc độ
+          <select id="encoderPreset">
+            <option value="p1">P1 nhanh nhất</option>
+            <option value="p4" selected>P4 cân bằng giống export nhanh</option>
+            <option value="p7">P7 đẹp hơn, chậm hơn</option>
+          </select>
+        </label>
+        <label class="span-3">Chất lượng
+          <select id="renderQuality">
+            <option value="23">Nhẹ máy - CQ 23</option>
+            <option value="21" selected>Đẹp cân bằng - CQ 21</option>
+            <option value="19">Đẹp hơn - CQ 19</option>
+          </select>
+        </label>
+        <label class="span-3">Bitrate mode
+          <select id="bitrateMode">
+            <option value="cq" selected>Constant Quality - giống chọn chất lượng</option>
+            <option value="youtube">YouTube preset - bitrate khuyến nghị</option>
+            <option value="manual">Manual VBR - tự nhập Mbps</option>
+          </select>
+        </label>
+        <label class="span-3">Bitrate video Mbps
+          <input id="videoMbps" type="number" min="2" max="120" step="1" value="8">
+        </label>
+        <label class="span-3">Profile / level
+          <select id="videoProfile">
+            <option value="auto" selected>Auto</option>
+            <option value="main">Main</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label class="span-3">Audio bitrate
+          <select id="audioBitrate">
+            <option value="160k">160 kbps - nhẹ</option>
+            <option value="192k" selected>192 kbps - đủ tốt</option>
+            <option value="320k">320 kbps - tốt hơn</option>
+          </select>
+        </label>
+        <label class="span-3">Kiểu render dài
+          <select id="longMotionMode">
+            <option value="still">Ổn định nhất: ảnh tĩnh + audio</option>
+            <option value="zoom">Zoom rất chậm: đẹp hơn nhưng nặng CPU hơn</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="makeLongRenderPack">Tạo lệnh render dài</button>
+        <button id="copyLongCommand">Copy lệnh FFmpeg</button>
+        <button id="downloadLongBat">Tải file render .bat</button>
+      </div>
+      <div class="output-grid" style="margin-top:12px">
+        <div class="mini-output">
+          <h3>Cách dùng nhanh</h3>
+          <pre id="longRenderGuide"></pre>
+        </div>
+        <div class="mini-output">
+          <h3>Lệnh FFmpeg/NVENC</h3>
+          <pre id="longRenderCommand"></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>3C. AI tạo nhạc MP3 theo phong cách piano</h2>
+      <p>AI có thể tạo nhạc từ prompt và trả về audio/MP3 nếu dùng nhà cung cấp có API âm nhạc. Tool này sinh prompt, JSON request mẫu và quy trình nối loop để dùng cho video dài.</p>
+      <div class="grid" style="margin-top:12px">
+        <label class="span-3">Nhà cung cấp nhạc AI
+          <select id="musicProvider">
+            <option value="elevenlabs" selected>ElevenLabs Music API</option>
+            <option value="suno">Suno / Udio qua web hoặc API bên thứ ba</option>
+            <option value="stableaudio">Stable Audio / audio model khác</option>
+            <option value="manual">Chỉ tạo prompt để dán thủ công</option>
+          </select>
+        </label>
+        <label class="span-3">Độ dài mỗi clip nhạc
+          <select id="musicClipLength">
+            <option value="60">60 giây test</option>
+            <option value="120" selected>2 phút loop</option>
+            <option value="180">3 phút</option>
+            <option value="300">5 phút</option>
+            <option value="600">10 phút nền dài</option>
+          </select>
+        </label>
+        <label class="span-3">Kiểu nhạc
+          <select id="musicOutputMode">
+            <option value="instrumental" selected>Instrumental piano, không vocal</option>
+            <option value="piano-rain">Piano + mưa/ambience</option>
+            <option value="piano-pad">Piano + pad/drone mềm</option>
+            <option value="piano-only">Chỉ piano sạch</option>
+          </select>
+        </label>
+        <label class="span-3">Mức an toàn ngủ
+          <select id="sleepSafety">
+            <option value="maximum" selected>Tối đa: không cao trào</option>
+            <option value="balanced">Cân bằng: có motif nhẹ</option>
+            <option value="emotional">Cảm xúc hơn nhưng vẫn êm</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="makeMusicPrompt">Tạo prompt nhạc MP3</button>
+        <button id="copyMusicPrompt">Copy prompt nhạc</button>
+        <button id="copyMusicJson">Copy JSON API mẫu</button>
+        <button id="downloadMusicPlan">Tải kế hoạch MP3</button>
+      </div>
+      <div class="output-grid" style="margin-top:12px">
+        <div class="mini-output">
+          <h3>Prompt tạo nhạc AI</h3>
+          <pre id="musicPromptPack"></pre>
+        </div>
+        <div class="mini-output">
+          <h3>JSON / quy trình MP3</h3>
+          <pre id="musicApiPack"></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Thumbnail + SEO</h2>
+      <p>Tạo thumbnail bằng canvas hoặc dùng API AI để tạo ảnh thumbnail riêng, sau đó tool tự phủ chữ và xuất 1280x720.</p>
+      <div class="grid" style="margin-top:12px">
+        <label class="span-12">Prompt thumbnail AI
+          <textarea id="thumbnailPrompt"></textarea>
+        </label>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="generateThumbImage">Tạo ảnh thumbnail AI</button>
+        <button id="copyThumbPrompt">Copy prompt thumbnail</button>
+        <span class="status" id="thumbStatus">Sẵn sàng.</span>
+      </div>
+      <div class="preview" style="margin-top:12px">
+        <div>
+          <canvas id="thumbCanvas" width="1280" height="720"></canvas>
+          <div class="row" style="margin-top:10px">
+            <button class="primary" id="makeThumb">Tạo thumbnail</button>
+            <button id="downloadThumb">Tải thumbnail</button>
+          </div>
+        </div>
+        <div>
+          <h3>Gói SEO</h3>
+          <pre id="seoPack"></pre>
+          <div class="row" style="margin-top:10px">
+            <button id="copySeo">Copy SEO</button>
+            <button id="downloadSeo">Tải SEO txt</button>
+          </div>
+          <h3 style="margin-top:14px">Gợi ý phong cách piano</h3>
+          <pre id="pianoStylePack"></pre>
+          <div class="row" style="margin-top:10px">
+            <button id="copyPianoStyle">Copy gợi ý piano</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let currentImage = null;
+    let thumbnailImage = null;
+    let lastVideoBlob = null;
+    let activeRecorder = null;
+    let activeAudio = null;
+    let renderCancelled = false;
+
+    const openaiBody = `{
+  "model": "gpt-image-1",
+  "prompt": "{{prompt}}",
+  "size": "1536x1024"
+}`;
+    const geminiBody = `{
+  "contents": [
+    {
+      "parts": [
+        {
+          "text": "{{prompt}}"
+        }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "responseModalities": ["TEXT", "IMAGE"]
+  }
+}`;
+    const stabilityBody = `{
+  "text_prompts": [
+    {
+      "text": "{{prompt}}",
+      "weight": 1
+    },
+    {
+      "text": "{{negative}}",
+      "weight": -1
+    }
+  ],
+  "cfg_scale": 7,
+  "height": 768,
+  "width": 1344,
+  "samples": 1,
+  "steps": 30
+}`;
+    const replicateBody = `{
+  "version": "black-forest-labs/flux-schnell",
+  "input": {
+    "prompt": "{{prompt}}",
+    "aspect_ratio": "16:9",
+    "output_format": "png"
+  }
+}`;
+    const huggingFaceBody = `{
+  "inputs": "{{prompt}}",
+  "parameters": {
+    "negative_prompt": "{{negative}}"
+  }
+}`;
+    const sdBody = `{
+  "prompt": "{{prompt}}",
+  "negative_prompt": "{{negative}}",
+  "width": 1280,
+  "height": 720,
+  "steps": 24,
+  "cfg_scale": 6
+}`;
+
+    function brief() {
+      return {
+        concept: $("concept").value.trim(),
+        channelPreset: $("channelPreset").value,
+        videoGoal: $("videoGoal").value,
+        finalLength: $("finalLength").value,
+        duration: Number($("duration").value),
+        resolution: $("resolution").value,
+        pianoStyle: $("pianoStyle").value,
+        tempo: $("tempo").value,
+        keySig: $("keySig").value,
+        rainMood: $("rainMood").value,
+        visualStyle: $("visualStyle").value.trim(),
+        thumbA: $("thumbA").value.trim(),
+        thumbB: $("thumbB").value.trim(),
+        thumbStyle: $("thumbStyle").value,
+        thumbPos: $("thumbPos").value,
+        motionPreset: $("motionPreset").value,
+        loopSafety: $("loopSafety").value,
+        longHours: $("longHours") ? $("longHours").value : "3",
+        exportResolution: $("exportResolution") ? $("exportResolution").value : "1920x1080",
+        exportFps: $("exportFps") ? $("exportFps").value : "30",
+        exportContainer: $("exportContainer") ? $("exportContainer").value : "mp4",
+        gpuCodec: $("gpuCodec") ? $("gpuCodec").value : "hevc_nvenc",
+        encoderPreset: $("encoderPreset") ? $("encoderPreset").value : "p4",
+        renderQuality: $("renderQuality") ? $("renderQuality").value : "21",
+        bitrateMode: $("bitrateMode") ? $("bitrateMode").value : "cq",
+        videoMbps: $("videoMbps") ? $("videoMbps").value : "8",
+        videoProfile: $("videoProfile") ? $("videoProfile").value : "auto",
+        audioBitrate: $("audioBitrate") ? $("audioBitrate").value : "192k",
+        longMotionMode: $("longMotionMode") ? $("longMotionMode").value : "still",
+        musicProvider: $("musicProvider") ? $("musicProvider").value : "elevenlabs",
+        musicClipLength: $("musicClipLength") ? $("musicClipLength").value : "120",
+        musicOutputMode: $("musicOutputMode") ? $("musicOutputMode").value : "instrumental",
+        sleepSafety: $("sleepSafety") ? $("sleepSafety").value : "maximum",
+        publishCadence: $("publishCadence") ? $("publishCadence").value : "3 video / tuần",
+        productFormat: $("productFormat") ? $("productFormat").value : "Video thường 3 giờ",
+        brandVoice: $("brandVoice") ? $("brandVoice").value : "Êm dịu, chữa lành, cao cấp",
+        simplicityLevel: $("simplicityLevel") ? $("simplicityLevel").value : "Tối giản nhất để ra video nhanh"
+      };
+    }
+
+    const presetData = {
+      alex: {
+        concept: "Fall into sleep instantly with rain sounds and soft piano",
+        visual: "cozy dark bedroom, rainy window, moonlight, forest lake view, soft bedside lamp, neon pink-blue glow",
+        rain: "Mưa nhẹ bên cửa sổ",
+        piano: "Piano mưa đêm rất chậm",
+        tempo: "Rất chậm 45-55 BPM",
+        key: "F trưởng / D thứ",
+        motion: "rain",
+        thumbA: "FALL ASLEEP FAST",
+        thumbB: "RAIN + PIANO"
+      },
+      soul: {
+        concept: "Soft rain and nostalgic piano for stress relief and deep focus",
+        visual: "rainy old window, quiet desk, warm lamp, nostalgic night, soft blue-pink glow, peaceful reading room",
+        rain: "Mưa rừng mềm",
+        piano: "Piano nostalgic hoài niệm",
+        tempo: "Chậm 56-68 BPM",
+        key: "C trưởng / A thứ",
+        motion: "fog",
+        thumbA: "STRESS RELIEF",
+        thumbB: "SOFT RAIN"
+      },
+      soothing: {
+        concept: "Beautiful relaxing piano music with flowing water sounds for sleep and meditation",
+        visual: "peaceful waterfall, green forest, soft sunrise mist, calm river, gentle pink sunlight, premium nature relaxation",
+        rain: "Mưa đêm trên mặt hồ",
+        piano: "Piano thiên nhiên nước chảy",
+        tempo: "Chậm 56-68 BPM",
+        key: "Ngũ cung êm dịu",
+        motion: "waterfall",
+        thumbA: "RELAXING PIANO",
+        thumbB: "WATER SOUNDS"
+      },
+      kno: {
+        concept: "Long calm piano collection for deep sleep and study",
+        visual: "anime-inspired cozy night room, piano near window, soft stars, dreamy moonlight, premium calm collection cover",
+        rain: "Không mưa, room tone nhẹ",
+        piano: "Piano deep sleep 8 giờ",
+        tempo: "Rubato tự do",
+        key: "F trưởng / D thứ",
+        motion: "stars",
+        thumbA: "DEEP SLEEP",
+        thumbB: "PIANO COLLECTION"
+      },
+      morning: {
+        concept: "Fresh morning piano with birds, water and soft nature ambience for study",
+        visual: "fresh morning window, soft sunlight, garden, piano room, flowers, calm bright pastel pink-cyan glow",
+        rain: "Không mưa, room tone nhẹ",
+        piano: "Piano morning fresh",
+        tempo: "Chậm 56-68 BPM",
+        key: "C trưởng / A thứ",
+        motion: "clouds",
+        thumbA: "MORNING PIANO",
+        thumbB: "STUDY MUSIC"
+      },
+      bgm: {
+        concept: "Cozy cafe piano music for work, study and calm evening focus",
+        visual: "warm coffee shop corner, rainy street window, piano jazz ambience, wooden table, soft lamp, cozy pink-cyan neon reflections",
+        rain: "Mưa nhẹ bên cửa sổ",
+        piano: "Piano cafe ấm áp",
+        tempo: "Chậm 56-68 BPM",
+        key: "C trưởng / A thứ",
+        motion: "candle",
+        thumbA: "COZY PIANO",
+        thumbB: "WORK + STUDY"
+      }
+    };
+
+    function applyChannelPreset() {
+      const p = presetData[$("channelPreset").value];
+      if (!p) return;
+      $("concept").value = p.concept;
+      $("visualStyle").value = p.visual;
+      $("rainMood").value = p.rain;
+      $("pianoStyle").value = p.piano;
+      $("tempo").value = p.tempo;
+      $("keySig").value = p.key;
+      $("motionPreset").value = p.motion;
+      $("thumbA").value = p.thumbA;
+      $("thumbB").value = p.thumbB;
+      generatePack();
+    }
+
+    function slug(text) {
+      return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80) || "huy_hoang_piano";
+    }
+
+    function imagePromptText() {
+      const b = brief();
+      return `YouTube relaxing piano video background, ${b.concept}, goal: ${b.videoGoal}, inspired by large sleep/relaxing piano channels, ${b.visualStyle}, ${b.rainMood}, ${b.pianoStyle}, calm long-form ${b.finalLength} ambience, soft moonlight, peaceful room or nature, subtle neon pink and blue glow, cinematic 16:9, premium relaxing piano channel aesthetic, no text, no watermark, no logo, no people staring at camera, safe for overnight sleep video.`;
+    }
+
+    function thumbnailPromptText() {
+      const b = brief();
+      return `YouTube thumbnail background for a relaxing piano video. Goal: ${b.videoGoal}. Main promise: ${b.thumbA}. Secondary idea: ${b.thumbB}. Visual: ${b.visualStyle}, ${b.rainMood}, ${b.pianoStyle}, premium sleep/relaxing piano channel style, high contrast, very readable on mobile, simple composition, one calm focal point, leave safe empty space for large text overlay, 16:9, 1280x720 style, no generated text, no watermark, no logo, no scary mood, no clutter.`;
+    }
+
+    function seoText() {
+      const b = brief();
+      return `GỢI Ý TIÊU ĐỀ
+1. FALL INTO SLEEP INSTANTLY - Relaxing Sleep Music with Rain Sounds & Soft Piano
+2. Deep Sleep Piano Music + Rain Sounds | Insomnia Relief, Fall Asleep Fast
+3. ${b.concept} | Sleep Piano, Rain Sounds, Stress Relief Music
+4. Relaxing Sleep Piano for Insomnia | Gentle Rain Sounds for Deep Sleep
+5. Soft Piano Sleep Music + Rain | Calm Your Mind and Fall Asleep Fast
+
+MÔ TẢ
+Relax with ${b.pianoStyle.toLowerCase()}, gentle ambience, and a calm visual designed for ${b.videoGoal.toLowerCase()}, deep rest, stress relief, and long-form relaxation.
+
+Audio direction:
+- Piano: ${b.pianoStyle}, ${b.tempo}, ${b.keySig}
+- Ambience: ${b.rainMood}
+- Target length: ${b.finalLength}
+- Mood: soft, repetitive, low distraction, safe for sleep
+
+Best for:
+- Falling asleep fast
+- Deep sleep and insomnia relief
+- Relaxation, stress relief, bedtime routine
+- Calm background music while resting
+
+This video is for relaxation and sleep support only. It is not medical advice.
+
+HASHTAG
+#SleepPiano #RainSounds #DeepSleepMusic #InsomniaRelief #RelaxingPiano #SleepMusic
+
+TAG
+sleep piano, relaxing sleep music, rain sounds, insomnia relief, deep sleep music, fall asleep fast, soft piano music, piano rain sounds, stress relief music, sleep instantly, relaxing piano, night rain, ${b.pianoStyle}, ${b.tempo}, ${b.keySig}
+
+BÌNH LUẬN GHIM
+What are you using this session for tonight: sleep, stress relief, insomnia, relaxation, or focus?`;
+    }
+
+    function pianoStyleGuide(style) {
+      const guides = {
+        "Piano ngủ": "very soft sleep piano, sparse right-hand motif, warm felt tone, long pedal, no bright attack",
+        "Piano solo mềm": "gentle solo piano, simple emotional melody, soft dynamics, rounded high notes, no virtuoso runs",
+        "Piano felt lofi": "felt piano lofi texture, muted hammer noise, intimate close-mic tone, subtle tape warmth",
+        "Piano tối giản nền drone": "minimal piano over a soft drone bed, few notes, long silence, low distraction",
+        "Piano mưa đêm rất chậm": "ultra slow rainy night piano, 2-4 note motif, very long decay, dark warm room mood",
+        "Piano deep sleep 8 giờ": "deep sleep piano bed, nearly static harmony, seamless loop, no melodic surprise",
+        "Piano chữa lành / healing": "healing piano, warm major/minor colors, gentle resolving chords, reassuring cadence",
+        "Piano thiền spa": "spa meditation piano, slow open chords, airy reverb, calm breath-like phrasing",
+        "Piano thiên nhiên nước chảy": "nature piano with flowing water feeling, gentle arpeggios, clear but soft upper register",
+        "Piano cinematic êm dịu": "soft cinematic piano, emotional but restrained, wide reverb, no trailer intensity",
+        "Piano emotional buồn nhẹ": "light melancholic piano, tender minor color, simple sad melody, comforting ending",
+        "Piano nostalgic hoài niệm": "nostalgic piano, warm old-room feeling, slow rubato, memory-like motif",
+        "Piano study focus": "focus piano, steady calm pulse, low repetition, no sudden dynamic changes",
+        "Piano cafe ấm áp": "cozy cafe piano, warm voicings, gentle jazzy color, relaxed evening mood",
+        "Piano morning fresh": "fresh morning piano, brighter soft chords, optimistic calm, clean airy tone",
+        "Piano winter fireplace": "winter fireplace piano, warm low-mid register, gentle crackle-friendly space, cozy slow chords",
+        "Piano fantasy dream": "dreamy fantasy piano, soft modal harmony, shimmering high notes, magical but calm",
+        "Piano neoclassical mềm": "soft neoclassical piano, simple ostinato, elegant chord movement, restrained emotion",
+        "Piano ambient pad": "piano blended with ambient pad, slow chord swells, no lead melody dominance",
+        "Piano lullaby ru ngủ": "lullaby sleep piano, rocking 3/4 or 6/8 feel, childlike gentle motif, no bright bells",
+        "Piano dark sleep tối giản": "dark minimal sleep piano, low register, very few notes, safe calm darkness, no horror",
+        "Piano no melody sleep bed": "no-melody sleep bed, soft repeated chords, almost texture-only, maximum sleep safety",
+        "Piano sad rain": "sad rain piano, tender minor chords, slow falling motif, emotional but not dramatic",
+        "Piano midnight insomnia": "midnight insomnia piano, very low dynamics, dark blue room tone, comforting repeated harmony",
+        "Piano warm room ambience": "warm room piano ambience, close felt piano, soft lamp mood, cozy low-mid voicings",
+        "Piano crystal soft": "crystal soft piano, delicate high notes, glassy but gentle tone, long smooth reverb",
+        "Piano ambient cinematic pad": "ambient cinematic piano with soft pad, wide space, slow harmonic movement, no climax",
+        "Piano forest meditation": "forest meditation piano, natural breathing pace, open intervals, calm green soundscape",
+        "Piano ocean sleep waves": "ocean sleep piano, wave-like arpeggio motion, slow swell and release, relaxed low end",
+        "Piano prayer healing": "prayer-like healing piano, simple sacred cadence, warm sustained chords, peaceful resolution",
+        "Piano binaural sleep bed": "sleep piano designed for binaural/low ambience layering, ultra-stable dynamics, minimal melody",
+        "Piano no-drama focus": "focus piano with no drama, steady low-energy pulse, clear repetition, no emotional peaks",
+        "Piano soft romantic sleep": "soft romantic sleep piano, tender chords, gentle longing, no big chorus or dramatic swell",
+        "Piano lonely cabin night": "lonely cabin night piano, warm fireplace mood, sparse low notes, intimate winter silence",
+        "Piano moonlight lake": "moonlight lake piano, reflective arpeggios, calm water-like timing, silver-blue ambience",
+        "Piano Japanese garden calm": "Japanese garden calm piano, pentatonic touches, open space, respectful non-cliche serenity",
+        "Piano soft anime night": "soft anime night piano, dreamy nostalgic harmony, gentle high-register motif, calm bedroom mood",
+        "Piano library study rain": "library study rain piano, quiet steady voicings, unobtrusive focus texture, no hooky melody",
+        "Piano fireplace Christmas calm": "fireplace Christmas calm piano, warm seasonal chords, soft nostalgic comfort, no jingle energy",
+        "Piano angelic soft pad": "angelic piano with soft pad, airy major colors, slow glowing chords, peaceful spiritual tone",
+        "Piano ultra sparse meditation": "ultra sparse meditation piano, single notes and long silence, deep breath pacing, maximum calm",
+        "Piano brown noise layer": "piano composed to sit above brown noise, low-mid warmth, simple chords, very stable dynamics"
+      };
+      return guides[style] || "soft relaxing piano, sparse notes, warm tone, long reverb, safe for sleep";
+    }
+
+    function compositionText() {
+      const b = brief();
+      const styleGuide = pianoStyleGuide(b.pianoStyle);
+      return `GÓI SÁNG TÁC PIANO
+Phong cách: ${b.pianoStyle}
+Mô tả âm sắc: ${styleGuide}
+Tempo: ${b.tempo}
+Tông: ${b.keySig}
+
+LUẬT SÁNG TÁC
+1. Motif 3-5 nốt, rất chậm, dễ loop.
+2. Tay trái thưa: quãng năm mở hoặc hợp âm rải thật mềm.
+3. Không chạy nốt nhanh, không piano trailer kịch tính, không beat pop.
+4. Biến thể rất nhỏ sau mỗi 16 ô nhịp.
+5. Chừa khoảng lặng và đuôi pedal dài.
+6. Mưa phải đều, nhẹ, không sấm.
+
+LUẬT THUMBNAIL TỪ CÁC KÊNH LỚN
+1. Lời hứa phải đọc rõ trên điện thoại: 2-4 từ, tương phản cao.
+2. Chỉ một ý chính: giường/cửa sổ/mưa/piano/trăng. Không nhồi chi tiết.
+3. Nền tối + glow hồng xanh ấm thường hợp video ngủ hơn cảnh sáng ban ngày.
+4. Chữ nằm trong vùng an toàn, tránh chữ phụ quá nhỏ.
+5. Chuẩn bị 2 bản A/B: bản chữ mạnh và bản tối giản cao cấp.
+
+LUẬT MOTION
+1. Chuyển động gần như vô hình cho giấc ngủ: mưa, glow, sương, phản chiếu hoặc zoom rất chậm.
+2. Loop không được lộ điểm cắt, tránh reset hạt đột ngột.
+3. Không nhấp nháy, không camera nhanh, không strobe tương phản mạnh.
+4. Xuất 16:9. Test loop 60 giây trước, ổn rồi mới render dài.
+
+PROMPT TẠO NHẠC AI
+Create a long-form ${b.pianoStyle} track for ${b.videoGoal}. Style details: ${styleGuide}. Target final video length: ${b.finalLength}. ${b.tempo}, ${b.keySig}, warm felt piano, sparse notes, long pedal decay, gentle ambience (${b.rainMood}), no drums, no sudden changes, no dramatic melody, seamless loop, peaceful overnight mood.`;
+    }
+
+    function pianoStylePackText() {
+      const b = brief();
+      const styleGuide = pianoStyleGuide(b.pianoStyle);
+      return `PHONG CÁCH ĐANG CHỌN
+${b.pianoStyle}
+
+ÂM SẮC / CÁCH CHƠI
+${styleGuide}
+
+PROMPT NHẠC NGẮN
+Create ${b.pianoStyle} for ${b.videoGoal}. ${styleGuide}. ${b.tempo}, ${b.keySig}, ${b.rainMood}, seamless long loop, no drums, no sudden changes, no vocals, peaceful overnight mood.
+
+KIỂM TRA TRƯỚC KHI XUẤT
+1. Melody không quá nổi bật.
+2. Không có đoạn cao trào.
+3. Âm lượng mưa/ambience không che piano.
+4. Loop 60 giây không lộ điểm cắt.
+5. Nghe nhỏ vẫn êm, không gắt tai.`;
+    }
+
+    function musicPromptText() {
+      const b = brief();
+      const styleGuide = pianoStyleGuide(b.pianoStyle);
+      const modeText = {
+        instrumental: "instrumental piano only, no vocals, no lyrics",
+        "piano-rain": "instrumental piano with gentle rain ambience, no vocals, no lyrics",
+        "piano-pad": "instrumental piano with soft ambient pad or drone, no vocals, no lyrics",
+        "piano-only": "clean solo piano, no ambience, no vocals, no lyrics"
+      }[b.musicOutputMode] || "instrumental piano, no vocals";
+      const safetyText = {
+        maximum: "maximum sleep safety: no climax, no sudden notes, no percussion, no bright attack, no dramatic melody",
+        balanced: "balanced sleep-safe arrangement: gentle motif, soft dynamics, no sudden changes",
+        emotional: "slightly more emotional but still calm, no big chorus, no cinematic trailer build"
+      }[b.sleepSafety] || "safe for sleep";
+      return `Create a ${b.musicClipLength}-second seamless loop for a long YouTube sleep/relaxing piano video.
+
+Main style: ${b.pianoStyle}
+Style details: ${styleGuide}
+Mode: ${modeText}
+Goal: ${b.videoGoal}
+Tempo: ${b.tempo}
+Key / scale: ${b.keySig}
+Ambience: ${b.rainMood}
+Safety: ${safetyText}
+
+Composition rules:
+- Sparse piano notes, long pedal decay, soft felt tone.
+- Keep the dynamic range stable and low.
+- Make the final 8 seconds compatible with the first 8 seconds for seamless looping.
+- Avoid vocals, lyrics, drums, bass drops, risers, stingers, scary tones, sharp high notes, and dramatic chord changes.
+- Leave space for rain/water/room ambience.
+- Suitable for repeating into a ${b.finalLength} video without listener fatigue.
+
+Output target: high-quality MP3 or WAV, 48 kHz preferred, stereo.`;
+    }
+
+    function musicApiJsonText() {
+      const b = brief();
+      const prompt = musicPromptText();
+      if (b.musicProvider === "elevenlabs") {
+        return `ELEVENLABS MUSIC API - JSON MẪU
+{
+  "prompt": ${JSON.stringify(prompt)},
+  "duration_seconds": ${Number(b.musicClipLength)},
+  "output_format": "mp3_44100_192",
+  "music_type": "instrumental"
+}
+
+GỢI Ý LUỒNG DÙNG
+1. Lấy API key từ tài khoản ElevenLabs.
+2. Gửi prompt tới endpoint Music API theo tài liệu hiện tại của ElevenLabs.
+3. Lưu audio trả về thành music_loop.mp3.
+4. Nghe test loop 2-3 lần.
+5. Dùng music_loop.mp3 làm audio.mp3 trong file render CUDA/NVENC.`;
+      }
+      if (b.musicProvider === "suno") {
+        return `SUNO / UDIO - QUY TRÌNH THỦ CÔNG HOẶC API BÊN THỨ BA
+1. Copy prompt nhạc.
+2. Chọn instrumental / no vocal nếu dịch vụ có tùy chọn.
+3. Tạo 2-4 biến thể, chọn bản ít cao trào nhất.
+4. Tải MP3/WAV.
+5. Cắt đoạn loop tốt nhất 2-10 phút.
+6. Đổi tên thành audio.mp3 để render video dài.
+
+LƯU Ý
+- API chính thức/khả dụng có thể thay đổi theo gói và từng thời điểm.
+- Luôn kiểm tra quyền thương mại trước khi upload YouTube.`;
+      }
+      if (b.musicProvider === "stableaudio") {
+        return `STABLE AUDIO / AUDIO MODEL KHÁC - JSON MẪU CHUNG
+{
+  "prompt": ${JSON.stringify(prompt)},
+  "duration": ${Number(b.musicClipLength)},
+  "format": "mp3",
+  "sample_rate": 48000,
+  "channels": 2
+}
+
+Mục tiêu: tạo clip piano không vocal, loop được, sau đó đổi tên thành audio.mp3.`;
+      }
+      return `PROMPT THỦ CÔNG
+Copy prompt ở khung bên trái vào công cụ AI music bạn dùng.
+
+Sau khi có file:
+1. Tải MP3/WAV.
+2. Nghe kiểm tra cao trào, tiếng gắt, vocal ẩn.
+3. Đổi tên thành audio.mp3.
+4. Dùng RENDER_DAI_CUDA_NVIDIA.bat để render video dài.`;
+    }
+
+    function musicPlanText() {
+      return `KẾ HOẠCH TẠO NHẠC MP3
+
+${musicPromptText()}
+
+------------------------------
+
+${musicApiJsonText()}`;
+    }
+
+    function readinessScore() {
+      const checks = [
+        $("concept").value.trim().length >= 18,
+        $("imagePrompt").value.trim().length >= 80,
+        $("thumbnailPrompt").value.trim().length >= 80,
+        $("thumbA").value.trim().length >= 4 && $("thumbA").value.trim().length <= 24,
+        $("thumbB").value.trim().length >= 4 && $("thumbB").value.trim().length <= 24,
+        Number($("duration").value) >= 30,
+        Number($("zoom").value) <= 8,
+        Number($("rainFx").value) >= 25,
+        $("seoPack").textContent.trim().length >= 500,
+        $("resolution").value.includes("x")
+      ];
+      const passed = checks.filter(Boolean).length;
+      return Math.round((passed / checks.length) * 100);
+    }
+
+    function checklistText() {
+      const b = brief();
+      const score = readinessScore();
+      return `CHECKLIST XUẤT BẢN NHANH
+[${score >= 80 ? "x" : " "}] Điểm sẵn sàng tối thiểu 80%.
+[${b.concept.length >= 18 ? "x" : " "}] Ý tưởng rõ: ${b.concept}
+[${$("imagePrompt").value.length >= 80 ? "x" : " "}] Prompt ảnh nền đủ chi tiết.
+[${$("thumbnailPrompt").value.length >= 80 ? "x" : " "}] Prompt thumbnail có vùng trống để phủ chữ.
+[${b.thumbA.length <= 24 ? "x" : " "}] Chữ thumbnail 1 ngắn, dễ đọc: ${b.thumbA}
+[${b.thumbB.length <= 24 ? "x" : " "}] Chữ thumbnail 2 ngắn, dễ đọc: ${b.thumbB}
+[ ] Đã render thử 30-60 giây và xem loop không giật.
+[ ] Đã nghe audio bằng tai nghe: không có tiếng gắt, click, sấm, cao tần khó ngủ.
+[ ] Đã xuất thumbnail 1280x720 và kiểm tra trên màn hình điện thoại.
+[ ] Đã copy title, mô tả, tag, bình luận ghim.
+[ ] Đã đặt tên file đúng để dễ quản lý.
+
+ƯU TIÊN NHANH
+1. Nếu cần ra sản phẩm ngay: dùng ảnh có sẵn + render 60 giây loop + xuất WebM.
+2. Nếu muốn đẹp hơn: tạo 2 thumbnail A/B, đổi chữ chính và màu glow.
+3. Nếu làm video dài: render ngắn trước, sau đó nhân loop trong editor hoặc render bản dài khi máy rảnh.`;
+    }
+
+    function descriptionText() {
+      const b = brief();
+      return `${b.concept}
+
+Relax with ${b.pianoStyle.toLowerCase()}, ${b.rainMood.toLowerCase()}, and a calm long-form visual designed for ${b.videoGoal.toLowerCase()}.
+
+This session is made for:
+- Falling asleep faster
+- Deep sleep and bedtime relaxation
+- Stress relief after a long day
+- Gentle study, reading, meditation, or calm background music
+
+Music direction:
+- Piano: ${b.pianoStyle}
+- Tempo: ${b.tempo}
+- Key / scale: ${b.keySig}
+- Ambience: ${b.rainMood}
+- Final format: ${b.productFormat}
+- Brand voice: ${b.brandVoice}
+
+For the best experience, keep the volume low and let the music stay in the background.
+
+This video is for relaxation and sleep support only. It is not medical advice.
+
+#SleepPiano #RainSounds #DeepSleepMusic #RelaxingPiano #InsomniaRelief #HuyHoangPiano`;
+    }
+
+    function chaptersText() {
+      const b = brief();
+      const base = slug(b.concept);
+      return `TIMESTAMP GỢI Ý
+00:00 Soft piano and rain begins
+10:00 Calm mind, slow breathing
+30:00 Deep sleep piano ambience
+01:00:00 Gentle rain for insomnia relief
+02:00:00 Long peaceful sleep loop
+03:00:00 End of main session
+
+TÊN FILE NÊN DÙNG
+Video: ${base}_${b.motionPreset}_${b.resolution}_${b.duration}s.webm
+Thumbnail A: ${base}_thumb_big_text.png
+Thumbnail B: ${base}_thumb_minimal.png
+SEO: ${base}_seo_pack.txt
+Project: ${base}_project.json
+
+QUY ƯỚC THƯ MỤC
+01_assets
+02_audio
+03_render_test
+04_final_video
+05_thumbnail
+06_seo`;
+    }
+
+    function scheduleText() {
+      const b = brief();
+      const ideas = [
+        "Rainy bedroom sleep piano",
+        "Forest lake night piano",
+        "Cozy window rain piano",
+        "Waterfall meditation piano",
+        "Moonlight deep sleep piano",
+        "Cafe study soft piano",
+        "No talking insomnia piano"
+      ];
+      return ideas.map((idea, index) => {
+        const day = index + 1;
+        return `Ngày ${day}: ${idea}
+- Format: ${b.productFormat}
+- Motion: ${b.motionPreset}
+- Thumbnail: ${index % 2 ? "tối giản cao cấp" : "chữ lớn promise rõ"}
+- Việc chính: prompt ảnh -> render test -> thumbnail -> SEO -> upload`;
+      }).join("\n\n") + `\n\nTần suất đang chọn: ${b.publishCadence}
+Mức tối giản: ${b.simplicityLevel}`;
+    }
+
+    function studioPackText() {
+      return [
+        checklistText(),
+        "------------------------------",
+        "MÔ TẢ YOUTUBE",
+        descriptionText(),
+        "------------------------------",
+        chaptersText(),
+        "------------------------------",
+        "LỊCH SẢN XUẤT",
+        scheduleText()
+      ].join("\n\n");
+    }
+
+    function longDurationSeconds() {
+      return Number($("longHours").value) * 3600;
+    }
+
+    function exportSize() {
+      const parts = $("exportResolution").value.split("x").map(Number);
+      return { w: parts[0], h: parts[1] };
+    }
+
+    function youtubeMbps() {
+      const { h } = exportSize();
+      const fps = Number($("exportFps").value);
+      const highFps = fps > 30;
+      if (h >= 2160) return highFps ? 68 : 45;
+      if (h >= 1440) return highFps ? 24 : 16;
+      if (h >= 1080) return highFps ? 12 : 8;
+      return highFps ? 7 : 5;
+    }
+
+    function bitrateSettings() {
+      const b = brief();
+      const mode = b.bitrateMode;
+      const mbps = mode === "manual" ? Number(b.videoMbps || 8) : youtubeMbps();
+      if (mode === "cq") {
+        return {
+          bitrate: b.gpuCodec === "hevc_nvenc" || b.gpuCodec === "av1_nvenc" ? "3500k" : "5500k",
+          maxrate: b.gpuCodec === "hevc_nvenc" || b.gpuCodec === "av1_nvenc" ? "6500k" : "9000k",
+          bufsize: b.gpuCodec === "hevc_nvenc" || b.gpuCodec === "av1_nvenc" ? "13000k" : "18000k"
+        };
+      }
+      return {
+        bitrate: `${mbps * 1000}k`,
+        maxrate: `${Math.round(mbps * 1.6) * 1000}k`,
+        bufsize: `${Math.round(mbps * 3.2) * 1000}k`
+      };
+    }
+
+    function ffmpegVideoFilter() {
+      const mode = $("longMotionMode").value;
+      const { w, h } = exportSize();
+      const fps = $("exportFps").value;
+      if (mode === "zoom") {
+        const workW = Math.max(w, 2560);
+        const workH = Math.max(h, 1440);
+        return `scale=${workW}:${workH}:force_original_aspect_ratio=increase,crop=${workW}:${workH},zoompan=z='min(zoom+0.000015,1.06)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${w}x${h}:fps=${fps},format=yuv420p`;
+      }
+      return `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},fps=${fps},format=yuv420p`;
+    }
+
+    function videoCodecArgs() {
+      const b = brief();
+      const rate = bitrateSettings();
+      const profile = b.videoProfile !== "auto" && b.gpuCodec !== "av1_nvenc" ? ` -profile:v ${b.videoProfile}` : "";
+      if (b.gpuCodec === "libx264") {
+        const crf = b.renderQuality;
+        const preset = b.encoderPreset === "p1" ? "veryfast" : b.encoderPreset === "p7" ? "slow" : "medium";
+        if (b.bitrateMode === "manual" || b.bitrateMode === "youtube") {
+          return `-c:v libx264 -preset ${preset}${profile} -b:v ${rate.bitrate} -maxrate ${rate.maxrate} -bufsize ${rate.bufsize}`;
+        }
+        return `-c:v libx264 -preset ${preset}${profile} -crf ${crf}`;
+      }
+      if (b.bitrateMode === "manual" || b.bitrateMode === "youtube") {
+        return `-c:v ${b.gpuCodec} -preset ${b.encoderPreset} -tune hq${profile} -rc vbr -b:v ${rate.bitrate} -maxrate ${rate.maxrate} -bufsize ${rate.bufsize}`;
+      }
+      return `-c:v ${b.gpuCodec} -preset ${b.encoderPreset} -tune hq${profile} -rc vbr -cq ${b.renderQuality} -b:v ${rate.bitrate} -maxrate ${rate.maxrate} -bufsize ${rate.bufsize}`;
+    }
+
+    function ffmpegCommandText() {
+      const b = brief();
+      const seconds = longDurationSeconds();
+      const out = `${slug(b.concept)}_${b.longHours}h_${b.exportResolution}_${b.gpuCodec}.${b.exportContainer}`;
+      const movflags = b.exportContainer === "mp4" || b.exportContainer === "mov" ? " -movflags +faststart" : "";
+      return `ffmpeg -y -loop 1 -framerate ${b.exportFps} -i "background.png" -stream_loop -1 -i "audio.mp3" -t ${seconds} -vf "${ffmpegVideoFilter()}" ${videoCodecArgs()} -c:a aac -b:a ${b.audioBitrate} -ar 48000 -shortest${movflags} "${out}"`;
+    }
+
+    function longRenderGuideText() {
+      const b = brief();
+      return `QUY TRÌNH RENDER DÀI ỔN ĐỊNH
+1. Cài FFmpeg bản có NVIDIA NVENC, hoặc đặt ffmpeg.exe vào thư mục tool.
+2. Đổi tên ảnh nền cuối thành: background.png
+3. Đổi tên file nhạc/mưa cuối thành: audio.mp3
+4. Bấm "Tải file render .bat", đặt file .bat cùng thư mục với background.png và audio.mp3.
+5. Chạy file .bat, chọn thời lượng ${b.longHours} tiếng.
+6. Trong lúc render dài, không render bằng trình duyệt nữa.
+
+THIẾT LẬP ĐANG CHỌN
+- Thời lượng: ${b.longHours} tiếng
+- Resolution/FPS: ${b.exportResolution} / ${b.exportFps} fps
+- Container: ${b.exportContainer.toUpperCase()}
+- Codec: ${b.gpuCodec}
+- Preset: ${b.encoderPreset}
+- Bitrate mode: ${b.bitrateMode}
+- Chất lượng: CQ/CRF ${b.renderQuality}
+- Audio: AAC ${b.audioBitrate}
+- Motion dài: ${b.longMotionMode === "zoom" ? "zoom rất chậm, đẹp hơn nhưng nặng CPU hơn" : "ảnh tĩnh ổn định nhất"}
+- Video test trong tool: ${b.duration} giây
+
+LƯU Ý
+- Tốc độ render có thể gần DaVinci nếu cùng dùng NVENC và motion nhẹ.
+- Nếu chọn zoompan, FFmpeg phải tính hiệu ứng bằng CPU nhiều hơn nên sẽ chậm hơn ảnh tĩnh.
+- 3-10 tiếng nên ưu tiên chế độ ảnh tĩnh + audio để máy chạy ổn định.
+- Nếu muốn motion rõ, render nhiều đoạn 30-60 phút rồi ghép lại sẽ an toàn hơn render 10 tiếng một lần.
+- Nếu máy không có NVIDIA/NVENC, đổi codec trong .bat sang libx264 nhưng render sẽ chậm hơn nhiều.`;
+    }
+
+    function longRenderBatText() {
+      const b = brief();
+      const seconds = longDurationSeconds();
+      const out = `${slug(b.concept)}_${b.longHours}h_${b.exportResolution}_${b.gpuCodec}.${b.exportContainer}`;
+      const rate = bitrateSettings();
+      const args = videoCodecArgs();
+      const movflags = b.exportContainer === "mp4" || b.exportContainer === "mov" ? "-movflags +faststart" : "";
+      return `@echo off
+setlocal
+cd /d "%~dp0"
+title Huy Hoang Piano - Render dai kieu DaVinci/NVENC
+
+set "FFMPEG=ffmpeg"
+if exist "%~dp0ffmpeg.exe" set "FFMPEG=%~dp0ffmpeg.exe"
+if exist "%~dp0ffmpeg\\bin\\ffmpeg.exe" set "FFMPEG=%~dp0ffmpeg\\bin\\ffmpeg.exe"
+
+echo.
+echo HUY HOANG PIANO - RENDER VIDEO DAI KIEU DAVINCI BANG FFMPEG
+echo.
+echo Can co:
+echo - background.png hoac sua bien IMG ben duoi
+echo - audio.mp3 hoac sua bien AUD ben duoi
+echo - FFmpeg co ho tro codec da chon
+echo.
+
+set "IMG=background.png"
+set "AUD=audio.mp3"
+set "OUT=${out}"
+set "DURATION=${seconds}"
+set "CODEC=${b.gpuCodec}"
+set "FPS=${b.exportFps}"
+set "RES=${b.exportResolution}"
+set "PRESET=${b.encoderPreset}"
+set "BITRATE=${rate.bitrate}"
+set "MAXRATE=${rate.maxrate}"
+set "BUFSIZE=${rate.bufsize}"
+set "VF=${ffmpegVideoFilter()}"
+set "VIDEO_ARGS=${args}"
+set "AUDIO_BITRATE=${b.audioBitrate}"
+set "MOVFLAGS=${movflags}"
+
+if not exist "%IMG%" (
+  echo Khong thay %IMG%
+  set /p IMG=Nhap duong dan anh nen:
+)
+
+if not exist "%AUD%" (
+  echo Khong thay %AUD%
+  set /p AUD=Nhap duong dan audio mp3/wav:
+)
+
+if /i not "%CODEC%"=="libx264" (
+"%FFMPEG%" -hide_banner -encoders | findstr /i "%CODEC%" >nul
+if errorlevel 1 (
+  echo.
+  echo Khong thay encoder %CODEC%. Hay cai FFmpeg co NVIDIA NVENC/AV1 hoac doi CODEC thanh libx264.
+  echo.
+  pause
+  exit /b 1
+)
+)
+
+echo.
+echo Bat dau render %DURATION% giay...
+echo Resolution/FPS: %RES% / %FPS%
+echo Codec: %CODEC%
+echo Bitrate: %BITRATE%
+echo Output: %OUT%
+echo.
+
+"%FFMPEG%" -y -loop 1 -framerate %FPS% -i "%IMG%" -stream_loop -1 -i "%AUD%" -t %DURATION% -vf "%VF%" %VIDEO_ARGS% -c:a aac -b:a %AUDIO_BITRATE% -ar 48000 -shortest %MOVFLAGS% "%OUT%"
+
+echo.
+if errorlevel 1 (
+  echo Render bi loi. Kiem tra lai FFmpeg, codec NVENC, duong dan anh/audio.
+) else (
+  echo Render xong: %OUT%
+)
+pause`;
+    }
+
+    function updateLongRenderPack() {
+      $("longRenderGuide").textContent = longRenderGuideText();
+      $("longRenderCommand").textContent = ffmpegCommandText();
+    }
+
+    function updateDashboard() {
+      const score = readinessScore();
+      $("readyScore").textContent = score + "%";
+      $("readyNote").textContent = score >= 85 ? "Có thể render/upload thử." : score >= 65 ? "Ổn, nên kiểm tra thumbnail và loop." : "Cần tạo prompt/SEO trước.";
+      $("formatNote").textContent = $("resolution").value;
+      $("loopNote").textContent = $("duration").value + "s";
+      $("thumbNote").textContent = $("thumbStyle").value === "minimal" ? "Minimal" : "A/B";
+      $("checklistPack").textContent = checklistText();
+      $("schedulePack").textContent = scheduleText();
+      $("descriptionPack").textContent = descriptionText();
+      $("chaptersPack").textContent = chaptersText();
+      updateLongRenderPack();
+    }
+
+    function generatePack() {
+      $("imagePrompt").value = imagePromptText();
+      $("thumbnailPrompt").value = thumbnailPromptText();
+      $("seoPack").textContent = seoText() + "\n\n" + compositionText();
+      $("pianoStylePack").textContent = pianoStylePackText();
+      $("musicPromptPack").textContent = musicPromptText();
+      $("musicApiPack").textContent = musicApiJsonText();
+      makeProviderTemplate();
+      drawPlaceholder();
+      makeThumb();
+      updateDashboard();
+    }
+
+    function makeProviderTemplate() {
+      const provider = $("provider").value;
+      if (provider === "openai") {
+        $("endpoint").value = "https://api.openai.com/v1/images/generations";
+        $("bodyTemplate").value = openaiBody;
+      } else if (provider === "gemini") {
+        $("endpoint").value = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent";
+        $("bodyTemplate").value = geminiBody;
+      } else if (provider === "stability") {
+        $("endpoint").value = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image";
+        $("bodyTemplate").value = stabilityBody;
+      } else if (provider === "replicate") {
+        $("endpoint").value = "https://api.replicate.com/v1/predictions";
+        $("bodyTemplate").value = replicateBody;
+      } else if (provider === "huggingface") {
+        $("endpoint").value = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell";
+        $("bodyTemplate").value = huggingFaceBody;
+      } else if (provider === "sd") {
+        $("endpoint").value = "http://127.0.0.1:7860/sdapi/v1/txt2img";
+        $("bodyTemplate").value = sdBody;
+      }
+    }
+
+    function fillTemplate(tpl) {
+      return tpl
+        .replaceAll("{{prompt}}", $("imagePrompt").value.replaceAll("\\", "\\\\").replaceAll('"', '\\"'))
+        .replaceAll("{{thumbnail_prompt}}", $("thumbnailPrompt").value.replaceAll("\\", "\\\\").replaceAll('"', '\\"'))
+        .replaceAll("{{negative}}", $("negativePrompt").value.replaceAll("\\", "\\\\").replaceAll('"', '\\"'));
+    }
+
+    function apiPayload(promptText) {
+      const bodyText = $("bodyTemplate").value
+        .replaceAll("{{prompt}}", promptText.replaceAll("\\", "\\\\").replaceAll('"', '\\"'))
+        .replaceAll("{{thumbnail_prompt}}", promptText.replaceAll("\\", "\\\\").replaceAll('"', '\\"'))
+        .replaceAll("{{negative}}", $("negativePrompt").value.replaceAll("\\", "\\\\").replaceAll('"', '\\"'));
+      return {
+        endpoint: $("endpoint").value.trim(),
+        apiKey: $("apiKey").value.trim(),
+        body: JSON.parse(bodyText),
+        provider: $("provider").value
+      };
+    }
+
+    async function generateImage() {
+      $("imageStatus").textContent = "Đang tạo ảnh...";
+      $("imageStatus").className = "status";
+      try {
+        const payload = apiPayload($("imagePrompt").value);
+        const res = await fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.image) throw new Error(data.error || "Khong lay duoc anh.");
+        await loadImageUrl(data.image);
+        $("imageStatus").textContent = "Đã tạo ảnh AI.";
+        $("imageStatus").className = "status ok";
+      } catch (err) {
+        $("imageStatus").textContent = "Lỗi: " + err.message + ". Nếu mở file trực tiếp, hãy chạy start.bat để bật local proxy.";
+        $("imageStatus").className = "status bad";
+      }
+    }
+
+    async function generateThumbImage() {
+      $("thumbStatus").textContent = "Đang tạo ảnh thumbnail AI...";
+      $("thumbStatus").className = "status";
+      try {
+        const payload = apiPayload($("thumbnailPrompt").value);
+        const res = await fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.image) throw new Error(data.error || "Không lấy được ảnh thumbnail.");
+        await loadThumbnailUrl(data.image);
+        $("thumbStatus").textContent = "Đã tạo ảnh thumbnail AI.";
+        $("thumbStatus").className = "status ok";
+      } catch (err) {
+        $("thumbStatus").textContent = "Lỗi: " + err.message + ". Nếu mở file trực tiếp, hãy chạy start.bat để bật local proxy.";
+        $("thumbStatus").className = "status bad";
+      }
+    }
+
+    function loadImageUrl(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => { currentImage = img; drawFrame(0); makeThumb(); resolve(); };
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+
+    function loadThumbnailUrl(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => { thumbnailImage = img; makeThumb(); resolve(); };
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+
+    function loadImageFile(file) {
+      const url = URL.createObjectURL(file);
+      loadImageUrl(url).then(() => $("renderStatus").textContent = "Đã tải ảnh nền.");
+    }
+
+    function canvasSize() {
+      const [w, h] = $("resolution").value.split("x").map(Number);
+      return { w, h };
+    }
+
+    function setupCanvas(canvas) {
+      const { w, h } = canvasSize();
+      canvas.width = w;
+      canvas.height = h;
+      return canvas.getContext("2d");
+    }
+
+    function drawCover(ctx, img, x, y, w, h) {
+      const scale = Math.max(w / img.width, h / img.height);
+      const sw = w / scale;
+      const sh = h / scale;
+      ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, x, y, w, h);
+    }
+
+    function drawFrame(t) {
+      const canvas = $("stage");
+      const ctx = setupCanvas(canvas);
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      if (currentImage) {
+        const zoom = 1 + (Number($("zoom").value) / 100) * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-w / 2, -h / 2);
+        drawCover(ctx, currentImage, 0, 0, w, h);
+        ctx.restore();
+      } else {
+        const g = ctx.createLinearGradient(0, 0, w, h);
+        g.addColorStop(0, "#18081b");
+        g.addColorStop(1, "#05030a");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "#ff84d8";
+        ctx.font = `${Math.round(w / 24)}px sans-serif`;
+        ctx.fillText("Sleep Piano Rain", w * .08, h * .48);
+      }
+      const amount = Number($("rainFx").value);
+      const preset = $("motionPreset").value;
+      if (preset === "rain") drawRain(ctx, w, h, t, amount);
+      if (preset === "candle") drawGlow(ctx, w, h, t, amount);
+      if (preset === "lake") drawLake(ctx, w, h, t, amount);
+      if (preset === "fog") drawFog(ctx, w, h, t, amount);
+      if (preset === "leaves") drawLeaves(ctx, w, h, t, amount);
+      if (preset === "piano") drawPianoPulse(ctx, w, h, t, amount);
+      if (preset === "stars") drawStars(ctx, w, h, t, amount);
+      if (preset === "aurora") drawAurora(ctx, w, h, t, amount);
+      if (preset === "waterfall") drawWaterfall(ctx, w, h, t, amount);
+      if (preset === "fireflies") drawFireflies(ctx, w, h, t, amount);
+      if (preset === "clouds") drawClouds(ctx, w, h, t, amount);
+      if (preset === "dust") drawDust(ctx, w, h, t, amount);
+      ctx.fillStyle = "rgba(255,46,166,.10)";
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    function motionSpeed() {
+      const mode = $("loopSafety").value;
+      if (mode === "very") return 0.55;
+      if (mode === "visible") return 1.35;
+      return 1;
+    }
+
+    function drawRain(ctx, w, h, t, amount) {
+      const count = Math.floor(amount * 3);
+      ctx.strokeStyle = "rgba(190,225,255,.34)";
+      ctx.lineWidth = Math.max(1, w / 900);
+      const speed = motionSpeed();
+      for (let i = 0; i < count; i++) {
+        const x = (i * 97 + t * 420 * speed + Math.sin(i) * 80) % (w + 80) - 40;
+        const y = (i * 53 + t * 900 * speed) % (h + 120) - 60;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - w * .012, y + h * .07);
+        ctx.stroke();
+      }
+    }
+
+    function drawGlow(ctx, w, h, t, amount) {
+      const count = Math.floor(amount * 1.5);
+      const speed = motionSpeed();
+      for (let i = 0; i < count; i++) {
+        const x = (i * 83 + Math.sin(t * 6.28 * speed + i) * w * .03) % w;
+        const y = h * .58 + Math.sin(i * 2 + t * 6.28 * speed) * h * .25;
+        const r = w * (.008 + (i % 5) * .002);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r * 5);
+        g.addColorStop(0, "rgba(255,180,95,.22)");
+        g.addColorStop(1, "rgba(255,46,166,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, r * 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawLake(ctx, w, h, t, amount) {
+      const lines = Math.floor(amount * 1.4);
+      ctx.strokeStyle = "rgba(120,220,255,.18)";
+      ctx.lineWidth = Math.max(1, w / 1000);
+      const speed = motionSpeed();
+      for (let i = 0; i < lines; i++) {
+        const y = h * .52 + (i / lines) * h * .42;
+        const shift = Math.sin(t * 6.28 * speed + i * .7) * w * .035;
+        ctx.beginPath();
+        ctx.moveTo(w * .08 + shift, y);
+        ctx.bezierCurveTo(w * .28, y + Math.sin(i) * 8, w * .62, y - Math.cos(i) * 8, w * .92 + shift, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawFog(ctx, w, h, t, amount) {
+      const count = Math.floor(amount * .8);
+      const speed = motionSpeed();
+      for (let i = 0; i < count; i++) {
+        const x = ((i * 211 + t * w * .20 * speed) % (w * 1.3)) - w * .15;
+        const y = h * (.25 + ((i * 37) % 55) / 100);
+        const r = w * (.07 + (i % 4) * .025);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, "rgba(220,220,255,.055)");
+        g.addColorStop(1, "rgba(220,220,255,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawLeaves(ctx, w, h, t, amount) {
+      const count = Math.floor(amount * .9);
+      const speed = motionSpeed();
+      ctx.fillStyle = "rgba(180,255,190,.18)";
+      for (let i = 0; i < count; i++) {
+        const x = (i * 127 + t * w * .18 * speed) % (w + 120) - 60;
+        const y = (i * 71 + Math.sin(t * 6.28 * speed + i) * h * .08) % h;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(Math.sin(t * 6.28 + i) * .7);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, w * .006, h * .014, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      drawGlow(ctx, w, h, t, amount * .35);
+    }
+
+    function drawPianoPulse(ctx, w, h, t, amount) {
+      const alpha = .08 + .06 * Math.sin(t * Math.PI * 2 * motionSpeed());
+      const g = ctx.createLinearGradient(0, h * .65, w, h);
+      g.addColorStop(0, `rgba(255,46,166,${alpha})`);
+      g.addColorStop(.5, `rgba(95,247,255,${alpha * .8})`);
+      g.addColorStop(1, `rgba(255,132,216,${alpha})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, h * .62, w, h * .38);
+      drawGlow(ctx, w, h, t, amount * .45);
+    }
+
+    function drawStars(ctx, w, h, t, amount) {
+      const count = Math.floor(amount * 1.2);
+      for (let i = 0; i < count; i++) {
+        const x = (i * 173) % w;
+        const y = (i * 89) % (h * .72);
+        const a = .08 + .22 * Math.max(0, Math.sin(t * Math.PI * 2 * motionSpeed() + i));
+        ctx.fillStyle = `rgba(230,240,255,${a})`;
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(1, w / 900), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawAurora(ctx, w, h, t, amount) {
+      const speed = motionSpeed();
+      for (let band = 0; band < 3; band++) {
+        const yBase = h * (.20 + band * .11);
+        const g = ctx.createLinearGradient(0, yBase - h * .1, 0, yBase + h * .18);
+        g.addColorStop(0, "rgba(95,247,255,0)");
+        g.addColorStop(.5, band % 2 ? "rgba(255,46,166,.12)" : "rgba(95,247,255,.12)");
+        g.addColorStop(1, "rgba(95,247,255,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(0, yBase);
+        for (let x = 0; x <= w; x += w / 18) {
+          const y = yBase + Math.sin(x / w * Math.PI * 4 + t * Math.PI * 2 * speed + band) * h * .05;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(w, yBase + h * .20);
+        ctx.lineTo(0, yBase + h * .20);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    function drawWaterfall(ctx, w, h, t, amount) {
+      const count = Math.floor(amount * 1.5);
+      const speed = motionSpeed();
+      ctx.strokeStyle = "rgba(190,235,255,.16)";
+      ctx.lineWidth = Math.max(1, w / 850);
+      for (let i = 0; i < count; i++) {
+        const x = w * .35 + ((i * 31) % Math.floor(w * .3));
+        const y = (i * 47 + t * h * 1.2 * speed) % h;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.sin(i) * 8, y + h * .12);
+        ctx.stroke();
+      }
+      drawFog(ctx, w, h, t, amount * .25);
+    }
+
+    function drawFireflies(ctx, w, h, t, amount) {
+      const count = Math.floor(amount * .7);
+      const speed = motionSpeed();
+      for (let i = 0; i < count; i++) {
+        const x = (i * 149 + Math.sin(t * 6.28 * speed + i) * w * .06) % w;
+        const y = h * .25 + ((i * 91) % Math.floor(h * .58)) + Math.cos(t * 5 * speed + i) * h * .025;
+        const r = w * .008;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r * 6);
+        g.addColorStop(0, "rgba(255,230,120,.35)");
+        g.addColorStop(1, "rgba(255,230,120,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, r * 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawClouds(ctx, w, h, t, amount) {
+      const count = Math.floor(amount * .35);
+      const speed = motionSpeed();
+      for (let i = 0; i < count; i++) {
+        const x = ((i * 277 + t * w * .11 * speed) % (w * 1.4)) - w * .2;
+        const y = h * (.10 + ((i * 17) % 35) / 100);
+        const r = w * (.09 + (i % 3) * .025);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, "rgba(210,220,255,.07)");
+        g.addColorStop(1, "rgba(210,220,255,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.ellipse(x, y, r * 1.6, r * .48, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawDust(ctx, w, h, t, amount) {
+      const count = Math.floor(amount * 1.8);
+      const speed = motionSpeed();
+      for (let i = 0; i < count; i++) {
+        const x = (i * 67 + Math.sin(i) * 45 + t * w * .04 * speed) % w;
+        const y = (i * 113 + Math.sin(t * 6.28 * speed + i) * h * .05) % h;
+        ctx.fillStyle = "rgba(255,210,235,.11)";
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(1, w / 1200), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawPlaceholder() {
+      drawFrame(0);
+    }
+
+    function drawFittedText(ctx, text, x, y, maxWidth, startSize, weight, align) {
+      let size = startSize;
+      ctx.textAlign = align;
+      do {
+        ctx.font = `${weight} ${size}px sans-serif`;
+        if (ctx.measureText(text).width <= maxWidth || size <= 28) break;
+        size -= 3;
+      } while (size > 28);
+      ctx.fillText(text, x, y);
+      return size;
+    }
+
+    function makeThumb() {
+      const canvas = $("thumbCanvas");
+      const ctx = setupCanvas(canvas);
+      const w = canvas.width, h = canvas.height;
+      const baseImage = thumbnailImage || currentImage;
+      if (baseImage) drawCover(ctx, baseImage, 0, 0, w, h);
+      else {
+        const g = ctx.createLinearGradient(0, 0, w, h);
+        g.addColorStop(0, "#130718");
+        g.addColorStop(1, "#020104");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+      }
+      const style = $("thumbStyle").value;
+      const pos = $("thumbPos").value;
+      ctx.fillStyle = style === "minimal" ? "rgba(0,0,0,.30)" : "rgba(0,0,0,.50)";
+      ctx.fillRect(0, 0, w, h);
+      if (style === "split") {
+        const g = ctx.createLinearGradient(0, 0, w * .56, 0);
+        g.addColorStop(0, "rgba(0,0,0,.72)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+      }
+      ctx.fillStyle = "#fff7fd";
+      ctx.textAlign = pos === "center" ? "center" : "left";
+      const x = pos === "center" ? w * .5 : w * .06;
+      const maxTextWidth = pos === "center" ? w * .86 : w * .58;
+      const y1 = pos === "bottom" ? h * .72 : pos === "center" ? h * .46 : h * .42;
+      const y2 = pos === "bottom" ? h * .84 : pos === "center" ? h * .58 : h * .55;
+      const mainSize = style === "minimal" ? Math.round(w / 18) : Math.round(w / 14);
+      const subSize = style === "minimal" ? Math.round(w / 30) : Math.round(w / 24);
+      ctx.shadowColor = "rgba(255,46,166,.75)";
+      ctx.shadowBlur = style === "minimal" ? 10 : 18;
+      if (style !== "minimal") drawFittedText(ctx, $("thumbA").value, x, y1, maxTextWidth, mainSize, 900, ctx.textAlign);
+      else drawFittedText(ctx, $("thumbB").value, x, y1, maxTextWidth, mainSize, 900, ctx.textAlign);
+      ctx.fillStyle = "#ff84d8";
+      if (style !== "minimal") drawFittedText(ctx, $("thumbB").value, x, y2, maxTextWidth, subSize, 800, ctx.textAlign);
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "#ff2ea6";
+      ctx.lineWidth = Math.max(4, w / 220);
+      ctx.strokeRect(w * .035, h * .055, w * .93, h * .89);
+    }
+
+    function supportedMime() {
+      const types = [
+        'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+        "video/webm;codecs=vp9,opus",
+        "video/webm;codecs=vp8,opus",
+        "video/webm"
+      ];
+      return types.find(t => MediaRecorder.isTypeSupported(t)) || "";
+    }
+
+    async function renderVideo() {
+      if (!currentImage) drawPlaceholder();
+      lastVideoBlob = null;
+      $("downloadVideo").disabled = true;
+      const canvas = $("stage");
+      setupCanvas(canvas);
+      const fps = 30;
+      const duration = Number($("duration").value);
+      const chunks = [];
+      const canvasStream = canvas.captureStream(fps);
+      const tracks = [...canvasStream.getVideoTracks()];
+
+      let audioEl = null;
+      let audioUrl = null;
+      let audioCtx = null;
+      if ($("audioFile").files[0]) {
+        audioUrl = URL.createObjectURL($("audioFile").files[0]);
+        audioEl = new Audio(audioUrl);
+        audioEl.loop = true;
+        audioEl.volume = 1;
+        audioCtx = new AudioContext();
+        const source = audioCtx.createMediaElementSource(audioEl);
+        const dest = audioCtx.createMediaStreamDestination();
+        source.connect(dest);
+        source.connect(audioCtx.destination);
+        tracks.push(...dest.stream.getAudioTracks());
+      }
+
+      const stream = new MediaStream(tracks);
+      const mimeType = supportedMime();
+      const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      activeRecorder = rec;
+      activeAudio = audioEl;
+      renderCancelled = false;
+      rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      rec.onstop = () => {
+        lastVideoBlob = new Blob(chunks, { type: mimeType || "video/webm" });
+        const url = URL.createObjectURL(lastVideoBlob);
+        $("videoOut").src = url;
+        $("downloadVideo").disabled = false;
+        $("stopRender").disabled = true;
+        $("renderVideo").disabled = false;
+        $("renderStatus").textContent = renderCancelled ? "Đã dừng render, file nháp vẫn có thể tải nếu cần." : "Render xong.";
+        $("renderStatus").className = renderCancelled ? "status" : "status ok";
+        if (audioUrl) URL.revokeObjectURL(audioUrl);
+        if (audioCtx) audioCtx.close();
+        activeRecorder = null;
+        activeAudio = null;
+      };
+
+      $("renderStatus").textContent = "Đang render... hãy giữ tab này mở.";
+      $("renderStatus").className = "status";
+      $("renderVideo").disabled = true;
+      $("stopRender").disabled = false;
+      rec.start(1000);
+      if (audioEl) await audioEl.play();
+
+      const start = performance.now();
+      function tick(now) {
+        const elapsed = (now - start) / 1000;
+        const p = Math.min(1, elapsed / duration);
+        drawFrame(p);
+        $("renderBar").style.width = Math.round(p * 100) + "%";
+        if (renderCancelled) return;
+        if (elapsed < duration) requestAnimationFrame(tick);
+        else {
+          if (audioEl) audioEl.pause();
+          rec.stop();
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function stopRender() {
+      renderCancelled = true;
+      if (activeAudio) activeAudio.pause();
+      if (activeRecorder && activeRecorder.state !== "inactive") activeRecorder.stop();
+      $("stopRender").disabled = true;
+    }
+
+    function downloadBlob(blob, name) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    function exportProject() {
+      const data = {};
+      document.querySelectorAll("input, textarea, select").forEach(el => {
+        if (el.type !== "file") data[el.id] = el.value;
+      });
+      downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), "huy_hoang_piano_project.json");
+    }
+
+    async function importProject(file) {
+      const data = JSON.parse(await file.text());
+      Object.entries(data).forEach(([id, value]) => { if ($(id)) $(id).value = value; });
+      generatePack();
+    }
+
+    $("provider").addEventListener("change", makeProviderTemplate);
+    $("channelPreset").addEventListener("change", applyChannelPreset);
+    $("makePack").addEventListener("click", generatePack);
+    $("refreshStudio").addEventListener("click", () => { generatePack(); updateDashboard(); });
+    $("runAll").addEventListener("click", () => { generatePack(); makeThumb(); updateDashboard(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+    $("copyPack").addEventListener("click", () => navigator.clipboard.writeText($("imagePrompt").value + "\n\n" + $("seoPack").textContent + "\n\n" + studioPackText()));
+    $("copySeo").addEventListener("click", () => navigator.clipboard.writeText($("seoPack").textContent));
+    $("copyPianoStyle").addEventListener("click", () => navigator.clipboard.writeText($("pianoStylePack").textContent));
+    $("copyDescription").addEventListener("click", () => navigator.clipboard.writeText($("descriptionPack").textContent));
+    $("copyChapters").addEventListener("click", () => navigator.clipboard.writeText($("chaptersPack").textContent));
+    $("copyChecklist").addEventListener("click", () => navigator.clipboard.writeText($("checklistPack").textContent));
+    $("downloadStudio").addEventListener("click", () => downloadBlob(new Blob([studioPackText()], { type: "text/plain" }), `${slug($("concept").value)}_studio_pack.txt`));
+    $("makeLongRenderPack").addEventListener("click", updateLongRenderPack);
+    $("copyLongCommand").addEventListener("click", () => navigator.clipboard.writeText($("longRenderCommand").textContent));
+    $("downloadLongBat").addEventListener("click", () => downloadBlob(new Blob([longRenderBatText()], { type: "application/x-bat" }), `${slug($("concept").value)}_render_cuda_nvenc.bat`));
+    $("makeMusicPrompt").addEventListener("click", () => {
+      $("musicPromptPack").textContent = musicPromptText();
+      $("musicApiPack").textContent = musicApiJsonText();
+    });
+    $("copyMusicPrompt").addEventListener("click", () => navigator.clipboard.writeText($("musicPromptPack").textContent));
+    $("copyMusicJson").addEventListener("click", () => navigator.clipboard.writeText($("musicApiPack").textContent));
+    $("downloadMusicPlan").addEventListener("click", () => downloadBlob(new Blob([musicPlanText()], { type: "text/plain" }), `${slug($("concept").value)}_ai_music_mp3_plan.txt`));
+    $("generateImage").addEventListener("click", generateImage);
+    $("generateThumbImage").addEventListener("click", generateThumbImage);
+    $("copyThumbPrompt").addEventListener("click", () => navigator.clipboard.writeText($("thumbnailPrompt").value));
+    $("imageFile").addEventListener("change", e => e.target.files[0] && loadImageFile(e.target.files[0]));
+    $("renderVideo").addEventListener("click", renderVideo);
+    $("stopRender").addEventListener("click", stopRender);
+    $("downloadVideo").addEventListener("click", () => {
+      if (!lastVideoBlob) return;
+      const ext = lastVideoBlob.type.includes("mp4") ? "mp4" : "webm";
+      downloadBlob(lastVideoBlob, `${slug($("concept").value)}.${ext}`);
+    });
+    $("makeThumb").addEventListener("click", makeThumb);
+    $("downloadThumb").addEventListener("click", () => $("thumbCanvas").toBlob(b => downloadBlob(b, `${slug($("concept").value)}_thumbnail.png`), "image/png"));
+    $("downloadSeo").addEventListener("click", () => downloadBlob(new Blob([$("seoPack").textContent], { type: "text/plain" }), `${slug($("concept").value)}_seo_pack.txt`));
+    $("saveProject").addEventListener("click", exportProject);
+    $("loadProjectBtn").addEventListener("click", () => $("loadProject").click());
+    $("loadProject").addEventListener("change", e => e.target.files[0] && importProject(e.target.files[0]));
+    ["concept","videoGoal","finalLength","duration","resolution","pianoStyle","tempo","keySig","rainMood","visualStyle","thumbA","thumbB","thumbStyle","thumbPos","motionPreset","loopSafety","zoom","rainFx","longHours","exportResolution","exportFps","exportContainer","gpuCodec","encoderPreset","renderQuality","bitrateMode","videoMbps","videoProfile","audioBitrate","longMotionMode","musicProvider","musicClipLength","musicOutputMode","sleepSafety","publishCadence","productFormat","brandVoice","simplicityLevel"].forEach(id => $(id).addEventListener("input", generatePack));
+
+    makeProviderTemplate();
+    applyChannelPreset();
+  </script>
+</body>
+</html>

@@ -425,6 +425,11 @@ h3 {
   border-right: 0;
 }
 
+.piano-visual {
+  background: linear-gradient(135deg, #10111a, var(--pink), var(--cyan));
+  color: #ffffff;
+}
+
 .project-card div {
   padding: 24px;
 }
