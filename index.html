@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hoangdaika13 | Website cá nhân</title>
-  <meta name="description" content="Website cá nhân của Hoangdaika13: nơi giới thiệu dự án, kỹ năng và các sản phẩm HTML sáng tạo.">
+  <title>Hoangdaika13 | Kịch bản AI</title>
+  <meta name="description" content="Website cá nhân của Hoangdaika13 với công cụ viết kịch bản AI chạy trực tiếp trong HTML.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -22,134 +22,166 @@
 
     <nav class="nav-links" aria-label="Điều hướng chính">
       <a href="#about">Giới thiệu</a>
-      <a href="#projects">Dự án</a>
+      <a href="#projects">Tool AI</a>
       <a href="#skills">Kỹ năng</a>
       <a href="#contact">Liên hệ</a>
     </nav>
 
-    <button class="theme-toggle" type="button" aria-label="Đổi giao diện">☀</button>
+    <button class="theme-toggle" type="button" aria-label="Đổi giao diện">Sáng</button>
   </header>
 
   <main id="top">
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">HTML Creator / Web Personal / Mini App Maker</p>
+        <p class="eyebrow">AI Script Tool / HTML App / GitHub Pages</p>
         <h1>Hoangdaika13</h1>
         <p class="hero-text">
-          Đây là không gian cá nhân của tôi trên GitHub Pages, nơi tôi viết HTML,
-          thử ý tưởng giao diện và đăng các dự án nhỏ do chính mình tạo ra.
+          Website cá nhân này có công cụ viết kịch bản AI chạy ngay trong trình duyệt:
+          nhập ý tưởng, tạo prompt, dựng bản nháp và có thể gọi Gemini bằng API key riêng.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="#projects">Xem dự án</a>
+          <a class="button primary" href="#projects">Mở tool kịch bản</a>
           <a class="button secondary" href="https://github.com/hoangdaika13" target="_blank" rel="noreferrer">GitHub</a>
         </div>
       </div>
 
-      <div class="hero-panel" aria-label="Thẻ giới thiệu Hoangdaika13">
+      <div class="hero-panel" aria-label="Thẻ giới thiệu công cụ AI">
         <div class="profile-card">
-          <div class="avatar">H</div>
-          <p class="profile-label">Online Portfolio</p>
-          <h2>Build. Learn. Upgrade.</h2>
-          <p>Mỗi lần sửa HTML là một lần trang web này trở nên xịn hơn.</p>
+          <div class="avatar">AI</div>
+          <p class="profile-label">Script Studio</p>
+          <h2>Idea to Script.</h2>
+          <p>Viết kịch bản nhanh hơn, rõ bố cục hơn và dễ xuất file hơn.</p>
         </div>
       </div>
     </section>
 
     <section class="ticker" aria-label="Điểm nổi bật">
-      <span>HTML</span>
-      <span>CSS</span>
-      <span>JavaScript</span>
-      <span>GitHub Pages</span>
+      <span>Viết prompt</span>
+      <span>Tạo bản nháp</span>
+      <span>Gemini API</span>
+      <span>Xuất TXT</span>
     </section>
 
     <section id="about" class="section split-section">
       <div>
         <p class="section-kicker">Giới thiệu</p>
-        <h2>Tôi thích tạo những trang web rõ ràng, đẹp mắt và có cá tính.</h2>
+        <h2>Tôi xây trang này thành nơi thử nghiệm các công cụ HTML thực tế.</h2>
       </div>
       <p>
-        Website này là nơi tôi lưu lại các sản phẩm đang làm, luyện kỹ năng lập trình web
-        và biến ý tưởng thành giao diện thật. Mục tiêu là mỗi phiên bản đều đẹp hơn,
-        mượt hơn và dễ dùng hơn phiên bản trước.
+        Thay vì chỉ trưng bày dự án, trang này có một tool nhỏ để dùng ngay.
+        Bạn có thể nhập kịch bản gốc, chọn phong cách kể chuyện, tạo prompt chuẩn
+        hoặc tạo bản nháp trong trình duyệt trước khi đưa sang AI nâng cấp.
       </p>
     </section>
 
     <section id="projects" class="section projects-section">
       <div class="section-heading">
-        <p class="section-kicker">Dự án</p>
-        <h2>Một vài sản phẩm nổi bật</h2>
+        <p class="section-kicker">Dự án chính</p>
+        <h2>Kịch bản AI viết HTML</h2>
+        <p class="section-note">
+          Công cụ này chạy bằng JavaScript trên GitHub Pages. API key Gemini chỉ được nhập khi cần gọi AI thật,
+          không nên ghi cố định API key vào code vì website là công khai.
+        </p>
       </div>
 
-      <div class="project-grid">
-        <article class="project-card featured">
-          <img src="assets/piano-scream-style-check.png" alt="Giao diện HuyHoangPialo phiên bản nổi bật">
-          <div>
-            <p class="project-tag">Featured</p>
-            <h3>HuyHoangPialo</h3>
-            <p>Ứng dụng piano mini với phong cách nổi bật, hiệu ứng mạnh và giao diện vui mắt.</p>
+      <div class="tool-shell">
+        <form class="script-tool" id="scriptTool">
+          <div class="field-row">
+            <label>
+              Tên câu chuyện
+              <input id="storyTitle" type="text" placeholder="Ví dụ: Người cha im lặng suốt 20 năm">
+            </label>
+            <label>
+              Thời lượng
+              <input id="duration" type="text" value="8-12 phút">
+            </label>
           </div>
-        </article>
 
-        <article class="project-card">
-          <img src="assets/piano-neon-check.png" alt="Giao diện piano phong cách neon">
-          <div>
-            <p class="project-tag">Neon</p>
-            <h3>Piano Neon</h3>
-            <p>Thiết kế sáng, tương phản cao, phù hợp với các sản phẩm giải trí nhỏ.</p>
+          <div class="field-row">
+            <label>
+              Người xem
+              <select id="audience">
+                <option>Người xem 40+</option>
+                <option>Người xem đại chúng</option>
+                <option>Gia đình và hôn nhân</option>
+                <option>Khán giả YouTube kể chuyện</option>
+              </select>
+            </label>
+            <label>
+              Phong cách
+              <select id="tone">
+                <option>Kể chuyện đời thường sâu cảm xúc</option>
+                <option>Drama gia đình có plot twist</option>
+                <option>Nhân quả báo ứng</option>
+                <option>Cinematic chậm, giàu hình ảnh</option>
+                <option>Review nội dung ngắn gọn</option>
+              </select>
+            </label>
           </div>
-        </article>
 
-        <article class="project-card">
-          <img src="assets/piano-guide-check.png" alt="Giao diện hướng dẫn piano">
-          <div>
-            <p class="project-tag">Guide</p>
-            <h3>Piano Guide</h3>
-            <p>Bản giao diện có hướng dẫn rõ ràng hơn để người dùng mới dễ thao tác.</p>
-          </div>
-        </article>
+          <label>
+            Kịch bản gốc hoặc ý tưởng
+            <textarea id="sourceText" rows="10" placeholder="Dán kịch bản gốc, transcript, tóm tắt câu chuyện hoặc ý tưởng bạn muốn AI viết lại..."></textarea>
+          </label>
 
-        <article class="project-card ai-project">
-          <img src="assets/kich-ban-ai.png" alt="Ảnh dự án Kịch bản AI viết HTML">
-          <div>
-            <p class="project-tag">AI Tool</p>
-            <h3>Kịch bản AI viết HTML</h3>
-            <p>Công cụ desktop hỗ trợ viết lại kịch bản, kiểm tra nội dung, xuất file và dùng Gemini để tăng tốc sáng tạo.</p>
-            <div class="project-actions">
-              <a href="projects/kich-ban-ai/">Xem chi tiết</a>
-              <a href="assets/downloads/kich-ban-ai-source.zip" download>Tải source</a>
-            </div>
+          <div class="field-row">
+            <label>
+              API key Gemini nếu muốn gọi AI thật
+              <input id="apiKey" type="password" placeholder="Không bắt buộc">
+            </label>
+            <label>
+              Model
+              <select id="modelName">
+                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+              </select>
+            </label>
           </div>
-        </article>
+
+          <div class="tool-actions">
+            <button class="button primary" type="button" id="makeDraft">Tạo bản nháp</button>
+            <button class="button secondary" type="button" id="makePrompt">Tạo prompt</button>
+            <button class="button secondary" type="button" id="callGemini">Gọi Gemini</button>
+            <button class="button ghost" type="button" id="copyOutput">Copy</button>
+            <button class="button ghost" type="button" id="downloadOutput">Tải TXT</button>
+          </div>
+
+          <label>
+            Kết quả
+            <textarea id="outputText" rows="14" placeholder="Kết quả sẽ hiện ở đây..."></textarea>
+          </label>
+          <p class="tool-status" id="toolStatus">Sẵn sàng.</p>
+        </form>
       </div>
     </section>
 
     <section id="skills" class="section skills-section">
       <div class="section-heading">
         <p class="section-kicker">Kỹ năng</p>
-        <h2>Những thứ tôi đang luyện mỗi ngày</h2>
+        <h2>Những phần đang dùng trong website này</h2>
       </div>
       <div class="skill-list">
-        <span>HTML</span>
-        <span>CSS Layout</span>
-        <span>Responsive</span>
+        <span>HTML Form</span>
+        <span>CSS Responsive</span>
         <span>JavaScript</span>
-        <span>UI Design</span>
+        <span>Prompt Builder</span>
+        <span>Gemini API</span>
         <span>GitHub Pages</span>
       </div>
     </section>
 
     <section class="quote-band">
-      <p>Viết code nhỏ mỗi ngày, nâng cấp trang web từng chút một.</p>
+      <p>Biến ý tưởng thành kịch bản, rồi biến kịch bản thành nội dung.</p>
     </section>
 
     <section id="contact" class="section contact-section">
       <div>
         <p class="section-kicker">Liên hệ</p>
-        <h2>Muốn xem code hoặc theo dõi bản cập nhật?</h2>
+        <h2>Muốn xem source hoặc theo dõi bản cập nhật?</h2>
       </div>
       <div class="contact-actions">
         <a class="button primary" href="https://github.com/hoangdaika13" target="_blank" rel="noreferrer">Mở GitHub</a>
-        <a class="button secondary" href="mailto:hoangdaika13@example.com">Gửi email</a>
+        <a class="button secondary" href="assets/downloads/kich-ban-ai-source.zip" download>Tải source cũ</a>
       </div>
     </section>
   </main>
