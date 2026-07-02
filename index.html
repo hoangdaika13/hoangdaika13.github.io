@@ -1,203 +1,196 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hoangdaika13 | Website cá nhân</title>
-  <meta name="description" content="Website cá nhân của Hoangdaika13: profile, kỹ năng và các dự án HTML/AI.">
+  <title>Hoangdaika13 | Neon Portfolio</title>
+  <meta name="description" content="Website cá nhân neon của Hoangdaika13: profile, liên hệ và các dự án HTML/AI.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="home-neon">
   <div class="scroll-meter" aria-hidden="true"></div>
   <canvas class="ambient-canvas" aria-hidden="true"></canvas>
+  <div class="neon-grid-bg" aria-hidden="true"></div>
+  <div class="cursor-glow" aria-hidden="true"></div>
 
-  <header class="site-header">
+  <header class="site-header neon-header">
     <a class="brand" href="#top" aria-label="Về đầu trang">
       <span class="brand-mark">H13</span>
       <span>Hoangdaika13</span>
     </a>
 
     <nav class="nav-links" aria-label="Điều hướng chính">
-      <a href="#about">Giới thiệu</a>
+      <a href="#about">Profile</a>
       <a href="#projects">Dự án</a>
       <a href="#skills">Kỹ năng</a>
       <a href="#contact">Liên hệ</a>
     </nav>
 
-    <button class="theme-toggle" type="button" aria-label="Đổi giao diện">Sáng</button>
+    <button class="theme-toggle" type="button" aria-label="Đổi giao diện">Neon</button>
   </header>
 
   <main id="top">
-    <section class="hero">
+    <section class="hero neon-hero">
       <div class="hero-copy">
-        <p class="eyebrow">HTML Creator / AI Tool Builder / GitHub Pages</p>
+        <p class="eyebrow">HTML Creator / AI Tool Builder / Neon Interface</p>
         <h1>Hoangdaika13</h1>
         <p class="hero-text">
-          Đây là website cá nhân của tôi: nơi giới thiệu profile, kỹ năng và các dự án
-          tôi đang xây dựng bằng HTML, CSS, JavaScript và AI.
+          Tôi xây các tool web nhiều màu, có hiệu ứng, dùng được thật: AI script,
+          piano visualizer, voice studio và các sản phẩm HTML chạy trực tiếp trên GitHub Pages.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="#projects">Xem dự án</a>
-          <a class="button secondary" href="projects/kich-ban-ai/">Mở Kịch bản AI</a>
+          <a class="button primary interactive" href="#projects">Xem dự án</a>
+          <a class="button secondary interactive" href="projects/kich-ban-ai/">Mở Kịch bản AI</a>
+          <a class="button ghost interactive" href="#contact">Liên hệ</a>
+        </div>
+        <div class="hero-stats" aria-label="Thống kê nhanh">
+          <div><strong>04</strong><span>Tool đang chạy</span></div>
+          <div><strong>100%</strong><span>HTML/CSS/JS</span></div>
+          <div><strong>Neon</strong><span>Phong cách chính</span></div>
         </div>
       </div>
 
-      <div class="hero-panel" aria-label="Thẻ giới thiệu Hoangdaika13">
-        <div class="profile-card">
-          <div class="avatar">H</div>
+      <div class="hero-panel" aria-label="Profile Hoangdaika13">
+        <div class="profile-card neon-profile-card tilt-card interactive">
+          <div class="avatar neon-avatar">H</div>
           <p class="profile-label">Online Portfolio</p>
           <h2>Build. Learn. Upgrade.</h2>
-          <p>Mỗi lần sửa HTML là một lần trang web này trở nên xịn hơn.</p>
+          <p>Mỗi dự án là một bản nâng cấp: đẹp hơn, mượt hơn, nhiều chức năng hơn.</p>
+          <div class="profile-stats" aria-label="Thống kê profile">
+            <span><strong>04</strong>Dự án</span>
+            <span><strong>AI</strong>Tools</span>
+            <span><strong>100%</strong>HTML</span>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="ticker" aria-label="Điểm nổi bật">
-      <span>HTML</span>
-      <span>CSS</span>
-      <span>JavaScript</span>
+    <section class="ticker neon-ticker" aria-label="Điểm nổi bật">
+      <span>Neon UI</span>
+      <span>HTML Apps</span>
       <span>AI Tools</span>
+      <span>GitHub Pages</span>
     </section>
 
-    <section id="about" class="section split-section">
+    <section id="about" class="section split-section neon-about">
       <div>
-        <p class="section-kicker">Giới thiệu</p>
-        <h2>Tôi thích tạo những trang web rõ ràng, đẹp mắt và có thể dùng thật.</h2>
+        <p class="section-kicker">Profile</p>
+        <h2>Tôi thích biến ý tưởng thành tool có giao diện mạnh, rõ và dùng được ngay.</h2>
       </div>
-      <p>
-        Website này là hồ sơ cá nhân của tôi trên GitHub Pages. Tôi dùng nó để lưu lại
-        sản phẩm đang làm, luyện kỹ năng lập trình web và phát triển các công cụ nhỏ
-        phục vụ công việc sáng tạo nội dung.
-      </p>
+      <div class="about-stack">
+        <p>
+          Website này là hồ sơ cá nhân của tôi trên GitHub Pages. Tôi dùng nó để giới thiệu
+          các dự án đang làm, lưu lại sản phẩm, và tạo những công cụ nhỏ phục vụ sáng tạo nội dung.
+        </p>
+        <div class="mini-badges">
+          <span>Frontend</span><span>Creative Coding</span><span>Prompt Design</span><span>Audio Tools</span>
+        </div>
+      </div>
     </section>
 
-    <section id="projects" class="section projects-section">
+    <section id="projects" class="section projects-section neon-projects">
       <div class="section-heading">
         <p class="section-kicker">Dự án</p>
-        <h2>Dự án chính của tôi</h2>
+        <h2>Tool chính của tôi</h2>
         <p class="section-note">
-          Các tool được để riêng như từng dự án độc lập. Trang chủ vẫn giữ vai trò profile cá nhân.
+          Mỗi dự án được tách riêng để mở trực tiếp, tải về hoặc tiếp tục nâng cấp mà không làm rối trang chủ.
         </p>
       </div>
 
       <div class="project-grid">
-        <article class="project-card ai-project featured">
+        <article class="project-card ai-project featured interactive-card interactive">
           <div class="project-visual" aria-hidden="true">
-            <span>AI</span>
-            <span>Script</span>
-            <span>Studio</span>
+            <span>AI</span><span>Script</span><span>Studio</span>
           </div>
           <div>
             <p class="project-tag">AI Tool</p>
             <h3>Kịch bản AI</h3>
-            <p>
-              Công cụ viết lại kịch bản, tạo prompt, phân tích nội dung, tóm tắt,
-              so sánh độ giống, quản lý batch và gọi Gemini ngay trong trình duyệt.
-            </p>
+            <p>Công cụ viết lại kịch bản, tạo prompt, phân tích, tóm tắt, so sánh độ giống, batch và gọi Gemini.</p>
             <div class="project-actions">
-              <a href="projects/kich-ban-ai/">Mở tool</a>
-              <a href="assets/downloads/kich-ban-ai-source.zip" download>Tải source Python</a>
+              <a class="interactive" href="projects/kich-ban-ai/">Mở tool</a>
+              <a class="interactive" href="assets/downloads/kich-ban-ai-source.zip" download>Tải source Python</a>
             </div>
           </div>
         </article>
 
-        <article class="project-card ai-project">
+        <article class="project-card ai-project interactive-card interactive">
           <div class="project-visual piano-visual" aria-hidden="true">
-            <span>HH</span>
-            <span>Piano</span>
-            <span>Video</span>
+            <span>HH</span><span>Piano</span><span>Video</span>
           </div>
           <div>
             <p class="project-tag">Music Tool</p>
             <h3>Huy Hoang Piano</h3>
-            <p>
-              Tool tạo ý tưởng video piano thư giãn: prompt ảnh AI, thumbnail,
-              chuyển ảnh thành video động, SEO pack, checklist và xuất JSON.
-            </p>
-            <div class="project-actions">
-              <a href="projects/huy-hoang-piano/">Mở tool</a>
-            </div>
+            <p>Tool tạo ý tưởng video piano thư giãn: prompt ảnh AI, thumbnail, motion, SEO pack và checklist.</p>
+            <div class="project-actions"><a class="interactive" href="projects/huy-hoang-piano/">Mở tool</a></div>
           </div>
         </article>
 
-        <article class="project-card ai-project">
+        <article class="project-card ai-project interactive-card interactive">
           <div class="project-visual voice-visual" aria-hidden="true">
-            <span>HH</span>
-            <span>Voice</span>
-            <span>Studio</span>
+            <span>HH</span><span>Voice</span><span>Studio</span>
           </div>
           <div>
             <p class="project-tag">Voice Tool</p>
             <h3>HH Voice Studio</h3>
-            <p>
-              Tool chuẩn bị voice: dọn text/SRT, chia part, chọn voice trình duyệt,
-              humanize, batch text, xuất manifest và tải bản Windows.
-            </p>
+            <p>Dọn text/SRT, chia part, chọn voice trình duyệt, humanize, batch text và tải bản Windows Lite.</p>
             <div class="project-actions">
-              <a href="projects/hh-voice-studio/">Mở tool</a>
-              <a href="assets/downloads/HHVoiceStudio_Neon_Lite.zip" download>Tải bản Lite</a>
+              <a class="interactive" href="projects/hh-voice-studio/">Mở tool</a>
+              <a class="interactive" href="assets/downloads/HHVoiceStudio_Neon_Lite.zip" download>Tải bản Lite</a>
             </div>
           </div>
         </article>
 
-        <article class="project-card ai-project">
+        <article class="project-card ai-project interactive-card interactive">
           <div class="project-visual pialo-visual" aria-hidden="true">
-            <span>HH</span>
-            <span>Pialo</span>
-            <span>Keys</span>
+            <span>HH</span><span>Pialo</span><span>Keys</span>
           </div>
           <div>
             <p class="project-tag">Piano App</p>
             <h3>HuyHoangPialo ScreamStyle</h3>
-            <p>
-              Piano visualizer chơi bằng bàn phím máy tính, có 100 bài hướng dẫn,
-              nhiều style, sustain, visualizer, ghi/phát lại và map phím.
-            </p>
+            <p>Piano visualizer chơi bằng bàn phím, có 100 bài hướng dẫn, nhiều style, sustain, ghi/phát lại và map phím.</p>
             <div class="project-actions">
-              <a href="projects/huy-hoang-pialo-scream/">Mở tool</a>
-              <a href="assets/downloads/HuyHoangPialo_ScreamStyle_Portable.zip" download>Tải portable</a>
+              <a class="interactive" href="projects/huy-hoang-pialo-scream/">Mở tool</a>
+              <a class="interactive" href="assets/downloads/HuyHoangPialo_ScreamStyle_Portable.zip" download>Tải portable</a>
             </div>
           </div>
         </article>
       </div>
     </section>
 
-    <section id="skills" class="section skills-section">
+    <section id="skills" class="section skills-section neon-skills">
       <div class="section-heading">
         <p class="section-kicker">Kỹ năng</p>
-        <h2>Những phần tôi đang luyện mỗi ngày</h2>
+        <h2>Bộ kỹ năng đang luyện mỗi ngày</h2>
       </div>
       <div class="skill-list">
-        <span>HTML</span>
-        <span>CSS Layout</span>
-        <span>Responsive</span>
-        <span>JavaScript</span>
-        <span>Prompt Design</span>
-        <span>GitHub Pages</span>
+        <span>HTML</span><span>CSS Animation</span><span>Responsive UI</span><span>JavaScript</span><span>Prompt Design</span><span>Audio Tools</span><span>GitHub Pages</span><span>Neon Design</span>
       </div>
     </section>
 
-    <section class="quote-band">
-      <p>Viết code nhỏ mỗi ngày, nâng cấp sản phẩm từng chút một.</p>
+    <section class="quote-band neon-quote">
+      <p>Make it useful. Make it glow. Then upgrade it again.</p>
     </section>
 
-    <section id="contact" class="section contact-section">
+    <section id="contact" class="section contact-section neon-contact">
       <div>
         <p class="section-kicker">Liên hệ</p>
-        <h2>Muốn xem source hoặc theo dõi bản cập nhật?</h2>
+        <h2>Kết nối với tôi</h2>
+        <p class="section-note">Chọn cách liên hệ nhanh hoặc mở các kênh dự án của tôi.</p>
       </div>
-      <div class="contact-actions">
-        <a class="button primary" href="https://github.com/hoangdaika13" target="_blank" rel="noreferrer">Mở GitHub</a>
-        <a class="button secondary" href="projects/kich-ban-ai/">Dùng Kịch bản AI</a>
+      <div class="contact-grid">
+        <a class="contact-card interactive" href="https://github.com/hoangdaika13" target="_blank" rel="noreferrer"><strong>GitHub</strong><span>github.com/hoangdaika13</span></a>
+        <a class="contact-card interactive" href="mailto:hoangdaika13@example.com"><strong>Email</strong><span>hoangdaika13@example.com</span></a>
+        <a class="contact-card interactive" href="projects/kich-ban-ai/"><strong>Kịch bản AI</strong><span>Mở tool viết kịch bản</span></a>
+        <a class="contact-card interactive" href="#projects"><strong>Portfolio</strong><span>Xem toàn bộ dự án</span></a>
       </div>
     </section>
   </main>
 
-  <footer>
-    <p>© 2026 Hoangdaika13. Built with HTML, CSS and JavaScript.</p>
+  <footer class="neon-footer">
+    <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
   <script src="script.js"></script>

@@ -83,6 +83,41 @@ function initTheme() {
   });
 }
 
+function initHomeNeonInteractions() {
+  if (!document.body.classList.contains("home-neon")) return;
+
+  window.addEventListener("pointermove", (event) => {
+    const x = `${event.clientX}px`;
+    const y = `${event.clientY}px`;
+    document.documentElement.style.setProperty("--mx", x);
+    document.documentElement.style.setProperty("--my", y);
+  }, { passive: true });
+
+  document.querySelectorAll(".tilt-card, .project-card").forEach((card) => {
+    card.addEventListener("pointermove", (event) => {
+      const rect = card.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width - 0.5) * 8;
+      const y = ((event.clientY - rect.top) / rect.height - 0.5) * -8;
+      card.style.transform = `translateY(-8px) rotateX(${y}deg) rotateY(${x}deg)`;
+    });
+    card.addEventListener("pointerleave", () => {
+      card.style.transform = "";
+    });
+  });
+
+  document.querySelectorAll(".interactive").forEach((item) => {
+    item.addEventListener("click", (event) => {
+      const rect = item.getBoundingClientRect();
+      const dot = document.createElement("span");
+      dot.className = "ripple-dot";
+      dot.style.left = `${event.clientX - rect.left}px`;
+      dot.style.top = `${event.clientY - rect.top}px`;
+      item.appendChild(dot);
+      setTimeout(() => dot.remove(), 560);
+    });
+  });
+}
+
 function valueOf(id) {
   return byId(id)?.value.trim() || "";
 }
@@ -520,6 +555,7 @@ drawParticles();
 updateScrollMeter();
 initReveal();
 initTheme();
+initHomeNeonInteractions();
 initMiniTabs();
 initTool();
 
