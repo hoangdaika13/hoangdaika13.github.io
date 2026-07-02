@@ -405,6 +405,39 @@ h3 {
   grid-column: span 2;
 }
 
+.ai-project {
+  background:
+    linear-gradient(var(--panel), var(--panel)) padding-box,
+    linear-gradient(135deg, var(--pink), var(--cyan), var(--green)) border-box;
+}
+
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.project-actions a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  color: #15151f;
+  background: var(--yellow);
+  font-size: 0.9rem;
+  font-weight: 900;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.project-actions a:first-child {
+  color: #ffffff;
+  background: var(--ink);
+}
+
 .skills-section {
   background: #15151f;
   color: #ffffff;
