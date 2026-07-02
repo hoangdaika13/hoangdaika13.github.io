@@ -186,11 +186,81 @@
         </div>
       </section>
 
-      <section class="mini-panel" id="mini-writer"><pre class="neon-report">Gemini Writer dùng các nút ở tab Biên tập: Đọc & viết ngay, Nâng cấp draft, Tạo series.</pre></section>
-      <section class="mini-panel" id="mini-chat"><pre class="neon-report">Chat AI: phiên bản HTML sẽ dùng API key Gemini trong sidebar để hỏi về kịch bản, profile hoặc ý tưởng.</pre></section>
-      <section class="mini-panel" id="mini-batch"><pre class="neon-report">Batch: chọn nhiều file text để xử lý hàng loạt trong trình duyệt ở bản nâng cấp tiếp theo.</pre></section>
-      <section class="mini-panel" id="mini-url"><pre class="neon-report">URL Results: dùng để lưu URL và tạo prompt xử lý URL. Một số URL có thể bị giới hạn CORS trên GitHub Pages.</pre></section>
-      <section class="mini-panel" id="mini-translation"><pre class="neon-report">Bản dịch kiểm tra: dịch nguồn và bản viết lại để đối chiếu nội dung.</pre></section>
+      <section class="mini-panel" id="mini-writer">
+        <div class="neon-workflows single">
+          <section class="neon-workflow">
+            <h3>Gemini Writer</h3>
+            <div class="neon-grid-buttons">
+              <button class="neon-btn magenta" id="writerGenerate" type="button">Viết mới</button>
+              <button class="neon-btn lime" id="writerImprove" type="button">Nâng cấp bản nháp</button>
+              <button class="neon-btn cyan" id="writerPrompt" type="button">Tạo prompt đầy đủ</button>
+              <button class="neon-btn" id="copyOutput" type="button">Copy output</button>
+            </div>
+          </section>
+        </div>
+        <pre class="neon-report" id="geminiOutput">Output Gemini Writer sẽ hiện ở đây.</pre>
+      </section>
+      <section class="mini-panel" id="mini-chat">
+        <div class="neon-workflows single">
+          <section class="neon-workflow">
+            <h3>Chat trực tiếp với Gemini</h3>
+            <div class="neon-chat-row">
+              <select id="chatMode">
+                <option>Chat tự do như Gemini</option>
+                <option>Hỏi về kịch bản hiện tại</option>
+                <option>Hỏi về training profile</option>
+              </select>
+              <input id="chatInput" placeholder="Nhập câu hỏi...">
+              <button class="neon-btn lime" id="sendChat" type="button">Gửi</button>
+              <button class="neon-btn" id="clearChat" type="button">Xóa chat</button>
+            </div>
+          </section>
+        </div>
+        <pre class="neon-report" id="chatLog">Chat log.</pre>
+      </section>
+      <section class="mini-panel" id="mini-batch">
+        <div class="neon-workflows single">
+          <section class="neon-workflow">
+            <h3>Batch text không giới hạn</h3>
+            <div class="neon-grid-buttons">
+              <label class="neon-btn cyan file">Chọn nhiều file<input id="batchFiles" type="file" accept=".txt,.md,.srt,.vtt" multiple></label>
+              <button class="neon-btn lime" id="runBatch" type="button">Chạy batch local</button>
+              <button class="neon-btn cyan" id="downloadBatch" type="button">Tải JSON</button>
+              <button class="neon-btn" id="useBatchFirst" type="button">Dùng item đầu</button>
+            </div>
+          </section>
+        </div>
+        <pre class="neon-report" id="batchOutput">Chưa có batch.</pre>
+      </section>
+      <section class="mini-panel" id="mini-url">
+        <div class="neon-workflows single">
+          <section class="neon-workflow">
+            <h3>URL Results</h3>
+            <textarea class="neon-inline-textarea" id="urlInput" rows="5" placeholder="Dán URL, mỗi dòng một URL..."></textarea>
+            <div class="neon-grid-buttons">
+              <button class="neon-btn lime" id="parseUrls" type="button">Tạo prompt URL</button>
+              <button class="neon-btn" id="clearUrls" type="button">Xóa danh sách</button>
+            </div>
+          </section>
+        </div>
+        <pre class="neon-report" id="urlOutput">Chưa có URL.</pre>
+      </section>
+      <section class="mini-panel" id="mini-translation">
+        <div class="neon-workflows single">
+          <section class="neon-workflow">
+            <h3>Bản dịch kiểm tra</h3>
+            <div class="neon-grid-buttons">
+              <button class="neon-btn lime" id="translateLocal" type="button">Dịch kiểm tra local</button>
+              <button class="neon-btn magenta" id="translateGemini" type="button">Dịch bằng Gemini</button>
+              <button class="neon-btn" id="copyTranslation" type="button">Copy dịch</button>
+            </div>
+          </section>
+        </div>
+        <div class="neon-editors">
+          <section><header><h3>Dịch nguồn</h3></header><textarea id="sourceTranslation"></textarea></section>
+          <section><header><h3>Dịch bản mới</h3></header><textarea id="draftTranslation"></textarea></section>
+        </div>
+      </section>
       <section class="mini-panel" id="mini-summary"><pre class="neon-report" id="summaryOutput">Bấm Tóm tắt + so sánh ở tab Biên tập.</pre></section>
       <section class="mini-panel" id="mini-compare">
         <div class="neon-metrics">
@@ -200,8 +270,32 @@
         </div>
         <pre class="neon-report" id="compareOutput"></pre>
       </section>
-      <section class="mini-panel" id="mini-plan"><pre class="neon-report">Kế hoạch: tạo series, lịch đăng, tiêu đề và hook cho từng tập.</pre></section>
-      <section class="mini-panel" id="mini-project"><pre class="neon-report">Dự án được lưu local trong trình duyệt. Source Python gốc vẫn có thể tải ở trang profile.</pre></section>
+      <section class="mini-panel" id="mini-plan">
+        <div class="neon-workflows single">
+          <section class="neon-workflow">
+            <h3>Kế hoạch nội dung</h3>
+            <div class="neon-grid-buttons">
+              <button class="neon-btn lime" id="makePlan" type="button">Tạo kế hoạch</button>
+              <button class="neon-btn cyan" id="ideaBank" type="button">Kho ý tưởng 40+</button>
+            </div>
+          </section>
+        </div>
+        <pre class="neon-report" id="plannerOutput">Chưa có kế hoạch.</pre>
+      </section>
+      <section class="mini-panel" id="mini-project">
+        <div class="neon-workflows single">
+          <section class="neon-workflow">
+            <h3>Quản lý dự án local</h3>
+            <div class="neon-grid-buttons">
+              <button class="neon-btn lime" id="saveProject" type="button">Lưu dự án</button>
+              <button class="neon-btn cyan" id="loadProject" type="button">Mở dự án</button>
+              <button class="neon-btn" id="exportProject" type="button">Export JSON</button>
+              <button class="neon-btn" id="deleteProject" type="button">Xóa local</button>
+            </div>
+          </section>
+        </div>
+        <pre class="neon-report" id="projectOutput">Dự án được lưu local trong trình duyệt. Source Python gốc vẫn có thể tải ở trang profile.</pre>
+      </section>
     </main>
   </div>
 

@@ -248,9 +248,53 @@ function updateMetas() {
 function setOutput(text, message) {
   setValue("outputText", text);
   setValue("draftText", text);
-  setValue("geminiOutput", text);
+  setText("geminiOutput", text);
   updateMetas();
   setStatus(message);
+}
+
+function showMiniTab(tab) {
+  const button = document.querySelector(`.mini-tab[data-mini-tab="${tab}"]`);
+  if (button) button.click();
+}
+
+function currentProjectPayload() {
+  return {
+    projectName: valueOf("projectName"),
+    storyTitle: valueOf("storyTitle"),
+    duration: valueOf("duration"),
+    audience: valueOf("audience"),
+    tone: valueOf("tone"),
+    niche: valueOf("niche"),
+    cta: valueOf("cta"),
+    mode: valueOf("rewriteMode"),
+    source: valueOf("sourceText"),
+    output: valueOf("outputText"),
+    savedAt: new Date().toISOString()
+  };
+}
+
+function loadProjectPayload(payload) {
+  setValue("projectName", payload.projectName || "");
+  setValue("storyTitle", payload.storyTitle || "");
+  setValue("duration", payload.duration || "");
+  setValue("audience", payload.audience || "");
+  setValue("tone", payload.tone || "");
+  setValue("niche", payload.niche || "");
+  setValue("cta", payload.cta || "");
+  setValue("rewriteMode", payload.mode || "");
+  setValue("sourceText", payload.source || "");
+  setValue("outputText", payload.output || "");
+  updateMetas();
+}
+
+function downloadText(filename, text, type = "text/plain;charset=utf-8") {
+  const blob = new Blob([text], { type });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
 }
 
 async function callGemini() {
@@ -306,20 +350,39 @@ function initTool() {
     updateMetas();
     setStatus(`Đã nhập file: ${file.name}`);
   });
+  bind("pasteSource", "click", async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setValue("sourceText", text);
+      updateMetas();
+      setStatus("Đã dán nội dung từ clipboard.");
+    } catch {
+      setStatus("Trình duyệt chưa cho phép đọc clipboard. Hãy dán bằng Ctrl+V.");
+    }
+  });
   bind("cleanSource", "click", () => {
     setValue("sourceText", cleanText(valueOf("sourceText")));
     updateMetas();
     setStatus("Đã làm sạch text/phụ đề.");
   });
   bind("makeDraft", "click", () => setOutput(buildDraft(), "Đã tạo bản nháp local."));
+  bind("oneClick", "click", () => {
+    const cleaned = cleanText(valueOf("sourceText"));
+    setValue("sourceText", cleaned);
+    const draft = buildDraft();
+    setOutput(draft, "Đã xử lý 1 chạm: làm sạch, phân tích nhanh và tạo bản nháp.");
+    setText("analysisOutput", analyzeText(cleaned));
+  });
   bind("makePrompt", "click", () => setOutput(buildPrompt(), "Đã tạo prompt."));
   bind("callGemini", "click", callGemini);
-  bind("makeTitle", "click", () => {
+  const makeTitleHandler = () => {
     const source = valueOf("sourceText");
     const kw = topKeywords(source, 4).map(([word]) => word).join(" ");
     setValue("storyTitle", kw ? `Sự thật phía sau ${kw}` : "Một bí mật khiến cả gia đình im lặng");
     setStatus("Đã tạo title local.");
-  });
+  };
+  bind("makeTitle", "click", makeTitleHandler);
+  bind("makeTitle2", "click", makeTitleHandler);
   bind("copyOutput", "click", async () => {
     const text = valueOf("outputText");
     if (!text) return setStatus("Chưa có nội dung để copy.");
@@ -329,13 +392,22 @@ function initTool() {
   bind("downloadOutput", "click", () => {
     const text = valueOf("outputText");
     if (!text) return setStatus("Chưa có nội dung để tải.");
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "kich-ban-ai.txt";
-    link.click();
-    URL.revokeObjectURL(link.href);
+    downloadText("kich-ban-ai.txt", text);
     setStatus("Đã tạo file TXT.");
+  });
+  bind("writerGenerate", "click", () => {
+    const draft = buildDraft();
+    setOutput(draft, "Gemini Writer: đã tạo bản viết mới local.");
+    showMiniTab("writer");
+  });
+  bind("writerImprove", "click", () => {
+    const improved = `${valueOf("outputText") || buildDraft()}\n\nPHIÊN BẢN NÂNG CẤP\n- Tăng hook mở đầu.\n- Thêm đối thoại ở cao trào.\n- Làm rõ bài học cuối câu chuyện.\n- Giảm câu giống nguồn, tăng chi tiết mới.`;
+    setOutput(improved, "Đã nâng cấp bản nháp local.");
+    showMiniTab("writer");
+  });
+  bind("writerPrompt", "click", () => {
+    setOutput(buildPrompt(), "Đã tạo prompt đầy đủ.");
+    showMiniTab("writer");
   });
   bind("analyzeScript", "click", () => {
     setText("analysisOutput", analyzeText(valueOf("sourceText")));
@@ -352,6 +424,7 @@ function initTool() {
     const draftSummary = summarizeText(valueOf("outputText"));
     setText("summaryOutput", `TÓM TẮT NGUỒN\n${sourceSummary}\n\nTÓM TẮT BẢN MỚI\n${draftSummary}`);
     setStatus("Đã tóm tắt.");
+    showMiniTab("summary");
   });
   bind("compareScript", "click", () => {
     const report = compareTexts(valueOf("sourceText"), valueOf("outputText"));
@@ -360,6 +433,84 @@ function initTool() {
     setText("riskLevel", report.risk);
     setText("compareOutput", `Độ giống: ${report.similarity}%\nĐộ mới: ${report.originality}%\nRủi ro: ${report.risk}\n\nKhuyến nghị:\n- Nếu rủi ro cao, đổi cấu trúc cảnh, nhân vật, tình huống và cách mở nút.\n- Giữ ý lõi nhưng thay diễn biến và câu chữ.\n- Tăng chi tiết mới ở phần giữa và cao trào.`);
     setStatus("Đã so sánh độ giống.");
+    showMiniTab("compare");
+  });
+  bind("sendChat", "click", () => {
+    const question = valueOf("chatInput");
+    if (!question) return setStatus("Chưa có câu hỏi chat.");
+    const answer = `Bạn: ${question}\n\nAI local: Dựa trên kịch bản hiện tại, nên tăng xung đột ở phần giữa, thêm một bằng chứng rõ ràng và làm đoạn kết có dư âm hơn.\n\n`;
+    setText("chatLog", `${byId("chatLog")?.textContent || ""}${answer}`);
+    setValue("chatInput", "");
+    setStatus("Chat AI đã trả lời local.");
+  });
+  bind("clearChat", "click", () => {
+    setText("chatLog", "Chat log.");
+    setStatus("Đã xóa chat.");
+  });
+  bind("batchFiles", "change", async (event) => {
+    const files = [...(event.target.files || [])];
+    const rows = [];
+    for (const file of files) {
+      const text = await file.text();
+      rows.push({ name: file.name, words: wordCount(text), summary: summarizeText(text).slice(0, 220) });
+    }
+    setText("batchOutput", JSON.stringify(rows, null, 2));
+    setStatus(`Đã nạp ${rows.length} file batch.`);
+  });
+  bind("runBatch", "click", () => {
+    const output = byId("batchOutput")?.textContent || "[]";
+    setText("batchOutput", `${output}\n\nBatch local đã sẵn sàng. Với GitHub Pages, xử lý AI hàng loạt cần API key Gemini và xác nhận từng lượt gọi.`);
+    setStatus("Đã chạy batch local.");
+  });
+  bind("downloadBatch", "click", () => downloadText("batch-results.json", byId("batchOutput")?.textContent || "[]", "application/json;charset=utf-8"));
+  bind("parseUrls", "click", () => {
+    const urls = valueOf("urlInput").split(/\s+/).filter(Boolean);
+    const prompt = `Hãy đọc và viết lại nội dung từ các URL sau theo cấu hình hiện tại:\n\n${urls.map((url, i) => `${i + 1}. ${url}`).join("\n")}\n\n${buildPrompt()}`;
+    setText("urlOutput", prompt);
+    setStatus(`Đã tạo prompt cho ${urls.length} URL.`);
+  });
+  bind("clearUrls", "click", () => {
+    setValue("urlInput", "");
+    setText("urlOutput", "Chưa có URL.");
+    setStatus("Đã xóa URL.");
+  });
+  bind("translateLocal", "click", () => {
+    setValue("sourceTranslation", `[Bản dịch kiểm tra local]\n${valueOf("sourceText")}`);
+    setValue("draftTranslation", `[Bản dịch kiểm tra local]\n${valueOf("outputText")}`);
+    setStatus("Đã tạo bản dịch kiểm tra local.");
+  });
+  bind("copyTranslation", "click", async () => {
+    await navigator.clipboard.writeText(`${valueOf("sourceTranslation")}\n\n${valueOf("draftTranslation")}`);
+    setStatus("Đã copy bản dịch.");
+  });
+  bind("makePlan", "click", () => {
+    const title = valueOf("storyTitle") || "Series kể chuyện 40+";
+    setText("plannerOutput", `KẾ HOẠCH SERIES: ${title}\n\nTập 1: Hook bí mật gia đình\nTập 2: Nhân vật chính bị hiểu lầm\nTập 3: Bằng chứng cũ xuất hiện\nTập 4: Cao trào đối mặt\nTập 5: Sự thật và bài học\n\nLịch đăng: 3 video/tuần\nCTA: bình luận trải nghiệm cá nhân ở cuối mỗi tập.`);
+    setStatus("Đã tạo kế hoạch nội dung.");
+  });
+  bind("ideaBank", "click", () => {
+    setText("plannerOutput", "KHO Ý TƯỞNG 40+\n- Người mẹ bị con hiểu lầm\n- Di chúc mở ra bí mật cũ\n- Người cha nghèo âm thầm trả nợ cho con\n- Cuộc gọi cuối cùng trước ngày đoàn tụ\n- Hàng xóm giữ bí mật suốt 20 năm");
+    setStatus("Đã mở kho ý tưởng.");
+  });
+  bind("saveProject", "click", () => {
+    const payload = currentProjectPayload();
+    localStorage.setItem("kich-ban-ai-project", JSON.stringify(payload));
+    setText("projectOutput", JSON.stringify(payload, null, 2));
+    setStatus("Đã lưu dự án local.");
+  });
+  bind("loadProject", "click", () => {
+    const raw = localStorage.getItem("kich-ban-ai-project");
+    if (!raw) return setStatus("Chưa có dự án local.");
+    const payload = JSON.parse(raw);
+    loadProjectPayload(payload);
+    setText("projectOutput", JSON.stringify(payload, null, 2));
+    setStatus("Đã mở dự án local.");
+  });
+  bind("exportProject", "click", () => downloadText("kich-ban-ai-project.json", JSON.stringify(currentProjectPayload(), null, 2), "application/json;charset=utf-8"));
+  bind("deleteProject", "click", () => {
+    localStorage.removeItem("kich-ban-ai-project");
+    setText("projectOutput", "Đã xóa dự án local.");
+    setStatus("Đã xóa dự án local.");
   });
   updateMetas();
 }

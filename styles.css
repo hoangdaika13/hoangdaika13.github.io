@@ -1127,6 +1127,32 @@ footer p {
   gap: 10px;
 }
 
+.neon-chat-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) minmax(220px, 1fr) auto auto;
+  gap: 10px;
+}
+
+.neon-chat-row input,
+.neon-chat-row select,
+.neon-inline-textarea {
+  width: 100%;
+  border: 2px solid var(--neon-cyan);
+  border-radius: 0;
+  padding: 8px 10px;
+  color: #ffffff;
+  background: #07020f;
+  font: inherit;
+  font-size: 0.82rem;
+  outline: none;
+}
+
+.neon-inline-textarea {
+  min-height: 92px;
+  margin-bottom: 10px;
+  resize: vertical;
+}
+
 .neon-btn {
   position: relative;
   display: inline-flex;
@@ -1281,7 +1307,8 @@ footer p {
 
   .neon-workflows,
   .neon-editors,
-  .neon-editors.triple {
+  .neon-editors.triple,
+  .neon-chat-row {
     grid-template-columns: 1fr;
   }
 
