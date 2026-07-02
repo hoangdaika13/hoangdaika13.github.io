@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body class="home-neon">
   <div class="scroll-meter" aria-hidden="true"></div>
@@ -38,12 +38,13 @@
       <div class="visitor-copy">
         <p class="section-kicker">Ghé thăm website</p>
         <h2>Thích trang và để lại đánh giá</h2>
-        <p class="section-note">Ai ghé trang có thể để lại tên, email hoặc số điện thoại để tôi biết và liên hệ lại.</p>
+        <p class="section-note">Ai ghé trang có thể bấm thích, chấm sao và để lại thông tin để tôi biết người đã từng ghé website.</p>
       </div>
       <form class="visitor-form interactive-card" action="https://formsubmit.co/nhhoang130803@gmail.com" method="POST">
         <input type="hidden" name="_subject" value="Danh gia moi tu website Hoangdaika13">
         <input type="hidden" name="_template" value="table">
         <input type="hidden" name="_captcha" value="true">
+        <input type="hidden" name="_next" value="https://hoangdaika13.github.io/?sent=1#top">
         <input type="hidden" name="Da thich trang" id="visitorLiked" value="Chua bam thich">
         <input type="hidden" name="Danh gia sao" id="visitorRating" value="Chua danh gia">
         <button class="like-button interactive" type="button" id="likePageButton" aria-pressed="false">
@@ -60,10 +61,14 @@
         </div>
         <div class="visitor-fields">
           <input type="text" name="Ho ten nguoi ghe tham" placeholder="Họ tên">
-          <input type="email" name="Email nguoi ghe tham" placeholder="Email">
-          <input type="tel" name="So dien thoai nguoi ghe tham" placeholder="Số điện thoại">
+          <input type="email" name="email" placeholder="Email">
+          <input type="tel" name="phone" placeholder="Số điện thoại">
         </div>
-        <button class="button primary interactive" type="submit">Gửi đánh giá</button>
+        <div class="form-actions">
+          <button class="button primary interactive" type="submit">Gửi đánh giá</button>
+          <a class="button ghost interactive mail-fallback" id="visitorMailto" href="mailto:nhhoang130803@gmail.com">Gửi bằng Email</a>
+        </div>
+        <p class="form-note">Nếu chưa nhận mail, hãy gửi thử một lần rồi vào Gmail bấm xác nhận email từ FormSubmit.</p>
       </form>
     </section>
 
@@ -226,6 +231,7 @@
         <input type="hidden" name="_subject" value="Lien he moi tu website Hoangdaika13">
         <input type="hidden" name="_template" value="table">
         <input type="hidden" name="_captcha" value="true">
+        <input type="hidden" name="_next" value="https://hoangdaika13.github.io/?sent=1#contact">
         <input type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
         <div class="form-heading">
           <p class="section-kicker">Để lại thông tin</p>
@@ -249,7 +255,10 @@
           <span>Nội dung</span>
           <textarea name="Noi dung" rows="5" placeholder="Bạn muốn nhắn gì cho tôi?" required></textarea>
         </label>
-        <button class="button primary interactive" type="submit">Gửi thông tin</button>
+        <div class="form-actions">
+          <button class="button primary interactive" type="submit">Gửi thông tin</button>
+          <a class="button ghost interactive mail-fallback" id="leadMailto" href="mailto:nhhoang130803@gmail.com">Gửi bằng Email</a>
+        </div>
         <p class="form-note">Lần gửi đầu tiên FormSubmit sẽ gửi email xác nhận tới hộp thư của tôi để kích hoạt nhận tin.</p>
       </form>
     </section>
@@ -259,6 +268,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>

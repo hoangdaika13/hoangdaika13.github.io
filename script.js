@@ -204,6 +204,33 @@ function initHomeNeonInteractions() {
 
   const savedRating = Number(localStorage.getItem("hoangdaika13-rating"));
   if (savedRating) applyRating(savedRating);
+
+  const setMailto = (link, subject, fields) => {
+    if (!link) return;
+    const update = () => {
+      const body = fields
+        .map(([label, selector]) => `${label}: ${document.querySelector(selector)?.value || ""}`)
+        .join("\n");
+      link.href = `mailto:nhhoang130803@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    };
+    fields.forEach(([, selector]) => document.querySelector(selector)?.addEventListener("input", update));
+    update();
+  };
+
+  setMailto(byId("visitorMailto"), "Danh gia moi tu website Hoangdaika13", [
+    ["Da thich trang", "#visitorLiked"],
+    ["Danh gia sao", "#visitorRating"],
+    ["Ho ten", ".visitor-form input[name='Ho ten nguoi ghe tham']"],
+    ["Email", ".visitor-form input[name='email']"],
+    ["So dien thoai", ".visitor-form input[name='phone']"]
+  ]);
+
+  setMailto(byId("leadMailto"), "Lien he moi tu website Hoangdaika13", [
+    ["Ho ten", ".lead-form input[name='Ho ten']"],
+    ["Email", ".lead-form input[name='email']"],
+    ["So dien thoai", ".lead-form input[name='So dien thoai']"],
+    ["Noi dung", ".lead-form textarea[name='Noi dung']"]
+  ]);
 }
 
 function valueOf(id) {
