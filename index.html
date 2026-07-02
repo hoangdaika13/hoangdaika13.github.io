@@ -3,41 +3,148 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hoangdaika</title>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      font-family: Arial, sans-serif;
-      background: #101820;
-      color: #f5f7fa;
-    }
-
-    main {
-      width: min(720px, calc(100% - 32px));
-      text-align: center;
-    }
-
-    h1 {
-      margin: 0 0 12px;
-      font-size: clamp(40px, 8vw, 84px);
-      letter-spacing: 0;
-    }
-
-    p {
-      margin: 0;
-      font-size: 20px;
-      color: #c8d3df;
-      line-height: 1.5;
-    }
-  </style>
+  <title>Hoangdaika13 | Website cá nhân</title>
+  <meta name="description" content="Website cá nhân của Hoangdaika13: nơi giới thiệu dự án, kỹ năng và các sản phẩm HTML sáng tạo.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main>
-    <h1>Hoangdaika</h1>
-    <p>Trang HTML dau tien cua toi tren GitHub Pages.</p>
+  <div class="scroll-meter" aria-hidden="true"></div>
+  <canvas class="ambient-canvas" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Về đầu trang">
+      <span class="brand-mark">H13</span>
+      <span>Hoangdaika13</span>
+    </a>
+
+    <nav class="nav-links" aria-label="Điều hướng chính">
+      <a href="#about">Giới thiệu</a>
+      <a href="#projects">Dự án</a>
+      <a href="#skills">Kỹ năng</a>
+      <a href="#contact">Liên hệ</a>
+    </nav>
+
+    <button class="theme-toggle" type="button" aria-label="Đổi giao diện">☀</button>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">HTML Creator / Web Personal / Mini App Maker</p>
+        <h1>Hoangdaika13</h1>
+        <p class="hero-text">
+          Đây là không gian cá nhân của tôi trên GitHub Pages, nơi tôi viết HTML,
+          thử ý tưởng giao diện và đăng các dự án nhỏ do chính mình tạo ra.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#projects">Xem dự án</a>
+          <a class="button secondary" href="https://github.com/hoangdaika13" target="_blank" rel="noreferrer">GitHub</a>
+        </div>
+      </div>
+
+      <div class="hero-panel" aria-label="Thẻ giới thiệu Hoangdaika13">
+        <div class="profile-card">
+          <div class="avatar">H</div>
+          <p class="profile-label">Online Portfolio</p>
+          <h2>Build. Learn. Upgrade.</h2>
+          <p>Mỗi lần sửa HTML là một lần trang web này trở nên xịn hơn.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="ticker" aria-label="Điểm nổi bật">
+      <span>HTML</span>
+      <span>CSS</span>
+      <span>JavaScript</span>
+      <span>GitHub Pages</span>
+    </section>
+
+    <section id="about" class="section split-section">
+      <div>
+        <p class="section-kicker">Giới thiệu</p>
+        <h2>Tôi thích tạo những trang web rõ ràng, đẹp mắt và có cá tính.</h2>
+      </div>
+      <p>
+        Website này là nơi tôi lưu lại các sản phẩm đang làm, luyện kỹ năng lập trình web
+        và biến ý tưởng thành giao diện thật. Mục tiêu là mỗi phiên bản đều đẹp hơn,
+        mượt hơn và dễ dùng hơn phiên bản trước.
+      </p>
+    </section>
+
+    <section id="projects" class="section projects-section">
+      <div class="section-heading">
+        <p class="section-kicker">Dự án</p>
+        <h2>Một vài sản phẩm nổi bật</h2>
+      </div>
+
+      <div class="project-grid">
+        <article class="project-card featured">
+          <img src="assets/piano-scream-style-check.png" alt="Giao diện HuyHoangPialo phiên bản nổi bật">
+          <div>
+            <p class="project-tag">Featured</p>
+            <h3>HuyHoangPialo</h3>
+            <p>Ứng dụng piano mini với phong cách nổi bật, hiệu ứng mạnh và giao diện vui mắt.</p>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <img src="assets/piano-neon-check.png" alt="Giao diện piano phong cách neon">
+          <div>
+            <p class="project-tag">Neon</p>
+            <h3>Piano Neon</h3>
+            <p>Thiết kế sáng, tương phản cao, phù hợp với các sản phẩm giải trí nhỏ.</p>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <img src="assets/piano-guide-check.png" alt="Giao diện hướng dẫn piano">
+          <div>
+            <p class="project-tag">Guide</p>
+            <h3>Piano Guide</h3>
+            <p>Bản giao diện có hướng dẫn rõ ràng hơn để người dùng mới dễ thao tác.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="skills" class="section skills-section">
+      <div class="section-heading">
+        <p class="section-kicker">Kỹ năng</p>
+        <h2>Những thứ tôi đang luyện mỗi ngày</h2>
+      </div>
+      <div class="skill-list">
+        <span>HTML</span>
+        <span>CSS Layout</span>
+        <span>Responsive</span>
+        <span>JavaScript</span>
+        <span>UI Design</span>
+        <span>GitHub Pages</span>
+      </div>
+    </section>
+
+    <section class="quote-band">
+      <p>Viết code nhỏ mỗi ngày, nâng cấp trang web từng chút một.</p>
+    </section>
+
+    <section id="contact" class="section contact-section">
+      <div>
+        <p class="section-kicker">Liên hệ</p>
+        <h2>Muốn xem code hoặc theo dõi bản cập nhật?</h2>
+      </div>
+      <div class="contact-actions">
+        <a class="button primary" href="https://github.com/hoangdaika13" target="_blank" rel="noreferrer">Mở GitHub</a>
+        <a class="button secondary" href="mailto:hoangdaika13@example.com">Gửi email</a>
+      </div>
+    </section>
   </main>
+
+  <footer>
+    <p>© 2026 Hoangdaika13. Built with HTML, CSS and JavaScript.</p>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
