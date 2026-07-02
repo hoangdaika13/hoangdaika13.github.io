@@ -3,84 +3,152 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Kịch bản AI viết HTML | Hoangdaika13</title>
-  <meta name="description" content="Dự án Kịch bản AI viết HTML của Hoangdaika13: công cụ desktop hỗ trợ viết lại kịch bản bằng AI.">
+  <title>Kịch bản AI | Hoangdaika13</title>
+  <meta name="description" content="Dự án Kịch bản AI của Hoangdaika13: công cụ viết kịch bản chạy trực tiếp trong HTML.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../styles.css">
 </head>
 <body>
+  <div class="scroll-meter" aria-hidden="true"></div>
+  <canvas class="ambient-canvas" aria-hidden="true"></canvas>
+
   <header class="site-header">
     <a class="brand" href="../../">
       <span class="brand-mark">H13</span>
       <span>Hoangdaika13</span>
     </a>
     <nav class="nav-links" aria-label="Điều hướng dự án">
+      <a href="../../">Profile</a>
       <a href="../../#projects">Dự án</a>
-      <a href="../../#skills">Kỹ năng</a>
       <a href="../../#contact">Liên hệ</a>
     </nav>
+    <button class="theme-toggle" type="button" aria-label="Đổi giao diện">Sáng</button>
   </header>
 
   <main>
-    <section class="hero project-detail">
-      <div class="hero-copy">
-        <p class="eyebrow">AI Tool / Script Writer / Desktop App</p>
-        <h1>Kịch bản AI viết HTML</h1>
-        <p class="hero-text">
-          Dự án này là công cụ hỗ trợ viết lại kịch bản bằng AI, kiểm tra bản nháp,
-          xử lý nội dung dài và xuất file để dùng tiếp trong quy trình sáng tạo.
-        </p>
-        <div class="hero-actions">
-          <a class="button primary" href="../../assets/downloads/kich-ban-ai-source.zip" download>Tải source zip</a>
-          <a class="button secondary" href="../../#projects">Quay lại dự án</a>
-        </div>
-      </div>
-
-      <div class="hero-panel">
-        <article class="project-card">
-          <img src="../../assets/kich-ban-ai.png" alt="Thumbnail Neon Script Studio">
-          <div>
-            <p class="project-tag">Neon Script Studio</p>
-            <h3>App viết kịch bản bằng AI</h3>
-            <p>Source gốc được lưu riêng để tải xuống, chỉnh sửa và phát triển tiếp.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section split-section">
-      <div>
-        <p class="section-kicker">Điểm mạnh</p>
-        <h2>Một công cụ riêng cho quy trình viết nội dung.</h2>
-      </div>
+    <section class="project-tool-hero">
+      <p class="eyebrow">AI Tool / Script Writer / HTML App</p>
+      <h1>Kịch bản AI</h1>
       <p>
-        Dự án dùng Python desktop app, hướng tới việc nhập kịch bản, dùng AI viết lại,
-        kiểm tra bản dịch, tóm tắt, so sánh nội dung và xuất ra nhiều định dạng.
-        Đây là một phần riêng trong portfolio để người xem thấy rõ bạn không chỉ làm
-        giao diện web mà còn xây dựng công cụ hỗ trợ sáng tạo.
+        Phiên bản HTML của tool viết kịch bản: tạo prompt, dựng bản nháp, phân tích,
+        tóm tắt, so sánh độ giống và gọi Gemini bằng API key riêng.
       </p>
     </section>
 
-    <section class="section skills-section">
-      <div class="section-heading">
-        <p class="section-kicker">Tính năng</p>
-        <h2>Các phần đáng chú ý</h2>
-      </div>
-      <div class="skill-list">
-        <span>Viết lại kịch bản</span>
-        <span>Gemini AI</span>
-        <span>Kiểm tra nội dung</span>
-        <span>Xuất TXT/DOCX</span>
-        <span>Batch script</span>
-        <span>Python Tkinter</span>
-      </div>
+    <section class="tool-app">
+      <aside class="tool-sidebar">
+        <section class="side-panel">
+          <h2>Dự án</h2>
+          <label>Tên dự án<input id="projectName" value="Dự án kể chuyện 40+"></label>
+          <label>Title YouTube<input id="storyTitle" placeholder="Ví dụ: Người mẹ bị hiểu lầm"></label>
+          <button class="btn lime" id="makeTitle" type="button">Tạo title</button>
+        </section>
+
+        <section class="side-panel">
+          <h2>Cấu hình</h2>
+          <label>Thời lượng<input id="duration" value="8-12 phút"></label>
+          <label>Người xem<textarea id="audience" rows="4">Nam nữ 40-65 tuổi, thích câu chuyện đời thường, gia đình, hôn nhân, con cái, nhân quả và bài học nhân sinh</textarea></label>
+          <label>Tone<textarea id="tone" rows="4">Ấm áp, chậm vừa, chân thật, giàu cảm xúc, có cao trào và kết để lại dư âm</textarea></label>
+          <label>Chế độ
+            <select id="rewriteMode">
+              <option>Kể chuyện 40+ - nhanh và cảm xúc</option>
+              <option>Viết lại 100% chỉ giữ ý tưởng lõi</option>
+              <option>Drama gia đình có plot twist</option>
+              <option>Nhân quả báo ứng</option>
+              <option>Dịch + localize</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="side-panel">
+          <h2>Gemini</h2>
+          <label>API key<input id="apiKey" type="password" placeholder="Không bắt buộc"></label>
+          <label>Model
+            <select id="modelName">
+              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+            </select>
+          </label>
+        </section>
+      </aside>
+
+      <section class="tool-workspace">
+        <div class="tool-tabs" role="tablist" aria-label="Kịch bản AI tabs">
+          <button class="mini-tab active" data-mini-tab="editor">Biên tập</button>
+          <button class="mini-tab" data-mini-tab="report">Phân tích</button>
+          <button class="mini-tab" data-mini-tab="summary">Tóm tắt</button>
+          <button class="mini-tab" data-mini-tab="compare">Độ giống</button>
+        </div>
+
+        <section class="mini-panel active" id="mini-editor">
+          <div class="workflow-card">
+            <h3>Nguồn Video / Text / URL</h3>
+            <div class="tool-actions">
+              <label class="button ghost">Nhập file<input id="scriptFile" type="file" accept=".txt,.md,.srt,.vtt,.json,.csv"></label>
+              <button class="button ghost" id="cleanSource" type="button">Làm sạch</button>
+              <button class="button primary" id="makeDraft" type="button">Tạo bản nháp</button>
+              <button class="button secondary" id="makePrompt" type="button">Tạo prompt</button>
+              <button class="button secondary" id="callGemini" type="button">Gọi Gemini</button>
+            </div>
+          </div>
+
+          <div class="split-panes">
+            <label class="editor-pane">
+              <header><h3>Kịch bản gốc</h3><span id="sourceMeta">0 từ</span></header>
+              <textarea id="sourceText" rows="18" placeholder="Dán transcript, kịch bản gốc, ý tưởng hoặc URL notes..."></textarea>
+            </label>
+            <label class="editor-pane">
+              <header><h3>Output</h3><span id="draftMeta">0 từ</span></header>
+              <textarea id="outputText" rows="18" placeholder="Kết quả sẽ hiện ở đây..."></textarea>
+            </label>
+          </div>
+
+          <div class="tool-actions bottom-actions">
+            <button class="button ghost" id="copyOutput" type="button">Copy</button>
+            <button class="button ghost" id="downloadOutput" type="button">Tải TXT</button>
+            <a class="button ghost" href="../../assets/downloads/kich-ban-ai-source.zip" download>Tải source Python</a>
+          </div>
+        </section>
+
+        <section class="mini-panel" id="mini-report">
+          <div class="tool-actions">
+            <button class="button primary" id="analyzeScript" type="button">Phân tích ngay</button>
+            <button class="button secondary" id="storyScore" type="button">Story score 40+</button>
+          </div>
+          <pre class="report-box" id="analysisOutput"></pre>
+        </section>
+
+        <section class="mini-panel" id="mini-summary">
+          <div class="tool-actions">
+            <button class="button primary" id="summarizeScript" type="button">Tóm tắt + so sánh</button>
+          </div>
+          <pre class="report-box" id="summaryOutput"></pre>
+        </section>
+
+        <section class="mini-panel" id="mini-compare">
+          <div class="tool-actions">
+            <button class="button primary" id="compareScript" type="button">So sánh ngay</button>
+          </div>
+          <div class="metric-grid">
+            <div class="metric"><span>Độ giống</span><strong id="similarityPercent">0%</strong></div>
+            <div class="metric"><span>Độ mới</span><strong id="originalityPercent">0%</strong></div>
+            <div class="metric"><span>Rủi ro</span><strong id="riskLevel">N/A</strong></div>
+          </div>
+          <pre class="report-box" id="compareOutput"></pre>
+        </section>
+
+        <p class="tool-status" id="toolStatus">Sẵn sàng.</p>
+      </section>
     </section>
   </main>
 
   <footer>
-    <p>© 2026 Hoangdaika13. Project page for Kịch bản AI.</p>
+    <p>© 2026 Hoangdaika13. Kịch bản AI là một dự án riêng trong portfolio.</p>
   </footer>
+
+  <script src="../../script.js"></script>
 </body>
 </html>
