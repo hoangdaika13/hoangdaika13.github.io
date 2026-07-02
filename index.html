@@ -34,6 +34,39 @@
   </header>
 
   <main id="top">
+    <section class="visitor-pulse section" aria-label="Thích trang và đánh giá">
+      <div class="visitor-copy">
+        <p class="section-kicker">Ghé thăm website</p>
+        <h2>Thích trang và để lại đánh giá</h2>
+        <p class="section-note">Ai ghé trang có thể để lại tên, email hoặc số điện thoại để tôi biết và liên hệ lại.</p>
+      </div>
+      <form class="visitor-form interactive-card" action="https://formsubmit.co/nhhoang130803@gmail.com" method="POST">
+        <input type="hidden" name="_subject" value="Danh gia moi tu website Hoangdaika13">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="true">
+        <input type="hidden" name="Da thich trang" id="visitorLiked" value="Chua bam thich">
+        <input type="hidden" name="Danh gia sao" id="visitorRating" value="Chua danh gia">
+        <button class="like-button interactive" type="button" id="likePageButton" aria-pressed="false">
+          <span>♡</span>
+          <strong>Thích trang</strong>
+        </button>
+        <div class="rating-control" aria-label="Đánh giá trang">
+          <button class="interactive" type="button" data-rating="1">★</button>
+          <button class="interactive" type="button" data-rating="2">★</button>
+          <button class="interactive" type="button" data-rating="3">★</button>
+          <button class="interactive" type="button" data-rating="4">★</button>
+          <button class="interactive" type="button" data-rating="5">★</button>
+          <span id="ratingLabel">Chưa đánh giá</span>
+        </div>
+        <div class="visitor-fields">
+          <input type="text" name="Ho ten nguoi ghe tham" placeholder="Họ tên">
+          <input type="email" name="Email nguoi ghe tham" placeholder="Email">
+          <input type="tel" name="So dien thoai nguoi ghe tham" placeholder="Số điện thoại">
+        </div>
+        <button class="button primary interactive" type="submit">Gửi đánh giá</button>
+      </form>
+    </section>
+
     <section class="hero neon-hero">
       <div class="hero-copy">
         <p class="eyebrow">HTML Creator / AI Tool Builder / Neon Interface</p>
@@ -188,6 +221,37 @@
         <a class="contact-card interactive" href="projects/kich-ban-ai/"><strong>Kịch bản AI</strong><span>Mở tool viết kịch bản</span></a>
         <a class="contact-card interactive" href="#projects"><strong>Portfolio</strong><span>Xem toàn bộ dự án</span></a>
       </div>
+
+      <form class="lead-form interactive-card" action="https://formsubmit.co/nhhoang130803@gmail.com" method="POST">
+        <input type="hidden" name="_subject" value="Lien he moi tu website Hoangdaika13">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="true">
+        <input type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="form-heading">
+          <p class="section-kicker">Để lại thông tin</p>
+          <h3>Tôi sẽ nhận qua email</h3>
+        </div>
+        <label>
+          <span>Họ tên</span>
+          <input type="text" name="Ho ten" placeholder="Nhập họ tên của bạn" required>
+        </label>
+        <div class="form-row">
+          <label>
+            <span>Email</span>
+            <input type="email" name="email" placeholder="you@gmail.com">
+          </label>
+          <label>
+            <span>Số điện thoại</span>
+            <input type="tel" name="So dien thoai" placeholder="Số điện thoại">
+          </label>
+        </div>
+        <label>
+          <span>Nội dung</span>
+          <textarea name="Noi dung" rows="5" placeholder="Bạn muốn nhắn gì cho tôi?" required></textarea>
+        </label>
+        <button class="button primary interactive" type="submit">Gửi thông tin</button>
+        <p class="form-note">Lần gửi đầu tiên FormSubmit sẽ gửi email xác nhận tới hộp thư của tôi để kích hoạt nhận tin.</p>
+      </form>
     </section>
   </main>
 

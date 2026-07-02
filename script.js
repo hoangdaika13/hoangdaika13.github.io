@@ -7,6 +7,7 @@ const scrollMeter = $(".scroll-meter");
 const themeToggle = $(".theme-toggle");
 const colors = ["#ff4f9a", "#ffd84d", "#27d98b", "#29c7ff", "#3f63ff", "#ff7a59"];
 let particles = [];
+let clickAudioContext;
 
 function resizeCanvas() {
   if (!canvas || !context) return;
@@ -73,9 +74,19 @@ function initReveal() {
 function initTheme() {
   if (!themeToggle) return;
   if (document.body.classList.contains("home-neon")) {
-    themeToggle.textContent = "Neon";
+    const savedNeon = localStorage.getItem("hoangdaika13-neon-mode");
+    const setNeonMode = (mode) => {
+      const isStrong = mode === "strong";
+      document.body.classList.toggle("neon-boost", isStrong);
+      document.body.classList.toggle("neon-soft", !isStrong);
+      themeToggle.textContent = isStrong ? "Neon mạnh" : "Neon nhẹ";
+      localStorage.setItem("hoangdaika13-neon-mode", mode);
+    };
+    setNeonMode(savedNeon === "strong" ? "strong" : "soft");
     themeToggle.addEventListener("click", () => {
-      document.body.classList.toggle("neon-boost");
+      const nextMode = document.body.classList.contains("neon-boost") ? "soft" : "strong";
+      setNeonMode(nextMode);
+      playClickSound(720);
     });
     return;
   }
@@ -88,6 +99,27 @@ function initTheme() {
     themeToggle.textContent = isDark ? "Tối" : "Sáng";
     localStorage.setItem("hoangdaika13-theme", isDark ? "dark" : "light");
   });
+}
+
+function playClickSound(frequency = 560) {
+  if (!document.body.classList.contains("home-neon")) return;
+  try {
+    clickAudioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = clickAudioContext.createOscillator();
+    const gain = clickAudioContext.createGain();
+    oscillator.type = "triangle";
+    oscillator.frequency.setValueAtTime(frequency, clickAudioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.6, clickAudioContext.currentTime + 0.07);
+    gain.gain.setValueAtTime(0.0001, clickAudioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.045, clickAudioContext.currentTime + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, clickAudioContext.currentTime + 0.11);
+    oscillator.connect(gain);
+    gain.connect(clickAudioContext.destination);
+    oscillator.start();
+    oscillator.stop(clickAudioContext.currentTime + 0.12);
+  } catch (error) {
+    // Some browsers block WebAudio until the next user gesture; the UI still works.
+  }
 }
 
 function initHomeNeonInteractions() {
@@ -103,9 +135,9 @@ function initHomeNeonInteractions() {
   document.querySelectorAll(".tilt-card, .project-card").forEach((card) => {
     card.addEventListener("pointermove", (event) => {
       const rect = card.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width - 0.5) * 8;
-      const y = ((event.clientY - rect.top) / rect.height - 0.5) * -8;
-      card.style.transform = `translateY(-8px) rotateX(${y}deg) rotateY(${x}deg)`;
+      const x = ((event.clientX - rect.left) / rect.width - 0.5) * 12;
+      const y = ((event.clientY - rect.top) / rect.height - 0.5) * -12;
+      card.style.transform = `perspective(900px) translateY(-10px) rotateX(${y}deg) rotateY(${x}deg)`;
     });
     card.addEventListener("pointerleave", () => {
       card.style.transform = "";
@@ -117,6 +149,10 @@ function initHomeNeonInteractions() {
     item.addEventListener("pointerup", () => item.classList.remove("is-pressed"));
     item.addEventListener("pointerleave", () => item.classList.remove("is-pressed"));
     item.addEventListener("click", (event) => {
+      if (!item.matches("#likePageButton, [data-rating]")) playClickSound();
+      item.classList.remove("glow-burst");
+      void item.offsetWidth;
+      item.classList.add("glow-burst");
       const rect = item.getBoundingClientRect();
       const dot = document.createElement("span");
       dot.className = "ripple-dot";
@@ -126,6 +162,48 @@ function initHomeNeonInteractions() {
       setTimeout(() => dot.remove(), 560);
     });
   });
+
+  const likeButton = byId("likePageButton");
+  const likedInput = byId("visitorLiked");
+  const ratingInput = byId("visitorRating");
+  const ratingLabel = byId("ratingLabel");
+  const ratingButtons = document.querySelectorAll("[data-rating]");
+
+  if (likeButton && likedInput) {
+    const applyLiked = (liked) => {
+      likeButton.classList.toggle("is-liked", liked);
+      likeButton.setAttribute("aria-pressed", liked ? "true" : "false");
+      likeButton.querySelector("span").textContent = liked ? "♥" : "♡";
+      likeButton.querySelector("strong").textContent = liked ? "Đã thích trang" : "Thích trang";
+      likedInput.value = liked ? "Da bam thich" : "Chua bam thich";
+      localStorage.setItem("hoangdaika13-liked", liked ? "yes" : "no");
+    };
+    applyLiked(localStorage.getItem("hoangdaika13-liked") === "yes");
+    likeButton.addEventListener("click", () => {
+      applyLiked(!likeButton.classList.contains("is-liked"));
+      playClickSound(820);
+    });
+  }
+
+  const applyRating = (rating) => {
+    if (!ratingInput || !ratingLabel) return;
+    ratingInput.value = `${rating} sao`;
+    ratingLabel.textContent = `${rating}/5 sao`;
+    ratingButtons.forEach((button) => {
+      button.classList.toggle("is-active", Number(button.dataset.rating) <= rating);
+    });
+    localStorage.setItem("hoangdaika13-rating", String(rating));
+  };
+
+  ratingButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      applyRating(Number(button.dataset.rating));
+      playClickSound(620 + Number(button.dataset.rating) * 60);
+    });
+  });
+
+  const savedRating = Number(localStorage.getItem("hoangdaika13-rating"));
+  if (savedRating) applyRating(savedRating);
 }
 
 function valueOf(id) {
