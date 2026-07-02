@@ -9,6 +9,7 @@ const colors = ["#ff4f9a", "#ffd84d", "#27d98b", "#29c7ff", "#3f63ff", "#ff7a59"
 let particles = [];
 let clickAudioContext;
 let musicEngine;
+const CLOUD_VOTE_API = window.HH_VOTE_API_URL || "";
 
 const ambientTracks = [
   { name: "Pink Morning", mood: "piano pad", root: 261.63, scale: [0, 4, 7, 11], wave: "sine" },
@@ -135,7 +136,7 @@ function playClickSound(frequency = 560) {
     oscillator.frequency.setValueAtTime(frequency, clickAudioContext.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.6, clickAudioContext.currentTime + 0.07);
     gain.gain.setValueAtTime(0.0001, clickAudioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.045, clickAudioContext.currentTime + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.075, clickAudioContext.currentTime + 0.012);
     gain.gain.exponentialRampToValueAtTime(0.0001, clickAudioContext.currentTime + 0.11);
     oscillator.connect(gain);
     gain.connect(clickAudioContext.destination);
@@ -173,7 +174,7 @@ function initMusicPlayer() {
     const filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.value = 1450;
-    master.gain.value = Number(volume.value) / 1000;
+    master.gain.value = Number(volume.value) / 520;
     filter.connect(master);
     master.connect(ctx.destination);
     musicEngine = { ctx, master, filter };
@@ -194,7 +195,7 @@ function initMusicPlayer() {
     const track = ambientTracks[activeTrack];
     const now = engine.ctx.currentTime;
     const moodValue = Number(mood.value) / 100;
-    engine.master.gain.setTargetAtTime(Number(volume.value) / 900, now, 0.08);
+    engine.master.gain.setTargetAtTime(Number(volume.value) / 500, now, 0.08);
     engine.filter.frequency.setTargetAtTime(700 + moodValue * 2400, now, 0.12);
 
     const degree = track.scale[step % track.scale.length];
@@ -206,7 +207,7 @@ function initMusicPlayer() {
       osc.type = index === 2 ? "sine" : track.wave;
       osc.frequency.value = track.root * Math.pow(2, semitone / 12);
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(index === 2 ? 0.035 : 0.022, now + 0.18);
+      gain.gain.exponentialRampToValueAtTime(index === 2 ? 0.07 : 0.048, now + 0.18);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
       osc.connect(gain);
       gain.connect(engine.filter);
@@ -231,7 +232,24 @@ function initMusicPlayer() {
     isPlaying = true;
     toggle.textContent = "Tạm dừng";
     updateTrackButtons();
+    window.clearTimeout(timer);
     playNote();
+  };
+
+  const tryAutoplay = async () => {
+    try {
+      status.textContent = "Đang tự bật nhạc...";
+      await startMusic();
+    } catch {
+      status.textContent = "Bấm bất kỳ nút nào để bật nhạc";
+      const startAfterGesture = () => {
+        document.removeEventListener("pointerdown", startAfterGesture);
+        setTimeout(async () => {
+          if (!isPlaying) await startMusic();
+        }, 90);
+      };
+      document.addEventListener("pointerdown", startAfterGesture, { once: true });
+    }
   };
 
   ambientTracks.forEach((track, index) => {
@@ -274,7 +292,7 @@ function initMusicPlayer() {
 
   volume.addEventListener("input", () => {
     localStorage.setItem("hoangdaika13-volume", volume.value);
-    if (musicEngine) musicEngine.master.gain.setTargetAtTime(Number(volume.value) / 900, musicEngine.ctx.currentTime, 0.05);
+    if (musicEngine) musicEngine.master.gain.setTargetAtTime(Number(volume.value) / 500, musicEngine.ctx.currentTime, 0.05);
   });
 
   mood.addEventListener("input", () => {
@@ -284,12 +302,14 @@ function initMusicPlayer() {
   volume.value = localStorage.getItem("hoangdaika13-volume") || volume.value;
   mood.value = localStorage.getItem("hoangdaika13-mood") || mood.value;
   updateTrackButtons();
+  setTimeout(tryAutoplay, 700);
 }
 
 function initVoteStats() {
   if (!document.body.classList.contains("home-neon")) return;
   const statsKey = "hoangdaika13-vote-stats";
   const defaultStats = { likes: 0, votes: [0, 0, 0, 0, 0] };
+  let cloudReady = false;
   const readStats = () => {
     try {
       return { ...defaultStats, ...JSON.parse(localStorage.getItem(statsKey) || "{}") };
@@ -298,6 +318,26 @@ function initVoteStats() {
     }
   };
   const writeStats = (stats) => localStorage.setItem(statsKey, JSON.stringify(stats));
+  const normalizeStats = (stats) => ({
+    likes: Number(stats?.likes || 0),
+    votes: Array.from({ length: 5 }, (_, index) => Number(stats?.votes?.[index] || 0))
+  });
+  const fetchCloudStats = async () => {
+    if (!CLOUD_VOTE_API) return null;
+    const response = await fetch(CLOUD_VOTE_API, { cache: "no-store" });
+    if (!response.ok) throw new Error("Vote API unavailable");
+    return normalizeStats(await response.json());
+  };
+  const sendCloudVote = async (payload) => {
+    if (!CLOUD_VOTE_API) return null;
+    const response = await fetch(CLOUD_VOTE_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("Vote API unavailable");
+    return normalizeStats(await response.json());
+  };
   const renderStats = () => {
     const stats = readStats();
     const totalVotes = stats.votes.reduce((sum, count) => sum + count, 0);
@@ -312,6 +352,21 @@ function initVoteStats() {
       const bar = document.querySelector(`[data-rating-bar="${rating}"]`);
       if (bar) bar.style.setProperty("--bar", `${totalVotes ? Math.round((count / totalVotes) * 100) : 0}%`);
     });
+  };
+  const applyCloudStats = (stats) => {
+    if (!stats) return;
+    writeStats(normalizeStats(stats));
+    renderStats();
+  };
+  const syncCloudStats = async () => {
+    if (!CLOUD_VOTE_API) return;
+    try {
+      const stats = await fetchCloudStats();
+      cloudReady = true;
+      applyCloudStats(stats);
+    } catch {
+      cloudReady = false;
+    }
   };
 
   const bootstrapStats = () => {
@@ -343,6 +398,7 @@ function initVoteStats() {
     }
     writeStats(stats);
     renderStats();
+    sendCloudVote({ action: "like", liked: likedNow }).then(applyCloudStats).catch(() => {});
   });
 
   document.querySelectorAll("[data-rating]").forEach((button) => {
@@ -355,11 +411,14 @@ function initVoteStats() {
       localStorage.setItem("hoangdaika13-rating-counted", String(rating));
       writeStats(stats);
       renderStats();
+      sendCloudVote({ action: "rating", rating, previous }).then(applyCloudStats).catch(() => {});
     });
   });
 
   bootstrapStats();
   renderStats();
+  syncCloudStats();
+  if (CLOUD_VOTE_API) setInterval(syncCloudStats, 10000);
 }
 
 function initHomeNeonInteractions() {
