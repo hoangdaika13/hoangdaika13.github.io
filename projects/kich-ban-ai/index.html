@@ -4,150 +4,206 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kịch bản AI | Hoangdaika13</title>
-  <meta name="description" content="Dự án Kịch bản AI của Hoangdaika13: công cụ viết kịch bản chạy trực tiếp trong HTML.">
+  <meta name="description" content="Kịch bản AI phiên bản HTML: giao diện neon giống tool desktop, viết lại kịch bản, phân tích, tóm tắt, so sánh và gọi Gemini.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../styles.css">
 </head>
-<body>
-  <div class="scroll-meter" aria-hidden="true"></div>
-  <canvas class="ambient-canvas" aria-hidden="true"></canvas>
+<body class="tool-neon-page">
+  <div class="neon-app">
+    <header class="neon-titlebar">
+      <a class="neon-title" href="../../">Kịch bản AI</a>
+      <span id="toolStatus">Sẵn sàng</span>
+    </header>
 
-  <header class="site-header">
-    <a class="brand" href="../../">
-      <span class="brand-mark">H13</span>
-      <span>Hoangdaika13</span>
-    </a>
-    <nav class="nav-links" aria-label="Điều hướng dự án">
-      <a href="../../">Profile</a>
-      <a href="../../#projects">Dự án</a>
-      <a href="../../#contact">Liên hệ</a>
-    </nav>
-    <button class="theme-toggle" type="button" aria-label="Đổi giao diện">Sáng</button>
-  </header>
+    <aside class="neon-sidebar">
+      <section class="neon-panel">
+        <h2>Dự án</h2>
+        <label>Tên dự án
+          <input id="projectName" value="I Was A Six-Year-Old Left Behind, But I Found My Real Family">
+        </label>
+        <label>Tên câu chuyện / Title YouTube
+          <input id="storyTitle" value="I Was A Six-Year-Old Left Behind, But I Found My Real Family">
+        </label>
+        <p>Tối đa 100 ký tự để phù hợp giới hạn tiêu đề YouTube.</p>
+        <button class="neon-btn lime wide" id="makeTitle" type="button">Tạo title YouTube</button>
+        <label class="neon-check"><input type="checkbox"> Gemini chọn title hay nhất</label>
+      </section>
 
-  <main>
-    <section class="project-tool-hero">
-      <p class="eyebrow">AI Tool / Script Writer / HTML App</p>
-      <h1>Kịch bản AI</h1>
-      <p>
-        Phiên bản HTML của tool viết kịch bản: tạo prompt, dựng bản nháp, phân tích,
-        tóm tắt, so sánh độ giống và gọi Gemini bằng API key riêng.
-      </p>
-    </section>
+      <section class="neon-panel">
+        <h2>Mẫu cấu hình</h2>
+        <select id="preset">
+          <option>Series nhiều tập</option>
+          <option>Storytelling 40+</option>
+          <option>Drama gia đình</option>
+          <option>Nhân quả báo ứng</option>
+          <option>Cinematic emotional</option>
+        </select>
+        <div class="neon-two">
+          <button class="neon-btn magenta" type="button">Áp dụng mẫu</button>
+          <button class="neon-btn" type="button">Gợi ý mode</button>
+        </div>
+        <p>Một mẫu sẽ tự set người xem, tone, niche, CTA, thời lượng và chế độ viết lại.</p>
+      </section>
 
-    <section class="tool-app">
-      <aside class="tool-sidebar">
-        <section class="side-panel">
-          <h2>Dự án</h2>
-          <label>Tên dự án<input id="projectName" value="Dự án kể chuyện 40+"></label>
-          <label>Title YouTube<input id="storyTitle" placeholder="Ví dụ: Người mẹ bị hiểu lầm"></label>
-          <button class="btn lime" id="makeTitle" type="button">Tạo title</button>
-        </section>
+      <section class="neon-panel">
+        <h2>Cấu hình</h2>
+        <label>Nền tảng
+          <select id="platform"><option>YouTube</option><option>Facebook</option><option>TikTok</option></select>
+        </label>
+        <label>Thời lượng
+          <input id="duration" value="8-12 phút">
+        </label>
+        <p>Ví dụ: 50 = 50 phút; 40-50' = voice 40-50 phút.</p>
+        <label>Người xem
+          <textarea id="audience" rows="2">Nam nữ 40-65 tuổi, thích câu chuyện đời thường, gia đình, hôn nhân, con cái, nhân quả và bài học nhân sinh</textarea>
+        </label>
+        <label>Tone
+          <textarea id="tone" rows="2">Ấm áp, chậm vừa, chân thật, giàu cảm xúc, có cao trào và kết để lại dư âm</textarea>
+        </label>
+        <label>Niche
+          <textarea id="niche" rows="2">Kể chuyện đời sống / gia đình / tuổi trung niên / tình người / bài học nhân sinh</textarea>
+        </label>
+        <label>CTA
+          <textarea id="cta" rows="3">Nếu câu chuyện này làm bạn nhớ đến ai, hãy để lại một lời bình luận hoặc chia sẻ trải nghiệm của bạn.</textarea>
+        </label>
+      </section>
 
-        <section class="side-panel">
-          <h2>Cấu hình</h2>
-          <label>Thời lượng<input id="duration" value="8-12 phút"></label>
-          <label>Người xem<textarea id="audience" rows="4">Nam nữ 40-65 tuổi, thích câu chuyện đời thường, gia đình, hôn nhân, con cái, nhân quả và bài học nhân sinh</textarea></label>
-          <label>Tone<textarea id="tone" rows="4">Ấm áp, chậm vừa, chân thật, giàu cảm xúc, có cao trào và kết để lại dư âm</textarea></label>
-          <label>Chế độ
-            <select id="rewriteMode">
-              <option>Kể chuyện 40+ - nhanh và cảm xúc</option>
-              <option>Viết lại 100% chỉ giữ ý tưởng lõi</option>
-              <option>Drama gia đình có plot twist</option>
-              <option>Nhân quả báo ứng</option>
-              <option>Dịch + localize</option>
-            </select>
-          </label>
-        </section>
+      <section class="neon-panel">
+        <h2>Gemini</h2>
+        <label>API key
+          <input id="apiKey" type="password" placeholder="Nhập key khi cần gọi AI thật">
+        </label>
+        <label>Model
+          <select id="modelName">
+            <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+            <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+          </select>
+        </label>
+        <label>Chế độ viết
+          <select id="rewriteMode">
+            <option>Kể chuyện 40+ - nhanh và cảm xúc</option>
+            <option>Viết lại 100% chỉ giữ ý tưởng lõi</option>
+            <option>Drama gia đình có plot twist</option>
+            <option>Dịch + localize</option>
+          </select>
+        </label>
+        <label class="neon-check"><input type="checkbox" checked> Stream output khi Gemini đang viết</label>
+        <label class="neon-check"><input type="checkbox" checked> Dùng cache để tiết kiệm API</label>
+        <label class="neon-check"><input type="checkbox"> Tự dịch kiểm tra sau khi viết</label>
+      </section>
+    </aside>
 
-        <section class="side-panel">
-          <h2>Gemini</h2>
-          <label>API key<input id="apiKey" type="password" placeholder="Không bắt buộc"></label>
-          <label>Model
-            <select id="modelName">
-              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-            </select>
-          </label>
-        </section>
-      </aside>
+    <main class="neon-main">
+      <nav class="neon-tabs" aria-label="Tab công cụ">
+        <button class="mini-tab active" data-mini-tab="editor">Biên tập</button>
+        <button class="mini-tab" data-mini-tab="analysis">Phân tích</button>
+        <button class="mini-tab" data-mini-tab="training">Huấn luyện</button>
+        <button class="mini-tab" data-mini-tab="writer">Gemini Writer</button>
+        <button class="mini-tab" data-mini-tab="chat">Chat AI</button>
+        <button class="mini-tab" data-mini-tab="batch">Batch</button>
+        <button class="mini-tab" data-mini-tab="url">URL Results</button>
+        <button class="mini-tab" data-mini-tab="translation">Bản dịch</button>
+        <button class="mini-tab" data-mini-tab="summary">Tóm tắt</button>
+        <button class="mini-tab" data-mini-tab="compare">Độ giống</button>
+        <button class="mini-tab" data-mini-tab="plan">Kế hoạch</button>
+        <button class="mini-tab" data-mini-tab="project">Dự án</button>
+      </nav>
 
-      <section class="tool-workspace">
-        <div class="tool-tabs" role="tablist" aria-label="Kịch bản AI tabs">
-          <button class="mini-tab active" data-mini-tab="editor">Biên tập</button>
-          <button class="mini-tab" data-mini-tab="report">Phân tích</button>
-          <button class="mini-tab" data-mini-tab="summary">Tóm tắt</button>
-          <button class="mini-tab" data-mini-tab="compare">Độ giống</button>
+      <section class="mini-panel active" id="mini-editor">
+        <div class="neon-workflows">
+          <section class="neon-workflow">
+            <h3>1. Nhập nguồn</h3>
+            <div class="neon-grid-buttons">
+              <label class="neon-btn cyan file">File text<input id="scriptFile" type="file" accept=".txt,.md,.srt,.vtt,.json,.csv"></label>
+              <button class="neon-btn cyan" type="button">Folder text hàng loạt</button>
+              <button class="neon-btn cyan" id="pasteSource" type="button">Dán clipboard</button>
+              <button class="neon-btn cyan" type="button">Chọn video</button>
+              <button class="neon-btn" type="button">Folder video</button>
+              <button class="neon-btn cyan" type="button">URL list</button>
+              <button class="neon-btn cyan" type="button">Xem kết quả URL</button>
+            </div>
+          </section>
+
+          <section class="neon-workflow">
+            <h3>2. AI viết lại</h3>
+            <div class="neon-grid-buttons">
+              <button class="neon-btn magenta" id="makeDraft" type="button">Đọc & viết ngay</button>
+              <button class="neon-btn lime" id="oneClick" type="button">Xử lý 1 chạm</button>
+              <button class="neon-btn cyan" type="button">Chạy folder text</button>
+              <button class="neon-btn cyan" type="button">Resume batch</button>
+              <button class="neon-btn cyan" type="button">Batch URL</button>
+              <button class="neon-btn lime" id="makePrompt" type="button">Nâng cấp draft</button>
+              <button class="neon-btn magenta" id="callGemini" type="button">Tạo series</button>
+            </div>
+          </section>
+
+          <section class="neon-workflow">
+            <h3>3. Kiểm tra & xuất</h3>
+            <div class="neon-grid-buttons">
+              <button class="neon-btn lime" id="summarizeScript" type="button">Tóm tắt + so sánh</button>
+              <button class="neon-btn cyan" id="compareScript" type="button">Độ giống</button>
+              <button class="neon-btn cyan" type="button">Dịch kiểm tra</button>
+              <button class="neon-btn lime" id="makeTitle2" type="button">Tạo title YouTube</button>
+              <button class="neon-btn cyan" id="downloadOutput" type="button">Xuất TXT/DOCX</button>
+              <button class="neon-btn cyan" type="button">Lưu dự án</button>
+            </div>
+          </section>
         </div>
 
-        <section class="mini-panel active" id="mini-editor">
-          <div class="workflow-card">
-            <h3>Nguồn Video / Text / URL</h3>
-            <div class="tool-actions">
-              <label class="button ghost">Nhập file<input id="scriptFile" type="file" accept=".txt,.md,.srt,.vtt,.json,.csv"></label>
-              <button class="button ghost" id="cleanSource" type="button">Làm sạch</button>
-              <button class="button primary" id="makeDraft" type="button">Tạo bản nháp</button>
-              <button class="button secondary" id="makePrompt" type="button">Tạo prompt</button>
-              <button class="button secondary" id="callGemini" type="button">Gọi Gemini</button>
-            </div>
-          </div>
-
-          <div class="split-panes">
-            <label class="editor-pane">
-              <header><h3>Kịch bản gốc</h3><span id="sourceMeta">0 từ</span></header>
-              <textarea id="sourceText" rows="18" placeholder="Dán transcript, kịch bản gốc, ý tưởng hoặc URL notes..."></textarea>
-            </label>
-            <label class="editor-pane">
-              <header><h3>Output</h3><span id="draftMeta">0 từ</span></header>
-              <textarea id="outputText" rows="18" placeholder="Kết quả sẽ hiện ở đây..."></textarea>
-            </label>
-          </div>
-
-          <div class="tool-actions bottom-actions">
-            <button class="button ghost" id="copyOutput" type="button">Copy</button>
-            <button class="button ghost" id="downloadOutput" type="button">Tải TXT</button>
-            <a class="button ghost" href="../../assets/downloads/kich-ban-ai-source.zip" download>Tải source Python</a>
-          </div>
-        </section>
-
-        <section class="mini-panel" id="mini-report">
-          <div class="tool-actions">
-            <button class="button primary" id="analyzeScript" type="button">Phân tích ngay</button>
-            <button class="button secondary" id="storyScore" type="button">Story score 40+</button>
-          </div>
-          <pre class="report-box" id="analysisOutput"></pre>
-        </section>
-
-        <section class="mini-panel" id="mini-summary">
-          <div class="tool-actions">
-            <button class="button primary" id="summarizeScript" type="button">Tóm tắt + so sánh</button>
-          </div>
-          <pre class="report-box" id="summaryOutput"></pre>
-        </section>
-
-        <section class="mini-panel" id="mini-compare">
-          <div class="tool-actions">
-            <button class="button primary" id="compareScript" type="button">So sánh ngay</button>
-          </div>
-          <div class="metric-grid">
-            <div class="metric"><span>Độ giống</span><strong id="similarityPercent">0%</strong></div>
-            <div class="metric"><span>Độ mới</span><strong id="originalityPercent">0%</strong></div>
-            <div class="metric"><span>Rủi ro</span><strong id="riskLevel">N/A</strong></div>
-          </div>
-          <pre class="report-box" id="compareOutput"></pre>
-        </section>
-
-        <p class="tool-status" id="toolStatus">Sẵn sàng.</p>
+        <div class="neon-editors">
+          <section>
+            <header><h3>Kịch bản gốc / transcript</h3><span id="sourceMeta">0</span></header>
+            <textarea id="sourceText" spellcheck="false"></textarea>
+          </section>
+          <section>
+            <header><h3>Bản nháp mới / Gemini output</h3><span id="draftMeta">0</span></header>
+            <textarea id="outputText" spellcheck="false"></textarea>
+          </section>
+        </div>
       </section>
-    </section>
-  </main>
 
-  <footer>
-    <p>© 2026 Hoangdaika13. Kịch bản AI là một dự án riêng trong portfolio.</p>
-  </footer>
+      <section class="mini-panel" id="mini-analysis">
+        <div class="neon-workflows single">
+          <section class="neon-workflow">
+            <h3>Phân tích kịch bản</h3>
+            <div class="neon-grid-buttons">
+              <button class="neon-btn lime" id="analyzeScript" type="button">Phân tích ngay</button>
+              <button class="neon-btn cyan" id="storyScore" type="button">Story score 40+</button>
+            </div>
+          </section>
+        </div>
+        <pre class="neon-report" id="analysisOutput"></pre>
+      </section>
+
+      <section class="mini-panel" id="mini-training">
+        <div class="neon-editors triple">
+          <section><header><h3>Mẫu huấn luyện</h3></header><textarea></textarea></section>
+          <section><header><h3>Training profile</h3></header><textarea></textarea></section>
+          <section><header><h3>Negative / Locked rules</h3></header><textarea>Không sao chép nguyên văn. Không đổi sai ngôn ngữ. Không viết outline.</textarea></section>
+        </div>
+      </section>
+
+      <section class="mini-panel" id="mini-writer"><pre class="neon-report">Gemini Writer dùng các nút ở tab Biên tập: Đọc & viết ngay, Nâng cấp draft, Tạo series.</pre></section>
+      <section class="mini-panel" id="mini-chat"><pre class="neon-report">Chat AI: phiên bản HTML sẽ dùng API key Gemini trong sidebar để hỏi về kịch bản, profile hoặc ý tưởng.</pre></section>
+      <section class="mini-panel" id="mini-batch"><pre class="neon-report">Batch: chọn nhiều file text để xử lý hàng loạt trong trình duyệt ở bản nâng cấp tiếp theo.</pre></section>
+      <section class="mini-panel" id="mini-url"><pre class="neon-report">URL Results: dùng để lưu URL và tạo prompt xử lý URL. Một số URL có thể bị giới hạn CORS trên GitHub Pages.</pre></section>
+      <section class="mini-panel" id="mini-translation"><pre class="neon-report">Bản dịch kiểm tra: dịch nguồn và bản viết lại để đối chiếu nội dung.</pre></section>
+      <section class="mini-panel" id="mini-summary"><pre class="neon-report" id="summaryOutput">Bấm Tóm tắt + so sánh ở tab Biên tập.</pre></section>
+      <section class="mini-panel" id="mini-compare">
+        <div class="neon-metrics">
+          <div><span>Độ giống</span><strong id="similarityPercent">0%</strong></div>
+          <div><span>Độ mới</span><strong id="originalityPercent">0%</strong></div>
+          <div><span>Rủi ro</span><strong id="riskLevel">N/A</strong></div>
+        </div>
+        <pre class="neon-report" id="compareOutput"></pre>
+      </section>
+      <section class="mini-panel" id="mini-plan"><pre class="neon-report">Kế hoạch: tạo series, lịch đăng, tiêu đề và hook cho từng tập.</pre></section>
+      <section class="mini-panel" id="mini-project"><pre class="neon-report">Dự án được lưu local trong trình duyệt. Source Python gốc vẫn có thể tải ở trang profile.</pre></section>
+    </main>
+  </div>
 
   <script src="../../script.js"></script>
 </body>

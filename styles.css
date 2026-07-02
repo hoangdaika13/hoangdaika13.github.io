@@ -924,3 +924,368 @@ footer p {
     width: 100%;
   }
 }
+
+/* Kich ban AI project: desktop-neon tool surface */
+.tool-neon-page {
+  --neon-bg: #05000a;
+  --neon-panel: #13051f;
+  --neon-field: #07020f;
+  --neon-text: #fff7ff;
+  --neon-muted: #d8b8e9;
+  --neon-pink: #ff3bd4;
+  --neon-purple: #8b2cff;
+  --neon-cyan: #56eaff;
+  --neon-lime: #b9ff63;
+  margin: 0;
+  min-height: 100vh;
+  color: var(--neon-text);
+  background: var(--neon-bg);
+  font-family: "Be Vietnam Pro", Arial, sans-serif;
+  overflow: hidden;
+}
+
+.tool-neon-page * {
+  box-sizing: border-box;
+}
+
+.neon-app {
+  display: grid;
+  grid-template-columns: 430px minmax(0, 1fr);
+  grid-template-rows: 40px calc(100vh - 40px);
+  min-height: 100vh;
+}
+
+.neon-titlebar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0 10px;
+  color: var(--neon-text);
+  background: #05000a;
+}
+
+.neon-title {
+  color: var(--neon-pink);
+  font-size: 1.45rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.neon-titlebar span {
+  color: #f6dfff;
+  font-size: 0.82rem;
+}
+
+.neon-sidebar {
+  min-height: 0;
+  padding: 10px 14px 22px;
+  overflow: auto;
+  border-right: 2px solid #bfb8b4;
+  background: #12051f;
+  scrollbar-color: #d9d2cb #08020d;
+}
+
+.neon-main {
+  min-width: 0;
+  min-height: 0;
+  padding: 0 8px 10px 12px;
+  overflow: auto;
+  background: #05000a;
+}
+
+.neon-panel {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: var(--neon-text);
+}
+
+.neon-panel h2 {
+  margin: 8px 0 4px;
+  color: var(--neon-text);
+  font-size: 1.08rem;
+}
+
+.neon-panel p {
+  margin: 0;
+  color: var(--neon-text);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.neon-panel label {
+  display: grid;
+  gap: 5px;
+  color: var(--neon-text);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.neon-panel input,
+.neon-panel select,
+.neon-panel textarea {
+  width: 100%;
+  min-height: 20px;
+  border: 2px solid #f4e8ff;
+  border-radius: 0;
+  padding: 3px 5px;
+  color: #ffffff;
+  background: #13051f;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  outline: none;
+}
+
+.neon-panel textarea {
+  resize: vertical;
+  line-height: 1.35;
+}
+
+.neon-check {
+  display: flex !important;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px !important;
+}
+
+.neon-check input {
+  width: auto;
+  min-height: auto;
+}
+
+.neon-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.neon-tabs {
+  display: flex;
+  align-items: end;
+  gap: 0;
+  min-width: max-content;
+  padding-top: 0;
+  border-bottom: 2px solid #cfc7d2;
+}
+
+.neon-tabs .mini-tab {
+  min-height: 36px;
+  border: 2px solid #cfc7d2;
+  border-bottom: 0;
+  border-radius: 0;
+  padding: 0 16px;
+  color: #ffffff;
+  background: #13051f;
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.neon-tabs .mini-tab.active {
+  color: #ffffff;
+  background: #1b082e;
+}
+
+.mini-panel {
+  display: none;
+}
+
+.mini-panel.active {
+  display: block;
+}
+
+.neon-workflows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(250px, 1fr));
+  gap: 10px;
+  padding: 34px 4px 16px;
+}
+
+.neon-workflows.single {
+  grid-template-columns: minmax(280px, 560px);
+}
+
+.neon-workflow {
+  min-height: 196px;
+  padding: 14px 14px 12px;
+  border: 2px solid var(--neon-purple);
+  background: #05000a;
+}
+
+.neon-workflow h3 {
+  margin: -32px 0 12px;
+  color: var(--neon-pink);
+  font-size: 0.95rem;
+}
+
+.neon-grid-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(118px, 1fr));
+  gap: 10px;
+}
+
+.neon-btn {
+  position: relative;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid var(--neon-purple);
+  border-radius: 0;
+  padding: 0 12px;
+  color: #ffffff;
+  background: #10051f;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.neon-btn.cyan {
+  border-color: var(--neon-cyan);
+  background: #082338;
+}
+
+.neon-btn.lime {
+  border-color: var(--neon-lime);
+  background: #213d13;
+}
+
+.neon-btn.magenta {
+  border-color: var(--neon-pink);
+  background: #720f60;
+}
+
+.neon-btn.wide {
+  width: 100%;
+}
+
+.neon-btn.file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.neon-editors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-height: calc(100vh - 314px);
+}
+
+.neon-editors.triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: 12px;
+}
+
+.neon-editors section {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  min-height: 0;
+}
+
+.neon-editors header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 38px;
+}
+
+.neon-editors h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.96rem;
+}
+
+.neon-editors span {
+  color: #ffffff;
+  font-size: 0.8rem;
+}
+
+.neon-editors textarea {
+  width: 100%;
+  min-height: 420px;
+  border: 0;
+  border-right: 18px solid #d7d4cf;
+  border-radius: 0;
+  padding: 10px;
+  color: #ffffff;
+  background: #07020f;
+  font: 500 0.88rem/1.55 Consolas, "Courier New", monospace;
+  resize: none;
+  outline: none;
+  scrollbar-color: #d9d2cb #07020f;
+}
+
+.neon-report {
+  min-height: calc(100vh - 180px);
+  margin: 12px 4px;
+  padding: 14px;
+  overflow: auto;
+  border: 2px solid var(--neon-purple);
+  color: #ffffff;
+  background: #07020f;
+  white-space: pre-wrap;
+  font: 500 0.9rem/1.6 Consolas, "Courier New", monospace;
+}
+
+.neon-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 10px;
+  padding: 18px 4px 0;
+}
+
+.neon-metrics div {
+  padding: 14px;
+  border: 2px solid var(--neon-purple);
+  color: #ffffff;
+  background: #10051f;
+}
+
+.neon-metrics span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--neon-muted);
+  font-weight: 900;
+}
+
+.neon-metrics strong {
+  font-size: 2.4rem;
+}
+
+@media (max-width: 1100px) {
+  .tool-neon-page {
+    overflow: auto;
+  }
+
+  .neon-app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .neon-sidebar {
+    max-height: none;
+    border-right: 0;
+    border-bottom: 2px solid #bfb8b4;
+  }
+
+  .neon-workflows,
+  .neon-editors,
+  .neon-editors.triple {
+    grid-template-columns: 1fr;
+  }
+
+  .neon-main {
+    overflow: visible;
+  }
+}
