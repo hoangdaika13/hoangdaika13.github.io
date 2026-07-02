@@ -12,7 +12,9 @@ Trong MongoDB Atlas:
 3. Chon `Drivers`.
 4. Copy connection string dang:
    `mongodb+srv://USER:PASSWORD@cluster...mongodb.net/?retryWrites=true&w=majority`
-5. Thay `USER` va `PASSWORD` bang database user/password that.
+5. Voi cluster hien tai cua ban, template dang la:
+   `mongodb+srv://dungnguyen29082000_db_user:<db_password>@cluster0.k6k6m13.mongodb.net/?appName=Cluster0`
+6. Thay `<db_password>` bang password that cua database user `dungnguyen29082000_db_user`.
 
 Khong dua connection string nay vao HTML, GitHub, hoac chat cong khai.
 
