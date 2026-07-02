@@ -430,6 +430,16 @@ h3 {
   color: #ffffff;
 }
 
+.voice-visual {
+  background: linear-gradient(135deg, #0b1020, #56eaff, #b9ff63);
+  color: #101820;
+}
+
+.pialo-visual {
+  background: linear-gradient(135deg, #1a0711, #ff3bd4, #ffef7a);
+  color: #ffffff;
+}
+
 .project-card div {
   padding: 24px;
 }

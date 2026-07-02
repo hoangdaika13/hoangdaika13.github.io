@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HH Voice Studio | Hoangdaika13</title>
+  <meta name="description" content="HH Voice Studio phiên bản HTML: chuẩn bị text, chọn voice trình duyệt, humanize, batch text và tải bản Windows.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05000a;
+      --panel: #13051f;
+      --field: #07020f;
+      --text: #fff7ff;
+      --muted: #d8b8e9;
+      --pink: #ff3bd4;
+      --purple: #8b2cff;
+      --cyan: #56eaff;
+      --lime: #b9ff63;
+      --line: rgba(255, 255, 255, .18);
+      font-family: "Be Vietnam Pro", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--text); background: radial-gradient(circle at 18% -8%, rgba(255,59,212,.22), transparent 34%), linear-gradient(180deg, #0b0312, var(--bg)); overflow: hidden; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    .app { display: grid; grid-template-columns: 390px minmax(0, 1fr); grid-template-rows: 42px calc(100vh - 42px); min-height: 100vh; }
+    header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; background: #05000a; border-bottom: 1px solid var(--line); }
+    header a { color: var(--pink); font-size: 1.35rem; font-weight: 900; }
+    header span { color: var(--muted); font-size: .85rem; }
+    aside { min-height: 0; padding: 12px 14px 24px; overflow: auto; background: #12051f; border-right: 2px solid #c8c1bd; scrollbar-color: #d9d2cb #08020d; }
+    main { min-width: 0; min-height: 0; padding: 0 10px 12px; overflow: auto; }
+    .panel { display: grid; gap: 10px; margin-bottom: 18px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h2 { margin-bottom: 4px; font-size: 1.05rem; }
+    h3 { margin-bottom: 10px; color: var(--pink); font-size: .95rem; }
+    p { color: var(--muted); font-size: .82rem; line-height: 1.5; }
+    label { display: grid; gap: 5px; color: var(--text); font-size: .82rem; font-weight: 800; }
+    input, select, textarea { width: 100%; border: 2px solid #f4e8ff; border-radius: 0; padding: 7px 8px; color: #fff; background: var(--field); outline: none; }
+    textarea { resize: vertical; line-height: 1.5; }
+    .check { display: flex; align-items: center; gap: 7px; }
+    .check input { width: auto; }
+    .tabs { display: flex; min-width: max-content; border-bottom: 2px solid #cfc7d2; }
+    .tab { min-height: 36px; border: 2px solid #cfc7d2; border-bottom: 0; border-radius: 0; padding: 0 16px; color: #fff; background: #13051f; font-weight: 800; cursor: pointer; }
+    .tab.active { background: #1b082e; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .workflows { display: grid; grid-template-columns: repeat(3, minmax(240px, 1fr)); gap: 10px; padding: 34px 4px 16px; }
+    .workflow { min-height: 178px; padding: 14px; border: 2px solid var(--purple); background: #05000a; }
+    .workflow h3 { margin-top: -32px; }
+    .grid-buttons { display: grid; grid-template-columns: repeat(2, minmax(112px, 1fr)); gap: 10px; }
+    .btn { position: relative; display: inline-flex; min-height: 34px; align-items: center; justify-content: center; overflow: hidden; border: 2px solid var(--purple); border-radius: 0; padding: 0 12px; color: #fff; background: #10051f; font-weight: 800; cursor: pointer; }
+    .btn.cyan { border-color: var(--cyan); background: #082338; }
+    .btn.lime { border-color: var(--lime); background: #213d13; }
+    .btn.magenta { border-color: var(--pink); background: #720f60; }
+    .btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .editors { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-height: calc(100vh - 300px); }
+    .editors section { display: grid; grid-template-rows: auto 1fr; min-height: 0; }
+    .editors header { display: flex; justify-content: space-between; min-height: 38px; padding: 0; border: 0; background: transparent; }
+    .editors h3 { margin: 0; color: #fff; }
+    .editors textarea { min-height: 430px; border: 0; border-right: 18px solid #d7d4cf; background: #07020f; font-family: Consolas, "Courier New", monospace; }
+    .report { min-height: calc(100vh - 164px); margin: 12px 4px; padding: 14px; overflow: auto; border: 2px solid var(--purple); color: #fff; background: #07020f; white-space: pre-wrap; font: 500 .9rem/1.6 Consolas, "Courier New", monospace; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; padding: 12px 4px 0; }
+    .metric { padding: 14px; border: 2px solid var(--purple); background: #10051f; }
+    .metric span { display: block; color: var(--muted); font-weight: 900; }
+    .metric strong { font-size: 2rem; }
+    .download-card { padding: 16px; border: 2px solid var(--lime); background: #0b1808; }
+    @media (max-width: 1100px) { body { overflow: auto; } .app { grid-template-columns: 1fr; grid-template-rows: auto auto auto; } aside { border-right: 0; border-bottom: 2px solid #c8c1bd; } .workflows, .editors, .metrics { grid-template-columns: 1fr; } main { overflow: visible; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <a href="../../">HH Voice Studio</a>
+      <span id="status">Sẵn sàng</span>
+    </header>
+
+    <aside>
+      <section class="panel">
+        <h2>Dự án voice</h2>
+        <label>Tên dự án <input id="projectName" value="Voice kể chuyện 40+"></label>
+        <label>Thư mục kết quả <input id="outputFolder" value="exports"></label>
+        <div class="download-card">
+          <h3>Tải bản Windows</h3>
+          <p>Bản tải nhẹ gồm HHVoiceStudio.exe, hướng dẫn, file chạy và cache voice. Gói full Applio/RVC khoảng 10GB nên cần host ngoài nếu muốn tải online.</p>
+          <a class="btn lime" href="../../assets/downloads/HHVoiceStudio_Neon_Lite.zip" download>Tải HHVoiceStudio Lite</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Voice</h2>
+        <label>Engine
+          <select id="engine">
+            <option>Browser SpeechSynthesis</option>
+            <option>Edge TTS online trong app Windows</option>
+            <option>VOICEVOX/AivisSpeech local</option>
+            <option>RVC/Applio voice conversion</option>
+          </select>
+        </label>
+        <label>Giọng trình duyệt <select id="voiceSelect"></select></label>
+        <label>Ngôn ngữ
+          <select id="language"><option>Tiếng Việt</option><option>English</option><option>日本語</option><option>中文</option><option>한국어</option></select>
+        </label>
+        <label>Tốc độ <input id="rate" type="range" min="0.5" max="1.7" step="0.05" value="0.92"></label>
+        <label>Cao độ <input id="pitch" type="range" min="0.5" max="1.6" step="0.05" value="1"></label>
+        <label>Âm lượng <input id="volume" type="range" min="0" max="1" step="0.05" value="1"></label>
+      </section>
+
+      <section class="panel">
+        <h2>Humanize</h2>
+        <label>Preset
+          <select id="humanPreset">
+            <option>Tự nhiên</option>
+            <option>Ấm như podcast</option>
+            <option>Kể chuyện chậm</option>
+            <option>Truyện đêm nhẹ</option>
+            <option>Cảm xúc sâu</option>
+            <option>Hồi hộp bí ẩn</option>
+            <option>Bi thương chậm</option>
+            <option>Anime thoại nhanh</option>
+          </select>
+        </label>
+        <label class="check"><input id="cleanSrt" type="checkbox" checked> Tự dọn timestamp SRT</label>
+        <label class="check"><input id="splitLong" type="checkbox" checked> Tự chia part dài</label>
+        <label>Số ký tự mỗi part <input id="partSize" type="number" value="1800"></label>
+      </section>
+    </aside>
+
+    <main>
+      <nav class="tabs">
+        <button class="tab active" data-tab="editor">Nội dung</button>
+        <button class="tab" data-tab="voice">Voice Lab</button>
+        <button class="tab" data-tab="batch">Batch Folder</button>
+        <button class="tab" data-tab="rvc">RVC / Applio</button>
+        <button class="tab" data-tab="export">Xuất file</button>
+        <button class="tab" data-tab="settings">Dự án</button>
+      </nav>
+
+      <section class="tab-panel active" id="editor">
+        <div class="workflows">
+          <section class="workflow"><h3>1. Nhập text</h3><div class="grid-buttons"><label class="btn cyan">File text<input id="textFile" type="file" accept=".txt,.md,.srt,.vtt"></label><button class="btn cyan" id="pasteText">Dán clipboard</button><button class="btn" id="cleanText">Dọn text/SRT</button><button class="btn lime" id="loadDemo">Mẫu thử</button></div></section>
+          <section class="workflow"><h3>2. Tạo voice</h3><div class="grid-buttons"><button class="btn magenta" id="speakPreview">Đọc thử</button><button class="btn" id="stopSpeak">Dừng</button><button class="btn cyan" id="makeParts">Chia part</button><button class="btn lime" id="makeSsml">Tạo SSML</button></div></section>
+          <section class="workflow"><h3>3. Xuất</h3><div class="grid-buttons"><button class="btn cyan" id="downloadTxt">Tải TXT sạch</button><button class="btn cyan" id="downloadParts">Tải parts JSON</button><button class="btn lime" id="saveProject">Lưu dự án</button><button class="btn" id="exportProject">Export JSON</button></div></section>
+        </div>
+        <div class="editors">
+          <section><header><h3>Nội dung cần đọc</h3><span id="inputMeta">0 ký tự</span></header><textarea id="inputText" placeholder="Dán nội dung cần đọc, SRT hoặc truyện dài..."></textarea></section>
+          <section><header><h3>Output / Parts / SSML</h3><span id="outputMeta">0 part</span></header><textarea id="outputText"></textarea></section>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="voice"><div class="metrics"><div class="metric"><span>Ký tự</span><strong id="chars">0</strong></div><div class="metric"><span>Từ</span><strong id="words">0</strong></div><div class="metric"><span>Ước lượng</span><strong id="mins">0m</strong></div><div class="metric"><span>Parts</span><strong id="partsCount">0</strong></div></div><pre class="report" id="voiceReport"></pre></section>
+      <section class="tab-panel" id="batch"><div class="workflows single"><section class="workflow"><h3>Batch text</h3><div class="grid-buttons"><label class="btn cyan">Chọn nhiều file<input id="batchFiles" type="file" accept=".txt,.md,.srt,.vtt" multiple></label><button class="btn lime" id="runBatch">Phân tích batch</button><button class="btn cyan" id="downloadBatch">Tải manifest</button></div></section></div><pre class="report" id="batchReport">Chưa có batch.</pre></section>
+      <section class="tab-panel" id="rvc"><pre class="report">RVC/Applio trên HTML chỉ là bảng chuẩn bị cấu hình. Chức năng đổi màu giọng thật cần app Windows vì trình duyệt không chạy được Applio/env/model .pth trực tiếp.\n\nChecklist:\n- Đặt model .pth/.index vào RVC_Models.\n- Mở HHVoiceStudio.exe.\n- Chọn giọng TTS trước, sau đó chọn RVC conversion.\n- Render thử 15-30 giây trước khi batch dài.</pre></section>
+      <section class="tab-panel" id="export"><pre class="report" id="exportReport">Xuất file audio thật cần app Windows hoặc engine server. Bản HTML hỗ trợ chuẩn bị text sạch, parts, SSML và manifest để đưa sang app.</pre></section>
+      <section class="tab-panel" id="settings"><pre class="report" id="projectReport">Chưa lưu dự án.</pre></section>
+    </main>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let currentParts = [];
+    let batchRows = [];
+    function setStatus(text) { $("status").textContent = text; }
+    function words(text) { return (text.match(/[\\p{L}\\p{N}]+/gu) || []); }
+    function clean(text) {
+      return text.replace(/\\d{1,2}:\\d{2}:\\d{2}[,.]\\d{3}\\s*-->\\s*\\d{1,2}:\\d{2}:\\d{2}[,.]\\d{3}/g, "")
+        .replace(/^\\d+$/gm, "").replace(/[ \\t]+/g, " ").replace(/\\n{3,}/g, "\\n\\n").trim();
+    }
+    function splitParts(text) {
+      const size = Number($("partSize").value) || 1800;
+      const chunks = [];
+      let rest = text.trim();
+      while (rest.length) {
+        let cut = Math.min(size, rest.length);
+        const dot = rest.lastIndexOf(".", cut);
+        if (dot > size * .55) cut = dot + 1;
+        chunks.push(rest.slice(0, cut).trim());
+        rest = rest.slice(cut).trim();
+      }
+      return chunks;
+    }
+    function updateMeta() {
+      const text = $("inputText").value;
+      $("inputMeta").textContent = `${text.length} ký tự`;
+      $("chars").textContent = text.length;
+      $("words").textContent = words(text).length;
+      $("mins").textContent = `${Math.max(0, words(text).length / 145).toFixed(1)}m`;
+      $("partsCount").textContent = currentParts.length;
+      $("outputMeta").textContent = `${currentParts.length} part`;
+    }
+    function download(name, text, type = "text/plain;charset=utf-8") {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], { type }));
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+    function loadVoices() {
+      const voices = speechSynthesis.getVoices();
+      $("voiceSelect").innerHTML = voices.map((v, i) => `<option value="${i}">${v.name} - ${v.lang}</option>`).join("");
+    }
+    document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x === tab));
+      document.querySelectorAll(".tab-panel").forEach((x) => x.classList.toggle("active", x.id === tab.dataset.tab));
+    }));
+    $("inputText").addEventListener("input", updateMeta);
+    $("textFile").addEventListener("change", async (e) => { const f = e.target.files[0]; if (!f) return; $("inputText").value = await f.text(); updateMeta(); setStatus(`Đã nạp ${f.name}`); });
+    $("pasteText").addEventListener("click", async () => { $("inputText").value = await navigator.clipboard.readText(); updateMeta(); setStatus("Đã dán clipboard."); });
+    $("cleanText").addEventListener("click", () => { $("inputText").value = clean($("inputText").value); updateMeta(); setStatus("Đã dọn text/SRT."); });
+    $("loadDemo").addEventListener("click", () => { $("inputText").value = "Đêm xuống rất chậm. Bên ngoài cửa sổ, tiếng mưa rơi đều như một bản nhạc cũ. Người kể chuyện hạ giọng, để từng câu chữ đi qua thật nhẹ."; updateMeta(); setStatus("Đã nạp mẫu thử."); });
+    $("makeParts").addEventListener("click", () => { currentParts = splitParts(clean($("inputText").value)); $("outputText").value = currentParts.map((p, i) => `--- PART ${i + 1} ---\\n${p}`).join("\\n\\n"); updateMeta(); setStatus("Đã chia part."); });
+    $("makeSsml").addEventListener("click", () => { const text = clean($("inputText").value); $("outputText").value = `<speak>\\n  <prosody rate="${$("rate").value}" pitch="${$("pitch").value}">\\n${text}\\n  </prosody>\\n</speak>`; setStatus("Đã tạo SSML/prompt voice."); });
+    $("speakPreview").addEventListener("click", () => { const u = new SpeechSynthesisUtterance($("inputText").value.slice(0, 1200)); const voices = speechSynthesis.getVoices(); u.voice = voices[Number($("voiceSelect").value)] || null; u.rate = Number($("rate").value); u.pitch = Number($("pitch").value); u.volume = Number($("volume").value); speechSynthesis.cancel(); speechSynthesis.speak(u); setStatus("Đang đọc thử bằng trình duyệt."); });
+    $("stopSpeak").addEventListener("click", () => { speechSynthesis.cancel(); setStatus("Đã dừng đọc."); });
+    $("downloadTxt").addEventListener("click", () => download("voice-clean-text.txt", clean($("inputText").value)));
+    $("downloadParts").addEventListener("click", () => download("voice-parts.json", JSON.stringify(currentParts, null, 2), "application/json;charset=utf-8"));
+    $("saveProject").addEventListener("click", () => { const data = { projectName: $("projectName").value, text: $("inputText").value, settings: { engine: $("engine").value, voice: $("voiceSelect").value, rate: $("rate").value, pitch: $("pitch").value, volume: $("volume").value }, parts: currentParts }; localStorage.setItem("hh-voice-studio-project", JSON.stringify(data)); $("projectReport").textContent = JSON.stringify(data, null, 2); setStatus("Đã lưu dự án local."); });
+    $("exportProject").addEventListener("click", () => download("hh-voice-studio-project.json", localStorage.getItem("hh-voice-studio-project") || "{}", "application/json;charset=utf-8"));
+    $("batchFiles").addEventListener("change", async (e) => { batchRows = []; for (const file of e.target.files) { const text = clean(await file.text()); batchRows.push({ name: file.name, chars: text.length, words: words(text).length, parts: splitParts(text).length }); } $("batchReport").textContent = JSON.stringify(batchRows, null, 2); setStatus(`Đã nạp ${batchRows.length} file batch.`); });
+    $("runBatch").addEventListener("click", () => { $("batchReport").textContent = JSON.stringify(batchRows, null, 2); setStatus("Đã phân tích batch."); });
+    $("downloadBatch").addEventListener("click", () => download("voice-batch-manifest.json", JSON.stringify(batchRows, null, 2), "application/json;charset=utf-8"));
+    speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+    updateMeta();
+  </script>
+</body>
+</html>

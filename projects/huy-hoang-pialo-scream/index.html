@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Huy Hoàng Pialo</title>
+    <meta
+      name="description"
+      content="Tool piano visualizer lấy cảm hứng từ phong cách Rousseau, chơi bằng bàn phím máy tính với nhiều phong cách biểu diễn và giọng hét."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="stage" aria-label="Sân khấu piano visualizer">
+        <div class="stage-top">
+          <div>
+            <p class="eyebrow">Rousseau-style piano visualizer</p>
+            <h1>Huy Hoàng Pialo</h1>
+          </div>
+          <div class="status-pill" id="audioStatus">Bấm phím bất kỳ để bật âm thanh</div>
+        </div>
+
+        <div class="visualizer" id="visualizer" aria-hidden="true">
+          <canvas id="noteCanvas"></canvas>
+          <div class="fall-lane-grid"></div>
+          <div class="glow-line"></div>
+        </div>
+
+        <div class="keyboard-wrap" aria-label="Bàn phím piano">
+          <div class="piano" id="piano"></div>
+        </div>
+      </section>
+
+      <aside class="control-panel" aria-label="Bảng điều khiển">
+        <div class="panel-section now-playing">
+          <span>Phong cách đang chọn</span>
+          <strong id="currentStyleName">Rousseau Classic</strong>
+          <p id="currentStyleDesc">Âm grand piano sáng, reverb rộng, nốt rơi xanh lam.</p>
+        </div>
+
+        <div class="panel-section">
+          <label for="styleSelect">Phong cách chơi đàn & giọng hét</label>
+          <select id="styleSelect"></select>
+        </div>
+
+        <div class="panel-section song-panel">
+          <label for="songSelect">100 bài hướng dẫn</label>
+          <select id="songSelect"></select>
+          <div class="song-actions">
+            <button class="action-button" id="startGuideButton" type="button">Chạy bài</button>
+            <button class="action-button" id="stopGuideButton" type="button">Dừng</button>
+          </div>
+          <div class="guide-readout">
+            <strong id="currentSongName">Chọn bài để tập</strong>
+            <span id="guideStatus">Nốt rơi xuống vạch sáng, bạn bấm đúng phím hiển thị trên phím đàn.</span>
+          </div>
+        </div>
+
+        <div class="panel-grid">
+          <label>
+            Âm lượng
+            <input id="volumeControl" type="range" min="0" max="1" step="0.01" value="0.72" />
+          </label>
+          <label>
+            Octave
+            <input id="octaveControl" type="range" min="-2" max="2" step="1" value="0" />
+            <span id="octaveValue">0</span>
+          </label>
+          <label>
+            Sustain
+            <button class="toggle is-on" id="sustainToggle" type="button" aria-pressed="true">Bật</button>
+          </label>
+          <label>
+            Visualizer
+            <button class="toggle is-on" id="visualToggle" type="button" aria-pressed="true">Bật</button>
+          </label>
+          <label>
+            Tốc độ bài
+            <input id="tempoControl" type="range" min="0.55" max="1.55" step="0.05" value="1" />
+            <span id="tempoValue">1.00x</span>
+          </label>
+          <label>
+            Kiểu nốt rơi
+            <select id="fallStyleSelect"></select>
+          </label>
+        </div>
+
+        <div class="panel-section">
+          <div class="record-row">
+            <button class="action-button" id="recordButton" type="button">Ghi</button>
+            <button class="action-button" id="playButton" type="button">Phát lại</button>
+            <button class="action-button" id="clearButton" type="button">Xóa</button>
+          </div>
+          <p class="hint" id="recordStatus">Chưa ghi đoạn nào.</p>
+        </div>
+
+        <div class="panel-section compact">
+          <h2>Map phím</h2>
+          <div class="key-map" id="keyMap"></div>
+        </div>
+      </aside>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
