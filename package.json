@@ -1,0 +1,14 @@
+{
+  "name": "hoangdaika13-github-io",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "mongodb": "^6.20.0"
+  },
+  "devDependencies": {
+    "vercel": "^44.7.3"
+  }
+}
