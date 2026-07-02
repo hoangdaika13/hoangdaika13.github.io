@@ -72,6 +72,13 @@ function initReveal() {
 
 function initTheme() {
   if (!themeToggle) return;
+  if (document.body.classList.contains("home-neon")) {
+    themeToggle.textContent = "Neon";
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("neon-boost");
+    });
+    return;
+  }
   const saved = localStorage.getItem("hoangdaika13-theme");
   if (saved === "dark") document.body.classList.add("dark");
   themeToggle.textContent = document.body.classList.contains("dark") ? "Tối" : "Sáng";
@@ -106,6 +113,9 @@ function initHomeNeonInteractions() {
   });
 
   document.querySelectorAll(".interactive").forEach((item) => {
+    item.addEventListener("pointerdown", () => item.classList.add("is-pressed"));
+    item.addEventListener("pointerup", () => item.classList.remove("is-pressed"));
+    item.addEventListener("pointerleave", () => item.classList.remove("is-pressed"));
     item.addEventListener("click", (event) => {
       const rect = item.getBoundingClientRect();
       const dot = document.createElement("span");

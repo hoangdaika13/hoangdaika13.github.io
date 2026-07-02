@@ -1728,7 +1728,7 @@ footer p {
   background-size: auto, auto, 55px 55px, 55px 55px, auto;
 }
 
-.home-neon .home-glow {
+.home-neon .neon-grid-bg {
   position: fixed;
   inset: 0;
   z-index: -2;
@@ -1737,6 +1737,21 @@ footer p {
     radial-gradient(circle at var(--mx, 18%) var(--my, 18%), rgba(255, 59, 212, .20), transparent 220px),
     radial-gradient(circle at 12% 92%, rgba(255, 239, 122, .14), transparent 230px),
     radial-gradient(circle at 88% 76%, rgba(86, 234, 255, .16), transparent 260px);
+}
+
+.home-neon .cursor-glow {
+  position: fixed;
+  left: var(--mx, 50%);
+  top: var(--my, 28%);
+  z-index: 6;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 59, 212, .24), rgba(86, 234, 255, .10) 42%, transparent 72%);
+  mix-blend-mode: screen;
+  filter: blur(6px);
+  transform: translate(-50%, -50%);
 }
 
 .home-neon .ambient-canvas { z-index: -1; opacity: .9; }
@@ -1777,7 +1792,13 @@ footer p {
   box-shadow: 0 0 22px rgba(255, 59, 212, .45), 4px 4px 0 #05000a;
 }
 
+.home-neon.neon-boost {
+  filter: saturate(1.18) contrast(1.04);
+}
+
 .home-neon .neon-hero {
+  grid-template-columns: minmax(0, 0.98fr) minmax(330px, 430px);
+  gap: clamp(28px, 4vw, 56px);
   min-height: calc(100vh - 78px);
   padding-top: clamp(62px, 8vw, 112px);
 }
@@ -1788,6 +1809,9 @@ footer p {
   text-shadow: 0 0 16px rgba(86, 234, 255, .55);
 }
 .home-neon h1 {
+  max-width: 680px;
+  font-size: clamp(4.1rem, 7.6vw, 6.45rem);
+  line-height: .9;
   color: #fff;
   text-shadow: 0 0 26px rgba(255, 59, 212, .75), 8px 8px 0 rgba(86, 234, 255, .16);
 }
@@ -1796,6 +1820,36 @@ footer p {
 .home-neon .hero-text,
 .home-neon .section-note,
 .home-neon .split-section p:last-child { color: #ead0f7; }
+
+.home-neon .hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.home-neon .hero-stats div {
+  padding: 14px;
+  border: 2px solid rgba(255,255,255,.68);
+  border-radius: 8px;
+  background: rgba(255, 59, 212, .13);
+  box-shadow: 0 0 20px rgba(255, 59, 212, .20), 5px 5px 0 #05000a;
+}
+
+.home-neon .hero-stats strong {
+  display: block;
+  color: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.home-neon .hero-stats span {
+  display: block;
+  margin-top: 5px;
+  color: #ead0f7;
+  font-size: .82rem;
+  font-weight: 800;
+}
 
 .home-neon .button,
 .home-neon .project-actions a,
@@ -1834,6 +1888,8 @@ footer p {
 .home-neon .ghost { color: #fff; background: rgba(255,255,255,.08); }
 
 .home-neon .neon-profile-card {
+  width: min(100%, 410px);
+  min-height: 410px;
   border-color: rgba(255,255,255,.76);
   color: #fff;
   background:
@@ -1927,6 +1983,20 @@ footer p {
 .home-neon .neon-footer { background: #05000a; border-top: 1px solid rgba(255,59,212,.28); }
 
 @media (max-width: 760px) {
+  .home-neon .neon-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .home-neon h1 {
+    font-size: clamp(3.2rem, 18vw, 5.2rem);
+  }
+
   .home-neon .contact-grid,
+  .home-neon .hero-stats,
   .home-neon .profile-stats { grid-template-columns: 1fr; }
+}
+
+.home-neon .is-pressed {
+  transform: translateY(2px) scale(.985) !important;
+  filter: brightness(1.15) saturate(1.25);
 }
