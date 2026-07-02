@@ -8,6 +8,30 @@ const themeToggle = $(".theme-toggle");
 const colors = ["#ff4f9a", "#ffd84d", "#27d98b", "#29c7ff", "#3f63ff", "#ff7a59"];
 let particles = [];
 let clickAudioContext;
+let musicEngine;
+
+const ambientTracks = [
+  { name: "Pink Morning", mood: "piano pad", root: 261.63, scale: [0, 4, 7, 11], wave: "sine" },
+  { name: "Soft Rain", mood: "dream bell", root: 293.66, scale: [0, 3, 7, 10], wave: "triangle" },
+  { name: "Neon Lake", mood: "warm synth", root: 329.63, scale: [0, 5, 7, 12], wave: "sine" },
+  { name: "Moon Walk", mood: "slow keys", root: 220.00, scale: [0, 3, 8, 10], wave: "triangle" },
+  { name: "Cloud Room", mood: "air pad", root: 246.94, scale: [0, 4, 9, 11], wave: "sine" },
+  { name: "HH Dream", mood: "sweet bell", root: 349.23, scale: [0, 4, 7, 12], wave: "triangle" },
+  { name: "Tiny Stars", mood: "sparkle", root: 392.00, scale: [0, 2, 7, 9], wave: "sine" },
+  { name: "Late Night", mood: "lofi pad", root: 196.00, scale: [0, 5, 8, 10], wave: "triangle" },
+  { name: "Blue Garden", mood: "calm keys", root: 277.18, scale: [0, 4, 7, 9], wave: "sine" },
+  { name: "Quiet City", mood: "soft pulse", root: 233.08, scale: [0, 3, 7, 12], wave: "triangle" },
+  { name: "Rose Glass", mood: "neon pad", root: 311.13, scale: [0, 5, 7, 11], wave: "sine" },
+  { name: "Ocean Code", mood: "wide synth", root: 174.61, scale: [0, 4, 7, 14], wave: "sine" },
+  { name: "Warm Memory", mood: "gentle", root: 261.63, scale: [0, 3, 7, 10], wave: "triangle" },
+  { name: "Cyber Sleep", mood: "dark calm", root: 207.65, scale: [0, 5, 8, 12], wave: "sine" },
+  { name: "Golden Mist", mood: "bright pad", root: 369.99, scale: [0, 4, 7, 11], wave: "triangle" },
+  { name: "Slow Bloom", mood: "soft rise", root: 185.00, scale: [0, 4, 9, 12], wave: "sine" },
+  { name: "Pixel Love", mood: "tiny lead", root: 440.00, scale: [0, 3, 7, 10], wave: "triangle" },
+  { name: "Violet Road", mood: "cinematic", root: 164.81, scale: [0, 5, 7, 10], wave: "sine" },
+  { name: "Happy Focus", mood: "clean bell", root: 329.63, scale: [0, 4, 7, 14], wave: "triangle" },
+  { name: "Night Halo", mood: "deep pad", root: 146.83, scale: [0, 3, 7, 12], wave: "sine" }
+];
 
 function resizeCanvas() {
   if (!canvas || !context) return;
@@ -120,6 +144,222 @@ function playClickSound(frequency = 560) {
   } catch (error) {
     // Some browsers block WebAudio until the next user gesture; the UI still works.
   }
+}
+
+function initMusicPlayer() {
+  if (!document.body.classList.contains("home-neon")) return;
+  const grid = byId("trackGrid");
+  const toggle = byId("musicToggle");
+  const next = byId("musicNext");
+  const volume = byId("musicVolume");
+  const mood = byId("musicMood");
+  const status = byId("musicStatus");
+  if (!grid || !toggle || !next || !volume || !mood || !status) return;
+
+  let activeTrack = Number(localStorage.getItem("hoangdaika13-track") || 0);
+  let isPlaying = false;
+  let timer = 0;
+  let step = 0;
+
+  const ensureEngine = () => {
+    if (musicEngine) return musicEngine;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) {
+      status.textContent = "Mở bằng Chrome để phát nhạc";
+      return null;
+    }
+    const ctx = new AudioCtx();
+    const master = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 1450;
+    master.gain.value = Number(volume.value) / 1000;
+    filter.connect(master);
+    master.connect(ctx.destination);
+    musicEngine = { ctx, master, filter };
+    return musicEngine;
+  };
+
+  const updateTrackButtons = () => {
+    grid.querySelectorAll(".track-button").forEach((button) => {
+      button.classList.toggle("is-active", Number(button.dataset.track) === activeTrack);
+    });
+    status.textContent = isPlaying ? `Đang phát: ${ambientTracks[activeTrack].name}` : "Đang tắt";
+  };
+
+  const playNote = () => {
+    if (!isPlaying) return;
+    const engine = ensureEngine();
+    if (!engine) return;
+    const track = ambientTracks[activeTrack];
+    const now = engine.ctx.currentTime;
+    const moodValue = Number(mood.value) / 100;
+    engine.master.gain.setTargetAtTime(Number(volume.value) / 900, now, 0.08);
+    engine.filter.frequency.setTargetAtTime(700 + moodValue * 2400, now, 0.12);
+
+    const degree = track.scale[step % track.scale.length];
+    const bassDegree = track.scale[(step + 2) % track.scale.length] - 12;
+    const notes = [degree, degree + 12, bassDegree];
+    notes.forEach((semitone, index) => {
+      const osc = engine.ctx.createOscillator();
+      const gain = engine.ctx.createGain();
+      osc.type = index === 2 ? "sine" : track.wave;
+      osc.frequency.value = track.root * Math.pow(2, semitone / 12);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(index === 2 ? 0.035 : 0.022, now + 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
+      osc.connect(gain);
+      gain.connect(engine.filter);
+      osc.start(now);
+      osc.stop(now + 3.05);
+    });
+    step += 1;
+    timer = window.setTimeout(playNote, 1250 + (1 - moodValue) * 520);
+  };
+
+  const stopMusic = () => {
+    isPlaying = false;
+    window.clearTimeout(timer);
+    toggle.textContent = "Phát nhạc";
+    updateTrackButtons();
+  };
+
+  const startMusic = async () => {
+    const engine = ensureEngine();
+    if (!engine) return;
+    if (engine.ctx.state === "suspended") await engine.ctx.resume();
+    isPlaying = true;
+    toggle.textContent = "Tạm dừng";
+    updateTrackButtons();
+    playNote();
+  };
+
+  ambientTracks.forEach((track, index) => {
+    const button = document.createElement("button");
+    button.className = "track-button interactive";
+    button.type = "button";
+    button.dataset.track = String(index);
+    button.innerHTML = `<strong>${String(index + 1).padStart(2, "0")}. ${track.name}</strong><span>${track.mood}</span>`;
+    button.addEventListener("click", async () => {
+      activeTrack = index;
+      step = 0;
+      localStorage.setItem("hoangdaika13-track", String(activeTrack));
+      playClickSound(520 + index * 12);
+      updateTrackButtons();
+      if (isPlaying) {
+        window.clearTimeout(timer);
+        await startMusic();
+      }
+    });
+    grid.appendChild(button);
+  });
+
+  toggle.addEventListener("click", async () => {
+    playClickSound(760);
+    if (isPlaying) stopMusic();
+    else await startMusic();
+  });
+
+  next.addEventListener("click", async () => {
+    activeTrack = (activeTrack + 1) % ambientTracks.length;
+    step = 0;
+    localStorage.setItem("hoangdaika13-track", String(activeTrack));
+    playClickSound(680);
+    updateTrackButtons();
+    if (isPlaying) {
+      window.clearTimeout(timer);
+      await startMusic();
+    }
+  });
+
+  volume.addEventListener("input", () => {
+    localStorage.setItem("hoangdaika13-volume", volume.value);
+    if (musicEngine) musicEngine.master.gain.setTargetAtTime(Number(volume.value) / 900, musicEngine.ctx.currentTime, 0.05);
+  });
+
+  mood.addEventListener("input", () => {
+    localStorage.setItem("hoangdaika13-mood", mood.value);
+  });
+
+  volume.value = localStorage.getItem("hoangdaika13-volume") || volume.value;
+  mood.value = localStorage.getItem("hoangdaika13-mood") || mood.value;
+  updateTrackButtons();
+}
+
+function initVoteStats() {
+  if (!document.body.classList.contains("home-neon")) return;
+  const statsKey = "hoangdaika13-vote-stats";
+  const defaultStats = { likes: 0, votes: [0, 0, 0, 0, 0] };
+  const readStats = () => {
+    try {
+      return { ...defaultStats, ...JSON.parse(localStorage.getItem(statsKey) || "{}") };
+    } catch {
+      return { ...defaultStats };
+    }
+  };
+  const writeStats = (stats) => localStorage.setItem(statsKey, JSON.stringify(stats));
+  const renderStats = () => {
+    const stats = readStats();
+    const totalVotes = stats.votes.reduce((sum, count) => sum + count, 0);
+    const totalScore = stats.votes.reduce((sum, count, index) => sum + count * (index + 1), 0);
+    const average = totalVotes ? (totalScore / totalVotes).toFixed(1) : "0.0";
+    setText("likeCount", String(stats.likes));
+    setText("voteCount", String(totalVotes));
+    setText("averageRating", average);
+    stats.votes.forEach((count, index) => {
+      const rating = index + 1;
+      setText(`ratingCount${rating}`, String(count));
+      const bar = document.querySelector(`[data-rating-bar="${rating}"]`);
+      if (bar) bar.style.setProperty("--bar", `${totalVotes ? Math.round((count / totalVotes) * 100) : 0}%`);
+    });
+  };
+
+  const bootstrapStats = () => {
+    const stats = readStats();
+    if (localStorage.getItem("hoangdaika13-liked") === "yes" && localStorage.getItem("hoangdaika13-like-counted") !== "yes") {
+      stats.likes += 1;
+      localStorage.setItem("hoangdaika13-like-counted", "yes");
+    }
+    const savedRating = Number(localStorage.getItem("hoangdaika13-rating"));
+    if (savedRating && localStorage.getItem("hoangdaika13-rating-counted") !== String(savedRating)) {
+      const previous = Number(localStorage.getItem("hoangdaika13-rating-counted") || 0);
+      if (previous) stats.votes[previous - 1] = Math.max(0, stats.votes[previous - 1] - 1);
+      stats.votes[savedRating - 1] += 1;
+      localStorage.setItem("hoangdaika13-rating-counted", String(savedRating));
+    }
+    writeStats(stats);
+  };
+
+  byId("likePageButton")?.addEventListener("click", () => {
+    const likedNow = byId("likePageButton")?.classList.contains("is-liked");
+    const counted = localStorage.getItem("hoangdaika13-like-counted") === "yes";
+    const stats = readStats();
+    if (likedNow && !counted) {
+      stats.likes += 1;
+      localStorage.setItem("hoangdaika13-like-counted", "yes");
+    } else if (!likedNow && counted) {
+      stats.likes = Math.max(0, stats.likes - 1);
+      localStorage.setItem("hoangdaika13-like-counted", "no");
+    }
+    writeStats(stats);
+    renderStats();
+  });
+
+  document.querySelectorAll("[data-rating]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const rating = Number(button.dataset.rating);
+      const previous = Number(localStorage.getItem("hoangdaika13-rating-counted") || 0);
+      const stats = readStats();
+      if (previous) stats.votes[previous - 1] = Math.max(0, stats.votes[previous - 1] - 1);
+      stats.votes[rating - 1] += 1;
+      localStorage.setItem("hoangdaika13-rating-counted", String(rating));
+      writeStats(stats);
+      renderStats();
+    });
+  });
+
+  bootstrapStats();
+  renderStats();
 }
 
 function initHomeNeonInteractions() {
@@ -671,6 +911,8 @@ updateScrollMeter();
 initReveal();
 initTheme();
 initHomeNeonInteractions();
+initVoteStats();
+initMusicPlayer();
 initMiniTabs();
 initTool();
 

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body class="home-neon">
   <div class="scroll-meter" aria-hidden="true"></div>
@@ -59,11 +59,24 @@
           <button class="interactive" type="button" data-rating="5">★</button>
           <span id="ratingLabel">Chưa đánh giá</span>
         </div>
+        <div class="vote-board" aria-label="Thống kê vote">
+          <span><strong id="likeCount">0</strong>Lượt thích</span>
+          <span><strong id="voteCount">0</strong>Lượt vote</span>
+          <span><strong id="averageRating">0.0</strong>Điểm TB</span>
+        </div>
+        <div class="rating-bars" aria-label="Chi tiết đánh giá">
+          <div><span>5★</span><i data-rating-bar="5"></i><b id="ratingCount5">0</b></div>
+          <div><span>4★</span><i data-rating-bar="4"></i><b id="ratingCount4">0</b></div>
+          <div><span>3★</span><i data-rating-bar="3"></i><b id="ratingCount3">0</b></div>
+          <div><span>2★</span><i data-rating-bar="2"></i><b id="ratingCount2">0</b></div>
+          <div><span>1★</span><i data-rating-bar="1"></i><b id="ratingCount1">0</b></div>
+        </div>
         <div class="visitor-fields">
           <input type="text" name="Ho ten nguoi ghe tham" placeholder="Họ tên">
           <input type="email" name="email" placeholder="Email">
           <input type="tel" name="phone" placeholder="Số điện thoại">
         </div>
+        <p class="optional-note">Không cần điền thông tin vẫn có thể bấm thích và vote sao.</p>
         <div class="form-actions">
           <button class="button primary interactive" type="submit">Gửi đánh giá</button>
           <a class="button ghost interactive mail-fallback" id="visitorMailto" href="mailto:nhhoang130803@gmail.com">Gửi bằng Email</a>
@@ -264,10 +277,37 @@
     </section>
   </main>
 
+  <section class="music-section section" id="music" aria-label="Nhạc nền">
+    <div class="music-head">
+      <div>
+        <p class="section-kicker">Nhạc nền</p>
+        <h2>20 bản nhẹ nhàng có thể tùy chỉnh</h2>
+        <p class="section-note">Chọn một bản, bấm phát và âm thanh sẽ lặp liên tục trong khi bạn xem trang.</p>
+      </div>
+      <div class="music-status" id="musicStatus">Đang tắt</div>
+    </div>
+
+    <div class="music-console interactive-card">
+      <div class="music-controls">
+        <button class="button primary interactive" type="button" id="musicToggle">Phát nhạc</button>
+        <button class="button ghost interactive" type="button" id="musicNext">Bài tiếp</button>
+        <label>
+          <span>Âm lượng</span>
+          <input type="range" id="musicVolume" min="0" max="100" value="26">
+        </label>
+        <label>
+          <span>Không khí</span>
+          <input type="range" id="musicMood" min="0" max="100" value="48">
+        </label>
+      </div>
+      <div class="track-grid" id="trackGrid" aria-label="Danh sách nhạc nền"></div>
+    </div>
+  </section>
+
   <footer class="neon-footer">
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>

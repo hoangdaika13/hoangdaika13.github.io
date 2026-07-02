@@ -1894,6 +1894,68 @@ footer p {
   font-weight: 900;
 }
 
+.home-neon .vote-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.home-neon .vote-board span {
+  display: grid;
+  gap: 3px;
+  min-height: 66px;
+  align-content: center;
+  border: 2px solid rgba(255,255,255,.66);
+  border-radius: 8px;
+  color: #ead0f7;
+  background: rgba(255,59,212,.12);
+  box-shadow: 4px 4px 0 #05000a;
+  font-size: .78rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.home-neon .vote-board strong {
+  color: #fff;
+  font-size: 1.35rem;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(255,59,212,.66);
+}
+
+.home-neon .rating-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.home-neon .rating-bars div {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 24px;
+  gap: 9px;
+  align-items: center;
+  color: #f8e7ff;
+  font-size: .82rem;
+  font-weight: 900;
+}
+
+.home-neon .rating-bars i {
+  position: relative;
+  height: 9px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.45);
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+}
+
+.home-neon .rating-bars i::before {
+  position: absolute;
+  inset: 0;
+  width: var(--bar, 0%);
+  content: "";
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffef7a, #ff3bd4, #56eaff);
+  box-shadow: 0 0 16px rgba(255,59,212,.42);
+}
+
 .home-neon .visitor-fields {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2221,6 +2283,114 @@ footer p {
 }
 .home-neon .neon-footer { background: #05000a; border-top: 1px solid rgba(255,59,212,.28); }
 
+.home-neon .music-section {
+  position: relative;
+  z-index: 2;
+  width: min(1180px, calc(100% - 32px));
+  margin: clamp(26px, 5vw, 60px) auto;
+  padding: clamp(18px, 4vw, 30px);
+  border: 2px solid rgba(255,255,255,.72);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at var(--mx, 18%) var(--my, 40%), rgba(86,234,255,.16), transparent 260px),
+    linear-gradient(135deg, rgba(255,59,212,.13), rgba(86,234,255,.09)),
+    rgba(8, 1, 16, .82);
+  box-shadow: 0 0 48px rgba(255,59,212,.22), 10px 10px 0 #05000a;
+}
+
+.home-neon .music-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.home-neon .music-head h2 {
+  max-width: 760px;
+  font-size: clamp(2rem, 4vw, 4rem);
+}
+
+.home-neon .music-status {
+  min-width: 128px;
+  padding: 12px 16px;
+  border: 2px solid rgba(255,255,255,.72);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255,59,212,.16);
+  box-shadow: 0 0 24px rgba(255,59,212,.24), 5px 5px 0 #05000a;
+  font-weight: 900;
+  text-align: center;
+}
+
+.home-neon .music-console {
+  display: grid;
+  gap: 18px;
+}
+
+.home-neon .music-controls {
+  display: grid;
+  grid-template-columns: auto auto minmax(170px, 1fr) minmax(170px, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.home-neon .music-controls label {
+  display: grid;
+  gap: 7px;
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 900;
+}
+
+.home-neon .music-controls input[type="range"] {
+  accent-color: #ff3bd4;
+}
+
+.home-neon .track-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.home-neon .track-button {
+  min-height: 78px;
+  border: 2px solid rgba(255,255,255,.66);
+  border-radius: 8px;
+  padding: 11px;
+  color: #fff;
+  background: rgba(5, 0, 10, .52);
+  box-shadow: 5px 5px 0 #05000a;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.home-neon .track-button:hover,
+.home-neon .track-button.is-active {
+  transform: translateY(-4px);
+  border-color: #56eaff;
+  background: linear-gradient(135deg, rgba(255,59,212,.28), rgba(86,234,255,.18));
+  box-shadow: 0 0 26px rgba(255,59,212,.28), 5px 5px 0 #05000a;
+}
+
+.home-neon .track-button strong,
+.home-neon .track-button span {
+  display: block;
+}
+
+.home-neon .track-button strong {
+  margin-bottom: 4px;
+}
+
+.home-neon .track-button span {
+  color: #ead0f7;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
 @media (max-width: 760px) {
   .home-neon .neon-hero {
     grid-template-columns: 1fr;
@@ -2237,8 +2407,14 @@ footer p {
   .home-neon .contact-grid,
   .home-neon .hero-stats,
   .home-neon .profile-stats,
+  .home-neon .vote-board,
   .home-neon .visitor-fields,
   .home-neon .form-row { grid-template-columns: 1fr; }
+
+  .home-neon .music-controls,
+  .home-neon .track-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Final form polish: keep visitor/contact forms compact and readable. */
@@ -2320,7 +2496,18 @@ footer p {
 }
 
 .home-neon .visitor-form .form-note,
-.home-neon .lead-form .form-note {
+.home-neon .lead-form .form-note,
+.home-neon .optional-note {
   max-width: 720px;
   color: #f4d9ff;
+}
+
+.home-neon .optional-note {
+  margin: -2px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(86,234,255,.42);
+  border-radius: 8px;
+  background: rgba(86,234,255,.08);
+  font-size: .86rem;
+  font-weight: 900;
 }
