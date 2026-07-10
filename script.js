@@ -492,11 +492,16 @@ function initRealtimeAuth() {
     note.textContent = REALTIME_URL
       ? "Realtime backend Ä‘Ã£ cáº¥u hÃ¬nh. Tracking chá»‰ cháº¡y khi ngÆ°á»i dÃ¹ng Ä‘á»“ng Ã½ hoáº·c Ä‘Äƒng nháº­p."
       : "ChÆ°a cáº¥u hÃ¬nh realtime backend. Sau khi deploy server, dÃ¡n URL vÃ o config.js.";
-    if (REALTIME_URL) {
+    if (REALTIME_URL && !REALTIME_URL.includes("vercel.app")) {
       googleLogin.href = `${REALTIME_URL}/api/auth/google`;
       facebookLogin.href = `${REALTIME_URL}/api/auth/facebook`;
       googleLogin.setAttribute("aria-disabled", "false");
       facebookLogin.setAttribute("aria-disabled", "false");
+    } else {
+      googleLogin.href = "#account";
+      facebookLogin.href = "#account";
+      googleLogin.setAttribute("aria-disabled", "true");
+      facebookLogin.setAttribute("aria-disabled", "true");
     }
   };
 
