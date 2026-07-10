@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=17">
   <script src="config.js?v=2"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
@@ -495,7 +495,7 @@
       <div class="section-heading">
         <p class="section-kicker">Chat ứng dụng</p>
         <h2>HH Community Chat</h2>
-        <p class="section-note">Chat nhóm nhỏ khoảng 10 người, có biệt danh, avatar, phòng chat, reply, reaction, typing, tìm kiếm và tự cập nhật bằng backend MongoDB.</p>
+        <p class="section-note">Chat nhóm nhỏ khoảng 10 người, có biệt danh, avatar, tạo phòng riêng, reply, reaction, pin, tìm kiếm, voice nhập chữ và tự cập nhật bằng backend MongoDB.</p>
       </div>
 
       <div class="chat-app interactive-card">
@@ -528,14 +528,24 @@
             <button class="button secondary interactive" id="saveChatProfile" type="button">Lưu hồ sơ chat</button>
           </div>
 
-          <div class="chat-rooms" aria-label="Phòng chat">
-            <button class="chat-room active interactive" type="button" data-chat-room="general"># chung <span data-room-badge="general"></span></button>
-            <button class="chat-room interactive" type="button" data-chat-room="projects"># dự án <span data-room-badge="projects"></span></button>
-            <button class="chat-room interactive" type="button" data-chat-room="support"># hỗ trợ <span data-room-badge="support"></span></button>
-            <button class="chat-room interactive" type="button" data-chat-room="voice"># voice <span data-room-badge="voice"></span></button>
-            <button class="chat-room interactive" type="button" data-chat-room="announcements"># thông báo <span data-room-badge="announcements"></span></button>
-            <button class="chat-room interactive" type="button" data-chat-room="media"># media <span data-room-badge="media"></span></button>
-            <button class="chat-room interactive" type="button" data-chat-room="ai-lab"># ai-lab <span data-room-badge="ai-lab"></span></button>
+          <div class="chat-room-panel">
+            <div class="chat-room-heading">
+              <h3>Phòng trò chuyện</h3>
+              <button class="room-add-button interactive" id="toggleRoomCreator" type="button">+</button>
+            </div>
+            <form class="chat-room-create" id="chatRoomCreateForm" hidden>
+              <input id="newChatRoomName" type="text" maxlength="28" placeholder="Tên phòng mới">
+              <button class="button secondary interactive" type="submit">Tạo phòng</button>
+            </form>
+            <div class="chat-rooms" id="chatRoomList" aria-label="Phòng chat">
+              <button class="chat-room active interactive" type="button" data-chat-room="general"># chung <span data-room-badge="general"></span></button>
+              <button class="chat-room interactive" type="button" data-chat-room="projects"># dự án <span data-room-badge="projects"></span></button>
+              <button class="chat-room interactive" type="button" data-chat-room="support"># hỗ trợ <span data-room-badge="support"></span></button>
+              <button class="chat-room interactive" type="button" data-chat-room="voice"># voice <span data-room-badge="voice"></span></button>
+              <button class="chat-room interactive" type="button" data-chat-room="announcements"># thông báo <span data-room-badge="announcements"></span></button>
+              <button class="chat-room interactive" type="button" data-chat-room="media"># media <span data-room-badge="media"></span></button>
+              <button class="chat-room interactive" type="button" data-chat-room="ai-lab"># ai-lab <span data-room-badge="ai-lab"></span></button>
+            </div>
           </div>
 
           <div class="voice-lounge">
@@ -555,9 +565,11 @@
             <div>
               <p class="section-kicker" id="chatRoomLabel"># chung</p>
               <h3>Trò chuyện trực tiếp</h3>
+              <p class="chat-room-topic" id="chatRoomTopic">Kênh chung cho thông báo nhanh, hỏi đáp và cập nhật dự án.</p>
             </div>
             <div class="chat-header-tools">
               <input id="chatSearch" type="search" placeholder="Tìm tin nhắn...">
+              <button class="chat-tool-pill interactive" id="copyRoomLinkButton" type="button">Copy phòng</button>
               <span id="chatOnlineCount">0 online</span>
               <span id="chatStatus">Đang kết nối...</span>
             </div>
@@ -679,6 +691,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=16"></script>
+  <script src="script.js?v=17"></script>
 </body>
 </html>

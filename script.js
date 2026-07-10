@@ -1752,18 +1752,31 @@ function initCommunityChatV2() {
 
   const profileKey = "hh-chat-profile";
   const anonymousIdKey = "hh-anonymous-id";
-  const roomNames = {
-    general: "chung",
-    projects: "dự án",
-    support: "hỗ trợ",
-    voice: "voice",
-    announcements: "thông báo",
-    media: "media",
-    "ai-lab": "ai-lab"
-  };
+  const customRoomsKey = "hh-chat-custom-rooms";
+  const defaultRooms = [
+    { id: "general", name: "chung", topic: "Kênh chung cho thông báo nhanh, hỏi đáp và cập nhật dự án." },
+    { id: "projects", name: "dự án", topic: "Trao đổi tiến độ, demo, lỗi và ý tưởng nâng cấp dự án." },
+    { id: "support", name: "hỗ trợ", topic: "Hỏi đáp nhanh khi cần hỗ trợ sử dụng web, tool hoặc tài khoản." },
+    { id: "voice", name: "voice", topic: "Phòng hẹn voice, ghi chú cuộc nói chuyện và trạng thái tham gia." },
+    { id: "announcements", name: "thông báo", topic: "Tin quan trọng, cập nhật phiên bản và lịch bảo trì." },
+    { id: "media", name: "media", topic: "Chia sẻ ảnh, GIF, video, nhạc và tài nguyên sáng tạo." },
+    { id: "ai-lab", name: "ai-lab", topic: "Thử prompt, workflow AI, ý tưởng tự động hóa và bot hỗ trợ." }
+  ];
+  let customRooms = [];
+  try {
+    customRooms = JSON.parse(localStorage.getItem(customRoomsKey) || "[]");
+  } catch {
+    customRooms = [];
+  }
+  if (!Array.isArray(customRooms)) customRooms = [];
+  let rooms = [...defaultRooms, ...customRooms];
+  let roomNames = Object.fromEntries(rooms.map((item) => [item.id, item.name]));
   const reactionEmojis = ["\u2764\ufe0f", "\ud83d\ude02", "\ud83d\udd25", "\ud83d\udc4f", "\u2728"];
 
-  const roomButtons = root.querySelectorAll("[data-chat-room]");
+  const roomList = byId("chatRoomList");
+  const roomCreateForm = byId("chatRoomCreateForm");
+  const newRoomInput = byId("newChatRoomName");
+  const toggleRoomCreator = byId("toggleRoomCreator");
   const nicknameInput = byId("chatNickname");
   const avatarUrlInput = byId("chatAvatarUrl");
   const presenceInput = byId("chatPresenceStatus");
@@ -1771,6 +1784,7 @@ function initCommunityChatV2() {
   const saveProfile = byId("saveChatProfile");
   const userList = byId("chatUserList");
   const roomLabel = byId("chatRoomLabel");
+  const roomTopic = byId("chatRoomTopic");
   const status = byId("chatStatus");
   const messagesBox = byId("chatMessages");
   const pinsBox = byId("chatPins");
@@ -1787,6 +1801,7 @@ function initCommunityChatV2() {
   const exportButton = byId("exportChatButton");
   const clearButton = byId("clearChatViewButton");
   const notifyButton = byId("notifyChatButton");
+  const copyRoomLinkButton = byId("copyRoomLinkButton");
   const voiceButton = byId("chatVoiceButton");
   const joinVoiceButton = byId("joinVoiceLounge");
   const voiceStatus = byId("voiceLoungeStatus");
@@ -1804,6 +1819,17 @@ function initCommunityChatV2() {
   let profile = JSON.parse(localStorage.getItem(profileKey) || "{}");
 
   const escapeHtml = (value) => String(value || "").replace(/[<>&"']/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;", "'": "&#39;" }[char]));
+  const slugifyRoom = (value) => {
+    const normalized = String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/đ/g, "d")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 32);
+    return normalized || `room-${Date.now().toString(36)}`;
+  };
   const initials = (name) => (name || "HH").split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const fallbackName = () => {
     try {
@@ -1852,6 +1878,51 @@ function initCommunityChatV2() {
       avatarPreview.style.backgroundColor = profile.color;
     }
     localStorage.setItem(profileKey, JSON.stringify(profile));
+  };
+
+  const syncRoomMaps = () => {
+    customRooms = customRooms
+      .filter((item) => item?.id && item?.name)
+      .filter((item, index, arr) => arr.findIndex((roomItem) => roomItem.id === item.id) === index);
+    rooms = [...defaultRooms, ...customRooms];
+    roomNames = Object.fromEntries(rooms.map((item) => [item.id, item.name]));
+  };
+
+  const currentRoomMeta = () => rooms.find((item) => item.id === room) || { id: room, name: room, topic: "Phòng trò chuyện tùy chỉnh." };
+
+  const saveCustomRooms = () => {
+    localStorage.setItem(customRoomsKey, JSON.stringify(customRooms));
+    syncRoomMaps();
+  };
+
+  const renderRooms = () => {
+    if (!roomList) return;
+    syncRoomMaps();
+    roomList.innerHTML = rooms.map((item) => {
+      const removable = customRooms.some((customRoom) => customRoom.id === item.id);
+      return `<button class="chat-room ${item.id === room ? "active" : ""} interactive" type="button" data-chat-room="${escapeHtml(item.id)}">
+        <b class="room-hash">#</b>
+        <strong>${escapeHtml(item.name)}</strong>
+        <span data-room-badge="${escapeHtml(item.id)}"></span>
+        ${removable ? `<span class="room-remove" role="button" tabindex="0" data-remove-room="${escapeHtml(item.id)}" aria-label="Xóa phòng ${escapeHtml(item.name)}">x</span>` : ""}
+      </button>`;
+    }).join("");
+  };
+
+  const selectRoom = (nextRoom) => {
+    room = nextRoom || "general";
+    if (!rooms.some((item) => item.id === room)) room = "general";
+    const meta = currentRoomMeta();
+    if (roomLabel) roomLabel.textContent = `# ${meta.name}`;
+    if (roomTopic) roomTopic.textContent = meta.topic || "Phòng trò chuyện tùy chỉnh.";
+    lastMessageSignature = "";
+    replyTarget = null;
+    if (replyPreview) replyPreview.hidden = true;
+    lastSeenByRoom[room] = Date.now();
+    localStorage.setItem("hh-chat-last-seen", JSON.stringify(lastSeenByRoom));
+    renderRooms();
+    loadMessages();
+    postPresence();
   };
 
   const chatRequest = async (path, options = {}) => {
@@ -1917,6 +1988,7 @@ function initCommunityChatV2() {
     const users = new Map();
     items.filter((item) => item.type === "chat-message" || item.type === "chat-presence").forEach((item) => {
       const data = item.data || {};
+      if (data.room && data.room !== room) return;
       if (!data.nickname) return;
       users.set(data.senderId || data.nickname, {
         nickname: data.nickname,
@@ -2139,6 +2211,10 @@ function initCommunityChatV2() {
   };
 
   applyProfile();
+  const hashRoom = decodeURIComponent((location.hash || "").replace(/^#chat-room-/, ""));
+  if (hashRoom && rooms.some((item) => item.id === hashRoom)) room = hashRoom;
+  renderRooms();
+  selectRoom(room);
 
   window.addEventListener("hh:auth-change", (event) => {
     const authUser = event.detail?.user;
@@ -2171,20 +2247,54 @@ function initCommunityChatV2() {
     await loadMessages();
   });
 
-  roomButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      roomButtons.forEach((item) => item.classList.remove("active"));
-      button.classList.add("active");
-      room = button.dataset.chatRoom || "general";
-      if (roomLabel) roomLabel.textContent = `# ${roomNames[room] || room}`;
-      lastMessageSignature = "";
-      replyTarget = null;
-      if (replyPreview) replyPreview.hidden = true;
-      lastSeenByRoom[room] = Date.now();
-      localStorage.setItem("hh-chat-last-seen", JSON.stringify(lastSeenByRoom));
-      loadMessages();
-      postPresence();
+  toggleRoomCreator?.addEventListener("click", () => {
+    if (!roomCreateForm) return;
+    roomCreateForm.hidden = !roomCreateForm.hidden;
+    if (!roomCreateForm.hidden) newRoomInput?.focus();
+  });
+
+  roomCreateForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = (newRoomInput?.value || "").trim();
+    if (!name) {
+      if (status) status.textContent = "Nhập tên phòng trước đã";
+      return;
+    }
+    const idBase = slugifyRoom(name);
+    let id = idBase;
+    let suffix = 2;
+    while (rooms.some((item) => item.id === id)) {
+      id = `${idBase}-${suffix}`;
+      suffix += 1;
+    }
+    customRooms.push({
+      id,
+      name: name.slice(0, 28),
+      topic: `Phòng riêng do ${profile.nickname || "thành viên"} tạo.`
     });
+    saveCustomRooms();
+    if (newRoomInput) newRoomInput.value = "";
+    if (roomCreateForm) roomCreateForm.hidden = true;
+    if (status) status.textContent = `Đã tạo phòng # ${name}`;
+    selectRoom(id);
+  });
+
+  roomList?.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-room]");
+    if (removeButton) {
+      event.stopPropagation();
+      const removeId = removeButton.dataset.removeRoom;
+      customRooms = customRooms.filter((item) => item.id !== removeId);
+      saveCustomRooms();
+      if (room === removeId) room = "general";
+      renderRooms();
+      selectRoom(room);
+      if (status) status.textContent = "Đã xóa phòng tùy chỉnh";
+      return;
+    }
+    const button = event.target.closest("[data-chat-room]");
+    if (!button) return;
+    selectRoom(button.dataset.chatRoom || "general");
   });
 
   cancelReply?.addEventListener("click", () => {
@@ -2206,6 +2316,11 @@ function initCommunityChatV2() {
   });
   sendButton?.addEventListener("click", sendMessage);
   refreshButton?.addEventListener("click", loadMessages);
+  copyRoomLinkButton?.addEventListener("click", async () => {
+    const url = `${location.origin}${location.pathname}#chat-room-${encodeURIComponent(room)}`;
+    await navigator.clipboard?.writeText(url);
+    if (status) status.textContent = "Đã copy link phòng";
+  });
   exportButton?.addEventListener("click", () => {
     downloadText(`hh-chat-${room}.json`, JSON.stringify(currentMessages, null, 2));
     if (status) status.textContent = "Đã xuất JSON phòng chat";
@@ -2267,8 +2382,6 @@ function initCommunityChatV2() {
     return rect.top < window.innerHeight + 520 && rect.bottom > -520;
   };
 
-  loadMessages();
-  postPresence();
   presenceTimer = setInterval(postPresence, 60000);
   pollingTimer = setInterval(() => {
     if (shouldPollMessages()) loadMessages();
