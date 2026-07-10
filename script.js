@@ -723,6 +723,53 @@ function initSuperPlatform() {
 
   const writeCommandCenterState = (state) => localStorage.setItem(commandCenterKey, JSON.stringify(state));
 
+  const moduleProfiles = {
+    "ai-center": { verb: "Tạo prompt", subject: "AI workflow", sample: "Viết prompt tối ưu cho video YouTube 40+ về một câu chuyện gia đình cảm động.", metrics: ["Prompt", "History", "Model"], items: ["Prompt rewrite cảm xúc", "Prompt title YouTube", "Prompt tóm tắt nhanh"] },
+    "download-center": { verb: "Tạo gói tải", subject: "download pack", sample: "HH Voice Studio bản Lite, version 3.1, changelog mới nhất.", metrics: ["Files", "Version", "Rating"], items: ["Windows Lite", "Portable ZIP", "Full Google Drive"] },
+    "media-center": { verb: "Tạo playlist", subject: "media set", sample: "Playlist nhạc nền nhẹ nhàng cho portfolio neon.", metrics: ["Videos", "Images", "Playlist"], items: ["Short intro", "Gallery neon", "Music ambient"] },
+    "project-center": { verb: "Lập roadmap", subject: "project plan", sample: "Nâng cấp website cá nhân, chat app, AI tools và voice studio.", metrics: ["Progress", "Bugs", "Demo"], items: ["Trang chủ neon", "HH Chat", "AI Script Tool"] },
+    "knowledge-center": { verb: "Tạo bài wiki", subject: "knowledge note", sample: "Ghi chú cách deploy GitHub Pages + Vercel backend + MongoDB.", metrics: ["Articles", "Tags", "Bookmarks"], items: ["GitHub Pages", "MongoDB", "Vercel API"] },
+    "learning-center": { verb: "Tạo bài học", subject: "lesson", sample: "Lộ trình học HTML/CSS/JS để tự nâng cấp web cá nhân.", metrics: ["Courses", "Quiz", "Progress"], items: ["HTML layout", "CSS neon", "JS localStorage"] },
+    community: { verb: "Tạo chủ đề", subject: "community post", sample: "Chủ đề góp ý cho HH Community Chat.", metrics: ["Posts", "Reactions", "Users"], items: ["Forum", "Comments", "Leaderboard"] },
+    "user-dashboard": { verb: "Lưu hồ sơ", subject: "user profile", sample: "Avatar, nickname, link dự án yêu thích và hoạt động gần đây.", metrics: ["Saved", "Favorites", "Activity"], items: ["Profile", "Settings", "Notifications"] },
+    "admin-panel": { verb: "Tạo audit", subject: "admin task", sample: "Kiểm tra users, logs, database monitor và backup hôm nay.", metrics: ["Users", "Logs", "Backup"], items: ["User Manager", "Content Manager", "Database Monitor"] },
+    "ai-automation": { verb: "Tự động hóa", subject: "AI automation", sample: "Tạo title, mô tả, tag, tóm tắt và thumbnail prompt.", metrics: ["Title", "Tags", "Summary"], items: ["Auto Title", "Auto Tags", "Auto Thumbnail"] },
+    "creator-studio": { verb: "Tạo nội dung", subject: "creator asset", sample: "Video idea + SEO score + hashtags cho kênh kể chuyện.", metrics: ["SEO", "Scripts", "Hashtags"], items: ["Thumbnail", "Video Manager", "Script"] },
+    analytics: { verb: "Tạo báo cáo", subject: "analytics report", sample: "Traffic hôm nay, thiết bị truy cập, lượt tải và AI usage.", metrics: ["Traffic", "Downloads", "Charts"], items: ["Devices", "Countries", "AI Usage"] },
+    store: { verb: "Tạo sản phẩm", subject: "store item", sample: "Digital product: HH Voice Studio Full, coupon giảm giá, membership.", metrics: ["Products", "Orders", "Coupons"], items: ["Digital Product", "Membership", "Checkout"] },
+    "cloud-storage": { verb: "Tạo file record", subject: "cloud file", sample: "File ZIP dự án, link share, folder và preview.", metrics: ["Files", "Folders", "Shares"], items: ["Upload", "Preview", "Recent Files"] },
+    "notification-center": { verb: "Soạn thông báo", subject: "notification", sample: "Thông báo cập nhật website qua email, push, Discord, Telegram.", metrics: ["Email", "Push", "In-app"], items: ["Discord", "Telegram", "Email"] },
+    "api-center": { verb: "Tạo API doc", subject: "API endpoint", sample: "Endpoint /api/modules/:id/items với ví dụ request/response.", metrics: ["Docs", "Keys", "Logs"], items: ["Playground", "Examples", "API Key"] },
+    "developer-hub": { verb: "Tạo release", subject: "dev release", sample: "Release v15: nâng cấp toàn bộ module dashboard.", metrics: ["Git", "Releases", "CI/CD"], items: ["Changelog", "Packages", "Deploy"] },
+    "security-center": { verb: "Kiểm tra bảo mật", subject: "security audit", sample: "Login history, sessions, devices, permissions và audit logs.", metrics: ["Sessions", "Devices", "2FA"], items: ["Permissions", "Audit Logs", "Login History"] },
+    "smart-search": { verb: "Tìm toàn site", subject: "search query", sample: "Tìm dự án voice, AI script, downloads, settings và chat.", metrics: ["Projects", "Files", "Users"], items: ["AI", "Downloads", "Settings"] },
+    "app-launcher": { verb: "Tạo shortcut", subject: "app shortcut", sample: "Shortcut mở AI Script, HH Voice Studio, Chat, GitHub, Drive.", metrics: ["Favorites", "Recent", "Categories"], items: ["AI Script", "Voice Studio", "GitHub"] },
+    "widgets-engine": { verb: "Tạo widget", subject: "widget layout", sample: "Widget clock, weather, notes, todo, visitor counter.", metrics: ["Widgets", "Pinned", "Layout"], items: ["Drag Drop", "Resize", "Save Layout"] },
+    marketplace: { verb: "Tạo listing", subject: "market item", sample: "Plugin neon theme, AI agent, script extension.", metrics: ["Plugins", "Themes", "Agents"], items: ["Extensions", "Scripts", "AI Agents"] },
+    "mobile-pwa": { verb: "Tạo PWA checklist", subject: "PWA task", sample: "Responsive, installable, offline cache, sync data.", metrics: ["Mobile", "Offline", "Install"], items: ["Manifest", "Service Worker", "Sync"] },
+    "modern-ui-kit": { verb: "Tạo UI kit", subject: "UI component", sample: "Glass neon button, command palette, dock nav, mega menu.", metrics: ["Components", "Motion", "Theme"], items: ["Command Palette", "Dock", "FAB"] },
+    i18n: { verb: "Dịch giao diện", subject: "locale pack", sample: "Dịch trang sang tiếng Việt/English và lưu theo user.", metrics: ["Locales", "RTL", "Saved"], items: ["VI", "EN", "RTL"] },
+    "accessibility-center": { verb: "Tạo preset", subject: "accessibility preset", sample: "Tăng chữ, tương phản cao, keyboard navigation.", metrics: ["Font", "Contrast", "Keyboard"], items: ["Screen-reader", "High Contrast", "Focus"] },
+    gamification: { verb: "Tạo huy hiệu", subject: "game reward", sample: "XP, streak, badge cho người dùng hoạt động nhiều.", metrics: ["XP", "Badges", "Streak"], items: ["Leaderboard", "Daily Quest", "Reward"] },
+    "onboarding-tour": { verb: "Tạo tour", subject: "tour step", sample: "Hướng dẫn người dùng mới qua profile, projects, chat, downloads.", metrics: ["Steps", "Progress", "Skipped"], items: ["Highlight", "Next", "Finish"] },
+    "feedback-survey": { verb: "Tạo khảo sát", subject: "survey", sample: "NPS, góp ý nhanh, popup feedback cho khách ghé thăm.", metrics: ["NPS", "Responses", "Score"], items: ["Survey", "Popup", "Feedback"] },
+    "helpdesk-ticketing": { verb: "Tạo ticket", subject: "support ticket", sample: "Ticket hỗ trợ tải tool hoặc báo lỗi website.", metrics: ["Open", "Pending", "Closed"], items: ["Assign", "History", "Status"] },
+    "status-page": { verb: "Tạo sự cố", subject: "status update", sample: "Uptime backend, lịch bảo trì, sự cố đang xử lý.", metrics: ["Uptime", "Incidents", "Maintenance"], items: ["Operational", "Degraded", "Resolved"] },
+    "feature-flag-dashboard": { verb: "Tạo flag", subject: "feature flag", sample: "Bật/tắt chat V2, neon boost, module studio, music player.", metrics: ["Flags", "Enabled", "A/B"], items: ["Runtime", "Experiment", "Rollout"] },
+    "cookie-consent-manager": { verb: "Tạo consent", subject: "privacy rule", sample: "Cho phép vote, analytics, localStorage, notification.", metrics: ["Consent", "Cookies", "Privacy"], items: ["Necessary", "Analytics", "Marketing"] },
+    "data-export-import": { verb: "Tạo backup", subject: "backup pack", sample: "Export/import localStorage, notes, todos, favorites, chat profile.", metrics: ["Export", "Import", "Backup"], items: ["JSON", "Restore", "Local Data"] },
+    "referral-affiliate": { verb: "Tạo chiến dịch", subject: "referral campaign", sample: "Mã giới thiệu HH2026, lượt click, hoa hồng dự kiến.", metrics: ["Clicks", "Leads", "Commission"], items: ["Referral Code", "Campaign", "Payout"] },
+    "wishlist-compare": { verb: "Tạo so sánh", subject: "compare list", sample: "So sánh bản Lite/Full, wishlist download và store.", metrics: ["Wishlist", "Compare", "Saved"], items: ["Lite", "Full", "Download"] }
+  };
+
+  const profileFor = (module) => moduleProfiles[module.id] || {
+    verb: "Tạo mục",
+    subject: module.title,
+    sample: `Tạo dữ liệu mẫu cho ${module.title}.`,
+    metrics: (module.features || []).slice(0, 3),
+    items: (module.features || []).slice(0, 3)
+  };
+
   const commandCenterMarkup = () => {
     const state = readCommandCenterState();
     return `
@@ -778,6 +825,50 @@ function initSuperPlatform() {
             <header><strong>Recent Activity</strong><button class="interactive" type="button" data-command-clear-activity>Dọn</button></header>
             <div class="command-activity" data-command-activity>
               ${(state.activity || []).slice(0, 6).map((item) => `<p>${escapeHtml(item)}</p>`).join("") || "<p>Chưa có hoạt động.</p>"}
+            </div>
+          </article>
+        </div>
+      </section>
+    `;
+  };
+
+  const moduleStudioMarkup = (module) => {
+    const profile = profileFor(module);
+    const stored = JSON.parse(localStorage.getItem(`${stateKey}:${module.id}:studio`) || "null") || {};
+    const created = stored.created || 0;
+    const savedItems = stored.items || profile.items || [];
+    return `
+      <section class="module-studio-app" data-module-studio="${module.id}">
+        <div class="studio-hero">
+          <div>
+            <p class="section-kicker">${String(module.order || "").padStart(2, "0")} Studio</p>
+            <h4>${escapeHtml(profile.subject)}</h4>
+            <span>${escapeHtml(profile.sample)}</span>
+          </div>
+          <div class="studio-score">
+            <strong>${String(created).padStart(2, "0")}</strong>
+            <span>mục đã tạo</span>
+          </div>
+        </div>
+        <div class="studio-grid">
+          <article class="studio-panel studio-metrics">
+            ${(profile.metrics || []).slice(0, 3).map((metric, index) => `
+              <span><strong>${String((stored.metricBase || 7) + index * 3).padStart(2, "0")}</strong>${escapeHtml(metric)}</span>
+            `).join("")}
+          </article>
+          <article class="studio-panel">
+            <header><strong>Quick Builder</strong><button class="interactive" type="button" data-studio-action="generate" data-studio-module="${module.id}">${escapeHtml(profile.verb)}</button></header>
+            <textarea data-studio-input="${module.id}" rows="5" placeholder="${escapeHtml(profile.sample)}">${escapeHtml(stored.input || profile.sample)}</textarea>
+            <div class="studio-actions">
+              <button class="interactive" type="button" data-studio-action="save" data-studio-module="${module.id}">Lưu</button>
+              <button class="interactive" type="button" data-studio-action="export" data-studio-module="${module.id}">Export</button>
+              <button class="interactive" type="button" data-studio-action="google" data-studio-module="${module.id}">Google</button>
+            </div>
+          </article>
+          <article class="studio-panel">
+            <header><strong>Preview / Items</strong><button class="interactive" type="button" data-studio-action="clear" data-studio-module="${module.id}">Dọn</button></header>
+            <div class="studio-preview" data-studio-preview="${module.id}">
+              ${(savedItems || []).slice(0, 5).map((item, index) => `<p><b>${String(index + 1).padStart(2, "0")}</b>${escapeHtml(item.text || item)}</p>`).join("")}
             </div>
           </article>
         </div>
@@ -914,7 +1005,7 @@ function initSuperPlatform() {
             </div>
           </div>
           <div class="module-inline-app" data-inline-app="${module.id}">
-            ${module.id === "command-center" ? commandCenterMarkup(module) : ""}
+            ${module.id === "command-center" ? commandCenterMarkup(module) : moduleStudioMarkup(module)}
             <label>
               Dữ liệu dùng nhanh
               <textarea data-inline-input="${module.id}" rows="4" placeholder="Nhập yêu cầu cho ${escapeHtml(module.title)}..."></textarea>
@@ -1135,6 +1226,57 @@ function initSuperPlatform() {
     if (todo) todo.done = toggle.checked;
     writeCommandCenterState(state);
     logCommandActivity(toggle.checked ? "Hoàn thành todo" : "Mở lại todo");
+  });
+
+  grid.addEventListener("click", (event) => {
+    const studioButton = event.target.closest("[data-studio-action]");
+    if (!studioButton) return;
+    const moduleId = studioButton.dataset.studioModule;
+    const module = modules.find((item) => item.id === moduleId);
+    if (!module) return;
+    const profile = profileFor(module);
+    const key = `${stateKey}:${module.id}:studio`;
+    const input = grid.querySelector(`[data-studio-input="${CSS.escape(module.id)}"]`);
+    const preview = grid.querySelector(`[data-studio-preview="${CSS.escape(module.id)}"]`);
+    const current = JSON.parse(localStorage.getItem(key) || "null") || {};
+    const action = studioButton.dataset.studioAction;
+    const inputText = (input?.value || profile.sample).trim();
+    const generated = {
+      text: `${profile.verb}: ${inputText}`,
+      at: new Date().toISOString(),
+      module: module.title
+    };
+
+    if (action === "generate") {
+      const items = [generated, ...(current.items || profile.items || []).map((item) => typeof item === "string" ? { text: item } : item)].slice(0, 12);
+      const next = { ...current, input: inputText, items, created: Number(current.created || 0) + 1, metricBase: Math.min(99, Number(current.metricBase || 7) + 1) };
+      localStorage.setItem(key, JSON.stringify(next));
+      if (preview) preview.innerHTML = items.slice(0, 5).map((item, index) => `<p><b>${String(index + 1).padStart(2, "0")}</b>${escapeHtml(item.text || item)}</p>`).join("");
+      const inlineOutput = grid.querySelector(`[data-inline-output="${CSS.escape(module.id)}"]`);
+      if (inlineOutput) inlineOutput.textContent = moduleDemoText(module, inputText);
+      return;
+    }
+
+    if (action === "save") {
+      localStorage.setItem(key, JSON.stringify({ ...current, input: inputText, savedAt: new Date().toISOString() }));
+      if (preview) preview.insertAdjacentHTML("afterbegin", `<p><b>OK</b>Đã lưu lúc ${new Date().toLocaleTimeString("vi-VN")}</p>`);
+      return;
+    }
+
+    if (action === "export") {
+      downloadText(`${module.id}-studio.json`, JSON.stringify({ module, studio: current, input: inputText }, null, 2), "application/json;charset=utf-8");
+      return;
+    }
+
+    if (action === "google") {
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(`${module.title} ${inputText}`)}`, "_blank", "noopener");
+      return;
+    }
+
+    if (action === "clear") {
+      localStorage.removeItem(key);
+      if (preview) preview.innerHTML = (profile.items || []).map((item, index) => `<p><b>${String(index + 1).padStart(2, "0")}</b>${escapeHtml(item)}</p>`).join("");
+    }
   });
 
   detailMeta?.addEventListener("click", (event) => {

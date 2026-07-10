@@ -2959,6 +2959,181 @@ footer p {
   padding-bottom: 6px;
 }
 
+.home-neon .module-studio-app {
+  display: grid;
+  gap: 14px;
+}
+
+.home-neon .studio-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,.58);
+  border-radius: 8px;
+  padding: 15px;
+  background:
+    radial-gradient(circle at 12% 15%, color-mix(in srgb, var(--module-accent, #ff3bd4) 36%, transparent), transparent 220px),
+    linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.03)),
+    rgba(2,0,8,.72);
+}
+
+.home-neon .studio-hero h4 {
+  margin: 4px 0 6px;
+  color: #fff;
+  font-size: clamp(1.16rem, 2.4vw, 2rem);
+}
+
+.home-neon .studio-hero span {
+  color: #ead0f7;
+  font-weight: 800;
+}
+
+.home-neon .studio-score {
+  display: grid;
+  min-width: 108px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(5,0,10,.58);
+}
+
+.home-neon .studio-score strong {
+  color: #fff;
+  font-size: 2.2rem;
+  line-height: 1;
+  text-shadow: 0 0 24px color-mix(in srgb, var(--module-accent, #ff3bd4) 64%, transparent);
+}
+
+.home-neon .studio-score span {
+  color: #56eaff;
+  font-size: .76rem;
+  font-weight: 1000;
+}
+
+.home-neon .studio-grid {
+  display: grid;
+  grid-template-columns: .7fr 1.2fr 1fr;
+  gap: 12px;
+}
+
+.home-neon .studio-panel {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+  min-width: 0;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 8px;
+  padding: 13px;
+  color: #fff;
+  background: rgba(5,0,10,.52);
+  box-shadow: 4px 4px 0 #05000a;
+}
+
+.home-neon .studio-panel header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-neon .studio-panel header strong {
+  font-size: .95rem;
+}
+
+.home-neon .studio-panel button,
+.home-neon .studio-actions button {
+  border: 1px solid rgba(255,255,255,.44);
+  border-radius: 999px;
+  padding: 7px 9px;
+  color: #12051f;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+  cursor: pointer;
+  font: inherit;
+  font-size: .74rem;
+  font-weight: 1000;
+}
+
+.home-neon .studio-metrics {
+  grid-template-columns: 1fr;
+}
+
+.home-neon .studio-metrics span {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 8px;
+  padding: 11px;
+  color: #ead0f7;
+  background: rgba(255,255,255,.05);
+  font-size: .78rem;
+  font-weight: 1000;
+}
+
+.home-neon .studio-metrics strong {
+  color: #fff;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.home-neon .studio-panel textarea {
+  width: 100%;
+  min-height: 116px;
+  border: 2px solid rgba(255,255,255,.5);
+  border-radius: 8px;
+  padding: 10px 11px;
+  color: #fff;
+  background: rgba(2,0,8,.7);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+}
+
+.home-neon .studio-panel textarea:focus {
+  border-color: #56eaff;
+  box-shadow: 0 0 20px rgba(86,234,255,.22);
+}
+
+.home-neon .studio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.home-neon .studio-preview {
+  display: grid;
+  gap: 8px;
+}
+
+.home-neon .studio-preview p {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 8px;
+  padding: 8px;
+  color: #ead0f7;
+  background: rgba(255,255,255,.05);
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.home-neon .studio-preview b {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 999px;
+  color: #12051f;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+  font-size: .7rem;
+}
+
 .home-neon .module-card:hover {
   transform: translateY(-7px);
   border-color: var(--module-accent, #ff3bd4);
@@ -4221,7 +4396,9 @@ html {
   .home-neon .google-live-search,
   .home-neon .module-row-body,
   .home-neon .command-hero,
-  .home-neon .command-grid {
+  .home-neon .command-grid,
+  .home-neon .studio-hero,
+  .home-neon .studio-grid {
     grid-template-columns: 1fr;
   }
 
