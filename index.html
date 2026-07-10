@@ -10,6 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=6">
+  <script src="config/modules.config.js" defer></script>
+  <script src="services/eventBus.js" defer></script>
+  <script src="services/store.js" defer></script>
+  <script src="services/moduleLoader.js" defer></script>
 </head>
 <body class="home-neon">
   <div class="scroll-meter" aria-hidden="true"></div>
@@ -249,6 +253,35 @@
               <a class="interactive" href="assets/downloads/HuyHoangPialo_ScreamStyle_Portable.zip" download>Tải portable</a>
             </div>
           </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="platform" class="section platform-section neon-platform">
+      <div class="section-heading">
+        <p class="section-kicker">AI Super Platform</p>
+        <h2>40 module nâng cấp theo từng lớp</h2>
+        <p class="section-note">
+          Mỗi module được tách thành thẻ riêng, có trạng thái, nhóm chức năng và đánh dấu rõ phần nào cần backend thật.
+        </p>
+      </div>
+      <div class="platform-toolbar" aria-label="Lọc module">
+        <button class="platform-filter active interactive" type="button" data-module-filter="all">Tất cả</button>
+        <button class="platform-filter interactive" type="button" data-module-filter="core">Lõi</button>
+        <button class="platform-filter interactive" type="button" data-module-filter="extension">Mở rộng</button>
+        <button class="platform-filter interactive" type="button" data-module-filter="backend">Cần backend</button>
+      </div>
+      <div class="platform-overview" aria-label="Tổng quan module">
+        <span><strong id="moduleTotal">0</strong>Module</span>
+        <span><strong id="moduleCore">0</strong>Lõi</span>
+        <span><strong id="moduleBackend">0</strong>Cần backend</span>
+      </div>
+      <div class="module-grid" id="moduleGrid" aria-live="polite">
+        <article class="module-card skeleton-card">
+          <span class="module-number">01</span>
+          <p class="project-tag">Đang nạp</p>
+          <h3>Module registry</h3>
+          <p>Dữ liệu module đang được chuẩn hóa để hiển thị đồng bộ.</p>
         </article>
       </div>
     </section>

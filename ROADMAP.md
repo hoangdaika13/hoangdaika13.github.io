@@ -2,6 +2,7 @@
 
 ## Dang lam
 
+- Hoan thien tung module AI Super Platform theo thu tu 1 den 40: hien tai da co registry + card UI, cac man hinh chi tiet se them dan.
 - Deploy `realtime-server` len Render/Railway/Fly.io/VPS de bat online counter, login/register va Socket.io.
 - Gan `window.HH_REALTIME_URL` trong `config.js` sau khi co URL backend.
 - Tao Google OAuth Client va Facebook App neu muon dang nhap bang Gmail/Facebook.

@@ -610,6 +610,82 @@ function initRealtimeAuth() {
   loadMe().then(connectSocket);
 }
 
+function initSuperPlatform() {
+  if (!document.body.classList.contains("home-neon")) return;
+  const grid = byId("moduleGrid");
+  if (!grid) return;
+
+  let modules = Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
+  const filters = document.querySelectorAll("[data-module-filter]");
+  const total = byId("moduleTotal");
+  const core = byId("moduleCore");
+  const backend = byId("moduleBackend");
+
+  const setCounter = (node, value) => {
+    if (node) node.textContent = String(value).padStart(2, "0");
+  };
+
+  const render = (filter = "all") => {
+    const visible = modules.filter((module) => {
+      if (filter === "backend") return module.requiresBackend;
+      if (filter === "core") return module.group === "core";
+      if (filter === "extension") return module.group === "extension";
+      return true;
+    });
+
+    if (!modules.length) {
+      grid.innerHTML = `
+        <article class="module-card skeleton-card">
+          <span class="module-number">00</span>
+          <p class="project-tag">Chưa có dữ liệu</p>
+          <h3>Đang chờ module registry</h3>
+          <p>Khi file config/modules.config.js sẵn sàng, 40 module sẽ tự hiển thị tại đây.</p>
+        </article>`;
+      return;
+    }
+
+    grid.innerHTML = visible.map((module, index) => `
+      <article class="module-card interactive-card interactive" style="--module-accent:${module.accent || "#ff3bd4"}">
+        <span class="module-number">${String(module.order || index + 1).padStart(2, "0")}</span>
+        <p class="project-tag">${module.group === "core" ? "Lõi" : "Mở rộng"}</p>
+        <h3>${module.title}</h3>
+        <p>${module.description}</p>
+        <div class="module-features">
+          ${(module.features || []).slice(0, 4).map((feature) => `<span>${feature}</span>`).join("")}
+        </div>
+        <footer>
+          <span>${module.status || "planned"}</span>
+          ${module.requiresBackend ? "<strong>Cần backend</strong>" : "<strong>Client-side</strong>"}
+        </footer>
+      </article>
+    `).join("");
+  };
+
+  const updateCounters = () => {
+    setCounter(total, modules.length);
+    setCounter(core, modules.filter((module) => module.group === "core").length);
+    setCounter(backend, modules.filter((module) => module.requiresBackend).length);
+  };
+
+  filters.forEach((button) => {
+    button.addEventListener("click", () => {
+      filters.forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      render(button.dataset.moduleFilter);
+    });
+  });
+
+  window.addEventListener("hh:modules-ready", (event) => {
+    modules = Array.isArray(event.detail) ? event.detail : [];
+    updateCounters();
+    const active = document.querySelector("[data-module-filter].active");
+    render(active?.dataset.moduleFilter || "all");
+  });
+
+  updateCounters();
+  render("all");
+}
+
 function initHomeNeonInteractions() {
   if (!document.body.classList.contains("home-neon")) return;
 
@@ -1161,6 +1237,7 @@ initTheme();
 initHomeNeonInteractions();
 initVoteStats();
 initRealtimeAuth();
+initSuperPlatform();
 initMusicPlayer();
 initMiniTabs();
 initTool();

@@ -2,6 +2,9 @@
 
 ## 2026-07-10
 
+- Them section AI Super Platform tren trang chu, hien thi 40 module theo dung huong tu prompt.
+- Them registry JSON cho 40 module, filter loi/mo rong/can backend va counter tong quan.
+- Them services nen: `HHEventBus`, `HHStore`, `HHModuleLoader`.
 - Them backend `realtime-server` cho Socket.io, dang ky/dang nhap local, OAuth Google/Facebook va tracking co xin phep.
 - Them UI tai khoan tren trang chu, dat sau hero de profile van la trong tam.
 - Noi frontend voi `window.HH_REALTIME_URL` de co the bat realtime sau khi deploy server.
