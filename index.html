@@ -9,18 +9,53 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=15">
+  <link rel="stylesheet" href="styles.css?v=16">
   <script src="config.js?v=2"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
   <script src="services/store.js" defer></script>
   <script src="services/moduleLoader.js" defer></script>
 </head>
-<body class="home-neon">
+<body class="home-neon auth-locked">
   <div class="scroll-meter" aria-hidden="true"></div>
   <canvas class="ambient-canvas" aria-hidden="true"></canvas>
   <div class="neon-grid-bg" aria-hidden="true"></div>
   <div class="cursor-glow" aria-hidden="true"></div>
+
+  <section class="auth-gate" id="authGate" aria-label="Đăng nhập để vào trang chủ">
+    <div class="auth-gate-brand">
+      <span class="brand-mark">HH</span>
+      <p class="section-kicker">Hoangdaika13 Neon Platform</p>
+      <h1>Đăng nhập để vào trang chủ</h1>
+      <p>Trang chính, chat cộng đồng, module studio và dữ liệu cá nhân sẽ mở sau khi bạn đăng nhập hoặc tạo tài khoản.</p>
+      <div class="auth-gate-status" id="authGateStatus">Đang kiểm tra phiên đăng nhập...</div>
+    </div>
+
+    <div class="auth-gate-card interactive-card">
+      <div class="auth-social-row">
+        <button class="button secondary interactive" type="button" data-oauth-disabled="google">Tiếp tục với Google</button>
+        <button class="button ghost interactive" type="button" data-oauth-disabled="facebook">Tiếp tục với Facebook</button>
+      </div>
+      <p class="auth-oauth-note">Google/Facebook cần cấu hình OAuth chính thức. Hiện tại hãy dùng tài khoản email bên dưới.</p>
+
+      <div class="auth-gate-forms">
+        <form id="gateLoginForm">
+          <h2>Đăng nhập</h2>
+          <input name="email" type="email" placeholder="Email" autocomplete="email" required>
+          <input name="password" type="password" placeholder="Mật khẩu" autocomplete="current-password" required>
+          <button class="button primary interactive" type="submit">Đăng nhập</button>
+        </form>
+        <form id="gateRegisterForm">
+          <h2>Tạo tài khoản mới</h2>
+          <input name="name" type="text" placeholder="Họ tên" autocomplete="name" required>
+          <input name="email" type="email" placeholder="Email" autocomplete="email" required>
+          <input name="password" type="password" placeholder="Mật khẩu ít nhất 8 ký tự" autocomplete="new-password" minlength="8" required>
+          <label class="consent-line"><input name="consent" type="checkbox"> Tôi đồng ý chia sẻ tên/email và hoạt động do tôi tự gửi.</label>
+          <button class="button secondary interactive" type="submit">Đăng ký</button>
+        </form>
+      </div>
+    </div>
+  </section>
 
   <header class="site-header neon-header">
     <a class="brand" href="#top" aria-label="Về đầu trang">
@@ -644,6 +679,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=15"></script>
+  <script src="script.js?v=16"></script>
 </body>
 </html>

@@ -452,6 +452,10 @@ function initRealtimeAuth() {
   const consent = byId("trackingConsent");
   const registerForm = byId("registerForm");
   const loginForm = byId("loginForm");
+  const gate = byId("authGate");
+  const gateStatus = byId("authGateStatus");
+  const gateRegisterForm = byId("gateRegisterForm");
+  const gateLoginForm = byId("gateLoginForm");
   const logoutButton = byId("logoutButton");
   const googleLogin = byId("googleLogin");
   const facebookLogin = byId("facebookLogin");
@@ -481,6 +485,24 @@ function initRealtimeAuth() {
 
   const setStatus = (message) => {
     status.textContent = message;
+    if (gateStatus) gateStatus.textContent = message;
+  };
+
+  const setGateState = () => {
+    const unlocked = Boolean(user && token);
+    document.body.classList.toggle("auth-unlocked", unlocked);
+    document.body.classList.toggle("auth-locked", !unlocked);
+    gate?.setAttribute("aria-hidden", unlocked ? "true" : "false");
+  };
+
+  const persistAuthUser = () => {
+    if (user) {
+      localStorage.setItem("hh-auth-user", JSON.stringify(user));
+      localStorage.setItem("hh-chat-last-name", user.name || user.email || "Khách HH");
+    } else {
+      localStorage.removeItem("hh-auth-user");
+    }
+    window.dispatchEvent(new CustomEvent("hh:auth-change", { detail: { user, token } }));
   };
 
   const api = async (path, options = {}) => {
@@ -520,6 +542,8 @@ function initRealtimeAuth() {
       googleLogin.setAttribute("aria-disabled", "true");
       facebookLogin.setAttribute("aria-disabled", "true");
     }
+    persistAuthUser();
+    setGateState();
   };
 
   const loadMe = async () => {
@@ -536,10 +560,11 @@ function initRealtimeAuth() {
     renderAuth();
   };
 
-  registerForm?.addEventListener("submit", async (event) => {
+  const handleRegister = async (event, formNode) => {
     event.preventDefault();
-    const form = new FormData(registerForm);
+    const form = new FormData(formNode);
     try {
+      setStatus("Đang tạo tài khoản...");
       const data = await api("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({
@@ -556,15 +581,17 @@ function initRealtimeAuth() {
       localStorage.setItem("hh-tracking-consent", consent.checked ? "yes" : "no");
       renderAuth();
       connectSocket();
+      location.hash = "#top";
     } catch (error) {
       setStatus(error.message);
     }
-  });
+  };
 
-  loginForm?.addEventListener("submit", async (event) => {
+  const handleLogin = async (event, formNode) => {
     event.preventDefault();
-    const form = new FormData(loginForm);
+    const form = new FormData(formNode);
     try {
+      setStatus("Đang đăng nhập...");
       const data = await api("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ email: form.get("email"), password: form.get("password") })
@@ -574,17 +601,29 @@ function initRealtimeAuth() {
       localStorage.setItem("hh-auth-token", token);
       renderAuth();
       connectSocket();
+      location.hash = "#top";
     } catch (error) {
       setStatus(error.message);
     }
+  };
+
+  registerForm?.addEventListener("submit", (event) => handleRegister(event, registerForm));
+  gateRegisterForm?.addEventListener("submit", (event) => handleRegister(event, gateRegisterForm));
+  loginForm?.addEventListener("submit", (event) => handleLogin(event, loginForm));
+  gateLoginForm?.addEventListener("submit", (event) => handleLogin(event, gateLoginForm));
+
+  document.querySelectorAll("[data-oauth-disabled]").forEach((button) => {
+    button.addEventListener("click", () => setStatus("Google/Facebook OAuth cần cấu hình Client ID và callback backend trước khi dùng."));
   });
 
   logoutButton?.addEventListener("click", () => {
     token = "";
     user = null;
     localStorage.removeItem("hh-auth-token");
+    localStorage.removeItem("hh-chat-last-name");
     renderAuth();
     connectSocket();
+    location.hash = "";
   });
 
   let socket;
@@ -1766,7 +1805,15 @@ function initCommunityChatV2() {
 
   const escapeHtml = (value) => String(value || "").replace(/[<>&"']/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;", "'": "&#39;" }[char]));
   const initials = (name) => (name || "HH").split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-  const fallbackName = () => localStorage.getItem("hh-chat-last-name") || "Khách HH";
+  const fallbackName = () => {
+    try {
+      const authUser = JSON.parse(localStorage.getItem("hh-auth-user") || "null");
+      if (authUser?.name || authUser?.email) return authUser.name || authUser.email;
+    } catch {
+      // Ignore malformed local auth cache.
+    }
+    return localStorage.getItem("hh-chat-last-name") || "Khách HH";
+  };
   const anonymousId = () => {
     let id = localStorage.getItem(anonymousIdKey);
     if (!id) {
@@ -1823,12 +1870,15 @@ function initCommunityChatV2() {
     return data;
   };
 
+  const canUseChat = () => !document.body.classList.contains("auth-locked") && Boolean(localStorage.getItem("hh-auth-token"));
+
   const postChatItem = (type, data, title = type) => chatRequest("/api/modules/chat-app/items", {
     method: "POST",
     body: { title, type, anonymousId: anonymousId(), data }
   });
 
   const postPresence = async () => {
+    if (!canUseChat()) return;
     applyProfile();
     try {
       await postChatItem("chat-presence", {
@@ -2020,6 +2070,12 @@ function initCommunityChatV2() {
 
   async function loadMessages() {
     if (!status) return;
+    if (!canUseChat()) {
+      status.textContent = "Đăng nhập để dùng chat";
+      if (messagesBox) messagesBox.innerHTML = "<p class=\"chat-empty\">Vui lòng đăng nhập để xem và gửi tin nhắn realtime.</p>";
+      if (userList) userList.innerHTML = "<p>Đăng nhập để xem thành viên online.</p>";
+      return;
+    }
     if (!REALTIME_URL) {
       status.textContent = "Backend chưa cấu hình";
       return;
@@ -2047,6 +2103,10 @@ function initCommunityChatV2() {
   };
 
   const sendMessage = async () => {
+    if (!canUseChat()) {
+      if (status) status.textContent = "Bạn cần đăng nhập trước khi gửi tin nhắn";
+      return;
+    }
     const expanded = expandSlashCommand((messageInput?.value || "").trim());
     const imageUrl = safeUrl(imageUrlInput?.value || "");
     if (!expanded && !imageUrl) return;
@@ -2079,6 +2139,21 @@ function initCommunityChatV2() {
   };
 
   applyProfile();
+
+  window.addEventListener("hh:auth-change", (event) => {
+    const authUser = event.detail?.user;
+    if (!authUser) {
+      loadMessages();
+      return;
+    }
+    const oldDefault = !profile.nickname || profile.nickname === "Khách HH" || profile.nickname === "Khach HH";
+    if (oldDefault) {
+      profile.nickname = authUser.name || authUser.email || "Khách HH";
+      applyProfile();
+      postPresence();
+      loadMessages();
+    }
+  });
 
   saveProfile?.addEventListener("click", async () => {
     profile.nickname = nicknameInput?.value.trim() || "Khách HH";
