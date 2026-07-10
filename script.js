@@ -1260,6 +1260,513 @@ function initCommunityChat() {
   window.addEventListener("beforeunload", () => clearInterval(pollingTimer));
 }
 
+function initCommunityChatV2() {
+  if (!document.body.classList.contains("home-neon")) return;
+  const root = byId("chat");
+  if (!root) return;
+
+  const profileKey = "hh-chat-profile";
+  const anonymousIdKey = "hh-anonymous-id";
+  const roomNames = {
+    general: "chung",
+    projects: "dự án",
+    support: "hỗ trợ",
+    voice: "voice",
+    announcements: "thông báo",
+    media: "media",
+    "ai-lab": "ai-lab"
+  };
+  const reactionEmojis = ["\u2764\ufe0f", "\ud83d\ude02", "\ud83d\udd25", "\ud83d\udc4f", "\u2728"];
+
+  const roomButtons = root.querySelectorAll("[data-chat-room]");
+  const nicknameInput = byId("chatNickname");
+  const avatarUrlInput = byId("chatAvatarUrl");
+  const presenceInput = byId("chatPresenceStatus");
+  const avatarPreview = byId("chatAvatarPreview");
+  const saveProfile = byId("saveChatProfile");
+  const userList = byId("chatUserList");
+  const roomLabel = byId("chatRoomLabel");
+  const status = byId("chatStatus");
+  const messagesBox = byId("chatMessages");
+  const pinsBox = byId("chatPins");
+  const messageInput = byId("chatMessageInput");
+  const imageUrlInput = byId("chatImageUrl");
+  const searchInput = byId("chatSearch");
+  const onlineCount = byId("chatOnlineCount");
+  const replyPreview = byId("chatReplyPreview");
+  const replyText = byId("chatReplyText");
+  const cancelReply = byId("cancelChatReply");
+  const typingLabel = byId("chatTyping");
+  const sendButton = byId("sendChatMessage");
+  const refreshButton = byId("refreshChatButton");
+  const exportButton = byId("exportChatButton");
+  const clearButton = byId("clearChatViewButton");
+  const notifyButton = byId("notifyChatButton");
+  const voiceButton = byId("chatVoiceButton");
+  const joinVoiceButton = byId("joinVoiceLounge");
+  const voiceStatus = byId("voiceLoungeStatus");
+
+  let room = "general";
+  let pollingTimer = 0;
+  let presenceTimer = 0;
+  let typingTimer = 0;
+  let lastMessageSignature = "";
+  let lastSeenByRoom = JSON.parse(localStorage.getItem("hh-chat-last-seen") || "{}");
+  let allItems = [];
+  let currentMessages = [];
+  let replyTarget = null;
+  let voiceJoined = false;
+  let profile = JSON.parse(localStorage.getItem(profileKey) || "{}");
+
+  const escapeHtml = (value) => String(value || "").replace(/[<>&"']/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;", "'": "&#39;" }[char]));
+  const initials = (name) => (name || "HH").split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const fallbackName = () => localStorage.getItem("hh-chat-last-name") || "Khách HH";
+  const anonymousId = () => {
+    let id = localStorage.getItem(anonymousIdKey);
+    if (!id) {
+      id = randomId();
+      localStorage.setItem(anonymousIdKey, id);
+    }
+    return id;
+  };
+  const safeUrl = (value) => {
+    const raw = String(value || "").trim();
+    try {
+      const url = new URL(raw);
+      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+    } catch {
+      return "";
+    }
+  };
+  const linkify = (value) => escapeHtml(value)
+    .replace(/(https?:\/\/[^\s<]+)/g, "<a href=\"$1\" target=\"_blank\" rel=\"noopener\">$1</a>")
+    .replace(/\B@([\p{L}\p{N}_. -]{2,32})/gu, "<mark>@$1</mark>");
+  const formatTime = (date) => new Date(date).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
+
+  const applyProfile = () => {
+    profile = {
+      nickname: (profile.nickname || fallbackName()).slice(0, 32),
+      avatarUrl: safeUrl(profile.avatarUrl || ""),
+      presence: profile.presence || "online",
+      color: profile.color || `hsl(${Math.floor(Math.random() * 360)} 90% 72%)`
+    };
+    if (nicknameInput) nicknameInput.value = profile.nickname;
+    if (avatarUrlInput) avatarUrlInput.value = profile.avatarUrl;
+    if (presenceInput) presenceInput.value = profile.presence;
+    if (avatarPreview) {
+      avatarPreview.textContent = profile.avatarUrl ? "" : initials(profile.nickname);
+      avatarPreview.style.backgroundImage = profile.avatarUrl ? `url("${profile.avatarUrl}")` : "";
+      avatarPreview.style.backgroundColor = profile.color;
+    }
+    localStorage.setItem(profileKey, JSON.stringify(profile));
+  };
+
+  const chatRequest = async (path, options = {}) => {
+    if (!REALTIME_URL) throw new Error("Backend chat chưa cấu hình.");
+    const token = localStorage.getItem("hh-auth-token") || "";
+    const response = await fetch(`${REALTIME_URL}${path}`, {
+      method: options.method || "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      ...(options.body ? { body: JSON.stringify(options.body) } : {})
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Chat request failed.");
+    return data;
+  };
+
+  const postChatItem = (type, data, title = type) => chatRequest("/api/modules/chat-app/items", {
+    method: "POST",
+    body: { title, type, anonymousId: anonymousId(), data }
+  });
+
+  const postPresence = async () => {
+    applyProfile();
+    try {
+      await postChatItem("chat-presence", {
+        room,
+        senderId: anonymousId(),
+        nickname: profile.nickname,
+        avatarUrl: profile.avatarUrl,
+        color: profile.color,
+        presence: profile.presence,
+        voiceJoined,
+        at: Date.now()
+      }, `${profile.nickname} presence`);
+    } catch {
+      // Presence is optional and should never block the UI.
+    }
+  };
+
+  const buildReactionMap = (items) => {
+    const map = new Map();
+    items.filter((item) => item.type === "chat-reaction").forEach((item) => {
+      const data = item.data || {};
+      if (!data.messageId) return;
+      const grouped = map.get(data.messageId) || {};
+      const emoji = data.emoji || "\u2728";
+      grouped[emoji] ||= new Set();
+      grouped[emoji].add(data.senderId || item.anonymousId || item.createdAt);
+      map.set(data.messageId, grouped);
+    });
+    return map;
+  };
+
+  const buildPinSet = (items) => new Set(items.filter((item) => item.type === "chat-pin" && item.data?.room === room).map((item) => item.data.messageId).filter(Boolean));
+
+  const renderUsers = (items) => {
+    if (!userList) return;
+    const users = new Map();
+    items.filter((item) => item.type === "chat-message" || item.type === "chat-presence").forEach((item) => {
+      const data = item.data || {};
+      if (!data.nickname) return;
+      users.set(data.senderId || data.nickname, {
+        nickname: data.nickname,
+        avatarUrl: data.avatarUrl,
+        color: data.color,
+        presence: data.presence || "online",
+        voiceJoined: Boolean(data.voiceJoined),
+        at: item.createdAt
+      });
+    });
+    const rows = [...users.values()].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 12);
+    const online = rows.filter((user) => Date.now() - new Date(user.at).getTime() < 5 * 60 * 1000);
+    if (onlineCount) onlineCount.textContent = `${online.length} online`;
+    userList.innerHTML = rows.length ? rows.map((user) => `
+      <button class="chat-user interactive" type="button" data-mention="${escapeHtml(user.nickname)}">
+        <span style="${user.avatarUrl ? `background-image:url('${escapeHtml(user.avatarUrl)}')` : `background:${user.color || "#ff4fd8"}`}">${user.avatarUrl ? "" : initials(user.nickname)}</span>
+        <strong>${escapeHtml(user.nickname)}</strong>
+        <em class="${Date.now() - new Date(user.at).getTime() < 5 * 60 * 1000 ? "online" : ""}">${user.voiceJoined ? "voice" : escapeHtml(user.presence)}</em>
+      </button>
+    `).join("") : "<p>Chưa có ai trong phòng.</p>";
+    userList.querySelectorAll("[data-mention]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!messageInput) return;
+        messageInput.value = `${messageInput.value} @${button.dataset.mention} `.replace(/\s+/g, " ");
+        messageInput.focus();
+      });
+    });
+  };
+
+  const renderBadges = (messages) => {
+    const counts = {};
+    messages.forEach((item) => {
+      const data = item.data || {};
+      if (!data.room || data.room === room) return;
+      if (new Date(item.createdAt).getTime() > Number(lastSeenByRoom[data.room] || 0)) counts[data.room] = (counts[data.room] || 0) + 1;
+    });
+    root.querySelectorAll("[data-room-badge]").forEach((badge) => {
+      const count = counts[badge.dataset.roomBadge] || 0;
+      badge.textContent = count ? String(count) : "";
+      badge.hidden = !count;
+    });
+  };
+
+  const renderPins = (messages, pinSet) => {
+    if (!pinsBox) return;
+    const pins = messages.filter((item) => pinSet.has(item._id)).slice(-4).reverse();
+    pinsBox.hidden = pins.length === 0;
+    pinsBox.innerHTML = pins.map((item) => {
+      const data = item.data || {};
+      return `<button class="chat-pin interactive" type="button" data-jump-message="${item._id}">
+        <strong>\ud83d\udccc ${escapeHtml(data.nickname || "Khách")}</strong>
+        <span>${escapeHtml(data.message || data.imageUrl || "Tin đã ghim").slice(0, 120)}</span>
+      </button>`;
+    }).join("");
+    pinsBox.querySelectorAll("[data-jump-message]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = messagesBox?.querySelector(`[data-message-id="${button.dataset.jumpMessage}"]`);
+        target?.scrollIntoView({ behavior: "smooth", block: "center" });
+        target?.classList.add("glow-burst");
+      });
+    });
+  };
+
+  const attachMessageActions = () => {
+    messagesBox?.querySelectorAll("[data-reply-message]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const item = currentMessages.find((message) => message._id === button.dataset.replyMessage);
+        if (!item) return;
+        replyTarget = { id: item._id, nickname: item.data?.nickname || "Khách", text: item.data?.message || "" };
+        if (replyPreview && replyText) {
+          replyPreview.hidden = false;
+          replyText.textContent = `${replyTarget.nickname}: ${replyTarget.text.slice(0, 90)}`;
+        }
+        messageInput?.focus();
+      });
+    });
+    messagesBox?.querySelectorAll("[data-pin-message]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        await postChatItem("chat-pin", { room, messageId: button.dataset.pinMessage, senderId: anonymousId(), nickname: profile.nickname }, `${profile.nickname} pinned`);
+        await loadMessages();
+      });
+    });
+    messagesBox?.querySelectorAll("[data-copy-message]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const item = currentMessages.find((message) => message._id === button.dataset.copyMessage);
+        if (!item) return;
+        await navigator.clipboard?.writeText(item.data?.message || item.data?.imageUrl || "");
+        if (status) status.textContent = "Đã copy tin nhắn";
+      });
+    });
+    messagesBox?.querySelectorAll("[data-react-message]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        await postChatItem("chat-reaction", { room, messageId: button.dataset.reactMessage, emoji: button.dataset.emoji, senderId: anonymousId(), nickname: profile.nickname }, `${profile.nickname} reacted`);
+        await loadMessages();
+      });
+    });
+  };
+
+  const renderMessages = (items) => {
+    if (!messagesBox) return;
+    allItems = items;
+    const search = (searchInput?.value || "").trim().toLowerCase();
+    const reactions = buildReactionMap(items);
+    const pinSet = buildPinSet(items);
+    const messages = items
+      .filter((item) => item.type === "chat-message" && item.data?.room === room)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+      .filter((item) => {
+        if (!search) return true;
+        const data = item.data || {};
+        return `${data.nickname || ""} ${data.message || ""} ${data.imageUrl || ""}`.toLowerCase().includes(search);
+      })
+      .slice(-120);
+    currentMessages = messages;
+    const signature = [room, search, messages.map((item) => item._id || item.createdAt).join("|"), items.filter((item) => item.type === "chat-reaction" || item.type === "chat-pin").map((item) => item._id || item.createdAt).join("|")].join("::");
+    renderUsers(items);
+    renderBadges(items.filter((item) => item.type === "chat-message"));
+    renderPins(messages, pinSet);
+    if (signature === lastMessageSignature) return;
+    lastMessageSignature = signature;
+    messagesBox.innerHTML = messages.length ? messages.map((item) => {
+      const data = item.data || {};
+      const mine = data.senderId === anonymousId();
+      const avatarStyle = data.avatarUrl ? `background-image:url('${escapeHtml(data.avatarUrl)}')` : `background:${data.color || "#ff4fd8"}`;
+      const reply = data.replyTo ? `<div class="chat-reply-line">\u21a9 ${escapeHtml(data.replyTo.nickname || "Tin nhắn")}: ${escapeHtml(data.replyTo.text || "").slice(0, 100)}</div>` : "";
+      const imageUrl = safeUrl(data.imageUrl);
+      const image = imageUrl ? `<a class="chat-image" href="${escapeHtml(imageUrl)}" target="_blank" rel="noopener"><img src="${escapeHtml(imageUrl)}" alt="Ảnh chat" loading="lazy"></a>` : "";
+      const groupedReactions = reactions.get(item._id) || {};
+      const reactionHtml = Object.entries(groupedReactions).map(([emoji, users]) => `<button class="chat-reaction active interactive" type="button" data-react-message="${item._id}" data-emoji="${escapeHtml(emoji)}">${escapeHtml(emoji)} ${users.size}</button>`).join("");
+      return `
+        <article class="chat-message ${mine ? "mine" : ""} ${pinSet.has(item._id) ? "pinned" : ""}" data-message-id="${item._id}">
+          <div class="chat-avatar small" style="${avatarStyle}">${data.avatarUrl ? "" : initials(data.nickname)}</div>
+          <div class="chat-bubble">
+            <header><strong>${escapeHtml(data.nickname || "Khách")}</strong><span>${formatTime(item.createdAt)}</span>${pinSet.has(item._id) ? "<b>Đã ghim</b>" : ""}</header>
+            ${reply}
+            <p>${linkify(data.message || "")}</p>
+            ${image}
+            <div class="chat-message-tools">
+              <button class="interactive" type="button" data-reply-message="${item._id}">Trả lời</button>
+              <button class="interactive" type="button" data-pin-message="${item._id}">Ghim</button>
+              <button class="interactive" type="button" data-copy-message="${item._id}">Copy</button>
+              ${reactionEmojis.map((emoji) => `<button class="chat-reaction interactive" type="button" data-react-message="${item._id}" data-emoji="${emoji}">${emoji}</button>`).join("")}
+            </div>
+            <div class="chat-reaction-row">${reactionHtml}</div>
+          </div>
+        </article>`;
+    }).join("") : "<p class=\"chat-empty\">Chưa có tin nhắn. Hãy là người mở lời.</p>";
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+    attachMessageActions();
+  };
+
+  async function loadMessages() {
+    if (!status) return;
+    if (!REALTIME_URL) {
+      status.textContent = "Backend chưa cấu hình";
+      return;
+    }
+    try {
+      const data = await chatRequest("/api/modules/chat-app/items");
+      renderMessages(data.items || []);
+      lastSeenByRoom[room] = Date.now();
+      localStorage.setItem("hh-chat-last-seen", JSON.stringify(lastSeenByRoom));
+      status.textContent = "Đang online";
+    } catch (error) {
+      status.textContent = `Lỗi chat: ${error.message}`;
+    }
+  }
+
+  const expandSlashCommand = (message) => {
+    if (message === "/help") return "Lệnh nhanh: /help, /clear, /shrug, /me nội dung. Dùng @tên để nhắc người khác.";
+    if (message === "/shrug") return "¯\\_(ツ)_/¯";
+    if (message.startsWith("/me ")) return `* ${profile.nickname} ${message.slice(4)}`;
+    if (message === "/clear") {
+      if (messagesBox) messagesBox.innerHTML = "<p class=\"chat-empty\">Đã dọn màn hình local. Bấm tải lại để xem lại tin.</p>";
+      return "";
+    }
+    return message;
+  };
+
+  const sendMessage = async () => {
+    const expanded = expandSlashCommand((messageInput?.value || "").trim());
+    const imageUrl = safeUrl(imageUrlInput?.value || "");
+    if (!expanded && !imageUrl) return;
+    applyProfile();
+    if (status) status.textContent = "Đang gửi...";
+    try {
+      await postChatItem("chat-message", {
+        room,
+        message: expanded,
+        imageUrl,
+        replyTo: replyTarget,
+        senderId: anonymousId(),
+        nickname: profile.nickname,
+        avatarUrl: profile.avatarUrl,
+        color: profile.color,
+        presence: profile.presence
+      }, `${profile.nickname} - ${room}`);
+      if (messageInput) messageInput.value = "";
+      if (imageUrlInput) imageUrlInput.value = "";
+      replyTarget = null;
+      if (replyPreview) replyPreview.hidden = true;
+      if (typingLabel) typingLabel.textContent = "";
+      await loadMessages();
+      if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+        new Notification(`HH Chat #${roomNames[room] || room}`, { body: `${profile.nickname}: ${expanded || "Đã gửi ảnh"}` });
+      }
+    } catch (error) {
+      if (status) status.textContent = `Gửi lỗi: ${error.message}`;
+    }
+  };
+
+  applyProfile();
+
+  saveProfile?.addEventListener("click", async () => {
+    profile.nickname = nicknameInput?.value.trim() || "Khách HH";
+    profile.avatarUrl = safeUrl(avatarUrlInput?.value || "");
+    profile.presence = presenceInput?.value || "online";
+    applyProfile();
+    await postPresence();
+    if (status) status.textContent = "Đã lưu hồ sơ chat";
+  });
+
+  presenceInput?.addEventListener("change", async () => {
+    profile.presence = presenceInput.value;
+    applyProfile();
+    await postPresence();
+    await loadMessages();
+  });
+
+  roomButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      roomButtons.forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      room = button.dataset.chatRoom || "general";
+      if (roomLabel) roomLabel.textContent = `# ${roomNames[room] || room}`;
+      lastMessageSignature = "";
+      replyTarget = null;
+      if (replyPreview) replyPreview.hidden = true;
+      lastSeenByRoom[room] = Date.now();
+      localStorage.setItem("hh-chat-last-seen", JSON.stringify(lastSeenByRoom));
+      loadMessages();
+      postPresence();
+    });
+  });
+
+  cancelReply?.addEventListener("click", () => {
+    replyTarget = null;
+    if (replyPreview) replyPreview.hidden = true;
+  });
+
+  root.querySelectorAll("[data-chat-emoji]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!messageInput) return;
+      messageInput.value = `${messageInput.value}${button.dataset.chatEmoji}`;
+      messageInput.focus();
+    });
+  });
+
+  searchInput?.addEventListener("input", () => {
+    lastMessageSignature = "";
+    renderMessages(allItems);
+  });
+  sendButton?.addEventListener("click", sendMessage);
+  refreshButton?.addEventListener("click", loadMessages);
+  exportButton?.addEventListener("click", () => {
+    downloadText(`hh-chat-${room}.json`, JSON.stringify(currentMessages, null, 2));
+    if (status) status.textContent = "Đã xuất JSON phòng chat";
+  });
+  clearButton?.addEventListener("click", () => {
+    if (messagesBox) messagesBox.innerHTML = "<p class=\"chat-empty\">Đã dọn màn hình local. Bấm tải lại để xem lại tin.</p>";
+    lastMessageSignature = "";
+  });
+  notifyButton?.addEventListener("click", async () => {
+    if (!("Notification" in window)) {
+      if (status) status.textContent = "Trình duyệt chưa hỗ trợ thông báo";
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    notifyButton.textContent = permission === "granted" ? "Thông báo đã bật" : "Bật thông báo";
+  });
+  joinVoiceButton?.addEventListener("click", async () => {
+    voiceJoined = !voiceJoined;
+    joinVoiceButton.textContent = voiceJoined ? "Rời voice" : "Tham gia";
+    if (voiceStatus) voiceStatus.textContent = voiceJoined ? `${profile.nickname} đang trong voice lounge` : "Chưa tham gia voice";
+    await postPresence();
+    await loadMessages();
+  });
+
+  messageInput?.addEventListener("input", () => {
+    if (typingLabel) typingLabel.textContent = messageInput.value.trim() ? `${profile.nickname} đang soạn...` : "";
+    window.clearTimeout(typingTimer);
+    typingTimer = window.setTimeout(() => { if (typingLabel) typingLabel.textContent = ""; }, 1800);
+  });
+  messageInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition && voiceButton) {
+    voiceButton.disabled = true;
+    voiceButton.textContent = "Trình duyệt chưa hỗ trợ nói";
+  }
+  voiceButton?.addEventListener("click", () => {
+    if (!SpeechRecognition || !messageInput) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "vi-VN";
+    recognition.interimResults = false;
+    recognition.onstart = () => { if (status) status.textContent = "Đang nghe giọng nói..."; };
+    recognition.onresult = (event) => {
+      messageInput.value = `${messageInput.value} ${event.results[0][0].transcript}`.trim();
+      if (status) status.textContent = "Đã nhập giọng nói";
+    };
+    recognition.onerror = () => { if (status) status.textContent = "Không nhận được giọng nói"; };
+    recognition.start();
+  });
+
+  const shouldPollMessages = () => {
+    if (document.hidden) return false;
+    const rect = root.getBoundingClientRect();
+    return rect.top < window.innerHeight + 520 && rect.bottom > -520;
+  };
+
+  loadMessages();
+  postPresence();
+  presenceTimer = setInterval(postPresence, 60000);
+  pollingTimer = setInterval(() => {
+    if (shouldPollMessages()) loadMessages();
+  }, 3200);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      if (canvas && !particleAnimation) drawParticles();
+      if (shouldPollMessages()) {
+        loadMessages();
+        postPresence();
+      }
+    }
+  });
+  window.addEventListener("beforeunload", () => {
+    clearInterval(pollingTimer);
+    clearInterval(presenceTimer);
+  });
+}
+
 function initHomeNeonInteractions() {
   if (!document.body.classList.contains("home-neon")) return;
 
@@ -1813,7 +2320,7 @@ initVoteStats();
 initRealtimeAuth();
 initSuperPlatform();
 initCreatorWorkspace();
-initCommunityChat();
+initCommunityChatV2();
 initMusicPlayer();
 initMiniTabs();
 initTool();

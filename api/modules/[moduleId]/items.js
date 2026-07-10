@@ -6,7 +6,8 @@ module.exports = async function handler(req, res) {
     const collection = db.collection("moduleRecords");
 
     if (req.method === "GET") {
-      const items = await collection.find({ moduleId }).sort({ createdAt: -1 }).limit(100).toArray();
+      const limit = moduleId === "chat-app" ? 300 : 100;
+      const items = await collection.find({ moduleId }).sort({ createdAt: -1 }).limit(limit).toArray();
       return res.status(200).json({ moduleId, items });
     }
 

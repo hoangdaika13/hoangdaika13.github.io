@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=12">
   <script src="config.js?v=2"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
@@ -440,10 +440,17 @@
       <div class="section-heading">
         <p class="section-kicker">Chat ứng dụng</p>
         <h2>HH Community Chat</h2>
-        <p class="section-note">Chat nhóm nhỏ khoảng 10 người, có biệt danh, avatar, phòng chat và tự cập nhật bằng backend MongoDB.</p>
+        <p class="section-note">Chat nhóm nhỏ khoảng 10 người, có biệt danh, avatar, phòng chat, reply, reaction, typing, tìm kiếm và tự cập nhật bằng backend MongoDB.</p>
       </div>
 
       <div class="chat-app interactive-card">
+        <aside class="chat-server-rail" aria-label="Máy chủ chat">
+          <button class="server-pill active interactive" type="button" title="HH Home">HH</button>
+          <button class="server-pill interactive" type="button" title="Dự án">AI</button>
+          <button class="server-pill interactive" type="button" title="Voice">VO</button>
+          <button class="server-pill interactive" type="button" title="Thêm server">+</button>
+        </aside>
+
         <aside class="chat-sidebar">
           <div class="chat-profile">
             <div class="chat-avatar" id="chatAvatarPreview">HH</div>
@@ -455,13 +462,31 @@
               Avatar URL
               <input id="chatAvatarUrl" type="url" placeholder="https://...">
             </label>
+            <label>
+              Trạng thái
+              <select id="chatPresenceStatus">
+                <option value="online">Online</option>
+                <option value="focus">Đang tập trung</option>
+                <option value="away">Tạm vắng</option>
+              </select>
+            </label>
             <button class="button secondary interactive" id="saveChatProfile" type="button">Lưu hồ sơ chat</button>
           </div>
 
           <div class="chat-rooms" aria-label="Phòng chat">
-            <button class="chat-room active interactive" type="button" data-chat-room="general"># chung</button>
-            <button class="chat-room interactive" type="button" data-chat-room="projects"># dự án</button>
-            <button class="chat-room interactive" type="button" data-chat-room="support"># hỗ trợ</button>
+            <button class="chat-room active interactive" type="button" data-chat-room="general"># chung <span data-room-badge="general"></span></button>
+            <button class="chat-room interactive" type="button" data-chat-room="projects"># dự án <span data-room-badge="projects"></span></button>
+            <button class="chat-room interactive" type="button" data-chat-room="support"># hỗ trợ <span data-room-badge="support"></span></button>
+            <button class="chat-room interactive" type="button" data-chat-room="voice"># voice <span data-room-badge="voice"></span></button>
+            <button class="chat-room interactive" type="button" data-chat-room="announcements"># thông báo <span data-room-badge="announcements"></span></button>
+            <button class="chat-room interactive" type="button" data-chat-room="media"># media <span data-room-badge="media"></span></button>
+            <button class="chat-room interactive" type="button" data-chat-room="ai-lab"># ai-lab <span data-room-badge="ai-lab"></span></button>
+          </div>
+
+          <div class="voice-lounge">
+            <h3>Voice Lounge</h3>
+            <p id="voiceLoungeStatus">Chưa tham gia voice</p>
+            <button class="button ghost interactive" id="joinVoiceLounge" type="button">Tham gia</button>
           </div>
 
           <div class="chat-users">
@@ -476,16 +501,40 @@
               <p class="section-kicker" id="chatRoomLabel"># chung</p>
               <h3>Trò chuyện trực tiếp</h3>
             </div>
-            <span id="chatStatus">Đang kết nối...</span>
+            <div class="chat-header-tools">
+              <input id="chatSearch" type="search" placeholder="Tìm tin nhắn...">
+              <span id="chatOnlineCount">0 online</span>
+              <span id="chatStatus">Đang kết nối...</span>
+            </div>
           </header>
 
+          <div class="chat-pins" id="chatPins" hidden></div>
           <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
 
           <div class="chat-composer">
+            <div class="chat-reply-preview" id="chatReplyPreview" hidden>
+              <span>Đang trả lời</span>
+              <strong id="chatReplyText"></strong>
+              <button class="interactive" type="button" id="cancelChatReply">Bỏ</button>
+            </div>
+            <div class="chat-typing" id="chatTyping"></div>
             <textarea id="chatMessageInput" rows="3" maxlength="1200" placeholder="Nhập tin nhắn..."></textarea>
+            <div class="chat-extra-row">
+              <div class="chat-emoji-tray" aria-label="Emoji nhanh">
+                <button class="interactive" type="button" data-chat-emoji="❤️">❤️</button>
+                <button class="interactive" type="button" data-chat-emoji="😂">😂</button>
+                <button class="interactive" type="button" data-chat-emoji="🔥">🔥</button>
+                <button class="interactive" type="button" data-chat-emoji="👏">👏</button>
+                <button class="interactive" type="button" data-chat-emoji="✨">✨</button>
+              </div>
+              <input id="chatImageUrl" type="url" placeholder="Dán link ảnh/GIF nếu muốn gửi kèm">
+            </div>
             <div class="chat-actions">
+              <button class="button ghost interactive" id="notifyChatButton" type="button">Bật thông báo</button>
               <button class="button ghost interactive" id="chatVoiceButton" type="button">Nói để nhập</button>
               <button class="button ghost interactive" id="refreshChatButton" type="button">Tải lại</button>
+              <button class="button ghost interactive" id="exportChatButton" type="button">Xuất JSON</button>
+              <button class="button ghost interactive" id="clearChatViewButton" type="button">Dọn màn hình</button>
               <button class="button primary interactive" id="sendChatMessage" type="button">Gửi tin nhắn</button>
             </div>
           </div>
@@ -575,6 +624,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=11"></script>
+  <script src="script.js?v=12"></script>
 </body>
 </html>
