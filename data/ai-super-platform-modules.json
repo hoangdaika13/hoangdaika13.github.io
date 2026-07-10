@@ -1,402 +1,335 @@
 [
   {
-    "id": "chat-workspace",
-    "title": "AI Chat Workspace",
-    "group": "Core AI",
-    "status": "ready-static",
-    "description": "Khong gian chat de hoi dap, lap ke hoach va luu nhanh y tuong trong trinh duyet.",
+    "id": "command-center",
+    "title": "Command Center",
+    "status": "dynamic-local",
+    "description": "Trung tam dieu khien trang chu gom weather, calendar, clock, notes, todo, AI quick access, visitor counter, online status, server status, notifications, recent activity va favorite apps.",
     "requiresBackend": false,
     "accent": "#ff4fd8",
-    "features": ["multi-prompt", "local history", "copy answer", "preset roles"]
+    "features": ["Weather", "Calendar", "Clock", "Notes", "Todo", "AI Quick Access", "Visitor Counter", "Online Status", "Server Status", "Notifications", "Recent Activity", "Favorite Apps"]
   },
   {
-    "id": "prompt-studio",
-    "title": "Prompt Studio",
-    "group": "Core AI",
-    "status": "ready-static",
-    "description": "Trinh bien tap prompt co template, bien dau vao va phien ban mau cho creator.",
+    "id": "ai-center",
+    "title": "AI Center",
+    "status": "dynamic-local",
+    "description": "Khong gian AI gom multi AI chat, prompt library, prompt collection, prompt history, prompt optimizer, prompt translator, AI model switcher va AI workflow.",
     "requiresBackend": false,
     "accent": "#00e5ff",
-    "features": ["prompt templates", "variables", "version notes", "export txt"]
+    "features": ["Multi AI Chat", "Prompt Library", "Prompt Collection", "Prompt History", "Prompt Optimizer", "Prompt Translator", "AI Model Switcher", "AI Workflow"]
   },
   {
-    "id": "ai-script-generator",
-    "title": "AI Script Generator",
-    "group": "Content",
-    "status": "ready-static",
-    "description": "Tao kich ban video ngan, long-form va voice-over theo tone, nhan vat va cau truc.",
+    "id": "download-center",
+    "title": "Download Center",
+    "status": "dynamic-local",
+    "description": "Khu tai ve co search, categories, download counter, version, changelog, rating, favorite va file preview.",
     "requiresBackend": false,
     "accent": "#ffcc33",
-    "features": ["short video script", "hook generator", "voice-over draft", "scene beats"]
+    "features": ["Search", "Categories", "Download Counter", "Version", "Changelog", "Rating", "Favorite", "File Preview"]
   },
   {
-    "id": "content-calendar",
-    "title": "Content Calendar",
-    "group": "Content",
-    "status": "needs-backend",
-    "description": "Lap lich noi dung, gan trang thai va dong bo ke hoach dang bai theo ngay.",
-    "requiresBackend": true,
+    "id": "media-center",
+    "title": "Media Center",
+    "status": "dynamic-local",
+    "description": "Trung tam media gom videos, shorts, images, music, podcast, gallery va playlist.",
+    "requiresBackend": false,
     "accent": "#7c5cff",
-    "features": ["calendar board", "status tracking", "scheduled reminders", "team notes"]
+    "features": ["Videos", "Shorts", "Images", "Music", "Podcast", "Gallery", "Playlist"]
   },
   {
-    "id": "seo-brief-builder",
-    "title": "SEO Brief Builder",
-    "group": "Content",
-    "status": "ready-static",
-    "description": "Tao brief SEO gom title, outline, tu khoa, meta description va FAQ.",
+    "id": "project-center",
+    "title": "Project Center",
+    "status": "dynamic-local",
+    "description": "Quan ly du an gom progress, roadmap, timeline, screenshots, demo, features, bugs, changelog va team.",
     "requiresBackend": false,
     "accent": "#39ff88",
-    "features": ["keyword plan", "article outline", "meta draft", "FAQ ideas"]
+    "features": ["Progress", "Roadmap", "Timeline", "Screenshots", "Demo", "Features", "Bugs", "Changelog", "Team"]
   },
   {
-    "id": "social-caption-lab",
-    "title": "Social Caption Lab",
-    "group": "Content",
-    "status": "ready-static",
-    "description": "Viet caption cho Facebook, TikTok, YouTube Shorts va Instagram theo nhieu tone.",
+    "id": "knowledge-center",
+    "title": "Knowledge Center (Wiki)",
+    "status": "dynamic-local",
+    "description": "Wiki ca nhan ho tro markdown, categories, tags, search, bookmark va related articles.",
     "requiresBackend": false,
     "accent": "#ff6b6b",
-    "features": ["caption variants", "hashtag packs", "CTA builder", "tone switcher"]
+    "features": ["Markdown", "Categories", "Tags", "Search", "Bookmark", "Related Articles"]
   },
   {
-    "id": "thumbnail-idea-lab",
-    "title": "Thumbnail Idea Lab",
-    "group": "Content",
-    "status": "ready-static",
-    "description": "Sinh concept thumbnail, text ngan, mau nen va bo cuc canh cho video.",
+    "id": "learning-center",
+    "title": "Learning Center",
+    "status": "dynamic-local",
+    "description": "Khong gian hoc tap gom courses, lessons, progress, quiz, certificates va notes.",
     "requiresBackend": false,
     "accent": "#f97316",
-    "features": ["thumbnail angles", "headline text", "color mood", "composition notes"]
+    "features": ["Courses", "Lessons", "Progress", "Quiz", "Certificates", "Notes"]
   },
   {
-    "id": "image-prompt-forge",
-    "title": "Image Prompt Forge",
-    "group": "Creative Media",
-    "status": "ready-static",
-    "description": "Tao prompt anh AI chi tiet theo phong cach, anh sang, ong kinh va chat lieu.",
-    "requiresBackend": false,
+    "id": "community",
+    "title": "Community",
+    "status": "needs-backend",
+    "description": "Cong dong gom forum, comments, reactions, follow, profile va leaderboard.",
+    "requiresBackend": true,
     "accent": "#22d3ee",
-    "features": ["style presets", "negative prompt", "camera details", "batch prompts"]
+    "features": ["Forum", "Comments", "Reactions", "Follow", "Profile", "Leaderboard"]
   },
   {
-    "id": "video-shot-planner",
-    "title": "Video Shot Planner",
-    "group": "Creative Media",
-    "status": "ready-static",
-    "description": "Chia kich ban thanh shot list, goc may, chuyen dong, sound cue va ghi chu dung cu.",
-    "requiresBackend": false,
+    "id": "user-dashboard",
+    "title": "User Dashboard",
+    "status": "needs-backend",
+    "description": "Bang nguoi dung gom avatar, profile, settings, saved, favorites, activity va notification.",
+    "requiresBackend": true,
     "accent": "#a3e635",
-    "features": ["shot list", "camera movement", "sound cues", "prop notes"]
+    "features": ["Avatar", "Profile", "Settings", "Saved", "Favorites", "Activity", "Notification"]
   },
   {
-    "id": "voiceover-director",
-    "title": "Voiceover Director",
-    "group": "Creative Media",
-    "status": "ready-static",
-    "description": "Huong dan doc voice-over bang nhip, cam xuc, diem nhan va khoang dung.",
-    "requiresBackend": false,
-    "accent": "#fb7185",
-    "features": ["voice tone", "pause marks", "emotion map", "read speed"]
-  },
-  {
-    "id": "music-mood-board",
-    "title": "Music Mood Board",
-    "group": "Creative Media",
-    "status": "ready-static",
-    "description": "Goi y mood nhac, tempo, nhac cu va cau truc nen cho video hoac game.",
-    "requiresBackend": false,
-    "accent": "#c084fc",
-    "features": ["mood presets", "tempo ideas", "instrument palette", "loop notes"]
-  },
-  {
-    "id": "asset-library",
-    "title": "Asset Library",
-    "group": "Creative Media",
+    "id": "admin-panel",
+    "title": "Admin Panel",
     "status": "needs-backend",
-    "description": "Thu vien luu anh, prompt, file audio va file du an co tim kiem va tag.",
+    "description": "Bang quan tri gom dashboard, user manager, content manager, analytics, logs, database monitor va backup.",
     "requiresBackend": true,
-    "accent": "#38bdf8",
-    "features": ["file upload", "tag search", "asset preview", "project folders"]
+    "accent": "#ef4444",
+    "features": ["Dashboard", "User Manager", "Content Manager", "Analytics", "Logs", "Database Monitor", "Backup"]
   },
   {
-    "id": "brand-kit",
-    "title": "Brand Kit",
-    "group": "Business",
-    "status": "ready-static",
-    "description": "Quan ly mau sac, gioi thieu, tone of voice va mau cau chu thuong dung.",
-    "requiresBackend": false,
-    "accent": "#f43f5e",
-    "features": ["color tokens", "voice rules", "bio snippets", "copy blocks"]
-  },
-  {
-    "id": "landing-page-copy",
-    "title": "Landing Page Copy",
-    "group": "Business",
-    "status": "ready-static",
-    "description": "Tao noi dung landing page gom hero, loi ich, bang gia, FAQ va CTA.",
-    "requiresBackend": false,
-    "accent": "#06b6d4",
-    "features": ["hero copy", "benefit blocks", "pricing text", "FAQ generator"]
-  },
-  {
-    "id": "offer-builder",
-    "title": "Offer Builder",
-    "group": "Business",
-    "status": "ready-static",
-    "description": "Dong goi uu dai, bonus, bao hanh va thong diep ban hang thanh mot offer ro rang.",
-    "requiresBackend": false,
-    "accent": "#facc15",
-    "features": ["offer stack", "bonus ideas", "guarantee copy", "objection answers"]
-  },
-  {
-    "id": "crm-lite",
-    "title": "CRM Lite",
-    "group": "Business",
-    "status": "needs-backend",
-    "description": "Quan ly lead, ghi chu, trang thai cham soc va lich hen khach hang.",
-    "requiresBackend": true,
-    "accent": "#34d399",
-    "features": ["lead list", "pipeline stages", "contact notes", "follow-up tasks"]
-  },
-  {
-    "id": "invoice-estimator",
-    "title": "Invoice Estimator",
-    "group": "Business",
-    "status": "ready-static",
-    "description": "Tinh bao gia va tao noi dung hoa don don gian cho dich vu sang tao.",
-    "requiresBackend": false,
-    "accent": "#60a5fa",
-    "features": ["price calculator", "service items", "tax notes", "export summary"]
-  },
-  {
-    "id": "support-reply-assistant",
-    "title": "Support Reply Assistant",
-    "group": "Business",
-    "status": "ready-static",
-    "description": "Soan phan hoi khach hang theo tinh huong: hoi gia, bao loi, khieu nai, cam on.",
-    "requiresBackend": false,
-    "accent": "#f472b6",
-    "features": ["reply templates", "tone control", "issue summary", "next action"]
-  },
-  {
-    "id": "meeting-summarizer",
-    "title": "Meeting Summarizer",
-    "group": "Productivity",
-    "status": "ready-static",
-    "description": "Tom tat ghi chu hop thanh y chinh, quyet dinh, action item va rui ro.",
-    "requiresBackend": false,
-    "accent": "#2dd4bf",
-    "features": ["summary", "decisions", "action items", "risk list"]
-  },
-  {
-    "id": "task-autopilot",
-    "title": "Task Autopilot",
-    "group": "Productivity",
-    "status": "needs-backend",
-    "description": "Tao, gan va theo doi task tu prompt, co nhac viec va dong bo nhom.",
-    "requiresBackend": true,
-    "accent": "#818cf8",
-    "features": ["task extraction", "assignees", "reminders", "team sync"]
-  },
-  {
-    "id": "document-cleaner",
-    "title": "Document Cleaner",
-    "group": "Productivity",
-    "status": "ready-static",
-    "description": "Lam sach van ban, sua format, tao muc luc va bien ghi chu tho thanh tai lieu ro rang.",
-    "requiresBackend": false,
-    "accent": "#e879f9",
-    "features": ["format cleanup", "outline", "rewrite modes", "export markdown"]
-  },
-  {
-    "id": "translation-desk",
-    "title": "Translation Desk",
-    "group": "Productivity",
-    "status": "ready-static",
-    "description": "Dich va ban dia hoa noi dung giua tieng Viet, Anh va cac thi truong khac.",
+    "id": "ai-automation",
+    "title": "AI Automation",
+    "status": "dynamic-local",
+    "description": "Tu dong hoa AI gom auto title, auto description, auto tags, auto translation, auto summary, auto voice va auto thumbnail.",
     "requiresBackend": false,
     "accent": "#14b8a6",
-    "features": ["translation draft", "localization notes", "tone match", "glossary"]
+    "features": ["Auto Title", "Auto Description", "Auto Tags", "Auto Translation", "Auto Summary", "Auto Voice", "Auto Thumbnail"]
   },
   {
-    "id": "research-collector",
-    "title": "Research Collector",
-    "group": "Productivity",
-    "status": "needs-backend",
-    "description": "Luu nguon, trich y chinh, tag chu de va tao ban tong hop nghien cuu.",
-    "requiresBackend": true,
-    "accent": "#84cc16",
-    "features": ["source storage", "tagging", "summary cards", "citation notes"]
-  },
-  {
-    "id": "code-snippet-helper",
-    "title": "Code Snippet Helper",
-    "group": "Developer",
-    "status": "ready-static",
-    "description": "Tao, giai thich va bien doi snippet HTML, CSS, JavaScript theo yeu cau.",
+    "id": "creator-studio",
+    "title": "Creator Studio",
+    "status": "dynamic-local",
+    "description": "Studio sang tao gom thumbnail manager, video manager, SEO score, script generator va hashtag generator.",
     "requiresBackend": false,
-    "accent": "#22c55e",
-    "features": ["snippet generator", "explain code", "refactor hints", "copy blocks"]
-  },
-  {
-    "id": "api-tester",
-    "title": "API Tester",
-    "group": "Developer",
-    "status": "needs-backend",
-    "description": "Luu request API, header, body mau va lich su ket qua kiem thu.",
-    "requiresBackend": true,
-    "accent": "#0ea5e9",
-    "features": ["request builder", "saved headers", "response history", "environment vars"]
-  },
-  {
-    "id": "schema-designer",
-    "title": "Schema Designer",
-    "group": "Developer",
-    "status": "ready-static",
-    "description": "Phac thao schema JSON, database table va validation rules cho module moi.",
-    "requiresBackend": false,
-    "accent": "#f59e0b",
-    "features": ["JSON schema", "table fields", "validation rules", "sample records"]
-  },
-  {
-    "id": "bug-report-writer",
-    "title": "Bug Report Writer",
-    "group": "Developer",
-    "status": "ready-static",
-    "description": "Bien mo ta loi thanh bug report co buoc tai hien, ky vong, thuc te va muc do uu tien.",
-    "requiresBackend": false,
-    "accent": "#ef4444",
-    "features": ["repro steps", "expected result", "actual result", "priority label"]
-  },
-  {
-    "id": "release-notes-builder",
-    "title": "Release Notes Builder",
-    "group": "Developer",
-    "status": "ready-static",
-    "description": "Tao release notes, changelog va thong bao cap nhat tu danh sach thay doi.",
-    "requiresBackend": false,
-    "accent": "#8b5cf6",
-    "features": ["change grouping", "user summary", "technical notes", "migration notes"]
-  },
-  {
-    "id": "learning-path-maker",
-    "title": "Learning Path Maker",
-    "group": "Learning",
-    "status": "ready-static",
-    "description": "Tao lo trinh hoc theo muc tieu, thoi gian, bai tap va moc kiem tra.",
-    "requiresBackend": false,
-    "accent": "#10b981",
-    "features": ["weekly plan", "practice tasks", "checkpoint quiz", "resource notes"]
-  },
-  {
-    "id": "quiz-generator",
-    "title": "Quiz Generator",
-    "group": "Learning",
-    "status": "ready-static",
-    "description": "Sinh cau hoi trac nghiem, tu luan, dap an va giai thich tu tai lieu dau vao.",
-    "requiresBackend": false,
-    "accent": "#06b6d4",
-    "features": ["MCQ", "short answers", "answer key", "difficulty levels"]
-  },
-  {
-    "id": "flashcard-builder",
-    "title": "Flashcard Builder",
-    "group": "Learning",
-    "status": "needs-backend",
-    "description": "Tao bo flashcard, luu tien do on tap va lap lich spaced repetition.",
-    "requiresBackend": true,
-    "accent": "#f97316",
-    "features": ["card decks", "review schedule", "progress memory", "import text"]
-  },
-  {
-    "id": "lesson-plan-designer",
-    "title": "Lesson Plan Designer",
-    "group": "Learning",
-    "status": "ready-static",
-    "description": "Tao giao an voi muc tieu, hoat dong, bai tap va cach danh gia.",
-    "requiresBackend": false,
-    "accent": "#d946ef",
-    "features": ["objectives", "activities", "materials", "assessment rubric"]
-  },
-  {
-    "id": "knowledge-base",
-    "title": "Knowledge Base",
-    "group": "Learning",
-    "status": "needs-backend",
-    "description": "Luu bai viet, cau hoi, tag va tim kiem noi bo cho nhom hoac san pham.",
-    "requiresBackend": true,
-    "accent": "#3b82f6",
-    "features": ["article storage", "tag search", "permissions", "revision history"]
-  },
-  {
-    "id": "automation-builder",
-    "title": "Automation Builder",
-    "group": "Automation",
-    "status": "needs-backend",
-    "description": "Tao workflow neu-thi, webhook, lich chay va hanh dong tu dong.",
-    "requiresBackend": true,
     "accent": "#ec4899",
-    "features": ["workflow rules", "webhooks", "scheduled jobs", "action logs"]
+    "features": ["Thumbnail Manager", "Video Manager", "SEO Score", "Script Generator", "Hashtag Generator"]
   },
   {
-    "id": "email-campaign-lab",
-    "title": "Email Campaign Lab",
-    "group": "Automation",
+    "id": "analytics",
+    "title": "Analytics",
     "status": "needs-backend",
-    "description": "Soan chuoi email, phan doan nguoi nhan va gui chien dich co theo doi ket qua.",
+    "description": "Thong ke traffic, devices, browsers, countries, downloads, AI usage va charts.",
     "requiresBackend": true,
-    "accent": "#22d3ee",
-    "features": ["email sequence", "audience segments", "send queue", "open tracking"]
+    "accent": "#38bdf8",
+    "features": ["Traffic", "Devices", "Browsers", "Countries", "Downloads", "AI Usage", "Charts"]
+  },
+  {
+    "id": "store",
+    "title": "Store",
+    "status": "needs-backend",
+    "description": "Cua hang san pham so gom digital products, membership, orders, coupons va checkout.",
+    "requiresBackend": true,
+    "accent": "#f59e0b",
+    "features": ["Digital Products", "Membership", "Orders", "Coupons", "Checkout"]
+  },
+  {
+    "id": "cloud-storage",
+    "title": "Cloud Storage",
+    "status": "needs-backend",
+    "description": "Kho luu tru cloud gom upload, download, preview, share, folder va recent files.",
+    "requiresBackend": true,
+    "accent": "#60a5fa",
+    "features": ["Upload", "Download", "Preview", "Share", "Folder", "Recent Files"]
   },
   {
     "id": "notification-center",
     "title": "Notification Center",
-    "group": "Automation",
     "status": "needs-backend",
-    "description": "Quan ly thong bao trong app, email hoac push theo su kien va muc uu tien.",
+    "description": "Trung tam thong bao qua email, push, in-app, Discord va Telegram.",
     "requiresBackend": true,
+    "accent": "#fb7185",
+    "features": ["Email", "Push", "In-app", "Discord", "Telegram"]
+  },
+  {
+    "id": "api-center",
+    "title": "API Center",
+    "status": "needs-backend",
+    "description": "Khu API gom API docs, playground, API key, logs va examples.",
+    "requiresBackend": true,
+    "accent": "#34d399",
+    "features": ["API Docs", "Playground", "API Key", "Logs", "Examples"]
+  },
+  {
+    "id": "developer-hub",
+    "title": "Developer Hub",
+    "status": "dynamic-local",
+    "description": "Hub lap trinh gom git, releases, changelog, packages va CI/CD.",
+    "requiresBackend": false,
+    "accent": "#c084fc",
+    "features": ["Git", "Releases", "Changelog", "Packages", "CI/CD"]
+  },
+  {
+    "id": "security-center",
+    "title": "Security Center",
+    "status": "needs-backend",
+    "description": "Bao mat gom login history, sessions, devices, two factor, permissions va audit logs.",
+    "requiresBackend": true,
+    "accent": "#f43f5e",
+    "features": ["Login History", "Sessions", "Devices", "Two Factor", "Permissions", "Audit Logs"]
+  },
+  {
+    "id": "smart-search",
+    "title": "Smart Search",
+    "status": "dynamic-local",
+    "description": "Tim Projects, Videos, Downloads, AI, Articles, Users, Files va Settings trong mot o.",
+    "requiresBackend": false,
+    "accent": "#2dd4bf",
+    "features": ["Projects", "Videos", "Downloads", "AI", "Articles", "Users", "Files", "Settings"]
+  },
+  {
+    "id": "app-launcher",
+    "title": "App Launcher",
+    "status": "dynamic-local",
+    "description": "Start menu cho favorite apps, recent apps, categories va search.",
+    "requiresBackend": false,
+    "accent": "#f472b6",
+    "features": ["Favorite Apps", "Recent Apps", "Categories", "Search"]
+  },
+  {
+    "id": "widgets-engine",
+    "title": "Widgets Engine",
+    "status": "dynamic-local",
+    "description": "Dong co widget gom drag drop, resize, hide, pin va save layout.",
+    "requiresBackend": false,
     "accent": "#fde047",
-    "features": ["event triggers", "notification inbox", "priority rules", "delivery status"]
+    "features": ["Drag Drop", "Resize", "Hide", "Pin", "Save Layout"]
   },
   {
-    "id": "webhook-inbox",
-    "title": "Webhook Inbox",
-    "group": "Automation",
+    "id": "marketplace",
+    "title": "Marketplace",
     "status": "needs-backend",
-    "description": "Nhan webhook, luu payload, loc su kien va replay request khi can kiem thu.",
+    "description": "Cho module gom plugins, themes, scripts, AI agents va extensions.",
     "requiresBackend": true,
+    "accent": "#818cf8",
+    "features": ["Plugins", "Themes", "Scripts", "AI Agents", "Extensions"]
+  },
+  {
+    "id": "mobile-pwa",
+    "title": "Mobile/PWA",
+    "status": "dynamic-local",
+    "description": "Mobile va PWA gom responsive, installable, offline va sync data.",
+    "requiresBackend": false,
     "accent": "#4ade80",
-    "features": ["webhook endpoint", "payload log", "filters", "replay action"]
+    "features": ["Responsive", "Installable", "Offline", "Sync Data"]
   },
   {
-    "id": "analytics-dashboard",
-    "title": "Analytics Dashboard",
-    "group": "Admin",
-    "status": "needs-backend",
-    "description": "Hien thi luot truy cap, module pho bien, conversion va su kien gan day.",
-    "requiresBackend": true,
-    "accent": "#38bdf8",
-    "features": ["traffic metrics", "module usage", "conversion funnel", "event stream"]
+    "id": "modern-ui-kit",
+    "title": "Modern UI Kit",
+    "status": "dynamic-local",
+    "description": "Bo UI hien dai gom glassmorphism, neon, gradient, blur, motion, smooth scroll, skeleton loading, command palette, dock navigation, floating action button, dynamic sidebar va mega menu.",
+    "requiresBackend": false,
+    "accent": "#ff4fd8",
+    "features": ["Glassmorphism", "Neon", "Gradient", "Blur", "Motion", "Smooth Scroll", "Skeleton Loading", "Command Palette", "Dock Navigation", "Floating Action Button", "Dynamic Sidebar", "Mega Menu"]
   },
   {
-    "id": "user-admin",
-    "title": "User Admin",
-    "group": "Admin",
-    "status": "needs-backend",
-    "description": "Quan ly tai khoan, quyen truy cap, khoa nguoi dung va nhat ky dang nhap.",
-    "requiresBackend": true,
+    "id": "i18n",
+    "title": "Da ngon ngu (i18n)",
+    "status": "dynamic-local",
+    "description": "Chuyen ngu, luu theo user va ho tro RTL.",
+    "requiresBackend": false,
+    "accent": "#06b6d4",
+    "features": ["Language Switcher", "User Locale", "RTL"]
+  },
+  {
+    "id": "accessibility-center",
+    "title": "Accessibility Center",
+    "status": "dynamic-local",
+    "description": "Trung tam tiep can gom phong to chu, tuong phan cao, screen-reader mode va dieu huong ban phim.",
+    "requiresBackend": false,
+    "accent": "#84cc16",
+    "features": ["Font Size", "High Contrast", "Screen-reader Mode", "Keyboard Navigation"]
+  },
+  {
+    "id": "gamification",
+    "title": "Gamification",
+    "status": "dynamic-local",
+    "description": "Game hoa hoat dong gom XP, huy hieu, streak va bang xep hang hoat dong.",
+    "requiresBackend": false,
+    "accent": "#facc15",
+    "features": ["XP", "Badges", "Streak", "Leaderboard"]
+  },
+  {
+    "id": "onboarding-tour",
+    "title": "Onboarding/Tour Guide",
+    "status": "dynamic-local",
+    "description": "Huong dan tung buoc cho nguoi dung moi.",
+    "requiresBackend": false,
     "accent": "#a78bfa",
-    "features": ["user list", "roles", "access control", "login audit"]
+    "features": ["Step Guide", "Highlights", "Progress", "Skip"]
   },
   {
-    "id": "billing-admin",
-    "title": "Billing Admin",
-    "group": "Admin",
-    "status": "needs-backend",
-    "description": "Theo doi goi su dung, hoa don, thanh toan va gioi han tinh nang.",
-    "requiresBackend": true,
+    "id": "feedback-survey",
+    "title": "Feedback & Survey",
+    "status": "dynamic-local",
+    "description": "Gop y nhanh, khao sat popup va NPS.",
+    "requiresBackend": false,
     "accent": "#fb923c",
-    "features": ["plans", "invoices", "payment status", "usage limits"]
+    "features": ["Quick Feedback", "Survey Popup", "NPS"]
+  },
+  {
+    "id": "helpdesk-ticketing",
+    "title": "Helpdesk/Ticketing",
+    "status": "needs-backend",
+    "description": "Ho tro khach hang va quan ly trang thai ticket.",
+    "requiresBackend": true,
+    "accent": "#f87171",
+    "features": ["Support Ticket", "Status", "Assign", "History"]
+  },
+  {
+    "id": "status-page",
+    "title": "Status Page",
+    "status": "dynamic-local",
+    "description": "Trang trang thai gom uptime, su co va lich bao tri he thong.",
+    "requiresBackend": false,
+    "accent": "#22c55e",
+    "features": ["Uptime", "Incidents", "Maintenance"]
+  },
+  {
+    "id": "feature-flag-dashboard",
+    "title": "Feature Flag Dashboard",
+    "status": "dynamic-local",
+    "description": "Bat tat module runtime va A/B testing don gian.",
+    "requiresBackend": false,
+    "accent": "#e879f9",
+    "features": ["Runtime Flags", "A/B Testing", "Module Toggle"]
+  },
+  {
+    "id": "cookie-consent-manager",
+    "title": "Cookie & Consent Manager",
+    "status": "dynamic-local",
+    "description": "Quan ly quyen rieng tu va theo doi co xin phep.",
+    "requiresBackend": false,
+    "accent": "#67e8f9",
+    "features": ["Privacy", "Tracking Consent", "Cookie Control"]
+  },
+  {
+    "id": "data-export-import",
+    "title": "Data Export/Import",
+    "status": "dynamic-local",
+    "description": "Tai du lieu ca nhan, backup va restore cau hinh local.",
+    "requiresBackend": false,
+    "accent": "#93c5fd",
+    "features": ["Export", "Import", "Backup", "Restore"]
+  },
+  {
+    "id": "referral-affiliate",
+    "title": "Referral & Affiliate",
+    "status": "needs-backend",
+    "description": "Ma gioi thieu va theo doi hoa hong.",
+    "requiresBackend": true,
+    "accent": "#fbbf24",
+    "features": ["Referral Code", "Commission Tracking", "Campaigns"]
+  },
+  {
+    "id": "wishlist-compare",
+    "title": "Wishlist & Compare",
+    "status": "dynamic-local",
+    "description": "Wishlist va so sanh dung cho Store va Download Center.",
+    "requiresBackend": false,
+    "accent": "#f0abfc",
+    "features": ["Wishlist", "Compare", "Store", "Download Center"]
   }
 ]

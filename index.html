@@ -260,22 +260,48 @@
     <section id="platform" class="section platform-section neon-platform">
       <div class="section-heading">
         <p class="section-kicker">AI Super Platform</p>
-        <h2>40 module nâng cấp theo từng lớp</h2>
+        <h2>37 module chạy như một trang chủ động</h2>
         <p class="section-note">
-          Mỗi module được tách thành thẻ riêng, có trạng thái, nhóm chức năng và đánh dấu rõ phần nào cần backend thật.
+          Mỗi module là một ô chức năng trên trang chủ: tìm kiếm, mở chi tiết, lưu yêu thích, tạo checklist và lưu dữ liệu local ngay trong HTML.
         </p>
       </div>
       <div class="platform-toolbar" aria-label="Lọc module">
+        <label class="module-search">
+          <span>Tìm module</span>
+          <input id="moduleSearch" type="search" placeholder="Nhập: AI, Store, Notes, PWA...">
+        </label>
         <button class="platform-filter active interactive" type="button" data-module-filter="all">Tất cả</button>
         <button class="platform-filter interactive" type="button" data-module-filter="core">Lõi</button>
         <button class="platform-filter interactive" type="button" data-module-filter="extension">Mở rộng</button>
         <button class="platform-filter interactive" type="button" data-module-filter="backend">Cần backend</button>
+        <button class="platform-filter interactive" type="button" data-module-filter="favorite">Yêu thích</button>
       </div>
       <div class="platform-overview" aria-label="Tổng quan module">
         <span><strong id="moduleTotal">0</strong>Module</span>
         <span><strong id="moduleCore">0</strong>Lõi</span>
         <span><strong id="moduleBackend">0</strong>Cần backend</span>
       </div>
+      <article class="module-detail interactive-card" id="moduleDetail" aria-live="polite">
+        <div>
+          <p class="section-kicker">Module đang chọn</p>
+          <h3 id="moduleDetailTitle">Chọn một module để mở</h3>
+          <p id="moduleDetailDescription">Bấm vào bất kỳ card bên dưới để mở workspace động của module đó.</p>
+        </div>
+        <div class="module-detail-meta" id="moduleDetailMeta"></div>
+        <div class="module-detail-features" id="moduleDetailFeatures"></div>
+        <div class="module-mini-app">
+          <label>
+            Dữ liệu / yêu cầu cho module
+            <textarea id="moduleDemoInput" rows="4" placeholder="Nhập nội dung muốn module xử lý..."></textarea>
+          </label>
+          <div class="workspace-actions">
+            <button class="button primary interactive" id="runModuleDemo" type="button">Chạy module</button>
+            <button class="button ghost interactive" id="saveModuleState" type="button">Lưu local</button>
+            <button class="button ghost interactive" id="copyModuleOutput" type="button">Copy output</button>
+          </div>
+          <pre class="workspace-output" id="moduleDemoOutput">Output của module sẽ hiện ở đây.</pre>
+        </div>
+      </article>
       <div class="platform-console interactive-card" id="platformConsole">
         <div class="platform-console-head">
           <div>

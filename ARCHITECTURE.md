@@ -14,8 +14,8 @@ Trang web hien tai la portfolio tinh chay tren GitHub Pages, co them API vote tr
 - `index.html`: trang chu portfolio va cac khoi vote, tai khoan, lien he, nhac nen.
 - `script.js`: hieu ung neon, vote MongoDB API, form, am nhac, realtime auth client.
 - `styles.css`: theme chung va style rieng cho tung tool.
-- `config/modules.config.js`: nap registry 40 module AI Super Platform tu JSON.
-- `data/ai-super-platform-modules.json`: du lieu 40 module, trang thai va yeu cau backend.
+- `config/modules.config.js`: nap registry 37 module AI Super Platform tu JSON.
+- `data/ai-super-platform-modules.json`: du lieu 37 module, trang thai va yeu cau backend.
 - `services/`: event bus, local store va module loader dung chung cho cac dot mo rong sau.
 - `api/votes.js`: API vote/like deploy Vercel, dung MongoDB Atlas.
 - `realtime-server/`: server Node.js rieng cho Socket.io, dang ky/dang nhap, OAuth Google/Facebook va tracking co xin phep.

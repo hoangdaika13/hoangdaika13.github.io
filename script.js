@@ -1,4 +1,4 @@
-const $ = (selector) => document.querySelector(selector);
+﻿const $ = (selector) => document.querySelector(selector);
 const byId = (id) => document.getElementById(id);
 
 const canvas = $(".ambient-canvas");
@@ -105,7 +105,7 @@ function initTheme() {
       const isStrong = mode === "strong";
       document.body.classList.toggle("neon-boost", isStrong);
       document.body.classList.toggle("neon-soft", !isStrong);
-      themeToggle.textContent = isStrong ? "Neon mạnh" : "Neon nhẹ";
+      themeToggle.textContent = isStrong ? "Neon máº¡nh" : "Neon nháº¹";
       localStorage.setItem("hoangdaika13-neon-mode", mode);
     };
     setNeonMode(savedNeon === "strong" ? "strong" : "soft");
@@ -118,11 +118,11 @@ function initTheme() {
   }
   const saved = localStorage.getItem("hoangdaika13-theme");
   if (saved === "dark") document.body.classList.add("dark");
-  themeToggle.textContent = document.body.classList.contains("dark") ? "Tối" : "Sáng";
+  themeToggle.textContent = document.body.classList.contains("dark") ? "Tá»‘i" : "SÃ¡ng";
   themeToggle.addEventListener("click", () => {
     document.body.classList.toggle("dark");
     const isDark = document.body.classList.contains("dark");
-    themeToggle.textContent = isDark ? "Tối" : "Sáng";
+    themeToggle.textContent = isDark ? "Tá»‘i" : "SÃ¡ng";
     localStorage.setItem("hoangdaika13-theme", isDark ? "dark" : "light");
   });
 }
@@ -167,7 +167,7 @@ function initMusicPlayer() {
     if (musicEngine) return musicEngine;
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) {
-      status.textContent = "Mở bằng Chrome để phát nhạc";
+      status.textContent = "Má»Ÿ báº±ng Chrome Ä‘á»ƒ phÃ¡t nháº¡c";
       return null;
     }
     const ctx = new AudioCtx();
@@ -186,7 +186,7 @@ function initMusicPlayer() {
     grid.querySelectorAll(".track-button").forEach((button) => {
       button.classList.toggle("is-active", Number(button.dataset.track) === activeTrack);
     });
-    status.textContent = isPlaying ? `Đang phát: ${ambientTracks[activeTrack].name}` : "Đang tắt";
+    status.textContent = isPlaying ? `Äang phÃ¡t: ${ambientTracks[activeTrack].name}` : "Äang táº¯t";
   };
 
   const playNote = () => {
@@ -222,7 +222,7 @@ function initMusicPlayer() {
   const stopMusic = () => {
     isPlaying = false;
     window.clearTimeout(timer);
-    toggle.textContent = "Phát nhạc";
+    toggle.textContent = "PhÃ¡t nháº¡c";
     updateTrackButtons();
   };
 
@@ -231,7 +231,7 @@ function initMusicPlayer() {
     if (!engine) return;
     if (engine.ctx.state === "suspended") await engine.ctx.resume();
     isPlaying = true;
-    toggle.textContent = "Tạm dừng";
+    toggle.textContent = "Táº¡m dá»«ng";
     updateTrackButtons();
     window.clearTimeout(timer);
     playNote();
@@ -239,10 +239,10 @@ function initMusicPlayer() {
 
   const tryAutoplay = async () => {
     try {
-      status.textContent = "Đang tự bật nhạc...";
+      status.textContent = "Äang tá»± báº­t nháº¡c...";
       await startMusic();
     } catch {
-      status.textContent = "Bấm bất kỳ nút nào để bật nhạc";
+      status.textContent = "Báº¥m báº¥t ká»³ nÃºt nÃ o Ä‘á»ƒ báº­t nháº¡c";
       const startAfterGesture = () => {
         document.removeEventListener("pointerdown", startAfterGesture);
         setTimeout(async () => {
@@ -467,7 +467,7 @@ function initRealtimeAuth() {
   };
 
   const api = async (path, options = {}) => {
-    if (!REALTIME_URL) throw new Error("Chưa cấu hình realtime backend.");
+    if (!REALTIME_URL) throw new Error("ChÆ°a cáº¥u hÃ¬nh realtime backend.");
     const response = await fetch(`${REALTIME_URL}${path}`, {
       ...options,
       headers: {
@@ -477,21 +477,21 @@ function initRealtimeAuth() {
       }
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Lỗi kết nối backend.");
+    if (!response.ok) throw new Error(data.error || "Lá»—i káº¿t ná»‘i backend.");
     return data;
   };
 
   const renderAuth = () => {
     if (user) {
-      setStatus(`Đã đăng nhập: ${user.name || user.email}`);
+      setStatus(`ÄÃ£ Ä‘Äƒng nháº­p: ${user.name || user.email}`);
     } else if (token && REALTIME_URL) {
-      setStatus("Đang kiểm tra tài khoản...");
+      setStatus("Äang kiá»ƒm tra tÃ i khoáº£n...");
     } else {
-      setStatus("Chưa đăng nhập");
+      setStatus("ChÆ°a Ä‘Äƒng nháº­p");
     }
     note.textContent = REALTIME_URL
-      ? "Realtime backend đã cấu hình. Tracking chỉ chạy khi người dùng đồng ý hoặc đăng nhập."
-      : "Chưa cấu hình realtime backend. Sau khi deploy server, dán URL vào config.js.";
+      ? "Realtime backend Ä‘Ã£ cáº¥u hÃ¬nh. Tracking chá»‰ cháº¡y khi ngÆ°á»i dÃ¹ng Ä‘á»“ng Ã½ hoáº·c Ä‘Äƒng nháº­p."
+      : "ChÆ°a cáº¥u hÃ¬nh realtime backend. Sau khi deploy server, dÃ¡n URL vÃ o config.js.";
     if (REALTIME_URL) {
       googleLogin.href = `${REALTIME_URL}/api/auth/google`;
       facebookLogin.href = `${REALTIME_URL}/api/auth/facebook`;
@@ -582,7 +582,7 @@ function initRealtimeAuth() {
       socket = null;
     }
     if (!REALTIME_URL || (!token && !consent.checked)) {
-      online.textContent = "0 đang online";
+      online.textContent = "0 Ä‘ang online";
       return;
     }
     try {
@@ -598,11 +598,11 @@ function initRealtimeAuth() {
         }
       });
       socket.on("site:stats", (stats) => {
-        online.textContent = `${Number(stats.online || 0)} đang online`;
+        online.textContent = `${Number(stats.online || 0)} Ä‘ang online`;
       });
       socket.emit("page:event", { type: "page:view", path: location.pathname, detail: { title: document.title } });
     } catch {
-      note.textContent = "Không kết nối được realtime backend.";
+      note.textContent = "KhÃ´ng káº¿t ná»‘i Ä‘Æ°á»£c realtime backend.";
     }
   }
 
@@ -617,35 +617,99 @@ function initSuperPlatform() {
 
   let modules = Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
   const filters = document.querySelectorAll("[data-module-filter]");
+  const search = byId("moduleSearch");
   const total = byId("moduleTotal");
   const core = byId("moduleCore");
   const backend = byId("moduleBackend");
+  const detailTitle = byId("moduleDetailTitle");
+  const detailDescription = byId("moduleDetailDescription");
+  const detailMeta = byId("moduleDetailMeta");
+  const detailFeatures = byId("moduleDetailFeatures");
+  const demoInput = byId("moduleDemoInput");
+  const demoOutput = byId("moduleDemoOutput");
+  const runDemo = byId("runModuleDemo");
+  const saveState = byId("saveModuleState");
+  const copyOutput = byId("copyModuleOutput");
+  const favoritesKey = "hh-platform-favorites";
+  const stateKey = "hh-platform-module-state";
+  let activeFilter = "all";
+  let selectedModule = null;
+  let favorites = JSON.parse(localStorage.getItem(favoritesKey) || "[]");
 
   const setCounter = (node, value) => {
     if (node) node.textContent = String(value).padStart(2, "0");
   };
 
-  const render = (filter = "all") => {
-    const visible = modules.filter((module) => {
-      if (filter === "backend") return module.requiresBackend;
-      if (filter === "core") return module.group === "core";
-      if (filter === "extension") return module.group === "extension";
-      return true;
-    });
+  const persistFavorites = () => localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+  const textOf = (module) => `${module.title} ${module.description} ${(module.features || []).join(" ")}`.toLowerCase();
 
+  const filteredModules = () => {
+    const query = (search?.value || "").trim().toLowerCase();
+    return modules.filter((module) => {
+      if (activeFilter === "backend" && !module.requiresBackend) return false;
+      if (activeFilter === "core" && module.group !== "core") return false;
+      if (activeFilter === "extension" && module.group !== "extension") return false;
+      if (activeFilter === "favorite" && !favorites.includes(module.id)) return false;
+      return !query || textOf(module).includes(query);
+    });
+  };
+
+  const moduleDemoText = (module, input) => {
+    const features = (module.features || []).slice(0, 9);
+    const backendNote = module.requiresBackend
+      ? "\n\nBackend thật cần có: database, auth, role, logs, sync API và bảo mật trước khi dùng cho nhiều người."
+      : "\n\nChế độ hiện tại: chạy client-side trong HTML và có thể lưu localStorage.";
+    return [
+      `${String(module.order || "").padStart(2, "0")}. ${module.title}`,
+      "",
+      `Mô tả: ${module.description}`,
+      "",
+      "Checklist chức năng:",
+      ...features.map((feature, index) => `${index + 1}. ${feature}: UI + state + action + dữ liệu mẫu.`),
+      "",
+      "Dữ liệu bạn nhập:",
+      input || "Chưa nhập dữ liệu.",
+      "",
+      "Output gợi ý:",
+      `- Tạo workspace động cho ${module.title}.`,
+      "- Có search/filter/favorite và trạng thái lưu local.",
+      "- Nếu module cần backend, UI giữ nguyên và thay localStorage bằng API thật sau."
+    ].join("\n") + backendNote;
+  };
+
+  const renderDetail = (module) => {
+    if (!module) return;
+    selectedModule = module;
+    if (detailTitle) detailTitle.textContent = `${String(module.order || "").padStart(2, "0")}. ${module.title}`;
+    if (detailDescription) detailDescription.textContent = module.description;
+    if (detailMeta) {
+      detailMeta.innerHTML = `
+        <span>${module.group === "core" ? "Nhóm lõi" : "Nhóm mở rộng"}</span>
+        <span>${module.status || "planned"}</span>
+        <span>${module.requiresBackend ? "Cần backend thật" : "Chạy local trong HTML"}</span>
+        <button class="module-fav-toggle interactive" type="button" data-module-fav="${module.id}">${favorites.includes(module.id) ? "Bỏ yêu thích" : "Yêu thích"}</button>`;
+    }
+    if (detailFeatures) detailFeatures.innerHTML = (module.features || []).map((feature) => `<span>${feature}</span>`).join("");
+    const saved = JSON.parse(localStorage.getItem(stateKey) || "{}")[module.id];
+    if (demoInput) demoInput.value = saved?.input || "";
+    if (demoOutput) demoOutput.textContent = saved?.output || moduleDemoText(module, saved?.input || "");
+  };
+
+  const render = () => {
+    const visible = filteredModules();
     if (!modules.length) {
       grid.innerHTML = `
         <article class="module-card skeleton-card">
           <span class="module-number">00</span>
           <p class="project-tag">Chưa có dữ liệu</p>
           <h3>Đang chờ module registry</h3>
-          <p>Khi file config/modules.config.js sẵn sàng, 40 module sẽ tự hiển thị tại đây.</p>
+          <p>Khi file config/modules.config.js sẵn sàng, các module sẽ tự hiển thị tại đây.</p>
         </article>`;
       return;
     }
 
     grid.innerHTML = visible.map((module, index) => `
-      <article class="module-card interactive-card interactive" style="--module-accent:${module.accent || "#ff3bd4"}">
+      <article class="module-card interactive-card interactive ${selectedModule?.id === module.id ? "active" : ""}" data-module-id="${module.id}" style="--module-accent:${module.accent || "#ff3bd4"}">
         <span class="module-number">${String(module.order || index + 1).padStart(2, "0")}</span>
         <p class="project-tag">${module.group === "core" ? "Lõi" : "Mở rộng"}</p>
         <h3>${module.title}</h3>
@@ -656,9 +720,12 @@ function initSuperPlatform() {
         <footer>
           <span>${module.status || "planned"}</span>
           ${module.requiresBackend ? "<strong>Cần backend</strong>" : "<strong>Client-side</strong>"}
+          <button class="module-card-fav interactive" type="button" data-module-fav="${module.id}" aria-label="Yêu thích ${module.title}">${favorites.includes(module.id) ? "♥" : "♡"}</button>
         </footer>
       </article>
     `).join("");
+
+    if (!selectedModule && modules.length) renderDetail(modules[0]);
   };
 
   const updateCounters = () => {
@@ -671,21 +738,76 @@ function initSuperPlatform() {
     button.addEventListener("click", () => {
       filters.forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
-      render(button.dataset.moduleFilter);
+      activeFilter = button.dataset.moduleFilter || "all";
+      render();
     });
+  });
+
+  search?.addEventListener("input", render);
+
+  const toggleFavorite = (id) => {
+    favorites = favorites.includes(id) ? favorites.filter((item) => item !== id) : [...favorites, id];
+    persistFavorites();
+  };
+
+  grid.addEventListener("click", (event) => {
+    const favoriteButton = event.target.closest("[data-module-fav]");
+    if (favoriteButton) {
+      toggleFavorite(favoriteButton.dataset.moduleFav);
+      if (selectedModule?.id === favoriteButton.dataset.moduleFav) renderDetail(selectedModule);
+      render();
+      return;
+    }
+
+    const card = event.target.closest("[data-module-id]");
+    if (!card) return;
+    renderDetail(modules.find((item) => item.id === card.dataset.moduleId));
+    render();
+  });
+
+  detailMeta?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-module-fav]");
+    if (!button) return;
+    toggleFavorite(button.dataset.moduleFav);
+    renderDetail(selectedModule);
+    render();
+  });
+
+  runDemo?.addEventListener("click", () => {
+    if (!selectedModule || !demoOutput) return;
+    demoOutput.textContent = moduleDemoText(selectedModule, demoInput?.value || "");
+  });
+
+  saveState?.addEventListener("click", () => {
+    if (!selectedModule) return;
+    const allState = JSON.parse(localStorage.getItem(stateKey) || "{}");
+    allState[selectedModule.id] = {
+      input: demoInput?.value || "",
+      output: demoOutput?.textContent || "",
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(stateKey, JSON.stringify(allState));
+    if (demoOutput) demoOutput.textContent = `${demoOutput.textContent}\n\n[Đã lưu local cho ${selectedModule.title}]`;
+  });
+
+  copyOutput?.addEventListener("click", async () => {
+    const text = demoOutput?.textContent || "";
+    if (text) await navigator.clipboard.writeText(text);
   });
 
   window.addEventListener("hh:modules-ready", (event) => {
     modules = Array.isArray(event.detail) ? event.detail : [];
     updateCounters();
     const active = document.querySelector("[data-module-filter].active");
-    render(active?.dataset.moduleFilter || "all");
+    activeFilter = active?.dataset.moduleFilter || "all";
+    selectedModule = modules[0] || null;
+    renderDetail(selectedModule);
+    render();
   });
 
   updateCounters();
-  render("all");
+  render();
 }
-
 function initCreatorWorkspace() {
   if (!document.body.classList.contains("home-neon")) return;
   const consoleRoot = byId("platformConsole");
@@ -715,17 +837,17 @@ function initCreatorWorkspace() {
   };
 
   const roleLabels = {
-    mentor: "Mentor sáng tạo",
-    writer: "Biên kịch YouTube",
+    mentor: "Mentor sÃ¡ng táº¡o",
+    writer: "BiÃªn ká»‹ch YouTube",
     designer: "UI/UX Designer",
     marketer: "Marketing Advisor"
   };
 
   byId("generateChatReply")?.addEventListener("click", () => {
     const role = val("chatRole") || "mentor";
-    const goal = val("chatGoal") || "phát triển ý tưởng mới";
-    const input = val("chatInput") || "Chưa có nội dung đầu vào.";
-    const output = `${roleLabels[role] || role}\n\nMục tiêu: ${goal}\n\nGợi ý nhanh:\n1. Chốt một kết quả cụ thể cần đạt trước khi viết dài.\n2. Tách ý tưởng thành 3 phần: hook, nội dung chính, lời kêu gọi hành động.\n3. Giữ một tone xuyên suốt để người xem nhận ra phong cách của bạn.\n4. Nếu dùng AI thật, hãy gửi prompt dưới dạng vai trò + bối cảnh + yêu cầu + định dạng output.\n\nPrompt tiếp theo có thể dùng:\n\"Bạn là ${roleLabels[role] || role}. Hãy giúp tôi ${goal}. Dữ liệu đầu vào: ${input}. Trả lời bằng checklist rõ ràng, có ví dụ cụ thể.\"`;
+    const goal = val("chatGoal") || "phÃ¡t triá»ƒn Ã½ tÆ°á»Ÿng má»›i";
+    const input = val("chatInput") || "ChÆ°a cÃ³ ná»™i dung Ä‘áº§u vÃ o.";
+    const output = `${roleLabels[role] || role}\n\nMá»¥c tiÃªu: ${goal}\n\nGá»£i Ã½ nhanh:\n1. Chá»‘t má»™t káº¿t quáº£ cá»¥ thá»ƒ cáº§n Ä‘áº¡t trÆ°á»›c khi viáº¿t dÃ i.\n2. TÃ¡ch Ã½ tÆ°á»Ÿng thÃ nh 3 pháº§n: hook, ná»™i dung chÃ­nh, lá»i kÃªu gá»i hÃ nh Ä‘á»™ng.\n3. Giá»¯ má»™t tone xuyÃªn suá»‘t Ä‘á»ƒ ngÆ°á»i xem nháº­n ra phong cÃ¡ch cá»§a báº¡n.\n4. Náº¿u dÃ¹ng AI tháº­t, hÃ£y gá»­i prompt dÆ°á»›i dáº¡ng vai trÃ² + bá»‘i cáº£nh + yÃªu cáº§u + Ä‘á»‹nh dáº¡ng output.\n\nPrompt tiáº¿p theo cÃ³ thá»ƒ dÃ¹ng:\n\"Báº¡n lÃ  ${roleLabels[role] || role}. HÃ£y giÃºp tÃ´i ${goal}. Dá»¯ liá»‡u Ä‘áº§u vÃ o: ${input}. Tráº£ lá»i báº±ng checklist rÃµ rÃ ng, cÃ³ vÃ­ dá»¥ cá»¥ thá»ƒ.\"`;
     write("chatOutput", output);
   });
 
@@ -733,35 +855,35 @@ function initCreatorWorkspace() {
     const notes = JSON.parse(localStorage.getItem("hh-chat-notes") || "[]");
     notes.unshift({ at: new Date().toISOString(), role: val("chatRole"), goal: val("chatGoal"), input: val("chatInput"), output: byId("chatOutput")?.textContent || "" });
     localStorage.setItem("hh-chat-notes", JSON.stringify(notes.slice(0, 30)));
-    write("chatOutput", `${byId("chatOutput")?.textContent || ""}\n\n[Đã lưu note local: ${notes.length > 30 ? 30 : notes.length}/30]`);
+    write("chatOutput", `${byId("chatOutput")?.textContent || ""}\n\n[ÄÃ£ lÆ°u note local: ${notes.length > 30 ? 30 : notes.length}/30]`);
   });
   byId("copyChatReply")?.addEventListener("click", () => copyFrom("chatOutput"));
 
   const promptTemplates = {
-    rewrite: ({ tone, brief }) => `Bạn là biên kịch YouTube chuyên kể chuyện cảm xúc.\n\nNhiệm vụ: Viết lại nội dung dưới đây thành một kịch bản mới, giữ ý chính nhưng thay đổi cách kể, nhịp dựng và câu chữ.\n\nTone: ${tone}\n\nYêu cầu:\n- Mở đầu có hook mạnh trong 10 giây đầu.\n- Câu văn tự nhiên, dễ đọc voice-over.\n- Có cao trào, chuyển cảnh rõ, kết thúc có bài học và CTA.\n- Không sao chép nguyên văn.\n\nNội dung gốc:\n${brief}`,
-    title: ({ tone, brief }) => `Hãy tạo 20 title YouTube tiếng Việt cho nội dung sau.\n\nTone: ${tone}\n\nQuy tắc:\n- Dưới 100 ký tự.\n- Có tò mò nhưng không lừa người xem.\n- Phù hợp khán giả 40+.\n- Chia thành 4 nhóm: cảm xúc, bí mật, gia đình, bài học.\n\nNội dung:\n${brief}`,
-    image: ({ tone, brief }) => `Tạo prompt ảnh AI cinematic cho thumbnail/video.\n\nPhong cách: ${tone}\n\nTrả về:\n1. Prompt chính bằng tiếng Anh.\n2. Negative prompt.\n3. Gợi ý màu sắc, ánh sáng, bố cục.\n4. Text ngắn đặt trên thumbnail.\n\nBrief:\n${brief}`,
-    summary: ({ tone, brief }) => `Tóm tắt nội dung sau theo tone ${tone}.\n\nTrả về:\n- 5 ý chính.\n- 3 điểm cảm xúc mạnh.\n- 1 câu hook.\n- 1 CTA phù hợp.\n\nNội dung:\n${brief}`
+    rewrite: ({ tone, brief }) => `Báº¡n lÃ  biÃªn ká»‹ch YouTube chuyÃªn ká»ƒ chuyá»‡n cáº£m xÃºc.\n\nNhiá»‡m vá»¥: Viáº¿t láº¡i ná»™i dung dÆ°á»›i Ä‘Ã¢y thÃ nh má»™t ká»‹ch báº£n má»›i, giá»¯ Ã½ chÃ­nh nhÆ°ng thay Ä‘á»•i cÃ¡ch ká»ƒ, nhá»‹p dá»±ng vÃ  cÃ¢u chá»¯.\n\nTone: ${tone}\n\nYÃªu cáº§u:\n- Má»Ÿ Ä‘áº§u cÃ³ hook máº¡nh trong 10 giÃ¢y Ä‘áº§u.\n- CÃ¢u vÄƒn tá»± nhiÃªn, dá»… Ä‘á»c voice-over.\n- CÃ³ cao trÃ o, chuyá»ƒn cáº£nh rÃµ, káº¿t thÃºc cÃ³ bÃ i há»c vÃ  CTA.\n- KhÃ´ng sao chÃ©p nguyÃªn vÄƒn.\n\nNá»™i dung gá»‘c:\n${brief}`,
+    title: ({ tone, brief }) => `HÃ£y táº¡o 20 title YouTube tiáº¿ng Viá»‡t cho ná»™i dung sau.\n\nTone: ${tone}\n\nQuy táº¯c:\n- DÆ°á»›i 100 kÃ½ tá»±.\n- CÃ³ tÃ² mÃ² nhÆ°ng khÃ´ng lá»«a ngÆ°á»i xem.\n- PhÃ¹ há»£p khÃ¡n giáº£ 40+.\n- Chia thÃ nh 4 nhÃ³m: cáº£m xÃºc, bÃ­ máº­t, gia Ä‘Ã¬nh, bÃ i há»c.\n\nNá»™i dung:\n${brief}`,
+    image: ({ tone, brief }) => `Táº¡o prompt áº£nh AI cinematic cho thumbnail/video.\n\nPhong cÃ¡ch: ${tone}\n\nTráº£ vá»:\n1. Prompt chÃ­nh báº±ng tiáº¿ng Anh.\n2. Negative prompt.\n3. Gá»£i Ã½ mÃ u sáº¯c, Ã¡nh sÃ¡ng, bá»‘ cá»¥c.\n4. Text ngáº¯n Ä‘áº·t trÃªn thumbnail.\n\nBrief:\n${brief}`,
+    summary: ({ tone, brief }) => `TÃ³m táº¯t ná»™i dung sau theo tone ${tone}.\n\nTráº£ vá»:\n- 5 Ã½ chÃ­nh.\n- 3 Ä‘iá»ƒm cáº£m xÃºc máº¡nh.\n- 1 cÃ¢u hook.\n- 1 CTA phÃ¹ há»£p.\n\nNá»™i dung:\n${brief}`
   };
 
   byId("buildPromptButton")?.addEventListener("click", () => {
     const template = promptTemplates[val("promptTemplate")] || promptTemplates.rewrite;
-    write("promptOutput", template({ tone: val("promptTone") || "tự nhiên", brief: val("promptBrief") || "Chưa có brief." }));
+    write("promptOutput", template({ tone: val("promptTone") || "tá»± nhiÃªn", brief: val("promptBrief") || "ChÆ°a cÃ³ brief." }));
   });
   byId("copyPromptButton")?.addEventListener("click", () => copyFrom("promptOutput"));
   byId("downloadPromptButton")?.addEventListener("click", () => downloadText("hh-prompt-studio.txt", byId("promptOutput")?.textContent || ""));
 
   byId("generateScriptButton")?.addEventListener("click", () => {
-    const topic = val("scriptTopic") || "Một câu chuyện gia đình cảm động";
+    const topic = val("scriptTopic") || "Má»™t cÃ¢u chuyá»‡n gia Ä‘Ã¬nh cáº£m Ä‘á»™ng";
     const length = val("scriptLength");
-    const audience = val("scriptAudience") || "người xem đại chúng";
-    const notes = val("scriptNotes") || "Chưa có ghi chú thêm.";
+    const audience = val("scriptAudience") || "ngÆ°á»i xem Ä‘áº¡i chÃºng";
+    const notes = val("scriptNotes") || "ChÆ°a cÃ³ ghi chÃº thÃªm.";
     const beats = length === "short"
-      ? ["0-3s: Câu hook gây tò mò", "3-15s: Vấn đề chính", "15-40s: Twist/cao trào", "40-55s: Bài học", "55-60s: CTA"]
+      ? ["0-3s: CÃ¢u hook gÃ¢y tÃ² mÃ²", "3-15s: Váº¥n Ä‘á» chÃ­nh", "15-40s: Twist/cao trÃ o", "40-55s: BÃ i há»c", "55-60s: CTA"]
       : length === "long"
-        ? ["Tập 1: Hook và biến cố", "Tập 2: Bí mật cũ", "Tập 3: Hiểu lầm bùng nổ", "Tập 4: Bằng chứng xuất hiện", "Tập 5: Hóa giải và bài học"]
-        : ["Mở đầu: Hook cảm xúc", "Phần 1: Bối cảnh và nhân vật", "Phần 2: Mâu thuẫn chính", "Phần 3: Cao trào", "Phần 4: Sự thật", "Kết: Bài học + CTA"];
-    const output = `KHUNG KỊCH BẢN\n\nChủ đề: ${topic}\nKhán giả: ${audience}\nGhi chú: ${notes}\n\nCấu trúc:\n${beats.map((beat, index) => `${index + 1}. ${beat}`).join("\n")}\n\nHook mẫu:\n\"Ông ấy im lặng suốt 20 năm, cho đến ngày một lá thư cũ khiến cả gia đình phải nhìn lại mọi chuyện.\"\n\nCTA mẫu:\n\"Nếu bạn từng hiểu lầm một người thân yêu, hãy để lại một bình luận để câu chuyện này đến được với nhiều người hơn.\"`;
+        ? ["Táº­p 1: Hook vÃ  biáº¿n cá»‘", "Táº­p 2: BÃ­ máº­t cÅ©", "Táº­p 3: Hiá»ƒu láº§m bÃ¹ng ná»•", "Táº­p 4: Báº±ng chá»©ng xuáº¥t hiá»‡n", "Táº­p 5: HÃ³a giáº£i vÃ  bÃ i há»c"]
+        : ["Má»Ÿ Ä‘áº§u: Hook cáº£m xÃºc", "Pháº§n 1: Bá»‘i cáº£nh vÃ  nhÃ¢n váº­t", "Pháº§n 2: MÃ¢u thuáº«n chÃ­nh", "Pháº§n 3: Cao trÃ o", "Pháº§n 4: Sá»± tháº­t", "Káº¿t: BÃ i há»c + CTA"];
+    const output = `KHUNG Ká»ŠCH Báº¢N\n\nChá»§ Ä‘á»: ${topic}\nKhÃ¡n giáº£: ${audience}\nGhi chÃº: ${notes}\n\nCáº¥u trÃºc:\n${beats.map((beat, index) => `${index + 1}. ${beat}`).join("\n")}\n\nHook máº«u:\n\"Ã”ng áº¥y im láº·ng suá»‘t 20 nÄƒm, cho Ä‘áº¿n ngÃ y má»™t lÃ¡ thÆ° cÅ© khiáº¿n cáº£ gia Ä‘Ã¬nh pháº£i nhÃ¬n láº¡i má»i chuyá»‡n.\"\n\nCTA máº«u:\n\"Náº¿u báº¡n tá»«ng hiá»ƒu láº§m má»™t ngÆ°á»i thÃ¢n yÃªu, hÃ£y Ä‘á»ƒ láº¡i má»™t bÃ¬nh luáº­n Ä‘á»ƒ cÃ¢u chuyá»‡n nÃ y Ä‘áº¿n Ä‘Æ°á»£c vá»›i nhiá»u ngÆ°á»i hÆ¡n.\"`;
     write("scriptOutput", output);
   });
   byId("copyScriptButton")?.addEventListener("click", () => copyFrom("scriptOutput"));
@@ -819,8 +941,8 @@ function initHomeNeonInteractions() {
     const applyLiked = (liked) => {
       likeButton.classList.toggle("is-liked", liked);
       likeButton.setAttribute("aria-pressed", liked ? "true" : "false");
-      likeButton.querySelector("span").textContent = liked ? "♥" : "♡";
-      likeButton.querySelector("strong").textContent = liked ? "Đã thích trang" : "Thích trang";
+      likeButton.querySelector("span").textContent = liked ? "â™¥" : "â™¡";
+      likeButton.querySelector("strong").textContent = liked ? "ÄÃ£ thÃ­ch trang" : "ThÃ­ch trang";
       likedInput.value = liked ? "Da bam thich" : "Chua bam thich";
       localStorage.setItem("hoangdaika13-liked", liked ? "yes" : "no");
     };
@@ -908,13 +1030,13 @@ function wordCount(text) {
 function sentences(text) {
   return text
     .replace(/\s+/g, " ")
-    .split(/(?<=[.!?。！？])\s+|[\r\n]+/u)
+    .split(/(?<=[.!?ã€‚ï¼ï¼Ÿ])\s+|[\r\n]+/u)
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
 function topKeywords(text, limit = 12) {
-  const stop = new Set("và là của có cho một những các trong với được không khi đã này người để thì vào như từ".split(" "));
+  const stop = new Set("vÃ  lÃ  cá»§a cÃ³ cho má»™t nhá»¯ng cÃ¡c trong vá»›i Ä‘Æ°á»£c khÃ´ng khi Ä‘Ã£ nÃ y ngÆ°á»i Ä‘á»ƒ thÃ¬ vÃ o nhÆ° tá»«".split(" "));
   const counts = new Map();
   for (const word of words(text)) {
     if (stop.has(word) || word.length < 3) continue;
@@ -934,70 +1056,70 @@ function cleanText(text) {
 
 function config() {
   return {
-    projectName: valueOf("projectName") || "Dự án kể chuyện 40+",
-    title: valueOf("storyTitle") || "Một câu chuyện đời thường nhiều cảm xúc",
-    duration: valueOf("duration") || "8-12 phút",
-    audience: valueOf("audience") || "Người xem 40+",
-    tone: valueOf("tone") || "Ấm áp, chân thật, giàu cảm xúc",
-    mode: valueOf("rewriteMode") || "Kể chuyện 40+ - nhanh và cảm xúc"
+    projectName: valueOf("projectName") || "Dá»± Ã¡n ká»ƒ chuyá»‡n 40+",
+    title: valueOf("storyTitle") || "Má»™t cÃ¢u chuyá»‡n Ä‘á»i thÆ°á»ng nhiá»u cáº£m xÃºc",
+    duration: valueOf("duration") || "8-12 phÃºt",
+    audience: valueOf("audience") || "NgÆ°á»i xem 40+",
+    tone: valueOf("tone") || "áº¤m Ã¡p, chÃ¢n tháº­t, giÃ u cáº£m xÃºc",
+    mode: valueOf("rewriteMode") || "Ká»ƒ chuyá»‡n 40+ - nhanh vÃ  cáº£m xÃºc"
   };
 }
 
 function buildPrompt() {
   const cfg = config();
-  const source = valueOf("sourceText") || "Chưa có nội dung nguồn. Hãy tự xây một câu chuyện mới theo chủ đề.";
-  return `Bạn là biên kịch YouTube chuyên viết kịch bản kể chuyện.
+  const source = valueOf("sourceText") || "ChÆ°a cÃ³ ná»™i dung nguá»“n. HÃ£y tá»± xÃ¢y má»™t cÃ¢u chuyá»‡n má»›i theo chá»§ Ä‘á».";
+  return `Báº¡n lÃ  biÃªn ká»‹ch YouTube chuyÃªn viáº¿t ká»‹ch báº£n ká»ƒ chuyá»‡n.
 
-Dự án: ${cfg.projectName}
-Tiêu đề/chủ đề: ${cfg.title}
-Thời lượng mục tiêu: ${cfg.duration}
-Người xem: ${cfg.audience}
+Dá»± Ã¡n: ${cfg.projectName}
+TiÃªu Ä‘á»/chá»§ Ä‘á»: ${cfg.title}
+Thá»i lÆ°á»£ng má»¥c tiÃªu: ${cfg.duration}
+NgÆ°á»i xem: ${cfg.audience}
 Tone: ${cfg.tone}
-Chế độ viết: ${cfg.mode}
+Cháº¿ Ä‘á»™ viáº¿t: ${cfg.mode}
 
-Yêu cầu:
-1. Viết thành kịch bản hoàn chỉnh, không viết outline, không viết bảng.
-2. Mở đầu có hook mạnh trong 20 giây đầu.
-3. Mạch truyện rõ: mở chuyện, xung đột, bí mật, cao trào, giải quyết, bài học.
-4. Không dùng timestamp, không ghi chú ngoài lề.
-5. Ngôn ngữ tự nhiên, giàu cảm xúc, hợp để đọc voice YouTube.
-6. Nếu nguồn ngắn, phát triển chi tiết hợp lý nhưng giữ ý lõi.
-7. Kết thúc có dư âm và CTA mềm.
+YÃªu cáº§u:
+1. Viáº¿t thÃ nh ká»‹ch báº£n hoÃ n chá»‰nh, khÃ´ng viáº¿t outline, khÃ´ng viáº¿t báº£ng.
+2. Má»Ÿ Ä‘áº§u cÃ³ hook máº¡nh trong 20 giÃ¢y Ä‘áº§u.
+3. Máº¡ch truyá»‡n rÃµ: má»Ÿ chuyá»‡n, xung Ä‘á»™t, bÃ­ máº­t, cao trÃ o, giáº£i quyáº¿t, bÃ i há»c.
+4. KhÃ´ng dÃ¹ng timestamp, khÃ´ng ghi chÃº ngoÃ i lá».
+5. NgÃ´n ngá»¯ tá»± nhiÃªn, giÃ u cáº£m xÃºc, há»£p Ä‘á»ƒ Ä‘á»c voice YouTube.
+6. Náº¿u nguá»“n ngáº¯n, phÃ¡t triá»ƒn chi tiáº¿t há»£p lÃ½ nhÆ°ng giá»¯ Ã½ lÃµi.
+7. Káº¿t thÃºc cÃ³ dÆ° Ã¢m vÃ  CTA má»m.
 
-Nội dung nguồn:
+Ná»™i dung nguá»“n:
 ${source}`;
 }
 
 function buildDraft() {
   const cfg = config();
-  const source = valueOf("sourceText") || "Một nhân vật chính từng bị hiểu lầm, nhưng cuối cùng sự thật được hé lộ.";
-  return `TIÊU ĐỀ: ${cfg.title}
+  const source = valueOf("sourceText") || "Má»™t nhÃ¢n váº­t chÃ­nh tá»«ng bá»‹ hiá»ƒu láº§m, nhÆ°ng cuá»‘i cÃ¹ng sá»± tháº­t Ä‘Æ°á»£c hÃ© lá»™.";
+  return `TIÃŠU Äá»€: ${cfg.title}
 
-ĐỊNH HƯỚNG
-- Dự án: ${cfg.projectName}
-- Người xem: ${cfg.audience}
-- Thời lượng: ${cfg.duration}
+Äá»ŠNH HÆ¯á»šNG
+- Dá»± Ã¡n: ${cfg.projectName}
+- NgÆ°á»i xem: ${cfg.audience}
+- Thá»i lÆ°á»£ng: ${cfg.duration}
 - Tone: ${cfg.tone}
-- Chế độ: ${cfg.mode}
+- Cháº¿ Ä‘á»™: ${cfg.mode}
 
-HOOK MỞ ĐẦU
-Không phải ai im lặng cũng là người sai. Có những sự thật bị chôn giấu rất lâu, chỉ chờ một ngày bình thường để khiến cả gia đình phải nhìn lại mọi chuyện.
+HOOK Má»ž Äáº¦U
+KhÃ´ng pháº£i ai im láº·ng cÅ©ng lÃ  ngÆ°á»i sai. CÃ³ nhá»¯ng sá»± tháº­t bá»‹ chÃ´n giáº¥u ráº¥t lÃ¢u, chá»‰ chá» má»™t ngÃ y bÃ¬nh thÆ°á»ng Ä‘á»ƒ khiáº¿n cáº£ gia Ä‘Ã¬nh pháº£i nhÃ¬n láº¡i má»i chuyá»‡n.
 
-TÓM TẮT NGUỒN
+TÃ“M Táº®T NGUá»’N
 ${source}
 
-BẢN NHÁP KỊCH BẢN
-Ngày hôm đó bắt đầu như bao ngày khác. Nhưng chỉ một câu nói vô tình đã kéo mọi người trở về với những vết thương tưởng như đã ngủ yên. Nhân vật chính không vội giải thích. Người ấy chỉ lặng lẽ nhìn từng người, như thể đã quen với việc bị hiểu lầm.
+Báº¢N NHÃP Ká»ŠCH Báº¢N
+NgÃ y hÃ´m Ä‘Ã³ báº¯t Ä‘áº§u nhÆ° bao ngÃ y khÃ¡c. NhÆ°ng chá»‰ má»™t cÃ¢u nÃ³i vÃ´ tÃ¬nh Ä‘Ã£ kÃ©o má»i ngÆ°á»i trá»Ÿ vá» vá»›i nhá»¯ng váº¿t thÆ°Æ¡ng tÆ°á»Ÿng nhÆ° Ä‘Ã£ ngá»§ yÃªn. NhÃ¢n váº­t chÃ­nh khÃ´ng vá»™i giáº£i thÃ­ch. NgÆ°á»i áº¥y chá»‰ láº·ng láº½ nhÃ¬n tá»«ng ngÆ°á»i, nhÆ° thá»ƒ Ä‘Ã£ quen vá»›i viá»‡c bá»‹ hiá»ƒu láº§m.
 
-Trong quá khứ, có một quyết định rất khó khăn đã được đưa ra. Quyết định ấy khiến nhiều người tổn thương, nhưng phía sau nó lại là một lý do không ai biết. Càng đi sâu vào câu chuyện, người xem càng nhận ra điều đáng sợ nhất không phải là nghèo khó hay mất mát, mà là khi người thân không còn đủ kiên nhẫn để lắng nghe nhau.
+Trong quÃ¡ khá»©, cÃ³ má»™t quyáº¿t Ä‘á»‹nh ráº¥t khÃ³ khÄƒn Ä‘Ã£ Ä‘Æ°á»£c Ä‘Æ°a ra. Quyáº¿t Ä‘á»‹nh áº¥y khiáº¿n nhiá»u ngÆ°á»i tá»•n thÆ°Æ¡ng, nhÆ°ng phÃ­a sau nÃ³ láº¡i lÃ  má»™t lÃ½ do khÃ´ng ai biáº¿t. CÃ ng Ä‘i sÃ¢u vÃ o cÃ¢u chuyá»‡n, ngÆ°á»i xem cÃ ng nháº­n ra Ä‘iá»u Ä‘Ã¡ng sá»£ nháº¥t khÃ´ng pháº£i lÃ  nghÃ¨o khÃ³ hay máº¥t mÃ¡t, mÃ  lÃ  khi ngÆ°á»i thÃ¢n khÃ´ng cÃ²n Ä‘á»§ kiÃªn nháº«n Ä‘á»ƒ láº¯ng nghe nhau.
 
-Mâu thuẫn tăng lên khi một bằng chứng cũ xuất hiện: một lá thư, một cuộc gọi, một món đồ hoặc một người chứng kiến. Từ đây, những lời trách móc dần đổi thành im lặng. Người từng bị xem là vô tâm hóa ra lại là người âm thầm gánh phần nặng nhất.
+MÃ¢u thuáº«n tÄƒng lÃªn khi má»™t báº±ng chá»©ng cÅ© xuáº¥t hiá»‡n: má»™t lÃ¡ thÆ°, má»™t cuá»™c gá»i, má»™t mÃ³n Ä‘á»“ hoáº·c má»™t ngÆ°á»i chá»©ng kiáº¿n. Tá»« Ä‘Ã¢y, nhá»¯ng lá»i trÃ¡ch mÃ³c dáº§n Ä‘á»•i thÃ nh im láº·ng. NgÆ°á»i tá»«ng bá»‹ xem lÃ  vÃ´ tÃ¢m hÃ³a ra láº¡i lÃ  ngÆ°á»i Ã¢m tháº§m gÃ¡nh pháº§n náº·ng nháº¥t.
 
-CAO TRÀO
-Sự thật được nói ra vào đúng lúc không ai còn có thể trốn tránh. Người gây tổn thương phải đối diện với lỗi lầm của mình, còn người chịu đựng cuối cùng cũng được trả lại sự công bằng.
+CAO TRÃ€O
+Sá»± tháº­t Ä‘Æ°á»£c nÃ³i ra vÃ o Ä‘Ãºng lÃºc khÃ´ng ai cÃ²n cÃ³ thá»ƒ trá»‘n trÃ¡nh. NgÆ°á»i gÃ¢y tá»•n thÆ°Æ¡ng pháº£i Ä‘á»‘i diá»‡n vá»›i lá»—i láº§m cá»§a mÃ¬nh, cÃ²n ngÆ°á»i chá»‹u Ä‘á»±ng cuá»‘i cÃ¹ng cÅ©ng Ä‘Æ°á»£c tráº£ láº¡i sá»± cÃ´ng báº±ng.
 
-KẾT
-Câu chuyện khép lại bằng một bài học nhẹ nhưng sâu: trong gia đình, đôi khi điều cần nhất không phải là thắng trong một cuộc tranh cãi, mà là đủ thương để hỏi: "Ngày đó, bạn đã đau như thế nào?"`;
+Káº¾T
+CÃ¢u chuyá»‡n khÃ©p láº¡i báº±ng má»™t bÃ i há»c nháº¹ nhÆ°ng sÃ¢u: trong gia Ä‘Ã¬nh, Ä‘Ã´i khi Ä‘iá»u cáº§n nháº¥t khÃ´ng pháº£i lÃ  tháº¯ng trong má»™t cuá»™c tranh cÃ£i, mÃ  lÃ  Ä‘á»§ thÆ°Æ¡ng Ä‘á»ƒ há»i: "NgÃ y Ä‘Ã³, báº¡n Ä‘Ã£ Ä‘au nhÆ° tháº¿ nÃ o?"`;
 }
 
 function analyzeText(text) {
@@ -1005,23 +1127,23 @@ function analyzeText(text) {
   const kws = topKeywords(text);
   const wc = wordCount(text);
   const minutes = Math.max(1, wc / 145);
-  return `Số từ: ${wc}
-Số câu/đoạn: ${sents.length}
-Ước lượng voice: ${minutes.toFixed(1)} phút
+  return `Sá»‘ tá»«: ${wc}
+Sá»‘ cÃ¢u/Ä‘oáº¡n: ${sents.length}
+Æ¯á»›c lÆ°á»£ng voice: ${minutes.toFixed(1)} phÃºt
 
-Keyword nổi bật:
-${kws.map(([word, count]) => `- ${word}: ${count}`).join("\n") || "- Chưa đủ dữ liệu"}
+Keyword ná»•i báº­t:
+${kws.map(([word, count]) => `- ${word}: ${count}`).join("\n") || "- ChÆ°a Ä‘á»§ dá»¯ liá»‡u"}
 
-Beat gợi ý:
-- Hook: ${sents[0] || "Cần thêm mở đầu mạnh hơn."}
-- Xung đột: cần làm rõ nhân vật muốn gì và bị cản bởi điều gì.
-- Cao trào: nên có bằng chứng, đối thoại hoặc lựa chọn khó.
-- Kết: nên có bài học hoặc dư âm cảm xúc.`;
+Beat gá»£i Ã½:
+- Hook: ${sents[0] || "Cáº§n thÃªm má»Ÿ Ä‘áº§u máº¡nh hÆ¡n."}
+- Xung Ä‘á»™t: cáº§n lÃ m rÃµ nhÃ¢n váº­t muá»‘n gÃ¬ vÃ  bá»‹ cáº£n bá»Ÿi Ä‘iá»u gÃ¬.
+- Cao trÃ o: nÃªn cÃ³ báº±ng chá»©ng, Ä‘á»‘i thoáº¡i hoáº·c lá»±a chá»n khÃ³.
+- Káº¿t: nÃªn cÃ³ bÃ i há»c hoáº·c dÆ° Ã¢m cáº£m xÃºc.`;
 }
 
 function summarizeText(text) {
   const sents = sentences(text);
-  if (!sents.length) return "Chưa có nội dung để tóm tắt.";
+  if (!sents.length) return "ChÆ°a cÃ³ ná»™i dung Ä‘á»ƒ tÃ³m táº¯t.";
   return sents.slice(0, 7).map((sent, index) => `${index + 1}. ${sent}`).join("\n");
 }
 
@@ -1032,13 +1154,13 @@ function compareTexts(source, draft) {
   const total = new Set([...left, ...right]).size || 1;
   const similarity = Math.round((shared / total) * 100);
   const originality = Math.max(0, 100 - similarity);
-  const risk = similarity >= 55 ? "Cao" : similarity >= 32 ? "Vừa" : "Thấp";
+  const risk = similarity >= 55 ? "Cao" : similarity >= 32 ? "Vá»«a" : "Tháº¥p";
   return { similarity, originality, risk };
 }
 
 function updateMetas() {
-  setText("sourceMeta", `${wordCount(valueOf("sourceText"))} từ`);
-  setText("draftMeta", `${wordCount(valueOf("outputText"))} từ`);
+  setText("sourceMeta", `${wordCount(valueOf("sourceText"))} tá»«`);
+  setText("draftMeta", `${wordCount(valueOf("outputText"))} tá»«`);
 }
 
 function setOutput(text, message) {
@@ -1097,10 +1219,10 @@ async function callGemini() {
   const apiKey = valueOf("apiKey");
   const model = valueOf("modelName") || "gemini-1.5-flash";
   if (!apiKey) {
-    setStatus("Bạn cần nhập API key Gemini nếu muốn gọi AI thật.");
+    setStatus("Báº¡n cáº§n nháº­p API key Gemini náº¿u muá»‘n gá»i AI tháº­t.");
     return;
   }
-  setStatus("Đang gọi Gemini...");
+  setStatus("Äang gá»i Gemini...");
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
       method: "POST",
@@ -1113,10 +1235,10 @@ async function callGemini() {
     if (!response.ok) throw new Error(await response.text());
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text).join("\n") || "";
-    setOutput(text || "Gemini không trả về nội dung.", "Gemini đã trả kết quả.");
+    setOutput(text || "Gemini khÃ´ng tráº£ vá» ná»™i dung.", "Gemini Ä‘Ã£ tráº£ káº¿t quáº£.");
   } catch (error) {
     console.error(error);
-    setStatus("Không gọi được Gemini. Hãy kiểm tra API key, model hoặc mạng/CORS.");
+    setStatus("KhÃ´ng gá»i Ä‘Æ°á»£c Gemini. HÃ£y kiá»ƒm tra API key, model hoáº·c máº¡ng/CORS.");
   }
 }
 
@@ -1144,82 +1266,82 @@ function initTool() {
     if (!file) return;
     setValue("sourceText", await file.text());
     updateMetas();
-    setStatus(`Đã nhập file: ${file.name}`);
+    setStatus(`ÄÃ£ nháº­p file: ${file.name}`);
   });
   bind("pasteSource", "click", async () => {
     try {
       const text = await navigator.clipboard.readText();
       setValue("sourceText", text);
       updateMetas();
-      setStatus("Đã dán nội dung từ clipboard.");
+      setStatus("ÄÃ£ dÃ¡n ná»™i dung tá»« clipboard.");
     } catch {
-      setStatus("Trình duyệt chưa cho phép đọc clipboard. Hãy dán bằng Ctrl+V.");
+      setStatus("TrÃ¬nh duyá»‡t chÆ°a cho phÃ©p Ä‘á»c clipboard. HÃ£y dÃ¡n báº±ng Ctrl+V.");
     }
   });
   bind("cleanSource", "click", () => {
     setValue("sourceText", cleanText(valueOf("sourceText")));
     updateMetas();
-    setStatus("Đã làm sạch text/phụ đề.");
+    setStatus("ÄÃ£ lÃ m sáº¡ch text/phá»¥ Ä‘á».");
   });
-  bind("makeDraft", "click", () => setOutput(buildDraft(), "Đã tạo bản nháp local."));
+  bind("makeDraft", "click", () => setOutput(buildDraft(), "ÄÃ£ táº¡o báº£n nhÃ¡p local."));
   bind("oneClick", "click", () => {
     const cleaned = cleanText(valueOf("sourceText"));
     setValue("sourceText", cleaned);
     const draft = buildDraft();
-    setOutput(draft, "Đã xử lý 1 chạm: làm sạch, phân tích nhanh và tạo bản nháp.");
+    setOutput(draft, "ÄÃ£ xá»­ lÃ½ 1 cháº¡m: lÃ m sáº¡ch, phÃ¢n tÃ­ch nhanh vÃ  táº¡o báº£n nhÃ¡p.");
     setText("analysisOutput", analyzeText(cleaned));
   });
-  bind("makePrompt", "click", () => setOutput(buildPrompt(), "Đã tạo prompt."));
+  bind("makePrompt", "click", () => setOutput(buildPrompt(), "ÄÃ£ táº¡o prompt."));
   bind("callGemini", "click", callGemini);
   const makeTitleHandler = () => {
     const source = valueOf("sourceText");
     const kw = topKeywords(source, 4).map(([word]) => word).join(" ");
-    setValue("storyTitle", kw ? `Sự thật phía sau ${kw}` : "Một bí mật khiến cả gia đình im lặng");
-    setStatus("Đã tạo title local.");
+    setValue("storyTitle", kw ? `Sá»± tháº­t phÃ­a sau ${kw}` : "Má»™t bÃ­ máº­t khiáº¿n cáº£ gia Ä‘Ã¬nh im láº·ng");
+    setStatus("ÄÃ£ táº¡o title local.");
   };
   bind("makeTitle", "click", makeTitleHandler);
   bind("makeTitle2", "click", makeTitleHandler);
   bind("copyOutput", "click", async () => {
     const text = valueOf("outputText");
-    if (!text) return setStatus("Chưa có nội dung để copy.");
+    if (!text) return setStatus("ChÆ°a cÃ³ ná»™i dung Ä‘á»ƒ copy.");
     await navigator.clipboard.writeText(text);
-    setStatus("Đã copy kết quả.");
+    setStatus("ÄÃ£ copy káº¿t quáº£.");
   });
   bind("downloadOutput", "click", () => {
     const text = valueOf("outputText");
-    if (!text) return setStatus("Chưa có nội dung để tải.");
+    if (!text) return setStatus("ChÆ°a cÃ³ ná»™i dung Ä‘á»ƒ táº£i.");
     downloadText("kich-ban-ai.txt", text);
-    setStatus("Đã tạo file TXT.");
+    setStatus("ÄÃ£ táº¡o file TXT.");
   });
   bind("writerGenerate", "click", () => {
     const draft = buildDraft();
-    setOutput(draft, "Gemini Writer: đã tạo bản viết mới local.");
+    setOutput(draft, "Gemini Writer: Ä‘Ã£ táº¡o báº£n viáº¿t má»›i local.");
     showMiniTab("writer");
   });
   bind("writerImprove", "click", () => {
-    const improved = `${valueOf("outputText") || buildDraft()}\n\nPHIÊN BẢN NÂNG CẤP\n- Tăng hook mở đầu.\n- Thêm đối thoại ở cao trào.\n- Làm rõ bài học cuối câu chuyện.\n- Giảm câu giống nguồn, tăng chi tiết mới.`;
-    setOutput(improved, "Đã nâng cấp bản nháp local.");
+    const improved = `${valueOf("outputText") || buildDraft()}\n\nPHIÃŠN Báº¢N NÃ‚NG Cáº¤P\n- TÄƒng hook má»Ÿ Ä‘áº§u.\n- ThÃªm Ä‘á»‘i thoáº¡i á»Ÿ cao trÃ o.\n- LÃ m rÃµ bÃ i há»c cuá»‘i cÃ¢u chuyá»‡n.\n- Giáº£m cÃ¢u giá»‘ng nguá»“n, tÄƒng chi tiáº¿t má»›i.`;
+    setOutput(improved, "ÄÃ£ nÃ¢ng cáº¥p báº£n nhÃ¡p local.");
     showMiniTab("writer");
   });
   bind("writerPrompt", "click", () => {
-    setOutput(buildPrompt(), "Đã tạo prompt đầy đủ.");
+    setOutput(buildPrompt(), "ÄÃ£ táº¡o prompt Ä‘áº§y Ä‘á»§.");
     showMiniTab("writer");
   });
   bind("analyzeScript", "click", () => {
     setText("analysisOutput", analyzeText(valueOf("sourceText")));
-    setStatus("Đã phân tích nguồn.");
+    setStatus("ÄÃ£ phÃ¢n tÃ­ch nguá»“n.");
   });
   bind("storyScore", "click", () => {
     const draft = valueOf("outputText");
     const score = Math.min(100, 35 + Math.round(wordCount(draft) / 30) + topKeywords(draft, 8).length * 3);
-    setText("analysisOutput", `Story score 40+: ${score}/100\n\nGợi ý:\n- Tăng hook mở đầu nếu score dưới 70.\n- Thêm cao trào, đối thoại và plot twist.\n- Kết thúc nên có bài học hoặc CTA mềm.`);
+    setText("analysisOutput", `Story score 40+: ${score}/100\n\nGá»£i Ã½:\n- TÄƒng hook má»Ÿ Ä‘áº§u náº¿u score dÆ°á»›i 70.\n- ThÃªm cao trÃ o, Ä‘á»‘i thoáº¡i vÃ  plot twist.\n- Káº¿t thÃºc nÃªn cÃ³ bÃ i há»c hoáº·c CTA má»m.`);
     setStatus(`Story score: ${score}/100`);
   });
   bind("summarizeScript", "click", () => {
     const sourceSummary = summarizeText(valueOf("sourceText"));
     const draftSummary = summarizeText(valueOf("outputText"));
-    setText("summaryOutput", `TÓM TẮT NGUỒN\n${sourceSummary}\n\nTÓM TẮT BẢN MỚI\n${draftSummary}`);
-    setStatus("Đã tóm tắt.");
+    setText("summaryOutput", `TÃ“M Táº®T NGUá»’N\n${sourceSummary}\n\nTÃ“M Táº®T Báº¢N Má»šI\n${draftSummary}`);
+    setStatus("ÄÃ£ tÃ³m táº¯t.");
     showMiniTab("summary");
   });
   bind("compareScript", "click", () => {
@@ -1227,21 +1349,21 @@ function initTool() {
     setText("similarityPercent", `${report.similarity}%`);
     setText("originalityPercent", `${report.originality}%`);
     setText("riskLevel", report.risk);
-    setText("compareOutput", `Độ giống: ${report.similarity}%\nĐộ mới: ${report.originality}%\nRủi ro: ${report.risk}\n\nKhuyến nghị:\n- Nếu rủi ro cao, đổi cấu trúc cảnh, nhân vật, tình huống và cách mở nút.\n- Giữ ý lõi nhưng thay diễn biến và câu chữ.\n- Tăng chi tiết mới ở phần giữa và cao trào.`);
-    setStatus("Đã so sánh độ giống.");
+    setText("compareOutput", `Äá»™ giá»‘ng: ${report.similarity}%\nÄá»™ má»›i: ${report.originality}%\nRá»§i ro: ${report.risk}\n\nKhuyáº¿n nghá»‹:\n- Náº¿u rá»§i ro cao, Ä‘á»•i cáº¥u trÃºc cáº£nh, nhÃ¢n váº­t, tÃ¬nh huá»‘ng vÃ  cÃ¡ch má»Ÿ nÃºt.\n- Giá»¯ Ã½ lÃµi nhÆ°ng thay diá»…n biáº¿n vÃ  cÃ¢u chá»¯.\n- TÄƒng chi tiáº¿t má»›i á»Ÿ pháº§n giá»¯a vÃ  cao trÃ o.`);
+    setStatus("ÄÃ£ so sÃ¡nh Ä‘á»™ giá»‘ng.");
     showMiniTab("compare");
   });
   bind("sendChat", "click", () => {
     const question = valueOf("chatInput");
-    if (!question) return setStatus("Chưa có câu hỏi chat.");
-    const answer = `Bạn: ${question}\n\nAI local: Dựa trên kịch bản hiện tại, nên tăng xung đột ở phần giữa, thêm một bằng chứng rõ ràng và làm đoạn kết có dư âm hơn.\n\n`;
+    if (!question) return setStatus("ChÆ°a cÃ³ cÃ¢u há»i chat.");
+    const answer = `Báº¡n: ${question}\n\nAI local: Dá»±a trÃªn ká»‹ch báº£n hiá»‡n táº¡i, nÃªn tÄƒng xung Ä‘á»™t á»Ÿ pháº§n giá»¯a, thÃªm má»™t báº±ng chá»©ng rÃµ rÃ ng vÃ  lÃ m Ä‘oáº¡n káº¿t cÃ³ dÆ° Ã¢m hÆ¡n.\n\n`;
     setText("chatLog", `${byId("chatLog")?.textContent || ""}${answer}`);
     setValue("chatInput", "");
-    setStatus("Chat AI đã trả lời local.");
+    setStatus("Chat AI Ä‘Ã£ tráº£ lá»i local.");
   });
   bind("clearChat", "click", () => {
     setText("chatLog", "Chat log.");
-    setStatus("Đã xóa chat.");
+    setStatus("ÄÃ£ xÃ³a chat.");
   });
   bind("batchFiles", "change", async (event) => {
     const files = [...(event.target.files || [])];
@@ -1251,62 +1373,62 @@ function initTool() {
       rows.push({ name: file.name, words: wordCount(text), summary: summarizeText(text).slice(0, 220) });
     }
     setText("batchOutput", JSON.stringify(rows, null, 2));
-    setStatus(`Đã nạp ${rows.length} file batch.`);
+    setStatus(`ÄÃ£ náº¡p ${rows.length} file batch.`);
   });
   bind("runBatch", "click", () => {
     const output = byId("batchOutput")?.textContent || "[]";
-    setText("batchOutput", `${output}\n\nBatch local đã sẵn sàng. Với GitHub Pages, xử lý AI hàng loạt cần API key Gemini và xác nhận từng lượt gọi.`);
-    setStatus("Đã chạy batch local.");
+    setText("batchOutput", `${output}\n\nBatch local Ä‘Ã£ sáºµn sÃ ng. Vá»›i GitHub Pages, xá»­ lÃ½ AI hÃ ng loáº¡t cáº§n API key Gemini vÃ  xÃ¡c nháº­n tá»«ng lÆ°á»£t gá»i.`);
+    setStatus("ÄÃ£ cháº¡y batch local.");
   });
   bind("downloadBatch", "click", () => downloadText("batch-results.json", byId("batchOutput")?.textContent || "[]", "application/json;charset=utf-8"));
   bind("parseUrls", "click", () => {
     const urls = valueOf("urlInput").split(/\s+/).filter(Boolean);
-    const prompt = `Hãy đọc và viết lại nội dung từ các URL sau theo cấu hình hiện tại:\n\n${urls.map((url, i) => `${i + 1}. ${url}`).join("\n")}\n\n${buildPrompt()}`;
+    const prompt = `HÃ£y Ä‘á»c vÃ  viáº¿t láº¡i ná»™i dung tá»« cÃ¡c URL sau theo cáº¥u hÃ¬nh hiá»‡n táº¡i:\n\n${urls.map((url, i) => `${i + 1}. ${url}`).join("\n")}\n\n${buildPrompt()}`;
     setText("urlOutput", prompt);
-    setStatus(`Đã tạo prompt cho ${urls.length} URL.`);
+    setStatus(`ÄÃ£ táº¡o prompt cho ${urls.length} URL.`);
   });
   bind("clearUrls", "click", () => {
     setValue("urlInput", "");
-    setText("urlOutput", "Chưa có URL.");
-    setStatus("Đã xóa URL.");
+    setText("urlOutput", "ChÆ°a cÃ³ URL.");
+    setStatus("ÄÃ£ xÃ³a URL.");
   });
   bind("translateLocal", "click", () => {
-    setValue("sourceTranslation", `[Bản dịch kiểm tra local]\n${valueOf("sourceText")}`);
-    setValue("draftTranslation", `[Bản dịch kiểm tra local]\n${valueOf("outputText")}`);
-    setStatus("Đã tạo bản dịch kiểm tra local.");
+    setValue("sourceTranslation", `[Báº£n dá»‹ch kiá»ƒm tra local]\n${valueOf("sourceText")}`);
+    setValue("draftTranslation", `[Báº£n dá»‹ch kiá»ƒm tra local]\n${valueOf("outputText")}`);
+    setStatus("ÄÃ£ táº¡o báº£n dá»‹ch kiá»ƒm tra local.");
   });
   bind("copyTranslation", "click", async () => {
     await navigator.clipboard.writeText(`${valueOf("sourceTranslation")}\n\n${valueOf("draftTranslation")}`);
-    setStatus("Đã copy bản dịch.");
+    setStatus("ÄÃ£ copy báº£n dá»‹ch.");
   });
   bind("makePlan", "click", () => {
-    const title = valueOf("storyTitle") || "Series kể chuyện 40+";
-    setText("plannerOutput", `KẾ HOẠCH SERIES: ${title}\n\nTập 1: Hook bí mật gia đình\nTập 2: Nhân vật chính bị hiểu lầm\nTập 3: Bằng chứng cũ xuất hiện\nTập 4: Cao trào đối mặt\nTập 5: Sự thật và bài học\n\nLịch đăng: 3 video/tuần\nCTA: bình luận trải nghiệm cá nhân ở cuối mỗi tập.`);
-    setStatus("Đã tạo kế hoạch nội dung.");
+    const title = valueOf("storyTitle") || "Series ká»ƒ chuyá»‡n 40+";
+    setText("plannerOutput", `Káº¾ HOáº CH SERIES: ${title}\n\nTáº­p 1: Hook bÃ­ máº­t gia Ä‘Ã¬nh\nTáº­p 2: NhÃ¢n váº­t chÃ­nh bá»‹ hiá»ƒu láº§m\nTáº­p 3: Báº±ng chá»©ng cÅ© xuáº¥t hiá»‡n\nTáº­p 4: Cao trÃ o Ä‘á»‘i máº·t\nTáº­p 5: Sá»± tháº­t vÃ  bÃ i há»c\n\nLá»‹ch Ä‘Äƒng: 3 video/tuáº§n\nCTA: bÃ¬nh luáº­n tráº£i nghiá»‡m cÃ¡ nhÃ¢n á»Ÿ cuá»‘i má»—i táº­p.`);
+    setStatus("ÄÃ£ táº¡o káº¿ hoáº¡ch ná»™i dung.");
   });
   bind("ideaBank", "click", () => {
-    setText("plannerOutput", "KHO Ý TƯỞNG 40+\n- Người mẹ bị con hiểu lầm\n- Di chúc mở ra bí mật cũ\n- Người cha nghèo âm thầm trả nợ cho con\n- Cuộc gọi cuối cùng trước ngày đoàn tụ\n- Hàng xóm giữ bí mật suốt 20 năm");
-    setStatus("Đã mở kho ý tưởng.");
+    setText("plannerOutput", "KHO Ã TÆ¯á»žNG 40+\n- NgÆ°á»i máº¹ bá»‹ con hiá»ƒu láº§m\n- Di chÃºc má»Ÿ ra bÃ­ máº­t cÅ©\n- NgÆ°á»i cha nghÃ¨o Ã¢m tháº§m tráº£ ná»£ cho con\n- Cuá»™c gá»i cuá»‘i cÃ¹ng trÆ°á»›c ngÃ y Ä‘oÃ n tá»¥\n- HÃ ng xÃ³m giá»¯ bÃ­ máº­t suá»‘t 20 nÄƒm");
+    setStatus("ÄÃ£ má»Ÿ kho Ã½ tÆ°á»Ÿng.");
   });
   bind("saveProject", "click", () => {
     const payload = currentProjectPayload();
     localStorage.setItem("kich-ban-ai-project", JSON.stringify(payload));
     setText("projectOutput", JSON.stringify(payload, null, 2));
-    setStatus("Đã lưu dự án local.");
+    setStatus("ÄÃ£ lÆ°u dá»± Ã¡n local.");
   });
   bind("loadProject", "click", () => {
     const raw = localStorage.getItem("kich-ban-ai-project");
-    if (!raw) return setStatus("Chưa có dự án local.");
+    if (!raw) return setStatus("ChÆ°a cÃ³ dá»± Ã¡n local.");
     const payload = JSON.parse(raw);
     loadProjectPayload(payload);
     setText("projectOutput", JSON.stringify(payload, null, 2));
-    setStatus("Đã mở dự án local.");
+    setStatus("ÄÃ£ má»Ÿ dá»± Ã¡n local.");
   });
   bind("exportProject", "click", () => downloadText("kich-ban-ai-project.json", JSON.stringify(currentProjectPayload(), null, 2), "application/json;charset=utf-8"));
   bind("deleteProject", "click", () => {
     localStorage.removeItem("kich-ban-ai-project");
-    setText("projectOutput", "Đã xóa dự án local.");
-    setStatus("Đã xóa dự án local.");
+    setText("projectOutput", "ÄÃ£ xÃ³a dá»± Ã¡n local.");
+    setStatus("ÄÃ£ xÃ³a dá»± Ã¡n local.");
   });
   updateMetas();
 }
@@ -1327,3 +1449,4 @@ initTool();
 
 window.addEventListener("resize", resizeCanvas);
 window.addEventListener("scroll", updateScrollMeter, { passive: true });
+

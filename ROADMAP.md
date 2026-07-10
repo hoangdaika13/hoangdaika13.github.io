@@ -2,7 +2,7 @@
 
 ## Dang lam
 
-- Hoan thien tung module AI Super Platform theo thu tu 1 den 40: module 01-03 da co workspace client-side, tiep theo la module 04 Content Calendar va 05 SEO Brief Builder.
+- Hoan thien tung module AI Super Platform theo thu tu 1 den 37: hien tai da co hub dong, workspace local va mini output cho moi module; tiep theo la nang tung module thanh UI rieng sau hon.
 - Deploy `realtime-server` len Render/Railway/Fly.io/VPS de bat online counter, login/register va Socket.io.
 - Gan `window.HH_REALTIME_URL` trong `config.js` sau khi co URL backend.
 - Tao Google OAuth Client va Facebook App neu muon dang nhap bang Gmail/Facebook.
