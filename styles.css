@@ -2783,6 +2783,182 @@ footer p {
   white-space: pre-wrap;
 }
 
+.home-neon .command-center-app {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.home-neon .command-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,.62);
+  border-radius: 8px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 8% 15%, rgba(255,59,212,.34), transparent 210px),
+    radial-gradient(circle at 88% 20%, rgba(86,234,255,.24), transparent 240px),
+    rgba(2,0,8,.72);
+  box-shadow: inset 0 0 30px rgba(255,59,212,.08);
+}
+
+.home-neon .command-hero h4 {
+  margin: 4px 0 6px;
+  color: #fff;
+  font-size: clamp(1.25rem, 2.7vw, 2.35rem);
+}
+
+.home-neon .command-hero span {
+  color: #ead0f7;
+  font-weight: 800;
+}
+
+.home-neon .command-clock {
+  display: grid;
+  min-width: 210px;
+  justify-items: end;
+}
+
+.home-neon .command-clock strong {
+  color: #fff;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  line-height: 1;
+  text-shadow: 0 0 28px rgba(86,234,255,.65), 0 0 58px rgba(255,59,212,.28);
+}
+
+.home-neon .command-clock span {
+  color: #56eaff;
+  font-size: .82rem;
+  font-weight: 1000;
+}
+
+.home-neon .command-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.home-neon .command-widget {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+  min-height: 150px;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 8px;
+  padding: 13px;
+  color: #fff;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.03)),
+    rgba(5,0,10,.64);
+  box-shadow: 4px 4px 0 #05000a;
+}
+
+.home-neon .command-widget header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-neon .command-widget header strong {
+  font-size: .98rem;
+}
+
+.home-neon .command-widget header button,
+.home-neon .command-mini-links a,
+.home-neon .command-todo-list button {
+  border: 1px solid rgba(255,255,255,.44);
+  border-radius: 999px;
+  padding: 7px 9px;
+  color: #12051f;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+  cursor: pointer;
+  font: inherit;
+  font-size: .74rem;
+  font-weight: 1000;
+  text-decoration: none;
+}
+
+.home-neon .command-widget input,
+.home-neon .command-widget textarea {
+  width: 100%;
+  border: 2px solid rgba(255,255,255,.5);
+  border-radius: 8px;
+  padding: 10px 11px;
+  color: #fff;
+  background: rgba(2,0,8,.7);
+  font: inherit;
+  outline: none;
+}
+
+.home-neon .command-widget input:focus,
+.home-neon .command-widget textarea:focus {
+  border-color: #56eaff;
+  box-shadow: 0 0 20px rgba(86,234,255,.22);
+}
+
+.home-neon .weather-readout,
+.home-neon .server-readout,
+.home-neon .command-activity {
+  display: grid;
+  gap: 6px;
+  color: #ead0f7;
+  font-weight: 800;
+}
+
+.home-neon .weather-readout strong,
+.home-neon .server-readout strong {
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.home-neon .weather-readout em {
+  color: #56eaff;
+  font-style: normal;
+}
+
+.home-neon .command-mini-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.home-neon .notes-widget,
+.home-neon .todo-widget {
+  min-height: 230px;
+}
+
+.home-neon .command-todo-list {
+  display: grid;
+  gap: 8px;
+}
+
+.home-neon .command-todo-list label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255,255,255,.05);
+}
+
+.home-neon .command-todo-list input:checked + span {
+  color: #95ffba;
+  text-decoration: line-through;
+}
+
+.home-neon .command-activity p {
+  margin: 0;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  padding-bottom: 6px;
+}
+
 .home-neon .module-card:hover {
   transform: translateY(-7px);
   border-color: var(--module-accent, #ff3bd4);
@@ -4043,8 +4219,14 @@ html {
 
   .home-neon .platform-livebar,
   .home-neon .google-live-search,
-  .home-neon .module-row-body {
+  .home-neon .module-row-body,
+  .home-neon .command-hero,
+  .home-neon .command-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-neon .command-clock {
+    justify-items: start;
   }
 
   .home-neon .google-live-links {

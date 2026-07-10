@@ -645,6 +645,8 @@ function initPlatformLivebar() {
     const date = now.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
     if (timeNode) timeNode.textContent = time;
     if (dateNode) dateNode.textContent = `${date} · Múi giờ ${Intl.DateTimeFormat().resolvedOptions().timeZone || "local"}`;
+    document.querySelectorAll("[data-command-time]").forEach((node) => { node.textContent = time; });
+    document.querySelectorAll("[data-command-date]").forEach((node) => { node.textContent = date; });
     document.querySelectorAll("[data-module-now]").forEach((node) => {
       node.textContent = time;
     });
@@ -700,6 +702,88 @@ function initSuperPlatform() {
   const persistFavorites = () => localStorage.setItem(favoritesKey, JSON.stringify(favorites));
   const textOf = (module) => `${module.title} ${module.description} ${(module.features || []).join(" ")}`.toLowerCase();
   const escapeHtml = (value) => String(value || "").replace(/[<>&"']/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;", "'": "&#39;" }[char]));
+  const commandCenterKey = "hh-command-center-state";
+
+  const readCommandCenterState = () => {
+    const fallback = {
+      notes: "Viết nhanh ý tưởng, lịch làm việc hoặc việc cần nhớ tại đây.",
+      todos: [
+        { text: "Kiểm tra tin nhắn mới", done: false },
+        { text: "Cập nhật dự án nổi bật", done: false },
+        { text: "Sao lưu dữ liệu quan trọng", done: true }
+      ],
+      activity: []
+    };
+    try {
+      return { ...fallback, ...JSON.parse(localStorage.getItem(commandCenterKey) || "{}") };
+    } catch {
+      return fallback;
+    }
+  };
+
+  const writeCommandCenterState = (state) => localStorage.setItem(commandCenterKey, JSON.stringify(state));
+
+  const commandCenterMarkup = () => {
+    const state = readCommandCenterState();
+    return `
+      <section class="command-center-app" data-command-center>
+        <div class="command-hero">
+          <div>
+            <p class="section-kicker">Command Center 01</p>
+            <h4>Trung tâm điều khiển cá nhân</h4>
+            <span>Đồng hồ, thời tiết, ghi chú, todo, Google, trạng thái server và app yêu thích.</span>
+          </div>
+          <div class="command-clock">
+            <strong data-command-time>--:--:--</strong>
+            <span data-command-date>Đang đồng bộ...</span>
+          </div>
+        </div>
+        <div class="command-grid">
+          <article class="command-widget weather-widget">
+            <header><strong>Thời tiết</strong><button class="interactive" type="button" data-command-weather>Tải mới</button></header>
+            <div class="weather-readout" data-command-weather-output>Ấn "Tải mới" để xem thời tiết Hà Nội.</div>
+          </article>
+          <article class="command-widget">
+            <header><strong>Google nhanh</strong><button class="interactive" type="button" data-command-google>Google</button></header>
+            <input data-command-search type="search" placeholder="Tìm nhanh trên Google...">
+            <div class="command-mini-links">
+              <a href="https://mail.google.com/" target="_blank" rel="noopener">Gmail</a>
+              <a href="https://drive.google.com/" target="_blank" rel="noopener">Drive</a>
+              <a href="https://calendar.google.com/" target="_blank" rel="noopener">Calendar</a>
+              <a href="https://news.google.com/topstories?hl=vi&gl=VN&ceid=VN:vi" target="_blank" rel="noopener">News</a>
+            </div>
+          </article>
+          <article class="command-widget notes-widget">
+            <header><strong>Notes</strong><button class="interactive" type="button" data-command-save-notes>Lưu</button></header>
+            <textarea data-command-notes rows="6">${escapeHtml(state.notes || "")}</textarea>
+          </article>
+          <article class="command-widget todo-widget">
+            <header><strong>Todo</strong><button class="interactive" type="button" data-command-add-todo>Thêm</button></header>
+            <input data-command-todo-input type="text" placeholder="Nhập việc cần làm...">
+            <div class="command-todo-list" data-command-todos>
+              ${(state.todos || []).map((todo, index) => `
+                <label>
+                  <input type="checkbox" data-command-toggle-todo="${index}" ${todo.done ? "checked" : ""}>
+                  <span>${escapeHtml(todo.text)}</span>
+                  <button class="interactive" type="button" data-command-remove-todo="${index}">Xóa</button>
+                </label>
+              `).join("")}
+            </div>
+          </article>
+          <article class="command-widget">
+            <header><strong>Server Status</strong><button class="interactive" type="button" data-command-server>Kiểm tra</button></header>
+            <div class="server-readout" data-command-server-output>Backend: chờ kiểm tra.</div>
+          </article>
+          <article class="command-widget">
+            <header><strong>Recent Activity</strong><button class="interactive" type="button" data-command-clear-activity>Dọn</button></header>
+            <div class="command-activity" data-command-activity>
+              ${(state.activity || []).slice(0, 6).map((item) => `<p>${escapeHtml(item)}</p>`).join("") || "<p>Chưa có hoạt động.</p>"}
+            </div>
+          </article>
+        </div>
+      </section>
+    `;
+  };
 
   const filteredModules = () => {
     const query = (search?.value || "").trim().toLowerCase();
@@ -830,6 +914,7 @@ function initSuperPlatform() {
             </div>
           </div>
           <div class="module-inline-app" data-inline-app="${module.id}">
+            ${module.id === "command-center" ? commandCenterMarkup(module) : ""}
             <label>
               Dữ liệu dùng nhanh
               <textarea data-inline-input="${module.id}" rows="4" placeholder="Nhập yêu cầu cho ${escapeHtml(module.title)}..."></textarea>
@@ -934,6 +1019,122 @@ function initSuperPlatform() {
       renderDetail(module);
       byId("moduleDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+  });
+
+  const logCommandActivity = (message) => {
+    const state = readCommandCenterState();
+    const stamp = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    state.activity = [`${stamp} · ${message}`, ...(state.activity || [])].slice(0, 20);
+    writeCommandCenterState(state);
+    const activity = grid.querySelector("[data-command-activity]");
+    if (activity) activity.innerHTML = state.activity.slice(0, 6).map((item) => `<p>${escapeHtml(item)}</p>`).join("");
+  };
+
+  const renderCommandTodos = () => {
+    const state = readCommandCenterState();
+    const list = grid.querySelector("[data-command-todos]");
+    if (!list) return;
+    list.innerHTML = (state.todos || []).map((todo, index) => `
+      <label>
+        <input type="checkbox" data-command-toggle-todo="${index}" ${todo.done ? "checked" : ""}>
+        <span>${escapeHtml(todo.text)}</span>
+        <button class="interactive" type="button" data-command-remove-todo="${index}">Xóa</button>
+      </label>
+    `).join("") || "<p>Chưa có việc cần làm.</p>";
+  };
+
+  grid.addEventListener("click", async (event) => {
+    const saveNotes = event.target.closest("[data-command-save-notes]");
+    const addTodo = event.target.closest("[data-command-add-todo]");
+    const removeTodo = event.target.closest("[data-command-remove-todo]");
+    const google = event.target.closest("[data-command-google]");
+    const weather = event.target.closest("[data-command-weather]");
+    const server = event.target.closest("[data-command-server]");
+    const clearActivity = event.target.closest("[data-command-clear-activity]");
+
+    if (saveNotes) {
+      const state = readCommandCenterState();
+      state.notes = grid.querySelector("[data-command-notes]")?.value || "";
+      writeCommandCenterState(state);
+      logCommandActivity("Đã lưu ghi chú");
+      return;
+    }
+    if (addTodo) {
+      const input = grid.querySelector("[data-command-todo-input]");
+      const text = (input?.value || "").trim();
+      if (!text) return;
+      const state = readCommandCenterState();
+      state.todos = [{ text, done: false }, ...(state.todos || [])].slice(0, 18);
+      writeCommandCenterState(state);
+      if (input) input.value = "";
+      renderCommandTodos();
+      logCommandActivity(`Thêm todo: ${text}`);
+      return;
+    }
+    if (removeTodo) {
+      const state = readCommandCenterState();
+      state.todos = (state.todos || []).filter((_, index) => index !== Number(removeTodo.dataset.commandRemoveTodo));
+      writeCommandCenterState(state);
+      renderCommandTodos();
+      logCommandActivity("Đã xóa todo");
+      return;
+    }
+    if (google) {
+      const query = (grid.querySelector("[data-command-search]")?.value || "").trim() || "tin tức AI hôm nay";
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank", "noopener");
+      logCommandActivity(`Tìm Google: ${query}`);
+      return;
+    }
+    if (weather) {
+      const output = grid.querySelector("[data-command-weather-output]");
+      if (output) output.textContent = "Đang tải thời tiết...";
+      try {
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=21.0285&longitude=105.8542&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=Asia%2FBangkok");
+        const data = await response.json();
+        const current = data.current || {};
+        if (output) output.innerHTML = `
+          <strong>${Math.round(current.temperature_2m ?? 0)}°C</strong>
+          <span>Độ ẩm ${current.relative_humidity_2m ?? "--"}% · Gió ${current.wind_speed_10m ?? "--"} km/h</span>
+          <em>Hà Nội · cập nhật ${new Date().toLocaleTimeString("vi-VN")}</em>
+        `;
+        logCommandActivity("Đã cập nhật thời tiết");
+      } catch (error) {
+        if (output) output.textContent = "Không tải được thời tiết. Hãy thử lại sau.";
+      }
+      return;
+    }
+    if (server) {
+      const output = grid.querySelector("[data-command-server-output]");
+      if (output) output.textContent = "Đang kiểm tra backend...";
+      try {
+        if (!REALTIME_URL) throw new Error("Chưa cấu hình backend");
+        const response = await fetch(`${REALTIME_URL}/api/platform/summary`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Backend lỗi");
+        if (output) output.innerHTML = `<strong>Online</strong><span>Modules: ${data.modules || "--"} · Users: ${data.users || "--"} · ${new Date().toLocaleTimeString("vi-VN")}</span>`;
+        logCommandActivity("Backend online");
+      } catch (error) {
+        if (output) output.textContent = `Backend chưa sẵn sàng: ${error.message}`;
+      }
+      return;
+    }
+    if (clearActivity) {
+      const state = readCommandCenterState();
+      state.activity = [];
+      writeCommandCenterState(state);
+      const activity = grid.querySelector("[data-command-activity]");
+      if (activity) activity.innerHTML = "<p>Chưa có hoạt động.</p>";
+    }
+  });
+
+  grid.addEventListener("change", (event) => {
+    const toggle = event.target.closest("[data-command-toggle-todo]");
+    if (!toggle) return;
+    const state = readCommandCenterState();
+    const todo = state.todos?.[Number(toggle.dataset.commandToggleTodo)];
+    if (todo) todo.done = toggle.checked;
+    writeCommandCenterState(state);
+    logCommandActivity(toggle.checked ? "Hoàn thành todo" : "Mở lại todo");
   });
 
   detailMeta?.addEventListener("click", (event) => {
