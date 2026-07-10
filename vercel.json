@@ -1,13 +1,13 @@
 {
   "version": 2,
   "functions": {
-    "api/votes.js": {
+    "api/**/*.js": {
       "maxDuration": 10
     }
   },
   "headers": [
     {
-      "source": "/api/votes",
+      "source": "/api/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
