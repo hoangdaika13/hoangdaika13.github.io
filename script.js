@@ -686,6 +686,88 @@ function initSuperPlatform() {
   render("all");
 }
 
+function initCreatorWorkspace() {
+  if (!document.body.classList.contains("home-neon")) return;
+  const consoleRoot = byId("platformConsole");
+  if (!consoleRoot) return;
+
+  const tabs = consoleRoot.querySelectorAll("[data-platform-tab]");
+  const panels = consoleRoot.querySelectorAll("[data-platform-panel]");
+
+  const activate = (name) => {
+    tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.platformTab === name));
+    panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.platformPanel === name));
+  };
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => activate(tab.dataset.platformTab));
+  });
+
+  const val = (id) => byId(id)?.value.trim() || "";
+  const write = (id, text) => {
+    const node = byId(id);
+    if (node) node.textContent = text;
+  };
+  const copyFrom = async (id) => {
+    const text = byId(id)?.textContent || "";
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+  };
+
+  const roleLabels = {
+    mentor: "Mentor sáng tạo",
+    writer: "Biên kịch YouTube",
+    designer: "UI/UX Designer",
+    marketer: "Marketing Advisor"
+  };
+
+  byId("generateChatReply")?.addEventListener("click", () => {
+    const role = val("chatRole") || "mentor";
+    const goal = val("chatGoal") || "phát triển ý tưởng mới";
+    const input = val("chatInput") || "Chưa có nội dung đầu vào.";
+    const output = `${roleLabels[role] || role}\n\nMục tiêu: ${goal}\n\nGợi ý nhanh:\n1. Chốt một kết quả cụ thể cần đạt trước khi viết dài.\n2. Tách ý tưởng thành 3 phần: hook, nội dung chính, lời kêu gọi hành động.\n3. Giữ một tone xuyên suốt để người xem nhận ra phong cách của bạn.\n4. Nếu dùng AI thật, hãy gửi prompt dưới dạng vai trò + bối cảnh + yêu cầu + định dạng output.\n\nPrompt tiếp theo có thể dùng:\n\"Bạn là ${roleLabels[role] || role}. Hãy giúp tôi ${goal}. Dữ liệu đầu vào: ${input}. Trả lời bằng checklist rõ ràng, có ví dụ cụ thể.\"`;
+    write("chatOutput", output);
+  });
+
+  byId("saveChatNote")?.addEventListener("click", () => {
+    const notes = JSON.parse(localStorage.getItem("hh-chat-notes") || "[]");
+    notes.unshift({ at: new Date().toISOString(), role: val("chatRole"), goal: val("chatGoal"), input: val("chatInput"), output: byId("chatOutput")?.textContent || "" });
+    localStorage.setItem("hh-chat-notes", JSON.stringify(notes.slice(0, 30)));
+    write("chatOutput", `${byId("chatOutput")?.textContent || ""}\n\n[Đã lưu note local: ${notes.length > 30 ? 30 : notes.length}/30]`);
+  });
+  byId("copyChatReply")?.addEventListener("click", () => copyFrom("chatOutput"));
+
+  const promptTemplates = {
+    rewrite: ({ tone, brief }) => `Bạn là biên kịch YouTube chuyên kể chuyện cảm xúc.\n\nNhiệm vụ: Viết lại nội dung dưới đây thành một kịch bản mới, giữ ý chính nhưng thay đổi cách kể, nhịp dựng và câu chữ.\n\nTone: ${tone}\n\nYêu cầu:\n- Mở đầu có hook mạnh trong 10 giây đầu.\n- Câu văn tự nhiên, dễ đọc voice-over.\n- Có cao trào, chuyển cảnh rõ, kết thúc có bài học và CTA.\n- Không sao chép nguyên văn.\n\nNội dung gốc:\n${brief}`,
+    title: ({ tone, brief }) => `Hãy tạo 20 title YouTube tiếng Việt cho nội dung sau.\n\nTone: ${tone}\n\nQuy tắc:\n- Dưới 100 ký tự.\n- Có tò mò nhưng không lừa người xem.\n- Phù hợp khán giả 40+.\n- Chia thành 4 nhóm: cảm xúc, bí mật, gia đình, bài học.\n\nNội dung:\n${brief}`,
+    image: ({ tone, brief }) => `Tạo prompt ảnh AI cinematic cho thumbnail/video.\n\nPhong cách: ${tone}\n\nTrả về:\n1. Prompt chính bằng tiếng Anh.\n2. Negative prompt.\n3. Gợi ý màu sắc, ánh sáng, bố cục.\n4. Text ngắn đặt trên thumbnail.\n\nBrief:\n${brief}`,
+    summary: ({ tone, brief }) => `Tóm tắt nội dung sau theo tone ${tone}.\n\nTrả về:\n- 5 ý chính.\n- 3 điểm cảm xúc mạnh.\n- 1 câu hook.\n- 1 CTA phù hợp.\n\nNội dung:\n${brief}`
+  };
+
+  byId("buildPromptButton")?.addEventListener("click", () => {
+    const template = promptTemplates[val("promptTemplate")] || promptTemplates.rewrite;
+    write("promptOutput", template({ tone: val("promptTone") || "tự nhiên", brief: val("promptBrief") || "Chưa có brief." }));
+  });
+  byId("copyPromptButton")?.addEventListener("click", () => copyFrom("promptOutput"));
+  byId("downloadPromptButton")?.addEventListener("click", () => downloadText("hh-prompt-studio.txt", byId("promptOutput")?.textContent || ""));
+
+  byId("generateScriptButton")?.addEventListener("click", () => {
+    const topic = val("scriptTopic") || "Một câu chuyện gia đình cảm động";
+    const length = val("scriptLength");
+    const audience = val("scriptAudience") || "người xem đại chúng";
+    const notes = val("scriptNotes") || "Chưa có ghi chú thêm.";
+    const beats = length === "short"
+      ? ["0-3s: Câu hook gây tò mò", "3-15s: Vấn đề chính", "15-40s: Twist/cao trào", "40-55s: Bài học", "55-60s: CTA"]
+      : length === "long"
+        ? ["Tập 1: Hook và biến cố", "Tập 2: Bí mật cũ", "Tập 3: Hiểu lầm bùng nổ", "Tập 4: Bằng chứng xuất hiện", "Tập 5: Hóa giải và bài học"]
+        : ["Mở đầu: Hook cảm xúc", "Phần 1: Bối cảnh và nhân vật", "Phần 2: Mâu thuẫn chính", "Phần 3: Cao trào", "Phần 4: Sự thật", "Kết: Bài học + CTA"];
+    const output = `KHUNG KỊCH BẢN\n\nChủ đề: ${topic}\nKhán giả: ${audience}\nGhi chú: ${notes}\n\nCấu trúc:\n${beats.map((beat, index) => `${index + 1}. ${beat}`).join("\n")}\n\nHook mẫu:\n\"Ông ấy im lặng suốt 20 năm, cho đến ngày một lá thư cũ khiến cả gia đình phải nhìn lại mọi chuyện.\"\n\nCTA mẫu:\n\"Nếu bạn từng hiểu lầm một người thân yêu, hãy để lại một bình luận để câu chuyện này đến được với nhiều người hơn.\"`;
+    write("scriptOutput", output);
+  });
+  byId("copyScriptButton")?.addEventListener("click", () => copyFrom("scriptOutput"));
+  byId("downloadScriptButton")?.addEventListener("click", () => downloadText("hh-script-generator.txt", byId("scriptOutput")?.textContent || ""));
+}
+
 function initHomeNeonInteractions() {
   if (!document.body.classList.contains("home-neon")) return;
 
@@ -1238,6 +1320,7 @@ initHomeNeonInteractions();
 initVoteStats();
 initRealtimeAuth();
 initSuperPlatform();
+initCreatorWorkspace();
 initMusicPlayer();
 initMiniTabs();
 initTool();

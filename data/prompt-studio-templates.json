@@ -1,0 +1,214 @@
+{
+  "moduleId": "prompt-studio",
+  "version": "1.0.0",
+  "updatedAt": "2026-07-10",
+  "categories": [
+    {
+      "id": "content",
+      "name": "Content",
+      "description": "Mau prompt cho bai viet, caption, video va y tuong sang tao."
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "description": "Mau prompt cho offer, landing page, khach hang va van hanh."
+    },
+    {
+      "id": "learning",
+      "name": "Learning",
+      "description": "Mau prompt cho hoc tap, giai thich va bai tap thuc hanh."
+    },
+    {
+      "id": "developer",
+      "name": "Developer",
+      "description": "Mau prompt cho phan tich code, tao snippet va viet tai lieu ky thuat."
+    }
+  ],
+  "templates": [
+    {
+      "id": "content-idea-sprint",
+      "categoryId": "content",
+      "title": "Content Idea Sprint",
+      "description": "Sinh nhanh cac goc noi dung theo khan gia, nen tang va muc tieu.",
+      "roleId": "content-strategist",
+      "variables": [
+        {
+          "key": "topic",
+          "label": "Chu de",
+          "type": "text",
+          "placeholder": "Vi du: AI cho chu shop online",
+          "required": true
+        },
+        {
+          "key": "audience",
+          "label": "Khan gia",
+          "type": "text",
+          "placeholder": "Vi du: nguoi ban hang moi bat dau",
+          "required": true
+        },
+        {
+          "key": "platform",
+          "label": "Nen tang",
+          "type": "select",
+          "options": ["TikTok", "Facebook", "YouTube Shorts", "Instagram", "Blog"],
+          "default": "TikTok",
+          "required": true
+        },
+        {
+          "key": "goal",
+          "label": "Muc tieu",
+          "type": "select",
+          "options": ["awareness", "engagement", "lead", "sale", "education"],
+          "default": "engagement",
+          "required": true
+        }
+      ],
+      "prompt": "Ban la content strategist. Hay tao 12 y tuong noi dung ve {{topic}} cho {{audience}} tren {{platform}} voi muc tieu {{goal}}. Moi y tuong gom: tieu de ngan, hook 1 cau, insight khan gia, dinh dang de san xuat, CTA va muc do kho 1-5.",
+      "outputFormat": "Danh sach co bang markdown",
+      "exampleInput": {
+        "topic": "AI giup viet caption ban hang",
+        "audience": "chu shop thoi trang online",
+        "platform": "TikTok",
+        "goal": "lead"
+      },
+      "tags": ["ideas", "social", "planning"]
+    },
+    {
+      "id": "prompt-refiner",
+      "categoryId": "content",
+      "title": "Prompt Refiner",
+      "description": "Bien mot prompt tho thanh prompt ro vai tro, ngu canh, rang buoc va format.",
+      "roleId": "prompt-engineer",
+      "variables": [
+        {
+          "key": "draftPrompt",
+          "label": "Prompt tho",
+          "type": "textarea",
+          "placeholder": "Dan prompt hien tai vao day",
+          "required": true
+        },
+        {
+          "key": "targetOutput",
+          "label": "Ket qua mong muon",
+          "type": "text",
+          "placeholder": "Vi du: 5 caption co CTA",
+          "required": true
+        },
+        {
+          "key": "constraints",
+          "label": "Rang buoc",
+          "type": "textarea",
+          "placeholder": "Tone, do dai, ngon ngu, dieu can tranh",
+          "required": false
+        }
+      ],
+      "prompt": "Hay nang cap prompt sau de tao ket qua tot hon: {{draftPrompt}}\n\nMuc tieu dau ra: {{targetOutput}}\nRang buoc: {{constraints}}\n\nTra ve 3 phien ban: quick, balanced, expert. Moi phien ban can co vai tro, ngu canh, yeu cau dau vao, quy tac xu ly va format dau ra.",
+      "outputFormat": "3 prompt hoan chinh kem ghi chu khi dung",
+      "exampleInput": {
+        "draftPrompt": "Viet caption cho san pham moi",
+        "targetOutput": "10 caption ngan cho Facebook",
+        "constraints": "Tieng Viet, than thien, khong qua cuong dieu"
+      },
+      "tags": ["prompt", "rewrite", "quality"]
+    },
+    {
+      "id": "landing-page-copy-pack",
+      "categoryId": "business",
+      "title": "Landing Page Copy Pack",
+      "description": "Tao bo copy landing page day du cho san pham hoac dich vu.",
+      "roleId": "conversion-copywriter",
+      "variables": [
+        {
+          "key": "offer",
+          "label": "Offer",
+          "type": "text",
+          "placeholder": "Vi du: khoa hoc AI cho freelancer",
+          "required": true
+        },
+        {
+          "key": "customerPain",
+          "label": "Noi dau khach hang",
+          "type": "textarea",
+          "placeholder": "Van de lon nhat khach dang gap",
+          "required": true
+        },
+        {
+          "key": "proof",
+          "label": "Bang chung",
+          "type": "textarea",
+          "placeholder": "Case study, so lieu, kinh nghiem",
+          "required": false
+        }
+      ],
+      "prompt": "Ban la conversion copywriter. Viet copy landing page cho {{offer}}. Khach hang dang dau o: {{customerPain}}. Bang chung hien co: {{proof}}. Tao cac phan: hero headline, subheadline, 5 loi ich, 3 objection answers, offer stack, FAQ 6 cau va CTA chinh/phu.",
+      "outputFormat": "Landing page section-by-section",
+      "exampleInput": {
+        "offer": "goi setup chatbot cho spa",
+        "customerPain": "mat khach vi phan hoi cham tren Facebook",
+        "proof": "da setup cho 20 spa nho, giam 40% thoi gian tra loi"
+      },
+      "tags": ["copywriting", "landing", "sales"]
+    },
+    {
+      "id": "explain-like-coach",
+      "categoryId": "learning",
+      "title": "Explain Like A Coach",
+      "description": "Giai thich mot chu de kho bang vi du, bai tap va cau hoi kiem tra.",
+      "roleId": "learning-coach",
+      "variables": [
+        {
+          "key": "concept",
+          "label": "Khai niem",
+          "type": "text",
+          "placeholder": "Vi du: prompt chaining",
+          "required": true
+        },
+        {
+          "key": "level",
+          "label": "Trinh do",
+          "type": "select",
+          "options": ["beginner", "intermediate", "advanced"],
+          "default": "beginner",
+          "required": true
+        }
+      ],
+      "prompt": "Hay dong vai learning coach va giai thich {{concept}} cho nguoi hoc trinh do {{level}}. Dung cau truc: dinh nghia ngan, vi du doi thuong, loi sai thuong gap, bai tap 10 phut, 5 cau hoi tu kiem tra va dap an.",
+      "outputFormat": "Lesson note ngan gon",
+      "exampleInput": {
+        "concept": "prompt chaining",
+        "level": "beginner"
+      },
+      "tags": ["learning", "explain", "practice"]
+    },
+    {
+      "id": "code-review-assistant",
+      "categoryId": "developer",
+      "title": "Code Review Assistant",
+      "description": "Kiem tra code theo bug, maintainability, bao mat va test gap.",
+      "roleId": "senior-engineer",
+      "variables": [
+        {
+          "key": "code",
+          "label": "Code",
+          "type": "textarea",
+          "placeholder": "Dan code hoac diff can review",
+          "required": true
+        },
+        {
+          "key": "context",
+          "label": "Ngu canh",
+          "type": "textarea",
+          "placeholder": "Muc tieu thay doi, framework, constraint",
+          "required": false
+        }
+      ],
+      "prompt": "Ban la senior engineer dang review code. Ngu canh: {{context}}\n\nCode/diff:\n{{code}}\n\nHay tra ve cac findings uu tien theo muc do nghiem trong, moi finding gom: risk, vi tri lien quan, cach sua va test can co. Neu khong thay van de, noi ro con rui ro nao chua kiem duoc.",
+      "outputFormat": "Findings truoc, sau do test gaps",
+      "exampleInput": {
+        "code": "function total(items){ return items.reduce((s,i)=>s+i.price) }",
+        "context": "JS utility tinh tong gio hang"
+      },
+      "tags": ["code", "review", "quality"]
+    }
+  ]
+}

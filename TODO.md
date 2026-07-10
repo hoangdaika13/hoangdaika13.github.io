@@ -9,7 +9,9 @@
 
 ## Dot tiep theo
 
-- Tao trang/section chi tiet cho tung module theo thu tu 1 den 40.
+- Module 04: Content Calendar UI voi localStorage truoc, backend sync sau.
+- Module 05: SEO Brief Builder client-side.
+- Noi Creator Workspace voi `data/prompt-studio-templates.json`, `data/ai-script-generator-structures.json` va `data/ai-creator-roles.json` de template dong hon.
 - Dong bo tung tool project voi design token neon chung.
 - Them command palette Ctrl+K de mo nhanh module.
 - Them PWA manifest, service worker va offline fallback.

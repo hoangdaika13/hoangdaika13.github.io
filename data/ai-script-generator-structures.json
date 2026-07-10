@@ -1,0 +1,233 @@
+{
+  "moduleId": "ai-script-generator",
+  "version": "1.0.0",
+  "updatedAt": "2026-07-10",
+  "formats": [
+    {
+      "id": "short-video-30s",
+      "name": "Short Video 30s",
+      "bestFor": ["TikTok", "YouTube Shorts", "Instagram Reels"],
+      "targetLengthSeconds": 30,
+      "description": "Kich ban video ngan tap trung hook nhanh, mot y chinh va CTA ro.",
+      "structure": [
+        {
+          "step": "hook",
+          "label": "0-3s Hook",
+          "goal": "Keo su chu y bang loi hua, cau hoi hoac xung dot.",
+          "promptCue": "Viet 5 hook khac nhau, moi hook duoi 12 tu."
+        },
+        {
+          "step": "context",
+          "label": "3-7s Context",
+          "goal": "Noi ro van de va ai nen xem tiep.",
+          "promptCue": "Giai thich van de bang mot cau gan voi doi song khan gia."
+        },
+        {
+          "step": "value",
+          "label": "7-23s Value",
+          "goal": "Dua ra 3 y chinh, buoc lam hoac insight.",
+          "promptCue": "Chia noi dung thanh 3 beat ngan, moi beat co visual cue."
+        },
+        {
+          "step": "payoff",
+          "label": "23-27s Payoff",
+          "goal": "Ket lai bang ket qua hoac loi ich cu the.",
+          "promptCue": "Tom tat loi ich bang mot cau de nho."
+        },
+        {
+          "step": "cta",
+          "label": "27-30s CTA",
+          "goal": "Moi hanh dong tiep theo khong gay ap luc.",
+          "promptCue": "Viet CTA ngan phu hop muc tieu: follow, comment, inbox hoac luu video."
+        }
+      ],
+      "defaultFields": {
+        "topic": "Cach dung AI de viet caption ban hang nhanh hon",
+        "audience": "chu shop online",
+        "tone": "than thien, thuc chien",
+        "cta": "luu video de dung lai"
+      }
+    },
+    {
+      "id": "tutorial-60s",
+      "name": "Tutorial 60s",
+      "bestFor": ["TikTok", "YouTube Shorts", "Facebook Reels"],
+      "targetLengthSeconds": 60,
+      "description": "Huong dan mot tac vu cu the theo cac buoc de xem lam duoc ngay.",
+      "structure": [
+        {
+          "step": "promise",
+          "label": "0-5s Promise",
+          "goal": "Noi ket qua nguoi xem se dat duoc.",
+          "promptCue": "Mo dau bang 'Sau 60 giay ban se...'."
+        },
+        {
+          "step": "setup",
+          "label": "5-12s Setup",
+          "goal": "Neu cong cu, dau vao hoac dieu kien can co.",
+          "promptCue": "Liet ke dieu can chuan bi trong 1-2 cau."
+        },
+        {
+          "step": "steps",
+          "label": "12-48s Steps",
+          "goal": "Huong dan 3-5 buoc theo thu tu.",
+          "promptCue": "Moi buoc gom hanh dong, ly do va loi meo tranh sai."
+        },
+        {
+          "step": "example",
+          "label": "48-55s Example",
+          "goal": "Cho vi du ket qua hoac man hinh can thay.",
+          "promptCue": "Tao mot example output ngan de chen len man hinh."
+        },
+        {
+          "step": "cta",
+          "label": "55-60s CTA",
+          "goal": "Moi nguoi xem thu lam va phan hoi.",
+          "promptCue": "Viet CTA khuyen khich comment ket qua hoac cau hoi."
+        }
+      ],
+      "defaultFields": {
+        "topic": "Tao prompt ban hang tu insight khach hang",
+        "audience": "freelancer va chu shop nho",
+        "tone": "ro rang, co vi du",
+        "cta": "comment nganh cua ban"
+      }
+    },
+    {
+      "id": "long-form-youtube",
+      "name": "Long-form YouTube",
+      "bestFor": ["YouTube", "Course lesson", "Webinar"],
+      "targetLengthSeconds": 480,
+      "description": "Kich ban video dai co mo bai, phan tich, vi du va retention beat.",
+      "structure": [
+        {
+          "step": "cold-open",
+          "label": "Cold Open",
+          "goal": "Dat van de lon hoac ket qua gay to mo.",
+          "promptCue": "Viet 2 phien ban cold open: story va contrarian."
+        },
+        {
+          "step": "promise-map",
+          "label": "Promise Map",
+          "goal": "Noi nguoi xem se nhan duoc gi va video di qua nhung phan nao.",
+          "promptCue": "Tao map 3 phan, moi phan co loi ich cu the."
+        },
+        {
+          "step": "main-points",
+          "label": "Main Points",
+          "goal": "Trien khai 3-5 luan diem chinh.",
+          "promptCue": "Moi luan diem co insight, vi du, buoc lam va loi sai can tranh."
+        },
+        {
+          "step": "pattern-interrupt",
+          "label": "Pattern Interrupt",
+          "goal": "Chen doi nhip de giu retention.",
+          "promptCue": "De xuat 3 diem chen cau hoi, demo, meme text hoac mini recap."
+        },
+        {
+          "step": "close",
+          "label": "Close",
+          "goal": "Tom tat va dua next step.",
+          "promptCue": "Ket bang recap 3 dong va CTA lien quan video tiep theo."
+        }
+      ],
+      "defaultFields": {
+        "topic": "Xay he thong prompt cho san xuat noi dung hang ngay",
+        "audience": "creator va marketer ca nhan",
+        "tone": "chuyen sau nhung de ap dung",
+        "cta": "tai checklist hoac xem video tiep theo"
+      }
+    },
+    {
+      "id": "voice-over-ad",
+      "name": "Voice-over Ad",
+      "bestFor": ["Meta Ads", "TikTok Ads", "YouTube Ads"],
+      "targetLengthSeconds": 45,
+      "description": "Kich ban quang cao voice-over co problem, promise, proof va offer.",
+      "structure": [
+        {
+          "step": "problem",
+          "label": "Problem",
+          "goal": "Goi dung noi dau khach hang.",
+          "promptCue": "Viet 3 cau problem angle, moi cau duoi 15 tu."
+        },
+        {
+          "step": "promise",
+          "label": "Promise",
+          "goal": "Noi ket qua ma offer dem lai.",
+          "promptCue": "Viet loi hua cu the, tranh qua da."
+        },
+        {
+          "step": "mechanism",
+          "label": "Mechanism",
+          "goal": "Giai thich cach offer tao ket qua.",
+          "promptCue": "Mo ta co che trong 2 cau de tin duoc."
+        },
+        {
+          "step": "proof",
+          "label": "Proof",
+          "goal": "Dua bang chung hoac ly do tin cay.",
+          "promptCue": "Chen so lieu, review, quy trinh hoac demo neu co."
+        },
+        {
+          "step": "offer-cta",
+          "label": "Offer CTA",
+          "goal": "Keu goi hanh dong cu the.",
+          "promptCue": "Viet CTA co uu dai hoac buoc tiep theo ro rang."
+        }
+      ],
+      "defaultFields": {
+        "topic": "Dich vu setup chatbot tra loi khach hang",
+        "audience": "spa va salon nho",
+        "tone": "tin cay, nhe nhang",
+        "cta": "nhan tu van mien phi"
+      }
+    }
+  ],
+  "tonePresets": [
+    {
+      "id": "friendly-practical",
+      "name": "Than thien thuc chien",
+      "guidance": "Dung cau ngan, vi du doi thuong, tranh thuat ngu neu khong can."
+    },
+    {
+      "id": "bold-contrarian",
+      "name": "Manh va nguoc chieu",
+      "guidance": "Mo dau bang nhan dinh bat ngo, nhung phan value phai co ly le ro."
+    },
+    {
+      "id": "premium-expert",
+      "name": "Chuyen gia cao cap",
+      "guidance": "Gioi han slang, tap trung vao insight, quy trinh va bang chung."
+    },
+    {
+      "id": "warm-story",
+      "name": "Am ap ke chuyen",
+      "guidance": "Dan bang tinh huong that, co nhan vat va ket qua sau thay doi."
+    }
+  ],
+  "sampleRequests": [
+    {
+      "id": "sample-short-shop",
+      "formatId": "short-video-30s",
+      "brief": "Viet kich ban TikTok 30s gioi thieu cach dung AI de tra loi comment khach hang nhanh hon.",
+      "inputs": {
+        "topic": "AI tra loi comment ban hang",
+        "audience": "chu shop online",
+        "tonePresetId": "friendly-practical",
+        "cta": "comment 'AI' de nhan mau prompt"
+      }
+    },
+    {
+      "id": "sample-ad-spa",
+      "formatId": "voice-over-ad",
+      "brief": "Viet quang cao voice-over cho goi setup chatbot cho spa nho.",
+      "inputs": {
+        "topic": "chatbot tu van lich hen spa",
+        "audience": "chu spa co fanpage nhung tra loi cham",
+        "tonePresetId": "premium-expert",
+        "cta": "dat lich demo 15 phut"
+      }
+    }
+  ]
+}

@@ -276,6 +276,97 @@
         <span><strong id="moduleCore">0</strong>Lõi</span>
         <span><strong id="moduleBackend">0</strong>Cần backend</span>
       </div>
+      <div class="platform-console interactive-card" id="platformConsole">
+        <div class="platform-console-head">
+          <div>
+            <p class="section-kicker">Module 01-03</p>
+            <h3>Creator Workspace</h3>
+          </div>
+          <div class="platform-tabs" role="tablist" aria-label="Module workspace">
+            <button class="active interactive" type="button" data-platform-tab="chat">AI Chat</button>
+            <button class="interactive" type="button" data-platform-tab="prompt">Prompt Studio</button>
+            <button class="interactive" type="button" data-platform-tab="script">Script Generator</button>
+          </div>
+        </div>
+
+        <div class="platform-workspace active" data-platform-panel="chat">
+          <div class="workspace-controls">
+            <label>
+              Vai trò
+              <select id="chatRole">
+                <option value="mentor">Mentor sáng tạo</option>
+                <option value="writer">Biên kịch YouTube</option>
+                <option value="designer">UI/UX Designer</option>
+                <option value="marketer">Marketing Advisor</option>
+              </select>
+            </label>
+            <label>
+              Mục tiêu
+              <input id="chatGoal" type="text" placeholder="Ví dụ: lên ý tưởng video kể chuyện 40+">
+            </label>
+          </div>
+          <textarea id="chatInput" rows="6" placeholder="Nhập câu hỏi, ý tưởng hoặc nội dung muốn AI hỗ trợ..."></textarea>
+          <div class="workspace-actions">
+            <button class="button primary interactive" id="generateChatReply" type="button">Tạo gợi ý</button>
+            <button class="button ghost interactive" id="saveChatNote" type="button">Lưu note</button>
+            <button class="button ghost interactive" id="copyChatReply" type="button">Copy</button>
+          </div>
+          <pre class="workspace-output" id="chatOutput">Kết quả gợi ý sẽ hiện ở đây.</pre>
+        </div>
+
+        <div class="platform-workspace" data-platform-panel="prompt">
+          <div class="workspace-controls">
+            <label>
+              Template
+              <select id="promptTemplate">
+                <option value="rewrite">Viết lại kịch bản</option>
+                <option value="title">Tạo title YouTube</option>
+                <option value="image">Prompt ảnh AI</option>
+                <option value="summary">Tóm tắt nội dung</option>
+              </select>
+            </label>
+            <label>
+              Tone
+              <input id="promptTone" type="text" value="ấm áp, chậm vừa, chân thật, giàu cảm xúc">
+            </label>
+          </div>
+          <textarea id="promptBrief" rows="6" placeholder="Dán brief, chủ đề, transcript hoặc yêu cầu cụ thể..."></textarea>
+          <div class="workspace-actions">
+            <button class="button primary interactive" id="buildPromptButton" type="button">Tạo prompt</button>
+            <button class="button ghost interactive" id="downloadPromptButton" type="button">Tải TXT</button>
+            <button class="button ghost interactive" id="copyPromptButton" type="button">Copy</button>
+          </div>
+          <pre class="workspace-output" id="promptOutput">Prompt hoàn chỉnh sẽ hiện ở đây.</pre>
+        </div>
+
+        <div class="platform-workspace" data-platform-panel="script">
+          <div class="workspace-controls three-cols">
+            <label>
+              Chủ đề
+              <input id="scriptTopic" type="text" placeholder="Ví dụ: Người mẹ bị con hiểu lầm">
+            </label>
+            <label>
+              Độ dài
+              <select id="scriptLength">
+                <option value="short">Short 60 giây</option>
+                <option value="medium" selected>8-12 phút</option>
+                <option value="long">Series nhiều tập</option>
+              </select>
+            </label>
+            <label>
+              Khán giả
+              <input id="scriptAudience" type="text" value="Nam nữ 40-65 tuổi, thích câu chuyện đời thường">
+            </label>
+          </div>
+          <textarea id="scriptNotes" rows="5" placeholder="Ghi chú nhân vật, twist, bài học, CTA..."></textarea>
+          <div class="workspace-actions">
+            <button class="button primary interactive" id="generateScriptButton" type="button">Tạo khung kịch bản</button>
+            <button class="button ghost interactive" id="downloadScriptButton" type="button">Tải DOC TXT</button>
+            <button class="button ghost interactive" id="copyScriptButton" type="button">Copy</button>
+          </div>
+          <pre class="workspace-output" id="scriptOutput">Khung kịch bản sẽ hiện ở đây.</pre>
+        </div>
+      </div>
       <div class="module-grid" id="moduleGrid" aria-live="polite">
         <article class="module-card skeleton-card">
           <span class="module-number">01</span>
