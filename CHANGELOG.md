@@ -2,6 +2,8 @@
 
 ## 2026-07-10
 
+- Them backend API that cho 37 module: module records/actions, helpdesk, store orders, storage metadata, notification subscriptions va admin overview.
+- Noi trang chu voi backend module neu `window.HH_REALTIME_URL` duoc cau hinh, fallback local khi chua deploy backend.
 - Bat dau hien thuc hoa module 01-03: AI Chat Workspace, Prompt Studio va AI Script Generator.
 - Them Creator Workspace tren section AI Super Platform voi tab chat, prompt, script, copy/download/local note.
 - Them du lieu mau cho role, prompt template va cau truc kich ban trong `data/`.

@@ -4,8 +4,9 @@
 
 - Deploy `realtime-server` de bat Socket.io, login/register, OAuth va event tracking.
 - Noi admin events voi giao dien admin rieng bang `ADMIN_TOKEN`.
-- Cac module can database/API that duoc danh dau `requiresBackend: true` trong `data/ai-super-platform-modules.json`.
+- Cac module can database/API that duoc danh dau `requiresBackend: true` da co API records/actions chung trong `realtime-server`.
 - Khong gia lap la cac module backend da hoat dong day du neu chua co endpoint that.
+- Tich hop provider that cho payment, email/push, Discord/Telegram va storage file lon.
 
 ## Dot tiep theo
 

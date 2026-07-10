@@ -24,7 +24,7 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
 const allowedOrigins = [FRONTEND_URL, "http://127.0.0.1:4173", "http://localhost:4173"].filter(Boolean);
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "2mb" }));
 app.use(passport.initialize());
 
 const io = new Server(server, {
@@ -44,6 +44,44 @@ async function db() {
 const users = () => db().then((database) => database.collection("users"));
 const sessions = () => db().then((database) => database.collection("sessions"));
 const events = () => db().then((database) => database.collection("events"));
+const moduleRecords = () => db().then((database) => database.collection("moduleRecords"));
+const moduleActions = () => db().then((database) => database.collection("moduleActions"));
+const tickets = () => db().then((database) => database.collection("tickets"));
+const orders = () => db().then((database) => database.collection("orders"));
+const storageFiles = () => db().then((database) => database.collection("storageFiles"));
+const notificationSubscriptions = () => db().then((database) => database.collection("notificationSubscriptions"));
+
+const seedProducts = [
+  { id: "hh-voice-lite", title: "HH Voice Studio Lite", price: 0, currency: "VND", type: "download" },
+  { id: "kich-ban-ai-source", title: "Kich ban AI Source", price: 0, currency: "VND", type: "source" },
+  { id: "portfolio-membership", title: "Creator Membership", price: 99000, currency: "VND", type: "membership" }
+];
+
+function cleanString(value, max = 2000) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function readBearer(req) {
+  return (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+}
+
+async function currentUser(req) {
+  return verifyToken(readBearer(req));
+}
+
+function ownerFrom(user, fallback = {}) {
+  return user
+    ? { userId: user._id, user: publicUser(user) }
+    : { anonymousId: cleanString(fallback.anonymousId, 160), user: null };
+}
+
+function requireAdmin(req, res) {
+  if (!ADMIN_TOKEN || req.headers.authorization !== `Bearer ${ADMIN_TOKEN}`) {
+    res.status(401).json({ error: "Unauthorized" });
+    return false;
+  }
+  return true;
+}
 
 function signUser(user) {
   return jwt.sign(
@@ -199,13 +237,183 @@ app.get("/api/auth/facebook/callback", passport.authenticate("facebook", { sessi
   res.redirect(`${FRONTEND_URL}?authToken=${encodeURIComponent(token)}#account`);
 });
 
+app.get("/api/platform/summary", async (_req, res) => {
+  const [recordCount, actionCount, ticketCount, orderCount, fileCount] = await Promise.all([
+    (await moduleRecords()).countDocuments(),
+    (await moduleActions()).countDocuments(),
+    (await tickets()).countDocuments(),
+    (await orders()).countDocuments(),
+    (await storageFiles()).countDocuments()
+  ]);
+  res.json({
+    ok: true,
+    counts: { records: recordCount, actions: actionCount, tickets: ticketCount, orders: orderCount, files: fileCount },
+    products: seedProducts
+  });
+});
+
+app.get("/api/modules/:moduleId/items", async (req, res) => {
+  const moduleId = cleanString(req.params.moduleId, 120);
+  const rows = await (await moduleRecords()).find({ moduleId }).sort({ createdAt: -1 }).limit(100).toArray();
+  res.json({ moduleId, items: rows });
+});
+
+app.post("/api/modules/:moduleId/items", async (req, res) => {
+  const user = await currentUser(req);
+  const moduleId = cleanString(req.params.moduleId, 120);
+  const payload = {
+    moduleId,
+    title: cleanString(req.body?.title, 180),
+    type: cleanString(req.body?.type || "note", 80),
+    data: req.body?.data || {},
+    ...ownerFrom(user, req.body),
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  const result = await (await moduleRecords()).insertOne(payload);
+  await (await events()).insertOne({ type: "module:item:create", moduleId, recordId: result.insertedId, createdAt: new Date() });
+  res.json({ ok: true, item: { ...payload, _id: result.insertedId } });
+});
+
+app.get("/api/modules/:moduleId/actions", async (req, res) => {
+  const moduleId = cleanString(req.params.moduleId, 120);
+  const rows = await (await moduleActions()).find({ moduleId }).sort({ createdAt: -1 }).limit(100).toArray();
+  res.json({ moduleId, actions: rows });
+});
+
+app.post("/api/modules/:moduleId/actions", async (req, res) => {
+  const user = await currentUser(req);
+  const moduleId = cleanString(req.params.moduleId, 120);
+  const input = cleanString(req.body?.input, 8000);
+  const actionType = cleanString(req.body?.actionType || "run", 80);
+  const output = [
+    `Backend action accepted for ${moduleId}.`,
+    "",
+    `Action: ${actionType}`,
+    `Input: ${input || "No input"}`,
+    "",
+    "Stored in MongoDB. A specialized worker/API can replace this generic output later."
+  ].join("\n");
+  const payload = {
+    moduleId,
+    actionType,
+    input,
+    output,
+    meta: req.body?.meta || {},
+    ...ownerFrom(user, req.body),
+    createdAt: new Date()
+  };
+  const result = await (await moduleActions()).insertOne(payload);
+  await (await events()).insertOne({ type: "module:action", moduleId, actionType, actionId: result.insertedId, createdAt: new Date() });
+  res.json({ ok: true, action: { ...payload, _id: result.insertedId } });
+});
+
+app.get("/api/store/products", (_req, res) => {
+  res.json({ products: seedProducts });
+});
+
+app.post("/api/store/orders", async (req, res) => {
+  const user = await currentUser(req);
+  const items = Array.isArray(req.body?.items) ? req.body.items.slice(0, 20) : [];
+  const payload = {
+    items,
+    customer: {
+      name: cleanString(req.body?.customer?.name, 120),
+      email: cleanString(req.body?.customer?.email, 160),
+      phone: cleanString(req.body?.customer?.phone, 40)
+    },
+    status: "pending_manual_payment",
+    paymentNote: "No real payment has been captured. Connect Stripe/PayPal/MoMo/VNPay before charging users.",
+    ...ownerFrom(user, req.body),
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  const result = await (await orders()).insertOne(payload);
+  await (await events()).insertOne({ type: "store:order:create", orderId: result.insertedId, createdAt: new Date() });
+  res.json({ ok: true, order: { ...payload, _id: result.insertedId } });
+});
+
+app.post("/api/helpdesk/tickets", async (req, res) => {
+  const user = await currentUser(req);
+  const payload = {
+    subject: cleanString(req.body?.subject, 180),
+    message: cleanString(req.body?.message, 8000),
+    email: cleanString(req.body?.email, 160),
+    status: "open",
+    priority: cleanString(req.body?.priority || "normal", 40),
+    ...ownerFrom(user, req.body),
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  if (!payload.subject || !payload.message) return res.status(400).json({ error: "Subject and message are required." });
+  const result = await (await tickets()).insertOne(payload);
+  await (await events()).insertOne({ type: "helpdesk:ticket:create", ticketId: result.insertedId, createdAt: new Date() });
+  res.json({ ok: true, ticket: { ...payload, _id: result.insertedId } });
+});
+
+app.get("/api/helpdesk/tickets", async (req, res) => {
+  const user = await currentUser(req);
+  const query = user ? { userId: user._id } : { anonymousId: cleanString(req.query.anonymousId, 160) };
+  const rows = await (await tickets()).find(query).sort({ createdAt: -1 }).limit(50).toArray();
+  res.json({ tickets: rows });
+});
+
+app.post("/api/storage/files", async (req, res) => {
+  const user = await currentUser(req);
+  const content = cleanString(req.body?.content, 50000);
+  const payload = {
+    name: cleanString(req.body?.name || "untitled.txt", 180),
+    mimeType: cleanString(req.body?.mimeType || "text/plain", 120),
+    size: Number(req.body?.size || content.length || 0),
+    content,
+    note: "This endpoint stores small text/base64 payloads only. Use S3/R2/GridFS for large production files.",
+    ...ownerFrom(user, req.body),
+    createdAt: new Date()
+  };
+  const result = await (await storageFiles()).insertOne(payload);
+  await (await events()).insertOne({ type: "storage:file:create", fileId: result.insertedId, createdAt: new Date() });
+  res.json({ ok: true, file: { ...payload, _id: result.insertedId } });
+});
+
+app.get("/api/storage/files", async (req, res) => {
+  const user = await currentUser(req);
+  const query = user ? { userId: user._id } : { anonymousId: cleanString(req.query.anonymousId, 160) };
+  const rows = await (await storageFiles()).find(query, { projection: { content: 0 } }).sort({ createdAt: -1 }).limit(50).toArray();
+  res.json({ files: rows });
+});
+
+app.post("/api/notifications/subscribe", async (req, res) => {
+  const user = await currentUser(req);
+  const payload = {
+    channel: cleanString(req.body?.channel || "email", 40),
+    target: cleanString(req.body?.target, 240),
+    preferences: req.body?.preferences || {},
+    active: true,
+    note: "Email/push/Discord/Telegram delivery needs provider keys before real sending.",
+    ...ownerFrom(user, req.body),
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  const result = await (await notificationSubscriptions()).insertOne(payload);
+  res.json({ ok: true, subscription: { ...payload, _id: result.insertedId } });
+});
+
 app.get("/api/admin/events", async (req, res) => {
-  if (!ADMIN_TOKEN || req.headers.authorization !== `Bearer ${ADMIN_TOKEN}`) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  if (!requireAdmin(req, res)) return;
   const collection = await events();
   const rows = await collection.find({}).sort({ createdAt: -1 }).limit(200).toArray();
   res.json({ events: rows });
+});
+
+app.get("/api/admin/overview", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  const database = await db();
+  const names = ["users", "sessions", "events", "moduleRecords", "moduleActions", "tickets", "orders", "storageFiles", "notificationSubscriptions"];
+  const counts = {};
+  await Promise.all(names.map(async (name) => {
+    counts[name] = await database.collection(name).countDocuments();
+  }));
+  res.json({ counts, generatedAt: new Date() });
 });
 
 io.use(async (socket, next) => {

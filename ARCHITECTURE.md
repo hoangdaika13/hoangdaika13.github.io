@@ -27,6 +27,8 @@ GitHub Pages chi host HTML/CSS/JS tinh. Cac tinh nang sau can backend:
 - Like/vote dong bo: da co Vercel endpoint `window.HH_VOTE_API_URL`.
 - Online users, login, register, OAuth, event log: can deploy `realtime-server` len Render/Railway/Fly.io/VPS roi gan `window.HH_REALTIME_URL`.
 - Admin xem event: goi `GET /api/admin/events` voi `Authorization: Bearer <ADMIN_TOKEN>`.
+- Module backend: `realtime-server` co API cho records/actions theo module, helpdesk tickets, store orders, storage metadata, notification subscriptions va admin overview.
+- Thanh toan that, upload file lon, email/push/Discord/Telegram that can them provider rieng; UI/API hien tai khong gia vo da thu tien hay gui thong bao that.
 
 ## Them module moi
 

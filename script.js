@@ -773,12 +773,43 @@ function initSuperPlatform() {
     render();
   });
 
-  runDemo?.addEventListener("click", () => {
+  const platformApi = async (path, payload) => {
+    if (!REALTIME_URL) throw new Error("Realtime backend is not configured.");
+    const token = localStorage.getItem("hh-auth-token") || "";
+    const response = await fetch(`${REALTIME_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Backend request failed.");
+    return data;
+  };
+
+  runDemo?.addEventListener("click", async () => {
     if (!selectedModule || !demoOutput) return;
-    demoOutput.textContent = moduleDemoText(selectedModule, demoInput?.value || "");
+    const localOutput = moduleDemoText(selectedModule, demoInput?.value || "");
+    if (!REALTIME_URL) {
+      demoOutput.textContent = `${localOutput}\n\n[Backend chưa cấu hình: đang chạy local trong HTML.]`;
+      return;
+    }
+    demoOutput.textContent = "Đang gửi module action lên backend...";
+    try {
+      const data = await platformApi(`/api/modules/${encodeURIComponent(selectedModule.id)}/actions`, {
+        actionType: "run",
+        input: demoInput?.value || "",
+        meta: { title: selectedModule.title, requiresBackend: selectedModule.requiresBackend }
+      });
+      demoOutput.textContent = `${localOutput}\n\n[Backend MongoDB]\nAction ID: ${data.action?._id || "created"}\n${data.action?.output || ""}`;
+    } catch (error) {
+      demoOutput.textContent = `${localOutput}\n\n[Backend lỗi hoặc chưa deploy]\n${error.message}`;
+    }
   });
 
-  saveState?.addEventListener("click", () => {
+  saveState?.addEventListener("click", async () => {
     if (!selectedModule) return;
     const allState = JSON.parse(localStorage.getItem(stateKey) || "{}");
     allState[selectedModule.id] = {
@@ -787,6 +818,20 @@ function initSuperPlatform() {
       savedAt: new Date().toISOString()
     };
     localStorage.setItem(stateKey, JSON.stringify(allState));
+    if (REALTIME_URL) {
+      try {
+        const data = await platformApi(`/api/modules/${encodeURIComponent(selectedModule.id)}/items`, {
+          title: selectedModule.title,
+          type: "module-state",
+          data: allState[selectedModule.id]
+        });
+        if (demoOutput) demoOutput.textContent = `${demoOutput.textContent}\n\n[Đã lưu local + MongoDB: ${data.item?._id || "created"}]`;
+        return;
+      } catch (error) {
+        if (demoOutput) demoOutput.textContent = `${demoOutput.textContent}\n\n[Đã lưu local, backend lỗi: ${error.message}]`;
+        return;
+      }
+    }
     if (demoOutput) demoOutput.textContent = `${demoOutput.textContent}\n\n[Đã lưu local cho ${selectedModule.title}]`;
   });
 
