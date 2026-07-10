@@ -2298,6 +2298,130 @@ footer p {
   box-shadow: 0 0 48px rgba(255,59,212,.22), 10px 10px 0 #05000a;
 }
 
+.home-neon .account-section {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, .78fr) minmax(360px, 1fr);
+  gap: clamp(18px, 4vw, 36px);
+  width: min(1120px, calc(100% - 32px));
+  margin: clamp(24px, 5vw, 54px) auto;
+  padding: clamp(18px, 4vw, 28px);
+  border: 2px solid rgba(255,255,255,.72);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 16% 10%, rgba(255,59,212,.18), transparent 230px),
+    radial-gradient(circle at 86% 72%, rgba(86,234,255,.13), transparent 260px),
+    rgba(8, 1, 16, .82);
+  box-shadow: 0 0 44px rgba(255,59,212,.20), 10px 10px 0 #05000a;
+}
+
+.home-neon .account-copy h2 {
+  max-width: 650px;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+}
+
+.home-neon .account-panel {
+  display: grid;
+  gap: 16px;
+  padding: clamp(16px, 3vw, 22px);
+  border: 2px solid rgba(255,255,255,.72);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255,59,212,.16), rgba(86,234,255,.10)),
+    rgba(5,0,10,.66);
+  box-shadow: 0 0 34px rgba(255,59,212,.18), 8px 8px 0 #05000a;
+}
+
+.home-neon .account-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-neon .account-status span,
+.home-neon .account-status strong {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 0 13px;
+  border: 2px solid rgba(255,255,255,.68);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255,59,212,.13);
+  box-shadow: 4px 4px 0 #05000a;
+  font-size: .86rem;
+}
+
+.home-neon .oauth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.home-neon .oauth-actions a[aria-disabled="true"] {
+  opacity: .58;
+  pointer-events: none;
+}
+
+.home-neon .account-forms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.home-neon .account-forms form {
+  display: grid;
+  gap: 11px;
+  padding: 14px;
+  border: 2px solid rgba(255,255,255,.62);
+  border-radius: 8px;
+  background: rgba(5,0,10,.55);
+}
+
+.home-neon .account-forms h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.home-neon .account-forms input[type="text"],
+.home-neon .account-forms input[type="email"],
+.home-neon .account-forms input[type="password"] {
+  min-height: 46px;
+  border: 2px solid rgba(255,255,255,.68);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: #fff;
+  background: rgba(5,0,10,.72);
+  font: inherit;
+  outline: none;
+}
+
+.home-neon .account-forms input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 22px rgba(86,234,255,.25);
+}
+
+.home-neon .consent-line,
+.home-neon .consent-switch {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: #f4d9ff;
+  font-size: .86rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.home-neon .consent-switch {
+  padding: 12px;
+  border: 1px solid rgba(86,234,255,.42);
+  border-radius: 8px;
+  background: rgba(86,234,255,.08);
+}
+
 .home-neon .music-head {
   display: flex;
   flex-wrap: wrap;
@@ -2397,6 +2521,11 @@ footer p {
   }
 
   .home-neon .visitor-pulse {
+    grid-template-columns: 1fr;
+  }
+
+  .home-neon .account-section,
+  .home-neon .account-forms {
     grid-template-columns: 1fr;
   }
 
@@ -2510,4 +2639,89 @@ footer p {
   background: rgba(86,234,255,.08);
   font-size: .86rem;
   font-weight: 900;
+}
+
+/* Unified neon polish for home modules. */
+.home-neon .visitor-pulse,
+.home-neon .account-section,
+.home-neon .neon-about,
+.home-neon .neon-projects,
+.home-neon .neon-skills,
+.home-neon .neon-contact,
+.home-neon .music-section {
+  isolation: isolate;
+}
+
+.home-neon .visitor-form,
+.home-neon .account-panel,
+.home-neon .lead-form,
+.home-neon .project-card,
+.home-neon .music-console {
+  position: relative;
+}
+
+.home-neon .visitor-form::after,
+.home-neon .account-panel::after,
+.home-neon .lead-form::after,
+.home-neon .project-card::after,
+.home-neon .music-console::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  content: "";
+  background: linear-gradient(115deg, transparent 0 38%, rgba(255,255,255,.16) 48%, transparent 58% 100%);
+  opacity: 0;
+  transform: translateX(-18%);
+  transition: opacity .25s ease, transform .55s ease;
+  pointer-events: none;
+}
+
+.home-neon .visitor-form:hover::after,
+.home-neon .account-panel:hover::after,
+.home-neon .lead-form:hover::after,
+.home-neon .project-card:hover::after,
+.home-neon .music-console:hover::after {
+  opacity: 1;
+  transform: translateX(18%);
+}
+
+.home-neon .account-section {
+  margin-top: clamp(18px, 4vw, 42px);
+}
+
+.home-neon .account-copy {
+  align-self: center;
+}
+
+.home-neon .account-copy .section-note::before {
+  display: inline-block;
+  margin-right: 8px;
+  color: #56eaff;
+  content: "Quyen rieng tu:";
+  font-weight: 900;
+}
+
+.home-neon .account-status strong {
+  color: #12051f;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+}
+
+.home-neon .consent-line input,
+.home-neon .consent-switch input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #ff3bd4;
+}
+
+.home-neon .account-forms button,
+.home-neon .oauth-actions .button {
+  justify-content: center;
+}
+
+@media (max-width: 980px) {
+  .home-neon .account-section {
+    grid-template-columns: 1fr;
+  }
 }

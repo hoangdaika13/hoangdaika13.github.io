@@ -10,6 +10,7 @@ let particles = [];
 let clickAudioContext;
 let musicEngine;
 const CLOUD_VOTE_API = window.HH_VOTE_API_URL || "";
+const REALTIME_URL = window.HH_REALTIME_URL || "";
 
 const ambientTracks = [
   { name: "Pink Morning", mood: "piano pad", root: 261.63, scale: [0, 4, 7, 11], wave: "sine" },
@@ -419,6 +420,194 @@ function initVoteStats() {
   renderStats();
   syncCloudStats();
   if (CLOUD_VOTE_API) setInterval(syncCloudStats, 10000);
+}
+
+function randomId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `anon-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function initRealtimeAuth() {
+  if (!document.body.classList.contains("home-neon")) return;
+  const status = byId("authStatus");
+  const online = byId("onlineCount");
+  const note = byId("realtimeNote");
+  const consent = byId("trackingConsent");
+  const registerForm = byId("registerForm");
+  const loginForm = byId("loginForm");
+  const logoutButton = byId("logoutButton");
+  const googleLogin = byId("googleLogin");
+  const facebookLogin = byId("facebookLogin");
+  if (!status || !online || !note || !consent) return;
+
+  let token = localStorage.getItem("hh-auth-token") || "";
+  let user = null;
+  const anonymousIdKey = "hh-anonymous-id";
+  let anonymousId = localStorage.getItem(anonymousIdKey);
+  if (!anonymousId) {
+    anonymousId = randomId();
+    localStorage.setItem(anonymousIdKey, anonymousId);
+  }
+
+  const params = new URLSearchParams(location.search);
+  if (params.get("authToken")) {
+    token = params.get("authToken");
+    localStorage.setItem("hh-auth-token", token);
+    history.replaceState({}, document.title, `${location.pathname}#account`);
+  }
+
+  consent.checked = localStorage.getItem("hh-tracking-consent") === "yes";
+  consent.addEventListener("change", () => {
+    localStorage.setItem("hh-tracking-consent", consent.checked ? "yes" : "no");
+    connectSocket();
+  });
+
+  const setStatus = (message) => {
+    status.textContent = message;
+  };
+
+  const api = async (path, options = {}) => {
+    if (!REALTIME_URL) throw new Error("Chưa cấu hình realtime backend.");
+    const response = await fetch(`${REALTIME_URL}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {})
+      }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Lỗi kết nối backend.");
+    return data;
+  };
+
+  const renderAuth = () => {
+    if (user) {
+      setStatus(`Đã đăng nhập: ${user.name || user.email}`);
+    } else if (token && REALTIME_URL) {
+      setStatus("Đang kiểm tra tài khoản...");
+    } else {
+      setStatus("Chưa đăng nhập");
+    }
+    note.textContent = REALTIME_URL
+      ? "Realtime backend đã cấu hình. Tracking chỉ chạy khi người dùng đồng ý hoặc đăng nhập."
+      : "Chưa cấu hình realtime backend. Sau khi deploy server, dán URL vào config.js.";
+    if (REALTIME_URL) {
+      googleLogin.href = `${REALTIME_URL}/api/auth/google`;
+      facebookLogin.href = `${REALTIME_URL}/api/auth/facebook`;
+      googleLogin.setAttribute("aria-disabled", "false");
+      facebookLogin.setAttribute("aria-disabled", "false");
+    }
+  };
+
+  const loadMe = async () => {
+    if (!token || !REALTIME_URL) return renderAuth();
+    try {
+      const data = await api("/api/auth/me");
+      user = data.user;
+      if (!user) localStorage.removeItem("hh-auth-token");
+    } catch {
+      localStorage.removeItem("hh-auth-token");
+      token = "";
+      user = null;
+    }
+    renderAuth();
+  };
+
+  registerForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = new FormData(registerForm);
+    try {
+      const data = await api("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: form.get("name"),
+          email: form.get("email"),
+          password: form.get("password"),
+          consent: form.get("consent") === "on"
+        })
+      });
+      token = data.token;
+      user = data.user;
+      localStorage.setItem("hh-auth-token", token);
+      consent.checked = Boolean(user?.consent);
+      localStorage.setItem("hh-tracking-consent", consent.checked ? "yes" : "no");
+      renderAuth();
+      connectSocket();
+    } catch (error) {
+      setStatus(error.message);
+    }
+  });
+
+  loginForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = new FormData(loginForm);
+    try {
+      const data = await api("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email: form.get("email"), password: form.get("password") })
+      });
+      token = data.token;
+      user = data.user;
+      localStorage.setItem("hh-auth-token", token);
+      renderAuth();
+      connectSocket();
+    } catch (error) {
+      setStatus(error.message);
+    }
+  });
+
+  logoutButton?.addEventListener("click", () => {
+    token = "";
+    user = null;
+    localStorage.removeItem("hh-auth-token");
+    renderAuth();
+    connectSocket();
+  });
+
+  let socket;
+  const loadSocketClient = () => new Promise((resolve, reject) => {
+    if (window.io) return resolve();
+    if (!REALTIME_URL) return reject(new Error("No realtime URL"));
+    const script = document.createElement("script");
+    script.src = `${REALTIME_URL}/socket.io/socket.io.js`;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+
+  async function connectSocket() {
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
+    if (!REALTIME_URL || (!token && !consent.checked)) {
+      online.textContent = "0 đang online";
+      return;
+    }
+    try {
+      await loadSocketClient();
+      socket = window.io(REALTIME_URL, {
+        transports: ["websocket", "polling"],
+        auth: {
+          token,
+          anonymousId,
+          consent: consent.checked,
+          page: location.pathname,
+          referrer: document.referrer
+        }
+      });
+      socket.on("site:stats", (stats) => {
+        online.textContent = `${Number(stats.online || 0)} đang online`;
+      });
+      socket.emit("page:event", { type: "page:view", path: location.pathname, detail: { title: document.title } });
+    } catch {
+      note.textContent = "Không kết nối được realtime backend.";
+    }
+  }
+
+  renderAuth();
+  loadMe().then(connectSocket);
 }
 
 function initHomeNeonInteractions() {
@@ -971,6 +1160,7 @@ initReveal();
 initTheme();
 initHomeNeonInteractions();
 initVoteStats();
+initRealtimeAuth();
 initMusicPlayer();
 initMiniTabs();
 initTool();

@@ -20,7 +20,7 @@
   <header class="site-header neon-header">
     <a class="brand" href="#top" aria-label="Về đầu trang">
       <span class="brand-mark">HH</span>
-      <span>Hoangdaika13</span>
+      <span>Hoàng Đại Ka 13</span>
     </a>
 
     <nav class="nav-links" aria-label="Điều hướng chính">
@@ -88,7 +88,7 @@
     <section class="hero neon-hero">
       <div class="hero-copy">
         <p class="eyebrow">HTML Creator / AI Tool Builder / Neon Interface</p>
-        <h1>Hoangdaika13</h1>
+        <h1>Nguyễn Huy Hoàng </h1>
         <p class="hero-text">
           Tôi xây các tool web nhiều màu, có hiệu ứng, dùng được thật: AI script,
           piano visualizer, voice studio và các sản phẩm HTML chạy trực tiếp trên GitHub Pages.
@@ -117,6 +117,46 @@
             <span><strong>100%</strong>HTML</span>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="account-section section" id="account" aria-label="Tài khoản và quyền riêng tư">
+      <div class="account-copy">
+        <p class="section-kicker">Tài khoản</p>
+        <h2>Đăng nhập, đăng ký và theo dõi lượt truy cập có xin phép</h2>
+        <p class="section-note">Người dùng chỉ gửi những thông tin họ đồng ý chia sẻ. Mật khẩu được mã hóa ở backend, bạn không đọc được mật khẩu gốc.</p>
+      </div>
+      <div class="account-panel interactive-card">
+        <div class="account-status">
+          <span id="authStatus">Chưa đăng nhập</span>
+          <strong id="onlineCount">0 đang online</strong>
+        </div>
+        <div class="oauth-actions">
+          <a class="button secondary interactive" id="googleLogin" href="#" aria-disabled="true">Đăng nhập Google</a>
+          <a class="button ghost interactive" id="facebookLogin" href="#" aria-disabled="true">Đăng nhập Facebook</a>
+        </div>
+        <div class="account-forms">
+          <form id="registerForm">
+            <h3>Đăng ký</h3>
+            <input name="name" type="text" placeholder="Họ tên" required>
+            <input name="email" type="email" placeholder="Gmail hoặc email" required>
+            <input name="password" type="password" placeholder="Mật khẩu" minlength="8" required>
+            <label class="consent-line"><input name="consent" type="checkbox"> Tôi đồng ý chia sẻ tên/email và lượt truy cập với chủ website.</label>
+            <button class="button primary interactive" type="submit">Tạo tài khoản</button>
+          </form>
+          <form id="loginForm">
+            <h3>Đăng nhập</h3>
+            <input name="email" type="email" placeholder="Email" required>
+            <input name="password" type="password" placeholder="Mật khẩu" required>
+            <button class="button primary interactive" type="submit">Đăng nhập</button>
+            <button class="button ghost interactive" id="logoutButton" type="button">Đăng xuất</button>
+          </form>
+        </div>
+        <label class="consent-switch">
+          <input id="trackingConsent" type="checkbox">
+          <span>Cho phép ghi nhận lượt truy cập ẩn danh trên trang này</span>
+        </label>
+        <p class="form-note" id="realtimeNote">Chưa cấu hình realtime backend. Sau khi deploy server, dán URL vào `config.js`.</p>
       </div>
     </section>
 
