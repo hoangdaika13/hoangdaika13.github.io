@@ -25,7 +25,7 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--ink);
-  font-family: "Be Vietnam Pro", Arial, sans-serif;
+  font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
   background:
     linear-gradient(90deg, rgba(21, 21, 31, 0.055) 1px, transparent 1px),
     linear-gradient(180deg, rgba(21, 21, 31, 0.055) 1px, transparent 1px),
@@ -3405,6 +3405,62 @@ footer p {
 
 .home-neon .account-section {
   margin-top: clamp(18px, 4vw, 42px);
+}
+
+/* Stability and smoothness pass: content must never stay hidden if JS/observer stalls. */
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+.home-neon,
+.home-neon button,
+.home-neon input,
+.home-neon textarea,
+.home-neon select {
+  font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+.home-neon .reveal,
+.home-neon .reveal.is-visible {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+.home-neon .section,
+.home-neon .project-card,
+.home-neon .module-card,
+.home-neon .contact-card,
+.home-neon .tool-app {
+  contain: layout paint;
+}
+
+.home-neon .project-card,
+.home-neon .module-card,
+.home-neon .contact-card {
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .home-neon *,
+  .home-neon *::before,
+  .home-neon *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .home-neon .ambient-canvas,
+  .home-neon .cursor-glow {
+    display: none !important;
+  }
 }
 
 .home-neon .account-copy {
