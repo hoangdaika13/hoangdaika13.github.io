@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
   <script src="config.js?v=2"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
@@ -291,16 +291,34 @@
         <div class="module-detail-meta" id="moduleDetailMeta"></div>
         <div class="module-detail-features" id="moduleDetailFeatures"></div>
         <div class="module-mini-app">
+          <div class="module-tool-grid" id="moduleToolGrid" aria-label="Chức năng của module"></div>
+          <div class="workspace-controls three-cols">
+            <label>
+              Tên mục
+              <input id="moduleItemTitle" type="text" placeholder="Ví dụ: Kế hoạch hôm nay">
+            </label>
+            <label>
+              Chức năng đang dùng
+              <select id="moduleActionMode"></select>
+            </label>
+            <label>
+              Trạng thái
+              <input id="moduleStatusField" type="text" value="ready" readonly>
+            </label>
+          </div>
           <label>
             Dữ liệu / yêu cầu cho module
             <textarea id="moduleDemoInput" rows="4" placeholder="Nhập nội dung muốn module xử lý..."></textarea>
           </label>
           <div class="workspace-actions">
             <button class="button primary interactive" id="runModuleDemo" type="button">Chạy module</button>
-            <button class="button ghost interactive" id="saveModuleState" type="button">Lưu local</button>
+            <button class="button ghost interactive" id="saveModuleState" type="button">Lưu dữ liệu</button>
+            <button class="button ghost interactive" id="loadModuleHistory" type="button">Tải lịch sử</button>
+            <button class="button ghost interactive" id="exportModuleData" type="button">Export JSON</button>
             <button class="button ghost interactive" id="copyModuleOutput" type="button">Copy output</button>
           </div>
           <pre class="workspace-output" id="moduleDemoOutput">Output của module sẽ hiện ở đây.</pre>
+          <div class="module-history" id="moduleItemList" aria-live="polite"></div>
         </div>
       </article>
       <div class="platform-console interactive-card" id="platformConsole">
@@ -500,6 +518,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=8"></script>
+  <script src="script.js?v=9"></script>
 </body>
 </html>

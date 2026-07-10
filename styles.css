@@ -2283,6 +2283,55 @@ footer p {
   gap: 12px;
 }
 
+.home-neon .module-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.home-neon .module-tool-button,
+.home-neon .module-open-button {
+  min-height: 44px;
+  border: 2px solid rgba(255,255,255,.72);
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: #fff;
+  background: rgba(255,255,255,.08);
+  box-shadow: 4px 4px 0 #05000a;
+  cursor: pointer;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 900;
+  text-align: left;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.home-neon .module-tool-button span {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  margin-right: 7px;
+  place-items: center;
+  border-radius: 999px;
+  color: #12051f;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+}
+
+.home-neon .module-tool-button:hover,
+.home-neon .module-open-button:hover {
+  transform: translateY(-3px);
+  border-color: #56eaff;
+  background: linear-gradient(135deg, rgba(255,59,212,.24), rgba(86,234,255,.15));
+  box-shadow: 0 0 24px rgba(255,59,212,.22), 4px 4px 0 #05000a;
+}
+
+.home-neon .module-open-button {
+  width: 100%;
+  color: #12051f;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+  text-align: center;
+}
+
 .home-neon .module-mini-app label {
   display: grid;
   gap: 7px;
@@ -2306,6 +2355,37 @@ footer p {
   box-shadow: 3px 3px 0 #05000a;
   cursor: pointer;
   font: inherit;
+  font-weight: 900;
+}
+
+.home-neon .module-history {
+  display: grid;
+  gap: 10px;
+}
+
+.home-neon .module-history article,
+.home-neon .module-history p {
+  margin: 0;
+  border: 1px solid rgba(255,255,255,.34);
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: #ead0f7;
+  background: rgba(5,0,10,.48);
+}
+
+.home-neon .module-history article strong,
+.home-neon .module-history article span {
+  display: block;
+}
+
+.home-neon .module-history article strong {
+  color: #fff;
+}
+
+.home-neon .module-history article span {
+  margin: 4px 0;
+  color: #56eaff;
+  font-size: .78rem;
   font-weight: 900;
 }
 
@@ -3128,6 +3208,10 @@ footer p {
     grid-template-columns: 1fr;
   }
 
+  .home-neon .module-tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .home-neon .module-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3135,6 +3219,7 @@ footer p {
 
 @media (max-width: 620px) {
   .home-neon .platform-overview,
+  .home-neon .module-tool-grid,
   .home-neon .module-grid {
     grid-template-columns: 1fr;
   }

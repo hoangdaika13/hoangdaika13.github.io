@@ -630,11 +630,18 @@ function initSuperPlatform() {
   const detailDescription = byId("moduleDetailDescription");
   const detailMeta = byId("moduleDetailMeta");
   const detailFeatures = byId("moduleDetailFeatures");
+  const toolGrid = byId("moduleToolGrid");
+  const itemTitle = byId("moduleItemTitle");
+  const actionMode = byId("moduleActionMode");
+  const statusField = byId("moduleStatusField");
   const demoInput = byId("moduleDemoInput");
   const demoOutput = byId("moduleDemoOutput");
   const runDemo = byId("runModuleDemo");
   const saveState = byId("saveModuleState");
+  const loadHistory = byId("loadModuleHistory");
+  const exportData = byId("exportModuleData");
   const copyOutput = byId("copyModuleOutput");
+  const itemList = byId("moduleItemList");
   const favoritesKey = "hh-platform-favorites";
   const stateKey = "hh-platform-module-state";
   let activeFilter = "all";
@@ -660,6 +667,7 @@ function initSuperPlatform() {
   };
 
   const moduleDemoText = (module, input) => {
+    const mode = actionMode?.value || (module.features || [])[0] || "run";
     const features = (module.features || []).slice(0, 9);
     const backendNote = module.requiresBackend
       ? "\n\nBackend thật cần có: database, auth, role, logs, sync API và bảo mật trước khi dùng cho nhiều người."
@@ -667,19 +675,42 @@ function initSuperPlatform() {
     return [
       `${String(module.order || "").padStart(2, "0")}. ${module.title}`,
       "",
+      `Chức năng đang chạy: ${mode}`,
+      "",
       `Mô tả: ${module.description}`,
       "",
-      "Checklist chức năng:",
+      "Các bước xử lý như một module thật:",
+      `1. Nhận dữ liệu từ ô nhập và chế độ "${mode}".`,
+      "2. Tạo output/checklist có thể dùng ngay.",
+      "3. Lưu localStorage để không mất dữ liệu khi tải lại.",
+      "4. Nếu backend đã cấu hình, gửi action/item lên MongoDB.",
+      "",
+      "Checklist mở rộng:",
       ...features.map((feature, index) => `${index + 1}. ${feature}: UI + state + action + dữ liệu mẫu.`),
       "",
       "Dữ liệu bạn nhập:",
       input || "Chưa nhập dữ liệu.",
       "",
       "Output gợi ý:",
-      `- Tạo workspace động cho ${module.title}.`,
-      "- Có search/filter/favorite và trạng thái lưu local.",
-      "- Nếu module cần backend, UI giữ nguyên và thay localStorage bằng API thật sau."
+      `- ${mode}: ${input ? "đã nhận dữ liệu và sẵn sàng xử lý" : "hãy nhập dữ liệu cụ thể hơn để output chính xác hơn"}.`,
+      `- ${module.title} có thể lưu, tải lịch sử và export JSON như một mini app.`,
+      "- Những chức năng cần provider thật sẽ dùng chung giao diện này nhưng gọi API/provider riêng sau."
     ].join("\n") + backendNote;
+  };
+
+  const renderItems = (items = []) => {
+    if (!itemList) return;
+    if (!items.length) {
+      itemList.innerHTML = "<p>Chưa có dữ liệu đã lưu cho module này.</p>";
+      return;
+    }
+    itemList.innerHTML = items.slice(0, 8).map((item) => `
+      <article>
+        <strong>${item.title || item.type || "Module item"}</strong>
+        <span>${new Date(item.createdAt || item.savedAt || Date.now()).toLocaleString("vi-VN")}</span>
+        <p>${(item.data?.input || item.data?.output || item.input || "").toString().slice(0, 180)}</p>
+      </article>
+    `).join("");
   };
 
   const renderDetail = (module) => {
@@ -695,9 +726,22 @@ function initSuperPlatform() {
         <button class="module-fav-toggle interactive" type="button" data-module-fav="${module.id}">${favorites.includes(module.id) ? "Bỏ yêu thích" : "Yêu thích"}</button>`;
     }
     if (detailFeatures) detailFeatures.innerHTML = (module.features || []).map((feature) => `<span>${feature}</span>`).join("");
+    if (toolGrid) {
+      toolGrid.innerHTML = (module.features || []).slice(0, 12).map((feature, index) => `
+        <button class="module-tool-button interactive" type="button" data-module-tool="${feature}">
+          <span>${String(index + 1).padStart(2, "0")}</span>${feature}
+        </button>
+      `).join("");
+    }
+    if (actionMode) {
+      actionMode.innerHTML = (module.features || ["Run"]).slice(0, 12).map((feature) => `<option value="${feature}">${feature}</option>`).join("");
+    }
+    if (itemTitle && !itemTitle.value) itemTitle.value = `${module.title} item`;
+    if (statusField) statusField.value = module.requiresBackend ? "backend-ready" : "local-ready";
     const saved = JSON.parse(localStorage.getItem(stateKey) || "{}")[module.id];
     if (demoInput) demoInput.value = saved?.input || "";
     if (demoOutput) demoOutput.textContent = saved?.output || moduleDemoText(module, saved?.input || "");
+    renderItems(saved?.history || []);
   };
 
   const render = () => {
@@ -722,6 +766,7 @@ function initSuperPlatform() {
         <div class="module-features">
           ${(module.features || []).slice(0, 4).map((feature) => `<span>${feature}</span>`).join("")}
         </div>
+        <button class="module-open-button interactive" type="button" data-module-open="${module.id}">Mở module</button>
         <footer>
           <span>${module.status || "planned"}</span>
           ${module.requiresBackend ? "<strong>Cần backend</strong>" : "<strong>Client-side</strong>"}
@@ -768,6 +813,7 @@ function initSuperPlatform() {
     if (!card) return;
     renderDetail(modules.find((item) => item.id === card.dataset.moduleId));
     render();
+    byId("moduleDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   detailMeta?.addEventListener("click", (event) => {
@@ -778,21 +824,32 @@ function initSuperPlatform() {
     render();
   });
 
-  const platformApi = async (path, payload) => {
+  toolGrid?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-module-tool]");
+    if (!button || !selectedModule) return;
+    if (actionMode) actionMode.value = button.dataset.moduleTool;
+    if (demoOutput) {
+      demoOutput.textContent = moduleDemoText(selectedModule, demoInput?.value || "");
+    }
+  });
+
+  const platformRequest = async (path, options = {}) => {
     if (!REALTIME_URL) throw new Error("Realtime backend is not configured.");
     const token = localStorage.getItem("hh-auth-token") || "";
     const response = await fetch(`${REALTIME_URL}${path}`, {
-      method: "POST",
+      method: options.method || "POST",
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
-      body: JSON.stringify(payload)
+      ...(options.body ? { body: JSON.stringify(options.body) } : {})
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "Backend request failed.");
     return data;
   };
+
+  const platformApi = (path, payload) => platformRequest(path, { method: "POST", body: payload });
 
   runDemo?.addEventListener("click", async () => {
     if (!selectedModule || !demoOutput) return;
@@ -804,7 +861,7 @@ function initSuperPlatform() {
     demoOutput.textContent = "Đang gửi module action lên backend...";
     try {
       const data = await platformApi(`/api/modules/${encodeURIComponent(selectedModule.id)}/actions`, {
-        actionType: "run",
+        actionType: actionMode?.value || "run",
         input: demoInput?.value || "",
         meta: { title: selectedModule.title, requiresBackend: selectedModule.requiresBackend }
       });
@@ -818,16 +875,23 @@ function initSuperPlatform() {
     if (!selectedModule) return;
     const allState = JSON.parse(localStorage.getItem(stateKey) || "{}");
     allState[selectedModule.id] = {
+      title: itemTitle?.value || selectedModule.title,
+      actionType: actionMode?.value || "save",
       input: demoInput?.value || "",
       output: demoOutput?.textContent || "",
+      history: [
+        { title: itemTitle?.value || selectedModule.title, input: demoInput?.value || "", output: demoOutput?.textContent || "", savedAt: new Date().toISOString() },
+        ...(allState[selectedModule.id]?.history || [])
+      ].slice(0, 20),
       savedAt: new Date().toISOString()
     };
     localStorage.setItem(stateKey, JSON.stringify(allState));
+    renderItems(allState[selectedModule.id].history);
     if (REALTIME_URL) {
       try {
         const data = await platformApi(`/api/modules/${encodeURIComponent(selectedModule.id)}/items`, {
-          title: selectedModule.title,
-          type: "module-state",
+          title: itemTitle?.value || selectedModule.title,
+          type: actionMode?.value || "module-state",
           data: allState[selectedModule.id]
         });
         if (demoOutput) demoOutput.textContent = `${demoOutput.textContent}\n\n[Đã lưu local + MongoDB: ${data.item?._id || "created"}]`;
@@ -843,6 +907,26 @@ function initSuperPlatform() {
   copyOutput?.addEventListener("click", async () => {
     const text = demoOutput?.textContent || "";
     if (text) await navigator.clipboard.writeText(text);
+  });
+
+  loadHistory?.addEventListener("click", async () => {
+    if (!selectedModule) return;
+    const localState = JSON.parse(localStorage.getItem(stateKey) || "{}")[selectedModule.id];
+    renderItems(localState?.history || []);
+    if (!REALTIME_URL) return;
+    try {
+      const data = await platformRequest(`/api/modules/${encodeURIComponent(selectedModule.id)}/items`, { method: "GET" });
+      renderItems(data.items || []);
+      if (demoOutput) demoOutput.textContent = `${demoOutput.textContent}\n\n[Đã tải lịch sử MongoDB: ${(data.items || []).length} mục]`;
+    } catch (error) {
+      if (demoOutput) demoOutput.textContent = `${demoOutput.textContent}\n\n[Tải lịch sử backend lỗi: ${error.message}]`;
+    }
+  });
+
+  exportData?.addEventListener("click", () => {
+    if (!selectedModule) return;
+    const state = JSON.parse(localStorage.getItem(stateKey) || "{}")[selectedModule.id] || {};
+    downloadText(`${selectedModule.id}-data.json`, JSON.stringify({ module: selectedModule, state }, null, 2), "application/json;charset=utf-8");
   });
 
   window.addEventListener("hh:modules-ready", (event) => {
