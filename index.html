@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=12">
+  <link rel="stylesheet" href="styles.css?v=13">
   <script src="config.js?v=2"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
@@ -282,6 +282,26 @@
         <span><strong id="moduleCore">0</strong>Lõi</span>
         <span><strong id="moduleBackend">0</strong>Cần backend</span>
       </div>
+      <div class="platform-livebar interactive-card" aria-label="Google và thời gian trực tiếp">
+        <div class="live-clock">
+          <p class="section-kicker">Thời gian trực tiếp</p>
+          <strong id="platformClockTime">--:--:--</strong>
+          <span id="platformClockDate">Đang đồng bộ ngày giờ...</span>
+        </div>
+        <form class="google-live-search" id="googleLiveSearch">
+          <label>
+            Google nhanh 24/24
+            <input id="googleLiveQuery" type="search" placeholder="Nhập nội dung cần tìm, tin tức, tài liệu, lịch...">
+          </label>
+          <button class="button primary interactive" type="submit">Tìm Google</button>
+        </form>
+        <div class="google-live-links">
+          <a class="interactive" href="https://news.google.com/topstories?hl=vi&gl=VN&ceid=VN:vi" target="_blank" rel="noopener">Tin mới</a>
+          <a class="interactive" href="https://calendar.google.com/" target="_blank" rel="noopener">Calendar</a>
+          <a class="interactive" href="https://drive.google.com/" target="_blank" rel="noopener">Drive</a>
+          <a class="interactive" href="https://mail.google.com/" target="_blank" rel="noopener">Gmail</a>
+        </div>
+      </div>
       <article class="module-detail interactive-card" id="moduleDetail" aria-live="polite">
         <div>
           <p class="section-kicker">Module đang chọn</p>
@@ -412,7 +432,7 @@
           <pre class="workspace-output" id="scriptOutput">Khung kịch bản sẽ hiện ở đây.</pre>
         </div>
       </div>
-      <div class="module-grid" id="moduleGrid" aria-live="polite">
+      <div class="module-grid module-flow" id="moduleGrid" aria-live="polite">
         <article class="module-card skeleton-card">
           <span class="module-number">01</span>
           <p class="project-tag">Đang nạp</p>
@@ -624,6 +644,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=12"></script>
+  <script src="script.js?v=13"></script>
 </body>
 </html>

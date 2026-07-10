@@ -2222,6 +2222,91 @@ footer p {
   text-shadow: 0 0 22px rgba(255,59,212,.7);
 }
 
+.home-neon .platform-livebar {
+  display: grid;
+  grid-template-columns: minmax(220px, .7fr) minmax(280px, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 22px;
+  padding: clamp(16px, 3vw, 22px);
+  border: 2px solid rgba(255,255,255,.74);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 8% 10%, rgba(86,234,255,.22), transparent 220px),
+    radial-gradient(circle at 82% 20%, rgba(255,59,212,.22), transparent 260px),
+    rgba(5,0,10,.72);
+  box-shadow: 0 0 34px rgba(255,59,212,.2), 8px 8px 0 #05000a;
+}
+
+.home-neon .live-clock {
+  display: grid;
+  gap: 4px;
+}
+
+.home-neon .live-clock strong {
+  color: #fff;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+  text-shadow: 0 0 30px rgba(86,234,255,.58), 0 0 54px rgba(255,59,212,.28);
+}
+
+.home-neon .live-clock span {
+  color: #ead0f7;
+  font-weight: 900;
+}
+
+.home-neon .google-live-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.home-neon .google-live-search label {
+  display: grid;
+  gap: 7px;
+  color: #fff;
+  font-size: .86rem;
+  font-weight: 900;
+}
+
+.home-neon .google-live-search input {
+  width: 100%;
+  min-height: 46px;
+  border: 2px solid rgba(255,255,255,.7);
+  border-radius: 999px;
+  padding: 0 16px;
+  color: #fff;
+  background: rgba(5,0,10,.72);
+  box-shadow: inset 0 0 18px rgba(255,59,212,.12);
+  font: inherit;
+  outline: none;
+}
+
+.home-neon .google-live-search input:focus {
+  border-color: #56eaff;
+  box-shadow: 0 0 24px rgba(86,234,255,.28), inset 0 0 18px rgba(255,59,212,.16);
+}
+
+.home-neon .google-live-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.home-neon .google-live-links a {
+  border: 2px solid rgba(255,255,255,.66);
+  border-radius: 999px;
+  padding: 11px 13px;
+  color: #12051f;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+  box-shadow: 4px 4px 0 #05000a;
+  font-size: .82rem;
+  font-weight: 1000;
+  text-decoration: none;
+}
+
 .home-neon .module-detail {
   display: grid;
   gap: 16px;
@@ -2530,6 +2615,11 @@ footer p {
   gap: 14px;
 }
 
+.home-neon .module-grid.module-flow {
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
 .home-neon .module-card {
   position: relative;
   display: grid;
@@ -2545,6 +2635,152 @@ footer p {
     linear-gradient(145deg, rgba(255,59,212,.12), rgba(86,234,255,.08)),
     rgba(5,0,10,.74);
   box-shadow: 0 0 28px rgba(255,59,212,.18), 7px 7px 0 #05000a;
+}
+
+.home-neon .module-row {
+  min-height: 0;
+  padding: clamp(16px, 3vw, 24px);
+}
+
+.home-neon .module-row:hover {
+  transform: translateY(-4px);
+}
+
+.home-neon .module-row-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+}
+
+.home-neon .module-row-head h3 {
+  margin: 4px 0 8px;
+  font-size: clamp(1.25rem, 2.6vw, 2.1rem);
+}
+
+.home-neon .module-row-body {
+  display: grid;
+  grid-template-columns: minmax(280px, .92fr) minmax(320px, 1.08fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.home-neon .module-function-panel,
+.home-neon .module-inline-app {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(5,0,10,.42);
+}
+
+.home-neon .module-features.full {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  align-content: start;
+}
+
+.home-neon .module-feature-chip {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+  border: 1px solid rgba(255,255,255,.46);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: #fff;
+  background: rgba(255,255,255,.08);
+  cursor: pointer;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 1000;
+  text-align: left;
+}
+
+.home-neon .module-feature-chip span {
+  display: inline-grid;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  place-items: center;
+  border-radius: 999px;
+  color: #12051f;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+  font-size: .68rem;
+}
+
+.home-neon .module-feature-chip:hover {
+  color: #12051f;
+  border-color: #56eaff;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+}
+
+.home-neon .module-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.home-neon .module-row-meta span {
+  border: 1px solid rgba(255,255,255,.34);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: #ead0f7;
+  background: rgba(255,255,255,.07);
+  font-size: .75rem;
+  font-weight: 1000;
+}
+
+.home-neon .module-row-meta b {
+  color: #56eaff;
+}
+
+.home-neon .module-inline-app label {
+  display: grid;
+  gap: 8px;
+  color: #fff;
+  font-size: .86rem;
+  font-weight: 900;
+}
+
+.home-neon .module-inline-app textarea {
+  width: 100%;
+  min-height: 108px;
+  border: 2px solid rgba(255,255,255,.62);
+  border-radius: 8px;
+  padding: 11px 13px;
+  color: #fff;
+  background: rgba(5,0,10,.72);
+  box-shadow: inset 0 0 18px rgba(255,59,212,.12);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+}
+
+.home-neon .module-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.home-neon .module-inline-output {
+  min-height: 170px;
+  max-height: 320px;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid rgba(86,234,255,.32);
+  border-radius: 8px;
+  padding: 13px;
+  color: #f8e9ff;
+  background:
+    linear-gradient(90deg, rgba(86,234,255,.07) 1px, transparent 1px),
+    rgba(2,0,8,.72);
+  background-size: 24px 24px;
+  font: 800 .82rem/1.6 "Be Vietnam Pro", system-ui, sans-serif;
+  white-space: pre-wrap;
 }
 
 .home-neon .module-card:hover {
@@ -3803,6 +4039,25 @@ html {
   .home-neon .workspace-controls,
   .home-neon .workspace-controls.three-cols {
     grid-template-columns: 1fr;
+  }
+
+  .home-neon .platform-livebar,
+  .home-neon .google-live-search,
+  .home-neon .module-row-body {
+    grid-template-columns: 1fr;
+  }
+
+  .home-neon .google-live-links {
+    justify-content: flex-start;
+  }
+
+  .home-neon .module-row-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .home-neon .module-row-head .module-card-fav {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .home-neon .module-tool-grid {

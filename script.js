@@ -632,6 +632,34 @@ function initRealtimeAuth() {
   loadMe().then(connectSocket);
 }
 
+function initPlatformLivebar() {
+  if (!document.body.classList.contains("home-neon")) return;
+  const timeNode = byId("platformClockTime");
+  const dateNode = byId("platformClockDate");
+  const searchForm = byId("googleLiveSearch");
+  const searchInput = byId("googleLiveQuery");
+
+  const updateClock = () => {
+    const now = new Date();
+    const time = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const date = now.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
+    if (timeNode) timeNode.textContent = time;
+    if (dateNode) dateNode.textContent = `${date} · Múi giờ ${Intl.DateTimeFormat().resolvedOptions().timeZone || "local"}`;
+    document.querySelectorAll("[data-module-now]").forEach((node) => {
+      node.textContent = time;
+    });
+  };
+
+  searchForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const query = (searchInput?.value || "").trim() || "tin tức công nghệ AI hôm nay";
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank", "noopener");
+  });
+
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+
 function initSuperPlatform() {
   if (!document.body.classList.contains("home-neon")) return;
   const grid = byId("moduleGrid");
@@ -671,6 +699,7 @@ function initSuperPlatform() {
 
   const persistFavorites = () => localStorage.setItem(favoritesKey, JSON.stringify(favorites));
   const textOf = (module) => `${module.title} ${module.description} ${(module.features || []).join(" ")}`.toLowerCase();
+  const escapeHtml = (value) => String(value || "").replace(/[<>&"']/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;", "'": "&#39;" }[char]));
 
   const filteredModules = () => {
     const query = (search?.value || "").trim().toLowerCase();
@@ -775,20 +804,45 @@ function initSuperPlatform() {
     }
 
     grid.innerHTML = visible.map((module, index) => `
-      <article class="module-card interactive-card interactive ${selectedModule?.id === module.id ? "active" : ""}" data-module-id="${module.id}" style="--module-accent:${module.accent || "#ff3bd4"}">
-        <span class="module-number">${String(module.order || index + 1).padStart(2, "0")}</span>
-        <p class="project-tag">${module.group === "core" ? "Lõi" : "Mở rộng"}</p>
-        <h3>${module.title}</h3>
-        <p>${module.description}</p>
-        <div class="module-features">
-          ${(module.features || []).slice(0, 4).map((feature) => `<span>${feature}</span>`).join("")}
+      <article class="module-card module-row interactive-card ${selectedModule?.id === module.id ? "active" : ""}" data-module-id="${module.id}" style="--module-accent:${module.accent || "#ff3bd4"}">
+        <div class="module-row-head">
+          <span class="module-number">${String(module.order || index + 1).padStart(2, "0")}</span>
+          <div>
+            <p class="project-tag">${module.group === "core" ? "Lõi" : "Mở rộng"}</p>
+            <h3>${escapeHtml(module.title)}</h3>
+            <p>${escapeHtml(module.description)}</p>
+          </div>
+          <button class="module-card-fav interactive" type="button" data-module-fav="${module.id}" aria-label="Yêu thích ${escapeHtml(module.title)}">${favorites.includes(module.id) ? "♥" : "♡"}</button>
         </div>
-        <button class="module-open-button interactive" type="button" data-module-open="${module.id}">Mở module</button>
-        <footer>
-          <span>${module.status || "planned"}</span>
-          ${module.requiresBackend ? "<strong>Cần backend</strong>" : "<strong>Client-side</strong>"}
-          <button class="module-card-fav interactive" type="button" data-module-fav="${module.id}" aria-label="Yêu thích ${module.title}">${favorites.includes(module.id) ? "♥" : "♡"}</button>
-        </footer>
+        <div class="module-row-body">
+          <div class="module-function-panel">
+            <div class="module-features full">
+              ${(module.features || []).map((feature, featureIndex) => `
+                <button class="module-feature-chip interactive" type="button" data-inline-feature="${escapeHtml(feature)}" data-inline-module="${module.id}">
+                  <span>${String(featureIndex + 1).padStart(2, "0")}</span>${escapeHtml(feature)}
+                </button>
+              `).join("")}
+            </div>
+            <div class="module-row-meta">
+              <span>${escapeHtml(module.status || "planned")}</span>
+              <span>${module.requiresBackend ? "Backend + MongoDB" : "Client-side + localStorage"}</span>
+              <span>Cập nhật: <b data-module-now="${module.id}">--:--:--</b></span>
+            </div>
+          </div>
+          <div class="module-inline-app" data-inline-app="${module.id}">
+            <label>
+              Dữ liệu dùng nhanh
+              <textarea data-inline-input="${module.id}" rows="4" placeholder="Nhập yêu cầu cho ${escapeHtml(module.title)}..."></textarea>
+            </label>
+            <div class="module-inline-actions">
+              <button class="button primary interactive" type="button" data-inline-run="${module.id}">Chạy ngay</button>
+              <button class="button ghost interactive" type="button" data-inline-google="${module.id}">Tìm Google</button>
+              <button class="button ghost interactive" type="button" data-inline-save="${module.id}">Lưu local</button>
+              <button class="button ghost interactive" type="button" data-inline-open="${module.id}">Mở workspace</button>
+            </div>
+            <pre class="module-inline-output" data-inline-output="${module.id}">${escapeHtml(moduleDemoText(module, ""))}</pre>
+          </div>
+        </div>
       </article>
     `).join("");
 
@@ -829,8 +883,57 @@ function initSuperPlatform() {
     const card = event.target.closest("[data-module-id]");
     if (!card) return;
     renderDetail(modules.find((item) => item.id === card.dataset.moduleId));
-    render();
-    byId("moduleDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  grid.addEventListener("click", (event) => {
+    const featureButton = event.target.closest("[data-inline-feature]");
+    const runButton = event.target.closest("[data-inline-run]");
+    const googleButton = event.target.closest("[data-inline-google]");
+    const saveButton = event.target.closest("[data-inline-save]");
+    const openButton = event.target.closest("[data-inline-open]");
+    const moduleId = featureButton?.dataset.inlineModule || runButton?.dataset.inlineRun || googleButton?.dataset.inlineGoogle || saveButton?.dataset.inlineSave || openButton?.dataset.inlineOpen;
+    if (!moduleId) return;
+    const module = modules.find((item) => item.id === moduleId);
+    if (!module) return;
+    const input = grid.querySelector(`[data-inline-input="${CSS.escape(moduleId)}"]`);
+    const output = grid.querySelector(`[data-inline-output="${CSS.escape(moduleId)}"]`);
+    if (featureButton) {
+      renderDetail(module);
+      if (actionMode) actionMode.value = featureButton.dataset.inlineFeature;
+      if (output) output.textContent = moduleDemoText(module, input?.value || "");
+      return;
+    }
+    if (runButton) {
+      renderDetail(module);
+      if (output) output.textContent = moduleDemoText(module, input?.value || "");
+      return;
+    }
+    if (googleButton) {
+      const query = `${module.title} ${(input?.value || "").trim() || (module.features || []).join(" ")}`;
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank", "noopener");
+      return;
+    }
+    if (saveButton) {
+      const allState = JSON.parse(localStorage.getItem(stateKey) || "{}");
+      const saved = {
+        title: module.title,
+        input: input?.value || "",
+        output: output?.textContent || moduleDemoText(module, input?.value || ""),
+        savedAt: new Date().toISOString()
+      };
+      allState[module.id] = {
+        ...(allState[module.id] || {}),
+        ...saved,
+        history: [saved, ...(allState[module.id]?.history || [])].slice(0, 20)
+      };
+      localStorage.setItem(stateKey, JSON.stringify(allState));
+      if (output) output.textContent = `${saved.output}\n\n[Đã lưu nhanh local lúc ${new Date().toLocaleTimeString("vi-VN")}]`;
+      return;
+    }
+    if (openButton) {
+      renderDetail(module);
+      byId("moduleDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   });
 
   detailMeta?.addEventListener("click", (event) => {
@@ -2318,6 +2421,7 @@ initTheme();
 initHomeNeonInteractions();
 initVoteStats();
 initRealtimeAuth();
+initPlatformLivebar();
 initSuperPlatform();
 initCreatorWorkspace();
 initCommunityChatV2();
