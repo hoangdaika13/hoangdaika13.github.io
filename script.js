@@ -1024,6 +1024,211 @@ function initCreatorWorkspace() {
   byId("downloadScriptButton")?.addEventListener("click", () => downloadText("hh-script-generator.txt", byId("scriptOutput")?.textContent || ""));
 }
 
+function initCommunityChat() {
+  if (!document.body.classList.contains("home-neon")) return;
+  const root = byId("chat");
+  if (!root) return;
+
+  const profileKey = "hh-chat-profile";
+  const roomButtons = root.querySelectorAll("[data-chat-room]");
+  const nicknameInput = byId("chatNickname");
+  const avatarUrlInput = byId("chatAvatarUrl");
+  const avatarPreview = byId("chatAvatarPreview");
+  const saveProfile = byId("saveChatProfile");
+  const userList = byId("chatUserList");
+  const roomLabel = byId("chatRoomLabel");
+  const status = byId("chatStatus");
+  const messagesBox = byId("chatMessages");
+  const messageInput = byId("chatMessageInput");
+  const sendButton = byId("sendChatMessage");
+  const refreshButton = byId("refreshChatButton");
+  const voiceButton = byId("chatVoiceButton");
+  const anonymousIdKey = "hh-anonymous-id";
+  let room = "general";
+  let pollingTimer;
+  let lastMessageSignature = "";
+  let profile = JSON.parse(localStorage.getItem(profileKey) || "{}");
+
+  const fallbackName = () => {
+    const tokenName = localStorage.getItem("hh-chat-last-name");
+    return tokenName || "Khách HH";
+  };
+
+  const anonymousId = () => {
+    let id = localStorage.getItem(anonymousIdKey);
+    if (!id) {
+      id = randomId();
+      localStorage.setItem(anonymousIdKey, id);
+    }
+    return id;
+  };
+
+  const initials = (name) => (name || "HH").split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+
+  const applyProfile = () => {
+    profile = {
+      nickname: (profile.nickname || fallbackName()).slice(0, 32),
+      avatarUrl: profile.avatarUrl || "",
+      color: profile.color || `hsl(${Math.floor(Math.random() * 360)} 90% 72%)`
+    };
+    if (nicknameInput) nicknameInput.value = profile.nickname;
+    if (avatarUrlInput) avatarUrlInput.value = profile.avatarUrl;
+    if (avatarPreview) {
+      avatarPreview.textContent = profile.avatarUrl ? "" : initials(profile.nickname);
+      avatarPreview.style.backgroundImage = profile.avatarUrl ? `url("${profile.avatarUrl}")` : "";
+      avatarPreview.style.backgroundColor = profile.color;
+    }
+    localStorage.setItem(profileKey, JSON.stringify(profile));
+  };
+
+  const chatRequest = async (path, options = {}) => {
+    if (!REALTIME_URL) throw new Error("Backend chat chưa cấu hình.");
+    const token = localStorage.getItem("hh-auth-token") || "";
+    const response = await fetch(`${REALTIME_URL}${path}`, {
+      method: options.method || "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      ...(options.body ? { body: JSON.stringify(options.body) } : {})
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Chat request failed.");
+    return data;
+  };
+
+  const renderUsers = (messages) => {
+    if (!userList) return;
+    const users = new Map();
+    messages.forEach((item) => {
+      const data = item.data || {};
+      if (!data.nickname) return;
+      users.set(data.nickname, { nickname: data.nickname, avatarUrl: data.avatarUrl, color: data.color, at: item.createdAt });
+    });
+    const rows = [...users.values()].slice(-10).reverse();
+    userList.innerHTML = rows.length ? rows.map((user) => `
+      <div class="chat-user">
+        <span style="${user.avatarUrl ? `background-image:url('${user.avatarUrl}')` : `background:${user.color || "#ff4fd8"}`}">${user.avatarUrl ? "" : initials(user.nickname)}</span>
+        <strong>${user.nickname}</strong>
+      </div>
+    `).join("") : "<p>Chưa có ai trong phòng.</p>";
+  };
+
+  const renderMessages = (items) => {
+    if (!messagesBox) return;
+    const messages = items
+      .filter((item) => item.type === "chat-message" && item.data?.room === room)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+      .slice(-80);
+    const signature = messages.map((item) => item._id || item.createdAt).join("|");
+    renderUsers(items.filter((item) => item.type === "chat-message"));
+    if (signature === lastMessageSignature) return;
+    lastMessageSignature = signature;
+    messagesBox.innerHTML = messages.length ? messages.map((item) => {
+      const data = item.data || {};
+      const mine = data.senderId === anonymousId();
+      return `
+        <article class="chat-message ${mine ? "mine" : ""}">
+          <div class="chat-avatar small" style="${data.avatarUrl ? `background-image:url('${data.avatarUrl}')` : `background:${data.color || "#ff4fd8"}`}">${data.avatarUrl ? "" : initials(data.nickname)}</div>
+          <div>
+            <header><strong>${data.nickname || "Khách"}</strong><span>${new Date(item.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span></header>
+            <p>${String(data.message || "").replace(/[<>&]/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[char]))}</p>
+          </div>
+        </article>`;
+    }).join("") : "<p class=\"chat-empty\">Chưa có tin nhắn. Hãy là người mở lời.</p>";
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  };
+
+  const loadMessages = async () => {
+    if (!status) return;
+    if (!REALTIME_URL) {
+      status.textContent = "Backend chưa cấu hình";
+      return;
+    }
+    try {
+      const data = await chatRequest("/api/modules/chat-app/items");
+      renderMessages(data.items || []);
+      status.textContent = "Đang online";
+    } catch (error) {
+      status.textContent = `Lỗi chat: ${error.message}`;
+    }
+  };
+
+  const sendMessage = async () => {
+    const message = (messageInput?.value || "").trim();
+    if (!message) return;
+    applyProfile();
+    if (status) status.textContent = "Đang gửi...";
+    try {
+      await chatRequest("/api/modules/chat-app/items", {
+        method: "POST",
+        body: {
+          title: `${profile.nickname} - ${room}`,
+          type: "chat-message",
+          anonymousId: anonymousId(),
+          data: { room, message, senderId: anonymousId(), nickname: profile.nickname, avatarUrl: profile.avatarUrl, color: profile.color }
+        }
+      });
+      if (messageInput) messageInput.value = "";
+      await loadMessages();
+    } catch (error) {
+      if (status) status.textContent = `Gửi lỗi: ${error.message}`;
+    }
+  };
+
+  applyProfile();
+
+  saveProfile?.addEventListener("click", () => {
+    profile.nickname = nicknameInput?.value.trim() || "Khách HH";
+    profile.avatarUrl = avatarUrlInput?.value.trim() || "";
+    applyProfile();
+    if (status) status.textContent = "Đã lưu hồ sơ chat";
+  });
+
+  roomButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      roomButtons.forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      room = button.dataset.chatRoom || "general";
+      if (roomLabel) roomLabel.textContent = `# ${room === "general" ? "chung" : room}`;
+      lastMessageSignature = "";
+      loadMessages();
+    });
+  });
+
+  sendButton?.addEventListener("click", sendMessage);
+  refreshButton?.addEventListener("click", loadMessages);
+  messageInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition && voiceButton) {
+    voiceButton.disabled = true;
+    voiceButton.textContent = "Trình duyệt chưa hỗ trợ nói";
+  }
+  voiceButton?.addEventListener("click", () => {
+    if (!SpeechRecognition || !messageInput) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "vi-VN";
+    recognition.interimResults = false;
+    recognition.onstart = () => { if (status) status.textContent = "Đang nghe giọng nói..."; };
+    recognition.onresult = (event) => {
+      messageInput.value = `${messageInput.value} ${event.results[0][0].transcript}`.trim();
+      if (status) status.textContent = "Đã nhập giọng nói";
+    };
+    recognition.onerror = () => { if (status) status.textContent = "Không nhận được giọng nói"; };
+    recognition.start();
+  });
+
+  loadMessages();
+  pollingTimer = setInterval(loadMessages, 2500);
+  window.addEventListener("beforeunload", () => clearInterval(pollingTimer));
+}
+
 function initHomeNeonInteractions() {
   if (!document.body.classList.contains("home-neon")) return;
 
@@ -1577,6 +1782,7 @@ initVoteStats();
 initRealtimeAuth();
 initSuperPlatform();
 initCreatorWorkspace();
+initCommunityChat();
 initMusicPlayer();
 initMiniTabs();
 initTool();

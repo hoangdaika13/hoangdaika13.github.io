@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
   <script src="config.js?v=2"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
@@ -436,6 +436,63 @@
       <p>Make it useful. Make it glow. Then upgrade it again.</p>
     </section>
 
+    <section id="chat" class="section chat-section neon-chat">
+      <div class="section-heading">
+        <p class="section-kicker">Chat ứng dụng</p>
+        <h2>HH Community Chat</h2>
+        <p class="section-note">Chat nhóm nhỏ khoảng 10 người, có biệt danh, avatar, phòng chat và tự cập nhật bằng backend MongoDB.</p>
+      </div>
+
+      <div class="chat-app interactive-card">
+        <aside class="chat-sidebar">
+          <div class="chat-profile">
+            <div class="chat-avatar" id="chatAvatarPreview">HH</div>
+            <label>
+              Biệt danh
+              <input id="chatNickname" type="text" maxlength="32" placeholder="Tên hiển thị">
+            </label>
+            <label>
+              Avatar URL
+              <input id="chatAvatarUrl" type="url" placeholder="https://...">
+            </label>
+            <button class="button secondary interactive" id="saveChatProfile" type="button">Lưu hồ sơ chat</button>
+          </div>
+
+          <div class="chat-rooms" aria-label="Phòng chat">
+            <button class="chat-room active interactive" type="button" data-chat-room="general"># chung</button>
+            <button class="chat-room interactive" type="button" data-chat-room="projects"># dự án</button>
+            <button class="chat-room interactive" type="button" data-chat-room="support"># hỗ trợ</button>
+          </div>
+
+          <div class="chat-users">
+            <h3>Người dùng gần đây</h3>
+            <div id="chatUserList"></div>
+          </div>
+        </aside>
+
+        <div class="chat-main">
+          <header class="chat-header">
+            <div>
+              <p class="section-kicker" id="chatRoomLabel"># chung</p>
+              <h3>Trò chuyện trực tiếp</h3>
+            </div>
+            <span id="chatStatus">Đang kết nối...</span>
+          </header>
+
+          <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+
+          <div class="chat-composer">
+            <textarea id="chatMessageInput" rows="3" maxlength="1200" placeholder="Nhập tin nhắn..."></textarea>
+            <div class="chat-actions">
+              <button class="button ghost interactive" id="chatVoiceButton" type="button">Nói để nhập</button>
+              <button class="button ghost interactive" id="refreshChatButton" type="button">Tải lại</button>
+              <button class="button primary interactive" id="sendChatMessage" type="button">Gửi tin nhắn</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="contact" class="section contact-section neon-contact">
       <div>
         <p class="section-kicker">Liên hệ</p>
@@ -518,6 +575,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=9"></script>
+  <script src="script.js?v=10"></script>
 </body>
 </html>

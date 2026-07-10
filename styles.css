@@ -2617,6 +2617,245 @@ footer p {
 .home-neon .neon-quote { background: linear-gradient(135deg, #ff3bd4, #8b5cff 45%, #56eaff); }
 .home-neon .neon-quote p { text-shadow: 0 0 24px rgba(255,255,255,.42); }
 
+.home-neon .chat-section {
+  position: relative;
+  z-index: 2;
+  background:
+    linear-gradient(90deg, rgba(255, 59, 212, 0.1) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(86, 234, 255, 0.08) 1px, transparent 1px),
+    rgba(7, 1, 15, .82);
+  background-size: 46px 46px;
+}
+
+.home-neon .chat-app {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  min-height: 640px;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,.74);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255,59,212,.18), transparent 260px),
+    radial-gradient(circle at 90% 0%, rgba(86,234,255,.14), transparent 280px),
+    rgba(5,0,10,.76);
+  box-shadow: 0 0 42px rgba(255,59,212,.20), 10px 10px 0 #05000a;
+}
+
+.home-neon .chat-sidebar {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 18px;
+  border-right: 2px solid rgba(255,255,255,.24);
+  background: rgba(5,0,10,.48);
+}
+
+.home-neon .chat-profile,
+.home-neon .chat-users {
+  display: grid;
+  gap: 11px;
+}
+
+.home-neon .chat-avatar {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border: 2px solid rgba(255,255,255,.78);
+  border-radius: 18px;
+  color: #12051f;
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 0 26px rgba(255,59,212,.28), 5px 5px 0 #05000a;
+  font-weight: 900;
+}
+
+.home-neon .chat-avatar.small {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 13px;
+  font-size: .82rem;
+}
+
+.home-neon .chat-profile label {
+  display: grid;
+  gap: 7px;
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 900;
+}
+
+.home-neon .chat-profile input,
+.home-neon .chat-composer textarea {
+  width: 100%;
+  border: 2px solid rgba(255,255,255,.68);
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: #fff;
+  background: rgba(5,0,10,.72);
+  font: inherit;
+  outline: none;
+}
+
+.home-neon .chat-profile input:focus,
+.home-neon .chat-composer textarea:focus {
+  border-color: #56eaff;
+  box-shadow: 0 0 22px rgba(86,234,255,.24);
+}
+
+.home-neon .chat-rooms {
+  display: grid;
+  gap: 8px;
+}
+
+.home-neon .chat-room {
+  min-height: 42px;
+  border: 2px solid rgba(255,255,255,.5);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: #fff;
+  background: rgba(255,255,255,.07);
+  box-shadow: 4px 4px 0 #05000a;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  text-align: left;
+}
+
+.home-neon .chat-room:hover,
+.home-neon .chat-room.active {
+  color: #12051f;
+  background: linear-gradient(135deg, #ffef7a, #56eaff);
+}
+
+.home-neon .chat-users h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.home-neon .chat-user {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(255,255,255,.06);
+}
+
+.home-neon .chat-user span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  color: #12051f;
+  background-position: center;
+  background-size: cover;
+  font-size: .75rem;
+  font-weight: 900;
+}
+
+.home-neon .chat-main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+}
+
+.home-neon .chat-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px;
+  border-bottom: 2px solid rgba(255,255,255,.18);
+}
+
+.home-neon .chat-header h3 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 2.2rem);
+}
+
+.home-neon #chatStatus {
+  border: 1px solid rgba(86,234,255,.42);
+  border-radius: 999px;
+  padding: 8px 11px;
+  color: #56eaff;
+  background: rgba(86,234,255,.08);
+  font-size: .8rem;
+  font-weight: 900;
+}
+
+.home-neon .chat-messages {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  max-height: 470px;
+  overflow: auto;
+  padding: 18px;
+}
+
+.home-neon .chat-message {
+  display: flex;
+  max-width: min(720px, 92%);
+  gap: 10px;
+}
+
+.home-neon .chat-message.mine {
+  justify-self: end;
+  flex-direction: row-reverse;
+}
+
+.home-neon .chat-message > div:last-child {
+  border: 2px solid rgba(255,255,255,.52);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #fff;
+  background: rgba(255,255,255,.08);
+  box-shadow: 4px 4px 0 #05000a;
+}
+
+.home-neon .chat-message.mine > div:last-child {
+  background: linear-gradient(135deg, rgba(255,59,212,.30), rgba(86,234,255,.16));
+}
+
+.home-neon .chat-message header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.home-neon .chat-message header span {
+  color: #56eaff;
+  font-size: .75rem;
+  font-weight: 900;
+}
+
+.home-neon .chat-message p,
+.home-neon .chat-empty {
+  margin: 0;
+  color: #f4d9ff;
+  line-height: 1.55;
+}
+
+.home-neon .chat-composer {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-top: 2px solid rgba(255,255,255,.18);
+}
+
+.home-neon .chat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .home-neon .contact-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(220px, 1fr));
@@ -3212,6 +3451,15 @@ footer p {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .home-neon .chat-app {
+    grid-template-columns: 1fr;
+  }
+
+  .home-neon .chat-sidebar {
+    border-right: 0;
+    border-bottom: 2px solid rgba(255,255,255,.24);
+  }
+
   .home-neon .module-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3220,7 +3468,16 @@ footer p {
 @media (max-width: 620px) {
   .home-neon .platform-overview,
   .home-neon .module-tool-grid,
-  .home-neon .module-grid {
+  .home-neon .module-grid,
+  .home-neon .chat-actions {
     grid-template-columns: 1fr;
+  }
+
+  .home-neon .chat-actions {
+    display: grid;
+  }
+
+  .home-neon .chat-message {
+    max-width: 100%;
   }
 }
