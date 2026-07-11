@@ -5018,3 +5018,189 @@ html {
     max-width: 100%;
   }
 }
+
+/* Download Center */
+.home-neon .social-downloader {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  color: #fff;
+}
+
+.home-neon .downloader-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  background: radial-gradient(circle at 12% 10%, rgba(255, 47, 209, .22), transparent 35%), rgba(8, 2, 18, .9);
+}
+
+.home-neon .downloader-hero h4 {
+  margin: 4px 0 8px;
+  font-size: clamp(1.35rem, 3vw, 2.2rem);
+  letter-spacing: 0;
+}
+
+.home-neon .downloader-hero span {
+  color: #ddcde5;
+  line-height: 1.6;
+}
+
+.home-neon .downloader-live {
+  display: grid;
+  min-width: 150px;
+  padding: 14px;
+  border: 1px solid rgba(72, 247, 236, .45);
+  background: rgba(17, 48, 59, .42);
+}
+
+.home-neon .downloader-live i {
+  width: 10px;
+  height: 10px;
+  margin-bottom: 7px;
+  border-radius: 50%;
+  background: #ffcc42;
+  box-shadow: 0 0 14px #ffcc42;
+}
+.home-neon .downloader-live.ready i { background: #61f7a6; box-shadow: 0 0 14px #61f7a6; }
+
+.home-neon .downloader-live strong { color: #62fff1; }
+.home-neon .downloader-live span { font-size: .74rem; }
+
+.home-neon .downloader-platforms {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.home-neon .downloader-platforms span {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  color: #f8eaff;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.home-neon .downloader-form,
+.home-neon .download-preview,
+.home-neon .download-queue {
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  background: rgba(11, 3, 20, .86);
+}
+
+.home-neon .download-url-field { display: grid; gap: 8px; font-weight: 800; }
+.home-neon .download-url-field > div { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+
+.home-neon .download-url-field input,
+.home-neon .download-options select {
+  min-width: 0;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 110, 223, .62);
+  border-radius: 6px;
+  background: #090211;
+  color: #fff;
+  font: inherit;
+}
+
+.home-neon .download-url-field input:focus,
+.home-neon .download-options select:focus {
+  outline: 2px solid #3df4ee;
+  outline-offset: 2px;
+}
+
+.home-neon .download-url-field button,
+.home-neon .download-result-actions button,
+.home-neon .download-result-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: 1px solid #3df4ee;
+  border-radius: 6px;
+  background: rgba(61, 244, 238, .12);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.home-neon .download-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.home-neon .download-options label { display: grid; gap: 7px; color: #dfcce6; font-size: .8rem; font-weight: 800; }
+.home-neon .download-options .download-check { display: flex; align-items: center; min-height: 46px; margin-top: 24px; padding: 0 12px; border: 1px solid rgba(255,255,255,.2); border-radius: 6px; }
+.home-neon .download-check input { accent-color: #ff32ce; }
+
+.home-neon .download-primary-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.home-neon .download-primary-actions button { min-width: 150px; }
+.home-neon .download-primary-actions button:disabled { opacity: .55; cursor: wait; }
+
+.home-neon .downloader-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, .75fr);
+  gap: 14px;
+}
+
+.home-neon .download-preview { min-height: 220px; display: grid; place-items: center; }
+.home-neon .download-placeholder,
+.home-neon .download-result,
+.home-neon .download-loading { width: min(100%, 620px); text-align: center; overflow-wrap: anywhere; }
+.home-neon .download-placeholder > span,
+.home-neon .download-result > span { display: inline-grid; place-items: center; min-width: 52px; height: 34px; padding: 0 10px; border-radius: 5px; background: linear-gradient(135deg, #ff43d2, #6afaf0); color: #110018; font-size: .76rem; font-weight: 900; }
+.home-neon .download-placeholder strong,
+.home-neon .download-result strong,
+.home-neon .download-loading strong { display: block; margin: 13px 0 7px; font-size: 1.2rem; }
+.home-neon .download-placeholder p,
+.home-neon .download-result p,
+.home-neon .download-loading p { margin: 0; color: #cdbbd5; line-height: 1.55; }
+.home-neon .download-result.error > span { background: #ff647e; color: #180006; }
+.home-neon .download-result.success > span { background: #79f5a8; color: #03160a; }
+.home-neon .download-result-actions,
+.home-neon .download-file-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 15px; }
+.home-neon .download-file-list a { padding: 11px 15px; border-radius: 6px; background: linear-gradient(135deg, #f5ff67, #45f2ec); color: #10011c; font-weight: 900; text-decoration: none; }
+.home-neon .download-loading i { display: block; width: 42px; height: 42px; margin: auto; border: 4px solid rgba(255,255,255,.14); border-top-color: #ff3bd4; border-radius: 50%; animation: hhDownloadSpin .8s linear infinite; }
+@keyframes hhDownloadSpin { to { transform: rotate(360deg); } }
+
+.home-neon .download-queue header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.home-neon .download-queue header div { display: grid; }
+.home-neon .download-queue header span { color: #cdbbd5; font-size: .74rem; }
+.home-neon .download-queue header button { padding: 6px 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 5px; background: transparent; color: #fff; }
+.home-neon .download-queue [data-download-history] { display: grid; gap: 7px; max-height: 260px; overflow: auto; }
+.home-neon .download-history-item { display: grid; gap: 3px; width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,.15); border-radius: 5px; background: rgba(255,255,255,.04); color: #fff; text-align: left; }
+.home-neon .download-history-item:hover { border-color: #ff42d1; transform: translateX(3px); }
+.home-neon .download-history-item span { color: #50f7ed; font-size: .7rem; font-weight: 900; }
+.home-neon .download-history-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-neon .download-history-item small { color: #aa95b4; }
+
+@media (max-width: 900px) {
+  .home-neon .download-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-neon .download-options .download-check { margin-top: 0; }
+  .home-neon .downloader-workspace { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .home-neon .downloader-hero { align-items: stretch; flex-direction: column; }
+  .home-neon .download-options { grid-template-columns: 1fr; }
+  .home-neon .download-url-field > div { grid-template-columns: 1fr; }
+  .home-neon .download-primary-actions { display: grid; }
+  .home-neon .download-primary-actions button { width: 100%; }
+}

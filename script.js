@@ -924,6 +924,56 @@ function initSuperPlatform() {
     `;
   };
 
+  const downloadCenterMarkup = () => {
+    let history = [];
+    try { history = JSON.parse(localStorage.getItem("hh-download-history") || "[]"); } catch { history = []; }
+    const historyMarkup = history.slice(0, 6).map((item) => `
+      <button class="download-history-item interactive" type="button" data-download-history-url="${escapeHtml(item.url)}">
+        <span>${escapeHtml(item.platform || "Link")}</span>
+        <strong>${escapeHtml(item.title || item.url)}</strong>
+        <small>${escapeHtml(item.time || "")}</small>
+      </button>`).join("");
+    return `
+      <section class="social-downloader" data-social-downloader>
+        <div class="downloader-hero">
+          <div>
+            <p class="section-kicker">HH Social Downloader</p>
+            <h4>Tải media từ liên kết</h4>
+            <span>Dán link công khai, chọn MP4/MP3 và chất lượng. Chỉ tải nội dung bạn sở hữu hoặc được phép sử dụng.</span>
+          </div>
+          <div class="downloader-live"><i></i><strong data-download-service>Đang kiểm tra</strong><span>dịch vụ tải</span></div>
+        </div>
+        <div class="downloader-platforms" aria-label="Nền tảng hỗ trợ">
+          ${["YouTube", "TikTok", "Facebook", "Instagram", "X / Twitter", "Reddit", "Vimeo", "SoundCloud"].map((name) => `<span>${name}</span>`).join("")}
+        </div>
+        <form class="downloader-form" data-download-form>
+          <label class="download-url-field">
+            <span>Liên kết video / bài đăng</span>
+            <div><input data-download-url type="url" inputmode="url" autocomplete="url" placeholder="https://www.youtube.com/watch?v=..." required><button class="interactive" type="button" data-download-paste>Dán</button></div>
+          </label>
+          <div class="download-options">
+            <label>Định dạng<select data-download-mode><option value="auto">MP4 video</option><option value="audio">MP3 âm thanh</option><option value="mute">Video không tiếng</option></select></label>
+            <label>Chất lượng<select data-download-quality><option value="max">Tốt nhất</option><option value="2160">4K / 2160p</option><option value="1080" selected>Full HD / 1080p</option><option value="720">HD / 720p</option><option value="480">480p</option><option value="360">360p</option></select></label>
+            <label>Âm thanh<select data-download-audio><option value="320">320 kbps</option><option value="256">256 kbps</option><option value="128" selected>128 kbps</option></select></label>
+            <label class="download-check"><input data-download-playlist type="checkbox"><span>Tải playlist / album</span></label>
+          </div>
+          <div class="download-primary-actions">
+            <button class="button ghost interactive" type="button" data-download-analyze>Kiểm tra link</button>
+            <button class="button primary interactive" type="submit" data-download-submit>Tạo bản tải</button>
+          </div>
+        </form>
+        <div class="downloader-workspace">
+          <article class="download-preview" data-download-preview>
+            <div class="download-placeholder"><span>URL</span><strong>Dán một liên kết để bắt đầu</strong><p>Trang sẽ nhận diện nền tảng và chuẩn bị lựa chọn tải phù hợp.</p></div>
+          </article>
+          <aside class="download-queue">
+            <header><div><span>Hàng đợi</span><strong data-download-count>0 mục</strong></div><button class="interactive" type="button" data-download-clear>Xóa lịch sử</button></header>
+            <div data-download-history>${historyMarkup || "<p>Chưa có lượt tải trên thiết bị này.</p>"}</div>
+          </aside>
+        </div>
+      </section>`;
+  };
+
   const filteredModules = () => {
     const query = (search?.value || "").trim().toLowerCase();
     return modules.filter((module) => {
@@ -1103,7 +1153,7 @@ function initSuperPlatform() {
             </div>
           </div>
           <div class="module-inline-app" data-inline-app="${module.id}">
-            ${module.id === "command-center" ? commandCenterMarkup(module) : moduleStudioMarkup(module)}
+            ${module.id === "command-center" ? commandCenterMarkup(module) : module.id === "download-center" ? downloadCenterMarkup(module) : moduleStudioMarkup(module)}
             <label>
               Dữ liệu dùng nhanh
               <textarea data-inline-input="${module.id}" rows="4" placeholder="Nhập yêu cầu cho ${escapeHtml(module.title)}..."></textarea>
@@ -1121,6 +1171,7 @@ function initSuperPlatform() {
     `;
     }).join("");
 
+    if (visible.some((module) => module.id === "download-center")) checkDownloadService();
     if (!selectedModule && modules.length) renderDetail(modules[0]);
   };
 
@@ -1363,6 +1414,104 @@ function initSuperPlatform() {
     }
   });
 
+  const downloadPlatformOf = (value) => {
+    try {
+      const host = new URL(value).hostname.toLowerCase();
+      if (host.includes("youtu")) return "YouTube";
+      if (host.includes("tiktok")) return "TikTok";
+      if (host.includes("facebook") || host.includes("fb.watch")) return "Facebook";
+      if (host.includes("instagram")) return "Instagram";
+      if (host.includes("twitter") || host === "x.com" || host.endsWith(".x.com")) return "X / Twitter";
+      if (host.includes("reddit")) return "Reddit";
+      if (host.includes("vimeo")) return "Vimeo";
+      if (host.includes("soundcloud")) return "SoundCloud";
+      return host.replace(/^www\./, "");
+    } catch { return "Link chưa hợp lệ"; }
+  };
+
+  const downloadPanel = () => grid.querySelector("[data-social-downloader]");
+  const downloadHistory = () => {
+    try { return JSON.parse(localStorage.getItem("hh-download-history") || "[]"); } catch { return []; }
+  };
+  const updateDownloadHistory = (items) => {
+    localStorage.setItem("hh-download-history", JSON.stringify(items.slice(0, 20)));
+    const panel = downloadPanel();
+    const list = panel?.querySelector("[data-download-history]");
+    const count = panel?.querySelector("[data-download-count]");
+    if (count) count.textContent = `${items.length} mục`;
+    if (list) list.innerHTML = items.length ? items.slice(0, 8).map((item) => `
+      <button class="download-history-item interactive" type="button" data-download-history-url="${escapeHtml(item.url)}">
+        <span>${escapeHtml(item.platform)}</span><strong>${escapeHtml(item.title || item.url)}</strong><small>${escapeHtml(item.time)}</small>
+      </button>`).join("") : "<p>Chưa có lượt tải trên thiết bị này.</p>";
+  };
+  const showDownloadPreview = (html, state = "") => {
+    const preview = downloadPanel()?.querySelector("[data-download-preview]");
+    if (!preview) return;
+    preview.dataset.state = state;
+    preview.innerHTML = html;
+  };
+  const checkDownloadService = async () => {
+    const status = downloadPanel()?.querySelector("[data-download-service]");
+    if (!status) return;
+    if (!REALTIME_URL) { status.textContent = "Chưa kết nối"; return; }
+    try {
+      const response = await fetch(`${REALTIME_URL}/api/downloads/resolve`, { cache: "no-store" });
+      const data = await response.json();
+      status.textContent = data.configured ? "Sẵn sàng" : "Chờ cấu hình";
+      status.closest(".downloader-live")?.classList.toggle("ready", Boolean(data.configured));
+    } catch { status.textContent = "Mất kết nối"; }
+  };
+  const analyzeDownloadUrl = (value) => {
+    const platform = downloadPlatformOf(value);
+    if (!/^https?:\/\//i.test(value) || platform === "Link chưa hợp lệ") {
+      showDownloadPreview('<div class="download-result error"><span>Lỗi URL</span><strong>Liên kết chưa hợp lệ</strong><p>Hãy dán đầy đủ link bắt đầu bằng https://</p></div>', "error");
+      return false;
+    }
+    showDownloadPreview(`<div class="download-result ready"><span>${escapeHtml(platform)}</span><strong>Đã nhận diện liên kết</strong><p>${escapeHtml(value)}</p><div class="download-result-actions"><a class="interactive" href="${escapeHtml(value)}" target="_blank" rel="noopener">Mở bài gốc</a><button class="interactive" type="button" data-download-copy="${escapeHtml(value)}">Sao chép link</button></div></div>`, "ready");
+    return true;
+  };
+  const requestDownload = async (form) => {
+    const url = form.querySelector("[data-download-url]")?.value.trim() || "";
+    if (!analyzeDownloadUrl(url)) return;
+    const submit = form.querySelector("[data-download-submit]");
+    if (submit) { submit.disabled = true; submit.textContent = "Đang xử lý..."; }
+    showDownloadPreview('<div class="download-loading"><i></i><strong>Đang chuẩn bị bản tải</strong><p>Máy chủ đang kiểm tra media và định dạng phù hợp...</p></div>', "loading");
+    try {
+      if (!REALTIME_URL) throw new Error("Backend chưa được cấu hình.");
+      const token = localStorage.getItem("hh-auth-token") || "";
+      const response = await fetch(`${REALTIME_URL}/api/downloads/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          url,
+          downloadMode: form.querySelector("[data-download-mode]")?.value,
+          videoQuality: form.querySelector("[data-download-quality]")?.value,
+          audioBitrate: form.querySelector("[data-download-audio]")?.value,
+          playlist: Boolean(form.querySelector("[data-download-playlist]")?.checked)
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Không thể tạo bản tải.");
+      const candidates = data.status === "picker" ? (data.picker || []) : [{ url: data.url, filename: data.filename }];
+      const links = candidates.filter((item) => item?.url).slice(0, 20);
+      if (!links.length) throw new Error("Máy chủ chưa trả về tệp có thể tải.");
+      showDownloadPreview(`<div class="download-result success"><span>Đã sẵn sàng</span><strong>${links.length > 1 ? `${links.length} tệp trong bộ sưu tập` : escapeHtml(links[0].filename || "Media đã xử lý")}</strong><p>Liên kết có thể hết hạn, hãy tải ngay.</p><div class="download-file-list">${links.map((item, index) => `<a class="interactive" href="${escapeHtml(item.url)}" target="_blank" rel="noopener" download>${escapeHtml(item.filename || `Tải tệp ${index + 1}`)}</a>`).join("")}</div></div>`, "success");
+      const history = [{ url, platform: downloadPlatformOf(url), title: links[0].filename || "Media", time: new Date().toLocaleString("vi-VN") }, ...downloadHistory().filter((item) => item.url !== url)];
+      updateDownloadHistory(history);
+    } catch (error) {
+      showDownloadPreview(`<div class="download-result error"><span>Chưa thể tải</span><strong>${escapeHtml(error.message)}</strong><p>Download Center đã hoạt động, nhưng cần cấu hình máy chủ tải media chuyên dụng để xử lý video.</p><div class="download-result-actions"><a class="interactive" href="https://cobalt.tools/" target="_blank" rel="noopener">Mở trình tải dự phòng</a><button class="interactive" type="button" data-download-retry>Thử lại</button></div></div>`, "error");
+    } finally {
+      if (submit) { submit.disabled = false; submit.textContent = "Tạo bản tải"; }
+    }
+  };
+
+  grid.addEventListener("submit", (event) => {
+    const form = event.target.closest("[data-download-form]");
+    if (!form) return;
+    event.preventDefault();
+    requestDownload(form);
+  });
+
   grid.addEventListener("change", (event) => {
     const moduleStep = event.target.closest("[data-module-step]");
     if (moduleStep) {
@@ -1386,6 +1535,22 @@ function initSuperPlatform() {
   });
 
   grid.addEventListener("click", (event) => {
+    const panel = event.target.closest("[data-social-downloader]");
+    if (panel) {
+      const form = panel.querySelector("[data-download-form]");
+      const urlInput = panel.querySelector("[data-download-url]");
+      if (event.target.closest("[data-download-paste]")) {
+        navigator.clipboard.readText().then((text) => { if (urlInput) { urlInput.value = text.trim(); analyzeDownloadUrl(urlInput.value); } }).catch(() => urlInput?.focus());
+        return;
+      }
+      if (event.target.closest("[data-download-analyze]")) { analyzeDownloadUrl(urlInput?.value.trim() || ""); return; }
+      if (event.target.closest("[data-download-retry]")) { if (form) requestDownload(form); return; }
+      const historyButton = event.target.closest("[data-download-history-url]");
+      if (historyButton) { if (urlInput) urlInput.value = historyButton.dataset.downloadHistoryUrl; analyzeDownloadUrl(historyButton.dataset.downloadHistoryUrl); return; }
+      if (event.target.closest("[data-download-clear]")) { updateDownloadHistory([]); return; }
+      const copyButton = event.target.closest("[data-download-copy]");
+      if (copyButton) { navigator.clipboard.writeText(copyButton.dataset.downloadCopy || ""); copyButton.textContent = "Đã sao chép"; return; }
+    }
     const studioButton = event.target.closest("[data-studio-action]");
     if (!studioButton) return;
     const moduleId = studioButton.dataset.studioModule;
