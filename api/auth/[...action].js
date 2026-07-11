@@ -68,7 +68,9 @@ async function oauthCallback(req, res, db, provider, code, state) {
 
 module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {
-    const action = Array.isArray(req.query.action) ? req.query.action : [];
+    const action = Array.isArray(req.query.action)
+      ? req.query.action
+      : (typeof req.query.action === "string" ? [req.query.action] : []);
     const route = action.join("/");
     if (route === "register" && req.method === "POST") {
       const name = clean(body.name, 160);
