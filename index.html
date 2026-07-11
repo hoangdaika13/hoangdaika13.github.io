@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app-shell.css?v=30">
+  <link rel="stylesheet" href="app-shell.css?v=31">
   <script src="config.js?v=3"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
@@ -23,6 +23,7 @@
   <div class="cursor-glow" aria-hidden="true"></div>
 
   <section class="auth-gate" id="authGate" aria-label="Đăng nhập để vào trang chủ">
+    <button class="auth-gate-close" type="button" data-auth-close aria-label="Đóng đăng nhập">×</button>
     <div class="auth-gate-brand">
       <span class="brand-mark">HH</span>
       <p class="section-kicker">Hoangdaika13 Neon Platform</p>
@@ -66,6 +67,7 @@
       <button class="app-global-search" type="button" data-command-open aria-haspopup="dialog"><span>⌕</span><span>Tìm công cụ, chức năng, dự án hoặc hướng dẫn...</span><kbd>Ctrl K</kbd></button>
       <div class="app-header__actions">
         <button class="app-action-button" type="button" data-app-route="/create" title="Tạo mới">＋<span>Tạo mới</span></button>
+        <button class="app-action-button" id="authOpenButton" type="button" data-auth-open>Đăng nhập</button>
         <button class="app-icon-button" type="button" data-help-toggle aria-label="Mở trợ giúp" title="Trợ giúp">?</button>
         <button class="app-icon-button app-notification-button" type="button" data-notification-toggle aria-label="Mở thông báo" title="Thông báo"><span aria-hidden="true">◇</span><i aria-hidden="true"></i></button>
         <button class="app-user-button" type="button" data-user-menu-toggle aria-haspopup="menu" aria-expanded="false"><span id="shellUserInitials">HH</span><strong id="shellUserName">Tài khoản</strong><i aria-hidden="true">⌄</i></button>
@@ -788,6 +790,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=30"></script>
+  <script src="script.js?v=31"></script>
 </body>
 </html>

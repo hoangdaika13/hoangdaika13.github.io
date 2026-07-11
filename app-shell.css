@@ -1,4 +1,4 @@
-@import url("styles.css?v=30") layer(legacy);
+@import url("styles.css?v=31") layer(legacy);
 
 @layer legacy, tokens, base, layout, components, pages, modules, responsive, accessibility;
 
@@ -887,10 +887,36 @@
 }
 
 @layer pages {
+  .home-neon.auth-unlocked.auth-panel-open .auth-gate {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+  }
+  .auth-gate-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border-default);
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-primary);
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .auth-gate-close:hover { border-color: var(--accent); color: var(--accent); }
   .home-neon.auth-locked .auth-gate {
     grid-template-columns: minmax(300px, .9fr) minmax(480px, 640px);
     gap: clamp(32px, 6vw, 88px);
     padding: clamp(24px, 6vw, 80px);
+    background: linear-gradient(120deg, rgba(86, 234, 255, .055), transparent 34%), var(--app-bg);
+  }
+
+  .home-neon.auth-unlocked .auth-gate {
     background: linear-gradient(120deg, rgba(86, 234, 255, .055), transparent 34%), var(--app-bg);
   }
   .home-neon.auth-locked .auth-gate-brand { gap: var(--space-4); }

@@ -457,6 +457,7 @@ function initRealtimeAuth() {
   const gateRegisterForm = byId("gateRegisterForm");
   const gateLoginForm = byId("gateLoginForm");
   const logoutButton = byId("logoutButton");
+  const authOpenButton = byId("authOpenButton");
   const googleLogin = byId("googleLogin");
   const facebookLogin = byId("facebookLogin");
   if (!status || !online || !note || !consent) return;
@@ -489,10 +490,15 @@ function initRealtimeAuth() {
   };
 
   const setGateState = () => {
-    const unlocked = Boolean(user && token);
-    document.body.classList.toggle("auth-unlocked", unlocked);
-    document.body.classList.toggle("auth-locked", !unlocked);
-    gate?.setAttribute("aria-hidden", unlocked ? "true" : "false");
+    const authenticated = Boolean(user && token);
+    // The public dashboard must never be blocked by authentication.  Account
+    // features still receive the real session state from the backend.
+    document.body.classList.add("auth-unlocked");
+    document.body.classList.remove("auth-locked");
+    document.body.classList.toggle("auth-authenticated", authenticated);
+    if (authenticated) document.body.classList.remove("auth-panel-open");
+    gate?.setAttribute("aria-hidden", "true");
+    if (authOpenButton) authOpenButton.hidden = authenticated;
   };
 
   const persistAuthUser = () => {
@@ -611,6 +617,16 @@ function initRealtimeAuth() {
   gateRegisterForm?.addEventListener("submit", (event) => handleRegister(event, gateRegisterForm));
   loginForm?.addEventListener("submit", (event) => handleLogin(event, loginForm));
   gateLoginForm?.addEventListener("submit", (event) => handleLogin(event, gateLoginForm));
+  authOpenButton?.addEventListener("click", () => {
+    document.body.classList.add("auth-panel-open");
+    gate?.setAttribute("aria-hidden", "false");
+    gateLoginForm?.querySelector("input[name=email]")?.focus();
+  });
+  gate?.querySelector("[data-auth-close]")?.addEventListener("click", () => {
+    document.body.classList.remove("auth-panel-open");
+    gate?.setAttribute("aria-hidden", "true");
+    authOpenButton?.focus();
+  });
 
   document.querySelectorAll("[data-oauth-disabled]").forEach((button) => {
     button.addEventListener("click", () => setStatus("Google/Facebook OAuth cần cấu hình Client ID và callback backend trước khi dùng."));
@@ -3950,7 +3966,7 @@ function initAppShell() {
   const userName = () => {
     try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}").name || "Tài khoản"; } catch { return "Tài khoản"; }
   };
-  const isUnlocked = () => localShellPreview || document.body.classList.contains("auth-unlocked");
+  const isUnlocked = () => true;
   const setShellVisibility = () => {
     const unlocked = isUnlocked();
     if (localShellPreview) document.body.classList.add("auth-unlocked");
@@ -4002,6 +4018,7 @@ function initAppShell() {
     if (recommendedList) recommendedList.innerHTML = recommended.map(makeItem).join("") || modules.slice(0, 3).map(makeItem).join("");
   };
   const mountPlatform = (activeModuleId = "") => {
+    window.dispatchEvent(new CustomEvent("hh:workspace-open"));
     workspace.replaceChildren(platform);
     platform.hidden = false;
     platform.classList.add("app-workspace__platform");
@@ -4234,15 +4251,17 @@ function initAppShell() {
 // rendered behind the sign-in gate, which made the first visit feel frozen on
 // desktop computers.  Start optional, authenticated features only after a
 // verified session is available.
-function initAfterAuthentication(initializer) {
+function initPlatformOnDemand(initializer) {
   let initialized = false;
   const start = () => {
-    if (initialized || !document.body.classList.contains("auth-unlocked")) return;
+    if (initialized) return;
     initialized = true;
     initializer();
   };
-  window.addEventListener("hh:auth-change", start);
-  start();
+  window.addEventListener("hh:workspace-open", start);
+  window.addEventListener("hh:auth-change", (event) => {
+    if (event.detail?.user && event.detail?.token) start();
+  });
 }
 
 resizeCanvas();
@@ -4252,7 +4271,7 @@ initTheme();
 initVoteStats();
 initRealtimeAuth();
 initAppShell();
-initAfterAuthentication(() => {
+initPlatformOnDemand(() => {
   drawParticles();
   initHomeNeonInteractions();
   initPlatformLivebar();
