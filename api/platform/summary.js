@@ -11,7 +11,12 @@ module.exports = async function handler(req, res) {
     await Promise.all(names.map(async (name) => {
       counts[name] = await db.collection(name).countDocuments();
     }));
+    const activeSince = new Date(Date.now() - 2 * 60 * 1000);
+    const [onlineVisitors, onlineRegistered] = await Promise.all([
+      db.collection("presence").countDocuments({ lastSeenAt: { $gte: activeSince } }),
+      db.collection("presence").countDocuments({ lastSeenAt: { $gte: activeSince }, kind: "registered" })
+    ]);
     const recentEvents = await db.collection("events").find({}).sort({ createdAt: -1 }).limit(12).project({ type: 1, moduleId: 1, createdAt: 1 }).toArray();
-    return res.status(200).json({ ok: true, counts, recentEvents, checkedAt: new Date() });
+    return res.status(200).json({ ok: true, counts, audience: { registeredUsers: counts.users || 0, onlineVisitors, onlineRegistered, activeWindowSeconds: 120 }, recentEvents, checkedAt: new Date() });
   });
 };

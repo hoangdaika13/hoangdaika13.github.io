@@ -12,6 +12,7 @@ let clickAudioContext;
 let musicEngine;
 const CLOUD_VOTE_API = window.HH_VOTE_API_URL || "";
 const REALTIME_URL = window.HH_REALTIME_URL || "";
+let adminRealtimeTimer = 0;
 
 const ambientTracks = [
   { name: "Pink Morning", mood: "piano pad", root: 261.63, scale: [0, 4, 7, 11], wave: "sine" },
@@ -442,6 +443,29 @@ function initVoteStats() {
 function randomId() {
   if (window.crypto?.randomUUID) return window.crypto.randomUUID();
   return `anon-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function initPublicPresence() {
+  if (!REALTIME_URL) return;
+  const key = "hh-presence-id";
+  let visitorId = localStorage.getItem(key);
+  if (!visitorId) {
+    visitorId = randomId();
+    localStorage.setItem(key, visitorId);
+  }
+  const sendPresence = () => {
+    if (document.hidden) return;
+    const token = localStorage.getItem("hh-auth-token") || "";
+    fetch(`${REALTIME_URL}/api/platform/presence`, {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ visitorId, page: location.pathname + location.hash })
+    }).catch(() => {});
+  };
+  sendPresence();
+  setInterval(sendPresence, 45000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) sendPresence(); });
 }
 
 function initRealtimeAuth() {
@@ -1808,7 +1832,7 @@ function initSuperPlatform() {
   const writeUserState=(state)=>localStorage.setItem("hh-user-dashboard",JSON.stringify(state));
   const loadAdminSummary=async()=>{
     const panel=grid.querySelector("[data-admin-panel]");if(!panel||!REALTIME_URL)return;const status=panel.querySelector("[data-admin-status]");
-    try{const token=localStorage.getItem("hh-auth-token")||"";const response=await fetch(`${REALTIME_URL}/api/platform/summary`,{headers:{...(token?{Authorization:`Bearer ${token}`}:{})},cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"Không có quyền quản trị");const access=panel.querySelector("[data-admin-access]");if(access)access.textContent="Đã xác minh chủ sở hữu";if(status)status.textContent=`Kết nối thành công · ${new Date(data.checkedAt).toLocaleString("vi-VN")}`;const values=[data.counts.users,data.counts.moduleRecords,data.counts.moduleActions,data.counts.events];panel.querySelectorAll("[data-admin-metrics] article strong").forEach((node,index)=>node.textContent=values[index]??0);const events=panel.querySelector("[data-admin-events]");if(events)events.innerHTML=(data.recentEvents||[]).map((item)=>`<p><i></i><span>${escapeHtml(item.type||"event")}${item.moduleId?` · ${escapeHtml(item.moduleId)}`:""}</span><small>${new Date(item.createdAt).toLocaleString("vi-VN")}</small></p>`).join("")||"<p>Chưa có sự kiện.</p>";panel.querySelectorAll(".admin-service").forEach((item)=>{item.classList.add("online");item.querySelector("b").textContent="Hoạt động";});}
+    try{const token=localStorage.getItem("hh-auth-token")||"";const response=await fetch(`${REALTIME_URL}/api/platform/summary`,{headers:{...(token?{Authorization:`Bearer ${token}`}:{})},cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"Không có quyền quản trị");const access=panel.querySelector("[data-admin-access]");if(access)access.textContent="Đã xác minh chủ sở hữu";const audience=data.audience||{};if(status)status.textContent=`Realtime · ${audience.onlineVisitors??0} đang hoạt động (${audience.onlineRegistered??0} đã đăng nhập) · cập nhật ${new Date(data.checkedAt).toLocaleString("vi-VN")}`;const labels=["Tài khoản đăng ký","Đang hoạt động","Đang đăng nhập","Sự kiện"];const values=[audience.registeredUsers??data.counts.users,audience.onlineVisitors,audience.onlineRegistered,data.counts.events];panel.querySelectorAll("[data-admin-metrics] article").forEach((card,index)=>{const label=card.querySelector("span");if(label)label.textContent=labels[index];const value=card.querySelector("strong");if(value)value.textContent=values[index]??0;const note=card.querySelector("small");if(note)note.textContent=index===1||index===2?"2 phút gần nhất":"MongoDB";});const events=panel.querySelector("[data-admin-events]");if(events)events.innerHTML=(data.recentEvents||[]).map((item)=>`<p><i></i><span>${escapeHtml(item.type||"event")}${item.moduleId?` · ${escapeHtml(item.moduleId)}`:""}</span><small>${new Date(item.createdAt).toLocaleString("vi-VN")}</small></p>`).join("")||"<p>Chưa có sự kiện.</p>";panel.querySelectorAll(".admin-service").forEach((item)=>{item.classList.add("online");item.querySelector("b").textContent="Hoạt động";});if(!adminRealtimeTimer)adminRealtimeTimer=setInterval(()=>{const activePanel=grid.querySelector("[data-admin-panel]");if(activePanel&&!activePanel.closest("[hidden]"))loadAdminSummary();},15000);}
     catch(error){const access=panel.querySelector("[data-admin-access]");if(access)access.textContent="Quyền truy cập bị giới hạn";if(status)status.textContent=error.message;}
   };
   const readCart=()=>{try{return JSON.parse(localStorage.getItem("hh-store-cart")||"[]");}catch{return [];}};
@@ -4269,6 +4293,7 @@ updateScrollMeter();
 initReveal();
 initTheme();
 initVoteStats();
+initPublicPresence();
 initRealtimeAuth();
 initAppShell();
 initPlatformOnDemand(() => {
