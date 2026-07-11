@@ -956,6 +956,66 @@ function initSuperPlatform() {
       </section>`;
   };
 
+  const mediaCenterMarkup = () => {
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem("hh-media-center") || "{}"); } catch { state = {}; }
+    const defaults = [
+      { id: "hh-ai-cover", title: "Kịch bản AI Studio", type: "image", category: "images", url: "assets/kich-ban-ai.png", source: "HH Projects", favorite: true },
+      { id: "hh-ambient", title: "HH Neon Ambient", type: "audio", category: "music", url: "", source: "Music Engine", favorite: false },
+      { id: "hh-profile", title: "Hoangdaika13 Portfolio", type: "link", category: "gallery", url: "https://hoangdaika13.github.io", source: "Website", favorite: false }
+    ];
+    const items = Array.isArray(state.items) && state.items.length ? state.items : defaults;
+    const playlists = Array.isArray(state.playlists) && state.playlists.length ? state.playlists : [{ name: "Yêu thích", items: [] }, { name: "Xem sau", items: [] }];
+    return `
+      <section class="media-center-app" data-media-center>
+        <header class="media-center-hero">
+          <div><p class="section-kicker">Media Center 04</p><h4>Thư viện sáng tạo đa phương tiện</h4><span>Quản lý video, shorts, ảnh, nhạc, podcast, gallery và playlist trong một nơi.</span></div>
+          <div class="media-hero-stats"><span><b data-media-total>${items.length}</b> Media</span><span><b data-media-favorites>${items.filter((item) => item.favorite).length}</b> Yêu thích</span><span><b>${playlists.length}</b> Playlist</span></div>
+        </header>
+        <div class="media-command-bar">
+          <label class="media-search"><span>Tìm kiếm</span><input type="search" data-media-search placeholder="Tìm theo tên, nguồn hoặc loại..."></label>
+          <div class="media-view-switch"><button class="interactive active" type="button" data-media-view="grid" title="Dạng lưới">Lưới</button><button class="interactive" type="button" data-media-view="list" title="Dạng danh sách">Danh sách</button></div>
+          <button class="button ghost interactive" type="button" data-media-add-url>+ Thêm URL</button>
+          <label class="button primary interactive media-upload">Chọn file<input type="file" data-media-upload multiple accept="image/*,video/*,audio/*"></label>
+        </div>
+        <div class="media-category-tabs">
+          ${[["all","Tất cả"],["videos","Videos"],["shorts","Shorts"],["images","Hình ảnh"],["music","Âm nhạc"],["podcast","Podcast"],["gallery","Gallery"],["favorites","Yêu thích"]].map(([id,label], index) => `<button class="interactive ${index === 0 ? "active" : ""}" type="button" data-media-filter="${id}">${label}</button>`).join("")}
+        </div>
+        <div class="media-layout">
+          <main class="media-library">
+            <div class="media-grid" data-media-grid>
+              ${items.map((item) => `
+                <article class="media-card interactive-card" data-media-id="${escapeHtml(item.id)}" data-media-category="${escapeHtml(item.category || item.type)}" data-media-search-text="${escapeHtml(`${item.title} ${item.source} ${item.type}`.toLowerCase())}">
+                  <button class="media-cover interactive" type="button" data-media-open="${escapeHtml(item.id)}">
+                    ${item.type === "image" ? `<img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.title)}">` : `<span class="media-type-icon">${item.type === "audio" ? "♫" : item.type === "video" ? "▶" : "↗"}</span>`}
+                    <i>${escapeHtml(item.category || item.type)}</i>
+                  </button>
+                  <div class="media-card-info"><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.source || "Nguồn cá nhân")}</span></div><button class="interactive ${item.favorite ? "active" : ""}" type="button" data-media-favorite="${escapeHtml(item.id)}" aria-label="Yêu thích">${item.favorite ? "♥" : "♡"}</button></div>
+                  <div class="media-card-actions"><button class="interactive" type="button" data-media-open="${escapeHtml(item.id)}">Mở</button><button class="interactive" type="button" data-media-queue="${escapeHtml(item.id)}">+ Playlist</button><button class="interactive" type="button" data-media-more="${escapeHtml(item.id)}">•••</button></div>
+                </article>`).join("")}
+            </div>
+            <div class="media-empty" data-media-empty hidden><span>MEDIA</span><strong>Không tìm thấy nội dung</strong><p>Thử từ khóa khác hoặc thêm media mới.</p></div>
+          </main>
+          <aside class="media-sidebar">
+            <section class="media-now-playing">
+              <header><span>Đang chọn</span><button class="interactive" type="button" data-media-close-preview>Đóng</button></header>
+              <div class="media-preview-stage" data-media-preview><div class="media-preview-placeholder"><span>▶</span><strong>Chọn một media</strong><p>Ảnh, video hoặc âm thanh sẽ hiển thị tại đây.</p></div></div>
+              <div class="media-preview-meta"><strong data-media-preview-title>Chưa chọn</strong><span data-media-preview-source>Media Library</span></div>
+            </section>
+            <section class="media-playlists">
+              <header><div><span>Bộ sưu tập</span><strong>Playlist của tôi</strong></div><button class="interactive" type="button" data-media-new-playlist>+</button></header>
+              <div data-media-playlists>${playlists.map((list, index) => `<button class="interactive" type="button" data-media-playlist="${index}"><span>▤</span><div><strong>${escapeHtml(list.name)}</strong><small>${(list.items || []).length} mục</small></div></button>`).join("")}</div>
+            </section>
+            <section class="media-activity"><header><span>Hoạt động gần đây</span><button class="interactive" type="button" data-media-clear-activity>Dọn</button></header><div data-media-activity>${(state.activity || []).slice(0,5).map((item) => `<p>${escapeHtml(item)}</p>`).join("") || "<p>Chưa có hoạt động.</p>"}</div></section>
+          </aside>
+        </div>
+        <dialog class="media-dialog" data-media-dialog>
+          <form method="dialog"><button type="submit" aria-label="Đóng">×</button></form>
+          <div><p class="section-kicker">Thêm vào thư viện</p><h5>Media từ liên kết</h5><label>Tên nội dung<input data-media-url-title placeholder="Ví dụ: Video giới thiệu"></label><label>URL<input type="url" data-media-url-input placeholder="https://youtube.com/... hoặc link ảnh/audio/video"></label><label>Loại<select data-media-url-category><option value="videos">Video</option><option value="shorts">Short</option><option value="images">Hình ảnh</option><option value="music">Âm nhạc</option><option value="podcast">Podcast</option><option value="gallery">Gallery / Link</option></select></label><button class="button primary interactive" type="button" data-media-save-url>Lưu media</button></div>
+        </dialog>
+      </section>`;
+  };
+
   const moduleStudioMarkup = (module) => {
     const profile = profileFor(module);
     const stored = JSON.parse(localStorage.getItem(`${stateKey}:${module.id}:studio`) || "null") || {};
@@ -1229,7 +1289,7 @@ function initSuperPlatform() {
             </div>
           </div>
           <div class="module-inline-app" data-inline-app="${module.id}">
-            ${module.id === "command-center" ? commandCenterMarkup(module) : module.id === "ai-center" ? aiCenterMarkup(module) : module.id === "download-center" ? downloadCenterMarkup(module) : moduleStudioMarkup(module)}
+            ${module.id === "command-center" ? commandCenterMarkup(module) : module.id === "ai-center" ? aiCenterMarkup(module) : module.id === "download-center" ? downloadCenterMarkup(module) : module.id === "media-center" ? mediaCenterMarkup(module) : moduleStudioMarkup(module)}
             <label>
               Dữ liệu dùng nhanh
               <textarea data-inline-input="${module.id}" rows="4" placeholder="Nhập yêu cầu cho ${escapeHtml(module.title)}..."></textarea>
@@ -1563,7 +1623,70 @@ function initSuperPlatform() {
       const query = event.target.value.toLowerCase();
       aiPanel()?.querySelectorAll("[data-ai-session]").forEach((item) => item.hidden = !item.textContent.toLowerCase().includes(query));
     }
+    if (event.target.matches("[data-media-search]")) {
+      const panel = event.target.closest("[data-media-center]");
+      const query = event.target.value.trim().toLowerCase();
+      let visible = 0;
+      panel?.querySelectorAll("[data-media-id]").forEach((card) => {
+        const match = !query || (card.dataset.mediaSearchText || "").includes(query);
+        card.hidden = !match;
+        if (match) visible += 1;
+      });
+      const empty = panel?.querySelector("[data-media-empty]");
+      if (empty) empty.hidden = visible > 0;
+    }
   });
+
+  const mediaDefaults = () => [
+    { id: "hh-ai-cover", title: "Kịch bản AI Studio", type: "image", category: "images", url: "assets/kich-ban-ai.png", source: "HH Projects", favorite: true },
+    { id: "hh-ambient", title: "HH Neon Ambient", type: "audio", category: "music", url: "", source: "Music Engine", favorite: false },
+    { id: "hh-profile", title: "Hoangdaika13 Portfolio", type: "link", category: "gallery", url: "https://hoangdaika13.github.io", source: "Website", favorite: false }
+  ];
+  const mediaSessionItems = new Map();
+  const readMediaState = () => {
+    try {
+      const state = JSON.parse(localStorage.getItem("hh-media-center") || "{}");
+      return { items: Array.isArray(state.items) && state.items.length ? state.items : mediaDefaults(), playlists: Array.isArray(state.playlists) && state.playlists.length ? state.playlists : [{ name: "Yêu thích", items: [] }, { name: "Xem sau", items: [] }], activity: state.activity || [] };
+    } catch { return { items: mediaDefaults(), playlists: [{ name: "Yêu thích", items: [] }, { name: "Xem sau", items: [] }], activity: [] }; }
+  };
+  const writeMediaState = (state, activity) => {
+    if (activity) state.activity = [`${new Date().toLocaleTimeString("vi-VN")} · ${activity}`, ...(state.activity || [])].slice(0, 20);
+    localStorage.setItem("hh-media-center", JSON.stringify(state));
+  };
+  const mediaItemById = (id) => mediaSessionItems.get(id) || readMediaState().items.find((item) => item.id === id);
+  const mediaCardMarkup = (item) => `<article class="media-card interactive-card" data-media-id="${escapeHtml(item.id)}" data-media-category="${escapeHtml(item.category || item.type)}" data-media-search-text="${escapeHtml(`${item.title} ${item.source} ${item.type}`.toLowerCase())}"><button class="media-cover interactive" type="button" data-media-open="${escapeHtml(item.id)}">${item.type === "image" ? `<img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.title)}">` : item.thumbnail ? `<img src="${escapeHtml(item.thumbnail)}" alt="${escapeHtml(item.title)}">` : `<span class="media-type-icon">${item.type === "audio" ? "♫" : item.type === "video" ? "▶" : "↗"}</span>`}<i>${escapeHtml(item.category || item.type)}</i></button><div class="media-card-info"><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.source || "Nguồn cá nhân")}</span></div><button class="interactive ${item.favorite ? "active" : ""}" type="button" data-media-favorite="${escapeHtml(item.id)}" aria-label="Yêu thích">${item.favorite ? "♥" : "♡"}</button></div><div class="media-card-actions"><button class="interactive" type="button" data-media-open="${escapeHtml(item.id)}">Mở</button><button class="interactive" type="button" data-media-queue="${escapeHtml(item.id)}">+ Playlist</button><button class="interactive" type="button" data-media-more="${escapeHtml(item.id)}">•••</button></div></article>`;
+  const refreshMediaCenter = () => {
+    const panel = grid.querySelector("[data-media-center]");
+    if (!panel) return;
+    const state = readMediaState();
+    const allItems = [...state.items, ...mediaSessionItems.values()];
+    const mediaGrid = panel.querySelector("[data-media-grid]");
+    if (mediaGrid) mediaGrid.innerHTML = allItems.map(mediaCardMarkup).join("");
+    const total = panel.querySelector("[data-media-total]"); if (total) total.textContent = allItems.length;
+    const favorites = panel.querySelector("[data-media-favorites]"); if (favorites) favorites.textContent = allItems.filter((item) => item.favorite).length;
+    const activity = panel.querySelector("[data-media-activity]"); if (activity) activity.innerHTML = state.activity.slice(0, 5).map((item) => `<p>${escapeHtml(item)}</p>`).join("") || "<p>Chưa có hoạt động.</p>";
+    const playlists = panel.querySelector("[data-media-playlists]"); if (playlists) playlists.innerHTML = state.playlists.map((list, index) => `<button class="interactive" type="button" data-media-playlist="${index}"><span>▤</span><div><strong>${escapeHtml(list.name)}</strong><small>${(list.items || []).length} mục</small></div></button>`).join("");
+  };
+  const youtubeIdOf = (url) => {
+    try { const parsed = new URL(url); if (parsed.hostname.includes("youtu.be")) return parsed.pathname.split("/")[1]; if (parsed.hostname.includes("youtube")) return parsed.searchParams.get("v") || parsed.pathname.split("/").filter(Boolean).pop(); } catch {} return "";
+  };
+  const openMediaItem = (item) => {
+    const panel = grid.querySelector("[data-media-center]");
+    const stage = panel?.querySelector("[data-media-preview]");
+    if (!stage || !item) return;
+    const youtubeId = youtubeIdOf(item.url);
+    let content = "";
+    if (youtubeId) content = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}" title="${escapeHtml(item.title)}" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    else if (item.type === "image") content = `<img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.title)}">`;
+    else if (item.type === "video") content = `<video src="${escapeHtml(item.url)}" controls playsinline></video>`;
+    else if (item.type === "audio" && item.url) content = `<div class="media-audio-art"><span>♫</span><strong>${escapeHtml(item.title)}</strong></div><audio src="${escapeHtml(item.url)}" controls></audio>`;
+    else if (item.id === "hh-ambient") content = `<div class="media-audio-art"><span>♫</span><strong>Trình phát nhạc nền HH</strong><p>Dùng bộ chọn nhạc ở cuối trang để phát 20 bản ambient.</p></div>`;
+    else content = `<div class="media-link-preview"><span>↗</span><strong>${escapeHtml(item.title)}</strong><a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">Mở liên kết</a></div>`;
+    stage.innerHTML = content;
+    const title = panel.querySelector("[data-media-preview-title]"); if (title) title.textContent = item.title;
+    const source = panel.querySelector("[data-media-preview-source]"); if (source) source.textContent = item.source || item.category;
+    const state = readMediaState(); writeMediaState(state, `Đã mở ${item.title}`);
+  };
 
   const downloadPlatformOf = (value) => {
     try {
@@ -1664,6 +1787,18 @@ function initSuperPlatform() {
   });
 
   grid.addEventListener("change", (event) => {
+    const mediaUpload = event.target.closest("[data-media-upload]");
+    if (mediaUpload) {
+      Array.from(mediaUpload.files || []).slice(0, 20).forEach((file) => {
+        const type = file.type.startsWith("image/") ? "image" : file.type.startsWith("video/") ? "video" : file.type.startsWith("audio/") ? "audio" : "link";
+        const category = type === "image" ? "images" : type === "video" ? "videos" : type === "audio" ? "music" : "gallery";
+        const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        mediaSessionItems.set(id, { id, title: file.name, type, category, url: URL.createObjectURL(file), source: `${(file.size / 1024 / 1024).toFixed(1)} MB · File cục bộ`, favorite: false, local: true });
+      });
+      refreshMediaCenter();
+      mediaUpload.value = "";
+      return;
+    }
     const moduleStep = event.target.closest("[data-module-step]");
     if (moduleStep) {
       const [moduleId, stepIndex] = moduleStep.dataset.moduleStep.split(":");
@@ -1686,6 +1821,76 @@ function initSuperPlatform() {
   });
 
   grid.addEventListener("click", (event) => {
+    const media = event.target.closest("[data-media-center]");
+    if (media) {
+      const filterButton = event.target.closest("[data-media-filter]");
+      if (filterButton) {
+        media.querySelectorAll("[data-media-filter]").forEach((item) => item.classList.toggle("active", item === filterButton));
+        let visible = 0;
+        media.querySelectorAll("[data-media-id]").forEach((card) => {
+          const item = mediaItemById(card.dataset.mediaId);
+          const match = filterButton.dataset.mediaFilter === "all" || (filterButton.dataset.mediaFilter === "favorites" ? item?.favorite : card.dataset.mediaCategory === filterButton.dataset.mediaFilter);
+          card.hidden = !match; if (match) visible += 1;
+        });
+        const empty = media.querySelector("[data-media-empty]"); if (empty) empty.hidden = visible > 0;
+        return;
+      }
+      const viewButton = event.target.closest("[data-media-view]");
+      if (viewButton) {
+        media.querySelectorAll("[data-media-view]").forEach((item) => item.classList.toggle("active", item === viewButton));
+        media.querySelector("[data-media-grid]")?.classList.toggle("list-view", viewButton.dataset.mediaView === "list");
+        return;
+      }
+      if (event.target.closest("[data-media-add-url]")) { media.querySelector("[data-media-dialog]")?.showModal(); return; }
+      if (event.target.closest("[data-media-save-url]")) {
+        const title = media.querySelector("[data-media-url-title]")?.value.trim() || "Media mới";
+        const url = media.querySelector("[data-media-url-input]")?.value.trim() || "";
+        const category = media.querySelector("[data-media-url-category]")?.value || "gallery";
+        if (!/^https?:\/\//i.test(url)) return media.querySelector("[data-media-url-input]")?.focus();
+        const image = /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(url);
+        const audio = /\.(mp3|wav|ogg|m4a|aac)(\?|$)/i.test(url);
+        const video = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) || Boolean(youtubeIdOf(url));
+        const state = readMediaState();
+        state.items.unshift({ id: `media-${Date.now()}`, title, url, category, type: image ? "image" : audio ? "audio" : video ? "video" : "link", source: new URL(url).hostname.replace(/^www\./, ""), favorite: false });
+        writeMediaState(state, `Đã thêm ${title}`); refreshMediaCenter(); media.querySelector("[data-media-dialog]")?.close();
+        return;
+      }
+      const openButton = event.target.closest("[data-media-open]");
+      if (openButton) { openMediaItem(mediaItemById(openButton.dataset.mediaOpen)); return; }
+      const favoriteButton = event.target.closest("[data-media-favorite]");
+      if (favoriteButton) {
+        const item = mediaItemById(favoriteButton.dataset.mediaFavorite);
+        if (!item) return;
+        if (item.local) item.favorite = !item.favorite;
+        else { const state = readMediaState(); const stored = state.items.find((entry) => entry.id === item.id); if (stored) stored.favorite = !stored.favorite; writeMediaState(state, `${stored?.favorite ? "Đã thích" : "Bỏ thích"} ${item.title}`); }
+        refreshMediaCenter(); return;
+      }
+      const queueButton = event.target.closest("[data-media-queue]");
+      if (queueButton) {
+        const item = mediaItemById(queueButton.dataset.mediaQueue); const state = readMediaState(); const list = state.playlists[1] || state.playlists[0];
+        if (item && list && !(list.items || []).includes(item.id)) { list.items = [...(list.items || []), item.id]; writeMediaState(state, `Đã thêm ${item.title} vào ${list.name}`); refreshMediaCenter(); }
+        return;
+      }
+      const playlistButton = event.target.closest("[data-media-playlist]");
+      if (playlistButton) {
+        const state = readMediaState(); const list = state.playlists[Number(playlistButton.dataset.mediaPlaylist)]; const ids = new Set(list?.items || []); let visible = 0;
+        media.querySelectorAll("[data-media-id]").forEach((card) => { const match = ids.has(card.dataset.mediaId); card.hidden = !match; if (match) visible += 1; });
+        const empty = media.querySelector("[data-media-empty]"); if (empty) empty.hidden = visible > 0; return;
+      }
+      if (event.target.closest("[data-media-new-playlist]")) {
+        const name = window.prompt("Tên playlist mới:", "Bộ sưu tập mới")?.trim();
+        if (name) { const state = readMediaState(); state.playlists.push({ name, items: [] }); writeMediaState(state, `Đã tạo playlist ${name}`); refreshMediaCenter(); } return;
+      }
+      const moreButton = event.target.closest("[data-media-more]");
+      if (moreButton) {
+        const item = mediaItemById(moreButton.dataset.mediaMore); if (!item) return;
+        if (item.local) { URL.revokeObjectURL(item.url); mediaSessionItems.delete(item.id); refreshMediaCenter(); }
+        else if (window.confirm(`Xóa “${item.title}” khỏi thư viện?`)) { const state = readMediaState(); state.items = state.items.filter((entry) => entry.id !== item.id); state.playlists.forEach((list) => list.items = (list.items || []).filter((id) => id !== item.id)); writeMediaState(state, `Đã xóa ${item.title}`); refreshMediaCenter(); }
+        return;
+      }
+      if (event.target.closest("[data-media-close-preview]")) { const stage = media.querySelector("[data-media-preview]"); if (stage) stage.innerHTML = '<div class="media-preview-placeholder"><span>▶</span><strong>Chọn một media</strong><p>Ảnh, video hoặc âm thanh sẽ hiển thị tại đây.</p></div>'; return; }
+      if (event.target.closest("[data-media-clear-activity]")) { const state = readMediaState(); state.activity = []; writeMediaState(state); refreshMediaCenter(); return; }
+    }
     const ai = event.target.closest("[data-ai-center]");
     if (ai) {
       const tabButton = event.target.closest("[data-ai-tab]");
