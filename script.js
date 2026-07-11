@@ -741,6 +741,15 @@ function initSuperPlatform() {
   const persistFavorites = () => localStorage.setItem(favoritesKey, JSON.stringify(favorites));
   const textOf = (module) => `${module.title} ${module.description} ${(module.features || []).join(" ")}`.toLowerCase();
   const escapeHtml = (value) => String(value || "").replace(/[<>&"']/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;", "'": "&#39;" }[char]));
+  const readPlatformState = () => {
+    try {
+      return JSON.parse(localStorage.getItem(stateKey) || "{}");
+    } catch {
+      return {};
+    }
+  };
+  const writePlatformState = (state) => localStorage.setItem(stateKey, JSON.stringify(state));
+  const moduleStateFor = (moduleId) => readPlatformState()[moduleId] || {};
   const commandCenterKey = "hh-command-center-state";
 
   const readCommandCenterState = () => {
@@ -1017,7 +1026,13 @@ function initSuperPlatform() {
       return;
     }
 
-    grid.innerHTML = visible.map((module, index) => `
+    grid.innerHTML = visible.map((module, index) => {
+      const quickState = moduleStateFor(module.id);
+      const featureCount = (module.features || []).length;
+      const doneSteps = Object.values(quickState.steps || {}).filter(Boolean).length;
+      const progress = featureCount ? Math.round((doneSteps / Math.min(featureCount, 4)) * 100) : 0;
+      const activity = (quickState.activity || []).slice(0, 4);
+      return `
       <article class="module-card module-row interactive-card ${selectedModule?.id === module.id ? "active" : ""}" data-module-id="${module.id}" style="--module-accent:${module.accent || "#ff3bd4"}">
         <div class="module-row-head">
           <span class="module-number">${String(module.order || index + 1).padStart(2, "0")}</span>
@@ -1030,12 +1045,56 @@ function initSuperPlatform() {
         </div>
         <div class="module-row-body">
           <div class="module-function-panel">
+            <div class="module-quick-head">
+              <div>
+                <p class="section-kicker">Sử dụng nhanh</p>
+                <strong>${escapeHtml(module.title)}</strong>
+              </div>
+              <span>${module.requiresBackend ? "API" : "LOCAL"}</span>
+            </div>
+            <div class="module-quick-stats">
+              <span><b>${String(featureCount).padStart(2, "0")}</b> chức năng</span>
+              <span><b>${favorites.includes(module.id) ? "ON" : "OFF"}</b> yêu thích</span>
+              <span><b>${progress}%</b> tiến độ</span>
+            </div>
+            <div class="module-progress-card">
+              <div>
+                <strong>Tiến độ sử dụng</strong>
+                <span>${doneSteps}/${Math.min(featureCount, 4)} bước đã tick</span>
+              </div>
+              <i style="--progress:${Math.max(4, progress)}%"></i>
+            </div>
             <div class="module-features full">
               ${(module.features || []).map((feature, featureIndex) => `
                 <button class="module-feature-chip interactive" type="button" data-inline-feature="${escapeHtml(feature)}" data-inline-module="${module.id}">
                   <span>${String(featureIndex + 1).padStart(2, "0")}</span>${escapeHtml(feature)}
                 </button>
               `).join("")}
+            </div>
+            <div class="module-playbook">
+              <strong>Quy trình dùng ngay</strong>
+              ${(module.features || []).slice(0, 4).map((feature, stepIndex) => `
+                <label>
+                  <input type="checkbox" data-module-step="${module.id}:${stepIndex}" ${quickState.steps?.[stepIndex] ? "checked" : ""}>
+                  <span>${escapeHtml(feature)} đã sẵn sàng</span>
+                </label>
+              `).join("")}
+            </div>
+            <div class="module-note-card">
+              <label>
+                Ghi chú nhanh
+                <textarea data-module-note="${module.id}" rows="3" placeholder="Ghi mục tiêu, link, ý tưởng hoặc dữ liệu cần xử lý...">${escapeHtml(quickState.note || "")}</textarea>
+              </label>
+              <button class="interactive" type="button" data-module-save-note="${module.id}">Lưu ghi chú</button>
+            </div>
+            <div class="module-quick-actions">
+              <button class="interactive" type="button" data-inline-run="${module.id}">Chạy demo</button>
+              <button class="interactive" type="button" data-inline-open="${module.id}">Workspace</button>
+              <button class="interactive" type="button" data-inline-google="${module.id}">Google</button>
+            </div>
+            <div class="module-activity-feed" data-module-activity="${module.id}">
+              <strong>Hoạt động gần đây</strong>
+              ${activity.length ? activity.map((item) => `<p>${escapeHtml(item)}</p>`).join("") : "<p>Chưa có hoạt động. Bấm chức năng hoặc lưu ghi chú để bắt đầu.</p>"}
             </div>
             <div class="module-row-meta">
               <span>${escapeHtml(module.status || "planned")}</span>
@@ -1059,7 +1118,8 @@ function initSuperPlatform() {
           </div>
         </div>
       </article>
-    `).join("");
+    `;
+    }).join("");
 
     if (!selectedModule && modules.length) renderDetail(modules[0]);
   };
@@ -1086,6 +1146,36 @@ function initSuperPlatform() {
     persistFavorites();
   };
 
+  const logModuleActivity = (moduleId, message) => {
+    const allState = readPlatformState();
+    const current = allState[moduleId] || {};
+    const stamp = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const activity = [`${stamp} · ${message}`, ...(current.activity || [])].slice(0, 12);
+    allState[moduleId] = { ...current, activity };
+    writePlatformState(allState);
+    const feed = grid.querySelector(`[data-module-activity="${CSS.escape(moduleId)}"]`);
+    if (feed) {
+      feed.innerHTML = `<strong>Hoạt động gần đây</strong>${activity.slice(0, 4).map((item) => `<p>${escapeHtml(item)}</p>`).join("")}`;
+    }
+  };
+
+  const updateModuleProgress = (moduleId) => {
+    const module = modules.find((item) => item.id === moduleId);
+    const card = grid.querySelector(`[data-module-id="${CSS.escape(moduleId)}"]`);
+    if (!module || !card) return;
+    const state = moduleStateFor(moduleId);
+    const maxSteps = Math.min((module.features || []).length, 4) || 1;
+    const doneSteps = Object.values(state.steps || {}).filter(Boolean).length;
+    const progress = Math.round((doneSteps / maxSteps) * 100);
+    const progressCard = card.querySelector(".module-progress-card");
+    const progressBar = progressCard?.querySelector("i");
+    const progressText = progressCard?.querySelector("span");
+    const stat = card.querySelector(".module-quick-stats span:nth-child(3) b");
+    if (progressBar) progressBar.style.setProperty("--progress", `${Math.max(4, progress)}%`);
+    if (progressText) progressText.textContent = `${doneSteps}/${maxSteps} bước đã tick`;
+    if (stat) stat.textContent = `${progress}%`;
+  };
+
   grid.addEventListener("click", (event) => {
     const favoriteButton = event.target.closest("[data-module-fav]");
     if (favoriteButton) {
@@ -1106,30 +1196,44 @@ function initSuperPlatform() {
     const googleButton = event.target.closest("[data-inline-google]");
     const saveButton = event.target.closest("[data-inline-save]");
     const openButton = event.target.closest("[data-inline-open]");
-    const moduleId = featureButton?.dataset.inlineModule || runButton?.dataset.inlineRun || googleButton?.dataset.inlineGoogle || saveButton?.dataset.inlineSave || openButton?.dataset.inlineOpen;
+    const noteButton = event.target.closest("[data-module-save-note]");
+    const moduleId = featureButton?.dataset.inlineModule || runButton?.dataset.inlineRun || googleButton?.dataset.inlineGoogle || saveButton?.dataset.inlineSave || openButton?.dataset.inlineOpen || noteButton?.dataset.moduleSaveNote;
     if (!moduleId) return;
     const module = modules.find((item) => item.id === moduleId);
     if (!module) return;
     const input = grid.querySelector(`[data-inline-input="${CSS.escape(moduleId)}"]`);
     const output = grid.querySelector(`[data-inline-output="${CSS.escape(moduleId)}"]`);
+    if (noteButton) {
+      const allState = readPlatformState();
+      const note = grid.querySelector(`[data-module-note="${CSS.escape(moduleId)}"]`)?.value || "";
+      allState[moduleId] = { ...(allState[moduleId] || {}), note, savedAt: new Date().toISOString() };
+      writePlatformState(allState);
+      logModuleActivity(moduleId, "Đã lưu ghi chú nhanh");
+      return;
+    }
     if (featureButton) {
       renderDetail(module);
       if (actionMode) actionMode.value = featureButton.dataset.inlineFeature;
-      if (output) output.textContent = moduleDemoText(module, input?.value || "");
+      const nextInput = `${featureButton.dataset.inlineFeature}: ${input?.value || profileFor(module).sample}`;
+      if (input && !input.value.trim()) input.value = nextInput;
+      if (output) output.textContent = moduleDemoText(module, input?.value || nextInput);
+      logModuleActivity(moduleId, `Chọn chức năng ${featureButton.dataset.inlineFeature}`);
       return;
     }
     if (runButton) {
       renderDetail(module);
       if (output) output.textContent = moduleDemoText(module, input?.value || "");
+      logModuleActivity(moduleId, "Chạy demo nhanh");
       return;
     }
     if (googleButton) {
       const query = `${module.title} ${(input?.value || "").trim() || (module.features || []).join(" ")}`;
       window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank", "noopener");
+      logModuleActivity(moduleId, "Mở tìm kiếm Google");
       return;
     }
     if (saveButton) {
-      const allState = JSON.parse(localStorage.getItem(stateKey) || "{}");
+      const allState = readPlatformState();
       const saved = {
         title: module.title,
         input: input?.value || "",
@@ -1141,12 +1245,14 @@ function initSuperPlatform() {
         ...saved,
         history: [saved, ...(allState[module.id]?.history || [])].slice(0, 20)
       };
-      localStorage.setItem(stateKey, JSON.stringify(allState));
+      writePlatformState(allState);
       if (output) output.textContent = `${saved.output}\n\n[Đã lưu nhanh local lúc ${new Date().toLocaleTimeString("vi-VN")}]`;
+      logModuleActivity(moduleId, "Đã lưu output local");
       return;
     }
     if (openButton) {
       renderDetail(module);
+      logModuleActivity(moduleId, "Mở workspace chi tiết");
       byId("moduleDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   });
@@ -1258,6 +1364,18 @@ function initSuperPlatform() {
   });
 
   grid.addEventListener("change", (event) => {
+    const moduleStep = event.target.closest("[data-module-step]");
+    if (moduleStep) {
+      const [moduleId, stepIndex] = moduleStep.dataset.moduleStep.split(":");
+      const allState = readPlatformState();
+      const current = allState[moduleId] || {};
+      const steps = { ...(current.steps || {}), [stepIndex]: moduleStep.checked };
+      allState[moduleId] = { ...current, steps, savedAt: new Date().toISOString() };
+      writePlatformState(allState);
+      updateModuleProgress(moduleId);
+      logModuleActivity(moduleId, moduleStep.checked ? `Hoàn thành bước ${Number(stepIndex) + 1}` : `Mở lại bước ${Number(stepIndex) + 1}`);
+      return;
+    }
     const toggle = event.target.closest("[data-command-toggle-todo]");
     if (!toggle) return;
     const state = readCommandCenterState();
