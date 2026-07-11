@@ -1016,6 +1016,46 @@ function initSuperPlatform() {
       </section>`;
   };
 
+  const projectCenterMarkup = () => {
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem("hh-project-center") || "{}"); } catch { state = {}; }
+    const projects = state.projects || [
+      { id: "portfolio", name: "HH Neon Platform", status: "Đang phát triển", progress: 82, priority: "Cao", due: "2026-08-01", description: "Website cá nhân, AI Center, Media Center và cộng đồng.", color: "#ff3bd1" },
+      { id: "script-ai", name: "Kịch bản AI", status: "Đang thử nghiệm", progress: 68, priority: "Cao", due: "2026-08-15", description: "Công cụ viết và quản lý kịch bản đa nền tảng.", color: "#55f3ec" },
+      { id: "voice", name: "HH Voice Studio", status: "Bản ổn định", progress: 94, priority: "Trung bình", due: "2026-07-30", description: "Text/SRT, chia part, voice trình duyệt và humanize.", color: "#f5ff67" }
+    ];
+    const tasks = state.tasks || [
+      { id:"t1", title:"Hoàn thiện Project Center", column:"doing", priority:"Cao", project:"portfolio" },
+      { id:"t2", title:"Kiểm tra giao diện mobile", column:"todo", priority:"Cao", project:"portfolio" },
+      { id:"t3", title:"Nâng cấp AI Center", column:"done", priority:"Cao", project:"portfolio" },
+      { id:"t4", title:"Viết changelog v22", column:"review", priority:"Trung bình", project:"portfolio" }
+    ];
+    const active = projects.find((item) => item.id === state.activeProject) || projects[0];
+    return `<section class="project-center-app" data-project-center data-active-project="${escapeHtml(active.id)}">
+      <header class="project-center-hero"><div><p class="section-kicker">Project Center 05</p><h4>Điều hành dự án thông minh</h4><span>Tiến độ, Kanban, roadmap, timeline, bugs, changelog và nhóm trong một bảng điều khiển.</span></div><div class="project-health"><span>Project health</span><strong>${active.progress >= 80 ? "Tốt" : active.progress >= 55 ? "Ổn định" : "Cần chú ý"}</strong><i style="--health:${active.progress}%"></i></div></header>
+      <div class="project-topbar"><label><span>Dự án hiện tại</span><select data-project-select>${projects.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === active.id ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div class="project-view-tabs">${[["overview","Tổng quan"],["board","Kanban"],["roadmap","Roadmap"],["bugs","Bugs"],["release","Changelog"]].map(([id,label],index) => `<button class="interactive ${index===0?"active":""}" type="button" data-project-tab="${id}">${label}</button>`).join("")}</div><button class="button primary interactive" type="button" data-project-new>+ Dự án</button></div>
+      <div class="project-dashboard">
+        <aside class="project-list-panel"><header><div><span>Danh mục</span><strong>${projects.length} dự án</strong></div><button class="interactive" type="button" data-project-sort>Sắp xếp</button></header><div data-project-list>${projects.map((item) => `<button class="project-list-item interactive ${item.id===active.id?"active":""}" type="button" data-project-open="${escapeHtml(item.id)}" style="--project-color:${item.color}"><i></i><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.status)} · ${item.progress}%</span></div><b>${escapeHtml(item.priority)}</b></button>`).join("")}</div><div class="project-mini-stats"><span><b>${tasks.filter((task)=>task.column!=="done").length}</b> đang mở</span><span><b>${tasks.filter((task)=>task.column==="done").length}</b> hoàn tất</span><span><b>${(state.bugs||[]).length}</b> bugs</span></div></aside>
+        <main class="project-workspace">
+          <section class="project-pane active" data-project-pane="overview"><div class="project-overview-head"><div><span>${escapeHtml(active.status)}</span><h5>${escapeHtml(active.name)}</h5><p>${escapeHtml(active.description)}</p></div><button class="interactive" type="button" data-project-edit>Chỉnh sửa</button></div><div class="project-metric-grid"><article><span>Tiến độ</span><strong data-project-progress-value>${active.progress}%</strong><i><b style="width:${active.progress}%"></b></i></article><article><span>Deadline</span><strong>${escapeHtml(active.due)}</strong><small data-project-days>Đang tính...</small></article><article><span>Nhiệm vụ</span><strong>${tasks.filter((task)=>task.project===active.id).length}</strong><small>${tasks.filter((task)=>task.project===active.id&&task.column==="done").length} hoàn thành</small></article><article><span>Ưu tiên</span><strong>${escapeHtml(active.priority)}</strong><small>Theo dõi liên tục</small></article></div><div class="project-progress-control"><label>Cập nhật tiến độ <input type="range" min="0" max="100" value="${active.progress}" data-project-progress><b>${active.progress}%</b></label><button class="interactive" type="button" data-project-complete>Đánh dấu hoàn tất</button></div><div class="project-timeline"><header><strong>Hoạt động gần đây</strong><button class="interactive" type="button" data-project-add-update>+ Cập nhật</button></header><div data-project-activity>${(state.activity||[]).slice(0,6).map((item)=>`<p><i></i><span>${escapeHtml(item)}</span></p>`).join("")||"<p><i></i><span>Project Center đã được khởi tạo.</span></p>"}</div></div></section>
+          <section class="project-pane" data-project-pane="board"><div class="project-pane-heading"><div><span>Kanban board</span><h5>Luồng công việc</h5></div><button class="interactive" type="button" data-project-add-task>+ Nhiệm vụ</button></div><div class="project-kanban">${[["todo","Cần làm"],["doing","Đang làm"],["review","Kiểm tra"],["done","Hoàn tất"]].map(([id,label])=>`<section data-task-column="${id}"><header><strong>${label}</strong><span>${tasks.filter((task)=>task.column===id).length}</span></header><div>${tasks.filter((task)=>task.column===id).map((task)=>`<article draggable="true" data-task-id="${task.id}"><span>${escapeHtml(task.priority)}</span><strong>${escapeHtml(task.title)}</strong><small>${escapeHtml(projects.find((project)=>project.id===task.project)?.name||"")}</small><div><button class="interactive" type="button" data-task-move="${task.id}">Chuyển</button><button class="interactive" type="button" data-task-delete="${task.id}">×</button></div></article>`).join("")||"<p>Chưa có nhiệm vụ</p>"}</div></section>`).join("")}</div></section>
+          <section class="project-pane" data-project-pane="roadmap"><div class="project-pane-heading"><div><span>Roadmap</span><h5>Các cột mốc phát triển</h5></div><button class="interactive" type="button" data-project-add-milestone>+ Cột mốc</button></div><div class="roadmap-list" data-roadmap-list>${(state.milestones||[{title:"Nền tảng lõi",date:"2026-07",progress:100},{title:"AI & Media workspace",date:"2026-08",progress:82},{title:"Community & Learning",date:"2026-09",progress:35}]).map((item,index)=>`<article><span>${String(index+1).padStart(2,"0")}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.date)}</small><i><b style="width:${item.progress}%"></b></i></div><b>${item.progress}%</b></article>`).join("")}</div></section>
+          <section class="project-pane" data-project-pane="bugs"><div class="project-pane-heading"><div><span>Issue tracker</span><h5>Lỗi và rủi ro</h5></div><button class="interactive" type="button" data-project-add-bug>+ Báo lỗi</button></div><div class="bug-list" data-bug-list>${(state.bugs||[]).map((bug)=>`<article><span>${escapeHtml(bug.severity)}</span><div><strong>${escapeHtml(bug.title)}</strong><small>${escapeHtml(bug.status)} · ${escapeHtml(bug.time)}</small></div><button class="interactive" type="button" data-bug-resolve="${bug.id}">Xử lý</button></article>`).join("")||"<p>Không có lỗi đang theo dõi.</p>"}</div></section>
+          <section class="project-pane" data-project-pane="release"><div class="project-pane-heading"><div><span>Release notes</span><h5>Changelog dự án</h5></div><button class="interactive" type="button" data-project-add-release>+ Phiên bản</button></div><div class="release-list" data-release-list>${(state.releases||[{version:"v22",title:"Media Center workspace",date:"2026-07-11"},{version:"v21",title:"AI Center intelligent workspace",date:"2026-07-11"}]).map((item)=>`<article><b>${escapeHtml(item.version)}</b><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.date)}</span></div></article>`).join("")}</div></section>
+        </main>
+      </div>
+      <dialog class="project-dialog" data-project-dialog><form method="dialog"><button aria-label="Đóng">×</button></form><div><p class="section-kicker">Project editor</p><h5 data-project-dialog-title>Dự án mới</h5><label>Tên<input data-project-name></label><label>Mô tả<textarea rows="3" data-project-description></textarea></label><div><label>Trạng thái<select data-project-status><option>Đang phát triển</option><option>Đang thử nghiệm</option><option>Tạm dừng</option><option>Bản ổn định</option></select></label><label>Ưu tiên<select data-project-priority><option>Cao</option><option>Trung bình</option><option>Thấp</option></select></label></div><label>Deadline<input type="date" data-project-due></label><button class="button primary interactive" type="button" data-project-save>Lưu dự án</button></div></dialog>
+    </section>`;
+  };
+
+  const knowledgeCenterMarkup = () => {
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem("hh-knowledge-center") || "{}"); } catch { state = {}; }
+    const articles = state.articles || [{id:"deploy",title:"Deploy GitHub Pages và Vercel",category:"Hướng dẫn",tags:["github","vercel"],bookmark:true,updated:"2026-07-11",content:"# Deploy website HH\n\n## GitHub Pages\n- Push mã nguồn lên nhánh `main`.\n- Kiểm tra Pages trong Settings.\n\n## Vercel backend\nKết nối MongoDB và đặt biến môi trường trước khi deploy.\n\n> Luôn kiểm tra API sau khi phát hành."},{id:"ai-prompts",title:"Cấu trúc prompt AI hiệu quả",category:"AI",tags:["prompt","ai"],bookmark:false,updated:"2026-07-11",content:"# Prompt AI hiệu quả\n\nMột prompt tốt gồm **vai trò**, **mục tiêu**, **ngữ cảnh**, **ràng buộc** và **định dạng đầu ra**.\n\n## Checklist\n- Mục tiêu rõ ràng\n- Có ví dụ\n- Không bịa dữ kiện"}];
+    const active = articles.find((item)=>item.id===state.activeArticle)||articles[0];
+    return `<section class="knowledge-center-app" data-knowledge-center data-active-article="${escapeHtml(active?.id||"")}"><header class="wiki-hero"><div><p class="section-kicker">Knowledge Center 06</p><h4>Wiki kiến thức cá nhân</h4><span>Viết Markdown, tổ chức bài, tìm kiếm, tag, bookmark và liên kết kiến thức.</span></div><div class="wiki-stats"><span><b>${articles.length}</b>Bài viết</span><span><b>${new Set(articles.flatMap((item)=>item.tags||[])).size}</b>Tags</span><span><b>${articles.filter((item)=>item.bookmark).length}</b>Đã lưu</span></div></header><div class="wiki-toolbar"><label><span>Tìm toàn Wiki</span><input type="search" data-wiki-search placeholder="Tên bài, nội dung hoặc tag..."></label><div class="wiki-mode"><button class="interactive active" type="button" data-wiki-mode="split">Chia đôi</button><button class="interactive" type="button" data-wiki-mode="edit">Soạn thảo</button><button class="interactive" type="button" data-wiki-mode="preview">Xem bài</button></div><button class="button primary interactive" type="button" data-wiki-new>+ Bài mới</button></div><div class="wiki-layout"><aside class="wiki-sidebar"><div class="wiki-filter-row"><button class="interactive active" type="button" data-wiki-filter="all">Tất cả</button><button class="interactive" type="button" data-wiki-filter="bookmark">Đã lưu</button></div><div class="wiki-article-list" data-wiki-articles>${articles.map((item)=>`<button class="interactive ${item.id===active?.id?"active":""}" type="button" data-wiki-open="${item.id}"><span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.updated)} · ${(item.tags||[]).map((tag)=>`#${escapeHtml(tag)}`).join(" ")}</small></button>`).join("")}</div><section class="wiki-categories"><strong>Danh mục</strong>${[...new Set(articles.map((item)=>item.category))].map((category)=>`<button class="interactive" type="button" data-wiki-category="${escapeHtml(category)}"><span>▤</span>${escapeHtml(category)}<b>${articles.filter((item)=>item.category===category).length}</b></button>`).join("")}</section></aside><main class="wiki-editor" data-wiki-editor-wrap><div class="wiki-document-head"><div><input data-wiki-title value="${escapeHtml(active?.title||"")}" placeholder="Tiêu đề bài viết"><span>Cập nhật <b data-wiki-updated>${escapeHtml(active?.updated||"")}</b></span></div><div><button class="interactive ${active?.bookmark?"active":""}" type="button" data-wiki-bookmark>${active?.bookmark?"★":"☆"}</button><button class="interactive" type="button" data-wiki-export>Xuất MD</button><button class="button primary interactive" type="button" data-wiki-save>Lưu</button></div></div><div class="wiki-meta-fields"><label>Danh mục<input data-wiki-category-input value="${escapeHtml(active?.category||"Ghi chú")}"></label><label>Tags<input data-wiki-tags value="${escapeHtml((active?.tags||[]).join(", "))}" placeholder="ai, html, hướng dẫn"></label></div><div class="wiki-format-bar">${[["# ","H1"],["## ","H2"],["**text**","B"],["- ","List"],["> ","Quote"],["`code`","Code"],["[text](url)","Link"]].map(([value,label])=>`<button class="interactive" type="button" data-wiki-format="${escapeHtml(value)}">${label}</button>`).join("")}</div><div class="wiki-split"><textarea data-wiki-content spellcheck="true">${escapeHtml(active?.content||"")}</textarea><article class="wiki-preview" data-wiki-preview></article></div></main><aside class="wiki-inspector"><section><header><span>Mục lục</span><button class="interactive" type="button" data-wiki-copy-link>Link</button></header><nav data-wiki-toc><p>Đang tạo mục lục...</p></nav></section><section><header><span>Bài liên quan</span></header><div data-wiki-related>${articles.filter((item)=>item.id!==active?.id).slice(0,4).map((item)=>`<button class="interactive" type="button" data-wiki-open="${item.id}">${escapeHtml(item.title)}</button>`).join("")}</div></section><section class="wiki-doc-info"><span><b data-wiki-word-count>0</b> từ</span><span><b data-wiki-read-time>1</b> phút đọc</span><span><b data-wiki-heading-count>0</b> đề mục</span></section></aside></div></section>`;
+  };
+
   const moduleStudioMarkup = (module) => {
     const profile = profileFor(module);
     const stored = JSON.parse(localStorage.getItem(`${stateKey}:${module.id}:studio`) || "null") || {};
@@ -1289,7 +1329,7 @@ function initSuperPlatform() {
             </div>
           </div>
           <div class="module-inline-app" data-inline-app="${module.id}">
-            ${module.id === "command-center" ? commandCenterMarkup(module) : module.id === "ai-center" ? aiCenterMarkup(module) : module.id === "download-center" ? downloadCenterMarkup(module) : module.id === "media-center" ? mediaCenterMarkup(module) : moduleStudioMarkup(module)}
+            ${module.id === "command-center" ? commandCenterMarkup(module) : module.id === "ai-center" ? aiCenterMarkup(module) : module.id === "download-center" ? downloadCenterMarkup(module) : module.id === "media-center" ? mediaCenterMarkup(module) : module.id === "project-center" ? projectCenterMarkup(module) : module.id === "knowledge-center" ? knowledgeCenterMarkup(module) : moduleStudioMarkup(module)}
             <label>
               Dữ liệu dùng nhanh
               <textarea data-inline-input="${module.id}" rows="4" placeholder="Nhập yêu cầu cho ${escapeHtml(module.title)}..."></textarea>
@@ -1308,6 +1348,7 @@ function initSuperPlatform() {
     }).join("");
 
     if (visible.some((module) => module.id === "download-center")) checkDownloadService();
+    if (visible.some((module) => module.id === "knowledge-center")) updateWikiPreview();
     if (!selectedModule && modules.length) renderDetail(modules[0]);
   };
 
@@ -1635,7 +1676,68 @@ function initSuperPlatform() {
       const empty = panel?.querySelector("[data-media-empty]");
       if (empty) empty.hidden = visible > 0;
     }
+    if (event.target.matches("[data-project-progress]")) {
+      const panel = event.target.closest("[data-project-center]");
+      const value = Number(event.target.value);
+      const label = event.target.closest("label")?.querySelector("b"); if (label) label.textContent = `${value}%`;
+      const metric = panel?.querySelector("[data-project-progress-value]"); if (metric) metric.textContent = `${value}%`;
+    }
+    if (event.target.matches("[data-wiki-content]")) updateWikiPreview(event.target.closest("[data-knowledge-center]"));
+    if (event.target.matches("[data-wiki-search]")) {
+      const panel = event.target.closest("[data-knowledge-center]"); const query = event.target.value.toLowerCase();
+      panel?.querySelectorAll("[data-wiki-open]").forEach((button) => { if (button.closest("[data-wiki-articles]")) button.hidden = !button.textContent.toLowerCase().includes(query); });
+    }
   });
+
+  const readProjectState = () => {
+    try { return JSON.parse(localStorage.getItem("hh-project-center") || "{}"); } catch { return {}; }
+  };
+  const writeProjectState = (state, activity) => {
+    if (activity) state.activity = [`${new Date().toLocaleString("vi-VN")} · ${activity}`, ...(state.activity || [])].slice(0, 30);
+    localStorage.setItem("hh-project-center", JSON.stringify(state));
+  };
+  const ensureProjectState = () => {
+    const current = readProjectState();
+    if (!current.projects) current.projects = [
+      { id:"portfolio",name:"HH Neon Platform",status:"Đang phát triển",progress:82,priority:"Cao",due:"2026-08-01",description:"Website cá nhân, AI Center, Media Center và cộng đồng.",color:"#ff3bd1" },
+      { id:"script-ai",name:"Kịch bản AI",status:"Đang thử nghiệm",progress:68,priority:"Cao",due:"2026-08-15",description:"Công cụ viết và quản lý kịch bản đa nền tảng.",color:"#55f3ec" },
+      { id:"voice",name:"HH Voice Studio",status:"Bản ổn định",progress:94,priority:"Trung bình",due:"2026-07-30",description:"Text/SRT, chia part, voice trình duyệt và humanize.",color:"#f5ff67" }
+    ];
+    if (!current.tasks) current.tasks = [{id:"t1",title:"Hoàn thiện Project Center",column:"doing",priority:"Cao",project:"portfolio"},{id:"t2",title:"Kiểm tra giao diện mobile",column:"todo",priority:"Cao",project:"portfolio"},{id:"t3",title:"Nâng cấp AI Center",column:"done",priority:"Cao",project:"portfolio"},{id:"t4",title:"Viết changelog v22",column:"review",priority:"Trung bình",project:"portfolio"}];
+    return current;
+  };
+  const rerenderModule = (moduleId, tabName) => {
+    const scrollY = window.scrollY; render(); requestAnimationFrame(() => { window.scrollTo(0, scrollY); const panel = grid.querySelector(`[data-${moduleId}]`); if (tabName) panel?.querySelector(`[data-project-tab="${tabName}"]`)?.click(); });
+  };
+
+  const readWikiState = () => {
+    try { return JSON.parse(localStorage.getItem("hh-knowledge-center") || "{}"); } catch { return {}; }
+  };
+  const ensureWikiState = () => {
+    const state = readWikiState();
+    if (!state.articles) state.articles = [{id:"deploy",title:"Deploy GitHub Pages và Vercel",category:"Hướng dẫn",tags:["github","vercel"],bookmark:true,updated:"2026-07-11",content:"# Deploy website HH\n\n## GitHub Pages\n- Push mã nguồn lên nhánh `main`.\n- Kiểm tra Pages trong Settings.\n\n## Vercel backend\nKết nối MongoDB và đặt biến môi trường trước khi deploy.\n\n> Luôn kiểm tra API sau khi phát hành."},{id:"ai-prompts",title:"Cấu trúc prompt AI hiệu quả",category:"AI",tags:["prompt","ai"],bookmark:false,updated:"2026-07-11",content:"# Prompt AI hiệu quả\n\nMột prompt tốt gồm **vai trò**, **mục tiêu**, **ngữ cảnh**, **ràng buộc** và **định dạng đầu ra**.\n\n## Checklist\n- Mục tiêu rõ ràng\n- Có ví dụ\n- Không bịa dữ kiện"}];
+    return state;
+  };
+  const writeWikiState = (state) => localStorage.setItem("hh-knowledge-center", JSON.stringify(state));
+  const markdownToHtml = (source) => {
+    const lines = String(source || "").split("\n");
+    let inList = false; const html = [];
+    lines.forEach((raw) => {
+      let line = escapeHtml(raw);
+      line = line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      const heading = line.match(/^(#{1,3})\s+(.+)/);
+      if (heading) { if (inList) { html.push("</ul>"); inList=false; } const level=heading[1].length; const id=heading[2].replace(/<[^>]+>/g,"").toLowerCase().replace(/[^a-z0-9\u00C0-\u024f]+/g,"-"); html.push(`<h${level} id="${id}">${heading[2]}</h${level}>`); }
+      else if (/^-\s+/.test(line)) { if (!inList) { html.push("<ul>"); inList=true; } html.push(`<li>${line.replace(/^-\s+/,"")}</li>`); }
+      else { if (inList) { html.push("</ul>"); inList=false; } if (/^&gt;\s+/.test(line)) html.push(`<blockquote>${line.replace(/^&gt;\s+/,"")}</blockquote>`); else if (line.trim()) html.push(`<p>${line}</p>`); }
+    });
+    if (inList) html.push("</ul>"); return html.join("");
+  };
+  const updateWikiPreview = (panel = grid.querySelector("[data-knowledge-center]")) => {
+    if (!panel) return; const source = panel.querySelector("[data-wiki-content]")?.value || ""; const preview = panel.querySelector("[data-wiki-preview]"); if (preview) preview.innerHTML = markdownToHtml(source);
+    const words = source.trim() ? source.trim().split(/\s+/).length : 0; const headings = (source.match(/^#{1,3}\s+/gm)||[]).length;
+    const wordNode=panel.querySelector("[data-wiki-word-count]"); if(wordNode) wordNode.textContent=words; const readNode=panel.querySelector("[data-wiki-read-time]"); if(readNode) readNode.textContent=Math.max(1,Math.ceil(words/220)); const headingNode=panel.querySelector("[data-wiki-heading-count]"); if(headingNode) headingNode.textContent=headings;
+    const toc=panel.querySelector("[data-wiki-toc]"); if(toc) { const matches=[...source.matchAll(/^(#{1,3})\s+(.+)$/gm)]; toc.innerHTML=matches.map((match)=>`<a href="#${escapeHtml(match[2].toLowerCase().replace(/[^a-z0-9\u00C0-\u024f]+/g,"-"))}" style="--level:${match[1].length}">${escapeHtml(match[2])}</a>`).join("")||"<p>Chưa có đề mục.</p>"; }
+  };
 
   const mediaDefaults = () => [
     { id: "hh-ai-cover", title: "Kịch bản AI Studio", type: "image", category: "images", url: "assets/kich-ban-ai.png", source: "HH Projects", favorite: true },
@@ -1787,6 +1889,10 @@ function initSuperPlatform() {
   });
 
   grid.addEventListener("change", (event) => {
+    const projectSelect = event.target.closest("[data-project-select]");
+    if (projectSelect) { const state=ensureProjectState(); state.activeProject=projectSelect.value; writeProjectState(state,`Đã mở ${state.projects.find((item)=>item.id===state.activeProject)?.name||"dự án"}`); rerenderModule("project-center","overview"); return; }
+    const projectProgress = event.target.closest("[data-project-progress]");
+    if (projectProgress) { const panel=projectProgress.closest("[data-project-center]");const state=ensureProjectState();const item=state.projects.find((entry)=>entry.id===panel?.dataset.activeProject);if(item){item.progress=Number(projectProgress.value);writeProjectState(state,`Tiến độ ${item.name}: ${item.progress}%`);}return; }
     const mediaUpload = event.target.closest("[data-media-upload]");
     if (mediaUpload) {
       Array.from(mediaUpload.files || []).slice(0, 20).forEach((file) => {
@@ -1821,6 +1927,39 @@ function initSuperPlatform() {
   });
 
   grid.addEventListener("click", (event) => {
+    const project = event.target.closest("[data-project-center]");
+    if (project) {
+      const tab=event.target.closest("[data-project-tab]"); if(tab){project.querySelectorAll("[data-project-tab]").forEach((item)=>item.classList.toggle("active",item===tab));project.querySelectorAll("[data-project-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.projectPane===tab.dataset.projectTab));return;}
+      if(event.target.closest("[data-project-sort]")){const state=ensureProjectState();state.projects.sort((a,b)=>b.progress-a.progress);writeProjectState(state);rerenderModule("project-center","overview");return;}
+      const open=event.target.closest("[data-project-open]"); if(open){const state=ensureProjectState();state.activeProject=open.dataset.projectOpen;writeProjectState(state);rerenderModule("project-center","overview");return;}
+      const dialog=project.querySelector("[data-project-dialog]");
+      if(event.target.closest("[data-project-new]")){dialog?.removeAttribute("data-edit-id");["[data-project-name]","[data-project-description]","[data-project-due]"].forEach((selector)=>{const field=dialog?.querySelector(selector);if(field)field.value="";});dialog?.showModal();return;}
+      if(event.target.closest("[data-project-edit]")){const state=ensureProjectState();const item=state.projects.find((entry)=>entry.id===project.dataset.activeProject);if(item&&dialog){dialog.dataset.editId=item.id;dialog.querySelector("[data-project-name]").value=item.name;dialog.querySelector("[data-project-description]").value=item.description;dialog.querySelector("[data-project-status]").value=item.status;dialog.querySelector("[data-project-priority]").value=item.priority;dialog.querySelector("[data-project-due]").value=item.due;dialog.showModal();}return;}
+      if(event.target.closest("[data-project-save]")){const name=dialog?.querySelector("[data-project-name]")?.value.trim();if(!name)return dialog?.querySelector("[data-project-name]")?.focus();const state=ensureProjectState();const id=dialog.dataset.editId||`project-${Date.now()}`;const old=state.projects.find((item)=>item.id===id);const next={id,name,description:dialog.querySelector("[data-project-description]").value.trim(),status:dialog.querySelector("[data-project-status]").value,priority:dialog.querySelector("[data-project-priority]").value,due:dialog.querySelector("[data-project-due]").value,progress:old?.progress||0,color:old?.color||["#ff3bd1","#55f3ec","#f5ff67","#8f7cff"][state.projects.length%4]};state.projects=old?state.projects.map((item)=>item.id===id?next:item):[next,...state.projects];state.activeProject=id;writeProjectState(state,`${old?"Cập nhật":"Tạo"} dự án ${name}`);dialog.close();rerenderModule("project-center","overview");return;}
+      if(event.target.closest("[data-project-complete]")){const state=ensureProjectState();const item=state.projects.find((entry)=>entry.id===project.dataset.activeProject);if(item){item.progress=100;item.status="Hoàn tất";writeProjectState(state,`Hoàn tất ${item.name}`);rerenderModule("project-center","overview");}return;}
+      if(event.target.closest("[data-project-add-update]")){const text=window.prompt("Nội dung cập nhật:")?.trim();if(text){const state=ensureProjectState();writeProjectState(state,text);rerenderModule("project-center","overview");}return;}
+      if(event.target.closest("[data-project-add-task]")){const title=window.prompt("Tên nhiệm vụ mới:")?.trim();if(title){const state=ensureProjectState();state.tasks.push({id:`task-${Date.now()}`,title,column:"todo",priority:"Trung bình",project:project.dataset.activeProject});writeProjectState(state,`Thêm nhiệm vụ ${title}`);rerenderModule("project-center","board");}return;}
+      const move=event.target.closest("[data-task-move]");if(move){const state=ensureProjectState();const task=state.tasks.find((item)=>item.id===move.dataset.taskMove);const order=["todo","doing","review","done"];if(task)task.column=order[(order.indexOf(task.column)+1)%order.length];writeProjectState(state,`Chuyển nhiệm vụ ${task?.title}`);rerenderModule("project-center","board");return;}
+      const delTask=event.target.closest("[data-task-delete]");if(delTask){const state=ensureProjectState();state.tasks=state.tasks.filter((item)=>item.id!==delTask.dataset.taskDelete);writeProjectState(state,"Đã xóa nhiệm vụ");rerenderModule("project-center","board");return;}
+      if(event.target.closest("[data-project-add-milestone]")){const title=window.prompt("Tên cột mốc:")?.trim();if(title){const state=ensureProjectState();state.milestones=state.milestones||[];state.milestones.push({title,date:new Date().toISOString().slice(0,7),progress:0});writeProjectState(state,`Thêm cột mốc ${title}`);rerenderModule("project-center","roadmap");}return;}
+      if(event.target.closest("[data-project-add-bug]")){const title=window.prompt("Mô tả lỗi:")?.trim();if(title){const state=ensureProjectState();state.bugs=state.bugs||[];state.bugs.unshift({id:`bug-${Date.now()}`,title,severity:"Cao",status:"Đang mở",time:new Date().toLocaleDateString("vi-VN")});writeProjectState(state,`Báo lỗi ${title}`);rerenderModule("project-center","bugs");}return;}
+      const resolveBug=event.target.closest("[data-bug-resolve]");if(resolveBug){const state=ensureProjectState();const bug=(state.bugs||[]).find((item)=>item.id===resolveBug.dataset.bugResolve);if(bug)bug.status=bug.status==="Đã xử lý"?"Đang mở":"Đã xử lý";writeProjectState(state,`Cập nhật lỗi ${bug?.title}`);rerenderModule("project-center","bugs");return;}
+      if(event.target.closest("[data-project-add-release]")){const version=window.prompt("Phiên bản:","v23")?.trim();const title=version&&window.prompt("Tên bản phát hành:")?.trim();if(title){const state=ensureProjectState();state.releases=state.releases||[];state.releases.unshift({version,title,date:new Date().toISOString().slice(0,10)});writeProjectState(state,`Phát hành ${version}`);rerenderModule("project-center","release");}return;}
+    }
+    const wiki=event.target.closest("[data-knowledge-center]");
+    if(wiki){
+      const state=ensureWikiState();
+      const open=event.target.closest("[data-wiki-open]");if(open){state.activeArticle=open.dataset.wikiOpen;writeWikiState(state);rerenderModule("knowledge-center");return;}
+      const mode=event.target.closest("[data-wiki-mode]");if(mode){wiki.querySelectorAll("[data-wiki-mode]").forEach((item)=>item.classList.toggle("active",item===mode));const split=wiki.querySelector(".wiki-split");if(split)split.dataset.mode=mode.dataset.wikiMode;return;}
+      const filter=event.target.closest("[data-wiki-filter]");if(filter){wiki.querySelectorAll("[data-wiki-filter]").forEach((item)=>item.classList.toggle("active",item===filter));wiki.querySelectorAll("[data-wiki-articles] [data-wiki-open]").forEach((button)=>{const article=state.articles.find((item)=>item.id===button.dataset.wikiOpen);button.hidden=filter.dataset.wikiFilter==="bookmark"&&!article?.bookmark;});return;}
+      const category=event.target.closest("[data-wiki-category]");if(category){wiki.querySelectorAll("[data-wiki-articles] [data-wiki-open]").forEach((button)=>{const article=state.articles.find((item)=>item.id===button.dataset.wikiOpen);button.hidden=article?.category!==category.dataset.wikiCategory;});return;}
+      if(event.target.closest("[data-wiki-new]")){const item={id:`article-${Date.now()}`,title:"Bài viết chưa đặt tên",category:"Ghi chú",tags:[],bookmark:false,updated:new Date().toISOString().slice(0,10),content:"# Bài viết mới\n\nBắt đầu ghi lại kiến thức tại đây."};state.articles.unshift(item);state.activeArticle=item.id;writeWikiState(state);rerenderModule("knowledge-center");return;}
+      if(event.target.closest("[data-wiki-save]")){const item=state.articles.find((entry)=>entry.id===wiki.dataset.activeArticle);if(item){item.title=wiki.querySelector("[data-wiki-title]").value.trim()||"Không có tiêu đề";item.category=wiki.querySelector("[data-wiki-category-input]").value.trim()||"Ghi chú";item.tags=wiki.querySelector("[data-wiki-tags]").value.split(",").map((tag)=>tag.trim()).filter(Boolean);item.content=wiki.querySelector("[data-wiki-content]").value;item.updated=new Date().toISOString().slice(0,10);writeWikiState(state);rerenderModule("knowledge-center");}return;}
+      if(event.target.closest("[data-wiki-bookmark]")){const item=state.articles.find((entry)=>entry.id===wiki.dataset.activeArticle);if(item){item.bookmark=!item.bookmark;writeWikiState(state);event.target.closest("[data-wiki-bookmark]").textContent=item.bookmark?"★":"☆";event.target.closest("[data-wiki-bookmark]").classList.toggle("active",item.bookmark);}return;}
+      const format=event.target.closest("[data-wiki-format]");if(format){const textarea=wiki.querySelector("[data-wiki-content]");const value=format.dataset.wikiFormat;const start=textarea.selectionStart;const end=textarea.selectionEnd;const selected=textarea.value.slice(start,end);const insertion=value.includes("text")?value.replace("text",selected||"text"):value+(selected||"");textarea.setRangeText(insertion,start,end,"end");textarea.focus();updateWikiPreview(wiki);return;}
+      if(event.target.closest("[data-wiki-export]")){const item=state.articles.find((entry)=>entry.id===wiki.dataset.activeArticle);downloadText(`${(item?.title||"wiki").replace(/[^a-z0-9]+/gi,"-").toLowerCase()}.md`,wiki.querySelector("[data-wiki-content]").value,"text/markdown;charset=utf-8");return;}
+      if(event.target.closest("[data-wiki-copy-link]")){navigator.clipboard.writeText(`${location.href.split("#")[0]}#wiki-${wiki.dataset.activeArticle}`);return;}
+    }
     const media = event.target.closest("[data-media-center]");
     if (media) {
       const filterButton = event.target.closest("[data-media-filter]");
