@@ -1551,6 +1551,16 @@ function initSuperPlatform() {
     if (stat) stat.textContent = `${progress}%`;
   };
 
+  const openModuleWorkspace = (module, feature = "") => {
+    const card = grid.querySelector(`[data-module-id="${CSS.escape(module.id)}"]`);
+    const input = card?.querySelector(`[data-inline-input="${CSS.escape(module.id)}"]`);
+    const output = card?.querySelector(`[data-inline-output="${CSS.escape(module.id)}"]`);
+    if (input) input.value = `${feature ? `${feature}: ` : ""}${input.value.trim() || profileFor(module).sample}`;
+    if (output) output.textContent = moduleDemoText(module, input?.value || feature);
+    card?.querySelector(`[data-inline-app="${CSS.escape(module.id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    logModuleActivity(module.id, `${feature || "Workspace"} đã sẵn sàng để thao tác`);
+  };
+
   grid.addEventListener("click", (event) => {
     const favoriteButton = event.target.closest("[data-module-fav]");
     if (favoriteButton) {
@@ -1560,6 +1570,7 @@ function initSuperPlatform() {
       return;
     }
 
+    if (event.target.closest("button, input, textarea, select, a, label")) return;
     const card = event.target.closest("[data-module-id]");
     if (!card) return;
     renderDetail(modules.find((item) => item.id === card.dataset.moduleId));
@@ -1587,12 +1598,8 @@ function initSuperPlatform() {
       return;
     }
     if (featureButton) {
-      renderDetail(module);
       if (actionMode) actionMode.value = featureButton.dataset.inlineFeature;
-      const nextInput = `${featureButton.dataset.inlineFeature}: ${input?.value || profileFor(module).sample}`;
-      if (input && !input.value.trim()) input.value = nextInput;
-      if (output) output.textContent = moduleDemoText(module, input?.value || nextInput);
-      logModuleActivity(moduleId, `Chọn chức năng ${featureButton.dataset.inlineFeature}`);
+      openModuleWorkspace(module, featureButton.dataset.inlineFeature);
       return;
     }
     if (runButton) {
@@ -1626,9 +1633,7 @@ function initSuperPlatform() {
       return;
     }
     if (openButton) {
-      renderDetail(module);
-      logModuleActivity(moduleId, "Mở workspace chi tiết");
-      byId("moduleDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      openModuleWorkspace(module, "Workspace");
     }
   });
 
@@ -2407,9 +2412,7 @@ function initSuperPlatform() {
     const button = event.target.closest("[data-module-tool]");
     if (!button || !selectedModule) return;
     if (actionMode) actionMode.value = button.dataset.moduleTool;
-    if (demoOutput) {
-      demoOutput.textContent = moduleDemoText(selectedModule, demoInput?.value || "");
-    }
+    openModuleWorkspace(selectedModule, button.dataset.moduleTool);
   });
 
   const platformRequest = async (path, options = {}) => {
