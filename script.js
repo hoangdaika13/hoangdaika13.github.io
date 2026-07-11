@@ -3961,11 +3961,17 @@ function initAppShell() {
   const setUser = () => {
     const name = userName();
     const initials = name.split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase() || "HH";
-    byId("shellUserName").textContent = name;
-    byId("shellUserInitials").textContent = initials;
-    byId("shellMenuName").textContent = name;
-    byId("shellMenuInitials").textContent = initials;
-    byId("dashboardGreeting").textContent = `Chào mừng trở lại, ${name}`;
+    const values = {
+      shellUserName: name,
+      shellUserInitials: initials,
+      shellMenuName: name,
+      shellMenuInitials: initials,
+      dashboardGreeting: `Chào mừng trở lại, ${name}`
+    };
+    Object.entries(values).forEach(([id, value]) => {
+      const target = byId(id);
+      if (target) target.textContent = value;
+    });
   };
   const renderNavigation = () => {
     const route = activeRoute;
@@ -3990,8 +3996,10 @@ function initAppShell() {
     const recentItems = (recent.length ? recent : ["ai-center", "project-center", "media-center"]).map(moduleById).filter(Boolean);
     const recommended = (favorites.length ? favorites : ["ai-center", "creator-studio", "ai-automation"]).map(moduleById).filter(Boolean);
     const makeItem = (item) => `<button type="button" data-app-route="${routeForModule(item.id)}"><span>${item.group === "core" ? "Tool" : "More"}</span><strong>${item.title}</strong><small>${item.description}</small><b>›</b></button>`;
-    byId("dashboardRecentWork").innerHTML = recentItems.map(makeItem).join("") || "<p>Chưa có công việc gần đây.</p>";
-    byId("dashboardRecommended").innerHTML = recommended.map(makeItem).join("") || modules.slice(0, 3).map(makeItem).join("");
+    const recentWork = byId("dashboardRecentWork");
+    const recommendedList = byId("dashboardRecommended");
+    if (recentWork) recentWork.innerHTML = recentItems.map(makeItem).join("") || "<p>Chưa có công việc gần đây.</p>";
+    if (recommendedList) recommendedList.innerHTML = recommended.map(makeItem).join("") || modules.slice(0, 3).map(makeItem).join("");
   };
   const mountPlatform = (activeModuleId = "") => {
     workspace.replaceChildren(platform);
@@ -4202,14 +4210,20 @@ function initAppShell() {
   });
   paletteInput?.addEventListener("input", () => renderPalette(paletteInput.value));
   window.addEventListener("hashchange", renderRoute);
+  window.addEventListener("hh:modules-ready", () => {
+    renderNavigation();
+    renderRoute();
+  });
   window.addEventListener("hh:auth-change", () => { setShellVisibility(); setUser(); });
   const initial = stored();
   const compactOnMobile = window.matchMedia("(max-width: 720px)").matches;
   document.body.classList.toggle("app-sidebar-collapsed", compactOnMobile || Boolean(initial.collapsed));
   document.body.classList.toggle("app-advanced-mode", Boolean(initial.advanced));
   const updateClock = () => {
-    byId("shellClock").textContent = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-    byId("shellDate").textContent = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
+    const clock = byId("shellClock");
+    const date = byId("shellDate");
+    if (clock) clock.textContent = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    if (date) date.textContent = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
   };
   updateClock();
   setInterval(updateClock, 60000);
