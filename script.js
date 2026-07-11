@@ -3919,9 +3919,14 @@ function initAppShell() {
   const palette = byId("commandPalette");
   const paletteInput = byId("commandPaletteInput");
   const paletteResults = byId("commandPaletteResults");
+  const notificationDrawer = byId("notificationDrawer");
+  const helpDrawer = byId("helpDrawer");
+  const drawerBackdrop = document.querySelector(".app-drawer-backdrop");
+  const userMenu = byId("appUserMenu");
   if (!shell || !workspace || !navigation || !platform) return;
 
   const stateKey = "hh.app-shell.v1";
+  const localShellPreview = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSearchParams(location.search).has("shell-preview");
   const stored = () => {
     try { return JSON.parse(localStorage.getItem(stateKey) || "{}"); } catch { return {}; }
   };
@@ -3945,9 +3950,10 @@ function initAppShell() {
   const userName = () => {
     try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}").name || "Tài khoản"; } catch { return "Tài khoản"; }
   };
-  const isUnlocked = () => document.body.classList.contains("auth-unlocked");
+  const isUnlocked = () => localShellPreview || document.body.classList.contains("auth-unlocked");
   const setShellVisibility = () => {
     const unlocked = isUnlocked();
+    if (localShellPreview) document.body.classList.add("auth-unlocked");
     shell.hidden = !unlocked;
     document.body.classList.toggle("app-shell-enabled", unlocked);
     if (unlocked) renderRoute();
@@ -3957,6 +3963,8 @@ function initAppShell() {
     const initials = name.split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase() || "HH";
     byId("shellUserName").textContent = name;
     byId("shellUserInitials").textContent = initials;
+    byId("shellMenuName").textContent = name;
+    byId("shellMenuInitials").textContent = initials;
     byId("dashboardGreeting").textContent = `Chào mừng trở lại, ${name}`;
   };
   const renderNavigation = () => {
@@ -3966,7 +3974,8 @@ function initAppShell() {
       const submenu = group.items.map((id) => {
         const module = moduleById(id);
         if (!module) return "";
-        return `<button class="app-sidebar__subitem" type="button" data-app-route="${routeForModule(id)}"><span>${module.title}</span></button>`;
+        const moduleRoute = routeForModule(id);
+        return `<button class="app-sidebar__subitem ${route === moduleRoute ? "is-active" : ""}" type="button" data-app-route="${moduleRoute}" ${route === moduleRoute ? "aria-current=page" : ""}><span>${module.title}</span></button>`;
       }).join("");
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}">
         <button class="app-sidebar__item ${expanded ? "is-active" : ""}" type="button" data-app-route="${group.route}" aria-expanded="${expanded}"><span>${group.icon}</span><b>${group.label}</b><i>›</i></button>
@@ -4022,6 +4031,7 @@ function initAppShell() {
     activeRoute = route;
     setUser();
     renderNavigation();
+    updateMobileNavigation();
     const parts = route.split("/").filter(Boolean);
     const possibleId = parts.at(-1);
     const module = moduleById(possibleId);
@@ -4065,10 +4075,50 @@ function initAppShell() {
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
     const results = searchItems().filter((item) => !normalized || item.key.toLowerCase().includes(normalized)).slice(0, 12);
-    paletteResults.innerHTML = results.length ? results.map((item) => `<button type="button" role="option" data-app-route="${item.route}"><span>${item.type}</span><div><strong>${item.title}</strong><small>${item.description}</small></div><b>↵</b></button>`).join("") : "<p>Không tìm thấy công cụ hoặc hướng dẫn phù hợp.</p>";
+    paletteResults.innerHTML = results.length ? results.map((item, index) => `<button type="button" role="option" aria-selected="${index === 0}" class="${index === 0 ? "is-selected" : ""}" data-app-route="${item.route}"><span>${item.type}</span><div><strong>${item.title}</strong><small>${item.description}</small></div><b>↵</b></button>`).join("") : "<p>Không tìm thấy công cụ hoặc hướng dẫn phù hợp.</p>";
   };
   const openPalette = () => { palette.showModal(); renderPalette(); requestAnimationFrame(() => paletteInput.focus()); };
   const closePalette = () => palette.open && palette.close();
+  let drawerTrigger = null;
+  const closeOverlays = ({ restoreFocus = true } = {}) => {
+    [notificationDrawer, helpDrawer].forEach((drawer) => {
+      drawer?.classList.remove("is-open");
+      drawer?.setAttribute("aria-hidden", "true");
+    });
+    userMenu?.classList.remove("is-open");
+    userMenu?.setAttribute("aria-hidden", "true");
+    document.querySelectorAll("[data-notification-toggle], [data-help-toggle], [data-user-menu-toggle]").forEach((button) => button.setAttribute("aria-expanded", "false"));
+    if (drawerBackdrop) drawerBackdrop.hidden = true;
+    if (restoreFocus) drawerTrigger?.focus();
+    drawerTrigger = null;
+  };
+  const openDrawer = (drawer, trigger) => {
+    closeOverlays({ restoreFocus: false });
+    drawerTrigger = trigger;
+    drawer?.classList.add("is-open");
+    drawer?.setAttribute("aria-hidden", "false");
+    trigger?.setAttribute("aria-expanded", "true");
+    if (drawerBackdrop) drawerBackdrop.hidden = false;
+    requestAnimationFrame(() => drawer?.querySelector("button, input")?.focus());
+  };
+  const toggleUserMenu = (trigger) => {
+    const opening = !userMenu?.classList.contains("is-open");
+    closeOverlays({ restoreFocus: false });
+    if (!opening || !userMenu) return;
+    drawerTrigger = trigger;
+    userMenu.classList.add("is-open");
+    userMenu.setAttribute("aria-hidden", "false");
+    trigger?.setAttribute("aria-expanded", "true");
+    requestAnimationFrame(() => userMenu.querySelector("[role=menuitem]")?.focus());
+  };
+  const updateMobileNavigation = () => {
+    document.querySelectorAll(".app-mobile-nav [data-app-route]").forEach((button) => {
+      const target = button.dataset.appRoute;
+      const active = target === "/home" ? activeRoute === target : activeRoute === target || activeRoute.startsWith(`${target}/`);
+      button.classList.toggle("is-active", active);
+      if (active) button.setAttribute("aria-current", "page"); else button.removeAttribute("aria-current");
+    });
+  };
 
   document.addEventListener("click", (event) => {
     const routeButton = event.target.closest("[data-app-route]");
@@ -4081,6 +4131,7 @@ function initAppShell() {
           saveState({ collapsed: true });
         }
         closePalette();
+        closeOverlays({ restoreFocus: false });
       }
       return;
     }
@@ -4093,6 +4144,18 @@ function initAppShell() {
       return;
     }
     if (event.target.closest("[data-command-open]")) { openPalette(); return; }
+    const notificationToggle = event.target.closest("[data-notification-toggle]");
+    if (notificationToggle) { openDrawer(notificationDrawer, notificationToggle); return; }
+    const helpToggle = event.target.closest("[data-help-toggle]");
+    if (helpToggle) { openDrawer(helpDrawer, helpToggle); return; }
+    const userToggle = event.target.closest("[data-user-menu-toggle]");
+    if (userToggle) { toggleUserMenu(userToggle); return; }
+    if (event.target.closest("[data-drawer-close]")) { closeOverlays(); return; }
+    if (event.target.closest("[data-shell-logout]")) {
+      closeOverlays({ restoreFocus: false });
+      byId("logoutButton")?.click();
+      return;
+    }
     const favorite = event.target.closest("[data-shell-favorite]");
     if (favorite) {
       let favorites = [];
@@ -4109,7 +4172,9 @@ function initAppShell() {
       legacyMain.hidden = false;
       platform.hidden = false;
       location.hash = "#about";
+      return;
     }
+    if (userMenu?.classList.contains("is-open") && !event.target.closest("#appUserMenu")) closeOverlays({ restoreFocus: false });
   });
   document.addEventListener("change", (event) => {
     const setting = event.target.closest("[data-shell-setting]");
@@ -4121,7 +4186,19 @@ function initAppShell() {
   });
   document.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openPalette(); }
-    if (event.key === "Escape") closePalette();
+    if (event.key === "Escape") { closePalette(); closeOverlays(); }
+    if (palette?.open && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {
+      const options = [...paletteResults.querySelectorAll("[role=option]")];
+      if (!options.length) return;
+      event.preventDefault();
+      const current = Math.max(0, options.findIndex((option) => option.classList.contains("is-selected")));
+      const next = event.key === "ArrowDown" ? (current + 1) % options.length : event.key === "ArrowUp" ? (current - 1 + options.length) % options.length : current;
+      options.forEach((option, index) => {
+        option.classList.toggle("is-selected", index === next);
+        option.setAttribute("aria-selected", String(index === next));
+      });
+      if (event.key === "Enter") options[current].click(); else options[next].scrollIntoView({ block: "nearest" });
+    }
   });
   paletteInput?.addEventListener("input", () => renderPalette(paletteInput.value));
   window.addEventListener("hashchange", renderRoute);

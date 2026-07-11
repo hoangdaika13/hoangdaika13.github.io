@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=27">
+  <link rel="stylesheet" href="app-shell.css?v=28">
   <script src="config.js?v=3"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
@@ -66,9 +66,9 @@
       <button class="app-global-search" type="button" data-command-open aria-haspopup="dialog"><span>⌕</span><span>Tìm công cụ, chức năng, dự án hoặc hướng dẫn...</span><kbd>Ctrl K</kbd></button>
       <div class="app-header__actions">
         <button class="app-action-button" type="button" data-app-route="/create" title="Tạo mới">＋<span>Tạo mới</span></button>
-        <button class="app-icon-button" type="button" data-app-route="/learn" aria-label="Trợ giúp">?</button>
-        <button class="app-icon-button" type="button" data-app-route="/communication/notifications" aria-label="Thông báo">♢</button>
-        <button class="app-user-button" type="button" data-app-route="/settings"><span id="shellUserInitials">HH</span><strong id="shellUserName">Tài khoản</strong></button>
+        <button class="app-icon-button" type="button" data-help-toggle aria-label="Mở trợ giúp" title="Trợ giúp">?</button>
+        <button class="app-icon-button app-notification-button" type="button" data-notification-toggle aria-label="Mở thông báo" title="Thông báo"><span aria-hidden="true">◇</span><i aria-hidden="true"></i></button>
+        <button class="app-user-button" type="button" data-user-menu-toggle aria-haspopup="menu" aria-expanded="false"><span id="shellUserInitials">HH</span><strong id="shellUserName">Tài khoản</strong><i aria-hidden="true">⌄</i></button>
       </div>
     </header>
 
@@ -103,6 +103,7 @@
             <div class="dashboard-grid">
               <section class="dashboard-panel"><header><div><span>Tiếp tục công việc</span><strong>Dự án và bản nháp gần đây</strong></div><button type="button" data-app-route="/work/project-center">Mở dự án</button></header><div id="dashboardRecentWork" class="dashboard-list"></div></section>
               <section class="dashboard-panel"><header><div><span>Công cụ thường dùng</span><strong>Gợi ý dành cho bạn</strong></div><button type="button" data-app-route="/tools">Tất cả công cụ</button></header><div id="dashboardRecommended" class="dashboard-list"></div></section>
+              <section class="dashboard-panel dashboard-panel--activity"><header><div><span>Trạng thái hệ thống</span><strong>Sẵn sàng làm việc</strong></div><span class="app-status-badge">Hoạt động</span></header><div class="dashboard-status-grid"><div><span>API</span><strong>Online</strong></div><div><span>Đồng bộ</span><strong>Tự động</strong></div><div><span>Workspace</span><strong>37 module</strong></div></div></section>
               <section class="dashboard-panel dashboard-panel--guide"><header><div><span>Hướng dẫn nhanh</span><strong>Hoàn thành bước đầu tiên</strong></div></header><ol><li>Chọn một công cụ trong nhóm Sáng tạo.</li><li>Nhập ý tưởng hoặc nội dung nguồn.</li><li>Lưu hoặc xuất kết quả khi hoàn tất.</li></ol></section>
             </div>
           </section>
@@ -115,6 +116,43 @@
     <div class="command-palette__header"><span>⌕</span><input id="commandPaletteInput" type="search" placeholder="Tìm công cụ, chức năng, dự án hoặc hướng dẫn..." autocomplete="off"><kbd>Esc</kbd></div>
     <div class="command-palette__results" id="commandPaletteResults" role="listbox"></div>
   </dialog>
+
+  <aside class="app-drawer" id="notificationDrawer" aria-label="Thông báo" aria-hidden="true">
+    <header><div><p>Trung tâm</p><h2>Thông báo</h2></div><button class="app-icon-button" type="button" data-drawer-close aria-label="Đóng thông báo">×</button></header>
+    <div class="app-drawer__toolbar"><button type="button" class="is-active">Tất cả</button><button type="button">Chưa đọc</button><button type="button" data-app-route="/communication/notification-center">Cài đặt</button></div>
+    <div class="app-drawer__content">
+      <article class="app-notice app-notice--new"><span>HH</span><div><strong>Workspace đã sẵn sàng</strong><p>Toàn bộ công cụ và dự án của bạn có thể mở từ thanh điều hướng.</p><time>Vừa xong</time></div></article>
+      <article class="app-notice"><span>✓</span><div><strong>Dữ liệu được lưu an toàn</strong><p>Cài đặt cá nhân trên thiết bị đã được đồng bộ.</p><time>Hôm nay</time></div></article>
+    </div>
+  </aside>
+
+  <aside class="app-drawer app-drawer--help" id="helpDrawer" aria-label="Trợ giúp" aria-hidden="true">
+    <header><div><p>Hỗ trợ</p><h2>Tôi có thể giúp gì?</h2></div><button class="app-icon-button" type="button" data-drawer-close aria-label="Đóng trợ giúp">×</button></header>
+    <div class="app-drawer__content">
+      <label class="app-help-search"><span>Tìm trong hướng dẫn</span><input type="search" placeholder="Nhập nội dung cần tìm..."></label>
+      <button class="app-help-link" type="button" data-app-route="/learn/learning-center"><strong>Bắt đầu sử dụng</strong><span>Làm quen với workspace và công cụ ›</span></button>
+      <button class="app-help-link" type="button" data-app-route="/learn/knowledge-center"><strong>Kho kiến thức</strong><span>Tìm bài viết và hướng dẫn chi tiết ›</span></button>
+      <button class="app-help-link" type="button" data-app-route="/communication/community"><strong>Hỏi cộng đồng</strong><span>Trao đổi trực tiếp với thành viên ›</span></button>
+    </div>
+  </aside>
+
+  <div class="app-user-menu" id="appUserMenu" role="menu" aria-hidden="true">
+    <div class="app-user-menu__profile"><span id="shellMenuInitials">HH</span><div><strong id="shellMenuName">Tài khoản</strong><small>Thành viên HH Platform</small></div></div>
+    <button type="button" role="menuitem" data-app-route="/settings/user-dashboard">Hồ sơ cá nhân <span>›</span></button>
+    <button type="button" role="menuitem" data-app-route="/settings">Cài đặt workspace <span>›</span></button>
+    <button type="button" role="menuitem" data-app-route="/settings/security-center">Bảo mật tài khoản <span>›</span></button>
+    <button type="button" role="menuitem" data-shell-logout>Đăng xuất <span>↗</span></button>
+  </div>
+
+  <div class="app-drawer-backdrop" data-drawer-close hidden></div>
+
+  <nav class="app-mobile-nav" aria-label="Điều hướng di động">
+    <button type="button" data-app-route="/home"><span>⌂</span>Trang chủ</button>
+    <button type="button" data-app-route="/tools"><span>⌕</span>Công cụ</button>
+    <button class="app-mobile-nav__create" type="button" data-app-route="/create" aria-label="Tạo mới"><span>＋</span></button>
+    <button type="button" data-app-route="/recent"><span>◷</span>Gần đây</button>
+    <button type="button" data-user-menu-toggle><span>○</span>Tài khoản</button>
+  </nav>
 
   <header class="site-header neon-header">
     <a class="brand" href="#top" aria-label="Về đầu trang">
@@ -750,6 +788,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=27"></script>
+  <script src="script.js?v=28"></script>
 </body>
 </html>
