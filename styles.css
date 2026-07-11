@@ -4665,6 +4665,12 @@ footer p {
   filter: blur(10px) brightness(.45);
 }
 
+/* Keep the sign-in screen light: animated visuals begin after authentication. */
+.home-neon.auth-locked .ambient-canvas,
+.home-neon.auth-locked .cursor-glow {
+  display: none;
+}
+
 .home-neon.auth-unlocked .auth-gate {
   opacity: 0;
   pointer-events: none;

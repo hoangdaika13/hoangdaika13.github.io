@@ -4230,22 +4230,39 @@ function initAppShell() {
   setShellVisibility();
 }
 
+// The platform workspaces create thousands of DOM nodes.  They used to be
+// rendered behind the sign-in gate, which made the first visit feel frozen on
+// desktop computers.  Start optional, authenticated features only after a
+// verified session is available.
+function initAfterAuthentication(initializer) {
+  let initialized = false;
+  const start = () => {
+    if (initialized || !document.body.classList.contains("auth-unlocked")) return;
+    initialized = true;
+    initializer();
+  };
+  window.addEventListener("hh:auth-change", start);
+  start();
+}
+
 resizeCanvas();
-drawParticles();
 updateScrollMeter();
 initReveal();
 initTheme();
-initHomeNeonInteractions();
 initVoteStats();
 initRealtimeAuth();
-initPlatformLivebar();
-initSuperPlatform();
-initCreatorWorkspace();
-initCommunityChatV2();
-initMusicPlayer();
-initMiniTabs();
-initTool();
 initAppShell();
+initAfterAuthentication(() => {
+  drawParticles();
+  initHomeNeonInteractions();
+  initPlatformLivebar();
+  initSuperPlatform();
+  initCreatorWorkspace();
+  initCommunityChatV2();
+  initMusicPlayer();
+  initMiniTabs();
+  initTool();
+});
 
 window.addEventListener("resize", resizeCanvas);
 window.addEventListener("scroll", updateScrollMeter, { passive: true });
