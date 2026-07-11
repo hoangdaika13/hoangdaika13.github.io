@@ -468,6 +468,56 @@ function initPublicPresence() {
   document.addEventListener("visibilitychange", () => { if (!document.hidden) sendPresence(); });
 }
 
+function initPublicAuthPanel() {
+  const gate = byId("authGate");
+  const openButton = byId("authOpenButton");
+  const loginForm = byId("gateLoginForm");
+  const registerForm = byId("gateRegisterForm");
+  const status = byId("authGateStatus");
+  if (!gate || !openButton || !loginForm || !registerForm) return;
+
+  const setStatus = (message) => { if (status) status.textContent = message; };
+  const close = () => {
+    document.body.classList.remove("auth-panel-open");
+    gate.setAttribute("aria-hidden", "true");
+  };
+  openButton.addEventListener("click", () => {
+    document.body.classList.add("auth-panel-open");
+    gate.setAttribute("aria-hidden", "false");
+    loginForm.querySelector("input[name=email]")?.focus();
+  });
+  gate.querySelector("[data-auth-close]")?.addEventListener("click", close);
+
+  const authenticate = async (path, payload) => {
+    if (!REALTIME_URL) throw new Error("Backend đăng nhập chưa được cấu hình.");
+    const response = await fetch(`${REALTIME_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Không thể đăng nhập.");
+    localStorage.setItem("hh-auth-token", data.token);
+    localStorage.setItem("hh-auth-user", JSON.stringify(data.user || {}));
+    localStorage.setItem("hh-chat-last-name", data.user?.name || data.user?.email || "Thành viên HH");
+    window.dispatchEvent(new CustomEvent("hh:auth-change", { detail: { user: data.user, token: data.token } }));
+    close();
+    location.reload();
+  };
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = new FormData(loginForm);
+    try { setStatus("Đang đăng nhập..."); await authenticate("/api/auth/login", { email: form.get("email"), password: form.get("password") }); }
+    catch (error) { setStatus(error.message); }
+  });
+  registerForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = new FormData(registerForm);
+    try { setStatus("Đang tạo tài khoản..."); await authenticate("/api/auth/register", { name: form.get("name"), email: form.get("email"), password: form.get("password"), consent: form.get("consent") === "on" }); }
+    catch (error) { setStatus(error.message); }
+  });
+}
+
 function initRealtimeAuth() {
   if (!document.body.classList.contains("home-neon")) return;
   const status = byId("authStatus");
@@ -4295,6 +4345,7 @@ initTheme();
 initVoteStats();
 initPublicPresence();
 initRealtimeAuth();
+initPublicAuthPanel();
 initAppShell();
 initPlatformOnDemand(() => {
   drawParticles();
