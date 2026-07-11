@@ -546,6 +546,7 @@ function initRealtimeAuth() {
   }
 
   const params = new URLSearchParams(location.search);
+  const oauthError = params.get("authError");
   if (params.get("authToken")) {
     token = params.get("authToken");
     localStorage.setItem("hh-auth-token", token);
@@ -603,6 +604,8 @@ function initRealtimeAuth() {
   const renderAuth = () => {
     if (user) {
       setStatus(`Đã đăng nhập: ${user.name || user.email}`);
+    } else if (oauthError) {
+      setStatus(oauthError);
     } else if (token && REALTIME_URL) {
       setStatus("Đang kiểm tra tài khoản...");
     } else {
