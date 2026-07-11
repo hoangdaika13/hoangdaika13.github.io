@@ -1455,7 +1455,7 @@ function initSuperPlatform() {
     if (!status) return;
     if (!REALTIME_URL) { status.textContent = "Chưa kết nối"; return; }
     try {
-      const response = await fetch(`${REALTIME_URL}/api/downloads/resolve`, { cache: "no-store" });
+      const response = await fetch(`${REALTIME_URL}/api/modules/download-center/actions`, { cache: "no-store" });
       const data = await response.json();
       status.textContent = data.configured ? "Sẵn sàng" : "Chờ cấu hình";
       status.closest(".downloader-live")?.classList.toggle("ready", Boolean(data.configured));
@@ -1479,7 +1479,7 @@ function initSuperPlatform() {
     try {
       if (!REALTIME_URL) throw new Error("Backend chưa được cấu hình.");
       const token = localStorage.getItem("hh-auth-token") || "";
-      const response = await fetch(`${REALTIME_URL}/api/downloads/resolve`, {
+      const response = await fetch(`${REALTIME_URL}/api/modules/download-center/actions`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
