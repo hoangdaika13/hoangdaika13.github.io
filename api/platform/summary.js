@@ -33,7 +33,27 @@ module.exports = async function handler(req, res) {
       db.collection("presence").countDocuments({ lastSeenAt: { $gte: activeSince } }),
       db.collection("presence").countDocuments({ lastSeenAt: { $gte: activeSince }, kind: "registered" })
     ]);
+    const activePresence = await db.collection("presence")
+      .find({ lastSeenAt: { $gte: activeSince } })
+      .sort({ lastSeenAt: -1 })
+      .limit(50)
+      .toArray();
+    const userIds = activePresence.filter((item) => item.userId).map((item) => item.userId);
+    const activeUsers = userIds.length
+      ? await db.collection("users").find({ _id: { $in: userIds } }, { projection: { name: 1, email: 1 } }).toArray()
+      : [];
+    const userById = new Map(activeUsers.map((item) => [String(item._id), item]));
+    const activeVisitors = activePresence.map((item) => {
+      const profile = item.userId ? userById.get(String(item.userId)) : null;
+      return {
+        kind: item.kind === "registered" ? "registered" : "guest",
+        name: profile?.name || (item.kind === "registered" ? "Tài khoản đã đăng nhập" : "Khách ẩn danh"),
+        email: profile?.email || "",
+        page: item.page || "/",
+        lastSeenAt: item.lastSeenAt
+      };
+    });
     const recentEvents = await db.collection("events").find({}).sort({ createdAt: -1 }).limit(12).project({ type: 1, moduleId: 1, createdAt: 1 }).toArray();
-    return res.status(200).json({ ok: true, counts, audience: { registeredUsers: counts.users || 0, onlineVisitors, onlineRegistered, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000 }, recentEvents, checkedAt: new Date() });
+    return res.status(200).json({ ok: true, counts, audience: { registeredUsers: counts.users || 0, onlineVisitors, onlineRegistered, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, activeVisitors }, recentEvents, checkedAt: new Date() });
   });
 };
