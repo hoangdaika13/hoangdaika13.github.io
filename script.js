@@ -456,7 +456,7 @@ function initPublicPresence() {
   const sendPresence = () => {
     if (document.hidden) return;
     const token = localStorage.getItem("hh-auth-token") || "";
-    fetch(`${REALTIME_URL}/api/platform/presence`, {
+    fetch(`${REALTIME_URL}/api/platform/summary`, {
       method: "POST",
       keepalive: true,
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -611,9 +611,10 @@ function initRealtimeAuth() {
     note.textContent = REALTIME_URL
       ? "Realtime backend đã cấu hình. Tracking chỉ chạy khi người dùng đồng ý hoặc đăng nhập."
       : "Chưa cấu hình realtime backend. Sau khi deploy server, dán URL vào config.js.";
-    if (REALTIME_URL && !REALTIME_URL.includes("vercel.app")) {
-      googleLogin.href = `${REALTIME_URL}/api/auth/google`;
-      facebookLogin.href = `${REALTIME_URL}/api/auth/facebook`;
+    if (REALTIME_URL) {
+      const returnTo = encodeURIComponent(location.origin);
+      googleLogin.href = `${REALTIME_URL}/api/auth/google?returnTo=${returnTo}`;
+      facebookLogin.href = `${REALTIME_URL}/api/auth/facebook?returnTo=${returnTo}`;
       googleLogin.setAttribute("aria-disabled", "false");
       facebookLogin.setAttribute("aria-disabled", "false");
     } else {
@@ -703,16 +704,25 @@ function initRealtimeAuth() {
   });
 
   document.querySelectorAll("[data-oauth-disabled]").forEach((button) => {
-    button.addEventListener("click", () => setStatus("Google/Facebook OAuth cần cấu hình Client ID và callback backend trước khi dùng."));
+    button.addEventListener("click", () => {
+      const provider = button.dataset.oauthDisabled;
+      if (!REALTIME_URL) return setStatus("Backend đăng nhập chưa được cấu hình.");
+      location.assign(`${REALTIME_URL}/api/auth/${provider}?returnTo=${encodeURIComponent(location.origin)}`);
+    });
   });
 
   logoutButton?.addEventListener("click", () => {
     token = "";
     user = null;
     localStorage.removeItem("hh-auth-token");
+    localStorage.removeItem("hh-auth-user");
     localStorage.removeItem("hh-chat-last-name");
+    sessionStorage.removeItem("hh-auth-return-to");
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
     renderAuth();
-    connectSocket();
     location.hash = "";
   });
 

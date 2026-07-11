@@ -40,6 +40,23 @@ function signUser(user) {
   );
 }
 
+function signOAuthState(provider, returnTo) {
+  return jwt.sign(
+    { type: "oauth", provider, returnTo },
+    jwtSecret,
+    { expiresIn: "10m" }
+  );
+}
+
+function verifyOAuthState(state, provider) {
+  try {
+    const value = jwt.verify(String(state || ""), jwtSecret);
+    return value?.type === "oauth" && value.provider === provider ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function publicUser(user) {
   if (!user) return null;
   return {
@@ -89,6 +106,8 @@ module.exports = {
   ownerFrom,
   publicUser,
   setCors,
+  signOAuthState,
   signUser,
+  verifyOAuthState,
   withApi
 };
