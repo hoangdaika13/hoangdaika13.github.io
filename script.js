@@ -1079,6 +1079,16 @@ function initSuperPlatform() {
 
   const cloudStorageMarkup=()=>`<section class="cloud-app" data-cloud><header class="suite-hero"><div><p class="section-kicker">Cloud Storage 15</p><h4>Kho dữ liệu cá nhân</h4><span>Upload file nhỏ, metadata MongoDB, preview, thư mục, chia sẻ và file gần đây.</span></div><div class="suite-badge"><i></i><strong data-cloud-status>Đang kết nối</strong><span>Tài khoản riêng tư</span></div></header><div class="cloud-toolbar"><label class="button primary interactive">Upload file<input type="file" data-cloud-upload multiple></label><button class="button ghost interactive" type="button" data-cloud-new-text>+ File văn bản</button><button class="button ghost interactive" type="button" data-cloud-refresh>Làm mới</button><input type="search" data-cloud-search placeholder="Tìm file..."></div><div class="cloud-layout"><aside class="cloud-nav"><button class="interactive active" type="button" data-cloud-filter="all">Tất cả file</button><button class="interactive" type="button" data-cloud-filter="recent">Gần đây</button><button class="interactive" type="button" data-cloud-filter="text">Văn bản</button><section><strong>Thư mục</strong><button class="interactive" type="button">▤ Dự án</button><button class="interactive" type="button">▤ Tài liệu</button><button class="interactive" type="button">▤ Media</button></section><div class="cloud-quota"><span>Dung lượng metadata</span><i><b style="width:12%"></b></i><small>Giới hạn 50 KB mỗi file</small></div></aside><main class="cloud-files"><div class="cloud-file-head"><span>Tên</span><span>Loại</span><span>Kích thước</span><span>Ngày tạo</span><span></span></div><div data-cloud-files><p>Đang tải dữ liệu của bạn...</p></div></main><aside class="cloud-preview"><header><strong>Preview</strong><button class="interactive" type="button" data-cloud-close>×</button></header><pre data-cloud-preview>Chọn một file để xem metadata.</pre><button class="button ghost interactive" type="button" data-cloud-export-list>Xuất danh sách</button></aside></div></section>`;
 
+  const notificationCenterMarkup=()=>{let state={};try{state=JSON.parse(localStorage.getItem("hh-notification-center")||"{}");}catch{}const inbox=state.inbox||[{title:"Chào mừng đến HH Platform",message:"Các trung tâm 01-15 đã sẵn sàng để sử dụng.",time:"Hôm nay",read:false,type:"system"},{title:"Media Center v22",message:"Thư viện media đã được nâng cấp.",time:"Gần đây",read:true,type:"update"}];return `<section class="notification-app" data-notification><header class="suite-hero"><div><p class="section-kicker">Notification Center 16</p><h4>Thông báo đa kênh</h4><span>Email, Push, In-app, Discord và Telegram với tùy chọn theo tài khoản.</span></div><button class="button primary interactive" type="button" data-notification-enable>Cho phép thông báo trình duyệt</button></header><div class="notification-layout"><aside class="notification-nav">${[["all","Tất cả"],["unread","Chưa đọc"],["system","Hệ thống"],["update","Cập nhật"]].map(([id,label],index)=>`<button class="interactive ${index===0?"active":""}" type="button" data-notification-filter="${id}">${label}<b>${id==="unread"?inbox.filter((item)=>!item.read).length:""}</b></button>`).join("")}<section><strong>Kênh đã cấu hình</strong><span><i></i>In-app</span><span><i></i>Email</span><span><i></i>Push</span></section></aside><main class="notification-inbox"><header><div><span>Inbox</span><strong data-notification-count>${inbox.filter((item)=>!item.read).length} chưa đọc</strong></div><button class="interactive" type="button" data-notification-read-all>Đánh dấu đã đọc</button></header><div data-notification-list>${inbox.map((item,index)=>`<article class="${item.read?"read":""}" data-notification-item="${index}" data-notification-type="${item.type}"><i></i><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.message)}</p><small>${escapeHtml(item.time)}</small></div><button class="interactive" type="button" data-notification-read="${index}">${item.read?"✓":"Đọc"}</button></article>`).join("")}</div></main><aside class="notification-settings"><header><span>Kết nối kênh</span><strong>Preferences</strong></header><label>Kênh<select data-notification-channel><option value="email">Email</option><option value="push">Push Browser</option><option value="discord">Discord webhook</option><option value="telegram">Telegram chat</option><option value="in-app">In-app</option></select></label><label>Địa chỉ nhận<input data-notification-target placeholder="Email, webhook hoặc chat ID"></label>${["Cập nhật dự án","Tin nhắn cộng đồng","Sản phẩm mới","Cảnh báo bảo mật"].map((item,index)=>`<label class="notification-check"><input type="checkbox" data-notification-pref="${index}" checked>${item}</label>`).join("")}<button class="button primary interactive" type="button" data-notification-subscribe>Lưu đăng ký</button><p data-notification-status>Provider bên ngoài cần key riêng để gửi thật.</p></aside></div></section>`;};
+
+  const apiCenterMarkup=()=>{const endpoints=[{method:"GET",path:"/api/auth/me",name:"Phiên người dùng"},{method:"GET",path:"/api/store/products",name:"Sản phẩm"},{method:"GET",path:"/api/storage/files",name:"Cloud files"},{method:"GET",path:"/api/platform/summary",name:"Admin summary"},{method:"POST",path:"/api/notifications/subscribe",name:"Đăng ký thông báo"},{method:"POST",path:"/api/store/orders",name:"Tạo đơn hàng"}];return `<section class="api-center-app" data-api-center><header class="suite-hero"><div><p class="section-kicker">API Center 17</p><h4>API Docs & Playground</h4><span>Tài liệu endpoint, request builder, response viewer, ví dụ và trạng thái backend.</span></div><div class="suite-badge"><i></i><strong>${endpoints.length} endpoints</strong><span>Vercel Serverless</span></div></header><div class="api-layout"><aside class="api-sidebar"><label>Tìm endpoint<input type="search" data-api-search placeholder="auth, store, files..."></label><div data-api-list>${endpoints.map((item,index)=>`<button class="interactive ${index===0?"active":""}" type="button" data-api-open="${index}" data-api-search-text="${`${item.name} ${item.path}`.toLowerCase()}"><b class="${item.method.toLowerCase()}">${item.method}</b><span>${escapeHtml(item.name)}</span><small>${item.path}</small></button>`).join("")}</div></aside><main class="api-playground"><div class="api-request-line"><select data-api-method><option>GET</option><option>POST</option></select><input data-api-path value="/api/auth/me"><button class="button primary interactive" type="button" data-api-send>Gửi request</button></div><div class="api-tabs"><button class="interactive active" type="button">Body JSON</button><button class="interactive" type="button">Headers</button><button class="interactive" type="button">Examples</button></div><textarea data-api-body rows="12" spellcheck="false">{}</textarea><div class="api-response-head"><strong>Response</strong><span data-api-timing>Chưa gửi</span></div><pre data-api-response>Chọn endpoint và gửi request để xem dữ liệu.</pre></main><aside class="api-docs"><span>Endpoint đang chọn</span><h5 data-api-doc-title>Phiên người dùng</h5><code data-api-doc-path>GET /api/auth/me</code><p data-api-doc-description>Trả về tài khoản hiện tại và lịch sử đăng nhập được phép xem.</p><section><strong>Authentication</strong><p>Bearer token được tự động lấy từ phiên đăng nhập hiện tại.</p></section><button class="button ghost interactive" type="button" data-api-copy-curl>Sao chép cURL</button></aside></div></section>`;};
+
+  const developerHubMarkup=()=>`<section class="developer-app" data-developer><header class="suite-hero"><div><p class="section-kicker">Developer Hub 18</p><h4>Git, Releases & CI/CD</h4><span>Theo dõi repository, commits, package, changelog và tình trạng triển khai.</span></div><a class="button primary interactive" href="https://github.com/hoangdaika13/hoangdaika13.github.io" target="_blank" rel="noopener">Mở GitHub</a></header><div class="developer-metrics"><article><span>Branch</span><strong>main</strong><small>Production</small></article><article><span>GitHub Pages</span><strong data-dev-pages>Checking</strong><small>Frontend</small></article><article><span>Vercel API</span><strong data-dev-api>Checking</strong><small>Backend</small></article><article><span>Version</span><strong>v26</strong><small>Current UI</small></article></div><div class="developer-layout"><aside class="developer-nav">${[["overview","Overview"],["commits","Commits"],["releases","Releases"],["packages","Packages"],["pipeline","CI/CD"]].map(([id,label],index)=>`<button class="interactive ${index===0?"active":""}" type="button" data-dev-tab="${id}">${label}</button>`).join("")}<section><strong>Quick links</strong><a href="https://github.com/hoangdaika13/hoangdaika13.github.io/actions" target="_blank" rel="noopener">Actions</a><a href="https://vercel.com/" target="_blank" rel="noopener">Vercel</a><a href="https://cloud.mongodb.com/" target="_blank" rel="noopener">MongoDB</a></section></aside><main class="developer-workspace"><section class="dev-pane active" data-dev-pane="overview"><div class="repo-card"><span>PUBLIC REPOSITORY</span><h5>hoangdaika13/hoangdaika13.github.io</h5><p>Neon portfolio và super platform chạy GitHub Pages + Vercel + MongoDB.</p><div><b>HTML</b><b>CSS</b><b>JavaScript</b><b>MongoDB</b></div></div><div class="pipeline-view"><strong>Production pipeline</strong>${["Commit","Push main","GitHub Pages","Vercel Build","Production"].map((item,index)=>`<span class="active"><i>${index+1}</i>${item}</span>`).join("")}</div></section><section class="dev-pane" data-dev-pane="commits"><div class="commit-list" data-dev-commits><p>Đang tải commits từ GitHub...</p></div></section><section class="dev-pane" data-dev-pane="releases"><div class="release-board"><article><b>v25</b><strong>Automation, Creator, Analytics, Store & Cloud</strong><span>Production</span></article><article><b>v24</b><strong>Learning, Community, User & Admin</strong><span>Production</span></article><article><b>v23</b><strong>Project Center & Knowledge Wiki</strong><span>Production</span></article></div></section><section class="dev-pane" data-dev-pane="packages"><pre>{\n  "runtime": "Node.js",\n  "database": "MongoDB",\n  "auth": "JWT + bcrypt",\n  "hosting": ["GitHub Pages", "Vercel"]\n}</pre></section><section class="dev-pane" data-dev-pane="pipeline"><div class="pipeline-log" data-pipeline-log><p>✓ Source uploaded</p><p>✓ Dependencies installed</p><p>✓ Serverless functions built</p><p>✓ Production alias assigned</p></div></section></main></div></section>`;
+
+  const securityCenterMarkup=()=>`<section class="security-app" data-security><header class="suite-hero"><div><p class="section-kicker">Security Center 19</p><h4>Bảo mật tài khoản</h4><span>Lịch sử đăng nhập, phiên, thiết bị, 2FA, quyền và audit logs cá nhân.</span></div><div class="security-score"><strong data-security-score>72</strong><span>Security score</span></div></header><div class="security-alert" data-security-alert><i></i><div><strong>Khuyến nghị bật xác thực hai bước</strong><span>2FA cần provider OTP trước khi có thể kích hoạt thật.</span></div></div><div class="security-layout"><aside class="security-nav">${[["overview","Tổng quan"],["history","Lịch sử đăng nhập"],["sessions","Phiên & thiết bị"],["permissions","Quyền dữ liệu"],["audit","Audit logs"]].map(([id,label],index)=>`<button class="interactive ${index===0?"active":""}" type="button" data-security-tab="${id}">${label}</button>`).join("")}</aside><main class="security-workspace"><section class="security-pane active" data-security-pane="overview"><div class="security-checks">${[["Mật khẩu tài khoản","Đã thiết lập","safe"],["Email đăng nhập","Đã xác minh phiên","safe"],["Xác thực hai bước","Chưa cấu hình","warn"],["Phiên hiện tại","Đang hoạt động","safe"]].map((item)=>`<article class="${item[2]}"><i></i><div><strong>${item[0]}</strong><span>${item[1]}</span></div></article>`).join("")}</div><button class="button ghost interactive" type="button" data-security-check>Kiểm tra lại tài khoản</button></section><section class="security-pane" data-security-pane="history"><div class="login-history" data-login-history><p>Đang tải lịch sử đăng nhập...</p></div></section><section class="security-pane" data-security-pane="sessions"><article class="current-session"><span>THIẾT BỊ HIỆN TẠI</span><strong>${escapeHtml(navigator.platform||"Thiết bị")}</strong><p>${escapeHtml(navigator.userAgent)}</p><button class="interactive" type="button" data-security-logout>Đăng xuất phiên này</button></article></section><section class="security-pane" data-security-pane="permissions"><div class="permission-list">${["Lưu hồ sơ cá nhân","Lưu lịch sử module","Thông báo trong ứng dụng","Analytics cục bộ"].map((item,index)=>`<label><span>${item}</span><input type="checkbox" data-security-permission="${index}" checked><i></i></label>`).join("")}</div></section><section class="security-pane" data-security-pane="audit"><pre data-security-audit>Audit logs chỉ hiển thị hành động thuộc tài khoản hiện tại.</pre></section></main></div></section>`;
+
+  const smartSearchMarkup=()=>`<section class="smart-search-app" data-smart-search><header class="smart-search-hero"><p class="section-kicker">Smart Search 20</p><h4>Tìm kiếm toàn bộ HH Platform</h4><label><span>⌕</span><input type="search" data-smart-query placeholder="Tìm dự án, Wiki, media, module, file hoặc cài đặt..." autofocus><kbd>Ctrl K</kbd></label><div>${["AI","Projects","Downloads","Wiki","Media","Settings"].map((item)=>`<button class="interactive" type="button" data-smart-suggestion="${item}">${item}</button>`).join("")}</div></header><div class="smart-search-layout"><aside class="smart-search-filters">${[["all","Tất cả"],["module","Modules"],["project","Projects"],["article","Wiki"],["media","Media"],["file","Files"]].map(([id,label],index)=>`<button class="interactive ${index===0?"active":""}" type="button" data-smart-filter="${id}">${label}<b data-smart-filter-count="${id}"></b></button>`).join("")}<section><strong>Tìm gần đây</strong><div data-smart-history><p>Chưa có tìm kiếm.</p></div></section></aside><main class="smart-results"><header><div><span>Kết quả</span><strong data-smart-summary>Nhập từ khóa để bắt đầu</strong></div><select data-smart-sort><option value="relevance">Liên quan nhất</option><option value="name">Theo tên</option><option value="type">Theo loại</option></select></header><div data-smart-results><div class="smart-empty"><span>⌕</span><strong>Một ô tìm kiếm cho toàn website</strong><p>Kết quả được lập chỉ mục trực tiếp từ dữ liệu của bạn.</p></div></div></main><aside class="smart-preview"><header><strong>Xem nhanh</strong></header><div data-smart-preview><p>Chọn một kết quả để xem chi tiết.</p></div></aside></div></section>`;
+
   const moduleStudioMarkup = (module) => {
     const profile = profileFor(module);
     const stored = JSON.parse(localStorage.getItem(`${stateKey}:${module.id}:studio`) || "null") || {};
@@ -1352,7 +1362,7 @@ function initSuperPlatform() {
             </div>
           </div>
           <div class="module-inline-app" data-inline-app="${module.id}">
-            ${module.id === "command-center" ? commandCenterMarkup(module) : module.id === "ai-center" ? aiCenterMarkup(module) : module.id === "download-center" ? downloadCenterMarkup(module) : module.id === "media-center" ? mediaCenterMarkup(module) : module.id === "project-center" ? projectCenterMarkup(module) : module.id === "knowledge-center" ? knowledgeCenterMarkup(module) : module.id === "learning-center" ? learningCenterMarkup(module) : module.id === "community" ? communityCenterMarkup(module) : module.id === "user-dashboard" ? userDashboardMarkup(module) : module.id === "admin-panel" ? adminPanelMarkup(module) : module.id === "ai-automation" ? aiAutomationMarkup(module) : module.id === "creator-studio" ? creatorStudioMarkup(module) : module.id === "analytics" ? analyticsMarkup(module) : module.id === "store" ? storeMarkup(module) : module.id === "cloud-storage" ? cloudStorageMarkup(module) : moduleStudioMarkup(module)}
+            ${module.id === "command-center" ? commandCenterMarkup(module) : module.id === "ai-center" ? aiCenterMarkup(module) : module.id === "download-center" ? downloadCenterMarkup(module) : module.id === "media-center" ? mediaCenterMarkup(module) : module.id === "project-center" ? projectCenterMarkup(module) : module.id === "knowledge-center" ? knowledgeCenterMarkup(module) : module.id === "learning-center" ? learningCenterMarkup(module) : module.id === "community" ? communityCenterMarkup(module) : module.id === "user-dashboard" ? userDashboardMarkup(module) : module.id === "admin-panel" ? adminPanelMarkup(module) : module.id === "ai-automation" ? aiAutomationMarkup(module) : module.id === "creator-studio" ? creatorStudioMarkup(module) : module.id === "analytics" ? analyticsMarkup(module) : module.id === "store" ? storeMarkup(module) : module.id === "cloud-storage" ? cloudStorageMarkup(module) : module.id === "notification-center" ? notificationCenterMarkup(module) : module.id === "api-center" ? apiCenterMarkup(module) : module.id === "developer-hub" ? developerHubMarkup(module) : module.id === "security-center" ? securityCenterMarkup(module) : module.id === "smart-search" ? smartSearchMarkup(module) : moduleStudioMarkup(module)}
             <label>
               Dữ liệu dùng nhanh
               <textarea data-inline-input="${module.id}" rows="4" placeholder="Nhập yêu cầu cho ${escapeHtml(module.title)}..."></textarea>
@@ -1375,6 +1385,9 @@ function initSuperPlatform() {
     if (visible.some((module) => module.id === "admin-panel")) loadAdminSummary();
     if (visible.some((module) => module.id === "store")) loadStoreProducts();
     if (visible.some((module) => module.id === "cloud-storage")) loadCloudFiles();
+    if (visible.some((module) => module.id === "developer-hub")) loadDeveloperData();
+    if (visible.some((module) => module.id === "security-center")) loadSecurityData();
+    if (visible.some((module) => module.id === "smart-search")) updateSmartIndex();
     if (!selectedModule && modules.length) renderDetail(modules[0]);
   };
 
@@ -1716,6 +1729,8 @@ function initSuperPlatform() {
     if(event.target.matches("[data-learning-search]")){const query=event.target.value.toLowerCase();event.target.closest("[data-learning-center]")?.querySelectorAll("[data-course-open]").forEach((button)=>button.hidden=!button.textContent.toLowerCase().includes(query));}
     if(event.target.matches("[data-store-search]")){const query=event.target.value.toLowerCase();event.target.closest("[data-store]")?.querySelectorAll(".product-card").forEach((card)=>card.hidden=!card.dataset.productSearch.includes(query));}
     if(event.target.matches("[data-cloud-search]")){const query=event.target.value.toLowerCase();event.target.closest("[data-cloud]")?.querySelectorAll("[data-cloud-file]").forEach((row)=>row.hidden=!row.dataset.cloudSearchText.includes(query));}
+    if(event.target.matches("[data-api-search]")){const query=event.target.value.toLowerCase();event.target.closest("[data-api-center]")?.querySelectorAll("[data-api-open]").forEach((button)=>button.hidden=!button.dataset.apiSearchText.includes(query));}
+    if(event.target.matches("[data-smart-query]")){const panel=event.target.closest("[data-smart-search]");renderSmartSearch(event.target.value,panel?.querySelector("[data-smart-filter].active")?.dataset.smartFilter||"all");}
   });
 
   const readProjectState = () => {
@@ -1787,6 +1802,11 @@ function initSuperPlatform() {
   const loadStoreProducts=async()=>{const panel=grid.querySelector("[data-store]");if(!panel)return;try{const response=await fetch(`${REALTIME_URL}/api/store/products`,{cache:"no-store"});const data=await response.json();storeProductsCache=data.products||[];const list=panel.querySelector("[data-store-products]");if(list)list.innerHTML=storeProductsCache.map((item,index)=>`<article class="product-card" data-product-type="${item.type}" data-product-search="${escapeHtml(item.title.toLowerCase())}"><div class="product-art"><span>${["HH","AI","PRO"][index]||"HH"}</span><b>${item.type}</b></div><div><span>${item.price===0?"MIỄN PHÍ":item.type.toUpperCase()}</span><h5>${escapeHtml(item.title)}</h5><p>${item.type==="membership"?"Quyền truy cập nội dung và cập nhật dành cho creator.":"Sản phẩm số thuộc hệ sinh thái HH."}</p><strong>${item.price?`${item.price.toLocaleString("vi-VN")} ₫`:"Miễn phí"}</strong></div><button class="button primary interactive" type="button" data-product-add="${item.id}">${item.price===0?"Thêm vào thư viện":"Thêm giỏ hàng"}</button></article>`).join("");renderCart();}catch(error){const list=panel.querySelector("[data-store-products]");if(list)list.innerHTML=`<p>Không tải được Store API: ${escapeHtml(error.message)}</p>`;}};
   const loadCloudFiles=async()=>{const panel=grid.querySelector("[data-cloud]");if(!panel||!REALTIME_URL)return;const status=panel.querySelector("[data-cloud-status]");try{const token=localStorage.getItem("hh-auth-token")||"";const response=await fetch(`${REALTIME_URL}/api/storage/files`,{headers:{Authorization:`Bearer ${token}`},cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"Cloud lỗi");cloudFilesCache=data.files||[];if(status)status.textContent="Đã đồng bộ";const list=panel.querySelector("[data-cloud-files]");if(list)list.innerHTML=cloudFilesCache.length?cloudFilesCache.map((item)=>`<button class="cloud-file-row interactive" type="button" data-cloud-file="${item._id}" data-cloud-search-text="${escapeHtml(item.name.toLowerCase())}"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.mimeType)}</span><span>${Number(item.size||0).toLocaleString("vi-VN")} B</span><span>${new Date(item.createdAt).toLocaleDateString("vi-VN")}</span><b>›</b></button>`).join(""):"<p>Kho của bạn đang trống.</p>";}catch(error){if(status)status.textContent="Chưa kết nối";const list=panel.querySelector("[data-cloud-files]");if(list)list.innerHTML=`<p>${escapeHtml(error.message)}</p>`;}};
   const uploadCloudText=async(name,mimeType,content,size)=>{if(!REALTIME_URL)throw new Error("Backend chưa cấu hình");const token=localStorage.getItem("hh-auth-token")||"";const response=await fetch(`${REALTIME_URL}/api/storage/files`,{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({name,mimeType,content,size})});const data=await response.json();if(!response.ok)throw new Error(data.error||"Upload thất bại");return data.file;};
+  const loadDeveloperData=async()=>{const panel=grid.querySelector("[data-developer]");if(!panel)return;try{const [commits,pages,api]=await Promise.all([fetch("https://api.github.com/repos/hoangdaika13/hoangdaika13.github.io/commits?per_page=10",{headers:{Accept:"application/vnd.github+json"}}).then((res)=>res.json()),fetch("https://hoangdaika13.github.io",{method:"HEAD",cache:"no-store"}),fetch(`${REALTIME_URL}/api/store/products`,{cache:"no-store"})]);panel.querySelector("[data-dev-pages]").textContent=pages.ok?"Online":"Lỗi";panel.querySelector("[data-dev-api]").textContent=api.ok?"Online":"Lỗi";const list=panel.querySelector("[data-dev-commits]");if(list)list.innerHTML=Array.isArray(commits)?commits.map((item)=>`<article><code>${item.sha.slice(0,7)}</code><div><strong>${escapeHtml(item.commit.message.split("\n")[0])}</strong><span>${escapeHtml(item.commit.author.name)} · ${new Date(item.commit.author.date).toLocaleString("vi-VN")}</span></div><a href="${item.html_url}" target="_blank" rel="noopener">Mở</a></article>`).join(""):"<p>GitHub API chưa phản hồi.</p>";}catch{panel.querySelector("[data-dev-pages]").textContent="Offline";panel.querySelector("[data-dev-api]").textContent="Offline";}};
+  const loadSecurityData=async()=>{const panel=grid.querySelector("[data-security]");if(!panel||!REALTIME_URL)return;try{const token=localStorage.getItem("hh-auth-token")||"";const response=await fetch(`${REALTIME_URL}/api/auth/me`,{headers:{Authorization:`Bearer ${token}`},cache:"no-store"});const data=await response.json();const list=panel.querySelector("[data-login-history]");if(list)list.innerHTML=(data.loginHistory||[]).map((item)=>`<article><i></i><div><strong>${escapeHtml(item.userAgent||"Thiết bị không xác định")}</strong><span>${new Date(item.createdAt).toLocaleString("vi-VN")} · ${escapeHtml(String(item.forwardedFor||"").split(",")[0])}</span></div></article>`).join("")||"<p>Chưa có lịch sử đăng nhập được ghi nhận.</p>";}catch(error){const list=panel.querySelector("[data-login-history]");if(list)list.innerHTML=`<p>${escapeHtml(error.message)}</p>`;}};
+  let smartSearchIndex=[];
+  const updateSmartIndex=()=>{smartSearchIndex=[...modules.map((item)=>({type:"module",title:item.title,description:item.description,id:item.id})),...(ensureProjectState().projects||[]).map((item)=>({type:"project",title:item.name,description:item.description,id:item.id})),...(ensureWikiState().articles||[]).map((item)=>({type:"article",title:item.title,description:`${item.category} ${(item.tags||[]).join(" ")}`,id:item.id})),...(readMediaState().items||[]).map((item)=>({type:"media",title:item.title,description:item.source||item.category,id:item.id})),...cloudFilesCache.map((item)=>({type:"file",title:item.name,description:item.mimeType,id:String(item._id)})),{type:"setting",title:"Cài đặt neon",description:"Hiệu ứng giao diện",id:"neon"},{type:"setting",title:"Thông báo",description:"Email Push Discord Telegram",id:"notifications"}];const panel=grid.querySelector("[data-smart-search]");if(panel)panel.querySelectorAll("[data-smart-filter-count]").forEach((node)=>node.textContent=node.dataset.smartFilterCount==="all"?smartSearchIndex.length:smartSearchIndex.filter((item)=>item.type===node.dataset.smartFilterCount).length);};
+  const renderSmartSearch=(query,filter="all")=>{const panel=grid.querySelector("[data-smart-search]");if(!panel)return;const normalized=query.trim().toLowerCase();let results=smartSearchIndex.filter((item)=>(filter==="all"||item.type===filter)&&(!normalized||`${item.title} ${item.description}`.toLowerCase().includes(normalized)));const sort=panel.querySelector("[data-smart-sort]")?.value;if(sort==="name")results.sort((a,b)=>a.title.localeCompare(b.title));if(sort==="type")results.sort((a,b)=>a.type.localeCompare(b.type));const summary=panel.querySelector("[data-smart-summary]");if(summary)summary.textContent=`${results.length} kết quả${normalized?` cho “${query}”`:""}`;const list=panel.querySelector("[data-smart-results]");if(list)list.innerHTML=results.length?results.slice(0,50).map((item,index)=>`<button class="smart-result interactive" type="button" data-smart-result="${index}" data-smart-item='${escapeHtml(JSON.stringify(item))}'><span>${item.type.toUpperCase()}</span><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.description||"")}</p></div><b>›</b></button>`).join(""):'<div class="smart-empty"><span>⌕</span><strong>Không tìm thấy kết quả</strong><p>Thử từ khóa hoặc bộ lọc khác.</p></div>';};
 
   const mediaDefaults = () => [
     { id: "hh-ai-cover", title: "Kịch bản AI Studio", type: "image", category: "images", url: "assets/kich-ban-ai.png", source: "HH Projects", favorite: true },
@@ -1947,6 +1967,7 @@ function initSuperPlatform() {
     const cloudUpload=event.target.closest("[data-cloud-upload]");if(cloudUpload){const files=Array.from(cloudUpload.files||[]).slice(0,10);(async()=>{for(const file of files){if(file.size>45000){window.alert(`${file.name} vượt giới hạn 45 KB.`);continue;}const content=await file.text();await uploadCloudText(file.name,file.type||"text/plain",content,file.size);}await loadCloudFiles();})().catch((error)=>window.alert(error.message));cloudUpload.value="";return;}
     const avatarUpload=event.target.closest("[data-user-avatar-upload]");if(avatarUpload){const file=avatarUpload.files?.[0];if(!file)return;if(file.size>1024*1024){window.alert("Ảnh avatar cần nhỏ hơn 1 MB.");return;}const reader=new FileReader();reader.onload=()=>{const state=readUserState();state.avatar=reader.result;writeUserState(state);rerenderModule("user-dashboard");};reader.readAsDataURL(file);return;}
     const userToggle=event.target.closest("[data-user-notification],[data-user-setting]");if(userToggle){const state=readUserState();if(userToggle.dataset.userNotification!==undefined){state.notifications=state.notifications||{};state.notifications[userToggle.dataset.userNotification]=userToggle.checked;}else{state.settings=state.settings||{};state.settings[userToggle.dataset.userSetting]=userToggle.checked;}writeUserState(state);return;}
+    if(event.target.matches("[data-smart-sort]")){const panel=event.target.closest("[data-smart-search]");renderSmartSearch(panel?.querySelector("[data-smart-query]")?.value||"",panel?.querySelector("[data-smart-filter].active")?.dataset.smartFilter||"all");return;}
     const projectSelect = event.target.closest("[data-project-select]");
     if (projectSelect) { const state=ensureProjectState(); state.activeProject=projectSelect.value; writeProjectState(state,`Đã mở ${state.projects.find((item)=>item.id===state.activeProject)?.name||"dự án"}`); rerenderModule("project-center","overview"); return; }
     const projectProgress = event.target.closest("[data-project-progress]");
@@ -1985,6 +2006,11 @@ function initSuperPlatform() {
   });
 
   grid.addEventListener("click", (event) => {
+    const notification=event.target.closest("[data-notification]");if(notification){const readState=()=>{try{return JSON.parse(localStorage.getItem("hh-notification-center")||"{}");}catch{return {};}};const defaults=[{title:"Chào mừng đến HH Platform",message:"Các trung tâm 01-15 đã sẵn sàng để sử dụng.",time:"Hôm nay",read:false,type:"system"},{title:"Media Center v22",message:"Thư viện media đã được nâng cấp.",time:"Gần đây",read:true,type:"update"}];const save=(state)=>localStorage.setItem("hh-notification-center",JSON.stringify(state));if(event.target.closest("[data-notification-enable]")){if("Notification" in window)Notification.requestPermission().then((permission)=>{event.target.closest("[data-notification-enable]").textContent=permission==="granted"?"Đã cho phép":"Chưa được cho phép";});return;}const filter=event.target.closest("[data-notification-filter]");if(filter){notification.querySelectorAll("[data-notification-filter]").forEach((item)=>item.classList.toggle("active",item===filter));notification.querySelectorAll("[data-notification-item]").forEach((item)=>item.hidden=filter.dataset.notificationFilter==="unread"&&item.classList.contains("read")||!["all","unread"].includes(filter.dataset.notificationFilter)&&item.dataset.notificationType!==filter.dataset.notificationFilter);return;}const read=event.target.closest("[data-notification-read]");if(read){const state=readState();state.inbox=state.inbox||defaults;state.inbox[Number(read.dataset.notificationRead)].read=true;save(state);rerenderModule("notification-center");return;}if(event.target.closest("[data-notification-read-all]")){const state=readState();state.inbox=(state.inbox||defaults).map((item)=>({...item,read:true}));save(state);rerenderModule("notification-center");return;}if(event.target.closest("[data-notification-subscribe]")){const status=notification.querySelector("[data-notification-status]");(async()=>{try{const token=localStorage.getItem("hh-auth-token")||"";const response=await fetch(`${REALTIME_URL}/api/notifications/subscribe`,{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({channel:notification.querySelector("[data-notification-channel]").value,target:notification.querySelector("[data-notification-target]").value,preferences:Object.fromEntries(Array.from(notification.querySelectorAll("[data-notification-pref]")).map((item)=>[item.dataset.notificationPref,item.checked]))})});const data=await response.json();if(!response.ok)throw new Error(data.error||"Lưu thất bại");status.textContent=`Đã lưu đăng ký ${data.subscription.channel}. ${data.subscription.note}`;}catch(error){status.textContent=error.message;}})();return;}}
+    const apiCenter=event.target.closest("[data-api-center]");if(apiCenter){const endpoints=[{method:"GET",path:"/api/auth/me",name:"Phiên người dùng",description:"Trả về tài khoản hiện tại và lịch sử đăng nhập."},{method:"GET",path:"/api/store/products",name:"Sản phẩm",description:"Danh sách sản phẩm số công khai."},{method:"GET",path:"/api/storage/files",name:"Cloud files",description:"Metadata file riêng của tài khoản."},{method:"GET",path:"/api/platform/summary",name:"Admin summary",description:"Thống kê chỉ dành cho chủ sở hữu."},{method:"POST",path:"/api/notifications/subscribe",name:"Đăng ký thông báo",description:"Lưu kênh thông báo vào MongoDB."},{method:"POST",path:"/api/store/orders",name:"Tạo đơn hàng",description:"Tạo đơn chờ thanh toán thủ công."}];const open=event.target.closest("[data-api-open]");if(open){const item=endpoints[Number(open.dataset.apiOpen)];apiCenter.querySelectorAll("[data-api-open]").forEach((node)=>node.classList.toggle("active",node===open));apiCenter.querySelector("[data-api-method]").value=item.method;apiCenter.querySelector("[data-api-path]").value=item.path;apiCenter.querySelector("[data-api-doc-title]").textContent=item.name;apiCenter.querySelector("[data-api-doc-path]").textContent=`${item.method} ${item.path}`;apiCenter.querySelector("[data-api-doc-description]").textContent=item.description;return;}if(event.target.closest("[data-api-send]")){const method=apiCenter.querySelector("[data-api-method]").value;const path=apiCenter.querySelector("[data-api-path]").value;const output=apiCenter.querySelector("[data-api-response]");const start=performance.now();output.textContent="Đang gửi request...";(async()=>{try{const token=localStorage.getItem("hh-auth-token")||"";const options={method,headers:{"Content-Type":"application/json",...(token?{Authorization:`Bearer ${token}`}:{})}};if(method!=="GET")options.body=apiCenter.querySelector("[data-api-body]").value||"{}";const response=await fetch(`${REALTIME_URL}${path}`,options);const data=await response.json().catch(()=>({}));output.textContent=JSON.stringify({status:response.status,ok:response.ok,data},null,2);apiCenter.querySelector("[data-api-timing]").textContent=`${Math.round(performance.now()-start)} ms · HTTP ${response.status}`;}catch(error){output.textContent=error.message;}})();return;}if(event.target.closest("[data-api-copy-curl]")){const method=apiCenter.querySelector("[data-api-method]").value;const path=apiCenter.querySelector("[data-api-path]").value;navigator.clipboard.writeText(`curl -X ${method} "${REALTIME_URL}${path}" -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json"`);return;}}
+    const developer=event.target.closest("[data-developer]");if(developer){const tab=event.target.closest("[data-dev-tab]");if(tab){developer.querySelectorAll("[data-dev-tab]").forEach((item)=>item.classList.toggle("active",item===tab));developer.querySelectorAll("[data-dev-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.devPane===tab.dataset.devTab));return;}}
+    const security=event.target.closest("[data-security]");if(security){const tab=event.target.closest("[data-security-tab]");if(tab){security.querySelectorAll("[data-security-tab]").forEach((item)=>item.classList.toggle("active",item===tab));security.querySelectorAll("[data-security-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.securityPane===tab.dataset.securityTab));return;}if(event.target.closest("[data-security-check]")){loadSecurityData();security.querySelector("[data-security-alert] strong").textContent="Đã kiểm tra lại phiên và lịch sử đăng nhập";return;}if(event.target.closest("[data-security-logout]")){localStorage.removeItem("hh-auth-token");localStorage.removeItem("hh-auth-user");location.reload();return;}}
+    const smart=event.target.closest("[data-smart-search]");if(smart){const suggestion=event.target.closest("[data-smart-suggestion]");if(suggestion){const input=smart.querySelector("[data-smart-query]");input.value=suggestion.dataset.smartSuggestion;renderSmartSearch(input.value);return;}const filter=event.target.closest("[data-smart-filter]");if(filter){smart.querySelectorAll("[data-smart-filter]").forEach((item)=>item.classList.toggle("active",item===filter));renderSmartSearch(smart.querySelector("[data-smart-query]").value,filter.dataset.smartFilter);return;}const result=event.target.closest("[data-smart-result]");if(result){try{const item=JSON.parse(result.dataset.smartItem);smart.querySelector("[data-smart-preview]").innerHTML=`<span>${escapeHtml(item.type.toUpperCase())}</span><h5>${escapeHtml(item.title)}</h5><p>${escapeHtml(item.description||"")}</p><button class="button primary interactive" type="button" data-smart-open-module="${escapeHtml(item.id)}">Mở nội dung</button>`;}catch{}return;}const openModule=event.target.closest("[data-smart-open-module]");if(openModule){const moduleCard=grid.querySelector(`[data-module-id="${CSS.escape(openModule.dataset.smartOpenModule)}"]`);moduleCard?.scrollIntoView({behavior:"smooth",block:"start"});return;}}
     const automation=event.target.closest("[data-automation]");if(automation){if(event.target.closest("[data-auto-run]")){const input=automation.querySelector("[data-auto-input]")?.value.trim();if(!input)return automation.querySelector("[data-auto-input]")?.focus();const platform=automation.querySelector("[data-auto-platform]").value;const style=automation.querySelector("[data-auto-style]").value;const enabled=Array.from(automation.querySelectorAll("[data-auto-step]:checked")).map((item)=>item.dataset.autoStep);const keywords=[...new Set(input.toLowerCase().replace(/[^a-z0-9\u00C0-\u024f\s]/g,"").split(/\s+/).filter((word)=>word.length>4))].slice(0,8);const blocks={title:`TIÊU ĐỀ\n${input.slice(0,65)}: Điều Bạn Chưa Từng Biết`,description:`MÔ TẢ\nNội dung ${style.toLowerCase()} dành cho ${platform}: ${input}\n\nTheo dõi HH để xem thêm nội dung mới.`,tags:`TAGS\n${keywords.map((word)=>`#${word.replace(/\s/g,"")}`).join(" ")}`,translation:`TRANSLATION PROMPT\nTranslate the following content naturally while preserving tone and intent:\n${input}`,summary:`TÓM TẮT\n${input.split(/[.!?]/).filter(Boolean).slice(0,3).join(". ").trim()}.`,voice:`VOICE PROMPT\nGiọng đọc ${style.toLowerCase()}, tốc độ vừa, ngắt nghỉ tự nhiên, nhấn mạnh từ khóa chính.`,thumbnail:`THUMBNAIL PROMPT\nẢnh thumbnail ${platform}, chủ thể rõ, tương phản mạnh, chữ lớn 3-5 từ: “${input.slice(0,35).toUpperCase()}”, không watermark.`};const output=enabled.map((key)=>blocks[key]).join("\n\n---\n\n");automation.querySelector("[data-auto-output]").textContent=output;automation.querySelector("[data-auto-progress]").style.width="100%";automation.querySelector("[data-auto-status]").textContent=`Hoàn tất ${enabled.length}/7 tác vụ`;return;}if(event.target.closest("[data-auto-clear]")){automation.querySelector("[data-auto-input]").value="";automation.querySelector("[data-auto-output]").textContent="Đã xóa workflow.";return;}if(event.target.closest("[data-auto-copy]")){navigator.clipboard.writeText(automation.querySelector("[data-auto-output]").textContent);return;}if(event.target.closest("[data-auto-export]")){downloadText("hh-ai-automation.txt",automation.querySelector("[data-auto-output]").textContent);return;}}
     const creator=event.target.closest("[data-creator]");if(creator){const tab=event.target.closest("[data-creator-tab]");if(tab){creator.querySelectorAll("[data-creator-tab]").forEach((item)=>item.classList.toggle("active",item===tab));return;}if(event.target.closest("[data-creator-generate]")){const topic=creator.querySelector("[data-creator-topic]").value.trim();if(!topic)return creator.querySelector("[data-creator-topic]").focus();const platform=creator.querySelector("[data-creator-platform]").value;const tone=creator.querySelector("[data-creator-tone]").value;const score=Math.min(98,58+Math.round(topic.length/3)+creator.querySelectorAll("[data-creator-check]:checked").length*5);creator.querySelector("[data-creator-score]").textContent=score;const outputs={title:`1. ${topic}: Sự Thật Khiến Ai Cũng Bất Ngờ\n2. Điều Không Ai Nói Về ${topic}\n3. Sau Tất Cả, ${topic} Đã Thay Đổi Mọi Thứ`,script:`HOOK\nBạn có từng nghĩ rằng ${topic.toLowerCase()} lại dẫn tới một kết quả không ai đoán trước?\n\nMỞ ĐẦU\nGiới thiệu hoàn cảnh và nhân vật.\n\nPHÁT TRIỂN\n1. Vấn đề chính\n2. Xung đột tăng dần\n3. Bước ngoặt\n\nCAO TRÀO\nTiết lộ chi tiết quan trọng nhất.\n\nKẾT\nBài học và CTA tự nhiên.`,seo:`SEO SCORE: ${score}/100\nTừ khóa chính: ${topic}\nNền tảng: ${platform}\nTone: ${tone}\nKhuyến nghị: đưa từ khóa vào 60 ký tự đầu và 2 câu đầu mô tả.`,thumbnail:`Chủ thể biểu cảm rõ, nền tương phản hồng neon và cyan, ánh sáng điện ảnh, chữ lớn “${topic.slice(0,28).toUpperCase()}”, bố cục 16:9, không watermark.`};creator.dataset.outputs=JSON.stringify(outputs);creator.querySelector("[data-creator-output]").textContent=outputs.title;creator.querySelector("[data-thumbnail-preview] small").textContent=topic.slice(0,42);const tags=topic.toLowerCase().split(/\s+/).filter((word)=>word.length>3).slice(0,6);creator.querySelector("[data-creator-tags]").innerHTML=tags.map((tag)=>`<span>#${escapeHtml(tag)}</span>`).join("");return;}const outputTab=event.target.closest("[data-creator-output-tab]");if(outputTab){creator.querySelectorAll("[data-creator-output-tab]").forEach((item)=>item.classList.toggle("active",item===outputTab));try{creator.querySelector("[data-creator-output]").textContent=JSON.parse(creator.dataset.outputs||"{}")[outputTab.dataset.creatorOutputTab]||"Hãy tạo bộ nội dung trước.";}catch{}return;}if(event.target.closest("[data-creator-export]")){downloadText("hh-creator-studio.txt",creator.querySelector("[data-creator-output]").textContent);return;}}
     const analytics=event.target.closest("[data-analytics]");if(analytics&&event.target.closest("[data-analytics-refresh]")){rerenderModule("analytics");return;}
@@ -3880,6 +3906,239 @@ function initTool() {
   updateMetas();
 }
 
+function initAppShell() {
+  const shell = byId("appShell");
+  const workspace = byId("appWorkspace");
+  const navigation = document.querySelector("[data-app-navigation]");
+  const breadcrumb = byId("appBreadcrumb");
+  const pageHeader = byId("appPageHeader");
+  const pageActions = byId("appPageActions");
+  const platform = byId("platform");
+  const legacyMain = byId("top");
+  const dashboardHome = workspace.querySelector(".dashboard-home");
+  const palette = byId("commandPalette");
+  const paletteInput = byId("commandPaletteInput");
+  const paletteResults = byId("commandPaletteResults");
+  if (!shell || !workspace || !navigation || !platform) return;
+
+  const stateKey = "hh.app-shell.v1";
+  const stored = () => {
+    try { return JSON.parse(localStorage.getItem(stateKey) || "{}"); } catch { return {}; }
+  };
+  const saveState = (next) => localStorage.setItem(stateKey, JSON.stringify({ ...stored(), ...next }));
+  const groups = [
+    { id: "home", label: "Trang chủ", icon: "⌂", route: "/home", items: [] },
+    { id: "create", label: "Sáng tạo", icon: "✦", route: "/create", items: ["ai-center", "creator-studio", "media-center", "ai-automation"] },
+    { id: "work", label: "Công việc", icon: "□", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center"] },
+    { id: "communication", label: "Giao tiếp", icon: "◌", route: "/communication", items: ["community", "notification-center", "user-dashboard"] },
+    { id: "insights", label: "Phân tích", icon: "↗", route: "/analytics", items: ["analytics", "smart-search"] },
+    { id: "learn", label: "Học tập", icon: "◫", route: "/learn", items: ["learning-center", "knowledge-center"] }
+  ];
+  let activeRoute = "";
+
+  const moduleList = () => Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
+  const moduleById = (id) => moduleList().find((item) => item.id === id);
+  const routeForModule = (id) => {
+    const group = groups.find((item) => item.items.includes(id));
+    return `${group?.route || "/tools"}/${id}`;
+  };
+  const userName = () => {
+    try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}").name || "Tài khoản"; } catch { return "Tài khoản"; }
+  };
+  const isUnlocked = () => document.body.classList.contains("auth-unlocked");
+  const setShellVisibility = () => {
+    const unlocked = isUnlocked();
+    shell.hidden = !unlocked;
+    document.body.classList.toggle("app-shell-enabled", unlocked);
+    if (unlocked) renderRoute();
+  };
+  const setUser = () => {
+    const name = userName();
+    const initials = name.split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase() || "HH";
+    byId("shellUserName").textContent = name;
+    byId("shellUserInitials").textContent = initials;
+    byId("dashboardGreeting").textContent = `Chào mừng trở lại, ${name}`;
+  };
+  const renderNavigation = () => {
+    const route = activeRoute;
+    navigation.innerHTML = groups.map((group) => {
+      const expanded = route === group.route || route.startsWith(`${group.route}/`);
+      const submenu = group.items.map((id) => {
+        const module = moduleById(id);
+        if (!module) return "";
+        return `<button class="app-sidebar__subitem" type="button" data-app-route="${routeForModule(id)}"><span>${module.title}</span></button>`;
+      }).join("");
+      return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}">
+        <button class="app-sidebar__item ${expanded ? "is-active" : ""}" type="button" data-app-route="${group.route}" aria-expanded="${expanded}"><span>${group.icon}</span><b>${group.label}</b><i>›</i></button>
+        ${group.items.length ? `<div class="app-sidebar__submenu">${submenu}</div>` : ""}
+      </section>`;
+    }).join("");
+  };
+  const updateDashboard = () => {
+    const modules = moduleList();
+    const favorites = (() => { try { return JSON.parse(localStorage.getItem("hh-module-favorites") || "[]"); } catch { return []; } })();
+    const recent = (() => { try { return JSON.parse(localStorage.getItem("hh.app-shell.recent") || "[]"); } catch { return []; } })();
+    const recentItems = (recent.length ? recent : ["ai-center", "project-center", "media-center"]).map(moduleById).filter(Boolean);
+    const recommended = (favorites.length ? favorites : ["ai-center", "creator-studio", "ai-automation"]).map(moduleById).filter(Boolean);
+    const makeItem = (item) => `<button type="button" data-app-route="${routeForModule(item.id)}"><span>${item.group === "core" ? "Tool" : "More"}</span><strong>${item.title}</strong><small>${item.description}</small><b>›</b></button>`;
+    byId("dashboardRecentWork").innerHTML = recentItems.map(makeItem).join("") || "<p>Chưa có công việc gần đây.</p>";
+    byId("dashboardRecommended").innerHTML = recommended.map(makeItem).join("") || modules.slice(0, 3).map(makeItem).join("");
+  };
+  const mountPlatform = (activeModuleId = "") => {
+    workspace.replaceChildren(platform);
+    platform.hidden = false;
+    platform.classList.add("app-workspace__platform");
+    document.querySelectorAll("#moduleGrid [data-module-id]").forEach((card) => {
+      card.hidden = Boolean(activeModuleId) && card.dataset.moduleId !== activeModuleId;
+      card.toggleAttribute("data-shell-active", card.dataset.moduleId === activeModuleId);
+    });
+    if (activeModuleId) {
+      requestAnimationFrame(() => {
+        const target = document.querySelector(`#moduleGrid [data-module-id="${CSS.escape(activeModuleId)}"]`);
+        target?.scrollIntoView({ block: "start" });
+      });
+    }
+  };
+  const mountSimpleView = (title, description, content) => {
+    workspace.innerHTML = `<section class="app-simple-view"><div class="app-simple-view__intro"><p class="section-kicker">HH Platform</p><h2>${title}</h2><p>${description}</p></div>${content}</section>`;
+  };
+  const remember = (moduleId) => {
+    if (!moduleId) return;
+    let recent = [];
+    try { recent = JSON.parse(localStorage.getItem("hh.app-shell.recent") || "[]"); } catch {}
+    localStorage.setItem("hh.app-shell.recent", JSON.stringify([moduleId, ...recent.filter((id) => id !== moduleId)].slice(0, 8)));
+  };
+  const updatePageHeader = (title, description, route, module) => {
+    pageHeader.querySelector("h1").textContent = title;
+    pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
+    const crumbs = route.split("/").filter(Boolean);
+    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || ({ create: "Sáng tạo", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt" }[crumb] || crumb)}</button>`)].join("");
+    pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
+  };
+  const renderRoute = () => {
+    if (!isUnlocked()) return;
+    const hash = location.hash.replace(/^#/, "") || "/home";
+    const route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+    activeRoute = route;
+    setUser();
+    renderNavigation();
+    const parts = route.split("/").filter(Boolean);
+    const possibleId = parts.at(-1);
+    const module = moduleById(possibleId);
+    if (route === "/home") {
+      updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
+      workspace.replaceChildren(dashboardHome);
+      updateDashboard();
+    } else if (module) {
+      updatePageHeader(module.title, module.description, route, module);
+      mountPlatform(module.id);
+      remember(module.id);
+    } else if (route === "/tools" || route === "/create" || route === "/work" || route === "/communication" || route === "/analytics" || route === "/learn") {
+      const allowed = route === "/tools" ? "" : groups.find((group) => group.route === route)?.items || "";
+      updatePageHeader(route === "/tools" ? "Tất cả công cụ" : groups.find((group) => group.route === route)?.label || "Công cụ", "Chọn công cụ phù hợp và mở trong workspace.", route);
+      mountPlatform("");
+      if (Array.isArray(allowed)) document.querySelectorAll("#moduleGrid [data-module-id]").forEach((card) => { card.hidden = !allowed.includes(card.dataset.moduleId); });
+    } else if (route === "/favorites" || route === "/recent") {
+      const key = route === "/favorites" ? "hh-module-favorites" : "hh.app-shell.recent";
+      const ids = (() => { try { return JSON.parse(localStorage.getItem(key) || "[]"); } catch { return []; } })();
+      const label = route === "/favorites" ? "Yêu thích" : "Gần đây";
+      updatePageHeader(label, `Các công cụ ${route === "/favorites" ? "đã lưu" : "vừa sử dụng"} của bạn.`, route);
+      mountSimpleView(label, "Mở một mục để tiếp tục công việc.", `<div class="app-item-grid">${ids.map(moduleById).filter(Boolean).map((item) => `<button type="button" data-app-route="${routeForModule(item.id)}"><span>Tool</span><strong>${item.title}</strong><p>${item.description}</p></button>`).join("") || "<div class=app-empty-state><strong>Chưa có mục nào</strong><p>Hãy đánh dấu yêu thích hoặc mở một công cụ để xem tại đây.</p><button type=button data-app-route=/tools>Mở công cụ</button></div>"}</div>`);
+    } else if (route === "/settings") {
+      updatePageHeader("Cài đặt", "Điều chỉnh giao diện và dữ liệu cá nhân.", route);
+      mountSimpleView("Cài đặt", "Các thiết lập cơ bản được lưu trên thiết bị này.", `<div class="app-settings-list"><label><span>Sidebar thu gọn</span><input type=checkbox data-shell-setting=collapsed ${document.body.classList.contains("app-sidebar-collapsed") ? "checked" : ""}></label><label><span>Chế độ nâng cao</span><input type=checkbox data-shell-setting=advanced ${stored().advanced ? "checked" : ""}></label><button type=button data-app-route=/settings/user-dashboard>Mở hồ sơ tài khoản</button><button type=button data-app-route=/settings/security-center>Mở bảo mật</button></div>`);
+    } else if (route === "/profile") {
+      updatePageHeader("Profile", "Trang portfolio và thông tin liên hệ.", route);
+      mountSimpleView("Profile", "Mở portfolio gốc trong trang này.", `<button class="app-primary-action" type=button data-shell-show-profile>Mở portfolio</button>`);
+    } else {
+      updatePageHeader("Không tìm thấy trang", "Route này chưa có workspace tương ứng.", route);
+      mountSimpleView("Không tìm thấy trang", "Hãy quay lại dashboard hoặc dùng tìm kiếm toàn hệ thống.", `<button type=button data-app-route=/home>Về trang chủ</button>`);
+    }
+    document.title = `${pageHeader.querySelector("h1").textContent} | HH Platform`;
+    workspace.scrollTop = 0;
+    legacyMain.hidden = true;
+  };
+  const searchItems = () => {
+    const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
+    return [...modules, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+  };
+  const renderPalette = (query = "") => {
+    const normalized = query.trim().toLowerCase();
+    const results = searchItems().filter((item) => !normalized || item.key.toLowerCase().includes(normalized)).slice(0, 12);
+    paletteResults.innerHTML = results.length ? results.map((item) => `<button type="button" role="option" data-app-route="${item.route}"><span>${item.type}</span><div><strong>${item.title}</strong><small>${item.description}</small></div><b>↵</b></button>`).join("") : "<p>Không tìm thấy công cụ hoặc hướng dẫn phù hợp.</p>";
+  };
+  const openPalette = () => { palette.showModal(); renderPalette(); requestAnimationFrame(() => paletteInput.focus()); };
+  const closePalette = () => palette.open && palette.close();
+
+  document.addEventListener("click", (event) => {
+    const routeButton = event.target.closest("[data-app-route]");
+    if (routeButton) {
+      const route = routeButton.dataset.appRoute;
+      if (route) {
+        location.hash = `#${route}`;
+        if (window.matchMedia("(max-width: 720px)").matches) {
+          document.body.classList.add("app-sidebar-collapsed");
+          saveState({ collapsed: true });
+        }
+        closePalette();
+      }
+      return;
+    }
+    const toggle = event.target.closest("[data-shell-toggle]");
+    if (toggle) {
+      const collapsed = !document.body.classList.contains("app-sidebar-collapsed");
+      document.body.classList.toggle("app-sidebar-collapsed", collapsed);
+      toggle.setAttribute("aria-expanded", String(!collapsed));
+      saveState({ collapsed });
+      return;
+    }
+    if (event.target.closest("[data-command-open]")) { openPalette(); return; }
+    const favorite = event.target.closest("[data-shell-favorite]");
+    if (favorite) {
+      let favorites = [];
+      try { favorites = JSON.parse(localStorage.getItem("hh-module-favorites") || "[]"); } catch {}
+      const id = favorite.dataset.shellFavorite;
+      const enabled = !favorites.includes(id);
+      localStorage.setItem("hh-module-favorites", JSON.stringify(enabled ? [...favorites, id] : favorites.filter((item) => item !== id)));
+      favorite.textContent = enabled ? "★ Đã yêu thích" : "☆ Yêu thích";
+      return;
+    }
+    if (event.target.closest("[data-shell-show-profile]")) {
+      shell.hidden = true;
+      document.body.classList.remove("app-shell-enabled");
+      legacyMain.hidden = false;
+      platform.hidden = false;
+      location.hash = "#about";
+    }
+  });
+  document.addEventListener("change", (event) => {
+    const setting = event.target.closest("[data-shell-setting]");
+    if (!setting) return;
+    const next = { [setting.dataset.shellSetting]: setting.checked };
+    saveState(next);
+    if (setting.dataset.shellSetting === "collapsed") document.body.classList.toggle("app-sidebar-collapsed", setting.checked);
+    if (setting.dataset.shellSetting === "advanced") document.body.classList.toggle("app-advanced-mode", setting.checked);
+  });
+  document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openPalette(); }
+    if (event.key === "Escape") closePalette();
+  });
+  paletteInput?.addEventListener("input", () => renderPalette(paletteInput.value));
+  window.addEventListener("hashchange", renderRoute);
+  window.addEventListener("hh:auth-change", () => { setShellVisibility(); setUser(); });
+  const initial = stored();
+  const compactOnMobile = window.matchMedia("(max-width: 720px)").matches;
+  document.body.classList.toggle("app-sidebar-collapsed", compactOnMobile || Boolean(initial.collapsed));
+  document.body.classList.toggle("app-advanced-mode", Boolean(initial.advanced));
+  const updateClock = () => {
+    byId("shellClock").textContent = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    byId("shellDate").textContent = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
+  };
+  updateClock();
+  setInterval(updateClock, 60000);
+  setShellVisibility();
+}
+
 resizeCanvas();
 drawParticles();
 updateScrollMeter();
@@ -3895,6 +4154,7 @@ initCommunityChatV2();
 initMusicPlayer();
 initMiniTabs();
 initTool();
+initAppShell();
 
 window.addEventListener("resize", resizeCanvas);
 window.addEventListener("scroll", updateScrollMeter, { passive: true });

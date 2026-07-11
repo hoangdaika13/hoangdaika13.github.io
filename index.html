@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=25">
+  <link rel="stylesheet" href="styles.css?v=27">
   <script src="config.js?v=3"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
@@ -56,6 +56,65 @@
       </div>
     </div>
   </section>
+
+  <section class="app-shell" id="appShell" aria-label="HH Platform workspace" hidden>
+    <header class="app-header">
+      <div class="app-header__start">
+        <button class="app-icon-button" type="button" data-shell-toggle aria-label="Thu gọn thanh điều hướng" aria-expanded="true">☰</button>
+        <a class="app-brand" href="#/home" data-app-route="/home" aria-label="HH Platform dashboard"><span>HH</span><strong>HH Platform</strong></a>
+      </div>
+      <button class="app-global-search" type="button" data-command-open aria-haspopup="dialog"><span>⌕</span><span>Tìm công cụ, chức năng, dự án hoặc hướng dẫn...</span><kbd>Ctrl K</kbd></button>
+      <div class="app-header__actions">
+        <button class="app-action-button" type="button" data-app-route="/create" title="Tạo mới">＋<span>Tạo mới</span></button>
+        <button class="app-icon-button" type="button" data-app-route="/learn" aria-label="Trợ giúp">?</button>
+        <button class="app-icon-button" type="button" data-app-route="/communication/notifications" aria-label="Thông báo">♢</button>
+        <button class="app-user-button" type="button" data-app-route="/settings"><span id="shellUserInitials">HH</span><strong id="shellUserName">Tài khoản</strong></button>
+      </div>
+    </header>
+
+    <div class="app-shell__body">
+      <nav class="app-sidebar" aria-label="Điều hướng ứng dụng">
+        <div class="app-sidebar__primary" data-app-navigation></div>
+        <div class="app-sidebar__footer">
+          <button class="app-sidebar__item" type="button" data-app-route="/favorites"><span>☆</span><b>Yêu thích</b></button>
+          <button class="app-sidebar__item" type="button" data-app-route="/recent"><span>◷</span><b>Gần đây</b></button>
+          <button class="app-sidebar__item" type="button" data-app-route="/settings"><span>⚙</span><b>Cài đặt</b></button>
+        </div>
+      </nav>
+
+      <main class="app-main" id="appMain" tabindex="-1">
+        <nav class="app-breadcrumb" aria-label="Breadcrumb" id="appBreadcrumb"></nav>
+        <section class="app-page-header" id="appPageHeader">
+          <div><p class="app-page-header__eyebrow">HH Platform</p><h1>Trang chủ</h1><p>Bắt đầu với các công cụ phù hợp cho công việc của bạn.</p></div>
+          <div class="app-page-header__actions" id="appPageActions"></div>
+        </section>
+        <div class="app-workspace" id="appWorkspace" aria-live="polite">
+          <section class="dashboard-home" data-shell-view="home">
+            <div class="dashboard-welcome">
+              <div><p class="section-kicker">Bắt đầu nhanh</p><h2 id="dashboardGreeting">Chào mừng trở lại</h2><p>Chọn một lối tắt hoặc mở toàn bộ công cụ từ thanh điều hướng.</p></div>
+              <div class="dashboard-clock"><strong id="shellClock">--:--</strong><span id="shellDate">Đang đồng bộ thời gian</span></div>
+            </div>
+            <div class="dashboard-quick-actions">
+              <button type="button" data-app-route="/create/ai-center"><span>✦</span><strong>Tạo nội dung</strong><small>Prompt, kịch bản và nội dung AI</small></button>
+              <button type="button" data-app-route="/create/creator-studio"><span>◫</span><strong>Tạo media</strong><small>Thumbnail, video và media</small></button>
+              <button type="button" data-app-route="/work/ai-automation"><span>↻</span><strong>Tự động hóa</strong><small>Chạy quy trình nội dung</small></button>
+              <button type="button" data-app-route="/analytics"><span>↗</span><strong>Xem phân tích</strong><small>Theo dõi hiệu suất hoạt động</small></button>
+            </div>
+            <div class="dashboard-grid">
+              <section class="dashboard-panel"><header><div><span>Tiếp tục công việc</span><strong>Dự án và bản nháp gần đây</strong></div><button type="button" data-app-route="/work/project-center">Mở dự án</button></header><div id="dashboardRecentWork" class="dashboard-list"></div></section>
+              <section class="dashboard-panel"><header><div><span>Công cụ thường dùng</span><strong>Gợi ý dành cho bạn</strong></div><button type="button" data-app-route="/tools">Tất cả công cụ</button></header><div id="dashboardRecommended" class="dashboard-list"></div></section>
+              <section class="dashboard-panel dashboard-panel--guide"><header><div><span>Hướng dẫn nhanh</span><strong>Hoàn thành bước đầu tiên</strong></div></header><ol><li>Chọn một công cụ trong nhóm Sáng tạo.</li><li>Nhập ý tưởng hoặc nội dung nguồn.</li><li>Lưu hoặc xuất kết quả khi hoàn tất.</li></ol></section>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <dialog class="command-palette" id="commandPalette" aria-label="Tìm kiếm toàn hệ thống">
+    <div class="command-palette__header"><span>⌕</span><input id="commandPaletteInput" type="search" placeholder="Tìm công cụ, chức năng, dự án hoặc hướng dẫn..." autocomplete="off"><kbd>Esc</kbd></div>
+    <div class="command-palette__results" id="commandPaletteResults" role="listbox"></div>
+  </dialog>
 
   <header class="site-header neon-header">
     <a class="brand" href="#top" aria-label="Về đầu trang">
@@ -691,6 +750,6 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=25"></script>
+  <script src="script.js?v=27"></script>
 </body>
 </html>

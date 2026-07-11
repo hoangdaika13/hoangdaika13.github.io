@@ -9,6 +9,7 @@ module.exports = async function handler(req, res) {
       return res.status(401).json({ error: "Sai email hoặc mật khẩu." });
     }
     await db.collection("users").updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
+    await db.collection("loginEvents").insertOne({ userId: user._id, type: "login", userAgent: clean(req.headers["user-agent"], 300), forwardedFor: clean(req.headers["x-forwarded-for"], 120), createdAt: new Date() });
     return res.status(200).json({ token: signUser(user), user: publicUser(user) });
   });
 };
