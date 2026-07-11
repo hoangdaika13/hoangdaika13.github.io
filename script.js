@@ -880,6 +880,82 @@ function initSuperPlatform() {
     `;
   };
 
+  const aiCenterMarkup = () => {
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem("hh-ai-center") || "{}"); } catch { state = {}; }
+    const sessions = Array.isArray(state.sessions) ? state.sessions : [];
+    return `
+      <section class="ai-center-app" data-ai-center>
+        <header class="ai-center-hero">
+          <div><p class="section-kicker">AI Center 02</p><h4>Trung tâm trí tuệ sáng tạo</h4><span>Chat, thiết kế prompt, tối ưu, dịch và chạy workflow trong một không gian.</span></div>
+          <div class="ai-model-status"><i></i><div><strong data-ai-status>Local Intelligence</strong><span>Không gửi dữ liệu khi chưa yêu cầu</span></div></div>
+        </header>
+        <div class="ai-center-toolbar">
+          <div class="ai-tool-tabs" role="tablist">
+            ${[["chat","Chat AI"],["prompt","Prompt Studio"],["optimize","Tối ưu"],["translate","Dịch"],["workflow","Workflow"]].map(([id,label], index) => `<button class="interactive ${index === 0 ? "active" : ""}" type="button" data-ai-tab="${id}">${label}</button>`).join("")}
+          </div>
+          <label class="ai-model-select">Model<select data-ai-model><option value="smart-local">HH Smart Local</option><option value="creative">Creative Writer</option><option value="analyst">Deep Analyst</option><option value="fast">Fast Assistant</option><option value="cloud">Cloud AI (backend)</option></select></label>
+        </div>
+        <div class="ai-center-layout">
+          <aside class="ai-sidebar">
+            <button class="ai-new-session interactive" type="button" data-ai-new>+ Cuộc trò chuyện mới</button>
+            <label class="ai-history-search"><span>Tìm lịch sử</span><input type="search" data-ai-search placeholder="Tên hoặc nội dung..."></label>
+            <div class="ai-session-list" data-ai-sessions>
+              ${sessions.slice(0, 10).map((item, index) => `<button class="interactive" type="button" data-ai-session="${index}"><span>${escapeHtml(item.title || "Phiên AI")}</span><small>${escapeHtml(item.time || "")}</small></button>`).join("") || "<p>Chưa có phiên đã lưu.</p>"}
+            </div>
+            <div class="ai-quick-prompts">
+              <strong>Prompt nhanh</strong>
+              ${["Viết tiêu đề YouTube","Tóm tắt nội dung","Lập kế hoạch dự án","Sửa code HTML","Viết bài mạng xã hội"].map((item) => `<button class="interactive" type="button" data-ai-quick="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}
+            </div>
+          </aside>
+          <main class="ai-workspace">
+            <section class="ai-pane active" data-ai-pane="chat">
+              <div class="ai-chat-stream" data-ai-stream><article class="ai-message assistant"><span>HH</span><div><strong>HH AI Assistant</strong><p>Xin chào. Hãy nhập yêu cầu, tôi sẽ phân tích cấu trúc và tạo câu trả lời ngay trên thiết bị.</p></div></article></div>
+              <form class="ai-composer" data-ai-chat-form>
+                <textarea data-ai-chat-input rows="3" placeholder="Nhập câu hỏi, ý tưởng, đoạn code hoặc nội dung cần xử lý..."></textarea>
+                <div><span><b data-ai-char-count>0</b> ký tự</span><button class="interactive" type="button" data-ai-clear-chat>Xóa</button><button class="button primary interactive" type="submit">Gửi AI</button></div>
+              </form>
+            </section>
+            <section class="ai-pane" data-ai-pane="prompt">
+              <div class="ai-pane-heading"><div><span>Prompt Studio</span><h5>Thiết kế prompt chuyên nghiệp</h5></div><button class="interactive" type="button" data-ai-example>Điền ví dụ</button></div>
+              <div class="ai-prompt-grid">
+                <label>Vai trò<input data-ai-role placeholder="Ví dụ: Chuyên gia nội dung YouTube"></label>
+                <label>Mục tiêu<input data-ai-goal placeholder="Kết quả bạn muốn nhận"></label>
+                <label>Đối tượng<input data-ai-audience placeholder="Người xem / người đọc"></label>
+                <label>Giọng điệu<select data-ai-tone><option>Chuyên nghiệp</option><option>Cảm xúc</option><option>Thân thiện</option><option>Thuyết phục</option><option>Sáng tạo</option></select></label>
+                <label class="wide">Ngữ cảnh<textarea data-ai-context rows="4" placeholder="Thông tin nền, dữ liệu, giới hạn..."></textarea></label>
+                <label class="wide">Yêu cầu đầu ra<textarea data-ai-output rows="3" placeholder="Cấu trúc, độ dài, ngôn ngữ, định dạng..."></textarea></label>
+              </div>
+              <button class="button primary interactive ai-build-prompt" type="button" data-ai-build-prompt>Tạo prompt hoàn chỉnh</button>
+            </section>
+            <section class="ai-pane" data-ai-pane="optimize">
+              <div class="ai-pane-heading"><div><span>Prompt Optimizer</span><h5>Làm rõ và tăng chất lượng yêu cầu</h5></div><div class="ai-score"><strong data-ai-score>0</strong><span>/100</span></div></div>
+              <textarea class="ai-large-input" data-ai-optimize-input rows="10" placeholder="Dán prompt cần tối ưu..."></textarea>
+              <div class="ai-option-row"><label><input type="checkbox" data-ai-opt="structure" checked>Cấu trúc</label><label><input type="checkbox" data-ai-opt="constraints" checked>Ràng buộc</label><label><input type="checkbox" data-ai-opt="examples">Ví dụ</label><label><input type="checkbox" data-ai-opt="reasoning" checked>Các bước</label></div>
+              <button class="button primary interactive" type="button" data-ai-optimize>Tối ưu ngay</button>
+            </section>
+            <section class="ai-pane" data-ai-pane="translate">
+              <div class="ai-pane-heading"><div><span>Prompt Translator</span><h5>Chuyển ngôn ngữ, giữ nguyên ý nghĩa</h5></div><button class="interactive" type="button" data-ai-swap>Đổi chiều</button></div>
+              <div class="ai-translate-grid"><label><select data-ai-source-lang><option value="vi">Tiếng Việt</option><option value="en">English</option></select><textarea data-ai-translate-input rows="10" placeholder="Nhập nội dung..."></textarea></label><label><select data-ai-target-lang><option value="en">English</option><option value="vi">Tiếng Việt</option></select><textarea data-ai-translate-output rows="10" readonly placeholder="Bản dịch..."></textarea></label></div>
+              <button class="button primary interactive" type="button" data-ai-translate>Dịch prompt</button>
+            </section>
+            <section class="ai-pane" data-ai-pane="workflow">
+              <div class="ai-pane-heading"><div><span>AI Workflow</span><h5>Chuỗi xử lý nhiều bước</h5></div><button class="interactive" type="button" data-ai-add-step>+ Thêm bước</button></div>
+              <label class="ai-workflow-source">Dữ liệu đầu vào<textarea data-ai-workflow-input rows="4" placeholder="Chủ đề hoặc nội dung cần xử lý..."></textarea></label>
+              <div class="ai-workflow-steps" data-ai-workflow-steps>${["Phân tích yêu cầu","Tạo bản nháp","Kiểm tra và cải thiện"].map((item,index) => `<label><span>${index+1}</span><input value="${item}" data-ai-step><button class="interactive" type="button" data-ai-remove-step aria-label="Xóa bước">×</button></label>`).join("")}</div>
+              <button class="button primary interactive" type="button" data-ai-run-workflow>Chạy toàn bộ workflow</button>
+            </section>
+          </main>
+          <aside class="ai-context-panel">
+            <header><div><span>Kết quả AI</span><strong data-ai-result-title>Sẵn sàng</strong></div><button class="interactive" type="button" data-ai-copy-result>Sao chép</button></header>
+            <pre data-ai-result>Chọn một công cụ và nhập yêu cầu để bắt đầu.</pre>
+            <div class="ai-result-actions"><button class="interactive" type="button" data-ai-save-result>Lưu phiên</button><button class="interactive" type="button" data-ai-export-result>Xuất TXT</button></div>
+            <div class="ai-insights"><strong>Phân tích nhanh</strong><span>Độ rõ ràng <i data-ai-clarity style="--value:20%"></i></span><span>Chi tiết <i data-ai-detail style="--value:15%"></i></span><span>Khả năng sử dụng <i data-ai-usability style="--value:25%"></i></span></div>
+          </aside>
+        </div>
+      </section>`;
+  };
+
   const moduleStudioMarkup = (module) => {
     const profile = profileFor(module);
     const stored = JSON.parse(localStorage.getItem(`${stateKey}:${module.id}:studio`) || "null") || {};
@@ -1153,7 +1229,7 @@ function initSuperPlatform() {
             </div>
           </div>
           <div class="module-inline-app" data-inline-app="${module.id}">
-            ${module.id === "command-center" ? commandCenterMarkup(module) : module.id === "download-center" ? downloadCenterMarkup(module) : moduleStudioMarkup(module)}
+            ${module.id === "command-center" ? commandCenterMarkup(module) : module.id === "ai-center" ? aiCenterMarkup(module) : module.id === "download-center" ? downloadCenterMarkup(module) : moduleStudioMarkup(module)}
             <label>
               Dữ liệu dùng nhanh
               <textarea data-inline-input="${module.id}" rows="4" placeholder="Nhập yêu cầu cho ${escapeHtml(module.title)}..."></textarea>
@@ -1414,6 +1490,81 @@ function initSuperPlatform() {
     }
   });
 
+  const aiPanel = () => grid.querySelector("[data-ai-center]");
+  const aiResult = (title, text) => {
+    const panel = aiPanel();
+    const output = panel?.querySelector("[data-ai-result]");
+    const heading = panel?.querySelector("[data-ai-result-title]");
+    if (output) output.textContent = text;
+    if (heading) heading.textContent = title;
+    const length = text.length;
+    [["clarity", Math.min(96, 35 + Math.round(length / 18))], ["detail", Math.min(98, 25 + Math.round(length / 12))], ["usability", Math.min(97, 45 + Math.round(length / 20))]].forEach(([key, value]) => {
+      panel?.querySelector(`[data-ai-${key}]`)?.style.setProperty("--value", `${value}%`);
+    });
+  };
+  const aiLocalAnswer = (input, model) => {
+    const text = input.trim();
+    const lower = text.toLowerCase();
+    const style = model === "creative" ? "sáng tạo, giàu hình ảnh" : model === "analyst" ? "phân tích sâu, có luận điểm" : model === "fast" ? "ngắn gọn, đi thẳng trọng tâm" : "rõ ràng, thực tế";
+    if (/html|css|javascript|code|lỗi|bug/.test(lower)) return [`Tôi đã phân tích yêu cầu theo hướng ${style}.`, "", "Hướng xử lý:", "1. Xác định chính xác thành phần và hành vi cần thay đổi.", "2. Giữ cấu trúc hiện tại, tách giao diện, trạng thái và sự kiện.", "3. Kiểm tra responsive, lỗi JavaScript và trạng thái khi dữ liệu trống.", "4. Chạy kiểm thử trước khi xuất bản.", "", "Yêu cầu đã nhận:", text, "", "Gợi ý kỹ thuật: cung cấp đoạn code hoặc ảnh lỗi để tạo bản sửa chính xác đến từng dòng."].join("\n");
+    if (/youtube|video|tiêu đề|kịch bản|nội dung/.test(lower)) return [`Chiến lược nội dung (${style}):`, "", `Chủ đề: ${text}`, "", "Cấu trúc đề xuất:", "1. Hook 5-10 giây tạo tò mò.", "2. Nêu xung đột hoặc vấn đề chính.", "3. Phát triển 3 điểm có ví dụ cụ thể.", "4. Cao trào và bài học.", "5. CTA tự nhiên, không ngắt cảm xúc.", "", "Tiêu đề mẫu:", `• Điều Không Ai Ngờ Đã Xảy Ra: ${text.slice(0, 70)}`, `• Sự Thật Phía Sau ${text.slice(0, 55)}`].join("\n");
+    if (/kế hoạch|dự án|roadmap|công việc/.test(lower)) return [`Kế hoạch hành động (${style}):`, "", `Mục tiêu: ${text}`, "", "Giai đoạn 1 - Chuẩn bị: xác định đầu ra, dữ liệu và tiêu chí hoàn thành.", "Giai đoạn 2 - Thực hiện: chia thành nhiệm vụ nhỏ, ưu tiên phần ảnh hưởng lớn.", "Giai đoạn 3 - Kiểm tra: thử trường hợp thường gặp và trường hợp lỗi.", "Giai đoạn 4 - Phát hành: sao lưu, triển khai, theo dõi phản hồi.", "", "Bước tiếp theo: viết một đầu ra đo lường được và thời hạn cụ thể."].join("\n");
+    return [`Phân tích theo phong cách ${style}:`, "", `Bạn đang yêu cầu: “${text}”`, "", "Câu trả lời đề xuất:", "• Mục tiêu chính cần được diễn đạt bằng một kết quả cụ thể.", "• Bổ sung đối tượng sử dụng, giới hạn và định dạng đầu ra.", "• Chia yêu cầu thành các bước có thể kiểm tra độc lập.", "", "Prompt tốt hơn:", `Hãy đóng vai chuyên gia phù hợp. Thực hiện yêu cầu sau: ${text}. Trình bày rõ ràng theo từng bước, đưa ví dụ cụ thể, nêu giả định và kết thúc bằng checklist hành động.`].join("\n");
+  };
+  const aiSaveSession = (title, input, result) => {
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem("hh-ai-center") || "{}"); } catch { state = {}; }
+    const session = { title: title || input.slice(0, 48) || "Phiên AI", input, result, time: new Date().toLocaleString("vi-VN") };
+    state.sessions = [session, ...(state.sessions || [])].slice(0, 30);
+    localStorage.setItem("hh-ai-center", JSON.stringify(state));
+    const list = aiPanel()?.querySelector("[data-ai-sessions]");
+    if (list) list.innerHTML = state.sessions.slice(0, 10).map((item, index) => `<button class="interactive" type="button" data-ai-session="${index}"><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.time)}</small></button>`).join("");
+    return session;
+  };
+  const aiRunChat = async (form) => {
+    const panel = aiPanel();
+    const input = form.querySelector("[data-ai-chat-input]");
+    const text = input?.value.trim() || "";
+    if (!text) return input?.focus();
+    const stream = panel?.querySelector("[data-ai-stream]");
+    const model = panel?.querySelector("[data-ai-model]")?.value || "smart-local";
+    stream?.insertAdjacentHTML("beforeend", `<article class="ai-message user"><span>Bạn</span><div><strong>Bạn</strong><p>${escapeHtml(text)}</p></div></article><article class="ai-message assistant thinking" data-ai-thinking><span>HH</span><div><strong>Đang suy nghĩ...</strong><p>Phân tích mục tiêu và tạo câu trả lời.</p></div></article>`);
+    if (input) input.value = "";
+    let answer = "";
+    if (model === "cloud" && REALTIME_URL) {
+      try {
+        const token = localStorage.getItem("hh-auth-token") || "";
+        const response = await fetch(`${REALTIME_URL}/api/modules/ai-center/actions`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ input: text, actionType: "chat", meta: { model } }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Cloud AI không phản hồi");
+        answer = data.action?.output || aiLocalAnswer(text, "analyst");
+      } catch (error) { answer = `${aiLocalAnswer(text, "smart-local")}\n\n[Cloud AI chưa sẵn sàng: ${error.message}]`; }
+    } else answer = aiLocalAnswer(text, model);
+    const thinking = stream?.querySelector("[data-ai-thinking]");
+    if (thinking) thinking.outerHTML = `<article class="ai-message assistant"><span>HH</span><div><strong>HH AI · ${escapeHtml(model)}</strong><p>${escapeHtml(answer)}</p></div></article>`;
+    if (stream) stream.scrollTop = stream.scrollHeight;
+    aiResult("Kết quả chat", answer);
+    aiSaveSession(text.slice(0, 48), text, answer);
+  };
+
+  grid.addEventListener("submit", (event) => {
+    const form = event.target.closest("[data-ai-chat-form]");
+    if (!form) return;
+    event.preventDefault();
+    aiRunChat(form);
+  });
+
+  grid.addEventListener("input", (event) => {
+    if (event.target.matches("[data-ai-chat-input]")) {
+      const counter = aiPanel()?.querySelector("[data-ai-char-count]");
+      if (counter) counter.textContent = event.target.value.length;
+    }
+    if (event.target.matches("[data-ai-search]")) {
+      const query = event.target.value.toLowerCase();
+      aiPanel()?.querySelectorAll("[data-ai-session]").forEach((item) => item.hidden = !item.textContent.toLowerCase().includes(query));
+    }
+  });
+
   const downloadPlatformOf = (value) => {
     try {
       const host = new URL(value).hostname.toLowerCase();
@@ -1535,6 +1686,97 @@ function initSuperPlatform() {
   });
 
   grid.addEventListener("click", (event) => {
+    const ai = event.target.closest("[data-ai-center]");
+    if (ai) {
+      const tabButton = event.target.closest("[data-ai-tab]");
+      if (tabButton) {
+        ai.querySelectorAll("[data-ai-tab]").forEach((item) => item.classList.toggle("active", item === tabButton));
+        ai.querySelectorAll("[data-ai-pane]").forEach((item) => item.classList.toggle("active", item.dataset.aiPane === tabButton.dataset.aiTab));
+        return;
+      }
+      const quick = event.target.closest("[data-ai-quick]");
+      if (quick) {
+        const input = ai.querySelector("[data-ai-chat-input]");
+        if (input) input.value = `${quick.dataset.aiQuick}: `;
+        ai.querySelector('[data-ai-tab="chat"]')?.click();
+        input?.focus();
+        return;
+      }
+      if (event.target.closest("[data-ai-new]")) {
+        const stream = ai.querySelector("[data-ai-stream]");
+        if (stream) stream.innerHTML = '<article class="ai-message assistant"><span>HH</span><div><strong>HH AI Assistant</strong><p>Phiên mới đã sẵn sàng. Bạn muốn làm gì?</p></div></article>';
+        aiResult("Phiên mới", "Nhập yêu cầu để bắt đầu.");
+        return;
+      }
+      if (event.target.closest("[data-ai-clear-chat]")) {
+        const stream = ai.querySelector("[data-ai-stream]");
+        if (stream) stream.innerHTML = "";
+        return;
+      }
+      const sessionButton = event.target.closest("[data-ai-session]");
+      if (sessionButton) {
+        let sessions = [];
+        try { sessions = JSON.parse(localStorage.getItem("hh-ai-center") || "{}").sessions || []; } catch { sessions = []; }
+        const session = sessions[Number(sessionButton.dataset.aiSession)];
+        if (session) { aiResult(session.title, session.result); const input = ai.querySelector("[data-ai-chat-input]"); if (input) input.value = session.input || ""; }
+        return;
+      }
+      if (event.target.closest("[data-ai-example]")) {
+        const values = { "[data-ai-role]": "Chuyên gia chiến lược YouTube", "[data-ai-goal]": "Viết kịch bản giữ chân người xem", "[data-ai-audience]": "Nam nữ 40-65 tuổi", "[data-ai-context]": "Câu chuyện gia đình cảm động, thời lượng 12 phút", "[data-ai-output]": "Hook, 5 phần nội dung, cao trào, CTA; tiếng Việt tự nhiên" };
+        Object.entries(values).forEach(([selector, value]) => { const field = ai.querySelector(selector); if (field) field.value = value; });
+        return;
+      }
+      if (event.target.closest("[data-ai-build-prompt]")) {
+        const value = (selector, fallback) => ai.querySelector(selector)?.value.trim() || fallback;
+        const prompt = [`VAI TRÒ\nBạn là ${value("[data-ai-role]", "một chuyên gia phù hợp")}.`, `\nMỤC TIÊU\n${value("[data-ai-goal]", "Hoàn thành yêu cầu chính xác")}.`, `\nĐỐI TƯỢNG\n${value("[data-ai-audience]", "Người dùng phổ thông")}.`, `\nNGỮ CẢNH\n${value("[data-ai-context]", "Chưa cung cấp; hãy nêu giả định trước khi trả lời")}.`, `\nGIỌNG ĐIỆU\n${value("[data-ai-tone]", "Chuyên nghiệp")}.`, `\nĐẦU RA BẮT BUỘC\n${value("[data-ai-output]", "Trình bày từng bước, rõ ràng và có ví dụ")}.`, "\nQUY TẮC\n- Không bịa dữ kiện.\n- Nêu giả định và điểm chưa chắc chắn.\n- Tự kiểm tra kết quả trước khi trả lời.\n- Kết thúc bằng checklist hành động."].join("\n");
+        aiResult("Prompt hoàn chỉnh", prompt);
+        return;
+      }
+      if (event.target.closest("[data-ai-optimize]")) {
+        const input = ai.querySelector("[data-ai-optimize-input]")?.value.trim() || "";
+        if (!input) return ai.querySelector("[data-ai-optimize-input]")?.focus();
+        const options = Array.from(ai.querySelectorAll("[data-ai-opt]:checked")).map((item) => item.dataset.aiOpt);
+        const optimized = [`VAI TRÒ: Hãy đóng vai chuyên gia có kinh nghiệm thực tế phù hợp với nhiệm vụ.`, `\nNHIỆM VỤ: ${input}`, options.includes("structure") ? "\nCẤU TRÚC: Phân tích mục tiêu, thực hiện theo từng bước, sau đó tự kiểm tra kết quả." : "", options.includes("constraints") ? "\nRÀNG BUỘC: Không bịa thông tin; nêu rõ giả định; ưu tiên giải pháp có thể thực hiện ngay." : "", options.includes("examples") ? "\nVÍ DỤ: Cung cấp ít nhất 2 ví dụ cụ thể và một trường hợp cần tránh." : "", options.includes("reasoning") ? "\nQUY TRÌNH: Giải thích ngắn gọn cơ sở của từng quyết định quan trọng." : "", "\nĐẦU RA: Dùng tiêu đề ngắn, danh sách hành động và checklist hoàn thành."].filter(Boolean).join("\n");
+        const score = Math.min(98, 58 + options.length * 9 + Math.min(8, Math.round(input.length / 80)));
+        const scoreNode = ai.querySelector("[data-ai-score]"); if (scoreNode) scoreNode.textContent = score;
+        aiResult(`Prompt tối ưu · ${score}/100`, optimized);
+        return;
+      }
+      if (event.target.closest("[data-ai-swap]")) {
+        const source = ai.querySelector("[data-ai-source-lang]"); const target = ai.querySelector("[data-ai-target-lang]");
+        if (source && target) [source.value, target.value] = [target.value, source.value];
+        const input = ai.querySelector("[data-ai-translate-input]"); const output = ai.querySelector("[data-ai-translate-output]");
+        if (input && output) [input.value, output.value] = [output.value, input.value];
+        return;
+      }
+      if (event.target.closest("[data-ai-translate]")) {
+        const input = ai.querySelector("[data-ai-translate-input]")?.value.trim() || "";
+        const target = ai.querySelector("[data-ai-target-lang]")?.value;
+        if (!input) return ai.querySelector("[data-ai-translate-input]")?.focus();
+        const translated = target === "en" ? `Act as an expert assistant. Preserve the original intent and execute this request accurately:\n\n${input}\n\nReturn a clear, structured answer with practical examples and an action checklist.` : `Hãy đóng vai trợ lý chuyên gia. Giữ nguyên ý nghĩa ban đầu và thực hiện chính xác yêu cầu sau:\n\n${input}\n\nTrả lời rõ ràng, có cấu trúc, ví dụ thực tế và checklist hành động.`;
+        const output = ai.querySelector("[data-ai-translate-output]"); if (output) output.value = translated;
+        aiResult("Prompt đã chuyển ngữ", translated);
+        return;
+      }
+      if (event.target.closest("[data-ai-add-step]")) {
+        const steps = ai.querySelector("[data-ai-workflow-steps]");
+        const number = (steps?.children.length || 0) + 1;
+        steps?.insertAdjacentHTML("beforeend", `<label><span>${number}</span><input value="Bước xử lý ${number}" data-ai-step><button class="interactive" type="button" data-ai-remove-step aria-label="Xóa bước">×</button></label>`);
+        return;
+      }
+      const removeStep = event.target.closest("[data-ai-remove-step]");
+      if (removeStep) { removeStep.closest("label")?.remove(); return; }
+      if (event.target.closest("[data-ai-run-workflow]")) {
+        const source = ai.querySelector("[data-ai-workflow-input]")?.value.trim() || "Chưa có dữ liệu đầu vào";
+        const steps = Array.from(ai.querySelectorAll("[data-ai-step]")).map((item) => item.value.trim()).filter(Boolean);
+        const result = [`WORKFLOW HOÀN TẤT`, `\nĐầu vào: ${source}`, ...steps.map((step, index) => `\nBƯỚC ${index + 1}: ${step}\n${aiLocalAnswer(`${step}. Dữ liệu: ${source}`, index === 0 ? "analyst" : "smart-local").split("\n").slice(0, 4).join("\n")}`), "\nKết luận: Các bước đã được xử lý. Hãy kiểm tra và tinh chỉnh kết quả trước khi xuất bản."].join("\n");
+        aiResult("Workflow hoàn thành", result);
+        return;
+      }
+      if (event.target.closest("[data-ai-copy-result]")) { navigator.clipboard.writeText(ai.querySelector("[data-ai-result]")?.textContent || ""); return; }
+      if (event.target.closest("[data-ai-save-result]")) { const text = ai.querySelector("[data-ai-result]")?.textContent || ""; aiSaveSession(ai.querySelector("[data-ai-result-title]")?.textContent, "", text); return; }
+      if (event.target.closest("[data-ai-export-result]")) { downloadText("hh-ai-center-result.txt", ai.querySelector("[data-ai-result]")?.textContent || ""); return; }
+    }
     const panel = event.target.closest("[data-social-downloader]");
     if (panel) {
       const form = panel.querySelector("[data-download-form]");

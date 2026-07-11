@@ -42,29 +42,32 @@ async function downloadCenterAction(req, res) {
   } catch (error) { return res.status(502).json({ error: `Máy chủ tải không phản hồi: ${error.message}` }); }
 }
 
+function aiCenterOutput(input) {
+  return [
+    "HH Cloud AI đã phân tích yêu cầu.", "", `Yêu cầu: ${input || "Chưa có nội dung"}`, "",
+    "Hướng xử lý đề xuất:", "1. Xác định mục tiêu và đầu ra cần đạt.", "2. Chia nhiệm vụ thành các bước có thể kiểm tra.",
+    "3. Bổ sung ví dụ, giới hạn và tiêu chí chất lượng.", "4. Tự kiểm tra kết quả trước khi sử dụng.", "",
+    `Prompt nâng cấp: Hãy đóng vai chuyên gia phù hợp và thực hiện yêu cầu sau: ${input}. Trả lời có cấu trúc, nêu giả định, đưa ví dụ cụ thể và kết thúc bằng checklist hành động.`, "",
+    "Phiên này đã được lưu vào lịch sử tài khoản."
+  ].join("\n");
+}
+
 module.exports = async function handler(req, res) {
   if (req.query.moduleId === "download-center") return downloadCenterAction(req, res);
   return withApi(req, res, async ({ db, body }) => {
     const moduleId = clean(req.query.moduleId, 120);
     const collection = db.collection("moduleActions");
-
     if (req.method === "GET") {
       const actions = await collection.find({ moduleId }).sort({ createdAt: -1 }).limit(100).toArray();
       return res.status(200).json({ moduleId, actions });
     }
-
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
     const user = await currentUser(req);
     const input = clean(body.input, 8000);
     const actionType = clean(body.actionType || "run", 80);
-    const output = [
-      `Backend đã nhận action cho ${moduleId}.`,
-      "",
-      `Action: ${actionType}`,
-      `Input: ${input || "Không có input"}`,
-      "",
-      "Dữ liệu đã lưu MongoDB. Có thể thay output này bằng AI/API chuyên biệt sau."
-    ].join("\n");
+    const output = moduleId === "ai-center" && actionType === "chat"
+      ? aiCenterOutput(input)
+      : [`Backend đã nhận tác vụ cho ${moduleId}.`, "", `Tác vụ: ${actionType}`, `Dữ liệu: ${input || "Không có dữ liệu"}`, "", "Dữ liệu đã được lưu vào MongoDB."].join("\n");
     const doc = { moduleId, actionType, input, output, meta: body.meta || {}, ...ownerFrom(user, body), createdAt: new Date() };
     const result = await collection.insertOne(doc);
     await db.collection("events").insertOne({ type: "module:action", moduleId, actionType, actionId: result.insertedId, createdAt: new Date() });
