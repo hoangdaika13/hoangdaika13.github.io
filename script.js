@@ -4050,12 +4050,13 @@ function initAppShell() {
   };
   const saveState = (next) => localStorage.setItem(stateKey, JSON.stringify({ ...stored(), ...next }));
   const groups = [
-    { id: "home", label: "Trang chủ", icon: "⌂", route: "/home", items: [] },
+    { id: "home", label: "Trang chủ", icon: "⌂", route: "/home", items: ["command-center"] },
     { id: "create", label: "Sáng tạo", icon: "✦", route: "/create", items: ["ai-center", "creator-studio", "media-center", "ai-automation"] },
-    { id: "work", label: "Công việc", icon: "□", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center"] },
-    { id: "communication", label: "Giao tiếp", icon: "◌", route: "/communication", items: ["community", "notification-center", "user-dashboard"] },
-    { id: "insights", label: "Phân tích", icon: "↗", route: "/analytics", items: ["analytics", "smart-search"] },
-    { id: "learn", label: "Học tập", icon: "◫", route: "/learn", items: ["learning-center", "knowledge-center"] }
+    { id: "work", label: "Công việc", icon: "□", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare"] },
+    { id: "communication", label: "Giao tiếp", icon: "◌", route: "/communication", items: ["community", "notification-center", "user-dashboard", "feedback-survey", "helpdesk-ticketing", "referral-affiliate"] },
+    { id: "insights", label: "Phân tích", icon: "↗", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
+    { id: "learn", label: "Học tập", icon: "◫", route: "/learn", items: ["learning-center", "i18n", "accessibility-center", "gamification", "onboarding-tour"] },
+    { id: "system", label: "Hệ thống", icon: "⚙", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] }
   ];
   let activeRoute = "";
 
@@ -4170,9 +4171,9 @@ function initAppShell() {
       updatePageHeader(module.title, module.description, route, module);
       mountPlatform(module.id);
       remember(module.id);
-    } else if (route === "/tools" || route === "/create" || route === "/work" || route === "/communication" || route === "/analytics" || route === "/learn") {
+    } else if (route === "/tools" || groups.some((group) => group.route === route)) {
       const allowed = route === "/tools" ? "" : groups.find((group) => group.route === route)?.items || "";
-      updatePageHeader(route === "/tools" ? "Tất cả công cụ" : groups.find((group) => group.route === route)?.label || "Công cụ", "Chọn công cụ phù hợp và mở trong workspace.", route);
+      updatePageHeader(route === "/tools" ? "Tất cả công cụ" : groups.find((group) => group.route === route)?.label || "Công cụ", "Chọn một module để mở thành trang làm việc riêng.", route);
       mountPlatform("");
       if (Array.isArray(allowed)) document.querySelectorAll("#moduleGrid [data-module-id]").forEach((card) => { card.hidden = !allowed.includes(card.dataset.moduleId); });
     } else if (route === "/favorites" || route === "/recent") {
