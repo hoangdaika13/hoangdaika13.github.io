@@ -11,7 +11,7 @@ function supportedDownloadUrl(value) {
 }
 
 async function downloadCenterAction(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method === "GET") return res.status(200).json({ configured: Boolean(process.env.VIDEO_DOWNLOADER_API_URL), providers: downloadHosts });
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });

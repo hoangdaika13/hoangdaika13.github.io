@@ -4,8 +4,14 @@ const jwt = require("jsonwebtoken");
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || "hoangdaika13_site";
-const jwtSecret = process.env.JWT_SECRET || "change-this-jwt-secret";
 let cachedClient;
+let rateLimitIndexReady = false;
+
+function jwtSecret() {
+  const secret = String(process.env.JWT_SECRET || "");
+  if (secret.length < 32) throw new Error("Server security configuration is incomplete");
+  return secret;
+}
 
 async function database() {
   if (!uri) throw new Error("Missing MONGODB_URI");
@@ -16,15 +22,25 @@ async function database() {
   return cachedClient.db(dbName);
 }
 
-function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "*");
+function setCors(req, res) {
+  const allowed = String(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "https://hoangdaika13.github.io,https://hoangdaika13githubio.vercel.app").split(",").map((v) => v.trim());
+  const origin = String(req.headers.origin || "");
+  if (origin && allowed.includes(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 }
 
 function bodyOf(req) {
-  if (typeof req.body === "string") return JSON.parse(req.body || "{}");
+  if (typeof req.body === "string") {
+    if (Buffer.byteLength(req.body, "utf8") > 64 * 1024) throw new Error("Request body too large");
+    return JSON.parse(req.body || "{}");
+  }
   return req.body || {};
 }
 
@@ -34,23 +50,23 @@ function clean(value, max = 2000) {
 
 function signUser(user) {
   return jwt.sign(
-    { sub: String(user._id), email: user.email, name: user.name || "" },
-    jwtSecret,
-    { expiresIn: "30d" }
+    { sub: String(user._id), email: user.email, name: user.name || "", ver: Number(user.tokenVersion || 0) },
+    jwtSecret(),
+    { algorithm: "HS256", expiresIn: "12h", issuer: "hh-platform", audience: "hh-web" }
   );
 }
 
 function signOAuthState(provider, returnTo) {
   return jwt.sign(
     { type: "oauth", provider, returnTo },
-    jwtSecret,
-    { expiresIn: "10m" }
+    jwtSecret(),
+    { algorithm: "HS256", expiresIn: "10m", issuer: "hh-platform", audience: "hh-oauth" }
   );
 }
 
 function verifyOAuthState(state, provider) {
   try {
-    const value = jwt.verify(String(state || ""), jwtSecret);
+    const value = jwt.verify(String(state || ""), jwtSecret(), { algorithms: ["HS256"], issuer: "hh-platform", audience: "hh-oauth" });
     return value?.type === "oauth" && value.provider === provider ? value : null;
   } catch {
     return null;
@@ -73,9 +89,10 @@ async function currentUser(req) {
   const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) return null;
   try {
-    const payload = jwt.verify(token, jwtSecret);
+    const payload = jwt.verify(token, jwtSecret(), { algorithms: ["HS256"], issuer: "hh-platform", audience: "hh-web" });
     const db = await database();
-    return db.collection("users").findOne({ _id: new ObjectId(payload.sub) }, { projection: { passwordHash: 0 } });
+    const user = await db.collection("users").findOne({ _id: new ObjectId(payload.sub) }, { projection: { passwordHash: 0 } });
+    return user && Number(payload.ver || 0) === Number(user.tokenVersion || 0) ? user : null;
   } catch {
     return null;
   }
@@ -88,12 +105,34 @@ function ownerFrom(user, body = {}) {
 }
 
 async function withApi(req, res, handler) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
   try {
     return await handler({ db: await database(), body: bodyOf(req) });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error("API error", error?.message || error);
+    if (error?.statusCode === 429) return res.status(429).json({ error: "Bạn thao tác quá nhanh. Vui lòng thử lại sau." });
+    if (error?.message === "Request body too large") return res.status(413).json({ error: "Yêu cầu vượt quá giới hạn cho phép." });
+    return res.status(500).json({ error: "Máy chủ không thể xử lý yêu cầu." });
+  }
+}
+
+async function enforceRateLimit(db, key, limit = 10, windowMs = 15 * 60 * 1000) {
+  const now = new Date();
+  const bucket = new Date(Math.floor(now.getTime() / windowMs) * windowMs);
+  if (!rateLimitIndexReady) {
+    await db.collection("rateLimits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    rateLimitIndexReady = true;
+  }
+  const result = await db.collection("rateLimits").findOneAndUpdate(
+    { _id: `${clean(key, 300)}:${bucket.toISOString()}` },
+    { $inc: { count: 1 }, $setOnInsert: { createdAt: now, expiresAt: new Date(bucket.getTime() + windowMs * 2) } },
+    { upsert: true, returnDocument: "after" }
+  );
+  if (Number(result?.count || 0) > limit) {
+    const error = new Error("Rate limit exceeded");
+    error.statusCode = 429;
+    throw error;
   }
 }
 
@@ -103,6 +142,7 @@ module.exports = {
   clean,
   currentUser,
   database,
+  enforceRateLimit,
   ownerFrom,
   publicUser,
   setCors,

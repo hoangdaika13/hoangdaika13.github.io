@@ -1,4 +1,13 @@
-const { bcrypt, clean, currentUser, publicUser, signOAuthState, signUser, verifyOAuthState, withApi } = require("../_lib/platform");
+const { bcrypt, clean, currentUser, enforceRateLimit, publicUser, signOAuthState, signUser, verifyOAuthState, withApi } = require("../_lib/platform");
+
+function clientIp(req) {
+  return clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0], 80);
+}
+
+function strongPassword(value) {
+  const bytes = Buffer.byteLength(value, "utf8");
+  return value.length >= 15 && bytes <= 72;
+}
 
 function appOrigin(req) {
   const protocol = req.headers["x-forwarded-proto"] || "https";
@@ -79,20 +88,28 @@ module.exports = async function handler(req, res) {
       const name = clean(body.name, 160);
       const email = clean(body.email, 160).toLowerCase();
       const password = String(body.password || "");
-      if (!name || !email || password.length < 8) return res.status(400).json({ error: "Vui lòng nhập họ tên, email và mật khẩu tối thiểu 8 ký tự." });
+      await enforceRateLimit(db, `register:${clientIp(req)}`, 5, 60 * 60 * 1000);
+      if (!name || !/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: "Họ tên hoặc email không hợp lệ." });
+      if (!strongPassword(password)) return res.status(400).json({ error: "Mật khẩu cần từ 15 ký tự và không vượt quá giới hạn mã hóa an toàn." });
       if (await db.collection("users").findOne({ email, provider: "local" })) return res.status(409).json({ error: "Email này đã được đăng ký." });
-      const user = { name, email, provider: "local", passwordHash: await bcrypt.hash(password, 12), consent: Boolean(body.consent), createdAt: new Date(), lastLoginAt: new Date() };
+      const user = { name, email, provider: "local", passwordHash: await bcrypt.hash(password, 13), tokenVersion: 0, consent: Boolean(body.consent), createdAt: new Date(), lastLoginAt: new Date() };
       const result = await db.collection("users").insertOne(user);
       user._id = result.insertedId;
       return res.status(201).json({ token: signUser(user), user: publicUser(user) });
     }
     if (route === "login" && req.method === "POST") {
       const email = clean(body.email, 160).toLowerCase();
+      await enforceRateLimit(db, `login:${clientIp(req)}:${email}`, 8, 15 * 60 * 1000);
       const user = await db.collection("users").findOne({ email, provider: "local" });
       if (!user || !user.passwordHash || !(await bcrypt.compare(String(body.password || ""), user.passwordHash))) return res.status(401).json({ error: "Sai email hoặc mật khẩu." });
       await db.collection("users").updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
       await db.collection("loginEvents").insertOne({ userId: user._id, type: "login", userAgent: clean(req.headers["user-agent"], 300), forwardedFor: clean(req.headers["x-forwarded-for"], 120), createdAt: new Date() });
       return res.status(200).json({ token: signUser(user), user: publicUser(user) });
+    }
+    if (route === "logout" && req.method === "POST") {
+      const user = await currentUser(req);
+      if (user) await db.collection("users").updateOne({ _id: user._id }, { $inc: { tokenVersion: 1 }, $set: { lastLogoutAt: new Date() } });
+      return res.status(200).json({ ok: true });
     }
     if (route === "me" && req.method === "GET") {
       const user = await currentUser(req);
