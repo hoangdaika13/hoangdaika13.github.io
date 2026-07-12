@@ -4119,7 +4119,35 @@ function initAppShell() {
     const recommendedList = byId("dashboardRecommended");
     if (recentWork) recentWork.innerHTML = recentItems.map(makeItem).join("") || "<p>Chưa có công việc gần đây.</p>";
     if (recommendedList) recommendedList.innerHTML = recommended.map(makeItem).join("") || modules.slice(0, 3).map(makeItem).join("");
+    const metrics = {
+      dashboardModuleCount: modules.length,
+      dashboardFavoriteCount: favorites.length,
+      dashboardRecentCount: recent.length,
+      dashboardStorage: `${(JSON.stringify(localStorage).length / 1024).toFixed(1)} KB`,
+      dashboardNetwork: navigator.onLine ? "ONLINE" : "OFFLINE"
+    };
+    Object.entries(metrics).forEach(([id, value]) => { const node = byId(id); if (node) node.textContent = value; });
   };
+
+  const quickNote = byId("dashboardQuickNote");
+  if (quickNote) {
+    quickNote.value = localStorage.getItem("hh.dashboard.quick-note") || "";
+    quickNote.addEventListener("input", () => {
+      localStorage.setItem("hh.dashboard.quick-note", quickNote.value);
+      const status = byId("dashboardQuickNoteStatus");
+      if (status) status.textContent = `Đã lưu lúc ${new Date().toLocaleTimeString("vi-VN")}`;
+    });
+  }
+  dashboardHome.addEventListener("click", (event) => {
+    if (event.target.closest(".dashboard-dev-button")) document.querySelector(".feature-lab-open")?.click();
+    if (event.target.closest("[data-dashboard-clear-note]")) {
+      if (quickNote) quickNote.value = "";
+      localStorage.removeItem("hh.dashboard.quick-note");
+      const status = byId("dashboardQuickNoteStatus"); if (status) status.textContent = "Đã xóa ghi chú";
+    }
+  });
+  addEventListener("online", updateDashboard);
+  addEventListener("offline", updateDashboard);
   const mountPlatform = (activeModuleId = "") => {
     window.dispatchEvent(new CustomEvent("hh:workspace-open"));
     workspace.replaceChildren(platform);
