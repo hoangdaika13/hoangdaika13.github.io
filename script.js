@@ -4163,6 +4163,7 @@ function initAppShell() {
     const parts = route.split("/").filter(Boolean);
     const possibleId = parts.at(-1);
     const module = moduleById(possibleId);
+    document.body.classList.toggle("app-single-module", Boolean(module));
     if (route === "/home") {
       updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
       workspace.replaceChildren(dashboardHome);

@@ -628,6 +628,43 @@
     padding: var(--space-5);
     background: var(--app-bg);
   }
+
+  /* A module route is a fixed application screen, never a long card list. */
+  body.app-single-module .app-main { overflow: hidden; }
+  body.app-single-module .app-breadcrumb,
+  body.app-single-module .app-page-header { display: none; }
+  body.app-single-module .app-workspace {
+    width: 100%; height: 100%; min-height: 0; padding: 0; overflow: hidden;
+  }
+  body.app-single-module .app-workspace__platform,
+  body.app-single-module #moduleGrid {
+    width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; overflow: hidden;
+  }
+  body.app-single-module #moduleGrid { display: block; }
+  body.app-single-module #moduleGrid > .module-card[data-shell-active] {
+    display: block; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0;
+    overflow: hidden; border: 0; border-radius: 0; box-shadow: none;
+  }
+  body.app-single-module .module-card[data-shell-active] > .module-row-head,
+  body.app-single-module .module-card[data-shell-active] .module-function-panel { display: none; }
+  body.app-single-module .module-card[data-shell-active] > .module-row-body {
+    display: block; height: 100%; min-height: 0;
+  }
+  body.app-single-module .module-card[data-shell-active] .module-inline-app {
+    display: block; width: 100%; height: 100%; min-height: 0; padding: var(--space-4);
+    overflow: hidden; border: 0; border-radius: 0;
+  }
+  body.app-single-module .module-card[data-shell-active] .module-inline-app > :is(label, .module-inline-actions, .module-inline-output) { display: none; }
+  body.app-single-module .module-card[data-shell-active] .module-inline-app > section {
+    height: 100%; min-height: 0; overflow: hidden;
+  }
+
+  @media (max-width: 900px) {
+    body.app-single-module .module-card[data-shell-active] .module-inline-app,
+    body.app-single-module .module-card[data-shell-active] .module-inline-app > section {
+      overflow: auto; overscroll-behavior: contain;
+    }
+  }
   .app-workspace__platform .module-inline-app > label {
     display: grid;
     gap: 7px;
