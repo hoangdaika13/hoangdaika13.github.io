@@ -679,35 +679,36 @@
     background: var(--app-bg);
   }
 
-  /* A module route is a fixed application screen, never a long card list. */
-  body.app-single-module .app-main { overflow: hidden; }
+  /* A module route shows one complete workspace and scrolls when its tools need room. */
+  body.app-single-module .app-main { overflow-x: hidden; overflow-y: auto; }
   body.app-single-module .app-breadcrumb,
   body.app-single-module .app-page-header { display: none; }
   body.app-single-module .app-workspace {
-    width: 100%; height: 100%; min-height: 0; padding: 0; overflow: hidden;
+    width: 100%; min-height: 100%; padding: 0; overflow: visible;
   }
   body.app-single-module .app-workspace__platform,
   body.app-single-module #moduleGrid {
-    width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; overflow: hidden;
+    width: 100%; min-height: 100%; margin: 0; padding: 0; overflow: visible;
   }
   body.app-single-module .app-workspace__platform > :not(#moduleGrid) { display: none !important; }
   body.app-single-module #moduleGrid { display: block; }
+  body.app-single-module #moduleGrid > .module-card[hidden] { display: none !important; }
   body.app-single-module #moduleGrid > .module-card[data-shell-active] {
-    display: block; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0;
-    overflow: hidden; border: 0; border-radius: 0; box-shadow: none;
+    display: block; width: 100%; min-height: 100%; margin: 0; padding: 0;
+    overflow: visible; border: 0; border-radius: 0; box-shadow: none;
   }
   body.app-single-module .module-card[data-shell-active] > .module-row-head,
   body.app-single-module .module-card[data-shell-active] .module-function-panel { display: none; }
   body.app-single-module .module-card[data-shell-active] > .module-row-body {
-    display: block; height: 100%; min-height: 0;
+    display: block; min-height: 100%;
   }
   body.app-single-module .module-card[data-shell-active] .module-inline-app {
-    display: block; width: 100%; height: 100%; min-height: 0; padding: var(--space-4);
-    overflow: hidden; border: 0; border-radius: 0;
+    display: block; width: 100%; min-height: 100%; padding: var(--space-4);
+    overflow: visible; border: 0; border-radius: 0;
   }
   body.app-single-module .module-card[data-shell-active] .module-inline-app > :is(label, .module-inline-actions, .module-inline-output) { display: none; }
   body.app-single-module .module-card[data-shell-active] .module-inline-app > section {
-    height: 100%; min-height: 0; overflow: hidden;
+    min-height: calc(100dvh - 96px); height: auto; overflow: visible;
   }
 
   /* Shared full-screen layout for the compact module workspaces (21-25). */
@@ -717,10 +718,9 @@
     align-content: start;
     gap: clamp(12px, 2vh, 20px);
     width: 100%;
-    height: 100%;
-    min-height: 0;
+    min-height: calc(100dvh - 96px);
     padding: clamp(18px, 3vw, 38px);
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
     background:
@@ -748,7 +748,7 @@
     gap: 12px;
     min-width: 0;
     min-height: 0;
-    overflow: auto;
+    overflow: visible;
   }
   body.app-single-module .suite-card-grid > :is(label, article, button) {
     position: relative;
@@ -786,9 +786,9 @@
   @media (max-width: 900px) {
     body.app-single-module .module-card[data-shell-active] .module-inline-app,
     body.app-single-module .module-card[data-shell-active] .module-inline-app > section {
-      overflow: auto; overscroll-behavior: contain;
+      overflow: visible;
     }
-    body.app-single-module .suite-app { padding: 14px; overflow: auto; }
+    body.app-single-module .suite-app { padding: 14px; overflow: visible; }
     body.app-single-module .suite-app > .suite-hero { align-items: flex-start; flex-direction: column; }
   }
   .app-workspace__platform .module-inline-app > label {
