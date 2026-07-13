@@ -4180,7 +4180,8 @@ function initAppShell() {
     { id: "communication", label: "Giao tiếp", icon: "◌", route: "/communication", items: ["community", "notification-center", "user-dashboard", "feedback-survey", "helpdesk-ticketing", "referral-affiliate"] },
     { id: "insights", label: "Phân tích", icon: "↗", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
     { id: "learn", label: "Học tập", icon: "◫", route: "/learn", items: ["learning-center", "i18n", "accessibility-center", "gamification", "onboarding-tour"] },
-    { id: "system", label: "Hệ thống", icon: "⚙", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] }
+    { id: "system", label: "Hệ thống", icon: "⚙", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] },
+    { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", route: "/support", items: [] }
   ];
   let activeRoute = "";
 
@@ -4196,7 +4197,10 @@ function initAppShell() {
   const isUnlocked = () => localShellPreview || document.body.classList.contains("auth-unlocked");
   const setShellVisibility = () => {
     const unlocked = isUnlocked();
-    if (localShellPreview) document.body.classList.add("auth-unlocked");
+    if (localShellPreview) {
+      document.body.classList.add("auth-unlocked");
+      document.body.classList.remove("auth-locked");
+    }
     shell.hidden = !unlocked;
     document.body.classList.toggle("app-shell-enabled", unlocked);
     if (unlocked) renderRoute();
@@ -4227,7 +4231,7 @@ function initAppShell() {
         return `<button class="app-sidebar__subitem ${route === moduleRoute ? "is-active" : ""}" type="button" data-app-route="${moduleRoute}" ${route === moduleRoute ? "aria-current=page" : ""}><span>${module.title}</span></button>`;
       }).join("");
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}">
-        <button class="app-sidebar__item ${expanded ? "is-active" : ""}" type="button" data-app-route="${group.route}" aria-expanded="${expanded}"><span>${group.icon}</span><b>${group.label}</b><i>›</i></button>
+        <button class="app-sidebar__item ${expanded ? "is-active" : ""}" type="button" data-app-route="${group.route}" aria-expanded="${expanded}"><span>${group.icon}</span><b>${group.label}</b><i>${group.items.length ? "›" : ""}</i></button>
         ${group.items.length ? `<div class="app-sidebar__submenu">${submenu}</div>` : ""}
       </section>`;
     }).join("");
@@ -4301,7 +4305,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || ({ create: "Sáng tạo", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt" }[crumb] || crumb)}</button>`)].join("");
+    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || ({ create: "Sáng tạo", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
   };
   const renderRoute = () => {
@@ -4320,6 +4324,11 @@ function initAppShell() {
       updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
       workspace.replaceChildren(dashboardHome);
       updateDashboard();
+    } else if (route === "/support") {
+      updatePageHeader("Ủng hộ nhà phát triển", "Đóng góp minh bạch để duy trì máy chủ và phát triển các công cụ HH.", route);
+      workspace.innerHTML = "";
+      if (window.HHSupportPage?.mount) window.HHSupportPage.mount(workspace, { apiBase: REALTIME_URL });
+      else mountSimpleView("Ủng hộ nhà phát triển", "Không thể tải giao diện ủng hộ. Vui lòng làm mới trang.", "");
     } else if (module) {
       updatePageHeader(module.title, module.description, route, module);
       mountPlatform(module.id);
@@ -4351,7 +4360,7 @@ function initAppShell() {
   };
   const searchItems = () => {
     const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
-    return [...modules, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();

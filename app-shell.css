@@ -992,7 +992,8 @@
     .app-brand strong,
     .app-global-search > span:nth-child(2),
     .app-global-search kbd { display: none; }
-    .app-shell__body { height: calc(100dvh - var(--header-height)); }
+    .app-shell__body,
+    body.app-sidebar-collapsed .app-shell__body { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - var(--header-height)); }
     .app-sidebar { top: var(--header-height); width: min(304px, 88vw); padding-bottom: 80px; }
     body:not(.app-sidebar-collapsed) .app-main { filter: none; }
     .app-breadcrumb { min-height: 36px; padding-inline: var(--space-4); }

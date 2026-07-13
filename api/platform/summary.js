@@ -23,7 +23,7 @@ module.exports = async function handler(req, res) {
     const user = await currentUser(req);
     const ownerEmail = String(process.env.ADMIN_EMAIL || "nhhoang130803@gmail.com").toLowerCase();
     if (!user || String(user.email || "").toLowerCase() !== ownerEmail) return res.status(403).json({ error: "Chỉ chủ sở hữu được truy cập Admin Panel." });
-    const names = ["users", "moduleRecords", "moduleActions", "tickets", "orders", "storageFiles", "notificationSubscriptions", "events"];
+    const names = ["users", "moduleRecords", "moduleActions", "tickets", "orders", "storageFiles", "notificationSubscriptions", "events", "donations"];
     const counts = {};
     await Promise.all(names.map(async (name) => {
       counts[name] = await db.collection(name).countDocuments();
