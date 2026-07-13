@@ -10,6 +10,20 @@
     "System & UX": ["Multi-language", "Language Switcher", "Weather Widget", "Clock", "System Status", "Network Speed", "FPS Monitor", "Memory Usage", "Storage Usage", "Analytics Dashboard", "Notification Center", "Smart Search", "Context Menu", "Floating Toolbar", "QR Scanner"]
   };
 
+  const mediaCatalog = {
+    "Image Compressor": ["01", "Nén batch, target size", "IMG"],
+    "Image Converter": ["02", "Đổi định dạng hàng loạt", "IMG"],
+    "Image Toolkit": ["03", "Transform và bộ lọc", "IMG"],
+    "PDF Toolkit": ["04", "Gộp, tách, watermark", "DOC"],
+    "QR Toolkit": ["05", "Tạo và quét mã QR", "QR"],
+    "Color Studio": ["06", "Palette và WCAG", "CLR"],
+    "Typography Studio": ["07", "Type scale và CSS", "TYP"],
+    "Icon Browser": ["08", "Lucide SVG và PNG", "ICO"],
+    "SVG Editor": ["09", "Vector live workspace", "SVG"],
+    "Gradient Generator": ["10", "4 stops, 3 chế độ", "GRD"],
+    "Color Picker": ["11", "Pixel, HSL và contrast", "PCK"]
+  };
+
   const all = Object.values(groups).flat();
   const key = "hh-feature-lab";
   let active = all[0];
@@ -17,6 +31,11 @@
   const read = () => { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; } };
   const write = value => localStorage.setItem(key, JSON.stringify(value));
   const slug = value => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const catalogItem = (group, name) => {
+    const media = mediaCatalog[name];
+    if (!media) return `<button class="feature-lab__item" type="button" data-lab-feature="${escapeHtml(name)}"><b>${escapeHtml(name)}</b><span>Mở workspace</span></button>`;
+    return `<button class="feature-lab__item feature-lab__item--media" type="button" data-lab-feature="${escapeHtml(name)}"><span class="feature-lab__item-index">${media[0]}</span><span class="feature-lab__item-copy"><b>${escapeHtml(name)}</b><small>${escapeHtml(media[1])}</small></span><span class="feature-lab__item-engine">${media[2]} · LOCAL</span></button>`;
+  };
 
   document.body.insertAdjacentHTML("beforeend", `
     <button class="feature-lab-open" type="button" title="Mở toàn bộ công cụ">ALL TOOLS</button>
@@ -29,7 +48,7 @@
         </header>
         <div class="feature-lab__body">
           <main class="feature-lab__catalog">
-            ${Object.entries(groups).map(([group, items]) => `<section class="feature-lab__group" data-lab-group="${escapeHtml(group)}"><h3>${escapeHtml(group)}</h3><div class="feature-lab__grid">${items.map(name => `<button class="feature-lab__item" type="button" data-lab-feature="${escapeHtml(name)}"><b>${escapeHtml(name)}</b><span>${group === "Media & Design" ? "Công cụ xử lý trực tiếp" : "Mở workspace"}</span></button>`).join("")}</div></section>`).join("")}
+            ${Object.entries(groups).map(([group, items]) => `<section class="feature-lab__group${group === "Media & Design" ? " feature-lab__group--media" : ""}" data-lab-group="${escapeHtml(group)}"><h3><span>${escapeHtml(group)}</span>${group === "Media & Design" ? `<b>11 CREATIVE ENGINES</b>` : ""}</h3><div class="feature-lab__grid">${items.map(name => catalogItem(group, name)).join("")}</div></section>`).join("")}
           </main>
           <aside class="feature-lab__work" data-lab-work></aside>
         </div>
