@@ -1,10 +1,28 @@
 const { ObjectId } = require("mongodb");
+const { PayOS } = require("@payos/node");
 const { clean, currentUser, enforceRateLimit, withApi } = require("./_lib/platform");
 const votesHandler = require("./_lib/votes");
 
 const OWNER_DEFAULT = "nhhoang130803@gmail.com";
 const MIN_AMOUNT = 1000;
 const MAX_AMOUNT = 1000000000;
+let payOSClient;
+
+function payOSReady() {
+  return Boolean(process.env.PAYOS_CLIENT_ID && process.env.PAYOS_API_KEY && process.env.PAYOS_CHECKSUM_KEY);
+}
+
+function payOS() {
+  if (!payOSReady()) return null;
+  if (!payOSClient) {
+    payOSClient = new PayOS({
+      clientId: process.env.PAYOS_CLIENT_ID,
+      apiKey: process.env.PAYOS_API_KEY,
+      checksumKey: process.env.PAYOS_CHECKSUM_KEY
+    });
+  }
+  return payOSClient;
+}
 
 function objectId(value) {
   try { return new ObjectId(String(value || "")); } catch { return null; }
@@ -34,12 +52,18 @@ function makeReference() {
   return `HH${date}${random}`;
 }
 
+function makeOrderCode() {
+  return Number(`${Date.now()}${Math.floor(10 + Math.random() * 90)}`);
+}
+
 module.exports = async function handler(req, res) {
   if (String(req.query.resource || "") === "votes") return votesHandler(req, res);
   return withApi(req, res, async ({ db, body }) => {
     const donations = db.collection("donations");
     await Promise.all([
       donations.createIndex({ reference: 1 }, { unique: true }),
+      donations.createIndex({ payosOrderCode: 1 }, { unique: true, sparse: true }),
+      donations.createIndex({ payosTransactionReference: 1 }, { unique: true, sparse: true }),
       donations.createIndex({ status: 1, verifiedAt: -1 }),
       donations.createIndex({ createdAt: -1 })
     ]);
@@ -47,7 +71,43 @@ module.exports = async function handler(req, res) {
     const ownerEmail = String(process.env.ADMIN_EMAIL || OWNER_DEFAULT).toLowerCase();
     const isOwner = Boolean(user && String(user.email || "").toLowerCase() === ownerEmail);
 
+    if (req.method === "POST" && String(req.query.provider || "") === "payos") {
+      if (!payOSReady()) return res.status(503).json({ error: "payOS chưa được cấu hình." });
+      let payment;
+      try {
+        payment = await payOS().webhooks.verify(body);
+      } catch {
+        return res.status(400).json({ error: "Chữ ký webhook payOS không hợp lệ." });
+      }
+      if (body.success !== true || String(payment.code || "") !== "00") {
+        return res.status(200).json({ success: true, ignored: true });
+      }
+      const orderCode = Number(payment.orderCode || 0);
+      const donation = orderCode ? await donations.findOne({ payosOrderCode: orderCode }) : null;
+      if (!donation) return res.status(200).json({ success: true });
+      if (Number(payment.amount) !== Number(donation.amount)) return res.status(409).json({ error: "Số tiền webhook không khớp giao dịch." });
+      const now = new Date();
+      const providerReference = clean(payment.reference || `payos:${orderCode}`, 120);
+      await donations.updateOne(
+        { _id: donation._id, status: { $ne: "verified" } },
+        { $set: { status: "verified", verifiedAt: now, updatedAt: now, paymentMethod: "payos_vietqr", payosPaymentLinkId: clean(payment.paymentLinkId, 100), payosTransactionReference: providerReference, payosTransactionTime: clean(payment.transactionDateTime, 80) } }
+      );
+      await db.collection("events").updateOne(
+        { type: "donation:payos_verified", providerReference },
+        { $setOnInsert: { type: "donation:payos_verified", providerReference, recordId: donation._id, amount: donation.amount, createdAt: now } },
+        { upsert: true }
+      );
+      return res.status(200).json({ success: true });
+    }
+
     if (req.method === "GET") {
+      const lookupId = objectId(req.query.id);
+      const lookupReference = clean(req.query.reference, 40);
+      if (lookupId && lookupReference) {
+        const item = await donations.findOne({ _id: lookupId, reference: lookupReference });
+        if (!item) return res.status(404).json({ error: "Không tìm thấy giao dịch." });
+        return res.status(200).json({ donation: { id: String(item._id), reference: item.reference, amount: item.amount, status: item.status, paymentMethod: item.paymentMethod, verifiedAt: item.verifiedAt || null } });
+      }
       if (String(req.query.admin || "") === "1") {
         if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được quản lý giao dịch ủng hộ." });
         const items = await donations.find({}).sort({ createdAt: -1 }).limit(200).toArray();
@@ -56,7 +116,8 @@ module.exports = async function handler(req, res) {
           donations: items.map((item) => ({
             id: String(item._id), reference: item.reference, donorName: item.donorName,
             email: item.email, amount: item.amount, message: item.message,
-            anonymous: Boolean(item.anonymous), status: item.status,
+            anonymous: Boolean(item.anonymous), status: item.status, paymentMethod: item.paymentMethod,
+            payosOrderCode: item.payosOrderCode || null, payosTransactionReference: item.payosTransactionReference || "",
             transferTime: item.transferTime || null, createdAt: item.createdAt,
             submittedAt: item.submittedAt || null, verifiedAt: item.verifiedAt || null
           }))
@@ -81,6 +142,7 @@ module.exports = async function handler(req, res) {
         stats: { total: summary?.total || 0, count: summary?.count || 0, average: Math.round(summary?.average || 0), monthlyTotal: monthly?.total || 0, monthlyCount: monthly?.count || 0 },
         recent: verified.slice(0, 12),
         leaderboard: leaderboard.map((item) => ({ name: clean(item._id || "Thành viên HH", 100), amount: item.amount, donations: item.donations })),
+        paymentProviders: { manual: true, payos: payOSReady() },
         checkedAt: new Date()
       });
     }
@@ -88,7 +150,7 @@ module.exports = async function handler(req, res) {
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
     const action = clean(body.action || "create", 40);
 
-    if (action === "create") {
+    if (action === "create" || action === "payos:create") {
       const ip = clean(String(req.headers["x-forwarded-for"] || "").split(",")[0], 80) || "unknown";
       await enforceRateLimit(db, `donation:create:${user?._id || ip}`, 12, 60 * 60 * 1000);
       const amount = amountOf(body.amount);
@@ -97,14 +159,39 @@ module.exports = async function handler(req, res) {
       const email = clean(body.email || user?.email, 160).toLowerCase();
       if (!donorName) return res.status(400).json({ error: "Hãy nhập tên người ủng hộ." });
       const reference = makeReference();
+      const usePayOS = action === "payos:create";
+      if (usePayOS && !payOSReady()) return res.status(503).json({ error: "Kênh payOS chưa sẵn sàng. Hãy dùng chuyển khoản thường." });
+      const payosOrderCode = usePayOS ? makeOrderCode() : null;
       const doc = {
         userId: user?._id || null, reference, donorName, email, amount,
         message: clean(body.message, 500), anonymous: Boolean(body.anonymous),
-        status: "pending", paymentMethod: "vietcombank_transfer",
+        status: "pending", paymentMethod: usePayOS ? "payos_vietqr" : "vietcombank_transfer",
+        ...(payosOrderCode ? { payosOrderCode } : {}),
         createdAt: new Date(), updatedAt: new Date()
       };
       const result = await donations.insertOne(doc);
       await db.collection("events").insertOne({ type: "donation:intent", userId: user?._id || null, recordId: result.insertedId, createdAt: new Date() });
+      if (usePayOS) {
+        const siteUrl = String(process.env.PUBLIC_SITE_URL || "https://hoangdaika13.github.io").replace(/\/$/, "");
+        try {
+          const payment = await payOS().paymentRequests.create({
+            orderCode: payosOrderCode,
+            amount,
+            description: reference,
+            items: [{ name: "Ủng hộ HH Platform", quantity: 1, price: amount }],
+            buyerName: donorName,
+            ...(email ? { buyerEmail: email } : {}),
+            cancelUrl: `${siteUrl}/?payos=cancel#/support`,
+            returnUrl: `${siteUrl}/?payos=success#/support`,
+            expiredAt: Math.floor(Date.now() / 1000) + 30 * 60
+          });
+          await donations.updateOne({ _id: result.insertedId }, { $set: { payosPaymentLinkId: payment.paymentLinkId, payosCheckoutUrl: payment.checkoutUrl, payosAccountNumber: payment.accountNumber, updatedAt: new Date() } });
+          return res.status(201).json({ ok: true, donation: { id: String(result.insertedId), reference, amount, status: doc.status, paymentMethod: doc.paymentMethod }, payos: { checkoutUrl: payment.checkoutUrl, paymentLinkId: payment.paymentLinkId, expiresIn: 1800 } });
+        } catch (error) {
+          await donations.updateOne({ _id: result.insertedId }, { $set: { status: "payment_error", paymentError: clean(error?.message, 300), updatedAt: new Date() } });
+          return res.status(502).json({ error: "payOS chưa thể tạo link thanh toán. Hãy thử lại hoặc dùng chuyển khoản thường." });
+        }
+      }
       return res.status(201).json({ ok: true, donation: { id: String(result.insertedId), reference, amount, status: doc.status }, bank: { name: "Vietcombank", accountName: "NGUYEN HUY HOANG", accountNumber: "1030351658" } });
     }
 
