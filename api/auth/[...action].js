@@ -125,6 +125,9 @@ module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {
     let action = Array.isArray(req.query.action) ? req.query.action : (typeof req.query.action === "string" ? [req.query.action] : []);
     if (!action.length) action = String(req.url || "").split("?")[0].split("/").filter(Boolean).slice(2);
+    if (req.query.oauthCallback === "google" || req.query.oauthCallback === "facebook") {
+      action = [req.query.oauthCallback, "callback"];
+    }
     const route = action.join("/");
 
     if (route === "providers" && req.method === "GET") return res.status(200).json({
