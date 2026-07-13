@@ -1,11 +1,11 @@
-const CACHE = "hh-dev-hub-v47";
+const CACHE = "hh-dev-hub-v50";
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=36",
+  "./app-shell.css?v=38",
   "./professional-tools.css?v=1",
-  "./feature-lab.css?v=1",
-  "./script.js?v=47",
+  "./feature-lab.css?v=2",
+  "./script.js?v=50",
   "./professional-tools.js?v=1",
   "./feature-lab.js?v=1",
   "./feature-engines.js?v=1",
