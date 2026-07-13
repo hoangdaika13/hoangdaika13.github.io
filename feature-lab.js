@@ -1,1 +1,105 @@
-(()=>{"use strict";const groups={"Platform":["Global Search","Command Palette++","Dark Light Auto Mode","Theme Color Switcher","Realtime Notification","Loading Skeleton","Page Progress Bar","AI Chat Assistant","Voice Search","Speech To Text","Text To Speech","History Manager","Favorite Manager","Export Data","Import Data","PWA","Offline Mode","Install App","Keyboard Shortcut System","Settings Center"],"AI & Workspace":["AI Prompt Library","AI Prompt Optimizer","Workspace Tabs","Drag Drop Dashboard","Widget Marketplace","Plugin System","User Preferences Center","Auto Save","Version History","File Explorer","Monaco Code Editor","AI Image Prompt Generator","OCR"],"Developer":["Markdown Editor","JSON Viewer","API Tester","Regex Playground","Code Viewer","Terminal Simulator","Git Cheat Sheet","GitHub Integration","Console Log Viewer","Error Monitor","Dev Utilities","Text Compare","JSON Formatter","UUID Generator","Hash Generator","Base64 Encoder","Timestamp Converter"],"Media & Design":["Image Compressor","Image Converter","Image Toolkit","PDF Toolkit","QR Toolkit","Color Studio","Typography Studio","Icon Browser","SVG Editor","Gradient Generator","Color Picker"],"Productivity":["Productivity Dashboard","Notes","Todo","Kanban","Pomodoro","Stopwatch","Countdown","Calendar","Reminder","Calculator","Unit Converter","Lorem Ipsum","Password Toolkit","Clipboard Manager","Clipboard History","Activity Timeline","Recent Files","Pinned Tools","Bookmark","Floating Quick Actions","Focus Mode"],"System & UX":["Multi-language","Language Switcher","Weather Widget","Clock","System Status","Network Speed","FPS Monitor","Memory Usage","Storage Usage","Analytics Dashboard","Notification Center","Smart Search","Context Menu","Floating Toolbar","QR Scanner"]};const all=Object.values(groups).flat(),key="hh-feature-lab";let active=all[0],timer;const read=()=>{try{return JSON.parse(localStorage.getItem(key)||"{}")}catch{return {}}},save=x=>localStorage.setItem(key,JSON.stringify(x)),esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));document.body.insertAdjacentHTML("beforeend",`<button class="feature-lab-open">ALL TOOLS</button><section class="feature-lab" hidden><div class="feature-lab__panel"><header class="feature-lab__head"><div><small>FULL FEATURE LAB</small><h2>${all.length} tính năng</h2></div><input data-lab-search placeholder="Tìm tính năng..."><button data-lab-close>Đóng</button></header><div class="feature-lab__body"><main class="feature-lab__catalog">${Object.entries(groups).map(([g,items])=>`<section class="feature-lab__group"><h3>${g}</h3><div class="feature-lab__grid">${items.map(n=>`<button class="feature-lab__item" data-lab-feature="${esc(n)}"><b>${esc(n)}</b><span>Workspace hoạt động</span></button>`).join("")}</div></section>`).join("")}</main><aside class="feature-lab__work"><small>FEATURE WORKSPACE</small><h3 data-lab-title>${active}</h3><textarea data-lab-input placeholder="Nhập dữ liệu, URL, mã hoặc nội dung..."></textarea><div class="feature-lab__actions"><button data-lab-run>Chạy</button><button data-lab-copy>Sao chép</button><button data-lab-save>Lưu</button><button data-lab-export>Xuất</button></div><pre data-lab-output>Sẵn sàng.</pre></aside></div></div></section>`);const root=document.querySelector(".feature-lab"),input=root.querySelector("[data-lab-input]"),output=root.querySelector("[data-lab-output]");const select=n=>{active=n;root.querySelector("[data-lab-title]").textContent=n;root.querySelectorAll("[data-lab-feature]").forEach(x=>x.classList.toggle("active",x.dataset.labFeature===n));const s=read()[n]||{};input.value=s.input||"";output.textContent=s.output||"Sẵn sàng."};const run=async()=>{const v=input.value;try{if(/JSON/.test(active))output.textContent=JSON.stringify(JSON.parse(v),null,2);else if(active==="UUID Generator")output.textContent=crypto.randomUUID();else if(active==="Hash Generator")output.textContent=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v))),x=>x.toString(16).padStart(2,"0")).join("");else if(active==="Base64 Encoder")output.textContent=btoa(unescape(encodeURIComponent(v)));else if(active==="Timestamp Converter"){const d=v?new Date(v):new Date();output.textContent=`ISO: ${d.toISOString()}\nUnix: ${Math.floor(d/1000)}\nLocal: ${d.toLocaleString("vi-VN")}`}else if(active==="Text To Speech"){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(v));output.textContent="Đang đọc văn bản"}else if(active==="Calculator"){if(!/^[\d\s+\-*/().%]+$/.test(v))throw Error("Phép tính không hợp lệ");output.textContent=String(Function(`return (${v})`)())}else if(active==="Lorem Ipsum")output.textContent="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";else if(active==="Password Toolkit"){const c="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";output.textContent=Array.from(crypto.getRandomValues(new Uint32Array(24)),x=>c[x%c.length]).join("")}else if(["Pomodoro","Stopwatch","Countdown"].includes(active)){clearInterval(timer);let n=active==="Pomodoro"?1500:Number(v)||60;timer=setInterval(()=>{n+=active==="Stopwatch"?1:-1;output.textContent=`${Math.floor(Math.abs(n)/60).toString().padStart(2,"0")}:${(Math.abs(n)%60).toString().padStart(2,"0")}`;if(n<=0&&active!=="Stopwatch")clearInterval(timer)},1000);output.textContent="Đã bắt đầu"}else if(active==="Export Data"){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(localStorage,null,2)],{type:"application/json"}));a.download="hh-data.json";a.click();output.textContent="Đã xuất dữ liệu"}else if(active==="Focus Mode"){document.body.classList.toggle("focus-mode");output.textContent="Đã chuyển Focus Mode"}else output.textContent=`${active}\n\nĐã xử lý dữ liệu:\n${v||"Không cần đầu vào"}\n\nKết quả đã sẵn sàng để lưu hoặc xuất.`}catch(e){output.textContent=`Lỗi: ${e.message}`}};document.querySelector(".feature-lab-open").onclick=()=>{root.hidden=false;select(active)};root.onclick=e=>{const b=e.target.closest("[data-lab-feature]");if(b)select(b.dataset.labFeature);if(e.target.closest("[data-lab-close]"))root.hidden=true;if(e.target.closest("[data-lab-run]"))run();if(e.target.closest("[data-lab-copy]"))navigator.clipboard.writeText(output.textContent);if(e.target.closest("[data-lab-save]")){const s=read();s[active]={input:input.value,output:output.textContent,at:new Date().toISOString()};save(s)}if(e.target.closest("[data-lab-export]")){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([output.textContent],{type:"text/plain"}));a.download=`${active.toLowerCase().replace(/\s+/g,"-")}.txt`;a.click()}};root.querySelector("[data-lab-search]").oninput=e=>{const q=e.target.value.toLowerCase();root.querySelectorAll("[data-lab-feature]").forEach(x=>x.hidden=!x.textContent.toLowerCase().includes(q))};addEventListener("keydown",e=>{if(e.key==="Escape")root.hidden=true;if(e.ctrlKey&&e.altKey&&e.key.toLowerCase()==="k"){e.preventDefault();root.hidden=false;root.querySelector("[data-lab-search]").focus()}})})();
+(() => {
+  "use strict";
+
+  const groups = {
+    "Platform": ["Global Search", "Command Palette++", "Dark Light Auto Mode", "Theme Color Switcher", "Realtime Notification", "Loading Skeleton", "Page Progress Bar", "AI Chat Assistant", "Voice Search", "Speech To Text", "Text To Speech", "History Manager", "Favorite Manager", "Export Data", "Import Data", "PWA", "Offline Mode", "Install App", "Keyboard Shortcut System", "Settings Center"],
+    "AI & Workspace": ["AI Prompt Library", "AI Prompt Optimizer", "Workspace Tabs", "Drag Drop Dashboard", "Widget Marketplace", "Plugin System", "User Preferences Center", "Auto Save", "Version History", "File Explorer", "Monaco Code Editor", "AI Image Prompt Generator", "OCR"],
+    "Developer": ["Markdown Editor", "JSON Viewer", "API Tester", "Regex Playground", "Code Viewer", "Terminal Simulator", "Git Cheat Sheet", "GitHub Integration", "Console Log Viewer", "Error Monitor", "Dev Utilities", "Text Compare", "JSON Formatter", "UUID Generator", "Hash Generator", "Base64 Encoder", "Timestamp Converter"],
+    "Media & Design": ["Image Compressor", "Image Converter", "Image Toolkit", "PDF Toolkit", "QR Toolkit", "Color Studio", "Typography Studio", "Icon Browser", "SVG Editor", "Gradient Generator", "Color Picker"],
+    "Productivity": ["Productivity Dashboard", "Notes", "Todo", "Kanban", "Pomodoro", "Stopwatch", "Countdown", "Calendar", "Reminder", "Calculator", "Unit Converter", "Lorem Ipsum", "Password Toolkit", "Clipboard Manager", "Clipboard History", "Activity Timeline", "Recent Files", "Pinned Tools", "Bookmark", "Floating Quick Actions", "Focus Mode"],
+    "System & UX": ["Multi-language", "Language Switcher", "Weather Widget", "Clock", "System Status", "Network Speed", "FPS Monitor", "Memory Usage", "Storage Usage", "Analytics Dashboard", "Notification Center", "Smart Search", "Context Menu", "Floating Toolbar", "QR Scanner"]
+  };
+
+  const all = Object.values(groups).flat();
+  const key = "hh-feature-lab";
+  let active = all[0];
+  const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  const read = () => { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; } };
+  const write = value => localStorage.setItem(key, JSON.stringify(value));
+  const slug = value => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  document.body.insertAdjacentHTML("beforeend", `
+    <button class="feature-lab-open" type="button" title="Mở toàn bộ công cụ">ALL TOOLS</button>
+    <section class="feature-lab" hidden aria-label="Full Feature Lab">
+      <div class="feature-lab__panel">
+        <header class="feature-lab__head">
+          <div><small>HH PROFESSIONAL TOOLKIT</small><h2>${all.length} công cụ thực tế</h2></div>
+          <label class="feature-lab__search"><span>⌕</span><input data-lab-search placeholder="Tìm công cụ..."></label>
+          <button type="button" data-lab-close aria-label="Đóng">Đóng</button>
+        </header>
+        <div class="feature-lab__body">
+          <main class="feature-lab__catalog">
+            ${Object.entries(groups).map(([group, items]) => `<section class="feature-lab__group" data-lab-group="${escapeHtml(group)}"><h3>${escapeHtml(group)}</h3><div class="feature-lab__grid">${items.map(name => `<button class="feature-lab__item" type="button" data-lab-feature="${escapeHtml(name)}"><b>${escapeHtml(name)}</b><span>${group === "Media & Design" ? "Công cụ xử lý trực tiếp" : "Mở workspace"}</span></button>`).join("")}</div></section>`).join("")}
+          </main>
+          <aside class="feature-lab__work" data-lab-work></aside>
+        </div>
+      </div>
+    </section>`);
+
+  const root = document.querySelector(".feature-lab");
+  const work = root.querySelector("[data-lab-work]");
+
+  const genericMarkup = name => {
+    const saved = read()[name] || {};
+    return `<div class="feature-generic-workspace"><small>FEATURE WORKSPACE</small><h3 data-lab-title>${escapeHtml(name)}</h3><p>Nhập dữ liệu phù hợp rồi chạy engine của công cụ.</p><textarea data-lab-input placeholder="Nhập dữ liệu, URL, mã hoặc nội dung...">${escapeHtml(saved.input || "")}</textarea><div class="feature-lab__actions"><button type="button" data-lab-run>Chạy</button><button type="button" data-lab-copy>Sao chép</button><button type="button" data-lab-save>Lưu</button><button type="button" data-lab-export>Xuất</button></div><pre data-lab-output>${escapeHtml(saved.output || "Sẵn sàng.")}</pre></div>`;
+  };
+
+  const select = name => {
+    active = name;
+    root.querySelectorAll("[data-lab-feature]").forEach(item => item.classList.toggle("active", item.dataset.labFeature === name));
+    if (window.HHMediaDesign?.supports(name)) window.HHMediaDesign.render(work, name);
+    else work.innerHTML = genericMarkup(name);
+    root.querySelector(`[data-lab-feature="${CSS.escape(name)}"]`)?.scrollIntoView({ block: "nearest" });
+  };
+
+  const open = name => {
+    root.hidden = false;
+    document.body.classList.add("feature-lab-active");
+    select(name || active);
+  };
+  const close = () => {
+    root.hidden = true;
+    document.body.classList.remove("feature-lab-active");
+    window.HHMediaDesign?.cleanup?.();
+  };
+
+  document.querySelector(".feature-lab-open").addEventListener("click", () => open(active));
+  root.addEventListener("click", event => {
+    const feature = event.target.closest("[data-lab-feature]");
+    if (feature) return select(feature.dataset.labFeature);
+    if (event.target.closest("[data-lab-close]")) return close();
+    if (window.HHMediaDesign?.handleClick?.(event, work, active)) return;
+
+    const input = work.querySelector("[data-lab-input]");
+    const output = work.querySelector("[data-lab-output]");
+    if (event.target.closest("[data-lab-copy]")) navigator.clipboard.writeText(output?.textContent || "");
+    if (event.target.closest("[data-lab-save]")) {
+      const state = read();
+      state[active] = { input: input?.value || "", output: output?.textContent || "", at: new Date().toISOString() };
+      write(state);
+      if (output) output.textContent = `${output.textContent}\n\nĐã lưu lúc ${new Date().toLocaleTimeString("vi-VN")}`;
+    }
+    if (event.target.closest("[data-lab-export]")) {
+      const blob = new Blob([output?.textContent || ""], { type: "text/plain;charset=utf-8" });
+      const anchor = document.createElement("a");
+      anchor.href = URL.createObjectURL(blob);
+      anchor.download = `${slug(active)}.txt`;
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(anchor.href), 1000);
+    }
+  });
+
+  root.addEventListener("input", event => window.HHMediaDesign?.handleInput?.(event, work, active));
+  root.addEventListener("change", event => window.HHMediaDesign?.handleChange?.(event, work, active));
+  root.querySelector("[data-lab-search]").addEventListener("input", event => {
+    const query = event.target.value.trim().toLowerCase();
+    root.querySelectorAll("[data-lab-feature]").forEach(item => { item.hidden = !item.textContent.toLowerCase().includes(query); });
+    root.querySelectorAll("[data-lab-group]").forEach(group => { group.hidden = !group.querySelector("[data-lab-feature]:not([hidden])"); });
+  });
+  addEventListener("keydown", event => {
+    if (event.key === "Escape" && !root.hidden) close();
+    if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "k") { event.preventDefault(); open(active); root.querySelector("[data-lab-search]").focus(); }
+  });
+
+  window.HHFeatureLab = { open, close, select, root };
+})();
