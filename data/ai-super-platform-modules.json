@@ -331,5 +331,32 @@
     "requiresBackend": false,
     "accent": "#f0abfc",
     "features": ["Wishlist", "Compare", "Store", "Download Center"]
+  },
+  {
+    "id": "team-collaboration",
+    "title": "Team Collaboration",
+    "status": "needs-backend",
+    "description": "Bang cong viec nhom, thanh vien, binh luan va dong bo tien do.",
+    "requiresBackend": true,
+    "accent": "#5eead4",
+    "features": ["Team Board", "Tasks", "Members", "Activity"]
+  },
+  {
+    "id": "form-builder",
+    "title": "Form Builder",
+    "status": "dynamic-local",
+    "description": "Tao bieu mau, xem truoc, thu thap va xuat phan hoi.",
+    "requiresBackend": false,
+    "accent": "#60a5fa",
+    "features": ["Fields", "Live Preview", "Responses", "Export CSV"]
+  },
+  {
+    "id": "workflow-automation",
+    "title": "Workflow Automation",
+    "status": "dynamic-local",
+    "description": "Tao quy trinh trigger, dieu kien, hanh dong va nhat ky chay.",
+    "requiresBackend": false,
+    "accent": "#f472b6",
+    "features": ["Triggers", "Conditions", "Actions", "Run History"]
   }
 ]

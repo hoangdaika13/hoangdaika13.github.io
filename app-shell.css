@@ -984,11 +984,11 @@
 
   @media (max-width: 760px) {
     :root { --header-height: 58px; }
-    .app-header { grid-template-columns: auto 1fr auto; padding: 0 var(--space-3); backdrop-filter: none; }
+    .app-header { grid-template-columns: auto 1fr auto; height: var(--header-height); min-height: var(--header-height); padding: 0 var(--space-3); backdrop-filter: none; }
     .app-header__actions .app-action-button,
     .app-header__actions > .app-icon-button,
     .app-user-button { display: none; }
-    .app-global-search { justify-self: end; width: 44px; min-width: 44px; padding: 0; }
+    .app-global-search { align-self: center; justify-self: end; width: 44px; min-width: 44px; height: 42px; min-height: 42px; padding: 0; }
     .app-brand strong,
     .app-global-search > span:nth-child(2),
     .app-global-search kbd { display: none; }
@@ -1059,6 +1059,9 @@
     visibility: visible;
     pointer-events: auto;
     transform: none;
+  }
+  .home-neon.auth-unlocked:not(.auth-panel-open) .auth-gate {
+    display: none !important;
   }
   .auth-gate-close {
     position: absolute;

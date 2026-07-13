@@ -979,7 +979,10 @@ function initSuperPlatform() {
     "cookie-consent-manager": { verb: "Tạo consent", subject: "privacy rule", sample: "Cho phép vote, analytics, localStorage, notification.", metrics: ["Consent", "Cookies", "Privacy"], items: ["Necessary", "Analytics", "Marketing"] },
     "data-export-import": { verb: "Tạo backup", subject: "backup pack", sample: "Export/import localStorage, notes, todos, favorites, chat profile.", metrics: ["Export", "Import", "Backup"], items: ["JSON", "Restore", "Local Data"] },
     "referral-affiliate": { verb: "Tạo chiến dịch", subject: "referral campaign", sample: "Mã giới thiệu HH2026, lượt click, hoa hồng dự kiến.", metrics: ["Clicks", "Leads", "Commission"], items: ["Referral Code", "Campaign", "Payout"] },
-    "wishlist-compare": { verb: "Tạo so sánh", subject: "compare list", sample: "So sánh bản Lite/Full, wishlist download và store.", metrics: ["Wishlist", "Compare", "Saved"], items: ["Lite", "Full", "Download"] }
+    "wishlist-compare": { verb: "Tạo so sánh", subject: "compare list", sample: "So sánh bản Lite/Full, wishlist download và store.", metrics: ["Wishlist", "Compare", "Saved"], items: ["Lite", "Full", "Download"] },
+    "team-collaboration": { verb: "Tạo công việc", subject: "team task", sample: "Phân công nâng cấp Community cho thành viên trong nhóm.", metrics: ["Tasks", "Members", "Done"], items: ["Board", "Comments", "Activity"] },
+    "form-builder": { verb: "Tạo biểu mẫu", subject: "smart form", sample: "Biểu mẫu đăng ký dùng thử HH Voice Studio.", metrics: ["Fields", "Responses", "Export"], items: ["Text", "Choice", "Rating"] },
+    "workflow-automation": { verb: "Tạo workflow", subject: "automation flow", sample: "Khi có feedback mới, lưu dữ liệu và tạo thông báo.", metrics: ["Triggers", "Actions", "Runs"], items: ["Condition", "Delay", "History"] }
   };
 
   const profileFor = (module) => moduleProfiles[module.id] || {
@@ -1582,6 +1585,7 @@ function initSuperPlatform() {
     if (visible.some((module) => module.id === "smart-search")) updateSmartIndex();
     if (visible.some((module) => module.id === "community")) loadCommunityFeed();
     if (visible.some((module) => module.id === "media-center")) hydrateMediaLibrary();
+    window.HHExtensionSuite?.mount?.(grid, visible);
     if (!selectedModule && modules.length) renderDetail(modules[0]);
   };
 
@@ -4190,7 +4194,7 @@ function initAppShell() {
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", route: "/home", items: ["command-center"] },
     { id: "create", label: "Sáng tạo", icon: "✦", route: "/create", items: ["ai-center", "creator-studio", "media-center", "ai-automation"] },
-    { id: "work", label: "Công việc", icon: "□", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare"] },
+    { id: "work", label: "Công việc", icon: "□", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
     { id: "communication", label: "Giao tiếp", icon: "◌", route: "/communication", items: ["community", "notification-center", "user-dashboard", "feedback-survey", "helpdesk-ticketing", "referral-affiliate"] },
     { id: "insights", label: "Phân tích", icon: "↗", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
     { id: "learn", label: "Học tập", icon: "◫", route: "/learn", items: ["learning-center", "i18n", "accessibility-center", "gamification", "onboarding-tour"] },
@@ -4301,8 +4305,9 @@ function initAppShell() {
     });
     if (activeModuleId) {
       requestAnimationFrame(() => {
-        const target = document.querySelector(`#moduleGrid [data-module-id="${CSS.escape(activeModuleId)}"]`);
-        target?.scrollIntoView({ block: "start" });
+        const main = document.querySelector(".app-main");
+        if (main) main.scrollTop = 0;
+        window.scrollTo(0, 0);
       });
     }
   };
