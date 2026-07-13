@@ -1,5 +1,6 @@
 const { ObjectId } = require("mongodb");
 const { clean, currentUser, enforceRateLimit, withApi } = require("./_lib/platform");
+const votesHandler = require("./_lib/votes");
 
 const OWNER_DEFAULT = "nhhoang130803@gmail.com";
 const MIN_AMOUNT = 1000;
@@ -34,6 +35,7 @@ function makeReference() {
 }
 
 module.exports = async function handler(req, res) {
+  if (String(req.query.resource || "") === "votes") return votesHandler(req, res);
   return withApi(req, res, async ({ db, body }) => {
     const donations = db.collection("donations");
     await Promise.all([
