@@ -866,7 +866,8 @@ function initPlatformLivebar() {
   searchForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     const query = (searchInput?.value || "").trim() || "tin tức công nghệ AI hôm nay";
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank", "noopener");
+    if (window.HHSearchWatch?.open) window.HHSearchWatch.open("google", query);
+    else window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank", "noopener");
   });
 
   updateClock();
