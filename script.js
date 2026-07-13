@@ -464,6 +464,7 @@ function initPublicPresence() {
   const sendPresence = () => {
     if (document.hidden) return;
     const token = localStorage.getItem("hh-auth-token") || "";
+    if (!token) return;
     fetch(`${REALTIME_URL}/api/platform/summary`, {
       method: "POST",
       keepalive: true,
@@ -540,8 +541,7 @@ function initRealtimeAuth() {
   const gateLoginForm = byId("gateLoginForm");
   const logoutButton = byId("logoutButton");
   const authOpenButton = byId("authOpenButton");
-  const googleLogin = byId("googleLogin");
-  const facebookLogin = byId("facebookLogin");
+  const oauthButtons = [...document.querySelectorAll("[data-oauth-provider]")];
   if (!status || !online || !note || !consent) return;
 
   let token = localStorage.getItem("hh-auth-token") || "";
@@ -558,7 +558,9 @@ function initRealtimeAuth() {
   if (params.get("authToken")) {
     token = params.get("authToken");
     localStorage.setItem("hh-auth-token", token);
-    history.replaceState({}, document.title, `${location.pathname}#account`);
+    history.replaceState({}, document.title, `${location.pathname}#/home`);
+  } else if (oauthError) {
+    history.replaceState({}, document.title, `${location.pathname}${location.hash || ""}`);
   }
 
   consent.checked = localStorage.getItem("hh-tracking-consent") === "yes";
@@ -572,15 +574,35 @@ function initRealtimeAuth() {
     if (gateStatus) gateStatus.textContent = message;
   };
 
+  const selectAuthPanel = (panelName) => {
+    gate?.querySelectorAll("[data-auth-tab]").forEach((tab) => {
+      const active = tab.dataset.authTab === panelName;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", String(active));
+    });
+    gate?.querySelectorAll("[data-auth-panel]").forEach((panel) => {
+      panel.hidden = panel.dataset.authPanel !== panelName;
+    });
+    gateStatus?.classList.remove("is-error", "is-success");
+  };
+
+  const setFormBusy = (formNode, busy) => {
+    const submit = formNode?.querySelector('button[type="submit"]');
+    if (!submit) return;
+    if (!submit.dataset.idleLabel) submit.dataset.idleLabel = submit.textContent.trim();
+    submit.disabled = busy;
+    submit.setAttribute("aria-busy", String(busy));
+    const label = submit.querySelector("span") || submit;
+    label.textContent = busy ? "Đang xử lý..." : submit.dataset.idleLabel;
+  };
+
   const setGateState = () => {
     const authenticated = Boolean(user && token);
-    // The public dashboard must never be blocked by authentication.  Account
-    // features still receive the real session state from the backend.
-    document.body.classList.add("auth-unlocked");
-    document.body.classList.remove("auth-locked");
+    document.body.classList.toggle("auth-unlocked", authenticated);
+    document.body.classList.toggle("auth-locked", !authenticated);
     document.body.classList.toggle("auth-authenticated", authenticated);
     if (authenticated) document.body.classList.remove("auth-panel-open");
-    gate?.setAttribute("aria-hidden", "true");
+    gate?.setAttribute("aria-hidden", String(authenticated));
     if (authOpenButton) authOpenButton.hidden = authenticated;
   };
 
@@ -622,20 +644,9 @@ function initRealtimeAuth() {
     note.textContent = REALTIME_URL
       ? "Realtime backend đã cấu hình. Tracking chỉ chạy khi người dùng đồng ý hoặc đăng nhập."
       : "Chưa cấu hình realtime backend. Sau khi deploy server, dán URL vào config.js.";
-    if (REALTIME_URL) {
-      const returnTo = encodeURIComponent(location.origin);
-      googleLogin.href = `${REALTIME_URL}/api/auth/google?returnTo=${returnTo}`;
-      facebookLogin.href = `${REALTIME_URL}/api/auth/facebook?returnTo=${returnTo}`;
-      googleLogin.setAttribute("aria-disabled", "false");
-      facebookLogin.setAttribute("aria-disabled", "false");
-    } else {
-      googleLogin.href = "#account";
-      facebookLogin.href = "#account";
-      googleLogin.setAttribute("aria-disabled", "true");
-      facebookLogin.setAttribute("aria-disabled", "true");
-    }
-    persistAuthUser();
+    oauthButtons.forEach((button) => button.toggleAttribute("disabled", !REALTIME_URL));
     setGateState();
+    persistAuthUser();
   };
 
   const loadMe = async () => {
@@ -643,7 +654,10 @@ function initRealtimeAuth() {
     try {
       const data = await api("/api/auth/me");
       user = data.user;
-      if (!user) localStorage.removeItem("hh-auth-token");
+      if (!user) {
+        token = "";
+        localStorage.removeItem("hh-auth-token");
+      }
     } catch {
       localStorage.removeItem("hh-auth-token");
       token = "";
@@ -655,7 +669,14 @@ function initRealtimeAuth() {
   const handleRegister = async (event, formNode) => {
     event.preventDefault();
     const form = new FormData(formNode);
+    if (form.has("confirmPassword") && form.get("password") !== form.get("confirmPassword")) {
+      setStatus("Mật khẩu xác nhận chưa khớp.");
+      gateStatus?.classList.add("is-error");
+      formNode.querySelector('[name="confirmPassword"]')?.focus();
+      return;
+    }
     try {
+      setFormBusy(formNode, true);
       setStatus("Đang tạo tài khoản...");
       const data = await api("/api/auth/register", {
         method: "POST",
@@ -673,9 +694,14 @@ function initRealtimeAuth() {
       localStorage.setItem("hh-tracking-consent", consent.checked ? "yes" : "no");
       renderAuth();
       connectSocket();
-      location.hash = "#top";
+      formNode.reset();
+      gateStatus?.classList.add("is-success");
+      location.hash = "#/home";
     } catch (error) {
       setStatus(error.message);
+      gateStatus?.classList.add("is-error");
+    } finally {
+      setFormBusy(formNode, false);
     }
   };
 
@@ -683,6 +709,7 @@ function initRealtimeAuth() {
     event.preventDefault();
     const form = new FormData(formNode);
     try {
+      setFormBusy(formNode, true);
       setStatus("Đang đăng nhập...");
       const data = await api("/api/auth/login", {
         method: "POST",
@@ -693,9 +720,14 @@ function initRealtimeAuth() {
       localStorage.setItem("hh-auth-token", token);
       renderAuth();
       connectSocket();
-      location.hash = "#top";
+      formNode.reset();
+      gateStatus?.classList.add("is-success");
+      location.hash = "#/home";
     } catch (error) {
       setStatus(error.message);
+      gateStatus?.classList.add("is-error");
+    } finally {
+      setFormBusy(formNode, false);
     }
   };
 
@@ -703,20 +735,28 @@ function initRealtimeAuth() {
   gateRegisterForm?.addEventListener("submit", (event) => handleRegister(event, gateRegisterForm));
   loginForm?.addEventListener("submit", (event) => handleLogin(event, loginForm));
   gateLoginForm?.addEventListener("submit", (event) => handleLogin(event, gateLoginForm));
-  authOpenButton?.addEventListener("click", () => {
-    document.body.classList.add("auth-panel-open");
-    gate?.setAttribute("aria-hidden", "false");
-    gateLoginForm?.querySelector("input[name=email]")?.focus();
-  });
-  gate?.querySelector("[data-auth-close]")?.addEventListener("click", () => {
-    document.body.classList.remove("auth-panel-open");
-    gate?.setAttribute("aria-hidden", "true");
-    authOpenButton?.focus();
+  gate?.querySelectorAll("[data-auth-tab]").forEach((tab) => tab.addEventListener("click", () => selectAuthPanel(tab.dataset.authTab)));
+  gate?.querySelectorAll("[data-password-toggle]").forEach((button) => button.addEventListener("click", () => {
+    const input = button.parentElement?.querySelector("input");
+    if (!input) return;
+    const reveal = input.type === "password";
+    input.type = reveal ? "text" : "password";
+    button.textContent = reveal ? "Ẩn" : "Hiện";
+    button.setAttribute("aria-label", reveal ? "Ẩn mật khẩu" : "Hiện mật khẩu");
+  }));
+  gate?.querySelector("[data-register-password]")?.addEventListener("input", (event) => {
+    const value = event.target.value;
+    const score = [value.length >= 15, /[a-zà-ỹ]/.test(value), /[A-ZÀ-Ỹ]/.test(value), /\d/.test(value), /[^A-Za-zÀ-ỹ\d]/.test(value)].filter(Boolean).length;
+    const meter = gate.querySelector("[data-password-strength]");
+    if (!meter) return;
+    meter.dataset.score = String(score);
+    const label = meter.querySelector("span");
+    if (label) label.textContent = ["Độ mạnh mật khẩu", "Rất yếu", "Yếu", "Trung bình", "Mạnh", "Rất mạnh"][score];
   });
 
-  document.querySelectorAll("[data-oauth-disabled]").forEach((button) => {
+  oauthButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      const provider = button.dataset.oauthDisabled;
+      const provider = button.dataset.oauthProvider;
       if (!REALTIME_URL) return setStatus("Backend đăng nhập chưa được cấu hình.");
       location.assign(`${REALTIME_URL}/api/auth/${provider}?returnTo=${encodeURIComponent(location.origin)}`);
     });
@@ -1179,7 +1219,7 @@ function initSuperPlatform() {
 
   const userDashboardMarkup=()=>{let user={};try{user=JSON.parse(localStorage.getItem("hh-auth-user")||"{}");}catch{}let state={};try{state=JSON.parse(localStorage.getItem("hh-user-dashboard")||"{}");}catch{}const name=state.nickname||user.name||"Thành viên HH";const initials=name.split(/\s+/).slice(-2).map((part)=>part[0]).join("").toUpperCase();return `<section class="user-dashboard-app" data-user-dashboard><header class="user-cover"><div class="user-avatar" data-user-avatar>${state.avatar?`<img src="${escapeHtml(state.avatar)}" alt="Avatar">`:initials}</div><div><p class="section-kicker">User Dashboard 09</p><h4>${escapeHtml(name)}</h4><span>${escapeHtml(user.email||"Tài khoản thành viên")}</span></div><button class="interactive" type="button" data-user-edit>Chỉnh sửa hồ sơ</button></header><div class="user-stat-row"><span><b>${Object.keys((readProjectState().favorites)||{}).length}</b>Đã lưu</span><span><b>${JSON.parse(localStorage.getItem("hh-module-favorites")||"[]").length}</b>Yêu thích</span><span><b>${(readWikiState().articles||[]).filter((item)=>item.bookmark).length}</b>Bookmark</span><span><b>${state.xp||120}</b>XP</span></div><div class="user-dashboard-layout"><aside class="user-menu">${[["profile","Hồ sơ"],["saved","Đã lưu"],["activity","Hoạt động"],["notifications","Thông báo"],["settings","Cài đặt"]].map(([id,label],index)=>`<button class="interactive ${index===0?"active":""}" type="button" data-user-tab="${id}">${label}</button>`).join("")}<button class="interactive danger" type="button" data-user-export>Xuất dữ liệu cá nhân</button></aside><main class="user-content"><section class="user-pane active" data-user-pane="profile"><div class="user-pane-head"><div><span>Thông tin công khai</span><h5>Hồ sơ cá nhân</h5></div><label class="button ghost interactive">Đổi avatar<input type="file" accept="image/*" data-user-avatar-upload></label></div><div class="user-form-grid"><label>Biệt danh<input data-user-nickname value="${escapeHtml(name)}"></label><label>Email<input value="${escapeHtml(user.email||"")}" disabled></label><label>Giới thiệu<textarea rows="4" data-user-bio>${escapeHtml(state.bio||"")}</textarea></label><label>Website<input data-user-website value="${escapeHtml(state.website||"")}" placeholder="https://..."></label></div><button class="button primary interactive" type="button" data-user-save>Lưu hồ sơ</button></section><section class="user-pane" data-user-pane="saved"><h5>Nội dung đã lưu</h5><div class="user-saved-grid"><article><span>Wiki</span><strong>Bookmark kiến thức</strong><p>${(readWikiState().articles||[]).filter((item)=>item.bookmark).length} bài đã lưu</p></article><article><span>Media</span><strong>Media yêu thích</strong><p>${(readMediaState().items||[]).filter((item)=>item.favorite).length} mục</p></article><article><span>Modules</span><strong>Ứng dụng yêu thích</strong><p>${JSON.parse(localStorage.getItem("hh-module-favorites")||"[]").length} module</p></article></div></section><section class="user-pane" data-user-pane="activity"><h5>Hoạt động gần đây</h5><div class="user-activity-list">${[...(readProjectState().activity||[]),...(readMediaState().activity||[])].slice(0,10).map((item)=>`<p><i></i>${escapeHtml(item)}</p>`).join("")||"<p>Chưa có hoạt động.</p>"}</div></section><section class="user-pane" data-user-pane="notifications"><h5>Trung tâm thông báo</h5>${["Cập nhật dự án","Tin nhắn cộng đồng","Bản phát hành mới","Nhắc lịch học"].map((item,index)=>`<label class="user-toggle"><span>${item}</span><input type="checkbox" data-user-notification="${index}" ${state.notifications?.[index]!==false?"checked":""}><i></i></label>`).join("")}</section><section class="user-pane" data-user-pane="settings"><h5>Cài đặt trải nghiệm</h5><label class="user-toggle"><span>Hiệu ứng neon mạnh</span><input type="checkbox" data-user-setting="neon" ${state.settings?.neon!==false?"checked":""}><i></i></label><label class="user-toggle"><span>Âm thanh click</span><input type="checkbox" data-user-setting="sound" ${state.settings?.sound!==false?"checked":""}><i></i></label><label class="user-toggle"><span>Animation khi cuộn</span><input type="checkbox" data-user-setting="motion" ${state.settings?.motion!==false?"checked":""}><i></i></label></section></main></div></section>`;};
 
-  const adminPanelMarkup=()=>`<section class="admin-panel-app" data-admin-panel><header class="admin-hero"><div><p class="section-kicker">Admin Panel 10</p><h4>Trung tâm quản trị hệ thống</h4><span>Dữ liệu thật từ MongoDB, chỉ mở cho email chủ sở hữu.</span></div><div class="admin-security"><i></i><strong data-admin-access>Đang xác minh quyền</strong><span>Owner-only access</span></div></header><div class="admin-toolbar"><div class="admin-tabs">${[["dashboard","Dashboard"],["content","Nội dung"],["analytics","Analytics"],["logs","Logs"],["database","Database"],["backup","Backup"]].map(([id,label],index)=>`<button class="interactive ${index===0?"active":""}" type="button" data-admin-tab="${id}">${label}</button>`).join("")}</div><button class="button primary interactive" type="button" data-admin-refresh>Tải dữ liệu thật</button></div><div class="admin-status" data-admin-status>Đang kết nối backend an toàn...</div><div class="admin-pane active" data-admin-pane="dashboard"><div class="admin-metrics" data-admin-metrics>${["Users","Module records","Actions","Events"].map((label)=>`<article><span>${label}</span><strong>--</strong><small>MongoDB</small></article>`).join("")}</div><div class="admin-dashboard-grid"><section><header><strong>Người đang hoạt động</strong><span>2 phút gần nhất</span></header><div data-admin-visitors><p>Đang tải danh sách...</p></div></section><section><header><strong>Hoạt động hệ thống</strong><span>Realtime</span></header><div data-admin-events><p>Đang tải logs...</p></div></section><section><header><strong>Trạng thái dịch vụ</strong><span>Monitor</span></header>${["GitHub Pages","Vercel API","MongoDB Atlas","Realtime Chat"].map((service)=>`<p class="admin-service"><i></i><span>${service}</span><b>Đang kiểm tra</b></p>`).join("")}</section></div></div>${["content","analytics","logs","database","backup"].map((id)=>`<div class="admin-pane" data-admin-pane="${id}"><div class="admin-placeholder"><span>${id.toUpperCase()}</span><strong>${id==="backup"?"Sao lưu cấu hình cá nhân":"Dữ liệu quản trị được bảo vệ"}</strong><p>${id==="backup"?"Xuất toàn bộ localStorage của website thành JSON để lưu trữ hoặc phục hồi.":"Tải dữ liệu thật để xem thống kê đã được chủ sở hữu cho phép."}</p>${id==="backup"?'<button class="button primary interactive" type="button" data-admin-backup>Tạo file backup</button>':""}</div></div>`).join("")}</section>`;
+  const adminPanelMarkup = () => `<section class="admin-panel-app" data-admin-panel><header class="admin-hero"><div><p class="section-kicker">Admin Panel 10</p><h4>Trung tâm quản trị hệ thống</h4><span>Dữ liệu thật từ MongoDB, chỉ mở cho email chủ sở hữu.</span></div><div class="admin-security"><i></i><strong data-admin-access>Đang xác minh quyền</strong><span>Owner-only access</span></div></header><div class="admin-toolbar"><div class="admin-tabs">${[["dashboard","Dashboard"],["users","Tài khoản"],["content","Nội dung"],["analytics","Analytics"],["logs","Logs"],["database","Database"],["backup","Backup"]].map(([id,label],index)=>`<button class="interactive ${index===0?"active":""}" type="button" data-admin-tab="${id}">${label}</button>`).join("")}</div><button class="button primary interactive" type="button" data-admin-refresh>Làm mới dữ liệu</button></div><div class="admin-status" data-admin-status>Đang kết nối backend an toàn...</div><div class="admin-pane active" data-admin-pane="dashboard"><div class="admin-metrics" data-admin-metrics>${["Users","Module records","Actions","Events"].map((label)=>`<article><span>${label}</span><strong>--</strong><small>MongoDB</small></article>`).join("")}</div><div class="admin-dashboard-grid"><section><header><strong>Người đang hoạt động</strong><span>2 phút gần nhất</span></header><div data-admin-visitors><p>Đang tải danh sách...</p></div></section><section><header><strong>Hoạt động hệ thống</strong><span>Realtime</span></header><div data-admin-events><p>Đang tải logs...</p></div></section><section><header><strong>Trạng thái dịch vụ</strong><span>Monitor</span></header>${["GitHub Pages","Vercel API","MongoDB Atlas","Realtime Chat"].map((service)=>`<p class="admin-service"><i></i><span>${service}</span><b>Đang kiểm tra</b></p>`).join("")}</section></div></div><div class="admin-pane" data-admin-pane="users"><div class="admin-users-toolbar"><label><span>Tìm tài khoản</span><input type="search" data-admin-user-search placeholder="Tên, email hoặc phương thức đăng nhập"></label><div><span data-admin-user-total>0 tài khoản</span><span data-admin-user-online>0 online</span><span data-admin-user-updated>Chưa đồng bộ</span></div></div><div class="admin-users-table-wrap"><table class="admin-users-table"><thead><tr><th>Tài khoản</th><th>Đăng nhập bằng</th><th>Quyền dữ liệu</th><th>Đăng ký</th><th>Đăng nhập cuối</th><th>Trạng thái</th></tr></thead><tbody data-admin-users><tr><td colspan="6">Đang tải danh sách tài khoản...</td></tr></tbody></table></div><p class="admin-privacy-note">Mật khẩu và mã băm không bao giờ được API hoặc Admin Panel trả về.</p></div>${["content","analytics","logs","database","backup"].map((id)=>`<div class="admin-pane" data-admin-pane="${id}"><div class="admin-placeholder"><span>${id.toUpperCase()}</span><strong>${id==="backup"?"Sao lưu cấu hình cá nhân":"Dữ liệu quản trị được bảo vệ"}</strong><p>${id==="backup"?"Xuất toàn bộ localStorage của website thành JSON để lưu trữ hoặc phục hồi.":"Tải dữ liệu thật để xem thống kê đã được chủ sở hữu cho phép."}</p>${id==="backup"?'<button class="button primary interactive" type="button" data-admin-backup>Tạo file backup</button>':""}</div></div>`).join("")}</section>`;
 
   const aiAutomationMarkup=()=>`<section class="automation-app" data-automation><header class="suite-hero"><div><p class="section-kicker">AI Automation 11</p><h4>Dây chuyền nội dung AI</h4><span>Tạo title, mô tả, tags, bản dịch, tóm tắt, voice prompt và thumbnail prompt chỉ trong một lần chạy.</span></div><div class="suite-badge"><i></i><strong>7 tác vụ</strong><span>Local-first pipeline</span></div></header><div class="automation-layout"><aside class="automation-steps"><strong>Pipeline</strong>${[["title","Auto Title"],["description","Auto Description"],["tags","Auto Tags"],["translation","Auto Translation"],["summary","Auto Summary"],["voice","Auto Voice"],["thumbnail","Auto Thumbnail"]].map(([id,label],index)=>`<label><span>${index+1}</span><input type="checkbox" data-auto-step="${id}" checked><i></i><b>${label}</b></label>`).join("")}</aside><main class="automation-workspace"><div class="suite-form-grid"><label>Chủ đề / nội dung<textarea rows="7" data-auto-input placeholder="Dán nội dung hoặc mô tả video..."></textarea></label><label>Nền tảng<select data-auto-platform><option>YouTube</option><option>TikTok</option><option>Facebook</option><option>Website</option></select></label><label>Ngôn ngữ<select data-auto-language><option>Tiếng Việt</option><option>English</option></select></label><label>Phong cách<select data-auto-style><option>Cảm xúc</option><option>Chuyên nghiệp</option><option>Thân thiện</option><option>Kịch tính</option></select></label></div><div class="suite-actions"><button class="button primary interactive" type="button" data-auto-run>Chạy toàn bộ</button><button class="button ghost interactive" type="button" data-auto-clear>Xóa</button><button class="button ghost interactive" type="button" data-auto-export>Xuất kết quả</button></div><div class="automation-progress"><i data-auto-progress></i><span data-auto-status>Sẵn sàng chạy workflow</span></div></main><aside class="automation-results"><header><strong>Kết quả</strong><button class="interactive" type="button" data-auto-copy>Sao chép</button></header><pre data-auto-output>Chọn các bước và nhập nội dung để bắt đầu.</pre></aside></div></section>`;
 
@@ -1913,9 +1953,30 @@ function initSuperPlatform() {
   const writeCommunityState=(state)=>localStorage.setItem("hh-community-center",JSON.stringify(state));
   const readUserState=()=>{try{return JSON.parse(localStorage.getItem("hh-user-dashboard")||"{}");}catch{return {};}};
   const writeUserState=(state)=>localStorage.setItem("hh-user-dashboard",JSON.stringify(state));
+  let adminUsersCache=[];
+  const adminUserDate=(value)=>value?new Date(value).toLocaleString("vi-VN"):"Chưa có";
+  const renderAdminUsers=(panel,query="")=>{
+    const target=panel?.querySelector("[data-admin-users]");if(!target)return;
+    const normalized=query.trim().toLowerCase();
+    const users=adminUsersCache.filter((item)=>!normalized||`${item.name} ${item.email} ${item.provider}`.toLowerCase().includes(normalized));
+    target.innerHTML=users.length?users.map((item)=>`<tr><td><div class="admin-user-identity"><span>${item.avatar?`<img src="${escapeHtml(item.avatar)}" alt="">`:escapeHtml((item.name||"HH").slice(0,2).toUpperCase())}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.email)}</small></div></div></td><td><span class="admin-provider">${escapeHtml(item.provider==="local"?"Email":item.provider)}</span></td><td>${item.consent?'<span class="admin-consent yes">Đã đồng ý</span>':'<span class="admin-consent">Chưa đồng ý</span>'}</td><td>${adminUserDate(item.createdAt)}</td><td>${adminUserDate(item.lastLoginAt)}</td><td><span class="admin-online ${item.online?"is-online":""}"><i></i>${item.online?"Online":"Offline"}</span></td></tr>`).join(""):'<tr><td colspan="6">Không tìm thấy tài khoản phù hợp.</td></tr>';
+  };
+  const loadAdminUsers=async()=>{
+    const panel=grid.querySelector("[data-admin-panel]");if(!panel||!REALTIME_URL)return;
+    const token=localStorage.getItem("hh-auth-token")||"";
+    const response=await fetch(`${REALTIME_URL}/api/platform/users`,{headers:{Authorization:`Bearer ${token}`},cache:"no-store"});
+    const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||"Không thể tải danh sách tài khoản.");
+    adminUsersCache=data.users||[];
+    const search=panel.querySelector("[data-admin-user-search]");
+    if(search&&!search.dataset.bound){search.dataset.bound="true";search.addEventListener("input",()=>renderAdminUsers(panel,search.value));}
+    renderAdminUsers(panel,search?.value||"");
+    const total=panel.querySelector("[data-admin-user-total]");if(total)total.textContent=`${data.stats?.total||0} tài khoản`;
+    const online=panel.querySelector("[data-admin-user-online]");if(online)online.textContent=`${data.stats?.online||0} online`;
+    const updated=panel.querySelector("[data-admin-user-updated]");if(updated)updated.textContent=`Cập nhật ${new Date(data.checkedAt).toLocaleTimeString("vi-VN")}`;
+  };
   const loadAdminSummary=async()=>{
     const panel=grid.querySelector("[data-admin-panel]");if(!panel||!REALTIME_URL)return;const status=panel.querySelector("[data-admin-status]");
-    try{const token=localStorage.getItem("hh-auth-token")||"";const response=await fetch(`${REALTIME_URL}/api/platform/summary`,{headers:{...(token?{Authorization:`Bearer ${token}`}:{})},cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"Không có quyền quản trị");const access=panel.querySelector("[data-admin-access]");if(access)access.textContent="Đã xác minh chủ sở hữu";const audience=data.audience||{};if(status)status.textContent=`Realtime · ${audience.onlineVisitors??0} đang hoạt động (${audience.onlineRegistered??0} đã đăng nhập) · cập nhật ${new Date(data.checkedAt).toLocaleString("vi-VN")}`;const labels=["Tài khoản đăng ký","Đang hoạt động","Đang đăng nhập","Sự kiện"];const values=[audience.registeredUsers??data.counts.users,audience.onlineVisitors,audience.onlineRegistered,data.counts.events];panel.querySelectorAll("[data-admin-metrics] article").forEach((card,index)=>{const label=card.querySelector("span");if(label)label.textContent=labels[index];const value=card.querySelector("strong");if(value)value.textContent=values[index]??0;const note=card.querySelector("small");if(note)note.textContent=index===1||index===2?"2 phút gần nhất":"MongoDB";});const visitors=panel.querySelector("[data-admin-visitors]");if(visitors)visitors.innerHTML=(audience.activeVisitors||[]).map((item)=>`<p><i></i><span>${escapeHtml(item.name)}${item.email?` · ${escapeHtml(item.email)}`:""}<small>${escapeHtml(item.page||"/")}</small></span><small>${new Date(item.lastSeenAt).toLocaleTimeString("vi-VN")}</small></p>`).join("")||"<p>Chưa có người hoạt động trong 2 phút gần nhất.</p>";const events=panel.querySelector("[data-admin-events]");if(events)events.innerHTML=(data.recentEvents||[]).map((item)=>`<p><i></i><span>${escapeHtml(item.type||"event")}${item.moduleId?` · ${escapeHtml(item.moduleId)}`:""}</span><small>${new Date(item.createdAt).toLocaleString("vi-VN")}</small></p>`).join("")||"<p>Chưa có sự kiện.</p>";panel.querySelectorAll(".admin-service").forEach((item)=>{item.classList.add("online");item.querySelector("b").textContent="Hoạt động";});if(!adminRealtimeTimer)adminRealtimeTimer=setInterval(()=>{const activePanel=grid.querySelector("[data-admin-panel]");if(activePanel&&!activePanel.closest("[hidden]"))loadAdminSummary();},15000);}
+    try{const token=localStorage.getItem("hh-auth-token")||"";const response=await fetch(`${REALTIME_URL}/api/platform/summary`,{headers:{...(token?{Authorization:`Bearer ${token}`}:{})},cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"Không có quyền quản trị");const access=panel.querySelector("[data-admin-access]");if(access)access.textContent="Đã xác minh chủ sở hữu";const audience=data.audience||{};if(status)status.textContent=`Realtime · ${audience.onlineVisitors??0} đang hoạt động (${audience.onlineRegistered??0} đã đăng nhập) · cập nhật ${new Date(data.checkedAt).toLocaleString("vi-VN")}`;const labels=["Tài khoản đăng ký","Đang hoạt động","Đang đăng nhập","Sự kiện"];const values=[audience.registeredUsers??data.counts.users,audience.onlineVisitors,audience.onlineRegistered,data.counts.events];panel.querySelectorAll("[data-admin-metrics] article").forEach((card,index)=>{const label=card.querySelector("span");if(label)label.textContent=labels[index];const value=card.querySelector("strong");if(value)value.textContent=values[index]??0;const note=card.querySelector("small");if(note)note.textContent=index===1||index===2?"2 phút gần nhất":"MongoDB";});const visitors=panel.querySelector("[data-admin-visitors]");if(visitors)visitors.innerHTML=(audience.activeVisitors||[]).map((item)=>`<p><i></i><span>${escapeHtml(item.name)}${item.email?` · ${escapeHtml(item.email)}`:""}<small>${escapeHtml(item.page||"/")}</small></span><small>${new Date(item.lastSeenAt).toLocaleTimeString("vi-VN")}</small></p>`).join("")||"<p>Chưa có người hoạt động trong 2 phút gần nhất.</p>";const events=panel.querySelector("[data-admin-events]");if(events)events.innerHTML=(data.recentEvents||[]).map((item)=>`<p><i></i><span>${escapeHtml(item.type||"event")}${item.moduleId?` · ${escapeHtml(item.moduleId)}`:""}</span><small>${new Date(item.createdAt).toLocaleString("vi-VN")}</small></p>`).join("")||"<p>Chưa có sự kiện.</p>";panel.querySelectorAll(".admin-service").forEach((item)=>{item.classList.add("online");item.querySelector("b").textContent="Hoạt động";});loadAdminUsers().catch(()=>{});if(!adminRealtimeTimer)adminRealtimeTimer=setInterval(()=>{const activePanel=grid.querySelector("[data-admin-panel]");if(activePanel&&!activePanel.closest("[hidden]"))loadAdminSummary();},15000);}
     catch(error){const access=panel.querySelector("[data-admin-access]");if(access)access.textContent="Quyền truy cập bị giới hạn";if(status)status.textContent=error.message;}
   };
   const readCart=()=>{try{return JSON.parse(localStorage.getItem("hh-store-cart")||"[]");}catch{return [];}};
@@ -2148,7 +2209,7 @@ function initSuperPlatform() {
     const learning=event.target.closest("[data-learning-center]");if(learning){const tab=event.target.closest("[data-learning-tab]");if(tab){learning.querySelectorAll("[data-learning-tab]").forEach((item)=>item.classList.toggle("active",item===tab));learning.querySelectorAll("[data-learning-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.learningPane===tab.dataset.learningTab));return;}const course=event.target.closest("[data-course-open]");if(course){const state=readLearningState();state.activeCourse=course.dataset.courseOpen;writeLearningState(state);rerenderModule("learning-center");return;}const lesson=event.target.closest("[data-lesson-toggle]");if(lesson){const state=readLearningState();state.progress=state.progress||{};state.progress[lesson.dataset.lessonToggle]=!state.progress[lesson.dataset.lessonToggle];writeLearningState(state);rerenderModule("learning-center");return;}if(event.target.closest("[data-learning-save-notes]")){const state=readLearningState();state.notes=learning.querySelector("[data-learning-notes]")?.value||"";writeLearningState(state);return;}if(event.target.closest("[data-learning-export-notes]")){downloadText("hh-learning-notes.txt",learning.querySelector("[data-learning-notes]")?.value||"");return;}if(event.target.closest("[data-learning-certificate]")){const state=readLearningState();const courseName=learning.querySelector(".learning-course-head h5")?.textContent||"Khóa học";downloadText("hh-certificate.txt",`CHỨNG NHẬN HOÀN THÀNH\n\n${courseName}\n\nHọc viên: ${JSON.parse(localStorage.getItem("hh-auth-user")||"{}").name||"Thành viên HH"}\nNgày: ${new Date().toLocaleDateString("vi-VN")}\nĐiểm quiz: ${state.quizScore||0}/100`);return;}if(event.target.closest("[data-learning-reset]")){const state=readLearningState();state.progress={};state.quizScore=0;writeLearningState(state);rerenderModule("learning-center");return;}}
     const community=event.target.closest("[data-community-center]");if(community){const like=event.target.closest("[data-post-like]");if(like){const state=ensureCommunityState();const post=state.posts.find((item)=>item.id===like.dataset.postLike);if(post){post.liked=!post.liked;post.likes=Math.max(0,(post.likes||0)+(post.liked?1:-1));writeCommunityState(state);rerenderModule("community");}return;}const share=event.target.closest("[data-post-share]");if(share){navigator.clipboard.writeText(`${location.href.split("#")[0]}#community-post-${share.dataset.postShare}`);share.textContent="Đã sao chép";return;}const topic=event.target.closest("[data-community-topic]");if(topic){community.querySelectorAll("[data-post-id]").forEach((post)=>post.hidden=!post.textContent.includes(topic.dataset.communityTopic));return;}const filter=event.target.closest("[data-community-filter]");if(filter){community.querySelectorAll("[data-community-filter]").forEach((item)=>item.classList.toggle("active",item===filter));const state=ensureCommunityState();community.querySelectorAll("[data-post-id]").forEach((node)=>{const post=state.posts.find((item)=>item.id===node.dataset.postId);node.hidden=filter.dataset.communityFilter==="popular"&&(post?.likes||0)<10;});return;}const follow=event.target.closest("[data-community-follow]");if(follow){follow.classList.toggle("active");follow.textContent=follow.classList.contains("active")?"Đang theo dõi":"Theo dõi";return;}}
     const dashboard=event.target.closest("[data-user-dashboard]");if(dashboard){const tab=event.target.closest("[data-user-tab]");if(tab){dashboard.querySelectorAll("[data-user-tab]").forEach((item)=>item.classList.toggle("active",item===tab));dashboard.querySelectorAll("[data-user-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.userPane===tab.dataset.userTab));return;}if(event.target.closest("[data-user-edit]")){dashboard.querySelector('[data-user-tab="profile"]')?.click();dashboard.querySelector("[data-user-nickname]")?.focus();return;}if(event.target.closest("[data-user-save]")){const state=readUserState();state.nickname=dashboard.querySelector("[data-user-nickname]")?.value.trim();state.bio=dashboard.querySelector("[data-user-bio]")?.value.trim();state.website=dashboard.querySelector("[data-user-website]")?.value.trim();state.xp=(state.xp||120)+10;writeUserState(state);rerenderModule("user-dashboard");return;}if(event.target.closest("[data-user-export]")){const data={profile:readUserState(),learning:readLearningState(),community:readCommunityState(),projects:readProjectState(),wiki:readWikiState(),media:readMediaState()};downloadText("hh-personal-data.json",JSON.stringify(data,null,2),"application/json;charset=utf-8");return;}}
-    const admin=event.target.closest("[data-admin-panel]");if(admin){const tab=event.target.closest("[data-admin-tab]");if(tab){admin.querySelectorAll("[data-admin-tab]").forEach((item)=>item.classList.toggle("active",item===tab));admin.querySelectorAll("[data-admin-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.adminPane===tab.dataset.adminTab));return;}if(event.target.closest("[data-admin-refresh]")){loadAdminSummary();return;}if(event.target.closest("[data-admin-backup]")){const backup={version:24,createdAt:new Date().toISOString(),localStorage:Object.fromEntries(Object.keys(localStorage).map((key)=>[key,localStorage.getItem(key)]))};downloadText(`hh-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(backup,null,2),"application/json;charset=utf-8");return;}}
+    const admin=event.target.closest("[data-admin-panel]");if(admin){const tab=event.target.closest("[data-admin-tab]");if(tab){admin.querySelectorAll("[data-admin-tab]").forEach((item)=>item.classList.toggle("active",item===tab));admin.querySelectorAll("[data-admin-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.adminPane===tab.dataset.adminTab));if(tab.dataset.adminTab==="users")loadAdminUsers().catch((error)=>{const status=admin.querySelector("[data-admin-status]");if(status)status.textContent=error.message;});return;}if(event.target.closest("[data-admin-refresh]")){loadAdminSummary();return;}if(event.target.closest("[data-admin-backup]")){const backup={version:47,createdAt:new Date().toISOString(),localStorage:Object.fromEntries(Object.keys(localStorage).map((key)=>[key,localStorage.getItem(key)]))};downloadText(`hh-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(backup,null,2),"application/json;charset=utf-8");return;}}
     const project = event.target.closest("[data-project-center]");
     if (project) {
       const tab=event.target.closest("[data-project-tab]"); if(tab){project.querySelectorAll("[data-project-tab]").forEach((item)=>item.classList.toggle("active",item===tab));project.querySelectorAll("[data-project-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.projectPane===tab.dataset.projectTab));return;}
@@ -4078,7 +4139,7 @@ function initAppShell() {
   const userName = () => {
     try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}").name || "Tài khoản"; } catch { return "Tài khoản"; }
   };
-  const isUnlocked = () => true;
+  const isUnlocked = () => localShellPreview || document.body.classList.contains("auth-unlocked");
   const setShellVisibility = () => {
     const unlocked = isUnlocked();
     if (localShellPreview) document.body.classList.add("auth-unlocked");
@@ -4412,7 +4473,6 @@ initTheme();
 initVoteStats();
 initPublicPresence();
 initRealtimeAuth();
-initPublicAuthPanel();
 initAppShell();
 initPlatformOnDemand(() => {
   drawParticles();

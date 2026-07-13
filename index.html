@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app-shell.css?v=35">
+  <link rel="stylesheet" href="app-shell.css?v=36">
   <link rel="stylesheet" href="professional-tools.css?v=1">
   <link rel="stylesheet" href="feature-lab.css?v=1">
   <script src="config.js?v=3"></script>
@@ -33,36 +33,40 @@
   <div class="cursor-glow" aria-hidden="true"></div>
 
   <section class="auth-gate" id="authGate" aria-label="Đăng nhập để vào trang chủ">
-    <button class="auth-gate-close" type="button" data-auth-close aria-label="Đóng đăng nhập">×</button>
     <div class="auth-gate-brand">
       <span class="brand-mark">HH</span>
-      <p class="section-kicker">Hoangdaika13 Neon Platform</p>
-      <h1>Đăng nhập để vào trang chủ</h1>
-      <p>Trang chính, chat cộng đồng, module studio và dữ liệu cá nhân sẽ mở sau khi bạn đăng nhập hoặc tạo tài khoản.</p>
+      <p class="section-kicker">HH Platform · Private Workspace</p>
+      <h1>Không gian sáng tạo của bạn bắt đầu tại đây.</h1>
+      <p>Đăng nhập để sử dụng dashboard, 37 module, chat cộng đồng và dữ liệu cá nhân được đồng bộ an toàn.</p>
+      <div class="auth-benefits" aria-label="Quyền lợi tài khoản"><span><i>01</i> Workspace cá nhân</span><span><i>02</i> Chat và cộng đồng</span><span><i>03</i> Lưu tiến trình</span></div>
       <div class="auth-gate-status" id="authGateStatus">Đang kiểm tra phiên đăng nhập...</div>
     </div>
 
     <div class="auth-gate-card interactive-card">
+      <header class="auth-card-heading"><span>HH</span><div><strong>Chào mừng bạn</strong><small>Đăng nhập hoặc tạo tài khoản miễn phí</small></div></header>
+      <div class="auth-mode-tabs" role="tablist" aria-label="Chọn hình thức xác thực"><button class="active" type="button" role="tab" aria-selected="true" data-auth-tab="login">Đăng nhập</button><button type="button" role="tab" aria-selected="false" data-auth-tab="register">Tạo tài khoản</button></div>
       <div class="auth-social-row">
-        <button class="button secondary interactive" type="button" data-oauth-disabled="google">Tiếp tục với Google</button>
-        <button class="button ghost interactive" type="button" data-oauth-disabled="facebook">Tiếp tục với Facebook</button>
+        <button class="auth-provider auth-provider--google interactive" type="button" data-oauth-provider="google"><b>G</b><span>Google</span></button>
+        <button class="auth-provider auth-provider--facebook interactive" type="button" data-oauth-provider="facebook"><b>f</b><span>Facebook</span></button>
       </div>
-      <p class="auth-oauth-note">Đăng nhập Google/Facebook sẽ mở nhà cung cấp tương ứng khi OAuth đã được cấu hình.</p>
+      <div class="auth-divider"><span>hoặc tiếp tục bằng email</span></div>
 
       <div class="auth-gate-forms">
-        <form id="gateLoginForm">
-          <h2>Đăng nhập</h2>
-          <input name="email" type="email" placeholder="Email" autocomplete="email" required>
-          <input name="password" type="password" placeholder="Mật khẩu" autocomplete="current-password" required>
-          <button class="button primary interactive" type="submit">Đăng nhập</button>
+        <form id="gateLoginForm" data-auth-panel="login" aria-label="Đăng nhập bằng email">
+          <label class="auth-field"><span>Email</span><input name="email" type="email" placeholder="you@gmail.com" autocomplete="email" required></label>
+          <label class="auth-field"><span>Mật khẩu</span><span class="auth-password"><input name="password" type="password" placeholder="Nhập mật khẩu" autocomplete="current-password" required><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span></label>
+          <button class="button primary interactive auth-submit" type="submit"><span>Đăng nhập vào HH Platform</span></button>
+          <p class="auth-form-note">Phiên đăng nhập được bảo vệ và tự hết hạn sau 12 giờ.</p>
         </form>
-        <form id="gateRegisterForm">
-          <h2>Tạo tài khoản mới</h2>
-          <input name="name" type="text" placeholder="Họ tên" autocomplete="name" required>
-          <input name="email" type="email" placeholder="Email" autocomplete="email" required>
-          <input name="password" type="password" placeholder="Mật khẩu hoặc cụm mật khẩu ít nhất 15 ký tự" autocomplete="new-password" minlength="15" maxlength="72" required>
+        <form id="gateRegisterForm" data-auth-panel="register" aria-label="Tạo tài khoản mới" hidden>
+          <label class="auth-field"><span>Họ tên</span><input name="name" type="text" placeholder="Tên hiển thị của bạn" autocomplete="name" minlength="2" maxlength="160" required></label>
+          <label class="auth-field"><span>Email</span><input name="email" type="email" placeholder="you@gmail.com" autocomplete="email" required></label>
+          <label class="auth-field"><span>Mật khẩu</span><span class="auth-password"><input name="password" type="password" placeholder="Ít nhất 15 ký tự" autocomplete="new-password" minlength="15" maxlength="72" required data-register-password><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span></label>
+          <div class="password-strength" data-password-strength data-score="0"><i></i><span>Độ mạnh mật khẩu</span></div>
+          <label class="auth-field"><span>Xác nhận mật khẩu</span><span class="auth-password"><input name="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password" minlength="15" maxlength="72" required><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span></label>
           <label class="consent-line"><input name="consent" type="checkbox"> Tôi đồng ý chia sẻ tên/email và hoạt động do tôi tự gửi.</label>
-          <button class="button secondary interactive" type="submit">Đăng ký</button>
+          <button class="button secondary interactive auth-submit" type="submit"><span>Tạo tài khoản và tiếp tục</span></button>
+          <p class="auth-form-note">Mật khẩu được băm một chiều, kể cả chủ website cũng không thể đọc mật khẩu gốc.</p>
         </form>
       </div>
     </div>
@@ -816,7 +820,7 @@
     <p>© 2026 Hoangdaika13. Built with HTML, CSS, JavaScript and neon energy.</p>
   </footer>
 
-  <script src="script.js?v=46"></script>
+  <script src="script.js?v=47"></script>
   <script src="professional-tools.js?v=1"></script>
   <script src="feature-lab.js?v=1"></script>
   <script src="feature-engines.js?v=1"></script>
