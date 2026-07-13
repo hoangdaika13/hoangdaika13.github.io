@@ -546,6 +546,7 @@ function initRealtimeAuth() {
 
   let token = localStorage.getItem("hh-auth-token") || "";
   let user = null;
+  let oauthProviders = null;
   const anonymousIdKey = "hh-anonymous-id";
   let anonymousId = localStorage.getItem(anonymousIdKey);
   if (!anonymousId) {
@@ -631,6 +632,24 @@ function initRealtimeAuth() {
     return data;
   };
 
+  const updateOAuthButtons = () => {
+    oauthButtons.forEach((button) => {
+      const provider = button.dataset.oauthProvider;
+      const enabled = Boolean(REALTIME_URL && oauthProviders?.[provider]);
+      button.disabled = !enabled;
+      button.title = enabled ? `Đăng nhập bằng ${provider === "google" ? "Google" : "Facebook"}` : `${provider === "google" ? "Google" : "Facebook"} chưa được cấu hình trên Vercel`;
+    });
+  };
+
+  const loadOAuthProviders = async () => {
+    if (!REALTIME_URL) return updateOAuthButtons();
+    try {
+      const response = await fetch(`${REALTIME_URL}/api/auth/providers`, { cache: "no-store" });
+      oauthProviders = response.ok ? await response.json() : {};
+    } catch { oauthProviders = {}; }
+    updateOAuthButtons();
+  };
+
   const renderAuth = () => {
     if (user) {
       setStatus(`Đã đăng nhập: ${user.name || user.email}`);
@@ -644,7 +663,7 @@ function initRealtimeAuth() {
     note.textContent = REALTIME_URL
       ? "Realtime backend đã cấu hình. Tracking chỉ chạy khi người dùng đồng ý hoặc đăng nhập."
       : "Chưa cấu hình realtime backend. Sau khi deploy server, dán URL vào config.js.";
-    oauthButtons.forEach((button) => button.toggleAttribute("disabled", !REALTIME_URL));
+    updateOAuthButtons();
     setGateState();
     persistAuthUser();
   };
@@ -820,6 +839,7 @@ function initRealtimeAuth() {
   }
 
   renderAuth();
+  loadOAuthProviders();
   loadMe().then(connectSocket);
 }
 

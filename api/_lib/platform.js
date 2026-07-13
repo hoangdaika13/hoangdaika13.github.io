@@ -56,9 +56,9 @@ function signUser(user) {
   );
 }
 
-function signOAuthState(provider, returnTo) {
+function signOAuthState(provider, returnTo, nonce) {
   return jwt.sign(
-    { type: "oauth", provider, returnTo },
+    { type: "oauth", provider, returnTo, nonce },
     jwtSecret(),
     { algorithm: "HS256", expiresIn: "10m", issuer: "hh-platform", audience: "hh-oauth" }
   );
@@ -79,7 +79,7 @@ function publicUser(user) {
     id: String(user._id),
     name: user.name || "",
     email: user.email || "",
-    provider: user.provider || "local",
+    provider: user.lastProvider || user.provider || "local",
     avatar: user.avatar || "",
     consent: Boolean(user.consent)
   };
