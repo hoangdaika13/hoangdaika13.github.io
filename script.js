@@ -590,10 +590,10 @@ function initRealtimeAuth() {
   const setFormBusy = (formNode, busy) => {
     const submit = formNode?.querySelector('button[type="submit"]');
     if (!submit) return;
-    if (!submit.dataset.idleLabel) submit.dataset.idleLabel = submit.textContent.trim();
+    const label = submit.querySelector("span") || submit;
+    if (!submit.dataset.idleLabel) submit.dataset.idleLabel = label.textContent.trim();
     submit.disabled = busy;
     submit.setAttribute("aria-busy", String(busy));
-    const label = submit.querySelector("span") || submit;
     label.textContent = busy ? "Đang xử lý..." : submit.dataset.idleLabel;
   };
 
