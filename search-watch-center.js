@@ -430,6 +430,13 @@
   }
 
   function wireLaunchers() {
+    document.addEventListener("click", (event) => {
+      const launcher = event.target.closest("[data-search-watch-open]");
+      if (!launcher) return;
+      event.preventDefault();
+      if (window.matchMedia("(max-width: 760px)").matches) document.body.classList.add("app-sidebar-collapsed");
+      openHub(launcher.dataset.searchWatchOpen || "google");
+    }, true);
     const liveForm = document.getElementById("googleLiveSearch");
     const liveInput = document.getElementById("googleLiveQuery");
     if (liveForm) {

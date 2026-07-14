@@ -4187,6 +4187,7 @@ function initAppShell() {
   if (!shell || !workspace || !navigation || !platform) return;
 
   const stateKey = "hh.app-shell.v1";
+  const mobileSidebarQuery = window.matchMedia("(max-width: 760px)");
   const localShellPreview = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSearchParams(location.search).has("shell-preview");
   const stored = () => {
     try { return JSON.parse(localStorage.getItem(stateKey) || "{}"); } catch { return {}; }
@@ -4196,7 +4197,14 @@ function initAppShell() {
     { id: "home", label: "Trang chủ", icon: "⌂", route: "/home", items: ["command-center"] },
     { id: "create", label: "Sáng tạo", icon: "✦", route: "/create", items: ["ai-center", "creator-studio", "media-center", "ai-automation"] },
     { id: "work", label: "Công việc", icon: "□", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
-    { id: "communication", label: "Giao tiếp", icon: "◌", route: "/communication", items: ["community", "notification-center", "user-dashboard", "feedback-survey", "helpdesk-ticketing", "referral-affiliate"] },
+    {
+      id: "communication",
+      label: "Giao tiếp",
+      icon: "◌",
+      route: "/communication",
+      items: ["community", "notification-center", "user-dashboard", "feedback-survey", "helpdesk-ticketing", "referral-affiliate"],
+      shortcuts: [{ label: "Google + YouTube", icon: "G", tab: "google" }]
+    },
     { id: "insights", label: "Phân tích", icon: "↗", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
     { id: "learn", label: "Học tập", icon: "◫", route: "/learn", items: ["learning-center", "i18n", "accessibility-center", "gamification", "onboarding-tour"] },
     { id: "system", label: "Hệ thống", icon: "⚙", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] },
@@ -4243,15 +4251,18 @@ function initAppShell() {
     const route = activeRoute;
     navigation.innerHTML = groups.map((group) => {
       const expanded = route === group.route || route.startsWith(`${group.route}/`);
-      const submenu = group.items.map((id) => {
+      const moduleItems = group.items.map((id) => {
         const module = moduleById(id);
         if (!module) return "";
         const moduleRoute = routeForModule(id);
         return `<button class="app-sidebar__subitem ${route === moduleRoute ? "is-active" : ""}" type="button" data-app-route="${moduleRoute}" ${route === moduleRoute ? "aria-current=page" : ""}><span>${module.title}</span></button>`;
       }).join("");
+      const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
+      const submenu = `${shortcuts}${moduleItems}`;
+      const hasSubmenu = Boolean(submenu);
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}">
-        <button class="app-sidebar__item ${expanded ? "is-active" : ""}" type="button" data-app-route="${group.route}" aria-expanded="${expanded}"><span>${group.icon}</span><b>${group.label}</b><i>${group.items.length ? "›" : ""}</i></button>
-        ${group.items.length ? `<div class="app-sidebar__submenu">${submenu}</div>` : ""}
+        <button class="app-sidebar__item ${expanded ? "is-active" : ""}" type="button" data-app-route="${group.route}" aria-expanded="${expanded}" title="${group.label}"><span>${group.icon}</span><b>${group.label}</b><i>${hasSubmenu ? "›" : ""}</i></button>
+        ${hasSubmenu ? `<div class="app-sidebar__submenu">${submenu}</div>` : ""}
       </section>`;
     }).join("");
   };
@@ -4315,6 +4326,13 @@ function initAppShell() {
   const mountSimpleView = (title, description, content) => {
     workspace.innerHTML = `<section class="app-simple-view"><div class="app-simple-view__intro"><p class="section-kicker">HH Platform</p><h2>${title}</h2><p>${description}</p></div>${content}</section>`;
   };
+  const mountCommunicationSearch = () => {
+    const launcher = document.createElement("section");
+    launcher.className = "communication-search-launcher";
+    launcher.setAttribute("aria-label", "Google và YouTube trong HH Platform");
+    launcher.innerHTML = `<div class="communication-search-launcher__copy"><span>Mạng xã hội & khám phá</span><h2>Google + YouTube</h2><p>Tìm website, hình ảnh và video hoặc dán liên kết YouTube để xem ngay trong HH Platform.</p></div><div class="communication-search-launcher__actions"><button type="button" data-search-watch-open="google"><b>G</b><span>Tìm với Google</span></button><button type="button" data-search-watch-open="youtube"><b>▶</b><span>Mở YouTube</span></button></div>`;
+    workspace.insertBefore(launcher, platform);
+  };
   const remember = (moduleId) => {
     if (!moduleId) return;
     let recent = [];
@@ -4357,6 +4375,10 @@ function initAppShell() {
       const allowed = route === "/tools" ? "" : groups.find((group) => group.route === route)?.items || "";
       updatePageHeader(route === "/tools" ? "Tất cả công cụ" : groups.find((group) => group.route === route)?.label || "Công cụ", "Chọn một module để mở thành trang làm việc riêng.", route);
       mountPlatform("");
+      if (route === "/communication") {
+        mountCommunicationSearch();
+        pageActions.innerHTML = `<button class="app-primary-action" type="button" data-search-watch-open="google">Google + YouTube</button>`;
+      }
       if (Array.isArray(allowed)) document.querySelectorAll("#moduleGrid [data-module-id]").forEach((card) => { card.hidden = !allowed.includes(card.dataset.moduleId); });
     } else if (route === "/favorites" || route === "/recent") {
       const key = route === "/favorites" ? "hh-module-favorites" : "hh.app-shell.recent";
@@ -4436,9 +4458,8 @@ function initAppShell() {
       const route = routeButton.dataset.appRoute;
       if (route) {
         location.hash = `#${route}`;
-        if (window.matchMedia("(max-width: 720px)").matches) {
+        if (mobileSidebarQuery.matches) {
           document.body.classList.add("app-sidebar-collapsed");
-          saveState({ collapsed: true });
         }
         closePalette();
         closeOverlays({ restoreFocus: false });
@@ -4450,7 +4471,7 @@ function initAppShell() {
       const collapsed = !document.body.classList.contains("app-sidebar-collapsed");
       document.body.classList.toggle("app-sidebar-collapsed", collapsed);
       toggle.setAttribute("aria-expanded", String(!collapsed));
-      saveState({ collapsed });
+      if (!mobileSidebarQuery.matches) saveState({ collapsed });
       return;
     }
     if (event.target.closest("[data-command-open]")) { openPalette(); return; }
@@ -4518,8 +4539,13 @@ function initAppShell() {
   });
   window.addEventListener("hh:auth-change", () => { setShellVisibility(); setUser(); });
   const initial = stored();
-  const compactOnMobile = window.matchMedia("(max-width: 720px)").matches;
-  document.body.classList.toggle("app-sidebar-collapsed", compactOnMobile || Boolean(initial.collapsed));
+  const syncResponsiveSidebar = (isMobile = mobileSidebarQuery.matches) => {
+    document.body.classList.toggle("app-sidebar-collapsed", isMobile || Boolean(stored().collapsed));
+    document.querySelectorAll("[data-shell-toggle]").forEach((button) => button.setAttribute("aria-expanded", String(!document.body.classList.contains("app-sidebar-collapsed"))));
+  };
+  syncResponsiveSidebar();
+  if (mobileSidebarQuery.addEventListener) mobileSidebarQuery.addEventListener("change", (event) => syncResponsiveSidebar(event.matches));
+  else mobileSidebarQuery.addListener((event) => syncResponsiveSidebar(event.matches));
   document.body.classList.toggle("app-advanced-mode", Boolean(initial.advanced));
   const updateClock = () => {
     const clock = byId("shellClock");
