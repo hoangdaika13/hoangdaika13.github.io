@@ -35,6 +35,8 @@
         <div class="mdx-editor-toolbar">
           <button type="button" data-adv-action="editor-new" title="Tạo tài liệu mới">Mới</button>
           <label class="mdx-file-button">Mở ảnh<input type="file" accept="image/*" multiple data-adv-file="editor"></label>
+          <label class="mdx-file-button">Mở project<input type="file" accept="application/json,.hhphoto" data-adv-project></label>
+          <button type="button" data-adv-action="editor-save-project">Lưu project</button>
           <span></span>
           <button type="button" data-adv-action="editor-undo" title="Hoàn tác (Ctrl+Z)">↶</button>
           <button type="button" data-adv-action="editor-redo" title="Làm lại (Ctrl+Y)">↷</button>
@@ -42,6 +44,7 @@
           <button type="button" data-adv-action="editor-text">+ Chữ</button>
           <button type="button" data-adv-action="editor-rect">+ Chữ nhật</button>
           <button type="button" data-adv-action="editor-circle">+ Tròn</button>
+          <button type="button" data-adv-action="editor-flatten" title="Gộp toàn bộ layer thành một layer ảnh">Gộp layer</button>
           <span class="mdx-toolbar-spacer"></span>
           <label>Khổ<select data-adv-editor-preset><option value="custom">Tùy chỉnh</option><option value="1280x720">HD 16:9</option><option value="1920x1080">Full HD</option><option value="1080x1080">Bài vuông</option><option value="1080x1350">Instagram 4:5</option><option value="1080x1920">Story 9:16</option><option value="2480x3508">A4 300dpi</option></select></label>
           <label>Zoom<select data-adv-editor-zoom><option value="0.35">35%</option><option value="0.5">50%</option><option value="0.75" selected>75%</option><option value="1">100%</option><option value="1.5">150%</option></select></label>
@@ -49,7 +52,13 @@
         </div>
         <div class="mdx-editor-body">
           <aside class="mdx-editor-tools" aria-label="Công cụ nhanh">
-            <button class="is-active" type="button" data-adv-action="editor-select" title="Chọn và di chuyển">↖<span>Chọn</span></button>
+            <button class="is-active" type="button" data-adv-action="editor-tool" data-editor-tool="select" title="Chọn và di chuyển (V)">↖<span>Chọn</span></button>
+            <button type="button" data-adv-action="editor-tool" data-editor-tool="brush" title="Brush (B)">●<span>Brush</span></button>
+            <button type="button" data-adv-action="editor-tool" data-editor-tool="eraser" title="Eraser (E)">◒<span>Eraser</span></button>
+            <button type="button" data-adv-action="editor-tool" data-editor-tool="eyedropper" title="Eyedropper (I)">⌾<span>Lấy màu</span></button>
+            <button type="button" data-adv-action="editor-tool" data-editor-tool="pan" title="Hand / Pan (H)">✋<span>Pan</span></button>
+            <button type="button" data-adv-action="editor-add-raster" title="Raster layer mới">▦<span>Raster</span></button>
+            <button type="button" data-adv-action="editor-gradient" title="Gradient layer">◩<span>Gradient</span></button>
             <button type="button" data-adv-action="editor-center" title="Căn giữa layer">⊙<span>Căn giữa</span></button>
             <button type="button" data-adv-action="editor-crop" title="Cắt tài liệu theo layer">⌗<span>Crop</span></button>
             <button type="button" data-adv-action="editor-flip-x" title="Lật ngang ảnh">↔<span>Lật X</span></button>
@@ -58,6 +67,16 @@
             <button type="button" data-adv-action="editor-delete" title="Xóa layer">⌫<span>Xóa</span></button>
           </aside>
           <section class="mdx-editor-stage-wrap">
+            <div class="mdx-editor-options">
+              <span>Công cụ: <b data-adv-active-tool>Chọn</b></span>
+              <label>Màu<input type="color" value="#ec4899" data-adv-brush="color"></label>
+              <label>Size <b data-adv-brush-value="size">36px</b><input type="range" min="1" max="300" value="36" data-adv-brush="size"></label>
+              <label>Opacity <b data-adv-brush-value="opacity">100%</b><input type="range" min="1" max="100" value="100" data-adv-brush="opacity"></label>
+              <label>Hardness <b data-adv-brush-value="hardness">85%</b><input type="range" min="1" max="100" value="85" data-adv-brush="hardness"></label>
+              <label class="mdx-option-check"><input type="checkbox" data-adv-grid> Grid</label>
+              <label class="mdx-option-check"><input type="checkbox" data-adv-snap> Snap</label>
+              <span data-adv-pointer-info>X 0 · Y 0</span>
+            </div>
             <div class="mdx-editor-stage" data-adv-editor-stage><canvas data-adv-editor-canvas width="1280" height="720"></canvas></div>
             <div class="mdx-editor-foot"><span data-adv-doc-info>1280 × 720 px</span><span>Kéo layer trực tiếp trên canvas · Delete để xóa</span></div>
           </section>
@@ -74,13 +93,20 @@
               </div>
               <label>Blend mode<select data-adv-prop="blend"><option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color Dodge</option><option value="difference">Difference</option></select></label>
               <div class="mdx-effect-controls" data-adv-image-controls>
+                <label>Preset<select data-adv-filter-preset><option value="custom">Tùy chỉnh</option><option value="vivid">Vivid</option><option value="cinema">Cinema</option><option value="mono">Monochrome</option><option value="sepia">Vintage Sepia</option><option value="invert">Invert</option></select></label>
                 <label>Độ sáng <b data-adv-value="brightness">100%</b><input type="range" min="0" max="200" value="100" data-adv-prop="brightness"></label>
                 <label>Tương phản <b data-adv-value="contrast">100%</b><input type="range" min="0" max="200" value="100" data-adv-prop="contrast"></label>
                 <label>Bão hòa <b data-adv-value="saturation">100%</b><input type="range" min="0" max="200" value="100" data-adv-prop="saturation"></label>
+                <label>Hue <b data-adv-value="hue">0°</b><input type="range" min="-180" max="180" value="0" data-adv-prop="hue"></label>
+                <label>Grayscale <b data-adv-value="grayscale">0%</b><input type="range" min="0" max="100" value="0" data-adv-prop="grayscale"></label>
+                <label>Sepia <b data-adv-value="sepia">0%</b><input type="range" min="0" max="100" value="0" data-adv-prop="sepia"></label>
+                <label>Invert <b data-adv-value="invert">0%</b><input type="range" min="0" max="100" value="0" data-adv-prop="invert"></label>
                 <label>Blur <b data-adv-value="blur">0px</b><input type="range" min="0" max="30" value="0" data-adv-prop="blur"></label>
+                <fieldset><legend>Drop shadow</legend><label>Màu<input type="color" value="#000000" data-adv-prop="shadowColor"></label><label>Blur<input type="range" min="0" max="80" value="0" data-adv-prop="shadowBlur"></label><div class="mdx-inspector-grid"><label>X<input type="number" value="0" data-adv-prop="shadowX"></label><label>Y<input type="number" value="0" data-adv-prop="shadowY"></label></div></fieldset>
               </div>
-              <div class="mdx-text-controls" data-adv-text-controls hidden><label>Nội dung<textarea rows="3" data-adv-prop="text"></textarea></label><div class="mdx-inspector-grid"><label>Cỡ chữ<input type="number" min="8" max="400" data-adv-prop="fontSize"></label><label>Màu<input type="color" data-adv-prop="color"></label></div><label>Font<select data-adv-prop="fontFamily"><option>Be Vietnam Pro</option><option>Arial</option><option>Georgia</option><option>Courier New</option><option>Verdana</option></select></label></div>
+              <div class="mdx-text-controls" data-adv-text-controls hidden><label>Nội dung<textarea rows="3" data-adv-prop="text"></textarea></label><div class="mdx-inspector-grid"><label>Cỡ chữ<input type="number" min="8" max="400" data-adv-prop="fontSize"></label><label>Màu<input type="color" data-adv-prop="color"></label><label>Độ đậm<select data-adv-prop="fontWeight"><option value="300">Light</option><option value="400">Regular</option><option value="600">Semi Bold</option><option value="700">Bold</option><option value="800">Extra Bold</option><option value="900">Black</option></select></label><label>Căn chữ<select data-adv-prop="textAlign"><option value="center">Giữa</option><option value="left">Trái</option><option value="right">Phải</option></select></label><label>Màu viền<input type="color" data-adv-prop="textStroke"></label><label>Độ dày viền<input type="range" min="0" max="20" data-adv-prop="textStrokeWidth"></label></div><label>Font<select data-adv-prop="fontFamily"><option>Be Vietnam Pro</option><option>Arial</option><option>Georgia</option><option>Courier New</option><option>Verdana</option></select></label></div>
               <div class="mdx-shape-controls" data-adv-shape-controls hidden><div class="mdx-inspector-grid"><label>Màu nền<input type="color" data-adv-prop="fill"></label><label>Màu viền<input type="color" data-adv-prop="stroke"></label></div><label>Độ dày viền<input type="range" min="0" max="40" data-adv-prop="strokeWidth"></label></div>
+              <div class="mdx-gradient-controls" data-adv-gradient-controls hidden><div class="mdx-inspector-grid"><label>Màu đầu<input type="color" data-adv-prop="colorA"></label><label>Màu cuối<input type="color" data-adv-prop="colorB"></label></div><label>Kiểu<select data-adv-prop="gradientType"><option value="linear">Linear</option><option value="radial">Radial</option></select></label><label>Góc<input type="range" min="0" max="360" data-adv-prop="gradientAngle"></label></div>
               <button type="button" data-adv-action="editor-reset-effects">Đặt lại hiệu ứng</button>
             </section>
             <section class="mdx-document-settings"><header><strong>Tài liệu</strong></header><div class="mdx-inspector-grid"><label>Rộng<input type="number" min="64" max="6000" value="1280" data-adv-doc="width"></label><label>Cao<input type="number" min="64" max="6000" value="720" data-adv-doc="height"></label></div><label>Nền<input type="color" value="#ffffff" data-adv-doc="background"></label><label class="mdx-check"><input type="checkbox" data-adv-doc-transparent> Nền trong suốt</label><label>Định dạng<select data-adv-export-type><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option></select></label><label>Chất lượng <b data-adv-export-quality-value>92%</b><input type="range" min="20" max="100" value="92" data-adv-export-quality></label></section>
@@ -90,16 +116,19 @@
   }
 
   function makeLayer(type, extra = {}) {
-    const common = { id: uid(), type, name: type === "image" ? "Ảnh" : type === "text" ? "Văn bản" : "Hình khối", x: 640, y: 360, width: 320, height: 220, rotation: 0, opacity: 1, visible: true, blend: "source-over" };
+    const names = { image: "Ảnh", raster: "Raster layer", text: "Văn bản", shape: "Hình khối", gradient: "Gradient" };
+    const common = { id: uid(), type, name: names[type] || "Layer", x: 640, y: 360, width: 320, height: 220, rotation: 0, opacity: 1, visible: true, blend: "source-over" };
     return { ...common, locked: false, ...extra };
   }
   const selectedLayer = () => state.editor?.layers.find((layer) => layer.id === state.editor.selected);
-  const snapshotLayers = (layers) => layers.map((layer) => ({ ...layer }));
+  const cloneRaster = (source) => { if (!source) return null; const canvas = document.createElement("canvas"); canvas.width = source.width; canvas.height = source.height; canvas.getContext("2d").drawImage(source, 0, 0); return canvas; };
+  const snapshotLayers = (layers) => layers.map((layer) => layer.type === "raster" ? { ...layer, raster: cloneRaster(layer.raster) } : { ...layer });
   function pushHistory() {
     const editor = state.editor; if (!editor) return;
     editor.history.splice(editor.historyIndex + 1);
     editor.history.push({ layers: snapshotLayers(editor.layers), selected: editor.selected, width: editor.width, height: editor.height, background: editor.background, transparent: editor.transparent });
-    if (editor.history.length > 40) editor.history.shift();
+    const limit = editor.layers.some((layer) => layer.type === "raster") ? 24 : 40;
+    if (editor.history.length > limit) editor.history.shift();
     editor.historyIndex = editor.history.length - 1;
   }
   function restoreHistory(index) {
@@ -111,30 +140,35 @@
   function drawLayer(ctx, layer, selected = false) {
     if (!layer.visible) return;
     ctx.save(); ctx.translate(layer.x, layer.y); ctx.rotate(layer.rotation * Math.PI / 180); ctx.globalAlpha = layer.opacity; ctx.globalCompositeOperation = layer.blend || "source-over";
-    if (layer.type === "image") {
-      ctx.filter = `brightness(${layer.brightness || 100}%) contrast(${layer.contrast || 100}%) saturate(${layer.saturation || 100}%) blur(${layer.blur || 0}px)`;
-      ctx.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1); ctx.drawImage(layer.image, -layer.width / 2, -layer.height / 2, layer.width, layer.height); ctx.filter = "none";
+    ctx.shadowColor = layer.shadowColor || "transparent"; ctx.shadowBlur = layer.shadowBlur || 0; ctx.shadowOffsetX = layer.shadowX || 0; ctx.shadowOffsetY = layer.shadowY || 0;
+    if (layer.type === "image" || layer.type === "raster") {
+      ctx.filter = `brightness(${layer.brightness ?? 100}%) contrast(${layer.contrast ?? 100}%) saturate(${layer.saturation ?? 100}%) hue-rotate(${layer.hue || 0}deg) grayscale(${layer.grayscale || 0}%) sepia(${layer.sepia || 0}%) invert(${layer.invert || 0}%) blur(${layer.blur || 0}px)`;
+      ctx.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1); ctx.drawImage(layer.type === "raster" ? layer.raster : layer.image, -layer.width / 2, -layer.height / 2, layer.width, layer.height); ctx.filter = "none";
     } else if (layer.type === "text") {
-      ctx.fillStyle = layer.color; ctx.font = `${layer.fontWeight || 700} ${layer.fontSize}px "${layer.fontFamily}",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      const lines = String(layer.text || "Văn bản").split("\n"); const lineHeight = layer.fontSize * 1.22; lines.forEach((line, index) => ctx.fillText(line, 0, (index - (lines.length - 1) / 2) * lineHeight, layer.width));
+      ctx.fillStyle = layer.color; ctx.strokeStyle = layer.textStroke || "transparent"; ctx.lineWidth = layer.textStrokeWidth || 0; ctx.font = `${layer.fontWeight || 700} ${layer.fontSize}px "${layer.fontFamily}",sans-serif`; ctx.textAlign = layer.textAlign || "center"; ctx.textBaseline = "middle";
+      const lines = String(layer.text || "Văn bản").split("\n"), lineHeight = layer.fontSize * 1.22, anchor = layer.textAlign === "left" ? -layer.width / 2 : layer.textAlign === "right" ? layer.width / 2 : 0; lines.forEach((line, index) => { const y = (index - (lines.length - 1) / 2) * lineHeight; if (layer.textStrokeWidth) ctx.strokeText(line, anchor, y, layer.width); ctx.fillText(line, anchor, y, layer.width); });
+    } else if (layer.type === "gradient") {
+      let gradient; if (layer.gradientType === "radial") gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(layer.width, layer.height) / 2); else { const angle = (layer.gradientAngle || 0) * Math.PI / 180, dx = Math.cos(angle) * layer.width / 2, dy = Math.sin(angle) * layer.height / 2; gradient = ctx.createLinearGradient(-dx, -dy, dx, dy); } gradient.addColorStop(0, layer.colorA); gradient.addColorStop(1, layer.colorB); ctx.fillStyle = gradient; ctx.fillRect(-layer.width / 2, -layer.height / 2, layer.width, layer.height);
     } else {
       ctx.fillStyle = layer.fill; ctx.strokeStyle = layer.stroke; ctx.lineWidth = layer.strokeWidth || 0;
       ctx.beginPath(); if (layer.shape === "circle") ctx.ellipse(0, 0, layer.width / 2, layer.height / 2, 0, 0, Math.PI * 2); else ctx.rect(-layer.width / 2, -layer.height / 2, layer.width, layer.height); ctx.fill(); if (layer.strokeWidth) ctx.stroke();
     }
-    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
-    if (selected) { ctx.setLineDash([10, 7]); ctx.lineWidth = 2 / Math.max(state.editor.zoom, .25); ctx.strokeStyle = "#55e5eb"; ctx.strokeRect(-layer.width / 2 - 5, -layer.height / 2 - 5, layer.width + 10, layer.height + 10); ctx.setLineDash([]); }
+    ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+    if (selected) { const handle = 12 / Math.max(state.editor.zoom, .25); ctx.setLineDash([10, 7]); ctx.lineWidth = 2 / Math.max(state.editor.zoom, .25); ctx.strokeStyle = "#55e5eb"; ctx.strokeRect(-layer.width / 2 - 5, -layer.height / 2 - 5, layer.width + 10, layer.height + 10); ctx.setLineDash([]); ctx.fillStyle = "#f8ffff"; ctx.strokeStyle = "#1698a5"; [[-layer.width / 2, -layer.height / 2], [layer.width / 2, -layer.height / 2], [-layer.width / 2, layer.height / 2], [layer.width / 2, layer.height / 2]].forEach(([x, y]) => { ctx.fillRect(x - handle / 2, y - handle / 2, handle, handle); ctx.strokeRect(x - handle / 2, y - handle / 2, handle, handle); }); }
     ctx.restore();
   }
   function drawEditor() {
     const editor = state.editor; if (!editor) return;
     const { canvas, ctx } = editor; ctx.clearRect(0, 0, canvas.width, canvas.height); if (!editor.transparent) { ctx.fillStyle = editor.background; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-    editor.layers.forEach((layer) => drawLayer(ctx, layer, layer.id === editor.selected));
+    if (editor.grid && !editor.exporting) { ctx.save(); ctx.strokeStyle = "rgba(80,210,220,.22)"; ctx.lineWidth = 1; for (let x = 0; x <= canvas.width; x += editor.gridSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); } for (let y = 0; y <= canvas.height; y += editor.gridSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); } ctx.restore(); }
+    editor.layers.forEach((layer) => drawLayer(ctx, layer, !editor.exporting && layer.id === editor.selected));
     canvas.style.width = `${Math.max(120, editor.width * editor.zoom)}px`; canvas.style.height = `${Math.max(80, editor.height * editor.zoom)}px`;
     const info = $(editor.work, "[data-adv-doc-info]"); if (info) info.textContent = `${editor.width} × ${editor.height} px · ${editor.layers.length} layer`;
   }
   function layerListMarkup() {
     const editor = state.editor;
-    return [...editor.layers].reverse().map((layer) => `<article class="${layer.id === editor.selected ? "is-active" : ""}" data-adv-layer="${layer.id}"><button type="button" data-adv-action="editor-visible" data-layer-id="${layer.id}" title="Ẩn/hiện">${layer.visible ? "◉" : "○"}</button><button type="button" data-adv-action="editor-lock" data-layer-id="${layer.id}" title="Khóa layer">${layer.locked ? "▣" : "□"}</button><span>${layer.type === "image" ? "IMG" : layer.type === "text" ? "TXT" : "SHP"}</span><button type="button" data-adv-action="editor-select-layer" data-layer-id="${layer.id}"><strong>${esc(layer.name)}</strong><small>${layer.type} · ${Math.round(layer.opacity * 100)}%${layer.locked ? " · khóa" : ""}</small></button></article>`).join("") || '<div class="mdx-layer-empty">Mở ảnh hoặc thêm chữ để bắt đầu.</div>';
+    const codes = { image: "IMG", raster: "PXL", text: "TXT", shape: "SHP", gradient: "GRD" };
+    return [...editor.layers].reverse().map((layer) => `<article class="${layer.id === editor.selected ? "is-active" : ""}" data-adv-layer="${layer.id}"><button type="button" data-adv-action="editor-visible" data-layer-id="${layer.id}" title="Ẩn/hiện">${layer.visible ? "◉" : "○"}</button><button type="button" data-adv-action="editor-lock" data-layer-id="${layer.id}" title="Khóa layer">${layer.locked ? "▣" : "□"}</button><span>${codes[layer.type] || "LYR"}</span><button type="button" data-adv-action="editor-select-layer" data-layer-id="${layer.id}"><strong>${esc(layer.name)}</strong><small>${layer.type} · ${Math.round(layer.opacity * 100)}%${layer.locked ? " · khóa" : ""}</small></button></article>`).join("") || '<div class="mdx-layer-empty">Mở ảnh hoặc thêm layer để bắt đầu.</div>';
   }
   function renderLayerList() { const node = state.editor && $(state.editor.work, "[data-adv-layer-list]"); if (node) node.innerHTML = layerListMarkup(); }
   function syncEditorUi() {
@@ -142,39 +176,77 @@
     renderLayerList();
     $$ (editor.work, "[data-adv-prop]").forEach((input) => { const key = input.dataset.advProp; input.disabled = !layer; if (layer && key in layer) input.value = key === "opacity" ? Math.round(layer[key] * 100) : layer[key]; });
     const kind = $(editor.work, "[data-adv-selected-kind]"); if (kind) kind.textContent = layer ? `${layer.name} · ${layer.type}` : "Chưa chọn layer";
-    $(editor.work, "[data-adv-image-controls]").hidden = layer?.type !== "image";
+    $(editor.work, "[data-adv-image-controls]").hidden = !["image", "raster"].includes(layer?.type);
     $(editor.work, "[data-adv-text-controls]").hidden = layer?.type !== "text";
     $(editor.work, "[data-adv-shape-controls]").hidden = layer?.type !== "shape";
+    $(editor.work, "[data-adv-gradient-controls]").hidden = layer?.type !== "gradient";
+    const preset = $(editor.work, "[data-adv-filter-preset]"); if (preset) preset.value = "custom";
     $$ (editor.work, "[data-adv-doc]").forEach((input) => { input.value = editor[input.dataset.advDoc]; });
     const transparent = $(editor.work, "[data-adv-doc-transparent]"); if (transparent) transparent.checked = editor.transparent;
   }
   function selectEditorLayer(id) { if (!state.editor?.layers.some((layer) => layer.id === id)) return; state.editor.selected = id; syncEditorUi(); drawEditor(); }
   function addEditorLayer(layer) { state.editor.layers.push(layer); state.editor.selected = layer.id; pushHistory(); syncEditorUi(); drawEditor(); }
+  function duplicateEditorLayer(layer) { if (!layer) return; addEditorLayer({ ...layer, id: uid(), raster: layer.type === "raster" ? cloneRaster(layer.raster) : layer.raster, name: `${layer.name} copy`, x: layer.x + 24, y: layer.y + 24 }); }
+  const editorPoint = (event) => { const editor = state.editor, rect = editor.canvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) * editor.canvas.width / rect.width, y: (event.clientY - rect.top) * editor.canvas.height / rect.height }; };
+  const layerPoint = (layer, point) => { const angle = -layer.rotation * Math.PI / 180, dx = point.x - layer.x, dy = point.y - layer.y; return { x: (dx * Math.cos(angle) - dy * Math.sin(angle)) / layer.width * (layer.raster?.width || layer.width) + (layer.raster?.width || layer.width) / 2, y: (dx * Math.sin(angle) + dy * Math.cos(angle)) / layer.height * (layer.raster?.height || layer.height) + (layer.raster?.height || layer.height) / 2 }; };
+  const hitLayer = (point) => [...state.editor.layers].reverse().find((layer) => { if (!layer.visible) return false; const local = layerPoint(layer, point), width = layer.raster?.width || layer.width, height = layer.raster?.height || layer.height; return local.x >= 0 && local.x <= width && local.y >= 0 && local.y <= height; });
+  function setEditorTool(tool) { const editor = state.editor; if (!editor) return; editor.tool = tool; $$(editor.work, "[data-editor-tool]").forEach((button) => button.classList.toggle("is-active", button.dataset.editorTool === tool)); const names = { select: "Chọn / Transform", brush: "Brush", eraser: "Eraser", eyedropper: "Eyedropper", pan: "Hand / Pan" }; $(editor.work, "[data-adv-active-tool]").textContent = names[tool] || tool; editor.canvas.dataset.tool = tool; }
+  function newRasterLayer(name = "Raster layer") { const editor = state.editor, raster = document.createElement("canvas"); raster.width = editor.width; raster.height = editor.height; return makeLayer("raster", { name, raster, x: editor.width / 2, y: editor.height / 2, width: editor.width, height: editor.height, brightness: 100, contrast: 100, saturation: 100, hue: 0, grayscale: 0, sepia: 0, invert: 0, blur: 0, shadowColor: "#000000", shadowBlur: 0, shadowX: 0, shadowY: 0, flipX: false, flipY: false }); }
+  function ensureRasterLayer() { const current = selectedLayer(); if (current?.type === "raster" && !current.locked) return current; const layer = newRasterLayer(state.editor.tool === "eraser" ? "Eraser layer" : "Brush layer"); addEditorLayer(layer); return layer; }
+  function paintRaster(layer, from, to, erase = false) { const editor = state.editor, ctx = layer.raster.getContext("2d"), size = editor.brush.size * layer.raster.width / layer.width; ctx.save(); ctx.globalCompositeOperation = erase ? "destination-out" : "source-over"; ctx.globalAlpha = editor.brush.opacity; ctx.strokeStyle = editor.brush.color; ctx.fillStyle = editor.brush.color; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = size; ctx.filter = `blur(${Math.max(0, (1 - editor.brush.hardness) * size * .22)}px)`; ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke(); ctx.restore(); }
+  function sampleEditorColor(point) { const editor = state.editor, selected = editor.selected; editor.exporting = true; editor.selected = null; drawEditor(); const pixel = editor.ctx.getImageData(clamp(Math.round(point.x), 0, editor.width - 1), clamp(Math.round(point.y), 0, editor.height - 1), 1, 1).data, color = `#${[pixel[0], pixel[1], pixel[2]].map((value) => value.toString(16).padStart(2, "0")).join("")}`; editor.exporting = false; editor.selected = selected; editor.brush.color = color; $(editor.work, "[data-adv-brush='color']").value = color; drawEditor(); status(editor.work, `Đã lấy màu ${color}.`, "success"); }
   function setupEditor(work) {
     const canvas = $(work, "[data-adv-editor-canvas]");
-    state.editor = { work, canvas, ctx: canvas.getContext("2d"), width: 1280, height: 720, background: "#ffffff", transparent: false, zoom: .75, layers: [], selected: null, history: [], historyIndex: -1, drag: null };
-    pushHistory(); syncEditorUi(); drawEditor();
+    state.editor = { work, canvas, stage: $(work, "[data-adv-editor-stage]"), ctx: canvas.getContext("2d", { willReadFrequently: true }), width: 1280, height: 720, background: "#ffffff", transparent: false, zoom: .75, tool: "select", brush: { color: "#ec4899", size: 36, opacity: 1, hardness: .85 }, grid: false, snap: false, gridSize: 50, exporting: false, layers: [], selected: null, history: [], historyIndex: -1, drag: null };
+    pushHistory(); syncEditorUi(); setEditorTool("select"); drawEditor();
     canvas.addEventListener("pointerdown", (event) => {
-      const editor = state.editor; const rect = canvas.getBoundingClientRect(); const point = { x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height };
-      const hit = [...editor.layers].reverse().find((layer) => { if (!layer.visible) return false; const angle = -layer.rotation * Math.PI / 180, dx = point.x - layer.x, dy = point.y - layer.y, x = dx * Math.cos(angle) - dy * Math.sin(angle), y = dx * Math.sin(angle) + dy * Math.cos(angle); return Math.abs(x) <= layer.width / 2 && Math.abs(y) <= layer.height / 2; });
+      const editor = state.editor, point = editorPoint(event);
+      if (["brush", "eraser"].includes(editor.tool)) { const layer = ensureRasterLayer(), local = layerPoint(layer, point); paintRaster(layer, local, local, editor.tool === "eraser"); editor.drag = { type: "paint", layer, last: local, moved: true }; canvas.setPointerCapture(event.pointerId); drawEditor(); return; }
+      if (editor.tool === "eyedropper") { sampleEditorColor(point); return; }
+      if (editor.tool === "pan") { editor.drag = { type: "pan", clientX: event.clientX, clientY: event.clientY, left: editor.stage.scrollLeft, top: editor.stage.scrollTop }; canvas.setPointerCapture(event.pointerId); return; }
+      const current = selectedLayer(); if (current && !current.locked) { const local = layerPoint(current, point), sourceWidth = current.raster?.width || current.width, sourceHeight = current.raster?.height || current.height, margin = 22 / editor.zoom * sourceWidth / current.width; if (Math.abs(local.x - sourceWidth) < margin && Math.abs(local.y - sourceHeight) < margin) { editor.drag = { type: "resize", id: current.id, start: point, width: current.width, height: current.height, ratio: current.width / current.height, moved: false }; canvas.setPointerCapture(event.pointerId); return; } }
+      const hit = hitLayer(point);
       if (!hit) { editor.selected = null; syncEditorUi(); drawEditor(); return; }
-      selectEditorLayer(hit.id); if (hit.locked) return; editor.drag = { id: hit.id, offsetX: point.x - hit.x, offsetY: point.y - hit.y, moved: false }; canvas.setPointerCapture(event.pointerId);
+      selectEditorLayer(hit.id); if (hit.locked) return; editor.drag = { type: "move", id: hit.id, offsetX: point.x - hit.x, offsetY: point.y - hit.y, moved: false }; canvas.setPointerCapture(event.pointerId);
     });
-    canvas.addEventListener("pointermove", (event) => { const editor = state.editor; if (!editor?.drag) return; const rect = canvas.getBoundingClientRect(), layer = selectedLayer(); if (!layer) return; layer.x = Math.round((event.clientX - rect.left) * canvas.width / rect.width - editor.drag.offsetX); layer.y = Math.round((event.clientY - rect.top) * canvas.height / rect.height - editor.drag.offsetY); editor.drag.moved = true; syncEditorUi(); drawEditor(); });
-    canvas.addEventListener("pointerup", () => { if (state.editor?.drag?.moved) pushHistory(); if (state.editor) state.editor.drag = null; });
+    canvas.addEventListener("pointermove", (event) => { const editor = state.editor, point = editorPoint(event), info = $(work, "[data-adv-pointer-info]"); if (info) info.textContent = `X ${Math.round(point.x)} · Y ${Math.round(point.y)}`; if (!editor?.drag) return; if (editor.drag.type === "paint") { const next = layerPoint(editor.drag.layer, point); paintRaster(editor.drag.layer, editor.drag.last, next, editor.tool === "eraser"); editor.drag.last = next; drawEditor(); return; } if (editor.drag.type === "pan") { editor.stage.scrollLeft = editor.drag.left - (event.clientX - editor.drag.clientX); editor.stage.scrollTop = editor.drag.top - (event.clientY - editor.drag.clientY); return; } const layer = editor.layers.find((item) => item.id === editor.drag.id); if (!layer) return; if (editor.drag.type === "resize") { const dx = point.x - editor.drag.start.x, nextWidth = Math.max(10, editor.drag.width + dx * 2); layer.width = editor.snap ? Math.round(nextWidth / editor.gridSize) * editor.gridSize : Math.round(nextWidth); layer.height = Math.round(layer.width / editor.drag.ratio); } else { const nextX = point.x - editor.drag.offsetX, nextY = point.y - editor.drag.offsetY; layer.x = editor.snap ? Math.round(nextX / editor.gridSize) * editor.gridSize : Math.round(nextX); layer.y = editor.snap ? Math.round(nextY / editor.gridSize) * editor.gridSize : Math.round(nextY); } editor.drag.moved = true; syncEditorUi(); drawEditor(); });
+    const finishPointer = () => { if (state.editor?.drag?.moved) pushHistory(); if (state.editor) state.editor.drag = null; };
+    canvas.addEventListener("pointerup", finishPointer); canvas.addEventListener("pointercancel", finishPointer);
+    canvas.addEventListener("wheel", (event) => { if (!event.ctrlKey && !event.metaKey) return; event.preventDefault(); const editor = state.editor; editor.zoom = clamp(editor.zoom + (event.deltaY < 0 ? .1 : -.1), .1, 3); const select = $(work, "[data-adv-editor-zoom]"); if ([...select.options].some((option) => Number(option.value) === editor.zoom)) select.value = editor.zoom; drawEditor(); }, { passive: false });
   }
   async function addEditorImages(files) {
     const editor = state.editor; if (!editor) return;
     status(editor.work, `Đang mở ${files.length} ảnh...`);
     for (const file of files.slice(0, 12)) {
       const image = await loadImage(file); const ratio = Math.min(1, editor.width * .72 / image.naturalWidth, editor.height * .72 / image.naturalHeight);
-      addEditorLayer(makeLayer("image", { name: file.name.replace(/\.[^.]+$/, ""), image, width: Math.round(image.naturalWidth * ratio), height: Math.round(image.naturalHeight * ratio), brightness: 100, contrast: 100, saturation: 100, blur: 0, flipX: false, flipY: false }));
+      addEditorLayer(makeLayer("image", { name: file.name.replace(/\.[^.]+$/, ""), image, width: Math.round(image.naturalWidth * ratio), height: Math.round(image.naturalHeight * ratio), brightness: 100, contrast: 100, saturation: 100, hue: 0, grayscale: 0, sepia: 0, invert: 0, blur: 0, shadowColor: "#000000", shadowBlur: 0, shadowX: 0, shadowY: 0, flipX: false, flipY: false }));
     }
     status(editor.work, `Đã thêm ${files.length} ảnh vào layer.`, "success");
   }
+  const imageFromSource = (source) => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error("Project chứa nguồn ảnh không hợp lệ.")); image.src = source; });
+  function drawableDataUrl(layer) { if (layer.type === "raster") return layer.raster.toDataURL("image/png"); if (layer.type !== "image") return ""; const canvas = document.createElement("canvas"), image = layer.image; canvas.width = image.naturalWidth || image.width; canvas.height = image.naturalHeight || image.height; canvas.getContext("2d").drawImage(image, 0, 0); return canvas.toDataURL("image/png"); }
+  async function saveEditorProject() {
+    const editor = state.editor; if (!editor) return;
+    status(editor.work, "Đang đóng gói project...");
+    const layers = editor.layers.map((layer) => { const clean = { ...layer }; delete clean.image; delete clean.raster; const source = drawableDataUrl(layer); return { ...clean, source }; });
+    const project = { format: "HH Photo Project", version: 2, savedAt: new Date().toISOString(), document: { width: editor.width, height: editor.height, background: editor.background, transparent: editor.transparent }, layers };
+    const blob = new Blob([JSON.stringify(project)], { type: "application/json;charset=utf-8" }); download(blob, `hh-photo-${Date.now()}.hhphoto`); historyAdd("Photo Editor", "Lưu project", `${layers.length} layer · ${bytes(blob.size)}`); status(editor.work, `Đã lưu project ${bytes(blob.size)}.`, "success");
+  }
+  async function openEditorProject(file) {
+    const editor = state.editor, project = JSON.parse(await file.text()); if (project.format !== "HH Photo Project" || !Array.isArray(project.layers)) throw new Error("Đây không phải project HH Photo hợp lệ.");
+    status(editor.work, "Đang khôi phục project..."); const layers = [];
+    for (const saved of project.layers.slice(0, 40)) { const layer = { ...saved }; delete layer.source; if (saved.source && saved.type === "image") layer.image = await imageFromSource(saved.source); if (saved.source && saved.type === "raster") { const image = await imageFromSource(saved.source), raster = document.createElement("canvas"); raster.width = image.naturalWidth || image.width; raster.height = image.naturalHeight || image.height; raster.getContext("2d").drawImage(image, 0, 0); layer.raster = raster; } layers.push(layer); }
+    editor.width = clamp(project.document?.width, 64, 6000); editor.height = clamp(project.document?.height, 64, 6000); editor.background = project.document?.background || "#ffffff"; editor.transparent = Boolean(project.document?.transparent); editor.canvas.width = editor.width; editor.canvas.height = editor.height; editor.layers = layers; editor.selected = layers.at(-1)?.id || null; editor.history = []; editor.historyIndex = -1; pushHistory(); syncEditorUi(); drawEditor(); status(editor.work, `Đã mở ${file.name} · ${layers.length} layer.`, "success");
+  }
+  async function flattenEditor() {
+    const editor = state.editor; if (!editor || !editor.layers.length) return;
+    editor.exporting = true; drawEditor();
+    const raster = cloneRaster(editor.canvas); editor.exporting = false;
+    const layer = newRasterLayer("Merged artwork"); layer.raster = raster; editor.layers = [layer]; editor.selected = layer.id; pushHistory(); syncEditorUi(); drawEditor(); status(editor.work, "Đã gộp toàn bộ layer. Bạn vẫn có thể hoàn tác bằng Ctrl+Z.", "success");
+  }
   async function exportEditor() {
-    const editor = state.editor; if (!editor) return; const selected = editor.selected; editor.selected = null; drawEditor();
-    const type = $(editor.work, "[data-adv-export-type]").value, quality = Number($(editor.work, "[data-adv-export-quality]").value) / 100; const blob = await canvasBlob(editor.canvas, type, quality); editor.selected = selected; drawEditor();
+    const editor = state.editor; if (!editor) return; editor.exporting = true; drawEditor();
+    const type = $(editor.work, "[data-adv-export-type]").value, quality = Number($(editor.work, "[data-adv-export-quality]").value) / 100; let source = editor.canvas; if (type === "image/jpeg" && editor.transparent) { source = document.createElement("canvas"); source.width = editor.width; source.height = editor.height; const ctx = source.getContext("2d"); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, source.width, source.height); ctx.drawImage(editor.canvas, 0, 0); } const blob = await canvasBlob(source, type, quality); editor.exporting = false; drawEditor();
     download(blob, `hh-photo-editor.${type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg"}`); historyAdd("Photo Editor", "Xuất tác phẩm", `${editor.width}×${editor.height} · ${editor.layers.length} layer · ${bytes(blob.size)}`); status(editor.work, `Đã xuất ${bytes(blob.size)}.`, "success");
   }
 
@@ -229,21 +301,26 @@
     if (name === "Photo Editor") {
       const editor = state.editor, layer = selectedLayer();
       if (action === "editor-new") { editor.layers = []; editor.selected = null; editor.width = clamp($(work, "[data-adv-doc='width']").value, 64, 6000); editor.height = clamp($(work, "[data-adv-doc='height']").value, 64, 6000); editor.canvas.width = editor.width; editor.canvas.height = editor.height; pushHistory(); syncEditorUi(); drawEditor(); }
-      if (action === "editor-text") addEditorLayer(makeLayer("text", { name: "Văn bản", text: "HH Creative Studio", width: 520, height: 100, fontSize: 64, fontFamily: "Be Vietnam Pro", fontWeight: 800, color: "#111827" }));
+      if (action === "editor-tool") setEditorTool(event.target.closest("[data-editor-tool]").dataset.editorTool);
+      if (action === "editor-add-raster") { addEditorLayer(newRasterLayer()); setEditorTool("brush"); }
+      if (action === "editor-gradient") addEditorLayer(makeLayer("gradient", { name: "Gradient", x: editor.width / 2, y: editor.height / 2, width: editor.width, height: editor.height, colorA: "#ec4899", colorB: "#50e6e6", gradientType: "linear", gradientAngle: 135 }));
+      if (action === "editor-save-project") saveEditorProject().catch((error) => status(work, error.message, "error"));
+      if (action === "editor-flatten") flattenEditor().catch((error) => status(work, error.message, "error"));
+      if (action === "editor-text") addEditorLayer(makeLayer("text", { name: "Văn bản", text: "HH Creative Studio", width: 520, height: 100, fontSize: 64, fontFamily: "Be Vietnam Pro", fontWeight: 800, textAlign: "center", color: "#111827", textStroke: "#ffffff", textStrokeWidth: 0 }));
       if (action === "editor-rect") addEditorLayer(makeLayer("shape", { name: "Chữ nhật", shape: "rect", fill: "#ec4899", stroke: "#ffffff", strokeWidth: 0 }));
       if (action === "editor-circle") addEditorLayer(makeLayer("shape", { name: "Hình tròn", shape: "circle", width: 240, height: 240, fill: "#50e6e6", stroke: "#ffffff", strokeWidth: 0 }));
       if (["editor-select-layer", "editor-visible", "editor-lock"].includes(action)) { const id = event.target.closest("[data-layer-id]")?.dataset.layerId, target = editor.layers.find((item) => item.id === id); if (action === "editor-visible" && target) { target.visible = !target.visible; pushHistory(); } if (action === "editor-lock" && target) { target.locked = !target.locked; pushHistory(); } selectEditorLayer(id); }
-      if (action === "editor-delete" && layer) { editor.layers = editor.layers.filter((item) => item.id !== layer.id); editor.selected = editor.layers.at(-1)?.id || null; pushHistory(); syncEditorUi(); drawEditor(); }
-      if (action === "editor-duplicate" && layer) addEditorLayer({ ...layer, id: uid(), name: `${layer.name} copy`, x: layer.x + 24, y: layer.y + 24 });
+      if (action === "editor-delete" && layer && !layer.locked) { editor.layers = editor.layers.filter((item) => item.id !== layer.id); editor.selected = editor.layers.at(-1)?.id || null; pushHistory(); syncEditorUi(); drawEditor(); }
+      if (action === "editor-duplicate" && layer) duplicateEditorLayer(layer);
       if (action === "editor-center" && layer) { layer.x = editor.width / 2; layer.y = editor.height / 2; pushHistory(); syncEditorUi(); drawEditor(); }
-      if (action === "editor-flip-x" && layer?.type === "image") { layer.flipX = !layer.flipX; pushHistory(); drawEditor(); }
-      if (action === "editor-flip-y" && layer?.type === "image") { layer.flipY = !layer.flipY; pushHistory(); drawEditor(); }
+      if (action === "editor-flip-x" && ["image", "raster"].includes(layer?.type)) { layer.flipX = !layer.flipX; pushHistory(); drawEditor(); }
+      if (action === "editor-flip-y" && ["image", "raster"].includes(layer?.type)) { layer.flipY = !layer.flipY; pushHistory(); drawEditor(); }
       if (action === "editor-crop" && layer) { const left = Math.round(layer.x - layer.width / 2), top = Math.round(layer.y - layer.height / 2); editor.layers.forEach((item) => { item.x -= left; item.y -= top; }); editor.width = Math.max(64, Math.round(layer.width)); editor.height = Math.max(64, Math.round(layer.height)); editor.canvas.width = editor.width; editor.canvas.height = editor.height; pushHistory(); syncEditorUi(); drawEditor(); }
       if (["editor-layer-up", "editor-layer-down"].includes(action) && layer) { const index = editor.layers.indexOf(layer), next = action === "editor-layer-up" ? Math.min(editor.layers.length - 1, index + 1) : Math.max(0, index - 1); [editor.layers[index], editor.layers[next]] = [editor.layers[next], editor.layers[index]]; pushHistory(); syncEditorUi(); drawEditor(); }
       if (action === "editor-undo") restoreHistory(editor.historyIndex - 1);
       if (action === "editor-redo") restoreHistory(editor.historyIndex + 1);
       if (action === "editor-export") exportEditor().catch((error) => status(work, error.message, "error"));
-      if (action === "editor-reset-effects" && layer) { Object.assign(layer, { opacity: 1, blend: "source-over", brightness: 100, contrast: 100, saturation: 100, blur: 0, rotation: 0 }); pushHistory(); syncEditorUi(); drawEditor(); }
+      if (action === "editor-reset-effects" && layer) { Object.assign(layer, { opacity: 1, blend: "source-over", brightness: 100, contrast: 100, saturation: 100, hue: 0, grayscale: 0, sepia: 0, invert: 0, blur: 0, shadowBlur: 0, shadowX: 0, shadowY: 0, rotation: 0 }); pushHistory(); syncEditorUi(); drawEditor(); }
       return true;
     }
     if (name === "Background Remover") {
@@ -270,24 +347,35 @@
   function handleInput(event, outer, name) {
     if (!advanced.has(name)) return base.handleInput?.(event, outer, name);
     const work = $(outer, "[data-md-tool]"); if (!work) return;
-    if (name === "Photo Editor" && event.target.matches("[data-adv-prop]")) { const layer = selectedLayer(); if (!layer) return; const key = event.target.dataset.advProp, numeric = ["x", "y", "width", "height", "rotation", "opacity", "brightness", "contrast", "saturation", "blur", "fontSize", "strokeWidth"].includes(key); layer[key] = numeric ? Number(event.target.value) : event.target.value; if (key === "opacity") layer[key] /= 100; const value = $(work, `[data-adv-value='${key}']`); if (value) value.textContent = key === "blur" ? `${layer[key]}px` : `${layer[key]}%`; renderLayerList(); drawEditor(); }
+    if (name === "Photo Editor" && event.target.matches("[data-adv-prop]")) { const layer = selectedLayer(); if (!layer) return; const key = event.target.dataset.advProp, numeric = ["x", "y", "width", "height", "rotation", "opacity", "brightness", "contrast", "saturation", "hue", "grayscale", "sepia", "invert", "blur", "fontSize", "fontWeight", "textStrokeWidth", "strokeWidth", "gradientAngle", "shadowBlur", "shadowX", "shadowY"].includes(key); layer[key] = numeric ? Number(event.target.value) : event.target.value; if (key === "opacity") layer[key] /= 100; const value = $(work, `[data-adv-value='${key}']`); if (value) value.textContent = key === "blur" ? `${layer[key]}px` : key === "hue" ? `${layer[key]}°` : `${layer[key]}%`; renderLayerList(); drawEditor(); }
+    if (name === "Photo Editor" && event.target.matches("[data-adv-brush]")) { const key = event.target.dataset.advBrush, numeric = key !== "color", raw = numeric ? Number(event.target.value) : event.target.value; state.editor.brush[key] = key === "opacity" || key === "hardness" ? raw / 100 : raw; const value = $(work, `[data-adv-brush-value='${key}']`); if (value) value.textContent = key === "size" ? `${raw}px` : `${raw}%`; }
     if (name === "Photo Editor" && event.target.matches("[data-adv-doc]")) { const key = event.target.dataset.advDoc; if (key === "background") { state.editor.background = event.target.value; drawEditor(); } }
     if (name === "Photo Editor" && event.target.matches("[data-adv-export-quality]")) $(work, "[data-adv-export-quality-value]").textContent = `${event.target.value}%`;
     if (name === "Background Remover" && event.target.matches("[data-adv-remove]")) { const key = event.target.dataset.advRemove, value = $(work, `[data-adv-remove-value='${key}']`); if (value) value.textContent = event.target.value; clearTimeout(state.timer); state.timer = setTimeout(() => key === "preview" ? updateRemovePreview() : processRemoval(), 70); }
     if (name === "Collage Maker" && event.target.matches("[data-adv-collage]")) { clearTimeout(state.timer); state.timer = setTimeout(drawCollage, 80); }
   }
 
+  function applyEditorFilterPreset(value) {
+    const layer = selectedLayer(); if (!layer || !["image", "raster"].includes(layer.type)) return;
+    const presets = { vivid: { brightness: 106, contrast: 114, saturation: 145, hue: 0, grayscale: 0, sepia: 0, invert: 0 }, cinema: { brightness: 94, contrast: 122, saturation: 82, hue: -8, grayscale: 0, sepia: 10, invert: 0 }, mono: { brightness: 102, contrast: 118, saturation: 0, hue: 0, grayscale: 100, sepia: 0, invert: 0 }, sepia: { brightness: 104, contrast: 108, saturation: 72, hue: -12, grayscale: 0, sepia: 78, invert: 0 }, invert: { brightness: 100, contrast: 100, saturation: 100, hue: 0, grayscale: 0, sepia: 0, invert: 100 } };
+    if (presets[value]) Object.assign(layer, presets[value]); else return; pushHistory(); syncEditorUi(); drawEditor();
+  }
+
   function handleChange(event, outer, name) {
     if (!advanced.has(name)) return base.handleChange?.(event, outer, name);
     const work = $(outer, "[data-md-tool]"); if (!work) return;
     if (event.target.matches("[data-adv-file='editor']")) addEditorImages([...event.target.files]).catch((error) => status(work, error.message, "error"));
+    if (event.target.matches("[data-adv-project]")) { const file = event.target.files[0]; if (file) openEditorProject(file).catch((error) => status(work, error.message, "error")); }
     if (event.target.matches("[data-adv-file='remover']")) { const file = event.target.files[0]; if (file) loadRemover(file).catch((error) => status(work, error.message, "error")); }
     if (event.target.matches("[data-adv-file='collage']")) loadCollage([...event.target.files]).catch((error) => status(work, error.message, "error"));
     if (event.target.matches("[data-adv-file='inspector']")) { const file = event.target.files[0]; if (file) inspectImage(file).catch((error) => status(work, error.message, "error")); }
     if (name === "Photo Editor" && event.target.matches("[data-adv-prop]")) pushHistory();
+    if (name === "Photo Editor" && event.target.matches("[data-adv-filter-preset]")) applyEditorFilterPreset(event.target.value);
     if (name === "Photo Editor" && event.target.matches("[data-adv-editor-zoom]")) { state.editor.zoom = Number(event.target.value); drawEditor(); }
     if (name === "Photo Editor" && event.target.matches("[data-adv-editor-preset]")) { const [width, height] = event.target.value.split("x").map(Number); if (width && height) { state.editor.width = width; state.editor.height = height; state.editor.canvas.width = width; state.editor.canvas.height = height; pushHistory(); syncEditorUi(); drawEditor(); } }
-    if (name === "Photo Editor" && event.target.matches("[data-adv-doc-transparent]")) { state.editor.transparent = event.target.checked; drawEditor(); }
+    if (name === "Photo Editor" && event.target.matches("[data-adv-doc-transparent]")) { state.editor.transparent = event.target.checked; pushHistory(); drawEditor(); }
+    if (name === "Photo Editor" && event.target.matches("[data-adv-grid]")) { state.editor.grid = event.target.checked; drawEditor(); }
+    if (name === "Photo Editor" && event.target.matches("[data-adv-snap]")) state.editor.snap = event.target.checked;
     if (name === "Photo Editor" && event.target.matches("[data-adv-doc]")) { const key = event.target.dataset.advDoc; if (["width", "height"].includes(key)) { state.editor[key] = clamp(event.target.value, 64, 6000); state.editor.canvas[key] = state.editor[key]; } else state.editor.background = event.target.value; pushHistory(); drawEditor(); }
     if (name === "Background Remover" && event.target.matches("[data-adv-remove='preview']")) updateRemovePreview();
   }
@@ -295,12 +383,16 @@
   addEventListener("keydown", (event) => {
     const editor = state.editor;
     if (!editor?.work?.isConnected || !location.hash.includes("/media-design") || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")) return;
-    const layer = selectedLayer();
-    if (event.ctrlKey && event.key.toLowerCase() === "z") { event.preventDefault(); restoreHistory(editor.historyIndex - 1); }
-    if (event.ctrlKey && event.key.toLowerCase() === "y") { event.preventDefault(); restoreHistory(editor.historyIndex + 1); }
-    if (event.ctrlKey && event.key.toLowerCase() === "d" && layer) { event.preventDefault(); addEditorLayer({ ...layer, id: uid(), name: `${layer.name} copy`, x: layer.x + 24, y: layer.y + 24 }); }
+    const layer = selectedLayer(), key = event.key.toLowerCase(), command = event.ctrlKey || event.metaKey;
+    if (command && key === "z") { event.preventDefault(); restoreHistory(editor.historyIndex - 1); return; }
+    if (command && key === "y") { event.preventDefault(); restoreHistory(editor.historyIndex + 1); return; }
+    if (command && key === "d" && layer) { event.preventDefault(); duplicateEditorLayer(layer); return; }
+    if (command && key === "s") { event.preventDefault(); (event.shiftKey ? exportEditor() : saveEditorProject()).catch((error) => status(editor.work, error.message, "error")); return; }
+    if (!command && { v: "select", b: "brush", e: "eraser", i: "eyedropper", h: "pan" }[key]) { setEditorTool({ v: "select", b: "brush", e: "eraser", i: "eyedropper", h: "pan" }[key]); return; }
+    if (!command && ["[", "]"].includes(event.key)) { editor.brush.size = clamp(editor.brush.size + (event.key === "]" ? 5 : -5), 1, 300); const input = $(editor.work, "[data-adv-brush='size']"), value = $(editor.work, "[data-adv-brush-value='size']"); input.value = editor.brush.size; value.textContent = `${editor.brush.size}px`; return; }
+    if (!command && layer && !layer.locked && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) { event.preventDefault(); const amount = event.shiftKey ? 10 : 1; if (event.key === "ArrowLeft") layer.x -= amount; if (event.key === "ArrowRight") layer.x += amount; if (event.key === "ArrowUp") layer.y -= amount; if (event.key === "ArrowDown") layer.y += amount; pushHistory(); syncEditorUi(); drawEditor(); return; }
     if (event.key === "Delete" && layer && !layer.locked) { event.preventDefault(); editor.layers = editor.layers.filter((item) => item.id !== layer.id); editor.selected = editor.layers.at(-1)?.id || null; pushHistory(); syncEditorUi(); drawEditor(); }
-    if (event.key === "Escape") { editor.selected = null; syncEditorUi(); drawEditor(); }
+    if (event.key === "Escape") { editor.selected = null; setEditorTool("select"); syncEditorUi(); drawEditor(); }
   });
 
   window.HHMediaDesign = {
