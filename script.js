@@ -4347,23 +4347,24 @@ function initAppShell() {
     { id: "network", icon: "◎", title: "DNS / IP", group: "Mạng & API" }
   ];
   const groups = [
-    { id: "home", label: "Trang chủ", icon: "⌂", route: "/home", items: ["command-center"] },
-    { id: "create", label: "Sáng tạo", icon: "✦", route: "/create", items: ["ai-center", "creator-studio", "media-center", "ai-automation"] },
-    { id: "media-design", label: "Media & Design", icon: "◈", route: "/media-design", items: [], studioItems: mediaStudioItems },
-    { id: "dev", label: "DEV", icon: "⌘", route: "/dev-tools", items: [], studioItems: developerToolItems },
-    { id: "work", label: "Công việc", icon: "□", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
+    { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
+    { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: ["ai-center", "creator-studio", "media-center", "ai-automation"] },
+    { id: "media-design", label: "Media & Design", icon: "◈", accent: "#c87cff", route: "/media-design", items: [], studioItems: mediaStudioItems },
+    { id: "dev", label: "DEV", icon: "⌘", accent: "#61e7ff", route: "/dev-tools", items: [], studioItems: developerToolItems },
+    { id: "work", label: "Công việc", icon: "□", accent: "#baf46b", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
     {
       id: "communication",
       label: "Giao tiếp",
       icon: "◌",
+      accent: "#5ee8d7",
       route: "/communication",
       items: ["community", "notification-center", "user-dashboard", "feedback-survey", "helpdesk-ticketing", "referral-affiliate"],
       shortcuts: [{ label: "Google + YouTube", icon: "G", tab: "google" }]
     },
-    { id: "insights", label: "Phân tích", icon: "↗", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
-    { id: "learn", label: "Học tập", icon: "◫", route: "/learn", items: ["learning-center", "i18n", "accessibility-center", "gamification", "onboarding-tour"] },
-    { id: "system", label: "Hệ thống", icon: "⚙", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] },
-    { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", route: "/support", items: [] }
+    { id: "insights", label: "Phân tích", icon: "↗", accent: "#ffbd69", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
+    { id: "learn", label: "Học tập", icon: "◫", accent: "#9a86ff", route: "/learn", items: ["learning-center", "i18n", "accessibility-center", "gamification", "onboarding-tour"] },
+    { id: "system", label: "Hệ thống", icon: "⚙", accent: "#68dda8", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] },
+    { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", accent: "#ff6fae", route: "/support", items: [] }
   ];
   let activeRoute = "";
   const sidebarGroupState = (() => {
@@ -4421,8 +4422,8 @@ function initAppShell() {
       const studioMenu = group.studioItems ? `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
       const submenu = `${shortcuts}${studioMenu}${moduleItems}`;
       const hasSubmenu = Boolean(submenu);
-      return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}">
-        <button class="app-sidebar__item ${expanded ? "is-active" : ""}" type="button" data-app-route="${group.route}" aria-expanded="${expanded}" title="${group.label}"><span>${group.icon}</span><b>${group.label}</b><i>${hasSubmenu ? "›" : ""}</i></button>
+      return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}" data-nav-group="${group.id}" style="--nav-accent:${group.accent || "#56eaff"}">
+        <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.route}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}"><span>${group.icon}</span><b>${group.label}</b><i ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
         ${hasSubmenu ? `<div class="app-sidebar__submenu">${submenu}</div>` : ""}
       </section>`;
     }).join("");
@@ -4524,6 +4525,13 @@ function initAppShell() {
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
     setUser();
     renderNavigation();
+    requestAnimationFrame(() => {
+      const sidebar = navigation.closest(".app-sidebar");
+      const activeItem = navigation.querySelector(".app-sidebar__item.is-active");
+      if (!sidebar || !activeItem) return;
+      if (route === "/home") sidebar.scrollTo({ top: 0, behavior: "smooth" });
+      else activeItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
     updateMobileNavigation();
     const parts = route.split("/").filter(Boolean);
     const possibleId = parts.at(-1);
@@ -4650,7 +4658,7 @@ function initAppShell() {
     if (routeButton) {
       const route = routeButton.dataset.appRoute;
       const sidebarGroup = routeButton.parentElement?.classList.contains("app-sidebar__group") ? routeButton.parentElement : null;
-      if (sidebarGroup?.querySelector(":scope > .app-sidebar__submenu")) {
+      if (sidebarGroup?.querySelector(":scope > .app-sidebar__submenu") && event.target.closest("[data-sidebar-toggle]")) {
         const group = groups.find((item) => item.route === route);
         if (group) {
           sidebarGroupState[group.id] = !sidebarGroup.classList.contains("is-expanded");
@@ -4662,7 +4670,8 @@ function initAppShell() {
       if (route) {
         const targetGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
         if (targetGroup) { sidebarGroupState[targetGroup.id] = true; saveSidebarGroups(); }
-        location.hash = `#${route}`;
+        const nextHash = `#${route}`;
+        if (location.hash === nextHash) renderRoute(); else location.hash = nextHash;
         if (mobileSidebarQuery.matches) {
           document.body.classList.add("app-sidebar-collapsed");
         }

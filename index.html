@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="auth-experience.css?v=2">
   <link rel="stylesheet" href="search-watch-center.css?v=1">
   <link rel="stylesheet" href="creative-suite.css?v=2">
+  <link rel="stylesheet" href="sidebar-navigation-pro.css?v=1">
   <script src="config.js?v=3"></script>
   <script src="config/modules.config.js" defer></script>
   <script src="services/eventBus.js" defer></script>
@@ -113,9 +114,9 @@
         <button class="app-icon-button" type="button" data-shell-toggle aria-label="Thu gọn thanh điều hướng" aria-expanded="true">☰</button>
         <a class="app-brand" href="#/home" data-app-route="/home" aria-label="HH Platform dashboard"><span>HH</span><strong>HH Platform</strong></a>
       </div>
-      <button class="app-global-search" type="button" data-command-open aria-haspopup="dialog"><span>⌕</span><span>Tìm công cụ, chức năng, dự án hoặc hướng dẫn...</span><kbd>Ctrl K</kbd></button>
+      <button class="app-global-search" type="button" data-command-open aria-haspopup="dialog"><span>⌕</span><span data-i18n-text>Tìm công cụ, chức năng, dự án hoặc hướng dẫn...</span><kbd>Ctrl K</kbd></button>
       <div class="app-header__actions">
-        <button class="app-action-button" type="button" data-app-route="/create" title="Tạo mới">＋<span>Tạo mới</span></button>
+        <button class="app-action-button" type="button" data-app-route="/create" title="Tạo mới">＋<span data-i18n-text>Tạo mới</span></button>
         <button class="app-action-button" id="authOpenButton" type="button" data-auth-open onclick="document.body.classList.add('auth-panel-open');document.getElementById('authGate').setAttribute('aria-hidden','false');document.querySelector('#gateLoginForm input[name=email]').focus()">Đăng nhập</button>
         <button class="app-icon-button" type="button" data-dashboard-theme-cycle aria-label="Đổi giao diện" title="Đổi giao diện">◐</button>
         <button class="app-icon-button" type="button" data-dashboard-fullscreen aria-label="Toàn màn hình" title="Toàn màn hình">□</button>
@@ -890,8 +891,8 @@
   </footer>
 
   <script src="support-platform.js?v=2"></script>
-  <script src="extension-suite.js?v=1"></script>
-  <script src="script.js?v=66"></script>
+  <script src="extension-suite.js?v=2"></script>
+  <script src="script.js?v=67"></script>
   <script src="dashboard-aurora.js?v=3"></script>
   <script src="command-center-pro.js?v=2"></script>
   <script src="professional-tools.js?v=3"></script>

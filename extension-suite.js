@@ -172,7 +172,12 @@
     document.documentElement.lang = state.locale;
     document.documentElement.dir = state.rtl ? "rtl" : "ltr";
     const dictionary = { en: { "Trang chủ": "Home", "Sáng tạo": "Create", "Công việc": "Work", "Giao tiếp": "Communication", "Phân tích": "Analytics", "Học tập": "Learning", "Hệ thống": "System", "Yêu thích": "Favorites", "Gần đây": "Recent", "Cài đặt": "Settings" }, vi: {} };
-    document.querySelectorAll(".app-sidebar__item b,.app-header button,.app-page-header button").forEach((node) => { if (!node.dataset.viText) node.dataset.viText = node.textContent.trim(); node.textContent = dictionary[state.locale]?.[node.dataset.viText] || node.dataset.viText; });
+    document.querySelectorAll(".app-sidebar__item b,.app-header button,.app-page-header button").forEach((node) => {
+      const label = node.children.length ? node.querySelector("[data-i18n-text]") : node;
+      if (!label) return;
+      if (!label.dataset.viText) label.dataset.viText = label.textContent.trim();
+      label.textContent = dictionary[state.locale]?.[label.dataset.viText] || label.dataset.viText;
+    });
   }
   function ensureReferralState() {
     const state = getState("referral-affiliate", defaults["referral-affiliate"]);
