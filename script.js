@@ -4317,10 +4317,35 @@ function initAppShell() {
     { id: "icon", icon: "◇", title: "Icon Browser", group: "Tài nguyên" },
     { id: "svg", icon: "⌁", title: "SVG Editor", group: "Tài nguyên" }
   ];
+  const developerToolItems = [
+    { id: "json", icon: "{}", title: "JSON Formatter", group: "Dữ liệu" },
+    { id: "base64", icon: "64", title: "Base64", group: "Dữ liệu" },
+    { id: "uuid", icon: "#", title: "UUID & Token", group: "Bảo mật" },
+    { id: "password", icon: "✦", title: "Password Generator", group: "Bảo mật" },
+    { id: "timestamp", icon: "◷", title: "Timestamp", group: "Dữ liệu" },
+    { id: "regex", icon: ".*", title: "Regex Tester", group: "Văn bản" },
+    { id: "text", icon: "T", title: "Text Utilities", group: "Văn bản" },
+    { id: "color", icon: "◉", title: "Color Studio", group: "Thiết kế" },
+    { id: "compare", icon: "⇄", title: "Text Compare", group: "Văn bản" },
+    { id: "calculator", icon: "∑", title: "Calculator", group: "Tiện ích" },
+    { id: "notes", icon: "✓", title: "Notes & Todo", group: "Tiện ích" },
+    { id: "system", icon: "◫", title: "System Monitor", group: "Hệ thống" },
+    { id: "hash", icon: "#", title: "Hash Tools", group: "Bảo mật" },
+    { id: "encryption", icon: "◇", title: "Encryption", group: "Bảo mật" },
+    { id: "url", icon: "↗", title: "URL Tools", group: "Mạng & API" },
+    { id: "qr-barcode", icon: "▦", title: "QR & Barcode", group: "Dữ liệu" },
+    { id: "api", icon: "⇆", title: "API Tester", group: "Mạng & API" },
+    { id: "image", icon: "▧", title: "Image Tools", group: "Thiết kế" },
+    { id: "sql", icon: "DB", title: "SQL Tools", group: "Mã nguồn" },
+    { id: "markdown", icon: "M", title: "Markdown", group: "Mã nguồn" },
+    { id: "cron", icon: "◴", title: "Cron", group: "Mã nguồn" },
+    { id: "network", icon: "◎", title: "DNS / IP", group: "Mạng & API" }
+  ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", route: "/home", items: ["command-center"] },
     { id: "create", label: "Sáng tạo", icon: "✦", route: "/create", items: ["ai-center", "creator-studio", "media-center", "ai-automation"] },
     { id: "media-design", label: "Media & Design", icon: "◈", route: "/media-design", items: [], studioItems: mediaStudioItems },
+    { id: "dev", label: "DEV", icon: "⌘", route: "/dev-tools", items: [], studioItems: developerToolItems },
     { id: "work", label: "Công việc", icon: "□", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
     {
       id: "communication",
@@ -4394,9 +4419,9 @@ function initAppShell() {
   };
   navigation.addEventListener("input", (event) => {
     if (!event.target.matches("[data-media-sidebar-search]")) return;
-    const query = event.target.value.trim().toLowerCase();
-    navigation.querySelectorAll("[data-media-sidebar-item]").forEach((item) => { item.hidden = Boolean(query) && !item.dataset.mediaSidebarItem.includes(query); });
-    navigation.querySelectorAll("[data-media-sidebar-group]").forEach((group) => { group.hidden = !group.querySelector("[data-media-sidebar-item]:not([hidden])"); });
+    const query = event.target.value.trim().toLowerCase(), studio = event.target.closest(".app-sidebar__studio");
+    studio?.querySelectorAll("[data-media-sidebar-item]").forEach((item) => { item.hidden = Boolean(query) && !item.dataset.mediaSidebarItem.includes(query); });
+    studio?.querySelectorAll("[data-media-sidebar-group]").forEach((group) => { group.hidden = !group.querySelector("[data-media-sidebar-item]:not([hidden])"); });
   });
   const updateDashboard = () => {
     const modules = moduleList();
@@ -4476,7 +4501,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || mediaStudioItems.find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
+    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || [...mediaStudioItems, ...developerToolItems].find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
   };
   const renderRoute = () => {
@@ -4485,6 +4510,8 @@ function initAppShell() {
     const route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
     activeRoute = route;
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
+    document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
+    if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
     setUser();
     renderNavigation();
     updateMobileNavigation();
@@ -4507,6 +4534,10 @@ function initAppShell() {
       const mediaHost = workspace.firstElementChild;
       mediaHost.dataset.mediaDesignTool = parts[1] || "";
       window.HHMediaDesignPage?.mount(mediaHost, { toolId: parts[1] || "" });
+    } else if (route === "/dev-tools" || route.startsWith("/dev-tools/")) {
+      updatePageHeader("Developer Toolbox", "Bộ công cụ dữ liệu, bảo mật, văn bản, API và hệ thống dành cho developer.", route);
+      workspace.innerHTML = '<div data-developer-tools-host></div>';
+      window.HHDeveloperTools?.mount(workspace.firstElementChild, { toolId: parts[1] || "json" });
     } else if (module) {
       updatePageHeader(module.title, module.description, route, module);
       mountPlatform(module.id);
@@ -4543,7 +4574,8 @@ function initAppShell() {
   const searchItems = () => {
     const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
     const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
-    return [...modules, ...commandCenter, { type: "Studio", title: "Media & Design", description: "15 công cụ xử lý ảnh, Photo Editor, PDF, QR, màu sắc, chữ và vector.", route: "/media-design", key: "media design creative studio photo editor photoshop background remover collage image pdf qr svg color typography compressor converter" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));
+    return [...modules, ...commandCenter, ...developerTools, { type: "Studio", title: "Media & Design", description: "15 công cụ xử lý ảnh, Photo Editor, PDF, QR, màu sắc, chữ và vector.", route: "/media-design", key: "media design creative studio photo editor photoshop background remover collage image pdf qr svg color typography compressor converter" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
@@ -4684,6 +4716,7 @@ function initAppShell() {
     renderNavigation();
     renderRoute();
   });
+  window.addEventListener("hh:developer-tools-ready", renderRoute);
   window.addEventListener("hh:auth-change", () => { setShellVisibility(); setUser(); });
   const initial = stored();
   const syncResponsiveSidebar = (isMobile = mobileSidebarQuery.matches) => {
