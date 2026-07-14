@@ -3,21 +3,21 @@
 
   const STORAGE_KEY = "hh.media-design.page.v1";
   const TOOLS = [
-    { id: "photo-editor", number: "12", name: "Photo Editor", group: "Biên tập nâng cao", code: "PHOTO", description: "Chỉnh sửa ảnh nhiều lớp như một Photoshop thu gọn ngay trong trình duyệt.", caps: ["Layers", "Blend & filters", "Undo · Redo", "High-res export"] },
-    { id: "background-remover", number: "13", name: "Background Remover", group: "Biên tập nâng cao", code: "CUT", description: "Xóa nền theo màu, lấy mẫu pixel và làm mềm đường biên.", caps: ["Color key", "Edge feather", "PNG alpha"] },
-    { id: "collage", number: "14", name: "Collage Maker", group: "Biên tập nâng cao", code: "COL", description: "Ghép nhiều ảnh theo lưới, ảnh nổi bật hoặc dải ngang.", caps: ["12 images", "Smart cover", "High-res"] },
-    { id: "inspector", number: "15", name: "Image Inspector", group: "Biên tập nâng cao", code: "META", description: "Đọc EXIF, SHA-256, màu đại diện và xóa metadata.", caps: ["EXIF", "SHA-256", "Strip metadata"] },
-    { id: "compress", number: "01", name: "Image Compressor", group: "Hình ảnh", code: "IMG", description: "Nén nhiều ảnh, đặt dung lượng đích và tối ưu WebP/JPEG.", caps: ["Batch 20 ảnh", "Target size", "So sánh trước/sau"] },
-    { id: "convert", number: "02", name: "Image Converter", group: "Hình ảnh", code: "IMG", description: "Đổi định dạng hàng loạt, đổi kích thước và giữ chất lượng.", caps: ["PNG · JPEG · WebP", "Resize", "Tải hàng loạt"] },
-    { id: "image", number: "03", name: "Image Toolkit", group: "Hình ảnh", code: "IMG", description: "Cắt, xoay, lật, cân chỉnh và áp dụng bộ lọc trực tiếp.", caps: ["Transform", "Filter presets", "Canvas preview"] },
-    { id: "pdf", number: "04", name: "PDF Toolkit", group: "Tài liệu", code: "DOC", description: "Gộp, tách, xoay, watermark và chỉnh metadata PDF.", caps: ["Merge · Split", "Watermark", "Metadata"] },
-    { id: "qr", number: "05", name: "QR Toolkit", group: "Tài liệu", code: "QR", description: "Tạo QR tùy chỉnh hoặc quét QR từ ảnh trên thiết bị.", caps: ["Live QR", "Scan image", "PNG export"] },
-    { id: "color", number: "06", name: "Color Studio", group: "Thương hiệu", code: "CLR", description: "Tạo bảng màu, trích màu từ ảnh và kiểm tra WCAG.", caps: ["Palette", "WCAG", "Image extraction"] },
-    { id: "type", number: "07", name: "Typography Studio", group: "Thương hiệu", code: "TYP", description: "Thiết kế type scale, xem trực tiếp và xuất CSS sẵn dùng.", caps: ["Type scale", "Live preview", "CSS export"] },
-    { id: "icon", number: "08", name: "Icon Browser", group: "Tài nguyên", code: "ICO", description: "Tìm biểu tượng Lucide và xuất SVG hoặc PNG theo kích thước.", caps: ["Lucide", "Search", "SVG · PNG"] },
-    { id: "svg", number: "09", name: "SVG Editor", group: "Tài nguyên", code: "SVG", description: "Chỉnh mã vector, xem trước tức thì và xuất tệp an toàn.", caps: ["Live editor", "Sanitize", "Export"] },
-    { id: "gradient", number: "10", name: "Gradient Generator", group: "Thương hiệu", code: "GRD", description: "Tạo gradient nhiều điểm màu cho CSS và ảnh PNG.", caps: ["4 color stops", "3 modes", "CSS · PNG"] },
-    { id: "picker", number: "11", name: "Color Picker", group: "Hình ảnh", code: "PCK", description: "Lấy màu pixel, chuyển HEX/RGB/HSL và đo độ tương phản.", caps: ["EyeDropper", "Pixel sample", "Contrast"] }
+    { id: "photo-editor", icon: "✎", name: "Photo Editor", group: "Biên tập nâng cao", code: "PHOTO", description: "Chỉnh sửa ảnh nhiều lớp như một Photoshop thu gọn ngay trong trình duyệt.", caps: ["Layers", "Blend & filters", "Undo · Redo", "High-res export"] },
+    { id: "background-remover", icon: "✂", name: "Background Remover", group: "Biên tập nâng cao", code: "CUT", description: "Xóa nền theo màu, lấy mẫu pixel và làm mềm đường biên.", caps: ["Color key", "Edge feather", "PNG alpha"] },
+    { id: "collage", icon: "▦", name: "Collage Maker", group: "Biên tập nâng cao", code: "COL", description: "Ghép nhiều ảnh theo lưới, ảnh nổi bật hoặc dải ngang.", caps: ["12 images", "Smart cover", "High-res"] },
+    { id: "inspector", icon: "⌕", name: "Image Inspector", group: "Biên tập nâng cao", code: "META", description: "Đọc EXIF, SHA-256, màu đại diện và xóa metadata.", caps: ["EXIF", "SHA-256", "Strip metadata"] },
+    { id: "compress", icon: "⇣", name: "Image Compressor", group: "Hình ảnh", code: "IMG", description: "Nén nhiều ảnh, đặt dung lượng đích và tối ưu WebP/JPEG.", caps: ["Batch 20 ảnh", "Target size", "So sánh trước/sau"] },
+    { id: "convert", icon: "⇄", name: "Image Converter", group: "Hình ảnh", code: "IMG", description: "Đổi định dạng hàng loạt, đổi kích thước và giữ chất lượng.", caps: ["PNG · JPEG · WebP", "Resize", "Tải hàng loạt"] },
+    { id: "image", icon: "◫", name: "Image Toolkit", group: "Hình ảnh", code: "IMG", description: "Cắt, xoay, lật, cân chỉnh và áp dụng bộ lọc trực tiếp.", caps: ["Transform", "Filter presets", "Canvas preview"] },
+    { id: "pdf", icon: "▤", name: "PDF Toolkit", group: "Tài liệu", code: "DOC", description: "Gộp, tách, xoay, watermark và chỉnh metadata PDF.", caps: ["Merge · Split", "Watermark", "Metadata"] },
+    { id: "qr", icon: "⌗", name: "QR Toolkit", group: "Tài liệu", code: "QR", description: "Tạo QR tùy chỉnh hoặc quét QR từ ảnh trên thiết bị.", caps: ["Live QR", "Scan image", "PNG export"] },
+    { id: "color", icon: "◉", name: "Color Studio", group: "Thương hiệu", code: "CLR", description: "Tạo bảng màu, trích màu từ ảnh và kiểm tra WCAG.", caps: ["Palette", "WCAG", "Image extraction"] },
+    { id: "type", icon: "T", name: "Typography Studio", group: "Thương hiệu", code: "TYP", description: "Thiết kế type scale, xem trực tiếp và xuất CSS sẵn dùng.", caps: ["Type scale", "Live preview", "CSS export"] },
+    { id: "icon", icon: "◇", name: "Icon Browser", group: "Tài nguyên", code: "ICO", description: "Tìm biểu tượng Lucide và xuất SVG hoặc PNG theo kích thước.", caps: ["Lucide", "Search", "SVG · PNG"] },
+    { id: "svg", icon: "⌁", name: "SVG Editor", group: "Tài nguyên", code: "SVG", description: "Chỉnh mã vector, xem trước tức thì và xuất tệp an toàn.", caps: ["Live editor", "Sanitize", "Export"] },
+    { id: "gradient", icon: "◒", name: "Gradient Generator", group: "Thương hiệu", code: "GRD", description: "Tạo gradient nhiều điểm màu cho CSS và ảnh PNG.", caps: ["4 color stops", "3 modes", "CSS · PNG"] },
+    { id: "picker", icon: "⌾", name: "Color Picker", group: "Hình ảnh", code: "PCK", description: "Lấy màu pixel, chuyển HEX/RGB/HSL và đo độ tương phản.", caps: ["EyeDropper", "Pixel sample", "Contrast"] }
   ];
   const GROUPS = ["Biên tập nâng cao", "Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên"];
   const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -44,9 +44,9 @@
       return matchesFilter && (!term || normalize(`${tool.name} ${tool.group} ${tool.description} ${tool.caps.join(" ")}`).includes(term));
     });
   };
-  const toolItem = (tool) => `<div class="mdp-tool-row ${pageState.active === tool.name ? "is-active" : ""}" data-mdp-tool-row="${escapeHtml(tool.name)}" style="--tool-index:${Number(tool.number)}">
+  const toolItem = (tool) => `<div class="mdp-tool-row ${pageState.active === tool.name ? "is-active" : ""}" data-mdp-tool-row="${escapeHtml(tool.name)}">
     <button type="button" class="mdp-tool" data-mdp-tool="${escapeHtml(tool.name)}" ${pageState.active === tool.name ? 'aria-current="page"' : ""}>
-      <span class="mdp-tool__number">${tool.number}</span><span class="mdp-tool__copy"><strong>${escapeHtml(tool.name)}</strong><small>${escapeHtml(tool.description)}</small></span><i>${tool.code}</i>
+      <span class="mdp-tool__icon" aria-hidden="true">${tool.icon}</span><span class="mdp-tool__copy"><strong>${escapeHtml(tool.name)}</strong><small>${escapeHtml(tool.description)}</small></span><i>${tool.code}</i>
     </button>
     <button type="button" class="mdp-tool__favorite ${pageState.favorites.includes(tool.name) ? "is-active" : ""}" data-mdp-favorite="${escapeHtml(tool.name)}" aria-label="${pageState.favorites.includes(tool.name) ? "Bỏ ghim" : "Ghim"} ${escapeHtml(tool.name)}" title="Ghim công cụ">☆</button>
   </div>`;
@@ -58,7 +58,7 @@
       return items.length ? `<section class="mdp-tool-group"><header><span>${group}</span><b>${items.length}</b></header>${items.map(toolItem).join("")}</section>` : "";
     }).join("");
   };
-  const contextMarkup = (tool) => `<div class="mdp-context__identity"><span>${tool.number}</span><div><small>${tool.group} · ${tool.code} LOCAL</small><h2>${escapeHtml(tool.name)}</h2><p>${escapeHtml(tool.description)}</p></div></div><div class="mdp-context__caps">${tool.caps.map((cap) => `<span>${escapeHtml(cap)}</span>`).join("")}</div><button type="button" class="mdp-context__favorite ${pageState.favorites.includes(tool.name) ? "is-active" : ""}" data-mdp-favorite="${escapeHtml(tool.name)}" title="Ghim công cụ" aria-label="Ghim ${escapeHtml(tool.name)}">☆</button>`;
+  const contextMarkup = (tool) => `<div class="mdp-context__identity"><span aria-hidden="true">${tool.icon}</span><div><small>${tool.group} · ${tool.code} LOCAL</small><h2>${escapeHtml(tool.name)}</h2><p>${escapeHtml(tool.description)}</p></div></div><div class="mdp-context__caps">${tool.caps.map((cap) => `<span>${escapeHtml(cap)}</span>`).join("")}</div><button type="button" class="mdp-context__favorite ${pageState.favorites.includes(tool.name) ? "is-active" : ""}" data-mdp-favorite="${escapeHtml(tool.name)}" title="Ghim công cụ" aria-label="Ghim ${escapeHtml(tool.name)}">☆</button>`;
 
   const renderCatalog = (root) => {
     const search = root.querySelector("[data-mdp-search]");
@@ -141,7 +141,7 @@
       <div class="mdp-shell">
         <main class="mdp-main">
           <header class="mdp-context" data-mdp-context>${contextMarkup(toolByName(pageState.active))}</header>
-          <div class="mdp-session"><span><i></i> Xử lý trên thiết bị</span><span>Đang mở: <b data-mdp-current>${escapeHtml(pageState.active)}</b></span><span>Cập nhật <b data-mdp-last-used>${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</b></span><label class="mdp-mobile-switcher">Công cụ<select data-mdp-mobile-select>${TOOLS.map((tool) => `<option value="${tool.id}" ${tool.name === pageState.active ? "selected" : ""}>${tool.number} · ${escapeHtml(tool.name)}</option>`).join("")}</select></label><span class="mdp-session__shortcut"><kbd>Alt</kbd><kbd>↑ ↓</kbd> đổi tool</span><div class="mdp-session__config"><button type="button" data-mdp-export>Xuất cấu hình</button><label>Nhập<input type="file" accept="application/json" data-mdp-import></label></div></div>
+          <div class="mdp-session"><span><i></i> Xử lý trên thiết bị</span><span>Đang mở: <b data-mdp-current>${escapeHtml(pageState.active)}</b></span><span>Cập nhật <b data-mdp-last-used>${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</b></span><label class="mdp-mobile-switcher">Công cụ<select data-mdp-mobile-select>${TOOLS.map((tool) => `<option value="${tool.id}" ${tool.name === pageState.active ? "selected" : ""}>${escapeHtml(tool.name)}</option>`).join("")}</select></label><span class="mdp-session__shortcut"><kbd>Alt</kbd><kbd>↑ ↓</kbd> đổi tool</span><div class="mdp-session__config"><button type="button" data-mdp-export>Xuất cấu hình</button><label>Nhập<input type="file" accept="application/json" data-mdp-import></label></div></div>
           <div class="feature-lab__work media-design-page__work" data-mdp-work></div>
         </main>
       </div>

@@ -4301,21 +4301,21 @@ function initAppShell() {
   };
   const saveState = (next) => localStorage.setItem(stateKey, JSON.stringify({ ...stored(), ...next }));
   const mediaStudioItems = [
-    { id: "photo-editor", number: "12", title: "Photo Editor", group: "Biên tập" },
-    { id: "background-remover", number: "13", title: "Background Remover", group: "Biên tập" },
-    { id: "collage", number: "14", title: "Collage Maker", group: "Biên tập" },
-    { id: "inspector", number: "15", title: "Image Inspector", group: "Biên tập" },
-    { id: "compress", number: "01", title: "Image Compressor", group: "Hình ảnh" },
-    { id: "convert", number: "02", title: "Image Converter", group: "Hình ảnh" },
-    { id: "image", number: "03", title: "Image Toolkit", group: "Hình ảnh" },
-    { id: "picker", number: "11", title: "Color Picker", group: "Hình ảnh" },
-    { id: "pdf", number: "04", title: "PDF Toolkit", group: "Tài liệu" },
-    { id: "qr", number: "05", title: "QR Toolkit", group: "Tài liệu" },
-    { id: "color", number: "06", title: "Color Studio", group: "Thương hiệu" },
-    { id: "type", number: "07", title: "Typography Studio", group: "Thương hiệu" },
-    { id: "gradient", number: "10", title: "Gradient Generator", group: "Thương hiệu" },
-    { id: "icon", number: "08", title: "Icon Browser", group: "Tài nguyên" },
-    { id: "svg", number: "09", title: "SVG Editor", group: "Tài nguyên" }
+    { id: "photo-editor", icon: "✎", title: "Photo Editor", group: "Biên tập" },
+    { id: "background-remover", icon: "✂", title: "Background Remover", group: "Biên tập" },
+    { id: "collage", icon: "▦", title: "Collage Maker", group: "Biên tập" },
+    { id: "inspector", icon: "⌕", title: "Image Inspector", group: "Biên tập" },
+    { id: "compress", icon: "⇣", title: "Image Compressor", group: "Hình ảnh" },
+    { id: "convert", icon: "⇄", title: "Image Converter", group: "Hình ảnh" },
+    { id: "image", icon: "◫", title: "Image Toolkit", group: "Hình ảnh" },
+    { id: "picker", icon: "⌾", title: "Color Picker", group: "Hình ảnh" },
+    { id: "pdf", icon: "▤", title: "PDF Toolkit", group: "Tài liệu" },
+    { id: "qr", icon: "⌗", title: "QR Toolkit", group: "Tài liệu" },
+    { id: "color", icon: "◉", title: "Color Studio", group: "Thương hiệu" },
+    { id: "type", icon: "T", title: "Typography Studio", group: "Thương hiệu" },
+    { id: "gradient", icon: "◒", title: "Gradient Generator", group: "Thương hiệu" },
+    { id: "icon", icon: "◇", title: "Icon Browser", group: "Tài nguyên" },
+    { id: "svg", icon: "⌁", title: "SVG Editor", group: "Tài nguyên" }
   ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", route: "/home", items: ["command-center"] },
@@ -4383,7 +4383,7 @@ function initAppShell() {
         return `<button class="app-sidebar__subitem ${route === moduleRoute ? "is-active" : ""}" type="button" data-app-route="${moduleRoute}" ${route === moduleRoute ? "aria-current=page" : ""}><span>${module.title}</span></button>`;
       }).join("");
       const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
-      const studioMenu = group.studioItems ? `<div class="app-sidebar__studio"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup) => `<section data-media-sidebar-group><small>${studioGroup}</small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}"><span>${item.number}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
+      const studioMenu = group.studioItems ? `<div class="app-sidebar__studio"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup) => `<section data-media-sidebar-group><small>${studioGroup}</small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
       const submenu = `${shortcuts}${studioMenu}${moduleItems}`;
       const hasSubmenu = Boolean(submenu);
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}">
