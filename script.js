@@ -4268,6 +4268,7 @@ function initAppShell() {
   };
   const updateDashboard = () => {
     const modules = moduleList();
+    const localStorageBytes = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)).filter(Boolean).reduce((total, key) => total + ((key.length + (localStorage.getItem(key)?.length || 0)) * 2), 0);
     const favorites = (() => { try { return JSON.parse(localStorage.getItem("hh-module-favorites") || "[]"); } catch { return []; } })();
     const recent = (() => { try { return JSON.parse(localStorage.getItem("hh.app-shell.recent") || "[]"); } catch { return []; } })();
     const recentItems = (recent.length ? recent : ["ai-center", "project-center", "media-center"]).map(moduleById).filter(Boolean);
@@ -4281,7 +4282,7 @@ function initAppShell() {
       dashboardModuleCount: modules.length,
       dashboardFavoriteCount: favorites.length,
       dashboardRecentCount: recent.length,
-      dashboardStorage: `${(JSON.stringify(localStorage).length / 1024).toFixed(1)} KB`,
+      dashboardStorage: localStorageBytes < 1024 * 1024 ? `${(localStorageBytes / 1024).toFixed(1)} KB` : `${(localStorageBytes / 1024 / 1024).toFixed(1)} MB`,
       dashboardNetwork: navigator.onLine ? "ONLINE" : "OFFLINE"
     };
     Object.entries(metrics).forEach(([id, value]) => { const node = byId(id); if (node) node.textContent = value; });

@@ -19,6 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app-shell.css?v=40">
+  <link rel="stylesheet" href="dashboard-aurora.css?v=1">
   <link rel="stylesheet" href="professional-tools.css?v=1">
   <link rel="stylesheet" href="feature-lab.css?v=3">
   <link rel="stylesheet" href="media-design-pro.css?v=1">
@@ -130,11 +131,11 @@
           <div class="app-page-header__actions" id="appPageActions"></div>
         </section>
         <div class="app-workspace" id="appWorkspace" aria-live="polite">
-          <section class="dashboard-home dashboard-home--pro" data-shell-view="home">
-            <div class="dashboard-welcome dashboard-hero-pro">
-              <div class="dashboard-hero-copy"><p class="section-kicker">HH SUPER PLATFORM · ONLINE</p><h2 id="dashboardGreeting">Chào mừng trở lại</h2><p>Không gian sáng tạo, công việc và AI được thiết kế để biến ý tưởng thành kết quả nhanh hơn.</p><div class="dashboard-hero-actions"><button class="app-primary-action" type="button" data-app-route="/create/ai-center">✦ Bắt đầu với AI</button><button type="button" data-command-open>⌕ Tìm mọi thứ</button><button type="button" class="dashboard-dev-button">DEV 97+</button></div><div class="dashboard-live-line"><i></i><span>Hệ thống hoạt động bình thường</span><b id="dashboardNetwork">ONLINE</b></div></div>
-              <div class="dashboard-hero-orbit" aria-hidden="true"><span>HH</span><i></i><i></i><i></i></div>
-              <div class="dashboard-clock"><strong id="shellClock">--:--</strong><span id="shellDate">Đang đồng bộ thời gian</span></div>
+          <section class="dashboard-home dashboard-home--pro dashboard-aurora" data-shell-view="home">
+            <div class="dashboard-welcome dashboard-hero-pro dashboard-glass">
+              <div class="dashboard-hero-copy"><p class="section-kicker"><span class="dashboard-live-dot"></span> HH SUPER PLATFORM · ONLINE</p><h2 id="dashboardGreeting">Chào mừng trở lại</h2><p>Không gian sáng tạo, công việc và AI được thiết kế để biến ý tưởng thành kết quả nhanh hơn.</p><div class="dashboard-hero-actions"><button class="app-primary-action" type="button" data-app-route="/create/ai-center">✦ Bắt đầu với AI</button><button type="button" data-command-open>⌕ Tìm mọi thứ</button><button type="button" data-search-watch-open="google">G Google + YouTube</button></div><div class="dashboard-live-line"><i></i><span id="dashboardMoment">Đang đồng bộ nhịp làm việc</span><b id="dashboardNetwork">ONLINE</b></div></div>
+              <div class="dashboard-aurora-mark" aria-hidden="true"><span>HH</span><small>CREATIVE OS</small></div>
+              <div class="dashboard-clock"><small id="dashboardPeriod">GIỜ ĐỊA PHƯƠNG</small><strong id="shellClock">--:--:--</strong><span id="shellDate">Đang đồng bộ thời gian</span></div>
             </div>
             <div class="dashboard-metric-strip">
               <article><span>MODULE</span><strong id="dashboardModuleCount">40</strong><small>Workspace chuyên biệt</small></article>
@@ -142,6 +143,35 @@
               <article><span>GẦN ĐÂY</span><strong id="dashboardRecentCount">0</strong><small>Phiên làm việc</small></article>
               <article><span>LƯU TRỮ</span><strong id="dashboardStorage">0 KB</strong><small>Dữ liệu trên thiết bị</small></article>
             </div>
+
+            <div class="dashboard-intelligence-grid">
+              <section class="dashboard-weather dashboard-glass" aria-labelledby="dashboardWeatherTitle">
+                <header class="dashboard-widget-head">
+                  <div><span>THỜI TIẾT TRỰC TIẾP</span><h3 id="dashboardWeatherTitle">Dự báo 7 ngày & AQI</h3></div>
+                  <div class="dashboard-weather-tools"><form id="dashboardWeatherSearch"><input id="dashboardWeatherCity" type="search" placeholder="Tìm thành phố..." aria-label="Tìm thành phố"><button type="submit">Tìm</button></form><button type="button" id="dashboardUseLocation" title="Dùng vị trí hiện tại" aria-label="Dùng vị trí hiện tại">⌖</button></div>
+                </header>
+                <div class="dashboard-weather-current" id="dashboardWeatherCurrent"><div class="dashboard-widget-skeleton"></div></div>
+                <div class="dashboard-forecast" id="dashboardForecast" aria-live="polite"></div>
+                <footer class="dashboard-weather-credit"><span id="dashboardWeatherUpdated">Đang tải dữ liệu mới nhất...</span><a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo · CAMS</a></footer>
+              </section>
+
+              <section class="dashboard-device dashboard-glass" aria-labelledby="dashboardDeviceTitle">
+                <header class="dashboard-widget-head"><div><span>THIẾT BỊ TRỰC TIẾP</span><h3 id="dashboardDeviceTitle">Hiệu suất trình duyệt</h3></div><b class="dashboard-realtime-badge"><i></i> REALTIME</b></header>
+                <div class="dashboard-device-grid">
+                  <article data-device-card="cpu"><div><span>CPU / TAB</span><strong id="dashboardCpuValue">--</strong><small id="dashboardCpuMeta">Đang đo độ trễ</small></div><svg viewBox="0 0 120 32" aria-hidden="true"><polyline id="dashboardCpuGraph" points="0,28 120,28"></polyline></svg></article>
+                  <article data-device-card="ram"><div><span>RAM</span><strong id="dashboardRamValue">--</strong><small id="dashboardRamMeta">Đang đọc bộ nhớ</small></div><svg viewBox="0 0 120 32" aria-hidden="true"><polyline id="dashboardRamGraph" points="0,28 120,28"></polyline></svg></article>
+                  <article data-device-card="disk"><div><span>DISK WEB</span><strong id="dashboardDiskValue">--</strong><small id="dashboardDiskMeta">Đang ước tính lưu trữ</small></div><svg viewBox="0 0 120 32" aria-hidden="true"><polyline id="dashboardDiskGraph" points="0,28 120,28"></polyline></svg></article>
+                  <article data-device-card="gpu"><div><span>GPU / FPS</span><strong id="dashboardGpuValue">--</strong><small id="dashboardGpuMeta">Đang nhận diện GPU</small></div><svg viewBox="0 0 120 32" aria-hidden="true"><polyline id="dashboardGpuGraph" points="0,28 120,28"></polyline></svg></article>
+                </div>
+                <p class="dashboard-device-note">Số liệu giới hạn trong tab trình duyệt để bảo vệ quyền riêng tư; không phải Task Manager của hệ điều hành.</p>
+              </section>
+            </div>
+
+            <section class="dashboard-sticky dashboard-glass" aria-labelledby="dashboardStickyTitle">
+              <header class="dashboard-widget-head"><div><span>Ý TƯỞNG NHANH</span><h3 id="dashboardStickyTitle">Sticky Notes</h3></div><div class="dashboard-sticky-actions"><span>Tự động lưu trên thiết bị</span><button type="button" id="dashboardAddSticky">＋ Thêm ghi chú</button></div></header>
+              <div class="dashboard-sticky-board" id="dashboardStickyBoard" aria-live="polite"></div>
+            </section>
+
             <div class="dashboard-quick-actions">
               <button type="button" data-app-route="/create/ai-center"><span>✦</span><strong>Tạo nội dung</strong><small>Prompt, kịch bản và nội dung AI</small></button>
               <button type="button" data-app-route="/create/creator-studio"><span>◫</span><strong>Tạo media</strong><small>Thumbnail, video và media</small></button>
@@ -159,9 +189,6 @@
             <div class="dashboard-grid">
               <section class="dashboard-panel"><header><div><span>Tiếp tục công việc</span><strong>Dự án và bản nháp gần đây</strong></div><button type="button" data-app-route="/work/project-center">Mở dự án</button></header><div id="dashboardRecentWork" class="dashboard-list"></div></section>
               <section class="dashboard-panel"><header><div><span>Công cụ thường dùng</span><strong>Gợi ý dành cho bạn</strong></div><button type="button" data-app-route="/tools">Tất cả công cụ</button></header><div id="dashboardRecommended" class="dashboard-list"></div></section>
-              <section class="dashboard-panel dashboard-panel--activity"><header><div><span>Trạng thái hệ thống</span><strong>Sẵn sàng làm việc</strong></div><span class="app-status-badge">Hoạt động</span></header><div class="dashboard-status-grid"><div><span>API</span><strong>Online</strong></div><div><span>Đồng bộ</span><strong>Tự động</strong></div><div><span>Workspace</span><strong>40 module</strong></div></div></section>
-              <section class="dashboard-panel dashboard-panel--guide"><header><div><span>Hướng dẫn nhanh</span><strong>Hoàn thành bước đầu tiên</strong></div></header><ol><li>Chọn một công cụ trong nhóm Sáng tạo.</li><li>Nhập ý tưởng hoặc nội dung nguồn.</li><li>Lưu hoặc xuất kết quả khi hoàn tất.</li></ol></section>
-              <section class="dashboard-panel dashboard-focus-card"><header><div><span>FOCUS NOTE</span><strong>Ý tưởng nhanh hôm nay</strong></div><span class="app-status-badge">AUTO SAVE</span></header><textarea id="dashboardQuickNote" rows="4" placeholder="Ghi ý tưởng, việc cần làm hoặc prompt quan trọng..."></textarea><footer><small id="dashboardQuickNoteStatus">Được lưu tự động trên thiết bị</small><button type="button" data-dashboard-clear-note>Xóa ghi chú</button></footer></section>
             </div>
           </section>
         </div>
@@ -848,7 +875,8 @@
 
   <script src="support-platform.js?v=2"></script>
   <script src="extension-suite.js?v=1"></script>
-  <script src="script.js?v=53"></script>
+  <script src="script.js?v=54"></script>
+  <script src="dashboard-aurora.js?v=1"></script>
   <script src="professional-tools.js?v=1"></script>
   <script src="media-design-studio.js?v=1"></script>
   <script src="media-design-pro.js?v=1"></script>
