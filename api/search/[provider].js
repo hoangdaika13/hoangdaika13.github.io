@@ -1,27 +1,83 @@
-const { clean, enforceRateLimit, withApi } = require("../_lib/platform");
+const { clean, setCors } = require("../_lib/platform");
 
-const GOOGLE_ENDPOINT = "https://www.googleapis.com/customsearch/v1";
-const YOUTUBE_ENDPOINT = "https://www.googleapis.com/youtube/v3/search";
+const GOOGLE_ENDPOINT = "https://customsearch.googleapis.com/customsearch/v1";
+const YOUTUBE_SEARCH_ENDPOINT = "https://www.googleapis.com/youtube/v3/search";
+const YOUTUBE_VIDEOS_ENDPOINT = "https://www.googleapis.com/youtube/v3/videos";
+const rateBuckets = new Map();
 
 function requestIp(req) {
   return clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "guest").split(",")[0], 120);
 }
 
+function rateLimit(key, limit = 50, windowMs = 10 * 60 * 1000) {
+  const now = Date.now();
+  const current = rateBuckets.get(key);
+  if (!current || current.expiresAt <= now) {
+    rateBuckets.set(key, { count: 1, expiresAt: now + windowMs });
+    return;
+  }
+  current.count += 1;
+  if (current.count > limit) {
+    const error = new Error("Bạn thao tác quá nhanh. Vui lòng thử lại sau.");
+    error.statusCode = 429;
+    error.code = "RATE_LIMITED";
+    throw error;
+  }
+  if (rateBuckets.size > 500) {
+    for (const [bucketKey, bucket] of rateBuckets) {
+      if (bucket.expiresAt <= now) rateBuckets.delete(bucketKey);
+    }
+  }
+}
+
 async function readJson(url) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8500);
+  const timer = setTimeout(() => controller.abort(), 9000);
   try {
-    const response = await fetch(url, { signal: controller.signal, headers: { Accept: "application/json" } });
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: "application/json", "User-Agent": "HH-Platform-Search/1.0" }
+    });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const error = new Error(clean(data?.error?.message || "Dịch vụ tìm kiếm đang bận.", 300));
-      error.statusCode = response.status;
+      const error = new Error(clean(data?.error?.message || "Dịch vụ tìm kiếm tạm thời không phản hồi.", 300));
+      error.statusCode = response.status === 429 ? 429 : 502;
+      error.code = response.status === 403 ? "API_ACCESS_DENIED" : "PROVIDER_ERROR";
       throw error;
     }
     return data;
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error("Dịch vụ tìm kiếm phản hồi quá chậm. Hãy thử lại.");
+      timeoutError.statusCode = 504;
+      timeoutError.code = "PROVIDER_TIMEOUT";
+      throw timeoutError;
+    }
+    throw error;
   } finally {
     clearTimeout(timer);
   }
+}
+
+function configuredServices() {
+  return {
+    google: Boolean(String(process.env.GOOGLE_SEARCH_API_KEY || "").trim() && String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim()),
+    youtube: Boolean(String(process.env.YOUTUBE_API_KEY || "").trim()),
+    gemini: Boolean(String(process.env.GEMINI_API_KEY || "").trim())
+  };
+}
+
+function isoDuration(value) {
+  const match = String(value || "").match(/^P(?:([0-9]+)D)?T?(?:([0-9]+)H)?(?:([0-9]+)M)?(?:([0-9]+)S)?$/);
+  if (!match) return "";
+  const days = Number(match[1] || 0);
+  const hours = Number(match[2] || 0) + days * 24;
+  const minutes = Number(match[3] || 0);
+  const seconds = Number(match[4] || 0);
+  return [hours, minutes, seconds]
+    .filter((_, index) => hours || index > 0)
+    .map((part, index) => String(part).padStart(index || hours ? 2 : 1, "0"))
+    .join(":");
 }
 
 async function googleSearch(req, query) {
@@ -31,19 +87,51 @@ async function googleSearch(req, query) {
 
   const page = Math.max(1, Math.min(10, Number(req.query.page || 1)));
   const kind = req.query.kind === "images" ? "images" : "web";
-  const params = new URLSearchParams({ key, cx, q: query, num: "10", start: String((page - 1) * 10 + 1), safe: "active", hl: "vi", gl: "vn" });
+  const safe = req.query.safe === "off" ? "off" : "active";
+  const dateRestrict = /^(d|w|m|y)(1|7|30|90|365)$/.test(String(req.query.date || "")) ? String(req.query.date) : "";
+  const allowedFiles = new Set(["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"]);
+  const fileType = allowedFiles.has(String(req.query.file || "")) ? String(req.query.file) : "";
+  const params = new URLSearchParams({
+    key,
+    cx,
+    q: query,
+    num: "10",
+    start: String((page - 1) * 10 + 1),
+    safe,
+    hl: "vi",
+    gl: "vn"
+  });
   if (kind === "images") params.set("searchType", "image");
+  if (dateRestrict) params.set("dateRestrict", dateRestrict);
+  if (fileType && kind === "web") params.set("fileType", fileType);
+
   const data = await readJson(`${GOOGLE_ENDPOINT}?${params}`);
-  const items = (data.items || []).map((item) => ({
-    title: clean(item.title, 300),
-    url: clean(item.link, 2000),
-    displayUrl: clean(item.displayLink, 300),
-    snippet: clean(item.snippet, 800),
-    image: clean(item.image?.thumbnailLink || item.pagemap?.cse_thumbnail?.[0]?.src, 2000),
-    width: Number(item.image?.width || 0),
-    height: Number(item.image?.height || 0)
-  }));
-  return { provider: "google", query, kind, page, total: Number(data.searchInformation?.totalResults || 0), items };
+  const items = (data.items || []).map((item) => {
+    const isImage = kind === "images";
+    return {
+      title: clean(item.title, 300),
+      url: clean(isImage ? item.image?.contextLink || item.link : item.link, 2000),
+      displayUrl: clean(item.displayLink, 300),
+      snippet: clean(item.snippet, 800),
+      image: clean(isImage ? item.link : item.pagemap?.cse_thumbnail?.[0]?.src || item.pagemap?.cse_image?.[0]?.src, 2000),
+      originalImage: clean(isImage ? item.link : "", 2000),
+      mime: clean(item.mime, 80),
+      width: Number(item.image?.width || 0),
+      height: Number(item.image?.height || 0)
+    };
+  });
+  return {
+    provider: "google",
+    query,
+    correctedQuery: clean(data.spelling?.correctedQuery, 180),
+    kind,
+    page,
+    total: Number(data.searchInformation?.totalResults || 0),
+    searchTime: Number(data.searchInformation?.searchTime || 0),
+    hasPrevious: page > 1,
+    hasNext: Boolean(data.queries?.nextPage?.length) && page < 10,
+    items
+  };
 }
 
 async function youtubeSearch(req, query) {
@@ -52,41 +140,88 @@ async function youtubeSearch(req, query) {
 
   const allowedOrders = new Set(["relevance", "date", "rating", "viewCount"]);
   const allowedDurations = new Set(["any", "short", "medium", "long"]);
+  const allowedDefinitions = new Set(["any", "high", "standard"]);
   const order = allowedOrders.has(req.query.order) ? req.query.order : "relevance";
   const duration = allowedDurations.has(req.query.duration) ? req.query.duration : "any";
+  const definition = allowedDefinitions.has(req.query.definition) ? req.query.definition : "any";
+  const pageToken = clean(req.query.pageToken, 200);
   const params = new URLSearchParams({
     key,
     part: "snippet",
     type: "video",
     q: query,
-    maxResults: "18",
+    maxResults: "12",
     order,
     safeSearch: "moderate",
     relevanceLanguage: "vi",
-    regionCode: "VN"
+    regionCode: "VN",
+    videoEmbeddable: "true"
   });
   if (duration !== "any") params.set("videoDuration", duration);
-  const data = await readJson(`${YOUTUBE_ENDPOINT}?${params}`);
-  const items = (data.items || []).map((item) => ({
-    id: clean(item.id?.videoId, 32),
-    title: clean(item.snippet?.title, 300),
-    channel: clean(item.snippet?.channelTitle, 200),
-    description: clean(item.snippet?.description, 800),
-    publishedAt: item.snippet?.publishedAt || "",
-    thumbnail: clean(item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url, 2000)
-  })).filter((item) => item.id);
-  return { provider: "youtube", query, order, duration, items, nextPageToken: clean(data.nextPageToken, 200) };
+  if (definition !== "any") params.set("videoDefinition", definition);
+  if (pageToken) params.set("pageToken", pageToken);
+
+  const searchData = await readJson(`${YOUTUBE_SEARCH_ENDPOINT}?${params}`);
+  const ids = (searchData.items || []).map((item) => clean(item.id?.videoId, 32)).filter(Boolean);
+  let details = new Map();
+  if (ids.length) {
+    const detailParams = new URLSearchParams({ key, part: "snippet,contentDetails,statistics,status", id: ids.join(",") });
+    const detailData = await readJson(`${YOUTUBE_VIDEOS_ENDPOINT}?${detailParams}`);
+    details = new Map((detailData.items || []).map((item) => [item.id, item]));
+  }
+
+  const items = (searchData.items || []).map((item) => {
+    const id = clean(item.id?.videoId, 32);
+    const detail = details.get(id) || {};
+    const snippet = detail.snippet || item.snippet || {};
+    return {
+      id,
+      title: clean(snippet.title, 300),
+      channel: clean(snippet.channelTitle, 200),
+      channelId: clean(snippet.channelId, 80),
+      description: clean(snippet.description, 800),
+      publishedAt: snippet.publishedAt || "",
+      thumbnail: clean(snippet.thumbnails?.maxres?.url || snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url, 2000),
+      duration: isoDuration(detail.contentDetails?.duration),
+      views: Number(detail.statistics?.viewCount || 0),
+      likes: Number(detail.statistics?.likeCount || 0),
+      definition: clean(detail.contentDetails?.definition, 20),
+      captions: detail.contentDetails?.caption === "true",
+      embeddable: detail.status?.embeddable !== false,
+      live: snippet.liveBroadcastContent === "live"
+    };
+  }).filter((item) => item.id && item.embeddable);
+
+  return {
+    provider: "youtube",
+    query,
+    order,
+    duration,
+    definition,
+    total: Number(searchData.pageInfo?.totalResults || 0),
+    nextPageToken: clean(searchData.nextPageToken, 200),
+    previousPageToken: clean(searchData.prevPageToken, 200),
+    items
+  };
 }
 
 module.exports = async function handler(req, res) {
-  return withApi(req, res, async ({ db }) => {
-    if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+  setCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+
+  try {
+    if (String(req.query.health || "") === "1") {
+      res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60");
+      return res.status(200).json({ ok: true, services: configuredServices() });
+    }
+
     const provider = clean(req.query.provider, 30).toLowerCase();
     const query = clean(req.query.q, 180);
-    if (!query) return res.status(400).json({ error: "Hãy nhập nội dung cần tìm." });
     if (!new Set(["google", "youtube"]).has(provider)) return res.status(404).json({ error: "Dịch vụ tìm kiếm không tồn tại." });
+    if (!query) return res.status(400).json({ error: "Hãy nhập nội dung cần tìm." });
 
-    await enforceRateLimit(db, `search:${provider}:${requestIp(req)}`, 40, 10 * 60 * 1000);
+    rateLimit(`search:${provider}:${requestIp(req)}`);
     const result = provider === "google" ? await googleSearch(req, query) : await youtubeSearch(req, query);
     if (result.notConfigured) {
       return res.status(503).json({
@@ -98,5 +233,11 @@ module.exports = async function handler(req, res) {
     }
     res.setHeader("Cache-Control", "public, max-age=30, s-maxage=180, stale-while-revalidate=300");
     return res.status(200).json(result);
-  });
+  } catch (error) {
+    console.error("Search API error", error?.message || error);
+    return res.status(Number(error?.statusCode || 500)).json({
+      error: clean(error?.message || "Máy chủ không thể xử lý yêu cầu.", 300),
+      code: clean(error?.code || "SEARCH_FAILED", 80)
+    });
+  }
 };
