@@ -811,4 +811,20 @@
     document.querySelector(".cc-hero-profile")?.remove();
     mountHero();
   });
+  window.addEventListener("hh:command-center-sync", () => {
+    if (!state.initialized) return;
+    renderTodos();
+    renderCalendar();
+    renderActivity();
+    updateStats();
+  });
+  window.addEventListener("hashchange", () => {
+    if (!location.hash.includes("/home")) return;
+    requestAnimationFrame(() => {
+      renderTodos();
+      renderCalendar();
+      renderActivity();
+      updateStats();
+    });
+  });
 })();

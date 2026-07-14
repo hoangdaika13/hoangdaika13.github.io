@@ -420,4 +420,17 @@
   window.addEventListener("hh:auth-change", () => {
     if (document.body.classList.contains("auth-unlocked")) init();
   });
+  window.addEventListener("hh:command-center-sync", () => {
+    if (!initialized || !byId("dashboardStickyBoard")) return;
+    notes = readJson(NOTES_KEY, notes);
+    renderNotes();
+  });
+  window.addEventListener("hashchange", () => {
+    if (!location.hash.includes("/home")) return;
+    requestAnimationFrame(() => {
+      if (!byId("dashboardStickyBoard")) return;
+      notes = readJson(NOTES_KEY, notes);
+      renderNotes();
+    });
+  });
 })();

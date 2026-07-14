@@ -924,6 +924,9 @@ function initSuperPlatform() {
   const writePlatformState = (state) => localStorage.setItem(stateKey, JSON.stringify(state));
   const moduleStateFor = (moduleId) => readPlatformState()[moduleId] || {};
   const commandCenterKey = "hh-command-center-state";
+  const commandTodoKey = "hh.command-center.todos.v2";
+  const commandNotesKey = "hh.dashboard.sticky-notes.v1";
+  const commandActivityKey = "hh.command-center.activity.v1";
 
   const readCommandCenterState = () => {
     const fallback = {
@@ -936,13 +939,52 @@ function initSuperPlatform() {
       activity: []
     };
     try {
-      return { ...fallback, ...JSON.parse(localStorage.getItem(commandCenterKey) || "{}") };
-    } catch {
-      return fallback;
-    }
+      const legacy = JSON.parse(localStorage.getItem(commandCenterKey) || "{}");
+      const homeTodos = JSON.parse(localStorage.getItem(commandTodoKey) || "null");
+      const stickyNotes = JSON.parse(localStorage.getItem(commandNotesKey) || "null");
+      const homeActivity = JSON.parse(localStorage.getItem(commandActivityKey) || "null");
+      const primaryNote = Array.isArray(stickyNotes) ? ([...stickyNotes].sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)))[0] || null) : null;
+      return {
+        ...fallback,
+        ...legacy,
+        noteId: primaryNote?.id || "",
+        notes: primaryNote?.text ?? legacy.notes ?? fallback.notes,
+        todos: Array.isArray(homeTodos) ? homeTodos.map((todo) => ({ ...todo, text: todo.title || todo.text || "", done: Boolean(todo.completed ?? todo.done) })) : (legacy.todos || fallback.todos),
+        activity: Array.isArray(homeActivity) ? homeActivity.map((item) => typeof item === "string" ? item : `${new Date(item.time || Date.now()).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} · ${item.action || "Hoạt động Command Center"}`) : (legacy.activity || [])
+      };
+    } catch { return fallback; }
   };
 
-  const writeCommandCenterState = (state) => localStorage.setItem(commandCenterKey, JSON.stringify(state));
+  const writeCommandCenterState = (state) => {
+    localStorage.setItem(commandCenterKey, JSON.stringify(state));
+    if (Array.isArray(state.todos)) {
+      localStorage.setItem(commandTodoKey, JSON.stringify(state.todos.map((todo, index) => ({
+        ...todo,
+        id: todo.id || `todo-${Date.now()}-${index}`,
+        title: todo.title || todo.text || "Công việc",
+        priority: todo.priority || "medium",
+        category: todo.category || "Command Center",
+        deadline: todo.deadline || "",
+        reminder: todo.reminder || "",
+        repeat: todo.repeat || "none",
+        completed: Boolean(todo.done ?? todo.completed),
+        createdAt: todo.createdAt || Date.now()
+      }))));
+    }
+    if (typeof state.notes === "string") {
+      let sticky = [];
+      try { sticky = JSON.parse(localStorage.getItem(commandNotesKey) || "[]"); } catch {}
+      if (!Array.isArray(sticky)) sticky = [];
+      const index = sticky.findIndex((note) => note.id === state.noteId) >= 0 ? sticky.findIndex((note) => note.id === state.noteId) : 0;
+      if (sticky[index]) sticky[index] = { ...sticky[index], text: state.notes, updatedAt: Date.now() };
+      else sticky.push({ id: `note-${Date.now()}`, text: state.notes, color: "#75f2d0", x: 20, y: 20, rotate: 0, pinned: true, tags: "command-center", reminder: "", updatedAt: Date.now() });
+      localStorage.setItem(commandNotesKey, JSON.stringify(sticky));
+    }
+    if (Array.isArray(state.activity)) {
+      localStorage.setItem(commandActivityKey, JSON.stringify(state.activity.slice(0, 30).map((item, index) => typeof item === "string" ? { id: `command-${Date.now()}-${index}`, action: item.replace(/^\d{1,2}:\d{2}\s*·\s*/, ""), icon: "C", color: "#5ce8f2", time: Date.now() - index * 1000 } : item)));
+    }
+    window.dispatchEvent(new CustomEvent("hh:command-center-sync"));
+  };
 
   const moduleProfiles = {
     "ai-center": { verb: "Tạo prompt", subject: "AI workflow", sample: "Viết prompt tối ưu cho video YouTube 40+ về một câu chuyện gia đình cảm động.", metrics: ["Prompt", "History", "Model"], items: ["Prompt rewrite cảm xúc", "Prompt title YouTube", "Prompt tóm tắt nhanh"] },
@@ -994,62 +1036,86 @@ function initSuperPlatform() {
     items: (module.features || []).slice(0, 3)
   };
 
+  const commandTodoMarkup = (todo, index) => `<label style="--todo-color:${todo.priority === "high" ? "#ff6688" : todo.priority === "low" ? "#62e6b0" : "#ffc75c"}"><input type="checkbox" data-command-toggle-todo="${index}" ${todo.done ? "checked" : ""}><span><strong>${escapeHtml(todo.text)}</strong><small>${escapeHtml(todo.category || "Command Center")} · ${todo.deadline ? new Date(`${todo.deadline}T12:00:00`).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) : "Không deadline"}</small></span><button class="interactive" type="button" data-command-remove-todo="${index}" aria-label="Xóa">×</button></label>`;
+
   const commandCenterMarkup = () => {
     const state = readCommandCenterState();
+    let cachedWeather = null;
+    let authUser = {};
+    try { cachedWeather = JSON.parse(localStorage.getItem("hh.dashboard.weather.v1") || "null"); } catch {}
+    try { authUser = JSON.parse(localStorage.getItem("hh-auth-user") || "{}"); } catch {}
+    const currentWeather = cachedWeather?.payload?.weather?.current || {};
+    const currentAir = cachedWeather?.payload?.air?.current || {};
+    const weatherLocation = cachedWeather?.location?.name || "Hà Nội";
+    const todos = state.todos || [];
+    const completed = todos.filter((todo) => todo.done).length;
+    const progress = todos.length ? Math.round(completed / todos.length * 100) : 0;
+    let stickyCount = 0;
+    try { stickyCount = JSON.parse(localStorage.getItem(commandNotesKey) || "[]").length || 0; } catch {}
+    const userName = authUser.name || "Thành viên HH";
+    const initials = userName.split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase() || "HH";
+    const weatherReady = Number.isFinite(currentWeather.temperature_2m);
     return `
-      <section class="command-center-app" data-command-center>
-        <div class="command-hero">
-          <div>
-            <p class="section-kicker">Command Center 01</p>
-            <h4>Trung tâm điều khiển cá nhân</h4>
-            <span>Đồng hồ, thời tiết, ghi chú, todo, Google, trạng thái server và app yêu thích.</span>
+      <section class="command-center-app command-center-app--aurora" data-command-center>
+        <div class="command-hero command-hero--aurora">
+          <div class="command-hero__copy">
+            <p class="section-kicker"><i></i> COMMAND CENTER 01 · SYNCED</p>
+            <h4>Điều hành ngày mới<br><em>trong một không gian.</em></h4>
+            <span>Đồng bộ trực tiếp với Trang chủ: thời tiết, Sticky Notes, Todo, hoạt động và trạng thái hệ thống.</span>
+            <div class="command-hero__profile"><b>${authUser.avatar ? `<img src="${escapeHtml(authUser.avatar)}" alt="">` : escapeHtml(initials)}</b><div><strong>${escapeHtml(userName)}</strong><small>${completed}/${todos.length} công việc hoàn thành</small></div><span class="command-sync-badge"><i></i> Realtime local sync</span></div>
           </div>
           <div class="command-clock">
             <strong data-command-time>--:--:--</strong>
             <span data-command-date>Đang đồng bộ...</span>
+            <small>${weatherReady ? `${Math.round(currentWeather.temperature_2m)}°C · ${escapeHtml(weatherLocation)}` : "Weather đang đồng bộ"}</small>
           </div>
         </div>
+        <div class="command-overview">
+          <article><i>✓</i><div><span>Tiến độ hôm nay</span><strong data-command-overview-progress>${progress}%</strong><small data-command-overview-remaining>${todos.length - completed} việc còn lại</small></div><b><u data-command-overview-bar style="width:${progress}%"></u></b></article>
+          <article><i>N</i><div><span>Sticky Notes</span><strong>${stickyCount}</strong><small>Tự động lưu</small></div><b><u style="width:${Math.min(100, stickyCount * 18)}%"></u></b></article>
+          <article><i>◉</i><div><span>Trạng thái</span><strong>${navigator.onLine ? "Online" : "Offline"}</strong><small>${navigator.onLine ? "Kết nối ổn định" : "Đang dùng cache"}</small></div><b><u style="width:${navigator.onLine ? 100 : 25}%"></u></b></article>
+          <article><i>✦</i><div><span>Hoạt động</span><strong>${(state.activity || []).length}</strong><small>Lịch sử gần đây</small></div><b><u style="width:${Math.min(100, (state.activity || []).length * 8)}%"></u></b></article>
+        </div>
         <div class="command-grid">
-          <article class="command-widget weather-widget">
-            <header><strong>Thời tiết</strong><button class="interactive" type="button" data-command-weather>Tải mới</button></header>
-            <div class="weather-readout" data-command-weather-output>Ấn "Tải mới" để xem thời tiết Hà Nội.</div>
+          <article class="command-widget command-widget--wide weather-widget">
+            <header><div><small>LIVE WEATHER</small><strong>Thời tiết & chất lượng không khí</strong></div><button class="interactive" type="button" data-command-weather>↻ Làm mới</button></header>
+            <div class="weather-readout command-weather-readout" data-command-weather-output>
+              ${weatherReady ? `<div class="command-weather-main"><i>${currentWeather.is_day ? "☀" : "☾"}</i><div><strong>${Math.round(currentWeather.temperature_2m)}°C</strong><span>${escapeHtml(weatherLocation)} · Cảm giác ${Math.round(currentWeather.apparent_temperature || currentWeather.temperature_2m)}°</span></div></div><div class="command-weather-metrics"><span><b>${Math.round(currentWeather.relative_humidity_2m || 0)}%</b>Độ ẩm</span><span><b>${Math.round(currentWeather.wind_speed_10m || 0)} km/h</b>Gió</span><span><b>AQI ${Math.round(currentAir.us_aqi || 0)}</b>Không khí</span><span><b>${Math.round(currentWeather.surface_pressure || 0)} hPa</b>Áp suất</span></div>` : `<div class="command-widget-empty"><i>☁</i><span>Chọn “Làm mới” để tải thời tiết hiện tại.</span></div>`}
+            </div>
           </article>
-          <article class="command-widget">
-            <header><strong>Google nhanh</strong><button class="interactive" type="button" data-command-google>Google</button></header>
-            <input data-command-search type="search" placeholder="Tìm nhanh trên Google...">
-            <div class="command-mini-links">
-              <a href="https://mail.google.com/" target="_blank" rel="noopener">Gmail</a>
-              <a href="https://drive.google.com/" target="_blank" rel="noopener">Drive</a>
-              <a href="https://calendar.google.com/" target="_blank" rel="noopener">Calendar</a>
-              <a href="https://news.google.com/topstories?hl=vi&gl=VN&ceid=VN:vi" target="_blank" rel="noopener">News</a>
+          <article class="command-widget command-google-widget">
+            <header><div><small>QUICK ACCESS</small><strong>Google Hub</strong></div><button class="interactive" type="button" data-search-watch-open="google">Mở Hub</button></header>
+            <form class="command-search-form" data-command-google-form><input data-command-search type="search" placeholder="Tìm trên Google..."><button class="interactive" type="submit" data-command-google aria-label="Tìm kiếm">⌕</button></form>
+            <div class="command-mini-links command-app-links">
+              ${[["Gmail","M","https://mail.google.com/"],["Drive","D","https://drive.google.com/"],["Calendar","C","https://calendar.google.com/"],["YouTube","▶","https://youtube.com/"],["Gemini","✦","https://gemini.google.com/"],["Maps","M","https://maps.google.com/"]].map(([label,icon,url]) => `<a href="${url}" target="_blank" rel="noopener"><i>${icon}</i><span>${label}</span></a>`).join("")}
             </div>
           </article>
           <article class="command-widget notes-widget">
-            <header><strong>Notes</strong><button class="interactive" type="button" data-command-save-notes>Lưu</button></header>
-            <textarea data-command-notes rows="6">${escapeHtml(state.notes || "")}</textarea>
+            <header><div><small>SYNCED NOTES</small><strong>Ghi chú đang ghim</strong></div><button class="interactive" type="button" data-command-save-notes>✓ Lưu</button></header>
+            <textarea data-command-notes rows="6" placeholder="Markdown, checklist hoặc ý tưởng...">${escapeHtml(state.notes || "")}</textarea>
+            <footer><span data-command-note-count>${String(state.notes || "").length} ký tự</span><button type="button" data-app-route="/home">Mở Sticky Board ↗</button></footer>
           </article>
-          <article class="command-widget todo-widget">
-            <header><strong>Todo</strong><button class="interactive" type="button" data-command-add-todo>Thêm</button></header>
-            <input data-command-todo-input type="text" placeholder="Nhập việc cần làm...">
+          <article class="command-widget command-widget--wide todo-widget">
+            <header><div><small>TODO WORKSPACE</small><strong>Công việc đồng bộ</strong></div><span class="command-progress-label" data-command-progress-label>${progress}% hoàn thành</span></header>
+            <div class="command-todo-progress"><i data-command-progress-bar style="width:${progress}%"></i></div>
+            <div class="command-todo-compose"><input data-command-todo-input type="text" placeholder="Thêm công việc mới..."><button class="interactive" type="button" data-command-add-todo>＋ Thêm</button></div>
             <div class="command-todo-list" data-command-todos>
-              ${(state.todos || []).map((todo, index) => `
-                <label>
-                  <input type="checkbox" data-command-toggle-todo="${index}" ${todo.done ? "checked" : ""}>
-                  <span>${escapeHtml(todo.text)}</span>
-                  <button class="interactive" type="button" data-command-remove-todo="${index}">Xóa</button>
-                </label>
-              `).join("")}
+              ${todos.slice(0, 8).map(commandTodoMarkup).join("") || `<div class="command-widget-empty"><i>✓</i><span>Chưa có công việc. Thêm việc đầu tiên ở phía trên.</span></div>`}
             </div>
           </article>
-          <article class="command-widget">
-            <header><strong>Server Status</strong><button class="interactive" type="button" data-command-server>Kiểm tra</button></header>
-            <div class="server-readout" data-command-server-output>Backend: chờ kiểm tra.</div>
+          <article class="command-widget command-server-widget">
+            <header><div><small>SYSTEM HEALTH</small><strong>Trạng thái dịch vụ</strong></div><button class="interactive" type="button" data-command-server>↻ Kiểm tra</button></header>
+            <div class="server-readout command-service-list" data-command-server-output>${["Frontend","Backend","Database","Authentication"].map((service) => `<span data-status="checking"><i></i><b>${service}</b><small>Chờ kiểm tra</small></span>`).join("")}</div>
           </article>
-          <article class="command-widget">
-            <header><strong>Recent Activity</strong><button class="interactive" type="button" data-command-clear-activity>Dọn</button></header>
+          <article class="command-widget command-activity-widget">
+            <header><div><small>RECENT ACTIVITY</small><strong>Dòng thời gian</strong></div><button class="interactive" type="button" data-command-clear-activity>Dọn</button></header>
             <div class="command-activity" data-command-activity>
-              ${(state.activity || []).slice(0, 6).map((item) => `<p>${escapeHtml(item)}</p>`).join("") || "<p>Chưa có hoạt động.</p>"}
+              ${(state.activity || []).slice(0, 6).map((item, index) => `<p><i>${index === 0 ? "✦" : "•"}</i><span>${escapeHtml(item)}</span></p>`).join("") || `<div class="command-widget-empty"><i>◷</i><span>Hoạt động mới sẽ xuất hiện tại đây.</span></div>`}
             </div>
+          </article>
+          <article class="command-widget command-launch-widget">
+            <header><div><small>QUICK LAUNCH</small><strong>Tiếp tục công việc</strong></div><button type="button" data-command-open>Ctrl K</button></header>
+            <div class="command-launch-grid"><button type="button" data-app-route="/create/ai-center"><i>✦</i><span>AI Center</span></button><button type="button" data-app-route="/work/project-center"><i>P</i><span>Dự án</span></button><button type="button" data-app-route="/communication/community"><i>C</i><span>Cộng đồng</span></button><button type="button" data-app-route="/analytics"><i>↗</i><span>Analytics</span></button></div>
           </article>
         </div>
       </section>
@@ -1586,6 +1652,11 @@ function initSuperPlatform() {
     if (visible.some((module) => module.id === "smart-search")) updateSmartIndex();
     if (visible.some((module) => module.id === "community")) loadCommunityFeed();
     if (visible.some((module) => module.id === "media-center")) hydrateMediaLibrary();
+    if (visible.some((module) => module.id === "command-center")) requestAnimationFrame(() => {
+      const center = grid.querySelector("[data-command-center]");
+      center?.querySelector("[data-command-server]")?.click();
+      if (center?.querySelector("[data-command-weather-output] .command-widget-empty")) center.querySelector("[data-command-weather]")?.click();
+    });
     window.HHExtensionSuite?.mount?.(grid, visible);
     if (!selectedModule && modules.length) renderDetail(modules[0]);
   };
@@ -1734,21 +1805,47 @@ function initSuperPlatform() {
     state.activity = [`${stamp} · ${message}`, ...(state.activity || [])].slice(0, 20);
     writeCommandCenterState(state);
     const activity = grid.querySelector("[data-command-activity]");
-    if (activity) activity.innerHTML = state.activity.slice(0, 6).map((item) => `<p>${escapeHtml(item)}</p>`).join("");
+    if (activity) activity.innerHTML = state.activity.slice(0, 6).map((item, index) => `<p><i>${index === 0 ? "✦" : "•"}</i><span>${escapeHtml(item)}</span></p>`).join("");
   };
 
   const renderCommandTodos = () => {
     const state = readCommandCenterState();
     const list = grid.querySelector("[data-command-todos]");
     if (!list) return;
-    list.innerHTML = (state.todos || []).map((todo, index) => `
-      <label>
-        <input type="checkbox" data-command-toggle-todo="${index}" ${todo.done ? "checked" : ""}>
-        <span>${escapeHtml(todo.text)}</span>
-        <button class="interactive" type="button" data-command-remove-todo="${index}">Xóa</button>
-      </label>
-    `).join("") || "<p>Chưa có việc cần làm.</p>";
+    const todos = state.todos || [];
+    list.innerHTML = todos.slice(0, 8).map(commandTodoMarkup).join("") || `<div class="command-widget-empty"><i>✓</i><span>Chưa có công việc. Thêm việc đầu tiên ở phía trên.</span></div>`;
+    const completed = todos.filter((todo) => todo.done).length;
+    const progress = todos.length ? Math.round(completed / todos.length * 100) : 0;
+    grid.querySelectorAll("[data-command-progress-bar],[data-command-overview-bar]").forEach((node) => { node.style.width = `${progress}%`; });
+    const label = grid.querySelector("[data-command-progress-label]");
+    if (label) label.textContent = `${progress}% hoàn thành`;
+    const overview = grid.querySelector("[data-command-overview-progress]");
+    if (overview) overview.textContent = `${progress}%`;
+    const remaining = grid.querySelector("[data-command-overview-remaining]");
+    if (remaining) remaining.textContent = `${todos.length - completed} việc còn lại`;
   };
+
+  let commandNoteSaveTimer = 0;
+  grid.addEventListener("input", (event) => {
+    const notes = event.target.closest("[data-command-notes]");
+    if (!notes) return;
+    const counter = grid.querySelector("[data-command-note-count]");
+    if (counter) counter.textContent = `${notes.value.length} ký tự · đang tự lưu`;
+    clearTimeout(commandNoteSaveTimer);
+    commandNoteSaveTimer = setTimeout(() => {
+      const state = readCommandCenterState();
+      state.notes = notes.value;
+      writeCommandCenterState(state);
+      if (counter) counter.textContent = `${notes.value.length} ký tự · đã lưu`;
+    }, 450);
+  });
+
+  grid.addEventListener("submit", (event) => {
+    const form = event.target.closest("[data-command-google-form]");
+    if (!form) return;
+    event.preventDefault();
+    form.querySelector("[data-command-google]")?.click();
+  });
 
   grid.addEventListener("click", async (event) => {
     const saveNotes = event.target.closest("[data-command-save-notes]");
@@ -1788,7 +1885,8 @@ function initSuperPlatform() {
     }
     if (google) {
       const query = (grid.querySelector("[data-command-search]")?.value || "").trim() || "tin tức AI hôm nay";
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank", "noopener");
+      if (window.HHSearchWatch?.open) window.HHSearchWatch.open("google", query);
+      else window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank", "noopener");
       logCommandActivity(`Tìm Google: ${query}`);
       return;
     }
@@ -1796,14 +1894,15 @@ function initSuperPlatform() {
       const output = grid.querySelector("[data-command-weather-output]");
       if (output) output.textContent = "Đang tải thời tiết...";
       try {
-        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=21.0285&longitude=105.8542&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=Asia%2FBangkok");
-        const data = await response.json();
+        const weatherUrl = "https://api.open-meteo.com/v1/forecast?latitude=21.0285&longitude=105.8542&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max&timezone=Asia%2FBangkok&forecast_days=7";
+        const airUrl = "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=21.0285&longitude=105.8542&current=us_aqi,pm2_5,pm10&timezone=Asia%2FBangkok";
+        const [weatherResponse, airResponse] = await Promise.all([fetch(weatherUrl), fetch(airUrl)]);
+        if (!weatherResponse.ok || !airResponse.ok) throw new Error("Dịch vụ thời tiết chưa phản hồi");
+        const [data, air] = await Promise.all([weatherResponse.json(), airResponse.json()]);
         const current = data.current || {};
-        if (output) output.innerHTML = `
-          <strong>${Math.round(current.temperature_2m ?? 0)}°C</strong>
-          <span>Độ ẩm ${current.relative_humidity_2m ?? "--"}% · Gió ${current.wind_speed_10m ?? "--"} km/h</span>
-          <em>Hà Nội · cập nhật ${new Date().toLocaleTimeString("vi-VN")}</em>
-        `;
+        const aqi = air.current?.us_aqi ?? 0;
+        if (output) output.innerHTML = `<div class="command-weather-main"><i>${current.is_day ? "☀" : "☾"}</i><div><strong>${Math.round(current.temperature_2m ?? 0)}°C</strong><span>Hà Nội · Cảm giác ${Math.round(current.apparent_temperature ?? 0)}°</span></div></div><div class="command-weather-metrics"><span><b>${Math.round(current.relative_humidity_2m ?? 0)}%</b>Độ ẩm</span><span><b>${Math.round(current.wind_speed_10m ?? 0)} km/h</b>Gió</span><span><b>AQI ${Math.round(aqi)}</b>Không khí</span><span><b>${Math.round(current.surface_pressure ?? 0)} hPa</b>Áp suất</span></div>`;
+        localStorage.setItem("hh.dashboard.weather.v1", JSON.stringify({ payload: { weather: data, air, savedAt: Date.now() }, location: { name: "Hà Nội", latitude: 21.0285, longitude: 105.8542 }, savedAt: Date.now() }));
         logCommandActivity("Đã cập nhật thời tiết");
       } catch (error) {
         if (output) output.textContent = "Không tải được thời tiết. Hãy thử lại sau.";
@@ -1812,17 +1911,24 @@ function initSuperPlatform() {
     }
     if (server) {
       const output = grid.querySelector("[data-command-server-output]");
-      if (output) output.textContent = "Đang kiểm tra backend...";
-      try {
-        if (!REALTIME_URL) throw new Error("Chưa cấu hình backend");
-        const response = await fetch(`${REALTIME_URL}/api/platform/summary`);
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Backend lỗi");
-        if (output) output.innerHTML = `<strong>Online</strong><span>Modules: ${data.modules || "--"} · Users: ${data.users || "--"} · ${new Date().toLocaleTimeString("vi-VN")}</span>`;
-        logCommandActivity("Backend online");
-      } catch (error) {
-        if (output) output.textContent = `Backend chưa sẵn sàng: ${error.message}`;
-      }
+      const checks = [["Frontend", `${location.origin}/?status=${Date.now()}`], ["Backend", `${REALTIME_URL}/api/store/products`], ["Database", `${REALTIME_URL}/api/donations`], ["Authentication", `${REALTIME_URL}/api/auth/me`]];
+      if (output) output.innerHTML = checks.map(([name]) => `<span data-status="checking"><i></i><b>${name}</b><small>Đang kiểm tra...</small></span>`).join("");
+      await Promise.all(checks.map(async ([name, url], index) => {
+        const row = output?.children[index];
+        const started = performance.now();
+        let online = false;
+        let message = "Mất kết nối";
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 7000);
+          const response = await fetch(url, { signal: controller.signal, cache: "no-store", credentials: "omit" });
+          clearTimeout(timer);
+          online = response.status < 500;
+          message = `HTTP ${response.status} · ${Math.round(performance.now() - started)}ms`;
+        } catch (error) { message = error.name === "AbortError" ? "Quá thời gian" : "Không phản hồi"; }
+        if (row) { row.dataset.status = online ? "online" : "offline"; row.querySelector("small").textContent = message; }
+      }));
+      logCommandActivity("Đã kiểm tra trạng thái dịch vụ");
       return;
     }
     if (clearActivity) {
@@ -1830,7 +1936,7 @@ function initSuperPlatform() {
       state.activity = [];
       writeCommandCenterState(state);
       const activity = grid.querySelector("[data-command-activity]");
-      if (activity) activity.innerHTML = "<p>Chưa có hoạt động.</p>";
+      if (activity) activity.innerHTML = `<div class="command-widget-empty"><i>◷</i><span>Hoạt động mới sẽ xuất hiện tại đây.</span></div>`;
     }
   });
 
@@ -2240,6 +2346,7 @@ function initSuperPlatform() {
     const todo = state.todos?.[Number(toggle.dataset.commandToggleTodo)];
     if (todo) todo.done = toggle.checked;
     writeCommandCenterState(state);
+    renderCommandTodos();
     logCommandActivity(toggle.checked ? "Hoàn thành todo" : "Mở lại todo");
   });
 
