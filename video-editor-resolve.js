@@ -555,7 +555,7 @@
     else if (action === "pro-multicam") {
       state.data.multicam = !state.data.multicam; state.root.classList.toggle("is-vr-multicam", state.data.multicam);
       let grid = $(state.root, "[data-vr-multicam]");
-      if (state.data.multicam && !grid) { grid = document.createElement("div"); grid.className = "vr-multicam-grid"; grid.dataset.vrMulticam = ""; grid.innerHTML = [1,2,3,4].map((camera) => `<span><b>CAM ${camera}</b><small>${camera === 1 ? "PROGRAM" : "ANGLE"}</small></span>`).join(""); $(state.root, "[data-ve-monitor]")?.append(grid); }
+      if (state.data.multicam && !grid) { grid = document.createElement("div"); grid.className = "vr-multicam-grid"; grid.dataset.vrMulticam = ""; grid.innerHTML = [1,2,3,4].map((camera) => `<span><b>CAM ${camera}</b><small>${camera === 1 ? "PROGRAM" : "ANGLE"}</small></span>`).join(""); ($(state.root, "[data-ve-monitor-frame]") || $(state.root, "[data-ve-monitor]"))?.append(grid); }
       if (grid) grid.hidden = !state.data.multicam; save(); status(`Multicam Viewer ${state.data.multicam ? "đã bật" : "đã tắt"}.`, "success");
     }
     else if (action === "pro-keyframes") toggleProDrawer();

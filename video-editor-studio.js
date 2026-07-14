@@ -84,13 +84,15 @@
         </section>
 
         <section class="ve-monitor-panel">
-          <header class="ve-monitor-tabs"><button class="is-active" data-ve-monitor-tab="source">Source</button><button data-ve-monitor-tab="program">Program: <span data-ve-sequence-name>HH Sequence 01</span></button><span></span><button data-ve-action="safe-margins" title="Safe margins">${icon("scan")}</button><button data-ve-action="monitor-settings" title="Monitor settings">${icon("settings-2")}</button></header>
+          <header class="ve-monitor-tabs"><button class="is-active" data-ve-monitor-tab="source">Source</button><button data-ve-monitor-tab="program">Program: <span data-ve-sequence-name>HH Sequence 01</span></button><span></span><button data-ve-action="fit-preview" title="Vừa toàn bộ khung hình">${icon("maximize")}</button><button data-ve-action="safe-margins" title="Safe margins">${icon("scan")}</button><button data-ve-action="monitor-settings" title="Monitor settings">${icon("settings-2")}</button></header>
           <div class="ve-monitor" data-ve-monitor>
-            <video data-ve-video playsinline preload="metadata"></video>
-            <canvas data-ve-export-canvas width="1280" height="720" hidden></canvas>
-            <div class="ve-safe-margins" data-ve-safe hidden><i></i></div>
-            <div class="ve-title-overlay" data-ve-title-overlay></div>
-            <div class="ve-monitor-empty" data-ve-empty>${icon("film")}<strong>Program Monitor</strong><span>Import media hoặc kéo clip vào timeline</span><button data-ve-action="import">Import media</button></div>
+            <div class="ve-monitor-frame" data-ve-monitor-frame>
+              <video data-ve-video playsinline preload="metadata"></video>
+              <canvas data-ve-export-canvas width="1280" height="720" hidden></canvas>
+              <div class="ve-safe-margins" data-ve-safe hidden><i></i></div>
+              <div class="ve-title-overlay" data-ve-title-overlay></div>
+              <div class="ve-monitor-empty" data-ve-empty>${icon("film")}<strong>Program Monitor</strong><span>Import media hoặc kéo clip vào timeline</span><button data-ve-action="import">Import media</button></div>
+            </div>
           </div>
           <div class="ve-monitor-controls">
             <span data-ve-inout>In --:-- · Out --:--</span><div>${action("prev-edit", "Previous Edit", "skip-back")}${action("step-back", "Step Back", "step-back")}${action("play", "Play / Pause", "play")}${action("step-forward", "Step Forward", "step-forward")}${action("next-edit", "Next Edit", "skip-forward")}${action("marker", "Marker", "map-pin")}</div><strong data-ve-timecode>00:00:00:00</strong>
@@ -261,6 +263,23 @@
     const filters = { none: "none", cinema: "contrast(1.2) saturate(.84) sepia(.08)", vivid: "contrast(1.08) saturate(1.45)", mono: "grayscale(1) contrast(1.14)", warm: "sepia(.18) saturate(1.16)", cool: "hue-rotate(10deg) saturate(1.08)", blur: "blur(5px)", fade: "none" };
     video.style.transform = `translate(${clip.x}px,${clip.y}px) scale(${clip.scale / 100}) rotate(${clip.rotation}deg)`; video.style.opacity = String(clip.opacity * fade); video.style.filter = filters[clip.effect] || "none"; video.style.mixBlendMode = clip.blend.toLowerCase().replace("normal", "normal"); video.volume = clip.muted || state.project.disabledTracks.includes("A1") ? 0 : clamp(clip.volume * Number($(state.work, "[data-ve-master-volume]")?.value || 100) / 100, 0, 1); video.playbackRate = clamp(clip.speed, .1, 8);
   }
+  function updateMonitorFrame() {
+    if (!state.work) return;
+    state.work.dataset.veMonitorMode = state.project.monitorMode || "source";
+    const frame = $(state.work, "[data-ve-monitor-frame]");
+    if (frame) frame.style.setProperty("--ve-monitor-ratio", String(Math.max(.1, state.project.width / state.project.height)));
+  }
+  function fitPreview() {
+    const video = $(state.work, "[data-ve-video]");
+    if (state.project.monitorMode === "source") {
+      if (video) { video.style.transform = "none"; video.style.filter = "none"; video.style.opacity = "1"; video.style.mixBlendMode = "normal"; }
+      return status("Source Monitor đã vừa toàn bộ khung hình.", "success");
+    }
+    const selected = clipById() || activeTimelineClip();
+    if (!selected) return status("Hãy chọn một clip để đưa về vừa khung.", "error");
+    Object.assign(selected, { x: 0, y: 0, scale: 100, rotation: 0 });
+    state.project.selected = selected.id; pushHistory("Fit clip to frame"); renderProperties(); syncPreview(true); status("Clip đã vừa toàn bộ khung hình.", "success");
+  }
   function syncPreview(force = false) {
     if (!state.work) return;
     const clip = activeTimelineClip(), video = $(state.work, "[data-ve-video]"), empty = $(state.work, "[data-ve-empty]");
@@ -358,7 +377,7 @@
     $(state.work, "[data-ve-timeline]").addEventListener("click", (event) => { if (event.target.closest("[data-ve-clip],[data-ve-title],[data-ve-marker]")) return; const rect = $(state.work, "[data-ve-track-content]").getBoundingClientRect(); seek((event.clientX - rect.left) / state.project.zoom); });
     const sequence = $(state.work, "[data-ve-sequence]"); if (sequence) sequence.value = `${state.project.width}x${state.project.height}`;
     $(state.work, "[data-ve-project-name]").textContent = state.project.name; $(state.work, "[data-ve-sequence-name]").textContent = state.project.name;
-    renderAll(); restoreAssets(); ensureLucide();
+    updateMonitorFrame(); renderAll(); restoreAssets(); ensureLucide();
   }
   function cleanupOwn() { pause(); clearTimeout(state.timer); if (state.recorder?.state === "recording") state.recorder.stop(); state.urls.splice(0).forEach((url) => URL.revokeObjectURL(url)); Object.assign(state, { outer: null, work: null, assets: [], activeClip: "", recorder: null, exporting: false, drag: null }); }
 
@@ -367,7 +386,7 @@
     const panelTab = event.target.closest("[data-ve-panel-tab]"); if (panelTab) return switchPanel("panel", panelTab.dataset.vePanelTab);
     const inspectorTab = event.target.closest("[data-ve-inspector-tab]"); if (inspectorTab) return switchPanel("inspector", inspectorTab.dataset.veInspectorTab);
     const monitorTab = event.target.closest("[data-ve-monitor-tab]");
-    if (monitorTab) { $$(state.work, "[data-ve-monitor-tab]").forEach((button) => button.classList.toggle("is-active", button === monitorTab)); state.project.monitorMode = monitorTab.dataset.veMonitorTab; if (state.project.monitorMode === "source") { const clip = clipById(); const asset = clip && assetById(clip.assetId), video = $(state.work, "[data-ve-video]"); if (asset) { state.activeClip = clip.id; video.src = asset.url; video.currentTime = clip.in; $(state.work, "[data-ve-empty]").hidden = true; drawTitleOverlay(); } else status("Select a clip to load Source Monitor."); } else syncPreview(true); return; }
+    if (monitorTab) { $$(state.work, "[data-ve-monitor-tab]").forEach((button) => button.classList.toggle("is-active", button === monitorTab)); state.project.monitorMode = monitorTab.dataset.veMonitorTab; updateMonitorFrame(); if (state.project.monitorMode === "source") { const clip = clipById(); const asset = clip && assetById(clip.assetId), video = $(state.work, "[data-ve-video]"); if (asset) { state.activeClip = clip.id; video.src = asset.url; video.currentTime = clip.in; video.style.transform = "none"; video.style.filter = "none"; video.style.opacity = "1"; video.style.mixBlendMode = "normal"; $(state.work, "[data-ve-empty]").hidden = true; $(state.work, "[data-ve-title-overlay]").innerHTML = ""; } else status("Select a clip to load Source Monitor."); } else syncPreview(true); saveProject(false); return; }
     const trackToggle = event.target.closest("[data-ve-track-toggle]");
     if (trackToggle) { const track = trackToggle.dataset.veTrackToggle, disabled = state.project.disabledTracks.includes(track); state.project.disabledTracks = disabled ? state.project.disabledTracks.filter((item) => item !== track) : [...state.project.disabledTracks, track]; trackToggle.classList.toggle("is-off", !disabled); syncPreview(true); drawTitleOverlay(); saveProject(false); return; }
     const trackLock = event.target.closest("[data-ve-track-lock]");
@@ -411,6 +430,7 @@
     if (actionId === "step-forward") return seek(state.project.playhead + 1 / state.project.fps);
     if (actionId === "prev-edit" || actionId === "next-edit") { const edits = [0, ...state.project.clips.flatMap((item) => [item.start, item.start + clipDuration(item)])].sort((a, b) => a - b); const next = actionId === "next-edit" ? edits.find((time) => time > state.project.playhead + .01) : [...edits].reverse().find((time) => time < state.project.playhead - .01); return seek(next ?? (actionId === "next-edit" ? projectDuration() : 0)); }
     if (actionId === "safe-margins") { const safe = $(state.work, "[data-ve-safe]"); safe.hidden = !safe.hidden; return; }
+    if (actionId === "fit-preview") return fitPreview();
     if (actionId === "monitor-settings") return status("Program Monitor · Fit · High quality playback");
     if (actionId === "asset-add") return addAssetToTimeline(event.target.closest("[data-asset-id]").dataset.assetId);
     if (actionId === "asset-remove") { const id = event.target.closest("[data-asset-id]").dataset.assetId; if (state.project.clips.some((item) => item.assetId === id)) return status("Remove clips using this media from the timeline first.", "error"); state.assets = state.assets.filter((item) => item.id !== id); await dbDelete(id); renderAssets(); return; }
@@ -437,7 +457,7 @@
     if (event.target.matches("[data-ve-project-file]")) { const file = event.target.files?.[0]; if (file) await importProjectFile(file); return; }
     if (event.target.matches("[data-ve-prop]")) { pushHistory("Change clip property"); renderAll(); return; }
     if (event.target.matches("[data-ve-snap]")) state.project.snap = event.target.checked;
-    if (event.target.matches("[data-ve-sequence]")) { const [width, height] = event.target.value.split("x").map(Number); state.project.width = width; state.project.height = height; $(state.work, "[data-ve-footer-sequence]").textContent = `${width}×${height} · ${state.project.fps}fps`; saveProject(false); }
+    if (event.target.matches("[data-ve-sequence]")) { const [width, height] = event.target.value.split("x").map(Number); state.project.width = width; state.project.height = height; $(state.work, "[data-ve-footer-sequence]").textContent = `${width}×${height} · ${state.project.fps}fps`; updateMonitorFrame(); saveProject(false); }
     if (event.target.matches("[data-ve-workspace]")) { const value = event.target.value; if (value === "Color") switchPanel("panel", "effects"); if (value === "Audio") switchPanel("panel", "audio"); if (value === "Graphics") switchPanel("inspector", "graphics"); if (value === "Editing") { switchPanel("panel", "project"); switchPanel("inspector", "effect"); } }
   }
 
