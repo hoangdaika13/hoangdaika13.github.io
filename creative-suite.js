@@ -43,7 +43,7 @@
     if (!group) return;
     group.classList.add("is-creative-group");
     const arrow = group.querySelector(":scope > .app-sidebar__item > i");
-    if (arrow && !arrow.classList.contains("creative-group-count")) { arrow.className = "creative-group-count"; arrow.textContent = "4"; }
+    if (arrow && !arrow.classList.contains("creative-group-count")) { arrow.className = "creative-group-count"; arrow.textContent = "›"; }
     group.querySelectorAll(".app-sidebar__subitem").forEach((button) => {
       const id = Object.keys(meta).find((key) => button.dataset.appRoute?.endsWith(`/${key}`));
       if (!id) return;
