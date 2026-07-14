@@ -4302,7 +4302,7 @@ function initAppShell() {
   const saveState = (next) => localStorage.setItem(stateKey, JSON.stringify({ ...stored(), ...next }));
   const mediaStudioItems = [
     { id: "photo-editor", icon: "✎", title: "Photo Editor", group: "Biên tập" },
-    { id: "video-editor", icon: "▶", title: "Video Editor", group: "Biên tập" },
+    { id: "video-editor", icon: "▶", title: "Video Editor", group: "Biên tập", description: "Dựng, màu, VFX, âm thanh và xuất bản" },
     { id: "background-remover", icon: "✂", title: "Background Remover", group: "Biên tập" },
     { id: "collage", icon: "▦", title: "Collage Maker", group: "Biên tập" },
     { id: "inspector", icon: "⌕", title: "Image Inspector", group: "Biên tập" },

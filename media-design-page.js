@@ -4,7 +4,7 @@
   const STORAGE_KEY = "hh.media-design.page.v1";
   const TOOLS = [
     { id: "photo-editor", icon: "✎", name: "Photo Editor", group: "Biên tập nâng cao", code: "PHOTO", description: "Chỉnh sửa ảnh nhiều lớp như một Photoshop thu gọn ngay trong trình duyệt.", caps: ["Layers", "Blend & filters", "Undo · Redo", "High-res export"] },
-    { id: "video-editor", icon: "▶", name: "Video Editor", group: "Biên tập nâng cao", code: "VIDEO", description: "Biên tập video nhiều track với Program Monitor, timeline, title, audio và xuất WebM.", caps: ["Multi-track timeline", "Trim · Split", "Titles & markers", "WebM export"] },
+    { id: "video-editor", icon: "▶", name: "Video Editor", group: "Biên tập nâng cao", code: "RESOLVE", description: "Studio hậu kỳ tiếng Việt với Media, Cut, Edit, Fusion, Color, Fairlight và Deliver.", caps: ["Timeline nhiều rãnh", "Color & scopes", "Fusion nodes", "Fairlight mixer"] },
     { id: "background-remover", icon: "✂", name: "Background Remover", group: "Biên tập nâng cao", code: "CUT", description: "Xóa nền theo màu, lấy mẫu pixel và làm mềm đường biên.", caps: ["Color key", "Edge feather", "PNG alpha"] },
     { id: "collage", icon: "▦", name: "Collage Maker", group: "Biên tập nâng cao", code: "COL", description: "Ghép nhiều ảnh theo lưới, ảnh nổi bật hoặc dải ngang.", caps: ["12 images", "Smart cover", "High-res"] },
     { id: "inspector", icon: "⌕", name: "Image Inspector", group: "Biên tập nâng cao", code: "META", description: "Đọc EXIF, SHA-256, màu đại diện và xóa metadata.", caps: ["EXIF", "SHA-256", "Strip metadata"] },
