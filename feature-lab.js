@@ -5,23 +5,8 @@
     "Platform": ["Global Search", "Command Palette++", "Dark Light Auto Mode", "Theme Color Switcher", "Realtime Notification", "Loading Skeleton", "Page Progress Bar", "AI Chat Assistant", "Voice Search", "Speech To Text", "Text To Speech", "History Manager", "Favorite Manager", "Export Data", "Import Data", "PWA", "Offline Mode", "Install App", "Keyboard Shortcut System", "Settings Center"],
     "AI & Workspace": ["AI Prompt Library", "AI Prompt Optimizer", "Workspace Tabs", "Drag Drop Dashboard", "Widget Marketplace", "Plugin System", "User Preferences Center", "Auto Save", "Version History", "File Explorer", "Monaco Code Editor", "AI Image Prompt Generator", "OCR"],
     "Developer": ["Markdown Editor", "JSON Viewer", "API Tester", "Regex Playground", "Code Viewer", "Terminal Simulator", "Git Cheat Sheet", "GitHub Integration", "Console Log Viewer", "Error Monitor", "Dev Utilities", "Text Compare", "JSON Formatter", "UUID Generator", "Hash Generator", "Base64 Encoder", "Timestamp Converter"],
-    "Media & Design": ["Image Compressor", "Image Converter", "Image Toolkit", "PDF Toolkit", "QR Toolkit", "Color Studio", "Typography Studio", "Icon Browser", "SVG Editor", "Gradient Generator", "Color Picker"],
     "Productivity": ["Productivity Dashboard", "Notes", "Todo", "Kanban", "Pomodoro", "Stopwatch", "Countdown", "Calendar", "Reminder", "Calculator", "Unit Converter", "Lorem Ipsum", "Password Toolkit", "Clipboard Manager", "Clipboard History", "Activity Timeline", "Recent Files", "Pinned Tools", "Bookmark", "Floating Quick Actions", "Focus Mode"],
     "System & UX": ["Multi-language", "Language Switcher", "Weather Widget", "Clock", "System Status", "Network Speed", "FPS Monitor", "Memory Usage", "Storage Usage", "Analytics Dashboard", "Notification Center", "Smart Search", "Context Menu", "Floating Toolbar", "QR Scanner"]
-  };
-
-  const mediaCatalog = {
-    "Image Compressor": ["01", "Nén batch, target size", "IMG"],
-    "Image Converter": ["02", "Đổi định dạng hàng loạt", "IMG"],
-    "Image Toolkit": ["03", "Transform và bộ lọc", "IMG"],
-    "PDF Toolkit": ["04", "Gộp, tách, watermark", "DOC"],
-    "QR Toolkit": ["05", "Tạo và quét mã QR", "QR"],
-    "Color Studio": ["06", "Palette và WCAG", "CLR"],
-    "Typography Studio": ["07", "Type scale và CSS", "TYP"],
-    "Icon Browser": ["08", "Lucide SVG và PNG", "ICO"],
-    "SVG Editor": ["09", "Vector live workspace", "SVG"],
-    "Gradient Generator": ["10", "4 stops, 3 chế độ", "GRD"],
-    "Color Picker": ["11", "Pixel, HSL và contrast", "PCK"]
   };
 
   const all = Object.values(groups).flat();
@@ -31,11 +16,7 @@
   const read = () => { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; } };
   const write = value => localStorage.setItem(key, JSON.stringify(value));
   const slug = value => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const catalogItem = (group, name) => {
-    const media = mediaCatalog[name];
-    if (!media) return `<button class="feature-lab__item" type="button" data-lab-feature="${escapeHtml(name)}"><b>${escapeHtml(name)}</b><span>Mở workspace</span></button>`;
-    return `<button class="feature-lab__item feature-lab__item--media" type="button" data-lab-feature="${escapeHtml(name)}"><span class="feature-lab__item-index">${media[0]}</span><span class="feature-lab__item-copy"><b>${escapeHtml(name)}</b><small>${escapeHtml(media[1])}</small></span><span class="feature-lab__item-engine">${media[2]} · LOCAL</span></button>`;
-  };
+  const catalogItem = (_group, name) => `<button class="feature-lab__item" type="button" data-lab-feature="${escapeHtml(name)}"><b>${escapeHtml(name)}</b><span>Mở workspace</span></button>`;
 
   document.body.insertAdjacentHTML("beforeend", `
     <button class="feature-lab-open" type="button" title="Mở toàn bộ công cụ">ALL TOOLS</button>
@@ -48,7 +29,7 @@
         </header>
         <div class="feature-lab__body">
           <main class="feature-lab__catalog">
-            ${Object.entries(groups).map(([group, items]) => `<section class="feature-lab__group${group === "Media & Design" ? " feature-lab__group--media" : ""}" data-lab-group="${escapeHtml(group)}"><h3><span>${escapeHtml(group)}</span>${group === "Media & Design" ? `<b>11 CREATIVE ENGINES</b>` : ""}</h3><div class="feature-lab__grid">${items.map(name => catalogItem(group, name)).join("")}</div></section>`).join("")}
+            ${Object.entries(groups).map(([group, items]) => `<section class="feature-lab__group" data-lab-group="${escapeHtml(group)}"><h3><span>${escapeHtml(group)}</span></h3><div class="feature-lab__grid">${items.map(name => catalogItem(group, name)).join("")}</div></section>`).join("")}
           </main>
           <aside class="feature-lab__work" data-lab-work></aside>
         </div>

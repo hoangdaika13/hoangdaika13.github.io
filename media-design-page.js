@@ -1,0 +1,203 @@
+(() => {
+  "use strict";
+
+  const STORAGE_KEY = "hh.media-design.page.v1";
+  const TOOLS = [
+    { id: "compress", number: "01", name: "Image Compressor", group: "Hình ảnh", code: "IMG", description: "Nén nhiều ảnh, đặt dung lượng đích và tối ưu WebP/JPEG.", caps: ["Batch 20 ảnh", "Target size", "So sánh trước/sau"] },
+    { id: "convert", number: "02", name: "Image Converter", group: "Hình ảnh", code: "IMG", description: "Đổi định dạng hàng loạt, đổi kích thước và giữ chất lượng.", caps: ["PNG · JPEG · WebP", "Resize", "Tải hàng loạt"] },
+    { id: "image", number: "03", name: "Image Toolkit", group: "Hình ảnh", code: "IMG", description: "Cắt, xoay, lật, cân chỉnh và áp dụng bộ lọc trực tiếp.", caps: ["Transform", "Filter presets", "Canvas preview"] },
+    { id: "pdf", number: "04", name: "PDF Toolkit", group: "Tài liệu", code: "DOC", description: "Gộp, tách, xoay, watermark và chỉnh metadata PDF.", caps: ["Merge · Split", "Watermark", "Metadata"] },
+    { id: "qr", number: "05", name: "QR Toolkit", group: "Tài liệu", code: "QR", description: "Tạo QR tùy chỉnh hoặc quét QR từ ảnh trên thiết bị.", caps: ["Live QR", "Scan image", "PNG export"] },
+    { id: "color", number: "06", name: "Color Studio", group: "Thương hiệu", code: "CLR", description: "Tạo bảng màu, trích màu từ ảnh và kiểm tra WCAG.", caps: ["Palette", "WCAG", "Image extraction"] },
+    { id: "type", number: "07", name: "Typography Studio", group: "Thương hiệu", code: "TYP", description: "Thiết kế type scale, xem trực tiếp và xuất CSS sẵn dùng.", caps: ["Type scale", "Live preview", "CSS export"] },
+    { id: "icon", number: "08", name: "Icon Browser", group: "Tài nguyên", code: "ICO", description: "Tìm biểu tượng Lucide và xuất SVG hoặc PNG theo kích thước.", caps: ["Lucide", "Search", "SVG · PNG"] },
+    { id: "svg", number: "09", name: "SVG Editor", group: "Tài nguyên", code: "SVG", description: "Chỉnh mã vector, xem trước tức thì và xuất tệp an toàn.", caps: ["Live editor", "Sanitize", "Export"] },
+    { id: "gradient", number: "10", name: "Gradient Generator", group: "Thương hiệu", code: "GRD", description: "Tạo gradient nhiều điểm màu cho CSS và ảnh PNG.", caps: ["4 color stops", "3 modes", "CSS · PNG"] },
+    { id: "picker", number: "11", name: "Color Picker", group: "Hình ảnh", code: "PCK", description: "Lấy màu pixel, chuyển HEX/RGB/HSL và đo độ tương phản.", caps: ["EyeDropper", "Pixel sample", "Contrast"] }
+  ];
+  const GROUPS = ["Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên"];
+  const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const loadState = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      return { active: saved.active || TOOLS[0].name, favorites: Array.isArray(saved.favorites) ? saved.favorites : [], recent: Array.isArray(saved.recent) ? saved.recent : [], usage: saved.usage || {} };
+    } catch {
+      return { active: TOOLS[0].name, favorites: [], recent: [], usage: {} };
+    }
+  };
+  let pageState = loadState();
+  let activeRoot = null;
+  let activeFilter = "all";
+
+  const saveState = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(pageState));
+  const toolByName = (name) => TOOLS.find((tool) => tool.name === name) || TOOLS[0];
+  const visibleTools = (query = "") => {
+    const term = normalize(query);
+    return TOOLS.filter((tool) => {
+      const matchesFilter = activeFilter === "favorites" ? pageState.favorites.includes(tool.name) : activeFilter === "recent" ? pageState.recent.includes(tool.name) : true;
+      return matchesFilter && (!term || normalize(`${tool.name} ${tool.group} ${tool.description} ${tool.caps.join(" ")}`).includes(term));
+    });
+  };
+  const toolItem = (tool) => `<div class="mdp-tool-row ${pageState.active === tool.name ? "is-active" : ""}" data-mdp-tool-row="${escapeHtml(tool.name)}" style="--tool-index:${Number(tool.number)}">
+    <button type="button" class="mdp-tool" data-mdp-tool="${escapeHtml(tool.name)}" ${pageState.active === tool.name ? 'aria-current="page"' : ""}>
+      <span class="mdp-tool__number">${tool.number}</span><span class="mdp-tool__copy"><strong>${escapeHtml(tool.name)}</strong><small>${escapeHtml(tool.description)}</small></span><i>${tool.code}</i>
+    </button>
+    <button type="button" class="mdp-tool__favorite ${pageState.favorites.includes(tool.name) ? "is-active" : ""}" data-mdp-favorite="${escapeHtml(tool.name)}" aria-label="${pageState.favorites.includes(tool.name) ? "Bỏ ghim" : "Ghim"} ${escapeHtml(tool.name)}" title="Ghim công cụ">☆</button>
+  </div>`;
+  const catalogMarkup = (query = "") => {
+    const visible = visibleTools(query);
+    if (!visible.length) return '<div class="mdp-empty"><strong>Không tìm thấy công cụ</strong><p>Thử từ khóa khác hoặc chuyển về Tất cả.</p></div>';
+    return GROUPS.map((group) => {
+      const items = visible.filter((tool) => tool.group === group);
+      return items.length ? `<section class="mdp-tool-group"><header><span>${group}</span><b>${items.length}</b></header>${items.map(toolItem).join("")}</section>` : "";
+    }).join("");
+  };
+  const contextMarkup = (tool) => `<div class="mdp-context__identity"><span>${tool.number}</span><div><small>${tool.group} · ${tool.code} LOCAL</small><h2>${escapeHtml(tool.name)}</h2><p>${escapeHtml(tool.description)}</p></div></div><div class="mdp-context__caps">${tool.caps.map((cap) => `<span>${escapeHtml(cap)}</span>`).join("")}</div><button type="button" class="mdp-context__favorite ${pageState.favorites.includes(tool.name) ? "is-active" : ""}" data-mdp-favorite="${escapeHtml(tool.name)}" title="Ghim công cụ" aria-label="Ghim ${escapeHtml(tool.name)}">☆</button>`;
+
+  const renderCatalog = (root) => {
+    const search = root.querySelector("[data-mdp-search]");
+    root.querySelector("[data-mdp-catalog]").innerHTML = catalogMarkup(search?.value || "");
+    root.querySelectorAll("[data-mdp-filter]").forEach((button) => button.classList.toggle("is-active", button.dataset.mdpFilter === activeFilter));
+    const favoriteCount = root.querySelector("[data-mdp-favorite-count]");
+    if (favoriteCount) favoriteCount.textContent = pageState.favorites.length;
+    const recentCount = root.querySelector("[data-mdp-recent-count]");
+    if (recentCount) recentCount.textContent = pageState.recent.length;
+  };
+  const renderContext = (root, tool) => {
+    root.querySelector("[data-mdp-context]").innerHTML = contextMarkup(tool);
+    const usage = root.querySelector("[data-mdp-usage]");
+    if (usage) usage.textContent = `${pageState.usage[tool.name] || 1} phiên`;
+  };
+  const selectTool = (root, name, focus = false) => {
+    const tool = toolByName(name);
+    window.HHMediaDesign?.cleanup?.();
+    pageState.active = tool.name;
+    pageState.recent = [tool.name, ...pageState.recent.filter((item) => item !== tool.name)].slice(0, 8);
+    pageState.usage[tool.name] = (pageState.usage[tool.name] || 0) + 1;
+    saveState();
+    renderCatalog(root);
+    renderContext(root, tool);
+    const work = root.querySelector("[data-mdp-work]");
+    if (window.HHMediaDesign?.supports?.(tool.name)) window.HHMediaDesign.render(work, tool.name);
+    else work.innerHTML = '<div class="mdp-engine-error"><strong>Engine chưa sẵn sàng</strong><p>Hãy tải lại trang để khởi động Media Engine.</p><button type="button" data-mdp-retry>Thử lại</button></div>';
+    root.querySelector("[data-mdp-current]").textContent = tool.name;
+    root.querySelector("[data-mdp-last-used]").textContent = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    if (focus) root.querySelector(`[data-mdp-tool="${CSS.escape(tool.name)}"]`)?.focus();
+  };
+  const downloadPreferences = () => {
+    const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), ...pageState }, null, 2)], { type: "application/json" });
+    const anchor = document.createElement("a");
+    anchor.href = URL.createObjectURL(blob);
+    anchor.download = "hh-media-design-preferences.json";
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(anchor.href), 1000);
+    showNotice(activeRoot, "Đã xuất cấu hình Media & Design.", "success");
+  };
+  const showNotice = (root, message, state = "success") => {
+    const notice = root?.querySelector("[data-mdp-notice]");
+    if (!notice) return;
+    notice.textContent = message;
+    notice.dataset.state = state;
+    notice.hidden = false;
+    clearTimeout(showNotice.timer);
+    showNotice.timer = setTimeout(() => { notice.hidden = true; }, 3200);
+  };
+  const importPreferences = async (file, root) => {
+    const value = JSON.parse(await file.text());
+    pageState = {
+      active: toolByName(value.active).name,
+      favorites: Array.isArray(value.favorites) ? value.favorites.filter((name) => TOOLS.some((tool) => tool.name === name)) : [],
+      recent: Array.isArray(value.recent) ? value.recent.filter((name) => TOOLS.some((tool) => tool.name === name)).slice(0, 8) : [],
+      usage: value.usage && typeof value.usage === "object" ? value.usage : {}
+    };
+    saveState();
+    selectTool(root, pageState.active);
+    showNotice(root, "Đã nhập cấu hình và khôi phục workspace.", "success");
+  };
+
+  const mount = (host) => {
+    if (!host) return;
+    window.HHMediaDesign?.cleanup?.();
+    host.innerHTML = `<section class="media-design-page" data-media-design-page>
+      <header class="mdp-overview">
+        <div class="mdp-overview__copy"><span class="mdp-eyebrow"><i></i> HH CREATIVE STUDIO</span><h2>Một workspace. Mọi công cụ sáng tạo.</h2><p>Xử lý tệp trực tiếp trên trình duyệt, không tải nội dung cá nhân lên máy chủ.</p></div>
+        <div class="mdp-overview__status"><span><i class="is-online"></i> Engine sẵn sàng</span><strong>11</strong><small>công cụ cục bộ</small></div>
+      </header>
+      <div class="mdp-metrics" aria-label="Tổng quan Media & Design">
+        <div><span>Engine</span><strong>11 / 11</strong><i style="--value:100%"></i></div>
+        <div><span>Yêu thích</span><strong data-mdp-favorite-count>${pageState.favorites.length}</strong><i style="--value:${Math.min(pageState.favorites.length / TOOLS.length * 100, 100)}%"></i></div>
+        <div><span>Gần đây</span><strong data-mdp-recent-count>${pageState.recent.length}</strong><i style="--value:${Math.min(pageState.recent.length / 8 * 100, 100)}%"></i></div>
+        <div><span>Phiên hiện tại</span><strong data-mdp-usage>1 phiên</strong><i style="--value:64%"></i></div>
+      </div>
+      <div class="mdp-shell">
+        <aside class="mdp-sidebar" aria-label="Danh mục công cụ Media & Design">
+          <div class="mdp-sidebar__top"><div><small>THƯ VIỆN</small><strong>Creative engines</strong></div><span>LOCAL</span></div>
+          <label class="mdp-search"><span>⌕</span><input type="search" data-mdp-search placeholder="Tìm ảnh, PDF, QR, màu..." autocomplete="off"><kbd>/</kbd></label>
+          <div class="mdp-filters" role="tablist" aria-label="Lọc công cụ"><button type="button" class="is-active" data-mdp-filter="all">Tất cả</button><button type="button" data-mdp-filter="favorites">Đã ghim</button><button type="button" data-mdp-filter="recent">Gần đây</button></div>
+          <div class="mdp-catalog" data-mdp-catalog>${catalogMarkup()}</div>
+          <footer class="mdp-sidebar__footer"><button type="button" data-mdp-export title="Xuất cấu hình">Xuất cấu hình</button><label title="Nhập cấu hình">Nhập cấu hình<input type="file" accept="application/json" data-mdp-import></label></footer>
+        </aside>
+        <main class="mdp-main">
+          <header class="mdp-context" data-mdp-context>${contextMarkup(toolByName(pageState.active))}</header>
+          <div class="mdp-session"><span><i></i> Xử lý trên thiết bị</span><span>Đang mở: <b data-mdp-current>${escapeHtml(pageState.active)}</b></span><span>Cập nhật <b data-mdp-last-used>${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</b></span><span class="mdp-session__shortcut"><kbd>Ctrl</kbd><kbd>1–9</kbd> đổi tool</span></div>
+          <div class="feature-lab__work media-design-page__work" data-mdp-work></div>
+        </main>
+      </div>
+      <div class="mdp-notice" data-mdp-notice role="status" aria-live="polite" hidden></div>
+    </section>`;
+    const root = host.querySelector("[data-media-design-page]");
+    activeRoot = root;
+    selectTool(root, pageState.active);
+
+    root.addEventListener("click", (event) => {
+      const favorite = event.target.closest("[data-mdp-favorite]");
+      if (favorite) {
+        const name = favorite.dataset.mdpFavorite;
+        pageState.favorites = pageState.favorites.includes(name) ? pageState.favorites.filter((item) => item !== name) : [name, ...pageState.favorites];
+        saveState();
+        renderCatalog(root);
+        renderContext(root, toolByName(pageState.active));
+        return;
+      }
+      const tool = event.target.closest("[data-mdp-tool]");
+      if (tool) return selectTool(root, tool.dataset.mdpTool);
+      const filter = event.target.closest("[data-mdp-filter]");
+      if (filter) { activeFilter = filter.dataset.mdpFilter; renderCatalog(root); return; }
+      if (event.target.closest("[data-mdp-export]")) return downloadPreferences();
+      if (event.target.closest("[data-mdp-retry]")) return selectTool(root, pageState.active);
+      window.HHMediaDesign?.handleClick?.(event, root.querySelector("[data-mdp-work]"), pageState.active);
+    });
+    root.addEventListener("input", (event) => {
+      if (event.target.matches("[data-mdp-search]")) return renderCatalog(root);
+      window.HHMediaDesign?.handleInput?.(event, root.querySelector("[data-mdp-work]"), pageState.active);
+    });
+    root.addEventListener("change", (event) => {
+      if (event.target.matches("[data-mdp-import]")) {
+        const file = event.target.files?.[0];
+        if (file) importPreferences(file, root).catch(() => showNotice(root, "Tệp cấu hình không hợp lệ.", "error"));
+        return;
+      }
+      window.HHMediaDesign?.handleChange?.(event, root.querySelector("[data-mdp-work]"), pageState.active);
+    });
+  };
+
+  addEventListener("keydown", (event) => {
+    if (!activeRoot?.isConnected || !location.hash.includes("/media-design")) return;
+    if (event.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")) {
+      event.preventDefault();
+      activeRoot.querySelector("[data-mdp-search]")?.focus();
+    }
+    if (event.ctrlKey && /^[1-9]$/.test(event.key)) {
+      event.preventDefault();
+      selectTool(activeRoot, TOOLS[Number(event.key) - 1].name, true);
+    }
+  });
+  addEventListener("hashchange", () => {
+    if (!location.hash.includes("/media-design")) window.HHMediaDesign?.cleanup?.();
+  });
+
+  window.HHMediaDesignPage = { mount, tools: TOOLS };
+  const pendingHost = document.querySelector("[data-media-design-page-host]");
+  if (pendingHost) mount(pendingHost);
+})();
