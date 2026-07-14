@@ -100,7 +100,12 @@
     const daily = weather.daily || {};
     const info = weatherInfo(current.weather_code, Boolean(current.is_day));
     const aqi = aqiInfo(air.current?.us_aqi);
-    currentNode.innerHTML = `<div class="dashboard-weather-main"><span class="dashboard-weather-icon">${info.icon}</span><div><h4>${escapeHtml(location.name)}</h4><strong>${Math.round(current.temperature_2m ?? 0)}°C</strong><small>${escapeHtml(info.label)} · Cảm giác ${Math.round(current.apparent_temperature ?? 0)}° · Gió ${Math.round(current.wind_speed_10m ?? 0)} km/h · Ẩm ${Math.round(current.relative_humidity_2m ?? 0)}%</small></div></div><div class="dashboard-aqi" style="--aqi-color:${aqi.color}"><span>CHẤT LƯỢNG KHÔNG KHÍ</span><strong>AQI ${Math.round(air.current?.us_aqi ?? 0)}</strong><small>${escapeHtml(aqi.label)} · PM2.5 ${Math.round(air.current?.pm2_5 ?? 0)} · PM10 ${Math.round(air.current?.pm10 ?? 0)} µg/m³</small></div>`;
+    const sunrise = daily.sunrise?.[0] ? new Date(daily.sunrise[0]).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "--";
+    const sunset = daily.sunset?.[0] ? new Date(daily.sunset[0]).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "--";
+    const moonAge = ((Date.now() / 86400000 - 6.75) % 29.53059 + 29.53059) % 29.53059;
+    const moon = moonAge < 1.85 ? "Trăng mới" : moonAge < 7.38 ? "Lưỡi liềm" : moonAge < 9.23 ? "Bán nguyệt" : moonAge < 14.77 ? "Trăng khuyết" : moonAge < 16.61 ? "Trăng tròn" : moonAge < 22.15 ? "Khuyết dần" : moonAge < 23.99 ? "Hạ huyền" : "Lưỡi liềm cuối";
+    const uv = Math.round(daily.uv_index_max?.[0] ?? 0);
+    currentNode.innerHTML = `<div class="dashboard-weather-main"><span class="dashboard-weather-icon">${info.icon}</span><div><h4>${escapeHtml(location.name)}</h4><strong>${Math.round(current.temperature_2m ?? 0)}°C</strong><small>${escapeHtml(info.label)} · Cảm giác ${Math.round(current.apparent_temperature ?? 0)}°</small></div></div><div class="dashboard-aqi" style="--aqi-color:${aqi.color}"><span>CHẤT LƯỢNG KHÔNG KHÍ</span><strong>AQI ${Math.round(air.current?.us_aqi ?? 0)}</strong><small>${escapeHtml(aqi.label)} · PM2.5 ${Math.round(air.current?.pm2_5 ?? 0)} · PM10 ${Math.round(air.current?.pm10 ?? 0)} µg/m³</small></div><div class="dashboard-weather-details"><span><b>${Math.round(current.relative_humidity_2m ?? 0)}%</b>Độ ẩm</span><span><b>${Math.round(current.wind_speed_10m ?? 0)} km/h</b>Gió</span><span><b>${Math.round(current.surface_pressure ?? 0)} hPa</b>Áp suất</span><span><b>${uv}</b>UV cao nhất</span><span><b>${sunrise}</b>Bình minh</span><span><b>${sunset}</b>Hoàng hôn</span><span><b>${escapeHtml(moon)}</b>Pha Mặt Trăng</span></div>`;
     const days = Array.isArray(daily.time) ? daily.time.slice(0, 7) : [];
     forecastNode.innerHTML = days.map((date, index) => {
       const dayInfo = weatherInfo(daily.weather_code?.[index], true);
@@ -131,7 +136,7 @@
     const current = byId("dashboardWeatherCurrent");
     if (current) current.innerHTML = `<div class="dashboard-widget-skeleton"></div>`;
     const weatherUrl = new URL("https://api.open-meteo.com/v1/forecast");
-    weatherUrl.search = new URLSearchParams({ latitude: location.latitude, longitude: location.longitude, current: "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m", daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset", timezone: "auto", forecast_days: "7" });
+    weatherUrl.search = new URLSearchParams({ latitude: location.latitude, longitude: location.longitude, current: "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,surface_pressure", daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max", timezone: "auto", forecast_days: "7" });
     const airUrl = new URL("https://air-quality-api.open-meteo.com/v1/air-quality");
     airUrl.search = new URLSearchParams({ latitude: location.latitude, longitude: location.longitude, current: "us_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,ozone", timezone: "auto", forecast_days: "7" });
     try {
@@ -173,25 +178,41 @@
 
   function defaultNotes() {
     return [
-      { id: crypto.randomUUID?.() || `note-${Date.now()}-1`, text: "Ý tưởng hôm nay: hoàn thiện một tính năng thật tốt.", color: noteColors[0], x: 22, y: 26, rotate: -1.2, updatedAt: Date.now() },
-      { id: crypto.randomUUID?.() || `note-${Date.now()}-2`, text: "Việc cần làm\n• Kiểm tra dự án\n• Trả lời tin nhắn", color: noteColors[1], x: 266, y: 72, rotate: 1.1, updatedAt: Date.now() },
-      { id: crypto.randomUUID?.() || `note-${Date.now()}-3`, text: "Prompt hay:\nVai trò + mục tiêu + đầu vào + định dạng kết quả.", color: noteColors[2], x: 510, y: 32, rotate: -.5, updatedAt: Date.now() }
+      { id: crypto.randomUUID?.() || `note-${Date.now()}-1`, text: "# Ý tưởng hôm nay\nHoàn thiện một tính năng thật tốt.", color: noteColors[0], x: 22, y: 26, rotate: -1.2, pinned: true, tags: "ý tưởng", reminder: "", updatedAt: Date.now() },
+      { id: crypto.randomUUID?.() || `note-${Date.now()}-2`, text: "## Việc cần làm\n- [ ] Kiểm tra dự án\n- [ ] Trả lời tin nhắn", color: noteColors[1], x: 266, y: 72, rotate: 1.1, pinned: false, tags: "công việc", reminder: "", updatedAt: Date.now() },
+      { id: crypto.randomUUID?.() || `note-${Date.now()}-3`, text: "**Prompt hay:**\nVai trò + mục tiêu + đầu vào + định dạng kết quả.", color: noteColors[2], x: 510, y: 32, rotate: -.5, pinned: false, tags: "ai,prompt", reminder: "", updatedAt: Date.now() }
     ];
   }
 
   let notes = [];
   function saveNotes() { writeJson(NOTES_KEY, notes); }
 
+  function markdown(text) {
+    return escapeHtml(text)
+      .replace(/^###\s+(.+)$/gm, "<h6>$1</h6>")
+      .replace(/^##\s+(.+)$/gm, "<h5>$1</h5>")
+      .replace(/^#\s+(.+)$/gm, "<h4>$1</h4>")
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/^- \[x\]\s+(.+)$/gim, '<label><input type="checkbox" checked disabled> $1</label>')
+      .replace(/^- \[ \]\s+(.+)$/gim, '<label><input type="checkbox" disabled> $1</label>')
+      .replace(/^-\s+(.+)$/gm, "<span>• $1</span>")
+      .replace(/\n/g, "<br>");
+  }
+
   function renderNotes() {
     const board = byId("dashboardStickyBoard");
     if (!board) return;
-    board.innerHTML = notes.map((note, index) => `<article class="dashboard-sticky-note" data-note-id="${escapeHtml(note.id)}" style="--note-color:${escapeHtml(note.color)};--note-rotate:${Number(note.rotate || 0)}deg;left:${Math.max(0, Number(note.x) || 0)}px;top:${Math.max(0, Number(note.y) || 0)}px"><header data-note-drag><span>NOTE ${String(index + 1).padStart(2, "0")}</span><div><button type="button" data-note-color title="Đổi màu" aria-label="Đổi màu">◐</button><button type="button" data-note-delete title="Xóa" aria-label="Xóa ghi chú">×</button></div></header><textarea aria-label="Nội dung ghi chú" placeholder="Viết điều gì đó...">${escapeHtml(note.text)}</textarea><footer>${new Date(note.updatedAt || Date.now()).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}</footer></article>`).join("");
+    const ordered = [...notes].sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
+    board.innerHTML = ordered.map((note, index) => {
+      const words = note.text.trim() ? note.text.trim().split(/\s+/).length : 0;
+      return `<article class="dashboard-sticky-note ${note.pinned ? "is-pinned" : ""}" data-note-id="${escapeHtml(note.id)}" data-note-search="${escapeHtml(`${note.text} ${note.tags || ""}`.toLowerCase())}" style="--note-color:${escapeHtml(note.color)};--note-rotate:${Number(note.rotate || 0)}deg;left:${Math.max(0, Number(note.x) || 0)}px;top:${Math.max(0, Number(note.y) || 0)}px"><header data-note-drag><span>${note.pinned ? "PIN" : "NOTE"} ${String(index + 1).padStart(2, "0")}</span><div><button type="button" data-note-checklist title="Thêm checklist" aria-label="Thêm checklist">☑</button><button type="button" data-note-preview title="Xem Markdown" aria-label="Xem Markdown">M</button><button type="button" data-note-pin title="Ghim" aria-label="Ghim ghi chú">${note.pinned ? "★" : "☆"}</button><button type="button" data-note-color title="Đổi màu" aria-label="Đổi màu">◐</button><button type="button" data-note-delete title="Xóa" aria-label="Xóa ghi chú">×</button></div></header><textarea aria-label="Nội dung ghi chú" placeholder="Markdown, checklist hoặc ý tưởng..." ${note.preview ? "hidden" : ""}>${escapeHtml(note.text)}</textarea><div class="dashboard-note-preview" ${note.preview ? "" : "hidden"}>${markdown(note.text)}</div><footer><div><span>${words} từ · ${note.text.length} ký tự</span><span>${new Date(note.updatedAt || Date.now()).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}</span></div><details><summary>Tag & nhắc lịch</summary><label>Tag<input data-note-tags value="${escapeHtml(note.tags || "")}" placeholder="ý tưởng, công việc"></label><label>Nhắc<input data-note-reminder type="datetime-local" value="${escapeHtml(note.reminder || "")}"></label></details></footer></article>`;
+    }).join("");
   }
 
   function addNote() {
     const board = byId("dashboardStickyBoard");
     const offset = (notes.length * 37) % Math.max(80, (board?.clientWidth || 700) - 240);
-    notes.push({ id: crypto.randomUUID?.() || `note-${Date.now()}`, text: "", color: noteColors[notes.length % noteColors.length], x: 20 + offset, y: 20 + ((notes.length * 43) % 110), rotate: (notes.length % 3 - 1) * .8, updatedAt: Date.now() });
+    notes.push({ id: crypto.randomUUID?.() || `note-${Date.now()}`, text: "", color: noteColors[notes.length % noteColors.length], x: 20 + offset, y: 20 + ((notes.length * 43) % 110), rotate: (notes.length % 3 - 1) * .8, pinned: false, tags: "", reminder: "", preview: false, updatedAt: Date.now() });
     saveNotes();
     renderNotes();
     requestAnimationFrame(() => byId("dashboardStickyBoard")?.querySelector(`[data-note-id="${notes.at(-1).id}"] textarea`)?.focus());
@@ -206,10 +227,12 @@
     byId("dashboardAddSticky")?.addEventListener("click", addNote);
     board.addEventListener("input", (event) => {
       const card = event.target.closest("[data-note-id]");
-      if (!card || event.target.tagName !== "TEXTAREA") return;
+      if (!card) return;
       const note = notes.find((item) => item.id === card.dataset.noteId);
       if (!note) return;
-      note.text = event.target.value;
+      if (event.target.tagName === "TEXTAREA") note.text = event.target.value;
+      if (event.target.matches("[data-note-tags]")) note.tags = event.target.value;
+      if (event.target.matches("[data-note-reminder]")) note.reminder = event.target.value;
       note.updatedAt = Date.now();
       saveNotes();
     });
@@ -220,7 +243,48 @@
       if (index < 0) return;
       if (event.target.closest("[data-note-delete]")) { notes.splice(index, 1); saveNotes(); renderNotes(); }
       if (event.target.closest("[data-note-color]")) { notes[index].color = noteColors[(noteColors.indexOf(notes[index].color) + 1) % noteColors.length]; notes[index].updatedAt = Date.now(); saveNotes(); renderNotes(); }
+      if (event.target.closest("[data-note-pin]")) { notes[index].pinned = !notes[index].pinned; notes[index].updatedAt = Date.now(); saveNotes(); renderNotes(); }
+      if (event.target.closest("[data-note-preview]")) { notes[index].preview = !notes[index].preview; saveNotes(); renderNotes(); }
+      if (event.target.closest("[data-note-checklist]")) { notes[index].text += `${notes[index].text ? "\n" : ""}- [ ] `; notes[index].preview = false; notes[index].updatedAt = Date.now(); saveNotes(); renderNotes(); requestAnimationFrame(() => board.querySelector(`[data-note-id="${notes[index].id}"] textarea`)?.focus()); }
     });
+
+    byId("dashboardNoteSearch")?.addEventListener("input", (event) => {
+      const query = event.target.value.trim().toLowerCase();
+      board.querySelectorAll("[data-note-id]").forEach((card) => { card.hidden = Boolean(query && !card.dataset.noteSearch.includes(query)); });
+    });
+    byId("dashboardNoteExport")?.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), notes }, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `hh-sticky-notes-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
+    byId("dashboardNoteImport")?.addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      try {
+        const payload = JSON.parse(await file.text());
+        if (!Array.isArray(payload.notes)) throw new Error();
+        notes = payload.notes.filter((note) => note && typeof note.text === "string").slice(0, 30);
+        saveNotes();
+        renderNotes();
+      } catch { window.dispatchEvent(new CustomEvent("hh:toast", { detail: { title: "Không nhập được ghi chú", message: "Tệp JSON không đúng định dạng HH Sticky Notes." } })); }
+      event.target.value = "";
+    });
+    const checkNoteReminders = () => {
+      let changed = false;
+      notes.forEach((note) => {
+        if (note.reminder && !note.reminded && new Date(note.reminder).getTime() <= Date.now()) {
+          note.reminded = true;
+          changed = true;
+          window.dispatchEvent(new CustomEvent("hh:toast", { detail: { title: "Nhắc ghi chú", message: note.text.split("\n")[0] || "Đến giờ xem lại ghi chú.", icon: "◇" } }));
+        }
+      });
+      if (changed) saveNotes();
+    };
+    checkNoteReminders();
+    setInterval(checkNoteReminders, 30000);
     board.addEventListener("pointerdown", (event) => {
       if (!event.target.closest("[data-note-drag]") || event.target.closest("button") || matchMedia("(max-width: 860px)").matches) return;
       const card = event.target.closest("[data-note-id]");

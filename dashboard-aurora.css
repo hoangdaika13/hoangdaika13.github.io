@@ -204,6 +204,9 @@
   .dashboard-forecast small { color: #7990a6; font-size: 8px; }
   .dashboard-weather-credit { display: flex; justify-content: space-between; gap: 10px; margin-top: 9px; color: #667b91; font-size: 8px; }
   .dashboard-weather-credit a { color: #6edee9; text-decoration: none; }
+  .dashboard-weather-details { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 6px; }
+  .dashboard-weather-details span { display: grid; gap: 3px; min-width: 0; padding: 7px; border: 1px solid rgba(255,255,255,.08); border-radius: 6px; background: rgba(255,255,255,.025); color: #71859a; font-size: 7px; }
+  .dashboard-weather-details b { overflow: hidden; color: #eaf7ff; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 
   .dashboard-realtime-badge { display: flex; align-items: center; gap: 5px; color: #72f0a6; font-size: 8px; }
   .dashboard-realtime-badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
@@ -224,16 +227,29 @@
   .dashboard-sticky { overflow: hidden; }
   .dashboard-sticky-actions { display: flex !important; align-items: center; gap: 10px !important; }
   .dashboard-sticky-actions > span { color: #71859a; font-size: 8px; letter-spacing: 0; }
+  .dashboard-sticky-actions input { width: 120px; height: 34px; padding: 0 9px; border: 1px solid rgba(255,255,255,.12); border-radius: 6px; outline: 0; background: rgba(3,9,17,.6); color: #edf8ff; font: inherit; font-size: 9px; }
+  .dashboard-sticky-actions input:focus { border-color: var(--aurora-cyan); }
+  .dashboard-sticky-actions label { display: grid; place-items: center; min-height: 34px; padding: 0 11px; border: 1px solid rgba(255,255,255,.12); border-radius: 6px; color: #b9c8d8; font-size: 9px; font-weight: 750; cursor: pointer; }
   .dashboard-sticky-actions button { padding: 0 12px; border-color: rgba(255,79,216,.36); border-radius: 6px; color: #ff8de3; cursor: pointer; }
   .dashboard-sticky-board { position: relative; min-height: 330px; overflow: hidden; border: 1px dashed rgba(255,255,255,.11); border-radius: 7px; background: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px), rgba(3,8,16,.26); background-size: 34px 34px; }
-  .dashboard-sticky-note { position: absolute; display: grid; grid-template-rows: auto 1fr auto; width: 210px; min-height: 176px; padding: 12px; border: 1px solid rgba(255,255,255,.34); border-radius: 6px; background: var(--note-color, #fff17a); color: #17151d; box-shadow: 0 15px 32px rgba(0,0,0,.24); transform: rotate(var(--note-rotate, -1deg)); touch-action: none; }
+  .dashboard-sticky-note { position: absolute; display: grid; grid-template-rows: auto 1fr auto; width: 230px; min-height: 205px; padding: 12px; border: 1px solid rgba(255,255,255,.34); border-radius: 6px; background: var(--note-color, #fff17a); color: #17151d; box-shadow: 0 15px 32px rgba(0,0,0,.24); transform: rotate(var(--note-rotate, -1deg)); touch-action: none; }
+  .dashboard-sticky-note.is-pinned { box-shadow: 0 0 0 2px rgba(255,255,255,.38), 0 18px 38px rgba(0,0,0,.26); }
   .dashboard-sticky-note[data-dragging="true"] { z-index: 20; transform: rotate(0) scale(1.025); box-shadow: 0 24px 50px rgba(0,0,0,.35); }
   .dashboard-sticky-note header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px; cursor: grab; }
   .dashboard-sticky-note header span { color: rgba(20,18,27,.65); font-size: 8px; font-weight: 900; letter-spacing: .08em; }
   .dashboard-sticky-note header div { display: flex; gap: 3px; }
   .dashboard-sticky-note button { display: grid; place-items: center; width: 25px; height: 25px; padding: 0; border: 1px solid rgba(20,18,27,.2); border-radius: 5px; background: rgba(255,255,255,.28); color: #211b2a; cursor: pointer; }
   .dashboard-sticky-note textarea { width: 100%; min-height: 95px; padding: 3px; resize: none; border: 0; outline: 0; background: transparent; color: #17151d; font: 650 12px/1.5 "Be Vietnam Pro", sans-serif; }
-  .dashboard-sticky-note footer { color: rgba(20,18,27,.58); font-size: 7px; }
+  .dashboard-note-preview { min-height: 95px; overflow: auto; color: #17151d; font: 650 11px/1.5 "Be Vietnam Pro", sans-serif; }
+  .dashboard-note-preview :where(h4,h5,h6) { margin: 0 0 5px; color: #17151d; font-size: 12px; }
+  .dashboard-note-preview :where(span,label) { display: block; }
+  .dashboard-note-preview input { accent-color: #17151d; }
+  .dashboard-sticky-note footer { display: grid; gap: 5px; color: rgba(20,18,27,.58); font-size: 7px; }
+  .dashboard-sticky-note footer > div { display: flex; justify-content: space-between; gap: 7px; }
+  .dashboard-sticky-note details { border-top: 1px solid rgba(20,18,27,.14); }
+  .dashboard-sticky-note summary { padding-top: 5px; cursor: pointer; font-weight: 800; }
+  .dashboard-sticky-note details label { display: grid; grid-template-columns: 32px 1fr; gap: 5px; align-items: center; margin-top: 4px; }
+  .dashboard-sticky-note details input { min-width: 0; height: 25px; padding: 0 5px; border: 1px solid rgba(20,18,27,.22); border-radius: 4px; background: rgba(255,255,255,.24); color: #17151d; font: inherit; }
 
   .dashboard-widget-skeleton { grid-column: 1 / -1; width: 100%; min-height: 76px; border-radius: 6px; background: linear-gradient(100deg, rgba(255,255,255,.035), rgba(255,255,255,.12), rgba(255,255,255,.035)); background-size: 220% 100%; animation: dashboard-skeleton 1.5s linear infinite; }
   .dashboard-widget-error { grid-column: 1 / -1; display: grid; align-content: center; gap: 5px; min-height: 82px; color: #ff9eaf; }
@@ -262,14 +278,22 @@
     .dashboard-widget-head { align-items: stretch; flex-direction: column; }
     .dashboard-weather-tools form { grid-template-columns: minmax(0,1fr) auto; flex: 1; }
     .dashboard-weather-current { grid-template-columns: 1fr; gap: 10px; }
+    .dashboard-weather-details { grid-template-columns: repeat(4, minmax(0,1fr)); }
     .dashboard-aqi { justify-items: start; text-align: left; }
     .dashboard-device-grid { grid-template-columns: 1fr 1fr; }
     .dashboard-sticky-actions { justify-content: space-between; }
+    .dashboard-sticky-actions input { display: none; }
+  }
+
+  @media (max-width: 520px) {
+    .dashboard-weather-details { grid-template-columns: repeat(2, minmax(0,1fr)); }
   }
 
   @media (max-width: 390px) {
     .dashboard-device-grid { grid-template-columns: 1fr; }
     .dashboard-sticky-actions > span { display: none; }
+    .dashboard-sticky-actions label,
+    .dashboard-sticky-actions button:not(#dashboardAddSticky) { display: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {

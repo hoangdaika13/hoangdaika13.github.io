@@ -4403,12 +4403,13 @@ function initAppShell() {
   };
   const searchItems = () => {
     const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
-    return [...modules, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
+    return [...modules, ...commandCenter, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
     const results = searchItems().filter((item) => !normalized || item.key.toLowerCase().includes(normalized)).slice(0, 12);
-    paletteResults.innerHTML = results.length ? results.map((item, index) => `<button type="button" role="option" aria-selected="${index === 0}" class="${index === 0 ? "is-selected" : ""}" data-app-route="${item.route}"><span>${item.type}</span><div><strong>${item.title}</strong><small>${item.description}</small></div><b>↵</b></button>`).join("") : "<p>Không tìm thấy công cụ hoặc hướng dẫn phù hợp.</p>";
+    paletteResults.innerHTML = results.length ? results.map((item, index) => `<button type="button" role="option" aria-selected="${index === 0}" class="${index === 0 ? "is-selected" : ""}" ${item.action ? `data-command-action="${item.action}"` : `data-app-route="${item.route}"`}><span>${item.type}</span><div><strong>${item.title}</strong><small>${item.description}</small></div><b>↵</b></button>`).join("") : "<p>Không tìm thấy công cụ hoặc hướng dẫn phù hợp.</p>";
   };
   const openPalette = () => { palette.showModal(); renderPalette(); requestAnimationFrame(() => paletteInput.focus()); };
   const closePalette = () => palette.open && palette.close();
@@ -4454,6 +4455,12 @@ function initAppShell() {
   };
 
   document.addEventListener("click", (event) => {
+    const commandAction = event.target.closest("[data-command-action]");
+    if (commandAction) {
+      window.HHCommandCenter?.runAction?.(commandAction.dataset.commandAction);
+      closePalette();
+      return;
+    }
     const routeButton = event.target.closest("[data-app-route]");
     if (routeButton) {
       const route = routeButton.dataset.appRoute;
