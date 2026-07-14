@@ -4366,6 +4366,10 @@ function initAppShell() {
     { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", route: "/support", items: [] }
   ];
   let activeRoute = "";
+  const sidebarGroupState = (() => {
+    try { return JSON.parse(localStorage.getItem("hh.sidebar.groups.v1") || "{}"); } catch { return {}; }
+  })();
+  const saveSidebarGroups = () => localStorage.setItem("hh.sidebar.groups.v1", JSON.stringify(sidebarGroupState));
 
   const moduleList = () => Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
   const moduleById = (id) => moduleList().find((item) => item.id === id);
@@ -4405,7 +4409,8 @@ function initAppShell() {
   const renderNavigation = () => {
     const route = activeRoute;
     navigation.innerHTML = groups.map((group) => {
-      const expanded = route === group.route || route.startsWith(`${group.route}/`);
+      const routeMatches = route === group.route || route.startsWith(`${group.route}/`);
+      const expanded = Object.hasOwn(sidebarGroupState, group.id) ? Boolean(sidebarGroupState[group.id]) : routeMatches;
       const moduleItems = group.items.map((id) => {
         const module = moduleById(id);
         if (!module) return "";
@@ -4574,6 +4579,10 @@ function initAppShell() {
     }
     document.title = `${pageHeader.querySelector("h1").textContent} | HH Platform`;
     workspace.scrollTop = 0;
+    requestAnimationFrame(() => {
+      document.querySelector(".app-main")?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
     legacyMain.hidden = true;
   };
   const searchItems = () => {
@@ -4640,7 +4649,19 @@ function initAppShell() {
     const routeButton = event.target.closest("[data-app-route]");
     if (routeButton) {
       const route = routeButton.dataset.appRoute;
+      const sidebarGroup = routeButton.parentElement?.classList.contains("app-sidebar__group") ? routeButton.parentElement : null;
+      if (sidebarGroup?.querySelector(":scope > .app-sidebar__submenu")) {
+        const group = groups.find((item) => item.route === route);
+        if (group) {
+          sidebarGroupState[group.id] = !sidebarGroup.classList.contains("is-expanded");
+          saveSidebarGroups();
+          renderNavigation();
+          return;
+        }
+      }
       if (route) {
+        const targetGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
+        if (targetGroup) { sidebarGroupState[targetGroup.id] = true; saveSidebarGroups(); }
         location.hash = `#${route}`;
         if (mobileSidebarQuery.matches) {
           document.body.classList.add("app-sidebar-collapsed");

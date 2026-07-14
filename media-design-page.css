@@ -1,6 +1,8 @@
 body.app-shell-enabled :where(.feature-lab-open,.pro-tools-launcher){display:none!important}
 body.app-media-design-route :where(.app-breadcrumb,.app-page-header,.app-workspace){width:100%;max-width:none}
 body.app-media-design-route .app-workspace{padding-right:18px;padding-left:18px}
+.app-sidebar__group>.app-sidebar__item>i{transition:transform .16s ease}.app-sidebar__group.is-expanded>.app-sidebar__item>i{transform:rotate(90deg)}
+.app-sidebar__group>.app-sidebar__item[aria-expanded=false]+.app-sidebar__submenu{display:none!important}.app-sidebar__group>.app-sidebar__item[aria-expanded=true]+.app-sidebar__submenu{display:grid!important}
 
 .app-sidebar__group:has(.app-sidebar__studio) .app-sidebar__submenu{margin:3px 0 7px 31px;padding:3px 0 4px 10px;border-left:1px solid var(--border-default)}
 .app-sidebar__studio{display:grid;gap:7px;min-width:0;padding:2px 5px 7px 0}

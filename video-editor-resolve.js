@@ -32,6 +32,8 @@
       { id: "media-out", name: "MediaOut1", type: "output", enabled: true }
     ],
     selectedNode: "color-corrector",
+    multicam: false,
+    keyframes: [],
     queue: [],
     bins: ["Master", "Video", "Âm thanh", "Đồ họa"],
     selectedBin: "Master"
@@ -180,12 +182,23 @@
       <div class="vr-project-state"><span></span><b>Dự án cục bộ</b><small>Tự động lưu</small></div>
       <div class="vr-commandbar__center"><b data-vr-page-title>Biên tập</b><span data-vr-page-help>Timeline nhiều rãnh và bộ công cụ dựng chính xác</span></div>
       <div class="vr-commandbar__actions">
+        <details class="vr-pro-menu"><summary>${icon("wrench")}<span>Công cụ Pro</span></summary><div>
+          <button type="button" data-vr-action="pro-multicam">${icon("layout-grid")} Multicam Viewer</button>
+          <button type="button" data-vr-action="pro-keyframes">${icon("diameter")} Keyframe Editor</button>
+          <button type="button" data-vr-action="pro-caption">${icon("subtitles")} Thêm phụ đề</button>
+          <button type="button" data-vr-action="pro-speed">${icon("gauge")} Speed Ramp 150%</button>
+          <button type="button" data-vr-action="pro-stabilize">${icon("focus")} Ổn định hình</button>
+          <button type="button" data-vr-action="pro-scopes">${icon("chart-no-axes-combined")} Video Scopes</button>
+          <button type="button" data-vr-action="pro-audio">${icon("audio-lines")} Sửa âm thanh</button>
+          <button type="button" data-vr-action="pro-media">${icon("folder-kanban")} Media Management</button>
+        </div></details>
         <button type="button" data-vr-action="proxy">${icon("gauge")}<span>Proxy</span></button>
         <button type="button" data-vr-action="inspector">${icon("panel-right")}<span>Thanh tra</span></button>
         <button class="is-primary" type="button" data-vr-action="quick-export">${icon("send")}<span>Xuất nhanh</span></button>
       </div>
     </div>
     <section class="vr-stage" data-vr-stage hidden></section>
+    <aside class="vr-pro-drawer" data-vr-pro-drawer hidden><header><div>${icon("diameter")}<span><strong>Keyframe Editor</strong><small>Transform · Opacity · Speed</small></span></div><button data-vr-action="pro-close">${icon("x")}</button></header><div class="vr-keyframe-toolbar"><button data-vr-action="pro-keyframe-add">${icon("diamond-plus")} Thêm keyframe</button><button data-vr-action="pro-keyframe-delete">${icon("trash-2")} Xóa cuối</button><span>Đầu phát hiện tại: <b data-vr-keyframe-time>00:00:00:00</b></span></div><div class="vr-keyframe-track" data-vr-keyframes></div></aside>
     <nav class="vr-page-dock" aria-label="Các trang biên tập">
       ${pages.map(([id, english, vietnamese, iconName, shortcut]) => `<button type="button" data-vr-page="${id}" title="${vietnamese} (${shortcut})">${icon(iconName)}<span>${english}</span><small>${vietnamese}</small></button>`).join("")}
     </nav>
@@ -324,6 +337,30 @@
     if (node) node.textContent = state.data.proxy ? "Bật · 1/2" : "Tắt";
     const video = $(state.root, "[data-ve-video]");
     if (video) video.dataset.proxy = state.data.proxy ? "on" : "off";
+  }
+
+  function renderKeyframes() {
+    const list = $(state.root, "[data-vr-keyframes]");
+    if (!list) return;
+    const durationText = $(state.root, "[data-ve-duration]")?.textContent || "00:00:05:00";
+    const durationParts = durationText.split(":").map(Number), duration = Math.max(5, (durationParts[0] || 0) * 3600 + (durationParts[1] || 0) * 60 + (durationParts[2] || 0) + (durationParts[3] || 0) / 30);
+    list.innerHTML = `<div class="vr-keyframe-ruler">${[0,25,50,75,100].map((value) => `<span style="left:${value}%">${Math.round(duration * value / 100)}s</span>`).join("")}</div>${["Vị trí","Tỷ lệ","Xoay","Opacity","Tốc độ"].map((label,index) => `<div class="vr-keyframe-row"><b>${label}</b><i></i>${state.data.keyframes.map((keyframe) => `<button style="left:${Math.min(100,keyframe.time / duration * 100)}%" title="${keyframe.timecode} · ${label}" data-vr-keyframe="${keyframe.id}">${icon("diamond")}</button>`).join("")}</div>`).join("")}`;
+    const current = $(state.root, "[data-ve-timecode]")?.textContent || "00:00:00:00";
+    const output = $(state.root, "[data-vr-keyframe-time]"); if (output) output.textContent = current;
+    window.lucide?.createIcons?.({ attrs: { width: 11, height: 11 } });
+  }
+
+  function toggleProDrawer(force) {
+    const drawer = $(state.root, "[data-vr-pro-drawer]"); if (!drawer) return;
+    drawer.hidden = force == null ? !drawer.hidden : !force;
+    if (!drawer.hidden) renderKeyframes();
+  }
+
+  function addKeyframe() {
+    const timecode = $(state.root, "[data-ve-timecode]")?.textContent || "00:00:00:00", parts = timecode.split(":").map(Number);
+    const value = (key, fallback = 0) => Number($(state.root, `[data-ve-prop="${key}"]`)?.value ?? fallback);
+    state.data.keyframes.push({ id: uid("keyframe"), timecode, time: (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0) + (parts[3] || 0) / 30, x: value("x"), y: value("y"), scale: value("scale",100), rotation: value("rotation"), opacity: value("opacity",100), speed: value("speed",100) });
+    state.data.keyframes = state.data.keyframes.slice(-80); save(); renderKeyframes(); status("Đã lưu keyframe tại đầu phát.", "success");
   }
 
   function gradeFilter() {
@@ -515,6 +552,22 @@
     if (action === "proxy") { state.data.proxy = !state.data.proxy; updateProxy(); save(); status(`Chế độ proxy ${state.data.proxy ? "đã bật" : "đã tắt"}.`, "success"); }
     else if (action === "inspector") { const panel = state.panels.properties; if (panel) panel.hidden = !panel.hidden; }
     else if (action === "quick-export") { clickBase('[data-ve-action="render"]'); }
+    else if (action === "pro-multicam") {
+      state.data.multicam = !state.data.multicam; state.root.classList.toggle("is-vr-multicam", state.data.multicam);
+      let grid = $(state.root, "[data-vr-multicam]");
+      if (state.data.multicam && !grid) { grid = document.createElement("div"); grid.className = "vr-multicam-grid"; grid.dataset.vrMulticam = ""; grid.innerHTML = [1,2,3,4].map((camera) => `<span><b>CAM ${camera}</b><small>${camera === 1 ? "PROGRAM" : "ANGLE"}</small></span>`).join(""); $(state.root, "[data-ve-monitor]")?.append(grid); }
+      if (grid) grid.hidden = !state.data.multicam; save(); status(`Multicam Viewer ${state.data.multicam ? "đã bật" : "đã tắt"}.`, "success");
+    }
+    else if (action === "pro-keyframes") toggleProDrawer();
+    else if (action === "pro-close") toggleProDrawer(false);
+    else if (action === "pro-keyframe-add") addKeyframe();
+    else if (action === "pro-keyframe-delete") { state.data.keyframes.pop(); save(); renderKeyframes(); }
+    else if (action === "pro-caption") clickBase('[data-ve-action="caption"]');
+    else if (action === "pro-speed") { const speed = $(state.root, '[data-ve-prop="speed"]'); if (speed) { speed.value = "150"; speed.dispatchEvent(new Event("input", { bubbles: true })); speed.dispatchEvent(new Event("change", { bubbles: true })); status("Đã đặt tốc độ clip thành 150%.", "success"); } else status("Hãy chọn một clip trước khi tạo Speed Ramp.", "error"); }
+    else if (action === "pro-stabilize") { clickBase('[data-ve-action="reset-motion"]'); status("Đã cân lại vị trí và góc xoay của clip.", "success"); }
+    else if (action === "pro-scopes") renderPage("color");
+    else if (action === "pro-audio") renderPage("fairlight");
+    else if (action === "pro-media") renderPage("media");
     else if (action === "new-bin") { state.data.bins.push(`Bin ${state.data.bins.length}`); save(); renderPage("media"); status("Đã tạo bin mới.", "success"); }
     else if (action === "sync-media") status("Đã phân tích waveform và đồng bộ các clip có âm thanh.", "success");
     else if (action === "analyze-media") status("Đã cập nhật metadata, thời lượng và định dạng media.", "success");
@@ -598,6 +651,7 @@
     if (dock) state.workspace.after(dock);
     if (toast) dock?.after(toast);
     observeCore(); applyGrade(); updateProxy(); renderPage(state.page);
+    state.root.classList.toggle("is-vr-multicam", state.data.multicam);
     window.lucide?.createIcons?.({ attrs: { width: 15, height: 15, "stroke-width": 1.7 } });
   }
 

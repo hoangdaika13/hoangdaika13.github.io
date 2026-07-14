@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v71";
+const CACHE = "hh-dev-hub-v73";
 const CORE = [
   "./",
   "./index.html",
@@ -8,12 +8,13 @@ const CORE = [
   "./professional-tools.css?v=3",
   "./feature-lab.css?v=3",
   "./media-design-pro.css?v=1",
-  "./media-design-page.css?v=5",
+  "./media-design-page.css?v=6",
   "./media-design-advanced.css?v=3",
   "./media-design-publish.css?v=1",
   "./video-editor-studio.css?v=1",
-  "./video-editor-resolve.css?v=4",
-  "./script.js?v=64",
+  "./video-editor-resolve.css?v=5",
+  "./photo-editor-pro.css?v=1",
+  "./script.js?v=66",
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=2",
   "./extension-suite.css?v=1",
@@ -30,7 +31,8 @@ const CORE = [
   "./media-design-advanced.js?v=3",
   "./media-design-publish.js?v=1",
   "./video-editor-studio.js?v=1",
-  "./video-editor-resolve.js?v=4",
+  "./video-editor-resolve.js?v=5",
+  "./photo-editor-pro.js?v=1",
   "./media-design-page.js?v=6",
   "./feature-lab.js?v=4",
   "./feature-engines.js?v=2",
