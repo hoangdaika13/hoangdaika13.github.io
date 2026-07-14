@@ -4300,10 +4300,27 @@ function initAppShell() {
     try { return JSON.parse(localStorage.getItem(stateKey) || "{}"); } catch { return {}; }
   };
   const saveState = (next) => localStorage.setItem(stateKey, JSON.stringify({ ...stored(), ...next }));
+  const mediaStudioItems = [
+    { id: "photo-editor", number: "12", title: "Photo Editor", group: "Biên tập" },
+    { id: "background-remover", number: "13", title: "Background Remover", group: "Biên tập" },
+    { id: "collage", number: "14", title: "Collage Maker", group: "Biên tập" },
+    { id: "inspector", number: "15", title: "Image Inspector", group: "Biên tập" },
+    { id: "compress", number: "01", title: "Image Compressor", group: "Hình ảnh" },
+    { id: "convert", number: "02", title: "Image Converter", group: "Hình ảnh" },
+    { id: "image", number: "03", title: "Image Toolkit", group: "Hình ảnh" },
+    { id: "picker", number: "11", title: "Color Picker", group: "Hình ảnh" },
+    { id: "pdf", number: "04", title: "PDF Toolkit", group: "Tài liệu" },
+    { id: "qr", number: "05", title: "QR Toolkit", group: "Tài liệu" },
+    { id: "color", number: "06", title: "Color Studio", group: "Thương hiệu" },
+    { id: "type", number: "07", title: "Typography Studio", group: "Thương hiệu" },
+    { id: "gradient", number: "10", title: "Gradient Generator", group: "Thương hiệu" },
+    { id: "icon", number: "08", title: "Icon Browser", group: "Tài nguyên" },
+    { id: "svg", number: "09", title: "SVG Editor", group: "Tài nguyên" }
+  ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", route: "/home", items: ["command-center"] },
     { id: "create", label: "Sáng tạo", icon: "✦", route: "/create", items: ["ai-center", "creator-studio", "media-center", "ai-automation"] },
-    { id: "media-design", label: "Media & Design", icon: "◈", route: "/media-design", items: [] },
+    { id: "media-design", label: "Media & Design", icon: "◈", route: "/media-design", items: [], studioItems: mediaStudioItems },
     { id: "work", label: "Công việc", icon: "□", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
     {
       id: "communication",
@@ -4366,7 +4383,8 @@ function initAppShell() {
         return `<button class="app-sidebar__subitem ${route === moduleRoute ? "is-active" : ""}" type="button" data-app-route="${moduleRoute}" ${route === moduleRoute ? "aria-current=page" : ""}><span>${module.title}</span></button>`;
       }).join("");
       const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
-      const submenu = `${shortcuts}${moduleItems}`;
+      const studioMenu = group.studioItems ? `<div class="app-sidebar__studio"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup) => `<section data-media-sidebar-group><small>${studioGroup}</small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}"><span>${item.number}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
+      const submenu = `${shortcuts}${studioMenu}${moduleItems}`;
       const hasSubmenu = Boolean(submenu);
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}">
         <button class="app-sidebar__item ${expanded ? "is-active" : ""}" type="button" data-app-route="${group.route}" aria-expanded="${expanded}" title="${group.label}"><span>${group.icon}</span><b>${group.label}</b><i>${hasSubmenu ? "›" : ""}</i></button>
@@ -4374,6 +4392,12 @@ function initAppShell() {
       </section>`;
     }).join("");
   };
+  navigation.addEventListener("input", (event) => {
+    if (!event.target.matches("[data-media-sidebar-search]")) return;
+    const query = event.target.value.trim().toLowerCase();
+    navigation.querySelectorAll("[data-media-sidebar-item]").forEach((item) => { item.hidden = Boolean(query) && !item.dataset.mediaSidebarItem.includes(query); });
+    navigation.querySelectorAll("[data-media-sidebar-group]").forEach((group) => { group.hidden = !group.querySelector("[data-media-sidebar-item]:not([hidden])"); });
+  });
   const updateDashboard = () => {
     const modules = moduleList();
     const localStorageBytes = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)).filter(Boolean).reduce((total, key) => total + ((key.length + (localStorage.getItem(key)?.length || 0)) * 2), 0);
@@ -4452,7 +4476,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
+    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || mediaStudioItems.find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
   };
   const renderRoute = () => {
@@ -4460,6 +4484,7 @@ function initAppShell() {
     const hash = location.hash.replace(/^#/, "") || "/home";
     const route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
     activeRoute = route;
+    document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     setUser();
     renderNavigation();
     updateMobileNavigation();
@@ -4476,10 +4501,12 @@ function initAppShell() {
       workspace.innerHTML = "";
       if (window.HHSupportPage?.mount) window.HHSupportPage.mount(workspace, { apiBase: REALTIME_URL });
       else mountSimpleView("Ủng hộ nhà phát triển", "Không thể tải giao diện ủng hộ. Vui lòng làm mới trang.", "");
-    } else if (route === "/media-design") {
+    } else if (route === "/media-design" || route.startsWith("/media-design/")) {
       updatePageHeader("Media & Design", "Studio sáng tạo xử lý ảnh, tài liệu, màu sắc và vector ngay trên thiết bị.", route);
       workspace.innerHTML = '<div data-media-design-page-host></div>';
-      window.HHMediaDesignPage?.mount(workspace.firstElementChild);
+      const mediaHost = workspace.firstElementChild;
+      mediaHost.dataset.mediaDesignTool = parts[1] || "";
+      window.HHMediaDesignPage?.mount(mediaHost, { toolId: parts[1] || "" });
     } else if (module) {
       updatePageHeader(module.title, module.description, route, module);
       mountPlatform(module.id);
@@ -4516,7 +4543,7 @@ function initAppShell() {
   const searchItems = () => {
     const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
     const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
-    return [...modules, ...commandCenter, { type: "Studio", title: "Media & Design", description: "11 công cụ xử lý ảnh, PDF, QR, màu sắc, chữ và vector.", route: "/media-design", key: "media design creative studio image pdf qr svg color typography compressor converter" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, { type: "Studio", title: "Media & Design", description: "15 công cụ xử lý ảnh, Photo Editor, PDF, QR, màu sắc, chữ và vector.", route: "/media-design", key: "media design creative studio photo editor photoshop background remover collage image pdf qr svg color typography compressor converter" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();

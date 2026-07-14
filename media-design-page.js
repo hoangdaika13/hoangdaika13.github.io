@@ -3,6 +3,10 @@
 
   const STORAGE_KEY = "hh.media-design.page.v1";
   const TOOLS = [
+    { id: "photo-editor", number: "12", name: "Photo Editor", group: "Biên tập nâng cao", code: "PHOTO", description: "Chỉnh sửa ảnh nhiều lớp như một Photoshop thu gọn ngay trong trình duyệt.", caps: ["Layers", "Blend & filters", "Undo · Redo", "High-res export"] },
+    { id: "background-remover", number: "13", name: "Background Remover", group: "Biên tập nâng cao", code: "CUT", description: "Xóa nền theo màu, lấy mẫu pixel và làm mềm đường biên.", caps: ["Color key", "Edge feather", "PNG alpha"] },
+    { id: "collage", number: "14", name: "Collage Maker", group: "Biên tập nâng cao", code: "COL", description: "Ghép nhiều ảnh theo lưới, ảnh nổi bật hoặc dải ngang.", caps: ["12 images", "Smart cover", "High-res"] },
+    { id: "inspector", number: "15", name: "Image Inspector", group: "Biên tập nâng cao", code: "META", description: "Đọc EXIF, SHA-256, màu đại diện và xóa metadata.", caps: ["EXIF", "SHA-256", "Strip metadata"] },
     { id: "compress", number: "01", name: "Image Compressor", group: "Hình ảnh", code: "IMG", description: "Nén nhiều ảnh, đặt dung lượng đích và tối ưu WebP/JPEG.", caps: ["Batch 20 ảnh", "Target size", "So sánh trước/sau"] },
     { id: "convert", number: "02", name: "Image Converter", group: "Hình ảnh", code: "IMG", description: "Đổi định dạng hàng loạt, đổi kích thước và giữ chất lượng.", caps: ["PNG · JPEG · WebP", "Resize", "Tải hàng loạt"] },
     { id: "image", number: "03", name: "Image Toolkit", group: "Hình ảnh", code: "IMG", description: "Cắt, xoay, lật, cân chỉnh và áp dụng bộ lọc trực tiếp.", caps: ["Transform", "Filter presets", "Canvas preview"] },
@@ -15,7 +19,7 @@
     { id: "gradient", number: "10", name: "Gradient Generator", group: "Thương hiệu", code: "GRD", description: "Tạo gradient nhiều điểm màu cho CSS và ảnh PNG.", caps: ["4 color stops", "3 modes", "CSS · PNG"] },
     { id: "picker", number: "11", name: "Color Picker", group: "Hình ảnh", code: "PCK", description: "Lấy màu pixel, chuyển HEX/RGB/HSL và đo độ tương phản.", caps: ["EyeDropper", "Pixel sample", "Contrast"] }
   ];
-  const GROUPS = ["Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên"];
+  const GROUPS = ["Biên tập nâng cao", "Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên"];
   const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const loadState = () => {
@@ -32,6 +36,7 @@
 
   const saveState = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(pageState));
   const toolByName = (name) => TOOLS.find((tool) => tool.name === name) || TOOLS[0];
+  const toolById = (id) => TOOLS.find((tool) => tool.id === id);
   const visibleTools = (query = "") => {
     const term = normalize(query);
     return TOOLS.filter((tool) => {
@@ -57,7 +62,8 @@
 
   const renderCatalog = (root) => {
     const search = root.querySelector("[data-mdp-search]");
-    root.querySelector("[data-mdp-catalog]").innerHTML = catalogMarkup(search?.value || "");
+    const catalog = root.querySelector("[data-mdp-catalog]");
+    if (catalog) catalog.innerHTML = catalogMarkup(search?.value || "");
     root.querySelectorAll("[data-mdp-filter]").forEach((button) => button.classList.toggle("is-active", button.dataset.mdpFilter === activeFilter));
     const favoriteCount = root.querySelector("[data-mdp-favorite-count]");
     if (favoriteCount) favoriteCount.textContent = pageState.favorites.length;
@@ -73,7 +79,7 @@
     const tool = toolByName(name);
     window.HHMediaDesign?.cleanup?.();
     pageState.active = tool.name;
-    pageState.recent = [tool.name, ...pageState.recent.filter((item) => item !== tool.name)].slice(0, 8);
+    pageState.recent = [tool.name, ...pageState.recent.filter((item) => item !== tool.name)].slice(0, 12);
     pageState.usage[tool.name] = (pageState.usage[tool.name] || 0) + 1;
     saveState();
     renderCatalog(root);
@@ -108,7 +114,7 @@
     pageState = {
       active: toolByName(value.active).name,
       favorites: Array.isArray(value.favorites) ? value.favorites.filter((name) => TOOLS.some((tool) => tool.name === name)) : [],
-      recent: Array.isArray(value.recent) ? value.recent.filter((name) => TOOLS.some((tool) => tool.name === name)).slice(0, 8) : [],
+      recent: Array.isArray(value.recent) ? value.recent.filter((name) => TOOLS.some((tool) => tool.name === name)).slice(0, 12) : [],
       usage: value.usage && typeof value.usage === "object" ? value.usage : {}
     };
     saveState();
@@ -116,31 +122,26 @@
     showNotice(root, "Đã nhập cấu hình và khôi phục workspace.", "success");
   };
 
-  const mount = (host) => {
+  const mount = (host, options = {}) => {
     if (!host) return;
     window.HHMediaDesign?.cleanup?.();
+    const requestedTool = toolById(options.toolId || host.dataset.mediaDesignTool);
+    if (requestedTool) pageState.active = requestedTool.name;
     host.innerHTML = `<section class="media-design-page" data-media-design-page>
       <header class="mdp-overview">
         <div class="mdp-overview__copy"><span class="mdp-eyebrow"><i></i> HH CREATIVE STUDIO</span><h2>Một workspace. Mọi công cụ sáng tạo.</h2><p>Xử lý tệp trực tiếp trên trình duyệt, không tải nội dung cá nhân lên máy chủ.</p></div>
-        <div class="mdp-overview__status"><span><i class="is-online"></i> Engine sẵn sàng</span><strong>11</strong><small>công cụ cục bộ</small></div>
+        <div class="mdp-overview__status"><span><i class="is-online"></i> Engine sẵn sàng</span><strong>${TOOLS.length}</strong><small>công cụ cục bộ</small></div>
       </header>
       <div class="mdp-metrics" aria-label="Tổng quan Media & Design">
-        <div><span>Engine</span><strong>11 / 11</strong><i style="--value:100%"></i></div>
+        <div><span>Engine</span><strong>${TOOLS.length} / ${TOOLS.length}</strong><i style="--value:100%"></i></div>
         <div><span>Yêu thích</span><strong data-mdp-favorite-count>${pageState.favorites.length}</strong><i style="--value:${Math.min(pageState.favorites.length / TOOLS.length * 100, 100)}%"></i></div>
-        <div><span>Gần đây</span><strong data-mdp-recent-count>${pageState.recent.length}</strong><i style="--value:${Math.min(pageState.recent.length / 8 * 100, 100)}%"></i></div>
+        <div><span>Gần đây</span><strong data-mdp-recent-count>${pageState.recent.length}</strong><i style="--value:${Math.min(pageState.recent.length / 12 * 100, 100)}%"></i></div>
         <div><span>Phiên hiện tại</span><strong data-mdp-usage>1 phiên</strong><i style="--value:64%"></i></div>
       </div>
       <div class="mdp-shell">
-        <aside class="mdp-sidebar" aria-label="Danh mục công cụ Media & Design">
-          <div class="mdp-sidebar__top"><div><small>THƯ VIỆN</small><strong>Creative engines</strong></div><span>LOCAL</span></div>
-          <label class="mdp-search"><span>⌕</span><input type="search" data-mdp-search placeholder="Tìm ảnh, PDF, QR, màu..." autocomplete="off"><kbd>/</kbd></label>
-          <div class="mdp-filters" role="tablist" aria-label="Lọc công cụ"><button type="button" class="is-active" data-mdp-filter="all">Tất cả</button><button type="button" data-mdp-filter="favorites">Đã ghim</button><button type="button" data-mdp-filter="recent">Gần đây</button></div>
-          <div class="mdp-catalog" data-mdp-catalog>${catalogMarkup()}</div>
-          <footer class="mdp-sidebar__footer"><button type="button" data-mdp-export title="Xuất cấu hình">Xuất cấu hình</button><label title="Nhập cấu hình">Nhập cấu hình<input type="file" accept="application/json" data-mdp-import></label></footer>
-        </aside>
         <main class="mdp-main">
           <header class="mdp-context" data-mdp-context>${contextMarkup(toolByName(pageState.active))}</header>
-          <div class="mdp-session"><span><i></i> Xử lý trên thiết bị</span><span>Đang mở: <b data-mdp-current>${escapeHtml(pageState.active)}</b></span><span>Cập nhật <b data-mdp-last-used>${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</b></span><span class="mdp-session__shortcut"><kbd>Ctrl</kbd><kbd>1–9</kbd> đổi tool</span></div>
+          <div class="mdp-session"><span><i></i> Xử lý trên thiết bị</span><span>Đang mở: <b data-mdp-current>${escapeHtml(pageState.active)}</b></span><span>Cập nhật <b data-mdp-last-used>${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</b></span><label class="mdp-mobile-switcher">Công cụ<select data-mdp-mobile-select>${TOOLS.map((tool) => `<option value="${tool.id}" ${tool.name === pageState.active ? "selected" : ""}>${tool.number} · ${escapeHtml(tool.name)}</option>`).join("")}</select></label><span class="mdp-session__shortcut"><kbd>Alt</kbd><kbd>↑ ↓</kbd> đổi tool</span><div class="mdp-session__config"><button type="button" data-mdp-export>Xuất cấu hình</button><label>Nhập<input type="file" accept="application/json" data-mdp-import></label></div></div>
           <div class="feature-lab__work media-design-page__work" data-mdp-work></div>
         </main>
       </div>
@@ -173,6 +174,7 @@
       window.HHMediaDesign?.handleInput?.(event, root.querySelector("[data-mdp-work]"), pageState.active);
     });
     root.addEventListener("change", (event) => {
+      if (event.target.matches("[data-mdp-mobile-select]")) { location.hash = `#/media-design/${event.target.value}`; return; }
       if (event.target.matches("[data-mdp-import]")) {
         const file = event.target.files?.[0];
         if (file) importPreferences(file, root).catch(() => showNotice(root, "Tệp cấu hình không hợp lệ.", "error"));
@@ -192,6 +194,12 @@
       event.preventDefault();
       selectTool(activeRoot, TOOLS[Number(event.key) - 1].name, true);
     }
+    if (event.altKey && ["ArrowUp", "ArrowDown"].includes(event.key)) {
+      event.preventDefault();
+      const index = TOOLS.findIndex((tool) => tool.name === pageState.active);
+      const next = event.key === "ArrowDown" ? (index + 1) % TOOLS.length : (index - 1 + TOOLS.length) % TOOLS.length;
+      selectTool(activeRoot, TOOLS[next].name, true);
+    }
   });
   addEventListener("hashchange", () => {
     if (!location.hash.includes("/media-design")) window.HHMediaDesign?.cleanup?.();
@@ -199,5 +207,5 @@
 
   window.HHMediaDesignPage = { mount, tools: TOOLS };
   const pendingHost = document.querySelector("[data-media-design-page-host]");
-  if (pendingHost) mount(pendingHost);
+  if (pendingHost) mount(pendingHost, { toolId: pendingHost.dataset.mediaDesignTool || "" });
 })();
