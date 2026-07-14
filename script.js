@@ -4315,7 +4315,11 @@ function initAppShell() {
     { id: "type", icon: "T", title: "Typography Studio", group: "Thương hiệu" },
     { id: "gradient", icon: "◒", title: "Gradient Generator", group: "Thương hiệu" },
     { id: "icon", icon: "◇", title: "Icon Browser", group: "Tài nguyên" },
-    { id: "svg", icon: "⌁", title: "SVG Editor", group: "Tài nguyên" }
+    { id: "svg", icon: "⌁", title: "SVG Editor", group: "Tài nguyên" },
+    { id: "social-post", icon: "▣", title: "Social Post Maker", group: "Xuất bản" },
+    { id: "brand-kit", icon: "◆", title: "Brand Kit", group: "Xuất bản" },
+    { id: "favicon", icon: "◈", title: "Favicon Studio", group: "Xuất bản" },
+    { id: "meme", icon: "▰", title: "Meme Maker", group: "Xuất bản" }
   ];
   const developerToolItems = [
     { id: "json", icon: "{}", title: "JSON Formatter", group: "Dữ liệu" },
@@ -4575,7 +4579,7 @@ function initAppShell() {
     const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
     const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
     const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));
-    return [...modules, ...commandCenter, ...developerTools, { type: "Studio", title: "Media & Design", description: "15 công cụ xử lý ảnh, Photo Editor, PDF, QR, màu sắc, chữ và vector.", route: "/media-design", key: "media design creative studio photo editor photoshop background remover collage image pdf qr svg color typography compressor converter" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...developerTools, { type: "Studio", title: "Media & Design", description: "19 công cụ xử lý ảnh, Photo Editor, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();

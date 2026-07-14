@@ -17,9 +17,13 @@
     { id: "icon", icon: "◇", name: "Icon Browser", group: "Tài nguyên", code: "ICO", description: "Tìm biểu tượng Lucide và xuất SVG hoặc PNG theo kích thước.", caps: ["Lucide", "Search", "SVG · PNG"] },
     { id: "svg", icon: "⌁", name: "SVG Editor", group: "Tài nguyên", code: "SVG", description: "Chỉnh mã vector, xem trước tức thì và xuất tệp an toàn.", caps: ["Live editor", "Sanitize", "Export"] },
     { id: "gradient", icon: "◒", name: "Gradient Generator", group: "Thương hiệu", code: "GRD", description: "Tạo gradient nhiều điểm màu cho CSS và ảnh PNG.", caps: ["4 color stops", "3 modes", "CSS · PNG"] },
-    { id: "picker", icon: "⌾", name: "Color Picker", group: "Hình ảnh", code: "PCK", description: "Lấy màu pixel, chuyển HEX/RGB/HSL và đo độ tương phản.", caps: ["EyeDropper", "Pixel sample", "Contrast"] }
+    { id: "picker", icon: "⌾", name: "Color Picker", group: "Hình ảnh", code: "PCK", description: "Lấy màu pixel, chuyển HEX/RGB/HSL và đo độ tương phản.", caps: ["EyeDropper", "Pixel sample", "Contrast"] },
+    { id: "social-post", icon: "▣", name: "Social Post Maker", group: "Xuất bản", code: "SOC", description: "Tạo post, story, cover và thumbnail theo kích thước chuẩn mạng xã hội.", caps: ["9 presets", "Live canvas", "Brand overlay", "PNG · JPG · WebP"] },
+    { id: "brand-kit", icon: "◆", name: "Brand Kit", group: "Xuất bản", code: "BRD", description: "Tạo brand board, bảng màu, hệ chữ và token CSS/JSON.", caps: ["Brand board", "Color tokens", "Typography", "PNG · JSON · CSS"] },
+    { id: "favicon", icon: "◈", name: "Favicon Studio", group: "Xuất bản", code: "FAV", description: "Sinh favicon, Apple Touch Icon, app icon và Web Manifest.", caps: ["9 sizes", "Safe padding", "App shapes", "Manifest"] },
+    { id: "meme", icon: "▰", name: "Meme Maker", group: "Xuất bản", code: "MEM", description: "Tạo meme, caption card và ảnh phản ứng với chữ viền sắc nét.", caps: ["Top · Bottom", "Text stroke", "Watermark", "High-res"] }
   ];
-  const GROUPS = ["Biên tập nâng cao", "Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên"];
+  const GROUPS = ["Biên tập nâng cao", "Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên", "Xuất bản"];
   const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const loadState = () => {
@@ -130,8 +134,9 @@
     host.innerHTML = `<section class="media-design-page" data-media-design-page>
       <header class="mdp-overview">
         <div class="mdp-overview__copy"><span class="mdp-eyebrow"><i></i> HH CREATIVE STUDIO</span><h2>Một workspace. Mọi công cụ sáng tạo.</h2><p>Xử lý tệp trực tiếp trên trình duyệt, không tải nội dung cá nhân lên máy chủ.</p></div>
-        <div class="mdp-overview__status"><span><i class="is-online"></i> Engine sẵn sàng</span><strong>${TOOLS.length}</strong><small>công cụ cục bộ</small></div>
+        <div class="mdp-overview__status"><span><i class="is-online"></i> Engine sẵn sàng</span><strong>${TOOLS.length}</strong><small>creative engines</small></div>
       </header>
+      <nav class="mdp-suite-ribbon" aria-label="Nhóm công cụ Media & Design">${GROUPS.map((group, index) => `<button type="button" data-mdp-jump-group="${escapeHtml(group)}" style="--suite-index:${index}"><span>${escapeHtml(group)}</span><b>${TOOLS.filter((tool) => tool.group === group).length}</b><i></i></button>`).join("")}</nav>
       <div class="mdp-metrics" aria-label="Tổng quan Media & Design">
         <div><span>Engine</span><strong>${TOOLS.length} / ${TOOLS.length}</strong><i style="--value:100%"></i></div>
         <div><span>Yêu thích</span><strong data-mdp-favorite-count>${pageState.favorites.length}</strong><i style="--value:${Math.min(pageState.favorites.length / TOOLS.length * 100, 100)}%"></i></div>
@@ -165,6 +170,8 @@
       if (tool) return selectTool(root, tool.dataset.mdpTool);
       const filter = event.target.closest("[data-mdp-filter]");
       if (filter) { activeFilter = filter.dataset.mdpFilter; renderCatalog(root); return; }
+      const groupJump = event.target.closest("[data-mdp-jump-group]");
+      if (groupJump) { const target = TOOLS.find((item) => item.group === groupJump.dataset.mdpJumpGroup); if (target) location.hash = `#/media-design/${target.id}`; return; }
       if (event.target.closest("[data-mdp-export]")) return downloadPreferences();
       if (event.target.closest("[data-mdp-retry]")) return selectTool(root, pageState.active);
       window.HHMediaDesign?.handleClick?.(event, root.querySelector("[data-mdp-work]"), pageState.active);
