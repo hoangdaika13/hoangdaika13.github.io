@@ -1,16 +1,16 @@
-const CACHE = "hh-dev-hub-v66";
+const CACHE = "hh-dev-hub-v67";
 const CORE = [
   "./",
   "./index.html",
   "./app-shell.css?v=40",
   "./dashboard-aurora.css?v=3",
   "./command-center-pro.css?v=2",
-  "./professional-tools.css?v=2",
+  "./professional-tools.css?v=3",
   "./feature-lab.css?v=3",
   "./media-design-pro.css?v=1",
   "./media-design-page.css?v=3",
   "./media-design-advanced.css?v=3",
-  "./script.js?v=60",
+  "./script.js?v=61",
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=2",
   "./extension-suite.css?v=1",
@@ -19,7 +19,7 @@ const CORE = [
   "./search-watch-center.css?v=1",
   "./search-watch-center.js?v=2",
   "./extension-suite.js?v=1",
-  "./professional-tools.js?v=2",
+  "./professional-tools.js?v=3",
   "./media-design-studio.js?v=1",
   "./media-design-pro.js?v=1",
   "./media-design-advanced.js?v=3",
