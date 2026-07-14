@@ -1,7 +1,7 @@
 const { ObjectId } = require("mongodb");
 const { PayOS } = require("@payos/node");
-const { clean, currentUser, enforceRateLimit, withApi } = require("./_lib/platform");
-const votesHandler = require("./_lib/votes");
+const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/platform");
+const votesHandler = require("../utils/votes");
 
 const OWNER_DEFAULT = "nhhoang130803@gmail.com";
 const MIN_AMOUNT = 1000;

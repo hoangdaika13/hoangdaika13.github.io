@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { bcrypt, clean, currentUser, enforceRateLimit, publicUser, signOAuthState, signUser, verifyOAuthState, withApi } = require("../_lib/platform");
+const { bcrypt, clean, currentUser, enforceRateLimit, publicUser, signOAuthState, signUser, verifyOAuthState, withApi } = require("../../utils/platform");
 
 function clientIp(req) {
   return clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0], 80);

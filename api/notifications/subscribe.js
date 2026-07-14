@@ -1,4 +1,4 @@
-const { clean, currentUser, ownerFrom, withApi } = require("../_lib/platform");
+const { clean, currentUser, ownerFrom, withApi } = require("../../utils/platform");
 
 module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {

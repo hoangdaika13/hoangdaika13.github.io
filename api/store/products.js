@@ -1,4 +1,4 @@
-const { setCors } = require("../_lib/platform");
+const { setCors } = require("../../utils/platform");
 
 const products = [
   { id: "hh-voice-lite", title: "HH Voice Studio Lite", price: 0, currency: "VND", type: "download" },

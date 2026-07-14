@@ -1,4 +1,4 @@
-const { bodyOf, clean, currentUser, ownerFrom, setCors, withApi } = require("../../_lib/platform");
+const { bodyOf, clean, currentUser, ownerFrom, setCors, withApi } = require("../../../utils/platform");
 
 const downloadHosts = ["youtube.com", "youtu.be", "tiktok.com", "facebook.com", "fb.watch", "instagram.com", "twitter.com", "x.com", "reddit.com", "vimeo.com", "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"];
 

@@ -1,8 +1,10 @@
-const { clean, setCors } = require("../_lib/platform");
+const { clean, setCors } = require("../../utils/platform");
 
 const GOOGLE_ENDPOINT = "https://customsearch.googleapis.com/customsearch/v1";
 const YOUTUBE_SEARCH_ENDPOINT = "https://www.googleapis.com/youtube/v3/search";
 const YOUTUBE_VIDEOS_ENDPOINT = "https://www.googleapis.com/youtube/v3/videos";
+const YOUTUBE_CHANNELS_ENDPOINT = "https://www.googleapis.com/youtube/v3/channels";
+const YOUTUBE_PLAYLIST_ITEMS_ENDPOINT = "https://www.googleapis.com/youtube/v3/playlistItems";
 const rateBuckets = new Map();
 
 function requestIp(req) {
@@ -205,6 +207,40 @@ async function youtubeSearch(req, query) {
   };
 }
 
+function youtubeIds(value, limit = 50) {
+  return clean(value, 4000).split(",").map((item) => item.trim()).filter((item) => /^[A-Za-z0-9_-]{6,128}$/.test(item)).slice(0, limit);
+}
+
+async function youtubeResource(req, action) {
+  const key = String(process.env.YOUTUBE_API_KEY || "").trim();
+  if (!key) return { notConfigured: true, required: ["YOUTUBE_API_KEY"] };
+  if (action === "videos") {
+    const ids = youtubeIds(req.query.id);
+    if (!ids.length) return { invalid: "Hãy nhập ít nhất một video id hợp lệ." };
+    const params = new URLSearchParams({ key, part: "snippet,contentDetails,statistics,status", id: ids.join(",") });
+    const data = await readJson(`${YOUTUBE_VIDEOS_ENDPOINT}?${params}`);
+    return { provider: "youtube", action, pageInfo: data.pageInfo || {}, items: data.items || [] };
+  }
+  if (action === "channels") {
+    const ids = youtubeIds(req.query.id);
+    if (!ids.length) return { invalid: "Hãy nhập ít nhất một channel id hợp lệ." };
+    const params = new URLSearchParams({ key, part: "snippet,contentDetails,statistics,brandingSettings", id: ids.join(",") });
+    const data = await readJson(`${YOUTUBE_CHANNELS_ENDPOINT}?${params}`);
+    return { provider: "youtube", action, pageInfo: data.pageInfo || {}, items: data.items || [] };
+  }
+  if (action === "playlist-items") {
+    const playlistId = youtubeIds(req.query.playlistId, 1)[0];
+    if (!playlistId) return { invalid: "Hãy nhập playlistId hợp lệ." };
+    const maxResults = String(Math.max(1, Math.min(50, Number(req.query.maxResults || 20))));
+    const params = new URLSearchParams({ key, part: "snippet,contentDetails,status", playlistId, maxResults });
+    const pageToken = clean(req.query.pageToken, 200);
+    if (pageToken) params.set("pageToken", pageToken);
+    const data = await readJson(`${YOUTUBE_PLAYLIST_ITEMS_ENDPOINT}?${params}`);
+    return { provider: "youtube", action, nextPageToken: clean(data.nextPageToken, 200), previousPageToken: clean(data.prevPageToken, 200), pageInfo: data.pageInfo || {}, items: data.items || [] };
+  }
+  return { invalid: "Tác vụ YouTube không được hỗ trợ." };
+}
+
 module.exports = async function handler(req, res) {
   setCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
@@ -217,12 +253,15 @@ module.exports = async function handler(req, res) {
     }
 
     const provider = clean(req.query.provider, 30).toLowerCase();
+    const action = clean(req.query.action || "search", 40).toLowerCase();
     const query = clean(req.query.q, 180);
     if (!new Set(["google", "youtube"]).has(provider)) return res.status(404).json({ error: "Dịch vụ tìm kiếm không tồn tại." });
-    if (!query) return res.status(400).json({ error: "Hãy nhập nội dung cần tìm." });
+    if (provider === "google" && action !== "search") return res.status(400).json({ error: "Google Search chỉ hỗ trợ action=search." });
+    if (action === "search" && !query) return res.status(400).json({ error: "Hãy nhập nội dung cần tìm." });
 
-    rateLimit(`search:${provider}:${requestIp(req)}`);
-    const result = provider === "google" ? await googleSearch(req, query) : await youtubeSearch(req, query);
+    rateLimit(`search:${provider}:${action}:${requestIp(req)}`, action === "search" ? 50 : 80);
+    const result = provider === "google" ? await googleSearch(req, query) : action === "search" ? await youtubeSearch(req, query) : await youtubeResource(req, action);
+    if (result.invalid) return res.status(400).json({ error: result.invalid });
     if (result.notConfigured) {
       return res.status(503).json({
         error: `${provider === "google" ? "Google Search" : "YouTube Search"} chưa được kết nối trên máy chủ.`,

@@ -1,4 +1,4 @@
-const { clean, currentUser, withApi } = require("../_lib/platform");
+const { clean, currentUser, withApi } = require("../../utils/platform");
 
 const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
 
@@ -23,6 +23,24 @@ module.exports = async function handler(req, res) {
     const user = await currentUser(req);
     const ownerEmail = String(process.env.ADMIN_EMAIL || "nhhoang130803@gmail.com").toLowerCase();
     if (!user || String(user.email || "").toLowerCase() !== ownerEmail) return res.status(403).json({ error: "Chỉ chủ sở hữu được truy cập Admin Panel." });
+    if (req.query.view === "users") {
+      const rows = await db.collection("users")
+        .find({}, { projection: { passwordHash: 0, providerId: 0, tokenVersion: 0 } })
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .toArray();
+      const activePresence = await db.collection("presence")
+        .find({ kind: "registered", lastSeenAt: { $gte: new Date(Date.now() - ACTIVE_WINDOW_MS) } }, { projection: { userId: 1 } })
+        .toArray();
+      const onlineIds = new Set(activePresence.map((item) => String(item.userId || "")));
+      const users = rows.map((item) => ({
+        id: String(item._id), name: item.name || item.displayName || "Chưa đặt tên", email: item.email || "",
+        provider: item.provider || item.lastProvider || "local", avatar: item.avatar || "",
+        consent: Boolean(item.consent), createdAt: item.createdAt || null, lastLoginAt: item.lastLoginAt || null,
+        online: onlineIds.has(String(item._id))
+      }));
+      return res.status(200).json({ ok: true, users, stats: { total: users.length, online: users.filter((item) => item.online).length, consented: users.filter((item) => item.consent).length }, checkedAt: new Date() });
+    }
     const names = ["users", "moduleRecords", "moduleActions", "tickets", "orders", "storageFiles", "notificationSubscriptions", "events", "donations"];
     const counts = {};
     await Promise.all(names.map(async (name) => {

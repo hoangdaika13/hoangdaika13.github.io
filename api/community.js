@@ -1,5 +1,5 @@
 const { ObjectId } = require("mongodb");
-const { clean, currentUser, enforceRateLimit, withApi } = require("./_lib/platform");
+const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/platform");
 
 const REACTIONS = new Set(["like", "love", "care", "haha", "wow", "sad"]);
 const TOPICS = new Set(["Thông báo", "AI & Công nghệ", "Website", "Âm nhạc", "Góp ý", "Đời sống"]);

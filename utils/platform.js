@@ -1,3 +1,4 @@
+// Shared server runtime. Kept outside /api so Vercel never counts it as a function.
 const { MongoClient, ObjectId } = require("mongodb");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -111,6 +112,10 @@ async function withApi(req, res, handler) {
     return await handler({ db: await database(), body: bodyOf(req) });
   } catch (error) {
     console.error("API error", error?.message || error);
+    const explicitStatus = Number(error?.statusCode || 0);
+    if (explicitStatus >= 400 && explicitStatus <= 503 && explicitStatus !== 429) {
+      return res.status(explicitStatus).json({ error: clean(error.message, 300), code: clean(error.code, 80) || undefined });
+    }
     if (error?.statusCode === 429) return res.status(429).json({ error: "Bạn thao tác quá nhanh. Vui lòng thử lại sau." });
     if (error?.message === "Request body too large") return res.status(413).json({ error: "Yêu cầu vượt quá giới hạn cho phép." });
     return res.status(500).json({ error: "Máy chủ không thể xử lý yêu cầu." });
