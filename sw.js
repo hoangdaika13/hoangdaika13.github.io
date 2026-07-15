@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v93";
+const CACHE = "hh-dev-hub-v94";
 const CORE = [
   "./",
   "./index.html",
