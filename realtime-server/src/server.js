@@ -32,6 +32,10 @@ const ICE_SERVERS = [
   }] : [])
 ];
 const activeCalls = new Map();
+const activeAstraRooms = new Map();
+const MAX_ASTRA_PLAYERS = Math.max(2, Math.min(12, Number(process.env.MAX_ASTRA_PLAYERS || 10)));
+const ASTRA_WORLD = { width: 12000, height: 8000 };
+const ASTRA_SHIPS = new Set(["asteria", "nomad", "aurora", "titan", "lumen", "odyssey"]);
 
 const allowedOrigins = [...new Set([
   FRONTEND_URL,
@@ -107,6 +111,57 @@ function messengerSocketRoom(slug) {
 
 function callSocketRoom(callId) {
   return `community:call:${callId}`;
+}
+
+function astraRoomCode(value) {
+  return cleanString(value, 12).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+}
+
+function astraSocketRoom(code) {
+  return `astra:expedition:${code}`;
+}
+
+function createAstraCode() {
+  let code = "";
+  do code = randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase();
+  while (activeAstraRooms.has(code));
+  return code;
+}
+
+function publicAstraRoom(room) {
+  return {
+    code: room.code,
+    name: room.name,
+    seed: room.seed,
+    sector: room.sector,
+    visibility: room.visibility,
+    hostId: room.hostId,
+    players: [...room.players.values()].map((player) => ({
+      socketId: player.socketId,
+      user: player.user,
+      ship: player.ship,
+      state: player.state,
+      joinedAt: player.joinedAt
+    })),
+    maxPlayers: MAX_ASTRA_PLAYERS,
+    createdAt: room.createdAt
+  };
+}
+
+function sanitizeAstraState(payload = {}, previous = {}) {
+  const finite = (value, fallback, min, max) => Number.isFinite(Number(value)) ? Math.max(min, Math.min(max, Number(value))) : fallback;
+  return {
+    x: finite(payload.x, previous.x || 0, -ASTRA_WORLD.width / 2, ASTRA_WORLD.width / 2),
+    y: finite(payload.y, previous.y || 0, -ASTRA_WORLD.height / 2, ASTRA_WORLD.height / 2),
+    vx: finite(payload.vx, 0, -900, 900),
+    vy: finite(payload.vy, 0, -900, 900),
+    angle: finite(payload.angle, previous.angle || 0, -Math.PI * 8, Math.PI * 8),
+    shield: finite(payload.shield, previous.shield ?? 100, 0, 300),
+    hull: finite(payload.hull, previous.hull ?? 100, 0, 100),
+    thrusting: Boolean(payload.thrusting),
+    boosting: Boolean(payload.boosting),
+    updatedAt: Date.now()
+  };
 }
 
 function publicCall(call) {
@@ -505,6 +560,7 @@ io.on("connection", async (socket) => {
   const auth = socket.handshake.auth || {};
   const consent = Boolean(auth.consent || socket.user?.consent);
   let activeMessengerRoom = "";
+  let activeAstraRoom = "";
   const activeCallIds = new Set();
   if (socket.user) {
     socket.join(`community:user:${String(socket.user._id)}`);
@@ -516,6 +572,28 @@ io.on("connection", async (socket) => {
     const members = await io.in(roomName).fetchSockets();
     const onlineUsers = [...new Map(members.filter((item) => item.user).map((item) => [String(item.user._id), publicChatUser(item.user)])).values()];
     io.to(roomName).emit("messenger:presence", { room: slug, online: members.length, users: onlineUsers, updatedAt: new Date().toISOString() });
+  };
+  const emitAstraRoom = (code) => {
+    const room = activeAstraRooms.get(code);
+    if (room) io.to(astraSocketRoom(code)).emit("astra:room", publicAstraRoom(room));
+  };
+  const leaveAstraRoom = async (reason = "left") => {
+    const code = activeAstraRoom;
+    if (!code) return;
+    const room = activeAstraRooms.get(code);
+    activeAstraRoom = "";
+    await socket.leave(astraSocketRoom(code));
+    if (!room) return;
+    room.players.delete(socket.id);
+    socket.to(astraSocketRoom(code)).emit("astra:player:left", { socketId: socket.id, userId: String(socket.user?._id || ""), reason, updatedAt: Date.now() });
+    if (!room.players.size) {
+      activeAstraRooms.delete(code);
+      return;
+    }
+    if (![...room.players.values()].some((player) => String(player.user.id) === room.hostId)) {
+      room.hostId = String(room.players.values().next().value.user.id);
+    }
+    emitAstraRoom(code);
   };
   const leaveCall = async (callId, reason = "left") => {
     const call = activeCalls.get(callId);
@@ -553,6 +631,134 @@ io.on("connection", async (socket) => {
     await (await events()).insertOne({ type: "visit:start", session, createdAt: new Date() });
   }
   io.emit("site:stats", { online: io.engine.clientsCount });
+
+  const joinAstraRoom = async (room, payload, done) => {
+    if (!socket.user) return done({ ok: false, error: "Authentication required" });
+    if (!room) return done({ ok: false, error: "Expedition unavailable" });
+    if (room.players.size >= MAX_ASTRA_PLAYERS && !room.players.has(socket.id)) return done({ ok: false, error: "Expedition is full" });
+    if (activeAstraRoom && activeAstraRoom !== room.code) await leaveAstraRoom("switched");
+    const ship = ASTRA_SHIPS.has(payload.ship) ? payload.ship : "asteria";
+    const slot = room.players.size;
+    const initialState = sanitizeAstraState(payload.state);
+    if (slot > 0 && Math.hypot(initialState.x, initialState.y) < 80) {
+      initialState.x = Math.cos(slot / MAX_ASTRA_PLAYERS * Math.PI * 2) * (42 + slot * 4);
+      initialState.y = Math.sin(slot / MAX_ASTRA_PLAYERS * Math.PI * 2) * (42 + slot * 4);
+    }
+    const player = {
+      socketId: socket.id,
+      user: publicChatUser(socket.user),
+      ship,
+      state: initialState,
+      joinedAt: new Date().toISOString()
+    };
+    room.players.set(socket.id, player);
+    activeAstraRoom = room.code;
+    await socket.join(astraSocketRoom(room.code));
+    socket.to(astraSocketRoom(room.code)).emit("astra:player:joined", player);
+    emitAstraRoom(room.code);
+    done({ ok: true, room: publicAstraRoom(room), selfSocketId: socket.id });
+  };
+
+  socket.on("astra:room:create", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    try {
+      if (!socket.user) return done({ ok: false, error: "Authentication required" });
+      if (activeAstraRoom) await leaveAstraRoom("recreated");
+      const code = createAstraCode();
+      const room = {
+        code,
+        name: cleanString(payload.name || `Expedition ${code}`, 48),
+        sector: Math.max(0, Math.min(9999, Math.floor(Number(payload.sector || 0)))),
+        visibility: payload.visibility === "public" ? "public" : "private",
+        seed: Number.parseInt(code, 36) >>> 0,
+        hostId: String(socket.user._id),
+        players: new Map(),
+        createdAt: new Date().toISOString(),
+        lastWarpAt: 0
+      };
+      activeAstraRooms.set(code, room);
+      await joinAstraRoom(room, payload, done);
+    } catch (error) {
+      done({ ok: false, error: error.message || "Unable to create expedition" });
+    }
+  });
+
+  socket.on("astra:room:join", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    try {
+      const code = astraRoomCode(payload.code);
+      await joinAstraRoom(activeAstraRooms.get(code), payload, done);
+    } catch (error) {
+      done({ ok: false, error: error.message || "Unable to join expedition" });
+    }
+  });
+
+  socket.on("astra:room:match", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    try {
+      if (!socket.user) return done({ ok: false, error: "Authentication required" });
+      let room = [...activeAstraRooms.values()].find((item) => item.visibility === "public" && item.players.size < MAX_ASTRA_PLAYERS);
+      if (!room) {
+        const code = createAstraCode();
+        room = { code, name: `Đội thám hiểm ${code}`, seed: Number.parseInt(code, 36) >>> 0, sector: Math.max(0, Math.floor(Number(payload.sector || 0))), visibility: "public", hostId: String(socket.user._id), players: new Map(), createdAt: new Date().toISOString(), lastWarpAt: 0 };
+        activeAstraRooms.set(code, room);
+      }
+      await joinAstraRoom(room, payload, done);
+    } catch (error) {
+      done({ ok: false, error: error.message || "Matchmaking unavailable" });
+    }
+  });
+
+  socket.on("astra:room:leave", async (_payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    await leaveAstraRoom("left");
+    done({ ok: true });
+  });
+
+  socket.on("astra:state", (payload = {}) => {
+    const room = activeAstraRooms.get(activeAstraRoom);
+    const player = room?.players.get(socket.id);
+    if (!room || !player) return;
+    const now = Date.now();
+    if (now - Number(socket.data.lastAstraState || 0) < 45) return;
+    socket.data.lastAstraState = now;
+    player.state = sanitizeAstraState(payload, player.state);
+    socket.to(astraSocketRoom(room.code)).volatile.emit("astra:state", { socketId: socket.id, ship: player.ship, state: player.state });
+  });
+
+  socket.on("astra:ship", (payload = {}) => {
+    const room = activeAstraRooms.get(activeAstraRoom);
+    const player = room?.players.get(socket.id);
+    if (!room || !player || !ASTRA_SHIPS.has(payload.ship)) return;
+    player.ship = payload.ship;
+    io.to(astraSocketRoom(room.code)).emit("astra:player:ship", { socketId: socket.id, ship: player.ship, updatedAt: Date.now() });
+    emitAstraRoom(room.code);
+  });
+
+  socket.on("astra:action", (payload = {}) => {
+    const room = activeAstraRooms.get(activeAstraRoom);
+    const player = room?.players.get(socket.id);
+    if (!room || !player) return;
+    const type = cleanString(payload.type, 24);
+    if (!["scan", "probe", "ping", "collect", "emote"].includes(type)) return;
+    const now = Date.now();
+    if (now - Number(socket.data.lastAstraAction || 0) < 220) return;
+    socket.data.lastAstraAction = now;
+    socket.to(astraSocketRoom(room.code)).emit("astra:action", { socketId: socket.id, type, targetId: cleanString(payload.targetId, 80), detail: cleanString(payload.detail, 120), updatedAt: now });
+  });
+
+  socket.on("astra:warp", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeAstraRooms.get(activeAstraRoom);
+    if (!room || !socket.user || room.hostId !== String(socket.user._id)) return done({ ok: false, error: "Only the expedition host can initiate warp" });
+    const now = Date.now();
+    if (now - room.lastWarpAt < 3000) return done({ ok: false, error: "Warp drive is cooling down" });
+    room.lastWarpAt = now;
+    room.sector = Math.max(room.sector + 1, Math.floor(Number(payload.sector || room.sector + 1)));
+    room.players.forEach((player) => { player.state = sanitizeAstraState({ ...player.state, x: 0, y: 0, vx: 0, vy: 0 }, player.state); });
+    io.to(astraSocketRoom(room.code)).emit("astra:warp", { sector: room.sector, hostId: room.hostId, updatedAt: now });
+    done({ ok: true, sector: room.sector });
+  });
 
   socket.on("messenger:room:join", async (payload = {}, callback) => {
     const done = typeof callback === "function" ? callback : () => {};
@@ -766,6 +972,7 @@ io.on("connection", async (socket) => {
 
   socket.on("disconnect", async () => {
     if (activeMessengerRoom) emitMessengerPresence(activeMessengerRoom).catch(() => {});
+    await leaveAstraRoom("disconnected");
     await Promise.all([...activeCallIds].map((callId) => leaveCall(callId, "disconnected")));
     if (consent || socket.user) {
       await (await sessions()).updateOne({ socketId: socket.id }, { $set: { endedAt: new Date(), lastSeenAt: new Date() } });
