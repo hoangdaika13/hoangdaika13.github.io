@@ -392,6 +392,9 @@
 .hh-group-detail li { color: #91a2ad; font-size: 9px; line-height: 1.55; }
 
 .hh-v2-dialog {
+  --v2-cyan: #62d7e7;
+  --v2-line: #2b3a48;
+  --v2-muted: #8899a8;
   width: min(94vw, 760px);
   max-height: 92vh;
   padding: 0;
@@ -526,6 +529,15 @@
   .home-neon .hh-v2-inline-search { width: 100%; min-width: 0; }
   .home-neon .hh-v2-section-title { align-items: flex-start; flex-direction: column; gap: 8px; }
 }
+
+.hh-v2-audience-list { display: grid; gap: 8px; max-height: min(52vh, 520px); overflow: auto; padding-right: 4px; }
+.hh-v2-audience-list > p { margin: 0 0 4px; color: var(--v2-muted); }
+.hh-v2-audience-list > label { display: grid; grid-template-columns: auto 40px minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--v2-line); background: #0c141d; cursor: pointer; }
+.hh-v2-audience-list > label:hover { border-color: color-mix(in srgb, var(--v2-cyan) 65%, var(--v2-line)); background: #111d28; }
+.hh-v2-audience-list input { width: 17px; height: 17px; accent-color: var(--v2-cyan); }
+.hh-v2-audience-list .hh-v2-avatar { width: 40px; height: 40px; }
+.hh-v2-audience-list label span { display: grid; gap: 2px; }
+.hh-v2-audience-list label small { color: var(--v2-muted); }
 
 @media (prefers-reduced-motion: reduce) {
   .home-neon .hh-social-v2-workspace *,

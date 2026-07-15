@@ -82,9 +82,12 @@ async function canViewPost(db, post, user) {
   if (viewerId && String(viewerId) === String(ownerId)) return true;
   if (post.deletedAt || post.archived || (post.scheduledAt && new Date(post.scheduledAt) > new Date())) return false;
   if (viewerId && await blockedBetween(db, viewerId, ownerId)) return false;
+  if ((post.audienceExcludeIds || []).some((id) => String(id) === String(viewerId))) return false;
   const privacy = post.privacy || "public";
   if (privacy === "public") return true;
   if (!viewerId || privacy === "private") return false;
+  if (["specific", "custom"].includes(privacy)) return (post.audienceIncludeIds || []).some((id) => String(id) === String(viewerId));
+  if (privacy === "friends-except") return areFriends(db, viewerId, ownerId);
   if (privacy === "followers") return isFollowing(db, viewerId, ownerId);
   if (privacy === "friends") return areFriends(db, viewerId, ownerId);
   if (privacy === "friends-of-friends") {
@@ -103,8 +106,17 @@ async function canViewStory(db, story, user) {
   const viewerId = user?._id;
   if (viewerId && String(viewerId) === String(story.userId)) return true;
   if (viewerId && await blockedBetween(db, viewerId, story.userId)) return false;
+  if ((story.hideUserIds || []).some((id) => String(id) === String(viewerId))) return false;
   if ((story.privacy || "public") === "public") return true;
   if (!viewerId || story.privacy === "private") return false;
+  if (["close-friends", "close_friends"].includes(story.privacy)) {
+    return Boolean(await db.collection("communityRelations").findOne({
+      actorId: story.userId,
+      targetId: viewerId,
+      type: "close_friend",
+      active: true
+    }, { projection: { _id: 1 } }));
+  }
   return areFriends(db, viewerId, story.userId);
 }
 
@@ -164,7 +176,9 @@ function present(post, viewerId) {
     shares: Number(post.shares || 0),
     canReshare: post.canReshare !== false,
     commentsEnabled: post.commentsEnabled !== false,
+    commentPermission: ["everyone", "friends", "followers"].includes(post.commentPermission) ? post.commentPermission : "everyone",
     hideReactionCounts: Boolean(post.hideReactionCounts),
+    notificationSubscribed: (post.notificationSubscriberIds || []).some((id) => String(id) === viewerId),
     archived: Boolean(post.archived),
     scheduledAt: post.scheduledAt || null,
     background: clean(post.background, 40),
@@ -186,6 +200,10 @@ function present(post, viewerId) {
     viewerReaction: reactions.find((item) => String(item.userId) === viewerId)?.type || "",
     saved: (post.savedBy || []).some((id) => String(id) === viewerId),
     owned: String(post.userId || "") === viewerId,
+    editHistory: String(post.userId || "") === viewerId ? (post.editHistory || []).slice(-20).map((item) => ({
+      content: clean(item.content, 5000),
+      editedAt: item.editedAt || null
+    })) : [],
     comments: (post.comments || []).filter((comment) => !comment.deletedAt).slice(-80).map((comment) => {
       const commentReactions = Array.isArray(comment.reactions) ? comment.reactions : [];
       return {
@@ -213,6 +231,14 @@ async function notify(db, userId, actor, type, message, recordId) {
     },
     { upsert: true }
   );
+}
+
+async function notifyPostSubscribers(db, post, actor, type, message) {
+  const recipients = [...new Map((post.notificationSubscriberIds || [])
+    .filter((id) => String(id) !== String(actor._id) && String(id) !== String(post.userId))
+    .slice(0, 200)
+    .map((id) => [String(id), id])).values()];
+  await Promise.all(recipients.map((userId) => notify(db, userId, actor, type, message, post._id)));
 }
 
 module.exports = async function handler(req, res) {
@@ -256,7 +282,7 @@ module.exports = async function handler(req, res) {
       const query = clean(req.query.q, 100);
       const topic = clean(req.query.topic, 60);
       const feedMode = clean(req.query.feed || "ranked", 20);
-      const [legacyFollowingDocs, relationFollowingDocs, friendshipDocs, legacyBlockDocs, relationBlockDocs, mutedRelationDocs, feedPreferences, viewerProfile] = user ? await Promise.all([
+      const [legacyFollowingDocs, relationFollowingDocs, friendshipDocs, legacyBlockDocs, relationBlockDocs, mutedRelationDocs, priorityRelationDocs, feedPreferences, viewerProfile, notificationPreferences] = user ? await Promise.all([
         follows.find({ followerId: user._id }).toArray(),
         db.collection("communityRelations").find({ actorId: user._id, type: "follow", active: true }).toArray(),
         db.collection("communityFriendships").find({
@@ -267,10 +293,16 @@ module.exports = async function handler(req, res) {
         }).toArray(),
         db.collection("communityBlocks").find({ $or: [{ blockerId: user._id }, { targetId: user._id }] }).toArray(),
         db.collection("communityRelations").find({ type: "block", active: true, $or: [{ actorId: user._id }, { targetId: user._id }] }).toArray(),
-        db.collection("communityRelations").find({ actorId: user._id, type: "mute", active: true }).toArray(),
+        db.collection("communityRelations").find({
+          actorId: user._id,
+          active: true,
+          $or: [{ type: "mute" }, { type: "snooze", expiresAt: { $gt: new Date() } }]
+        }).toArray(),
+        db.collection("communityRelations").find({ actorId: user._id, type: "priority", active: true }).toArray(),
         db.collection("communityFeedPreferences").findOne({ userId: user._id }),
-        db.collection("communityProfiles").findOne({ userId: user._id })
-      ]) : [[], [], [], [], [], [], null, null];
+        db.collection("communityProfiles").findOne({ userId: user._id }),
+        db.collection("communityNotificationPreferences").findOne({ userId: user._id })
+      ]) : [[], [], [], [], [], [], [], null, null, null];
       const followingIds = [...new Map([...legacyFollowingDocs, ...relationFollowingDocs].map((item) => [String(item.targetId), item.targetId])).values()];
       const friendIds = [...new Map(friendshipDocs.flatMap((item) => item.userIds || [item.userAId, item.userBId]).filter(Boolean).filter((id) => String(id) !== viewerId).map((id) => [String(id), id])).values()];
       const friendOfFriendDocs = friendIds.length ? await db.collection("communityFriendships").find({
@@ -284,6 +316,7 @@ module.exports = async function handler(req, res) {
         ...relationBlockDocs.map((item) => String(item.actorId) === viewerId ? item.targetId : item.actorId)
       ].filter(Boolean).map((id) => [String(id), id])).values()];
       const mutedIds = [...new Map([...(feedPreferences?.mutedUserIds || []).map(idOf).filter(Boolean), ...mutedRelationDocs.map((item) => item.targetId)].map((id) => [String(id), id])).values()];
+      const priorityUserIds = [...new Map([...(feedPreferences?.priorityUserIds || []).map(idOf).filter(Boolean), ...priorityRelationDocs.map((item) => item.targetId)].map((id) => [String(id), id])).values()];
       const excludedAuthorIds = [...blockedIds, ...mutedIds];
       const hiddenPostIds = [...(feedPreferences?.hiddenPostIds || []), ...(feedPreferences?.uninterestedPostIds || [])].map(idOf).filter(Boolean);
       const visibleToViewer = [{ privacy: "public" }, { privacy: { $exists: false } }];
@@ -291,6 +324,8 @@ module.exports = async function handler(req, res) {
       if (followingIds.length) visibleToViewer.push({ privacy: "followers", userId: { $in: followingIds } });
       if (friendIds.length) visibleToViewer.push({ privacy: { $in: ["friends", "friends-of-friends"] }, userId: { $in: friendIds } });
       if (friendOfFriendIds.length) visibleToViewer.push({ privacy: "friends-of-friends", userId: { $in: friendOfFriendIds } });
+      if (friendIds.length) visibleToViewer.push({ privacy: "friends-except", userId: { $in: friendIds }, audienceExcludeIds: { $ne: user._id } });
+      if (user) visibleToViewer.push({ privacy: { $in: ["specific", "custom"] }, audienceIncludeIds: user._id, audienceExcludeIds: { $ne: user._id } });
       const now = new Date();
       const filter = {
         $and: [
@@ -332,15 +367,65 @@ module.exports = async function handler(req, res) {
       }
       const items = feedMode === "latest" ? rawItems : feedMode === "friends"
         ? rawItems.filter((item) => friendIds.some((id) => String(id) === String(item.userId))).slice(0, 40)
-        : rankFeed(rawItems, { viewerId, followingIds, friendIds, priorityUserIds: feedPreferences?.priorityUserIds || [], interests: viewerProfile?.interests || [] });
+        : rankFeed(rawItems, { viewerId, followingIds, friendIds, priorityUserIds, interests: viewerProfile?.interests || [] });
       return res.status(200).json({
         posts: items.map((item) => present(item, viewerId)),
-        stories: visibleStories.map((item) => ({ id: String(item._id), author: socialUser(item.author), content: item.content, mediaUrl: item.mediaUrl || "", mediaId: item.mediaId ? String(item.mediaId) : "", mediaType: item.mediaType || "image", background: item.background || "", musicUrl: item.musicUrl || "", location: item.location || "", linkUrl: item.linkUrl || "", privacy: item.privacy || "public", viewerSeen: (item.views || []).some((view) => String(view.userId) === viewerId), viewerCount: (item.views || []).length, createdAt: item.createdAt, expiresAt: item.expiresAt })),
+        stories: visibleStories.map((item) => ({
+          id: String(item._id), author: socialUser(item.author), content: item.content,
+          mediaUrl: item.mediaUrl || "", mediaId: item.mediaId ? String(item.mediaId) : "", mediaType: item.mediaType || "image",
+          background: item.background || "", musicUrl: item.musicUrl || "", location: item.location || "", linkUrl: item.linkUrl || "",
+          question: item.question || "", poll: item.poll || null, countdownAt: item.countdownAt || null, stickers: item.stickers || [],
+          privacy: item.privacy || "public", allowForward: item.allowForward !== false, owned: String(item.userId || "") === viewerId,
+          viewerSeen: (item.views || []).some((view) => String(view.userId) === viewerId), viewerCount: (item.views || []).length,
+          reactionCount: (item.reactions || []).length, viewerReaction: (item.reactions || []).find((reaction) => String(reaction.userId) === viewerId)?.type || "",
+          createdAt: item.createdAt, expiresAt: item.expiresAt
+        })),
         suggestions: suggestions.map((item) => ({ ...socialUser(item), following: followingIds.some((id) => String(id) === String(item._id)) })),
         notifications: notifications.map((item) => ({ id: String(item._id), actor: socialUser(item.actor), type: item.type, message: item.message, recordId: String(item.recordId || ""), count: Math.max(1, Number(item.count || 1)), read: Boolean(item.read), createdAt: item.createdAt, updatedAt: item.updatedAt || item.createdAt })),
-        groups: groups.map((item) => ({ id: String(item._id), name: item.name, description: item.description, owner: socialUser(item.owner), visibility: item.visibility || "public", postApproval: item.postApproval || "off", memberCount: (item.memberIds || []).length, joined: (item.memberIds || []).some((id) => String(id) === viewerId), pending: (item.joinRequests || []).some((entry) => String(entry.userId) === viewerId && entry.status === "pending") })),
-        events: communityEvents.map((item) => ({ id: String(item._id), name: item.name, description: item.description, startsAt: item.startsAt, endsAt: item.endsAt || null, eventType: item.eventType || "online", online: (item.eventType || "online") === "online", location: item.location || "", meetingUrl: item.meetingUrl || "", owner: socialUser(item.owner), attendeeCount: (item.attendeeIds || []).length, going: (item.attendeeIds || []).some((id) => String(id) === viewerId) })),
+        groups: groups.map((item) => {
+          const owned = String(item.ownerId || "") === viewerId;
+          const pendingRequests = (item.joinRequests || []).filter((entry) => entry.status === "pending");
+          return {
+            id: String(item._id),
+            name: item.name,
+            description: item.description,
+            owner: socialUser(item.owner),
+            owned,
+            visibility: item.visibility || "public",
+            discovery: item.discovery || "visible",
+            postApproval: item.postApproval || "off",
+            topic: clean(item.topic, 80),
+            location: clean(item.location, 120),
+            tags: (item.tags || []).slice(0, 12).map((tag) => clean(tag, 40)),
+            rules: (item.rules || []).slice(0, 20).map((rule) => clean(rule, 240)),
+            questions: (item.questions || []).slice(0, 5).map((question) => clean(question, 240)),
+            memberCount: (item.memberIds || []).length,
+            joined: (item.memberIds || []).some((id) => String(id) === viewerId),
+            pending: pendingRequests.some((entry) => String(entry.userId) === viewerId),
+            joinRequestCount: owned ? pendingRequests.length : 0,
+            joinRequests: owned ? pendingRequests.slice(0, 50).map((entry) => ({
+              id: String(entry._id || entry.userId),
+              userId: String(entry.userId),
+              user: socialUser(entry.user),
+              answers: (entry.answers || []).slice(0, 5).map((answer) => clean(answer, 300)),
+              createdAt: entry.createdAt || null
+            })) : []
+          };
+        }),
+        events: communityEvents.map((item) => {
+          const response = (item.responses || []).find((entry) => String(entry.userId) === viewerId)?.status || ((item.attendeeIds || []).some((id) => String(id) === viewerId) ? "going" : "");
+          return {
+            id: String(item._id), name: item.name, description: item.description,
+            startsAt: item.startsAt, endsAt: item.endsAt || null,
+            eventType: item.eventType || "online", online: (item.eventType || "online") === "online",
+            location: item.location || "", meetingUrl: item.meetingUrl || "", timezone: item.timezone || "Asia/Bangkok",
+            privacy: item.privacy || "public", capacity: Number(item.capacity || 0), ticketUrl: item.ticketUrl || "",
+            recurrence: item.recurrence || "none", owner: socialUser(item.owner), owned: String(item.ownerId || "") === viewerId,
+            attendeeCount: (item.attendeeIds || []).length, response, going: response === "going", interested: response === "interested"
+          };
+        }),
         unread: notifications.filter((item) => !item.read).length,
+        notificationSettings: notificationPreferences?.settings || {},
         feedMode,
         signedIn: Boolean(user)
       });
@@ -392,13 +477,35 @@ module.exports = async function handler(req, res) {
       if (mediaId && !storedMedia) return res.status(400).json({ error: "Media của Tin không hợp lệ hoặc đã hết hạn." });
       if (!content && !mediaUrl && !storedMedia) return res.status(400).json({ error: "Tin đang trống." });
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      const doc = { userId: user._id, author: socialUser(user), content, mediaUrl, ...(storedMedia ? { mediaId: storedMedia._id, mediaType: storedMedia.mimeType.startsWith("video/") ? "video" : "image" } : {}), privacy: ["public", "friends", "close-friends", "private"].includes(body.privacy) ? body.privacy : "public", background: clean(body.background, 40), musicUrl: safeMedia(body.musicUrl), location: clean(body.location, 120), linkUrl: safeMedia(body.linkUrl), views: [], reactions: [], archived: false, createdAt: new Date(), expiresAt };
+      const requestedPrivacy = body.privacy === "close-friends" ? "close_friends" : clean(body.privacy, 30);
+      const hideUserIds = [...new Set((Array.isArray(body.hideUserIds) ? body.hideUserIds : []).slice(0, 200).map(String))].map(idOf).filter(Boolean);
+      const pollOptions = [...new Set((Array.isArray(body.pollOptions) ? body.pollOptions : []).map((item) => clean(item, 100)).filter(Boolean))].slice(0, 4);
+      const countdown = body.countdownAt ? new Date(body.countdownAt) : null;
+      const doc = {
+        userId: user._id,
+        author: socialUser(user),
+        content,
+        mediaUrl,
+        ...(storedMedia ? { mediaId: storedMedia._id, mediaType: storedMedia.mimeType.startsWith("video/") ? "video" : "image" } : {}),
+        privacy: ["public", "friends", "close_friends", "private"].includes(requestedPrivacy) ? requestedPrivacy : "public",
+        hideUserIds,
+        allowForward: body.allowForward !== false,
+        background: clean(body.background, 40),
+        musicUrl: safeMedia(body.musicUrl),
+        location: clean(body.location, 120),
+        linkUrl: safeMedia(body.linkUrl),
+        question: clean(body.question, 180),
+        poll: pollOptions.length >= 2 ? { options: pollOptions.map((text) => ({ id: String(new ObjectId()), text })), votes: [] } : null,
+        countdownAt: countdown && !Number.isNaN(countdown.getTime()) ? countdown : null,
+        stickers: (Array.isArray(body.stickers) ? body.stickers : []).slice(0, 12).map((item) => clean(item, 80)).filter(Boolean),
+        views: [], reactions: [], archived: false, createdAt: new Date(), expiresAt
+      };
       const result = await stories.insertOne(doc);
       if (storedMedia) await mediaFiles.updateOne({ _id: storedMedia._id }, { $set: { expiresAt: new Date(expiresAt.getTime() + 60 * 60 * 1000) } });
       return res.status(201).json({ ok: true, story: { ...doc, id: String(result.insertedId) } });
     }
 
-    if (["story:view", "story:react", "story:highlight", "story:delete"].includes(action)) {
+    if (["story:view", "story:react", "story:highlight", "story:delete", "story:report"].includes(action)) {
       const storyId = idOf(body.storyId);
       if (!storyId) return res.status(400).json({ error: "Tin không hợp lệ." });
       const story = await stories.findOne({ _id: storyId });
@@ -418,6 +525,14 @@ module.exports = async function handler(req, res) {
       if (action === "story:delete") {
         if (String(story.userId) !== viewerId) return res.status(403).json({ error: "Bạn chỉ có thể xóa Tin của mình." });
         await stories.updateOne({ _id: storyId }, { $set: { expiresAt: new Date(), deletedAt: new Date() } });
+      }
+      if (action === "story:report") {
+        if (String(story.userId) === viewerId) return res.status(400).json({ error: "Bạn không thể báo cáo Tin của mình." });
+        await db.collection("communityReports").updateOne(
+          { targetType: "story", targetId: storyId, reporterId: user._id },
+          { $setOnInsert: { targetType: "story", targetId: storyId, reporterId: user._id, category: clean(body.category || "other", 40), description: clean(body.description || body.reason || "Tin không phù hợp", 800), evidence: clean(body.evidence, 1200), status: "pending", createdAt: new Date(), history: [{ status: "pending", at: new Date() }] } },
+          { upsert: true }
+        );
       }
       return res.status(200).json({ ok: true });
     }
@@ -445,9 +560,78 @@ module.exports = async function handler(req, res) {
       const name = clean(body.name, 100);
       if (name.length < 3) return res.status(400).json({ error: "Tên nhóm cần ít nhất 3 ký tự." });
       const now = new Date();
-      const doc = { name, description: clean(body.description, 500), ownerId: user._id, owner: socialUser(user), memberIds: [user._id], roles: [{ userId: user._id, role: "owner", createdAt: now }], joinRequests: [], rules: [], visibility: ["public", "private"].includes(body.visibility) ? body.visibility : "public", postApproval: body.postApproval === "on" ? "on" : "off", status: "active", createdAt: now, updatedAt: now };
+      const normalizeList = (value, limit, max) => (Array.isArray(value) ? value : String(value || "").split(/\r?\n|,/)).map((item) => clean(item, max)).filter(Boolean).slice(0, limit);
+      const doc = {
+        name,
+        description: clean(body.description, 500),
+        ownerId: user._id,
+        owner: socialUser(user),
+        memberIds: [user._id],
+        roles: [{ userId: user._id, role: "owner", createdAt: now }],
+        joinRequests: [],
+        rules: normalizeList(body.rules, 20, 240),
+        questions: normalizeList(body.questions, 5, 240),
+        tags: normalizeList(body.tags, 12, 40),
+        topic: clean(body.topic, 80),
+        location: clean(body.location, 120),
+        avatar: safeMedia(body.avatar),
+        cover: safeMedia(body.cover),
+        visibility: ["public", "private"].includes(body.visibility) ? body.visibility : "public",
+        discovery: body.discovery === "hidden" ? "hidden" : "visible",
+        postApproval: body.postApproval === "on" ? "on" : "off",
+        anonymousPosts: Boolean(body.anonymousPosts),
+        status: "active",
+        createdAt: now,
+        updatedAt: now
+      };
       const result = await db.collection("communityGroups").insertOne(doc);
       return res.status(201).json({ ok: true, group: { ...doc, id: String(result.insertedId) } });
+    }
+
+    if (action === "group:request:respond") {
+      const groupId = idOf(body.groupId);
+      const targetId = idOf(body.targetId || body.userId);
+      const response = body.response === "accept" ? "accepted" : body.response === "decline" ? "declined" : "";
+      if (!groupId || !targetId || !response) return res.status(400).json({ error: "Yêu cầu duyệt thành viên không hợp lệ." });
+      const group = await db.collection("communityGroups").findOne({ _id: groupId });
+      if (!group) return res.status(404).json({ error: "Không tìm thấy nhóm." });
+      const role = (group.roles || []).find((entry) => String(entry.userId) === viewerId)?.role;
+      if (String(group.ownerId) !== viewerId && !["admin", "moderator"].includes(role)) return res.status(403).json({ error: "Bạn không có quyền duyệt thành viên." });
+      const request = (group.joinRequests || []).find((entry) => String(entry.userId) === String(targetId) && entry.status === "pending");
+      if (!request) return res.status(404).json({ error: "Lời xin tham gia không còn chờ duyệt." });
+      const now = new Date();
+      await db.collection("communityGroups").updateOne(
+        { _id: groupId },
+        {
+          $set: { "joinRequests.$[request].status": response, "joinRequests.$[request].reviewedAt": now, "joinRequests.$[request].reviewedBy": user._id, updatedAt: now },
+          ...(response === "accepted" ? { $addToSet: { memberIds: targetId } } : {})
+        },
+        { arrayFilters: [{ "request.userId": targetId, "request.status": "pending" }] }
+      );
+      await notify(db, targetId, user, "group-request", response === "accepted" ? `Yêu cầu tham gia ${group.name} đã được chấp nhận.` : `Yêu cầu tham gia ${group.name} đã được từ chối.`, groupId);
+      return res.status(200).json({ ok: true, status: response });
+    }
+
+    if (action === "group:update") {
+      const groupId = idOf(body.groupId);
+      if (!groupId) return res.status(400).json({ error: "Nhóm không hợp lệ." });
+      const group = await db.collection("communityGroups").findOne({ _id: groupId });
+      if (!group) return res.status(404).json({ error: "Không tìm thấy nhóm." });
+      if (String(group.ownerId) !== viewerId) return res.status(403).json({ error: "Chỉ chủ sở hữu có thể đổi thiết lập nhóm." });
+      const normalizeList = (value, limit, max) => (Array.isArray(value) ? value : String(value || "").split(/\r?\n|,/)).map((item) => clean(item, max)).filter(Boolean).slice(0, limit);
+      const patch = { updatedAt: new Date() };
+      if (Object.prototype.hasOwnProperty.call(body, "name")) patch.name = clean(body.name, 100);
+      if (Object.prototype.hasOwnProperty.call(body, "description")) patch.description = clean(body.description, 500);
+      if (Object.prototype.hasOwnProperty.call(body, "rules")) patch.rules = normalizeList(body.rules, 20, 240);
+      if (Object.prototype.hasOwnProperty.call(body, "questions")) patch.questions = normalizeList(body.questions, 5, 240);
+      if (Object.prototype.hasOwnProperty.call(body, "tags")) patch.tags = normalizeList(body.tags, 12, 40);
+      if (["public", "private"].includes(body.visibility)) patch.visibility = body.visibility;
+      if (["visible", "hidden"].includes(body.discovery)) patch.discovery = body.discovery;
+      if (["on", "off"].includes(body.postApproval)) patch.postApproval = body.postApproval;
+      if (typeof body.anonymousPosts === "boolean") patch.anonymousPosts = body.anonymousPosts;
+      await db.collection("communityGroups").updateOne({ _id: groupId }, { $set: patch });
+      await db.collection("communityAuditLogs").insertOne({ actorId: user._id, action, targetType: "group", targetId: groupId, before: { visibility: group.visibility, discovery: group.discovery, postApproval: group.postApproval }, after: patch, createdAt: new Date() });
+      return res.status(200).json({ ok: true });
     }
 
     if (action === "group:join") {
@@ -459,7 +643,7 @@ module.exports = async function handler(req, res) {
       if (String(group.ownerId) === viewerId && joined) return res.status(409).json({ error: "Chủ sở hữu không thể rời nhóm trước khi chuyển quyền." });
       if (!joined && group.visibility === "private") {
         const pending = (group.joinRequests || []).some((item) => String(item.userId) === viewerId && item.status === "pending");
-        if (!pending) await db.collection("communityGroups").updateOne({ _id: groupId }, { $push: { joinRequests: { userId: user._id, user: socialUser(user), status: "pending", createdAt: new Date() } }, $set: { updatedAt: new Date() } });
+        if (!pending) await db.collection("communityGroups").updateOne({ _id: groupId }, { $push: { joinRequests: { _id: new ObjectId(), userId: user._id, user: socialUser(user), answers: (Array.isArray(body.answers) ? body.answers : []).slice(0, 5).map((answer) => clean(answer, 300)), status: "pending", createdAt: new Date() } }, $set: { updatedAt: new Date() } });
         return res.status(200).json({ ok: true, joined: false, pending: true });
       }
       await db.collection("communityGroups").updateOne({ _id: groupId }, joined ? { $pull: { memberIds: user._id }, $set: { updatedAt: new Date() } } : { $addToSet: { memberIds: user._id }, $set: { updatedAt: new Date() } });
@@ -471,7 +655,34 @@ module.exports = async function handler(req, res) {
       const startsAt = new Date(body.startsAt);
       if (name.length < 3 || Number.isNaN(startsAt.getTime())) return res.status(400).json({ error: "Tên hoặc thời gian sự kiện không hợp lệ." });
       const endsAtValue = body.endsAt ? new Date(body.endsAt) : new Date(startsAt.getTime() + 60 * 60 * 1000);
-      const doc = { name, description: clean(body.description, 500), startsAt, endsAt: Number.isNaN(endsAtValue.getTime()) ? new Date(startsAt.getTime() + 60 * 60 * 1000) : endsAtValue, eventType: body.eventType === "in-person" ? "in-person" : "online", location: clean(body.location, 180), meetingUrl: safeMedia(body.meetingUrl), timezone: clean(body.timezone || "Asia/Bangkok", 80), privacy: ["public", "private"].includes(body.privacy) ? body.privacy : "public", ownerId: user._id, owner: socialUser(user), attendeeIds: [user._id], status: "active", createdAt: new Date(), updatedAt: new Date() };
+      const endsAt = Number.isNaN(endsAtValue.getTime()) ? new Date(startsAt.getTime() + 60 * 60 * 1000) : endsAtValue;
+      if (endsAt <= startsAt) return res.status(400).json({ error: "Thời gian kết thúc phải sau thời gian bắt đầu." });
+      const capacity = Math.max(0, Math.min(100000, Number.parseInt(body.capacity, 10) || 0));
+      const recurrence = ["none", "daily", "weekly", "monthly"].includes(body.recurrence) ? body.recurrence : "none";
+      const doc = {
+        name,
+        description: clean(body.description, 1000),
+        startsAt,
+        endsAt,
+        eventType: body.eventType === "in-person" ? "in-person" : "online",
+        location: clean(body.location, 180),
+        meetingUrl: safeMedia(body.meetingUrl),
+        timezone: clean(body.timezone || "Asia/Bangkok", 80),
+        privacy: ["public", "private"].includes(body.privacy) ? body.privacy : "public",
+        cover: safeMedia(body.cover),
+        capacity,
+        ticketUrl: safeMedia(body.ticketUrl),
+        recurrence,
+        reminders: ["1h", "1d"],
+        ownerId: user._id,
+        owner: socialUser(user),
+        cohostIds: [],
+        attendeeIds: [user._id],
+        responses: [{ userId: user._id, status: "going", respondedAt: new Date() }],
+        status: "active",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       const result = await db.collection("communityEvents").insertOne(doc);
       return res.status(201).json({ ok: true, event: { ...doc, id: String(result.insertedId) } });
     }
@@ -481,9 +692,18 @@ module.exports = async function handler(req, res) {
       if (!eventId) return res.status(400).json({ error: "Sự kiện không hợp lệ." });
       const item = await db.collection("communityEvents").findOne({ _id: eventId });
       if (!item) return res.status(404).json({ error: "Không tìm thấy sự kiện." });
-      const going = (item.attendeeIds || []).some((id) => String(id) === viewerId);
-      await db.collection("communityEvents").updateOne({ _id: eventId }, going ? { $pull: { attendeeIds: user._id } } : { $addToSet: { attendeeIds: user._id } });
-      return res.status(200).json({ ok: true, going: !going });
+      const current = (item.responses || []).find((entry) => String(entry.userId) === viewerId)?.status || ((item.attendeeIds || []).some((id) => String(id) === viewerId) ? "going" : "");
+      const requested = ["interested", "going", "declined"].includes(body.status) ? body.status : current === "going" ? "" : "going";
+      if (requested === "going" && item.capacity && (item.attendeeIds || []).length >= item.capacity && current !== "going") return res.status(409).json({ error: "Sự kiện đã đủ số người tham gia." });
+      const events = db.collection("communityEvents");
+      await events.updateOne({ _id: eventId }, { $pull: { responses: { userId: user._id }, attendeeIds: user._id }, $set: { updatedAt: new Date() } });
+      if (requested) {
+        await events.updateOne({ _id: eventId }, {
+          $push: { responses: { userId: user._id, status: requested, respondedAt: new Date() } },
+          ...(requested === "going" ? { $addToSet: { attendeeIds: user._id } } : {})
+        });
+      }
+      return res.status(200).json({ ok: true, response: requested, going: requested === "going", interested: requested === "interested" });
     }
 
     if (action === "notifications:read") {
@@ -506,6 +726,28 @@ module.exports = async function handler(req, res) {
       for (const key of allowedKeys) if (Object.prototype.hasOwnProperty.call(body.settings || {}, key)) settings[key] = typeof body.settings[key] === "boolean" ? body.settings[key] : clean(body.settings[key], 80);
       await db.collection("communityNotificationPreferences").updateOne({ userId: user._id }, { $set: { settings, updatedAt: new Date() }, $setOnInsert: { userId: user._id, createdAt: new Date() } }, { upsert: true });
       return res.status(200).json({ ok: true, settings });
+    }
+
+    if (action === "report:create") {
+      const targetType = clean(body.targetType, 30);
+      const targetId = idOf(body.targetId);
+      const category = clean(body.category || "other", 40);
+      const allowedTargets = new Set(["profile", "post", "comment", "story", "video", "livestream", "group", "page", "event", "message"]);
+      const allowedCategories = new Set(["spam", "harassment", "scam", "impersonation", "violence", "sexual", "hate", "copyright", "prohibited_goods", "self_harm", "privacy", "other"]);
+      if (!allowedTargets.has(targetType) || !targetId) return res.status(400).json({ error: "Đối tượng báo cáo không hợp lệ." });
+      if (!allowedCategories.has(category)) return res.status(400).json({ error: "Loại báo cáo không hợp lệ." });
+      const description = clean(body.description || body.reason, 800);
+      if (description.length < 5) return res.status(400).json({ error: "Hãy mô tả ngắn lý do báo cáo." });
+      const now = new Date();
+      const result = await db.collection("communityReports").findOneAndUpdate(
+        { targetType, targetId, reporterId: user._id },
+        {
+          $set: { category, description, evidence: clean(body.evidence, 1200), updatedAt: now },
+          $setOnInsert: { reporterId: user._id, status: "pending", createdAt: now, history: [{ status: "pending", at: now }] }
+        },
+        { upsert: true, returnDocument: "after" }
+      );
+      return res.status(201).json({ ok: true, reportId: String(result?._id || ""), status: result?.status || "pending" });
     }
 
     if (action === "create") {
@@ -532,15 +774,19 @@ module.exports = async function handler(req, res) {
       if (scheduledAtValue && (Number.isNaN(scheduledAt.getTime()) || scheduledAt.getTime() > Date.now() + 365 * 86400000)) return res.status(400).json({ error: "Thời gian lên lịch không hợp lệ." });
       const taggedIds = [...new Set((Array.isArray(body.taggedUserIds) ? body.taggedUserIds : []).slice(0, 20).map(String))].map(idOf).filter(Boolean);
       const taggedUsers = taggedIds.length ? await db.collection("users").find({ _id: { $in: taggedIds } }, { projection: { name: 1, avatar: 1 } }).toArray() : [];
+      const audienceIncludeIds = [...new Set((Array.isArray(body.audienceIncludeIds) ? body.audienceIncludeIds : []).slice(0, 200).map(String))].map(idOf).filter(Boolean);
+      const audienceExcludeIds = [...new Set((Array.isArray(body.audienceExcludeIds) ? body.audienceExcludeIds : []).slice(0, 200).map(String))].map(idOf).filter(Boolean);
+      const requestedPrivacy = clean(body.privacy, 30);
       const doc = {
         userId: user._id, author: socialUser(user), content,
         topic: TOPICS.has(body.topic) ? body.topic : "Góp ý",
-        privacy: ["public", "friends", "friends-of-friends", "followers", "private"].includes(body.privacy) ? body.privacy : "public",
+        privacy: ["public", "friends", "friends-of-friends", "friends-except", "specific", "custom", "followers", "private"].includes(requestedPrivacy) ? requestedPrivacy : "public",
         mediaUrl, mediaType: media[0]?.type || (body.mediaType === "video" ? "video" : mediaUrl ? "image" : ""), media,
-        feeling: clean(body.feeling, 80), location: clean(body.location, 120), poll, taggedUsers: taggedUsers.map(socialUser),
+        feeling: clean(body.feeling, 80), location: clean(body.location, 120), poll, taggedUsers: taggedUsers.map(socialUser), audienceIncludeIds, audienceExcludeIds,
         background: clean(body.background, 40), canReshare: body.canReshare !== false, commentsEnabled: body.commentsEnabled !== false,
+        commentPermission: ["everyone", "friends", "followers"].includes(body.commentPermission) ? body.commentPermission : "everyone",
         hideReactionCounts: Boolean(body.hideReactionCounts), scheduledAt,
-        pinned: false, archived: false, reactions: [], comments: [], savedBy: [], shares: 0, createdAt: new Date(), updatedAt: new Date()
+        pinned: false, archived: false, reactions: [], comments: [], savedBy: [], notificationSubscriberIds: [], shares: 0, createdAt: new Date(), updatedAt: new Date()
       };
       const result = await posts.insertOne(doc);
       if (media.length) await mediaFiles.updateMany({ _id: { $in: media.map((item) => item.id) }, userId: user._id }, { $unset: { expiresAt: "" }, $set: { postId: result.insertedId } });
@@ -563,6 +809,13 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, hidden: true });
     }
 
+    if (action === "post:notifications") {
+      const active = body.active !== false;
+      await posts.updateOne({ _id: postId }, active ? { $addToSet: { notificationSubscriberIds: user._id } } : { $pull: { notificationSubscriberIds: user._id } });
+      const updatedPost = await posts.findOne({ _id: postId });
+      return res.status(200).json({ ok: true, post: present(updatedPost, viewerId) });
+    }
+
     if (["post:archive", "post:restore", "post:pin", "post:settings"].includes(action)) {
       if (!ownsPost) return res.status(403).json({ error: "Bạn không có quyền quản lý bài viết này." });
       const now = new Date();
@@ -574,6 +827,7 @@ module.exports = async function handler(req, res) {
         if (typeof body.commentsEnabled === "boolean") changes.commentsEnabled = body.commentsEnabled;
         if (typeof body.hideReactionCounts === "boolean") changes.hideReactionCounts = body.hideReactionCounts;
         if (typeof body.canReshare === "boolean") changes.canReshare = body.canReshare;
+        if (["everyone", "friends", "followers"].includes(body.commentPermission)) changes.commentPermission = body.commentPermission;
       }
       changes.updatedAt = now;
       await posts.updateOne({ _id: postId, userId: user._id }, { $set: changes, ...(action === "post:restore" ? { $unset: { deletedAt: "" } } : {}) });
@@ -628,12 +882,16 @@ module.exports = async function handler(req, res) {
       await posts.updateOne({ _id: postId }, { $pull: { reactions: { userId: user._id } }, $set: { updatedAt: new Date() } });
       if (body.type !== "remove") await posts.updateOne({ _id: postId }, { $push: { reactions: { userId: user._id, type, createdAt: new Date() } }, $set: { updatedAt: new Date() } });
       if (body.type !== "remove") await notify(db, post.userId, user, "reaction", `${user.name || "Một thành viên"} đã bày tỏ cảm xúc về bài viết của bạn.`, postId);
+      if (body.type !== "remove") await notifyPostSubscribers(db, post, user, "post-reaction", `${user.name || "Một thành viên"} vừa tương tác với bài viết bạn đang theo dõi.`);
     } else if (action === "comment") {
       if (post.commentsEnabled === false) return res.status(403).json({ error: "Bình luận đã bị tắt cho bài viết này." });
+      if (!ownsPost && post.commentPermission === "friends" && !await areFriends(db, user._id, post.userId)) return res.status(403).json({ error: "Chỉ bạn bè của tác giả có thể bình luận." });
+      if (!ownsPost && post.commentPermission === "followers" && !await isFollowing(db, user._id, post.userId)) return res.status(403).json({ error: "Chỉ người theo dõi tác giả có thể bình luận." });
       const text = clean(body.text, 1200);
       if (!text) return res.status(400).json({ error: "Bình luận đang trống." });
       await posts.updateOne({ _id: postId }, { $push: { comments: { _id: new ObjectId(), author: socialUser(user), text, parentId: clean(body.parentId, 40), createdAt: new Date() } }, $set: { updatedAt: new Date() } });
       await notify(db, post.userId, user, "comment", `${user.name || "Một thành viên"} đã bình luận bài viết của bạn.`, postId);
+      await notifyPostSubscribers(db, post, user, "post-comment", `${user.name || "Một thành viên"} vừa bình luận bài viết bạn đang theo dõi.`);
     } else if (action === "save") {
       const saved = (post.savedBy || []).some((id) => String(id) === viewerId);
       await posts.updateOne({ _id: postId }, saved ? { $pull: { savedBy: user._id } } : { $addToSet: { savedBy: user._id } });

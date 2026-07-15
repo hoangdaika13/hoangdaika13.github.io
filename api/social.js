@@ -4,7 +4,7 @@ const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/plat
 const VISIBILITY = new Set(["public", "friends", "private"]);
 const FRIEND_REQUEST_PERMISSIONS = new Set(["everyone", "friends_of_friends", "none"]);
 const FOLLOW_PERMISSIONS = new Set(["everyone", "none"]);
-const RELATION_TYPES = new Set(["follow", "block", "restrict", "mute"]);
+const RELATION_TYPES = new Set(["follow", "block", "restrict", "mute", "snooze", "priority", "close_friend", "acquaintance"]);
 const FRIEND_STATES = new Set(["pending", "accepted", "declined", "cancelled", "removed"]);
 const RESERVED_USERNAMES = new Set([
   "admin", "api", "auth", "community", "help", "login", "logout", "me", "moderator",
@@ -341,6 +341,7 @@ async function ensureIndexes(db) {
       friendships.createIndex({ requesterId: 1, status: 1, updatedAt: -1 }, { name: "community_friendships_outgoing" }),
       relations.createIndex({ actorId: 1, targetId: 1, type: 1 }, { unique: true, name: "community_relations_unique" }),
       relations.createIndex({ targetId: 1, type: 1, active: 1, updatedAt: -1 }, { name: "community_relations_target" }),
+      relations.createIndex({ actorId: 1, type: 1, active: 1, expiresAt: 1 }, { name: "community_relations_feed_controls" }),
       pages.createIndex({ slug: 1 }, { unique: true, name: "community_pages_slug_unique" }),
       pages.createIndex({ ownerId: 1, status: 1, createdAt: -1 }, { name: "community_pages_owner" }),
       pages.createIndex({ status: 1, followerCount: -1, createdAt: -1 }, { name: "community_pages_discover" }),
@@ -484,11 +485,13 @@ async function hasMutualFriend(db, firstId, secondId) {
 async function relationshipContext(db, viewerId, targetId) {
   if (!viewerId) return {
     owner: false, friend: false, blocked: false, following: false, followedBy: false,
-    restricted: false, muted: false, friendStatus: "", requestDirection: ""
+    restricted: false, muted: false, snoozed: false, priority: false, closeFriend: false, acquaintance: false,
+    friendStatus: "", requestDirection: ""
   };
   if (String(viewerId) === String(targetId)) return {
     owner: true, friend: false, blocked: false, following: false, followedBy: false,
-    restricted: false, muted: false, friendStatus: "", requestDirection: ""
+    restricted: false, muted: false, snoozed: false, priority: false, closeFriend: false, acquaintance: false,
+    friendStatus: "", requestDirection: ""
   };
   const [friendship, relations] = await Promise.all([
     friendshipBetween(db, viewerId, targetId),
@@ -510,6 +513,10 @@ async function relationshipContext(db, viewerId, targetId) {
     followedBy: incoming("follow"),
     restricted: outgoing("restrict"),
     muted: outgoing("mute"),
+    snoozed: outgoing("snooze"),
+    priority: outgoing("priority"),
+    closeFriend: outgoing("close_friend"),
+    acquaintance: outgoing("acquaintance"),
     friendStatus: FRIEND_STATES.has(friendship?.status) ? friendship.status : "",
     requestDirection: friendship?.status === "pending"
       ? String(friendship.requesterId) === String(viewerId) ? "outgoing" : "incoming"
@@ -581,7 +588,11 @@ function serializeProfile(profile, account, context, stats = { friends: 0, follo
       following: Boolean(context.following),
       followedBy: Boolean(context.followedBy),
       restricted: Boolean(context.restricted),
-      muted: Boolean(context.muted)
+      muted: Boolean(context.muted),
+      snoozed: Boolean(context.snoozed),
+      priority: Boolean(context.priority),
+      closeFriend: Boolean(context.closeFriend),
+      acquaintance: Boolean(context.acquaintance)
     },
     stats: {
       friends: friendsVisible ? Number(stats.friends || 0) : null,
@@ -698,20 +709,26 @@ async function blockedUserIds(db, userId) {
 }
 
 async function loadOwnedRelations(db, userId) {
+  const now = new Date();
   const docs = await db.collection("communityRelations").find({
     actorId: userId,
-    type: { $in: ["block", "restrict", "mute", "follow"] },
-    active: true
+    type: { $in: ["block", "restrict", "mute", "snooze", "priority", "close_friend", "acquaintance", "follow"] },
+    active: true,
+    $or: [{ type: { $ne: "snooze" } }, { expiresAt: { $gt: now } }]
   }).sort({ updatedAt: -1 }).limit(500).toArray();
   const people = await loadPeople(db, docs.map((item) => item.targetId));
-  const result = { blocked: [], restricted: [], muted: [], following: [] };
+  const result = { blocked: [], restricted: [], muted: [], snoozed: [], priority: [], closeFriends: [], acquaintances: [], following: [] };
   for (const item of docs) {
     const person = basicPerson(people.get(String(item.targetId)), item.targetId);
     if (!person.id) continue;
-    const entry = { ...person, relationUpdatedAt: item.updatedAt || item.createdAt || null };
+    const entry = { ...person, relationUpdatedAt: item.updatedAt || item.createdAt || null, expiresAt: item.expiresAt || null };
     if (item.type === "block") result.blocked.push(entry);
     if (item.type === "restrict") result.restricted.push(entry);
     if (item.type === "mute") result.muted.push(entry);
+    if (item.type === "snooze") result.snoozed.push(entry);
+    if (item.type === "priority") result.priority.push(entry);
+    if (item.type === "close_friend") result.closeFriends.push(entry);
+    if (item.type === "acquaintance") result.acquaintances.push(entry);
     if (item.type === "follow") result.following.push(entry);
   }
   return result;
@@ -1023,6 +1040,10 @@ async function getBootstrap(db, viewer) {
       blocked: [],
       restricted: [],
       muted: [],
+      snoozed: [],
+      priority: [],
+      closeFriends: [],
+      acquaintances: [],
       following: [],
       saved: [],
       activity: [],
@@ -1052,6 +1073,10 @@ async function getBootstrap(db, viewer) {
     blocked: relations.blocked,
     restricted: relations.restricted,
     muted: relations.muted,
+    snoozed: relations.snoozed,
+    priority: relations.priority,
+    closeFriends: relations.closeFriends,
+    acquaintances: relations.acquaintances,
     following: relations.following,
     saved: saved.items,
     activity: activity.items,
@@ -1351,24 +1376,32 @@ async function setRelation(db, user, body, type) {
   const existing = await relations.findOne({ actorId: user._id, targetId, type });
   const active = requestedState(body, Boolean(existing?.active));
   if (type !== "block" && active) await assertNotBlocked(db, user._id, targetId);
+  if (["close_friend", "acquaintance"].includes(type) && active && !await areFriends(db, user._id, targetId)) {
+    fail(409, "Only accepted friends can be added to this list.", "FRIEND_LIST_REQUIRES_FRIENDSHIP");
+  }
   if (type === "follow" && active) {
     const targetProfile = await db.collection("communityProfiles").findOne({ userId: targetId, status: { $ne: "deleted" } });
     if (privacyFor(targetProfile).followPermission === "none") fail(403, "This user is not accepting followers.", "FOLLOWS_DISABLED");
   }
   const now = new Date();
+  const snoozeDays = Math.max(1, Math.min(30, Number.parseInt(body.days, 10) || 30));
+  const expiresAt = type === "snooze" && active ? new Date(now.getTime() + snoozeDays * 24 * 60 * 60 * 1000) : null;
   await relations.updateOne(
     { actorId: user._id, targetId, type },
     {
       $set: {
         active,
         updatedAt: now,
+        ...(expiresAt ? { expiresAt } : {}),
         ...(active ? { activatedAt: now } : { disabledAt: now })
       },
       $setOnInsert: { actorId: user._id, targetId, type, createdAt: now },
-      ...(active ? { $unset: { disabledAt: "" } } : {})
+      ...(active ? { $unset: { disabledAt: "", ...(type !== "snooze" ? { expiresAt: "" } : {}) } } : { $unset: { expiresAt: "" } })
     },
     { upsert: true }
   );
+  if (active && type === "close_friend") await relations.updateOne({ actorId: user._id, targetId, type: "acquaintance", active: true }, { $set: { active: false, disabledAt: now, updatedAt: now } });
+  if (active && type === "acquaintance") await relations.updateOne({ actorId: user._id, targetId, type: "close_friend", active: true }, { $set: { active: false, disabledAt: now, updatedAt: now } });
   if (type === "block" && active) {
     const pair = pairFor(user._id, targetId);
     const event = { status: "removed", actorId: user._id, at: now };
@@ -1390,18 +1423,24 @@ async function setRelation(db, user, body, type) {
       }, { $set: { active: false, disabledAt: now, updatedAt: now, endedReason: "blocked" } })
     ]);
   }
-  const privateAction = ["block", "restrict", "mute"].includes(type);
+  const privateAction = ["block", "restrict", "mute", "snooze", "priority", "close_friend", "acquaintance"].includes(type);
   await logActivity(db, {
     ownerIds: privateAction ? [user._id] : [user._id, targetId],
     actorId: user._id,
     targetId,
     type: `${type}.${active ? "enabled" : "disabled"}`,
     entityType: "relation",
-    metadata: { relation: type, active },
+    metadata: { relation: type, active, ...(expiresAt ? { expiresAt } : {}) },
     visibility: privateAction || !active ? "private" : "public"
   });
-  const responseKey = type === "follow" ? "following" : type === "block" ? "blocked" : type === "restrict" ? "restricted" : "muted";
-  return { ok: true, relation: type, active, [responseKey]: active };
+  const responseKey = type === "follow" ? "following"
+    : type === "block" ? "blocked"
+      : type === "restrict" ? "restricted"
+        : type === "mute" ? "muted"
+          : type === "snooze" ? "snoozed"
+            : type === "priority" ? "priority"
+              : type === "close_friend" ? "closeFriend" : "acquaintance";
+  return { ok: true, relation: type, active, expiresAt, [responseKey]: active };
 }
 
 function pageSlug(value) {
@@ -1584,6 +1623,10 @@ function canonicalAction(value) {
     ["block", "relation:block"], ["relation:block", "relation:block"], ["user:block", "relation:block"],
     ["restrict", "relation:restrict"], ["relation:restrict", "relation:restrict"], ["user:restrict", "relation:restrict"],
     ["mute", "relation:mute"], ["relation:mute", "relation:mute"], ["user:mute", "relation:mute"],
+    ["snooze", "relation:snooze"], ["relation:snooze", "relation:snooze"],
+    ["priority", "relation:priority"], ["relation:priority", "relation:priority"],
+    ["close-friend", "relation:close-friend"], ["relation:close-friend", "relation:close-friend"],
+    ["acquaintance", "relation:acquaintance"], ["relation:acquaintance", "relation:acquaintance"],
     ["page:create", "page:create"], ["pages:create", "page:create"], ["create-page", "page:create"],
     ["page:follow", "page:follow"], ["pages:follow", "page:follow"], ["follow-page", "page:follow"],
     ["collection:create", "collection:create"], ["create-collection", "collection:create"],
@@ -1643,6 +1686,10 @@ module.exports = async function handler(req, res) {
     if (action === "relation:block") return res.status(200).json(await setRelation(db, user, body, "block"));
     if (action === "relation:restrict") return res.status(200).json(await setRelation(db, user, body, "restrict"));
     if (action === "relation:mute") return res.status(200).json(await setRelation(db, user, body, "mute"));
+    if (action === "relation:snooze") return res.status(200).json(await setRelation(db, user, body, "snooze"));
+    if (action === "relation:priority") return res.status(200).json(await setRelation(db, user, body, "priority"));
+    if (action === "relation:close-friend") return res.status(200).json(await setRelation(db, user, body, "close_friend"));
+    if (action === "relation:acquaintance") return res.status(200).json(await setRelation(db, user, body, "acquaintance"));
     if (action === "page:create") return res.status(201).json(await createPage(db, user, body));
     if (action === "page:follow") return res.status(200).json(await followPage(db, user, body));
     if (action === "collection:create") return res.status(201).json(await createCollection(db, user, body));

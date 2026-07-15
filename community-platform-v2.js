@@ -120,7 +120,14 @@
     const mutual = item.mutualFriends || person.mutualFriends || 0;
     let actions = `<button class="primary" type="button" data-v2-relation="friend:request" data-target-id="${esc(id)}">Kết bạn</button><button type="button" data-v2-relation="follow:add" data-target-id="${esc(id)}">Theo dõi</button>`;
     if (mode === "incoming") actions = `<button class="primary" type="button" data-v2-relation="friend:accept" data-request-id="${esc(item.id || item._id || "")}">Chấp nhận</button><button type="button" data-v2-relation="friend:decline" data-request-id="${esc(item.id || item._id || "")}">Từ chối</button>`;
-    if (mode === "friend") actions = `<button type="button" data-v2-open-chat="${esc(id)}">Nhắn tin</button><button class="danger" type="button" data-v2-relation="friend:remove" data-target-id="${esc(id)}">Hủy kết bạn</button>`;
+    const hasRelation = (key) => (socialData?.[key] || []).some((entry) => String(personOf(entry).id || personOf(entry)._id || entry.targetId) === String(id));
+    const closeFriend = hasRelation("closeFriends");
+    const priority = hasRelation("priority");
+    const snoozed = hasRelation("snoozed");
+    if (mode === "friend") actions = `<button type="button" data-v2-open-chat="${esc(id)}">Nhắn tin</button><button type="button" data-v2-relation="close-friend:${closeFriend ? "remove" : "add"}" data-target-id="${esc(id)}">${closeFriend ? "Bỏ bạn thân" : "Bạn thân"}</button><button type="button" data-v2-relation="priority:${priority ? "remove" : "add"}" data-target-id="${esc(id)}">${priority ? "Bỏ ưu tiên" : "Ưu tiên"}</button><button type="button" data-v2-relation="snooze:${snoozed ? "remove" : "add"}" data-target-id="${esc(id)}">${snoozed ? "Bỏ tạm ẩn" : "Tạm ẩn 30 ngày"}</button><button class="danger" type="button" data-v2-relation="friend:remove" data-target-id="${esc(id)}">Hủy kết bạn</button>`;
+    if (mode === "close-friends") actions = `<button type="button" data-v2-open-chat="${esc(id)}">Nhắn tin</button><button class="danger" type="button" data-v2-relation="close-friend:remove" data-target-id="${esc(id)}">Bỏ bạn thân</button>`;
+    if (mode === "priority") actions = `<button type="button" data-v2-open-chat="${esc(id)}">Nhắn tin</button><button class="danger" type="button" data-v2-relation="priority:remove" data-target-id="${esc(id)}">Bỏ ưu tiên</button>`;
+    if (mode === "snoozed") actions = `<button class="primary" type="button" data-v2-relation="snooze:remove" data-target-id="${esc(id)}">Hiện lại ngay</button>`;
     if (mode === "blocked") actions = `<button class="primary" type="button" data-v2-relation="block:remove" data-target-id="${esc(id)}">Bỏ chặn</button><button type="button" data-social-v2-view="privacy">Quyền riêng tư</button>`;
     return `<article class="hh-person-card"><header>${avatarMarkup(person)}<div><strong>${esc(name)}</strong><small>@${esc(person.username || "hh_member")} · ${mutual} bạn chung</small></div></header><p>${esc(person.bio || person.city || "Thành viên cộng đồng HH")}</p><div class="hh-card-actions">${actions}</div></article>`;
   }
@@ -130,7 +137,7 @@
     const friends = socialData?.friends || [];
     const suggestions = socialData?.suggestions || [];
     const blocked = socialData?.blocked || [];
-    panel.innerHTML = `${head("Bạn bè & kết nối", "Quản lý lời mời, bạn bè, người theo dõi và danh sách chặn trong một nơi.", `<button class="hh-v2-action" type="button" data-v2-friend-tab="blocked">Đã chặn</button><button class="hh-v2-action primary" type="button" data-v2-friend-tab="suggestions">Khám phá</button>`)}<section class="hh-v2-section"><nav class="hh-v2-tabs"><button class="active" type="button" data-v2-friend-tab="requests">Lời mời (${incoming.length})</button><button type="button" data-v2-friend-tab="friends">Bạn bè (${friends.length})</button><button type="button" data-v2-friend-tab="suggestions">Có thể bạn biết</button><button type="button" data-v2-friend-tab="blocked">Đã chặn (${blocked.length})</button></nav><div class="hh-card-grid" data-v2-friend-grid>${(incoming.length ? incoming.map((item) => personCard(item, "incoming")) : suggestions.map((item) => personCard(item, "suggestion"))).join("") || empty("◎", "Không có lời mời mới", "Khi ai đó gửi lời mời kết bạn, thông tin sẽ xuất hiện tại đây.")}</div></section>`;
+    panel.innerHTML = `${head("Bạn bè & kết nối", "Quản lý lời mời, danh sách thân thiết, ưu tiên bảng tin và quyền tương tác trong một nơi.", `<button class="hh-v2-action" type="button" data-v2-friend-tab="blocked">Đã chặn</button><button class="hh-v2-action primary" type="button" data-v2-friend-tab="suggestions">Khám phá</button>`)}<section class="hh-v2-section"><nav class="hh-v2-tabs"><button class="active" type="button" data-v2-friend-tab="requests">Lời mời (${incoming.length})</button><button type="button" data-v2-friend-tab="friends">Bạn bè (${friends.length})</button><button type="button" data-v2-friend-tab="close-friends">Bạn thân (${(socialData?.closeFriends || []).length})</button><button type="button" data-v2-friend-tab="priority">Ưu tiên (${(socialData?.priority || []).length})</button><button type="button" data-v2-friend-tab="snoozed">Tạm ẩn (${(socialData?.snoozed || []).length})</button><button type="button" data-v2-friend-tab="suggestions">Có thể bạn biết</button><button type="button" data-v2-friend-tab="blocked">Đã chặn (${blocked.length})</button></nav><div class="hh-card-grid" data-v2-friend-grid>${(incoming.length ? incoming.map((item) => personCard(item, "incoming")) : suggestions.map((item) => personCard(item, "suggestion"))).join("") || empty("◎", "Không có lời mời mới", "Khi ai đó gửi lời mời kết bạn, thông tin sẽ xuất hiện tại đây.")}</div></section>`;
   }
 
   function mediaSource(item, post) {
@@ -278,7 +285,7 @@
     posts?.insertAdjacentHTML("beforebegin", `<section class="hh-feed-control"><div><strong>Bảng tin thông minh</strong><small>Xếp hạng đa dạng, không chỉ dựa vào lượt thích</small></div><label><span>Sắp xếp</span><select data-v2-feed-mode><option value="ranked">Dành cho bạn</option><option value="latest">Mới nhất</option><option value="friends">Bạn bè</option></select><button type="button" data-v2-refresh-feed>↻ Làm mới</button></label></section>`);
     const composer = root.querySelector("[data-community-form]");
     const privacy = composer?.querySelector("[data-community-privacy]");
-    if (privacy && !privacy.querySelector('[value="friends"]')) privacy.querySelector('[value="followers"]')?.insertAdjacentHTML("beforebegin", '<option value="friends">Bạn bè</option><option value="friends-of-friends">Bạn của bạn bè</option>');
+    if (privacy && !privacy.querySelector('[value="friends"]')) privacy.querySelector('[value="followers"]')?.insertAdjacentHTML("beforebegin", '<option value="friends">Bạn bè</option><option value="friends-of-friends">Bạn của bạn bè</option><option value="friends-except">Bạn bè ngoại trừ...</option><option value="specific">Bạn bè cụ thể...</option>');
     const composerActions = composer?.querySelector("footer > div");
     if (composerActions && !composerActions.querySelector("[data-v2-post-options]")) composerActions.insertAdjacentHTML("beforeend", '<button class="interactive" type="button" data-v2-post-options>⚙ Tùy chọn</button>');
     workspace(root);
@@ -320,10 +327,12 @@
   }
 
   function createGroup(root) {
-    const modal = dialog("Tạo nhóm cộng đồng", `<label class="wide"><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="100" placeholder="AI Creator Việt Nam"></label><label class="wide"><span>Giới thiệu</span><textarea name="description" maxlength="500" placeholder="Mục tiêu, chủ đề và nội quy cơ bản..."></textarea></label><label><span>Quyền riêng tư</span><select name="visibility"><option value="public">Công khai</option><option value="private">Riêng tư</option></select></label><label><span>Kiểm duyệt bài</span><select name="postApproval"><option value="off">Đăng trực tiếp</option><option value="on">Duyệt trước khi đăng</option></select></label>`, "Tạo nhóm");
+    const modal = dialog("Tạo nhóm cộng đồng", `<label class="wide"><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="100" placeholder="AI Creator Việt Nam"></label><label class="wide"><span>Giới thiệu</span><textarea name="description" maxlength="500" placeholder="Mục tiêu và nội dung của nhóm..."></textarea></label><label><span>Chủ đề</span><input name="topic" maxlength="80" placeholder="AI & Công nghệ"></label><label><span>Thẻ khám phá</span><input name="tags" maxlength="240" placeholder="AI, sáng tạo, video"></label><label class="wide"><span>Nội quy, mỗi dòng một mục</span><textarea name="rules" maxlength="1200" placeholder="Tôn trọng thành viên&#10;Không spam"></textarea></label><label class="wide"><span>Câu hỏi duyệt thành viên</span><textarea name="questions" maxlength="600" placeholder="Bạn muốn tham gia nhóm vì điều gì?"></textarea></label><label><span>Quyền riêng tư</span><select name="visibility"><option value="public">Công khai</option><option value="private">Riêng tư</option></select></label><label><span>Khả năng khám phá</span><select name="discovery"><option value="visible">Hiện khi tìm kiếm</option><option value="hidden">Ẩn khỏi khám phá</option></select></label><label><span>Kiểm duyệt bài</span><select name="postApproval"><option value="off">Đăng trực tiếp</option><option value="on">Duyệt trước khi đăng</option></select></label><label class="hh-setting-row"><div><strong>Bài ẩn danh</strong><small>Cho phép gửi bài không hiện tên</small></div><input name="anonymousPosts" type="checkbox"></label>`, "Tạo nhóm");
     modal.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
-      const values = Object.fromEntries(new FormData(event.currentTarget));
+      const formData = new FormData(event.currentTarget);
+      const values = Object.fromEntries(formData);
+      values.anonymousPosts = formData.has("anonymousPosts");
       try { await window.HHCommunity.mutate({ action: "group:create", ...values }); await window.HHCommunity.refresh({ silent: true }); modal.close(); modal.remove(); renderGroups(workspace(root)); toast("Nhóm mới đã được tạo."); }
       catch (error) { toast(error.message, "error"); }
     });
@@ -331,7 +340,7 @@
 
   function createEvent(root) {
     const minimum = new Date(Date.now() + 15 * 60000).toISOString().slice(0, 16);
-    const modal = dialog("Tạo sự kiện", `<label class="wide"><span>Tên sự kiện</span><input name="name" required minlength="3" maxlength="100" placeholder="Workshop sáng tạo cùng HH"></label><label><span>Bắt đầu</span><input name="startsAt" type="datetime-local" min="${minimum}" required></label><label><span>Hình thức</span><select name="eventType"><option value="online">Trực tuyến</option><option value="in-person">Trực tiếp</option></select></label><label class="wide"><span>Mô tả</span><textarea name="description" maxlength="500" placeholder="Nội dung, lịch trình và thông tin tham gia..."></textarea></label>`, "Đăng sự kiện");
+    const modal = dialog("Tạo sự kiện", `<label class="wide"><span>Tên sự kiện</span><input name="name" required minlength="3" maxlength="100" placeholder="Workshop sáng tạo cùng HH"></label><label><span>Bắt đầu</span><input name="startsAt" type="datetime-local" min="${minimum}" required></label><label><span>Kết thúc</span><input name="endsAt" type="datetime-local" min="${minimum}"></label><label><span>Hình thức</span><select name="eventType"><option value="online">Trực tuyến</option><option value="in-person">Trực tiếp</option></select></label><label><span>Quyền xem</span><select name="privacy"><option value="public">Công khai</option><option value="private">Riêng tư</option></select></label><label><span>Sức chứa</span><input name="capacity" type="number" min="0" max="100000" value="0" placeholder="0 = không giới hạn"></label><label><span>Lặp lại</span><select name="recurrence"><option value="none">Không lặp</option><option value="daily">Hàng ngày</option><option value="weekly">Hàng tuần</option><option value="monthly">Hàng tháng</option></select></label><label class="wide"><span>Địa điểm hoặc phòng họp</span><input name="location" maxlength="180" placeholder="Địa chỉ trực tiếp hoặc tên phòng"></label><label class="wide"><span>Liên kết tham gia</span><input name="meetingUrl" type="url" placeholder="https://..."></label><label class="wide"><span>Liên kết vé</span><input name="ticketUrl" type="url" placeholder="https://..."></label><label class="wide"><span>Mô tả</span><textarea name="description" maxlength="1000" placeholder="Nội dung, lịch trình và thông tin tham gia..."></textarea></label>`, "Đăng sự kiện");
     modal.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
       const values = Object.fromEntries(new FormData(event.currentTarget));
@@ -356,7 +365,15 @@
       "restrict:add": { action: "relation:restrict", active: true },
       "restrict:remove": { action: "relation:restrict", active: false },
       "mute:add": { action: "relation:mute", active: true },
-      "mute:remove": { action: "relation:mute", active: false }
+      "mute:remove": { action: "relation:mute", active: false },
+      "snooze:add": { action: "relation:snooze", active: true, days: 30 },
+      "snooze:remove": { action: "relation:snooze", active: false },
+      "priority:add": { action: "relation:priority", active: true },
+      "priority:remove": { action: "relation:priority", active: false },
+      "close-friend:add": { action: "relation:close-friend", active: true },
+      "close-friend:remove": { action: "relation:close-friend", active: false },
+      "acquaintance:add": { action: "relation:acquaintance", active: true },
+      "acquaintance:remove": { action: "relation:acquaintance", active: false }
     };
     const payload = mapping[requested] || { action: requested };
     try {
@@ -379,17 +396,50 @@
     field.value = String(value ?? "");
   }
 
+  function choosePostAudience(select) {
+    const mode = select.value;
+    if (!["friends-except", "specific"].includes(mode)) {
+      setComposerValue(select.form, "audienceIncludeIds", "[]");
+      setComposerValue(select.form, "audienceExcludeIds", "[]");
+      return;
+    }
+    const friends = socialData?.friends || [];
+    if (!friends.length) {
+      select.value = "friends";
+      toast("Bạn cần có bạn bè trước khi tạo đối tượng tùy chỉnh.", "error");
+      return;
+    }
+    const key = mode === "specific" ? "audienceIncludeIds" : "audienceExcludeIds";
+    let selected = [];
+    try { selected = JSON.parse(select.form.querySelector(`[data-v2-composer-value="${key}"]`)?.value || "[]"); } catch {}
+    const modal = dialog(mode === "specific" ? "Chọn người có thể xem" : "Ẩn bài viết với bạn bè", `<section class="wide hh-v2-audience-list"><p>${mode === "specific" ? "Chỉ những người được chọn bên dưới có thể xem bài viết." : "Các bạn bè được chọn sẽ không nhìn thấy bài viết này."}</p>${friends.map((friend) => { const id = friend.id || friend._id || friend.userId; return `<label><input type="checkbox" name="audience" value="${esc(id)}" ${selected.includes(String(id)) ? "checked" : ""}>${avatarMarkup(friend)}<span><strong>${esc(friend.displayName || friend.name || friend.username || "Thành viên HH")}</strong><small>@${esc(friend.username || "hh-member")}</small></span></label>`; }).join("")}</section>`, "Áp dụng đối tượng");
+    let saved = false;
+    modal.querySelector("form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const ids = new FormData(event.currentTarget).getAll("audience").map(String);
+      if (mode === "specific" && !ids.length) { toast("Hãy chọn ít nhất một người có thể xem.", "error"); return; }
+      setComposerValue(select.form, "audienceIncludeIds", JSON.stringify(mode === "specific" ? ids : []));
+      setComposerValue(select.form, "audienceExcludeIds", JSON.stringify(mode === "friends-except" ? ids : []));
+      saved = true;
+      modal.close(); modal.remove();
+      toast(mode === "specific" ? `Đã chọn ${ids.length} người xem.` : `Đã loại trừ ${ids.length} bạn bè.`);
+    });
+    modal.querySelectorAll("[data-v2-dialog-close]").forEach((button) => button.addEventListener("click", () => { if (!saved) select.value = "friends"; }));
+    modal.addEventListener("cancel", () => { if (!saved) select.value = "friends"; }, { once: true });
+  }
+
   function postOptions(root) {
     const form = root.querySelector("[data-community-form]");
     if (!form) return;
     const value = (name, fallback = "") => form.querySelector(`[data-v2-composer-value="${name}"]`)?.value ?? fallback;
     const checked = (name, fallback) => value(name, String(fallback)) === "true";
-    const modal = dialog("Tùy chọn bài viết", `<label><span>Lên lịch đăng</span><input name="scheduledAt" type="datetime-local" value="${esc(value("scheduledAt"))}"></label><label><span>Nền bài viết</span><select name="background"><option value="">Mặc định</option><option value="aurora" ${value("background") === "aurora" ? "selected" : ""}>Aurora</option><option value="sunset" ${value("background") === "sunset" ? "selected" : ""}>Hoàng hôn</option><option value="ocean" ${value("background") === "ocean" ? "selected" : ""}>Đại dương</option><option value="neon" ${value("background") === "neon" ? "selected" : ""}>Neon</option></select></label><label class="hh-setting-row wide"><div><strong>Cho phép chia sẻ lại</strong><small>Người xem có thể chia sẻ bài viết</small></div><input name="canReshare" type="checkbox" ${checked("canReshare", true) ? "checked" : ""}></label><label class="hh-setting-row wide"><div><strong>Cho phép bình luận</strong><small>Tắt khi bạn chỉ muốn phát thông báo</small></div><input name="commentsEnabled" type="checkbox" ${checked("commentsEnabled", true) ? "checked" : ""}></label><label class="hh-setting-row wide"><div><strong>Ẩn số cảm xúc</strong><small>Vẫn lưu reaction nhưng không công khai tổng số</small></div><input name="hideReactionCounts" type="checkbox" ${checked("hideReactionCounts", false) ? "checked" : ""}></label>`, "Áp dụng");
+    const modal = dialog("Tùy chọn bài viết", `<label><span>Lên lịch đăng</span><input name="scheduledAt" type="datetime-local" value="${esc(value("scheduledAt"))}"></label><label><span>Nền bài viết</span><select name="background"><option value="">Mặc định</option><option value="aurora" ${value("background") === "aurora" ? "selected" : ""}>Aurora</option><option value="sunset" ${value("background") === "sunset" ? "selected" : ""}>Hoàng hôn</option><option value="ocean" ${value("background") === "ocean" ? "selected" : ""}>Đại dương</option><option value="neon" ${value("background") === "neon" ? "selected" : ""}>Neon</option></select></label><label class="wide"><span>Ai có thể bình luận</span><select name="commentPermission"><option value="everyone" ${value("commentPermission", "everyone") === "everyone" ? "selected" : ""}>Mọi người</option><option value="friends" ${value("commentPermission") === "friends" ? "selected" : ""}>Bạn bè</option><option value="followers" ${value("commentPermission") === "followers" ? "selected" : ""}>Người theo dõi</option></select></label><label class="hh-setting-row wide"><div><strong>Cho phép chia sẻ lại</strong><small>Người xem có thể chia sẻ bài viết</small></div><input name="canReshare" type="checkbox" ${checked("canReshare", true) ? "checked" : ""}></label><label class="hh-setting-row wide"><div><strong>Cho phép bình luận</strong><small>Tắt khi bạn chỉ muốn phát thông báo</small></div><input name="commentsEnabled" type="checkbox" ${checked("commentsEnabled", true) ? "checked" : ""}></label><label class="hh-setting-row wide"><div><strong>Ẩn số cảm xúc</strong><small>Vẫn lưu reaction nhưng không công khai tổng số</small></div><input name="hideReactionCounts" type="checkbox" ${checked("hideReactionCounts", false) ? "checked" : ""}></label>`, "Áp dụng");
     modal.querySelector("form").addEventListener("submit", (event) => {
       event.preventDefault();
       const values = new FormData(event.currentTarget);
       setComposerValue(form, "scheduledAt", values.get("scheduledAt") || "");
       setComposerValue(form, "background", values.get("background") || "");
+      setComposerValue(form, "commentPermission", values.get("commentPermission") || "everyone");
       ["canReshare", "commentsEnabled", "hideReactionCounts"].forEach((name) => setComposerValue(form, name, values.has(name)));
       modal.close(); modal.remove();
       toast(values.get("scheduledAt") ? "Đã lên lịch và lưu tùy chọn bài viết." : "Đã lưu tùy chọn bài viết.");
@@ -408,11 +458,11 @@
   }
 
   function editPostSettings(root, post) {
-    const modal = dialog("Quyền bình luận & chia sẻ", `<label class="hh-setting-row wide"><div><strong>Cho phép bình luận</strong><small>Thành viên có thể gửi phản hồi</small></div><input name="commentsEnabled" type="checkbox" ${post.commentsEnabled !== false ? "checked" : ""}></label><label class="hh-setting-row wide"><div><strong>Cho phép chia sẻ lại</strong><small>Giữ quyền xem của bài gốc khi chia sẻ</small></div><input name="canReshare" type="checkbox" ${post.canReshare !== false ? "checked" : ""}></label><label class="hh-setting-row wide"><div><strong>Ẩn số cảm xúc</strong><small>Không hiển thị tổng reaction công khai</small></div><input name="hideReactionCounts" type="checkbox" ${post.hideReactionCounts ? "checked" : ""}></label>`, "Lưu thiết lập");
+    const modal = dialog("Quyền bình luận & chia sẻ", `<label class="wide"><span>Ai có thể bình luận</span><select name="commentPermission"><option value="everyone" ${post.commentPermission === "everyone" || !post.commentPermission ? "selected" : ""}>Mọi người</option><option value="friends" ${post.commentPermission === "friends" ? "selected" : ""}>Bạn bè</option><option value="followers" ${post.commentPermission === "followers" ? "selected" : ""}>Người theo dõi</option></select></label><label class="hh-setting-row wide"><div><strong>Cho phép bình luận</strong><small>Thành viên có thể gửi phản hồi</small></div><input name="commentsEnabled" type="checkbox" ${post.commentsEnabled !== false ? "checked" : ""}></label><label class="hh-setting-row wide"><div><strong>Cho phép chia sẻ lại</strong><small>Giữ quyền xem của bài gốc khi chia sẻ</small></div><input name="canReshare" type="checkbox" ${post.canReshare !== false ? "checked" : ""}></label><label class="hh-setting-row wide"><div><strong>Ẩn số cảm xúc</strong><small>Không hiển thị tổng reaction công khai</small></div><input name="hideReactionCounts" type="checkbox" ${post.hideReactionCounts ? "checked" : ""}></label>`, "Lưu thiết lập");
     modal.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
       const values = new FormData(event.currentTarget);
-      try { await window.HHCommunity.mutate({ action: "post:settings", postId: post.id, commentsEnabled: values.has("commentsEnabled"), canReshare: values.has("canReshare"), hideReactionCounts: values.has("hideReactionCounts") }); modal.close(); modal.remove(); decoratePosts(root); toast("Đã lưu quyền của bài viết."); }
+      try { await window.HHCommunity.mutate({ action: "post:settings", postId: post.id, commentPermission: values.get("commentPermission") || "everyone", commentsEnabled: values.has("commentsEnabled"), canReshare: values.has("canReshare"), hideReactionCounts: values.has("hideReactionCounts") }); modal.close(); modal.remove(); decoratePosts(root); toast("Đã lưu quyền của bài viết."); }
       catch (error) { toast(error.message, "error"); }
     });
   }
@@ -420,7 +470,7 @@
   async function showPostMenu(root, postId) {
     const post = (communityState().remotePosts || []).find((item) => String(item.id) === String(postId));
     if (!post) return;
-    const actions = post.owned ? [["edit","Sửa bài viết"],["pin",post.pinned?"Bỏ ghim":"Ghim bài"],["settings","Quyền bình luận & chia sẻ"],["archive","Lưu trữ"],["trash","Chuyển vào thùng rác"]] : [["hide","Ẩn bài viết"],["not-interested","Xem ít nội dung tương tự"],["report","Báo cáo bài viết"]];
+    const actions = post.owned ? [["edit","Sửa bài viết"],["pin",post.pinned?"Bỏ ghim":"Ghim bài"],["settings","Quyền bình luận & chia sẻ"],["archive","Lưu trữ"],["trash","Chuyển vào thùng rác"]] : [["notify",post.notificationSubscribed?"Tắt thông báo bài viết":"Bật thông báo bài viết"],["hide","Ẩn bài viết"],["not-interested","Xem ít nội dung tương tự"],["report","Báo cáo bài viết"]];
     const modal = dialog("Tùy chọn bài viết", actions.map(([id, label]) => `<button class="hh-v2-action ${id === "trash" || id === "report" ? "danger" : ""}" type="button" data-v2-post-action="${id}" data-post-id="${esc(postId)}">${label}</button>`).join(""), "Đóng");
     modal.querySelector("footer .primary").remove();
     modal.querySelectorAll("[data-v2-post-action]").forEach((button) => button.addEventListener("click", async () => {
@@ -435,6 +485,8 @@
           await window.HHCommunity.refresh({ silent: true });
         } else if (action === "report") {
           await window.HHCommunity.mutate({ action: "report", postId, reason: "Người dùng gửi từ menu Social Hub" });
+        } else if (action === "notify") {
+          await window.HHCommunity.mutate({ action: "post:notifications", postId, active: !post.notificationSubscribed });
         } else await window.HHCommunity.mutate({ action: action === "pin" ? "post:pin" : action === "archive" ? "post:archive" : action === "hide" ? "post:hide" : "post:not-interested", postId });
         modal.close(); modal.remove(); toast("Đã cập nhật bài viết.");
       } catch (error) { toast(error.message, "error"); }
@@ -455,7 +507,7 @@
     if (event.target.closest("[data-v2-post-options]")) { postOptions(root); return; }
     const relation = event.target.closest("[data-v2-relation]"); if (relation) { performRelation(root, relation); return; }
     const friendTab = event.target.closest("[data-v2-friend-tab]");
-    if (friendTab) { const mode = friendTab.dataset.v2FriendTab; const list = mode === "requests" ? (socialData?.requests?.incoming || socialData?.incomingRequests || []) : mode === "friends" ? (socialData?.friends || []) : mode === "blocked" ? (socialData?.blocked || []) : (socialData?.suggestions || []); $$(root, "[data-v2-friend-tab]").forEach((button) => button.classList.toggle("active", button.dataset.v2FriendTab === mode)); const grid = $(root, "[data-v2-friend-grid]"); if (grid) grid.innerHTML = list.map((item) => personCard(item, mode === "requests" ? "incoming" : mode === "friends" ? "friend" : mode === "blocked" ? "blocked" : "suggestion")).join("") || empty("◎", "Không có dữ liệu", "Danh sách này hiện đang trống."); return; }
+    if (friendTab) { const mode = friendTab.dataset.v2FriendTab; const sources = { requests: socialData?.requests?.incoming || socialData?.incomingRequests || [], friends: socialData?.friends || [], blocked: socialData?.blocked || [], "close-friends": socialData?.closeFriends || [], priority: socialData?.priority || [], snoozed: socialData?.snoozed || [], suggestions: socialData?.suggestions || [] }; const list = sources[mode] || []; $$(root, "[data-v2-friend-tab]").forEach((button) => button.classList.toggle("active", button.dataset.v2FriendTab === mode)); const grid = $(root, "[data-v2-friend-grid]"); if (grid) grid.innerHTML = list.map((item) => personCard(item, mode === "requests" ? "incoming" : mode === "friends" ? "friend" : mode === "blocked" ? "blocked" : mode)).join("") || empty("◎", "Không có dữ liệu", "Danh sách này hiện đang trống."); return; }
     if (event.target.closest("[data-v2-refresh-feed]")) { await window.HHCommunity?.loadMode?.($(root, "[data-v2-feed-mode]")?.value || "ranked"); decoratePosts(root); return; }
     const openPost = event.target.closest("[data-v2-open-post]"); if (openPost) { showFeed(root); requestAnimationFrame(() => root.querySelector(`[data-post-id="${CSS.escape(openPost.dataset.v2OpenPost)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" })); return; }
     const more = event.target.closest("[data-post-more]"); if (more) { event.preventDefault(); event.stopImmediatePropagation(); showPostMenu(root, more.dataset.postMore); return; }
@@ -489,6 +541,11 @@
   });
 
   document.addEventListener("change", async (event) => {
+    const privacy = event.target.closest("[data-community-privacy]");
+    if (privacy) {
+      choosePostAudience(privacy);
+      return;
+    }
     const feedMode = event.target.closest("[data-v2-feed-mode]");
     if (!feedMode) return;
     const root = feedMode.closest("[data-community-center]");
