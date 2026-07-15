@@ -1,10 +1,17 @@
 const { ObjectId } = require("mongodb");
+const { createHash } = require("crypto");
 const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/platform");
 
 const REACTIONS = new Set(["like", "love", "care", "haha", "wow", "sad", "angry"]);
 const TOPICS = new Set(["Thông báo", "AI & Công nghệ", "Website", "Âm nhạc", "Góp ý", "Đời sống"]);
 const MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm", "video/quicktime"]);
 const MAX_MEDIA_BYTES = 2.5 * 1024 * 1024;
+const DEFAULT_CHAT_ROOMS = [
+  { id: "general", name: "Chung", description: "Trò chuyện và cập nhật chung của cộng đồng." },
+  { id: "creator", name: "Sáng tạo", description: "Chia sẻ ý tưởng, hình ảnh, video và quy trình sáng tạo." },
+  { id: "projects", name: "Dự án", description: "Phối hợp dự án và theo dõi tiến độ." },
+  { id: "support", name: "Hỗ trợ", description: "Hỏi đáp và nhận trợ giúp từ cộng đồng." }
+];
 
 function idOf(value) {
   try { return new ObjectId(String(value || "")); } catch { return null; }
@@ -31,6 +38,41 @@ function socialUser(user) {
 function hashtagsFrom(value) {
   const matches = String(value || "").match(/#[\p{L}\p{N}_]{2,50}/gu) || [];
   return [...new Set(matches.map((item) => item.slice(1).toLocaleLowerCase("vi")))].slice(0, 20);
+}
+
+function chatSlug(value) {
+  return clean(value, 60).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+}
+
+function directRoomSlug(firstId, secondId) {
+  const pair = [String(firstId || ""), String(secondId || "")].sort().join(":");
+  return `dm-${createHash("sha256").update(pair).digest("hex").slice(0, 32)}`;
+}
+
+function presentMessage(message, viewerId) {
+  const reactions = (message.reactions || []).reduce((result, item) => {
+    const type = REACTIONS.has(item.type) ? item.type : "like";
+    result[type] = (result[type] || 0) + 1;
+    return result;
+  }, {});
+  const mine = String(message.userId || "") === String(viewerId || "");
+  return {
+    id: String(message._id || ""),
+    room: clean(message.room || "general", 40),
+    text: clean(message.text, 2000),
+    author: socialUser(message.author),
+    mine,
+    edited: Boolean(message.editedAt),
+    deleted: Boolean(message.deletedAt),
+    attachmentUrl: safeMedia(message.attachmentUrl),
+    mediaId: message.mediaId ? String(message.mediaId) : "",
+    mediaType: clean(message.mediaType, 20),
+    replyTo: message.replyTo ? { id: String(message.replyTo.id || ""), name: clean(message.replyTo.name, 100), text: clean(message.replyTo.text, 180) } : null,
+    reactions,
+    viewerReaction: (message.reactions || []).find((item) => String(item.userId) === String(viewerId || ""))?.type || "",
+    createdAt: message.createdAt,
+    updatedAt: message.updatedAt || message.createdAt
+  };
 }
 
 async function blockedBetween(db, firstId, secondId) {
@@ -174,7 +216,7 @@ function present(post, viewerId) {
     privacy: post.privacy,
     mediaUrl: post.mediaUrl || "",
     mediaType: post.mediaType || "",
-    media: (post.media || []).slice(0, 4).map((item) => ({ id: String(item.id || ""), type: item.type === "video" ? "video" : "image" })),
+    media: (post.media || []).slice(0, 12).map((item) => ({ id: String(item.id || ""), type: item.type === "video" ? "video" : "image" })),
     pinned: Boolean(post.pinned),
     feeling: clean(post.feeling, 80),
     location: clean(post.location, 120),
@@ -253,6 +295,9 @@ module.exports = async function handler(req, res) {
     const stories = db.collection("communityStories");
     const follows = db.collection("communityFollows");
     const mediaFiles = db.collection("communityMedia");
+    const messages = db.collection("communityMessages");
+    const chatRooms = db.collection("communityChatRooms");
+    const messageReads = db.collection("communityMessageReads");
     await Promise.all([
       posts.createIndex({ createdAt: -1 }),
       posts.createIndex({ userId: 1, deletedAt: 1, archived: 1, createdAt: -1 }),
@@ -261,7 +306,12 @@ module.exports = async function handler(req, res) {
       follows.createIndex({ followerId: 1, targetId: 1 }, { unique: true }),
       db.collection("communityFeedPreferences").createIndex({ userId: 1 }, { unique: true }),
       mediaFiles.createIndex({ userId: 1, createdAt: -1 }),
-      mediaFiles.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+      mediaFiles.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      messages.createIndex({ room: 1, createdAt: -1 }),
+      messages.createIndex({ room: 1, userId: 1, createdAt: -1 }),
+      messages.createIndex({ userId: 1, createdAt: -1 }),
+      chatRooms.createIndex({ slug: 1 }, { unique: true }),
+      messageReads.createIndex({ userId: 1, room: 1 }, { unique: true })
     ]);
     const user = await currentUser(req);
     const viewerId = user ? String(user._id) : "";
@@ -273,7 +323,9 @@ module.exports = async function handler(req, res) {
       if (!item) return res.status(404).json({ error: "Không tìm thấy media." });
       const linkedPost = item.postId ? await posts.findOne({ _id: item.postId }) : null;
       const linkedStory = !linkedPost ? await stories.findOne({ mediaId }) : null;
-      const allowed = linkedPost ? await canViewPost(db, linkedPost, user) : linkedStory ? await canViewStory(db, linkedStory, user) : Boolean(user && String(item.userId) === viewerId);
+      const linkedMessage = !linkedPost && !linkedStory && item.messageId ? await messages.findOne({ _id: item.messageId, deletedAt: { $exists: false } }) : null;
+      const messageRoomAllowed = linkedMessage && user ? DEFAULT_CHAT_ROOMS.some((room) => room.id === linkedMessage.room) || Boolean(await chatRooms.findOne({ slug: linkedMessage.room, $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }] }, { projection: { _id: 1 } })) : false;
+      const allowed = linkedPost ? await canViewPost(db, linkedPost, user) : linkedStory ? await canViewStory(db, linkedStory, user) : linkedMessage ? messageRoomAllowed : Boolean(user && String(item.userId) === viewerId);
       if (!allowed) return res.status(404).json({ error: "Không tìm thấy media." });
       const bytes = Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data?.buffer || item.data || []);
       res.setHeader("Content-Type", item.mimeType || "application/octet-stream");
@@ -282,6 +334,70 @@ module.exports = async function handler(req, res) {
       const publicMedia = linkedPost ? (linkedPost.privacy || "public") === "public" : linkedStory ? (linkedStory.privacy || "public") === "public" : false;
       res.setHeader("Cache-Control", publicMedia ? "public, max-age=3600" : "private, no-store");
       return res.status(200).send(bytes);
+    }
+
+    if (req.method === "GET" && req.query.view === "messenger") {
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để dùng Messenger HH." });
+      const requestedRoom = chatSlug(req.query.room || "general") || "general";
+      const customRooms = await chatRooms.find({
+        $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }]
+      }).sort({ updatedAt: -1, createdAt: -1 }).limit(30).toArray();
+      const customMemberIds = [...new Map(customRooms.flatMap((room) => room.memberIds || []).filter(Boolean).map((id) => [String(id), id])).values()];
+      const memberUsers = customMemberIds.length ? await db.collection("users").find(
+        { _id: { $in: customMemberIds } },
+        { projection: { name: 1, avatar: 1 } }
+      ).toArray() : [];
+      const userMap = new Map(memberUsers.map((item) => [String(item._id), socialUser(item)]));
+      const customRoomCards = customRooms.map((room) => {
+        const kind = room.kind === "direct" ? "direct" : "group";
+        const otherId = kind === "direct" ? (room.memberIds || []).find((id) => String(id) !== viewerId) : null;
+        const other = otherId ? userMap.get(String(otherId)) : null;
+        return {
+          id: room.slug,
+          name: kind === "direct" ? (other?.name || "Thành viên HH") : room.name,
+          description: clean(room.lastMessage?.text, 90) || (kind === "direct" ? "Tin nhắn riêng" : room.description),
+          avatar: kind === "direct" ? (other?.avatar || "") : safeMedia(room.avatar),
+          otherId: otherId ? String(otherId) : "",
+          kind,
+          visibility: room.visibility || "private",
+          owned: String(room.ownerId) === viewerId,
+          memberCount: (room.memberIds || []).length,
+          memberIds: (room.memberIds || []).map(String)
+        };
+      });
+      const roomRecords = [
+        ...customRoomCards.filter((room) => room.kind === "direct"),
+        ...DEFAULT_CHAT_ROOMS.map((room) => ({ ...room, kind: "channel", visibility: "public", owned: false, memberCount: 0 })),
+        ...customRoomCards.filter((room) => room.kind !== "direct")
+      ];
+      const readRecords = await messageReads.find({ userId: user._id, room: { $in: roomRecords.map((item) => item.id) } }).toArray();
+      const readMap = new Map(readRecords.map((item) => [item.room, item.readAt || new Date(0)]));
+      const roomsWithUnread = await Promise.all(roomRecords.map(async (item) => ({
+        ...item,
+        unread: await messages.countDocuments({
+          room: item.id,
+          userId: { $ne: user._id },
+          deletedAt: { $exists: false },
+          createdAt: { $gt: readMap.get(item.id) || new Date(0) }
+        })
+      })));
+      const room = roomsWithUnread.find((item) => item.id === requestedRoom) || roomsWithUnread[0];
+      const rawMessages = await messages.find({ room: room.id, deletedAt: { $exists: false } }).sort({ createdAt: -1 }).limit(120).toArray();
+      const chronological = rawMessages.reverse();
+      const selectedCustom = customRooms.find((item) => item.slug === room.id);
+      const roomMembers = (selectedCustom?.memberIds || []).map((id) => userMap.get(String(id))).filter(Boolean);
+      const activePeople = chronological.slice().reverse().map((item) => [String(item.userId), { ...socialUser(item.author), lastSeenAt: item.createdAt }]);
+      const participants = [...new Map([
+        ...roomMembers.map((item) => [String(item.id), { ...item, lastSeenAt: null }]),
+        ...activePeople
+      ]).values()].slice(0, 30);
+      return res.status(200).json({
+        room,
+        rooms: roomsWithUnread,
+        messages: chronological.map((item) => presentMessage(item, viewerId)),
+        participants,
+        refreshedAt: new Date()
+      });
     }
 
     if (req.method === "GET") {
@@ -478,6 +594,186 @@ module.exports = async function handler(req, res) {
       };
       const result = await mediaFiles.insertOne(doc);
       return res.status(201).json({ ok: true, media: { id: String(result.insertedId), type: mimeType.startsWith("video/") ? "video" : "image", size: bytes.length } });
+    }
+
+    if (action === "message:direct") {
+      await enforceRateLimit(db, `community:direct:${user._id}`, 30, 10 * 60 * 1000);
+      const targetId = idOf(body.targetId);
+      if (!targetId || String(targetId) === viewerId) return res.status(400).json({ error: "Người nhận tin nhắn không hợp lệ." });
+      if (await blockedBetween(db, user._id, targetId)) return res.status(403).json({ error: "Không thể mở cuộc trò chuyện với tài khoản này." });
+      const target = await db.collection("users").findOne({ _id: targetId, status: { $nin: ["deleted", "suspended", "locked", "banned"] } }, { projection: { name: 1, avatar: 1 } });
+      if (!target) return res.status(404).json({ error: "Không tìm thấy thành viên này." });
+      const slug = directRoomSlug(user._id, targetId);
+      const now = new Date();
+      await chatRooms.updateOne(
+        { slug },
+        {
+          $setOnInsert: {
+            slug,
+            kind: "direct",
+            name: "Tin nhắn riêng",
+            description: "Cuộc trò chuyện riêng tư giữa hai thành viên.",
+            visibility: "private",
+            ownerId: user._id,
+            owner: socialUser(user),
+            memberIds: [user._id, targetId],
+            createdAt: now
+          },
+          $set: { updatedAt: now }
+        },
+        { upsert: true }
+      );
+      return res.status(200).json({ ok: true, room: { id: slug, name: target.name || "Thành viên HH", avatar: safeMedia(target.avatar), kind: "direct", visibility: "private", memberCount: 2 } });
+    }
+
+    if (action === "message:read") {
+      const roomSlug = chatSlug(body.room || "general") || "general";
+      const defaultRoom = DEFAULT_CHAT_ROOMS.find((room) => room.id === roomSlug);
+      const customRoom = defaultRoom ? null : await chatRooms.findOne({
+        slug: roomSlug,
+        $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }]
+      }, { projection: { _id: 1 } });
+      if (!defaultRoom && !customRoom) return res.status(404).json({ error: "Phòng trò chuyện không tồn tại hoặc bạn không có quyền truy cập." });
+      const latest = await messages.findOne(
+        { room: roomSlug, deletedAt: { $exists: false } },
+        { sort: { createdAt: -1 }, projection: { _id: 1, createdAt: 1 } }
+      );
+      const readAt = new Date();
+      await messageReads.updateOne(
+        { userId: user._id, room: roomSlug },
+        { $set: { readAt, latestMessageId: latest?._id || null, updatedAt: readAt }, $setOnInsert: { createdAt: readAt } },
+        { upsert: true }
+      );
+      return res.status(200).json({ ok: true, room: roomSlug, readAt, latestMessageId: latest ? String(latest._id) : "" });
+    }
+
+    if (action === "message:room:create") {
+      await enforceRateLimit(db, `community:room:${user._id}`, 8, 60 * 60 * 1000);
+      const name = clean(body.name, 80);
+      const slug = chatSlug(body.slug || name);
+      if (name.length < 3 || slug.length < 3) return res.status(400).json({ error: "Tên phòng cần ít nhất 3 ký tự." });
+      if (DEFAULT_CHAT_ROOMS.some((room) => room.id === slug)) return res.status(409).json({ error: "Tên phòng này đã được sử dụng." });
+      const requestedMemberIds = [...new Set((Array.isArray(body.memberIds) ? body.memberIds : []).slice(0, 29).map(String))]
+        .map(idOf).filter((id) => id && String(id) !== viewerId);
+      const validMembers = requestedMemberIds.length ? await db.collection("users").find(
+        { _id: { $in: requestedMemberIds }, status: { $nin: ["deleted", "suspended", "locked", "banned"] } },
+        { projection: { _id: 1 } }
+      ).toArray() : [];
+      const doc = {
+        slug,
+        kind: "group",
+        name,
+        description: clean(body.description, 240),
+        visibility: body.visibility === "private" ? "private" : "public",
+        ownerId: user._id,
+        owner: socialUser(user),
+        memberIds: [user._id, ...validMembers.map((item) => item._id)],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      try {
+        const result = await chatRooms.insertOne(doc);
+        return res.status(201).json({ ok: true, room: { id: slug, name, description: doc.description, kind: "group", visibility: doc.visibility, owned: true, memberCount: doc.memberIds.length, recordId: String(result.insertedId) } });
+      } catch (error) {
+        if (error?.code === 11000) return res.status(409).json({ error: "Đường dẫn phòng đã tồn tại." });
+        throw error;
+      }
+    }
+
+    if (["message:room:update", "message:room:leave"].includes(action)) {
+      const roomSlug = chatSlug(body.room);
+      const room = roomSlug ? await chatRooms.findOne({ slug: roomSlug, kind: "group", memberIds: user._id }) : null;
+      if (!room) return res.status(404).json({ error: "Không tìm thấy nhóm chat hoặc bạn không còn là thành viên." });
+      if (action === "message:room:leave") {
+        if (String(room.ownerId) === viewerId) return res.status(400).json({ error: "Chủ phòng cần chuyển quyền trước khi rời nhóm." });
+        await chatRooms.updateOne({ _id: room._id }, { $pull: { memberIds: user._id }, $set: { updatedAt: new Date() } });
+        return res.status(200).json({ ok: true, left: true });
+      }
+      if (String(room.ownerId) !== viewerId) return res.status(403).json({ error: "Chỉ chủ phòng có thể thay đổi nhóm chat." });
+      const name = clean(body.name || room.name, 80);
+      if (name.length < 3) return res.status(400).json({ error: "Tên nhóm chat cần ít nhất 3 ký tự." });
+      const requestedMemberIds = [...new Set((Array.isArray(body.memberIds) ? body.memberIds : room.memberIds || []).slice(0, 29).map(String))]
+        .map(idOf).filter((id) => id && String(id) !== viewerId);
+      const validMembers = requestedMemberIds.length ? await db.collection("users").find(
+        { _id: { $in: requestedMemberIds }, status: { $nin: ["deleted", "suspended", "locked", "banned"] } },
+        { projection: { _id: 1 } }
+      ).toArray() : [];
+      await chatRooms.updateOne({ _id: room._id }, { $set: {
+        name,
+        description: clean(body.description ?? room.description, 240),
+        visibility: body.visibility === "public" ? "public" : "private",
+        memberIds: [user._id, ...validMembers.map((item) => item._id)],
+        updatedAt: new Date()
+      } });
+      return res.status(200).json({ ok: true, updated: true, memberCount: validMembers.length + 1 });
+    }
+
+    if (["message:create", "message:edit", "message:delete", "message:react"].includes(action)) {
+      const roomSlug = chatSlug(body.room || "general") || "general";
+      const defaultRoom = DEFAULT_CHAT_ROOMS.find((room) => room.id === roomSlug);
+      const customRoom = defaultRoom ? null : await chatRooms.findOne({ slug: roomSlug, $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }] });
+      if (!defaultRoom && !customRoom) return res.status(404).json({ error: "Phòng trò chuyện không tồn tại hoặc bạn không có quyền truy cập." });
+
+      if (action === "message:create") {
+        await enforceRateLimit(db, `community:message:${user._id}`, 45, 10 * 60 * 1000);
+        const text = clean(body.text, 2000);
+        const attachmentUrl = safeMedia(body.attachmentUrl);
+        const mediaId = idOf(body.mediaId);
+        const storedMedia = mediaId ? await mediaFiles.findOne({ _id: mediaId, userId: user._id }) : null;
+        if (mediaId && !storedMedia) return res.status(400).json({ error: "Tệp đính kèm không hợp lệ hoặc đã hết hạn." });
+        if (!text && !attachmentUrl && !storedMedia) return res.status(400).json({ error: "Tin nhắn đang trống." });
+        let replyTo = null;
+        const replyId = idOf(body.replyToId);
+        if (replyId) {
+          const source = await messages.findOne({ _id: replyId, room: roomSlug, deletedAt: { $exists: false } });
+          if (source) replyTo = { id: source._id, name: source.author?.name || "Thành viên HH", text: source.text || "Tệp đính kèm" };
+        }
+        const doc = {
+          room: roomSlug,
+          userId: user._id,
+          author: socialUser(user),
+          text,
+          attachmentUrl,
+          ...(storedMedia ? { mediaId: storedMedia._id, mediaType: storedMedia.mimeType.startsWith("video/") ? "video" : "image" } : {}),
+          replyTo,
+          reactions: [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        const result = await messages.insertOne(doc);
+        if (storedMedia) await mediaFiles.updateOne({ _id: storedMedia._id }, { $unset: { expiresAt: "" }, $set: { messageId: result.insertedId } });
+        if (customRoom) {
+          await chatRooms.updateOne({ _id: customRoom._id }, { $set: { lastMessage: { id: result.insertedId, text: text || (storedMedia ? "Đã gửi media" : "Đã gửi một liên kết"), author: socialUser(user), createdAt: doc.createdAt }, updatedAt: doc.createdAt } });
+          const recipients = (customRoom.memberIds || []).filter((id) => String(id) !== viewerId).slice(0, 50);
+          await Promise.all(recipients.map((recipientId) => notify(db, recipientId, user, "message", `${user.name || "Một thành viên"} đã gửi tin nhắn mới.`, result.insertedId)));
+        }
+        return res.status(201).json({ ok: true, message: presentMessage({ ...doc, _id: result.insertedId }, viewerId) });
+      }
+
+      const messageId = idOf(body.messageId);
+      if (!messageId) return res.status(400).json({ error: "Tin nhắn không hợp lệ." });
+      const message = await messages.findOne({ _id: messageId, room: roomSlug, deletedAt: { $exists: false } });
+      if (!message) return res.status(404).json({ error: "Không tìm thấy tin nhắn." });
+      const ownsMessage = String(message.userId) === viewerId;
+      if (action === "message:edit") {
+        if (!ownsMessage) return res.status(403).json({ error: "Bạn chỉ có thể sửa tin nhắn của mình." });
+        if (Date.now() - new Date(message.createdAt).getTime() > 30 * 60 * 1000) return res.status(403).json({ error: "Tin nhắn chỉ có thể sửa trong 30 phút." });
+        const text = clean(body.text, 2000);
+        if (!text) return res.status(400).json({ error: "Tin nhắn đang trống." });
+        await messages.updateOne({ _id: messageId, userId: user._id }, { $set: { text, editedAt: new Date(), updatedAt: new Date() } });
+      }
+      if (action === "message:delete") {
+        if (!ownsMessage) return res.status(403).json({ error: "Bạn chỉ có thể thu hồi tin nhắn của mình." });
+        await messages.updateOne({ _id: messageId, userId: user._id }, { $set: { text: "", deletedAt: new Date(), updatedAt: new Date() } });
+      }
+      if (action === "message:react") {
+        const type = REACTIONS.has(body.type) ? body.type : "like";
+        const previous = (message.reactions || []).find((item) => String(item.userId) === viewerId)?.type || "";
+        await messages.updateOne({ _id: messageId }, { $pull: { reactions: { userId: user._id } }, $set: { updatedAt: new Date() } });
+        if (previous !== type) await messages.updateOne({ _id: messageId }, { $push: { reactions: { userId: user._id, type, createdAt: new Date() } } });
+      }
+      const updatedMessage = await messages.findOne({ _id: messageId });
+      return res.status(200).json({ ok: true, message: presentMessage(updatedMessage, viewerId) });
     }
 
     if (action === "story:create") {
@@ -765,7 +1061,7 @@ module.exports = async function handler(req, res) {
     if (action === "create") {
       const content = clean(body.content, 5000);
       const mediaUrl = safeMedia(body.mediaUrl);
-      const requestedIds = [...new Set((Array.isArray(body.mediaIds) ? body.mediaIds : body.mediaId ? [body.mediaId] : []).slice(0, 4).map(String))];
+      const requestedIds = [...new Set((Array.isArray(body.mediaIds) ? body.mediaIds : body.mediaId ? [body.mediaId] : []).slice(0, 12).map(String))];
       const objectIds = requestedIds.map(idOf).filter(Boolean);
       const storedMedia = objectIds.length ? await mediaFiles.find({ _id: { $in: objectIds }, userId: user._id }).toArray() : [];
       if (requestedIds.length !== objectIds.length || storedMedia.length !== requestedIds.length) return res.status(400).json({ error: "Một hoặc nhiều tệp media không hợp lệ hoặc đã hết hạn." });

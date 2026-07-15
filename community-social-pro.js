@@ -24,6 +24,66 @@
     return window.HHCommunity.mutate(body);
   }
 
+  const MEDIA_COUNT_LIMIT = 12;
+  const MEDIA_SIZE_LIMIT = 2.5 * 1024 * 1024;
+
+  function ensureMediaPicker(form, folder = false) {
+    const fields = $(form, "[data-community-media-fields]");
+    if (!fields) return null;
+    const selector = folder ? "[data-social-folder-input]" : "[data-community-file]:not([data-social-folder-input])";
+    let picker = fields.querySelector(selector);
+    if (!picker) {
+      picker = document.createElement("input");
+      picker.type = "file";
+      picker.multiple = true;
+      picker.accept = "image/*,video/*";
+      picker.dataset.communityFile = "";
+      picker.hidden = true;
+      if (folder) {
+        picker.dataset.socialFolderInput = "";
+        picker.setAttribute("webkitdirectory", "");
+        picker.setAttribute("directory", "");
+      }
+      fields.append(picker);
+    }
+    return picker;
+  }
+
+  function deliverMediaFiles(form, fileList) {
+    const source = [...(fileList || [])];
+    const supported = source.filter((file) => /^(image|video)\//.test(file.type) && file.size <= MEDIA_SIZE_LIMIT).slice(0, MEDIA_COUNT_LIMIT);
+    if (!supported.length) { toast("Không tìm thấy ảnh/video hợp lệ nhỏ hơn 2,5 MB.", "error"); return; }
+    if (supported.length !== source.length) toast(`Đã nhận ${supported.length}/${source.length} tệp hợp lệ (tối đa ${MEDIA_COUNT_LIMIT} tệp).`, "error");
+    const picker = ensureMediaPicker(form);
+    try {
+      const transfer = new DataTransfer();
+      supported.forEach((file) => transfer.items.add(file));
+      picker.files = transfer.files;
+      picker.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch {
+      toast("Trình duyệt này chưa hỗ trợ thả nhiều tệp. Hãy dùng nút Chọn tệp.", "error");
+    }
+  }
+
+  function enhanceMediaDropZone(form) {
+    const fields = $(form, "[data-community-media-fields]");
+    if (!fields || fields.querySelector("[data-social-media-drop]")) return;
+    const drop = document.createElement("section");
+    drop.className = "hh-media-dropzone";
+    drop.dataset.socialMediaDrop = "";
+    drop.tabIndex = 0;
+    drop.innerHTML = `<div><i>＋</i><span><strong>Thả ảnh hoặc video vào đây</strong><small>Tối đa ${MEDIA_COUNT_LIMIT} tệp · 2,5 MB mỗi tệp · hỗ trợ dán từ clipboard</small></span></div><footer><button type="button" data-social-pick-files>Chọn tệp</button><button type="button" data-social-pick-folder>Chọn folder</button></footer>`;
+    fields.prepend(drop);
+    ["dragenter", "dragover"].forEach((name) => drop.addEventListener(name, (event) => { event.preventDefault(); drop.classList.add("is-dragging"); }));
+    ["dragleave", "drop"].forEach((name) => drop.addEventListener(name, (event) => { event.preventDefault(); drop.classList.remove("is-dragging"); }));
+    drop.addEventListener("drop", (event) => deliverMediaFiles(form, event.dataTransfer?.files));
+    drop.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) { event.preventDefault(); ensureMediaPicker(form)?.click(); } });
+    form.addEventListener("paste", (event) => {
+      const files = [...(event.clipboardData?.files || [])].filter((file) => /^(image|video)\//.test(file.type));
+      if (files.length) { event.preventDefault(); fields.hidden = false; deliverMediaFiles(form, files); }
+    });
+  }
+
   function createDialog(className, content) {
     document.querySelector(`.${className}`)?.remove();
     const dialog = document.createElement("dialog");
@@ -58,6 +118,8 @@
       <button class="interactive" type="button" data-social-poll><span>▥</span> Khảo sát</button>
       <button class="interactive" type="button" data-social-emoji><span>☺</span> Emoji</button>
       <button class="interactive" type="button" data-social-gif><span>GIF</span> GIF</button>`);
+
+    enhanceMediaDropZone(form);
 
     let timer;
     input.addEventListener("input", () => {
@@ -190,6 +252,8 @@
   function setFeedMode(root, mode) {
     $$(root, "[data-social-tab]").forEach((button) => button.classList.toggle("active", button.dataset.socialTab === mode));
     root.querySelector("[data-social-directory]")?.remove();
+    const advancedView = { feed: "feed", friends: "friends", video: "reels", groups: "groups", events: "events", messenger: "messenger", profile: "profile", pages: "pages", saved: "saved", privacy: "privacy", safety: "safety" }[mode];
+    if (advancedView && window.HHSocialV2?.open) { window.HHSocialV2.open(root, advancedView); return; }
     const posts = $$(root, "[data-post-id]");
     if (mode === "video") {
       posts.forEach((node) => { const post = postRecord(node.dataset.postId); node.hidden = !(post?.media || []).some((item) => item.type === "video") && post?.mediaType !== "video"; });
@@ -229,7 +293,8 @@
       if (!reply) return dialog.querySelector("footer input")?.focus();
       localStorage.setItem("hh-chat-draft", reply);
       close();
-      location.hash = "community";
+      if (window.HHSocialV2?.openMessenger) window.HHSocialV2.openMessenger(button.closest("[data-community-center]"), name, reply);
+      else location.hash = "/communication/community";
       toast("Đã chuyển câu trả lời sang Messenger HH.");
     });
     const timer = setTimeout(close, 8000);
@@ -306,6 +371,24 @@
 
     const tab = event.target.closest("[data-social-tab]");
     if (tab) { setFeedMode(root, tab.dataset.socialTab); return; }
+    if (event.target.closest("[data-community-add-media], [data-social-pick-files]")) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      const form = root.querySelector("[data-community-form]");
+      const fields = form?.querySelector("[data-community-media-fields]");
+      if (fields) fields.hidden = false;
+      enhanceMediaDropZone(form);
+      ensureMediaPicker(form)?.click();
+      return;
+    }
+    if (event.target.closest("[data-social-pick-folder]")) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      const form = root.querySelector("[data-community-form]");
+      const fields = form?.querySelector("[data-community-media-fields]");
+      if (fields) fields.hidden = false;
+      enhanceMediaDropZone(form);
+      ensureMediaPicker(form, true)?.click();
+      return;
+    }
     if (event.target.closest("[data-social-directory-close]")) { root.querySelector("[data-social-directory]")?.remove(); setFeedMode(root, "feed"); return; }
     if (event.target.closest("[data-social-group-create]")) {
       const { dialog } = createDialog("hh-community-create-dialog", `<form data-social-create-group><header><div><small>NHÓM HH</small><h5>Tạo nhóm cộng đồng</h5></div><button type="button" data-social-close>×</button></header><label><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="100" placeholder="Ví dụ: Nhà sáng tạo HH"></label><label><span>Mô tả</span><textarea name="description" maxlength="500" placeholder="Mục tiêu và chủ đề của nhóm..."></textarea></label><footer><button type="button" data-social-close>Hủy</button><button class="primary" type="submit">Tạo nhóm</button></footer></form>`);
@@ -353,7 +436,7 @@
     }
     if (event.target.closest("[data-social-live]")) {
       const { dialog } = createDialog("hh-live-dialog", `<section><header><div><small>HH LIVE</small><h5>Phát trực tiếp cùng cộng đồng</h5></div><button type="button" data-social-close>×</button></header><div class="hh-live-preview"><span>●</span><strong>Kiểm tra camera và micro trước khi bắt đầu</strong><p>Livestream trực tiếp cần phòng WebRTC. Hiện tại bạn có thể mở phòng Messenger HH để trò chuyện thời gian thực.</p></div><footer><button type="button" data-social-close>Để sau</button><button class="primary" type="button" data-social-open-messenger>Mở Messenger HH</button></footer></section>`);
-      dialog.querySelector("[data-social-open-messenger]")?.addEventListener("click", () => { dialog.close(); dialog.remove(); location.hash = "community"; });
+      dialog.querySelector("[data-social-open-messenger]")?.addEventListener("click", () => { dialog.close(); dialog.remove(); window.HHSocialV2?.openMessenger?.(root); });
       return;
     }
     const vote = event.target.closest("[data-social-poll-vote]");

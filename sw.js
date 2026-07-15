@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v86";
+const CACHE = "hh-dev-hub-v88";
 const CORE = [
   "./",
   "./index.html",
@@ -15,7 +15,7 @@ const CORE = [
   "./video-editor-resolve.css?v=5",
   "./photo-editor-pro.css?v=1",
   "./editor-workflow-pro.css?v=1",
-  "./script.js?v=73",
+  "./script.js?v=75",
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=2",
   "./extension-suite.css?v=1",
@@ -24,11 +24,11 @@ const CORE = [
   "./search-watch-center.css?v=3",
   "./search-watch-center.js?v=4",
   "./creative-suite.css?v=2",
-  "./sidebar-navigation-pro.css?v=1",
-  "./community-social-pro.css?v=2",
-  "./community-social-pro.js?v=3",
-  "./community-platform-v2.css?v=7",
-  "./community-platform-v2.js?v=7",
+  "./sidebar-navigation-pro.css?v=2",
+  "./community-social-pro.css?v=3",
+  "./community-social-pro.js?v=4",
+  "./community-platform-v2.css?v=9",
+  "./community-platform-v2.js?v=9",
   "./creative-suite.js?v=2",
   "./extension-suite.js?v=2",
   "./professional-tools.js?v=3",
@@ -43,7 +43,7 @@ const CORE = [
   "./media-design-page.js?v=6",
   "./feature-lab.js?v=4",
   "./feature-engines.js?v=2",
-  "./config.js?v=3",
+  "./config.js?v=4",
   "./data/ai-super-platform-modules.json"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));

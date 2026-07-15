@@ -21,7 +21,12 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const MONGODB_DB = process.env.MONGODB_DB || "hoangdaika13_site";
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
 
-const allowedOrigins = [FRONTEND_URL, "http://127.0.0.1:4173", "http://localhost:4173"].filter(Boolean);
+const allowedOrigins = [...new Set([
+  FRONTEND_URL,
+  ...(process.env.ALLOWED_ORIGINS || "").split(",").map((item) => item.trim()),
+  "http://127.0.0.1:4173",
+  "http://localhost:4173"
+].filter(Boolean))];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
@@ -50,6 +55,9 @@ const tickets = () => db().then((database) => database.collection("tickets"));
 const orders = () => db().then((database) => database.collection("orders"));
 const storageFiles = () => db().then((database) => database.collection("storageFiles"));
 const notificationSubscriptions = () => db().then((database) => database.collection("notificationSubscriptions"));
+const communityMessages = () => db().then((database) => database.collection("communityMessages"));
+const communityChatRooms = () => db().then((database) => database.collection("communityChatRooms"));
+const DEFAULT_COMMUNITY_CHAT_ROOMS = new Set(["general", "creator", "projects", "support"]);
 
 const seedProducts = [
   { id: "hh-voice-lite", title: "HH Voice Studio Lite", price: 0, currency: "VND", type: "download" },
@@ -59,6 +67,30 @@ const seedProducts = [
 
 function cleanString(value, max = 2000) {
   return String(value || "").trim().slice(0, max);
+}
+
+function communityRoomSlug(value) {
+  return cleanString(value, 60)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/gi, "d")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+async function communityRoomFor(user, slug) {
+  if (!user || !slug) return null;
+  if (DEFAULT_COMMUNITY_CHAT_ROOMS.has(slug)) return { slug, kind: "channel", visibility: "public", memberIds: [] };
+  return (await communityChatRooms()).findOne({
+    slug,
+    $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }]
+  }, { projection: { slug: 1, kind: 1, visibility: 1, ownerId: 1, memberIds: 1 } });
+}
+
+function messengerSocketRoom(slug) {
+  return `community:chat:${slug}`;
 }
 
 function readBearer(req) {
@@ -112,6 +144,11 @@ function publicUser(user) {
     avatar: user.avatar || "",
     consent: Boolean(user.consent)
   };
+}
+
+function publicChatUser(user) {
+  const profile = publicUser(user);
+  return profile ? { id: profile.id, name: profile.name, avatar: profile.avatar } : null;
 }
 
 async function upsertOAuthUser(profile, provider) {
@@ -425,6 +462,18 @@ io.use(async (socket, next) => {
 io.on("connection", async (socket) => {
   const auth = socket.handshake.auth || {};
   const consent = Boolean(auth.consent || socket.user?.consent);
+  let activeMessengerRoom = "";
+  if (socket.user) {
+    socket.join(`community:user:${String(socket.user._id)}`);
+    socket.join("community:all");
+  }
+  const emitMessengerPresence = async (slug) => {
+    if (!slug) return;
+    const roomName = messengerSocketRoom(slug);
+    const members = await io.in(roomName).fetchSockets();
+    const onlineUsers = [...new Map(members.filter((item) => item.user).map((item) => [String(item.user._id), publicChatUser(item.user)])).values()];
+    io.to(roomName).emit("messenger:presence", { room: slug, online: members.length, users: onlineUsers, updatedAt: new Date().toISOString() });
+  };
   const session = {
     socketId: socket.id,
     anonymousId: auth.anonymousId || "",
@@ -444,6 +493,83 @@ io.on("connection", async (socket) => {
   }
   io.emit("site:stats", { online: io.engine.clientsCount });
 
+  socket.on("messenger:room:join", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    try {
+      if (!socket.user) return done({ ok: false, error: "Authentication required" });
+      const slug = communityRoomSlug(payload.room || "general") || "general";
+      const room = await communityRoomFor(socket.user, slug);
+      if (!room) return done({ ok: false, error: "Room unavailable" });
+      if (activeMessengerRoom && activeMessengerRoom !== slug) {
+        const previous = activeMessengerRoom;
+        await socket.leave(messengerSocketRoom(previous));
+        emitMessengerPresence(previous).catch(() => {});
+      }
+      activeMessengerRoom = slug;
+      await socket.join(messengerSocketRoom(slug));
+      await emitMessengerPresence(slug);
+      done({ ok: true, room: slug });
+    } catch (error) {
+      done({ ok: false, error: error.message || "Realtime room failed" });
+    }
+  });
+
+  socket.on("messenger:room:leave", async (payload = {}) => {
+    const slug = communityRoomSlug(payload.room || activeMessengerRoom);
+    if (!slug) return;
+    await socket.leave(messengerSocketRoom(slug));
+    if (activeMessengerRoom === slug) activeMessengerRoom = "";
+    emitMessengerPresence(slug).catch(() => {});
+  });
+
+  socket.on("messenger:typing", (payload = {}) => {
+    if (!socket.user) return;
+    const slug = communityRoomSlug(payload.room);
+    if (!slug || slug !== activeMessengerRoom || !socket.rooms.has(messengerSocketRoom(slug))) return;
+    socket.to(messengerSocketRoom(slug)).emit("messenger:typing", {
+      room: slug,
+      active: Boolean(payload.active),
+      user: publicChatUser(socket.user),
+      updatedAt: new Date().toISOString()
+    });
+  });
+
+  socket.on("messenger:changed", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    try {
+      if (!socket.user) return done({ ok: false, error: "Authentication required" });
+      const now = Date.now();
+      if (now - Number(socket.data.lastMessengerSignal || 0) < 150) return done({ ok: false, error: "Too many signals" });
+      socket.data.lastMessengerSignal = now;
+      const slug = communityRoomSlug(payload.room);
+      const room = await communityRoomFor(socket.user, slug);
+      if (!room) return done({ ok: false, error: "Room unavailable" });
+      const messageId = cleanString(payload.messageId, 80);
+      const message = messageId && ObjectId.isValid(messageId)
+        ? await (await communityMessages()).findOne({ _id: new ObjectId(messageId), room: slug }, { projection: { _id: 1, room: 1, userId: 1, updatedAt: 1 } })
+        : null;
+      const type = cleanString(payload.type || "update", 30);
+      if (!message && type !== "room:update") return done({ ok: false, error: "Message unavailable" });
+      let recipients = io.to(messengerSocketRoom(slug));
+      if (DEFAULT_COMMUNITY_CHAT_ROOMS.has(slug)) {
+        recipients = recipients.to("community:all");
+      } else {
+        const ids = [...new Set([room.ownerId, ...(room.memberIds || [])].filter(Boolean).map(String))];
+        ids.forEach((id) => { recipients = recipients.to(`community:user:${id}`); });
+      }
+      recipients.emit("messenger:changed", {
+        room: slug,
+        messageId: message ? String(message._id) : "",
+        type,
+        actor: publicChatUser(socket.user),
+        updatedAt: new Date().toISOString()
+      });
+      done({ ok: true });
+    } catch (error) {
+      done({ ok: false, error: error.message || "Realtime signal failed" });
+    }
+  });
+
   socket.on("page:event", async (payload = {}) => {
     if (!consent && !socket.user) return;
     await (await events()).insertOne({
@@ -457,6 +583,7 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("disconnect", async () => {
+    if (activeMessengerRoom) emitMessengerPresence(activeMessengerRoom).catch(() => {});
     if (consent || socket.user) {
       await (await sessions()).updateOne({ socketId: socket.id }, { $set: { endedAt: new Date(), lastSeenAt: new Date() } });
       await (await events()).insertOne({ type: "visit:end", socketId: socket.id, createdAt: new Date() });

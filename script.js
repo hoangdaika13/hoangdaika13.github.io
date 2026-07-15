@@ -12,6 +12,7 @@ let clickAudioContext;
 let musicEngine;
 const CLOUD_VOTE_API = window.HH_VOTE_API_URL || "";
 const REALTIME_URL = window.HH_REALTIME_URL || "";
+const SOCKET_URL = typeof window.HH_SOCKET_URL === "string" ? window.HH_SOCKET_URL : REALTIME_URL;
 let adminRealtimeTimer = 0;
 
 const revokeCurrentSession = async () => {
@@ -794,6 +795,8 @@ function initRealtimeAuth() {
     if (socket) {
       socket.disconnect();
       socket = null;
+      window.HHRealtimeSocket = null;
+      window.dispatchEvent(new CustomEvent("hh:realtime-offline"));
     }
     renderAuth();
     location.hash = "";
@@ -802,9 +805,9 @@ function initRealtimeAuth() {
   let socket;
   const loadSocketClient = () => new Promise((resolve, reject) => {
     if (window.io) return resolve();
-    if (!REALTIME_URL) return reject(new Error("No realtime URL"));
+    if (!SOCKET_URL) return reject(new Error("No realtime URL"));
     const script = document.createElement("script");
-    script.src = `${REALTIME_URL}/socket.io/socket.io.js`;
+    script.src = `${SOCKET_URL}/socket.io/socket.io.js`;
     script.onload = resolve;
     script.onerror = reject;
     document.head.appendChild(script);
@@ -814,14 +817,15 @@ function initRealtimeAuth() {
     if (socket) {
       socket.disconnect();
       socket = null;
+      window.HHRealtimeSocket = null;
     }
-    if (!REALTIME_URL || (!token && !consent.checked)) {
+    if (!SOCKET_URL || (!token && !consent.checked)) {
       online.textContent = "0 đang online";
       return;
     }
     try {
       await loadSocketClient();
-      socket = window.io(REALTIME_URL, {
+      socket = window.io(SOCKET_URL, {
         transports: ["websocket", "polling"],
         auth: {
           token,
@@ -830,6 +834,14 @@ function initRealtimeAuth() {
           page: location.pathname,
           referrer: document.referrer
         }
+      });
+      window.HHRealtimeSocket = socket;
+      socket.on("connect", () => {
+        window.HHRealtimeSocket = socket;
+        window.dispatchEvent(new CustomEvent("hh:realtime-ready", { detail: { socket } }));
+      });
+      socket.on("disconnect", () => {
+        window.dispatchEvent(new CustomEvent("hh:realtime-offline"));
       });
       socket.on("site:stats", (stats) => {
         online.textContent = `${Number(stats.online || 0)} đang online`;
@@ -2315,7 +2327,7 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
 
   grid.addEventListener("change", (event) => {
     const cloudUpload=event.target.closest("[data-cloud-upload]");if(cloudUpload){const files=Array.from(cloudUpload.files||[]).slice(0,10);(async()=>{for(const file of files){if(file.size>45000){window.alert(`${file.name} vượt giới hạn 45 KB.`);continue;}const content=await file.text();await uploadCloudText(file.name,file.type||"text/plain",content,file.size);}await loadCloudFiles();})().catch((error)=>window.alert(error.message));cloudUpload.value="";return;}
-    const communityFile=event.target.closest("[data-community-file]");if(communityFile){const form=communityFile.closest("[data-community-form]");const selected=Array.from(communityFile.files||[]).slice(0,4);const accepted=selected.filter((file)=>/^(image|video)\//.test(file.type)&&file.size<=COMMUNITY_MEDIA_LIMIT);if(accepted.length!==selected.length)communityNotice("Chỉ nhận tối đa 4 ảnh/video, mỗi tệp nhỏ hơn 2,5 MB.","error");communityRenderComposerFiles(form,accepted);return;}
+    const communityFile=event.target.closest("[data-community-file]");if(communityFile){const form=communityFile.closest("[data-community-form]");const source=Array.from(communityFile.files||[]);const selected=source.slice(0,12);const accepted=selected.filter((file)=>/^(image|video)\//.test(file.type)&&file.size<=COMMUNITY_MEDIA_LIMIT);if(accepted.length!==source.length)communityNotice(`Đã nhận ${accepted.length}/${source.length} tệp hợp lệ. Tối đa 12 ảnh/video, mỗi tệp nhỏ hơn 2,5 MB.`,"error");communityRenderComposerFiles(form,accepted);return;}
     const avatarUpload=event.target.closest("[data-user-avatar-upload]");if(avatarUpload){const file=avatarUpload.files?.[0];if(!file)return;if(file.size>1024*1024){window.alert("Ảnh avatar cần nhỏ hơn 1 MB.");return;}const reader=new FileReader();reader.onload=()=>{const state=readUserState();state.avatar=reader.result;writeUserState(state);rerenderModule("user-dashboard");};reader.readAsDataURL(file);return;}
     const userToggle=event.target.closest("[data-user-notification],[data-user-setting]");if(userToggle){const state=readUserState();if(userToggle.dataset.userNotification!==undefined){state.notifications=state.notifications||{};state.notifications[userToggle.dataset.userNotification]=userToggle.checked;}else{state.settings=state.settings||{};state.settings[userToggle.dataset.userSetting]=userToggle.checked;}writeUserState(state);return;}
     const widgetToggle=event.target.closest("[data-widget-toggle]");if(widgetToggle){const state=JSON.parse(localStorage.getItem("hh-widgets-engine")||"{}");state[widgetToggle.dataset.widgetToggle]=widgetToggle.checked;localStorage.setItem("hh-widgets-engine",JSON.stringify(state));const panel=widgetToggle.closest("[data-widgets-engine]");if(panel)panel.querySelector("[data-widgets-output]").textContent=`Đã ${widgetToggle.checked?"bật":"ẩn"} widget ${widgetToggle.dataset.widgetToggle}.`;return;}
@@ -2379,7 +2391,7 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
       const share=event.target.closest("[data-post-share]");if(share){const url=`${location.href.split("#")[0]}#community-post-${share.dataset.postShare}`;(navigator.share?navigator.share({title:"Bài viết HH Community",url}):navigator.clipboard.writeText(url)).then(()=>{share.textContent="Đã chia sẻ";}).catch(()=>{});return;}
       const toggle=event.target.closest("[data-post-comment-toggle]");if(toggle){const form=community.querySelector(`[data-comment-form="${toggle.dataset.postCommentToggle}"]`);form?.querySelector("input")?.focus();return;}
       const reply=event.target.closest("[data-comment-reply]");if(reply){const form=reply.closest("[data-post-comments]")?.querySelector("form");if(form){form.dataset.parentId=reply.dataset.commentReply;const input=form.querySelector("input");input.placeholder="Viết câu trả lời...";input.focus();}return;}
-      if(event.target.closest("[data-community-add-media]")){const form=community.querySelector("[data-community-form]");const fields=form.querySelector("[data-community-media-fields]");fields.hidden=false;let picker=fields.querySelector("[data-community-file]");if(!picker){const label=document.createElement("label");label.className="community-device-picker";label.innerHTML="<span>＋ Chọn từ thiết bị</span><small>Tối đa 4 ảnh/video · 2,5 MB mỗi tệp</small>";picker=document.createElement("input");picker.type="file";picker.multiple=true;picker.accept="image/*,video/*";picker.dataset.communityFile="";picker.setAttribute("aria-label","Chọn tối đa 4 ảnh hoặc video từ thiết bị");label.prepend(picker);fields.prepend(label);}picker.click();return;}
+      if(event.target.closest("[data-community-add-media]")){const form=community.querySelector("[data-community-form]");const fields=form.querySelector("[data-community-media-fields]");fields.hidden=false;let picker=fields.querySelector("[data-community-file]");if(!picker){const label=document.createElement("label");label.className="community-device-picker";label.innerHTML="<span>＋ Chọn từ thiết bị</span><small>Tối đa 12 ảnh/video · 2,5 MB mỗi tệp</small>";picker=document.createElement("input");picker.type="file";picker.multiple=true;picker.accept="image/*,video/*";picker.dataset.communityFile="";picker.setAttribute("aria-label","Chọn tối đa 12 ảnh hoặc video từ thiết bị");label.prepend(picker);fields.prepend(label);}picker.click();return;}
       if(event.target.closest("[data-community-remove-media]")){const form=event.target.closest("[data-community-form]");const picker=form?.querySelector("[data-community-file]");if(picker)picker.value="";if(form)communityRenderComposerFiles(form,[]);return;}
       if(event.target.closest("[data-community-feeling]")){const input=community.querySelector("[data-community-input]");input.value+=`${input.value?" ":""}Đang cảm thấy vui vẻ 😊`;input.focus();return;}
       if(event.target.closest("[data-community-checkin]")){const input=community.querySelector("[data-community-input]");input.value+=`${input.value?" ":""}📍 Hưng Yên`;input.focus();return;}

@@ -13,6 +13,19 @@
   let currentView = "feed";
   let loadingPromise = null;
   let reelObserver = null;
+  let messengerData = null;
+  let messengerTimer = 0;
+  let messengerRoom = "general";
+  let messengerReply = null;
+  let messengerFiles = [];
+  let messengerReadKey = "";
+  let messengerRealtimeSocket = null;
+  let messengerRealtimeRefresh = 0;
+  let messengerRealtimeState = "fallback";
+  let messengerOnlineCount = 0;
+  let messengerOnlineUsers = new Set();
+  let messengerTypingTimer = 0;
+  const messengerTypingUsers = new Map();
 
   function toast(message, type = "success") {
     window.HHCommunity?.notice?.(message, type);
@@ -76,20 +89,302 @@
     const incoming = socialData?.requests?.incoming?.length || socialData?.incomingRequests?.length || 0;
     const saved = socialData?.saved?.length || socialData?.counts?.saved || 0;
     const pages = socialData?.pages?.length || 0;
-    const badges = { friends: incoming, saved, pages };
+    const badges = { friends: incoming, saved, pages, messenger: messengerData?.messages?.length || 0 };
     $$(root, "[data-social-v2-view]").forEach((button) => {
       button.classList.toggle("active", button.dataset.socialV2View === currentView);
       const badge = button.querySelector("b");
       if (badge) { const count = badges[button.dataset.socialV2View] || 0; badge.textContent = count; badge.hidden = !count; }
     });
+    const tabView = currentView === "reels" ? "video" : currentView;
+    $$(root, "[data-social-tab]").forEach((button) => button.classList.toggle("active", button.dataset.socialTab === tabView));
   }
 
   function showFeed(root) {
+    clearInterval(messengerTimer);
+    const liveSocket = window.HHRealtimeSocket;
+    if (liveSocket?.connected) liveSocket.emit("messenger:room:leave", { room: messengerRoom });
     currentView = "feed";
+    root.querySelector("[data-social-directory]")?.remove();
     root.querySelector(".community-layout")?.removeAttribute("hidden");
     const panel = workspace(root);
     panel.hidden = true;
     updateNav(root);
+  }
+
+  function messengerRoot() {
+    return document.querySelector("[data-community-center]");
+  }
+
+  function messengerConnectionText() {
+    if (messengerRealtimeState === "live") return `${messengerOnlineCount || 1} người đang trực tuyến · Socket.io`;
+    if (messengerRealtimeState === "connecting") return "Đang kết nối đồng bộ trực tiếp...";
+    return "Đồng bộ an toàn mỗi vài giây";
+  }
+
+  function updateMessengerConnection(panel) {
+    if (!panel) { const root = messengerRoot(); panel = root ? workspace(root) : null; }
+    const node = panel?.querySelector("[data-v2-room-presence]");
+    if (node) {
+      node.textContent = messengerConnectionText();
+      node.dataset.state = messengerRealtimeState;
+    }
+  }
+
+  function updateTypingIndicator(panel) {
+    if (!panel) { const root = messengerRoot(); panel = root ? workspace(root) : null; }
+    if (!panel) return;
+    const now = Date.now();
+    const names = [...messengerTypingUsers.values()].filter((item) => item.room === messengerRoom && item.until > now).map((item) => item.name);
+    const node = panel.querySelector("[data-v2-typing]");
+    if (!node) return;
+    node.hidden = !names.length;
+    node.innerHTML = names.length ? `<i></i><i></i><i></i><span>${esc(names.slice(0, 2).join(", "))}${names.length > 2 ? ` và ${names.length - 2} người khác` : ""} đang nhập...</span>` : "";
+  }
+
+  function scheduleMessengerRefresh(delay = 120) {
+    clearTimeout(messengerRealtimeRefresh);
+    messengerRealtimeRefresh = setTimeout(() => {
+      const root = messengerRoot();
+      const panel = root ? workspace(root) : null;
+      if (root && panel?.isConnected && currentView === "messenger") loadMessenger(root, panel, { silent: true }).catch(() => {});
+    }, delay);
+  }
+
+  function handleMessengerChanged(payload = {}) {
+    if (!payload.room) return;
+    if (currentView === "messenger") scheduleMessengerRefresh(payload.room === messengerRoom ? 80 : 350);
+  }
+
+  function handleMessengerTyping(payload = {}) {
+    if (!payload.user?.id || payload.room !== messengerRoom || String(payload.user.id) === String(authUser().id || "")) return;
+    if (payload.active) messengerTypingUsers.set(String(payload.user.id), { room: payload.room, name: payload.user.name || "Thành viên HH", until: Date.now() + 2400 });
+    else messengerTypingUsers.delete(String(payload.user.id));
+    updateTypingIndicator();
+    setTimeout(() => updateTypingIndicator(), 2500);
+  }
+
+  function handleMessengerPresence(payload = {}) {
+    if (payload.room !== messengerRoom) return;
+    messengerOnlineCount = Number(payload.online || 0);
+    messengerOnlineUsers = new Set((payload.users || []).map((user) => String(user.id || "")).filter(Boolean));
+    updateMessengerConnection();
+    const panel = messengerRoot()?.querySelector("[data-social-v2-workspace]");
+    if (panel) panel.querySelectorAll("[data-v2-participant]").forEach((item) => item.classList.toggle("online", messengerOnlineUsers.has(item.dataset.v2Participant)));
+  }
+
+  function joinMessengerRealtime() {
+    const socket = messengerRealtimeSocket;
+    if (!socket?.connected || currentView !== "messenger") return;
+    messengerRealtimeState = "connecting";
+    updateMessengerConnection();
+    socket.emit("messenger:room:join", { room: messengerRoom }, (result = {}) => {
+      messengerRealtimeState = result.ok ? "live" : "fallback";
+      updateMessengerConnection();
+    });
+  }
+
+  function bindMessengerRealtime() {
+    const socket = window.HHRealtimeSocket;
+    if (!socket) {
+      messengerRealtimeState = "fallback";
+      updateMessengerConnection();
+      return;
+    }
+    if (messengerRealtimeSocket !== socket) {
+      messengerRealtimeSocket?.off?.("messenger:changed", handleMessengerChanged);
+      messengerRealtimeSocket?.off?.("messenger:typing", handleMessengerTyping);
+      messengerRealtimeSocket?.off?.("messenger:presence", handleMessengerPresence);
+      messengerRealtimeSocket = socket;
+      socket.on("messenger:changed", handleMessengerChanged);
+      socket.on("messenger:typing", handleMessengerTyping);
+      socket.on("messenger:presence", handleMessengerPresence);
+    }
+    messengerRealtimeState = socket.connected ? "connecting" : "fallback";
+    joinMessengerRealtime();
+  }
+
+  function signalMessengerChange(type, messageId = "") {
+    const socket = messengerRealtimeSocket || window.HHRealtimeSocket;
+    if (socket?.connected) socket.emit("messenger:changed", { room: messengerRoom, type, messageId });
+  }
+
+  function emitMessengerTyping(active) {
+    const socket = messengerRealtimeSocket || window.HHRealtimeSocket;
+    if (socket?.connected) socket.emit("messenger:typing", { room: messengerRoom, active: Boolean(active) });
+  }
+
+  function formatFileSize(value) {
+    const bytes = Number(value || 0);
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  function renderMessengerFileQueue(panel) {
+    const queue = panel?.querySelector("[data-v2-message-files]");
+    const input = panel?.querySelector("[data-v2-message-file]");
+    if (input && typeof DataTransfer === "function") {
+      const transfer = new DataTransfer();
+      messengerFiles.forEach((file) => transfer.items.add(file));
+      input.files = transfer.files;
+    }
+    if (!queue) return;
+    queue.hidden = !messengerFiles.length;
+    queue.innerHTML = messengerFiles.map((file, index) => `<article><i>${file.type.startsWith("video/") ? "▶" : "▧"}</i><span><strong>${esc(file.name)}</strong><small>${formatFileSize(file.size)}</small></span><button type="button" data-v2-message-file-remove="${index}" aria-label="Bỏ tệp ${esc(file.name)}">×</button></article>`).join("");
+  }
+
+  function setMessengerFiles(files, panel, append = false) {
+    const incoming = [...(files || [])];
+    const valid = incoming.filter((file) => /^(image|video)\//.test(file.type) && file.size > 0 && file.size <= 2.5 * 1024 * 1024);
+    const combined = append ? [...messengerFiles, ...valid] : valid;
+    messengerFiles = [...new Map(combined.map((file) => [`${file.name}:${file.size}:${file.lastModified}`, file])).values()].slice(0, 8);
+    if (incoming.length !== valid.length) toast("Một số tệp đã bỏ qua: chỉ nhận ảnh/video dưới 2,5 MB.", "error");
+    if (combined.length > 8) toast("Messenger gửi tối đa 8 tệp trong một lượt.", "error");
+    renderMessengerFileQueue(panel);
+    const status = panel?.querySelector("[data-v2-message-status]");
+    if (status && messengerFiles.length) status.textContent = `Đã chọn ${messengerFiles.length} tệp · Có thể thêm lời nhắn rồi gửi`;
+  }
+
+  function messageMedia(message) {
+    if (message.mediaId) return `${API_BASE}/api/community?media=${encodeURIComponent(message.mediaId)}`;
+    return message.attachmentUrl || "";
+  }
+
+  function messageListMarkup(messages = []) {
+    const icons = { like: "👍", love: "❤", care: "🤗", haha: "😆", wow: "😮", sad: "😢", angry: "😡" };
+    return messages.map((message) => {
+      const media = messageMedia(message);
+      const reactions = Object.entries(message.reactions || {}).filter(([, count]) => Number(count) > 0).map(([type, count]) => `<button type="button" data-v2-message-react="${esc(message.id)}" data-reaction-type="${esc(type)}">${icons[type] || "👍"} ${Number(count)}</button>`).join("");
+      return `<article class="hh-message ${message.mine ? "mine" : ""}" data-v2-message="${esc(message.id)}"><div>${avatarMarkup(message.author)}</div><section><header><strong>${esc(message.author?.name || "Thành viên HH")}</strong><time>${dateText(message.createdAt)}</time>${message.edited ? "<small>đã sửa</small>" : ""}</header>${message.replyTo ? `<blockquote><b>${esc(message.replyTo.name)}</b>${esc(message.replyTo.text)}</blockquote>` : ""}${message.text ? `<p>${esc(message.text).replace(/\n/g, "<br>")}</p>` : ""}${media ? message.mediaType === "video" ? `<video src="${esc(media)}" controls playsinline preload="metadata"></video>` : `<button class="hh-message-media" type="button" data-v2-message-media="${esc(media)}"><img src="${esc(media)}" alt="Ảnh trong tin nhắn" loading="lazy"></button>` : ""}<footer><button type="button" data-v2-message-reply="${esc(message.id)}">Trả lời</button><button type="button" data-v2-message-react="${esc(message.id)}" data-reaction-type="like">👍</button><button type="button" data-v2-message-react="${esc(message.id)}" data-reaction-type="love">❤</button>${message.mine ? `<button type="button" data-v2-message-edit="${esc(message.id)}">Sửa</button><button class="danger" type="button" data-v2-message-delete="${esc(message.id)}">Thu hồi</button>` : ""}</footer>${reactions ? `<div class="hh-message-reactions">${reactions}</div>` : ""}</section></article>`;
+    }).join("") || empty("◌", "Chưa có tin nhắn", "Hãy là người mở đầu cuộc trò chuyện trong phòng này.");
+  }
+
+  function filterMessenger(panel) {
+    const roomTerm = panel.querySelector("[data-v2-room-search]")?.value.trim().toLocaleLowerCase("vi") || "";
+    const messageTerm = panel.querySelector("[data-v2-message-search]")?.value.trim().toLocaleLowerCase("vi") || "";
+    $$(panel, "[data-v2-chat-room]").forEach((button) => { button.hidden = Boolean(roomTerm) && !button.textContent.toLocaleLowerCase("vi").includes(roomTerm); });
+    $$(panel, "[data-v2-message]").forEach((message) => { message.hidden = Boolean(messageTerm) && !message.textContent.toLocaleLowerCase("vi").includes(messageTerm); });
+  }
+
+  function messengerContacts() {
+    const viewerId = String(authUser().id || "");
+    const pools = [socialData?.friends || [], socialData?.suggestions || [], socialData?.followers || [], socialData?.following || []].flat();
+    return [...new Map(pools.map(personOf).filter(Boolean).map((person) => {
+      const id = String(person.id || person._id || "");
+      return [id, { ...person, id, displayName: person.displayName || person.name || person.username || "Thành viên HH" }];
+    }).filter(([id]) => id && id !== viewerId)).values()].slice(0, 40);
+  }
+
+  function messengerMemberChoices(selectedIds = [], single = false) {
+    const selected = new Set(selectedIds.map(String));
+    return `<section class="wide hh-message-member-picker"><label><span>⌕</span><input type="search" data-v2-member-search placeholder="Tìm thành viên..."></label><div>${messengerContacts().map((person) => `<label data-v2-member-option><input type="${single ? "radio" : "checkbox"}" name="${single ? "targetId" : "memberIds"}" value="${esc(person.id)}" ${selected.has(String(person.id)) ? "checked" : ""}>${avatarMarkup(person)}<span><strong>${esc(person.displayName)}</strong><small>${person.username ? `@${esc(person.username)}` : "Thành viên HH"}</small></span></label>`).join("") || "<p>Chưa có thành viên được gợi ý.</p>"}</div></section>`;
+  }
+
+  async function openDirectMessage(root, targetId, draft = "") {
+    if (!targetId) return openMessenger(root, "", draft);
+    try {
+      const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:direct", targetId } });
+      messengerRoom = result.room.id;
+      messengerReply = null;
+      messengerFiles = [];
+      await showView(root, "messenger");
+      if (draft) {
+        const input = workspace(root).querySelector("[data-v2-message-input]");
+        if (input) { input.value = draft; input.focus(); }
+      }
+    } catch (error) { toast(error.message, "error"); }
+  }
+
+  function renderMessenger(panel, data = messengerData) {
+    if (!data) return;
+    const oldInput = panel.querySelector("[data-v2-message-input]");
+    const draft = oldInput?.value || "";
+    const restoreFocus = oldInput === document.activeElement;
+    const selectionStart = oldInput?.selectionStart || draft.length;
+    const selectionEnd = oldInput?.selectionEnd || selectionStart;
+    const roomSearch = panel.querySelector("[data-v2-room-search]")?.value || "";
+    const messageSearch = panel.querySelector("[data-v2-message-search]")?.value || "";
+    const oldList = panel.querySelector("[data-v2-message-list]");
+    const distanceFromBottom = oldList ? oldList.scrollHeight - oldList.scrollTop - oldList.clientHeight : 0;
+    const selectedRoom = data.room?.id || messengerRoom;
+    messengerRoom = selectedRoom;
+    const directRooms = (data.rooms || []).filter((room) => room.kind === "direct");
+    const groupRooms = (data.rooms || []).filter((room) => room.kind !== "direct");
+    const roomButton = (room) => {
+      const trailing = Number(room.unread || 0) > 0 ? `<b class="unread">${Math.min(99, Number(room.unread))}${Number(room.unread) > 99 ? "+" : ""}</b>` : room.kind === "direct" ? `<b class="${messengerOnlineUsers.has(String(room.otherId || "")) ? "online" : "offline"}">${messengerOnlineUsers.has(String(room.otherId || "")) ? "●" : "○"}</b>` : room.visibility === "private" ? "<b>Riêng tư</b>" : "";
+      return `<button class="${room.id === selectedRoom ? "active" : ""}" type="button" data-v2-chat-room="${esc(room.id)}"><i class="${room.kind || "channel"}">${room.avatar ? `<img src="${esc(room.avatar)}" alt="">` : room.kind === "direct" ? esc(initials(room.name)) : room.kind === "group" ? "◆" : "#"}</i><span><strong>${esc(room.name)}</strong><small>${esc(room.description || "Phòng cộng đồng")}</small></span>${trailing}</button>`;
+    };
+    const currentIcon = data.room?.avatar ? `<img src="${esc(data.room.avatar)}" alt="">` : data.room?.kind === "direct" ? esc(initials(data.room?.name)) : data.room?.kind === "group" ? "◆" : "#";
+    panel.innerHTML = `${head("Messenger HH", "Tin nhắn riêng và nhóm chat được đồng bộ an toàn giữa các tài khoản đã đăng nhập.", `<button class="hh-v2-action" type="button" data-v2-message-refresh>↻ Làm mới</button><button class="hh-v2-action" type="button" data-v2-direct-create>✎ Tin nhắn mới</button><button class="hh-v2-action primary" type="button" data-v2-chat-room-create>＋ Tạo nhóm</button>`, "MESSENGER · LIVE SYNC")}
+      <section class="hh-messenger-shell">
+        <aside class="hh-messenger-rooms"><label><span>⌕</span><input type="search" data-v2-room-search placeholder="Tìm đoạn chat..."></label><nav>${directRooms.length ? `<small>TIN NHẮN RIÊNG</small>${directRooms.map(roomButton).join("")}` : ""}<small>KÊNH & NHÓM CHAT</small>${groupRooms.map(roomButton).join("")}</nav></aside>
+        <main class="hh-messenger-main"><header><i class="hh-message-room-avatar">${currentIcon}</i><div><small>${data.room?.kind === "direct" ? "TIN NHẮN RIÊNG" : data.room?.kind === "group" ? "NHÓM CHAT" : "KÊNH CỘNG ĐỒNG"}</small><h6>${data.room?.kind === "direct" ? "" : "# "}${esc(data.room?.name || selectedRoom)}</h6><p>${esc(data.room?.description || "Trò chuyện trong cộng đồng HH")}</p><p class="hh-message-sync" data-v2-room-presence data-state="${messengerRealtimeState}">${messengerConnectionText()}</p></div><div class="hh-message-head-actions">${data.room?.kind === "group" ? '<button type="button" data-v2-room-settings aria-label="Cài đặt nhóm chat">⚙</button>' : ""}<label><span>⌕</span><input type="search" data-v2-message-search placeholder="Tìm tin nhắn"></label></div></header><div class="hh-message-list" data-v2-message-list>${messageListMarkup(data.messages)}<div class="hh-message-typing" data-v2-typing hidden></div></div><form class="hh-message-composer" data-v2-message-form data-v2-message-drop>${messengerReply ? `<div class="hh-message-replying"><span>Đang trả lời <b>${esc(messengerReply.name)}</b>: ${esc(messengerReply.text)}</span><button type="button" data-v2-message-reply-cancel>×</button></div>` : ""}<div class="hh-message-file-queue" data-v2-message-files hidden></div><textarea data-v2-message-input maxlength="2000" rows="2" placeholder="Nhập tin nhắn, Enter để gửi · Shift+Enter để xuống dòng"></textarea><div><label class="hh-message-file"><input type="file" multiple data-v2-message-file accept="image/*,video/*"><span>＋ Ảnh / Video</span></label><label class="hh-message-file folder"><input type="file" multiple data-v2-message-folder accept="image/*,video/*" webkitdirectory directory><span>▤ Chọn folder</span></label><input type="url" data-v2-message-url placeholder="Hoặc liên kết HTTPS"><button class="primary" type="submit">Gửi</button></div><small data-v2-message-status>Kéo thả tối đa 8 tệp · Đồng bộ ${dateText(data.refreshedAt)}</small></form></main>
+        <aside class="hh-messenger-people"><header><strong>${data.room?.kind === "direct" ? "Thông tin hội thoại" : "Thành viên nhóm"}</strong><span>${(data.participants || []).length}</span></header>${(data.participants || []).map((person) => `<article class="${messengerOnlineUsers.has(String(person.id || "")) ? "online" : ""}" data-v2-participant="${esc(person.id || "")}">${avatarMarkup(person)}<div><strong>${esc(person.name)}</strong><small>${messengerOnlineUsers.has(String(person.id || "")) ? "Đang hoạt động" : person.lastSeenAt ? `Hoạt động ${dateText(person.lastSeenAt)}` : "Thành viên cuộc trò chuyện"}</small></div><i></i></article>`).join("") || "<p>Chưa có thành viên trong phòng.</p>"}<section><strong>Quyền riêng tư</strong><p>Tin nhắn chỉ hiển thị cho thành viên của cuộc trò chuyện. Media riêng tư không được công khai.</p></section></aside>
+      </section>`;
+    const input = panel.querySelector("[data-v2-message-input]");
+    if (input) {
+      input.value = draft;
+      if (restoreFocus) { input.focus({ preventScroll: true }); input.setSelectionRange(selectionStart, selectionEnd); }
+    }
+    const nextRoomSearch = panel.querySelector("[data-v2-room-search]");
+    const nextMessageSearch = panel.querySelector("[data-v2-message-search]");
+    if (nextRoomSearch) nextRoomSearch.value = roomSearch;
+    if (nextMessageSearch) nextMessageSearch.value = messageSearch;
+    filterMessenger(panel);
+    const nextList = panel.querySelector("[data-v2-message-list]");
+    if (nextList) nextList.scrollTop = distanceFromBottom < 90 ? nextList.scrollHeight : Math.max(0, nextList.scrollHeight - nextList.clientHeight - distanceFromBottom);
+    const messageForm = panel.querySelector("[data-v2-message-form]");
+    const fileInput = messageForm?.querySelector("[data-v2-message-file]");
+    const folderInput = messageForm?.querySelector("[data-v2-message-folder]");
+    renderMessengerFileQueue(panel);
+    updateTypingIndicator(panel);
+    updateMessengerConnection(panel);
+    ["dragenter", "dragover"].forEach((name) => messageForm?.addEventListener(name, (event) => { event.preventDefault(); messageForm.classList.add("is-dragging"); }));
+    ["dragleave", "drop"].forEach((name) => messageForm?.addEventListener(name, (event) => { event.preventDefault(); messageForm.classList.remove("is-dragging"); }));
+    messageForm?.addEventListener("drop", (event) => {
+      const files = [...(event.dataTransfer?.files || [])];
+      if (!files.length || !fileInput) return toast("Chỉ hỗ trợ kéo thả ảnh hoặc video.", "error");
+      setMessengerFiles(files, panel, true);
+    });
+    fileInput?.addEventListener("change", () => setMessengerFiles(fileInput.files, panel));
+    folderInput?.addEventListener("change", () => setMessengerFiles(folderInput.files, panel));
+    input?.addEventListener("input", () => {
+      emitMessengerTyping(Boolean(input.value.trim()));
+      clearTimeout(messengerTypingTimer);
+      messengerTypingTimer = setTimeout(() => emitMessengerTyping(false), 1200);
+    });
+  }
+
+  async function loadMessenger(root, panel = workspace(root), { silent = false } = {}) {
+    if (!silent) panel.innerHTML = `<div class="hh-v2-loading"><div><i></i><p>Đang kết nối Messenger HH...</p></div></div>`;
+    try {
+      messengerData = await window.HHCommunity.api({ query: `?view=messenger&room=${encodeURIComponent(messengerRoom)}` });
+      if (currentView !== "messenger" || !panel.isConnected) return;
+      const latestMessageId = messengerData.messages?.at?.(-1)?.id || "empty";
+      const nextReadKey = `${messengerData.room?.id || messengerRoom}:${latestMessageId}`;
+      messengerData.rooms = (messengerData.rooms || []).map((room) => room.id === messengerData.room?.id ? { ...room, unread: 0 } : room);
+      if (messengerData.room) messengerData.room.unread = 0;
+      if (messengerReadKey !== nextReadKey) {
+        messengerReadKey = nextReadKey;
+        window.HHCommunity.api({ method: "POST", body: { action: "message:read", room: messengerData.room?.id || messengerRoom } }).catch(() => {});
+      }
+      renderMessenger(panel, messengerData);
+      bindMessengerRealtime();
+      clearInterval(messengerTimer);
+      const refreshDelay = document.hidden ? 15000 : messengerRealtimeState === "live" ? 9000 : 3000;
+      messengerTimer = setTimeout(() => { if (currentView === "messenger" && panel.isConnected) loadMessenger(root, panel, { silent: true }).catch(() => {}); }, refreshDelay);
+    } catch (error) {
+      panel.innerHTML = `${head("Messenger chưa sẵn sàng", error.message)}${empty("!", "Không thể tải cuộc trò chuyện", "Kiểm tra đăng nhập và thử kết nối lại.", '<button class="hh-v2-action primary" type="button" data-v2-message-refresh>Thử lại</button>')}`;
+    }
+  }
+
+  function openMessenger(root, mention = "", draft = "") {
+    messengerReply = null;
+    showView(root, "messenger");
+    if (mention || draft) setTimeout(() => {
+      const input = workspace(root).querySelector("[data-v2-message-input]");
+      if (input) { input.value = `${mention ? `@${mention} ` : ""}${draft}`; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+    }, 650);
   }
 
   function profileData() {
@@ -241,7 +536,9 @@
 
   async function showView(root, view) {
     if (view === "feed") return showFeed(root);
+    clearInterval(messengerTimer);
     currentView = view;
+    root.querySelector("[data-social-directory]")?.remove();
     root.querySelector(".community-layout")?.setAttribute("hidden", "");
     const panel = workspace(root);
     panel.hidden = false;
@@ -250,6 +547,7 @@
     try {
       await loadSocial();
       if (!root.isConnected || currentView !== view) return;
+      if (view === "messenger") { await loadMessenger(root, panel); return; }
       if (view === "profile") renderProfile(panel);
       else if (view === "friends") renderFriends(panel);
       else if (view === "reels") renderReels(panel);
@@ -304,7 +602,23 @@
     if (!root || root.dataset.socialV2) return;
     root.dataset.socialV2 = "true";
     const profileCard = root.querySelector(".community-profile-card");
-    profileCard?.insertAdjacentHTML("afterend", `<section class="hh-v2-nav"><strong>Không gian của bạn</strong>${[["feed","⌂","Bảng tin","#62d7e7"],["profile","ID","Hồ sơ cá nhân","#f05caf"],["friends","◎","Bạn bè & kết nối","#67dba1"],["reels","▶","Video ngắn","#f4d77d"],["groups","G","Nhóm cộng đồng","#67dba1"],["pages","P","Trang sáng tạo","#79a8ff"],["events","E","Sự kiện","#f0a174"],["memories","◷","Kỷ niệm","#f05caf"],["saved","☆","Đã lưu","#b991ff"],["activity","↺","Nhật ký hoạt động","#f0a174"],["privacy","◈","Quyền riêng tư","#67dba1"],["safety","!","An toàn & báo cáo","#ff7e8a"]].map(([id, icon, label, color]) => `<button type="button" data-social-v2-view="${id}" style="--item:${color}"><i>${icon}</i><span>${label}</span><b hidden>0</b></button>`).join("")}</section>`);
+    const communityNav = root.querySelector(".community-nav");
+    const navMarkup = `<section class="hh-v2-nav"><strong>Không gian của bạn</strong>${[["feed","⌂","Bảng tin","#62d7e7"],["messenger","◌","Messenger HH","#62d7e7"],["profile","ID","Hồ sơ cá nhân","#f05caf"],["friends","◎","Bạn bè & kết nối","#67dba1"],["reels","▶","Video ngắn","#f4d77d"],["groups","G","Nhóm cộng đồng","#67dba1"],["pages","P","Trang sáng tạo","#79a8ff"],["events","E","Sự kiện","#f0a174"],["memories","◷","Kỷ niệm","#f05caf"],["saved","☆","Đã lưu","#b991ff"],["activity","↺","Nhật ký hoạt động","#f0a174"],["privacy","◈","Quyền riêng tư","#67dba1"],["safety","!","An toàn & báo cáo","#ff7e8a"]].map(([id, icon, label, color]) => `<button type="button" data-social-v2-view="${id}" style="--item:${color}"><i>${icon}</i><span>${label}</span><b hidden>0</b></button>`).join("")}</section>`;
+    if (communityNav && !communityNav.querySelector(".hh-v2-nav")) {
+      if (profileCard) profileCard.insertAdjacentHTML("afterend", navMarkup); else communityNav.insertAdjacentHTML("afterbegin", navMarkup);
+    }
+    const socialTabs = root.querySelector(".hh-social-tabs");
+    if (socialTabs && !socialTabs.querySelector('[data-social-tab="messenger"]')) socialTabs.insertAdjacentHTML("beforeend", '<button type="button" data-social-tab="messenger"><span>◌</span>Messenger</button><button type="button" data-social-tab="profile"><span>ID</span>Hồ sơ</button><button type="button" data-social-tab="pages"><span>P</span>Trang</button><button type="button" data-social-tab="saved"><span>☆</span>Đã lưu</button><button type="button" data-social-tab="privacy"><span>◈</span>Riêng tư</button><button type="button" data-social-tab="safety"><span>!</span>An toàn</button>');
+    const heroMessenger = root.querySelector('.community-hero-actions a[href="#community"]');
+    if (heroMessenger) { heroMessenger.href = "#/communication/community"; heroMessenger.dataset.v2Messenger = ""; }
+    root.querySelectorAll('.community-online a[href="#community"]').forEach((link) => { link.href = "#/communication/community"; link.dataset.v2Messenger = ""; });
+    const onlinePanel = root.querySelector(".community-online");
+    if (onlinePanel) {
+      const title = onlinePanel.querySelector("strong");
+      const detail = onlinePanel.querySelector("span");
+      if (title) title.textContent = "Messenger HH trực tuyến";
+      if (detail) detail.textContent = "Tin riêng và nhóm chat đồng bộ liên tục";
+    }
     const posts = root.querySelector("[data-community-posts]");
     posts?.insertAdjacentHTML("beforebegin", `<section class="hh-feed-control"><div><strong>Bảng tin thông minh</strong><small>Xếp hạng đa dạng, không chỉ dựa vào lượt thích</small></div><label><span>Sắp xếp</span><select data-v2-feed-mode><option value="ranked">Dành cho bạn</option><option value="latest">Mới nhất</option><option value="friends">Bạn bè</option></select><button type="button" data-v2-refresh-feed>↻ Làm mới</button></label></section>`);
     const composer = root.querySelector("[data-community-form]");
@@ -587,8 +901,17 @@
   document.addEventListener("click", async (event) => {
     const root = event.target.closest("[data-community-center]");
     if (!root) return;
+    const legacyView = event.target.closest("[data-community-view]");
+    if (legacyView) {
+      const mode = legacyView.dataset.communityView;
+      const mapped = { friends: "friends", groups: "groups", events: "events", memories: "memories" }[mode];
+      if (mapped) { event.preventDefault(); event.stopImmediatePropagation(); showView(root, mapped); return; }
+    }
     const view = event.target.closest("[data-social-v2-view]");
-    if (view) { event.preventDefault(); showView(root, view.dataset.socialV2View); return; }
+    if (view) { event.preventDefault(); event.stopImmediatePropagation(); showView(root, view.dataset.socialV2View); return; }
+    if (event.target.closest("[data-v2-messenger]")) { event.preventDefault(); event.stopImmediatePropagation(); openMessenger(root); return; }
+    const contact = event.target.closest("[data-community-contact]");
+    if (contact) { event.preventDefault(); event.stopImmediatePropagation(); const name = contact.dataset.communityContact || ""; const person = messengerContacts().find((item) => item.displayName === name || item.name === name || item.username === name); if (person?.id) await openDirectMessage(root, person.id); else openMessenger(root, name); return; }
     if (event.target.closest("[data-v2-retry]")) { socialData = null; showView(root, currentView); return; }
     if (event.target.closest("[data-v2-edit-profile]")) { editProfile(root); return; }
     if (event.target.closest("[data-v2-share-profile]")) { const url = `${location.origin}${location.pathname}?profile=${encodeURIComponent(profileData().username)}#/communication/community`; if (navigator.share) navigator.share({ title: profileData().displayName, url }).catch(() => {}); else navigator.clipboard.writeText(url).then(() => toast("Đã sao chép liên kết hồ sơ.")); return; }
@@ -609,7 +932,7 @@
     const groupOpen = event.target.closest("[data-v2-group-open]"); if (groupOpen) { const group = (communityState().communityGroups || []).find((item) => String(item.id) === groupOpen.dataset.v2GroupOpen); if (group) openGroupDetail(root, group); return; }
     const eventRsvp = event.target.closest("[data-v2-event-rsvp]"); if (eventRsvp) { const item = (communityState().communityEvents || []).find((entry) => String(entry.id) === eventRsvp.dataset.v2EventRsvp); const desired = eventRsvp.dataset.eventStatus || "going"; eventRsvp.disabled = true; try { await window.HHCommunity.mutate({ action: "event:rsvp", eventId: eventRsvp.dataset.v2EventRsvp, status: item?.response === desired ? "none" : desired }); await window.HHCommunity.refresh({ silent: true }); renderEvents(workspace(root)); } catch (error) { toast(error.message, "error"); eventRsvp.disabled = false; } return; }
     const eventCalendar = event.target.closest("[data-v2-event-calendar]"); if (eventCalendar) { const item = (communityState().communityEvents || []).find((entry) => String(entry.id) === eventCalendar.dataset.v2EventCalendar); if (!item) return; const start = new Date(item.startsAt); const parsedEnd = new Date(item.endsAt); const end = Number.isNaN(parsedEnd.getTime()) ? new Date(start.getTime() + 60 * 60 * 1000) : parsedEnd; const stamp = (date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//HH Platform//Community Event//VI\r\nBEGIN:VEVENT\r\nUID:${item.id}@hoangdaika13.github.io\r\nDTSTAMP:${stamp(new Date())}\r\nDTSTART:${stamp(start)}\r\nDTEND:${stamp(end)}\r\nSUMMARY:${String(item.name || "Sự kiện HH").replace(/[\r\n,;]/g, " ")}\r\nLOCATION:${String(item.location || item.meetingUrl || "").replace(/[\r\n,;]/g, " ")}\r\nDESCRIPTION:${String(item.description || "").replace(/[\r\n]/g, " ")}\r\nEND:VEVENT\r\nEND:VCALENDAR`; const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" })); link.download = `hh-event-${item.id}.ics`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); toast("Đã tạo tệp lịch cho sự kiện."); return; }
-    const openChat = event.target.closest("[data-v2-open-chat]"); if (openChat) { localStorage.setItem("hh-pending-chat-user", openChat.dataset.v2OpenChat); location.hash = `chat-room-direct-${encodeURIComponent(openChat.dataset.v2OpenChat)}`; return; }
+    const openChat = event.target.closest("[data-v2-open-chat]"); if (openChat) { await openDirectMessage(root, openChat.dataset.v2OpenChat); return; }
     const pageOpen = event.target.closest("[data-v2-page-open]"); if (pageOpen) { const page = (socialData?.pages || []).find((item) => String(item.id) === pageOpen.dataset.v2PageOpen); if (page) { const modal = dialog(page.name, `<section class="hh-page-preview wide">${avatarMarkup(page)}<div><small>${esc(page.category || "Trang cộng đồng")}</small><h4>${esc(page.name)}</h4><p>${esc(page.description || "Trang trong hệ sinh thái HH")}</p><strong>${Number(page.followerCount || 0).toLocaleString("vi-VN")} người theo dõi</strong><div class="hh-page-contact">${page.website ? `<a href="${esc(page.website)}" target="_blank" rel="noopener noreferrer">Website</a>` : ""}${page.phone ? `<span>${esc(page.phone)}</span>` : ""}${page.address ? `<span>${esc(page.address)}</span>` : ""}</div>${page.owned ? `<div class="hh-page-insights"><article><b>${Number(page.insights?.reach || 0)}</b><small>Tiếp cận</small></article><article><b>${Number(page.insights?.engagement || 0)}</b><small>Tương tác</small></article><article><b>${Number(page.insights?.videoViews || 0)}</b><small>Lượt xem video</small></article></div><button class="hh-v2-action primary" type="button" data-v2-edit-page>Chỉnh sửa Trang</button>` : ""}</div></section>`, "Đóng"); modal.querySelector("footer .primary").addEventListener("click", () => { modal.close(); modal.remove(); }); modal.querySelector("[data-v2-edit-page]")?.addEventListener("click", () => { modal.close(); modal.remove(); editPage(root, page); }); } return; }
     if (event.target.closest("[data-v2-create-collection]")) { const modal = dialog("Tạo bộ sưu tập", '<label class="wide"><span>Tên bộ sưu tập</span><input name="name" maxlength="100" required placeholder="Ý tưởng muốn xem lại"></label><label class="wide"><span>Mô tả</span><textarea name="description" maxlength="400" placeholder="Mô tả ngắn..."></textarea></label><label><span>Quyền xem</span><select name="privacy"><option value="private">Chỉ mình tôi</option><option value="friends">Bạn bè</option><option value="public">Công khai</option></select></label><label><span>Màu nhận diện</span><input name="color" type="color" value="#62d7e7"></label>', "Tạo bộ sưu tập"); modal.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); const values = Object.fromEntries(new FormData(submitEvent.currentTarget)); try { await socialApi({ method: "POST", body: { action: "collection:create", collection: values } }); modal.close(); modal.remove(); await loadSocial(true); renderSaved(workspace(root)); toast("Đã tạo bộ sưu tập cá nhân."); } catch (error) { toast(error.message, "error"); } }); return; }
     const addCollection = event.target.closest("[data-v2-add-collection]"); if (addCollection) { const collections = socialData?.collections || []; if (!collections.length) { root.querySelector("[data-v2-create-collection]")?.click(); toast("Hãy tạo bộ sưu tập đầu tiên."); return; } const modal = dialog("Thêm vào bộ sưu tập", `<label class="wide"><span>Chọn bộ sưu tập</span><select name="collectionId">${collections.map((item) => `<option value="${esc(item.id)}">${esc(item.name)} (${item.itemCount || 0})</option>`).join("")}</select></label>`, "Thêm nội dung"); modal.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); const collectionId = new FormData(submitEvent.currentTarget).get("collectionId"); try { await socialApi({ method: "POST", body: { action: "collection:item", collectionId, postId: addCollection.dataset.v2AddCollection, active: true } }); modal.close(); modal.remove(); await loadSocial(true); renderSaved(workspace(root)); toast("Đã thêm vào bộ sưu tập."); } catch (error) { toast(error.message, "error"); } }); return; }
@@ -620,11 +943,107 @@
     const activityFilter = event.target.closest("[data-v2-activity-filter]"); if (activityFilter) { const mode = activityFilter.dataset.v2ActivityFilter; $$(root, "[data-v2-activity-filter]").forEach((button) => button.classList.toggle("active", button === activityFilter)); $$(root, ".hh-activity-item").forEach((item) => { item.hidden = mode !== "all" && !item.dataset.activityType.includes(mode); }); return; }
     if (event.target.closest("[data-v2-export-activity]")) { const blob = new Blob([JSON.stringify(socialData?.activity || [], null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `hh-activity-${new Date().toISOString().slice(0, 10)}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); return; }
     if (event.target.closest("[data-v2-save-privacy]")) { $(root, "[data-v2-privacy-form]")?.requestSubmit(); return; }
+    if (event.target.closest("[data-v2-message-refresh]")) { await loadMessenger(root, workspace(root)); return; }
+    const room = event.target.closest("[data-v2-chat-room]"); if (room) { messengerRoom = room.dataset.v2ChatRoom || "general"; messengerReply = null; messengerFiles = []; emitMessengerTyping(false); await loadMessenger(root, workspace(root)); return; }
+    if (event.target.closest("[data-v2-direct-create]")) {
+      const modal = dialog("Tin nhắn mới", messengerMemberChoices([], true), "Mở cuộc trò chuyện");
+      modal.querySelector("form").addEventListener("submit", async (submitEvent) => {
+        submitEvent.preventDefault();
+        const targetId = new FormData(submitEvent.currentTarget).get("targetId");
+        if (!targetId) return toast("Hãy chọn một thành viên để nhắn tin.", "error");
+        modal.close(); modal.remove();
+        await openDirectMessage(root, targetId);
+      });
+      return;
+    }
+    if (event.target.closest("[data-v2-chat-room-create]")) {
+      const modal = dialog("Tạo nhóm chat", `<label><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="80" placeholder="Ví dụ: Nhóm thiết kế HH"></label><label><span>Quyền truy cập</span><select name="visibility"><option value="private">Riêng tư</option><option value="public">Công khai</option></select></label><label class="wide"><span>Mô tả</span><textarea name="description" maxlength="240" placeholder="Chủ đề và mục đích của nhóm..."></textarea></label>${messengerMemberChoices()}`, "Tạo nhóm chat");
+      modal.querySelector("form").addEventListener("submit", async (submitEvent) => {
+        submitEvent.preventDefault();
+        const data = new FormData(submitEvent.currentTarget);
+        const values = Object.fromEntries(data);
+        values.memberIds = data.getAll("memberIds");
+        const button = submitEvent.currentTarget.querySelector('[type="submit"]');
+        button.disabled = true;
+        try {
+          const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:room:create", ...values } });
+          messengerRoom = result.room.id; messengerFiles = []; modal.close(); modal.remove();
+          await loadMessenger(root, workspace(root)); toast("Nhóm chat đã được tạo.");
+        } catch (error) { toast(error.message, "error"); button.disabled = false; }
+      });
+      return;
+    }
+    if (event.target.closest("[data-v2-room-settings]")) {
+      const roomData = messengerData?.room;
+      if (!roomData || roomData.kind !== "group") return;
+      if (!roomData.owned) {
+        const modal = dialog("Thông tin nhóm chat", `<section class="wide hh-v2-confirm"><i>◆</i><p>${esc(roomData.name)} · ${Number(roomData.memberCount || 0)} thành viên</p><button class="hh-v2-action danger" type="button" data-v2-room-leave>Rời nhóm chat</button></section>`, "Đóng");
+        modal.querySelector("footer .primary")?.addEventListener("click", () => { modal.close(); modal.remove(); });
+        modal.querySelector("[data-v2-room-leave]")?.addEventListener("click", async () => { try { await window.HHCommunity.api({ method: "POST", body: { action: "message:room:leave", room: messengerRoom } }); messengerRoom = "general"; modal.close(); modal.remove(); await loadMessenger(root, workspace(root)); toast("Bạn đã rời nhóm chat."); } catch (error) { toast(error.message, "error"); } });
+        return;
+      }
+      const modal = dialog("Quản lý nhóm chat", `<label><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="80" value="${esc(roomData.name)}"></label><label><span>Quyền truy cập</span><select name="visibility"><option value="private" ${roomData.visibility === "private" ? "selected" : ""}>Riêng tư</option><option value="public" ${roomData.visibility === "public" ? "selected" : ""}>Công khai</option></select></label><label class="wide"><span>Mô tả</span><textarea name="description" maxlength="240">${esc(roomData.description || "")}</textarea></label>${messengerMemberChoices(roomData.memberIds || [])}`, "Lưu nhóm chat");
+      modal.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); const data = new FormData(submitEvent.currentTarget); const values = Object.fromEntries(data); values.memberIds = data.getAll("memberIds"); try { await window.HHCommunity.api({ method: "POST", body: { action: "message:room:update", room: messengerRoom, ...values } }); signalMessengerChange("room:update"); modal.close(); modal.remove(); await loadMessenger(root, workspace(root)); toast("Đã cập nhật nhóm chat."); } catch (error) { toast(error.message, "error"); } });
+      return;
+    }
+    const removeMessageFile = event.target.closest("[data-v2-message-file-remove]");
+    if (removeMessageFile) {
+      messengerFiles.splice(Number(removeMessageFile.dataset.v2MessageFileRemove), 1);
+      renderMessengerFileQueue(workspace(root));
+      return;
+    }
+    const messageReplyButton = event.target.closest("[data-v2-message-reply]"); if (messageReplyButton) { const message = (messengerData?.messages || []).find((item) => String(item.id) === messageReplyButton.dataset.v2MessageReply); if (message) { messengerReply = { id: message.id, name: message.author?.name || "Thành viên HH", text: message.text || "Media" }; renderMessenger(workspace(root)); workspace(root).querySelector("[data-v2-message-input]")?.focus(); } return; }
+    if (event.target.closest("[data-v2-message-reply-cancel]")) { messengerReply = null; renderMessenger(workspace(root)); return; }
+    const messageReact = event.target.closest("[data-v2-message-react]"); if (messageReact) { messageReact.disabled = true; try { const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:react", room: messengerRoom, messageId: messageReact.dataset.v2MessageReact, type: messageReact.dataset.reactionType || "like" } }); signalMessengerChange("react", result.message?.id || messageReact.dataset.v2MessageReact); await loadMessenger(root, workspace(root), { silent: true }); } catch (error) { toast(error.message, "error"); messageReact.disabled = false; } return; }
+    const messageEdit = event.target.closest("[data-v2-message-edit]"); if (messageEdit) { const message = (messengerData?.messages || []).find((item) => String(item.id) === messageEdit.dataset.v2MessageEdit); if (!message) return; const modal = dialog("Sửa tin nhắn", `<label class="wide"><span>Nội dung</span><textarea name="text" required maxlength="2000">${esc(message.text || "")}</textarea></label>`, "Lưu tin nhắn"); modal.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); const text = String(new FormData(submitEvent.currentTarget).get("text") || "").trim(); if (!text) return; try { const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:edit", room: messengerRoom, messageId: message.id, text } }); signalMessengerChange("edit", result.message?.id || message.id); modal.close(); modal.remove(); await loadMessenger(root, workspace(root), { silent: true }); toast("Đã sửa tin nhắn."); } catch (error) { toast(error.message, "error"); } }); return; }
+    const messageDelete = event.target.closest("[data-v2-message-delete]"); if (messageDelete) { const confirm = dialog("Thu hồi tin nhắn?", '<section class="wide hh-v2-confirm"><i>!</i><p>Tin nhắn sẽ bị xóa khỏi phòng trò chuyện đối với mọi thành viên.</p></section>', "Thu hồi"); confirm.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); try { const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:delete", room: messengerRoom, messageId: messageDelete.dataset.v2MessageDelete } }); signalMessengerChange("delete", result.message?.id || messageDelete.dataset.v2MessageDelete); confirm.close(); confirm.remove(); await loadMessenger(root, workspace(root), { silent: true }); toast("Đã thu hồi tin nhắn."); } catch (error) { toast(error.message, "error"); } }); return; }
+    const messageMediaButton = event.target.closest("[data-v2-message-media]"); if (messageMediaButton) { const modal = dialog("Media trong Messenger", `<section class="wide hh-message-lightbox"><img src="${esc(messageMediaButton.dataset.v2MessageMedia)}" alt="Ảnh trong tin nhắn"></section>`, "Đóng"); modal.querySelector("footer .primary")?.addEventListener("click", () => { modal.close(); modal.remove(); }); return; }
     const commentReact = event.target.closest("[data-v2-comment-react]"); if (commentReact) { const postId = commentReact.closest("[data-post-id]")?.dataset.postId; const post = (communityState().remotePosts || []).find((item) => String(item.id) === postId); const comment = post?.comments?.find((item) => String(item.id) === commentReact.dataset.v2CommentReact); await window.HHCommunity.mutate({ action: "comment:react", postId, commentId: commentReact.dataset.v2CommentReact, type: comment?.viewerReaction ? "remove" : "like" }); return; }
     const commentMore = event.target.closest("[data-v2-comment-more]"); if (commentMore) { const postId = commentMore.closest("[data-post-id]")?.dataset.postId; const post = (communityState().remotePosts || []).find((item) => String(item.id) === String(postId)); const comment = post?.comments?.find((item) => String(item.id) === commentMore.dataset.v2CommentMore); if (!post || !comment) return; const actions = `${comment.owned ? '<button class="hh-v2-action" type="button" data-v2-comment-action="edit">Sửa bình luận</button><button class="hh-v2-action danger" type="button" data-v2-comment-action="delete">Xóa bình luận</button>' : '<button class="hh-v2-action danger" type="button" data-v2-comment-action="report">Báo cáo bình luận</button>'}${post.owned ? '<button class="hh-v2-action" type="button" data-v2-comment-action="pin">Ghim / bỏ ghim</button>' : ''}`; const modal = dialog("Tùy chọn bình luận", actions, "Đóng"); modal.querySelector("footer .primary")?.remove(); modal.querySelectorAll("[data-v2-comment-action]").forEach((button) => button.addEventListener("click", async () => { const action = button.dataset.v2CommentAction; try { if (action === "edit") { modal.close(); modal.remove(); const editor = dialog("Sửa bình luận", `<label class="wide"><span>Nội dung</span><textarea name="text" required maxlength="1200">${esc(comment.text || "")}</textarea></label>`, "Lưu bình luận"); editor.querySelector("form").addEventListener("submit", async (editEvent) => { editEvent.preventDefault(); const text = String(new FormData(editEvent.currentTarget).get("text") || "").trim(); if (!text) return; await window.HHCommunity.mutate({ action: "comment:edit", postId, commentId: comment.id, text }); editor.close(); editor.remove(); decoratePosts(root); toast("Đã sửa bình luận."); }); return; } await window.HHCommunity.mutate({ action: `comment:${action}`, postId, commentId: comment.id, reason: "Bình luận không phù hợp" }); modal.close(); modal.remove(); decoratePosts(root); toast("Đã cập nhật bình luận."); } catch (error) { toast(error.message, "error"); } })); return; }
   }, true);
 
   document.addEventListener("submit", async (event) => {
+    const messageForm = event.target.closest("[data-v2-message-form]");
+    if (messageForm) {
+      event.preventDefault();
+      const input = messageForm.querySelector("[data-v2-message-input]");
+      const selectedFiles = [...messengerFiles];
+      const urlInput = messageForm.querySelector("[data-v2-message-url]");
+      const attachmentUrl = urlInput?.value.trim() || "";
+      const text = input?.value.trim() || "";
+      if (!text && !selectedFiles.length && !attachmentUrl) { input?.focus(); return; }
+      const button = messageForm.querySelector('[type="submit"]');
+      const status = messageForm.querySelector("[data-v2-message-status]");
+      clearInterval(messengerTimer);
+      button.disabled = true;
+      status.textContent = selectedFiles.length ? `Đang chuẩn bị ${selectedFiles.length} tệp...` : "Đang gửi...";
+      try {
+        const created = [];
+        if (selectedFiles.length) {
+          for (let index = 0; index < selectedFiles.length; index += 1) {
+            status.textContent = `Đang gửi tệp ${index + 1}/${selectedFiles.length}: ${selectedFiles[index].name}`;
+            const uploaded = await window.HHCommunity.uploadMedia(selectedFiles[index]);
+            const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, text: index === 0 ? text : "", mediaId: uploaded?.media?.id || "", replyToId: index === 0 ? messengerReply?.id || "" : "" } });
+            if (result.message) created.push(result.message);
+          }
+          if (attachmentUrl) {
+            const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, attachmentUrl } });
+            if (result.message) created.push(result.message);
+          }
+        } else {
+          const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, text, attachmentUrl, replyToId: messengerReply?.id || "" } });
+          if (result.message) created.push(result.message);
+        }
+        messengerFiles = [];
+        messengerReply = null;
+        if (input) input.value = "";
+        if (urlInput) urlInput.value = "";
+        emitMessengerTyping(false);
+        signalMessengerChange("create", created.at(-1)?.id || "");
+        await loadMessenger(messageForm.closest("[data-community-center]"), workspace(messageForm.closest("[data-community-center]")), { silent: true });
+      } catch (error) { toast(error.message, "error"); button.disabled = false; status.textContent = error.message; }
+      return;
+    }
     const reportForm = event.target.closest("[data-v2-report-form]");
     if (reportForm) {
       event.preventDefault();
@@ -677,12 +1096,45 @@
   });
 
   document.addEventListener("input", (event) => {
+    const memberSearch = event.target.closest("[data-v2-member-search]");
+    if (memberSearch) {
+      const term = memberSearch.value.trim().toLocaleLowerCase("vi");
+      $$(memberSearch.closest(".hh-message-member-picker"), "[data-v2-member-option]").forEach((option) => { option.hidden = Boolean(term) && !option.textContent.toLocaleLowerCase("vi").includes(term); });
+      return;
+    }
+    const messengerSearch = event.target.closest("[data-v2-room-search], [data-v2-message-search]");
+    if (messengerSearch) { filterMessenger(messengerSearch.closest("[data-social-v2-workspace]")); return; }
     const search = event.target.closest("[data-v2-group-search]");
     if (!search) return;
     const term = search.value.trim().toLocaleLowerCase("vi");
     $$(search.closest("[data-social-v2-workspace]"), "[data-v2-group-card]").forEach((card) => {
       card.hidden = Boolean(term) && !card.textContent.toLocaleLowerCase("vi").includes(term);
     });
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const input = event.target.closest("[data-v2-message-input]");
+    if (!input || event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+    event.preventDefault();
+    input.closest("form")?.requestSubmit();
+  });
+
+  window.addEventListener("hh:realtime-ready", () => bindMessengerRealtime());
+  window.addEventListener("hh:realtime-offline", () => {
+    messengerRealtimeState = "fallback";
+    messengerOnlineCount = 0;
+    messengerOnlineUsers = new Set();
+    updateMessengerConnection();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && currentView === "messenger") scheduleMessengerRefresh(80);
+  });
+
+  window.HHSocialV2 = Object.freeze({
+    open: (root, view = "feed") => showView(root, view),
+    openMessenger: (root, mention = "", draft = "") => openMessenger(root, mention, draft),
+    openDirect: (root, targetId, draft = "") => openDirectMessage(root, targetId, draft),
+    refresh: (root) => showView(root, currentView)
   });
 
   let enhanceFrame = 0;
