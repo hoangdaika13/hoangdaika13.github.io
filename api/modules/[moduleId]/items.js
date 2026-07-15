@@ -9,6 +9,26 @@ module.exports = async function handler(req, res) {
     const ownerEmail = String(process.env.ADMIN_EMAIL || "nhhoang130803@gmail.com").toLowerCase();
     const isAdmin = Boolean(user && String(user.email || "").toLowerCase() === ownerEmail);
 
+    if (moduleId === "space-explorer" && req.method === "GET" && req.query.view === "leaderboard") {
+      const scores = await collection.find(
+        { moduleId, type: "score" },
+        { projection: { "user.name": 1, "data.score": 1, "data.rank": 1, "data.level": 1, "data.sectors": 1, "data.discoveries": 1, updatedAt: 1 } }
+      ).sort({ "data.score": -1, updatedAt: 1 }).limit(20).toArray();
+      return res.status(200).json({
+        moduleId,
+        items: scores.map((item, index) => ({
+          position: index + 1,
+          pilot: clean(item.user?.name || "Phi công HH", 80),
+          score: Math.max(0, Number(item.data?.score || 0)),
+          rank: clean(item.data?.rank || "Tân binh", 40),
+          level: Math.max(1, Number(item.data?.level || 1)),
+          sectors: Math.max(0, Number(item.data?.sectors || 0)),
+          discoveries: Math.max(0, Number(item.data?.discoveries || 0)),
+          updatedAt: item.updatedAt
+        }))
+      });
+    }
+
     if (moduleId === "referral-affiliate" && req.method === "GET" && req.query.code) {
       const code = clean(req.query.code, 40);
       const clicks = await collection.countDocuments({ moduleId, type: "click", "data.code": code });
@@ -20,6 +40,26 @@ module.exports = async function handler(req, res) {
       return res.status(401).json({ error: "Bạn cần đăng nhập để đồng bộ dữ liệu module." });
     }
     const ownership = isAdmin ? {} : { userId: user?._id };
+
+    if (moduleId === "space-explorer" && req.method === "POST" && body.type === "score") {
+      const number = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
+      const data = {
+        score: number(body.data?.score, 0, 999999999),
+        rank: clean(body.data?.rank || "Tân binh", 40),
+        level: number(body.data?.level, 1, 999),
+        sectors: number(body.data?.sectors, 0, 99999),
+        discoveries: number(body.data?.discoveries, 0, 999999),
+        playSeconds: number(body.data?.playSeconds, 0, 315360000)
+      };
+      const now = new Date();
+      await collection.updateOne(
+        { moduleId, type: "score", userId: user._id },
+        { $set: { title: clean(user.name || "Phi công HH", 180), data, user: ownerFrom(user).user, updatedAt: now }, $setOnInsert: { moduleId, type: "score", userId: user._id, createdAt: now } },
+        { upsert: true }
+      );
+      await db.collection("events").insertOne({ type: "game:score:sync", moduleId, userId: user._id, score: data.score, createdAt: now });
+      return res.status(200).json({ ok: true, data });
+    }
 
     if (req.method === "GET") {
       const limit = moduleId === "chat-app" ? 300 : 100;

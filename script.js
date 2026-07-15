@@ -4378,6 +4378,7 @@ function initAppShell() {
       items: ["community", "notification-center", "user-dashboard", "feedback-survey", "helpdesk-ticketing", "referral-affiliate"],
       shortcuts: [{ label: "Google + YouTube", icon: "G", tab: "google" }]
     },
+    { id: "entertainment", label: "Giải trí", icon: "◉", accent: "#ff8a5b", route: "/entertainment", items: [], pages: [{ id: "astra-hh", title: "ASTRA HH", route: "/entertainment/astra-hh" }] },
     { id: "insights", label: "Phân tích", icon: "↗", accent: "#ffbd69", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
     { id: "learn", label: "Học tập", icon: "◫", accent: "#9a86ff", route: "/learn", items: ["learning-center", "i18n", "accessibility-center", "gamification", "onboarding-tour"] },
     { id: "system", label: "Hệ thống", icon: "⚙", accent: "#68dda8", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] },
@@ -4436,8 +4437,9 @@ function initAppShell() {
         return `<button class="app-sidebar__subitem ${route === moduleRoute ? "is-active" : ""}" type="button" data-app-route="${moduleRoute}" ${route === moduleRoute ? "aria-current=page" : ""}><span>${module.title}</span></button>`;
       }).join("");
       const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
+      const pageItems = (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
       const studioMenu = group.studioItems ? `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
-      const submenu = `${shortcuts}${studioMenu}${moduleItems}`;
+      const submenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
       const hasSubmenu = Boolean(submenu);
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}" data-nav-group="${group.id}" style="--nav-accent:${group.accent || "#56eaff"}">
         <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.route}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}"><span>${group.icon}</span><b>${group.label}</b><i ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
@@ -4529,7 +4531,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || [...mediaStudioItems, ...developerToolItems].find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
+    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || [...mediaStudioItems, ...developerToolItems].find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
   };
   const renderRoute = () => {
@@ -4539,7 +4541,9 @@ function initAppShell() {
     activeRoute = route;
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
+    document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
+    if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
     setUser();
     renderNavigation();
     requestAnimationFrame(() => {
@@ -4563,6 +4567,11 @@ function initAppShell() {
       workspace.innerHTML = "";
       if (window.HHSupportPage?.mount) window.HHSupportPage.mount(workspace, { apiBase: REALTIME_URL });
       else mountSimpleView("Ủng hộ nhà phát triển", "Không thể tải giao diện ủng hộ. Vui lòng làm mới trang.", "");
+    } else if (route === "/entertainment" || route === "/entertainment/astra-hh") {
+      updatePageHeader("ASTRA HH: Tín Hiệu Vô Tận", "Lái tàu, quét ngoại hành tinh, khai thác tài nguyên và truy tìm nguồn phát HH-13.", route);
+      workspace.innerHTML = '<div data-space-explorer-host></div>';
+      if (window.HHSpaceExplorer?.mount) window.HHSpaceExplorer.mount(workspace.firstElementChild, { apiBase: REALTIME_URL });
+      else mountSimpleView("ASTRA HH", "Đang khởi động động cơ khám phá vũ trụ...", "");
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {
       updatePageHeader("Media & Design", "Studio sáng tạo xử lý ảnh, tài liệu, màu sắc và vector ngay trên thiết bị.", route);
       workspace.innerHTML = '<div data-media-design-page-host></div>';
@@ -4614,7 +4623,7 @@ function initAppShell() {
     const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
     const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
     const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));
-    return [...modules, ...commandCenter, ...developerTools, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...developerTools, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
@@ -4770,6 +4779,7 @@ function initAppShell() {
     renderRoute();
   });
   window.addEventListener("hh:developer-tools-ready", renderRoute);
+  window.addEventListener("hh:space-explorer-ready", renderRoute);
   window.addEventListener("hh:auth-change", () => { setShellVisibility(); setUser(); });
   const initial = stored();
   const syncResponsiveSidebar = (isMobile = mobileSidebarQuery.matches) => {

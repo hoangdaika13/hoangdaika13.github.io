@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v94";
+const CACHE = "hh-dev-hub-v95";
 const CORE = [
   "./",
   "./index.html",
@@ -25,6 +25,7 @@ const CORE = [
   "./search-watch-center.js?v=4",
   "./creative-suite.css?v=2",
   "./sidebar-navigation-pro.css?v=2",
+  "./space-explorer.css?v=1",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
   "./community-platform-v2.css?v=10",
@@ -47,6 +48,7 @@ const CORE = [
   "./media-design-page.js?v=6",
   "./feature-lab.js?v=4",
   "./feature-engines.js?v=2",
+  "./space-explorer.js?v=1",
   "./config.js?v=5",
   "./data/ai-super-platform-modules.json"
 ];
