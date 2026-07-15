@@ -193,10 +193,12 @@
     navTimer = setTimeout(async () => {
       const currentAccess = await discoverAccess();
       const nav = document.querySelector("[data-community-center] .hh-v2-nav");
-      if (!nav) return;
-      const existing = nav.querySelector('[data-social-v2-view="admin"]');
-      if (!currentAccess) { existing?.remove(); return; }
-      if (!existing) nav.insertAdjacentHTML("beforeend", '<button type="button" data-social-v2-view="admin" style="--item:#f4d76d"><i>⚙</i><span>Community Admin</span><b hidden>0</b></button>');
+      const topNav = document.querySelector("[data-community-center] .hh-social-tabs");
+      const existing = nav?.querySelector('[data-social-v2-view="admin"]');
+      const topExisting = topNav?.querySelector('[data-social-v2-view="admin"]');
+      if (!currentAccess) { existing?.remove(); topExisting?.remove(); return; }
+      if (nav && !existing) nav.insertAdjacentHTML("beforeend", '<button type="button" data-social-v2-view="admin" style="--item:#f4d76d"><i>⚙</i><span>Community Admin</span><b hidden>0</b></button>');
+      if (topNav && !topExisting) topNav.insertAdjacentHTML("beforeend", '<button type="button" data-social-v2-view="admin"><span>⚙</span>Quản trị</button>');
     }, 80);
   }
 
