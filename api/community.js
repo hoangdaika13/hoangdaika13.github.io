@@ -693,7 +693,8 @@ module.exports = async function handler(req, res) {
       const item = await db.collection("communityEvents").findOne({ _id: eventId });
       if (!item) return res.status(404).json({ error: "Không tìm thấy sự kiện." });
       const current = (item.responses || []).find((entry) => String(entry.userId) === viewerId)?.status || ((item.attendeeIds || []).some((id) => String(id) === viewerId) ? "going" : "");
-      const requested = ["interested", "going", "declined"].includes(body.status) ? body.status : current === "going" ? "" : "going";
+      const hasRequestedStatus = Object.prototype.hasOwnProperty.call(body, "status");
+      const requested = body.status === "none" ? "" : ["interested", "going", "declined"].includes(body.status) ? body.status : hasRequestedStatus ? current : current === "going" ? "" : "going";
       if (requested === "going" && item.capacity && (item.attendeeIds || []).length >= item.capacity && current !== "going") return res.status(409).json({ error: "Sự kiện đã đủ số người tham gia." });
       const events = db.collection("communityEvents");
       await events.updateOne({ _id: eventId }, { $pull: { responses: { userId: user._id }, attendeeIds: user._id }, $set: { updatedAt: new Date() } });

@@ -547,6 +547,23 @@
 .home-neon .hh-safety-forms form > footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--v2-line); }
 .home-neon .hh-safety-forms form > footer small { color: var(--v2-muted); line-height: 1.45; }
 
+.hh-v2-dialog .hh-group-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.hh-v2-dialog .hh-group-meta span { padding: 5px 8px; border: 1px solid #314552; border-radius: 999px; background: #101b24; color: #b9c8d1; font-size: 8px; }
+.hh-v2-dialog .hh-group-requests { display: grid; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #2b3a48; }
+.hh-v2-dialog .hh-group-requests > header { align-items: center; margin: 0; }
+.hh-v2-dialog .hh-group-requests > article { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px; border: 1px solid #2d3f4c; border-radius: 6px; background: #091118; }
+.hh-v2-dialog .hh-group-requests .hh-v2-avatar { width: 40px; height: 40px; }
+.hh-v2-dialog .hh-group-requests article div { display: grid; gap: 3px; }
+.hh-v2-dialog .hh-group-requests article p { margin: 0; }
+.hh-v2-dialog .hh-group-requests article footer { display: flex; gap: 5px; margin: 0; padding: 0; border: 0; }
+.hh-v2-dialog .hh-v2-confirm { display: grid; place-items: center; gap: 10px; padding: 16px; text-align: center; }
+.hh-v2-dialog .hh-v2-confirm i { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid #7d4355; border-radius: 50%; background: #29131c; color: #ff8ca7; font-size: 24px; font-style: normal; }
+.hh-v2-dialog .hh-v2-confirm p { max-width: 520px; margin: 0; color: #b8c7d0; line-height: 1.6; }
+.hh-v2-dialog .hh-v2-history { display: grid; gap: 8px; max-height: 56vh; overflow: auto; }
+.hh-v2-dialog .hh-v2-history article { padding: 10px; border-left: 3px solid #62d7e7; background: #0a1219; }
+.hh-v2-dialog .hh-v2-history small { color: #72dce5; }
+.hh-v2-dialog .hh-v2-history p { margin: 5px 0 0; color: #d5e0e5; line-height: 1.55; white-space: pre-wrap; }
+
 .hh-v2-audience-list { display: grid; gap: 8px; max-height: min(52vh, 520px); overflow: auto; padding-right: 4px; }
 .hh-v2-audience-list > p { margin: 0 0 4px; color: var(--v2-muted); }
 .hh-v2-audience-list > label { display: grid; grid-template-columns: auto 40px minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--v2-line); background: #0c141d; cursor: pointer; }
@@ -560,6 +577,8 @@
   .home-neon .hh-safety-grid,
   .home-neon .hh-safety-forms { grid-template-columns: minmax(0, 1fr); }
   .home-neon .hh-safety-forms form > footer { align-items: stretch; flex-direction: column; }
+  .hh-v2-dialog .hh-group-requests > article { grid-template-columns: 36px minmax(0, 1fr); }
+  .hh-v2-dialog .hh-group-requests article footer { grid-column: 1 / -1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
