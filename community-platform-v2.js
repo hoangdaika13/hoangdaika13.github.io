@@ -109,6 +109,14 @@
     $$(root, "[data-social-tab]").forEach((button) => button.classList.toggle("active", button.dataset.socialTab === tabView));
   }
 
+  function resetCommunityViewport(root) {
+    requestAnimationFrame(() => {
+      const panel = workspace(root);
+      panel.scrollTop = 0;
+      (root.querySelector(".community-hero") || root).scrollIntoView({ block: "start", behavior: "auto" });
+    });
+  }
+
   function showFeed(root) {
     clearInterval(messengerTimer);
     const liveSocket = window.HHRealtimeSocket;
@@ -119,6 +127,7 @@
     const panel = workspace(root);
     panel.hidden = true;
     updateNav(root);
+    resetCommunityViewport(root);
   }
 
   function messengerRoot() {
@@ -666,6 +675,7 @@
     panel.hidden = false;
     panel.innerHTML = `<div class="hh-v2-loading"><div><i></i><p>Đang tải Social Hub...</p></div></div>`;
     updateNav(root);
+    resetCommunityViewport(root);
     try {
       if (view === "admin") {
         if (!window.HHCommunityAdmin?.mount) throw new Error("Ứng dụng Community Admin chưa sẵn sàng.");

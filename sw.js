@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v92";
+const CACHE = "hh-dev-hub-v93";
 const CORE = [
   "./",
   "./index.html",
@@ -28,7 +28,7 @@ const CORE = [
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
   "./community-platform-v2.css?v=10",
-  "./community-platform-v2.js?v=11",
+  "./community-platform-v2.js?v=12",
   "./community-messenger-pro.css?v=1",
   "./community-calls.js?v=1",
   "./community-admin.css?v=1",

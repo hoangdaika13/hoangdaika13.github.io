@@ -23,6 +23,8 @@ test("Messenger client actions are implemented by the Community API", () => {
   });
   assert.match(api, /MESSAGE_PAGE_SIZE/);
   assert.match(api, /expiresAt.*expireAfterSeconds/s);
+  assert.match(client, /resetCommunityViewport/);
+  assert.match(client, /scrollIntoView/);
 });
 
 test("WebRTC client and signaling server share the call protocol", () => {
