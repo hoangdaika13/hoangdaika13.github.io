@@ -593,6 +593,14 @@
 .home-neon [data-social-v2="true"] .hh-group-card:hover,
 .home-neon [data-social-v2="true"] .hh-page-card:hover,
 .home-neon [data-social-v2="true"] .hh-event-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--v2-cyan) 56%, var(--v2-line)); box-shadow: 0 14px 34px rgba(0,0,0,.24), 0 0 24px rgba(98,215,231,.06); }
+
+.home-neon .hh-v2-trending { display: grid; gap: 7px; padding: 9px 11px; border: 1px solid var(--v2-line); border-radius: 7px; background: linear-gradient(105deg, rgba(115,152,245,.08), rgba(240,92,175,.06), rgba(98,215,231,.07)), #0b1219; }
+.home-neon .hh-v2-trending > strong { color: #8de4eb; font-size: 8px; text-transform: uppercase; }
+.home-neon .hh-v2-trending > div { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: thin; }
+.home-neon .hh-v2-trending button { flex: 0 0 auto; min-height: 29px; padding: 0 9px; border: 1px solid #304251; border-radius: 999px; background: #101923; color: #a8b8c2; font-size: 8px; }
+.home-neon .hh-v2-trending button:hover,
+.home-neon .hh-v2-trending button.active { border-color: #65dbe5; background: linear-gradient(110deg, rgba(98,215,231,.18), rgba(240,92,175,.12)); color: #fff; }
+.home-neon .hh-v2-trending small { color: #f4a9d2; }
 .hh-v2-dialog .hh-page-contact { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .hh-v2-dialog .hh-page-contact a,
 .hh-v2-dialog .hh-page-contact span { padding: 6px 8px; border: 1px solid #314552; border-radius: 5px; background: #0b141c; color: #b9c8d1; text-decoration: none; }

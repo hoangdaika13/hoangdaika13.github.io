@@ -95,7 +95,7 @@
   function profileData() {
     const auth = authUser();
     const profile = socialData?.profile || socialData?.viewerProfile || {};
-    return { id: profile.id || auth.id || "", displayName: profile.displayName || profile.name || auth.name || "Thành viên HH", username: profile.username || `hh_${String(auth.id || "member").slice(-6)}`, avatar: profile.avatar || auth.avatar || "", cover: profile.cover || "", bio: profile.bio || "Chia sẻ ý tưởng, kết nối và cùng sáng tạo trong cộng đồng HH.", city: profile.city || "", hometown: profile.hometown || "", workplace: profile.workplace || "", school: profile.school || "", relationship: profile.relationship || "", website: profile.website || "", birthday: profile.birthday || "", gender: profile.gender || "", pronouns: profile.pronouns || "", interests: Array.isArray(profile.interests) ? profile.interests : [], languages: Array.isArray(profile.languages) ? profile.languages : [], socialLinks: Array.isArray(profile.socialLinks) ? profile.socialLinks : [], ...profile };
+    return { ...profile, id: profile.id || auth.id || "", displayName: profile.displayName || profile.name || auth.name || "Thành viên HH", username: profile.username || `hh_${String(auth.id || "member").slice(-6)}`, avatar: profile.avatar || auth.avatar || "", cover: profile.cover || "", bio: profile.bio || "Chia sẻ ý tưởng, kết nối và cùng sáng tạo trong cộng đồng HH.", city: profile.city || "", hometown: profile.hometown || "", workplace: profile.workplace || "", school: profile.school || "", relationship: profile.relationship || "", website: profile.website || "", birthday: profile.birthday || "", gender: profile.gender || "", pronouns: profile.pronouns || "", interests: Array.isArray(profile.interests) ? profile.interests : [], languages: Array.isArray(profile.languages) ? profile.languages : [], socialLinks: Array.isArray(profile.socialLinks) ? profile.socialLinks : [] };
   }
 
   function renderProfile(panel) {
@@ -287,6 +287,17 @@
         commentNode.querySelector("small")?.insertAdjacentHTML("beforeend", ` · <button type="button" data-v2-comment-react="${esc(comment.id)}">${comment.viewerReaction ? "Đã thích" : "Thích"}</button> · <button type="button" data-v2-comment-more="${esc(comment.id)}">Tùy chọn</button>${comment.pinned ? " · Đã ghim" : ""}`);
       });
     });
+    renderTrending(root);
+  }
+
+  function renderTrending(root) {
+    const composer = root.querySelector("[data-community-form]");
+    if (!composer) return;
+    let strip = root.querySelector("[data-v2-trending]");
+    const trends = communityState().communityTrendingHashtags || [];
+    if (!trends.length) { strip?.remove(); return; }
+    if (!strip) { strip = document.createElement("section"); strip.className = "hh-v2-trending"; strip.dataset.v2Trending = ""; composer.before(strip); }
+    strip.innerHTML = `<strong>Đang thịnh hành</strong><div><button class="active" type="button" data-v2-hashtag="">Tất cả</button>${trends.map((item) => `<button type="button" data-v2-hashtag="${esc(item.tag)}">#${esc(item.tag)} <small>${Number(item.count || 0)}</small></button>`).join("")}</div>`;
   }
 
   function enhance(root) {
@@ -307,7 +318,7 @@
   }
 
   function dialog(title, content, submitLabel = "Lưu thay đổi") {
-    document.querySelector(".hh-social-v2-dialog")?.remove();
+    document.querySelector(".hh-v2-dialog")?.remove();
     const element = document.createElement("dialog");
     element.className = "hh-v2-dialog";
     element.innerHTML = `<form method="dialog"><header><div><small>HH SOCIAL</small><h5>${esc(title)}</h5></div><button type="button" data-v2-dialog-close>×</button></header><div class="hh-v2-form-grid">${content}</div><footer><button type="button" data-v2-dialog-close>Hủy</button><button class="primary" type="submit">${esc(submitLabel)}</button></footer></form>`;
@@ -586,6 +597,7 @@
     if (event.target.closest("[data-v2-create-event]")) { createEvent(root); return; }
     if (event.target.closest("[data-story-create]")) { event.preventDefault(); event.stopImmediatePropagation(); createStory(root); return; }
     if (event.target.closest("[data-v2-post-options]")) { postOptions(root); return; }
+    const hashtag = event.target.closest("[data-v2-hashtag]"); if (hashtag) { const tag = hashtag.dataset.v2Hashtag.toLocaleLowerCase("vi"); $$(root, "[data-v2-hashtag]").forEach((button) => button.classList.toggle("active", button === hashtag)); $$(root, "[data-post-id]").forEach((node) => { const post = (communityState().remotePosts || []).find((item) => String(item.id) === String(node.dataset.postId)); const tags = post?.hashtags || []; node.hidden = Boolean(tag) && !tags.some((item) => String(item).toLocaleLowerCase("vi") === tag); }); return; }
     const relation = event.target.closest("[data-v2-relation]"); if (relation) { performRelation(root, relation); return; }
     const friendTab = event.target.closest("[data-v2-friend-tab]");
     if (friendTab) { const mode = friendTab.dataset.v2FriendTab; const sources = { requests: socialData?.requests?.incoming || socialData?.incomingRequests || [], friends: socialData?.friends || [], blocked: socialData?.blocked || [], "close-friends": socialData?.closeFriends || [], acquaintances: socialData?.acquaintances || [], priority: socialData?.priority || [], snoozed: socialData?.snoozed || [], suggestions: socialData?.suggestions || [] }; const list = sources[mode] || []; $$(root, "[data-v2-friend-tab]").forEach((button) => button.classList.toggle("active", button.dataset.v2FriendTab === mode)); const grid = $(root, "[data-v2-friend-grid]"); if (grid) grid.innerHTML = list.map((item) => personCard(item, mode === "requests" ? "incoming" : mode === "friends" ? "friend" : mode === "blocked" ? "blocked" : mode)).join("") || empty("◎", "Không có dữ liệu", "Danh sách này hiện đang trống."); return; }

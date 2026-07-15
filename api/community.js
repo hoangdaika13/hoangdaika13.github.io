@@ -28,6 +28,11 @@ function socialUser(user) {
   };
 }
 
+function hashtagsFrom(value) {
+  const matches = String(value || "").match(/#[\p{L}\p{N}_]{2,50}/gu) || [];
+  return [...new Set(matches.map((item) => item.slice(1).toLocaleLowerCase("vi")))].slice(0, 20);
+}
+
 async function blockedBetween(db, firstId, secondId) {
   if (!firstId || !secondId) return false;
   const [relation, legacy] = await Promise.all([
@@ -183,6 +188,7 @@ function present(post, viewerId) {
     scheduledAt: post.scheduledAt || null,
     background: clean(post.background, 40),
     taggedUsers: (post.taggedUsers || []).slice(0, 20).map(socialUser),
+    hashtags: (post.hashtags || hashtagsFrom(post.content)).slice(0, 20),
     poll: post.poll?.question ? {
       question: clean(post.poll.question, 220),
       options: (post.poll.options || []).slice(0, 6).map((option) => ({
@@ -347,8 +353,8 @@ module.exports = async function handler(req, res) {
         user ? db.collection("communityNotifications").find({ userId: user._id }).sort({ createdAt: -1 }).limit(20).toArray() : [],
         db.collection("communityGroups").find(user ? {
           status: { $ne: "deleted" },
-          $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }]
-        } : { visibility: "public", status: { $ne: "deleted" } }).sort({ createdAt: -1 }).limit(24).toArray(),
+          $or: [{ visibility: "public", discovery: { $ne: "hidden" } }, { ownerId: user._id }, { memberIds: user._id }]
+        } : { visibility: "public", discovery: { $ne: "hidden" }, status: { $ne: "deleted" } }).sort({ createdAt: -1 }).limit(24).toArray(),
         db.collection("communityEvents").find(user ? {
           startsAt: { $gte: new Date(Date.now() - 86400000) },
           status: { $ne: "deleted" },
@@ -368,6 +374,10 @@ module.exports = async function handler(req, res) {
       const items = feedMode === "latest" ? rawItems : feedMode === "friends"
         ? rawItems.filter((item) => friendIds.some((id) => String(id) === String(item.userId))).slice(0, 40)
         : rankFeed(rawItems, { viewerId, followingIds, friendIds, priorityUserIds, interests: viewerProfile?.interests || [] });
+      const hashtagCounts = rawItems.flatMap((item) => item.hashtags || hashtagsFrom(item.content)).reduce((result, tag) => {
+        result.set(tag, (result.get(tag) || 0) + 1);
+        return result;
+      }, new Map());
       return res.status(200).json({
         posts: items.map((item) => present(item, viewerId)),
         stories: visibleStories.map((item) => ({
@@ -426,6 +436,7 @@ module.exports = async function handler(req, res) {
         }),
         unread: notifications.filter((item) => !item.read).length,
         notificationSettings: notificationPreferences?.settings || {},
+        trendingHashtags: [...hashtagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "vi")).slice(0, 12).map(([tag, count]) => ({ tag, count })),
         feedMode,
         signedIn: Boolean(user)
       });
@@ -783,7 +794,7 @@ module.exports = async function handler(req, res) {
         topic: TOPICS.has(body.topic) ? body.topic : "Góp ý",
         privacy: ["public", "friends", "friends-of-friends", "friends-except", "specific", "custom", "followers", "private"].includes(requestedPrivacy) ? requestedPrivacy : "public",
         mediaUrl, mediaType: media[0]?.type || (body.mediaType === "video" ? "video" : mediaUrl ? "image" : ""), media,
-        feeling: clean(body.feeling, 80), location: clean(body.location, 120), poll, taggedUsers: taggedUsers.map(socialUser), audienceIncludeIds, audienceExcludeIds,
+        feeling: clean(body.feeling, 80), location: clean(body.location, 120), poll, taggedUsers: taggedUsers.map(socialUser), hashtags: hashtagsFrom(content), audienceIncludeIds, audienceExcludeIds,
         background: clean(body.background, 40), canReshare: body.canReshare !== false, commentsEnabled: body.commentsEnabled !== false,
         commentPermission: ["everyone", "friends", "followers"].includes(body.commentPermission) ? body.commentPermission : "everyone",
         hideReactionCounts: Boolean(body.hideReactionCounts), scheduledAt,
@@ -909,7 +920,7 @@ module.exports = async function handler(req, res) {
       if (!ownsPost) return res.status(403).json({ error: "Bạn chỉ có thể sửa bài viết của mình." });
       const content = clean(body.content, 5000);
       if (!content) return res.status(400).json({ error: "Nội dung bài viết đang trống." });
-      await posts.updateOne({ _id: postId }, { $push: { editHistory: { content: post.content, editedAt: new Date(), editorId: user._id } }, $set: { content, updatedAt: new Date() } });
+      await posts.updateOne({ _id: postId }, { $push: { editHistory: { content: post.content, editedAt: new Date(), editorId: user._id } }, $set: { content, hashtags: hashtagsFrom(content), updatedAt: new Date() } });
     } else if (action === "report") {
       await db.collection("communityReports").updateOne({ postId, reporterId: user._id }, { $setOnInsert: { postId, reporterId: user._id, reason: clean(body.reason || "Nội dung không phù hợp", 300), createdAt: new Date(), status: "pending" } }, { upsert: true });
     } else {
