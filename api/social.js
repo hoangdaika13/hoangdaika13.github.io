@@ -888,12 +888,22 @@ function serializePage(page, ownerRecord, following, viewerId) {
     avatar: safeStoredUrl(page.avatar, true),
     cover: safeStoredUrl(page.cover, true),
     website: safeStoredUrl(page.website),
+    address: clean(page.address, 240),
+    phone: clean(page.phone, 40),
+    businessHours: clean(page.businessHours, 240),
+    actionButton: clean(page.actionButton, 80),
     socialLinks: Array.isArray(page.socialLinks) ? page.socialLinks.slice(0, 12).map((item) => ({
       platform: clean(item.platform, 30), label: clean(item.label, 50), url: safeStoredUrl(item.url, false, 800)
     })).filter((item) => item.url) : [],
     followerCount: nonnegativeInt(page.followerCount),
     following: Boolean(following),
     owned: String(page.ownerId) === String(viewerId || ""),
+    roles: String(page.ownerId) === String(viewerId || "") ? (page.roles || []).slice(0, 50).map((item) => ({ userId: String(item.userId), role: clean(item.role, 30) })) : [],
+    insights: String(page.ownerId) === String(viewerId || "") ? {
+      reach: nonnegativeInt(page.insights?.reach),
+      engagement: nonnegativeInt(page.insights?.engagement),
+      videoViews: nonnegativeInt(page.insights?.videoViews)
+    } : null,
     createdAt: page.createdAt || null,
     updatedAt: page.updatedAt || page.createdAt || null
   };
@@ -1471,7 +1481,13 @@ async function createPage(db, user, body) {
     avatar: hasOwn(input, "avatar") ? inputUrl(input.avatar, "Page avatar", { imageOnly: true, max: 1200 }) : "",
     cover: hasOwn(input, "cover") ? inputUrl(input.cover, "Page cover", { imageOnly: true, max: 1200 }) : "",
     website: hasOwn(input, "website") ? inputUrl(input.website, "Page website", { max: 800 }) : "",
+    address: clean(input.address, 240),
+    phone: clean(input.phone, 40),
+    businessHours: clean(input.businessHours, 240),
+    actionButton: clean(input.actionButton || "Theo dõi", 80),
     socialLinks: hasOwn(input, "socialLinks") ? socialLinks(input.socialLinks) : [],
+    roles: [{ userId: user._id, role: "owner", createdAt: now }],
+    insights: { reach: 0, engagement: 0, videoViews: 0 },
     followerCount: 1,
     status: "active",
     createdAt: now,
@@ -1554,6 +1570,37 @@ async function followPage(db, user, body) {
   return { ok: true, following: active, page: serializePage(updatedPage, owners.get(String(updatedPage.ownerId)), active, user._id) };
 }
 
+async function updatePage(db, user, body) {
+  await enforceRateLimit(db, `social:page-update:${user._id}`, 40, 60 * 60 * 1000);
+  const pageId = idOf(body.pageId ?? body.id, "page id");
+  const pages = db.collection("communityPages");
+  const page = await pages.findOne({ _id: pageId, status: "active" });
+  if (!page) fail(404, "Page not found.", "PAGE_NOT_FOUND");
+  const role = (page.roles || []).find((item) => String(item.userId) === String(user._id))?.role;
+  if (String(page.ownerId) !== String(user._id) && !["admin", "editor"].includes(role)) fail(403, "You cannot edit this Page.", "PAGE_FORBIDDEN");
+  const input = isPlainObject(body.page) ? body.page : body;
+  const patch = { updatedAt: new Date() };
+  if (hasOwn(input, "name")) {
+    patch.name = clean(input.name, 120);
+    if (patch.name.length < 3) fail(400, "Page name must contain at least 3 characters.", "INVALID_PAGE_NAME");
+  }
+  if (hasOwn(input, "slug")) patch.slug = pageSlug(input.slug);
+  if (hasOwn(input, "category")) patch.category = clean(input.category, 80);
+  if (hasOwn(input, "description")) patch.description = clean(input.description, 1200);
+  if (hasOwn(input, "website")) patch.website = inputUrl(input.website, "Page website", { max: 800 });
+  if (hasOwn(input, "avatar")) patch.avatar = inputUrl(input.avatar, "Page avatar", { imageOnly: true, max: 1200 });
+  if (hasOwn(input, "cover")) patch.cover = inputUrl(input.cover, "Page cover", { imageOnly: true, max: 1200 });
+  for (const [field, max] of [["address", 240], ["phone", 40], ["businessHours", 240], ["actionButton", 80]]) {
+    if (hasOwn(input, field)) patch[field] = clean(input[field], max);
+  }
+  if (hasOwn(input, "socialLinks")) patch.socialLinks = socialLinks(input.socialLinks);
+  try { await pages.updateOne({ _id: pageId }, { $set: patch }); }
+  catch (error) { if (error?.code === 11000) fail(409, "Page slug is already in use.", "PAGE_SLUG_TAKEN"); throw error; }
+  await logActivity(db, { actorId: user._id, type: "page.updated", entityType: "page", entityId: pageId, metadata: { fields: Object.keys(patch).join(",") }, visibility: "private" });
+  const updated = await pages.findOne({ _id: pageId });
+  return { ok: true, page: serializePage(updated, { account: user, profile: await ensureProfile(db, user) }, true, user._id) };
+}
+
 async function createCollection(db, user, body) {
   await enforceRateLimit(db, `social:collection-create:${user._id}`, 30, 24 * 60 * 60 * 1000);
   const input = isPlainObject(body.collection) ? body.collection : body;
@@ -1629,6 +1676,7 @@ function canonicalAction(value) {
     ["acquaintance", "relation:acquaintance"], ["relation:acquaintance", "relation:acquaintance"],
     ["page:create", "page:create"], ["pages:create", "page:create"], ["create-page", "page:create"],
     ["page:follow", "page:follow"], ["pages:follow", "page:follow"], ["follow-page", "page:follow"],
+    ["page:update", "page:update"], ["pages:update", "page:update"], ["update-page", "page:update"],
     ["collection:create", "collection:create"], ["create-collection", "collection:create"],
     ["collection:item", "collection:item"], ["collection:add", "collection:item"], ["collection:remove", "collection:item"],
     ["collection:delete", "collection:delete"], ["delete-collection", "collection:delete"]
@@ -1692,6 +1740,7 @@ module.exports = async function handler(req, res) {
     if (action === "relation:acquaintance") return res.status(200).json(await setRelation(db, user, body, "acquaintance"));
     if (action === "page:create") return res.status(201).json(await createPage(db, user, body));
     if (action === "page:follow") return res.status(200).json(await followPage(db, user, body));
+    if (action === "page:update") return res.status(200).json(await updatePage(db, user, body));
     if (action === "collection:create") return res.status(201).json(await createCollection(db, user, body));
     if (action === "collection:item") return res.status(200).json(await updateCollectionItem(db, user, body));
     if (action === "collection:delete") return res.status(200).json(await deleteCollection(db, user, body));
