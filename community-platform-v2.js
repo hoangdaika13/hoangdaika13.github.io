@@ -95,7 +95,7 @@
   function profileData() {
     const auth = authUser();
     const profile = socialData?.profile || socialData?.viewerProfile || {};
-    return { id: profile.id || auth.id || "", displayName: profile.displayName || profile.name || auth.name || "Thành viên HH", username: profile.username || `hh_${String(auth.id || "member").slice(-6)}`, avatar: profile.avatar || auth.avatar || "", cover: profile.cover || "", bio: profile.bio || "Chia sẻ ý tưởng, kết nối và cùng sáng tạo trong cộng đồng HH.", city: profile.city || "", hometown: profile.hometown || "", workplace: profile.workplace || "", school: profile.school || "", relationship: profile.relationship || "", website: profile.website || "", birthday: profile.birthday || "", gender: profile.gender || "", pronouns: profile.pronouns || "", interests: Array.isArray(profile.interests) ? profile.interests : [], languages: Array.isArray(profile.languages) ? profile.languages : [], socialLinks: profile.socialLinks || {}, ...profile };
+    return { id: profile.id || auth.id || "", displayName: profile.displayName || profile.name || auth.name || "Thành viên HH", username: profile.username || `hh_${String(auth.id || "member").slice(-6)}`, avatar: profile.avatar || auth.avatar || "", cover: profile.cover || "", bio: profile.bio || "Chia sẻ ý tưởng, kết nối và cùng sáng tạo trong cộng đồng HH.", city: profile.city || "", hometown: profile.hometown || "", workplace: profile.workplace || "", school: profile.school || "", relationship: profile.relationship || "", website: profile.website || "", birthday: profile.birthday || "", gender: profile.gender || "", pronouns: profile.pronouns || "", interests: Array.isArray(profile.interests) ? profile.interests : [], languages: Array.isArray(profile.languages) ? profile.languages : [], socialLinks: Array.isArray(profile.socialLinks) ? profile.socialLinks : [], ...profile };
   }
 
   function renderProfile(panel) {
@@ -110,7 +110,7 @@
     panel.innerHTML = `<div class="hh-profile-cover" ${profile.cover ? `style="background-image:linear-gradient(0deg,rgba(4,8,12,.86),transparent 70%),url('${esc(profile.cover)}')"` : ""}></div>
       <section class="hh-profile-main">${avatarMarkup(profile, "hh-profile-avatar")}<div><h5>${esc(profile.displayName)}</h5><p>@${esc(profile.username)}</p><small>${esc(profile.bio)}</small></div><div><button class="hh-v2-action" type="button" data-v2-share-profile>Chia sẻ hồ sơ</button><button class="hh-v2-action primary" type="button" data-v2-edit-profile>Chỉnh sửa hồ sơ</button></div></section>
       <section class="hh-profile-stats"><article><strong>${counts.posts ?? mine.length}</strong><span>Bài viết</span></article><article><strong>${counts.friends ?? socialData?.friends?.length ?? 0}</strong><span>Bạn bè</span></article><article><strong>${counts.followers ?? 0}</strong><span>Người theo dõi</span></article><article><strong>${counts.following ?? 0}</strong><span>Đang theo dõi</span></article></section>
-      <section class="hh-profile-grid"><article class="hh-v2-panel"><header><h6>Giới thiệu</h6><button type="button" data-v2-edit-profile>Chỉnh sửa</button></header><div class="hh-about-list">${about.map(([icon, value]) => `<p><i>${icon}</i><span>${esc(value)}</span></p>`).join("") || "<p>Hãy bổ sung thành phố, công việc và trường học để mọi người hiểu bạn hơn.</p>"}</div><div class="hh-interest-list">${profile.interests.map((item) => `<span>#${esc(item)}</span>`).join("")}</div></article><article class="hh-v2-panel"><header><h6>Bài viết gần đây</h6><button type="button" data-social-v2-view="feed">Mở bảng tin</button></header>${mine.length ? mine.slice(0, 5).map((post) => `<article class="hh-saved-card"><small>${dateText(post.createdAt)} · ${esc(post.privacy || "public")}</small><p>${esc(post.content || "Bài viết media")}</p><button class="hh-v2-action" type="button" data-v2-open-post="${esc(post.id)}">Xem bài viết</button></article>`).join("") : empty("＋", "Chưa có bài viết", "Bài viết bạn đăng sẽ xuất hiện tại đây.")}</article></section>`;
+      <section class="hh-profile-grid"><article class="hh-v2-panel"><header><h6>Giới thiệu</h6><button type="button" data-v2-edit-profile>Chỉnh sửa</button></header><div class="hh-about-list">${about.map(([icon, value]) => `<p><i>${icon}</i><span>${esc(value)}</span></p>`).join("") || "<p>Hãy bổ sung thành phố, công việc và trường học để mọi người hiểu bạn hơn.</p>"}</div><div class="hh-interest-list">${profile.interests.map((item) => `<span>#${esc(item)}</span>`).join("")}</div><div class="hh-social-link-list">${profile.socialLinks.map((item) => `<a href="${esc(item.url)}" target="_blank" rel="noopener noreferrer"><i>↗</i><span>${esc(item.label || item.platform || "Liên kết")}</span></a>`).join("")}</div></article><article class="hh-v2-panel"><header><h6>Bài viết gần đây</h6><button type="button" data-social-v2-view="feed">Mở bảng tin</button></header>${mine.length ? mine.slice(0, 5).map((post) => `<article class="hh-saved-card"><small>${dateText(post.createdAt)} · ${esc(post.privacy || "public")}</small><p>${esc(post.content || "Bài viết media")}</p><button class="hh-v2-action" type="button" data-v2-open-post="${esc(post.id)}">Xem bài viết</button></article>`).join("") : empty("＋", "Chưa có bài viết", "Bài viết bạn đăng sẽ xuất hiện tại đây.")}</article></section>`;
   }
 
   function personCard(item, mode) {
@@ -227,6 +227,16 @@
     panel.innerHTML = `${head("Trung tâm quyền riêng tư", "Kiểm tra từng lớp quyền xem, kết nối, gắn thẻ và trạng thái hoạt động.", `<button class="hh-v2-action primary" type="button" data-v2-save-privacy>Lưu thay đổi</button>`, "PRIVACY CHECKUP")}<section class="hh-v2-section"><form class="hh-privacy-layout" data-v2-privacy-form><article class="hh-v2-panel hh-privacy-score"><b>${settings.score || 86}</b><strong>Điểm kiểm soát</strong><p>Điểm này phản ánh số thiết lập riêng tư bạn đã chủ động cấu hình.</p><div class="hh-privacy-pills"><span>${(socialData?.blocked || []).length} đã chặn</span><span>${(socialData?.restricted || []).length} hạn chế</span><span>${(socialData?.muted || []).length} tắt tiếng</span></div></article><article class="hh-v2-panel"><header><h6>Kiểm tra quyền theo từng bước</h6></header><div class="hh-setting-list">${privacyFields.map(([key, title, description, options]) => `<label class="hh-setting-row"><div><strong>${title}</strong><small>${description}</small></div><select name="${key}">${options.map((value) => `<option value="${value}" ${settings[key] === value ? "selected" : ""}>${labels[value] || value}</option>`).join("")}</select></label>`).join("")}<label class="hh-setting-row"><div><strong>Xét duyệt gắn thẻ</strong><small>Kiểm tra nội dung trước khi xuất hiện trên hồ sơ</small></div><input name="tagReview" type="checkbox" ${settings.tagReview !== false ? "checked" : ""}></label><label class="hh-setting-row"><div><strong>Xét duyệt dòng thời gian</strong><small>Duyệt bài người khác đăng lên hồ sơ của bạn</small></div><input name="timelineReview" type="checkbox" ${settings.timelineReview !== false ? "checked" : ""}></label><label class="hh-setting-row"><div><strong>Trạng thái hoạt động</strong><small>Cho phép bạn bè xem khi bạn đang online</small></div><input name="activeStatus" type="checkbox" ${settings.activeStatus !== false ? "checked" : ""}></label><label class="hh-setting-row"><div><strong>Biên nhận đã đọc</strong><small>Gửi trạng thái đã xem trong Messenger HH</small></div><input name="readReceipts" type="checkbox" ${settings.readReceipts !== false ? "checked" : ""}></label><label class="hh-setting-row"><div><strong>Quyền vị trí</strong><small>Chỉ dùng khi bạn chủ động chọn địa điểm check-in</small></div><input name="locationAccess" type="checkbox" ${settings.locationAccess ? "checked" : ""}></label><label class="hh-setting-row"><div><strong>Cho phép công cụ tìm kiếm</strong><small>Cho phép liên kết hồ sơ xuất hiện ngoài HH Platform</small></div><input name="searchIndexing" type="checkbox" ${settings.searchIndexing ? "checked" : ""}></label></div></article></form></section>`;
   }
 
+  function renderSafety(panel) {
+    const relationshipList = (title, description, items, action, emptyText) => `<article class="hh-v2-panel hh-safety-list"><header><div><h6>${esc(title)}</h6><small>${esc(description)}</small></div><b>${items.length}</b></header><div>${items.map((item) => { const person = personOf(item); const id = person.id || person._id || item.targetId || ""; return `<article>${avatarMarkup(person)}<span><strong>${esc(person.displayName || person.name || "Thành viên HH")}</strong><small>${item.expiresAt ? `Đến ${dateText(item.expiresAt)}` : `@${esc(person.username || "hh_member")}`}</small></span><button type="button" data-v2-relation="${action}" data-target-id="${esc(id)}">Gỡ</button></article>`; }).join("") || `<p>${esc(emptyText)}</p>`}</div></article>`;
+    const notificationSettings = communityState().communityNotificationSettings || {};
+    panel.innerHTML = `${head("An toàn & hỗ trợ", "Kiểm soát quan hệ, gửi báo cáo riêng tư và chọn loại cảnh báo bạn muốn nhận.", "", "SAFETY CENTER")}
+      <section class="hh-v2-metric-row"><article><small>Tài khoản đã chặn</small><strong>${(socialData?.blocked || []).length}</strong><span>Không thể tương tác hai chiều</span></article><article><small>Đang hạn chế</small><strong>${(socialData?.restricted || []).length}</strong><span>Bình luận được kiểm soát</span></article><article><small>Tạm ẩn</small><strong>${(socialData?.snoozed || []).length}</strong><span>Tự hết hạn sau 30 ngày</span></article></section>
+      <section class="hh-safety-grid">${relationshipList("Danh sách chặn", "Ẩn hoàn toàn và ngắt kết nối", socialData?.blocked || [], "block:remove", "Bạn chưa chặn tài khoản nào.")}${relationshipList("Danh sách hạn chế", "Giảm khả năng tương tác mà không hủy kết bạn", socialData?.restricted || [], "restrict:remove", "Bạn chưa hạn chế tài khoản nào.")}${relationshipList("Đã tắt tiếng", "Không hiển thị nội dung trên bảng tin", socialData?.muted || [], "mute:remove", "Bạn chưa tắt tiếng ai.")}${relationshipList("Tạm ẩn 30 ngày", "Nội dung tự xuất hiện lại khi hết hạn", socialData?.snoozed || [], "snooze:remove", "Không có tài khoản đang tạm ẩn.")}</section>
+      <section class="hh-v2-section hh-safety-forms"><form class="hh-v2-panel" data-v2-report-form><header><div><h6>Báo cáo riêng tư</h6><small>Danh tính người báo cáo không được gửi cho đối tượng bị báo cáo</small></div></header><div class="hh-v2-form-grid"><label><span>Loại nội dung</span><select name="targetType"><option value="post">Bài viết</option><option value="profile">Hồ sơ</option><option value="comment">Bình luận</option><option value="story">Tin</option><option value="video">Video</option><option value="group">Nhóm</option><option value="page">Trang</option><option value="event">Sự kiện</option><option value="message">Tin nhắn</option></select></label><label><span>ID nội dung</span><input name="targetId" required pattern="[a-fA-F0-9]{24}" maxlength="24" placeholder="24 ký tự trong liên kết nội dung"></label><label><span>Phân loại</span><select name="category"><option value="spam">Spam</option><option value="harassment">Quấy rối</option><option value="scam">Lừa đảo</option><option value="impersonation">Giả mạo</option><option value="violence">Bạo lực</option><option value="hate">Ngôn từ thù ghét</option><option value="copyright">Bản quyền</option><option value="privacy">Xâm phạm riêng tư</option><option value="self_harm">Nguy cơ tự gây hại</option><option value="other">Khác</option></select></label><label class="wide"><span>Mô tả</span><textarea name="description" required minlength="5" maxlength="800" placeholder="Mô tả điều đã xảy ra, không gửi mật khẩu hoặc dữ liệu nhạy cảm..."></textarea></label><label class="wide"><span>Bằng chứng hoặc liên kết bổ sung</span><input name="evidence" maxlength="1200" placeholder="https://..."></label></div><footer><small>Báo cáo được lưu ở trạng thái chờ xử lý và có nhật ký kiểm duyệt.</small><button class="hh-v2-action danger" type="submit">Gửi báo cáo</button></footer></form>
+      <form class="hh-v2-panel" data-v2-notification-form><header><div><h6>Cài đặt cảnh báo</h6><small>Gom nhóm thông báo tương tự và hạn chế làm phiền</small></div></header><div class="hh-setting-list">${[["friendRequests","Lời mời kết bạn"],["reactions","Cảm xúc"],["comments","Bình luận & trả lời"],["mentions","Gắn thẻ & nhắc đến"],["messages","Tin nhắn"],["groups","Hoạt động nhóm"],["events","Sự kiện"],["security","Cảnh báo bảo mật"]].map(([key, label]) => `<label class="hh-setting-row"><div><strong>${label}</strong><small>Nhận trong Trung tâm thông báo</small></div><input type="checkbox" name="${key}" ${notificationSettings[key] !== false ? "checked" : ""}></label>`).join("")}<label class="hh-setting-row"><div><strong>Khung giờ yên tĩnh</strong><small>Ví dụ 22:00-07:00</small></div><input name="quietHours" value="${esc(notificationSettings.quietHours || "22:00-07:00")}" pattern="[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]"></label></div><footer><button class="hh-v2-action primary" type="submit">Lưu cảnh báo</button></footer></form></section>`;
+  }
+
   async function showView(root, view) {
     if (view === "feed") return showFeed(root);
     currentView = view;
@@ -248,6 +258,7 @@
       else if (view === "saved") renderSaved(panel);
       else if (view === "activity") renderActivity(panel);
       else if (view === "privacy") renderPrivacy(panel);
+      else if (view === "safety") renderSafety(panel);
       else showFeed(root);
       updateNav(root);
     } catch (error) {
@@ -280,7 +291,7 @@
     if (!root || root.dataset.socialV2) return;
     root.dataset.socialV2 = "true";
     const profileCard = root.querySelector(".community-profile-card");
-    profileCard?.insertAdjacentHTML("afterend", `<section class="hh-v2-nav"><strong>Không gian của bạn</strong>${[["feed","⌂","Bảng tin","#62d7e7"],["profile","ID","Hồ sơ cá nhân","#f05caf"],["friends","◎","Bạn bè & kết nối","#67dba1"],["reels","▶","Video ngắn","#f4d77d"],["groups","G","Nhóm cộng đồng","#67dba1"],["pages","P","Trang sáng tạo","#79a8ff"],["events","E","Sự kiện","#f0a174"],["memories","◷","Kỷ niệm","#f05caf"],["saved","☆","Đã lưu","#b991ff"],["activity","↺","Nhật ký hoạt động","#f0a174"],["privacy","◈","Quyền riêng tư","#67dba1"]].map(([id, icon, label, color]) => `<button type="button" data-social-v2-view="${id}" style="--item:${color}"><i>${icon}</i><span>${label}</span><b hidden>0</b></button>`).join("")}</section>`);
+    profileCard?.insertAdjacentHTML("afterend", `<section class="hh-v2-nav"><strong>Không gian của bạn</strong>${[["feed","⌂","Bảng tin","#62d7e7"],["profile","ID","Hồ sơ cá nhân","#f05caf"],["friends","◎","Bạn bè & kết nối","#67dba1"],["reels","▶","Video ngắn","#f4d77d"],["groups","G","Nhóm cộng đồng","#67dba1"],["pages","P","Trang sáng tạo","#79a8ff"],["events","E","Sự kiện","#f0a174"],["memories","◷","Kỷ niệm","#f05caf"],["saved","☆","Đã lưu","#b991ff"],["activity","↺","Nhật ký hoạt động","#f0a174"],["privacy","◈","Quyền riêng tư","#67dba1"],["safety","!","An toàn & báo cáo","#ff7e8a"]].map(([id, icon, label, color]) => `<button type="button" data-social-v2-view="${id}" style="--item:${color}"><i>${icon}</i><span>${label}</span><b hidden>0</b></button>`).join("")}</section>`);
     const posts = root.querySelector("[data-community-posts]");
     posts?.insertAdjacentHTML("beforebegin", `<section class="hh-feed-control"><div><strong>Bảng tin thông minh</strong><small>Xếp hạng đa dạng, không chỉ dựa vào lượt thích</small></div><label><span>Sắp xếp</span><select data-v2-feed-mode><option value="ranked">Dành cho bạn</option><option value="latest">Mới nhất</option><option value="friends">Bạn bè</option></select><button type="button" data-v2-refresh-feed>↻ Làm mới</button></label></section>`);
     const composer = root.querySelector("[data-community-form]");
@@ -307,7 +318,7 @@
 
   function editProfile(root) {
     const profile = profileData();
-    const fields = [["displayName","Tên hiển thị",profile.displayName],["username","Username duy nhất",profile.username],["bio","Tiểu sử",profile.bio,"textarea","wide"],["cover","Liên kết ảnh bìa",profile.cover],["avatar","Liên kết ảnh đại diện",profile.avatar],["birthday","Ngày sinh",profile.birthday,"date"],["gender","Giới tính",profile.gender],["pronouns","Đại từ xưng hô",profile.pronouns],["city","Nơi sống",profile.city],["hometown","Quê quán",profile.hometown],["workplace","Nơi làm việc",profile.workplace],["school","Trường học",profile.school],["relationship","Tình trạng quan hệ",profile.relationship],["website","Website",profile.website],["interests","Sở thích, phân cách bằng dấu phẩy",profile.interests.join(", "),"text","wide"],["languages","Ngôn ngữ, phân cách bằng dấu phẩy",profile.languages.join(", "),"text","wide"]];
+    const fields = [["displayName","Tên hiển thị",profile.displayName],["username","Username duy nhất",profile.username],["bio","Tiểu sử",profile.bio,"textarea","wide"],["cover","Liên kết ảnh bìa",profile.cover],["avatar","Liên kết ảnh đại diện",profile.avatar],["birthday","Ngày sinh",profile.birthday,"date"],["gender","Giới tính",profile.gender],["pronouns","Đại từ xưng hô",profile.pronouns],["city","Nơi sống",profile.city],["hometown","Quê quán",profile.hometown],["workplace","Nơi làm việc",profile.workplace],["school","Trường học",profile.school],["relationship","Tình trạng quan hệ",profile.relationship],["website","Website",profile.website],["socialLinks","Liên kết xã hội, mỗi dòng một URL",profile.socialLinks.map((item) => item.url).join("\n"),"textarea","wide"],["interests","Sở thích, phân cách bằng dấu phẩy",profile.interests.join(", "),"text","wide"],["languages","Ngôn ngữ, phân cách bằng dấu phẩy",profile.languages.join(", "),"text","wide"]];
     const modal = dialog("Chỉnh sửa hồ sơ", fields.map(([name, label, value, type = "text", className = ""]) => `<label class="${className}"><span>${label}</span>${type === "textarea" ? `<textarea name="${name}">${esc(value)}</textarea>` : `<input name="${name}" type="${type}" value="${esc(value)}">`}</label>`).join(""));
     modal.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -315,6 +326,10 @@
       const values = Object.fromEntries(new FormData(form));
       values.interests = String(values.interests || "").split(",").map((item) => item.trim()).filter(Boolean);
       values.languages = String(values.languages || "").split(",").map((item) => item.trim()).filter(Boolean);
+      values.socialLinks = String(values.socialLinks || "").split(/\r?\n/).map((url) => url.trim()).filter(Boolean).map((url) => {
+        try { const parsed = new URL(url); return { platform: parsed.hostname.replace(/^www\./, "").split(".")[0], label: parsed.hostname.replace(/^www\./, ""), url: parsed.toString() }; }
+        catch { return { platform: "web", label: "Liên kết", url }; }
+      });
       const submit = form.querySelector('[type="submit"]'); submit.disabled = true; submit.textContent = "Đang lưu...";
       try { await socialApi({ method: "POST", body: { action: "profile:update", ...values } }); modal.close(); modal.remove(); await loadSocial(true); renderProfile(workspace(root)); toast("Hồ sơ xã hội đã được cập nhật."); }
       catch (error) { toast(error.message, "error"); submit.disabled = false; submit.textContent = "Lưu thay đổi"; }
@@ -346,6 +361,31 @@
       const values = Object.fromEntries(new FormData(event.currentTarget));
       try { await window.HHCommunity.mutate({ action: "event:create", ...values }); await window.HHCommunity.refresh({ silent: true }); modal.close(); modal.remove(); renderEvents(workspace(root)); toast("Sự kiện đã được công bố."); }
       catch (error) { toast(error.message, "error"); }
+    });
+  }
+
+  function createStory(root) {
+    const modal = dialog("Tạo Tin 24 giờ", `<label class="wide"><span>Nội dung</span><textarea name="content" maxlength="600" placeholder="Chia sẻ một khoảnh khắc..."></textarea></label><label class="wide hh-v2-file-field"><span>Ảnh hoặc video từ thiết bị</span><input name="mediaFile" type="file" accept="image/*,video/*"><small>Tối đa 2,5 MB; dữ liệu được kiểm tra MIME trước khi lưu.</small></label><label class="wide"><span>Hoặc liên kết media HTTPS</span><input name="mediaUrl" type="url" placeholder="https://..."></label><label><span>Quyền xem</span><select name="privacy"><option value="public">Công khai</option><option value="friends">Bạn bè</option><option value="close_friends">Bạn thân</option><option value="private">Chỉ mình tôi</option></select></label><label><span>Nền Tin</span><select name="background"><option value="aurora">Aurora</option><option value="sunset">Hoàng hôn</option><option value="ocean">Đại dương</option><option value="neon">Neon</option><option value="paper">Giấy sáng</option></select></label><label><span>Địa điểm</span><input name="location" maxlength="120" placeholder="Chỉ lưu khi bạn chủ động nhập"></label><label><span>Liên kết hành động</span><input name="linkUrl" type="url" placeholder="https://..."></label><label><span>Nhạc nền</span><input name="musicUrl" type="url" placeholder="Liên kết HTTPS"></label><label><span>Câu hỏi</span><input name="question" maxlength="180" placeholder="Hỏi người xem..."></label><label class="wide"><span>Bình chọn, mỗi lựa chọn một dòng</span><textarea name="pollOptions" maxlength="420" placeholder="Có\nKhông"></textarea></label><label><span>Đếm ngược đến</span><input name="countdownAt" type="datetime-local"></label><label class="hh-setting-row"><div><strong>Cho phép chuyển tiếp</strong><small>Người xem vẫn phải có quyền xem Tin</small></div><input name="allowForward" type="checkbox" checked></label>`, "Đăng Tin");
+    modal.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const data = new FormData(form);
+      const file = form.elements.mediaFile?.files?.[0] || null;
+      const content = String(data.get("content") || "").trim();
+      const mediaUrl = String(data.get("mediaUrl") || "").trim();
+      if (!content && !mediaUrl && !file) { toast("Hãy nhập nội dung hoặc thêm ảnh/video.", "error"); return; }
+      const submit = form.querySelector('[type="submit"]'); submit.disabled = true; submit.textContent = file ? "Đang tải media..." : "Đang đăng...";
+      try {
+        const uploaded = file ? await window.HHCommunity.uploadMedia(file) : null;
+        await window.HHCommunity.mutate({
+          action: "story:create", content, mediaUrl, mediaId: uploaded?.media?.id || "",
+          privacy: data.get("privacy"), background: data.get("background"), location: data.get("location"),
+          linkUrl: data.get("linkUrl"), musicUrl: data.get("musicUrl"), question: data.get("question"),
+          pollOptions: String(data.get("pollOptions") || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean),
+          countdownAt: data.get("countdownAt") || "", allowForward: data.has("allowForward")
+        });
+        modal.close(); modal.remove(); toast("Tin đã được đăng và sẽ tự hết hạn sau 24 giờ.");
+      } catch (error) { toast(error.message, "error"); submit.disabled = false; submit.textContent = "Đăng Tin"; }
     });
   }
 
@@ -504,6 +544,7 @@
     if (event.target.closest("[data-v2-create-page]")) { createPage(root); return; }
     if (event.target.closest("[data-v2-create-group]")) { createGroup(root); return; }
     if (event.target.closest("[data-v2-create-event]")) { createEvent(root); return; }
+    if (event.target.closest("[data-story-create]")) { event.preventDefault(); event.stopImmediatePropagation(); createStory(root); return; }
     if (event.target.closest("[data-v2-post-options]")) { postOptions(root); return; }
     const relation = event.target.closest("[data-v2-relation]"); if (relation) { performRelation(root, relation); return; }
     const friendTab = event.target.closest("[data-v2-friend-tab]");
@@ -532,6 +573,33 @@
   }, true);
 
   document.addEventListener("submit", async (event) => {
+    const reportForm = event.target.closest("[data-v2-report-form]");
+    if (reportForm) {
+      event.preventDefault();
+      const submit = reportForm.querySelector('[type="submit"]');
+      submit.disabled = true;
+      try {
+        const values = Object.fromEntries(new FormData(reportForm));
+        await window.HHCommunity.api({ method: "POST", body: { action: "report:create", ...values } });
+        reportForm.reset();
+        toast("Báo cáo đã được gửi riêng tư và đang chờ kiểm duyệt.");
+      } catch (error) { toast(error.message, "error"); }
+      finally { submit.disabled = false; }
+      return;
+    }
+    const notificationForm = event.target.closest("[data-v2-notification-form]");
+    if (notificationForm) {
+      event.preventDefault();
+      const data = new FormData(notificationForm);
+      const settings = { quietHours: data.get("quietHours") || "" };
+      notificationForm.querySelectorAll('input[type="checkbox"]').forEach((input) => { settings[input.name] = input.checked; });
+      try {
+        await window.HHCommunity.api({ method: "POST", body: { action: "notifications:settings", settings } });
+        const state = communityState(); state.communityNotificationSettings = settings;
+        toast("Đã lưu cài đặt cảnh báo cộng đồng.");
+      } catch (error) { toast(error.message, "error"); }
+      return;
+    }
     const form = event.target.closest("[data-v2-privacy-form]");
     if (!form) return;
     event.preventDefault();

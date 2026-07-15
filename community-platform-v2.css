@@ -530,6 +530,23 @@
   .home-neon .hh-v2-section-title { align-items: flex-start; flex-direction: column; gap: 8px; }
 }
 
+.home-neon .hh-social-link-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.home-neon .hh-social-link-list a { display: inline-flex; align-items: center; gap: 6px; min-height: 31px; padding: 0 9px; border: 1px solid var(--v2-line); border-radius: 5px; background: #0b141c; color: #b9c9d2; text-decoration: none; }
+.home-neon .hh-social-link-list a:hover { border-color: var(--v2-cyan); color: #fff; transform: translateY(-1px); }
+.home-neon .hh-social-link-list i { color: var(--v2-cyan); font-style: normal; }
+
+.home-neon .hh-safety-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.home-neon .hh-safety-list > header b { display: grid; place-items: center; min-width: 28px; height: 28px; border: 1px solid #506476; border-radius: 50%; color: #fff; }
+.home-neon .hh-safety-list > div { display: grid; gap: 6px; padding-top: 10px; }
+.home-neon .hh-safety-list > div > article { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 8px; border: 1px solid #263744; border-radius: 5px; background: #0a1219; }
+.home-neon .hh-safety-list .hh-v2-avatar { width: 38px; height: 38px; }
+.home-neon .hh-safety-list article span { display: grid; gap: 2px; min-width: 0; }
+.home-neon .hh-safety-list article small { overflow: hidden; color: var(--v2-muted); text-overflow: ellipsis; white-space: nowrap; }
+.home-neon .hh-safety-list article button { min-height: 30px; padding: 0 9px; border: 1px solid #5b3b49; border-radius: 5px; background: #25131b; color: #ff9bad; }
+.home-neon .hh-safety-forms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.home-neon .hh-safety-forms form > footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--v2-line); }
+.home-neon .hh-safety-forms form > footer small { color: var(--v2-muted); line-height: 1.45; }
+
 .hh-v2-audience-list { display: grid; gap: 8px; max-height: min(52vh, 520px); overflow: auto; padding-right: 4px; }
 .hh-v2-audience-list > p { margin: 0 0 4px; color: var(--v2-muted); }
 .hh-v2-audience-list > label { display: grid; grid-template-columns: auto 40px minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--v2-line); background: #0c141d; cursor: pointer; }
@@ -538,6 +555,12 @@
 .hh-v2-audience-list .hh-v2-avatar { width: 40px; height: 40px; }
 .hh-v2-audience-list label span { display: grid; gap: 2px; }
 .hh-v2-audience-list label small { color: var(--v2-muted); }
+
+@media (max-width: 900px) {
+  .home-neon .hh-safety-grid,
+  .home-neon .hh-safety-forms { grid-template-columns: minmax(0, 1fr); }
+  .home-neon .hh-safety-forms form > footer { align-items: stretch; flex-direction: column; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .home-neon .hh-social-v2-workspace *,
