@@ -1,6 +1,7 @@
 const { clean, setCors } = require("../../utils/platform");
 
 const GOOGLE_ENDPOINT = "https://customsearch.googleapis.com/customsearch/v1";
+const VERTEX_SEARCH_ENDPOINT = "https://discoveryengine.googleapis.com/v1";
 const YOUTUBE_SEARCH_ENDPOINT = "https://www.googleapis.com/youtube/v3/search";
 const YOUTUBE_VIDEOS_ENDPOINT = "https://www.googleapis.com/youtube/v3/videos";
 const YOUTUBE_CHANNELS_ENDPOINT = "https://www.googleapis.com/youtube/v3/channels";
@@ -32,13 +33,18 @@ function rateLimit(key, limit = 50, windowMs = 10 * 60 * 1000) {
   }
 }
 
-async function readJson(url) {
+async function readJson(url, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 9000);
   try {
     const response = await fetch(url, {
+      ...options,
       signal: controller.signal,
-      headers: { Accept: "application/json", "User-Agent": "HH-Platform-Search/1.0" }
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "HH-Platform-Search/1.0",
+        ...(options.headers || {})
+      }
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -61,11 +67,114 @@ async function readJson(url) {
   }
 }
 
-function configuredServices() {
+function vertexSearchConfig() {
+  const projectId = String(process.env.VERTEX_SEARCH_PROJECT_ID || "").trim();
+  const appId = String(process.env.VERTEX_SEARCH_APP_ID || "").trim();
+  const apiKey = String(process.env.VERTEX_SEARCH_API_KEY || process.env.GOOGLE_SEARCH_API_KEY || "").trim();
+  const location = String(process.env.VERTEX_SEARCH_LOCATION || "global").trim() || "global";
   return {
-    google: Boolean(String(process.env.GOOGLE_SEARCH_API_KEY || "").trim() && String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim()),
+    projectId,
+    appId,
+    apiKey,
+    location,
+    configured: Boolean(projectId && appId && apiKey)
+  };
+}
+
+function configuredServices() {
+  const vertex = vertexSearchConfig();
+  const programmableSearch = Boolean(String(process.env.GOOGLE_SEARCH_API_KEY || "").trim() && String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim());
+  return {
+    google: vertex.configured || programmableSearch,
+    googleProvider: vertex.configured ? "vertex-ai-search" : programmableSearch ? "programmable-search" : "none",
     youtube: Boolean(String(process.env.YOUTUBE_API_KEY || "").trim()),
     gemini: Boolean(String(process.env.GEMINI_API_KEY || "").trim())
+  };
+}
+
+function firstText(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value;
+    if (Array.isArray(value)) {
+      const nested = firstText(...value.map((item) => item?.content || item?.snippet || item?.text || item));
+      if (nested) return nested;
+    }
+  }
+  return "";
+}
+
+function displayHost(value) {
+  try {
+    return new URL(value).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+async function vertexSearch(req, query, config) {
+  const kind = req.query.kind === "images" ? "images" : "web";
+  if (kind === "images") {
+    const error = new Error("Vertex AI Search chỉ tìm nội dung website; hãy mở Google Images để tìm ảnh toàn web.");
+    error.statusCode = 400;
+    error.code = "VERTEX_IMAGE_SEARCH_UNSUPPORTED";
+    throw error;
+  }
+
+  const page = Math.max(1, Math.min(10, Number(req.query.page || 1)));
+  const servingConfig = `projects/${config.projectId}/locations/${config.location}/collections/default_collection/engines/${config.appId}/servingConfigs/default_search`;
+  const endpoint = `${VERTEX_SEARCH_ENDPOINT}/${servingConfig}:searchLite?key=${encodeURIComponent(config.apiKey)}`;
+  const startedAt = Date.now();
+  const data = await readJson(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      servingConfig,
+      query,
+      pageSize: 10,
+      offset: (page - 1) * 10,
+      languageCode: "vi",
+      queryExpansionSpec: { condition: "AUTO" },
+      spellCorrectionSpec: { mode: "AUTO" },
+      contentSearchSpec: { snippetSpec: { returnSnippet: true } }
+    })
+  });
+
+  const items = (data.results || []).map((result) => {
+    const document = result.document || {};
+    const derived = document.derivedStructData || document.structData || {};
+    const url = firstText(derived.link, derived.url);
+    const image = firstText(
+      derived.image,
+      derived.thumbnail,
+      derived.images?.map((item) => item?.url || item?.src),
+      derived.pagemap?.cse_thumbnail?.map((item) => item?.src)
+    );
+    return {
+      title: clean(firstText(derived.title, derived.htmlTitle, document.id, url), 300),
+      url: clean(url, 2000),
+      displayUrl: clean(firstText(derived.displayLink, displayHost(url)), 300),
+      snippet: clean(firstText(derived.snippets, derived.extractive_answers, derived.description), 800),
+      image: clean(image, 2000),
+      originalImage: "",
+      mime: clean(firstText(derived.mimeType, derived.mime), 80),
+      width: 0,
+      height: 0
+    };
+  }).filter((item) => item.url);
+
+  const total = Number(data.totalSize || items.length || 0);
+  return {
+    provider: "google",
+    source: "vertex-ai-search",
+    query,
+    correctedQuery: clean(data.correctedQuery, 180),
+    kind,
+    page,
+    total,
+    searchTime: (Date.now() - startedAt) / 1000,
+    hasPrevious: page > 1,
+    hasNext: Boolean(data.nextPageToken) || total > page * 10,
+    items
   };
 }
 
@@ -83,6 +192,9 @@ function isoDuration(value) {
 }
 
 async function googleSearch(req, query) {
+  const vertex = vertexSearchConfig();
+  if (vertex.configured) return vertexSearch(req, query, vertex);
+
   const key = String(process.env.GOOGLE_SEARCH_API_KEY || "").trim();
   const cx = String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim();
   if (!key || !cx) return { notConfigured: true, required: ["GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID"] };
@@ -143,9 +255,15 @@ async function youtubeSearch(req, query) {
   const allowedOrders = new Set(["relevance", "date", "rating", "viewCount"]);
   const allowedDurations = new Set(["any", "short", "medium", "long"]);
   const allowedDefinitions = new Set(["any", "high", "standard"]);
+  const allowedCaptions = new Set(["any", "closedCaption", "none"]);
+  const allowedEvents = new Set(["any", "live", "upcoming", "completed"]);
+  const allowedPublished = new Set(["any", "d1", "w1", "m1", "y1"]);
   const order = allowedOrders.has(req.query.order) ? req.query.order : "relevance";
   const duration = allowedDurations.has(req.query.duration) ? req.query.duration : "any";
   const definition = allowedDefinitions.has(req.query.definition) ? req.query.definition : "any";
+  const caption = allowedCaptions.has(req.query.caption) ? req.query.caption : "any";
+  const event = allowedEvents.has(req.query.event) ? req.query.event : "any";
+  const published = allowedPublished.has(req.query.published) ? req.query.published : "any";
   const pageToken = clean(req.query.pageToken, 200);
   const params = new URLSearchParams({
     key,
@@ -161,6 +279,13 @@ async function youtubeSearch(req, query) {
   });
   if (duration !== "any") params.set("videoDuration", duration);
   if (definition !== "any") params.set("videoDefinition", definition);
+  if (caption !== "any") params.set("videoCaption", caption);
+  if (event !== "any") params.set("eventType", event);
+  if (published !== "any") {
+    const ranges = { d1: 1, w1: 7, m1: 30, y1: 365 };
+    const publishedAfter = new Date(Date.now() - ranges[published] * 86400000);
+    params.set("publishedAfter", publishedAfter.toISOString());
+  }
   if (pageToken) params.set("pageToken", pageToken);
 
   const searchData = await readJson(`${YOUTUBE_SEARCH_ENDPOINT}?${params}`);
@@ -190,7 +315,8 @@ async function youtubeSearch(req, query) {
       definition: clean(detail.contentDetails?.definition, 20),
       captions: detail.contentDetails?.caption === "true",
       embeddable: detail.status?.embeddable !== false,
-      live: snippet.liveBroadcastContent === "live"
+      live: snippet.liveBroadcastContent === "live",
+      upcoming: snippet.liveBroadcastContent === "upcoming"
     };
   }).filter((item) => item.id && item.embeddable);
 
@@ -200,6 +326,9 @@ async function youtubeSearch(req, query) {
     order,
     duration,
     definition,
+    caption,
+    event,
+    published,
     total: Number(searchData.pageInfo?.totalResults || 0),
     nextPageToken: clean(searchData.nextPageToken, 200),
     previousPageToken: clean(searchData.prevPageToken, 200),

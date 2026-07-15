@@ -5,6 +5,8 @@
   const STORAGE = {
     recent: "hh.search-watch.youtube-recent",
     favorites: "hh.search-watch.youtube-favorites",
+    queue: "hh.search-watch.youtube-queue",
+    preferences: "hh.search-watch.preferences",
     searches: "hh.search-watch.history",
     webSaved: "hh.search-watch.web-saved"
   };
@@ -16,7 +18,11 @@
     youtubePageToken: "",
     youtubeNextToken: "",
     youtubePreviousToken: "",
+    youtubeItems: [],
     currentVideo: null,
+    privacyShield: true,
+    autoplayQueue: false,
+    playerRate: 1,
     lastQuery: { google: "", youtube: "" }
   };
   let root;
@@ -34,6 +40,23 @@
     try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Storage may be disabled. */ }
   }
 
+  function readPreferences() {
+    try {
+      const value = JSON.parse(localStorage.getItem(STORAGE.preferences) || "{}");
+      return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function savePreferences() {
+    writeStore(STORAGE.preferences, {
+      privacyShield: state.privacyShield,
+      autoplayQueue: state.autoplayQueue,
+      playerRate: state.playerRate
+    });
+  }
+
   function rememberSearch(provider, query) {
     const item = { provider, query, at: new Date().toISOString() };
     const next = [item, ...readStore(STORAGE.searches).filter((entry) => !(entry.provider === provider && entry.query === query))].slice(0, 16);
@@ -49,6 +72,59 @@
     if (!value) return "";
     try { return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)); }
     catch { return ""; }
+  }
+
+  function isPromotionalVideo(video) {
+    const text = `${video?.title || ""} ${video?.description || ""}`.toLowerCase();
+    return /(^|\s)(#ad|#sponsored)(\s|$)|paid promotion|sponsored content|được tài trợ|nội dung quảng cáo/.test(text);
+  }
+
+  function queueItems() {
+    return readStore(STORAGE.queue);
+  }
+
+  function isQueued(id) {
+    return queueItems().some((item) => item.id === id);
+  }
+
+  function toggleQueue(video) {
+    if (!video?.id) return;
+    const items = queueItems();
+    const exists = items.some((item) => item.id === video.id);
+    writeStore(STORAGE.queue, exists ? items.filter((item) => item.id !== video.id) : [...items, video].slice(-60));
+    renderLibraries();
+  }
+
+  function queueIndex() {
+    return queueItems().findIndex((item) => item.id === state.currentVideo?.id);
+  }
+
+  function playQueueStep(direction) {
+    const items = queueItems();
+    if (!items.length) return;
+    const current = queueIndex();
+    const next = current < 0 ? 0 : (current + direction + items.length) % items.length;
+    loadVideo(items[next], { scroll: false });
+  }
+
+  function playerCommand(func, args = []) {
+    const frame = root?.querySelector("#hhYouTubePlayer");
+    if (!frame?.contentWindow || !state.currentVideo) return;
+    frame.contentWindow.postMessage(JSON.stringify({ event: "command", func, args }), "https://www.youtube-nocookie.com");
+  }
+
+  function updatePreferenceControls() {
+    if (!root) return;
+    const privacy = root.querySelector("[data-privacy-shield]");
+    privacy.setAttribute("aria-pressed", String(state.privacyShield));
+    privacy.textContent = state.privacyShield ? "Đang bảo vệ" : "Đang ghi lịch sử";
+    root.querySelector("[data-privacy-status]").textContent = state.privacyShield
+      ? "NoCookie · không lưu lịch sử HH"
+      : "NoCookie · có lưu lịch sử HH";
+    const autoplay = root.querySelector("[data-autoplay-queue]");
+    autoplay.setAttribute("aria-pressed", String(state.autoplayQueue));
+    autoplay.classList.toggle("active", state.autoplayQueue);
+    root.querySelector("[data-player-rate]").value = String(state.playerRate);
   }
 
   function parseYouTubeId(value) {
@@ -111,11 +187,11 @@
             </section>
             <section><small>LỊCH SỬ TÌM KIẾM</small><div class="swh-history" data-swh-history></div><button class="swh-clear" type="button" data-swh-clear-history>Xóa lịch sử</button></section>
             <section><small>WEB ĐÃ LƯU</small><div class="swh-history" data-web-saved></div></section>
-            <section class="swh-privacy"><b>Khóa được bảo vệ</b><p>API key chỉ chạy trên Vercel. Lịch sử và mục đã lưu nằm trong thiết bị này.</p></section>
+            <section class="swh-privacy"><b>Privacy Shield</b><p>Dùng YouTube NoCookie, không ghi lịch sử khi bật và lọc nội dung tự gắn nhãn quảng bá.</p><button type="button" data-privacy-shield aria-pressed="true">Đang bảo vệ</button></section>
           </aside>
           <main class="swh-main">
             <section class="swh-panel active" data-swh-panel="google">
-              <div class="swh-panel-heading"><div><small>GOOGLE DISCOVERY</small><h3>Tìm đúng thông tin, ngay trong HH</h3><p>Tra cứu web, tài liệu và hình ảnh qua Programmable Search API.</p></div><div class="swh-segment"><button class="active" type="button" data-google-kind="web">Trang web</button><button type="button" data-google-kind="images">Hình ảnh</button></div></div>
+              <div class="swh-panel-heading"><div><small>GOOGLE DISCOVERY</small><h3>Tìm đúng thông tin, ngay trong HH</h3><p>Agent Search ưu tiên nguồn đã chọn; tự chuyển sang Programmable Search khi cần.</p></div><div class="swh-segment"><button class="active" type="button" data-google-kind="web">Trang web</button><button type="button" data-google-kind="images">Hình ảnh</button></div></div>
               <div class="swh-filterbar">
                 <label>Thời gian<select data-google-date><option value="">Mọi thời gian</option><option value="d1">24 giờ</option><option value="d7">7 ngày</option><option value="m1">1 tháng</option><option value="y1">1 năm</option></select></label>
                 <label>Tệp<select data-google-file><option value="">Tất cả</option><option value="pdf">PDF</option><option value="docx">Word</option><option value="xlsx">Excel</option><option value="pptx">PowerPoint</option></select></label>
@@ -131,13 +207,32 @@
                 <label>Sắp xếp<select data-youtube-order><option value="relevance">Phù hợp nhất</option><option value="date">Mới nhất</option><option value="viewCount">Nhiều lượt xem</option><option value="rating">Đánh giá cao</option></select></label>
                 <label>Thời lượng<select data-youtube-duration><option value="any">Tất cả</option><option value="short">Dưới 4 phút</option><option value="medium">4-20 phút</option><option value="long">Trên 20 phút</option></select></label>
                 <label>Chất lượng<select data-youtube-definition><option value="any">Mọi chất lượng</option><option value="high">HD</option><option value="standard">SD</option></select></label>
+                <label>Thời điểm<select data-youtube-published><option value="any">Mọi thời điểm</option><option value="d1">24 giờ</option><option value="w1">7 ngày</option><option value="m1">30 ngày</option><option value="y1">1 năm</option></select></label>
+                <label>Phụ đề<select data-youtube-caption><option value="any">Tất cả</option><option value="closedCaption">Có phụ đề</option><option value="none">Không phụ đề</option></select></label>
+                <label>Trạng thái<select data-youtube-event><option value="any">Mọi video</option><option value="live">Đang trực tiếp</option><option value="upcoming">Sắp phát</option><option value="completed">Đã phát xong</option></select></label>
               </div>
               <form class="swh-search-form swh-search-form--youtube" data-search-form="youtube"><span>▶</span><input type="search" name="q" autocomplete="off" placeholder="Tìm video hoặc dán link YouTube..." required><button class="swh-voice" type="button" data-voice="youtube" title="Tìm bằng giọng nói" aria-label="Tìm bằng giọng nói">◉</button><button class="swh-submit" type="submit">Tìm / Phát</button></form>
+              <div class="swh-youtube-tools" aria-label="Công cụ YouTube">
+                <button type="button" data-youtube-random title="Phát ngẫu nhiên một kết quả">⤨ Ngẫu nhiên</button>
+                <button type="button" data-youtube-focus aria-pressed="false">◐ Chế độ rạp</button>
+                <button type="button" data-youtube-mini aria-pressed="false">▣ Trình phát mini</button>
+                <button type="button" data-autoplay-queue aria-pressed="false">↻ Tự phát hàng đợi</button>
+                <span data-queue-count>0 trong hàng đợi</span>
+              </div>
               <div class="swh-player-shell" data-youtube-player hidden>
-                <div class="swh-player"><iframe title="YouTube player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+                <div class="swh-player"><iframe id="hhYouTubePlayer" title="YouTube player" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+                <div class="swh-player-controls">
+                  <button type="button" data-player-previous title="Video trước">◀</button>
+                  <button type="button" data-player-play title="Phát">▶</button>
+                  <button type="button" data-player-pause title="Tạm dừng">Ⅱ</button>
+                  <button type="button" data-player-next title="Video tiếp theo">▶▶</button>
+                  <label>Tốc độ<select data-player-rate><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+                  <span data-privacy-status>NoCookie · lịch sử riêng tư</span>
+                </div>
                 <div class="swh-now-playing"><div><small>ĐANG PHÁT TRONG HH PLAYER</small><h4 data-player-title></h4><p data-player-channel></p></div><div><button type="button" data-player-share>Chia sẻ</button><button type="button" data-player-open>Mở YouTube</button><button type="button" data-player-favorite>Lưu video</button></div></div>
               </div>
               <div class="swh-library-row"><section><header><b>Xem gần đây</b><button type="button" data-clear-recent>Xóa</button></header><div data-youtube-recent></div></section><section><header><b>Đã lưu</b><span data-favorite-count>0 video</span></header><div data-youtube-favorites></div></section></div>
+              <section class="swh-queue"><header><div><small>WATCH QUEUE</small><b>Hàng đợi thông minh</b></div><button type="button" data-clear-queue>Xóa hàng đợi</button></header><div data-youtube-queue></div></section>
               <div class="swh-query-meta"><span data-youtube-meta>Dán liên kết để phát ngay hoặc tìm video bằng API.</span><div data-youtube-pager hidden><button type="button" data-youtube-page="prev">‹ Trước</button><button type="button" data-youtube-page="next">Sau ›</button></div></div>
               <div class="swh-results swh-video-results" data-results="youtube"><div class="swh-empty"><b>▶</b><h4>YouTube ngay trong HH</h4><p>Tìm video, xem thời lượng và lượt xem, phát ngay hoặc xây thư viện cá nhân.</p><div class="swh-empty-chips"><span>HD</span><span>Phụ đề</span><span>Thư viện</span></div></div></div>
             </section>
@@ -147,6 +242,7 @@
       </div>`;
     document.body.appendChild(root);
     bindHub();
+    updatePreferenceControls();
     renderSearchHistory();
     renderWebSaved();
     renderLibraries();
@@ -238,6 +334,9 @@
       params.set("order", root.querySelector("[data-youtube-order]").value);
       params.set("duration", root.querySelector("[data-youtube-duration]").value);
       params.set("definition", root.querySelector("[data-youtube-definition]").value);
+      params.set("published", root.querySelector("[data-youtube-published]").value);
+      params.set("caption", root.querySelector("[data-youtube-caption]").value);
+      params.set("event", root.querySelector("[data-youtube-event]").value);
       if (state.youtubePageToken) params.set("pageToken", state.youtubePageToken);
     }
     const response = await fetch(`${API_BASE}/api/search/${provider}?${params}`, { headers: { Accept: "application/json" }, cache: "no-store" });
@@ -282,10 +381,12 @@
     const card = document.createElement("div");
     card.className = "swh-service-error";
     const title = document.createElement("h4");
-    title.textContent = error.code === "SEARCH_NOT_CONFIGURED" ? "API chưa được cấu hình trên Vercel" : "Chưa tải được kết quả";
+    title.textContent = error.code === "SEARCH_NOT_CONFIGURED"
+      ? "API chưa được cấu hình trên Vercel"
+      : error.code === "VERTEX_IMAGE_SEARCH_UNSUPPORTED" ? "Agent Search không hỗ trợ tìm ảnh toàn web" : "Chưa tải được kết quả";
     const copy = document.createElement("p");
     copy.textContent = error.code === "SEARCH_NOT_CONFIGURED"
-      ? `${provider === "google" ? "Google Search cần GOOGLE_SEARCH_API_KEY và GOOGLE_SEARCH_ENGINE_ID" : "YouTube cần YOUTUBE_API_KEY"}. Khóa chỉ đặt ở Vercel, không nhập vào HTML.`
+      ? `${provider === "google" ? "Google Search cần bộ biến Vertex hoặc GOOGLE_SEARCH_API_KEY và GOOGLE_SEARCH_ENGINE_ID" : "YouTube cần YOUTUBE_API_KEY"}. Khóa chỉ đặt ở Vercel, không nhập vào HTML.`
       : error.message;
     const actions = document.createElement("div");
     const retry = document.createElement("button");
@@ -295,8 +396,10 @@
     const external = document.createElement("a");
     external.target = "_blank";
     external.rel = "noopener";
-    external.href = provider === "google" ? `https://www.google.com/search?q=${encodeURIComponent(query)}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-    external.textContent = `Mở ${provider === "google" ? "Google" : "YouTube"}`;
+    external.href = provider === "google"
+      ? `${error.code === "VERTEX_IMAGE_SEARCH_UNSUPPORTED" ? "https://www.google.com/search?tbm=isch&q=" : "https://www.google.com/search?q="}${encodeURIComponent(query)}`
+      : `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    external.textContent = `Mở ${error.code === "VERTEX_IMAGE_SEARCH_UNSUPPORTED" ? "Google Images" : provider === "google" ? "Google" : "YouTube"}`;
     actions.append(retry, external);
     card.append(title, copy, actions);
     results.append(card);
@@ -384,10 +487,13 @@
   function renderYouTube(data) {
     const results = root.querySelector('[data-results="youtube"]');
     results.replaceChildren();
-    const items = Array.isArray(data.items) ? data.items : [];
+    const incoming = Array.isArray(data.items) ? data.items : [];
+    const items = state.privacyShield ? incoming.filter((item) => !isPromotionalVideo(item)) : incoming;
+    state.youtubeItems = items;
     state.youtubeNextToken = data.nextPageToken || "";
     state.youtubePreviousToken = data.previousPageToken || "";
-    root.querySelector("[data-youtube-meta]").textContent = `${formatNumber(data.total)} video cho “${data.query}” · ${items.length} video trên trang này`;
+    const hidden = incoming.length - items.length;
+    root.querySelector("[data-youtube-meta]").textContent = `${formatNumber(data.total)} video cho “${data.query}” · ${items.length} video trên trang này${hidden ? ` · Privacy Shield đã ẩn ${hidden}` : ""}`;
     const pager = root.querySelector("[data-youtube-pager]");
     pager.hidden = !items.length;
     pager.querySelector('[data-youtube-page="prev"]').disabled = !state.youtubePreviousToken;
@@ -424,13 +530,22 @@
     if (video.definition) badges.append(Object.assign(document.createElement("span"), { textContent: video.definition.toUpperCase() }));
     if (video.captions) badges.append(Object.assign(document.createElement("span"), { textContent: "CC" }));
     if (video.live) badges.append(Object.assign(document.createElement("span"), { textContent: "LIVE" }));
+    const actions = document.createElement("div");
+    actions.className = "swh-video-actions";
+    const queue = createAction(isQueued(video.id) ? "Đã xếp" : "+ Hàng đợi", (event) => {
+      event.stopPropagation();
+      toggleQueue(video);
+      queue.textContent = isQueued(video.id) ? "Đã xếp" : "+ Hàng đợi";
+      queue.classList.toggle("active", isQueued(video.id));
+    }, isQueued(video.id));
     const save = createAction(isFavorite(video.id) ? "Đã lưu" : "Lưu", (event) => {
       event.stopPropagation();
       toggleFavorite(video);
       save.textContent = isFavorite(video.id) ? "Đã lưu" : "Lưu";
       save.classList.toggle("active", isFavorite(video.id));
     }, isFavorite(video.id));
-    content.append(title, meta, badges, save);
+    actions.append(queue, save);
+    content.append(title, meta, badges, actions);
     article.append(media, content);
     const playVideo = () => loadVideo(video);
     article.addEventListener("click", playVideo);
@@ -440,17 +555,20 @@
     return article;
   }
 
-  function loadVideo(video) {
+  function loadVideo(video, options = {}) {
     state.currentVideo = video;
     const shell = root.querySelector("[data-youtube-player]");
-    shell.querySelector("iframe").src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(video.id)}?autoplay=1&playsinline=1&rel=0`;
+    const origin = location.origin && location.origin !== "null" ? `&origin=${encodeURIComponent(location.origin)}` : "";
+    shell.querySelector("iframe").src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(video.id)}?autoplay=1&playsinline=1&rel=0&enablejsapi=1${origin}`;
     root.querySelector("[data-player-title]").textContent = video.title;
     root.querySelector("[data-player-channel]").textContent = [video.channel || "YouTube", video.views ? `${formatNumber(video.views)} lượt xem` : ""].filter(Boolean).join(" · ");
     shell.hidden = false;
-    writeStore(STORAGE.recent, [video, ...readStore(STORAGE.recent).filter((item) => item.id !== video.id)].slice(0, 20));
+    if (!state.privacyShield) writeStore(STORAGE.recent, [video, ...readStore(STORAGE.recent).filter((item) => item.id !== video.id)].slice(0, 20));
     renderLibraries();
     updatePlayerFavorite();
-    shell.scrollIntoView({ behavior: "smooth", block: "start" });
+    root.querySelector("[data-player-rate]").value = String(state.playerRate);
+    setTimeout(() => playerCommand("setPlaybackRate", [state.playerRate]), 700);
+    if (options.scroll !== false) shell.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function isFavorite(id) {
@@ -480,6 +598,38 @@
     const favorites = readStore(STORAGE.favorites);
     renderVideoStrip(root.querySelector("[data-youtube-favorites]"), favorites);
     root.querySelector("[data-favorite-count]").textContent = `${favorites.length} video`;
+    renderQueue();
+  }
+
+  function renderQueue() {
+    const container = root.querySelector("[data-youtube-queue]");
+    const items = queueItems();
+    root.querySelector("[data-queue-count]").textContent = `${items.length} trong hàng đợi`;
+    container.replaceChildren();
+    if (!items.length) {
+      container.append(Object.assign(document.createElement("p"), { textContent: "Hàng đợi đang trống. Chọn + Hàng đợi ở một video để bắt đầu." }));
+      return;
+    }
+    items.forEach((video, index) => {
+      const row = document.createElement("article");
+      row.classList.toggle("active", video.id === state.currentVideo?.id);
+      const image = document.createElement("img");
+      image.src = video.thumbnail || `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
+      image.alt = "";
+      const details = document.createElement("button");
+      details.type = "button";
+      details.innerHTML = `<small>${String(index + 1).padStart(2, "0")} · ${video.channel || "YouTube"}</small><b></b>`;
+      details.querySelector("b").textContent = video.title;
+      details.addEventListener("click", () => loadVideo(video));
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "swh-queue-remove";
+      remove.title = "Bỏ khỏi hàng đợi";
+      remove.textContent = "×";
+      remove.addEventListener("click", () => toggleQueue(video));
+      row.append(image, details, remove);
+      container.append(row);
+    });
   }
 
   function renderVideoStrip(container, items) {
@@ -622,6 +772,52 @@
       if (navigator.share) navigator.share({ title: state.currentVideo.title, url }).catch(() => {});
       else copyText(url, event.currentTarget);
     });
+    root.querySelector("#hhYouTubePlayer").addEventListener("load", () => {
+      setTimeout(() => {
+        playerCommand("addEventListener", ["onStateChange"]);
+        playerCommand("setPlaybackRate", [state.playerRate]);
+      }, 350);
+    });
+    root.querySelector("[data-player-play]").addEventListener("click", () => playerCommand("playVideo"));
+    root.querySelector("[data-player-pause]").addEventListener("click", () => playerCommand("pauseVideo"));
+    root.querySelector("[data-player-previous]").addEventListener("click", () => playQueueStep(-1));
+    root.querySelector("[data-player-next]").addEventListener("click", () => playQueueStep(1));
+    root.querySelector("[data-player-rate]").addEventListener("change", (event) => {
+      state.playerRate = Number(event.currentTarget.value) || 1;
+      savePreferences();
+      playerCommand("setPlaybackRate", [state.playerRate]);
+    });
+    root.querySelector("[data-privacy-shield]").addEventListener("click", () => {
+      state.privacyShield = !state.privacyShield;
+      savePreferences();
+      updatePreferenceControls();
+      if (state.lastQuery.youtube) runSearch("youtube", state.lastQuery.youtube, { resetPage: true });
+    });
+    root.querySelector("[data-autoplay-queue]").addEventListener("click", () => {
+      state.autoplayQueue = !state.autoplayQueue;
+      savePreferences();
+      updatePreferenceControls();
+    });
+    root.querySelector("[data-youtube-random]").addEventListener("click", () => {
+      if (!state.youtubeItems.length) return;
+      loadVideo(state.youtubeItems[Math.floor(Math.random() * state.youtubeItems.length)]);
+    });
+    root.querySelector("[data-youtube-focus]").addEventListener("click", (event) => {
+      const active = root.classList.toggle("swh-focus");
+      event.currentTarget.classList.toggle("active", active);
+      event.currentTarget.setAttribute("aria-pressed", String(active));
+    });
+    root.querySelector("[data-youtube-mini]").addEventListener("click", (event) => {
+      const shell = root.querySelector("[data-youtube-player]");
+      if (shell.hidden) return;
+      const active = shell.classList.toggle("swh-mini-player");
+      event.currentTarget.classList.toggle("active", active);
+      event.currentTarget.setAttribute("aria-pressed", String(active));
+    });
+    root.querySelector("[data-clear-queue]").addEventListener("click", () => {
+      writeStore(STORAGE.queue, []);
+      renderLibraries();
+    });
     root.querySelector("[data-clear-recent]").addEventListener("click", () => { writeStore(STORAGE.recent, []); renderLibraries(); });
     root.querySelector("[data-swh-clear-history]").addEventListener("click", () => { writeStore(STORAGE.searches, []); renderSearchHistory(); });
   }
@@ -661,7 +857,18 @@
     }
   });
 
+  window.addEventListener("message", (event) => {
+    if (!/^(https:\/\/www\.)?youtube(?:-nocookie)?\.com$/.test(event.origin)) return;
+    let message = event.data;
+    try { if (typeof message === "string") message = JSON.parse(message); } catch { return; }
+    if (message?.event === "onStateChange" && Number(message.info) === 0 && state.autoplayQueue) playQueueStep(1);
+  });
+
   function init() {
+    const preferences = readPreferences();
+    state.privacyShield = preferences.privacyShield !== false;
+    state.autoplayQueue = preferences.autoplayQueue === true;
+    state.playerRate = [0.5, 0.75, 1, 1.25, 1.5, 2].includes(Number(preferences.playerRate)) ? Number(preferences.playerRate) : 1;
     createHub();
     wireLaunchers();
     window.HHSearchWatch = {
