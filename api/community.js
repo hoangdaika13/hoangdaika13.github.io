@@ -1,7 +1,7 @@
 const { ObjectId } = require("mongodb");
 const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/platform");
 
-const REACTIONS = new Set(["like", "love", "care", "haha", "wow", "sad"]);
+const REACTIONS = new Set(["like", "love", "care", "haha", "wow", "sad", "angry"]);
 const TOPICS = new Set(["Thông báo", "AI & Công nghệ", "Website", "Âm nhạc", "Góp ý", "Đời sống"]);
 const MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm", "video/quicktime"]);
 const MAX_MEDIA_BYTES = 2.5 * 1024 * 1024;
@@ -30,6 +30,7 @@ function socialUser(user) {
 
 function present(post, viewerId) {
   const reactions = Array.isArray(post.reactions) ? post.reactions : [];
+  const pollVotes = Array.isArray(post.poll?.votes) ? post.poll.votes : [];
   const summary = reactions.reduce((result, item) => {
     result[item.type] = (result[item.type] || 0) + 1;
     return result;
@@ -44,6 +45,19 @@ function present(post, viewerId) {
     mediaType: post.mediaType || "",
     media: (post.media || []).slice(0, 4).map((item) => ({ id: String(item.id || ""), type: item.type === "video" ? "video" : "image" })),
     pinned: Boolean(post.pinned),
+    feeling: clean(post.feeling, 80),
+    location: clean(post.location, 120),
+    shares: Number(post.shares || 0),
+    poll: post.poll?.question ? {
+      question: clean(post.poll.question, 220),
+      options: (post.poll.options || []).slice(0, 6).map((option) => ({
+        id: String(option.id),
+        text: clean(option.text, 160),
+        votes: pollVotes.filter((vote) => String(vote.optionId) === String(option.id)).length
+      })),
+      totalVotes: pollVotes.length,
+      viewerVote: String(pollVotes.find((vote) => String(vote.userId) === viewerId)?.optionId || "")
+    } : null,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     reactionCount: reactions.length,
@@ -119,8 +133,8 @@ module.exports = async function handler(req, res) {
         stories: activeStories.map((item) => ({ id: String(item._id), author: socialUser(item.author), content: item.content, mediaUrl: item.mediaUrl || "", mediaId: item.mediaId ? String(item.mediaId) : "", mediaType: item.mediaType || "image", createdAt: item.createdAt, expiresAt: item.expiresAt })),
         suggestions: suggestions.map((item) => ({ ...socialUser(item), following: followingIds.some((id) => String(id) === String(item._id)) })),
         notifications: notifications.map((item) => ({ id: String(item._id), actor: socialUser(item.actor), type: item.type, message: item.message, recordId: String(item.recordId || ""), read: Boolean(item.read), createdAt: item.createdAt })),
-        groups: groups.map((item) => ({ id: String(item._id), name: item.name, description: item.description, owner: socialUser(item.owner), memberCount: (item.memberIds || []).length })),
-        events: communityEvents.map((item) => ({ id: String(item._id), name: item.name, description: item.description, startsAt: item.startsAt, owner: socialUser(item.owner) })),
+        groups: groups.map((item) => ({ id: String(item._id), name: item.name, description: item.description, owner: socialUser(item.owner), memberCount: (item.memberIds || []).length, joined: (item.memberIds || []).some((id) => String(id) === viewerId) })),
+        events: communityEvents.map((item) => ({ id: String(item._id), name: item.name, description: item.description, startsAt: item.startsAt, owner: socialUser(item.owner), attendeeCount: (item.attendeeIds || []).length, going: (item.attendeeIds || []).some((id) => String(id) === viewerId) })),
         unread: notifications.filter((item) => !item.read).length,
         signedIn: Boolean(user)
       });
@@ -198,13 +212,33 @@ module.exports = async function handler(req, res) {
       return res.status(201).json({ ok: true, group: { ...doc, id: String(result.insertedId) } });
     }
 
+    if (action === "group:join") {
+      const groupId = idOf(body.groupId);
+      if (!groupId) return res.status(400).json({ error: "Nhóm không hợp lệ." });
+      const group = await db.collection("communityGroups").findOne({ _id: groupId });
+      if (!group) return res.status(404).json({ error: "Không tìm thấy nhóm." });
+      const joined = (group.memberIds || []).some((id) => String(id) === viewerId);
+      await db.collection("communityGroups").updateOne({ _id: groupId }, joined ? { $pull: { memberIds: user._id } } : { $addToSet: { memberIds: user._id } });
+      return res.status(200).json({ ok: true, joined: !joined });
+    }
+
     if (action === "event:create") {
       const name = clean(body.name, 100);
       const startsAt = new Date(body.startsAt);
       if (name.length < 3 || Number.isNaN(startsAt.getTime())) return res.status(400).json({ error: "Tên hoặc thời gian sự kiện không hợp lệ." });
-      const doc = { name, description: clean(body.description, 500), startsAt, ownerId: user._id, owner: socialUser(user), createdAt: new Date() };
+      const doc = { name, description: clean(body.description, 500), startsAt, ownerId: user._id, owner: socialUser(user), attendeeIds: [user._id], createdAt: new Date() };
       const result = await db.collection("communityEvents").insertOne(doc);
       return res.status(201).json({ ok: true, event: { ...doc, id: String(result.insertedId) } });
+    }
+
+    if (action === "event:rsvp") {
+      const eventId = idOf(body.eventId);
+      if (!eventId) return res.status(400).json({ error: "Sự kiện không hợp lệ." });
+      const item = await db.collection("communityEvents").findOne({ _id: eventId });
+      if (!item) return res.status(404).json({ error: "Không tìm thấy sự kiện." });
+      const going = (item.attendeeIds || []).some((id) => String(id) === viewerId);
+      await db.collection("communityEvents").updateOne({ _id: eventId }, going ? { $pull: { attendeeIds: user._id } } : { $addToSet: { attendeeIds: user._id } });
+      return res.status(200).json({ ok: true, going: !going });
     }
 
     if (action === "notifications:read") {
@@ -224,12 +258,20 @@ module.exports = async function handler(req, res) {
         return { id: item._id, type: item.mimeType.startsWith("video/") ? "video" : "image" };
       });
       if (!content && !mediaUrl && !media.length) return res.status(400).json({ error: "Hãy nhập nội dung hoặc thêm ảnh/video." });
+      const pollQuestion = clean(body.pollQuestion, 220);
+      const pollOptions = [...new Set((Array.isArray(body.pollOptions) ? body.pollOptions : []).map((item) => clean(item, 160)).filter(Boolean))].slice(0, 6);
+      const poll = pollQuestion && pollOptions.length >= 2 ? {
+        question: pollQuestion,
+        options: pollOptions.map((text) => ({ id: String(new ObjectId()), text })),
+        votes: []
+      } : null;
       const doc = {
         userId: user._id, author: socialUser(user), content,
         topic: TOPICS.has(body.topic) ? body.topic : "Góp ý",
         privacy: ["public", "followers", "private"].includes(body.privacy) ? body.privacy : "public",
         mediaUrl, mediaType: media[0]?.type || (body.mediaType === "video" ? "video" : mediaUrl ? "image" : ""), media,
-        pinned: false, reactions: [], comments: [], savedBy: [], createdAt: new Date(), updatedAt: new Date()
+        feeling: clean(body.feeling, 80), location: clean(body.location, 120), poll,
+        pinned: false, reactions: [], comments: [], savedBy: [], shares: 0, createdAt: new Date(), updatedAt: new Date()
       };
       const result = await posts.insertOne(doc);
       if (media.length) await mediaFiles.updateMany({ _id: { $in: media.map((item) => item.id) }, userId: user._id }, { $unset: { expiresAt: "" }, $set: { postId: result.insertedId } });
@@ -256,6 +298,15 @@ module.exports = async function handler(req, res) {
     } else if (action === "save") {
       const saved = (post.savedBy || []).some((id) => String(id) === viewerId);
       await posts.updateOne({ _id: postId }, saved ? { $pull: { savedBy: user._id } } : { $addToSet: { savedBy: user._id } });
+    } else if (action === "share") {
+      await posts.updateOne({ _id: postId }, { $inc: { shares: 1 }, $set: { updatedAt: new Date() } });
+      await notify(db, post.userId, user, "share", `${user.name || "Một thành viên"} đã chia sẻ bài viết của bạn.`, postId);
+    } else if (action === "poll:vote") {
+      const optionId = clean(body.optionId, 40);
+      if (!post.poll?.options?.some((option) => String(option.id) === optionId)) return res.status(400).json({ error: "Lựa chọn khảo sát không hợp lệ." });
+      const votes = (post.poll.votes || []).filter((vote) => String(vote.userId) !== viewerId);
+      votes.push({ userId: user._id, optionId, createdAt: new Date() });
+      await posts.updateOne({ _id: postId }, { $set: { "poll.votes": votes, updatedAt: new Date() } });
     } else if (action === "edit") {
       if (String(post.userId) !== viewerId) return res.status(403).json({ error: "Bạn chỉ có thể sửa bài viết của mình." });
       const content = clean(body.content, 5000);
