@@ -1,6 +1,7 @@
 const { ObjectId } = require("mongodb");
 const { createHash } = require("crypto");
 const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/platform");
+const communityAdminHandler = require("../utils/community-admin-api");
 
 const REACTIONS = new Set(["like", "love", "care", "haha", "wow", "sad", "angry"]);
 const TOPICS = new Set(["Thông báo", "AI & Công nghệ", "Website", "Âm nhạc", "Góp ý", "Đời sống"]);
@@ -350,6 +351,7 @@ async function notifyPostSubscribers(db, post, actor, type, message) {
 }
 
 module.exports = async function handler(req, res) {
+  if (String(req.query?.adminRoute || "") === "1") return communityAdminHandler(req, res);
   return withApi(req, res, async ({ db, body }) => {
     const posts = db.collection("communityPosts");
     const stories = db.collection("communityStories");

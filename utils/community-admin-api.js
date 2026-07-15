@@ -1,6 +1,6 @@
 const { ObjectId } = require("mongodb");
-const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/platform");
-const { accessFor, requirePermission, rolesFor, writeAdminAudit } = require("../utils/community-admin");
+const { clean, currentUser, enforceRateLimit, withApi } = require("./platform");
+const { accessFor, requirePermission, rolesFor, writeAdminAudit } = require("./community-admin");
 
 const USER_PROJECTION = Object.freeze({
   name: 1,

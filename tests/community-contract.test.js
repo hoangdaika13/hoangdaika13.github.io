@@ -38,9 +38,13 @@ test("WebRTC client and signaling server share the call protocol", () => {
 });
 
 test("Admin app enforces RBAC, audit metadata and privacy boundaries", () => {
-  const api = read("api/community-admin.js");
+  const api = read("utils/community-admin-api.js");
+  const communityApi = read("api/community.js");
+  const vercel = read("vercel.json");
   const permissions = read("utils/community-admin.js");
   assert.match(api, /requirePermission/);
+  assert.match(communityApi, /communityAdminHandler/);
+  assert.match(vercel, /\/api\/community-admin/);
   assert.match(api, /privateMessagesVisibleToAdmin:\s*false/);
   assert.match(api, /passwordsVisibleToAdmin:\s*false/);
   ["adminId", "action", "targetType", "targetId", "reason", "before", "after", "ip", "userAgent", "createdAt"].forEach((field) => {

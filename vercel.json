@@ -7,6 +7,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/community-admin",
+      "destination": "/api/community?adminRoute=1"
+    },
+    {
       "source": "/api/votes",
       "destination": "/api/donations?resource=votes"
     },
