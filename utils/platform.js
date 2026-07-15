@@ -93,7 +93,8 @@ async function currentUser(req) {
     const payload = jwt.verify(token, jwtSecret(), { algorithms: ["HS256"], issuer: "hh-platform", audience: "hh-web" });
     const db = await database();
     const user = await db.collection("users").findOne({ _id: new ObjectId(payload.sub) }, { projection: { passwordHash: 0 } });
-    return user && Number(payload.ver || 0) === Number(user.tokenVersion || 0) ? user : null;
+    const disabled = ["deleted", "suspended", "locked", "banned"].includes(String(user?.status || "").toLocaleLowerCase("en-US"));
+    return user && !disabled && Number(payload.ver || 0) === Number(user.tokenVersion || 0) ? user : null;
   } catch {
     return null;
   }

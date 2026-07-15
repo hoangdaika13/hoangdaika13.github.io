@@ -175,10 +175,10 @@
     const close = `<button type="button" data-social-directory-close aria-label="Đóng">×</button>`;
     if (mode === "groups") {
       const groups = state.communityGroups || [];
-      panel.innerHTML = `<header><div><small>KHÔNG GIAN KẾT NỐI</small><h5>Nhóm cộng đồng</h5><p>Tham gia thảo luận theo chủ đề và dự án.</p></div>${close}</header><div class="hh-directory-grid">${groups.map((item) => `<article><i>G</i><div><strong>${esc(item.name)}</strong><p>${esc(item.description || "Nhóm công khai trong HH Social")}</p><small>${item.memberCount || 0} thành viên</small></div><button class="${item.joined ? "active" : ""}" type="button" data-social-group-join="${esc(item.id)}">${item.joined ? "Đã tham gia" : "Tham gia"}</button></article>`).join("") || "<p>Chưa có nhóm. Dùng mục Nhóm của bạn để tạo nhóm đầu tiên.</p>"}</div>`;
+      panel.innerHTML = `<header><div><small>KHÔNG GIAN KẾT NỐI</small><h5>Nhóm cộng đồng</h5><p>Tham gia thảo luận theo chủ đề và dự án.</p></div><div><button class="primary" type="button" data-social-group-create>＋ Tạo nhóm</button>${close}</div></header><div class="hh-directory-grid">${groups.map((item) => `<article><i>G</i><div><strong>${esc(item.name)}</strong><p>${esc(item.description || "Nhóm công khai trong HH Social")}</p><small>${item.memberCount || 0} thành viên</small></div><button class="${item.joined ? "active" : ""}" type="button" data-social-group-join="${esc(item.id)}">${item.joined ? "Đã tham gia" : "Tham gia"}</button></article>`).join("") || "<p>Chưa có nhóm. Hãy tạo nhóm đầu tiên cho cộng đồng.</p>"}</div>`;
     } else if (mode === "events") {
       const events = state.communityEvents || [];
-      panel.innerHTML = `<header><div><small>LỊCH CỘNG ĐỒNG</small><h5>Sự kiện sắp tới</h5><p>Gặp gỡ, workshop và hoạt động trực tuyến.</p></div>${close}</header><div class="hh-directory-grid">${events.map((item) => `<article><time>${new Date(item.startsAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</time><div><strong>${esc(item.name)}</strong><p>${esc(item.description || "Sự kiện cộng đồng HH")}</p><small>${item.attendeeCount || 0} người tham dự · ${new Date(item.startsAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</small></div><button class="${item.going ? "active" : ""}" type="button" data-social-event-rsvp="${esc(item.id)}">${item.going ? "Sẽ tham gia" : "Quan tâm"}</button></article>`).join("") || "<p>Chưa có sự kiện sắp tới.</p>"}</div>`;
+      panel.innerHTML = `<header><div><small>LỊCH CỘNG ĐỒNG</small><h5>Sự kiện sắp tới</h5><p>Gặp gỡ, workshop và hoạt động trực tuyến.</p></div><div><button class="primary" type="button" data-social-event-create>＋ Tạo sự kiện</button>${close}</div></header><div class="hh-directory-grid">${events.map((item) => `<article><time>${new Date(item.startsAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</time><div><strong>${esc(item.name)}</strong><p>${esc(item.description || "Sự kiện cộng đồng HH")}</p><small>${item.attendeeCount || 0} người tham dự · ${new Date(item.startsAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</small></div><button class="${item.going ? "active" : ""}" type="button" data-social-event-rsvp="${esc(item.id)}">${item.going ? "Sẽ tham gia" : "Quan tâm"}</button></article>`).join("") || "<p>Chưa có sự kiện sắp tới.</p>"}</div>`;
     } else {
       const users = state.communitySuggestions || [];
       panel.innerHTML = `<header><div><small>MỌI NGƯỜI QUANH BẠN</small><h5>Khám phá thành viên</h5><p>Kết nối với những người có cùng sở thích.</p></div>${close}</header><div class="hh-people-grid">${users.map((user) => `<article><span>${esc(String(user.name || "HH").split(/\s+/).slice(-2).map((part) => part[0]).join("").toUpperCase())}</span><strong>${esc(user.name)}</strong><small>Thành viên HH</small><button class="${user.following ? "active" : ""}" type="button" data-community-follow="${esc(user.id)}">${user.following ? "Đang theo dõi" : "Theo dõi"}</button></article>`).join("") || "<p>Chưa có thành viên mới để gợi ý.</p>"}</div>`;
@@ -211,12 +211,19 @@
   }
 
   function showStory(button) {
+    const storyId = button.dataset.storyId || "";
     const media = button.dataset.storyMedia || button.querySelector("img,video")?.src || "";
     const name = button.querySelector("strong")?.textContent || "Tin HH";
     const content = button.dataset.storyContent || "Khoảnh khắc được chia sẻ trong HH Social.";
     const type = button.querySelector("video") || /\.(mp4|webm|mov)(\?|$)/i.test(media) ? "video" : "image";
     const { dialog, close } = createDialog("hh-story-viewer", `<section><div class="hh-story-progress"><i></i></div><header><span>${esc(name.slice(0, 2).toUpperCase())}</span><div><strong>${esc(name)}</strong><small>Tin · 24 giờ</small></div><button type="button" data-social-close>×</button></header><main>${media ? type === "video" ? `<video src="${esc(media)}" autoplay controls playsinline></video>` : `<img src="${esc(media)}" alt="${esc(name)}">` : `<div class="hh-story-text">${esc(content)}</div>`}</main><footer><input aria-label="Trả lời tin" placeholder="Trả lời ${esc(name)}..."><button type="button" data-story-heart>❤</button><button type="button" data-story-reply>Gửi</button></footer></section>`);
-    dialog.querySelector("[data-story-heart]")?.addEventListener("click", () => toast(`Đã gửi cảm xúc tới ${name}.`));
+    if (storyId) mutate({ action: "story:view", storyId }).catch(() => {});
+    dialog.querySelector("[data-story-heart]")?.addEventListener("click", async () => {
+      try {
+        if (storyId) await mutate({ action: "story:react", storyId, type: "love" });
+        toast(`Đã gửi cảm xúc tới ${name}.`);
+      } catch (error) { toast(error.message, "error"); }
+    });
     dialog.querySelector("[data-story-reply]")?.addEventListener("click", () => {
       const reply = dialog.querySelector("footer input")?.value.trim();
       if (!reply) return dialog.querySelector("footer input")?.focus();
@@ -301,6 +308,27 @@
     const tab = event.target.closest("[data-social-tab]");
     if (tab) { setFeedMode(root, tab.dataset.socialTab); return; }
     if (event.target.closest("[data-social-directory-close]")) { root.querySelector("[data-social-directory]")?.remove(); setFeedMode(root, "feed"); return; }
+    if (event.target.closest("[data-social-group-create]")) {
+      const { dialog } = createDialog("hh-community-create-dialog", `<form data-social-create-group><header><div><small>NHÓM HH</small><h5>Tạo nhóm cộng đồng</h5></div><button type="button" data-social-close>×</button></header><label><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="100" placeholder="Ví dụ: Nhà sáng tạo HH"></label><label><span>Mô tả</span><textarea name="description" maxlength="500" placeholder="Mục tiêu và chủ đề của nhóm..."></textarea></label><footer><button type="button" data-social-close>Hủy</button><button class="primary" type="submit">Tạo nhóm</button></footer></form>`);
+      dialog.querySelector("form")?.addEventListener("submit", async (submitEvent) => {
+        submitEvent.preventDefault();
+        const values = Object.fromEntries(new FormData(submitEvent.currentTarget));
+        try { await mutate({ action: "group:create", ...values }); dialog.close(); dialog.remove(); renderDirectory(root, "groups"); toast("Nhóm mới đã sẵn sàng."); }
+        catch (error) { toast(error.message, "error"); }
+      });
+      return;
+    }
+    if (event.target.closest("[data-social-event-create]")) {
+      const minimum = new Date(Date.now() + 15 * 60000).toISOString().slice(0, 16);
+      const { dialog } = createDialog("hh-community-create-dialog", `<form data-social-create-event><header><div><small>SỰ KIỆN HH</small><h5>Tạo sự kiện</h5></div><button type="button" data-social-close>×</button></header><label><span>Tên sự kiện</span><input name="name" required minlength="3" maxlength="100" placeholder="Workshop hoặc buổi gặp mặt"></label><label><span>Thời gian bắt đầu</span><input name="startsAt" type="datetime-local" min="${minimum}" required></label><label><span>Mô tả</span><textarea name="description" maxlength="500" placeholder="Nội dung và hình thức tham gia..."></textarea></label><footer><button type="button" data-social-close>Hủy</button><button class="primary" type="submit">Tạo sự kiện</button></footer></form>`);
+      dialog.querySelector("form")?.addEventListener("submit", async (submitEvent) => {
+        submitEvent.preventDefault();
+        const values = Object.fromEntries(new FormData(submitEvent.currentTarget));
+        try { await mutate({ action: "event:create", ...values }); dialog.close(); dialog.remove(); renderDirectory(root, "events"); toast("Sự kiện đã được công bố."); }
+        catch (error) { toast(error.message, "error"); }
+      });
+      return;
+    }
     const form = root.querySelector("[data-community-form]");
     if (event.target.closest("[data-community-feeling]")) {
       event.preventDefault(); event.stopImmediatePropagation(); showComposerChoice(form, "feeling"); return;

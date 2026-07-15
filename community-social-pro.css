@@ -629,6 +629,23 @@
 .hh-live-dialog footer button { min-height: 38px; padding: 0 13px; border: 1px solid #3c4f5e; border-radius: 6px; background: #17232d; color: #fff; font-weight: 900; }
 .hh-live-dialog footer button.primary { border-color: #ff5c72; background: #ff5c72; color: #19070b; }
 
+.hh-community-create-dialog { width: min(92vw, 620px); max-height: 92vh; padding: 0; overflow: auto; border: 1px solid #3b5160; border-radius: 8px; background: #0d151d; color: #f2f7fa; box-shadow: 0 35px 110px rgba(0,0,0,.76); }
+.hh-community-create-dialog::backdrop { background: rgba(1,4,8,.88); backdrop-filter: blur(10px); }
+.hh-community-create-dialog > form { display: grid; gap: 12px; padding: 18px; background: radial-gradient(circle at 0 0, rgba(87,220,229,.12), transparent 35%), radial-gradient(circle at 100% 100%, rgba(240,92,175,.1), transparent 36%), #101821; }
+.hh-community-create-dialog header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.hh-community-create-dialog header small { color: var(--social-cyan, #57dce5); font-size: 8px; font-weight: 900; }
+.hh-community-create-dialog h5 { margin: 3px 0; font-size: 21px; }
+.hh-community-create-dialog header button { width: 34px; height: 34px; border: 1px solid #3a4c5a; border-radius: 50%; background: #17232d; color: #fff; }
+.hh-community-create-dialog label { display: grid; gap: 6px; color: #9babb5; font-size: 10px; }
+.hh-community-create-dialog input,
+.hh-community-create-dialog textarea { min-height: 42px; padding: 9px 11px; border: 1px solid #344956; border-radius: 6px; outline: 0; background: #090f15; color: #fff; }
+.hh-community-create-dialog textarea { min-height: 100px; resize: vertical; }
+.hh-community-create-dialog input:focus,
+.hh-community-create-dialog textarea:focus { border-color: #57dce5; box-shadow: 0 0 0 2px rgba(87,220,229,.12); }
+.hh-community-create-dialog footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; border-top: 1px solid #2c3d48; }
+.hh-community-create-dialog footer button { min-height: 38px; padding: 0 14px; border: 1px solid #3b4e5d; border-radius: 6px; background: #17232d; color: #fff; font-weight: 900; }
+.hh-community-create-dialog footer button.primary { border-color: #57dce5; background: linear-gradient(135deg,#67dce5,#78c5e6); color: #071216; }
+
 .hh-composer-dialog { width: min(92vw, 520px); }
 .hh-composer-dialog > section { padding: 18px; background: radial-gradient(circle at 8% 0, rgba(87, 220, 229, .13), transparent 34%), radial-gradient(circle at 100% 100%, rgba(240, 92, 172, .12), transparent 36%), #101821; }
 .hh-composer-dialog header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }

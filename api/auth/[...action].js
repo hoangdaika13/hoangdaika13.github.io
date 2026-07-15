@@ -68,15 +68,18 @@ async function upsertOAuthUser(db, profile, provider) {
   const fields = {
     name: clean(profile.name, 160) || email.split("@")[0], email,
     avatar: clean(profile.avatar, 800), lastProvider: provider,
-    lastLoginAt: now, lastSeenAt: now, updatedAt: now, status: "active",
+    lastLoginAt: now, lastSeenAt: now, updatedAt: now,
     [`oauth.${provider}.id`]: providerId
   };
   if (existing) {
+    if (["deleted", "suspended", "locked", "banned"].includes(String(existing.status || "").toLocaleLowerCase("en-US"))) {
+      throw new Error("Tài khoản này hiện không được phép đăng nhập.");
+    }
     await users.updateOne({ _id: existing._id }, { $set: fields });
     return users.findOne({ _id: existing._id });
   }
   delete fields[`oauth.${provider}.id`];
-  const result = await users.insertOne({ ...fields, provider, providerId, oauth: { [provider]: { id: providerId } }, tokenVersion: 0, consent: false, createdAt: now });
+  const result = await users.insertOne({ ...fields, status: "active", provider, providerId, oauth: { [provider]: { id: providerId } }, tokenVersion: 0, consent: false, createdAt: now });
   return users.findOne({ _id: result.insertedId });
 }
 
@@ -153,6 +156,7 @@ module.exports = async function handler(req, res) {
       await enforceRateLimit(db, `login:${clientIp(req)}:${email}`, 8, 15 * 60 * 1000);
       const user = await db.collection("users").findOne({ email, provider: "local" });
       if (!user || !user.passwordHash || !(await bcrypt.compare(String(body.password || ""), user.passwordHash))) return res.status(401).json({ error: "Sai email hoặc mật khẩu." });
+      if (["deleted", "suspended", "locked", "banned"].includes(String(user.status || "").toLocaleLowerCase("en-US"))) return res.status(403).json({ error: "Tài khoản này hiện không được phép đăng nhập." });
       const now = new Date();
       await db.collection("users").updateOne({ _id: user._id }, { $set: { lastLoginAt: now, lastSeenAt: now } });
       await db.collection("loginEvents").insertOne({ userId: user._id, type: "login", userAgent: clean(req.headers["user-agent"], 300), forwardedFor: clean(req.headers["x-forwarded-for"], 120), createdAt: now });
