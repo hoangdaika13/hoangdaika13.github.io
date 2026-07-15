@@ -8,6 +8,17 @@
   --v2-panel-2: #151f2a;
   --v2-line: #2b3a48;
   --v2-muted: #8899a8;
+  container-type: inline-size;
+}
+
+@container (max-width: 1160px) {
+  .home-neon .community-center-app[data-social-v2="true"] .community-layout { grid-template-columns: 210px minmax(0, 1fr) !important; }
+  .home-neon .community-center-app[data-social-v2="true"] .community-side { display: none !important; }
+}
+
+@container (max-width: 760px) {
+  .home-neon .community-center-app[data-social-v2="true"] .community-layout { grid-template-columns: minmax(0, 1fr) !important; }
+  .home-neon .community-center-app[data-social-v2="true"] .community-nav { position: relative; top: auto; max-height: none; }
 }
 
 .home-neon [data-social-v2="true"] .community-layout[hidden],

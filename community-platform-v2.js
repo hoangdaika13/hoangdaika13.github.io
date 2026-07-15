@@ -57,7 +57,7 @@
   }
 
   function empty(icon, title, description, action = "") {
-    return `<section class="hh-v2-empty"><b>${icon}</b><strong>${esc(title)}</strong><p>${esc(description)}</p>${action}</section>`;
+    return `<section class="hh-v2-empty"><i>${icon}</i><strong>${esc(title)}</strong><p>${esc(description)}</p>${action}</section>`;
   }
 
   function workspace(root) {
@@ -259,7 +259,8 @@
       const commentForm = node.querySelector("[data-comment-form]");
       if (commentForm && post.commentsEnabled === false) { commentForm.innerHTML = "<p>Bình luận đã được tắt cho bài viết này.</p>"; }
       $$(node, ".community-comment").forEach((commentNode, index) => {
-        const comment = post.comments?.[index];
+        const sourceId = commentNode.querySelector("[data-comment-reply]")?.dataset.commentReply || commentNode.dataset.commentId;
+        const comment = post.comments?.find((item) => String(item.id) === String(sourceId)) || post.comments?.[index];
         if (!comment || commentNode.dataset.v2Actions) return;
         commentNode.dataset.v2Actions = "true";
         commentNode.dataset.commentId = comment.id;
@@ -507,9 +508,15 @@
     });
   });
 
+  let enhanceFrame = 0;
   const observer = new MutationObserver(() => {
-    const root = document.querySelector("[data-community-center]");
-    if (root) { enhance(root); decoratePosts(root); }
+    if (enhanceFrame) return;
+    enhanceFrame = requestAnimationFrame(() => {
+      enhanceFrame = 0;
+      const root = document.querySelector("[data-community-center]");
+      if (root) { enhance(root); decoratePosts(root); }
+      else reelObserver?.disconnect();
+    });
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   const initial = document.querySelector("[data-community-center]");

@@ -264,6 +264,7 @@
 
   document.addEventListener("click", async (event) => {
     const root = event.target.closest("[data-community-center]");
+    if (!root) return;
     const story = event.target.closest("[data-story-id],[data-story-demo],[data-story]");
     if (story) {
       event.preventDefault();
@@ -273,8 +274,6 @@
     }
     const media = event.target.closest("[data-community-center] .community-media-grid img");
     if (media) { event.preventDefault(); event.stopImmediatePropagation(); showLightbox(media); return; }
-    if (!root) return;
-
     if (event.target.closest("[data-community-notifications]")) {
       event.preventDefault(); event.stopImmediatePropagation(); showNotifications(root); return;
     }
@@ -360,9 +359,9 @@
     const vote = event.target.closest("[data-social-poll-vote]");
     if (vote) { vote.disabled = true; try { await mutate({ action: "poll:vote", postId: vote.dataset.socialPollVote, optionId: vote.dataset.optionId }); toast("Đã ghi nhận lựa chọn của bạn."); } catch (error) { toast(error.message, "error"); } return; }
     const group = event.target.closest("[data-social-group-join]");
-    if (group) { group.disabled = true; try { const data = await mutate({ action: "group:join", groupId: group.dataset.socialGroupJoin }); group.classList.toggle("active", data.joined); group.textContent = data.joined ? "Đã tham gia" : "Tham gia"; renderDirectory(root, "groups"); } catch (error) { toast(error.message, "error"); } return; }
+    if (group) { group.disabled = true; try { const data = await mutate({ action: "group:join", groupId: group.dataset.socialGroupJoin }); group.classList.toggle("active", data.joined); group.textContent = data.pending ? "Đang chờ duyệt" : data.joined ? "Đã tham gia" : "Tham gia"; if (!data.pending) group.disabled = false; renderDirectory(root, "groups"); } catch (error) { toast(error.message, "error"); group.disabled = false; } return; }
     const rsvp = event.target.closest("[data-social-event-rsvp]");
-    if (rsvp) { rsvp.disabled = true; try { const data = await mutate({ action: "event:rsvp", eventId: rsvp.dataset.socialEventRsvp }); rsvp.classList.toggle("active", data.going); rsvp.textContent = data.going ? "Sẽ tham gia" : "Quan tâm"; renderDirectory(root, "events"); } catch (error) { toast(error.message, "error"); } return; }
+    if (rsvp) { rsvp.disabled = true; try { const data = await mutate({ action: "event:rsvp", eventId: rsvp.dataset.socialEventRsvp }); rsvp.classList.toggle("active", data.going); rsvp.textContent = data.going ? "Sẽ tham gia" : "Quan tâm"; rsvp.disabled = false; renderDirectory(root, "events"); } catch (error) { toast(error.message, "error"); rsvp.disabled = false; } return; }
     const share = event.target.closest("[data-post-share]");
     if (share) {
       event.preventDefault();
@@ -400,9 +399,14 @@
     comments.forEach((comment) => container.insertBefore(comment, form));
   });
 
+  let socialFrame = 0;
   const observer = new MutationObserver(() => {
-    const root = document.querySelector("[data-community-center]");
-    if (root) { enhance(root); upgradePosts(root); }
+    if (socialFrame) return;
+    socialFrame = requestAnimationFrame(() => {
+      socialFrame = 0;
+      const root = document.querySelector("[data-community-center]");
+      if (root) { enhance(root); upgradePosts(root); }
+    });
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   const initial = document.querySelector("[data-community-center]");

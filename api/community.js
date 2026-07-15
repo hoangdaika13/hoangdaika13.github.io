@@ -202,10 +202,17 @@ function present(post, viewerId) {
 
 async function notify(db, userId, actor, type, message, recordId) {
   if (!userId || String(userId) === String(actor._id)) return;
-  await db.collection("communityNotifications").insertOne({
-    userId, actor: socialUser(actor), type, message: clean(message, 240), recordId,
-    read: false, createdAt: new Date()
-  });
+  const now = new Date();
+  const groupKey = `${clean(type, 40)}:${String(actor._id)}:${String(recordId || "")}`;
+  await db.collection("communityNotifications").updateOne(
+    { userId, groupKey, read: false },
+    {
+      $set: { actor: socialUser(actor), type: clean(type, 40), message: clean(message, 240), recordId, updatedAt: now },
+      $inc: { count: 1 },
+      $setOnInsert: { userId, groupKey, read: false, createdAt: now }
+    },
+    { upsert: true }
+  );
 }
 
 module.exports = async function handler(req, res) {
@@ -266,6 +273,12 @@ module.exports = async function handler(req, res) {
       ]) : [[], [], [], [], [], [], null, null];
       const followingIds = [...new Map([...legacyFollowingDocs, ...relationFollowingDocs].map((item) => [String(item.targetId), item.targetId])).values()];
       const friendIds = [...new Map(friendshipDocs.flatMap((item) => item.userIds || [item.userAId, item.userBId]).filter(Boolean).filter((id) => String(id) !== viewerId).map((id) => [String(id), id])).values()];
+      const friendOfFriendDocs = friendIds.length ? await db.collection("communityFriendships").find({
+        status: "accepted",
+        $or: [{ userAId: { $in: friendIds } }, { userBId: { $in: friendIds } }]
+      }, { projection: { userAId: 1, userBId: 1 } }).limit(5000).toArray() : [];
+      const directFriendSet = new Set(friendIds.map(String));
+      const friendOfFriendIds = [...new Map(friendOfFriendDocs.flatMap((item) => [item.userAId, item.userBId]).filter(Boolean).filter((id) => String(id) !== viewerId && !directFriendSet.has(String(id))).map((id) => [String(id), id])).values()];
       const blockedIds = [...new Map([
         ...legacyBlockDocs.map((item) => String(item.blockerId) === viewerId ? item.targetId : item.blockerId),
         ...relationBlockDocs.map((item) => String(item.actorId) === viewerId ? item.targetId : item.actorId)
@@ -277,6 +290,7 @@ module.exports = async function handler(req, res) {
       if (user) visibleToViewer.push({ userId: user._id });
       if (followingIds.length) visibleToViewer.push({ privacy: "followers", userId: { $in: followingIds } });
       if (friendIds.length) visibleToViewer.push({ privacy: { $in: ["friends", "friends-of-friends"] }, userId: { $in: friendIds } });
+      if (friendOfFriendIds.length) visibleToViewer.push({ privacy: "friends-of-friends", userId: { $in: friendOfFriendIds } });
       const now = new Date();
       const filter = {
         $and: [
@@ -323,7 +337,7 @@ module.exports = async function handler(req, res) {
         posts: items.map((item) => present(item, viewerId)),
         stories: visibleStories.map((item) => ({ id: String(item._id), author: socialUser(item.author), content: item.content, mediaUrl: item.mediaUrl || "", mediaId: item.mediaId ? String(item.mediaId) : "", mediaType: item.mediaType || "image", background: item.background || "", musicUrl: item.musicUrl || "", location: item.location || "", linkUrl: item.linkUrl || "", privacy: item.privacy || "public", viewerSeen: (item.views || []).some((view) => String(view.userId) === viewerId), viewerCount: (item.views || []).length, createdAt: item.createdAt, expiresAt: item.expiresAt })),
         suggestions: suggestions.map((item) => ({ ...socialUser(item), following: followingIds.some((id) => String(id) === String(item._id)) })),
-        notifications: notifications.map((item) => ({ id: String(item._id), actor: socialUser(item.actor), type: item.type, message: item.message, recordId: String(item.recordId || ""), read: Boolean(item.read), createdAt: item.createdAt })),
+        notifications: notifications.map((item) => ({ id: String(item._id), actor: socialUser(item.actor), type: item.type, message: item.message, recordId: String(item.recordId || ""), count: Math.max(1, Number(item.count || 1)), read: Boolean(item.read), createdAt: item.createdAt, updatedAt: item.updatedAt || item.createdAt })),
         groups: groups.map((item) => ({ id: String(item._id), name: item.name, description: item.description, owner: socialUser(item.owner), visibility: item.visibility || "public", postApproval: item.postApproval || "off", memberCount: (item.memberIds || []).length, joined: (item.memberIds || []).some((id) => String(id) === viewerId), pending: (item.joinRequests || []).some((entry) => String(entry.userId) === viewerId && entry.status === "pending") })),
         events: communityEvents.map((item) => ({ id: String(item._id), name: item.name, description: item.description, startsAt: item.startsAt, endsAt: item.endsAt || null, eventType: item.eventType || "online", online: (item.eventType || "online") === "online", location: item.location || "", meetingUrl: item.meetingUrl || "", owner: socialUser(item.owner), attendeeCount: (item.attendeeIds || []).length, going: (item.attendeeIds || []).some((id) => String(id) === viewerId) })),
         unread: notifications.filter((item) => !item.read).length,
@@ -393,9 +407,8 @@ module.exports = async function handler(req, res) {
       if (action === "story:view") await stories.updateOne({ _id: storyId, "views.userId": { $ne: user._id } }, { $push: { views: { userId: user._id, viewedAt: new Date() } } });
       if (action === "story:react") {
         const type = REACTIONS.has(body.type) ? body.type : "like";
-        const reactions = (story.reactions || []).filter((item) => String(item.userId) !== viewerId);
-        reactions.push({ userId: user._id, type, createdAt: new Date() });
-        await stories.updateOne({ _id: storyId }, { $set: { reactions } });
+        await stories.updateOne({ _id: storyId }, { $pull: { reactions: { userId: user._id } } });
+        await stories.updateOne({ _id: storyId }, { $push: { reactions: { userId: user._id, type, createdAt: new Date() } } });
         await notify(db, story.userId, user, "story-reaction", `${user.name || "Một thành viên"} đã bày tỏ cảm xúc về Tin của bạn.`, storyId);
       }
       if (action === "story:highlight") {
@@ -474,8 +487,25 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "notifications:read") {
-      await db.collection("communityNotifications").updateMany({ userId: user._id, read: false }, { $set: { read: true, readAt: new Date() } });
+      const notificationId = idOf(body.notificationId);
+      const filter = { userId: user._id, read: false, ...(notificationId ? { _id: notificationId } : {}) };
+      await db.collection("communityNotifications").updateMany(filter, { $set: { read: true, readAt: new Date() } });
       return res.status(200).json({ ok: true });
+    }
+
+    if (action === "notifications:delete") {
+      const notificationId = idOf(body.notificationId);
+      if (!notificationId) return res.status(400).json({ error: "Thông báo không hợp lệ." });
+      await db.collection("communityNotifications").deleteOne({ _id: notificationId, userId: user._id });
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === "notifications:settings") {
+      const allowedKeys = ["friendRequests", "reactions", "comments", "mentions", "messages", "groups", "pages", "events", "birthdays", "security", "emailDigest", "push", "quietHours"];
+      const settings = {};
+      for (const key of allowedKeys) if (Object.prototype.hasOwnProperty.call(body.settings || {}, key)) settings[key] = typeof body.settings[key] === "boolean" ? body.settings[key] : clean(body.settings[key], 80);
+      await db.collection("communityNotificationPreferences").updateOne({ userId: user._id }, { $set: { settings, updatedAt: new Date() }, $setOnInsert: { userId: user._id, createdAt: new Date() } }, { upsert: true });
+      return res.status(200).json({ ok: true, settings });
     }
 
     if (action === "create") {
@@ -562,39 +592,41 @@ module.exports = async function handler(req, res) {
         await db.collection("communityReports").updateOne({ targetType: "comment", targetId: comment._id, reporterId: user._id }, { $setOnInsert: { targetType: "comment", targetId: comment._id, postId, reporterId: user._id, reason: clean(body.reason || "Bình luận không phù hợp", 300), status: "pending", createdAt: new Date() } }, { upsert: true });
         return res.status(200).json({ ok: true });
       }
+      const commentQuery = { _id: postId, "comments._id": comment._id };
+      const commentOptions = { arrayFilters: [{ "comment._id": comment._id }] };
       if (action === "comment:edit") {
         if (!ownsComment) return res.status(403).json({ error: "Bạn chỉ có thể sửa bình luận của mình." });
         const text = clean(body.text, 1200);
         if (!text) return res.status(400).json({ error: "Bình luận đang trống." });
-        comment.editHistory = [...(comment.editHistory || []), { text: comment.text, editedAt: new Date() }].slice(-20);
-        comment.text = text;
-        comment.updatedAt = new Date();
+        const now = new Date();
+        await posts.updateOne(commentQuery, {
+          $set: { "comments.$[comment].text": text, "comments.$[comment].updatedAt": now, updatedAt: now },
+          $push: { "comments.$[comment].editHistory": { $each: [{ text: comment.text, editedAt: now }], $slice: -20 } }
+        }, commentOptions);
       }
       if (action === "comment:delete") {
         if (!ownsComment && !ownsPost) return res.status(403).json({ error: "Bạn không có quyền xóa bình luận này." });
-        comment.deletedAt = new Date();
-        comment.text = "";
+        const now = new Date();
+        await posts.updateOne(commentQuery, { $set: { "comments.$[comment].deletedAt": now, "comments.$[comment].text": "", updatedAt: now } }, commentOptions);
       }
       if (action === "comment:pin") {
         if (!ownsPost) return res.status(403).json({ error: "Chỉ chủ bài viết có thể ghim bình luận." });
-        comments.forEach((item) => { item.pinned = String(item._id) === commentId ? !comment.pinned : false; });
+        await posts.updateOne({ _id: postId }, { $set: { "comments.$[].pinned": false, updatedAt: new Date() } });
+        if (!comment.pinned) await posts.updateOne(commentQuery, { $set: { "comments.$[comment].pinned": true, updatedAt: new Date() } }, commentOptions);
       }
       if (action === "comment:react") {
         const type = REACTIONS.has(body.type) ? body.type : "like";
-        const reactions = (comment.reactions || []).filter((item) => String(item.userId) !== viewerId);
-        if (body.type !== "remove") reactions.push({ userId: user._id, type, createdAt: new Date() });
-        comment.reactions = reactions;
+        await posts.updateOne(commentQuery, { $pull: { "comments.$[comment].reactions": { userId: user._id } }, $set: { updatedAt: new Date() } }, commentOptions);
+        if (body.type !== "remove") await posts.updateOne(commentQuery, { $push: { "comments.$[comment].reactions": { userId: user._id, type, createdAt: new Date() } }, $set: { updatedAt: new Date() } }, commentOptions);
       }
-      await posts.updateOne({ _id: postId }, { $set: { comments, updatedAt: new Date() } });
       const updatedPost = await posts.findOne({ _id: postId });
       return res.status(200).json({ ok: true, post: present(updatedPost, viewerId) });
     }
 
     if (action === "react") {
       const type = REACTIONS.has(body.type) ? body.type : "like";
-      const reactions = (post.reactions || []).filter((item) => String(item.userId) !== viewerId);
-      if (body.type !== "remove") reactions.push({ userId: user._id, type, createdAt: new Date() });
-      await posts.updateOne({ _id: postId }, { $set: { reactions, updatedAt: new Date() } });
+      await posts.updateOne({ _id: postId }, { $pull: { reactions: { userId: user._id } }, $set: { updatedAt: new Date() } });
+      if (body.type !== "remove") await posts.updateOne({ _id: postId }, { $push: { reactions: { userId: user._id, type, createdAt: new Date() } }, $set: { updatedAt: new Date() } });
       if (body.type !== "remove") await notify(db, post.userId, user, "reaction", `${user.name || "Một thành viên"} đã bày tỏ cảm xúc về bài viết của bạn.`, postId);
     } else if (action === "comment") {
       if (post.commentsEnabled === false) return res.status(403).json({ error: "Bình luận đã bị tắt cho bài viết này." });
@@ -612,9 +644,8 @@ module.exports = async function handler(req, res) {
     } else if (action === "poll:vote") {
       const optionId = clean(body.optionId, 40);
       if (!post.poll?.options?.some((option) => String(option.id) === optionId)) return res.status(400).json({ error: "Lựa chọn khảo sát không hợp lệ." });
-      const votes = (post.poll.votes || []).filter((vote) => String(vote.userId) !== viewerId);
-      votes.push({ userId: user._id, optionId, createdAt: new Date() });
-      await posts.updateOne({ _id: postId }, { $set: { "poll.votes": votes, updatedAt: new Date() } });
+      await posts.updateOne({ _id: postId }, { $pull: { "poll.votes": { userId: user._id } }, $set: { updatedAt: new Date() } });
+      await posts.updateOne({ _id: postId }, { $push: { "poll.votes": { userId: user._id, optionId, createdAt: new Date() } }, $set: { updatedAt: new Date() } });
     } else if (action === "edit") {
       if (!ownsPost) return res.status(403).json({ error: "Bạn chỉ có thể sửa bài viết của mình." });
       const content = clean(body.content, 5000);
