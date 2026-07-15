@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const http = require("http");
+const { randomUUID } = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
@@ -20,6 +21,17 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const MONGODB_URI = process.env.MONGODB_URI;
 const MONGODB_DB = process.env.MONGODB_DB || "hoangdaika13_site";
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
+const MAX_CALL_PARTICIPANTS = Math.max(2, Math.min(12, Number(process.env.MAX_CALL_PARTICIPANTS || 8)));
+const STUN_URLS = (process.env.STUN_URLS || "stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302").split(",").map((item) => item.trim()).filter(Boolean);
+const ICE_SERVERS = [
+  ...(STUN_URLS.length ? [{ urls: STUN_URLS }] : []),
+  ...(process.env.TURN_URL ? [{
+    urls: process.env.TURN_URL.split(",").map((item) => item.trim()).filter(Boolean),
+    username: process.env.TURN_USERNAME || "",
+    credential: process.env.TURN_CREDENTIAL || ""
+  }] : [])
+];
+const activeCalls = new Map();
 
 const allowedOrigins = [...new Set([
   FRONTEND_URL,
@@ -93,6 +105,22 @@ function messengerSocketRoom(slug) {
   return `community:chat:${slug}`;
 }
 
+function callSocketRoom(callId) {
+  return `community:call:${callId}`;
+}
+
+function publicCall(call) {
+  return {
+    id: call.id,
+    room: call.room,
+    type: call.type,
+    group: call.group,
+    startedBy: call.startedBy,
+    startedAt: call.startedAt,
+    participants: [...call.participants.values()].map((item) => ({ socketId: item.socketId, user: item.user, media: item.media }))
+  };
+}
+
 function readBearer(req) {
   return (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
 }
@@ -117,18 +145,20 @@ function requireAdmin(req, res) {
 
 function signUser(user) {
   return jwt.sign(
-    { sub: String(user._id), email: user.email, name: user.name || user.displayName || "" },
+    { sub: String(user._id), email: user.email, name: user.name || user.displayName || "", ver: Number(user.tokenVersion || 0) },
     JWT_SECRET,
-    { expiresIn: "30d" }
+    { algorithm: "HS256", expiresIn: "12h", issuer: "hh-platform", audience: "hh-web" }
   );
 }
 
 async function verifyToken(token) {
   if (!token) return null;
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"], issuer: "hh-platform", audience: "hh-web" });
     const collection = await users();
-    return collection.findOne({ _id: new ObjectId(payload.sub) }, { projection: { passwordHash: 0 } });
+    const user = await collection.findOne({ _id: new ObjectId(payload.sub) }, { projection: { passwordHash: 0 } });
+    const disabled = ["deleted", "suspended", "locked", "banned"].includes(String(user?.status || "").toLowerCase());
+    return user && !disabled && Number(payload.ver || 0) === Number(user.tokenVersion || 0) ? user : null;
   } catch {
     return null;
   }
@@ -453,6 +483,18 @@ app.get("/api/admin/overview", async (req, res) => {
   res.json({ counts, generatedAt: new Date() });
 });
 
+app.get("/api/realtime/ice", async (req, res) => {
+  const user = await currentUser(req);
+  if (!user) return res.status(401).json({ error: "Authentication required" });
+  res.json({
+    ok: true,
+    iceServers: ICE_SERVERS,
+    maxParticipants: MAX_CALL_PARTICIPANTS,
+    endToEndEncryption: false,
+    transportSecurity: "TLS when deployed behind HTTPS/WSS"
+  });
+});
+
 io.use(async (socket, next) => {
   const token = socket.handshake.auth?.token;
   socket.user = await verifyToken(token);
@@ -463,6 +505,7 @@ io.on("connection", async (socket) => {
   const auth = socket.handshake.auth || {};
   const consent = Boolean(auth.consent || socket.user?.consent);
   let activeMessengerRoom = "";
+  const activeCallIds = new Set();
   if (socket.user) {
     socket.join(`community:user:${String(socket.user._id)}`);
     socket.join("community:all");
@@ -473,6 +516,24 @@ io.on("connection", async (socket) => {
     const members = await io.in(roomName).fetchSockets();
     const onlineUsers = [...new Map(members.filter((item) => item.user).map((item) => [String(item.user._id), publicChatUser(item.user)])).values()];
     io.to(roomName).emit("messenger:presence", { room: slug, online: members.length, users: onlineUsers, updatedAt: new Date().toISOString() });
+  };
+  const leaveCall = async (callId, reason = "left") => {
+    const call = activeCalls.get(callId);
+    if (!call || !call.participants.has(socket.id)) return;
+    call.participants.delete(socket.id);
+    activeCallIds.delete(callId);
+    await socket.leave(callSocketRoom(callId));
+    io.to(callSocketRoom(callId)).emit("call:participant:left", { callId, socketId: socket.id, userId: String(socket.user?._id || ""), reason, updatedAt: new Date().toISOString() });
+    if (!call.participants.size) {
+      activeCalls.delete(callId);
+      return;
+    }
+    if (call.startedById === String(socket.user?._id || "")) {
+      const nextHost = call.participants.values().next().value;
+      call.startedById = String(nextHost.user.id);
+      call.startedBy = nextHost.user;
+      io.to(callSocketRoom(callId)).emit("call:host", { callId, startedBy: call.startedBy });
+    }
   };
   const session = {
     socketId: socket.id,
@@ -570,6 +631,127 @@ io.on("connection", async (socket) => {
     }
   });
 
+  socket.on("call:config", (callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    if (!socket.user) return done({ ok: false, error: "Authentication required" });
+    done({ ok: true, iceServers: ICE_SERVERS, maxParticipants: MAX_CALL_PARTICIPANTS, endToEndEncryption: false });
+  });
+
+  socket.on("call:start", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    try {
+      if (!socket.user) return done({ ok: false, error: "Authentication required" });
+      const now = Date.now();
+      if (now - Number(socket.data.lastCallStart || 0) < 3000) return done({ ok: false, error: "Please wait before starting another call" });
+      socket.data.lastCallStart = now;
+      const slug = communityRoomSlug(payload.room);
+      const room = await communityRoomFor(socket.user, slug);
+      if (!room || !["direct", "group"].includes(room.kind)) return done({ ok: false, error: "Calls require a private or group conversation" });
+      const existing = [...activeCalls.values()].find((item) => item.room === slug);
+      if (existing) return done({ ok: true, existing: true, call: publicCall(existing), iceServers: ICE_SERVERS });
+      const type = payload.type === "audio" ? "audio" : "video";
+      const callId = randomUUID();
+      const caller = publicChatUser(socket.user);
+      const call = {
+        id: callId,
+        room: slug,
+        type,
+        group: room.kind === "group",
+        startedBy: caller,
+        startedById: String(socket.user._id),
+        startedAt: new Date().toISOString(),
+        participants: new Map()
+      };
+      call.participants.set(socket.id, { socketId: socket.id, user: caller, media: { mic: true, camera: type === "video", screen: false } });
+      activeCalls.set(callId, call);
+      activeCallIds.add(callId);
+      await socket.join(callSocketRoom(callId));
+      const event = { call: publicCall(call), caller, iceServers: ICE_SERVERS };
+      for (const memberId of [...new Set((room.memberIds || []).map(String))]) {
+        if (memberId !== String(socket.user._id)) io.to(`community:user:${memberId}`).emit("call:incoming", event);
+      }
+      socket.to(messengerSocketRoom(slug)).emit("call:incoming", event);
+      done({ ok: true, call: publicCall(call), iceServers: ICE_SERVERS, maxParticipants: MAX_CALL_PARTICIPANTS });
+    } catch (error) {
+      done({ ok: false, error: error.message || "Unable to start call" });
+    }
+  });
+
+  socket.on("call:join", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    try {
+      if (!socket.user) return done({ ok: false, error: "Authentication required" });
+      const callId = cleanString(payload.callId, 80);
+      const call = activeCalls.get(callId);
+      if (!call) return done({ ok: false, error: "Call is no longer active" });
+      const room = await communityRoomFor(socket.user, call.room);
+      if (!room || !["direct", "group"].includes(room.kind)) return done({ ok: false, error: "Call unavailable" });
+      if (!call.participants.has(socket.id) && call.participants.size >= MAX_CALL_PARTICIPANTS) return done({ ok: false, error: "Call participant limit reached" });
+      const participant = { socketId: socket.id, user: publicChatUser(socket.user), media: { mic: payload.mic !== false, camera: call.type === "video" && payload.camera !== false, screen: false } };
+      const peers = [...call.participants.values()];
+      call.participants.set(socket.id, participant);
+      activeCallIds.add(callId);
+      await socket.join(callSocketRoom(callId));
+      socket.to(callSocketRoom(callId)).emit("call:participant:joined", { callId, participant });
+      done({ ok: true, call: publicCall(call), peers, iceServers: ICE_SERVERS, maxParticipants: MAX_CALL_PARTICIPANTS });
+    } catch (error) {
+      done({ ok: false, error: error.message || "Unable to join call" });
+    }
+  });
+
+  socket.on("call:signal", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const callId = cleanString(payload.callId, 80);
+    const targetSocketId = cleanString(payload.targetSocketId, 120);
+    const call = activeCalls.get(callId);
+    const signal = payload.signal;
+    if (!socket.user || !call?.participants.has(socket.id) || !call.participants.has(targetSocketId)) return done({ ok: false, error: "Invalid call signal" });
+    if (!signal || JSON.stringify(signal).length > 64000) return done({ ok: false, error: "Signal payload rejected" });
+    io.to(targetSocketId).emit("call:signal", { callId, fromSocketId: socket.id, from: publicChatUser(socket.user), signal });
+    done({ ok: true });
+  });
+
+  socket.on("call:media", (payload = {}) => {
+    const callId = cleanString(payload.callId, 80);
+    const call = activeCalls.get(callId);
+    const participant = call?.participants.get(socket.id);
+    if (!socket.user || !participant) return;
+    participant.media = { mic: payload.mic !== false, camera: Boolean(payload.camera), screen: Boolean(payload.screen) };
+    socket.to(callSocketRoom(callId)).emit("call:participant:media", { callId, socketId: socket.id, media: participant.media });
+  });
+
+  socket.on("call:decline", (payload = {}) => {
+    const callId = cleanString(payload.callId, 80);
+    const call = activeCalls.get(callId);
+    if (!socket.user || !call) return;
+    for (const participant of call.participants.values()) {
+      if (String(participant.user.id) === call.startedById) io.to(participant.socketId).emit("call:declined", { callId, user: publicChatUser(socket.user) });
+    }
+  });
+
+  socket.on("call:leave", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const callId = cleanString(payload.callId, 80);
+    await leaveCall(callId, "left");
+    done({ ok: true });
+  });
+
+  socket.on("call:end", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const callId = cleanString(payload.callId, 80);
+    const call = activeCalls.get(callId);
+    if (!socket.user || !call?.participants.has(socket.id)) return done({ ok: false, error: "Call unavailable" });
+    if (call.group && call.startedById !== String(socket.user._id)) return done({ ok: false, error: "Only the call host can end a group call" });
+    io.to(callSocketRoom(callId)).emit("call:ended", { callId, endedBy: publicChatUser(socket.user), reason: cleanString(payload.reason || "ended", 80), updatedAt: new Date().toISOString() });
+    for (const participant of call.participants.values()) {
+      const peerSocket = io.sockets.sockets.get(participant.socketId);
+      if (peerSocket) await peerSocket.leave(callSocketRoom(callId));
+    }
+    activeCalls.delete(callId);
+    activeCallIds.delete(callId);
+    done({ ok: true });
+  });
+
   socket.on("page:event", async (payload = {}) => {
     if (!consent && !socket.user) return;
     await (await events()).insertOne({
@@ -584,6 +766,7 @@ io.on("connection", async (socket) => {
 
   socket.on("disconnect", async () => {
     if (activeMessengerRoom) emitMessengerPresence(activeMessengerRoom).catch(() => {});
+    await Promise.all([...activeCallIds].map((callId) => leaveCall(callId, "disconnected")));
     if (consent || socket.user) {
       await (await sessions()).updateOne({ socketId: socket.id }, { $set: { endedAt: new Date(), lastSeenAt: new Date() } });
       await (await events()).insertOne({ type: "visit:end", socketId: socket.id, createdAt: new Date() });

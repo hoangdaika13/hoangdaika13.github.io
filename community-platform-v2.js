@@ -25,6 +25,16 @@
   let messengerOnlineCount = 0;
   let messengerOnlineUsers = new Set();
   let messengerTypingTimer = 0;
+  let messengerSearchTimer = 0;
+  let messengerSearchTerm = "";
+  let messengerNextCursor = "";
+  let messengerLoadingOlder = false;
+  let messengerArchivedOnly = false;
+  let messengerRecorder = null;
+  let messengerRecorderStream = null;
+  let messengerRecorderChunks = [];
+  let messengerComposerExtra = { sticker: "", gifUrl: "", location: null };
+  const messengerMediaCache = new Map();
   const messengerTypingUsers = new Map();
 
   function toast(message, type = "success") {
@@ -220,6 +230,16 @@
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   }
 
+  function messengerFileIcon(file = {}) {
+    const type = String(file.type || file.mimeType || "");
+    if (type.startsWith("image/")) return "▧";
+    if (type.startsWith("video/")) return "▶";
+    if (type.startsWith("audio/")) return "♫";
+    if (type.includes("pdf")) return "PDF";
+    if (type.includes("zip")) return "ZIP";
+    return "FILE";
+  }
+
   function renderMessengerFileQueue(panel) {
     const queue = panel?.querySelector("[data-v2-message-files]");
     const input = panel?.querySelector("[data-v2-message-file]");
@@ -230,15 +250,16 @@
     }
     if (!queue) return;
     queue.hidden = !messengerFiles.length;
-    queue.innerHTML = messengerFiles.map((file, index) => `<article><i>${file.type.startsWith("video/") ? "▶" : "▧"}</i><span><strong>${esc(file.name)}</strong><small>${formatFileSize(file.size)}</small></span><button type="button" data-v2-message-file-remove="${index}" aria-label="Bỏ tệp ${esc(file.name)}">×</button></article>`).join("");
+    queue.innerHTML = messengerFiles.map((file, index) => `<article><i>${messengerFileIcon(file)}</i><span><strong>${esc(file.name)}</strong><small>${esc(file.type || "Tệp")} · ${formatFileSize(file.size)}</small></span><button type="button" data-v2-message-file-remove="${index}" aria-label="Bỏ tệp ${esc(file.name)}">×</button></article>`).join("");
   }
 
   function setMessengerFiles(files, panel, append = false) {
     const incoming = [...(files || [])];
-    const valid = incoming.filter((file) => /^(image|video)\//.test(file.type) && file.size > 0 && file.size <= 2.5 * 1024 * 1024);
+    const documentTypes = new Set(["application/pdf", "application/zip", "application/x-zip-compressed", "application/json", "text/plain", "text/csv", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]);
+    const valid = incoming.filter((file) => (/^(image|video|audio)\//.test(file.type) || documentTypes.has(file.type)) && file.size > 0 && file.size <= 2.5 * 1024 * 1024);
     const combined = append ? [...messengerFiles, ...valid] : valid;
     messengerFiles = [...new Map(combined.map((file) => [`${file.name}:${file.size}:${file.lastModified}`, file])).values()].slice(0, 8);
-    if (incoming.length !== valid.length) toast("Một số tệp đã bỏ qua: chỉ nhận ảnh/video dưới 2,5 MB.", "error");
+    if (incoming.length !== valid.length) toast("Một số tệp đã bỏ qua: định dạng chưa hỗ trợ hoặc vượt 2,5 MB.", "error");
     if (combined.length > 8) toast("Messenger gửi tối đa 8 tệp trong một lượt.", "error");
     renderMessengerFileQueue(panel);
     const status = panel?.querySelector("[data-v2-message-status]");
@@ -246,16 +267,97 @@
   }
 
   function messageMedia(message) {
-    if (message.mediaId) return `${API_BASE}/api/community?media=${encodeURIComponent(message.mediaId)}`;
-    return message.attachmentUrl || "";
+    return message.mediaId ? "" : message.attachmentUrl || "";
+  }
+
+  function secureMediaAttribute(mediaId, link = false) {
+    if (!mediaId) return "";
+    return `data-v2-secure-media="${esc(mediaId)}" ${link ? 'href="#" aria-disabled="true"' : ""}`;
+  }
+
+  async function privateMediaUrl(mediaId) {
+    const id = String(mediaId || "");
+    if (!id) throw new Error("Media không hợp lệ.");
+    const cached = messengerMediaCache.get(id);
+    if (cached) {
+      cached.usedAt = Date.now();
+      return cached.url;
+    }
+    const token = localStorage.getItem("hh-auth-token") || "";
+    if (!token) throw new Error("Bạn cần đăng nhập để xem media này.");
+    const response = await fetch(`${API_BASE}/api/community?media=${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store"
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || "Không thể tải media riêng tư.");
+    }
+    const url = URL.createObjectURL(await response.blob());
+    messengerMediaCache.set(id, { url, usedAt: Date.now() });
+    if (messengerMediaCache.size > 80) {
+      const oldest = [...messengerMediaCache.entries()].sort((first, second) => first[1].usedAt - second[1].usedAt).slice(0, 16);
+      oldest.forEach(([key, item]) => { URL.revokeObjectURL(item.url); messengerMediaCache.delete(key); });
+    }
+    return url;
+  }
+
+  function hydrateMessengerMedia(panel) {
+    const nodes = $$(panel, "[data-v2-secure-media]");
+    nodes.forEach(async (node) => {
+      if (node.dataset.v2MediaHydrating === "true") return;
+      node.dataset.v2MediaHydrating = "true";
+      node.classList.add("is-loading");
+      try {
+        const url = await privateMediaUrl(node.dataset.v2SecureMedia);
+        if (!node.isConnected) return;
+        if (node instanceof HTMLAnchorElement) {
+          node.href = url;
+          node.removeAttribute("aria-disabled");
+        } else {
+          node.src = url;
+        }
+        const lightbox = node.closest("[data-v2-message-media]");
+        if (lightbox) lightbox.dataset.v2MessageMedia = url;
+        node.classList.remove("is-loading", "is-error");
+        node.dataset.v2MediaHydrated = "true";
+      } catch (error) {
+        if (!node.isConnected) return;
+        node.classList.remove("is-loading");
+        node.classList.add("is-error");
+        node.title = error.message;
+        if (node instanceof HTMLImageElement) node.alt = "Không thể tải media";
+      }
+    });
+  }
+
+  function messageAttachmentMarkup(message) {
+    const media = messageMedia(message);
+    const mediaId = message.mediaId || "";
+    const hasMedia = Boolean(media || mediaId);
+    const kind = message.kind || (String(message.mediaType).startsWith("video/") || message.mediaType === "video" ? "video" : String(message.mediaType).startsWith("audio/") ? "audio" : media ? "image" : "text");
+    if (message.deleted) return '<div class="hh-message-tombstone">Tin nhắn đã được thu hồi</div>';
+    if (kind === "sticker" && message.sticker) return `<div class="hh-message-sticker" aria-label="Sticker">${esc(message.sticker)}</div>`;
+    if (kind === "gif" && message.gifUrl) return `<button class="hh-message-media" type="button" data-v2-message-media="${esc(message.gifUrl)}"><img src="${esc(message.gifUrl)}" alt="GIF" loading="lazy"></button>`;
+    if (kind === "location" && message.location) {
+      const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(`${message.location.lat},${message.location.lng}`)}`;
+      return `<a class="hh-message-location" href="${mapUrl}" target="_blank" rel="noopener noreferrer"><i>⌖</i><span><strong>${esc(message.location.label || "Vị trí đã chia sẻ")}</strong><small>${Number(message.location.lat).toFixed(5)}, ${Number(message.location.lng).toFixed(5)}</small></span></a>`;
+    }
+    if (kind === "video" && hasMedia) return `<video ${mediaId ? secureMediaAttribute(mediaId) : `src="${esc(media)}"`} controls playsinline preload="metadata"></video>`;
+    if (["audio", "voice"].includes(kind) && hasMedia) return `<div class="hh-message-audio ${kind === "voice" ? "voice" : ""}"><i>${kind === "voice" ? "◉" : "♫"}</i><audio ${mediaId ? secureMediaAttribute(mediaId) : `src="${esc(media)}"`} controls preload="metadata"></audio><small>${kind === "voice" ? "Tin nhắn thoại" : esc(message.file?.name || "Âm thanh")}</small></div>`;
+    if (kind === "file" && hasMedia) return `<a class="hh-message-document" ${mediaId ? secureMediaAttribute(mediaId, true) : `href="${esc(media)}"`} target="_blank" rel="noopener noreferrer" download="${esc(message.file?.name || "hh-attachment")}"><i>${messengerFileIcon(message.file || {})}</i><span><strong>${esc(message.file?.name || "Tệp đính kèm")}</strong><small>${formatFileSize(message.file?.size)} · Nhấn để tải</small></span></a>`;
+    if (kind === "link" && message.attachmentUrl) return `<a class="hh-message-link" href="${esc(message.attachmentUrl)}" target="_blank" rel="noopener noreferrer"><i>↗</i><span><strong>Mở liên kết</strong><small>${esc(message.attachmentUrl)}</small></span></a>`;
+    if (hasMedia) return `<button class="hh-message-media" type="button" ${media ? `data-v2-message-media="${esc(media)}"` : ""}><img ${mediaId ? secureMediaAttribute(mediaId) : `src="${esc(media)}"`} alt="Ảnh trong tin nhắn" loading="lazy"></button>`;
+    return "";
   }
 
   function messageListMarkup(messages = []) {
     const icons = { like: "👍", love: "❤", care: "🤗", haha: "😆", wow: "😮", sad: "😢", angry: "😡" };
     return messages.map((message) => {
-      const media = messageMedia(message);
       const reactions = Object.entries(message.reactions || {}).filter(([, count]) => Number(count) > 0).map(([type, count]) => `<button type="button" data-v2-message-react="${esc(message.id)}" data-reaction-type="${esc(type)}">${icons[type] || "👍"} ${Number(count)}</button>`).join("");
-      return `<article class="hh-message ${message.mine ? "mine" : ""}" data-v2-message="${esc(message.id)}"><div>${avatarMarkup(message.author)}</div><section><header><strong>${esc(message.author?.name || "Thành viên HH")}</strong><time>${dateText(message.createdAt)}</time>${message.edited ? "<small>đã sửa</small>" : ""}</header>${message.replyTo ? `<blockquote><b>${esc(message.replyTo.name)}</b>${esc(message.replyTo.text)}</blockquote>` : ""}${message.text ? `<p>${esc(message.text).replace(/\n/g, "<br>")}</p>` : ""}${media ? message.mediaType === "video" ? `<video src="${esc(media)}" controls playsinline preload="metadata"></video>` : `<button class="hh-message-media" type="button" data-v2-message-media="${esc(media)}"><img src="${esc(media)}" alt="Ảnh trong tin nhắn" loading="lazy"></button>` : ""}<footer><button type="button" data-v2-message-reply="${esc(message.id)}">Trả lời</button><button type="button" data-v2-message-react="${esc(message.id)}" data-reaction-type="like">👍</button><button type="button" data-v2-message-react="${esc(message.id)}" data-reaction-type="love">❤</button>${message.mine ? `<button type="button" data-v2-message-edit="${esc(message.id)}">Sửa</button><button class="danger" type="button" data-v2-message-delete="${esc(message.id)}">Thu hồi</button>` : ""}</footer>${reactions ? `<div class="hh-message-reactions">${reactions}</div>` : ""}</section></article>`;
+      const status = { sent: "Đã gửi", delivered: "Đã nhận", seen: "Đã xem", received: "Đã nhận" }[message.status] || "";
+      const expiry = message.expiresAt ? `<small class="expires">Tự xóa ${dateText(message.expiresAt)}</small>` : "";
+      return `<article class="hh-message ${message.mine ? "mine" : ""} ${message.deleted ? "is-deleted" : ""}" data-v2-message="${esc(message.id)}"><div>${avatarMarkup(message.author)}</div><section><header><strong>${esc(message.author?.name || "Thành viên HH")}</strong><time>${dateText(message.createdAt)}</time>${message.edited ? "<small>đã sửa</small>" : ""}${message.pinned ? '<small class="pinned">◆ Đã ghim</small>' : ""}${message.forwardedFrom ? "<small>Đã chuyển tiếp</small>" : ""}${expiry}</header>${message.replyTo ? `<blockquote><b>${esc(message.replyTo.name)}</b>${esc(message.replyTo.text)}</blockquote>` : ""}${message.text ? `<p>${esc(message.text).replace(/\n/g, "<br>")}</p>` : ""}${messageAttachmentMarkup(message)}${!message.deleted ? `<footer><button type="button" data-v2-message-reply="${esc(message.id)}">↩ Trả lời</button><button type="button" data-v2-message-react="${esc(message.id)}" data-reaction-type="like">👍</button><button type="button" data-v2-message-react="${esc(message.id)}" data-reaction-type="love">❤</button>${message.allowForward ? `<button type="button" data-v2-message-forward="${esc(message.id)}">Chuyển tiếp</button>` : ""}<button type="button" data-v2-message-pin="${esc(message.id)}" data-pinned="${message.pinned ? "true" : "false"}">${message.pinned ? "Bỏ ghim" : "Ghim"}</button>${message.canEdit ? `<button type="button" data-v2-message-edit="${esc(message.id)}">Sửa</button>` : ""}<button type="button" data-v2-message-delete-self="${esc(message.id)}">Xóa với tôi</button>${message.canRecall ? `<button class="danger" type="button" data-v2-message-delete-all="${esc(message.id)}">Thu hồi</button>` : ""}</footer>` : ""}${reactions ? `<div class="hh-message-reactions">${reactions}</div>` : ""}${message.mine && status ? `<div class="hh-message-status">${status}${message.seenCount ? ` · ${Number(message.seenCount)} người xem` : ""}</div>` : ""}</section></article>`;
     }).join("") || empty("◌", "Chưa có tin nhắn", "Hãy là người mở đầu cuộc trò chuyện trong phòng này.");
   }
 
@@ -295,6 +397,13 @@
     } catch (error) { toast(error.message, "error"); }
   }
 
+  function roomAvatarMarkup(room = {}, className = "") {
+    const source = room.avatar || "";
+    const fallback = room.kind === "direct" ? initials(room.name) : room.kind === "group" ? "◆" : "#";
+    const avatar = room.avatarMediaId ? `<img ${secureMediaAttribute(room.avatarMediaId)} alt="">` : source ? `<img src="${esc(source)}" alt="">` : esc(fallback);
+    return `<i class="${esc(`${room.kind || "channel"} ${className}`.trim())}">${avatar}</i>`;
+  }
+
   function renderMessenger(panel, data = messengerData) {
     if (!data) return;
     const oldInput = panel.querySelector("[data-v2-message-input]");
@@ -308,18 +417,22 @@
     const distanceFromBottom = oldList ? oldList.scrollHeight - oldList.scrollTop - oldList.clientHeight : 0;
     const selectedRoom = data.room?.id || messengerRoom;
     messengerRoom = selectedRoom;
-    const directRooms = (data.rooms || []).filter((room) => room.kind === "direct");
-    const groupRooms = (data.rooms || []).filter((room) => room.kind !== "direct");
+    messengerNextCursor = data.pagination?.nextCursor || "";
+    const roomPool = (data.rooms || []).filter((room) => room.id === selectedRoom || Boolean(room.archived) === messengerArchivedOnly);
+    const directRooms = roomPool.filter((room) => room.kind === "direct");
+    const groupRooms = roomPool.filter((room) => room.kind !== "direct");
     const roomButton = (room) => {
-      const trailing = Number(room.unread || 0) > 0 ? `<b class="unread">${Math.min(99, Number(room.unread))}${Number(room.unread) > 99 ? "+" : ""}</b>` : room.kind === "direct" ? `<b class="${messengerOnlineUsers.has(String(room.otherId || "")) ? "online" : "offline"}">${messengerOnlineUsers.has(String(room.otherId || "")) ? "●" : "○"}</b>` : room.visibility === "private" ? "<b>Riêng tư</b>" : "";
-      return `<button class="${room.id === selectedRoom ? "active" : ""}" type="button" data-v2-chat-room="${esc(room.id)}"><i class="${room.kind || "channel"}">${room.avatar ? `<img src="${esc(room.avatar)}" alt="">` : room.kind === "direct" ? esc(initials(room.name)) : room.kind === "group" ? "◆" : "#"}</i><span><strong>${esc(room.name)}</strong><small>${esc(room.description || "Phòng cộng đồng")}</small></span>${trailing}</button>`;
+      const trailing = Number(room.unread || 0) > 0 ? `<b class="unread">${Math.min(99, Number(room.unread))}${Number(room.unread) > 99 ? "+" : ""}</b>` : room.muted ? "<b>◒</b>" : room.kind === "direct" ? `<b class="${messengerOnlineUsers.has(String(room.otherId || "")) ? "online" : "offline"}">${messengerOnlineUsers.has(String(room.otherId || "")) ? "●" : "○"}</b>` : room.visibility === "private" ? "<b>Riêng tư</b>" : "";
+      return `<button class="${room.id === selectedRoom ? "active" : ""}" type="button" data-v2-chat-room="${esc(room.id)}">${roomAvatarMarkup(room)}<span><strong>${esc(room.name)}</strong><small>${esc(room.description || "Phòng cộng đồng")}</small></span>${trailing}</button>`;
     };
-    const currentIcon = data.room?.avatar ? `<img src="${esc(data.room.avatar)}" alt="">` : data.room?.kind === "direct" ? esc(initials(data.room?.name)) : data.room?.kind === "group" ? "◆" : "#";
-    panel.innerHTML = `${head("Messenger HH", "Tin nhắn riêng và nhóm chat được đồng bộ an toàn giữa các tài khoản đã đăng nhập.", `<button class="hh-v2-action" type="button" data-v2-message-refresh>↻ Làm mới</button><button class="hh-v2-action" type="button" data-v2-direct-create>✎ Tin nhắn mới</button><button class="hh-v2-action primary" type="button" data-v2-chat-room-create>＋ Tạo nhóm</button>`, "MESSENGER · LIVE SYNC")}
-      <section class="hh-messenger-shell">
-        <aside class="hh-messenger-rooms"><label><span>⌕</span><input type="search" data-v2-room-search placeholder="Tìm đoạn chat..."></label><nav>${directRooms.length ? `<small>TIN NHẮN RIÊNG</small>${directRooms.map(roomButton).join("")}` : ""}<small>KÊNH & NHÓM CHAT</small>${groupRooms.map(roomButton).join("")}</nav></aside>
-        <main class="hh-messenger-main"><header><i class="hh-message-room-avatar">${currentIcon}</i><div><small>${data.room?.kind === "direct" ? "TIN NHẮN RIÊNG" : data.room?.kind === "group" ? "NHÓM CHAT" : "KÊNH CỘNG ĐỒNG"}</small><h6>${data.room?.kind === "direct" ? "" : "# "}${esc(data.room?.name || selectedRoom)}</h6><p>${esc(data.room?.description || "Trò chuyện trong cộng đồng HH")}</p><p class="hh-message-sync" data-v2-room-presence data-state="${messengerRealtimeState}">${messengerConnectionText()}</p></div><div class="hh-message-head-actions">${data.room?.kind === "group" ? '<button type="button" data-v2-room-settings aria-label="Cài đặt nhóm chat">⚙</button>' : ""}<label><span>⌕</span><input type="search" data-v2-message-search placeholder="Tìm tin nhắn"></label></div></header><div class="hh-message-list" data-v2-message-list>${messageListMarkup(data.messages)}<div class="hh-message-typing" data-v2-typing hidden></div></div><form class="hh-message-composer" data-v2-message-form data-v2-message-drop>${messengerReply ? `<div class="hh-message-replying"><span>Đang trả lời <b>${esc(messengerReply.name)}</b>: ${esc(messengerReply.text)}</span><button type="button" data-v2-message-reply-cancel>×</button></div>` : ""}<div class="hh-message-file-queue" data-v2-message-files hidden></div><textarea data-v2-message-input maxlength="2000" rows="2" placeholder="Nhập tin nhắn, Enter để gửi · Shift+Enter để xuống dòng"></textarea><div><label class="hh-message-file"><input type="file" multiple data-v2-message-file accept="image/*,video/*"><span>＋ Ảnh / Video</span></label><label class="hh-message-file folder"><input type="file" multiple data-v2-message-folder accept="image/*,video/*" webkitdirectory directory><span>▤ Chọn folder</span></label><input type="url" data-v2-message-url placeholder="Hoặc liên kết HTTPS"><button class="primary" type="submit">Gửi</button></div><small data-v2-message-status>Kéo thả tối đa 8 tệp · Đồng bộ ${dateText(data.refreshedAt)}</small></form></main>
-        <aside class="hh-messenger-people"><header><strong>${data.room?.kind === "direct" ? "Thông tin hội thoại" : "Thành viên nhóm"}</strong><span>${(data.participants || []).length}</span></header>${(data.participants || []).map((person) => `<article class="${messengerOnlineUsers.has(String(person.id || "")) ? "online" : ""}" data-v2-participant="${esc(person.id || "")}">${avatarMarkup(person)}<div><strong>${esc(person.name)}</strong><small>${messengerOnlineUsers.has(String(person.id || "")) ? "Đang hoạt động" : person.lastSeenAt ? `Hoạt động ${dateText(person.lastSeenAt)}` : "Thành viên cuộc trò chuyện"}</small></div><i></i></article>`).join("") || "<p>Chưa có thành viên trong phòng.</p>"}<section><strong>Quyền riêng tư</strong><p>Tin nhắn chỉ hiển thị cho thành viên của cuộc trò chuyện. Media riêng tư không được công khai.</p></section></aside>
+    const roomType = data.room?.kind === "direct" ? "TIN NHẮN RIÊNG" : data.room?.kind === "group" ? "NHÓM CHAT" : "KÊNH CỘNG ĐỒNG";
+    const callButtons = ["direct", "group"].includes(data.room?.kind) ? `<button type="button" data-hh-call="audio" data-room="${esc(selectedRoom)}" aria-label="Gọi thoại" title="Gọi thoại">☎</button><button type="button" data-hh-call="video" data-room="${esc(selectedRoom)}" aria-label="Gọi video" title="Gọi video">▣</button>` : "";
+    const extraPreview = messengerComposerExtra.sticker ? `<div class="hh-composer-extra"><b>${esc(messengerComposerExtra.sticker)}</b><span>Sticker</span><button type="button" data-v2-extra-clear>×</button></div>` : messengerComposerExtra.gifUrl ? `<div class="hh-composer-extra"><img src="${esc(messengerComposerExtra.gifUrl)}" alt="GIF"><span>GIF</span><button type="button" data-v2-extra-clear>×</button></div>` : messengerComposerExtra.location ? `<div class="hh-composer-extra"><b>⌖</b><span>${esc(messengerComposerExtra.location.label || "Vị trí hiện tại")}</span><button type="button" data-v2-extra-clear>×</button></div>` : "";
+    panel.innerHTML = `${head("Messenger HH", "Nhắn riêng, nhóm chat, media và cuộc gọi trên một không gian thống nhất.", `<button class="hh-v2-action" type="button" data-v2-message-refresh>↻ Làm mới</button><button class="hh-v2-action" type="button" data-v2-direct-create>✎ Tin nhắn mới</button><button class="hh-v2-action primary" type="button" data-v2-chat-room-create>＋ Tạo nhóm</button>`, "MESSENGER · REALTIME")}
+      <section class="hh-messenger-shell hh-messenger-pro">
+        <aside class="hh-messenger-rooms"><label><span>⌕</span><input type="search" data-v2-room-search placeholder="Tìm đoạn chat..."></label><div class="hh-room-tabs"><button type="button" data-v2-room-tab="active" class="${!messengerArchivedOnly ? "active" : ""}">Đang mở</button><button type="button" data-v2-room-tab="archived" class="${messengerArchivedOnly ? "active" : ""}">Lưu trữ</button></div><nav>${directRooms.length ? `<small>TIN NHẮN RIÊNG</small>${directRooms.map(roomButton).join("")}` : ""}<small>KÊNH & NHÓM CHAT</small>${groupRooms.map(roomButton).join("") || '<p class="hh-room-empty">Chưa có cuộc trò chuyện.</p>'}</nav></aside>
+        <main class="hh-messenger-main"><header>${roomAvatarMarkup(data.room, "hh-message-room-avatar")}<div><small>${roomType}</small><h6>${data.room?.kind === "direct" ? "" : "# "}${esc(data.room?.name || selectedRoom)}</h6><p>${esc(data.room?.description || "Trò chuyện trong cộng đồng HH")}</p><p class="hh-message-sync" data-v2-room-presence data-state="${messengerRealtimeState}">${messengerConnectionText()}</p></div><div class="hh-message-head-actions">${callButtons}${data.room?.kind === "group" ? '<button type="button" data-v2-room-settings aria-label="Quản lý nhóm" title="Quản lý nhóm">⚙</button>' : ""}<button type="button" data-v2-conversation-menu aria-label="Tùy chọn cuộc trò chuyện" title="Tùy chọn">•••</button><label><span>⌕</span><input type="search" data-v2-message-search value="${esc(messageSearch)}" placeholder="Tìm trong cuộc trò chuyện"></label></div></header><div class="hh-message-list" data-v2-message-list>${data.pagination?.hasMore ? '<button class="hh-load-older" type="button" data-v2-message-older>↑ Tải tin nhắn cũ hơn</button>' : ""}${messageListMarkup(data.messages)}<div class="hh-message-typing" data-v2-typing hidden></div></div><form class="hh-message-composer" data-v2-message-form data-v2-message-drop>${messengerReply ? `<div class="hh-message-replying"><span>Đang trả lời <b>${esc(messengerReply.name)}</b>: ${esc(messengerReply.text)}</span><button type="button" data-v2-message-reply-cancel>×</button></div>` : ""}${extraPreview}<div class="hh-message-file-queue" data-v2-message-files hidden></div><div class="hh-composer-row"><div class="hh-composer-tools"><button type="button" data-v2-emoji aria-label="Emoji" title="Emoji">☺</button><button type="button" data-v2-sticker aria-label="Sticker" title="Sticker">◇</button><button type="button" data-v2-gif aria-label="GIF" title="GIF">GIF</button><label title="Chọn tệp"><input type="file" multiple data-v2-message-file accept="image/*,video/*,audio/*,.pdf,.zip,.json,.txt,.csv,.doc,.docx,.xls,.xlsx"><span>＋</span></label><label title="Chọn folder"><input type="file" multiple data-v2-message-folder webkitdirectory directory><span>▤</span></label><button type="button" data-v2-location aria-label="Gửi vị trí" title="Vị trí">⌖</button><button type="button" data-v2-voice aria-label="Ghi âm" title="Tin nhắn thoại">◉</button></div><textarea data-v2-message-input maxlength="2000" rows="2" placeholder="Aa"></textarea><button class="primary hh-send-message" type="submit" aria-label="Gửi">➤</button></div><div class="hh-composer-options"><input type="url" data-v2-message-url placeholder="Dán liên kết HTTPS"><label><span>Tự xóa</span><select data-v2-ephemeral><option value="0">Tắt</option><option value="60" ${Number(data.room?.ephemeralSeconds) === 60 ? "selected" : ""}>1 phút</option><option value="300" ${Number(data.room?.ephemeralSeconds) === 300 ? "selected" : ""}>5 phút</option><option value="3600" ${Number(data.room?.ephemeralSeconds) === 3600 ? "selected" : ""}>1 giờ</option><option value="86400" ${Number(data.room?.ephemeralSeconds) === 86400 ? "selected" : ""}>1 ngày</option><option value="604800" ${Number(data.room?.ephemeralSeconds) === 604800 ? "selected" : ""}>7 ngày</option></select></label><small data-v2-message-status>Đồng bộ ${dateText(data.refreshedAt)}</small></div></form></main>
+        <aside class="hh-messenger-people"><header><strong>${data.room?.kind === "direct" ? "Thông tin hội thoại" : "Thành viên"}</strong><span>${(data.participants || []).length}</span></header>${(data.participants || []).map((person) => `<article class="${messengerOnlineUsers.has(String(person.id || "")) ? "online" : ""}" data-v2-participant="${esc(person.id || "")}">${avatarMarkup(person)}<div><strong>${esc(person.name)}</strong><small>${person.role ? `${person.role === "owner" ? "Chủ nhóm" : person.role === "admin" ? "Quản trị viên" : "Thành viên"} · ` : ""}${messengerOnlineUsers.has(String(person.id || "")) ? "Đang hoạt động" : person.lastSeenAt ? `Hoạt động ${dateText(person.lastSeenAt)}` : "Ngoại tuyến"}</small></div><i></i></article>`).join("") || "<p>Chưa có thành viên trong phòng.</p>"}<section><strong>Bảo mật cuộc trò chuyện</strong><p>HTTPS/WSS mã hóa dữ liệu khi truyền. Mã hóa đầu cuối chưa được bật cho Messenger HH.</p></section><section><strong>Trạng thái</strong><p>${data.policy?.tlsRequired ? "TLS bắt buộc" : "TLS theo máy chủ"} · Chỉnh sửa ${Number(data.policy?.editMinutes || 30)} phút · Thu hồi ${Number(data.policy?.recallMinutes || 60)} phút</p></section></aside>
       </section>`;
     const input = panel.querySelector("[data-v2-message-input]");
     if (input) {
@@ -337,13 +450,14 @@
     const fileInput = messageForm?.querySelector("[data-v2-message-file]");
     const folderInput = messageForm?.querySelector("[data-v2-message-folder]");
     renderMessengerFileQueue(panel);
+    hydrateMessengerMedia(panel);
     updateTypingIndicator(panel);
     updateMessengerConnection(panel);
     ["dragenter", "dragover"].forEach((name) => messageForm?.addEventListener(name, (event) => { event.preventDefault(); messageForm.classList.add("is-dragging"); }));
     ["dragleave", "drop"].forEach((name) => messageForm?.addEventListener(name, (event) => { event.preventDefault(); messageForm.classList.remove("is-dragging"); }));
     messageForm?.addEventListener("drop", (event) => {
       const files = [...(event.dataTransfer?.files || [])];
-      if (!files.length || !fileInput) return toast("Chỉ hỗ trợ kéo thả ảnh hoặc video.", "error");
+      if (!files.length || !fileInput) return toast("Không tìm thấy tệp phù hợp để gửi.", "error");
       setMessengerFiles(files, panel, true);
     });
     fileInput?.addEventListener("change", () => setMessengerFiles(fileInput.files, panel));
@@ -355,10 +469,18 @@
     });
   }
 
-  async function loadMessenger(root, panel = workspace(root), { silent = false } = {}) {
+  async function loadMessenger(root, panel = workspace(root), { silent = false, before = "", search = messengerSearchTerm, append = false } = {}) {
     if (!silent) panel.innerHTML = `<div class="hh-v2-loading"><div><i></i><p>Đang kết nối Messenger HH...</p></div></div>`;
     try {
-      messengerData = await window.HHCommunity.api({ query: `?view=messenger&room=${encodeURIComponent(messengerRoom)}` });
+      const query = new URLSearchParams({ view: "messenger", room: messengerRoom });
+      if (before) query.set("before", before);
+      if (search) query.set("q", search);
+      const result = await window.HHCommunity.api({ query: `?${query}` });
+      if (append && messengerData?.room?.id === result.room?.id) {
+        const merged = [...(result.messages || []), ...(messengerData.messages || [])];
+        result.messages = [...new Map(merged.map((message) => [String(message.id), message])).values()].sort((first, second) => new Date(first.createdAt) - new Date(second.createdAt));
+      }
+      messengerData = result;
       if (currentView !== "messenger" || !panel.isConnected) return;
       const latestMessageId = messengerData.messages?.at?.(-1)?.id || "empty";
       const nextReadKey = `${messengerData.room?.id || messengerRoom}:${latestMessageId}`;
@@ -545,6 +667,12 @@
     panel.innerHTML = `<div class="hh-v2-loading"><div><i></i><p>Đang tải Social Hub...</p></div></div>`;
     updateNav(root);
     try {
+      if (view === "admin") {
+        if (!window.HHCommunityAdmin?.mount) throw new Error("Ứng dụng Community Admin chưa sẵn sàng.");
+        await window.HHCommunityAdmin.mount(panel);
+        updateNav(root);
+        return;
+      }
       await loadSocial();
       if (!root.isConnected || currentView !== view) return;
       if (view === "messenger") { await loadMessenger(root, panel); return; }
@@ -898,6 +1026,116 @@
     }));
   }
 
+  function insertAtCursor(input, value) {
+    if (!input) return;
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? start;
+    input.value = `${input.value.slice(0, start)}${value}${input.value.slice(end)}`;
+    input.focus();
+    input.setSelectionRange(start + value.length, start + value.length);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function openEmojiPicker(root, stickerMode = false) {
+    const values = stickerMode
+      ? ["💖", "✨", "🎉", "🔥", "💯", "🥳", "🤗", "😎", "🚀", "🌈", "☕", "🎵", "👏", "🙏", "💐", "🎁"]
+      : ["😀", "😂", "😍", "🥰", "😊", "😉", "😎", "🤩", "😭", "😡", "👍", "👎", "❤", "🔥", "🎉", "✨", "🙏", "👏", "💯", "🚀", "🌸", "🌈", "☕", "🎵"];
+    const modal = dialog(stickerMode ? "Chọn sticker" : "Chọn emoji", `<section class="wide hh-message-picker">${values.map((value) => `<button type="button" data-v2-picker-value="${esc(value)}">${esc(value)}</button>`).join("")}</section>`, "Đóng");
+    modal.querySelector("footer .primary")?.addEventListener("click", () => { modal.close(); modal.remove(); });
+    modal.querySelectorAll("[data-v2-picker-value]").forEach((button) => button.addEventListener("click", () => {
+      if (stickerMode) { messengerComposerExtra = { sticker: button.dataset.v2PickerValue, gifUrl: "", location: null }; renderMessenger(workspace(root)); }
+      else insertAtCursor(workspace(root).querySelector("[data-v2-message-input]"), button.dataset.v2PickerValue);
+      modal.close(); modal.remove();
+    }));
+  }
+
+  async function toggleVoiceRecording(root) {
+    const panel = workspace(root);
+    const button = panel.querySelector("[data-v2-voice]");
+    if (messengerRecorder?.state === "recording") {
+      messengerRecorder.stop();
+      if (button) { button.classList.remove("recording"); button.textContent = "◉"; }
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return toast("Trình duyệt này chưa hỗ trợ ghi âm.", "error");
+    try {
+      messengerRecorderStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false });
+      const preferred = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"].find((type) => MediaRecorder.isTypeSupported(type));
+      messengerRecorderChunks = [];
+      messengerRecorder = new MediaRecorder(messengerRecorderStream, preferred ? { mimeType: preferred } : undefined);
+      messengerRecorder.addEventListener("dataavailable", (event) => { if (event.data?.size) messengerRecorderChunks.push(event.data); });
+      messengerRecorder.addEventListener("stop", () => {
+        const type = messengerRecorder.mimeType || "audio/webm";
+        const blob = new Blob(messengerRecorderChunks, { type });
+        const extension = type.includes("ogg") ? "ogg" : "webm";
+        const file = new File([blob], `hh-voice-${Date.now()}.${extension}`, { type, lastModified: Date.now() });
+        setMessengerFiles([file], panel, true);
+        messengerRecorderStream?.getTracks().forEach((track) => track.stop());
+        messengerRecorderStream = null;
+        messengerRecorder = null;
+        toast("Tin nhắn thoại đã sẵn sàng để gửi.");
+      }, { once: true });
+      messengerRecorder.start(250);
+      if (button) { button.classList.add("recording"); button.textContent = "■"; }
+      toast("Đang ghi âm. Nhấn lại để dừng.");
+    } catch (error) {
+      messengerRecorderStream?.getTracks().forEach((track) => track.stop());
+      messengerRecorderStream = null;
+      toast(error.name === "NotAllowedError" ? "Bạn chưa cấp quyền microphone." : "Không thể bắt đầu ghi âm.", "error");
+    }
+  }
+
+  function requestMessengerLocation(root) {
+    if (!navigator.geolocation) return toast("Thiết bị không hỗ trợ chia sẻ vị trí.", "error");
+    toast("Đang lấy vị trí theo quyền bạn cấp...");
+    navigator.geolocation.getCurrentPosition((position) => {
+      messengerComposerExtra = { sticker: "", gifUrl: "", location: { lat: position.coords.latitude, lng: position.coords.longitude, label: "Vị trí hiện tại" } };
+      renderMessenger(workspace(root));
+    }, (error) => toast(error.code === 1 ? "Bạn chưa cấp quyền vị trí." : "Không thể xác định vị trí lúc này.", "error"), { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+  }
+
+  function showConversationMenu(root) {
+    const room = messengerData?.room || {};
+    const buttons = [
+      ["unread", "Đánh dấu chưa đọc"],
+      ["mute", room.muted ? "Bật thông báo" : "Tắt thông báo"],
+      ["archive", room.archived ? "Bỏ lưu trữ" : "Lưu trữ cuộc trò chuyện"],
+      ["clear", "Xóa lịch sử ở phía tôi"],
+      ...(room.kind === "direct" ? [["block", "Chặn người gửi"]] : []),
+      ["report", "Báo cáo cuộc trò chuyện"]
+    ];
+    const modal = dialog("Tùy chọn cuộc trò chuyện", `<section class="wide hh-conversation-menu">${buttons.map(([id, label]) => `<button type="button" data-v2-conversation-action="${id}" class="${["clear", "block", "report"].includes(id) ? "danger" : ""}">${esc(label)}</button>`).join("")}</section>`, "Đóng");
+    modal.querySelector("footer .primary")?.addEventListener("click", () => { modal.close(); modal.remove(); });
+    modal.querySelectorAll("[data-v2-conversation-action]").forEach((button) => button.addEventListener("click", async () => {
+      const mode = button.dataset.v2ConversationAction;
+      try {
+        if (mode === "report") {
+          modal.close(); modal.remove();
+          const report = dialog("Báo cáo cuộc trò chuyện", '<label class="wide"><span>Lý do</span><textarea name="reason" required minlength="5" maxlength="800" placeholder="Mô tả vấn đề, không cần gửi nội dung tin nhắn riêng..."></textarea></label>', "Gửi báo cáo");
+          report.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const reason = new FormData(event.currentTarget).get("reason"); await window.HHCommunity.api({ method: "POST", body: { action: "message:conversation:report", room: messengerRoom, reason } }); report.close(); report.remove(); toast("Báo cáo đã được gửi, không kèm nội dung tin nhắn riêng."); });
+          return;
+        }
+        if (mode === "block") await window.HHCommunity.api({ method: "POST", body: { action: "message:conversation:block", room: messengerRoom, active: true } });
+        else await window.HHCommunity.api({ method: "POST", body: { action: "message:conversation:preference", room: messengerRoom, markedUnread: mode === "unread" ? true : room.markedUnread, muted: mode === "mute" ? !room.muted : room.muted, archived: mode === "archive" ? !room.archived : room.archived, deleteForMe: mode === "clear" } });
+        modal.close(); modal.remove();
+        if (mode === "clear") messengerData.messages = [];
+        await loadMessenger(root, workspace(root), { silent: true });
+        toast(mode === "block" ? "Đã chặn người gửi." : "Đã cập nhật cuộc trò chuyện.");
+      } catch (error) { toast(error.message, "error"); }
+    }));
+  }
+
+  function forwardMessage(root, messageId) {
+    const rooms = (messengerData?.rooms || []).filter((room) => room.id !== messengerRoom);
+    const modal = dialog("Chuyển tiếp tin nhắn", `<label class="wide"><span>Cuộc trò chuyện đích</span><select name="targetRoom" required>${rooms.map((room) => `<option value="${esc(room.id)}">${esc(room.name)}</option>`).join("")}</select></label>`, "Chuyển tiếp");
+    modal.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const targetRoom = new FormData(event.currentTarget).get("targetRoom");
+      try { await window.HHCommunity.api({ method: "POST", body: { action: "message:forward", room: messengerRoom, messageId, targetRoom } }); signalMessengerChange("forward", messageId); modal.close(); modal.remove(); toast("Đã chuyển tiếp tin nhắn."); }
+      catch (error) { toast(error.message, "error"); }
+    });
+  }
+
   document.addEventListener("click", async (event) => {
     const root = event.target.closest("[data-community-center]");
     if (!root) return;
@@ -944,7 +1182,23 @@
     if (event.target.closest("[data-v2-export-activity]")) { const blob = new Blob([JSON.stringify(socialData?.activity || [], null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `hh-activity-${new Date().toISOString().slice(0, 10)}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); return; }
     if (event.target.closest("[data-v2-save-privacy]")) { $(root, "[data-v2-privacy-form]")?.requestSubmit(); return; }
     if (event.target.closest("[data-v2-message-refresh]")) { await loadMessenger(root, workspace(root)); return; }
-    const room = event.target.closest("[data-v2-chat-room]"); if (room) { messengerRoom = room.dataset.v2ChatRoom || "general"; messengerReply = null; messengerFiles = []; emitMessengerTyping(false); await loadMessenger(root, workspace(root)); return; }
+    const roomTab = event.target.closest("[data-v2-room-tab]"); if (roomTab) { messengerArchivedOnly = roomTab.dataset.v2RoomTab === "archived"; renderMessenger(workspace(root)); return; }
+    if (event.target.closest("[data-v2-conversation-menu]")) { showConversationMenu(root); return; }
+    if (event.target.closest("[data-v2-message-older]")) {
+      if (!messengerNextCursor || messengerLoadingOlder) return;
+      messengerLoadingOlder = true;
+      try { await loadMessenger(root, workspace(root), { silent: true, before: messengerNextCursor, append: true }); }
+      catch (error) { toast(error.message, "error"); }
+      finally { messengerLoadingOlder = false; }
+      return;
+    }
+    if (event.target.closest("[data-v2-emoji]")) { openEmojiPicker(root); return; }
+    if (event.target.closest("[data-v2-sticker]")) { openEmojiPicker(root, true); return; }
+    if (event.target.closest("[data-v2-gif]")) { const modal = dialog("Gửi GIF", '<label class="wide"><span>Liên kết GIF HTTPS</span><input name="gifUrl" type="url" required placeholder="https://..."></label>', "Chọn GIF"); modal.querySelector("form").addEventListener("submit", (submitEvent) => { submitEvent.preventDefault(); messengerComposerExtra = { sticker: "", gifUrl: String(new FormData(submitEvent.currentTarget).get("gifUrl") || "").trim(), location: null }; modal.close(); modal.remove(); renderMessenger(workspace(root)); }); return; }
+    if (event.target.closest("[data-v2-location]")) { requestMessengerLocation(root); return; }
+    if (event.target.closest("[data-v2-voice]")) { await toggleVoiceRecording(root); return; }
+    if (event.target.closest("[data-v2-extra-clear]")) { messengerComposerExtra = { sticker: "", gifUrl: "", location: null }; renderMessenger(workspace(root)); return; }
+    const room = event.target.closest("[data-v2-chat-room]"); if (room) { messengerRoom = room.dataset.v2ChatRoom || "general"; messengerReply = null; messengerFiles = []; messengerComposerExtra = { sticker: "", gifUrl: "", location: null }; messengerSearchTerm = ""; messengerNextCursor = ""; emitMessengerTyping(false); await loadMessenger(root, workspace(root)); return; }
     if (event.target.closest("[data-v2-direct-create]")) {
       const modal = dialog("Tin nhắn mới", messengerMemberChoices([], true), "Mở cuộc trò chuyện");
       modal.querySelector("form").addEventListener("submit", async (submitEvent) => {
@@ -957,15 +1211,18 @@
       return;
     }
     if (event.target.closest("[data-v2-chat-room-create]")) {
-      const modal = dialog("Tạo nhóm chat", `<label><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="80" placeholder="Ví dụ: Nhóm thiết kế HH"></label><label><span>Quyền truy cập</span><select name="visibility"><option value="private">Riêng tư</option><option value="public">Công khai</option></select></label><label class="wide"><span>Mô tả</span><textarea name="description" maxlength="240" placeholder="Chủ đề và mục đích của nhóm..."></textarea></label>${messengerMemberChoices()}`, "Tạo nhóm chat");
+      const modal = dialog("Tạo nhóm chat", `<label><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="80" placeholder="Ví dụ: Nhóm thiết kế HH"></label><label><span>Quyền truy cập</span><select name="visibility"><option value="private">Riêng tư</option><option value="public">Công khai</option></select></label><label class="wide"><span>Ảnh đại diện nhóm</span><input name="avatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"></label><label class="wide"><span>Mô tả</span><textarea name="description" maxlength="240" placeholder="Chủ đề và mục đích của nhóm..."></textarea></label>${messengerMemberChoices()}`, "Tạo nhóm chat");
       modal.querySelector("form").addEventListener("submit", async (submitEvent) => {
         submitEvent.preventDefault();
         const data = new FormData(submitEvent.currentTarget);
         const values = Object.fromEntries(data);
         values.memberIds = data.getAll("memberIds");
+        const avatarFile = data.get("avatarFile");
+        delete values.avatarFile;
         const button = submitEvent.currentTarget.querySelector('[type="submit"]');
         button.disabled = true;
         try {
+          if (avatarFile?.size) values.avatarMediaId = (await window.HHCommunity.uploadMedia(avatarFile))?.media?.id || "";
           const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:room:create", ...values } });
           messengerRoom = result.room.id; messengerFiles = []; modal.close(); modal.remove();
           await loadMessenger(root, workspace(root)); toast("Nhóm chat đã được tạo.");
@@ -976,14 +1233,19 @@
     if (event.target.closest("[data-v2-room-settings]")) {
       const roomData = messengerData?.room;
       if (!roomData || roomData.kind !== "group") return;
-      if (!roomData.owned) {
-        const modal = dialog("Thông tin nhóm chat", `<section class="wide hh-v2-confirm"><i>◆</i><p>${esc(roomData.name)} · ${Number(roomData.memberCount || 0)} thành viên</p><button class="hh-v2-action danger" type="button" data-v2-room-leave>Rời nhóm chat</button></section>`, "Đóng");
+      if (!roomData.canManage) {
+        const modal = dialog("Thông tin nhóm chat", `<section class="wide hh-v2-confirm"><i>◆</i><p>${esc(roomData.name)} · ${Number(roomData.memberCount || 0)} thành viên</p><p>Vai trò của bạn: ${roomData.role === "admin" ? "Quản trị viên" : "Thành viên"}</p><button class="hh-v2-action danger" type="button" data-v2-room-leave>Rời nhóm chat</button></section>`, "Đóng");
         modal.querySelector("footer .primary")?.addEventListener("click", () => { modal.close(); modal.remove(); });
         modal.querySelector("[data-v2-room-leave]")?.addEventListener("click", async () => { try { await window.HHCommunity.api({ method: "POST", body: { action: "message:room:leave", room: messengerRoom } }); messengerRoom = "general"; modal.close(); modal.remove(); await loadMessenger(root, workspace(root)); toast("Bạn đã rời nhóm chat."); } catch (error) { toast(error.message, "error"); } });
         return;
       }
-      const modal = dialog("Quản lý nhóm chat", `<label><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="80" value="${esc(roomData.name)}"></label><label><span>Quyền truy cập</span><select name="visibility"><option value="private" ${roomData.visibility === "private" ? "selected" : ""}>Riêng tư</option><option value="public" ${roomData.visibility === "public" ? "selected" : ""}>Công khai</option></select></label><label class="wide"><span>Mô tả</span><textarea name="description" maxlength="240">${esc(roomData.description || "")}</textarea></label>${messengerMemberChoices(roomData.memberIds || [])}`, "Lưu nhóm chat");
-      modal.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); const data = new FormData(submitEvent.currentTarget); const values = Object.fromEntries(data); values.memberIds = data.getAll("memberIds"); try { await window.HHCommunity.api({ method: "POST", body: { action: "message:room:update", room: messengerRoom, ...values } }); signalMessengerChange("room:update"); modal.close(); modal.remove(); await loadMessenger(root, workspace(root)); toast("Đã cập nhật nhóm chat."); } catch (error) { toast(error.message, "error"); } });
+      const viewerId = String(authUser().id || "");
+      const memberAdmin = (messengerData?.participants || []).filter((person) => String(person.id) !== viewerId).map((person) => `<article data-v2-room-member="${esc(person.id)}">${avatarMarkup(person)}<span><strong>${esc(person.name)}</strong><small>${person.role === "admin" ? "Quản trị viên" : "Thành viên"}</small></span>${roomData.role === "owner" ? `<button type="button" data-v2-room-role="${esc(person.id)}" data-role="${person.role === "admin" ? "member" : "admin"}">${person.role === "admin" ? "Hạ quyền" : "Đặt QTV"}</button><button type="button" data-v2-room-transfer="${esc(person.id)}">Chuyển chủ</button>` : ""}<button class="danger" type="button" data-v2-room-remove="${esc(person.id)}">Xóa</button></article>`).join("");
+      const modal = dialog("Quản lý nhóm chat", `<label><span>Tên nhóm</span><input name="name" required minlength="3" maxlength="80" value="${esc(roomData.name)}"></label><label><span>Quyền truy cập</span><select name="visibility"><option value="private" ${roomData.visibility === "private" ? "selected" : ""}>Riêng tư</option><option value="public" ${roomData.visibility === "public" ? "selected" : ""}>Công khai</option></select></label><label class="wide"><span>Đổi ảnh đại diện</span><input name="avatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"></label><label class="wide"><span>Mô tả</span><textarea name="description" maxlength="240">${esc(roomData.description || "")}</textarea></label>${messengerMemberChoices(roomData.memberIds || [])}<section class="wide hh-room-member-admin"><header><strong>Vai trò và thành viên</strong><small>${Number(roomData.memberCount || 0)}/50</small></header>${memberAdmin || "<p>Chưa có thành viên khác.</p>"}</section>`, "Lưu nhóm chat");
+      modal.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); const data = new FormData(submitEvent.currentTarget); const values = Object.fromEntries(data); const avatarFile = data.get("avatarFile"); delete values.avatarFile; values.memberIds = [...new Set([...data.getAll("memberIds"), ...(roomData.memberIds || [])].map(String))]; try { if (avatarFile?.size) values.avatarMediaId = (await window.HHCommunity.uploadMedia(avatarFile))?.media?.id || ""; await window.HHCommunity.api({ method: "POST", body: { action: "message:room:update", room: messengerRoom, ...values } }); signalMessengerChange("room:update"); modal.close(); modal.remove(); await loadMessenger(root, workspace(root)); toast("Đã cập nhật nhóm chat."); } catch (error) { toast(error.message, "error"); } });
+      modal.querySelectorAll("[data-v2-room-role]").forEach((button) => button.addEventListener("click", async () => { try { await window.HHCommunity.api({ method: "POST", body: { action: "message:room:role", room: messengerRoom, targetId: button.dataset.v2RoomRole, role: button.dataset.role } }); modal.close(); modal.remove(); await loadMessenger(root, workspace(root)); toast("Đã cập nhật quyền thành viên."); } catch (error) { toast(error.message, "error"); } }));
+      modal.querySelectorAll("[data-v2-room-remove]").forEach((button) => button.addEventListener("click", async () => { try { await window.HHCommunity.api({ method: "POST", body: { action: "message:room:member", room: messengerRoom, targetId: button.dataset.v2RoomRemove, mode: "remove" } }); modal.close(); modal.remove(); await loadMessenger(root, workspace(root)); toast("Đã xóa thành viên khỏi nhóm."); } catch (error) { toast(error.message, "error"); } }));
+      modal.querySelectorAll("[data-v2-room-transfer]").forEach((button) => button.addEventListener("click", async () => { try { await window.HHCommunity.api({ method: "POST", body: { action: "message:room:transfer", room: messengerRoom, targetId: button.dataset.v2RoomTransfer } }); modal.close(); modal.remove(); await loadMessenger(root, workspace(root)); toast("Đã chuyển quyền chủ nhóm."); } catch (error) { toast(error.message, "error"); } }));
       return;
     }
     const removeMessageFile = event.target.closest("[data-v2-message-file-remove]");
@@ -995,8 +1257,11 @@
     const messageReplyButton = event.target.closest("[data-v2-message-reply]"); if (messageReplyButton) { const message = (messengerData?.messages || []).find((item) => String(item.id) === messageReplyButton.dataset.v2MessageReply); if (message) { messengerReply = { id: message.id, name: message.author?.name || "Thành viên HH", text: message.text || "Media" }; renderMessenger(workspace(root)); workspace(root).querySelector("[data-v2-message-input]")?.focus(); } return; }
     if (event.target.closest("[data-v2-message-reply-cancel]")) { messengerReply = null; renderMessenger(workspace(root)); return; }
     const messageReact = event.target.closest("[data-v2-message-react]"); if (messageReact) { messageReact.disabled = true; try { const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:react", room: messengerRoom, messageId: messageReact.dataset.v2MessageReact, type: messageReact.dataset.reactionType || "like" } }); signalMessengerChange("react", result.message?.id || messageReact.dataset.v2MessageReact); await loadMessenger(root, workspace(root), { silent: true }); } catch (error) { toast(error.message, "error"); messageReact.disabled = false; } return; }
+    const messageForward = event.target.closest("[data-v2-message-forward]"); if (messageForward) { forwardMessage(root, messageForward.dataset.v2MessageForward); return; }
+    const messagePin = event.target.closest("[data-v2-message-pin]"); if (messagePin) { try { const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:pin", room: messengerRoom, messageId: messagePin.dataset.v2MessagePin, pinned: messagePin.dataset.pinned !== "true" } }); signalMessengerChange("pin", result.message?.id || messagePin.dataset.v2MessagePin); await loadMessenger(root, workspace(root), { silent: true }); } catch (error) { toast(error.message, "error"); } return; }
     const messageEdit = event.target.closest("[data-v2-message-edit]"); if (messageEdit) { const message = (messengerData?.messages || []).find((item) => String(item.id) === messageEdit.dataset.v2MessageEdit); if (!message) return; const modal = dialog("Sửa tin nhắn", `<label class="wide"><span>Nội dung</span><textarea name="text" required maxlength="2000">${esc(message.text || "")}</textarea></label>`, "Lưu tin nhắn"); modal.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); const text = String(new FormData(submitEvent.currentTarget).get("text") || "").trim(); if (!text) return; try { const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:edit", room: messengerRoom, messageId: message.id, text } }); signalMessengerChange("edit", result.message?.id || message.id); modal.close(); modal.remove(); await loadMessenger(root, workspace(root), { silent: true }); toast("Đã sửa tin nhắn."); } catch (error) { toast(error.message, "error"); } }); return; }
-    const messageDelete = event.target.closest("[data-v2-message-delete]"); if (messageDelete) { const confirm = dialog("Thu hồi tin nhắn?", '<section class="wide hh-v2-confirm"><i>!</i><p>Tin nhắn sẽ bị xóa khỏi phòng trò chuyện đối với mọi thành viên.</p></section>', "Thu hồi"); confirm.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); try { const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:delete", room: messengerRoom, messageId: messageDelete.dataset.v2MessageDelete } }); signalMessengerChange("delete", result.message?.id || messageDelete.dataset.v2MessageDelete); confirm.close(); confirm.remove(); await loadMessenger(root, workspace(root), { silent: true }); toast("Đã thu hồi tin nhắn."); } catch (error) { toast(error.message, "error"); } }); return; }
+    const messageDeleteSelf = event.target.closest("[data-v2-message-delete-self]"); if (messageDeleteSelf) { try { await window.HHCommunity.api({ method: "POST", body: { action: "message:delete:self", room: messengerRoom, messageId: messageDeleteSelf.dataset.v2MessageDeleteSelf } }); await loadMessenger(root, workspace(root), { silent: true }); toast("Tin nhắn đã được xóa ở phía bạn."); } catch (error) { toast(error.message, "error"); } return; }
+    const messageDeleteAll = event.target.closest("[data-v2-message-delete-all]"); if (messageDeleteAll) { const confirm = dialog("Thu hồi với mọi người?", '<section class="wide hh-v2-confirm"><i>!</i><p>Nội dung sẽ được thay bằng thông báo thu hồi trong cuộc trò chuyện.</p></section>', "Thu hồi"); confirm.querySelector("form").addEventListener("submit", async (submitEvent) => { submitEvent.preventDefault(); try { const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:delete:all", room: messengerRoom, messageId: messageDeleteAll.dataset.v2MessageDeleteAll } }); signalMessengerChange("delete", result.message?.id || messageDeleteAll.dataset.v2MessageDeleteAll); confirm.close(); confirm.remove(); await loadMessenger(root, workspace(root), { silent: true }); toast("Đã thu hồi tin nhắn với mọi người."); } catch (error) { toast(error.message, "error"); } }); return; }
     const messageMediaButton = event.target.closest("[data-v2-message-media]"); if (messageMediaButton) { const modal = dialog("Media trong Messenger", `<section class="wide hh-message-lightbox"><img src="${esc(messageMediaButton.dataset.v2MessageMedia)}" alt="Ảnh trong tin nhắn"></section>`, "Đóng"); modal.querySelector("footer .primary")?.addEventListener("click", () => { modal.close(); modal.remove(); }); return; }
     const commentReact = event.target.closest("[data-v2-comment-react]"); if (commentReact) { const postId = commentReact.closest("[data-post-id]")?.dataset.postId; const post = (communityState().remotePosts || []).find((item) => String(item.id) === postId); const comment = post?.comments?.find((item) => String(item.id) === commentReact.dataset.v2CommentReact); await window.HHCommunity.mutate({ action: "comment:react", postId, commentId: commentReact.dataset.v2CommentReact, type: comment?.viewerReaction ? "remove" : "like" }); return; }
     const commentMore = event.target.closest("[data-v2-comment-more]"); if (commentMore) { const postId = commentMore.closest("[data-post-id]")?.dataset.postId; const post = (communityState().remotePosts || []).find((item) => String(item.id) === String(postId)); const comment = post?.comments?.find((item) => String(item.id) === commentMore.dataset.v2CommentMore); if (!post || !comment) return; const actions = `${comment.owned ? '<button class="hh-v2-action" type="button" data-v2-comment-action="edit">Sửa bình luận</button><button class="hh-v2-action danger" type="button" data-v2-comment-action="delete">Xóa bình luận</button>' : '<button class="hh-v2-action danger" type="button" data-v2-comment-action="report">Báo cáo bình luận</button>'}${post.owned ? '<button class="hh-v2-action" type="button" data-v2-comment-action="pin">Ghim / bỏ ghim</button>' : ''}`; const modal = dialog("Tùy chọn bình luận", actions, "Đóng"); modal.querySelector("footer .primary")?.remove(); modal.querySelectorAll("[data-v2-comment-action]").forEach((button) => button.addEventListener("click", async () => { const action = button.dataset.v2CommentAction; try { if (action === "edit") { modal.close(); modal.remove(); const editor = dialog("Sửa bình luận", `<label class="wide"><span>Nội dung</span><textarea name="text" required maxlength="1200">${esc(comment.text || "")}</textarea></label>`, "Lưu bình luận"); editor.querySelector("form").addEventListener("submit", async (editEvent) => { editEvent.preventDefault(); const text = String(new FormData(editEvent.currentTarget).get("text") || "").trim(); if (!text) return; await window.HHCommunity.mutate({ action: "comment:edit", postId, commentId: comment.id, text }); editor.close(); editor.remove(); decoratePosts(root); toast("Đã sửa bình luận."); }); return; } await window.HHCommunity.mutate({ action: `comment:${action}`, postId, commentId: comment.id, reason: "Bình luận không phù hợp" }); modal.close(); modal.remove(); decoratePosts(root); toast("Đã cập nhật bình luận."); } catch (error) { toast(error.message, "error"); } })); return; }
@@ -1011,7 +1276,9 @@
       const urlInput = messageForm.querySelector("[data-v2-message-url]");
       const attachmentUrl = urlInput?.value.trim() || "";
       const text = input?.value.trim() || "";
-      if (!text && !selectedFiles.length && !attachmentUrl) { input?.focus(); return; }
+      const ephemeralSeconds = Number(messageForm.querySelector("[data-v2-ephemeral]")?.value || 0);
+      const extra = { ...messengerComposerExtra };
+      if (!text && !selectedFiles.length && !attachmentUrl && !extra.sticker && !extra.gifUrl && !extra.location) { input?.focus(); return; }
       const button = messageForm.querySelector('[type="submit"]');
       const status = messageForm.querySelector("[data-v2-message-status]");
       clearInterval(messengerTimer);
@@ -1022,20 +1289,26 @@
         if (selectedFiles.length) {
           for (let index = 0; index < selectedFiles.length; index += 1) {
             status.textContent = `Đang gửi tệp ${index + 1}/${selectedFiles.length}: ${selectedFiles[index].name}`;
-            const uploaded = await window.HHCommunity.uploadMedia(selectedFiles[index]);
-            const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, text: index === 0 ? text : "", mediaId: uploaded?.media?.id || "", replyToId: index === 0 ? messengerReply?.id || "" : "" } });
+            const voice = selectedFiles[index].name.startsWith("hh-voice-");
+            const uploaded = await window.HHCommunity.uploadMedia(selectedFiles[index], voice ? "voice" : "");
+            const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, text: index === 0 ? text : "", mediaId: uploaded?.media?.id || "", kind: voice ? "voice" : uploaded?.media?.type || "file", replyToId: index === 0 ? messengerReply?.id || "" : "", ephemeralSeconds } });
             if (result.message) created.push(result.message);
           }
           if (attachmentUrl) {
-            const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, attachmentUrl } });
+            const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, attachmentUrl, ephemeralSeconds } });
+            if (result.message) created.push(result.message);
+          }
+          if (extra.sticker || extra.gifUrl || extra.location) {
+            const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, sticker: extra.sticker, gifUrl: extra.gifUrl, location: extra.location, ephemeralSeconds } });
             if (result.message) created.push(result.message);
           }
         } else {
-          const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, text, attachmentUrl, replyToId: messengerReply?.id || "" } });
+          const result = await window.HHCommunity.api({ method: "POST", body: { action: "message:create", room: messengerRoom, text, attachmentUrl, sticker: extra.sticker, gifUrl: extra.gifUrl, location: extra.location, replyToId: messengerReply?.id || "", ephemeralSeconds } });
           if (result.message) created.push(result.message);
         }
         messengerFiles = [];
         messengerReply = null;
+        messengerComposerExtra = { sticker: "", gifUrl: "", location: null };
         if (input) input.value = "";
         if (urlInput) urlInput.value = "";
         emitMessengerTyping(false);
@@ -1103,7 +1376,16 @@
       return;
     }
     const messengerSearch = event.target.closest("[data-v2-room-search], [data-v2-message-search]");
-    if (messengerSearch) { filterMessenger(messengerSearch.closest("[data-social-v2-workspace]")); return; }
+    if (messengerSearch) {
+      const panel = messengerSearch.closest("[data-social-v2-workspace]");
+      filterMessenger(panel);
+      if (messengerSearch.matches("[data-v2-message-search]")) {
+        messengerSearchTerm = messengerSearch.value.trim();
+        clearTimeout(messengerSearchTimer);
+        messengerSearchTimer = setTimeout(() => { const root = messengerRoot(); if (root && currentView === "messenger") loadMessenger(root, panel, { silent: true, search: messengerSearchTerm }).catch((error) => toast(error.message, "error")); }, 420);
+      }
+      return;
+    }
     const search = event.target.closest("[data-v2-group-search]");
     if (!search) return;
     const term = search.value.trim().toLocaleLowerCase("vi");

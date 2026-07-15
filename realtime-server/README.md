@@ -4,6 +4,7 @@ Backend rieng cho:
 
 - Socket.io theo doi nguoi dang online theo consent.
 - Messenger HH realtime: phong rieng, nhom, hien dien, dang nhap va dong bo thay doi.
+- WebRTC signaling cho goi thoai, goi video, goi nhom va chia se man hinh.
 - Dang ky/dang nhap bang email + password.
 - Dang nhap Google/Facebook OAuth khi co Client ID/Secret.
 - Luu user/session/event vao MongoDB.
@@ -22,6 +23,9 @@ Quan trong:
 - `FRONTEND_URL`: `https://hoangdaika13.github.io`.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: tao trong Google Cloud Console.
 - `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`: tao trong Meta for Developers.
+- `STUN_URLS`: danh sach STUN, mac dinh dung Google STUN.
+- `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL`: TURN production de cuoc goi hoat dong qua NAT/firewall.
+- `MAX_CALL_PARTICIPANTS`: gioi han cuoc goi nhom, mac dinh 8.
 
 ## Chay local
 
@@ -42,6 +46,8 @@ window.HH_SOCKET_URL = "https://your-persistent-node-server.example.com";
 
 `HH_SOCKET_URL` phai la may chu Node chay lien tuc (Render, Railway hoac VPS), khong phai Vercel Functions. Neu de trong, Messenger van dong bo bang REST polling de khong mat tin nhan.
 May chu Socket va Vercel API phai dung cung `JWT_SECRET`, `MONGODB_URI` va `MONGODB_DB` de xac minh dung tai khoan va quyen vao phong.
+
+Cuoc goi dung WebRTC ngang hang va signaling Socket.io. HTTPS/WSS cung cap ma hoa khi truyen. Module ma hoa dau cuoi rieng chua duoc trien khai, vi vay giao dien khong duoc tuyen bo E2EE.
 
 Nguoi dung phai dong y hoac dang nhap thi frontend moi gui thong tin truy cap.
 

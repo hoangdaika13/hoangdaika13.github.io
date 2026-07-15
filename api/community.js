@@ -4,8 +4,20 @@ const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/plat
 
 const REACTIONS = new Set(["like", "love", "care", "haha", "wow", "sad", "angry"]);
 const TOPICS = new Set(["Thông báo", "AI & Công nghệ", "Website", "Âm nhạc", "Góp ý", "Đời sống"]);
-const MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm", "video/quicktime"]);
+const MEDIA_TYPES = new Set([
+  "image/jpeg", "image/png", "image/webp", "image/gif", "image/avif",
+  "video/mp4", "video/webm", "video/quicktime",
+  "audio/mpeg", "audio/mp4", "audio/ogg", "audio/webm", "audio/wav", "audio/x-wav",
+  "application/pdf", "application/zip", "application/x-zip-compressed", "application/json",
+  "text/plain", "text/csv",
+  "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+]);
 const MAX_MEDIA_BYTES = 2.5 * 1024 * 1024;
+const MESSAGE_EDIT_MINUTES = Math.max(1, Math.min(1440, Number(process.env.MESSAGE_EDIT_MINUTES || 30)));
+const MESSAGE_RECALL_MINUTES = Math.max(1, Math.min(10080, Number(process.env.MESSAGE_RECALL_MINUTES || 60)));
+const MESSAGE_PAGE_SIZE = 40;
+const EPHEMERAL_SECONDS = new Set([0, 60, 300, 3600, 86400, 604800]);
 const DEFAULT_CHAT_ROOMS = [
   { id: "general", name: "Chung", description: "Trò chuyện và cập nhật chung của cộng đồng." },
   { id: "creator", name: "Sáng tạo", description: "Chia sẻ ý tưởng, hình ảnh, video và quy trình sáng tạo." },
@@ -49,27 +61,75 @@ function directRoomSlug(firstId, secondId) {
   return `dm-${createHash("sha256").update(pair).digest("hex").slice(0, 32)}`;
 }
 
-function presentMessage(message, viewerId) {
+function escapeRegex(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function attachmentKind(mimeType, requested = "") {
+  if (requested === "voice" && String(mimeType).startsWith("audio/")) return "voice";
+  if (String(mimeType).startsWith("image/")) return "image";
+  if (String(mimeType).startsWith("video/")) return "video";
+  if (String(mimeType).startsWith("audio/")) return "audio";
+  return mimeType ? "file" : "";
+}
+
+function roomRole(room, userId) {
+  if (!room || !userId) return "";
+  if (String(room.ownerId) === String(userId)) return "owner";
+  return clean((room.roles || []).find((entry) => String(entry.userId) === String(userId))?.role || "member", 30);
+}
+
+function canManageRoom(room, userId) {
+  return ["owner", "admin"].includes(roomRole(room, userId));
+}
+
+async function resolveChatRoom(chatRooms, user, slug) {
+  const defaultRoom = DEFAULT_CHAT_ROOMS.find((room) => room.id === slug);
+  if (defaultRoom) return { ...defaultRoom, kind: "channel", visibility: "public", memberIds: [], roles: [] };
+  return chatRooms.findOne({ slug, $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }] });
+}
+
+function presentMessage(message, viewerId, options = {}) {
   const reactions = (message.reactions || []).reduce((result, item) => {
     const type = REACTIONS.has(item.type) ? item.type : "like";
     result[type] = (result[type] || 0) + 1;
     return result;
   }, {});
   const mine = String(message.userId || "") === String(viewerId || "");
+  const deleted = Boolean(message.deletedAt);
+  const receiptRows = options.receipts || [];
+  const otherReceipts = receiptRows.filter((item) => String(item.userId || "") !== String(viewerId || ""));
+  const seenCount = mine ? otherReceipts.filter((item) => item.readAt && new Date(item.readAt) >= new Date(message.createdAt)).length : 0;
+  const deliveredCount = mine ? otherReceipts.filter((item) => item.deliveredAt && new Date(item.deliveredAt) >= new Date(message.createdAt)).length : 0;
+  const age = Date.now() - new Date(message.createdAt).getTime();
   return {
     id: String(message._id || ""),
     room: clean(message.room || "general", 40),
-    text: clean(message.text, 2000),
+    text: deleted ? "" : clean(message.text, 2000),
     author: socialUser(message.author),
     mine,
-    edited: Boolean(message.editedAt),
-    deleted: Boolean(message.deletedAt),
-    attachmentUrl: safeMedia(message.attachmentUrl),
-    mediaId: message.mediaId ? String(message.mediaId) : "",
-    mediaType: clean(message.mediaType, 20),
+    kind: deleted ? "deleted" : clean(message.kind || (message.mediaId ? message.mediaType : message.attachmentUrl ? "link" : "text"), 30),
+    edited: Boolean(message.editedAt) && !deleted,
+    deleted,
+    attachmentUrl: deleted ? "" : safeMedia(message.attachmentUrl),
+    mediaId: !deleted && message.mediaId ? String(message.mediaId) : "",
+    mediaType: deleted ? "" : clean(message.mediaType, 80),
+    file: !deleted && message.file ? { name: clean(message.file.name, 180), mimeType: clean(message.file.mimeType, 100), size: Number(message.file.size || 0) } : null,
+    sticker: deleted ? "" : clean(message.sticker, 80),
+    gifUrl: deleted ? "" : safeMedia(message.gifUrl),
+    location: !deleted && message.location ? { lat: Number(message.location.lat), lng: Number(message.location.lng), label: clean(message.location.label, 180) } : null,
     replyTo: message.replyTo ? { id: String(message.replyTo.id || ""), name: clean(message.replyTo.name, 100), text: clean(message.replyTo.text, 180) } : null,
+    forwardedFrom: message.forwardedFrom ? { id: String(message.forwardedFrom.id || ""), author: socialUser(message.forwardedFrom.author) } : null,
     reactions,
     viewerReaction: (message.reactions || []).find((item) => String(item.userId) === String(viewerId || ""))?.type || "",
+    pinned: Boolean(options.pinnedMessageIds?.has(String(message._id))),
+    allowForward: message.allowForward !== false && !deleted,
+    status: mine ? seenCount ? "seen" : deliveredCount ? "delivered" : "sent" : "received",
+    seenCount,
+    deliveredCount,
+    canEdit: mine && !deleted && age <= MESSAGE_EDIT_MINUTES * 60 * 1000,
+    canRecall: mine && !deleted && age <= MESSAGE_RECALL_MINUTES * 60 * 1000,
+    expiresAt: message.expiresAt || null,
     createdAt: message.createdAt,
     updatedAt: message.updatedAt || message.createdAt
   };
@@ -298,6 +358,8 @@ module.exports = async function handler(req, res) {
     const messages = db.collection("communityMessages");
     const chatRooms = db.collection("communityChatRooms");
     const messageReads = db.collection("communityMessageReads");
+    const chatPreferences = db.collection("communityChatPreferences");
+    const messagePins = db.collection("communityMessagePins");
     await Promise.all([
       posts.createIndex({ createdAt: -1 }),
       posts.createIndex({ userId: 1, deletedAt: 1, archived: 1, createdAt: -1 }),
@@ -310,8 +372,12 @@ module.exports = async function handler(req, res) {
       messages.createIndex({ room: 1, createdAt: -1 }),
       messages.createIndex({ room: 1, userId: 1, createdAt: -1 }),
       messages.createIndex({ userId: 1, createdAt: -1 }),
+      messages.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       chatRooms.createIndex({ slug: 1 }, { unique: true }),
-      messageReads.createIndex({ userId: 1, room: 1 }, { unique: true })
+      messageReads.createIndex({ userId: 1, room: 1 }, { unique: true }),
+      chatPreferences.createIndex({ userId: 1, room: 1 }, { unique: true }),
+      messagePins.createIndex({ room: 1, messageId: 1 }, { unique: true }),
+      messagePins.createIndex({ room: 1, createdAt: -1 })
     ]);
     const user = await currentUser(req);
     const viewerId = user ? String(user._id) : "";
@@ -324,13 +390,16 @@ module.exports = async function handler(req, res) {
       const linkedPost = item.postId ? await posts.findOne({ _id: item.postId }) : null;
       const linkedStory = !linkedPost ? await stories.findOne({ mediaId }) : null;
       const linkedMessage = !linkedPost && !linkedStory && item.messageId ? await messages.findOne({ _id: item.messageId, deletedAt: { $exists: false } }) : null;
+      const linkedRoom = !linkedPost && !linkedStory && !linkedMessage && item.roomAvatarId ? await chatRooms.findOne({ _id: item.roomAvatarId }) : null;
       const messageRoomAllowed = linkedMessage && user ? DEFAULT_CHAT_ROOMS.some((room) => room.id === linkedMessage.room) || Boolean(await chatRooms.findOne({ slug: linkedMessage.room, $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }] }, { projection: { _id: 1 } })) : false;
-      const allowed = linkedPost ? await canViewPost(db, linkedPost, user) : linkedStory ? await canViewStory(db, linkedStory, user) : linkedMessage ? messageRoomAllowed : Boolean(user && String(item.userId) === viewerId);
+      const roomAllowed = linkedRoom && user ? linkedRoom.visibility === "public" || String(linkedRoom.ownerId) === viewerId || (linkedRoom.memberIds || []).some((id) => String(id) === viewerId) : false;
+      const allowed = linkedPost ? await canViewPost(db, linkedPost, user) : linkedStory ? await canViewStory(db, linkedStory, user) : linkedMessage ? messageRoomAllowed : linkedRoom ? roomAllowed : Boolean(user && String(item.userId) === viewerId);
       if (!allowed) return res.status(404).json({ error: "Không tìm thấy media." });
       const bytes = Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data?.buffer || item.data || []);
       res.setHeader("Content-Type", item.mimeType || "application/octet-stream");
       res.setHeader("Content-Length", bytes.length);
-      res.setHeader("Content-Disposition", `inline; filename="${String(item.filename || "community-media").replace(/[\r\n"\\]/g, "")}"`);
+      const disposition = /^(image|video|audio)\//.test(item.mimeType || "") || item.mimeType === "application/pdf" ? "inline" : "attachment";
+      res.setHeader("Content-Disposition", `${disposition}; filename="${String(item.filename || "community-media").replace(/[\r\n"\\]/g, "")}"`);
       const publicMedia = linkedPost ? (linkedPost.privacy || "public") === "public" : linkedStory ? (linkedStory.privacy || "public") === "public" : false;
       res.setHeader("Cache-Control", publicMedia ? "public, max-age=3600" : "private, no-store");
       return res.status(200).send(bytes);
@@ -339,63 +408,118 @@ module.exports = async function handler(req, res) {
     if (req.method === "GET" && req.query.view === "messenger") {
       if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để dùng Messenger HH." });
       const requestedRoom = chatSlug(req.query.room || "general") || "general";
+      const search = clean(req.query.q, 120);
+      const beforeId = idOf(req.query.before);
       const customRooms = await chatRooms.find({
         $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }]
-      }).sort({ updatedAt: -1, createdAt: -1 }).limit(30).toArray();
+      }).sort({ updatedAt: -1, createdAt: -1 }).limit(100).toArray();
       const customMemberIds = [...new Map(customRooms.flatMap((room) => room.memberIds || []).filter(Boolean).map((id) => [String(id), id])).values()];
       const memberUsers = customMemberIds.length ? await db.collection("users").find(
         { _id: { $in: customMemberIds } },
-        { projection: { name: 1, avatar: 1 } }
+        { projection: { name: 1, avatar: 1, lastLoginAt: 1 } }
       ).toArray() : [];
-      const userMap = new Map(memberUsers.map((item) => [String(item._id), socialUser(item)]));
+      const userMap = new Map(memberUsers.map((item) => [String(item._id), { ...socialUser(item), lastSeenAt: item.lastLoginAt || null }]));
       const customRoomCards = customRooms.map((room) => {
         const kind = room.kind === "direct" ? "direct" : "group";
         const otherId = kind === "direct" ? (room.memberIds || []).find((id) => String(id) !== viewerId) : null;
         const other = otherId ? userMap.get(String(otherId)) : null;
+        const role = roomRole(room, user._id);
         return {
           id: room.slug,
           name: kind === "direct" ? (other?.name || "Thành viên HH") : room.name,
           description: clean(room.lastMessage?.text, 90) || (kind === "direct" ? "Tin nhắn riêng" : room.description),
           avatar: kind === "direct" ? (other?.avatar || "") : safeMedia(room.avatar),
+          avatarMediaId: kind === "group" && room.avatarMediaId ? String(room.avatarMediaId) : "",
           otherId: otherId ? String(otherId) : "",
           kind,
           visibility: room.visibility || "private",
           owned: String(room.ownerId) === viewerId,
+          ownerId: room.ownerId ? String(room.ownerId) : "",
+          role,
+          canManage: canManageRoom(room, user._id),
           memberCount: (room.memberIds || []).length,
-          memberIds: (room.memberIds || []).map(String)
+          memberIds: (room.memberIds || []).map(String),
+          memberRoles: (room.roles || []).map((entry) => ({ userId: String(entry.userId), role: clean(entry.role || "member", 30) })),
+          pinnedCount: (room.pinnedMessageIds || []).length
         };
       });
-      const roomRecords = [
+      const baseRoomRecords = [
         ...customRoomCards.filter((room) => room.kind === "direct"),
         ...DEFAULT_CHAT_ROOMS.map((room) => ({ ...room, kind: "channel", visibility: "public", owned: false, memberCount: 0 })),
         ...customRoomCards.filter((room) => room.kind !== "direct")
       ];
-      const readRecords = await messageReads.find({ userId: user._id, room: { $in: roomRecords.map((item) => item.id) } }).toArray();
+      const roomIds = baseRoomRecords.map((item) => item.id);
+      const [readRecords, preferenceRecords] = await Promise.all([
+        messageReads.find({ userId: user._id, room: { $in: roomIds } }).toArray(),
+        chatPreferences.find({ userId: user._id, room: { $in: roomIds } }).toArray()
+      ]);
       const readMap = new Map(readRecords.map((item) => [item.room, item.readAt || new Date(0)]));
-      const roomsWithUnread = await Promise.all(roomRecords.map(async (item) => ({
-        ...item,
-        unread: await messages.countDocuments({
+      const preferenceMap = new Map(preferenceRecords.map((item) => [item.room, item]));
+      const roomsWithUnread = await Promise.all(baseRoomRecords.map(async (item) => {
+        const preference = preferenceMap.get(item.id) || {};
+        const unreadSince = [readMap.get(item.id), preference.deletedBefore].filter(Boolean).reduce((latest, value) => new Date(value) > latest ? new Date(value) : latest, new Date(0));
+        const unread = await messages.countDocuments({
           room: item.id,
           userId: { $ne: user._id },
           deletedAt: { $exists: false },
-          createdAt: { $gt: readMap.get(item.id) || new Date(0) }
-        })
-      })));
+          hiddenFor: { $ne: user._id },
+          createdAt: { $gt: unreadSince },
+          $or: [{ expiresAt: { $exists: false } }, { expiresAt: { $gt: new Date() } }]
+        });
+        return {
+          ...item,
+          unread: preference.markedUnread ? Math.max(1, unread) : unread,
+          muted: Boolean(preference.muted),
+          archived: Boolean(preference.archived),
+          markedUnread: Boolean(preference.markedUnread),
+          ephemeralSeconds: Number(preference.ephemeralSeconds || 0)
+        };
+      }));
       const room = roomsWithUnread.find((item) => item.id === requestedRoom) || roomsWithUnread[0];
-      const rawMessages = await messages.find({ room: room.id, deletedAt: { $exists: false } }).sort({ createdAt: -1 }).limit(120).toArray();
-      const chronological = rawMessages.reverse();
+      const roomPreference = preferenceMap.get(room.id) || {};
+      const messageFilter = {
+        room: room.id,
+        hiddenFor: { $ne: user._id },
+        ...(roomPreference.deletedBefore ? { createdAt: { $gt: roomPreference.deletedBefore } } : {}),
+        ...(beforeId ? { _id: { $lt: beforeId } } : {}),
+        $and: [
+          { $or: [{ expiresAt: { $exists: false } }, { expiresAt: { $gt: new Date() } }] },
+          ...(search ? [{ $or: [
+            { text: { $regex: escapeRegex(search), $options: "i" } },
+            { "file.name": { $regex: escapeRegex(search), $options: "i" } },
+            { "author.name": { $regex: escapeRegex(search), $options: "i" } }
+          ] }] : [])
+        ]
+      };
+      const fetchedMessages = await messages.find(messageFilter).sort({ _id: -1 }).limit(MESSAGE_PAGE_SIZE + 1).toArray();
+      const hasMore = fetchedMessages.length > MESSAGE_PAGE_SIZE;
+      const pageMessages = fetchedMessages.slice(0, MESSAGE_PAGE_SIZE);
+      const chronological = pageMessages.slice().reverse();
       const selectedCustom = customRooms.find((item) => item.slug === room.id);
-      const roomMembers = (selectedCustom?.memberIds || []).map((id) => userMap.get(String(id))).filter(Boolean);
+      const [receiptRows, pinRows] = await Promise.all([
+        messageReads.find({ room: room.id }).toArray(),
+        messagePins.find({ room: room.id }).sort({ createdAt: -1 }).limit(100).toArray()
+      ]);
+      const roomMembers = (selectedCustom?.memberIds || []).map((id) => {
+        const profile = userMap.get(String(id));
+        return profile ? { ...profile, role: roomRole(selectedCustom, id) } : null;
+      }).filter(Boolean);
       const activePeople = chronological.slice().reverse().map((item) => [String(item.userId), { ...socialUser(item.author), lastSeenAt: item.createdAt }]);
       const participants = [...new Map([
-        ...roomMembers.map((item) => [String(item.id), { ...item, lastSeenAt: null }]),
+        ...roomMembers.map((item) => [String(item.id), item]),
         ...activePeople
       ]).values()].slice(0, 30);
+      const pinnedMessageIds = new Set([
+        ...(selectedCustom?.pinnedMessageIds || []).map(String),
+        ...pinRows.map((item) => String(item.messageId))
+      ]);
       return res.status(200).json({
         room,
         rooms: roomsWithUnread,
-        messages: chronological.map((item) => presentMessage(item, viewerId)),
+        messages: chronological.map((item) => presentMessage(item, viewerId, { receipts: receiptRows, pinnedMessageIds })),
         participants,
+        pagination: { hasMore, nextCursor: pageMessages.length ? String(pageMessages[pageMessages.length - 1]._id) : "", pageSize: MESSAGE_PAGE_SIZE },
+        policy: { editMinutes: MESSAGE_EDIT_MINUTES, recallMinutes: MESSAGE_RECALL_MINUTES, maxAttachmentBytes: MAX_MEDIA_BYTES, tlsRequired: true, endToEndEncryption: false },
         refreshedAt: new Date()
       });
     }
@@ -578,10 +702,10 @@ module.exports = async function handler(req, res) {
     if (action === "media:upload") {
       const mimeType = clean(body.mimeType, 80).toLowerCase();
       const encoded = clean(body.data, 4000000).replace(/\s/g, "");
-      if (!MEDIA_TYPES.has(mimeType)) return res.status(400).json({ error: "Chỉ hỗ trợ ảnh JPG, PNG, WebP, GIF, AVIF và video MP4, WebM, MOV." });
+      if (!MEDIA_TYPES.has(mimeType)) return res.status(400).json({ error: "Định dạng tệp chưa được hỗ trợ. Hãy dùng ảnh, video, âm thanh, PDF, ZIP, JSON, TXT, CSV, Word hoặc Excel." });
       if (!encoded || !/^[a-z0-9+/]+={0,2}$/i.test(encoded)) return res.status(400).json({ error: "Dữ liệu media không hợp lệ." });
       const bytes = Buffer.from(encoded, "base64");
-      if (!bytes.length || bytes.length > MAX_MEDIA_BYTES) return res.status(413).json({ error: "Mỗi ảnh hoặc video cộng đồng cần nhỏ hơn 2,5 MB." });
+      if (!bytes.length || bytes.length > MAX_MEDIA_BYTES) return res.status(413).json({ error: "Mỗi tệp cộng đồng cần nhỏ hơn 2,5 MB." });
       const now = new Date();
       const doc = {
         userId: user._id,
@@ -593,7 +717,16 @@ module.exports = async function handler(req, res) {
         expiresAt: new Date(now.getTime() + 60 * 60 * 1000)
       };
       const result = await mediaFiles.insertOne(doc);
-      return res.status(201).json({ ok: true, media: { id: String(result.insertedId), type: mimeType.startsWith("video/") ? "video" : "image", size: bytes.length } });
+      return res.status(201).json({
+        ok: true,
+        media: {
+          id: String(result.insertedId),
+          type: attachmentKind(mimeType, clean(body.requestedType, 20)),
+          filename: doc.filename,
+          mimeType,
+          size: bytes.length
+        }
+      });
     }
 
     if (action === "message:direct") {
@@ -626,25 +759,76 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, room: { id: slug, name: target.name || "Thành viên HH", avatar: safeMedia(target.avatar), kind: "direct", visibility: "private", memberCount: 2 } });
     }
 
-    if (action === "message:read") {
+    if (["message:read", "message:receipt"].includes(action)) {
       const roomSlug = chatSlug(body.room || "general") || "general";
-      const defaultRoom = DEFAULT_CHAT_ROOMS.find((room) => room.id === roomSlug);
-      const customRoom = defaultRoom ? null : await chatRooms.findOne({
-        slug: roomSlug,
-        $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }]
-      }, { projection: { _id: 1 } });
-      if (!defaultRoom && !customRoom) return res.status(404).json({ error: "Phòng trò chuyện không tồn tại hoặc bạn không có quyền truy cập." });
+      const room = await resolveChatRoom(chatRooms, user, roomSlug);
+      if (!room) return res.status(404).json({ error: "Phòng trò chuyện không tồn tại hoặc bạn không có quyền truy cập." });
       const latest = await messages.findOne(
-        { room: roomSlug, deletedAt: { $exists: false } },
+        { room: roomSlug, deletedAt: { $exists: false }, hiddenFor: { $ne: user._id } },
         { sort: { createdAt: -1 }, projection: { _id: 1, createdAt: 1 } }
       );
-      const readAt = new Date();
-      await messageReads.updateOne(
-        { userId: user._id, room: roomSlug },
-        { $set: { readAt, latestMessageId: latest?._id || null, updatedAt: readAt }, $setOnInsert: { createdAt: readAt } },
+      const now = new Date();
+      const status = action === "message:read" ? "seen" : ["delivered", "seen"].includes(body.status) ? body.status : "delivered";
+      const fields = { deliveredAt: now, latestMessageId: latest?._id || null, updatedAt: now };
+      if (status === "seen") fields.readAt = now;
+      await Promise.all([
+        messageReads.updateOne(
+          { userId: user._id, room: roomSlug },
+          { $set: fields, $setOnInsert: { createdAt: now } },
+          { upsert: true }
+        ),
+        status === "seen" ? chatPreferences.updateOne(
+          { userId: user._id, room: roomSlug },
+          { $set: { markedUnread: false, updatedAt: now }, $setOnInsert: { createdAt: now } },
+          { upsert: true }
+        ) : Promise.resolve()
+      ]);
+      return res.status(200).json({ ok: true, room: roomSlug, status, at: now, latestMessageId: latest ? String(latest._id) : "" });
+    }
+
+    if (["message:conversation:preference", "message:conversation:block", "message:conversation:report"].includes(action)) {
+      const roomSlug = chatSlug(body.room || "general") || "general";
+      const room = await resolveChatRoom(chatRooms, user, roomSlug);
+      if (!room) return res.status(404).json({ error: "Không tìm thấy cuộc trò chuyện." });
+      const now = new Date();
+      if (action === "message:conversation:preference") {
+        const current = await chatPreferences.findOne({ userId: user._id, room: roomSlug }) || {};
+        const nextEphemeral = Number(body.ephemeralSeconds ?? current.ephemeralSeconds ?? 0);
+        if (!EPHEMERAL_SECONDS.has(nextEphemeral)) return res.status(400).json({ error: "Thời gian tự xóa không hợp lệ." });
+        const fields = {
+          muted: body.muted == null ? Boolean(current.muted) : Boolean(body.muted),
+          archived: body.archived == null ? Boolean(current.archived) : Boolean(body.archived),
+          markedUnread: body.markedUnread == null ? Boolean(current.markedUnread) : Boolean(body.markedUnread),
+          ephemeralSeconds: nextEphemeral,
+          updatedAt: now
+        };
+        if (body.deleteForMe || body.clearHistory) fields.deletedBefore = now;
+        await chatPreferences.updateOne(
+          { userId: user._id, room: roomSlug },
+          { $set: fields, $setOnInsert: { createdAt: now } },
+          { upsert: true }
+        );
+        return res.status(200).json({ ok: true, room: roomSlug, preference: fields });
+      }
+      if (action === "message:conversation:block") {
+        if (room.kind !== "direct") return res.status(400).json({ error: "Chỉ có thể chặn người gửi trong cuộc trò chuyện riêng." });
+        const targetId = (room.memberIds || []).find((id) => String(id) !== viewerId);
+        if (!targetId) return res.status(400).json({ error: "Không tìm thấy người gửi cần chặn." });
+        const active = body.active !== false;
+        await db.collection("communityRelations").updateOne(
+          { actorId: user._id, targetId, type: "block" },
+          { $set: { active, updatedAt: now }, $setOnInsert: { actorId: user._id, targetId, type: "block", createdAt: now } },
+          { upsert: true }
+        );
+        return res.status(200).json({ ok: true, blocked: active });
+      }
+      const reportTargetId = room._id || idOf(body.targetId) || new ObjectId();
+      await db.collection("communityReports").updateOne(
+        { targetType: "conversation", targetKey: roomSlug, reporterId: user._id },
+        { $setOnInsert: { targetType: "conversation", targetId: reportTargetId, targetKey: roomSlug, reporterId: user._id, category: clean(body.category || "other", 40), description: clean(body.reason || body.description || "Báo cáo cuộc trò chuyện", 800), includesPrivateContent: false, status: "pending", createdAt: now, history: [{ status: "pending", at: now }] } },
         { upsert: true }
       );
-      return res.status(200).json({ ok: true, room: roomSlug, readAt, latestMessageId: latest ? String(latest._id) : "" });
+      return res.status(200).json({ ok: true, reported: true });
     }
 
     if (action === "message:room:create") {
@@ -653,127 +837,265 @@ module.exports = async function handler(req, res) {
       const slug = chatSlug(body.slug || name);
       if (name.length < 3 || slug.length < 3) return res.status(400).json({ error: "Tên phòng cần ít nhất 3 ký tự." });
       if (DEFAULT_CHAT_ROOMS.some((room) => room.id === slug)) return res.status(409).json({ error: "Tên phòng này đã được sử dụng." });
-      const requestedMemberIds = [...new Set((Array.isArray(body.memberIds) ? body.memberIds : []).slice(0, 29).map(String))]
+      const requestedMemberIds = [...new Set((Array.isArray(body.memberIds) ? body.memberIds : []).slice(0, 49).map(String))]
         .map(idOf).filter((id) => id && String(id) !== viewerId);
       const validMembers = requestedMemberIds.length ? await db.collection("users").find(
         { _id: { $in: requestedMemberIds }, status: { $nin: ["deleted", "suspended", "locked", "banned"] } },
         { projection: { _id: 1 } }
       ).toArray() : [];
+      const avatarMediaId = idOf(body.avatarMediaId);
+      const avatarMedia = avatarMediaId ? await mediaFiles.findOne({ _id: avatarMediaId, userId: user._id, mimeType: { $regex: /^image\// } }) : null;
+      if (avatarMediaId && !avatarMedia) return res.status(400).json({ error: "Ảnh đại diện nhóm không hợp lệ hoặc đã hết hạn." });
+      const now = new Date();
       const doc = {
         slug,
         kind: "group",
         name,
         description: clean(body.description, 240),
-        visibility: body.visibility === "private" ? "private" : "public",
+        visibility: body.visibility === "public" ? "public" : "private",
+        avatar: safeMedia(body.avatar),
+        ...(avatarMedia ? { avatarMediaId: avatarMedia._id } : {}),
         ownerId: user._id,
         owner: socialUser(user),
         memberIds: [user._id, ...validMembers.map((item) => item._id)],
-        createdAt: new Date(),
-        updatedAt: new Date()
+        roles: [{ userId: user._id, role: "owner", createdAt: now }],
+        createdAt: now,
+        updatedAt: now
       };
       try {
         const result = await chatRooms.insertOne(doc);
-        return res.status(201).json({ ok: true, room: { id: slug, name, description: doc.description, kind: "group", visibility: doc.visibility, owned: true, memberCount: doc.memberIds.length, recordId: String(result.insertedId) } });
+        if (avatarMedia) await mediaFiles.updateOne({ _id: avatarMedia._id }, { $unset: { expiresAt: "" }, $set: { roomAvatarId: result.insertedId } });
+        return res.status(201).json({ ok: true, room: { id: slug, name, description: doc.description, kind: "group", visibility: doc.visibility, owned: true, role: "owner", canManage: true, memberCount: doc.memberIds.length, avatarMediaId: avatarMedia ? String(avatarMedia._id) : "", recordId: String(result.insertedId) } });
       } catch (error) {
         if (error?.code === 11000) return res.status(409).json({ error: "Đường dẫn phòng đã tồn tại." });
         throw error;
       }
     }
 
-    if (["message:room:update", "message:room:leave"].includes(action)) {
+    if (["message:room:update", "message:room:leave", "message:room:member", "message:room:role", "message:room:transfer"].includes(action)) {
       const roomSlug = chatSlug(body.room);
       const room = roomSlug ? await chatRooms.findOne({ slug: roomSlug, kind: "group", memberIds: user._id }) : null;
       if (!room) return res.status(404).json({ error: "Không tìm thấy nhóm chat hoặc bạn không còn là thành viên." });
+      const now = new Date();
+      const actorRole = roomRole(room, user._id);
       if (action === "message:room:leave") {
-        if (String(room.ownerId) === viewerId) return res.status(400).json({ error: "Chủ phòng cần chuyển quyền trước khi rời nhóm." });
-        await chatRooms.updateOne({ _id: room._id }, { $pull: { memberIds: user._id }, $set: { updatedAt: new Date() } });
+        if (actorRole === "owner") return res.status(400).json({ error: "Chủ phòng cần chuyển quyền trước khi rời nhóm." });
+        await chatRooms.updateOne({ _id: room._id }, { $pull: { memberIds: user._id, roles: { userId: user._id } }, $set: { updatedAt: now } });
         return res.status(200).json({ ok: true, left: true });
       }
-      if (String(room.ownerId) !== viewerId) return res.status(403).json({ error: "Chỉ chủ phòng có thể thay đổi nhóm chat." });
+      if (!canManageRoom(room, user._id)) return res.status(403).json({ error: "Bạn cần quyền quản trị nhóm chat để thực hiện thao tác này." });
+      if (action === "message:room:role" || action === "message:room:transfer") {
+        if (actorRole !== "owner") return res.status(403).json({ error: "Chỉ chủ nhóm có thể thay đổi quyền quản trị hoặc chuyển quyền sở hữu." });
+        const targetId = idOf(body.targetId);
+        if (!targetId || !(room.memberIds || []).some((id) => String(id) === String(targetId))) return res.status(400).json({ error: "Thành viên được chọn không hợp lệ." });
+        if (action === "message:room:transfer") {
+          if (String(targetId) === viewerId) return res.status(400).json({ error: "Bạn đang là chủ nhóm." });
+          const roles = (room.roles || []).filter((entry) => ![viewerId, String(targetId)].includes(String(entry.userId)));
+          roles.push({ userId: user._id, role: "admin", createdAt: now }, { userId: targetId, role: "owner", createdAt: now });
+          await chatRooms.updateOne({ _id: room._id }, { $set: { ownerId: targetId, roles, updatedAt: now } });
+          return res.status(200).json({ ok: true, transferred: true, ownerId: String(targetId) });
+        }
+        if (String(targetId) === viewerId) return res.status(400).json({ error: "Không thể đổi vai trò chủ nhóm theo cách này." });
+        const nextRole = body.role === "admin" ? "admin" : "member";
+        await chatRooms.updateOne({ _id: room._id }, { $pull: { roles: { userId: targetId } } });
+        if (nextRole === "admin") await chatRooms.updateOne({ _id: room._id }, { $push: { roles: { userId: targetId, role: "admin", createdAt: now } }, $set: { updatedAt: now } });
+        else await chatRooms.updateOne({ _id: room._id }, { $set: { updatedAt: now } });
+        return res.status(200).json({ ok: true, targetId: String(targetId), role: nextRole });
+      }
+      if (action === "message:room:member") {
+        const targetId = idOf(body.targetId);
+        const mode = body.mode === "remove" ? "remove" : "add";
+        if (!targetId || String(targetId) === String(room.ownerId)) return res.status(400).json({ error: "Thành viên được chọn không hợp lệ." });
+        const targetRole = roomRole(room, targetId);
+        if (actorRole !== "owner" && targetRole === "admin") return res.status(403).json({ error: "Chỉ chủ nhóm có thể xóa quản trị viên." });
+        if (mode === "add") {
+          const valid = await db.collection("users").findOne({ _id: targetId, status: { $nin: ["deleted", "suspended", "locked", "banned"] } }, { projection: { _id: 1 } });
+          if (!valid) return res.status(404).json({ error: "Không tìm thấy tài khoản hoạt động." });
+          if ((room.memberIds || []).length >= 50) return res.status(400).json({ error: "Nhóm chat hiện hỗ trợ tối đa 50 thành viên." });
+          await chatRooms.updateOne({ _id: room._id }, { $addToSet: { memberIds: targetId }, $set: { updatedAt: now } });
+        } else {
+          await chatRooms.updateOne({ _id: room._id }, { $pull: { memberIds: targetId, roles: { userId: targetId } }, $set: { updatedAt: now } });
+        }
+        return res.status(200).json({ ok: true, mode, targetId: String(targetId) });
+      }
       const name = clean(body.name || room.name, 80);
       if (name.length < 3) return res.status(400).json({ error: "Tên nhóm chat cần ít nhất 3 ký tự." });
-      const requestedMemberIds = [...new Set((Array.isArray(body.memberIds) ? body.memberIds : room.memberIds || []).slice(0, 29).map(String))]
-        .map(idOf).filter((id) => id && String(id) !== viewerId);
+      const requestedMemberIds = [...new Set((Array.isArray(body.memberIds) ? body.memberIds : room.memberIds || []).slice(0, 49).map(String))]
+        .map(idOf).filter((id) => id && String(id) !== String(room.ownerId));
       const validMembers = requestedMemberIds.length ? await db.collection("users").find(
         { _id: { $in: requestedMemberIds }, status: { $nin: ["deleted", "suspended", "locked", "banned"] } },
         { projection: { _id: 1 } }
       ).toArray() : [];
+      const memberIds = [room.ownerId, ...validMembers.map((item) => item._id)];
+      const avatarMediaId = idOf(body.avatarMediaId);
+      const avatarMedia = avatarMediaId ? await mediaFiles.findOne({ _id: avatarMediaId, userId: user._id, mimeType: { $regex: /^image\// } }) : null;
+      if (avatarMediaId && !avatarMedia && String(avatarMediaId) !== String(room.avatarMediaId || "")) return res.status(400).json({ error: "Ảnh đại diện nhóm không hợp lệ hoặc đã hết hạn." });
+      const roles = (room.roles || []).filter((entry) => memberIds.some((id) => String(id) === String(entry.userId)));
       await chatRooms.updateOne({ _id: room._id }, { $set: {
         name,
         description: clean(body.description ?? room.description, 240),
         visibility: body.visibility === "public" ? "public" : "private",
-        memberIds: [user._id, ...validMembers.map((item) => item._id)],
-        updatedAt: new Date()
+        avatar: safeMedia(body.avatar) || room.avatar || "",
+        ...(avatarMedia ? { avatarMediaId: avatarMedia._id } : {}),
+        memberIds,
+        roles,
+        updatedAt: now
       } });
-      return res.status(200).json({ ok: true, updated: true, memberCount: validMembers.length + 1 });
+      if (avatarMedia) await mediaFiles.updateOne({ _id: avatarMedia._id }, { $unset: { expiresAt: "" }, $set: { roomAvatarId: room._id } });
+      return res.status(200).json({ ok: true, updated: true, memberCount: memberIds.length, avatarMediaId: avatarMedia ? String(avatarMedia._id) : String(room.avatarMediaId || "") });
     }
 
-    if (["message:create", "message:edit", "message:delete", "message:react"].includes(action)) {
+    if (["message:create", "message:edit", "message:delete", "message:delete:self", "message:delete:all", "message:react", "message:pin", "message:forward"].includes(action)) {
       const roomSlug = chatSlug(body.room || "general") || "general";
-      const defaultRoom = DEFAULT_CHAT_ROOMS.find((room) => room.id === roomSlug);
-      const customRoom = defaultRoom ? null : await chatRooms.findOne({ slug: roomSlug, $or: [{ visibility: "public" }, { ownerId: user._id }, { memberIds: user._id }] });
-      if (!defaultRoom && !customRoom) return res.status(404).json({ error: "Phòng trò chuyện không tồn tại hoặc bạn không có quyền truy cập." });
+      const roomRecord = await resolveChatRoom(chatRooms, user, roomSlug);
+      if (!roomRecord) return res.status(404).json({ error: "Phòng trò chuyện không tồn tại hoặc bạn không có quyền truy cập." });
+      const customRoom = DEFAULT_CHAT_ROOMS.some((room) => room.id === roomSlug) ? null : roomRecord;
+      if (customRoom?.kind === "direct") {
+        const otherId = (customRoom.memberIds || []).find((id) => String(id) !== viewerId);
+        if (otherId && await blockedBetween(db, user._id, otherId)) return res.status(403).json({ error: "Cuộc trò chuyện đã bị chặn." });
+      }
 
       if (action === "message:create") {
-        await enforceRateLimit(db, `community:message:${user._id}`, 45, 10 * 60 * 1000);
+        await enforceRateLimit(db, `community:message:${user._id}`, 60, 10 * 60 * 1000);
         const text = clean(body.text, 2000);
-        const attachmentUrl = safeMedia(body.attachmentUrl);
+        const attachmentUrl = safeMedia(body.attachmentUrl || body.linkUrl);
+        const gifUrl = safeMedia(body.gifUrl);
+        const sticker = clean(body.sticker, 80);
         const mediaId = idOf(body.mediaId);
         const storedMedia = mediaId ? await mediaFiles.findOne({ _id: mediaId, userId: user._id }) : null;
         if (mediaId && !storedMedia) return res.status(400).json({ error: "Tệp đính kèm không hợp lệ hoặc đã hết hạn." });
-        if (!text && !attachmentUrl && !storedMedia) return res.status(400).json({ error: "Tin nhắn đang trống." });
+        const location = body.location && Number.isFinite(Number(body.location.lat)) && Number.isFinite(Number(body.location.lng))
+          ? { lat: Number(body.location.lat), lng: Number(body.location.lng), label: clean(body.location.label, 180) }
+          : null;
+        if (location && (Math.abs(location.lat) > 90 || Math.abs(location.lng) > 180)) return res.status(400).json({ error: "Tọa độ vị trí không hợp lệ." });
+        if (!text && !attachmentUrl && !gifUrl && !sticker && !storedMedia && !location) return res.status(400).json({ error: "Tin nhắn đang trống." });
         let replyTo = null;
         const replyId = idOf(body.replyToId);
         if (replyId) {
-          const source = await messages.findOne({ _id: replyId, room: roomSlug, deletedAt: { $exists: false } });
-          if (source) replyTo = { id: source._id, name: source.author?.name || "Thành viên HH", text: source.text || "Tệp đính kèm" };
+          const source = await messages.findOne({ _id: replyId, room: roomSlug, deletedAt: { $exists: false }, hiddenFor: { $ne: user._id } });
+          if (source) replyTo = { id: source._id, name: source.author?.name || "Thành viên HH", text: source.text || source.file?.name || "Tệp đính kèm" };
         }
+        const preference = await chatPreferences.findOne({ userId: user._id, room: roomSlug });
+        const requestedEphemeral = Number(body.ephemeralSeconds ?? preference?.ephemeralSeconds ?? 0);
+        if (!EPHEMERAL_SECONDS.has(requestedEphemeral)) return res.status(400).json({ error: "Thời gian tự xóa không hợp lệ." });
+        const now = new Date();
+        const mediaKind = storedMedia ? attachmentKind(storedMedia.mimeType, clean(body.kind, 20)) : "";
+        const kind = mediaKind || (location ? "location" : sticker ? "sticker" : gifUrl ? "gif" : attachmentUrl ? "link" : clean(body.kind, 20) === "emoji" ? "emoji" : "text");
         const doc = {
           room: roomSlug,
           userId: user._id,
           author: socialUser(user),
+          kind,
           text,
           attachmentUrl,
-          ...(storedMedia ? { mediaId: storedMedia._id, mediaType: storedMedia.mimeType.startsWith("video/") ? "video" : "image" } : {}),
+          gifUrl,
+          sticker,
+          location,
+          allowForward: body.allowForward !== false,
+          ...(storedMedia ? { mediaId: storedMedia._id, mediaType: storedMedia.mimeType, file: { name: storedMedia.filename, mimeType: storedMedia.mimeType, size: storedMedia.size } } : {}),
           replyTo,
           reactions: [],
-          createdAt: new Date(),
-          updatedAt: new Date()
+          ...(requestedEphemeral ? { expiresAt: new Date(now.getTime() + requestedEphemeral * 1000), ephemeralSeconds: requestedEphemeral } : {}),
+          createdAt: now,
+          updatedAt: now
         };
         const result = await messages.insertOne(doc);
         if (storedMedia) await mediaFiles.updateOne({ _id: storedMedia._id }, { $unset: { expiresAt: "" }, $set: { messageId: result.insertedId } });
         if (customRoom) {
-          await chatRooms.updateOne({ _id: customRoom._id }, { $set: { lastMessage: { id: result.insertedId, text: text || (storedMedia ? "Đã gửi media" : "Đã gửi một liên kết"), author: socialUser(user), createdAt: doc.createdAt }, updatedAt: doc.createdAt } });
+          const preview = text || storedMedia?.filename || (location ? "Đã chia sẻ vị trí" : sticker ? "Đã gửi sticker" : gifUrl ? "Đã gửi GIF" : "Đã gửi một liên kết");
+          await chatRooms.updateOne({ _id: customRoom._id }, { $set: { lastMessage: { id: result.insertedId, text: preview, author: socialUser(user), createdAt: now }, updatedAt: now } });
           const recipients = (customRoom.memberIds || []).filter((id) => String(id) !== viewerId).slice(0, 50);
           await Promise.all(recipients.map((recipientId) => notify(db, recipientId, user, "message", `${user.name || "Một thành viên"} đã gửi tin nhắn mới.`, result.insertedId)));
         }
         return res.status(201).json({ ok: true, message: presentMessage({ ...doc, _id: result.insertedId }, viewerId) });
       }
 
+      if (action === "message:forward") {
+        const sourceMessageId = idOf(body.messageId || body.sourceMessageId);
+        const targetRoomSlug = chatSlug(body.targetRoom);
+        if (!sourceMessageId || !targetRoomSlug) return res.status(400).json({ error: "Tin nhắn hoặc cuộc trò chuyện đích không hợp lệ." });
+        const source = await messages.findOne({ _id: sourceMessageId, room: roomSlug, deletedAt: { $exists: false }, hiddenFor: { $ne: user._id }, allowForward: { $ne: false } });
+        const targetRoom = await resolveChatRoom(chatRooms, user, targetRoomSlug);
+        if (!source || !targetRoom) return res.status(404).json({ error: "Không thể chuyển tiếp tin nhắn này." });
+        if (targetRoom.kind === "direct") {
+          const targetUserId = (targetRoom.memberIds || []).find((id) => String(id) !== viewerId);
+          if (targetUserId && await blockedBetween(db, user._id, targetUserId)) return res.status(403).json({ error: "Không thể chuyển tiếp vào cuộc trò chuyện đã bị chặn." });
+        }
+        let copiedMedia = null;
+        if (source.mediaId) {
+          const originalMedia = await mediaFiles.findOne({ _id: source.mediaId });
+          if (originalMedia) {
+            const copy = { ...originalMedia, _id: undefined, userId: user._id, messageId: undefined, createdAt: new Date() };
+            delete copy._id;
+            const copied = await mediaFiles.insertOne(copy);
+            copiedMedia = { ...copy, _id: copied.insertedId };
+          }
+        }
+        const now = new Date();
+        const doc = {
+          room: targetRoomSlug,
+          userId: user._id,
+          author: socialUser(user),
+          kind: source.kind || "text",
+          text: clean(source.text, 2000),
+          attachmentUrl: safeMedia(source.attachmentUrl),
+          gifUrl: safeMedia(source.gifUrl),
+          sticker: clean(source.sticker, 80),
+          location: source.location || null,
+          ...(copiedMedia ? { mediaId: copiedMedia._id, mediaType: copiedMedia.mimeType, file: { name: copiedMedia.filename, mimeType: copiedMedia.mimeType, size: copiedMedia.size } } : {}),
+          forwardedFrom: { id: source._id, author: source.author },
+          allowForward: source.allowForward !== false,
+          reactions: [],
+          createdAt: now,
+          updatedAt: now
+        };
+        const result = await messages.insertOne(doc);
+        if (copiedMedia) await mediaFiles.updateOne({ _id: copiedMedia._id }, { $set: { messageId: result.insertedId } });
+        if (targetRoom._id) await chatRooms.updateOne({ _id: targetRoom._id }, { $set: { lastMessage: { id: result.insertedId, text: doc.text || doc.file?.name || "Tin nhắn được chuyển tiếp", author: socialUser(user), createdAt: now }, updatedAt: now } });
+        return res.status(201).json({ ok: true, room: targetRoomSlug, message: presentMessage({ ...doc, _id: result.insertedId }, viewerId) });
+      }
+
       const messageId = idOf(body.messageId);
       if (!messageId) return res.status(400).json({ error: "Tin nhắn không hợp lệ." });
-      const message = await messages.findOne({ _id: messageId, room: roomSlug, deletedAt: { $exists: false } });
+      const message = await messages.findOne({ _id: messageId, room: roomSlug, hiddenFor: { $ne: user._id } });
       if (!message) return res.status(404).json({ error: "Không tìm thấy tin nhắn." });
       const ownsMessage = String(message.userId) === viewerId;
+      const age = Date.now() - new Date(message.createdAt).getTime();
       if (action === "message:edit") {
-        if (!ownsMessage) return res.status(403).json({ error: "Bạn chỉ có thể sửa tin nhắn của mình." });
-        if (Date.now() - new Date(message.createdAt).getTime() > 30 * 60 * 1000) return res.status(403).json({ error: "Tin nhắn chỉ có thể sửa trong 30 phút." });
+        if (!ownsMessage || message.deletedAt) return res.status(403).json({ error: "Bạn chỉ có thể sửa tin nhắn đang hoạt động của mình." });
+        if (age > MESSAGE_EDIT_MINUTES * 60 * 1000) return res.status(403).json({ error: `Tin nhắn chỉ có thể sửa trong ${MESSAGE_EDIT_MINUTES} phút.` });
         const text = clean(body.text, 2000);
         if (!text) return res.status(400).json({ error: "Tin nhắn đang trống." });
         await messages.updateOne({ _id: messageId, userId: user._id }, { $set: { text, editedAt: new Date(), updatedAt: new Date() } });
       }
-      if (action === "message:delete") {
-        if (!ownsMessage) return res.status(403).json({ error: "Bạn chỉ có thể thu hồi tin nhắn của mình." });
-        await messages.updateOne({ _id: messageId, userId: user._id }, { $set: { text: "", deletedAt: new Date(), updatedAt: new Date() } });
+      if (action === "message:delete:self") {
+        await messages.updateOne({ _id: messageId }, { $addToSet: { hiddenFor: user._id }, $set: { updatedAt: new Date() } });
+        return res.status(200).json({ ok: true, hiddenForMe: true, messageId: String(messageId) });
+      }
+      if (["message:delete", "message:delete:all"].includes(action)) {
+        if (!ownsMessage || message.deletedAt) return res.status(403).json({ error: "Bạn chỉ có thể thu hồi tin nhắn của mình." });
+        if (age > MESSAGE_RECALL_MINUTES * 60 * 1000) return res.status(403).json({ error: `Tin nhắn chỉ có thể thu hồi với mọi người trong ${MESSAGE_RECALL_MINUTES} phút.` });
+        await messages.updateOne({ _id: messageId, userId: user._id }, { $set: { text: "", deletedAt: new Date(), updatedAt: new Date() }, $unset: { mediaId: "", attachmentUrl: "", gifUrl: "", sticker: "", location: "", file: "" } });
       }
       if (action === "message:react") {
+        if (message.deletedAt) return res.status(400).json({ error: "Không thể bày tỏ cảm xúc với tin nhắn đã thu hồi." });
         const type = REACTIONS.has(body.type) ? body.type : "like";
         const previous = (message.reactions || []).find((item) => String(item.userId) === viewerId)?.type || "";
         await messages.updateOne({ _id: messageId }, { $pull: { reactions: { userId: user._id } }, $set: { updatedAt: new Date() } });
         if (previous !== type) await messages.updateOne({ _id: messageId }, { $push: { reactions: { userId: user._id, type, createdAt: new Date() } } });
       }
-      const updatedMessage = await messages.findOne({ _id: messageId });
-      return res.status(200).json({ ok: true, message: presentMessage(updatedMessage, viewerId) });
+      if (action === "message:pin") {
+        if (message.deletedAt) return res.status(400).json({ error: "Không thể ghim tin nhắn đã thu hồi." });
+        const canPin = customRoom?.kind === "direct" || (customRoom?.kind === "group" && canManageRoom(customRoom, user._id)) || (!customRoom && ownsMessage);
+        if (!canPin) return res.status(403).json({ error: "Bạn không có quyền ghim tin nhắn trong cuộc trò chuyện này." });
+        if (body.pinned === false) await messagePins.deleteOne({ room: roomSlug, messageId });
+        else await messagePins.updateOne({ room: roomSlug, messageId }, { $set: { pinnedBy: user._id, updatedAt: new Date() }, $setOnInsert: { room: roomSlug, messageId, createdAt: new Date() } }, { upsert: true });
+      }
+      const [updatedMessage, pin] = await Promise.all([
+        messages.findOne({ _id: messageId }),
+        messagePins.findOne({ room: roomSlug, messageId })
+      ]);
+      return res.status(200).json({ ok: true, message: presentMessage(updatedMessage, viewerId, { pinnedMessageIds: new Set(pin ? [String(messageId)] : []) }) });
     }
 
     if (action === "story:create") {

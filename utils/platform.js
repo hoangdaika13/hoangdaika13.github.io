@@ -76,13 +76,18 @@ function verifyOAuthState(state, provider) {
 
 function publicUser(user) {
   if (!user) return null;
+  const ownerEmail = String(process.env.ADMIN_EMAIL || "nhhoang130803@gmail.com").trim().toLowerCase();
+  const roles = new Set((Array.isArray(user.systemRoles) ? user.systemRoles : []).map((role) => clean(role, 40)).filter(Boolean));
+  if (String(user.email || "").trim().toLowerCase() === ownerEmail) roles.add("owner");
   return {
     id: String(user._id),
     name: user.name || "",
     email: user.email || "",
     provider: user.lastProvider || user.provider || "local",
     avatar: user.avatar || "",
-    consent: Boolean(user.consent)
+    consent: Boolean(user.consent),
+    roles: [...roles],
+    verified: Boolean(user.verifiedAt || user.emailVerifiedAt)
   };
 }
 

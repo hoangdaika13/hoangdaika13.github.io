@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v88";
+const CACHE = "hh-dev-hub-v91";
 const CORE = [
   "./",
   "./index.html",
@@ -15,7 +15,7 @@ const CORE = [
   "./video-editor-resolve.css?v=5",
   "./photo-editor-pro.css?v=1",
   "./editor-workflow-pro.css?v=1",
-  "./script.js?v=75",
+  "./script.js?v=76",
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=2",
   "./extension-suite.css?v=1",
@@ -27,8 +27,12 @@ const CORE = [
   "./sidebar-navigation-pro.css?v=2",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
-  "./community-platform-v2.css?v=9",
-  "./community-platform-v2.js?v=9",
+  "./community-platform-v2.css?v=10",
+  "./community-platform-v2.js?v=11",
+  "./community-messenger-pro.css?v=1",
+  "./community-calls.js?v=1",
+  "./community-admin.css?v=1",
+  "./community-admin.js?v=1",
   "./creative-suite.js?v=2",
   "./extension-suite.js?v=2",
   "./professional-tools.js?v=3",
@@ -43,16 +47,32 @@ const CORE = [
   "./media-design-page.js?v=6",
   "./feature-lab.js?v=4",
   "./feature-engines.js?v=2",
-  "./config.js?v=4",
+  "./config.js?v=5",
   "./data/ai-super-platform-modules.json"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(fetch(event.request).then(response => {
-    const copy = response.clone();
-    caches.open(CACHE).then(cache => cache.put(event.request, copy));
+  const request = event.request;
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  const isPrivateRequest = url.pathname.startsWith("/api/") || request.headers.has("authorization");
+  if (url.origin !== self.location.origin || isPrivateRequest) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  event.respondWith(fetch(request).then(response => {
+    if (response.ok && response.type === "basic") {
+      const copy = response.clone();
+      caches.open(CACHE).then(cache => cache.put(request, copy));
+    }
     return response;
-  }).catch(() => caches.match(event.request).then(response => response || caches.match("./index.html"))));
+  }).catch(async () => {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    if (request.mode === "navigate") return caches.match("./index.html");
+    return Response.error();
+  }));
 });
