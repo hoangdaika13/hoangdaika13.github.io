@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="editor-workflow-pro.css?v=1">
   <link rel="stylesheet" href="support-platform.css?v=2">
   <link rel="stylesheet" href="extension-suite.css?v=1">
-  <link rel="stylesheet" href="auth-experience.css?v=3">
+  <link rel="stylesheet" href="auth-experience.css?v=4">
   <link rel="stylesheet" href="search-watch-center.css?v=3">
   <link rel="stylesheet" href="creative-suite.css?v=5">
   <link rel="stylesheet" href="sidebar-navigation-pro.css?v=3">
@@ -61,6 +61,7 @@
       <span class="auth-orbit auth-orbit--one"><i></i></span>
       <span class="auth-orbit auth-orbit--two"><i></i></span>
       <b></b><b></b><b></b><b></b><b></b>
+      <em></em><em></em><em></em>
     </div>
     <div class="auth-gate-brand">
       <div class="auth-brand-lockup">
@@ -69,17 +70,36 @@
       </div>
       <h1><span>Đăng nhập.</span> Bật chế độ sáng tạo.</h1>
       <p>Một tài khoản cho workspace cá nhân, AI, công cụ sáng tạo và cộng đồng HH theo thời gian thực.</p>
+      <section class="auth-feature-showcase" aria-label="Khám phá chức năng tiêu biểu">
+        <header><span><i></i> LIVE PRODUCT TOUR</span><small data-auth-demo-counter>01 / 05</small></header>
+        <div class="auth-feature-switcher" role="tablist" aria-label="Chọn chức năng để xem trước">
+          <button class="active" type="button" role="tab" aria-selected="true" data-auth-demo="ai"><i>AI</i><span><b>AI Center</b><small>Chat · Prompt · Workflow</small></span></button>
+          <button type="button" role="tab" aria-selected="false" data-auth-demo="script"><i>KS</i><span><b>Kịch bản AI</b><small>Series · Batch · Training</small></span></button>
+          <button type="button" role="tab" aria-selected="false" data-auth-demo="media"><i>MD</i><span><b>Media Studio</b><small>Ảnh · Video · Xuất bản</small></span></button>
+          <button type="button" role="tab" aria-selected="false" data-auth-demo="dev"><i>DV</i><span><b>DEV Toolkit</b><small>API · Code · Security</small></span></button>
+          <button type="button" role="tab" aria-selected="false" data-auth-demo="community"><i>CM</i><span><b>Cộng đồng</b><small>Chat · Call · Realtime</small></span></button>
+        </div>
+      </section>
       <div class="auth-benefits" aria-label="Quyền lợi tài khoản">
         <span><i>01</i><b>97+ công cụ</b><small>Trong một workspace</small></span>
         <span><i>02</i><b>Realtime</b><small>Chat và cộng đồng</small></span>
         <span><i>03</i><b>Private</b><small>Dữ liệu có kiểm soát</small></span>
       </div>
       <div class="auth-product-preview" aria-hidden="true">
-        <header><span><i></i><i></i><i></i></span><b>HH Command Center</b><small>LIVE</small></header>
+        <header><span><i></i><i></i><i></i></span><b>HH Command Center · Interactive Preview</b><small><i></i> LIVE</small></header>
         <div class="auth-preview-grid">
-          <div class="auth-preview-nav"><span class="active">Dashboard</span><span>AI Center</span><span>Creative Lab</span><span>Community</span></div>
-          <div class="auth-preview-main"><small>WORKSPACE TODAY</small><strong>12 tác vụ đang hoạt động</strong><div class="auth-preview-chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><footer><span>AI <b>72%</b></span><span>Media <b>48%</b></span><span>Cloud <b>96%</b></span></footer></div>
+          <div class="auth-preview-nav"><span class="active" data-auth-preview-nav="ai"><i>AI</i>AI Center</span><span data-auth-preview-nav="script"><i>KS</i>Kịch bản AI</span><span data-auth-preview-nav="media"><i>MD</i>Media Studio</span><span data-auth-preview-nav="dev"><i>DV</i>DEV Toolkit</span><span data-auth-preview-nav="community"><i>CM</i>Cộng đồng</span></div>
+          <div class="auth-preview-main" data-auth-preview>
+            <div class="auth-preview-copy"><small><i></i><span data-auth-preview-tag>AI WORKFLOW</span></small><strong data-auth-preview-title>Biến ý tưởng thành quy trình AI hoàn chỉnh</strong><p data-auth-preview-description>Chat đa mô hình, tối ưu prompt và chạy workflow trong cùng một không gian.</p></div>
+            <div class="auth-preview-live"><span><i></i><b data-auth-preview-metric>12</b><small data-auth-preview-metric-label>Tác vụ AI</small></span><span><i></i><b data-auth-preview-status>98%</b><small>Hệ thống sẵn sàng</small></span><span><i></i><b data-auth-preview-output>6.4s</b><small>Phản hồi trung bình</small></span></div>
+            <div class="auth-preview-pipeline"><span><i>01</i><b data-auth-stage-one>Nhận yêu cầu</b></span><em></em><span><i>02</i><b data-auth-stage-two>AI xử lý</b></span><em></em><span><i>03</i><b data-auth-stage-three>Xuất kết quả</b></span></div>
+            <div class="auth-preview-chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span></span></div>
+            <footer><span>AI <b data-auth-preview-foot-one>72%</b></span><span>Automation <b data-auth-preview-foot-two>48%</b></span><span>Cloud <b data-auth-preview-foot-three>96%</b></span><small>Đồng bộ thời gian thực</small></footer>
+          </div>
         </div>
+      </div>
+      <div class="auth-tool-stream" aria-label="Một số công cụ có trong HH Platform">
+        <div><span>Video Editor</span><span>Photo Editor Pro</span><span>Creator Studio</span><span>Project Center</span><span>Analytics</span><span>HH English</span><span>Automation</span><span>Space Explorer</span><span>Video Editor</span><span>Photo Editor Pro</span><span>Creator Studio</span><span>Project Center</span><span>Analytics</span><span>HH English</span><span>Automation</span><span>Space Explorer</span></div>
       </div>
     </div>
 
@@ -922,7 +942,7 @@
   <script src="photo-editor-pro.js?v=1"></script>
   <script src="editor-workflow-pro.js?v=1"></script>
   <script src="media-design-page.js?v=6"></script>
-  <script src="auth-experience.js?v=2"></script>
+  <script src="auth-experience.js?v=3"></script>
   <script src="feature-lab.js?v=4"></script>
   <script src="feature-engines.js?v=2"></script>
   <script src="search-watch-center.js?v=4"></script>

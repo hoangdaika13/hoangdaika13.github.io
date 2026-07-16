@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v111";
+const CACHE = "hh-dev-hub-v112";
 const CORE = [
   "./",
   "./index.html",
@@ -19,8 +19,8 @@ const CORE = [
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=3",
   "./extension-suite.css?v=1",
-  "./auth-experience.css?v=3",
-  "./auth-experience.js?v=2",
+  "./auth-experience.css?v=4",
+  "./auth-experience.js?v=3",
   "./search-watch-center.css?v=3",
   "./search-watch-center.js?v=4",
   "./creative-suite.css?v=5",

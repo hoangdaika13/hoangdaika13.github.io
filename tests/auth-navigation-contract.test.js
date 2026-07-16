@@ -40,8 +40,16 @@ test("enhanced authentication motion remains accessible", () => {
   const client = read("auth-experience.js");
 
   assert.match(html, /auth-motion-field/);
+  assert.match(html, /auth-feature-showcase/);
+  assert.match(html, /data-auth-demo="ai"/);
+  assert.match(html, /auth-tool-stream/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /auth-card-arrive/);
+  assert.match(css, /auth-preview-float-heavy/);
+  assert.match(css, /auth-tool-marquee/);
   assert.match(client, /prefers-reduced-motion: reduce/);
   assert.match(client, /--auth-tilt-x/);
+  assert.match(client, /const demos =/);
+  assert.match(client, /renderDemo/);
+  assert.match(client, /4200/);
 });
