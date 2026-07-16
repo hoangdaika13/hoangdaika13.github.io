@@ -260,6 +260,19 @@ function generatedText(data) {
   return parts.join("\n").trim();
 }
 
+function interactionText(data) {
+  const parts = [];
+  for (const step of data?.steps || []) {
+    if (step?.type !== "model_output") continue;
+    for (const content of step.content || []) {
+      if (content?.type === "text" && typeof content.text === "string" && content.text.trim()) {
+        parts.push(content.text.trim());
+      }
+    }
+  }
+  return parts.join("\n").trim();
+}
+
 function generatedSources(data) {
   const sources = [];
   const seen = new Set();
@@ -284,12 +297,91 @@ function generatedSources(data) {
   return sources.slice(0, 20);
 }
 
+function interactionSources(data) {
+  const sources = [];
+  const seen = new Set();
+  for (const step of data?.steps || []) {
+    for (const content of step?.content || []) {
+      for (const annotation of content?.annotations || []) {
+        const url = clean(annotation?.url, 1200);
+        if (!url || seen.has(url)) continue;
+        seen.add(url);
+        sources.push({
+          url,
+          title: clean(annotation?.title || url, 240),
+          type: annotation?.type === "url_citation" ? "url-context" : "google-search"
+        });
+      }
+    }
+  }
+  return sources.slice(0, 20);
+}
+
 function safeJson(text) {
   try {
     return JSON.parse(String(text || "").replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""));
   } catch {
     return null;
   }
+}
+
+async function runInteractionsGemini({
+  apiKey,
+  model,
+  prompt,
+  instruction,
+  temperature,
+  useGoogleSearch,
+  useUrlContext,
+  useStructuredOutput
+}) {
+  const payload = {
+    model,
+    input: prompt,
+    system_instruction: instruction,
+    generation_config: {
+      temperature,
+      max_output_tokens: useStructuredOutput ? 8192 : 4096,
+      thinking_level: "low"
+    },
+    tools: [
+      ...(useUrlContext ? [{ type: "url_context" }] : []),
+      ...(useGoogleSearch ? [{ type: "google_search" }] : [])
+    ],
+    ...(useStructuredOutput
+      ? { response_format: [{ type: "text", mime_type: "application/json", schema: contentPackSchema }] }
+      : {}),
+    stream: false,
+    background: false,
+    store: false
+  };
+  if (!payload.tools.length) delete payload.tools;
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta2/interactions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(7500)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(clean(data?.error?.message || `Interactions API lỗi HTTP ${response.status}.`, 300));
+    error.code = "GEMINI_INTERACTIONS_ERROR";
+    throw error;
+  }
+  const output = interactionText(data);
+  if (!output) throw new Error(`Interactions API không trả về nội dung (${clean(data?.status || "NO_CONTENT", 80)}).`);
+  return {
+    output,
+    structured: useStructuredOutput ? safeJson(output) : null,
+    model,
+    interactionId: clean(data.id, 240),
+    usage: data.usage || null,
+    sources: interactionSources(data),
+    providerApi: "interactions-v1beta2"
+  };
 }
 
 async function runGemini(moduleId, actionType, input, meta = {}) {
@@ -306,17 +398,19 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
   const temperature = Number.isFinite(creativity)
     ? Math.max(0.2, Math.min(1.2, creativity / 100))
     : 0.72;
+  const prompt = promptFor(moduleId, actionType, input, meta);
+  const instruction = systemInstruction(moduleId, actionType);
   const tools = [
     ...(useUrlContext ? [{ url_context: {} }] : []),
     ...(useGoogleSearch ? [{ google_search: {} }] : [])
   ];
   const payload = {
     systemInstruction: {
-      parts: [{ text: systemInstruction(moduleId, actionType) }]
+      parts: [{ text: instruction }]
     },
     contents: [{
       role: "user",
-      parts: [{ text: promptFor(moduleId, actionType, input, meta) }]
+      parts: [{ text: prompt }]
     }],
     generationConfig: {
       temperature,
@@ -338,16 +432,41 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const error = new Error(clean(data?.error?.message || "Gemini không phản hồi.", 300));
+    const generateError = clean(data?.error?.message || `GenerateContent lỗi HTTP ${response.status}.`, 300);
+    if ([400, 403, 404].includes(response.status)) {
+      try {
+        return await runInteractionsGemini({
+          apiKey,
+          model,
+          prompt,
+          instruction,
+          temperature,
+          useGoogleSearch,
+          useUrlContext,
+          useStructuredOutput
+        });
+      } catch (interactionError) {
+        const error = new Error(clean(`${generateError} Interactions: ${interactionError.message}`, 300));
+        error.code = "GEMINI_PROVIDER_ERROR";
+        throw error;
+      }
+    }
+    const error = new Error(generateError);
     error.code = "GEMINI_PROVIDER_ERROR";
     throw error;
   }
   const output = generatedText(data);
   if (!output) {
-    const reason = data?.promptFeedback?.blockReason
-      || data?.candidates?.[0]?.finishReason
-      || "NO_CONTENT";
-    throw new Error(`Gemini không trả về nội dung (${clean(reason, 80)}).`);
+    return runInteractionsGemini({
+      apiKey,
+      model,
+      prompt,
+      instruction,
+      temperature,
+      useGoogleSearch,
+      useUrlContext,
+      useStructuredOutput
+    });
   }
   return {
     output,
