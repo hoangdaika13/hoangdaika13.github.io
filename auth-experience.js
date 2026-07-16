@@ -5,6 +5,7 @@
   if (!gate) return;
 
   const panels = [...gate.querySelectorAll(".auth-spectrum i")];
+  const card = gate.querySelector(".auth-gate-card");
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let frame = 0;
 
@@ -23,10 +24,20 @@
       const x = (event.clientX / innerWidth - 0.5) * 7;
       const y = (event.clientY / innerHeight - 0.5) * 7;
       setParallax(x, y);
+      gate.style.setProperty("--auth-cursor-x", `${event.clientX}px`);
+      gate.style.setProperty("--auth-cursor-y", `${event.clientY}px`);
+      if (card && innerWidth > 920) {
+        card.style.setProperty("--auth-tilt-x", `${(x * 0.34).toFixed(2)}deg`);
+        card.style.setProperty("--auth-tilt-y", `${(-y * 0.28).toFixed(2)}deg`);
+      }
     });
   }, { passive: true });
 
-  gate.addEventListener("pointerleave", () => setParallax(0, 0));
+  gate.addEventListener("pointerleave", () => {
+    setParallax(0, 0);
+    card?.style.setProperty("--auth-tilt-x", "0deg");
+    card?.style.setProperty("--auth-tilt-y", "0deg");
+  });
   gate.addEventListener("focusin", event => {
     const field = event.target.closest(".auth-field");
     gate.dataset.authFocus = field?.querySelector("input")?.name || "";

@@ -33,10 +33,10 @@
   <link rel="stylesheet" href="editor-workflow-pro.css?v=1">
   <link rel="stylesheet" href="support-platform.css?v=2">
   <link rel="stylesheet" href="extension-suite.css?v=1">
-  <link rel="stylesheet" href="auth-experience.css?v=2">
+  <link rel="stylesheet" href="auth-experience.css?v=3">
   <link rel="stylesheet" href="search-watch-center.css?v=3">
-  <link rel="stylesheet" href="creative-suite.css?v=4">
-  <link rel="stylesheet" href="sidebar-navigation-pro.css?v=2">
+  <link rel="stylesheet" href="creative-suite.css?v=5">
+  <link rel="stylesheet" href="sidebar-navigation-pro.css?v=3">
   <link rel="stylesheet" href="space-explorer.css?v=3">
   <link rel="stylesheet" href="english-learning.css?v=9">
 <link rel="stylesheet" href="community-social-pro.css?v=3">
@@ -57,6 +57,11 @@
 
   <section class="auth-gate" id="authGate" aria-label="Đăng nhập để vào trang chủ">
     <div class="auth-spectrum" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="auth-motion-field" aria-hidden="true">
+      <span class="auth-orbit auth-orbit--one"><i></i></span>
+      <span class="auth-orbit auth-orbit--two"><i></i></span>
+      <b></b><b></b><b></b><b></b><b></b>
+    </div>
     <div class="auth-gate-brand">
       <div class="auth-brand-lockup">
         <span class="brand-mark"><img src="assets/hh-app-icon-1024.png" alt="" width="64" height="64"></span>
@@ -102,9 +107,9 @@
         <form id="gateRegisterForm" data-auth-panel="register" aria-label="Tạo tài khoản mới" hidden>
           <label class="auth-field"><span>Họ tên <small>Tên hiển thị</small></span><span class="auth-input-shell"><i>◇</i><input name="name" type="text" placeholder="Tên hiển thị của bạn" autocomplete="name" minlength="2" maxlength="160" required></span></label>
           <label class="auth-field"><span>Email <small>Dùng để đăng nhập</small></span><span class="auth-input-shell"><i>@</i><input name="email" type="email" placeholder="you@gmail.com" autocomplete="email" required></span></label>
-          <label class="auth-field"><span>Mật khẩu <small>Tối thiểu 15 ký tự</small></span><span class="auth-password auth-input-shell"><i>●</i><input name="password" type="password" placeholder="Ít nhất 15 ký tự" autocomplete="new-password" minlength="15" maxlength="72" required data-register-password><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span></label>
+          <label class="auth-field"><span>Mật khẩu <small>Tối thiểu 8 ký tự</small></span><span class="auth-password auth-input-shell"><i>●</i><input name="password" type="password" placeholder="Ít nhất 8 ký tự" autocomplete="new-password" minlength="8" maxlength="72" required data-register-password><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span></label>
           <div class="password-strength" data-password-strength data-score="0"><i></i><span>Độ mạnh mật khẩu</span></div>
-          <label class="auth-field"><span>Xác nhận mật khẩu <small>Nhập lại chính xác</small></span><span class="auth-password auth-input-shell"><i>●</i><input name="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password" minlength="15" maxlength="72" required><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span></label>
+          <label class="auth-field"><span>Xác nhận mật khẩu <small>Nhập lại chính xác</small></span><span class="auth-password auth-input-shell"><i>●</i><input name="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password" minlength="8" maxlength="72" required><button type="button" data-password-toggle aria-label="Hiện mật khẩu">Hiện</button></span></label>
           <label class="consent-line"><input name="consent" type="checkbox"> <span>Tôi đồng ý chia sẻ tên/email và hoạt động do tôi tự gửi.</span></label>
           <button class="button secondary interactive auth-submit" type="submit"><span>Tạo tài khoản và tiếp tục</span><i>→</i></button>
           <p class="auth-form-note">Mật khẩu được băm một chiều và không thể đọc lại ở dạng gốc.</p>
@@ -382,7 +387,7 @@
             <h3>Đăng ký</h3>
             <input name="name" type="text" placeholder="Họ tên" required>
             <input name="email" type="email" placeholder="Gmail hoặc email" required>
-            <input name="password" type="password" placeholder="Mật khẩu hoặc cụm mật khẩu ít nhất 15 ký tự" minlength="15" maxlength="72" required>
+            <input name="password" type="password" placeholder="Mật khẩu hoặc cụm mật khẩu ít nhất 8 ký tự" minlength="8" maxlength="72" required>
             <label class="consent-line"><input name="consent" type="checkbox"> Tôi đồng ý chia sẻ tên/email và lượt truy cập với chủ website.</label>
             <button class="button primary interactive" type="submit">Tạo tài khoản</button>
           </form>
@@ -900,7 +905,7 @@
 <script src="english-career-expansion.js?v=1"></script>
 <script src="english-career-curriculum.js?v=2"></script>
 <script src="english-learning.js?v=9"></script>
-<script src="script.js?v=84"></script>
+<script src="script.js?v=85"></script>
 <script src="community-social-pro.js?v=4"></script>
 <script src="community-platform-v2.js?v=12"></script>
 <script src="community-calls.js?v=1"></script>
@@ -917,11 +922,11 @@
   <script src="photo-editor-pro.js?v=1"></script>
   <script src="editor-workflow-pro.js?v=1"></script>
   <script src="media-design-page.js?v=6"></script>
-  <script src="auth-experience.js?v=1"></script>
+  <script src="auth-experience.js?v=2"></script>
   <script src="feature-lab.js?v=4"></script>
   <script src="feature-engines.js?v=2"></script>
   <script src="search-watch-center.js?v=4"></script>
-  <script src="creative-suite.js?v=4"></script>
+  <script src="creative-suite.js?v=5"></script>
   <script src="space-explorer.js?v=3"></script>
 </body>
 </html>

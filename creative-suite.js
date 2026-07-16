@@ -218,8 +218,8 @@
   const decorateNavigation = () => {
     const group = [...document.querySelectorAll(".app-sidebar__group")].find((item) => item.querySelector('[data-app-route="/create"]'));
     if (!group) return;
-    group.classList.add("is-creative-group");
-    group.style.setProperty("--creative-group-count", `"${Object.keys(meta).length}"`);
+    group.classList.remove("is-creative-group");
+    group.style.removeProperty("--creative-group-count");
     group.querySelectorAll(".app-sidebar__subitem, .app-sidebar__studio-item").forEach((button) => {
       const id = Object.keys(meta).find((key) => button.dataset.appRoute?.endsWith(`/${key}`));
       if (!id) return;

@@ -6,7 +6,7 @@ function clientIp(req) {
 }
 
 function strongPassword(value) {
-  return value.length >= 15 && Buffer.byteLength(value, "utf8") <= 72;
+  return value.length >= 8 && Buffer.byteLength(value, "utf8") <= 72;
 }
 
 function appOrigin(req) {
@@ -143,7 +143,7 @@ module.exports = async function handler(req, res) {
       const name = clean(body.name, 160); const email = clean(body.email, 160).toLowerCase(); const password = String(body.password || "");
       await enforceRateLimit(db, `register:${clientIp(req)}`, 5, 60 * 60 * 1000);
       if (!name || !/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: "Họ tên hoặc email không hợp lệ." });
-      if (!strongPassword(password)) return res.status(400).json({ error: "Mật khẩu cần từ 15 ký tự và không vượt quá giới hạn mã hóa an toàn." });
+      if (!strongPassword(password)) return res.status(400).json({ error: "Mật khẩu cần từ 8 ký tự và không vượt quá giới hạn mã hóa an toàn." });
       if (await db.collection("users").findOne({ email })) return res.status(409).json({ error: "Email này đã được đăng ký." });
       const now = new Date();
       const user = { name, email, provider: "local", passwordHash: await bcrypt.hash(password, 13), tokenVersion: 0, consent: Boolean(body.consent), status: "active", createdAt: now, updatedAt: now, lastLoginAt: now, lastSeenAt: now };

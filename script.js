@@ -689,6 +689,13 @@ function initRealtimeAuth() {
   const handleRegister = async (event, formNode) => {
     event.preventDefault();
     const form = new FormData(formNode);
+    const password = String(form.get("password") || "");
+    if (password.length < 8) {
+      setStatus("Mật khẩu cần ít nhất 8 ký tự.");
+      gateStatus?.classList.add("is-error");
+      formNode.querySelector('[name="password"]')?.focus();
+      return;
+    }
     if (form.has("confirmPassword") && form.get("password") !== form.get("confirmPassword")) {
       setStatus("Mật khẩu xác nhận chưa khớp.");
       gateStatus?.classList.add("is-error");
@@ -703,7 +710,7 @@ function initRealtimeAuth() {
         body: JSON.stringify({
           name: form.get("name"),
           email: form.get("email"),
-          password: form.get("password"),
+          password,
           consent: form.get("consent") === "on"
         })
       });
@@ -766,7 +773,7 @@ function initRealtimeAuth() {
   }));
   gate?.querySelector("[data-register-password]")?.addEventListener("input", (event) => {
     const value = event.target.value;
-    const score = [value.length >= 15, /[a-zà-ỹ]/.test(value), /[A-ZÀ-Ỹ]/.test(value), /\d/.test(value), /[^A-Za-zÀ-ỹ\d]/.test(value)].filter(Boolean).length;
+    const score = [value.length >= 8, /[a-zà-ỹ]/.test(value), /[A-ZÀ-Ỹ]/.test(value), /\d/.test(value), /[^A-Za-zÀ-ỹ\d]/.test(value)].filter(Boolean).length;
     const meter = gate.querySelector("[data-password-strength]");
     if (!meter) return;
     meter.dataset.score = String(score);
@@ -4816,19 +4823,22 @@ function initAppShell() {
     navigation.innerHTML = groups.map((group) => {
       const routeMatches = route === group.route || route.startsWith(`${group.route}/`);
       const expanded = Object.hasOwn(sidebarGroupState, group.id) ? Boolean(sidebarGroupState[group.id]) : routeMatches;
-      const moduleItems = group.items.map((id) => {
+      const moduleEntries = group.items.map((id) => {
         const module = moduleById(id);
         if (!module) return "";
         const moduleRoute = routeForModule(id);
         return `<button class="app-sidebar__subitem ${route === moduleRoute ? "is-active" : ""}" type="button" data-app-route="${moduleRoute}" ${route === moduleRoute ? "aria-current=page" : ""}><span>${module.title}</span></button>`;
-      }).join("");
+      }).filter(Boolean);
+      const moduleItems = moduleEntries.join("");
       const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
       const pageItems = (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
       const studioMenu = group.studioItems ? `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
       const submenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
       const hasSubmenu = Boolean(submenu);
+      const submenuCount = (group.shortcuts?.length || 0) + (group.pages?.length || 0) + (group.studioItems?.length || 0) + moduleEntries.length;
+      const countBadge = hasSubmenu ? `<small class="app-sidebar__count" aria-label="${submenuCount} chức năng">${submenuCount}</small>` : "";
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}" data-nav-group="${group.id}" style="--nav-accent:${group.accent || "#56eaff"}">
-        <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.route}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}"><span>${group.icon}</span><b>${group.label}</b><i ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
+        <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.route}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}"><span>${group.icon}</span><b>${group.label}</b>${countBadge}<i class="app-sidebar__chevron" ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
         ${hasSubmenu ? `<div class="app-sidebar__submenu">${submenu}</div>` : ""}
       </section>`;
     }).join("");
