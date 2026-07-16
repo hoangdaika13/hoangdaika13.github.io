@@ -1144,13 +1144,13 @@ function initSuperPlatform() {
       <section class="ai-center-app" data-ai-center>
         <header class="ai-center-hero">
           <div><p class="section-kicker">AI Center 02</p><h4>Trung tâm trí tuệ sáng tạo</h4><span>Chat, thiết kế prompt, tối ưu, dịch và chạy workflow trong một không gian.</span></div>
-          <div class="ai-model-status"><i></i><div><strong data-ai-status>Local Intelligence</strong><span>Không gửi dữ liệu khi chưa yêu cầu</span></div></div>
+          <div class="ai-model-status"><i></i><div><strong data-ai-status>Gemini 3.5 qua máy chủ</strong><span>API key được bảo vệ trên Vercel, có fallback local</span></div></div>
         </header>
         <div class="ai-center-toolbar">
           <div class="ai-tool-tabs" role="tablist">
             ${[["chat","Chat AI"],["prompt","Prompt Studio"],["optimize","Tối ưu"],["translate","Dịch"],["workflow","Workflow"]].map(([id,label], index) => `<button class="interactive ${index === 0 ? "active" : ""}" type="button" data-ai-tab="${id}">${label}</button>`).join("")}
           </div>
-          <label class="ai-model-select">Model<select data-ai-model><option value="smart-local">HH Smart Local</option><option value="creative">Creative Writer</option><option value="analyst">Deep Analyst</option><option value="fast">Fast Assistant</option><option value="cloud">Cloud AI (backend)</option></select></label>
+          <label class="ai-model-select">Model<select data-ai-model><option value="cloud">Gemini 3.5 Flash (server)</option><option value="smart-local">HH Smart Local</option><option value="creative">Creative Writer Local</option><option value="analyst">Deep Analyst Local</option><option value="fast">Fast Assistant Local</option></select></label>
         </div>
         <div class="ai-center-layout">
           <aside class="ai-sidebar">
@@ -1216,7 +1216,7 @@ function initSuperPlatform() {
     let state = {};
     try { state = JSON.parse(localStorage.getItem("hh-media-center") || "{}"); } catch { state = {}; }
     const defaults = [
-      { id: "hh-ai-cover", title: "Kịch bản AI Studio", type: "image", category: "images", url: "assets/kich-ban-ai.png", source: "HH Projects", favorite: true },
+      { id: "hh-ai-cover", title: "Kịch bản AI Studio", type: "image", category: "images", url: "assets/kich-ban-ai.png", source: "HH Projects", favorite: true, route: "/create/ai-script" },
       { id: "hh-ambient", title: "HH Neon Ambient", type: "audio", category: "music", url: "", source: "Music Engine", favorite: false },
       { id: "hh-profile", title: "Hoangdaika13 Portfolio", type: "link", category: "gallery", url: "https://hoangdaika13.github.io", source: "Website", favorite: false }
     ];
@@ -1737,7 +1737,7 @@ function initSuperPlatform() {
     logModuleActivity(module.id, `${feature || "Workspace"} đã sẵn sàng để thao tác`);
   };
 
-  grid.addEventListener("click", (event) => {
+  grid.addEventListener("click", async (event) => {
     const favoriteButton = event.target.closest("[data-module-fav]");
     if (favoriteButton) {
       toggleFavorite(favoriteButton.dataset.moduleFav);
@@ -2163,7 +2163,7 @@ function initSuperPlatform() {
   const renderSmartSearch=(query,filter="all")=>{const panel=grid.querySelector("[data-smart-search]");if(!panel)return;const normalized=query.trim().toLowerCase();let results=smartSearchIndex.filter((item)=>(filter==="all"||item.type===filter)&&(!normalized||`${item.title} ${item.description}`.toLowerCase().includes(normalized)));const sort=panel.querySelector("[data-smart-sort]")?.value;if(sort==="name")results.sort((a,b)=>a.title.localeCompare(b.title));if(sort==="type")results.sort((a,b)=>a.type.localeCompare(b.type));const summary=panel.querySelector("[data-smart-summary]");if(summary)summary.textContent=`${results.length} kết quả${normalized?` cho “${query}”`:""}`;const list=panel.querySelector("[data-smart-results]");if(list)list.innerHTML=results.length?results.slice(0,50).map((item,index)=>`<button class="smart-result interactive" type="button" data-smart-result="${index}" data-smart-item='${escapeHtml(JSON.stringify(item))}'><span>${item.type.toUpperCase()}</span><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.description||"")}</p></div><b>›</b></button>`).join(""):'<div class="smart-empty"><span>⌕</span><strong>Không tìm thấy kết quả</strong><p>Thử từ khóa hoặc bộ lọc khác.</p></div>';};
 
   const mediaDefaults = () => [
-    { id: "hh-ai-cover", title: "Kịch bản AI Studio", type: "image", category: "images", url: "assets/kich-ban-ai.png", source: "HH Projects", favorite: true },
+    { id: "hh-ai-cover", title: "Kịch bản AI Studio", type: "image", category: "images", url: "assets/kich-ban-ai.png", source: "HH Projects", favorite: true, route: "/create/ai-script" },
     { id: "hh-ambient", title: "HH Neon Ambient", type: "audio", category: "music", url: "", source: "Music Engine", favorite: false },
     { id: "hh-profile", title: "Hoangdaika13 Portfolio", type: "link", category: "gallery", url: "https://hoangdaika13.github.io", source: "Website", favorite: false }
   ];
@@ -2204,6 +2204,10 @@ function initSuperPlatform() {
     try { const parsed = new URL(url); if (parsed.hostname.includes("youtu.be")) return parsed.pathname.split("/")[1]; if (parsed.hostname.includes("youtube")) return parsed.searchParams.get("v") || parsed.pathname.split("/").filter(Boolean).pop(); } catch {} return "";
   };
   const openMediaItem = (item) => {
+    if (item?.route || item?.id === "hh-ai-cover") {
+      location.hash = `#${item.route || "/create/ai-script"}`;
+      return;
+    }
     const panel = grid.querySelector("[data-media-center]");
     const stage = panel?.querySelector("[data-media-preview]");
     if (!stage || !item) return;
@@ -2367,7 +2371,7 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
     logCommandActivity(toggle.checked ? "Hoàn thành todo" : "Mở lại todo");
   });
 
-  grid.addEventListener("click", (event) => {
+  grid.addEventListener("click", async (event) => {
     const notification=event.target.closest("[data-notification]");if(notification){const readState=()=>{try{return JSON.parse(localStorage.getItem("hh-notification-center")||"{}");}catch{return {};}};const defaults=[{title:"Chào mừng đến HH Platform",message:"Các trung tâm 01-15 đã sẵn sàng để sử dụng.",time:"Hôm nay",read:false,type:"system"},{title:"Media Center v22",message:"Thư viện media đã được nâng cấp.",time:"Gần đây",read:true,type:"update"}];const save=(state)=>localStorage.setItem("hh-notification-center",JSON.stringify(state));if(event.target.closest("[data-notification-enable]")){if("Notification" in window)Notification.requestPermission().then((permission)=>{event.target.closest("[data-notification-enable]").textContent=permission==="granted"?"Đã cho phép":"Chưa được cho phép";});return;}const filter=event.target.closest("[data-notification-filter]");if(filter){notification.querySelectorAll("[data-notification-filter]").forEach((item)=>item.classList.toggle("active",item===filter));notification.querySelectorAll("[data-notification-item]").forEach((item)=>item.hidden=filter.dataset.notificationFilter==="unread"&&item.classList.contains("read")||!["all","unread"].includes(filter.dataset.notificationFilter)&&item.dataset.notificationType!==filter.dataset.notificationFilter);return;}const read=event.target.closest("[data-notification-read]");if(read){const state=readState();state.inbox=state.inbox||defaults;state.inbox[Number(read.dataset.notificationRead)].read=true;save(state);rerenderModule("notification-center");return;}if(event.target.closest("[data-notification-read-all]")){const state=readState();state.inbox=(state.inbox||defaults).map((item)=>({...item,read:true}));save(state);rerenderModule("notification-center");return;}if(event.target.closest("[data-notification-subscribe]")){const status=notification.querySelector("[data-notification-status]");(async()=>{try{const token=localStorage.getItem("hh-auth-token")||"";const response=await fetch(`${REALTIME_URL}/api/notifications/subscribe`,{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({channel:notification.querySelector("[data-notification-channel]").value,target:notification.querySelector("[data-notification-target]").value,preferences:Object.fromEntries(Array.from(notification.querySelectorAll("[data-notification-pref]")).map((item)=>[item.dataset.notificationPref,item.checked]))})});const data=await response.json();if(!response.ok)throw new Error(data.error||"Lưu thất bại");status.textContent=`Đã lưu đăng ký ${data.subscription.channel}. ${data.subscription.note}`;}catch(error){status.textContent=error.message;}})();return;}}
     const apiCenter=event.target.closest("[data-api-center]");if(apiCenter){const endpoints=[{method:"GET",path:"/api/auth/me",name:"Phiên người dùng",description:"Trả về tài khoản hiện tại và lịch sử đăng nhập."},{method:"GET",path:"/api/store/products",name:"Sản phẩm",description:"Danh sách sản phẩm số công khai."},{method:"GET",path:"/api/storage/files",name:"Cloud files",description:"Metadata file riêng của tài khoản."},{method:"GET",path:"/api/platform/summary",name:"Admin summary",description:"Thống kê chỉ dành cho chủ sở hữu."},{method:"POST",path:"/api/notifications/subscribe",name:"Đăng ký thông báo",description:"Lưu kênh thông báo vào MongoDB."},{method:"POST",path:"/api/store/orders",name:"Tạo đơn hàng",description:"Tạo đơn chờ thanh toán thủ công."},{method:"GET",path:"/api/search/google?health=1",name:"Search Gateway",description:"Một function động dùng chung cho Google và YouTube."},{method:"GET",path:"/api/search/youtube?q=music",name:"YouTube Search",description:"Tìm video, channel hoặc playlist qua YouTube Data API."},{method:"GET",path:"/api/search/google?q=AI",name:"Google Search",description:"Tìm web hoặc hình ảnh qua Programmable Search."}];const open=event.target.closest("[data-api-open]");if(open){const item=endpoints[Number(open.dataset.apiOpen)];apiCenter.querySelectorAll("[data-api-open]").forEach((node)=>node.classList.toggle("active",node===open));apiCenter.querySelector("[data-api-method]").value=item.method;apiCenter.querySelector("[data-api-path]").value=item.path;apiCenter.querySelector("[data-api-doc-title]").textContent=item.name;apiCenter.querySelector("[data-api-doc-path]").textContent=`${item.method} ${item.path}`;apiCenter.querySelector("[data-api-doc-description]").textContent=item.description;return;}if(event.target.closest("[data-api-send]")){const method=apiCenter.querySelector("[data-api-method]").value;const path=apiCenter.querySelector("[data-api-path]").value;const output=apiCenter.querySelector("[data-api-response]");const start=performance.now();output.textContent="Đang gửi request...";(async()=>{try{const token=localStorage.getItem("hh-auth-token")||"";const options={method,headers:{"Content-Type":"application/json",...(token?{Authorization:`Bearer ${token}`}:{})}};if(method!=="GET")options.body=apiCenter.querySelector("[data-api-body]").value||"{}";const response=await fetch(`${REALTIME_URL}${path}`,options);const data=await response.json().catch(()=>({}));output.textContent=JSON.stringify({status:response.status,ok:response.ok,data},null,2);apiCenter.querySelector("[data-api-timing]").textContent=`${Math.round(performance.now()-start)} ms · HTTP ${response.status}`;}catch(error){output.textContent=error.message;}})();return;}if(event.target.closest("[data-api-copy-curl]")){const method=apiCenter.querySelector("[data-api-method]").value;const path=apiCenter.querySelector("[data-api-path]").value;navigator.clipboard.writeText(`curl -X ${method} "${REALTIME_URL}${path}" -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json"`);return;}}
     const developer=event.target.closest("[data-developer]");if(developer){const tab=event.target.closest("[data-dev-tab]");if(tab){developer.querySelectorAll("[data-dev-tab]").forEach((item)=>item.classList.toggle("active",item===tab));developer.querySelectorAll("[data-dev-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.devPane===tab.dataset.devTab));return;}}
@@ -2560,6 +2564,17 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
         const input = ai.querySelector("[data-ai-optimize-input]")?.value.trim() || "";
         if (!input) return ai.querySelector("[data-ai-optimize-input]")?.focus();
         const options = Array.from(ai.querySelectorAll("[data-ai-opt]:checked")).map((item) => item.dataset.aiOpt);
+        if (ai.querySelector("[data-ai-model]")?.value === "cloud" && REALTIME_URL) {
+          aiResult("Đang tối ưu với Gemini 3.5", "Creative AI đang phân tích cấu trúc và ràng buộc...");
+          try {
+            const action = await creativeAIRequest("ai-center", `Tối ưu prompt sau với các tiêu chí ${options.join(", ")}:\n\n${input}`, "chat", { model: "gemini-3.5-flash", mode: "prompt-optimizer" });
+            const scoreNode = ai.querySelector("[data-ai-score]"); if (scoreNode) scoreNode.textContent = "96";
+            aiResult("Prompt tối ưu · Gemini 3.5", action.output || "");
+          } catch (error) {
+            aiResult("Cloud AI chưa sẵn sàng", `${aiLocalAnswer(input, "analyst")}\n\n${error.message}`);
+          }
+          return;
+        }
         const optimized = [`VAI TRÒ: Hãy đóng vai chuyên gia có kinh nghiệm thực tế phù hợp với nhiệm vụ.`, `\nNHIỆM VỤ: ${input}`, options.includes("structure") ? "\nCẤU TRÚC: Phân tích mục tiêu, thực hiện theo từng bước, sau đó tự kiểm tra kết quả." : "", options.includes("constraints") ? "\nRÀNG BUỘC: Không bịa thông tin; nêu rõ giả định; ưu tiên giải pháp có thể thực hiện ngay." : "", options.includes("examples") ? "\nVÍ DỤ: Cung cấp ít nhất 2 ví dụ cụ thể và một trường hợp cần tránh." : "", options.includes("reasoning") ? "\nQUY TRÌNH: Giải thích ngắn gọn cơ sở của từng quyết định quan trọng." : "", "\nĐẦU RA: Dùng tiêu đề ngắn, danh sách hành động và checklist hoàn thành."].filter(Boolean).join("\n");
         const score = Math.min(98, 58 + options.length * 9 + Math.min(8, Math.round(input.length / 80)));
         const scoreNode = ai.querySelector("[data-ai-score]"); if (scoreNode) scoreNode.textContent = score;
@@ -2577,6 +2592,17 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
         const input = ai.querySelector("[data-ai-translate-input]")?.value.trim() || "";
         const target = ai.querySelector("[data-ai-target-lang]")?.value;
         if (!input) return ai.querySelector("[data-ai-translate-input]")?.focus();
+        if (ai.querySelector("[data-ai-model]")?.value === "cloud" && REALTIME_URL) {
+          aiResult("Đang dịch với Gemini 3.5", "Giữ nguyên ý nghĩa, tone và thuật ngữ...");
+          try {
+            const action = await creativeAIRequest("ai-center", `Dịch tự nhiên sang ${target === "en" ? "English" : "Tiếng Việt"}:\n\n${input}`, "translate", { model: "gemini-3.5-flash", target });
+            const output = ai.querySelector("[data-ai-translate-output]"); if (output) output.value = action.output || "";
+            aiResult("Bản dịch Gemini 3.5", action.output || "");
+          } catch (error) {
+            aiResult("Cloud AI chưa sẵn sàng", error.message);
+          }
+          return;
+        }
         const translated = target === "en" ? `Act as an expert assistant. Preserve the original intent and execute this request accurately:\n\n${input}\n\nReturn a clear, structured answer with practical examples and an action checklist.` : `Hãy đóng vai trợ lý chuyên gia. Giữ nguyên ý nghĩa ban đầu và thực hiện chính xác yêu cầu sau:\n\n${input}\n\nTrả lời rõ ràng, có cấu trúc, ví dụ thực tế và checklist hành động.`;
         const output = ai.querySelector("[data-ai-translate-output]"); if (output) output.value = translated;
         aiResult("Prompt đã chuyển ngữ", translated);
@@ -2593,6 +2619,16 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
       if (event.target.closest("[data-ai-run-workflow]")) {
         const source = ai.querySelector("[data-ai-workflow-input]")?.value.trim() || "Chưa có dữ liệu đầu vào";
         const steps = Array.from(ai.querySelectorAll("[data-ai-step]")).map((item) => item.value.trim()).filter(Boolean);
+        if (ai.querySelector("[data-ai-model]")?.value === "cloud" && REALTIME_URL) {
+          aiResult("Workflow Gemini đang chạy", "Các bước được gửi trong một tác vụ gộp để tiết kiệm quota...");
+          try {
+            const action = await creativeAIRequest("ai-center", JSON.stringify({ input: source, platform: "General", language: "Tiếng Việt", style: "Chuyên nghiệp", steps: steps.map((id) => ({ id, enabled: true })) }), "workflow", { model: "gemini-3.5-flash" });
+            aiResult("Workflow Gemini hoàn tất", action.output || "");
+          } catch (error) {
+            aiResult("Cloud workflow chưa sẵn sàng", error.message);
+          }
+          return;
+        }
         const result = [`WORKFLOW HOÀN TẤT`, `\nĐầu vào: ${source}`, ...steps.map((step, index) => `\nBƯỚC ${index + 1}: ${step}\n${aiLocalAnswer(`${step}. Dữ liệu: ${source}`, index === 0 ? "analyst" : "smart-local").split("\n").slice(0, 4).join("\n")}`), "\nKết luận: Các bước đã được xử lý. Hãy kiểm tra và tinh chỉnh kết quả trước khi xuất bản."].join("\n");
         aiResult("Workflow hoàn thành", result);
         return;
@@ -3916,10 +3952,17 @@ function config() {
   return {
     projectName: valueOf("projectName") || "Dự án kể chuyện 40+",
     title: valueOf("storyTitle") || "Một câu chuyện đời thường nhiều cảm xúc",
+    platform: valueOf("platform") || "YouTube",
     duration: valueOf("duration") || "8-12 phút",
     audience: valueOf("audience") || "Người xem 40+",
     tone: valueOf("tone") || "Ấm áp, chân thật, giàu cảm xúc",
-    mode: valueOf("rewriteMode") || "Kể chuyện 40+ - nhanh và cảm xúc"
+    niche: valueOf("niche") || "Kể chuyện đời sống",
+    cta: valueOf("cta") || "CTA mềm, tự nhiên",
+    mode: valueOf("rewriteMode") || "Kể chuyện 40+ - nhanh và cảm xúc",
+    thinking: valueOf("thinkingMode") || "balanced",
+    creativity: Number(byId("creativity")?.value || 72),
+    trainingProfile: valueOf("trainingProfile"),
+    negativeRules: valueOf("negativeRules")
   };
 }
 
@@ -3930,10 +3973,17 @@ function buildPrompt() {
 
 Dự án: ${cfg.projectName}
 Tiêu đề/chủ đề: ${cfg.title}
+Nền tảng: ${cfg.platform}
 Thời lượng mục tiêu: ${cfg.duration}
 Người xem: ${cfg.audience}
 Tone: ${cfg.tone}
+Niche: ${cfg.niche}
+CTA: ${cfg.cta}
 Chế độ viết: ${cfg.mode}
+Chế độ suy luận: ${cfg.thinking}
+Độ sáng tạo: ${cfg.creativity}/100
+Hồ sơ phong cách: ${cfg.trainingProfile || "Chưa thiết lập"}
+Quy tắc khóa: ${cfg.negativeRules || "Không sao chép nguyên văn, không bịa dữ kiện."}
 
 Yêu cầu:
 1. Viết thành kịch bản hoàn chỉnh, không viết outline, không viết bảng.
@@ -4044,6 +4094,13 @@ function currentProjectPayload() {
     niche: valueOf("niche"),
     cta: valueOf("cta"),
     mode: valueOf("rewriteMode"),
+    platform: valueOf("platform"),
+    model: valueOf("modelName"),
+    thinking: valueOf("thinkingMode"),
+    creativity: Number(byId("creativity")?.value || 72),
+    trainingSamples: valueOf("trainingSamples"),
+    trainingProfile: valueOf("trainingProfile"),
+    negativeRules: valueOf("negativeRules"),
     source: valueOf("sourceText"),
     output: valueOf("outputText"),
     savedAt: new Date().toISOString()
@@ -4059,6 +4116,14 @@ function loadProjectPayload(payload) {
   setValue("niche", payload.niche || "");
   setValue("cta", payload.cta || "");
   setValue("rewriteMode", payload.mode || "");
+  setValue("platform", payload.platform || "YouTube");
+  setValue("modelName", payload.model || "gemini-3.5-flash");
+  setValue("thinkingMode", payload.thinking || "balanced");
+  if (byId("creativity")) byId("creativity").value = String(payload.creativity || 72);
+  setText("creativityValue", `${payload.creativity || 72}%`);
+  setValue("trainingSamples", payload.trainingSamples || "");
+  setValue("trainingProfile", payload.trainingProfile || "");
+  setValue("negativeRules", payload.negativeRules || "Không sao chép nguyên văn. Không bịa dữ kiện.");
   setValue("sourceText", payload.source || "");
   setValue("outputText", payload.output || "");
   updateMetas();
@@ -4073,35 +4138,104 @@ function downloadText(filename, text, type = "text/plain;charset=utf-8") {
   URL.revokeObjectURL(link.href);
 }
 
-async function callGemini() {
-  const apiKey = valueOf("apiKey");
-  const model = valueOf("modelName") || "gemini-1.5-flash";
-  if (!apiKey) {
-    setStatus("Bạn cần nhập API key Gemini nếu muốn gọi AI thật.");
-    return;
+function creativeAnonymousId() {
+  let id = localStorage.getItem("hh-anonymous-id");
+  if (!id) {
+    id = crypto.randomUUID?.() || `guest-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem("hh-anonymous-id", id);
   }
-  setStatus("Đang gọi Gemini...");
+  return id;
+}
+
+async function creativeAIRequest(moduleId, input, actionType, meta = {}) {
+  const base = String(window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
+  const token = localStorage.getItem("hh-auth-token") || "";
+  const cacheSeed = `${moduleId}|${actionType}|${meta.model || ""}|${input}`;
+  const cacheHash = [...cacheSeed].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0);
+  const cacheKey = `hh-creative-ai-cache:${cacheHash}`;
+  if (meta.useCache) {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(cacheKey) || "null");
+      if (cached?.output) return { ...cached, provider: `${cached.provider || "local"}-cache` };
+    } catch {}
+  }
+  const response = await fetch(`${base}/api/modules/${encodeURIComponent(moduleId)}/actions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify({
+      input,
+      actionType,
+      meta,
+      anonymousId: creativeAnonymousId()
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Creative AI chưa phản hồi.");
+  const action = data.action || {};
+  if (meta.useCache && action.output) {
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(action)); } catch {}
+  }
+  return action;
+}
+
+async function checkCreativeAIStatus() {
+  const target = byId("aiServerStatus");
+  if (!target) return;
+  const base = String(window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: buildPrompt() }] }],
-        generationConfig: { temperature: 0.8, topP: 0.95, maxOutputTokens: 4096 }
-      })
-    });
-    if (!response.ok) throw new Error(await response.text());
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text).join("\n") || "";
-    setOutput(text || "Gemini không trả về nội dung.", "Gemini đã trả kết quả.");
+    const response = await fetch(`${base}/api/modules/ai-script/actions`, { cache: "no-store" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Không kết nối được.");
+    target.textContent = data.configured
+      ? `Đã kết nối · ${data.defaultModel || "Gemini 3.5 Flash"}`
+      : "Chế độ local · chưa cấu hình GEMINI_API_KEY";
+    target.classList.toggle("is-online", Boolean(data.configured));
+  } catch {
+    target.textContent = "Chế độ local · máy chủ AI tạm thời ngoại tuyến";
+    target.classList.remove("is-online");
+  }
+}
+
+function aiScriptMeta(extra = {}) {
+  return {
+    model: valueOf("modelName") || "gemini-3.5-flash",
+    config: config(),
+    context: valueOf("trainingProfile"),
+    thinking: valueOf("thinkingMode") || "balanced",
+    creativity: Number(byId("creativity")?.value || 72),
+    stream: Boolean(byId("streamOutput")?.checked),
+    useCache: Boolean(byId("useCache")?.checked),
+    ...extra
+  };
+}
+
+async function runScriptAI(actionType, input, statusMessage) {
+  setStatus(statusMessage || "Creative AI đang phân tích...");
+  const action = await creativeAIRequest("ai-script", input, actionType, aiScriptMeta());
+  const suffix = String(action.provider || "").startsWith("gemini")
+    ? `Gemini ${action.model || "3.5"}`
+    : "HH Local fallback";
+  return { action, suffix };
+}
+
+async function callGemini() {
+  try {
+    const { action, suffix } = await runScriptAI("rewrite", buildPrompt(), "Gemini đang viết kịch bản hoàn chỉnh...");
+    setOutput(action.output || "AI không trả về nội dung.", `Đã hoàn tất bằng ${suffix}.`);
+    if (byId("autoTranslate")?.checked) byId("translateGemini")?.click();
   } catch (error) {
     console.error(error);
-    setStatus("Không gọi được Gemini. Hãy kiểm tra API key, model hoặc mạng/CORS.");
+    setStatus(`Không gọi được Creative AI: ${error.message}`);
   }
 }
 
 function initMiniTabs() {
   document.querySelectorAll(".mini-tab").forEach((button) => {
+    if (button.dataset.miniTabBound === "true") return;
+    button.dataset.miniTabBound = "true";
     button.addEventListener("click", () => {
       const tab = button.dataset.miniTab;
       document.querySelectorAll(".mini-tab").forEach((item) => item.classList.toggle("active", item === button));
@@ -4116,9 +4250,92 @@ function bind(id, event, handler) {
 
 function initTool() {
   if (!byId("sourceText") && !byId("outputText")) return;
+  const toolRoot = byId("sourceText")?.closest(".neon-app") || byId("outputText")?.closest(".neon-app");
+  if (toolRoot?.dataset.aiScriptBound === "true") return;
+  if (toolRoot) toolRoot.dataset.aiScriptBound = "true";
+  let batchItems = [];
+  let autoSaveTimer = 0;
+  const saveProjectLocal = (quiet = false) => {
+    const payload = currentProjectPayload();
+    localStorage.setItem("kich-ban-ai-project", JSON.stringify(payload));
+    setText("projectOutput", JSON.stringify(payload, null, 2));
+    if (!quiet) setStatus("Đã lưu dự án trên thiết bị.");
+    return payload;
+  };
+  const renderBatch = (note = "") => {
+    const rows = batchItems.map(({ text, ...item }) => item);
+    setText("batchOutput", `${JSON.stringify(rows, null, 2)}${note ? `\n\n${note}` : ""}`);
+    localStorage.setItem("kich-ban-ai-batch", JSON.stringify(batchItems.slice(0, 60)));
+  };
+  const loadTextFiles = async (files, sourceLabel = "batch") => {
+    batchItems = [];
+    for (const file of [...files].slice(0, 60)) {
+      const text = await file.text();
+      batchItems.push({
+        name: file.webkitRelativePath || file.name,
+        words: wordCount(text),
+        summary: summarizeText(text).slice(0, 240),
+        source: sourceLabel,
+        text
+      });
+    }
+    renderBatch();
+    setStatus(`Đã nạp ${batchItems.length} file từ ${sourceLabel}.`);
+  };
+  const videoMetadata = (file) => new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const media = document.createElement(file.type.startsWith("audio/") ? "audio" : "video");
+    const finish = () => {
+      const duration = Number.isFinite(media.duration) ? media.duration : 0;
+      URL.revokeObjectURL(url);
+      resolve({
+        name: file.webkitRelativePath || file.name,
+        type: file.type || "media",
+        sizeMB: Number((file.size / 1024 / 1024).toFixed(2)),
+        duration: duration ? `${Math.floor(duration / 60)}:${String(Math.round(duration % 60)).padStart(2, "0")}` : "Không đọc được"
+      });
+    };
+    media.preload = "metadata";
+    media.onloadedmetadata = finish;
+    media.onerror = finish;
+    media.src = url;
+  });
+  const showVideoFiles = async (files) => {
+    const rows = await Promise.all([...files].slice(0, 40).map(videoMetadata));
+    const report = `MEDIA THAM CHIẾU\n${rows.map((item, index) => `${index + 1}. ${item.name}\n   ${item.type} · ${item.sizeMB} MB · ${item.duration}`).join("\n")}\n\nGợi ý: dùng tên file, thời lượng và mô tả cảnh làm ngữ cảnh cho prompt; video lớn không được tải trực tiếp lên Vercel để tránh vượt giới hạn gói free.`;
+    setText("batchOutput", report);
+    showMiniTab("batch");
+    setStatus(`Đã đọc metadata của ${rows.length} file media.`);
+  };
+  const localTitle = () => {
+    const source = valueOf("sourceText");
+    const kw = topKeywords(source, 4).map(([word]) => word).join(" ");
+    return kw ? `Sự thật phía sau ${kw}` : "Một bí mật khiến cả gia đình im lặng";
+  };
+  const makeTitleHandler = async () => {
+    if (!byId("aiPickTitle")?.checked || valueOf("modelName") === "local") {
+      setValue("storyTitle", localTitle());
+      return setStatus("Đã tạo title local.");
+    }
+    try {
+      const { action, suffix } = await runScriptAI("chat", `Hãy tạo 5 tiêu đề YouTube dưới 70 ký tự và chọn 1 tiêu đề mạnh nhất cho nội dung sau:\n\n${valueOf("sourceText") || valueOf("outputText")}`, "AI đang tối ưu tiêu đề...");
+      const first = String(action.output || "").split(/\r?\n/).map((line) => line.replace(/^\s*\d+[.)-]?\s*/, "").trim()).find(Boolean);
+      setValue("storyTitle", first?.slice(0, 100) || localTitle());
+      setText("geminiOutput", action.output || "");
+      setStatus(`Đã tạo title bằng ${suffix}.`);
+    } catch (error) {
+      setValue("storyTitle", localTitle());
+      setStatus(`Đã dùng title local vì AI chưa phản hồi: ${error.message}`);
+    }
+  };
 
   bind("sourceText", "input", updateMetas);
   bind("outputText", "input", updateMetas);
+  toolRoot?.addEventListener("input", () => {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => saveProjectLocal(true), 700);
+  });
+  bind("creativity", "input", (event) => setText("creativityValue", `${event.target.value}%`));
   bind("scriptFile", "change", async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -4126,6 +4343,10 @@ function initTool() {
     updateMetas();
     setStatus(`Đã nhập file: ${file.name}`);
   });
+  bind("textFolderFiles", "change", (event) => loadTextFiles(event.target.files || [], "folder text"));
+  bind("batchFiles", "change", (event) => loadTextFiles(event.target.files || [], "batch"));
+  bind("videoFile", "change", (event) => showVideoFiles(event.target.files || []));
+  bind("videoFolderFiles", "change", (event) => showVideoFiles(event.target.files || []));
   bind("pasteSource", "click", async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -4141,22 +4362,42 @@ function initTool() {
     updateMetas();
     setStatus("Đã làm sạch text/phụ đề.");
   });
+  bind("applyPreset", "click", () => {
+    const preset = valueOf("preset");
+    const profiles = {
+      "Series nhiều tập": ["10-15 phút", "Người xem theo dõi series dài hạn", "Giàu cliffhanger, nhất quán nhân vật", "Series kể chuyện nhiều tập", "Kết mỗi tập bằng một câu hỏi hoặc cliffhanger."],
+      "Storytelling 40+": ["8-12 phút", "Nam nữ 40-65 tuổi", "Ấm áp, chân thật, giàu cảm xúc", "Kể chuyện 40+ - nhanh và cảm xúc", "CTA mềm gợi người xem chia sẻ trải nghiệm."],
+      "Drama gia đình": ["12-18 phút", "Người xem yêu thích drama gia đình", "Kịch tính, nhiều đối thoại, có plot twist", "Drama gia đình có plot twist", "Mời người xem bình luận ai đúng ai sai."],
+      "Nhân quả báo ứng": ["10-14 phút", "Người xem thích bài học nhân sinh", "Căng thẳng, công bằng, có dư âm", "Viết lại 100% chỉ giữ ý tưởng lõi", "Kết bằng bài học về lựa chọn và hậu quả."],
+      "Cinematic emotional": ["8-12 phút", "Khán giả yêu nội dung điện ảnh", "Điện ảnh, giàu hình ảnh, tiết chế", "Viết lại 100% chỉ giữ ý tưởng lõi", "CTA ngắn, không phá cảm xúc kết."]
+    };
+    const [duration, audience, tone, mode, cta] = profiles[preset] || profiles["Storytelling 40+"];
+    setValue("duration", duration);
+    setValue("audience", audience);
+    setValue("tone", tone);
+    setValue("rewriteMode", mode);
+    setValue("cta", cta);
+    setStatus(`Đã áp dụng mẫu ${preset}.`);
+  });
+  bind("suggestMode", "click", () => {
+    const source = valueOf("sourceText").toLowerCase();
+    const mode = /gia đình|mẹ|cha|con|hôn nhân/.test(source)
+      ? "Drama gia đình có plot twist"
+      : wordCount(source) > 1800
+        ? "Viết lại 100% chỉ giữ ý tưởng lõi"
+        : "Kể chuyện 40+ - nhanh và cảm xúc";
+    setValue("rewriteMode", mode);
+    setStatus(`Đề xuất: ${mode}.`);
+  });
   bind("makeDraft", "click", () => setOutput(buildDraft(), "Đã tạo bản nháp local."));
   bind("oneClick", "click", () => {
     const cleaned = cleanText(valueOf("sourceText"));
     setValue("sourceText", cleaned);
-    const draft = buildDraft();
-    setOutput(draft, "Đã xử lý 1 chạm: làm sạch, phân tích nhanh và tạo bản nháp.");
+    setOutput(buildDraft(), "Đã xử lý 1 chạm: làm sạch, phân tích nhanh và tạo bản nháp.");
     setText("analysisOutput", analyzeText(cleaned));
   });
-  bind("makePrompt", "click", () => setOutput(buildPrompt(), "Đã tạo prompt."));
+  bind("makePrompt", "click", () => setOutput(buildPrompt(), "Đã tạo prompt sản xuất đầy đủ."));
   bind("callGemini", "click", callGemini);
-  const makeTitleHandler = () => {
-    const source = valueOf("sourceText");
-    const kw = topKeywords(source, 4).map(([word]) => word).join(" ");
-    setValue("storyTitle", kw ? `Sự thật phía sau ${kw}` : "Một bí mật khiến cả gia đình im lặng");
-    setStatus("Đã tạo title local.");
-  };
   bind("makeTitle", "click", makeTitleHandler);
   bind("makeTitle2", "click", makeTitleHandler);
   bind("copyOutput", "click", async () => {
@@ -4171,14 +4412,30 @@ function initTool() {
     downloadText("kich-ban-ai.txt", text);
     setStatus("Đã tạo file TXT.");
   });
-  bind("writerGenerate", "click", () => {
-    const draft = buildDraft();
-    setOutput(draft, "Gemini Writer: đã tạo bản viết mới local.");
+  bind("downloadWord", "click", () => {
+    const text = valueOf("outputText");
+    if (!text) return setStatus("Chưa có nội dung để xuất Word.");
+    const safe = text.replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[char]).replace(/\n/g, "<br>");
+    downloadText("kich-ban-ai.doc", `<html><meta charset="utf-8"><body style="font-family:Arial;line-height:1.6"><h1>${config().title}</h1><p>${safe}</p></body></html>`, "application/msword;charset=utf-8");
+    setStatus("Đã tạo file Word tương thích.");
+  });
+  bind("writerGenerate", "click", async () => {
+    try {
+      const { action, suffix } = await runScriptAI("rewrite", buildPrompt(), "Gemini Writer đang tạo bản mới...");
+      setOutput(action.output || buildDraft(), `Gemini Writer hoàn tất bằng ${suffix}.`);
+    } catch (error) {
+      setOutput(buildDraft(), `Đã dùng bản local: ${error.message}`);
+    }
     showMiniTab("writer");
   });
-  bind("writerImprove", "click", () => {
-    const improved = `${valueOf("outputText") || buildDraft()}\n\nPHIÊN BẢN NÂNG CẤP\n- Tăng hook mở đầu.\n- Thêm đối thoại ở cao trào.\n- Làm rõ bài học cuối câu chuyện.\n- Giảm câu giống nguồn, tăng chi tiết mới.`;
-    setOutput(improved, "Đã nâng cấp bản nháp local.");
+  bind("writerImprove", "click", async () => {
+    const draft = valueOf("outputText") || buildDraft();
+    try {
+      const { action, suffix } = await runScriptAI("improve", draft, "AI đang biên tập sâu bản nháp...");
+      setOutput(action.output || draft, `Đã nâng cấp bằng ${suffix}.`);
+    } catch (error) {
+      setOutput(`${draft}\n\nCHECKLIST NÂNG CẤP\n- Tăng hook.\n- Thêm đối thoại ở cao trào.\n- Làm rõ bài học.\n- Tăng chi tiết nguyên bản.`, `Đã dùng bộ biên tập local: ${error.message}`);
+    }
     showMiniTab("writer");
   });
   bind("writerPrompt", "click", () => {
@@ -4186,8 +4443,18 @@ function initTool() {
     showMiniTab("writer");
   });
   bind("analyzeScript", "click", () => {
-    setText("analysisOutput", analyzeText(valueOf("sourceText")));
-    setStatus("Đã phân tích nguồn.");
+    setText("analysisOutput", analyzeText(valueOf("outputText") || valueOf("sourceText")));
+    setStatus("Đã phân tích local.");
+  });
+  bind("analyzeAI", "click", async () => {
+    try {
+      const { action, suffix } = await runScriptAI("analysis", valueOf("outputText") || valueOf("sourceText"), "Gemini đang chấm cấu trúc, retention và originality...");
+      setText("analysisOutput", action.output || "Không có kết quả.");
+      setStatus(`Đã phân tích sâu bằng ${suffix}.`);
+    } catch (error) {
+      setText("analysisOutput", analyzeText(valueOf("outputText") || valueOf("sourceText")));
+      setStatus(`Đã dùng phân tích local: ${error.message}`);
+    }
   });
   bind("storyScore", "click", () => {
     const draft = valueOf("outputText");
@@ -4196,9 +4463,7 @@ function initTool() {
     setStatus(`Story score: ${score}/100`);
   });
   bind("summarizeScript", "click", () => {
-    const sourceSummary = summarizeText(valueOf("sourceText"));
-    const draftSummary = summarizeText(valueOf("outputText"));
-    setText("summaryOutput", `TÓM TẮT NGUỒN\n${sourceSummary}\n\nTÓM TẮT BẢN MỚI\n${draftSummary}`);
+    setText("summaryOutput", `TÓM TẮT NGUỒN\n${summarizeText(valueOf("sourceText"))}\n\nTÓM TẮT BẢN MỚI\n${summarizeText(valueOf("outputText"))}`);
     setStatus("Đã tóm tắt.");
     showMiniTab("summary");
   });
@@ -4207,43 +4472,84 @@ function initTool() {
     setText("similarityPercent", `${report.similarity}%`);
     setText("originalityPercent", `${report.originality}%`);
     setText("riskLevel", report.risk);
-    setText("compareOutput", `Độ giống: ${report.similarity}%\nĐộ mới: ${report.originality}%\nRủi ro: ${report.risk}\n\nKhuyến nghị:\n- Nếu rủi ro cao, đổi cấu trúc cảnh, nhân vật, tình huống và cách mở nút.\n- Giữ ý lõi nhưng thay diễn biến và câu chữ.\n- Tăng chi tiết mới ở phần giữa và cao trào.`);
+    setText("compareOutput", `Độ giống: ${report.similarity}%\nĐộ mới: ${report.originality}%\nRủi ro: ${report.risk}\n\nKhuyến nghị:\n- Đổi cấu trúc cảnh, nhân vật và cách mở nút nếu rủi ro cao.\n- Giữ ý lõi nhưng thay diễn biến và câu chữ.\n- Tăng chi tiết mới ở phần giữa và cao trào.`);
     setStatus("Đã so sánh độ giống.");
     showMiniTab("compare");
   });
-  bind("sendChat", "click", () => {
+  bind("sendChat", "click", async () => {
     const question = valueOf("chatInput");
     if (!question) return setStatus("Chưa có câu hỏi chat.");
-    const answer = `Bạn: ${question}\n\nAI local: Dựa trên kịch bản hiện tại, nên tăng xung đột ở phần giữa, thêm một bằng chứng rõ ràng và làm đoạn kết có dư âm hơn.\n\n`;
-    setText("chatLog", `${byId("chatLog")?.textContent || ""}${answer}`);
+    const previous = byId("chatLog")?.textContent || "";
+    setText("chatLog", `${previous}\n\nBẠN\n${question}\n\nAI\nĐang suy nghĩ...`);
     setValue("chatInput", "");
-    setStatus("Chat AI đã trả lời local.");
+    try {
+      const context = valueOf("chatMode").includes("kịch bản")
+        ? valueOf("outputText") || valueOf("sourceText")
+        : valueOf("chatMode").includes("training")
+          ? valueOf("trainingProfile")
+          : "";
+      const { action, suffix } = await runScriptAI("chat", question, "Chat AI đang trả lời...");
+      setText("chatLog", `${previous}\n\nBẠN\n${question}\n\nAI · ${suffix}\n${action.output || ""}${context ? `\n\nNgữ cảnh đang dùng: ${context.slice(0, 120)}...` : ""}`);
+      setStatus(`Chat đã trả lời bằng ${suffix}.`);
+    } catch (error) {
+      setText("chatLog", `${previous}\n\nBẠN\n${question}\n\nAI LOCAL\nNên tăng xung đột ở phần giữa, thêm bằng chứng rõ ràng và làm đoạn kết có dư âm hơn.`);
+      setStatus(`Chat dùng fallback local: ${error.message}`);
+    }
+  });
+  bind("chatInput", "keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      byId("sendChat")?.click();
+    }
   });
   bind("clearChat", "click", () => {
     setText("chatLog", "Chat log.");
     setStatus("Đã xóa chat.");
   });
-  bind("batchFiles", "change", async (event) => {
-    const files = [...(event.target.files || [])];
-    const rows = [];
-    for (const file of files) {
-      const text = await file.text();
-      rows.push({ name: file.name, words: wordCount(text), summary: summarizeText(text).slice(0, 220) });
-    }
-    setText("batchOutput", JSON.stringify(rows, null, 2));
-    setStatus(`Đã nạp ${rows.length} file batch.`);
-  });
   bind("runBatch", "click", () => {
-    const output = byId("batchOutput")?.textContent || "[]";
-    setText("batchOutput", `${output}\n\nBatch local đã sẵn sàng. Với GitHub Pages, xử lý AI hàng loạt cần API key Gemini và xác nhận từng lượt gọi.`);
-    setStatus("Đã chạy batch local.");
+    if (!batchItems.length) return setStatus("Hãy chọn file batch trước.");
+    batchItems = batchItems.map((item) => ({ ...item, cleanedWords: wordCount(cleanText(item.text)), status: "ready" }));
+    renderBatch("Batch local đã làm sạch, tóm tắt và sẵn sàng dùng từng item. Chỉ gửi một tác vụ gộp lên AI khi cần để tiết kiệm quota.");
+    setStatus(`Đã xử lý local ${batchItems.length} file.`);
   });
-  bind("downloadBatch", "click", () => downloadText("batch-results.json", byId("batchOutput")?.textContent || "[]", "application/json;charset=utf-8"));
+  bind("runFolderText", "click", () => byId("runBatch")?.click());
+  bind("useBatchFirst", "click", () => {
+    if (!batchItems[0]) return setStatus("Batch chưa có item.");
+    setValue("sourceText", batchItems[0].text || "");
+    updateMetas();
+    showMiniTab("editor");
+    setStatus(`Đang dùng ${batchItems[0].name}.`);
+  });
+  bind("resumeBatch", "click", () => {
+    try { batchItems = JSON.parse(localStorage.getItem("kich-ban-ai-batch") || "[]"); } catch { batchItems = []; }
+    renderBatch(batchItems.length ? "Đã khôi phục phiên batch gần nhất." : "Chưa có batch đã lưu.");
+    showMiniTab("batch");
+    setStatus(batchItems.length ? `Đã resume ${batchItems.length} item.` : "Chưa có batch đã lưu.");
+  });
+  bind("downloadBatch", "click", () => downloadText("batch-results.json", JSON.stringify(batchItems.map(({ text, ...item }) => item), null, 2), "application/json;charset=utf-8"));
+  bind("openUrlTab", "click", () => showMiniTab("url"));
+  bind("viewUrlResults", "click", () => showMiniTab("url"));
   bind("parseUrls", "click", () => {
-    const urls = valueOf("urlInput").split(/\s+/).filter(Boolean);
+    const urls = valueOf("urlInput").split(/\s+/).filter((url) => /^https?:\/\//i.test(url));
     const prompt = `Hãy đọc và viết lại nội dung từ các URL sau theo cấu hình hiện tại:\n\n${urls.map((url, i) => `${i + 1}. ${url}`).join("\n")}\n\n${buildPrompt()}`;
     setText("urlOutput", prompt);
     setStatus(`Đã tạo prompt cho ${urls.length} URL.`);
+  });
+  bind("researchUrls", "click", async () => {
+    const urls = valueOf("urlInput").split(/\s+/).filter((url) => /^https?:\/\//i.test(url)).slice(0, 12);
+    if (!urls.length) return setStatus("Hãy nhập ít nhất một URL hợp lệ.");
+    try {
+      const { action, suffix } = await runScriptAI("url-research", `${urls.join("\n")}\n\nMục tiêu dự án: ${config().title}`, "Gemini đang đọc URL context và đối chiếu Google...");
+      setText("urlOutput", action.output || "");
+      setStatus(`Đã nghiên cứu ${urls.length} URL bằng ${suffix}.`);
+    } catch (error) {
+      byId("parseUrls")?.click();
+      setStatus(`Đã tạo prompt URL local: ${error.message}`);
+    }
+  });
+  bind("runUrlBatch", "click", () => {
+    showMiniTab("url");
+    byId("researchUrls")?.click();
   });
   bind("clearUrls", "click", () => {
     setValue("urlInput", "");
@@ -4255,25 +4561,74 @@ function initTool() {
     setValue("draftTranslation", `[Bản dịch kiểm tra local]\n${valueOf("outputText")}`);
     setStatus("Đã tạo bản dịch kiểm tra local.");
   });
+  bind("translateCheck", "click", () => {
+    showMiniTab("translation");
+    byId("translateGemini")?.click();
+  });
+  bind("translateGemini", "click", async () => {
+    const source = valueOf("sourceText");
+    const draft = valueOf("outputText");
+    if (!source && !draft) return setStatus("Chưa có nội dung để dịch.");
+    try {
+      const sourceAction = source ? await runScriptAI("translate", source, "Đang dịch kiểm tra nguồn...") : null;
+      const draftAction = draft ? await runScriptAI("translate", draft, "Đang dịch kiểm tra bản mới...") : null;
+      setValue("sourceTranslation", sourceAction?.action.output || "");
+      setValue("draftTranslation", draftAction?.action.output || "");
+      setStatus(`Đã dịch bằng ${draftAction?.suffix || sourceAction?.suffix}.`);
+    } catch (error) {
+      byId("translateLocal")?.click();
+      setStatus(`Đã dùng bản dịch local: ${error.message}`);
+    }
+  });
   bind("copyTranslation", "click", async () => {
     await navigator.clipboard.writeText(`${valueOf("sourceTranslation")}\n\n${valueOf("draftTranslation")}`);
     setStatus("Đã copy bản dịch.");
   });
+  bind("buildTraining", "click", () => {
+    const sample = valueOf("trainingSamples");
+    if (!sample) return setStatus("Hãy dán kịch bản mẫu trước.");
+    const sent = sentences(sample);
+    const average = sent.length ? Math.round(wordCount(sample) / sent.length) : 0;
+    const profile = `TRAINING PROFILE\n- Độ dài câu trung bình: ${average} từ\n- Keyword nổi bật: ${topKeywords(sample, 10).map(([word]) => word).join(", ")}\n- Nhịp: ${average > 22 ? "chậm, nhiều mô tả" : average > 12 ? "cân bằng" : "nhanh, câu ngắn"}\n- Hook mẫu: ${sent[0] || "Chưa xác định"}\n- Quy tắc: học nhịp, cấu trúc và tone; không sao chép câu chữ.`;
+    setValue("trainingProfile", profile);
+    setStatus("Đã phân tích phong cách mẫu.");
+  });
+  bind("applyTraining", "click", () => {
+    if (!valueOf("trainingProfile")) return setStatus("Chưa có training profile.");
+    setValue("tone", `${valueOf("tone")}\nÁp dụng training profile đã lưu, chỉ học phong cách và cấu trúc.`);
+    showMiniTab("editor");
+    setStatus("Đã áp dụng training profile vào cấu hình.");
+  });
+  bind("saveTraining", "click", () => {
+    localStorage.setItem("kich-ban-ai-training", JSON.stringify({
+      samples: valueOf("trainingSamples"),
+      profile: valueOf("trainingProfile"),
+      negative: valueOf("negativeRules"),
+      savedAt: new Date().toISOString()
+    }));
+    setStatus("Đã lưu training profile.");
+  });
   bind("makePlan", "click", () => {
     const title = valueOf("storyTitle") || "Series kể chuyện 40+";
     setText("plannerOutput", `KẾ HOẠCH SERIES: ${title}\n\nTập 1: Hook bí mật gia đình\nTập 2: Nhân vật chính bị hiểu lầm\nTập 3: Bằng chứng cũ xuất hiện\nTập 4: Cao trào đối mặt\nTập 5: Sự thật và bài học\n\nLịch đăng: 3 video/tuần\nCTA: bình luận trải nghiệm cá nhân ở cuối mỗi tập.`);
-    setStatus("Đã tạo kế hoạch nội dung.");
+    setStatus("Đã tạo kế hoạch local.");
+  });
+  bind("makePlanAI", "click", async () => {
+    try {
+      const { action, suffix } = await runScriptAI("plan", `${config().title}\n\n${valueOf("sourceText").slice(0, 12000)}`, "AI đang xây kế hoạch series, KPI và lịch đăng...");
+      setText("plannerOutput", action.output || "");
+      setStatus(`Đã tạo kế hoạch bằng ${suffix}.`);
+    } catch (error) {
+      byId("makePlan")?.click();
+      setStatus(`Đã dùng kế hoạch local: ${error.message}`);
+    }
   });
   bind("ideaBank", "click", () => {
-    setText("plannerOutput", "KHO Ý TƯỞNG 40+\n- Người mẹ bị con hiểu lầm\n- Di chúc mở ra bí mật cũ\n- Người cha nghèo âm thầm trả nợ cho con\n- Cuộc gọi cuối cùng trước ngày đoàn tụ\n- Hàng xóm giữ bí mật suốt 20 năm");
+    setText("plannerOutput", "KHO Ý TƯỞNG 40+\n- Người mẹ bị con hiểu lầm\n- Di chúc mở ra bí mật cũ\n- Người cha nghèo âm thầm trả nợ cho con\n- Cuộc gọi cuối cùng trước ngày đoàn tụ\n- Hàng xóm giữ bí mật suốt 20 năm\n- Một bức ảnh cũ thay đổi cách cả nhà nhìn về quá khứ\n- Người lạ giữ lời hứa suốt ba thập kỷ");
     setStatus("Đã mở kho ý tưởng.");
   });
-  bind("saveProject", "click", () => {
-    const payload = currentProjectPayload();
-    localStorage.setItem("kich-ban-ai-project", JSON.stringify(payload));
-    setText("projectOutput", JSON.stringify(payload, null, 2));
-    setStatus("Đã lưu dự án local.");
-  });
+  bind("saveProject", "click", () => saveProjectLocal());
+  bind("saveProjectTop", "click", () => saveProjectLocal());
   bind("loadProject", "click", () => {
     const raw = localStorage.getItem("kich-ban-ai-project");
     if (!raw) return setStatus("Chưa có dự án local.");
@@ -4282,12 +4637,35 @@ function initTool() {
     setText("projectOutput", JSON.stringify(payload, null, 2));
     setStatus("Đã mở dự án local.");
   });
+  bind("importProject", "change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const payload = JSON.parse(await file.text());
+      loadProjectPayload(payload);
+      localStorage.setItem("kich-ban-ai-project", JSON.stringify(payload));
+      setText("projectOutput", JSON.stringify(payload, null, 2));
+      setStatus(`Đã nhập dự án ${file.name}.`);
+    } catch {
+      setStatus("File dự án không phải JSON hợp lệ.");
+    }
+  });
   bind("exportProject", "click", () => downloadText("kich-ban-ai-project.json", JSON.stringify(currentProjectPayload(), null, 2), "application/json;charset=utf-8"));
   bind("deleteProject", "click", () => {
     localStorage.removeItem("kich-ban-ai-project");
     setText("projectOutput", "Đã xóa dự án local.");
     setStatus("Đã xóa dự án local.");
   });
+
+  const savedTraining = (() => {
+    try { return JSON.parse(localStorage.getItem("kich-ban-ai-training") || "null"); } catch { return null; }
+  })();
+  if (savedTraining) {
+    setValue("trainingSamples", savedTraining.samples || "");
+    setValue("trainingProfile", savedTraining.profile || "");
+    setValue("negativeRules", savedTraining.negative || "");
+  }
+  checkCreativeAIStatus();
   updateMetas();
 }
 
@@ -4339,6 +4717,13 @@ function initAppShell() {
     { id: "favicon", icon: "◈", title: "Favicon Studio", group: "Xuất bản" },
     { id: "meme", icon: "▰", title: "Meme Maker", group: "Xuất bản" }
   ];
+  const creativeStudioItems = [
+    { id: "ai-center", icon: "AI", title: "AI Center", group: "AI & Kịch bản", description: "Chat, prompt, phân tích và workflow AI" },
+    { id: "ai-script", icon: "KS", title: "Kịch bản AI", group: "AI & Kịch bản", description: "Viết, phân tích, dịch, batch và quản lý series" },
+    { id: "creator-studio", icon: "CS", title: "Creator Studio", group: "Sản xuất nội dung", description: "Gói nội dung đa nền tảng và nghiên cứu xu hướng" },
+    { id: "media-center", icon: "MC", title: "Media Center", group: "Sản xuất nội dung", description: "Thư viện, Google và YouTube discovery" },
+    { id: "ai-automation", icon: "AU", title: "AI Automation", group: "Tự động hóa", description: "Pipeline sản xuất, preset và lịch sử chạy" }
+  ];
   const developerToolItems = [
     { id: "json", icon: "{}", title: "JSON Formatter", group: "Dữ liệu" },
     { id: "base64", icon: "64", title: "Base64", group: "Dữ liệu" },
@@ -4365,7 +4750,7 @@ function initAppShell() {
   ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
-    { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: ["ai-center", "creator-studio", "media-center", "ai-automation"] },
+    { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: [], studioItems: creativeStudioItems },
     { id: "media-design", label: "Media & Design", icon: "◈", accent: "#c87cff", route: "/media-design", items: [], studioItems: mediaStudioItems },
     { id: "dev", label: "DEV", icon: "⌘", accent: "#61e7ff", route: "/dev-tools", items: [], studioItems: developerToolItems },
     { id: "work", label: "Công việc", icon: "□", accent: "#baf46b", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
@@ -4394,7 +4779,7 @@ function initAppShell() {
   const moduleList = () => Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
   const moduleById = (id) => moduleList().find((item) => item.id === id);
   const routeForModule = (id) => {
-    const group = groups.find((item) => item.items.includes(id));
+    const group = groups.find((item) => item.items.includes(id) || item.studioItems?.some((tool) => tool.id === id));
     return `${group?.route || "/tools"}/${id}`;
   };
   const userName = () => {
@@ -4532,7 +4917,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-      breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || [...mediaStudioItems, ...developerToolItems].find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
+      breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems].find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
   };
   const renderRoute = () => {
@@ -4544,6 +4929,7 @@ function initAppShell() {
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
+    document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
     if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
@@ -4580,6 +4966,11 @@ function initAppShell() {
       workspace.innerHTML = '<div data-hh-english-host></div>';
       if (window.HHEnglish?.mount) window.HHEnglish.mount(workspace.firstElementChild, { view: parts[1] || "dashboard" });
       else mountSimpleView("HH English", "Đang tải không gian học tiếng Anh...", "");
+    } else if (route === "/create/ai-script") {
+      updatePageHeader("Kịch bản AI Studio", "Workspace biên kịch thông minh: viết, phân tích, dịch, batch, URL research và quản lý series.", route);
+      workspace.innerHTML = '<div class="creative-ai-script-host tool-neon-page" data-ai-script-host><div class="creative-ai-script-loading"><i></i><strong>Đang mở Kịch bản AI Studio...</strong></div></div>';
+      window.HHCreativeSuite?.mountScriptStudio?.(workspace.firstElementChild);
+      remember("ai-script");
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {
       updatePageHeader("Media & Design", "Studio sáng tạo xử lý ảnh, tài liệu, màu sắc và vector ngay trên thiết bị.", route);
       workspace.innerHTML = '<div data-media-design-page-host></div>';
@@ -4630,8 +5021,9 @@ function initAppShell() {
   const searchItems = () => {
     const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
     const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
+    const creativeTools = creativeStudioItems.map((item) => ({ type: "Sáng tạo", title: item.title, description: item.description || item.group, route: `/create/${item.id}`, key: `${item.title} ${item.group} ${item.description || ""} creative sáng tạo kịch bản ai` }));
     const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));
-    return [...modules, ...commandCenter, ...developerTools, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...creativeTools, ...developerTools, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
@@ -4842,6 +5234,14 @@ initPlatformOnDemand(() => {
   initCreatorWorkspace();
   initCommunityChatV2();
   initMusicPlayer();
+  initMiniTabs();
+  initTool();
+});
+if (document.body.classList.contains("tool-neon-page")) {
+  initMiniTabs();
+  initTool();
+}
+window.addEventListener("hh:ai-script-mounted", () => {
   initMiniTabs();
   initTool();
 });

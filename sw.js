@@ -1,8 +1,8 @@
-const CACHE = "hh-dev-hub-v109";
+const CACHE = "hh-dev-hub-v110";
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=40",
+  "./app-shell.css?v=41",
   "./dashboard-aurora.css?v=3",
   "./command-center-pro.css?v=3",
   "./professional-tools.css?v=3",
@@ -15,7 +15,7 @@ const CORE = [
   "./video-editor-resolve.css?v=5",
   "./photo-editor-pro.css?v=1",
   "./editor-workflow-pro.css?v=1",
-  "./script.js?v=83",
+  "./script.js?v=84",
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=3",
   "./extension-suite.css?v=1",
@@ -23,7 +23,7 @@ const CORE = [
   "./auth-experience.js?v=1",
   "./search-watch-center.css?v=3",
   "./search-watch-center.js?v=4",
-  "./creative-suite.css?v=3",
+  "./creative-suite.css?v=4",
   "./sidebar-navigation-pro.css?v=2",
   "./space-explorer.css?v=3",
   "./english-learning.css?v=9",
@@ -35,7 +35,7 @@ const CORE = [
   "./community-calls.js?v=1",
   "./community-admin.css?v=1",
   "./community-admin.js?v=2",
-  "./creative-suite.js?v=3",
+  "./creative-suite.js?v=4",
   "./extension-suite.js?v=2",
   "./professional-tools.js?v=3",
   "./media-design-studio.js?v=1",

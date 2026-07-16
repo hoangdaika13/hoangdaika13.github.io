@@ -1432,6 +1432,24 @@ footer p {
   line-height: 1.35;
 }
 
+.neon-server-status {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, .24);
+  padding: 7px 9px;
+  color: #ffd38e;
+  background: rgba(255, 197, 110, .08);
+  font-size: .75rem;
+  line-height: 1.35;
+}
+
+.neon-server-status.is-online {
+  border-color: rgba(185, 255, 99, .52);
+  color: var(--neon-lime);
+  background: rgba(185, 255, 99, .08);
+}
+
 .neon-check {
   display: flex !important;
   grid-template-columns: auto 1fr;
@@ -1652,6 +1670,17 @@ footer p {
   font: 500 0.9rem/1.6 Consolas, "Courier New", monospace;
 }
 
+.neon-training-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 4px;
+}
+
+.neon-training-actions .neon-btn {
+  min-width: 150px;
+}
+
 .neon-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(140px, 1fr));
@@ -1683,14 +1712,26 @@ footer p {
   }
 
   .neon-app {
+    width: 100%;
+    min-width: 0;
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
+    overflow: hidden;
   }
 
   .neon-sidebar {
+    width: 100%;
+    min-width: 0;
     max-height: none;
     border-right: 0;
     border-bottom: 2px solid #bfb8b4;
+  }
+
+  .neon-tabs {
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 
   .neon-workflows,
