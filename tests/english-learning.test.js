@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { courses, courseLevels, placementQuestions, scheduleReview, scoreAnswers, levelFromScore, normalize } = require("../english-learning.js");
+const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, scheduleReview, scoreAnswers, levelFromScore, normalize } = require("../english-learning.js");
 
 test("CEFR curriculum contains seven levels and sixty-nine complete lessons", () => {
   assert.deepEqual(courseLevels.map((level) => level.id), ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
@@ -24,6 +24,28 @@ test("CEFR curriculum contains seven levels and sixty-nine complete lessons", ()
     lesson.exercises.forEach((exercise) => {
       assert.ok(exercise.answer);
       assert.ok(exercise.explanation.length > 20);
+    });
+  });
+});
+
+test("Career English provides thirty-six seven-day industry tracks", () => {
+  assert.equal(careerCategories.length, 10);
+  assert.equal(careerTracks.length, 36);
+  assert.equal(careerTracks.reduce((sum, track) => sum + track.lessons.length, 0), 252);
+  assert.equal(careerTracks.reduce((sum, track) => sum + track.vocabulary.length, 0), 864);
+  assert.ok(new Set(careerTracks.flatMap((track) => track.vocabulary.map((word) => word[0].toLowerCase()))).size >= 700);
+  careerTracks.forEach((track) => {
+    assert.equal(track.lessons.length, 7, `${track.id} lesson count`);
+    assert.equal(track.vocabulary.length, 24, `${track.id} vocabulary count`);
+    assert.ok(careerCategories.some((category) => category.id === track.category));
+    assert.ok(track.project.length > 40);
+    track.lessons.forEach((lesson, index) => {
+      assert.equal(lesson.trackId, track.id);
+      assert.equal(lesson.day, index + 1);
+      assert.equal(lesson.vocabulary.length, 8);
+      assert.equal(lesson.exercises.length, 5);
+      assert.ok(lesson.canDo.length > 35);
+      assert.ok(lesson.dialogue.includes("\n"));
     });
   });
 });

@@ -111,6 +111,13 @@
     }
     return { levels: [] };
   })();
+  const careerCurriculum = (() => {
+    if (root.HHEnglishCareerCurriculum) return root.HHEnglishCareerCurriculum;
+    if (typeof require === "function") {
+      try { return require("./english-career-curriculum.js"); } catch { return { categories: [], tracks: [] }; }
+    }
+    return { categories: [], tracks: [] };
+  })();
   const a0Level = {
     id: "A0", name: "Mất gốc", band: "Foundation", color: "#63e8ff",
     description: "Xây lại bảng chữ cái, âm, câu chào hỏi và vốn từ thiết yếu từ con số 0.",
@@ -122,8 +129,14 @@
   const courseLevels = [a0Level, ...(extendedCurriculum.levels || [])];
   courseLevels.slice(1).forEach((level) => level.units.forEach((unit) => unit.lessons.forEach((lesson) => lessonIds.push(lesson.id))));
   const courses = courseLevels.flatMap((level) => level.units);
+  const careerCategories = careerCurriculum.categories || [];
+  const careerTracks = careerCurriculum.tracks || [];
+  const careerLessons = careerTracks.flatMap((item) => item.lessons);
+  careerLessons.forEach((lesson) => lessonIds.push(lesson.id));
+  const allLessons = [...courses.flatMap((unit) => unit.lessons), ...careerLessons];
   const levelOrder = courseLevels.map((level) => level.id);
   const levelById = (id = "A0") => courseLevels.find((level) => level.id === id) || a0Level;
+  const careerTrackById = (id) => careerTracks.find((item) => item.id === id) || careerTracks[0];
 
   const placementQuestions = [
     ["Vocabulary", "Chọn nghĩa của “hello”.", ["xin chào", "tạm biệt", "cảm ơn"], 0],
@@ -158,7 +171,7 @@
 
   const defaultState = () => ({
     version: APP_VERSION, activeView: "dashboard", activeLesson: lessonIds[0], completed: {}, attempts: {}, savedWords: {}, reviewQueue: {}, xp: 0,
-    streak: { current: 0, longest: 0, lastDate: "" }, dailyGoal: 15, studyDays: [1, 2, 3, 4, 5], minutesByDay: {}, placement: null, placementRewarded: false, selectedLevel: "A0", writingDraft: "", writingDrafts: {}, writingHistory: [], practice: { listening: 0, reading: 0, grammar: 0 }, practiceByLevel: {},
+    streak: { current: 0, longest: 0, lastDate: "" }, dailyGoal: 15, studyDays: [1, 2, 3, 4, 5], minutesByDay: {}, placement: null, placementRewarded: false, selectedLevel: "A0", selectedCareer: careerTracks[0]?.id || "", careerSurvey: null, careerSurveyRewarded: false, favoriteCareers: [], writingDraft: "", writingDrafts: {}, writingHistory: [], practice: { listening: 0, reading: 0, grammar: 0 }, practiceByLevel: {},
     settings: { voiceRate: 0.85, interfaceLanguage: "vi", reducedMotion: false, theme: "night", learnerType: "student", goal: "Giao tiếp hằng ngày" }
   });
   const readState = () => {
@@ -166,13 +179,15 @@
       const fallback = defaultState(); const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
       const state = { ...fallback, ...stored, streak: { ...fallback.streak, ...(stored.streak || {}) }, practice: { ...fallback.practice, ...(stored.practice || {}) }, practiceByLevel: { ...(stored.practiceByLevel || {}) }, writingDrafts: { ...(stored.writingDrafts || {}) }, settings: { ...fallback.settings, ...(stored.settings || {}) } };
       if (!levelOrder.includes(state.selectedLevel)) state.selectedLevel = levelOrder.includes(state.placement?.level) ? state.placement.level : "A0";
+      if (!careerTracks.some((item) => item.id === state.selectedCareer)) state.selectedCareer = careerTracks[0]?.id || "";
+      if (!Array.isArray(state.favoriteCareers)) state.favoriteCareers = [];
       if (!state.practiceByLevel.A0) state.practiceByLevel.A0 = { ...fallback.practice, ...state.practice };
       if (!state.writingDrafts.A0 && state.writingDraft) state.writingDrafts.A0 = state.writingDraft;
       return state;
     } catch { return defaultState(); }
   };
   const writeState = (state) => localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, version: APP_VERSION }));
-  const getLesson = (id) => courses.flatMap((unit) => unit.lessons).find((lesson) => lesson.id === id) || courses[0].lessons[0];
+  const getLesson = (id) => allLessons.find((lesson) => lesson.id === id) || courses[0].lessons[0];
   const selectedLevelId = (state) => levelOrder.includes(state.selectedLevel) ? state.selectedLevel : "A0";
   const levelLessonIds = (levelId) => levelById(levelId).units.flatMap((unit) => unit.lessons.map((lesson) => lesson.id));
   const completedCount = (state, levelId = null) => (levelId ? levelLessonIds(levelId) : lessonIds).filter((id) => state.completed?.[id]).length;
@@ -182,6 +197,15 @@
   };
   const levelPractice = (state, levelId = selectedLevelId(state)) => ({ listening: 0, reading: 0, grammar: 0, ...(state.practiceByLevel?.[levelId] || (levelId === "A0" ? state.practice : {})) });
   const writingDraftFor = (state, levelId = selectedLevelId(state)) => state.writingDrafts?.[levelId] || (levelId === "A0" ? state.writingDraft : "") || "";
+  const selectedCareerId = (state) => careerTrackById(state.selectedCareer)?.id || careerTracks[0]?.id || "";
+  const careerCompletedCount = (state, trackId) => careerTrackById(trackId)?.lessons.filter((lesson) => state.completed?.[lesson.id]).length || 0;
+  const careerProgress = (state, trackId) => {
+    const item = careerTrackById(trackId); return item?.lessons.length ? Math.round(careerCompletedCount(state, trackId) / item.lessons.length * 100) : 0;
+  };
+  const nextCareerLesson = (state, trackId = selectedCareerId(state)) => {
+    const item = careerTrackById(trackId); if (!item) return getLesson();
+    return item.lessons.find((lesson) => !state.completed?.[lesson.id]) || item.lessons[0];
+  };
   const updateStreak = (state) => {
     const today = todayKey();
     if (state.streak.lastDate === today) return;
@@ -211,6 +235,7 @@
   let recordingUrl = "";
   let focusSeconds = 15 * 60;
   let focusTimer = null;
+  let activeCareerCategory = "all";
 
   const speak = (text, rate) => {
     if (!("speechSynthesis" in window)) return false;
@@ -224,9 +249,17 @@
   };
 
   const navItems = [
-    ["dashboard", "⌂", "Tổng quan"], ["learn", "▶", "Bài học"], ["practice", "✦", "Luyện tập"], ["placement", "◎", "Xếp lớp"], ["vocabulary", "◇", "Sổ từ"],
+    ["dashboard", "⌂", "Tổng quan"], ["learn", "▶", "Bài học"], ["career", "▦", "Chuyên ngành"], ["practice", "✦", "Luyện tập"], ["placement", "◎", "Xếp lớp"], ["survey", "◈", "Khảo sát nghề"], ["vocabulary", "◇", "Sổ từ"],
     ["speaking", "◉", "Phát âm"], ["writing", "✎", "Viết"], ["progress", "↗", "Tiến độ"], ["settings", "⚙", "Cài đặt"]
   ];
+  const routeForView = (view) => view === "dashboard" ? "#/english" : `#/english/${view}`;
+  const syncViewRoute = (view) => {
+    if (!root.location) return false;
+    const nextHash = routeForView(view);
+    if (root.location.hash === nextHash) return false;
+    root.location.hash = nextHash;
+    return true;
+  };
   const weekdayLabels = [[1, "T2"], [2, "T3"], [3, "T4"], [4, "T5"], [5, "T6"], [6, "T7"], [0, "CN"]];
   const formatFocusTime = (seconds) => `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const nextLessonFor = (state, levelId = selectedLevelId(state)) => {
@@ -244,11 +277,13 @@
   const dashboardView = (state) => {
     const levelId = selectedLevelId(state); const level = levelById(levelId); const done = completedCount(state, levelId); const percent = levelProgress(state, levelId); const minutes = state.minutesByDay[todayKey()] || 0;
     const next = nextLessonFor(state, levelId);
+    const career = careerTrackById(selectedCareerId(state)); const careerNext = nextCareerLesson(state, career?.id); const careerDone = careerCompletedCount(state, career?.id);
     const hour = new Date().getHours(); const greeting = hour < 11 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
     return `<section class="hhe-dashboard"><div class="hhe-hero"><div><p>${greeting.toUpperCase()}, ${levelId} LEARNER</p><h2>Biến tiếng Anh thành<br><em>kỹ năng mỗi ngày.</em></h2><span>${escapeHtml(level.description)} Bạn có thể tự do đổi cấp độ bất cứ lúc nào.</span><div><button class="primary" type="button" data-hhe-open-lesson="${next.id}">Tiếp tục bài học <b>→</b></button><button type="button" data-hhe-view="placement">Kiểm tra trình độ</button></div></div><div class="hhe-orbit" aria-hidden="true"><b>${percent}%</b><span>${levelId} ROADMAP</span><i></i><i></i><i></i></div></div>
       <div class="hhe-metrics"><article><span>Mục tiêu hôm nay</span><strong>${minutes}/${state.dailyGoal} phút</strong><i style="--p:${Math.min(100, minutes / state.dailyGoal * 100)}%"></i></article><article><span>Chuỗi học</span><strong>${state.streak.current} ngày</strong><small>Kỷ lục ${state.streak.longest} ngày</small></article><article><span>Từ đã lưu</span><strong>${Object.keys(state.savedWords).length} từ</strong><small>${Object.values(state.reviewQueue).filter((item) => new Date(item.dueAt || 0) <= new Date()).length} cần ôn</small></article><article><span>Năng lượng học</span><strong>${state.xp} XP</strong><small>Cấp ${Math.floor(state.xp / 300) + 1}</small></article></div>
       <div class="hhe-dashboard-grid"><section class="hhe-next-card"><header><div><small>BÀI TIẾP THEO · ${levelId} · ${next.minutes} PHÚT</small><h3>${escapeHtml(next.title)}</h3><p>${escapeHtml(next.canDo)}</p></div><span>+${next.xp} XP</span></header><div class="hhe-skill-pills"><b>${escapeHtml(next.primarySkill || "English")}</b><b>Ngữ pháp</b><b>Từ vựng</b></div><button class="primary" type="button" data-hhe-open-lesson="${next.id}">Bắt đầu học</button></section>
       <section class="hhe-roadmap-mini"><header><div><small>LỘ TRÌNH CEFR</small><h3>69 bài từ A0 đến C2</h3></div><button type="button" data-hhe-view="learn">Xem chi tiết</button></header>${courseLevels.map((item) => `<button type="button" class="${item.id === levelId ? "active" : ""}" data-hhe-level="${item.id}" aria-pressed="${item.id === levelId}"><b>${item.id}</b><span>${escapeHtml(item.name)}</span><small>${levelProgress(state, item.id)}%</small></button>`).join("")}</section></div>
+      ${career && careerNext ? `<section class="hhe-career-daily" style="--career:${career.color}"><div><small>CAREER ENGLISH · BÀI HÔM NAY</small><h3>${escapeHtml(career.viName)}</h3><p>${escapeHtml(careerNext.canDo)}</p><div><span>Ngày ${careerNext.day}/7</span><span>${careerDone}/7 hoàn thành</span><span>${career.vocabulary.length} thuật ngữ</span></div></div><aside><b>${career.code}</b><strong>${careerProgress(state, career.id)}%</strong><button class="primary" type="button" data-hhe-open-lesson="${careerNext.id}">Học bài hôm nay</button><button type="button" data-hhe-view="career">Đổi chuyên ngành</button></aside></section>` : ""}
       <section class="hhe-student-tools"><article class="hhe-study-plan"><header><div><small>LỊCH HỌC CỦA TÔI</small><h3>Nhịp học trong tuần</h3></div><span>${state.studyDays.length} ngày</span></header><div>${weekdayLabels.map(([day, label]) => `<button type="button" class="${state.studyDays.includes(day) ? "active" : ""}" data-hhe-day="${day}" aria-pressed="${state.studyDays.includes(day)}"><b>${label}</b><small>${state.studyDays.includes(day) ? "Học" : "Nghỉ"}</small></button>`).join("")}</div><p>Chọn những ngày bạn có thể duy trì. Lịch được lưu ngay trên thiết bị.</p></article><article class="hhe-focus-card"><small>FOCUS SESSION</small><h3>Học tập trung 15 phút</h3><strong data-hhe-focus-clock>${formatFocusTime(focusSeconds)}</strong><div><button class="primary" type="button" data-hhe-focus-start>${focusTimer ? "Tạm dừng" : "Bắt đầu"}</button><button type="button" data-hhe-focus-reset>Đặt lại</button></div><p>Hoàn thành một phiên để nhận 30 XP và cộng thời gian học.</p></article><article class="hhe-goal-card"><small>MỤC TIÊU CÁ NHÂN</small><h3>${escapeHtml(state.settings.goal)}</h3><p>${state.settings.learnerType === "student" ? "Lịch học linh hoạt cho học sinh, sinh viên." : "Lộ trình ngắn gọn cho người đi làm."}</p><div><span>Hôm nay</span><b>${Math.min(100, Math.round(minutes / state.dailyGoal * 100))}%</b></div><i style="--p:${Math.min(100, minutes / state.dailyGoal * 100)}%"></i><button type="button" data-hhe-view="settings">Điều chỉnh mục tiêu</button></article></section>
       <section class="hhe-skills"><header><div><small>4 KỸ NĂNG CỐT LÕI</small><h3>Học để sử dụng, không chỉ ghi nhớ</h3></div><button type="button" data-hhe-view="practice">Mở phòng luyện tập</button></header><div>${[["Listening", "Nghe chậm, nghe lại và đọc transcript", "#62e9f2"], ["Speaking", "Nghe mẫu, thu âm và tự đối chiếu", "#ff6ecf"], ["Reading", "Đọc ngắn với từ vựng đúng trình độ", "#ffe66d"], ["Writing", "Viết có gợi ý, đếm từ và lưu bản nháp", "#80f4b4"]].map(([title, text, color]) => `<article style="--skill:${color}"><i></i><strong>${title}</strong><p>${text}</p></article>`).join("")}</div></section></section>`;
   };
@@ -262,6 +297,29 @@
       <label class="hhe-course-search"><span>Tìm bài học ${levelId}</span><input type="search" data-hhe-search placeholder="Tìm theo chủ đề hoặc mục tiêu bài học..." autocomplete="off"><kbd>/</kbd></label><p class="hhe-search-empty" data-hhe-search-empty hidden>Không tìm thấy bài phù hợp trong cấp ${levelId}. Hãy thử từ khóa khác.</p>
       <div class="hhe-unit-list">${level.units.map((item, index) => `<section style="--unit:${item.color}" data-hhe-unit data-search="${escapeHtml(`${item.title} ${item.vi} ${item.primarySkill}`)}"><header><span>${String(index + 1).padStart(2, "0")}</span><div><small>${levelId} · UNIT ${index + 1} · ${escapeHtml(item.primarySkill.toUpperCase())}</small><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.vi)}</p></div><b>${item.lessons.filter((lessonItem) => state.completed[lessonItem.id]).length}/${item.lessons.length}</b></header><div>${item.lessons.map((lessonItem, lessonIndex) => `<button type="button" class="${state.completed[lessonItem.id] ? "done" : ""}" data-hhe-open-lesson="${lessonItem.id}" data-search="${escapeHtml(`${lessonItem.title} ${lessonItem.canDo} ${lessonItem.grammar}`)}"><span>${state.completed[lessonItem.id] ? "✓" : lessonIndex + 1}</span><div><strong>${escapeHtml(lessonItem.title)}</strong><small>${escapeHtml(lessonItem.canDo)}</small></div><b>${lessonItem.minutes}m</b></button>`).join("")}</div></section>`).join("")}</div>
       <section class="hhe-open-path"><span>✓</span><div><strong>Không khóa tiến độ</strong><p>Nếu một bài quá khó, bạn có thể đổi cấp hoặc học lại bài trước mà không mất dữ liệu.</p></div><button type="button" data-hhe-view="progress">Xem toàn bộ tiến độ</button></section></section>`;
+  };
+
+  const careerView = (state) => {
+    const selectedId = selectedCareerId(state); const selected = careerTrackById(selectedId); const next = nextCareerLesson(state, selectedId);
+    const completed = careerCompletedCount(state, selectedId); const nextWords = next?.vocabulary || [];
+    return `<section class="hhe-careers"><header class="hhe-section-head"><div><small>CAREER ENGLISH · ENGLISH FOR SPECIFIC PURPOSES</small><h2>Tiếng Anh theo 36 ngành nghề</h2><p>Chọn một lĩnh vực, học 7 ngày theo tình huống thật và lưu thuật ngữ vào sổ ôn thông minh. Mọi ngành đều mở miễn phí.</p></div><span>${careerCurriculum.lessonCount || careerLessons.length} bài · ${careerCurriculum.vocabularyCount || 0} mục từ</span></header>
+      <section class="hhe-career-overview"><article><b>${careerTracks.length}</b><span>lộ trình nghề nghiệp</span></article><article><b>${careerLessons.length}</b><span>bài học theo ngày</span></article><article><b>${careerTracks.reduce((sum, item) => sum + item.vocabulary.length, 0)}</b><span>mục từ chuyên ngành</span></article><article><b>${careerCategories.length}</b><span>nhóm lĩnh vực</span></article></section>
+      ${selected ? `<section class="hhe-career-feature" style="--career:${selected.color}"><div class="hhe-career-feature-copy"><small>${escapeHtml(selected.code)} · ${escapeHtml(selected.level)} · NGÀY ${next?.day || 1}/7</small><h3>${escapeHtml(selected.viName)}</h3><p>${escapeHtml(selected.description)}</p><div><span>${completed}/7 bài hoàn thành</span><span>${careerProgress(state, selected.id)}% tiến độ</span><span>${selected.vocabulary.length} thuật ngữ</span></div><button class="primary" type="button" data-hhe-open-lesson="${next?.id || selected.lessons[0].id}">Học bài hôm nay</button><button type="button" data-hhe-career-favorite="${selected.id}">${state.favoriteCareers.includes(selected.id) ? "★ Đã ghim" : "☆ Ghim lộ trình"}</button></div><aside><b>${escapeHtml(selected.code)}</b><small>DỰ ÁN CUỐI TUẦN</small><p>${escapeHtml(selected.project)}</p><i style="--p:${careerProgress(state, selected.id)}%"></i></aside></section>` : ""}
+      ${nextWords.length ? `<section class="hhe-career-words"><header><div><small>DAILY WORD KIT</small><h3>8 từ của bài hôm nay</h3></div><button type="button" data-hhe-speak="${escapeHtml(nextWords.map((item) => item[0]).join(", "))}">▶ Nghe tất cả</button></header><div>${nextWords.map((item) => `<article><button type="button" data-hhe-speak="${escapeHtml(item[0])}" aria-label="Nghe ${escapeHtml(item[0])}">♪</button><div><strong>${escapeHtml(item[0])}</strong><span>${escapeHtml(item[2])}</span></div><button type="button" class="${state.savedWords[item[0]] ? "saved" : ""}" data-hhe-save-word="${escapeHtml(item[0])}" data-hhe-word-json="${encodeURIComponent(JSON.stringify(item))}">${state.savedWords[item[0]] ? "★" : "☆"}</button></article>`).join("")}</div></section>` : ""}
+      ${selected ? `<section class="hhe-career-week"><header><div><small>7-DAY ACTION PATH</small><h3>Lộ trình thực hành ${escapeHtml(selected.name)}</h3></div><button type="button" data-hhe-view="survey">Làm khảo sát chọn nghề</button></header><div>${selected.lessons.map((lesson, index) => `<button type="button" class="${state.completed[lesson.id] ? "done" : lesson.id === next?.id ? "active" : ""}" data-hhe-open-lesson="${lesson.id}"><span>${state.completed[lesson.id] ? "✓" : index + 1}</span><div><strong>Ngày ${index + 1} · ${escapeHtml(lesson.title.split(":")[0])}</strong><small>${escapeHtml(lesson.canDo)}</small></div><b>${lesson.minutes}m</b></button>`).join("")}</div></section>` : ""}
+      <section class="hhe-career-library"><header><div><small>CAREER LIBRARY</small><h3>Khám phá toàn bộ ngành nghề</h3></div><label><span>⌕</span><input type="search" data-hhe-career-search placeholder="Tìm ngành, kỹ năng hoặc từ vựng..." autocomplete="off"></label></header><div class="hhe-career-filters"><button type="button" class="active" data-hhe-career-category="all">Tất cả</button>${careerCategories.map((item) => `<button type="button" data-hhe-career-category="${item.id}" style="--category:${item.color}">${escapeHtml(item.name)}</button>`).join("")}</div><p class="hhe-search-empty" data-hhe-career-empty hidden>Không tìm thấy ngành phù hợp. Hãy thử từ khóa hoặc nhóm khác.</p><div class="hhe-career-grid">${careerTracks.map((item) => `<article class="${item.id === selectedId ? "active" : ""}" style="--career:${item.color}" data-hhe-career-card data-category="${item.category}" data-search="${escapeHtml(`${item.name} ${item.viName} ${item.description} ${item.vocabulary.map((word) => `${word[0]} ${word[2]}`).join(" ")}`)}"><header><b>${escapeHtml(item.code)}</b><button type="button" data-hhe-career-favorite="${item.id}" aria-label="Ghim ${escapeHtml(item.viName)}">${state.favoriteCareers.includes(item.id) ? "★" : "☆"}</button></header><small>${escapeHtml(careerCategories.find((category) => category.id === item.category)?.name || "")}</small><h4>${escapeHtml(item.viName)}</h4><p>${escapeHtml(item.description)}</p><footer><span>${item.level}</span><span>${careerProgress(state, item.id)}%</span><button type="button" data-hhe-career="${item.id}">Mở lộ trình</button></footer></article>`).join("")}</div></section></section>`;
+  };
+
+  const careerSurveyView = (state) => {
+    const resultIds = state.careerSurvey?.recommendations || [];
+    return `<section class="hhe-career-survey"><header class="hhe-section-head"><div><small>LEARNER & CAREER SURVEY</small><h2>Khảo sát lộ trình phù hợp</h2><p>Khảo sát ngắn giúp ưu tiên ngành, cấp độ và nhịp học. Kết quả chỉ là gợi ý tự học, không phải tư vấn nghề nghiệp chính thức.</p></div><span>Khoảng 3 phút</span></header>
+      ${resultIds.length ? `<section class="hhe-survey-result"><div><small>GỢI Ý GẦN NHẤT</small><h3>${escapeHtml(state.careerSurvey.goal)}</h3><p>${escapeHtml(state.careerSurvey.summary)}</p></div><div>${resultIds.map((id, index) => { const item = careerTrackById(id); return item ? `<button type="button" data-hhe-career="${item.id}" style="--career:${item.color}"><b>${index + 1}</b><span><strong>${escapeHtml(item.viName)}</strong><small>${escapeHtml(item.level)} · ${item.lessons.length} ngày</small></span><i>→</i></button>` : ""; }).join("")}</div></section>` : ""}
+      <form data-hhe-career-survey><fieldset><legend><span>01</span><div><strong>Bạn đang ở giai đoạn nào?</strong><small>Chọn mô tả gần nhất.</small></div></legend><div class="hhe-survey-options">${[["student", "Học sinh / sinh viên"], ["starter", "Mới đi làm"], ["switcher", "Muốn chuyển ngành"], ["professional", "Đang làm chuyên môn"]].map(([value, label]) => `<label><input type="radio" name="situation" value="${value}" required ${state.careerSurvey?.situation === value ? "checked" : ""}><span>${label}</span></label>`).join("")}</div></fieldset>
+      <fieldset><legend><span>02</span><div><strong>Lĩnh vực bạn quan tâm</strong><small>Có thể chọn nhiều nhóm.</small></div></legend><div class="hhe-survey-options categories">${careerCategories.map((item) => `<label style="--category:${item.color}"><input type="checkbox" name="categories" value="${item.id}" ${state.careerSurvey?.categories?.includes(item.id) ? "checked" : ""}><span>${escapeHtml(item.name)}</span></label>`).join("")}</div></fieldset>
+      <fieldset><legend><span>03</span><div><strong>Mục tiêu sử dụng tiếng Anh</strong><small>Lộ trình sẽ ưu tiên dạng nhiệm vụ phù hợp.</small></div></legend><select name="goal" required>${["Xin việc và phỏng vấn", "Giao tiếp tại nơi làm việc", "Đọc tài liệu chuyên môn", "Họp và thuyết trình", "Làm việc với khách hàng quốc tế", "Du học hoặc nghiên cứu"].map((item) => `<option ${state.careerSurvey?.goal === item ? "selected" : ""}>${item}</option>`).join("")}</select></fieldset>
+      <div class="hhe-survey-row"><label><span>Kỹ năng ưu tiên</span><select name="skill"><option value="speaking">Nói & tương tác</option><option value="listening">Nghe</option><option value="reading">Đọc chuyên môn</option><option value="writing">Viết email / báo cáo</option><option value="vocabulary">Từ vựng</option></select></label><label><span>Thời gian mỗi ngày</span><select name="minutes"><option value="10">10 phút</option><option value="15" selected>15 phút</option><option value="20">20 phút</option><option value="30">30 phút</option><option value="45">45 phút</option></select></label><label><span>Trình độ tự đánh giá</span><select name="level">${levelOrder.map((level) => `<option value="${level}" ${selectedLevelId(state) === level ? "selected" : ""}>${level}</option>`).join("")}</select></label></div>
+      <button class="primary" type="submit">Phân tích và tạo lộ trình</button></form>
+      <section class="hhe-survey-method"><article><b>01</b><div><strong>Học qua hành động</strong><p>Mỗi tuần kết thúc bằng một nhiệm vụ nghề nghiệp thực tế.</p></div></article><article><b>02</b><div><strong>Bài ngắn mỗi ngày</strong><p>7 ngày, mỗi bài 16–22 phút và có thể học lại.</p></div></article><article><b>03</b><div><strong>Ôn cách quãng</strong><p>Từ đã lưu quay lại theo mức Quên, Khó, Nhớ hoặc Rất dễ.</p></div></article><article><b>04</b><div><strong>Không khóa ngành</strong><p>Bạn có thể thử nhiều lộ trình và giữ nguyên toàn bộ tiến độ.</p></div></article></section></section>`;
   };
 
   const practiceTasksFor = (state) => {
@@ -289,10 +347,11 @@
 
   const lessonView = (state, lesson) => {
     const answers = state.attempts[lesson.id] || {};
-    return `<section class="hhe-lesson" data-hhe-lesson="${lesson.id}"><header><button type="button" data-hhe-view="learn">← Lộ trình ${lesson.level}</button><div><small>${lesson.level} · ${escapeHtml(lesson.primarySkill || "ENGLISH").toUpperCase()} · ${lesson.minutes} PHÚT · +${lesson.xp} XP</small><h2>${escapeHtml(lesson.title)}</h2><p>${escapeHtml(lesson.canDo)}</p></div><span class="${state.completed[lesson.id] ? "done" : ""}">${state.completed[lesson.id] ? "Đã hoàn thành" : "Đang học"}</span></header>
+    return `<section class="hhe-lesson" data-hhe-lesson="${lesson.id}"><header><button type="button" data-hhe-view="${lesson.isCareer ? "career" : "learn"}">← ${lesson.isCareer ? `Chuyên ngành ${escapeHtml(lesson.trackName)}` : `Lộ trình ${lesson.level}`}</button><div><small>${lesson.isCareer ? `${escapeHtml(lesson.levelRange)} · NGÀY ${lesson.day}/7` : lesson.level} · ${escapeHtml(lesson.primarySkill || "ENGLISH").toUpperCase()} · ${lesson.minutes} PHÚT · +${lesson.xp} XP</small><h2>${escapeHtml(lesson.title)}</h2><p>${escapeHtml(lesson.canDo)}</p></div><span class="${state.completed[lesson.id] ? "done" : ""}">${state.completed[lesson.id] ? "Đã hoàn thành" : "Đang học"}</span></header>
       <div class="hhe-lesson-grid"><main><section class="hhe-objective"><small>CAN DO</small><strong>Sau bài này, bạn có thể:</strong><p>${escapeHtml(lesson.canDo)}</p></section>
       <section class="hhe-lesson-block"><header><span>01</span><div><small>TỪ VỰNG</small><h3>Nghe, đọc và lưu từ</h3></div><button type="button" data-hhe-speak="${escapeHtml(lesson.vocabulary.map((item) => item[0]).join(", "))}">▶ Nghe tất cả</button></header><div class="hhe-vocab-grid">${lesson.vocabulary.map((item) => `<article><div><strong>${escapeHtml(item[0])}</strong><span>${escapeHtml(item[1])}</span></div><p>${escapeHtml(item[2])}</p><small>${escapeHtml(item[3])}</small><footer><button type="button" title="Nghe phát âm" data-hhe-speak="${escapeHtml(item[0])}">♪</button><button type="button" class="${state.savedWords[item[0]] ? "saved" : ""}" data-hhe-save-word="${escapeHtml(item[0])}" data-hhe-word-json="${encodeURIComponent(JSON.stringify(item))}">${state.savedWords[item[0]] ? "★ Đã lưu" : "☆ Lưu từ"}</button></footer></article>`).join("")}</div></section>
       <section class="hhe-lesson-block"><header><span>02</span><div><small>NGỮ PHÁP</small><h3>Mẫu câu trọng tâm</h3></div></header><div class="hhe-grammar"><p>${escapeHtml(lesson.grammar)}</p><button type="button" data-hhe-speak="${escapeHtml(lesson.dialogue.replace(/\n/g, " "))}">▶ Nghe hội thoại</button></div><pre class="hhe-dialogue">${escapeHtml(lesson.dialogue)}</pre></section>
+      ${lesson.project ? `<section class="hhe-career-project"><small>CAPSTONE TASK</small><h3>Dự án cuối tuần</h3><p>${escapeHtml(lesson.project)}</p><ol><li>Nêu bối cảnh và người nghe.</li><li>Dùng ít nhất 8 thuật ngữ trong lộ trình.</li><li>Trình bày rủi ro, lựa chọn và bước tiếp theo.</li></ol></section>` : ""}
       <section class="hhe-lesson-block"><header><span>03</span><div><small>LUYỆN TẬP</small><h3>Hiểu câu trả lời của bạn</h3></div></header><form class="hhe-exercises" data-hhe-exercises>${lesson.exercises.map((question, index) => `<fieldset data-question="${question.id}"><legend><span>${index + 1}</span>${escapeHtml(question.prompt)}</legend>${question.type === "fill-in-the-blank" ? `<input type="text" name="${question.id}" value="${escapeHtml(answers[question.id] || "")}" autocomplete="off" placeholder="Nhập câu trả lời...">` : `<div>${question.options.map((option) => `<label><input type="radio" name="${question.id}" value="${escapeHtml(option)}" ${answers[question.id] === option ? "checked" : ""}><span>${escapeHtml(option)}</span></label>`).join("")}</div>`}<p data-feedback hidden></p></fieldset>`).join("")}<button class="primary" type="submit">Chấm bài và giải thích</button></form></section></main>
       <aside><section><small>TIẾN ĐỘ BÀI</small><strong data-hhe-lesson-progress>${state.completed[lesson.id] ? "100%" : "0%"}</strong><i data-hhe-lesson-progress-bar style="--p:${state.completed[lesson.id] ? 100 : 0}%"></i></section><section><small>HỌC HIỆU QUẢ</small><p>Nghe mẫu ít nhất hai lần, đọc thành tiếng, rồi mới làm bài tập.</p></section><section><small>QUYỀN RIÊNG TƯ</small><p>Tiến độ bài học được lưu trên thiết bị này.</p></section></aside></div></section>`;
   };
@@ -338,12 +397,14 @@
     return `<section class="hhe-progress"><header class="hhe-section-head"><div><small>${levelId} · LEARNER ANALYTICS</small><h2>Tiến bộ từ A0 đến C2</h2><p>Số liệu được lưu trên thiết bị và tách riêng theo từng cấp độ.</p></div><span>Cấp XP ${Math.floor(state.xp / 300) + 1}</span></header><div class="hhe-progress-cards"><article><span>Bài ${levelId}</span><strong>${selectedDone}/${selectedTotal}</strong></article><article><span>Toàn lộ trình</span><strong>${done}/${lessonIds.length}</strong></article><article><span>XP tích lũy</span><strong>${state.xp}</strong></article><article><span>Điểm xếp lớp</span><strong>${state.placement ? `${state.placement.score}/${state.placement.total || 16}` : "--"}</strong></article></div><section class="hhe-level-progress-list"><header><div><small>CEFR ROADMAP</small><h3>Tiến độ từng cấp</h3></div><span>Chọn cấp để xem chi tiết</span></header><div>${courseLevels.map((item) => `<button type="button" class="${item.id === levelId ? "active" : ""}" data-hhe-level="${item.id}" style="--level:${item.color}"><b>${item.id}</b><span><strong>${escapeHtml(item.name)}</strong><i style="--p:${levelProgress(state, item.id)}%"></i></span><small>${levelProgress(state, item.id)}%</small></button>`).join("")}</div></section><section class="hhe-week"><header><h3>Hoạt động 7 ngày</h3><span>Mục tiêu ${state.dailyGoal} phút/ngày</span></header><div>${activity.map(([date, minutes]) => `<i style="--h:${Math.max(5, Math.min(100, minutes / state.dailyGoal * 100))}%"><b>${minutes}</b><span>${new Date(date).toLocaleDateString("vi-VN", { weekday: "short" })}</span></i>`).join("")}</div></section><section class="hhe-skill-progress">${skillValues.map(([label, value]) => `<div><span>${label}</span><i style="--p:${Math.min(100, Math.round(value))}%"></i><b>${Math.min(100, Math.round(value))}%</b></div>`).join("")}</section><section class="hhe-achievements"><header><div><small>THÀNH TÍCH</small><h3>Các cột mốc học tập</h3></div><span>${achievements.filter((item) => item[3]).length}/${achievements.length} đã mở</span></header><div>${achievements.map(([id, title, description, unlocked, progress]) => `<article class="${unlocked ? "unlocked" : "locked"}" data-achievement="${id}"><span>${unlocked ? "◆" : "◇"}</span><div><strong>${title}</strong><p>${description}</p></div><small>${progress}</small></article>`).join("")}</div></section></section>`;
   };
 
-  const settingsView = (state) => `<section class="hhe-settings"><header class="hhe-section-head"><div><small>LEARNING PREFERENCES</small><h2>Cài đặt HH English</h2><p>Tùy chỉnh cấp độ, mục tiêu, tốc độ giọng đọc và dữ liệu học tập.</p></div></header><form data-hhe-settings><label><span>Cấp độ đang học<small>Mọi cấp từ A0 đến C2 đều có thể chọn</small></span><select name="selectedLevel">${courseLevels.map((level) => `<option value="${level.id}" ${selectedLevelId(state) === level.id ? "selected" : ""}>${level.id} · ${escapeHtml(level.name)}</option>`).join("")}</select></label><label><span>Bạn đang là<small>Giúp nội dung gợi ý phù hợp nhịp sống</small></span><select name="learnerType"><option value="student" ${state.settings.learnerType === "student" ? "selected" : ""}>Học sinh / sinh viên</option><option value="worker" ${state.settings.learnerType === "worker" ? "selected" : ""}>Người đi làm</option><option value="independent" ${state.settings.learnerType === "independent" ? "selected" : ""}>Người tự học linh hoạt</option></select></label><label><span>Mục tiêu học<small>Hiển thị trong kế hoạch cá nhân</small></span><select name="goal">${["Giao tiếp hằng ngày", "Học tập và thi cử", "Du lịch", "Công việc", "Xây nền từ mất gốc", "Học thuật C1-C2"].map((goal) => `<option ${state.settings.goal === goal ? "selected" : ""}>${goal}</option>`).join("")}</select></label><label><span>Mục tiêu mỗi ngày<small>5–60 phút; có thể học lại không giới hạn</small></span><input type="number" name="dailyGoal" min="5" max="60" step="5" value="${state.dailyGoal}"></label><label><span>Tốc độ giọng đọc<small>Chậm 0.6× · Bình thường 1×</small></span><input type="range" name="voiceRate" min="0.6" max="1.2" step="0.05" value="${state.settings.voiceRate}"><output>${state.settings.voiceRate}×</output></label><label><span>Giảm chuyển động<small>Tôn trọng khả năng tập trung và prefers-reduced-motion</small></span><input type="checkbox" name="reducedMotion" ${state.settings.reducedMotion ? "checked" : ""}></label><button class="primary" type="submit">Lưu cài đặt</button></form><section class="hhe-data-tools"><div><h3>Dữ liệu cá nhân</h3><p>Xuất bản sao JSON hoặc nhập lại trên thiết bị khác.</p></div><button type="button" data-hhe-export>Xuất JSON</button><label>Nhập JSON<input type="file" accept="application/json" data-hhe-import></label><button class="danger" type="button" data-hhe-reset>Xóa toàn bộ dữ liệu học</button></section><section class="hhe-sources"><h3>Nguồn học miễn phí được tuyển chọn</h3><a href="https://learnenglish.britishcouncil.org/" target="_blank" rel="noopener">British Council · LearnEnglish</a><a href="https://www.cambridgeenglish.org/learning-english/" target="_blank" rel="noopener">Cambridge English · Free activities</a><a href="https://learningenglish.voanews.com/" target="_blank" rel="noopener">VOA · Learning English</a><a href="https://www.coe.int/en/web/common-european-framework-reference-languages" target="_blank" rel="noopener">Council of Europe · CEFR</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API" target="_blank" rel="noopener">MDN · Web Speech API</a></section></section>`;
+  const settingsView = (state) => `<section class="hhe-settings"><header class="hhe-section-head"><div><small>LEARNING PREFERENCES</small><h2>Cài đặt HH English</h2><p>Tùy chỉnh cấp độ, chuyên ngành, mục tiêu, tốc độ giọng đọc và dữ liệu học tập.</p></div></header><form data-hhe-settings><label><span>Cấp độ đang học<small>Mọi cấp từ A0 đến C2 đều có thể chọn</small></span><select name="selectedLevel">${courseLevels.map((level) => `<option value="${level.id}" ${selectedLevelId(state) === level.id ? "selected" : ""}>${level.id} · ${escapeHtml(level.name)}</option>`).join("")}</select></label><label><span>Chuyên ngành đang học<small>36 lộ trình nghề nghiệp đều mở miễn phí</small></span><select name="selectedCareer">${careerTracks.map((item) => `<option value="${item.id}" ${selectedCareerId(state) === item.id ? "selected" : ""}>${escapeHtml(item.code)} · ${escapeHtml(item.viName)}</option>`).join("")}</select></label><label><span>Bạn đang là<small>Giúp nội dung gợi ý phù hợp nhịp sống</small></span><select name="learnerType"><option value="student" ${state.settings.learnerType === "student" ? "selected" : ""}>Học sinh / sinh viên</option><option value="worker" ${state.settings.learnerType === "worker" ? "selected" : ""}>Người đi làm</option><option value="independent" ${state.settings.learnerType === "independent" ? "selected" : ""}>Người tự học linh hoạt</option></select></label><label><span>Mục tiêu học<small>Hiển thị trong kế hoạch cá nhân</small></span><select name="goal">${["Giao tiếp hằng ngày", "Học tập và thi cử", "Du lịch", "Công việc", "Xây nền từ mất gốc", "Học thuật C1-C2", "Tiếng Anh chuyên ngành"].map((goal) => `<option ${state.settings.goal === goal ? "selected" : ""}>${goal}</option>`).join("")}</select></label><label><span>Mục tiêu mỗi ngày<small>5–60 phút; có thể học lại không giới hạn</small></span><input type="number" name="dailyGoal" min="5" max="60" step="5" value="${state.dailyGoal}"></label><label><span>Tốc độ giọng đọc<small>Chậm 0.6× · Bình thường 1×</small></span><input type="range" name="voiceRate" min="0.6" max="1.2" step="0.05" value="${state.settings.voiceRate}"><output>${state.settings.voiceRate}×</output></label><label><span>Giảm chuyển động<small>Tôn trọng khả năng tập trung và prefers-reduced-motion</small></span><input type="checkbox" name="reducedMotion" ${state.settings.reducedMotion ? "checked" : ""}></label><button class="primary" type="submit">Lưu cài đặt</button></form><section class="hhe-data-tools"><div><h3>Dữ liệu cá nhân</h3><p>Xuất bản sao JSON hoặc nhập lại trên thiết bị khác.</p></div><button type="button" data-hhe-export>Xuất JSON</button><label>Nhập JSON<input type="file" accept="application/json" data-hhe-import></label><button class="danger" type="button" data-hhe-reset>Xóa toàn bộ dữ liệu học</button></section><section class="hhe-sources"><h3>Nguồn học miễn phí được tuyển chọn</h3><a href="https://learnenglish.britishcouncil.org/" target="_blank" rel="noopener">British Council · LearnEnglish</a><a href="https://www.cambridgeenglish.org/learning-english/" target="_blank" rel="noopener">Cambridge English · Free activities</a><a href="https://learningenglish.voanews.com/" target="_blank" rel="noopener">VOA · Learning English</a><a href="https://www.coe.int/en/web/common-european-framework-reference-languages" target="_blank" rel="noopener">Council of Europe · CEFR</a><a href="https://www.onetonline.org/find/career?c=0" target="_blank" rel="noopener">O*NET · Career Clusters</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API" target="_blank" rel="noopener">MDN · Web Speech API</a></section></section>`;
 
   const render = () => {
     if (!host) return;
     const state = readState(); let content = "";
     if (state.activeView === "learn") content = learnView(state);
+    else if (state.activeView === "career") content = careerView(state);
+    else if (state.activeView === "survey") content = careerSurveyView(state);
     else if (state.activeView === "practice") content = practiceView(state);
     else if (state.activeView === "lesson") content = lessonView(state, getLesson(state.activeLesson));
     else if (state.activeView === "placement") content = placementView(state);
@@ -357,6 +418,7 @@
     host.querySelector("[data-hhe-app]")?.setAttribute("data-reduced-motion", String(Boolean(state.settings.reducedMotion)));
     host.querySelector("[data-hhe-writing]")?.addEventListener("input", onWritingInput);
     host.querySelector("[data-hhe-search]")?.addEventListener("input", onLessonSearch);
+    host.querySelector("[data-hhe-career-search]")?.addEventListener("input", filterCareerTracks);
     host.querySelector('[name="voiceRate"]')?.addEventListener("input", (event) => { event.target.nextElementSibling.textContent = `${event.target.value}×`; });
     updateFocusClock();
   };
@@ -383,11 +445,20 @@
     });
     const empty = host.querySelector("[data-hhe-search-empty]"); if (empty) empty.hidden = visibleCount > 0;
   };
+  const filterCareerTracks = () => {
+    const query = foldSearch(host?.querySelector("[data-hhe-career-search]")?.value || ""); let visibleCount = 0;
+    host?.querySelectorAll("[data-hhe-career-card]").forEach((card) => {
+      const categoryMatches = activeCareerCategory === "all" || card.dataset.category === activeCareerCategory;
+      const queryMatches = !query || foldSearch(card.dataset.search).includes(query);
+      card.hidden = !(categoryMatches && queryMatches); visibleCount += card.hidden ? 0 : 1;
+    });
+    const empty = host?.querySelector("[data-hhe-career-empty]"); if (empty) empty.hidden = visibleCount > 0;
+  };
   const handleKeydown = (event) => {
     if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
     const target = event.target;
     if (target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName || "")) return;
-    const search = host?.querySelector("[data-hhe-search]");
+    const search = host?.querySelector("[data-hhe-search], [data-hhe-career-search]");
     if (!search) return;
     event.preventDefault(); search.focus();
   };
@@ -410,15 +481,21 @@
   const handleClick = async (event) => {
     event.stopPropagation();
     const viewButton = event.target.closest("[data-hhe-view]");
-    if (viewButton) { const state = readState(); state.activeView = viewButton.dataset.hheView; writeState(state); render(); return; }
+    if (viewButton) { const state = readState(); state.activeView = viewButton.dataset.hheView; writeState(state); if (!syncViewRoute(state.activeView)) render(); return; }
     const levelButton = event.target.closest("[data-hhe-level]");
-    if (levelButton) { const state = readState(); if (!levelOrder.includes(levelButton.dataset.hheLevel)) return; state.selectedLevel = levelButton.dataset.hheLevel; state.activeView = levelButton.closest(".hhe-level-progress-list") ? "progress" : "learn"; writeState(state); render(); toast(`Đã mở lộ trình ${state.selectedLevel}.`); return; }
+    if (levelButton) { const state = readState(); if (!levelOrder.includes(levelButton.dataset.hheLevel)) return; state.selectedLevel = levelButton.dataset.hheLevel; state.activeView = levelButton.closest(".hhe-level-progress-list") ? "progress" : "learn"; writeState(state); if (!syncViewRoute(state.activeView)) { render(); toast(`Đã mở lộ trình ${state.selectedLevel}.`); } return; }
+    const careerCategoryButton = event.target.closest("[data-hhe-career-category]");
+    if (careerCategoryButton) { activeCareerCategory = careerCategoryButton.dataset.hheCareerCategory; host.querySelectorAll("[data-hhe-career-category]").forEach((button) => button.classList.toggle("active", button === careerCategoryButton)); filterCareerTracks(); return; }
+    const favoriteCareerButton = event.target.closest("[data-hhe-career-favorite]");
+    if (favoriteCareerButton) { const state = readState(); const id = favoriteCareerButton.dataset.hheCareerFavorite; state.favoriteCareers = state.favoriteCareers.includes(id) ? state.favoriteCareers.filter((item) => item !== id) : [...state.favoriteCareers, id]; writeState(state); render(); toast(state.favoriteCareers.includes(id) ? "Đã ghim lộ trình nghề nghiệp." : "Đã bỏ ghim lộ trình."); return; }
+    const careerButton = event.target.closest("[data-hhe-career]");
+    if (careerButton) { const state = readState(); if (!careerTracks.some((item) => item.id === careerButton.dataset.hheCareer)) return; state.selectedCareer = careerButton.dataset.hheCareer; state.activeView = "career"; activeCareerCategory = "all"; writeState(state); if (!syncViewRoute("career")) { render(); toast(`Đã mở ${careerTrackById(state.selectedCareer).viName}.`); } return; }
     const lessonButton = event.target.closest("[data-hhe-open-lesson]");
-    if (lessonButton) { const state = readState(); const lesson = getLesson(lessonButton.dataset.hheOpenLesson); state.activeView = "lesson"; state.activeLesson = lesson.id; state.selectedLevel = lesson.level || "A0"; writeState(state); render(); return; }
+    if (lessonButton) { const state = readState(); const lesson = getLesson(lessonButton.dataset.hheOpenLesson); state.activeView = "lesson"; state.activeLesson = lesson.id; state.selectedLevel = lesson.level || "A0"; if (lesson.trackId) state.selectedCareer = lesson.trackId; writeState(state); render(); return; }
     const speakButton = event.target.closest("[data-hhe-speak]");
     if (speakButton) { if (!speak(speakButton.dataset.hheSpeak, readState().settings.voiceRate)) toast("Thiết bị này chưa hỗ trợ giọng đọc.", "error"); return; }
     const saveWord = event.target.closest("[data-hhe-save-word]");
-    if (saveWord) { const state = readState(); const raw = JSON.parse(decodeURIComponent(saveWord.dataset.hheWordJson)); const word = raw[0]; if (state.savedWords[word]) delete state.savedWords[word]; else state.savedWords[word] = { word, ipa: raw[1], meaning: raw[2], example: raw[3], level: selectedLevelId(state), savedAt: new Date().toISOString() }; writeState(state); render(); toast(state.savedWords[word] ? "Đã lưu vào sổ từ." : "Đã bỏ từ khỏi sổ."); return; }
+    if (saveWord) { const state = readState(); const raw = JSON.parse(decodeURIComponent(saveWord.dataset.hheWordJson)); const word = raw[0]; const lesson = saveWord.closest("[data-hhe-lesson]") ? getLesson(saveWord.closest("[data-hhe-lesson]").dataset.hheLesson) : null; if (state.savedWords[word]) delete state.savedWords[word]; else state.savedWords[word] = { word, ipa: raw[1], meaning: raw[2], example: raw[3], level: lesson?.level || selectedLevelId(state), trackId: lesson?.trackId || selectedCareerId(state), savedAt: new Date().toISOString() }; writeState(state); render(); toast(state.savedWords[word] ? "Đã lưu vào sổ từ." : "Đã bỏ từ khỏi sổ."); return; }
     const removeWord = event.target.closest("[data-hhe-remove-word]");
     if (removeWord) { const state = readState(); delete state.savedWords[removeWord.dataset.hheRemoveWord]; delete state.reviewQueue[removeWord.dataset.hheRemoveWord]; writeState(state); render(); return; }
     if (event.target.closest("[data-hhe-reveal]")) { host.querySelector("[data-hhe-review-answer]").hidden = false; host.querySelector("[data-hhe-review] footer").hidden = false; event.target.hidden = true; return; }
@@ -448,10 +525,36 @@
       else toast(correct >= 4 ? `Bạn đã hoàn thành trước đó · ${correct}/5` : `${correct}/5 đúng. Đọc giải thích rồi thử lại.`, correct >= 4 ? "success" : "error"); writeState(state); return; }
     const practiceForm = event.target.closest("[data-hhe-practice]");
     if (practiceForm) { event.preventDefault(); const skill = practiceForm.dataset.hhePractice; const answer = new FormData(practiceForm).get("answer") || ""; const correct = normalize(answer) === normalize(practiceForm.dataset.answer); const feedback = practiceForm.querySelector("[data-hhe-practice-feedback]"); feedback.className = correct ? "correct" : "wrong"; feedback.innerHTML = `<strong>${correct ? "Chính xác" : `Đáp án đúng: ${escapeHtml(practiceForm.dataset.answer)}`}</strong><span>${escapeHtml(practiceForm.dataset.explanation || "Hãy đối chiếu lại nội dung và thử thêm một lần.")}</span>`; const state = readState(); const levelId = selectedLevelId(state); const current = levelPractice(state, levelId); if (correct && current[skill] < 100) { current[skill] = 100; state.practiceByLevel[levelId] = current; if (levelId === "A0") state.practice = { ...current }; state.xp += 10; state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + 3; updateStreak(state); writeState(state); const xp = host.querySelector("[data-hhe-xp]"); if (xp) xp.textContent = state.xp; toast(`Hoàn thành bài luyện ${levelId} · +10 XP`); } else toast(correct ? "Bạn đã hoàn thành bài luyện này." : "Chưa đúng. Hãy đọc giải thích rồi thử lại.", correct ? "success" : "error"); return; }
+    const careerSurveyForm = event.target.closest("[data-hhe-career-survey]");
+    if (careerSurveyForm) {
+      event.preventDefault(); const data = new FormData(careerSurveyForm); const categories = data.getAll("categories");
+      if (!categories.length) return toast("Hãy chọn ít nhất một lĩnh vực bạn quan tâm.", "error");
+      const goal = String(data.get("goal") || "Giao tiếp tại nơi làm việc"); const situation = String(data.get("situation") || "student"); const skill = String(data.get("skill") || "speaking");
+      const level = levelOrder.includes(String(data.get("level"))) ? String(data.get("level")) : "A0"; const minutes = Math.max(10, Math.min(45, Number(data.get("minutes")) || 15));
+      const goalBoosts = {
+        "Xin việc và phỏng vấn": ["human-resources", "business-management", "customer-service-retail"],
+        "Giao tiếp tại nơi làm việc": ["business-management", "customer-service-retail", "it-support", "tourism-hospitality"],
+        "Đọc tài liệu chuyên môn": ["science-research", "software-development", "data-ai", "law-public-service"],
+        "Họp và thuyết trình": ["business-management", "marketing-sales", "engineering-manufacturing", "human-resources"],
+        "Làm việc với khách hàng quốc tế": ["customer-service-retail", "marketing-sales", "tourism-hospitality", "real-estate"],
+        "Du học hoặc nghiên cứu": ["science-research", "teaching-education", "data-ai", "nursing-healthcare"]
+      };
+      const levelIndex = levelOrder.indexOf(level);
+      const ranked = careerTracks.filter((item) => categories.includes(item.category)).map((item, index) => {
+        const minLevel = item.level.split("-")[0]; const distance = Math.abs(levelOrder.indexOf(minLevel) - levelIndex);
+        const goalScore = Math.max(0, 8 - (goalBoosts[goal] || []).indexOf(item.id) * 2);
+        return { item, score: (goalBoosts[goal] || []).includes(item.id) ? goalScore : 0, distance, index };
+      }).sort((a, b) => b.score - a.score || a.distance - b.distance || a.index - b.index);
+      const recommendations = ranked.slice(0, 3).map(({ item }) => item.id);
+      const state = readState(); state.selectedLevel = level; state.selectedCareer = recommendations[0] || careerTracks[0]?.id || ""; state.dailyGoal = minutes;
+      state.careerSurvey = { situation, categories, goal, skill, minutes, level, recommendations, summary: `Ưu tiên ${goal.toLowerCase()}, kỹ năng ${skill} và nhịp học ${minutes} phút mỗi ngày ở cấp ${level}.`, takenAt: new Date().toISOString() };
+      if (!state.careerSurveyRewarded) { state.xp += 15; state.careerSurveyRewarded = true; }
+      writeState(state); render(); toast("Đã tạo gợi ý lộ trình nghề nghiệp · +15 XP"); return;
+    }
     const placementForm = event.target.closest("[data-hhe-placement]");
     if (placementForm) { event.preventDefault(); const answers = placementQuestions.map((_, index) => placementForm.elements[`placement-${index}`]?.value); const answered = answers.filter((value) => value !== "").length; if (answered < 12) return toast("Hãy trả lời ít nhất 12 câu để nhận gợi ý đáng tin cậy hơn.", "error"); const score = scoreAnswers(placementQuestions, answers); const groups = {}; placementQuestions.forEach((question, index) => { const key = question[0]; groups[key] = groups[key] || { label: { Vocabulary: "từ vựng", Grammar: "ngữ pháp", Reading: "đọc hiểu", Listening: "nghe hiểu", "Use of English": "cách dùng ngôn ngữ" }[key] || key, score: 0, total: 0 }; groups[key].score += Number(answers[index]) === question[3] ? 1 : 0; groups[key].total += 1; }); const skillScores = Object.values(groups); const strongest = [...skillScores].sort((a, b) => b.score / b.total - a.score / a.total)[0]; const weakest = [...skillScores].sort((a, b) => a.score / a.total - b.score / b.total)[0]; const state = readState(); const suggestedLevel = levelFromScore(score / placementQuestions.length * 100); state.placement = { score, answered, total: placementQuestions.length, level: suggestedLevel, strength: strongest.label, improve: weakest.label, takenAt: new Date().toISOString() }; state.selectedLevel = suggestedLevel; if (!state.placementRewarded) { state.xp += 25; state.placementRewarded = true; } writeState(state); render(); toast(`Đã hoàn tất bài kiểm tra · gợi ý ${suggestedLevel}.`); return; }
     const settingsForm = event.target.closest("[data-hhe-settings]");
-    if (settingsForm) { event.preventDefault(); const state = readState(); state.selectedLevel = levelOrder.includes(settingsForm.selectedLevel.value) ? settingsForm.selectedLevel.value : "A0"; state.dailyGoal = Math.max(5, Math.min(60, Number(settingsForm.dailyGoal.value) || 15)); state.settings.learnerType = settingsForm.learnerType.value; state.settings.goal = settingsForm.goal.value; state.settings.voiceRate = Number(settingsForm.voiceRate.value); state.settings.reducedMotion = settingsForm.reducedMotion.checked; writeState(state); render(); toast("Đã lưu cài đặt."); }
+    if (settingsForm) { event.preventDefault(); const state = readState(); state.selectedLevel = levelOrder.includes(settingsForm.selectedLevel.value) ? settingsForm.selectedLevel.value : "A0"; state.selectedCareer = careerTracks.some((item) => item.id === settingsForm.selectedCareer.value) ? settingsForm.selectedCareer.value : selectedCareerId(state); state.dailyGoal = Math.max(5, Math.min(60, Number(settingsForm.dailyGoal.value) || 15)); state.settings.learnerType = settingsForm.learnerType.value; state.settings.goal = settingsForm.goal.value; state.settings.voiceRate = Number(settingsForm.voiceRate.value); state.settings.reducedMotion = settingsForm.reducedMotion.checked; writeState(state); render(); toast("Đã lưu cài đặt."); }
   };
 
   const startRecognition = () => {
@@ -489,6 +592,6 @@
   };
   const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.cancel?.(); if (focusTimer) clearInterval(focusTimer); focusTimer = null; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
-  root.HHEnglish = { mount, unmount, courses, courseLevels, scheduleReview, scoreAnswers, levelFromScore };
-  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, placementQuestions, scheduleReview, scoreAnswers, levelFromScore, normalize };
+  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, scheduleReview, scoreAnswers, levelFromScore };
+  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, scheduleReview, scoreAnswers, levelFromScore, normalize };
 })();

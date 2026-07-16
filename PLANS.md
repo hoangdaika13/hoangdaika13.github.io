@@ -17,6 +17,7 @@ Add HH English as a major HH Platform workspace for Vietnamese learners. The fir
 
 ```text
 english-curriculum.js      # original A1-C2 CEFR-aligned curriculum data
+english-career-curriculum.js # original profession-specific English paths
 english-learning.js        # A0 data, lesson renderer, learning engine, mount API
 english-learning.css       # responsive HH English visual system
 tests/
@@ -56,6 +57,15 @@ PLANS.md
 - Extend the preliminary placement test across A0-C2 without presenting it as an accredited CEFR certificate.
 - Preserve old A0 localStorage data through additive state migration.
 - Verify keyboard operation, 375px responsiveness, reduced motion, content contracts, and regression suites.
+
+### M2.6: Career English and daily profession paths
+
+- Add 36 profession-specific tracks grouped into 10 career families.
+- Provide seven action-oriented daily lessons per track, for 252 Career English lessons.
+- Add 864 vocabulary entries spanning technology, healthcare, education, business, engineering, services, public work, media, agriculture, and sustainability.
+- Include workplace dialogues, CEFR-style Can Do outcomes, explained exercises, daily word kits, capstone tasks, progress, favorites, search, and category filters.
+- Add a career survey that recommends three suitable tracks from learner goals, interests, current level, priority skill, and available study time.
+- Keep all professional paths free, local-first, open for self-directed study, and clearly distinct from accredited career or CEFR certification.
 
 ### M3: Optional free backend
 
