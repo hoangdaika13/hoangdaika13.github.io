@@ -88,16 +88,12 @@ function configuredServices() {
     google: vertex.configured || programmableSearch,
     googleProvider: vertex.configured ? "vertex-ai-search" : programmableSearch ? "programmable-search" : "none",
     youtube: Boolean(String(process.env.YOUTUBE_API_KEY || "").trim()),
-    gemini: Boolean(String(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_SEARCH_API_KEY || process.env.VERTEX_SEARCH_API_KEY || "").trim()),
+    gemini: Boolean(String(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "").trim()),
     geminiKeySource: process.env.GEMINI_API_KEY
       ? "gemini"
       : process.env.GOOGLE_AI_API_KEY
         ? "google-ai"
-        : process.env.GOOGLE_SEARCH_API_KEY
-          ? "google-shared"
-          : process.env.VERTEX_SEARCH_API_KEY
-            ? "vertex-shared"
-            : "none"
+        : "none"
   };
 }
 

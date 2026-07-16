@@ -35,8 +35,6 @@ function geminiApiKey() {
   return String(
     process.env.GEMINI_API_KEY
     || process.env.GOOGLE_AI_API_KEY
-    || process.env.GOOGLE_SEARCH_API_KEY
-    || process.env.VERTEX_SEARCH_API_KEY
     || ""
   ).trim();
 }
@@ -44,8 +42,6 @@ function geminiApiKey() {
 function geminiKeySource() {
   if (process.env.GEMINI_API_KEY) return "gemini";
   if (process.env.GOOGLE_AI_API_KEY) return "google-ai";
-  if (process.env.GOOGLE_SEARCH_API_KEY) return "google-shared";
-  if (process.env.VERTEX_SEARCH_API_KEY) return "vertex-shared";
   return "none";
 }
 
@@ -152,7 +148,144 @@ function localContentPack(input, meta = {}) {
   };
 }
 
-function localCreativeOutput(moduleId, actionType, input, meta = {}) {
+function localDraftOutput(actionType, input, meta = {}) {
+  const text = clean(input || "Chưa có nội dung", 16000);
+  const words = text.match(/[\p{L}\p{N}]+/gu) || [];
+  const paragraphs = text.split(/\n{2,}/).map((item) => item.trim()).filter(Boolean);
+  const opening = clean(paragraphs[0] || text, 240);
+  const platform = clean(meta?.config?.platform || meta.platform || "đa nền tảng", 80);
+  const goal = actionType === "rewrite" ? "tái cấu trúc mạnh" : "biên tập sâu";
+  return {
+    output: [
+      `BẢN ${actionType === "rewrite" ? "VIẾT LẠI" : "BIÊN TẬP"} · HH LOCAL`,
+      "",
+      `Mục tiêu: ${goal} cho ${platform}`,
+      `Quy mô bản gốc: ${words.length} từ · ${Math.max(1, paragraphs.length)} đoạn`,
+      "",
+      "HOOK ĐỀ XUẤT",
+      `“${opening.replace(/[.!?]+$/, "").slice(0, 150)} — nhưng phần quan trọng nhất thường bị bỏ qua.”`,
+      "",
+      "CẤU TRÚC XUẤT BẢN",
+      "1. Mở bằng vấn đề hoặc kết quả cụ thể.",
+      "2. Đưa bối cảnh vừa đủ để người xem hiểu vì sao cần quan tâm.",
+      "3. Chia thân bài thành ba luận điểm, mỗi luận điểm có ví dụ hoặc bằng chứng.",
+      "4. Đặt insight mạnh nhất ở khoảng 60–75% thời lượng.",
+      "5. Kết bằng một hành động rõ ràng, không dùng CTA chung chung.",
+      "",
+      "BẢN NHÁP ĐÃ CHUẨN HÓA",
+      ...paragraphs.map((paragraph, index) => `${index + 1}. ${paragraph}`),
+      "",
+      "KIỂM TRA TRƯỚC KHI ĐĂNG",
+      "□ Hook nêu lợi ích hoặc xung đột trong 2 câu đầu",
+      "□ Mỗi đoạn chỉ truyền đạt một ý chính",
+      "□ Có ví dụ, số liệu hoặc trải nghiệm kiểm chứng được",
+      "□ Loại bỏ câu lặp và từ đệm",
+      "□ CTA khớp đúng mục tiêu nội dung"
+    ].join("\n")
+  };
+}
+
+function localPlanOutput(input, meta = {}) {
+  let data = {};
+  try { data = JSON.parse(input || "{}"); } catch { data = { topic: input }; }
+  const topic = clean(data.topic || data.title || data.input || input || "Chủ đề mới", 180);
+  const platform = clean(data.platform || meta?.config?.platform || "YouTube", 80);
+  const audience = clean(data.audience || meta?.config?.audience || "khán giả mục tiêu", 140);
+  return {
+    output: [
+      `KẾ HOẠCH NỘI DUNG · ${topic}`,
+      `Nền tảng chính: ${platform} · Đối tượng: ${audience}`,
+      "",
+      "MỤC TIÊU 30 NGÀY",
+      "• Xây một trụ cột nội dung có nhận diện rõ.",
+      "• Kiểm chứng ba góc tiếp cận bằng retention, lượt lưu và bình luận.",
+      "• Tái sử dụng mỗi nội dung dài thành ít nhất ba tài sản ngắn.",
+      "",
+      "BỐN TUẦN TRIỂN KHAI",
+      `Tuần 1 · Nhận biết: giải thích vấn đề cốt lõi của “${topic}”, khảo sát câu hỏi thật và tạo video nền.`,
+      "Tuần 2 · Tin cậy: case study, hướng dẫn từng bước và bài phá bỏ hiểu lầm.",
+      "Tuần 3 · Chuyển đổi: so sánh giải pháp, quy trình thực hành và CTA thử nghiệm.",
+      "Tuần 4 · Cộng đồng: Q&A, phản hồi người xem, tổng kết dữ liệu và chọn chủ đề vòng tiếp theo.",
+      "",
+      "NHỊP ĐĂNG ĐỀ XUẤT",
+      "Thứ 2: nội dung trụ cột · Thứ 3: short hook · Thứ 4: carousel/checklist",
+      "Thứ 5: case study · Thứ 6: short phản biện · Cuối tuần: Q&A và tổng kết.",
+      "",
+      "KPI",
+      "Retention 30 giây · thời lượng xem trung bình · tỷ lệ lưu/chia sẻ · bình luận có ý nghĩa · chuyển đổi CTA.",
+      "",
+      "QUY TẮC QUYẾT ĐỊNH",
+      "Giữ chủ đề nếu retention và lượt lưu cùng tăng; đổi hook nếu impressions tốt nhưng retention thấp; đổi góc nội dung nếu ba lần thử liên tiếp không tạo bình luận chất lượng."
+    ].join("\n")
+  };
+}
+
+async function googleResearchOutput(input, actionType) {
+  const key = String(process.env.GOOGLE_SEARCH_API_KEY || "").trim();
+  const cx = String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim();
+  if (!key || !cx) return null;
+  const urls = String(input || "").match(/https?:\/\/[^\s<>"']+/gi) || [];
+  const queryText = String(input || "")
+    .replace(/https?:\/\/[^\s<>"']+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const query = clean(queryText || urls.map((url) => {
+    try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
+  }).filter(Boolean).join(" ") || "xu hướng sáng tạo nội dung", 300);
+  const params = new URLSearchParams({
+    key,
+    cx,
+    q: query,
+    num: "8",
+    safe: "active",
+    hl: "vi",
+    gl: "vn"
+  });
+  const response = await fetch(`https://customsearch.googleapis.com/customsearch/v1?${params}`, {
+    headers: { Accept: "application/json", "User-Agent": "HH-Creative-Research/1.0" },
+    signal: AbortSignal.timeout(5500)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) return null;
+  const items = (data.items || []).slice(0, 8).map((item, index) => ({
+    index: index + 1,
+    title: clean(item.title, 240),
+    url: clean(item.link, 1200),
+    snippet: clean(item.snippet, 600)
+  })).filter((item) => item.url);
+  if (!items.length) return null;
+  const sourceLines = items.map((item) => `[${item.index}] ${item.title}\n${item.snippet}\n${item.url}`);
+  const angles = items.slice(0, 5).map((item, index) =>
+    `${index + 1}. ${item.title}: chuyển thành góc “vấn đề → bằng chứng → ứng dụng → quan điểm riêng”.`
+  );
+  return {
+    output: [
+      actionType === "url-research" ? "NGHIÊN CỨU URL + GOOGLE" : "NGHIÊN CỨU GOOGLE",
+      `Truy vấn: ${query}`,
+      `Kết quả kiểm chứng được: ${items.length}`,
+      urls.length ? `URL người dùng cung cấp: ${urls.slice(0, 20).join(", ")}` : "",
+      "",
+      "TÓM TẮT NGUỒN",
+      ...sourceLines,
+      "",
+      "GÓC NỘI DUNG CÓ THỂ TRIỂN KHAI",
+      ...angles,
+      "",
+      "CHECKLIST XÁC MINH",
+      "□ Mở nguồn gốc thay vì chỉ dựa vào đoạn trích",
+      "□ Kiểm tra ngày xuất bản và tác giả",
+      "□ Đối chiếu ít nhất hai nguồn độc lập",
+      "□ Tách dữ kiện khỏi nhận định",
+      "□ Ghi nguồn cạnh số liệu khi xuất bản"
+    ].filter(Boolean).join("\n\n"),
+    sources: items.map((item) => ({ url: item.url, title: item.title, type: "google-search" })),
+    model: "google-programmable-search",
+    providerApi: "programmable-search",
+    provider: "google-search"
+  };
+}
+
+async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
   if (actionType === "content-pack") {
     const structured = localContentPack(input, meta);
     return {
@@ -186,6 +319,16 @@ function localCreativeOutput(moduleId, actionType, input, meta = {}) {
     return {
       output: `PHÂN TÍCH KỊCH BẢN\n\nSố từ: ${wordTotal}\nThời lượng voice ước tính: ${Math.max(1, wordTotal / 145).toFixed(1)} phút\n\nƯu tiên cải thiện:\n1. Hook rõ trong 20 giây đầu.\n2. Xung đột tăng dần và có bằng chứng cụ thể.\n3. Cao trào buộc nhân vật phải lựa chọn.\n4. Kết thúc có dư âm và CTA mềm.\n5. Kiểm tra tính nguyên bản trước khi đăng.`
     };
+  }
+  if (["rewrite", "improve"].includes(actionType)) {
+    return localDraftOutput(actionType, input, meta);
+  }
+  if (actionType === "plan") {
+    return localPlanOutput(input, meta);
+  }
+  if (["research", "url-research"].includes(actionType)) {
+    const research = await googleResearchOutput(input, actionType).catch(() => null);
+    if (research) return research;
   }
   if (actionType === "chat") {
     return {
@@ -517,7 +660,10 @@ module.exports = async function handler(req, res) {
         providerError = clean(error.message, 260);
       }
     }
-    if (!result) result = localCreativeOutput(moduleId, actionType, input, meta);
+    if (!result) {
+      result = await localCreativeOutput(moduleId, actionType, input, meta);
+      if (result.provider) provider = result.provider;
+    }
 
     const doc = {
       moduleId,
