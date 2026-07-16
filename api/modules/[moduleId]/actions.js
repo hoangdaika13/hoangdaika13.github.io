@@ -285,6 +285,76 @@ async function googleResearchOutput(input, actionType) {
   };
 }
 
+async function youtubeResearchOutput(input, actionType) {
+  const key = String(process.env.YOUTUBE_API_KEY || "").trim();
+  if (!key) return null;
+  const urls = String(input || "").match(/https?:\/\/[^\s<>"']+/gi) || [];
+  const query = clean(String(input || "")
+    .replace(/https?:\/\/[^\s<>"']+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim() || "sáng tạo nội dung AI", 300);
+  const params = new URLSearchParams({
+    key,
+    q: query,
+    part: "snippet",
+    type: "video",
+    maxResults: "10",
+    order: "relevance",
+    safeSearch: "moderate",
+    relevanceLanguage: "vi",
+    regionCode: "VN"
+  });
+  const response = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`, {
+    headers: { Accept: "application/json", "User-Agent": "HH-Creative-Research/1.0" },
+    signal: AbortSignal.timeout(5500)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) return null;
+  const items = (data.items || []).map((item, index) => ({
+    index: index + 1,
+    title: clean(item?.snippet?.title, 240),
+    channel: clean(item?.snippet?.channelTitle, 180),
+    publishedAt: clean(item?.snippet?.publishedAt, 80),
+    snippet: clean(item?.snippet?.description, 500),
+    url: item?.id?.videoId ? `https://www.youtube.com/watch?v=${item.id.videoId}` : ""
+  })).filter((item) => item.url);
+  if (!items.length) return null;
+  return {
+    output: [
+      actionType === "url-research" ? "NGHIÊN CỨU URL + YOUTUBE DATA" : "NGHIÊN CỨU YOUTUBE DATA",
+      `Truy vấn: ${query}`,
+      `Video tham khảo thực tế: ${items.length}`,
+      urls.length ? `URL người dùng cung cấp: ${urls.slice(0, 20).join(", ")}` : "",
+      "",
+      "BẢN ĐỒ NỘI DUNG ĐANG CÓ",
+      ...items.map((item) => [
+        `[${item.index}] ${item.title}`,
+        `${item.channel}${item.publishedAt ? ` · ${new Date(item.publishedAt).toLocaleDateString("vi-VN")}` : ""}`,
+        item.snippet || "Không có mô tả công khai.",
+        item.url
+      ].join("\n")),
+      "",
+      "CÁCH TẠO PHIÊN BẢN NGUYÊN BẢN",
+      "1. Nhóm các video theo lời hứa ở tiêu đề, không sao chép câu chữ.",
+      "2. Tìm một câu hỏi mà phần lớn video chưa trả lời hoặc trả lời còn chung chung.",
+      "3. Bổ sung trải nghiệm, thử nghiệm, dữ liệu hoặc ví dụ của chính bạn.",
+      "4. Mở bằng kết quả cụ thể; đưa bối cảnh sau khi người xem đã hiểu lợi ích.",
+      "5. Dùng bình luận và video liên quan làm nguồn câu hỏi cho tập tiếp theo.",
+      "",
+      "CHECKLIST CẠNH TRANH",
+      "□ Tiêu đề khác biệt về góc nhìn, không chỉ thay vài từ",
+      "□ Thumbnail truyền một ý duy nhất",
+      "□ 30 giây đầu xác nhận đúng lời hứa ở tiêu đề",
+      "□ Có đoạn chứng minh hoặc demo",
+      "□ Ghi nguồn khi sử dụng dữ kiện của bên thứ ba"
+    ].filter(Boolean).join("\n\n"),
+    sources: items.map((item) => ({ url: item.url, title: `${item.title} · ${item.channel}`, type: "youtube" })),
+    model: "youtube-data-api",
+    providerApi: "youtube-data-v3",
+    provider: "youtube-research"
+  };
+}
+
 async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
   if (actionType === "content-pack") {
     const structured = localContentPack(input, meta);
@@ -329,6 +399,8 @@ async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
   if (["research", "url-research"].includes(actionType)) {
     const research = await googleResearchOutput(input, actionType).catch(() => null);
     if (research) return research;
+    const youtubeResearch = await youtubeResearchOutput(input, actionType).catch(() => null);
+    if (youtubeResearch) return youtubeResearch;
   }
   if (actionType === "chat") {
     return {
