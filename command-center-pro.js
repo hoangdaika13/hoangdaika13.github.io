@@ -584,15 +584,6 @@
     toast("Đã đổi giao diện", document.body.dataset.dashboardTheme, "◐");
   }
 
-  function installDock() {
-    if (document.querySelector(".cc-dock")) return;
-    const dock = document.createElement("nav");
-    dock.className = "cc-dock";
-    dock.setAttribute("aria-label", "Truy cập nhanh");
-    dock.innerHTML = `<button type="button" data-app-route="/home" title="Trang chủ">⌂</button><button type="button" data-command-open title="Command Palette">⌕</button><button type="button" data-app-route="/create/ai-center" title="AI Center">✦</button><button type="button" data-app-route="/work/project-center" title="Dự án">P</button><button type="button" data-app-route="/communication/community" title="Cộng đồng">C</button><button type="button" data-search-watch-open="youtube" title="YouTube">▶</button><button type="button" data-notification-toggle title="Thông báo">◇</button>`;
-    document.body.append(dock);
-  }
-
   function wireReveal() {
     if (!("IntersectionObserver" in window)) {
       document.querySelectorAll(".cc-reveal").forEach((node) => node.classList.add("is-visible"));
@@ -782,7 +773,6 @@
     root().innerHTML = markup();
     mountHero();
     installThemeUi();
-    installDock();
     wireReveal();
     wireMouseLight();
     wireDragging();
