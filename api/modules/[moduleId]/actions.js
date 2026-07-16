@@ -250,16 +250,38 @@ function promptFor(moduleId, actionType, input, meta = {}) {
   ].join("\n");
 }
 
-function interactionText(data) {
-  if (typeof data?.output_text === "string" && data.output_text.trim()) return data.output_text.trim();
+function generatedText(data) {
   const parts = [];
-  for (const step of data?.steps || []) {
-    if (step?.type !== "model_output") continue;
-    for (const content of step.content || []) {
-      if (content?.type === "text" && typeof content.text === "string") parts.push(content.text);
+  for (const candidate of data?.candidates || []) {
+    for (const part of candidate?.content?.parts || []) {
+      if (typeof part?.text === "string" && part.text.trim()) parts.push(part.text.trim());
     }
   }
   return parts.join("\n").trim();
+}
+
+function generatedSources(data) {
+  const sources = [];
+  const seen = new Set();
+  const add = (url, title, type) => {
+    const normalized = clean(url, 1200);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    sources.push({
+      url: normalized,
+      title: clean(title || normalized, 240),
+      type
+    });
+  };
+  for (const candidate of data?.candidates || []) {
+    for (const chunk of candidate?.groundingMetadata?.groundingChunks || []) {
+      add(chunk?.web?.uri, chunk?.web?.title, "google-search");
+    }
+    for (const item of candidate?.urlContextMetadata?.urlMetadata || []) {
+      add(item?.retrievedUrl, item?.retrievedUrl, "url-context");
+    }
+  }
+  return sources.slice(0, 20);
 }
 
 function safeJson(text) {
@@ -277,20 +299,35 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
   const model = allowedModels.has(requestedModel)
     ? requestedModel
     : (allowedModels.has(process.env.GEMINI_MODEL) ? process.env.GEMINI_MODEL : "gemini-3.5-flash");
-  const useResearchTools = ["research", "url-research"].includes(actionType);
+  const useGoogleSearch = ["research", "url-research"].includes(actionType);
+  const useUrlContext = actionType === "url-research";
   const useStructuredOutput = actionType === "content-pack";
+  const creativity = Number(meta.creativity);
+  const temperature = Number.isFinite(creativity)
+    ? Math.max(0.2, Math.min(1.2, creativity / 100))
+    : 0.72;
+  const tools = [
+    ...(useUrlContext ? [{ url_context: {} }] : []),
+    ...(useGoogleSearch ? [{ google_search: {} }] : [])
+  ];
   const payload = {
-    model,
-    input: promptFor(moduleId, actionType, input, meta),
-    system_instruction: systemInstruction(moduleId, actionType),
-    ...(useResearchTools
-      ? { tools: [{ type: "google_search" }, { type: "url_context" }] }
-      : {}),
-    ...(useStructuredOutput
-      ? { response_format: { type: "text", mime_type: "application/json", schema: contentPackSchema } }
-      : {})
+    systemInstruction: {
+      parts: [{ text: systemInstruction(moduleId, actionType) }]
+    },
+    contents: [{
+      role: "user",
+      parts: [{ text: promptFor(moduleId, actionType, input, meta) }]
+    }],
+    generationConfig: {
+      temperature,
+      maxOutputTokens: useStructuredOutput ? 8192 : 4096,
+      ...(useStructuredOutput
+        ? { responseMimeType: "application/json", responseSchema: contentPackSchema }
+        : {})
+    },
+    ...(tools.length ? { tools } : {})
   };
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -305,14 +342,21 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
     error.code = "GEMINI_PROVIDER_ERROR";
     throw error;
   }
-  const output = interactionText(data);
-  if (!output) throw new Error("Gemini không trả về nội dung.");
+  const output = generatedText(data);
+  if (!output) {
+    const reason = data?.promptFeedback?.blockReason
+      || data?.candidates?.[0]?.finishReason
+      || "NO_CONTENT";
+    throw new Error(`Gemini không trả về nội dung (${clean(reason, 80)}).`);
+  }
   return {
     output,
     structured: useStructuredOutput ? safeJson(output) : null,
     model,
-    interactionId: clean(data.id, 240),
-    usage: data.usage || null
+    interactionId: clean(data.responseId, 240),
+    usage: data.usageMetadata || null,
+    sources: generatedSources(data),
+    providerApi: "generateContent"
   };
 }
 
@@ -367,6 +411,8 @@ module.exports = async function handler(req, res) {
       model: result.model || "hh-local",
       interactionId: result.interactionId || "",
       usage: result.usage || null,
+      sources: result.sources || [],
+      providerApi: result.providerApi || (provider === "local" ? "local" : ""),
       meta,
       ...ownerFrom(user, body),
       createdAt: new Date()
