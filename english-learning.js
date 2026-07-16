@@ -125,11 +125,11 @@
 
   const defaultState = () => ({
     version: APP_VERSION, activeView: "dashboard", activeLesson: lessonIds[0], completed: {}, attempts: {}, savedWords: {}, reviewQueue: {}, xp: 0,
-    streak: { current: 0, longest: 0, lastDate: "" }, dailyGoal: 15, minutesByDay: {}, placement: null, writingDraft: "", writingHistory: [],
-    settings: { voiceRate: 0.85, interfaceLanguage: "vi", reducedMotion: false }
+    streak: { current: 0, longest: 0, lastDate: "" }, dailyGoal: 15, studyDays: [1, 2, 3, 4, 5], minutesByDay: {}, placement: null, writingDraft: "", writingHistory: [], practice: { listening: 0, reading: 0, grammar: 0 },
+    settings: { voiceRate: 0.85, interfaceLanguage: "vi", reducedMotion: false, theme: "night", learnerType: "student", goal: "Giao tiếp hằng ngày" }
   });
   const readState = () => {
-    try { return { ...defaultState(), ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") }; } catch { return defaultState(); }
+    try { const fallback = defaultState(); const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); return { ...fallback, ...stored, streak: { ...fallback.streak, ...(stored.streak || {}) }, practice: { ...fallback.practice, ...(stored.practice || {}) }, settings: { ...fallback.settings, ...(stored.settings || {}) } }; } catch { return defaultState(); }
   };
   const writeState = (state) => localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, version: APP_VERSION }));
   const getLesson = (id) => courses.flatMap((unit) => unit.lessons).find((lesson) => lesson.id === id) || courses[0].lessons[0];
@@ -162,6 +162,8 @@
   let mediaRecorder = null;
   let recordedChunks = [];
   let recordingUrl = "";
+  let focusSeconds = 15 * 60;
+  let focusTimer = null;
 
   const speak = (text, rate) => {
     if (!("speechSynthesis" in window)) return false;
@@ -175,11 +177,13 @@
   };
 
   const navItems = [
-    ["dashboard", "⌂", "Tổng quan"], ["learn", "▶", "Bài học"], ["placement", "◎", "Xếp lớp"], ["vocabulary", "◇", "Sổ từ"],
+    ["dashboard", "⌂", "Tổng quan"], ["learn", "▶", "Bài học"], ["practice", "✦", "Luyện tập"], ["placement", "◎", "Xếp lớp"], ["vocabulary", "◇", "Sổ từ"],
     ["speaking", "◉", "Phát âm"], ["writing", "✎", "Viết"], ["progress", "↗", "Tiến độ"], ["settings", "⚙", "Cài đặt"]
   ];
-  const shell = (state, content) => `<section class="hhe-app" data-hhe-app data-view="${state.activeView}">
-    <header class="hhe-topbar"><div class="hhe-brand"><span>HH</span><div><small>FREE ENGLISH LAB</small><strong>HH English</strong></div></div><div class="hhe-top-stats"><span><i>⚡</i><b data-hhe-xp>${state.xp}</b> XP</span><span><i>◆</i><b>${state.streak.current}</b> ngày</span><span><i>◷</i><b>${state.dailyGoal}</b> phút</span></div><button type="button" data-hhe-export>Xuất dữ liệu</button></header>
+  const weekdayLabels = [[1, "T2"], [2, "T3"], [3, "T4"], [4, "T5"], [5, "T6"], [6, "T7"], [0, "CN"]];
+  const formatFocusTime = (seconds) => `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+  const shell = (state, content) => `<section class="hhe-app" data-hhe-app data-view="${state.activeView}" data-theme="${state.settings.theme}">
+    <header class="hhe-topbar"><div class="hhe-brand"><span>HH</span><div><small>FREE ENGLISH LAB</small><strong>HH English</strong></div></div><div class="hhe-top-stats"><span><i>⚡</i><b data-hhe-xp>${state.xp}</b> XP</span><span><i>◆</i><b>${state.streak.current}</b> ngày</span><span><i>◷</i><b>${state.dailyGoal}</b> phút</span></div><button type="button" data-hhe-theme aria-label="Đổi màu giao diện">${state.settings.theme === "day" ? "☀ Sáng" : "◐ Tối"}</button><button type="button" data-hhe-export>Xuất dữ liệu</button></header>
     <div class="hhe-layout"><aside class="hhe-nav" aria-label="Điều hướng HH English">${navItems.map(([id, icon, label]) => `<button type="button" class="${state.activeView === id ? "active" : ""}" data-hhe-view="${id}"><i>${icon}</i><span>${label}</span></button>`).join("")}<section><small>Trình độ hiện tại</small><strong>${state.placement?.level || "A0"}</strong><span>${completedCount(state)}/15 bài A0</span></section></aside><main class="hhe-main">${content}</main></div>
     <div class="hhe-toast" data-hhe-toast role="status" aria-live="polite"></div>
   </section>`;
@@ -187,14 +191,18 @@
   const dashboardView = (state) => {
     const done = completedCount(state); const percent = Math.round(done / lessonIds.length * 100); const minutes = state.minutesByDay[todayKey()] || 0;
     const next = getLesson(lessonIds.find((id) => !state.completed[id]) || lessonIds[0]);
-    return `<section class="hhe-dashboard"><div class="hhe-hero"><div><p>HELLO, LEARNER</p><h2>Biến tiếng Anh thành<br><em>kỹ năng mỗi ngày.</em></h2><span>Lộ trình nguyên bản cho người Việt từ mất gốc, học ngắn gọn và luôn biết vì sao mình sai.</span><div><button class="primary" type="button" data-hhe-open-lesson="${next.id}">Tiếp tục bài học <b>→</b></button><button type="button" data-hhe-view="placement">Kiểm tra trình độ</button></div></div><div class="hhe-orbit" aria-hidden="true"><b>${percent}%</b><span>A0 ROADMAP</span><i></i><i></i><i></i></div></div>
+    const hour = new Date().getHours(); const greeting = hour < 11 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
+    return `<section class="hhe-dashboard"><div class="hhe-hero"><div><p>${greeting.toUpperCase()}, LEARNER</p><h2>Biến tiếng Anh thành<br><em>kỹ năng mỗi ngày.</em></h2><span>Lộ trình nguyên bản cho người Việt từ mất gốc, học ngắn gọn và luôn biết vì sao mình sai.</span><div><button class="primary" type="button" data-hhe-open-lesson="${next.id}">Tiếp tục bài học <b>→</b></button><button type="button" data-hhe-view="placement">Kiểm tra trình độ</button></div></div><div class="hhe-orbit" aria-hidden="true"><b>${percent}%</b><span>A0 ROADMAP</span><i></i><i></i><i></i></div></div>
       <div class="hhe-metrics"><article><span>Mục tiêu hôm nay</span><strong>${minutes}/${state.dailyGoal} phút</strong><i style="--p:${Math.min(100, minutes / state.dailyGoal * 100)}%"></i></article><article><span>Chuỗi học</span><strong>${state.streak.current} ngày</strong><small>Kỷ lục ${state.streak.longest} ngày</small></article><article><span>Từ đã lưu</span><strong>${Object.keys(state.savedWords).length} từ</strong><small>${Object.values(state.reviewQueue).filter((item) => new Date(item.dueAt || 0) <= new Date()).length} cần ôn</small></article><article><span>Năng lượng học</span><strong>${state.xp} XP</strong><small>Cấp ${Math.floor(state.xp / 300) + 1}</small></article></div>
       <div class="hhe-dashboard-grid"><section class="hhe-next-card"><header><div><small>BÀI TIẾP THEO · ${next.minutes} PHÚT</small><h3>${escapeHtml(next.title)}</h3><p>${escapeHtml(next.canDo)}</p></div><span>+${next.xp} XP</span></header><div class="hhe-skill-pills"><b>Nghe</b><b>Nói</b><b>Từ vựng</b></div><button class="primary" type="button" data-hhe-open-lesson="${next.id}">Bắt đầu học</button></section>
       <section class="hhe-roadmap-mini"><header><div><small>LỘ TRÌNH CEFR</small><h3>Từ A0 đến C2</h3></div><button type="button" data-hhe-view="learn">Xem lộ trình</button></header>${["A0", "A1", "A2", "B1", "B2", "C1", "C2"].map((level, index) => `<div class="${index === 0 ? "active" : ""}"><b>${level}</b><span>${["Mất gốc", "Cơ bản", "Sơ trung cấp", "Trung cấp", "Trên trung cấp", "Nâng cao", "Thành thạo"][index]}</span><small>${index === 0 ? `${percent}%` : index === 1 ? "Bản xem trước" : "Sắp mở"}</small></div>`).join("")}</section></div>
-      <section class="hhe-skills"><header><div><small>4 KỸ NĂNG CỐT LÕI</small><h3>Học để sử dụng, không chỉ ghi nhớ</h3></div></header><div>${[["Listening", "Nghe chậm, nghe lại và đọc transcript", "#62e9f2"], ["Speaking", "Nghe mẫu, thu âm và tự đối chiếu", "#ff6ecf"], ["Reading", "Đọc ngắn với từ vựng đúng trình độ", "#ffe66d"], ["Writing", "Viết có gợi ý, đếm từ và lưu bản nháp", "#80f4b4"]].map(([title, text, color]) => `<article style="--skill:${color}"><i></i><strong>${title}</strong><p>${text}</p></article>`).join("")}</div></section></section>`;
+      <section class="hhe-student-tools"><article class="hhe-study-plan"><header><div><small>LỊCH HỌC CỦA TÔI</small><h3>Nhịp học trong tuần</h3></div><span>${state.studyDays.length} ngày</span></header><div>${weekdayLabels.map(([day, label]) => `<button type="button" class="${state.studyDays.includes(day) ? "active" : ""}" data-hhe-day="${day}" aria-pressed="${state.studyDays.includes(day)}"><b>${label}</b><small>${state.studyDays.includes(day) ? "Học" : "Nghỉ"}</small></button>`).join("")}</div><p>Chọn những ngày bạn có thể duy trì. Lịch được lưu ngay trên thiết bị.</p></article><article class="hhe-focus-card"><small>FOCUS SESSION</small><h3>Học tập trung 15 phút</h3><strong data-hhe-focus-clock>${formatFocusTime(focusSeconds)}</strong><div><button class="primary" type="button" data-hhe-focus-start>${focusTimer ? "Tạm dừng" : "Bắt đầu"}</button><button type="button" data-hhe-focus-reset>Đặt lại</button></div><p>Hoàn thành một phiên để nhận 30 XP và cộng thời gian học.</p></article><article class="hhe-goal-card"><small>MỤC TIÊU CÁ NHÂN</small><h3>${escapeHtml(state.settings.goal)}</h3><p>${state.settings.learnerType === "student" ? "Lịch học linh hoạt cho học sinh, sinh viên." : "Lộ trình ngắn gọn cho người đi làm."}</p><div><span>Hôm nay</span><b>${Math.min(100, Math.round(minutes / state.dailyGoal * 100))}%</b></div><i style="--p:${Math.min(100, minutes / state.dailyGoal * 100)}%"></i><button type="button" data-hhe-view="settings">Điều chỉnh mục tiêu</button></article></section>
+      <section class="hhe-skills"><header><div><small>4 KỸ NĂNG CỐT LÕI</small><h3>Học để sử dụng, không chỉ ghi nhớ</h3></div><button type="button" data-hhe-view="practice">Mở phòng luyện tập</button></header><div>${[["Listening", "Nghe chậm, nghe lại và đọc transcript", "#62e9f2"], ["Speaking", "Nghe mẫu, thu âm và tự đối chiếu", "#ff6ecf"], ["Reading", "Đọc ngắn với từ vựng đúng trình độ", "#ffe66d"], ["Writing", "Viết có gợi ý, đếm từ và lưu bản nháp", "#80f4b4"]].map(([title, text, color]) => `<article style="--skill:${color}"><i></i><strong>${title}</strong><p>${text}</p></article>`).join("")}</div></section></section>`;
   };
 
-  const learnView = (state) => `<section class="hhe-learning"><header class="hhe-section-head"><div><small>A0 · ENGLISH FROM ZERO</small><h2>Lộ trình học từng bước</h2><p>5 unit · 15 bài nguyên bản · ước tính 3 giờ học tập trung</p></div><span>${Math.round(completedCount(state) / 15 * 100)}% hoàn thành</span></header><div class="hhe-unit-list">${courses.map((unit, index) => `<section style="--unit:${unit.color}"><header><span>${String(index + 1).padStart(2, "0")}</span><div><small>UNIT ${index + 1}</small><h3>${unit.title}</h3><p>${unit.vi}</p></div><b>${unit.lessons.filter((item) => state.completed[item.id]).length}/3</b></header><div>${unit.lessons.map((lesson, lessonIndex) => `<button type="button" class="${state.completed[lesson.id] ? "done" : ""}" data-hhe-open-lesson="${lesson.id}"><span>${state.completed[lesson.id] ? "✓" : lessonIndex + 1}</span><div><strong>${lesson.title}</strong><small>${lesson.canDo}</small></div><b>${lesson.minutes}m</b></button>`).join("")}</div></section>`).join("")}</div><section class="hhe-a1-preview"><div><small>A1 PREVIEW</small><h3>Bước tiếp theo của bạn</h3><p>Daily routines · Food & ordering · Places in town</p></div><span>Đang biên soạn</span></section></section>`;
+  const learnView = (state) => `<section class="hhe-learning"><header class="hhe-section-head"><div><small>A0 · ENGLISH FROM ZERO</small><h2>Lộ trình học từng bước</h2><p>5 unit · 15 bài nguyên bản · ước tính 3 giờ học tập trung</p></div><span>${Math.round(completedCount(state) / 15 * 100)}% hoàn thành</span></header><label class="hhe-course-search"><span>Tìm bài học</span><input type="search" data-hhe-search placeholder="Ví dụ: chào hỏi, số, gia đình..." autocomplete="off"><kbd>/</kbd></label><p class="hhe-search-empty" data-hhe-search-empty hidden>Không tìm thấy bài phù hợp. Hãy thử từ khóa khác.</p><div class="hhe-unit-list">${courses.map((unit, index) => `<section style="--unit:${unit.color}" data-hhe-unit data-search="${escapeHtml(`${unit.title} ${unit.vi}`)}"><header><span>${String(index + 1).padStart(2, "0")}</span><div><small>UNIT ${index + 1}</small><h3>${unit.title}</h3><p>${unit.vi}</p></div><b>${unit.lessons.filter((item) => state.completed[item.id]).length}/3</b></header><div>${unit.lessons.map((lesson, lessonIndex) => `<button type="button" class="${state.completed[lesson.id] ? "done" : ""}" data-hhe-open-lesson="${lesson.id}" data-search="${escapeHtml(`${lesson.title} ${lesson.canDo}`)}"><span>${state.completed[lesson.id] ? "✓" : lessonIndex + 1}</span><div><strong>${lesson.title}</strong><small>${lesson.canDo}</small></div><b>${lesson.minutes}m</b></button>`).join("")}</div></section>`).join("")}</div><section class="hhe-a1-preview"><div><small>A1 PREVIEW</small><h3>Bước tiếp theo của bạn</h3><p>Daily routines · Food & ordering · Places in town</p></div><span>Đang biên soạn</span></section></section>`;
+
+  const practiceView = (state) => `<section class="hhe-practice"><header class="hhe-section-head"><div><small>DAILY SKILL LAB</small><h2>Phòng luyện tập tổng hợp</h2><p>Bài ngắn có chấm điểm, đáp án và giải thích để ôn giữa giờ học hoặc trước kỳ kiểm tra.</p></div><span>${Object.values(state.practice).filter((score) => score >= 100).length}/3 hoàn thành</span></header><div class="hhe-practice-summary">${[["listening", "Nghe", "Âm thanh + hiểu ý"], ["reading", "Đọc", "Đọc nhanh + chi tiết"], ["grammar", "Ngữ pháp", "Mẫu câu nền tảng"]].map(([id, label, text]) => `<article><span>${state.practice[id] >= 100 ? "✓" : "○"}</span><div><strong>${label}</strong><small>${text}</small></div><b>${state.practice[id] || 0}%</b></article>`).join("")}</div><div class="hhe-practice-grid"><form data-hhe-practice="listening" data-answer="library"><header><span>01</span><div><small>LISTENING</small><h3>Nghe thông báo ở trường</h3></div></header><p>Nghe câu ngắn rồi chọn địa điểm được nhắc tới.</p><button type="button" data-hhe-speak="The English club meets in the library at four o'clock.">▶ Phát câu nghe</button><fieldset><legend>The English club meets in the…</legend>${["classroom", "library", "cafeteria"].map((answer) => `<label><input type="radio" name="answer" value="${answer}"><span>${answer}</span></label>`).join("")}</fieldset><button class="primary" type="submit">Kiểm tra bài nghe</button><output data-hhe-practice-feedback></output></form><form data-hhe-practice="reading" data-answer="bus"><header><span>02</span><div><small>READING</small><h3>Đọc lịch học ngắn</h3></div></header><blockquote>“Mai has an English class at 8 a.m. She goes to school by bus and studies with Lan.”</blockquote><fieldset><legend>How does Mai go to school?</legend>${["bike", "bus", "train"].map((answer) => `<label><input type="radio" name="answer" value="${answer}"><span>${answer}</span></label>`).join("")}</fieldset><button class="primary" type="submit">Kiểm tra đọc hiểu</button><output data-hhe-practice-feedback></output></form><form data-hhe-practice="grammar" data-answer="am"><header><span>03</span><div><small>GRAMMAR</small><h3>Chọn động từ “be”</h3></div></header><p>Dùng chủ ngữ để chọn đúng am, is hoặc are.</p><fieldset><legend>I ___ a first-year student.</legend>${["is", "am", "are"].map((answer) => `<label><input type="radio" name="answer" value="${answer}"><span>${answer}</span></label>`).join("")}</fieldset><button class="primary" type="submit">Kiểm tra ngữ pháp</button><output data-hhe-practice-feedback></output></form></div><section class="hhe-practice-more"><div><small>LUYỆN KỸ NĂNG MỞ RỘNG</small><h3>Từ nhận biết đến sử dụng</h3></div><button type="button" data-hhe-view="speaking">Luyện phát âm</button><button type="button" data-hhe-view="writing">Luyện viết</button><button type="button" data-hhe-view="vocabulary">Ôn flashcard</button></section></section>`;
 
   const lessonView = (state, lesson) => {
     const answers = state.attempts[lesson.id] || {};
@@ -219,15 +227,25 @@
 
   const progressView = (state) => {
     const done = completedCount(state); const activity = Array.from({ length: 7 }, (_, offset) => { const date = new Date(Date.now() - (6 - offset) * 86400000).toISOString().slice(0, 10); return [date, state.minutesByDay[date] || 0]; });
-    return `<section class="hhe-progress"><header class="hhe-section-head"><div><small>LEARNER ANALYTICS</small><h2>Tiến bộ của bạn</h2><p>Số liệu được tính từ hoạt động đã lưu trên thiết bị này.</p></div><span>Cấp ${Math.floor(state.xp / 300) + 1}</span></header><div class="hhe-progress-cards"><article><span>Bài hoàn thành</span><strong>${done}/15</strong></article><article><span>XP tích lũy</span><strong>${state.xp}</strong></article><article><span>Chuỗi dài nhất</span><strong>${state.streak.longest} ngày</strong></article><article><span>Điểm xếp lớp</span><strong>${state.placement ? `${state.placement.score}/16` : "--"}</strong></article></div><section class="hhe-week"><header><h3>Hoạt động 7 ngày</h3><span>Mục tiêu ${state.dailyGoal} phút/ngày</span></header><div>${activity.map(([date, minutes]) => `<i style="--h:${Math.max(5, Math.min(100, minutes / state.dailyGoal * 100))}%"><b>${minutes}</b><span>${new Date(date).toLocaleDateString("vi-VN", { weekday: "short" })}</span></i>`).join("")}</div></section><section class="hhe-skill-progress">${[["Nghe", done * 7], ["Nói", done * 5], ["Đọc", done * 7], ["Viết", state.writingHistory.length * 18]].map(([label, value]) => `<div><span>${label}</span><i style="--p:${Math.min(100, value)}%"></i><b>${Math.min(100, value)}%</b></div>`).join("")}</section></section>`;
+    const achievements = [
+      ["first-step", "Bước đầu tiên", "Hoàn thành một bài học", done >= 1, `${Math.min(done, 1)}/1`],
+      ["word-collector", "Nhà sưu tầm từ", "Lưu 5 từ vào sổ", Object.keys(state.savedWords).length >= 5, `${Math.min(Object.keys(state.savedWords).length, 5)}/5`],
+      ["focused", "Học tập trung", "Đạt 100 XP", state.xp >= 100, `${Math.min(state.xp, 100)}/100 XP`],
+      ["explorer", "Hiểu bản thân", "Hoàn thành bài xếp lớp", Boolean(state.placement), state.placement ? "Đã mở" : "Chưa mở"],
+      ["writer", "Tác giả trẻ", "Lưu bài viết đầu tiên", state.writingHistory.length >= 1, `${Math.min(state.writingHistory.length, 1)}/1`],
+      ["all-rounder", "Học toàn diện", "Hoàn thành 3 bài luyện kỹ năng", Object.values(state.practice).every((score) => score >= 100), `${Object.values(state.practice).filter((score) => score >= 100).length}/3`]
+    ];
+    const skillValues = [["Nghe", Math.max(done * 7, state.practice.listening)], ["Nói", done * 5], ["Đọc", Math.max(done * 7, state.practice.reading)], ["Viết", state.writingHistory.length * 18], ["Ngữ pháp", Math.max(done * 6, state.practice.grammar)]];
+    return `<section class="hhe-progress"><header class="hhe-section-head"><div><small>LEARNER ANALYTICS</small><h2>Tiến bộ của bạn</h2><p>Số liệu được tính từ hoạt động đã lưu trên thiết bị này.</p></div><span>Cấp ${Math.floor(state.xp / 300) + 1}</span></header><div class="hhe-progress-cards"><article><span>Bài hoàn thành</span><strong>${done}/15</strong></article><article><span>XP tích lũy</span><strong>${state.xp}</strong></article><article><span>Chuỗi dài nhất</span><strong>${state.streak.longest} ngày</strong></article><article><span>Điểm xếp lớp</span><strong>${state.placement ? `${state.placement.score}/16` : "--"}</strong></article></div><section class="hhe-week"><header><h3>Hoạt động 7 ngày</h3><span>Mục tiêu ${state.dailyGoal} phút/ngày</span></header><div>${activity.map(([date, minutes]) => `<i style="--h:${Math.max(5, Math.min(100, minutes / state.dailyGoal * 100))}%"><b>${minutes}</b><span>${new Date(date).toLocaleDateString("vi-VN", { weekday: "short" })}</span></i>`).join("")}</div></section><section class="hhe-skill-progress">${skillValues.map(([label, value]) => `<div><span>${label}</span><i style="--p:${Math.min(100, value)}%"></i><b>${Math.min(100, value)}%</b></div>`).join("")}</section><section class="hhe-achievements"><header><div><small>THÀNH TÍCH</small><h3>Các cột mốc học tập</h3></div><span>${achievements.filter((item) => item[3]).length}/${achievements.length} đã mở</span></header><div>${achievements.map(([id, title, description, unlocked, progress]) => `<article class="${unlocked ? "unlocked" : "locked"}" data-achievement="${id}"><span>${unlocked ? "◆" : "◇"}</span><div><strong>${title}</strong><p>${description}</p></div><small>${progress}</small></article>`).join("")}</div></section></section>`;
   };
 
-  const settingsView = (state) => `<section class="hhe-settings"><header class="hhe-section-head"><div><small>LEARNING PREFERENCES</small><h2>Cài đặt HH English</h2><p>Tùy chỉnh mục tiêu, tốc độ giọng đọc và dữ liệu học tập.</p></div></header><form data-hhe-settings><label><span>Mục tiêu mỗi ngày<small>5–60 phút</small></span><input type="number" name="dailyGoal" min="5" max="60" step="5" value="${state.dailyGoal}"></label><label><span>Tốc độ giọng đọc<small>Chậm 0.6× · Bình thường 1×</small></span><input type="range" name="voiceRate" min="0.6" max="1.2" step="0.05" value="${state.settings.voiceRate}"><output>${state.settings.voiceRate}×</output></label><label><span>Giảm chuyển động<small>Tôn trọng khả năng tập trung</small></span><input type="checkbox" name="reducedMotion" ${state.settings.reducedMotion ? "checked" : ""}></label><button class="primary" type="submit">Lưu cài đặt</button></form><section class="hhe-data-tools"><div><h3>Dữ liệu cá nhân</h3><p>Xuất bản sao JSON hoặc nhập lại trên thiết bị khác.</p></div><button type="button" data-hhe-export>Xuất JSON</button><label>Nhập JSON<input type="file" accept="application/json" data-hhe-import></label><button class="danger" type="button" data-hhe-reset>Xóa toàn bộ dữ liệu học</button></section><section class="hhe-sources"><h3>Nguồn phương pháp và công nghệ</h3><a href="https://www.coe.int/en/web/common-european-framework-reference-languages" target="_blank" rel="noopener">Council of Europe · CEFR</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API" target="_blank" rel="noopener">MDN · Web Speech API</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder" target="_blank" rel="noopener">MDN · MediaRecorder</a></section></section>`;
+  const settingsView = (state) => `<section class="hhe-settings"><header class="hhe-section-head"><div><small>LEARNING PREFERENCES</small><h2>Cài đặt HH English</h2><p>Tùy chỉnh mục tiêu, tốc độ giọng đọc và dữ liệu học tập.</p></div></header><form data-hhe-settings><label><span>Bạn đang là<small>Giúp nội dung gợi ý phù hợp nhịp sống</small></span><select name="learnerType"><option value="student" ${state.settings.learnerType === "student" ? "selected" : ""}>Học sinh / sinh viên</option><option value="worker" ${state.settings.learnerType === "worker" ? "selected" : ""}>Người đi làm</option></select></label><label><span>Mục tiêu học<small>Hiển thị trong kế hoạch cá nhân</small></span><select name="goal">${["Giao tiếp hằng ngày", "Học tập và thi cử", "Du lịch", "Công việc", "Xây nền từ mất gốc"].map((goal) => `<option ${state.settings.goal === goal ? "selected" : ""}>${goal}</option>`).join("")}</select></label><label><span>Mục tiêu mỗi ngày<small>5–60 phút</small></span><input type="number" name="dailyGoal" min="5" max="60" step="5" value="${state.dailyGoal}"></label><label><span>Tốc độ giọng đọc<small>Chậm 0.6× · Bình thường 1×</small></span><input type="range" name="voiceRate" min="0.6" max="1.2" step="0.05" value="${state.settings.voiceRate}"><output>${state.settings.voiceRate}×</output></label><label><span>Giảm chuyển động<small>Tôn trọng khả năng tập trung</small></span><input type="checkbox" name="reducedMotion" ${state.settings.reducedMotion ? "checked" : ""}></label><button class="primary" type="submit">Lưu cài đặt</button></form><section class="hhe-data-tools"><div><h3>Dữ liệu cá nhân</h3><p>Xuất bản sao JSON hoặc nhập lại trên thiết bị khác.</p></div><button type="button" data-hhe-export>Xuất JSON</button><label>Nhập JSON<input type="file" accept="application/json" data-hhe-import></label><button class="danger" type="button" data-hhe-reset>Xóa toàn bộ dữ liệu học</button></section><section class="hhe-sources"><h3>Nguồn học miễn phí được tuyển chọn</h3><a href="https://learnenglish.britishcouncil.org/" target="_blank" rel="noopener">British Council · LearnEnglish</a><a href="https://learningenglish.voanews.com/" target="_blank" rel="noopener">VOA · Learning English</a><a href="https://www.coe.int/en/web/common-european-framework-reference-languages" target="_blank" rel="noopener">Council of Europe · CEFR</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API" target="_blank" rel="noopener">MDN · Web Speech API</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder" target="_blank" rel="noopener">MDN · MediaRecorder</a></section></section>`;
 
   const render = () => {
     if (!host) return;
     const state = readState(); let content = "";
     if (state.activeView === "learn") content = learnView(state);
+    else if (state.activeView === "practice") content = practiceView(state);
     else if (state.activeView === "lesson") content = lessonView(state, getLesson(state.activeLesson));
     else if (state.activeView === "placement") content = placementView(state);
     else if (state.activeView === "vocabulary") content = vocabularyView(state);
@@ -239,7 +257,9 @@
     host.innerHTML = shell(state, content);
     host.querySelector("[data-hhe-app]")?.setAttribute("data-reduced-motion", String(Boolean(state.settings.reducedMotion)));
     host.querySelector("[data-hhe-writing]")?.addEventListener("input", onWritingInput);
+    host.querySelector("[data-hhe-search]")?.addEventListener("input", onLessonSearch);
     host.querySelector('[name="voiceRate"]')?.addEventListener("input", (event) => { event.target.nextElementSibling.textContent = `${event.target.value}×`; });
+    updateFocusClock();
   };
 
   const toast = (message, type = "success") => {
@@ -254,8 +274,42 @@
     const state = readState(); state.writingDraft = event.target.value; writeState(state);
     const count = event.target.value.trim() ? event.target.value.trim().split(/\s+/).length : 0; host.querySelector("[data-hhe-word-count]").textContent = count;
   };
+  const foldSearch = (value = "") => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const onLessonSearch = (event) => {
+    const query = foldSearch(event.target.value); let visibleCount = 0;
+    host.querySelectorAll("[data-hhe-unit]").forEach((unit) => {
+      const unitMatches = foldSearch(unit.dataset.search).includes(query); let visibleLessons = 0;
+      unit.querySelectorAll("[data-hhe-open-lesson]").forEach((lesson) => { const visible = !query || unitMatches || foldSearch(lesson.dataset.search).includes(query); lesson.hidden = !visible; visibleLessons += visible ? 1 : 0; });
+      unit.hidden = visibleLessons === 0; visibleCount += visibleLessons;
+    });
+    const empty = host.querySelector("[data-hhe-search-empty]"); if (empty) empty.hidden = visibleCount > 0;
+  };
+  const handleKeydown = (event) => {
+    if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
+    const target = event.target;
+    if (target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName || "")) return;
+    const search = host?.querySelector("[data-hhe-search]");
+    if (!search) return;
+    event.preventDefault(); search.focus();
+  };
+  const updateFocusClock = () => {
+    const clock = host?.querySelector("[data-hhe-focus-clock]"); if (clock) clock.textContent = formatFocusTime(focusSeconds);
+    const button = host?.querySelector("[data-hhe-focus-start]"); if (button) button.textContent = focusTimer ? "Tạm dừng" : "Bắt đầu";
+  };
+  const toggleFocusTimer = () => {
+    if (focusTimer) { clearInterval(focusTimer); focusTimer = null; updateFocusClock(); return; }
+    focusTimer = setInterval(() => {
+      focusSeconds -= 1; updateFocusClock();
+      if (focusSeconds > 0) return;
+      clearInterval(focusTimer); focusTimer = null; focusSeconds = 15 * 60;
+      const state = readState(); state.xp += 30; state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + 15; updateStreak(state); writeState(state); render(); toast("Hoàn thành phiên tập trung · +30 XP");
+    }, 1000);
+    updateFocusClock();
+  };
+  const resetFocusTimer = () => { if (focusTimer) clearInterval(focusTimer); focusTimer = null; focusSeconds = 15 * 60; updateFocusClock(); };
 
   const handleClick = async (event) => {
+    event.stopPropagation();
     const viewButton = event.target.closest("[data-hhe-view]");
     if (viewButton) { const state = readState(); state.activeView = viewButton.dataset.hheView; writeState(state); render(); return; }
     const lessonButton = event.target.closest("[data-hhe-open-lesson]");
@@ -269,6 +323,11 @@
     if (event.target.closest("[data-hhe-reveal]")) { host.querySelector("[data-hhe-review-answer]").hidden = false; host.querySelector("[data-hhe-review] footer").hidden = false; event.target.hidden = true; return; }
     const rating = event.target.closest("[data-hhe-rate]");
     if (rating) { const state = readState(); state.reviewQueue[rating.dataset.word] = scheduleReview(state.reviewQueue[rating.dataset.word], rating.dataset.hheRate); state.xp += 2; writeState(state); render(); toast("Đã lên lịch ôn tiếp theo."); return; }
+    if (event.target.closest("[data-hhe-theme]")) { const state = readState(); state.settings.theme = state.settings.theme === "day" ? "night" : "day"; writeState(state); render(); return; }
+    const studyDay = event.target.closest("[data-hhe-day]");
+    if (studyDay) { const state = readState(); const day = Number(studyDay.dataset.hheDay); state.studyDays = state.studyDays.includes(day) ? state.studyDays.filter((item) => item !== day) : [...state.studyDays, day]; writeState(state); render(); toast(state.studyDays.includes(day) ? "Đã thêm ngày học." : "Đã chuyển thành ngày nghỉ."); return; }
+    if (event.target.closest("[data-hhe-focus-start]")) { toggleFocusTimer(); return; }
+    if (event.target.closest("[data-hhe-focus-reset]")) { resetFocusTimer(); return; }
     if (event.target.closest("[data-hhe-export]")) { downloadJson(readState()); return; }
     if (event.target.closest("[data-hhe-submit-writing]")) { const state = readState(); const body = state.writingDraft.trim(); if (!body) return toast("Hãy viết ít nhất một câu.", "error"); const words = body.split(/\s+/).length; state.writingHistory.unshift({ id: Date.now(), body, words, status: "pending", createdAt: new Date().toISOString() }); state.xp += Math.min(30, words); updateStreak(state); state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + 5; writeState(state); render(); toast("Đã lưu bài viết trên thiết bị."); return; }
     if (event.target.closest("[data-hhe-clear-writing]")) { const state = readState(); state.writingDraft = ""; writeState(state); render(); return; }
@@ -280,15 +339,18 @@
   };
 
   const handleSubmit = (event) => {
+    event.stopPropagation();
     const exerciseForm = event.target.closest("[data-hhe-exercises]");
     if (exerciseForm) { event.preventDefault(); const state = readState(); const lesson = getLesson(exerciseForm.closest("[data-hhe-lesson]").dataset.hheLesson); let correct = 0; state.attempts[lesson.id] = state.attempts[lesson.id] || {};
       lesson.exercises.forEach((question) => { const field = exerciseForm.querySelector(`[data-question="${question.id}"]`); const input = exerciseForm.elements[question.id]; const value = input instanceof RadioNodeList ? input.value : input?.value || ""; state.attempts[lesson.id][question.id] = value; const ok = normalize(value) === normalize(question.answer); correct += ok ? 1 : 0; field.classList.toggle("correct", ok); field.classList.toggle("wrong", !ok); const feedback = field.querySelector("[data-feedback]"); feedback.hidden = false; feedback.innerHTML = `<strong>${ok ? "Chính xác" : `Đáp án: ${escapeHtml(question.answer)}`}</strong><span>${escapeHtml(question.explanation)}</span>`; });
       if (correct >= 4 && !state.completed[lesson.id]) { state.completed[lesson.id] = true; state.xp += lesson.xp; updateStreak(state); state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + lesson.minutes; const status = host.querySelector(".hhe-lesson>header>span"); if (status) { status.textContent = "Đã hoàn thành"; status.classList.add("done"); } const progress = host.querySelector("[data-hhe-lesson-progress]"); if (progress) progress.textContent = "100%"; host.querySelector("[data-hhe-lesson-progress-bar]")?.style.setProperty("--p", "100%"); const xp = host.querySelector("[data-hhe-xp]"); if (xp) xp.textContent = state.xp; toast(`Hoàn thành ${correct}/5 · +${lesson.xp} XP`); }
       else toast(correct >= 4 ? `Bạn đã hoàn thành trước đó · ${correct}/5` : `${correct}/5 đúng. Đọc giải thích rồi thử lại.`, correct >= 4 ? "success" : "error"); writeState(state); return; }
+    const practiceForm = event.target.closest("[data-hhe-practice]");
+    if (practiceForm) { event.preventDefault(); const skill = practiceForm.dataset.hhePractice; const answer = new FormData(practiceForm).get("answer") || ""; const correct = normalize(answer) === normalize(practiceForm.dataset.answer); const feedback = practiceForm.querySelector("[data-hhe-practice-feedback]"); const explanations = { listening: "Câu nghe nói câu lạc bộ gặp tại library lúc 4 giờ.", reading: "Đoạn văn ghi rõ Mai goes to school by bus.", grammar: "Chủ ngữ I luôn đi với am ở thì hiện tại của động từ be." }; feedback.className = correct ? "correct" : "wrong"; feedback.innerHTML = `<strong>${correct ? "Chính xác" : `Đáp án đúng: ${escapeHtml(practiceForm.dataset.answer)}`}</strong><span>${explanations[skill]}</span>`; const state = readState(); if (correct && state.practice[skill] < 100) { state.practice[skill] = 100; state.xp += 10; state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + 3; updateStreak(state); writeState(state); const xp = host.querySelector("[data-hhe-xp]"); if (xp) xp.textContent = state.xp; toast("Hoàn thành bài luyện · +10 XP"); } else toast(correct ? "Bạn đã hoàn thành bài luyện này." : "Chưa đúng. Hãy đọc giải thích rồi thử lại.", correct ? "success" : "error"); return; }
     const placementForm = event.target.closest("[data-hhe-placement]");
     if (placementForm) { event.preventDefault(); const answers = placementQuestions.map((_, index) => placementForm.elements[`placement-${index}`]?.value); if (answers.filter((value) => value !== "").length < placementQuestions.length) return toast("Hãy trả lời đủ 16 câu.", "error"); const score = scoreAnswers(placementQuestions, answers); const skillScores = [0, 5, 10, 13, 16].slice(0, -1).map((start, index) => ({ label: ["từ vựng", "ngữ pháp", "đọc hiểu", "nghe hiểu"][index], score: answers.slice(start, [5, 10, 13, 16][index]).reduce((sum, value, offset) => sum + (Number(value) === placementQuestions[start + offset][3] ? 1 : 0), 0), total: [5, 5, 3, 3][index] })); const strongest = [...skillScores].sort((a, b) => b.score / b.total - a.score / a.total)[0]; const weakest = [...skillScores].sort((a, b) => a.score / a.total - b.score / b.total)[0]; const state = readState(); state.placement = { score, level: levelFromScore(score / 16 * 100), strength: strongest.label, improve: weakest.label, takenAt: new Date().toISOString() }; state.xp += 25; writeState(state); render(); toast("Đã hoàn tất bài kiểm tra."); return; }
     const settingsForm = event.target.closest("[data-hhe-settings]");
-    if (settingsForm) { event.preventDefault(); const state = readState(); state.dailyGoal = Math.max(5, Math.min(60, Number(settingsForm.dailyGoal.value) || 15)); state.settings.voiceRate = Number(settingsForm.voiceRate.value); state.settings.reducedMotion = settingsForm.reducedMotion.checked; writeState(state); render(); toast("Đã lưu cài đặt."); }
+    if (settingsForm) { event.preventDefault(); const state = readState(); state.dailyGoal = Math.max(5, Math.min(60, Number(settingsForm.dailyGoal.value) || 15)); state.settings.learnerType = settingsForm.learnerType.value; state.settings.goal = settingsForm.goal.value; state.settings.voiceRate = Number(settingsForm.voiceRate.value); state.settings.reducedMotion = settingsForm.reducedMotion.checked; writeState(state); render(); toast("Đã lưu cài đặt."); }
   };
 
   const startRecognition = () => {
@@ -309,6 +371,7 @@
   };
 
   const handleChange = async (event) => {
+    event.stopPropagation();
     if (!event.target.matches("[data-hhe-import]")) return;
     const file = event.target.files?.[0]; if (!file || file.size > 2 * 1024 * 1024) return toast("Tệp JSON không hợp lệ hoặc lớn hơn 2 MB.", "error");
     try { const data = JSON.parse(await file.text()); if (typeof data !== "object" || data.version !== APP_VERSION) throw new Error("Sai phiên bản dữ liệu"); writeState({ ...defaultState(), ...data }); render(); toast("Đã nhập dữ liệu HH English."); } catch (error) { toast(`Không thể nhập: ${error.message}`, "error"); }
@@ -320,9 +383,10 @@
       const state = readState(); state.activeView = options.view; writeState(state);
     }
     host = target; host.removeEventListener("click", handleClick); host.removeEventListener("submit", handleSubmit); host.removeEventListener("change", handleChange);
-    host.addEventListener("click", handleClick); host.addEventListener("submit", handleSubmit); host.addEventListener("change", handleChange); render();
+    root.document?.removeEventListener("keydown", handleKeydown);
+    host.addEventListener("click", handleClick); host.addEventListener("submit", handleSubmit); host.addEventListener("change", handleChange); root.document?.addEventListener("keydown", handleKeydown); render();
   };
-  const unmount = () => { speechSynthesis?.cancel?.(); if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
+  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.cancel?.(); if (focusTimer) clearInterval(focusTimer); focusTimer = null; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
   root.HHEnglish = { mount, unmount, courses, scheduleReview, scoreAnswers, levelFromScore };
   if (typeof module !== "undefined" && module.exports) module.exports = { courses, scheduleReview, scoreAnswers, levelFromScore, normalize };
