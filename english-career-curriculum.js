@@ -11,7 +11,13 @@
     { id: "engineering", name: "Kỹ thuật & công nghiệp", color: "#ff9c66" },
     { id: "environment", name: "Môi trường & nông nghiệp", color: "#a8ef72" },
     { id: "society", name: "Luật & xã hội", color: "#7bb7ff" },
-    { id: "creative", name: "Truyền thông & sáng tạo", color: "#ef78ff" }
+    { id: "creative", name: "Truyền thông & sáng tạo", color: "#ef78ff" },
+    { id: "legal", name: "Pháp lý & tuân thủ", color: "#ff7ca8" },
+    { id: "science", name: "Khoa học & nghiên cứu", color: "#72b7ff" },
+    { id: "agriculture", name: "Nông nghiệp & thực phẩm", color: "#a8ef72" },
+    { id: "retail", name: "Bán lẻ & thương mại điện tử", color: "#ffd166" },
+    { id: "public", name: "Hành chính công", color: "#68d8d6" },
+    { id: "sports", name: "Thể thao & thành tích", color: "#ff9b71" }
   ];
 
   const words = (source = "", defaults = {}) => source.trim().split(/\r?\n/).filter(Boolean).map((line) => {
