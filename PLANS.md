@@ -60,12 +60,22 @@ PLANS.md
 
 ### M2.6: Career English and daily profession paths
 
-- Add 36 profession-specific tracks grouped into 10 career families.
-- Provide seven action-oriented daily lessons per track, for 252 Career English lessons.
-- Add 864 vocabulary entries spanning technology, healthcare, education, business, engineering, services, public work, media, agriculture, and sustainability.
+- Add 64 profession-specific tracks grouped into 10 career families.
+- Provide seven action-oriented daily lessons per track, for 448 Career English lessons.
+- Provide 2,073 contextual vocabulary placements with 1,284 unique terms spanning technology, healthcare, education, business, engineering, services, public work, media, agriculture, sustainability, finance, transport, and creative production.
 - Include workplace dialogues, CEFR-style Can Do outcomes, explained exercises, daily word kits, capstone tasks, progress, favorites, search, and category filters.
 - Add a career survey that recommends three suitable tracks from learner goals, interests, current level, priority skill, and available study time.
+- Rebuild each daily word kit, dialogue, and exercise set from the learner's career stage, priority skill, requested intensity, saved vocabulary, and review schedule.
+- Let learners switch between student, starter, specialist, and manager profiles without losing progress or creating duplicate lesson IDs.
 - Keep all professional paths free, local-first, open for self-directed study, and clearly distinct from accredited career or CEFR certification.
+
+### M2.7: Smart Start and adaptive daily coach
+
+- Add a three-step first-run guide for current confidence, learning goal, focus skill, and sustainable daily minutes.
+- Generate a transparent daily plan from the learner's selected CEFR level, due vocabulary, practice results, previous mistakes, career goal, and remaining daily time.
+- Add a beginner checklist, a dedicated `/english/plan` workspace, and one-click actions that open the real lesson or practice tool.
+- Preserve existing learner data through additive localStorage migration and allow the guide to be dismissed or reopened at any time.
+- Keep recommendations deterministic and local-first; do not label them as AI or send learner activity to a paid external service.
 
 ### M3: Optional free backend
 

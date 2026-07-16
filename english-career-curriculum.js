@@ -14,14 +14,26 @@
     { id: "creative", name: "Truyền thông & sáng tạo", color: "#ef78ff" }
   ];
 
-  const words = (source) => source.trim().split("\n").map((line) => {
-    const [term, meaning] = line.split("|").map((part) => part.trim());
-    return [term, "Thuật ngữ", meaning];
+  const words = (source = "", defaults = {}) => source.trim().split(/\r?\n/).filter(Boolean).map((line) => {
+    const [term = "", meaning = "", rawTags = ""] = line.split("|").map((part) => part.trim());
+    const tags = rawTags.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean);
+    const tier = tags.find((tag) => ["foundation", "specialist", "leadership"].includes(tag)) || defaults.tier || "specialist";
+    const skills = tags.filter((tag) => ["listening", "speaking", "reading", "writing", "vocabulary"].includes(tag));
+    return [term, "Thuật ngữ", meaning, {
+      source: defaults.source || "specialist",
+      tier,
+      skills: skills.length ? skills : (defaults.skills || [])
+    }];
   });
 
-  const track = (id, category, code, name, viName, level, description, task, project, vocabulary) => ({
-    id, category, code, name, viName, level, description, task, project, vocabulary: words(vocabulary)
-  });
+  const track = (id, category, code, name, viName, level, description, task, project, vocabulary, options = {}) => {
+    const { vocabulary: ignoredVocabulary, ...metadata } = options;
+    return {
+      id, category, code, name, viName, level, description, task, project,
+      ...metadata,
+      vocabulary: words(vocabulary, { source: "specialist" })
+    };
+  };
 
   const rawTracks = [
     track("software-development", "digital", "DEV", "Software Development", "Phát triển phần mềm", "A2-C1",
@@ -1069,12 +1081,59 @@ lookbook|bộ ảnh giới thiệu`)
     return questions;
   };
 
-  const tracks = rawTracks.map((item, trackIndex) => {
+  const careerExpansion = (() => {
+    if (typeof window !== "undefined" && window.HHEnglishCareerExpansion) return window.HHEnglishCareerExpansion;
+    if (typeof require === "function") {
+      try { return require("./english-career-expansion.js"); } catch { return { categoryProfiles: {}, categoryVocabulary: {}, tracks: [] }; }
+    }
+    return { categoryProfiles: {}, categoryVocabulary: {}, tracks: [] };
+  })();
+
+  const expandedTracks = (careerExpansion.tracks || []).map((item) => track(
+    item.id, item.category, item.code, item.name, item.viName, item.level,
+    item.description, item.task, item.project, item.vocabulary, item
+  ));
+  const allRawTracks = [...rawTracks, ...expandedTracks];
+  const dedupeWords = (entries) => {
+    const seen = new Set();
+    return entries.filter((entry) => {
+      const key = String(entry[0] || "").trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+  const stageByTier = {
+    foundation: ["student", "starter"],
+    specialist: ["starter", "specialist"],
+    leadership: ["specialist", "manager"]
+  };
+  const skillCycle = ["vocabulary", "speaking", "listening", "reading", "writing"];
+
+  const tracks = allRawTracks.map((item, trackIndex) => {
     const color = categoryById(item.category)?.color || "#63e8ff";
-    const preparedWords = item.vocabulary.map((entry) => [
-      entry[0], entry[1], entry[2],
-      `In ${item.name}, “${entry[0]}” is useful when a team needs to ${item.task}.`
-    ]);
+    const categoryProfile = careerExpansion.categoryProfiles?.[item.category] || {};
+    const sharedWords = words(careerExpansion.categoryVocabulary?.[item.category] || "", {
+      source: "field",
+      tier: "foundation"
+    });
+    const preparedWords = dedupeWords([...sharedWords, ...item.vocabulary]).map((entry, wordIndex) => {
+      const metadata = entry[3] || {};
+      const tier = metadata.tier || (wordIndex < 10 ? "foundation" : wordIndex < 28 ? "specialist" : "leadership");
+      const skills = metadata.skills?.length ? metadata.skills : [skillCycle[wordIndex % skillCycle.length]];
+      return [
+        entry[0], entry[1], entry[2],
+        `In ${item.name}, “${entry[0]}” is useful when a team needs to ${item.task}.`,
+        {
+          ...metadata,
+          tier,
+          skills,
+          stages: metadata.stages?.length ? metadata.stages : stageByTier[tier],
+          category: item.category,
+          trackId: item.id
+        }
+      ];
+    });
     const lessons = dayTemplates.map((day, dayIndex) => {
       const vocabulary = rotate(preparedWords, dayIndex * 3).slice(0, 8);
       const id = `career-${item.id}-day-${dayIndex + 1}`;
@@ -1103,14 +1162,23 @@ lookbook|bộ ảnh giới thiệu`)
         project: dayIndex === 6 ? item.project : ""
       };
     });
-    return { ...item, color, vocabulary: preparedWords, lessons };
+    return {
+      ...item,
+      color,
+      roles: item.roles || categoryProfile.roles || [],
+      skillProfile: { ...(categoryProfile.skillProfile || {}), ...(item.skillProfile || {}) },
+      vocabulary: preparedWords,
+      lessons
+    };
   });
 
   const curriculum = {
     categories,
     tracks,
+    profileVersion: 2,
     lessonCount: tracks.reduce((sum, item) => sum + item.lessons.length, 0),
-    vocabularyCount: tracks.reduce((sum, item) => sum + item.vocabulary.length, 0)
+    vocabularyCount: tracks.reduce((sum, item) => sum + item.vocabulary.length, 0),
+    uniqueVocabularyCount: new Set(tracks.flatMap((item) => item.vocabulary.map((entry) => entry[0].toLowerCase()))).size
   };
 
   if (typeof window !== "undefined") window.HHEnglishCareerCurriculum = curriculum;
