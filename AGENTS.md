@@ -5,6 +5,7 @@
 - `index.html` is the application shell and asset manifest.
 - `script.js` owns authentication state, hash routing, primary navigation, and legacy module mounting.
 - Feature workspaces live in dedicated `*.js` and `*.css` files and expose a small global mount API.
+- `english-curriculum.js` owns original A1-C2 course data; `english-learning.js` owns the renderer and local learning engine.
 - Serverless endpoints live in `api/`; persistent Socket.io services live in `realtime-server/`.
 - User-facing local-first state must be versioned and stored under an `hh.*` localStorage key.
 
@@ -16,6 +17,7 @@
 - Do not place secrets, service-role keys, passwords, or private tokens in client code.
 - Browser-only capabilities must provide a clear unsupported/error state.
 - Educational content is data, not one hard-coded page per lesson.
+- Every HH English level remains selectable; placement results are recommendations rather than hard locks.
 
 ## Commands
 
@@ -32,4 +34,3 @@
 - Keyboard focus is visible and reduced-motion preferences are respected.
 - Syntax checks, contract tests, and focused feature tests pass.
 - No secrets or unrelated user changes are committed.
-

@@ -1,16 +1,24 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { courses, scheduleReview, scoreAnswers, levelFromScore, normalize } = require("../english-learning.js");
+const { courses, courseLevels, placementQuestions, scheduleReview, scoreAnswers, levelFromScore, normalize } = require("../english-learning.js");
 
-test("A0 curriculum contains five units and fifteen complete lessons", () => {
-  assert.equal(courses.length, 5);
+test("CEFR curriculum contains seven levels and sixty-nine complete lessons", () => {
+  assert.deepEqual(courseLevels.map((level) => level.id), ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
+  assert.equal(courseLevels[0].units.length, 5);
+  assert.equal(courseLevels[0].units.flatMap((unit) => unit.lessons).length, 15);
+  courseLevels.slice(1).forEach((level) => {
+    assert.equal(level.units.length, 3, `${level.id} unit count`);
+    assert.equal(level.units.flatMap((unit) => unit.lessons).length, 9, `${level.id} lesson count`);
+  });
+  assert.equal(courses.length, 23);
   const lessons = courses.flatMap((unit) => unit.lessons);
-  assert.equal(lessons.length, 15);
-  assert.equal(new Set(lessons.map((lesson) => lesson.id)).size, 15);
+  assert.equal(lessons.length, 69);
+  assert.equal(new Set(lessons.map((lesson) => lesson.id)).size, 69);
   lessons.forEach((lesson) => {
+    assert.ok(["A0", "A1", "A2", "B1", "B2", "C1", "C2"].includes(lesson.level));
     assert.ok(lesson.canDo.length > 20);
     assert.ok(lesson.grammar.length > 20);
-    assert.ok(lesson.dialogue.includes("\n"));
+    assert.ok(lesson.dialogue.length > 40);
     assert.ok(lesson.vocabulary.length >= 8 && lesson.vocabulary.length <= 15);
     assert.equal(lesson.exercises.length, 5);
     lesson.exercises.forEach((exercise) => {
@@ -37,8 +45,13 @@ test("review scheduler advances and resets intervals", () => {
 test("placement scoring and answer normalization are deterministic", () => {
   const questions = [["", "", [], 0], ["", "", [], 1], ["", "", [], 2]];
   assert.equal(scoreAnswers(questions, [0, 1, 0]), 2);
-  assert.equal(levelFromScore(20), "A0");
-  assert.equal(levelFromScore(50), "A1");
-  assert.equal(levelFromScore(85), "A2");
+  assert.equal(placementQuestions.length, 28);
+  assert.equal(levelFromScore(10), "A0");
+  assert.equal(levelFromScore(20), "A1");
+  assert.equal(levelFromScore(40), "A2");
+  assert.equal(levelFromScore(55), "B1");
+  assert.equal(levelFromScore(70), "B2");
+  assert.equal(levelFromScore(82), "C1");
+  assert.equal(levelFromScore(95), "C2");
   assert.equal(normalize("  Hello,   World! "), "hello world");
 });

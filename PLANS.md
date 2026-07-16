@@ -16,7 +16,8 @@ Add HH English as a major HH Platform workspace for Vietnamese learners. The fir
 ## Expected Tree
 
 ```text
-english-learning.js        # data schemas, curriculum, learning engine, mount API
+english-curriculum.js      # original A1-C2 CEFR-aligned curriculum data
+english-learning.js        # A0 data, lesson renderer, learning engine, mount API
 english-learning.css       # responsive HH English visual system
 tests/
   english-learning.test.js # curriculum and scoring/review contracts
@@ -45,6 +46,16 @@ PLANS.md
 - At least five explained questions per lesson.
 - More exercise renderers: ordering, matching, dictation, translation, and flashcards.
 - Content QA for Vietnamese explanations, IPA, and answer rationales.
+
+### M2.5: Complete CEFR learning path
+
+- Add original A1, A2, B1, B2, C1, and C2 curriculum data in a dedicated module.
+- Provide three themed units and nine interactive lessons per level, bringing the local-first path to 69 lessons.
+- Keep every level open for self-directed learners while clearly showing placement recommendations and per-level progress.
+- Adapt practice, speaking prompts, writing prompts, vocabulary, XP, and progress analytics to the selected level.
+- Extend the preliminary placement test across A0-C2 without presenting it as an accredited CEFR certificate.
+- Preserve old A0 localStorage data through additive state migration.
+- Verify keyboard operation, 375px responsiveness, reduced motion, content contracts, and regression suites.
 
 ### M3: Optional free backend
 
@@ -91,4 +102,3 @@ Every production table will use primary keys, foreign keys, timestamps, query in
 - GitHub Pages cannot securely perform server-authoritative XP or multi-device sync. Supabase Free is needed for those guarantees.
 - Microphone access requires HTTPS and user permission.
 - CEFR placement results in M1 are preliminary and are not an accredited assessment.
-
