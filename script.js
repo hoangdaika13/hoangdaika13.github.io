@@ -4381,6 +4381,7 @@ function initAppShell() {
     { id: "entertainment", label: "Giải trí", icon: "◉", accent: "#ff8a5b", route: "/entertainment", items: [], pages: [{ id: "astra-hh", title: "ASTRA HH", route: "/entertainment/astra-hh" }] },
     { id: "insights", label: "Phân tích", icon: "↗", accent: "#ffbd69", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
     { id: "learn", label: "Học tập", icon: "◫", accent: "#9a86ff", route: "/learn", items: ["learning-center", "i18n", "accessibility-center", "gamification", "onboarding-tour"] },
+    { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [], pages: [{ id: "english-home", title: "Tổng quan", route: "/english" }, { id: "english-learn", title: "Bài học A0", route: "/english/learn" }, { id: "english-placement", title: "Kiểm tra xếp lớp", route: "/english/placement" }, { id: "english-vocabulary", title: "Sổ từ vựng", route: "/english/vocabulary" }, { id: "english-speaking", title: "Phát âm", route: "/english/speaking" }, { id: "english-writing", title: "Luyện viết", route: "/english/writing" }, { id: "english-progress", title: "Tiến độ", route: "/english/progress" }] },
     { id: "system", label: "Hệ thống", icon: "⚙", accent: "#68dda8", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] },
     { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", accent: "#ff6fae", route: "/support", items: [] }
   ];
@@ -4531,7 +4532,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || [...mediaStudioItems, ...developerToolItems].find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
+    breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || [...mediaStudioItems, ...developerToolItems].find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
   };
   const renderRoute = () => {
@@ -4542,8 +4543,10 @@ function initAppShell() {
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
+    document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
     if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
+    if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     setUser();
     renderNavigation();
     requestAnimationFrame(() => {
@@ -4572,6 +4575,11 @@ function initAppShell() {
       workspace.innerHTML = '<div data-space-explorer-host></div>';
       if (window.HHSpaceExplorer?.mount) window.HHSpaceExplorer.mount(workspace.firstElementChild, { apiBase: REALTIME_URL });
       else mountSimpleView("ASTRA HH", "Đang khởi động động cơ khám phá vũ trụ...", "");
+    } else if (route === "/english" || route.startsWith("/english/")) {
+      updatePageHeader("HH English", "Học tiếng Anh miễn phí từ mất gốc với lộ trình, luyện tập và tiến độ cá nhân.", route);
+      workspace.innerHTML = '<div data-hh-english-host></div>';
+      if (window.HHEnglish?.mount) window.HHEnglish.mount(workspace.firstElementChild, { view: parts[1] || "dashboard" });
+      else mountSimpleView("HH English", "Đang tải không gian học tiếng Anh...", "");
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {
       updatePageHeader("Media & Design", "Studio sáng tạo xử lý ảnh, tài liệu, màu sắc và vector ngay trên thiết bị.", route);
       workspace.innerHTML = '<div data-media-design-page-host></div>';
@@ -4623,7 +4631,7 @@ function initAppShell() {
     const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
     const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
     const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));
-    return [...modules, ...commandCenter, ...developerTools, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...developerTools, { type: "Học tập", title: "HH English", description: "Lộ trình tiếng Anh miễn phí A0-C2, xếp lớp, từ vựng, phát âm và luyện viết.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 cefr từ vựng phát âm speaking writing placement" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
