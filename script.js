@@ -819,7 +819,7 @@ function initRealtimeAuth() {
       socket = null;
       window.HHRealtimeSocket = null;
     }
-    if (!SOCKET_URL || (!token && !consent.checked)) {
+    if (!SOCKET_URL) {
       online.textContent = "0 đang online";
       return;
     }

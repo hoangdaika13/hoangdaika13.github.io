@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: hoangdaika13-astra-realtime
+    runtime: node
+    plan: free
+    rootDir: realtime-server
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /live
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: FRONTEND_URL
+        value: https://hoangdaika13.github.io
+      - key: ALLOWED_ORIGINS
+        value: https://hoangdaika13.github.io,https://hoangdaika13githubio.vercel.app
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_DB
+        value: hoangdaika13_site
+      - key: MAX_ASTRA_PLAYERS
+        value: "10"
+      - key: MAX_CALL_PARTICIPANTS
+        value: "8"

@@ -293,6 +293,10 @@ if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
   }));
 }
 
+app.get("/live", (_req, res) => {
+  res.json({ ok: true, service: "hoangdaika13-realtime", transport: "socket.io" });
+});
+
 app.get("/health", async (_req, res) => {
   await db();
   res.json({ ok: true, service: "hoangdaika13-realtime" });
@@ -559,6 +563,10 @@ io.use(async (socket, next) => {
 io.on("connection", async (socket) => {
   const auth = socket.handshake.auth || {};
   const consent = Boolean(auth.consent || socket.user?.consent);
+  const guestId = cleanString(auth.anonymousId, 80).replace(/[^a-zA-Z0-9_-]/g, "") || socket.id;
+  const astraIdentity = () => socket.user
+    ? publicChatUser(socket.user)
+    : { id: `guest:${guestId}`, name: cleanString(auth.astraName, 40) || `Phi công ${guestId.slice(-4).toUpperCase()}`, avatar: "", guest: true };
   let activeMessengerRoom = "";
   let activeAstraRoom = "";
   const activeCallIds = new Set();
@@ -633,7 +641,6 @@ io.on("connection", async (socket) => {
   io.emit("site:stats", { online: io.engine.clientsCount });
 
   const joinAstraRoom = async (room, payload, done) => {
-    if (!socket.user) return done({ ok: false, error: "Authentication required" });
     if (!room) return done({ ok: false, error: "Expedition unavailable" });
     if (room.players.size >= MAX_ASTRA_PLAYERS && !room.players.has(socket.id)) return done({ ok: false, error: "Expedition is full" });
     if (activeAstraRoom && activeAstraRoom !== room.code) await leaveAstraRoom("switched");
@@ -646,7 +653,7 @@ io.on("connection", async (socket) => {
     }
     const player = {
       socketId: socket.id,
-      user: publicChatUser(socket.user),
+      user: astraIdentity(),
       ship,
       state: initialState,
       joinedAt: new Date().toISOString()
@@ -662,16 +669,16 @@ io.on("connection", async (socket) => {
   socket.on("astra:room:create", async (payload = {}, callback) => {
     const done = typeof callback === "function" ? callback : () => {};
     try {
-      if (!socket.user) return done({ ok: false, error: "Authentication required" });
       if (activeAstraRoom) await leaveAstraRoom("recreated");
       const code = createAstraCode();
+      const identity = astraIdentity();
       const room = {
         code,
         name: cleanString(payload.name || `Expedition ${code}`, 48),
         sector: Math.max(0, Math.min(9999, Math.floor(Number(payload.sector || 0)))),
         visibility: payload.visibility === "public" ? "public" : "private",
         seed: Number.parseInt(code, 36) >>> 0,
-        hostId: String(socket.user._id),
+        hostId: identity.id,
         players: new Map(),
         createdAt: new Date().toISOString(),
         lastWarpAt: 0
@@ -696,11 +703,10 @@ io.on("connection", async (socket) => {
   socket.on("astra:room:match", async (payload = {}, callback) => {
     const done = typeof callback === "function" ? callback : () => {};
     try {
-      if (!socket.user) return done({ ok: false, error: "Authentication required" });
       let room = [...activeAstraRooms.values()].find((item) => item.visibility === "public" && item.players.size < MAX_ASTRA_PLAYERS);
       if (!room) {
         const code = createAstraCode();
-        room = { code, name: `Đội thám hiểm ${code}`, seed: Number.parseInt(code, 36) >>> 0, sector: Math.max(0, Math.floor(Number(payload.sector || 0))), visibility: "public", hostId: String(socket.user._id), players: new Map(), createdAt: new Date().toISOString(), lastWarpAt: 0 };
+        room = { code, name: `Đội thám hiểm ${code}`, seed: Number.parseInt(code, 36) >>> 0, sector: Math.max(0, Math.floor(Number(payload.sector || 0))), visibility: "public", hostId: astraIdentity().id, players: new Map(), createdAt: new Date().toISOString(), lastWarpAt: 0 };
         activeAstraRooms.set(code, room);
       }
       await joinAstraRoom(room, payload, done);
@@ -750,7 +756,7 @@ io.on("connection", async (socket) => {
   socket.on("astra:warp", (payload = {}, callback) => {
     const done = typeof callback === "function" ? callback : () => {};
     const room = activeAstraRooms.get(activeAstraRoom);
-    if (!room || !socket.user || room.hostId !== String(socket.user._id)) return done({ ok: false, error: "Only the expedition host can initiate warp" });
+    if (!room || room.hostId !== astraIdentity().id) return done({ ok: false, error: "Only the expedition host can initiate warp" });
     const now = Date.now();
     if (now - room.lastWarpAt < 3000) return done({ ok: false, error: "Warp drive is cooling down" });
     room.lastWarpAt = now;

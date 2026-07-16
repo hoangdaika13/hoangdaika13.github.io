@@ -283,7 +283,7 @@
             <section class="astra-modal" data-modal="coop" hidden>
               <div class="astra-modal__content astra-coop-modal">
                 <header class="astra-modal__head"><div><span class="astra-eyebrow">Astra shared universe</span><h2>Bay cùng bạn bè</h2></div><button type="button" data-modal-close aria-label="Đóng">×</button></header>
-                <div class="astra-coop-hero"><div><strong data-coop-room-name>Chưa tham gia expedition</strong><span data-coop-status>Đăng nhập và kết nối realtime để mở phòng.</span></div><div class="astra-room-code"><small>MÃ MỜI</small><b data-room-code>------</b><button type="button" data-action="copy-room" title="Sao chép mã mời">Sao chép</button></div></div>
+                <div class="astra-coop-hero"><div><strong data-coop-room-name>Chưa tham gia expedition</strong><span data-coop-status>Kết nối realtime để mở phòng hoặc ghép đội nhanh.</span></div><div class="astra-room-code"><small>MÃ MỜI</small><b data-room-code>------</b><button type="button" data-action="copy-room" title="Sao chép mã mời">Sao chép</button></div></div>
                 <div class="astra-coop-layout">
                   <div>
                     <h3>Chọn phi thuyền</h3>
@@ -413,7 +413,11 @@
     }
 
     attachRealtime(socket) {
-      if (!socket || socket === this.realtimeSocket) return;
+      if (!socket) return;
+      if (socket === this.realtimeSocket) {
+        this.updateCoopUi();
+        return;
+      }
       this.detachRealtime();
       this.realtimeSocket = socket;
       const on = (event, handler) => {
@@ -437,6 +441,7 @@
         if (!payload || !Number.isFinite(Number(payload.sector))) return;
         if (Number(payload.sector) !== this.state.sector) this.performWarp(Number(payload.sector), true);
       });
+      on("connect", () => this.updateCoopUi());
       on("disconnect", () => {
         this.coopRoom = null;
         this.remoteShips.clear();
@@ -618,7 +623,7 @@
       set("[data-room-code]", room?.code || "------");
       set("[data-coop-room-name]", room?.name || "Chưa tham gia expedition");
       set("[data-coop-capacity]", `${players.length}/${room?.maxPlayers || 10}`);
-      set("[data-coop-status]", room ? `Vùng sao ${room.sector} · ${room.visibility === "public" ? "Phòng công khai" : "Phòng riêng bằng mã mời"}` : connected ? "Realtime sẵn sàng · tạo phòng hoặc ghép đội nhanh." : "Đăng nhập và kết nối realtime để mở phòng.");
+      set("[data-coop-status]", room ? `Vùng sao ${room.sector} · ${room.visibility === "public" ? "Phòng công khai" : "Phòng riêng bằng mã mời"}` : connected ? "Realtime sẵn sàng · tạo phòng hoặc ghép đội nhanh." : "Đang kết nối máy chủ realtime...");
       const squad = this.root.querySelector("[data-squad]");
       const roster = this.root.querySelector("[data-lobby-roster]");
       const rows = players.map((player) => {
