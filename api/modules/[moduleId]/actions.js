@@ -31,6 +31,24 @@ const contentPackSchema = {
   required: ["title", "script", "seo", "thumbnail", "description", "outline", "chapters", "shorts", "calendar"]
 };
 
+function geminiApiKey() {
+  return String(
+    process.env.GEMINI_API_KEY
+    || process.env.GOOGLE_AI_API_KEY
+    || process.env.GOOGLE_SEARCH_API_KEY
+    || process.env.VERTEX_SEARCH_API_KEY
+    || ""
+  ).trim();
+}
+
+function geminiKeySource() {
+  if (process.env.GEMINI_API_KEY) return "gemini";
+  if (process.env.GOOGLE_AI_API_KEY) return "google-ai";
+  if (process.env.GOOGLE_SEARCH_API_KEY) return "google-shared";
+  if (process.env.VERTEX_SEARCH_API_KEY) return "vertex-shared";
+  return "none";
+}
+
 function supportedDownloadUrl(value) {
   try {
     const url = new URL(String(value || ""));
@@ -253,7 +271,7 @@ function safeJson(text) {
 }
 
 async function runGemini(moduleId, actionType, input, meta = {}) {
-  const apiKey = String(process.env.GEMINI_API_KEY || "").trim();
+  const apiKey = geminiApiKey();
   const requestedModel = clean(meta.model, 80);
   if (!apiKey || requestedModel === "local") return null;
   const model = allowedModels.has(requestedModel)
@@ -307,7 +325,8 @@ module.exports = async function handler(req, res) {
       const actions = await collection.find({ moduleId }).sort({ createdAt: -1 }).limit(50).toArray();
       return res.status(200).json({
         moduleId,
-        configured: creativeModules.has(moduleId) ? Boolean(process.env.GEMINI_API_KEY) : undefined,
+        configured: creativeModules.has(moduleId) ? Boolean(geminiApiKey()) : undefined,
+        keySource: creativeModules.has(moduleId) ? geminiKeySource() : undefined,
         defaultModel: "gemini-3.5-flash",
         actions
       });
