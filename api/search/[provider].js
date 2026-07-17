@@ -210,6 +210,8 @@ async function googleSearch(req, query) {
   const dateRestrict = /^(d|w|m|y)(1|7|30|90|365)$/.test(String(req.query.date || "")) ? String(req.query.date) : "";
   const allowedFiles = new Set(["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"]);
   const fileType = allowedFiles.has(String(req.query.file || "")) ? String(req.query.file) : "";
+  const requestedSite = clean(req.query.site, 253).toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const site = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(requestedSite) ? requestedSite : "";
   const params = new URLSearchParams({
     key,
     cx,
@@ -223,6 +225,7 @@ async function googleSearch(req, query) {
   if (kind === "images") params.set("searchType", "image");
   if (dateRestrict) params.set("dateRestrict", dateRestrict);
   if (fileType && kind === "web") params.set("fileType", fileType);
+  if (site && kind === "web") params.set("siteSearch", site);
 
   const data = await readJson(`${GOOGLE_ENDPOINT}?${params}`);
   const items = (data.items || []).map((item) => {
@@ -263,12 +266,18 @@ async function youtubeSearch(req, query) {
   const allowedCaptions = new Set(["any", "closedCaption", "none"]);
   const allowedEvents = new Set(["any", "live", "upcoming", "completed"]);
   const allowedPublished = new Set(["any", "d1", "w1", "m1", "y1"]);
+  const allowedSafe = new Set(["none", "moderate", "strict"]);
+  const allowedRegions = new Set(["VN", "US", "GB", "JP", "KR"]);
+  const allowedLanguages = new Set(["vi", "en", "ja", "ko"]);
   const order = allowedOrders.has(req.query.order) ? req.query.order : "relevance";
   const duration = allowedDurations.has(req.query.duration) ? req.query.duration : "any";
   const definition = allowedDefinitions.has(req.query.definition) ? req.query.definition : "any";
   const caption = allowedCaptions.has(req.query.caption) ? req.query.caption : "any";
   const event = allowedEvents.has(req.query.event) ? req.query.event : "any";
   const published = allowedPublished.has(req.query.published) ? req.query.published : "any";
+  const safe = allowedSafe.has(req.query.safe) ? req.query.safe : "moderate";
+  const region = allowedRegions.has(req.query.region) ? req.query.region : "VN";
+  const language = allowedLanguages.has(req.query.language) ? req.query.language : "vi";
   const pageToken = clean(req.query.pageToken, 200);
   const params = new URLSearchParams({
     key,
@@ -277,9 +286,9 @@ async function youtubeSearch(req, query) {
     q: query,
     maxResults: "12",
     order,
-    safeSearch: "moderate",
-    relevanceLanguage: "vi",
-    regionCode: "VN",
+    safeSearch: safe,
+    relevanceLanguage: language,
+    regionCode: region,
     videoEmbeddable: "true"
   });
   if (duration !== "any") params.set("videoDuration", duration);
@@ -334,6 +343,9 @@ async function youtubeSearch(req, query) {
     caption,
     event,
     published,
+    safe,
+    region,
+    language,
     total: Number(searchData.pageInfo?.totalResults || 0),
     nextPageToken: clean(searchData.nextPageToken, 200),
     previousPageToken: clean(searchData.prevPageToken, 200),

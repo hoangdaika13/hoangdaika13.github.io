@@ -5151,12 +5151,14 @@ function initAppShell() {
   const mountSimpleView = (title, description, content) => {
     workspace.innerHTML = `<section class="app-simple-view"><div class="app-simple-view__intro"><p class="section-kicker">HH Platform</p><h2>${title}</h2><p>${description}</p></div>${content}</section>`;
   };
-  const mountCommunicationSearch = () => {
-    const launcher = document.createElement("section");
-    launcher.className = "communication-search-launcher";
-    launcher.setAttribute("aria-label", "Google và YouTube trong HH Platform");
-    launcher.innerHTML = `<div class="communication-search-launcher__copy"><span>Mạng xã hội & khám phá</span><h2>Google + YouTube</h2><p>Tìm website, hình ảnh và video hoặc dán liên kết YouTube để xem ngay trong HH Platform.</p></div><div class="communication-search-launcher__actions"><button type="button" data-search-watch-open="google"><b>G</b><span>Tìm với Google</span></button><button type="button" data-search-watch-open="youtube"><b>▶</b><span>Mở YouTube</span></button></div>`;
-    workspace.insertBefore(launcher, platform);
+  const mountCommunicationOverview = () => {
+    workspace.innerHTML = '<div data-communication-overview-host></div>';
+    const host = workspace.firstElementChild;
+    if (window.HHCommunicationOverview?.mount) {
+      window.HHCommunicationOverview.mount(host, { apiBase: REALTIME_URL });
+      return;
+    }
+    mountSimpleView("Giao tiếp", "Không gian kết nối, tìm kiếm và cộng đồng của HH Platform.", '<button class="app-primary-action" type="button" data-search-watch-open="google">Mở Google + YouTube</button>');
   };
   const remember = (moduleId) => {
     if (!moduleId) return;
@@ -5180,10 +5182,12 @@ function initAppShell() {
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
+    document.body.classList.toggle("app-communication-route", route === "/communication");
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
     if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
+    if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     setUser();
     renderNavigation();
     requestAnimationFrame(() => {
@@ -5202,6 +5206,10 @@ function initAppShell() {
       updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
       workspace.replaceChildren(dashboardHome);
       updateDashboard();
+    } else if (route === "/communication") {
+      updatePageHeader("Giao tiếp", "Tìm kiếm, xem nội dung, tham gia cộng đồng và quản lý mọi kết nối tại một nơi.", route);
+      pageActions.innerHTML = `<button type="button" data-search-watch-open="google">Tìm trên Google</button><button class="app-primary-action" type="button" data-search-watch-open="youtube">Mở YouTube</button>`;
+      mountCommunicationOverview();
     } else if (route === "/support") {
       updatePageHeader("Ủng hộ nhà phát triển", "Đóng góp minh bạch để duy trì máy chủ và phát triển các công cụ HH.", route);
       workspace.innerHTML = "";
@@ -5240,10 +5248,6 @@ function initAppShell() {
       const allowed = route === "/tools" ? "" : groups.find((group) => group.route === route)?.items || "";
       updatePageHeader(route === "/tools" ? "Tất cả công cụ" : groups.find((group) => group.route === route)?.label || "Công cụ", "Chọn một module để mở thành trang làm việc riêng.", route);
       mountPlatform("");
-      if (route === "/communication") {
-        mountCommunicationSearch();
-        pageActions.innerHTML = `<button class="app-primary-action" type="button" data-search-watch-open="google">Google + YouTube</button>`;
-      }
       if (Array.isArray(allowed)) document.querySelectorAll("#moduleGrid [data-module-id]").forEach((card) => { card.hidden = !allowed.includes(card.dataset.moduleId); });
     } else if (route === "/favorites" || route === "/recent") {
       const key = route === "/favorites" ? "hh-module-favorites" : "hh.app-shell.recent";

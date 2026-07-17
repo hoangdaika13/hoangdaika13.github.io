@@ -124,7 +124,9 @@ body.search-watch-open { overflow: hidden; }
 
 .swh-filterbar { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; overflow: auto hidden; }
 .swh-filterbar label { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; flex: 0 0 auto; padding: 0 8px 0 11px; border: 1px solid rgba(143,174,200,.18); border-radius: 6px; background: rgba(14, 21, 31, .82); color: #6f8091; font-size: 9px; font-weight: 800; }
-.swh-filterbar select { min-width: 95px; height: 29px; border: 0; outline: 0; background: transparent; color: #c4d1dc; font: 700 10px inherit; }
+.swh-filterbar select, .swh-filterbar input { min-width: 95px; height: 29px; border: 0; outline: 0; background: transparent; color: #c4d1dc; font: 700 10px inherit; }
+.swh-filterbar input { width: 126px; }
+.swh-filterbar input::placeholder { color: #617180; }
 .swh-filterbar select option { background: #101722; }
 .swh-toggle input { position: absolute; opacity: 0; }
 .swh-toggle span { position: relative; width: 28px; height: 16px; border-radius: 9px; background: #27323d; transition: 150ms ease; }
@@ -249,7 +251,7 @@ body.search-watch-open { overflow: hidden; }
 .swh-queue > header button { min-height: 30px; border: 1px solid #394854; border-radius: 5px; background: #111923; color: #8797a4; font: 800 8px inherit; cursor: pointer; }
 .swh-queue > div { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1px; background: var(--swh-line); }
 .swh-queue > div > p { grid-column: 1 / -1; margin: 0; padding: 18px; background: #0c1219; color: #657583; font-size: 9px; text-align: center; }
-.swh-queue article { display: grid; grid-template-columns: 72px minmax(0,1fr) 28px; align-items: center; gap: 8px; min-width: 0; padding: 8px; background: #0c1219; }
+.swh-queue article { display: grid; grid-template-columns: 72px minmax(0,1fr) auto; align-items: center; gap: 8px; min-width: 0; padding: 8px; background: #0c1219; }
 .swh-queue article.active { background: linear-gradient(90deg, rgba(255,89,103,.11), rgba(92,231,239,.04)); box-shadow: inset 3px 0 var(--swh-red); }
 .swh-queue article img { width: 72px; aspect-ratio: 16/9; border-radius: 4px; object-fit: cover; }
 .swh-queue article > button { min-width: 0; padding: 0; border: 0; background: transparent; color: #a8b5bf; text-align: left; cursor: pointer; }
@@ -257,6 +259,46 @@ body.search-watch-open { overflow: hidden; }
 .swh-queue article > button b { display: block; overflow: hidden; margin-top: 3px; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .swh-queue article > button.swh-queue-remove { width: 27px; height: 27px; border: 1px solid #33414d; border-radius: 5px; color: #758593; text-align: center; }
 .swh-queue article > button.swh-queue-remove:hover { border-color: var(--swh-red); color: var(--swh-red); }
+.swh-queue-controls { display: flex; gap: 3px; }
+.swh-queue-controls button { display: grid; place-items: center; width: 24px; height: 25px; padding: 0; border: 1px solid #33414d; border-radius: 4px; background: #101821; color: #778795; font: 800 9px inherit; cursor: pointer; }
+.swh-queue-controls button:hover:not(:disabled) { border-color: var(--swh-cyan); color: var(--swh-cyan); }
+.swh-queue-controls button:last-child:hover { border-color: var(--swh-red); color: var(--swh-red); }
+.swh-queue-controls button:disabled { opacity: .25; cursor: not-allowed; }
+
+.swh-floating-player {
+  position: fixed;
+  z-index: 12500;
+  right: 18px;
+  bottom: 18px;
+  display: grid;
+  grid-template-rows: 38px minmax(0, 1fr);
+  width: min(480px, calc(100vw - 28px));
+  min-width: 320px;
+  min-height: 240px;
+  max-width: calc(100vw - 12px);
+  max-height: calc(100dvh - 12px);
+  overflow: hidden;
+  resize: both;
+  border: 1px solid rgba(255, 89, 103, .48);
+  border-radius: 8px;
+  background: #080c12;
+  box-shadow: 0 28px 80px rgba(0,0,0,.68), 0 0 35px rgba(255,89,103,.12), 0 0 0 1px rgba(92,231,239,.08);
+}
+.swh-floating-player[hidden] { display: none; }
+.swh-floating-player > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 7px 0 11px; border-bottom: 1px solid #283643; background: linear-gradient(90deg, #111923, #211421); cursor: move; user-select: none; touch-action: none; }
+.swh-floating-player > header > div { display: inline-flex; align-items: center; gap: 7px; color: #c7d3dc; font-size: 8px; font-weight: 900; }
+.swh-floating-player > header i { width: 7px; height: 7px; border-radius: 50%; background: #ff6675; box-shadow: 0 0 10px #ff6675; }
+.swh-floating-player > header nav { display: flex; gap: 4px; }
+.swh-floating-player > header button { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid #354452; border-radius: 4px; background: #111923; color: #9eacb8; font: 800 11px inherit; cursor: pointer; }
+.swh-floating-player > header button:hover { border-color: var(--swh-cyan); color: var(--swh-cyan); }
+.swh-floating-player > header button:last-child:hover { border-color: var(--swh-red); color: var(--swh-red); }
+.swh-floating-player > [data-floating-slot] { min-height: 0; overflow: auto; background: #080c12; }
+.swh-floating-player .swh-player-shell { display: grid; grid-template-rows: auto auto auto; height: 100%; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+.swh-floating-player .swh-player { min-height: 180px; }
+.swh-floating-player .swh-now-playing { padding: 9px 11px; }
+.swh-floating-player .swh-now-playing h4 { max-width: 245px; }
+.swh-floating-player.is-minimized { width: 310px !important; min-width: 310px; height: 38px !important; min-height: 38px; resize: none; }
+.swh-floating-player.is-minimized > [data-floating-slot] { display: none; }
 .search-watch-hub.swh-focus .swh-body { grid-template-columns: minmax(0,1fr); }
 .search-watch-hub.swh-focus .swh-sidebar { display: none; }
 .search-watch-hub.swh-focus .swh-panel-heading, .search-watch-hub.swh-focus .swh-filterbar--youtube, .search-watch-hub.swh-focus .swh-search-form--youtube { display: none; }
@@ -317,6 +359,8 @@ body.search-watch-open { overflow: hidden; }
   .swh-player-controls > span { width: 100%; margin: 2px 0 0; }
   .swh-player-shell.swh-mini-player { width: 100%; }
   .swh-footer { min-height: 34px; }
+  .swh-floating-player { right: 7px; bottom: 7px; min-width: 280px; width: calc(100vw - 14px); max-height: calc(100dvh - 14px); }
+  .swh-floating-player .swh-now-playing > div:last-child { display: none; }
 }
 
 @media (max-width: 480px) {
