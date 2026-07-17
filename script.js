@@ -5160,6 +5160,15 @@ function initAppShell() {
     }
     mountSimpleView("Giao tiếp", "Không gian kết nối, tìm kiếm và cộng đồng của HH Platform.", '<button class="app-primary-action" type="button" data-search-watch-open="google">Mở Google + YouTube</button>');
   };
+  const mountWorkOverview = () => {
+    workspace.innerHTML = '<div data-work-center-host></div>';
+    const host = workspace.firstElementChild;
+    if (window.HHWorkCenter?.mount) {
+      window.HHWorkCenter.mount(host, { apiBase: REALTIME_URL });
+      return;
+    }
+    mountSimpleView("Công việc", "Không gian dự án, tài liệu, tệp và tự động hóa của HH Platform.", '<button class="app-primary-action" type="button" data-app-route="/work/project-center">Mở Project Center</button>');
+  };
   const remember = (moduleId) => {
     if (!moduleId) return;
     let recent = [];
@@ -5183,11 +5192,13 @@ function initAppShell() {
     document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     document.body.classList.toggle("app-communication-route", route === "/communication");
+    document.body.classList.toggle("app-work-route", route === "/work");
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
     if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
+    if (route !== "/work") window.HHWorkCenter?.unmount?.();
     setUser();
     renderNavigation();
     requestAnimationFrame(() => {
@@ -5206,6 +5217,10 @@ function initAppShell() {
       updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
       workspace.replaceChildren(dashboardHome);
       updateDashboard();
+    } else if (route === "/work") {
+      updatePageHeader("Công việc", "Điều hành dự án, đầu việc, tài liệu, tệp và tự động hóa trong một workspace thống nhất.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/work/project-center">Project Center</button><button class="app-primary-action" type="button" data-work-capture>+ Tạo công việc</button>`;
+      mountWorkOverview();
     } else if (route === "/communication") {
       updatePageHeader("Giao tiếp", "Tìm kiếm, xem nội dung, tham gia cộng đồng và quản lý mọi kết nối tại một nơi.", route);
       pageActions.innerHTML = `<button type="button" data-search-watch-open="google">Tìm trên Google</button><button class="app-primary-action" type="button" data-search-watch-open="youtube">Mở YouTube</button>`;
@@ -5333,6 +5348,11 @@ function initAppShell() {
     if (commandAction) {
       window.HHCommandCenter?.runAction?.(commandAction.dataset.commandAction);
       closePalette();
+      return;
+    }
+    const workCapture = event.target.closest("[data-work-capture]");
+    if (workCapture && !workCapture.closest(".work-center")) {
+      window.HHWorkCenter?.openCapture?.();
       return;
     }
     const routeButton = event.target.closest("[data-app-route]");
