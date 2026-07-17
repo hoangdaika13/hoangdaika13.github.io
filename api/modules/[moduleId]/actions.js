@@ -7,6 +7,11 @@ const {
   setCors,
   withApi
 } = require("../../../utils/platform");
+const {
+  GeminiKeyPool,
+  canTryAnotherKey,
+  parseGeminiKeys
+} = require("../../../utils/gemini-key-pool");
 
 const downloadHosts = [
   "youtube.com", "youtu.be", "tiktok.com", "facebook.com", "fb.watch",
@@ -31,18 +36,74 @@ const contentPackSchema = {
   required: ["title", "script", "seo", "thumbnail", "description", "outline", "chapters", "shorts", "calendar"]
 };
 
-function geminiApiKey() {
-  return String(
-    process.env.GEMINI_API_KEY
-    || process.env.GOOGLE_AI_API_KEY
-    || ""
-  ).trim();
+let cachedGeminiPool = null;
+let cachedGeminiPoolSignature = "";
+
+function geminiKeys() {
+  return parseGeminiKeys(process.env);
+}
+
+function geminiPool() {
+  const keys = geminiKeys();
+  const signature = keys.join("\u001f");
+  if (!cachedGeminiPool || signature !== cachedGeminiPoolSignature) {
+    cachedGeminiPool = new GeminiKeyPool(keys, {
+      maxAttempts: Math.min(8, Math.max(1, Number(process.env.GEMINI_MAX_KEY_ATTEMPTS) || 4))
+    });
+    cachedGeminiPoolSignature = signature;
+  }
+  return cachedGeminiPool;
 }
 
 function geminiKeySource() {
+  if (process.env.GEMINI_API_KEYS) return "gemini-pool";
   if (process.env.GEMINI_API_KEY) return "gemini";
   if (process.env.GOOGLE_AI_API_KEY) return "google-ai";
   return "none";
+}
+
+function sanitizeHistory(history) {
+  if (!Array.isArray(history)) return [];
+  return history
+    .slice(-12)
+    .map((message) => ({
+      role: message?.role === "model" || message?.role === "assistant" ? "model" : "user",
+      text: clean(message?.text || message?.content, 6000)
+    }))
+    .filter((message) => message.text);
+}
+
+function sanitizeAttachments(attachments) {
+  if (!Array.isArray(attachments)) return [];
+  const supported = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+  return attachments
+    .slice(0, 2)
+    .map((attachment) => {
+      const mimeType = clean(attachment?.mimeType || attachment?.type, 80).toLowerCase();
+      const data = String(attachment?.data || "").replace(/^data:[^;]+;base64,/, "");
+      if (!supported.has(mimeType) || !/^[a-z0-9+/=\r\n]+$/i.test(data) || data.length > 2_100_000) return null;
+      return {
+        name: clean(attachment?.name || "image", 180),
+        mimeType,
+        size: Math.min(Number(attachment?.size) || Math.ceil(data.length * 0.75), 1_600_000),
+        data
+      };
+    })
+    .filter(Boolean);
+}
+
+function storedMeta(meta = {}) {
+  const blocked = /key|token|secret|password|authorization|cookie/i;
+  const safe = {};
+  for (const [key, value] of Object.entries(meta || {})) {
+    if (blocked.test(key) || key === "history" || key === "attachments") continue;
+    if (["string", "number", "boolean"].includes(typeof value)) safe[key] = typeof value === "string" ? clean(value, 2000) : value;
+  }
+  const history = sanitizeHistory(meta.history);
+  const attachments = sanitizeAttachments(meta.attachments);
+  safe.historyCount = history.length;
+  safe.attachments = attachments.map(({ name, mimeType, size }) => ({ name, mimeType, size }));
+  return safe;
 }
 
 function supportedDownloadUrl(value) {
@@ -584,6 +645,7 @@ async function runInteractionsGemini({
   if (!response.ok) {
     const error = new Error(clean(data?.error?.message || `Interactions API lỗi HTTP ${response.status}.`, 300));
     error.code = "GEMINI_INTERACTIONS_ERROR";
+    error.status = response.status;
     throw error;
   }
   const output = interactionText(data);
@@ -599,34 +661,31 @@ async function runInteractionsGemini({
   };
 }
 
-async function runGemini(moduleId, actionType, input, meta = {}) {
-  const apiKey = geminiApiKey();
-  const requestedModel = clean(meta.model, 80);
-  if (!apiKey || requestedModel === "local") return null;
-  const model = allowedModels.has(requestedModel)
-    ? requestedModel
-    : (allowedModels.has(process.env.GEMINI_MODEL) ? process.env.GEMINI_MODEL : "gemini-3.5-flash");
-  const useGoogleSearch = ["research", "url-research"].includes(actionType);
-  const useUrlContext = actionType === "url-research";
-  const useStructuredOutput = actionType === "content-pack";
-  const creativity = Number(meta.creativity);
-  const temperature = Number.isFinite(creativity)
-    ? Math.max(0.2, Math.min(1.2, creativity / 100))
-    : 0.72;
-  const prompt = promptFor(moduleId, actionType, input, meta);
-  const instruction = systemInstruction(moduleId, actionType);
-  const tools = [
-    ...(useUrlContext ? [{ url_context: {} }] : []),
-    ...(useGoogleSearch ? [{ google_search: {} }] : [])
-  ];
+function retryDelay(attempt, status) {
+  if (status !== 408 && status !== 429 && status < 500) return 0;
+  return Math.min(2200, (320 * (2 ** attempt)) + Math.floor(Math.random() * 220));
+}
+
+async function wait(ms) {
+  if (ms > 0) await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function runGeminiWithKey({
+  apiKey,
+  model,
+  prompt,
+  instruction,
+  contents,
+  temperature,
+  tools,
+  useGoogleSearch,
+  useUrlContext,
+  useStructuredOutput,
+  canUseInteractions
+}) {
   const payload = {
-    systemInstruction: {
-      parts: [{ text: instruction }]
-    },
-    contents: [{
-      role: "user",
-      parts: [{ text: prompt }]
-    }],
+    systemInstruction: { parts: [{ text: instruction }] },
+    contents,
     generationConfig: {
       temperature,
       maxOutputTokens: useStructuredOutput ? 8192 : 4096,
@@ -643,12 +702,12 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
       "x-goog-api-key": apiKey
     },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(8500)
+    signal: AbortSignal.timeout(10500)
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const generateError = clean(data?.error?.message || `GenerateContent lỗi HTTP ${response.status}.`, 300);
-    if ([400, 403, 404].includes(response.status)) {
+    const providerMessage = clean(data?.error?.message || `GenerateContent HTTP ${response.status}.`, 300);
+    if (canUseInteractions && [400, 403, 404].includes(response.status)) {
       try {
         return await runInteractionsGemini({
           apiKey,
@@ -661,17 +720,19 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
           useStructuredOutput
         });
       } catch (interactionError) {
-        const error = new Error(clean(`${generateError} Interactions: ${interactionError.message}`, 300));
+        const error = new Error(clean(`${providerMessage} Interactions: ${interactionError.message}`, 300));
         error.code = "GEMINI_PROVIDER_ERROR";
+        error.status = interactionError.status || response.status;
         throw error;
       }
     }
-    const error = new Error(generateError);
+    const error = new Error(providerMessage);
     error.code = "GEMINI_PROVIDER_ERROR";
+    error.status = response.status;
     throw error;
   }
   const output = generatedText(data);
-  if (!output) {
+  if (!output && canUseInteractions) {
     return runInteractionsGemini({
       apiKey,
       model,
@@ -682,6 +743,12 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
       useUrlContext,
       useStructuredOutput
     });
+  }
+  if (!output) {
+    const error = new Error("Gemini returned an empty response.");
+    error.code = "GEMINI_EMPTY_RESPONSE";
+    error.status = 502;
+    throw error;
   }
   return {
     output,
@@ -694,24 +761,102 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
   };
 }
 
+async function runGemini(moduleId, actionType, input, meta = {}) {
+  const pool = geminiPool();
+  const requestedModel = clean(meta.model, 80);
+  if (!pool.keys.length || requestedModel === "local") return null;
+  const model = allowedModels.has(requestedModel)
+    ? requestedModel
+    : (allowedModels.has(process.env.GEMINI_MODEL) ? process.env.GEMINI_MODEL : "gemini-3.5-flash");
+  const useGoogleSearch = Boolean(meta.useGoogleSearch) || ["research", "url-research"].includes(actionType);
+  const useUrlContext = actionType === "url-research";
+  const useStructuredOutput = actionType === "content-pack";
+  const creativity = Number(meta.creativity);
+  const temperature = Number.isFinite(creativity)
+    ? Math.max(0.2, Math.min(1.2, creativity / 100))
+    : 0.72;
+  const prompt = promptFor(moduleId, actionType, input, meta);
+  const customInstruction = clean(meta.systemPrompt, 2000);
+  const instruction = [systemInstruction(moduleId, actionType), customInstruction].filter(Boolean).join("\n\n");
+  const history = sanitizeHistory(meta.history);
+  const attachments = sanitizeAttachments(meta.attachments);
+  const contents = history.map((message) => ({
+    role: message.role,
+    parts: [{ text: message.text }]
+  }));
+  contents.push({
+    role: "user",
+    parts: [
+      { text: prompt },
+      ...attachments.map((attachment) => ({
+        inlineData: { mimeType: attachment.mimeType, data: attachment.data }
+      }))
+    ]
+  });
+  const tools = [
+    ...(useUrlContext ? [{ url_context: {} }] : []),
+    ...(useGoogleSearch ? [{ google_search: {} }] : [])
+  ];
+  const candidates = pool.candidates();
+  const startedAt = Date.now();
+  let lastError = null;
+  for (let attempt = 0; attempt < candidates.length; attempt += 1) {
+    const apiKey = candidates[attempt];
+    try {
+      const result = await runGeminiWithKey({
+        apiKey,
+        model,
+        prompt,
+        instruction,
+        contents,
+        temperature,
+        tools,
+        useGoogleSearch,
+        useUrlContext,
+        useStructuredOutput,
+        canUseInteractions: attachments.length === 0 && history.length === 0
+      });
+      pool.reportSuccess(apiKey);
+      return { ...result, keyAttempts: attempt + 1, keyPoolSize: pool.keys.length };
+    } catch (error) {
+      lastError = error;
+      const status = Number(error.status || 0);
+      pool.reportFailure(apiKey, status, error.message);
+      if (!canTryAnotherKey(status, error.message) || attempt === candidates.length - 1 || Date.now() - startedAt > 25000) break;
+      await wait(retryDelay(attempt, status));
+    }
+  }
+  throw lastError || new Error("Gemini provider is unavailable.");
+}
+
 module.exports = async function handler(req, res) {
   if (req.query.moduleId === "download-center") return downloadCenterAction(req, res);
   return withApi(req, res, async ({ db, body }) => {
     const moduleId = clean(req.query.moduleId, 120);
     const collection = db.collection("moduleActions");
+    const user = await currentUser(req);
     if (req.method === "GET") {
-      const actions = await collection.find({ moduleId }).sort({ createdAt: -1 }).limit(50).toArray();
+      const anonymousId = clean(req.query.anonymousId, 160);
+      const ownerQuery = user?._id
+        ? { userId: user._id }
+        : (anonymousId ? { anonymousId } : { anonymousId: "__not_available__" });
+      const actions = await collection.find({ moduleId, ...ownerQuery }).sort({ createdAt: -1 }).limit(50).toArray();
+      const pool = geminiPool();
       return res.status(200).json({
         moduleId,
-        configured: creativeModules.has(moduleId) ? Boolean(geminiApiKey()) : undefined,
+        configured: creativeModules.has(moduleId) ? pool.keys.length > 0 : undefined,
         keySource: creativeModules.has(moduleId) ? geminiKeySource() : undefined,
+        keyPoolSize: creativeModules.has(moduleId) ? pool.keys.length : undefined,
+        availableKeyCount: creativeModules.has(moduleId) ? pool.availableCount() : undefined,
         defaultModel: "gemini-3.5-flash",
+        supports: creativeModules.has(moduleId)
+          ? { history: true, images: true, googleSearch: true, structuredOutput: true }
+          : undefined,
         actions
       });
     }
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    const user = await currentUser(req);
     if (creativeModules.has(moduleId)) {
       const actor = user?._id ? String(user._id) : requestIp(req);
       await enforceRateLimit(db, `creative-ai:${actor}`, user ? 60 : 24, 10 * 60 * 1000);
@@ -750,7 +895,9 @@ module.exports = async function handler(req, res) {
       usage: result.usage || null,
       sources: result.sources || [],
       providerApi: result.providerApi || (provider === "local" ? "local" : ""),
-      meta,
+      keyAttempts: Number(result.keyAttempts || 0),
+      keyPoolSize: Number(result.keyPoolSize || 0),
+      meta: storedMeta(meta),
       ...ownerFrom(user, body),
       createdAt: new Date()
     };

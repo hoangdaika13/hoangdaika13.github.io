@@ -5,6 +5,7 @@
   "scripts": {
     "start": "vercel dev",
     "test:community": "node --test tests/community-contract.test.js",
+    "test:ai": "node --test tests/ai-center-contract.test.js",
     "test:space": "node --test tests/space-explorer-contract.test.js",
     "test:english": "node --test tests/english-learning.test.js"
   },

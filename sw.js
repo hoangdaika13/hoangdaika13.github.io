@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v112";
+const CACHE = "hh-dev-hub-v113";
 const CORE = [
   "./",
   "./index.html",
@@ -15,7 +15,7 @@ const CORE = [
   "./video-editor-resolve.css?v=5",
   "./photo-editor-pro.css?v=1",
   "./editor-workflow-pro.css?v=1",
-  "./script.js?v=85",
+  "./script.js?v=86",
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=3",
   "./extension-suite.css?v=1",
@@ -24,6 +24,7 @@ const CORE = [
   "./search-watch-center.css?v=3",
   "./search-watch-center.js?v=4",
   "./creative-suite.css?v=5",
+  "./ai-center-pro.css?v=1",
   "./sidebar-navigation-pro.css?v=3",
   "./space-explorer.css?v=3",
   "./english-learning.css?v=9",

@@ -1143,29 +1143,61 @@ function initSuperPlatform() {
     `;
   };
 
-  const aiCenterMarkup = () => {
+  const readAIState = () => {
     let state = {};
     try { state = JSON.parse(localStorage.getItem("hh-ai-center") || "{}"); } catch { state = {}; }
-    const sessions = Array.isArray(state.sessions) ? state.sessions : [];
+    const sessions = (Array.isArray(state.sessions) ? state.sessions : []).map((session, index) => ({
+      id: session.id || `ai-legacy-${index}`,
+      title: session.title || "Phiên Gemini",
+      createdAt: session.createdAt || session.time || new Date().toISOString(),
+      updatedAt: session.updatedAt || session.time || new Date().toISOString(),
+      messages: Array.isArray(session.messages) ? session.messages : [
+        ...(session.input ? [{ id: `u-${index}`, role: "user", text: session.input, time: session.time || "" }] : []),
+        ...(session.result ? [{ id: `m-${index}`, role: "assistant", text: session.result, time: session.time || "", provider: "legacy" }] : [])
+      ]
+    }));
+    if (!sessions.length) sessions.push({ id: "ai-new", title: "Cuộc trò chuyện mới", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), messages: [] });
+    return {
+      ...state,
+      sessions: sessions.slice(0, 30),
+      activeSessionId: sessions.some((session) => session.id === state.activeSessionId) ? state.activeSessionId : sessions[0].id,
+      model: state.model || "gemini-3.5-flash",
+      systemPrompt: state.systemPrompt || "Bạn là HH Gemini, trợ lý sáng tạo chính xác, hữu ích và trả lời bằng tiếng Việt tự nhiên.",
+      creativity: Number.isFinite(Number(state.creativity)) ? Number(state.creativity) : 72,
+      useGoogleSearch: state.useGoogleSearch !== false
+    };
+  };
+  const writeAIState = (state) => localStorage.setItem("hh-ai-center", JSON.stringify(state));
+  const aiActiveSession = (state = readAIState()) => state.sessions.find((session) => session.id === state.activeSessionId) || state.sessions[0];
+  const aiSafeSourceUrl = (value) => {
+    try { const url = new URL(String(value || "")); return ["http:", "https:"].includes(url.protocol) ? url.href : ""; } catch { return ""; }
+  };
+  const aiMessageMarkup = (message) => {
+    const sources = (Array.isArray(message.sources) ? message.sources : []).map((source) => ({ ...source, url: aiSafeSourceUrl(source.url) })).filter((source) => source.url).slice(0, 5);
+    return `<article class="ai-message ${message.role === "user" ? "user" : "assistant"}" data-ai-message-id="${escapeHtml(message.id || "")}"><span>${message.role === "user" ? "Bạn" : "HH"}</span><div><strong>${message.role === "user" ? "Bạn" : `HH Gemini${message.provider ? ` · ${escapeHtml(message.provider)}` : ""}`}</strong><p>${escapeHtml(message.text || "")}</p>${sources.length ? `<nav class="ai-message-sources" aria-label="Nguồn tham khảo">${sources.map((source, index) => `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${index + 1}. ${escapeHtml(source.title || new URL(source.url).hostname)}</a>`).join("")}</nav>` : ""}<small>${escapeHtml(message.time || "")}</small>${message.role !== "user" ? `<div class="ai-message-tools"><button type="button" data-ai-copy-message="${escapeHtml(message.id || "")}">Sao chép</button><button type="button" data-ai-regenerate="${escapeHtml(message.id || "")}">Tạo lại</button></div>` : ""}</div></article>`;
+  };
+  const aiSessionListMarkup = (state) => state.sessions.slice(0, 20).map((item) => `<button class="interactive ${item.id === state.activeSessionId ? "active" : ""}" type="button" data-ai-session="${escapeHtml(item.id)}"><span>${escapeHtml(item.title || "Phiên AI")}</span><small>${escapeHtml(new Date(item.updatedAt || item.createdAt).toLocaleString("vi-VN"))}</small><i data-ai-delete-session="${escapeHtml(item.id)}" role="button" tabindex="0" aria-label="Xóa phiên">×</i></button>`).join("");
+
+  const aiCenterMarkup = () => {
+    const state = readAIState();
+    const activeSession = aiActiveSession(state);
     return `
-      <section class="ai-center-app" data-ai-center>
+      <section class="ai-center-app ai-center-pro" data-ai-center>
         <header class="ai-center-hero">
           <div><p class="section-kicker">AI Center 02</p><h4>Trung tâm trí tuệ sáng tạo</h4><span>Chat, thiết kế prompt, tối ưu, dịch và chạy workflow trong một không gian.</span></div>
-          <div class="ai-model-status"><i></i><div><strong data-ai-status>Gemini 3.5 qua máy chủ</strong><span>API key được bảo vệ trên Vercel, có fallback local</span></div></div>
+          <div class="ai-model-status" data-ai-provider-state="checking"><i></i><div><strong data-ai-status>Đang kiểm tra Gemini...</strong><span data-ai-status-detail>Khóa API chỉ tồn tại trên Vercel</span></div><b data-ai-pool>--</b></div>
         </header>
         <div class="ai-center-toolbar">
           <div class="ai-tool-tabs" role="tablist">
             ${[["chat","Chat AI"],["prompt","Prompt Studio"],["optimize","Tối ưu"],["translate","Dịch"],["workflow","Workflow"]].map(([id,label], index) => `<button class="interactive ${index === 0 ? "active" : ""}" type="button" data-ai-tab="${id}">${label}</button>`).join("")}
           </div>
-          <label class="ai-model-select">Model<select data-ai-model><option value="cloud">Gemini 3.5 Flash (server)</option><option value="smart-local">HH Smart Local</option><option value="creative">Creative Writer Local</option><option value="analyst">Deep Analyst Local</option><option value="fast">Fast Assistant Local</option></select></label>
+          <label class="ai-model-select">Model<select data-ai-model><option value="gemini-3.5-flash" ${state.model === "gemini-3.5-flash" ? "selected" : ""}>Gemini 3.5 Flash</option><option value="gemini-3.1-flash-lite" ${state.model === "gemini-3.1-flash-lite" ? "selected" : ""}>Gemini 3.1 Flash Lite</option><option value="smart-local" ${state.model === "smart-local" ? "selected" : ""}>HH Smart Local</option><option value="creative" ${state.model === "creative" ? "selected" : ""}>Creative Writer Local</option><option value="analyst" ${state.model === "analyst" ? "selected" : ""}>Deep Analyst Local</option><option value="fast" ${state.model === "fast" ? "selected" : ""}>Fast Assistant Local</option></select></label>
         </div>
         <div class="ai-center-layout">
           <aside class="ai-sidebar">
             <button class="ai-new-session interactive" type="button" data-ai-new>+ Cuộc trò chuyện mới</button>
             <label class="ai-history-search"><span>Tìm lịch sử</span><input type="search" data-ai-search placeholder="Tên hoặc nội dung..."></label>
-            <div class="ai-session-list" data-ai-sessions>
-              ${sessions.slice(0, 10).map((item, index) => `<button class="interactive" type="button" data-ai-session="${index}"><span>${escapeHtml(item.title || "Phiên AI")}</span><small>${escapeHtml(item.time || "")}</small></button>`).join("") || "<p>Chưa có phiên đã lưu.</p>"}
-            </div>
+            <div class="ai-session-list" data-ai-sessions>${aiSessionListMarkup(state)}</div>
             <div class="ai-quick-prompts">
               <strong>Prompt nhanh</strong>
               ${["Viết tiêu đề YouTube","Tóm tắt nội dung","Lập kế hoạch dự án","Sửa code HTML","Viết bài mạng xã hội"].map((item) => `<button class="interactive" type="button" data-ai-quick="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}
@@ -1173,10 +1205,11 @@ function initSuperPlatform() {
           </aside>
           <main class="ai-workspace">
             <section class="ai-pane active" data-ai-pane="chat">
-              <div class="ai-chat-stream" data-ai-stream><article class="ai-message assistant"><span>HH</span><div><strong>HH AI Assistant</strong><p>Xin chào. Hãy nhập yêu cầu, tôi sẽ phân tích cấu trúc và tạo câu trả lời ngay trên thiết bị.</p></div></article></div>
+              <div class="ai-chat-stream" data-ai-stream>${activeSession.messages.length ? activeSession.messages.map(aiMessageMarkup).join("") : '<article class="ai-message assistant"><span>HH</span><div><strong>HH Gemini Assistant</strong><p>Xin chào. Tôi có thể trò chuyện nhiều lượt, phân tích ảnh, tra cứu Google và hỗ trợ sáng tạo nội dung.</p></div></article>'}</div>
               <form class="ai-composer" data-ai-chat-form>
                 <textarea data-ai-chat-input rows="3" placeholder="Nhập câu hỏi, ý tưởng, đoạn code hoặc nội dung cần xử lý..."></textarea>
-                <div><span><b data-ai-char-count>0</b> ký tự</span><button class="interactive" type="button" data-ai-clear-chat>Xóa</button><button class="button primary interactive" type="submit">Gửi AI</button></div>
+                <div class="ai-attachment-tray" data-ai-attachments hidden></div>
+                <div><span><b data-ai-char-count>0</b> ký tự</span><label class="ai-attach-button interactive" title="Đính kèm ảnh hoặc tệp văn bản">＋ Tệp<input type="file" data-ai-attach accept="image/png,image/jpeg,image/webp,image/gif,.txt,.md,.json,.csv" multiple></label><button class="interactive" type="button" data-ai-clear-chat>Xóa</button><button class="interactive ai-stop" type="button" data-ai-stop hidden>Dừng</button><button class="button primary interactive" type="submit" data-ai-send>Gửi Gemini</button></div>
               </form>
             </section>
             <section class="ai-pane" data-ai-pane="prompt">
@@ -1214,6 +1247,7 @@ function initSuperPlatform() {
             <pre data-ai-result>Chọn một công cụ và nhập yêu cầu để bắt đầu.</pre>
             <div class="ai-result-actions"><button class="interactive" type="button" data-ai-save-result>Lưu phiên</button><button class="interactive" type="button" data-ai-export-result>Xuất TXT</button></div>
             <div class="ai-insights"><strong>Phân tích nhanh</strong><span>Độ rõ ràng <i data-ai-clarity style="--value:20%"></i></span><span>Chi tiết <i data-ai-detail style="--value:15%"></i></span><span>Khả năng sử dụng <i data-ai-usability style="--value:25%"></i></span></div>
+            <details class="ai-runtime-settings" open><summary>Cấu hình hội thoại</summary><label>Chỉ dẫn hệ thống<textarea rows="4" data-ai-system-prompt>${escapeHtml(state.systemPrompt)}</textarea></label><label>Sáng tạo <span data-ai-creativity-value>${state.creativity}%</span><input type="range" min="20" max="120" value="${state.creativity}" data-ai-creativity></label><label class="ai-toggle"><input type="checkbox" data-ai-google-search ${state.useGoogleSearch ? "checked" : ""}><span>Tìm kiếm Google cho câu trả lời mới</span></label><div class="ai-runtime-meta"><span data-ai-provider>Provider: đang kiểm tra</span><span data-ai-usage>Token: --</span><span data-ai-latency>Độ trễ: --</span></div></details>
           </aside>
         </div>
       </section>`;
@@ -1664,6 +1698,7 @@ function initSuperPlatform() {
     }).join("");
 
     if (visible.some((module) => module.id === "download-center")) checkDownloadService();
+    if (visible.some((module) => module.id === "ai-center")) loadAICenterStatus();
     if (visible.some((module) => module.id === "knowledge-center")) updateWikiPreview();
     if (visible.some((module) => module.id === "admin-panel")) loadAdminSummary();
     if (visible.some((module) => module.id === "store")) loadStoreProducts();
@@ -1962,6 +1997,61 @@ function initSuperPlatform() {
   });
 
   const aiPanel = () => grid.querySelector("[data-ai-center]");
+  let aiPendingAttachments = [];
+  let aiActiveController = null;
+  let aiLastPrompt = "";
+  const aiIsCloudModel = (model) => String(model || "").startsWith("gemini-");
+  const renderAIConversation = () => {
+    const panel = aiPanel();
+    if (!panel) return;
+    const state = readAIState();
+    const session = aiActiveSession(state);
+    const list = panel.querySelector("[data-ai-sessions]");
+    const stream = panel.querySelector("[data-ai-stream]");
+    if (list) list.innerHTML = aiSessionListMarkup(state);
+    if (stream) {
+      stream.innerHTML = session.messages.length
+        ? session.messages.map(aiMessageMarkup).join("")
+        : '<article class="ai-message assistant"><span>HH</span><div><strong>HH Gemini Assistant</strong><p>Phiên mới đã sẵn sàng. Bạn muốn sáng tạo điều gì?</p></div></article>';
+      stream.scrollTop = stream.scrollHeight;
+    }
+  };
+  const renderAIAttachments = () => {
+    const tray = aiPanel()?.querySelector("[data-ai-attachments]");
+    if (!tray) return;
+    tray.hidden = !aiPendingAttachments.length;
+    tray.innerHTML = aiPendingAttachments.map((file, index) => `<span><b>${file.mimeType.startsWith("image/") ? "Ảnh" : "TXT"}</b>${escapeHtml(file.name)}<button type="button" data-ai-remove-attachment="${index}" aria-label="Bỏ tệp">×</button></span>`).join("");
+  };
+  const loadAICenterStatus = async () => {
+    const panel = aiPanel();
+    if (!panel) return;
+    const base = String(window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
+    const token = localStorage.getItem("hh-auth-token") || "";
+    const anonymousId = creativeAnonymousId();
+    try {
+      const response = await fetch(`${base}/api/modules/ai-center/actions?anonymousId=${encodeURIComponent(anonymousId)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        cache: "no-store"
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Không kết nối được backend");
+      panel.querySelector("[data-ai-provider-state]")?.setAttribute("data-ai-provider-state", data.configured ? "online" : "local");
+      const status = panel.querySelector("[data-ai-status]");
+      const detail = panel.querySelector("[data-ai-status-detail]");
+      const pool = panel.querySelector("[data-ai-pool]");
+      if (status) status.textContent = data.configured ? "Gemini đã kết nối an toàn" : "Chế độ HH Local";
+      if (detail) detail.textContent = data.configured ? `${data.defaultModel} · server-side` : "Cần cấu hình GEMINI_API_KEYS trên Vercel";
+      if (pool) pool.textContent = data.configured ? `${data.availableKeyCount || 0}/${data.keyPoolSize || 0} key` : "LOCAL";
+      const provider = panel.querySelector("[data-ai-provider]");
+      if (provider) provider.textContent = `Provider: ${data.configured ? "Gemini" : "HH Local"}`;
+    } catch (error) {
+      panel.querySelector("[data-ai-provider-state]")?.setAttribute("data-ai-provider-state", "offline");
+      const status = panel.querySelector("[data-ai-status]");
+      const detail = panel.querySelector("[data-ai-status-detail]");
+      if (status) status.textContent = "Backend chưa phản hồi";
+      if (detail) detail.textContent = error.message;
+    }
+  };
   const aiResult = (title, text) => {
     const panel = aiPanel();
     const output = panel?.querySelector("[data-ai-result]");
@@ -1983,39 +2073,81 @@ function initSuperPlatform() {
     return [`Phân tích theo phong cách ${style}:`, "", `Bạn đang yêu cầu: “${text}”`, "", "Câu trả lời đề xuất:", "• Mục tiêu chính cần được diễn đạt bằng một kết quả cụ thể.", "• Bổ sung đối tượng sử dụng, giới hạn và định dạng đầu ra.", "• Chia yêu cầu thành các bước có thể kiểm tra độc lập.", "", "Prompt tốt hơn:", `Hãy đóng vai chuyên gia phù hợp. Thực hiện yêu cầu sau: ${text}. Trình bày rõ ràng theo từng bước, đưa ví dụ cụ thể, nêu giả định và kết thúc bằng checklist hành động.`].join("\n");
   };
   const aiSaveSession = (title, input, result) => {
-    let state = {};
-    try { state = JSON.parse(localStorage.getItem("hh-ai-center") || "{}"); } catch { state = {}; }
-    const session = { title: title || input.slice(0, 48) || "Phiên AI", input, result, time: new Date().toLocaleString("vi-VN") };
-    state.sessions = [session, ...(state.sessions || [])].slice(0, 30);
-    localStorage.setItem("hh-ai-center", JSON.stringify(state));
-    const list = aiPanel()?.querySelector("[data-ai-sessions]");
-    if (list) list.innerHTML = state.sessions.slice(0, 10).map((item, index) => `<button class="interactive" type="button" data-ai-session="${index}"><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.time)}</small></button>`).join("");
+    const state = readAIState();
+    const session = aiActiveSession(state);
+    if (title) session.title = title;
+    if (input) session.messages.push({ id: `u-${Date.now()}`, role: "user", text: input, time: new Date().toLocaleTimeString("vi-VN") });
+    if (result && !session.messages.some((message) => message.text === result)) session.messages.push({ id: `m-${Date.now()}`, role: "assistant", text: result, time: new Date().toLocaleTimeString("vi-VN"), provider: "saved" });
+    session.updatedAt = new Date().toISOString();
+    writeAIState(state);
+    renderAIConversation();
     return session;
   };
-  const aiRunChat = async (form) => {
+  const aiRunChat = async (form, overrideText = "") => {
     const panel = aiPanel();
     const input = form.querySelector("[data-ai-chat-input]");
-    const text = input?.value.trim() || "";
+    const text = overrideText || input?.value.trim() || "";
     if (!text) return input?.focus();
     const stream = panel?.querySelector("[data-ai-stream]");
     const model = panel?.querySelector("[data-ai-model]")?.value || "smart-local";
-    stream?.insertAdjacentHTML("beforeend", `<article class="ai-message user"><span>Bạn</span><div><strong>Bạn</strong><p>${escapeHtml(text)}</p></div></article><article class="ai-message assistant thinking" data-ai-thinking><span>HH</span><div><strong>Đang suy nghĩ...</strong><p>Phân tích mục tiêu và tạo câu trả lời.</p></div></article>`);
+    const state = readAIState();
+    const session = aiActiveSession(state);
+    const history = session.messages.slice(-12).map((message) => ({ role: message.role === "assistant" ? "model" : "user", text: message.text }));
+    session.title = session.messages.length ? session.title : text.slice(0, 52);
+    session.messages.push({ id: `u-${Date.now()}`, role: "user", text: `${text}${aiPendingAttachments.length ? `\n[Đính kèm: ${aiPendingAttachments.map((file) => file.name).join(", ")}]` : ""}`, time: new Date().toLocaleTimeString("vi-VN") });
+    session.updatedAt = new Date().toISOString();
+    state.model = model;
+    state.systemPrompt = panel?.querySelector("[data-ai-system-prompt]")?.value.trim() || state.systemPrompt;
+    state.creativity = Number(panel?.querySelector("[data-ai-creativity]")?.value || 72);
+    state.useGoogleSearch = Boolean(panel?.querySelector("[data-ai-google-search]")?.checked);
+    writeAIState(state);
+    renderAIConversation();
+    stream?.insertAdjacentHTML("beforeend", '<article class="ai-message assistant thinking" data-ai-thinking><span>HH</span><div><strong>Gemini đang suy nghĩ...</strong><p>Đang đọc ngữ cảnh và chuẩn bị câu trả lời.</p></div></article>');
     if (input) input.value = "";
+    aiLastPrompt = text;
     let answer = "";
-    if (model === "cloud" && REALTIME_URL) {
+    let action = null;
+    const startedAt = performance.now();
+    const stopButton = panel?.querySelector("[data-ai-stop]");
+    const sendButton = panel?.querySelector("[data-ai-send]");
+    if (stopButton) stopButton.hidden = false;
+    if (sendButton) sendButton.disabled = true;
+    if (aiIsCloudModel(model)) {
       try {
-        const token = localStorage.getItem("hh-auth-token") || "";
-        const response = await fetch(`${REALTIME_URL}/api/modules/ai-center/actions`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ input: text, actionType: "chat", meta: { model } }) });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Cloud AI không phản hồi");
-        answer = data.action?.output || aiLocalAnswer(text, "analyst");
-      } catch (error) { answer = `${aiLocalAnswer(text, "smart-local")}\n\n[Cloud AI chưa sẵn sàng: ${error.message}]`; }
+        aiActiveController?.abort();
+        aiActiveController = new AbortController();
+        action = await creativeAIRequest("ai-center", text, "chat", {
+          model,
+          history,
+          systemPrompt: state.systemPrompt,
+          creativity: state.creativity,
+          useGoogleSearch: state.useGoogleSearch,
+          attachments: aiPendingAttachments.filter((file) => file.mimeType.startsWith("image/")).map(({ name, mimeType, size, data }) => ({ name, mimeType, size, data }))
+        }, { signal: aiActiveController.signal });
+        answer = action.output || aiLocalAnswer(text, "analyst");
+      } catch (error) {
+        if (error.name === "AbortError") answer = "Đã dừng yêu cầu theo lựa chọn của bạn.";
+        else answer = `${aiLocalAnswer(text, "smart-local")}\n\n[Gemini chưa sẵn sàng, đang dùng HH Local: ${error.message}]`;
+      }
     } else answer = aiLocalAnswer(text, model);
-    const thinking = stream?.querySelector("[data-ai-thinking]");
-    if (thinking) thinking.outerHTML = `<article class="ai-message assistant"><span>HH</span><div><strong>HH AI · ${escapeHtml(model)}</strong><p>${escapeHtml(answer)}</p></div></article>`;
-    if (stream) stream.scrollTop = stream.scrollHeight;
+    const latestState = readAIState();
+    const latestSession = aiActiveSession(latestState);
+    latestSession.messages.push({ id: `m-${Date.now()}`, role: "assistant", text: answer, time: new Date().toLocaleTimeString("vi-VN"), provider: action?.provider || (aiIsCloudModel(model) ? "fallback" : "local"), sources: action?.sources || [] });
+    latestSession.updatedAt = new Date().toISOString();
+    writeAIState(latestState);
+    renderAIConversation();
     aiResult("Kết quả chat", answer);
-    aiSaveSession(text.slice(0, 48), text, answer);
+    const provider = panel?.querySelector("[data-ai-provider]");
+    const usage = panel?.querySelector("[data-ai-usage]");
+    const latency = panel?.querySelector("[data-ai-latency]");
+    if (provider) provider.textContent = `Provider: ${action?.provider || (aiIsCloudModel(model) ? "HH Local fallback" : "HH Local")}${action?.model ? ` · ${action.model}` : ""}`;
+    if (usage) usage.textContent = `Token: ${action?.usage?.totalTokenCount || action?.usage?.total_tokens || "--"}`;
+    if (latency) latency.textContent = `Độ trễ: ${Math.round(performance.now() - startedAt)}ms`;
+    if (stopButton) stopButton.hidden = true;
+    if (sendButton) sendButton.disabled = false;
+    aiActiveController = null;
+    aiPendingAttachments = [];
+    renderAIAttachments();
   };
 
   grid.addEventListener("submit", (event) => {
@@ -2025,10 +2157,25 @@ function initSuperPlatform() {
     aiRunChat(form);
   });
 
+  grid.addEventListener("keydown", (event) => {
+    if (event.target.matches("[data-ai-chat-input]") && event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      event.target.closest("[data-ai-chat-form]")?.requestSubmit();
+    }
+    if (event.target.matches("[data-ai-delete-session]") && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      event.target.click();
+    }
+  });
+
   grid.addEventListener("input", (event) => {
     if (event.target.matches("[data-ai-chat-input]")) {
       const counter = aiPanel()?.querySelector("[data-ai-char-count]");
       if (counter) counter.textContent = event.target.value.length;
+    }
+    if (event.target.matches("[data-ai-creativity]")) {
+      const label = aiPanel()?.querySelector("[data-ai-creativity-value]");
+      if (label) label.textContent = `${event.target.value}%`;
     }
     if (event.target.matches("[data-ai-search]")) {
       const query = event.target.value.toLowerCase();
@@ -2337,6 +2484,44 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
   });
 
   grid.addEventListener("change", (event) => {
+    const aiAttachment = event.target.closest("[data-ai-attach]");
+    if (aiAttachment) {
+      const files = Array.from(aiAttachment.files || []).slice(0, 4);
+      (async () => {
+        for (const file of files) {
+          if (file.type.startsWith("image/")) {
+            if (aiPendingAttachments.filter((item) => item.mimeType.startsWith("image/")).length >= 2) continue;
+            if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type) || file.size > 1_500_000) continue;
+            const dataUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result || ""));
+              reader.onerror = () => reject(reader.error || new Error("Không thể đọc ảnh."));
+              reader.readAsDataURL(file);
+            });
+            aiPendingAttachments.push({ name: file.name, mimeType: file.type, size: file.size, data: dataUrl.split(",")[1] || "" });
+          } else if (file.size <= 256_000) {
+            const input = aiPanel()?.querySelector("[data-ai-chat-input]");
+            const content = await file.text();
+            if (input) input.value = `${input.value}${input.value ? "\n\n" : ""}--- ${file.name} ---\n${content.slice(0, 12000)}`;
+            aiPendingAttachments.push({ name: file.name, mimeType: file.type || "text/plain", size: file.size, data: "" });
+          }
+        }
+        renderAIAttachments();
+        aiAttachment.value = "";
+      })().catch((error) => aiResult("Không thể đọc tệp", error.message));
+      return;
+    }
+    const aiSetting = event.target.closest("[data-ai-model],[data-ai-system-prompt],[data-ai-creativity],[data-ai-google-search]");
+    if (aiSetting) {
+      const panel = aiSetting.closest("[data-ai-center]");
+      const state = readAIState();
+      state.model = panel?.querySelector("[data-ai-model]")?.value || state.model;
+      state.systemPrompt = panel?.querySelector("[data-ai-system-prompt]")?.value.trim() || state.systemPrompt;
+      state.creativity = Number(panel?.querySelector("[data-ai-creativity]")?.value || state.creativity);
+      state.useGoogleSearch = Boolean(panel?.querySelector("[data-ai-google-search]")?.checked);
+      writeAIState(state);
+      return;
+    }
     const cloudUpload=event.target.closest("[data-cloud-upload]");if(cloudUpload){const files=Array.from(cloudUpload.files||[]).slice(0,10);(async()=>{for(const file of files){if(file.size>45000){window.alert(`${file.name} vượt giới hạn 45 KB.`);continue;}const content=await file.text();await uploadCloudText(file.name,file.type||"text/plain",content,file.size);}await loadCloudFiles();})().catch((error)=>window.alert(error.message));cloudUpload.value="";return;}
     const communityFile=event.target.closest("[data-community-file]");if(communityFile){const form=communityFile.closest("[data-community-form]");const source=Array.from(communityFile.files||[]);const selected=source.slice(0,12);const accepted=selected.filter((file)=>/^(image|video)\//.test(file.type)&&file.size<=COMMUNITY_MEDIA_LIMIT);if(accepted.length!==source.length)communityNotice(`Đã nhận ${accepted.length}/${source.length} tệp hợp lệ. Tối đa 12 ảnh/video, mỗi tệp nhỏ hơn 2,5 MB.`,"error");communityRenderComposerFiles(form,accepted);return;}
     const avatarUpload=event.target.closest("[data-user-avatar-upload]");if(avatarUpload){const file=avatarUpload.files?.[0];if(!file)return;if(file.size>1024*1024){window.alert("Ảnh avatar cần nhỏ hơn 1 MB.");return;}const reader=new FileReader();reader.onload=()=>{const state=readUserState();state.avatar=reader.result;writeUserState(state);rerenderModule("user-dashboard");};reader.readAsDataURL(file);return;}
@@ -2537,23 +2722,78 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
         input?.focus();
         return;
       }
+      const deleteSession = event.target.closest("[data-ai-delete-session]");
+      if (deleteSession) {
+        event.stopPropagation();
+        const state = readAIState();
+        state.sessions = state.sessions.filter((session) => session.id !== deleteSession.dataset.aiDeleteSession);
+        if (!state.sessions.length) state.sessions.push({ id: `ai-${Date.now()}`, title: "Cuộc trò chuyện mới", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), messages: [] });
+        if (!state.sessions.some((session) => session.id === state.activeSessionId)) state.activeSessionId = state.sessions[0].id;
+        writeAIState(state);
+        renderAIConversation();
+        return;
+      }
       if (event.target.closest("[data-ai-new]")) {
-        const stream = ai.querySelector("[data-ai-stream]");
-        if (stream) stream.innerHTML = '<article class="ai-message assistant"><span>HH</span><div><strong>HH AI Assistant</strong><p>Phiên mới đã sẵn sàng. Bạn muốn làm gì?</p></div></article>';
+        const state = readAIState();
+        const session = { id: `ai-${Date.now()}`, title: "Cuộc trò chuyện mới", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), messages: [] };
+        state.sessions.unshift(session);
+        state.activeSessionId = session.id;
+        writeAIState(state);
+        renderAIConversation();
         aiResult("Phiên mới", "Nhập yêu cầu để bắt đầu.");
         return;
       }
       if (event.target.closest("[data-ai-clear-chat]")) {
-        const stream = ai.querySelector("[data-ai-stream]");
-        if (stream) stream.innerHTML = "";
+        const state = readAIState();
+        const session = aiActiveSession(state);
+        session.messages = [];
+        session.title = "Cuộc trò chuyện mới";
+        session.updatedAt = new Date().toISOString();
+        writeAIState(state);
+        renderAIConversation();
+        return;
+      }
+      if (event.target.closest("[data-ai-stop]")) {
+        aiActiveController?.abort();
+        return;
+      }
+      const removeAttachment = event.target.closest("[data-ai-remove-attachment]");
+      if (removeAttachment) {
+        aiPendingAttachments.splice(Number(removeAttachment.dataset.aiRemoveAttachment), 1);
+        renderAIAttachments();
+        return;
+      }
+      const copyMessage = event.target.closest("[data-ai-copy-message]");
+      if (copyMessage) {
+        const message = aiActiveSession(readAIState()).messages.find((item) => item.id === copyMessage.dataset.aiCopyMessage);
+        if (message) navigator.clipboard.writeText(message.text);
+        return;
+      }
+      const regenerate = event.target.closest("[data-ai-regenerate]");
+      if (regenerate) {
+        const state = readAIState();
+        const session = aiActiveSession(state);
+        const index = session.messages.findIndex((message) => message.id === regenerate.dataset.aiRegenerate);
+        const previousUser = session.messages.slice(0, index).reverse().find((message) => message.role === "user");
+        if (previousUser) {
+          session.messages = session.messages.slice(0, Math.max(0, index));
+          writeAIState(state);
+          const form = ai.querySelector("[data-ai-chat-form]");
+          if (form) aiRunChat(form, previousUser.text.replace(/\n\[Đính kèm:.*\]$/, ""));
+        }
         return;
       }
       const sessionButton = event.target.closest("[data-ai-session]");
       if (sessionButton) {
-        let sessions = [];
-        try { sessions = JSON.parse(localStorage.getItem("hh-ai-center") || "{}").sessions || []; } catch { sessions = []; }
-        const session = sessions[Number(sessionButton.dataset.aiSession)];
-        if (session) { aiResult(session.title, session.result); const input = ai.querySelector("[data-ai-chat-input]"); if (input) input.value = session.input || ""; }
+        const state = readAIState();
+        const session = state.sessions.find((item) => item.id === sessionButton.dataset.aiSession);
+        if (session) {
+          state.activeSessionId = session.id;
+          writeAIState(state);
+          renderAIConversation();
+          const last = [...session.messages].reverse().find((message) => message.role === "assistant");
+          if (last) aiResult(session.title, last.text);
+        }
         return;
       }
       if (event.target.closest("[data-ai-example]")) {
@@ -2571,10 +2811,10 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
         const input = ai.querySelector("[data-ai-optimize-input]")?.value.trim() || "";
         if (!input) return ai.querySelector("[data-ai-optimize-input]")?.focus();
         const options = Array.from(ai.querySelectorAll("[data-ai-opt]:checked")).map((item) => item.dataset.aiOpt);
-        if (ai.querySelector("[data-ai-model]")?.value === "cloud" && REALTIME_URL) {
+        if (aiIsCloudModel(ai.querySelector("[data-ai-model]")?.value)) {
           aiResult("Đang tối ưu với Gemini 3.5", "Creative AI đang phân tích cấu trúc và ràng buộc...");
           try {
-            const action = await creativeAIRequest("ai-center", `Tối ưu prompt sau với các tiêu chí ${options.join(", ")}:\n\n${input}`, "chat", { model: "gemini-3.5-flash", mode: "prompt-optimizer" });
+            const action = await creativeAIRequest("ai-center", `Tối ưu prompt sau với các tiêu chí ${options.join(", ")}:\n\n${input}`, "chat", { model: ai.querySelector("[data-ai-model]")?.value, mode: "prompt-optimizer" });
             const scoreNode = ai.querySelector("[data-ai-score]"); if (scoreNode) scoreNode.textContent = "96";
             aiResult("Prompt tối ưu · Gemini 3.5", action.output || "");
           } catch (error) {
@@ -2599,10 +2839,10 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
         const input = ai.querySelector("[data-ai-translate-input]")?.value.trim() || "";
         const target = ai.querySelector("[data-ai-target-lang]")?.value;
         if (!input) return ai.querySelector("[data-ai-translate-input]")?.focus();
-        if (ai.querySelector("[data-ai-model]")?.value === "cloud" && REALTIME_URL) {
+        if (aiIsCloudModel(ai.querySelector("[data-ai-model]")?.value)) {
           aiResult("Đang dịch với Gemini 3.5", "Giữ nguyên ý nghĩa, tone và thuật ngữ...");
           try {
-            const action = await creativeAIRequest("ai-center", `Dịch tự nhiên sang ${target === "en" ? "English" : "Tiếng Việt"}:\n\n${input}`, "translate", { model: "gemini-3.5-flash", target });
+            const action = await creativeAIRequest("ai-center", `Dịch tự nhiên sang ${target === "en" ? "English" : "Tiếng Việt"}:\n\n${input}`, "translate", { model: ai.querySelector("[data-ai-model]")?.value, target });
             const output = ai.querySelector("[data-ai-translate-output]"); if (output) output.value = action.output || "";
             aiResult("Bản dịch Gemini 3.5", action.output || "");
           } catch (error) {
@@ -2626,10 +2866,10 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
       if (event.target.closest("[data-ai-run-workflow]")) {
         const source = ai.querySelector("[data-ai-workflow-input]")?.value.trim() || "Chưa có dữ liệu đầu vào";
         const steps = Array.from(ai.querySelectorAll("[data-ai-step]")).map((item) => item.value.trim()).filter(Boolean);
-        if (ai.querySelector("[data-ai-model]")?.value === "cloud" && REALTIME_URL) {
+        if (aiIsCloudModel(ai.querySelector("[data-ai-model]")?.value)) {
           aiResult("Workflow Gemini đang chạy", "Các bước được gửi trong một tác vụ gộp để tiết kiệm quota...");
           try {
-            const action = await creativeAIRequest("ai-center", JSON.stringify({ input: source, platform: "General", language: "Tiếng Việt", style: "Chuyên nghiệp", steps: steps.map((id) => ({ id, enabled: true })) }), "workflow", { model: "gemini-3.5-flash" });
+            const action = await creativeAIRequest("ai-center", JSON.stringify({ input: source, platform: "General", language: "Tiếng Việt", style: "Chuyên nghiệp", steps: steps.map((id) => ({ id, enabled: true })) }), "workflow", { model: ai.querySelector("[data-ai-model]")?.value });
             aiResult("Workflow Gemini hoàn tất", action.output || "");
           } catch (error) {
             aiResult("Cloud workflow chưa sẵn sàng", error.message);
@@ -4154,7 +4394,7 @@ function creativeAnonymousId() {
   return id;
 }
 
-async function creativeAIRequest(moduleId, input, actionType, meta = {}) {
+async function creativeAIRequest(moduleId, input, actionType, meta = {}, options = {}) {
   const base = String(window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
   const token = localStorage.getItem("hh-auth-token") || "";
   const cacheSeed = `${moduleId}|${actionType}|${meta.model || ""}|${input}`;
@@ -4177,7 +4417,8 @@ async function creativeAIRequest(moduleId, input, actionType, meta = {}) {
       actionType,
       meta,
       anonymousId: creativeAnonymousId()
-    })
+    }),
+    signal: options.signal
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "Creative AI chưa phản hồi.");
