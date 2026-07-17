@@ -7,7 +7,7 @@
       icon: "G",
       eyebrow: "Tìm kiếm & xem",
       title: "Google + YouTube",
-      description: "Tìm web, hình ảnh và video bằng API thật; xem bằng YouTube Player chính thức.",
+      description: "Tìm web và hình ảnh bằng Google Search Element/API chính thức; xem video bằng YouTube Player.",
       features: ["Web & hình ảnh", "Hàng đợi video", "Mini-player & PiP"],
       accent: "cyan",
       action: "search"

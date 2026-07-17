@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v115";
+const CACHE = "hh-dev-hub-v116";
 const CORE = [
   "./",
   "./index.html",
@@ -21,11 +21,11 @@ const CORE = [
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=4",
   "./auth-experience.js?v=3",
-  "./search-watch-center.css?v=4",
-  "./search-watch-center.js?v=6",
+  "./search-watch-center.css?v=5",
+  "./search-watch-center.js?v=7",
   "./youtube-pip.html",
   "./communication-overview.css?v=1",
-  "./communication-overview.js?v=1",
+  "./communication-overview.js?v=2",
   "./creative-suite.css?v=5",
   "./ai-center-pro.css?v=1",
   "./sidebar-navigation-pro.css?v=3",
@@ -58,7 +58,7 @@ const CORE = [
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
   "./english-learning.js?v=9",
-  "./config.js?v=6",
+  "./config.js?v=7",
   "./data/ai-super-platform-modules.json"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));

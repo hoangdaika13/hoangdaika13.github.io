@@ -193,6 +193,17 @@ body.search-watch-open { overflow: hidden; }
 .swh-service-error p { max-width: 760px; margin: 0; color: #c1b3a4; font-size: 11px; line-height: 1.7; }
 .swh-service-error > div { display: flex; gap: 8px; margin-top: 15px; }
 .swh-service-error button, .swh-service-error a { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border: 1px solid #826343; border-radius: 6px; background: #282018; color: #f0cb80; font: 800 10px inherit; text-decoration: none; cursor: pointer; }
+.swh-results.swh-free-google-results { display: block; }
+.swh-google-free-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 8px 0 12px; padding: 13px 15px; border: 1px solid rgba(104, 230, 163, .35); border-radius: 8px; background: linear-gradient(110deg, rgba(39, 113, 91, .22), rgba(33, 93, 116, .17), rgba(83, 45, 95, .17)); box-shadow: inset 0 1px rgba(255,255,255,.04), 0 10px 30px rgba(0,0,0,.16); }
+.swh-google-free-banner div { display: grid; gap: 3px; }
+.swh-google-free-banner b { color: #9df1be; font-size: 12px; }
+.swh-google-free-banner span { color: #9cabb9; font-size: 10px; }
+.swh-google-free-banner a { display: inline-flex; align-items: center; min-height: 34px; flex: 0 0 auto; padding: 0 12px; border: 1px solid rgba(92, 231, 239, .35); border-radius: 6px; background: rgba(14, 27, 38, .85); color: var(--swh-cyan); font-size: 10px; font-weight: 800; text-decoration: none; }
+.swh-google-cse-host { width: 100%; min-width: 0; min-height: 300px; overflow-x: hidden; overflow-y: auto; padding: 10px; border: 1px solid rgba(151, 187, 215, .24); border-radius: 8px; background: #fff; color: #202124; color-scheme: light; }
+.swh-google-cse-host .gsc-control-cse { width: 100%; min-width: 0; padding: 0; border: 0; font-family: Arial, sans-serif; }
+.swh-google-cse-host .gsc-results-wrapper-overlay { position: static !important; inset: auto !important; width: 100% !important; height: auto !important; min-height: 260px; margin: 0 !important; overflow: visible !important; border: 0 !important; box-shadow: none !important; opacity: 1 !important; visibility: visible !important; }
+.swh-google-cse-host .gsc-results-close-btn, .search-watch-hub .gsc-modal-background-image { display: none !important; }
+.swh-google-cse-host .gsc-webResult, .swh-google-cse-host .gsc-imageResult, .swh-google-cse-host .gsc-results { width: 100% !important; max-width: 100% !important; }
 
 .swh-player-shell { margin: 18px 0; overflow: hidden; border: 1px solid rgba(255, 89, 103, .35); border-radius: 8px; background: #090d13; box-shadow: 0 18px 45px rgba(0,0,0,.3), 0 0 25px rgba(255,89,103,.05); }
 .swh-player { width: 100%; aspect-ratio: 16 / 9; background: #000; }
@@ -374,6 +385,8 @@ body.search-watch-open { overflow: hidden; }
   .swh-google-result { grid-template-columns: minmax(0, 1fr); }
   .swh-google-result img { width: 100%; height: 150px; }
   .swh-service-error > div { align-items: stretch; flex-direction: column; }
+  .swh-google-free-banner { align-items: stretch; flex-direction: column; }
+  .swh-google-free-banner a { justify-content: center; }
   .swh-filterbar label { min-height: 34px; }
 }
 

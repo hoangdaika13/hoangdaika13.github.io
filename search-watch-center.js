@@ -2,6 +2,7 @@
   "use strict";
 
   const API_BASE = String(window.HH_REALTIME_URL || "").replace(/\/$/, "");
+  const GOOGLE_FREE_CSE_ID = String(window.HH_GOOGLE_CSE_ID || "").trim();
   const STORAGE = {
     recent: "hh.search-watch.youtube-recent",
     favorites: "hh.search-watch.youtube-favorites",
@@ -15,6 +16,8 @@
     busy: false,
     googleKind: "web",
     googlePage: 1,
+    googleMode: "auto",
+    googleCseRenderId: 0,
     youtubePageToken: "",
     youtubeNextToken: "",
     youtubePreviousToken: "",
@@ -35,6 +38,7 @@
   let playerNode;
   let playerAnchor;
   let floatingDock;
+  let googleCsePromise;
 
   function readStore(key) {
     try {
@@ -62,7 +66,8 @@
     writeStore(STORAGE.preferences, {
       privacyShield: state.privacyShield,
       autoplayQueue: state.autoplayQueue,
-      playerRate: state.playerRate
+      playerRate: state.playerRate,
+      googleMode: state.googleMode
     });
   }
 
@@ -403,7 +408,7 @@
             </section>
           </main>
         </div>
-        <footer class="swh-footer"><span><i></i> HH secure server proxy</span><p>Google và YouTube là dịch vụ của Google LLC. HH sử dụng API và trình phát nhúng chính thức.</p><div><kbd>Alt G</kbd><kbd>Alt Y</kbd><kbd>Esc</kbd></div></footer>
+        <footer class="swh-footer"><span><i></i> HH secure server proxy</span><p>Google và YouTube là dịch vụ của Google LLC. HH sử dụng Search Element/API và trình phát nhúng chính thức.</p><div><kbd>Alt G</kbd><kbd>Alt Y</kbd><kbd>Esc</kbd></div></footer>
       </div>`;
     document.body.appendChild(root);
     playerNode = root.querySelector("[data-youtube-player]");
@@ -450,20 +455,39 @@
     const pills = [...root.querySelectorAll("[data-service]")];
     pills.forEach((pill) => { pill.className = "swh-api-pill checking"; pill.title = "Đang kiểm tra cấu hình"; });
     if (!API_BASE) {
-      pills.forEach((pill) => { pill.className = "swh-api-pill offline"; pill.title = "Chưa khai báo địa chỉ backend"; });
+      pills.forEach((pill) => {
+        if (pill.dataset.service === "google" && GOOGLE_FREE_CSE_ID) setServicePill(pill, true, "Google Free", "Google Programmable Search miễn phí đã sẵn sàng");
+        else setServicePill(pill, false, pill.dataset.service === "youtube" ? "YouTube API" : "Google API", "Chưa khai báo địa chỉ backend");
+      });
       return;
     }
     try {
       const response = await fetch(`${API_BASE}/api/search/google?health=1`, { headers: { Accept: "application/json" } });
       const data = await response.json();
       pills.forEach((pill) => {
+        if (pill.dataset.service === "google" && GOOGLE_FREE_CSE_ID) {
+          const backend = Boolean(data.services?.google);
+          setServicePill(pill, true, "Google Free", backend
+            ? "Chế độ miễn phí sẵn sàng; backend sẽ được thử trước khi tự chuyển chế độ"
+            : "Google Programmable Search miễn phí đã sẵn sàng");
+          return;
+        }
         const online = Boolean(data.services?.[pill.dataset.service]);
-        pill.className = `swh-api-pill ${online ? "online" : "offline"}`;
-        pill.title = online ? "API đã sẵn sàng" : "API chưa có biến môi trường trên Vercel";
+        setServicePill(pill, online, pill.dataset.service === "youtube" ? "YouTube API" : "Google API", online ? "API đã sẵn sàng" : "API chưa có biến môi trường trên Vercel");
       });
     } catch {
-      pills.forEach((pill) => { pill.className = "swh-api-pill offline"; pill.title = "Không kết nối được backend"; });
+      pills.forEach((pill) => {
+        if (pill.dataset.service === "google" && GOOGLE_FREE_CSE_ID) setServicePill(pill, true, "Google Free", "Google Programmable Search miễn phí đã sẵn sàng");
+        else setServicePill(pill, false, pill.dataset.service === "youtube" ? "YouTube API" : "Google API", "Không kết nối được backend");
+      });
     }
+  }
+
+  function setServicePill(pill, online, label, title) {
+    const dot = document.createElement("i");
+    pill.replaceChildren(dot, document.createTextNode(` ${label}`));
+    pill.className = `swh-api-pill ${online ? "online" : "offline"}`;
+    pill.title = title;
   }
 
   function setLoading(provider, loading, message = "") {
@@ -519,6 +543,112 @@
     return data;
   }
 
+  function canUseFreeGoogle(error) {
+    if (!GOOGLE_FREE_CSE_ID) return false;
+    if (["SEARCH_NOT_CONFIGURED", "API_ACCESS_DENIED", "VERTEX_IMAGE_SEARCH_UNSUPPORTED"].includes(error?.code)) return true;
+    return /custom search json api|does not have (?:the )?access|chưa được kết nối/i.test(String(error?.message || ""));
+  }
+
+  function loadGoogleCse() {
+    if (!GOOGLE_FREE_CSE_ID) return Promise.reject(Object.assign(new Error("Chưa khai báo Google Search Engine ID."), { code: "GOOGLE_CSE_NOT_CONFIGURED" }));
+    if (window.google?.search?.cse?.element) return Promise.resolve(window.google.search.cse.element);
+    if (googleCsePromise) return googleCsePromise;
+
+    googleCsePromise = new Promise((resolve, reject) => {
+      let settled = false;
+      let poll;
+      let timeout;
+      const finish = (error) => {
+        if (settled) return;
+        settled = true;
+        clearInterval(poll);
+        clearTimeout(timeout);
+        if (error) reject(error);
+        else resolve(window.google.search.cse.element);
+      };
+      poll = setInterval(() => {
+        if (window.google?.search?.cse?.element) finish();
+      }, 80);
+      timeout = setTimeout(() => finish(Object.assign(new Error("Google Search miễn phí phản hồi quá chậm."), { code: "GOOGLE_CSE_TIMEOUT" })), 12000);
+
+      window.__gcse = { ...(window.__gcse || {}), parsetags: "explicit" };
+      let script = document.querySelector("script[data-hh-google-cse]");
+      if (!script) {
+        script = document.createElement("script");
+        script.async = true;
+        script.dataset.hhGoogleCse = "true";
+        script.src = `https://cse.google.com/cse.js?cx=${encodeURIComponent(GOOGLE_FREE_CSE_ID)}`;
+        document.head.append(script);
+      }
+      script.addEventListener("error", () => finish(Object.assign(new Error("Không tải được Google Programmable Search. Hãy kiểm tra kết nối hoặc trình chặn nội dung."), { code: "GOOGLE_CSE_LOAD_FAILED" })), { once: true });
+    }).catch((error) => {
+      googleCsePromise = null;
+      throw error;
+    });
+    return googleCsePromise;
+  }
+
+  function freeGoogleQuery(query) {
+    const parts = [query];
+    const file = root.querySelector("[data-google-file]").value;
+    const site = root.querySelector("[data-google-site]").value.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    if (state.googleKind === "web" && file) parts.push(`filetype:${file}`);
+    if (site) parts.push(`site:${site}`);
+    return parts.join(" ");
+  }
+
+  async function renderFreeGoogleSearch(query) {
+    const results = root.querySelector('[data-results="google"]');
+    results.replaceChildren();
+    results.className = "swh-results swh-free-google-results";
+    root.querySelector("[data-google-pager]").hidden = true;
+
+    const notice = document.createElement("div");
+    notice.className = "swh-google-free-banner";
+    const noticeCopy = document.createElement("div");
+    noticeCopy.innerHTML = "<b>Google miễn phí đang hoạt động</b><span>Không cần API key · có thể có quảng cáo · tìm trong các miền đã cấu hình</span>";
+    const openFull = document.createElement("a");
+    openFull.target = "_blank";
+    openFull.rel = "noopener";
+    openFull.href = `${state.googleKind === "images" ? "https://www.google.com/search?tbm=isch&q=" : "https://www.google.com/search?q="}${encodeURIComponent(freeGoogleQuery(query))}`;
+    openFull.textContent = "Tìm toàn Google ↗";
+    notice.append(noticeCopy, openFull);
+
+    const host = document.createElement("div");
+    host.className = "swh-google-cse-host";
+    host.id = `hhGoogleCse${++state.googleCseRenderId}`;
+    results.append(notice, host);
+    root.querySelector("[data-google-meta]").textContent = "Đang dùng Google Programmable Search Element miễn phí.";
+
+    try {
+      const cse = await loadGoogleCse();
+      const gname = `hh-free-google-${state.googleCseRenderId}`;
+      cse.render({
+        div: host,
+        tag: "searchresults-only",
+        gname,
+        attributes: {
+          linkTarget: "_blank",
+          resultSetSize: "filtered_cse",
+          safeSearch: root.querySelector("[data-google-safe]").checked ? "active" : "off",
+          enableImageSearch: true,
+          defaultToImageSearch: state.googleKind === "images",
+          imageSearchLayout: "column",
+          noResultsString: "Không tìm thấy kết quả phù hợp."
+        }
+      });
+      const element = cse.getElement(gname);
+      if (!element) throw Object.assign(new Error("Google Search Element chưa khởi tạo được."), { code: "GOOGLE_CSE_RENDER_FAILED" });
+      element.execute(freeGoogleQuery(query));
+      state.googleMode = "free-cse";
+      savePreferences();
+      const pill = root.querySelector('[data-service="google"]');
+      if (pill) setServicePill(pill, true, "Google Free", "Google Programmable Search miễn phí đang hoạt động");
+    } catch (error) {
+      renderError("google", query, error);
+    }
+  }
+
   async function runSearch(provider, rawQuery, options = {}) {
     const query = String(rawQuery || "").trim().slice(0, 180);
     if (!query || state.busy) return;
@@ -538,11 +668,16 @@
     rememberSearch(provider, query);
     setLoading(provider, true, `Đang tìm “${query}”...`);
     try {
+      if (provider === "google" && state.googleMode === "free-cse") {
+        await renderFreeGoogleSearch(query);
+        return;
+      }
       const data = await fetchSearch(provider, query);
       if (provider === "google") renderGoogle(data);
       else renderYouTube(data);
     } catch (error) {
-      renderError(provider, query, error);
+      if (provider === "google" && canUseFreeGoogle(error)) await renderFreeGoogleSearch(query);
+      else renderError(provider, query, error);
     } finally {
       setLoading(provider, false);
     }
@@ -567,6 +702,13 @@
     retry.type = "button";
     retry.textContent = "Thử lại";
     retry.addEventListener("click", () => runSearch(provider, query));
+    if (provider === "google" && GOOGLE_FREE_CSE_ID && error.code !== "GOOGLE_CSE_LOAD_FAILED") {
+      const free = document.createElement("button");
+      free.type = "button";
+      free.textContent = "Dùng Google miễn phí";
+      free.addEventListener("click", () => renderFreeGoogleSearch(query));
+      actions.append(free);
+    }
     const external = document.createElement("a");
     external.target = "_blank";
     external.rel = "noopener";
@@ -1127,6 +1269,7 @@
     state.privacyShield = preferences.privacyShield !== false;
     state.autoplayQueue = preferences.autoplayQueue === true;
     state.playerRate = [0.5, 0.75, 1, 1.25, 1.5, 2].includes(Number(preferences.playerRate)) ? Number(preferences.playerRate) : 1;
+    state.googleMode = preferences.googleMode === "free-cse" && GOOGLE_FREE_CSE_ID ? "free-cse" : "auto";
     createHub();
     wireLaunchers();
     window.HHSearchWatch = {
