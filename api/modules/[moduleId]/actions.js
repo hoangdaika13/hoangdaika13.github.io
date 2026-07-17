@@ -18,6 +18,7 @@ const downloadHosts = [
   "instagram.com", "twitter.com", "x.com", "reddit.com", "vimeo.com",
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
+const downloadCapabilities = ["single", "collection", "channel"];
 const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation"]);
 const allowedModels = new Set(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
 const contentPackSchema = {
@@ -127,7 +128,9 @@ async function downloadCenterAction(req, res) {
   if (req.method === "GET") {
     return res.status(200).json({
       configured: Boolean(process.env.VIDEO_DOWNLOADER_API_URL),
-      providers: downloadHosts
+      providers: downloadHosts,
+      capabilities: downloadCapabilities,
+      policy: "Only public media you own or are authorized to save. No DRM, private content, paywall or access-control bypass."
     });
   }
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -136,6 +139,9 @@ async function downloadCenterAction(req, res) {
   const body = bodyOf(req);
   if (!supportedDownloadUrl(body.url)) {
     return res.status(400).json({ error: "Liên kết không hợp lệ hoặc nền tảng chưa được hỗ trợ." });
+  }
+  if (body.ownershipConfirmed !== true) {
+    return res.status(400).json({ error: "Confirm authorization to save this media before creating a download request." });
   }
   const endpoint = String(process.env.VIDEO_DOWNLOADER_API_URL || "").replace(/\/$/, "");
   if (!endpoint) {
@@ -164,6 +170,8 @@ async function downloadCenterAction(req, res) {
         audioBitrate: ["320", "256", "128"].includes(String(body.audioBitrate))
           ? String(body.audioBitrate)
           : "128",
+        sourceKind: downloadCapabilities.includes(String(body.sourceKind)) ? String(body.sourceKind) : "single",
+        ownershipConfirmed: true,
         filenameStyle: "pretty",
         youtubeVideoContainer: "mp4"
       }),

@@ -1459,43 +1459,35 @@ function initSuperPlatform() {
         <strong>${escapeHtml(item.title || item.url)}</strong>
         <small>${escapeHtml(item.time || "")}</small>
       </button>`).join("");
+    const platforms = [["YouTube", "YT"], ["TikTok", "TT"], ["Facebook", "f"], ["Instagram", "IG"], ["X / Twitter", "X"], ["Reddit", "R"], ["Vimeo", "V"], ["SoundCloud", "SC"], ["Twitch", "TW"], ["Pinterest", "P"]];
     return `
-      <section class="social-downloader" data-social-downloader>
-        <div class="downloader-hero">
-          <div>
-            <p class="section-kicker">HH Social Downloader</p>
-            <h4>Tải media từ liên kết</h4>
-            <span>Dán link công khai, chọn MP4/MP3 và chất lượng. Chỉ tải nội dung bạn sở hữu hoặc được phép sử dụng.</span>
-          </div>
-          <div class="downloader-live"><i></i><strong data-download-service>Đang kiểm tra</strong><span>dịch vụ tải</span></div>
+      <section class="social-downloader downloader-pro" data-social-downloader>
+        <header class="downloader-hero">
+          <div class="downloader-hero-copy"><p class="section-kicker">HH DOWNLOAD CENTER · 03</p><h4>Media Delivery Studio</h4><span>Nhận liên kết công khai, kiểm tra nguồn và đưa media bạn có quyền sử dụng vào một hàng đợi gọn gàng.</span><div class="downloader-hero-pills"><b><i></i> Kiểm tra nguồn</b><b>MP4 · MP3 · M4A</b><b>Queue riêng tư</b></div></div>
+          <div class="downloader-live" data-download-service-card><i></i><div><small>DOWNLOAD ENGINE</small><strong data-download-service>Đang kiểm tra</strong><span data-download-service-note>Đang kết nối dịch vụ</span></div></div>
+        </header>
+        <section class="downloader-platform-ribbon" aria-label="Các nền tảng liên kết công khai được nhận diện">
+          <div><span>NỀN TẢNG</span><strong>Nhận diện link nhanh</strong></div><div class="downloader-platforms">${platforms.map(([name, mark]) => `<button class="interactive" type="button" data-download-platform="${name}" title="Dùng mẫu link ${name}"><b>${mark}</b><span>${name}</span></button>`).join("")}</div>
+        </section>
+        <div class="downloader-main-grid">
+          <form class="downloader-form downloader-control-deck" data-download-form>
+            <div class="download-step"><b>01</b><div><span>Nguồn hợp lệ</span><strong>Liên kết media công khai</strong></div></div>
+            <label class="download-url-field"><span>URL video, bài đăng, playlist hoặc kênh</span><div><input data-download-url type="url" inputmode="url" autocomplete="url" placeholder="Dán liên kết từ nền tảng được hỗ trợ..." required><button class="interactive" type="button" data-download-paste>Dán</button></div></label>
+            <div class="download-source-type" role="group" aria-label="Loại nguồn tải"><button class="active interactive" type="button" data-download-source="single">Một bài</button><button class="interactive" type="button" data-download-source="collection">Playlist / album</button><button class="interactive" type="button" data-download-source="channel">Kênh của tôi</button></div>
+            <input data-download-source-kind type="hidden" value="single">
+            <div class="download-options">
+              <label>Định dạng<select data-download-mode><option value="auto">MP4 video</option><option value="audio">MP3 âm thanh</option><option value="mute">Video không tiếng</option></select></label>
+              <label>Chất lượng<select data-download-quality><option value="max">Tốt nhất có sẵn</option><option value="2160">4K / 2160p</option><option value="1080" selected>Full HD / 1080p</option><option value="720">HD / 720p</option><option value="480">480p</option><option value="360">360p</option></select></label>
+              <label>Âm thanh<select data-download-audio><option value="320">320 kbps</option><option value="256">256 kbps</option><option value="128" selected>128 kbps</option></select></label>
+            </div>
+            <label class="download-rights"><input data-download-consent type="checkbox" required><span><b>Tôi xác nhận</b> mình sở hữu hoặc có quyền lưu nội dung này; không dùng để vượt DRM, nội dung riêng tư hay giới hạn của nền tảng.</span></label>
+            <div class="download-primary-actions"><button class="button ghost interactive" type="button" data-download-analyze>Kiểm tra link</button><button class="button primary interactive" type="submit" data-download-submit>Thêm vào hàng đợi <i>→</i></button></div>
+          </form>
+          <article class="download-preview downloader-inspector" data-download-preview><div class="download-placeholder"><span>URL</span><strong>Sẵn sàng kiểm tra nguồn</strong><p>Dán một liên kết để xem nền tảng, phạm vi nguồn và lựa chọn tải phù hợp.</p></div></article>
         </div>
-        <div class="downloader-platforms" aria-label="Nền tảng hỗ trợ">
-          ${["YouTube", "TikTok", "Facebook", "Instagram", "X / Twitter", "Reddit", "Vimeo", "SoundCloud"].map((name) => `<span>${name}</span>`).join("")}
-        </div>
-        <form class="downloader-form" data-download-form>
-          <label class="download-url-field">
-            <span>Liên kết video / bài đăng</span>
-            <div><input data-download-url type="url" inputmode="url" autocomplete="url" placeholder="https://www.youtube.com/watch?v=..." required><button class="interactive" type="button" data-download-paste>Dán</button></div>
-          </label>
-          <div class="download-options">
-            <label>Định dạng<select data-download-mode><option value="auto">MP4 video</option><option value="audio">MP3 âm thanh</option><option value="mute">Video không tiếng</option></select></label>
-            <label>Chất lượng<select data-download-quality><option value="max">Tốt nhất</option><option value="2160">4K / 2160p</option><option value="1080" selected>Full HD / 1080p</option><option value="720">HD / 720p</option><option value="480">480p</option><option value="360">360p</option></select></label>
-            <label>Âm thanh<select data-download-audio><option value="320">320 kbps</option><option value="256">256 kbps</option><option value="128" selected>128 kbps</option></select></label>
-            <label class="download-check"><input data-download-playlist type="checkbox"><span>Tải playlist / album</span></label>
-          </div>
-          <div class="download-primary-actions">
-            <button class="button ghost interactive" type="button" data-download-analyze>Kiểm tra link</button>
-            <button class="button primary interactive" type="submit" data-download-submit>Tạo bản tải</button>
-          </div>
-        </form>
         <div class="downloader-workspace">
-          <article class="download-preview" data-download-preview>
-            <div class="download-placeholder"><span>URL</span><strong>Dán một liên kết để bắt đầu</strong><p>Trang sẽ nhận diện nền tảng và chuẩn bị lựa chọn tải phù hợp.</p></div>
-          </article>
-          <aside class="download-queue">
-            <header><div><span>Hàng đợi</span><strong data-download-count>0 mục</strong></div><button class="interactive" type="button" data-download-clear>Xóa lịch sử</button></header>
-            <div data-download-history>${historyMarkup || "<p>Chưa có lượt tải trên thiết bị này.</p>"}</div>
-          </aside>
+          <aside class="download-queue"><header><div><span>HÀNG ĐỢI THIẾT BỊ</span><strong data-download-count>${history.length} mục</strong></div><button class="interactive" type="button" data-download-clear>Xóa lịch sử</button></header><div data-download-history>${historyMarkup || "<p>Chưa có lượt tải trên thiết bị này.</p>"}</div></aside>
+          <section class="download-safety-panel"><div><span>QUYỀN SỬ DỤNG</span><strong>Luồng tải có kiểm soát</strong><p>Tải trực tiếp chỉ được mở khi Download Engine được cấu hình. Kênh/playlist phải là nội dung bạn quản lý hoặc được ủy quyền.</p></div><button class="interactive" type="button" data-download-config>Hướng dẫn cấu hình</button><a class="interactive" href="#/work/cloud-storage">Lưu tệp vào Cloud Storage ↗</a></section>
         </div>
       </section>`;
   };
@@ -2390,6 +2382,10 @@ function initSuperPlatform() {
       if (host.includes("reddit")) return "Reddit";
       if (host.includes("vimeo")) return "Vimeo";
       if (host.includes("soundcloud")) return "SoundCloud";
+      if (host.includes("twitch")) return "Twitch";
+      if (host.includes("pinterest")) return "Pinterest";
+      if (host.includes("tumblr")) return "Tumblr";
+      if (host.includes("bilibili")) return "Bilibili";
       return host.replace(/^www\./, "");
     } catch { return "Link chưa hợp lệ"; }
   };
@@ -2417,27 +2413,31 @@ function initSuperPlatform() {
   };
   const checkDownloadService = async () => {
     const status = downloadPanel()?.querySelector("[data-download-service]");
+    const note = downloadPanel()?.querySelector("[data-download-service-note]");
     if (!status) return;
-    if (!REALTIME_URL) { status.textContent = "Chưa kết nối"; return; }
+    if (!REALTIME_URL) { status.textContent = "Chưa kết nối"; if (note) note.textContent = "Thiếu URL backend"; return; }
     try {
       const response = await fetch(`${REALTIME_URL}/api/modules/download-center/actions`, { cache: "no-store" });
       const data = await response.json();
-      status.textContent = data.configured ? "Sẵn sàng" : "Chờ cấu hình";
+      status.textContent = data.configured ? "Sẵn sàng nhận việc" : "Cần Download Engine";
+      if (note) note.textContent = data.configured ? `${data.providers?.length || 0} nguồn được nhận diện` : "Cần VIDEO_DOWNLOADER_API_URL";
       status.closest(".downloader-live")?.classList.toggle("ready", Boolean(data.configured));
-    } catch { status.textContent = "Mất kết nối"; }
+    } catch { status.textContent = "Mất kết nối"; if (note) note.textContent = "Không thể kiểm tra backend"; }
   };
-  const analyzeDownloadUrl = (value) => {
+  const analyzeDownloadUrl = (value, sourceKind = "single") => {
     const platform = downloadPlatformOf(value);
     if (!/^https?:\/\//i.test(value) || platform === "Link chưa hợp lệ") {
       showDownloadPreview('<div class="download-result error"><span>Lỗi URL</span><strong>Liên kết chưa hợp lệ</strong><p>Hãy dán đầy đủ link bắt đầu bằng https://</p></div>', "error");
       return false;
     }
-    showDownloadPreview(`<div class="download-result ready"><span>${escapeHtml(platform)}</span><strong>Đã nhận diện liên kết</strong><p>${escapeHtml(value)}</p><div class="download-result-actions"><a class="interactive" href="${escapeHtml(value)}" target="_blank" rel="noopener">Mở bài gốc</a><button class="interactive" type="button" data-download-copy="${escapeHtml(value)}">Sao chép link</button></div></div>`, "ready");
+    const scope = { single: "một bài đăng", collection: "playlist / album", channel: "kênh hoặc hồ sơ" }[sourceKind] || "nguồn đã chọn";
+    showDownloadPreview(`<div class="download-result ready"><span>${escapeHtml(platform)}</span><strong>Nguồn đã được nhận diện</strong><p>${escapeHtml(value)}</p><dl class="download-inspector-data"><div><dt>Loại nguồn</dt><dd>${scope}</dd></div><div><dt>Trạng thái</dt><dd>Chờ xác minh quyền tải</dd></div><div><dt>Đầu ra</dt><dd>MP4 / MP3 theo lựa chọn</dd></div></dl><div class="download-result-actions"><a class="interactive" href="${escapeHtml(value)}" target="_blank" rel="noopener">Mở bài gốc</a><button class="interactive" type="button" data-download-copy="${escapeHtml(value)}">Sao chép link</button></div></div>`, "ready");
     return true;
   };
   const requestDownload = async (form) => {
     const url = form.querySelector("[data-download-url]")?.value.trim() || "";
-    if (!analyzeDownloadUrl(url)) return;
+    const sourceKind = form.querySelector("[data-download-source-kind]")?.value || "single";
+    if (!analyzeDownloadUrl(url, sourceKind)) return;
     const submit = form.querySelector("[data-download-submit]");
     if (submit) { submit.disabled = true; submit.textContent = "Đang xử lý..."; }
     showDownloadPreview('<div class="download-loading"><i></i><strong>Đang chuẩn bị bản tải</strong><p>Máy chủ đang kiểm tra media và định dạng phù hợp...</p></div>', "loading");
@@ -2452,7 +2452,8 @@ function initSuperPlatform() {
           downloadMode: form.querySelector("[data-download-mode]")?.value,
           videoQuality: form.querySelector("[data-download-quality]")?.value,
           audioBitrate: form.querySelector("[data-download-audio]")?.value,
-          playlist: Boolean(form.querySelector("[data-download-playlist]")?.checked)
+          sourceKind,
+          ownershipConfirmed: Boolean(form.querySelector("[data-download-consent]")?.checked)
         })
       });
       const data = await response.json().catch(() => ({}));
@@ -2460,11 +2461,11 @@ function initSuperPlatform() {
       const candidates = data.status === "picker" ? (data.picker || []) : [{ url: data.url, filename: data.filename }];
       const links = candidates.filter((item) => item?.url).slice(0, 20);
       if (!links.length) throw new Error("Máy chủ chưa trả về tệp có thể tải.");
-      showDownloadPreview(`<div class="download-result success"><span>Đã sẵn sàng</span><strong>${links.length > 1 ? `${links.length} tệp trong bộ sưu tập` : escapeHtml(links[0].filename || "Media đã xử lý")}</strong><p>Liên kết có thể hết hạn, hãy tải ngay.</p><div class="download-file-list">${links.map((item, index) => `<a class="interactive" href="${escapeHtml(item.url)}" target="_blank" rel="noopener" download>${escapeHtml(item.filename || `Tải tệp ${index + 1}`)}</a>`).join("")}</div></div>`, "success");
+      showDownloadPreview(`<div class="download-result success"><span>Đã sẵn sàng</span><strong>${links.length > 1 ? `${links.length} tệp trong bộ sưu tập` : escapeHtml(links[0].filename || "Media đã xử lý")}</strong><p>Liên kết có thể hết hạn, hãy tải ngay. Tệp do Download Engine cung cấp.</p><div class="download-file-list">${links.map((item, index) => `<a class="interactive" href="${escapeHtml(item.url)}" target="_blank" rel="noopener" download>${escapeHtml(item.filename || `Tải tệp ${index + 1}`)}</a>`).join("")}</div></div>`, "success");
       const history = [{ url, platform: downloadPlatformOf(url), title: links[0].filename || "Media", time: new Date().toLocaleString("vi-VN") }, ...downloadHistory().filter((item) => item.url !== url)];
       updateDownloadHistory(history);
     } catch (error) {
-      showDownloadPreview(`<div class="download-result error"><span>Chưa thể tải</span><strong>${escapeHtml(error.message)}</strong><p>Download Center đã hoạt động, nhưng cần cấu hình máy chủ tải media chuyên dụng để xử lý video.</p><div class="download-result-actions"><a class="interactive" href="https://cobalt.tools/" target="_blank" rel="noopener">Mở trình tải dự phòng</a><button class="interactive" type="button" data-download-retry>Thử lại</button></div></div>`, "error");
+      showDownloadPreview(`<div class="download-result error"><span>Chưa thể tải</span><strong>${escapeHtml(error.message)}</strong><p>Hãy kiểm tra quyền sử dụng và cấu hình Download Engine. HH không bỏ qua DRM, đăng nhập, paywall hoặc giới hạn nền tảng.</p><div class="download-result-actions"><button class="interactive" type="button" data-download-config>Hướng dẫn cấu hình</button><button class="interactive" type="button" data-download-retry>Thử lại</button></div></div>`, "error");
     } finally {
       if (submit) { submit.disabled = false; submit.textContent = "Tạo bản tải"; }
     }
@@ -2889,16 +2890,22 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
       const form = panel.querySelector("[data-download-form]");
       const urlInput = panel.querySelector("[data-download-url]");
       if (event.target.closest("[data-download-paste]")) {
-        navigator.clipboard.readText().then((text) => { if (urlInput) { urlInput.value = text.trim(); analyzeDownloadUrl(urlInput.value); } }).catch(() => urlInput?.focus());
+        navigator.clipboard.readText().then((text) => { if (urlInput) { urlInput.value = text.trim(); analyzeDownloadUrl(urlInput.value, form?.querySelector("[data-download-source-kind]")?.value); } }).catch(() => urlInput?.focus());
         return;
       }
-      if (event.target.closest("[data-download-analyze]")) { analyzeDownloadUrl(urlInput?.value.trim() || ""); return; }
+      const sourceButton = event.target.closest("[data-download-source]");
+      if (sourceButton) { panel.querySelectorAll("[data-download-source]").forEach((item) => item.classList.toggle("active", item === sourceButton)); const kind = sourceButton.dataset.downloadSource || "single"; const sourceField = form?.querySelector("[data-download-source-kind]"); if (sourceField) sourceField.value = kind; analyzeDownloadUrl(urlInput?.value.trim() || "", kind); return; }
+      const platformButton = event.target.closest("[data-download-platform]");
+      if (platformButton) { const platform = platformButton.dataset.downloadPlatform || "nền tảng"; if (urlInput) { urlInput.placeholder = `Dán link ${platform} công khai...`; urlInput.focus(); } return; }
+      if (event.target.closest("[data-download-analyze]")) { analyzeDownloadUrl(urlInput?.value.trim() || "", form?.querySelector("[data-download-source-kind]")?.value); return; }
       if (event.target.closest("[data-download-retry]")) { if (form) requestDownload(form); return; }
+      if (event.target.closest("[data-download-config]")) { showDownloadPreview('<div class="download-result ready"><span>Cấu hình</span><strong>Kết nối Download Engine</strong><p>Trên Vercel, thêm <code>VIDEO_DOWNLOADER_API_URL</code> trỏ đến dịch vụ xử lý media do bạn quản lý và (nếu cần) <code>VIDEO_DOWNLOADER_API_KEY</code>. Dịch vụ phải chỉ xử lý URL công khai, kiểm tra quyền sử dụng và trả JSON gồm <code>url</code>, <code>filename</code> hoặc <code>picker</code>.</p><div class="download-result-actions"><button class="interactive" type="button" data-download-copy-config>Sao chép tên biến</button><a class="interactive" href="https://vercel.com/docs/environment-variables" target="_blank" rel="noopener">Mở Vercel</a></div></div>', "ready"); return; }
       const historyButton = event.target.closest("[data-download-history-url]");
-      if (historyButton) { if (urlInput) urlInput.value = historyButton.dataset.downloadHistoryUrl; analyzeDownloadUrl(historyButton.dataset.downloadHistoryUrl); return; }
+      if (historyButton) { if (urlInput) urlInput.value = historyButton.dataset.downloadHistoryUrl; analyzeDownloadUrl(historyButton.dataset.downloadHistoryUrl, form?.querySelector("[data-download-source-kind]")?.value); return; }
       if (event.target.closest("[data-download-clear]")) { updateDownloadHistory([]); return; }
       const copyButton = event.target.closest("[data-download-copy]");
       if (copyButton) { navigator.clipboard.writeText(copyButton.dataset.downloadCopy || ""); copyButton.textContent = "Đã sao chép"; return; }
+      if (event.target.closest("[data-download-copy-config]")) { navigator.clipboard.writeText("VIDEO_DOWNLOADER_API_URL\nVIDEO_DOWNLOADER_API_KEY"); event.target.closest("[data-download-copy-config]").textContent = "Đã sao chép"; return; }
     }
     const studioButton = event.target.closest("[data-studio-action]");
     if (!studioButton) return;
