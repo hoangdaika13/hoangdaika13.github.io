@@ -20,6 +20,7 @@ test("YouTube workspace uses official embeds and persistent player modes", () =>
   const source = read("search-watch-center.js");
   assert.match(source, /youtube-nocookie\.com\/embed/);
   assert.match(source, /documentPictureInPicture\.requestWindow/);
+  assert.match(source, /youtube-pip\.html/);
   assert.match(source, /swh-floating-player/);
   assert.match(source, /action: "playlist-items"/);
   assert.match(source, /moveQueueItem/);
@@ -39,8 +40,17 @@ test("Search API validates advanced filters on the server", () => {
 test("Versioned assets are available offline", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=1", "search-watch-center.css?v=4", "search-watch-center.js?v=5"]) {
+  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=1", "search-watch-center.css?v=4", "search-watch-center.js?v=6"]) {
     assert.match(index, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
+  assert.match(worker, /youtube-pip\.html/);
+});
+
+test("Picture-in-Picture bridge preserves YouTube client identification", () => {
+  const bridge = read("youtube-pip.html");
+  assert.match(bridge, /strict-origin-when-cross-origin/);
+  assert.match(bridge, /widget_referrer/);
+  assert.match(bridge, /location\.origin/);
+  assert.match(bridge, /youtube-nocookie\.com\/embed/);
 });

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>HH YouTube Player</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Be Vietnam Pro", Inter, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #070910; color: #eef6ff; }
+    body { display: grid; grid-template-rows: 38px minmax(0, 1fr) 34px; }
+    header, footer { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 11px; background: linear-gradient(90deg, #101721, #211321); }
+    header { border-bottom: 1px solid #2c3946; }
+    header i { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #ff6173; box-shadow: 0 0 12px #ff6173; }
+    header strong { flex: 0 0 auto; color: #65e7ef; font-size: 9px; }
+    header span { min-width: 0; overflow: hidden; color: #bac6d0; font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    main { min-width: 0; min-height: 0; background: #000; }
+    #player { display: block; width: 100%; height: 100%; border: 0; }
+    footer { justify-content: space-between; border-top: 1px solid #2c3946; color: #7f8e9b; font-size: 8px; }
+    footer span:first-child { color: #79e8b1; font-weight: 800; }
+    footer span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pip-error { display: grid; place-items: center; height: 100%; padding: 24px; color: #ff9aa5; font-size: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header><i></i><strong>HH PLAYER</strong><span id="videoTitle">YouTube Picture-in-Picture</span></header>
+  <main><iframe id="player" title="YouTube player" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></main>
+  <footer><span>● Trình phát chính thức</span><span>Đóng cửa sổ để trở lại HH Platform</span></footer>
+  <script>
+    (() => {
+      "use strict";
+      const params = new URLSearchParams(location.search);
+      const videoId = params.get("v") || "";
+      const start = Math.max(0, Math.floor(Number(params.get("t")) || 0));
+      const rate = Number(params.get("rate")) || 1;
+      const title = (params.get("title") || "YouTube").slice(0, 180);
+      const frame = document.getElementById("player");
+      document.getElementById("videoTitle").textContent = title;
+      document.title = `${title} | HH Player`;
+      if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+        frame.replaceWith(Object.assign(document.createElement("div"), { className: "pip-error", textContent: "Liên kết video không hợp lệ." }));
+        return;
+      }
+      const embed = new URL(`https://www.youtube-nocookie.com/embed/${videoId}`);
+      embed.searchParams.set("autoplay", "1");
+      embed.searchParams.set("playsinline", "1");
+      embed.searchParams.set("rel", "0");
+      embed.searchParams.set("controls", "1");
+      embed.searchParams.set("enablejsapi", "1");
+      embed.searchParams.set("origin", location.origin);
+      embed.searchParams.set("widget_referrer", location.href);
+      if (start) embed.searchParams.set("start", String(start));
+      frame.src = embed.href;
+
+      let ready = false;
+      window.onYouTubeIframeAPIReady = () => {
+        const player = new YT.Player("player", {
+          events: {
+            onReady: () => {
+              ready = true;
+              if ([0.5, 0.75, 1, 1.25, 1.5, 2].includes(rate)) player.setPlaybackRate(rate);
+              player.playVideo();
+            }
+          }
+        });
+        window.setInterval(() => {
+          if (!ready || typeof player.getCurrentTime !== "function") return;
+          window.parent.postMessage({ type: "hh-youtube-pip-progress", currentTime: player.getCurrentTime() }, location.origin);
+        }, 1000);
+      };
+      const api = document.createElement("script");
+      api.src = "https://www.youtube.com/iframe_api";
+      document.head.append(api);
+    })();
+  </script>
+</body>
+</html>

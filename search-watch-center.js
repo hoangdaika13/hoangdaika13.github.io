@@ -23,10 +23,12 @@
     privacyShield: true,
     autoplayQueue: false,
     playerRate: 1,
+    currentTime: 0,
     floating: false,
     floatingMinimized: false,
     pipWindow: null,
     beforePipFloating: false,
+    pipReturnTarget: "hub",
     lastQuery: { google: "", youtube: "" }
   };
   let root;
@@ -192,12 +194,15 @@
   }
 
   function returnPlayerToHub({ open = true } = {}) {
+    state.pipReturnTarget = "hub";
     if (state.pipWindow && !state.pipWindow.closed) state.pipWindow.close();
     placePlayer(false);
     if (open) openHub("youtube");
   }
 
   function closePlayer() {
+    state.pipReturnTarget = "hub";
+    if (state.pipWindow && !state.pipWindow.closed) state.pipWindow.close();
     playerCommand("stopVideo");
     const frame = playerNode?.querySelector("iframe");
     if (frame) frame.src = "about:blank";
@@ -225,19 +230,38 @@
     }
     try {
       state.beforePipFloating = state.floating;
+      state.pipReturnTarget = state.floating || !root.classList.contains("open") ? "floating" : "hub";
+      playerCommand("getCurrentTime");
+      playerCommand("pauseVideo");
       const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 520, height: 390 });
       state.pipWindow = pipWindow;
       const style = pipWindow.document.createElement("style");
-      style.textContent = `*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#070a10;color:#eef6ff;font-family:system-ui,sans-serif}.swh-player-shell{display:grid;grid-template-rows:minmax(0,1fr) auto auto;width:100%;height:100%;margin:0;overflow:hidden;background:#090d13}.swh-player{min-height:0;background:#000}.swh-player iframe{display:block;width:100%;height:100%;border:0}.swh-player-controls,.swh-now-playing{display:flex;align-items:center;gap:6px;padding:7px 9px;border-top:1px solid #293642;background:#0c121a}.swh-player-controls button,.swh-now-playing button{min-height:30px;border:1px solid #354552;border-radius:5px;background:#121923;color:#c2ced7}.swh-player-controls label{display:flex;align-items:center;gap:5px;color:#8b9aaa;font-size:10px}.swh-player-controls select{height:28px;background:#111923;color:#fff;border:1px solid #354552}.swh-player-controls>span{margin-left:auto;font-size:9px;color:#5ce7ef}.swh-now-playing{justify-content:space-between}.swh-now-playing>div:first-child{min-width:0}.swh-now-playing>div:last-child{display:flex;gap:5px}.swh-now-playing small{font-size:8px;color:#ff6675}.swh-now-playing h4{margin:2px 0;overflow:hidden;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.swh-now-playing p{margin:0;color:#81909e;font-size:9px}`;
+      style.textContent = `*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#070a10}iframe{display:block;width:100%;height:100%;border:0;background:#000}`;
       pipWindow.document.head.append(style);
-      pipWindow.document.body.append(playerNode);
-      floatingDock.hidden = true;
-      state.floating = false;
-      updateMiniButton();
+      const bridge = pipWindow.document.createElement("iframe");
+      const bridgeUrl = new URL("youtube-pip.html", location.href);
+      bridgeUrl.searchParams.set("v", state.currentVideo.id);
+      bridgeUrl.searchParams.set("t", String(Math.max(0, Math.floor(state.currentTime || 0))));
+      bridgeUrl.searchParams.set("rate", String(state.playerRate));
+      bridgeUrl.searchParams.set("title", state.currentVideo.title || "YouTube");
+      bridge.src = bridgeUrl.href;
+      bridge.title = `YouTube Picture-in-Picture · ${state.currentVideo.title || "Video"}`;
+      bridge.allow = "autoplay; encrypted-media; picture-in-picture";
+      pipWindow.document.body.append(bridge);
+      if (state.floating) floatingDock.hidden = true;
+      pipWindow.addEventListener("message", (event) => {
+        if (event.origin !== location.origin || event.data?.type !== "hh-youtube-pip-progress") return;
+        const time = Number(event.data.currentTime);
+        if (Number.isFinite(time) && time >= 0) state.currentTime = time;
+      });
       pipWindow.addEventListener("pagehide", () => {
-        const shouldFloat = state.beforePipFloating || !root.classList.contains("open");
+        const shouldFloat = state.pipReturnTarget === "floating" || !root.classList.contains("open");
         state.pipWindow = null;
         placePlayer(shouldFloat);
+        window.setTimeout(() => {
+          playerCommand("seekTo", [Math.max(0, state.currentTime || 0), true]);
+          playerCommand("playVideo");
+        }, 350);
       }, { once: true });
     } catch (error) {
       activateFloatingPlayer();
@@ -713,6 +737,7 @@
 
   function loadVideo(video, options = {}) {
     state.currentVideo = video;
+    state.currentTime = 0;
     const shell = playerNode;
     const origin = location.origin && location.origin !== "null" ? `&origin=${encodeURIComponent(location.origin)}` : "";
     shell.querySelector("iframe").src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(video.id)}?autoplay=1&playsinline=1&rel=0&enablejsapi=1${origin}`;
@@ -1090,6 +1115,10 @@
     if (!/^(https:\/\/www\.)?youtube(?:-nocookie)?\.com$/.test(event.origin)) return;
     let message = event.data;
     try { if (typeof message === "string") message = JSON.parse(message); } catch { return; }
+    if (message?.event === "infoDelivery") {
+      const time = Number(message.info?.currentTime);
+      if (Number.isFinite(time) && time >= 0) state.currentTime = time;
+    }
     if (message?.event === "onStateChange" && Number(message.info) === 0 && state.autoplayQueue) playQueueStep(1);
   });
 
