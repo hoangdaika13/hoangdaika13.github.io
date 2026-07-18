@@ -5029,6 +5029,23 @@ function initAppShell() {
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
     { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: [], studioItems: creativeStudioItems },
+    {
+      id: "music-ai",
+      label: "Làm nhạc AI",
+      icon: "♫",
+      accent: "#72eadb",
+      route: "/music-ai",
+      items: [],
+      pages: [
+        { id: "project", title: "Xưởng sản xuất", route: "/music-ai/project" },
+        { id: "prompt-studio", title: "Prompt đồng bộ", route: "/music-ai/prompt-studio" },
+        { id: "loop-builder", title: "Loop 1–5 giờ", route: "/music-ai/loop-builder" },
+        { id: "audio-qa", title: "Kiểm âm", route: "/music-ai/audio-qa" },
+        { id: "chapters", title: "Tracklist & Chapter", route: "/music-ai/chapters" },
+        { id: "youtube-pack", title: "Gói YouTube", route: "/music-ai/youtube-pack" },
+        { id: "publish-checklist", title: "Kiểm tra xuất bản", route: "/music-ai/publish-checklist" }
+      ]
+    },
     { id: "media-design", label: "Media & Design", icon: "◈", accent: "#c87cff", route: "/media-design", items: [], studioItems: mediaStudioItems },
     { id: "dev", label: "DEV", icon: "⌘", accent: "#61e7ff", route: "/dev-tools", items: [], studioItems: developerToolItems },
     { id: "work", label: "Công việc", icon: "□", accent: "#baf46b", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
@@ -5271,11 +5288,13 @@ function initAppShell() {
     document.body.classList.toggle("app-communication-route", route === "/communication");
     document.body.classList.toggle("app-work-route", route === "/work");
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
+    document.body.classList.toggle("app-music-ai-route", route === "/music-ai" || route.startsWith("/music-ai/"));
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
     if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     if (route !== "/work") window.HHWorkCenter?.unmount?.();
+    if (route !== "/music-ai" && !route.startsWith("/music-ai/")) window.HHMusicAIStudio?.unmount?.();
     setUser();
     renderNavigation();
     requestAnimationFrame(() => {
@@ -5317,6 +5336,11 @@ function initAppShell() {
       workspace.innerHTML = '<div data-hh-english-host></div>';
       if (window.HHEnglish?.mount) window.HHEnglish.mount(workspace.firstElementChild, { view: parts[1] || "dashboard" });
       else mountSimpleView("HH English", "Đang tải không gian học tiếng Anh...", "");
+    } else if (route === "/music-ai" || route.startsWith("/music-ai/")) {
+      updatePageHeader("Làm nhạc AI", "Xưởng sản xuất relax piano, thiền, jazz và lofi dài 1–5 giờ: prompt, loop, kiểm âm, chapter và gói YouTube.", route);
+      workspace.innerHTML = '<div data-music-ai-studio-host></div>';
+      if (window.HHMusicAIStudio?.mount) window.HHMusicAIStudio.mount(workspace.firstElementChild, { view: parts[1] || "project" });
+      else mountSimpleView("Làm nhạc AI", "Đang tải xưởng sản xuất âm nhạc...", "");
     } else if (route === "/create/ai-script") {
       updatePageHeader("Kịch bản AI Studio", "Workspace biên kịch thông minh: viết, phân tích, dịch, batch, URL research và quản lý series.", route);
       workspace.innerHTML = '<div class="creative-ai-script-host tool-neon-page" data-ai-script-host><div class="creative-ai-script-loading"><i></i><strong>Đang mở Kịch bản AI Studio...</strong></div></div>';
@@ -5416,7 +5440,16 @@ function initAppShell() {
     const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
     const creativeTools = creativeStudioItems.map((item) => ({ type: "Sáng tạo", title: item.title, description: item.description || item.group, route: `/create/${item.id}`, key: `${item.title} ${item.group} ${item.description || ""} creative sáng tạo kịch bản ai` }));
     const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));
-    return [...modules, ...commandCenter, ...creativeTools, ...developerTools, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    const musicAI = [
+      { type: "Làm nhạc AI", title: "Xưởng sản xuất", description: "Tạo dự án relax piano, thiền, jazz hoặc lofi dài 1–5 giờ.", route: "/music-ai/project", key: "làm nhạc ai relax piano thiền meditation jazz lofi youtube music project" },
+      { type: "Làm nhạc AI", title: "Prompt đồng bộ", description: "Tạo prompt ảnh, Kling/Veo, nhạc và thumbnail cùng concept.", route: "/music-ai/prompt-studio", key: "prompt chatgpt image kling veo motion music thumbnail" },
+      { type: "Làm nhạc AI", title: "Loop 1–5 giờ", description: "Tính vòng lặp và xuất lệnh FFmpeg dựng video dài.", route: "/music-ai/loop-builder", key: "loop ffmpeg video dài 1 2 3 4 5 giờ" },
+      { type: "Làm nhạc AI", title: "Kiểm âm", description: "Đo peak, RMS, clipping và sample rate ngay trên trình duyệt.", route: "/music-ai/audio-qa", key: "audio qa peak rms clipping 48khz kiểm âm" },
+      { type: "Làm nhạc AI", title: "Tracklist & Chapter", description: "Sinh timestamp chapter YouTube đúng quy tắc.", route: "/music-ai/chapters", key: "tracklist chapter timestamp youtube" },
+      { type: "Làm nhạc AI", title: "Gói YouTube", description: "Tạo title, description, tags và cấu hình encode.", route: "/music-ai/youtube-pack", key: "youtube title description tags seo thumbnail encode" },
+      { type: "Làm nhạc AI", title: "Kiểm tra xuất bản", description: "Checklist quyền sử dụng và QA trước khi public.", route: "/music-ai/publish-checklist", key: "publish checklist bản quyền quyền thương mại qa" }
+    ];
+    return [...modules, ...commandCenter, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "Quét QR, gửi lời nhắn và theo dõi số tiền đã xác nhận.", route: "/support", key: "ủng hộ donate nhà phát triển quét qr vietcombank" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();

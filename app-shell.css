@@ -1327,3 +1327,14 @@
 @layer accessibility {
   @media(prefers-reduced-motion:reduce){.app-module-hub__grid>button,.app-route-progress i{animation:none!important}::view-transition-old(app-workspace),::view-transition-new(app-workspace),::view-transition-old(app-page-header),::view-transition-new(app-page-header){animation-duration:1ms!important}}
 }
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
