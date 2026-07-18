@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
+const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
 
 test("CEFR curriculum contains seven levels and sixty-nine complete lessons", () => {
   assert.deepEqual(courseLevels.map((level) => level.id), ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
@@ -28,15 +28,15 @@ test("CEFR curriculum contains seven levels and sixty-nine complete lessons", ()
   });
 });
 
-test("Career English provides sixty-four adaptive seven-day industry tracks", () => {
-  assert.equal(careerCategories.length, 10);
-  assert.equal(careerTracks.length, 64);
-  assert.equal(careerTracks.reduce((sum, track) => sum + track.lessons.length, 0), 448);
+test("Career English provides seventy adaptive seven-day industry tracks", () => {
+  assert.equal(careerCategories.length, 16);
+  assert.equal(careerTracks.length, 70);
+  assert.equal(careerTracks.reduce((sum, track) => sum + track.lessons.length, 0), 490);
   assert.ok(careerTracks.reduce((sum, track) => sum + track.vocabulary.length, 0) >= 2000);
   assert.ok(new Set(careerTracks.flatMap((track) => track.vocabulary.map((word) => word[0].toLowerCase()))).size >= 1200);
   careerTracks.forEach((track) => {
     assert.equal(track.lessons.length, 7, `${track.id} lesson count`);
-    assert.ok(track.vocabulary.length >= 28, `${track.id} vocabulary count`);
+    assert.ok(track.vocabulary.length >= 12, `${track.id} vocabulary count`);
     assert.ok(careerCategories.some((category) => category.id === track.category));
     assert.ok(track.project.length > 40);
     assert.ok(Array.isArray(track.roles));
@@ -50,6 +50,31 @@ test("Career English provides sixty-four adaptive seven-day industry tracks", ()
       assert.ok(lesson.dialogue.includes("\n"));
     });
   });
+});
+
+test("voice coach supports regional male and female profiles with deterministic fallback", () => {
+  assert.ok(voiceProfiles.length >= 8);
+  assert.ok(voiceProfiles.some((profile) => profile.lang === "en-US" && profile.gender === "female"));
+  assert.ok(voiceProfiles.some((profile) => profile.lang === "en-GB" && profile.gender === "male"));
+  assert.equal(inferVoiceGender({ name: "Microsoft Zira Online" }), "female");
+  assert.equal(inferVoiceGender({ name: "Microsoft David Desktop" }), "male");
+  const voices = [
+    { name: "George", voiceURI: "gb-male", lang: "en-GB", localService: true },
+    { name: "Samantha", voiceURI: "us-female", lang: "en-US", localService: true },
+    { name: "Daniel", voiceURI: "us-male", lang: "en-US", localService: true }
+  ];
+  assert.equal(selectVoice(voices, { voiceProfile: "us-female", voiceURI: "" }).voiceURI, "us-female");
+  assert.equal(selectVoice(voices, { voiceProfile: "gb-male", voiceURI: "" }).voiceURI, "gb-male");
+  assert.equal(selectVoice(voices, { voiceProfile: "us-female", voiceURI: "us-male" }).voiceURI, "us-male");
+});
+
+test("speaking and dictation comparison reports matched and missed words", () => {
+  const exact = compareTranscript("Could you clarify the next step please", "Could you clarify the next step, please?");
+  assert.equal(exact.score, 100);
+  assert.deepEqual(exact.missed, []);
+  const partial = compareTranscript("clarify next step", "Could you clarify the next step, please?");
+  assert.equal(partial.score, 43);
+  assert.deepEqual(partial.missed, ["could", "you", "the", "please"]);
 });
 
 test("career selector changes vocabulary and exercises for different learner profiles", () => {

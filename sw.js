@@ -1,4 +1,4 @@
-const CACHE = "hh-dev-hub-v122";
+const CACHE = "hh-dev-hub-v124";
 const CORE = [
   "./",
   "./index.html",
@@ -36,7 +36,8 @@ const CORE = [
   "./ai-center-pro.css?v=1",
   "./sidebar-navigation-pro.css?v=3",
   "./space-explorer.css?v=3",
-  "./english-learning.css?v=9",
+  "./english-learning.css?v=10",
+  "./english-voice-coach.css?v=1",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
   "./community-platform-v2.css?v=10",
@@ -65,7 +66,7 @@ const CORE = [
   "./english-curriculum.js?v=1",
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
-  "./english-learning.js?v=9",
+  "./english-learning.js?v=11",
   "./config.js?v=7",
   "./data/ai-super-platform-modules.json"
 ];
