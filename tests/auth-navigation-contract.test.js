@@ -71,3 +71,18 @@ test("custom domain branding and Google-only OAuth stay in sync", () => {
   assert.match(manifest, /Nhhoang · HH Neon Platform/);
   assert.match(manifest, /assets\/favicon\.svg\?v=3/);
 });
+
+test("Vercel Hobby deployment stays within the twelve-function limit", () => {
+  const apiRoot = path.join(root, "api");
+  const countFunctions = (directory) => fs.readdirSync(directory, { withFileTypes: true }).reduce((count, entry) => {
+    const target = path.join(directory, entry.name);
+    return count + (entry.isDirectory() ? countFunctions(target) : Number(entry.isFile() && entry.name.endsWith(".js")));
+  }, 0);
+  const vercel = read("vercel.json");
+  const donations = read("api/donations.js");
+
+  assert.ok(countFunctions(apiRoot) <= 12);
+  assert.match(vercel, /\/api\/notifications\/subscribe/);
+  assert.match(vercel, /notification-subscribe/);
+  assert.match(donations, /notificationSubscriptionHandler/);
+});

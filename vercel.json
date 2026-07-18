@@ -15,6 +15,10 @@
       "destination": "/api/donations?resource=votes"
     },
     {
+      "source": "/api/notifications/subscribe",
+      "destination": "/api/donations?resource=notification-subscribe"
+    },
+    {
       "source": "/api/auth/google/callback",
       "destination": "/api/auth/google?oauthCallback=google"
     }
