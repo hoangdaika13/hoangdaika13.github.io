@@ -24,7 +24,13 @@ async function database() {
 }
 
 function setCors(req, res) {
-  const allowed = String(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "https://hoangdaika13.github.io,https://hoangdaika13githubio.vercel.app").split(",").map((v) => v.trim());
+  const allowed = [...new Set([
+    "https://nhhoang13all.xyz",
+    "https://www.nhhoang13all.xyz",
+    "https://hoangdaika13.github.io",
+    "https://hoangdaika13githubio.vercel.app",
+    ...String(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "").split(",").map((v) => v.trim())
+  ].filter(Boolean))];
   const origin = String(req.headers.origin || "");
   if (origin && allowed.includes(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Vary", "Origin");

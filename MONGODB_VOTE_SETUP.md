@@ -25,8 +25,8 @@ Khong dua connection string nay vao HTML, GitHub, hoac chat cong khai.
    - `MONGODB_URI`: connection string MongoDB Atlas
    - `MONGODB_DB`: `hoangdaika13_site`
    - `MONGODB_COLLECTION`: `votes`
-   - `SITE_ID`: `hoangdaika13.github.io`
-   - `ALLOWED_ORIGIN`: `https://hoangdaika13.github.io`
+   - `SITE_ID`: `nhhoang13all.xyz`
+   - `ALLOWED_ORIGIN`: `https://nhhoang13all.xyz`
 3. Deploy.
 4. API se co dang:
    `https://ten-du-an-vercel.vercel.app/api/votes`

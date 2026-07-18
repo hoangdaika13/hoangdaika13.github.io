@@ -1,4 +1,4 @@
-# Hoangdaika13 Realtime Server
+# Nhhoang Realtime Server
 
 Backend rieng cho:
 
@@ -6,7 +6,7 @@ Backend rieng cho:
 - Messenger HH realtime: phong rieng, nhom, hien dien, dang nhap va dong bo thay doi.
 - WebRTC signaling cho goi thoai, goi video, goi nhom va chia se man hinh.
 - Dang ky/dang nhap bang email + password.
-- Dang nhap Google/Facebook OAuth khi co Client ID/Secret.
+- Dang nhap Google OAuth khi co Client ID/Secret.
 - Luu user/session/event vao MongoDB.
 - API cho 37 module AI Super Platform: module records/actions, helpdesk, store orders, storage metadata, notification subscriptions va admin overview.
 
@@ -20,9 +20,8 @@ Quan trong:
 
 - `MONGODB_URI`: connection string MongoDB Atlas.
 - `JWT_SECRET`: chuoi random dai.
-- `FRONTEND_URL`: `https://hoangdaika13.github.io`.
+- `FRONTEND_URL`: `https://nhhoang13all.xyz`.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: tao trong Google Cloud Console.
-- `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`: tao trong Meta for Developers.
 - `STUN_URLS`: danh sach STUN, mac dinh dung Google STUN.
 - `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL`: TURN production de cuoc goi hoat dong qua NAT/firewall.
 - `MAX_CALL_PARTICIPANTS`: gioi han cuoc goi nhom, mac dinh 8.

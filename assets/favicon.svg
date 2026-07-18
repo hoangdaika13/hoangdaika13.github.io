@@ -1,21 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="HH Neon">
   <defs>
-    <radialGradient id="bg" cx="38%" cy="26%" r="78%">
-      <stop offset="0" stop-color="#ffb8f3"/>
-      <stop offset="0.34" stop-color="#ff3bd4"/>
-      <stop offset="0.72" stop-color="#8b5cff"/>
-      <stop offset="1" stop-color="#08020f"/>
+    <linearGradient id="frame" x1="10" y1="12" x2="118" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#46f6ff"/><stop offset=".32" stop-color="#8572ff"/><stop offset=".65" stop-color="#ff4fc8"/><stop offset="1" stop-color="#ffe66b"/>
+    </linearGradient>
+    <linearGradient id="left" x1="24" y1="34" x2="62" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5ff8ff"/><stop offset="1" stop-color="#6b7cff"/>
+    </linearGradient>
+    <linearGradient id="right" x1="67" y1="34" x2="106" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff55d2"/><stop offset="1" stop-color="#ffe66b"/>
+    </linearGradient>
+    <radialGradient id="surface" cx="35%" cy="18%" r="92%">
+      <stop stop-color="#211036"/><stop offset=".52" stop-color="#0b0d1a"/><stop offset="1" stop-color="#04050a"/>
     </radialGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="4" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <rect width="128" height="128" rx="28" fill="#08020f"/>
-  <rect x="8" y="8" width="112" height="112" rx="24" fill="url(#bg)" stroke="#fff6ff" stroke-width="5"/>
-  <path d="M27 34h17v23h40V34h17v60H84V71H44v23H27z" fill="#fff6ff" filter="url(#glow)"/>
-  <path d="M23 100h82" stroke="#56eaff" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+  <rect x="3" y="3" width="122" height="122" rx="30" fill="#05060c"/>
+  <rect x="7" y="7" width="114" height="114" rx="26" fill="url(#surface)" stroke="url(#frame)" stroke-width="4"/>
+  <g filter="url(#glow)">
+    <path d="M25 34h12v22h13V34h12v60H50V69H37v25H25z" fill="url(#left)"/>
+    <path d="M67 34h12v22h14V34h12v60H93V69H79v25H67z" fill="url(#right)"/>
+  </g>
+  <path d="M24 103h80" stroke="url(#frame)" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="24" cy="103" r="2.5" fill="#5ff8ff"/><circle cx="104" cy="103" r="2.5" fill="#ffe66b"/>
 </svg>

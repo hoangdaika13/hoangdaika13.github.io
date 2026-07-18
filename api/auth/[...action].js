@@ -18,11 +18,17 @@ function appOrigin(req) {
 function allowedFrontendOrigins() {
   const configured = String(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "")
     .split(",").map((value) => value.trim()).filter(Boolean);
-  return new Set([process.env.FRONTEND_URL || "https://hoangdaika13.github.io", "https://hoangdaika13.github.io", ...configured]);
+  return new Set([
+    "https://nhhoang13all.xyz",
+    "https://www.nhhoang13all.xyz",
+    "https://hoangdaika13.github.io",
+    process.env.FRONTEND_URL || "",
+    ...configured
+  ].filter(Boolean));
 }
 
 function frontendOrigin(value) {
-  const fallback = process.env.FRONTEND_URL || "https://hoangdaika13.github.io";
+  const fallback = "https://nhhoang13all.xyz";
   try {
     const origin = new URL(String(value || "")).origin;
     return allowedFrontendOrigins().has(origin) ? origin : fallback;
@@ -52,10 +58,6 @@ function safeState(req, provider, state) {
 
 function callbackUrl(req, provider) {
   return process.env[`${provider.toUpperCase()}_CALLBACK_URL`] || `${appOrigin(req)}/api/auth/${provider}/callback`;
-}
-
-function facebookVersion() {
-  return clean(process.env.FACEBOOK_GRAPH_VERSION || "v23.0", 16);
 }
 
 async function upsertOAuthUser(db, profile, provider) {
@@ -90,30 +92,16 @@ async function oauthCallback(req, res, db, provider, code, state) {
   if (!saved || !code) return redirectError(res, frontend, "Phiên đăng nhập đã hết hạn. Hãy thử lại.");
   const redirectUri = callbackUrl(req, provider);
   try {
-    let profile;
-    if (provider === "google") {
-      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ code, client_id: process.env.GOOGLE_CLIENT_ID || "", client_secret: process.env.GOOGLE_CLIENT_SECRET || "", redirect_uri: redirectUri, grant_type: "authorization_code" })
-      });
-      const tokens = await tokenResponse.json();
-      if (!tokenResponse.ok || !tokens.access_token) throw new Error(tokens.error_description || "Google không chấp nhận yêu cầu đăng nhập.");
-      const personResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { Authorization: `Bearer ${tokens.access_token}` } });
-      const person = await personResponse.json();
-      if (!personResponse.ok || !person.email_verified) throw new Error("Google chưa xác minh email của tài khoản.");
-      profile = { id: person.sub, email: person.email, name: person.name, avatar: person.picture };
-    } else {
-      const version = facebookVersion();
-      const tokenUrl = new URL(`https://graph.facebook.com/${version}/oauth/access_token`);
-      tokenUrl.search = new URLSearchParams({ client_id: process.env.FACEBOOK_APP_ID || "", client_secret: process.env.FACEBOOK_APP_SECRET || "", redirect_uri: redirectUri, code }).toString();
-      const tokenResponse = await fetch(tokenUrl);
-      const tokens = await tokenResponse.json();
-      if (!tokenResponse.ok || !tokens.access_token) throw new Error(tokens.error?.message || "Facebook không chấp nhận yêu cầu đăng nhập.");
-      const personResponse = await fetch(`https://graph.facebook.com/${version}/me?fields=id,name,email,picture.type(large)&access_token=${encodeURIComponent(tokens.access_token)}`);
-      const person = await personResponse.json();
-      if (!personResponse.ok) throw new Error(person.error?.message || "Không lấy được hồ sơ Facebook.");
-      profile = { id: person.id, email: person.email, name: person.name, avatar: person.picture?.data?.url };
-    }
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ code, client_id: process.env.GOOGLE_CLIENT_ID || "", client_secret: process.env.GOOGLE_CLIENT_SECRET || "", redirect_uri: redirectUri, grant_type: "authorization_code" })
+    });
+    const tokens = await tokenResponse.json();
+    if (!tokenResponse.ok || !tokens.access_token) throw new Error(tokens.error_description || "Google không chấp nhận yêu cầu đăng nhập.");
+    const personResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { Authorization: `Bearer ${tokens.access_token}` } });
+    const person = await personResponse.json();
+    if (!personResponse.ok || !person.email_verified) throw new Error("Google chưa xác minh email của tài khoản.");
+    const profile = { id: person.sub, email: person.email, name: person.name, avatar: person.picture };
     const user = await upsertOAuthUser(db, profile, provider);
     const now = new Date();
     await Promise.all([
@@ -128,15 +116,14 @@ module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {
     let action = Array.isArray(req.query.action) ? req.query.action : (typeof req.query.action === "string" ? [req.query.action] : []);
     if (!action.length) action = String(req.url || "").split("?")[0].split("/").filter(Boolean).slice(2);
-    if (req.query.oauthCallback === "google" || req.query.oauthCallback === "facebook") {
+    if (req.query.oauthCallback === "google") {
       action = [req.query.oauthCallback, "callback"];
     }
     const route = action.join("/");
 
     if (route === "providers" && req.method === "GET") return res.status(200).json({
       google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-      facebook: Boolean(process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET),
-      callbacks: { google: callbackUrl(req, "google"), facebook: callbackUrl(req, "facebook") }
+      callbacks: { google: callbackUrl(req, "google") }
     });
 
     if (route === "register" && req.method === "POST") {
@@ -175,20 +162,20 @@ module.exports = async function handler(req, res) {
     }
 
     const provider = action[0];
-    if ((provider === "google" || provider === "facebook") && action.length === 1 && req.method === "GET") {
-      const clientId = provider === "google" ? process.env.GOOGLE_CLIENT_ID : process.env.FACEBOOK_APP_ID;
-      const clientSecret = provider === "google" ? process.env.GOOGLE_CLIENT_SECRET : process.env.FACEBOOK_APP_SECRET;
+    if (provider === "google" && action.length === 1 && req.method === "GET") {
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
       const frontend = frontendOrigin(req.query.returnTo);
-      if (!clientId || !clientSecret) return redirectError(res, frontend, `Đăng nhập ${provider === "google" ? "Google" : "Facebook"} chưa được cấu hình trên máy chủ.`);
+      if (!clientId || !clientSecret) return redirectError(res, frontend, "Đăng nhập Google chưa được cấu hình trên máy chủ.");
       const redirectUri = callbackUrl(req, provider);
       const nonce = crypto.randomBytes(24).toString("base64url");
       const state = signOAuthState(provider, frontend, nonce);
       oauthCookie(res, provider, nonce);
-      const authUrl = new URL(provider === "google" ? "https://accounts.google.com/o/oauth2/v2/auth" : `https://www.facebook.com/${facebookVersion()}/dialog/oauth`);
-      authUrl.search = new URLSearchParams(provider === "google" ? { client_id: clientId, redirect_uri: redirectUri, response_type: "code", scope: "openid email profile", state, prompt: "select_account" } : { client_id: clientId, redirect_uri: redirectUri, response_type: "code", scope: "email,public_profile", state });
+      const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+      authUrl.search = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: "code", scope: "openid email profile", state, prompt: "select_account" });
       return res.redirect(authUrl.toString());
     }
-    if ((provider === "google" || provider === "facebook") && action[1] === "callback" && req.method === "GET") return oauthCallback(req, res, db, provider, req.query.code, req.query.state);
+    if (provider === "google" && action[1] === "callback" && req.method === "GET") return oauthCallback(req, res, db, provider, req.query.code, req.query.state);
     return res.status(405).json({ error: "Method not allowed" });
   });
 };

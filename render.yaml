@@ -12,9 +12,9 @@ services:
       - key: NODE_VERSION
         value: 22.16.0
       - key: FRONTEND_URL
-        value: https://hoangdaika13.github.io
+        value: https://nhhoang13all.xyz
       - key: ALLOWED_ORIGINS
-        value: https://hoangdaika13.github.io,https://hoangdaika13githubio.vercel.app
+        value: https://nhhoang13all.xyz,https://www.nhhoang13all.xyz,https://hoangdaika13githubio.vercel.app
       - key: JWT_SECRET
         generateValue: true
       - key: MONGODB_DB

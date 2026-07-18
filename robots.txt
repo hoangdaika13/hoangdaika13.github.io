@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://hoangdaika13.github.io/sitemap.xml
+Sitemap: https://nhhoang13all.xyz/sitemap.xml

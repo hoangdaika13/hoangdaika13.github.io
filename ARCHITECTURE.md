@@ -1,4 +1,4 @@
-# Hoangdaika13 Neon Portfolio Architecture
+# Nhhoang · HH Neon Platform Architecture
 
 Trang web hien tai la portfolio tinh chay tren GitHub Pages, co them API vote tren Vercel va backend realtime rieng trong `realtime-server`.
 

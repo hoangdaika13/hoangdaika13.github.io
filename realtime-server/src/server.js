@@ -8,7 +8,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
-const { Strategy: FacebookStrategy } = require("passport-facebook");
 const { MongoClient, ObjectId } = require("mongodb");
 const { Server } = require("socket.io");
 
@@ -38,6 +37,8 @@ const ASTRA_WORLD = { width: 12000, height: 8000 };
 const ASTRA_SHIPS = new Set(["asteria", "nomad", "aurora", "titan", "lumen", "odyssey"]);
 
 const allowedOrigins = [...new Set([
+  "https://nhhoang13all.xyz",
+  "https://www.nhhoang13all.xyz",
   FRONTEND_URL,
   ...(process.env.ALLOWED_ORIGINS || "").split(",").map((item) => item.trim()),
   "http://127.0.0.1:4173",
@@ -278,21 +279,6 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   }));
 }
 
-if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
-  passport.use(new FacebookStrategy({
-    clientID: process.env.FACEBOOK_APP_ID,
-    clientSecret: process.env.FACEBOOK_APP_SECRET,
-    callbackURL: process.env.FACEBOOK_CALLBACK_URL || "/api/auth/facebook/callback",
-    profileFields: ["id", "displayName", "emails", "photos"]
-  }, async (_accessToken, _refreshToken, profile, done) => {
-    try {
-      done(null, await upsertOAuthUser(profile, "facebook"));
-    } catch (error) {
-      done(error);
-    }
-  }));
-}
-
 app.get("/live", (_req, res) => {
   res.json({ ok: true, service: "hoangdaika13-realtime", transport: "socket.io" });
 });
@@ -349,16 +335,6 @@ app.get("/api/auth/google", (req, res, next) => {
 });
 
 app.get("/api/auth/google/callback", passport.authenticate("google", { session: false, failureRedirect: FRONTEND_URL }), (req, res) => {
-  const token = signUser(req.user);
-  res.redirect(`${FRONTEND_URL}?authToken=${encodeURIComponent(token)}#account`);
-});
-
-app.get("/api/auth/facebook", (req, res, next) => {
-  if (!process.env.FACEBOOK_APP_ID) return res.status(501).json({ error: "Facebook OAuth chua cau hinh." });
-  passport.authenticate("facebook", { scope: ["email"], state: req.query.returnTo || FRONTEND_URL })(req, res, next);
-});
-
-app.get("/api/auth/facebook/callback", passport.authenticate("facebook", { session: false, failureRedirect: FRONTEND_URL }), (req, res) => {
   const token = signUser(req.user);
   res.redirect(`${FRONTEND_URL}?authToken=${encodeURIComponent(token)}#account`);
 });

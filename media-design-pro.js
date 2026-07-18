@@ -252,11 +252,11 @@
     select?.insertAdjacentHTML("beforeend", `<option value="watermark">Đóng watermark</option><option value="metadata">Gắn metadata</option>`);
     $(work, "[data-md-rotation-wrap]")?.insertAdjacentHTML("afterend", `
       <div class="md-pro-pdf-extra" data-pro-pdf-watermark hidden>
-        <label>Nội dung watermark<input value="HOANGDAIKA13" maxlength="80" data-pro-watermark-text></label>
+        <label>Nội dung watermark<input value="NHHOANG" maxlength="80" data-pro-watermark-text></label>
         <div class="md-control-grid"><label>Cỡ chữ<input type="number" min="10" max="160" value="42" data-pro-watermark-size></label><label>Độ mờ<input type="range" min="5" max="80" value="18" data-pro-watermark-opacity></label></div>
       </div>
       <div class="md-pro-pdf-extra" data-pro-pdf-metadata hidden>
-        <label>Tiêu đề<input data-pro-pdf-title placeholder="Tên tài liệu"></label><label>Tác giả<input data-pro-pdf-author value="Hoangdaika13"></label><label>Từ khóa<input data-pro-pdf-keywords placeholder="design, media, hh"></label>
+        <label>Tiêu đề<input data-pro-pdf-title placeholder="Tên tài liệu"></label><label>Tác giả<input data-pro-pdf-author value="Nhhoang"></label><label>Từ khóa<input data-pro-pdf-keywords placeholder="design, media, hh"></label>
       </div>`);
     const processButton = $(work, "[data-md-action='pdf-process']");
     if (processButton) { delete processButton.dataset.mdAction; processButton.dataset.proAction = "pdf-process"; }
@@ -290,10 +290,10 @@
       } else if (mode === "rotate") {
         output = source; const angle = Number($(work, "[data-md-pdf-rotation]").value); output.getPages().forEach(page => page.setRotation(degrees((page.getRotation().angle + angle) % 360)));
       } else if (mode === "watermark") {
-        output = source; const font = await output.embedFont(StandardFonts.HelveticaBold); const text = $(work, "[data-pro-watermark-text]").value.trim() || "HOANGDAIKA13"; const size = clamp($(work, "[data-pro-watermark-size]").value, 10, 160); const opacity = clamp($(work, "[data-pro-watermark-opacity]").value, 5, 80) / 100;
+        output = source; const font = await output.embedFont(StandardFonts.HelveticaBold); const text = $(work, "[data-pro-watermark-text]").value.trim() || "NHHOANG"; const size = clamp($(work, "[data-pro-watermark-size]").value, 10, 160); const opacity = clamp($(work, "[data-pro-watermark-opacity]").value, 5, 80) / 100;
         output.getPages().forEach(page => { const width = font.widthOfTextAtSize(text, size); page.drawText(text, { x: Math.max(18, (page.getWidth() - width) / 2), y: page.getHeight() / 2, size, font, color: rgb(.25, .12, .32), opacity, rotate: degrees(28) }); });
       } else {
-        output = source; output.setTitle($(work, "[data-pro-pdf-title]").value || baseName(pro.pdfFiles[0].name)); output.setAuthor($(work, "[data-pro-pdf-author]").value || "Hoangdaika13"); output.setKeywords($(work, "[data-pro-pdf-keywords]").value.split(",").map(value => value.trim()).filter(Boolean)); output.setModificationDate(new Date());
+        output = source; output.setTitle($(work, "[data-pro-pdf-title]").value || baseName(pro.pdfFiles[0].name)); output.setAuthor($(work, "[data-pro-pdf-author]").value || "Nhhoang"); output.setKeywords($(work, "[data-pro-pdf-keywords]").value.split(",").map(value => value.trim()).filter(Boolean)); output.setModificationDate(new Date());
       }
     }
     pro.resultBlob = new Blob([await output.save()], { type: "application/pdf" });

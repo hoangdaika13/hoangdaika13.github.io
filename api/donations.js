@@ -172,7 +172,7 @@ module.exports = async function handler(req, res) {
       const result = await donations.insertOne(doc);
       await db.collection("events").insertOne({ type: "donation:intent", userId: user?._id || null, recordId: result.insertedId, createdAt: new Date() });
       if (usePayOS) {
-        const siteUrl = String(process.env.PUBLIC_SITE_URL || "https://hoangdaika13.github.io").replace(/\/$/, "");
+        const siteUrl = String(process.env.PUBLIC_SITE_URL || "https://nhhoang13all.xyz").replace(/\/$/, "");
         try {
           const payment = await payOS().paymentRequests.create({
             orderCode: payosOrderCode,

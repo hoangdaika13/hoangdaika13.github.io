@@ -53,3 +53,21 @@ test("enhanced authentication motion remains accessible", () => {
   assert.match(client, /renderDemo/);
   assert.match(client, /4200/);
 });
+
+test("custom domain branding and Google-only OAuth stay in sync", () => {
+  const html = read("index.html");
+  const api = read("api/auth/[...action].js");
+  const platform = read("utils/platform.js");
+  const manifest = read("manifest.webmanifest");
+
+  assert.equal(read("CNAME").trim(), "nhhoang13all.xyz");
+  assert.match(html, /<title>Nhhoang \| HH Neon Platform<\/title>/);
+  assert.match(html, /rel="canonical" href="https:\/\/nhhoang13all\.xyz\/"/);
+  assert.match(html, /data-oauth-provider="google"/);
+  assert.doesNotMatch(html, /data-oauth-provider="facebook"|id="facebookLogin"/);
+  assert.match(api, /https:\/\/nhhoang13all\.xyz/);
+  assert.doesNotMatch(api, /FACEBOOK_APP_ID|graph\.facebook\.com|facebookVersion/);
+  assert.match(platform, /https:\/\/nhhoang13all\.xyz/);
+  assert.match(manifest, /Nhhoang · HH Neon Platform/);
+  assert.match(manifest, /assets\/favicon\.svg\?v=3/);
+});
