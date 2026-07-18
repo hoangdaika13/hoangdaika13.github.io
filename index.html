@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app-shell.css?v=42">
+  <link rel="stylesheet" href="app-shell.css?v=43">
   <link rel="stylesheet" href="dashboard-aurora.css?v=3">
   <link rel="stylesheet" href="command-center-pro.css?v=3">
   <link rel="stylesheet" href="professional-tools.css?v=3">
@@ -42,7 +42,7 @@
   <link rel="stylesheet" href="ai-center-pro.css?v=1">
   <link rel="stylesheet" href="sidebar-navigation-pro.css?v=3">
   <link rel="stylesheet" href="space-explorer.css?v=3">
-  <link rel="stylesheet" href="english-learning.css?v=10">
+  <link rel="stylesheet" href="english-learning.css?v=11">
   <link rel="stylesheet" href="english-voice-coach.css?v=1">
 <link rel="stylesheet" href="community-social-pro.css?v=3">
 <link rel="stylesheet" href="community-platform-v2.css?v=10">
@@ -160,6 +160,9 @@
       </div>
     </header>
 
+    <div class="app-route-progress" id="appRouteProgress" aria-hidden="true"><i></i></div>
+    <div class="app-route-announcer sr-only" id="appRouteAnnouncer" role="status" aria-live="polite"></div>
+
     <div class="app-shell__body">
       <nav class="app-sidebar" aria-label="Điều hướng ứng dụng">
         <div class="app-sidebar__primary" data-app-navigation></div>
@@ -176,6 +179,12 @@
           <div><p class="app-page-header__eyebrow">HH Platform</p><h1>Trang chủ</h1><p>Bắt đầu với các công cụ phù hợp cho công việc của bạn.</p></div>
           <div class="app-page-header__actions" id="appPageActions"></div>
         </section>
+        <nav class="app-context-bar" id="appContextBar" aria-label="Điều hướng theo ngữ cảnh" hidden>
+          <button type="button" data-shell-back aria-label="Quay lại trang trước"><span>←</span> Quay lại</button>
+          <div><small id="appContextGroup">HH PLATFORM</small><strong id="appContextLabel">Trang hiện tại</strong></div>
+          <span class="app-context-bar__status"><i></i> Màn hình độc lập</span>
+          <div class="app-context-bar__actions"><button type="button" data-command-open>⌕ Tìm nhanh</button><button type="button" data-app-route="/home">⌂ Trang chủ</button></div>
+        </nav>
         <div class="app-workspace" id="appWorkspace" aria-live="polite">
           <section class="dashboard-home dashboard-home--pro dashboard-aurora" data-shell-view="home">
             <div class="dashboard-welcome dashboard-hero-pro dashboard-glass">
@@ -929,11 +938,11 @@
 <script src="english-curriculum.js?v=1"></script>
 <script src="english-career-expansion.js?v=1"></script>
 <script src="english-career-curriculum.js?v=2"></script>
-<script src="english-learning.js?v=11"></script>
+<script src="english-learning.js?v=12"></script>
 <script src="communication-overview.js?v=2"></script>
 <script src="work-center.js?v=1"></script>
 <script src="insights-pro.js?v=1"></script>
-<script src="script.js?v=90"></script>
+<script src="script.js?v=91"></script>
 <script src="community-social-pro.js?v=4"></script>
 <script src="community-platform-v2.js?v=12"></script>
 <script src="community-calls.js?v=1"></script>

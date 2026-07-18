@@ -1,8 +1,8 @@
-const CACHE = "hh-dev-hub-v124";
+const CACHE = "hh-dev-hub-v125";
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=42",
+  "./app-shell.css?v=43",
   "./dashboard-aurora.css?v=3",
   "./command-center-pro.css?v=3",
   "./professional-tools.css?v=3",
@@ -15,7 +15,7 @@ const CORE = [
   "./video-editor-resolve.css?v=5",
   "./photo-editor-pro.css?v=1",
   "./editor-workflow-pro.css?v=1",
-  "./script.js?v=90",
+  "./script.js?v=91",
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=4",
   "./extension-suite.css?v=1",
@@ -36,7 +36,7 @@ const CORE = [
   "./ai-center-pro.css?v=1",
   "./sidebar-navigation-pro.css?v=3",
   "./space-explorer.css?v=3",
-  "./english-learning.css?v=10",
+  "./english-learning.css?v=11",
   "./english-voice-coach.css?v=1",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
@@ -66,7 +66,7 @@ const CORE = [
   "./english-curriculum.js?v=1",
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
-  "./english-learning.js?v=11",
+  "./english-learning.js?v=12",
   "./config.js?v=7",
   "./data/ai-super-platform-modules.json"
 ];

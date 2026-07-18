@@ -4948,6 +4948,11 @@ function initAppShell() {
   const breadcrumb = byId("appBreadcrumb");
   const pageHeader = byId("appPageHeader");
   const pageActions = byId("appPageActions");
+  const routeProgress = byId("appRouteProgress");
+  const routeAnnouncer = byId("appRouteAnnouncer");
+  const contextBar = byId("appContextBar");
+  const contextGroup = byId("appContextGroup");
+  const contextLabel = byId("appContextLabel");
   const platform = byId("platform");
   const legacyMain = byId("top");
   const dashboardHome = workspace.querySelector(".dashboard-home");
@@ -4967,6 +4972,7 @@ function initAppShell() {
     try { return JSON.parse(localStorage.getItem(stateKey) || "{}"); } catch { return {}; }
   };
   const saveState = (next) => localStorage.setItem(stateKey, JSON.stringify({ ...stored(), ...next }));
+  const safeText = (value) => String(value ?? "").replace(/[<>&"']/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;", "'": "&#39;" }[char]));
   const mediaStudioItems = [
     { id: "photo-editor", icon: "✎", title: "Photo Editor", group: "Biên tập" },
     { id: "video-editor", icon: "▶", title: "Video Editor", group: "Biên tập", description: "Dựng, màu, VFX, âm thanh và xuất bản" },
@@ -5043,6 +5049,8 @@ function initAppShell() {
     { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", accent: "#ff6fae", route: "/support", items: [] }
   ];
   let activeRoute = "";
+  let renderedRoute = "";
+  let routeTransition = null;
   const sidebarGroupState = (() => {
     try { return JSON.parse(localStorage.getItem("hh.sidebar.groups.v1") || "{}"); } catch { return {}; }
   })();
@@ -5085,9 +5093,10 @@ function initAppShell() {
   };
   const renderNavigation = () => {
     const route = activeRoute;
+    const advancedMode = Boolean(stored().advanced);
     navigation.innerHTML = groups.map((group) => {
       const routeMatches = route === group.route || route.startsWith(`${group.route}/`);
-      const expanded = Object.hasOwn(sidebarGroupState, group.id) ? Boolean(sidebarGroupState[group.id]) : routeMatches;
+      const expanded = advancedMode ? (Object.hasOwn(sidebarGroupState, group.id) ? Boolean(sidebarGroupState[group.id]) : routeMatches) : (routeMatches && sidebarGroupState[group.id] !== false);
       const moduleEntries = group.items.filter((id) => id !== "admin-panel" || isCurrentUserAdmin()).map((id) => {
         const module = moduleById(id);
         if (!module) return "";
@@ -5098,9 +5107,20 @@ function initAppShell() {
       const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
       const pageItems = (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
       const studioMenu = group.studioItems ? `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
-      const submenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
-      const hasSubmenu = Boolean(submenu);
+      const activeStudio = (group.studioItems || []).find((item) => route === `${group.route}/${item.id}`);
+      const compactStudioItems = [...(activeStudio ? [activeStudio] : []), ...(group.studioItems || []).filter((item) => item !== activeStudio)].slice(0, 4).map((item) => {
+        const itemRoute = `${group.route}/${item.id}`;
+        return `<button class="app-sidebar__subitem app-sidebar__subitem--featured ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" ${route === itemRoute ? "aria-current=page" : ""}><b>${item.icon}</b><span>${item.title}</span></button>`;
+      }).join("");
+      const activeModuleEntry = moduleEntries.find((entry) => entry.includes("is-active"));
+      const compactModuleItems = [...(activeModuleEntry ? [activeModuleEntry] : []), ...moduleEntries.filter((entry) => entry !== activeModuleEntry)].slice(0, 4).join("");
+      const fullSubmenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
+      const compactSubmenu = `${shortcuts}${pageItems}${compactStudioItems}${compactModuleItems}`;
       const submenuCount = (group.shortcuts?.length || 0) + (group.pages?.length || 0) + (group.studioItems?.length || 0) + moduleEntries.length;
+      const compactCount = (group.shortcuts?.length || 0) + (group.pages?.length || 0) + Math.min(4, group.studioItems?.length || 0) + Math.min(4, moduleEntries.length);
+      const moreItem = !advancedMode && submenuCount > compactCount ? `<button class="app-sidebar__more" type="button" data-app-route="${group.route}"><span>＋</span><b>Xem tất cả ${submenuCount} chức năng</b><i>→</i></button>` : "";
+      const submenu = advancedMode ? fullSubmenu : `${compactSubmenu}${moreItem}`;
+      const hasSubmenu = Boolean(submenu);
       const countBadge = hasSubmenu ? `<small class="app-sidebar__count" aria-label="${submenuCount} chức năng">${submenuCount}</small>` : "";
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}" data-nav-group="${group.id}" style="--nav-accent:${group.accent || "#56eaff"}">
         <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.route}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}"><span>${group.icon}</span><b>${group.label}</b>${countBadge}<i class="app-sidebar__chevron" ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
@@ -5172,6 +5192,25 @@ function initAppShell() {
       });
     }
   };
+  const mountModuleHub = (group = null) => {
+    const moduleEntries = (group?.items || moduleList().map((item) => item.id))
+      .filter((id) => id !== "admin-panel" || isCurrentUserAdmin())
+      .map((id) => {
+        const item = moduleById(id);
+        return item ? { id: item.id, icon: "HH", title: item.title, group: group?.label || item.group || "HH Platform", description: item.description, route: routeForModule(item.id) } : null;
+      }).filter(Boolean);
+    const studioEntries = (group?.studioItems || []).map((item) => ({ ...item, route: `${group.route}/${item.id}` }));
+    const pageEntries = (group?.pages || []).map((item) => ({ ...item, icon: "↗", group: group.label, description: `Mở ${item.title} thành một màn hình làm việc riêng.` }));
+    const entries = [...studioEntries, ...pageEntries, ...moduleEntries];
+    const label = group?.label || "Tất cả công cụ";
+    workspace.innerHTML = `<section class="app-module-hub" data-module-hub>
+      <header><div><p class="section-kicker">${group ? "KHÔNG GIAN CHỨC NĂNG" : "HH APP LIBRARY"}</p><h2>Chọn một việc trong ${label}</h2><p>Mỗi lựa chọn mở thành một trang riêng, lưu trạng thái và luôn có đường quay lại. Bạn không cần cuộn qua các module không liên quan.</p></div><span><b>${entries.length}</b> màn hình sẵn sàng</span></header>
+      <div class="app-module-hub__toolbar"><label><span>⌕</span><input type="search" data-app-hub-search placeholder="Tìm theo tên hoặc việc cần làm..." autocomplete="off"></label><button type="button" data-command-open>Ctrl K · Tìm toàn hệ thống</button></div>
+      <div class="app-module-hub__grid" data-app-hub-grid>${entries.map((item, index) => `<button type="button" data-app-route="${safeText(item.route)}" data-app-hub-item="${safeText(`${item.title} ${item.group || ""} ${item.description || ""}`.toLowerCase())}" style="--hub-index:${index};--hub-accent:${safeText(group?.accent || item.accent || "#56eaff")}"><span>${safeText(item.icon || "◇")}</span><div><small>${safeText(item.group || label)}</small><strong>${safeText(item.title)}</strong><p>${safeText(item.description || "Mở không gian thao tác đầy đủ cho chức năng này.")}</p></div><i>→</i></button>`).join("") || `<div class="app-empty-state"><strong>Chưa có màn hình trong nhóm này</strong><p>Dùng tìm kiếm toàn hệ thống để mở công cụ khác.</p><button type="button" data-command-open>Tìm công cụ</button></div>`}</div>
+      <p class="app-module-hub__empty" data-app-hub-empty hidden>Không tìm thấy chức năng phù hợp. Hãy thử từ khóa ngắn hơn hoặc nhấn Ctrl K.</p>
+    </section>`;
+    requestAnimationFrame(() => workspace.querySelector("[data-app-hub-search]")?.focus({ preventScroll: true }));
+  };
   const mountSimpleView = (title, description, content) => {
     workspace.innerHTML = `<section class="app-simple-view"><div class="app-simple-view__intro"><p class="section-kicker">HH Platform</p><h2>${title}</h2><p>${description}</p></div>${content}</section>`;
   };
@@ -5205,6 +5244,26 @@ function initAppShell() {
     const crumbs = route.split("/").filter(Boolean);
       breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems].find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
+    if (contextBar) {
+      const group = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
+      contextBar.hidden = route === "/home";
+      if (contextGroup) contextGroup.textContent = (group?.label || "HH Platform").toUpperCase();
+      if (contextLabel) contextLabel.textContent = title;
+    }
+  };
+  const routeFromHash = () => {
+    const hash = location.hash.replace(/^#/, "") || "/home";
+    return hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+  };
+  const beginRouteFeedback = (route = routeFromHash()) => {
+    document.body.classList.add("app-route-changing");
+    routeProgress?.setAttribute("aria-hidden", "false");
+    if (routeAnnouncer) routeAnnouncer.textContent = `Đang mở ${route.split("/").filter(Boolean).at(-1) || "trang chủ"}`;
+  };
+  const endRouteFeedback = () => {
+    document.body.classList.remove("app-route-changing");
+    routeProgress?.setAttribute("aria-hidden", "true");
+    if (routeAnnouncer) routeAnnouncer.textContent = `${pageHeader.querySelector("h1")?.textContent || "Trang"} đã sẵn sàng`;
   };
   const renderRoute = () => {
     if (!isUnlocked()) return;
@@ -5315,10 +5374,9 @@ function initAppShell() {
       mountPlatform(module.id);
       remember(module.id);
     } else if (route === "/tools" || groups.some((group) => group.route === route)) {
-      const allowed = route === "/tools" ? "" : (groups.find((group) => group.route === route)?.items || []).filter((id) => id !== "admin-panel" || isCurrentUserAdmin());
-      updatePageHeader(route === "/tools" ? "Tất cả công cụ" : groups.find((group) => group.route === route)?.label || "Công cụ", "Chọn một module để mở thành trang làm việc riêng.", route);
-      mountPlatform("");
-      if (Array.isArray(allowed)) document.querySelectorAll("#moduleGrid [data-module-id]").forEach((card) => { card.hidden = !allowed.includes(card.dataset.moduleId); });
+      const currentGroup = route === "/tools" ? null : groups.find((group) => group.route === route);
+      updatePageHeader(currentGroup?.label || "Tất cả công cụ", "Chọn một việc để mở thành màn hình độc lập, không phải cuộn qua các module khác.", route);
+      mountModuleHub(currentGroup);
     } else if (route === "/favorites" || route === "/recent") {
       const key = route === "/favorites" ? "hh-module-favorites" : "hh.app-shell.recent";
       const ids = (() => { try { return JSON.parse(localStorage.getItem(key) || "[]"); } catch { return []; } })();
@@ -5342,6 +5400,26 @@ function initAppShell() {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     });
     legacyMain.hidden = true;
+    renderedRoute = route;
+  };
+  const renderRouteWithTransition = () => {
+    if (!isUnlocked()) return;
+    const nextRoute = routeFromHash();
+    const canTransition = Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    beginRouteFeedback(nextRoute);
+    routeTransition?.skipTransition?.();
+    if (!canTransition) {
+      renderRoute();
+      requestAnimationFrame(endRouteFeedback);
+      return;
+    }
+    document.documentElement.dataset.routeDirection = nextRoute.split("/").length >= renderedRoute.split("/").length ? "forward" : "back";
+    routeTransition = document.startViewTransition(() => renderRoute());
+    Promise.resolve(routeTransition.finished).catch(() => {}).finally(() => {
+      routeTransition = null;
+      delete document.documentElement.dataset.routeDirection;
+      endRouteFeedback();
+    });
   };
   const searchItems = () => {
     const modules = moduleList().filter((item) => item.id !== "admin-panel" || isCurrentUserAdmin()).map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
@@ -5410,6 +5488,11 @@ function initAppShell() {
       window.HHWorkCenter?.openCapture?.();
       return;
     }
+    if (event.target.closest("[data-shell-back]")) {
+      if (history.length > 1) history.back();
+      else location.hash = "#/home";
+      return;
+    }
     const routeButton = event.target.closest("[data-app-route]");
     if (routeButton) {
       const route = routeButton.dataset.appRoute;
@@ -5427,7 +5510,8 @@ function initAppShell() {
         const targetGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
         if (targetGroup) { sidebarGroupState[targetGroup.id] = true; saveSidebarGroups(); }
         const nextHash = `#${route}`;
-        if (location.hash === nextHash) renderRoute(); else location.hash = nextHash;
+        beginRouteFeedback(route);
+        if (location.hash === nextHash) renderRouteWithTransition(); else location.hash = nextHash;
         if (mobileSidebarQuery.matches) {
           document.body.classList.add("app-sidebar-collapsed");
         }
@@ -5478,13 +5562,25 @@ function initAppShell() {
     }
     if (userMenu?.classList.contains("is-open") && !event.target.closest("#appUserMenu")) closeOverlays({ restoreFocus: false });
   });
+  document.addEventListener("input", (event) => {
+    if (!event.target.matches("[data-app-hub-search]")) return;
+    const query = event.target.value.trim().toLowerCase();
+    const hub = event.target.closest("[data-module-hub]");
+    let visible = 0;
+    hub?.querySelectorAll("[data-app-hub-item]").forEach((item) => {
+      item.hidden = Boolean(query) && !item.dataset.appHubItem.includes(query);
+      visible += item.hidden ? 0 : 1;
+    });
+    const empty = hub?.querySelector("[data-app-hub-empty]");
+    if (empty) empty.hidden = visible > 0;
+  });
   document.addEventListener("change", (event) => {
     const setting = event.target.closest("[data-shell-setting]");
     if (!setting) return;
     const next = { [setting.dataset.shellSetting]: setting.checked };
     saveState(next);
     if (setting.dataset.shellSetting === "collapsed") document.body.classList.toggle("app-sidebar-collapsed", setting.checked);
-    if (setting.dataset.shellSetting === "advanced") document.body.classList.toggle("app-advanced-mode", setting.checked);
+    if (setting.dataset.shellSetting === "advanced") { document.body.classList.toggle("app-advanced-mode", setting.checked); renderNavigation(); }
   });
   document.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openPalette(); }
@@ -5503,7 +5599,7 @@ function initAppShell() {
     }
   });
   paletteInput?.addEventListener("input", () => renderPalette(paletteInput.value));
-  window.addEventListener("hashchange", renderRoute);
+  window.addEventListener("hashchange", renderRouteWithTransition);
   window.addEventListener("hh:modules-ready", () => {
     renderNavigation();
     renderRoute();
