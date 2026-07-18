@@ -5107,19 +5107,9 @@ function initAppShell() {
       const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
       const pageItems = (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
       const studioMenu = group.studioItems ? `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
-      const activeStudio = (group.studioItems || []).find((item) => route === `${group.route}/${item.id}`);
-      const compactStudioItems = [...(activeStudio ? [activeStudio] : []), ...(group.studioItems || []).filter((item) => item !== activeStudio)].slice(0, 4).map((item) => {
-        const itemRoute = `${group.route}/${item.id}`;
-        return `<button class="app-sidebar__subitem app-sidebar__subitem--featured ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" ${route === itemRoute ? "aria-current=page" : ""}><b>${item.icon}</b><span>${item.title}</span></button>`;
-      }).join("");
-      const activeModuleEntry = moduleEntries.find((entry) => entry.includes("is-active"));
-      const compactModuleItems = [...(activeModuleEntry ? [activeModuleEntry] : []), ...moduleEntries.filter((entry) => entry !== activeModuleEntry)].slice(0, 4).join("");
       const fullSubmenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
-      const compactSubmenu = `${shortcuts}${pageItems}${compactStudioItems}${compactModuleItems}`;
       const submenuCount = (group.shortcuts?.length || 0) + (group.pages?.length || 0) + (group.studioItems?.length || 0) + moduleEntries.length;
-      const compactCount = (group.shortcuts?.length || 0) + (group.pages?.length || 0) + Math.min(4, group.studioItems?.length || 0) + Math.min(4, moduleEntries.length);
-      const moreItem = !advancedMode && submenuCount > compactCount ? `<button class="app-sidebar__more" type="button" data-app-route="${group.route}"><span>＋</span><b>Xem tất cả ${submenuCount} chức năng</b><i>→</i></button>` : "";
-      const submenu = advancedMode ? fullSubmenu : `${compactSubmenu}${moreItem}`;
+      const submenu = fullSubmenu;
       const hasSubmenu = Boolean(submenu);
       const countBadge = hasSubmenu ? `<small class="app-sidebar__count" aria-label="${submenuCount} chức năng">${submenuCount}</small>` : "";
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}" data-nav-group="${group.id}" style="--nav-accent:${group.accent || "#56eaff"}">
