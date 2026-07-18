@@ -89,6 +89,15 @@
     ],
     checklist: {},
     media: { visualName: "", visualDuration: 0, audioName: "", audioDuration: 0 },
+    automation: {
+      idea: "Một đêm mưa yên tĩnh trong cabin trên núi, piano ấm áp để ngủ và thư giãn",
+      trackSeconds: 60,
+      plan: "",
+      operationName: "",
+      lastRunAt: "",
+      lastError: "",
+      stages: {}
+    },
     qa: null,
     updatedAt: new Date().toISOString()
   });
@@ -100,6 +109,13 @@
   let audioContext = null;
   let visualUrl = "";
   let audioUrl = "";
+  let generatedImage = null;
+  let generatedAudio = null;
+  let generatedVideo = null;
+  let providerStatus = null;
+  let pipelineRunning = false;
+  let pipelineCancelled = false;
+  const ASSET_DB = "hh-music-ai-assets-v1";
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || min));
@@ -129,6 +145,7 @@
         ...saved,
         project: { ...base.project, ...(saved.project || {}) },
         media: { ...base.media, ...(saved.media || {}) },
+        automation: { ...base.automation, ...(saved.automation || {}), stages: { ...base.automation.stages, ...(saved.automation?.stages || {}) } },
         chapters: Array.isArray(saved.chapters) && saved.chapters.length ? saved.chapters : base.chapters,
         checklist: { ...(saved.checklist || {}) }
       };
@@ -141,6 +158,117 @@
     state.updatedAt = new Date().toISOString();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
   }
+
+  function assetDatabase() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error("Trình duyệt không hỗ trợ IndexedDB."));
+      const request = indexedDB.open(ASSET_DB, 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains("assets")) request.result.createObjectStore("assets");
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Không mở được kho media."));
+    });
+  }
+
+  async function storeAsset(kind, blob) {
+    const db = await assetDatabase();
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction("assets", "readwrite");
+      transaction.objectStore("assets").put(blob, kind);
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+  }
+
+  async function readAsset(kind) {
+    const db = await assetDatabase();
+    const value = await new Promise((resolve, reject) => {
+      const request = db.transaction("assets", "readonly").objectStore("assets").get(kind);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    return value;
+  }
+
+  function base64ToBlob(data, mimeType) {
+    const binary = atob(String(data || "").replace(/^data:[^;]+;base64,/, ""));
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return new Blob([bytes], { type: mimeType || "application/octet-stream" });
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || "").split(",")[1] || "");
+      reader.onerror = () => reject(reader.error || new Error("Không đọc được media."));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function replaceAssetUrl(asset, blob) {
+    if (asset?.url) URL.revokeObjectURL(asset.url);
+    return { blob, url: URL.createObjectURL(blob), mimeType: blob.type || "application/octet-stream" };
+  }
+
+  async function restoreGeneratedAssets() {
+    try {
+      const [image, audio, video] = await Promise.all([readAsset("image"), readAsset("audio"), readAsset("video")]);
+      if (image instanceof Blob) generatedImage = replaceAssetUrl(generatedImage, image);
+      if (audio instanceof Blob) generatedAudio = replaceAssetUrl(generatedAudio, audio);
+      if (video instanceof Blob) generatedVideo = replaceAssetUrl(generatedVideo, video);
+      if (host && view === "project") render();
+    } catch {}
+  }
+
+  function apiBase() {
+    return String(window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
+  }
+
+  function authHeaders(json = true) {
+    const token = localStorage.getItem("hh-auth-token") || "";
+    return { ...(json ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  }
+
+  async function musicApi(actionType, input = "", meta = {}) {
+    const response = await fetch(`${apiBase()}/api/modules/music-ai/actions`, {
+      method: "POST",
+      headers: authHeaders(true),
+      body: JSON.stringify({ actionType, input, meta }),
+      cache: "no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data.error || `Music AI API lỗi HTTP ${response.status}.`);
+      error.code = data.code || "MUSIC_AI_API_ERROR";
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }
+
+  async function refreshProviders(shouldRender = true) {
+    try {
+      const response = await fetch(`${apiBase()}/api/modules/music-ai/actions`, { headers: authHeaders(false), cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      providerStatus = await response.json();
+    } catch (error) {
+      providerStatus = { canRunMedia: false, providers: {}, error: `Không kết nối backend: ${error.message}` };
+    }
+    if (shouldRender && host && view === "project") render();
+    return providerStatus;
+  }
+
+  function setPipelineStage(id, status, detail = "") {
+    state.automation.stages[id] = { status, detail, updatedAt: new Date().toISOString() };
+    saveState();
+    if (host && view === "project") render();
+  }
+
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   function projectMath() {
     const project = state.project;
@@ -218,12 +346,56 @@
     <nav class="mai-tabs" aria-label="Quy trình làm nhạc AI">${VIEWS.map((item) => `<button type="button" data-app-route="/music-ai/${item.id}" class="${view === item.id ? "is-active" : ""}"><i>${item.icon}</i><span>${item.label}</span></button>`).join("")}</nav>`;
   }
 
+  function automationView() {
+    const automation = state.automation;
+    const providers = providerStatus?.providers || {};
+    const providerRows = [
+      ["concept", "AI Concept", "Lập production brief và đồng bộ prompt"],
+      ["image", "Gemini Images", "Tạo ảnh 16:9 ngay trong web"],
+      ["music", "Eleven Music", "Tạo track instrumental 48 kHz"],
+      ["video", "Google Veo", "Animate ảnh thành clip 8 giây"],
+      ["renderer", "Render 1–5 giờ", "FFmpeg worker cho file cuối"]
+    ];
+    const stageRows = [
+      ["concept", "Production brief"],
+      ["image", "Ảnh nền 16:9"],
+      ["music", "Track instrumental"],
+      ["video", "Clip chuyển động"],
+      ["package", "Gói dựng & YouTube"]
+    ];
+    const completed = stageRows.filter(([id]) => automation.stages?.[id]?.status === "done").length;
+    const statusLabel = (status) => ({ idle: "Chờ", running: "Đang chạy", done: "Hoàn tất", blocked: "Chưa kết nối", error: "Lỗi", skipped: "Bỏ qua" }[status] || "Chờ");
+    const assetButtons = [
+      generatedImage ? `<button type="button" data-download-generated="image">Tải ảnh JPG</button>` : "",
+      generatedAudio ? `<button type="button" data-download-generated="audio">Tải nhạc MP3</button>` : "",
+      generatedVideo ? `<button type="button" data-download-generated="video">Tải video Veo</button>` : ""
+    ].filter(Boolean).join("");
+    return `<section class="mai-auto mai-panel">
+      <header class="mai-auto__head"><div><p><i></i> ONE-CLICK AI PRODUCER</p><h3>Nhập một ý tưởng, hệ thống tự chạy cả dây chuyền</h3><span>AI lập concept, tạo ảnh, nhạc, chuyển động và đóng gói dự án mà không phải chuyển qua nhiều website.</span></div><div class="mai-auto__progress"><strong>${completed}/5</strong><span>${pipelineRunning ? "Đang sản xuất" : "Tiến độ"}</span></div></header>
+      <div class="mai-auto__connections">${providerRows.map(([id, label, note]) => { const item = providers[id]; const ready = Boolean(item?.configured) && (id === "concept" || providerStatus?.canRunMedia); return `<article class="${ready ? "is-connected" : "is-missing"}"><i>${ready ? "✓" : "!"}</i><span><strong>${label}</strong><small>${item?.model || note}</small></span><b>${ready ? "Đã nối" : item?.configured ? "Cần quyền admin" : "Chưa cấu hình"}</b></article>`; }).join("")}</div>
+      ${providerStatus?.error ? `<div class="mai-auto__notice is-error">${escapeHtml(providerStatus.error)}</div>` : ""}
+      <div class="mai-auto__body">
+        <section class="mai-auto__brief">
+          <label><span>Ý tưởng video</span><textarea rows="4" data-automation-field="idea" placeholder="Ví dụ: cabin piano trong đêm mưa để ngủ sâu...">${escapeHtml(automation.idea)}</textarea></label>
+          <div><label><span>Track mẫu</span><select data-automation-field="trackSeconds"><option value="30" ${automation.trackSeconds === 30 ? "selected" : ""}>30 giây · thử nhanh</option><option value="60" ${automation.trackSeconds === 60 ? "selected" : ""}>60 giây · cân bằng</option><option value="120" ${automation.trackSeconds === 120 ? "selected" : ""}>120 giây · chất lượng</option></select></label><label><span>Đầu ra</span><input value="${state.project.hours} giờ · ${state.project.resolution} · ${state.project.genre}" readonly></label></div>
+          <div class="mai-auto__actions"><button class="mai-primary" type="button" data-run-auto ${pipelineRunning ? "disabled" : ""}>${pipelineRunning ? "Đang chạy…" : "▶ Chạy tự động toàn bộ"}</button>${pipelineRunning ? `<button type="button" data-stop-auto>Dừng sau bước hiện tại</button>` : ""}<button type="button" data-refresh-providers>Kiểm tra kết nối</button></div>
+          <small>Media tính phí chỉ chạy cho tài khoản quản trị để tránh người khác tiêu hao credit API của bạn.</small>
+        </section>
+        <aside class="mai-auto__stages">${stageRows.map(([id, label], index) => { const stage = automation.stages?.[id] || { status: "idle", detail: "" }; return `<article class="is-${stage.status || "idle"}"><i>${String(index + 1).padStart(2, "0")}</i><span><strong>${label}</strong><small>${escapeHtml(stage.detail || "Sẵn sàng")}</small></span><b>${statusLabel(stage.status)}</b></article>`; }).join("")}</aside>
+      </div>
+      ${(generatedImage || generatedAudio || generatedVideo || automation.plan) ? `<section class="mai-auto__outputs"><div class="mai-auto__preview">${generatedVideo ? `<video src="${generatedVideo.url}" controls loop muted playsinline></video>` : generatedImage ? `<img src="${generatedImage.url}" alt="Ảnh AI đã tạo">` : `<div><span>Chưa có hình ảnh</span></div>`}${generatedAudio ? `<audio src="${generatedAudio.url}" controls></audio>` : `<div><span>Chưa có audio</span></div>`}</div><div class="mai-auto__result"><p>PRODUCTION BRIEF</p><pre>${escapeHtml(automation.plan || "Đang chờ AI lập kế hoạch…")}</pre><div>${assetButtons}<button type="button" data-download-production-pack>Tải gói dựng</button></div></div></section>` : ""}
+      ${automation.lastError ? `<div class="mai-auto__notice is-error"><strong>Pipeline dừng:</strong> ${escapeHtml(automation.lastError)}</div>` : ""}
+      <footer><span>Dữ liệu media được lưu trong IndexedDB trên thiết bị này.</span><span>Gemini/Veo dùng chung pool khóa máy chủ · Eleven Music dùng khóa riêng.</span></footer>
+    </section>`;
+  }
+
   function projectView() {
     const p = state.project;
     const math = projectMath();
     const preset = PRESETS[p.genre] || PRESETS.piano;
     const steps = VIEWS.slice(1).map((item, index) => `<button class="mai-flow-card" type="button" data-app-route="/music-ai/${item.id}"><i>${String(index + 2).padStart(2, "0")}</i><span><strong>${item.label}</strong><small>${["Tạo một bộ prompt cùng ngôn ngữ hình ảnh và âm thanh.", "Tính loop và xuất lệnh FFmpeg dùng ngay.", "Đọc file thật, đo peak/RMS và phát hiện clipping.", "Tạo timestamp đúng chuẩn chapter YouTube.", "Sinh tiêu đề, mô tả, tag và file metadata.", "Chốt quyền sử dụng và QA trước khi public."][index]}</small></span><b>→</b></button>`).join("");
     return `<section class="mai-view">
+      ${automationView()}
       <div class="mai-section-head"><div><p>PROJECT BLUEPRINT</p><h3>Thiết lập một lần, dùng cho cả dây chuyền</h3><span>Mọi prompt, phép tính loop và nội dung xuất bản tự cập nhật theo dự án này.</span></div><button class="mai-primary" type="button" data-action="save-project">Lưu dự án</button></div>
       <div class="mai-layout mai-layout--project">
         <form class="mai-panel mai-project-form" onsubmit="return false">
@@ -398,6 +570,145 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  function safeProjectName() {
+    return String(state.project.name || "hh-music-ai").replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "hh-music-ai";
+  }
+
+  async function fetchGeneratedVideo(uri) {
+    const encoded = btoa(uri).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const response = await fetch(`${apiBase()}/api/modules/music-ai/actions?media=veo&uri=${encodeURIComponent(encoded)}`, { headers: authHeaders(false), cache: "no-store" });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || `Không tải được video Veo (HTTP ${response.status}).`);
+    }
+    return response.blob();
+  }
+
+  async function runAutomaticPipeline() {
+    if (pipelineRunning) return;
+    pipelineRunning = true;
+    pipelineCancelled = false;
+    state.automation.lastError = "";
+    state.automation.lastRunAt = new Date().toISOString();
+    state.automation.stages = {};
+    saveState();
+    render();
+    const pack = promptPack();
+    try {
+      const health = await refreshProviders(false);
+      setPipelineStage("concept", "running", "Gemini đang lập production brief…");
+      const planResponse = await musicApi("music-plan", JSON.stringify({ idea: state.automation.idea, project: state.project, prompts: pack }), { config: state.project, creativity: 72 });
+      state.automation.plan = planResponse.action?.output || "Production brief đã được tạo.";
+      setPipelineStage("concept", "done", `${planResponse.action?.model || "HH AI"} · brief đã đồng bộ`);
+      if (pipelineCancelled) throw new Error("Đã dừng theo yêu cầu.");
+
+      if (health?.providers?.image?.configured && health.canRunMedia) {
+        setPipelineStage("image", "running", "Gemini Images đang tạo ảnh 16:9…");
+        const imageResponse = await musicApi("music-image", pack.image, {});
+        const imageBlob = base64ToBlob(imageResponse.media.data, imageResponse.media.mimeType);
+        generatedImage = replaceAssetUrl(generatedImage, imageBlob);
+        await storeAsset("image", imageBlob);
+        state.media.visualName = `${safeProjectName()}-cover.jpg`;
+        setPipelineStage("image", "done", `${imageResponse.media.model} · ảnh đã lưu trên thiết bị`);
+      } else {
+        setPipelineStage("image", "blocked", health?.providers?.image?.configured ? "Đăng nhập tài khoản quản trị để dùng credit" : "Cần GEMINI_API_KEYS có quyền tạo ảnh");
+      }
+      if (pipelineCancelled) throw new Error("Đã dừng theo yêu cầu.");
+
+      if (health?.providers?.music?.configured && health.canRunMedia) {
+        setPipelineStage("music", "running", `Eleven Music đang tạo ${state.automation.trackSeconds} giây…`);
+        const trackResponse = await musicApi("music-track", pack.music, { durationSeconds: state.automation.trackSeconds });
+        const audioBlob = base64ToBlob(trackResponse.media.data, trackResponse.media.mimeType);
+        generatedAudio = replaceAssetUrl(generatedAudio, audioBlob);
+        await storeAsset("audio", audioBlob);
+        state.media.audioName = `${safeProjectName()}-track.mp3`;
+        state.media.audioDuration = Number(trackResponse.media.durationSeconds || state.automation.trackSeconds);
+        setPipelineStage("music", "done", `${trackResponse.media.model} · instrumental đã sẵn sàng`);
+      } else {
+        setPipelineStage("music", "blocked", health?.providers?.music?.configured ? "Đăng nhập tài khoản quản trị để tạo nhạc" : "Cần ELEVENLABS_API_KEY trên Vercel");
+      }
+      if (pipelineCancelled) throw new Error("Đã dừng theo yêu cầu.");
+
+      if (health?.providers?.video?.configured && health.canRunMedia && generatedImage?.blob) {
+        setPipelineStage("video", "running", "Đang gửi ảnh sang Veo…");
+        const imageData = await blobToBase64(generatedImage.blob);
+        const startResponse = await musicApi("music-video-start", pack.motion, { imageData, imageMimeType: generatedImage.mimeType, resolution: state.project.resolution === "1080p" ? "1080p" : "720p" });
+        state.automation.operationName = startResponse.operation.name;
+        saveState();
+        let videoResult = null;
+        for (let attempt = 1; attempt <= 75 && !pipelineCancelled; attempt += 1) {
+          if (attempt > 1) await delay(8000);
+          const statusResponse = await musicApi("music-video-status", "", { operationName: state.automation.operationName });
+          if (statusResponse.operation.error) throw new Error(statusResponse.operation.error);
+          if (statusResponse.operation.done && statusResponse.operation.ready) { videoResult = statusResponse.operation; break; }
+          if (attempt === 1 || attempt % 3 === 0) setPipelineStage("video", "running", `Veo đang dựng clip · lần kiểm tra ${attempt}`);
+        }
+        if (pipelineCancelled) throw new Error("Đã dừng theo yêu cầu.");
+        if (!videoResult?.mediaUri) throw new Error("Veo chưa hoàn thành trong 10 phút. Mã tiến trình đã được lưu để thử lại.");
+        setPipelineStage("video", "running", "Đang tải clip Veo về thiết bị…");
+        const videoBlob = await fetchGeneratedVideo(videoResult.mediaUri);
+        generatedVideo = replaceAssetUrl(generatedVideo, videoBlob);
+        await storeAsset("video", videoBlob);
+        state.media.visualName = `${safeProjectName()}-veo.mp4`;
+        state.media.visualDuration = 8;
+        state.project.visualType = "video";
+        setPipelineStage("video", "done", "Clip Veo 8 giây đã lưu trên thiết bị");
+      } else {
+        const detail = !generatedImage ? "Cần ảnh đầu vào trước khi tạo chuyển động" : health?.providers?.video?.configured ? "Đăng nhập tài khoản quản trị để tạo video" : "Cần GEMINI_API_KEYS có quyền Veo";
+        setPipelineStage("video", "blocked", detail);
+      }
+
+      setPipelineStage("package", "running", "Đang tạo lệnh render và metadata YouTube…");
+      state.checklist.metadata = true;
+      state.automation.lastError = "";
+      saveState();
+      setPipelineStage("package", "done", health?.providers?.renderer?.configured ? "Render Worker đã kết nối · gói dựng sẵn sàng" : "Gói FFmpeg + YouTube đã sẵn sàng tải");
+      toast("Pipeline đã chạy xong các dịch vụ đang kết nối.");
+    } catch (error) {
+      state.automation.lastError = String(error.message || error);
+      Object.entries(state.automation.stages || {}).forEach(([id, stage]) => {
+        if (stage?.status === "running") {
+          state.automation.stages[id] = { status: "error", detail: state.automation.lastError };
+        }
+      });
+      saveState();
+      toast(state.automation.lastError, "error");
+    } finally {
+      pipelineRunning = false;
+      if (host && view === "project") render();
+    }
+  }
+
+  function downloadProductionPack() {
+    const name = safeProjectName();
+    const youtube = youtubePack();
+    const manifest = {
+      project: state.project,
+      automation: { ...state.automation, stages: state.automation.stages },
+      prompts: promptPack(),
+      youtube,
+      chapters: chapterOutput().lines,
+      renderCommand: ffmpegCommand(),
+      generatedAssets: { image: Boolean(generatedImage), audio: Boolean(generatedAudio), video: Boolean(generatedVideo) }
+    };
+    download(JSON.stringify(manifest, null, 2), `${name}-production.json`, "application/json");
+    download(`@echo off\r\n${ffmpegCommand()}\r\npause\r\n`, `${name}-render.bat`, "application/x-bat");
+    download(`TITLE\n${youtube.title}\n\nDESCRIPTION\n${youtube.description}\n\nTAGS\n${youtube.tags}\n`, `${name}-youtube.txt`);
+    if (generatedImage) downloadBlob(generatedImage.blob, `${name}-cover.jpg`);
+    if (generatedAudio) downloadBlob(generatedAudio.blob, `${name}-track.mp3`);
+    if (generatedVideo) downloadBlob(generatedVideo.blob, `${name}-veo.mp4`);
+    toast("Đã tải gói sản xuất và các media hiện có.");
+  }
+
   function applyPreset() {
     const preset = PRESETS[state.project.genre] || PRESETS.piano;
     Object.assign(state.project, { bpm: preset.bpm, mood: preset.mood, instruments: preset.instruments, scene: preset.scene, palette: preset.palette });
@@ -553,6 +864,11 @@
   function handleInput(event) {
     const target = event.target;
     if (target.matches("[data-project-field]")) updateProjectField(target);
+    if (target.matches("[data-automation-field]")) {
+      const key = target.dataset.automationField;
+      state.automation[key] = key === "trackSeconds" ? Number(target.value) : target.value;
+      saveState();
+    }
     if (target.matches("[data-chapter-name]")) {
       state.chapters[Number(target.dataset.chapterName)].name = target.value;
       saveState();
@@ -567,6 +883,12 @@
 
   function handleChange(event) {
     const target = event.target;
+    if (target.matches("[data-automation-field]")) {
+      const key = target.dataset.automationField;
+      state.automation[key] = key === "trackSeconds" ? Number(target.value) : target.value;
+      saveState();
+      return;
+    }
     if (target.matches("[data-project-field]")) {
       updateProjectField(target);
       if (target.dataset.projectField === "genre") applyPreset(); else render();
@@ -599,6 +921,15 @@
     if (button.dataset.action === "apply-preset") applyPreset();
     if (button.dataset.action === "save-project") { saveState(); toast("Dự án đã lưu trên thiết bị."); }
     if (button.dataset.action === "export-project") download(JSON.stringify(state, null, 2), `${state.project.name.replace(/[^a-z0-9_-]+/gi, "-")}.hhmusic.json`, "application/json");
+    if (button.hasAttribute("data-run-auto")) runAutomaticPipeline();
+    if (button.hasAttribute("data-stop-auto")) { pipelineCancelled = true; toast("Pipeline sẽ dừng sau tác vụ hiện tại."); }
+    if (button.hasAttribute("data-refresh-providers")) { refreshProviders().then(() => toast("Đã cập nhật trạng thái kết nối.")); }
+    if (button.dataset.downloadGenerated) {
+      const asset = { image: generatedImage, audio: generatedAudio, video: generatedVideo }[button.dataset.downloadGenerated];
+      const extension = button.dataset.downloadGenerated === "image" ? "jpg" : button.dataset.downloadGenerated === "audio" ? "mp3" : "mp4";
+      if (asset?.blob) downloadBlob(asset.blob, `${safeProjectName()}-${button.dataset.downloadGenerated}.${extension}`);
+    }
+    if (button.hasAttribute("data-download-production-pack")) downloadProductionPack();
     if (button.hasAttribute("data-copy-all-prompts")) {
       const pack = promptPack();
       copyText(Object.entries(pack).map(([key, text]) => `${key.toUpperCase()}\n${text}`).join("\n\n"));
@@ -627,6 +958,8 @@
     host.addEventListener("change", handleChange, { signal: controller.signal });
     host.addEventListener("click", handleClick, { signal: controller.signal });
     render();
+    refreshProviders();
+    restoreGeneratedAssets();
   }
 
   function unmount() {

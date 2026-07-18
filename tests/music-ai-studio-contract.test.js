@@ -32,6 +32,36 @@ test("Music AI workflow performs real local production tasks", () => {
   assert.match(source, /data-download-youtube/);
 });
 
+test("One-click producer connects real server media jobs without exposing keys", () => {
+  const client = read("music-ai-studio.js");
+  const server = read("api/modules/[moduleId]/actions.js");
+  assert.match(client, /ONE-CLICK AI PRODUCER/);
+  assert.match(client, /runAutomaticPipeline/);
+  assert.match(client, /indexedDB\.open/);
+  assert.match(client, /music-image/);
+  assert.match(client, /music-track/);
+  assert.match(client, /music-video-start/);
+  assert.match(client, /music-video-status/);
+  assert.match(client, /stage\?\.status === "running"/);
+  assert.match(client, /status: "error"/);
+  assert.match(server, /gemini-3\.1-flash-image/);
+  assert.match(server, /veo-3\.1-fast-generate-preview/);
+  assert.match(server, /https:\/\/api\.elevenlabs\.io\/v1\/music/);
+  assert.match(server, /force_instrumental: true/);
+  assert.match(server, /isAdminUser/);
+  assert.match(server, /Readable\.fromWeb/);
+  assert.doesNotMatch(client, /process\.env|AIza[0-9A-Za-z_-]{24,}/);
+});
+
+test("Paid media providers report configuration without returning credentials", () => {
+  const server = read("api/modules/[moduleId]/actions.js");
+  assert.match(server, /function musicProviderStatus/);
+  assert.match(server, /ownerOnly: true/);
+  assert.match(server, /canRunMedia: isAdminUser\(user\)/);
+  assert.match(server, /configured: Boolean/);
+  assert.doesNotMatch(server, /providers:[\s\S]{0,1400}(?:apiKey|secret|token):/i);
+});
+
 test("Music AI ships YouTube-safe defaults and no fake LUFS claim", () => {
   const source = read("music-ai-studio.js");
   assert.match(source, /-c:v libx264/);
@@ -44,7 +74,7 @@ test("Music AI ships YouTube-safe defaults and no fake LUFS claim", () => {
 test("Music AI assets are loaded by the page and offline worker", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["music-ai-studio.css?v=1", "music-ai-studio.js?v=1", "script.js?v=94", "app-shell.css?v=44"]) {
+  for (const asset of ["music-ai-studio.css?v=2", "music-ai-studio.js?v=2", "script.js?v=95", "app-shell.css?v=44"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

@@ -2,11 +2,14 @@ const {
   bodyOf,
   clean,
   currentUser,
+  database,
   enforceRateLimit,
+  isAdminUser,
   ownerFrom,
   setCors,
   withApi
 } = require("../../../utils/platform");
+const { Readable } = require("node:stream");
 const {
   GeminiKeyPool,
   canTryAnotherKey,
@@ -19,7 +22,7 @@ const downloadHosts = [
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
-const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation"]);
+const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai"]);
 const allowedModels = new Set(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
 const contentPackSchema = {
   type: "object",
@@ -120,6 +123,248 @@ function supportedDownloadUrl(value) {
 
 function requestIp(req) {
   return clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "guest").split(",")[0], 120);
+}
+
+const musicMediaActions = new Set(["music-image", "music-track", "music-video-start", "music-video-status"]);
+
+function musicProviderStatus(user) {
+  const geminiConfigured = geminiKeys().length > 0;
+  return {
+    ownerOnly: true,
+    canRunMedia: isAdminUser(user),
+    providers: {
+      concept: { configured: geminiConfigured, provider: "Gemini", model: process.env.GEMINI_MODEL || "gemini-3.5-flash" },
+      image: { configured: geminiConfigured, provider: "Gemini Images", model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image" },
+      video: { configured: geminiConfigured, provider: "Google Veo", model: process.env.GEMINI_VIDEO_MODEL || "veo-3.1-fast-generate-preview" },
+      music: { configured: Boolean(clean(process.env.ELEVENLABS_API_KEY, 400)), provider: "Eleven Music", model: process.env.ELEVEN_MUSIC_MODEL || "music_v2" },
+      renderer: { configured: Boolean(clean(process.env.MUSIC_RENDER_API_URL, 1000)), provider: "HH Render Worker", model: "FFmpeg" }
+    }
+  };
+}
+
+function musicBody(req) {
+  if (typeof req.body === "string") {
+    if (Buffer.byteLength(req.body, "utf8") > 3_200_000) {
+      const error = new Error("Music media request is too large.");
+      error.statusCode = 413;
+      throw error;
+    }
+    return JSON.parse(req.body || "{}");
+  }
+  return req.body && typeof req.body === "object" ? req.body : {};
+}
+
+function providerError(message, status = 502, code = "MUSIC_PROVIDER_ERROR") {
+  const error = new Error(clean(message, 300));
+  error.statusCode = status;
+  error.code = code;
+  return error;
+}
+
+async function withGeminiMediaKey(task) {
+  const pool = geminiPool();
+  if (!pool.keys.length) throw providerError("Gemini media chưa được cấu hình trên máy chủ.", 503, "GEMINI_NOT_CONFIGURED");
+  const candidates = pool.candidates();
+  let lastError = null;
+  for (let index = 0; index < candidates.length; index += 1) {
+    const key = candidates[index];
+    try {
+      const result = await task(key);
+      pool.reportSuccess(key);
+      return result;
+    } catch (error) {
+      lastError = error;
+      const status = Number(error.status || error.statusCode || 0);
+      pool.reportFailure(key, status, error.message);
+      if (!canTryAnotherKey(status, error.message) || index === candidates.length - 1) break;
+    }
+  }
+  throw lastError || providerError("Gemini media không phản hồi.");
+}
+
+function interactionImage(data) {
+  for (const step of data?.steps || []) {
+    if (step?.type !== "model_output") continue;
+    for (const block of step.content || []) {
+      if (block?.type === "image" && block.data) {
+        return { data: String(block.data), mimeType: clean(block.mime_type || block.mimeType || "image/jpeg", 80) };
+      }
+    }
+  }
+  const direct = data?.output_image || data?.outputImage;
+  return direct?.data ? { data: String(direct.data), mimeType: clean(direct.mime_type || direct.mimeType || "image/jpeg", 80) } : null;
+}
+
+async function generateMusicImage(body) {
+  const prompt = clean(body.input || body.prompt, 5000);
+  if (!prompt) throw providerError("Hãy nhập concept trước khi tạo ảnh.", 400, "IMAGE_PROMPT_REQUIRED");
+  return withGeminiMediaKey(async (apiKey) => {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image",
+        input: prompt,
+        response_format: { type: "image", mime_type: "image/jpeg", aspect_ratio: "16:9", image_size: "1K" },
+        background: false,
+        store: false
+      }),
+      signal: AbortSignal.timeout(26000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = providerError(data?.error?.message || `Gemini Images HTTP ${response.status}.`, response.status, "GEMINI_IMAGE_ERROR");
+      error.status = response.status;
+      throw error;
+    }
+    const image = interactionImage(data);
+    if (!image?.data || image.data.length > 3_100_000) throw providerError("Ảnh trả về rỗng hoặc vượt giới hạn truyền tải.", 502, "IMAGE_OUTPUT_INVALID");
+    return { ok: true, media: { kind: "image", data: image.data, mimeType: image.mimeType, model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image", interactionId: clean(data.id, 240) } };
+  });
+}
+
+async function generateMusicTrack(body) {
+  const apiKey = clean(process.env.ELEVENLABS_API_KEY, 400);
+  if (!apiKey) throw providerError("Eleven Music chưa được cấu hình trên Vercel.", 503, "ELEVEN_MUSIC_NOT_CONFIGURED");
+  const prompt = clean(body.input || body.prompt, 4100);
+  if (!prompt) throw providerError("Hãy nhập prompt nhạc trước khi tạo track.", 400, "MUSIC_PROMPT_REQUIRED");
+  const durationMs = Math.min(120000, Math.max(15000, Number(body.meta?.durationSeconds || body.durationSeconds || 60) * 1000));
+  const response = await fetch("https://api.elevenlabs.io/v1/music?output_format=mp3_48000_192", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "xi-api-key": apiKey },
+    body: JSON.stringify({
+      prompt,
+      music_length_ms: durationMs,
+      model_id: process.env.ELEVEN_MUSIC_MODEL || "music_v2",
+      force_instrumental: true,
+      sign_with_c2pa: true
+    }),
+    signal: AbortSignal.timeout(28000)
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw providerError(data?.detail?.message || data?.detail || data?.error || `Eleven Music HTTP ${response.status}.`, response.status, "ELEVEN_MUSIC_ERROR");
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > 3_100_000) throw providerError("Track vượt giới hạn truyền tải của Vercel. Hãy giảm thời lượng xuống 60 giây.", 413, "MUSIC_OUTPUT_TOO_LARGE");
+  return { ok: true, media: { kind: "audio", data: bytes.toString("base64"), mimeType: response.headers.get("content-type") || "audio/mpeg", durationSeconds: durationMs / 1000, model: process.env.ELEVEN_MUSIC_MODEL || "music_v2", songId: clean(response.headers.get("song-id"), 240) } };
+}
+
+function cleanInlineImage(meta = {}) {
+  const data = String(meta.imageData || "").replace(/^data:[^;]+;base64,/, "");
+  const mimeType = clean(meta.imageMimeType || "image/jpeg", 80).toLowerCase();
+  if (!data) return null;
+  if (!/^image\/(jpeg|png|webp)$/.test(mimeType) || !/^[a-z0-9+/=\r\n]+$/i.test(data) || data.length > 2_500_000) {
+    throw providerError("Ảnh đầu vào Veo không hợp lệ hoặc quá lớn.", 413, "VEO_IMAGE_INVALID");
+  }
+  return { inlineData: { mimeType, data } };
+}
+
+async function startMusicVideo(body) {
+  const prompt = clean(body.input || body.prompt, 4000);
+  if (!prompt) throw providerError("Hãy nhập prompt chuyển động trước khi tạo video.", 400, "VIDEO_PROMPT_REQUIRED");
+  const image = cleanInlineImage(body.meta || {});
+  return withGeminiMediaKey(async (apiKey) => {
+    const model = process.env.GEMINI_VIDEO_MODEL || "veo-3.1-fast-generate-preview";
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:predictLongRunning`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        instances: [{ prompt, ...(image ? { image } : {}) }],
+        parameters: { numberOfVideos: 1, aspectRatio: "16:9", resolution: body.meta?.resolution === "1080p" ? "1080p" : "720p", durationSeconds: 8 }
+      }),
+      signal: AbortSignal.timeout(24000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.name) {
+      const error = providerError(data?.error?.message || `Veo HTTP ${response.status}.`, response.status, "VEO_START_ERROR");
+      error.status = response.status;
+      throw error;
+    }
+    return { ok: true, operation: { name: clean(data.name, 500), done: false, model } };
+  });
+}
+
+function videoUriFromOperation(data) {
+  return clean(
+    data?.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri
+      || data?.response?.generatedVideos?.[0]?.video?.uri
+      || data?.response?.generated_videos?.[0]?.video?.uri,
+    1800
+  );
+}
+
+async function musicVideoStatus(body) {
+  const name = clean(body.meta?.operationName || body.operationName, 500);
+  if (!/^[a-z0-9_./-]+$/i.test(name) || !name.includes("operations/")) throw providerError("Mã tiến trình Veo không hợp lệ.", 400, "VEO_OPERATION_INVALID");
+  return withGeminiMediaKey(async (apiKey) => {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${name.replace(/^\//, "")}`, {
+      headers: { "x-goog-api-key": apiKey },
+      signal: AbortSignal.timeout(12000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = providerError(data?.error?.message || `Veo status HTTP ${response.status}.`, response.status, "VEO_STATUS_ERROR");
+      error.status = response.status;
+      throw error;
+    }
+    const uri = videoUriFromOperation(data);
+    return { ok: true, operation: { name, done: Boolean(data.done), error: clean(data?.error?.message, 300), ready: Boolean(uri), mediaUri: uri } };
+  });
+}
+
+function allowedGoogleMediaUri(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" && (url.hostname === "generativelanguage.googleapis.com" || url.hostname.endsWith(".googleapis.com") || url.hostname.endsWith(".googleusercontent.com"));
+  } catch {
+    return false;
+  }
+}
+
+async function proxyMusicVideo(req, res) {
+  const user = await currentUser(req);
+  if (!isAdminUser(user)) return res.status(403).json({ error: "Chỉ tài khoản quản trị được tải media AI có tính phí." });
+  const uri = Buffer.from(clean(req.query.uri, 2600), "base64url").toString("utf8");
+  if (!allowedGoogleMediaUri(uri)) return res.status(400).json({ error: "Liên kết media không hợp lệ." });
+  return withGeminiMediaKey(async (apiKey) => {
+    const upstream = await fetch(uri, { headers: { "x-goog-api-key": apiKey }, redirect: "follow", signal: AbortSignal.timeout(25000) });
+    if (!upstream.ok || !upstream.body) return res.status(502).json({ error: `Không tải được video Veo (HTTP ${upstream.status}).` });
+    res.statusCode = 200;
+    res.setHeader("Content-Type", upstream.headers.get("content-type") || "video/mp4");
+    res.setHeader("Content-Disposition", 'attachment; filename="hh-music-ai-veo.mp4"');
+    res.setHeader("Cache-Control", "private, no-store");
+    Readable.fromWeb(upstream.body).pipe(res);
+    return undefined;
+  });
+}
+
+async function musicMediaAction(req, res) {
+  setCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).end();
+  try {
+    if (req.method === "GET" && req.query.media === "veo") return proxyMusicVideo(req, res);
+    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+    const user = await currentUser(req);
+    if (!isAdminUser(user)) return res.status(403).json({ error: "Media AI có tính phí chỉ mở cho tài khoản quản trị." });
+    const body = musicBody(req);
+    const actionType = clean(body.actionType, 80);
+    const db = await database();
+    if (actionType === "music-video-status") await enforceRateLimit(db, `music-media-status:${String(user._id)}`, 140, 60 * 60 * 1000);
+    else await enforceRateLimit(db, `music-media:${String(user._id)}`, 12, 60 * 60 * 1000);
+    let result;
+    if (actionType === "music-image") result = await generateMusicImage(body);
+    else if (actionType === "music-track") result = await generateMusicTrack(body);
+    else if (actionType === "music-video-start") result = await startMusicVideo(body);
+    else if (actionType === "music-video-status") result = await musicVideoStatus(body);
+    else return res.status(400).json({ error: "Tác vụ media không được hỗ trợ." });
+    await db.collection("events").insertOne({ type: "music-ai:media", actionType, userId: user._id, provider: actionType === "music-track" ? "eleven-music" : "gemini-media", createdAt: new Date() });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Music media error", error?.message || error);
+    const status = Number(error?.statusCode || 0);
+    return res.status(status >= 400 && status <= 503 ? status : 502).json({ error: clean(error.message, 300), code: clean(error.code, 80) || undefined });
+  }
 }
 
 async function downloadCenterAction(req, res) {
@@ -506,7 +751,8 @@ function systemInstruction(moduleId, actionType) {
     "ai-center": "Phân tích mục tiêu, trả lời trực tiếp, đưa ví dụ thực tế và kết thúc bằng checklist hành động.",
     "ai-script": "Đóng vai biên kịch và script editor. Tập trung vào hook, retention, mạch truyện, cao trào, tính nguyên bản, lời thoại tự nhiên và CTA mềm.",
     "creator-studio": "Đóng vai chiến lược gia nội dung đa nền tảng. Tối ưu tiêu đề, SEO, kịch bản, thumbnail, short và lịch tái sử dụng.",
-    "ai-automation": "Đóng vai content operations engineer. Thực hiện đúng từng bước pipeline, giữ nhất quán dữ liệu và trả kết quả có nhãn rõ."
+    "ai-automation": "Đóng vai content operations engineer. Thực hiện đúng từng bước pipeline, giữ nhất quán dữ liệu và trả kết quả có nhãn rõ.",
+    "music-ai": "Đóng vai nhà sản xuất relax piano, thiền, jazz và lofi cho video YouTube dài. Xây concept nguyên bản, nhất quán giữa âm nhạc, hình ảnh, chuyển động, tracklist, metadata và kiểm soát chất lượng; tuyệt đối không bắt chước nghệ sĩ hoặc bài hát có bản quyền."
   };
   return `${common}\n\n${rules[moduleId] || rules["ai-center"]}\nTác vụ hiện tại: ${actionType}.`;
 }
@@ -524,7 +770,8 @@ function promptFor(moduleId, actionType, input, meta = {}) {
     research: "Nghiên cứu bằng Google Search, tách dữ kiện với suy luận, ghi nguồn ngay cạnh luận điểm.",
     "url-research": "Dùng URL context và Google Search để tổng hợp các URL, so sánh góc nhìn và đề xuất hướng nội dung nguyên bản.",
     workflow: "Chạy toàn bộ pipeline theo đúng thứ tự các bước đã bật; mỗi phần phải có tiêu đề và đầu ra hoàn chỉnh.",
-    "content-pack": "Tạo gói nội dung hoàn chỉnh theo JSON schema. Mỗi trường phải là nội dung thực, không phải hướng dẫn chung."
+    "content-pack": "Tạo gói nội dung hoàn chỉnh theo JSON schema. Mỗi trường phải là nội dung thực, không phải hướng dẫn chung.",
+    "music-plan": "Lập production brief hoàn chỉnh cho một video nhạc AI dài: concept, mood, BPM, cấu trúc master, biến thể track, hình ảnh chủ đạo, chuyển động loop, tiêu chí kiểm âm, tiêu đề và rủi ro bản quyền. Trả nội dung có nhãn rõ, ngắn gọn và dùng được ngay."
   };
   return [
     actionNotes[actionType] || "Thực hiện yêu cầu với chất lượng xuất bản.",
@@ -839,6 +1086,9 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
 
 module.exports = async function handler(req, res) {
   if (req.query.moduleId === "download-center") return downloadCenterAction(req, res);
+  if (req.query.moduleId === "music-ai" && (req.query.media === "veo" || musicMediaActions.has(clean(req.body?.actionType, 80)))) {
+    return musicMediaAction(req, res);
+  }
   return withApi(req, res, async ({ db, body }) => {
     const moduleId = clean(req.query.moduleId, 120);
     const collection = db.collection("moduleActions");
@@ -860,6 +1110,7 @@ module.exports = async function handler(req, res) {
         supports: creativeModules.has(moduleId)
           ? { history: true, images: true, googleSearch: true, structuredOutput: true }
           : undefined,
+        ...(moduleId === "music-ai" ? musicProviderStatus(user) : {}),
         actions
       });
     }
