@@ -34,9 +34,10 @@ test("sidebar uses one shared visual system for every primary group", () => {
   assert.match(sidebarCss, /\.app-sidebar__group>\.app-sidebar__item,/);
 });
 
-test("enhanced authentication motion remains accessible", () => {
+test("authentication uses calm motion and keeps manual feature previews", () => {
   const html = read("index.html");
   const css = read("auth-experience.css");
+  const comfort = read("motion-comfort.css");
   const client = read("auth-experience.js");
 
   assert.match(html, /auth-motion-field/);
@@ -52,6 +53,12 @@ test("enhanced authentication motion remains accessible", () => {
   assert.match(client, /const demos =/);
   assert.match(client, /renderDemo/);
   assert.match(client, /4200/);
+  assert.match(client, /const automaticDemoRotation = false/);
+  assert.match(client, /!automaticDemoRotation/);
+  assert.match(client, /const pointerParallax = false/);
+  assert.match(comfort, /Authentication remains rich/);
+  assert.match(comfort, /auth-product-preview/);
+  assert.match(comfort, /auth-tool-stream > div/);
 });
 
 test("custom domain branding and Google-only OAuth stay in sync", () => {

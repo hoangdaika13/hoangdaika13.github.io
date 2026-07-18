@@ -1780,7 +1780,7 @@ function initSuperPlatform() {
     const output = card?.querySelector(`[data-inline-output="${CSS.escape(module.id)}"]`);
     if (input) input.value = `${feature ? `${feature}: ` : ""}${input.value.trim() || profileFor(module).sample}`;
     if (output) output.textContent = moduleDemoText(module, input?.value || feature);
-    card?.querySelector(`[data-inline-app="${CSS.escape(module.id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    card?.querySelector(`[data-inline-app="${CSS.escape(module.id)}"]`)?.scrollIntoView({ behavior: "auto", block: "center" });
     logModuleActivity(module.id, `${feature || "Workspace"} đã sẵn sàng để thao tác`);
   };
 
@@ -3700,7 +3700,7 @@ function initCommunityChatV2() {
     pinsBox.querySelectorAll("[data-jump-message]").forEach((button) => {
       button.addEventListener("click", () => {
         const target = messagesBox?.querySelector(`[data-message-id="${button.dataset.jumpMessage}"]`);
-        target?.scrollIntoView({ behavior: "smooth", block: "center" });
+        target?.scrollIntoView({ behavior: "auto", block: "center" });
         target?.classList.add("glow-burst");
       });
     });
@@ -5292,8 +5292,8 @@ function initAppShell() {
       const sidebar = navigation.closest(".app-sidebar");
       const activeItem = navigation.querySelector(".app-sidebar__item.is-active");
       if (!sidebar || !activeItem) return;
-      if (route === "/home") sidebar.scrollTo({ top: 0, behavior: "smooth" });
-      else activeItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      if (route === "/home") sidebar.scrollTo({ top: 0, behavior: "auto" });
+      else activeItem.scrollIntoView({ block: "nearest", behavior: "auto" });
     });
     updateMobileNavigation();
     const parts = route.split("/").filter(Boolean);
@@ -5557,7 +5557,7 @@ function initAppShell() {
       legacyMain.hidden = false;
       platform.hidden = false;
       history.replaceState(null, "", `${location.pathname}${location.search}#about`);
-      requestAnimationFrame(() => document.querySelector("#about")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      requestAnimationFrame(() => document.querySelector("#about")?.scrollIntoView({ behavior: "auto", block: "start" }));
       return;
     }
     if (userMenu?.classList.contains("is-open") && !event.target.closest("#appUserMenu")) closeOverlays({ restoreFocus: false });

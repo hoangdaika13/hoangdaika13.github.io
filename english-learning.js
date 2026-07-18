@@ -854,7 +854,7 @@
 
   const focusCurrentView = () => root.requestAnimationFrame?.(() => {
     const heading = host?.querySelector(".hhe-main h2, .hhe-main h3");
-    heading?.scrollIntoView?.({ behavior: readState().settings.reducedMotion ? "auto" : "smooth", block: "start" });
+    heading?.scrollIntoView?.({ behavior: "auto", block: "start" });
     heading?.setAttribute?.("tabindex", "-1");
     heading?.focus?.({ preventScroll: true });
   });
@@ -1275,7 +1275,7 @@
     const surveyForm = event.target.closest("[data-hhe-career-survey]");
     if (surveyForm) {
       updateSurveyProgress(surveyForm);
-      if (event.target.name === "situation") root.setTimeout?.(() => surveyForm.querySelector('[data-hhe-survey-step="2"]')?.scrollIntoView?.({ behavior: "smooth", block: "center" }), 120);
+      if (event.target.name === "situation") root.setTimeout?.(() => surveyForm.querySelector('[data-hhe-survey-step="2"]')?.scrollIntoView?.({ behavior: "auto", block: "center" }), 120);
       return;
     }
     if (!event.target.matches("[data-hhe-import]")) return;

@@ -10,6 +10,8 @@
   const preview = gate.querySelector("[data-auth-preview]");
   const demoButtons = [...gate.querySelectorAll("[data-auth-demo]")];
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const automaticDemoRotation = false;
+  const pointerParallax = false;
   let frame = 0;
   let demoTimer = 0;
   let demoIndex = 0;
@@ -83,7 +85,7 @@
 
   const scheduleDemo = () => {
     clearInterval(demoTimer);
-    if (reducedMotion.matches || demoButtons.length < 2) return;
+    if (!automaticDemoRotation || reducedMotion.matches || demoButtons.length < 2) return;
     demoTimer = setInterval(() => {
       const next = (demoIndex + 1) % demoButtons.length;
       renderDemo(demoButtons[next].dataset.authDemo);
@@ -99,7 +101,7 @@
   };
 
   gate.addEventListener("pointermove", event => {
-    if (reducedMotion.matches) return;
+    if (!pointerParallax || reducedMotion.matches) return;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
       const x = (event.clientX / innerWidth - 0.5) * 7;

@@ -1,0 +1,170 @@
+/* HH Motion Comfort
+   One calm motion language for the shell, workspaces and authentication screen. */
+:root {
+  --hh-motion-fast: 120ms;
+  --hh-motion-standard: 160ms;
+  --hh-motion-slow: 220ms;
+  --hh-motion-ease: cubic-bezier(.2, 0, 0, 1);
+}
+
+html { scroll-behavior: auto !important; }
+
+/* Page changes use a quiet cross-fade. The viewport never slides or blurs. */
+.app-page-header { view-transition-name: none !important; }
+.app-workspace { view-transition-name: app-workspace; }
+::view-transition-group(app-workspace) { animation: none !important; }
+::view-transition-old(app-workspace),
+html[data-route-direction="back"]::view-transition-old(app-workspace) {
+  animation: hh-comfort-fade-out var(--hh-motion-fast) ease-out both !important;
+}
+::view-transition-new(app-workspace),
+html[data-route-direction="back"]::view-transition-new(app-workspace) {
+  animation: hh-comfort-fade-in var(--hh-motion-standard) ease-out both !important;
+}
+@keyframes hh-comfort-fade-out { to { opacity: 0; } }
+@keyframes hh-comfort-fade-in { from { opacity: 0; } }
+
+/* A single, finite progress cue replaces the continuously travelling light. */
+.app-route-progress { transition: opacity var(--hh-motion-fast) ease-out !important; }
+.app-route-progress i {
+  width: 100% !important;
+  box-shadow: none !important;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+body.app-route-changing .app-route-progress i {
+  animation: hh-comfort-progress 320ms var(--hh-motion-ease) both !important;
+}
+@keyframes hh-comfort-progress { to { transform: scaleX(.78); } }
+
+/* Repeated cards appear together and remain physically stable on hover. */
+.app-module-hub__grid > button {
+  animation: hh-comfort-fade-in var(--hh-motion-standard) ease-out both !important;
+  animation-delay: 0ms !important;
+  transition: border-color var(--hh-motion-standard) ease,
+              background-color var(--hh-motion-standard) ease,
+              box-shadow var(--hh-motion-standard) ease !important;
+}
+.app-module-hub__grid > button:hover {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .18) !important;
+  transform: none !important;
+}
+.app-module-hub__grid > button:active { transform: scale(.995) !important; }
+
+/* HH English: new learning screens fade in place; dialogs move only four pixels. */
+.hhe-view-stage {
+  animation: hh-comfort-fade-in var(--hh-motion-standard) ease-out both !important;
+}
+.hhe-navigator-backdrop {
+  backdrop-filter: blur(7px) !important;
+  animation: hh-comfort-fade-in var(--hh-motion-fast) ease-out both !important;
+}
+.hhe-navigator {
+  animation: hh-comfort-dialog var(--hh-motion-slow) var(--hh-motion-ease) both !important;
+}
+.hhe-toast { transform: none !important; transition: opacity var(--hh-motion-standard) ease !important; }
+@keyframes hh-comfort-dialog {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Decorative loops on primary workspaces become a steady visual background. */
+.home-neon h1,
+.dashboard-aurora::after,
+.dashboard-live-dot,
+.dashboard-hero-pro::before,
+.dashboard-live-line i,
+.dashboard-hero-orbit i,
+.cc-music-art,
+.dashboard-weather-icon,
+.command-center-app--aurora .command-hero--aurora::before,
+.command-hero__copy .section-kicker i,
+.command-weather-main > i,
+.work-aurora::before,
+.work-hero__copy > span i,
+.comm-orbit::before,
+.comm-orbit::after,
+.creative-orbit::before,
+.creative-orbit::after,
+.insights-eyebrow i,
+.insights-orbit::before,
+.insights-orbit::after,
+.insights-orbit > span,
+.insights-score::before,
+.hhe-voice-studio::before,
+.hhe-survey-launch aside > i {
+  animation: none !important;
+}
+
+/* Hover feedback changes colour and border without making the layout jump. */
+.home-neon .tilt-card,
+.home-neon .project-card,
+.comm-hero__actions button:hover,
+.work-hero__copy button:hover,
+.work-command > button:hover,
+.insights-hero__actions button:hover,
+.insights-analytics-toolbar button:hover,
+.insights-performance-actions button:hover {
+  transform: none !important;
+}
+
+/* Authentication remains rich, but does not orbit, scan, float, tilt or auto-glow. */
+.home-neon.auth-locked .auth-motion-field *,
+.home-neon.auth-locked .auth-spectrum i,
+.home-neon.auth-locked .auth-feature-showcase::before,
+.home-neon.auth-locked .auth-feature-showcase > header span i,
+.home-neon.auth-locked .auth-feature-switcher button.active > i,
+.home-neon.auth-locked .auth-product-preview,
+.home-neon.auth-locked .auth-product-preview::before,
+.home-neon.auth-locked .auth-product-preview > header > small i,
+.home-neon.auth-locked .auth-preview-main,
+.home-neon.auth-locked .auth-preview-main::before,
+.home-neon.auth-locked .auth-preview-live > span > i,
+.home-neon.auth-locked .auth-preview-pipeline > em::after,
+.home-neon.auth-locked .auth-preview-chart > span,
+.home-neon.auth-locked .auth-preview-chart > i,
+.home-neon.auth-locked .auth-tool-stream,
+.home-neon.auth-locked .auth-tool-stream > div,
+.home-neon.auth-locked .auth-gate-card,
+.home-neon.auth-locked .auth-gate-card::before,
+.home-neon.auth-locked .auth-gate-forms .auth-submit::before,
+.home-neon.auth-locked .auth-gate-status > i {
+  animation: none !important;
+}
+.home-neon.auth-locked .auth-gate-card,
+.home-neon.auth-locked .auth-product-preview { transform: none !important; }
+.home-neon.auth-locked .auth-brand-lockup,
+.home-neon.auth-locked .auth-gate-brand h1,
+.home-neon.auth-locked .auth-gate-brand > p:not(.section-kicker),
+.home-neon.auth-locked .auth-benefits,
+.home-neon.auth-locked .auth-gate-card {
+  animation: hh-comfort-fade-in var(--hh-motion-slow) ease-out both !important;
+}
+.home-neon.auth-locked .auth-feature-switcher button,
+.home-neon.auth-locked .auth-benefits span,
+.home-neon.auth-locked .auth-provider,
+.home-neon.auth-locked .auth-input-shell,
+.home-neon.auth-locked .auth-submit {
+  transition-duration: var(--hh-motion-standard) !important;
+}
+.home-neon.auth-locked .auth-feature-switcher button:hover,
+.home-neon.auth-locked .auth-benefits span:hover,
+.home-neon.auth-locked .auth-provider:hover:not(:disabled) > b,
+.home-neon.auth-locked .auth-provider:hover:not(:disabled) > i,
+.home-neon.auth-locked .auth-input-shell:focus-within,
+.home-neon.auth-locked .auth-submit:hover:not(:disabled) > i {
+  transform: none !important;
+}
+
+/* Loading, recording, speech and typing indicators remain animated because they
+   communicate active work rather than decorating the interface. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  ::view-transition-old(app-workspace),
+  ::view-transition-new(app-workspace) { animation: none !important; }
+}
