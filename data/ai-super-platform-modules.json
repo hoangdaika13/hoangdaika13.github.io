@@ -84,10 +84,10 @@
     "id": "admin-panel",
     "title": "Admin Panel",
     "status": "needs-backend",
-    "description": "Bang quan tri gom dashboard, user manager, content manager, analytics, logs, database monitor va backup.",
+    "description": "Trung tam quan tri RBAC gom dashboard, user manager, content moderation, reports, appeals, system config, feature flags va audit log.",
     "requiresBackend": true,
     "accent": "#ef4444",
-    "features": ["Dashboard", "User Manager", "Content Manager", "Analytics", "Logs", "Database Monitor", "Backup"]
+    "features": ["System Dashboard", "User Manager", "Role Management", "Content Moderation", "Reports", "Appeals", "Feature Flags", "Audit Log", "Data Export"]
   },
   {
     "id": "ai-automation",
@@ -111,10 +111,10 @@
     "id": "analytics",
     "title": "Analytics",
     "status": "needs-backend",
-    "description": "Thong ke traffic, devices, browsers, countries, downloads, AI usage va charts.",
+    "description": "Phan tich rieng tu gom traffic, user journey, module usage, device insights, Web Vitals, event explorer va export report.",
     "requiresBackend": true,
     "accent": "#38bdf8",
-    "features": ["Traffic", "Devices", "Browsers", "Countries", "Downloads", "AI Usage", "Charts"]
+    "features": ["Traffic Trends", "User Journey", "Module Usage", "Device Insights", "Core Web Vitals", "Event Explorer", "Health Check", "CSV Export", "JSON Report"]
   },
   {
     "id": "store",

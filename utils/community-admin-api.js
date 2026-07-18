@@ -106,11 +106,12 @@ module.exports = async function handler(req, res) {
       const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const activeSince = new Date(now.getTime() - 15 * 60 * 1000);
+      const presenceSince = new Date(now.getTime() - 2 * 60 * 1000);
       const users = db.collection("users");
       const started = Date.now();
       await db.command({ ping: 1 });
       const databaseLatencyMs = Date.now() - started;
-      const [totalUsers, activeUsers, newUsers, newPosts, newMessages, mediaUploads, pendingReports, lockedAccounts, groups, pages, events, marketplace, pendingJobs, failedJobs, recentErrors] = await Promise.all([
+      const [totalUsers, activeUsers, newUsers, newPosts, newMessages, mediaUploads, pendingReports, lockedAccounts, groups, pages, events, marketplace, pendingJobs, failedJobs, recentErrors, activePresence] = await Promise.all([
         users.countDocuments({ status: { $ne: "deleted" } }),
         users.countDocuments({ lastLoginAt: { $gte: activeSince }, status: { $nin: ["deleted", "locked", "suspended", "banned"] } }),
         users.countDocuments({ createdAt: { $gte: weekAgo } }),
@@ -125,13 +126,32 @@ module.exports = async function handler(req, res) {
         db.collection("communityMarketplaceListings").countDocuments({ status: { $nin: ["deleted", "rejected"] } }),
         db.collection("communityQueueJobs").countDocuments({ status: { $in: ["queued", "running"] } }),
         db.collection("communityQueueJobs").countDocuments({ status: "failed" }),
-        db.collection("events").find({ type: { $regex: /error|failure|exception/i } }, { projection: { type: 1, path: 1, detail: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(10).toArray()
+        db.collection("events").find({ type: { $regex: /error|failure|exception/i } }, { projection: { type: 1, path: 1, detail: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(10).toArray(),
+        db.collection("presence").find({ lastSeenAt: { $gte: presenceSince } }, { projection: { kind: 1, userId: 1, page: 1, lastSeenAt: 1 } }).sort({ lastSeenAt: -1 }).limit(50).toArray()
       ]);
+      const presenceUserIds = activePresence.filter((item) => item.userId).map((item) => item.userId);
+      const presenceUsers = presenceUserIds.length
+        ? await users.find({ _id: { $in: presenceUserIds } }, { projection: { name: 1, email: 1, avatar: 1 } }).toArray()
+        : [];
+      const presenceUserById = new Map(presenceUsers.map((item) => [String(item._id), item]));
+      const activeVisitors = activePresence.map((item) => {
+        const profile = item.userId ? presenceUserById.get(String(item.userId)) : null;
+        return {
+          kind: item.kind === "registered" ? "registered" : "guest",
+          name: clean(profile?.name || (item.kind === "registered" ? "Tài khoản đã đăng nhập" : "Khách ẩn danh"), 120),
+          email: clean(profile?.email, 180),
+          avatar: clean(profile?.avatar, 1200),
+          page: clean(item.page || "/", 240),
+          lastSeenAt: item.lastSeenAt
+        };
+      });
+      const onlineRegistered = activeVisitors.filter((item) => item.kind === "registered").length;
       return res.status(200).json({
         ok: true,
-        metrics: { totalUsers, activeUsers, newUsers, newPosts, newMessages, mediaUploads, pendingReports, lockedAccounts, groups, pages, events, marketplace, pendingJobs, failedJobs },
+        metrics: { totalUsers, activeUsers, onlineVisitors: activeVisitors.length, onlineRegistered, newUsers, newPosts, newMessages, mediaUploads, pendingReports, lockedAccounts, groups, pages, events, marketplace, pendingJobs, failedJobs },
         system: { api: "operational", database: "operational", databaseLatencyMs, queue: failedJobs ? "degraded" : "operational", generatedAt: now },
-        recentErrors
+        recentErrors,
+        activeVisitors
       });
     }
 

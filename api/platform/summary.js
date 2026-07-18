@@ -1,4 +1,4 @@
-const { clean, currentUser, withApi } = require("../../utils/platform");
+const { clean, currentUser, isAdminUser, withApi } = require("../../utils/platform");
 
 const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
 
@@ -21,8 +21,7 @@ module.exports = async function handler(req, res) {
     }
     if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
     const user = await currentUser(req);
-    const ownerEmail = String(process.env.ADMIN_EMAIL || "nhhoang130803@gmail.com").toLowerCase();
-    if (!user || String(user.email || "").toLowerCase() !== ownerEmail) return res.status(403).json({ error: "Chỉ chủ sở hữu được truy cập Admin Panel." });
+    if (!isAdminUser(user)) return res.status(403).json({ error: "Tài khoản không có quyền truy cập Admin Panel." });
     if (req.query.view === "users") {
       const rows = await db.collection("users")
         .find({}, { projection: { passwordHash: 0, providerId: 0, tokenVersion: 0 } })

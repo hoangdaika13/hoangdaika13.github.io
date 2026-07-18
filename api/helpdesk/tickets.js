@@ -1,13 +1,12 @@
 const { ObjectId } = require("mongodb");
-const { clean, currentUser, ownerFrom, withApi } = require("../../utils/platform");
+const { clean, currentUser, isAdminUser, ownerFrom, withApi } = require("../../utils/platform");
 
 module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {
     const collection = db.collection("tickets");
     const user = await currentUser(req);
     if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để sử dụng Helpdesk." });
-    const ownerEmail = String(process.env.ADMIN_EMAIL || "nhhoang130803@gmail.com").toLowerCase();
-    const isAdmin = String(user.email || "").toLowerCase() === ownerEmail;
+    const isAdmin = isAdminUser(user);
     const ownership = isAdmin ? {} : { userId: user._id };
     if (req.method === "GET") {
       const rows = await collection.find(ownership).sort({ createdAt: -1 }).limit(50).toArray();

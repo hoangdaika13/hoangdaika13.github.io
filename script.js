@@ -15,6 +15,16 @@ const REALTIME_URL = window.HH_REALTIME_URL || "";
 const SOCKET_URL = typeof window.HH_SOCKET_URL === "string" ? window.HH_SOCKET_URL : REALTIME_URL;
 let adminRealtimeTimer = 0;
 
+const HH_ADMIN_ROLES = new Set(["owner", "super_admin", "admin", "moderator", "support", "analyst"]);
+const readCurrentAuthUser = () => {
+  try { return JSON.parse(localStorage.getItem("hh-auth-user") || "null"); }
+  catch { return null; }
+};
+const isCurrentUserAdmin = (user = readCurrentAuthUser()) => Boolean(
+  user && Array.isArray(user.roles) && user.roles.some((role) => HH_ADMIN_ROLES.has(String(role || "").toLowerCase()))
+);
+window.HHAuthz = Object.freeze({ currentUser: readCurrentAuthUser, isAdmin: isCurrentUserAdmin });
+
 const revokeCurrentSession = async () => {
   const token = localStorage.getItem("hh-auth-token") || "";
   if (!token || !REALTIME_URL) return;
@@ -1496,6 +1506,7 @@ function initSuperPlatform() {
   const filteredModules = () => {
     const query = (search?.value || "").trim().toLowerCase();
     return modules.filter((module) => {
+      if (module.id === "admin-panel" && !isCurrentUserAdmin()) return false;
       if (activeFilter === "backend" && !module.requiresBackend) return false;
       if (activeFilter === "core" && module.group !== "core") return false;
       if (activeFilter === "extension" && module.group !== "extension") return false;
@@ -1711,9 +1722,10 @@ function initSuperPlatform() {
   };
 
   const updateCounters = () => {
-    setCounter(total, modules.length);
-    setCounter(core, modules.filter((module) => module.group === "core").length);
-    setCounter(backend, modules.filter((module) => module.requiresBackend).length);
+    const accessibleModules = modules.filter((module) => module.id !== "admin-panel" || isCurrentUserAdmin());
+    setCounter(total, accessibleModules.length);
+    setCounter(core, accessibleModules.filter((module) => module.group === "core").length);
+    setCounter(backend, accessibleModules.filter((module) => module.requiresBackend).length);
   };
 
   filters.forEach((button) => {
@@ -3076,6 +3088,10 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
     activeFilter = active?.dataset.moduleFilter || "all";
     selectedModule = modules[0] || null;
     renderDetail(selectedModule);
+    render();
+  });
+  window.addEventListener("hh:auth-change", () => {
+    updateCounters();
     render();
   });
 
@@ -5072,7 +5088,7 @@ function initAppShell() {
     navigation.innerHTML = groups.map((group) => {
       const routeMatches = route === group.route || route.startsWith(`${group.route}/`);
       const expanded = Object.hasOwn(sidebarGroupState, group.id) ? Boolean(sidebarGroupState[group.id]) : routeMatches;
-      const moduleEntries = group.items.map((id) => {
+      const moduleEntries = group.items.filter((id) => id !== "admin-panel" || isCurrentUserAdmin()).map((id) => {
         const module = moduleById(id);
         if (!module) return "";
         const moduleRoute = routeForModule(id);
@@ -5193,7 +5209,11 @@ function initAppShell() {
   const renderRoute = () => {
     if (!isUnlocked()) return;
     const hash = location.hash.replace(/^#/, "") || "/home";
-    const route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+    let route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+    if (route.endsWith("/admin-panel")) {
+      route = isCurrentUserAdmin() ? "/analytics/admin-panel" : "/analytics";
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
+    }
     activeRoute = route;
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
@@ -5263,12 +5283,39 @@ function initAppShell() {
       updatePageHeader("Developer Toolbox", "Bộ công cụ dữ liệu, bảo mật, văn bản, API và hệ thống dành cho developer.", route);
       workspace.innerHTML = '<div data-developer-tools-host></div>';
       window.HHDeveloperTools?.mount(workspace.firstElementChild, { toolId: parts[1] || "json" });
+    } else if (route === "/analytics") {
+      updatePageHeader("Phân tích", "Đo lường hiệu suất, hành vi sử dụng, vận hành API và an toàn hệ thống trong một trung tâm thống nhất.", route);
+      workspace.innerHTML = '<div data-insights-overview-host></div>';
+      window.HHInsights?.mountOverview?.(workspace.firstElementChild, { admin: isCurrentUserAdmin(), user: readCurrentAuthUser() });
+    } else if (route === "/analytics/analytics") {
+      updatePageHeader("Analytics", "Báo cáo hoạt động, hiệu suất trình duyệt, hành trình module và dữ liệu có thể xuất.", route, module);
+      workspace.innerHTML = '<div data-insights-analytics-host></div>';
+      window.HHInsights?.mountAnalytics?.(workspace.firstElementChild);
+      remember("analytics");
+    } else if (route === "/analytics/admin-panel") {
+      updatePageHeader("Admin Panel", "Quản trị người dùng, nội dung, báo cáo, cấu hình, audit log và sức khỏe hệ thống theo vai trò.", route, module);
+      workspace.innerHTML = '<div class="admin-panel-route" data-admin-application-host><section class="insights-loading"><i></i><strong>Đang xác minh quyền quản trị...</strong></section></div>';
+      const host = workspace.firstElementChild;
+      const mountAdmin = async (attempt = 0) => {
+        if (!window.HHCommunityAdmin?.mount) {
+          if (attempt < 30) setTimeout(() => mountAdmin(attempt + 1), 100);
+          else host.innerHTML = '<section class="insights-error"><strong>Không thể tải ứng dụng quản trị.</strong><p>Hãy làm mới trang để thử lại.</p></section>';
+          return;
+        }
+        try { await window.HHCommunityAdmin.mount(host); }
+        catch (error) {
+          host.innerHTML = '<section class="insights-error"><strong>Quyền truy cập bị từ chối</strong><p></p></section>';
+          host.querySelector("p").textContent = String(error.message || error);
+        }
+      };
+      mountAdmin();
+      remember("admin-panel");
     } else if (module) {
       updatePageHeader(module.title, module.description, route, module);
       mountPlatform(module.id);
       remember(module.id);
     } else if (route === "/tools" || groups.some((group) => group.route === route)) {
-      const allowed = route === "/tools" ? "" : groups.find((group) => group.route === route)?.items || "";
+      const allowed = route === "/tools" ? "" : (groups.find((group) => group.route === route)?.items || []).filter((id) => id !== "admin-panel" || isCurrentUserAdmin());
       updatePageHeader(route === "/tools" ? "Tất cả công cụ" : groups.find((group) => group.route === route)?.label || "Công cụ", "Chọn một module để mở thành trang làm việc riêng.", route);
       mountPlatform("");
       if (Array.isArray(allowed)) document.querySelectorAll("#moduleGrid [data-module-id]").forEach((card) => { card.hidden = !allowed.includes(card.dataset.moduleId); });
@@ -5297,7 +5344,7 @@ function initAppShell() {
     legacyMain.hidden = true;
   };
   const searchItems = () => {
-    const modules = moduleList().map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
+    const modules = moduleList().filter((item) => item.id !== "admin-panel" || isCurrentUserAdmin()).map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
     const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
     const creativeTools = creativeStudioItems.map((item) => ({ type: "Sáng tạo", title: item.title, description: item.description || item.group, route: `/create/${item.id}`, key: `${item.title} ${item.group} ${item.description || ""} creative sáng tạo kịch bản ai` }));
     const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));

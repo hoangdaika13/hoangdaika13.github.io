@@ -1,4 +1,4 @@
-const { clean } = require("./platform");
+const { clean, isOwnerEmail } = require("./platform");
 
 const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
@@ -11,9 +11,8 @@ const ROLE_PERMISSIONS = Object.freeze({
 
 function rolesFor(user) {
   if (!user) return [];
-  const ownerEmail = String(process.env.ADMIN_EMAIL || "nhhoang130803@gmail.com").trim().toLowerCase();
   const roles = new Set((Array.isArray(user.systemRoles) ? user.systemRoles : []).map((role) => clean(role, 40).toLowerCase()).filter((role) => ROLE_PERMISSIONS[role]));
-  if (String(user.email || "").trim().toLowerCase() === ownerEmail) roles.add("owner");
+  if (isOwnerEmail(user.email)) roles.add("owner");
   return [...roles];
 }
 

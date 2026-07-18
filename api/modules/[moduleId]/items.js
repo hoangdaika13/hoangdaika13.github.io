@@ -1,13 +1,12 @@
 const { ObjectId } = require("mongodb");
-const { clean, currentUser, ownerFrom, withApi } = require("../../../utils/platform");
+const { clean, currentUser, isAdminUser, ownerFrom, withApi } = require("../../../utils/platform");
 
 module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {
     const moduleId = clean(req.query.moduleId, 120);
     const collection = db.collection("moduleRecords");
     const user = await currentUser(req);
-    const ownerEmail = String(process.env.ADMIN_EMAIL || "nhhoang130803@gmail.com").toLowerCase();
-    const isAdmin = Boolean(user && String(user.email || "").toLowerCase() === ownerEmail);
+    const isAdmin = isAdminUser(user);
 
     if (moduleId === "space-explorer" && req.method === "GET" && req.query.view === "leaderboard") {
       const scores = await collection.find(

@@ -1,9 +1,8 @@
 const { ObjectId } = require("mongodb");
 const { PayOS } = require("@payos/node");
-const { clean, currentUser, enforceRateLimit, ownerFrom, withApi } = require("../utils/platform");
+const { clean, currentUser, enforceRateLimit, isAdminUser, ownerFrom, withApi } = require("../utils/platform");
 const votesHandler = require("../utils/votes");
 
-const OWNER_DEFAULT = "nhhoang130803@gmail.com";
 const MIN_AMOUNT = 1000;
 const MAX_AMOUNT = 1000000000;
 let payOSClient;
@@ -92,8 +91,7 @@ module.exports = async function handler(req, res) {
       donations.createIndex({ createdAt: -1 })
     ]);
     const user = await currentUser(req);
-    const ownerEmail = String(process.env.ADMIN_EMAIL || OWNER_DEFAULT).toLowerCase();
-    const isOwner = Boolean(user && String(user.email || "").toLowerCase() === ownerEmail);
+    const isOwner = isAdminUser(user);
 
     if (req.method === "POST" && String(req.query.provider || "") === "payos") {
       if (!payOSReady()) return res.status(503).json({ error: "payOS chưa được cấu hình." });

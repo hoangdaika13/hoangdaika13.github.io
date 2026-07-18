@@ -8,6 +8,31 @@ const dbName = process.env.MONGODB_DB || "hoangdaika13_site";
 let cachedClient;
 let rateLimitIndexReady = false;
 
+const DEFAULT_ADMIN_EMAILS = Object.freeze([
+  "nhhoang130803@gmail.com",
+  "dungnguyen29082000@gmail.com"
+]);
+const ADMIN_ROLES = new Set(["owner", "super_admin", "admin", "moderator", "support", "analyst"]);
+
+function adminEmails() {
+  return new Set([
+    ...DEFAULT_ADMIN_EMAILS,
+    ...String(process.env.ADMIN_EMAIL || "").split(","),
+    ...String(process.env.ADMIN_EMAILS || "").split(",")
+  ].map((email) => String(email || "").trim().toLowerCase()).filter(Boolean));
+}
+
+function isOwnerEmail(email) {
+  return adminEmails().has(String(email || "").trim().toLowerCase());
+}
+
+function isAdminUser(user) {
+  if (!user) return false;
+  if (isOwnerEmail(user.email)) return true;
+  return (Array.isArray(user.systemRoles) ? user.systemRoles : [])
+    .some((role) => ADMIN_ROLES.has(clean(role, 40).toLowerCase()));
+}
+
 function jwtSecret() {
   const secret = String(process.env.JWT_SECRET || "");
   if (secret.length < 32) throw new Error("Server security configuration is incomplete");
@@ -82,9 +107,8 @@ function verifyOAuthState(state, provider) {
 
 function publicUser(user) {
   if (!user) return null;
-  const ownerEmail = String(process.env.ADMIN_EMAIL || "nhhoang130803@gmail.com").trim().toLowerCase();
   const roles = new Set((Array.isArray(user.systemRoles) ? user.systemRoles : []).map((role) => clean(role, 40)).filter(Boolean));
-  if (String(user.email || "").trim().toLowerCase() === ownerEmail) roles.add("owner");
+  if (isOwnerEmail(user.email)) roles.add("owner");
   return {
     id: String(user._id),
     name: user.name || "",
@@ -154,12 +178,15 @@ async function enforceRateLimit(db, key, limit = 10, windowMs = 15 * 60 * 1000) 
 }
 
 module.exports = {
+  adminEmails,
   bcrypt,
   bodyOf,
   clean,
   currentUser,
   database,
   enforceRateLimit,
+  isAdminUser,
+  isOwnerEmail,
   ownerFrom,
   publicUser,
   setCors,
