@@ -41,6 +41,7 @@ test("support UI requires email and exposes an embedded payOS journey", () => {
   assert.match(client, /action: "payos:create"/);
   assert.match(client, /showStage\("payment"\)/);
   assert.match(client, /showStage\("verify"\)/);
+  assert.match(client, /scrollRoot\.scrollTop - 128/);
   assert.match(client, /data-support-payos-amount/);
   assert.match(client, /data-support-payos-countdown/);
   assert.match(styles, /\.support-payos-workspace\{[^}]*grid-template-columns/);

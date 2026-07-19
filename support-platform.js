@@ -180,7 +180,11 @@
       if (activePanel) {
         activePanel.classList.remove("is-entering");
         requestAnimationFrame(() => activePanel.classList.add("is-entering"));
-        if (scroll) activePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (scroll) {
+          activePanel.scrollIntoView({ behavior: "auto", block: "start" });
+          const scrollRoot = activePanel.closest(".app-main");
+          if (scrollRoot) scrollRoot.scrollTop = Math.max(0, scrollRoot.scrollTop - 128);
+        }
       }
     };
     const waitForPayOS = async () => {
