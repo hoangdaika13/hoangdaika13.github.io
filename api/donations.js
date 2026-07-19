@@ -339,8 +339,8 @@ module.exports = async function handler(req, res) {
           items: [{ name: "Ủng hộ HH Platform", quantity: 1, price: amount }],
           buyerName: donorName,
           ...(email ? { buyerEmail: email } : {}),
-          cancelUrl: `${siteUrl}/#/support`,
-          returnUrl: `${siteUrl}/#/support`,
+          cancelUrl: `${siteUrl}/`,
+          returnUrl: `${siteUrl}/`,
           expiredAt: Math.floor(Date.now() / 1000) + 30 * 60
         });
         await donations.updateOne({ _id: result.insertedId }, { $set: { payosPaymentLinkId: payment.paymentLinkId, payosCheckoutUrl: payment.checkoutUrl, payosAccountNumber: payment.accountNumber, updatedAt: new Date() } });

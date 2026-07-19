@@ -152,7 +152,7 @@
     const openEmbeddedCheckout = async checkoutUrl => {
       const sdk = await waitForPayOS();
       closeEmbeddedCheckout();
-      const returnUrl = `${window.location.origin}${window.location.pathname}#/support`;
+      const returnUrl = new URL(window.location.pathname || "/", window.location.origin).href;
       checkoutController = sdk.usePayOS({
         RETURN_URL: returnUrl,
         ELEMENT_ID: "hh-payos-embedded",
