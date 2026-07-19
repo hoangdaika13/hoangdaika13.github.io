@@ -14,6 +14,7 @@
   let lastRemoteAt = 0;
   let lastInteractionAt = Date.now();
   let lastAllowedRoute = "/home";
+  const formTelemetry = new WeakMap();
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
   const readJson = (key, fallback) => {
@@ -40,6 +41,29 @@
   const deviceKey = () => innerWidth < 640 ? "mobile" : innerWidth < 1024 ? "tablet" : "desktop";
   const viewportKey = () => `${Math.round(innerWidth / 100) * 100}x${Math.round(innerHeight / 100) * 100}`;
   const analyticsAllowed = () => localStorage.getItem("hh-tracking-consent") === "yes";
+  const bucketNumber = (value, ranges) => ranges.find(([max]) => value <= max)?.[1] || ranges.at(-1)?.[1] || "many";
+  const lengthBucket = (value) => bucketNumber(Math.max(0, Number(value || 0)), [[0, "empty"], [20, "1-20"], [80, "21-80"], [240, "81-240"], [1000, "241-1000"], [Infinity, "1000+"]]);
+  const interactionBucket = (value) => bucketNumber(Math.max(0, Number(value || 0)), [[0, "none"], [5, "1-5"], [20, "6-20"], [60, "21-60"], [Infinity, "60+"]]);
+  const durationBucket = (milliseconds) => bucketNumber(Math.max(0, Number(milliseconds || 0)), [[5000, "0-5s"], [30000, "6-30s"], [120000, "31-120s"], [600000, "2-10m"], [Infinity, "10m+"]]);
+  const sensitiveField = (field) => field?.type === "password" || /pass(word)?|token|secret|credential|otp|one.?time|api.?key|private.?key/i.test(`${field?.name || ""} ${field?.id || ""} ${field?.autocomplete || ""}`);
+  const formKey = (form) => {
+    const dataKey = Object.keys(form?.dataset || {}).find((key) => /form|composer|prompt|chat|message|login|register|search/i.test(key));
+    return String(dataKey || form?.id || form?.getAttribute?.("name") || "form").replace(/[^a-z0-9_.:-]/gi, "-").toLowerCase().slice(0, 80) || "form";
+  };
+  const formKind = (form) => {
+    const hint = `${formKey(form)} ${form?.className || ""}`.toLowerCase();
+    return /login|register|auth/.test(hint) ? "authentication" : /prompt|ai-|composer-ai/.test(hint) ? "prompt" : /chat|message|comment|composer/.test(hint) ? "message" : /search/.test(hint) ? "search" : "form";
+  };
+  const safeMeta = (value = {}) => ({
+    form: String(value.form || "").replace(/[^a-z0-9_.:-]/gi, "-").toLowerCase().slice(0, 80),
+    kind: String(value.kind || "").replace(/[^a-z0-9_.:-]/gi, "-").toLowerCase().slice(0, 40),
+    fieldType: String(value.fieldType || "").replace(/[^a-z0-9_.:-]/gi, "-").toLowerCase().slice(0, 40),
+    fieldCount: Math.max(0, Math.min(100, Number(value.fieldCount || 0))),
+    lengthBucket: String(value.lengthBucket || "").slice(0, 20),
+    interactionBucket: String(value.interactionBucket || "").slice(0, 20),
+    durationBucket: String(value.durationBucket || "").slice(0, 20),
+    valid: value.valid !== false
+  });
   const visitorId = () => {
     const key = "hh-presence-id";
     let value = localStorage.getItem(key);
@@ -55,6 +79,7 @@
       module: String(detail.module || moduleName(detail.route)).slice(0, 80),
       action: String(detail.action || type || "event").replace(/[^a-z0-9_.:-]/gi, "-").toLowerCase().slice(0, 100),
       label: String(detail.label || "").replace(/\s+/g, " ").trim().slice(0, 100),
+      meta: safeMeta(detail.meta),
       createdAt: new Date().toISOString()
     };
     writeJson(STORE_KEY, [row, ...events()].slice(0, MAX_EVENTS));
@@ -159,10 +184,48 @@
       if (!target || target.closest("[data-insights-no-track]")) return;
       lastInteractionAt = Date.now();
       const nextRoute = target.dataset.appRoute || target.getAttribute("href")?.replace(/^#/, "") || routeName();
-      const label = target.getAttribute("aria-label") || target.querySelector("strong, b, span")?.textContent || target.textContent;
-      record("action", { route: nextRoute, module: moduleName(nextRoute), action: actionKey(target), label });
+      record("action", { route: nextRoute, module: moduleName(nextRoute), action: actionKey(target) });
     }, { passive: true });
     document.addEventListener("keydown", () => { lastInteractionAt = Date.now(); }, { passive: true });
+    document.addEventListener("focusin", (event) => {
+      const field = event.target.closest?.("input, textarea, select");
+      const form = field?.form || field?.closest?.("form");
+      if (!form || formTelemetry.has(form)) return;
+      const state = { startedAt: Date.now(), interactions: 0 };
+      formTelemetry.set(form, state);
+      record("form_start", { route: routeName(), action: "form-start", meta: { form: formKey(form), kind: formKind(form), fieldType: sensitiveField(field) ? "credential" : field.type || field.tagName.toLowerCase() } });
+    }, { passive: true });
+    document.addEventListener("input", (event) => {
+      const field = event.target.closest?.("input, textarea");
+      const form = field?.form || field?.closest?.("form");
+      if (!form || sensitiveField(field)) return;
+      const state = formTelemetry.get(form) || { startedAt: Date.now(), interactions: 0 };
+      state.interactions += 1;
+      formTelemetry.set(form, state);
+    }, { passive: true });
+    document.addEventListener("change", (event) => {
+      const field = event.target.closest?.("select, input[type='checkbox'], input[type='radio']");
+      const form = field?.form || field?.closest?.("form");
+      if (!form) return;
+      record("control_change", { route: routeName(), action: "control-change", meta: { form: formKey(form), kind: formKind(form), fieldType: field.type || field.tagName.toLowerCase() } });
+    }, { passive: true });
+    document.addEventListener("invalid", (event) => {
+      const field = event.target.closest?.("input, textarea, select");
+      const form = field?.form || field?.closest?.("form");
+      if (!form) return;
+      record("form_validation", { route: routeName(), action: "validation-error", meta: { form: formKey(form), kind: formKind(form), fieldType: sensitiveField(field) ? "credential" : field.type || field.tagName.toLowerCase(), valid: false } });
+    }, true);
+    document.addEventListener("submit", (event) => {
+      const form = event.target.closest?.("form");
+      if (!form) return;
+      const state = formTelemetry.get(form) || { startedAt: Date.now(), interactions: 0 };
+      const fields = [...form.querySelectorAll("input, textarea, select")];
+      const measurable = fields.filter((field) => !sensitiveField(field) && ["INPUT", "TEXTAREA"].includes(field.tagName));
+      const longest = measurable.reduce((max, field) => Math.max(max, String(field.value || "").length), 0);
+      record("form_submit", { route: routeName(), action: `${formKind(form)}-submit`, meta: { form: formKey(form), kind: formKind(form), fieldCount: fields.length, lengthBucket: lengthBucket(longest), interactionBucket: interactionBucket(state.interactions), durationBucket: durationBucket(Date.now() - state.startedAt), valid: form.checkValidity() } });
+      formTelemetry.delete(form);
+      flushRemote(true);
+    }, true);
     document.addEventListener("visibilitychange", updateSession);
     window.addEventListener("pagehide", () => { record("session_end", { route: routeName(), action: "session-end", label: "Kết thúc phiên" }); flushRemote(true); });
     setInterval(updateSession, 15000);
@@ -243,7 +306,7 @@
         <aside class="insights-side">
           <section class="insights-pulse"><header><div><small>7 NGÀY GẦN NHẤT</small><strong>Nhịp hoạt động</strong></div><span>LIVE</span></header><div>${data.daily.map((item) => `<i style="--value:${Math.max(8, Math.round(item.value / max * 100))}%"><b>${item.value}</b><small>${item.label}</small></i>`).join("")}</div></section>
           <section class="insights-health" data-insights-health-output><header><small>SYSTEM CHECK</small><strong>Sẵn sàng kiểm tra</strong></header><p>Bấm “Kiểm tra hệ thống” để đo kết nối frontend và API thật.</p></section>
-          <section class="insights-privacy"><span>◇</span><div><strong>Analytics riêng tư</strong><p>Không thu nội dung biểu mẫu, mật khẩu hay tin nhắn. Dữ liệu hành vi cơ bản đang lưu trên thiết bị này.</p></div></section>
+          <section class="insights-privacy"><span>◇</span><div><strong>Analytics riêng tư</strong><p>Đo trạng thái biểu mẫu và nhóm tương tác, không lưu ký tự gõ, giá trị nhập, prompt, mật khẩu, token hay tin nhắn.</p></div></section>
         </aside>
       </div>
     </section>`;

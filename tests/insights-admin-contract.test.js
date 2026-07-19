@@ -52,7 +52,7 @@ test("Phân tích ships interactive telemetry, filters, diagnostics and exports"
   const css = read("insights-pro.css");
 
   assert.match(html, /insights-pro\.css\?v=1/);
-  assert.match(html, /insights-pro\.js\?v=2/);
+  assert.match(html, /insights-pro\.js\?v=3/);
   assert.match(client, /PerformanceObserver/);
   assert.match(client, /data-insights-range/);
   assert.match(client, /data-insights-event-search/);
@@ -62,9 +62,17 @@ test("Phân tích ships interactive telemetry, filters, diagnostics and exports"
   assert.match(client, /REMOTE_BATCH_SIZE/);
   assert.match(client, /analyticsConsent/);
   assert.match(client, /restrictedFeatures/);
+  assert.match(client, /form_start/);
+  assert.match(client, /form_submit/);
+  assert.match(client, /form_validation/);
+  assert.match(client, /sensitiveField/);
+  assert.match(client, /lengthBucket/);
+  assert.doesNotMatch(client, /event\.key\b/);
   assert.match(read("api/platform/summary.js"), /TELEMETRY_RETENTION_SECONDS/);
   assert.match(read("api/platform/summary.js"), /presence.*expiresAt/s);
   assert.match(read("api/platform/summary.js"), /formValuesStored:\s*false/);
+  assert.match(read("api/platform/summary.js"), /rawKeystrokesStored:\s*false/);
+  assert.match(read("api/platform/summary.js"), /tokensStored:\s*false/);
   assert.doesNotMatch(read("api/platform/summary.js"), /passwordHash:\s*1/);
   assert.match(css, /@media \(max-width: 560px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);

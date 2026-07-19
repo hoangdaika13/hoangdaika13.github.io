@@ -75,6 +75,11 @@ function presentActivity(item, profile) {
     module: clean(item.module || "home", 100),
     action: clean(item.action || item.lastAction, 100),
     label: clean(item.label || item.lastAction, 100),
+    meta: item.meta && typeof item.meta === "object" ? {
+      form: clean(item.meta.form, 80), kind: clean(item.meta.kind, 40), fieldType: clean(item.meta.fieldType, 40),
+      fieldCount: Math.max(0, Number(item.meta.fieldCount || 0)), lengthBucket: clean(item.meta.lengthBucket, 20),
+      interactionBucket: clean(item.meta.interactionBucket, 20), durationBucket: clean(item.meta.durationBucket, 20), valid: item.meta.valid !== false
+    } : null,
     activityState: clean(item.activityState || "active", 20),
     activeSeconds: Math.max(0, Number(item.activeSeconds || 0)),
     device: clean(item.device || "unknown", 40),
@@ -123,6 +128,7 @@ module.exports = async function handler(req, res) {
       db.collection("communityEmailTemplates").createIndex({ key: 1 }, { unique: true }),
       db.collection("communityModerationKeywords").createIndex({ value: 1 }, { unique: true }),
       db.collection("telemetryEvents").createIndex({ createdAt: -1 }),
+      db.collection("telemetryEvents").createIndex({ type: 1, createdAt: -1 }),
       db.collection("telemetryEvents").createIndex({ userId: 1, createdAt: -1 }),
       db.collection("telemetryEvents").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       db.collection("presence").createIndex({ userId: 1, lastSeenAt: -1 })
@@ -194,12 +200,14 @@ module.exports = async function handler(req, res) {
       const since30 = new Date(now.getTime() - 30 * 60 * 1000);
       const telemetry = db.collection("telemetryEvents");
       const presence = db.collection("presence");
-      const [presenceRows, timelineRows, active5Ids, active30Ids, eventCount30, topRoutes, topModules, topActions, riskRows] = await Promise.all([
+      const [presenceRows, timelineRows, active5Ids, active30Ids, eventCount30, formSubmits30, validationErrors30, topRoutes, topModules, topActions, riskRows] = await Promise.all([
         presence.find({ lastSeenAt: { $gte: since30 } }, { projection: { identity: 1, kind: 1, userId: 1, sessionId: 1, page: 1, module: 1, lastAction: 1, activityState: 1, activeSeconds: 1, device: 1, browser: 1, viewport: 1, analyticsConsent: 1, firstSeenAt: 1, lastSeenAt: 1 } }).sort({ lastSeenAt: -1 }).limit(200).toArray(),
-        telemetry.find({ createdAt: { $gte: since30 } }, { projection: { identity: 1, kind: 1, userId: 1, sessionId: 1, type: 1, route: 1, module: 1, action: 1, label: 1, device: 1, browser: 1, viewport: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(200).toArray(),
+        telemetry.find({ createdAt: { $gte: since30 } }, { projection: { identity: 1, kind: 1, userId: 1, sessionId: 1, type: 1, route: 1, module: 1, action: 1, label: 1, meta: 1, device: 1, browser: 1, viewport: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(200).toArray(),
         presence.distinct("identity", { lastSeenAt: { $gte: since5 } }),
         presence.distinct("identity", { lastSeenAt: { $gte: since30 } }),
         telemetry.countDocuments({ createdAt: { $gte: since30 } }),
+        telemetry.countDocuments({ createdAt: { $gte: since30 }, type: "form_submit" }),
+        telemetry.countDocuments({ createdAt: { $gte: since30 }, type: "form_validation" }),
         telemetry.aggregate([{ $match: { createdAt: { $gte: since30 } } }, { $group: { _id: "$route", count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 10 }]).toArray(),
         telemetry.aggregate([{ $match: { createdAt: { $gte: since30 } } }, { $group: { _id: "$module", count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 10 }]).toArray(),
         telemetry.aggregate([{ $match: { createdAt: { $gte: since30 }, type: { $ne: "heartbeat" } } }, { $group: { _id: "$action", count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 10 }]).toArray(),
@@ -217,13 +225,13 @@ module.exports = async function handler(req, res) {
       }));
       return res.status(200).json({
         ok: true,
-        summary: { active5: active5Ids.length, active30: active30Ids.length, registered5: activeSessions.filter((item) => item.kind === "registered" && new Date(item.lastSeenAt) >= since5).length, consented30: activeSessions.filter((item) => item.analyticsConsent).length, eventCount30, riskCount: riskSignals.length },
+        summary: { active5: active5Ids.length, active30: active30Ids.length, registered5: activeSessions.filter((item) => item.kind === "registered" && new Date(item.lastSeenAt) >= since5).length, consented30: activeSessions.filter((item) => item.analyticsConsent).length, eventCount30, formSubmits30, validationErrors30, riskCount: riskSignals.length },
         activeSessions, timeline, riskSignals,
         topRoutes: topRoutes.map((item) => ({ name: clean(item._id || "/", 200), count: Number(item.count || 0) })),
         topModules: topModules.map((item) => ({ name: clean(item._id || "home", 100), count: Number(item.count || 0) })),
         topActions: topActions.map((item) => ({ name: clean(item._id || "action", 100), count: Number(item.count || 0) })),
         generatedAt: now,
-        privacy: { formValuesVisible: false, passwordsVisible: false, privateMessagesVisible: false, keystrokesVisible: false, retentionDays: 30, consentRequiredForDetailedEvents: true }
+        privacy: { interactionMetadataVisible: true, formValuesVisible: false, promptBodiesVisible: false, passwordsVisible: false, tokensVisible: false, privateMessagesVisible: false, rawKeystrokesVisible: false, retentionDays: 30, consentRequiredForDetailedEvents: true }
       });
     }
 
@@ -252,7 +260,7 @@ module.exports = async function handler(req, res) {
       const [target, moderation, activity, sessions] = await Promise.all([
         db.collection("users").findOne({ _id: userId }, { projection: USER_PROJECTION }),
         db.collection("communityAdminAuditLogs").find({ targetType: "user", targetId: String(userId) }, { projection: { action: 1, reason: 1, admin: 1, roles: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(50).toArray(),
-        hasPermission(admin, "activity.view") ? db.collection("telemetryEvents").find({ userId }, { projection: { sessionId: 1, type: 1, route: 1, module: 1, action: 1, label: 1, device: 1, browser: 1, viewport: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(100).toArray() : [],
+        hasPermission(admin, "activity.view") ? db.collection("telemetryEvents").find({ userId }, { projection: { sessionId: 1, type: 1, route: 1, module: 1, action: 1, label: 1, meta: 1, device: 1, browser: 1, viewport: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(100).toArray() : [],
         hasPermission(admin, "activity.view") ? db.collection("presence").find({ userId }, { projection: { sessionId: 1, page: 1, module: 1, lastAction: 1, activityState: 1, activeSeconds: 1, device: 1, browser: 1, viewport: 1, analyticsConsent: 1, firstSeenAt: 1, lastSeenAt: 1 } }).sort({ lastSeenAt: -1 }).limit(20).toArray() : []
       ]);
       if (!target) return res.status(404).json({ error: "Không tìm thấy tài khoản." });
