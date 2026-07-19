@@ -89,6 +89,13 @@
     ],
     checklist: {},
     media: { visualName: "", visualDuration: 0, audioName: "", audioDuration: 0 },
+    smartLoop: {
+      targetDuration: "03:00:00",
+      mode: "auto",
+      transitionSeconds: 0.8,
+      interpolation: true,
+      analysis: null
+    },
     automation: {
       idea: "Một đêm mưa yên tĩnh trong cabin trên núi, piano ấm áp để ngủ và thư giãn",
       trackSeconds: 60,
@@ -145,6 +152,7 @@
         ...saved,
         project: { ...base.project, ...(saved.project || {}) },
         media: { ...base.media, ...(saved.media || {}) },
+        smartLoop: { ...base.smartLoop, targetDuration: saved.smartLoop?.targetDuration || `${clamp(saved.project?.hours || base.project.hours, 1, 8)}:00:00`, ...(saved.smartLoop || {}) },
         automation: { ...base.automation, ...(saved.automation || {}), stages: { ...base.automation.stages, ...(saved.automation?.stages || {}) } },
         chapters: Array.isArray(saved.chapters) && saved.chapters.length ? saved.chapters : base.chapters,
         checklist: { ...(saved.checklist || {}) }
@@ -324,13 +332,81 @@
     return { title, description, tags, thumbnailText: p.genre === "meditation" ? "DEEP PEACE" : p.genre === "jazz" ? "NIGHT JAZZ" : p.genre === "lofi" ? "FOCUS MODE" : "QUIET PIANO" };
   }
 
+  function smartLoopTargetSeconds() {
+    const parsed = parseDuration(state.smartLoop?.targetDuration);
+    return Math.round(clamp(parsed || projectMath().targetSeconds, 5, 8 * 3600));
+  }
+
+  function resolvedSmartLoopMode() {
+    if (state.project.visualType === "image") return "direct";
+    if (state.smartLoop.mode !== "auto") return state.smartLoop.mode;
+    const analysis = state.smartLoop.analysis;
+    if (!analysis) return "crossfade";
+    if (analysis.seamScore >= 86) return "direct";
+    if (analysis.motionEnergy <= 18 && analysis.seamScore < 55) return "pingpong";
+    return "crossfade";
+  }
+
+  function smartLoopProfile() {
+    const p = state.project;
+    const math = projectMath();
+    const mode = resolvedSmartLoopMode();
+    const duration = Math.max(1, number(state.media.visualDuration, number(p.visualSeconds, 8)));
+    const maxTransition = Math.max(.15, Math.min(1.5, duration / 3));
+    const transition = clamp(state.smartLoop.transitionSeconds, .15, maxTransition);
+    const size = p.resolution === "2160p" ? "3840:2160" : p.resolution === "1440p" ? "2560:1440" : "1920:1080";
+    const interpolate = state.smartLoop.interpolation
+      ? `minterpolate=fps=${p.fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,`
+      : `fps=${p.fps},`;
+    const normalize = `${interpolate}settb=AVTB,scale=${size}:force_original_aspect_ratio=increase,crop=${size},format=yuv420p`;
+    let prepare = "";
+    let unitDuration = duration;
+    if (p.visualType !== "image" && mode === "crossfade") {
+      const rotateAt = Math.min(duration / 2, Math.max(transition + .12, 1));
+      const offset = Math.max(.01, duration - rotateAt - transition);
+      unitDuration = Math.max(.5, duration - transition);
+      prepare = `ffmpeg -y -i "visual.mp4" -filter_complex "[0:v]${normalize},split=2[tail0][head0];[tail0]trim=start=${rotateAt.toFixed(3)},setpts=PTS-STARTPTS[tail];[head0]trim=end=${rotateAt.toFixed(3)},setpts=PTS-STARTPTS[head];[tail][head]xfade=transition=fade:duration=${transition.toFixed(3)}:offset=${offset.toFixed(3)}[loopv]" -map "[loopv]" -an -c:v libx264 -preset slow -crf 17 -movflags +faststart "seamless-loop.mp4"`;
+    } else if (p.visualType !== "image" && mode === "pingpong") {
+      unitDuration = duration * 2;
+      prepare = `ffmpeg -y -i "visual.mp4" -filter_complex "[0:v]${normalize},split=2[forward][reverse0];[reverse0]reverse,setpts=PTS-STARTPTS[reverse];[forward][reverse]concat=n=2:v=1:a=0[loopv]" -map "[loopv]" -an -c:v libx264 -preset slow -crf 17 -movflags +faststart "seamless-loop.mp4"`;
+    }
+    return { mode, duration, transition, size, prepare, unitDuration, videoRate: `${math.videoMbps}M` };
+  }
+
   function ffmpegCommand() {
     const p = state.project;
     const math = projectMath();
-    const size = p.resolution === "2160p" ? "3840:2160" : p.resolution === "1440p" ? "2560:1440" : "1920:1080";
-    const visualInput = p.visualType === "image" ? '-loop 1 -i "cover.png"' : '-stream_loop -1 -i "visual.mp4"';
-    const videoRate = `${math.videoMbps}M`;
-    return `ffmpeg ${visualInput} -stream_loop -1 -i "music.wav" -t ${Math.round(math.targetSeconds)} -map 0:v:0 -map 1:a:0 -vf "scale=${size}:force_original_aspect_ratio=increase,crop=${size},format=yuv420p" -r ${p.fps} -c:v libx264 -preset slow -crf 18 -maxrate ${videoRate} -bufsize ${math.videoMbps * 2}M -c:a aac -b:a 384k -ar 48000 -movflags +faststart -shortest "${String(p.name || "hh-relax").replace(/[\\/:*?"<>|]/g, "-")}.mp4"`;
+    const profile = smartLoopProfile();
+    const visualFile = p.visualType === "image" ? "cover.png" : profile.prepare ? "seamless-loop.mp4" : "visual.mp4";
+    const visualInput = p.visualType === "image" ? `-loop 1 -i "${visualFile}"` : `-stream_loop -1 -i "${visualFile}"`;
+    const output = String(p.name || "hh-relax").replace(/[\\/:*?"<>|]/g, "-");
+    const render = `ffmpeg ${visualInput} -stream_loop -1 -i "music.wav" -t ${smartLoopTargetSeconds()} -map 0:v:0 -map 1:a:0 -vf "scale=${profile.size}:force_original_aspect_ratio=increase,crop=${profile.size},format=yuv420p" -r ${p.fps} -c:v libx264 -preset slow -crf 18 -maxrate ${profile.videoRate} -bufsize ${math.videoMbps * 2}M -c:a aac -b:a 384k -ar 48000 -movflags +faststart -shortest "${output}.mp4"`;
+    return [profile.prepare, render].filter(Boolean).join("\r\n");
+  }
+
+  function smartLoopBat() {
+    const commands = ffmpegCommand().split(/\r?\n/).filter(Boolean);
+    const steps = commands.flatMap((command, index) => [
+      `echo [${index + 1}/${commands.length}] ${index === 0 && commands.length > 1 ? "Tao seamless loop-unit" : "Render video dai"}...`,
+      command,
+      "if errorlevel 1 goto :error"
+    ]);
+    return [
+      "@echo off",
+      "setlocal",
+      "chcp 65001 >nul",
+      "where ffmpeg >nul 2>nul",
+      "if errorlevel 1 (echo Khong tim thay FFmpeg trong PATH. & goto :error)",
+      ...steps,
+      "echo.",
+      "echo HOAN TAT - video da duoc tao.",
+      "goto :done",
+      ":error",
+      "echo.",
+      "echo DUNG DO LOI - kiem tra ten visual.mp4, music.wav va FFmpeg.",
+      ":done",
+      "pause"
+    ].join("\r\n");
   }
 
   const cardMetric = (value, label, tone = "") => `<article class="mai-metric ${tone}"><strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span></article>`;
@@ -459,21 +535,35 @@
   }
 
   function loopView() {
-    const math = projectMath();
+    const profile = smartLoopProfile();
+    const analysis = state.smartLoop.analysis;
     const command = ffmpegCommand();
-    return `<section class="mai-view"><div class="mai-section-head"><div><p>LONG-FORM LOOP BUILDER</p><h3>Biến một master thành video ${state.project.hours} giờ</h3><span>Đọc thời lượng file thật, tính số vòng lặp và xuất lệnh FFmpeg cho Windows.</span></div><button class="mai-primary" type="button" data-copy-command>Sao chép lệnh</button></div>
+    const modeNames = { direct: "Nối thẳng", crossfade: "Smart Crossfade", pingpong: "Ping-pong mềm" };
+    const targetSeconds = smartLoopTargetSeconds();
+    const visualLoops = state.project.visualType === "image" ? 1 : Math.ceil(targetSeconds / Math.max(.5, profile.unitDuration));
+    return `<section class="mai-view"><div class="mai-section-head"><div><p>SMART SEAMLESS LOOP</p><h3>Biến clip ngắn thành chuyển động dài không khựng</h3><span>Tải clip 5 giây, chọn thời lượng; hệ thống đo điểm nối và tự chọn kỹ thuật loop phù hợp.</span></div><button class="mai-primary" type="button" data-copy-command>Sao chép lệnh dựng</button></div>
+      <section class="mai-panel mai-smart-loop-controls">
+        <header><div><p>LOOP ENGINE</p><strong>${modeNames[profile.mode]} · ${formatDuration(targetSeconds)}</strong></div><span class="is-${analysis ? analysis.seamScore >= 70 ? "good" : analysis.seamScore >= 45 ? "medium" : "low" : "waiting"}">${analysis ? `${analysis.seamScore}% liền mạch` : "Chờ clip"}</span></header>
+        <div class="mai-smart-loop-form">
+          <label><span>Thời lượng đầu ra</span><input data-smart-loop-field="targetDuration" value="${escapeHtml(state.smartLoop.targetDuration)}" placeholder="03:00:00"><small>HH:MM:SS · tối đa 8 giờ</small></label>
+          <label><span>Chế độ nối</span><select data-smart-loop-field="mode"><option value="auto" ${state.smartLoop.mode === "auto" ? "selected" : ""}>Tự động thông minh</option><option value="crossfade" ${state.smartLoop.mode === "crossfade" ? "selected" : ""}>Smart Crossfade</option><option value="pingpong" ${state.smartLoop.mode === "pingpong" ? "selected" : ""}>Ping-pong mềm</option><option value="direct" ${state.smartLoop.mode === "direct" ? "selected" : ""}>Nối thẳng</option></select><small>Auto dựa trên phân tích đầu–cuối</small></label>
+          <label><span>Vùng chuyển tiếp</span><input type="number" min="0.15" max="1.5" step="0.05" data-smart-loop-field="transitionSeconds" value="${escapeHtml(state.smartLoop.transitionSeconds)}"><small>Khuyến nghị 0.6–1.0 giây</small></label>
+          <label class="mai-smart-toggle"><input type="checkbox" data-smart-loop-field="interpolation" ${state.smartLoop.interpolation ? "checked" : ""}><span><strong>Nội suy chuyển động</strong><small>Motion-compensated · mượt hơn, render nặng hơn</small></span></label>
+        </div>
+      </section>
       <div class="mai-layout">
         <section class="mai-panel mai-media-inputs">
-          <label class="mai-drop"><input type="file" accept="image/*,video/*" data-visual-file><i>◫</i><strong>Chọn ảnh hoặc clip Kling / Veo</strong><span>${escapeHtml(state.media.visualName || "PNG, JPG, MP4, WebM")}</span></label>
+          <label class="mai-drop"><input type="file" accept="image/*,video/mp4,video/webm" data-visual-file><i>◎</i><strong>Chọn clip 5 giây hoặc ảnh</strong><span>${escapeHtml(state.media.visualName || "MP4, WebM, PNG, JPG · tự phân tích khi tải")}</span></label>
           <label class="mai-drop"><input type="file" accept="audio/*" data-loop-audio-file><i>♫</i><strong>Chọn master nhạc</strong><span>${escapeHtml(state.media.audioName || "WAV, MP3, M4A")}</span></label>
-          <div class="mai-preview-grid">${visualUrl ? (state.project.visualType === "image" ? `<img src="${visualUrl}" alt="Xem trước hình nền">` : `<video src="${visualUrl}" muted loop controls></video>`) : `<div><span>Chưa chọn hình</span></div>`}${audioUrl ? `<audio src="${audioUrl}" controls></audio>` : `<div><span>Chưa chọn audio</span></div>`}</div>
+          <div class="mai-preview-grid">${visualUrl ? (state.project.visualType === "image" ? `<img src="${visualUrl}" alt="Xem trước hình nền">` : `<video src="${visualUrl}" muted loop controls playsinline></video>`) : `<div><span>Chưa chọn hình</span></div>`}${audioUrl ? `<audio src="${audioUrl}" controls></audio>` : `<div><span>Chưa chọn audio</span></div>`}</div>
         </section>
-        <aside class="mai-panel mai-loop-math"><p>LOOP CALCULATOR</p><div class="mai-metrics">${cardMetric(formatDuration(math.targetSeconds), "Đích")}${cardMetric(state.media.audioDuration ? formatDuration(state.media.audioDuration) : `${state.project.masterMinutes}:00`, "Master")}${cardMetric(`${state.media.audioDuration ? Math.ceil(math.targetSeconds / state.media.audioDuration) : math.audioLoops}×`, "Lặp nhạc")}${cardMetric(state.project.visualType === "image" ? "1 ảnh" : `${state.media.visualDuration ? Math.ceil(math.targetSeconds / state.media.visualDuration) : math.visualLoops}×`, "Lặp hình")}</div>
-          <ul><li>Đổi tên file hình thành <b>${state.project.visualType === "image" ? "cover.png" : "visual.mp4"}</b>.</li><li>Đổi master thành <b>music.wav</b>.</li><li>Đặt cùng thư mục với FFmpeg rồi chạy file .BAT.</li></ul>
+        <aside class="mai-panel mai-loop-math"><p>LOOP CALCULATOR</p><div class="mai-metrics">${cardMetric(formatDuration(targetSeconds), "Đích")}${cardMetric(state.media.visualDuration ? `${state.media.visualDuration.toFixed(2)}s` : `${state.project.visualSeconds}s`, "Clip gốc")}${cardMetric(`${profile.unitDuration.toFixed(2)}s`, "Loop-unit")}${cardMetric(`${visualLoops}×`, "Số vòng")}</div>
+          <ul><li>Đổi clip thành <b>${state.project.visualType === "image" ? "cover.png" : "visual.mp4"}</b>.</li><li>Đổi master thành <b>music.wav</b>.</li><li>Chạy file .BAT; Smart Loop sẽ tạo <b>seamless-loop.mp4</b> trước khi dựng video dài.</li></ul>
         </aside>
       </div>
-      <article class="mai-panel mai-command"><header><div><p>FFMPEG · H.264 + AAC 48KHZ</p><strong>Lệnh render theo chuẩn YouTube</strong></div><button type="button" data-download-bat>Tải file .BAT</button></header><pre><code>${escapeHtml(command)}</code></pre></article>
-      <div class="mai-quality-note"><i>i</i><p><strong>Không để người nghe nhận ra vòng lặp</strong><span>Video có thể lặp 8–10 giây, nhưng audio nên là master 30–60 phút gồm nhiều đoạn. Nghe thử đúng các mốc nối trước khi render 5 giờ.</span></p></div>
+      ${analysis ? `<section class="mai-panel mai-seam-analysis"><header><div><p>FRAME INTELLIGENCE</p><strong>Phân tích chuyển động đầu–cuối</strong></div><span>${escapeHtml(analysis.recommendation)}</span></header><div class="mai-seam-analysis__body"><div class="mai-seam-frames"><figure><img src="${analysis.startFrame}" alt="Khung hình đầu"><figcaption>Đầu clip</figcaption></figure><figure><img src="${analysis.endFrame}" alt="Khung hình cuối"><figcaption>Cuối clip</figcaption></figure></div><div class="mai-seam-scores">${cardMetric(`${analysis.seamScore}%`, "Khớp hình", analysis.seamScore >= 70 ? "is-good" : "is-warn")}${cardMetric(`${analysis.motionEnergy}%`, "Năng lượng motion")}${cardMetric(`${analysis.brightnessJump}%`, "Nhảy sáng", analysis.brightnessJump <= 12 ? "is-good" : "is-warn")}</div><p>${escapeHtml(analysis.detail)}</p></div></section>` : `<div class="mai-quality-note"><i>AI</i><p><strong>Tải clip để bắt đầu phân tích</strong><span>Trình duyệt lấy mẫu bốn khung hình cục bộ, không tải clip lên máy chủ. Kết quả quyết định nối thẳng, crossfade hay ping-pong.</span></p></div>`}
+      <article class="mai-panel mai-command"><header><div><p>FFMPEG · ${profile.prepare ? "2 BƯỚC · " : ""}H.264 + AAC 48KHZ</p><strong>${modeNames[profile.mode]} · xuất video ${formatDuration(targetSeconds)}</strong></div><button type="button" data-download-bat>Tải Smart Loop .BAT</button></header><pre><code>${escapeHtml(command)}</code></pre></article>
+      <div class="mai-quality-note"><i>i</i><p><strong>Chuyển động dài mà không lộ vòng lặp</strong><span>Crossfade xoay điểm cắt vào giữa clip rồi hòa cuối–đầu; ping-pong phù hợp với mưa, khói, ánh sáng và chuyển động chậm. Nội suy motion làm mượt frame nhưng sẽ render lâu hơn.</span></p></div>
     </section>`;
   }
 
@@ -693,6 +783,7 @@
     const youtube = youtubePack();
     const manifest = {
       project: state.project,
+      smartLoop: { ...state.smartLoop, targetSeconds: smartLoopTargetSeconds(), resolvedMode: resolvedSmartLoopMode() },
       automation: { ...state.automation, stages: state.automation.stages },
       prompts: promptPack(),
       youtube,
@@ -701,7 +792,7 @@
       generatedAssets: { image: Boolean(generatedImage), audio: Boolean(generatedAudio), video: Boolean(generatedVideo) }
     };
     download(JSON.stringify(manifest, null, 2), `${name}-production.json`, "application/json");
-    download(`@echo off\r\n${ffmpegCommand()}\r\npause\r\n`, `${name}-render.bat`, "application/x-bat");
+    download(smartLoopBat(), `${name}-render.bat`, "application/x-bat");
     download(`TITLE\n${youtube.title}\n\nDESCRIPTION\n${youtube.description}\n\nTAGS\n${youtube.tags}\n`, `${name}-youtube.txt`);
     if (generatedImage) downloadBlob(generatedImage.blob, `${name}-cover.jpg`);
     if (generatedAudio) downloadBlob(generatedAudio.blob, `${name}-track.mp3`);
@@ -720,8 +811,12 @@
   function updateProjectField(target) {
     const key = target.dataset.projectField;
     if (!key) return;
+    const previousHours = state.project.hours;
     const numeric = ["hours", "bpm", "masterMinutes", "visualSeconds", "fps"].includes(key);
     state.project[key] = numeric ? number(target.value, state.project[key]) : target.value;
+    if (key === "hours" && parseDuration(state.smartLoop.targetDuration) === Number(previousHours) * 3600) {
+      state.smartLoop.targetDuration = `${clamp(state.project.hours, 1, 8)}:00:00`;
+    }
     saveState();
     updateProjectPreview();
   }
@@ -754,6 +849,85 @@
     }
   }
 
+  function seekVideoFrame(video, time) {
+    return new Promise((resolve, reject) => {
+      const target = Math.max(0, Math.min(Number(video.duration) - .01, time));
+      const timer = setTimeout(() => reject(new Error("Hết thời gian đọc khung hình.")), 5000);
+      const complete = () => { clearTimeout(timer); video.removeEventListener("seeked", complete); resolve(); };
+      video.addEventListener("seeked", complete, { once: true });
+      video.currentTime = target;
+    });
+  }
+
+  async function captureVideoFrame(video, time) {
+    await seekVideoFrame(video, time);
+    const canvas = document.createElement("canvas");
+    canvas.width = 160;
+    canvas.height = 90;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return {
+      pixels: context.getImageData(0, 0, canvas.width, canvas.height).data,
+      preview: canvas.toDataURL("image/jpeg", .72)
+    };
+  }
+
+  function frameDifference(first, second) {
+    let difference = 0;
+    let brightnessFirst = 0;
+    let brightnessSecond = 0;
+    let samples = 0;
+    for (let index = 0; index < first.length; index += 4) {
+      const firstLuma = first[index] * .2126 + first[index + 1] * .7152 + first[index + 2] * .0722;
+      const secondLuma = second[index] * .2126 + second[index + 1] * .7152 + second[index + 2] * .0722;
+      difference += Math.abs(first[index] - second[index]) + Math.abs(first[index + 1] - second[index + 1]) + Math.abs(first[index + 2] - second[index + 2]);
+      brightnessFirst += firstLuma;
+      brightnessSecond += secondLuma;
+      samples += 1;
+    }
+    return {
+      difference: difference / Math.max(1, samples * 3 * 255) * 100,
+      brightnessJump: Math.abs(brightnessFirst - brightnessSecond) / Math.max(1, samples * 255) * 100
+    };
+  }
+
+  async function analyzeVideoLoop(video) {
+    const duration = Number(video.duration) || 0;
+    if (duration < .8) throw new Error("Clip cần dài ít nhất 0.8 giây để phân tích loop.");
+    const edge = Math.min(.08, duration * .015);
+    const gap = Math.min(.35, duration * .08);
+    const start = await captureVideoFrame(video, edge);
+    const startMotion = await captureVideoFrame(video, Math.min(duration / 2, edge + gap));
+    const endMotion = await captureVideoFrame(video, Math.max(duration / 2, duration - edge - gap));
+    const end = await captureVideoFrame(video, duration - edge);
+    const seam = frameDifference(start.pixels, end.pixels);
+    const startEnergy = frameDifference(start.pixels, startMotion.pixels).difference;
+    const endEnergy = frameDifference(endMotion.pixels, end.pixels).difference;
+    const seamScore = Math.round(Math.max(0, 100 - seam.difference * 2.2));
+    const motionEnergy = Math.round(Math.min(100, (startEnergy + endEnergy) * 2.4));
+    const brightnessJump = Math.round(Math.min(100, seam.brightnessJump * 2));
+    let recommendation = "Smart Crossfade";
+    let detail = "Đầu và cuối khác nhau; xoay điểm cắt rồi hòa chuyển động sẽ che mối nối tốt nhất.";
+    if (seamScore >= 86) {
+      recommendation = "Nối thẳng";
+      detail = "Khung hình đầu và cuối đã rất gần nhau; có thể nối trực tiếp để giữ hình nét nhất.";
+    } else if (motionEnergy <= 18 && seamScore < 55) {
+      recommendation = "Ping-pong mềm";
+      detail = "Chuyển động chậm nhưng hai đầu lệch nhiều; chạy tiến–lùi sẽ kín điểm nối hơn crossfade dài.";
+    }
+    state.smartLoop.analysis = {
+      seamScore,
+      motionEnergy,
+      brightnessJump,
+      recommendation,
+      detail,
+      duration: Number(duration.toFixed(3)),
+      startFrame: start.preview,
+      endFrame: end.preview,
+      analyzedAt: new Date().toISOString()
+    };
+  }
+
   function readMediaMetadata(file, kind) {
     const oldUrl = kind === "visual" ? visualUrl : audioUrl;
     if (oldUrl) URL.revokeObjectURL(oldUrl);
@@ -764,24 +938,28 @@
       state.project.visualType = "image";
       state.media.visualName = file.name;
       state.media.visualDuration = 0;
+      state.smartLoop.analysis = null;
       saveState();
       render();
       return;
     }
     const element = document.createElement(kind === "visual" ? "video" : "audio");
-    element.preload = "metadata";
-    element.onloadedmetadata = () => {
+    element.preload = kind === "visual" ? "auto" : "metadata";
+    element.onloadedmetadata = async () => {
       if (kind === "visual") {
         state.project.visualType = "video";
         state.media.visualName = file.name;
         state.media.visualDuration = Number(element.duration) || 0;
+        state.smartLoop.analysis = null;
+        toast("Đang phân tích chuyển động đầu–cuối…");
+        try { await analyzeVideoLoop(element); } catch (error) { toast(error.message || "Không phân tích được clip.", "error"); }
       } else {
         state.media.audioName = file.name;
         state.media.audioDuration = Number(element.duration) || 0;
       }
       saveState();
       render();
-      toast("Đã đọc thời lượng file.");
+      toast(kind === "visual" && state.smartLoop.analysis ? "Đã phân tích và chọn chế độ Smart Loop." : "Đã đọc thời lượng file.");
     };
     element.onerror = () => toast("Không thể đọc metadata file này.", "error");
     element.src = url;
@@ -864,6 +1042,15 @@
   function handleInput(event) {
     const target = event.target;
     if (target.matches("[data-project-field]")) updateProjectField(target);
+    if (target.matches("[data-smart-loop-field]")) {
+      const key = target.dataset.smartLoopField;
+      state.smartLoop[key] = target.type === "checkbox" ? target.checked : key === "transitionSeconds" ? Number(target.value) : target.value;
+      saveState();
+      clearTimeout(handleInput.smartLoopTimer);
+      handleInput.smartLoopTimer = setTimeout(() => {
+        if (host && view === "loop-builder") render();
+      }, 550);
+    }
     if (target.matches("[data-automation-field]")) {
       const key = target.dataset.automationField;
       state.automation[key] = key === "trackSeconds" ? Number(target.value) : target.value;
@@ -883,6 +1070,15 @@
 
   function handleChange(event) {
     const target = event.target;
+    if (target.matches("[data-smart-loop-field]")) {
+      clearTimeout(handleInput.smartLoopTimer);
+      const key = target.dataset.smartLoopField;
+      state.smartLoop[key] = target.type === "checkbox" ? target.checked : key === "transitionSeconds" ? Number(target.value) : target.value;
+      if (key === "targetDuration" && !parseDuration(target.value)) state.smartLoop.targetDuration = "01:00:00";
+      saveState();
+      render();
+      return;
+    }
     if (target.matches("[data-automation-field]")) {
       const key = target.dataset.automationField;
       state.automation[key] = key === "trackSeconds" ? Number(target.value) : target.value;
@@ -907,7 +1103,7 @@
       target.files[0].text().then((text) => {
         const imported = JSON.parse(text);
         const base = defaultState();
-        state = { ...base, ...imported, project: { ...base.project, ...(imported.project || {}) }, media: { ...base.media, ...(imported.media || {}) } };
+        state = { ...base, ...imported, project: { ...base.project, ...(imported.project || {}) }, media: { ...base.media, ...(imported.media || {}) }, smartLoop: { ...base.smartLoop, ...(imported.smartLoop || {}) } };
         saveState();
         render();
         toast("Đã nhập dự án.");
@@ -936,7 +1132,7 @@
     }
     if (button.dataset.copyText) copyText(promptPack()[button.dataset.copyText]);
     if (button.hasAttribute("data-copy-command")) copyText(ffmpegCommand());
-    if (button.hasAttribute("data-download-bat")) download(`@echo off\r\n${ffmpegCommand()}\r\npause\r\n`, `${state.project.name.replace(/[^a-z0-9_-]+/gi, "-")}-render.bat`, "application/x-bat");
+    if (button.hasAttribute("data-download-bat")) download(smartLoopBat(), `${state.project.name.replace(/[^a-z0-9_-]+/gi, "-")}-render.bat`, "application/x-bat");
     if (button.hasAttribute("data-add-chapter")) { state.chapters.push({ name: `Track ${state.chapters.length + 1}`, duration: "30:00" }); saveState(); render(); }
     if (button.dataset.removeChapter !== undefined) { state.chapters.splice(Number(button.dataset.removeChapter), 1); saveState(); render(); }
     if (button.hasAttribute("data-copy-chapters")) copyText(chapterOutput().lines.join("\n"));

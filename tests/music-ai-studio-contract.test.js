@@ -32,6 +32,23 @@ test("Music AI workflow performs real local production tasks", () => {
   assert.match(source, /data-download-youtube/);
 });
 
+test("Smart Loop analyzes clip seams and generates adaptive FFmpeg workflows", () => {
+  const source = read("music-ai-studio.js");
+  assert.match(source, /function analyzeVideoLoop/);
+  assert.match(source, /function frameDifference/);
+  assert.match(source, /function resolvedSmartLoopMode/);
+  assert.match(source, /seamScore >= 86/);
+  assert.match(source, /Smart Crossfade/);
+  assert.match(source, /Ping-pong mềm/);
+  assert.match(source, /xfade=transition=fade/);
+  assert.match(source, /minterpolate=fps=/);
+  assert.match(source, /reverse,setpts=PTS-STARTPTS/);
+  assert.match(source, /data-smart-loop-field="targetDuration"/);
+  assert.match(source, /seamless-loop\.mp4/);
+  assert.match(source, /function smartLoopBat/);
+  assert.match(source, /if errorlevel 1 goto :error/);
+});
+
 test("One-click producer connects real server media jobs without exposing keys", () => {
   const client = read("music-ai-studio.js");
   const server = read("api/modules/[moduleId]/actions.js");
@@ -74,7 +91,7 @@ test("Music AI ships YouTube-safe defaults and no fake LUFS claim", () => {
 test("Music AI assets are loaded by the page and offline worker", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["music-ai-studio.css?v=2", "music-ai-studio.js?v=2", "script.js?v=95", "app-shell.css?v=44"]) {
+  for (const asset of ["music-ai-studio.css?v=3", "music-ai-studio.js?v=3", "script.js?v=95", "app-shell.css?v=44"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

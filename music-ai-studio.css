@@ -424,6 +424,39 @@
 .mai-next strong { color: var(--mai-text); }
 .mai-next button { flex: 0 0 auto; }
 
+.mai-smart-loop-controls { overflow: hidden; }
+.mai-smart-loop-controls > header,
+.mai-seam-analysis > header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px; border-bottom: 1px solid var(--mai-line); }
+.mai-smart-loop-controls > header strong,
+.mai-seam-analysis > header strong { font-size: 13px; }
+.mai-smart-loop-controls > header > span,
+.mai-seam-analysis > header > span { padding: 8px 11px; border: 1px solid var(--mai-line); border-radius: 999px; color: var(--mai-muted); background: rgba(255, 255, 255, .025); font-size: 9px; font-weight: 900; }
+.mai-smart-loop-controls > header > span.is-good { color: var(--mai-green); border-color: rgba(158, 239, 145, .34); background: rgba(158, 239, 145, .07); }
+.mai-smart-loop-controls > header > span.is-medium { color: #ffd27d; border-color: rgba(255, 204, 113, .34); }
+.mai-smart-loop-controls > header > span.is-low { color: #ff91c7; border-color: rgba(255, 117, 185, .34); }
+.mai-smart-loop-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 18px 20px 20px; }
+.mai-smart-loop-form > label { display: grid; align-content: start; gap: 7px; min-width: 0; }
+.mai-smart-loop-form > label > span { color: #b8c8d1; font-size: 10px; font-weight: 800; }
+.mai-smart-loop-form input:not([type="checkbox"]),
+.mai-smart-loop-form select { width: 100%; height: 44px; padding: 0 12px; border: 1px solid var(--mai-line); border-radius: 10px; color: var(--mai-text); background: rgba(4, 10, 16, .65); outline: none; }
+.mai-smart-loop-form input:focus,
+.mai-smart-loop-form select:focus { border-color: rgba(100, 236, 226, .62); box-shadow: 0 0 0 3px rgba(100, 236, 226, .08); }
+.mai-smart-loop-form small { color: var(--mai-muted); font-size: 8px; line-height: 1.45; }
+.mai-smart-toggle { display: flex !important; align-items: center; min-height: 66px; margin-top: 17px; padding: 10px 12px; border: 1px solid var(--mai-line); border-radius: 11px; background: rgba(97, 228, 218, .035); cursor: pointer; }
+.mai-smart-toggle > input { flex: 0 0 18px; width: 18px; height: 18px; accent-color: #66eee6; }
+.mai-smart-toggle > span { display: grid; gap: 4px; }
+.mai-smart-toggle strong { color: var(--mai-text); font-size: 10px; }
+.mai-smart-toggle small { font-weight: 500; }
+.mai-seam-analysis { overflow: hidden; }
+.mai-seam-analysis > header > span { color: var(--mai-cyan); border-color: rgba(100, 236, 226, .3); }
+.mai-seam-analysis__body { display: grid; grid-template-columns: minmax(260px, .75fr) minmax(280px, 1fr); gap: 16px; padding: 18px; }
+.mai-seam-frames { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.mai-seam-frames figure { overflow: hidden; margin: 0; border: 1px solid var(--mai-line); border-radius: 12px; background: #03070b; }
+.mai-seam-frames img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.mai-seam-frames figcaption { padding: 8px 10px; color: var(--mai-muted); font-size: 8px; font-weight: 800; text-align: center; }
+.mai-seam-scores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-content: start; }
+.mai-seam-analysis__body > p { grid-column: 2; margin: -2px 0 0; color: var(--mai-muted); font-size: 10px; line-height: 1.65; }
+
 .mai-media-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 20px; }
 .mai-drop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 160px; padding: 25px; border: 1px dashed rgba(100, 236, 226, .34); border-radius: 15px; text-align: center; background: rgba(73, 213, 205, .035); cursor: pointer; }
 .mai-drop:hover { border-color: var(--mai-cyan); background: rgba(73, 213, 205, .065); }
@@ -523,6 +556,7 @@ body.app-music-ai-route .app-workspace { overflow: visible; }
   .mai-flow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mai-export-spec { grid-template-columns: 1fr; }
   .mai-auto__connections { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mai-smart-loop-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 900px) {
@@ -538,6 +572,8 @@ body.app-music-ai-route .app-workspace { overflow: visible; }
   .mai-qa-advice { grid-template-columns: 1fr; }
   .mai-auto__body,
   .mai-auto__outputs { grid-template-columns: 1fr; }
+  .mai-seam-analysis__body { grid-template-columns: 1fr; }
+  .mai-seam-analysis__body > p { grid-column: auto; }
 }
 
 @media (max-width: 640px) {
@@ -557,6 +593,10 @@ body.app-music-ai-route .app-workspace { overflow: visible; }
   .mai-preview-grid,
   .mai-export-spec .mai-metrics { grid-template-columns: 1fr; }
   .mai-preview-grid { grid-column: auto; }
+  .mai-smart-loop-form,
+  .mai-seam-scores { grid-template-columns: 1fr; }
+  .mai-smart-loop-controls > header,
+  .mai-seam-analysis > header { align-items: flex-start; flex-direction: column; }
   .mai-next { align-items: flex-start; flex-direction: column; }
   .mai-track-editor > header,
   .mai-track-row { grid-template-columns: minmax(0, 1fr) 92px 38px; }
