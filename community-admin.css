@@ -211,21 +211,128 @@
 .home-neon .hh-admin-keywords span { padding: 5px 7px; border: 1px solid #344b57; border-radius: 4px; color: #a7bbc3; font-size: 8px; }
 .home-neon .hh-admin-empty { color: #788c96; font-size: 9px; }
 
+.home-neon .hh-admin-live-metrics { grid-template-columns: repeat(6, minmax(130px, 1fr)); }
+.home-neon .hh-admin-live-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; padding: 10px 12px; border: 1px solid rgba(103, 219, 161, .25); border-radius: 7px; background: linear-gradient(90deg, rgba(103, 219, 161, .07), rgba(98, 215, 231, .035)); }
+.home-neon .hh-admin-live-toolbar > div { display: flex; align-items: center; gap: 9px; }
+.home-neon .hh-admin-live-toolbar > div > i { width: 9px; height: 9px; border-radius: 50%; background: var(--admin-green); box-shadow: 0 0 0 5px rgba(103, 219, 161, .08), 0 0 18px rgba(103, 219, 161, .55); animation: hh-admin-pulse 2s ease-in-out infinite; }
+.home-neon .hh-admin-live-toolbar span { display: grid; gap: 2px; }
+.home-neon .hh-admin-live-toolbar strong { font-size: 10px; }
+.home-neon .hh-admin-live-toolbar small { color: #7e929d; font-size: 8px; }
+.home-neon .hh-admin-behavior-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(250px, .8fr); gap: 10px; margin-top: 10px; }
+.home-neon .hh-admin-live-sessions,
+.home-neon .hh-admin-rankings > article,
+.home-neon .hh-admin-event-timeline,
+.home-neon .hh-admin-risk-signals { min-width: 0; padding: 13px; border: 1px solid #2b3f4b; border-radius: 7px; background: #0d151d; }
+.home-neon .hh-admin-live-sessions > header,
+.home-neon .hh-admin-rankings article > header,
+.home-neon .hh-admin-event-timeline > header,
+.home-neon .hh-admin-risk-signals > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.home-neon .hh-admin-live-sessions > header > div,
+.home-neon .hh-admin-event-timeline > header > div,
+.home-neon .hh-admin-risk-signals > header > div,
+.home-neon .hh-admin-rankings header { display: grid; gap: 2px; }
+.home-neon .hh-admin-live-sessions header small,
+.home-neon .hh-admin-event-timeline header small,
+.home-neon .hh-admin-risk-signals header small,
+.home-neon .hh-admin-rankings header small { color: var(--admin-cyan); font-size: 8px; font-weight: 900; }
+.home-neon .hh-admin-live-sessions header strong,
+.home-neon .hh-admin-event-timeline header strong,
+.home-neon .hh-admin-risk-signals header strong,
+.home-neon .hh-admin-rankings header strong { font-size: 12px; }
+.home-neon .hh-admin-live-sessions > header > span { padding: 5px 8px; border-radius: 20px; background: rgba(103, 219, 161, .1); color: var(--admin-green); font-size: 8px; font-weight: 900; }
+.home-neon .hh-admin-live-sessions > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; max-height: 540px; overflow: auto; }
+.home-neon .hh-admin-live-session { display: grid; gap: 9px; padding: 10px; border: 1px solid #273b46; border-radius: 7px; background: linear-gradient(145deg, rgba(98, 215, 231, .035), rgba(255, 255, 255, .012)); }
+.home-neon .hh-admin-live-session > header { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.home-neon .hh-admin-live-session > header > i { position: relative; display: grid; place-items: center; width: 34px; height: 34px; overflow: hidden; border: 1px solid rgba(98, 215, 231, .38); border-radius: 50%; color: var(--admin-cyan); font-size: 8px; font-style: normal; font-weight: 900; }
+.home-neon .hh-admin-live-session > header > i img { width: 100%; height: 100%; object-fit: cover; }
+.home-neon .hh-admin-live-session > header > i b { position: absolute; right: 0; bottom: 0; width: 8px; height: 8px; border: 2px solid #0d151d; border-radius: 50%; background: var(--admin-green); }
+.home-neon .hh-admin-live-session.idle > header > i b { background: var(--admin-gold); }
+.home-neon .hh-admin-live-session.background > header > i b { background: #738793; }
+.home-neon .hh-admin-live-session > header > span { display: grid; min-width: 0; }
+.home-neon .hh-admin-live-session > header strong,
+.home-neon .hh-admin-live-session > header small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-neon .hh-admin-live-session > header strong { font-size: 9px; }
+.home-neon .hh-admin-live-session > header small { color: #728791; font-size: 7px; }
+.home-neon .hh-admin-live-session > header em { color: var(--admin-green); font-size: 7px; font-style: normal; }
+.home-neon .hh-admin-live-session > div { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.home-neon .hh-admin-live-session > div code { grid-column: 1 / -1; overflow: hidden; color: #72dce6; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.home-neon .hh-admin-live-session > div span { overflow: hidden; padding: 5px 6px; border-radius: 4px; background: rgba(255,255,255,.025); color: #8da0a9; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+.home-neon .hh-admin-live-session > footer { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 5px; padding-top: 7px; border-top: 1px solid #23343e; color: #687d88; font-size: 7px; }
+.home-neon .hh-admin-live-session > footer button { grid-column: 1 / -1; min-height: 29px; }
+.home-neon .hh-admin-rankings { display: grid; gap: 10px; align-content: start; }
+.home-neon .hh-admin-rankings > article > div { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 32px; border-top: 1px solid #22343e; }
+.home-neon .hh-admin-rankings > article > div > b { color: #647b86; font-size: 7px; }
+.home-neon .hh-admin-rankings > article > div > span { display: grid; gap: 4px; min-width: 0; }
+.home-neon .hh-admin-rankings > article > div strong { overflow: hidden; color: #aebdc3; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.home-neon .hh-admin-rankings > article > div i { position: relative; width: 100%; height: 2px; overflow: hidden; border-radius: 3px; background: #263b46; }
+.home-neon .hh-admin-rankings > article > div i::after { position: absolute; inset: 0 auto 0 0; width: var(--value); border-radius: inherit; background: linear-gradient(90deg, var(--admin-cyan), var(--admin-pink)); content: ""; }
+.home-neon .hh-admin-rankings > article > div em { color: var(--admin-cyan); font-size: 8px; font-style: normal; }
+.home-neon .hh-admin-event-timeline,
+.home-neon .hh-admin-risk-signals { grid-column: 1 / -1; }
+.home-neon .hh-admin-event-timeline > header > span,
+.home-neon .hh-admin-risk-signals > header > span { color: #748994; font-size: 8px; }
+.home-neon .hh-admin-event-timeline > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; max-height: 400px; overflow: auto; }
+.home-neon .hh-admin-event-timeline > div > article { display: grid; grid-template-columns: 9px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 46px; border-top: 1px solid #22343e; }
+.home-neon .hh-admin-event-timeline article > i { width: 7px; height: 7px; border-radius: 50%; background: var(--admin-cyan); box-shadow: 0 0 9px rgba(98, 215, 231, .35); }
+.home-neon .hh-admin-event-timeline article > i.error { background: var(--admin-red); }
+.home-neon .hh-admin-event-timeline article > span { display: grid; min-width: 0; gap: 2px; }
+.home-neon .hh-admin-event-timeline article strong,
+.home-neon .hh-admin-event-timeline article small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-neon .hh-admin-event-timeline article strong { font-size: 8px; }
+.home-neon .hh-admin-event-timeline article small,
+.home-neon .hh-admin-event-timeline article time { color: #748994; font-size: 7px; }
+.home-neon .hh-admin-event-timeline article code { color: #73d9e2; }
+.home-neon .hh-admin-risk-signals > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.home-neon .hh-admin-risk-signals > div > article { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 9px; border: 1px solid rgba(244, 215, 109, .2); border-radius: 6px; background: rgba(244, 215, 109, .035); }
+.home-neon .hh-admin-risk-signals > div > article.high { border-color: rgba(255, 113, 140, .3); background: rgba(255, 113, 140, .045); }
+.home-neon .hh-admin-risk-signals article > i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 5px; background: rgba(244, 215, 109, .11); color: var(--admin-gold); font-style: normal; }
+.home-neon .hh-admin-risk-signals article > span { display: grid; gap: 2px; }
+.home-neon .hh-admin-risk-signals article strong { font-size: 8px; }
+.home-neon .hh-admin-risk-signals article small { color: #788c96; font-size: 7px; }
+
+.hh-admin-restrictions { display: grid; gap: 7px; padding: 10px; border: 1px solid rgba(244, 215, 109, .22); border-radius: 6px; background: rgba(244, 215, 109, .035); }
+.hh-admin-restrictions > div { display: flex; flex-wrap: wrap; gap: 5px; }
+.hh-admin-restrictions b { padding: 4px 6px; border-radius: 4px; background: rgba(244, 215, 109, .1); color: #f4dd8b; font-size: 8px; }
+.hh-admin-restrictions span { color: #82959e; font-size: 8px; }
+.hh-admin-user-observability { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.hh-admin-user-observability > section { min-width: 0; padding: 9px; border: 1px solid #2b3f4a; border-radius: 6px; background: #080f15; }
+.hh-admin-user-observability h6,
+.hh-admin-moderation h6 { margin: 0 0 7px; font-size: 10px; }
+.hh-admin-user-observability > section > div { max-height: 230px; overflow: auto; }
+.hh-admin-user-observability article { display: grid; grid-template-columns: 8px minmax(0, 1fr); align-items: center; gap: 7px; min-height: 42px; border-top: 1px solid #233640; }
+.hh-admin-user-observability article > i { width: 7px; height: 7px; border-radius: 50%; background: #62d7e7; font-style: normal; }
+.hh-admin-user-observability article > span { display: grid; min-width: 0; gap: 2px; }
+.hh-admin-user-observability article strong,
+.hh-admin-user-observability article small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hh-admin-user-observability article strong { font-size: 8px; }
+.hh-admin-user-observability article small { color: #728690; font-size: 7px; }
+.hh-admin-kill-switch { padding: 11px; border: 1px solid rgba(255, 113, 140, .25); border-radius: 6px; background: rgba(255, 113, 140, .045); }
+.hh-admin-kill-switch p,
+.hh-admin-kill-switch span { color: #8da0a9; }
+.home-neon .hh-admin-settings > article > div article > div { display: flex; align-items: center; gap: 6px; }
+.home-neon .hh-admin-settings > article > div article > div button { min-height: 28px; font-size: 7px; }
+
 @keyframes hh-admin-spin { to { transform: rotate(360deg); } }
+@keyframes hh-admin-pulse { 50% { opacity: .55; transform: scale(.75); } }
 
 @media (max-width: 1180px) {
   .home-neon .hh-admin-metrics { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
+  .home-neon .hh-admin-live-sessions > div { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
   .home-neon .hh-admin-app > header { align-items: flex-start; flex-direction: column; }
   .home-neon .hh-admin-app > header > div:last-child { flex-wrap: wrap; }
   .home-neon .hh-admin-metrics { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
   .home-neon .hh-admin-dashboard-grid,
-  .home-neon .hh-admin-settings { grid-template-columns: 1fr; }
+  .home-neon .hh-admin-settings,
+  .home-neon .hh-admin-behavior-grid { grid-template-columns: 1fr; }
   .home-neon .hh-admin-toolbar { grid-template-columns: 1fr; }
   .hh-admin-user-facts,
   .hh-admin-audit-detail > div,
-  .hh-admin-audit-detail > section { grid-template-columns: 1fr 1fr; }
+  .hh-admin-audit-detail > section,
+  .hh-admin-user-observability { grid-template-columns: 1fr 1fr; }
+  .home-neon .hh-admin-event-timeline > div,
+  .home-neon .hh-admin-risk-signals > div { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 760px) {
@@ -243,8 +350,11 @@
   .hh-admin-user-facts,
   .hh-admin-role-picker,
   .hh-admin-audit-detail > div,
-  .hh-admin-audit-detail > section { grid-template-columns: 1fr; }
+  .hh-admin-audit-detail > section,
+  .hh-admin-user-observability { grid-template-columns: 1fr; }
+  .home-neon .hh-admin-live-toolbar { align-items: stretch; flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .home-neon .hh-admin-loading i { animation: none; }
+  .home-neon .hh-admin-loading i,
+  .home-neon .hh-admin-live-toolbar > div > i { animation: none; }
 }

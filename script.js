@@ -476,11 +476,15 @@ function initPublicPresence() {
     if (document.hidden) return;
     const token = localStorage.getItem("hh-auth-token") || "";
     if (!token) return;
+    let sessionId = "default";
+    let activeSeconds = 0;
+    try { const session = JSON.parse(sessionStorage.getItem("hh.insights.session.v2") || "{}"); sessionId = session.id || sessionId; activeSeconds = Number(session.activeSeconds || 0); } catch {}
+    const browser = navigator.userAgent.includes("Edg/") ? "edge" : navigator.userAgent.includes("Chrome/") ? "chrome" : navigator.userAgent.includes("Firefox/") ? "firefox" : navigator.userAgent.includes("Safari/") ? "safari" : "browser";
     fetch(`${REALTIME_URL}/api/platform/summary`, {
       method: "POST",
       keepalive: true,
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ visitorId, page: location.pathname + location.hash })
+      body: JSON.stringify({ visitorId, sessionId, page: location.pathname + location.hash, module: location.hash.split("/").filter(Boolean).at(-1) || "home", activeSeconds, activityState: "active", device: innerWidth < 640 ? "mobile" : innerWidth < 1024 ? "tablet" : "desktop", browser, viewport: `${Math.round(innerWidth / 100) * 100}x${Math.round(innerHeight / 100) * 100}`, analyticsConsent: localStorage.getItem("hh-tracking-consent") === "yes" })
     }).catch(() => {});
   };
   sendPresence();
@@ -5366,7 +5370,7 @@ function initAppShell() {
       window.HHInsights?.mountAnalytics?.(workspace.firstElementChild);
       remember("analytics");
     } else if (route === "/analytics/admin-panel") {
-      updatePageHeader("Admin Panel", "Quản trị người dùng, nội dung, báo cáo, cấu hình, audit log và sức khỏe hệ thống theo vai trò.", route, module);
+      updatePageHeader("Admin Panel", "Theo dõi hoạt động realtime, quản trị người dùng, phiên, quyền tính năng, nội dung, audit log và sức khỏe hệ thống.", route, module);
       workspace.innerHTML = '<div class="admin-panel-route" data-admin-application-host><section class="insights-loading"><i></i><strong>Đang xác minh quyền quản trị...</strong></section></div>';
       const host = workspace.firstElementChild;
       const mountAdmin = async (attempt = 0) => {

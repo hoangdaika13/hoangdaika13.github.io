@@ -4,9 +4,16 @@
   const STORE_KEY = "hh.insights.events.v2";
   const SESSION_KEY = "hh.insights.session.v2";
   const MAX_EVENTS = 600;
+  const REMOTE_BATCH_SIZE = 20;
+  const REMOTE_FLUSH_MS = 15000;
   const API_BASE = String(window.HH_REALTIME_URL || "").replace(/\/$/, "");
   const runtimeVitals = { lcp: 0, cls: 0, inp: 0 };
   let analyticsHost = null;
+  let remoteQueue = [];
+  let remoteSending = false;
+  let lastRemoteAt = 0;
+  let lastInteractionAt = Date.now();
+  let lastAllowedRoute = "/home";
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
   const readJson = (key, fallback) => {
@@ -23,6 +30,22 @@
   };
   const routeName = (route = location.hash.replace(/^#/, "") || "/home") => route.split("?")[0].slice(0, 160);
   const moduleName = (route) => routeName(route).split("/").filter(Boolean).at(-1) || "home";
+  const actionKey = (target) => {
+    const dataKey = Object.keys(target?.dataset || {}).find((key) => !["appRoute", "insightsNoTrack"].includes(key));
+    if (dataKey) return dataKey.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`).replace(/^-/, "");
+    if (target?.dataset?.appRoute) return "open-route";
+    return target?.tagName === "A" ? "open-link" : "button-action";
+  };
+  const browserKey = () => navigator.userAgent.includes("Edg/") ? "edge" : navigator.userAgent.includes("Chrome/") ? "chrome" : navigator.userAgent.includes("Firefox/") ? "firefox" : navigator.userAgent.includes("Safari/") ? "safari" : "browser";
+  const deviceKey = () => innerWidth < 640 ? "mobile" : innerWidth < 1024 ? "tablet" : "desktop";
+  const viewportKey = () => `${Math.round(innerWidth / 100) * 100}x${Math.round(innerHeight / 100) * 100}`;
+  const analyticsAllowed = () => localStorage.getItem("hh-tracking-consent") === "yes";
+  const visitorId = () => {
+    const key = "hh-presence-id";
+    let value = localStorage.getItem(key);
+    if (!value) { value = crypto.randomUUID?.() || `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`; localStorage.setItem(key, value); }
+    return value;
+  };
 
   function record(type, detail = {}) {
     const row = {
@@ -30,10 +53,12 @@
       type: String(type || "event").slice(0, 40),
       route: routeName(detail.route),
       module: String(detail.module || moduleName(detail.route)).slice(0, 80),
+      action: String(detail.action || type || "event").replace(/[^a-z0-9_.:-]/gi, "-").toLowerCase().slice(0, 100),
       label: String(detail.label || "").replace(/\s+/g, " ").trim().slice(0, 100),
       createdAt: new Date().toISOString()
     };
     writeJson(STORE_KEY, [row, ...events()].slice(0, MAX_EVENTS));
+    if (analyticsAllowed()) remoteQueue.push({ ...row, label: "" });
     return row;
   }
 
@@ -52,23 +77,102 @@
     return state;
   }
 
+  async function flushRemote(force = false) {
+    if (!API_BASE || remoteSending) return;
+    if (!force && !remoteQueue.length && Date.now() - lastRemoteAt < 45000) return;
+    const state = updateSession();
+    const consent = analyticsAllowed();
+    const batch = consent ? remoteQueue.splice(0, REMOTE_BATCH_SIZE) : [];
+    remoteSending = true;
+    try {
+      const token = localStorage.getItem("hh-auth-token") || "";
+      const response = await fetch(`${API_BASE}/api/platform/summary`, {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          visitorId: visitorId(), sessionId: state.id, page: routeName(), module: moduleName(routeName()),
+          activeSeconds: state.activeSeconds, activityState: document.hidden ? "background" : Date.now() - lastInteractionAt > 60000 ? "idle" : "active",
+          device: deviceKey(), browser: browserKey(), viewport: viewportKey(), analyticsConsent: consent, events: batch
+        })
+      });
+      if (!response.ok) throw new Error("telemetry rejected");
+      lastRemoteAt = Date.now();
+      const data = await response.json().catch(() => ({}));
+      if (data.policy && token) {
+        try {
+          const user = JSON.parse(localStorage.getItem("hh-auth-user") || "{}");
+          user.restrictedFeatures = Array.isArray(data.policy.restrictedFeatures) ? data.policy.restrictedFeatures : [];
+          localStorage.setItem("hh-auth-user", JSON.stringify(user));
+        } catch {}
+      }
+      if (data.policy) localStorage.setItem("hh-disabled-features", JSON.stringify(Array.isArray(data.policy.disabledFeatures) ? data.policy.disabledFeatures : []));
+      if (routeIsRestricted(routeName())) location.hash = "#/home";
+    } catch {
+      remoteQueue = [...batch, ...remoteQueue].slice(0, 100);
+    } finally { remoteSending = false; }
+  }
+
+  function restrictedFeatures() {
+    try {
+      const user = JSON.parse(localStorage.getItem("hh-auth-user") || "{}");
+      const disabled = JSON.parse(localStorage.getItem("hh-disabled-features") || "[]");
+      return new Set([...(Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures : []), ...(Array.isArray(disabled) ? disabled : [])]);
+    } catch { return new Set(); }
+  }
+
+  function routeIsRestricted(route) {
+    const denied = restrictedFeatures();
+    const normalized = routeName(route);
+    const parts = normalized.split("/").filter(Boolean);
+    return [...denied].some((feature) => parts.includes(feature) || normalized.startsWith(`/${feature}/`));
+  }
+
+  function installFeatureAccessGuard() {
+    document.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-app-route], a[href^='#/']");
+      const nextRoute = target?.dataset?.appRoute || target?.getAttribute("href")?.replace(/^#/, "");
+      if (!nextRoute || !routeIsRestricted(nextRoute)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.HHCommunity?.notice?.("Tính năng này đã được quản trị viên tạm giới hạn cho tài khoản của bạn.", "error");
+    }, true);
+    window.addEventListener("hashchange", () => {
+      const current = routeName();
+      if (routeIsRestricted(current)) {
+        location.hash = `#${lastAllowedRoute}`;
+        window.HHCommunity?.notice?.("Bạn không có quyền mở tính năng này.", "error");
+      } else lastAllowedRoute = current;
+    });
+  }
+
   function installTelemetry() {
     if (window.__HH_INSIGHTS_TRACKING__) return;
     window.__HH_INSIGHTS_TRACKING__ = true;
     const session = sessionState();
     try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch {}
-    record("page_view", { route: routeName() });
-    window.addEventListener("hashchange", () => record("page_view", { route: routeName() }));
+    record("session_start", { route: routeName(), action: "session-start", label: "Bắt đầu phiên" });
+    record("page_view", { route: routeName(), action: "open-route" });
+    window.addEventListener("hashchange", () => record("page_view", { route: routeName(), action: "open-route" }));
     document.addEventListener("click", (event) => {
       const target = event.target.closest("button, [data-app-route], a[href^='#/']");
       if (!target || target.closest("[data-insights-no-track]")) return;
+      lastInteractionAt = Date.now();
       const nextRoute = target.dataset.appRoute || target.getAttribute("href")?.replace(/^#/, "") || routeName();
       const label = target.getAttribute("aria-label") || target.querySelector("strong, b, span")?.textContent || target.textContent;
-      record("action", { route: nextRoute, module: moduleName(nextRoute), label });
+      record("action", { route: nextRoute, module: moduleName(nextRoute), action: actionKey(target), label });
     }, { passive: true });
+    document.addEventListener("keydown", () => { lastInteractionAt = Date.now(); }, { passive: true });
     document.addEventListener("visibilitychange", updateSession);
-    window.addEventListener("pagehide", updateSession);
+    window.addEventListener("pagehide", () => { record("session_end", { route: routeName(), action: "session-end", label: "Kết thúc phiên" }); flushRemote(true); });
     setInterval(updateSession, 15000);
+    setInterval(() => flushRemote(), REMOTE_FLUSH_MS);
+    window.addEventListener("hh:auth-change", () => flushRemote(true));
+    window.addEventListener("online", () => flushRemote(true));
+    window.addEventListener("error", () => record("error", { route: routeName(), action: "window-error" }));
+    window.addEventListener("unhandledrejection", () => record("error", { route: routeName(), action: "unhandled-rejection" }));
+    window.addEventListener("load", () => setTimeout(() => record("performance", { route: routeName(), action: "web-vitals" }), 1200), { once: true });
+    setTimeout(() => flushRemote(true), 1200);
     if ("PerformanceObserver" in window) {
       try { new PerformanceObserver((list) => { const last = list.getEntries().at(-1); runtimeVitals.lcp = Math.round(last?.startTime || runtimeVitals.lcp); }).observe({ type: "largest-contentful-paint", buffered: true }); } catch {}
       try { new PerformanceObserver((list) => { list.getEntries().forEach((entry) => { if (!entry.hadRecentInput) runtimeVitals.cls += Number(entry.value || 0); }); }).observe({ type: "layout-shift", buffered: true }); } catch {}
@@ -257,7 +361,8 @@
     }
   });
 
+  installFeatureAccessGuard();
   installTelemetry();
-  window.HHInsights = Object.freeze({ mountOverview, mountAnalytics, record, snapshot: aggregate });
+  window.HHInsights = Object.freeze({ mountOverview, mountAnalytics, record, flush: () => flushRemote(true), snapshot: aggregate });
   window.dispatchEvent(new CustomEvent("hh:insights-ready"));
 })();

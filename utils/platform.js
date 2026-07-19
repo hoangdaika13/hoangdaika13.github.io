@@ -116,6 +116,7 @@ function publicUser(user) {
     provider: user.lastProvider || user.provider || "local",
     avatar: user.avatar || "",
     consent: Boolean(user.consent),
+    restrictedFeatures: Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [],
     roles: [...roles],
     verified: Boolean(user.verifiedAt || user.emailVerifiedAt)
   };

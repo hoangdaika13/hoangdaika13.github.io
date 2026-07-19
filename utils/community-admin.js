@@ -2,11 +2,11 @@ const { clean, isOwnerEmail } = require("./platform");
 
 const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
-  super_admin: ["dashboard.view", "users.view", "users.moderate", "users.roles", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
-  admin: ["dashboard.view", "users.view", "users.moderate", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
-  moderator: ["dashboard.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
+  super_admin: ["dashboard.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
+  admin: ["dashboard.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
+  moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
   support: ["dashboard.view", "users.view", "reports.manage", "appeals.manage"],
-  analyst: ["dashboard.view", "users.view", "audit.view", "reports.export"]
+  analyst: ["dashboard.view", "activity.view", "users.view", "audit.view", "reports.export"]
 });
 
 function rolesFor(user) {
