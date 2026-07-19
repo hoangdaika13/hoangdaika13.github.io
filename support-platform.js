@@ -25,7 +25,7 @@
           <header><div><span>Bước 1</span><h3>Chọn mức ủng hộ</h3></div><span class="support-secure">Bảo mật phía máy chủ</span></header>
           <form data-support-form>
             <div class="support-methods" aria-label="Phương thức ủng hộ">
-              <button type="button" class="active" data-support-method="manual"><span>Chuyển khoản thường</span><small>Quét QR và chủ sở hữu đối soát</small></button>
+              <button type="button" class="active" data-support-method="manual"><span>VietQR ACB</span><small>Tự điền số tiền và nội dung chuyển khoản</small></button>
               <button type="button" data-support-method="payos" disabled><span>VietQR tự động</span><small data-support-payos-availability>Đang chờ cấu hình payOS</small></button>
             </div>
             <div class="support-presets">${presets.map((amount, index) => `<button type="button" class="${index === 2 ? "active" : ""}" data-support-preset="${amount}">${money(amount)}</button>`).join("")}</div>
@@ -40,7 +40,7 @@
 
         <aside class="support-bank-card" data-support-bank-card>
           <header><div><span>Bước 2</span><h3 data-support-bank-title>Quét QR chuyển khoản</h3></div><strong data-support-bank-badge>ACB</strong></header>
-          <div class="support-qr-wrap"><img src="assets/acb-donate-qr.jpg" alt="Mã QR ACB của Nguyễn Huy Hoàng"></div>
+          <div class="support-qr-wrap"><img data-support-qr src="https://img.vietqr.io/image/ACB-20223021-compact2.png?amount=100000&amp;addInfo=UNG%20HO%20HH%20PLATFORM&amp;accountName=NGUYEN%20HUY%20HOANG" alt="Mã VietQR ACB tự điền số tiền và nội dung chuyển khoản" referrerpolicy="no-referrer"></div>
           <dl><div><dt>Chủ tài khoản</dt><dd>NGUYEN HUY HOANG</dd></div><div><dt>Số tài khoản</dt><dd><span>20223021</span><button type="button" data-support-copy="20223021">Sao chép</button></dd></div><div><dt>Số tiền</dt><dd data-support-bank-amount>100.000 ₫</dd></div><div><dt>Nội dung</dt><dd><span data-support-reference>Chưa tạo mã</span><button type="button" data-support-copy-reference disabled>Sao chép</button></dd></div></dl>
           <p>QR dùng để chọn đúng tài khoản. Hãy nhập chính xác số tiền và nội dung được tạo ở bước 1.</p>
         </aside>
@@ -116,7 +116,17 @@
     };
     const setFormStatus = (message, type = "") => { const node = page.querySelector("[data-support-form-status]"); node.textContent = message; node.dataset.state = type; };
     const selectedAmount = () => Math.round(Number(page.querySelector("[data-support-amount]").value) || 0);
-    const updateAmount = amount => { page.querySelector("[data-support-amount]").value = amount; page.querySelector("[data-support-bank-amount]").textContent = money(amount); page.querySelectorAll("[data-support-preset]").forEach(button => button.classList.toggle("active", Number(button.dataset.supportPreset) === Number(amount))); };
+    const fallbackQrUrl = (amount, reference = "UNG HO HH PLATFORM") => {
+      const safeAmount = Math.max(1000, Math.min(1000000000, Math.round(Number(amount) || 100000)));
+      const safeReference = String(reference || "UNG HO HH PLATFORM").toUpperCase().replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim().slice(0, 50) || "UNG HO HH PLATFORM";
+      const params = new URLSearchParams({ amount: String(safeAmount), addInfo: safeReference, accountName: "NGUYEN HUY HOANG" });
+      return `https://img.vietqr.io/image/ACB-20223021-compact2.png?${params.toString()}`;
+    };
+    const refreshFallbackQr = (amount, reference = currentDonation?.reference) => {
+      const image = page.querySelector("[data-support-qr]");
+      if (image) image.src = fallbackQrUrl(amount, reference);
+    };
+    const updateAmount = amount => { page.querySelector("[data-support-amount]").value = amount; page.querySelector("[data-support-bank-amount]").textContent = money(amount); page.querySelectorAll("[data-support-preset]").forEach(button => button.classList.toggle("active", Number(button.dataset.supportPreset) === Number(amount))); refreshFallbackQr(amount); };
     const pendingKey = "hh-payos-pending";
     const submitButton = page.querySelector("[data-support-form] button[type=submit]");
     const stopPaymentPolling = () => { clearInterval(paymentPollTimer); paymentPollTimer = 0; };
@@ -168,7 +178,7 @@
         button.setAttribute("aria-pressed", String(active));
       });
       page.querySelector("[data-support-bank-card]").classList.toggle("is-secondary", paymentMethod === "payos");
-      page.querySelector("[data-support-bank-title]").textContent = paymentMethod === "payos" ? "Chuyển khoản dự phòng" : "Quét QR chuyển khoản";
+      page.querySelector("[data-support-bank-title]").textContent = paymentMethod === "payos" ? "VietQR ACB dự phòng" : "VietQR ACB tự điền";
       page.querySelector("[data-support-bank-badge]").textContent = paymentMethod === "payos" ? "QR dự phòng" : "ACB";
       submitButton.textContent = paymentMethod === "payos" ? "Tiếp tục với payOS" : "Tạo thông tin chuyển khoản";
       if (!quiet) {
@@ -315,6 +325,7 @@
         page.querySelector("[data-support-reference]").textContent = currentDonation.reference;
         page.querySelector("[data-support-copy-reference]").disabled = false;
         page.querySelector("[data-support-bank-amount]").textContent = money(currentDonation.amount);
+        refreshFallbackQr(currentDonation.amount, currentDonation.reference);
         if (paymentMethod === "payos") {
           const checkoutUrl = String(data.payos?.checkoutUrl || "");
           if (!checkoutUrl.startsWith("https://")) throw new Error("payOS chưa trả về cổng thanh toán hợp lệ.");
@@ -364,6 +375,7 @@
           page.querySelector("[data-support-transfer]").hidden = false;
           page.querySelector("[data-support-reference]").textContent = currentDonation.reference;
           page.querySelector("[data-support-bank-amount]").textContent = money(currentDonation.amount);
+          refreshFallbackQr(currentDonation.amount, currentDonation.reference);
         }
         beginPaymentPolling();
       }
