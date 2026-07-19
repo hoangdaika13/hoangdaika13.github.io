@@ -3,6 +3,7 @@
 
   let refreshTimer = 0;
   let paymentPollTimer = 0;
+  let paymentCountdownTimer = 0;
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const money = value => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value) || 0);
@@ -45,7 +46,20 @@
 
       <section class="support-payos-stage" data-support-payos data-support-stage-panel="payment" hidden>
         <header><div><span>BƯỚC 2 · VIETQR PAYOS</span><h3 data-support-payos-title>Đang tạo giao diện thanh toán</h3><p data-support-payos-status>Mã VietQR sẽ xuất hiện ngay tại đây, không mở sang website khác.</p></div><div class="support-live-badge"><i></i> Tự động đối soát</div></header>
-        <div class="support-payos-embed" id="hh-payos-embedded" data-support-payos-embed><div class="support-payos-loading"><i></i><strong>Đang tải VietQR bảo mật</strong><span>Vui lòng giữ trang này mở trong vài giây.</span></div></div>
+        <div class="support-payos-workspace">
+          <aside class="support-payos-summary" aria-label="Tóm tắt giao dịch">
+            <div class="support-payos-summary__eyebrow"><i></i><span>GIAO DỊCH ĐANG CHỜ</span></div>
+            <strong class="support-payos-summary__amount" data-support-payos-amount>--</strong>
+            <dl><div><dt>Mã giao dịch</dt><dd data-support-payos-reference>--</dd></div><div><dt>Thời gian còn lại</dt><dd data-support-payos-countdown>30:00</dd></div></dl>
+            <div class="support-payos-guide"><span>QUÉT VÀ HOÀN TẤT</span><ol><li><b>1</b><p><strong>Mở ứng dụng ngân hàng</strong><small>Chọn chức năng quét mã VietQR.</small></p></li><li><b>2</b><p><strong>Quét mã bên cạnh</strong><small>Số tiền và nội dung được điền tự động.</small></p></li><li><b>3</b><p><strong>Xác nhận thanh toán</strong><small>HH Platform tự chuyển bước sau khi nhận webhook.</small></p></li></ol></div>
+            <div class="support-payos-shield"><b>✓</b><p><strong>Bảo vệ bởi payOS</strong><small>HH Platform không lưu thông tin ngân hàng của bạn.</small></p></div>
+          </aside>
+          <div class="support-payos-frame">
+            <div class="support-payos-frame__top"><span><i></i> VietQR trực tiếp</span><small>Không rời khỏi HH Platform</small></div>
+            <div class="support-payos-embed" id="hh-payos-embedded" data-support-payos-embed><div class="support-payos-loading"><i></i><strong>Đang tải VietQR bảo mật</strong><span>Vui lòng giữ trang này mở trong vài giây.</span></div></div>
+            <div class="support-payos-frame__note"><span>🔒 Kết nối bảo mật</span><span>⚡ Xác minh tự động</span><span>✉ Email sau thanh toán</span></div>
+          </div>
+        </div>
         <footer><button type="button" data-support-new-payment>Thay đổi thông tin</button><a href="#" target="_blank" rel="noopener" data-support-payos-fallback hidden>Mở payOS trong tab mới</a></footer>
       </section>
 
@@ -81,6 +95,7 @@
   async function mount(container, options = {}) {
     clearInterval(refreshTimer);
     clearInterval(paymentPollTimer);
+    clearInterval(paymentCountdownTimer);
     const apiBase = String(options.apiBase || "").replace(/\/$/, "");
     const user = getUser();
     container.innerHTML = markup(user);
@@ -109,6 +124,28 @@
     const pendingKey = "hh-payos-pending";
     const submitButton = page.querySelector("[data-support-form] button[type=submit]");
     const stopPaymentPolling = () => { clearInterval(paymentPollTimer); paymentPollTimer = 0; };
+    const stopPaymentCountdown = () => { clearInterval(paymentCountdownTimer); paymentCountdownTimer = 0; };
+    const updatePaymentSummary = () => {
+      const amount = page.querySelector("[data-support-payos-amount]");
+      const reference = page.querySelector("[data-support-payos-reference]");
+      const countdown = page.querySelector("[data-support-payos-countdown]");
+      if (amount) amount.textContent = currentDonation?.amount ? money(currentDonation.amount) : "--";
+      if (reference) reference.textContent = currentDonation?.reference || "--";
+      if (!countdown) return;
+      const remaining = Math.max(0, Number(currentDonation?.pollUntil || 0) - Date.now());
+      const minutes = Math.floor(remaining / 60000);
+      const seconds = Math.floor(remaining % 60000 / 1000);
+      countdown.textContent = currentDonation?.pollUntil ? `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}` : "30:00";
+      countdown.classList.toggle("is-expired", Boolean(currentDonation?.pollUntil) && remaining <= 0);
+    };
+    const startPaymentCountdown = () => {
+      stopPaymentCountdown();
+      updatePaymentSummary();
+      paymentCountdownTimer = window.setInterval(() => {
+        if (!document.contains(page) || flowStage !== "payment") return stopPaymentCountdown();
+        updatePaymentSummary();
+      }, 1000);
+    };
     const closeEmbeddedCheckout = () => {
       try { checkoutController?.exit?.(); } catch { /* payOS may already have closed the embedded frame. */ }
       checkoutController = null;
@@ -170,6 +207,7 @@
         },
         onCancel: () => {
           stopPaymentPolling();
+          stopPaymentCountdown();
           forgetPending();
           currentDonation = null;
           closeEmbeddedCheckout();
@@ -221,6 +259,7 @@
         const data = await api(`?id=${encodeURIComponent(currentDonation.id)}&reference=${encodeURIComponent(currentDonation.reference)}`);
         currentDonation = { ...currentDonation, ...data.donation };
         if (data.donation.status === "verified") {
+          stopPaymentCountdown();
           closeEmbeddedCheckout();
           checkButton.disabled = true;
           checkButton.textContent = "Đã thanh toán";
@@ -243,11 +282,13 @@
     };
     const beginPaymentPolling = () => {
       stopPaymentPolling();
+      startPaymentCountdown();
       checkCurrentDonation(true);
       paymentPollTimer = window.setInterval(() => {
         if (!document.contains(page)) return stopPaymentPolling();
         if (currentDonation?.pollUntil && Date.now() > Number(currentDonation.pollUntil)) {
           stopPaymentPolling();
+          stopPaymentCountdown();
           if (flowStage === "payment") page.querySelector("[data-support-payos-status]").textContent = "VietQR đã hết thời gian chờ. Hãy quay lại và tạo giao dịch mới.";
           page.querySelector("[data-support-verify-status]").textContent = "Giao dịch đã hết thời gian chờ. Hãy tạo VietQR mới nếu chưa thanh toán.";
           return;
@@ -302,6 +343,7 @@
       if (event.target.closest("[data-support-payos-check]")) { await checkCurrentDonation(); return; }
       if (event.target.closest("[data-support-new-payment]")) {
         stopPaymentPolling();
+        stopPaymentCountdown();
         closeEmbeddedCheckout();
         forgetPending();
         currentDonation = null;
@@ -340,6 +382,7 @@
         if (!checkoutUrl.startsWith("https://")) throw new Error("payOS chưa trả về giao diện VietQR hợp lệ.");
         currentDonation = { ...data.donation, checkoutUrl, pollUntil: Date.now() + (Number(data.payos?.expiresIn) || 1800) * 1000 };
         rememberPending(currentDonation);
+        updatePaymentSummary();
         page.querySelector("[data-support-payos-title]").textContent = `Giao dịch ${currentDonation.reference}`;
         page.querySelector("[data-support-payos-status]").textContent = "Quét VietQR bên dưới bằng ứng dụng ngân hàng. Website sẽ tự chuyển bước sau khi thanh toán.";
         const fallback = page.querySelector("[data-support-payos-fallback]");
@@ -363,6 +406,7 @@
       const saved = JSON.parse(sessionStorage.getItem(pendingKey) || "null");
       if (saved?.id && saved?.reference && saved?.checkoutUrl && payOSAvailable) {
         currentDonation = saved;
+        updatePaymentSummary();
         page.querySelector("[data-support-payos-title]").textContent = `Giao dịch ${currentDonation.reference}`;
         page.querySelector("[data-support-payos-status]").textContent = "Đang khôi phục VietQR và trạng thái giao dịch gần nhất.";
         const fallback = page.querySelector("[data-support-payos-fallback]");

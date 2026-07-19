@@ -41,7 +41,10 @@ test("support UI requires email and exposes an embedded payOS journey", () => {
   assert.match(client, /action: "payos:create"/);
   assert.match(client, /showStage\("payment"\)/);
   assert.match(client, /showStage\("verify"\)/);
-  assert.match(styles, /\.support-payos-embed\{[^}]*height:720px/);
+  assert.match(client, /data-support-payos-amount/);
+  assert.match(client, /data-support-payos-countdown/);
+  assert.match(styles, /\.support-payos-workspace\{[^}]*grid-template-columns/);
+  assert.match(styles, /\.support-payos-embed\{[^}]*height:500px/);
   assert.doesNotMatch(client, /20223021|VietQR ACB|img\.vietqr\.io|data-support-method="manual"/);
   assert.doesNotMatch(api, /paymentProviders: \{ manual: true/);
 });
