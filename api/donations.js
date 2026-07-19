@@ -1,5 +1,6 @@
 const { ObjectId } = require("mongodb");
 const { PayOS } = require("@payos/node");
+const QRCode = require("qrcode");
 const { randomUUID } = require("crypto");
 const { clean, currentUser, enforceRateLimit, isAdminUser, ownerFrom, withApi } = require("../utils/platform");
 const votesHandler = require("../utils/votes");
@@ -343,8 +344,12 @@ module.exports = async function handler(req, res) {
           returnUrl: `${siteUrl}/`,
           expiredAt: Math.floor(Date.now() / 1000) + 30 * 60
         });
+        let qrImage = "";
+        try {
+          if (payment.qrCode) qrImage = await QRCode.toDataURL(String(payment.qrCode), { width: 560, margin: 2, errorCorrectionLevel: "M", color: { dark: "#07131c", light: "#ffffff" } });
+        } catch { /* The official payOS checkout remains available as a fallback. */ }
         await donations.updateOne({ _id: result.insertedId }, { $set: { payosPaymentLinkId: payment.paymentLinkId, payosCheckoutUrl: payment.checkoutUrl, payosAccountNumber: payment.accountNumber, updatedAt: new Date() } });
-        return res.status(201).json({ ok: true, donation: { id: String(result.insertedId), reference, amount, status: doc.status, paymentMethod: doc.paymentMethod }, payos: { checkoutUrl: payment.checkoutUrl, paymentLinkId: payment.paymentLinkId, expiresIn: 1800 } });
+        return res.status(201).json({ ok: true, donation: { id: String(result.insertedId), reference, amount, status: doc.status, paymentMethod: doc.paymentMethod }, payos: { checkoutUrl: payment.checkoutUrl, paymentLinkId: payment.paymentLinkId, qrImage, expiresIn: 1800 } });
       } catch (error) {
         await donations.updateOne({ _id: result.insertedId }, { $set: { status: "payment_error", paymentError: clean(error?.message, 300), updatedAt: new Date() } });
         return res.status(502).json({ error: "payOS chưa thể tạo VietQR. Vui lòng thử lại sau." });

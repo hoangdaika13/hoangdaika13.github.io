@@ -56,6 +56,7 @@
           </aside>
           <div class="support-payos-frame">
             <div class="support-payos-frame__top"><span><i></i> VietQR trực tiếp</span><small>Không rời khỏi HH Platform</small></div>
+            <div class="support-payos-direct" data-support-payos-direct hidden><div class="support-payos-direct__halo"><img data-support-payos-qr-image alt="Mã VietQR thanh toán tự động qua payOS"></div><div><strong>Quét mã để hoàn tất ủng hộ</strong><span>VietQR tự điền chính xác số tiền và nội dung chuyển khoản.</span></div><small><b>VIETQR</b> · Xử lý an toàn bởi payOS</small></div>
             <div class="support-payos-embed" id="hh-payos-embedded" data-support-payos-embed><div class="support-payos-loading"><i></i><strong>Đang tải VietQR bảo mật</strong><span>Vui lòng giữ trang này mở trong vài giây.</span></div></div>
             <div class="support-payos-frame__note"><span>🔒 Kết nối bảo mật</span><span>⚡ Xác minh tự động</span><span>✉ Email sau thanh toán</span></div>
           </div>
@@ -151,9 +152,25 @@
       checkoutController = null;
       const embed = page.querySelector("[data-support-payos-embed]");
       if (embed) {
+        embed.hidden = false;
         embed.classList.remove("is-loaded");
         embed.innerHTML = '<div class="support-payos-loading"><i></i><strong>Đang tải VietQR bảo mật</strong><span>Vui lòng giữ trang này mở trong vài giây.</span></div>';
       }
+      const direct = page.querySelector("[data-support-payos-direct]");
+      const image = page.querySelector("[data-support-payos-qr-image]");
+      if (direct) direct.hidden = true;
+      if (image) image.removeAttribute("src");
+    };
+    const showDirectQr = qrImage => {
+      closeEmbeddedCheckout();
+      const direct = page.querySelector("[data-support-payos-direct]");
+      const embed = page.querySelector("[data-support-payos-embed]");
+      const image = page.querySelector("[data-support-payos-qr-image]");
+      if (!direct || !embed || !image || !String(qrImage || "").startsWith("data:image/")) return false;
+      image.src = qrImage;
+      direct.hidden = false;
+      embed.hidden = true;
+      return true;
     };
     const rememberPending = donation => {
       try { sessionStorage.setItem(pendingKey, JSON.stringify(donation)); } catch { /* Storage may be unavailable in private mode. */ }
@@ -384,7 +401,7 @@
         const data = await api("", { method: "POST", body: { action: "payos:create", amount: selectedAmount(), donorName: page.querySelector("[data-support-name]").value, email: page.querySelector("[data-support-email]").value, message: page.querySelector("[data-support-message]").value, anonymous: page.querySelector("[data-support-anonymous]").checked } });
         const checkoutUrl = String(data.payos?.checkoutUrl || "");
         if (!checkoutUrl.startsWith("https://")) throw new Error("payOS chưa trả về giao diện VietQR hợp lệ.");
-        currentDonation = { ...data.donation, checkoutUrl, pollUntil: Date.now() + (Number(data.payos?.expiresIn) || 1800) * 1000 };
+        currentDonation = { ...data.donation, checkoutUrl, qrImage: String(data.payos?.qrImage || ""), pollUntil: Date.now() + (Number(data.payos?.expiresIn) || 1800) * 1000 };
         rememberPending(currentDonation);
         updatePaymentSummary();
         page.querySelector("[data-support-payos-title]").textContent = `Giao dịch ${currentDonation.reference}`;
@@ -393,10 +410,12 @@
         fallback.href = checkoutUrl;
         fallback.hidden = true;
         showStage("payment");
-        try { await openEmbeddedCheckout(checkoutUrl); }
-        catch (embedError) {
-          fallback.hidden = false;
-          page.querySelector("[data-support-payos-status]").textContent = `${embedError.message} Bạn vẫn có thể mở VietQR payOS bằng nút dự phòng bên dưới.`;
+        if (!showDirectQr(currentDonation.qrImage)) {
+          try { await openEmbeddedCheckout(checkoutUrl); }
+          catch (embedError) {
+            fallback.hidden = false;
+            page.querySelector("[data-support-payos-status]").textContent = `${embedError.message} Bạn vẫn có thể mở VietQR payOS bằng nút dự phòng bên dưới.`;
+          }
         }
         beginPaymentPolling();
       } catch (error) { showStage("details", false); setFormStatus(error.message, "error"); }
@@ -416,8 +435,10 @@
         const fallback = page.querySelector("[data-support-payos-fallback]");
         fallback.href = currentDonation.checkoutUrl;
         showStage("payment", false);
-        try { await openEmbeddedCheckout(currentDonation.checkoutUrl); }
-        catch { fallback.hidden = false; }
+        if (!showDirectQr(currentDonation.qrImage)) {
+          try { await openEmbeddedCheckout(currentDonation.checkoutUrl); }
+          catch { fallback.hidden = false; }
+        }
         beginPaymentPolling();
       } else if (saved) forgetPending();
     } catch { forgetPending(); }

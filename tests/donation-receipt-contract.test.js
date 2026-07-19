@@ -38,6 +38,10 @@ test("support UI requires email and exposes an embedded payOS journey", () => {
   assert.match(html, /https:\/\/cdn\.payos\.vn\/payos-checkout\/v1\/stable\/payos-initialize\.js/);
   assert.match(client, /ELEMENT_ID: "hh-payos-embedded"/);
   assert.match(client, /embedded: true/);
+  assert.match(client, /data-support-payos-qr-image/);
+  assert.match(client, /showDirectQr/);
+  assert.match(api, /QRCode\.toDataURL\(String\(payment\.qrCode\)/);
+  assert.match(api, /paymentLinkId: payment\.paymentLinkId, qrImage/);
   assert.match(client, /action: "payos:create"/);
   assert.match(client, /showStage\("payment"\)/);
   assert.match(client, /showStage\("verify"\)/);
@@ -45,6 +49,7 @@ test("support UI requires email and exposes an embedded payOS journey", () => {
   assert.match(client, /data-support-payos-amount/);
   assert.match(client, /data-support-payos-countdown/);
   assert.match(styles, /\.support-payos-workspace\{[^}]*grid-template-columns/);
+  assert.match(styles, /\.support-payos-direct img\{[^}]*width:min\(380px/);
   assert.match(styles, /\.support-payos-embed\{[^}]*height:500px/);
   assert.doesNotMatch(client, /20223021|VietQR ACB|img\.vietqr\.io|data-support-method="manual"/);
   assert.doesNotMatch(api, /paymentProviders: \{ manual: true/);
