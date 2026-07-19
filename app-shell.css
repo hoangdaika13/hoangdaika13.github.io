@@ -1,4 +1,4 @@
-@import url("styles.css?v=33") layer(legacy);
+@import url("styles.css?v=34") layer(legacy);
 
 @layer legacy, tokens, base, layout, components, pages, modules, responsive, accessibility;
 
@@ -186,7 +186,9 @@
     color: var(--accent);
     box-shadow: 0 0 18px rgba(86, 234, 255, 0.12);
     font-weight: 800;
+    overflow: hidden;
   }
+  .app-brand .app-brand-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .app-brand strong { font-size: 14px; font-weight: 700; }
 
   .app-global-search {

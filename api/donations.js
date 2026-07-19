@@ -324,7 +324,7 @@ module.exports = async function handler(req, res) {
       const doc = {
         userId: user?._id || null, reference, donorName, email, amount,
         message: clean(body.message, 500), anonymous: Boolean(body.anonymous),
-        status: "pending", paymentMethod: usePayOS ? "payos_vietqr" : "vietcombank_transfer",
+        status: "pending", paymentMethod: usePayOS ? "payos_vietqr" : "acb_transfer",
         receipt: { status: "waiting_payment", recipientMasked: maskEmail(email), attempts: 0 },
         ...(payosOrderCode ? { payosOrderCode } : {}),
         createdAt: new Date(), updatedAt: new Date()
@@ -352,7 +352,7 @@ module.exports = async function handler(req, res) {
           return res.status(502).json({ error: "payOS chưa thể tạo link thanh toán. Hãy thử lại hoặc dùng chuyển khoản thường." });
         }
       }
-      return res.status(201).json({ ok: true, donation: { id: String(result.insertedId), reference, amount, status: doc.status }, bank: { name: "Vietcombank", accountName: "NGUYEN HUY HOANG", accountNumber: "1030351658" } });
+      return res.status(201).json({ ok: true, donation: { id: String(result.insertedId), reference, amount, status: doc.status }, bank: { name: "ACB", accountName: "NGUYEN HUY HOANG", accountNumber: "20223021" } });
     }
 
     if (action === "submit") {

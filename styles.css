@@ -1431,6 +1431,7 @@ footer p {
   resize: vertical;
   line-height: 1.35;
 }
+.brand-mark img { display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit; }
 
 .neon-server-status {
   display: flex;

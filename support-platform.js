@@ -39,9 +39,9 @@
         </main>
 
         <aside class="support-bank-card" data-support-bank-card>
-          <header><div><span>Bước 2</span><h3 data-support-bank-title>Quét QR chuyển khoản</h3></div><strong data-support-bank-badge>Vietcombank</strong></header>
-          <div class="support-qr-wrap"><img src="assets/vietcombank-donate-qr.jpg" alt="Mã QR Vietcombank của Nguyễn Huy Hoàng"></div>
-          <dl><div><dt>Chủ tài khoản</dt><dd>NGUYEN HUY HOANG</dd></div><div><dt>Số tài khoản</dt><dd><span>1030351658</span><button type="button" data-support-copy="1030351658">Sao chép</button></dd></div><div><dt>Số tiền</dt><dd data-support-bank-amount>100.000 ₫</dd></div><div><dt>Nội dung</dt><dd><span data-support-reference>Chưa tạo mã</span><button type="button" data-support-copy-reference disabled>Sao chép</button></dd></div></dl>
+          <header><div><span>Bước 2</span><h3 data-support-bank-title>Quét QR chuyển khoản</h3></div><strong data-support-bank-badge>ACB</strong></header>
+          <div class="support-qr-wrap"><img src="assets/acb-donate-qr.jpg" alt="Mã QR ACB của Nguyễn Huy Hoàng"></div>
+          <dl><div><dt>Chủ tài khoản</dt><dd>NGUYEN HUY HOANG</dd></div><div><dt>Số tài khoản</dt><dd><span>20223021</span><button type="button" data-support-copy="20223021">Sao chép</button></dd></div><div><dt>Số tiền</dt><dd data-support-bank-amount>100.000 ₫</dd></div><div><dt>Nội dung</dt><dd><span data-support-reference>Chưa tạo mã</span><button type="button" data-support-copy-reference disabled>Sao chép</button></dd></div></dl>
           <p>QR dùng để chọn đúng tài khoản. Hãy nhập chính xác số tiền và nội dung được tạo ở bước 1.</p>
         </aside>
       </div>
@@ -169,7 +169,7 @@
       });
       page.querySelector("[data-support-bank-card]").classList.toggle("is-secondary", paymentMethod === "payos");
       page.querySelector("[data-support-bank-title]").textContent = paymentMethod === "payos" ? "Chuyển khoản dự phòng" : "Quét QR chuyển khoản";
-      page.querySelector("[data-support-bank-badge]").textContent = paymentMethod === "payos" ? "QR dự phòng" : "Vietcombank";
+      page.querySelector("[data-support-bank-badge]").textContent = paymentMethod === "payos" ? "QR dự phòng" : "ACB";
       submitButton.textContent = paymentMethod === "payos" ? "Tiếp tục với payOS" : "Tạo thông tin chuyển khoản";
       if (!quiet) {
         setFormStatus(paymentMethod === "payos" ? "payOS tạo VietQR đúng số tiền và tự xác nhận khi thanh toán thành công." : "Chuyển khoản thường cần chủ sở hữu đối soát trước khi số tiền xuất hiện công khai.");
@@ -283,7 +283,7 @@
         downloadText(`xac-nhan-ung-ho-${currentDonation.reference}.txt`, `XÁC NHẬN ỦNG HỘ HH PLATFORM\n\nMã xác nhận: ${receipt.receiptId || `HH-RCP-${currentDonation.reference}`}\nMã giao dịch: ${currentDonation.reference}\nSố tiền: ${money(currentDonation.amount)}\nXác nhận lúc: ${dateText(currentDonation.verifiedAt)}\nTrạng thái email: ${receipt.status === "sent" ? "Đã gửi" : "Đang xử lý"}\n\nCảm ơn bạn đã đồng hành cùng Nhhoang.\nĐây là xác nhận ủng hộ, không phải hóa đơn tài chính.`);
         return;
       }
-      if (event.target.closest("[data-support-download-instructions]") && currentDonation) { downloadText(`huong-dan-ung-ho-${currentDonation.reference}.txt`, `ỦNG HỘ HH PLATFORM\n\nNgân hàng: Vietcombank\nChủ tài khoản: NGUYEN HUY HOANG\nSố tài khoản: 1030351658\nSố tiền: ${money(currentDonation.amount)}\nNội dung: ${currentDonation.reference}\n\nKhoản ủng hộ sẽ xuất hiện công khai sau khi được đối soát.`); return; }
+      if (event.target.closest("[data-support-download-instructions]") && currentDonation) { downloadText(`huong-dan-ung-ho-${currentDonation.reference}.txt`, `ỦNG HỘ HH PLATFORM\n\nNgân hàng: ACB\nChủ tài khoản: NGUYEN HUY HOANG\nSố tài khoản: 20223021\nSố tiền: ${money(currentDonation.amount)}\nNội dung: ${currentDonation.reference}\n\nKhoản ủng hộ sẽ xuất hiện công khai sau khi được đối soát.`); return; }
       if (event.target.closest("[data-support-submit-transfer]") && currentDonation) {
         const button = event.target.closest("[data-support-submit-transfer]"); button.disabled = true;
         try { const data = await api("", { method: "POST", body: { action: "submit", id: currentDonation.id, reference: currentDonation.reference, transferTime: page.querySelector("[data-support-transfer-time]").value } }); currentDonation.status = data.status; rememberPending(currentDonation); setJourney("verify"); setFormStatus(`${data.message} Email cảm ơn chỉ gửi sau khi chủ sở hữu xác nhận tiền đã vào tài khoản.`, "success"); page.querySelector("[data-support-transfer]").classList.add("is-submitted"); button.textContent = "Đã gửi để đối soát"; beginPaymentPolling(); }
