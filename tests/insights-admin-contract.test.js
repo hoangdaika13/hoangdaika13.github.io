@@ -63,6 +63,7 @@ test("Phân tích ships interactive telemetry, filters, diagnostics and exports"
   assert.match(client, /analyticsConsent/);
   assert.match(client, /restrictedFeatures/);
   assert.match(read("api/platform/summary.js"), /TELEMETRY_RETENTION_SECONDS/);
+  assert.match(read("api/platform/summary.js"), /presence.*expiresAt/s);
   assert.match(read("api/platform/summary.js"), /formValuesStored:\s*false/);
   assert.doesNotMatch(read("api/platform/summary.js"), /passwordHash:\s*1/);
   assert.match(css, /@media \(max-width: 560px\)/);

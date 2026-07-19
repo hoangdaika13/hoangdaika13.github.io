@@ -62,11 +62,13 @@ module.exports = async function handler(req, res) {
       const device = ["desktop", "tablet", "mobile"].includes(body.device) ? body.device : "unknown";
       const browser = safeKey(body.browser, "browser").slice(0, 40);
       const viewport = safeKey(body.viewport, "unknown").slice(0, 40);
-      const presenceState = { identity, kind: user ? "registered" : "guest", userId: user?._id || null, sessionId, lastSeenAt: now, page, module, activityState, activeSeconds: Math.max(0, Math.min(86400, Number(body.activeSeconds || 0))), device, browser, viewport, analyticsConsent };
+      const presenceState = { identity, kind: user ? "registered" : "guest", userId: user?._id || null, sessionId, lastSeenAt: now, expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000), page, module, activityState, activeSeconds: Math.max(0, Math.min(86400, Number(body.activeSeconds || 0))), device, browser, viewport, analyticsConsent };
       if (latest) presenceState.lastAction = clean(latest.label || latest.action, 100);
       await Promise.all([
         db.collection("presence").createIndex({ lastSeenAt: -1 }),
         db.collection("presence").createIndex({ userId: 1, lastSeenAt: -1 }),
+        db.collection("presence").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+        db.collection("presence").updateMany({ expiresAt: { $exists: false } }, { $set: { expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000) } }),
         db.collection("telemetryEvents").createIndex({ createdAt: -1 }),
         db.collection("telemetryEvents").createIndex({ userId: 1, createdAt: -1 }),
         db.collection("telemetryEvents").createIndex({ sessionId: 1, createdAt: -1 }),
