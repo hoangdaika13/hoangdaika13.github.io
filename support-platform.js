@@ -113,7 +113,10 @@
       try { checkoutController?.exit?.(); } catch { /* payOS may already have closed the embedded frame. */ }
       checkoutController = null;
       const embed = page.querySelector("[data-support-payos-embed]");
-      if (embed) embed.innerHTML = '<div class="support-payos-loading"><i></i><strong>Đang tải VietQR bảo mật</strong><span>Vui lòng giữ trang này mở trong vài giây.</span></div>';
+      if (embed) {
+        embed.classList.remove("is-loaded");
+        embed.innerHTML = '<div class="support-payos-loading"><i></i><strong>Đang tải VietQR bảo mật</strong><span>Vui lòng giữ trang này mở trong vài giây.</span></div>';
+      }
     };
     const rememberPending = donation => {
       try { sessionStorage.setItem(pendingKey, JSON.stringify(donation)); } catch { /* Storage may be unavailable in private mode. */ }
@@ -178,6 +181,15 @@
         }
       });
       checkoutController.open();
+      const embed = page.querySelector("[data-support-payos-embed]");
+      const markCheckoutReady = () => {
+        if (!embed?.querySelector("iframe")) return false;
+        embed.classList.add("is-loaded");
+        return true;
+      };
+      const observer = new MutationObserver(() => { if (markCheckoutReady()) observer.disconnect(); });
+      observer.observe(embed, { childList: true, subtree: true });
+      if (!markCheckoutReady()) setTimeout(() => { markCheckoutReady(); observer.disconnect(); }, 8000);
     };
     const renderReceipt = donation => {
       const receipt = donation?.receipt || {};
