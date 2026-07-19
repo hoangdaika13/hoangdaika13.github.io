@@ -20,57 +20,46 @@
 
       <div class="support-metrics"><article><span>Tổng đã nhận</span><strong data-support-total-card>0 ₫</strong><small>Chỉ tính giao dịch đã đối soát</small></article><article><span>Người ủng hộ</span><strong data-support-count-card>0</strong><small>Cảm ơn cộng đồng HH</small></article><article><span>Ủng hộ trung bình</span><strong data-support-average>0 ₫</strong><small>Mỗi giao dịch đã xác nhận</small></article><article><span>Trạng thái</span><strong class="is-online">Đang hoạt động</strong><small data-support-checked>Cập nhật tự động 30 giây/lần</small></article></div>
 
-      <div class="support-main-grid">
+      <section class="support-automation" data-support-automation>
+        <header><div><p class="section-kicker">VIETQR AUTOMATION</p><h3>Ủng hộ trong một luồng liền mạch</h3></div><span data-support-journey-label>Sẵn sàng</span></header>
+        <ol><li class="is-current" data-support-step="details"><b>1</b><span><strong>Thông tin</strong><small>Chọn số tiền và email</small></span></li><li data-support-step="payment"><b>2</b><span><strong>VietQR</strong><small>Quét ngay trên HH Platform</small></span></li><li data-support-step="verify"><b>3</b><span><strong>Xác minh</strong><small>Webhook payOS tự đối soát</small></span></li><li data-support-step="email"><b>4</b><span><strong>Hoàn tất</strong><small>Nhận email cảm ơn</small></span></li></ol>
+        <p>Mỗi lần chỉ hiển thị đúng bước đang thực hiện. Giao dịch chỉ được ghi nhận sau khi payOS gửi webhook có chữ ký hợp lệ.</p>
+      </section>
+
+      <div class="support-payment-flow" data-support-flow>
+      <div class="support-main-grid" data-support-stage-panel="details">
         <main class="support-donate-panel">
           <header><div><span>Bước 1</span><h3>Chọn mức ủng hộ</h3></div><span class="support-secure">Bảo mật phía máy chủ</span></header>
           <form data-support-form>
-            <div class="support-methods" aria-label="Phương thức ủng hộ">
-              <button type="button" class="active" data-support-method="manual"><span>VietQR ACB</span><small>Tự điền số tiền và nội dung chuyển khoản</small></button>
-              <button type="button" data-support-method="payos" disabled><span>VietQR tự động</span><small data-support-payos-availability>Đang chờ cấu hình payOS</small></button>
-            </div>
+            <div class="support-auto-method" data-support-auto-method><div class="support-auto-method__icon">QR</div><div><span>VIETQR TỰ ĐỘNG QUA PAYOS</span><strong>Thanh toán an toàn ngay trong HH Platform</strong><small data-support-payos-availability>Đang kiểm tra kết nối payOS…</small></div><i data-support-provider-state></i></div>
             <div class="support-presets">${presets.map((amount, index) => `<button type="button" class="${index === 2 ? "active" : ""}" data-support-preset="${amount}">${money(amount)}</button>`).join("")}</div>
             <label class="support-amount-field"><span>Số tiền tùy chỉnh</span><div><b>₫</b><input type="number" min="1000" max="1000000000" step="1000" value="100000" data-support-amount required></div><small>Tối thiểu 1.000đ</small></label>
             <div class="support-form-grid"><label><span>Tên hiển thị</span><input data-support-name maxlength="100" value="${escapeHtml(user.name || "")}" placeholder="Tên của bạn" required></label><label><span>Email nhận lời cảm ơn (không công khai)</span><input type="email" data-support-email maxlength="160" value="${escapeHtml(user.email || "")}" placeholder="you@gmail.com" autocomplete="email" required><small>Thư chỉ gửi sau khi thanh toán được xác minh.</small></label></div>
             <label><span>Lời nhắn tới nhà phát triển</span><textarea rows="4" maxlength="500" data-support-message placeholder="Cảm ơn bạn đã xây dựng các công cụ hữu ích..."></textarea><small><b data-support-message-count>0</b>/500 ký tự</small></label>
             <label class="support-check"><input type="checkbox" data-support-anonymous><span><b>Ủng hộ ẩn danh</b><small>Tên của bạn sẽ không xuất hiện công khai.</small></span></label>
-            <button class="support-primary" type="submit">Tạo thông tin chuyển khoản</button>
-            <p class="support-form-status" data-support-form-status>Số tiền chỉ được cộng vào thống kê sau khi chủ sở hữu xác nhận đã nhận.</p>
+            <button class="support-primary" type="submit" disabled>Tiếp tục tới VietQR</button>
+            <p class="support-form-status" data-support-form-status>Đang kết nối kênh VietQR tự động…</p>
           </form>
         </main>
-
-        <aside class="support-bank-card" data-support-bank-card>
-          <header><div><span>Bước 2</span><h3 data-support-bank-title>Quét QR chuyển khoản</h3></div><strong data-support-bank-badge>ACB</strong></header>
-          <div class="support-qr-wrap"><img data-support-qr src="https://img.vietqr.io/image/ACB-20223021-compact2.png?amount=100000&amp;addInfo=UNG%20HO%20HH%20PLATFORM&amp;accountName=NGUYEN%20HUY%20HOANG" alt="Mã VietQR ACB tự điền số tiền và nội dung chuyển khoản" referrerpolicy="no-referrer"></div>
-          <dl><div><dt>Chủ tài khoản</dt><dd>NGUYEN HUY HOANG</dd></div><div><dt>Số tài khoản</dt><dd><span>20223021</span><button type="button" data-support-copy="20223021">Sao chép</button></dd></div><div><dt>Số tiền</dt><dd data-support-bank-amount>100.000 ₫</dd></div><div><dt>Nội dung</dt><dd><span data-support-reference>Chưa tạo mã</span><button type="button" data-support-copy-reference disabled>Sao chép</button></dd></div></dl>
-          <p>QR dùng để chọn đúng tài khoản. Hãy nhập chính xác số tiền và nội dung được tạo ở bước 1.</p>
-        </aside>
       </div>
 
-      <section class="support-automation" data-support-automation>
-        <header><div><p class="section-kicker">AUTOMATED THANK-YOU</p><h3>Ủng hộ một lần, hệ thống tự hoàn tất</h3></div><span data-support-journey-label>Sẵn sàng</span></header>
-        <ol><li class="is-current" data-support-step="details"><b>1</b><span><strong>Thông tin</strong><small>Chọn số tiền và email</small></span></li><li data-support-step="payment"><b>2</b><span><strong>Thanh toán</strong><small>VietQR hoặc chuyển khoản</small></span></li><li data-support-step="verify"><b>3</b><span><strong>Xác minh</strong><small>Webhook hoặc chủ sở hữu</small></span></li><li data-support-step="email"><b>4</b><span><strong>Gửi lời cảm ơn</strong><small>Một email cho mỗi giao dịch</small></span></li></ol>
-        <p>Hệ thống không gửi thư khi người dùng chỉ bấm “đã chuyển khoản”. Email được kích hoạt sau xác minh phía máy chủ và chống gửi trùng bằng mã giao dịch.</p>
+      <section class="support-payos-stage" data-support-payos data-support-stage-panel="payment" hidden>
+        <header><div><span>BƯỚC 2 · VIETQR PAYOS</span><h3 data-support-payos-title>Đang tạo giao diện thanh toán</h3><p data-support-payos-status>Mã VietQR sẽ xuất hiện ngay tại đây, không mở sang website khác.</p></div><div class="support-live-badge"><i></i> Tự động đối soát</div></header>
+        <div class="support-payos-embed" id="hh-payos-embedded" data-support-payos-embed><div class="support-payos-loading"><i></i><strong>Đang tải VietQR bảo mật</strong><span>Vui lòng giữ trang này mở trong vài giây.</span></div></div>
+        <footer><button type="button" data-support-new-payment>Thay đổi thông tin</button><a href="#" target="_blank" rel="noopener" data-support-payos-fallback hidden>Mở payOS trong tab mới</a></footer>
       </section>
 
-      <section class="support-payos-checkout" data-support-payos hidden>
-        <div class="support-payos-checkout__mark">VietQR</div>
-        <div><span>THANH TOÁN TỰ ĐỘNG</span><h3 data-support-payos-title>Sẵn sàng mở cổng thanh toán</h3><p data-support-payos-status>payOS sẽ tạo mã QR đúng số tiền và tự động xác nhận sau khi ngân hàng báo thành công.</p></div>
-        <div class="support-payos-checkout__actions"><a class="support-primary" href="#" target="_blank" rel="noopener" data-support-payos-open>Mở cổng thanh toán</a><button type="button" data-support-payos-check>Kiểm tra trạng thái</button></div>
+      <section class="support-verify-stage" data-support-stage-panel="verify" hidden>
+        <div class="support-verify-stage__pulse"><i></i><b>3</b></div><div><span>BƯỚC 3 · XÁC MINH TỰ ĐỘNG</span><h3 data-support-verify-title>Đang chờ ngân hàng xác nhận</h3><p data-support-verify-status>Webhook payOS đang đối chiếu mã giao dịch và số tiền. Bạn không cần tải lại trang.</p></div><button type="button" data-support-payos-check>Kiểm tra ngay</button>
       </section>
 
-      <section class="support-receipt" data-support-receipt hidden>
+      <section class="support-receipt" data-support-receipt data-support-stage-panel="email" hidden>
         <div class="support-receipt__icon">✓</div>
         <div><span>XÁC NHẬN ỦNG HỘ</span><h3>Cảm ơn bạn đã đồng hành cùng Nhhoang</h3><p data-support-receipt-status>Đang hoàn tất thư cảm ơn.</p></div>
         <dl><div><dt>Mã xác nhận</dt><dd data-support-receipt-id>--</dd></div><div><dt>Số tiền</dt><dd data-support-receipt-amount>--</dd></div><div><dt>Email</dt><dd data-support-receipt-email>--</dd></div><div><dt>Xác nhận lúc</dt><dd data-support-receipt-time>--</dd></div></dl>
         <button type="button" data-support-download-receipt>Tải xác nhận</button>
       </section>
-
-      <section class="support-transfer-confirm" data-support-transfer hidden>
-        <div><span>Bước 3</span><h3>Xác nhận bạn đã chuyển khoản</h3><p>Thông báo này không tự xác nhận tiền. Chủ sở hữu sẽ kiểm tra sao kê trước khi công khai khoản ủng hộ.</p></div>
-        <label>Thời gian chuyển<input type="datetime-local" data-support-transfer-time></label>
-        <button class="support-primary" type="button" data-support-submit-transfer>Tôi đã chuyển khoản</button>
-        <button type="button" data-support-download-instructions>Tải hướng dẫn</button>
-      </section>
+      </div>
 
       <div class="support-community-grid">
         <section class="support-wall"><header><div><span>Cộng đồng</span><h3>Lời nhắn gần đây</h3></div><button type="button" data-support-refresh>Làm mới</button></header><div data-support-wall><p class="support-empty">Chưa có giao dịch được xác nhận.</p></div></section>
@@ -79,7 +68,7 @@
 
       <section class="support-transparency"><div><p class="section-kicker">MINH BẠCH</p><h3>Nguồn lực được sử dụng như thế nào?</h3><p>Mục tiêu là duy trì nền tảng ổn định, bảo vệ dữ liệu người dùng và tiếp tục phát triển công cụ miễn phí.</p></div><div class="support-allocation"><span style="--allocation:40%"><b>40%</b>Hosting & database</span><span style="--allocation:30%"><b>30%</b>AI & API services</span><span style="--allocation:20%"><b>20%</b>Phát triển sản phẩm</span><span style="--allocation:10%"><b>10%</b>Dự phòng vận hành</span></div></section>
 
-      <section class="support-faq"><h3>Câu hỏi thường gặp</h3><details><summary>Khi nào khoản ủng hộ xuất hiện công khai?</summary><p>Với VietQR tự động, khoản ủng hộ xuất hiện sau khi webhook payOS xác minh thanh toán thành công. Chuyển khoản thường vẫn cần chủ sở hữu đối soát sao kê.</p></details><details><summary>Khi nào tôi nhận được email cảm ơn?</summary><p>Ngay sau khi máy chủ xác minh đúng mã giao dịch và số tiền. Email có mã xác nhận riêng; webhook gọi lại nhiều lần cũng không gửi trùng.</p></details><details><summary>Tại sao số tiền chưa được cộng ngay?</summary><p>Hệ thống chỉ cộng giao dịch có chữ ký hợp lệ, đúng mã đơn và đúng số tiền. Điều này ngăn số liệu giả và giao dịch bị tính hai lần.</p></details><details><summary>Thông tin nào được công khai?</summary><p>Chỉ tên hiển thị, số tiền và lời nhắn. Email, tài khoản đăng nhập và thông tin đối soát không bao giờ xuất hiện trên bảng công khai.</p></details><details><summary>Tôi có thể ủng hộ ẩn danh không?</summary><p>Có. Chọn “Ủng hộ ẩn danh” trước khi tạo giao dịch.</p></details></section>
+      <section class="support-faq"><h3>Câu hỏi thường gặp</h3><details><summary>Khi nào khoản ủng hộ xuất hiện công khai?</summary><p>Khoản ủng hộ xuất hiện sau khi webhook payOS xác minh chữ ký, mã đơn và số tiền thành công.</p></details><details><summary>Khi nào tôi nhận được email cảm ơn?</summary><p>Ngay sau khi máy chủ xác minh đúng giao dịch. Email có mã xác nhận riêng; webhook gọi lại nhiều lần cũng không gửi trùng.</p></details><details><summary>Tại sao số tiền chưa được cộng ngay?</summary><p>Hệ thống chỉ cộng giao dịch có chữ ký hợp lệ, đúng mã đơn và đúng số tiền. Điều này ngăn số liệu giả và giao dịch bị tính hai lần.</p></details><details><summary>Thông tin nào được công khai?</summary><p>Chỉ tên hiển thị, số tiền và lời nhắn. Email, tài khoản đăng nhập và thông tin đối soát không bao giờ xuất hiện trên bảng công khai.</p></details><details><summary>Tôi có thể ủng hộ ẩn danh không?</summary><p>Có. Chọn “Ủng hộ ẩn danh” trước khi tạo giao dịch.</p></details></section>
 
       <section class="support-admin" data-support-admin hidden>
         <header><div><p class="section-kicker">OWNER CONTROL</p><h3>Đối soát giao dịch ủng hộ</h3><p>Chỉ email chủ sở hữu được API trả danh sách này.</p></div><button type="button" data-support-admin-refresh>Làm mới</button></header>
@@ -98,9 +87,9 @@
     const page = container.querySelector("[data-support-page]");
     let currentDonation = null;
     let adminItems = [];
-    let paymentMethod = "manual";
     let payOSAvailable = false;
-    let providerInitialized = false;
+    let flowStage = "details";
+    let checkoutController = null;
 
     const api = async (path = "", request = {}) => {
       if (!apiBase) throw new Error("Backend donate chưa được cấu hình.");
@@ -116,20 +105,16 @@
     };
     const setFormStatus = (message, type = "") => { const node = page.querySelector("[data-support-form-status]"); node.textContent = message; node.dataset.state = type; };
     const selectedAmount = () => Math.round(Number(page.querySelector("[data-support-amount]").value) || 0);
-    const fallbackQrUrl = (amount, reference = "UNG HO HH PLATFORM") => {
-      const safeAmount = Math.max(1000, Math.min(1000000000, Math.round(Number(amount) || 100000)));
-      const safeReference = String(reference || "UNG HO HH PLATFORM").toUpperCase().replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim().slice(0, 50) || "UNG HO HH PLATFORM";
-      const params = new URLSearchParams({ amount: String(safeAmount), addInfo: safeReference, accountName: "NGUYEN HUY HOANG" });
-      return `https://img.vietqr.io/image/ACB-20223021-compact2.png?${params.toString()}`;
-    };
-    const refreshFallbackQr = (amount, reference = currentDonation?.reference) => {
-      const image = page.querySelector("[data-support-qr]");
-      if (image) image.src = fallbackQrUrl(amount, reference);
-    };
-    const updateAmount = amount => { page.querySelector("[data-support-amount]").value = amount; page.querySelector("[data-support-bank-amount]").textContent = money(amount); page.querySelectorAll("[data-support-preset]").forEach(button => button.classList.toggle("active", Number(button.dataset.supportPreset) === Number(amount))); refreshFallbackQr(amount); };
+    const updateAmount = amount => { page.querySelector("[data-support-amount]").value = amount; page.querySelectorAll("[data-support-preset]").forEach(button => button.classList.toggle("active", Number(button.dataset.supportPreset) === Number(amount))); };
     const pendingKey = "hh-payos-pending";
     const submitButton = page.querySelector("[data-support-form] button[type=submit]");
     const stopPaymentPolling = () => { clearInterval(paymentPollTimer); paymentPollTimer = 0; };
+    const closeEmbeddedCheckout = () => {
+      try { checkoutController?.exit?.(); } catch { /* payOS may already have closed the embedded frame. */ }
+      checkoutController = null;
+      const embed = page.querySelector("[data-support-payos-embed]");
+      if (embed) embed.innerHTML = '<div class="support-payos-loading"><i></i><strong>Đang tải VietQR bảo mật</strong><span>Vui lòng giữ trang này mở trong vài giây.</span></div>';
+    };
     const rememberPending = donation => {
       try { sessionStorage.setItem(pendingKey, JSON.stringify(donation)); } catch { /* Storage may be unavailable in private mode. */ }
     };
@@ -147,11 +132,58 @@
       const labels = { details: "Sẵn sàng", payment: "Chờ thanh toán", verify: "Đang xác minh", email: receiptStatus === "sent" ? "Đã gửi email" : "Đang gửi email" };
       page.querySelector("[data-support-journey-label]").textContent = labels[stage] || labels.details;
     };
+    const showStage = (stage = "details", scroll = true) => {
+      flowStage = ["details", "payment", "verify", "email"].includes(stage) ? stage : "details";
+      page.querySelectorAll("[data-support-stage-panel]").forEach(panel => { panel.hidden = panel.dataset.supportStagePanel !== flowStage; });
+      setJourney(flowStage);
+      const activePanel = page.querySelector(`[data-support-stage-panel="${flowStage}"]`);
+      if (activePanel) {
+        activePanel.classList.remove("is-entering");
+        requestAnimationFrame(() => activePanel.classList.add("is-entering"));
+        if (scroll) activePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+    const waitForPayOS = async () => {
+      const deadline = Date.now() + 8000;
+      while (!window.PayOSCheckout?.usePayOS && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));
+      if (!window.PayOSCheckout?.usePayOS) throw new Error("Không tải được giao diện payOS. Hãy kiểm tra kết nối mạng rồi thử lại.");
+      return window.PayOSCheckout;
+    };
+    const openEmbeddedCheckout = async checkoutUrl => {
+      const sdk = await waitForPayOS();
+      closeEmbeddedCheckout();
+      const returnUrl = `${window.location.origin}${window.location.pathname}#/support`;
+      checkoutController = sdk.usePayOS({
+        RETURN_URL: returnUrl,
+        ELEMENT_ID: "hh-payos-embedded",
+        CHECKOUT_URL: checkoutUrl,
+        embedded: true,
+        onSuccess: async () => {
+          showStage("verify");
+          page.querySelector("[data-support-verify-title]").textContent = "Ngân hàng đã ghi nhận thanh toán";
+          page.querySelector("[data-support-verify-status]").textContent = "Đang xác minh chữ ký webhook và hoàn tất email cảm ơn…";
+          await checkCurrentDonation(true);
+          beginPaymentPolling();
+        },
+        onCancel: () => {
+          stopPaymentPolling();
+          forgetPending();
+          currentDonation = null;
+          closeEmbeddedCheckout();
+          showStage("details");
+          setFormStatus("Bạn đã hủy giao dịch. Có thể chỉnh thông tin và tạo VietQR mới.", "error");
+        },
+        onExit: () => {
+          if (currentDonation?.status !== "verified") setFormStatus("Giao diện VietQR đã đóng. Bấm tiếp tục để tạo lại nếu cần.");
+        }
+      });
+      checkoutController.open();
+    };
     const renderReceipt = donation => {
       const receipt = donation?.receipt || {};
       const panel = page.querySelector("[data-support-receipt]");
       if (donation?.status !== "verified") { panel.hidden = true; return; }
-      panel.hidden = false;
+      showStage("email");
       const status = receipt.status || "pending";
       panel.dataset.state = status;
       page.querySelector("[data-support-receipt-id]").textContent = receipt.receiptId || `HH-RCP-${donation.reference}`;
@@ -169,39 +201,17 @@
       page.querySelector("[data-support-receipt-status]").textContent = messages[status] || messages.pending;
       setJourney("email", status);
     };
-    const setMethod = (method, quiet = false) => {
-      if (method === "payos" && !payOSAvailable) return;
-      paymentMethod = method === "payos" ? "payos" : "manual";
-      page.querySelectorAll("[data-support-method]").forEach(button => {
-        const active = button.dataset.supportMethod === paymentMethod;
-        button.classList.toggle("active", active);
-        button.setAttribute("aria-pressed", String(active));
-      });
-      page.querySelector("[data-support-bank-card]").classList.toggle("is-secondary", paymentMethod === "payos");
-      page.querySelector("[data-support-bank-title]").textContent = paymentMethod === "payos" ? "VietQR ACB dự phòng" : "VietQR ACB tự điền";
-      page.querySelector("[data-support-bank-badge]").textContent = paymentMethod === "payos" ? "QR dự phòng" : "ACB";
-      submitButton.textContent = paymentMethod === "payos" ? "Tiếp tục với payOS" : "Tạo thông tin chuyển khoản";
-      if (!quiet) {
-        setFormStatus(paymentMethod === "payos" ? "payOS tạo VietQR đúng số tiền và tự xác nhận khi thanh toán thành công." : "Chuyển khoản thường cần chủ sở hữu đối soát trước khi số tiền xuất hiện công khai.");
-      }
-    };
     const checkCurrentDonation = async (quiet = false) => {
       if (!currentDonation?.id || !currentDonation?.reference) return;
-      const panel = page.querySelector("[data-support-payos]");
-      const statusNode = page.querySelector("[data-support-payos-status]");
+      const verifyStatus = page.querySelector("[data-support-verify-status]");
       const checkButton = page.querySelector("[data-support-payos-check]");
       try {
         const data = await api(`?id=${encodeURIComponent(currentDonation.id)}&reference=${encodeURIComponent(currentDonation.reference)}`);
         currentDonation = { ...currentDonation, ...data.donation };
         if (data.donation.status === "verified") {
-          if (currentDonation.paymentMethod === "payos_vietqr") {
-            panel.hidden = false;
-            panel.classList.add("is-paid");
-            page.querySelector("[data-support-payos-title]").textContent = "Thanh toán đã được xác nhận";
-            statusNode.textContent = `Cảm ơn bạn. Giao dịch ${currentDonation.reference} đã được ghi nhận tự động.`;
-            checkButton.disabled = true;
-            checkButton.textContent = "Đã thanh toán";
-          }
+          closeEmbeddedCheckout();
+          checkButton.disabled = true;
+          checkButton.textContent = "Đã thanh toán";
           renderReceipt(currentDonation);
           const receiptSent = currentDonation.receipt?.status === "sent";
           if (["sent", "failed", "not_configured", "missing_email"].includes(currentDonation.receipt?.status)) {
@@ -212,8 +222,8 @@
           await loadPublic();
           return;
         }
-        setJourney(data.donation.status === "submitted" ? "verify" : "payment");
-        statusNode.textContent = `Giao dịch ${currentDonation.reference} đang chờ ngân hàng xác nhận.`;
+        setJourney(flowStage === "verify" ? "verify" : "payment");
+        verifyStatus.textContent = `Giao dịch ${currentDonation.reference} đang chờ ngân hàng xác nhận. Trang sẽ tự kiểm tra sau mỗi 5 giây.`;
         if (!quiet) setFormStatus("Chưa nhận được xác nhận thanh toán. Hệ thống sẽ tiếp tục kiểm tra tự động.");
       } catch (error) {
         if (!quiet) setFormStatus(error.message, "error");
@@ -226,7 +236,8 @@
         if (!document.contains(page)) return stopPaymentPolling();
         if (currentDonation?.pollUntil && Date.now() > Number(currentDonation.pollUntil)) {
           stopPaymentPolling();
-          page.querySelector("[data-support-payos-status]").textContent = "Link thanh toán đã hết thời gian chờ. Hãy kiểm tra lần cuối hoặc tạo giao dịch mới.";
+          if (flowStage === "payment") page.querySelector("[data-support-payos-status]").textContent = "VietQR đã hết thời gian chờ. Hãy quay lại và tạo giao dịch mới.";
+          page.querySelector("[data-support-verify-status]").textContent = "Giao dịch đã hết thời gian chờ. Hãy tạo VietQR mới nếu chưa thanh toán.";
           return;
         }
         if (!document.hidden) checkCurrentDonation(true);
@@ -249,18 +260,13 @@
       page.querySelector("[data-support-leaderboard]").innerHTML = data.leaderboard?.length ? data.leaderboard.map((item, index) => `<article><span>${index + 1}</span><div><strong>${escapeHtml(item.name)}</strong><small>${item.donations} lần ủng hộ</small></div><b>${money(item.amount)}</b></article>`).join("") : '<p class="support-empty">Danh sách sẽ xuất hiện sau khi đối soát.</p>';
       payOSAvailable = Boolean(data.paymentProviders?.payos);
       const receiptEmailAvailable = Boolean(data.paymentProviders?.receiptEmail);
-      const payOSButton = page.querySelector('[data-support-method="payos"]');
-      payOSButton.disabled = !payOSAvailable;
-      page.querySelector("[data-support-payos-availability]").textContent = payOSAvailable ? "Tự xác nhận qua payOS" : "Đang chờ kích hoạt payOS";
+      page.querySelector("[data-support-payos-availability]").textContent = payOSAvailable ? "Sẵn sàng · Tự xác nhận qua webhook" : "Kênh payOS tạm thời chưa sẵn sàng";
+      page.querySelector("[data-support-provider-state]").classList.toggle("is-online", payOSAvailable);
+      submitButton.disabled = !payOSAvailable;
       const emailTrust = page.querySelector("[data-support-email-trust]");
       emailTrust.textContent = receiptEmailAvailable ? "✓ Email cảm ơn tự động đang bật" : "○ Email cảm ơn chờ cấu hình";
       emailTrust.classList.toggle("is-pending", !receiptEmailAvailable);
-      if (!providerInitialized) {
-        providerInitialized = true;
-        setMethod(payOSAvailable ? "payos" : "manual");
-      } else if (!payOSAvailable && paymentMethod === "payos") {
-        setMethod("manual", true);
-      }
+      setFormStatus(payOSAvailable ? "Sẵn sàng. Bấm tiếp tục để mở VietQR ngay trong website." : "Không thể tạo VietQR lúc này. Vui lòng thử lại sau.", payOSAvailable ? "success" : "error");
     };
 
     const loadPublic = async () => { try { renderPublic(await api()); } catch (error) { setFormStatus(error.message, "error"); } };
@@ -280,24 +286,22 @@
     };
 
     page.addEventListener("click", async event => {
-      const method = event.target.closest("[data-support-method]");
-      if (method) { if (!method.disabled) setMethod(method.dataset.supportMethod); return; }
       const preset = event.target.closest("[data-support-preset]"); if (preset) return updateAmount(Number(preset.dataset.supportPreset));
-      const copy = event.target.closest("[data-support-copy]"); if (copy) { await navigator.clipboard.writeText(copy.dataset.supportCopy); copy.textContent = "Đã sao chép"; return; }
-      if (event.target.closest("[data-support-copy-reference]") && currentDonation) { await navigator.clipboard.writeText(currentDonation.reference); setFormStatus("Đã sao chép nội dung chuyển khoản.", "success"); return; }
       if (event.target.closest("[data-support-payos-check]")) { await checkCurrentDonation(); return; }
+      if (event.target.closest("[data-support-new-payment]")) {
+        stopPaymentPolling();
+        closeEmbeddedCheckout();
+        forgetPending();
+        currentDonation = null;
+        showStage("details");
+        setFormStatus("Có thể thay đổi thông tin và tạo một VietQR mới.");
+        return;
+      }
       if (event.target.closest("[data-support-refresh]")) return loadPublic();
       if (event.target.closest("[data-support-admin-refresh]")) return loadAdmin();
       if (event.target.closest("[data-support-download-receipt]") && currentDonation?.status === "verified") {
         const receipt = currentDonation.receipt || {};
         downloadText(`xac-nhan-ung-ho-${currentDonation.reference}.txt`, `XÁC NHẬN ỦNG HỘ HH PLATFORM\n\nMã xác nhận: ${receipt.receiptId || `HH-RCP-${currentDonation.reference}`}\nMã giao dịch: ${currentDonation.reference}\nSố tiền: ${money(currentDonation.amount)}\nXác nhận lúc: ${dateText(currentDonation.verifiedAt)}\nTrạng thái email: ${receipt.status === "sent" ? "Đã gửi" : "Đang xử lý"}\n\nCảm ơn bạn đã đồng hành cùng Nhhoang.\nĐây là xác nhận ủng hộ, không phải hóa đơn tài chính.`);
-        return;
-      }
-      if (event.target.closest("[data-support-download-instructions]") && currentDonation) { downloadText(`huong-dan-ung-ho-${currentDonation.reference}.txt`, `ỦNG HỘ HH PLATFORM\n\nNgân hàng: ACB\nChủ tài khoản: NGUYEN HUY HOANG\nSố tài khoản: 20223021\nSố tiền: ${money(currentDonation.amount)}\nNội dung: ${currentDonation.reference}\n\nKhoản ủng hộ sẽ xuất hiện công khai sau khi được đối soát.`); return; }
-      if (event.target.closest("[data-support-submit-transfer]") && currentDonation) {
-        const button = event.target.closest("[data-support-submit-transfer]"); button.disabled = true;
-        try { const data = await api("", { method: "POST", body: { action: "submit", id: currentDonation.id, reference: currentDonation.reference, transferTime: page.querySelector("[data-support-transfer-time]").value } }); currentDonation.status = data.status; rememberPending(currentDonation); setJourney("verify"); setFormStatus(`${data.message} Email cảm ơn chỉ gửi sau khi chủ sở hữu xác nhận tiền đã vào tài khoản.`, "success"); page.querySelector("[data-support-transfer]").classList.add("is-submitted"); button.textContent = "Đã gửi để đối soát"; beginPaymentPolling(); }
-        catch (error) { setFormStatus(error.message, "error"); button.disabled = false; }
         return;
       }
       const receiptRetry = event.target.closest("[data-support-receipt-retry]"); if (receiptRetry) {
@@ -317,68 +321,45 @@
     page.querySelector("[data-support-message]").addEventListener("input", event => { page.querySelector("[data-support-message-count]").textContent = event.target.value.length; });
     page.querySelector("[data-support-admin-filter]").addEventListener("change", event => renderAdmin(event.target.value));
     page.querySelector("[data-support-form]").addEventListener("submit", async event => {
-      event.preventDefault(); const button = event.submitter || submitButton; button.disabled = true; button.textContent = paymentMethod === "payos" ? "Đang kết nối payOS..." : "Đang tạo mã...";
+      event.preventDefault(); const button = event.submitter || submitButton; button.disabled = true; button.textContent = "Đang tạo VietQR…";
       try {
-        const data = await api("", { method: "POST", body: { action: paymentMethod === "payos" ? "payos:create" : "create", amount: selectedAmount(), donorName: page.querySelector("[data-support-name]").value, email: page.querySelector("[data-support-email]").value, message: page.querySelector("[data-support-message]").value, anonymous: page.querySelector("[data-support-anonymous]").checked } });
-        currentDonation = data.donation;
-        setJourney("payment");
-        page.querySelector("[data-support-reference]").textContent = currentDonation.reference;
-        page.querySelector("[data-support-copy-reference]").disabled = false;
-        page.querySelector("[data-support-bank-amount]").textContent = money(currentDonation.amount);
-        refreshFallbackQr(currentDonation.amount, currentDonation.reference);
-        if (paymentMethod === "payos") {
-          const checkoutUrl = String(data.payos?.checkoutUrl || "");
-          if (!checkoutUrl.startsWith("https://")) throw new Error("payOS chưa trả về cổng thanh toán hợp lệ.");
-          currentDonation = { ...currentDonation, checkoutUrl, pollUntil: Date.now() + (Number(data.payos?.expiresIn) || 1800) * 1000 };
-          rememberPending(currentDonation);
-          page.querySelector("[data-support-transfer]").hidden = true;
-          const panel = page.querySelector("[data-support-payos]");
-          panel.hidden = false;
-          panel.classList.remove("is-paid");
-          page.querySelector("[data-support-payos-title]").textContent = `Giao dịch ${currentDonation.reference}`;
-          page.querySelector("[data-support-payos-status]").textContent = "Mở cổng payOS, quét VietQR và hoàn tất trong ứng dụng ngân hàng. Trang này sẽ tự cập nhật sau khi thanh toán.";
-          page.querySelector("[data-support-payos-open]").href = checkoutUrl;
-          const checkButton = page.querySelector("[data-support-payos-check]");
-          checkButton.disabled = false;
-          checkButton.textContent = "Kiểm tra trạng thái";
-          setFormStatus("Cổng thanh toán đã sẵn sàng. Bấm “Mở cổng thanh toán” để tiếp tục.", "success");
-          panel.scrollIntoView({ behavior: "smooth", block: "center" });
-          beginPaymentPolling();
-        } else {
-          stopPaymentPolling();
-          rememberPending(currentDonation);
-          page.querySelector("[data-support-payos]").hidden = true;
-          page.querySelector("[data-support-transfer]").hidden = false;
-          page.querySelector("[data-support-transfer-time]").value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-          setFormStatus(`Đã tạo mã ${currentDonation.reference}. Hãy chuyển đúng nội dung này.`, "success");
-          page.querySelector("[data-support-transfer]").scrollIntoView({ behavior: "smooth", block: "center" });
+        const data = await api("", { method: "POST", body: { action: "payos:create", amount: selectedAmount(), donorName: page.querySelector("[data-support-name]").value, email: page.querySelector("[data-support-email]").value, message: page.querySelector("[data-support-message]").value, anonymous: page.querySelector("[data-support-anonymous]").checked } });
+        const checkoutUrl = String(data.payos?.checkoutUrl || "");
+        if (!checkoutUrl.startsWith("https://")) throw new Error("payOS chưa trả về giao diện VietQR hợp lệ.");
+        currentDonation = { ...data.donation, checkoutUrl, pollUntil: Date.now() + (Number(data.payos?.expiresIn) || 1800) * 1000 };
+        rememberPending(currentDonation);
+        page.querySelector("[data-support-payos-title]").textContent = `Giao dịch ${currentDonation.reference}`;
+        page.querySelector("[data-support-payos-status]").textContent = "Quét VietQR bên dưới bằng ứng dụng ngân hàng. Website sẽ tự chuyển bước sau khi thanh toán.";
+        const fallback = page.querySelector("[data-support-payos-fallback]");
+        fallback.href = checkoutUrl;
+        fallback.hidden = true;
+        showStage("payment");
+        try { await openEmbeddedCheckout(checkoutUrl); }
+        catch (embedError) {
+          fallback.hidden = false;
+          page.querySelector("[data-support-payos-status]").textContent = `${embedError.message} Bạn vẫn có thể mở VietQR payOS bằng nút dự phòng bên dưới.`;
         }
-      } catch (error) { setFormStatus(error.message, "error"); }
-      finally { button.disabled = false; button.textContent = paymentMethod === "payos" ? "Tiếp tục với payOS" : "Tạo thông tin chuyển khoản"; }
+        beginPaymentPolling();
+      } catch (error) { showStage("details", false); setFormStatus(error.message, "error"); }
+      finally { button.disabled = !payOSAvailable; button.textContent = "Tiếp tục tới VietQR"; }
     });
 
     updateAmount(100000);
+    showStage("details", false);
     await Promise.all([loadPublic(), loadAdmin()]);
     try {
       const saved = JSON.parse(sessionStorage.getItem(pendingKey) || "null");
-      if (saved?.id && saved?.reference) {
+      if (saved?.id && saved?.reference && saved?.checkoutUrl && payOSAvailable) {
         currentDonation = saved;
-        setJourney(saved.status === "submitted" ? "verify" : "payment");
-        if (saved.checkoutUrl && payOSAvailable) {
-          setMethod("payos", true);
-          const panel = page.querySelector("[data-support-payos]");
-          panel.hidden = false;
-          page.querySelector("[data-support-payos-title]").textContent = `Giao dịch ${currentDonation.reference}`;
-          page.querySelector("[data-support-payos-status]").textContent = "Đang khôi phục và kiểm tra giao dịch payOS gần nhất.";
-          page.querySelector("[data-support-payos-open]").href = currentDonation.checkoutUrl;
-        } else {
-          page.querySelector("[data-support-transfer]").hidden = false;
-          page.querySelector("[data-support-reference]").textContent = currentDonation.reference;
-          page.querySelector("[data-support-bank-amount]").textContent = money(currentDonation.amount);
-          refreshFallbackQr(currentDonation.amount, currentDonation.reference);
-        }
+        page.querySelector("[data-support-payos-title]").textContent = `Giao dịch ${currentDonation.reference}`;
+        page.querySelector("[data-support-payos-status]").textContent = "Đang khôi phục VietQR và trạng thái giao dịch gần nhất.";
+        const fallback = page.querySelector("[data-support-payos-fallback]");
+        fallback.href = currentDonation.checkoutUrl;
+        showStage("payment", false);
+        try { await openEmbeddedCheckout(currentDonation.checkoutUrl); }
+        catch { fallback.hidden = false; }
         beginPaymentPolling();
-      }
+      } else if (saved) forgetPending();
     } catch { forgetPending(); }
     refreshTimer = window.setInterval(() => {
       if (!document.contains(page)) return clearInterval(refreshTimer);
