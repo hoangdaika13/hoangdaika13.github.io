@@ -5085,6 +5085,17 @@ function initAppShell() {
     try { return JSON.parse(localStorage.getItem("hh.sidebar.groups.v1") || "{}"); } catch { return {}; }
   })();
   const saveSidebarGroups = () => localStorage.setItem("hh.sidebar.groups.v1", JSON.stringify(sidebarGroupState));
+  const musicSidebarSectionKey = "hh.music-ai.sidebar-section.v2";
+  let musicSidebarSection = localStorage.getItem(musicSidebarSectionKey) || "";
+  const saveMusicSidebarSection = (section) => {
+    musicSidebarSection = section;
+    localStorage.setItem(musicSidebarSectionKey, section);
+  };
+  if (localStorage.getItem("hh.music-ai.sidebar-nav-version") !== "2") {
+    sidebarGroupState["music-ai"] = false;
+    saveSidebarGroups();
+    localStorage.setItem("hh.music-ai.sidebar-nav-version", "2");
+  }
 
   const moduleList = () => Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
   const moduleById = (id) => moduleList().find((item) => item.id === id);
@@ -5136,7 +5147,20 @@ function initAppShell() {
       const moduleItems = moduleEntries.join("");
       const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
       const pageItems = group.id === "music-ai"
-        ? [...new Set(group.pages.map((item) => item.section))].map((section) => `<section class="app-sidebar__page-section"><small>${section}</small>${group.pages.filter((item) => item.section === section).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--music ${route === item.route || (route === group.route && item.id === "project") ? "is-active" : ""}" type="button" data-app-route="${item.route}" title="${safeText(item.description)}" ${route === item.route || (route === group.route && item.id === "project") ? "aria-current=page" : ""}><b>${item.icon}</b><span>${item.title}</span><i>›</i></button>`).join("")}</section>`).join("")
+        ? (() => {
+            const activePage = group.pages.find((item) => route === item.route || (route === group.route && item.id === "project"));
+            const openSection = musicSidebarSection === "__none__" ? "" : (musicSidebarSection || activePage?.section || "Bắt đầu");
+            return [...new Set(group.pages.map((item) => item.section))].map((section) => {
+              const sectionItems = group.pages.filter((item) => item.section === section);
+              const sectionOpen = section === openSection;
+              return `<section class="app-sidebar__page-section ${sectionOpen ? "is-open" : ""}">
+                <button class="app-sidebar__page-section-toggle" type="button" data-music-section="${safeText(section)}" aria-expanded="${sectionOpen}">
+                  <span>${safeText(section)}</span><b>${sectionItems.length}</b><i aria-hidden="true">›</i>
+                </button>
+                <div class="app-sidebar__page-section-items" aria-hidden="${!sectionOpen}">${sectionItems.map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--music ${route === item.route || (route === group.route && item.id === "project") ? "is-active" : ""}" type="button" data-app-route="${item.route}" title="${safeText(item.description)}" ${sectionOpen ? "" : "tabindex=-1"} ${route === item.route || (route === group.route && item.id === "project") ? "aria-current=page" : ""}><b>${safeText(item.icon)}</b><span>${safeText(item.title)}</span><i>›</i></button>`).join("")}</div>
+              </section>`;
+            }).join("");
+          })()
         : (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
       const studioMenu = group.studioItems ? `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
       const fullSubmenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
@@ -5537,6 +5561,13 @@ function initAppShell() {
       else location.hash = "#/home";
       return;
     }
+    const musicSectionToggle = event.target.closest("[data-music-section]");
+    if (musicSectionToggle) {
+      const section = musicSectionToggle.dataset.musicSection;
+      saveMusicSidebarSection(musicSectionToggle.getAttribute("aria-expanded") === "true" ? "__none__" : section);
+      renderNavigation();
+      return;
+    }
     const routeButton = event.target.closest("[data-app-route]");
     if (routeButton) {
       const route = routeButton.dataset.appRoute;
@@ -5544,7 +5575,12 @@ function initAppShell() {
       if (sidebarGroup?.querySelector(":scope > .app-sidebar__submenu") && event.target.closest("[data-sidebar-toggle]")) {
         const group = groups.find((item) => item.id === sidebarGroup.dataset.navGroup);
         if (group) {
-          sidebarGroupState[group.id] = !sidebarGroup.classList.contains("is-expanded");
+          const opening = !sidebarGroup.classList.contains("is-expanded");
+          sidebarGroupState[group.id] = opening;
+          if (opening && group.id === "music-ai") {
+            const activeMusicPage = musicAIPageItems.find((item) => activeRoute === item.route) || musicAIPageItems[0];
+            saveMusicSidebarSection(activeMusicPage.section);
+          }
           saveSidebarGroups();
           renderNavigation();
           return;
@@ -5552,7 +5588,15 @@ function initAppShell() {
       }
       if (route) {
         const targetGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
-        if (targetGroup) { sidebarGroupState[targetGroup.id] = true; saveSidebarGroups(); }
+        if (targetGroup) {
+          const musicSidebarLink = targetGroup.id === "music-ai" && routeButton.closest('[data-nav-group="music-ai"]');
+          sidebarGroupState[targetGroup.id] = !musicSidebarLink;
+          if (musicSidebarLink) {
+            const selectedMusicPage = musicAIPageItems.find((item) => item.route === route) || musicAIPageItems[0];
+            saveMusicSidebarSection(selectedMusicPage.section);
+          }
+          saveSidebarGroups();
+        }
         const nextHash = `#${route}`;
         beginRouteFeedback(route);
         if (location.hash === nextHash) renderRouteWithTransition(); else location.hash = nextHash;

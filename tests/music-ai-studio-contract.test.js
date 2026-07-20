@@ -23,9 +23,16 @@ test("Music AI uses one navigation source and opens tools directly", () => {
   const studio = read("music-ai-studio.js");
   const apps = read("music-ai-apps.js");
   const shell = read("script.js");
+  const styles = read("app-shell.css");
   assert.doesNotMatch(studio, /class="mai-tabs"/);
   assert.doesNotMatch(apps, /class="ma-app-dock"/);
   assert.match(shell, /app-sidebar__subitem--music/);
+  assert.match(shell, /data-music-section/);
+  assert.match(shell, /hh\.music-ai\.sidebar-nav-version/);
+  assert.match(shell, /sidebarGroupState\[targetGroup\.id\] = !musicSidebarLink/);
+  assert.match(shell, /tabindex=-1/);
+  assert.match(styles, /app-sidebar__page-section\.is-open/);
+  assert.match(styles, /pointer-events:none/);
   assert.match(shell, /updatePageHeader\(musicPage\.title, musicPage\.description/);
   assert.match(studio, /is-standalone-app/);
 });
@@ -104,7 +111,7 @@ test("Music AI ships YouTube-safe defaults and no fake LUFS claim", () => {
 test("Music AI assets are loaded by the page and offline worker", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["music-ai-studio.css?v=5", "music-ai-apps.css?v=2", "music-ai-apps.js?v=2", "music-ai-studio.js?v=6", "youtube-publisher.css?v=2", "youtube-publisher.js?v=2", "script.js?v=101", "app-shell.css?v=46"]) {
+  for (const asset of ["music-ai-studio.css?v=5", "music-ai-apps.css?v=2", "music-ai-apps.js?v=2", "music-ai-studio.js?v=6", "youtube-publisher.css?v=2", "youtube-publisher.js?v=2", "script.js?v=102", "app-shell.css?v=47"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);
