@@ -17,5 +17,6 @@ test("application shell contains a recoverable route error boundary", () => {
   assert.match(client, /data-shell-retry-route/);
   assert.match(client, /HHRuntimeDiagnostics/);
   assert.match(client, /unhandledrejection/);
+  assert.match(client, /escapeRouteHtml/);
   assert.match(css, /\.app-runtime-error/);
 });

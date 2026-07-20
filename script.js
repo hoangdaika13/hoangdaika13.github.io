@@ -5133,6 +5133,21 @@ function initAppShell() {
       pages: musicAIPageItems
     },
     { id: "media-design", label: "Media & Design", icon: "◈", accent: "#c87cff", route: "/media-design", items: [], studioItems: mediaStudioItems },
+    {
+      id: "graphic-design",
+      label: "Thiết kế đồ họa",
+      icon: "✺",
+      accent: "#ff65cf",
+      route: "/graphic-design",
+      items: [],
+      pages: [
+        { id: "animation", title: "Animation 2D", route: "/graphic-design/animation" },
+        { id: "3d", title: "3D Scene Studio", route: "/graphic-design/3d" },
+        { id: "prototype", title: "UI/UX Prototype", route: "/graphic-design/prototype" },
+        { id: "motion", title: "Motion & Video", route: "/graphic-design/motion" },
+        { id: "character", title: "Character Lab", route: "/graphic-design/character" }
+      ]
+    },
     { id: "dev", label: "DEV", icon: "⌘", accent: "#61e7ff", route: "/dev-tools", items: [], studioItems: developerToolItems },
     { id: "work", label: "Công việc", icon: "□", accent: "#baf46b", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
     {
@@ -5361,7 +5376,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", animation: "Animation 2D", "3d": "3D Scene Studio", prototype: "UI/UX Prototype", motion: "Motion & Video", character: "Character Lab", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIPageItems];
     let crumbRoute = "";
     breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Trang chủ</button>` : [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => {
@@ -5406,6 +5421,7 @@ function initAppShell() {
     shell.style.setProperty("--route-accent", activeGroup?.accent || "#56eaff");
     shell.dataset.activeSection = activeGroup?.id || "home";
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
+    document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
@@ -5419,6 +5435,7 @@ function initAppShell() {
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     if (route !== "/work") window.HHWorkCenter?.unmount?.();
     if (route !== "/music-ai" && !route.startsWith("/music-ai/")) window.HHMusicAIStudio?.unmount?.();
+    if (route !== "/graphic-design" && !route.startsWith("/graphic-design/")) window.HHGraphicDesign?.unmount?.();
     setUser();
     renderNavigation();
     requestAnimationFrame(() => {
@@ -5477,6 +5494,13 @@ function initAppShell() {
       const mediaHost = workspace.firstElementChild;
       mediaHost.dataset.mediaDesignTool = parts[1] || "";
       window.HHMediaDesignPage?.mount(mediaHost, { toolId: parts[1] || "" });
+    } else if (route === "/graphic-design" || route.startsWith("/graphic-design/")) {
+      const graphicView = parts[1] || "overview";
+      const graphicTitle = ({ animation: "Animation 2D", "3d": "3D Scene Studio", prototype: "UI/UX Prototype", motion: "Motion & Video", character: "Character Lab" })[graphicView] || "Thiết kế đồ họa";
+      updatePageHeader(graphicTitle, "Animation tương tác, 3D, prototype UI/UX, motion video và character trong một studio thống nhất.", route);
+      workspace.innerHTML = '<div data-graphic-design-host></div>';
+      if (window.HHGraphicDesign?.mount) window.HHGraphicDesign.mount(workspace.firstElementChild, { view: graphicView });
+      else mountSimpleView("Thiết kế đồ họa", "Đang tải Graphic Design Studio...", "");
     } else if (route === "/dev-tools" || route.startsWith("/dev-tools/")) {
       updatePageHeader("Developer Toolbox", "Bộ công cụ dữ liệu, bảo mật, văn bản, API và hệ thống dành cho developer.", route);
       workspace.innerHTML = '<div data-developer-tools-host></div>';
@@ -5561,9 +5585,10 @@ function initAppShell() {
   };
   const renderRouteFailure = (error) => {
     const issue = rememberRuntimeIssue(error, "route-render");
+    const escapeRouteHtml = (value) => String(value || "").replace(/[<>&"']/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;", "'": "&#39;" }[char]));
     activeRoute = routeFromHash();
     updatePageHeader("Không thể mở workspace", "HH Platform đã giữ phần còn lại của ứng dụng hoạt động.", activeRoute);
-    mountSimpleView("Workspace gặp lỗi", "Bạn có thể thử tải lại module hoặc trở về Command Center.", `<section class="app-runtime-error" role="alert"><span>!</span><div><strong>${escapeHtml(issue.name)}</strong><p>${escapeHtml(issue.message)}</p><small>Mã: ${escapeHtml(issue.id)} · Không lưu nội dung riêng tư.</small></div><div><button type="button" data-shell-retry-route>Thử lại</button><button type="button" data-app-route="/home">Về Command Center</button></div></section>`);
+    mountSimpleView("Workspace gặp lỗi", "Bạn có thể thử tải lại module hoặc trở về Command Center.", `<section class="app-runtime-error" role="alert"><span>!</span><div><strong>${escapeRouteHtml(issue.name)}</strong><p>${escapeRouteHtml(issue.message)}</p><small>Mã: ${escapeRouteHtml(issue.id)} · Không lưu nội dung riêng tư.</small></div><div><button type="button" data-shell-retry-route>Thử lại</button><button type="button" data-app-route="/home">Về Command Center</button></div></section>`);
     legacyMain.hidden = true;
     renderedRoute = activeRoute;
   };
