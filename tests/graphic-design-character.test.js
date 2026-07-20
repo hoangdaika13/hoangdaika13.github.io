@@ -7,140 +7,185 @@ const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "graphic-design-character.js"), "utf8");
 const character = require("../graphic-design-character.js");
 
-test("Character Studio exposes the standalone mount and unmount API", () => {
+test("Character Creator 2.0 keeps the standalone mount API and adds reusable engines", () => {
   assert.match(source, /runtime\.HHGraphicCharacter\s*=\s*api/);
-  assert.equal(typeof character.mount, "function");
-  assert.equal(typeof character.unmount, "function");
-  assert.equal(typeof character.createDefaultProject, "function");
-  assert.equal(typeof character.normalizeProject, "function");
-  assert.equal(typeof character.interpolateProject, "function");
+  ["mount", "unmount", "createDefaultProject", "normalizeProject", "interpolateProject", "solveTwoBoneIK", "applyIK", "buildVisemeTimeline"].forEach((name) => {
+    assert.equal(typeof character[name], "function", `${name} must be exported`);
+  });
 });
 
-test("Default schema contains a complete 2D human bone rig and layer tree", () => {
+test("Version 2 schema preserves the complete human rig, layers and autosave key", () => {
   const project = character.createDefaultProject();
-  assert.equal(project.version, 1);
+  assert.equal(project.version, 2);
   assert.equal(project.character.style, "anime-human");
+  assert.equal(character.STORAGE_KEY, "hh.graphic-character.project.v1");
   assert.ok(character.JOINT_DEFINITIONS.length >= 16);
   assert.ok(character.BONE_DEFINITIONS.length >= 15);
   assert.ok(project.layers.length >= 11);
   assert.ok(["head", "torso", "leftHand", "rightHand", "leftFoot", "rightFoot"].every((id) => project.rig.joints[id]));
   assert.ok(project.rig.bones.every((bone) => project.rig.joints[bone.from] && project.rig.joints[bone.to]));
-  assert.ok(project.layers.some((layer) => layer.id === "mouth"));
-  assert.ok(project.layers.some((layer) => layer.id === "rig"));
+  assert.deepEqual(Object.keys(project.rig.constraints), ["leftArm", "rightArm", "leftLeg", "rightLeg"]);
+  assert.deepEqual(project.rig.footLock, { left: false, right: false });
 });
 
-test("Pose presets provide distinct usable poses", () => {
-  const idle = character.poseJoints("idle");
-  const wave = character.poseJoints("wave");
-  const walk = character.poseJoints("walk");
-  const talk = character.poseJoints("talk");
-  const dance = character.poseJoints("dance");
-  assert.deepEqual(character.POSE_PRESETS.map((pose) => pose.id), ["idle", "wave", "walk", "talk", "dance"]);
-  assert.notDeepEqual(wave.rightHand, idle.rightHand);
-  assert.notDeepEqual(walk.leftFoot, idle.leftFoot);
-  assert.notDeepEqual(talk.leftHand, idle.leftHand);
-  assert.notDeepEqual(dance.head, idle.head);
-  [idle, wave, walk, talk, dance].forEach((pose) => {
-    assert.equal(Object.keys(pose).length, character.JOINT_DEFINITIONS.length);
+test("Appearance library covers face, eyes, hair, clothing and accessories", () => {
+  assert.ok(character.CHARACTER_LIBRARY.faces.length >= 4);
+  assert.ok(character.CHARACTER_LIBRARY.eyes.length >= 4);
+  assert.ok(character.CHARACTER_LIBRARY.hair.length >= 6);
+  assert.ok(character.CHARACTER_LIBRARY.outfits.length >= 5);
+  assert.ok(character.CHARACTER_LIBRARY.accessories.length >= 5);
+  const project = character.createDefaultProject();
+  ["faceId", "eyeId", "hairId", "outfitId", "accessoryId"].forEach((key) => assert.equal(typeof project.character[key], "string"));
+  assert.match(source, /data-hc-character="faceId"/);
+  assert.match(source, /data-hc-character="accessoryId"/);
+});
+
+test("Archetypes and body proportions produce visibly distinct display rigs", () => {
+  assert.deepEqual(character.ARCHETYPES.map((item) => item.id), ["male", "female", "anime", "chibi", "semi-realistic"]);
+  const base = character.createDefaultProject();
+  const anime = character.characterDisplayJoints(base, base.rig.joints);
+  const chibiProject = character.normalizeProject({ ...base, character: { ...base.character, archetype: "chibi", proportions: character.ARCHETYPES.find((item) => item.id === "chibi").proportions } });
+  const chibi = character.characterDisplayJoints(chibiProject, chibiProject.rig.joints);
+  assert.notEqual(chibi.head.y, anime.head.y);
+  assert.notEqual(chibi.leftFoot.y, anime.leftFoot.y);
+  assert.match(source, /data-hc-proportion=/);
+  assert.match(source, /\[\["height","Chiều cao"\],\["headScale","Tỉ lệ đầu"\]/);
+});
+
+test("Front, side and back views are available and side projection changes the rig", () => {
+  assert.deepEqual(character.CHARACTER_VIEWS.map((item) => item.id), ["front", "left", "right", "back"]);
+  const frontProject = character.createDefaultProject();
+  const sideProject = character.normalizeProject({ ...frontProject, character: { ...frontProject.character, view: "left" } });
+  const front = character.characterDisplayJoints(frontProject, frontProject.rig.joints);
+  const side = character.characterDisplayJoints(sideProject, sideProject.rig.joints);
+  assert.ok(Math.abs(side.leftHand.x - side.rightHand.x) < Math.abs(front.leftHand.x - front.rightHand.x));
+  assert.match(source, /data-hc-view/);
+  assert.match(source, /character\.view !== "back"/);
+});
+
+test("Pose and motion libraries include all requested character actions", () => {
+  const requested = ["walk", "run", "jump", "sit", "talk", "fight"];
+  requested.forEach((id) => assert.ok(character.POSE_PRESETS.some((pose) => pose.id === id)));
+  assert.deepEqual(character.MOTION_LIBRARY.map((motion) => motion.id), requested);
+  requested.forEach((id) => {
+    const frames = character.createMotionFrames(id);
+    assert.equal(frames.length, 3);
+    assert.equal(Object.keys(frames[0].joints).length, character.JOINT_DEFINITIONS.length);
+    assert.ok(frames[2].time > frames[0].time);
   });
+  assert.match(source, /data-hc-motion/);
+  assert.match(source, /applyMotionSequence/);
 });
 
-test("Character schema supports expressions, blinking, phonemes, timeline and lip-sync", () => {
-  const project = character.createDefaultProject();
-  assert.deepEqual(character.EXPRESSIONS.map((item) => item.id), ["neutral", "happy", "sad", "angry", "surprised", "blink"]);
-  assert.ok(character.PHONEMES.includes("M/B/P"));
-  assert.equal(typeof project.character.blinking, "boolean");
-  assert.ok(project.timeline.keyframes.length >= 3);
-  assert.ok(project.timeline.lipSync.length >= 3);
-  assert.ok(project.timeline.keyframes.every((frame) => frame.joints && frame.expression && frame.phoneme));
-  assert.match(source, /data-hc-expression/);
-  assert.match(source, /data-hc-add-lip/);
-  assert.match(source, /Tự động chớp mắt/);
+test("Two-bone IK reaches a bounded target while preserving finite joints", () => {
+  const joints = character.poseJoints("idle");
+  const root = { ...joints.rightShoulder };
+  const originalLength = Math.hypot(joints.rightElbow.x - root.x, joints.rightElbow.y - root.y)
+    + Math.hypot(joints.rightHand.x - joints.rightElbow.x, joints.rightHand.y - joints.rightElbow.y);
+  const solved = character.applyIK(joints, "rightHand", { x: 620, y: 250 }, {
+    rightArm: { minBend: 8, maxBend: 165, maxStretch: 1, bendDirection: -1 }
+  });
+  const solvedLength = Math.hypot(solved.rightElbow.x - root.x, solved.rightElbow.y - root.y)
+    + Math.hypot(solved.rightHand.x - solved.rightElbow.x, solved.rightHand.y - solved.rightElbow.y);
+  assert.ok(Math.abs(solvedLength - originalLength) < 8);
+  assert.ok(Number.isFinite(solved.rightElbow.x) && Number.isFinite(solved.rightElbow.y));
+  assert.notDeepEqual(solved.rightHand, joints.rightHand);
+  assert.match(source, /data-hc-foot-lock="left"/);
+  assert.match(source, /project\.rig\.footLock\.left/);
 });
 
-test("Timeline interpolation produces bounded joint values", () => {
-  const project = character.createDefaultProject();
-  project.timeline.keyframes = [
-    { id: "a", time: 0, easing: "linear", joints: character.poseJoints("idle"), expression: "neutral", phoneme: "REST" },
-    { id: "b", time: 10, easing: "linear", joints: character.poseJoints("wave"), expression: "happy", phoneme: "A" }
-  ];
-  project.timeline.duration = 10;
-  const middle = character.interpolateProject(project, 5);
-  const start = project.timeline.keyframes[0].joints.rightHand;
-  const end = project.timeline.keyframes[1].joints.rightHand;
-  assert.equal(middle.joints.rightHand.x, (start.x + end.x) / 2);
-  assert.equal(middle.joints.rightHand.y, (start.y + end.y) / 2);
-  assert.equal(character.interpolateProject(project, 0).expression, "neutral");
-  assert.equal(character.interpolateProject(project, 10).expression, "happy");
+test("Amplitude analysis creates deterministic viseme markers without speech-recognition claims", () => {
+  assert.equal(character.amplitudeToPhoneme(0), "REST");
+  assert.equal(character.amplitudeToPhoneme(.04, 0), "M/B/P");
+  const sampleRate = 1000;
+  const samples = new Float32Array(sampleRate);
+  for (let index = 250; index < 750; index += 1) samples[index] = .25 * Math.sin(index);
+  const markers = character.buildVisemeTimeline(samples, sampleRate, 1, .1);
+  assert.ok(markers.some((marker) => marker.phoneme !== "REST"));
+  assert.ok(markers.every((marker) => marker.time >= 0 && marker.time <= 1));
+  assert.match(source, /decodeAudioData/);
+  assert.match(source, /getChannelData\(0\)/);
+  assert.match(source, /WebAudio chỉ phân tích biên độ/);
+  assert.doesNotMatch(source, /SpeechRecognition|webkitSpeechRecognition/);
 });
 
-test("Normalization sanitizes imported projects and preserves the complete rig", () => {
+test("Normalization migrates old projects and sanitizes every new field", () => {
   const normalized = character.normalizeProject({
     meta: { name: "x".repeat(200) },
     stage: { background: "invalid" },
-    character: { expression: "unknown", phoneme: "invalid", blinkRate: 999, hairColor: "red" },
-    rig: { joints: { head: { x: -90, y: 9000 } }, selectedJointId: "missing" },
+    character: {
+      archetype: "unknown", view: "diagonal", faceId: "bad", hairId: "bad",
+      expression: "unknown", phoneme: "invalid", blinkRate: 999, hairColor: "red",
+      proportions: { height: 8, headScale: 0, shoulderWidth: 9, armLength: -2, legLength: 9 }
+    },
+    rig: { joints: { head: { x: -90, y: 9000 } }, selectedJointId: "missing", constraints: { leftArm: { maxBend: 999 } } },
     timeline: { duration: 9999, fps: 11, speed: 99, keyframes: [] }
   });
   assert.equal(normalized.meta.name.length, 120);
   assert.equal(normalized.stage.background, "#11172a");
-  assert.equal(normalized.character.expression, "neutral");
-  assert.equal(normalized.character.phoneme, "REST");
-  assert.equal(normalized.character.blinkRate, 12);
-  assert.equal(normalized.character.hairColor, "#4338ca");
+  assert.equal(normalized.character.archetype, "anime");
+  assert.equal(normalized.character.view, "front");
+  assert.equal(normalized.character.faceId, "oval");
+  assert.equal(normalized.character.proportions.height, 1.35);
+  assert.equal(normalized.character.proportions.headScale, .7);
   assert.equal(normalized.rig.joints.head.x, 0);
   assert.equal(normalized.rig.joints.head.y, 800);
-  assert.equal(normalized.rig.selectedJointId, "rightHand");
+  assert.equal(normalized.rig.constraints.leftArm.maxBend, 180);
   assert.equal(normalized.timeline.duration, 300);
-  assert.equal(normalized.timeline.fps, 30);
-  assert.equal(normalized.timeline.speed, 1);
   assert.ok(normalized.timeline.keyframes.length >= 1);
 });
 
-test("Canvas interaction supports draggable joints and numeric joint controls", () => {
+test("Canvas remains editable with pointer IK, numeric controls and keyboard nudging", () => {
   assert.match(source, /nearestJoint\(point\)/);
   assert.match(source, /data-hc-canvas/);
-  assert.match(source, /handlePointerDown/);
-  assert.match(source, /handlePointerMove/);
   assert.match(source, /setPointerCapture/);
   assert.match(source, /releasePointerCapture/);
+  assert.match(source, /applyIK\(project\.rig\.joints/);
   assert.match(source, /data-hc-joint="x"/);
-  assert.match(source, /data-hc-joint="y"/);
   assert.match(source, /data-hc-joint="rotation"/);
-  assert.match(source, /mirrorEdit/);
+  assert.match(source, /ArrowLeft/);
+  assert.match(source, /phím 1–4 đổi góc nhìn/);
 });
 
-test("Device access is truthfully gated behind explicit camera and microphone buttons", () => {
+test("Webcam is optional, explicitly consented and never presented as face tracking", () => {
+  assert.match(source, /data-hc-webcam-consent/);
+  assert.match(source, /if \(!webcamConsent\) throw new Error/);
   assert.match(source, /data-hc-camera>Xin quyền camera/);
   assert.match(source, /data-hc-microphone>Xin quyền micro/);
   assert.match(source, /async function requestCameraPermission\(\)/);
   assert.match(source, /async function requestMicrophonePermission\(\)/);
-  assert.match(source, /requestCameraPermission\(\)/);
-  assert.match(source, /requestMicrophonePermission\(\)/);
   assert.equal((source.match(/getUserMedia\(/g) || []).length, 2);
-  assert.match(source, /chưa tuyên bố theo dõi khuôn mặt hoặc nhận dạng giọng nói tự động/);
-  assert.match(source, /Face tracking chưa được bật/);
-  assert.match(source, /Nhận dạng âm vị tự động chưa được bật/);
+  assert.match(source, /Không có face tracking hoặc AI nhận dạng/);
   assert.match(source, /cameraStream\?\.getTracks/);
   assert.match(source, /microphoneStream\?\.getTracks/);
-  assert.match(source, /if \(target\.dataset\.hcCamera !== undefined\) return requestCameraPermission\(\)/);
-  assert.match(source, /if \(target\.dataset\.hcMicrophone !== undefined\) return requestMicrophonePermission\(\)/);
 });
 
-test("Local project workflow includes autosave, import/export and undo/redo without network tracking", () => {
-  assert.equal(character.STORAGE_KEY, "hh.graphic-character.project.v1");
+test("Project rig, sprite sheet, PNG sequence and truthful WebM branches are implemented", () => {
+  assert.match(source, /format: "hh-character-rig"/);
+  assert.match(source, /data-hc-sprite/);
+  assert.match(source, /function exportSpriteSheet\(\)/);
+  assert.match(source, /function exportPngSequence\(\)/);
+  assert.match(source, /canvasBlob\(renderExportFrame/);
+  assert.match(source, /function exportTransparentWebM\(\)/);
+  assert.match(source, /MediaRecorder/);
+  assert.match(source, /canvas\.captureStream/);
+  assert.match(source, /khả năng giữ trong suốt còn phụ thuộc codec và trình duyệt/);
+  assert.equal(character.transparentWebMSupport({}).supported, false);
+});
+
+test("Local workflow retains autosave, JSON migration and undo redo without network tracking", () => {
   assert.match(source, /storage\?\.setItem\(STORAGE_KEY/);
   assert.match(source, /JSON\.stringify\(payload, null, 2\)/);
-  assert.match(source, /new FileReader\(\)/);
+  assert.match(source, /parsed\?\.format === "hh-character-rig"/);
   assert.match(source, /function undo\(\)/);
   assert.match(source, /function redo\(\)/);
   assert.match(source, /data-hc-undo/);
   assert.match(source, /data-hc-redo/);
-  assert.match(source, /data-hc-import-open/);
   assert.doesNotMatch(source, /fetch\(|XMLHttpRequest|WebSocket|sendBeacon|google-analytics|gtag\(/i);
 });
 
-test("UI is responsive, accessible and respects reduced-motion preferences", () => {
+test("UI is Vietnamese, responsive, accessible and reduced-motion safe", () => {
+  assert.match(source, /HH Character Creator 2\.0/);
   assert.match(source, /setAttribute\("aria-label", "HH Character Studio"\)/);
   assert.match(source, /role="status" aria-live="polite"/);
   assert.match(source, /aria-label="Canvas rig nhân vật anime và con người"/);

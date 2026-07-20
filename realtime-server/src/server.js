@@ -32,7 +32,15 @@ const ICE_SERVERS = [
 ];
 const activeCalls = new Map();
 const activeAstraRooms = new Map();
+const activeDesignRooms = new Map();
 const MAX_ASTRA_PLAYERS = Math.max(2, Math.min(12, Number(process.env.MAX_ASTRA_PLAYERS || 10)));
+const MAX_DESIGN_ROOMS = Math.max(4, Math.min(200, Number(process.env.MAX_DESIGN_ROOMS || 40)));
+const MAX_DESIGN_MEMBERS = Math.max(2, Math.min(50, Number(process.env.MAX_DESIGN_MEMBERS || 24)));
+const MAX_DESIGN_COMMENTS = Math.max(20, Math.min(2000, Number(process.env.MAX_DESIGN_COMMENTS || 500)));
+const MAX_DESIGN_LOCKS = Math.max(10, Math.min(500, Number(process.env.MAX_DESIGN_LOCKS || 200)));
+const DESIGN_LOCK_TTL = Math.max(5000, Math.min(120000, Number(process.env.DESIGN_LOCK_TTL || 30000)));
+const DESIGN_ROLES = new Set(["viewer", "commenter", "editor", "owner"]);
+const DESIGN_ROLE_RANK = Object.freeze({ viewer: 0, commenter: 1, editor: 2, owner: 3 });
 const ASTRA_WORLD = { width: 12000, height: 8000 };
 const ASTRA_SHIPS = new Set(["asteria", "nomad", "aurora", "titan", "lumen", "odyssey"]);
 
@@ -84,6 +92,87 @@ const seedProducts = [
 
 function cleanString(value, max = 2000) {
   return String(value || "").trim().slice(0, max);
+}
+
+function designRoomCode(value) {
+  return cleanString(value, 16).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+}
+
+function designSocketRoom(code) {
+  return `design:room:${code}`;
+}
+
+function createDesignCode() {
+  let code = "";
+  do code = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  while (activeDesignRooms.has(code));
+  return code;
+}
+
+function boundedNumber(value, fallback = 0, min = -100000, max = 100000) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
+}
+
+function sanitizeDesignSelection(payload = {}) {
+  const layerIds = Array.isArray(payload.layerIds)
+    ? [...new Set(payload.layerIds.map((item) => cleanString(item, 80)).filter(Boolean))].slice(0, 30)
+    : [];
+  return {
+    layerIds,
+    artboardId: cleanString(payload.artboardId, 80),
+    bounds: payload.bounds ? {
+      x: boundedNumber(payload.bounds.x),
+      y: boundedNumber(payload.bounds.y),
+      width: boundedNumber(payload.bounds.width, 0, 0, 100000),
+      height: boundedNumber(payload.bounds.height, 0, 0, 100000)
+    } : null
+  };
+}
+
+function pruneDesignLocks(room) {
+  const now = Date.now();
+  for (const [layerId, lock] of room.locks) {
+    if (lock.expiresAt <= now) room.locks.delete(layerId);
+  }
+}
+
+function designRole(room, identityId) {
+  return DESIGN_ROLES.has(room.roles.get(identityId)) ? room.roles.get(identityId) : "viewer";
+}
+
+function canDesign(room, identityId, minimumRole) {
+  return DESIGN_ROLE_RANK[designRole(room, identityId)] >= DESIGN_ROLE_RANK[minimumRole];
+}
+
+function publicDesignMember(member, room) {
+  return {
+    socketId: member.socketId,
+    user: member.user,
+    role: designRole(room, member.user.id),
+    cursor: member.cursor,
+    selection: member.selection,
+    joinedAt: member.joinedAt
+  };
+}
+
+function publicDesignRoom(room) {
+  pruneDesignLocks(room);
+  return {
+    code: room.code,
+    name: room.name,
+    createdAt: room.createdAt,
+    updatedAt: room.updatedAt,
+    members: [...room.members.values()].map((member) => publicDesignMember(member, room)),
+    comments: room.comments.slice(-MAX_DESIGN_COMMENTS),
+    locks: [...room.locks.values()],
+    versions: room.versions.slice(-100),
+    branches: room.branches.slice(-50),
+    reviews: room.reviews.slice(-100),
+    limits: { members: MAX_DESIGN_MEMBERS, comments: MAX_DESIGN_COMMENTS, locks: MAX_DESIGN_LOCKS },
+    persistence: "memory",
+    transportSecurity: "TLS when deployed behind HTTPS/WSS"
+  };
 }
 
 function communityRoomSlug(value) {
@@ -543,8 +632,18 @@ io.on("connection", async (socket) => {
   const astraIdentity = () => socket.user
     ? publicChatUser(socket.user)
     : { id: `guest:${guestId}`, name: cleanString(auth.astraName, 40) || `Phi công ${guestId.slice(-4).toUpperCase()}`, avatar: "", guest: true };
+  const designIdentity = () => socket.user
+    ? { ...publicChatUser(socket.user), guest: false, authenticated: true }
+    : {
+        id: `guest:${guestId}`,
+        name: `${cleanString(auth.designName, 40) || `Khách ${guestId.slice(-4).toUpperCase()}`} (chưa đăng nhập)`,
+        avatar: "",
+        guest: true,
+        authenticated: false
+      };
   let activeMessengerRoom = "";
   let activeAstraRoom = "";
+  let activeDesignRoom = "";
   const activeCallIds = new Set();
   if (socket.user) {
     socket.join(`community:user:${String(socket.user._id)}`);
@@ -560,6 +659,40 @@ io.on("connection", async (socket) => {
   const emitAstraRoom = (code) => {
     const room = activeAstraRooms.get(code);
     if (room) io.to(astraSocketRoom(code)).emit("astra:room", publicAstraRoom(room));
+  };
+  const emitDesignPresence = (code) => {
+    const room = activeDesignRooms.get(code);
+    if (!room) return;
+    io.to(designSocketRoom(code)).emit("design:presence", {
+      room: code,
+      members: [...room.members.values()].map((member) => publicDesignMember(member, room)),
+      updatedAt: new Date().toISOString()
+    });
+  };
+  const leaveDesignRoom = async (reason = "left") => {
+    const code = activeDesignRoom;
+    if (!code) return;
+    activeDesignRoom = "";
+    const room = activeDesignRooms.get(code);
+    await socket.leave(designSocketRoom(code));
+    if (!room) return;
+    const member = room.members.get(socket.id);
+    room.members.delete(socket.id);
+    for (const [layerId, lock] of room.locks) {
+      if (lock.socketId !== socket.id) continue;
+      room.locks.delete(layerId);
+      io.to(designSocketRoom(code)).emit("design:lock:released", { room: code, layerId, userId: lock.user.id, reason });
+    }
+    if (member) socket.to(designSocketRoom(code)).emit("design:member:left", { room: code, socketId: socket.id, user: member.user, reason, updatedAt: new Date().toISOString() });
+    room.updatedAt = new Date().toISOString();
+    emitDesignPresence(code);
+    if (!room.members.size) {
+      const cleanup = setTimeout(() => {
+        const current = activeDesignRooms.get(code);
+        if (current && !current.members.size) activeDesignRooms.delete(code);
+      }, 5 * 60 * 1000);
+      cleanup.unref?.();
+    }
   };
   const leaveAstraRoom = async (reason = "left") => {
     const code = activeAstraRoom;
@@ -641,6 +774,248 @@ io.on("connection", async (socket) => {
     emitAstraRoom(room.code);
     done({ ok: true, room: publicAstraRoom(room), selfSocketId: socket.id });
   };
+
+  const joinDesignRoom = async (room, done) => {
+    if (!room) return done({ ok: false, error: "Không tìm thấy phòng thiết kế." });
+    if (room.members.size >= MAX_DESIGN_MEMBERS && !room.members.has(socket.id)) return done({ ok: false, error: "Phòng thiết kế đã đủ thành viên." });
+    if (activeDesignRoom && activeDesignRoom !== room.code) await leaveDesignRoom("switched");
+    const identity = designIdentity();
+    if (identity.id === room.ownerId) room.roles.set(identity.id, "owner");
+    const member = {
+      socketId: socket.id,
+      user: identity,
+      cursor: null,
+      selection: { layerIds: [], artboardId: "", bounds: null },
+      joinedAt: new Date().toISOString()
+    };
+    room.members.set(socket.id, member);
+    activeDesignRoom = room.code;
+    room.updatedAt = new Date().toISOString();
+    await socket.join(designSocketRoom(room.code));
+    socket.to(designSocketRoom(room.code)).emit("design:member:joined", { room: room.code, member: publicDesignMember(member, room) });
+    emitDesignPresence(room.code);
+    done({ ok: true, room: publicDesignRoom(room), selfSocketId: socket.id, identity });
+  };
+
+  socket.on("design:room:create", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    try {
+      if (activeDesignRooms.size >= MAX_DESIGN_ROOMS) return done({ ok: false, error: "Máy chủ đã đạt giới hạn phòng thiết kế đang hoạt động." });
+      if (activeDesignRoom) await leaveDesignRoom("recreated");
+      const identity = designIdentity();
+      const code = createDesignCode();
+      const now = new Date().toISOString();
+      const room = {
+        code,
+        name: cleanString(payload.name, 80) || `Thiết kế ${code}`,
+        ownerId: identity.id,
+        roles: new Map([[identity.id, "owner"]]),
+        members: new Map(),
+        comments: [],
+        locks: new Map(),
+        versions: [],
+        branches: [{ id: "main", name: "Main", baseVersionId: "", createdBy: identity, createdAt: now }],
+        reviews: [],
+        createdAt: now,
+        updatedAt: now
+      };
+      activeDesignRooms.set(code, room);
+      await joinDesignRoom(room, done);
+    } catch (error) {
+      done({ ok: false, error: error.message || "Không thể tạo phòng thiết kế." });
+    }
+  });
+
+  socket.on("design:room:join", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    try {
+      await joinDesignRoom(activeDesignRooms.get(designRoomCode(payload.code)), done);
+    } catch (error) {
+      done({ ok: false, error: error.message || "Không thể tham gia phòng thiết kế." });
+    }
+  });
+
+  socket.on("design:room:leave", async (_payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    await leaveDesignRoom("left");
+    done({ ok: true });
+  });
+
+  socket.on("design:cursor", (payload = {}) => {
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const member = room?.members.get(socket.id);
+    if (!room || !member) return;
+    const now = Date.now();
+    if (now - Number(socket.data.lastDesignCursor || 0) < 25) return;
+    socket.data.lastDesignCursor = now;
+    member.cursor = {
+      x: boundedNumber(payload.x),
+      y: boundedNumber(payload.y),
+      artboardId: cleanString(payload.artboardId, 80),
+      color: /^#[0-9a-f]{6}$/i.test(payload.color) ? payload.color : "#6ee7f2",
+      updatedAt: now
+    };
+    socket.to(designSocketRoom(room.code)).volatile.emit("design:cursor", { room: room.code, socketId: socket.id, user: member.user, cursor: member.cursor });
+  });
+
+  socket.on("design:selection", (payload = {}) => {
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const member = room?.members.get(socket.id);
+    if (!room || !member) return;
+    member.selection = sanitizeDesignSelection(payload);
+    socket.to(designSocketRoom(room.code)).volatile.emit("design:selection", { room: room.code, socketId: socket.id, user: member.user, selection: member.selection });
+  });
+
+  socket.on("design:permission:set", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const actor = designIdentity();
+    if (!room || actor.id !== room.ownerId) return done({ ok: false, error: "Chỉ chủ phòng được thay đổi quyền." });
+    const targetUserId = cleanString(payload.userId, 120);
+    const role = cleanString(payload.role, 20).toLowerCase();
+    if (!targetUserId || targetUserId === room.ownerId || !["viewer", "commenter", "editor"].includes(role)) return done({ ok: false, error: "Quyền hoặc thành viên không hợp lệ." });
+    if (![...room.members.values()].some((item) => item.user.id === targetUserId)) return done({ ok: false, error: "Thành viên không có trong phòng." });
+    room.roles.set(targetUserId, role);
+    room.updatedAt = new Date().toISOString();
+    io.to(designSocketRoom(room.code)).emit("design:permission", { room: room.code, userId: targetUserId, role, actor, updatedAt: room.updatedAt });
+    emitDesignPresence(room.code);
+    done({ ok: true, userId: targetUserId, role });
+  });
+
+  socket.on("design:comment:add", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const actor = designIdentity();
+    if (!room || !canDesign(room, actor.id, "commenter")) return done({ ok: false, error: "Bạn cần quyền bình luận." });
+    if (room.comments.length >= MAX_DESIGN_COMMENTS) return done({ ok: false, error: "Phòng đã đạt giới hạn bình luận." });
+    const body = cleanString(payload.body, 2000);
+    if (!body) return done({ ok: false, error: "Nội dung bình luận đang trống." });
+    const comment = {
+      id: randomUUID(), body,
+      x: boundedNumber(payload.x), y: boundedNumber(payload.y),
+      artboardId: cleanString(payload.artboardId, 80), layerId: cleanString(payload.layerId, 80),
+      user: actor, resolved: false, createdAt: new Date().toISOString()
+    };
+    room.comments.push(comment);
+    room.updatedAt = comment.createdAt;
+    io.to(designSocketRoom(room.code)).emit("design:comment:added", { room: room.code, comment });
+    done({ ok: true, comment });
+  });
+
+  socket.on("design:comment:resolve", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const actor = designIdentity();
+    const comment = room?.comments.find((item) => item.id === cleanString(payload.commentId, 80));
+    if (!room || !comment) return done({ ok: false, error: "Không tìm thấy bình luận." });
+    if (comment.user.id !== actor.id && !canDesign(room, actor.id, "editor")) return done({ ok: false, error: "Bạn không có quyền xử lý bình luận này." });
+    comment.resolved = payload.resolved !== false;
+    comment.resolvedBy = actor;
+    comment.resolvedAt = new Date().toISOString();
+    io.to(designSocketRoom(room.code)).emit("design:comment:updated", { room: room.code, comment });
+    done({ ok: true, comment });
+  });
+
+  socket.on("design:lock:acquire", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const actor = designIdentity();
+    if (!room || !canDesign(room, actor.id, "editor")) return done({ ok: false, error: "Bạn cần quyền chỉnh sửa để khóa layer." });
+    pruneDesignLocks(room);
+    const layerId = cleanString(payload.layerId, 80);
+    if (!layerId) return done({ ok: false, error: "Layer không hợp lệ." });
+    const current = room.locks.get(layerId);
+    if (current && current.user.id !== actor.id) return done({ ok: false, error: `Layer đang được ${current.user.name} chỉnh sửa.`, lock: current });
+    if (!current && room.locks.size >= MAX_DESIGN_LOCKS) return done({ ok: false, error: "Phòng đã đạt giới hạn layer đang khóa." });
+    const ttl = boundedNumber(payload.ttl, DESIGN_LOCK_TTL, 5000, DESIGN_LOCK_TTL);
+    const lock = { layerId, socketId: socket.id, user: actor, acquiredAt: Date.now(), expiresAt: Date.now() + ttl };
+    room.locks.set(layerId, lock);
+    io.to(designSocketRoom(room.code)).emit("design:lock:acquired", { room: room.code, lock });
+    const expiry = setTimeout(() => {
+      const liveRoom = activeDesignRooms.get(room.code);
+      const liveLock = liveRoom?.locks.get(layerId);
+      if (!liveLock || liveLock.socketId !== socket.id || liveLock.expiresAt !== lock.expiresAt) return;
+      liveRoom.locks.delete(layerId);
+      io.to(designSocketRoom(room.code)).emit("design:lock:released", { room: room.code, layerId, userId: actor.id, reason: "expired" });
+    }, ttl + 10);
+    expiry.unref?.();
+    done({ ok: true, lock });
+  });
+
+  socket.on("design:lock:release", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const actor = designIdentity();
+    const layerId = cleanString(payload.layerId, 80);
+    const lock = room?.locks.get(layerId);
+    if (!room || !lock) return done({ ok: true, released: false });
+    if (lock.user.id !== actor.id && actor.id !== room.ownerId) return done({ ok: false, error: "Bạn không sở hữu khóa layer này." });
+    room.locks.delete(layerId);
+    io.to(designSocketRoom(room.code)).emit("design:lock:released", { room: room.code, layerId, userId: actor.id, reason: "released" });
+    done({ ok: true, released: true });
+  });
+
+  socket.on("design:version:create", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const actor = designIdentity();
+    if (!room || !canDesign(room, actor.id, "editor")) return done({ ok: false, error: "Bạn cần quyền chỉnh sửa để tạo phiên bản." });
+    const version = {
+      id: randomUUID(), label: cleanString(payload.label, 100) || `Phiên bản ${room.versions.length + 1}`,
+      branchId: cleanString(payload.branchId, 80) || "main", projectHash: cleanString(payload.projectHash, 160),
+      note: cleanString(payload.note, 500), user: actor, createdAt: new Date().toISOString()
+    };
+    room.versions.push(version);
+    if (room.versions.length > 100) room.versions.shift();
+    room.updatedAt = version.createdAt;
+    io.to(designSocketRoom(room.code)).emit("design:version:created", { room: room.code, version });
+    done({ ok: true, version });
+  });
+
+  socket.on("design:branch:create", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const actor = designIdentity();
+    if (!room || !canDesign(room, actor.id, "editor")) return done({ ok: false, error: "Bạn cần quyền chỉnh sửa để tạo nhánh." });
+    if (room.branches.length >= 50) return done({ ok: false, error: "Phòng đã đạt giới hạn nhánh." });
+    const name = cleanString(payload.name, 80);
+    if (!name || room.branches.some((item) => item.name.toLowerCase() === name.toLowerCase())) return done({ ok: false, error: "Tên nhánh trống hoặc đã tồn tại." });
+    const branch = { id: randomUUID(), name, baseVersionId: cleanString(payload.baseVersionId, 80), user: actor, createdAt: new Date().toISOString() };
+    room.branches.push(branch);
+    room.updatedAt = branch.createdAt;
+    io.to(designSocketRoom(room.code)).emit("design:branch:created", { room: room.code, branch });
+    done({ ok: true, branch });
+  });
+
+  socket.on("design:review:create", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const actor = designIdentity();
+    if (!room || !canDesign(room, actor.id, "editor")) return done({ ok: false, error: "Bạn cần quyền chỉnh sửa để yêu cầu duyệt." });
+    if (room.reviews.length >= 100) return done({ ok: false, error: "Phòng đã đạt giới hạn yêu cầu duyệt." });
+    const branchId = cleanString(payload.branchId, 80);
+    if (!room.branches.some((item) => item.id === branchId)) return done({ ok: false, error: "Nhánh không tồn tại." });
+    const review = { id: randomUUID(), branchId, title: cleanString(payload.title, 120) || "Yêu cầu duyệt thiết kế", note: cleanString(payload.note, 500), status: "pending", user: actor, createdAt: new Date().toISOString() };
+    room.reviews.push(review);
+    io.to(designSocketRoom(room.code)).emit("design:review:created", { room: room.code, review });
+    done({ ok: true, review });
+  });
+
+  socket.on("design:review:update", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const room = activeDesignRooms.get(activeDesignRoom);
+    const actor = designIdentity();
+    if (!room || !canDesign(room, actor.id, "owner")) return done({ ok: false, error: "Chỉ chủ phòng được duyệt thiết kế." });
+    const review = room.reviews.find((item) => item.id === cleanString(payload.reviewId, 80));
+    const status = cleanString(payload.status, 20);
+    if (!review || !["approved", "changes_requested", "closed"].includes(status)) return done({ ok: false, error: "Yêu cầu duyệt hoặc trạng thái không hợp lệ." });
+    review.status = status;
+    review.response = cleanString(payload.response, 500);
+    review.reviewedBy = actor;
+    review.reviewedAt = new Date().toISOString();
+    io.to(designSocketRoom(room.code)).emit("design:review:updated", { room: room.code, review });
+    done({ ok: true, review });
+  });
 
   socket.on("astra:room:create", async (payload = {}, callback) => {
     const done = typeof callback === "function" ? callback : () => {};
@@ -954,6 +1329,7 @@ io.on("connection", async (socket) => {
 
   socket.on("disconnect", async () => {
     if (activeMessengerRoom) emitMessengerPresence(activeMessengerRoom).catch(() => {});
+    await leaveDesignRoom("disconnected");
     await leaveAstraRoom("disconnected");
     await Promise.all([...activeCallIds].map((callId) => leaveCall(callId, "disconnected")));
     if (consent || socket.user) {
