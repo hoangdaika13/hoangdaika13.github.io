@@ -1,4 +1,5 @@
 const { clean, setCors } = require("../../utils/platform");
+const youtubePublisherHandler = require("../../utils/youtubePublisher");
 
 const GOOGLE_ENDPOINT = "https://customsearch.googleapis.com/customsearch/v1";
 const VERTEX_SEARCH_ENDPOINT = "https://discoveryengine.googleapis.com/v1";
@@ -388,6 +389,9 @@ async function youtubeResource(req, action) {
 }
 
 module.exports = async function handler(req, res) {
+  if (clean(req.query.provider, 30).toLowerCase() === "youtube-publisher") {
+    return youtubePublisherHandler(req, res);
+  }
   setCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });

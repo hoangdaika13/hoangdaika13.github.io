@@ -9,7 +9,8 @@
     { id: "audio-qa", label: "Kiểm âm", icon: "04" },
     { id: "chapters", label: "Tracklist & chapter", icon: "05" },
     { id: "youtube-pack", label: "Gói YouTube", icon: "06" },
-    { id: "publish-checklist", label: "Kiểm tra xuất bản", icon: "07" }
+    { id: "youtube-publisher", label: "Đăng YouTube", icon: "07" },
+    { id: "publish-checklist", label: "Kiểm tra xuất bản", icon: "08" }
   ];
 
   const PRESETS = {
@@ -469,7 +470,7 @@
     const p = state.project;
     const math = projectMath();
     const preset = PRESETS[p.genre] || PRESETS.piano;
-    const steps = VIEWS.slice(1).map((item, index) => `<button class="mai-flow-card" type="button" data-app-route="/music-ai/${item.id}"><i>${String(index + 2).padStart(2, "0")}</i><span><strong>${item.label}</strong><small>${["Tạo một bộ prompt cùng ngôn ngữ hình ảnh và âm thanh.", "Tính loop và xuất lệnh FFmpeg dùng ngay.", "Đọc file thật, đo peak/RMS và phát hiện clipping.", "Tạo timestamp đúng chuẩn chapter YouTube.", "Sinh tiêu đề, mô tả, tag và file metadata.", "Chốt quyền sử dụng và QA trước khi public."][index]}</small></span><b>→</b></button>`).join("");
+    const steps = VIEWS.slice(1).map((item, index) => `<button class="mai-flow-card" type="button" data-app-route="/music-ai/${item.id}"><i>${String(index + 2).padStart(2, "0")}</i><span><strong>${item.label}</strong><small>${["Tạo một bộ prompt cùng ngôn ngữ hình ảnh và âm thanh.", "Tính loop và xuất lệnh FFmpeg dùng ngay.", "Đọc file thật, đo peak/RMS và phát hiện clipping.", "Tạo timestamp đúng chuẩn chapter YouTube.", "Sinh tiêu đề, mô tả, tag và file metadata.", "Chọn video, lên lịch và upload thẳng lên kênh bằng OAuth.", "Chốt quyền sử dụng và QA trước khi public."][index]}</small></span><b>→</b></button>`).join("");
     return `<section class="mai-view">
       ${automationView()}
       <div class="mai-section-head"><div><p>PROJECT BLUEPRINT</p><h3>Thiết lập một lần, dùng cho cả dây chuyền</h3><span>Mọi prompt, phép tính loop và nội dung xuất bản tự cập nhật theo dự án này.</span></div><button class="mai-primary" type="button" data-action="save-project">Lưu dự án</button></div>
@@ -596,8 +597,12 @@
         <article class="mai-panel mai-output mai-output--wide"><header><strong>Mô tả + chapter</strong><button type="button" data-copy-youtube="description">Sao chép</button></header><textarea rows="17" readonly data-youtube-output="description">${escapeHtml(pack.description)}</textarea></article>
         <article class="mai-panel mai-output mai-output--wide"><header><strong>Tags</strong><button type="button" data-copy-youtube="tags">Sao chép</button></header><textarea rows="4" readonly data-youtube-output="tags">${escapeHtml(pack.tags)}</textarea></article>
       </div>
-      <section class="mai-panel mai-export-spec"><div><p>RECOMMENDED EXPORT</p><h4>${state.project.resolution} · ${state.project.fps} FPS · 16:9</h4><span>MP4 · H.264 progressive · AAC stereo 48 kHz · Fast Start</span></div><div class="mai-metrics">${cardMetric(`${math.videoMbps} Mbps`, "Video SDR")}${cardMetric("384 kbps", "Audio stereo")}${cardMetric(`~${math.outputGb.toFixed(1)} GB`, "Kích thước")}</div><a href="https://studio.youtube.com/" target="_blank" rel="noreferrer">Mở YouTube Studio ↗</a></section>
+      <section class="mai-panel mai-export-spec"><div><p>RECOMMENDED EXPORT</p><h4>${state.project.resolution} · ${state.project.fps} FPS · 16:9</h4><span>MP4 · H.264 progressive · AAC stereo 48 kHz · Fast Start</span></div><div class="mai-metrics">${cardMetric(`${math.videoMbps} Mbps`, "Video SDR")}${cardMetric("384 kbps", "Audio stereo")}${cardMetric(`~${math.outputGb.toFixed(1)} GB`, "Kích thước")}</div><button class="mai-primary" type="button" data-app-route="/music-ai/youtube-publisher">Đăng tự động →</button></section>
     </section>`;
+  }
+
+  function youtubePublisherView() {
+    return `<section class="mai-view mai-view--youtube-publisher"><div data-youtube-publisher-host></div></section>`;
   }
 
   function publishView() {
@@ -619,9 +624,17 @@
       "audio-qa": qaView,
       chapters: chaptersView,
       "youtube-pack": youtubeView,
+      "youtube-publisher": youtubePublisherView,
       "publish-checklist": publishView
     }[view] || projectView)();
     host.innerHTML = `<div class="music-ai-studio">${headerHtml()}<main>${content}</main><div class="mai-toast" data-mai-toast role="status" aria-live="polite"></div></div>`;
+    if (view === "youtube-publisher") {
+      window.HHYouTubePublisher?.mount?.(host.querySelector("[data-youtube-publisher-host]"), {
+        apiBase: apiBase(),
+        pack: youtubePack(),
+        project: state.project
+      });
+    }
     if (view === "audio-qa" && state.qa?.waveform) requestAnimationFrame(drawWaveform);
   }
 
@@ -1159,6 +1172,7 @@
   }
 
   function unmount() {
+    window.HHYouTubePublisher?.unmount?.();
     controller?.abort();
     controller = null;
     audioContext?.close?.();

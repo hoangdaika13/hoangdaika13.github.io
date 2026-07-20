@@ -91,7 +91,7 @@ test("Music AI ships YouTube-safe defaults and no fake LUFS claim", () => {
 test("Music AI assets are loaded by the page and offline worker", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["music-ai-studio.css?v=3", "music-ai-studio.js?v=3", "script.js?v=98", "app-shell.css?v=45"]) {
+  for (const asset of ["music-ai-studio.css?v=4", "music-ai-studio.js?v=4", "youtube-publisher.css?v=1", "youtube-publisher.js?v=1", "script.js?v=99", "app-shell.css?v=45"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

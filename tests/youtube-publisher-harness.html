@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>YouTube Publisher visual harness</title>
+  <link rel="stylesheet" href="../youtube-publisher.css?v=1">
+  <style>html,body{margin:0;min-height:100%;background:#050a10;color:#eef8fb;font-family:Inter,system-ui,sans-serif}main{padding:20px}</style>
+</head>
+<body>
+  <main data-youtube-publisher-host></main>
+  <script src="../youtube-publisher.js?v=1"></script>
+  <script>
+    HHYouTubePublisher.mount(document.querySelector("[data-youtube-publisher-host]"), {
+      apiBase: location.origin,
+      project: { name: "Midnight Piano", genre: "piano", hours: 3 },
+      pack: {
+        title: "Midnight Piano for Deep Sleep & Focus",
+        description: "Ba giờ piano nhẹ nhàng cho giấc ngủ sâu, học tập và thư giãn.",
+        tags: "relaxing piano, sleep music, focus music, midnight piano"
+      }
+    });
+  </script>
+</body>
+</html>
