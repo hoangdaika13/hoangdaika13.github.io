@@ -5141,8 +5141,10 @@ function initAppShell() {
       route: "/graphic-design",
       items: [],
       pages: [
+        { id: "quick-motion", title: "Motion Maker", route: "/graphic-design/quick-motion" },
         { id: "animation", title: "Animation 2D", route: "/graphic-design/animation" },
         { id: "3d", title: "3D Scene Studio", route: "/graphic-design/3d" },
+        { id: "mockup", title: "3D Device Mockup", route: "/graphic-design/mockup" },
         { id: "prototype", title: "UI/UX Prototype", route: "/graphic-design/prototype" },
         { id: "motion", title: "Motion & Video", route: "/graphic-design/motion" },
         { id: "character", title: "Character Lab", route: "/graphic-design/character" }
@@ -5376,7 +5378,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", animation: "Animation 2D", "3d": "3D Scene Studio", prototype: "UI/UX Prototype", motion: "Motion & Video", character: "Character Lab", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", "quick-motion": "Motion Maker", animation: "Animation 2D", "3d": "3D Scene Studio", mockup: "3D Device Mockup", prototype: "UI/UX Prototype", motion: "Motion & Video", character: "Character Lab", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIPageItems];
     let crumbRoute = "";
     breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Trang chủ</button>` : [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => {
@@ -5496,8 +5498,8 @@ function initAppShell() {
       window.HHMediaDesignPage?.mount(mediaHost, { toolId: parts[1] || "" });
     } else if (route === "/graphic-design" || route.startsWith("/graphic-design/")) {
       const graphicView = parts[1] || "overview";
-      const graphicTitle = ({ animation: "Animation 2D", "3d": "3D Scene Studio", prototype: "UI/UX Prototype", motion: "Motion & Video", character: "Character Lab" })[graphicView] || "Thiết kế đồ họa";
-      updatePageHeader(graphicTitle, "Animation tương tác, 3D, prototype UI/UX, motion video và character trong một studio thống nhất.", route);
+      const graphicTitle = ({ "quick-motion": "Motion Maker", animation: "Animation 2D", "3d": "3D Scene Studio", mockup: "3D Device Mockup", prototype: "UI/UX Prototype", motion: "Motion & Video", character: "Character Lab" })[graphicView] || "Thiết kế đồ họa";
+      updatePageHeader(graphicTitle, "Thiết kế nhanh, animation tương tác, 3D, mockup, prototype UI/UX, motion video và nhân vật trong một studio thống nhất.", route);
       workspace.innerHTML = '<div data-graphic-design-host></div>';
       if (window.HHGraphicDesign?.mount) window.HHGraphicDesign.mount(workspace.firstElementChild, { view: graphicView });
       else mountSimpleView("Thiết kế đồ họa", "Đang tải Graphic Design Studio...", "");
