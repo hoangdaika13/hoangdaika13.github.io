@@ -2,6 +2,14 @@
 
 @layer legacy, tokens, base, layout, components, pages, modules, responsive, accessibility;
 
+@layer components {
+  .app-runtime-error{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:14px;align-items:center;padding:18px;border:1px solid color-mix(in srgb,var(--route-accent,#56eaff) 42%,#ff5f85);border-radius:8px;background:linear-gradient(135deg,rgba(255,95,133,.09),rgba(86,234,255,.055));box-shadow:inset 0 1px rgba(255,255,255,.04)}
+  .app-runtime-error>span{display:grid;place-items:center;width:42px;height:42px;border:1px solid #ff718f;border-radius:7px;color:#ff8ba3;font-size:1.15rem;font-weight:900}
+  .app-runtime-error>div{display:grid;gap:5px;min-width:0}.app-runtime-error strong{color:#f7fbff}.app-runtime-error p{margin:0;color:#b9c3cf;line-height:1.55}.app-runtime-error small{color:#778494;font-size:.68rem}
+  .app-runtime-error>div:last-child{display:flex;grid-auto-flow:column;gap:8px}.app-runtime-error button{min-height:38px;padding:0 13px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:#121a24;color:#eaf9ff;font:inherit;font-size:.72rem;font-weight:800;cursor:pointer}.app-runtime-error button:first-child{border-color:#58dce7;background:#15313a}
+  @media(max-width:720px){.app-runtime-error{grid-template-columns:42px minmax(0,1fr)}.app-runtime-error>div:last-child{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}}
+}
+
 @layer tokens {
   :root {
     --app-bg: #070a12;

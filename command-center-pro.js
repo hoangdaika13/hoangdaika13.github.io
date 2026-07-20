@@ -11,9 +11,48 @@
     pomodoro: "hh.command-center.pomodoro.v1",
     theme: "hh.command-center.theme.v1",
     quote: "hh.command-center.quote.v1",
-    news: "hh.command-center.news.v1"
+    news: "hh.command-center.news.v1",
+    layout: "hh.command-center.layout.v3",
+    preset: "hh.command-center.preset.v1"
   };
+  const NOTES_KEY = "hh.dashboard.sticky-notes.v1";
   const themes = ["dark", "light", "cyberpunk", "ocean", "aurora", "emerald", "purple", "sunset", "neon", "glass"];
+  const widgetSizes = ["small", "medium", "large"];
+  const widgetCatalog = [
+    ["google", "Google Hub", "medium"], ["ai", "AI Assistant", "medium"],
+    ["todo", "Todo Workspace", "medium"], ["calendar", "Calendar", "medium"],
+    ["server", "Server Status", "small"], ["activity", "Recent Activity", "small"],
+    ["projects", "Projects", "small"], ["launch", "Quick Launch", "medium"],
+    ["bookmarks", "Bookmarks", "medium"], ["files", "Recent Files", "small"],
+    ["pomodoro", "Pomodoro", "small"], ["music", "Music Focus", "small"],
+    ["news", "Technology Feed", "large"]
+  ];
+  const layoutPresets = {
+    focus: {
+      label: "Tập trung",
+      icon: "◎",
+      widgets: ["todo", "pomodoro", "calendar", "projects", "activity"],
+      sizes: { todo: "large", pomodoro: "small", calendar: "medium", projects: "medium", activity: "small" }
+    },
+    creative: {
+      label: "Sáng tạo",
+      icon: "✦",
+      widgets: ["ai", "google", "music", "launch", "bookmarks", "news"],
+      sizes: { ai: "medium", google: "medium", music: "small", launch: "medium", bookmarks: "medium", news: "large" }
+    },
+    manage: {
+      label: "Quản lý",
+      icon: "▦",
+      widgets: ["projects", "todo", "calendar", "server", "activity", "files"],
+      sizes: { projects: "medium", todo: "medium", calendar: "medium", server: "small", activity: "small", files: "small" }
+    },
+    learn: {
+      label: "Học tập",
+      icon: "◇",
+      widgets: ["google", "ai", "pomodoro", "bookmarks", "news"],
+      sizes: { google: "medium", ai: "medium", pomodoro: "small", bookmarks: "medium", news: "large" }
+    }
+  };
   const quotes = [
     "Mỗi bản phát hành tốt bắt đầu từ một thay đổi nhỏ nhưng rõ mục tiêu.",
     "Đơn giản không phải ít tính năng; đó là mọi thứ đều có đúng vị trí.",
@@ -62,7 +101,8 @@
     pomodoroSeconds: 25 * 60,
     pomodoroMode: "focus",
     github: null,
-    statHistory: Array.from({ length: 8 }, () => [])
+    statHistory: Array.from({ length: 8 }, () => []),
+    layoutDragId: ""
   };
 
   const byId = (id) => document.getElementById(id);
@@ -144,6 +184,156 @@
     if (!read(KEYS.files, null)) write(KEYS.files, []);
   }
 
+  function defaultLayout() {
+    return widgetCatalog.map(([id, label, size], order) => ({ id, label, size, order, pinned: false, hidden: false }));
+  }
+
+  function normalizeLayout(raw) {
+    const source = Array.isArray(raw) ? raw : Array.isArray(raw?.widgets) ? raw.widgets : [];
+    const saved = new Map(source.filter((item) => item && typeof item.id === "string").map((item) => [item.id, item]));
+    return defaultLayout().map((fallback) => {
+      const item = saved.get(fallback.id) || {};
+      return {
+        ...fallback,
+        size: widgetSizes.includes(item.size) ? item.size : fallback.size,
+        order: Number.isFinite(Number(item.order)) ? Number(item.order) : fallback.order,
+        pinned: Boolean(item.pinned),
+        hidden: Boolean(item.hidden)
+      };
+    }).sort((a, b) => a.order - b.order).map((item, order) => ({ ...item, order }));
+  }
+
+  function readLayout() {
+    return normalizeLayout(read(KEYS.layout, null));
+  }
+
+  function announceLayout(message) {
+    const live = byId("ccLayoutStatus");
+    if (live) live.textContent = message;
+  }
+
+  function layoutToolbarMarkup() {
+    return `<section class="cc-layout-toolbar cc-reveal" aria-label="Bố cục Command Center">
+      <div class="cc-layout-toolbar__intro"><span>WORKSPACE</span><strong>Bố cục linh hoạt</strong><small>Kéo widget, đổi kích thước hoặc dùng preset.</small></div>
+      <nav class="cc-layout-presets" aria-label="Preset bố cục">${Object.entries(layoutPresets).map(([id, preset]) => `<button type="button" data-layout-preset="${id}" aria-pressed="false"><i aria-hidden="true">${preset.icon}</i><span>${preset.label}</span></button>`).join("")}</nav>
+      <details class="cc-layout-library" data-layout-menu>
+        <summary><span>Tùy chỉnh widget</span><b id="ccHiddenWidgetCount">0 ẩn</b></summary>
+        <div class="cc-layout-library__panel">
+          <header><div><strong>Thư viện widget</strong><small>Hiện lại, đặt lại hoặc xuất bố cục.</small></div><div><button type="button" data-layout-show-all>Hiện tất cả</button><button type="button" data-layout-reset>Đặt lại</button></div></header>
+          <div id="ccWidgetLibrary" class="cc-widget-library"></div>
+        </div>
+      </details>
+      <span class="cc-sr-only" id="ccLayoutStatus" aria-live="polite"></span>
+    </section>`;
+  }
+
+  function installWidgetControls() {
+    root()?.querySelectorAll("[data-cc-widget]").forEach((widget) => {
+      const id = widget.dataset.ccWidget;
+      const header = widget.querySelector(":scope > header");
+      if (!header || header.querySelector("[data-widget-controls]")) return;
+      widget.setAttribute("aria-label", `${widgetCatalog.find((item) => item[0] === id)?.[1] || id} widget`);
+      const controls = document.createElement("div");
+      controls.className = "cc-widget-controls";
+      controls.dataset.widgetControls = id;
+      controls.setAttribute("role", "toolbar");
+      controls.setAttribute("aria-label", `Điều khiển widget ${id}`);
+      controls.innerHTML = `<button type="button" draggable="true" data-widget-drag="${id}" title="Kéo để sắp xếp" aria-label="Kéo hoặc dùng phím mũi tên để di chuyển" aria-grabbed="false">↕</button><button type="button" data-widget-pin="${id}" title="Ghim widget" aria-label="Ghim widget">◇</button><button type="button" data-widget-size="${id}" title="Đổi kích thước" aria-label="Đổi kích thước widget">M</button><button type="button" data-widget-hide="${id}" title="Ẩn widget" aria-label="Ẩn widget">×</button>`;
+      header.append(controls);
+    });
+  }
+
+  function renderWidgetLibrary(layout) {
+    const library = byId("ccWidgetLibrary");
+    if (!library) return;
+    const sorted = [...layout].sort((a, b) => Number(b.hidden) - Number(a.hidden) || a.order - b.order);
+    library.innerHTML = sorted.map((item) => `<button type="button" data-widget-visibility="${item.id}" aria-pressed="${!item.hidden}"><i aria-hidden="true">${item.hidden ? "+" : "✓"}</i><span><strong>${escapeHtml(item.label)}</strong><small>${item.hidden ? "Đang ẩn · bấm để hiện" : `${item.pinned ? "Đã ghim · " : ""}${item.size}`}</small></span></button>`).join("");
+    const count = layout.filter((item) => item.hidden).length;
+    if (byId("ccHiddenWidgetCount")) byId("ccHiddenWidgetCount").textContent = `${count} ẩn`;
+  }
+
+  function applyLayout(layout = readLayout(), { persist = false, announce = "" } = {}) {
+    const normalized = normalizeLayout(layout);
+    if (persist) write(KEYS.layout, normalized);
+    const grid = root()?.querySelector(".cc-grid");
+    if (!grid) return normalized;
+    [...normalized].sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.order - b.order).forEach((item) => {
+      const widget = grid.querySelector(`[data-cc-widget="${CSS.escape(item.id)}"]`);
+      if (!widget) return;
+      widget.hidden = item.hidden;
+      widget.dataset.widgetSize = item.size;
+      widget.classList.toggle("is-pinned", item.pinned);
+      widget.setAttribute("aria-hidden", String(item.hidden));
+      grid.append(widget);
+      const pin = widget.querySelector("[data-widget-pin]");
+      const size = widget.querySelector("[data-widget-size]");
+      if (pin) { pin.textContent = item.pinned ? "◆" : "◇"; pin.setAttribute("aria-pressed", String(item.pinned)); pin.title = item.pinned ? "Bỏ ghim widget" : "Ghim widget"; }
+      if (size) { size.textContent = item.size === "small" ? "S" : item.size === "large" ? "L" : "M"; size.dataset.currentSize = item.size; }
+    });
+    const activePreset = read(KEYS.preset, "custom");
+    root()?.querySelectorAll("[data-layout-preset]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.layoutPreset === activePreset)));
+    renderWidgetLibrary(normalized);
+    if (announce) announceLayout(announce);
+    return normalized;
+  }
+
+  function saveCustomLayout(layout, message) {
+    write(KEYS.preset, "custom");
+    return applyLayout(layout, { persist: true, announce: message });
+  }
+
+  function applyPreset(id) {
+    const preset = layoutPresets[id];
+    if (!preset) return;
+    const rank = new Map(preset.widgets.map((widget, index) => [widget, index]));
+    const layout = defaultLayout().map((item) => ({
+      ...item,
+      order: rank.has(item.id) ? rank.get(item.id) : preset.widgets.length + item.order,
+      size: preset.sizes[item.id] || item.size,
+      pinned: false,
+      hidden: !rank.has(item.id)
+    }));
+    write(KEYS.preset, id);
+    applyLayout(layout, { persist: true, announce: `Đã áp dụng preset ${preset.label}.` });
+    logActivity(`Đã áp dụng bố cục ${preset.label}`, preset.icon, "#5ce8f2");
+    toast("Đã đổi bố cục", `Preset ${preset.label} đã sẵn sàng.`, preset.icon);
+  }
+
+  function updateWidget(id, updater, message) {
+    const layout = readLayout();
+    const item = layout.find((entry) => entry.id === id);
+    if (!item) return;
+    updater(item, layout);
+    saveCustomLayout(layout, message);
+  }
+
+  function moveWidget(id, direction) {
+    const layout = readLayout().sort((a, b) => a.order - b.order);
+    const index = layout.findIndex((item) => item.id === id);
+    const target = clamp(index + direction, 0, layout.length - 1);
+    if (index < 0 || index === target) return;
+    const targetPinned = layout[target].pinned;
+    const [moved] = layout.splice(index, 1);
+    moved.pinned = targetPinned;
+    layout.splice(target, 0, moved);
+    layout.forEach((item, order) => { item.order = order; });
+    saveCustomLayout(layout, `Đã chuyển ${moved.label} sang vị trí ${target + 1}.`);
+    root()?.querySelector(`[data-widget-drag="${CSS.escape(id)}"]`)?.focus();
+  }
+
+  function reorderWidgets(sourceId, targetId) {
+    const layout = readLayout().sort((a, b) => a.order - b.order);
+    const from = layout.findIndex((item) => item.id === sourceId);
+    const to = layout.findIndex((item) => item.id === targetId);
+    if (from < 0 || to < 0 || from === to) return;
+    const targetPinned = layout[to].pinned;
+    const [moved] = layout.splice(from, 1);
+    moved.pinned = targetPinned;
+    layout.splice(to, 0, moved);
+    layout.forEach((item, order) => { item.order = order; });
+    saveCustomLayout(layout, `Đã đặt ${moved.label} ở vị trí ${to + 1}.`);
+  }
+
   function mountHero() {
     const hero = document.querySelector(".dashboard-hero-pro");
     if (!hero || hero.querySelector(".cc-hero-profile")) return;
@@ -189,6 +379,7 @@
     const googleApps = quickApps.map((app) => `<a class="cc-app" href="${app[2]}" target="_blank" rel="noopener" style="--app-a:${app[3]};--app-b:${app[4]}" title="Mở ${app[0]}"><i>${app[1]}</i><span>${app[0]}</span></a>`).join("");
     const launch = launchApps.map((app, index) => `<a class="cc-app" href="${app[2]}" target="_blank" rel="noopener" style="--app-a:${index % 3 === 0 ? "#5ce8f2" : index % 3 === 1 ? "#ff63c8" : "#b8ff62"};--app-b:#8f83ff"><i>${app[1]}</i><span>${app[0]}</span></a>`).join("");
     return `
+      ${layoutToolbarMarkup()}
       <section class="cc-stats" aria-label="Chỉ số nhanh">
         ${statCard("CPU", "C", "ccCpu", "ccCpuMeta", "#5ce8f2", 0)}
         ${statCard("RAM", "R", "ccRam", "ccRamMeta", "#ff63c8", 1)}
@@ -584,6 +775,49 @@
     toast("Đã đổi giao diện", document.body.dataset.dashboardTheme, "◐");
   }
 
+  async function createTaskFromCommand() {
+    const title = await requestText({ title: "Tạo công việc nhanh", message: "Công việc được thêm vào Todo Workspace và lưu trên thiết bị.", placeholder: "Việc cần hoàn thành..." });
+    if (!title) return false;
+    const items = read(KEYS.todos, []);
+    items.unshift({ id: uid("todo"), title, priority: "medium", category: "Command", deadline: new Date().toISOString().slice(0, 10), reminder: "", repeat: "none", completed: false, reminded: false, createdAt: Date.now() });
+    write(KEYS.todos, items);
+    renderTodos();
+    renderCalendar();
+    updateHeroProgress();
+    updateStats();
+    logActivity(`Đã tạo nhanh công việc: ${title}`, "+", "#5ce8f2");
+    toast("Đã tạo công việc", title, "+");
+    return true;
+  }
+
+  async function addNoteFromCommand() {
+    const text = await requestText({ title: "Thêm ghi chú nhanh", message: "Ghi chú được đưa vào Sticky Notes trên trang chủ.", placeholder: "Ý tưởng, thông tin cần nhớ..." });
+    if (!text) return false;
+    const notes = read(NOTES_KEY, []);
+    const colors = ["#fff17a", "#75f2d0", "#ff91d9", "#9cb8ff", "#ffb56f", "#c8ff78"];
+    notes.push({ id: uid("note"), text, color: colors[notes.length % colors.length], x: 24 + (notes.length * 37) % 420, y: 26 + (notes.length * 31) % 120, rotate: (notes.length % 3 - 1) * .8, pinned: false, tags: "command-center", reminder: "", preview: false, updatedAt: Date.now() });
+    write(NOTES_KEY, notes.slice(-30));
+    window.dispatchEvent(new CustomEvent("hh:command-center-sync"));
+    logActivity(`Đã thêm ghi chú nhanh: ${text.slice(0, 54)}`, "N", "#ff63c8");
+    toast("Đã thêm ghi chú", "Mở khu vực Sticky Notes để chỉnh sửa.", "N");
+    return true;
+  }
+
+  function exportCommandCenterData() {
+    const data = Object.fromEntries(Object.entries(KEYS).map(([name, key]) => [name, read(key, null)]));
+    const payload = { schema: "hh-command-center-export", version: 3, exportedAt: new Date().toISOString(), data, stickyNotes: read(NOTES_KEY, []) };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `hh-command-center-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 0);
+    logActivity("Đã xuất dữ liệu Command Center", "⇩", "#b8ff62");
+    toast("Đã xuất dữ liệu", "Tệp JSON đã được tải về máy.", "⇩");
+  }
+
   function wireReveal() {
     if (!("IntersectionObserver" in window)) {
       document.querySelectorAll(".cc-reveal").forEach((node) => node.classList.add("is-visible"));
@@ -629,6 +863,26 @@
     }
     if (event.target.closest("[data-dashboard-language]")) return toast("Ngôn ngữ", "Giao diện hiện dùng tiếng Việt. Mở Cài đặt để quản lý i18n.", "VI");
     if (event.target.closest("[data-dashboard-shortcuts]")) return toast("Phím tắt", "Ctrl K: tìm kiếm · Esc: đóng · Enter: mở mục đang chọn.", "⌘");
+
+    const preset = event.target.closest("[data-layout-preset]");
+    if (preset) return applyPreset(preset.dataset.layoutPreset);
+    if (event.target.closest("[data-layout-show-all]")) {
+      const layout = readLayout().map((item) => ({ ...item, hidden: false }));
+      return saveCustomLayout(layout, "Đã hiện tất cả widget.");
+    }
+    if (event.target.closest("[data-layout-reset]")) {
+      write(KEYS.preset, "custom");
+      applyLayout(defaultLayout(), { persist: true, announce: "Đã khôi phục bố cục mặc định." });
+      return toast("Đã đặt lại bố cục", "Tất cả widget trở về vị trí mặc định.", "↺");
+    }
+    const visibility = event.target.closest("[data-widget-visibility]");
+    if (visibility) return updateWidget(visibility.dataset.widgetVisibility, (item) => { item.hidden = !item.hidden; }, `${visibility.getAttribute("aria-pressed") === "true" ? "Đã ẩn" : "Đã hiện"} widget.`);
+    const pin = event.target.closest("[data-widget-pin]");
+    if (pin) return updateWidget(pin.dataset.widgetPin, (item) => { item.pinned = !item.pinned; }, pin.getAttribute("aria-pressed") === "true" ? "Đã bỏ ghim widget." : "Đã ghim widget lên đầu.");
+    const size = event.target.closest("[data-widget-size]");
+    if (size) return updateWidget(size.dataset.widgetSize, (item) => { item.size = widgetSizes[(widgetSizes.indexOf(item.size) + 1) % widgetSizes.length]; }, "Đã đổi kích thước widget.");
+    const hide = event.target.closest("[data-widget-hide]");
+    if (hide) return updateWidget(hide.dataset.widgetHide, (item) => { item.hidden = true; }, "Đã ẩn widget. Có thể hiện lại trong Tùy chỉnh widget.");
 
     const ai = event.target.closest("[data-ai-action]");
     if (ai) return handleAi(ai.dataset.aiAction);
@@ -750,18 +1004,77 @@
     });
   }
 
+  function wireWidgetLayout() {
+    const host = root();
+    if (!host) return;
+    host.addEventListener("dragstart", (event) => {
+      const handle = event.target.closest("[data-widget-drag]");
+      if (!handle) return;
+      state.layoutDragId = handle.dataset.widgetDrag;
+      handle.setAttribute("aria-grabbed", "true");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", state.layoutDragId);
+      handle.closest("[data-cc-widget]")?.classList.add("is-widget-dragging");
+    });
+    host.addEventListener("dragover", (event) => {
+      const target = event.target.closest("[data-cc-widget]");
+      if (!state.layoutDragId || !target || target.dataset.ccWidget === state.layoutDragId) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      host.querySelectorAll(".is-widget-drop-target").forEach((node) => node.classList.remove("is-widget-drop-target"));
+      target.classList.add("is-widget-drop-target");
+    });
+    host.addEventListener("drop", (event) => {
+      const target = event.target.closest("[data-cc-widget]");
+      if (!state.layoutDragId || !target) return;
+      event.preventDefault();
+      reorderWidgets(state.layoutDragId, target.dataset.ccWidget);
+      state.layoutDragId = "";
+      host.querySelectorAll("[data-widget-drag]").forEach((handle) => handle.setAttribute("aria-grabbed", "false"));
+      host.querySelectorAll(".is-widget-dragging,.is-widget-drop-target").forEach((node) => node.classList.remove("is-widget-dragging", "is-widget-drop-target"));
+    });
+    host.addEventListener("dragend", () => {
+      state.layoutDragId = "";
+      host.querySelectorAll("[data-widget-drag]").forEach((handle) => handle.setAttribute("aria-grabbed", "false"));
+      host.querySelectorAll(".is-widget-dragging,.is-widget-drop-target").forEach((node) => node.classList.remove("is-widget-dragging", "is-widget-drop-target"));
+    });
+    host.addEventListener("keydown", (event) => {
+      const handle = event.target.closest("[data-widget-drag]");
+      if (!handle || !["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const direction = event.key === "Home" ? -999 : event.key === "End" ? 999 : ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1;
+      moveWidget(handle.dataset.widgetDrag, direction);
+    });
+  }
+
   function enhanceCommandPalette() {
     window.HHCommandCenter = {
       searchItems: () => [
+        ["Tạo công việc", "Thêm task nhanh vào Todo Workspace", "cc:create-task"],
+        ["Thêm ghi chú", "Tạo Sticky Note mới trên trang chủ", "cc:add-note"],
+        ["Đổi giao diện", "Chuyển sang theme Command Center tiếp theo", "cc:cycle-theme"],
+        ["Xuất dữ liệu", "Tải task, lịch, bookmark, layout và ghi chú", "cc:export"],
+        ["Mở Project Center", "Đi đến không gian quản lý dự án", "route:/work/project-center"],
         ["Todo", "Thêm và quản lý công việc", "todo"], ["Lịch", "Xem lịch và deadline", "calendar"],
         ["Server Status", "Kiểm tra dịch vụ", "server"], ["Pomodoro", "Bắt đầu phiên tập trung", "pomodoro"],
         ["Bookmarks", "Mở website đã ghim", "bookmarks"], ["Recent Files", "Xem tệp gần đây", "files"],
         ["Quick Launch", "Mở ứng dụng nhanh", "launch"], ["Tin công nghệ", "Đọc feed mới", "news"]
-      ].map(([title, description, widget]) => ({ type: "Command Center", title, description, key: `${title} ${description}`, action: `focus:${widget}` })),
-      runAction(action) {
-        if (!action.startsWith("focus:")) return;
-        location.hash = "#/home";
-        setTimeout(() => document.querySelector(`[data-cc-widget="${CSS.escape(action.slice(6))}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+      ].map(([title, description, target]) => ({ type: "Command Center", title, description, key: `${title} ${description}`, action: target.includes(":") ? target : `focus:${target}` })),
+      async runAction(action) {
+        if (action === "cc:create-task") return createTaskFromCommand();
+        if (action === "cc:add-note") return addNoteFromCommand();
+        if (action === "cc:cycle-theme") return cycleTheme();
+        if (action === "cc:export") return exportCommandCenterData();
+        if (action.startsWith("route:")) { location.hash = `#${action.slice(6)}`; return; }
+        if (action.startsWith("focus:")) {
+          location.hash = "#/home";
+          setTimeout(() => {
+            const id = action.slice(6);
+            const item = readLayout().find((entry) => entry.id === id);
+            if (item?.hidden) updateWidget(id, (widget) => { widget.hidden = false; }, `Đã hiện ${item.label}.`);
+            document.querySelector(`[data-cc-widget="${CSS.escape(id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 120);
+        }
       }
     };
   }
@@ -771,11 +1084,14 @@
     state.initialized = true;
     ensureDefaults();
     root().innerHTML = markup();
+    installWidgetControls();
+    applyLayout(readLayout(), { persist: true });
     mountHero();
     installThemeUi();
     wireReveal();
     wireMouseLight();
     wireDragging();
+    wireWidgetLayout();
     enhanceCommandPalette();
     document.addEventListener("click", handleClick);
     document.addEventListener("submit", handleSubmit);

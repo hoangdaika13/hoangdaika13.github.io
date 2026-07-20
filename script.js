@@ -5188,7 +5188,7 @@ function initAppShell() {
     }
     shell.hidden = !unlocked;
     document.body.classList.toggle("app-shell-enabled", unlocked);
-    if (unlocked) renderRoute();
+    if (unlocked) renderRouteSafely();
   };
   const setUser = () => {
     const name = userName();
@@ -5541,6 +5541,53 @@ function initAppShell() {
     legacyMain.hidden = true;
     renderedRoute = route;
   };
+  const runtimeIssueKey = "hh.runtime.issues.v1";
+  const readRuntimeIssues = () => {
+    try { return JSON.parse(localStorage.getItem(runtimeIssueKey) || "[]"); } catch { return []; }
+  };
+  const rememberRuntimeIssue = (error, context = "runtime") => {
+    const issue = {
+      id: `issue-${Date.now()}`,
+      context,
+      route: routeFromHash(),
+      message: String(error?.message || error || "Lỗi không xác định").slice(0, 500),
+      name: String(error?.name || "Error").slice(0, 80),
+      time: new Date().toISOString()
+    };
+    try { localStorage.setItem(runtimeIssueKey, JSON.stringify([issue, ...readRuntimeIssues()].slice(0, 20))); } catch {}
+    window.dispatchEvent(new CustomEvent("hh:runtime-issue", { detail: issue }));
+    console.error(`[HH Platform:${context}]`, error);
+    return issue;
+  };
+  const renderRouteFailure = (error) => {
+    const issue = rememberRuntimeIssue(error, "route-render");
+    activeRoute = routeFromHash();
+    updatePageHeader("Không thể mở workspace", "HH Platform đã giữ phần còn lại của ứng dụng hoạt động.", activeRoute);
+    mountSimpleView("Workspace gặp lỗi", "Bạn có thể thử tải lại module hoặc trở về Command Center.", `<section class="app-runtime-error" role="alert"><span>!</span><div><strong>${escapeHtml(issue.name)}</strong><p>${escapeHtml(issue.message)}</p><small>Mã: ${escapeHtml(issue.id)} · Không lưu nội dung riêng tư.</small></div><div><button type="button" data-shell-retry-route>Thử lại</button><button type="button" data-app-route="/home">Về Command Center</button></div></section>`);
+    legacyMain.hidden = true;
+    renderedRoute = activeRoute;
+  };
+  const renderRouteSafely = () => {
+    try { renderRoute(); return true; }
+    catch (error) { renderRouteFailure(error); return false; }
+  };
+  const isExpectedRuntimeCancellation = (error) => {
+    const name = String(error?.name || "");
+    const message = String(error?.message || error || "");
+    return name === "AbortError" || /transition was skipped|operation was aborted|request was cancelled/i.test(message);
+  };
+  window.HHRuntimeDiagnostics = Object.freeze({
+    list: () => readRuntimeIssues().map((item) => ({ ...item })),
+    clear: () => localStorage.removeItem(runtimeIssueKey)
+  });
+  window.addEventListener("error", (event) => rememberRuntimeIssue(event.error || event.message, "window-error"));
+  window.addEventListener("unhandledrejection", (event) => {
+    if (isExpectedRuntimeCancellation(event.reason)) {
+      event.preventDefault?.();
+      return;
+    }
+    rememberRuntimeIssue(event.reason, "unhandled-rejection");
+  });
   const renderRouteWithTransition = () => {
     if (!isUnlocked()) return;
     const nextRoute = routeFromHash();
@@ -5548,12 +5595,12 @@ function initAppShell() {
     beginRouteFeedback(nextRoute);
     routeTransition?.skipTransition?.();
     if (!canTransition) {
-      renderRoute();
+      renderRouteSafely();
       requestAnimationFrame(endRouteFeedback);
       return;
     }
     document.documentElement.dataset.routeDirection = nextRoute.split("/").length >= renderedRoute.split("/").length ? "forward" : "back";
-    routeTransition = document.startViewTransition(() => renderRoute());
+    routeTransition = document.startViewTransition(() => renderRouteSafely());
     Promise.resolve(routeTransition.finished).catch(() => {}).finally(() => {
       routeTransition = null;
       delete document.documentElement.dataset.routeDirection;
@@ -5692,6 +5739,12 @@ function initAppShell() {
       else location.hash = "#/home";
       return;
     }
+    if (event.target.closest("[data-shell-retry-route]")) {
+      beginRouteFeedback(routeFromHash());
+      renderRouteSafely();
+      requestAnimationFrame(endRouteFeedback);
+      return;
+    }
     const musicSectionToggle = event.target.closest("[data-music-section]");
     if (musicSectionToggle) {
       const section = musicSectionToggle.dataset.musicSection;
@@ -5825,10 +5878,10 @@ function initAppShell() {
   window.addEventListener("hashchange", renderRouteWithTransition);
   window.addEventListener("hh:modules-ready", () => {
     renderNavigation();
-    renderRoute();
+    renderRouteSafely();
   });
-  window.addEventListener("hh:developer-tools-ready", renderRoute);
-  window.addEventListener("hh:space-explorer-ready", renderRoute);
+  window.addEventListener("hh:developer-tools-ready", renderRouteSafely);
+  window.addEventListener("hh:space-explorer-ready", renderRouteSafely);
   window.addEventListener("hh:auth-change", () => { setShellVisibility(); setUser(); });
   const initial = stored();
   const syncResponsiveSidebar = (isMobile = mobileSidebarQuery.matches) => {
