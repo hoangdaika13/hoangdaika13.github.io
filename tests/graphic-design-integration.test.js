@@ -10,7 +10,7 @@ test("Graphic Design is a first-class application section", () => {
   const html = read("index.html");
   const client = read("script.js");
   const worker = read("sw.js");
-  for (const asset of ["graphic-design-studio.css?v=4", "graphic-design-animation.js?v=1", "graphic-design-3d.js?v=2", "graphic-design-prototype.js?v=1", "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1", "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=1", "graphic-design-state-machine.js?v=1", "graphic-design-adaptive.js?v=1", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=1", "graphic-design-dev-ai.js?v=1", "graphic-design-composer.js?v=2", "graphic-design-studio.js?v=4"]) {
+  for (const asset of ["graphic-design-studio.css?v=5", "graphic-design-animation.js?v=1", "graphic-design-3d.js?v=2", "graphic-design-prototype.js?v=1", "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1", "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=1", "graphic-design-state-machine.js?v=1", "graphic-design-adaptive.js?v=1", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=1", "graphic-design-dev-ai.js?v=1", "graphic-design-composer.js?v=2", "graphic-design-studio.js?v=5"]) {
     assert.match(html, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }

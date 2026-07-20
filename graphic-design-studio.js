@@ -9,18 +9,29 @@
   const VIEWS = [
     { id: "overview", label: "Tổng quan", icon: "◇", description: "Dự án, template và tài nguyên" },
     { id: "vector", label: "Vector Core", icon: "⌁", description: "Bezier, shape, mask và timeline" },
+    { id: "nondestructive", label: "Non-destructive", icon: "◐", description: "Smart Object, filter và modifier stack" },
+    { id: "typography", label: "Typography Pro", icon: "T", description: "Variable font, OpenType và text path" },
+    { id: "effects", label: "Node Effects", icon: "⌬", description: "Node graph, mask, blend và preview" },
     { id: "quick-motion", label: "Motion Maker", icon: "✺", description: "Logo, loader và social motion" },
     { id: "animation", label: "Animation 2D", icon: "✦", description: "Timeline, keyframe và State Machine" },
     { id: "state-machine", label: "Interaction Graph", icon: "⌬", description: "State, transition và data binding" },
     { id: "3d", label: "3D Scene", icon: "◈", description: "Scene, vật thể, camera và ánh sáng" },
     { id: "mockup", label: "3D Mockup", icon: "▱", description: "Thiết bị, phối cảnh và camera orbit" },
-    { id: "character", label: "Character Lab", icon: "◉", description: "Puppet, IK, lip-sync và motion" },
+    { id: "character", label: "Character Creator 3.0", icon: "◉", description: "Mesh, facial rig, lip-sync và motion" },
+    { id: "simulation", label: "Simulation Lab", icon: "≈", description: "Particle, physics, cloth và rope" },
     { id: "prototype", label: "UI/UX Prototype", icon: "⌘", description: "Frame, flow, gesture và component" },
     { id: "motion", label: "Motion & Video", icon: "▶", description: "Text motion, timeline và export" },
     { id: "adaptive", label: "Adaptive Design", icon: "▦", description: "Một thiết kế, nhiều biến thể" },
+    { id: "data", label: "Data-driven", icon: "⇆", description: "CSV, JSON, binding và batch design" },
+    { id: "components", label: "Components", icon: "◫", description: "Master, instance, override và variant" },
+    { id: "color", label: "Color Pipeline", icon: "◉", description: "LAB, OKLCH, LUT và soft proof" },
     { id: "projects", label: "Project Vault", icon: "▣", description: "Version, snapshot, asset và branch" },
     { id: "collaboration", label: "Live Collaboration", icon: "◎", description: "Presence, comment và phân quyền" },
+    { id: "review", label: "Review & Approval", icon: "✓", description: "Comment, diff, duyệt và chia sẻ" },
     { id: "dev-ai", label: "Dev & AI", icon: "{}", description: "Handoff, token và AI có kiểm soát" },
+    { id: "export", label: "Export Center", icon: "⇩", description: "Batch export, preset và preflight" },
+    { id: "plugins", label: "Plugin SDK", icon: "⌘", description: "Extension sandbox, manifest và marketplace" },
+    { id: "performance", label: "Performance", icon: "◴", description: "Renderer, FPS, memory và proxy asset" },
     { id: "composer", label: "Scene Composer", icon: "⬡", description: "2D, 3D, nhân vật và âm thanh" }
   ];
 
@@ -38,7 +49,17 @@
     { id: "campaign", title: "Adaptive campaign", kind: "Đa nền tảng", size: "7 artboard", view: "adaptive", icon: "▦", accent: "#70f2ce", detail: "Một master design cho post, story, thumbnail và banner." },
     { id: "scene-composer", title: "Anime 3D scene", kind: "Scene Composer", size: "1920 × 1080", view: "composer", icon: "⬡", accent: "#a98cff", detail: "Nhân vật, scene 3D, thoại, UI và trigger trong một timeline." },
     { id: "presentation", title: "Presentation", kind: "Trình bày", size: "1920 × 1080", view: "prototype", icon: "▰", accent: "#9cf59f", detail: "Slide thuyết trình với hệ thống style nhất quán." },
-    { id: "brand", title: "Brand motion", kind: "Thương hiệu", size: "Đa kích thước", view: "quick-motion", icon: "✺", accent: "#f59cff", detail: "Logo motion, màu thương hiệu và token chuyển động." }
+    { id: "brand", title: "Brand motion", kind: "Thương hiệu", size: "Đa kích thước", view: "quick-motion", icon: "✺", accent: "#f59cff", detail: "Logo motion, màu thương hiệu và token chuyển động." },
+    { id: "smart-edit", title: "Smart photo edit", kind: "Chỉnh sửa", size: "Không phá hủy", view: "nondestructive", icon: "◐", accent: "#ff77c8", detail: "Smart Object, adjustment layer, mask và filter có thể chỉnh lại." },
+    { id: "type-system", title: "Variable type system", kind: "Typography", size: "OpenType", view: "typography", icon: "T", accent: "#ffd36a", detail: "Variable font, style dùng lại và text chạy theo đường cong." },
+    { id: "node-fx", title: "Realtime node effects", kind: "Hiệu ứng", size: "Node graph", view: "effects", icon: "⌬", accent: "#73e9ff", detail: "Blur, glow, distortion, mask và blend trong graph trực quan." },
+    { id: "simulation", title: "Particle simulation", kind: "Mô phỏng", size: "Canvas realtime", view: "simulation", icon: "≈", accent: "#a8f27a", detail: "Tuyết, mưa, pháo hoa, physics và constraint nhẹ." },
+    { id: "data-campaign", title: "Data campaign", kind: "Tự động hóa", size: "CSV · JSON", view: "data", icon: "⇆", accent: "#8fc7ff", detail: "Sinh hàng loạt banner và thẻ từ dữ liệu có kiểm tra schema." },
+    { id: "component-library", title: "Component library", kind: "Design System", size: "Variants", view: "components", icon: "◫", accent: "#c99cff", detail: "Master, instance, override và variant nhiều theme, ngôn ngữ." },
+    { id: "color-grade", title: "Color grade", kind: "Màu sắc", size: "LAB · OKLCH · LUT", view: "color", icon: "◉", accent: "#ff9d70", detail: "Harmony, gamut, contrast, soft proof và LUT cho ảnh/video." },
+    { id: "review-flow", title: "Approval flow", kind: "Cộng tác", size: "Review link", view: "review", icon: "✓", accent: "#7ff0c8", detail: "Comment ghim, so sánh phiên bản và trạng thái duyệt." },
+    { id: "export-pack", title: "Campaign export", kind: "Xuất bản", size: "1x · 2x · 3x", view: "export", icon: "⇩", accent: "#72dbff", detail: "Batch artboard, watermark, naming rule và preflight." },
+    { id: "performance-audit", title: "Performance audit", kind: "Hệ thống", size: "FPS · Memory", view: "performance", icon: "◴", accent: "#b8f26c", detail: "Theo dõi renderer, draw call, proxy asset và ngân sách hiệu năng." }
   ];
 
   const DEFAULT_STATE = {
@@ -71,6 +92,21 @@
 
   let activeRoot = null;
   let objectUrls = [];
+  const engineLoads = new Map();
+  const PRO_ENGINES = Object.freeze({
+    nondestructive: { selector: "[data-graphic-nondestructive]", api: "HHGraphicNondestructive", source: "graphic-design-nondestructive.js?v=1" },
+    typography: { selector: "[data-graphic-typography-pro]", api: "HHGraphicTypographyPro", source: "graphic-design-typography-pro.js?v=1" },
+    effects: { selector: "[data-graphic-node-effects]", api: "HHGraphicNodeEffects", source: "graphic-design-node-effects.js?v=1" },
+    character: { selector: "[data-graphic-character-pro]", api: "HHGraphicCharacterPro", source: "graphic-design-character-pro.js?v=1" },
+    simulation: { selector: "[data-graphic-simulation]", api: "HHGraphicSimulation", source: "graphic-design-simulation.js?v=1" },
+    data: { selector: "[data-graphic-data-driven]", api: "HHGraphicDataDriven", source: "graphic-design-data-driven.js?v=1" },
+    components: { selector: "[data-graphic-components]", api: "HHGraphicComponents", source: "graphic-design-components.js?v=1" },
+    color: { selector: "[data-graphic-color-pro]", api: "HHGraphicColorPro", source: "graphic-design-color-pro.js?v=1" },
+    export: { selector: "[data-graphic-export-center]", api: "HHGraphicExportCenter", source: "graphic-design-export-center.js?v=1" },
+    plugins: { selector: "[data-graphic-plugins]", api: "HHGraphicPlugins", source: "graphic-design-plugins.js?v=1" },
+    review: { selector: "[data-graphic-review]", api: "HHGraphicReview", source: "graphic-design-review.js?v=1" },
+    performance: { selector: "[data-graphic-performance]", api: "HHGraphicPerformance", source: "graphic-design-performance.js?v=1" }
+  });
 
   const escapeHTML = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -131,6 +167,41 @@
     else target.innerHTML = `<div class="gd-engine-unavailable"><strong>Engine đang chờ tải</strong><p>Làm mới trang để khởi động workspace này.</p></div>`;
   }
 
+  function loadEngine(config) {
+    if (globalThis[config.api]?.mount) return Promise.resolve(globalThis[config.api]);
+    if (engineLoads.has(config.source)) return engineLoads.get(config.source);
+    const pending = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = config.source;
+      script.async = true;
+      script.dataset.gdEngineSource = config.source;
+      script.addEventListener("load", () => globalThis[config.api]?.mount
+        ? resolve(globalThis[config.api])
+        : reject(new Error(`Module ${config.api} không cung cấp mount API.`)), { once: true });
+      script.addEventListener("error", () => reject(new Error(`Không tải được ${config.source}.`)), { once: true });
+      document.head.appendChild(script);
+    }).catch((error) => {
+      engineLoads.delete(config.source);
+      throw error;
+    });
+    engineLoads.set(config.source, pending);
+    return pending;
+  }
+
+  function mountProEngine(root, view, options = {}) {
+    const config = PRO_ENGINES[view];
+    const target = config ? root.querySelector(config.selector) : null;
+    if (!config || !target) return;
+    target.innerHTML = `<div class="gd-engine-unavailable" role="status"><strong>Đang khởi động ${escapeHTML(viewLabel(view))}</strong><p>Engine được tải theo nhu cầu để giữ HH Platform nhẹ và mượt.</p></div>`;
+    loadEngine(config).then((api) => {
+      if (root !== activeRoot || !target.isConnected) return;
+      api.mount(target, options);
+    }).catch((error) => {
+      if (!target.isConnected) return;
+      target.innerHTML = `<div class="gd-engine-unavailable" role="alert"><strong>Không thể mở engine</strong><p>${escapeHTML(error.message)}</p><button type="button" data-gd-retry-engine="${escapeHTML(view)}">Thử lại</button></div>`;
+    });
+  }
+
   function hero(view, state) {
     const complete = Math.round((state.checklist.filter((item) => item.done).length / Math.max(1, state.checklist.length)) * 100);
     const actions = view === "overview"
@@ -147,7 +218,7 @@
           <h2>${view === "overview" ? "Thiết kế đồ họa" : escapeHTML(viewLabel(view))}</h2>
           <p>${view === "overview" ? "Từ ý tưởng đến animation, 3D, prototype, motion video và nhân vật trong một quy trình thống nhất, dễ bắt đầu." : "Không gian biên tập chuyên sâu, tự lưu trên thiết bị và có thể xuất dự án để tiếp tục ở lần sau."}</p>
           <div class="gd-hero-actions">${actions}</div>
-          <div class="gd-hero-meta"><span><i></i>Local autosave</span><span>⌘ Ctrl K · tìm studio</span><span>${state.projects.length} dự án · ${complete}% checklist</span></div>
+          <div class="gd-hero-meta"><span><i></i>Local autosave</span><span>${VIEWS.length - 1} workspace chuyên dụng</span><span>⌘ Ctrl K · tìm studio</span><span>${state.projects.length} dự án · ${complete}% checklist</span></div>
         </div>
         <div class="gd-hero-preview" aria-label="Bản xem trước hệ thống thiết kế">
           <div class="gd-preview-bar"><span></span><span></span><span></span><b>HH Canvas</b><em>100%</em></div>
@@ -243,21 +314,33 @@
   function studioCard(item) {
     const meta = {
       vector: ["SVG · BEZIER · MOTION PATH", "Pen, shape, mask, blend, smart guide và timeline nhiều track"],
+      nondestructive: ["SMART OBJECT · FILTER · MASK", "Adjustment layer, modifier stack và chỉnh sửa không phá hủy"],
+      typography: ["VARIABLE FONT · OPENTYPE · TEXT PATH", "Kerning, ligature, style dùng lại và kiểm tra font"],
+      effects: ["NODE GRAPH · MASK · BLEND", "Blur, glow, distortion và preset hiệu ứng realtime"],
       "quick-motion": ["JITTER · LOTTIE · SVGATOR", "Logo động, loading, social post và xuất SVG/CSS chạy thật"],
       animation: ["RIVE · LOTTIE · SVGATOR", "Data binding, easing, keyframe và state machine"],
       "state-machine": ["RIVE · DOTLOTTIE · WEB COMPONENT", "Node graph, transition, event, binding và simulator"],
       "3d": ["SPLINE · VECTARY · BLENDER", "Scene graph, vật liệu, ánh sáng, camera và interaction"],
       mockup: ["ROTATO · SPLINE · VECTARY", "Phone, tablet, laptop, phối cảnh, scene và orbit camera"],
       character: ["CHARACTER ANIMATOR · LIVE2D · SPINE", "Rig xương, IK, pose, biểu cảm, blink, viseme và timeline"],
+      simulation: ["PARTICLE · PHYSICS · CONSTRAINT", "Mưa, tuyết, pháo hoa, rope, cloth và chuyển động vật lý"],
       prototype: ["FIGMA · PENPOT · FRAMER", "Frame, component, variable, hotspot và responsive preview"],
       motion: ["JITTER · CANVA · VEED", "Layer, track, preset, marker và cấu hình xuất video"],
       adaptive: ["CANVA · ADOBE EXPRESS · BRAND KIT", "Master design, smart crop, safe zone và artboard đồng bộ"],
+      data: ["CSV · JSON · DATA BINDING", "Sinh banner, thẻ và thumbnail hàng loạt từ dữ liệu có schema"],
+      components: ["MASTER · INSTANCE · VARIANT", "Component liên kết, override và biến thể theo theme, ngôn ngữ"],
+      color: ["LAB · OKLCH · LUT · WCAG", "Color harmony, soft proof, gamut warning và pipeline màu chuyên nghiệp"],
       projects: ["INDEXEDDB · VERSION · ASSET MANAGER", "Snapshot, diff, branch, review và gói .hhdesign"],
       collaboration: ["SOCKET.IO · PRESENCE · REVIEW", "Con trỏ, comment, layer lock, quyền và phiên cộng tác"],
+      review: ["COMMENT · DIFF · APPROVAL", "Bình luận ghim, so sánh phiên bản và quy trình duyệt có audit"],
       "dev-ai": ["FIGMA DEV MODE · DESIGN QA", "Inspect, token, handoff, accessibility và AI tạo bản nháp"],
+      export: ["BATCH · PREFLIGHT · PRESET", "Xuất nhiều artboard, watermark, naming rule và kiểm tra trước xuất"],
+      plugins: ["MANIFEST · SANDBOX · MARKETPLACE", "Cài extension, preset và asset pack trong vùng chạy an toàn"],
+      performance: ["WEBGPU · FPS · PROXY", "Theo dõi renderer, bộ nhớ, draw call và ngân sách asset"],
       composer: ["HH UNIVERSAL SCENE", "Ghép vector, character, 3D, UI, audio và interaction"]
     }[item.id];
-    return `<article class="gd-overview-card gd-overview-card--${escapeHTML(item.id)}"><span>${item.icon}</span><div><small>${meta[0]}</small><h3>${escapeHTML(item.label)}</h3><p>${meta[1]}.</p><ul><li>Autosave</li><li>Undo/redo</li><li>Import/export</li></ul></div><button type="button" data-gd-route="${escapeHTML(item.id)}">Mở studio <b>→</b></button></article>`;
+    const details = meta || ["HH CREATIVE WORKSPACE", item.description || "Công cụ thiết kế chuyên sâu"];
+    return `<article class="gd-overview-card gd-overview-card--${escapeHTML(item.id)}"><span>${item.icon}</span><div><small>${details[0]}</small><h3>${escapeHTML(item.label)}</h3><p>${details[1]}.</p><ul><li>Autosave</li><li>Undo/redo</li><li>Import/export</li></ul></div><button type="button" data-gd-route="${escapeHTML(item.id)}">Mở studio <b>→</b></button></article>`;
   }
 
   function renderProjects(projects, query = "") {
@@ -295,18 +378,29 @@
   function focusedContent(view) {
     const selectors = {
       vector: "data-graphic-vector-core",
+      nondestructive: "data-graphic-nondestructive",
+      typography: "data-graphic-typography-pro",
+      effects: "data-graphic-node-effects",
       "quick-motion": "data-graphic-quick-motion",
       animation: "data-graphic-animation",
       "state-machine": "data-graphic-state-machine",
       "3d": "data-graphic-3d",
       mockup: "data-graphic-mockup",
-      character: "data-graphic-character",
+      character: "data-graphic-character-pro data-graphic-character",
+      simulation: "data-graphic-simulation",
       prototype: "data-graphic-prototype",
       motion: "data-graphic-motion",
       adaptive: "data-graphic-adaptive",
+      data: "data-graphic-data-driven",
+      components: "data-graphic-components",
+      color: "data-graphic-color-pro",
       projects: "data-graphic-project-store",
       collaboration: "data-graphic-collaboration",
+      review: "data-graphic-review",
       "dev-ai": "data-graphic-dev-ai",
+      export: "data-graphic-export-center",
+      plugins: "data-graphic-plugins",
+      performance: "data-graphic-performance",
       composer: "data-graphic-composer"
     };
     return `<section class="gd-focused-workspace" data-gd-focused="${escapeHTML(view)}"><div ${selectors[view] || selectors.animation}></div></section>`;
@@ -524,14 +618,16 @@
       root.addEventListener("click", (event) => {
         const routeButton = event.target.closest("[data-gd-route]");
         if (routeButton) location.hash = `#${routeFor(normalizeView(routeButton.dataset.gdRoute))}`;
+        const retryButton = event.target.closest("[data-gd-retry-engine]");
+        if (retryButton) mountProEngine(root, normalizeView(retryButton.dataset.gdRetryEngine), options);
       });
-      if (view === "vector") mountChild(root, "[data-graphic-vector-core]", globalThis.HHGraphicVectorCore, options);
+      if (PRO_ENGINES[view]) mountProEngine(root, view, options);
+      else if (view === "vector") mountChild(root, "[data-graphic-vector-core]", globalThis.HHGraphicVectorCore, options);
       else if (view === "quick-motion") mountChild(root, "[data-graphic-quick-motion]", globalThis.HHGraphicQuickMotion, options);
       else if (view === "animation") mountChild(root, "[data-graphic-animation]", globalThis.HHGraphicAnimation);
       else if (view === "state-machine") mountChild(root, "[data-graphic-state-machine]", globalThis.HHGraphicStateMachine, options);
       else if (view === "3d") mountChild(root, "[data-graphic-3d]", globalThis.HHGraphic3D);
       else if (view === "mockup") mountChild(root, "[data-graphic-mockup]", globalThis.HHGraphicMockup);
-      else if (view === "character") mountChild(root, "[data-graphic-character]", globalThis.HHGraphicCharacter);
       else if (view === "prototype") mountChild(root, "[data-graphic-prototype]", globalThis.HHGraphicPrototype);
       else if (view === "motion") mountChild(root, "[data-graphic-motion]", globalThis.HHGraphicMotion);
       else if (view === "adaptive") mountChild(root, "[data-graphic-adaptive]", globalThis.HHGraphicAdaptive, options);
@@ -544,18 +640,30 @@
 
   function unmount() {
     globalThis.HHGraphicVectorCore?.unmount?.(activeRoot?.querySelector("[data-graphic-vector-core]"));
+    globalThis.HHGraphicNondestructive?.unmount?.(activeRoot?.querySelector("[data-graphic-nondestructive]"));
+    globalThis.HHGraphicTypographyPro?.unmount?.(activeRoot?.querySelector("[data-graphic-typography-pro]"));
+    globalThis.HHGraphicNodeEffects?.unmount?.(activeRoot?.querySelector("[data-graphic-node-effects]"));
     globalThis.HHGraphicQuickMotion?.unmount?.(activeRoot?.querySelector("[data-graphic-quick-motion]"));
     globalThis.HHGraphicAnimation?.unmount?.();
     globalThis.HHGraphicStateMachine?.unmount?.(activeRoot?.querySelector("[data-graphic-state-machine]"));
     globalThis.HHGraphic3D?.unmount?.(activeRoot?.querySelector("[data-graphic-3d]"));
     globalThis.HHGraphicMockup?.unmount?.(activeRoot?.querySelector("[data-graphic-mockup]"));
-    globalThis.HHGraphicCharacter?.unmount?.(activeRoot?.querySelector("[data-graphic-character]"));
+    globalThis.HHGraphicCharacterPro?.unmount?.(activeRoot?.querySelector("[data-graphic-character-pro]"));
+    globalThis.HHGraphicCharacter?.unmount?.(activeRoot?.querySelector("[data-graphic-character-pro]"));
+    globalThis.HHGraphicSimulation?.unmount?.(activeRoot?.querySelector("[data-graphic-simulation]"));
     globalThis.HHGraphicPrototype?.unmount?.();
     globalThis.HHGraphicMotion?.unmount?.();
     globalThis.HHGraphicAdaptive?.unmount?.(activeRoot?.querySelector("[data-graphic-adaptive]"));
+    globalThis.HHGraphicDataDriven?.unmount?.(activeRoot?.querySelector("[data-graphic-data-driven]"));
+    globalThis.HHGraphicComponents?.unmount?.(activeRoot?.querySelector("[data-graphic-components]"));
+    globalThis.HHGraphicColorPro?.unmount?.(activeRoot?.querySelector("[data-graphic-color-pro]"));
     globalThis.HHGraphicProjectStore?.unmount?.(activeRoot?.querySelector("[data-graphic-project-store]"));
     globalThis.HHGraphicCollaboration?.unmount?.(activeRoot?.querySelector("[data-graphic-collaboration]"));
+    globalThis.HHGraphicReview?.unmount?.(activeRoot?.querySelector("[data-graphic-review]"));
     globalThis.HHGraphicDevAI?.unmount?.(activeRoot?.querySelector("[data-graphic-dev-ai]"));
+    globalThis.HHGraphicExportCenter?.unmount?.(activeRoot?.querySelector("[data-graphic-export-center]"));
+    globalThis.HHGraphicPlugins?.unmount?.(activeRoot?.querySelector("[data-graphic-plugins]"));
+    globalThis.HHGraphicPerformance?.unmount?.(activeRoot?.querySelector("[data-graphic-performance]"));
     globalThis.HHGraphicComposer?.unmount?.(activeRoot?.querySelector("[data-graphic-composer]"));
     objectUrls.forEach((url) => URL.revokeObjectURL(url));
     objectUrls = [];

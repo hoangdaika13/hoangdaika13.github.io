@@ -5142,18 +5142,29 @@ function initAppShell() {
       items: [],
       pages: [
         { id: "vector", title: "Vector & Motion Core", route: "/graphic-design/vector" },
+        { id: "nondestructive", title: "Non-destructive Editing", route: "/graphic-design/nondestructive" },
+        { id: "typography", title: "Typography Studio Pro", route: "/graphic-design/typography" },
+        { id: "effects", title: "Node Effects Composer", route: "/graphic-design/effects" },
         { id: "quick-motion", title: "Motion Maker", route: "/graphic-design/quick-motion" },
         { id: "animation", title: "Animation 2D", route: "/graphic-design/animation" },
         { id: "state-machine", title: "State Machine & Data Binding", route: "/graphic-design/state-machine" },
         { id: "3d", title: "3D Scene Studio", route: "/graphic-design/3d" },
         { id: "mockup", title: "3D Device Mockup", route: "/graphic-design/mockup" },
-        { id: "character", title: "Character Creator 2.0", route: "/graphic-design/character" },
+        { id: "character", title: "Character Creator 3.0", route: "/graphic-design/character" },
+        { id: "simulation", title: "Simulation Lab", route: "/graphic-design/simulation" },
         { id: "prototype", title: "UI/UX Prototype", route: "/graphic-design/prototype" },
         { id: "motion", title: "Motion & Video", route: "/graphic-design/motion" },
         { id: "adaptive", title: "Adaptive Design", route: "/graphic-design/adaptive" },
+        { id: "data", title: "Data-driven Design", route: "/graphic-design/data" },
+        { id: "components", title: "Component & Variant System", route: "/graphic-design/components" },
+        { id: "color", title: "Professional Color Pipeline", route: "/graphic-design/color" },
         { id: "projects", title: "Project & Version Vault", route: "/graphic-design/projects" },
         { id: "collaboration", title: "Live Collaboration", route: "/graphic-design/collaboration" },
+        { id: "review", title: "Review & Approval", route: "/graphic-design/review" },
         { id: "dev-ai", title: "Dev Mode & Controlled AI", route: "/graphic-design/dev-ai" },
+        { id: "export", title: "Export Center Pro", route: "/graphic-design/export" },
+        { id: "plugins", title: "Plugin & Extension SDK", route: "/graphic-design/plugins" },
+        { id: "performance", title: "Performance Workspace", route: "/graphic-design/performance" },
         { id: "composer", title: "Universal Scene Composer", route: "/graphic-design/composer" }
       ]
     },
@@ -5505,7 +5516,7 @@ function initAppShell() {
       window.HHMediaDesignPage?.mount(mediaHost, { toolId: parts[1] || "" });
     } else if (route === "/graphic-design" || route.startsWith("/graphic-design/")) {
       const graphicView = parts[1] || "overview";
-      const graphicTitle = ({ vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer" })[graphicView] || "Thiết kế đồ họa";
+      const graphicTitle = ({ vector: "Vector & Motion Core", nondestructive: "Non-destructive Editing", typography: "Typography Studio Pro", effects: "Node Effects Composer", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 3.0", simulation: "Simulation Lab", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", data: "Data-driven Design", components: "Component & Variant System", color: "Professional Color Pipeline", projects: "Project & Version Vault", collaboration: "Live Collaboration", review: "Review & Approval", "dev-ai": "Dev Mode & Controlled AI", export: "Export Center Pro", plugins: "Plugin & Extension SDK", performance: "Performance Workspace", composer: "Universal Scene Composer" })[graphicView] || "Thiết kế đồ họa";
       updatePageHeader(graphicTitle, "Thiết kế nhanh, animation tương tác, 3D, mockup, prototype UI/UX, motion video và nhân vật trong một studio thống nhất.", route);
       workspace.innerHTML = '<div data-graphic-design-host></div>';
       if (window.HHGraphicDesign?.mount) window.HHGraphicDesign.mount(workspace.firstElementChild, { view: graphicView, apiBase: REALTIME_URL, socketUrl: SOCKET_URL });
