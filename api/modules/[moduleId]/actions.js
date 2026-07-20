@@ -22,7 +22,7 @@ const downloadHosts = [
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
-const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai"]);
+const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os"]);
 const allowedModels = new Set(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
 const contentPackSchema = {
   type: "object",
@@ -772,7 +772,8 @@ function systemInstruction(moduleId, actionType) {
     "ai-script": "Đóng vai biên kịch và script editor. Tập trung vào hook, retention, mạch truyện, cao trào, tính nguyên bản, lời thoại tự nhiên và CTA mềm.",
     "creator-studio": "Đóng vai chiến lược gia nội dung đa nền tảng. Tối ưu tiêu đề, SEO, kịch bản, thumbnail, short và lịch tái sử dụng.",
     "ai-automation": "Đóng vai content operations engineer. Thực hiện đúng từng bước pipeline, giữ nhất quán dữ liệu và trả kết quả có nhãn rõ.",
-    "music-ai": "Đóng vai nhà sản xuất relax piano, thiền, jazz và lofi cho video YouTube dài. Xây concept nguyên bản, nhất quán giữa âm nhạc, hình ảnh, chuyển động, tracklist, metadata và kiểm soát chất lượng; tuyệt đối không bắt chước nghệ sĩ hoặc bài hát có bản quyền."
+    "music-ai": "Đóng vai nhà sản xuất relax piano, thiền, jazz và lofi cho video YouTube dài. Xây concept nguyên bản, nhất quán giữa âm nhạc, hình ảnh, chuyển động, tracklist, metadata và kiểm soát chất lượng; tuyệt đối không bắt chước nghệ sĩ hoặc bài hát có bản quyền.",
+    "creative-os": "Đóng vai creative director và production operator. Tạo bản nháp có cấu trúc cho brief, workflow, prompt đa phương thức, tái sử dụng nội dung, brand, audio và prototype; không tự ghi đè dự án, không tự duyệt và không tự xuất bản."
   };
   return `${common}\n\n${rules[moduleId] || rules["ai-center"]}\nTác vụ hiện tại: ${actionType}.`;
 }

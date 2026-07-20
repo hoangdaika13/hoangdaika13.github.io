@@ -44,7 +44,7 @@ test("navigation uses immediate positioning and calm assets are cache-busted", (
   assert.match(client, /sidebar\.scrollTo\(\{ top: 0, behavior: "auto" \}\)/);
   assert.match(client, /activeItem\.scrollIntoView\(\{ block: "nearest", behavior: "auto" \}\)/);
   assert.match(english, /heading\?\.scrollIntoView\?\.\(\{ behavior: "auto", block: "start" \}\)/);
-for (const asset of ["motion-comfort.css?v=1", "script.js?v=111", "english-learning.js?v=13", "auth-experience.js?v=4"]) {
+for (const asset of ["motion-comfort.css?v=1", "script.js?v=112", "english-learning.js?v=13", "auth-experience.js?v=4"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

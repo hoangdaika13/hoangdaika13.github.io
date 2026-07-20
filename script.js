@@ -4497,7 +4497,11 @@ function creativeAnonymousId() {
 async function creativeAIRequest(moduleId, input, actionType, meta = {}, options = {}) {
   const base = String(window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
   const token = localStorage.getItem("hh-auth-token") || "";
-  const cacheSeed = `${moduleId}|${actionType}|${meta.model || ""}|${input}`;
+  let cacheInput = String(input ?? "");
+  if (input && typeof input === "object") {
+    try { cacheInput = JSON.stringify(input); } catch { cacheInput = "[unserializable-input]"; }
+  }
+  const cacheSeed = `${moduleId}|${actionType}|${meta.model || ""}|${cacheInput}`;
   const cacheHash = [...cacheSeed].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0);
   const cacheKey = `hh-creative-ai-cache:${cacheHash}`;
   if (meta.useCache) {
@@ -5073,12 +5077,38 @@ function initAppShell() {
     { id: "meme", icon: "▰", title: "Meme Maker", group: "Xuất bản" }
   ];
   const creativeStudioItems = [
+    { id: "overview", icon: "CC", title: "Creative Command Center", group: "Điều hành", description: "Dự án, deadline, chi phí, lịch và tiến độ" },
+    { id: "project", icon: "UP", title: "Universal Project", group: "Điều hành", description: "Brief, prompt, script, media và phiên bản dùng chung" },
     { id: "ai-center", icon: "AI", title: "AI Center", group: "AI & Kịch bản", description: "Chat, prompt, phân tích và workflow AI" },
     { id: "ai-script", icon: "KS", title: "Kịch bản AI", group: "AI & Kịch bản", description: "Viết, phân tích, dịch, batch và quản lý series" },
+    { id: "brief", icon: "BR", title: "Creative Brief", group: "Tiền kỳ", description: "Mục tiêu, đối tượng và kế hoạch nội dung" },
+    { id: "moodboard", icon: "MB", title: "Moodboard", group: "Tiền kỳ", description: "Concept board kéo thả đa phương tiện" },
+    { id: "storyboard", icon: "SB", title: "Storyboard", group: "Tiền kỳ", description: "Cảnh, shot, thoại và animatic" },
+    { id: "world-bible", icon: "WB", title: "World Bible", group: "Tiền kỳ", description: "Nhân vật, địa điểm và tính nhất quán" },
     { id: "creator-studio", icon: "CS", title: "Creator Studio", group: "Sản xuất nội dung", description: "Gói nội dung đa nền tảng và nghiên cứu xu hướng" },
     { id: "media-center", icon: "MC", title: "Media Center", group: "Sản xuất nội dung", description: "Thư viện, Google và YouTube discovery" },
-    { id: "ai-automation", icon: "AU", title: "AI Automation", group: "Tự động hóa", description: "Pipeline sản xuất, preset và lịch sử chạy" }
+    { id: "workflow", icon: "WF", title: "Creative Workflow", group: "AI & Workflow", description: "Pipeline node, cache và approval gate" },
+    { id: "ai-director", icon: "AD", title: "AI Director", group: "AI & Workflow", description: "Đề xuất quy trình có bước duyệt" },
+    { id: "prompt-studio", icon: "MP", title: "Multimodal Prompt", group: "AI & Workflow", description: "Reference, camera, seed và lineage" },
+    { id: "ai-automation", icon: "AU", title: "AI Automation", group: "AI & Workflow", description: "Pipeline sản xuất, preset và lịch sử chạy" },
+    { id: "repurpose", icon: "RE", title: "Repurpose Engine", group: "Sản xuất chuyên sâu", description: "Một nội dung thành nhiều định dạng" },
+    { id: "brand", icon: "BI", title: "Brand Intelligence", group: "Sản xuất chuyên sâu", description: "Brand voice, quy tắc và kiểm tra" },
+    { id: "audio-dubbing", icon: "DB", title: "Audio & Dubbing", group: "Sản xuất chuyên sâu", description: "Voice, nhạc, SFX và subtitle" },
+    { id: "prototype", icon: "PT", title: "Prototype from Prompt", group: "Sản xuất chuyên sâu", description: "Flow tương tác chỉnh sửa được" },
+    { id: "review", icon: "RV", title: "Creative Review", group: "Cộng tác", description: "Comment, diff và phê duyệt" },
+    { id: "collaboration", icon: "RT", title: "Realtime Collaboration", group: "Cộng tác", description: "Presence, chat, lock và timeline diff" },
+    { id: "publishing", icon: "PB", title: "Publishing Calendar", group: "Xuất bản", description: "Lịch đa nền tảng và hàng đợi" },
+    { id: "analytics", icon: "AN", title: "Creative Analytics", group: "Xuất bản", description: "CTR, retention và A/B test" },
+    { id: "rights", icon: "RC", title: "Rights & Provenance", group: "Xuất bản", description: "Nguồn, giấy phép và manifest" },
+    { id: "providers", icon: "PR", title: "Provider Router", group: "Xuất bản", description: "Quota, chi phí, độ trễ và cooldown" },
+    { id: "marketplace", icon: "MK", title: "Creative Marketplace", group: "Mở rộng", description: "Template, workflow và asset pack" }
   ];
+  const creativeOSViews = new Set(["overview", "project", "brief", "moodboard", "storyboard", "world-bible", "workflow", "ai-director", "prompt-studio", "repurpose", "brand", "audio-dubbing", "prototype", "review", "collaboration", "publishing", "analytics", "rights", "providers", "marketplace"]);
+  const isCreativeOSRoute = (route) => {
+    if (route === "/create") return true;
+    const routeParts = String(route || "").split("/").filter(Boolean);
+    return routeParts[0] === "create" && creativeOSViews.has(routeParts[1]);
+  };
   const musicAIPageItems = [
     { id: "project", icon: "▣", section: "Bắt đầu", title: "Xưởng sản xuất", description: "Thiết lập dự án và chạy toàn bộ quy trình", route: "/music-ai/project" },
     { id: "app-center", icon: "◇", section: "Bắt đầu", title: "Tổng quan AI Apps", description: "Trạng thái và lối tắt tới từng engine", route: "/music-ai/app-center" },
@@ -5398,11 +5428,12 @@ function initAppShell() {
     const crumbs = route.split("/").filter(Boolean);
     const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIPageItems];
+    const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIPageItems : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerToolItems : knownTools;
     let crumbRoute = "";
     breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Trang chủ</button>` : [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => {
       crumbRoute += `/${crumb}`;
       const isCurrent = index === crumbs.length - 1;
-      const label = isCurrent && module?.title ? module.title : knownTools.find((item) => item.id === crumb)?.title || crumbLabels[crumb] || crumb;
+      const label = isCurrent && module?.title ? module.title : routeTools.find((item) => item.id === crumb)?.title || crumbLabels[crumb] || crumb;
       return `<span aria-hidden="true">›</span><button type="button" ${isCurrent ? "aria-current=page" : `data-app-route="${safeText(crumbRoute)}"`}>${safeText(label)}</button>`;
     })].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
@@ -5448,6 +5479,7 @@ function initAppShell() {
     document.body.classList.toggle("app-communication-route", route === "/communication");
     document.body.classList.toggle("app-work-route", route === "/work");
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
+    document.body.classList.toggle("app-creative-os-route", isCreativeOSRoute(route));
     document.body.classList.toggle("app-music-ai-route", route === "/music-ai" || route.startsWith("/music-ai/"));
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
     if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
@@ -5456,6 +5488,7 @@ function initAppShell() {
     if (route !== "/work") window.HHWorkCenter?.unmount?.();
     if (route !== "/music-ai" && !route.startsWith("/music-ai/")) window.HHMusicAIStudio?.unmount?.();
     if (route !== "/graphic-design" && !route.startsWith("/graphic-design/")) window.HHGraphicDesign?.unmount?.();
+    if (!isCreativeOSRoute(route)) window.HHCreativeOS?.unmount?.();
     setUser();
     renderNavigation();
     requestAnimationFrame(() => {
@@ -5503,6 +5536,28 @@ function initAppShell() {
       workspace.innerHTML = '<div data-music-ai-studio-host></div>';
       if (window.HHMusicAIStudio?.mount) window.HHMusicAIStudio.mount(workspace.firstElementChild, { view: parts[1] || "project" });
       else mountSimpleView("Làm nhạc AI", "Đang tải xưởng sản xuất âm nhạc...", "");
+    } else if (isCreativeOSRoute(route)) {
+      const creativeView = route === "/create" ? "overview" : parts[1];
+      const creativePage = creativeStudioItems.find((item) => item.id === creativeView) || creativeStudioItems[0];
+      updatePageHeader(creativePage.title, creativePage.description, route);
+      workspace.innerHTML = '<div data-creative-os-host></div>';
+      if (window.HHCreativeOS?.mount) window.HHCreativeOS.mount(workspace.firstElementChild, {
+        view: creativeView,
+        apiBase: REALTIME_URL,
+        socketUrl: SOCKET_URL,
+        currentUser: readCurrentAuthUser(),
+        runAI: (input, meta = {}) => {
+          let payload = String(input ?? "");
+          if (input && typeof input === "object") {
+            try { payload = JSON.stringify(input, null, 2); } catch { throw new Error("Dữ liệu AI không thể chuyển thành JSON an toàn."); }
+          }
+          const actionType = String(input?.task || meta.actionType || "chat").slice(0, 80);
+          return creativeAIRequest("creative-os", payload, actionType, meta);
+        },
+        onNavigate: (target) => { location.hash = `#${target}`; }
+      });
+      else mountSimpleView("Creative OS", "Đang tải hệ điều hành sáng tạo...", "");
+      remember(creativeView);
     } else if (route === "/create/ai-script") {
       updatePageHeader("Kịch bản AI Studio", "Workspace biên kịch thông minh: viết, phân tích, dịch, batch, URL research và quản lý series.", route);
       workspace.innerHTML = '<div class="creative-ai-script-host tool-neon-page" data-ai-script-host><div class="creative-ai-script-loading"><i></i><strong>Đang mở Kịch bản AI Studio...</strong></div></div>';
