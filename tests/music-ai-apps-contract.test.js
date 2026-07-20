@@ -34,6 +34,7 @@ test("Every media app has its own real provider action and controls", () => {
   assert.match(server, /gemini-3\.1-flash-image/);
   assert.match(server, /veo-3\.1-fast-generate-preview/);
   assert.match(server, /music_v2/);
+  assert.match(server, /AbortSignal\.timeout\(22000\)/);
   assert.doesNotMatch(client, /GEMINI_API_KEY|ELEVENLABS_API_KEY|GOOGLE_CLIENT_SECRET/);
 });
 

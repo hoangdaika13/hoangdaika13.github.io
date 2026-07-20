@@ -963,7 +963,7 @@ async function runGeminiWithKey({
     contents,
     generationConfig: {
       temperature,
-      maxOutputTokens: useStructuredOutput ? 8192 : 4096,
+      maxOutputTokens: useStructuredOutput ? 8192 : 2048,
       ...(useStructuredOutput
         ? { responseMimeType: "application/json", responseSchema: contentPackSchema }
         : {})
@@ -977,7 +977,7 @@ async function runGeminiWithKey({
       "x-goog-api-key": apiKey
     },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(10500)
+    signal: AbortSignal.timeout(22000)
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
