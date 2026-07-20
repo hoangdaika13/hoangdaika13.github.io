@@ -5589,9 +5589,9 @@ function initAppShell() {
       if (route) {
         const targetGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
         if (targetGroup) {
-          const musicSidebarLink = targetGroup.id === "music-ai" && routeButton.closest('[data-nav-group="music-ai"]');
-          sidebarGroupState[targetGroup.id] = !musicSidebarLink;
-          if (musicSidebarLink) {
+          const musicSidebarToolLink = targetGroup.id === "music-ai" && routeButton.matches(".app-sidebar__subitem--music");
+          sidebarGroupState[targetGroup.id] = !musicSidebarToolLink;
+          if (musicSidebarToolLink) {
             const selectedMusicPage = musicAIPageItems.find((item) => item.route === route) || musicAIPageItems[0];
             saveMusicSidebarSection(selectedMusicPage.section);
           }
