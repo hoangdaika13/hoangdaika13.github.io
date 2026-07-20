@@ -1305,6 +1305,16 @@
 @layer components {
   .app-sidebar__subitem--featured{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:7px}
   .app-sidebar__subitem--featured>b{display:grid;place-items:center;width:22px;height:22px;border:1px solid color-mix(in srgb,var(--nav-accent) 45%,var(--border-default));border-radius:5px;color:var(--nav-accent);font-size:8px}
+  [data-nav-group="music-ai"] .app-sidebar__submenu{margin-left:20px;padding-left:8px}
+  .app-sidebar__page-section{display:grid;gap:2px;margin:4px 0 9px}
+  .app-sidebar__page-section>small{padding:4px 8px 3px;color:color-mix(in srgb,var(--nav-accent) 76%,var(--text-muted));font-size:7px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+  .app-sidebar__subitem--music{position:relative;display:grid;grid-template-columns:25px minmax(0,1fr) 10px;align-items:center;gap:7px;min-height:38px;padding:3px 7px;border:1px solid transparent;border-radius:6px;text-align:left;transition:transform 150ms ease,border-color 150ms ease,background-color 150ms ease,color 150ms ease}
+  .app-sidebar__subitem--music>b{display:grid;place-items:center;width:23px;height:23px;border:1px solid color-mix(in srgb,var(--nav-accent) 35%,var(--border-default));border-radius:5px;color:var(--nav-accent);background:color-mix(in srgb,var(--nav-accent) 7%,transparent);font-size:7px;font-weight:850}
+  .app-sidebar__subitem--music>i{color:#59687a;font-size:10px;font-style:normal;opacity:0;transform:translateX(-4px);transition:opacity 150ms ease,transform 150ms ease}
+  .app-sidebar__subitem--music:hover{border-color:color-mix(in srgb,var(--nav-accent) 25%,var(--border-default));background:color-mix(in srgb,var(--nav-accent) 8%,var(--surface-1));transform:translateX(2px)}
+  .app-sidebar__subitem--music:hover>i,.app-sidebar__subitem--music.is-active>i{opacity:1;transform:none}
+  .app-sidebar__subitem--music.is-active{border-color:color-mix(in srgb,var(--nav-accent) 45%,var(--border-default));background:linear-gradient(90deg,color-mix(in srgb,var(--nav-accent) 16%,var(--surface-1)),var(--surface-1));box-shadow:inset 2px 0 var(--nav-accent),0 7px 20px rgba(0,0,0,.12);color:#fff}
+  .app-sidebar__subitem--music:active{transform:translateX(2px) scale(.98)}
   .app-sidebar__more{display:grid;grid-template-columns:22px minmax(0,1fr) 15px;align-items:center;gap:7px;min-height:40px;margin-top:5px;padding:0 8px;border:1px dashed color-mix(in srgb,var(--nav-accent) 38%,var(--border-default));background:color-mix(in srgb,var(--nav-accent) 7%,transparent);color:var(--text-secondary);text-align:left}
   .app-sidebar__more>span{color:var(--nav-accent);font-size:13px}.app-sidebar__more>b{overflow:hidden;font-size:10px;font-weight:650;text-overflow:ellipsis;white-space:nowrap}.app-sidebar__more>i{color:var(--nav-accent);font-style:normal}.app-sidebar__more:hover{border-style:solid;background:color-mix(in srgb,var(--nav-accent) 13%,transparent);color:#fff}
 

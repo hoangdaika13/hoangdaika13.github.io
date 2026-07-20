@@ -423,11 +423,16 @@
 
   function headerHtml() {
     const progress = Math.round(Object.values(state.checklist || {}).filter(Boolean).length / PUBLISH_CHECKS.length * 100);
+    const current = VIEWS.find((item) => item.id === view) || VIEWS[0];
+    if (APP_VIEWS.has(view) || view === "youtube-publisher") return "";
+    if (view !== "project") return `<header class="mai-context-header">
+      <div><p><i></i> HH MUSIC WORKSPACE</p><h2>${current.label}</h2><span>${state.project.name} · ${state.project.genre} · ${state.project.hours} giờ</span></div>
+      <aside><button type="button" data-app-route="/music-ai/project">Về Xưởng sản xuất</button>${cardMetric(`${progress}%`, "Sẵn sàng", progress === 100 ? "is-good" : "")}</aside>
+    </header>`;
     return `<header class="mai-hero">
       <div><p><i></i> HH MUSIC PRODUCTION OS</p><h2>Làm nhạc AI <em>từ ý tưởng đến YouTube</em></h2><span>Ảnh → chuyển động → nhạc → loop 1–5 giờ → kiểm âm → xuất bản.</span></div>
       <aside>${cardMetric(`${state.project.hours}H`, "Thời lượng")}${cardMetric(`${state.project.bpm}`, "BPM")}${cardMetric(`${progress}%`, "Sẵn sàng", progress === 100 ? "is-good" : "")}</aside>
-    </header>
-    <nav class="mai-tabs" aria-label="Quy trình làm nhạc AI">${VIEWS.map((item) => `<button type="button" data-app-route="/music-ai/${item.id}" class="${view === item.id ? "is-active" : ""}"><i>${item.icon}</i><span>${item.label}</span></button>`).join("")}</nav>`;
+    </header>`;
   }
 
   function automationView() {
@@ -654,7 +659,8 @@
       "youtube-publisher": youtubePublisherView,
       "publish-checklist": publishView
     }[view] || projectView)();
-    host.innerHTML = `<div class="music-ai-studio">${headerHtml()}<main>${content}</main><div class="mai-toast" data-mai-toast role="status" aria-live="polite"></div></div>`;
+    const standalone = APP_VIEWS.has(view) || view === "youtube-publisher";
+    host.innerHTML = `<div class="music-ai-studio ${standalone ? "is-standalone-app" : ""}">${headerHtml()}<main>${content}</main><div class="mai-toast" data-mai-toast role="status" aria-live="polite"></div></div>`;
     if (view === "youtube-publisher") {
       window.HHYouTubePublisher?.mount?.(host.querySelector("[data-youtube-publisher-host]"), {
         apiBase: apiBase(),
@@ -1202,8 +1208,10 @@
     host.addEventListener("change", handleChange, { signal: controller.signal });
     host.addEventListener("click", handleClick, { signal: controller.signal });
     render();
-    refreshProviders();
-    restoreGeneratedAssets();
+    if (view === "project") {
+      refreshProviders();
+      restoreGeneratedAssets();
+    }
   }
 
   function unmount() {

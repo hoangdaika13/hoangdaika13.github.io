@@ -5006,6 +5006,22 @@ function initAppShell() {
     { id: "media-center", icon: "MC", title: "Media Center", group: "Sản xuất nội dung", description: "Thư viện, Google và YouTube discovery" },
     { id: "ai-automation", icon: "AU", title: "AI Automation", group: "Tự động hóa", description: "Pipeline sản xuất, preset và lịch sử chạy" }
   ];
+  const musicAIPageItems = [
+    { id: "project", icon: "▣", section: "Bắt đầu", title: "Xưởng sản xuất", description: "Thiết lập dự án và chạy toàn bộ quy trình", route: "/music-ai/project" },
+    { id: "app-center", icon: "◇", section: "Bắt đầu", title: "Tổng quan AI Apps", description: "Trạng thái và lối tắt tới từng engine", route: "/music-ai/app-center" },
+    { id: "concept-lab", icon: "AI", section: "Sáng tạo", title: "AI Concept Lab", description: "Concept, moodboard và production brief", route: "/music-ai/concept-lab" },
+    { id: "image-lab", icon: "IM", section: "Sáng tạo", title: "Gemini Image Studio", description: "Tạo key visual từ prompt hoặc ảnh mẫu", route: "/music-ai/image-lab" },
+    { id: "music-lab", icon: "MU", section: "Sáng tạo", title: "Eleven Music Studio", description: "Tạo riêng track nhạc AI", route: "/music-ai/music-lab" },
+    { id: "veo-lab", icon: "VE", section: "Sáng tạo", title: "Veo Motion Studio", description: "Chuyển prompt hoặc ảnh thành video", route: "/music-ai/veo-lab" },
+    { id: "render-lab", icon: "FF", section: "Sản xuất", title: "Long-form Render Lab", description: "Ghép video nhạc dài bằng FFmpeg", route: "/music-ai/render-lab" },
+    { id: "prompt-studio", icon: "PR", section: "Sản xuất", title: "Prompt đồng bộ", description: "Bộ prompt nhất quán cho cả dự án", route: "/music-ai/prompt-studio" },
+    { id: "loop-builder", icon: "LP", section: "Sản xuất", title: "Loop 1–5 giờ", description: "Tạo vòng lặp dài và lệnh dựng", route: "/music-ai/loop-builder" },
+    { id: "audio-qa", icon: "QA", section: "Sản xuất", title: "Kiểm âm", description: "Đo peak, RMS và clipping", route: "/music-ai/audio-qa" },
+    { id: "chapters", icon: "CH", section: "Xuất bản", title: "Tracklist & Chapter", description: "Tạo timestamp chuẩn YouTube", route: "/music-ai/chapters" },
+    { id: "youtube-pack", icon: "YT", section: "Xuất bản", title: "Gói YouTube", description: "Title, mô tả, tag và thumbnail", route: "/music-ai/youtube-pack" },
+    { id: "youtube-publisher", icon: "UP", section: "Xuất bản", title: "Đăng YouTube tự động", description: "Chọn kênh, lịch phát và upload", route: "/music-ai/youtube-publisher" },
+    { id: "publish-checklist", icon: "OK", section: "Xuất bản", title: "Kiểm tra xuất bản", description: "Chốt chất lượng và quyền sử dụng", route: "/music-ai/publish-checklist" }
+  ];
   const developerToolItems = [
     { id: "json", icon: "{}", title: "JSON Formatter", group: "Dữ liệu" },
     { id: "base64", icon: "64", title: "Base64", group: "Dữ liệu" },
@@ -5039,23 +5055,9 @@ function initAppShell() {
       icon: "♫",
       accent: "#72eadb",
       route: "/music-ai",
+      landingRoute: "/music-ai/project",
       items: [],
-      pages: [
-        { id: "project", title: "Xưởng sản xuất", route: "/music-ai/project" },
-        { id: "app-center", title: "AI App Center", route: "/music-ai/app-center" },
-        { id: "concept-lab", title: "AI Concept Lab", route: "/music-ai/concept-lab" },
-        { id: "image-lab", title: "Gemini Image Studio", route: "/music-ai/image-lab" },
-        { id: "music-lab", title: "Eleven Music Studio", route: "/music-ai/music-lab" },
-        { id: "veo-lab", title: "Veo Motion Studio", route: "/music-ai/veo-lab" },
-        { id: "render-lab", title: "Long-form Render Lab", route: "/music-ai/render-lab" },
-        { id: "prompt-studio", title: "Prompt đồng bộ", route: "/music-ai/prompt-studio" },
-        { id: "loop-builder", title: "Loop 1–5 giờ", route: "/music-ai/loop-builder" },
-        { id: "audio-qa", title: "Kiểm âm", route: "/music-ai/audio-qa" },
-        { id: "chapters", title: "Tracklist & Chapter", route: "/music-ai/chapters" },
-        { id: "youtube-pack", title: "Gói YouTube", route: "/music-ai/youtube-pack" },
-        { id: "youtube-publisher", title: "Đăng YouTube tự động", route: "/music-ai/youtube-publisher" },
-        { id: "publish-checklist", title: "Kiểm tra xuất bản", route: "/music-ai/publish-checklist" }
-      ]
+      pages: musicAIPageItems
     },
     { id: "media-design", label: "Media & Design", icon: "◈", accent: "#c87cff", route: "/media-design", items: [], studioItems: mediaStudioItems },
     { id: "dev", label: "DEV", icon: "⌘", accent: "#61e7ff", route: "/dev-tools", items: [], studioItems: developerToolItems },
@@ -5133,7 +5135,9 @@ function initAppShell() {
       }).filter(Boolean);
       const moduleItems = moduleEntries.join("");
       const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
-      const pageItems = (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
+      const pageItems = group.id === "music-ai"
+        ? [...new Set(group.pages.map((item) => item.section))].map((section) => `<section class="app-sidebar__page-section"><small>${section}</small>${group.pages.filter((item) => item.section === section).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--music ${route === item.route || (route === group.route && item.id === "project") ? "is-active" : ""}" type="button" data-app-route="${item.route}" title="${safeText(item.description)}" ${route === item.route || (route === group.route && item.id === "project") ? "aria-current=page" : ""}><b>${item.icon}</b><span>${item.title}</span><i>›</i></button>`).join("")}</section>`).join("")
+        : (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
       const studioMenu = group.studioItems ? `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
       const fullSubmenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
       const submenuCount = (group.shortcuts?.length || 0) + (group.pages?.length || 0) + (group.studioItems?.length || 0) + moduleEntries.length;
@@ -5141,7 +5145,7 @@ function initAppShell() {
       const hasSubmenu = Boolean(submenu);
       const countBadge = hasSubmenu ? `<small class="app-sidebar__count" aria-label="${submenuCount} chức năng">${submenuCount}</small>` : "";
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}" data-nav-group="${group.id}" style="--nav-accent:${group.accent || "#56eaff"}">
-        <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.route}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}"><span>${group.icon}</span><b>${group.label}</b>${countBadge}<i class="app-sidebar__chevron" ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
+        <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.landingRoute || group.route}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}"><span>${group.icon}</span><b>${group.label}</b>${countBadge}<i class="app-sidebar__chevron" ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
         ${hasSubmenu ? `<div class="app-sidebar__submenu">${submenu}</div>` : ""}
       </section>`;
     }).join("");
@@ -5348,7 +5352,8 @@ function initAppShell() {
       if (window.HHEnglish?.mount) window.HHEnglish.mount(workspace.firstElementChild, { view: parts[1] || "dashboard" });
       else mountSimpleView("HH English", "Đang tải không gian học tiếng Anh...", "");
     } else if (route === "/music-ai" || route.startsWith("/music-ai/")) {
-      updatePageHeader("Làm nhạc AI", "Xưởng sản xuất relax piano, thiền, jazz và lofi dài 1–5 giờ: prompt, loop, kiểm âm, chapter và gói YouTube.", route);
+      const musicPage = musicAIPageItems.find((item) => item.id === (parts[1] || "project")) || musicAIPageItems[0];
+      updatePageHeader(musicPage.title, musicPage.description, route);
       workspace.innerHTML = '<div data-music-ai-studio-host></div>';
       if (window.HHMusicAIStudio?.mount) window.HHMusicAIStudio.mount(workspace.firstElementChild, { view: parts[1] || "project" });
       else mountSimpleView("Làm nhạc AI", "Đang tải xưởng sản xuất âm nhạc...", "");
@@ -5537,7 +5542,7 @@ function initAppShell() {
       const route = routeButton.dataset.appRoute;
       const sidebarGroup = routeButton.parentElement?.classList.contains("app-sidebar__group") ? routeButton.parentElement : null;
       if (sidebarGroup?.querySelector(":scope > .app-sidebar__submenu") && event.target.closest("[data-sidebar-toggle]")) {
-        const group = groups.find((item) => item.route === route);
+        const group = groups.find((item) => item.id === sidebarGroup.dataset.navGroup);
         if (group) {
           sidebarGroupState[group.id] = !sidebarGroup.classList.contains("is-expanded");
           saveSidebarGroups();

@@ -143,44 +143,31 @@
 .mai-metric.is-warn { border-color: rgba(255, 169, 89, .46); }
 .mai-metric.is-warn strong { color: #ffc276; }
 
-.mai-tabs {
-  position: sticky;
-  z-index: 12;
-  top: 0;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
-  margin: 14px 0 0;
-  padding: 8px;
-  border: 1px solid var(--mai-line);
-  border-radius: 17px;
-  background: rgba(6, 12, 18, .92);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, .18);
-  backdrop-filter: blur(18px);
-}
-
-.mai-tabs button {
+.mai-context-header {
   display: flex;
   align-items: center;
-  gap: 9px;
-  min-width: 0;
-  min-height: 48px;
-  padding: 8px 11px;
-  border: 1px solid transparent;
-  border-radius: 11px;
-  color: var(--mai-muted);
-  background: transparent;
-  cursor: pointer;
-  transition: color .18s ease, border-color .18s ease, background .18s ease;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 112px;
+  padding: 22px 26px;
+  border: 1px solid var(--mai-line);
+  border-radius: 17px;
+  background: radial-gradient(circle at 82% 10%, rgba(181, 126, 255, .13), transparent 35%), linear-gradient(120deg, rgba(11, 28, 37, .96), rgba(15, 14, 29, .96));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .04), 0 18px 44px rgba(0, 0, 0, .18);
 }
+.mai-context-header > div { min-width: 0; }
+.mai-context-header p { margin: 0 0 6px; color: var(--mai-cyan); font-size: 9px; font-weight: 900; letter-spacing: .12em; }
+.mai-context-header p i { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--mai-green); box-shadow: 0 0 12px var(--mai-green); }
+.mai-context-header h2 { margin: 0; font-size: clamp(24px, 3vw, 36px); letter-spacing: 0; }
+.mai-context-header > div > span { display: block; margin-top: 7px; overflow: hidden; color: var(--mai-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.mai-context-header aside { display: flex; align-items: stretch; gap: 8px; }
+.mai-context-header aside > button { min-width: 144px; border: 1px solid var(--mai-line-strong); border-radius: 12px; color: var(--mai-cyan); background: rgba(6, 16, 23, .72); cursor: pointer; }
+.mai-context-header .mai-metric { min-width: 100px; min-height: 66px; }
 
-.mai-tabs button:hover { color: var(--mai-text); background: rgba(255, 255, 255, .035); }
-.mai-tabs button.is-active { color: var(--mai-text); border-color: rgba(99, 236, 224, .31); background: linear-gradient(135deg, rgba(83, 226, 216, .12), rgba(174, 118, 255, .1)); }
-.mai-tabs i { display: grid; flex: 0 0 28px; width: 28px; height: 28px; place-items: center; border: 1px solid var(--mai-line); border-radius: 9px; color: var(--mai-cyan); font-size: 10px; font-style: normal; font-weight: 900; }
-.mai-tabs span { overflow: hidden; font-size: 11px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-
-.music-ai-studio main { padding-top: 30px; }
-.mai-view { display: grid; gap: 24px; }
+.music-ai-studio main { padding-top: 24px; }
+.music-ai-studio.is-standalone-app main { padding-top: 0; }
+.mai-view { display: grid; gap: 24px; animation: maiViewEnter .32s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes maiViewEnter { from { opacity: 0; transform: translateY(10px) scale(.995); } }
 
 .mai-auto {
   position: relative;
@@ -550,7 +537,6 @@ body.app-music-ai-route .app-page-header { border-color: rgba(102, 238, 230, .2)
 body.app-music-ai-route .app-workspace { overflow: visible; }
 
 @media (max-width: 1280px) {
-  .mai-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); position: relative; }
   .mai-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mai-model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mai-flow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -562,6 +548,8 @@ body.app-music-ai-route .app-workspace { overflow: visible; }
 @media (max-width: 900px) {
   .mai-hero { align-items: flex-start; flex-direction: column; padding: 26px; }
   .mai-hero aside { width: 100%; min-width: 0; }
+  .mai-context-header { align-items: flex-start; flex-direction: column; }
+  .mai-context-header aside { width: 100%; }
   .mai-layout,
   .mai-layout--project,
   .mai-layout--chapters { grid-template-columns: 1fr; }
@@ -583,8 +571,8 @@ body.app-music-ai-route .app-workspace { overflow: visible; }
   .mai-hero aside { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .mai-hero .mai-metric { min-height: 66px; padding: 10px; }
   .mai-hero .mai-metric strong { font-size: 16px; }
-  .mai-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .mai-tabs button { min-height: 43px; }
+  .mai-context-header { min-height: 0; padding: 18px; }
+  .mai-context-header aside { display: grid; grid-template-columns: minmax(0, 1fr) 100px; }
   .mai-section-head { align-items: flex-start; flex-direction: column; }
   .mai-form-grid,
   .mai-flow-grid,

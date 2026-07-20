@@ -127,12 +127,8 @@
     outputs[key] = blob;
   }
 
-  function toolNav() {
-    return `<nav class="ma-app-dock" aria-label="Ứng dụng làm nhạc AI">${TOOLS.map((tool) => `<button class="tone-${tool.tone} ${view === tool.id ? "is-active" : ""}" type="button" data-app-route="/music-ai/${tool.route}" title="${esc(tool.note)}"><i>${tool.icon}</i><span>${tool.title}</span><b>›</b></button>`).join("")}</nav>`;
-  }
-
   function appShell(content, title, subtitle, badge = "APP ĐỘC LẬP") {
-    return `<div class="ma-app-suite"><header class="ma-app-hero"><div><p><i></i>${badge}</p><h2>${title}</h2><span>${subtitle}</span></div><div class="ma-app-hero__meta"><span>${navigator.onLine ? "Online" : "Offline"}</span><button type="button" data-ma-action="refresh-providers">Kiểm tra API</button></div></header><div class="ma-app-layout">${toolNav()}<main class="ma-app-workspace">${content}</main></div><div class="ma-app-toast" data-ma-app-toast role="status" aria-live="polite"></div></div>`;
+    return `<div class="ma-app-suite"><header class="ma-app-hero"><div><p><i></i>${badge}</p><h2>${title}</h2><span>${subtitle}</span></div><div class="ma-app-hero__meta"><span>${navigator.onLine ? "Online" : "Offline"}</span>${view === "app-center" ? "" : '<button type="button" data-app-route="/music-ai/app-center">Tất cả AI Apps</button>'}<button type="button" data-ma-action="refresh-providers">Kiểm tra API</button></div></header><main class="ma-app-workspace">${content}</main><div class="ma-app-toast" data-ma-app-toast role="status" aria-live="polite"></div></div>`;
   }
 
   function overview() {
