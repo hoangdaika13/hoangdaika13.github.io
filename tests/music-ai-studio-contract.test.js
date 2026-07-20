@@ -64,7 +64,7 @@ test("One-click producer connects real server media jobs without exposing keys",
   assert.match(server, /gemini-3\.1-flash-image/);
   assert.match(server, /veo-3\.1-fast-generate-preview/);
   assert.match(server, /https:\/\/api\.elevenlabs\.io\/v1\/music/);
-  assert.match(server, /force_instrumental: true/);
+  assert.match(server, /force_instrumental: meta\.instrumental !== false/);
   assert.match(server, /isAdminUser/);
   assert.match(server, /Readable\.fromWeb/);
   assert.doesNotMatch(client, /process\.env|AIza[0-9A-Za-z_-]{24,}/);
@@ -91,7 +91,7 @@ test("Music AI ships YouTube-safe defaults and no fake LUFS claim", () => {
 test("Music AI assets are loaded by the page and offline worker", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["music-ai-studio.css?v=4", "music-ai-studio.js?v=4", "youtube-publisher.css?v=1", "youtube-publisher.js?v=1", "script.js?v=99", "app-shell.css?v=45"]) {
+  for (const asset of ["music-ai-studio.css?v=4", "music-ai-apps.css?v=1", "music-ai-apps.js?v=1", "music-ai-studio.js?v=5", "youtube-publisher.css?v=2", "youtube-publisher.js?v=2", "script.js?v=100", "app-shell.css?v=45"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

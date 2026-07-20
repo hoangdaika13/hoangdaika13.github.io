@@ -5042,6 +5042,12 @@ function initAppShell() {
       items: [],
       pages: [
         { id: "project", title: "Xưởng sản xuất", route: "/music-ai/project" },
+        { id: "app-center", title: "AI App Center", route: "/music-ai/app-center" },
+        { id: "concept-lab", title: "AI Concept Lab", route: "/music-ai/concept-lab" },
+        { id: "image-lab", title: "Gemini Image Studio", route: "/music-ai/image-lab" },
+        { id: "music-lab", title: "Eleven Music Studio", route: "/music-ai/music-lab" },
+        { id: "veo-lab", title: "Veo Motion Studio", route: "/music-ai/veo-lab" },
+        { id: "render-lab", title: "Long-form Render Lab", route: "/music-ai/render-lab" },
         { id: "prompt-studio", title: "Prompt đồng bộ", route: "/music-ai/prompt-studio" },
         { id: "loop-builder", title: "Loop 1–5 giờ", route: "/music-ai/loop-builder" },
         { id: "audio-qa", title: "Kiểm âm", route: "/music-ai/audio-qa" },
@@ -5447,6 +5453,10 @@ function initAppShell() {
     const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));
     const musicAI = [
       { type: "Làm nhạc AI", title: "Xưởng sản xuất", description: "Tạo dự án relax piano, thiền, jazz hoặc lofi dài 1–5 giờ.", route: "/music-ai/project", key: "làm nhạc ai relax piano thiền meditation jazz lofi youtube music project" },
+      { type: "Làm nhạc AI", title: "AI App Center", description: "Chạy riêng Concept, Image, Music, Veo, Render hoặc Publisher.", route: "/music-ai/app-center", key: "music ai apps concept image eleven veo ffmpeg độc lập" },
+      { type: "Làm nhạc AI", title: "Gemini Image Studio", description: "Tạo và biến đổi key visual 1K–4K bằng ảnh tham chiếu.", route: "/music-ai/image-lab", key: "gemini image nano banana key visual reference" },
+      { type: "Làm nhạc AI", title: "Eleven Music Studio", description: "Tạo riêng track instrumental hoặc có giọng hát.", route: "/music-ai/music-lab", key: "eleven music v2 ai track instrumental" },
+      { type: "Làm nhạc AI", title: "Veo Motion Studio", description: "Tạo video ngang hoặc dọc từ text hay frame đầu.", route: "/music-ai/veo-lab", key: "veo 3.1 video image to video" },
       { type: "Làm nhạc AI", title: "Prompt đồng bộ", description: "Tạo prompt ảnh, Kling/Veo, nhạc và thumbnail cùng concept.", route: "/music-ai/prompt-studio", key: "prompt chatgpt image kling veo motion music thumbnail" },
       { type: "Làm nhạc AI", title: "Loop 1–5 giờ", description: "Tính vòng lặp và xuất lệnh FFmpeg dựng video dài.", route: "/music-ai/loop-builder", key: "loop ffmpeg video dài 1 2 3 4 5 giờ" },
       { type: "Làm nhạc AI", title: "Kiểm âm", description: "Đo peak, RMS, clipping và sample rate ngay trên trình duyệt.", route: "/music-ai/audio-qa", key: "audio qa peak rms clipping 48khz kiểm âm" },

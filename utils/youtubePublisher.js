@@ -118,21 +118,32 @@ async function refreshAccessToken(connection, connections) {
 }
 
 async function connectionFor(db, user) {
-  const connection = await db.collection("youtubeConnections").findOne({ userId: user._id });
+  const collection = db.collection("youtubeConnections");
+  const connection = await collection.findOne({ userId: user._id, active: true })
+    || await collection.findOne({ userId: user._id }, { sort: { updatedAt: -1 } });
   if (!connection) throw fail("Bạn chưa kết nối kênh YouTube.", 409, "YOUTUBE_NOT_CONNECTED");
   return connection;
 }
 
-function publicConnection(connection) {
+function publicChannel(connection) {
+  if (!connection) return null;
+  return {
+    id: connection.channelId || "",
+    title: connection.channelTitle || "Kênh YouTube",
+    thumbnail: connection.channelThumbnail || "",
+    subscribers: Number(connection.subscribers || 0),
+    videos: Number(connection.videoCount || 0),
+    active: Boolean(connection.active),
+    connectedAt: connection.connectedAt || null,
+    updatedAt: connection.updatedAt || null
+  };
+}
+
+function publicConnection(connection, allConnections = []) {
   return {
     connected: Boolean(connection),
-    channel: connection ? {
-      id: connection.channelId || "",
-      title: connection.channelTitle || "Kênh YouTube",
-      thumbnail: connection.channelThumbnail || "",
-      subscribers: Number(connection.subscribers || 0),
-      videos: Number(connection.videoCount || 0)
-    } : null,
+    channel: publicChannel(connection),
+    channels: allConnections.map(publicChannel),
     connectedAt: connection?.connectedAt || null,
     updatedAt: connection?.updatedAt || null
   };
@@ -253,6 +264,7 @@ module.exports = async function handler(req, res) {
     const connections = db.collection("youtubeConnections");
     const states = db.collection("youtubeOauthStates");
     const uploads = db.collection("youtubeUploads");
+    await connections.createIndex({ userId: 1, channelId: 1 }, { unique: true, sparse: true });
 
     if (route === "oauth/callback" && req.method === "GET") {
       const rawState = clean(req.query.state, 180);
@@ -276,13 +288,15 @@ module.exports = async function handler(req, res) {
         });
         const tokens = await tokenResponse.json().catch(() => ({}));
         if (!tokenResponse.ok || !tokens.access_token) throw fail(tokens.error_description || "Google từ chối kết nối YouTube.", 401);
-        const previous = await connections.findOne({ userId: state.userId });
+        const bundle = await channelBundle(tokens.access_token);
+        const previous = await connections.findOne({ userId: state.userId, channelId: bundle.channel.channelId });
         const refreshToken = tokens.refresh_token || (previous?.refreshToken ? decrypt(previous.refreshToken) : "");
         if (!refreshToken) throw fail("Google chưa cấp quyền truy cập ngoại tuyến. Hãy kết nối lại và chấp thuận quyền.", 401);
-        const bundle = await channelBundle(tokens.access_token);
         const now = new Date();
-        await connections.updateOne({ userId: state.userId }, { $set: {
+        await connections.updateMany({ userId: state.userId }, { $set: { active: false } });
+        await connections.updateOne({ userId: state.userId, channelId: bundle.channel.channelId }, { $set: {
           userId: state.userId,
+          active: true,
           accessToken: encrypt(tokens.access_token),
           refreshToken: encrypt(refreshToken),
           expiresAt: Date.now() + Number(tokens.expires_in || 3600) * 1000,
@@ -323,12 +337,13 @@ module.exports = async function handler(req, res) {
     }
 
     if (route === "status" && req.method === "GET") {
-      const connection = await connections.findOne({ userId: user._id });
+      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
+      const connection = allConnections.find((item) => item.active) || allConnections[0] || null;
       const history = await uploads.find({ userId: user._id }).sort({ createdAt: -1 }).limit(20).toArray();
       return res.status(200).json({
         configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
         callbackUrl: callbackUrl(req),
-        ...publicConnection(connection),
+        ...publicConnection(connection, allConnections),
         playlists: connection?.playlists || [],
         history: history.map((item) => ({ id: String(item._id), videoId: item.videoId || "", title: item.title, fileName: item.fileName, status: item.status, privacyStatus: item.privacyStatus, publishAt: item.publishAt || null, createdAt: item.createdAt, completedAt: item.completedAt || null, error: item.error || "" }))
       });
@@ -339,11 +354,26 @@ module.exports = async function handler(req, res) {
       const accessToken = await refreshAccessToken(connection, connections);
       const bundle = await channelBundle(accessToken);
       await connections.updateOne({ _id: connection._id }, { $set: { ...bundle.channel, playlists: bundle.playlists, updatedAt: new Date() } });
-      return res.status(200).json({ ...publicConnection({ ...connection, ...bundle.channel }), playlists: bundle.playlists });
+      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
+      return res.status(200).json({ ...publicConnection({ ...connection, ...bundle.channel }, allConnections), playlists: bundle.playlists });
+    }
+
+    if (route === "channel/select" && req.method === "POST") {
+      const channelId = clean(body.channelId, 120);
+      const selected = await connections.findOne({ userId: user._id, channelId });
+      if (!selected) throw fail("Kênh YouTube không tồn tại trong tài khoản HH này.", 404, "YOUTUBE_CHANNEL_NOT_FOUND");
+      await connections.updateMany({ userId: user._id }, { $set: { active: false } });
+      await connections.updateOne({ _id: selected._id }, { $set: { active: true, updatedAt: new Date() } });
+      const refreshed = await connections.findOne({ _id: selected._id });
+      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
+      return res.status(200).json({ ...publicConnection(refreshed, allConnections), playlists: refreshed.playlists || [] });
     }
 
     if (route === "disconnect" && req.method === "POST") {
-      await connections.deleteOne({ userId: user._id });
+      const active = await connectionFor(db, user);
+      await connections.deleteOne({ _id: active._id });
+      const fallback = await connections.findOne({ userId: user._id }, { sort: { updatedAt: -1 } });
+      if (fallback) await connections.updateOne({ _id: fallback._id }, { $set: { active: true, updatedAt: new Date() } });
       return res.status(200).json({ ok: true });
     }
 

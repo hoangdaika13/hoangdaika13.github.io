@@ -133,11 +133,11 @@ function musicProviderStatus(user) {
     ownerOnly: true,
     canRunMedia: isAdminUser(user),
     providers: {
-      concept: { configured: geminiConfigured, provider: "Gemini", model: process.env.GEMINI_MODEL || "gemini-3.5-flash" },
-      image: { configured: geminiConfigured, provider: "Gemini Images", model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image" },
-      video: { configured: geminiConfigured, provider: "Google Veo", model: process.env.GEMINI_VIDEO_MODEL || "veo-3.1-fast-generate-preview" },
-      music: { configured: Boolean(clean(process.env.ELEVENLABS_API_KEY, 400)), provider: "Eleven Music", model: process.env.ELEVEN_MUSIC_MODEL || "music_v2" },
-      renderer: { configured: Boolean(clean(process.env.MUSIC_RENDER_API_URL, 1000)), provider: "HH Render Worker", model: "FFmpeg" }
+      concept: { configured: geminiConfigured, provider: "Gemini", model: process.env.GEMINI_MODEL || "gemini-3.5-flash", capabilities: ["brief", "prompt-pack", "metadata", "research"] },
+      image: { configured: geminiConfigured, provider: "Gemini Images", model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image", capabilities: ["text-to-image", "reference-image", "16:9", "1K-4K"] },
+      video: { configured: geminiConfigured, provider: "Google Veo", model: process.env.GEMINI_VIDEO_MODEL || "veo-3.1-fast-generate-preview", capabilities: ["text-to-video", "image-to-video", "16:9", "9:16", "720p-4K"] },
+      music: { configured: Boolean(clean(process.env.ELEVENLABS_API_KEY, 400)), provider: "Eleven Music", model: process.env.ELEVEN_MUSIC_MODEL || "music_v2", capabilities: ["instrumental", "vocals", "3-120s", "mp3-48k"] },
+      renderer: { configured: true, cloudConfigured: Boolean(clean(process.env.MUSIC_RENDER_API_URL, 1000)), provider: "Local FFmpeg", model: "FFmpeg", capabilities: ["batch-script", "long-form", "1080p-4K", "local-files"] }
     }
   };
 }
@@ -195,17 +195,31 @@ function interactionImage(data) {
   return direct?.data ? { data: String(direct.data), mimeType: clean(direct.mime_type || direct.mimeType || "image/jpeg", 80) } : null;
 }
 
+function musicReferenceImages(meta = {}) {
+  const list = Array.isArray(meta.referenceImages) ? meta.referenceImages : [];
+  return list.slice(0, 3).map((item) => {
+    const mimeType = clean(item?.mimeType, 80).toLowerCase();
+    const data = String(item?.data || "").replace(/^data:[^;]+;base64,/, "");
+    if (!/^image\/(jpeg|png|webp)$/.test(mimeType) || !/^[a-z0-9+/=\r\n]+$/i.test(data) || data.length > 2_100_000) return null;
+    return { type: "image", data, mime_type: mimeType };
+  }).filter(Boolean);
+}
+
 async function generateMusicImage(body) {
   const prompt = clean(body.input || body.prompt, 5000);
   if (!prompt) throw providerError("Hãy nhập concept trước khi tạo ảnh.", 400, "IMAGE_PROMPT_REQUIRED");
+  const meta = body.meta || {};
+  const aspectRatio = new Set(["1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16", "21:9"]).has(meta.aspectRatio) ? meta.aspectRatio : "16:9";
+  const imageSize = new Set(["1K", "2K", "4K"]).has(meta.imageSize) ? meta.imageSize : "1K";
+  const references = musicReferenceImages(meta);
   return withGeminiMediaKey(async (apiKey) => {
     const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image",
-        input: prompt,
-        response_format: { type: "image", mime_type: "image/jpeg", aspect_ratio: "16:9", image_size: "1K" },
+        input: references.length ? [{ type: "text", text: prompt }, ...references] : prompt,
+        response_format: { type: "image", mime_type: "image/jpeg", aspect_ratio: aspectRatio, image_size: imageSize },
         background: false,
         store: false
       }),
@@ -228,15 +242,17 @@ async function generateMusicTrack(body) {
   if (!apiKey) throw providerError("Eleven Music chưa được cấu hình trên Vercel.", 503, "ELEVEN_MUSIC_NOT_CONFIGURED");
   const prompt = clean(body.input || body.prompt, 4100);
   if (!prompt) throw providerError("Hãy nhập prompt nhạc trước khi tạo track.", 400, "MUSIC_PROMPT_REQUIRED");
-  const durationMs = Math.min(120000, Math.max(15000, Number(body.meta?.durationSeconds || body.durationSeconds || 60) * 1000));
-  const response = await fetch("https://api.elevenlabs.io/v1/music?output_format=mp3_48000_192", {
+  const meta = body.meta || {};
+  const durationMs = Math.min(120000, Math.max(3000, Number(meta.durationSeconds || body.durationSeconds || 60) * 1000));
+  const outputFormat = new Set(["mp3_48000_192", "mp3_44100_128"]).has(meta.outputFormat) ? meta.outputFormat : "mp3_48000_192";
+  const response = await fetch(`https://api.elevenlabs.io/v1/music?output_format=${outputFormat}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "xi-api-key": apiKey },
     body: JSON.stringify({
       prompt,
       music_length_ms: durationMs,
       model_id: process.env.ELEVEN_MUSIC_MODEL || "music_v2",
-      force_instrumental: true,
+      force_instrumental: meta.instrumental !== false,
       sign_with_c2pa: true
     }),
     signal: AbortSignal.timeout(28000)
@@ -263,7 +279,11 @@ function cleanInlineImage(meta = {}) {
 async function startMusicVideo(body) {
   const prompt = clean(body.input || body.prompt, 4000);
   if (!prompt) throw providerError("Hãy nhập prompt chuyển động trước khi tạo video.", 400, "VIDEO_PROMPT_REQUIRED");
-  const image = cleanInlineImage(body.meta || {});
+  const meta = body.meta || {};
+  const image = cleanInlineImage(meta);
+  const aspectRatio = meta.aspectRatio === "9:16" ? "9:16" : "16:9";
+  const resolution = new Set(["720p", "1080p", "4k"]).has(String(meta.resolution).toLowerCase()) ? String(meta.resolution).toLowerCase() : "720p";
+  const durationSeconds = new Set([4, 6, 8]).has(Number(meta.durationSeconds)) ? Number(meta.durationSeconds) : 8;
   return withGeminiMediaKey(async (apiKey) => {
     const model = process.env.GEMINI_VIDEO_MODEL || "veo-3.1-fast-generate-preview";
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:predictLongRunning`, {
@@ -271,7 +291,7 @@ async function startMusicVideo(body) {
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         instances: [{ prompt, ...(image ? { image } : {}) }],
-        parameters: { numberOfVideos: 1, aspectRatio: "16:9", resolution: body.meta?.resolution === "1080p" ? "1080p" : "720p", durationSeconds: 8 }
+        parameters: { numberOfVideos: 1, aspectRatio, resolution, durationSeconds }
       }),
       signal: AbortSignal.timeout(24000)
     });

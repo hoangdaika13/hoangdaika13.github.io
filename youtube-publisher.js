@@ -33,7 +33,7 @@
   let thumbnailFile = null;
   let videoUrl = "";
   let thumbnailUrl = "";
-  let status = { configured: false, connected: false, channel: null, playlists: [], history: [] };
+  let status = { configured: false, connected: false, channel: null, channels: [], playlists: [], history: [] };
   let draft = loadDraft();
   let activeUpload = null;
   let currentXhr = null;
@@ -116,7 +116,7 @@
       render();
       if (showMessage) notify("Đã đồng bộ kênh và lịch sử upload.");
     } catch (error) {
-      status = { configured: false, connected: false, channel: null, playlists: [], history: [], error: error.message };
+      status = { configured: false, connected: false, channel: null, channels: [], playlists: [], history: [], error: error.message };
       render();
     }
   }
@@ -129,14 +129,16 @@
 
   function channelCard() {
     if (!status.connected) return `<article class="yap-channel yap-channel--empty">
-      <div class="yap-channel__mark">YT</div><div><small>BƯỚC 1 · ỦY QUYỀN</small><h3>Kết nối kênh YouTube</h3><p>Google chỉ cấp quyền upload sau khi chính bạn đồng ý. Website không nhận mật khẩu Google.</p></div>
-      <button class="yap-primary" type="button" data-yap-action="connect" ${status.configured ? "" : "disabled"}>Kết nối với Google</button>
+      <div class="yap-channel__mark">YT</div><div><small>BƯỚC 1 · CHỌN TÀI KHOẢN/KÊNH</small><h3>Kết nối kênh YouTube</h3><p>Google mở cửa sổ chọn tài khoản và Brand Account chính thức. HH không yêu cầu hoặc lưu mật khẩu Google.</p></div>
+      <button class="yap-primary" type="button" data-yap-action="connect" ${status.configured ? "" : "disabled"}>Chọn tài khoản Google</button>
     </article>`;
     const channel = status.channel || {};
+    const channels = status.channels || [];
     return `<article class="yap-channel">
       ${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="Ảnh kênh">` : '<div class="yap-channel__mark">YT</div>'}
       <div><small>KÊNH ĐANG CHỌN</small><h3>${esc(channel.title)}</h3><p>${Number(channel.subscribers || 0).toLocaleString("vi-VN")} người đăng ký · ${Number(channel.videos || 0).toLocaleString("vi-VN")} video</p></div>
-      <div class="yap-channel__actions"><button type="button" data-yap-action="refresh-channel" title="Làm mới kênh">↻</button><button type="button" data-yap-action="disconnect">Ngắt kết nối</button></div>
+      <div class="yap-channel__switcher">${channels.length > 1 ? `<label><span>Chuyển kênh</span><select data-yap-channel-select>${channels.map((item) => `<option value="${esc(item.id)}" ${item.id === channel.id ? "selected" : ""}>${esc(item.title)}</option>`).join("")}</select></label>` : ""}<button type="button" data-yap-action="connect">+ Thêm tài khoản/kênh</button></div>
+      <div class="yap-channel__actions"><button type="button" data-yap-action="refresh-channel" title="Làm mới kênh">↻</button><button type="button" data-yap-action="disconnect">Gỡ kênh này</button></div>
     </article>`;
   }
 
@@ -384,7 +386,7 @@
   }
 
   async function disconnectChannel() {
-    try { await api("disconnect", "POST", {}); status.connected = false; status.channel = null; status.playlists = []; render(); notify("Đã ngắt kết nối YouTube."); }
+    try { await api("disconnect", "POST", {}); await refreshStatus(); notify("Đã gỡ kênh YouTube khỏi HH Publisher."); }
     catch (error) { notify(error.message, "error"); }
   }
 
@@ -455,6 +457,14 @@
   function handleChange(event) {
     const target = event.target;
     if (target.matches("[data-yap-file]")) return changeFile(target);
+    if (target.matches("[data-yap-channel-select]")) {
+      api("channel/select", "POST", { channelId: target.value }).then((data) => {
+        status = { ...status, ...data };
+        render();
+        notify("Đã chuyển kênh xuất bản.");
+      }).catch((error) => notify(error.message, "error"));
+      return;
+    }
     if (target.dataset.yapField === "privacyMode") render();
   }
 

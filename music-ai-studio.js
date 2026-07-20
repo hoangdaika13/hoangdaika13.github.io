@@ -4,14 +4,21 @@
   const STORAGE_KEY = "hh.music-ai-studio.v1";
   const VIEWS = [
     { id: "project", label: "Xưởng sản xuất", icon: "01" },
-    { id: "prompt-studio", label: "Prompt đồng bộ", icon: "02" },
-    { id: "loop-builder", label: "Loop 1–5 giờ", icon: "03" },
-    { id: "audio-qa", label: "Kiểm âm", icon: "04" },
-    { id: "chapters", label: "Tracklist & chapter", icon: "05" },
-    { id: "youtube-pack", label: "Gói YouTube", icon: "06" },
-    { id: "youtube-publisher", label: "Đăng YouTube", icon: "07" },
-    { id: "publish-checklist", label: "Kiểm tra xuất bản", icon: "08" }
+    { id: "app-center", label: "AI Apps", icon: "02" },
+    { id: "concept-lab", label: "Concept", icon: "03" },
+    { id: "image-lab", label: "Tạo ảnh", icon: "04" },
+    { id: "music-lab", label: "Tạo nhạc", icon: "05" },
+    { id: "veo-lab", label: "Tạo video", icon: "06" },
+    { id: "render-lab", label: "Render", icon: "07" },
+    { id: "prompt-studio", label: "Prompt đồng bộ", icon: "08" },
+    { id: "loop-builder", label: "Loop 1–5 giờ", icon: "09" },
+    { id: "audio-qa", label: "Kiểm âm", icon: "10" },
+    { id: "chapters", label: "Tracklist & chapter", icon: "11" },
+    { id: "youtube-pack", label: "Gói YouTube", icon: "12" },
+    { id: "youtube-publisher", label: "Đăng YouTube", icon: "13" },
+    { id: "publish-checklist", label: "Kiểm tra xuất bản", icon: "14" }
   ];
+  const APP_VIEWS = new Set(["app-center", "concept-lab", "image-lab", "music-lab", "veo-lab", "render-lab"]);
 
   const PRESETS = {
     piano: {
@@ -470,7 +477,17 @@
     const p = state.project;
     const math = projectMath();
     const preset = PRESETS[p.genre] || PRESETS.piano;
-    const steps = VIEWS.slice(1).map((item, index) => `<button class="mai-flow-card" type="button" data-app-route="/music-ai/${item.id}"><i>${String(index + 2).padStart(2, "0")}</i><span><strong>${item.label}</strong><small>${["Tạo một bộ prompt cùng ngôn ngữ hình ảnh và âm thanh.", "Tính loop và xuất lệnh FFmpeg dùng ngay.", "Đọc file thật, đo peak/RMS và phát hiện clipping.", "Tạo timestamp đúng chuẩn chapter YouTube.", "Sinh tiêu đề, mô tả, tag và file metadata.", "Chọn video, lên lịch và upload thẳng lên kênh bằng OAuth.", "Chốt quyền sử dụng và QA trước khi public."][index]}</small></span><b>→</b></button>`).join("");
+    const workflowSteps = [
+      ["app-center", "AI Apps", "Mở riêng Concept, Image, Music, Veo hoặc Render Lab."],
+      ["prompt-studio", "Prompt đồng bộ", "Tạo một bộ prompt cùng ngôn ngữ hình ảnh và âm thanh."],
+      ["loop-builder", "Loop 1–5 giờ", "Tính loop và xuất lệnh FFmpeg dùng ngay."],
+      ["audio-qa", "Kiểm âm", "Đọc file thật, đo peak/RMS và phát hiện clipping."],
+      ["chapters", "Tracklist & chapter", "Tạo timestamp đúng chuẩn chapter YouTube."],
+      ["youtube-pack", "Gói YouTube", "Sinh tiêu đề, mô tả, tag và file metadata."],
+      ["youtube-publisher", "Đăng YouTube", "Chọn video, kênh, lịch phát và upload bằng OAuth."],
+      ["publish-checklist", "Kiểm tra xuất bản", "Chốt quyền sử dụng và QA trước khi public."]
+    ];
+    const steps = workflowSteps.map((item, index) => `<button class="mai-flow-card" type="button" data-app-route="/music-ai/${item[0]}"><i>${String(index + 2).padStart(2, "0")}</i><span><strong>${item[1]}</strong><small>${item[2]}</small></span><b>→</b></button>`).join("");
     return `<section class="mai-view">
       ${automationView()}
       <div class="mai-section-head"><div><p>PROJECT BLUEPRINT</p><h3>Thiết lập một lần, dùng cho cả dây chuyền</h3><span>Mọi prompt, phép tính loop và nội dung xuất bản tự cập nhật theo dự án này.</span></div><button class="mai-primary" type="button" data-action="save-project">Lưu dự án</button></div>
@@ -605,6 +622,10 @@
     return `<section class="mai-view mai-view--youtube-publisher"><div data-youtube-publisher-host></div></section>`;
   }
 
+  function modularAppView() {
+    return `<section class="mai-view mai-view--modular-app"><div data-music-ai-app-host></div></section>`;
+  }
+
   function publishView() {
     const completed = PUBLISH_CHECKS.filter(([key]) => Boolean(state.checklist[key])).length;
     const percent = Math.round(completed / PUBLISH_CHECKS.length * 100);
@@ -619,6 +640,12 @@
     if (!host) return;
     const content = ({
       project: projectView,
+      "app-center": modularAppView,
+      "concept-lab": modularAppView,
+      "image-lab": modularAppView,
+      "music-lab": modularAppView,
+      "veo-lab": modularAppView,
+      "render-lab": modularAppView,
       "prompt-studio": promptView,
       "loop-builder": loopView,
       "audio-qa": qaView,
@@ -633,6 +660,14 @@
         apiBase: apiBase(),
         pack: youtubePack(),
         project: state.project
+      });
+    }
+    if (APP_VIEWS.has(view)) {
+      window.HHMusicAIApps?.mount?.(host.querySelector("[data-music-ai-app-host]"), {
+        view,
+        apiBase: apiBase(),
+        project: state.project,
+        prompts: promptPack()
       });
     }
     if (view === "audio-qa" && state.qa?.waveform) requestAnimationFrame(drawWaveform);
@@ -1173,6 +1208,7 @@
 
   function unmount() {
     window.HHYouTubePublisher?.unmount?.();
+    window.HHMusicAIApps?.unmount?.();
     controller?.abort();
     controller = null;
     audioContext?.close?.();

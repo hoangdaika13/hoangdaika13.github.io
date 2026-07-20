@@ -52,7 +52,7 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
 test("Versioned publisher assets are loaded and cached", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["youtube-publisher.css?v=1", "youtube-publisher.js?v=1"]) {
+  for (const asset of ["youtube-publisher.css?v=2", "youtube-publisher.js?v=2"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);
