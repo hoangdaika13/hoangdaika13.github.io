@@ -1,4 +1,4 @@
-@import url("styles.css?v=34") layer(legacy);
+@import url("styles.css?v=35") layer(legacy);
 
 @layer legacy, tokens, base, layout, components, pages, modules, responsive, accessibility;
 

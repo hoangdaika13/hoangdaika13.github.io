@@ -1328,6 +1328,44 @@ function initSuperPlatform() {
       </section>`;
   };
 
+  const projectCenterAdvancedMarkup = ({ active, projects, tasks, state, projectView }) => {
+    const activeTasks = tasks.filter((task) => task.project === active.id);
+    const today = new Date();
+    const isoDate = (date) => date.toISOString().slice(0, 10);
+    const addDays = (date, amount) => { const next = new Date(date); next.setDate(next.getDate() + amount); return next; };
+    const taskDate = (task, index) => task.due || isoDate(addDays(today, Math.max(1, index + 1)));
+    const taskStatus = (column) => ({ todo: "Cần làm", doing: "Đang làm", review: "Kiểm tra", done: "Hoàn tất" }[column] || column || "Cần làm");
+    const priorityTone = (priority) => priority === "Cao" ? "high" : priority === "Thấp" ? "low" : "medium";
+    const taskSearchText = (task, index) => `${task.title} ${taskStatus(task.column)} ${task.priority || "Trung bình"} ${task.assignee || "Chưa giao"} ${taskDate(task, index)}`.toLowerCase();
+    const linked = [
+      ["knowledge-center", "Wiki dự án", "Tài liệu, quyết định và hướng dẫn liên quan", "/work/knowledge-center", "▤"],
+      ["ai-center", "AI Center", "Tóm tắt, phân tích rủi ro và viết kế hoạch", "/create/ai-center", "✦"],
+      ["team-collaboration", "Team Collaboration", "Giao việc, bình luận và activity log", "/work/team-collaboration", "⌘"],
+      ["media-center", "Media Center", "Ảnh, video và tài sản của dự án", "/create/media-center", "◫"]
+    ];
+    const calendarDays = Array.from({ length: 14 }, (_, index) => addDays(today, index));
+    const calendarMarkup = calendarDays.map((date) => {
+      const day = isoDate(date);
+      const dueTasks = activeTasks.map((task, index) => ({ task, index })).filter(({ task, index }) => taskDate(task, index) === day);
+      const projectDue = active.due === day;
+      return `<article class="project-calendar-day ${projectDue ? "is-project-due" : ""}" data-project-calendar-day="${day}"><header><strong>${date.toLocaleDateString("vi-VN", { weekday: "short" })}</strong><b>${date.getDate()}</b></header>${projectDue ? `<span class="project-calendar-project">Deadline dự án</span>` : ""}${dueTasks.map(({ task, index }) => `<button class="project-calendar-task interactive" type="button" data-project-task-search="${escapeHtml(taskSearchText(task, index))}" data-project-task-focus="${escapeHtml(task.id)}"><i class="${priorityTone(task.priority)}"></i><span>${escapeHtml(task.title)}</span><small>${escapeHtml(taskStatus(task.column))}</small></button>`).join("") || (!projectDue ? `<small class="project-calendar-empty">Trống</small>` : "")}</article>`;
+    }).join("");
+    const timelineMarkup = activeTasks.map((task, index) => {
+      const left = Math.min(82, index * 8);
+      const width = Math.max(15, 30 - index * 2);
+      return `<article class="project-timeline-row" data-project-task-search="${escapeHtml(taskSearchText(task, index))}"><div class="project-timeline-label"><strong>${escapeHtml(task.title)}</strong><small>${escapeHtml(task.assignee || "Chưa giao")} · ${escapeHtml(taskDate(task, index))}</small></div><div class="project-timeline-track"><i class="${priorityTone(task.priority)}" style="--timeline-left:${left}%;--timeline-width:${width}%"><span>${escapeHtml(taskStatus(task.column))}</span></i></div></article>`;
+    }).join("") || `<p class="project-empty-state">Chưa có nhiệm vụ cho dự án này. Mở Kanban để thêm việc đầu tiên.</p>`;
+    const openTasks = activeTasks.filter((task) => task.column !== "done").length;
+    const doneTasks = activeTasks.filter((task) => task.column === "done").length;
+    const blockedTasks = activeTasks.filter((task) => task.blockedBy).length;
+    const overdueTasks = activeTasks.filter((task, index) => task.column !== "done" && taskDate(task, index) < isoDate(today)).length;
+    return `
+          <section class="project-pane${projectView === "list" ? " active" : ""}" data-project-pane="list"><div class="project-pane-heading"><div><span>List view</span><h5>Danh sách công việc</h5></div><button class="interactive" type="button" data-project-add-task>+ Nhiệm vụ</button></div><div class="project-list-toolbar"><label><span>Tìm nhiệm vụ</span><input type="search" data-project-task-filter placeholder="Tên, người phụ trách hoặc deadline..."></label><label><span>Trạng thái</span><select data-project-task-status><option value="all">Tất cả trạng thái</option><option value="todo">Cần làm</option><option value="doing">Đang làm</option><option value="review">Kiểm tra</option><option value="done">Hoàn tất</option></select></label><button class="interactive" type="button" data-project-sort-tasks>Ưu tiên</button></div><div class="project-task-table" role="table"><div class="project-task-table-head" role="row"><span>Nhiệm vụ</span><span>Trạng thái</span><span>Ưu tiên</span><span>Deadline</span><span>Phụ trách</span><span></span></div>${activeTasks.map((task, index) => `<article class="project-task-row" role="row" data-project-task-row data-project-task-id="${escapeHtml(task.id)}" data-project-task-column="${escapeHtml(task.column || "todo")}" data-project-task-search="${escapeHtml(taskSearchText(task, index))}"><div><strong>${escapeHtml(task.title)}</strong><small>${task.blockedBy ? `Phụ thuộc: ${escapeHtml(task.blockedBy)}` : "Không có phụ thuộc"}</small></div><span class="project-task-status ${escapeHtml(task.column || "todo")}">${escapeHtml(taskStatus(task.column))}</span><span class="project-task-priority ${priorityTone(task.priority)}">${escapeHtml(task.priority || "Trung bình")}</span><time datetime="${escapeHtml(taskDate(task, index))}">${escapeHtml(taskDate(task, index))}</time><span>${escapeHtml(task.assignee || "Chưa giao")}</span><div class="project-row-actions"><button class="interactive" type="button" data-task-move="${escapeHtml(task.id)}">Chuyển</button><button class="interactive" type="button" data-task-delete="${escapeHtml(task.id)}" aria-label="Xóa nhiệm vụ">×</button></div></article>`).join("") || `<p class="project-empty-state">Chưa có nhiệm vụ phù hợp.</p>`}</div></section>
+          <section class="project-pane${projectView === "calendar" ? " active" : ""}" data-project-pane="calendar"><div class="project-pane-heading"><div><span>Calendar view</span><h5>Deadline 14 ngày tới</h5></div><button class="interactive" type="button" data-project-add-task>+ Nhiệm vụ</button></div><div class="project-calendar-legend"><span><i class="high"></i> Ưu tiên cao</span><span><i class="medium"></i> Trung bình</span><span><i class="low"></i> Thấp</span><b>${openTasks} việc mở · ${overdueTasks} trễ hạn</b></div><div class="project-calendar-grid">${calendarMarkup}</div></section>
+          <section class="project-pane${projectView === "timeline" ? " active" : ""}" data-project-pane="timeline"><div class="project-pane-heading"><div><span>Timeline view</span><h5>Lộ trình thực thi</h5></div><button class="interactive" type="button" data-project-add-milestone>+ Cột mốc</button></div><div class="project-timeline-scale"><span>Hôm nay</span><span>+ 1 tuần</span><span>+ 2 tuần</span></div><div class="project-timeline-board">${timelineMarkup}</div></section>
+          <section class="project-pane${projectView === "insights" ? " active" : ""}" data-project-pane="insights"><div class="project-pane-heading"><div><span>Project insights</span><h5>Sức khỏe và dữ liệu liên kết</h5></div><button class="interactive" type="button" data-project-add-update>+ Cập nhật</button></div><div class="project-insight-grid"><article><span>Đang mở</span><strong>${openTasks}</strong><small>trên ${activeTasks.length} nhiệm vụ</small></article><article><span>Hoàn tất</span><strong>${doneTasks}</strong><small>${activeTasks.length ? Math.round(doneTasks / activeTasks.length * 100) : 0}% hoàn thành</small></article><article><span>Phụ thuộc</span><strong>${blockedTasks}</strong><small>cần theo dõi</small></article><article><span>Trễ hạn</span><strong class="${overdueTasks ? "is-warning" : ""}">${overdueTasks}</strong><small>deadline chưa hoàn thành</small></article></div><div class="project-linked-workspaces"><header><div><span>LINKED WORKSPACES</span><strong>Một nguồn dữ liệu, nhiều không gian làm việc</strong></div><small>Dữ liệu vẫn lưu theo từng module</small></header><div>${linked.map(([id,title,description,route,icon]) => `<button class="project-linked-card interactive" type="button" data-app-route="${route}"><i>${icon}</i><span><strong>${title}</strong><small>${description}</small></span><b>↗</b></button>`).join("")}</div></div><div class="project-insight-activity"><header><strong>Activity log</strong><span>${(state.activity || []).length} sự kiện được lưu cục bộ</span></header>${(state.activity || []).slice(0, 8).map((item) => `<p><i></i><span>${escapeHtml(item)}</span></p>`).join("") || `<p class="project-empty-state">Chưa có hoạt động. Các thay đổi trong dự án sẽ xuất hiện tại đây.</p>`}</div></section>`;
+  };
+
   const projectCenterMarkup = () => {
     let state = {};
     try { state = JSON.parse(localStorage.getItem("hh-project-center") || "{}"); } catch { state = {}; }
@@ -1342,18 +1380,20 @@ function initSuperPlatform() {
       { id:"t3", title:"Nâng cấp AI Center", column:"done", priority:"Cao", project:"portfolio" },
       { id:"t4", title:"Viết changelog v22", column:"review", priority:"Trung bình", project:"portfolio" }
     ];
+    const projectView = ["overview", "list", "board", "calendar", "timeline", "roadmap", "bugs", "release", "insights"].includes(state.projectView) ? state.projectView : "overview";
     const active = projects.find((item) => item.id === state.activeProject) || projects[0];
     return `<section class="project-center-app" data-project-center data-active-project="${escapeHtml(active.id)}">
       <header class="project-center-hero"><div><p class="section-kicker">Project Center 05</p><h4>Điều hành dự án thông minh</h4><span>Tiến độ, Kanban, roadmap, timeline, bugs, changelog và nhóm trong một bảng điều khiển.</span></div><div class="project-health"><span>Project health</span><strong>${active.progress >= 80 ? "Tốt" : active.progress >= 55 ? "Ổn định" : "Cần chú ý"}</strong><i style="--health:${active.progress}%"></i></div></header>
-      <div class="project-topbar"><label><span>Dự án hiện tại</span><select data-project-select>${projects.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === active.id ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div class="project-view-tabs">${[["overview","Tổng quan"],["board","Kanban"],["roadmap","Roadmap"],["bugs","Bugs"],["release","Changelog"]].map(([id,label],index) => `<button class="interactive ${index===0?"active":""}" type="button" data-project-tab="${id}">${label}</button>`).join("")}</div><button class="button primary interactive" type="button" data-project-new>+ Dự án</button></div>
+      <div class="project-topbar"><label><span>Dự án hiện tại</span><select data-project-select>${projects.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === active.id ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</select></label><div class="project-view-tabs">${[["overview","Tổng quan"],["list","Danh sách"],["board","Kanban"],["calendar","Lịch"],["timeline","Timeline"],["roadmap","Roadmap"],["bugs","Bugs"],["release","Changelog"],["insights","Insights"]].map(([id,label]) => `<button class="interactive ${projectView===id?"active":""}" type="button" data-project-tab="${id}">${label}</button>`).join("")}</div><button class="button primary interactive" type="button" data-project-new>+ Dự án</button></div>
       <div class="project-dashboard">
         <aside class="project-list-panel"><header><div><span>Danh mục</span><strong>${projects.length} dự án</strong></div><button class="interactive" type="button" data-project-sort>Sắp xếp</button></header><div data-project-list>${projects.map((item) => `<button class="project-list-item interactive ${item.id===active.id?"active":""}" type="button" data-project-open="${escapeHtml(item.id)}" style="--project-color:${item.color}"><i></i><div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.status)} · ${item.progress}%</span></div><b>${escapeHtml(item.priority)}</b></button>`).join("")}</div><div class="project-mini-stats"><span><b>${tasks.filter((task)=>task.column!=="done").length}</b> đang mở</span><span><b>${tasks.filter((task)=>task.column==="done").length}</b> hoàn tất</span><span><b>${(state.bugs||[]).length}</b> bugs</span></div></aside>
         <main class="project-workspace">
-          <section class="project-pane active" data-project-pane="overview"><div class="project-overview-head"><div><span>${escapeHtml(active.status)}</span><h5>${escapeHtml(active.name)}</h5><p>${escapeHtml(active.description)}</p></div><button class="interactive" type="button" data-project-edit>Chỉnh sửa</button></div><div class="project-metric-grid"><article><span>Tiến độ</span><strong data-project-progress-value>${active.progress}%</strong><i><b style="width:${active.progress}%"></b></i></article><article><span>Deadline</span><strong>${escapeHtml(active.due)}</strong><small data-project-days>Đang tính...</small></article><article><span>Nhiệm vụ</span><strong>${tasks.filter((task)=>task.project===active.id).length}</strong><small>${tasks.filter((task)=>task.project===active.id&&task.column==="done").length} hoàn thành</small></article><article><span>Ưu tiên</span><strong>${escapeHtml(active.priority)}</strong><small>Theo dõi liên tục</small></article></div><div class="project-progress-control"><label>Cập nhật tiến độ <input type="range" min="0" max="100" value="${active.progress}" data-project-progress><b>${active.progress}%</b></label><button class="interactive" type="button" data-project-complete>Đánh dấu hoàn tất</button></div><div class="project-timeline"><header><strong>Hoạt động gần đây</strong><button class="interactive" type="button" data-project-add-update>+ Cập nhật</button></header><div data-project-activity>${(state.activity||[]).slice(0,6).map((item)=>`<p><i></i><span>${escapeHtml(item)}</span></p>`).join("")||"<p><i></i><span>Project Center đã được khởi tạo.</span></p>"}</div></div></section>
-          <section class="project-pane" data-project-pane="board"><div class="project-pane-heading"><div><span>Kanban board</span><h5>Luồng công việc</h5></div><button class="interactive" type="button" data-project-add-task>+ Nhiệm vụ</button></div><div class="project-kanban">${[["todo","Cần làm"],["doing","Đang làm"],["review","Kiểm tra"],["done","Hoàn tất"]].map(([id,label])=>`<section data-task-column="${id}"><header><strong>${label}</strong><span>${tasks.filter((task)=>task.column===id).length}</span></header><div>${tasks.filter((task)=>task.column===id).map((task)=>`<article draggable="true" data-task-id="${task.id}"><span>${escapeHtml(task.priority)}</span><strong>${escapeHtml(task.title)}</strong><small>${escapeHtml(projects.find((project)=>project.id===task.project)?.name||"")}</small><div><button class="interactive" type="button" data-task-move="${task.id}">Chuyển</button><button class="interactive" type="button" data-task-delete="${task.id}">×</button></div></article>`).join("")||"<p>Chưa có nhiệm vụ</p>"}</div></section>`).join("")}</div></section>
-          <section class="project-pane" data-project-pane="roadmap"><div class="project-pane-heading"><div><span>Roadmap</span><h5>Các cột mốc phát triển</h5></div><button class="interactive" type="button" data-project-add-milestone>+ Cột mốc</button></div><div class="roadmap-list" data-roadmap-list>${(state.milestones||[{title:"Nền tảng lõi",date:"2026-07",progress:100},{title:"AI & Media workspace",date:"2026-08",progress:82},{title:"Community & Learning",date:"2026-09",progress:35}]).map((item,index)=>`<article><span>${String(index+1).padStart(2,"0")}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.date)}</small><i><b style="width:${item.progress}%"></b></i></div><b>${item.progress}%</b></article>`).join("")}</div></section>
-          <section class="project-pane" data-project-pane="bugs"><div class="project-pane-heading"><div><span>Issue tracker</span><h5>Lỗi và rủi ro</h5></div><button class="interactive" type="button" data-project-add-bug>+ Báo lỗi</button></div><div class="bug-list" data-bug-list>${(state.bugs||[]).map((bug)=>`<article><span>${escapeHtml(bug.severity)}</span><div><strong>${escapeHtml(bug.title)}</strong><small>${escapeHtml(bug.status)} · ${escapeHtml(bug.time)}</small></div><button class="interactive" type="button" data-bug-resolve="${bug.id}">Xử lý</button></article>`).join("")||"<p>Không có lỗi đang theo dõi.</p>"}</div></section>
-          <section class="project-pane" data-project-pane="release"><div class="project-pane-heading"><div><span>Release notes</span><h5>Changelog dự án</h5></div><button class="interactive" type="button" data-project-add-release>+ Phiên bản</button></div><div class="release-list" data-release-list>${(state.releases||[{version:"v22",title:"Media Center workspace",date:"2026-07-11"},{version:"v21",title:"AI Center intelligent workspace",date:"2026-07-11"}]).map((item)=>`<article><b>${escapeHtml(item.version)}</b><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.date)}</span></div></article>`).join("")}</div></section>
+          <section class="project-pane${projectView === "overview" ? " active" : ""}" data-project-pane="overview"><div class="project-overview-head"><div><span>${escapeHtml(active.status)}</span><h5>${escapeHtml(active.name)}</h5><p>${escapeHtml(active.description)}</p></div><button class="interactive" type="button" data-project-edit>Chỉnh sửa</button></div><div class="project-metric-grid"><article><span>Tiến độ</span><strong data-project-progress-value>${active.progress}%</strong><i><b style="width:${active.progress}%"></b></i></article><article><span>Deadline</span><strong>${escapeHtml(active.due)}</strong><small data-project-days>Đang tính...</small></article><article><span>Nhiệm vụ</span><strong>${tasks.filter((task)=>task.project===active.id).length}</strong><small>${tasks.filter((task)=>task.project===active.id&&task.column==="done").length} hoàn thành</small></article><article><span>Ưu tiên</span><strong>${escapeHtml(active.priority)}</strong><small>Theo dõi liên tục</small></article></div><div class="project-progress-control"><label>Cập nhật tiến độ <input type="range" min="0" max="100" value="${active.progress}" data-project-progress><b>${active.progress}%</b></label><button class="interactive" type="button" data-project-complete>Đánh dấu hoàn tất</button></div><div class="project-timeline"><header><strong>Hoạt động gần đây</strong><button class="interactive" type="button" data-project-add-update>+ Cập nhật</button></header><div data-project-activity>${(state.activity||[]).slice(0,6).map((item)=>`<p><i></i><span>${escapeHtml(item)}</span></p>`).join("")||"<p><i></i><span>Project Center đã được khởi tạo.</span></p>"}</div></div></section>
+          <section class="project-pane${projectView === "board" ? " active" : ""}" data-project-pane="board"><div class="project-pane-heading"><div><span>Kanban board</span><h5>Luồng công việc</h5></div><button class="interactive" type="button" data-project-add-task>+ Nhiệm vụ</button></div><div class="project-kanban">${[["todo","Cần làm"],["doing","Đang làm"],["review","Kiểm tra"],["done","Hoàn tất"]].map(([id,label])=>`<section data-task-column="${id}"><header><strong>${label}</strong><span>${tasks.filter((task)=>task.column===id).length}</span></header><div>${tasks.filter((task)=>task.column===id).map((task)=>`<article draggable="true" data-task-id="${task.id}"><span>${escapeHtml(task.priority)}</span><strong>${escapeHtml(task.title)}</strong><small>${escapeHtml(projects.find((project)=>project.id===task.project)?.name||"")}</small><div><button class="interactive" type="button" data-task-move="${task.id}">Chuyển</button><button class="interactive" type="button" data-task-delete="${task.id}">×</button></div></article>`).join("")||"<p>Chưa có nhiệm vụ</p>"}</div></section>`).join("")}</div></section>
+          <section class="project-pane${projectView === "roadmap" ? " active" : ""}" data-project-pane="roadmap"><div class="project-pane-heading"><div><span>Roadmap</span><h5>Các cột mốc phát triển</h5></div><button class="interactive" type="button" data-project-add-milestone>+ Cột mốc</button></div><div class="roadmap-list" data-roadmap-list>${(state.milestones||[{title:"Nền tảng lõi",date:"2026-07",progress:100},{title:"AI & Media workspace",date:"2026-08",progress:82},{title:"Community & Learning",date:"2026-09",progress:35}]).map((item,index)=>`<article><span>${String(index+1).padStart(2,"0")}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.date)}</small><i><b style="width:${item.progress}%"></b></i></div><b>${item.progress}%</b></article>`).join("")}</div></section>
+          <section class="project-pane${projectView === "bugs" ? " active" : ""}" data-project-pane="bugs"><div class="project-pane-heading"><div><span>Issue tracker</span><h5>Lỗi và rủi ro</h5></div><button class="interactive" type="button" data-project-add-bug>+ Báo lỗi</button></div><div class="bug-list" data-bug-list>${(state.bugs||[]).map((bug)=>`<article><span>${escapeHtml(bug.severity)}</span><div><strong>${escapeHtml(bug.title)}</strong><small>${escapeHtml(bug.status)} · ${escapeHtml(bug.time)}</small></div><button class="interactive" type="button" data-bug-resolve="${bug.id}">Xử lý</button></article>`).join("")||"<p>Không có lỗi đang theo dõi.</p>"}</div></section>
+          <section class="project-pane${projectView === "release" ? " active" : ""}" data-project-pane="release"><div class="project-pane-heading"><div><span>Release notes</span><h5>Changelog dự án</h5></div><button class="interactive" type="button" data-project-add-release>+ Phiên bản</button></div><div class="release-list" data-release-list>${(state.releases||[{version:"v22",title:"Media Center workspace",date:"2026-07-11"},{version:"v21",title:"AI Center intelligent workspace",date:"2026-07-11"}]).map((item)=>`<article><b>${escapeHtml(item.version)}</b><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.date)}</span></div></article>`).join("")}</div></section>
+          ${projectCenterAdvancedMarkup({ active, projects, tasks, state, projectView })}
         </main>
       </div>
       <dialog class="project-dialog" data-project-dialog><form method="dialog"><button aria-label="Đóng">×</button></form><div><p class="section-kicker">Project editor</p><h5 data-project-dialog-title>Dự án mới</h5><label>Tên<input data-project-name></label><label>Mô tả<textarea rows="3" data-project-description></textarea></label><div><label>Trạng thái<select data-project-status><option>Đang phát triển</option><option>Đang thử nghiệm</option><option>Tạm dừng</option><option>Bản ổn định</option></select></label><label>Ưu tiên<select data-project-priority><option>Cao</option><option>Trung bình</option><option>Thấp</option></select></label></div><label>Deadline<input type="date" data-project-due></label><button class="button primary interactive" type="button" data-project-save>Lưu dự án</button></div></dialog>
@@ -2208,6 +2248,16 @@ function initSuperPlatform() {
       const label = event.target.closest("label")?.querySelector("b"); if (label) label.textContent = `${value}%`;
       const metric = panel?.querySelector("[data-project-progress-value]"); if (metric) metric.textContent = `${value}%`;
     }
+    if (event.target.matches("[data-project-task-filter]")) {
+      const panel = event.target.closest("[data-project-center]");
+      const query = event.target.value.trim().toLowerCase();
+      const status = panel?.querySelector("[data-project-task-status]")?.value || "all";
+      panel?.querySelectorAll("[data-project-task-search]").forEach((node) => {
+        const matchesText = !query || node.dataset.projectTaskSearch.includes(query);
+        const matchesStatus = status === "all" || node.closest("[data-project-task-row]")?.dataset.projectTaskColumn === status;
+        node.hidden = !(matchesText && matchesStatus);
+      });
+    }
     if (event.target.matches("[data-wiki-content]")) updateWikiPreview(event.target.closest("[data-knowledge-center]"));
     if (event.target.matches("[data-wiki-search]")) {
       const panel = event.target.closest("[data-knowledge-center]"); const query = event.target.value.toLowerCase();
@@ -2239,8 +2289,26 @@ function initSuperPlatform() {
     if (!current.tasks) current.tasks = [{id:"t1",title:"Hoàn thiện Project Center",column:"doing",priority:"Cao",project:"portfolio"},{id:"t2",title:"Kiểm tra giao diện mobile",column:"todo",priority:"Cao",project:"portfolio"},{id:"t3",title:"Nâng cấp AI Center",column:"done",priority:"Cao",project:"portfolio"},{id:"t4",title:"Viết changelog v22",column:"review",priority:"Trung bình",project:"portfolio"}];
     return current;
   };
+  const activateProjectView = (project, view) => {
+    if (!project || !view) return false;
+    const tab = project.querySelector(`[data-project-tab="${view}"]`);
+    if (!tab) return false;
+    const state = ensureProjectState();
+    state.projectView = view;
+    writeProjectState(state);
+    project.querySelectorAll("[data-project-tab]").forEach((item) => item.classList.toggle("active", item === tab));
+    project.querySelectorAll("[data-project-pane]").forEach((item) => item.classList.toggle("active", item.dataset.projectPane === view));
+    return true;
+  };
   const rerenderModule = (moduleId, tabName) => {
-    const scrollY = window.scrollY; render(); requestAnimationFrame(() => { window.scrollTo(0, scrollY); const panel = grid.querySelector(`[data-${moduleId}]`); if (tabName) panel?.querySelector(`[data-project-tab="${tabName}"]`)?.click(); });
+    const scrollY = window.scrollY;
+    render();
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollY);
+      const panel = grid.querySelector(`[data-${moduleId}]`);
+      if (tabName && moduleId === "project-center") activateProjectView(panel, tabName);
+      else if (tabName) panel?.querySelector(`[data-project-tab="${tabName}"]`)?.click();
+    });
   };
 
   const readWikiState = () => {
@@ -2546,9 +2614,11 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
     const userToggle=event.target.closest("[data-user-notification],[data-user-setting]");if(userToggle){const state=readUserState();if(userToggle.dataset.userNotification!==undefined){state.notifications=state.notifications||{};state.notifications[userToggle.dataset.userNotification]=userToggle.checked;}else{state.settings=state.settings||{};state.settings[userToggle.dataset.userSetting]=userToggle.checked;}writeUserState(state);return;}
     const widgetToggle=event.target.closest("[data-widget-toggle]");if(widgetToggle){const state=JSON.parse(localStorage.getItem("hh-widgets-engine")||"{}");state[widgetToggle.dataset.widgetToggle]=widgetToggle.checked;localStorage.setItem("hh-widgets-engine",JSON.stringify(state));const panel=widgetToggle.closest("[data-widgets-engine]");if(panel)panel.querySelector("[data-widgets-output]").textContent=`Đã ${widgetToggle.checked?"bật":"ẩn"} widget ${widgetToggle.dataset.widgetToggle}.`;return;}
     if(event.target.matches("[data-smart-sort]")){const panel=event.target.closest("[data-smart-search]");renderSmartSearch(panel?.querySelector("[data-smart-query]")?.value||"",panel?.querySelector("[data-smart-filter].active")?.dataset.smartFilter||"all");return;}
-    const projectSelect = event.target.closest("[data-project-select]");
-    if (projectSelect) { const state=ensureProjectState(); state.activeProject=projectSelect.value; writeProjectState(state,`Đã mở ${state.projects.find((item)=>item.id===state.activeProject)?.name||"dự án"}`); rerenderModule("project-center","overview"); return; }
-    const projectProgress = event.target.closest("[data-project-progress]");
+     const projectSelect = event.target.closest("[data-project-select]");
+     if (projectSelect) { const state=ensureProjectState(); state.activeProject=projectSelect.value; writeProjectState(state,`Đã mở ${state.projects.find((item)=>item.id===state.activeProject)?.name||"dự án"}`); rerenderModule("project-center","overview"); return; }
+     const projectTaskStatus = event.target.closest("[data-project-task-status]");
+     if (projectTaskStatus) { const panel=projectTaskStatus.closest("[data-project-center]");const query=panel?.querySelector("[data-project-task-filter]")?.value.trim().toLowerCase()||"";const status=projectTaskStatus.value;panel?.querySelectorAll("[data-project-task-search]").forEach((node)=>{const matchesText=!query||node.dataset.projectTaskSearch.includes(query);const matchesStatus=status==="all"||node.closest("[data-project-task-row]")?.dataset.projectTaskColumn===status;node.hidden=!(matchesText&&matchesStatus);});return; }
+     const projectProgress = event.target.closest("[data-project-progress]");
     if (projectProgress) { const panel=projectProgress.closest("[data-project-center]");const state=ensureProjectState();const item=state.projects.find((entry)=>entry.id===panel?.dataset.activeProject);if(item){item.progress=Number(projectProgress.value);writeProjectState(state,`Tiến độ ${item.name}: ${item.progress}%`);}return; }
     const mediaUpload = event.target.closest("[data-media-upload]");
     if (mediaUpload) {
@@ -2623,7 +2693,9 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
     const admin=event.target.closest("[data-admin-panel]");if(admin){const tab=event.target.closest("[data-admin-tab]");if(tab){admin.querySelectorAll("[data-admin-tab]").forEach((item)=>item.classList.toggle("active",item===tab));admin.querySelectorAll("[data-admin-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.adminPane===tab.dataset.adminTab));if(tab.dataset.adminTab==="users")loadAdminUsers().catch((error)=>{const status=admin.querySelector("[data-admin-status]");if(status)status.textContent=error.message;});return;}if(event.target.closest("[data-admin-refresh]")){loadAdminSummary();return;}if(event.target.closest("[data-admin-backup]")){const backup={version:47,createdAt:new Date().toISOString(),localStorage:Object.fromEntries(Object.keys(localStorage).map((key)=>[key,localStorage.getItem(key)]))};downloadText(`hh-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(backup,null,2),"application/json;charset=utf-8");return;}}
     const project = event.target.closest("[data-project-center]");
     if (project) {
-      const tab=event.target.closest("[data-project-tab]"); if(tab){project.querySelectorAll("[data-project-tab]").forEach((item)=>item.classList.toggle("active",item===tab));project.querySelectorAll("[data-project-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.projectPane===tab.dataset.projectTab));return;}
+      const tab=event.target.closest("[data-project-tab]"); if(tab){activateProjectView(project, tab.dataset.projectTab);return;}
+      const taskFocus=event.target.closest("[data-project-task-focus]");if(taskFocus){project.querySelector('[data-project-tab="list"]')?.click();requestAnimationFrame(()=>project.querySelector(`[data-project-task-row][data-project-task-id="${taskFocus.dataset.projectTaskFocus}"]`)?.scrollIntoView({behavior:"smooth",block:"center"}));return;}
+      if(event.target.closest("[data-project-sort-tasks]")){const state=ensureProjectState();const rank={Cao:0,"Trung bình":1,Thấp:2};state.tasks.sort((a,b)=>(rank[a.priority]??1)-(rank[b.priority]??1));writeProjectState(state,"Sắp xếp nhiệm vụ theo ưu tiên");rerenderModule("project-center","list");return;}
       if(event.target.closest("[data-project-sort]")){const state=ensureProjectState();state.projects.sort((a,b)=>b.progress-a.progress);writeProjectState(state);rerenderModule("project-center","overview");return;}
       const open=event.target.closest("[data-project-open]"); if(open){const state=ensureProjectState();state.activeProject=open.dataset.projectOpen;writeProjectState(state);rerenderModule("project-center","overview");return;}
       const dialog=project.querySelector("[data-project-dialog]");
@@ -5491,6 +5563,13 @@ function initAppShell() {
   const searchItems = () => {
     const modules = moduleList().filter((item) => item.id !== "admin-panel" || isCurrentUserAdmin()).map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
     const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
+    const projectCommands = [
+      { type: "Project", title: "Project · Tổng quan", description: "Mở bảng điều hành và sức khỏe dự án.", action: "project-view:overview", key: "project center tổng quan health dashboard" },
+      { type: "Project", title: "Project · Danh sách", description: "Quản lý nhiệm vụ theo bảng dữ liệu, lọc và ưu tiên.", action: "project-view:list", key: "project center list danh sách task filter priority" },
+      { type: "Project", title: "Project · Lịch", description: "Xem deadline dự án và nhiệm vụ trong 14 ngày tới.", action: "project-view:calendar", key: "project center calendar lịch deadline" },
+      { type: "Project", title: "Project · Timeline", description: "Theo dõi lộ trình thực thi và các cột mốc.", action: "project-view:timeline", key: "project center timeline roadmap milestone gantt" },
+      { type: "Project", title: "Project · Insights", description: "Kiểm tra tiến độ, phụ thuộc, trễ hạn và workspace liên kết.", action: "project-view:insights", key: "project center insights metrics dependencies overdue linked workspace" }
+    ];
     const creativeTools = creativeStudioItems.map((item) => ({ type: "Sáng tạo", title: item.title, description: item.description || item.group, route: `/create/${item.id}`, key: `${item.title} ${item.group} ${item.description || ""} creative sáng tạo kịch bản ai` }));
     const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));
     const musicAI = [
@@ -5507,7 +5586,7 @@ function initAppShell() {
       { type: "Làm nhạc AI", title: "Đăng YouTube tự động", description: "Chọn video, thumbnail, lên lịch, playlist và upload tiếp tục được khi gián đoạn.", route: "/music-ai/youtube-publisher", key: "youtube upload publisher schedule thumbnail playlist resumable oauth tự động đăng video" },
       { type: "Làm nhạc AI", title: "Kiểm tra xuất bản", description: "Checklist quyền sử dụng và QA trước khi public.", route: "/music-ai/publish-checklist", key: "publish checklist bản quyền quyền thương mại qa" }
     ];
-    return [...modules, ...commandCenter, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "20 công cụ xử lý ảnh, video, PDF, QR, thương hiệu và xuất bản mạng xã hội.", route: "/media-design", key: "media design creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
@@ -5567,11 +5646,40 @@ function initAppShell() {
     });
   };
 
+  const executePaletteOption = (option) => {
+    if (!option) return;
+    const action = option.dataset.commandAction || "";
+    const route = option.dataset.appRoute || "";
+    if (action.startsWith("project-view:")) {
+      const view = action.slice("project-view:".length);
+      const openProjectView = () => activateProjectView(document.querySelector("[data-project-center]"), view);
+      if (activeRoute === "/work/project-center") openProjectView();
+      else {
+        location.hash = "#/work/project-center";
+        window.setTimeout(openProjectView, 180);
+      }
+    } else if (route) {
+      const nextHash = `#${route}`;
+      beginRouteFeedback(route);
+      if (location.hash === nextHash) renderRouteWithTransition(); else location.hash = nextHash;
+      if (mobileSidebarQuery.matches) document.body.classList.add("app-sidebar-collapsed");
+      closeOverlays({ restoreFocus: false });
+    } else {
+      window.HHCommandCenter?.runAction?.(action);
+    }
+    closePalette();
+  };
+  paletteResults?.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-command-action], [data-app-route]");
+    if (!option || !paletteResults.contains(option)) return;
+    event.stopPropagation();
+    executePaletteOption(option);
+  });
+
   document.addEventListener("click", (event) => {
     const commandAction = event.target.closest("[data-command-action]");
     if (commandAction) {
-      window.HHCommandCenter?.runAction?.(commandAction.dataset.commandAction);
-      closePalette();
+      executePaletteOption(commandAction);
       return;
     }
     const workCapture = event.target.closest("[data-work-capture]");
@@ -5710,7 +5818,7 @@ function initAppShell() {
         option.classList.toggle("is-selected", index === next);
         option.setAttribute("aria-selected", String(index === next));
       });
-      if (event.key === "Enter") options[current].click(); else options[next].scrollIntoView({ block: "nearest" });
+      if (event.key === "Enter") executePaletteOption(options[current]); else options[next].scrollIntoView({ block: "nearest" });
     }
   });
   paletteInput?.addEventListener("input", () => renderPalette(paletteInput.value));
