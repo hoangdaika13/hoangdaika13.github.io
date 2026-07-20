@@ -17,6 +17,10 @@ test("application shell uses guided hubs and real route transitions", () => {
   assert.match(client, /const mountModuleHub/);
   assert.match(client, /data-app-hub-search/);
   assert.match(client, /const submenu = fullSubmenu/);
+  assert.match(client, /--route-accent/);
+  assert.match(client, /data-nav-label/);
+  assert.match(client, /crumbRoute \+=/);
+  assert.match(client, /event\.key === "\/"/);
   assert.doesNotMatch(client, /compactStudioItems|compactModuleItems|Xem tất cả \$\{submenuCount\} chức năng/);
   assert.match(css, /view-transition-name:app-workspace/);
   assert.match(css, /\.app-module-hub__grid/);
@@ -41,7 +45,7 @@ test("HH English keeps a focused path and moves secondary tools into a searchabl
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-for (const asset of ["app-shell.css?v=47", "script.js?v=103", "english-learning.css?v=11", "english-learning.js?v=13", "motion-comfort.css?v=1"]) {
+for (const asset of ["app-shell.css?v=48", "script.js?v=104", "sidebar-navigation-pro.css?v=4", "english-learning.css?v=11", "english-learning.js?v=13", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

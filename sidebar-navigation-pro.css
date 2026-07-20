@@ -210,3 +210,29 @@ body.app-sidebar-collapsed .app-sidebar__count{display:none}
 @media(prefers-reduced-motion:reduce){
   .app-sidebar__group>.app-sidebar__item>span:first-child{transform:none!important}
 }
+
+/* Primary rows behave as one consistent, fully clickable control. */
+.app-sidebar__group>.app-sidebar__item{
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.app-sidebar__group>.app-sidebar__item>.app-sidebar__count,
+.app-sidebar__group>.app-sidebar__item>b{pointer-events:none}
+.app-sidebar__group.is-expanded>.app-sidebar__item:not(.is-active){
+  border-color:color-mix(in srgb,var(--nav-accent) 18%,#263442);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--nav-accent) 6%,#0f1620),#0d141d);
+  color:#dbe6ef;
+}
+.app-sidebar__group.is-expanded>.app-sidebar__item:not(.is-active)>span:first-child{
+  color:var(--nav-accent);
+}
+.app-sidebar__group>.app-sidebar__item:focus-visible{
+  border-color:color-mix(in srgb,var(--nav-accent) 64%,#314252);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--nav-accent) 10%,transparent);
+  outline:0;
+}
+.app-sidebar__group>.app-sidebar__item[aria-expanded=true]>.app-sidebar__count{
+  border-color:color-mix(in srgb,var(--nav-accent) 48%,#273645);
+  background:color-mix(in srgb,var(--nav-accent) 14%,#0d141e);
+  color:#f3fbff;
+}

@@ -4963,6 +4963,7 @@ function initAppShell() {
   const palette = byId("commandPalette");
   const paletteInput = byId("commandPaletteInput");
   const paletteResults = byId("commandPaletteResults");
+  const paletteCount = byId("commandPaletteCount");
   const notificationDrawer = byId("notificationDrawer");
   const helpDrawer = byId("helpDrawer");
   const drawerBackdrop = document.querySelector(".app-drawer-backdrop");
@@ -5169,7 +5170,7 @@ function initAppShell() {
       const hasSubmenu = Boolean(submenu);
       const countBadge = hasSubmenu ? `<small class="app-sidebar__count" aria-label="${submenuCount} chức năng">${submenuCount}</small>` : "";
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}" data-nav-group="${group.id}" style="--nav-accent:${group.accent || "#56eaff"}">
-        <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.landingRoute || group.route}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}"><span>${group.icon}</span><b>${group.label}</b>${countBadge}<i class="app-sidebar__chevron" ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
+        <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.landingRoute || group.route}" data-nav-label="${safeText(group.label)}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}${hasSubmenu ? " và hiển thị chức năng" : ""}"><span>${group.icon}</span><b>${group.label}</b>${countBadge}<i class="app-sidebar__chevron" ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
         ${hasSubmenu ? `<div class="app-sidebar__submenu">${submenu}</div>` : ""}
       </section>`;
     }).join("");
@@ -5288,10 +5289,19 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-      breadcrumb.innerHTML = [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => `<span>›</span><button type="button" ${index === crumbs.length - 1 ? "aria-current=page" : ""}>${module?.title || [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems].find((item) => item.id === crumb)?.title || ({ create: "Sáng tạo", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" }[crumb] || crumb)}</button>`)].join("");
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIPageItems];
+    let crumbRoute = "";
+    breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Trang chủ</button>` : [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => {
+      crumbRoute += `/${crumb}`;
+      const isCurrent = index === crumbs.length - 1;
+      const label = isCurrent && module?.title ? module.title : knownTools.find((item) => item.id === crumb)?.title || crumbLabels[crumb] || crumb;
+      return `<span aria-hidden="true">›</span><button type="button" ${isCurrent ? "aria-current=page" : `data-app-route="${safeText(crumbRoute)}"`}>${safeText(label)}</button>`;
+    })].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
     if (contextBar) {
       const group = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
+      pageHeader.querySelector(".app-page-header__eyebrow").textContent = group?.label || "HH Platform";
       contextBar.hidden = route === "/home";
       if (contextGroup) contextGroup.textContent = (group?.label || "HH Platform").toUpperCase();
       if (contextLabel) contextLabel.textContent = title;
@@ -5320,6 +5330,9 @@ function initAppShell() {
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
     }
     activeRoute = route;
+    const activeGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
+    shell.style.setProperty("--route-accent", activeGroup?.accent || "#56eaff");
+    shell.dataset.activeSection = activeGroup?.id || "home";
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
@@ -5498,10 +5511,20 @@ function initAppShell() {
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
-    const results = searchItems().filter((item) => !normalized || item.key.toLowerCase().includes(normalized)).slice(0, 12);
+    const tokens = normalized.split(/\s+/).filter(Boolean);
+    const results = searchItems().filter((item) => {
+      const haystack = `${item.title} ${item.description || ""} ${item.key || ""}`.toLowerCase();
+      return tokens.every((token) => haystack.includes(token));
+    }).slice(0, 12);
+    if (paletteCount) paletteCount.textContent = `${results.length} kết quả`;
     paletteResults.innerHTML = results.length ? results.map((item, index) => `<button type="button" role="option" aria-selected="${index === 0}" class="${index === 0 ? "is-selected" : ""}" ${item.action ? `data-command-action="${item.action}"` : `data-app-route="${item.route}"`}><span>${item.type}</span><div><strong>${item.title}</strong><small>${item.description}</small></div><b>↵</b></button>`).join("") : "<p>Không tìm thấy công cụ hoặc hướng dẫn phù hợp.</p>";
   };
-  const openPalette = () => { palette.showModal(); renderPalette(); requestAnimationFrame(() => paletteInput.focus()); };
+  const openPalette = () => {
+    if (!palette.open) palette.showModal();
+    paletteInput.value = "";
+    renderPalette();
+    requestAnimationFrame(() => paletteInput.focus());
+  };
   const closePalette = () => palette.open && palette.close();
   let drawerTrigger = null;
   const closeOverlays = ({ restoreFocus = true } = {}) => {
@@ -5672,6 +5695,10 @@ function initAppShell() {
   });
   document.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openPalette(); }
+    const typing = event.target.matches("input, textarea, select, [contenteditable=true]");
+    if (!typing && event.key === "/") { event.preventDefault(); openPalette(); }
+    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = "#/home"; }
+    if (!typing && event.altKey && event.key.toLowerCase() === "m") { event.preventDefault(); location.hash = "#/music-ai/project"; }
     if (event.key === "Escape") { closePalette(); closeOverlays(); }
     if (palette?.open && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {
       const options = [...paletteResults.querySelectorAll("[role=option]")];
@@ -5705,13 +5732,25 @@ function initAppShell() {
   else mobileSidebarQuery.addListener((event) => syncResponsiveSidebar(event.matches));
   document.body.classList.toggle("app-advanced-mode", Boolean(initial.advanced));
   const updateClock = () => {
+    const now = new Date();
     const clock = byId("shellClock");
     const date = byId("shellDate");
-    if (clock) clock.textContent = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-    if (date) date.textContent = new Date().toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
+    const headerClock = byId("shellHeaderClock");
+    if (clock) clock.textContent = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    if (date) date.textContent = now.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
+    if (headerClock) headerClock.textContent = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  };
+  const updateHeaderNetwork = () => {
+    const status = byId("shellHeaderNetwork");
+    if (!status) return;
+    status.textContent = navigator.onLine ? "Online" : "Ngoại tuyến";
+    status.closest(".app-live-status")?.classList.toggle("is-offline", !navigator.onLine);
   };
   updateClock();
+  updateHeaderNetwork();
   setInterval(updateClock, 60000);
+  addEventListener("online", updateHeaderNetwork);
+  addEventListener("offline", updateHeaderNetwork);
   setShellVisibility();
 }
 

@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app-shell.css?v=47">
+  <link rel="stylesheet" href="app-shell.css?v=48">
   <link rel="stylesheet" href="dashboard-aurora.css?v=3">
   <link rel="stylesheet" href="command-center-pro.css?v=3">
   <link rel="stylesheet" href="professional-tools.css?v=3">
@@ -41,7 +41,7 @@
   <link rel="stylesheet" href="team-collaboration-pro.css?v=1">
   <link rel="stylesheet" href="creative-suite.css?v=5">
   <link rel="stylesheet" href="ai-center-pro.css?v=1">
-  <link rel="stylesheet" href="sidebar-navigation-pro.css?v=3">
+  <link rel="stylesheet" href="sidebar-navigation-pro.css?v=4">
   <link rel="stylesheet" href="space-explorer.css?v=3">
   <link rel="stylesheet" href="english-learning.css?v=11">
   <link rel="stylesheet" href="english-voice-coach.css?v=1">
@@ -157,6 +157,7 @@
       </div>
       <button class="app-global-search" type="button" data-command-open aria-haspopup="dialog"><span>⌕</span><span data-i18n-text>Tìm công cụ, chức năng, dự án hoặc hướng dẫn...</span><kbd>Ctrl K</kbd></button>
       <div class="app-header__actions">
+        <div class="app-live-status" title="Trạng thái kết nối của thiết bị"><i aria-hidden="true"></i><span>HH Cloud</span><b id="shellHeaderNetwork">Online</b><time id="shellHeaderClock">--:--</time></div>
         <button class="app-icon-button" type="button" data-dashboard-theme-cycle aria-label="Đổi giao diện" title="Đổi giao diện">◐</button>
         <button class="app-icon-button" type="button" data-dashboard-fullscreen aria-label="Toàn màn hình" title="Toàn màn hình">□</button>
         <button class="app-icon-button" type="button" data-help-toggle aria-label="Mở trợ giúp" title="Trợ giúp">?</button>
@@ -261,6 +262,7 @@
   <dialog class="command-palette" id="commandPalette" aria-label="Tìm kiếm toàn hệ thống">
     <div class="command-palette__header"><span>⌕</span><input id="commandPaletteInput" type="search" placeholder="Tìm công cụ, chức năng, dự án hoặc hướng dẫn..." autocomplete="off"><kbd>Esc</kbd></div>
     <div class="command-palette__results" id="commandPaletteResults" role="listbox"></div>
+    <footer class="command-palette__footer"><span><kbd>↑↓</kbd> Di chuyển</span><span><kbd>Enter</kbd> Mở</span><span><kbd>Esc</kbd> Đóng</span><strong id="commandPaletteCount">0 kết quả</strong></footer>
   </dialog>
 
   <aside class="app-drawer" id="notificationDrawer" aria-label="Thông báo" aria-hidden="true">
@@ -951,7 +953,7 @@
 <script src="youtube-publisher.js?v=2"></script>
 <script src="music-ai-apps.js?v=2"></script>
 <script src="music-ai-studio.js?v=6"></script>
-<script src="script.js?v=103"></script>
+<script src="script.js?v=104"></script>
 <script src="community-social-pro.js?v=4"></script>
 <script src="community-platform-v2.js?v=12"></script>
 <script src="community-calls.js?v=1"></script>

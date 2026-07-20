@@ -1346,6 +1346,140 @@
 @layer accessibility {
   @media(prefers-reduced-motion:reduce){.app-module-hub__grid>button,.app-route-progress i{animation:none!important}::view-transition-old(app-workspace),::view-transition-new(app-workspace),::view-transition-old(app-page-header),::view-transition-new(app-page-header){animation-duration:1ms!important}}
 }
+
+/* Global experience polish v2 */
+@layer layout {
+  .app-shell {
+    --route-accent: var(--accent);
+  }
+
+  .app-header {
+    border-bottom-color: color-mix(in srgb, var(--route-accent) 18%, var(--border-subtle));
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--route-accent) 5%, transparent), transparent 30%),
+      var(--header-bg);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .025), 0 12px 32px rgba(0, 0, 0, .16);
+  }
+
+  .app-main {
+    background:
+      linear-gradient(color-mix(in srgb, var(--route-accent) 2.4%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--route-accent) 2.4%, transparent) 1px, transparent 1px),
+      linear-gradient(135deg, color-mix(in srgb, var(--route-accent) 3.5%, var(--app-bg)), var(--app-bg) 42%);
+    background-size: 36px 36px, 36px 36px, auto;
+  }
+}
+
+@layer components {
+  .app-live-status {
+    display: grid;
+    grid-template-columns: 7px auto auto auto;
+    align-items: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--route-accent) 20%, var(--border-default));
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--route-accent) 4%, var(--field-bg));
+    color: var(--text-muted);
+    font-size: 8px;
+    white-space: nowrap;
+  }
+  .app-live-status > i { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 9px var(--success); }
+  .app-live-status > span { font-weight: 700; text-transform: uppercase; }
+  .app-live-status > b { color: var(--success); font-weight: 750; }
+  .app-live-status > time { padding-left: 7px; border-left: 1px solid var(--border-default); color: var(--text-secondary); font-variant-numeric: tabular-nums; font-weight: 700; }
+  .app-live-status.is-offline > i { background: var(--warning); box-shadow: 0 0 9px var(--warning); }
+  .app-live-status.is-offline > b { color: var(--warning); }
+
+  .app-global-search:focus-visible,
+  .app-global-search:hover {
+    border-color: color-mix(in srgb, var(--route-accent) 42%, var(--border-default));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--route-accent) 7%, transparent), 0 10px 28px rgba(0, 0, 0, .18);
+  }
+  .app-global-search > span:first-child,
+  .app-page-header__eyebrow,
+  .app-context-bar small { color: var(--route-accent); }
+
+  .app-breadcrumb button {
+    min-height: 28px;
+    padding: 0 7px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    cursor: pointer;
+  }
+  .app-breadcrumb button[data-app-route]:hover { border-color: var(--border-default); background: var(--surface-1); color: var(--text-primary); }
+  .app-breadcrumb button[aria-current="page"] { color: color-mix(in srgb, var(--route-accent) 76%, white); cursor: default; }
+  .app-breadcrumb > span { color: color-mix(in srgb, var(--route-accent) 42%, var(--text-muted)); }
+
+  .app-page-header {
+    position: relative;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--route-accent) 4%, transparent), transparent 52%);
+  }
+  .app-page-header::after {
+    position: absolute;
+    right: clamp(20px, 3vw, 36px);
+    bottom: -1px;
+    left: clamp(20px, 3vw, 36px);
+    height: 1px;
+    background: linear-gradient(90deg, var(--route-accent), color-mix(in srgb, var(--accent-secondary) 65%, transparent), transparent 74%);
+    content: "";
+    opacity: .48;
+    transform: scaleX(.35);
+    transform-origin: left;
+    transition: transform 420ms cubic-bezier(.2, .8, .2, 1), opacity 220ms ease;
+  }
+  .app-page-header:hover::after { opacity: .85; transform: scaleX(1); }
+
+  .app-context-bar {
+    border-color: color-mix(in srgb, var(--route-accent) 16%, var(--border-subtle));
+    background: color-mix(in srgb, var(--route-accent) 3%, var(--surface-1));
+  }
+  .app-context-bar > button:hover,
+  .app-context-bar__actions button:hover { border-color: color-mix(in srgb, var(--route-accent) 40%, var(--border-default)); background: color-mix(in srgb, var(--route-accent) 9%, transparent); }
+
+  .command-palette {
+    overflow: hidden;
+    border-color: color-mix(in srgb, var(--route-accent) 28%, var(--border-strong));
+    background: linear-gradient(145deg, color-mix(in srgb, var(--route-accent) 5%, var(--surface-1)), var(--surface-1));
+  }
+  .command-palette__header { color: var(--route-accent); }
+  .command-palette__footer {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 40px;
+    padding: 6px 12px;
+    border-top: 1px solid var(--border-subtle);
+    background: rgba(5, 9, 15, .42);
+    color: var(--text-muted);
+    font-size: 8px;
+  }
+  .command-palette__footer > span { display: inline-flex; align-items: center; gap: 5px; }
+  .command-palette__footer > strong { margin-left: auto; color: color-mix(in srgb, var(--route-accent) 72%, var(--text-secondary)); font-weight: 700; }
+  .command-palette__footer kbd { padding: 2px 5px; font-size: 7px; }
+
+  .app-module-hub > header { border-color: color-mix(in srgb, var(--route-accent) 26%, var(--border-default)); }
+  .app-module-hub > header .section-kicker,
+  .app-module-hub > header > span b,
+  .app-module-hub__toolbar label { color: var(--route-accent); }
+}
+
+@layer responsive {
+  @media (max-width: 1240px) { .app-live-status { display: none; } }
+  @media (max-width: 720px) {
+    .command-palette__footer > span:nth-child(2),
+    .command-palette__footer > span:nth-child(3) { display: none; }
+    .app-page-header::after { right: 16px; left: 16px; }
+  }
+}
+
+@layer accessibility {
+  @media (prefers-reduced-motion: reduce) { .app-page-header::after { transition: none; } }
+}
 .sr-only {
   position: absolute !important;
   width: 1px !important;
