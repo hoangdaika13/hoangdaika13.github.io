@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
 const { MongoClient, ObjectId } = require("mongodb");
+const { registerCommunicationV2 } = require("./communication-v2");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -623,6 +624,16 @@ io.use(async (socket, next) => {
   const token = socket.handshake.auth?.token;
   socket.user = await verifyToken(token);
   next();
+});
+
+registerCommunicationV2({
+  app,
+  io,
+  getDb: db,
+  getCurrentUser: currentUser,
+  hasMongo: Boolean(MONGODB_URI),
+  hasRedis: false,
+  hasObjectStorage: false
 });
 
 io.on("connection", async (socket) => {

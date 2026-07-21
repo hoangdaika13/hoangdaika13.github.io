@@ -1,0 +1,31 @@
+body.app-communication-route #appBreadcrumb,
+body.app-communication-route #appPageHeader,
+body.app-communication-route #appContextBar {
+  display: none;
+}
+
+body.app-communication-route #appWorkspace {
+  padding-top: 12px;
+}
+
+body.app-communication-route .communication-suite {
+  min-height: calc(100vh - 88px);
+}
+
+@media (max-width: 720px) {
+  body.app-communication-route #appWorkspace {
+    padding: 8px 8px 76px;
+  }
+
+  body.app-communication-route .communication-suite {
+    min-height: calc(100dvh - 66px);
+    gap: 8px;
+  }
+
+  body.app-communication-route .comms-suite-head {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    border-color: #325064;
+  }
+}

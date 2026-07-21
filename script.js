@@ -5250,6 +5250,22 @@ function initAppShell() {
       accent: "#5ee8d7",
       route: "/communication",
       items: ["community", "notification-center", "user-dashboard", "feedback-survey", "helpdesk-ticketing", "referral-affiliate"],
+      pages: [
+        { id: "command-center", title: "Communication Center", route: "/communication/command-center" },
+        { id: "unified-inbox", title: "Unified Inbox", route: "/communication/unified-inbox" },
+        { id: "messenger", title: "Messenger Pro", route: "/communication/messenger" },
+        { id: "channels", title: "Channels", route: "/communication/channels" },
+        { id: "forum", title: "Forum", route: "/communication/forum" },
+        { id: "live-room", title: "Live Room & Calls", route: "/communication/live-room" },
+        { id: "shared-canvas", title: "Shared Canvas", route: "/communication/shared-canvas" },
+        { id: "notifications", title: "Smart Notifications", route: "/communication/notifications" },
+        { id: "universal-search", title: "Universal Search", route: "/communication/universal-search" },
+        { id: "onboarding", title: "Onboarding", route: "/communication/onboarding" },
+        { id: "moderation", title: "Moderation & Safety", route: "/communication/moderation" },
+        { id: "automation", title: "Communication Automation", route: "/communication/automation" },
+        { id: "hh-spaces", title: "HH Spaces", route: "/communication/hh-spaces" },
+        { id: "smart-catch-up", title: "Smart Catch-up", route: "/communication/smart-catch-up" }
+      ],
       shortcuts: [{ label: "Google + YouTube", icon: "G", tab: "google" }]
     },
     { id: "entertainment", label: "Giải trí", icon: "◉", accent: "#ff8a5b", route: "/entertainment", items: [], pages: [{ id: "astra-hh", title: "ASTRA HH", route: "/entertainment/astra-hh" }] },
@@ -5444,6 +5460,15 @@ function initAppShell() {
   const mountCommunicationOverview = () => {
     workspace.innerHTML = '<div data-communication-overview-host></div>';
     const host = workspace.firstElementChild;
+    if (window.HHCommunicationSuite?.mount) {
+      window.HHCommunicationSuite.mount(host, {
+        view: "command-center",
+        apiBase: REALTIME_URL,
+        socketUrl: SOCKET_URL,
+        currentUser: readCurrentAuthUser()
+      });
+      return;
+    }
     if (window.HHCommunicationOverview?.mount) {
       window.HHCommunicationOverview.mount(host, { apiBase: REALTIME_URL });
       return;
@@ -5519,7 +5544,7 @@ function initAppShell() {
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
-    document.body.classList.toggle("app-communication-route", route === "/communication");
+    document.body.classList.toggle("app-communication-route", route === "/communication" || route.startsWith("/communication/"));
     document.body.classList.toggle("app-work-route", route === "/work");
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
     document.body.classList.toggle("app-creative-os-route", isCreativeOSRoute(route));
@@ -5531,6 +5556,8 @@ function initAppShell() {
     if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
+    const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
+    if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
     if (route !== "/work") window.HHWorkCenter?.unmount?.();
     if (route !== "/music-ai" && !route.startsWith("/music-ai/")) {
       window.HHMusicAIStudio?.unmount?.();
@@ -5560,10 +5587,19 @@ function initAppShell() {
       updatePageHeader("Công việc", "Điều hành dự án, đầu việc, tài liệu, tệp và tự động hóa trong một workspace thống nhất.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/work/project-center">Project Center</button><button class="app-primary-action" type="button" data-work-capture>+ Tạo công việc</button>`;
       mountWorkOverview();
-    } else if (route === "/communication") {
-      updatePageHeader("Giao tiếp", "Tìm kiếm, xem nội dung, tham gia cộng đồng và quản lý mọi kết nối tại một nơi.", route);
-      pageActions.innerHTML = `<button type="button" data-search-watch-open="google">Tìm trên Google</button><button class="app-primary-action" type="button" data-search-watch-open="youtube">Mở YouTube</button>`;
-      mountCommunicationOverview();
+    } else if (route === "/communication" || (route.startsWith("/communication/") && window.HHCommunicationSuite?.supports?.(parts[1]))) {
+      const communicationRouteView = route === "/communication" ? "command-center" : parts[1];
+      const communicationMeta = window.HHCommunicationSuite?.views?.[communicationRouteView];
+      updatePageHeader(communicationMeta?.title || "Giao tiếp", "Tin nhắn, kênh, cuộc gọi, cộng tác và thông báo trong một không gian realtime thống nhất.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/communication/unified-inbox">Hộp thư chung</button><button class="app-primary-action" type="button" data-app-route="/communication/messenger">Nhắn tin</button>`;
+      workspace.innerHTML = '<div data-communication-suite-host></div>';
+      if (window.HHCommunicationSuite?.mount) window.HHCommunicationSuite.mount(workspace.firstElementChild, {
+        view: communicationRouteView,
+        apiBase: REALTIME_URL,
+        socketUrl: SOCKET_URL,
+        currentUser: readCurrentAuthUser()
+      });
+      else mountCommunicationOverview();
     } else if (route === "/support") {
       updatePageHeader("Ủng hộ nhà phát triển", "Đóng góp minh bạch để duy trì máy chủ và phát triển các công cụ HH.", route);
       workspace.innerHTML = "";

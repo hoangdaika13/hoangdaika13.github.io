@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test:astra": "node --test test/astra-realtime.test.js"
+    "test:astra": "node --test test/astra-realtime.test.js",
+    "test:communication": "node --test test/communication-v2.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
