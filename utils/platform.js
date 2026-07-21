@@ -57,7 +57,10 @@ function setCors(req, res) {
     ...String(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "").split(",").map((v) => v.trim())
   ].filter(Boolean))];
   const origin = String(req.headers.origin || "");
-  if (origin && allowed.includes(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
+  if (origin && allowed.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -88,6 +91,16 @@ function signUser(user) {
   );
 }
 
+function requestCookie(req, name) {
+  const encoded = String(req.headers?.cookie || "")
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${name}=`));
+  if (!encoded) return "";
+  try { return decodeURIComponent(encoded.slice(name.length + 1)); }
+  catch { return ""; }
+}
+
 function signOAuthState(provider, returnTo, nonce) {
   return jwt.sign(
     { type: "oauth", provider, returnTo, nonce },
@@ -115,6 +128,12 @@ function publicUser(user) {
     email: user.email || "",
     provider: user.lastProvider || user.provider || "local",
     avatar: user.avatar || "",
+    nickname: user.nickname || "",
+    creativeColor: user.creativeColor || "#f05caf",
+    interests: Array.isArray(user.interests) ? user.interests.map((item) => clean(item, 80)).filter(Boolean).slice(0, 24) : [],
+    emailVerified: Boolean(user.emailVerifiedAt || user.verifiedAt),
+    lastLoginAt: user.lastLoginAt || null,
+    lastSeenAt: user.lastSeenAt || null,
     consent: Boolean(user.consent),
     restrictedFeatures: Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [],
     roles: [...roles],
@@ -123,7 +142,8 @@ function publicUser(user) {
 }
 
 async function currentUser(req) {
-  const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  const token = bearer || requestCookie(req, "hh_session");
   if (!token) return null;
   try {
     const payload = jwt.verify(token, jwtSecret(), { algorithms: ["HS256"], issuer: "hh-platform", audience: "hh-web" });

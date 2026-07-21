@@ -353,7 +353,7 @@
         state.kind = "error";
         return render();
       }
-      const token = options.token || globalScope.localStorage?.getItem("hh-auth-token") || "";
+      const token = options.token || globalScope.HHAuthSession?.token?.() || "";
       const socket = globalScope.io(socketUrl, {
         transports: ["websocket", "polling"],
         auth: { token, anonymousId: anonymousId(), designName: options.guestName || "Khách HH", consent: false }

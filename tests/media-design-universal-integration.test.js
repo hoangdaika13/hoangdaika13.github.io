@@ -28,7 +28,7 @@ test("Universal Media Project is reachable from the shell and cached offline", (
     assert.match(worker, pattern);
   }
 
-  assert.match(worker, /hh-learning-os-v170/);
+  assert.match(worker, /hh-learning-os-v172/);
   assert.match(shell, /id: "universal-media"/);
   assert.match(shell, /id: "asset-manager"/);
   assert.match(shell, /22 .*Universal Media Project/);

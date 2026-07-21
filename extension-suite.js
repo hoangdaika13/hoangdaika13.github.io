@@ -18,7 +18,7 @@
   const writeAll = (value) => localStorage.setItem(STORE_KEY, JSON.stringify(value));
   const getState = (id, fallback = {}) => ({ ...fallback, ...(readAll()[id] || {}) });
   const setState = (id, next) => { const all = readAll(); all[id] = typeof next === "function" ? next(all[id] || {}) : next; writeAll(all); return all[id]; };
-  const token = () => localStorage.getItem("hh-auth-token") || "";
+  const token = () => window.HHAuthSession?.token?.() || "";
   const currentUser = () => { try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}"); } catch { return {}; } };
   const download = (name, content, type = "application/json;charset=utf-8") => { const anchor = document.createElement("a"); anchor.href = URL.createObjectURL(new Blob([content], { type })); anchor.download = name; anchor.click(); setTimeout(() => URL.revokeObjectURL(anchor.href), 1000); };
   const copy = async (value) => { await navigator.clipboard.writeText(String(value || "")); };

@@ -33,7 +33,7 @@
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
   const apiBase = () => String(options.apiBase || window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
   const authHeaders = (json = true) => {
-    const token = localStorage.getItem("hh-auth-token") || "";
+    const token = window.HHAuthSession?.token?.() || "";
     return { ...(json ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   };
 

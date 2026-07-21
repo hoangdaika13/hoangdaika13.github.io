@@ -622,7 +622,7 @@
   }
 
   function authHeaders() {
-    const token = localStorage.getItem("hh-auth-token") || "";
+    const token = window.HHAuthSession?.token?.() || "";
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 

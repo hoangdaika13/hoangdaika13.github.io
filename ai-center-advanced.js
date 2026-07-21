@@ -235,7 +235,7 @@
 
   async function requestAI(input, actionType, meta, signal) {
     const base = String(globalScope.HH_REALTIME_URL || globalScope.location.origin).replace(/\/$/, "");
-    const token = storage.getItem("hh-auth-token") || "";
+    const token = globalScope.HHAuthSession?.token?.() || "";
     const response = await fetch(`${base}/api/modules/ai-center/actions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },

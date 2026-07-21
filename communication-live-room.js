@@ -144,7 +144,7 @@
   }
 
   async function loadCallConfig(instance) {
-    const token = localStorage.getItem("hh-auth-token") || "";
+    const token = window.HHAuthSession?.token?.() || "";
     let error = null;
     if (token && instance.apiBase) {
       try {

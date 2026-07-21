@@ -25,7 +25,7 @@
 
   async function api(view = "me", options = {}) {
     if (!API_BASE) throw new Error("Backend Community Admin chưa được cấu hình.");
-    const token = localStorage.getItem("hh-auth-token") || "";
+    const token = window.HHAuthSession?.token?.() || "";
     if (!token) throw new Error("Bạn cần đăng nhập để mở Community Admin.");
     const query = new URLSearchParams({ view, ...(options.query || {}) });
     const response = await fetch(`${API_BASE}/api/community-admin?${query}`, {
@@ -236,7 +236,7 @@
   }
 
   async function discoverAccess() {
-    const token = localStorage.getItem("hh-auth-token") || "";
+    const token = window.HHAuthSession?.token?.() || "";
     if (!token || !API_BASE) { access = null; accessToken = token; return null; }
     if (access && accessToken === token) return access;
     accessToken = token;
@@ -299,7 +299,7 @@
 
   const observer = new MutationObserver(ensureNav);
   observer.observe(document.documentElement, { childList: true, subtree: true });
-  window.addEventListener("storage", (event) => { if (["hh-auth-token", "hh-auth-user"].includes(event.key)) { access = null; ensureNav(); } });
+  window.addEventListener("storage", (event) => { if (event.key === "hh-auth-user") { access = null; ensureNav(); } });
   window.addEventListener("hh:auth-ready", () => { access = null; ensureNav(); });
   ensureNav();
 

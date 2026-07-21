@@ -425,7 +425,7 @@
 
   function authHeaders(json = true) {
     let token = "";
-    try { token = globalScope.localStorage?.getItem("hh-auth-token") || ""; } catch (_) {}
+    try { token = globalScope.HHAuthSession?.token?.() || ""; } catch (_) {}
     return { ...(json ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }
 

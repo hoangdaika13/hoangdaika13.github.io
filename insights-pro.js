@@ -110,7 +110,7 @@
     const batch = consent ? remoteQueue.splice(0, REMOTE_BATCH_SIZE) : [];
     remoteSending = true;
     try {
-      const token = localStorage.getItem("hh-auth-token") || "";
+      const token = window.HHAuthSession?.token?.() || "";
       const response = await fetch(`${API_BASE}/api/platform/summary`, {
         method: "POST",
         keepalive: true,

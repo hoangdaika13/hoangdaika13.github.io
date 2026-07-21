@@ -16,7 +16,7 @@
   const save = (value) => localStorage.setItem(KEY, JSON.stringify(value));
   const patchState = (change) => { const next = { ...read(), ...change }; save(next); return next; };
   const apiBase = () => String(window.HH_REALTIME_URL || "").replace(/\/$/, "");
-  const auth = () => localStorage.getItem("hh-auth-token") || "";
+  const auth = () => window.HHAuthSession?.token?.() || "";
   const request = async (options = {}) => {
     const response = await fetch(`${apiBase()}/api/team/board${options.query || ""}`, {
       method: options.method || "GET",

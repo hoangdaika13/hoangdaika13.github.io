@@ -748,7 +748,7 @@
 
   const creativeRequest = async (moduleId, input, actionType, meta = {}) => {
     const base = String(window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
-    const token = localStorage.getItem("hh-auth-token") || "";
+    const token = window.HHAuthSession?.token?.() || "";
     let anonymousId = localStorage.getItem("hh-anonymous-id");
     if (!anonymousId) {
       anonymousId = crypto.randomUUID?.() || `guest-${Date.now()}-${Math.random().toString(16).slice(2)}`;

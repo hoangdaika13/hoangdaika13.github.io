@@ -109,7 +109,7 @@
 
     const api = async (path = "", request = {}) => {
       if (!apiBase) throw new Error("Backend donate chưa được cấu hình.");
-      const token = localStorage.getItem("hh-auth-token") || "";
+      const token = window.HHAuthSession?.token?.() || "";
       const response = await fetch(`${apiBase}/api/donations${path}`, {
         method: request.method || "GET", cache: "no-store",
         headers: { ...(request.body ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },

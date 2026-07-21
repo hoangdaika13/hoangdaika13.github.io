@@ -34,7 +34,7 @@ test("sidebar uses one shared visual system for every primary group", () => {
   assert.match(sidebarCss, /\.app-sidebar__group>\.app-sidebar__item,/);
 });
 
-test("authentication uses calm motion and keeps manual feature previews", () => {
+test("authentication uses calm motion with pausable automatic previews", () => {
   const html = read("index.html");
   const css = read("auth-experience.css");
   const comfort = read("motion-comfort.css");
@@ -53,9 +53,10 @@ test("authentication uses calm motion and keeps manual feature previews", () => 
   assert.match(client, /const demos =/);
   assert.match(client, /renderDemo/);
   assert.match(client, /4200/);
-  assert.match(client, /const automaticDemoRotation = false/);
-  assert.match(client, /!automaticDemoRotation/);
-  assert.match(client, /const pointerParallax = false/);
+  assert.match(client, /const rotationDelay = 4200/);
+  assert.match(client, /rotationPaused/);
+  assert.match(client, /pointer: fine/);
+  assert.match(client, /requestAnimationFrame/);
   assert.match(comfort, /Authentication remains rich/);
   assert.match(comfort, /auth-product-preview/);
   assert.match(comfort, /auth-tool-stream > div/);

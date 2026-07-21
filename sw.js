@@ -1,4 +1,4 @@
-const CACHE = "hh-learning-os-v171";
+const CACHE = "hh-learning-os-v172";
 const CORE = [
   "./",
   "./index.html",
@@ -24,7 +24,7 @@ const CORE = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=8",
-  "./script.js?v=117",
+  "./script.js?v=118",
   "./graphic-design-studio.css?v=5",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -88,9 +88,10 @@ const CORE = [
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=5",
   "./extension-suite.css?v=1",
-  "./auth-experience.css?v=5",
+  "./auth-experience.css?v=6",
   "./assets/hh-neon-logo-v2.png?v=2",
-  "./auth-experience.js?v=4",
+  "./auth-platform.js?v=1",
+  "./auth-experience.js?v=5",
   "./search-watch-center.css?v=5",
   "./search-watch-center.js?v=7",
   "./youtube-pip.html",

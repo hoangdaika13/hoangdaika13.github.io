@@ -2564,7 +2564,7 @@
     async syncScore(force = false) {
       const now = Date.now();
       if (!force && now - this.lastSync < 45000) return;
-      const token = localStorage.getItem("hh-auth-token") || "";
+      const token = window.HHAuthSession?.token?.() || "";
       if (!this.apiBase || !token || this.state.score <= 0) return;
       this.lastSync = now;
       try {

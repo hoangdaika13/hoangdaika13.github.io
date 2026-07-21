@@ -43,7 +43,7 @@
 
   async function socialApi(options = {}) {
     if (!API_BASE) throw new Error("Backend Social chưa được cấu hình.");
-    const token = localStorage.getItem("hh-auth-token") || "";
+    const token = window.HHAuthSession?.token?.() || "";
     const query = options.query ? `?${new URLSearchParams(options.query)}` : "";
     const response = await fetch(`${API_BASE}/api/social${query}`, {
       method: options.method || "GET",
@@ -292,7 +292,7 @@
       cached.usedAt = Date.now();
       return cached.url;
     }
-    const token = localStorage.getItem("hh-auth-token") || "";
+    const token = window.HHAuthSession?.token?.() || "";
     if (!token) throw new Error("Bạn cần đăng nhập để xem media này.");
     const response = await fetch(`${API_BASE}/api/community?media=${encodeURIComponent(id)}`, {
       headers: { Authorization: `Bearer ${token}` },
