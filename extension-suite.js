@@ -8,6 +8,7 @@
     "team-collaboration", "form-builder", "workflow-automation"
   ];
   const STORE_KEY = "hh-extension-suite-v1";
+  const DIRECTION_MIGRATION_KEY = "hh-layout-direction-v2";
   const API_BASE = window.HH_REALTIME_URL || "";
   const enc = encodeURIComponent;
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -169,6 +170,11 @@
     document.querySelectorAll("#moduleGrid [data-module-id]").forEach((card) => { card.classList.toggle("ext-module-disabled", state.disabledModules?.includes(card.dataset.moduleId)); });
   }
   function applyLocale(state = getState("i18n", defaults.i18n)) {
+    if (localStorage.getItem(DIRECTION_MIGRATION_KEY) !== "2") {
+      state = { ...state, rtl: false };
+      setState("i18n", state);
+      localStorage.setItem(DIRECTION_MIGRATION_KEY, "2");
+    }
     document.documentElement.lang = state.locale;
     document.documentElement.dir = state.rtl ? "rtl" : "ltr";
     const dictionary = { en: { "Trang chủ": "Home", "Sáng tạo": "Create", "Công việc": "Work", "Giao tiếp": "Communication", "Phân tích": "Analytics", "Học tập": "Learning", "Hệ thống": "System", "Yêu thích": "Favorites", "Gần đây": "Recent", "Cài đặt": "Settings" }, vi: {} };
