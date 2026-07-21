@@ -6,17 +6,19 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Music AI is a standalone top-level route with seven production stages", () => {
+test("Music AI is a standalone DAW route with primary workspaces and specialized labs", () => {
   const shell = read("script.js");
   assert.match(shell, /id: "music-ai"/);
   assert.match(shell, /label: "Làm nhạc AI"/);
-  for (const route of ["project", "prompt-studio", "loop-builder", "audio-qa", "chapters", "youtube-pack", "publish-checklist"]) {
+  for (const route of ["studio", "composer", "lyrics", "arrange", "record", "mix", "master", "video", "publish", "stems", "vocal", "sound-design", "image-music", "realtime-jam", "visualizer", "rights"]) {
     assert.match(shell, new RegExp(`/music-ai/${route}`));
   }
+  assert.match(shell, /HHMusicProductionSuite\.mount/);
   assert.match(shell, /HHMusicAIStudio\.mount/);
   assert.match(shell, /app-music-ai-route/);
-  assert.match(shell, /landingRoute: "\/music-ai\/project"/);
+  assert.match(shell, /landingRoute: "\/music-ai\/studio"/);
   assert.match(shell, /const musicAIPageItems =/);
+  assert.match(shell, /const musicAILegacyPageItems =/);
 });
 
 test("Music AI uses one navigation source and opens tools directly", () => {
@@ -112,7 +114,7 @@ test("Music AI ships YouTube-safe defaults and no fake LUFS claim", () => {
 test("Music AI assets are loaded by the page and offline worker", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["music-ai-studio.css?v=5", "music-ai-apps.css?v=2", "music-ai-apps.js?v=2", "music-ai-studio.js?v=6", "youtube-publisher.css?v=2", "youtube-publisher.js?v=2", "script.js?v=114", "app-shell.css?v=50"]) {
+  for (const asset of ["music-production-suite.css?v=1", "music-production-suite.js?v=1", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1", "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=1", "music-publishing-rights.js?v=1", "music-ai-studio.css?v=5", "music-ai-apps.css?v=2", "music-ai-apps.js?v=2", "music-ai-studio.js?v=6", "youtube-publisher.css?v=2", "youtube-publisher.js?v=2", "script.js?v=115", "app-shell.css?v=50"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

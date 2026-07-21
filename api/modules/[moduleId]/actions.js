@@ -125,7 +125,7 @@ function requestIp(req) {
   return clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "guest").split(",")[0], 120);
 }
 
-const musicMediaActions = new Set(["music-image", "music-track", "music-video-start", "music-video-status"]);
+const musicMediaActions = new Set(["music-image", "music-track", "music-sfx", "music-video-start", "music-video-status"]);
 
 function musicProviderStatus(user) {
   const geminiConfigured = geminiKeys().length > 0;
@@ -137,6 +137,7 @@ function musicProviderStatus(user) {
       image: { configured: geminiConfigured, provider: "Gemini Images", model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image", capabilities: ["text-to-image", "reference-image", "16:9", "1K-4K"] },
       video: { configured: geminiConfigured, provider: "Google Veo", model: process.env.GEMINI_VIDEO_MODEL || "veo-3.1-fast-generate-preview", capabilities: ["text-to-video", "image-to-video", "16:9", "9:16", "720p-4K"] },
       music: { configured: Boolean(clean(process.env.ELEVENLABS_API_KEY, 400)), provider: "Eleven Music", model: process.env.ELEVEN_MUSIC_MODEL || "music_v2", capabilities: ["instrumental", "vocals", "3-120s", "mp3-48k"] },
+      sound: { configured: Boolean(clean(process.env.ELEVENLABS_API_KEY, 400)), provider: "Eleven Sound Effects", model: process.env.ELEVEN_SFX_MODEL || "eleven_text_to_sound_v2", capabilities: ["ambience", "foley", "one-shot", "loop", "0.5-30s"] },
       renderer: { configured: true, cloudConfigured: Boolean(clean(process.env.MUSIC_RENDER_API_URL, 1000)), provider: "Local FFmpeg", model: "FFmpeg", capabilities: ["batch-script", "long-form", "1080p-4K", "local-files"] }
     }
   };
@@ -241,20 +242,37 @@ async function generateMusicTrack(body) {
   const apiKey = clean(process.env.ELEVENLABS_API_KEY, 400);
   if (!apiKey) throw providerError("Eleven Music chưa được cấu hình trên Vercel.", 503, "ELEVEN_MUSIC_NOT_CONFIGURED");
   const prompt = clean(body.input || body.prompt, 4100);
-  if (!prompt) throw providerError("Hãy nhập prompt nhạc trước khi tạo track.", 400, "MUSIC_PROMPT_REQUIRED");
   const meta = body.meta || {};
   const durationMs = Math.min(120000, Math.max(3000, Number(meta.durationSeconds || body.durationSeconds || 60) * 1000));
   const outputFormat = new Set(["mp3_48000_192", "mp3_44100_128"]).has(meta.outputFormat) ? meta.outputFormat : "mp3_48000_192";
+  const compositionPlan = Array.isArray(meta.compositionPlan?.chunks)
+    ? {
+        chunks: meta.compositionPlan.chunks.slice(0, 30).map((chunk) => ({
+          text: clean(chunk?.text, 4000),
+          duration_ms: Math.min(120000, Math.max(3000, Number(chunk?.duration_ms || chunk?.durationMs || 15000))),
+          positive_styles: (Array.isArray(chunk?.positive_styles) ? chunk.positive_styles : []).slice(0, 50).map((item) => clean(item, 100)).filter(Boolean),
+          negative_styles: (Array.isArray(chunk?.negative_styles) ? chunk.negative_styles : []).slice(0, 50).map((item) => clean(item, 100)).filter(Boolean),
+          context_adherence: new Set(["low", "medium", "high"]).has(chunk?.context_adherence) ? chunk.context_adherence : "high"
+        })).filter((chunk) => chunk.text)
+      }
+    : null;
+  const seed = Number.isInteger(Number(meta.seed)) ? Math.min(2147483647, Math.max(0, Number(meta.seed))) : undefined;
+  if (meta.compositionPlan && !compositionPlan?.chunks.length) throw providerError("Composition plan không có section hợp lệ.", 400, "MUSIC_PLAN_INVALID");
+  if (!prompt && !compositionPlan?.chunks.length) throw providerError("Hãy nhập prompt nhạc hoặc composition plan trước khi tạo track.", 400, "MUSIC_PROMPT_REQUIRED");
+  const requestBody = compositionPlan?.chunks.length
+    ? { composition_plan: compositionPlan, model_id: process.env.ELEVEN_MUSIC_MODEL || "music_v2", sign_with_c2pa: true }
+    : {
+        prompt,
+        music_length_ms: durationMs,
+        model_id: process.env.ELEVEN_MUSIC_MODEL || "music_v2",
+        force_instrumental: meta.instrumental !== false,
+        sign_with_c2pa: true
+      };
+  if (seed !== undefined) requestBody.seed = seed;
   const response = await fetch(`https://api.elevenlabs.io/v1/music?output_format=${outputFormat}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "xi-api-key": apiKey },
-    body: JSON.stringify({
-      prompt,
-      music_length_ms: durationMs,
-      model_id: process.env.ELEVEN_MUSIC_MODEL || "music_v2",
-      force_instrumental: meta.instrumental !== false,
-      sign_with_c2pa: true
-    }),
+    body: JSON.stringify(requestBody),
     signal: AbortSignal.timeout(28000)
   });
   if (!response.ok) {
@@ -263,7 +281,37 @@ async function generateMusicTrack(body) {
   }
   const bytes = Buffer.from(await response.arrayBuffer());
   if (!bytes.length || bytes.length > 3_100_000) throw providerError("Track vượt giới hạn truyền tải của Vercel. Hãy giảm thời lượng xuống 60 giây.", 413, "MUSIC_OUTPUT_TOO_LARGE");
-  return { ok: true, media: { kind: "audio", data: bytes.toString("base64"), mimeType: response.headers.get("content-type") || "audio/mpeg", durationSeconds: durationMs / 1000, model: process.env.ELEVEN_MUSIC_MODEL || "music_v2", songId: clean(response.headers.get("song-id"), 240) } };
+  return { ok: true, media: { kind: "audio", data: bytes.toString("base64"), mimeType: response.headers.get("content-type") || "audio/mpeg", durationSeconds: compositionPlan ? compositionPlan.chunks.reduce((sum, chunk) => sum + chunk.duration_ms, 0) / 1000 : durationMs / 1000, model: process.env.ELEVEN_MUSIC_MODEL || "music_v2", songId: clean(response.headers.get("song-id"), 240), compositionPlan: Boolean(compositionPlan), c2paRequested: true } };
+}
+
+async function generateMusicSoundEffect(body) {
+  const apiKey = clean(process.env.ELEVENLABS_API_KEY, 400);
+  if (!apiKey) throw providerError("Eleven Sound Effects chưa được cấu hình trên Vercel.", 503, "ELEVEN_SFX_NOT_CONFIGURED");
+  const prompt = clean(body.input || body.prompt, 2500);
+  if (!prompt) throw providerError("Hãy mô tả sound effect cần tạo.", 400, "SFX_PROMPT_REQUIRED");
+  const meta = body.meta || {};
+  const durationSeconds = Math.min(30, Math.max(0.5, Number(meta.durationSeconds || 8)));
+  const promptInfluence = Math.min(1, Math.max(0, Number(meta.promptInfluence ?? 0.45)));
+  const outputFormat = new Set(["mp3_44100_128", "mp3_44100_192"]).has(meta.outputFormat) ? meta.outputFormat : "mp3_44100_128";
+  const response = await fetch(`https://api.elevenlabs.io/v1/sound-generation?output_format=${outputFormat}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "xi-api-key": apiKey },
+    body: JSON.stringify({
+      text: prompt,
+      duration_seconds: durationSeconds,
+      prompt_influence: promptInfluence,
+      loop: Boolean(meta.loop),
+      model_id: process.env.ELEVEN_SFX_MODEL || "eleven_text_to_sound_v2"
+    }),
+    signal: AbortSignal.timeout(28000)
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw providerError(data?.detail?.message || data?.detail || data?.error || `Eleven SFX HTTP ${response.status}.`, response.status, "ELEVEN_SFX_ERROR");
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > 3_100_000) throw providerError("Sound effect trả về rỗng hoặc quá lớn.", 413, "SFX_OUTPUT_INVALID");
+  return { ok: true, media: { kind: "sound-effect", data: bytes.toString("base64"), mimeType: response.headers.get("content-type") || "audio/mpeg", durationSeconds, loop: Boolean(meta.loop), model: process.env.ELEVEN_SFX_MODEL || "eleven_text_to_sound_v2", characterCost: clean(response.headers.get("character-cost"), 80) } };
 }
 
 function cleanInlineImage(meta = {}) {
@@ -375,10 +423,11 @@ async function musicMediaAction(req, res) {
     let result;
     if (actionType === "music-image") result = await generateMusicImage(body);
     else if (actionType === "music-track") result = await generateMusicTrack(body);
+    else if (actionType === "music-sfx") result = await generateMusicSoundEffect(body);
     else if (actionType === "music-video-start") result = await startMusicVideo(body);
     else if (actionType === "music-video-status") result = await musicVideoStatus(body);
     else return res.status(400).json({ error: "Tác vụ media không được hỗ trợ." });
-    await db.collection("events").insertOne({ type: "music-ai:media", actionType, userId: user._id, provider: actionType === "music-track" ? "eleven-music" : "gemini-media", createdAt: new Date() });
+    await db.collection("events").insertOne({ type: "music-ai:media", actionType, userId: user._id, provider: actionType === "music-track" ? "eleven-music" : actionType === "music-sfx" ? "eleven-sfx" : "gemini-media", createdAt: new Date() });
     return res.status(200).json(result);
   } catch (error) {
     console.error("Music media error", error?.message || error);

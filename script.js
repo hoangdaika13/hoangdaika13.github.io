@@ -5112,6 +5112,24 @@ function initAppShell() {
     return routeParts[0] === "create" && creativeOSViews.has(routeParts[1]);
   };
   const musicAIPageItems = [
+    { id: "studio", icon: "ST", section: "Bắt đầu", title: "Music Production Studio", description: "DAW tạo nhạc AI thống nhất từ ý tưởng tới xuất bản", route: "/music-ai/studio" },
+    { id: "composer", icon: "AI", section: "Sáng tác", title: "AI Composer Pro", description: "Composition plan, section, seed và phương án A/B", route: "/music-ai/composer" },
+    { id: "lyrics", icon: "LY", section: "Sáng tác", title: "Lyrics Studio", description: "Viết lời, nhịp âm tiết, phát âm và phiên bản", route: "/music-ai/lyrics" },
+    { id: "arrange", icon: "AR", section: "DAW", title: "Phối khí", description: "Timeline nhiều track, clip, marker và take lane", route: "/music-ai/arrange" },
+    { id: "record", icon: "RE", section: "DAW", title: "Thu âm", description: "Thu microphone, quản lý take và căn lời", route: "/music-ai/record" },
+    { id: "mix", icon: "MX", section: "Hậu kỳ", title: "Mix", description: "Mixer, bus, send, EQ và automation", route: "/music-ai/mix" },
+    { id: "master", icon: "MA", section: "Hậu kỳ", title: "Master", description: "Meter, preset, A/B và cảnh báo clipping", route: "/music-ai/master" },
+    { id: "video", icon: "VI", section: "Hình ảnh", title: "Video", description: "Visualizer, lyric video và chuyển sang Video Editor", route: "/music-ai/video" },
+    { id: "publish", icon: "PU", section: "Xuất bản", title: "Xuất bản", description: "YouTube OAuth, metadata, lịch phát và hàng đợi", route: "/music-ai/publish" },
+    { id: "stems", icon: "SM", section: "Phòng chuyên sâu", title: "Stem & Remix Lab", description: "Stem lane, karaoke, acapella và export manifest", route: "/music-ai/stems" },
+    { id: "vocal", icon: "VO", section: "Phòng chuyên sâu", title: "Vocal Studio", description: "Take giọng hát, timestamp và consent", route: "/music-ai/vocal" },
+    { id: "sound-design", icon: "FX", section: "Phòng chuyên sâu", title: "Sound Design", description: "Ambience, Foley, impact và loop bằng AI", route: "/music-ai/sound-design" },
+    { id: "image-music", icon: "IM", section: "Phòng chuyên sâu", title: "Image-to-Music", description: "Phân tích hình ảnh thành music brief", route: "/music-ai/image-music" },
+    { id: "realtime-jam", icon: "JM", section: "Phòng chuyên sâu", title: "Realtime Music Jam", description: "Điều khiển mood, groove và automation trực tiếp", route: "/music-ai/realtime-jam" },
+    { id: "visualizer", icon: "VZ", section: "Phòng chuyên sâu", title: "Visualizer", description: "Waveform, spectrum, particle và lyric animation", route: "/music-ai/visualizer" },
+    { id: "rights", icon: "RC", section: "Xuất bản", title: "Rights & Provenance", description: "Nguồn asset, giấy phép, consent và manifest", route: "/music-ai/rights" }
+  ];
+  const musicAILegacyPageItems = [
     { id: "project", icon: "▣", section: "Bắt đầu", title: "Xưởng sản xuất", description: "Thiết lập dự án và chạy toàn bộ quy trình", route: "/music-ai/project" },
     { id: "app-center", icon: "◇", section: "Bắt đầu", title: "Tổng quan AI Apps", description: "Trạng thái và lối tắt tới từng engine", route: "/music-ai/app-center" },
     { id: "concept-lab", icon: "AI", section: "Sáng tạo", title: "AI Concept Lab", description: "Concept, moodboard và production brief", route: "/music-ai/concept-lab" },
@@ -5127,6 +5145,7 @@ function initAppShell() {
     { id: "youtube-publisher", icon: "UP", section: "Xuất bản", title: "Đăng YouTube tự động", description: "Chọn kênh, lịch phát và upload", route: "/music-ai/youtube-publisher" },
     { id: "publish-checklist", icon: "OK", section: "Xuất bản", title: "Kiểm tra xuất bản", description: "Chốt chất lượng và quyền sử dụng", route: "/music-ai/publish-checklist" }
   ];
+  const musicAIAllPageItems = [...musicAIPageItems, ...musicAILegacyPageItems];
   const developerToolItems = [
     { id: "smart-input", icon: "SI", title: "Smart Input", group: "DEV Pro" },
     { id: "developer-recipe", icon: "DR", title: "Developer Recipe", group: "DEV Pro" },
@@ -5172,7 +5191,7 @@ function initAppShell() {
       icon: "♫",
       accent: "#72eadb",
       route: "/music-ai",
-      landingRoute: "/music-ai/project",
+      landingRoute: "/music-ai/studio",
       items: [],
       pages: musicAIPageItems
     },
@@ -5237,16 +5256,16 @@ function initAppShell() {
     try { return JSON.parse(localStorage.getItem("hh.sidebar.groups.v1") || "{}"); } catch { return {}; }
   })();
   const saveSidebarGroups = () => localStorage.setItem("hh.sidebar.groups.v1", JSON.stringify(sidebarGroupState));
-  const musicSidebarSectionKey = "hh.music-ai.sidebar-section.v2";
+  const musicSidebarSectionKey = "hh.music-ai.sidebar-section.v3";
   let musicSidebarSection = localStorage.getItem(musicSidebarSectionKey) || "";
   const saveMusicSidebarSection = (section) => {
     musicSidebarSection = section;
     localStorage.setItem(musicSidebarSectionKey, section);
   };
-  if (localStorage.getItem("hh.music-ai.sidebar-nav-version") !== "2") {
+  if (localStorage.getItem("hh.music-ai.sidebar-nav-version") !== "3") {
     sidebarGroupState["music-ai"] = false;
     saveSidebarGroups();
-    localStorage.setItem("hh.music-ai.sidebar-nav-version", "2");
+    localStorage.setItem("hh.music-ai.sidebar-nav-version", "3");
   }
 
   const moduleList = () => Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
@@ -5441,8 +5460,8 @@ function initAppShell() {
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
     const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
-    const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIPageItems];
-    const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIPageItems : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerToolItems : knownTools;
+    const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems];
+    const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerToolItems : knownTools;
     let crumbRoute = "";
     breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Trang chủ</button>` : [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => {
       crumbRoute += `/${crumb}`;
@@ -5503,7 +5522,10 @@ function initAppShell() {
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     if (route !== "/work") window.HHWorkCenter?.unmount?.();
-    if (route !== "/music-ai" && !route.startsWith("/music-ai/")) window.HHMusicAIStudio?.unmount?.();
+    if (route !== "/music-ai" && !route.startsWith("/music-ai/")) {
+      window.HHMusicAIStudio?.unmount?.();
+      window.HHMusicProductionSuite?.unmount?.();
+    }
     if (route !== "/graphic-design" && !route.startsWith("/graphic-design/")) window.HHGraphicDesign?.unmount?.();
     if (!isCreativeOSRoute(route)) window.HHCreativeOS?.unmount?.();
     setUser();
@@ -5548,10 +5570,20 @@ function initAppShell() {
       if (window.HHEnglish?.mount) window.HHEnglish.mount(workspace.firstElementChild, { view: parts[1] || "dashboard" });
       else mountSimpleView("HH English", "Đang tải không gian học tiếng Anh...", "");
     } else if (route === "/music-ai" || route.startsWith("/music-ai/")) {
-      const musicPage = musicAIPageItems.find((item) => item.id === (parts[1] || "project")) || musicAIPageItems[0];
+      const musicView = parts[1] || "studio";
+      const musicPage = musicAIAllPageItems.find((item) => item.id === musicView) || musicAIPageItems[0];
       updatePageHeader(musicPage.title, musicPage.description, route);
       workspace.innerHTML = '<div data-music-ai-studio-host></div>';
-      if (window.HHMusicAIStudio?.mount) window.HHMusicAIStudio.mount(workspace.firstElementChild, { view: parts[1] || "project" });
+      if (window.HHMusicProductionSuite?.supports?.(musicView)) {
+        window.HHMusicAIStudio?.unmount?.();
+        window.HHMusicProductionSuite.mount(workspace.firstElementChild, {
+          view: musicView,
+          onNavigate: (nextView) => { location.hash = `#/music-ai/${nextView}`; }
+        });
+      } else if (window.HHMusicAIStudio?.mount) {
+        window.HHMusicProductionSuite?.unmount?.();
+        window.HHMusicAIStudio.mount(workspace.firstElementChild, { view: musicView });
+      }
       else mountSimpleView("Làm nhạc AI", "Đang tải xưởng sản xuất âm nhạc...", "");
     } else if (isCreativeOSRoute(route)) {
       const creativeView = route === "/create" ? "overview" : parts[1];
@@ -5744,20 +5776,13 @@ function initAppShell() {
     ];
     const creativeTools = creativeStudioItems.map((item) => ({ type: "Sáng tạo", title: item.title, description: item.description || item.group, route: `/create/${item.id}`, key: `${item.title} ${item.group} ${item.description || ""} creative sáng tạo kịch bản ai` }));
     const developerTools = developerToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.group} developer toolbox` }));
-    const musicAI = [
-      { type: "Làm nhạc AI", title: "Xưởng sản xuất", description: "Tạo dự án relax piano, thiền, jazz hoặc lofi dài 1–5 giờ.", route: "/music-ai/project", key: "làm nhạc ai relax piano thiền meditation jazz lofi youtube music project" },
-      { type: "Làm nhạc AI", title: "AI App Center", description: "Chạy riêng Concept, Image, Music, Veo, Render hoặc Publisher.", route: "/music-ai/app-center", key: "music ai apps concept image eleven veo ffmpeg độc lập" },
-      { type: "Làm nhạc AI", title: "Gemini Image Studio", description: "Tạo và biến đổi key visual 1K–4K bằng ảnh tham chiếu.", route: "/music-ai/image-lab", key: "gemini image nano banana key visual reference" },
-      { type: "Làm nhạc AI", title: "Eleven Music Studio", description: "Tạo riêng track instrumental hoặc có giọng hát.", route: "/music-ai/music-lab", key: "eleven music v2 ai track instrumental" },
-      { type: "Làm nhạc AI", title: "Veo Motion Studio", description: "Tạo video ngang hoặc dọc từ text hay frame đầu.", route: "/music-ai/veo-lab", key: "veo 3.1 video image to video" },
-      { type: "Làm nhạc AI", title: "Prompt đồng bộ", description: "Tạo prompt ảnh, Kling/Veo, nhạc và thumbnail cùng concept.", route: "/music-ai/prompt-studio", key: "prompt chatgpt image kling veo motion music thumbnail" },
-      { type: "Làm nhạc AI", title: "Loop 1–5 giờ", description: "Tính vòng lặp và xuất lệnh FFmpeg dựng video dài.", route: "/music-ai/loop-builder", key: "loop ffmpeg video dài 1 2 3 4 5 giờ" },
-      { type: "Làm nhạc AI", title: "Kiểm âm", description: "Đo peak, RMS, clipping và sample rate ngay trên trình duyệt.", route: "/music-ai/audio-qa", key: "audio qa peak rms clipping 48khz kiểm âm" },
-      { type: "Làm nhạc AI", title: "Tracklist & Chapter", description: "Sinh timestamp chapter YouTube đúng quy tắc.", route: "/music-ai/chapters", key: "tracklist chapter timestamp youtube" },
-      { type: "Làm nhạc AI", title: "Gói YouTube", description: "Tạo title, description, tags và cấu hình encode.", route: "/music-ai/youtube-pack", key: "youtube title description tags seo thumbnail encode" },
-      { type: "Làm nhạc AI", title: "Đăng YouTube tự động", description: "Chọn video, thumbnail, lên lịch, playlist và upload tiếp tục được khi gián đoạn.", route: "/music-ai/youtube-publisher", key: "youtube upload publisher schedule thumbnail playlist resumable oauth tự động đăng video" },
-      { type: "Làm nhạc AI", title: "Kiểm tra xuất bản", description: "Checklist quyền sử dụng và QA trước khi public.", route: "/music-ai/publish-checklist", key: "publish checklist bản quyền quyền thương mại qa" }
-    ];
+    const musicAI = musicAIAllPageItems.map((item) => ({
+      type: "Làm nhạc AI",
+      title: item.title,
+      description: item.description,
+      route: item.route,
+      key: `${item.title} ${item.section || ""} ${item.description} AI DAW music composer lyrics timeline stems vocal mix master visualizer youtube rights`
+    }));
     return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "22 công cụ với Universal Media Project, Photo, Video, Asset Manager, thương hiệu và xuất bản.", route: "/media-design", key: "media design universal project asset manager media bin hhmedia creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "DEV Command Center", description: "12 workspace DEV Pro cùng 22 tiện ích nhanh cho dữ liệu, API, bảo mật, code, Git và diagnostics.", route: "/dev-tools", key: "developer dev smart input recipe pipeline api mock json data security regex database code playground git diff diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
