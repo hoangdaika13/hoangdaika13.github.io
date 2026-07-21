@@ -1,0 +1,228 @@
+#authGate {
+  --hh-auth-logo-cyan: var(--auth-cyan, #62d7e7);
+  --hh-auth-logo-pink: var(--auth-pink, #f05caf);
+  --hh-auth-logo-green: var(--auth-green, #67dba1);
+  --hh-auth-logo-danger: #ff6f91;
+}
+
+#authGate .hh-auth-logo-motion {
+  --hh-logo-tilt-x: 0deg;
+  --hh-logo-tilt-y: 0deg;
+  --hh-logo-focus-x: 0px;
+  --hh-logo-focus-y: 0px;
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  transform: translateZ(0);
+  transform-style: preserve-3d;
+  transition: transform 220ms cubic-bezier(.2, .8, .2, 1), filter 220ms ease;
+  will-change: transform;
+}
+
+#authGate .hh-auth-logo-motion > img {
+  position: relative;
+  z-index: 2;
+  display: block;
+  border-radius: inherit;
+  transform: translate3d(0, 0, 0);
+  transform-origin: 50% 55%;
+  transition: transform 240ms cubic-bezier(.2, .8, .2, 1), filter 240ms ease;
+  will-change: transform, filter;
+}
+
+#authGate .hh-auth-logo-fx {
+  position: absolute;
+  z-index: 1;
+  inset: -16px;
+  display: block;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+#authGate .hh-auth-logo-glow,
+#authGate .hh-auth-logo-ring {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: inherit;
+  opacity: 0;
+}
+
+#authGate .hh-auth-logo-glow {
+  background: radial-gradient(circle, color-mix(in srgb, var(--hh-auth-logo-pink) 30%, transparent) 0 34%, transparent 70%);
+  filter: blur(9px);
+  transform: scale(.82);
+  transition: opacity 220ms ease, transform 280ms ease;
+}
+
+#authGate .hh-auth-logo-ring {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#0a0d16, #0a0d16) padding-box,
+    conic-gradient(from 0deg, transparent 0 12%, var(--hh-auth-logo-cyan) 28%, var(--hh-auth-logo-pink) 52%, transparent 70% 100%) border-box;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--hh-auth-logo-cyan) 36%, transparent);
+  transform: scale(.9);
+}
+
+#authGate .hh-auth-logo-ray {
+  --hh-ray-angle: calc(var(--hh-ray-index, 0) * 45deg);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 15px;
+  border-radius: 999px;
+  background: linear-gradient(to top, var(--hh-auth-logo-pink), var(--hh-auth-logo-cyan), transparent);
+  box-shadow: 0 0 10px var(--hh-auth-logo-cyan);
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(var(--hh-ray-angle)) translateY(-29px) scaleY(.1);
+  transform-origin: 50% 100%;
+}
+
+#authGate[data-logo-state="idle"] .hh-auth-logo-motion > img {
+  animation: hh-auth-logo-breathe 3.8s ease-in-out infinite;
+}
+
+#authGate[data-logo-state="idle"] .hh-auth-logo-glow {
+  opacity: .42;
+  animation: hh-auth-logo-glow 3.8s ease-in-out infinite;
+}
+
+#authGate[data-logo-state="hover"] .hh-auth-logo-motion.is-logo-hovered {
+  filter: drop-shadow(0 9px 18px color-mix(in srgb, var(--hh-auth-logo-cyan) 28%, transparent));
+  transform: perspective(360px) rotateX(var(--hh-logo-tilt-x)) rotateY(var(--hh-logo-tilt-y)) scale(1.06);
+}
+
+#authGate[data-logo-state="hover"] .hh-auth-logo-motion.is-logo-hovered .hh-auth-logo-glow {
+  opacity: .78;
+  transform: scale(1.08);
+}
+
+#authGate[data-logo-state="focus"] .hh-auth-logo-motion > img {
+  filter: saturate(1.12) drop-shadow(0 0 9px color-mix(in srgb, var(--hh-auth-logo-pink) 42%, transparent));
+  transform: translate3d(var(--hh-logo-focus-x), var(--hh-logo-focus-y), 0) scale(1.035);
+}
+
+#authGate[data-logo-state="focus"] .hh-auth-logo-glow {
+  opacity: .64;
+  transform: translate3d(var(--hh-logo-focus-x), var(--hh-logo-focus-y), 0) scale(1.02);
+}
+
+#authGate[data-logo-state="loading"] .hh-auth-logo-ring {
+  opacity: 1;
+  animation: hh-auth-logo-spin 1.05s linear infinite;
+}
+
+#authGate[data-logo-state="loading"] .hh-auth-logo-motion > img {
+  animation: hh-auth-logo-loading 1.15s ease-in-out infinite;
+  filter: saturate(.9) brightness(.92);
+}
+
+#authGate[data-logo-state="success"] .hh-auth-logo-motion > img {
+  animation: hh-auth-logo-success 720ms cubic-bezier(.16, 1, .3, 1) both;
+  filter: drop-shadow(0 0 13px color-mix(in srgb, var(--hh-auth-logo-green) 64%, transparent));
+}
+
+#authGate[data-logo-state="success"] .hh-auth-logo-glow {
+  opacity: .92;
+  background: radial-gradient(circle, color-mix(in srgb, var(--hh-auth-logo-green) 45%, transparent) 0 30%, transparent 72%);
+  animation: hh-auth-logo-success-glow 760ms ease-out both;
+}
+
+#authGate[data-logo-state="success"] .hh-auth-logo-ray {
+  animation: hh-auth-logo-ray 620ms cubic-bezier(.2, .8, .2, 1) both;
+  animation-delay: calc(var(--hh-ray-index, 0) * 24ms);
+}
+
+#authGate[data-logo-state="error"] .hh-auth-logo-motion,
+#authGate .hh-auth-logo-motion.is-logo-error-pulse {
+  animation: hh-auth-logo-error 440ms cubic-bezier(.36, .07, .19, .97) both;
+}
+
+#authGate[data-logo-state="error"] .hh-auth-logo-motion > img,
+#authGate .hh-auth-logo-motion.is-logo-error-pulse > img {
+  filter: saturate(.78) drop-shadow(0 0 12px color-mix(in srgb, var(--hh-auth-logo-danger) 66%, transparent));
+}
+
+#authGate[data-logo-state="error"] .hh-auth-logo-ring,
+#authGate .hh-auth-logo-motion.is-logo-error-pulse .hh-auth-logo-ring {
+  border-color: color-mix(in srgb, var(--hh-auth-logo-danger) 74%, transparent);
+  background: transparent;
+  opacity: .74;
+  transform: scale(1.02);
+}
+
+#authGate[data-logo-paused="true"] .hh-auth-logo-motion,
+#authGate[data-logo-paused="true"] .hh-auth-logo-motion *,
+#authGate[data-logo-paused="true"] .hh-auth-logo-motion *::before,
+#authGate[data-logo-paused="true"] .hh-auth-logo-motion *::after {
+  animation-play-state: paused !important;
+}
+
+@keyframes hh-auth-logo-breathe {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); filter: brightness(1); }
+  50% { transform: translate3d(0, -1px, 0) scale(1.035); filter: brightness(1.08); }
+}
+
+@keyframes hh-auth-logo-glow {
+  0%, 100% { opacity: .3; transform: scale(.82); }
+  50% { opacity: .58; transform: scale(1.04); }
+}
+
+@keyframes hh-auth-logo-spin {
+  to { transform: rotate(1turn) scale(.9); }
+}
+
+@keyframes hh-auth-logo-loading {
+  0%, 100% { transform: scale(.96); opacity: .82; }
+  50% { transform: scale(1.02); opacity: 1; }
+}
+
+@keyframes hh-auth-logo-success {
+  0% { transform: scale(.88) rotate(-5deg); }
+  48% { transform: scale(1.13) rotate(3deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes hh-auth-logo-success-glow {
+  0% { opacity: 0; transform: scale(.65); }
+  42% { opacity: 1; transform: scale(1.24); }
+  100% { opacity: .5; transform: scale(1); }
+}
+
+@keyframes hh-auth-logo-ray {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--hh-ray-angle)) translateY(-22px) scaleY(.1); }
+  38% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--hh-ray-angle)) translateY(-42px) scaleY(1); }
+}
+
+@keyframes hh-auth-logo-error {
+  0%, 100% { transform: translateX(0); }
+  18% { transform: translateX(-4px) rotate(-1deg); }
+  36% { transform: translateX(4px) rotate(1deg); }
+  54% { transform: translateX(-3px); }
+  72% { transform: translateX(2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #authGate .hh-auth-logo-motion,
+  #authGate .hh-auth-logo-motion > img,
+  #authGate .hh-auth-logo-glow,
+  #authGate .hh-auth-logo-ring,
+  #authGate .hh-auth-logo-ray {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  #authGate[data-logo-state="hover"] .hh-auth-logo-motion.is-logo-hovered,
+  #authGate[data-logo-state="focus"] .hh-auth-logo-motion > img {
+    transform: none;
+  }
+
+  #authGate[data-logo-state="loading"] .hh-auth-logo-ring,
+  #authGate[data-logo-state="success"] .hh-auth-logo-glow,
+  #authGate[data-logo-state="error"] .hh-auth-logo-ring {
+    opacity: .72;
+  }
+}
+

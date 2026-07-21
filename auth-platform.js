@@ -349,7 +349,13 @@
       gate.classList.add("auth-success");
       setStatus(`${message} · Chuỗi hoạt động ${streak} ngày`, "success");
       writePublicProfile(user);
-      await new Promise((resolve) => setTimeout(resolve, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 520));
+      const transition = window.HHAuthTransitionRuntime;
+      if (transition?.available && typeof transition.play === "function") {
+        try { await transition.play({ user, message }); }
+        catch { await new Promise((resolve) => setTimeout(resolve, 520)); }
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 520));
+      }
       setGateState();
       const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || "#/home";
       sessionStorage.removeItem("hh.auth.pending-route");

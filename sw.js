@@ -1,4 +1,4 @@
-const CACHE = "hh-learning-os-v172";
+const CACHE = "hh-living-gateway-v175";
 const CORE = [
   "./",
   "./index.html",
@@ -89,9 +89,19 @@ const CORE = [
   "./command-center-pro.js?v=5",
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=6",
+  "./auth-living-background.css?v=1",
+  "./auth-creative-universe.css?v=2",
+  "./auth-logo-motion.css?v=1",
+  "./auth-form-motion.css?v=2",
+  "./auth-transition-runtime.css?v=1",
   "./assets/hh-neon-logo-v2.png?v=2",
-  "./auth-platform.js?v=1",
+  "./auth-platform.js?v=2",
   "./auth-experience.js?v=5",
+  "./auth-living-background.js?v=1",
+  "./auth-creative-universe.js?v=1",
+  "./auth-logo-motion.js?v=1",
+  "./auth-form-motion.js?v=1",
+  "./auth-transition-runtime.js?v=2",
   "./search-watch-center.css?v=5",
   "./search-watch-center.js?v=7",
   "./youtube-pip.html",

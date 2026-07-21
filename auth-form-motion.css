@@ -1,0 +1,308 @@
+/* HH Auth form motion layer. Visual-only; auth behavior stays in the platform modules. */
+
+:root {
+  --afm-cyan: #69eaf0;
+  --afm-pink: #f05caf;
+  --afm-violet: #9a7cff;
+  --afm-amber: #ffd36a;
+  --afm-success: #67dba1;
+  --afm-danger: #ff718b;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion {
+  --afm-spot-x: 50%;
+  --afm-spot-y: 24%;
+  --afm-spot-opacity: 0;
+  --afm-tilt-x: 0deg;
+  --afm-tilt-y: 0deg;
+  --afm-tab-count: 2;
+  --afm-tab-index: 0;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion [data-auth-card] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid transparent;
+  background:
+    radial-gradient(
+      520px circle at var(--afm-spot-x) var(--afm-spot-y),
+      rgba(105, 234, 240, calc(var(--afm-spot-opacity) * .12)),
+      rgba(240, 92, 175, calc(var(--afm-spot-opacity) * .07)) 32%,
+      transparent 68%
+    ) padding-box,
+    linear-gradient(145deg, rgba(17, 23, 35, .94), rgba(8, 12, 20, .9)) padding-box,
+    linear-gradient(115deg, rgba(240, 92, 175, .8), rgba(154, 124, 255, .5), rgba(105, 234, 240, .84), rgba(255, 211, 106, .52)) border-box;
+  box-shadow:
+    0 30px 84px rgba(0, 0, 0, .54),
+    0 0 0 1px rgba(255, 255, 255, .035) inset,
+    -18px 18px 52px rgba(240, 92, 175, .09),
+    18px -14px 48px rgba(105, 234, 240, .08);
+  transform: perspective(1400px) rotateX(var(--afm-tilt-x)) rotateY(var(--afm-tilt-y));
+  transform-style: preserve-3d;
+  transition: transform 180ms ease-out, box-shadow 260ms ease, border-color 260ms ease;
+  animation: none;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion [data-auth-card]::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  height: auto;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(110deg, var(--afm-pink), var(--afm-violet), var(--afm-cyan), var(--afm-amber), var(--afm-pink));
+  background-size: 320% 100%;
+  pointer-events: none;
+  content: "";
+  opacity: .62;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: afm-border-drift 32s linear infinite;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion [data-auth-card]::after {
+  position: absolute;
+  z-index: 0;
+  inset: -2px;
+  border-radius: inherit;
+  background: radial-gradient(
+    280px circle at var(--afm-spot-x) var(--afm-spot-y),
+    rgba(255, 255, 255, calc(var(--afm-spot-opacity) * .15)),
+    rgba(105, 234, 240, calc(var(--afm-spot-opacity) * .07)) 34%,
+    transparent 72%
+  );
+  pointer-events: none;
+  content: "";
+  transition: opacity 180ms ease;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion [data-auth-card] > * {
+  position: relative;
+  z-index: 1;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion [data-auth-card][data-afm-state="error"] {
+  box-shadow: 0 30px 84px rgba(0, 0, 0, .54), 0 0 0 1px rgba(255, 113, 139, .46) inset, 0 0 34px rgba(255, 113, 139, .1);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion [data-auth-card][data-afm-state="success"] {
+  box-shadow: 0 30px 84px rgba(0, 0, 0, .54), 0 0 0 1px rgba(103, 219, 161, .52) inset, 0 0 42px rgba(103, 219, 161, .13);
+}
+
+/* Shared indicator follows the active tab without changing the tab controls. */
+.home-neon.auth-locked #authGate.auth-form-motion .auth-mode-tabs {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-mode-tabs::before {
+  position: absolute;
+  z-index: 0;
+  inset: 4px auto 4px 4px;
+  width: calc((100% - 8px) / var(--afm-tab-count));
+  border: 1px solid rgba(105, 234, 240, .3);
+  border-radius: 9px;
+  background:
+    linear-gradient(110deg, rgba(240, 92, 175, .25), rgba(154, 124, 255, .16) 48%, rgba(105, 234, 240, .2));
+  box-shadow: 0 9px 24px rgba(240, 92, 175, .1), 0 0 18px rgba(105, 234, 240, .07) inset;
+  content: "";
+  pointer-events: none;
+  transform: translateX(calc(var(--afm-tab-index) * 100%));
+  transition: transform 320ms cubic-bezier(.22, .8, .22, 1), width 220ms ease;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-mode-tabs > button {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-mode-tabs > button.active {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Floating-label state is class driven so validation remains owned elsewhere. */
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field > span:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  transform: translate3d(0, 0, 0);
+  transform-origin: left bottom;
+  transition: color 180ms ease, transform 180ms ease, opacity 180ms ease;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.afm-is-focused > span:first-child,
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.afm-has-value > span:first-child,
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.is-focused > span:first-child,
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.has-value > span:first-child {
+  color: #a9f7f7;
+  transform: translate3d(0, -2px, 0) scale(.97);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.afm-is-focused .auth-input-shell {
+  border-color: rgba(105, 234, 240, .66);
+  box-shadow: 0 0 0 3px rgba(105, 234, 240, .09), 0 10px 28px rgba(0, 0, 0, .16);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.afm-is-focused .auth-input-shell > i {
+  color: var(--afm-cyan);
+  filter: drop-shadow(0 0 8px rgba(105, 234, 240, .48));
+}
+
+/* Pointer light is decorative and never captures a click. */
+.home-neon.auth-locked #authGate.auth-form-motion :where(.auth-submit, .auth-provider, .auth-step-next) {
+  --afm-button-x: 50%;
+  --afm-button-y: 50%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion :where(.auth-submit, .auth-provider, .auth-step-next)::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: radial-gradient(120px circle at var(--afm-button-x) var(--afm-button-y), rgba(255, 255, 255, .32), rgba(105, 234, 240, .12) 34%, transparent 72%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion :where(.auth-submit, .auth-provider, .auth-step-next).afm-pointer-hot::after {
+  opacity: 1;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion :where(.auth-submit, .auth-provider, .auth-step-next) > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Inline feedback expands in place; the card itself never shakes. */
+.home-neon.auth-locked #authGate.auth-form-motion .auth-inline-error,
+.home-neon.auth-locked #authGate.auth-form-motion .auth-caps-warning {
+  overflow: hidden;
+  max-height: 0;
+  margin-block: 0;
+  padding-block: 0;
+  border-left-width: 0;
+  opacity: 0;
+  transform: translate3d(0, -5px, 0);
+  transition: max-height 220ms ease, margin 220ms ease, padding 220ms ease, opacity 180ms ease, transform 220ms ease;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-inline-error:not([hidden]):not(:empty),
+.home-neon.auth-locked #authGate.auth-form-motion .auth-inline-error.afm-visible,
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.afm-caps-active .auth-caps-warning {
+  display: flex;
+  max-height: 72px;
+  margin-top: 6px;
+  padding: 7px 9px;
+  border-left-width: 2px;
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.afm-caps-active .auth-input-shell {
+  border-color: rgba(255, 211, 106, .66);
+  box-shadow: 0 0 0 3px rgba(255, 211, 106, .08);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.afm-caps-active .auth-caps-warning {
+  color: #ffe9a3;
+}
+
+/* OAuth loading is scoped to the provider row and cannot block the forms. */
+.home-neon.auth-locked #authGate.auth-form-motion .auth-social-row {
+  position: relative;
+  min-height: 54px;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-oauth-skeleton {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(105, 234, 240, .13);
+  border-radius: 11px;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, .08), transparent) 0 0 / 220% 100%,
+    linear-gradient(110deg, rgba(20, 28, 42, .92), rgba(28, 38, 55, .94), rgba(15, 23, 35, .92));
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.985);
+  transition: opacity 180ms ease, transform 180ms ease;
+  animation: none;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion.afm-oauth-loading .auth-oauth-skeleton,
+.home-neon.auth-locked #authGate.auth-form-motion .auth-oauth-skeleton.afm-visible {
+  display: block;
+  opacity: 1;
+  transform: scale(1);
+  animation: afm-oauth-shimmer 1.35s linear infinite;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion.afm-oauth-loading .auth-gate-forms {
+  opacity: 1;
+  pointer-events: auto;
+  filter: none;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion.afm-document-hidden *,
+.home-neon.auth-locked #authGate.auth-form-motion.afm-document-hidden *::before,
+.home-neon.auth-locked #authGate.auth-form-motion.afm-document-hidden *::after {
+  animation-play-state: paused !important;
+}
+
+@keyframes afm-border-drift {
+  from { background-position: 0 50%; }
+  to { background-position: 320% 50%; }
+}
+
+@keyframes afm-oauth-shimmer {
+  to { background-position: -220% 0, 0 0; }
+}
+
+@media (max-width: 920px), (hover: none), (pointer: coarse) {
+  .home-neon.auth-locked #authGate.auth-form-motion {
+    grid-auto-rows: max-content;
+    align-items: start;
+  }
+
+  .home-neon.auth-locked #authGate.auth-form-motion [data-auth-card] {
+    transform: none !important;
+    transition: box-shadow 220ms ease, border-color 220ms ease;
+  }
+
+  .home-neon.auth-locked #authGate.auth-form-motion [data-auth-card]::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-neon.auth-locked #authGate.auth-form-motion *,
+  .home-neon.auth-locked #authGate.auth-form-motion *::before,
+  .home-neon.auth-locked #authGate.auth-form-motion *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  .home-neon.auth-locked #authGate.auth-form-motion [data-auth-card] {
+    transform: none !important;
+  }
+
+  .home-neon.auth-locked #authGate.auth-form-motion [data-auth-card]::after,
+  .home-neon.auth-locked #authGate.auth-form-motion :where(.auth-submit, .auth-provider, .auth-step-next)::after {
+    display: none;
+  }
+}
