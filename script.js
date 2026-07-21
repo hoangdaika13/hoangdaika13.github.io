@@ -5128,6 +5128,18 @@ function initAppShell() {
     { id: "publish-checklist", icon: "OK", section: "Xuất bản", title: "Kiểm tra xuất bản", description: "Chốt chất lượng và quyền sử dụng", route: "/music-ai/publish-checklist" }
   ];
   const developerToolItems = [
+    { id: "smart-input", icon: "SI", title: "Smart Input", group: "DEV Pro" },
+    { id: "developer-recipe", icon: "DR", title: "Developer Recipe", group: "DEV Pro" },
+    { id: "api-studio", icon: "AP", title: "API Studio Pro", group: "API & Realtime" },
+    { id: "mock-api", icon: "MK", title: "Mock Server & Testing", group: "API & Realtime" },
+    { id: "json-data-lab", icon: "JS", title: "JSON & Data Lab", group: "Data Lab" },
+    { id: "security-encoding", icon: "SE", title: "Security & Encoding", group: "Data Lab" },
+    { id: "regex-studio", icon: "RX", title: "Regex Studio", group: "Phân tích" },
+    { id: "database-playground", icon: "DB", title: "Database Playground", group: "Phân tích" },
+    { id: "code-playground", icon: "CP", title: "Code Playground", group: "Code & Git" },
+    { id: "git-diff-studio", icon: "GD", title: "Git & Diff Studio", group: "Code & Git" },
+    { id: "web-diagnostics", icon: "WD", title: "Web Diagnostics", group: "Quan sát & AI" },
+    { id: "ai-developer", icon: "AI", title: "AI Developer Assistant", group: "Quan sát & AI" },
     { id: "json", icon: "{}", title: "JSON Formatter", group: "Dữ liệu" },
     { id: "base64", icon: "64", title: "Base64", group: "Dữ liệu" },
     { id: "uuid", icon: "#", title: "UUID & Token", group: "Bảo mật" },
@@ -5483,7 +5495,10 @@ function initAppShell() {
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
     document.body.classList.toggle("app-creative-os-route", isCreativeOSRoute(route));
     document.body.classList.toggle("app-music-ai-route", route === "/music-ai" || route.startsWith("/music-ai/"));
-    if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) window.HHDeveloperTools?.cleanup?.();
+    if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) {
+      window.HHDeveloperTools?.cleanup?.();
+      window.HHDevProSuite?.cleanup?.();
+    }
     if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
@@ -5579,9 +5594,17 @@ function initAppShell() {
       if (window.HHGraphicDesign?.mount) window.HHGraphicDesign.mount(workspace.firstElementChild, { view: graphicView, apiBase: REALTIME_URL, socketUrl: SOCKET_URL });
       else mountSimpleView("Thiết kế đồ họa", "Đang tải Graphic Design Studio...", "");
     } else if (route === "/dev-tools" || route.startsWith("/dev-tools/")) {
-      updatePageHeader("Developer Toolbox", "Bộ công cụ dữ liệu, bảo mật, văn bản, API và hệ thống dành cho developer.", route);
+      const devToolId = parts[1] || "overview";
+      const devTool = developerToolItems.find((item) => item.id === devToolId);
+      updatePageHeader(devTool?.title || "DEV Command Center", "Smart Input, pipeline, API, dữ liệu, bảo mật, code, Git và quan sát hệ thống trong một workspace.", route);
       workspace.innerHTML = '<div data-developer-tools-host></div>';
-      window.HHDeveloperTools?.mount(workspace.firstElementChild, { toolId: parts[1] || "json" });
+      if (devToolId === "overview" || window.HHDevProSuite?.supports?.(devToolId)) {
+        window.HHDeveloperTools?.cleanup?.();
+        window.HHDevProSuite?.mount(workspace.firstElementChild, { toolId: devToolId });
+      } else {
+        window.HHDevProSuite?.cleanup?.();
+        window.HHDeveloperTools?.mount(workspace.firstElementChild, { toolId: devToolId });
+      }
     } else if (route === "/analytics") {
       updatePageHeader("Phân tích", "Đo lường hiệu suất, hành vi sử dụng, vận hành API và an toàn hệ thống trong một trung tâm thống nhất.", route);
       workspace.innerHTML = '<div data-insights-overview-host></div>';
@@ -5735,7 +5758,7 @@ function initAppShell() {
       { type: "Làm nhạc AI", title: "Đăng YouTube tự động", description: "Chọn video, thumbnail, lên lịch, playlist và upload tiếp tục được khi gián đoạn.", route: "/music-ai/youtube-publisher", key: "youtube upload publisher schedule thumbnail playlist resumable oauth tự động đăng video" },
       { type: "Làm nhạc AI", title: "Kiểm tra xuất bản", description: "Checklist quyền sử dụng và QA trước khi public.", route: "/music-ai/publish-checklist", key: "publish checklist bản quyền quyền thương mại qa" }
     ];
-    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "22 công cụ với Universal Media Project, Photo, Video, Asset Manager, thương hiệu và xuất bản.", route: "/media-design", key: "media design universal project asset manager media bin hhmedia creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "Developer Toolbox", description: "22 công cụ JSON, Base64, Regex, Hash, API, SQL, Markdown, Cron và hệ thống.", route: "/dev-tools", key: "developer dev toolbox json base64 uuid token password timestamp regex text compare calculator hash encryption url qr api image sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "22 công cụ với Universal Media Project, Photo, Video, Asset Manager, thương hiệu và xuất bản.", route: "/media-design", key: "media design universal project asset manager media bin hhmedia creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "DEV Command Center", description: "12 workspace DEV Pro cùng 22 tiện ích nhanh cho dữ liệu, API, bảo mật, code, Git và diagnostics.", route: "/dev-tools", key: "developer dev smart input recipe pipeline api mock json data security regex database code playground git diff diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
