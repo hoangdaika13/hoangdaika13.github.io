@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HH Music Production QA</title>
+  <link rel="stylesheet" href="../music-production-suite.css?v=1">
+  <link rel="stylesheet" href="../music-daw-workspace.css?v=1">
+  <link rel="stylesheet" href="../music-composer-lyrics.css?v=1">
+  <link rel="stylesheet" href="../music-audio-labs.css?v=1">
+  <link rel="stylesheet" href="../music-mix-master.css?v=1">
+  <link rel="stylesheet" href="../music-visual-studio.css?v=1">
+  <link rel="stylesheet" href="../music-publishing-rights.css?v=1">
+  <link rel="stylesheet" href="../music-intelligence-engine.css?v=1">
+  <link rel="stylesheet" href="../music-generative-arrangement.css?v=1">
+  <link rel="stylesheet" href="../music-adaptive-library.css?v=1">
+  <link rel="stylesheet" href="../music-mix-performance.css?v=1">
+  <link rel="stylesheet" href="../music-project-governance.css?v=1">
+  <style>
+    html,body{margin:0;min-height:100%;background:#071016;color:#edfaff;font-family:Arial,sans-serif}
+    #music-qa-root{min-height:100vh}
+  </style>
+</head>
+<body>
+  <main id="music-qa-root"></main>
+  <script src="../music-daw-workspace.js?v=1"></script>
+  <script src="../music-composer-lyrics.js?v=1"></script>
+  <script src="../music-audio-labs.js?v=1"></script>
+  <script src="../music-mix-master.js?v=1"></script>
+  <script src="../music-visual-studio.js?v=1"></script>
+  <script src="../music-publishing-rights.js?v=1"></script>
+  <script src="../music-intelligence-engine.js?v=1"></script>
+  <script src="../music-generative-arrangement.js?v=1"></script>
+  <script src="../music-adaptive-library.js?v=1"></script>
+  <script src="../music-mix-performance.js?v=1"></script>
+  <script src="../music-project-governance.js?v=1"></script>
+  <script src="../music-production-suite.js?v=1"></script>
+  <script>
+    const view = new URLSearchParams(location.search).get("view") || "studio";
+    window.HHMusicProductionSuite.mount(document.getElementById("music-qa-root"), {
+      view,
+      onNavigate(nextView) { location.search = `?view=${encodeURIComponent(nextView)}`; }
+    });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.body.dataset.qaViewport = String(innerWidth);
+      document.body.dataset.qaScrollWidth = String(document.documentElement.scrollWidth);
+      document.body.dataset.qaOverflowX = String(document.documentElement.scrollWidth > innerWidth + 1);
+    }));
+  </script>
+</body>
+</html>

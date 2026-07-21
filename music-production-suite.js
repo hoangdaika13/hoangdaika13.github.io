@@ -13,6 +13,16 @@
   ];
 
   const LAB_VIEWS = [
+    { id: "musical-brain", label: "HH Musical Brain", description: "BPM, tone, hợp âm, cấu trúc và Song DNA dùng chung.", icon: "MB", engine: "HHMusicIntelligenceEngine" },
+    { id: "audio-midi", label: "Audio-to-MIDI 2.0", description: "Phân tích note, hợp âm, quantize và xuất MIDI chuẩn.", icon: "M2", engine: "HHMusicIntelligenceEngine" },
+    { id: "session-band", label: "AI Session Band", description: "Sáu nhạc công ảo đi theo Chord Track và vẫn sửa được MIDI.", icon: "SB", engine: "HHMusicGenerativeArrangement" },
+    { id: "region-editor", label: "Generative Region", description: "Tạo nhánh, thay đoạn và giữ seed theo cách không phá hủy.", icon: "GR", engine: "HHMusicGenerativeArrangement" },
+    { id: "adaptive-soundtrack", label: "Adaptive Soundtrack", description: "Cue sheet theo cảnh, cảm xúc và thời lượng video.", icon: "AS", engine: "HHMusicAdaptiveLibrary" },
+    { id: "sample-browser", label: "Semantic Samples", description: "Tìm sample theo mô tả, độ tương tự, BPM, tone và giấy phép.", icon: "SS", engine: "HHMusicAdaptiveLibrary" },
+    { id: "mix-doctor", label: "AI Mix Doctor", description: "Chẩn đoán mix, giải thích vấn đề và so sánh A/B minh bạch.", icon: "MD", engine: "HHMusicMixPerformance" },
+    { id: "live-performance", label: "Live Performance", description: "Clip scene, MIDI Learn, macro và automation trực tiếp.", icon: "LP", engine: "HHMusicMixPerformance" },
+    { id: "project-branches", label: "Project Branches", description: "Nhánh phối, comment timestamp, review và khóa track.", icon: "PB", engine: "HHMusicProjectGovernance" },
+    { id: "release-manager", label: "Release Manager", description: "Metadata, split, consent, preflight và provenance manifest.", icon: "RM", engine: "HHMusicProjectGovernance" },
     { id: "stems", label: "Stem & Remix", description: "Tách, cân chỉnh và xuất từng stem đồng bộ.", icon: "SM", engine: "HHMusicAudioLabs" },
     { id: "vocal", label: "Vocal Studio", description: "Thu take, xử lý giọng và căn lời theo thời gian.", icon: "VO", engine: "HHMusicAudioLabs" },
     { id: "sound-design", label: "Sound Design", description: "Tạo ambience, Foley, impact, riser và loop.", icon: "FX", engine: "HHMusicAudioLabs" },

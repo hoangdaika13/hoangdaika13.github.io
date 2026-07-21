@@ -25,5 +25,5 @@ test("P0 and P1 workspace upgrades are loaded and available offline", () => {
     assert.match(html, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-music-production-v167/);
+  assert.match(worker, /hh-music-production-v168/);
 });

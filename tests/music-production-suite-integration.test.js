@@ -16,11 +16,21 @@ test("production suite exposes the shared mount contract", () => {
 });
 
 test("suite dispatches every specialized room to a real engine", () => {
-  for (const engine of ["HHMusicComposerLyrics", "HHMusicDAWWorkspace", "HHMusicAudioLabs", "HHMusicMixMaster", "HHMusicVisualStudio", "HHMusicPublishingRights"]) {
+  for (const engine of ["HHMusicComposerLyrics", "HHMusicDAWWorkspace", "HHMusicAudioLabs", "HHMusicMixMaster", "HHMusicVisualStudio", "HHMusicPublishingRights", "HHMusicIntelligenceEngine", "HHMusicGenerativeArrangement", "HHMusicAdaptiveLibrary", "HHMusicMixPerformance", "HHMusicProjectGovernance"]) {
     assert.match(source, new RegExp(engine));
   }
-  for (const room of ["stems", "vocal", "sound-design", "image-music", "realtime-jam", "visualizer", "rights"]) {
+  for (const room of ["musical-brain", "audio-midi", "session-band", "region-editor", "stems", "vocal", "sound-design", "adaptive-soundtrack", "sample-browser", "mix-doctor", "live-performance", "project-branches", "release-manager", "image-music", "realtime-jam", "visualizer", "rights"]) {
     assert.match(source, new RegExp(`id: "${room}"`));
+  }
+});
+
+test("application shell loads every advanced music engine before the suite", () => {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const engines = ["music-intelligence-engine", "music-generative-arrangement", "music-adaptive-library", "music-mix-performance", "music-project-governance"];
+  for (const name of engines) {
+    assert.match(html, new RegExp(`${name}\\.css\\?v=1`));
+    assert.match(html, new RegExp(`${name}\\.js\\?v=1`));
+    assert.ok(html.indexOf(`${name}.js?v=1`) < html.indexOf("music-production-suite.js?v=1"));
   }
 });
 

@@ -5113,6 +5113,16 @@ function initAppShell() {
   };
   const musicAIPageItems = [
     { id: "studio", icon: "ST", section: "Bắt đầu", title: "Music Production Studio", description: "DAW tạo nhạc AI thống nhất từ ý tưởng tới xuất bản", route: "/music-ai/studio" },
+    { id: "musical-brain", icon: "MB", section: "Trí tuệ âm nhạc", title: "HH Musical Brain", description: "BPM, tone, hợp âm, cấu trúc và Song DNA", route: "/music-ai/musical-brain" },
+    { id: "audio-midi", icon: "M2", section: "Trí tuệ âm nhạc", title: "Audio-to-MIDI 2.0", description: "Nhận diện note, hợp âm, quantize và MIDI export", route: "/music-ai/audio-midi" },
+    { id: "session-band", icon: "SB", section: "Tạo & Phối", title: "AI Session Band", description: "Drums, bass, piano, guitar, synth và strings", route: "/music-ai/session-band" },
+    { id: "region-editor", icon: "GR", section: "Tạo & Phối", title: "Generative Region Editor", description: "Biến thể theo vùng và phân nhánh không phá hủy", route: "/music-ai/region-editor" },
+    { id: "adaptive-soundtrack", icon: "AS", section: "Audio thông minh", title: "Adaptive Soundtrack", description: "Nhạc và cue sheet khớp cảnh video", route: "/music-ai/adaptive-soundtrack" },
+    { id: "sample-browser", icon: "SS", section: "Audio thông minh", title: "Semantic Sample Browser", description: "Tìm sample theo mô tả, BPM, tone và độ tương tự", route: "/music-ai/sample-browser" },
+    { id: "mix-doctor", icon: "MD", section: "Hậu kỳ", title: "AI Mix Doctor", description: "Chẩn đoán tần số, dynamics, stereo và loudness", route: "/music-ai/mix-doctor" },
+    { id: "live-performance", icon: "LP", section: "Trình diễn", title: "Live Performance", description: "Clip scene, MIDI Learn, macro và automation", route: "/music-ai/live-performance" },
+    { id: "project-branches", icon: "PB", section: "Dự án & Quyền", title: "Project Branches", description: "Phiên bản phối, comment, review và phân quyền", route: "/music-ai/project-branches" },
+    { id: "release-manager", icon: "RM", section: "Dự án & Quyền", title: "Rights & Release Manager", description: "Metadata, split, consent và provenance", route: "/music-ai/release-manager" },
     { id: "composer", icon: "AI", section: "Sáng tác", title: "AI Composer Pro", description: "Composition plan, section, seed và phương án A/B", route: "/music-ai/composer" },
     { id: "lyrics", icon: "LY", section: "Sáng tác", title: "Lyrics Studio", description: "Viết lời, nhịp âm tiết, phát âm và phiên bản", route: "/music-ai/lyrics" },
     { id: "arrange", icon: "AR", section: "DAW", title: "Phối khí", description: "Timeline nhiều track, clip, marker và take lane", route: "/music-ai/arrange" },

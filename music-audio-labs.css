@@ -87,7 +87,7 @@
 .mal-arrangement { min-width: 0; overflow: auto; background: linear-gradient(rgba(98, 233, 244, .025) 1px, transparent 1px), linear-gradient(90deg, rgba(98, 233, 244, .035) 1px, transparent 1px), #070c13; background-size: 36px 36px; }
 .mal-ruler { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; min-width: 520px; padding: 8px 12px; border-bottom: 1px solid var(--mal-line); color: #64798b; background: rgba(10, 17, 25, .95); font: 8px "Cascadia Code", Consolas, monospace; }
 .mal-track-list { display: grid; gap: 6px; min-width: 520px; padding: 9px; }
-.mal-track { display: grid; grid-template-columns: 152px minmax(190px, 1fr) 185px; align-items: stretch; min-height: 76px; border: 1px solid var(--mal-line); border-radius: 6px; background: rgba(16, 26, 38, .94); overflow: hidden; }
+.mal-track { display: grid; grid-template-columns: 152px minmax(210px, 1fr) 238px; align-items: stretch; min-height: 92px; border: 1px solid var(--mal-line); border-radius: 6px; background: rgba(16, 26, 38, .94); overflow: hidden; }
 .mal-track.is-muted { opacity: .56; }
 .mal-track__identity { display: flex; align-items: center; gap: 8px; padding: 9px; border-right: 1px solid var(--mal-line); }
 .mal-track__identity > b { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 auto; border: 1px solid rgba(255, 103, 184, .48); border-radius: 6px; color: var(--mal-pink); font-size: 9px; }
@@ -95,13 +95,17 @@
 .mal-track__identity strong { overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .mal-track__identity select { width: 86px; padding: 3px; border: 1px solid var(--mal-line); border-radius: 4px; color: var(--mal-muted); background: #09111a; font-size: 8px; }
 .mal-track__wave { position: relative; min-width: 0; padding: 8px; background: linear-gradient(90deg, rgba(98, 233, 244, .03), rgba(255, 103, 184, .025)); }
-.mal-track__wave canvas { width: 100%; height: 48px; }
+.mal-track__wave canvas { width: 100%; height: 44px; }
 .mal-track__wave span { position: absolute; right: 7px; bottom: 4px; color: #788b9b; font: 7px "Cascadia Code", Consolas, monospace; }
-.mal-track__mix { display: grid; grid-template-columns: 30px 30px 1fr 1fr 28px; align-items: center; gap: 4px; padding: 7px; border-left: 1px solid var(--mal-line); }
+.mal-track__health { position: absolute; right: 7px; bottom: 18px; left: 7px; display: flex; flex-wrap: wrap; gap: 3px; }
+.mal-health-chip { display: inline-flex; align-items: center; min-height: 16px; padding: 1px 5px; border: 1px solid var(--mal-line); border-radius: 999px; color: var(--mal-muted); background: rgba(7, 13, 20, .84); font-size: 6px; font-weight: 850; }
+.mal-health-chip.is-ok { color: var(--mal-lime); border-color: rgba(185, 242, 115, .28); }.mal-health-chip.is-warn { color: var(--mal-amber); border-color: rgba(255, 209, 102, .34); }.mal-health-chip.is-danger { color: #ff9ac7; border-color: rgba(255, 103, 184, .42); }
+.mal-track__mix { display: grid; grid-template-columns: 28px 28px minmax(42px, 1fr) minmax(42px, 1fr) 62px 28px; align-items: center; gap: 4px; padding: 7px; border-left: 1px solid var(--mal-line); }
 .mal-track__mix button { min-height: 28px; padding: 0; }
 .mal-track__mix button.is-active { color: #071016; border-color: transparent; background: var(--mal-amber); }
 .mal-track__mix label { display: grid; gap: 3px; color: var(--mal-muted); font-size: 7px; }
 .mal-track__mix input { min-width: 0; width: 100%; accent-color: var(--mal-cyan); }
+.mal-track__mix .mal-offset-field input { min-height: 26px; padding: 3px; border: 1px solid var(--mal-line); border-radius: 4px; color: var(--mal-text); background: #08111a; font-size: 7px; }
 .mal-transport { grid-column: 1 / -1; display: grid; grid-template-columns: 38px 82px 70px minmax(120px, 1fr) 70px; align-items: center; gap: 7px; padding: 8px 12px; border-top: 1px solid var(--mal-line); background: #0c141e; }
 .mal-transport strong, .mal-transport span { color: #b7c6d0; font: 10px "Cascadia Code", Consolas, monospace; }
 .mal-transport input { width: 100%; accent-color: var(--mal-cyan); }
@@ -120,6 +124,10 @@
 .mal-server-card .mal-status { margin-top: 8px; }
 .mal-server-card p, .mal-adapter-note { color: var(--mal-muted); font-size: 8px; line-height: 1.55; }
 .mal-server-card button { width: 100%; }
+.mal-replacement { display: grid; gap: 7px; margin-top: 12px; padding: 11px; border: 1px solid rgba(255, 103, 184, .24); border-radius: 7px; background: rgba(39, 17, 35, .25); }
+.mal-replacement > div { display: grid; gap: 3px; }.mal-replacement small { color: var(--mal-pink); font-size: 7px; font-weight: 900; }.mal-replacement strong { font-size: 10px; }
+.mal-replacement label { display: grid; gap: 4px; color: var(--mal-muted); font-size: 7px; }.mal-replacement select { width: 100%; min-height: 31px; padding: 5px; border: 1px solid var(--mal-line); border-radius: 5px; color: var(--mal-text); background: #08111a; font-size: 8px; }
+.mal-replacement ul { display: grid; gap: 5px; max-height: 145px; margin: 0; padding: 0; overflow: auto; list-style: none; }.mal-replacement li { display: grid; grid-template-columns: minmax(0, 1fr) auto 25px; align-items: center; gap: 4px; padding: 5px; border: 1px solid var(--mal-line); border-radius: 5px; }.mal-replacement li.is-active { border-color: var(--mal-line-strong); background: rgba(98, 233, 244, .08); }.mal-replacement li > div { min-width: 0; }.mal-replacement li strong, .mal-replacement li span { display: block; overflow: hidden; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }.mal-replacement li span { margin-top: 2px; color: var(--mal-muted); }.mal-replacement li button { min-height: 25px; padding: 0 5px; font-size: 7px; }.mal-replacement li.is-empty { display: block; color: var(--mal-muted); text-align: center; font-size: 8px; }
 .mal-control { display: grid; gap: 7px; margin-top: 12px; color: #aebeca; font-size: 9px; font-weight: 750; }
 .mal-control > span { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .mal-control output { color: var(--mal-cyan); font: 8px "Cascadia Code", Consolas, monospace; }
@@ -136,7 +144,7 @@
 .mal-empty > span { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 12px; border: 1px solid var(--mal-line-strong); border-radius: 50%; color: var(--mal-cyan); font-size: 8px; font-weight: 950; box-shadow: 0 0 28px rgba(98, 233, 244, .1); }
 .mal-empty strong { color: var(--mal-text); font-size: 12px; }.mal-empty p { margin: 6px 0; font-size: 9px; }
 
-.mal-vocal-grid { display: grid; grid-template-columns: minmax(420px, 1.15fr) 270px minmax(340px, .85fr); gap: 9px; padding-top: 9px; }
+.mal-vocal-grid { display: grid; grid-template-columns: minmax(480px, 1.25fr) 290px minmax(340px, .8fr); gap: 9px; padding-top: 9px; }
 .mal-vocal-stage, .mal-vocal-effects, .mal-lyrics, .mal-prompt-rack, .mal-soundboard, .mal-timeline-drop { min-width: 0; min-height: calc(100vh - 175px); padding: 14px; border: 1px solid var(--mal-line); border-radius: 7px; background: var(--mal-panel); }
 .mal-vocal-stage > header, .mal-soundboard > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--mal-line); }
 .mal-vocal-stage header h3, .mal-soundboard header h3 { margin: 3px 0 0; font-size: 15px; }
@@ -148,11 +156,14 @@
 .mal-record-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
 .mal-file-button { display: inline-flex; align-items: center; justify-content: center; position: relative; }
 .mal-take-list { display: grid; gap: 6px; margin-top: 12px; }
-.mal-take { display: grid; grid-template-columns: 145px minmax(100px, 1fr) 48px 30px; align-items: center; gap: 7px; min-height: 58px; padding: 6px; border: 1px solid var(--mal-line); border-radius: 6px; background: rgba(10, 18, 27, .9); }
+.mal-take { display: grid; grid-template-columns: 155px minmax(130px, 1fr) 48px 30px; align-items: center; gap: 7px; min-height: 70px; padding: 6px; border: 1px solid var(--mal-line); border-radius: 6px; background: rgba(10, 18, 27, .9); }
 .mal-take.is-selected { border-color: rgba(255, 103, 184, .5); box-shadow: inset 3px 0 var(--mal-pink); }
 .mal-take > button:first-child { display: grid; justify-items: start; min-width: 0; text-align: left; background: transparent; border: 0; }
 .mal-take > button:first-child span { max-width: 130px; overflow: hidden; color: var(--mal-muted); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
-.mal-take canvas { width: 100%; height: 37px; }
+.mal-take-wave { min-width: 0; }.mal-take canvas { width: 100%; height: 33px; }.mal-take-wave > div { display: flex; flex-wrap: wrap; gap: 3px; }
+.mal-comp-editor { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--mal-line); }.mal-comp-editor > p { color: var(--mal-muted); font-size: 8px; line-height: 1.5; }
+.mal-range-editor { display: grid; grid-template-columns: 1fr 1fr auto auto; align-items: end; gap: 6px; margin-top: 10px; }.mal-range-editor label { display: grid; gap: 4px; color: var(--mal-muted); font-size: 7px; }.mal-range-editor input { width: 100%; min-height: 34px; padding: 6px; border: 1px solid var(--mal-line); border-radius: 5px; color: var(--mal-text); background: #08111a; }
+.mal-comp-list { display: grid; gap: 5px; max-height: 190px; margin: 10px 0 0; padding: 0; overflow: auto; list-style: none; }.mal-comp-list li { display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px 28px 28px; align-items: center; gap: 5px; min-height: 43px; padding: 5px; border: 1px solid var(--mal-line); border-radius: 5px; background: #09111a; }.mal-comp-list li > span { color: var(--mal-pink); font: 8px "Cascadia Code", Consolas, monospace; }.mal-comp-list li > div { min-width: 0; }.mal-comp-list li strong, .mal-comp-list li small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.mal-comp-list li strong { font-size: 8px; }.mal-comp-list li small { margin-top: 3px; color: var(--mal-muted); font-size: 7px; }.mal-comp-list li button { min-height: 26px; padding: 0; }.mal-comp-list li.is-empty { display: block; padding: 12px; color: var(--mal-muted); text-align: center; font-size: 8px; }
 .mal-effect-block { margin-top: 14px; padding: 11px; border: 1px solid var(--mal-line); border-radius: 6px; background: rgba(9, 16, 24, .74); }
 .mal-effect-block > span { color: var(--mal-amber); font-size: 7px; font-weight: 950; }
 .mal-effect-block p { color: var(--mal-muted); font-size: 8px; line-height: 1.55; }
@@ -163,6 +174,7 @@
 .mal-cues { display: grid; gap: 4px; max-height: 190px; margin: 10px 0; padding: 0; overflow: auto; list-style: none; }
 .mal-cues li { display: grid; grid-template-columns: 58px 1fr 28px; align-items: center; gap: 6px; min-height: 34px; padding: 4px 6px; border: 1px solid var(--mal-line); border-radius: 5px; background: #09111a; font-size: 9px; }
 .mal-cues time { color: var(--mal-cyan); font: 8px "Cascadia Code", Consolas, monospace; }
+.mal-cues li.is-syllable { border-color: rgba(185, 242, 115, .28); }.mal-cues li.is-syllable span { color: #e6facf; font-weight: 800; }
 .mal-cues button { min-height: 25px; padding: 0; }.mal-cues li.is-empty { display: block; padding: 12px; color: var(--mal-muted); text-align: center; }
 .mal-clone-gate { margin-top: 12px; padding: 11px; border: 1px solid rgba(255, 209, 102, .26); border-radius: 6px; background: rgba(44, 34, 15, .25); }
 .mal-clone-gate > strong { display: block; margin-bottom: 8px; color: var(--mal-amber); font-size: 10px; }
@@ -187,7 +199,7 @@
   .mal-inspector { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(170px, 1fr) 130px 1fr 180px; align-items: center; gap: 12px; border-top: 1px solid var(--mal-line); border-left: 0; }
   .mal-inspector .mal-panel-title { border: 0; padding: 0; }.mal-inspector .mal-meter-bank { height: 80px; margin: 0; }.mal-inspector .mal-specs { grid-template-columns: 1fr 1fr; margin: 0; }
   .mal-transport { grid-row: auto; }
-  .mal-vocal-grid { grid-template-columns: minmax(400px, 1fr) 250px; }.mal-lyrics { grid-column: 1 / -1; min-height: 0; }
+  .mal-vocal-grid { grid-template-columns: minmax(440px, 1fr) 280px; }.mal-lyrics { grid-column: 1 / -1; min-height: 0; }
   .mal-sound-layout { grid-template-columns: 250px minmax(420px, 1fr); }.mal-timeline-drop { grid-column: 1 / -1; min-height: 0; display: grid; grid-template-columns: 180px 1fr 190px; align-items: center; gap: 12px; }.mal-timeline-drop .mal-drop-target { min-height: 90px; margin: 0; }
 }
 
@@ -197,15 +209,16 @@
   .mal-daw { display: block; }.mal-library, .mal-inspector { border: 0; border-bottom: 1px solid var(--mal-line); }.mal-arrangement { max-height: 520px; }.mal-inspector { display: grid; grid-template-columns: 1fr 1fr; }.mal-inspector .mal-panel-title, .mal-inspector > button { grid-column: 1 / -1; }.mal-transport { position: sticky; bottom: 0; z-index: 5; display: grid; }
   .mal-vocal-grid, .mal-sound-layout { grid-template-columns: 1fr; }.mal-vocal-stage, .mal-vocal-effects, .mal-lyrics, .mal-prompt-rack, .mal-soundboard, .mal-timeline-drop { grid-column: auto; min-height: 0; }.mal-timeline-drop { display: block; }.mal-timeline-drop .mal-drop-target { min-height: 110px; margin: 12px 0; }
   .mal-sound-grid { grid-template-columns: 1fr; }
+  .mal-range-editor { grid-template-columns: 1fr 1fr; }.mal-range-editor button { width: 100%; }
 }
 
 @media (max-width: 520px) {
   .mal-brand h2 { font-size: 17px; }.mal-runtime span:last-child { display: none; }
   .mal-route-list { grid-template-columns: 1fr; }
   .mal-inspector { grid-template-columns: 1fr; }.mal-inspector .mal-panel-title, .mal-inspector > button { grid-column: auto; }.mal-inspector .mal-specs { grid-template-columns: 1fr; }
-  .mal-track { grid-template-columns: 135px minmax(170px, 1fr); }.mal-track__mix { grid-column: 1 / -1; border-top: 1px solid var(--mal-line); border-left: 0; }
+  .mal-track { grid-template-columns: 135px minmax(190px, 1fr); }.mal-track__mix { grid-column: 1 / -1; border-top: 1px solid var(--mal-line); border-left: 0; }
   .mal-transport { grid-template-columns: 34px 68px 60px 1fr; }.mal-transport > span { display: none; }
-  .mal-take { grid-template-columns: 105px minmax(75px, 1fr) 44px 28px; }.mal-take > button:first-child span { max-width: 92px; }
+  .mal-take { grid-template-columns: 115px minmax(90px, 1fr) 44px 28px; }.mal-take > button:first-child span { max-width: 102px; }
   .mal-cue-form { grid-template-columns: 76px 1fr; }.mal-cue-form button { grid-column: 1 / -1; }
   .mal-field-pair { grid-template-columns: 1fr; }.mal-type-grid { grid-template-columns: 1fr 1fr; }
   .mal-soundboard > header { align-items: flex-start; flex-direction: column; }.mal-soundboard > header > div:last-child { width: 100%; flex-wrap: wrap; }

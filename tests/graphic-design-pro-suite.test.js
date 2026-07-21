@@ -35,7 +35,7 @@ test("Graphic Design Pro engines are loaded, routed and cached", () => {
     assert.match(studio, new RegExp(`id: ["']${route}["']`));
     assert.match(shell, new RegExp(`/graphic-design/${route}`));
   }
-  assert.match(worker, /hh-music-production-v167/);
+  assert.match(worker, /hh-music-production-v168/);
   assert.match(html, /script\.js\?v=115/);
   assert.match(html, /graphic-design-studio\.js\?v=5/);
   assert.doesNotMatch(html, /graphic-design-nondestructive\.js\?v=1/);

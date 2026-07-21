@@ -48,6 +48,35 @@ test("Stem Lab performs real local decode, analysis, routing and synchronized ex
   assert.match(source, /không giả lập kết quả tách stem/i);
 });
 
+test("Stem Intelligence measures silence, noise and clipping locally", () => {
+  for (const contract of [
+    /function analyzeAudioHealth\(buffer\)/,
+    /windowed-rms-local-v1/,
+    /silenceThresholdDb/,
+    /silenceRanges/,
+    /noiseFloorDb/,
+    /noiseRisk/,
+    /clippedSamples/,
+    /clippingRatio/,
+    /clippingRanges/
+  ]) assert.match(source, contract);
+  assert.match(source, /Math\.abs\(sample\)/);
+  assert.match(source, /clippingThreshold = 0\.999/);
+  assert.match(source, /Nền .* dB/);
+});
+
+test("Stem replacement and synchronized WAV workflows stay non-destructive", () => {
+  assert.match(source, /function resolvedStemTracks\(\)/);
+  assert.match(source, /replacementTrackId/);
+  assert.match(source, /status: "draft"/);
+  assert.match(source, /preserveMixSettings: true/);
+  assert.match(source, /function synchronizeStemTracks\(\)/);
+  assert.match(source, /function exportSynchronizedStems\(\)/);
+  assert.match(source, /renderSynchronizedTrack/);
+  assert.match(source, /hh-sync-/);
+  assert.match(source, /API key chỉ nằm ở server/);
+});
+
 test("Vocal Studio asks for explicit consent and cleans capture devices", () => {
   const consentIndex = source.indexOf("if (!consent?.checked)");
   const mediaIndex = source.indexOf("getUserMedia", consentIndex);
@@ -59,6 +88,47 @@ test("Vocal Studio asks for explicit consent and cleans capture devices", () => 
   assert.match(source, /BACKEND REQUIRED/);
   assert.match(source, /Không lưu giọng, embedding hoặc mẫu sinh trắc học/);
   assert.match(source, /hh\.voice-consent\.v1/);
+});
+
+test("Vocal comping uses take lanes and a non-destructive range playlist", () => {
+  for (const contract of [
+    /lane: state\.vocal\.takes\.length \+ 1/,
+    /selection: \{ start: 0, end: 4 \}/,
+    /compSegments/,
+    /function addCompSegment\(\)/,
+    /takeId: take\.id/,
+    /function previewVocalComp\(\)/,
+    /function exportVocalComp\(\)/,
+    /hh-vocal-comp\.wav/,
+    /audio gốc không bị cắt hoặc ghi đè/i
+  ]) assert.match(source, contract);
+});
+
+test("Vocal controls distinguish local preview from optional backend metadata", () => {
+  assert.match(source, /connectVocalPreviewChain/);
+  assert.match(source, /deEsser\.frequency\.value = 7200/);
+  assert.match(source, /breathControl/);
+  assert.match(source, /timingCorrection/);
+  assert.match(source, /harmonyAmount/);
+  assert.match(source, /Trình duyệt không tự nhận là đã Auto-Tune/);
+  assert.match(source, /không phải mô hình ML/);
+});
+
+test("Vietnamese lyric syllable cues are explicit editable metadata", () => {
+  assert.match(source, /function createVietnameseSyllableCues\(\)/);
+  assert.match(source, /kind: "syllable"/);
+  assert.match(source, /language: "vi"/);
+  assert.match(source, /Tạo cue âm tiết tiếng Việt/);
+  assert.match(source, /tinh chỉnh thủ công/);
+});
+
+test("old manifest schemas remain stable and include optional project BPM/key", () => {
+  assert.match(source, /schema: "hh\.music\.stems\.v1"/);
+  assert.match(source, /schema: "hh\.music\.vocal-session\.v1"/);
+  assert.match(source, /HHMusicProjectContext\?\.getSnapshot\?\.\(\)/);
+  assert.match(source, /source: "standalone", bpm: null, key: null/);
+  assert.match(source, /projectContext: getProjectMusicContext\(\)/);
+  assert.match(source, /const projectContext = getProjectMusicContext\(\)/);
 });
 
 test("Sound Design supports local generation and truthful Eleven server adapters", () => {
@@ -90,6 +160,9 @@ test("DAW interface remains accessible and responsive", () => {
   assert.match(styles, /@media \(max-width: 520px\)/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /overflow: auto/);
+  assert.match(styles, /\.mal-comp-editor/);
+  assert.match(styles, /\.mal-health-chip/);
+  assert.match(styles, /\.mal-replacement/);
 });
 
 test("new module does not expose client-side provider secrets", () => {
