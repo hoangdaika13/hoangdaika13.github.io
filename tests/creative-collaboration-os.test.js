@@ -80,6 +80,17 @@ test("persists a bounded versioned local-first envelope", () => {
   assert.equal(reopened.getProject().title, "Chiến dịch Creative OS");
 });
 
+test("creates a matching collaboration workspace for each Universal Project", () => {
+  const storage = memoryStorage();
+  const first = creative.createStore({ storage, projectId: "universal-a", projectTitle: "Chiến dịch A", currentUser: { id: "owner", name: "Owner" } });
+  assert.equal(first.getProject("universal-a").title, "Chiến dịch A");
+
+  const second = creative.createStore({ storage, projectId: "universal-b", projectTitle: "Chiến dịch B", currentUser: { id: "owner", name: "Owner" } });
+  assert.equal(second.getState().activeProjectId, "universal-b");
+  assert.equal(second.getProject("universal-b").title, "Chiến dịch B");
+  assert.equal(second.getProject("universal-a").title, "Chiến dịch A");
+});
+
 test("validates the Draft to Review to Approved to Published workflow", () => {
   const store = deterministicStore();
   const id = store.getState().activeProjectId;

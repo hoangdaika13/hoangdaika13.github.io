@@ -360,8 +360,19 @@
       persistenceError = cleanText(error && error.message, 300) || "Không đọc được dữ liệu cục bộ.";
       state = normalizeEnvelope(settings.initialState, currentUser, now);
     }
-    if (!state.projects.length) {
-      const project = defaultProject(settings.projectId || "creative-main", currentUser, now);
+    const requestedProjectId = cleanText(settings.projectId, 120);
+    let requestedProject = requestedProjectId ? state.projects.find((project) => project.id === requestedProjectId) : null;
+    if (requestedProjectId && !requestedProject && state.projects.length < LIMITS.projects) {
+      requestedProject = defaultProject(requestedProjectId, currentUser, now);
+      requestedProject.title = cleanText(settings.projectTitle, LIMITS.title) || requestedProject.title;
+      state.projects.push(requestedProject);
+      state.activeProjectId = requestedProject.id;
+    } else if (requestedProject) {
+      state.activeProjectId = requestedProject.id;
+      if (settings.projectTitle && requestedProject.title === "Chiến dịch Creative OS") requestedProject.title = cleanText(settings.projectTitle, LIMITS.title);
+    } else if (!state.projects.length) {
+      const project = defaultProject(requestedProjectId || "creative-main", currentUser, now);
+      project.title = cleanText(settings.projectTitle, LIMITS.title) || project.title;
       state.projects.push(project);
       state.activeProjectId = project.id;
     }
@@ -911,11 +922,16 @@
   function createController(root, options) {
     const settings = options || {};
     const currentUser = publicUser(settings.currentUser);
+    const universalState = settings.store && typeof settings.store.getState === "function" ? settings.store.getState() : null;
+    const universalProject = Array.isArray(universalState && universalState.projects)
+      ? universalState.projects.find((item) => item.id === (settings.projectId || universalState.activeProjectId)) || universalState.projects[0]
+      : null;
+    const requestedProjectId = cleanText(settings.projectId || universalProject?.id, 120);
     const store = settings.store && typeof settings.store.getProject === "function"
       ? settings.store
-      : createStore({ currentUser, projectId: settings.projectId });
+      : createStore({ currentUser, projectId: requestedProjectId, projectTitle: universalProject?.name });
     let view = settings.view === "collaboration" ? "collaboration" : "review";
-    let projectId = cleanText(settings.projectId, 120) || store.getState().activeProjectId;
+    let projectId = requestedProjectId || store.getState().activeProjectId;
     let network = { mode: settings.socketUrl ? "connecting" : "local", realtime: false, error: settings.socketUrl ? "" : "Chưa cấu hình Socket.io. Đang dùng chế độ cục bộ một người." };
     let destroyed = false;
     let notice = "";
