@@ -3,3 +3,5 @@ node_modules/
 .env
 .env.*
 !.env.example
+artifacts-communication-*.png
+online-communication-debug.png
