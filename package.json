@@ -9,7 +9,8 @@
     "test:space": "node --test tests/space-explorer-contract.test.js",
     "test:english": "node --test tests/english-learning.test.js",
     "test:communication": "node --test tests/communication-*.test.js",
-    "test:youtube-publisher": "node --test tests/youtube-publisher-contract.test.js"
+    "test:youtube-publisher": "node --test tests/youtube-publisher-contract.test.js",
+    "test:learning": "node --test tests/learning-*.test.js"
   },
   "dependencies": {
     "@payos/node": "^2.0.5",

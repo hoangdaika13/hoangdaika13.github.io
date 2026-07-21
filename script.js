@@ -5270,7 +5270,29 @@ function initAppShell() {
     },
     { id: "entertainment", label: "Giải trí", icon: "◉", accent: "#ff8a5b", route: "/entertainment", items: [], pages: [{ id: "astra-hh", title: "ASTRA HH", route: "/entertainment/astra-hh" }] },
     { id: "insights", label: "Phân tích", icon: "↗", accent: "#ffbd69", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
-    { id: "learn", label: "Học tập", icon: "◫", accent: "#9a86ff", route: "/learn", items: ["learning-center", "i18n", "accessibility-center", "gamification", "onboarding-tour"] },
+    {
+      id: "learn",
+      label: "Học tập",
+      icon: "◫",
+      accent: "#9a86ff",
+      route: "/learn",
+      items: ["i18n", "accessibility-center", "gamification", "onboarding-tour"],
+      pages: [
+        { id: "home", title: "Learning Home", route: "/learn/home" },
+        { id: "paths", title: "Lộ trình cá nhân", route: "/learn/paths" },
+        { id: "mastery", title: "Skill Graph", route: "/learn/mastery" },
+        { id: "review", title: "Smart Review", route: "/learn/review" },
+        { id: "mistakes", title: "Mistake Notebook", route: "/learn/mistakes" },
+        { id: "lesson", title: "Lesson Player", route: "/learn/lesson" },
+        { id: "coach", title: "AI Learning Coach", route: "/learn/coach" },
+        { id: "speaking", title: "Speaking & Listening", route: "/learn/speaking" },
+        { id: "assessments", title: "Kiểm tra & Chứng chỉ", route: "/learn/assessments" },
+        { id: "classroom", title: "Classroom", route: "/learn/classroom" },
+        { id: "study-together", title: "Study Together", route: "/learn/study-together" },
+        { id: "catch-up", title: "Smart Catch-up", route: "/learn/catch-up" },
+        { id: "passport", title: "Learning Passport", route: "/learn/passport" }
+      ]
+    },
     { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [] },
     { id: "system", label: "Hệ thống", icon: "⚙", accent: "#68dda8", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] },
     { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", accent: "#ff6fae", route: "/support", items: [] }
@@ -5494,7 +5516,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerToolItems : knownTools;
     let crumbRoute = "";
@@ -5543,6 +5565,7 @@ function initAppShell() {
     document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
+    document.body.classList.toggle("app-learning-route", route === "/learn" || route.startsWith("/learn/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     document.body.classList.toggle("app-communication-route", route === "/communication" || route.startsWith("/communication/"));
     document.body.classList.toggle("app-work-route", route === "/work");
@@ -5558,6 +5581,8 @@ function initAppShell() {
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
     if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
+    const learningView = route === "/learn" ? "home" : route.split("/").filter(Boolean)[1];
+    if (!(route === "/learn" || window.HHLearningSuite?.supports?.(learningView))) window.HHLearningSuite?.unmount?.();
     if (route !== "/work") window.HHWorkCenter?.unmount?.();
     if (route !== "/music-ai" && !route.startsWith("/music-ai/")) {
       window.HHMusicAIStudio?.unmount?.();
@@ -5610,6 +5635,18 @@ function initAppShell() {
       workspace.innerHTML = '<div data-space-explorer-host></div>';
       if (window.HHSpaceExplorer?.mount) window.HHSpaceExplorer.mount(workspace.firstElementChild, { apiBase: REALTIME_URL });
       else mountSimpleView("ASTRA HH", "Đang khởi động động cơ khám phá vũ trụ...", "");
+    } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHLearningSuite?.supports?.(parts[1]))) {
+      const learningRouteView = route === "/learn" ? "home" : parts[1];
+      const learningMeta = window.HHLearningSuite?.views?.[learningRouteView];
+      updatePageHeader(learningMeta?.title || "HH Learning OS", "Lộ trình cá nhân, ôn tập thông minh, bài học ngắn, luyện kỹ năng và lớp học trong một không gian tập trung.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/learn/review">Ôn tập hôm nay</button><button class="app-primary-action" type="button" data-app-route="/learn/lesson">Học tiếp</button>`;
+      workspace.innerHTML = '<div data-learning-suite-shell></div>';
+      if (window.HHLearningSuite?.mount) window.HHLearningSuite.mount(workspace.firstElementChild, {
+        view: learningRouteView,
+        currentUser: readCurrentAuthUser(),
+        runAI: (request) => creativeAIRequest("ai-center", JSON.stringify(request), request?.task || "learning-coach", { source: "learning-os" })
+      });
+      else mountSimpleView("HH Learning OS", "Đang tải không gian học tập cá nhân...", "");
     } else if (route === "/english" || route.startsWith("/english/")) {
       updatePageHeader("HH English", "Học miễn phí từ A0 đến C2 với 64 lộ trình nghề nghiệp và bài học tự đổi theo từng người.", route);
       workspace.innerHTML = '<div data-hh-english-host></div>';
