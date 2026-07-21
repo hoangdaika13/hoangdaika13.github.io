@@ -1,0 +1,137 @@
+@layer pages {
+  #authGate {
+    --hh-identity-primary: #68e8f0;
+    --hh-identity-secondary: #f56fbc;
+    --hh-identity-accent: #f7d769;
+    --hh-identity-soft: rgba(104, 232, 240, .16);
+    isolation: isolate;
+  }
+
+  #authGate > :where(.auth-gate-brand, .auth-gate-card) {
+    position: relative;
+    z-index: 2;
+  }
+
+  .hh-identity-constellation {
+    position: fixed;
+    z-index: 1;
+    inset: 0;
+    inline-size: 100vw;
+    inline-size: 100dvw;
+    block-size: 100vh;
+    block-size: 100dvh;
+    overflow: hidden;
+    contain: strict;
+    pointer-events: none;
+    user-select: none;
+    opacity: .92;
+    transition: opacity .35s ease, filter .35s ease;
+  }
+
+  .hh-identity-constellation[hidden] {
+    display: none;
+  }
+
+  .hh-identity-constellation::before {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background:
+      radial-gradient(32rem circle at var(--hh-identity-pointer-x, 28%) var(--hh-identity-pointer-y, 48%), color-mix(in srgb, var(--hh-identity-primary) 11%, transparent), transparent 72%),
+      radial-gradient(22rem circle at var(--hh-identity-center-x, 28%) var(--hh-identity-center-y, 48%), color-mix(in srgb, var(--hh-identity-secondary) 9%, transparent), transparent 74%);
+    opacity: .85;
+    transform: translateZ(0);
+  }
+
+  .hh-identity-constellation__canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    max-inline-size: none;
+    max-block-size: none;
+    opacity: 1;
+    filter: saturate(112%);
+    transform: translateZ(0);
+  }
+
+  .hh-identity-constellation[data-phase="morning"] {
+    filter: brightness(1.06) saturate(1.02);
+  }
+
+  .hh-identity-constellation[data-phase="afternoon"] {
+    filter: saturate(1.08);
+  }
+
+  .hh-identity-constellation[data-phase="night"] {
+    filter: contrast(1.04) saturate(1.12);
+  }
+
+  .hh-identity-constellation[data-phase="offline"] {
+    opacity: .5;
+    filter: grayscale(.28) saturate(.62);
+  }
+
+  .hh-identity-constellation:is(.is-paused, .is-low-power) {
+    opacity: .68;
+  }
+
+  .hh-identity-constellation.is-reduced-motion {
+    opacity: .56;
+  }
+
+  body:not(.auth-locked) .hh-identity-constellation {
+    opacity: 0;
+  }
+
+  @media (max-width: 900px), (max-height: 680px) {
+    .hh-identity-constellation {
+      opacity: .68;
+    }
+
+    .hh-identity-constellation::before {
+      background:
+        radial-gradient(22rem circle at var(--hh-identity-pointer-x, 50%) var(--hh-identity-pointer-y, 18%), color-mix(in srgb, var(--hh-identity-primary) 9%, transparent), transparent 76%),
+        radial-gradient(17rem circle at var(--hh-identity-center-x, 50%) var(--hh-identity-center-y, 18%), color-mix(in srgb, var(--hh-identity-secondary) 7%, transparent), transparent 78%);
+    }
+
+    .hh-identity-constellation__canvas {
+      filter: saturate(104%);
+    }
+  }
+
+  @media (max-width: 520px), (max-height: 520px), (pointer: coarse) {
+    .hh-identity-constellation {
+      opacity: .48;
+    }
+
+    .hh-identity-constellation::before {
+      opacity: .55;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    .hh-identity-constellation {
+      opacity: .38;
+      filter: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hh-identity-constellation {
+      opacity: .42;
+      transition: none;
+    }
+
+    .hh-identity-constellation::before {
+      opacity: .42;
+    }
+  }
+
+  @media print {
+    .hh-identity-constellation {
+      display: none !important;
+    }
+  }
+}

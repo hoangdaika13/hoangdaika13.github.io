@@ -1,0 +1,391 @@
+#authGate {
+  --hh-quantum-cyan: var(--auth-cyan, #62d7e7);
+  --hh-quantum-pink: var(--auth-pink, #f05caf);
+  --hh-quantum-green: var(--auth-green, #67dba1);
+  --hh-quantum-yellow: var(--auth-yellow, #f7dc63);
+  --hh-quantum-danger: #ff718b;
+}
+
+#authGate .hh-quantum-flow {
+  position: relative;
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(98, 215, 231, .18);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(98, 215, 231, .055), transparent 42%),
+    linear-gradient(315deg, rgba(240, 92, 175, .05), transparent 44%),
+    rgba(7, 12, 21, .72);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .035);
+}
+
+#authGate .hh-quantum-flow::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(98, 215, 231, .04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(98, 215, 231, .04) 1px, transparent 1px);
+  background-size: 18px 18px;
+  content: "";
+  opacity: .48;
+  pointer-events: none;
+}
+
+#authGate .hh-quantum-flow__header,
+#authGate .hh-quantum-flow__steps {
+  position: relative;
+  z-index: 1;
+}
+
+#authGate .hh-quantum-flow__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+#authGate .hh-quantum-flow__header > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #aeb9c9;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+#authGate .hh-quantum-flow__header > span::before {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--hh-quantum-cyan);
+  box-shadow: 0 0 11px var(--hh-quantum-cyan);
+  content: "";
+}
+
+#authGate .hh-quantum-flow__header > output {
+  min-width: 0;
+  overflow: hidden;
+  color: #7f8da1;
+  font-size: 8px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#authGate[data-quantum-state="error"] .hh-quantum-flow__header > output {
+  color: #ff9aae;
+}
+
+#authGate[data-quantum-state="complete"] .hh-quantum-flow__header > span::before {
+  background: var(--hh-quantum-green);
+  box-shadow: 0 0 12px var(--hh-quantum-green);
+}
+
+#authGate .hh-quantum-flow__steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#authGate .hh-quantum-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 7px;
+  border: 1px solid rgba(255, 255, 255, .075);
+  border-radius: 9px;
+  background: rgba(12, 18, 29, .66);
+  color: #6f7c8f;
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+#authGate .hh-quantum-step__node {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 8px;
+  background: #0a111c;
+  color: #768498;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+#authGate .hh-quantum-step__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+#authGate .hh-quantum-step__copy strong,
+#authGate .hh-quantum-step__copy small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#authGate .hh-quantum-step__copy strong {
+  color: #b8c4d3;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+#authGate .hh-quantum-step__copy small {
+  color: #68768a;
+  font-size: 7px;
+  line-height: 1.35;
+}
+
+#authGate .hh-quantum-step[data-state="active"] {
+  border-color: rgba(98, 215, 231, .48);
+  background: linear-gradient(135deg, rgba(98, 215, 231, .12), rgba(240, 92, 175, .045));
+  box-shadow: 0 0 0 1px rgba(98, 215, 231, .06), 0 8px 22px rgba(0, 0, 0, .18);
+  color: var(--hh-quantum-cyan);
+  transform: translateY(-1px);
+}
+
+#authGate .hh-quantum-step[data-state="active"] .hh-quantum-step__node {
+  border-color: rgba(98, 215, 231, .65);
+  color: #b8fbff;
+  box-shadow: 0 0 12px rgba(98, 215, 231, .2);
+  animation: hh-quantum-node-pulse 1.9s ease-in-out infinite;
+}
+
+#authGate .hh-quantum-step[data-state="active"] strong {
+  color: #eefcff;
+}
+
+#authGate .hh-quantum-step[data-state="complete"] {
+  border-color: rgba(103, 219, 161, .24);
+  background: rgba(103, 219, 161, .055);
+}
+
+#authGate .hh-quantum-step[data-state="complete"] .hh-quantum-step__node {
+  border-color: rgba(103, 219, 161, .45);
+  background: rgba(103, 219, 161, .13);
+  color: #91f1bd;
+}
+
+#authGate .hh-quantum-step[data-state="complete"] strong {
+  color: #ccebdc;
+}
+
+#authGate .hh-quantum-step[data-state="error"] {
+  border-color: rgba(255, 113, 139, .52);
+  background: rgba(255, 113, 139, .075);
+  box-shadow: 0 0 0 1px rgba(255, 113, 139, .05), 0 8px 22px rgba(75, 8, 30, .16);
+}
+
+#authGate .hh-quantum-step[data-state="error"] .hh-quantum-step__node {
+  border-color: rgba(255, 113, 139, .6);
+  color: #ff9aae;
+}
+
+#authGate .hh-quantum-step[data-state="error"] strong,
+#authGate .hh-quantum-step[data-state="error"] small {
+  color: #ffadbc;
+}
+
+#authGate .auth-passkey-row > .hh-passkey-portal {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 54px;
+  isolation: isolate;
+}
+
+#authGate .hh-passkey-portal__field,
+#authGate .hh-passkey-portal__orbit {
+  position: absolute;
+  inset: -3px;
+  z-index: 0;
+  border-radius: 13px;
+  pointer-events: none;
+}
+
+#authGate .hh-passkey-portal__field {
+  border: 1px solid rgba(98, 215, 231, .16);
+  background: radial-gradient(circle at 20% 50%, rgba(98, 215, 231, .13), transparent 44%);
+  opacity: .72;
+}
+
+#authGate .hh-passkey-portal__orbit {
+  inset: -5px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#0b111c, #0b111c) padding-box,
+    conic-gradient(from 120deg, transparent 0 42%, var(--hh-quantum-cyan) 54%, var(--hh-quantum-pink) 66%, transparent 78% 100%) border-box;
+  opacity: 0;
+}
+
+#authGate .hh-passkey-portal > [data-passkey-login] {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  padding: 8px 10px;
+  border: 1px solid rgba(98, 215, 231, .25);
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(16, 24, 36, .94), rgba(8, 13, 22, .94));
+  color: #dce8f3;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+#authGate .hh-passkey-portal > [data-passkey-login] > i {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 9px;
+  background: linear-gradient(145deg, rgba(240, 92, 175, .22), rgba(98, 215, 231, .22));
+  color: #8cebf1;
+  font-style: normal;
+}
+
+#authGate .hh-passkey-portal > [data-passkey-login] > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+#authGate .hh-passkey-portal > [data-passkey-login] b {
+  color: #edf6ff;
+  font-size: 11px;
+}
+
+#authGate .hh-passkey-portal > [data-passkey-login] small {
+  overflow: hidden;
+  color: #7e8da1;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#authGate .hh-passkey-portal > [data-passkey-login]:hover,
+#authGate .hh-passkey-portal > [data-passkey-login]:focus-visible {
+  border-color: rgba(98, 215, 231, .62);
+  box-shadow: 0 0 0 3px rgba(98, 215, 231, .1), 0 10px 24px rgba(0, 0, 0, .22);
+  transform: translateY(-1px);
+}
+
+#authGate .hh-passkey-portal > [data-passkey-login]:focus-visible {
+  outline: 2px solid var(--hh-quantum-cyan);
+  outline-offset: 3px;
+}
+
+#authGate .hh-passkey-portal[data-portal-state="requesting"] .hh-passkey-portal__orbit {
+  opacity: .9;
+  animation: hh-passkey-portal-spin 1.15s linear infinite;
+}
+
+#authGate .hh-passkey-portal[data-portal-state="requesting"] > [data-passkey-login] {
+  border-color: rgba(98, 215, 231, .52);
+  cursor: progress;
+}
+
+#authGate .hh-passkey-portal[data-portal-state="success"] .hh-passkey-portal__field {
+  border-color: rgba(103, 219, 161, .5);
+  background: radial-gradient(circle at 20% 50%, rgba(103, 219, 161, .2), transparent 52%);
+}
+
+#authGate .hh-passkey-portal[data-portal-state="error"] .hh-passkey-portal__field {
+  border-color: rgba(255, 113, 139, .55);
+  background: radial-gradient(circle at 20% 50%, rgba(255, 113, 139, .16), transparent 52%);
+}
+
+#authGate .hh-passkey-portal[data-passkey-supported="false"] .hh-passkey-portal__field {
+  border-style: dashed;
+  opacity: .52;
+}
+
+#authGate[data-quantum-paused="true"] .hh-quantum-flow *,
+#authGate[data-quantum-paused="true"] .hh-passkey-portal * {
+  animation-play-state: paused !important;
+}
+
+@keyframes hh-quantum-node-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(98, 215, 231, .08), 0 0 10px rgba(98, 215, 231, .16); }
+  50% { box-shadow: 0 0 0 4px rgba(98, 215, 231, 0), 0 0 15px rgba(98, 215, 231, .28); }
+}
+
+@keyframes hh-passkey-portal-spin {
+  to { transform: rotate(1turn); }
+}
+
+@media (max-width: 680px), (min-resolution: 1.75dppx) and (max-width: 980px) {
+  #authGate .hh-quantum-flow__steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #authGate .hh-quantum-flow__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  #authGate .hh-quantum-flow__header > output {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  #authGate .hh-quantum-flow__steps {
+    grid-template-columns: 1fr;
+  }
+
+  #authGate .hh-quantum-step {
+    min-height: 44px;
+  }
+
+  #authGate .auth-passkey-row > .hh-passkey-portal {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #authGate .hh-quantum-step,
+  #authGate .hh-quantum-step__node,
+  #authGate .hh-passkey-portal__orbit,
+  #authGate .hh-passkey-portal > [data-passkey-login] {
+    animation: none !important;
+    transition-duration: .01ms !important;
+  }
+
+  #authGate .hh-quantum-step[data-state="active"],
+  #authGate .hh-passkey-portal > [data-passkey-login]:hover,
+  #authGate .hh-passkey-portal > [data-passkey-login]:focus-visible {
+    transform: none;
+  }
+
+  #authGate .hh-passkey-portal[data-portal-state="requesting"] .hh-passkey-portal__orbit {
+    opacity: .72;
+  }
+}
+
