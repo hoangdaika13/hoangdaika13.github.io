@@ -35,8 +35,8 @@ test("Learning OS assets load before the application router and are cached", () 
     assert.match(html, pattern);
     assert.match(worker, pattern);
   }
-  assert.ok(html.indexOf("learning-suite.js?v=2") < html.indexOf("script.js?v=118"));
-  assert.match(worker, /hh-learning-os-v172/);
+  assert.ok(html.indexOf("learning-suite.js?v=2") < html.indexOf("script.js?v=119"));
+  assert.match(worker, /hh-identity-portal-v\d+/);
 });
 
 test("Learning navigation exposes the complete focused study flow", () => {

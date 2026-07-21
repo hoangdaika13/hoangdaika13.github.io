@@ -20,10 +20,20 @@
 .home-neon.auth-locked #authGate .auth-gate-card {
   align-self: start;
   width: min(610px, 100%);
-  max-height: calc(100dvh - 36px);
+  max-height: none;
   overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
+  overflow-y: visible;
+}
+
+.home-neon.auth-locked #authGate .auth-provider-notice {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(247, 220, 99, .42);
+  border-radius: 8px;
+  background: rgba(247, 220, 99, .08);
+  color: #fff0ac;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .home-neon.auth-locked #authGate :where(.auth-recovery-panel, .auth-email-verify-panel, .auth-qr-panel) {
@@ -53,9 +63,7 @@
     height: 100svh;
   }
 
-  .home-neon.auth-locked #authGate .auth-gate-card {
-    max-height: calc(100svh - 36px);
-  }
+  .home-neon.auth-locked #authGate .auth-gate-card { max-height: none; }
 }
 
 /* Browser zoom reduces the CSS viewport. Switch before the old two-column grid can collapse. */
@@ -93,9 +101,7 @@
     padding-block: 18px;
   }
 
-  .home-neon.auth-locked #authGate .auth-gate-card {
-    max-height: calc(100dvh - 36px);
-  }
+  .home-neon.auth-locked #authGate .auth-gate-card { max-height: none; }
 }
 
 @media (max-width: 600px) {

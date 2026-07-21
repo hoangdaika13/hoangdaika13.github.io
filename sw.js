@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v178";
+const CACHE = "hh-identity-portal-v179";
 const CORE = [
   "./",
   "./index.html",
@@ -24,7 +24,7 @@ const CORE = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=8",
-  "./script.js?v=118",
+  "./script.js?v=119",
   "./graphic-design-studio.css?v=5",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -100,10 +100,10 @@ const CORE = [
   "./auth-quantum-flow.css?v=1",
   "./auth-transition-runtime.css?v=1",
   "./auth-trust-director.css?v=1",
-  "./auth-zoom-resilience.css?v=2",
+  "./auth-zoom-resilience.css?v=3",
   "./assets/hh-neon-logo-v2.png?v=2",
-  "./auth-platform.js?v=2",
-  "./auth-experience.js?v=5",
+  "./auth-platform.js?v=3",
+  "./auth-experience.js?v=6",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",

@@ -38,6 +38,23 @@ const EMAIL_OTP_TTL_MS = 15 * 60 * 1000;
 const QR_TTL_MS = 3 * 60 * 1000;
 const LOCK_AFTER_FAILURES = 5;
 const LOCK_TTL_MS = 15 * 60 * 1000;
+const ROUTE_ALIASES = Object.freeze({
+  "passkey-login-options": "passkey/login/options",
+  "passkey-login-verify": "passkey/login/verify",
+  "passkey-register-options": "passkey/register/options",
+  "passkey-register-verify": "passkey/register/verify",
+  "passkey-revoke": "passkeys/revoke",
+  "password-recovery-request": "forgot-password/request",
+  "password-recovery-verify": "forgot-password/verify",
+  "password-recovery-reset": "forgot-password/reset",
+  "email-verification-request": "email-verification/request",
+  "email-verification-verify": "email-verification/verify",
+  "qr-create": "qr/create",
+  "qr-approve": "qr/approve",
+  "qr-status": "qr/status",
+  "session-revoke": "sessions/revoke",
+  "session-revoke-all": "sessions/revoke-all"
+});
 // Session transport is issued by auth-security as: hh_session=...; HttpOnly; Secure; SameSite=None.
 
 function strongPassword(value) {
@@ -364,7 +381,8 @@ module.exports = async function handler(req, res) {
     let action = Array.isArray(req.query.action) ? req.query.action : (typeof req.query.action === "string" ? [req.query.action] : []);
     if (!action.length) action = String(req.url || "").split("?")[0].split("/").filter(Boolean).slice(2);
     if (req.query.oauthCallback === "google") action = [req.query.oauthCallback, "callback"];
-    const route = action.join("/");
+    const rawRoute = action.join("/");
+    const route = ROUTE_ALIASES[rawRoute] || rawRoute;
 
     if (route === "providers" && req.method === "GET") return res.status(200).json({
       google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
@@ -407,6 +425,13 @@ module.exports = async function handler(req, res) {
       const email = clean(body.email, 160).toLowerCase();
       const password = String(body.password || "");
       await enforceRateLimit(db, `register:${clientIp(req)}`, 5, 60 * 60 * 1000);
+      const productionEmailRequired = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
+      if (productionEmailRequired && (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM)) {
+        return res.status(503).json({
+          error: "Đăng ký bằng email đang tạm tắt vì dịch vụ gửi mã xác minh chưa được cấu hình. Hãy tiếp tục bằng Google.",
+          code: "EMAIL_PROVIDER_UNAVAILABLE"
+        });
+      }
       if (!name || !validEmail(email)) return res.status(400).json({ error: "Họ tên hoặc email không hợp lệ." });
       if (!strongPassword(password)) return res.status(400).json({ error: "Mật khẩu cần từ 8 ký tự và không vượt quá giới hạn mã hóa an toàn." });
       if (await db.collection("users").findOne({ email })) return res.status(409).json({ error: "Email này đã được đăng ký." });

@@ -9,6 +9,18 @@
   let qrPoll = 0;
   let credentialedFetchInstalled = false;
   let turnstileLoader = null;
+  const AUTH_ENDPOINTS = Object.freeze({
+    passkeyLoginOptions: "/api/auth/passkey-login-options",
+    passkeyLoginVerify: "/api/auth/passkey-login-verify",
+    recoveryRequest: "/api/auth/password-recovery-request",
+    recoveryVerify: "/api/auth/password-recovery-verify",
+    recoveryReset: "/api/auth/password-recovery-reset",
+    emailVerificationRequest: "/api/auth/email-verification-request",
+    emailVerificationVerify: "/api/auth/email-verification-verify",
+    qrCreate: "/api/auth/qr-create",
+    qrStatus: "/api/auth/qr-status",
+    qrApprove: "/api/auth/qr-approve"
+  });
 
   const token = () => memoryToken;
   const setToken = (value = "") => {
@@ -389,8 +401,11 @@
     const login = async (event) => {
       event.preventDefault();
       clearErrors(loginForm);
-      if (!loginForm.reportValidity()) return;
       const data = new FormData(loginForm);
+      const email = String(data.get("email") || "").trim();
+      const password = String(data.get("password") || "");
+      if (!/^\S+@\S+\.\S+$/.test(email)) return fieldError(loginForm, "email", "Hãy nhập một địa chỉ email hợp lệ.");
+      if (!password) return fieldError(loginForm, "password", "Hãy nhập mật khẩu của bạn.");
       try {
         setBusy(loginForm, true);
         setStatus("Đang xác thực tài khoản...");
@@ -415,6 +430,11 @@
       event.preventDefault();
       if (signupStep < 3) return setSignupStep(signupStep + 1);
       if (!validateStep(1) || !validateStep(2)) return;
+      if (oauthProviders.email === false) {
+        setStatus("Đăng ký bằng email đang tạm tắt vì máy chủ chưa cấu hình gửi mã xác minh. Hãy tiếp tục bằng Google.", "error");
+        gate.querySelector('[data-oauth-provider="google"]')?.focus({ preventScroll: true });
+        return;
+      }
       const data = new FormData(registerForm);
       const interests = data.getAll("interests");
       if (!interests.length) return setStatus("Hãy chọn ít nhất một lĩnh vực để cá nhân hóa.", "error");
@@ -456,9 +476,9 @@
       const email = loginForm.querySelector('[name="email"]')?.value.trim() || "";
       try {
         setStatus("Đang chuẩn bị Passkey...");
-        const options = await api("/api/auth/passkey/login/options", { method: "POST", body: JSON.stringify({ email }) });
+        const options = await api(AUTH_ENDPOINTS.passkeyLoginOptions, { method: "POST", body: JSON.stringify({ email }) });
         const credential = await navigator.credentials.get({ publicKey: publicKeyOptions(options.options || options) });
-        const result = await api("/api/auth/passkey/login/verify", { method: "POST", body: JSON.stringify({ requestId: options.requestId, response: credentialJSON(credential) }) });
+        const result = await api(AUTH_ENDPOINTS.passkeyLoginVerify, { method: "POST", body: JSON.stringify({ requestId: options.requestId, response: credentialJSON(credential) }) });
         await completeAuth(result, "Đăng nhập bằng Passkey thành công");
       } catch (error) { setStatus(error.name === "NotAllowedError" ? "Bạn đã hủy yêu cầu Passkey." : error.message, "error"); }
     };
@@ -472,13 +492,34 @@
       const status = panel.querySelector("[data-recovery-status]");
       try {
         if (verify.hidden) {
-          const result = await api("/api/auth/forgot-password/request", { method: "POST", body: JSON.stringify({ email }) });
+          if (oauthProviders.email === false) {
+            status.textContent = "Khôi phục bằng email đang tạm tắt vì dịch vụ gửi mã chưa được cấu hình. Bạn vẫn có thể đăng nhập bằng Google.";
+            return;
+          }
+          if (!/^\S+@\S+\.\S+$/.test(email)) {
+            status.textContent = "Hãy nhập một địa chỉ email hợp lệ.";
+            panel.querySelector("[data-recovery-email]").focus();
+            return;
+          }
+          const result = await api(AUTH_ENDPOINTS.recoveryRequest, { method: "POST", body: JSON.stringify({ email }) });
+          if (result.delivery === "email-provider-unavailable") {
+            status.textContent = "Máy chủ chưa cấu hình dịch vụ gửi mã. Vui lòng đăng nhập bằng Google.";
+            return;
+          }
           verify.hidden = false;
           panel.querySelector("[data-recovery-action]").textContent = "Xác minh và đổi mật khẩu";
           status.textContent = result.message || "Nếu email tồn tại, mã xác minh đã được gửi.";
         } else {
-          const verified = await api("/api/auth/forgot-password/verify", { method: "POST", body: JSON.stringify({ email, code }) });
-          const result = await api("/api/auth/forgot-password/reset", { method: "POST", body: JSON.stringify({ email, password, resetToken: verified.resetToken }) });
+          if (!/^\d{6}$/.test(code)) {
+            status.textContent = "Hãy nhập đủ mã xác minh 6 số.";
+            return;
+          }
+          if (password.length < 8) {
+            status.textContent = "Mật khẩu mới cần ít nhất 8 ký tự.";
+            return;
+          }
+          const verified = await api(AUTH_ENDPOINTS.recoveryVerify, { method: "POST", body: JSON.stringify({ email, code }) });
+          const result = await api(AUTH_ENDPOINTS.recoveryReset, { method: "POST", body: JSON.stringify({ email, password, resetToken: verified.resetToken }) });
           status.textContent = result.message || "Đã đổi mật khẩu. Bạn có thể đăng nhập.";
           setTimeout(() => showPanel("login"), 900);
         }
@@ -492,7 +533,7 @@
       if (!/^\d{6}$/.test(code)) { status.textContent = "Hãy nhập đủ mã xác minh 6 số."; return; }
       try {
         status.textContent = "Đang xác minh...";
-        await api("/api/auth/email-verification/verify", { method: "POST", body: JSON.stringify({ code }) });
+        await api(AUTH_ENDPOINTS.emailVerificationVerify, { method: "POST", body: JSON.stringify({ code }) });
         user = { ...user, emailVerified: true, verified: true };
         await completeAuth({ user, token: token() }, "Email đã xác minh");
         registerForm.reset();
@@ -505,7 +546,7 @@
       const status = panel.querySelector("[data-email-verify-status]");
       try {
         status.textContent = "Đang gửi lại mã...";
-        const result = await api("/api/auth/email-verification/request", { method: "POST", body: "{}" });
+        const result = await api(AUTH_ENDPOINTS.emailVerificationRequest, { method: "POST", body: "{}" });
         status.textContent = result.delivery === "sent" ? "Đã gửi mã mới." : "Dịch vụ email chưa được cấu hình trên máy chủ.";
         if (result.developmentCode) panel.querySelector("[data-email-verify-code]").value = result.developmentCode;
       } catch (error) { status.textContent = error.message; }
@@ -519,14 +560,14 @@
       const status = panel.querySelector("[data-qr-status]");
       clearInterval(qrPoll);
       try {
-        const result = await api("/api/auth/qr/create", { method: "POST", body: JSON.stringify({ returnTo: location.origin }) });
+        const result = await api(AUTH_ENDPOINTS.qrCreate, { method: "POST", body: JSON.stringify({ returnTo: location.origin }) });
         label.textContent = result.code || result.id;
         if (result.qrDataUrl) qr.innerHTML = `<img src="${result.qrDataUrl}" alt="Mã QR đăng nhập HH">`;
         else qr.innerHTML = `<span>${String(result.code || "QR").replace(/[^A-Z0-9-]/gi, "")}</span>`;
         status.textContent = "Đang chờ điện thoại xác nhận...";
         qrPoll = setInterval(async () => {
           try {
-            const state = await api(`/api/auth/qr/status?qrId=${encodeURIComponent(result.qrId)}&code=${encodeURIComponent(result.code)}`);
+            const state = await api(`${AUTH_ENDPOINTS.qrStatus}?qrId=${encodeURIComponent(result.qrId)}&code=${encodeURIComponent(result.code)}`);
             if (state.status === "approved" && state.user) {
               clearInterval(qrPoll);
               await completeAuth(state, "Đăng nhập từ thiết bị khác thành công");
@@ -561,7 +602,7 @@
       history.replaceState({}, document.title, `${location.pathname}${location.hash || "#/home"}`);
       try {
         setStatus("Đang xác nhận đăng nhập cho thiết bị khác...");
-        await api("/api/auth/qr/approve", { method: "POST", body: JSON.stringify({ qrId, code }) });
+        await api(AUTH_ENDPOINTS.qrApprove, { method: "POST", body: JSON.stringify({ qrId, code }) });
         setStatus("Đã cấp quyền đăng nhập cho thiết bị kia.", "success");
       } catch (error) { setStatus(error.message, "error"); }
     };
@@ -698,12 +739,27 @@
     setGateState();
     Promise.resolve(realtimeUrl ? api("/api/auth/providers") : {}).then((providers) => {
       oauthProviders = providers || {};
+      const providerNotice = gate.querySelector("[data-register-provider-notice]");
+      const registerSubmit = registerForm?.querySelector('button[type="submit"]');
+      const emailUnavailable = oauthProviders.email === false;
+      gate.dataset.authEmailDelivery = emailUnavailable ? "unavailable" : "ready";
+      if (providerNotice) {
+        providerNotice.hidden = !emailUnavailable;
+        providerNotice.textContent = emailUnavailable
+          ? "Đăng ký email đang tạm tắt vì máy chủ chưa có dịch vụ gửi mã. Bạn có thể tiếp tục bằng Google."
+          : "";
+      }
+      if (registerSubmit) {
+        registerSubmit.disabled = emailUnavailable;
+        registerSubmit.title = emailUnavailable ? "Hãy đăng nhập hoặc tạo tài khoản bằng Google" : "Tạo tài khoản miễn phí";
+      }
       gate.querySelectorAll("[data-oauth-provider]").forEach((button) => {
         button.disabled = !oauthProviders.google;
         button.title = oauthProviders.google ? "Đăng nhập an toàn với Google" : "Google OAuth chưa được cấu hình";
       });
     }).catch(() => {
       oauthProviders = {};
+      gate.dataset.authEmailDelivery = "unknown";
       gate.querySelectorAll("[data-oauth-provider]").forEach((button) => {
         button.disabled = true;
         button.title = "Không kết nối được Google OAuth";

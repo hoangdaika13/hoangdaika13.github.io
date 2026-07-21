@@ -190,6 +190,35 @@ test("session/device management and QR login use revocable server-side routes", 
   assertConcept(api, "hết hạn QR", [/expiresAt|ttl|expireAfterSeconds/i]);
 });
 
+test("production auth actions use Vercel-safe flat endpoints", () => {
+  const platform = readOptional("auth-platform.js");
+  const app = read("script.js");
+  const handler = readDirectoryJavaScript("api/auth");
+  assertNoPattern(
+    `${platform}\n${app}`,
+    /\/api\/auth\/(?:passkey|forgot-password|email-verification|qr|sessions)\//,
+    "Client không được gọi auth route nhiều tầng vì Vercel có thể trả 404 trước khi tới catch-all handler."
+  );
+  for (const alias of [
+    "passkey-login-options", "passkey-login-verify", "password-recovery-request",
+    "password-recovery-verify", "password-recovery-reset", "email-verification-request",
+    "email-verification-verify", "qr-create", "qr-status", "qr-approve",
+    "passkey-register-options", "passkey-register-verify", "passkey-revoke", "session-revoke"
+  ]) assert.match(handler, new RegExp(`\\"${alias}\\"`), `Auth handler thiếu alias ${alias}.`);
+});
+
+test("email signup and recovery expose provider availability without dead ends", () => {
+  assert.match(html, /data-register-provider-notice/i);
+  assert.match(client, /oauthProviders\.email\s*===\s*false/);
+  assert.match(client, /email-provider-unavailable/);
+  assert.match(api, /EMAIL_PROVIDER_UNAVAILABLE/);
+  assert.doesNotMatch(
+    `${readOptional("auth-experience.js")}\n${readOptional("auth-platform.js")}`,
+    /\.reportValidity\s*\(/,
+    "Auth phải báo lỗi nội tuyến thay vì dùng popup validation thô của trình duyệt."
+  );
+});
+
 test("returning-user, loading and service-isolation states are represented", () => {
   assertConcept(ui, "lời chào người quay lại", [/data-auth-returning/i, /returningUser|welcomeBack/i]);
   assertConcept(ui, "workspace gần nhất", [/data-auth-recent-workspace/i, /recentWorkspace/i]);

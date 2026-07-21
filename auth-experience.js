@@ -290,7 +290,6 @@
     fields.forEach((input) => syncFieldState(input, true));
     const invalid = fields.find((input) => !input.checkValidity());
     if (invalid) {
-      invalid.reportValidity();
       invalid.focus();
       return false;
     }
