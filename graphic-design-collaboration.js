@@ -73,6 +73,53 @@
     };
   }
 
+  function cleanText(value, maxLength = 1000) {
+    return String(value == null ? "" : value).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, maxLength);
+  }
+
+  function isWebSocketConfirmed(socket) {
+    if (!socket || socket.connected !== true) return false;
+    if (socket.realtimeConfirmed === true || socket.transport === "websocket") return true;
+    return socket.io?.engine?.transport?.name === "websocket";
+  }
+
+  function normalizeRoom(input) {
+    const source = input && typeof input === "object" ? input : {};
+    const members = (Array.isArray(source.members) ? source.members : []).slice(0, 50).map((member) => ({
+      socketId: cleanText(member.socketId, 160),
+      user: { id: cleanText(member.user?.id, 160), name: cleanText(member.user?.name, 160) || "Thành viên", avatar: cleanText(member.user?.avatar, 1000), guest: Boolean(member.user?.guest) },
+      role: Object.prototype.hasOwnProperty.call(ROLE_RANK, member.role) ? member.role : "viewer",
+      cursor: member.cursor ? { x: clamp(member.cursor.x), y: clamp(member.cursor.y), color: /^#[0-9a-f]{6}$/i.test(member.cursor.color || "") ? member.cursor.color : "#62d7e7" } : null,
+      selection: { layerIds: (Array.isArray(member.selection?.layerIds) ? member.selection.layerIds : []).slice(0, 50).map((id) => cleanText(id, 160)) }
+    }));
+    return {
+      code: cleanText(source.code, 12), name: cleanText(source.name, 120) || "Phòng thiết kế",
+      members,
+      comments: (Array.isArray(source.comments) ? source.comments : []).slice(-500).map((comment) => ({ id: cleanText(comment.id, 160), body: cleanText(comment.body, 2000), x: clamp(comment.x), y: clamp(comment.y), artboardId: cleanText(comment.artboardId, 160), layerId: cleanText(comment.layerId, 160), createdAt: cleanText(comment.createdAt, 40), resolved: Boolean(comment.resolved), user: { id: cleanText(comment.user?.id, 160), name: cleanText(comment.user?.name, 160) || "Thành viên" } })),
+      locks: (Array.isArray(source.locks) ? source.locks : []).slice(0, 200).map((lock) => ({ layerId: cleanText(lock.layerId, 160), createdAt: cleanText(lock.createdAt, 40), user: { id: cleanText(lock.user?.id, 160), name: cleanText(lock.user?.name, 160) || "Thành viên" } })),
+      versions: (Array.isArray(source.versions) ? source.versions : []).slice(-200).map((version) => ({ id: cleanText(version.id, 160), label: cleanText(version.label, 160), createdAt: cleanText(version.createdAt, 40), user: { id: cleanText(version.user?.id, 160), name: cleanText(version.user?.name, 160) || "Thành viên" } })),
+      branches: (Array.isArray(source.branches) ? source.branches : []).slice(-100).map((branch) => ({ id: cleanText(branch.id, 160), name: cleanText(branch.name, 160), createdAt: cleanText(branch.createdAt, 40), user: { id: cleanText(branch.user?.id, 160), name: cleanText(branch.user?.name, 160) || "Thành viên" } })),
+      reviews: (Array.isArray(source.reviews) ? source.reviews : []).slice(-200).map((review) => ({ id: cleanText(review.id, 160), title: cleanText(review.title, 200), status: ["pending", "approved", "rejected"].includes(review.status) ? review.status : "pending", user: { id: cleanText(review.user?.id, 160), name: cleanText(review.user?.name, 160) || "Thành viên" } })),
+      persistence: source.persistence === "memory" ? "memory" : "local-readonly",
+      limits: { members: clamp(source.limits?.members, 1, 100), comments: clamp(source.limits?.comments, 0, 10000), locks: clamp(source.limits?.locks, 0, 1000) }
+    };
+  }
+
+  function createAuditTrail(options = {}) {
+    const now = typeof options.now === "function" ? options.now : () => new Date();
+    const entries = [];
+    return Object.freeze({
+      append(type, actor, details) {
+        const previous = entries[entries.length - 1];
+        const entry = Object.freeze({ id: randomId(), sequence: entries.length + 1, previousId: previous?.id || null, type: cleanText(type, 80), actorId: cleanText(actor?.id, 160) || "unknown", at: new Date(now()).toISOString(), details: JSON.parse(JSON.stringify(details || {})) });
+        entries.push(entry);
+        if (entries.length > 1000) entries.shift();
+        return { ...entry };
+      },
+      list() { return entries.map((entry) => ({ ...entry, details: JSON.parse(JSON.stringify(entry.details)) })); }
+    });
+  }
+
   function injectStyles() {
     if (!hasDocument || document.getElementById(STYLE_ID)) return;
     const style = document.createElement("style");
@@ -121,8 +168,9 @@
     const state = {
       connection: "connecting", message: "Đang kết nối máy chủ cộng tác...", kind: "info",
       room: null, identity: fallbackIdentity, selfSocketId: "", tab: "comments", commentMode: false,
-      pinDraft: null, selectedLayers: [], ownSocket: false, socket: null, destroyed: false
+      pinDraft: null, selectedLayers: [], ownSocket: false, socket: null, destroyed: false, serverConfirmed: false
     };
+    const auditTrail = createAuditTrail({ now: options.now });
     const socketHandlers = [];
     let cursorFrame = 0;
     let pendingCursor = null;
@@ -134,6 +182,7 @@
     function currentRole() { return currentMember()?.role || "viewer"; }
     function can(minimum) { return (ROLE_RANK[currentRole()] || 0) >= ROLE_RANK[minimum]; }
     function readonly() { return state.connection !== "online" || state.room?.persistence === "local-readonly"; }
+    function recordAudit(type, details) { return auditTrail.append(type, state.identity, details); }
     function initials(name) { return String(name || "HH").split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase(); }
 
     function statusLabel() {
@@ -204,7 +253,8 @@
     }
 
     function inspector() {
-      return `<aside class="dc-inspector"><div class="dc-tabs" role="tablist"><button role="tab" data-dc-tab="comments" class="${state.tab === "comments" ? "is-active" : ""}" aria-selected="${state.tab === "comments"}">Bình luận</button><button role="tab" data-dc-tab="versions" class="${state.tab === "versions" ? "is-active" : ""}" aria-selected="${state.tab === "versions"}">Phiên bản</button><button role="tab" data-dc-tab="info" class="${state.tab === "info" ? "is-active" : ""}" aria-selected="${state.tab === "info"}">Thông tin</button></div><div class="dc-inspector-body">${state.tab === "comments" ? commentsPanel() : state.tab === "versions" ? versionsPanel() : `<section class="dc-section"><h4>Trạng thái phòng</h4><p><b>${escapeHtml(state.room?.name)}</b></p><p>Vai trò: ${escapeHtml(ROLE_LABELS[currentRole()] || currentRole())}</p><p>Lưu trữ: ${escapeHtml(state.room?.persistence || "memory")}</p><p>Mã hóa truyền tải: TLS/WSS khi website dùng HTTPS.</p><p>Không tuyên bố mã hóa đầu cuối. Nội dung cộng tác hoạt động nằm trong bộ nhớ máy chủ.</p></section>`}</div></aside>`;
+      const audit = auditTrail.list().slice(-8).reverse();
+      return `<aside class="dc-inspector"><div class="dc-tabs" role="tablist"><button role="tab" data-dc-tab="comments" class="${state.tab === "comments" ? "is-active" : ""}" aria-selected="${state.tab === "comments"}">Bình luận</button><button role="tab" data-dc-tab="versions" class="${state.tab === "versions" ? "is-active" : ""}" aria-selected="${state.tab === "versions"}">Phiên bản</button><button role="tab" data-dc-tab="info" class="${state.tab === "info" ? "is-active" : ""}" aria-selected="${state.tab === "info"}">Thông tin</button></div><div class="dc-inspector-body">${state.tab === "comments" ? commentsPanel() : state.tab === "versions" ? versionsPanel() : `<section class="dc-section"><h4>Trạng thái phòng</h4><p><b>${escapeHtml(state.room?.name)}</b></p><p>Vai trò: ${escapeHtml(ROLE_LABELS[currentRole()] || currentRole())}</p><p>Realtime: ${state.serverConfirmed ? "WebSocket đã xác nhận" : "Chưa xác nhận, presence/cursor đã tắt"}</p><p>Lưu trữ: ${escapeHtml(state.room?.persistence || "memory")}</p><p>Mã hóa truyền tải: TLS/WSS khi website dùng HTTPS.</p><p>Không tuyên bố mã hóa đầu cuối. Nội dung cộng tác hoạt động nằm trong bộ nhớ máy chủ.</p></section><section class="dc-section"><h4>Audit gần đây</h4><div class="dc-history">${audit.map((entry) => `<div class="dc-history-item"><b>${escapeHtml(entry.type)}</b><small>#${entry.sequence} · ${escapeHtml(entry.at)}</small></div>`).join("") || `<p class="dc-empty">Chưa có hoạt động.</p>`}</div></section>`}</div></aside>`;
     }
 
     function render() {
@@ -221,17 +271,21 @@
         const timer = setTimeout(() => reject(new Error("Máy chủ phản hồi quá lâu.")), 6000);
         state.socket.emit(event, payload, (response = {}) => {
           clearTimeout(timer);
-          response.ok ? resolve(response) : reject(new Error(response.error || "Thao tác không thành công."));
+          if (response.ok) { recordAudit("outbound.ack", { event }); resolve(response); }
+          else reject(new Error(cleanText(response.error, 240) || "Thao tác không thành công."));
         });
       });
     }
 
     function applyRoom(response) {
-      state.room = response.room;
+      state.room = normalizeRoom(response.room);
       state.selfSocketId = response.selfSocketId || state.socket?.id || "";
-      state.identity = response.identity || state.identity;
-      state.message = `Đã tham gia ${response.room.name}.`;
+      state.identity = response.identity ? { ...state.identity, id: cleanText(response.identity.id, 160), name: cleanText(response.identity.name, 160) || state.identity.name } : state.identity;
+      state.serverConfirmed = isWebSocketConfirmed(state.socket);
+      state.connection = state.serverConfirmed ? "online" : "readonly";
+      state.message = `Đã tham gia ${state.room.name}.`;
       state.kind = "info";
+      recordAudit("room.joined", { code: state.room.code, realtime: state.serverConfirmed });
       render();
     }
 
@@ -249,27 +303,30 @@
 
     function bindSocket(socket) {
       state.socket = socket;
+      const realtimeReady = () => state.serverConfirmed && state.connection === "online";
       onSocket("connect", () => {
-        state.connection = "online";
-        state.message = state.room && state.room.code !== "LOCAL" ? "Đã kết nối lại. Hãy tham gia lại phòng để lấy trạng thái mới nhất." : "Máy chủ cộng tác đã sẵn sàng.";
+        state.serverConfirmed = isWebSocketConfirmed(socket);
+        state.connection = state.serverConfirmed ? "online" : "readonly";
+        state.message = state.serverConfirmed ? (state.room && state.room.code !== "LOCAL" ? "Đã kết nối WebSocket lại. Đang lấy trạng thái mới nhất." : "WebSocket đã được máy chủ xác nhận.") : "Transport chưa được xác nhận là WebSocket. Presence và cursor vẫn tắt.";
         state.kind = "info";
-        if (state.room?.code && state.room.code !== "LOCAL") emitAck("design:room:join", { code: state.room.code }).then(applyRoom).catch((error) => setMessage(error.message, "error"));
+        recordAudit("transport.connected", { websocketConfirmed: state.serverConfirmed });
+        if (state.serverConfirmed && state.room?.code && state.room.code !== "LOCAL") emitAck("design:room:join", { code: state.room.code }).then(applyRoom).catch((error) => setMessage(error.message, "error"));
         else render();
       });
-      onSocket("disconnect", () => { state.connection = "reconnecting"; state.message = "Mất kết nối. Workspace tạm thời chỉ xem cho đến khi đồng bộ lại."; state.kind = "error"; render(); });
+      onSocket("disconnect", () => { state.serverConfirmed = false; state.connection = "reconnecting"; state.message = "Mất kết nối. Workspace tạm thời chỉ xem cho đến khi đồng bộ lại."; state.kind = "error"; recordAudit("transport.disconnected", {}); render(); });
       onSocket("connect_error", () => { state.connection = "readonly"; state.message = "Không kết nối được máy chủ. Bạn có thể mở bản xem trước chỉ đọc."; state.kind = "error"; render(); });
-      onSocket("design:presence", ({ members }) => { if (!state.room) return; state.room.members = members || []; render(); });
-      onSocket("design:permission", ({ userId, role }) => { if (!state.room) return; state.room.members = state.room.members.map((member) => member.user.id === userId ? { ...member, role } : member); render(); });
-      onSocket("design:cursor", ({ socketId, user, cursor }) => { if (!state.room) return; state.room.members = replaceById(state.room.members.map((member) => ({ ...member, id: member.socketId })), { ...(state.room.members.find((member) => member.socketId === socketId) || { socketId, user, role: "viewer" }), id: socketId, cursor }).map(({ id, ...member }) => member); render(); });
-      onSocket("design:selection", ({ socketId, user, selection }) => { if (!state.room) return; state.room.members = state.room.members.map((member) => member.socketId === socketId ? { ...member, user, selection } : member); render(); });
-      onSocket("design:comment:added", ({ comment }) => { if (!state.room) return; state.room.comments = replaceById(state.room.comments, comment); render(); });
-      onSocket("design:comment:updated", ({ comment }) => { if (!state.room) return; state.room.comments = replaceById(state.room.comments, comment); render(); });
-      onSocket("design:lock:acquired", ({ lock }) => { if (!state.room) return; state.room.locks = (state.room.locks || []).filter((item) => item.layerId !== lock.layerId).concat(lock); render(); });
-      onSocket("design:lock:released", ({ layerId }) => { if (!state.room) return; state.room.locks = (state.room.locks || []).filter((item) => item.layerId !== layerId); render(); });
-      onSocket("design:version:created", ({ version }) => { if (!state.room) return; state.room.versions = replaceById(state.room.versions, version); render(); });
-      onSocket("design:branch:created", ({ branch }) => { if (!state.room) return; state.room.branches = replaceById(state.room.branches, branch); render(); });
-      onSocket("design:review:created", ({ review }) => { if (!state.room) return; state.room.reviews = replaceById(state.room.reviews, review); render(); });
-      onSocket("design:review:updated", ({ review }) => { if (!state.room) return; state.room.reviews = replaceById(state.room.reviews, review); render(); });
+      onSocket("design:presence", ({ members }) => { if (!realtimeReady() || !state.room) return; state.room = normalizeRoom({ ...state.room, members }); render(); });
+      onSocket("design:permission", ({ userId, role }) => { if (!realtimeReady() || !state.room) return; state.room.members = state.room.members.map((member) => member.user.id === cleanText(userId, 160) ? { ...member, role: Object.hasOwn(ROLE_RANK, role) ? role : "viewer" } : member); recordAudit("permission.updated", { userId: cleanText(userId, 160), role }); render(); });
+      onSocket("design:cursor", ({ socketId, user, cursor }) => { if (!realtimeReady() || !state.room) return; state.room.members = replaceById(state.room.members.map((member) => ({ ...member, id: member.socketId })), { ...(state.room.members.find((member) => member.socketId === socketId) || { socketId: cleanText(socketId, 160), user, role: "viewer" }), id: cleanText(socketId, 160), cursor: { x: clamp(cursor?.x), y: clamp(cursor?.y), color: /^#[0-9a-f]{6}$/i.test(cursor?.color || "") ? cursor.color : "#62d7e7" } }).map(({ id, ...member }) => member); render(); });
+      onSocket("design:selection", ({ socketId, user, selection }) => { if (!realtimeReady() || !state.room) return; state.room.members = state.room.members.map((member) => member.socketId === socketId ? { ...member, user, selection } : member); render(); });
+      onSocket("design:comment:added", ({ comment }) => { if (!realtimeReady() || !state.room) return; state.room.comments = normalizeRoom({ ...state.room, comments: replaceById(state.room.comments, comment) }).comments; recordAudit("comment.added", { commentId: cleanText(comment?.id, 160) }); render(); });
+      onSocket("design:comment:updated", ({ comment }) => { if (!realtimeReady() || !state.room) return; state.room.comments = normalizeRoom({ ...state.room, comments: replaceById(state.room.comments, comment) }).comments; recordAudit("comment.updated", { commentId: cleanText(comment?.id, 160) }); render(); });
+      onSocket("design:lock:acquired", ({ lock }) => { if (!realtimeReady() || !state.room) return; state.room.locks = (state.room.locks || []).filter((item) => item.layerId !== lock.layerId).concat(lock); recordAudit("lock.remote.acquired", { layerId: cleanText(lock?.layerId, 160) }); render(); });
+      onSocket("design:lock:released", ({ layerId }) => { if (!realtimeReady() || !state.room) return; state.room.locks = (state.room.locks || []).filter((item) => item.layerId !== layerId); recordAudit("lock.remote.released", { layerId: cleanText(layerId, 160) }); render(); });
+      onSocket("design:version:created", ({ version }) => { if (!realtimeReady() || !state.room) return; state.room.versions = replaceById(state.room.versions, version); render(); });
+      onSocket("design:branch:created", ({ branch }) => { if (!realtimeReady() || !state.room) return; state.room.branches = replaceById(state.room.branches, branch); render(); });
+      onSocket("design:review:created", ({ review }) => { if (!realtimeReady() || !state.room) return; state.room.reviews = replaceById(state.room.reviews, review); render(); });
+      onSocket("design:review:updated", ({ review }) => { if (!realtimeReady() || !state.room) return; state.room.reviews = replaceById(state.room.reviews, review); render(); });
     }
 
     async function connect() {
@@ -277,8 +334,9 @@
       if (supplied) {
         state.ownSocket = false;
         bindSocket(supplied);
-        state.connection = supplied.connected ? "online" : "connecting";
-        state.message = supplied.connected ? "Máy chủ cộng tác đã sẵn sàng." : "Đang chờ kết nối realtime...";
+        state.serverConfirmed = isWebSocketConfirmed(supplied);
+        state.connection = state.serverConfirmed ? "online" : supplied.connected ? "readonly" : "connecting";
+        state.message = state.serverConfirmed ? "WebSocket đã được máy chủ xác nhận." : supplied.connected ? "Kết nối hiện tại chưa xác nhận WebSocket; presence/cursor đã tắt." : "Đang chờ kết nối realtime...";
         return render();
       }
       const socketUrl = options.socketUrl || globalScope.HH_SOCKET_URL || globalScope.HH_REALTIME_URL || "";
@@ -309,7 +367,7 @@
       try {
         if (action === "create") return applyRoom(await emitAck("design:room:create", { name: root.querySelector("[data-dc-room-name]")?.value }));
         if (action === "join") return applyRoom(await emitAck("design:room:join", { code: root.querySelector("[data-dc-room-code]")?.value }));
-        if (action === "readonly") { state.connection = "readonly"; state.room = createFallbackRoom(state.identity); state.selfSocketId = "local"; state.message = "Đang xem bản cục bộ. Không có thay đổi nào được gửi hoặc lưu."; return render(); }
+        if (action === "readonly") { state.connection = "readonly"; state.serverConfirmed = false; state.room = createFallbackRoom(state.identity); state.selfSocketId = "local"; state.message = "Đang xem bản cục bộ. Không có thay đổi nào được gửi hoặc lưu."; recordAudit("fallback.opened", {}); return render(); }
         if (action === "copy-code") { await globalScope.navigator?.clipboard?.writeText(state.room.code); return setMessage("Đã sao chép mã phòng."); }
         if (action === "leave") { if (state.room?.code !== "LOCAL") await emitAck("design:room:leave"); state.room = null; state.selectedLayers = []; return setMessage("Đã rời phòng."); }
         if (action === "comment-mode") { state.commentMode = !state.commentMode; return render(); }
@@ -327,7 +385,7 @@
       if (lockButton) {
         const layerId = lockButton.dataset.dcLayerLock;
         const own = state.room?.locks?.find((lock) => lock.layerId === layerId && lock.user.id === state.identity.id);
-        try { await emitAck(own ? "design:lock:release" : "design:lock:acquire", { layerId }); }
+        try { await emitAck(own ? "design:lock:release" : "design:lock:acquire", { layerId }); recordAudit(own ? "lock.released" : "lock.acquired", { layerId }); }
         catch (error) { setMessage(error.message, "error"); }
         return;
       }
@@ -398,7 +456,7 @@
     root.addEventListener("pointermove", onPointerMove);
     render();
     connect();
-    return { getState: () => ({ ...state, socket: undefined }), createRoom: (name) => emitAck("design:room:create", { name }).then(applyRoom), joinRoom: (code) => emitAck("design:room:join", { code }).then(applyRoom), leaveRoom: () => emitAck("design:room:leave"), unmount: unmountController };
+    return { getState: () => ({ ...state, socket: undefined, audit: auditTrail.list() }), getAudit: () => auditTrail.list(), createRoom: (name) => emitAck("design:room:create", { name }).then(applyRoom), joinRoom: (code) => emitAck("design:room:join", { code }).then(applyRoom), leaveRoom: () => emitAck("design:room:leave"), unmount: unmountController };
   }
 
   function mount(root, options = {}) {
@@ -417,7 +475,7 @@
     return true;
   }
 
-  const api = { VERSION, ROLE_LABELS, SAMPLE_LAYERS: SAMPLE_LAYERS.map((item) => ({ ...item })), createFallbackRoom, positionFromEvent, mount, unmount };
+  const api = { VERSION, ROLE_LABELS, SAMPLE_LAYERS: SAMPLE_LAYERS.map((item) => ({ ...item })), createFallbackRoom, positionFromEvent, isWebSocketConfirmed, normalizeRoom, createAuditTrail, mount, unmount };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   globalScope.HHGraphicCollaboration = api;
 }(typeof window !== "undefined" ? window : globalThis));

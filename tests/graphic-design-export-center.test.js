@@ -47,7 +47,7 @@ function fakeCanvas(options = {}) {
     toBlob(callback, mime, quality) {
       calls.push(["toBlob", mime, quality]);
       const actual = options.blobType?.(mime) || mime;
-      callback(new Blob([actual], { type: actual }));
+      callback(new Blob(options.emptyBlob ? [] : [actual], { type: actual }));
     }
   };
   return canvas;
@@ -67,7 +67,8 @@ test("Export Center exposes a versioned UMD/global API", () => {
 
 test("Social presets and naming rules normalize untrusted input", () => {
   assert.deepEqual(Object.keys(exportsCenter.SOCIAL_PRESETS), [
-    "instagram-post", "instagram-story", "facebook-cover", "x-post", "linkedin-post", "youtube-thumbnail"
+    "instagram-post", "instagram-story", "instagram-reel", "facebook-post", "facebook-cover", "tiktok-video",
+    "x-post", "linkedin-post", "youtube-thumbnail", "youtube-video"
   ]);
   const story = exportsCenter.createSocialArtboard("instagram-story", { name: '<img onerror="bad()"> Launch' });
   assert.equal(story.width, 1080);
@@ -98,9 +99,15 @@ test("Capabilities are explicit and AVIF is enabled only for an exact Canvas enc
   assert.equal(detected["sprite-sheet"].supported, true);
   assert.equal(detected.pdf.supported, false);
   assert.match(detected.pdf.reason, /PDF/);
+  assert.equal(detected.mp4.supported, false);
+  assert.equal(detected.wav.supported, false);
 
   const avifCanvas = fakeCanvas();
   assert.equal(exportsCenter.detectCapabilities(runtime, avifCanvas).avif.supported, true);
+  const withEncoders = exportsCenter.detectCapabilities({ ...runtime, encoders: { pdf() {}, mp4() {}, wav() {} } }, avifCanvas);
+  assert.equal(withEncoders.pdf.supported, true);
+  assert.equal(withEncoders.mp4.supported, true);
+  assert.equal(withEncoders.wav.supported, true);
 });
 
 test("Canvas renderer paints at 1x/2x/3x and applies a real watermark", () => {
@@ -141,6 +148,9 @@ test("PNG, JPEG and WebP exports use canvas.toBlob and reject MIME fallback", as
   await assert.rejects(() => exportsCenter.exportArtboard(artboard, { format: "avif" }, {
     Blob, canvasFactory: () => fallback, capabilities: capabilities()
   }), /image\/png.*image\/avif/);
+  await assert.rejects(() => exportsCenter.exportArtboard(artboard, { format: "png" }, {
+    Blob, canvasFactory: () => fakeCanvas({ emptyBlob: true }), capabilities: capabilities()
+  }), /rỗng/);
 });
 
 test("SVG and project JSON exports escape markup and reject unsafe image URLs", async () => {
@@ -170,7 +180,7 @@ test("Preflight reports fonts, low resolution, text overflow and asset size", ()
   const artboard = exportsCenter.normalizeArtboard({
     id: "preflight", name: "Preflight", width: 1000, height: 1000,
     assets: [
-      { id: "photo", name: "small.png", type: "image/png", width: 120, height: 120, size: 3000000 },
+      { id: "photo", name: "small.png", type: "image/png", width: 120, height: 120, size: 3000000, dataUrl: "data:image/png;base64,AA==" },
       { id: "font", name: "Brand.woff2", type: "font/woff2", size: 1000, loaded: false, fontFamily: "Brand Font" }
     ],
     elements: [
@@ -182,6 +192,44 @@ test("Preflight reports fonts, low resolution, text overflow and asset size", ()
   const codes = new Set(report.issues.map((issue) => issue.code));
   assert.equal(report.valid, true);
   for (const code of ["font-missing", "low-resolution", "text-overflow", "asset-oversize"]) assert.ok(codes.has(code), `missing ${code}`);
+});
+
+test("Preflight blocks offline and source-less media instead of exporting a blank frame", () => {
+  const offline = exportsCenter.normalizeArtboard({
+    id: "offline", width: 400, height: 300,
+    assets: [
+      { id: "missing", name: "missing.png", type: "image/png", loaded: false },
+      { id: "empty", name: "empty.png", type: "image/png", loaded: true }
+    ],
+    elements: [
+      { id: "one", type: "image", assetId: "missing", width: 100, height: 100 },
+      { id: "two", type: "image", assetId: "empty", width: 100, height: 100 }
+    ]
+  }, 0);
+  const report = exportsCenter.runPreflight([offline], { settings: { format: "png" } });
+  assert.equal(report.valid, false);
+  const codes = new Set(report.errors.map((issue) => issue.code));
+  assert.ok(codes.has("asset-offline"));
+  assert.ok(codes.has("asset-source-missing"));
+});
+
+test("PDF, MP4 and WAV require real encoders and validate returned MIME", async () => {
+  const artboard = exportsCenter.createSocialArtboard("youtube-video");
+  const exact = {
+    pdf: async () => new Blob(["pdf"], { type: "application/pdf" }),
+    mp4: async () => ({ blob: new Blob(["mp4"], { type: "video/mp4" }), width: 1920, height: 1080 }),
+    wav: async () => new Blob(["wav"], { type: "audio/wav" })
+  };
+  for (const format of ["pdf", "mp4", "wav"]) {
+    const [result] = await exportsCenter.exportBatch([artboard], { format, projectName: "Launch" }, { Blob, encoders: exact, capabilities: capabilities() });
+    assert.equal(result.format, format);
+    assert.equal(result.mimeType, exportsCenter.FORMATS[format].mime);
+    assert.ok(result.blob.size > 0);
+  }
+  await assert.rejects(() => exportsCenter.exportBatch([artboard], { format: "mp4" }, {
+    Blob, capabilities: capabilities(), encoders: { mp4: async () => new Blob(["wrong"], { type: "video/webm" }) }
+  }), /video\/webm.*video\/mp4/);
+  await assert.rejects(() => exportsCenter.exportBatch([artboard], { format: "pdf" }, { Blob, capabilities: capabilities() }), /not configured/);
 });
 
 test("Sprite sheet export composes multiple rendered artboards on one PNG canvas", async () => {
@@ -233,6 +281,34 @@ test("Batch queue snapshots artboards, cancels a running job and retries it", as
   assert.equal(aggregate.snapshot()[0].artboards.length, 2);
 });
 
+test("Queue is bounded, caps retries and rejects fake successful output", async () => {
+  const project = exportsCenter.createDefaultProject();
+  const bounded = exportsCenter.createExportQueue({ maxJobs: 2, capabilities: capabilities() });
+  assert.equal(bounded.enqueue(project.artboards, { format: "png" }).length, 2);
+  assert.equal(bounded.enqueue(project.artboards[0], { format: "png" }).length, 0);
+
+  const retries = exportsCenter.createExportQueue({
+    maxAttempts: 2,
+    capabilities: capabilities(),
+    exporter: async () => { throw new Error("encoder failed"); }
+  });
+  const [failed] = retries.enqueue(project.artboards[0], { format: "png" });
+  await retries.start();
+  assert.equal(retries.retry(failed.id), true);
+  await retries.start();
+  assert.equal(retries.retry(failed.id), false);
+  assert.equal(retries.snapshot()[0].attempts, 2);
+
+  const fake = exportsCenter.createExportQueue({
+    capabilities: capabilities(),
+    exporter: async () => ({ blob: new Blob(["not png"], { type: "text/plain" }), filename: "fake.png" })
+  });
+  fake.enqueue(project.artboards[0], { format: "png" });
+  await fake.start();
+  assert.equal(fake.snapshot()[0].status, "failed");
+  assert.equal(fake.snapshot()[0].error.code, "mime-mismatch");
+});
+
 test("Versioned local workspace and export manifest round-trip queue metadata", () => {
   const memory = new Map();
   const storage = { getItem: (key) => memory.get(key) || null, setItem: (key, value) => memory.set(key, value) };
@@ -260,7 +336,7 @@ test("Workspace contract is accessible, responsive and contains no network or CD
   for (const marker of [
     "data-hh-graphic-export-center", "data-hec-artboard", "data-hec-action=\"enqueue\"", "data-hec-cancel",
     "data-hec-retry", "data-hec-setting=\"namingRule\"", "data-hec-watermark", "data-hec-issues",
-    "canvas.toBlob", "captureStream", "MediaRecorder", "image/avif", "unsupported", "localStorage",
+    "canvas.toBlob", "captureStream", "MediaRecorder", "image/avif", "video/mp4", "audio/wav", "unsupported", "localStorage",
     "role=\"radiogroup\"", "role=\"status\"", "aria-live=\"polite\"", ":focus-visible",
     "@media(max-width:375px)", "@media(prefers-reduced-motion:reduce)", "ctrlKey", "Escape"
   ]) assert.ok(source.includes(marker), `missing ${marker}`);

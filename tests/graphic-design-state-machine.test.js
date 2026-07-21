@@ -123,3 +123,79 @@ test("Data Binding supports every requested target, direction and converter", ()
   for (const direction of ["source", "target", "bidirectional"]) assert.ok(engine.BINDING_DIRECTIONS.includes(direction));
   for (const converter of ["none", "uppercase", "lowercase", "number", "boolean", "hex-color", "px", "url"]) assert.ok(engine.CONVERTERS.includes(converter));
 });
+
+test("state semantics distinguish interactive busy success and error states", () => {
+  const project = engine.createDefaultProject();
+  assert.equal(engine.getStateSemantics(project, "hover").role, "interactive");
+  assert.equal(engine.getStateSemantics(project, "loading").busy, true);
+  assert.equal(engine.getStateSemantics(project, "success").success, true);
+  assert.equal(engine.getStateSemantics(project, "error").error, true);
+  assert.equal(engine.getStateSemantics(project, "success").terminal, true);
+});
+
+test("graph validator reports unreachable states ambiguous transitions and immediate timer loops", () => {
+  const project = engine.createDefaultProject();
+  project.states.push({ id: "orphan", name: "Orphan", x: 0, y: 0, color: "#FFFFFF", role: "idle", terminal: false });
+  project.transitions.push(
+    { id: "loop", from: "orphan", to: "orphan", event: "timer", priority: 1, delay: 0, conditions: [], actions: [] },
+    { id: "duplicate-a", from: "idle", to: "hover", event: "hover", priority: 99, conditions: [], actions: [] },
+    { id: "duplicate-b", from: "idle", to: "pressed", event: "hover", priority: 99, conditions: [], actions: [] }
+  );
+  const report = engine.validateProject(project);
+  assert.equal(report.valid, false);
+  assert.ok(report.errors.some((item) => item.type === "timer-loop"));
+  assert.ok(report.warnings.some((item) => item.type === "unreachable-state"));
+  assert.ok(report.warnings.some((item) => item.type === "ambiguous-transition"));
+});
+
+test("simulator tick respects timer delays and exposes observable runtime events", () => {
+  let now = 0;
+  const simulator = engine.createSimulator(engine.createDefaultProject(), null, { now: () => now });
+  const notifications = [];
+  const unsubscribe = simulator.subscribe((event) => notifications.push(event));
+  simulator.dispatch("hover", { timestamp: now });
+  simulator.dispatch("click", { timestamp: now });
+  now = 349;
+  assert.equal(simulator.tick(now).reason, "timer-not-due");
+  now = 350;
+  assert.equal(simulator.tick(now).runtime.stateId, "loading");
+  now = 1249;
+  assert.equal(simulator.tick(now).reason, "timer-not-due");
+  now = 1250;
+  assert.equal(simulator.tick(now).runtime.stateId, "success");
+  assert.ok(notifications.length >= 4);
+  unsubscribe();
+  simulator.destroy();
+});
+
+test("once and cooldown guards are deterministic and resettable", () => {
+  const project = engine.normalizeProject({
+    initialStateId: "idle",
+    states: [{ id: "idle", name: "Idle", x: 0, y: 0, color: "#67E8F9", role: "idle" }],
+    transitions: [
+      { id: "once", from: "idle", to: "idle", event: "click", priority: 10, once: true, conditions: [], actions: [] },
+      { id: "cool", from: "idle", to: "idle", event: "hover", priority: 10, cooldown: 1000, conditions: [], actions: [] }
+    ],
+    properties: [{ id: "enabled", name: "enabled", type: "boolean", value: true }], bindings: []
+  });
+  const simulator = engine.createSimulator(project);
+  assert.equal(simulator.dispatch("click", { timestamp: 0 }).matched, true);
+  assert.equal(simulator.dispatch("click", { timestamp: 1 }).matched, false);
+  assert.equal(simulator.dispatch("hover", { timestamp: 0 }).matched, true);
+  assert.equal(simulator.dispatch("hover", { timestamp: 500 }).matched, false);
+  assert.equal(simulator.dispatch("hover", { timestamp: 1000 }).matched, true);
+  simulator.reset();
+  assert.equal(simulator.dispatch("click", { timestamp: 2 }).matched, true);
+});
+
+test("capabilities and Web Component output state local limits and accessible busy state", () => {
+  const capabilities = engine.getCapabilities({});
+  assert.equal(capabilities.deterministicRuntime, true);
+  assert.equal(capabilities.externalData, false);
+  assert.equal(capabilities.realtimeCollaboration, false);
+  const html = engine.exportWebComponent(engine.createDefaultProject());
+  assert.match(html, /aria-busy/);
+  assert.match(html, /this\.used=new Set/);
+  assert.ok(html.includes("data:image/(?:png|jpeg|gif|webp);base64,"));
+  assert.doesNotMatch(html, /data:image\\\/svg/i);
+});

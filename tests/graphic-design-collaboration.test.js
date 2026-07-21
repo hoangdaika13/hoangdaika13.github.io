@@ -53,3 +53,32 @@ test("normalizes canvas coordinates for realtime cursors and pinned comments", (
   assert.deepEqual(collaboration.positionFromEvent({ clientX: 110, clientY: 70 }, node), { x: 50, y: 50 });
   assert.deepEqual(collaboration.positionFromEvent({ clientX: -500, clientY: 900 }, node), { x: 0, y: 100 });
 });
+
+test("only reports realtime after a confirmed WebSocket transport", () => {
+  assert.equal(collaboration.isWebSocketConfirmed({ connected: false, transport: "websocket" }), false);
+  assert.equal(collaboration.isWebSocketConfirmed({ connected: true, transport: "polling" }), false);
+  assert.equal(collaboration.isWebSocketConfirmed({ connected: true, io: { engine: { transport: { name: "websocket" } } } }), true);
+  assert.equal(collaboration.isWebSocketConfirmed({ connected: true, realtimeConfirmed: true }), true);
+});
+
+test("sanitizes server room payloads and keeps an append-only audit chain", () => {
+  const room = collaboration.normalizeRoom({
+    code: "ROOM<script>", name: "  Demo\u0000  ", persistence: "memory",
+    members: [{ socketId: "s1", role: "admin", user: { id: "u1", name: "<img onerror=1>" }, cursor: { x: 999, y: -4, color: "javascript:red" } }],
+    comments: [{ id: "c1", body: "hello\u0000", x: 999, y: -1 }]
+  });
+  assert.equal(room.code.length <= 12, true);
+  assert.equal(room.members[0].role, "viewer");
+  assert.deepEqual(room.members[0].cursor, { x: 100, y: 0, color: "#62d7e7" });
+  assert.equal(room.comments[0].body, "hello");
+
+  let tick = 0;
+  const audit = collaboration.createAuditTrail({ now: () => new Date(1700000000000 + tick++ * 1000) });
+  const first = audit.append("room.joined", { id: "u1" }, { code: "ROOM" });
+  const second = audit.append("lock.acquired", { id: "u1" }, { layerId: "hero" });
+  assert.equal(first.sequence, 1);
+  assert.equal(second.previousId, first.id);
+  const copy = audit.list();
+  copy[0].details.code = "mutated";
+  assert.equal(audit.list()[0].details.code, "ROOM");
+});

@@ -6,17 +6,22 @@
   const STORAGE_KEY = "hh.graphic-adaptive.project.v1";
   const STYLE_ID = "hh-graphic-adaptive-style-v1";
   const MAX_HISTORY = 50;
+  const MAX_BULK_BYTES = 1024 * 1024;
+  const MAX_BULK_ROWS = 250;
+  const MAX_BULK_COLUMNS = 64;
   const instances = new WeakMap();
 
   const PRESETS = Object.freeze({
     instagram: { id: "instagram", label: "Instagram Post", short: "IG", width: 1080, height: 1080, safe: { top: 64, right: 64, bottom: 64, left: 64 } },
     story: { id: "story", label: "Instagram Story", short: "ST", width: 1080, height: 1920, safe: { top: 250, right: 72, bottom: 310, left: 72 } },
+    reel: { id: "reel", label: "Reel / Short", short: "RL", width: 1080, height: 1920, safe: { top: 220, right: 92, bottom: 360, left: 92 } },
     youtube: { id: "youtube", label: "YouTube Thumbnail", short: "YT", width: 1280, height: 720, safe: { top: 48, right: 80, bottom: 76, left: 80 } },
     banner: { id: "banner", label: "Web Banner", short: "WB", width: 1500, height: 500, safe: { top: 44, right: 96, bottom: 44, left: 96 } },
     ads: { id: "ads", label: "Display Ads", short: "AD", width: 1200, height: 628, safe: { top: 48, right: 64, bottom: 48, left: 64 } }
   });
 
   const BRAND_FONTS = Object.freeze(["Inter", "Arial", "Georgia", "Trebuchet MS", "Verdana"]);
+  const BRAND_FIELDS = Object.freeze(["name", "logo", "primary", "secondary", "accent", "background", "text", "fontHeading", "fontBody"]);
 
   function uid(prefix) {
     return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -39,6 +44,17 @@
 
   function safeColor(value, fallback) {
     return /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value).toUpperCase() : fallback;
+  }
+
+  function cleanText(value, limit) {
+    return String(value == null ? "" : value)
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+      .slice(0, limit || 2000);
+  }
+
+  function normalizeBrandLocks(input) {
+    const source = input === true ? Object.fromEntries(BRAND_FIELDS.map((field) => [field, true])) : (input && typeof input === "object" ? input : {});
+    return Object.freeze(Object.fromEntries(BRAND_FIELDS.map((field) => [field, Boolean(source[field])])));
   }
 
   function createDefaultProject() {
@@ -67,7 +83,8 @@
         background: "#101528",
         text: "#FFFFFF",
         fontHeading: "Inter",
-        fontBody: "Inter"
+        fontBody: "Inter",
+        locks: normalizeBrandLocks(false)
       },
       variants: Object.keys(PRESETS).map((presetId) => ({ presetId, enabled: true, overrides: {} }))
     };
@@ -110,11 +127,131 @@
         background: safeColor(brand.background, fallback.brand.background),
         text: safeColor(brand.text, fallback.brand.text),
         fontHeading: BRAND_FONTS.includes(brand.fontHeading) ? brand.fontHeading : fallback.brand.fontHeading,
-        fontBody: BRAND_FONTS.includes(brand.fontBody) ? brand.fontBody : fallback.brand.fontBody
+        fontBody: BRAND_FONTS.includes(brand.fontBody) ? brand.fontBody : fallback.brand.fontBody,
+        locks: normalizeBrandLocks(brand.locks ?? source.brandLocks)
       },
       variants: Object.keys(PRESETS).map((presetId) => {
         const variant = variants.find((item) => item?.presetId === presetId) || {};
         return { presetId, enabled: variant.enabled !== false, overrides: variant.overrides && typeof variant.overrides === "object" ? clone(variant.overrides) : {} };
+      })
+    };
+  }
+
+  function applyBrandPatch(projectInput, patchInput, options) {
+    const project = normalizeProject(projectInput);
+    const patch = patchInput && typeof patchInput === "object" ? patchInput : {};
+    const respectLocks = options?.respectLocks !== false;
+    const next = clone(project);
+    BRAND_FIELDS.forEach((field) => {
+      if (!(field in patch) || (respectLocks && project.brand.locks[field])) return;
+      if (["primary", "secondary", "accent", "background", "text"].includes(field)) next.brand[field] = safeColor(patch[field], next.brand[field]);
+      else if (["fontHeading", "fontBody"].includes(field)) next.brand[field] = BRAND_FONTS.includes(patch[field]) ? patch[field] : next.brand[field];
+      else next.brand[field] = cleanText(patch[field], field === "logo" ? 16 : 100) || next.brand[field];
+    });
+    return normalizeProject(next);
+  }
+
+  function setBrandLocks(projectInput, fields, locked) {
+    const project = normalizeProject(projectInput);
+    const selected = fields === "all" ? BRAND_FIELDS : (Array.isArray(fields) ? fields : [fields]);
+    const next = clone(project);
+    const locks = { ...project.brand.locks };
+    selected.filter((field) => BRAND_FIELDS.includes(field)).forEach((field) => { locks[field] = locked !== false; });
+    next.brand.locks = locks;
+    return normalizeProject(next);
+  }
+
+  function parseCsv(text, options) {
+    const maxRows = Math.round(clamp(options?.maxRows, 1, MAX_BULK_ROWS, MAX_BULK_ROWS));
+    const maxColumns = Math.round(clamp(options?.maxColumns, 1, MAX_BULK_COLUMNS, MAX_BULK_COLUMNS));
+    const source = cleanText(text, MAX_BULK_BYTES + 1);
+    if (source.length > MAX_BULK_BYTES) throw new RangeError(`Bulk CSV exceeds ${MAX_BULK_BYTES} bytes.`);
+    const rows = [];
+    let truncated = false;
+    let row = [];
+    let field = "";
+    let quoted = false;
+    for (let index = 0; index <= source.length; index += 1) {
+      const character = source[index] ?? "\n";
+      if (quoted) {
+        if (character === '"' && source[index + 1] === '"') { field += '"'; index += 1; }
+        else if (character === '"') quoted = false;
+        else field += character;
+      } else if (character === '"' && !field) quoted = true;
+      else if (character === ",") { if (row.length < maxColumns) row.push(cleanText(field.trim(), 2000)); field = ""; }
+      else if (character === "\n" || character === "\r") {
+        if (character === "\r" && source[index + 1] === "\n") index += 1;
+        if (row.length < maxColumns) row.push(cleanText(field.trim(), 2000));
+        field = "";
+        if (row.some(Boolean)) rows.push(row.slice(0, maxColumns));
+        row = [];
+        if (rows.length > maxRows + 1) { truncated = true; break; }
+      } else field += character;
+    }
+    if (!rows.length) return { records: [], errors: ["CSV has no records."], truncated: false, source: "csv" };
+    const headers = rows.shift().map((header, index) => cleanText(header || `column${index + 1}`, 80));
+    const duplicates = new Set();
+    headers.forEach((header, index) => { if (headers.indexOf(header) !== index) duplicates.add(header); });
+    const records = rows.slice(0, maxRows).map((values) => Object.fromEntries(headers.map((header, index) => [header, cleanText(values[index], 2000)])));
+    return { records, errors: duplicates.size ? [`Duplicate columns: ${[...duplicates].join(", ")}`] : [], truncated: truncated || rows.length > maxRows, source: "csv" };
+  }
+
+  function normalizeBulkRecord(input, index) {
+    const source = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+    const pick = (...keys) => keys.map((key) => source[key]).find((value) => value != null && value !== "");
+    return {
+      id: cleanText(pick("id", "slug") || `row-${index + 1}`, 120),
+      name: cleanText(pick("name", "campaign", "project") || `Variant ${index + 1}`, 160),
+      title: cleanText(pick("title", "headline", "heading"), 180),
+      subtitle: cleanText(pick("subtitle", "description", "body"), 320),
+      callToAction: cleanText(pick("callToAction", "cta", "button"), 80),
+      brand: Object.fromEntries(BRAND_FIELDS.map((field) => [field, source.brand?.[field] ?? pick(`brand.${field}`, `brand_${field}`, field)]).filter(([, value]) => value != null && value !== "")),
+      meta: Object.fromEntries(Object.entries(source).slice(0, MAX_BULK_COLUMNS).map(([key, value]) => [cleanText(key, 80), cleanText(value, 500)]))
+    };
+  }
+
+  function parseBulkData(input, options) {
+    try {
+      if (Array.isArray(input)) {
+        const limit = Math.round(clamp(options?.maxRows, 1, MAX_BULK_ROWS, MAX_BULK_ROWS));
+        return { records: input.slice(0, limit).map(normalizeBulkRecord), errors: [], truncated: input.length > limit, source: "json" };
+      }
+      if (input && typeof input === "object") {
+        const values = Array.isArray(input.records) ? input.records : Array.isArray(input.items) ? input.items : [input];
+        return parseBulkData(values, options);
+      }
+      const text = cleanText(input, MAX_BULK_BYTES + 1);
+      if (text.length > MAX_BULK_BYTES) return { records: [], errors: [`Input exceeds ${MAX_BULK_BYTES} bytes.`], truncated: true, source: "unknown" };
+      const trimmed = text.trim();
+      if (!trimmed) return { records: [], errors: ["Bulk input is empty."], truncated: false, source: "unknown" };
+      if (trimmed.startsWith("[") || trimmed.startsWith("{")) return parseBulkData(JSON.parse(trimmed), options);
+      const parsed = parseCsv(trimmed, options);
+      parsed.records = parsed.records.map(normalizeBulkRecord);
+      return parsed;
+    } catch (error) {
+      return { records: [], errors: [cleanText(error?.message || "Bulk data is invalid.", 300)], truncated: false, source: "unknown" };
+    }
+  }
+
+  function applyBulkRecord(projectInput, recordInput) {
+    const project = normalizeProject(projectInput);
+    const record = normalizeBulkRecord(recordInput, 0);
+    const next = clone(project);
+    next.id = `${project.id}-${record.id}`.slice(0, 120);
+    next.name = record.name || project.name;
+    if (record.title) next.master.title = record.title;
+    if (record.subtitle) next.master.subtitle = record.subtitle;
+    if (record.callToAction) next.master.callToAction = record.callToAction;
+    return applyBrandPatch(next, record.brand, { respectLocks: true });
+  }
+
+  function createBulkCampaigns(projectInput, input, options) {
+    const parsed = parseBulkData(input, options);
+    return {
+      ...parsed,
+      campaigns: parsed.records.map((record) => {
+        const project = applyBulkRecord(projectInput, record);
+        return { record, project, variants: createVariants(project) };
       })
     };
   }
@@ -142,6 +279,38 @@
     };
   }
 
+  function calculateSmartCrop(imageWidth, imageHeight, outputWidth, outputHeight, options) {
+    const subjects = (Array.isArray(options?.subjects) ? options.subjects : []).slice(0, 20).filter((subject) => subject && Number.isFinite(Number(subject.x)) && Number.isFinite(Number(subject.y)));
+    let focalPoint = options?.focalPoint || options;
+    if (subjects.length) {
+      let totalWeight = 0;
+      let x = 0;
+      let y = 0;
+      subjects.forEach((subject) => {
+        const weight = clamp(subject.weight ?? subject.confidence, 0.01, 10, 1);
+        x += clamp(subject.x + (subject.width || 0) / 2, 0, 1, 0.5) * weight;
+        y += clamp(subject.y + (subject.height || 0) / 2, 0, 1, 0.5) * weight;
+        totalWeight += weight;
+      });
+      focalPoint = { x: x / totalWeight, y: y / totalWeight };
+    }
+    return { ...calculateCoverCrop(imageWidth, imageHeight, outputWidth, outputHeight, focalPoint), focalPoint: { x: clamp(focalPoint?.x, 0, 1, 0.5), y: clamp(focalPoint?.y, 0, 1, 0.5) }, strategy: subjects.length ? "subjects" : "focal-point" };
+  }
+
+  function fitTypography(text, initialSize, width, height, maxLines, options) {
+    const minSize = clamp(options?.minSize, 8, initialSize, Math.min(16, initialSize));
+    const lineHeight = clamp(options?.lineHeight, 0.8, 3, 1.05);
+    let size = Math.max(minSize, initialSize);
+    const characterUnits = [...cleanText(text, 5000)].reduce((sum, character) => sum + (/\s/.test(character) ? 0.3 : /[MW@#%]/.test(character) ? 0.9 : 0.58), 0);
+    while (size > minSize) {
+      const estimatedLines = Math.max(1, Math.ceil(characterUnits * size / Math.max(1, width)));
+      if (estimatedLines <= maxLines && estimatedLines * size * lineHeight <= height) return { size: Math.round(size), lines: estimatedLines, overflow: false };
+      size -= Math.max(1, initialSize * 0.04);
+    }
+    const lines = Math.max(1, Math.ceil(characterUnits * minSize / Math.max(1, width)));
+    return { size: Math.round(minSize), lines, overflow: lines > maxLines || lines * minSize * lineHeight > height };
+  }
+
   function safeZone(presetId) {
     const preset = PRESETS[presetId] || PRESETS.instagram;
     return clone(preset.safe);
@@ -157,8 +326,13 @@
     const align = project.master.align;
     const x = align === "left" ? safe.left : align === "right" ? preset.width - safe.right : preset.width / 2;
     const anchor = align === "left" ? "left" : align === "right" ? "right" : "center";
-    const titleSize = Math.round(Math.min(preset.width * (wide ? 0.054 : portrait ? 0.086 : 0.072), preset.height * 0.16) * project.master.titleScale);
-    const subtitleSize = Math.round(titleSize * 0.38);
+    const initialTitleSize = Math.round(Math.min(preset.width * (wide ? 0.054 : portrait ? 0.086 : 0.072), preset.height * 0.16) * project.master.titleScale);
+    const maxTitleLines = wide ? 2 : 3;
+    const titleFit = fitTypography(project.master.title, initialTitleSize, contentWidth, preset.height * (portrait ? 0.22 : 0.25), maxTitleLines, { minSize: Math.max(24, initialTitleSize * 0.58), lineHeight: 1.02 });
+    const titleSize = titleFit.size;
+    const initialSubtitleSize = Math.round(initialTitleSize * 0.38);
+    const subtitleFit = fitTypography(project.master.subtitle, initialSubtitleSize, contentWidth, preset.height * (portrait ? 0.13 : 0.12), portrait ? 3 : 2, { minSize: Math.max(14, initialSubtitleSize * 0.68), lineHeight: 1.35 });
+    const subtitleSize = subtitleFit.size;
     const top = portrait ? preset.height * 0.57 : wide ? preset.height * 0.27 : preset.height * 0.47;
     return {
       presetId,
@@ -167,21 +341,25 @@
       safe,
       content: { x, y: clamp(top, safe.top, preset.height - safe.bottom - titleSize * 3, safe.top), width: contentWidth, anchor },
       logo: { x: align === "right" ? preset.width - safe.right : safe.left, y: safe.top, size: Math.round(Math.min(preset.width, preset.height) * 0.075) },
-      title: { size: Math.max(28, titleSize), lineHeight: 1.02, maxLines: wide ? 2 : 3 },
-      subtitle: { size: Math.max(16, subtitleSize), lineHeight: 1.35, maxLines: portrait ? 3 : 2 },
+      title: { size: Math.max(24, titleSize), lineHeight: 1.02, maxLines: maxTitleLines, overflow: titleFit.overflow },
+      subtitle: { size: Math.max(14, subtitleSize), lineHeight: 1.35, maxLines: portrait ? 3 : 2, overflow: subtitleFit.overflow },
       cta: { height: Math.max(44, Math.round(titleSize * 0.72)), padding: Math.max(18, Math.round(titleSize * 0.35)) }
     };
   }
 
   function createVariants(projectInput) {
     const project = normalizeProject(projectInput);
-    return project.variants.filter((variant) => variant.enabled).map((variant) => ({
-      ...variant,
-      preset: clone(PRESETS[variant.presetId]),
-      layout: reflowLayout(project, variant.presetId),
-      content: { ...clone(project.master), ...clone(variant.overrides.content || {}) },
-      brand: { ...clone(project.brand), ...clone(variant.overrides.brand || {}) }
-    }));
+    return project.variants.filter((variant) => variant.enabled).map((variant) => {
+      const content = { ...clone(project.master), ...clone(variant.overrides.content || {}) };
+      const variantProject = applyBrandPatch({ ...project, master: content }, variant.overrides.brand, { respectLocks: true });
+      return {
+        ...variant,
+        preset: clone(PRESETS[variant.presetId]),
+        layout: reflowLayout(variantProject, variant.presetId),
+        content: clone(variantProject.master),
+        brand: clone(variantProject.brand)
+      };
+    });
   }
 
   function wrapText(context, text, maxWidth, maxLines) {
@@ -216,7 +394,9 @@
 
   function renderArtboard(canvas, projectInput, presetId, options) {
     if (!canvas || typeof canvas.getContext !== "function") return false;
-    const project = normalizeProject(projectInput);
+    const baseProject = normalizeProject(projectInput);
+    const variant = baseProject.variants.find((item) => item.presetId === presetId);
+    const project = variant ? applyBrandPatch({ ...baseProject, master: { ...baseProject.master, ...clone(variant.overrides.content || {}) } }, variant.overrides.brand, { respectLocks: true }) : baseProject;
     const layout = reflowLayout(project, presetId);
     const context = canvas.getContext("2d");
     if (!context) return false;
@@ -229,7 +409,7 @@
     context.fillStyle = gradient; context.fillRect(0, 0, layout.width, layout.height);
     const image = options?.image;
     if (image && image.naturalWidth && image.naturalHeight) {
-      const crop = calculateCoverCrop(image.naturalWidth, image.naturalHeight, layout.width, layout.height, project.master.focalPoint);
+      const crop = calculateSmartCrop(image.naturalWidth, image.naturalHeight, layout.width, layout.height, { focalPoint: project.master.focalPoint, subjects: options?.subjects });
       context.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, layout.width, layout.height);
     }
     context.fillStyle = `rgba(4,8,18,${project.master.overlay})`; context.fillRect(0, 0, layout.width, layout.height);
@@ -289,7 +469,7 @@
     try { project = normalizeProject(options?.project || JSON.parse(localStorage.getItem(STORAGE_KEY) || "null")); } catch (_) { project = createDefaultProject(); }
     let history = [clone(project)]; let historyIndex = 0; let showSafeZone = true; let activePreset = "instagram"; let image = null;
     root.classList.add("gad");
-    root.innerHTML = `<header class="gad-head"><div class="gad-logo" aria-hidden="true">AD</div><div><h2>Adaptive Design Studio</h2><p>Edit once · synced artboards · smart crop · Brand Kit · safe zones</p></div><div class="gad-head-actions"><button type="button" data-gad-action="undo" aria-label="Hoàn tác" title="Ctrl Z">Hoàn tác</button><button type="button" data-gad-action="redo" aria-label="Làm lại" title="Ctrl Y">Làm lại</button><button type="button" data-gad-action="import">Nhập JSON</button><button type="button" class="gad-primary" data-gad-action="export-all">Xuất tất cả</button></div></header><div class="gad-main"><aside class="gad-inspector"><section class="gad-panel"><h3>Nội dung master</h3><div class="gad-stack"><label>Tiêu đề<textarea data-gad-field="title" maxlength="180"></textarea></label><label>Mô tả<textarea data-gad-field="subtitle" maxlength="320"></textarea></label><label>Nút hành động<input data-gad-field="callToAction" maxlength="80"></label><div class="gad-row"><label>Căn<select data-gad-field="align"><option value="left">Trái</option><option value="center">Giữa</option><option value="right">Phải</option></select></label><label>Cỡ tiêu đề<input type="range" min="0.6" max="1.8" step="0.05" data-gad-field="titleScale"></label></div></div></section><section class="gad-panel"><h3>Ảnh & Smart Crop</h3><button type="button" class="gad-drop" data-gad-drop><span>Thả hoặc chọn ảnh<br><small>PNG, JPG, WebP · xử lý trên thiết bị</small></span></button><div class="gad-focal" data-gad-focal tabindex="0" role="slider" aria-label="Điểm tập trung của ảnh" aria-valuemin="0" aria-valuemax="100"><span class="gad-sr">Bấm vào ảnh để đặt focal point</span></div><label>Lớp phủ<input type="range" min="0" max="0.9" step="0.02" data-gad-field="overlay"></label></section><section class="gad-panel"><h3>Brand Kit</h3><div class="gad-stack"><label>Tên thương hiệu<input data-gad-brand="name"></label><label>Logo chữ<input data-gad-brand="logo" maxlength="16"></label><div class="gad-color-grid"><label>Chính<input type="color" data-gad-brand="primary"></label><label>Phụ<input type="color" data-gad-brand="secondary"></label><label>Nhấn<input type="color" data-gad-brand="accent"></label></div><label>Font tiêu đề<select data-gad-brand="fontHeading">${BRAND_FONTS.map((font) => `<option>${font}</option>`).join("")}</select></label><button type="button" data-gad-action="copy-tokens">Sao chép design token</button></div></section></aside><section class="gad-workspace"><div class="gad-toolbar"><button type="button" data-gad-action="toggle-safe">Safe zone: Bật</button><span class="gad-badge">5 định dạng đồng bộ</span><span class="gad-status" role="status" aria-live="polite" data-gad-status>Sẵn sàng.</span></div><div class="gad-artboards" data-gad-artboards></div><footer class="gad-footer"><span>Smart crop theo focal point</span><span>Reflow theo constraint</span><span data-gad-save>Tự lưu cục bộ</span></footer></section></div><input hidden type="file" accept="image/png,image/jpeg,image/webp" data-gad-image-file><input hidden type="file" accept="application/json,.json" data-gad-import-file>`;
+    root.innerHTML = `<header class="gad-head"><div class="gad-logo" aria-hidden="true">AD</div><div><h2>Adaptive Design Studio</h2><p>Edit once · synced artboards · smart crop · Brand Kit · safe zones</p></div><div class="gad-head-actions"><button type="button" data-gad-action="undo" aria-label="Hoàn tác" title="Ctrl Z">Hoàn tác</button><button type="button" data-gad-action="redo" aria-label="Làm lại" title="Ctrl Y">Làm lại</button><button type="button" data-gad-action="import">Nhập JSON</button><button type="button" data-gad-action="bulk">Bulk CSV/JSON</button><button type="button" class="gad-primary" data-gad-action="export-all">Xuất tất cả</button></div></header><div class="gad-main"><aside class="gad-inspector"><section class="gad-panel"><h3>Nội dung master</h3><div class="gad-stack"><label>Tiêu đề<textarea data-gad-field="title" maxlength="180"></textarea></label><label>Mô tả<textarea data-gad-field="subtitle" maxlength="320"></textarea></label><label>Nút hành động<input data-gad-field="callToAction" maxlength="80"></label><div class="gad-row"><label>Căn<select data-gad-field="align"><option value="left">Trái</option><option value="center">Giữa</option><option value="right">Phải</option></select></label><label>Cỡ tiêu đề<input type="range" min="0.6" max="1.8" step="0.05" data-gad-field="titleScale"></label></div></div></section><section class="gad-panel"><h3>Ảnh & Smart Crop</h3><button type="button" class="gad-drop" data-gad-drop><span>Thả hoặc chọn ảnh<br><small>PNG, JPG, WebP · xử lý trên thiết bị</small></span></button><div class="gad-focal" data-gad-focal tabindex="0" role="slider" aria-label="Điểm tập trung của ảnh" aria-valuemin="0" aria-valuemax="100"><span class="gad-sr">Bấm vào ảnh để đặt focal point</span></div><label>Lớp phủ<input type="range" min="0" max="0.9" step="0.02" data-gad-field="overlay"></label></section><section class="gad-panel"><h3>Brand Kit</h3><div class="gad-stack"><label>Tên thương hiệu<input data-gad-brand="name"></label><label>Logo chữ<input data-gad-brand="logo" maxlength="16"></label><div class="gad-color-grid"><label>Chính<input type="color" data-gad-brand="primary"></label><label>Phụ<input type="color" data-gad-brand="secondary"></label><label>Nhấn<input type="color" data-gad-brand="accent"></label></div><label>Font tiêu đề<select data-gad-brand="fontHeading">${BRAND_FONTS.map((font) => `<option>${font}</option>`).join("")}</select></label><button type="button" data-gad-action="toggle-brand-lock">Khóa Brand Kit</button><button type="button" data-gad-action="copy-tokens">Sao chép design token</button></div></section></aside><section class="gad-workspace"><div class="gad-toolbar"><button type="button" data-gad-action="toggle-safe">Safe zone: Bật</button><span class="gad-badge">${Object.keys(PRESETS).length} định dạng đồng bộ</span><span class="gad-status" role="status" aria-live="polite" data-gad-status>Sẵn sàng.</span></div><div class="gad-artboards" data-gad-artboards></div><footer class="gad-footer"><span>Smart crop theo focal point</span><span>Reflow theo constraint</span><span data-gad-save>Tự lưu cục bộ</span></footer></section></div><input hidden type="file" accept="image/png,image/jpeg,image/webp" data-gad-image-file><input hidden type="file" accept="application/json,.json" data-gad-import-file><input hidden type="file" accept="text/csv,application/json,.csv,.json" data-gad-bulk-file>`;
     const qs = (selector) => root.querySelector(selector);
     const status = (message) => { qs("[data-gad-status]").textContent = message; };
 
@@ -305,6 +485,9 @@
     function renderInspector() {
       ["title", "subtitle", "callToAction", "align", "titleScale", "overlay"].forEach((key) => { const node = qs(`[data-gad-field="${key}"]`); if (node) node.value = project.master[key]; });
       Object.keys(project.brand).forEach((key) => { const node = qs(`[data-gad-brand="${key}"]`); if (node) node.value = project.brand[key]; });
+      root.querySelectorAll("[data-gad-brand]").forEach((node) => { node.disabled = Boolean(project.brand.locks[node.dataset.gadBrand]); });
+      const lockButton = qs('[data-gad-action="toggle-brand-lock"]');
+      if (lockButton) lockButton.textContent = BRAND_FIELDS.every((field) => project.brand.locks[field]) ? "Mở khóa Brand Kit" : "Khóa Brand Kit";
       const focal = qs("[data-gad-focal]"); focal.style.setProperty("--fx", project.master.focalPoint.x); focal.style.setProperty("--fy", project.master.focalPoint.y);
       focal.innerHTML = project.master.image ? `<img alt="Ảnh gốc để chọn focal point" src="${project.master.image.dataUrl}">` : `<span>Chưa có ảnh · dùng nền Brand Kit</span>`;
     }
@@ -341,19 +524,22 @@
       const action = target.dataset.gadAction;
       if (action === "undo") return undo(); if (action === "redo") return redo();
       if (action === "import") return qs("[data-gad-import-file]").click();
+      if (action === "bulk") return qs("[data-gad-bulk-file]").click();
       if (action === "export-all") { downloadBlob(new Blob([serializeProject(project)], { type: "application/json" }), `${project.name.replace(/[^a-z0-9]+/gi, "-") || "adaptive"}.json`); return status("Đã xuất project JSON. Có thể xuất PNG riêng trên từng artboard."); }
       if (action === "toggle-safe") { showSafeZone = !showSafeZone; target.textContent = `Safe zone: ${showSafeZone ? "Bật" : "Tắt"}`; return renderCanvases(); }
+      if (action === "toggle-brand-lock") { const lock = !BRAND_FIELDS.every((field) => project.brand.locks[field]); project = setBrandLocks(project, "all", lock); remember(); render(); return status(lock ? "Brand Kit đã khóa." : "Brand Kit đã mở khóa."); }
       if (action === "copy-tokens") { await navigator.clipboard?.writeText(brandTokens(project)); return status("Đã sao chép design token CSS."); }
       if (target.matches("[data-gad-drop]")) return qs("[data-gad-image-file]").click();
     };
     const onInput = (event) => {
       if (event.target.dataset.gadField) return change((draft) => { draft.master[event.target.dataset.gadField] = event.target.type === "range" ? Number(event.target.value) : event.target.value; }, false);
-      if (event.target.dataset.gadBrand) return change((draft) => { draft.brand[event.target.dataset.gadBrand] = event.target.value; }, false);
+      if (event.target.dataset.gadBrand) { const field = event.target.dataset.gadBrand; if (project.brand.locks[field]) return status("Trường Brand Kit này đang bị khóa."); return change((draft) => { draft.brand[field] = event.target.value; }, false); }
     };
     const onChange = (event) => {
       if (event.target.matches("[data-gad-field],[data-gad-brand]")) { remember(); status("Đã đồng bộ thay đổi sang mọi artboard."); }
       if (event.target.matches("[data-gad-image-file]") && event.target.files[0]) importImage(event.target.files[0]);
       if (event.target.matches("[data-gad-import-file]") && event.target.files[0]) { const reader = new FileReader(); reader.onload = () => { try { const parsed = JSON.parse(reader.result); if (parsed.format !== FORMAT) throw new Error(); project = normalizeProject(parsed); history = [clone(project)]; historyIndex = 0; loadImage(); render(); persist(); status("Đã nhập project Adaptive Design."); } catch (_) { status("Project JSON không hợp lệ."); } }; reader.readAsText(event.target.files[0]); }
+      if (event.target.matches("[data-gad-bulk-file]") && event.target.files[0]) { const reader = new FileReader(); reader.onload = () => { const batch = createBulkCampaigns(project, reader.result); if (!batch.campaigns.length) return status(batch.errors[0] || "Bulk data không có bản ghi."); const bundle = { format: `${FORMAT}-bulk`, version: VERSION, generatedAt: new Date().toISOString(), campaigns: batch.campaigns.map((item) => item.project), errors: batch.errors, truncated: batch.truncated }; downloadBlob(new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" }), `${project.name.replace(/[^a-z0-9]+/gi, "-") || "adaptive"}-bulk.json`); status(`Đã tạo ${batch.campaigns.length} campaign từ bulk data.`); }; reader.readAsText(event.target.files[0]); }
     };
     const drop = qs("[data-gad-drop]");
     const onDragOver = (event) => { event.preventDefault(); drop.classList.add("is-over"); };
@@ -376,7 +562,7 @@
     const controller = instances.get(root); if (!controller) return false; controller.unmount(); return true;
   }
 
-  const api = Object.freeze({ VERSION, FORMAT, STORAGE_KEY, PRESETS, BRAND_FONTS, createDefaultProject, normalizeProject, calculateCoverCrop, safeZone, reflowLayout, createVariants, wrapText, renderArtboard, serializeProject, brandTokens, mount, unmount });
+  const api = Object.freeze({ VERSION, FORMAT, STORAGE_KEY, MAX_BULK_BYTES, MAX_BULK_ROWS, MAX_BULK_COLUMNS, PRESETS, BRAND_FONTS, BRAND_FIELDS, createDefaultProject, normalizeProject, normalizeBrandLocks, applyBrandPatch, setBrandLocks, parseCsv, parseBulkData, normalizeBulkRecord, applyBulkRecord, createBulkCampaigns, calculateCoverCrop, calculateSmartCrop, safeZone, fitTypography, reflowLayout, createVariants, wrapText, renderArtboard, serializeProject, brandTokens, mount, unmount });
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   globalScope.HHGraphicAdaptive = api;
 }(typeof globalThis !== "undefined" ? globalThis : this));

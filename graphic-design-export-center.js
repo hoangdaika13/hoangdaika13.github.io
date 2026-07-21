@@ -7,16 +7,22 @@
   const STORAGE_KEY = "hh.graphic-export-center.workspace.v1";
   const MAX_ASSET_BYTES = 20 * 1024 * 1024;
   const MAX_CANVAS_EDGE = 16384;
+  const MAX_QUEUE_JOBS = 100;
+  const MAX_RETRY_ATTEMPTS = 3;
   const SYSTEM_FONTS = Object.freeze(["Arial", "Helvetica", "Inter", "Georgia", "Times New Roman", "Verdana", "system-ui", "sans-serif", "serif", "monospace"]);
   const instances = new WeakMap();
 
   const SOCIAL_PRESETS = Object.freeze({
     "instagram-post": Object.freeze({ id: "instagram-post", label: "Instagram Post", width: 1080, height: 1080 }),
     "instagram-story": Object.freeze({ id: "instagram-story", label: "Instagram Story", width: 1080, height: 1920 }),
+    "instagram-reel": Object.freeze({ id: "instagram-reel", label: "Instagram Reel", width: 1080, height: 1920 }),
+    "facebook-post": Object.freeze({ id: "facebook-post", label: "Facebook Post", width: 1200, height: 630 }),
     "facebook-cover": Object.freeze({ id: "facebook-cover", label: "Facebook Cover", width: 1640, height: 624 }),
+    "tiktok-video": Object.freeze({ id: "tiktok-video", label: "TikTok Video", width: 1080, height: 1920 }),
     "x-post": Object.freeze({ id: "x-post", label: "X Post", width: 1600, height: 900 }),
     "linkedin-post": Object.freeze({ id: "linkedin-post", label: "LinkedIn Post", width: 1200, height: 627 }),
-    "youtube-thumbnail": Object.freeze({ id: "youtube-thumbnail", label: "YouTube Thumbnail", width: 1280, height: 720 })
+    "youtube-thumbnail": Object.freeze({ id: "youtube-thumbnail", label: "YouTube Thumbnail", width: 1280, height: 720 }),
+    "youtube-video": Object.freeze({ id: "youtube-video", label: "YouTube Video", width: 1920, height: 1080 })
   });
 
   const FORMATS = Object.freeze({
@@ -26,8 +32,10 @@
     avif: Object.freeze({ id: "avif", label: "AVIF", mime: "image/avif", extension: "avif", kind: "raster" }),
     svg: Object.freeze({ id: "svg", label: "SVG", mime: "image/svg+xml", extension: "svg", kind: "vector" }),
     "project-json": Object.freeze({ id: "project-json", label: "Project JSON", mime: "application/json", extension: "json", kind: "data" }),
-    pdf: Object.freeze({ id: "pdf", label: "PDF", mime: "application/pdf", extension: "pdf", kind: "document" }),
+    pdf: Object.freeze({ id: "pdf", label: "PDF", mime: "application/pdf", extension: "pdf", kind: "document", aggregate: true }),
+    mp4: Object.freeze({ id: "mp4", label: "MP4", mime: "video/mp4", extension: "mp4", kind: "video", aggregate: true }),
     webm: Object.freeze({ id: "webm", label: "WebM", mime: "video/webm", extension: "webm", kind: "video", aggregate: true }),
+    wav: Object.freeze({ id: "wav", label: "WAV", mime: "audio/wav", extension: "wav", kind: "audio", aggregate: true }),
     "sprite-sheet": Object.freeze({ id: "sprite-sheet", label: "Sprite sheet PNG", mime: "image/png", extension: "png", kind: "sprite", aggregate: true })
   });
 
@@ -247,6 +255,7 @@
 
   function detectCapabilities(runtime, canvasOverride) {
     const scope = runtime || globalScope || {};
+    const encoders = scope.encoders || scope.HHExportEncoders || {};
     let canvas = canvasOverride || null;
     try { if (!canvas) canvas = scope.document?.createElement?.("canvas") || null; } catch (_) { canvas = null; }
     const canvas2d = Boolean(canvas?.getContext?.("2d"));
@@ -267,8 +276,10 @@
       avif: createCapability(avif, "AVIF chỉ khả dụng khi Canvas của trình duyệt mã hóa đúng image/avif."),
       svg: createCapability(Boolean(BlobCtor), "Trình duyệt không có Blob để tạo SVG cục bộ."),
       "project-json": createCapability(Boolean(BlobCtor), "Trình duyệt không có Blob để tạo project JSON."),
-      pdf: createCapability(false, "Không có bộ mã hóa PDF cục bộ. Export Center không thay PDF bằng ảnh giả."),
+      pdf: createCapability(typeof encoders.pdf === "function", "PDF cần encoder cục bộ được cấu hình. Export Center không thay PDF bằng ảnh giả."),
+      mp4: createCapability(typeof encoders.mp4 === "function", "MP4 cần encoder thật, ví dụ WebCodecs/FFmpeg adapter được cấu hình cục bộ."),
       webm: createCapability(webm, "WebM cần MediaRecorder, Canvas captureStream và codec WebM được trình duyệt hỗ trợ."),
+      wav: createCapability(typeof encoders.wav === "function", "WAV cần audio encoder adapter được cấu hình cục bộ."),
       "sprite-sheet": createCapability(canvas2d && png, "Sprite sheet cần Canvas 2D có khả năng tạo PNG."),
       download: createCapability(Boolean(scope.document && scope.URL?.createObjectURL), "Trình duyệt không có luồng tải Blob cục bộ.")
     });
@@ -341,6 +352,7 @@
       artboard.assets.forEach((asset) => {
         if (asset.size > maxAssetBytes) push("warning", "asset-oversize", artboard, asset, `${asset.name} lớn hơn ${(maxAssetBytes / 1048576).toFixed(0)} MB.`);
         if (asset.type.startsWith("font/") && asset.loaded === false) push("warning", "font-missing", artboard, asset, `Font ${asset.fontFamily || asset.name} chưa được nạp.`);
+        if (!asset.type.startsWith("font/") && asset.loaded === false) push("error", "asset-offline", artboard, asset, `${asset.name} đang offline hoặc chưa được nạp.`);
       });
       artboard.elements.forEach((element) => {
         if (element.type === "text") {
@@ -352,6 +364,7 @@
         if (element.type === "image") {
           const asset = assets.get(element.assetId);
           if (!asset) return push("error", "asset-missing", artboard, element, `Thiếu asset cho image ${element.id}.`);
+          if (!asset.dataUrl && !asset.blob) push("error", "asset-source-missing", artboard, element, `${asset.name} không có dữ liệu ảnh để xuất.`);
           const requiredWidth = element.width * settings.scale;
           const requiredHeight = element.height * settings.scale;
           if (asset.width && asset.height && (asset.width < requiredWidth || asset.height < requiredHeight)) {
@@ -552,7 +565,8 @@
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, mime, quality));
     assertNotAborted(signal);
     if (!blob) throw new ExportCapabilityError(`Trình duyệt không tạo được ${mime}.`, "encode-failed");
-    if (mime !== "image/png" && blob.type && blob.type !== mime) throw new ExportCapabilityError(`Trình duyệt trả ${blob.type} thay vì ${mime}.`, "unsupported");
+    if (!blob.size) throw new ExportCapabilityError(`Trình duyệt tạo tệp ${mime} rỗng.`, "empty-output");
+    if (blob.type !== mime) throw new ExportCapabilityError(`Trình duyệt trả ${blob.type || "MIME rỗng"} thay vì ${mime}.`, "unsupported");
     return blob;
   }
 
@@ -584,6 +598,11 @@
     return images;
   }
 
+  function assertImagesLoaded(artboard, images) {
+    const missing = artboard.elements.filter((element) => element.type === "image" && !images.has(element.assetId));
+    if (missing.length) throw new ExportCapabilityError(`Không thể giải mã ${missing.length} ảnh dùng trong artboard ${artboard.name}.`, "media-load-failed");
+  }
+
   async function exportRaster(artboardInput, settingsInput, environment) {
     const artboard = normalizeArtboard(artboardInput, 0);
     const settings = normalizeSettings(settingsInput);
@@ -596,6 +615,7 @@
     const capability = getFormatCapability(format.id, capabilities);
     if (!capability.supported) throw new ExportCapabilityError(capability.reason, "unsupported");
     const images = await loadArtboardImages(artboard, environment || {}, signal);
+    assertImagesLoaded(artboard, images);
     renderArtboard(canvas, artboard, { settings, scale: settings.scale, images });
     const blob = await canvasToBlob(canvas, format.mime, settings.quality, signal);
     return { blob, width: canvas.width, height: canvas.height, mimeType: format.mime };
@@ -617,6 +637,8 @@
     if (format.kind === "raster") result = await exportRaster(artboard, settings, environment || {});
     else if (format.id === "svg") result = { blob: makeBlob([serializeSvg(artboard, settings)], format.mime, environment), width: artboard.width, height: artboard.height, mimeType: format.mime };
     else if (format.id === "project-json") result = { blob: makeBlob([serializeProject(projectForArtboard(artboard, settings))], format.mime, environment), width: artboard.width, height: artboard.height, mimeType: format.mime };
+    else if (["pdf", "mp4", "wav"].includes(format.id)) result = await exportWithEncoder([artboard], settings, environment || {});
+    else if (format.id === "webm") result = await exportWebM([artboard], settings, environment || {});
     else throw new ExportCapabilityError(`${format.label} cần export theo batch.`, "aggregate-required");
     result.format = format.id;
     result.filename = renderFileName(settings.namingRule, { project: settings.projectName, artboard: artboard.name, preset: artboard.presetId, scale: settings.scale, format: format.id }, format.id);
@@ -649,6 +671,7 @@
       const artboard = artboards[index];
       const tile = createCanvas(environment);
       const images = await loadArtboardImages(artboard, environment || {}, environment?.signal);
+      assertImagesLoaded(artboard, images);
       renderArtboard(tile, artboard, { settings, scale: settings.scale, images });
       const column = index % columns;
       const row = Math.floor(index / columns);
@@ -705,6 +728,7 @@
         const offsetX = (width - artboard.width * scale) / 2;
         const offsetY = (height - artboard.height * scale) / 2;
         const images = await loadArtboardImages(artboard, environment || {}, environment?.signal);
+        assertImagesLoaded(artboard, images);
         context.save?.();
         context.translate?.(offsetX, offsetY);
         context.scale?.(scale, scale);
@@ -727,11 +751,49 @@
     };
   }
 
+  function matchesMime(format, mimeType) {
+    const actual = String(mimeType || "").toLowerCase().split(";")[0].trim();
+    if (format.id === "wav") return ["audio/wav", "audio/wave", "audio/x-wav"].includes(actual);
+    return actual === format.mime;
+  }
+
+  function validateEncoderResult(resultInput, formatInput) {
+    const format = FORMATS[normalizeFormat(formatInput)];
+    const result = resultInput && typeof resultInput === "object" && "blob" in resultInput ? resultInput : { blob: resultInput };
+    const blob = result.blob;
+    if (!blob || typeof blob.size !== "number" || typeof blob.type !== "string") throw new ExportCapabilityError(`${format.label} encoder did not return a Blob.`, "invalid-encoder-result");
+    if (!matchesMime(format, blob.type)) throw new ExportCapabilityError(`${format.label} encoder returned ${blob.type || "an empty MIME type"} instead of ${format.mime}.`, "mime-mismatch");
+    if (!blob.size) throw new ExportCapabilityError(`${format.label} encoder returned an empty file.`, "empty-output");
+    return { ...result, blob, format: format.id, mimeType: format.mime };
+  }
+
+  async function exportWithEncoder(artboardInputs, settingsInput, environment) {
+    const settings = normalizeSettings(settingsInput);
+    const format = FORMATS[settings.format];
+    const artboards = (Array.isArray(artboardInputs) ? artboardInputs : [artboardInputs]).filter(Boolean).map(normalizeArtboard);
+    const encoders = environment?.encoders || environment?.HHExportEncoders || {};
+    const capabilities = environment?.capabilities || detectCapabilities(environment || globalScope, environment?.capabilityCanvas);
+    const capability = getFormatCapability(format.id, capabilities);
+    if (!capability.supported) throw new ExportCapabilityError(capability.reason, "unsupported");
+    const encoder = encoders[format.id];
+    if (typeof encoder !== "function") throw new ExportCapabilityError(`${format.label} encoder is not configured.`, "unsupported");
+    if (!artboards.length) throw new ExportCapabilityError(`${format.label} requires at least one artboard.`, "empty-batch");
+    assertNotAborted(environment?.signal);
+    const encoded = await encoder({ artboards: cloneSerializable(artboards), settings: cloneSerializable(settings), signal: environment?.signal });
+    assertNotAborted(environment?.signal);
+    const result = validateEncoderResult(encoded, format.id);
+    result.width = clamp(result.width, 0, MAX_CANVAS_EDGE, artboards[0].width * settings.scale);
+    result.height = clamp(result.height, 0, MAX_CANVAS_EDGE, artboards[0].height * settings.scale);
+    result.filename = cleanText(result.filename, 240) || renderFileName(settings.namingRule, { project: settings.projectName, artboard: artboards.length === 1 ? artboards[0].name : format.label, preset: artboards.length === 1 ? artboards[0].presetId : "batch", scale: settings.scale, format: format.id }, format.id);
+    result.artboardIds = artboards.map((artboard) => artboard.id);
+    return result;
+  }
+
   async function exportBatch(artboards, settingsInput, environment) {
     const settings = normalizeSettings(settingsInput);
     if (settings.format === "sprite-sheet") return [await exportSpriteSheet(artboards, settings, environment || {})];
     if (settings.format === "webm") return [await exportWebM(artboards, settings, environment || {})];
-    if (settings.format === "pdf") throw new ExportCapabilityError(detectCapabilities(environment || globalScope).pdf.reason, "unsupported");
+    if (["pdf", "mp4", "wav"].includes(settings.format)) return [await exportWithEncoder(artboards, settings, environment || {})];
     const results = [];
     for (let index = 0; index < artboards.length; index += 1) {
       assertNotAborted(environment?.signal);
@@ -766,13 +828,15 @@
 
   function createExportQueue(options) {
     const config = options && typeof options === "object" ? options : {};
+    const maxJobs = Math.round(clamp(config.maxJobs, 1, 500, MAX_QUEUE_JOBS));
+    const maxAttempts = Math.round(clamp(config.maxAttempts, 1, 20, MAX_RETRY_ATTEMPTS));
     const listeners = new Set();
     const activeControllers = new Map();
     const jobs = [];
     let processing = null;
     let disposed = false;
 
-    (Array.isArray(config.jobs) ? config.jobs : []).forEach((source) => {
+    (Array.isArray(config.jobs) ? config.jobs : []).slice(0, maxJobs).forEach((source) => {
       const job = serializableJob(source);
       if (!job.artboards.length) return;
       if (job.status === "running") job.status = "queued";
@@ -796,7 +860,8 @@
       if (!artboards.length) return [];
       const settings = normalizeSettings(settingsInput);
       const format = FORMATS[settings.format];
-      const batches = format.aggregate ? [artboards] : artboards.map((artboard) => [artboard]);
+      const available = Math.max(0, maxJobs - jobs.length);
+      const batches = (format.aggregate ? [artboards] : artboards.map((artboard) => [artboard])).slice(0, available);
       const created = batches.map((batch, index) => {
         const label = format.aggregate ? format.label : batch[0].name;
         const job = {
@@ -816,7 +881,7 @@
     async function defaultExporter(job, environment) {
       if (job.settings.format === "sprite-sheet") return exportSpriteSheet(job.artboards, job.settings, environment);
       if (job.settings.format === "webm") return exportWebM(job.artboards, job.settings, environment);
-      if (job.settings.format === "pdf") throw new ExportCapabilityError(detectCapabilities(environment).pdf.reason, "unsupported");
+      if (["pdf", "mp4", "wav"].includes(job.settings.format)) return exportWithEncoder(job.artboards, job.settings, environment);
       return exportArtboard(job.artboards[0], job.settings, environment);
     }
 
@@ -840,13 +905,13 @@
         notify();
         const environment = { ...(config.environment || {}), capabilities, signal: controller.signal };
         const exporter = config.exporter || defaultExporter;
-        const result = await exporter(job, environment);
+        const rawResult = await exporter(job, environment);
         assertNotAborted(controller.signal);
-        job.result = result;
+        job.result = validateEncoderResult(rawResult, job.settings.format);
         job.status = "completed";
         job.progress = 100;
         job.completedAt = new Date().toISOString();
-        await config.onResult?.(result, serializableJob(job));
+        await config.onResult?.(job.result, serializableJob(job));
       } catch (error) {
         const canceled = controller.signal.aborted || error?.name === "AbortError";
         job.status = canceled ? "canceled" : "failed";
@@ -887,7 +952,7 @@
 
     function retry(id) {
       const job = jobs.find((item) => item.id === id);
-      if (!job || !["failed", "canceled"].includes(job.status)) return false;
+      if (!job || !["failed", "canceled"].includes(job.status) || job.attempts >= maxAttempts) return false;
       job.status = "queued";
       job.progress = 0;
       job.error = null;
@@ -1074,7 +1139,8 @@
       Image: runtime.Image || globalScope.Image,
       URL: runtime.URL || globalScope.URL,
       MediaRecorder: runtime.MediaRecorder || globalScope.MediaRecorder,
-      HTMLCanvasElement: runtime.HTMLCanvasElement || globalScope.HTMLCanvasElement
+      HTMLCanvasElement: runtime.HTMLCanvasElement || globalScope.HTMLCanvasElement,
+      encoders: config.encoders || runtime.encoders || runtime.HHExportEncoders || {}
     };
     const capabilities = config.capabilities || detectCapabilities(capabilityRuntime, config.capabilityCanvas);
     const mountId = uid("hec");
@@ -1157,6 +1223,8 @@
       jobs: workspace.jobs,
       capabilities,
       capabilityCanvas: config.capabilityCanvas,
+      maxJobs: config.maxJobs,
+      maxAttempts: config.maxAttempts,
       preflightOptions: { document: documentRef, ...(config.preflightOptions || {}) },
       environment: { ...capabilityRuntime, canvasFactory: config.canvasFactory, images: config.images },
       exporter: config.exporter,
@@ -1334,13 +1402,13 @@
   }
 
   const api = Object.freeze({
-    VERSION, FORMAT, MANIFEST_FORMAT, STORAGE_KEY, MAX_ASSET_BYTES, MAX_CANVAS_EDGE,
+    VERSION, FORMAT, MANIFEST_FORMAT, STORAGE_KEY, MAX_ASSET_BYTES, MAX_CANVAS_EDGE, MAX_QUEUE_JOBS, MAX_RETRY_ATTEMPTS,
     SOCIAL_PRESETS, PRESETS: SOCIAL_PRESETS, FORMATS, ExportCapabilityError,
     escapeHtml, safeColor, normalizeFormat, normalizeArtboard, normalizeSettings, normalizeProject,
     createSocialArtboard, createDefaultProject, detectCapabilities, getFormatCapability,
     wrapText, runPreflight, preflight: runPreflight, paintArtboard, renderArtboard,
     serializeSvg, exportSVG: serializeSvg, serializeProject, renderFileName,
-    exportArtboard, exportRaster, exportSpriteSheet, exportWebM, exportBatch,
+    exportArtboard, exportRaster, exportSpriteSheet, exportWebM, exportWithEncoder, validateEncoderResult, exportBatch,
     createExportQueue, createQueue: createExportQueue,
     createExportManifest, exportManifest,
     normalizeWorkspace, saveWorkspace, loadWorkspace, saveState: saveWorkspace, loadState: loadWorkspace,

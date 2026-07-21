@@ -13,11 +13,11 @@ const ENGINES = [
   ["graphic-design-character-pro.js?v=1", "HHGraphicCharacterPro", "character"],
   ["graphic-design-simulation.js?v=1", "HHGraphicSimulation", "simulation"],
   ["graphic-design-data-driven.js?v=1", "HHGraphicDataDriven", "data"],
-  ["graphic-design-components.js?v=1", "HHGraphicComponents", "components"],
+  ["graphic-design-components.js?v=2", "HHGraphicComponents", "components"],
   ["graphic-design-color-pro.js?v=1", "HHGraphicColorPro", "color"],
-  ["graphic-design-export-center.js?v=1", "HHGraphicExportCenter", "export"],
+  ["graphic-design-export-center.js?v=2", "HHGraphicExportCenter", "export"],
   ["graphic-design-plugins.js?v=1", "HHGraphicPlugins", "plugins"],
-  ["graphic-design-review.js?v=1", "HHGraphicReview", "review"],
+  ["graphic-design-review.js?v=2", "HHGraphicReview", "review"],
   ["graphic-design-performance.js?v=1", "HHGraphicPerformance", "performance"]
 ];
 
@@ -35,8 +35,8 @@ test("Graphic Design Pro engines are loaded, routed and cached", () => {
     assert.match(studio, new RegExp(`id: ["']${route}["']`));
     assert.match(shell, new RegExp(`/graphic-design/${route}`));
   }
-  assert.match(worker, /hh-dev-hub-v161/);
-  assert.match(html, /script\.js\?v=112/);
+  assert.match(worker, /hh-dev-hub-v165/);
+  assert.match(html, /script\.js\?v=113/);
   assert.match(html, /graphic-design-studio\.js\?v=5/);
   assert.doesNotMatch(html, /graphic-design-nondestructive\.js\?v=1/);
   assert.match(studio, /engineLoads/);

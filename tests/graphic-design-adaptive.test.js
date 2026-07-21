@@ -18,19 +18,61 @@ test("Adaptive Design exposes a standalone global lifecycle", () => {
   assert.match(source, /instances\.delete\(root\)/);
 });
 
-test("Master design generates the five required synchronized variants", () => {
-  assert.deepEqual(Object.keys(adaptive.PRESETS), ["instagram", "story", "youtube", "banner", "ads"]);
+test("Master design generates post, story, reel, thumbnail and banner variants", () => {
+  assert.deepEqual(Object.keys(adaptive.PRESETS), ["instagram", "story", "reel", "youtube", "banner", "ads"]);
   const project = adaptive.createDefaultProject();
   project.master.title = "Nội dung dùng chung";
   project.brand.primary = "#123456";
   const variants = adaptive.createVariants(project);
-  assert.equal(variants.length, 5);
+  assert.equal(variants.length, 6);
   for (const variant of variants) {
     assert.equal(variant.content.title, "Nội dung dùng chung");
     assert.equal(variant.brand.primary, "#123456");
     assert.equal(variant.layout.width, adaptive.PRESETS[variant.presetId].width);
     assert.equal(variant.layout.height, adaptive.PRESETS[variant.presetId].height);
   }
+});
+
+test("Brand Kit locks survive normalization and block bulk or variant overrides", () => {
+  let project = adaptive.createDefaultProject();
+  project = adaptive.setBrandLocks(project, ["primary", "fontHeading"], true);
+  const patched = adaptive.applyBrandPatch(project, { primary: "#112233", secondary: "#445566", fontHeading: "Georgia" });
+  assert.equal(patched.brand.primary, "#F25CB4");
+  assert.equal(patched.brand.secondary, "#445566");
+  assert.equal(patched.brand.fontHeading, "Inter");
+  assert.equal(patched.brand.locks.primary, true);
+
+  project.variants.find((item) => item.presetId === "reel").overrides.brand = { primary: "#000000", accent: "#123456" };
+  const reel = adaptive.createVariants(project).find((item) => item.presetId === "reel");
+  assert.equal(reel.brand.primary, "#F25CB4");
+  assert.equal(reel.brand.accent, "#123456");
+});
+
+test("CSV and JSON bulk create are bounded, quoted and Brand Kit aware", () => {
+  const csv = 'name,title,subtitle,cta,brand_primary\n"Launch, VN","Hello, world","Line one",Start,#112233\nSecond,Headline,Body,Go,#445566';
+  const parsed = adaptive.parseBulkData(csv);
+  assert.equal(parsed.source, "csv");
+  assert.equal(parsed.records.length, 2);
+  assert.equal(parsed.records[0].name, "Launch, VN");
+  assert.equal(parsed.records[0].title, "Hello, world");
+
+  const project = adaptive.setBrandLocks(adaptive.createDefaultProject(), "primary", true);
+  const batch = adaptive.createBulkCampaigns(project, JSON.stringify({ records: [
+    { id: "one", title: "One", brand_primary: "#000000", brand_secondary: "#123456" },
+    { id: "two", headline: "Two" }
+  ] }));
+  assert.equal(batch.campaigns.length, 2);
+  assert.equal(batch.campaigns[0].project.master.title, "One");
+  assert.equal(batch.campaigns[1].project.master.title, "Two");
+  assert.equal(batch.campaigns[0].project.brand.primary, "#F25CB4");
+  assert.equal(batch.campaigns[0].project.brand.secondary, "#123456");
+
+  const oversized = adaptive.parseBulkData("x".repeat(adaptive.MAX_BULK_BYTES + 1));
+  assert.equal(oversized.records.length, 0);
+  assert.equal(oversized.truncated, true);
+  const bounded = adaptive.parseBulkData(Array.from({ length: adaptive.MAX_BULK_ROWS + 20 }, (_, index) => ({ title: `Row ${index}` })));
+  assert.equal(bounded.records.length, adaptive.MAX_BULK_ROWS);
+  assert.equal(bounded.truncated, true);
 });
 
 test("Normalizer bounds imported data and rejects unsafe embedded images", () => {
@@ -65,6 +107,10 @@ test("Smart crop covers the target while preserving the focal point", () => {
   assert.equal(portrait.sy, 0);
   assert.equal(portrait.sw, 1000);
   assert.equal(portrait.sh, 500);
+  const subject = adaptive.calculateSmartCrop(2000, 1000, 1000, 1000, { subjects: [{ x: 0.75, y: 0.25, width: 0.2, height: 0.5, confidence: 0.9 }] });
+  assert.equal(subject.strategy, "subjects");
+  assert.ok(subject.focalPoint.x > 0.8);
+  assert.equal(subject.sx, 1000);
 });
 
 test("Reflow constraints and safe zones adapt typography to each platform", () => {
@@ -78,6 +124,9 @@ test("Reflow constraints and safe zones adapt typography to each platform", () =
   assert.ok(banner.title.maxLines <= story.title.maxLines);
   assert.ok(banner.content.width <= banner.width);
   assert.equal(story.content.anchor, "left");
+  const shortTitle = adaptive.reflowLayout(project, "youtube").title.size;
+  project.master.title = "A very long campaign title designed to force responsive typography to shrink before it crosses the platform safe zone";
+  assert.ok(adaptive.reflowLayout(project, "youtube").title.size < shortTitle);
 });
 
 test("Canvas renderer paints brand background, text, CTA and optional safe zone", () => {
@@ -117,6 +166,7 @@ test("UI includes real local upload, focal editing, synced artboards and PNG exp
   for (const token of [
     "data-gad-field=\"title\"", "data-gad-brand=\"primary\"", "data-gad-focal", "data-gad-drop",
     "data-gad-canvas", "data-gad-export", "data-gad-action=\"toggle-safe\"", "data-gad-action=\"copy-tokens\"",
+    "data-gad-action=\"bulk\"", "data-gad-bulk-file", "data-gad-action=\"toggle-brand-lock\"",
     "FileReader", "readAsDataURL", "canvas.toBlob", "localStorage", "STORAGE_KEY", "dataTransfer.files",
     "Ctrl", "aria-live=\"polite\"", "@media(max-width:680px)", "prefers-reduced-motion:reduce"
   ]) assert.ok(source.includes(token), `missing ${token}`);

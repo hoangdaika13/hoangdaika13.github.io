@@ -250,3 +250,33 @@ test("workspace contract is escaped, keyboard-operable, reduced-motion and 375px
   assert.match(source, /type="password"/);
   assert.match(source, /passwordHash/);
 });
+
+test("supports frame and timeline pins plus role capabilities", () => {
+  assert.equal(reviewApi.canRole("viewer", "comment"), false);
+  assert.equal(reviewApi.canRole("commenter", "comment"), true);
+  assert.equal(reviewApi.canRole("editor", "edit"), true);
+  assert.equal(reviewApi.canRole("owner", "publish"), true);
+  assert.deepEqual(reviewApi.normalizeCommentTarget({ frameId: "hero", x: 1.5, y: -1 }), { kind: "frame", frameId: "hero", x: 1, y: 0 });
+  assert.deepEqual(reviewApi.normalizeCommentTarget({ kind: "timeline", sequenceId: "main", timeMs: 1250.4 }), { kind: "timeline", sequenceId: "main", timeMs: 1250 });
+
+  const store = reviewApi.createStore({ storage: null, crypto: webcrypto });
+  const review = createReview(store);
+  const frame = store.addThread(review.id, { frameId: "hero", x: 0.2, y: 0.4, body: "Sửa frame" });
+  const timeline = store.addThread(review.id, { kind: "timeline", sequenceId: "main", timeMs: 4200, body: "Sửa cut" });
+  assert.equal(frame.target.kind, "frame");
+  assert.equal(timeline.target.kind, "timeline");
+  assert.equal(timeline.target.timeMs, 4200);
+});
+
+test("creates immutable version snapshots and compares any two versions", () => {
+  const store = reviewApi.createStore({ storage: null, crypto: webcrypto });
+  const review = createReview(store);
+  const first = store.getReview(review.id).versions[0];
+  const second = store.addVersion(review.id, { label: "V2", data: { canvas: { width: 900 }, title: "V2" } }, { id: "editor", name: "Editor" });
+  const comparison = store.compareVersions(review.id, first.id, second.id);
+  assert.equal(comparison.before.id, first.id);
+  assert.ok(comparison.changes.some((change) => change.path === "$.title"));
+  const roles = store.setParticipantRole(review.id, { id: "guest", name: "Guest <script>" }, "commenter", { id: "owner", role: "owner" });
+  assert.equal(roles.find((item) => item.id === "guest").role, "commenter");
+  assert.throws(() => store.compareVersions(review.id, "missing", second.id), { code: "VERSION_NOT_FOUND" });
+});

@@ -3,6 +3,8 @@
 
   const STORAGE_KEY = "hh.media-design.page.v1";
   const TOOLS = [
+    { id: "universal-media", icon: "UM", name: "Universal Media Project", group: "Dự án & tài nguyên", code: "PROJECT", description: "Dự án media dùng chung cho ảnh, video, âm thanh, font, LUT và SVG.", caps: ["Media Bin", "Autosave", "Version history", ".hhmedia"] },
+    { id: "asset-manager", icon: "AM", name: "Asset Manager", group: "Dự án & tài nguyên", code: "ASSET", description: "Quản lý metadata, thumbnail, file trùng, media offline, Smart Collection và proxy.", caps: ["Metadata", "Duplicate scan", "Smart Collection", "Proxy plan"] },
     { id: "photo-editor", icon: "✎", name: "Photo Editor", group: "Biên tập nâng cao", code: "PHOTO", description: "Chỉnh sửa ảnh nhiều lớp như một Photoshop thu gọn ngay trong trình duyệt.", caps: ["Layers", "Blend & filters", "Undo · Redo", "High-res export"] },
     { id: "video-editor", icon: "▶", name: "Video Editor", group: "Biên tập nâng cao", code: "RESOLVE", description: "Studio hậu kỳ tiếng Việt với Media, Cut, Edit, Fusion, Color, Fairlight và Deliver.", caps: ["Timeline nhiều rãnh", "Color & scopes", "Fusion nodes", "Fairlight mixer"] },
     { id: "background-remover", icon: "✂", name: "Background Remover", group: "Biên tập nâng cao", code: "CUT", description: "Xóa nền theo màu, lấy mẫu pixel và làm mềm đường biên.", caps: ["Color key", "Edge feather", "PNG alpha"] },
@@ -24,7 +26,18 @@
     { id: "favicon", icon: "◈", name: "Favicon Studio", group: "Xuất bản", code: "FAV", description: "Sinh favicon, Apple Touch Icon, app icon và Web Manifest.", caps: ["9 sizes", "Safe padding", "App shapes", "Manifest"] },
     { id: "meme", icon: "▰", name: "Meme Maker", group: "Xuất bản", code: "MEM", description: "Tạo meme, caption card và ảnh phản ứng với chữ viền sắc nét.", caps: ["Top · Bottom", "Text stroke", "Watermark", "High-res"] }
   ];
-  const GROUPS = ["Biên tập nâng cao", "Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên", "Xuất bản"];
+  const GROUPS = ["Dự án & tài nguyên", "Biên tập nâng cao", "Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên", "Xuất bản"];
+  const PRODUCTION_FLOW = [
+    { code: "UP", label: "Universal Project", tool: "universal-media", description: "Dự án và Media Bin dùng chung" },
+    { code: "PE", label: "Photo Editor Pro", tool: "photo-editor", description: "Layer và chỉnh sửa không phá hủy" },
+    { code: "VE", label: "Video Editor Pro", tool: "video-editor", description: "Dựng, màu, âm thanh và deliver" },
+    { code: "MV", label: "Motion & Vector", route: "/graphic-design/vector", description: "Bezier, keyframe và state" },
+    { code: "DS", label: "Design System", route: "/graphic-design/components", description: "Component, variant và token" },
+    { code: "AD", label: "Adaptive Content", route: "/graphic-design/adaptive", description: "Đa kích thước và bulk create" },
+    { code: "RV", label: "Review", route: "/graphic-design/review", description: "Comment, version và duyệt" },
+    { code: "EX", label: "Export Center", route: "/graphic-design/export", description: "Queue, preflight và preset" },
+    { code: "AI", label: "Controlled AI", route: "/graphic-design/dev-ai", description: "AI tạo bản nháp có kiểm soát" }
+  ];
   const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const loadState = () => {
@@ -83,6 +96,7 @@
   const selectTool = (root, name, focus = false) => {
     const tool = toolByName(name);
     window.HHMediaDesign?.cleanup?.();
+    window.HHUniversalMediaProject?.unmount?.();
     pageState.active = tool.name;
     pageState.recent = [tool.name, ...pageState.recent.filter((item) => item !== tool.name)].slice(0, 12);
     pageState.usage[tool.name] = (pageState.usage[tool.name] || 0) + 1;
@@ -90,7 +104,9 @@
     renderCatalog(root);
     renderContext(root, tool);
     const work = root.querySelector("[data-mdp-work]");
-    if (window.HHMediaDesign?.supports?.(tool.name)) window.HHMediaDesign.render(work, tool.name);
+    if (["Universal Media Project", "Asset Manager"].includes(tool.name) && window.HHUniversalMediaProject?.mount) {
+      window.HHUniversalMediaProject.mount(work, { view: tool.name === "Asset Manager" ? "assets" : "project" });
+    } else if (window.HHMediaDesign?.supports?.(tool.name)) window.HHMediaDesign.render(work, tool.name);
     else work.innerHTML = '<div class="mdp-engine-error"><strong>Engine chưa sẵn sàng</strong><p>Hãy tải lại trang để khởi động Media Engine.</p><button type="button" data-mdp-retry>Thử lại</button></div>';
     root.querySelector("[data-mdp-current]").textContent = tool.name;
     root.querySelector("[data-mdp-last-used]").textContent = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
@@ -130,13 +146,15 @@
   const mount = (host, options = {}) => {
     if (!host) return;
     window.HHMediaDesign?.cleanup?.();
+    window.HHUniversalMediaProject?.unmount?.();
     const requestedTool = toolById(options.toolId || host.dataset.mediaDesignTool);
     if (requestedTool) pageState.active = requestedTool.name;
-    host.innerHTML = `<section class="media-design-page" data-media-design-page>
+    host.innerHTML = `<section class="media-design-page ${requestedTool ? "is-tool-view" : ""}" data-media-design-page>
       <header class="mdp-overview">
         <div class="mdp-overview__copy"><span class="mdp-eyebrow"><i></i> HH CREATIVE STUDIO</span><h2>Một workspace. Mọi công cụ sáng tạo.</h2><p>Xử lý tệp trực tiếp trên trình duyệt, không tải nội dung cá nhân lên máy chủ.</p></div>
         <div class="mdp-overview__status"><span><i class="is-online"></i> Engine sẵn sàng</span><strong>${TOOLS.length}</strong><small>creative engines</small></div>
       </header>
+      <nav class="mdp-production-flow" aria-label="Quy trình Media & Design chuyên nghiệp">${PRODUCTION_FLOW.map((item, index) => `<button type="button" ${item.tool ? `data-mdp-flow-tool="${item.tool}"` : `data-mdp-flow-route="${item.route}"`} style="--flow-index:${index}"><i>${item.code}</i><span><strong>${item.label}</strong><small>${item.description}</small></span><b aria-hidden="true">↗</b></button>`).join("")}</nav>
       <nav class="mdp-suite-ribbon" aria-label="Nhóm công cụ Media & Design">${GROUPS.map((group, index) => `<button type="button" data-mdp-jump-group="${escapeHtml(group)}" style="--suite-index:${index}"><span>${escapeHtml(group)}</span><b>${TOOLS.filter((tool) => tool.group === group).length}</b><i></i></button>`).join("")}</nav>
       <div class="mdp-metrics" aria-label="Tổng quan Media & Design">
         <div><span>Engine</span><strong>${TOOLS.length} / ${TOOLS.length}</strong><i style="--value:100%"></i></div>
@@ -169,6 +187,10 @@
       }
       const tool = event.target.closest("[data-mdp-tool]");
       if (tool) return selectTool(root, tool.dataset.mdpTool);
+      const flowTool = event.target.closest("[data-mdp-flow-tool]");
+      if (flowTool) { location.hash = `#/media-design/${flowTool.dataset.mdpFlowTool}`; return; }
+      const flowRoute = event.target.closest("[data-mdp-flow-route]");
+      if (flowRoute) { location.hash = `#${flowRoute.dataset.mdpFlowRoute}`; return; }
       const filter = event.target.closest("[data-mdp-filter]");
       if (filter) { activeFilter = filter.dataset.mdpFilter; renderCatalog(root); return; }
       const groupJump = event.target.closest("[data-mdp-jump-group]");
@@ -210,7 +232,10 @@
     }
   });
   addEventListener("hashchange", () => {
-    if (!location.hash.includes("/media-design")) window.HHMediaDesign?.cleanup?.();
+    if (!location.hash.includes("/media-design")) {
+      window.HHMediaDesign?.cleanup?.();
+      window.HHUniversalMediaProject?.unmount?.();
+    }
   });
 
   window.HHMediaDesignPage = { mount, tools: TOOLS };

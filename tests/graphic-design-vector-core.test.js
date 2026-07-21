@@ -271,3 +271,68 @@ test("responsive UI is accessible, keyboard-aware and respects reduced motion", 
   assert.match(source, /event\.key\.toLowerCase\(\) === "z"/);
   assert.match(source, /event\.key\.toLowerCase\(\) === "g"/);
 });
+
+test("safe expressions support deterministic math without executing JavaScript", () => {
+  const sine = vector.evaluateExpression("clamp(sin(progress * 3.14159), 0, 1)", { progress: 0.5 });
+  assert.equal(sine.ok, true);
+  assert.ok(Math.abs(sine.value - 1) < 0.00001);
+  assert.equal(vector.evaluateExpression("value + time * 2", { value: 4, time: 3 }).value, 10);
+  for (const unsafe of ["globalThis.alert(1)", "constructor.constructor('return 1')()", "process.exit()", "value = 9"]) {
+    assert.equal(vector.evaluateExpression(unsafe, { value: 1 }).ok, false, unsafe);
+  }
+  assert.doesNotMatch(source, /\beval\s*\(|new\s+Function\s*\(/);
+});
+
+test("layer expressions and unequal morph paths evaluate safely", () => {
+  const layer = vector.normalizeLayer({
+    id: "motion", type: "path", expressions: { rotation: "progress * 360", opacity: "clamp(value, .2, .8)", evil: "1" },
+    geometry: { points: [{ x: 0, y: 0 }, { x: 100, y: 0 }] },
+    keyframes: [
+      { time: 0, transform: { opacity: 0 }, morphPoints: [{ x: 0, y: 0 }, { x: 100, y: 0 }] },
+      { time: 2, transform: { opacity: 1 }, morphPoints: [{ x: 0, y: 0 }, { x: 50, y: 80 }, { x: 100, y: 0 }] }
+    ]
+  }, 0, 2);
+  assert.deepEqual(Object.keys(layer.expressions), ["rotation", "opacity"]);
+  const middle = vector.evaluateLayer(layer, 1, 2);
+  assert.equal(middle.transform.rotation, 180);
+  assert.ok(middle.transform.opacity >= 0.2 && middle.transform.opacity <= 0.8);
+  assert.equal(middle.morphPoints.length, 3);
+  const project = vector.normalizeProject({ timeline: { duration: 2 }, layers: [layer] });
+  const animated = vector.renderAnimatedSvg(project);
+  assert.match(animated, /type="rotate"[^>]+values="0 0 0;[^\"]+;360 0 0"/);
+});
+
+test("Bezier motion sampling follows handles and reports tangent angle", () => {
+  const path = [
+    { x: 0, y: 0, inX: 0, inY: 0, outX: 0, outY: 100 },
+    { x: 100, y: 100, inX: 100, inY: 0, outX: 100, outY: 100 }
+  ];
+  const sample = vector.motionPathSample(path, 0.5);
+  assert.ok(sample.x > 30 && sample.x < 70);
+  assert.ok(sample.y > 30 && sample.y < 70);
+  assert.ok(Number.isFinite(sample.angle));
+  assert.equal(vector.resamplePathPoints(path, 7).length, 7);
+});
+
+test("Lottie export is a truthful compatible subset with import warnings", () => {
+  const project = vector.createDefaultProject();
+  const target = project.layers.find((layer) => layer.type === "ellipse");
+  target.matte = "alpha";
+  const lottie = JSON.parse(vector.exportLottie(project));
+  assert.equal(lottie.v, "5.12.2");
+  assert.equal(lottie.meta.capability, "lottie-compatible-subset");
+  assert.equal(lottie.fr, project.timeline.fps);
+  assert.ok(lottie.layers.length >= 5);
+  assert.ok(lottie.meta.warnings.some((warning) => /mask/i.test(warning)));
+  assert.doesNotMatch(JSON.stringify(lottie), /<script|javascript:/i);
+});
+
+test("export capability matrix never claims unavailable browser encoders", async () => {
+  const capabilities = vector.getExportCapabilities({});
+  assert.equal(capabilities.animatedSvg.supported, true);
+  assert.equal(capabilities.lottie.level, "compatible-subset");
+  assert.equal(capabilities.webm.supported, false);
+  assert.equal(capabilities.gif.supported, false);
+  await assert.rejects(() => vector.exportGif(vector.createDefaultProject()), /GIF/);
+  for (const marker of ["data-vc-expression", 'data-vc-export="lottie"', 'data-vc-export="gif"']) assert.ok(source.includes(marker));
+});

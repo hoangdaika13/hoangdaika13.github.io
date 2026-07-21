@@ -19,6 +19,13 @@
     published: Object.freeze([])
   });
   const PERMISSIONS = Object.freeze(["view", "comment", "download"]);
+  const ROLES = Object.freeze(["viewer", "commenter", "editor", "owner"]);
+  const ROLE_CAPABILITIES = Object.freeze({
+    viewer: Object.freeze(["view"]),
+    commenter: Object.freeze(["view", "comment"]),
+    editor: Object.freeze(["view", "comment", "edit", "compare", "transition"]),
+    owner: Object.freeze(["view", "comment", "edit", "compare", "transition", "publish", "manage"])
+  });
   const mounted = typeof WeakMap === "function" ? new WeakMap() : new Map();
 
   function clone(value) {
@@ -88,6 +95,23 @@
       id: cleanText(author && author.id, 160) || "local-user",
       name: cleanText(author && author.name, 160) || "Người dùng cục bộ"
     };
+  }
+
+  function normalizeRole(value, fallback) {
+    const role = cleanText(value, 24).toLowerCase();
+    return ROLES.includes(role) ? role : (fallback || "viewer");
+  }
+
+  function canRole(role, capability) {
+    return Boolean(ROLE_CAPABILITIES[normalizeRole(role)]?.includes(cleanText(capability, 32).toLowerCase()));
+  }
+
+  function normalizeCommentTarget(input) {
+    const source = input && typeof input === "object" ? input : {};
+    const kind = source.kind === "timeline" || source.target === "timeline" || Number.isFinite(Number(source.timeMs)) ? "timeline" : "frame";
+    return kind === "timeline"
+      ? { kind, sequenceId: cleanText(source.sequenceId, 160), timeMs: Math.round(clamp(source.timeMs, 0, 86400000)) }
+      : { kind, frameId: cleanText(source.frameId || source.artboardId, 160) || "canvas", ...normalizePoint(source) };
   }
 
   function normalizePermissions(input) {
@@ -355,6 +379,8 @@
     const requireReview = (reviewId) => {
       const review = state.reviews.find((item) => item.id === reviewId);
       if (!review) throw makeError("REVIEW_NOT_FOUND", "Không tìm thấy review.");
+      if (!Array.isArray(review.versions)) review.versions = [];
+      if (!Array.isArray(review.participants)) review.participants = [];
       return review;
     };
     const requireThread = (review, threadId) => {
@@ -393,10 +419,13 @@
           after: normalizeSnapshot(source.after || (source.snapshots && source.snapshots.after), "Sau", idFactory)
         },
         threads: [],
+        versions: [],
+        participants: [{ ...normalizeAuthor(source.actor), role: "owner" }],
         activity: [],
         createdAt,
         updatedAt: createdAt
       };
+      review.versions.push({ id: idFactory("version"), label: "Phiên bản ban đầu", snapshot: clone(review.snapshots.after), createdAt, createdBy: normalizeAuthor(source.actor) });
       if (state.reviews.some((item) => item.id === review.id)) throw makeError("DUPLICATE_REVIEW", "Mã review đã tồn tại.");
       audit(review, "review.created", source.actor, { status: review.status });
       state.reviews.push(review);
@@ -429,12 +458,14 @@
       const review = requireReview(reviewId);
       const body = cleanText(input && input.body, 4000);
       if (!body) throw makeError("COMMENT_REQUIRED", "Nội dung bình luận không được để trống.");
-      const point = normalizePoint(input);
+      const target = normalizeCommentTarget(input);
+      const point = target.kind === "frame" ? { x: target.x, y: target.y } : normalizePoint(input);
       const createdAt = isoNow();
       const thread = {
         id: idFactory("thread"),
         x: point.x,
         y: point.y,
+        target,
         body,
         author: normalizeAuthor(actor || (input && input.author)),
         createdAt,
@@ -447,6 +478,50 @@
       audit(review, "thread.created", thread.author, { threadId: thread.id, x: thread.x, y: thread.y });
       save();
       return clone(thread);
+    }
+
+    function addVersion(reviewId, input, actor) {
+      const review = requireReview(reviewId);
+      if (review.status === "published") throw makeError("REVIEW_LOCKED", "Review đã xuất bản không thể thêm phiên bản.");
+      const source = input && typeof input === "object" ? input : {};
+      const version = {
+        id: cleanText(source.id, 200) || idFactory("version"),
+        label: cleanText(source.label, 200) || `Phiên bản ${review.versions.length + 1}`,
+        snapshot: normalizeSnapshot(source.snapshot || source.data || review.snapshots.after, "Phiên bản", idFactory),
+        createdAt: isoNow(),
+        createdBy: normalizeAuthor(actor)
+      };
+      review.versions.push(version);
+      audit(review, "version.created", actor, { versionId: version.id, label: version.label });
+      save();
+      return clone(version);
+    }
+
+    function compareVersions(reviewId, beforeVersionId, afterVersionId) {
+      const review = requireReview(reviewId);
+      const before = review.versions.find((item) => item.id === beforeVersionId);
+      const after = review.versions.find((item) => item.id === afterVersionId);
+      if (!before || !after) throw makeError("VERSION_NOT_FOUND", "Không tìm thấy phiên bản cần so sánh.");
+      return { before: clone(before), after: clone(after), changes: diffData(before.snapshot.data, after.snapshot.data) };
+    }
+
+    function setParticipantRole(reviewId, user, role, actor) {
+      const review = requireReview(reviewId);
+      const normalizedUser = normalizeAuthor(user);
+      const nextRole = normalizeRole(role);
+      if (nextRole === "owner" && actor && normalizeRole(actor.role) !== "owner") throw makeError("PERMISSION_DENIED", "Chỉ chủ review được cấp quyền owner.");
+      const existing = review.participants.find((item) => item.id === normalizedUser.id);
+      if (existing) Object.assign(existing, normalizedUser, { role: nextRole });
+      else review.participants.push({ ...normalizedUser, role: nextRole });
+      audit(review, "participant.role.changed", actor, { userId: normalizedUser.id, role: nextRole });
+      save();
+      return clone(review.participants);
+    }
+
+    function authorize(reviewId, userId, capability) {
+      const review = requireReview(reviewId);
+      const participant = review.participants.find((item) => item.id === cleanText(userId, 160));
+      return { allowed: canRole(participant?.role || "viewer", capability), role: participant?.role || "viewer", capability: cleanText(capability, 32) };
     }
 
     function addReply(reviewId, threadId, input, actor) {
@@ -593,7 +668,7 @@
     return Object.freeze({
       getPersistence: () => ({ type: persistence, key: STORAGE_KEY, version: VERSION, error: persistenceError }),
       createReview, getReview, listReviews, removeReview, updateSnapshots, compareSnapshots,
-      addThread, addReply, resolveThread, transition,
+      addThread, addReply, resolveThread, transition, addVersion, compareVersions, setParticipantRole, authorize,
       createShareLink, listShareLinks, accessShareLink, revokeShareLink,
       reportData, exportReport
     });
@@ -679,18 +754,20 @@
     }
 
     function stageTemplate(item) {
-      return `<main class="hgr-main"><div class="hgr-toolbar"><span>Chọn một điểm trên canvas để ghim bình luận. Nhấn Enter để ghim ở giữa.</span><b>${item.threads.filter((thread) => !thread.resolved).length} đang mở</b></div><section class="hgr-stage" data-hgr-canvas tabindex="0" role="region" aria-label="Canvas thiết kế, nhấn Enter để ghim bình luận"><div class="hgr-artboard" aria-hidden="true"><div class="hgr-art-copy"><b>Design with clarity</b><span>Review every detail before publishing.</span></div><div class="hgr-art-shape"></div></div>${item.threads.map((thread, index) => `<button type="button" class="hgr-pin ${thread.resolved ? "is-resolved" : ""}" style="left:${thread.x * 100}%;top:${thread.y * 100}%" data-hgr-thread="${escapeHtml(thread.id)}" data-hgr-focus="pin-${escapeHtml(thread.id)}" aria-label="Mở bình luận ${index + 1}: ${escapeHtml(thread.body)}">${index + 1}</button>`).join("")}${pinDraft ? `<span class="hgr-draft-pin" style="left:${pinDraft.x * 100}%;top:${pinDraft.y * 100}%" aria-hidden="true"></span>` : ""}</section></main>`;
+      const frameThreads = item.threads.filter((thread) => !thread.target || thread.target.kind === "frame");
+      return `<main class="hgr-main"><div class="hgr-toolbar"><span>Ghim góp ý theo frame hoặc chính xác trên timeline.</span><button type="button" data-hgr-timeline-pin>Bình luận timeline</button><button type="button" data-hgr-version>Lưu phiên bản</button><b>${item.threads.filter((thread) => !thread.resolved).length} đang mở</b></div><section class="hgr-stage" data-hgr-canvas tabindex="0" role="region" aria-label="Canvas thiết kế, nhấn Enter để ghim bình luận"><div class="hgr-artboard" aria-hidden="true"><div class="hgr-art-copy"><b>Design with clarity</b><span>Review every detail before publishing.</span></div><div class="hgr-art-shape"></div></div>${frameThreads.map((thread, index) => `<button type="button" class="hgr-pin ${thread.resolved ? "is-resolved" : ""}" style="left:${thread.x * 100}%;top:${thread.y * 100}%" data-hgr-thread="${escapeHtml(thread.id)}" data-hgr-focus="pin-${escapeHtml(thread.id)}" aria-label="Mở bình luận ${index + 1}: ${escapeHtml(thread.body)}">${index + 1}</button>`).join("")}${pinDraft && pinDraft.kind !== "timeline" ? `<span class="hgr-draft-pin" style="left:${pinDraft.x * 100}%;top:${pinDraft.y * 100}%" aria-hidden="true"></span>` : ""}</section></main>`;
     }
 
     function commentsPanel(item) {
-      const draftForm = pinDraft ? `<form class="hgr-card hgr-form" data-hgr-comment-form><strong>Bình luận mới tại ${Math.round(pinDraft.x * 100)}%, ${Math.round(pinDraft.y * 100)}%</strong><label>Nội dung<textarea name="body" maxlength="4000" required data-hgr-focus="comment-body"></textarea></label><div class="hgr-row"><button class="is-primary" type="submit">Ghim bình luận</button><button type="button" data-hgr-cancel-pin>Hủy</button></div></form>` : "";
-      const threads = item.threads.map((thread, index) => `<article class="hgr-card ${selectedThreadId === thread.id ? "is-active" : ""}"><div class="hgr-card-head"><strong>#${index + 1} · ${escapeHtml(thread.author.name)}</strong><small>${thread.resolved ? "Đã xử lý" : "Đang mở"}</small></div><p>${escapeHtml(thread.body)}</p>${thread.replies.map((reply) => `<div class="hgr-reply"><p>${escapeHtml(reply.body)}</p><small>${escapeHtml(reply.author.name)} · ${escapeHtml(formatDate(reply.createdAt))}</small></div>`).join("")}<footer><small>${escapeHtml(formatDate(thread.createdAt))}</small><button type="button" data-hgr-resolve="${escapeHtml(thread.id)}" data-resolved="${thread.resolved}">${thread.resolved ? "Mở lại" : "Đánh dấu xong"}</button></footer><form class="hgr-form" data-hgr-reply-form="${escapeHtml(thread.id)}"><label class="hgr-sr" for="reply-${escapeHtml(thread.id)}">Phản hồi</label><textarea id="reply-${escapeHtml(thread.id)}" name="body" rows="2" maxlength="4000" placeholder="Viết phản hồi…" required></textarea><button type="submit">Trả lời</button></form></article>`).join("");
+      const draftLabel = pinDraft?.kind === "timeline" ? `Timeline tại ${Math.round(pinDraft.timeMs / 100) / 10}s` : pinDraft ? `Frame tại ${Math.round(pinDraft.x * 100)}%, ${Math.round(pinDraft.y * 100)}%` : "";
+      const draftForm = pinDraft ? `<form class="hgr-card hgr-form" data-hgr-comment-form><strong>${escapeHtml(draftLabel)}</strong>${pinDraft.kind === "timeline" ? `<label>Thời điểm (ms)<input type="number" name="timeMs" min="0" max="86400000" value="${pinDraft.timeMs}"></label>` : ""}<label>Nội dung<textarea name="body" maxlength="4000" required data-hgr-focus="comment-body"></textarea></label><div class="hgr-row"><button class="is-primary" type="submit">Ghim bình luận</button><button type="button" data-hgr-cancel-pin>Hủy</button></div></form>` : "";
+      const threads = item.threads.map((thread, index) => { const target = thread.target?.kind === "timeline" ? `Timeline · ${Math.round(thread.target.timeMs / 100) / 10}s` : `Frame · ${Math.round(thread.x * 100)}%, ${Math.round(thread.y * 100)}%`; return `<article class="hgr-card ${selectedThreadId === thread.id ? "is-active" : ""}"><div class="hgr-card-head"><strong>#${index + 1} · ${escapeHtml(thread.author.name)}</strong><small>${thread.resolved ? "Đã xử lý" : "Đang mở"}</small></div><p>${escapeHtml(thread.body)}</p><small>${escapeHtml(target)}</small>${thread.replies.map((reply) => `<div class="hgr-reply"><p>${escapeHtml(reply.body)}</p><small>${escapeHtml(reply.author.name)} · ${escapeHtml(formatDate(reply.createdAt))}</small></div>`).join("")}<footer><small>${escapeHtml(formatDate(thread.createdAt))}</small><button type="button" data-hgr-resolve="${escapeHtml(thread.id)}" data-resolved="${thread.resolved}">${thread.resolved ? "Mở lại" : "Đánh dấu xong"}</button></footer><form class="hgr-form" data-hgr-reply-form="${escapeHtml(thread.id)}"><label class="hgr-sr" for="reply-${escapeHtml(thread.id)}">Phản hồi</label><textarea id="reply-${escapeHtml(thread.id)}" name="body" rows="2" maxlength="4000" placeholder="Viết phản hồi…" required></textarea><button type="submit">Trả lời</button></form></article>`; }).join("");
       return `${draftForm}${threads || `<div class="hgr-empty">Chưa có bình luận trên canvas.</div>`}`;
     }
 
     function comparePanel(item) {
       const changes = store.compareSnapshots(item.id);
-      return `<div class="hgr-compare"><div class="hgr-preview"><span>Canvas preview trước / sau</span><canvas data-hgr-diff-canvas aria-label="So sánh canvas trước và sau"></canvas><p data-hgr-canvas-status class="hgr-link"></p></div><strong>${changes.length} thay đổi dữ liệu</strong><div class="hgr-diff-list">${changes.slice(0, 100).map((change) => `<div class="hgr-diff"><code>${escapeHtml(change.path)}</code><small>${escapeHtml(change.type)}</small><span>${escapeHtml(valuePreview(change.before))} → ${escapeHtml(valuePreview(change.after))}</span></div>`).join("") || `<div class="hgr-empty">Hai snapshot giống nhau.</div>`}</div></div>`;
+      return `<div class="hgr-compare"><div class="hgr-preview"><span>Canvas preview trước / sau</span><canvas data-hgr-diff-canvas aria-label="So sánh canvas trước và sau"></canvas><p data-hgr-canvas-status class="hgr-link"></p></div><strong>${changes.length} thay đổi dữ liệu · ${(item.versions || []).length} phiên bản</strong><div class="hgr-row">${(item.versions || []).slice(-6).map((version) => `<span class="hgr-status">${escapeHtml(version.label)}</span>`).join("")}</div><div class="hgr-diff-list">${changes.slice(0, 100).map((change) => `<div class="hgr-diff"><code>${escapeHtml(change.path)}</code><small>${escapeHtml(change.type)}</small><span>${escapeHtml(valuePreview(change.before))} → ${escapeHtml(valuePreview(change.after))}</span></div>`).join("") || `<div class="hgr-empty">Hai snapshot giống nhau.</div>`}</div></div>`;
     }
 
     function activityPanel(item) {
@@ -744,6 +821,8 @@
         if (target.hasAttribute("data-hgr-cancel-pin")) { pinDraft = null; return render("tab-comments"); }
         if (target.dataset.hgrRevoke) { store.revokeShareLink(target.dataset.hgrRevoke, actor); setMessage("Đã thu hồi link."); return render(); }
         if (target.dataset.hgrCopy) { await copyLink(target.dataset.hgrCopy); return render(); }
+        if (target.hasAttribute("data-hgr-timeline-pin")) { pinDraft = { kind: "timeline", sequenceId: "main", timeMs: 0, x: 0.5, y: 0.5 }; tab = "comments"; return render("comment-body"); }
+        if (target.hasAttribute("data-hgr-version")) { store.addVersion(review.id, { label: `Phiên bản ${new Date().toLocaleTimeString("vi-VN")}`, snapshot: review.snapshots.after }, actor); setMessage("Đã lưu phiên bản để so sánh."); return render(); }
         if (target.hasAttribute("data-hgr-export")) {
           const html = store.exportReport(review.id, "html");
           const downloaded = downloadText(doc, html, `${review.title.replace(/[^a-z0-9]+/gi, "-") || "review"}-report.html`, "text/html;charset=utf-8");
@@ -751,7 +830,7 @@
           return render();
         }
         if (target.hasAttribute("data-hgr-canvas")) {
-          pinDraft = positionFromEvent(event, target);
+          pinDraft = { kind: "frame", frameId: "canvas", ...positionFromEvent(event, target) };
           tab = "comments";
           return render("comment-body");
         }
@@ -763,7 +842,7 @@
       try {
         if (event.target.matches("[data-hgr-comment-form]")) {
           const form = new FormData(event.target);
-          const thread = store.addThread(review.id, { ...pinDraft, body: form.get("body") }, actor);
+          const thread = store.addThread(review.id, { ...pinDraft, timeMs: pinDraft.kind === "timeline" ? form.get("timeMs") : undefined, body: form.get("body") }, actor);
           selectedThreadId = thread.id;
           pinDraft = null;
           setMessage("Đã ghim bình luận lên canvas.");
@@ -793,7 +872,7 @@
       const stage = event.target.closest && event.target.closest("[data-hgr-canvas]");
       if (stage && (event.key === "Enter" || event.key === " ")) {
         event.preventDefault();
-        pinDraft = { x: 0.5, y: 0.5 };
+        pinDraft = { kind: "frame", frameId: "canvas", x: 0.5, y: 0.5 };
         tab = "comments";
         return render("comment-body");
       }
@@ -839,8 +918,8 @@
   }
 
   const api = Object.freeze({
-    VERSION, STORAGE_KEY, FORMAT, STATUSES, STATUS_LABELS, TRANSITIONS, PERMISSIONS,
-    escapeHtml, normalizePoint, positionFromEvent, canTransition, diffData,
+    VERSION, STORAGE_KEY, FORMAT, STATUSES, STATUS_LABELS, TRANSITIONS, PERMISSIONS, ROLES, ROLE_CAPABILITIES,
+    escapeHtml, normalizePoint, normalizeCommentTarget, positionFromEvent, normalizeRole, canRole, canTransition, diffData,
     renderSnapshotPreview, renderDiffPreview, hashPassword, verifyPassword,
     normalizePermissions, createStore, mount, unmount
   });

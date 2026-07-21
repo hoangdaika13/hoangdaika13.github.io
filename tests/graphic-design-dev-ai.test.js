@@ -43,3 +43,35 @@ test("Layout QA detects overflow, contrast and text risk", () => {
   assert.ok(report.issues.some((issue) => issue.code === "contrast"));
   assert.ok(report.score < 100);
 });
+
+test("Controlled media operations always create non-destructive drafts", () => {
+  const source = { media: { id: "video-1", duration: 120 }, language: "vi" };
+  const before = JSON.stringify(source);
+  for (const action of dev.CONTROLLED_AI_ACTIONS) {
+    const draft = dev.createDraft(action, "Một nội dung thử nghiệm", source);
+    assert.equal(draft.status, "draft");
+    assert.equal(draft.overwrite, false);
+    assert.equal(draft.action, action);
+    assert.equal(draft.payload.overwrite, false);
+  }
+  assert.equal(JSON.stringify(source), before);
+  assert.equal(dev.createDraft("background-remove", "subject", source).payload.requiresProvider, true);
+  assert.ok(dev.createDraft("subtitle", "Cảnh một. Cảnh hai.", source).payload.cues.length >= 2);
+});
+
+test("provider adapter is server-only, sanitized and cannot overwrite source", async () => {
+  assert.throws(() => dev.assertServerAdapter({ apiKey: "secret", generateDraft() {} }), /API key/);
+  const requests = [];
+  const adapter = async (request) => {
+    requests.push(request);
+    return { payload: { text: "ok", apiKey: "must-not-leak", svg: '<svg onload="bad()"><script>bad()</script><rect/></svg>' } };
+  };
+  const context = { media: { id: "image-1" } };
+  const draft = await dev.requestProviderDraft(adapter, "thumbnail", "Tạo thumbnail", context);
+  assert.equal(requests[0].policy.overwrite, false);
+  assert.equal(draft.source, "provider-adapter");
+  assert.equal(draft.overwrite, false);
+  assert.equal(Object.hasOwn(draft.payload, "apiKey"), false);
+  assert.doesNotMatch(draft.payload.svg, /script|onload/i);
+  assert.deepEqual(context, { media: { id: "image-1" } });
+});

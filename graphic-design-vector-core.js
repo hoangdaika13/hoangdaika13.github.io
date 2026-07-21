@@ -8,6 +8,18 @@
   const STORE_NAME = "vector-motion";
   const STYLE_ID = "hh-graphic-vector-core-styles-v1";
   const MAX_HISTORY = 80;
+  const EXPRESSION_PROPERTIES = Object.freeze(["x", "y", "scaleX", "scaleY", "rotation", "opacity", "trimStart", "trimEnd", "trimOffset"]);
+  const EXPRESSION_FUNCTIONS = Object.freeze({
+    min: (...values) => Math.min(...values),
+    max: (...values) => Math.max(...values),
+    clamp: (value, min, max) => Math.min(max, Math.max(min, value)),
+    abs: Math.abs,
+    sin: Math.sin,
+    cos: Math.cos,
+    round: Math.round,
+    floor: Math.floor,
+    ceil: Math.ceil
+  });
   const mounted = new WeakMap();
 
   const TOOLS = [
@@ -63,6 +75,102 @@
 
   function safeText(value, fallback, max) {
     return String(value == null ? (fallback || "") : value).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").slice(0, max || 240);
+  }
+
+  function normalizeExpressions(raw) {
+    const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    return EXPRESSION_PROPERTIES.reduce((output, property) => {
+      if (!Object.prototype.hasOwnProperty.call(source, property)) return output;
+      const expression = safeText(source[property], "", 240).trim();
+      if (expression) output[property] = expression;
+      return output;
+    }, {});
+  }
+
+  function tokenizeExpression(expression) {
+    const source = safeText(expression, "", 240).trim();
+    const tokens = [];
+    let index = 0;
+    while (index < source.length) {
+      const rest = source.slice(index);
+      const whitespace = rest.match(/^\s+/);
+      if (whitespace) { index += whitespace[0].length; continue; }
+      const number = rest.match(/^(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?/i);
+      if (number) { tokens.push({ type: "number", value: Number(number[0]) }); index += number[0].length; continue; }
+      const identifier = rest.match(/^[a-zA-Z_$][a-zA-Z0-9_$]*/);
+      if (identifier) { tokens.push({ type: "identifier", value: identifier[0] }); index += identifier[0].length; continue; }
+      const character = source[index];
+      if ("+-*/%(),".includes(character)) { tokens.push({ type: character, value: character }); index += 1; continue; }
+      throw new SyntaxError(`Ky tu expression khong duoc ho tro: ${character}`);
+    }
+    tokens.push({ type: "eof", value: "" });
+    return tokens;
+  }
+
+  function evaluateExpression(expression, context) {
+    try {
+      const tokens = tokenizeExpression(expression);
+      const values = context && typeof context === "object" ? context : {};
+      let cursor = 0;
+      const peek = () => tokens[cursor];
+      const take = (type) => {
+        const token = tokens[cursor];
+        if (token.type !== type) throw new SyntaxError(`Can ${type}, nhan ${token.type}`);
+        cursor += 1;
+        return token;
+      };
+      function primary() {
+        const token = peek();
+        if (token.type === "number") { cursor += 1; return token.value; }
+        if (token.type === "(") { cursor += 1; const value = additive(); take(")"); return value; }
+        if (token.type === "identifier") {
+          cursor += 1;
+          const name = token.value;
+          if (peek().type === "(") {
+            cursor += 1;
+            const args = [];
+            if (peek().type !== ")") {
+              do { args.push(additive()); if (peek().type !== ",") break; cursor += 1; } while (args.length < 8);
+            }
+            take(")");
+            if (!Object.prototype.hasOwnProperty.call(EXPRESSION_FUNCTIONS, name)) throw new SyntaxError(`Ham ${name} khong duoc phep`);
+            return EXPRESSION_FUNCTIONS[name](...args);
+          }
+          if (!Object.prototype.hasOwnProperty.call(values, name)) throw new SyntaxError(`Bien ${name} khong ton tai`);
+          return Number(values[name]);
+        }
+        throw new SyntaxError(`Token ${token.type} khong hop le`);
+      }
+      function unary() {
+        if (peek().type === "+") { cursor += 1; return unary(); }
+        if (peek().type === "-") { cursor += 1; return -unary(); }
+        return primary();
+      }
+      function multiplicative() {
+        let value = unary();
+        while (["*", "/", "%"].includes(peek().type)) {
+          const operator = tokens[cursor++].type;
+          const right = unary();
+          value = operator === "*" ? value * right : operator === "/" ? value / right : value % right;
+        }
+        return value;
+      }
+      function additive() {
+        let value = multiplicative();
+        while (["+", "-"].includes(peek().type)) {
+          const operator = tokens[cursor++].type;
+          const right = multiplicative();
+          value = operator === "+" ? value + right : value - right;
+        }
+        return value;
+      }
+      const value = additive();
+      if (peek().type !== "eof") throw new SyntaxError("Expression con token du thua");
+      if (!Number.isFinite(value)) throw new RangeError("Expression khong tao ra so huu han");
+      return { ok: true, value };
+    } catch (error) {
+      return { ok: false, value: null, error: safeText(error?.message, "Expression khong hop le", 160) };
+    }
   }
 
   function defaultTransform(transform) {
@@ -154,6 +262,7 @@
       },
       motionPath: Array.isArray(raw?.motionPath) ? raw.motionPath.slice(0, 200).map((item) => point(item)) : [],
       morphModel: Array.isArray(raw?.morphModel) ? raw.morphModel.slice(0, 12).map((shape) => Array.isArray(shape) ? shape.slice(0, 200).map((item) => point(item)) : []) : [],
+      expressions: normalizeExpressions(raw?.expressions),
       keyframes: (Array.isArray(raw?.keyframes) ? raw.keyframes : []).slice(0, 240).map((item) => normalizeKeyframe(item, duration)).sort((a, b) => a.time - b.time),
       nestedCompositionId: raw?.nestedCompositionId ? safeId(raw.nestedCompositionId, "") : null
     };
@@ -345,11 +454,71 @@
     return start + (end - start) * value;
   }
 
-  function evaluateLayer(layer, time) {
+  function resamplePathPoints(points, count) {
+    const source = (Array.isArray(points) ? points : []).map((item) => point(item));
+    const total = Math.round(clamp(count || source.length, 2, 200));
+    if (!source.length) return [];
+    if (source.length === 1) return Array.from({ length: total }, () => point(source[0]));
+    return Array.from({ length: total }, (_, index) => {
+      const sample = motionPathSample(source, index / Math.max(1, total - 1));
+      return point({ x: sample.x, y: sample.y });
+    });
+  }
+
+  function interpolateMorphPoints(previousPoints, nextPoints, progress) {
+    if (!previousPoints?.length || !nextPoints?.length) return [];
+    const count = Math.max(previousPoints.length, nextPoints.length);
+    const previous = previousPoints.length === count ? previousPoints.map((item) => point(item)) : resamplePathPoints(previousPoints, count);
+    const next = nextPoints.length === count ? nextPoints.map((item) => point(item)) : resamplePathPoints(nextPoints, count);
+    return previous.map((item, index) => ({
+      x: interpolateNumber(item.x, next[index].x, progress),
+      y: interpolateNumber(item.y, next[index].y, progress),
+      inX: interpolateNumber(item.inX, next[index].inX, progress),
+      inY: interpolateNumber(item.inY, next[index].inY, progress),
+      outX: interpolateNumber(item.outX, next[index].outX, progress),
+      outY: interpolateNumber(item.outY, next[index].outY, progress),
+      corner: item.corner && next[index].corner
+    }));
+  }
+
+  function applyLayerExpressions(layer, result, time, duration) {
+    const expressions = normalizeExpressions(layer.expressions);
+    const progress = duration > 0 ? clamp(time / duration, 0, 1) : 0;
+    const context = {
+      time,
+      progress,
+      index: Number(layer.index || 0),
+      value: 0,
+      x: result.transform.x,
+      y: result.transform.y,
+      scaleX: result.transform.scaleX,
+      scaleY: result.transform.scaleY,
+      rotation: result.transform.rotation,
+      opacity: result.transform.opacity
+    };
+    Object.entries(expressions).forEach(([property, expression]) => {
+      context.value = property.startsWith("trim")
+        ? result.trim[property === "trimStart" ? "start" : property === "trimEnd" ? "end" : "offset"]
+        : result.transform[property];
+      const evaluated = evaluateExpression(expression, context);
+      if (!evaluated.ok) return;
+      if (property === "opacity") result.transform.opacity = clamp(evaluated.value, 0, 1);
+      else if (property === "scaleX" || property === "scaleY") result.transform[property] = clamp(evaluated.value, -100, 100);
+      else if (property === "trimStart") result.trim.start = clamp(evaluated.value, 0, 100);
+      else if (property === "trimEnd") result.trim.end = clamp(evaluated.value, 0, 100);
+      else if (property === "trimOffset") result.trim.offset = clamp(evaluated.value, -1000, 1000);
+      else if (Object.prototype.hasOwnProperty.call(result.transform, property)) result.transform[property] = clamp(evaluated.value, -100000, 100000);
+      context[property] = evaluated.value;
+    });
+    return result;
+  }
+
+  function evaluateLayer(layer, time, duration) {
     const frames = layer.keyframes || [];
-    if (!frames.length) return { transform: clone(layer.transform), morphPoints: [] };
-    if (time <= frames[0].time) return { transform: clone(frames[0].transform), morphPoints: clone(frames[0].morphPoints || []) };
-    if (time >= frames[frames.length - 1].time) return { transform: clone(frames[frames.length - 1].transform), morphPoints: clone(frames[frames.length - 1].morphPoints || []) };
+    const trim = { ...layer.trim };
+    if (!frames.length) return applyLayerExpressions(layer, { transform: clone(layer.transform), morphPoints: [], trim }, time, duration || 0);
+    if (time <= frames[0].time) return applyLayerExpressions(layer, { transform: clone(frames[0].transform), morphPoints: clone(frames[0].morphPoints || []), trim }, time, duration || frames[frames.length - 1].time);
+    if (time >= frames[frames.length - 1].time) return applyLayerExpressions(layer, { transform: clone(frames[frames.length - 1].transform), morphPoints: clone(frames[frames.length - 1].morphPoints || []), trim }, time, duration || frames[frames.length - 1].time);
     const nextIndex = frames.findIndex((frame) => frame.time >= time);
     const next = frames[nextIndex];
     const previous = frames[nextIndex - 1];
@@ -359,29 +528,61 @@
     Object.keys(defaultTransform()).forEach((key) => {
       transform[key] = interpolateNumber(previous.transform[key], next.transform[key], progress);
     });
-    let morphPoints = [];
-    if (previous.morphPoints?.length && previous.morphPoints.length === next.morphPoints?.length) {
-      morphPoints = previous.morphPoints.map((item, index) => ({
-        x: interpolateNumber(item.x, next.morphPoints[index].x, progress),
-        y: interpolateNumber(item.y, next.morphPoints[index].y, progress),
-        inX: interpolateNumber(item.inX, next.morphPoints[index].inX, progress),
-        inY: interpolateNumber(item.inY, next.morphPoints[index].inY, progress),
-        outX: interpolateNumber(item.outX, next.morphPoints[index].outX, progress),
-        outY: interpolateNumber(item.outY, next.morphPoints[index].outY, progress)
-      }));
+    const morphPoints = interpolateMorphPoints(previous.morphPoints, next.morphPoints, progress);
+    return applyLayerExpressions(layer, { transform, morphPoints, trim }, time, duration || frames[frames.length - 1].time);
+  }
+
+  function cubicPoint(start, end, progress) {
+    const t = clamp(progress, 0, 1);
+    const inverse = 1 - t;
+    return {
+      x: inverse ** 3 * start.x + 3 * inverse ** 2 * t * start.outX + 3 * inverse * t ** 2 * end.inX + t ** 3 * end.x,
+      y: inverse ** 3 * start.y + 3 * inverse ** 2 * t * start.outY + 3 * inverse * t ** 2 * end.inY + t ** 3 * end.y
+    };
+  }
+
+  function motionPathSample(points, progress) {
+    if (!Array.isArray(points) || !points.length) return { x: 0, y: 0 };
+    if (points.length === 1) return { x: points[0].x, y: points[0].y };
+    const raw = points;
+    const normalized = raw.map((item) => point(item));
+    const hasHandles = raw.some((item) => item && ["inX", "inY", "outX", "outY"].some((key) => Object.prototype.hasOwnProperty.call(item, key)));
+    if (!hasHandles) {
+      const lengths = raw.slice(1).map((item, index) => Math.hypot(item.x - raw[index].x, item.y - raw[index].y));
+      const total = lengths.reduce((sum, value) => sum + value, 0) || 1;
+      let distance = clamp(progress, 0, 1) * total;
+      let segment = 0;
+      while (segment < lengths.length - 1 && distance > lengths[segment]) distance -= lengths[segment++];
+      const local = lengths[segment] ? distance / lengths[segment] : 0;
+      const start = raw[segment];
+      const end = raw[segment + 1];
+      const x = interpolateNumber(start.x, end.x, local);
+      const y = interpolateNumber(start.y, end.y, local);
+      return { x, y, angle: Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI };
     }
-    return { transform, morphPoints };
+    const samples = [];
+    let total = 0;
+    normalized.slice(0, -1).forEach((start, segment) => {
+      let previous = cubicPoint(start, normalized[segment + 1], 0);
+      for (let step = 1; step <= 20; step += 1) {
+        const current = cubicPoint(start, normalized[segment + 1], step / 20);
+        total += Math.hypot(current.x - previous.x, current.y - previous.y);
+        samples.push({ segment, t: step / 20, distance: total, point: current, previous });
+        previous = current;
+      }
+    });
+    const target = clamp(progress, 0, 1) * (total || 1);
+    const sample = samples.find((item) => item.distance >= target) || samples[samples.length - 1];
+    const beforeDistance = sample.distance - Math.hypot(sample.point.x - sample.previous.x, sample.point.y - sample.previous.y);
+    const ratio = sample.distance === beforeDistance ? 0 : clamp((target - beforeDistance) / (sample.distance - beforeDistance), 0, 1);
+    const x = interpolateNumber(sample.previous.x, sample.point.x, ratio);
+    const y = interpolateNumber(sample.previous.y, sample.point.y, ratio);
+    return { x, y, angle: Math.atan2(sample.point.y - sample.previous.y, sample.point.x - sample.previous.x) * 180 / Math.PI };
   }
 
   function motionPathPoint(points, progress) {
-    if (!Array.isArray(points) || !points.length) return { x: 0, y: 0 };
-    if (points.length === 1) return { x: points[0].x, y: points[0].y };
-    const scaled = clamp(progress, 0, 1) * (points.length - 1);
-    const index = Math.min(points.length - 2, Math.floor(scaled));
-    const local = scaled - index;
-    const start = points[index];
-    const end = points[index + 1];
-    return { x: interpolateNumber(start.x, end.x, local), y: interpolateNumber(start.y, end.y, local) };
+    const sample = motionPathSample(points, progress);
+    return { x: sample.x, y: sample.y };
   }
 
   function pathData(points, closed) {
@@ -438,13 +639,25 @@
     if (layer.type === "polygon" || layer.type === "star") return `<polygon points="${regularPolygonPoints(geometry.cx, geometry.cy, geometry.radius, geometry.sides, layer.type === "star" ? geometry.innerRadius : 0)}" ${common}/>`;
     if (layer.type === "text") return `<text x="${round(geometry.x)}" y="${round(geometry.y + style.fontSize)}" fill="${escapeHtml(style.fill)}" stroke="${escapeHtml(style.stroke)}" stroke-width="${round(style.strokeWidth)}" font-family="${escapeHtml(style.fontFamily)}" font-size="${round(style.fontSize)}" font-weight="${round(style.fontWeight)}">${escapeHtml(geometry.text)}</text>`;
     if (layer.type === "path" || layer.type === "mask") {
-      const trimLength = Math.max(0, layer.trim.end - layer.trim.start);
-      const trim = layer.trim.enabled ? ` pathLength="100" stroke-dasharray="${round(trimLength)} ${round(100 - trimLength)}" stroke-dashoffset="${round(-layer.trim.start - layer.trim.offset)}"` : "";
-      const morphShapes = layer.morphModel.filter((shape) => shape.length === points.length);
+      const trimState = evaluated.trim || layer.trim;
+      const trimLength = Math.max(0, trimState.end - trimState.start);
+      const trim = trimState.enabled ? ` pathLength="100" stroke-dasharray="${round(trimLength)} ${round(100 - trimLength)}" stroke-dashoffset="${round(-trimState.start - trimState.offset)}"` : "";
+      const morphCount = Math.max(points.length, ...layer.morphModel.map((shape) => shape.length), 0);
+      const morphShapes = morphCount > 1 ? layer.morphModel.filter((shape) => shape.length > 1).map((shape) => shape.length === morphCount ? shape : resamplePathPoints(shape, morphCount)) : [];
       const morph = animation?.animated && morphShapes.length >= 2
         ? `<animate attributeName="d" dur="${animation.duration}s" values="${morphShapes.map((shape) => pathData(shape, geometry.closed)).join(";")}" repeatCount="${animation.loop === false ? "1" : "indefinite"}"/>`
         : "";
-      return `<path d="${pathData(points, geometry.closed)}" ${common}${trim}>${morph}</path>`;
+      const hasTrimExpression = ["trimStart", "trimEnd", "trimOffset"].some((property) => layer.expressions?.[property]);
+      const trimAnimation = animation?.animated && hasTrimExpression
+        ? (() => {
+          const frames = Array.from({ length: 21 }, (_, index) => evaluateLayer(layer, animation.duration * index / 20, animation.duration).trim);
+          const dash = frames.map((item) => `${round(Math.max(0, item.end - item.start))} ${round(100 - Math.max(0, item.end - item.start))}`).join(";");
+          const offset = frames.map((item) => round(-item.start - item.offset)).join(";");
+          const repeat = animation.loop === false ? "1" : "indefinite";
+          return `<animate attributeName="stroke-dasharray" dur="${animation.duration}s" values="${dash}" repeatCount="${repeat}"/><animate attributeName="stroke-dashoffset" dur="${animation.duration}s" values="${offset}" repeatCount="${repeat}"/>`;
+        })()
+        : "";
+      return `<path d="${pathData(points, geometry.closed)}" ${common}${trim}>${morph}${trimAnimation}</path>`;
     }
     return "";
   }
@@ -462,22 +675,34 @@
     const soloed = data.layers.filter((layer) => layer.solo).map((layer) => layer.id);
 
     function animationMarkup(layer) {
-      if (!opts.animated || layer.keyframes.length < 2) return "";
+      const expressionDriven = Object.keys(layer.expressions || {}).some((property) => ["x", "y", "scaleX", "scaleY", "rotation", "opacity"].includes(property));
+      if (!opts.animated || (layer.keyframes.length < 2 && !expressionDriven)) return "";
       const duration = data.timeline.duration;
-      const times = layer.keyframes.map((key) => round(key.time / duration, 4)).join(";");
-      const translations = layer.keyframes.map((key) => `${round(key.transform.x)} ${round(key.transform.y)}`).join(";");
-      const rotations = layer.keyframes.map((key) => `${round(key.transform.rotation)} ${round(key.transform.anchorX)} ${round(key.transform.anchorY)}`).join(";");
-      const scales = layer.keyframes.map((key) => `${round(key.transform.scaleX, 4)} ${round(key.transform.scaleY, 4)}`).join(";");
-      const opacity = layer.keyframes.map((key) => round(key.transform.opacity, 4)).join(";");
+      const expressionSamples = Math.min(121, Math.max(11, Math.ceil(duration * 12) + 1));
+      const sampleTimes = expressionDriven
+        ? Array.from({ length: expressionSamples }, (_, index) => duration * index / Math.max(1, expressionSamples - 1))
+        : [...new Set([0, ...layer.keyframes.map((key) => key.time), duration])].sort((a, b) => a - b);
+      const samples = sampleTimes.map((sampleTime) => ({ time: sampleTime, ...evaluateLayer(layer, sampleTime, duration) }));
+      const times = samples.map((sample) => round(sample.time / duration, 4)).join(";");
+      const translations = samples.map((sample) => `${round(sample.transform.x)} ${round(sample.transform.y)}`).join(";");
+      const rotations = samples.map((sample) => `${round(sample.transform.rotation)} ${round(sample.transform.anchorX)} ${round(sample.transform.anchorY)}`).join(";");
+      const scales = samples.map((sample) => `${round(sample.transform.scaleX, 4)} ${round(sample.transform.scaleY, 4)}`).join(";");
+      const opacity = samples.map((sample) => round(sample.transform.opacity, 4)).join(";");
+      const splines = samples.slice(0, -1).map((sample) => {
+        if (expressionDriven) return "0 0 1 1";
+        const easing = [...layer.keyframes].reverse().find((key) => key.time <= sample.time)?.easing || layer.keyframes[0]?.easing || [0.42, 0, 0.58, 1];
+        return easing.map((value) => round(value, 4)).join(" ");
+      }).join(";");
+      const splineAttrs = splines ? ` calcMode="spline" keySplines="${splines}"` : "";
       const repeat = opts.loop === false ? "1" : "indefinite";
       const motion = layer.motionPath.length > 1 ? `<animateMotion dur="${duration}s" path="${pathData(layer.motionPath, false)}" repeatCount="${repeat}" rotate="auto"/>` : "";
-      return `<animateTransform attributeName="transform" additive="sum" type="translate" dur="${duration}s" values="${translations}" keyTimes="${times}" repeatCount="${repeat}"/><animateTransform attributeName="transform" additive="sum" type="rotate" dur="${duration}s" values="${rotations}" keyTimes="${times}" repeatCount="${repeat}"/><animateTransform attributeName="transform" additive="sum" type="scale" dur="${duration}s" values="${scales}" keyTimes="${times}" repeatCount="${repeat}"/><animate attributeName="opacity" dur="${duration}s" values="${opacity}" keyTimes="${times}" repeatCount="${repeat}"/>${motion}`;
+      return `<animateTransform attributeName="transform" additive="sum" type="translate" dur="${duration}s" values="${translations}" keyTimes="${times}"${splineAttrs} repeatCount="${repeat}"/><animateTransform attributeName="transform" additive="sum" type="rotate" dur="${duration}s" values="${rotations}" keyTimes="${times}"${splineAttrs} repeatCount="${repeat}"/><animateTransform attributeName="transform" additive="sum" type="scale" dur="${duration}s" values="${scales}" keyTimes="${times}"${splineAttrs} repeatCount="${repeat}"/><animate attributeName="opacity" dur="${duration}s" values="${opacity}" keyTimes="${times}"${splineAttrs} repeatCount="${repeat}"/>${motion}`;
     }
 
     function renderLayer(layer, stack) {
       if (!layer.visible || layer.type === "mask" || (soloed.length && !soloed.includes(layer.id) && !soloed.includes(layer.parentId))) return "";
       if ((stack || []).includes(layer.id)) return "";
-      const evaluated = evaluateLayer(layer, currentTime);
+      const evaluated = evaluateLayer(layer, currentTime, data.timeline.duration);
       const progress = data.timeline.duration ? currentTime / data.timeline.duration : 0;
       const motion = opts.animated ? { x: 0, y: 0 } : layer.motionPath.length ? motionPathPoint(layer.motionPath, progress) : { x: 0, y: 0 };
       const transform = evaluated.transform;
@@ -492,7 +717,7 @@
     }
 
     const definitions = data.layers.filter((layer) => layer.type === "mask").map((layer) => {
-      const shape = layerShapeMarkup(layer, evaluateLayer(layer, currentTime));
+      const shape = layerShapeMarkup(layer, evaluateLayer(layer, currentTime, data.timeline.duration));
       return `<mask id="mask-${escapeHtml(layer.id)}" maskUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="black"/>${shape.replace(/fill="[^"]*"/, "fill=\"white\"")}</mask><clipPath id="clip-${escapeHtml(layer.id)}">${shape}</clipPath>`;
     }).join("");
     const gridSize = data.settings.grid;
@@ -509,6 +734,178 @@
   function exportProject(project) {
     const data = normalizeProject(project);
     return JSON.stringify({ ...data, format: FORMAT, exportedAt: new Date().toISOString() }, null, 2);
+  }
+
+  function colorToLottie(value) {
+    const match = String(value || "").match(/^#([0-9a-f]{6})$/i);
+    if (!match) return [0.39, 0.9, 0.94, 1];
+    return [0, 2, 4].map((offset) => parseInt(match[1].slice(offset, offset + 2), 16) / 255).concat(1);
+  }
+
+  function lottieBezierShape(points, closed) {
+    const normalized = (points || []).map((item) => point(item));
+    return {
+      c: Boolean(closed),
+      v: normalized.map((item) => [round(item.x, 4), round(item.y, 4)]),
+      i: normalized.map((item) => [round(item.inX - item.x, 4), round(item.inY - item.y, 4)]),
+      o: normalized.map((item) => [round(item.outX - item.x, 4), round(item.outY - item.y, 4)])
+    };
+  }
+
+  function lottieAnimatedProperty(layer, property, fps, mapper, fallback) {
+    const frames = layer.keyframes || [];
+    if (frames.length < 2) return { a: 0, k: mapper ? mapper(layer.transform[property]) : layer.transform[property] ?? fallback };
+    return {
+      a: 1,
+      k: frames.map((frame, index) => ({
+        t: round(frame.time * fps, 3),
+        s: [mapper ? mapper(frame.transform[property]) : frame.transform[property]],
+        h: 0,
+        ...(index < frames.length - 1 ? { e: [mapper ? mapper(frames[index + 1].transform[property]) : frames[index + 1].transform[property]] } : {})
+      }))
+    };
+  }
+
+  function exportLottie(projectInput) {
+    const project = normalizeProject(projectInput);
+    const fps = project.timeline.fps;
+    const indexById = new Map(project.layers.map((layer, index) => [layer.id, index + 1]));
+    const warnings = [];
+    const layers = project.layers.filter((layer) => layer.type !== "mask").map((layer, index) => {
+      const transform = {
+        o: lottieAnimatedProperty(layer, "opacity", fps, (value) => round(value * 100, 3), 100),
+        r: lottieAnimatedProperty(layer, "rotation", fps, null, 0),
+        p: layer.keyframes.length >= 2
+          ? { a: 1, k: layer.keyframes.map((frame, frameIndex) => ({ t: round(frame.time * fps, 3), s: [round(frame.transform.x, 3), round(frame.transform.y, 3), 0], ...(frameIndex < layer.keyframes.length - 1 ? { e: [round(layer.keyframes[frameIndex + 1].transform.x, 3), round(layer.keyframes[frameIndex + 1].transform.y, 3), 0] } : {}) })) }
+          : { a: 0, k: [round(layer.transform.x, 3), round(layer.transform.y, 3), 0] },
+        a: { a: 0, k: [round(layer.transform.anchorX, 3), round(layer.transform.anchorY, 3), 0] },
+        s: layer.keyframes.length >= 2
+          ? { a: 1, k: layer.keyframes.map((frame, frameIndex) => ({ t: round(frame.time * fps, 3), s: [round(frame.transform.scaleX * 100, 3), round(frame.transform.scaleY * 100, 3), 100], ...(frameIndex < layer.keyframes.length - 1 ? { e: [round(layer.keyframes[frameIndex + 1].transform.scaleX * 100, 3), round(layer.keyframes[frameIndex + 1].transform.scaleY * 100, 3), 100] } : {}) })) }
+          : { a: 0, k: [round(layer.transform.scaleX * 100, 3), round(layer.transform.scaleY * 100, 3), 100] }
+      };
+      const base = { ind: index + 1, nm: layer.name, ip: 0, op: Math.ceil(project.timeline.duration * fps), st: 0, ks: transform, ...(layer.parentId && indexById.has(layer.parentId) ? { parent: indexById.get(layer.parentId) } : {}) };
+      if (layer.type === "text") {
+        return { ...base, ty: 5, t: { d: { k: [{ t: 0, s: { t: layer.geometry.text, s: layer.style.fontSize, f: layer.style.fontFamily, fc: colorToLottie(layer.style.fill).slice(0, 3), j: 0 } }] } } };
+      }
+      const shapes = [];
+      if (layer.type === "rect") shapes.push({ ty: "rc", p: { a: 0, k: [layer.geometry.x + layer.geometry.width / 2, layer.geometry.y + layer.geometry.height / 2] }, s: { a: 0, k: [layer.geometry.width, layer.geometry.height] }, r: { a: 0, k: layer.geometry.rx } });
+      else if (layer.type === "ellipse") shapes.push({ ty: "el", p: { a: 0, k: [layer.geometry.cx, layer.geometry.cy] }, s: { a: 0, k: [layer.geometry.width, layer.geometry.height] } });
+      else if (layer.type === "polygon" || layer.type === "star") shapes.push({ ty: "sr", sy: layer.type === "star" ? 1 : 2, p: { a: 0, k: [layer.geometry.cx, layer.geometry.cy] }, pt: { a: 0, k: layer.geometry.sides }, or: { a: 0, k: layer.geometry.radius }, ir: { a: 0, k: layer.geometry.innerRadius }, r: { a: 0, k: 0 } });
+      else if (layer.type === "path") {
+        const shapeModels = [layer.geometry.points, ...layer.morphModel].filter((shape) => shape?.length);
+        const count = Math.max(...shapeModels.map((shape) => shape.length));
+        const normalizedShapes = shapeModels.map((shape) => lottieBezierShape(shape.length === count ? shape : resamplePathPoints(shape, count), layer.geometry.closed));
+        shapes.push({ ty: "sh", ks: normalizedShapes.length > 1 ? { a: 1, k: normalizedShapes.map((shape, shapeIndex) => ({ t: round(shapeIndex * project.timeline.duration * fps / Math.max(1, normalizedShapes.length - 1), 3), s: [shape] })) } : { a: 0, k: normalizedShapes[0] || lottieBezierShape([], false) } });
+      } else if (!["group", "composition"].includes(layer.type)) warnings.push(`Layer ${layer.name}: type ${layer.type} is metadata-only in Lottie subset.`);
+      if (layer.trim.enabled) shapes.push({ ty: "tm", s: { a: 0, k: layer.trim.start }, e: { a: 0, k: layer.trim.end }, o: { a: 0, k: layer.trim.offset }, m: 1 });
+      if (layer.style.fill !== "none") shapes.push({ ty: "fl", c: { a: 0, k: colorToLottie(layer.style.fill) }, o: { a: 0, k: 100 } });
+      if (layer.style.stroke !== "none" && layer.style.strokeWidth > 0) shapes.push({ ty: "st", c: { a: 0, k: colorToLottie(layer.style.stroke) }, w: { a: 0, k: layer.style.strokeWidth }, o: { a: 0, k: 100 }, lc: 2, lj: 2 });
+      if (layer.maskId || layer.matte !== "none") warnings.push(`Layer ${layer.name}: masks and mattes require review after Lottie import.`);
+      return { ...base, ty: 4, shapes };
+    });
+    return JSON.stringify({
+      v: "5.12.2", fr: fps, ip: 0, op: Math.ceil(project.timeline.duration * fps), w: project.stage.width, h: project.stage.height,
+      nm: project.meta.name, ddd: 0, assets: [], layers,
+      meta: { generator: "HH Vector Motion", capability: "lottie-compatible-subset", warnings }
+    }, null, 2);
+  }
+
+  function getExportCapabilities(scope) {
+    const runtime = scope || globalScope;
+    const canvas = Boolean(runtime.document && runtime.Image && runtime.URL?.createObjectURL);
+    const webm = Boolean(canvas && runtime.MediaRecorder && runtime.document?.createElement?.("canvas")?.captureStream);
+    const gif = Boolean(canvas && typeof runtime.createImageBitmap === "function");
+    return {
+      projectJson: { supported: true, level: "native" },
+      animatedSvg: { supported: true, level: "native-smil" },
+      lottie: { supported: true, level: "compatible-subset", note: "Masks, mattes and expressions may need review after import." },
+      pngSequence: { supported: canvas, level: canvas ? "native-frames" : "unavailable" },
+      webm: { supported: webm, level: webm ? "browser-mediarecorder" : "unavailable" },
+      gif: { supported: gif, level: gif ? "browser-encoded-256-color" : "unavailable" }
+    };
+  }
+
+  function gifPalette() {
+    const bytes = [];
+    for (let index = 0; index < 256; index += 1) bytes.push(((index >> 5) & 7) * 255 / 7, ((index >> 2) & 7) * 255 / 7, (index & 3) * 255 / 3);
+    return bytes.map(Math.round);
+  }
+
+  function gifPixels(imageData) {
+    const output = new Uint8Array(imageData.data.length / 4);
+    for (let source = 0, target = 0; source < imageData.data.length; source += 4, target += 1) output[target] = (imageData.data[source] >> 5) << 5 | (imageData.data[source + 1] >> 5) << 2 | (imageData.data[source + 2] >> 6);
+    return output;
+  }
+
+  function gifLzw(pixels) {
+    const clear = 256;
+    const end = 257;
+    let codeSize = 9;
+    let nextCode = 258;
+    let dictionary = new Map();
+    const bytes = [];
+    let buffer = 0;
+    let bits = 0;
+    const emit = (code) => {
+      buffer |= code << bits;
+      bits += codeSize;
+      while (bits >= 8) { bytes.push(buffer & 255); buffer >>>= 8; bits -= 8; }
+    };
+    const reset = () => { dictionary = new Map(); codeSize = 9; nextCode = 258; };
+    emit(clear);
+    if (pixels.length) {
+      let prefix = pixels[0];
+      for (let index = 1; index < pixels.length; index += 1) {
+        const suffix = pixels[index];
+        const key = `${prefix},${suffix}`;
+        if (dictionary.has(key)) { prefix = dictionary.get(key); continue; }
+        emit(prefix);
+        if (nextCode < 4096) {
+          dictionary.set(key, nextCode++);
+          if (nextCode === (1 << codeSize) && codeSize < 12) codeSize += 1;
+        } else { emit(clear); reset(); }
+        prefix = suffix;
+      }
+      emit(prefix);
+    }
+    emit(end);
+    if (bits) bytes.push(buffer & 255);
+    return bytes;
+  }
+
+  async function exportGif(projectInput, options, onProgress) {
+    const capabilities = getExportCapabilities(globalScope);
+    if (!capabilities.gif.supported) throw new Error("GIF chi kha dung khi trinh duyet ho tro Canvas, Image va createImageBitmap");
+    const project = normalizeProject(projectInput);
+    const settings = options && typeof options === "object" ? options : {};
+    const fps = Math.round(clamp(settings.fps || Math.min(project.timeline.fps, 15), 1, 30));
+    const frameCount = Math.round(clamp(Math.ceil(project.timeline.duration * fps), 2, 180));
+    const maxWidth = Math.round(clamp(settings.maxWidth || 960, 64, 1920));
+    const scale = Math.min(1, maxWidth / project.stage.width);
+    const width = Math.max(1, Math.round(project.stage.width * scale));
+    const height = Math.max(1, Math.round(project.stage.height * scale));
+    const canvas = globalScope.document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("Khong khoi tao duoc Canvas 2D cho GIF");
+    const bytes = [];
+    const word = (value) => { bytes.push(value & 255, value >> 8 & 255); };
+    bytes.push(...[71, 73, 70, 56, 57, 97]); word(width); word(height); bytes.push(0xf7, 0, 0, ...gifPalette());
+    bytes.push(0x21, 0xff, 0x0b, ...Array.from("NETSCAPE2.0", (char) => char.charCodeAt(0)), 3, 1, 0, 0, 0);
+    for (let index = 0; index < frameCount; index += 1) {
+      const time = project.timeline.duration * index / Math.max(1, frameCount - 1);
+      const png = await svgToPngBlob(renderSvg(project, time), project.stage.width, project.stage.height);
+      const bitmap = await globalScope.createImageBitmap(png);
+      context.clearRect(0, 0, width, height); context.drawImage(bitmap, 0, 0, width, height); bitmap.close?.();
+      const compressed = gifLzw(gifPixels(context.getImageData(0, 0, width, height)));
+      const delay = Math.max(2, Math.round(100 / fps));
+      bytes.push(0x21, 0xf9, 4, 0x04, delay & 255, delay >> 8 & 255, 0, 0, 0x2c); word(0); word(0); word(width); word(height); bytes.push(0, 8);
+      for (let offset = 0; offset < compressed.length; offset += 255) { const block = compressed.slice(offset, offset + 255); bytes.push(block.length, ...block); }
+      bytes.push(0);
+      if (typeof onProgress === "function") onProgress(index + 1, frameCount);
+    }
+    bytes.push(0x3b);
+    return new Blob([new Uint8Array(bytes)], { type: "image/gif" });
   }
 
   function createStorageDriver(scope) {
@@ -849,7 +1246,10 @@
       const layer = primaryLayer();
       root.querySelector("[data-vc-selection-name]").textContent = layer?.name || "Chưa chọn";
       root.querySelector("[data-vc-selection-kind]").textContent = layer?.type?.toUpperCase() || "";
-      root.querySelector("[data-vc-inspector-body]").innerHTML = inspectorMarkup(layer);
+      const inspector = root.querySelector("[data-vc-inspector-body]");
+      inspector.innerHTML = inspectorMarkup(layer);
+      if (!layer) return;
+      inspector.insertAdjacentHTML("beforeend", `<section class="hhvc-section"><h4>Expression an toàn</h4><label class="hhvc-field"><span>Rotation</span><input data-vc-expression="rotation" maxlength="240" placeholder="progress * 360" value="${escapeHtml(layer.expressions.rotation || "")}"></label><label class="hhvc-field"><span>Opacity</span><input data-vc-expression="opacity" maxlength="240" placeholder="clamp(value, 0, 1)" value="${escapeHtml(layer.expressions.opacity || "")}"></label><p style="color:var(--vc-muted);font-size:9px">Chỉ hỗ trợ số, time, progress, value và hàm whitelist. Không dùng eval hoặc JavaScript.</p><div class="hhvc-chip-row"><button class="hhvc-btn" type="button" data-vc-export="lottie">Lottie subset</button><button class="hhvc-btn" type="button" data-vc-export="gif">GIF</button></div></section>`);
     }
 
     function renderControls() {
@@ -1068,6 +1468,7 @@
         const base = project.meta.name.replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-|-$/g, "") || "hh-vector-motion";
         if (kind === "json") downloadBlob(new Blob([exportProject(project)], { type: "application/json" }), `${base}.hhvector.json`);
         if (kind === "svg") downloadBlob(new Blob([renderAnimatedSvg(project)], { type: "image/svg+xml;charset=utf-8" }), `${base}.animated.svg`);
+        if (kind === "lottie") downloadBlob(new Blob([exportLottie(project)], { type: "application/json" }), `${base}.lottie.json`);
         if (kind === "png") {
           announce("Đang dựng PNG từ SVG...");
           const blob = await svgToPngBlob(renderSvg(project, currentTime), project.stage.width, project.stage.height);
@@ -1082,6 +1483,11 @@
           announce("Đang mã hóa WebM bằng MediaRecorder...");
           const blob = await exportWebM(project, (done, total) => announce(`WebM ${Math.round(done / total * 100)}%`));
           downloadBlob(blob, `${base}.webm`);
+        }
+        if (kind === "gif") {
+          announce("Dang ma hoa GIF 256 mau tren thiet bi...");
+          const blob = await exportGif(project, { fps: 12, maxWidth: 960 }, (done, total) => announce(`GIF ${Math.round(done / total * 100)}%`));
+          downloadBlob(blob, `${base}.gif`);
         }
         announce(`Đã chuẩn bị tệp ${kind.toUpperCase()}.`);
       } catch (error) { announce(error.message || "Không thể xuất định dạng này."); }
@@ -1125,6 +1531,7 @@
       if (target.dataset.vcStyle) { layer.style[target.dataset.vcStyle] = target.dataset.vcStyle === "strokeWidth" || target.dataset.vcStyle === "fontSize" ? Number(target.value) : target.value; project = normalizeProject(project); persist(); renderCanvas(); return; }
       if (target.dataset.vcGeometry) { layer.geometry[target.dataset.vcGeometry] = safeText(target.value, "", 1000); persist(); renderCanvas(); return; }
       if (target.dataset.vcTrim) { layer.trim[target.dataset.vcTrim] = target.type === "checkbox" ? target.checked : Number(target.value); project = normalizeProject(project); persist(); renderCanvas(); return; }
+      if (target.dataset.vcExpression) { layer.expressions[target.dataset.vcExpression] = safeText(target.value, "", 240); project = normalizeProject(project); persist(); renderCanvas(); return; }
       if (target.dataset.vcEasing != null) {
         const key = layer.keyframes.slice().sort((a, b) => Math.abs(a.time - currentTime) - Math.abs(b.time - currentTime))[0];
         if (key) { key.easing[Number(target.dataset.vcEasing)] = Number(target.value); project = normalizeProject(project); persist(); renderInspector(); }
@@ -1208,7 +1615,10 @@
       undo,
       redo,
       exportProject: () => exportProject(project),
-      exportAnimatedSvg: () => renderAnimatedSvg(project)
+      exportAnimatedSvg: () => renderAnimatedSvg(project),
+      exportLottie: () => exportLottie(project),
+      exportGif: (options, onProgress) => exportGif(project, options, onProgress),
+      getExportCapabilities: () => getExportCapabilities(globalScope)
     };
     mounted.set(root, {
       api,
@@ -1249,12 +1659,17 @@
     BLEND_MODES,
     MATTE_MODES,
     ALIGN_ACTIONS,
+    EXPRESSION_PROPERTIES,
     createLayer,
     createDefaultProject,
     normalizeProject,
     normalizeLayer,
     cubicBezierValue,
+    evaluateExpression,
     evaluateLayer,
+    interpolateMorphPoints,
+    resamplePathPoints,
+    motionPathSample,
     motionPathPoint,
     pathData,
     regularPolygonPoints,
@@ -1263,8 +1678,11 @@
     renderSvg,
     renderAnimatedSvg,
     exportProject,
+    exportLottie,
     exportPngSequence,
     exportWebM,
+    exportGif,
+    getExportCapabilities,
     createStorageDriver,
     mount,
     unmount

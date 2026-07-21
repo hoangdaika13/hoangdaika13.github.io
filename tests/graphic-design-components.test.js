@@ -167,3 +167,64 @@ test("Workspace source includes real propagation UI, semantic access and honest 
   assert.doesNotMatch(source, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
   assert.doesNotMatch(source, /<script[^>]+src=|https?:\/\/|api[_-]?key|secret/i);
 });
+
+test("Design tokens resolve by theme and propagate through token-bound masters", () => {
+  let project = components.createDefaultProject();
+  assert.deepEqual(components.TOKEN_CATEGORIES, ["color", "font", "spacing", "radius"]);
+  assert.equal(components.resolveToken(project, "color.accent", "dark"), "#62D9E6");
+  project = components.setToken(project, "color.accent", "#FF3399", "dark");
+  project = components.setNodeTokenBinding(project, "action-button", "button-root", "background", "color.accent");
+  let resolved = components.resolveInstance(project, "button-live");
+  assert.equal(findNode(resolved.root, "button-root").props.background, "#FF3399");
+  project = components.setInstanceOverride(project, "button-live", "button-root.background", "#123456");
+  resolved = components.resolveInstance(project, "button-live");
+  assert.equal(findNode(resolved.root, "button-root").props.background, "#123456");
+});
+
+test("token and constraint normalizers reject executable or unbounded values", () => {
+  const project = components.normalizeProject({
+    tokens: { base: { color: { accent: "javascript:bad" }, font: { body: "Bad;}</style><script>x</script>" }, spacing: { huge: 99999 } } },
+    library: components.createDefaultProject().library
+  });
+  assert.equal(project.tokens.base.color.accent, "#62D9E6");
+  assert.notEqual(project.tokens.base.color.accent, "javascript:bad");
+  assert.doesNotMatch(project.tokens.base.font.body, /[;{}<>]/);
+  assert.equal(project.tokens.base.spacing.huge, 256);
+  const next = components.setNodeConstraints(project, "action-button", "button-root", { horizontal: "evil", vertical: "stretch" });
+  const root = next.library.components.find((item) => item.id === "action-button").root;
+  assert.deepEqual(root.constraints, { horizontal: "left", vertical: "stretch" });
+});
+
+test("responsive artboards select deterministic mobile tablet and desktop layouts", () => {
+  let project = components.createDefaultProject();
+  assert.equal(components.selectResponsiveArtboard(project, 390).id, "mobile");
+  assert.equal(components.selectResponsiveArtboard(project, 768).id, "tablet");
+  assert.equal(components.selectResponsiveArtboard(project, 1440).id, "desktop");
+  const added = components.addArtboard(project, { id: "desktop", name: "Wide", width: 1920, height: 1080, minWidth: 1600, maxWidth: 3000, rootInstanceId: "card-live" });
+  project = added.project;
+  assert.notEqual(added.artboard.id, "desktop");
+  assert.equal(project.artboards.length, 4);
+});
+
+test("auto layout and constraints generate stable inspectable geometry", () => {
+  const resolved = components.resolveInstance(components.createDefaultProject(), "card-live");
+  const layout = components.computeAutoLayout(resolved, { x: 0, y: 0, width: 520, height: 360 });
+  assert.equal(layout.id, "card-root");
+  assert.ok(layout.children.length >= 3);
+  assert.ok(layout.children.every((child) => Number.isFinite(child.x) && Number.isFinite(child.width)));
+  const stretched = components.computeAutoLayout({ id: "root", type: "frame", props: { width: 100, height: 80 }, constraints: { horizontal: "stretch", vertical: "stretch" }, children: [] }, { width: 600, height: 400 });
+  assert.equal(stretched.width, 600);
+  assert.equal(stretched.height, 400);
+});
+
+test("Dev Mode exports CSS variables Tailwind SVG and inspect data without executable markup", () => {
+  let project = components.createDefaultProject();
+  project = components.setMasterProperty(project, "action-button", "button-label.text", "</style><script>alert(1)</script>");
+  const handoff = components.exportDevMode(project, "action-button", { theme: "dark", size: "md", state: "default", language: "vi" });
+  assert.equal(handoff.format, "hh-dev-handoff");
+  assert.match(handoff.cssVariables, /--hh-color-accent:/);
+  assert.match(handoff.tailwindConfig, /module\.exports/);
+  assert.match(handoff.svg, /^<svg/);
+  assert.doesNotMatch(handoff.svg, /<script>alert/);
+  assert.ok(handoff.inspect.nodes.some((node) => node.id === "button-label"));
+});

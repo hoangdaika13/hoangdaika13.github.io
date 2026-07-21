@@ -23,6 +23,7 @@
     trigger: ["triggered", "not-triggered"]
   };
   const CONVERTERS = ["none", "uppercase", "lowercase", "number", "boolean", "hex-color", "px", "url"];
+  const STATE_ROLES = ["idle", "interactive", "pressed", "busy", "success", "error"];
 
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
@@ -80,13 +81,17 @@
   }
 
   function createDefaultProject() {
+    const roles = ["idle", "interactive", "pressed", "busy", "success", "error"];
     const states = STATE_PRESETS.map((name, index) => ({
       id: name.toLowerCase(),
       name,
       x: 60 + (index % 3) * 250,
       y: 70 + Math.floor(index / 3) * 210,
       color: ["#67e8f9", "#a78bfa", "#f472b6", "#fbbf24", "#6ee7b7", "#fb7185"][index],
-      description: ["Trạng thái mặc định", "Con trỏ đang ở trên", "Người dùng đang nhấn", "Đang xử lý dữ liệu", "Tác vụ hoàn tất", "Tác vụ thất bại"][index]
+      description: ["Trạng thái mặc định", "Con trỏ đang ở trên", "Người dùng đang nhấn", "Đang xử lý dữ liệu", "Tác vụ hoàn tất", "Tác vụ thất bại"][index],
+      role: roles[index],
+      ariaLive: index >= 3 ? "polite" : "off",
+      terminal: index >= 4
     }));
     return {
       format: FORMAT,
@@ -157,7 +162,10 @@
       x: clamp(state?.x, 0, 1800),
       y: clamp(state?.y, 0, 1000),
       color: /^#[0-9a-f]{6}$/i.test(state?.color || "") ? state.color : "#67e8f9",
-      description: sanitizeText(state?.description, 160)
+      description: sanitizeText(state?.description, 160),
+      role: STATE_ROLES.includes(state?.role) ? state.role : (STATE_ROLES[index] || "interactive"),
+      ariaLive: ["off", "polite", "assertive"].includes(state?.ariaLive) ? state.ariaLive : "off",
+      terminal: state?.terminal === true
     })) : clone(fallback.states);
     const uniqueStateIds = new Set();
     const safeStates = states.filter((state) => {
@@ -174,6 +182,9 @@
       event: EVENTS.includes(transition?.event) ? transition.event : "click",
       priority: clamp(transition?.priority == null ? 10 : transition.priority, -100, 100),
       delay: clamp(transition?.delay, 0, 600000),
+      cooldown: clamp(transition?.cooldown, 0, 600000),
+      once: transition?.once === true,
+      preventDefault: transition?.preventDefault === true,
       key: sanitizeText(transition?.key, 32),
       conditions: Array.isArray(transition?.conditions) ? transition.conditions.slice(0, 12).map((condition) => normalizeCondition(condition, safeProperties)) : [],
       actions: Array.isArray(transition?.actions) ? transition.actions.slice(0, 12).map((action) => ({
@@ -235,6 +246,60 @@
     return candidates[0] || null;
   }
 
+  function getStateSemantics(projectInput, stateId) {
+    const project = normalizeProject(projectInput);
+    const state = project.states.find((item) => item.id === stateId) || project.states[0];
+    return {
+      id: state.id,
+      role: state.role,
+      busy: state.role === "busy",
+      terminal: state.terminal === true,
+      success: state.role === "success",
+      error: state.role === "error",
+      ariaLive: state.ariaLive
+    };
+  }
+
+  function validateProject(projectInput) {
+    const project = normalizeProject(projectInput);
+    const errors = [];
+    const warnings = [];
+    const reachable = new Set([project.initialStateId]);
+    const queue = [project.initialStateId];
+    while (queue.length) {
+      const current = queue.shift();
+      project.transitions.filter((item) => item.from === current).forEach((transition) => {
+        if (!reachable.has(transition.to)) { reachable.add(transition.to); queue.push(transition.to); }
+      });
+    }
+    project.states.forEach((state) => {
+      if (!reachable.has(state.id)) warnings.push({ type: "unreachable-state", stateId: state.id });
+      if (!state.terminal && !project.transitions.some((transition) => transition.from === state.id)) warnings.push({ type: "dead-end", stateId: state.id });
+    });
+    const signatures = new Map();
+    project.transitions.forEach((transition) => {
+      const signature = `${transition.from}|${transition.event}|${transition.priority}|${JSON.stringify(transition.conditions)}`;
+      if (signatures.has(signature)) warnings.push({ type: "ambiguous-transition", transitionIds: [signatures.get(signature), transition.id] });
+      else signatures.set(signature, transition.id);
+      if (transition.event === "timer" && transition.delay === 0) warnings.push({ type: "immediate-timer", transitionId: transition.id });
+      if (transition.from === transition.to && transition.event === "timer" && transition.delay === 0) errors.push({ type: "timer-loop", transitionId: transition.id });
+    });
+    return { valid: errors.length === 0, errors, warnings, reachable: [...reachable] };
+  }
+
+  function selectRuntimeTransition(project, runtime, eventName, payload, metadata) {
+    const timestamp = payload?.timestamp == null ? Date.now() : Number(payload.timestamp);
+    const used = metadata?.used || new Set();
+    const lastRun = metadata?.lastRun || new Map();
+    return project.transitions
+      .filter((transition) => transition.from === runtime.stateId && transition.event === eventName)
+      .filter((transition) => eventName !== "keyboard" || !transition.key || transition.key.toLowerCase() === String(payload?.key || "").toLowerCase())
+      .filter((transition) => transition.conditions.every((condition) => evaluateCondition(condition, runtime.properties, payload || {})))
+      .filter((transition) => !transition.once || !used.has(transition.id))
+      .filter((transition) => !transition.cooldown || timestamp - (lastRun.has(transition.id) ? lastRun.get(transition.id) : -Infinity) >= transition.cooldown)
+      .sort((a, b) => b.priority - a.priority || a.id.localeCompare(b.id))[0] || null;
+  }
+
   function applyTransition(project, runtime, transition, timestamp) {
     if (!transition) return runtime;
     const properties = { ...runtime.properties };
@@ -246,28 +311,68 @@
     return { stateId: transition.to, properties, history: [...runtime.history, entry].slice(-100) };
   }
 
-  function createSimulator(projectInput, initialValues) {
+  function createSimulator(projectInput, initialValues, options) {
     const project = normalizeProject(projectInput);
+    const clock = typeof options?.now === "function" ? options.now : () => Date.now();
+    const listeners = new Set();
+    const used = new Set();
+    const lastRun = new Map();
+    let enteredAt = clock();
     let runtime = { stateId: project.initialStateId, properties: propertyMap(project, initialValues), history: [] };
+    const notify = (detail) => listeners.forEach((listener) => { try { listener(clone(detail)); } catch (_) { /* subscriber isolation */ } });
+    function dispatch(eventName, payload) {
+      if (!EVENTS.includes(eventName)) return { matched: false, transition: null, runtime: clone(runtime), reason: "unsupported-event" };
+      const timestamp = payload?.timestamp == null ? clock() : Number(payload.timestamp);
+      const transition = selectRuntimeTransition(project, runtime, eventName, { ...(payload || {}), timestamp }, { used, lastRun });
+      if (!transition) return { matched: false, transition: null, runtime: clone(runtime), reason: "no-transition" };
+      runtime = applyTransition(project, runtime, transition, timestamp);
+      enteredAt = timestamp;
+      if (transition.once) used.add(transition.id);
+      lastRun.set(transition.id, timestamp);
+      const result = { matched: true, transition: clone(transition), runtime: clone(runtime), semantics: getStateSemantics(project, runtime.stateId) };
+      notify(result);
+      return result;
+    }
     return {
-      dispatch(eventName, payload) {
-        const transition = selectTransition(project, runtime.stateId, eventName, runtime.properties, payload || {});
-        runtime = applyTransition(project, runtime, transition, payload?.timestamp);
-        return { matched: Boolean(transition), transition: transition ? clone(transition) : null, runtime: clone(runtime) };
+      dispatch,
+      tick(timestamp) {
+        const now = timestamp == null ? clock() : Number(timestamp);
+        const due = project.transitions.filter((item) => item.from === runtime.stateId && item.event === "timer" && now - enteredAt >= item.delay);
+        return due.length ? dispatch("timer", { timestamp: now }) : { matched: false, transition: null, runtime: clone(runtime), reason: "timer-not-due" };
       },
       setProperty(name, value) {
         const definition = project.properties.find((item) => item.name === name);
         if (!definition) return false;
         runtime.properties[name] = typedValue(definition.type, value);
+        notify({ type: "property", name, value: runtime.properties[name], runtime: clone(runtime) });
         return true;
       },
+      getAvailableEvents() {
+        return [...new Set(project.transitions.filter((item) => item.from === runtime.stateId).map((item) => item.event))];
+      },
+      subscribe(listener) { if (typeof listener !== "function") return () => {}; listeners.add(listener); return () => listeners.delete(listener); },
       getState: () => clone(runtime),
-      reset(values) { runtime = { stateId: project.initialStateId, properties: propertyMap(project, values), history: [] }; return clone(runtime); }
+      reset(values) { runtime = { stateId: project.initialStateId, properties: propertyMap(project, values), history: [] }; enteredAt = clock(); used.clear(); lastRun.clear(); notify({ type: "reset", runtime: clone(runtime) }); return clone(runtime); },
+      destroy() { listeners.clear(); used.clear(); lastRun.clear(); }
     };
   }
 
   function safeJsonForScript(value) {
     return JSON.stringify(value).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
+  }
+
+  function getCapabilities(scope) {
+    const runtime = scope || globalScope;
+    let localPersistence = false;
+    try { localPersistence = Boolean(runtime.localStorage && typeof runtime.localStorage.setItem === "function"); } catch (_) { localPersistence = false; }
+    return {
+      deterministicRuntime: true,
+      webComponentExport: true,
+      localPersistence,
+      externalData: false,
+      realtimeCollaboration: false,
+      note: "State Machine runs locally. External data and realtime require an explicit adapter."
+    };
   }
 
   function exportProject(project) {
@@ -286,20 +391,20 @@
 (() => {
   const project = ${data};
   const cast = (type, value) => type === "number" ? Number(value) || 0 : type === "boolean" || type === "trigger" ? value === true || value === "true" : String(value == null ? "" : value);
-  const convert = (kind, value) => kind === "uppercase" ? String(value).toUpperCase() : kind === "lowercase" ? String(value).toLowerCase() : kind === "number" ? Number(value) || 0 : kind === "boolean" ? Boolean(value) : kind === "hex-color" ? (/^#[0-9a-f]{6}$/i.test(String(value)) ? value : "#67e8f9") : kind === "px" ? (Number(value) || 0) + "px" : kind === "url" ? (/^(https?:|data:image\/)/i.test(String(value)) ? value : "") : value;
-  const test = (condition, values) => { const a = cast(condition.type, values[condition.property]); const b = cast(condition.type, condition.value); const op = condition.operator; return op === "equals" ? a === b : op === "not-equals" ? a !== b : op === "greater" ? a > b : op === "greater-equal" ? a >= b : op === "less" ? a < b : op === "less-equal" ? a <= b : op === "contains" ? String(a).includes(String(b)) : op === "starts-with" ? String(a).startsWith(String(b)) : op === "ends-with" ? String(a).endsWith(String(b)) : op === "triggered" ? a === true : op === "not-triggered" ? a !== true : false; };
+  const convert = (kind, value) => kind === "uppercase" ? String(value).toUpperCase() : kind === "lowercase" ? String(value).toLowerCase() : kind === "number" ? Number(value) || 0 : kind === "boolean" ? Boolean(value) : kind === "hex-color" ? (/^#[0-9a-f]{6}$/i.test(String(value)) ? value : "#67e8f9") : kind === "px" ? (Number(value) || 0) + "px" : kind === "url" ? (/^(?:https?:\/\/|data:image\/(?:png|jpeg|gif|webp);base64,)/i.test(String(value)) ? value : "") : value;
+  const test = (condition, values, payload) => { const a = condition.type === "trigger" && condition.property === "$event" ? Boolean(payload&&payload.triggered) : cast(condition.type, values[condition.property]); const b = cast(condition.type, condition.value); const op = condition.operator; return op === "equals" ? a === b : op === "not-equals" ? a !== b : op === "greater" ? a > b : op === "greater-equal" ? a >= b : op === "less" ? a < b : op === "less-equal" ? a <= b : op === "contains" ? String(a).includes(String(b)) : op === "starts-with" ? String(a).startsWith(String(b)) : op === "ends-with" ? String(a).endsWith(String(b)) : op === "triggered" ? a === true : op === "not-triggered" ? a !== true : false; };
   class HHInteraction extends HTMLElement {
-    constructor() { super(); this.attachShadow({mode:"open"}); this.timer=0; this.reset(); }
+    constructor() { super(); this.attachShadow({mode:"open"}); this.timer=0; this.used=new Set(); this.lastRun=new Map(); this.reset(); }
     connectedCallback() { this.render(); this.scheduleTimer(); ["click","pointerenter","pointermove","scroll","keydown"].forEach(type => this.addEventListener(type, event => { const map={pointerenter:"hover",pointermove:"drag",keydown:"keyboard"}; this.trigger(map[type]||type,{key:event.key}); })); }
     disconnectedCallback() { clearTimeout(this.timer); }
-    trigger(eventName, payload={}) { const options=project.transitions.filter(t=>t.from===this.stateId&&t.event===eventName&&(!t.key||String(t.key).toLowerCase()===String(payload.key||"").toLowerCase())&&t.conditions.every(c=>test(c,this.values))).sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id)); const transition=options[0]; if(!transition) return false; transition.actions.forEach(a=>{ const p=project.properties.find(item=>item.name===a.property); if(p)this.values[a.property]=cast(p.type,a.value); }); this.stateId=transition.to; this.history.push({from:transition.from,to:transition.to,event:eventName,at:Date.now()}); this.render(); this.scheduleTimer(); this.dispatchEvent(new CustomEvent("hh-state-change",{detail:{state:this.stateId,transition:transition.id},bubbles:true})); return true; }
+    trigger(eventName, payload={}) { const now=Date.now(); const options=project.transitions.filter(t=>t.from===this.stateId&&t.event===eventName&&(!t.key||String(t.key).toLowerCase()===String(payload.key||"").toLowerCase())&&t.conditions.every(c=>test(c,this.values,payload))&&(!t.once||!this.used.has(t.id))&&(!t.cooldown||now-(this.lastRun.has(t.id)?this.lastRun.get(t.id):-Infinity)>=t.cooldown)).sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id)); const transition=options[0]; if(!transition) return false; transition.actions.forEach(a=>{ const p=project.properties.find(item=>item.name===a.property); if(p)this.values[a.property]=cast(p.type,a.value); }); if(transition.once)this.used.add(transition.id); this.lastRun.set(transition.id,now); this.stateId=transition.to; this.history.push({from:transition.from,to:transition.to,event:eventName,at:now}); this.render(); this.scheduleTimer(); this.dispatchEvent(new CustomEvent("hh-state-change",{detail:{state:this.stateId,transition:transition.id},bubbles:true})); return true; }
     setProperty(name,value) { const p=project.properties.find(item=>item.name===name); if(!p)return false; this.values[name]=cast(p.type,value); this.render(); return true; }
     getProperty(name) { return this.values[name]; }
     getState() { return this.stateId; }
-    reset() { this.stateId=project.initialStateId; this.values=Object.fromEntries(project.properties.map(p=>[p.name,cast(p.type,p.value)])); this.history=[]; if(this.isConnected){this.render();this.scheduleTimer();} }
+    reset() { this.stateId=project.initialStateId; this.values=Object.fromEntries(project.properties.map(p=>[p.name,cast(p.type,p.value)])); this.history=[]; this.used&&this.used.clear(); this.lastRun&&this.lastRun.clear(); if(this.isConnected){this.render();this.scheduleTimer();} }
     scheduleTimer() { clearTimeout(this.timer); const timers=project.transitions.filter(t=>t.from===this.stateId&&t.event==="timer").sort((a,b)=>(a.delay||0)-(b.delay||0)||b.priority-a.priority); if(timers[0])this.timer=setTimeout(()=>this.trigger("timer"),timers[0].delay||0); }
     applyBindings() { project.bindings.forEach(binding=>{ let element; try{element=binding.selector===":host"?this:this.shadowRoot.querySelector(binding.selector);}catch(_){return;} if(!element)return; const raw=binding.property==="$state"?this.stateId:this.values[binding.property]; const value=convert(binding.converter,raw); if(binding.direction!=="target"){ if(binding.target==="text")element.textContent=String(value); if(binding.target==="color")element.style.setProperty("--accent",String(value)); if(binding.target==="position")element.style.transform=\`translateX(\${value})\`; if(binding.target==="image"&&"src" in element)element.src=String(value); if(binding.target==="state")element.dataset.state=String(value); } if(binding.direction!=="source"&&element!==this&&binding.property!=="$state"){ const sync=()=>this.setProperty(binding.property,"value" in element?element.value:element.textContent); element.addEventListener("input",sync); element.addEventListener("change",sync); } }); }
-    render() { const state=project.states.find(s=>s.id===this.stateId)||project.states[0]; const label=String(this.values.label||state.name); const color=convert("hex-color",this.values.accent||state.color); this.shadowRoot.innerHTML=\`<style>:host{display:inline-block;--accent:\${color};font:600 16px system-ui}button{border:1px solid color-mix(in srgb,var(--accent),white 25%);border-radius:12px;background:color-mix(in srgb,var(--accent),#08111d 82%);box-shadow:0 10px 36px color-mix(in srgb,var(--accent),transparent 72%);color:white;cursor:pointer;padding:14px 22px;transition:transform .18s ease}button:hover{transform:translateY(-2px)}@media(prefers-reduced-motion:reduce){button{transition:none}}</style><button type="button" data-hh-label></button>\`; const button=this.shadowRoot.querySelector("button"); button.textContent=label; button.setAttribute("aria-label",label); this.applyBindings(); }
+    render() { const state=project.states.find(s=>s.id===this.stateId)||project.states[0]; const label=String(this.values.label||state.name); const color=convert("hex-color",this.values.accent||state.color); const busy=state.role==="busy"; this.setAttribute("aria-busy",String(busy)); this.setAttribute("aria-live",state.ariaLive||"off"); this.dataset.state=this.stateId; this.shadowRoot.innerHTML=\`<style>:host{display:inline-block;--accent:\${color};font:600 16px system-ui}button{border:1px solid color-mix(in srgb,var(--accent),white 25%);border-radius:12px;background:color-mix(in srgb,var(--accent),#08111d 82%);box-shadow:0 10px 36px color-mix(in srgb,var(--accent),transparent 72%);color:white;cursor:pointer;padding:14px 22px;transition:transform .18s ease}button:hover{transform:translateY(-2px)}@media(prefers-reduced-motion:reduce){button{transition:none}}</style><button type="button" data-hh-label></button>\`; const button=this.shadowRoot.querySelector("button"); button.textContent=label; button.setAttribute("aria-label",label); button.disabled=busy||this.values.enabled===false; this.applyBindings(); }
   }
   customElements.define("${tag}", HHInteraction);
 })();
@@ -432,13 +537,14 @@
       const transition = selectedTransition();
       if (!transition) {
         const state = selectedState();
-        node.innerHTML = `<div class="hhsm-heading"><strong>Thuộc tính state</strong><span>${escapeHtml(state.id)}</span></div><div class="hhsm-field"><label>Tên state</label><input class="hhsm-input" data-sm-state-name value="${escapeHtml(state.name)}"></div><div class="hhsm-field"><label>Mô tả</label><input class="hhsm-input" data-sm-state-description value="${escapeHtml(state.description)}"></div><div class="hhsm-field"><label>Màu</label><input class="hhsm-input" data-sm-state-color type="color" value="${escapeHtml(state.color)}"></div><button type="button" data-sm-delete-state data-danger>Xóa state</button>`;
+        node.innerHTML = `<div class="hhsm-heading"><strong>Thuộc tính state</strong><span>${escapeHtml(state.id)}</span></div><div class="hhsm-field"><label>Tên state</label><input class="hhsm-input" data-sm-state-name value="${escapeHtml(state.name)}"></div><div class="hhsm-field"><label>Mô tả</label><input class="hhsm-input" data-sm-state-description value="${escapeHtml(state.description)}"></div><div class="hhsm-grid2"><div class="hhsm-field"><label>Vai trò</label><select class="hhsm-select" data-sm-state-role>${STATE_ROLES.map((role) => `<option value="${role}" ${state.role === role ? "selected" : ""}>${role}</option>`).join("")}</select></div><div class="hhsm-field"><label>ARIA live</label><select class="hhsm-select" data-sm-state-live>${["off", "polite", "assertive"].map((mode) => `<option value="${mode}" ${state.ariaLive === mode ? "selected" : ""}>${mode}</option>`).join("")}</select></div></div><label class="hhsm-field"><span><input type="checkbox" data-sm-state-terminal ${state.terminal ? "checked" : ""}> Trạng thái kết thúc</span></label><div class="hhsm-field"><label>Màu</label><input class="hhsm-input" data-sm-state-color type="color" value="${escapeHtml(state.color)}"></div><button type="button" data-sm-delete-state data-danger>Xóa state</button>`;
         return;
       }
       node.innerHTML = `<div class="hhsm-heading"><strong>Transition</strong><span>${escapeHtml(transition.from)} → ${escapeHtml(transition.to)}</span></div>
         <div class="hhsm-grid2"><div class="hhsm-field"><label>Sự kiện</label><select class="hhsm-select" data-sm-transition-event>${EVENTS.map((event) => `<option ${transition.event === event ? "selected" : ""}>${event}</option>`).join("")}</select></div><div class="hhsm-field"><label>Ưu tiên</label><input class="hhsm-input" data-sm-transition-priority type="number" min="-100" max="100" value="${transition.priority}"></div></div>
         ${transition.event === "timer" ? `<div class="hhsm-field"><label>Độ trễ (ms)</label><input class="hhsm-input" data-sm-transition-delay type="number" min="0" max="600000" value="${transition.delay || 0}"></div>` : ""}
         ${transition.event === "keyboard" ? `<div class="hhsm-field"><label>Phím</label><input class="hhsm-input" data-sm-transition-key value="${escapeHtml(transition.key || "Enter")}"></div>` : ""}
+        <div class="hhsm-grid2"><div class="hhsm-field"><label>Cooldown (ms)</label><input class="hhsm-input" data-sm-transition-cooldown type="number" min="0" max="600000" value="${transition.cooldown || 0}"></div><div class="hhsm-field"><label>Tùy chọn</label><label><input type="checkbox" data-sm-transition-once ${transition.once ? "checked" : ""}> Chỉ chạy một lần</label><label><input type="checkbox" data-sm-transition-prevent ${transition.preventDefault ? "checked" : ""}> Chặn mặc định</label></div></div>
         <div class="hhsm-heading"><strong>Điều kiện</strong><button type="button" data-sm-add-condition>+ Điều kiện</button></div>
         ${transition.conditions.map((condition) => `<div class="hhsm-condition" data-sm-condition="${escapeHtml(condition.id)}"><div class="hhsm-condition-grid"><select class="hhsm-select" data-sm-condition-property>${project.properties.map((property) => `<option value="${escapeHtml(property.name)}" ${property.name === condition.property ? "selected" : ""}>${escapeHtml(property.name)}</option>`).join("")}</select><select class="hhsm-select" data-sm-condition-operator>${OPERATORS[condition.type].map((operator) => `<option value="${operator}" ${operator === condition.operator ? "selected" : ""}>${operator}</option>`).join("")}</select></div><div class="hhsm-condition-grid"><input class="hhsm-input" data-sm-condition-value value="${escapeHtml(condition.value)}"><button type="button" data-sm-remove-condition="${escapeHtml(condition.id)}" data-danger>Xóa</button></div></div>`).join("") || `<div class="hhsm-empty">Luôn chuyển khi nhận đúng event.</div>`}
         <div class="hhsm-grid2"><button type="button" data-sm-test-transition data-primary>Test transition</button><button type="button" data-sm-delete-transition data-danger>Xóa transition</button></div>`;
@@ -523,6 +629,9 @@
       if (targetNode.hasAttribute("data-sm-transition-event") && transition) { transition.event = targetNode.value; commit(); return; }
       if (targetNode.hasAttribute("data-sm-transition-priority") && transition) { transition.priority = clamp(targetNode.value, -100, 100); commit(); return; }
       if (targetNode.hasAttribute("data-sm-transition-delay") && transition) { transition.delay = clamp(targetNode.value, 0, 600000); commit(); return; }
+      if (targetNode.hasAttribute("data-sm-transition-cooldown") && transition) { transition.cooldown = clamp(targetNode.value, 0, 600000); commit(); return; }
+      if (targetNode.hasAttribute("data-sm-transition-once") && transition) { transition.once = targetNode.checked; commit(); return; }
+      if (targetNode.hasAttribute("data-sm-transition-prevent") && transition) { transition.preventDefault = targetNode.checked; commit(); return; }
       if (targetNode.hasAttribute("data-sm-transition-key") && transition) { transition.key = sanitizeText(targetNode.value, 32); commit(); return; }
       const conditionNode = targetNode.closest("[data-sm-condition]");
       const condition = transition?.conditions.find((item) => item.id === conditionNode?.dataset.smCondition);
@@ -537,6 +646,9 @@
       if (binding && targetNode.hasAttribute("data-sm-binding-converter")) { binding.converter = targetNode.value; commit(); return; }
       if (targetNode.hasAttribute("data-sm-state-name")) { selectedState().name = sanitizeText(targetNode.value, 48); commit(); return; }
       if (targetNode.hasAttribute("data-sm-state-description")) { selectedState().description = sanitizeText(targetNode.value, 160); commit(); return; }
+      if (targetNode.hasAttribute("data-sm-state-role")) { selectedState().role = STATE_ROLES.includes(targetNode.value) ? targetNode.value : "interactive"; commit(); return; }
+      if (targetNode.hasAttribute("data-sm-state-live")) { selectedState().ariaLive = ["off", "polite", "assertive"].includes(targetNode.value) ? targetNode.value : "off"; commit(); return; }
+      if (targetNode.hasAttribute("data-sm-state-terminal")) { selectedState().terminal = targetNode.checked; commit(); return; }
       if (targetNode.hasAttribute("data-sm-state-color")) { selectedState().color = targetNode.value; commit(); }
     });
 
@@ -603,9 +715,10 @@
   }
 
   const api = {
-    VERSION, FORMAT, STORAGE_KEY, STATE_PRESETS, EVENTS, PROPERTY_TYPES, BINDING_TARGETS, BINDING_DIRECTIONS, OPERATORS, CONVERTERS,
+    VERSION, FORMAT, STORAGE_KEY, STATE_PRESETS, EVENTS, PROPERTY_TYPES, BINDING_TARGETS, BINDING_DIRECTIONS, OPERATORS, CONVERTERS, STATE_ROLES,
     sanitizeText, sanitizeIdentifier, typedValue, createDefaultProject, normalizeProject, evaluateCondition, selectTransition, applyTransition,
-    createSimulator, exportProject, exportWebComponent, mount, unmount
+    getStateSemantics, validateProject, selectRuntimeTransition, createSimulator, getCapabilities,
+    exportProject, exportWebComponent, mount, unmount
   };
   globalScope.HHGraphicStateMachine = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

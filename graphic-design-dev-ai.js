@@ -8,6 +8,10 @@
   const MAX_DRAFTS = 40;
   const MAX_FEED = 30;
   const instances = new WeakMap();
+  const CONTROLLED_AI_ACTIONS = Object.freeze([
+    "background-remove", "generative-expand", "remove-object", "subtitle", "transcript", "chapter",
+    "auto-reframe", "silence-detect", "cut-suggest", "thumbnail", "palette", "caption"
+  ]);
 
   const HANDOFF_ITEMS = Object.freeze([
     { id: "layout", label: "Bố cục và constraint đã kiểm tra" },
@@ -55,6 +59,37 @@
 
   function safeText(value, maxLength) {
     return String(value == null ? "" : value).replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, maxLength || 1000);
+  }
+
+  function sanitizeSvg(value) {
+    return String(value == null ? "" : value)
+      .replace(/<\/?(?:script|foreignObject|iframe|object|embed|audio|video)\b[^>]*>/gi, "")
+      .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+      .replace(/\s(?:href|xlink:href)\s*=\s*(?:"(?:https?:|data:|javascript:)[^"]*"|'(?:https?:|data:|javascript:)[^']*')/gi, "");
+  }
+
+  function sanitizePayload(value, depth) {
+    const level = Number(depth) || 0;
+    if (level > 6) return null;
+    if (value == null || typeof value === "boolean" || typeof value === "number") return value;
+    if (typeof value === "string") return safeText(value, 12000);
+    if (Array.isArray(value)) return value.slice(0, 200).map((item) => sanitizePayload(item, level + 1));
+    if (typeof value !== "object") return null;
+    const result = {};
+    Object.keys(value).slice(0, 120).forEach((key) => {
+      if (/^(?:api[_-]?key|secret|token|password|authorization)$/i.test(key)) return;
+      result[safeText(key, 80)] = key === "svg" ? sanitizeSvg(value[key]) : sanitizePayload(value[key], level + 1);
+    });
+    return result;
+  }
+
+  function assertServerAdapter(adapter) {
+    if (typeof adapter === "function") return true;
+    if (!adapter || typeof adapter.generateDraft !== "function") throw new Error("Provider adapter server-side chưa được cấu hình.");
+    for (const key of Object.keys(adapter)) {
+      if (/api[_-]?key|secret|token|password|authorization/i.test(key)) throw new Error("Không được truyền API key hoặc secret xuống frontend.");
+    }
+    return true;
   }
 
   function normalizeHex(value, fallback) {
@@ -335,7 +370,38 @@
     return { frame, issues, score: Math.max(0, 100 - issues.filter((item) => item.severity === "error").length * 24 - issues.filter((item) => item.severity === "warning").length * 9), checkedAt: new Date().toISOString() };
   }
 
+  function controlledDraftPayload(action, promptInput, contextInput) {
+    const prompt = safeText(promptInput, 2000).trim();
+    const context = contextInput && typeof contextInput === "object" ? contextInput : {};
+    const media = sanitizePayload(context.media || {}, 0);
+    const common = { operation: action, editable: true, overwrite: false, media, note: "Bản nháp đề xuất. Chỉ áp dụng sau khi người dùng duyệt." };
+    if (["background-remove", "generative-expand", "remove-object"].includes(action)) {
+      return { ...common, requiresProvider: true, mask: { mode: action === "background-remove" ? "subject" : "manual", feather: 8, refineEdge: true }, prompt };
+    }
+    if (action === "transcript") return { ...common, language: safeText(context.language || "vi", 12), segments: storyboardToScenes(prompt).map((scene) => ({ startMs: (scene.order - 1) * 4000, endMs: scene.order * 4000, text: scene.description, confidence: null })) };
+    if (action === "subtitle") return { ...common, format: "srt", language: safeText(context.language || "vi", 12), cues: storyboardToScenes(prompt).map((scene) => ({ index: scene.order, startMs: (scene.order - 1) * 4000, endMs: scene.order * 4000, text: scene.description })) };
+    if (action === "chapter") return { ...common, chapters: storyboardToScenes(prompt).map((scene) => ({ timeMs: (scene.order - 1) * 15000, title: scene.description.slice(0, 80) })) };
+    if (action === "auto-reframe") return { ...common, targets: ["9:16", "1:1", "4:5", "16:9"], subjectTracking: true, safeZone: true, keyframes: [] };
+    if (action === "silence-detect") return { ...common, thresholdDb: clamp(context.thresholdDb, -80, -10, -42), minimumMs: clamp(context.minimumMs, 100, 10000, 700), ranges: [], analysisRequired: true };
+    if (action === "cut-suggest") return { ...common, strategy: "speaker-and-silence", suggestions: [], analysisRequired: true, keepSource: true };
+    if (action === "thumbnail") return { ...common, canvas: { width: 1280, height: 720 }, variants: ["subject-left", "subject-center", "subject-right"], headline: prompt.slice(0, 80), safeZone: true };
+    if (action === "palette") return { ...common, colors: (Array.isArray(context.colors) ? context.colors : ["#F05CAF", "#62D7E3", "#0B1020"]).slice(0, 12).map((color) => normalizeHex(color, "#000000")) };
+    if (action === "caption") return { ...common, variants: [prompt || "Nội dung mới từ HH Creative", `${prompt || "Khám phá nội dung"} #HHCreative`], language: safeText(context.language || "vi", 12) };
+    return common;
+  }
+
+  async function requestProviderDraft(adapter, actionInput, promptInput, contextInput) {
+    assertServerAdapter(adapter);
+    const action = CONTROLLED_AI_ACTIONS.includes(actionInput) ? actionInput : "caption";
+    const sourceSnapshot = sanitizePayload(contextInput || {}, 0);
+    const request = { action: "controlled-media-draft", operation: action, prompt: safeText(promptInput, 2000), context: sourceSnapshot, policy: { draftOnly: true, overwrite: false } };
+    const response = typeof adapter === "function" ? await adapter(request) : await adapter.generateDraft(request);
+    const payload = sanitizePayload(response && response.payload !== undefined ? response.payload : response, 0);
+    return { id: uid("draft"), action, prompt: request.prompt, createdAt: new Date().toISOString(), status: "draft", source: "provider-adapter", overwrite: false, sourceSnapshot, payload };
+  }
+
   function draftPayload(action, prompt, context) {
+    if (CONTROLLED_AI_ACTIONS.includes(action)) return controlledDraftPayload(action, prompt, context);
     if (action === "vector" || action === "icon") return createVectorDraft(prompt, action);
     if (action === "keyframes") return suggestKeyframes(prompt);
     if (action === "rig") return suggestRig(context && context.model);
@@ -346,11 +412,11 @@
   }
 
   function createDraft(actionInput, promptInput, context) {
-    const action = ["vector", "icon", "palette", "keyframes", "rig", "expression", "storyboard", "audit", "remote"].includes(actionInput) ? actionInput : "vector";
+    const action = ["vector", "icon", "keyframes", "rig", "expression", "storyboard", "audit", "remote", ...CONTROLLED_AI_ACTIONS].includes(actionInput) ? actionInput : "vector";
     return {
       id: uid("draft"), action, prompt: safeText(promptInput || "", 2000),
       createdAt: new Date().toISOString(), status: "draft", source: action === "remote" ? "adapter" : "local-deterministic",
-      payload: action === "palette" ? { colors: context && context.colors || [] } : draftPayload(action, promptInput, context)
+      overwrite: false, sourceSnapshot: sanitizePayload(context || {}, 0), payload: draftPayload(action, promptInput, context)
     };
   }
 
@@ -359,8 +425,9 @@
     return {
       id: safeText(source.id || uid("draft"), 100), action: safeText(source.action || "remote", 40),
       prompt: safeText(source.prompt || "", 2000), createdAt: source.createdAt || new Date().toISOString(),
-      status: "draft", source: source.source === "adapter" ? "adapter" : "local-deterministic",
-      payload: source.payload && typeof source.payload === "object" ? clone(source.payload) : { text: safeText(source.payload, 4000) }
+      status: "draft", source: ["adapter", "provider-adapter"].includes(source.source) ? source.source : "local-deterministic",
+      overwrite: false, sourceSnapshot: sanitizePayload(source.sourceSnapshot || {}, 0),
+      payload: source.payload && typeof source.payload === "object" ? sanitizePayload(source.payload, 0) : { text: safeText(source.payload, 4000) }
     };
   }
 
@@ -422,7 +489,7 @@
   }
 
   function draftPreview(draft) {
-    if (draft.payload && draft.payload.svg) return `<div>${draft.payload.svg}</div>`;
+    if (draft.payload && draft.payload.svg) return `<div>${sanitizeSvg(draft.payload.svg)}</div>`;
     if (draft.action === "palette") return `<div class="hda-palette">${(draft.payload.colors || []).map((color) => `<span class="hda-color" style="background:${normalizeHex(color, "#000000")}" title="${normalizeHex(color, "#000000")}"></span>`).join("")}</div>`;
     return `<pre class="hda-code">${escapeHtml(JSON.stringify(draft.payload, null, 2))}</pre>`;
   }
@@ -442,7 +509,7 @@
     if (tab === "inspect") content = `<div class="hda-grid"><section class="hda-card"><h3>Thuộc tính layer</h3><div class="hda-fields">${field("Tên layer", "name")}${field("Nội dung", "text")}${field("X", "x", "number")}${field("Y", "y", "number")}${field("Rộng", "width", "number", "min=1")}${field("Cao", "height", "number", "min=1")}${field("Màu nền", "fill", "color")}${field("Màu chữ", "textColor", "color")}${field("Màu viền", "borderColor", "color")}${field("Độ dày viền", "borderWidth", "number", "min=0")}${field("Bo góc", "radius", "number", "min=0")}${field("Padding", "padding", "number", "min=0")}${field("Gap", "gap", "number", "min=0")}${field("Cỡ chữ", "fontSize", "number", "min=1")}${field("Độ đậm", "fontWeight", "number", "min=100 max=900 step=100")}${field("Line height", "lineHeight", "number", "min=.5 max=5 step=.05")}</div><h4>WCAG Contrast</h4><div class="hda-metrics"><div class="hda-metric"><span>Tỉ lệ</span><strong>${inspection.contrast.ratio}:1</strong></div><div class="hda-metric"><span>AA</span><strong class="${inspection.contrast.aa ? "hda-pass" : "hda-fail"}">${inspection.contrast.aa ? "Đạt" : "Chưa đạt"}</strong></div><div class="hda-metric"><span>AAA</span><strong class="${inspection.contrast.aaa ? "hda-pass" : "hda-fail"}">${inspection.contrast.aaa ? "Đạt" : "Chưa đạt"}</strong></div><div class="hda-metric"><span>Kích thước</span><strong>${layer.width} × ${layer.height}</strong></div></div></section><section class="hda-card"><div class="hda-preview"><article class="hda-preview-layer" style="width:min(100%,${layer.width}px);min-height:min(360px,${layer.height}px);padding:${layer.padding}px;gap:${layer.gap}px;color:${layer.textColor};background:${layer.fill};border:${layer.borderWidth}px solid ${layer.borderColor};border-radius:${layer.radius}px;opacity:${layer.opacity};font-family:${escapeHtml(layer.fontFamily)}"><strong style="font-size:min(8vw,${layer.fontSize}px);font-weight:${layer.fontWeight};line-height:${layer.lineHeight}">${escapeHtml(layer.text)}</strong></article></div><div class="hda-row" style="margin-top:12px"><button type="button" data-hda-copy="svg">Copy SVG</button><button type="button" data-hda-copy="css">Copy CSS</button><button type="button" data-hda-copy="html">Copy HTML</button><button type="button" data-hda-action="audit">Kiểm tra layout</button></div><h4>CSS component</h4><pre class="hda-code">${escapeHtml(snippets.css)}</pre></section></div>`;
     if (tab === "tokens") content = `<div class="hda-token-grid"><section class="hda-card"><h3>Token Light / Dark</h3>${["light", "dark"].map((theme) => `<h4>${theme === "light" ? "Light" : "Dark"}</h4><div class="hda-swatches">${Object.entries(workspace.tokens[theme]).map(([key, value]) => `<label class="hda-swatch">${escapeHtml(key)}<input type="color" value="${value}" data-hda-token="${theme}.${key}"></label>`).join("")}</div>`).join("")}<h4>Xuất token</h4><div class="hda-row"><button type="button" data-hda-token-export="css">CSS variables</button><button type="button" data-hda-token-export="tailwind">Tailwind config</button><button type="button" data-hda-token-export="json">JSON token</button></div></section><section class="hda-card"><h3>CSS variables</h3><pre class="hda-code">${escapeHtml(tokensToCss(workspace.tokens))}</pre></section></div>`;
     if (tab === "handoff") content = `<div class="hda-grid"><section class="hda-card"><div class="hda-row" style="justify-content:space-between"><div><h3>Checklist bàn giao</h3><small>${completed}/${HANDOFF_ITEMS.length} mục hoàn tất</small></div><button type="button" class="is-primary" data-hda-action="ready" ${completed !== HANDOFF_ITEMS.length ? "disabled" : ""}>Sẵn sàng bàn giao</button></div><div class="hda-progress" aria-label="Tiến độ bàn giao ${progress}%"><span style="width:${progress}%"></span></div><div class="hda-checklist" style="margin-top:12px">${HANDOFF_ITEMS.map((item) => { const checked = workspace.handoff.checklist.find((entry) => entry.id === item.id)?.done; return `<label class="hda-check"><input type="checkbox" data-hda-check="${item.id}" ${checked ? "checked" : ""}><span>${item.label}</span></label>`; }).join("")}</div><label style="margin-top:12px">Ghi chú cho developer<textarea data-hda-handoff="note">${escapeHtml(workspace.handoff.note)}</textarea></label></section><section class="hda-card"><h3>Change feed</h3><div class="hda-feed">${workspace.feed.map((entry) => `<div class="hda-feed-item"><span class="hda-feed-dot"></span><span>${escapeHtml(entry.text)}</span><time>${new Date(entry.at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</time></div>`).join("")}</div></section></div>`;
-    if (tab === "ai") content = `<div class="hda-ai-grid"><section class="hda-card"><h3>Controlled AI Lab</h3><label>Mô tả kết quả mong muốn<textarea data-hda-prompt placeholder="Ví dụ: icon ngôi sao neon nảy nhẹ khi hover"></textarea></label><p class="hda-note">Mọi tác vụ tạo một bản nháp mới. Thiết kế hiện tại không bị ghi đè. Xử lý cục bộ là mặc định; Gemini chỉ khả dụng khi ứng dụng truyền <code>apiAdapter</code> an toàn từ backend.</p><div class="hda-ai-actions"><button type="button" class="hda-ai-action" data-hda-ai="vector"><span>Vector draft<small>SVG deterministic cục bộ</small></span></button><button type="button" class="hda-ai-action" data-hda-ai="icon"><span>Icon draft<small>Biểu tượng SVG mới</small></span></button><button type="button" class="hda-ai-action" data-hda-ai="keyframes"><span>Gợi ý keyframe<small>Duration, easing, property</small></span></button><button type="button" class="hda-ai-action" data-hda-ai="rig"><span>Auto-rig heuristic<small>16 khớp có thể chỉnh</small></span></button><button type="button" class="hda-ai-action" data-hda-ai="expression"><span>Biểu cảm & pose<small>Phân tích từ khóa cục bộ</small></span></button><button type="button" class="hda-ai-action" data-hda-ai="storyboard"><span>Storyboard scene<small>Chia cảnh từ kịch bản</small></span></button><button type="button" class="hda-ai-action" data-hda-ai="audit"><span>Design audit<small>Tràn chữ, overflow, WCAG</small></span></button><button type="button" class="hda-ai-action" data-hda-ai="remote" ${adapterAvailable ? "" : "disabled"}><span>Gemini adapter<small>${adapterAvailable ? "Tạo draft qua backend" : "Chưa được ứng dụng cấu hình"}</small></span></button></div><label class="hda-file-label" style="margin-top:10px">Lấy palette từ ảnh<input class="hda-sr" type="file" accept="image/png,image/jpeg,image/webp" data-hda-palette-file></label></section><section class="hda-card"><h3>Bản nháp mới nhất</h3>${workspace.drafts.length ? `<article class="hda-draft">${draftPreview(workspace.drafts[0])}</article>` : `<div class="hda-empty"><div><strong>Chưa có bản nháp</strong><p>Chọn một tác vụ để bắt đầu.</p></div></div>`}</section></div>`;
+    if (tab === "ai") content = `<div class="hda-ai-grid"><section class="hda-card"><h3>Controlled AI Lab</h3><label>Mô tả kết quả mong muốn<textarea data-hda-prompt placeholder="Ví dụ: tách chủ thể, tạo phụ đề và thumbnail 16:9"></textarea></label><p class="hda-note">Mọi tác vụ tạo một bản nháp mới, không ghi đè media gốc. Provider chỉ chạy qua apiAdapter server-side; API key không được phép xuất hiện ở frontend.</p><div class="hda-ai-actions"><button type="button" class="hda-ai-action" data-hda-ai="vector"><span>Vector draft<small>SVG deterministic cục bộ</small></span></button><button type="button" class="hda-ai-action" data-hda-ai="audit"><span>Design audit<small>Overflow và WCAG</small></span></button>${CONTROLLED_AI_ACTIONS.map((action) => `<button type="button" class="hda-ai-action" data-hda-provider-ai="${action}" ${adapterAvailable ? "" : "disabled"}><span>${escapeHtml(action)}<small>${adapterAvailable ? "Draft qua backend" : "Cần provider server-side"}</small></span></button>`).join("")}</div><label class="hda-file-label" style="margin-top:10px">Lấy palette từ ảnh<input class="hda-sr" type="file" accept="image/png,image/jpeg,image/webp" data-hda-palette-file></label></section><section class="hda-card"><h3>Bản nháp mới nhất</h3>${workspace.drafts.length ? `<article class="hda-draft">${draftPreview(workspace.drafts[0])}</article>` : `<div class="hda-empty"><div><strong>Chưa có bản nháp</strong><p>Chọn một tác vụ để bắt đầu.</p></div></div>`}</section></div>`;
     if (tab === "drafts") content = workspace.drafts.length ? `<div class="hda-drafts">${workspace.drafts.map((draft) => `<article class="hda-draft"><header class="hda-draft-head"><div><span>${escapeHtml(draft.action)}</span><div>${escapeHtml(draft.prompt || "Bản nháp không tiêu đề")}</div></div><button type="button" data-hda-copy-draft="${draft.id}">Copy JSON</button></header><div class="hda-draft-body">${draftPreview(draft)}</div></article>`).join("")}</div>` : `<div class="hda-empty"><div><strong>Kho bản nháp đang trống</strong><p>Controlled AI luôn thêm kết quả vào đây và không sửa layer gốc.</p></div></div>`;
     return `<div class="hda-shell"><header class="hda-head"><div class="hda-mark" aria-hidden="true">DV</div><div class="hda-title"><h2>Dev Mode & Controlled AI</h2><p>Inspect · WCAG · Token · Handoff · Draft-first AI</p></div><div class="hda-actions"><button type="button" data-hda-action="import">Nhập workspace</button><button type="button" class="is-primary" data-hda-action="export">Xuất workspace</button></div></header><nav class="hda-tabs" role="tablist" aria-label="Khu vực Dev Mode">${tabs}</nav><main class="hda-view" role="tabpanel">${content}</main><footer class="hda-status" role="status" aria-live="polite" data-hda-status>Đã tự lưu trên thiết bị.</footer><input hidden type="file" accept="application/json,.json" data-hda-import></div>`;
   }
@@ -459,7 +526,8 @@
       workspace = normalizeWorkspace(settings.workspace || (stored ? JSON.parse(stored) : null));
     } catch (_) { workspace = createDefaultWorkspace(); }
     const apiAdapter = settings.apiAdapter;
-    const adapterAvailable = typeof apiAdapter === "function" || Boolean(apiAdapter && typeof apiAdapter.generateDraft === "function");
+    let adapterAvailable = false;
+    try { adapterAvailable = assertServerAdapter(apiAdapter); } catch (_) { adapterAvailable = false; }
     let destroyed = false;
 
     function persist() {
@@ -493,10 +561,14 @@
       saveAndRender(message || "Đã thêm bản nháp mới, thiết kế gốc không thay đổi.");
     }
 
-    async function runRemote(prompt) {
+    async function runRemote(prompt, operation) {
       if (!adapterAvailable) return setStatus("Ứng dụng chưa truyền apiAdapter an toàn.");
       setStatus("Đang yêu cầu adapter tạo bản nháp…");
       try {
+        if (operation && CONTROLLED_AI_ACTIONS.includes(operation)) {
+          const draft = await requestProviderDraft(apiAdapter, operation, prompt, { layer: clone(workspace.layer), tokens: clone(workspace.tokens) });
+          return addDraft(draft, `Provider đã tạo bản nháp ${operation}; media gốc được giữ nguyên.`);
+        }
         const request = { action: "design-draft", prompt: safeText(prompt, 2000), context: { layer: clone(workspace.layer), tokens: clone(workspace.tokens) } };
         const result = typeof apiAdapter === "function" ? await apiAdapter(request) : await apiAdapter.generateDraft(request);
         const payload = result && typeof result === "object" ? clone(result) : { text: safeText(result, 6000) };
@@ -537,6 +609,10 @@
         await copyText(doc, text); return setStatus(`Đã sao chép ${type === "tailwind" ? "Tailwind config" : type.toUpperCase()}.`);
       }
       if (target.dataset.hdaCopyDraft) { const draft = workspace.drafts.find((item) => item.id === target.dataset.hdaCopyDraft); if (draft) await copyText(doc, JSON.stringify(draft, null, 2)); return setStatus("Đã sao chép JSON của bản nháp."); }
+      if (target.dataset.hdaProviderAi) {
+        const prompt = root.querySelector("[data-hda-prompt]")?.value.trim() || "";
+        return runRemote(prompt, target.dataset.hdaProviderAi);
+      }
       if (target.dataset.hdaAi) {
         const promptNode = root.querySelector("[data-hda-prompt]"); const prompt = promptNode ? promptNode.value.trim() : ""; const aiAction = target.dataset.hdaAi;
         if (aiAction === "remote") return runRemote(prompt);
@@ -599,6 +675,7 @@
     normalizeHex, hexToRgb, relativeLuminance, contrastRatio, evaluateContrast,
     defaultLayer, normalizeLayer, inspectLayer, normalizeTokens, tokensToCss, tokensToTailwind, tokensToJson, componentSnippets,
     hashString, createVectorDraft, extractPaletteFromPixels, suggestKeyframes, suggestRig, suggestExpressionPose, storyboardToScenes, auditLayout,
+    CONTROLLED_AI_ACTIONS, sanitizeSvg, sanitizePayload, assertServerAdapter, controlledDraftPayload, requestProviderDraft,
     createDraft, createDefaultWorkspace, normalizeWorkspace, serializeWorkspace, mount, unmount
   });
   if (typeof module !== "undefined" && module.exports) module.exports = api;

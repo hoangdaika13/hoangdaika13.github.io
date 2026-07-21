@@ -6,6 +6,8 @@
   const LIBRARY_FORMAT = "hh-graphic-component-library";
   const STORAGE_KEY = "hh.graphic-components.project.v1";
   const STYLE_ID = "hh-graphic-components-style-v1";
+  const SVG_NAMESPACE = "http" + "://www.w3.org/2000/svg";
+  const XHTML_NAMESPACE = "http" + "://www.w3.org/1999/xhtml";
   const MAX_TREE_DEPTH = 18;
   const instances = new WeakMap();
 
@@ -19,14 +21,25 @@
   const DEFAULT_SELECTION = Object.freeze({ theme: "dark", size: "md", state: "default", language: "vi" });
   const AXIS_ORDER = Object.freeze(Object.keys(VARIANT_AXES));
   const NODE_TYPES = Object.freeze(["frame", "text", "button", "component", "unsupported"]);
+  const TOKEN_CATEGORIES = Object.freeze(["color", "font", "spacing", "radius"]);
+  const CONSTRAINT_AXES = Object.freeze({
+    horizontal: Object.freeze(["left", "center", "right", "stretch", "scale"]),
+    vertical: Object.freeze(["top", "center", "bottom", "stretch", "scale"])
+  });
+  const ARTBOARD_PRESETS = Object.freeze({
+    mobile: Object.freeze({ width: 390, height: 844, minWidth: 0, maxWidth: 599 }),
+    tablet: Object.freeze({ width: 768, height: 1024, minWidth: 600, maxWidth: 1023 }),
+    desktop: Object.freeze({ width: 1440, height: 1024, minWidth: 1024, maxWidth: 4096 })
+  });
   const COLOR_PROPS = new Set(["background", "color", "borderColor"]);
   const NUMBER_RULES = Object.freeze({
     padding: [0, 96], gap: [0, 64], radius: [0, 64], width: [24, 1600], height: [16, 1200],
+    minWidth: [0, 1600], maxWidth: [24, 4096], minHeight: [0, 1200], maxHeight: [16, 4096],
     fontSize: [8, 96], fontWeight: [100, 900], borderWidth: [0, 12], opacity: [0, 1]
   });
   const STRING_RULES = Object.freeze({
     layout: ["row", "column"], align: ["start", "center", "end", "stretch"],
-    justify: ["start", "center", "end", "between"]
+    justify: ["start", "center", "end", "between"], wrap: ["nowrap", "wrap"]
   });
 
   function uid(prefix) {
@@ -70,6 +83,81 @@
     })[character]);
   }
 
+  function createDefaultTokens() {
+    return {
+      base: {
+        color: { accent: "#62D9E6", surface: "#151D2B", text: "#F8FAFC", muted: "#94A3B8", border: "#334155" },
+        font: { body: "Inter, system-ui, sans-serif", display: "Inter, system-ui, sans-serif" },
+        spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 },
+        radius: { sm: 4, md: 8, lg: 16 }
+      },
+      themes: {
+        light: { color: { surface: "#FFFFFF", text: "#0F172A", muted: "#475569", border: "#CBD5E1", accent: "#0F766E" } },
+        dark: { color: { surface: "#151D2B", text: "#F8FAFC", muted: "#94A3B8", border: "#334155", accent: "#62D9E6" } }
+      }
+    };
+  }
+
+  function sanitizeTokenValue(category, value, fallback) {
+    if (category === "color") return safeColor(value, fallback || "#000000");
+    if (category === "font") {
+      const font = cleanText(value, 120).replace(/[;{}<>]/g, "").trim();
+      return font || fallback || "system-ui, sans-serif";
+    }
+    if (category === "spacing") return bounded(value, 0, 256, Number(fallback) || 0);
+    if (category === "radius") return bounded(value, 0, 256, Number(fallback) || 0);
+    return undefined;
+  }
+
+  function normalizeTokenGroup(raw, fallback) {
+    const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    const base = fallback && typeof fallback === "object" ? fallback : {};
+    return TOKEN_CATEGORIES.reduce((output, category) => {
+      output[category] = {};
+      const values = source[category] && typeof source[category] === "object" ? source[category] : base[category] || {};
+      Object.entries(values).slice(0, 100).forEach(([name, value]) => {
+        const id = safeId(name, "");
+        const normalized = sanitizeTokenValue(category, value, base[category]?.[id]);
+        if (id && normalized !== undefined) output[category][id] = normalized;
+      });
+      return output;
+    }, {});
+  }
+
+  function normalizeTokens(raw) {
+    const fallback = createDefaultTokens();
+    const source = raw && typeof raw === "object" ? raw : {};
+    const base = normalizeTokenGroup(source.base, fallback.base);
+    TOKEN_CATEGORIES.forEach((category) => {
+      if (!Object.keys(base[category]).length) base[category] = clone(fallback.base[category]);
+    });
+    const themes = {};
+    const rawThemes = source.themes && typeof source.themes === "object" ? source.themes : fallback.themes;
+    Object.entries(rawThemes).slice(0, 12).forEach(([theme, values]) => { themes[safeId(theme, "theme")] = normalizeTokenGroup(values, {}); });
+    if (!themes.light) themes.light = normalizeTokenGroup(fallback.themes.light, {});
+    if (!themes.dark) themes.dark = normalizeTokenGroup(fallback.themes.dark, {});
+    return { base, themes };
+  }
+
+  function normalizeTokenBindings(raw) {
+    const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    const bindings = {};
+    Object.entries(source).slice(0, 40).forEach(([property, rawPath]) => {
+      if (![...Object.keys(NUMBER_RULES), ...Object.keys(STRING_RULES), ...COLOR_PROPS, "text", "disabled", "shadow"].includes(property)) return;
+      const [category, name] = String(rawPath || "").split(".");
+      if (TOKEN_CATEGORIES.includes(category) && safeId(name, "")) bindings[property] = `${category}.${safeId(name, "")}`;
+    });
+    return bindings;
+  }
+
+  function normalizeConstraints(raw) {
+    const source = raw && typeof raw === "object" ? raw : {};
+    return {
+      horizontal: CONSTRAINT_AXES.horizontal.includes(source.horizontal) ? source.horizontal : "left",
+      vertical: CONSTRAINT_AXES.vertical.includes(source.vertical) ? source.vertical : "top"
+    };
+  }
+
   function normalizeSelection(raw, fallback) {
     const source = raw && typeof raw === "object" ? raw : {};
     const base = fallback || DEFAULT_SELECTION;
@@ -88,8 +176,8 @@
   }
 
   function defaultProps(type) {
-    if (type === "frame") return { layout: "column", align: "stretch", justify: "start", gap: 12, padding: 20, radius: 8, width: 320, background: "#151D2B", borderColor: "#334155", borderWidth: 1, opacity: 1 };
-    if (type === "button") return { layout: "row", align: "center", justify: "center", gap: 8, padding: 12, radius: 6, background: "#62D9E6", borderColor: "#62D9E6", borderWidth: 1, opacity: 1, disabled: false };
+    if (type === "frame") return { layout: "column", wrap: "nowrap", align: "stretch", justify: "start", gap: 12, padding: 20, radius: 8, width: 320, background: "#151D2B", borderColor: "#334155", borderWidth: 1, opacity: 1 };
+    if (type === "button") return { layout: "row", wrap: "nowrap", align: "center", justify: "center", gap: 8, padding: 12, radius: 6, background: "#62D9E6", borderColor: "#62D9E6", borderWidth: 1, opacity: 1, disabled: false };
     if (type === "text") return { text: "Text", color: "#F8FAFC", fontSize: 14, fontWeight: 500, opacity: 1 };
     return {};
   }
@@ -145,6 +233,8 @@
       type,
       name: cleanText(source.name || (type === "text" ? "Text" : "Layer"), 100),
       props: normalizeProps(type, source.props),
+      tokenBindings: normalizeTokenBindings(source.tokenBindings),
+      constraints: normalizeConstraints(source.constraints),
       children: []
     };
     if (type === "component") {
@@ -268,7 +358,27 @@
         { id: "button-live", name: "Live instance", componentId: "action-button", sourceComponentId: "action-button", selection: clone(DEFAULT_SELECTION), overrides: {}, detached: false, snapshot: null },
         { id: "button-override", name: "Label override", componentId: "action-button", sourceComponentId: "action-button", selection: clone(DEFAULT_SELECTION), overrides: { "button-label.text": "Dung mien phi" }, detached: false, snapshot: null },
         { id: "card-live", name: "Nested card", componentId: "feature-card", sourceComponentId: "feature-card", selection: clone(DEFAULT_SELECTION), overrides: {}, detached: false, snapshot: null }
-      ]
+      ],
+      tokens: createDefaultTokens(),
+      activeTheme: "dark",
+      artboards: Object.entries(ARTBOARD_PRESETS).map(([id, preset]) => ({ id, name: id[0].toUpperCase() + id.slice(1), ...preset, rootInstanceId: id === "desktop" ? "card-live" : "button-live" })),
+      devMode: { readyForHandoff: false, includeComments: true, unit: "px" }
+    };
+  }
+
+  function normalizeArtboard(raw, index) {
+    const source = raw && typeof raw === "object" ? raw : {};
+    const preset = ARTBOARD_PRESETS[Object.keys(ARTBOARD_PRESETS)[index] || "desktop"] || ARTBOARD_PRESETS.desktop;
+    const minWidth = bounded(source.minWidth, 0, 4096, preset.minWidth);
+    const maxWidth = bounded(source.maxWidth, minWidth, 8192, preset.maxWidth);
+    return {
+      id: safeId(source.id, `artboard-${index + 1}`),
+      name: cleanText(source.name || `Artboard ${index + 1}`, 80),
+      width: Math.round(bounded(source.width, 64, 8192, preset.width)),
+      height: Math.round(bounded(source.height, 64, 8192, preset.height)),
+      minWidth: Math.round(minWidth),
+      maxWidth: Math.round(maxWidth),
+      rootInstanceId: safeId(source.rootInstanceId, "") || null
     };
   }
 
@@ -332,7 +442,15 @@
         description: cleanText(sourceLibrary.description || fallback.library.description, 300),
         components
       },
-      instances: normalizedInstances
+      instances: normalizedInstances,
+      tokens: normalizeTokens(source.tokens || fallback.tokens),
+      activeTheme: safeId(source.activeTheme, "dark"),
+      artboards: (Array.isArray(source.artboards) && source.artboards.length ? source.artboards : fallback.artboards).slice(0, 30).map(normalizeArtboard),
+      devMode: {
+        readyForHandoff: source.devMode?.readyForHandoff === true,
+        includeComments: source.devMode?.includeComments !== false,
+        unit: ["px", "rem"].includes(source.devMode?.unit) ? source.devMode.unit : "px"
+      }
     };
   }
 
@@ -350,6 +468,32 @@
 
   function componentMap(project) {
     return new Map(project.library.components.map((component) => [component.id, component]));
+  }
+
+  function tokenValueFromProject(project, path, themeInput) {
+    const [category, rawName] = String(path || "").split(".");
+    const name = safeId(rawName, "");
+    if (!TOKEN_CATEGORIES.includes(category) || !name) return undefined;
+    const theme = safeId(themeInput || project.activeTheme, "dark");
+    const themed = project.tokens?.themes?.[theme]?.[category]?.[name];
+    return themed !== undefined ? themed : project.tokens?.base?.[category]?.[name];
+  }
+
+  function resolveToken(projectInput, path, theme) {
+    const project = normalizeProject(projectInput);
+    return clone(tokenValueFromProject(project, path, theme));
+  }
+
+  function applyTokenBindings(root, project, theme) {
+    walkNodes(root, (node) => {
+      if (!node.props || node.type === "component" || node.type === "unsupported") return;
+      Object.entries(normalizeTokenBindings(node.tokenBindings)).forEach(([property, path]) => {
+        const token = tokenValueFromProject(project, path, theme);
+        const value = sanitizeProperty(property, token, node.props[property]);
+        if (value !== undefined) node.props[property] = value;
+      });
+    });
+    return root;
   }
 
   function graphForProject(project) {
@@ -433,6 +577,7 @@
     }
     const root = clone(component.root);
     AXIS_ORDER.forEach((axis) => applyOverrides(root, component.variantValues[axis][selection[axis]]));
+    applyTokenBindings(root, project, selection.theme);
     applyOverrides(root, overrides);
     const issues = [];
     function resolveNested(node) {
@@ -664,6 +809,165 @@
     return { ok: true, project, added: incoming.map((item) => item.id), error: null };
   }
 
+  function setToken(projectInput, path, value, themeInput) {
+    const project = normalizeProject(projectInput);
+    const [category, rawName] = String(path || "").split(".");
+    const name = safeId(rawName, "");
+    if (!TOKEN_CATEGORIES.includes(category) || !name) return project;
+    const theme = themeInput == null ? null : safeId(themeInput, "");
+    const target = theme
+      ? (project.tokens.themes[theme] || (project.tokens.themes[theme] = normalizeTokenGroup({}, {})))
+      : project.tokens.base;
+    const fallback = target[category]?.[name] ?? project.tokens.base[category]?.[name];
+    const normalized = sanitizeTokenValue(category, value, fallback);
+    if (normalized !== undefined) target[category][name] = normalized;
+    project.updatedAt = new Date().toISOString();
+    return project;
+  }
+
+  function setNodeTokenBinding(projectInput, componentId, nodeId, property, tokenPath) {
+    const project = normalizeProject(projectInput);
+    const component = project.library.components.find((item) => item.id === safeId(componentId, ""));
+    const node = component && findNode(component.root, safeId(nodeId, ""));
+    const normalized = normalizeTokenBindings({ [property]: tokenPath });
+    if (!node || !Object.prototype.hasOwnProperty.call(normalized, property)) return project;
+    node.tokenBindings[property] = normalized[property];
+    project.updatedAt = new Date().toISOString();
+    return project;
+  }
+
+  function setNodeConstraints(projectInput, componentId, nodeId, constraints) {
+    const project = normalizeProject(projectInput);
+    const component = project.library.components.find((item) => item.id === safeId(componentId, ""));
+    const node = component && findNode(component.root, safeId(nodeId, ""));
+    if (node) node.constraints = normalizeConstraints(constraints);
+    project.updatedAt = new Date().toISOString();
+    return project;
+  }
+
+  function addArtboard(projectInput, options) {
+    const project = normalizeProject(projectInput);
+    const candidate = normalizeArtboard(options, project.artboards.length);
+    const used = new Set(project.artboards.map((item) => item.id));
+    const base = candidate.id;
+    let suffix = 2;
+    while (used.has(candidate.id)) candidate.id = `${base}-${suffix++}`;
+    if (!project.instances.some((item) => item.id === candidate.rootInstanceId)) candidate.rootInstanceId = project.instances[0]?.id || null;
+    project.artboards.push(candidate);
+    project.updatedAt = new Date().toISOString();
+    return { project, artboard: clone(candidate) };
+  }
+
+  function selectResponsiveArtboard(projectInput, viewportWidth) {
+    const project = normalizeProject(projectInput);
+    const width = bounded(viewportWidth, 0, 8192, 0);
+    const exact = project.artboards.find((item) => width >= item.minWidth && width <= item.maxWidth);
+    if (exact) return clone(exact);
+    return clone([...project.artboards].sort((a, b) => Math.abs(a.width - width) - Math.abs(b.width - width))[0] || null);
+  }
+
+  function intrinsicNodeSize(node) {
+    const props = node.props || {};
+    if (node.type === "text") return { width: Math.max(16, cleanText(props.text, 500).length * bounded(props.fontSize, 8, 96, 14) * 0.56), height: bounded(props.fontSize, 8, 96, 14) * 1.35 };
+    return { width: bounded(props.width, 24, 4096, node.type === "button" ? 140 : 320), height: bounded(props.height, 16, 4096, node.type === "button" ? 44 : 80) };
+  }
+
+  function applyConstraintSize(size, parentSize, axis) {
+    if (axis === "stretch") return parentSize;
+    if (axis === "scale") return Math.min(parentSize, size);
+    return size;
+  }
+
+  function computeAutoLayout(resolvedInput, containerInput) {
+    const root = resolvedInput?.root ? resolvedInput.root : resolvedInput;
+    const container = {
+      x: bounded(containerInput?.x, -8192, 8192, 0), y: bounded(containerInput?.y, -8192, 8192, 0),
+      width: bounded(containerInput?.width, 24, 8192, intrinsicNodeSize(root || {}).width),
+      height: bounded(containerInput?.height, 16, 8192, intrinsicNodeSize(root || {}).height)
+    };
+    function layout(node, box) {
+      if (!node) return null;
+      const props = node.props || {};
+      const intrinsic = intrinsicNodeSize(node);
+      const constraints = normalizeConstraints(node.constraints);
+      const width = applyConstraintSize(bounded(props.width, 24, 4096, intrinsic.width), box.width, constraints.horizontal);
+      const height = applyConstraintSize(bounded(props.height, 16, 4096, intrinsic.height), box.height, constraints.vertical);
+      const x = constraints.horizontal === "right" ? box.x + box.width - width : constraints.horizontal === "center" ? box.x + (box.width - width) / 2 : box.x;
+      const y = constraints.vertical === "bottom" ? box.y + box.height - height : constraints.vertical === "center" ? box.y + (box.height - height) / 2 : box.y;
+      const result = { id: node.id, type: node.type, x: Math.round(x), y: Math.round(y), width: Math.round(width), height: Math.round(height), children: [] };
+      const children = (node.children || []).filter((item) => item.type !== "unsupported");
+      if (!children.length) return result;
+      const padding = bounded(props.padding, 0, 256, 0);
+      const gap = bounded(props.gap, 0, 256, 0);
+      const row = props.layout === "row";
+      let cursor = row ? x + padding : y + padding;
+      children.forEach((child) => {
+        const childSize = intrinsicNodeSize(child);
+        const childBox = row
+          ? { x: cursor, y: y + padding, width: childSize.width, height: Math.max(16, height - padding * 2) }
+          : { x: x + padding, y: cursor, width: Math.max(24, width - padding * 2), height: childSize.height };
+        const childLayout = layout(child, childBox);
+        if (childLayout) { result.children.push(childLayout); cursor += (row ? childLayout.width : childLayout.height) + gap; }
+      });
+      return result;
+    }
+    return layout(root, container);
+  }
+
+  function tokenEntries(projectInput, theme) {
+    const project = normalizeProject(projectInput);
+    const entries = [];
+    TOKEN_CATEGORIES.forEach((category) => {
+      const names = new Set([...Object.keys(project.tokens.base[category] || {}), ...Object.keys(project.tokens.themes[safeId(theme || project.activeTheme, "dark")]?.[category] || {})]);
+      names.forEach((name) => entries.push({ category, name, path: `${category}.${name}`, value: tokenValueFromProject(project, `${category}.${name}`, theme) }));
+    });
+    return entries;
+  }
+
+  function exportCssVariables(projectInput, theme) {
+    const variables = tokenEntries(projectInput, theme).map((token) => `  --hh-${token.category}-${token.name}: ${token.category === "spacing" || token.category === "radius" ? `${token.value}px` : token.value};`);
+    return `:root {\n${variables.join("\n")}\n}`;
+  }
+
+  function exportTailwindConfig(projectInput, theme) {
+    const groups = { colors: {}, fontFamily: {}, spacing: {}, borderRadius: {} };
+    tokenEntries(projectInput, theme).forEach((token) => {
+      if (token.category === "color") groups.colors[token.name] = token.value;
+      if (token.category === "font") groups.fontFamily[token.name] = token.value.split(",").map((item) => item.trim().replace(/^['\"]|['\"]$/g, ""));
+      if (token.category === "spacing") groups.spacing[token.name] = `${token.value}px`;
+      if (token.category === "radius") groups.borderRadius[token.name] = `${token.value}px`;
+    });
+    return `module.exports = ${safeJson({ theme: { extend: groups } }, 2)};`;
+  }
+
+  function exportComponentSvg(projectInput, componentId, selection, width, height) {
+    const resolved = resolveComponent(projectInput, componentId, selection || {});
+    const safeWidth = Math.round(bounded(width, 64, 4096, 640));
+    const safeHeight = Math.round(bounded(height, 64, 4096, 480));
+    return `<svg xmlns="${SVG_NAMESPACE}" width="${safeWidth}" height="${safeHeight}" viewBox="0 0 ${safeWidth} ${safeHeight}"><foreignObject width="100%" height="100%"><div xmlns="${XHTML_NAMESPACE}" style="box-sizing:border-box;padding:24px;background:#0b111b;width:100%;height:100%">${renderResolvedHtml(resolved)}</div></foreignObject></svg>`;
+  }
+
+  function inspectComponent(projectInput, componentId, selection) {
+    const project = normalizeProject(projectInput);
+    const resolved = resolveComponent(project, componentId, selection || {});
+    const nodes = [];
+    walkNodes(resolved.root, (node) => nodes.push({ id: node.id, type: node.type, props: clone(node.props || {}), tokenBindings: clone(node.tokenBindings || {}), constraints: clone(node.constraints || {}) }));
+    return { componentId: resolved.componentId, selection: resolved.selection, issues: resolved.issues, nodes, tokens: tokenEntries(project, resolved.selection.theme) };
+  }
+
+  function exportDevMode(projectInput, componentId, selection) {
+    const project = normalizeProject(projectInput);
+    return {
+      format: "hh-dev-handoff",
+      version: 1,
+      readyForHandoff: project.devMode.readyForHandoff,
+      inspect: inspectComponent(project, componentId, selection),
+      cssVariables: exportCssVariables(project, selection?.theme),
+      tailwindConfig: exportTailwindConfig(project, selection?.theme),
+      svg: exportComponentSvg(project, componentId, selection)
+    };
+  }
+
   function validStorage(storage) {
     return !!storage && typeof storage.getItem === "function" && typeof storage.setItem === "function";
   }
@@ -689,7 +993,7 @@
       `opacity:${bounded(props.opacity, 0, 1, 1)}`, `gap:${bounded(props.gap, 0, 64, 0)}px`, `padding:${bounded(props.padding, 0, 96, 0)}px`,
       `border-radius:${bounded(props.radius, 0, 64, 0)}px`, `border:${bounded(props.borderWidth, 0, 12, 0)}px solid ${safeColor(props.borderColor, "#334155")}`,
       `background:${safeColor(props.background, "#151D2B")}`, `align-items:${align}`, `justify-content:${justify}`,
-      `flex-direction:${props.layout === "row" ? "row" : "column"}`
+      `flex-direction:${props.layout === "row" ? "row" : "column"}`, `flex-wrap:${props.wrap === "wrap" ? "wrap" : "nowrap"}`
     ];
     if (Number.isFinite(Number(props.width))) values.push(`width:${bounded(props.width, 24, 1600, 320)}px;max-width:100%`);
     if (Number.isFinite(Number(props.height))) values.push(`min-height:${bounded(props.height, 16, 1200, 16)}px`);
@@ -844,12 +1148,21 @@
       host.innerHTML = `${textNode ? `<label>Text override<input data-hgc-override-path="${escapeHtml(path)}" maxlength="500" value="${escapeHtml(current)}" placeholder="De trong de theo master"></label>` : ""}<div class="hgc-row"><button type="button" data-hgc-action="reset-overrides">Reset override</button><button type="button" class="hgc-danger" data-hgc-action="detach">Detach</button></div>`;
     }
 
+    function renderDesignSystemEditor() {
+      const host = qs("[data-hgc-master-editor]");
+      const component = selectedComponent();
+      if (!host || !component) return;
+      const accent = resolveToken(project, "color.accent", activeSelection.theme);
+      const artboard = selectResponsiveArtboard(project, activeSelection.size === "sm" ? 390 : activeSelection.size === "lg" ? 1440 : 768);
+      host.insertAdjacentHTML("beforeend", `<hr><strong>Design tokens &amp; Dev Mode</strong><label>Accent token (${escapeHtml(activeSelection.theme)})<input type="color" data-hgc-token="color.accent" value="${safeColor(accent, "#62D9E6")}"></label><label>Responsive artboard<input value="${escapeHtml(`${artboard?.name || "None"} · ${artboard?.width || 0}x${artboard?.height || 0}`)}" readonly></label><div class="hgc-row"><button type="button" data-hgc-action="bind-accent">Bind master to accent</button><button type="button" data-hgc-action="export-dev">Export Dev Mode</button></div>`);
+    }
+
     function renderAxisControls() {
       AXIS_ORDER.forEach((axis) => { const select = qs(`[data-hgc-axis="${axis}"]`); if (select) select.value = activeSelection[axis]; });
     }
 
     function render() {
-      renderLibrary(); renderMaster(); renderInstances(); renderMasterEditor(); renderInstanceEditor(); renderAxisControls();
+      renderLibrary(); renderMaster(); renderInstances(); renderMasterEditor(); renderDesignSystemEditor(); renderInstanceEditor(); renderAxisControls();
       qs("[data-hgc-revision]").textContent = `Revision ${revision}`;
     }
 
@@ -903,6 +1216,12 @@
       if (action === "import") return qs("[data-hgc-file]").click();
       if (action === "export-project") return exportPayload(serializeProject(project), `${safeId(project.name, "hh-components")}.json`);
       if (action === "export-library") return exportPayload(serializeLibrary(project), `${safeId(project.library.name, "hh-library")}.hhcomponents.json`);
+      if (action === "export-dev") return exportPayload(safeJson(exportDevMode(project, selectedComponentId, activeSelection), 2), `${safeId(project.name, "hh-components")}.handoff.json`);
+      if (action === "bind-accent") {
+        const component = selectedComponent();
+        if (!component) return;
+        return adopt(setNodeTokenBinding(project, component.id, component.root.id, "background", "color.accent"), "Master background is now linked to the theme accent token.");
+      }
       if (action === "new-component") {
         const added = addComponent(project, createComponent({ name: `Component ${project.library.components.length + 1}` }));
         selectedComponentId = added.component.id; selectedInstanceId = null;
@@ -937,6 +1256,7 @@
         return adoptLive(next, "Master name da cap nhat trong library.", true);
       }
       if (targetNode.dataset.hgcMasterPath) return adoptLive(setMasterProperty(project, selectedComponentId, targetNode.dataset.hgcMasterPath, targetNode.value), "Master edit da propagate toi moi linked instance.");
+      if (targetNode.dataset.hgcToken) return adoptLive(setToken(project, targetNode.dataset.hgcToken, targetNode.value, activeSelection.theme), "Theme token da cap nhat va propagate toi component dang lien ket.");
       if (targetNode.dataset.hgcVariantPath) return adoptLive(setVariantProperty(project, selectedComponentId, targetNode.dataset.hgcVariantAxis, activeSelection[targetNode.dataset.hgcVariantAxis], targetNode.dataset.hgcVariantPath, targetNode.value), "Variant master edit da propagate toi cac linked instance cung variant.");
       if (targetNode.dataset.hgcOverridePath) {
         if (!selectedInstanceId) return;
@@ -1029,10 +1349,13 @@
   }
 
   const api = Object.freeze({
-    VERSION, FORMAT, LIBRARY_FORMAT, STORAGE_KEY, VARIANT_AXES, DEFAULT_SELECTION, NODE_TYPES,
+    VERSION, FORMAT, LIBRARY_FORMAT, STORAGE_KEY, VARIANT_AXES, DEFAULT_SELECTION, NODE_TYPES, TOKEN_CATEGORIES, CONSTRAINT_AXES, ARTBOARD_PRESETS,
     escapeHtml, createDefaultProject, normalizeProject, createComponent, addComponent, createInstance, addInstance,
     validateGraph, wouldCreateCycle, addNestedComponent, resolveComponent, resolveInstance, renderResolvedHtml,
     setMasterProperty, updateMaster, setVariantProperty, setInstanceOverride, resetOverride, setInstanceVariant, detachInstance,
+    createDefaultTokens, normalizeTokens, resolveToken, setToken, setNodeTokenBinding, setNodeConstraints,
+    addArtboard, selectResponsiveArtboard, computeAutoLayout, inspectComponent,
+    exportCssVariables, exportTailwindConfig, exportComponentSvg, exportDevMode,
     serializeProject, deserializeProject, serializeLibrary, importLibrary, saveProject, loadProject, getCapabilities,
     mount, unmount
   });

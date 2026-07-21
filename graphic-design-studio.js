@@ -100,11 +100,11 @@
     character: { selector: "[data-graphic-character-pro]", api: "HHGraphicCharacterPro", source: "graphic-design-character-pro.js?v=1" },
     simulation: { selector: "[data-graphic-simulation]", api: "HHGraphicSimulation", source: "graphic-design-simulation.js?v=1" },
     data: { selector: "[data-graphic-data-driven]", api: "HHGraphicDataDriven", source: "graphic-design-data-driven.js?v=1" },
-    components: { selector: "[data-graphic-components]", api: "HHGraphicComponents", source: "graphic-design-components.js?v=1" },
+    components: { selector: "[data-graphic-components]", api: "HHGraphicComponents", source: "graphic-design-components.js?v=2" },
     color: { selector: "[data-graphic-color-pro]", api: "HHGraphicColorPro", source: "graphic-design-color-pro.js?v=1" },
-    export: { selector: "[data-graphic-export-center]", api: "HHGraphicExportCenter", source: "graphic-design-export-center.js?v=1" },
+    export: { selector: "[data-graphic-export-center]", api: "HHGraphicExportCenter", source: "graphic-design-export-center.js?v=2" },
     plugins: { selector: "[data-graphic-plugins]", api: "HHGraphicPlugins", source: "graphic-design-plugins.js?v=1" },
-    review: { selector: "[data-graphic-review]", api: "HHGraphicReview", source: "graphic-design-review.js?v=1" },
+    review: { selector: "[data-graphic-review]", api: "HHGraphicReview", source: "graphic-design-review.js?v=2" },
     performance: { selector: "[data-graphic-performance]", api: "HHGraphicPerformance", source: "graphic-design-performance.js?v=1" }
   });
 
