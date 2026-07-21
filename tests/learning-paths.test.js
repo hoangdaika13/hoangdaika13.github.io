@@ -146,7 +146,7 @@ test("lesson buttons navigate directly to lesson-player and persist active lesso
   api.mount(host, { view: "paths", store, navigate: (detail) => navigations.push(detail) });
   host.emit("click", actionTarget("open-lesson", { lessonId: "communication-a0-01" }));
   assert.equal(store.get().activeLessonId, "communication-a0-01");
-  assert.equal(navigations[0].route, "/learning/lesson-player");
+  assert.equal(navigations[0].route, "/learn/lesson-player");
   assert.equal(navigations[0].view, "lesson-player");
   assert.equal(navigations[0].lessonId, "communication-a0-01");
   assert.equal(events.at(-1).type, "hh:learning:navigate");

@@ -94,6 +94,18 @@
     return buildReviewQueue(input, { ...options, includeUpcoming: false });
   }
 
+  function ratingPreview(card, retentionGoal = 90, now = Date.now()) {
+    ensureCore();
+    return Object.fromEntries(RATINGS.map((rating) => {
+      const scheduled = core.scheduleReview(card, rating.id, now, retentionGoal);
+      const delay = Math.max(0, safeDate(scheduled.dueAt, now) - now);
+      let label = `${Math.max(1, Math.round(delay / 60_000))} phút`;
+      if (delay >= DAY) label = `${Math.max(1, Math.round(delay / DAY))} ngày`;
+      else if (delay >= 60 * 60_000) label = `${Math.max(1, Math.round(delay / (60 * 60_000)))} giờ`;
+      return [rating.id, { ...scheduled, delay, label }];
+    }));
+  }
+
   function getWorkload(input, options = {}) {
     const now = Number(options.now) || Date.now();
     const queue = buildReviewQueue(input, { ...options, now, includeUpcoming: true });
@@ -201,13 +213,27 @@
     const state = store.get();
     const mistake = state.mistakes.find((item) => item.id === clean(mistakeId, 100));
     if (!mistake) throw new Error("Không tìm thấy lỗi sai.");
-    return addManualCard(store, {
+    const trackId = trackForMistake(mistake, state);
+    const existing = state.reviews.find((card) => card.trackId === trackId
+      && card.skillId === mistake.skillId
+      && clean(card.prompt).toLocaleLowerCase("vi-VN") === clean(mistake.prompt).toLocaleLowerCase("vi-VN"));
+    if (!existing) return addManualCard(store, {
       prompt: mistake.prompt,
       answer: mistake.answer,
-      trackId: trackForMistake(mistake, state),
+      trackId,
       skillId: mistake.skillId,
       difficulty: 5
     }, now);
+    store.update((draft) => {
+      const card = draft.reviews.find((item) => item.id === existing.id);
+      if (card) {
+        card.answer = mistake.answer || card.answer;
+        card.difficulty = Math.max(5, Number(card.difficulty) || 3);
+        card.dueAt = new Date(now).toISOString();
+      }
+      return draft;
+    });
+    return existing.id;
   }
 
   function exportJSON(input, options = {}) {
@@ -256,8 +282,9 @@
 
   function renderReview(state, view, now) {
     const queue = buildReviewQueue(state, { trackId: view.trackId, query: view.query, includeUpcoming: view.includeUpcoming, now });
-    const active = queue[0] || null;
+    const active = queue.find((card) => card.id === view.activeCardId) || queue[0] || null;
     const answerVisible = active && view.revealedId === active.id;
+    const previews = active ? ratingPreview(active, state.profile.retentionGoal, now) : {};
     return `<div class="lr-workspace lr-review-workspace">
       <section class="lr-session" aria-live="polite">
         ${active ? `<div class="lr-card-meta"><span class="is-${active.priority.status}">${escapeHTML(statusLabel(active.priority))}</span><small>${escapeHTML(skillLabel(active.skillId))} · độ khó ${active.difficulty}/10</small></div>
@@ -266,11 +293,11 @@
             <div class="lr-answer" ${answerVisible ? "" : "aria-hidden=\"true\""}><span>ĐÁP ÁN</span><p>${answerVisible ? escapeHTML(active.answer) : "Nhấn Space hoặc nút bên dưới để xem đáp án."}</p></div>
           </article>
           <button class="lr-reveal" type="button" data-lr-action="reveal">${answerVisible ? "Ẩn đáp án" : "Hiện đáp án"}<kbd>Space</kbd></button>
-          <div class="lr-ratings" aria-label="Đánh giá mức ghi nhớ">${RATINGS.map((rating) => `<button type="button" class="is-${rating.tone}" data-lr-rate="${rating.id}" ${answerVisible ? "" : "disabled"}><kbd>${rating.key}</kbd><span>${rating.label}</span></button>`).join("")}</div>`
+          <div class="lr-ratings" aria-label="Đánh giá mức ghi nhớ">${RATINGS.map((rating) => `<button type="button" class="is-${rating.tone}" data-lr-rate="${rating.id}" ${answerVisible ? "" : "disabled"}><kbd>${rating.key}</kbd><span>${rating.label}<small>${escapeHTML(previews[rating.id]?.label || "")}</small></span></button>`).join("")}</div>`
         : `<div class="lr-empty"><span aria-hidden="true">✓</span><h2>Hôm nay đã ôn xong</h2><p>Bật “Xem thẻ sắp đến hạn” hoặc thêm thẻ mới để tiếp tục.</p></div>`}
       </section>
       <aside class="lr-queue"><header><div><span>HÀNG ĐỢI THÍCH ỨNG</span><strong>${queue.length} thẻ</strong></div><label><input type="checkbox" data-lr-upcoming ${view.includeUpcoming ? "checked" : ""}> Xem thẻ sắp đến hạn</label></header>
-        <div class="lr-queue-list">${queue.slice(0, 10).map((card, index) => `<article class="${index === 0 ? "is-active" : ""}"><i>${String(index + 1).padStart(2, "0")}</i><div><strong>${escapeHTML(card.prompt)}</strong><small>${escapeHTML(statusLabel(card.priority))}</small></div><span>${card.lapses} lần quên</span></article>`).join("") || `<p class="lr-muted">Không còn thẻ trong bộ lọc này.</p>`}</div>
+        <div class="lr-queue-list">${queue.slice(0, 12).map((card, index) => `<button type="button" data-lr-select="${escapeHTML(card.id)}" class="lr-queue-card ${card.id === active?.id ? "is-active" : ""}" ${card.id === active?.id ? 'aria-current="true"' : ""}><i>${String(index + 1).padStart(2, "0")}</i><span><strong>${escapeHTML(card.prompt)}</strong><small>${escapeHTML(statusLabel(card.priority))}</small></span><em>${card.lapses} lần quên</em></button>`).join("") || `<p class="lr-muted">Không còn thẻ trong bộ lọc này.</p>`}</div>
         <section class="lr-retention"><span>Mục tiêu ghi nhớ</span><div>${[85, 90, 95].map((goal) => `<button type="button" data-lr-retention="${goal}" class="${state.profile.retentionGoal === goal ? "is-active" : ""}">${goal}%</button>`).join("")}</div><small>Mục tiêu cao hơn tạo lịch ôn dày hơn.</small></section>
       </aside>
     </div>`;
@@ -309,7 +336,8 @@
       trackId: core.tracks.some((track) => track.id === options.trackId) ? options.trackId : "all",
       query: clean(options.query, 120),
       includeUpcoming: options.includeUpcoming !== false,
-      revealedId: clean(options.revealedId, 100)
+      revealedId: clean(options.revealedId, 100),
+      activeCardId: clean(options.activeCardId, 100)
     };
     return `<section class="hh-learning-review" data-learning-review data-mode="${view.mode}">
       <header class="lr-hero"><div><span>HH LEARNING · SMART REVIEW</span><h1>Ôn đúng lúc, hiểu đúng lỗi</h1><p>Lịch ôn thích ứng chạy cục bộ, lấy cảm hứng từ FSRS. HH không tuyên bố đây là FSRS chuẩn khi chưa được audit độc lập.</p></div><div class="lr-hero-actions"><label><span class="sr-only">Tìm thẻ hoặc lỗi sai</span><input type="search" data-lr-search value="${escapeHTML(view.query)}" placeholder="Tìm từ, đáp án, lỗi sai..."></label><select data-lr-track aria-label="Lọc chuyên ngành">${trackOptions(view.trackId)}</select><button type="button" data-lr-action="export">Xuất JSON</button></div></header>
@@ -355,11 +383,20 @@
     }
     if (target.dataset.lrAction === "export") { downloadExport(instance); return; }
     if (target.dataset.lrRetention) { setRetentionGoal(instance.store, target.dataset.lrRetention); return; }
+    if (target.dataset.lrSelect) {
+      instance.view.activeCardId = clean(target.dataset.lrSelect, 100);
+      instance.view.revealedId = "";
+      renderInstance(instance);
+      instance.host.querySelector?.("[data-lr-action=\"reveal\"]")?.focus?.();
+      return;
+    }
     if (target.dataset.lrRate) {
       const card = instance.host.querySelector?.("[data-review-card]");
       if (!card) return;
       rateCard(instance.store, card.dataset.reviewCard, target.dataset.lrRate, { now: instance.now() });
       instance.view.revealedId = "";
+      instance.view.activeCardId = "";
+      renderInstance(instance);
       return;
     }
     if (target.dataset.lrResolve) { resolveMistake(instance.store, target.dataset.lrResolve, target.dataset.resolved === "true"); return; }
@@ -388,6 +425,8 @@
     addManualCard(instance.store, Object.fromEntries(data.entries()), instance.now());
     instance.view.mode = "review";
     instance.view.revealedId = "";
+    instance.view.activeCardId = "";
+    renderInstance(instance);
   }
 
   function handleKeydown(instance, event) {
@@ -406,6 +445,8 @@
     event.preventDefault();
     rateCard(instance.store, instance.view.revealedId, rating.id, { now: instance.now() });
     instance.view.revealedId = "";
+    instance.view.activeCardId = "";
+    renderInstance(instance);
   }
 
   function mount(host, options = {}) {
@@ -421,7 +462,8 @@
         trackId: core.tracks.some((track) => track.id === options.trackId) ? options.trackId : "all",
         query: "",
         includeUpcoming: options.includeUpcoming !== false,
-        revealedId: ""
+        revealedId: "",
+        activeCardId: ""
       },
       handlers: {}
     };
@@ -463,6 +505,7 @@
     reviewUrgency,
     buildReviewQueue,
     getDueQueue,
+    ratingPreview,
     getWorkload,
     getMistakeStats,
     setRetentionGoal,

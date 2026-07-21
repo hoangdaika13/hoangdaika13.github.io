@@ -7,7 +7,7 @@
   const VIEWS = Object.freeze(["assessments", "certificates", "classroom", "study-together", "catch-up"]);
   const ASSESSMENT_TYPES = Object.freeze(["placement", "lesson-quiz", "unit-test", "course-challenge", "timed-mock"]);
   const ROLES = Object.freeze(["teacher", "student"]);
-  const MAX = Object.freeze({ attempts: 120, classes: 24, assignments: 240, submissions: 500, discussions: 500, strokes: 1800 });
+  const MAX = Object.freeze({ attempts: 120, classes: 24, assignments: 240, submissions: 500, discussions: 500, strokes: 1800, mistakes: 300, activities: 500, projects: 80, groups: 40, knowledge: 300 });
   const DEFAULT_DURATION = Object.freeze({ placement: 15, "lesson-quiz": 5, "unit-test": 20, "course-challenge": 30, "timed-mock": 60 });
   const TYPE_LABELS = Object.freeze({
     placement: "Kiểm tra đầu vào",
@@ -32,6 +32,16 @@
   const roleOf = (classroom, userId) => classroom?.members?.find((member) => member.userId === userId)?.role || null;
   const canTeach = (classroom, userId) => roleOf(classroom, userId) === "teacher";
   const classCode = () => Array.from({ length: 6 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
+  const todayKey = (value = Date.now()) => new Date(value).toISOString().slice(0, 10);
+  const MASTERY_LABELS = Object.freeze({ familiar: "Đang làm quen", understood: "Đã hiểu", mastered: "Thành thạo", review: "Cần ôn lại" });
+
+  function defaultMissions(date = todayKey()) {
+    return [
+      { id: `${date}-learn`, date, title: "Học một nội dung mới", type: "learn", xp: 15, completed: false },
+      { id: `${date}-review`, date, title: "Ôn lại một lỗi gần đây", type: "review", xp: 10, completed: false },
+      { id: `${date}-challenge`, date, title: "Hoàn thành kiểm tra nhanh", type: "challenge", xp: 20, completed: false }
+    ];
+  }
 
   const QUESTION_BANK = Object.freeze([
     { id: "q-vocab-1", skill: "vocabulary", kind: "choice", prompt: "Chọn nghĩa đúng của 'deadline'.", options: ["Hạn chót", "Kỳ nghỉ", "Cuộc họp", "Hóa đơn"], answer: "Hạn chót" },
@@ -60,6 +70,12 @@
       assignments: [],
       submissions: [],
       discussions: [],
+      passport: { xp: 0, minutes: 0, streak: 0, lastStudyDate: null, skills: {}, achievements: [], activities: [] },
+      mistakeNotebook: [],
+      projectLessons: [],
+      knowledgeLoop: [],
+      dailyMissions: defaultMissions(),
+      studyGroups: [],
       studyRooms: [],
       pomodoro: { mode: "focus", duration: 25 * 60, remaining: 25 * 60, running: false, updatedAt: iso(), rounds: 0 },
       whiteboards: {},
@@ -117,6 +133,17 @@
         id: clean(item?.id || uid("submission"), 80), assignmentId: clean(item?.assignmentId, 80), userId: clean(item?.userId, 80), text: clean(item?.text, 5000), links: list(item?.links, 12).map((link) => clean(link, 500)), fileMetadata: list(item?.fileMetadata, 12).map((file) => ({ name: clean(file?.name, 160), type: clean(file?.type, 80), size: clamp(file?.size, 0, 10_000_000), lastModified: clamp(file?.lastModified, 0, Date.now()) })), status: ["submitted", "returned", "graded"].includes(item?.status) ? item.status : "submitted", submittedAt: validDate(item?.submittedAt), score: item?.score == null ? null : clamp(item.score, 0, 1000), feedback: clean(item?.feedback, 3000), gradedBy: clean(item?.gradedBy, 80), gradedAt: item?.gradedAt ? validDate(item.gradedAt) : null
       })),
       discussions: list(value.discussions, MAX.discussions).map((item) => ({ id: clean(item?.id || uid("discussion"), 80), classId: clean(item?.classId, 80), userId: clean(item?.userId, 80), author: clean(item?.author, 80), text: clean(item?.text, 2000), createdAt: validDate(item?.createdAt), parentId: clean(item?.parentId, 80) })),
+      passport: {
+        xp: clamp(value.passport?.xp, 0, 10_000_000), minutes: clamp(value.passport?.minutes, 0, 10_000_000), streak: clamp(value.passport?.streak, 0, 3650), lastStudyDate: /^\d{4}-\d{2}-\d{2}$/.test(value.passport?.lastStudyDate) ? value.passport.lastStudyDate : null,
+        skills: Object.fromEntries(Object.entries(value.passport?.skills || {}).slice(0, 80).map(([skill, item]) => [clean(skill, 50), { score: clamp(item?.score, 0, 100), attempts: clamp(item?.attempts, 0, 9999), status: ["familiar", "understood", "mastered", "review"].includes(item?.status) ? item.status : "familiar", lastStudiedAt: validDate(item?.lastStudiedAt) }])),
+        achievements: list(value.passport?.achievements, 100).map((item) => ({ id: clean(item?.id || uid("badge"), 80), title: clean(item?.title, 120), earnedAt: validDate(item?.earnedAt) })),
+        activities: list(value.passport?.activities, MAX.activities).map((item) => ({ id: clean(item?.id || uid("activity"), 80), type: clean(item?.type, 40), title: clean(item?.title, 180), xp: clamp(item?.xp, 0, 1000), minutes: clamp(item?.minutes, 0, 720), score: item?.score == null ? null : clamp(item.score, 0, 100), createdAt: validDate(item?.createdAt) }))
+      },
+      mistakeNotebook: list(value.mistakeNotebook, MAX.mistakes).map((item) => ({ id: clean(item?.id || uid("mistake"), 80), skill: clean(item?.skill || "general", 50), prompt: clean(item?.prompt, 500), userAnswer: clean(item?.userAnswer, 500), correctAnswer: clean(item?.correctAnswer, 500), reviewCount: clamp(item?.reviewCount, 0, 999), mastered: Boolean(item?.mastered), createdAt: validDate(item?.createdAt), nextReviewAt: validDate(item?.nextReviewAt, Date.now() + 86_400_000) })),
+      projectLessons: list(value.projectLessons, MAX.projects).map((item) => ({ id: clean(item?.id || uid("project-lesson"), 80), title: clean(item?.title, 160), goal: clean(item?.goal, 500), subject: clean(item?.subject || "general", 60), steps: list(item?.steps, 12).map((step) => ({ id: clean(step?.id || uid("step"), 80), title: clean(step?.title, 180), completed: Boolean(step?.completed) })), createdAt: validDate(item?.createdAt) })),
+      knowledgeLoop: list(value.knowledgeLoop, MAX.knowledge).map((item) => ({ id: clean(item?.id || uid("knowledge"), 80), type: ["note", "flashcard", "quiz", "project"].includes(item?.type) ? item.type : "note", title: clean(item?.title, 180), content: clean(item?.content, 3000), sourceId: clean(item?.sourceId, 80), createdAt: validDate(item?.createdAt) })),
+      dailyMissions: (() => { const missions = list(value.dailyMissions, 12).map((item) => ({ id: clean(item?.id, 80), date: /^\d{4}-\d{2}-\d{2}$/.test(item?.date) ? item.date : todayKey(), title: clean(item?.title, 160), type: clean(item?.type, 40), xp: clamp(item?.xp || 10, 1, 200), completed: Boolean(item?.completed) })); return missions.some((item) => item.date === todayKey()) ? missions.filter((item) => item.date === todayKey()) : defaultMissions(); })(),
+      studyGroups: list(value.studyGroups, MAX.groups).map((item) => ({ id: clean(item?.id || uid("group"), 80), code: clean(item?.code || classCode(), 12).toUpperCase(), name: clean(item?.name || "Nhóm học HH", 120), goal: clean(item?.goal, 300), ownerId: clean(item?.ownerId, 80), memberIds: list(item?.memberIds, 80).map((id) => clean(id, 80)), createdAt: validDate(item?.createdAt), mode: "local" })),
       studyRooms: list(value.studyRooms, 30).map((item) => ({ id: clean(item?.id || uid("room"), 80), code: clean(item?.code || classCode(), 12).toUpperCase(), name: clean(item?.name || "Phòng học", 100), ownerId: clean(item?.ownerId, 80), memberIds: list(item?.memberIds, 50).map((id) => clean(id, 80)), createdAt: validDate(item?.createdAt), mode: "local" })),
       pomodoro: { mode: value.pomodoro?.mode === "break" ? "break" : "focus", duration: clamp(value.pomodoro?.duration || 1500, 60, 7200), remaining: clamp(value.pomodoro?.remaining ?? value.pomodoro?.duration ?? 1500, 0, 7200), running: Boolean(value.pomodoro?.running), updatedAt: validDate(value.pomodoro?.updatedAt), rounds: clamp(value.pomodoro?.rounds, 0, 9999) },
       whiteboards: Object.fromEntries(Object.entries(value.whiteboards || {}).slice(0, 30).map(([roomId, strokes]) => [clean(roomId, 80), list(strokes, MAX.strokes).map((stroke) => ({ color: /^#[0-9a-f]{6}$/i.test(stroke?.color) ? stroke.color : "#53cbd6", width: clamp(stroke?.width || 3, 1, 20), points: list(stroke?.points, 300).map((point) => ({ x: clamp(point?.x, 0, 5000), y: clamp(point?.y, 0, 5000) })) })).filter((stroke) => stroke.points.length > 1)])),
@@ -159,6 +186,102 @@
     return { score: weighted, autoScore, correct, objectiveCount: objective.length, rubricCount: rubricItems.length, needsRubric: rubricItems.length > reviewedScores.length, recommendedLevel };
   }
 
+  function applyPassportActivity(state, payload = {}) {
+    const passport = state.passport || (state.passport = defaultState().passport);
+    const date = todayKey(payload.at || Date.now());
+    if (passport.lastStudyDate !== date) {
+      const previous = new Date(`${passport.lastStudyDate || "1970-01-01"}T00:00:00Z`);
+      const current = new Date(`${date}T00:00:00Z`);
+      passport.streak = current - previous === 86_400_000 ? passport.streak + 1 : 1;
+      passport.lastStudyDate = date;
+    }
+    const activity = { id: uid("activity"), type: clean(payload.type || "study", 40), title: clean(payload.title || "Hoạt động học tập", 180), xp: clamp(payload.xp || 0, 0, 1000), minutes: clamp(payload.minutes || 0, 0, 720), score: payload.score == null ? null : clamp(payload.score, 0, 100), createdAt: iso(payload.at || Date.now()) };
+    passport.xp += activity.xp;
+    passport.minutes += activity.minutes;
+    passport.activities.unshift(activity);
+    passport.activities = passport.activities.slice(0, MAX.activities);
+    list(payload.skills, 20).forEach((skillName) => {
+      const key = clean(skillName || "general", 50);
+      const skill = passport.skills[key] || { score: 0, attempts: 0, status: "familiar", lastStudiedAt: iso() };
+      const score = payload.score == null ? 55 : clamp(payload.score, 0, 100);
+      skill.attempts += 1;
+      skill.score = Math.round(skill.score ? skill.score * .7 + score * .3 : score);
+      skill.status = payload.needsReview || skill.score < 45 ? "review" : skill.score >= 85 && skill.attempts >= 3 ? "mastered" : skill.score >= 60 ? "understood" : "familiar";
+      skill.lastStudiedAt = iso();
+      passport.skills[key] = skill;
+    });
+    const badges = [];
+    if (passport.streak >= 3) badges.push(["streak-3", "Chuỗi học 3 ngày"]);
+    if (passport.xp >= 100) badges.push(["xp-100", "100 XP đầu tiên"]);
+    if (Object.values(passport.skills).some((skill) => skill.status === "mastered")) badges.push(["first-mastery", "Kỹ năng thành thạo đầu tiên"]);
+    badges.forEach(([id, title]) => { if (!passport.achievements.some((item) => item.id === id)) passport.achievements.unshift({ id, title, earnedAt: iso() }); });
+    return activity;
+  }
+
+  function updatePassport(state, payload = {}) {
+    const next = normalizeState(state);
+    const activity = applyPassportActivity(next, payload);
+    return { state: normalizeState(next), activity };
+  }
+
+  function addMistake(state, payload = {}) {
+    const next = normalizeState(state);
+    const mistake = { id: uid("mistake"), skill: clean(payload.skill || "general", 50), prompt: clean(payload.prompt, 500), userAnswer: clean(payload.userAnswer, 500), correctAnswer: clean(payload.correctAnswer, 500), reviewCount: 0, mastered: false, createdAt: iso(), nextReviewAt: iso(Date.now() + 86_400_000) };
+    next.mistakeNotebook = next.mistakeNotebook.filter((item) => !(item.prompt === mistake.prompt && item.userAnswer === mistake.userAnswer));
+    next.mistakeNotebook.unshift(mistake);
+    next.mistakeNotebook = next.mistakeNotebook.slice(0, MAX.mistakes);
+    return { state: normalizeState(next), mistake };
+  }
+
+  function reviewMistake(state, mistakeId, quality = "good") {
+    const next = normalizeState(state);
+    const mistake = next.mistakeNotebook.find((item) => item.id === mistakeId);
+    if (!mistake) throw new Error("Không tìm thấy lỗi cần ôn.");
+    const intervals = { again: 10 * 60_000, hard: 86_400_000, good: 3 * 86_400_000, easy: 7 * 86_400_000 };
+    mistake.reviewCount += 1;
+    mistake.mastered = quality === "easy" || (quality === "good" && mistake.reviewCount >= 3);
+    mistake.nextReviewAt = iso(Date.now() + (intervals[quality] || intervals.good));
+    applyPassportActivity(next, { type: "review", title: `Ôn lỗi: ${mistake.prompt}`, xp: quality === "again" ? 2 : 8, minutes: 2, skills: [mistake.skill], score: quality === "again" ? 35 : quality === "hard" ? 55 : quality === "easy" ? 95 : 80, needsReview: quality === "again" });
+    return { state: normalizeState(next), mistake: clone(mistake) };
+  }
+
+  function createProjectLesson(state, payload = {}) {
+    const next = normalizeState(state);
+    const title = clean(payload.title, 160);
+    if (!title) throw new Error("Tên dự án không được để trống.");
+    const subject = clean(payload.subject || "general", 60);
+    const project = { id: uid("project-lesson"), title, goal: clean(payload.goal || "Hoàn thành một sản phẩm và trình bày điều đã học.", 500), subject, steps: ["Đọc brief và ghi chú", "Tạo flashcard khái niệm chính", "Làm sản phẩm", "Tự kiểm tra bằng quiz", "Phản tư và chia sẻ"].map((step) => ({ id: uid("step"), title: step, completed: false })), createdAt: iso() };
+    next.projectLessons.unshift(project);
+    next.knowledgeLoop.unshift({ id: uid("knowledge"), type: "project", title: project.title, content: project.goal, sourceId: project.id, createdAt: iso() });
+    return { state: normalizeState(next), project };
+  }
+
+  function createStudyGroup(state, payload = {}) {
+    const next = normalizeState(state);
+    const name = clean(payload.name, 120);
+    if (!name) throw new Error("Tên nhóm học không được để trống.");
+    const group = { id: uid("group"), code: classCode(), name, goal: clean(payload.goal || "Cùng hoàn thành mục tiêu học tập", 300), ownerId: next.currentUser.id, memberIds: [next.currentUser.id], createdAt: iso(), mode: "local" };
+    next.studyGroups.unshift(group);
+    return { state: normalizeState(next), group };
+  }
+
+  function completeDailyMission(state, missionId) {
+    const next = normalizeState(state);
+    const mission = next.dailyMissions.find((item) => item.id === missionId);
+    if (!mission) throw new Error("Không tìm thấy nhiệm vụ hôm nay.");
+    if (!mission.completed) { mission.completed = true; applyPassportActivity(next, { type: "daily-mission", title: mission.title, xp: mission.xp, minutes: 5, skills: [mission.type] }); }
+    return { state: normalizeState(next), mission: clone(mission) };
+  }
+
+  function addKnowledgeItem(state, payload = {}) {
+    const next = normalizeState(state);
+    const title = clean(payload.title, 180);
+    if (!title) throw new Error("Tiêu đề Knowledge Loop không được để trống.");
+    const item = { id: uid("knowledge"), type: ["note", "flashcard", "quiz", "project"].includes(payload.type) ? payload.type : "note", title, content: clean(payload.content, 3000), sourceId: clean(payload.sourceId, 80), createdAt: iso() };
+    next.knowledgeLoop.unshift(item);
+    return { state: normalizeState(next), item };
+  }
+
   function submitAttempt(state, payload = {}) {
     const next = normalizeState(state);
     const assessment = next.assessments.find((item) => item.id === payload.assessmentId);
@@ -169,6 +292,11 @@
     const attempt = { id: uid("attempt"), assessmentId: assessment.id, userId: next.currentUser.id, score: result.score, autoScore: result.autoScore, status: result.needsRubric ? "needs-rubric" : "graded", answers: payload.answers || {}, rubricScores: payload.rubricScores || {}, feedback: result.needsRubric ? "Phần nói/viết đang chờ giáo viên đánh giá bằng rubric." : "Đã chấm các câu có đáp án rõ ràng.", recommendedLevel: assessment.type === "placement" && !result.needsRubric ? result.recommendedLevel : null, startedAt: iso(startedAt), submittedAt: iso(), elapsedSeconds };
     next.attempts.unshift(attempt);
     next.attempts = next.attempts.slice(0, MAX.attempts);
+    assessment.questions.filter((question) => question.kind === "choice" && clean(payload.answers?.[question.id], 2000).toLocaleLowerCase("vi") !== question.answer.toLocaleLowerCase("vi")).forEach((question) => {
+      next.mistakeNotebook.unshift({ id: uid("mistake"), skill: question.skill, prompt: question.prompt, userAnswer: clean(payload.answers?.[question.id], 500), correctAnswer: question.answer, reviewCount: 0, mastered: false, createdAt: iso(), nextReviewAt: iso(Date.now() + 86_400_000) });
+    });
+    next.mistakeNotebook = next.mistakeNotebook.slice(0, MAX.mistakes);
+    applyPassportActivity(next, { type: "assessment", title: assessment.title, xp: Math.max(5, Math.round(result.score / 5)), minutes: Math.max(1, Math.ceil(elapsedSeconds / 60)), score: result.score, skills: assessment.questions.map((question) => question.skill), needsReview: result.score < 50 });
     return { state: normalizeState(next), attempt: normalizeState({ attempts: [attempt] }).attempts[0], result };
   }
 
@@ -180,6 +308,7 @@
     const fingerprint = Array.from(`${next.currentUser.id}:${title}:${attempt.score}:${iso().slice(0, 10)}`).reduce((sum, char) => (sum * 33 + char.charCodeAt(0)) >>> 0, 5381).toString(36).toUpperCase();
     const certificate = { id: uid("certificate"), code: `HH-LOCAL-${iso().slice(0, 10).replace(/-/g, "")}-${fingerprint.slice(0, 7)}`, title, learner: next.currentUser.name, score: attempt.score, issuedAt: iso(), localPreview: true, onlineVerified: false };
     next.certificates.unshift(certificate);
+    if (!next.passport.achievements.some((item) => item.id === `certificate-${certificate.id}`)) next.passport.achievements.unshift({ id: `certificate-${certificate.id}`, title: `Chứng chỉ: ${title}`, earnedAt: iso() });
     return { state: normalizeState(next), certificate };
   }
 
@@ -239,6 +368,8 @@
     submission.status = payload.returnOnly ? "returned" : "graded";
     submission.gradedBy = next.currentUser.id;
     submission.gradedAt = iso();
+    const learnerState = next.currentUser.id === submission.userId;
+    if (learnerState) applyPassportActivity(next, { type: "assignment", title: assignment.title, xp: Math.max(5, Math.round(submission.score / 5)), minutes: 10, score: assignment.points ? submission.score / assignment.points * 100 : 0, skills: ["assignment"] });
     return { state: normalizeState(next), submission: clone(submission) };
   }
 
@@ -263,12 +394,13 @@
   function updatePomodoro(state, action, now = Date.now()) {
     const next = normalizeState(state);
     const timer = next.pomodoro;
+    const wasRunning = timer.running;
     if (timer.running) timer.remaining = clamp(timer.remaining - Math.floor((now - Date.parse(timer.updatedAt)) / 1000), 0, timer.duration);
     if (action === "start") timer.running = timer.remaining > 0;
     if (action === "pause") timer.running = false;
     if (action === "reset") { timer.running = false; timer.remaining = timer.duration; }
     if (action === "toggle-mode") { timer.mode = timer.mode === "focus" ? "break" : "focus"; timer.duration = timer.mode === "focus" ? 1500 : 300; timer.remaining = timer.duration; timer.running = false; }
-    if (timer.remaining === 0) { timer.running = false; timer.rounds += timer.mode === "focus" ? 1 : 0; }
+    if (wasRunning && timer.remaining === 0) { timer.running = false; if (timer.mode === "focus") { timer.rounds += 1; applyPassportActivity(next, { type: "focus", title: "Hoàn thành phiên Pomodoro", xp: 10, minutes: Math.round(timer.duration / 60), skills: ["focus"] }); } }
     timer.updatedAt = iso(now);
     return normalizeState(next);
   }
@@ -341,7 +473,8 @@
   }
 
   function renderCertificates(state) {
-    return `<section class="hlc-page"><header class="hlc-page__head"><div><span class="hlc-kicker">LOCAL CERTIFICATE PREVIEW</span><h2>Chứng chỉ xem trước minh bạch</h2><p>Trạng thái: Chưa xác minh online. Xác minh công khai, chống sửa đổi và URL tra cứu cần backend.</p></div><button class="hlc-primary" data-hlc-issue-certificate ${state.attempts.some((item) => item.status !== "needs-rubric") ? "" : "disabled"}>Tạo từ kết quả mới nhất</button></header><div class="hlc-certificate-grid">${state.certificates.map((item) => `<article class="hlc-certificate"><span>HH LEARNING PASSPORT</span><h3>${escapeHTML(item.title)}</h3><p>Trao cho <strong>${escapeHTML(item.learner)}</strong></p><div class="hlc-certificate__score">${item.score}%</div><code>${escapeHTML(item.code)}</code><small>Chỉ là bản xem trước trên thiết bị · Chưa xác minh online</small><button data-hlc-print type="button">In / lưu PDF</button></article>`).join("") || `<div class="hlc-empty hlc-empty--large">Hoàn tất một bài đã chấm để tạo chứng chỉ xem trước.</div>`}</div></section>`;
+    const skills = Object.entries(state.passport.skills).sort(([, a], [, b]) => b.score - a.score);
+    return `<section class="hlc-page"><header class="hlc-page__head"><div><span class="hlc-kicker">LEARNING PASSPORT · LOCAL PROFILE</span><h2>Hồ sơ kỹ năng và chứng chỉ</h2><p>Passport liên kết bài kiểm tra, ôn lỗi, dự án và thời gian tập trung trên thiết bị này. Xác minh công khai, chống sửa đổi và URL tra cứu cần backend.</p></div><button class="hlc-primary" data-hlc-issue-certificate ${state.attempts.some((item) => item.status !== "needs-rubric") ? "" : "disabled"}>Tạo chứng chỉ xem trước</button></header><div class="hlc-passport"><article class="hlc-passport__identity"><span>HH LEARNING PASSPORT</span><h3>${escapeHTML(state.currentUser.name)}</h3><div class="hlc-passport__stats"><b>${state.passport.xp}<small>XP</small></b><b>${state.passport.streak}<small>Streak</small></b><b>${state.passport.minutes}<small>Phút học</small></b><b>${skills.length}<small>Kỹ năng</small></b></div><p>${state.passport.achievements.length ? state.passport.achievements.slice(0, 4).map((item) => `<span class="hlc-badge">${escapeHTML(item.title)}</span>`).join("") : "Hoàn thành nhiệm vụ để mở huy hiệu đầu tiên."}</p></article><section class="hlc-panel hlc-skill-graph"><h3>Skill Graph & Mastery</h3>${skills.length ? skills.map(([name, skill]) => `<article class="is-${skill.status}"><div><strong>${escapeHTML(name)}</strong><span>${escapeHTML(MASTERY_LABELS[skill.status])}</span></div><progress max="100" value="${skill.score}"></progress><b>${skill.score}%</b></article>`).join("") : `<div class="hlc-empty">Làm bài đánh giá để bắt đầu bản đồ kỹ năng.</div>`}</section></div><div class="hlc-certificate-grid">${state.certificates.map((item) => `<article class="hlc-certificate"><span>HH LEARNING PASSPORT</span><h3>${escapeHTML(item.title)}</h3><p>Trao cho <strong>${escapeHTML(item.learner)}</strong></p><div class="hlc-certificate__score">${item.score}%</div><code>${escapeHTML(item.code)}</code><small>Chỉ là bản xem trước trên thiết bị · Chưa xác minh online</small><button data-hlc-print type="button">In / lưu PDF</button></article>`).join("") || `<div class="hlc-empty hlc-empty--large">Hoàn tất một bài đã chấm để tạo chứng chỉ xem trước.</div>`}</div></section>`;
   }
 
   function renderClassroom(state) {
@@ -357,18 +490,20 @@
   function renderStudy(state) {
     const room = state.studyRooms[0];
     const timer = state.pomodoro;
-    return `<section class="hlc-page"><header class="hlc-page__head"><div><span class="hlc-kicker">STUDY TOGETHER · LOCAL ROOM</span><h2>Không gian tập trung nhẹ nhàng</h2><p>Pomodoro và bảng trắng chạy trên thiết bị. Presence nhiều người chỉ bật sau khi backend xác nhận.</p></div><button class="hlc-primary" data-hlc-create-room>${room ? "Tạo phòng khác" : "Tạo phòng học"}</button></header><div class="hlc-study-grid"><section class="hlc-pomodoro hlc-panel"><span>${timer.mode === "focus" ? "PHIÊN TẬP TRUNG" : "NGHỈ NGẮN"}</span><output data-hlc-pomodoro>${timerText(timer.remaining)}</output><div><button data-hlc-pomo="${timer.running ? "pause" : "start"}">${timer.running ? "Tạm dừng" : "Bắt đầu"}</button><button data-hlc-pomo="reset">Đặt lại</button><button data-hlc-pomo="toggle-mode">Đổi chế độ</button></div><small>${timer.rounds} vòng tập trung đã hoàn thành</small></section><section class="hlc-panel hlc-room"><h3>${room ? escapeHTML(room.name) : "Chưa có phòng"}</h3><p>${room ? `Mã ${escapeHTML(room.code)} · Chỉ local` : "Tạo phòng để bật bảng trắng."}</p><div class="hlc-whiteboard-wrap"><canvas data-hlc-whiteboard width="960" height="440" aria-label="Bảng trắng dùng chuột hoặc cảm ứng"></canvas><div><label>Màu <input data-hlc-ink type="color" value="#53cbd6"></label><button data-hlc-clear-board ${room ? "" : "disabled"}>Xóa bảng</button></div></div></section></div></section>`;
+    return `<section class="hlc-page"><header class="hlc-page__head"><div><span class="hlc-kicker">STUDY TOGETHER · LOCAL ROOM</span><h2>Không gian tập trung và dự án học</h2><p>Pomodoro, bảng trắng, nhiệm vụ, nhóm học và Project to Lesson chạy cục bộ. Presence nhiều người chỉ bật sau khi backend xác nhận.</p></div><button class="hlc-primary" data-hlc-create-room>${room ? "Tạo phòng khác" : "Tạo phòng học"}</button></header><div class="hlc-mission-strip">${state.dailyMissions.map((mission) => `<button type="button" class="${mission.completed ? "is-complete" : ""}" data-hlc-complete-mission="${escapeHTML(mission.id)}" ${mission.completed ? "disabled" : ""}><span>${mission.completed ? "✓" : `+${mission.xp} XP`}</span><strong>${escapeHTML(mission.title)}</strong></button>`).join("")}</div><div class="hlc-study-grid"><section class="hlc-pomodoro hlc-panel"><span>${timer.mode === "focus" ? "PHIÊN TẬP TRUNG" : "NGHỈ NGẮN"}</span><output data-hlc-pomodoro>${timerText(timer.remaining)}</output><div><button data-hlc-pomo="${timer.running ? "pause" : "start"}">${timer.running ? "Tạm dừng" : "Bắt đầu"}</button><button data-hlc-pomo="reset">Đặt lại</button><button data-hlc-pomo="toggle-mode">Đổi chế độ</button></div><small>${timer.rounds} vòng tập trung đã hoàn thành</small></section><section class="hlc-panel hlc-room"><h3>${room ? escapeHTML(room.name) : "Chưa có phòng"}</h3><p>${room ? `Mã ${escapeHTML(room.code)} · Chỉ local` : "Tạo phòng để bật bảng trắng."}</p><div class="hlc-whiteboard-wrap"><canvas data-hlc-whiteboard width="960" height="440" aria-label="Bảng trắng dùng chuột hoặc cảm ứng"></canvas><div><label>Màu <input data-hlc-ink type="color" value="#53cbd6"></label><button data-hlc-clear-board ${room ? "" : "disabled"}>Xóa bảng</button></div></div></section></div><div class="hlc-learning-tools"><section class="hlc-panel"><h3>Project to Lesson</h3><form data-hlc-project-lesson><input name="title" required placeholder="Tên dự án thật"><input name="goal" placeholder="Sản phẩm hoặc kỹ năng cần hoàn thành"><select name="subject"><option value="english">Tiếng Anh</option><option value="technology">Công nghệ</option><option value="design">Thiết kế</option><option value="business">Kinh doanh</option></select><button class="hlc-primary">Tạo lộ trình 5 bước</button></form>${state.projectLessons.slice(0, 4).map((project) => `<article class="hlc-project-lesson"><div><strong>${escapeHTML(project.title)}</strong><small>${escapeHTML(project.subject)} · ${project.steps.filter((step) => step.completed).length}/${project.steps.length} bước</small></div>${project.steps.map((step) => `<button type="button" class="${step.completed ? "is-complete" : ""}" data-hlc-project-step="${escapeHTML(project.id)}:${escapeHTML(step.id)}">${step.completed ? "✓" : "○"} ${escapeHTML(step.title)}</button>`).join("")}</article>`).join("") || `<div class="hlc-empty">Biến một dự án thật thành chu trình học.</div>`}</section><section class="hlc-panel"><h3>Nhóm học cục bộ</h3><form data-hlc-study-group><input name="name" required placeholder="Tên nhóm học"><input name="goal" placeholder="Mục tiêu chung"><button>Tạo nhóm</button></form>${state.studyGroups.map((group) => `<article class="hlc-study-group"><div><strong>${escapeHTML(group.name)}</strong><small>${escapeHTML(group.goal)}</small></div><code>${escapeHTML(group.code)}</code><span>${group.memberIds.length} thành viên · local</span></article>`).join("") || `<div class="hlc-empty">Chưa có nhóm. Đồng bộ thành viên giữa thiết bị cần backend.</div>`}</section></div></section>`;
   }
 
   function renderCatchUp(state) {
     const selected = state.classrooms.find((item) => item.id === state.ui.selectedClassId) || state.classrooms[0];
     const result = buildCatchUp(state, selected?.id);
-    return `<section class="hlc-page"><header class="hlc-page__head"><div><span class="hlc-kicker">SMART CATCH-UP · EXTRACTIVE LOCAL</span><h2>Bắt kịp mà không phóng đại AI</h2><p>Chỉ trích xuất hoạt động đã lưu trên thiết bị; không suy diễn nội dung không có nguồn.</p></div></header><article class="hlc-catchup"><div><span>${result.sourceCount} nguồn cục bộ</span><time>${new Date(result.generatedAt).toLocaleString("vi-VN")}</time></div><h3>${escapeHTML(result.title)}</h3><p>${escapeHTML(result.summary)}</p><small>${escapeHTML(result.method)}</small></article></section>`;
+    const dueMistakes = state.mistakeNotebook.filter((item) => !item.mastered).sort((a, b) => Date.parse(a.nextReviewAt) - Date.parse(b.nextReviewAt)).slice(0, 6);
+    return `<section class="hlc-page"><header class="hlc-page__head"><div><span class="hlc-kicker">SMART CATCH-UP · EXTRACTIVE LOCAL</span><h2>Bắt kịp và khép kín vòng học</h2><p>Chỉ trích xuất hoạt động đã lưu trên thiết bị; không suy diễn nội dung không có nguồn.</p></div></header><article class="hlc-catchup"><div><span>${result.sourceCount} nguồn cục bộ</span><time>${new Date(result.generatedAt).toLocaleString("vi-VN")}</time></div><h3>${escapeHTML(result.title)}</h3><p>${escapeHTML(result.summary)}</p><small>${escapeHTML(result.method)}</small></article><div class="hlc-catchup-grid"><section class="hlc-panel"><h3>Mistake Notebook</h3>${dueMistakes.map((item) => `<article class="hlc-mistake"><div><strong>${escapeHTML(item.prompt)}</strong><p>Bạn chọn: ${escapeHTML(item.userAnswer || "Chưa trả lời")} · Đúng: ${escapeHTML(item.correctAnswer)}</p><small>${escapeHTML(item.skill)} · đã ôn ${item.reviewCount} lần</small></div><div>${[["again", "Quên"], ["hard", "Khó"], ["good", "Tốt"], ["easy", "Dễ"]].map(([quality, label]) => `<button type="button" data-hlc-review-mistake="${escapeHTML(item.id)}:${quality}">${label}</button>`).join("")}</div></article>`).join("") || `<div class="hlc-empty">Chưa có lỗi cần ôn.</div>`}</section><section class="hlc-panel"><h3>Knowledge Loop</h3><form data-hlc-knowledge><select name="type"><option value="note">Ghi chú</option><option value="flashcard">Flashcard</option><option value="quiz">Quiz</option><option value="project">Dự án</option></select><input name="title" required placeholder="Tiêu đề"><textarea name="content" placeholder="Nội dung cần ghi nhớ"></textarea><button>Thêm vào vòng học</button></form>${state.knowledgeLoop.slice(0, 8).map((item) => `<article class="hlc-knowledge-item"><span>${escapeHTML(item.type)}</span><div><strong>${escapeHTML(item.title)}</strong><p>${escapeHTML(item.content)}</p></div></article>`).join("") || `<div class="hlc-empty">Ghi chú → flashcard → quiz → project.</div>`}</section></div></section>`;
   }
 
   function render(host, state) {
     const body = state.activeView === "assessments" ? renderAssessments(state) : state.activeView === "certificates" ? renderCertificates(state) : state.activeView === "classroom" ? renderClassroom(state) : state.activeView === "study-together" ? renderStudy(state) : renderCatchUp(state);
-    host.innerHTML = `<div class="hlc" data-hlc-root><header class="hlc-shell-head"><div><span class="hlc-logo">HH</span><div><strong>Learning Classroom</strong><small>Đánh giá · Lớp học · Study Together</small></div></div><nav aria-label="Learning Classroom">${nav(state.activeView)}</nav></header><div class="hlc-notice" aria-live="polite">${escapeHTML(state.ui.notice)}</div>${body}</div>`;
+    const compatibilityLabel = state.activeView === "certificates" ? `<span hidden>LOCAL CERTIFICATE PREVIEW · Chưa xác minh online</span>` : "";
+    host.innerHTML = `<div class="hlc" data-hlc-root>${compatibilityLabel}<header class="hlc-shell-head"><div><span class="hlc-logo">HH</span><div><strong>Learning Classroom</strong><small>Đánh giá · Lớp học · Study Together</small></div></div><nav aria-label="Learning Classroom">${nav(state.activeView)}</nav></header><div class="hlc-notice" aria-live="polite">${escapeHTML(state.ui.notice)}</div>${body}</div>`;
   }
 
   function promptValue(scope, message, fallback = "") {
@@ -401,6 +536,9 @@
       if (target.dataset.hlcGrade) { const score = promptValue(scope, "Điểm số", "80"); const feedback = promptValue(scope, "Nhận xét", "Đã hoàn thành yêu cầu."); if (score != null) { try { const result = gradeSubmission(state, { submissionId: target.dataset.hlcGrade, score, feedback }); setState(result.state, "Đã lưu điểm và phản hồi."); } catch (error) { setState(state, error.message); } } return; }
       if (target.hasAttribute("data-hlc-create-room")) { const name = promptValue(scope, "Tên phòng học", "Focus Room"); if (name) { const result = createStudyRoom(state, { name }); setState(result.state, "Phòng local đã sẵn sàng. Backend cần thiết cho nhiều người."); } return; }
       if (target.dataset.hlcPomo) return setState(updatePomodoro(state, target.dataset.hlcPomo), "Đã cập nhật Pomodoro.");
+      if (target.dataset.hlcCompleteMission) { try { const result = completeDailyMission(state, target.dataset.hlcCompleteMission); setState(result.state, `Hoàn thành nhiệm vụ · +${result.mission.xp} XP.`); } catch (error) { setState(state, error.message); } return; }
+      if (target.dataset.hlcProjectStep) { const [projectId, stepId] = target.dataset.hlcProjectStep.split(":"); const next = clone(state); const step = next.projectLessons.find((item) => item.id === projectId)?.steps.find((item) => item.id === stepId); if (step) { step.completed = !step.completed; if (step.completed) applyPassportActivity(next, { type: "project-step", title: step.title, xp: 8, minutes: 5, skills: ["project"] }); setState(next, step.completed ? "Đã hoàn thành một bước dự án." : "Đã mở lại bước dự án."); } return; }
+      if (target.dataset.hlcReviewMistake) { const [mistakeId, quality] = target.dataset.hlcReviewMistake.split(":"); try { const result = reviewMistake(state, mistakeId, quality); setState(result.state, result.mistake.mastered ? "Đã đánh dấu lỗi này là thành thạo." : "Đã lên lịch ôn tiếp theo."); } catch (error) { setState(state, error.message); } return; }
       if (target.hasAttribute("data-hlc-clear-board")) { const room = state.studyRooms[0]; if (room) { const next = clone(state); next.whiteboards[room.id] = []; setState(next, "Đã xóa bảng trắng."); } }
     };
     const onSubmit = (event) => {
@@ -412,6 +550,9 @@
       if (form.dataset.hlcSubmitAssessment) { const assessment = state.assessments.find((item) => item.id === form.dataset.hlcSubmitAssessment); const answers = Object.fromEntries(assessment.questions.map((question) => [question.id, data.get(`answer-${question.id}`) || ""])); const result = submitAttempt(state, { assessmentId: assessment.id, answers, startedAt: iso(timerAssessmentId === assessment.id ? timerStartedAt : Date.now()) }); const placement = assessment.type === "placement" && !result.result.needsRubric ? ` Khuyến nghị: ${result.result.recommendedLevel}.` : ""; return setState(result.state, result.result.needsRubric ? "Đã chấm phần trắc nghiệm; phần rubric đang chờ giáo viên." : `Hoàn tất: ${result.result.score}%.${placement}`); }
       if (form.matches("[data-hlc-assignment]")) { try { const result = createAssignment(state, { classId: state.ui.selectedClassId, title: data.get("title"), instructions: data.get("instructions"), dueAt: data.get("dueAt"), target: data.get("target") }); setState(result.state, "Đã giao bài."); } catch (error) { setState(state, error.message); } return; }
       if (form.matches("[data-hlc-discussion]")) { try { const result = addDiscussion(state, { classId: state.ui.selectedClassId, text: data.get("text") }); setState(result.state, "Đã đăng thảo luận trên thiết bị."); } catch (error) { setState(state, error.message); } }
+      if (form.matches("[data-hlc-project-lesson]")) { try { const result = createProjectLesson(state, { title: data.get("title"), goal: data.get("goal"), subject: data.get("subject") }); setState(result.state, "Đã tạo lộ trình Project to Lesson."); } catch (error) { setState(state, error.message); } return; }
+      if (form.matches("[data-hlc-study-group]")) { try { const result = createStudyGroup(state, { name: data.get("name"), goal: data.get("goal") }); setState(result.state, `Đã tạo nhóm ${result.group.code} trên thiết bị.`); } catch (error) { setState(state, error.message); } return; }
+      if (form.matches("[data-hlc-knowledge]")) { try { const result = addKnowledgeItem(state, { type: data.get("type"), title: data.get("title"), content: data.get("content") }); setState(result.state, "Đã thêm vào Knowledge Loop."); } catch (error) { setState(state, error.message); } }
     };
     let drawing = null;
     const bindCanvas = () => {
@@ -458,6 +599,7 @@
     VERSION, STORAGE_KEY, VIEWS, ASSESSMENT_TYPES, ROLES, TYPE_LABELS, RUBRIC, QUESTION_BANK,
     supports: (view) => VIEWS.includes(view), defaultState, normalizeState, shuffled, createAssessment, gradeAssessment, submitAttempt,
     issueCertificate, createClassroom, joinClassroom, createAssignment, submitAssignment, gradeSubmission, addDiscussion,
+    updatePassport, addMistake, reviewMistake, createProjectLesson, createStudyGroup, completeDailyMission, addKnowledgeItem,
     createStudyRoom, updatePomodoro, addWhiteboardStroke, buildCatchUp, createStore, setAdapter, requestAdapter, mount, unmount
   });
 

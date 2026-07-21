@@ -80,7 +80,7 @@ test("exposes the lesson and lesson-player lifecycle contract", () => {
 test("builds every requested activity from one core lesson", () => {
   const { lesson } = fixture();
   const steps = mod.buildLessonContent(lesson);
-  assert.deepEqual(steps.map((step) => step.type), ["article", "video", "flashcard", "fill", "drag", "match", "listen", "record", "write", "scenario", "quiz"]);
+  assert.deepEqual(steps.map((step) => step.type), ["read", "video", "flashcard", "fill", "drag", "match", "listen", "record", "write", "roleplay", "quiz"]);
   assert.equal(new Set(steps.map((step) => step.id)).size, steps.length);
   assert.ok(steps.every((step) => step.title && step.skillId));
   assert.match(steps.find((step) => step.type === "video").body, /thiết bị/i);

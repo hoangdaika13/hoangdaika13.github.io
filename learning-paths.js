@@ -9,6 +9,17 @@
     { id: "work", label: "Công việc", description: "Giao tiếp chuyên nghiệp hằng ngày." },
     { id: "career", label: "Theo chuyên ngành", description: "Học đúng ngữ cảnh nghề nghiệp." }
   ]);
+  const TRACK_GROUPS = Object.freeze([
+    { id: "foundation", label: "Nền tảng", description: "Giao tiếp và học thuật", trackIds: ["communication", "academic"] },
+    { id: "exam", label: "Thi cử", description: "IELTS, TOEIC và VSTEP", trackIds: ["ielts", "toeic", "vstep"] },
+    { id: "career", label: "Nghề nghiệp", description: "11 lộ trình theo ngành", trackIds: ["technology", "design", "media", "marketing", "business", "hospitality", "healthcare", "engineering", "finance", "logistics", "interview"] }
+  ]);
+  const GOAL_TRACKS = Object.freeze({
+    communication: ["communication", "hospitality", "interview"],
+    exam: ["ielts", "toeic", "vstep", "academic"],
+    work: ["business", "interview", "marketing", "finance", "logistics"],
+    career: TRACK_GROUPS.find((group) => group.id === "career").trackIds
+  });
   const MASTERY_META = Object.freeze({
     new: { label: "Đang làm quen", tone: "cyan", hint: "Bắt đầu bằng ví dụ ngắn và bài luyện có hướng dẫn." },
     familiar: { label: "Đã hiểu", tone: "violet", hint: "Luyện thêm trong tình huống mới để củng cố." },
@@ -27,6 +38,8 @@
   let inputHandler = null;
   let selectedMasterySkill = "";
   let careerQuery = "";
+  let careerFilter = "all";
+  let masteryFilter = "all";
   let pathTrackId = "";
   let statusMessage = "";
 
@@ -63,6 +76,22 @@
     return core().skills.find((skill) => skill.id === id) || core().skills[0];
   }
 
+  function trackGroupByTrackId(trackId) {
+    return TRACK_GROUPS.find((group) => group.trackIds.includes(trackId)) || TRACK_GROUPS[0];
+  }
+
+  function goalTrackIds(goal) {
+    return GOAL_TRACKS[goal] || GOAL_TRACKS.communication;
+  }
+
+  function trackMatchesFilters(track, goal, query = cleanQuery(careerQuery), filter = careerFilter) {
+    const matchesQuery = !query || cleanQuery(`${track.title} ${track.description}`).includes(query);
+    if (!matchesQuery) return false;
+    if (filter === "recommended") return goalTrackIds(goal).includes(track.id);
+    if (filter === "all") return true;
+    return trackGroupByTrackId(track.id).id === filter;
+  }
+
   function formatEvidenceDate(value) {
     const date = new Date(value || 0);
     return Number.isNaN(date.getTime()) ? "Chưa xác định" : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" }).format(date);
@@ -93,11 +122,29 @@
     return { completed, total: lessons.length, percent: lessons.length ? Math.round(completed / lessons.length * 100) : 0 };
   }
 
+  function adaptivePlan(state, trackId = state.profile.career) {
+    const validFocus = (state.profile.focusSkills || []).filter((skillId) => core().skills.some((skill) => skill.id === skillId));
+    const trackFocus = trackById(trackId).focus || [];
+    const focusSkills = [...new Set([...validFocus, ...trackFocus])].slice(0, 4);
+    const levelDifficulty = Math.max(1, core().levels.indexOf(state.profile.level) + 1);
+    const skillDifficulties = focusSkills.map((skillId) => core().adaptiveDifficulty(state, skillId));
+    const evidence = focusSkills.map((skillId) => state.mastery?.[skillId] || {}).filter((item) => Number(item.attempts || 0) > 0);
+    const accuracy = evidence.length ? Math.round(evidence.reduce((total, item) => total + Number(item.accuracy || 0), 0) / evidence.length) : null;
+    const evidenceDifficulty = skillDifficulties.length ? Math.round(skillDifficulties.reduce((total, value) => total + value, 0) / skillDifficulties.length) : levelDifficulty;
+    const targetDifficulty = Math.max(1, Math.min(7, Math.round((levelDifficulty * 2 + evidenceDifficulty) / 3)));
+    const reason = accuracy === null
+      ? `Bắt đầu theo cấp ${state.profile.level}; HH sẽ điều chỉnh sau 3 lượt luyện.`
+      : accuracy >= 88
+        ? `Độ chính xác ${accuracy}%: tăng thử thách một bước có kiểm soát.`
+        : accuracy < 55
+          ? `Độ chính xác ${accuracy}%: củng cố nền tảng trước khi tăng cấp.`
+          : `Độ chính xác ${accuracy}%: giữ nhịp luyện ổn định ở cấp hiện tại.`;
+    return { focusSkills, levelDifficulty, evidenceDifficulty, targetDifficulty, accuracy, reason };
+  }
+
   function recommendedLesson(state, trackId = state.profile.career) {
     const trackLessons = core().lessons.filter((lesson) => lesson.trackId === trackId);
-    const levelIndex = Math.max(0, core().levels.indexOf(state.profile.level));
-    const focusDifficulty = Math.round(state.profile.focusSkills.reduce((total, skillId) => total + core().adaptiveDifficulty(state, skillId), 0) / Math.max(1, state.profile.focusSkills.length));
-    const targetDifficulty = Math.max(1, Math.min(7, Math.round((levelIndex + 1 + focusDifficulty) / 2)));
+    const { targetDifficulty } = adaptivePlan(state, trackId);
     return trackLessons.find((lesson) => lesson.difficulty >= targetDifficulty && state.progress?.[lesson.id]?.status !== "completed")
       || trackLessons.find((lesson) => state.progress?.[lesson.id]?.status !== "completed")
       || trackLessons[trackLessons.length - 1];
@@ -129,7 +176,8 @@
     const focus = new Set(state.profile.focusSkills);
     const query = cleanQuery(careerQuery);
     const tracks = core().tracks;
-    const visibleTrackCount = tracks.filter((track) => !query || cleanQuery(`${track.title} ${track.description}`).includes(query)).length;
+    const visibleTrackCount = tracks.filter((track) => trackMatchesFilters(track, state.profile.goal, query)).length;
+    const selectedTrack = trackById(state.profile.career);
     return shell(`
       <main class="hlp-onboarding">
         <div class="hlp-intro">
@@ -137,11 +185,17 @@
           <h2>${state.profile.configured ? "Điều chỉnh lộ trình của bạn" : "Bạn muốn học để làm gì?"}</h2>
           <p>Chọn nhanh năm thông tin. HH sẽ tạo lộ trình, bài tiếp theo và độ khó phù hợp.</p>
         </div>
+        <aside class="hlp-profile-snapshot" aria-label="Cấu hình học hiện tại">
+          <div><span>Hướng hiện tại</span><strong>${esc(selectedTrack.title)}</strong></div>
+          <div><span>Điểm bắt đầu</span><strong>${esc(state.profile.level)}</strong></div>
+          <div><span>Nhịp học</span><strong>${state.profile.dailyMinutes} phút/ngày</strong></div>
+          <div><span>Kỹ năng ưu tiên</span><strong>${focus.size}/4</strong></div>
+        </aside>
         <form class="hlp-profile-form" data-learning-profile-form>
           <fieldset class="hlp-fieldset">
             <legend>1. Mục tiêu chính</legend>
             <div class="hlp-choice-grid hlp-choice-grid--goals">
-              ${GOALS.map((goal) => `<label class="hlp-choice"><input type="radio" name="goal" value="${goal.id}"${state.profile.goal === goal.id ? " checked" : ""}><span><strong>${esc(goal.label)}</strong><small>${esc(goal.description)}</small></span></label>`).join("")}
+              ${GOALS.map((goal) => `<label class="hlp-choice"><input type="radio" name="goal" value="${goal.id}" data-action="goal-select"${state.profile.goal === goal.id ? " checked" : ""}><span><strong>${esc(goal.label)}</strong><small>${esc(goal.description)}</small></span></label>`).join("")}
             </div>
           </fieldset>
           <div class="hlp-form-row">
@@ -150,13 +204,25 @@
             <label><span>Mục tiêu ghi nhớ</span><select name="retentionGoal">${[85, 90, 95].map((retention) => `<option value="${retention}"${state.profile.retentionGoal === retention ? " selected" : ""}>${retention}%</option>`).join("")}</select></label>
           </div>
           <fieldset class="hlp-fieldset">
-            <legend>4. Nghề nghiệp hoặc chuyên ngành</legend>
-            <label class="hlp-search"><span class="hlp-sr-only">Tìm chuyên ngành</span><input type="search" data-action="career-search" placeholder="Tìm trong 16 hướng học..." value="${esc(careerQuery)}"></label>
+            <legend>4. Nghề nghiệp hoặc chuyên ngành <small>2 nền tảng · 14 hướng thi cử/nghề nghiệp</small></legend>
+            <div class="hlp-track-tools">
+              <label class="hlp-search"><span class="hlp-sr-only">Tìm chuyên ngành</span><input type="search" data-action="career-search" placeholder="Tìm trong 16 hướng học..." value="${esc(careerQuery)}"></label>
+              <div class="hlp-filter-group" role="group" aria-label="Lọc hướng học">
+                ${[
+                  ["all", "Tất cả", 16],
+                  ["recommended", "Phù hợp mục tiêu", goalTrackIds(state.profile.goal).length],
+                  ["exam", "Thi cử", 3],
+                  ["career", "Nghề nghiệp", 11]
+                ].map(([id, label, count]) => `<button type="button" data-action="track-filter" data-filter="${id}" aria-pressed="${careerFilter === id}">${label}<span>${count}</span></button>`).join("")}
+              </div>
+            </div>
             <div class="hlp-track-list" role="radiogroup" aria-label="Chuyên ngành">
               ${tracks.map((track) => {
                 const searchValue = cleanQuery(`${track.title} ${track.description}`);
-                const hidden = query && !searchValue.includes(query);
-                return `<label class="hlp-track-choice" data-career-search="${esc(searchValue)}"${hidden ? " hidden" : ""}><input type="radio" name="career" value="${track.id}"${state.profile.career === track.id ? " checked" : ""}><span><strong>${esc(track.title)}</strong><small>${esc(track.description)}</small></span></label>`;
+                const group = trackGroupByTrackId(track.id);
+                const hidden = !trackMatchesFilters(track, state.profile.goal, query);
+                const recommended = goalTrackIds(state.profile.goal).includes(track.id);
+                return `<label class="hlp-track-choice" data-career-search="${esc(searchValue)}" data-track-group="${group.id}" data-recommended="${recommended}"${hidden ? " hidden" : ""}><input type="radio" name="career" value="${track.id}"${state.profile.career === track.id ? " checked" : ""}><span><span class="hlp-track-kind">${esc(group.label)}${recommended ? " · Đề xuất" : ""}</span><strong>${esc(track.title)}</strong><small>${esc(track.description)}</small></span></label>`;
               }).join("")}
               <p class="hlp-empty" data-career-empty${visibleTrackCount ? " hidden" : ""}>Không tìm thấy chuyên ngành phù hợp.</p>
             </div>
@@ -164,8 +230,9 @@
           <fieldset class="hlp-fieldset">
             <legend>5. Kỹ năng muốn ưu tiên <small>Chọn tối đa 4</small></legend>
             <div class="hlp-skill-choices">
-              ${core().skills.map((skill) => `<label><input type="checkbox" name="focusSkills" value="${skill.id}"${focus.has(skill.id) ? " checked" : ""}><span style="--skill-color:${esc(skill.color)}">${esc(skill.label)}</span></label>`).join("")}
+              ${core().skills.map((skill) => `<label><input type="checkbox" name="focusSkills" value="${skill.id}" data-action="focus-skill"${focus.has(skill.id) ? " checked" : ""}${focus.size >= 4 && !focus.has(skill.id) ? " disabled" : ""}><span style="--skill-color:${esc(skill.color)}">${esc(skill.label)}</span></label>`).join("")}
             </div>
+            <p class="hlp-selection-note"><strong data-focus-count>${focus.size}/4</strong> kỹ năng được chọn. HH ưu tiên bài luyện yếu nhất trong nhóm này.</p>
           </fieldset>
           <div class="hlp-form-actions">
             <p>Dữ liệu được lưu trong shared Learning Store trên thiết bị này.</p>
@@ -178,7 +245,9 @@
   function renderPaths(state) {
     const selectedTrack = trackById(pathTrackId || state.profile.career);
     const progress = pathProgress(state, selectedTrack.id);
+    const adaptive = adaptivePlan(state, selectedTrack.id);
     const recommendation = recommendedLesson(state, selectedTrack.id);
+    const selectedGroup = trackGroupByTrackId(selectedTrack.id);
     const levels = core().levels.map((level) => {
       const lesson = core().lessons.find((item) => item.trackId === selectedTrack.id && item.level === level);
       const itemProgress = state.progress?.[lesson?.id];
@@ -198,20 +267,29 @@
     return shell(`
       <main class="hlp-paths">
         <section class="hlp-path-toolbar">
-          <div><p class="hlp-eyebrow">BẢN ĐỒ A0–C2</p><h2>${esc(selectedTrack.title)}</h2><p>${esc(selectedTrack.description)}</p></div>
-          <label><span>Đổi hướng học</span><select data-action="track-select">${core().tracks.map((track) => `<option value="${track.id}"${selectedTrack.id === track.id ? " selected" : ""}>${esc(track.title)}</option>`).join("")}</select></label>
+          <div><p class="hlp-eyebrow">BẢN ĐỒ A0–C2 · ${esc(selectedGroup.label)}</p><h2>${esc(selectedTrack.title)}</h2><p>${esc(selectedTrack.description)}</p></div>
+          <label><span>Đổi hướng học</span><select data-action="track-select">${TRACK_GROUPS.map((group) => `<optgroup label="${esc(`${group.label} · ${group.description}`)}">${group.trackIds.map((trackId) => trackById(trackId)).map((track) => `<option value="${track.id}"${selectedTrack.id === track.id ? " selected" : ""}>${esc(track.title)}</option>`).join("")}</optgroup>`).join("")}</select></label>
+        </section>
+        <section class="hlp-path-profile" aria-label="Thông số lộ trình cá nhân">
+          <div><span>Xuất phát</span><strong>${esc(state.profile.level)}</strong><small>Cấp hiện tại</small></div>
+          <div><span>Mục tiêu ngày</span><strong>${state.profile.dailyMinutes} phút</strong><small>Nhịp học đã chọn</small></div>
+          <div><span>Độ khó thích ứng</span><strong>${adaptive.targetDifficulty}/7</strong><small>Tính lại từ bằng chứng</small></div>
+          <div><span>Ghi nhớ</span><strong>${state.profile.retentionGoal}%</strong><small>Mục tiêu ôn tập</small></div>
         </section>
         <section class="hlp-recommendation" aria-labelledby="hlp-recommendation-title">
-          <div><span>Đề xuất thích ứng</span><h3 id="hlp-recommendation-title">${esc(recommendation?.title || "Bài tiếp theo")}</h3><p>Dựa trên trình độ ${esc(state.profile.level)}, kỹ năng ưu tiên và bằng chứng làm bài gần đây.</p></div>
-          <div class="hlp-recommendation-score"><strong>${progress.percent}%</strong><span>${progress.completed}/${progress.total} chặng</span></div>
+          <div><span>Đề xuất thích ứng · Deterministic</span><h3 id="hlp-recommendation-title">${esc(recommendation?.title || "Bài tiếp theo")}</h3><p>${esc(adaptive.reason)}</p><div class="hlp-focus-tags">${adaptive.focusSkills.map((skillId) => `<i style="--skill-color:${esc(skillById(skillId).color)}">${esc(skillById(skillId).label)}</i>`).join("")}</div></div>
+          <div class="hlp-recommendation-score" role="progressbar" aria-label="Tiến độ lộ trình" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress.percent}"><strong>${progress.percent}%</strong><span>${progress.completed}/${progress.total} chặng</span></div>
           <button class="hlp-primary" type="button" data-action="open-lesson" data-lesson-id="${esc(recommendation?.id || "")}">Học bài đề xuất</button>
         </section>
+        <div class="hlp-level-overview" aria-label="Bảy cấp độ CEFR">${core().levels.map((level) => `<span class="${level === state.profile.level ? "is-current" : ""}">${level}</span>`).join("")}</div>
         <ol class="hlp-level-map" aria-label="Lộ trình từ A0 đến C2">${levels}</ol>
       </main>`, state);
   }
 
   function masteryRows(state) {
-    return core().skills.map((skill) => {
+    const skills = core().skills.filter((skill) => masteryFilter === "all" || state.mastery[skill.id]?.state === masteryFilter);
+    if (!skills.length) return `<div class="hlp-empty-state"><strong>Chưa có kỹ năng ở trạng thái này</strong><p>Hoàn thành thêm bài luyện để cập nhật Skill Graph.</p></div>`;
+    return skills.map((skill) => {
       const mastery = state.mastery[skill.id];
       const meta = MASTERY_META[mastery.state] || MASTERY_META.new;
       const evidence = evidenceForSkill(state, skill.id);
@@ -220,12 +298,12 @@
         <button type="button" data-action="select-skill" data-skill-id="${skill.id}" aria-expanded="${isSelected}">
           <span class="hlp-skill-dot" style="--skill-color:${esc(skill.color)}"></span>
           <span class="hlp-mastery-name"><strong>${esc(skill.label)}</strong><small>${esc(meta.label)}</small></span>
-          <span class="hlp-meter"><i style="width:${mastery.score}%"></i></span>
+          <span class="hlp-meter" role="progressbar" aria-label="Mức thành thạo ${esc(skill.label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${mastery.score}"><i style="width:${mastery.score}%"></i></span>
           <span class="hlp-score">${mastery.score}%</span>
         </button>
         ${isSelected ? `<div class="hlp-evidence-panel">
           <p>${esc(meta.hint)}</p>
-          <dl><div><dt>Độ chính xác</dt><dd>${evidence.accuracy}%</dd></div><div><dt>Lượt luyện</dt><dd>${evidence.attempts}</dd></div><div><dt>Bài hoàn thành</dt><dd>${evidence.completedLessons}</dd></div><div><dt>Lỗi cần sửa</dt><dd>${evidence.openMistakes}</dd></div></dl>
+          <dl><div><dt>Độ chính xác</dt><dd>${evidence.accuracy}%</dd></div><div><dt>Lượt luyện</dt><dd>${evidence.attempts}</dd></div><div><dt>Bài hoàn thành</dt><dd>${evidence.completedLessons}</dd></div><div><dt>Lỗi cần sửa</dt><dd>${evidence.openMistakes}</dd></div><div><dt>Điểm gần nhất</dt><dd>${evidence.recentScore}%</dd></div><div><dt>Phiên học</dt><dd>${evidence.studySessions}</dd></div></dl>
           <p class="hlp-adaptive">Độ khó đề xuất: <strong>${core().adaptiveDifficulty(state, skill.id)}/7</strong></p>
           ${mastery.state === "mastered" ? `<button type="button" data-action="add-passport" data-skill-id="${skill.id}">Lưu bằng chứng vào Learning Passport</button>` : `<button type="button" data-action="practice-skill" data-skill-id="${skill.id}">Luyện kỹ năng này</button>`}
         </div>` : ""}
@@ -235,12 +313,17 @@
 
   function renderMastery(state) {
     const weak = core().weakSkills(state);
-    const mastered = Object.values(state.mastery).filter((item) => item.state === "mastered").length;
+    const counts = Object.fromEntries(Object.keys(MASTERY_META).map((status) => [status, Object.values(state.mastery).filter((item) => item.state === status).length]));
+    const average = Math.round(Object.values(state.mastery).reduce((total, item) => total + Number(item.score || 0), 0) / Math.max(1, core().skills.length));
     return shell(`
       <main class="hlp-mastery">
         <section class="hlp-mastery-summary">
           <div><p class="hlp-eyebrow">SKILL GRAPH</p><h2>Biết rõ mình mạnh và yếu ở đâu</h2><p>Mỗi trạng thái dựa trên điểm, độ chính xác, lượt luyện và bài đã hoàn thành.</p></div>
-          <dl><div><dt>Thành thạo</dt><dd>${mastered}/${core().skills.length}</dd></div><div><dt>Ưu tiên ôn</dt><dd>${weak.map((item) => esc(skillById(item.skillId).label)).join(", ")}</dd></div></dl>
+          <dl><div><dt>Điểm tổng hợp</dt><dd>${average}%</dd></div><div><dt>Ưu tiên ôn</dt><dd>${weak.map((item) => esc(skillById(item.skillId).label)).join(", ") || "Chưa có"}</dd></div></dl>
+        </section>
+        <section class="hlp-mastery-states" aria-label="Bốn trạng thái kỹ năng">
+          ${Object.entries(MASTERY_META).map(([id, meta]) => `<button type="button" data-action="mastery-filter" data-filter="${id}" aria-pressed="${masteryFilter === id}"><i data-state="${id}"></i><span>${esc(meta.label)}</span><strong>${counts[id]}</strong></button>`).join("")}
+          <button type="button" data-action="mastery-filter" data-filter="all" aria-pressed="${masteryFilter === "all"}"><i data-state="all"></i><span>Tất cả kỹ năng</span><strong>${core().skills.length}</strong></button>
         </section>
         <section class="hlp-mastery-list" aria-label="Đồ thị kỹ năng">${masteryRows(state)}</section>
         <footer class="hlp-legend" aria-label="Chú giải trạng thái">${Object.entries(MASTERY_META).map(([id, meta]) => `<span data-state="${id}"><i></i>${esc(meta.label)}</span>`).join("")}</footer>
@@ -285,7 +368,10 @@
     if (!activeHost || !store) return;
     const state = store.get();
     if (!pathTrackId) pathTrackId = state.profile.career;
-    if (!selectedMasterySkill) selectedMasterySkill = core().weakSkills(state)[0]?.skillId || core().skills[0].id;
+    if (!selectedMasterySkill) {
+      const filteredSkill = masteryFilter === "all" ? null : core().skills.find((skill) => state.mastery[skill.id]?.state === masteryFilter);
+      selectedMasterySkill = filteredSkill?.id || core().weakSkills(state)[0]?.skillId || core().skills[0].id;
+    }
     const renderer = ({ profile: renderProfile, paths: renderPaths, mastery: renderMastery, passport: renderPassport })[activeView] || renderProfile;
     activeHost.innerHTML = renderer(state);
   }
@@ -293,10 +379,10 @@
   function navigateLesson(lessonId) {
     if (!lessonId || !core().lessons.some((lesson) => lesson.id === lessonId)) return;
     store.update((state) => { state.activeLessonId = lessonId; return state; });
-    const detail = { route: "/learning/lesson-player", view: "lesson-player", lessonId };
+    const detail = { route: "/learn/lesson-player", view: "lesson-player", lessonId };
     if (typeof activeOptions.navigate === "function") activeOptions.navigate(detail);
     try { root.dispatchEvent?.(new CustomEvent("hh:learning:navigate", { detail })); } catch {}
-    if (!activeOptions.navigate && root.location && typeof root.location === "object") root.location.hash = `#/learning/lesson-player?lesson=${encodeURIComponent(lessonId)}`;
+    if (!activeOptions.navigate && root.location && typeof root.location === "object") root.location.hash = `#/learn/lesson-player?lesson=${encodeURIComponent(lessonId)}`;
   }
 
   function syncPassport(skillId = "") {
@@ -322,9 +408,60 @@
     statusMessage = added ? `Đã thêm ${added} minh chứng vào Learning Passport.` : "Chưa có kỹ năng thành thạo mới để đồng bộ.";
   }
 
+  function announce(message) {
+    statusMessage = message;
+    const region = activeHost?.querySelector?.(".hlp-status");
+    if (region) region.textContent = message;
+  }
+
+  function activeGoal() {
+    return activeHost?.querySelector?.('input[name="goal"]:checked')?.value || store?.get?.().profile.goal || "communication";
+  }
+
+  function applyTrackFiltersToDom() {
+    const query = cleanQuery(careerQuery);
+    const goal = activeGoal();
+    const currentRecommended = new Set(goalTrackIds(goal));
+    let visible = 0;
+    activeHost?.querySelectorAll?.("[data-career-search]").forEach((item) => {
+      const input = item.querySelector?.('input[name="career"]');
+      if (input) item.dataset.recommended = String(currentRecommended.has(input.value));
+      const matchesQuery = !query || String(item.dataset.careerSearch || "").includes(query);
+      const matchesGroup = careerFilter === "all"
+        || careerFilter === "recommended" && item.dataset.recommended === "true"
+        || item.dataset.trackGroup === careerFilter;
+      item.hidden = !(matchesQuery && matchesGroup);
+      if (!item.hidden) visible += 1;
+    });
+    activeHost?.querySelectorAll?.('[data-action="track-filter"]').forEach((button) => {
+      button.setAttribute?.("aria-pressed", String(button.dataset.filter === careerFilter));
+      if (button.dataset.filter === "recommended") {
+        const count = button.querySelector?.("span");
+        if (count) count.textContent = String(currentRecommended.size);
+      }
+    });
+    const empty = activeHost?.querySelector?.("[data-career-empty]");
+    if (empty) empty.hidden = visible > 0;
+  }
+
+  function enforceFocusLimit(changedInput) {
+    const inputs = [...(activeHost?.querySelectorAll?.('input[name="focusSkills"]') || [])];
+    let selected = inputs.filter((input) => input.checked);
+    if (selected.length > 4 && changedInput) {
+      changedInput.checked = false;
+      selected = inputs.filter((input) => input.checked);
+      announce("Bạn có thể ưu tiên tối đa 4 kỹ năng.");
+    } else {
+      announce(selected.length === 4 ? "Đã chọn đủ 4 kỹ năng ưu tiên." : "");
+    }
+    inputs.forEach((input) => { input.disabled = selected.length >= 4 && !input.checked; });
+    const count = activeHost?.querySelector?.("[data-focus-count]");
+    if (count) count.textContent = `${selected.length}/4`;
+  }
+
   function onClick(event) {
     const button = event.target?.closest?.("[data-action]");
-    if (!button || !activeHost?.contains?.(button) && activeHost !== button.host) return;
+    if (!button || (!activeHost?.contains?.(button) && activeHost !== button.host)) return;
     const action = button.dataset.action;
     if (action === "switch-view") {
       activeView = supports(button.dataset.view) ? button.dataset.view : activeView;
@@ -333,6 +470,16 @@
       return;
     }
     if (action === "open-lesson") return navigateLesson(button.dataset.lessonId);
+    if (action === "track-filter") {
+      careerFilter = ["all", "recommended", "exam", "career", "foundation"].includes(button.dataset.filter) ? button.dataset.filter : "all";
+      applyTrackFiltersToDom();
+      return;
+    }
+    if (action === "mastery-filter") {
+      masteryFilter = button.dataset.filter === "all" || MASTERY_META[button.dataset.filter] ? button.dataset.filter : "all";
+      selectedMasterySkill = "";
+      return render();
+    }
     if (action === "select-skill") {
       selectedMasterySkill = selectedMasterySkill === button.dataset.skillId ? "" : button.dataset.skillId;
       return render();
@@ -386,16 +533,16 @@
     const action = event.target?.dataset?.action;
     if (action === "career-search") {
       careerQuery = event.target.value;
-      const query = cleanQuery(careerQuery);
-      let visible = 0;
-      activeHost?.querySelectorAll?.("[data-career-search]").forEach((item) => {
-        item.hidden = Boolean(query && !String(item.dataset.careerSearch || "").includes(query));
-        if (!item.hidden) visible += 1;
-      });
-      const empty = activeHost?.querySelector?.("[data-career-empty]");
-      if (empty) empty.hidden = visible > 0;
+      applyTrackFiltersToDom();
+    }
+    if (action === "goal-select" && careerFilter === "recommended") {
+      applyTrackFiltersToDom();
+    }
+    if (action === "focus-skill") {
+      enforceFocusLimit(event.target);
     }
     if (action === "track-select") {
+      if (!core().tracks.some((track) => track.id === event.target.value)) return;
       pathTrackId = event.target.value;
       render();
     }
@@ -411,6 +558,8 @@
     pathTrackId = options.trackId || store.get().profile.career;
     selectedMasterySkill = options.skillId || "";
     careerQuery = "";
+    careerFilter = ["all", "recommended", "exam", "career", "foundation"].includes(options.trackFilter) ? options.trackFilter : "all";
+    masteryFilter = options.masteryFilter === "all" || MASTERY_META[options.masteryFilter] ? options.masteryFilter : "all";
     statusMessage = "";
     clickHandler = onClick;
     submitHandler = onSubmit;

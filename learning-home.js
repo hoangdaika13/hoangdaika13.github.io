@@ -12,6 +12,13 @@
 
   const VIEWS = new Set(["home", "dashboard"]);
   const instances = new WeakMap();
+  const ROUTE_ALIASES = Object.freeze({
+    "lesson-player": "lesson",
+    "smart-review": "review",
+    "quick-test": "assessments",
+    "skill-graph": "mastery",
+    classroom: "classroom"
+  });
   const SUBJECT_COLORS = Object.freeze({
     communication: "#37b7a5", ielts: "#6f87dc", toeic: "#cf8b48", vstep: "#9a76cf",
     technology: "#438fc7", design: "#c7689d", media: "#b26a6a", marketing: "#d77c50",
@@ -66,6 +73,23 @@
     return `Còn ${days} ngày`;
   }
 
+  function deadlineDate(deadline) {
+    const date = new Date(deadline?.dueAt);
+    if (Number.isNaN(date.getTime())) return "Chưa rõ";
+    return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "short" }).format(date);
+  }
+
+  function todayGoal(state, now = Date.now()) {
+    const targetMinutes = clamp(state.profile?.dailyMinutes, 5, 120);
+    const today = typeof core.dayKey === "function" ? core.dayKey(now) : localDayKey(now);
+    const completedMinutes = state.daily?.date === today ? clamp(state.daily?.minutes, 0, 1440) : 0;
+    return {
+      targetMinutes,
+      completedMinutes,
+      percent: clamp(Math.round(completedMinutes / targetMinutes * 100), 0, 100)
+    };
+  }
+
   function masteryLabel(item) {
     if (!item || !item.attempts) return "Chưa có dữ liệu đánh giá";
     return ({ new: "Đang làm quen", familiar: "Đã hiểu", mastered: "Thành thạo", review: "Cần ôn lại" })[item.state] || "Đang làm quen";
@@ -74,6 +98,7 @@
   function render(instance) {
     const state = instance.store.get();
     const plan = core.buildDailyPlan(state);
+    const goal = todayGoal(state);
     const week = weekSummary(state);
     const track = core.tracks.find((item) => item.id === state.profile.career);
     const accent = SUBJECT_COLORS[state.profile.career] || "#37b7a5";
@@ -126,9 +151,9 @@
 
       <div class="hlh-insight-grid">
         <article class="hlh-card hlh-goal">
-          <div class="hlh-card-head"><span>Mục tiêu hôm nay</span><strong>${plan.goal.completedMinutes}/${plan.goal.targetMinutes} phút</strong></div>
-          <div class="hlh-goal-ring" style="--value:${plan.goal.percent}" role="progressbar" aria-label="Mục tiêu học hôm nay" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${plan.goal.percent}"><span>${plan.goal.percent}%</span></div>
-          <div class="hlh-stepper" aria-label="Điều chỉnh mục tiêu phút"><button type="button" data-hlh-action="goal-down" aria-label="Giảm mục tiêu 5 phút">−</button><span>${plan.goal.targetMinutes} phút/ngày</span><button type="button" data-hlh-action="goal-up" aria-label="Tăng mục tiêu 5 phút">+</button></div>
+          <div class="hlh-card-head"><span>Mục tiêu hôm nay</span><strong>${goal.completedMinutes}/${goal.targetMinutes} phút</strong></div>
+          <div class="hlh-goal-ring" style="--value:${goal.percent}" role="progressbar" aria-label="Mục tiêu học hôm nay" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${goal.percent}"><span>${goal.percent}%</span></div>
+          <div class="hlh-stepper" aria-label="Điều chỉnh mục tiêu phút"><button type="button" data-hlh-action="goal-down" aria-label="Giảm mục tiêu 5 phút" ${goal.targetMinutes <= 5 ? "disabled" : ""}>−</button><span>${goal.targetMinutes} phút/ngày</span><button type="button" data-hlh-action="goal-up" aria-label="Tăng mục tiêu 5 phút" ${goal.targetMinutes >= 120 ? "disabled" : ""}>+</button></div>
         </article>
 
         <article class="hlh-card hlh-week">
@@ -147,7 +172,7 @@
 
         <article class="hlh-card hlh-deadline">
           <div class="hlh-card-head"><span>Lịch học & deadline</span></div>
-          ${deadline ? `<time datetime="${escapeHtml(deadline.dueAt)}">${escapeHtml(new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "short" }).format(new Date(deadline.dueAt)))}</time><div><h3>${escapeHtml(deadline.title)}</h3><p>${escapeHtml(deadlineText(deadline))}</p></div><button type="button" data-hlh-action="deadline" data-deadline-id="${escapeHtml(deadline.id)}" aria-label="Mở ${escapeHtml(deadline.title)}">Mở</button>`
+          ${deadline ? `<time datetime="${escapeHtml(deadline.dueAt)}">${escapeHtml(deadlineDate(deadline))}</time><div><h3>${escapeHtml(deadline.title)}</h3><p>${escapeHtml(deadlineText(deadline))}</p></div><button type="button" data-hlh-action="deadline" data-deadline-id="${escapeHtml(deadline.id)}" aria-label="Mở ${escapeHtml(deadline.title)}">Mở</button>`
           : `<div class="hlh-empty"><strong>Lịch đang trống</strong><p>Deadline của lớp và bài học sẽ xuất hiện tại đây.</p></div>`}
         </article>
       </div>
@@ -155,8 +180,21 @@
     </section>`;
   }
 
-  function navigate(instance, view, detail = {}) {
-    if (typeof instance.onNavigate === "function") instance.onNavigate(view, detail);
+  function announce(instance, message) {
+    const status = instance.host.querySelector?.(".hlh-status");
+    if (status) status.textContent = message;
+  }
+
+  function navigate(instance, view, detail = {}, message = "Đang mở không gian học tập.") {
+    announce(instance, message);
+    if (typeof instance.onNavigate === "function") {
+      instance.onNavigate(view, detail);
+      return;
+    }
+    try {
+      scope.dispatchEvent?.(new scope.CustomEvent("hh:learning:navigate", { detail: { view, ...detail } }));
+    } catch {}
+    if (scope.location) scope.location.hash = `#/learn/${ROUTE_ALIASES[view] || view}`;
   }
 
   function handleClick(instance, event) {
@@ -165,17 +203,23 @@
     const action = button.dataset.hlhAction;
     const state = instance.store.get();
     const plan = core.buildDailyPlan(state);
-    if (action === "continue" && plan.continueLesson) navigate(instance, "lesson-player", { lessonId: plan.continueLesson.id });
-    else if (action === "review") navigate(instance, "smart-review", { dueCount: plan.reviewsDue.length });
-    else if (action === "quick-test") navigate(instance, "quick-test", { level: state.profile.level, skills: plan.quickTest.skills });
-    else if (action === "skill") navigate(instance, "skill-graph", { skillId: button.dataset.skillId || "" });
-    else if (action === "deadline") navigate(instance, "classroom", { deadlineId: button.dataset.deadlineId || "" });
+    if (action === "continue" && plan.continueLesson) {
+      instance.store.update((draft) => {
+        draft.activeLessonId = plan.continueLesson.id;
+        return draft;
+      });
+      navigate(instance, "lesson-player", { lessonId: plan.continueLesson.id }, `Đang mở bài ${plan.continueLesson.title}.`);
+    } else if (action === "review") navigate(instance, "smart-review", { dueCount: plan.reviewsDue.length }, "Đang mở lịch ôn tập hôm nay.");
+    else if (action === "quick-test") navigate(instance, "quick-test", { level: state.profile.level, skills: plan.quickTest.skills }, "Đang chuẩn bị bài kiểm tra nhanh.");
+    else if (action === "skill") navigate(instance, "skill-graph", { skillId: button.dataset.skillId || "" }, "Đang mở biểu đồ kỹ năng.");
+    else if (action === "deadline") navigate(instance, "classroom", { deadlineId: button.dataset.deadlineId || "" }, "Đang mở lịch học và deadline.");
     else if (action === "goal-down" || action === "goal-up") {
       const change = action === "goal-up" ? 5 : -5;
       instance.store.update((draft) => {
         draft.profile.dailyMinutes = clamp((draft.profile.dailyMinutes || 15) + change, 5, 120);
         return draft;
       });
+      announce(instance, `Đã lưu mục tiêu ${instance.store.get().profile.dailyMinutes} phút mỗi ngày.`);
     }
   }
 

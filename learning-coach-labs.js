@@ -50,8 +50,8 @@
       version: 1,
       view: "coach",
       career: "communication",
-      coach: { task: "socratic", prompt: "", output: null, hintIndex: 0, history: [] },
-      speaking: { scenarioId: "restaurant", transcript: "", attempts: [], recording: false },
+      coach: { task: "socratic", prompt: "", output: null, hintIndex: 0, level: "A2", dailyMinutes: 20, priority: "speaking", history: [] },
+      speaking: { scenarioId: "restaurant", transcript: "", manualTranscript: "", attempts: [], recording: false, micPermission: "prompt" },
       listening: { itemId: "daily", rate: 0.8, subtitles: true, repeats: 1, attempts: [] },
       writing: { draft: "", preview: null, reports: [] },
       careerSimulator: { careerId: "interview", messages: [], feedback: null },
@@ -72,13 +72,18 @@
         prompt: clean(value.coach?.prompt, 3000),
         output: value.coach?.output && typeof value.coach.output === "object" ? sanitizeAIResult(value.coach.output) : null,
         hintIndex: clamp(value.coach?.hintIndex, 0, 8),
+        level: ["A0", "A1", "A2", "B1", "B2", "C1", "C2"].includes(value.coach?.level) ? value.coach.level : base.coach.level,
+        dailyMinutes: clamp(value.coach?.dailyMinutes || base.coach.dailyMinutes, 5, 120),
+        priority: ["speaking", "listening", "writing", "vocabulary", "grammar"].includes(value.coach?.priority) ? value.coach.priority : base.coach.priority,
         history: Array.isArray(value.coach?.history) ? value.coach.history.slice(0, MAX_HISTORY).map(normalizeHistory) : []
       },
       speaking: {
         scenarioId: SPEAKING_SCENARIOS.some((item) => item.id === value.speaking?.scenarioId) ? value.speaking.scenarioId : base.speaking.scenarioId,
         transcript: clean(value.speaking?.transcript, 2000),
+        manualTranscript: clean(value.speaking?.manualTranscript, 2000),
         attempts: Array.isArray(value.speaking?.attempts) ? value.speaking.attempts.slice(0, MAX_HISTORY).map(normalizeAttempt) : [],
-        recording: false
+        recording: false,
+        micPermission: ["prompt", "granted", "denied", "unavailable"].includes(value.speaking?.micPermission) ? value.speaking.micPermission : "prompt"
       },
       listening: {
         itemId: LISTENING_ITEMS.some((item) => item.id === value.listening?.itemId) ? value.listening.itemId : base.listening.itemId,
@@ -188,14 +193,19 @@
       return { title: "Luyện từ lỗi gần đây", steps: items, summary: "Mỗi lỗi được đổi thành một bài luyện ngắn; chưa có dữ liệu thì dùng bài nền tảng." };
     }
     if (task === "career-example") return { title: `Ví dụ theo ngành ${career.label}`, example: `As a ${career.role}, I need to ${career.terms[0]} the issue, ${career.terms[1]} the next step, and ${career.terms[2]} the result.`, vocabulary: career.terms, challenge: career.scenario };
-    if (task === "weekly-plan") return { title: "Kế hoạch học 7 ngày", days: ["Khảo sát điểm yếu", "Từ vựng chuyên ngành", "Nghe và dictation", "Nói shadowing", "Viết theo tình huống", "Roleplay", "Ôn và kiểm tra nhanh"].map((focus, index) => ({ day: index + 1, focus, minutes: clamp(payload.dailyMinutes || 15, 5, 60) })), summary: "Kế hoạch tự động sẽ điều chỉnh sau mỗi attempt được ghi nhận." };
+    if (task === "weekly-plan") {
+      const priority = clean(payload.priority || "speaking", 20);
+      const focusMap = { speaking: "Nói shadowing", listening: "Nghe và dictation", writing: "Viết có rubric", vocabulary: "Từ vựng theo ngành", grammar: "Ngữ pháp từ lỗi sai" };
+      const focus = focusMap[priority] || focusMap.speaking;
+      return { title: `Kế hoạch 7 ngày · ${clean(payload.level || "A2", 8)}`, days: ["Khảo sát điểm yếu", focus, "Từ vựng chuyên ngành", "Nghe và ghi chính tả", "Roleplay thực tế", "Viết và tự đánh giá", "Ôn + kiểm tra nhanh"].map((item, index) => ({ day: index + 1, focus: item, minutes: clamp(payload.dailyMinutes || 15, 5, 60) })), summary: "Kế hoạch tự động sẽ điều chỉnh sau mỗi attempt được ghi nhận; người học vẫn quyết định lộ trình cuối cùng." };
+    }
     if (task === "daily-summary") return { title: "Tóm tắt học tập hôm nay", summary: `Bạn đã có ${Number(payload.sessions || 0)} phiên học và ${mistakes.length} lỗi đang cần xem lại.`, next: mistakes.length ? "Ôn lỗi gần nhất trước khi bắt đầu bài mới." : "Thử một bài nghe ngắn rồi ghi lại câu bạn chưa chắc." };
     const question = prompt || "Tôi chưa biết cách trả lời bài tập này.";
     return { title: "Coach Socratic", steps: ["Đề bài đang hỏi kết quả hay cách giải thích?", "Từ khóa nào cho biết thì, ngữ cảnh hoặc mục tiêu?", "Bạn có thể viết một câu đơn giản trước rồi mở rộng không?"], response: `Hãy bắt đầu từ điều bạn chắc nhất trong câu: “${question.slice(0, 140)}”. Tôi sẽ gợi ý từng bước, không đưa đáp án ngay.` };
   }
 
   async function runCoachTask(task, payload = {}, options = {}) {
-    const safePayload = sanitizeAIResult({ prompt: clean(payload.prompt, 3000), career: CAREERS[payload.career] ? payload.career : "communication", level: clean(payload.level || "A0", 8), dailyMinutes: clamp(payload.dailyMinutes || 15, 5, 120), mistakes: Array.isArray(payload.mistakes) ? payload.mistakes.slice(0, 8).map((item) => ({ prompt: clean(item.prompt, 220), answer: clean(item.answer, 220), userAnswer: clean(item.userAnswer, 220) })) : [], sessions: clamp(payload.sessions, 0, 999) });
+    const safePayload = sanitizeAIResult({ prompt: clean(payload.prompt, 3000), career: CAREERS[payload.career] ? payload.career : "communication", level: clean(payload.level || "A0", 8), dailyMinutes: clamp(payload.dailyMinutes || 15, 5, 120), priority: clean(payload.priority || "speaking", 20), mistakes: Array.isArray(payload.mistakes) ? payload.mistakes.slice(0, 8).map((item) => ({ prompt: clean(item.prompt, 220), answer: clean(item.answer, 220), userAnswer: clean(item.userAnswer, 220) })) : [], sessions: clamp(payload.sessions, 0, 999) });
     if (typeof options.runAI === "function") {
       try {
         const result = await options.runAI({ task: `learning-${clean(task, 40)}`, context: safePayload, policy: { suggestionsOnly: true, neverChangeOfficialGrade: true, neverApplyEditsWithoutConfirmation: true } });
@@ -221,7 +231,7 @@
     };
   }
 
-  function resultMarkup(output) {
+  function resultMarkup(output, visibleHints = Number.POSITIVE_INFINITY) {
     if (!output) return `<div class="hhlcl-empty"><strong>Coach đang chờ câu hỏi</strong><p>Chọn một tác vụ và nhập bối cảnh để nhận gợi ý.</p></div>`;
     const body = output.result || {};
     const rows = [];
@@ -230,7 +240,11 @@
     if (body.summary) rows.push(`<p>${escapeHtml(body.summary)}</p>`);
     if (body.example) rows.push(`<blockquote>${escapeHtml(body.example)}</blockquote>`);
     if (body.next) rows.push(`<p><strong>Bước tiếp:</strong> ${escapeHtml(body.next)}</p>`);
-    if (Array.isArray(body.steps)) rows.push(`<ol>${body.steps.map((item) => `<li>${escapeHtml(typeof item === "string" ? item : item.question || JSON.stringify(item))}${item?.hint ? `<small>${escapeHtml(item.hint)}</small>` : ""}</li>`).join("")}</ol>`);
+    if (Array.isArray(body.steps)) {
+      const visible = body.steps.slice(0, Math.max(1, visibleHints));
+      rows.push(`<ol>${visible.map((item) => `<li>${escapeHtml(typeof item === "string" ? item : item.question || JSON.stringify(item))}${item?.hint ? `<small>${escapeHtml(item.hint)}</small>` : ""}</li>`).join("")}</ol>`);
+      if (visible.length < body.steps.length) rows.push(`<button type="button" class="hhlcl-next-hint" data-hhlcl-next-hint>Hiện gợi ý tiếp theo <span>${visible.length}/${body.steps.length}</span></button>`);
+    }
     if (Array.isArray(body.days)) rows.push(`<div class="hhlcl-plan">${body.days.map((item) => `<article><b>Ngày ${escapeHtml(item.day)}</b><span>${escapeHtml(item.focus)}</span><small>${escapeHtml(item.minutes)} phút</small></article>`).join("")}</div>`);
     if (Array.isArray(body.vocabulary)) rows.push(`<div class="hhlcl-chips">${body.vocabulary.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>`);
     if (!rows.length) rows.push(`<pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>`);
@@ -240,7 +254,7 @@
   function shellMarkup(state) {
     const labels = { coach: "AI Coach", speaking: "Luyện nói", listening: "Luyện nghe", writing: "Luyện viết", "career-simulator": "Mô phỏng nghề nghiệp" };
     return `<section class="hhlcl-shell" data-hhlcl-shell>
-      <header class="hhlcl-hero"><div><span>HH LEARNING LABS</span><h1>Gia sư và phòng luyện kỹ năng</h1><p>Học từng bước, luyện bằng tình huống thật và luôn kiểm soát mọi chỉnh sửa.</p></div><aside><b>${escapeHtml(CAREERS[state.career].label)}</b><small>Local-first · Không chứa API key</small></aside></header>
+      <header class="hhlcl-hero"><div><span>HH LEARNING LABS</span><h1>Gia sư và phòng luyện kỹ năng</h1><p>Học từng bước, luyện bằng tình huống thật và luôn kiểm soát mọi chỉnh sửa.</p></div><aside><b>${escapeHtml(CAREERS[state.career].label)}</b><small>${escapeHtml(state.coach.level)} · ${state.coach.dailyMinutes} phút/ngày · Local-first</small></aside></header>
       <nav class="hhlcl-tabs" aria-label="Phòng học">${VIEWS.map((view) => `<button type="button" data-hhlcl-view="${view}" class="${state.view === view ? "is-active" : ""}" aria-current="${state.view === view ? "page" : "false"}">${labels[view]}</button>`).join("")}</nav>
       <main data-hhlcl-stage></main><div class="hhlcl-toast" data-hhlcl-toast role="status" aria-live="polite"></div>
     </section>`;
@@ -248,12 +262,13 @@
 
   function coachMarkup(state) {
     const tasks = [["socratic", "Gợi ý Socratic"], ["mistakes", "Luyện từ lỗi sai"], ["career-example", "Ví dụ theo ngành"], ["weekly-plan", "Kế hoạch tuần"], ["daily-summary", "Tóm tắt hôm nay"]];
-    return `<section class="hhlcl-workspace hhlcl-coach"><aside class="hhlcl-side"><small>AI LEARNING COACH</small><h2>Hiểu trước, đáp án sau</h2><p>Coach chia nhỏ vấn đề và đặt câu hỏi dẫn dắt. Khi chưa nối AI, bộ quy tắc cục bộ vẫn hoạt động minh bạch.</p><label>Chuyên ngành<select data-hhlcl-career>${Object.entries(CAREERS).map(([id, item]) => `<option value="${id}" ${state.career === id ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label></aside><section class="hhlcl-main"><div class="hhlcl-task-grid">${tasks.map(([id, label]) => `<button type="button" data-hhlcl-task="${id}" class="${state.coach.task === id ? "is-active" : ""}">${escapeHtml(label)}</button>`).join("")}</div><form data-hhlcl-coach-form><label>Bối cảnh hoặc câu hỏi<textarea name="prompt" rows="5" placeholder="Ví dụ: Em chưa hiểu vì sao câu này dùng thì hiện tại hoàn thành...">${escapeHtml(state.coach.prompt)}</textarea></label><button class="is-primary" type="submit">Nhận gợi ý từng bước</button></form><div data-hhlcl-coach-result>${resultMarkup(state.coach.output)}</div></section></section>`;
+    return `<section class="hhlcl-workspace hhlcl-coach"><aside class="hhlcl-side"><small>AI LEARNING COACH</small><h2>Hiểu trước, đáp án sau</h2><p>Coach chia nhỏ vấn đề và đặt câu hỏi dẫn dắt. Khi chưa nối AI, bộ quy tắc cục bộ vẫn hoạt động minh bạch.</p><div class="hhlcl-profile-grid"><label>Trình độ<select data-hhlcl-level>${["A0", "A1", "A2", "B1", "B2", "C1", "C2"].map((level) => `<option ${state.coach.level === level ? "selected" : ""}>${level}</option>`).join("")}</select></label><label>Phút/ngày<input data-hhlcl-minutes type="number" min="5" max="120" value="${state.coach.dailyMinutes}"></label></div><label>Ưu tiên<select data-hhlcl-priority>${[["speaking", "Nói"], ["listening", "Nghe"], ["writing", "Viết"], ["vocabulary", "Từ vựng"], ["grammar", "Ngữ pháp"]].map(([id, label]) => `<option value="${id}" ${state.coach.priority === id ? "selected" : ""}>${label}</option>`).join("")}</select></label><label>Chuyên ngành<select data-hhlcl-career>${Object.entries(CAREERS).map(([id, item]) => `<option value="${id}" ${state.career === id ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label><div class="hhlcl-auto-label"><i></i><span>Mọi nhận xét ở đây là gợi ý tự động, không phải điểm chính thức.</span></div></aside><section class="hhlcl-main"><div class="hhlcl-task-grid">${tasks.map(([id, label]) => `<button type="button" data-hhlcl-task="${id}" class="${state.coach.task === id ? "is-active" : ""}">${escapeHtml(label)}</button>`).join("")}</div><form data-hhlcl-coach-form><label>Bối cảnh hoặc câu hỏi<textarea name="prompt" rows="5" placeholder="Ví dụ: Em chưa hiểu vì sao câu này dùng thì hiện tại hoàn thành...">${escapeHtml(state.coach.prompt)}</textarea></label><button class="is-primary" type="submit">Nhận gợi ý từng bước</button></form><div data-hhlcl-coach-result>${resultMarkup(state.coach.output, state.coach.hintIndex)}</div></section></section>`;
   }
 
   function speakingMarkup(state) {
     const scenario = SPEAKING_SCENARIOS.find((item) => item.id === state.speaking.scenarioId) || SPEAKING_SCENARIOS[0];
-    return `<section class="hhlcl-workspace"><aside class="hhlcl-side"><small>SPEAKING LAB</small><h2>Shadowing có phản hồi</h2><p>Micro chỉ được yêu cầu sau khi bạn bấm bắt đầu. Transcript được so khớp cục bộ và không phải điểm thi.</p><div class="hhlcl-scenarios">${SPEAKING_SCENARIOS.map((item) => `<button type="button" data-hhlcl-scenario="${item.id}" class="${item.id === scenario.id ? "is-active" : ""}"><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.roles.join(" · "))}</small></button>`).join("")}</div></aside><section class="hhlcl-main"><article class="hhlcl-phrase"><span>CÂU LUYỆN</span><h2>${escapeHtml(scenario.phrase)}</h2><p>${escapeHtml(scenario.translation)}</p><div><button type="button" data-hhlcl-speak="normal">Nghe mẫu</button><button type="button" data-hhlcl-speak="slow">Nghe chậm</button><button class="is-primary" type="button" data-hhlcl-recognize>Bắt đầu nói</button><button type="button" data-hhlcl-record>Ghi âm</button><button type="button" data-hhlcl-stop disabled>Dừng</button></div></article><article class="hhlcl-transcript"><header><strong>Transcript và so sánh</strong><span data-hhlcl-mic-status>Sẵn sàng</span></header><output data-hhlcl-transcript>${escapeHtml(state.speaking.transcript || "Kết quả nhận dạng sẽ hiện ở đây.")}</output><div data-hhlcl-speaking-score></div></article>${attemptsMarkup(state.speaking.attempts, "Lịch sử luyện nói")}</section></section>`;
+    const permissionLabel = { prompt: "Chưa yêu cầu quyền", granted: "Đã cấp quyền micro", denied: "Quyền micro bị từ chối", unavailable: "Thiết bị không hỗ trợ" }[state.speaking.micPermission];
+    return `<section class="hhlcl-workspace"><aside class="hhlcl-side"><small>SPEAKING LAB</small><h2>Shadowing có phản hồi</h2><p>Micro chỉ được yêu cầu sau khi bạn bấm bắt đầu. Transcript được so khớp cục bộ và không phải điểm thi.</p><div class="hhlcl-permission is-${state.speaking.micPermission}"><i></i><div><b>${permissionLabel}</b><small>Bản ghi chỉ tồn tại trong phiên hiện tại, không lưu vào localStorage.</small></div></div><div class="hhlcl-scenarios">${SPEAKING_SCENARIOS.map((item) => `<button type="button" data-hhlcl-scenario="${item.id}" class="${item.id === scenario.id ? "is-active" : ""}"><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.roles.join(" · "))}</small></button>`).join("")}</div></aside><section class="hhlcl-main"><article class="hhlcl-phrase"><span>CÂU LUYỆN</span><h2>${escapeHtml(scenario.phrase)}</h2><p>${escapeHtml(scenario.translation)}</p><div><button type="button" data-hhlcl-speak="normal">Nghe mẫu</button><button type="button" data-hhlcl-speak="slow">Nghe chậm</button><button class="is-primary" type="button" data-hhlcl-recognize>Bắt đầu nói</button><button type="button" data-hhlcl-record>Ghi âm</button><button type="button" data-hhlcl-stop disabled>Dừng</button></div><div class="hhlcl-recording"><audio controls data-hhlcl-recording-preview hidden></audio><a data-hhlcl-download-recording hidden download="hh-shadowing.webm">Tải bản ghi trong phiên</a></div></article><article class="hhlcl-transcript"><header><strong>Transcript và so sánh</strong><span data-hhlcl-mic-status>Sẵn sàng</span></header><output data-hhlcl-transcript>${escapeHtml(state.speaking.transcript || "Kết quả nhận dạng sẽ hiện ở đây.")}</output><div data-hhlcl-speaking-score></div><form class="hhlcl-manual-transcript" data-hhlcl-manual-transcript><label>Nhập transcript thủ công khi trình duyệt không nhận giọng nói<input name="transcript" value="${escapeHtml(state.speaking.manualTranscript)}" placeholder="Type what you said..."></label><button type="submit">Đánh giá câu nói</button></form></article>${attemptsMarkup(state.speaking.attempts, "Lịch sử luyện nói")}</section></section>`;
   }
 
   function listeningMarkup(state) {
@@ -273,7 +288,7 @@
 
   function careerMarkup(state) {
     const career = CAREERS[state.careerSimulator.careerId];
-    return `<section class="hhlcl-workspace"><aside class="hhlcl-side"><small>CAREER SIMULATOR</small><h2>Luyện tình huống nghề nghiệp</h2><p>Mô phỏng phỏng vấn và hội thoại theo vai. Coach phản hồi sau từng lượt nhưng không tự chấm điểm chính thức.</p><label>Chọn bối cảnh<select data-hhlcl-career-sim>${Object.entries(CAREERS).map(([id, item]) => `<option value="${id}" ${id === state.careerSimulator.careerId ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label><article class="hhlcl-brief"><small>NHIỆM VỤ</small><strong>${escapeHtml(career.scenario)}</strong><span>Vai của bạn: ${escapeHtml(career.role)}</span></article></aside><section class="hhlcl-main"><div class="hhlcl-chat" data-hhlcl-chat>${state.careerSimulator.messages.length ? state.careerSimulator.messages.map((item) => `<article class="is-${item.role}"><small>${item.role === "learner" ? "Bạn" : "Coach"}</small><p>${escapeHtml(item.text)}</p></article>`).join("") : `<div class="hhlcl-empty"><strong>Sẵn sàng roleplay</strong><p>Bắt đầu để nhận câu hỏi đầu tiên theo đúng chuyên ngành.</p></div>`}</div><div class="hhlcl-actions"><button type="button" data-hhlcl-start-roleplay>Bắt đầu / làm mới</button></div><form data-hhlcl-roleplay><label>Phản hồi của bạn<textarea name="reply" rows="4" placeholder="Type your response in English..."></textarea></label><button class="is-primary" type="submit">Gửi phản hồi</button></form><div data-hhlcl-career-feedback>${state.careerSimulator.feedback ? resultMarkup(state.careerSimulator.feedback) : ""}</div></section></section>`;
+    return `<section class="hhlcl-workspace"><aside class="hhlcl-side"><small>CAREER SIMULATOR</small><h2>Luyện tình huống nghề nghiệp</h2><p>Mô phỏng phỏng vấn và hội thoại theo vai. Coach phản hồi sau từng lượt nhưng không tự chấm điểm chính thức.</p><label>Chọn bối cảnh<select data-hhlcl-career-sim>${Object.entries(CAREERS).map(([id, item]) => `<option value="${id}" ${id === state.careerSimulator.careerId ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label><article class="hhlcl-brief"><small>NHIỆM VỤ</small><strong>${escapeHtml(career.scenario)}</strong><span>Vai của bạn: ${escapeHtml(career.role)}</span></article></aside><section class="hhlcl-main"><div class="hhlcl-chat" data-hhlcl-chat>${state.careerSimulator.messages.length ? state.careerSimulator.messages.map((item) => `<article class="is-${item.role}"><small>${item.role === "learner" ? "Bạn" : "Coach"}</small><p>${escapeHtml(item.text)}</p></article>`).join("") : `<div class="hhlcl-empty"><strong>Sẵn sàng roleplay</strong><p>Bắt đầu để nhận câu hỏi đầu tiên theo đúng chuyên ngành.</p></div>`}</div><div class="hhlcl-actions"><button type="button" data-hhlcl-start-roleplay>Bắt đầu / làm mới</button><button type="button" data-hhlcl-hear-roleplay ${state.careerSimulator.messages.some((item) => item.role === "coach") ? "" : "disabled"}>Nghe câu Coach</button></div><form data-hhlcl-roleplay><label>Phản hồi của bạn<textarea name="reply" rows="4" placeholder="Type your response in English..."></textarea></label><button class="is-primary" type="submit">Gửi phản hồi</button></form><div data-hhlcl-career-feedback>${state.careerSimulator.feedback ? resultMarkup(state.careerSimulator.feedback) : ""}</div></section></section>`;
   }
 
   function attemptsMarkup(attempts, title) {
@@ -288,6 +303,8 @@
     if (VIEWS.includes(options.view)) state.view = options.view;
     let recognition = null;
     let recorder = null;
+    let recordingUrl = "";
+    let recordingChunks = [];
     const streams = new Set();
     let destroyed = false;
     let toastTimer = null;
@@ -333,12 +350,27 @@
       streams.forEach((stream) => stream?.getTracks?.().forEach((track) => track.stop()));
       streams.clear();
       root.speechSynthesis?.cancel?.();
+      if (recordingUrl) { root.URL?.revokeObjectURL?.(recordingUrl); recordingUrl = ""; }
+    };
+    const micErrorMessage = (error) => {
+      const name = clean(error?.name, 80);
+      if (["NotAllowedError", "PermissionDeniedError"].includes(name)) return "Bạn chưa cấp quyền micro. Hãy cho phép trong cài đặt trình duyệt hoặc nhập transcript thủ công.";
+      if (["NotFoundError", "DevicesNotFoundError"].includes(name)) return "Không tìm thấy micro. Bạn vẫn có thể nhập transcript thủ công để luyện.";
+      return clean(error?.message || "Không thể mở micro trên thiết bị này.", 180);
     };
     const requestMic = async () => {
-      if (!root.navigator?.mediaDevices?.getUserMedia) throw new Error("Trình duyệt chưa hỗ trợ micro.");
-      const stream = await root.navigator.mediaDevices.getUserMedia({ audio: true });
-      streams.add(stream);
-      return stream;
+      if (!root.navigator?.mediaDevices?.getUserMedia) { state.speaking.micPermission = "unavailable"; memory.set(state); throw new Error("Trình duyệt chưa hỗ trợ micro. Hãy dùng transcript thủ công."); }
+      try {
+        const stream = await root.navigator.mediaDevices.getUserMedia({ audio: true });
+        state.speaking.micPermission = "granted";
+        memory.set(state);
+        streams.add(stream);
+        return stream;
+      } catch (error) {
+        state.speaking.micPermission = ["NotAllowedError", "PermissionDeniedError"].includes(error?.name) ? "denied" : "unavailable";
+        memory.set(state);
+        throw new Error(micErrorMessage(error));
+      }
     };
     const addAttempt = (kind, comparison, transcript, targetText) => {
       const attempt = normalizeAttempt({ id: uid("attempt"), type: kind, target: targetText, transcript, ...comparison, createdAt: new Date().toISOString() });
@@ -383,14 +415,34 @@
       try {
         const stream = await requestMic();
         if (typeof root.MediaRecorder !== "function") throw new Error("Trình duyệt chưa hỗ trợ ghi âm.");
+        recordingChunks = [];
         recorder = new root.MediaRecorder(stream);
-        recorder.onstop = () => { stream.getTracks().forEach((track) => track.stop()); streams.delete(stream); state.speaking.recording = false; save(); if (status) status.textContent = "Đã ghi một attempt cục bộ. Dùng Bắt đầu nói để có transcript."; };
+        recorder.ondataavailable = (event) => { if (event.data?.size) recordingChunks.push(event.data); };
+        recorder.onstop = () => {
+          stream.getTracks().forEach((track) => track.stop());
+          streams.delete(stream);
+          state.speaking.recording = false;
+          save();
+          const blob = recordingChunks.length ? new Blob(recordingChunks, { type: recorder?.mimeType || "audio/webm" }) : null;
+          if (blob && root.URL?.createObjectURL) {
+            if (recordingUrl) root.URL.revokeObjectURL(recordingUrl);
+            recordingUrl = root.URL.createObjectURL(blob);
+            const audio = target.querySelector("[data-hhlcl-recording-preview]");
+            const download = target.querySelector("[data-hhlcl-download-recording]");
+            if (audio) { audio.src = recordingUrl; audio.hidden = false; }
+            if (download) { download.href = recordingUrl; download.hidden = false; }
+          }
+          recordingChunks = [];
+          if (status) status.textContent = "Đã ghi xong. Bạn có thể nghe lại hoặc nhập transcript để đánh giá.";
+          target.querySelector("[data-hhlcl-record]")?.removeAttribute("disabled");
+          target.querySelector("[data-hhlcl-stop]")?.setAttribute("disabled", "");
+        };
         recorder.start();
         state.speaking.recording = true;
         target.querySelector("[data-hhlcl-record]")?.setAttribute("disabled", "");
         target.querySelector("[data-hhlcl-stop]")?.removeAttribute("disabled");
         if (status) status.textContent = "Đang ghi âm trên thiết bị...";
-      } catch (error) { streams.forEach((stream) => stream.getTracks?.().forEach((track) => track.stop())); streams.clear(); if (status) status.textContent = clean(error.message, 180); }
+      } catch (error) { streams.forEach((stream) => stream.getTracks?.().forEach((track) => track.stop())); streams.clear(); if (status) status.textContent = micErrorMessage(error); }
     };
     const runCoach = async (task, payload) => {
       const response = await runCoachTask(task, payload, { runAI: options.runAI });
@@ -401,7 +453,8 @@
       const viewButton = event.target.closest("[data-hhlcl-view]");
       if (viewButton) { stopMedia(); state.view = viewButton.dataset.hhlclView; save(); renderStage(); return; }
       const taskButton = event.target.closest("[data-hhlcl-task]");
-      if (taskButton) { state.coach.task = taskButton.dataset.hhlclTask; save(); renderStage(); return; }
+      if (taskButton) { state.coach.task = taskButton.dataset.hhlclTask; state.coach.hintIndex = 1; save(); renderStage(); return; }
+      if (event.target.closest("[data-hhlcl-next-hint]")) { state.coach.hintIndex = clamp(state.coach.hintIndex + 1, 1, 8); save(); renderStage(); return; }
       const scenarioButton = event.target.closest("[data-hhlcl-scenario]");
       if (scenarioButton) { stopMedia(); state.speaking.scenarioId = scenarioButton.dataset.hhlclScenario; save(); renderStage(); return; }
       const listeningButton = event.target.closest("[data-hhlcl-listening]");
@@ -420,6 +473,7 @@
         state.careerSimulator.messages = [{ role: "coach", text: `${career.scenario} I will play the other role. Please introduce yourself and explain your first step.`, at: new Date().toISOString() }];
         state.careerSimulator.feedback = null; save(); renderStage(); return;
       }
+      if (event.target.closest("[data-hhlcl-hear-roleplay]")) { const message = [...state.careerSimulator.messages].reverse().find((item) => item.role === "coach"); if (message) speak(message.text, 0.82, 1); return; }
     };
 
     const onSubmit = async (event) => {
@@ -429,13 +483,28 @@
         const button = coachForm.querySelector("button[type=submit]"); button.disabled = true; button.textContent = "Đang chuẩn bị gợi ý...";
         state.coach.prompt = clean(new FormData(coachForm).get("prompt"), 3000);
         let coreState = null; try { coreState = coreStore?.get?.(); } catch {}
-        state.coach.output = await runCoach(state.coach.task, { prompt: state.coach.prompt, career: state.career, level: coreState?.profile?.level || options.level, dailyMinutes: coreState?.profile?.dailyMinutes || 15, mistakes: coreState?.mistakes || [], sessions: coreState?.sessions?.length || 0 });
+        state.coach.output = await runCoach(state.coach.task, { prompt: state.coach.prompt, career: state.career, level: coreState?.profile?.level || state.coach.level || options.level, dailyMinutes: coreState?.profile?.dailyMinutes || state.coach.dailyMinutes, priority: state.coach.priority, mistakes: coreState?.mistakes || [], sessions: coreState?.sessions?.length || 0 });
+        state.coach.hintIndex = 1;
         state.coach.history.unshift(normalizeHistory({ task: state.coach.task, title: state.coach.output.result?.title, source: state.coach.output.source }));
         save(); renderStage(); return;
       }
       const dictationForm = event.target.closest("[data-hhlcl-dictation]");
       if (dictationForm) {
         event.preventDefault(); const transcript = clean(new FormData(dictationForm).get("answer"), 2000); const comparison = compareTranscript(transcript, currentListening().text); addAttempt("listening", comparison, transcript, currentListening().text); const result = dictationForm.querySelector("[data-hhlcl-dictation-result]"); if (result) result.innerHTML = `<article class="hhlcl-score"><b>${comparison.score}</b><span>${comparison.missing.length ? `Còn thiếu: ${escapeHtml(comparison.missing.join(", "))}` : "Bạn đã nghe đúng các từ chính."}</span><small>${escapeHtml(comparison.notice)}</small></article>`; return;
+      }
+      const manualTranscriptForm = event.target.closest("[data-hhlcl-manual-transcript]");
+      if (manualTranscriptForm) {
+        event.preventDefault();
+        const transcript = clean(new FormData(manualTranscriptForm).get("transcript"), 2000);
+        if (!transcript) return toast("Hãy nhập câu bạn vừa nói.");
+        const comparison = compareTranscript(transcript, currentScenario().phrase);
+        state.speaking.manualTranscript = transcript;
+        state.speaking.transcript = transcript;
+        addAttempt("speaking", comparison, transcript, currentScenario().phrase);
+        renderStage();
+        const score = target.querySelector("[data-hhlcl-speaking-score]");
+        if (score) score.innerHTML = `<article class="hhlcl-score"><b>${comparison.score}</b><span>${comparison.missing.length ? `Cần luyện thêm: ${escapeHtml(comparison.missing.join(", "))}` : "Các từ chính đã khớp với câu mẫu."}</span><small>${escapeHtml(comparison.notice)}</small></article>`;
+        return;
       }
       const roleplayForm = event.target.closest("[data-hhlcl-roleplay]");
       if (roleplayForm) {
@@ -453,6 +522,9 @@
     };
     const onChange = (event) => {
       if (event.target.matches("[data-hhlcl-career]")) { state.career = event.target.value; save(); renderStage(); }
+      if (event.target.matches("[data-hhlcl-level]")) { state.coach.level = event.target.value; save(); render(); }
+      if (event.target.matches("[data-hhlcl-minutes]")) { state.coach.dailyMinutes = clamp(event.target.value, 5, 120); save(); render(); }
+      if (event.target.matches("[data-hhlcl-priority]")) { state.coach.priority = event.target.value; save(); renderStage(); }
       if (event.target.matches("[data-hhlcl-rate]")) { state.listening.rate = clamp(event.target.value, 0.5, 1.15); save(); event.target.nextElementSibling.textContent = `${state.listening.rate}×`; }
       if (event.target.matches("[data-hhlcl-repeat]")) { state.listening.repeats = clamp(event.target.value, 1, 5); save(); }
       if (event.target.matches("[data-hhlcl-career-sim]")) { state.careerSimulator.careerId = event.target.value; state.careerSimulator.messages = []; state.careerSimulator.feedback = null; save(); renderStage(); }
