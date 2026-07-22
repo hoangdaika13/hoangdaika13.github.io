@@ -28,6 +28,18 @@ const DEFAULT_GAMES = Object.freeze([
   "creative-sandbox",
   "space-chess",
   "survival-orbit",
+  "galaxy-farm",
+  "space-fishing",
+  "mecha-arena",
+  "planet-builder",
+  "alien-pet",
+  "dungeon-stars",
+  "cosmic-card-battle",
+  "astro-tycoon",
+  "space-runner",
+  "black-hole-escape",
+  "nebula-puzzle",
+  "boss-rush",
   "hh-astra-mmo"
 ]);
 

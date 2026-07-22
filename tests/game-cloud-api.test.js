@@ -43,6 +43,7 @@ test("Game Center API works without MongoDB for catalog and anonymous profile", 
   const catalog = await call("GET", { resource: "catalog" });
   assert.equal(catalog.statusCode, 200);
   assert.equal(catalog.payload.ok, true);
+  assert.ok(catalog.payload.games.length >= 22);
   assert.ok(catalog.payload.games.some((game) => game.id === "hh-astra-mmo"));
   assert.equal(catalog.payload.backend, "memory");
 
