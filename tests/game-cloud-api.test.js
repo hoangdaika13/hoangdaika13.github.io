@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const handler = require("../api/games");
+const handler = require("../utils/games-api");
 
 function createResponse() {
   const response = {

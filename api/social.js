@@ -1,5 +1,6 @@
 const { ObjectId } = require("mongodb");
 const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/platform");
+const gamesHandler = require("../utils/games-api");
 
 const VISIBILITY = new Set(["public", "friends", "private"]);
 const FRIEND_REQUEST_PERMISSIONS = new Set(["everyone", "friends_of_friends", "none"]);
@@ -1685,6 +1686,7 @@ function canonicalAction(value) {
 }
 
 module.exports = async function handler(req, res) {
+  if (String(req.query?.service || "").toLowerCase() === "games") return gamesHandler(req, res);
   return withApi(req, res, async ({ db, body }) => {
     await ensureIndexes(db);
     const user = await currentUser(req);
