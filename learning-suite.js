@@ -31,7 +31,11 @@
     "smart-review": "review",
     "quick-test": "assessments",
     "skill-graph": "mastery",
-    "smart-catch-up": "catch-up"
+    "smart-catch-up": "catch-up",
+    placement: "assessments",
+    project: "study-together",
+    projects: "study-together",
+    "project-practice": "study-together"
   });
 
   const PRIMARY_VIEWS = ["home", "paths", "review", "lesson", "coach", "speaking", "assessments", "classroom", "study-together"];

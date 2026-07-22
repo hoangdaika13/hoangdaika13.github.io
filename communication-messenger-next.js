@@ -25,7 +25,7 @@
     const stamp = Date.now();
     return {
       version: 1,
-      viewer: { id: "me", name: "Bạn", avatar: "HH", status: "online", lastActive: nowIso() },
+      viewer: { id: "me", name: "Bạn", avatar: "HH", status: "offline", lastActive: nowIso() },
       activeRoomId: "dm-hoang",
       roomFilter: "active",
       rooms: [
@@ -58,11 +58,11 @@
     const messages = {};
     rooms.forEach((room) => {
       const source = Array.isArray(value.messages?.[room.id]) ? value.messages[room.id] : seed.messages[room.id] || [];
-      messages[room.id] = source.slice(-500).map((message) => ({ reactions: {}, deletedFor: [], status: "sent", pinned: false, ...message, id: cleanText(message.id, 100) || uid("msg"), roomId: room.id, text: cleanText(message.text, 4000) }));
+      messages[room.id] = source.slice(-500).map((message) => ({ reactions: {}, deletedFor: [], status: "local", pinned: false, ...message, id: cleanText(message.id, 100) || uid("msg"), roomId: room.id, text: cleanText(message.text, 4000), status: ["local", "pending", "sent", "delivered", "read", "failed"].includes(message.status) ? message.status : "local" }));
     });
     return {
       version: 1,
-      viewer: { ...seed.viewer, ...(value.viewer || {}) },
+      viewer: { ...seed.viewer, ...(value.viewer || {}), status: "offline" },
       activeRoomId: rooms.some((room) => room.id === value.activeRoomId) ? value.activeRoomId : rooms[0]?.id || "",
       roomFilter: ["active", "unread", "groups", "archived"].includes(value.roomFilter) ? value.roomFilter : "active",
       rooms,
@@ -142,7 +142,7 @@
         const created = {
           id: cleanText(values.id, 100) || uid("msg"), roomId, author: clone(values.author || state.viewer), text: cleanText(values.text, 4000), kind: cleanText(values.kind, 30) || "text", attachmentUrl: safeUrl(values.attachmentUrl), file: values.file ? { name: cleanText(values.file.name, 160), size: Math.max(0, Number(values.file.size) || 0), type: cleanText(values.file.type, 100), dataUrl: String(values.file.dataUrl || "").slice(0, 1800000) } : null,
           location: values.location || null, poll: values.poll || null, event: values.event || null, sticker: cleanText(values.sticker, 20), gifUrl: safeUrl(values.gifUrl), replyTo: values.replyTo || null, forwardedFrom: values.forwardedFrom || null,
-          createdAt, editedAt: null, status: values.status || "sent", reactions: {}, pinned: false, deletedFor: [], expiresAt: values.ephemeralSeconds ? new Date(Date.now() + Number(values.ephemeralSeconds) * 1000).toISOString() : null
+          createdAt, editedAt: null, status: ["pending", "sent", "delivered", "read"].includes(values.status) ? values.status : "local", reactions: {}, pinned: false, deletedFor: [], expiresAt: values.ephemeralSeconds ? new Date(Date.now() + Number(values.ephemeralSeconds) * 1000).toISOString() : null
         };
         (state.messages[roomId] ||= []).push(created); target.lastActive = createdAt; state.drafts[roomId] = ""; save(); return clone(created);
       },
@@ -154,7 +154,7 @@
         const target = message(roomId, messageId); if (!target) return null;
         if (action === "reaction") target.reactions[value || "like"] = Math.max(0, Number(target.reactions[value || "like"] || 0) + 1);
         if (action === "pin") target.pinned = !target.pinned;
-        if (action === "status" && ["sent", "delivered", "read"].includes(value)) target.status = value;
+        if (action === "status" && ["local", "pending", "sent", "delivered", "read", "failed"].includes(value)) target.status = value;
         if (action === "recall" && target.author?.id === state.viewer.id) { target.recalled = true; target.text = ""; target.kind = "text"; target.file = null; target.attachmentUrl = ""; }
         if (action === "delete-self" && !target.deletedFor.includes(state.viewer.id)) target.deletedFor.push(state.viewer.id);
         save(); return clone(target);
@@ -181,7 +181,18 @@
   }
 
   function initials(name) { return String(name || "HH").split(/\s+/).slice(-2).map((part) => part[0]).join("").toUpperCase().slice(0, 2); }
-  function statusLabel(status) { return ({ sent: "Đã gửi", delivered: "Đã nhận", read: "Đã xem" })[status] || "Đang gửi"; }
+  function statusLabel(status) { return ({ local: "Chỉ lưu trên thiết bị", pending: "Đang chờ máy chủ", sent: "Máy chủ đã nhận", delivered: "Đã nhận", read: "Đã xem", failed: "Chưa gửi được" })[status] || "Chỉ lưu trên thiết bị"; }
+
+  function normalizeTranslationResult(result) {
+    if (!result || result.ok !== true || result.connected !== true) return null;
+    const translatedText = cleanText(result.translatedText || result.text, 4000);
+    if (!translatedText) return null;
+    return {
+      translatedText,
+      targetLanguage: cleanText(result.targetLanguage || result.language || "vi", 24),
+      provider: cleanText(result.provider || "adapter", 80)
+    };
+  }
   function notify(message, type = "info") {
     if (rootScope.HHCommunity?.notice) return rootScope.HHCommunity.notice(message, type === "error" ? "error" : "success");
     rootScope.dispatchEvent?.(new CustomEvent("hh:notice", { detail: { message, type } }));
@@ -209,15 +220,16 @@
     return "";
   }
 
-  function renderMessage(message, viewerId) {
+  function renderMessage(message, viewerId, translations = new Map(), translationPending = new Set()) {
     const mine = message.author?.id === viewerId;
+    const translation = translations.get(message.id);
     const reactions = Object.entries(message.reactions || {}).filter(([, count]) => count).map(([type, count]) => `<button type="button" data-hmn-action="reaction" data-message="${escapeHtml(message.id)}" data-value="${escapeHtml(type)}">${({ like: "👍", love: "❤", laugh: "😄", wow: "😮" })[type] || "👍"} ${count}</button>`).join("");
     return `<article class="hmn-message${mine ? " is-mine" : ""}" data-hmn-message="${escapeHtml(message.id)}">
       <span class="hmn-avatar" aria-hidden="true">${escapeHtml(message.author?.avatar || initials(message.author?.name))}</span>
       <div class="hmn-bubble"><header><b>${escapeHtml(message.author?.name || "Thành viên")}</b><time>${relativeTime(message.createdAt)}</time>${message.editedAt ? "<small>đã sửa</small>" : ""}${message.pinned ? "<small>◆ đã ghim</small>" : ""}</header>
       ${message.replyTo ? `<blockquote><b>${escapeHtml(message.replyTo.name)}</b><span>${escapeHtml(message.replyTo.text)}</span></blockquote>` : ""}
-      ${message.forwardedFrom ? '<small class="hmn-forwarded">Đã chuyển tiếp</small>' : ""}${message.text ? `<p>${escapeHtml(message.text).replace(/\n/g, "<br>")}</p>` : ""}${attachmentMarkup(message)}
-      <footer><button type="button" data-hmn-action="reply" data-message="${escapeHtml(message.id)}">Trả lời</button><button type="button" data-hmn-action="reaction" data-message="${escapeHtml(message.id)}" data-value="like">👍</button><button type="button" data-hmn-action="forward" data-message="${escapeHtml(message.id)}">Chuyển tiếp</button><button type="button" data-hmn-action="pin" data-message="${escapeHtml(message.id)}">${message.pinned ? "Bỏ ghim" : "Ghim"}</button>${mine && Date.now() - Date.parse(message.createdAt) <= EDIT_WINDOW_MS && !message.recalled ? `<button type="button" data-hmn-action="edit" data-message="${escapeHtml(message.id)}">Sửa</button><button type="button" data-hmn-action="recall" data-message="${escapeHtml(message.id)}">Thu hồi</button>` : ""}<button type="button" data-hmn-action="delete-self" data-message="${escapeHtml(message.id)}">Xóa với tôi</button></footer>
+      ${message.forwardedFrom ? '<small class="hmn-forwarded">Đã chuyển tiếp</small>' : ""}${message.text ? `<p>${escapeHtml(message.text).replace(/\n/g, "<br>")}</p>` : ""}${translation ? `<aside class="hmn-translation" lang="${escapeHtml(translation.targetLanguage)}"><small>Bản dịch ${escapeHtml(translation.targetLanguage)} · ${escapeHtml(translation.provider)}</small><p>${escapeHtml(translation.translatedText).replace(/\n/g, "<br>")}</p></aside>` : ""}${attachmentMarkup(message)}
+      <footer><button type="button" data-hmn-action="reply" data-message="${escapeHtml(message.id)}">Trả lời</button><button type="button" data-hmn-action="reaction" data-message="${escapeHtml(message.id)}" data-value="like">👍</button>${message.text && !message.recalled ? `<button type="button" data-hmn-action="translate" data-message="${escapeHtml(message.id)}" ${translationPending.has(message.id) ? "disabled" : ""}>${translationPending.has(message.id) ? "Đang dịch…" : translation ? "Dịch lại" : "Dịch"}</button>` : ""}<button type="button" data-hmn-action="forward" data-message="${escapeHtml(message.id)}">Chuyển tiếp</button><button type="button" data-hmn-action="pin" data-message="${escapeHtml(message.id)}">${message.pinned ? "Bỏ ghim" : "Ghim"}</button>${mine && Date.now() - Date.parse(message.createdAt) <= EDIT_WINDOW_MS && !message.recalled ? `<button type="button" data-hmn-action="edit" data-message="${escapeHtml(message.id)}">Sửa</button><button type="button" data-hmn-action="recall" data-message="${escapeHtml(message.id)}">Thu hồi</button>` : ""}<button type="button" data-hmn-action="delete-self" data-message="${escapeHtml(message.id)}">Xóa với tôi</button></footer>
       ${reactions ? `<div class="hmn-reactions">${reactions}</div>` : ""}${mine ? `<small class="hmn-delivery">${statusLabel(message.status)}</small>` : ""}</div>
     </article>`;
   }
@@ -254,12 +266,21 @@
     let recorderStream = null;
     let chunks = [];
     let socket = null;
+    let socketHandlers = null;
     let socketMode = "local";
+    const confirmedPresence = new Map();
+    const translations = new Map();
+    const translationPending = new Set();
     let destroyed = false;
 
     const activeRoom = () => state.rooms.find((room) => room.id === state.activeRoomId) || state.rooms[0];
     const api = rootScope.HHCommunity?.api;
-    const syncLabel = () => socketMode === "live" ? "Đồng bộ Socket.IO" : typeof api === "function" ? "API sẵn sàng · realtime ngoại tuyến" : "Chế độ cục bộ trên thiết bị";
+    const syncLabel = () => socketMode === "live" ? "Socket.IO đã xác nhận phòng" : typeof api === "function" ? "Có API cấu hình · realtime chưa xác nhận" : "Chế độ cục bộ trên thiết bị";
+    const roomPresenceLabel = (room) => room.kind === "group"
+      ? `${room.members.length} thành viên`
+      : socketMode === "live" && confirmedPresence.get(room.id) === true
+        ? "Đang online · realtime đã xác nhận"
+        : "Chưa xác nhận hiện diện realtime";
     const refresh = () => { state = store.snapshot(); render(); };
     const currentMessages = () => store.page(state.activeRoomId, pageCursor, loadedMessages, searchMessages);
 
@@ -280,18 +301,18 @@
         <div class="hmn-workspace">
           <aside class="hmn-rooms" aria-label="Danh sách trò chuyện"><div class="hmn-search"><span>⌕</span><input type="search" data-hmn-room-search value="${escapeHtml(searchRooms)}" placeholder="Tìm cuộc trò chuyện" aria-label="Tìm cuộc trò chuyện"></div>
             <nav class="hmn-filters" aria-label="Bộ lọc"><button type="button" data-hmn-filter="active" class="${state.roomFilter === "active" ? "is-active" : ""}">Gần đây</button><button type="button" data-hmn-filter="unread" class="${state.roomFilter === "unread" ? "is-active" : ""}">Chưa đọc</button><button type="button" data-hmn-filter="groups" class="${state.roomFilter === "groups" ? "is-active" : ""}">Nhóm</button><button type="button" data-hmn-filter="archived" class="${state.roomFilter === "archived" ? "is-active" : ""}">Lưu trữ</button></nav>
-            <div class="hmn-room-list">${filteredRooms().map((item) => { const last = (state.messages[item.id] || []).at(-1); return `<button type="button" class="hmn-room ${item.id === room.id ? "is-active" : ""}" data-hmn-room="${escapeHtml(item.id)}"><span class="hmn-avatar">${escapeHtml(item.avatar || initials(item.name))}<i class="${item.kind === "direct" ? "is-online" : ""}"></i></span><span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(last?.recalled ? "Tin nhắn đã thu hồi" : last?.text || (item.kind === "group" ? `${item.members.length} thành viên` : "Bắt đầu trò chuyện"))}</small></span>${item.unread || item.markedUnread ? `<em>${item.unread || "•"}</em>` : item.muted ? "<em>◒</em>" : ""}</button>`; }).join("") || '<p class="hmn-empty">Không có cuộc trò chuyện phù hợp.</p>'}</div>
+            <div class="hmn-room-list">${filteredRooms().map((item) => { const last = (state.messages[item.id] || []).at(-1); const online = socketMode === "live" && confirmedPresence.get(item.id) === true; return `<button type="button" class="hmn-room ${item.id === room.id ? "is-active" : ""}" data-hmn-room="${escapeHtml(item.id)}"><span class="hmn-avatar">${escapeHtml(item.avatar || initials(item.name))}<i class="${online ? "is-online" : ""}"></i></span><span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(last?.recalled ? "Tin nhắn đã thu hồi" : last?.text || (item.kind === "group" ? `${item.members.length} thành viên` : "Bắt đầu trò chuyện"))}</small></span>${item.unread || item.markedUnread ? `<em>${item.unread || "•"}</em>` : item.muted ? "<em>◒</em>" : ""}</button>`; }).join("") || '<p class="hmn-empty">Không có cuộc trò chuyện phù hợp.</p>'}</div>
           </aside>
-          <main class="hmn-conversation"><header class="hmn-conversation-head"><span class="hmn-avatar">${escapeHtml(room.avatar || initials(room.name))}</span><div><h3>${escapeHtml(room.name)}</h3><p>${room.kind === "group" ? `${room.members.length} thành viên` : `Hoạt động ${relativeTime(room.lastActive)}`} · ${escapeHtml(syncLabel())}</p></div><div><button type="button" data-hmn-call="audio" ${rootScope.HHCalls?.available?.() ? "" : 'title="Cần máy chủ realtime để gọi"'}>☎<span>Gọi thoại</span></button><button type="button" data-hmn-call="video" ${rootScope.HHCalls?.available?.() ? "" : 'title="Cần máy chủ realtime để gọi"'}>▣<span>Gọi video</span></button>${room.kind === "group" ? '<button type="button" data-hmn-room-settings>⚙<span>Nhóm</span></button>' : ""}</div></header>
+          <main class="hmn-conversation"><header class="hmn-conversation-head"><span class="hmn-avatar">${escapeHtml(room.avatar || initials(room.name))}</span><div><h3>${escapeHtml(room.name)}</h3><p>${escapeHtml(roomPresenceLabel(room))} · ${escapeHtml(syncLabel())}</p></div><div><button type="button" data-hmn-call="audio" ${rootScope.HHCalls?.available?.() ? "" : 'title="Cần máy chủ realtime để gọi"'}>☎<span>Gọi thoại</span></button><button type="button" data-hmn-call="video" ${rootScope.HHCalls?.available?.() ? "" : 'title="Cần máy chủ realtime để gọi"'}>▣<span>Gọi video</span></button>${room.kind === "group" ? '<button type="button" data-hmn-room-settings>⚙<span>Nhóm</span></button>' : ""}</div></header>
             <div class="hmn-message-search"><span>⌕</span><input type="search" data-hmn-message-search value="${escapeHtml(searchMessages)}" placeholder="Tìm trong cuộc trò chuyện"><small>${page.total} kết quả</small></div>
-            <section class="hmn-message-list" data-hmn-message-list aria-live="polite">${page.hasMore ? '<button class="hmn-load-more" type="button" data-hmn-load-more>↑ Tải tin cũ hơn</button>' : ""}${page.items.map((message) => renderMessage(message, state.viewer.id)).join("") || '<div class="hmn-empty-state"><span>✦</span><h3>Bắt đầu cuộc trò chuyện</h3><p>Gửi tin nhắn, ảnh, lịch hẹn hoặc bình chọn đầu tiên.</p></div>'}${typing.length ? `<div class="hmn-typing"><i></i><i></i><i></i><span>${escapeHtml(typing.map((item) => item.name).join(", "))} đang nhập…</span></div>` : ""}</section>
+            <section class="hmn-message-list" data-hmn-message-list aria-live="polite">${page.hasMore ? '<button class="hmn-load-more" type="button" data-hmn-load-more>↑ Tải tin cũ hơn</button>' : ""}${page.items.map((message) => renderMessage(message, state.viewer.id, translations, translationPending)).join("") || '<div class="hmn-empty-state"><span>✦</span><h3>Bắt đầu cuộc trò chuyện</h3><p>Gửi tin nhắn, ảnh, lịch hẹn hoặc bình chọn đầu tiên.</p></div>'}${typing.length ? `<div class="hmn-typing"><i></i><i></i><i></i><span>${escapeHtml(typing.map((item) => item.name).join(", "))} đang nhập…</span></div>` : ""}</section>
             <form class="hmn-composer" data-hmn-composer>${room.blocked ? '<div class="hmn-blocked">Bạn đã chặn người gửi. Bỏ chặn ở bảng thông tin để tiếp tục.</div>' : `${replyTo ? `<div class="hmn-reply-bar"><span>Đang trả lời <b>${escapeHtml(replyTo.name)}</b>: ${escapeHtml(replyTo.text)}</span><button type="button" data-hmn-reply-cancel aria-label="Hủy trả lời">×</button></div>` : ""}<div class="hmn-compose-tools"><button type="button" data-hmn-tool="emoji" title="Emoji">☺</button><button type="button" data-hmn-tool="sticker" title="Sticker">◇</button><button type="button" data-hmn-tool="gif" title="GIF">GIF</button><label title="Ảnh, video, âm thanh hoặc tệp"><input type="file" data-hmn-file accept="image/*,video/*,audio/*,.pdf,.zip,.txt,.json,.csv"><span>＋</span></label><button type="button" data-hmn-tool="voice" title="Ghi âm">${recorder?.state === "recording" ? "■" : "◉"}</button><button type="button" data-hmn-tool="location" title="Vị trí">⌖</button><button type="button" data-hmn-tool="poll" title="Bình chọn">▥</button><button type="button" data-hmn-tool="event" title="Lịch hẹn">▦</button></div><div class="hmn-compose-row"><textarea data-hmn-input rows="2" maxlength="4000" placeholder="Nhắn tin cho ${escapeHtml(room.name)}">${escapeHtml(state.drafts[room.id] || "")}</textarea><button class="primary" type="submit" aria-label="Gửi tin nhắn">➤</button></div><div class="hmn-compose-meta"><label>Tự xóa<select data-hmn-ephemeral><option value="0">Tắt</option><option value="60" ${Number(room.ephemeralSeconds) === 60 ? "selected" : ""}>1 phút</option><option value="3600" ${Number(room.ephemeralSeconds) === 3600 ? "selected" : ""}>1 giờ</option><option value="86400" ${Number(room.ephemeralSeconds) === 86400 ? "selected" : ""}>1 ngày</option><option value="604800" ${Number(room.ephemeralSeconds) === 604800 ? "selected" : ""}>7 ngày</option></select></label><small>Không mã hóa đầu cuối · truyền qua TLS khi backend trực tuyến</small></div>`}</form>
           </main>
-          <aside class="hmn-details" aria-label="Thông tin cuộc trò chuyện"><section class="hmn-profile-card"><span class="hmn-avatar hmn-avatar--xl">${escapeHtml(room.avatar || initials(room.name))}</span><h3>${escapeHtml(room.name)}</h3><p>${room.kind === "group" ? `${room.members.length} thành viên` : `Hoạt động ${relativeTime(room.lastActive)}`}</p><div><button type="button" data-hmn-call="audio">☎</button><button type="button" data-hmn-call="video">▣</button><button type="button" data-hmn-action-room="markedUnread">◉</button></div></section>
+          <aside class="hmn-details" aria-label="Thông tin cuộc trò chuyện"><section class="hmn-profile-card"><span class="hmn-avatar hmn-avatar--xl">${escapeHtml(room.avatar || initials(room.name))}</span><h3>${escapeHtml(room.name)}</h3><p>${escapeHtml(roomPresenceLabel(room))}</p><div><button type="button" data-hmn-call="audio">☎</button><button type="button" data-hmn-call="video">▣</button><button type="button" data-hmn-action-room="markedUnread">◉</button></div></section>
             <details open><summary>Quyền riêng tư & an toàn</summary><div class="hmn-setting-list"><button type="button" data-hmn-action-room="muted"><span>Tắt thông báo</span><b>${room.muted ? "Bật" : "Tắt"}</b></button><button type="button" data-hmn-action-room="markedUnread"><span>Đánh dấu chưa đọc</span><b>${room.markedUnread ? "Có" : "Không"}</b></button><button type="button" data-hmn-action-room="archived"><span>Lưu trữ</span><b>${room.archived ? "Có" : "Không"}</b></button>${room.kind === "direct" ? `<button type="button" data-hmn-action-room="blocked"><span>Chặn người gửi</span><b>${room.blocked ? "Đã chặn" : "Chưa chặn"}</b></button>` : ""}<button type="button" data-hmn-report><span>Báo cáo</span><b>Riêng tư</b></button></div></details>
             <details open><summary>${room.kind === "group" ? "Thành viên" : "Trạng thái"}</summary><ul class="hmn-members">${room.members.map((member) => memberMarkup(member, room, state.viewer.id)).join("")}</ul></details>
             <details><summary>Tin nhắn đã ghim</summary><div class="hmn-pins">${(state.messages[room.id] || []).filter((message) => message.pinned && !message.recalled).map((message) => `<button type="button" data-hmn-jump="${escapeHtml(message.id)}">${escapeHtml(message.text || message.kind)}</button>`).join("") || "<p>Chưa có tin nhắn được ghim.</p>"}</div></details>
-            <div class="hmn-capability"><b>Trạng thái bảo mật</b><p>Kết nối HTTPS/TLS bảo vệ dữ liệu khi truyền. HH chưa tuyên bố mã hóa đầu cuối cho workspace này.</p></div>
+            <div class="hmn-capability"><b>Trạng thái bảo mật</b><p>Kết nối HTTPS/TLS bảo vệ dữ liệu khi truyền. HH chưa tuyên bố mã hóa đầu cuối cho workspace này. Dịch chỉ gửi đúng tin nhắn bạn chủ động chọn tới adapter đã xác nhận và bản dịch không được lưu.</p></div>
           </aside>
         </div>${modalMarkup(modal, state)}
       </section>`;
@@ -300,36 +321,75 @@
 
     async function remoteMutation(body) {
       if (typeof api !== "function") return { localOnly: true };
-      try { const result = await api({ method: "POST", body }); return result || { ok: true }; }
+      try { const result = await api({ method: "POST", body }); return result && typeof result === "object" ? result : { localOnly: true }; }
       catch (error) { notify(`Đã lưu trên thiết bị; chưa đồng bộ máy chủ: ${error.message}`, "error"); return { localOnly: true, error }; }
     }
 
     function socketChanged(type, messageId = "") {
-      if (socket?.connected) socket.emit("messenger:changed", { room: state.activeRoomId, type, messageId });
+      if (socketMode === "live" && socket?.connected) socket.emit("messenger:changed", { room: state.activeRoomId, type, messageId });
     }
 
     function joinRealtime(roomId) {
-      if (!socket?.connected) { socketMode = "local"; render(); return; }
+      if (!socket?.connected) { socketMode = "local"; confirmedPresence.clear(); render(); return; }
       socketMode = "connecting";
-      socket.emit("messenger:room:join", { room: roomId }, (result = {}) => { socketMode = result.ok ? "live" : "local"; render(); });
+      socket.emit("messenger:room:join", { room: roomId }, (result = {}) => {
+        socketMode = result.ok === true && socket?.connected === true ? "live" : "local";
+        if (socketMode !== "live") confirmedPresence.clear();
+        render();
+      });
     }
 
     function bindRealtime() {
       const candidate = rootScope.HHRealtimeSocket;
       if (!candidate || socket === candidate) return;
       socket = candidate;
-      socket.on?.("messenger:typing", (payload = {}) => {
+      socketHandlers = {
+        connect: () => joinRealtime(state.activeRoomId),
+        disconnect: () => { socketMode = "local"; confirmedPresence.clear(); render(); },
+        typing: (payload = {}) => {
         if (payload.room !== state.activeRoomId || !payload.user?.id || payload.user.id === state.viewer.id) return;
         if (payload.active) typingUsers.set(payload.user.id, { roomId: payload.room, name: payload.user.name || "Thành viên", until: Date.now() + 2500 }); else typingUsers.delete(payload.user.id);
         render(); setTimeout(() => { if (!destroyed) render(); }, 2600);
-      });
-      socket.on?.("messenger:presence", (payload = {}) => {
-        if (payload.room !== state.activeRoomId) return;
-        const target = store.room(payload.room); if (target && target.kind === "direct" && payload.online) store.updateRoom(payload.room, { lastActive: nowIso() });
+        },
+        presence: (payload = {}) => {
+        if (socketMode !== "live" || payload.room !== state.activeRoomId || typeof payload.online !== "boolean") return;
+        confirmedPresence.set(payload.room, payload.online);
+        const target = store.room(payload.room); if (target && target.kind === "direct" && payload.online === true) store.updateRoom(payload.room, { lastActive: nowIso() });
         render();
-      });
-      socket.on?.("messenger:changed", (payload = {}) => { if (payload.room === state.activeRoomId) remoteLoad(payload.room); });
+        },
+        changed: (payload = {}) => { if (socketMode === "live" && payload.room === state.activeRoomId) remoteLoad(payload.room); }
+      };
+      socket.on?.("connect", socketHandlers.connect);
+      socket.on?.("disconnect", socketHandlers.disconnect);
+      socket.on?.("messenger:typing", socketHandlers.typing);
+      socket.on?.("messenger:presence", socketHandlers.presence);
+      socket.on?.("messenger:changed", socketHandlers.changed);
       joinRealtime(state.activeRoomId);
+    }
+
+    async function translateMessage(message) {
+      if (!message?.text || message.recalled) return;
+      if (typeof options.translateAdapter !== "function") {
+        return notify("Chưa có adapter dịch được cấu hình; nội dung không được gửi đi.", "error");
+      }
+      translationPending.add(message.id);
+      render();
+      try {
+        const result = normalizeTranslationResult(await options.translateAdapter({
+          messageId: message.id,
+          text: message.text,
+          sourceLanguage: "auto",
+          targetLanguage: cleanText(options.translationLanguage || "vi", 24)
+        }));
+        if (!result) return notify("Adapter chưa xác nhận kết nối hoặc không trả về bản dịch hợp lệ.", "error");
+        translations.set(message.id, result);
+        notify(`Đã dịch qua ${result.provider}. Bản dịch chỉ giữ trong phiên này.`);
+      } catch (error) {
+        notify(`Không thể dịch tin nhắn: ${error.message || "adapter không khả dụng"}`, "error");
+      } finally {
+        translationPending.delete(message.id);
+        render();
+      }
     }
 
     async function remoteLoad(roomId) {
@@ -383,7 +443,9 @@
       const content = cleanText(text, 4000); if (!content) return;
       const link = safeUrl(content); const created = store.addMessage(state.activeRoomId, { text: content, kind: link === content ? "link" : "text", attachmentUrl: link === content ? link : "", replyTo, ephemeralSeconds: activeRoom().ephemeralSeconds });
       replyTo = null; refresh(); socketChanged("create", created.id);
-      await remoteMutation({ action: "message:create", room: state.activeRoomId, text: content, kind: created.kind, replyTo: created.replyTo, ephemeralSeconds: activeRoom().ephemeralSeconds });
+      const result = await remoteMutation({ action: "message:create", room: state.activeRoomId, text: content, kind: created.kind, replyTo: created.replyTo, ephemeralSeconds: activeRoom().ephemeralSeconds });
+      store.mutateMessage(state.activeRoomId, created.id, "status", result?.ok === true ? "sent" : result?.error ? "failed" : "local");
+      refresh();
     }
 
     async function onSubmit(event) {
@@ -402,7 +464,7 @@
       if (event.target.matches("[data-hmn-message-search]")) { searchMessages = event.target.value; render(); return; }
       if (event.target.matches("[data-hmn-input]")) {
         store.saveDraft(state.activeRoomId, event.target.value);
-        if (socket?.connected) { socket.emit("messenger:typing", { room: state.activeRoomId, active: true }); clearTimeout(typingTimer); typingTimer = setTimeout(() => socket?.emit("messenger:typing", { room: state.activeRoomId, active: false }), 1200); }
+        if (socketMode === "live" && socket?.connected) { socket.emit("messenger:typing", { room: state.activeRoomId, active: true }); clearTimeout(typingTimer); typingTimer = setTimeout(() => socket?.emit("messenger:typing", { room: state.activeRoomId, active: false }), 1200); }
       }
     }
 
@@ -440,6 +502,7 @@
       if (button.dataset.hmnJump) { host.querySelector(`[data-hmn-message="${CSS.escape(button.dataset.hmnJump)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
       const action = button.dataset.hmnAction; const messageId = button.dataset.message; if (!action || !messageId) return;
       const target = store.page(state.activeRoomId, "", 500).items.find((item) => item.id === messageId); if (!target) return;
+      if (action === "translate") return translateMessage(target);
       if (action === "reply") { replyTo = { id: target.id, name: target.author?.name || "Thành viên", text: target.text || target.kind }; render(); host.querySelector("[data-hmn-input]")?.focus(); return; }
       if (action === "edit") { const next = rootScope.prompt?.("Sửa tin nhắn trong 15 phút:", target.text); if (next !== null && store.editMessage(state.activeRoomId, messageId, next)) { remoteMutation({ action: "message:edit", room: state.activeRoomId, messageId, text: next }); socketChanged("edit", messageId); refresh(); } return; }
       if (action === "forward") { const other = state.rooms.find((room) => room.id !== state.activeRoomId); if (!other) return notify("Chưa có cuộc trò chuyện khác để chuyển tiếp.", "error"); store.addMessage(other.id, { ...target, author: state.viewer, forwardedFrom: { roomId: state.activeRoomId, messageId }, replyTo: null }); remoteMutation({ action: "message:forward", room: state.activeRoomId, messageId, targetRoom: other.id }); notify(`Đã chuyển tiếp tới ${other.name}.`); return; }
@@ -466,6 +529,10 @@
       unmount() {
         destroyed = true; clearTimeout(typingTimer); recorderStream?.getTracks().forEach((track) => track.stop());
         socket?.emit?.("messenger:room:leave", { room: state.activeRoomId });
+        if (socket && socketHandlers) {
+          socket.off?.("connect", socketHandlers.connect); socket.off?.("disconnect", socketHandlers.disconnect);
+          socket.off?.("messenger:typing", socketHandlers.typing); socket.off?.("messenger:presence", socketHandlers.presence); socket.off?.("messenger:changed", socketHandlers.changed);
+        }
         rootScope.removeEventListener?.("hh:realtime-ready", bindRealtime);
         host.removeEventListener("submit", onSubmit); host.removeEventListener("input", onInput); host.removeEventListener("change", onChange); host.removeEventListener("click", onClick); host.removeEventListener("keydown", onKeydown);
         instances.delete(host); host.innerHTML = "";
@@ -481,5 +548,5 @@
   }
   function unmount(host) { if (host) instances.get(host)?.unmount?.(); else rootScope.document?.querySelectorAll?.("[data-hmn-root]").forEach((node) => instances.get(node.parentElement)?.unmount?.()); }
 
-  rootScope.HHCommunicationMessengerNext = Object.freeze({ supports, mount, unmount, createStore, normalizeState, STORAGE_KEY, PAGE_SIZE, EDIT_WINDOW_MS });
+  rootScope.HHCommunicationMessengerNext = Object.freeze({ supports, mount, unmount, createStore, normalizeState, normalizeTranslationResult, STORAGE_KEY, PAGE_SIZE, EDIT_WINDOW_MS });
 })();

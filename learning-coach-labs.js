@@ -24,6 +24,14 @@
     academic: { label: "Tiếng Anh học thuật", role: "sinh viên", terms: ["evidence", "hypothesis", "conclusion"], scenario: "Bạn bảo vệ lập luận trong một buổi seminar." }
   });
 
+  // These are the small, inspectable references used by the deterministic
+  // fallback. They are not a claim that an external model was consulted.
+  const LOCAL_TUTOR_SOURCES = Object.freeze([
+    { id: "hh-learning-rubric", title: "HH Learning rubric", kind: "local-rule", detail: "Bounded practice rubric for task response, organisation, vocabulary and grammar." },
+    { id: "hh-cefr-levels", title: "HH CEFR level map", kind: "local-catalog", detail: "Selectable A0–C2 labels used to tune examples and pacing; not an official placement score." },
+    { id: "hh-spaced-review", title: "HH spaced-review scheduler", kind: "local-rule", detail: "Deterministic review hints based on the learner's supplied mistakes and practice history." }
+  ]);
+
   const SPEAKING_SCENARIOS = Object.freeze([
     { id: "restaurant", title: "Nhà hàng", phrase: "Could I have the menu, please?", translation: "Tôi có thể xem thực đơn được không?", roles: ["Customer", "Server"] },
     { id: "airport", title: "Sân bay", phrase: "Where can I find the check-in counter?", translation: "Tôi có thể tìm quầy làm thủ tục ở đâu?", roles: ["Passenger", "Agent"] },
@@ -204,6 +212,22 @@
     return { title: "Coach Socratic", steps: ["Đề bài đang hỏi kết quả hay cách giải thích?", "Từ khóa nào cho biết thì, ngữ cảnh hoặc mục tiêu?", "Bạn có thể viết một câu đơn giản trước rồi mở rộng không?"], response: `Hãy bắt đầu từ điều bạn chắc nhất trong câu: “${question.slice(0, 140)}”. Tôi sẽ gợi ý từng bước, không đưa đáp án ngay.` };
   }
 
+  function localTutorEvidence(task, payload = {}) {
+    const sourceIds = task === "weekly-plan" ? ["hh-cefr-levels", "hh-spaced-review"] : task === "mistakes" ? ["hh-spaced-review", "hh-learning-rubric"] : ["hh-learning-rubric", "hh-cefr-levels"];
+    const sources = sourceIds.map((id) => LOCAL_TUTOR_SOURCES.find((source) => source.id === id)).filter(Boolean).map((source) => ({ ...source }));
+    const context = [payload.level && `level ${clean(payload.level, 8)}`, payload.priority && `priority ${clean(payload.priority, 24)}`, Number(payload.sessions) > 0 && `${clamp(payload.sessions, 0, 999)} recorded sessions`].filter(Boolean);
+    return {
+      sources,
+      explanation: `Deterministic local guidance from ${sources.map((source) => source.title).join(" and ")}${context.length ? `; inputs: ${context.join(", ")}` : "."}`,
+      disclaimer: "Local rule-based suggestion; no external AI or web source was consulted.",
+      sourceType: "local"
+    };
+  }
+
+  function enrichLocalResult(task, payload, result) {
+    return { ...result, ...localTutorEvidence(task, payload) };
+  }
+
   async function runCoachTask(task, payload = {}, options = {}) {
     const safePayload = sanitizeAIResult({ prompt: clean(payload.prompt, 3000), career: CAREERS[payload.career] ? payload.career : "communication", level: clean(payload.level || "A0", 8), dailyMinutes: clamp(payload.dailyMinutes || 15, 5, 120), priority: clean(payload.priority || "speaking", 20), mistakes: Array.isArray(payload.mistakes) ? payload.mistakes.slice(0, 8).map((item) => ({ prompt: clean(item.prompt, 220), answer: clean(item.answer, 220), userAnswer: clean(item.userAnswer, 220) })) : [], sessions: clamp(payload.sessions, 0, 999) });
     if (typeof options.runAI === "function") {
@@ -211,13 +235,13 @@
         const result = await options.runAI({ task: `learning-${clean(task, 40)}`, context: safePayload, policy: { suggestionsOnly: true, neverChangeOfficialGrade: true, neverApplyEditsWithoutConfirmation: true } });
         if (result != null) {
           const safeResult = sanitizeAIResult(result);
-          return { source: "adapter", label: AI_LABEL, result: typeof safeResult === "string" ? { content: safeResult } : safeResult, official: false };
+          return { source: "adapter", sourceType: "adapter", label: AI_LABEL, result: typeof safeResult === "string" ? { content: safeResult } : safeResult, official: false, disclaimer: "Adapter response; availability and provenance depend on the confirmed integration." };
         }
       } catch (error) {
-        return { source: "local", label: LOCAL_LABEL, result: localCoach(task, safePayload), warning: `Adapter AI chưa sẵn sàng: ${clean(error?.message || "lỗi không xác định", 240)}`, official: false };
+        return { source: "local", label: LOCAL_LABEL, result: enrichLocalResult(task, safePayload, localCoach(task, safePayload)), warning: `Adapter AI chưa sẵn sàng: ${clean(error?.message || "lỗi không xác định", 240)}`, official: false };
       }
     }
-    return { source: "local", label: LOCAL_LABEL, result: localCoach(task, safePayload), official: false };
+    return { source: "local", label: LOCAL_LABEL, result: enrichLocalResult(task, safePayload, localCoach(task, safePayload)), official: false };
   }
 
   function createMemoryStore(storage = root.localStorage) {
@@ -247,6 +271,9 @@
     }
     if (Array.isArray(body.days)) rows.push(`<div class="hhlcl-plan">${body.days.map((item) => `<article><b>Ngày ${escapeHtml(item.day)}</b><span>${escapeHtml(item.focus)}</span><small>${escapeHtml(item.minutes)} phút</small></article>`).join("")}</div>`);
     if (Array.isArray(body.vocabulary)) rows.push(`<div class="hhlcl-chips">${body.vocabulary.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>`);
+    if (body.explanation) rows.push(`<p class="hhlcl-explanation"><strong>Vì sao có gợi ý này?</strong> ${escapeHtml(body.explanation)}</p>`);
+    if (Array.isArray(body.sources) && body.sources.length) rows.push(`<details class="hhlcl-sources"><summary>Nguồn các quy tắc local (${body.sources.length})</summary><ul>${body.sources.map((source) => `<li><strong>${escapeHtml(source.title)}</strong><span>${escapeHtml(source.detail || source.kind || "local")}</span></li>`).join("")}</ul></details>`);
+    if (body.disclaimer) rows.push(`<small class="hhlcl-disclaimer">${escapeHtml(body.disclaimer)}</small>`);
     if (!rows.length) rows.push(`<pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>`);
     return `<article class="hhlcl-result"><header><span>${escapeHtml(output.label)}</span><strong>${escapeHtml(body.title || "Bản gợi ý")}</strong></header>${output.warning ? `<p class="hhlcl-warning">${escapeHtml(output.warning)}</p>` : ""}${rows.join("")}<footer>Nhận xét hỗ trợ tự học · Không tự sửa điểm chính thức</footer></article>`;
   }
@@ -559,6 +586,7 @@
     LOCAL_LABEL,
     VIEWS,
     CAREERS,
+    LOCAL_TUTOR_SOURCES,
     SPEAKING_SCENARIOS,
     LISTENING_ITEMS,
     defaultState,
@@ -567,6 +595,7 @@
     writingRubric,
     grammarPreview,
     localCoach,
+    localTutorEvidence,
     runCoachTask,
     sanitizeAIResult,
     createMemoryStore,

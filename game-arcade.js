@@ -1,7 +1,12 @@
 (function () {
   "use strict";
 
-  const STORE = "hh.arcade.galaxy.v2";
+  const SCHEMA = "hh.arcade.galaxy.v3";
+  const STORE = SCHEMA;
+  const LEGACY_STORE = "hh.arcade.galaxy.v2";
+  const LEVEL_SCHEMA = "hh.creator.level.v1";
+  const REPLAY_SCHEMA = "hh.game.replay.v1";
+  const INTEGRATION_VERSION = 3;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const pick = (items) => items[Math.floor(Math.random() * items.length)];
   const rnd = (min, max) => min + Math.random() * (max - min);
@@ -54,18 +59,84 @@
   let query = "";
   let saveData = load();
   let gameState = {};
+  let sessionStartedAt = 0;
+  let replayFrames = [];
+  let replay = { active: false, frames: [], index: 0, startedAt: 0 };
+  let sandboxTool = "spawn";
+
+  function cleanText(value, max = 120) {
+    return String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+  }
+
+  function cleanId(value, fallback = "") {
+    return cleanText(value, 80).toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 64) || fallback;
+  }
+
+  function finite(value, min = 0, max = 999999999, fallback = 0) {
+    const next = Number(value);
+    return Number.isFinite(next) ? Math.max(min, Math.min(max, next)) : fallback;
+  }
+
+  function createLevel(name = "Màn chơi mới") {
+    return { schema: LEVEL_SCHEMA, id: `level-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, name: cleanText(name, 60) || "Màn chơi mới", width: 960, height: 540, objects: [], updatedAt: new Date().toISOString() };
+  }
+
+  function sanitizeLevel(level) {
+    const allowed = new Set(["spawn", "goal", "platform", "hazard", "coin", "ship", "planet", "gate", "station"]);
+    return {
+      schema: LEVEL_SCHEMA,
+      id: cleanId(level?.id, `level-${Date.now().toString(36)}`),
+      name: cleanText(level?.name || "Màn chơi", 60),
+      width: 960,
+      height: 540,
+      objects: (Array.isArray(level?.objects) ? level.objects : []).slice(0, 160).map((item) => ({ type: allowed.has(item?.type) ? item.type : "platform", x: finite(item?.x, 24, 936, 120), y: finite(item?.y, 24, 516, 220) })),
+      updatedAt: cleanText(level?.updatedAt || new Date().toISOString(), 40)
+    };
+  }
+
+  function normalizeSave(raw) {
+    const data = raw && typeof raw === "object" ? raw : {};
+    const levelList = Array.isArray(data.sandbox?.levels) ? data.sandbox.levels.map(sanitizeLevel).slice(0, 24) : [];
+    if (!levelList.length) levelList.push(createLevel("Creator Starter"));
+    const next = {
+      schema: SCHEMA,
+      version: 3,
+      totalXp: finite(data.totalXp, 0),
+      favorites: (Array.isArray(data.favorites) ? data.favorites : []).map((id) => cleanId(id)).filter((id) => games.some((item) => item.id === id)).slice(0, games.length),
+      recent: (Array.isArray(data.recent) ? data.recent : []).map((id) => cleanId(id)).filter((id) => games.some((item) => item.id === id)).slice(0, 8),
+      sandbox: { schema: LEVEL_SCHEMA, activeLevelId: cleanId(data.sandbox?.activeLevelId, levelList[0].id), levels: levelList },
+      replays: (Array.isArray(data.replays) ? data.replays : []).filter((item) => item?.schema === REPLAY_SCHEMA).slice(0, 5).map((item) => ({
+        schema: REPLAY_SCHEMA,
+        id: cleanId(item.id, `replay-${Date.now().toString(36)}`),
+        gameId: games.some((gameItem) => gameItem.id === item.gameId) ? item.gameId : games[0].id,
+        gameTitle: cleanText(item.gameTitle, 80),
+        score: finite(item.score, 0),
+        duration: finite(item.duration, 0, 1440, 0),
+        createdAt: cleanText(item.createdAt, 40),
+        frames: (Array.isArray(item.frames) ? item.frames : []).slice(0, 180).map((frame) => ({ at: finite(frame.at, 0, 60 * 60 * 1000, 0), score: finite(frame.score, 0), combo: finite(frame.combo, 1, 12, 1), level: finite(frame.level, 1, 9999, 1), lives: finite(frame.lives, 0, 99, 0), energy: finite(frame.energy, 0, 100, 0), player: { x: finite(frame.player?.x, 0, 960, 120), y: finite(frame.player?.y, 0, 540, 230) } }))
+      }))
+    };
+    games.forEach((item) => {
+      const record = data[item.id];
+      if (!record || typeof record !== "object") return;
+      next[item.id] = { high: finite(record.high, 0), level: finite(record.level, 1, 9999, 1), plays: finite(record.plays, 0, 100000, 0), last: finite(record.last, 0, Number.MAX_SAFE_INTEGER, 0) };
+    });
+    return next;
+  }
 
   function load() {
     try {
-      return JSON.parse(localStorage.getItem(STORE) || "{}");
+      return normalizeSave(JSON.parse(localStorage.getItem(STORE) || localStorage.getItem(LEGACY_STORE) || "{}"));
     } catch (_) {
-      return {};
+      return normalizeSave({});
     }
   }
 
   function persist() {
     try {
-      localStorage.setItem(STORE, JSON.stringify(saveData));
+      saveData.schema = SCHEMA;
+      saveData.version = 3;
+      localStorage.setItem(STORE, JSON.stringify(normalizeSave(saveData)));
     } catch (_) {
       /* Local save can be unavailable in embedded privacy contexts. */
     }
@@ -73,6 +144,11 @@
 
   function game() {
     return games.find((item) => item.id === active) || games[0];
+  }
+
+  function activeLevel() {
+    const levels = saveData.sandbox?.levels || [];
+    return levels.find((item) => item.id === saveData.sandbox.activeLevelId) || levels[0];
   }
 
   function recordRecent(id) {
@@ -97,11 +173,50 @@
 
   function emitReward(xp) {
     window.dispatchEvent(new CustomEvent("hh:game-reward", {
-      detail: { source: "arcade", gameId: active, score: Math.floor(gameState.score || 0), xp: Math.floor(xp || 0) }
+      detail: { source: "arcade", gameId: active, gameTitle: game().title, score: Math.floor(gameState.score || 0), xp: Math.floor(xp || 0), duration: Math.max(0, Math.round((Date.now() - sessionStartedAt) / 60000)) }
     }));
   }
 
+  function captureReplayFrame(force = false) {
+    if (!sessionStartedAt || replay.active) return;
+    const at = Date.now() - sessionStartedAt;
+    if (!force && replayFrames.length && at - replayFrames[replayFrames.length - 1].at < 500) return;
+    replayFrames.push({
+      at,
+      score: Math.floor(gameState.score || 0),
+      combo: finite(gameState.combo, 1, 12, 1),
+      level: finite(gameState.level, 1, 9999, 1),
+      lives: finite(gameState.lives, 0, 99, 0),
+      energy: finite(gameState.energy, 0, 100, 0),
+      player: { x: finite(gameState.player?.x, 0, 960, 120), y: finite(gameState.player?.y, 0, 540, 230) }
+    });
+    replayFrames = replayFrames.slice(-180);
+  }
+
+  function saveReplay() {
+    captureReplayFrame(true);
+    if (!replayFrames.length) return null;
+    const item = {
+      schema: REPLAY_SCHEMA,
+      id: `replay-${Date.now().toString(36)}`,
+      gameId: active,
+      gameTitle: game().title,
+      score: Math.floor(gameState.score || 0),
+      duration: Math.max(0, Math.round((Date.now() - sessionStartedAt) / 60000)),
+      createdAt: new Date().toISOString(),
+      frames: replayFrames.slice(0, 180)
+    };
+    saveData.replays = [item, ...(saveData.replays || []).filter((entry) => entry.gameId !== active)].slice(0, 5);
+    window.dispatchEvent(new CustomEvent("hh:game-session", { detail: { ...item, frames: undefined } }));
+    return item;
+  }
+
   function finishRound(reason = "Đã lưu lượt chơi") {
+    if (!sessionStartedAt || (gameState.score || 0) <= 0) {
+      gameState.message = "Cần thực sự chơi và ghi điểm trước khi lưu kết quả.";
+      renderStatus();
+      return;
+    }
     const id = active;
     const xp = Math.max(10, Math.round((gameState.score || 0) / 9) + (gameState.level || 1) * 4);
     running = false;
@@ -114,6 +229,7 @@
       last: Date.now()
     };
     saveData.totalXp = (saveData.totalXp || 0) + xp;
+    saveReplay();
     recordRecent(id);
     persist();
     gameState.message = `${reason}. +${xp} XP`;
@@ -143,6 +259,9 @@
       bossHp: 220 + level * 40,
       modeData: {}
     };
+    replay = { active: false, frames: [], index: 0, startedAt: 0 };
+    replayFrames = [];
+    sessionStartedAt = 0;
     seedMode();
   }
 
@@ -183,6 +302,7 @@
     if (["colony", "farm", "builder", "pet", "dungeon", "tycoon", "fishing", "sandbox"].includes(g.mode)) {
       gameState.slots = [];
     }
+    if (g.mode === "sandbox") gameState.slots = (activeLevel()?.objects || []).map((item) => ({ ...item }));
   }
 
   function hazard(index) {
@@ -198,6 +318,12 @@
   }
 
   function start() {
+    if (replay.active) return;
+    if (!sessionStartedAt) {
+      sessionStartedAt = Date.now();
+      replayFrames = [];
+      captureReplayFrame(true);
+    }
     if (!running) last = performance.now();
     running = true;
     paused = false;
@@ -217,6 +343,7 @@
   function stopLoop() {
     running = false;
     paused = true;
+    replay.active = false;
     cancelAnimationFrame(raf);
   }
 
@@ -225,10 +352,51 @@
     const dt = clamp((time - last) / 1000, 0, 0.04);
     last = time;
     update(dt);
+    captureReplayFrame();
     draw();
     renderStatus();
     if (!running || paused) return;
     raf = requestAnimationFrame(loop);
+  }
+
+  function latestReplay(gameId = active) {
+    return (saveData.replays || []).find((item) => item.gameId === gameId && Array.isArray(item.frames) && item.frames.length);
+  }
+
+  function startLocalReplay() {
+    const item = latestReplay();
+    if (!item) return;
+    stopLoop();
+    replay = { active: true, frames: item.frames, index: 0, startedAt: performance.now() };
+    paused = false;
+    gameState.message = "Đang xem replay local · không phải spectator realtime.";
+    raf = requestAnimationFrame(replayLoop);
+    renderStatus();
+  }
+
+  function replayLoop(time) {
+    if (!replay.active) return;
+    const elapsed = time - replay.startedAt;
+    while (replay.index + 1 < replay.frames.length && replay.frames[replay.index + 1].at <= elapsed) replay.index += 1;
+    const frame = replay.frames[replay.index];
+    if (frame) {
+      gameState.score = finite(frame.score, 0);
+      gameState.combo = finite(frame.combo, 1, 12, 1);
+      gameState.level = finite(frame.level, 1, 9999, 1);
+      gameState.lives = finite(frame.lives, 0, 99, 0);
+      gameState.energy = finite(frame.energy, 0, 100, 0);
+      gameState.player = { ...gameState.player, x: finite(frame.player?.x, 0, 960, 120), y: finite(frame.player?.y, 0, 540, 230) };
+      draw();
+      renderStatus();
+    }
+    if (replay.index >= replay.frames.length - 1) {
+      replay.active = false;
+      paused = true;
+      gameState.message = "Replay local đã kết thúc.";
+      renderStatus();
+      return;
+    }
+    raf = requestAnimationFrame(replayLoop);
   }
 
   function update(dt) {
@@ -238,6 +406,7 @@
     else if (["shooter", "arena", "boss"].includes(g.mode)) updateShooter(dt, g.mode);
     else if (g.mode === "rhythm") updateRhythm(dt);
     else if (g.mode === "clicker") gameState.score += dt * 2;
+    else if (g.mode === "sandbox") updateSandbox(dt);
     else if (["colony", "farm", "builder", "pet", "tycoon", "fishing"].includes(g.mode)) updateSim(dt, g.mode);
     if (gameState.timer > 12 + gameState.level * 3) gameState.level += 1;
     if (gameState.lives <= 0 || gameState.energy <= 0) finishRound("Lượt chơi kết thúc");
@@ -359,6 +528,12 @@
   }
 
   function panelAction(action, value) {
+    if (replay.active) return;
+    if (!sessionStartedAt) {
+      sessionStartedAt = Date.now();
+      replayFrames = [];
+      captureReplayFrame(true);
+    }
     const mode = game().mode;
     if (mode === "colony") buildResource(value, { solar: 25, mine: 35, farm: 30, shield: 50 }, "Xây module thuộc địa");
     else if (mode === "farm") buildResource(value, { seed: 18, water: 12, harvest: 0, lab: 44 }, "Nông trại thiên hà");
@@ -503,8 +678,89 @@
   }
 
   function sandboxAction(action) {
-    gameState.slots.push({ type: action, x: rnd(80, 820), y: rnd(80, 420) });
-    addScore(34, "Thêm vật thể sandbox.");
+    const index = gameState.slots.length;
+    placeSandboxObject(action, 100 + (index % 7) * 110, 100 + Math.floor(index / 7) * 90);
+  }
+
+  function updateSandbox(dt) {
+    const player = gameState.player;
+    const speed = 150 * dt;
+    if (keys.has("ArrowLeft") || keys.has("a") || keys.has("A")) player.x -= speed;
+    if (keys.has("ArrowRight") || keys.has("d") || keys.has("D")) player.x += speed;
+    if (keys.has("ArrowUp") || keys.has("w") || keys.has("W")) player.y -= speed;
+    if (keys.has("ArrowDown") || keys.has("s") || keys.has("S")) player.y += speed;
+    player.x = clamp(player.x, 18, 942);
+    player.y = clamp(player.y, 18, 522);
+    gameState.slots.forEach((item) => {
+      if (Math.hypot(item.x - player.x, item.y - player.y) > 28) return;
+      if (item.type === "coin") {
+        item.type = "collected";
+        addScore(50, "Đã nhặt coin trong level.");
+      } else if (item.type === "hazard") {
+        gameState.lives = Math.max(0, gameState.lives - 1);
+        player.x = 120;
+        player.y = 230;
+      } else if (item.type === "goal" && gameState.score > 0) finishRound("Hoàn tất level Creator Sandbox");
+    });
+    gameState.slots = gameState.slots.filter((item) => item.type !== "collected");
+  }
+
+  function placeSandboxObject(type, x, y) {
+    if (replay.active || running || game().mode !== "sandbox" || gameState.slots.length >= 160) return;
+    const allowed = new Set(["spawn", "goal", "platform", "hazard", "coin", "ship", "planet", "gate", "station"]);
+    const safeType = allowed.has(type) ? type : "platform";
+    gameState.slots.push({ type: safeType, x: finite(x, 24, 936, 120), y: finite(y, 24, 516, 220) });
+    gameState.message = `Đã đặt ${safeType}. Lưu level để giữ thay đổi.`;
+    draw();
+    renderStatus();
+  }
+
+  function saveActiveLevel() {
+    const level = activeLevel();
+    if (!level) return;
+    const nameInput = root?.querySelector("[data-ag-level-name]");
+    level.name = cleanText(nameInput?.value || level.name, 60) || "Màn chơi";
+    level.objects = gameState.slots.map((item) => ({ type: item.type, x: finite(item.x, 24, 936, 120), y: finite(item.y, 24, 516, 220) })).slice(0, 160);
+    level.updatedAt = new Date().toISOString();
+    persist();
+    gameState.message = `Đã lưu ${level.name} trên thiết bị.`;
+    renderStatus();
+  }
+
+  function createNewLevel() {
+    const level = createLevel(`Màn chơi ${(saveData.sandbox.levels || []).length + 1}`);
+    saveData.sandbox.levels = [level, ...(saveData.sandbox.levels || [])].slice(0, 24);
+    saveData.sandbox.activeLevelId = level.id;
+    gameState.slots = [];
+    persist();
+    render();
+  }
+
+  function clearActiveLevel() {
+    gameState.slots = [];
+    gameState.message = "Đã dọn canvas; bấm Lưu level để xác nhận.";
+    draw();
+    renderStatus();
+  }
+
+  function testActiveLevel() {
+    saveActiveLevel();
+    gameState.score = 0;
+    gameState.player = { ...gameState.player, x: gameState.slots.find((item) => item.type === "spawn")?.x || 120, y: gameState.slots.find((item) => item.type === "spawn")?.y || 230 };
+    gameState.message = "Đang test level local. Phím mũi tên để di chuyển.";
+    start();
+  }
+
+  function exportActiveLevel() {
+    saveActiveLevel();
+    const level = sanitizeLevel(activeLevel());
+    const blob = new Blob([JSON.stringify(level, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${cleanId(level.name, "hh-level")}.json`;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   function draw() {
@@ -596,9 +852,14 @@
   }
 
   function drawSandbox() {
+    const colors = { spawn: "#7cffb2", goal: "#ffe66f", platform: "#79a7ff", hazard: "#ff6f91", coin: "#ffc857", ship: "#67f2ff", planet: "#b6ff6b", gate: "#c7a2ff", station: "#ff9fe5" };
     (gameState.slots || []).forEach((item, index) => {
-      drawCircle(item.x || 120 + index * 42, item.y || 220, 18 + (index % 3) * 5, pick(["#67f2ff", "#ff63c9", "#ffe66f", "#7cffb2"]));
+      drawCircle(item.x || 120 + index * 42, item.y || 220, item.type === "platform" ? 22 : 16, colors[item.type] || "#67f2ff");
+      ctx.fillStyle = "#eef8ff";
+      ctx.font = "700 10px system-ui";
+      ctx.fillText(cleanText(item.type, 12), (item.x || 120) - 18, (item.y || 220) + 30);
     });
+    if (running || replay.active) drawShip(gameState.player.x, gameState.player.y, "#eef8ff");
   }
 
   function drawPanelPreview(w, h) {
@@ -661,8 +922,9 @@
     if (event.type === "pointerdown") {
       if (["shooter", "arena", "boss", "rhythm"].includes(mode)) keys.add(" ");
       if (mode === "clicker") clickAsteroid(pointer.x, pointer.y);
-      if (["sandbox", "builder"].includes(mode)) {
-        gameState.slots.push({ type: "click", x: pointer.x, y: pointer.y });
+      if (mode === "sandbox") placeSandboxObject(sandboxTool, pointer.x, pointer.y);
+      if (mode === "builder") {
+        gameState.slots.push({ type: "platform", x: pointer.x, y: pointer.y });
         addScore(24, "Đặt vật thể.");
         draw();
       }
@@ -699,7 +961,7 @@
   function playfieldMarkup() {
     const mode = game().mode;
     if (["runner", "shooter", "clicker", "rhythm", "survival", "arena", "escape", "boss"].includes(mode)) {
-      return `<canvas class="ag-canvas" data-ag-canvas tabindex="0" aria-label="${game().title}"></canvas>`;
+      return `<canvas class="ag-canvas" data-ag-canvas tabindex="0" aria-label="Màn chơi ${escapeHtml(game().title)}" aria-describedby="ag-keyboard-help"></canvas>`;
     }
     if (mode === "cipher") {
       const seq = gameState.modeData.sequence || [];
@@ -720,6 +982,28 @@
     if (mode === "card") {
       const data = gameState.modeData;
       return `<div class="ag-card ag-span"><h4>Cosmic Card Battle</h4><p>Bạn: ${data.playerHp} HP - Đối thủ: ${data.enemyHp} HP</p><div class="ag-grid">${[["strike", "Nova Strike"], ["shield", "Shield Bloom"], ["draw", "Comet Draw"]].map(([id, label]) => `<button data-ag-action="card" data-value="${id}" class="ag-tile">${label}</button>`).join("")}</div></div>`;
+    }
+    if (mode === "sandbox") {
+      const level = activeLevel();
+      const palette = [["spawn", "Điểm xuất phát"], ["goal", "Đích"], ["platform", "Bệ"], ["hazard", "Bẫy"], ["coin", "Coin"], ["ship", "Tàu"], ["planet", "Hành tinh"], ["gate", "Cổng"], ["station", "Trạm"]];
+      return `
+        <section class="ag-creator" aria-labelledby="ag-creator-title">
+          <div class="ag-creator-head">
+            <div><p class="ag-kicker">${LEVEL_SCHEMA}</p><h4 id="ag-creator-title">Creator Sandbox</h4></div>
+            <label>Tên màn chơi<input data-ag-level-name maxlength="60" value="${escapeHtml(level?.name || "Màn chơi")}"></label>
+          </div>
+          <fieldset class="ag-palette"><legend>Chọn vật thể, rồi bấm lên canvas</legend>${palette.map(([id, label]) => `<button type="button" data-ag-sandbox-tool="${id}" class="${sandboxTool === id ? "is-active" : ""}" aria-pressed="${sandboxTool === id}">${label}</button>`).join("")}</fieldset>
+          <div class="ag-creator-actions">
+            <button type="button" data-ag-level-save>Lưu level</button>
+            <button type="button" data-ag-level-test>Test level</button>
+            <button type="button" data-ag-level-new>Màn mới</button>
+            <button type="button" data-ag-level-clear>Dọn canvas</button>
+            <button type="button" data-ag-level-export>Xuất JSON</button>
+            <span>${gameState.slots.length}/160 vật thể · local</span>
+          </div>
+          <canvas class="ag-canvas" data-ag-canvas tabindex="0" aria-label="Canvas tạo màn ${escapeHtml(level?.name || "Màn chơi")}" aria-describedby="ag-creator-help"></canvas>
+          <p id="ag-creator-help" class="ag-help">Bàn phím: Tab để chọn công cụ; Enter/Space để kích hoạt; trên canvas dùng phím mũi tên khi test. Level chỉ lưu local cho đến khi có cloud adapter được xác nhận.</p>
+        </section>`;
     }
     const actionsByMode = {
       colony: [["solar", "Solar"], ["mine", "Mỏ"], ["farm", "Farm"], ["shield", "Lá chắn"]],
@@ -746,7 +1030,7 @@
     if (nodes.score) nodes.score.textContent = Math.floor(gameState.score || 0);
     if (nodes.combo) nodes.combo.textContent = `x${gameState.combo || 1}`;
     if (nodes.level) nodes.level.textContent = gameState.level || 1;
-    if (nodes.status) nodes.status.textContent = paused ? (running ? "Tạm dừng" : "Sẵn sàng") : "Đang chơi";
+    if (nodes.status) nodes.status.textContent = replay.active ? "Replay local" : paused ? (running ? "Tạm dừng" : "Sẵn sàng") : "Đang chơi";
     if (nodes.message) nodes.message.textContent = gameState.message || "Sẵn sàng.";
   }
 
@@ -777,11 +1061,11 @@
           </div>
         </header>
         <div class="ag-toolbar">
-          <input data-ag-search value="${escapeHtml(query)}" placeholder="Tìm game, thể loại, mode...">
+          <input data-ag-search aria-label="Tìm game Arcade" value="${escapeHtml(query)}" placeholder="Tìm game, thể loại, mode...">
           <div class="ag-filters">${categories().map((cat) => `<button class="${filter === cat ? "is-active" : ""}" data-ag-filter="${cat}">${cat}</button>`).join("")}</div>
         </div>
         <div class="ag-layout">
-          <nav class="ag-menu">
+          <nav class="ag-menu" aria-label="Danh sách game Arcade">
             ${filteredGames().map((item) => `
               <button class="ag-game-button ${active === item.id ? "is-active" : ""}" type="button" data-ag-game="${item.id}" style="--game-color:${item.color}">
                 <span class="ag-icon">${item.icon}</span>
@@ -791,7 +1075,7 @@
           </nav>
           <main class="ag-stage">
             <div class="ag-stage-head">
-              <div><p class="ag-kicker">${g.icon} - ${g.category} - ${g.mode}</p><h3>${g.title}</h3><p data-ag-message>${gameState.message || "Sẵn sàng."}</p></div>
+              <div><p class="ag-kicker">${g.icon} - ${g.category} - ${g.mode}</p><h3>${g.title}</h3><p data-ag-message aria-live="polite">${gameState.message || "Sẵn sàng."}</p></div>
               <div class="ag-controls">
                 <button class="is-primary" type="button" data-ag-start>Chơi</button>
                 <button type="button" data-ag-pause>Tạm dừng</button>
@@ -800,19 +1084,21 @@
               </div>
             </div>
             <div class="ag-playfield" data-ag-playfield>${playfieldMarkup()}</div>
-            <div class="ag-touch">
-              <button data-ag-key="ArrowLeft">←</button><button data-ag-key="ArrowUp">↑</button><button data-ag-key="ArrowDown">↓</button><button data-ag-key="ArrowRight">→</button><button data-ag-key=" ">Bắn/Beat</button>
+            <div class="ag-touch" aria-label="Điều khiển cảm ứng">
+              <button type="button" data-ag-key="ArrowLeft" aria-label="Trái">←</button><button type="button" data-ag-key="ArrowUp" aria-label="Lên">↑</button><button type="button" data-ag-key="ArrowDown" aria-label="Xuống">↓</button><button type="button" data-ag-key="ArrowRight" aria-label="Phải">→</button><button type="button" data-ag-key=" ">Bắn/Beat</button>
             </div>
           </main>
           <aside class="ag-side">
             <button class="ag-fav ${favs.has(g.id) ? "is-active" : ""}" data-ag-favorite>${favs.has(g.id) ? "Đã yêu thích" : "Yêu thích"}</button>
             <h3>Trạng thái</h3>
-            <p><b data-ag-status>${paused ? "Sẵn sàng" : "Đang chơi"}</b></p>
+            <p><b data-ag-status>${replay.active ? "Replay local" : paused ? "Sẵn sàng" : "Đang chơi"}</b></p>
+            <p><span class="ag-mode-label">Lưu local · ${SCHEMA}</span></p>
+            <button type="button" data-ag-replay ${latestReplay() ? "" : "disabled"}>Xem replay local gần nhất</button>
             <div class="ag-progress"><span style="width:${clamp((gameState.score || 0) % 100, 0, 100)}%"></span></div>
             <h3>Gần đây</h3>
             <div class="ag-log">${(saveData.recent || []).slice(0, 6).map((id) => `<div>${gameById(id).title}: ${saveData[id]?.high || 0}</div>`).join("") || "<div>Chưa có lượt chơi.</div>"}</div>
             <h3>Mẹo điều khiển</h3>
-            <p>WASD/phím mũi tên để di chuyển. Space để bắn hoặc bắt nhịp. Trên điện thoại dùng cụm nút cảm ứng bên dưới màn chơi.</p>
+            <p id="ag-keyboard-help">WASD/phím mũi tên chỉ hoạt động khi canvas có focus. Space để bắn hoặc bắt nhịp. Trên điện thoại dùng cụm nút cảm ứng.</p>
           </aside>
         </div>
       </section>`;
@@ -837,7 +1123,7 @@
       query = event.target.value;
       render();
     });
-    root.querySelector("[data-ag-start]")?.addEventListener("click", start);
+    root.querySelector("[data-ag-start]")?.addEventListener("click", () => { start(); canvas?.focus(); });
     root.querySelector("[data-ag-pause]")?.addEventListener("click", pause);
     root.querySelector("[data-ag-reset]")?.addEventListener("click", () => {
       stopLoop();
@@ -846,6 +1132,7 @@
     });
     root.querySelector("[data-ag-end]")?.addEventListener("click", () => finishRound("Đã nhận thưởng"));
     root.querySelector("[data-ag-favorite]")?.addEventListener("click", () => toggleFavorite(active));
+    root.querySelector("[data-ag-replay]")?.addEventListener("click", startLocalReplay);
     root.querySelectorAll("[data-ag-key]").forEach((button) => {
       button.addEventListener("pointerdown", () => keys.add(button.dataset.agKey));
       button.addEventListener("pointerup", () => keys.delete(button.dataset.agKey));
@@ -860,10 +1147,22 @@
       canvas.addEventListener("pointerdown", canvasPointer);
       canvas.addEventListener("pointermove", canvasPointer);
       canvas.addEventListener("pointerup", canvasPointer);
+      canvas.addEventListener("keydown", keyDown);
+      canvas.addEventListener("keyup", keyUp);
+      canvas.addEventListener("blur", () => keys.clear());
     }
     root.querySelectorAll("[data-ag-action]").forEach((button) => {
       button.addEventListener("click", () => panelAction(button.dataset.agAction, button.dataset.value));
     });
+    root.querySelectorAll("[data-ag-sandbox-tool]").forEach((button) => button.addEventListener("click", () => {
+      sandboxTool = cleanId(button.dataset.agSandboxTool, "platform");
+      renderPlayfield();
+    }));
+    root.querySelector("[data-ag-level-save]")?.addEventListener("click", saveActiveLevel);
+    root.querySelector("[data-ag-level-test]")?.addEventListener("click", testActiveLevel);
+    root.querySelector("[data-ag-level-new]")?.addEventListener("click", createNewLevel);
+    root.querySelector("[data-ag-level-clear]")?.addEventListener("click", clearActiveLevel);
+    root.querySelector("[data-ag-level-export]")?.addEventListener("click", exportActiveLevel);
   }
 
   function gameById(id) {
@@ -875,8 +1174,9 @@
   }
 
   function keyDown(event) {
+    if (replay.active || event.altKey || event.ctrlKey || event.metaKey) return;
     keys.add(event.key);
-    if (event.key === " ") event.preventDefault();
+    if ([" ", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) event.preventDefault();
   }
 
   function keyUp(event) {
@@ -894,8 +1194,6 @@
     active = options.initialGameId || active;
     saveData = load();
     resetGame();
-    window.addEventListener("keydown", keyDown);
-    window.addEventListener("keyup", keyUp);
     render();
     window.dispatchEvent(new CustomEvent("hh:game-arcade-ready", { detail: inspect() }));
     return inspect();
@@ -903,8 +1201,6 @@
 
   function unmount() {
     stopLoop();
-    window.removeEventListener("keydown", keyDown);
-    window.removeEventListener("keyup", keyUp);
     if (root?.parentNode) root.parentNode.removeChild(root);
     root = null;
     hostNode = null;
@@ -916,6 +1212,8 @@
   function inspect() {
     return {
       mounted: Boolean(root),
+      schema: SCHEMA,
+      version: INTEGRATION_VERSION,
       active,
       currentGame: active,
       running,
@@ -926,6 +1224,8 @@
       xp: saveData.totalXp || 0,
       recent: saveData.recent || [],
       favorites: saveData.favorites || [],
+      spectator: { mode: replay.active ? "local-replay" : "off", replayCount: (saveData.replays || []).length },
+      creator: { schema: LEVEL_SCHEMA, activeLevelId: saveData.sandbox?.activeLevelId || "", levels: (saveData.sandbox?.levels || []).map((level) => ({ id: level.id, name: level.name, objects: level.objects.length })) },
       options: { hasSocket: Boolean(opts.socket), hasApiBase: Boolean(opts.apiBase) }
     };
   }

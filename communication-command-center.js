@@ -81,12 +81,12 @@
       mode: "local-fallback",
       createdAt: new Date(now).toISOString(),
       updatedAt: new Date(now).toISOString(),
-      onlineUsers: 4,
+      onlineUsers: 0,
       upcomingCalls: [{ id: "call-creative", title: "Creative Room: nghe bản phối", startsAt: new Date(now + 42 * 60 * 1000).toISOString(), participants: 5 }],
       supportRequests: 2,
       conversations: [
-        { id: "conv-team", name: "Nhóm HH Creative", preview: "Minh vừa gửi bản storyboard mới", online: true, unread: 3, favorite: true, timestamp: new Date(now - 4 * 60 * 1000).toISOString() },
-        { id: "conv-lan", name: "Lan Anh", preview: "Mình đã duyệt thumbnail rồi nhé", online: true, unread: 1, favorite: true, timestamp: new Date(now - 19 * 60 * 1000).toISOString() },
+        { id: "conv-team", name: "Nhóm HH Creative", preview: "Minh vừa gửi bản storyboard mới", online: false, unread: 3, favorite: true, timestamp: new Date(now - 4 * 60 * 1000).toISOString() },
+        { id: "conv-lan", name: "Lan Anh", preview: "Mình đã duyệt thumbnail rồi nhé", online: false, unread: 1, favorite: true, timestamp: new Date(now - 19 * 60 * 1000).toISOString() },
         { id: "conv-support", name: "Hỗ trợ HH", preview: "Ticket của bạn đã được tiếp nhận", online: false, unread: 0, favorite: false, timestamp: new Date(now - 75 * 60 * 1000).toISOString() }
       ],
       notices: [
@@ -153,10 +153,22 @@
         storage.setItem(STORAGE_KEY, JSON.stringify(seeded));
         return seeded;
       }
-      return normalizeState(JSON.parse(value));
+      const saved = normalizeState(JSON.parse(value));
+      return normalizeState({
+        ...saved,
+        mode: "local-fallback",
+        onlineUsers: 0,
+        conversations: saved.conversations.map((conversation) => ({ ...conversation, online: false }))
+      });
     } catch {
       return normalizeState(seedState());
     }
+  }
+
+  function isConfirmedAdapterPayload(payload) {
+    const data = payload && typeof payload === "object" ? payload : {};
+    const state = data.connection && typeof data.connection === "object" ? data.connection.state : "";
+    return data.ok !== false && (data.connected === true || state === "connected");
   }
 
   function saveState(state, scope = globalScope) {
@@ -168,18 +180,19 @@
 
   function mergeAdapterData(state, payload) {
     const data = payload && typeof payload === "object" ? payload : {};
+    const connected = isConfirmedAdapterPayload(data);
     const byId = new Map(state.items.map((item) => [item.id, item]));
     if (Array.isArray(data.items)) {
       data.items.map(normalizeItem).forEach((item) => byId.set(item.id, { ...byId.get(item.id), ...item, source: safeText(data.source || item.source || "adapter", 40) }));
     }
     return normalizeState({
       ...state,
-      mode: "adapter",
+      mode: connected ? "adapter" : "local-fallback",
       items: Array.from(byId.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, MAX_ITEMS),
-      onlineUsers: data.onlineUsers == null ? state.onlineUsers : data.onlineUsers,
+      onlineUsers: connected && data.onlineUsers != null ? data.onlineUsers : 0,
       upcomingCalls: Array.isArray(data.upcomingCalls) ? data.upcomingCalls : state.upcomingCalls,
       supportRequests: data.supportRequests == null ? state.supportRequests : data.supportRequests,
-      conversations: Array.isArray(data.conversations) ? data.conversations : state.conversations,
+      conversations: (Array.isArray(data.conversations) ? data.conversations : state.conversations).map((conversation) => ({ ...conversation, online: connected && Boolean(conversation.online) })),
       notices: Array.isArray(data.notices) ? data.notices : state.notices
     });
   }
@@ -255,7 +268,7 @@
 
       <section class="hcc-metrics" aria-label="Chỉ số giao tiếp">
         <article class="hcc-metric hcc-metric--pink"><span>✦</span><div><small>Tin chưa đọc</small><strong>${unread}</strong><p>${state.items.filter((item) => item.mentioned && item.unread).length} lượt nhắc đến</p></div></article>
-        <article class="hcc-metric hcc-metric--cyan"><span>◉</span><div><small>Đang online</small><strong>${state.onlineUsers}</strong><p>Cập nhật theo adapter</p></div></article>
+        <article class="hcc-metric hcc-metric--cyan"><span>◉</span><div><small>Đang online</small><strong>${state.mode === "adapter" ? state.onlineUsers : "—"}</strong><p>${state.mode === "adapter" ? "Adapter đã xác nhận" : "Chưa xác nhận realtime"}</p></div></article>
         <article class="hcc-metric hcc-metric--yellow"><span>◷</span><div><small>Cuộc gọi sắp tới</small><strong>${state.upcomingCalls.length}</strong><p>${nextCall ? `${escapeHtml(relativeTime(nextCall.startsAt))} · ${nextCall.participants} người` : "Chưa có lịch"}</p></div></article>
         <article class="hcc-metric hcc-metric--lime"><span>?</span><div><small>Yêu cầu hỗ trợ</small><strong>${state.supportRequests}</strong><p>Đang chờ xử lý</p></div></article>
       </section>
@@ -383,7 +396,9 @@
     const respond = (payload) => {
       responded = true;
       runtime.state = mergeAdapterData(runtime.state, payload);
-      persistAndRender(runtime, "Đã hợp nhất dữ liệu từ adapter giao tiếp.");
+      persistAndRender(runtime, isConfirmedAdapterPayload(payload)
+        ? "Adapter đã xác nhận kết nối và dữ liệu đã được hợp nhất."
+        : "Đã nhận dữ liệu nhưng adapter chưa xác nhận kết nối; presence vẫn ngoại tuyến.");
     };
     emit("hh:communication:request-data", { version: VERSION, source: "command-center", views: VIEWS.slice(), respond }, runtime.scope);
     if (!responded) {
@@ -536,7 +551,7 @@
     const item = updateItem(runtime, id, { preview: `Bạn: ${text}`, unread: false, timestamp: new Date().toISOString() });
     runtime.state.ui.replyDrafts[id] = "";
     dispatchAction(runtime, "message:reply", { id, conversationId: item && item.conversationId, text });
-    persistAndRender(runtime, "Đã gửi trả lời qua adapter; bản xem trước được lưu cục bộ.", id);
+    persistAndRender(runtime, "Đã lưu trả lời cục bộ và gửi yêu cầu; chờ adapter xác nhận gửi.", id);
   }
 
   function handleSubmit(runtime, event) {
@@ -588,7 +603,9 @@
 
   function handleExternalData(runtime, event) {
     runtime.state = mergeAdapterData(runtime.state, event && event.detail);
-    persistAndRender(runtime, "Đã nhận cập nhật mới từ adapter giao tiếp.");
+    persistAndRender(runtime, isConfirmedAdapterPayload(event && event.detail)
+      ? "Đã nhận cập nhật từ adapter đang kết nối."
+      : "Đã nhận dữ liệu cục bộ; chưa có xác nhận kết nối realtime.");
   }
 
   function mount(host, options = {}) {
@@ -628,7 +645,7 @@
   if (globalScope) globalScope.HHCommunicationCommandCenter = publicApi;
   if (typeof module !== "undefined" && module.exports) {
     module.exports = Object.freeze({
-      STORAGE_KEY, VERSION, VIEWS, supports, normalizeItem, normalizeState, mergeAdapterData,
+      STORAGE_KEY, VERSION, VIEWS, supports, normalizeItem, normalizeState, isConfirmedAdapterPayload, mergeAdapterData,
       filteredItems, relativeTime, seedState, loadState, saveState, publicApi
     });
   }

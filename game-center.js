@@ -1,7 +1,10 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "hh.game.center.profile.v2";
+  const SCHEMA = "hh.game.center.profile.v3";
+  const STORAGE_KEY = SCHEMA;
+  const LEGACY_STORAGE_KEY = "hh.game.center.profile.v2";
+  const INTEGRATION_VERSION = 3;
   const API_PATH = "/api/games";
   const DEFAULT_TAB = "overview";
 
@@ -84,18 +87,18 @@
     {
       id: "event-astra-raid",
       title: "Astra Raid",
-      subtitle: "Sự kiện giới hạn",
-      status: "Đang mở",
-      duration: "Còn 3 ngày",
+      subtitle: "Thử thách local",
+      status: "Chưa có kết quả",
+      duration: "Không giới hạn",
       description: "Hạ boss sự kiện để mở rương vàng, trail thiên thạch và skin tàu độc quyền.",
       reward: { coins: 140, xp: 220 }
     },
     {
       id: "event-neon-cup",
       title: "Neon Cup",
-      subtitle: "Giải đấu tuần",
-      status: "Mở đăng ký",
-      duration: "Bắt đầu thứ Sáu",
+      subtitle: "Thử thách local",
+      status: "Chưa có kết quả",
+      duration: "Không giới hạn",
       description: "Đua time trial theo bảng xếp hạng, có thưởng season pass điểm tích lũy.",
       reward: { coins: 110, xp: 190 }
     }
@@ -136,18 +139,16 @@
     { id: "collector", title: "Nhà sưu tầm", text: "Sở hữu 5 món inventory.", unlocked: false }
   ];
 
-  const DEFAULT_FRIENDS = [
-    { name: "Music Studio", status: "Đang trong lobby", online: true },
-    { name: "AI Creator", status: "Đang chơi thử", online: true },
-    { name: "Neon Member", status: "Offline 12 phút", online: false },
-    { name: "Team Collab", status: "Đang co-op", online: true }
-  ];
+  // Friends, rooms and public ranks must come from a confirmed provider. Never seed
+  // people that could be mistaken for live users.
+  const DEFAULT_FRIENDS = [];
 
   let hostEl = null;
   let rootEl = null;
   let settings = {};
   let state = null;
   let rewardListener = null;
+  let sessionListener = null;
   let toastTimer = null;
   let renderQueued = false;
 
@@ -174,13 +175,45 @@
       .replace(/'/g, "&#039;");
   }
 
+  function cleanText(value, max = 120) {
+    return String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+  }
+
+  function cleanId(value, fallback = "") {
+    return cleanText(value, 80).toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 64) || fallback;
+  }
+
+  function safeNumber(value, min = 0, max = 999999999, fallback = 0) {
+    const next = Number(value);
+    return Number.isFinite(next) ? Math.max(min, Math.min(max, next)) : fallback;
+  }
+
+  function connectionState(kind, status = "local", label = "") {
+    const allowed = new Set(["local", "connecting", "connected", "error", "disconnected"]);
+    const safeStatus = allowed.has(status) ? status : "local";
+    const fallback = kind === "cloud" ? "Chỉ lưu trên thiết bị" : "Chưa kết nối realtime";
+    return { status: safeStatus, label: cleanText(label || fallback, 120), provider: "", confirmed: false, updatedAt: new Date().toISOString() };
+  }
+
   function todayKey() {
     return new Date().toISOString().slice(0, 10);
   }
 
+  function weekKey() {
+    const date = new Date();
+    const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    utc.setUTCDate(utc.getUTCDate() + 4 - (utc.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+    return `${utc.getUTCFullYear()}-W${String(Math.ceil((((utc - yearStart) / 86400000) + 1) / 7)).padStart(2, "0")}`;
+  }
+
+  function seasonKey() {
+    return `local-${todayKey().slice(0, 7)}`;
+  }
+
   function loadLocal() {
     try {
-      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || "null");
       if (parsed && typeof parsed === "object") return parsed;
     } catch {
       // invalid local state should not block lobby
@@ -191,9 +224,10 @@
   function defaultState() {
     const user = settings.currentUser || {};
     return {
-      version: 2,
+      schema: SCHEMA,
+      version: 3,
       player: {
-        name: user.displayName || user.name || user.username || "Dũng Nguyễn",
+        name: user.displayName || user.name || user.username || "Người chơi local",
         avatar: initials(user.displayName || user.name || "HH Gamer"),
         frame: "frame-violet",
         pet: "pet-microbot",
@@ -202,16 +236,18 @@
         favoriteGame: "HH Astra Universe",
         lastRoute: "/entertainment/astra-hh",
         lastGame: "HH Astra Universe",
-        xp: 420,
-        coins: 260,
-        streak: 2
+        xp: 0,
+        coins: 0,
+        streak: 0
       },
       activeTab: DEFAULT_TAB,
       games: clone(CATALOG),
       missions: {
-        daily: DAILY_MISSIONS.map((item) => ({ ...item, progress: item.id === "daily-login" ? 1 : 0 })),
+        daily: DAILY_MISSIONS.map((item) => ({ ...item, progress: 0 })),
         weekly: WEEKLY_MISSIONS.map((item) => ({ ...item, progress: 0 }))
       },
+      dailyMissionDay: todayKey(),
+      weeklyMissionWeek: weekKey(),
       events: clone(FEATURED_EVENTS),
       badges: clone(BADGES),
       inventory: [
@@ -220,34 +256,37 @@
       equipment: { skin: "skin-lunar", trail: "trail-starlight", avatarFrame: "frame-violet", pet: "pet-microbot" },
       shopHistory: [],
       chest: { available: true, lastOpened: null, reward: null },
-      season: { level: 1, progress: 0, freeClaimed: [] },
+      dailyReward: { lastClaimedDay: "" },
+      season: { id: seasonKey(), source: "local-device", level: 1, progress: 0, freeClaimed: [] },
       crafting: [],
       friends: clone(DEFAULT_FRIENDS),
       activity: [
         { time: "Hôm nay", text: "Mở Game Center và sẵn sàng nhận nhiệm vụ." },
         { time: "Tuần này", text: "HH Astra Universe đã trở thành highlight MMO RPG." }
       ],
-      leaderboard: [
-        { name: "Hoàng Đại Ka", level: 9, xp: 4200, game: "HH Astra Universe" },
-        { name: "Astra Pilot", level: 7, xp: 3180, game: "Neon Drift" },
-        { name: "Neon Maker", level: 6, xp: 2740, game: "Galaxy Defense" },
-        { name: "Star Builder", level: 5, xp: 2180, game: "Star Colony" }
-      ],
-      cloud: { status: "local", label: "Đang dùng lưu local", updatedAt: new Date().toISOString() },
-      realtime: { status: "local", label: "Realtime chưa kết nối", updatedAt: new Date().toISOString() },
-      playedGames: ["astra-hh"],
-      history: [{ id: "astra-hh", title: "HH Astra Universe", playedAt: new Date().toISOString(), duration: 12 }]
+      leaderboard: [{ name: cleanText(user.displayName || user.name || user.username || "Người chơi local"), level: 1, xp: 0, game: "Chưa có kết quả", scope: "device" }],
+      leaderboardMeta: { source: "local-device", label: "Xếp hạng trên thiết bị này", confirmed: true, updatedAt: new Date().toISOString() },
+      cloud: connectionState("cloud"),
+      realtime: connectionState("realtime", "disconnected"),
+      party: { mode: "local", status: "solo", roomCode: "", role: "player", members: [], spectators: [], updatedAt: new Date().toISOString() },
+      spectator: { mode: "off", status: "idle", roomCode: "", gameId: "", updatedAt: new Date().toISOString() },
+      replays: [],
+      playedGames: [],
+      history: []
     };
   }
 
   function normalizeState(saved) {
     const base = defaultState();
     if (!saved) return base;
+    const legacy = saved.schema !== SCHEMA || Number(saved.version) !== 3;
     const inventory = Array.isArray(saved.inventory) && saved.inventory.length ? saved.inventory : base.inventory;
     const equipment = { ...base.equipment, ...(saved.equipment || {}) };
-    return {
+    const normalized = {
       ...base,
       ...saved,
+      schema: SCHEMA,
+      version: 3,
       player: { ...base.player, ...(saved.player || {}) },
       games: base.games,
       missions: {
@@ -260,20 +299,39 @@
       equipment,
       shopHistory: Array.isArray(saved.shopHistory) ? saved.shopHistory : base.shopHistory,
       chest: { ...base.chest, ...(saved.chest || {}) },
+      dailyReward: { ...base.dailyReward, ...(saved.dailyReward || {}) },
       season: {
         ...base.season,
         ...(saved.season || {}),
         freeClaimed: Array.isArray(saved.season?.freeClaimed) ? saved.season.freeClaimed : base.season.freeClaimed
       },
       crafting: Array.isArray(saved.crafting) ? saved.crafting : base.crafting,
-      friends: Array.isArray(saved.friends) && saved.friends.length ? saved.friends : base.friends,
+      friends: !legacy && Array.isArray(saved.friends) ? saved.friends : base.friends,
       activity: Array.isArray(saved.activity) && saved.activity.length ? saved.activity : base.activity,
-      leaderboard: Array.isArray(saved.leaderboard) && saved.leaderboard.length ? saved.leaderboard : base.leaderboard,
-      cloud: { ...base.cloud, ...(saved.cloud || {}) },
-      realtime: { ...base.realtime, ...(saved.realtime || {}) },
+      leaderboard: !legacy && Array.isArray(saved.leaderboard) && saved.leaderboard.length ? saved.leaderboard : base.leaderboard,
+      leaderboardMeta: legacy ? base.leaderboardMeta : { ...base.leaderboardMeta, ...(saved.leaderboardMeta || {}) },
+      // A provider session is runtime-only. Reloading always starts disconnected.
+      cloud: connectionState("cloud"),
+      realtime: connectionState("realtime", "disconnected"),
+      party: { ...base.party, ...(saved.party || {}), mode: saved.party?.mode === "local" ? "local" : "local", status: saved.party?.mode === "local" ? cleanText(saved.party?.status || "solo", 20) : "solo", members: Array.isArray(saved.party?.members) ? saved.party.members.slice(0, 10) : [] },
+      spectator: { ...base.spectator, mode: "off", status: "idle", roomCode: "" },
+      replays: Array.isArray(saved.replays) ? saved.replays.slice(0, 8) : [],
       playedGames: Array.isArray(saved.playedGames) ? saved.playedGames : base.playedGames,
       history: Array.isArray(saved.history) && saved.history.length ? saved.history : base.history
     };
+    normalized.player.name = cleanText(normalized.player.name || base.player.name, 80);
+    normalized.player.xp = safeNumber(normalized.player.xp, 0);
+    normalized.player.coins = safeNumber(normalized.player.coins, 0);
+    normalized.player.streak = safeNumber(normalized.player.streak, 0, 10000);
+    normalized.leaderboard = normalized.leaderboard.slice(0, 100).map((entry) => ({
+      name: cleanText(entry?.name || "Người chơi", 80),
+      level: safeNumber(entry?.level, 1, 9999, 1),
+      xp: safeNumber(entry?.xp ?? entry?.score, 0),
+      game: cleanText(entry?.game || entry?.gameId || "Game HH", 80),
+      scope: cleanText(entry?.scope || normalized.leaderboardMeta.source, 30)
+    }));
+    normalized.friends = normalized.friends.slice(0, 100).map((friend) => ({ name: cleanText(friend?.name, 80), status: cleanText(friend?.status, 100), online: friend?.online === true }));
+    return normalized;
   }
 
   function mergeMissionList(baseList, savedList) {
@@ -289,7 +347,16 @@
   function saveLocal() {
     if (!state) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const persisted = clone(state);
+      persisted.schema = SCHEMA;
+      persisted.version = 3;
+      persisted.cloud = connectionState("cloud");
+      persisted.realtime = connectionState("realtime", "disconnected");
+      if (persisted.party?.mode === "connected") persisted.party = defaultState().party;
+      persisted.spectator = defaultState().spectator;
+      persisted.history = (persisted.history || []).slice(0, 20);
+      persisted.replays = (persisted.replays || []).slice(0, 8);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
     } catch {
       state.cloud = { status: "error", label: "Không thể lưu local", updatedAt: new Date().toISOString() };
     }
@@ -372,60 +439,171 @@
     };
   }
 
-  async function syncCloud(mode) {
-    if (!settings.apiBase || !state) return false;
-    const base = String(settings.apiBase).replace(/\/$/, "");
+  function isConfirmed(result, requireDurable = false) {
+    return Boolean(result && result.confirmed === true && result.connected === true && (!requireDurable || result.durable === true));
+  }
+
+  function setLocalConnection(kind, label, status = "local") {
+    state[kind] = connectionState(kind, status, label);
+  }
+
+  async function syncCloud(mode = "save") {
+    if (!state) return false;
+    const adapter = settings.cloudAdapter;
+    if (!adapter || typeof adapter.connect !== "function") {
+      setLocalConnection("cloud", "Chỉ lưu trên thiết bị · chưa cấu hình cloud adapter");
+      scheduleRender();
+      return false;
+    }
+    state.cloud = connectionState("cloud", "connecting", "Đang xác nhận cloud adapter...");
+    scheduleRender();
     try {
+      const confirmation = await adapter.connect({ schema: SCHEMA, version: 3, player: { name: state.player.name } });
+      if (!isConfirmed(confirmation, true)) throw new Error("Cloud adapter chưa xác nhận lưu bền vững");
+      const confirmedCloud = { status: "connected", label: `Đã kết nối ${cleanText(confirmation.provider || "cloud", 60)}`, provider: cleanText(confirmation.provider || "cloud", 60), confirmed: true, updatedAt: new Date().toISOString() };
+      state.cloud = confirmedCloud;
       if (mode === "load") {
-        const response = await fetch(`${base}${API_PATH}/profile`, { credentials: "include" });
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.profile) {
-            state = normalizeState({ ...state, ...data.profile, cloud: { status: "online", label: "Đã đồng bộ cloud", updatedAt: new Date().toISOString() } });
-            saveLocal();
-            scheduleRender();
-            return true;
-          }
+        if (typeof adapter.load === "function") {
+          const result = await adapter.load({ key: STORAGE_KEY, schema: SCHEMA });
+          if (result?.confirmed === true && result.data && typeof result.data === "object") state = normalizeState({ ...state, ...result.data });
         }
       } else {
-        const response = await fetch(`${base}${API_PATH}/profile`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ profile: state })
-        });
-        if (response.ok) {
-          state.cloud = { status: "online", label: "Đã lưu cloud", updatedAt: new Date().toISOString() };
-          saveLocal();
-          scheduleRender();
-          return true;
-        }
+        if (typeof adapter.save !== "function") throw new Error("Cloud adapter không hỗ trợ save");
+        const result = await adapter.save({ key: STORAGE_KEY, schema: SCHEMA, version: 3, data: clone(state) });
+        if (result?.confirmed !== true) throw new Error("Cloud adapter chưa xác nhận bản lưu");
       }
-    } catch {
-      state.cloud = { status: "local", label: "Cloud chưa kết nối, vẫn lưu local", updatedAt: new Date().toISOString() };
+      state.cloud = confirmedCloud;
       saveLocal();
+      scheduleRender();
+      await refreshLeaderboard();
+      return true;
+    } catch (error) {
+      setLocalConnection("cloud", `Chỉ lưu trên thiết bị · ${cleanText(error?.message || "cloud chưa xác nhận", 90)}`, "error");
+      scheduleRender();
     }
     return false;
   }
 
   async function syncRealtime() {
-    if (!settings.socketUrl) return false;
+    const adapter = settings.realtimeAdapter;
+    if (!adapter || typeof adapter.connect !== "function") {
+      setLocalConnection("realtime", "Chưa kết nối realtime · party local", "disconnected");
+      scheduleRender();
+      return false;
+    }
+    state.realtime = connectionState("realtime", "connecting", "Đang xác nhận realtime adapter...");
+    scheduleRender();
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 1200);
-      const response = await fetch(String(settings.socketUrl).replace(/\/$/, ""), { signal: controller.signal });
-      clearTimeout(timer);
-      if (response.ok) {
-        state.realtime = { status: "online", label: "Realtime sẵn sàng", updatedAt: new Date().toISOString() };
-        saveLocal();
-        scheduleRender();
-        return true;
-      }
-    } catch {
-      state.realtime = { status: "local", label: "Realtime fallback local", updatedAt: new Date().toISOString() };
-      saveLocal();
+      const result = await adapter.connect({ channel: "games", schema: SCHEMA });
+      if (!isConfirmed(result)) throw new Error("Realtime adapter chưa xác nhận phiên");
+      state.realtime = { status: "connected", label: `Đã kết nối ${cleanText(result.provider || "realtime", 60)}`, provider: cleanText(result.provider || "realtime", 60), confirmed: true, updatedAt: new Date().toISOString() };
+      scheduleRender();
+      return true;
+    } catch (error) {
+      setLocalConnection("realtime", `Chưa kết nối realtime · ${cleanText(error?.message || "không có xác nhận", 90)}`, "error");
+      scheduleRender();
     }
     return false;
+  }
+
+  async function refreshLeaderboard() {
+    const adapter = settings.cloudAdapter;
+    if (state.cloud.status !== "connected" || typeof adapter?.leaderboard !== "function") return false;
+    try {
+      const result = await adapter.leaderboard({ season: state.season.id || "local-season", limit: 50 });
+      if (result?.confirmed !== true || !Array.isArray(result.entries)) throw new Error("Bảng xếp hạng chưa được xác nhận");
+      state.leaderboard = result.entries.slice(0, 50).map((entry) => ({ name: cleanText(entry.name, 80), level: safeNumber(entry.level, 1, 9999, 1), xp: safeNumber(entry.xp ?? entry.score, 0), game: cleanText(entry.game || entry.gameId, 80), scope: "provider" }));
+      state.leaderboardMeta = { source: "provider", label: cleanText(result.label || "Bảng xếp hạng đã xác nhận", 100), confirmed: true, updatedAt: new Date().toISOString() };
+      scheduleRender();
+      return true;
+    } catch (error) {
+      state.leaderboardMeta = { source: "local-device", label: `Xếp hạng local · ${cleanText(error?.message || "provider lỗi", 80)}`, confirmed: true, updatedAt: new Date().toISOString() };
+      updateLocalLeaderboard();
+      scheduleRender();
+      return false;
+    }
+  }
+
+  function updateLocalLeaderboard() {
+    if (state.leaderboardMeta.source !== "local-device") return;
+    state.leaderboard = [{
+      name: cleanText(state.player.name || "Người chơi local", 80),
+      level: levelFromXp(state.player.xp),
+      xp: safeNumber(state.player.xp, 0),
+      game: cleanText(state.player.lastGame || "Game HH", 80),
+      scope: "device"
+    }];
+  }
+
+  function createLocalParty() {
+    const code = `LOCAL-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    state.party = {
+      mode: "local",
+      status: "waiting",
+      roomCode: code,
+      role: "host",
+      members: [{ name: cleanText(state.player.name, 80), role: "host", local: true }],
+      spectators: [],
+      updatedAt: new Date().toISOString()
+    };
+    saveLocal();
+    scheduleRender();
+    showToast("Đã tạo party local trên thiết bị này.", "success");
+  }
+
+  async function createConnectedParty() {
+    const adapter = settings.realtimeAdapter;
+    if (state.realtime.status !== "connected" || state.realtime.confirmed !== true || typeof adapter?.createParty !== "function") {
+      showToast("Chưa có realtime adapter được xác nhận. Bạn vẫn có thể tạo party local.", "warn");
+      return false;
+    }
+    try {
+      const result = await adapter.createParty({ gameId: "astra-hh", player: { name: state.player.name } });
+      if (result?.confirmed !== true || !result.roomCode) throw new Error("Máy chủ chưa xác nhận phòng");
+      state.party = { mode: "connected", status: cleanText(result.status || "waiting", 20), roomCode: cleanText(result.roomCode, 20), role: "host", members: Array.isArray(result.members) ? result.members.slice(0, 10) : [], spectators: [], updatedAt: new Date().toISOString() };
+      scheduleRender();
+      showToast(`Đã tạo phòng ${state.party.roomCode}.`, "success");
+      return true;
+    } catch (error) {
+      showToast(cleanText(error?.message || "Không tạo được party.", 100), "error");
+      return false;
+    }
+  }
+
+  async function joinConnectedParty(roomCode, spectator = false) {
+    const adapter = settings.realtimeAdapter;
+    const method = spectator ? "spectate" : "joinParty";
+    const code = cleanText(roomCode, 20).toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+    if (!code) {
+      showToast("Nhập mã phòng hợp lệ.", "warn");
+      return false;
+    }
+    if (state.realtime.status !== "connected" || state.realtime.confirmed !== true || typeof adapter?.[method] !== "function") {
+      showToast("Chế độ này cần realtime adapter đã xác nhận.", "warn");
+      return false;
+    }
+    try {
+      const result = await adapter[method]({ roomCode: code, player: { name: state.player.name } });
+      if (result?.confirmed !== true || cleanText(result.roomCode, 20) !== code) throw new Error("Máy chủ chưa xác nhận vào phòng");
+      if (spectator) state.spectator = { mode: "connected", status: "watching", roomCode: code, gameId: cleanId(result.gameId, "astra-hh"), updatedAt: new Date().toISOString() };
+      else state.party = { mode: "connected", status: cleanText(result.status || "waiting", 20), roomCode: code, role: "player", members: Array.isArray(result.members) ? result.members.slice(0, 10) : [], spectators: [], updatedAt: new Date().toISOString() };
+      scheduleRender();
+      showToast(spectator ? `Đang xem phòng ${code}.` : `Đã vào phòng ${code}.`, "success");
+      return true;
+    } catch (error) {
+      showToast(cleanText(error?.message || "Không thể vào phòng.", 100), "error");
+      return false;
+    }
+  }
+
+  async function leaveParty() {
+    if (state.party.mode === "connected" && typeof settings.realtimeAdapter?.leaveParty === "function") {
+      try { await settings.realtimeAdapter.leaveParty({ roomCode: state.party.roomCode }); } catch { /* local UI can still leave */ }
+    }
+    state.party = defaultState().party;
+    state.spectator = defaultState().spectator;
+    saveLocal();
+    scheduleRender();
   }
 
   function unlockBadges() {
@@ -456,7 +634,7 @@
     const before = mission.progress >= mission.target;
     mission.progress = Math.min(mission.target, Math.max(0, Number(mission.progress || 0) + amount));
     if (!before && mission.progress >= mission.target) {
-      rewardPlayer({ xp: mission.xp, coins: mission.coins, source: `Nhiệm vụ ${mission.title}` });
+      rewardPlayer({ xp: mission.xp, coins: mission.coins, reason: `Hoàn thành nhiệm vụ ${cleanText(mission.title, 80)}.` });
       showToast(`Hoàn thành: ${mission.title}`, "success");
       return true;
     }
@@ -464,24 +642,34 @@
   }
 
   function rewardPlayer(payload = {}) {
-    const xp = Math.max(0, Number(payload.xp || 0));
-    const coins = Math.max(0, Number(payload.coins || 0));
+    const xp = safeNumber(payload.xp, 0, 100000, 0);
+    const coins = safeNumber(payload.coins, 0, 100000, 0);
     if (!xp && !coins) return;
     state.player.xp += xp;
     state.player.coins += coins;
     if (payload.streak) state.player.streak += payload.streak;
     if (payload.reason) addActivity(payload.reason);
     if (payload.gameId) {
-      const game = state.games.find((item) => item.id === payload.gameId) || state.games[0];
+      const safeGameId = cleanId(payload.gameId, "astra-hh");
+      const game = state.games.find((item) => item.id === safeGameId) || {
+        id: safeGameId,
+        title: cleanText(payload.gameTitle || safeGameId, 80),
+        route: `/entertainment/arcade?game=${encodeURIComponent(safeGameId)}`
+      };
       state.player.lastGame = game.title;
       state.player.lastRoute = game.route;
-      if (!state.playedGames.includes(game.id)) state.playedGames.push(game.id);
-      state.history.unshift({ id: game.id, title: game.title, playedAt: new Date().toISOString(), duration: 12 });
+      if (!state.playedGames.includes(game.id)) {
+        state.playedGames.push(game.id);
+        completeMission("weekly-three-games", 1);
+      }
+      state.history.unshift({ id: game.id, title: game.title, playedAt: new Date().toISOString(), duration: safeNumber(payload.duration, 0, 1440, 0), score: safeNumber(payload.score, 0) });
       state.history = state.history.slice(0, 8);
       addActivity(`Nhận ${xp} XP từ ${game.title}.`);
+      progressSeason(Math.max(1, Math.floor(xp / 5)));
     }
     if (payload.gameId === "astra-hh") completeMission("daily-play-astra", 1);
     completeMission("weekly-xp", xp);
+    updateLocalLeaderboard();
     unlockBadges();
     saveLocal();
     syncCloud("save");
@@ -491,16 +679,12 @@
 
   function openGame(gameId) {
     const game = state.games.find((item) => item.id === gameId) || state.games[0];
-    rewardPlayer({
-      gameId: game.id,
-      xp: Math.max(12, game.reward.xp / 3),
-      coins: Math.max(6, Math.round(game.reward.coins / 3)),
-      reason: `Mở ${game.title}.`
-    });
     state.player.lastGame = game.title;
     state.player.lastRoute = game.route;
-    completeMission("daily-login", 1);
-    if (game.id === "astra-hh") completeMission("daily-play-astra", 1);
+    state.history.unshift({ id: game.id, title: game.title, playedAt: new Date().toISOString(), duration: 0, score: 0, kind: "launch" });
+    state.history = state.history.slice(0, 8);
+    addActivity(`Mở ${game.title}. XP chỉ được cộng sau khi game gửi kết quả.`);
+    saveLocal();
     navigate(game.route);
   }
 
@@ -591,25 +775,28 @@
   }
 
   function claimDailyReward() {
-    const key = `hh.game.center.daily.${todayKey()}`;
-    if (localStorage.getItem(key)) {
+    if (state.dailyReward.lastClaimedDay === todayKey()) {
       showToast("Bạn đã nhận daily reward hôm nay.", "warn");
       return;
     }
-    localStorage.setItem(key, "1");
+    state.dailyReward.lastClaimedDay = todayKey();
     state.chest.available = true;
     rewardPlayer({ xp: 60, coins: 50, streak: 1, reason: "Nhận daily reward." });
     showToast("Nhận daily reward thành công", "success");
   }
 
   function progressSeason(amount = 1) {
-    state.season.progress += amount;
+    state.season.progress += safeNumber(amount, 0, 100, 0);
     while (state.season.progress >= 100 && state.season.level < 5) {
       state.season.progress -= 100;
       state.season.level += 1;
       const claimId = `season-${state.season.level}`;
-      if (!state.season.freeClaimed.includes(claimId)) state.season.freeClaimed.push(claimId);
-      rewardPlayer({ xp: 90, coins: 35, reason: `Mở cấp Season Pass free ${state.season.level}.` });
+      if (!state.season.freeClaimed.includes(claimId)) {
+        state.season.freeClaimed.push(claimId);
+        state.player.xp += 90;
+        state.player.coins += 35;
+        addActivity(`Tự động nhận thưởng Season Free cấp ${state.season.level}.`);
+      }
     }
   }
 
@@ -645,7 +832,7 @@
         ${renderProgressBar(percent(mission.progress, mission.target))}
         <div class="gc-card-foot">
           <span class="gc-muted">+${mission.coins} coin</span>
-          <button class="gc-btn" type="button" data-gc-action="claim-mission" data-id="${escapeHtml(mission.id)}">Nhận</button>
+          <button class="gc-btn" type="button" disabled>${mission.progress >= mission.target ? "Đã tự động nhận" : "Tự cập nhật khi chơi"}</button>
         </div>
       </div>
     `).join("");
@@ -662,13 +849,13 @@
           <span class="gc-pill">${escapeHtml(event.status)}</span>
         </div>
         <span class="gc-muted">${escapeHtml(event.description)}</span>
-        <button class="gc-btn" type="button" data-gc-action="reward-event" data-id="${escapeHtml(event.id)}">Nhận thưởng sự kiện</button>
+        <button class="gc-btn" type="button" data-gc-action="reward-event" data-id="${escapeHtml(event.id)}" ${event.completed === true && event.claimed !== true ? "" : "disabled"}>${event.claimed === true ? "Đã nhận" : event.completed === true ? "Nhận kết quả đã xác nhận" : "Cần kết quả trận"}</button>
       </div>
     `).join("");
   }
 
   function renderLeaderboard() {
-    return state.leaderboard
+    const entries = state.leaderboard
       .slice()
       .sort((a, b) => b.xp - a.xp)
       .slice(0, 6)
@@ -679,13 +866,14 @@
             <strong>${escapeHtml(item.name)}</strong>
             <div class="gc-muted">Lv.${item.level} · ${escapeHtml(item.game)}</div>
           </div>
-          <strong>${Number(item.xp).toLocaleString("vi-VN")}</strong>
+          <strong>${safeNumber(item.xp, 0).toLocaleString("vi-VN")}</strong>
         </div>
       `).join("");
+    return entries || `<div class="gc-empty">Chưa có điểm thật để xếp hạng.</div>`;
   }
 
   function renderFriends() {
-    return state.friends.map((friend) => `
+    const items = state.friends.map((friend) => `
       <div class="gc-friend">
         <div>
           <strong>${escapeHtml(friend.name)}</strong>
@@ -694,6 +882,7 @@
         <span class="gc-pill" style="color:${friend.online ? "var(--gc-green)" : "var(--gc-muted)"}">${friend.online ? "Online" : "Offline"}</span>
       </div>
     `).join("");
+    return items || `<div class="gc-empty">Chưa có danh sách bạn bè từ nhà cung cấp đã xác nhận.</div>`;
   }
 
   function renderBadgeList() {
@@ -758,12 +947,13 @@
   }
 
   function renderHistory() {
-    return state.history.map((entry) => `
+    const entries = state.history.map((entry) => `
       <div class="gc-feed-item">
         <strong>${escapeHtml(entry.title)}</strong>
-        <span class="gc-muted">${new Date(entry.playedAt).toLocaleString("vi-VN")} · ${entry.duration} phút</span>
+        <span class="gc-muted">${new Date(entry.playedAt).toLocaleString("vi-VN")} · ${entry.kind === "launch" ? "Đã mở game, chưa có kết quả" : `${safeNumber(entry.score, 0).toLocaleString("vi-VN")} điểm${entry.duration ? ` · ${safeNumber(entry.duration, 0)} phút` : ""}`}</span>
       </div>
     `).join("");
+    return entries || `<div class="gc-empty">Chưa có lượt chơi hoàn tất trên thiết bị này.</div>`;
   }
 
   function renderSeason() {
@@ -782,15 +972,14 @@
         ${renderProgressBar(state.season.progress)}
         <div class="gc-card-foot">
           <span class="gc-muted">Tiến độ season ${state.season.progress}%</span>
-          <button class="gc-btn gc-btn-primary" type="button" data-gc-action="claim-season">Nhận cấp</button>
+          <button class="gc-btn gc-btn-primary" type="button" disabled>Thưởng tự động theo XP thật</button>
         </div>
       </div>
     `;
   }
 
   function renderDailyReward() {
-    const key = `hh.game.center.daily.${todayKey()}`;
-    const claimed = Boolean(localStorage.getItem(key));
+    const claimed = state.dailyReward.lastClaimedDay === todayKey();
     return `
       <div class="gc-feed-item">
         <div class="gc-mission-top">
@@ -803,6 +992,42 @@
         <div class="gc-card-foot">
           <span class="gc-muted">${claimed ? "Hẹn mai quay lại" : "Nhận coin, XP và mở rương"}</span>
           <button class="gc-btn gc-btn-primary" type="button" data-gc-action="daily-reward">Nhận ngay</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderParty() {
+    const party = state.party;
+    const spectator = state.spectator;
+    const connected = state.realtime.status === "connected" && state.realtime.confirmed === true;
+    return `
+      <div class="gc-party" aria-live="polite">
+        <div class="gc-feed-item">
+          <div class="gc-mission-top">
+            <div>
+              <strong>${party.status === "solo" ? "Chưa vào party" : `Party ${escapeHtml(party.roomCode)}`}</strong>
+              <div class="gc-muted">${party.mode === "connected" ? "Phòng realtime đã được máy chủ xác nhận" : "Party local · chỉ tồn tại trên thiết bị này"}</div>
+            </div>
+            <span class="gc-pill">${escapeHtml(party.status)}</span>
+          </div>
+          <div class="gc-actions">
+            <button class="gc-btn" type="button" data-gc-action="create-party-local">Tạo party local</button>
+            <button class="gc-btn" type="button" data-gc-action="create-party-online" ${connected ? "" : "disabled"}>Tạo phòng realtime</button>
+            ${party.status !== "solo" ? `<button class="gc-btn" type="button" data-gc-action="leave-party">Rời party</button>` : ""}
+          </div>
+        </div>
+        <form class="gc-party-form" data-gc-party-form>
+          <label for="gc-room-code">Mã phòng đã được máy chủ cấp</label>
+          <div class="gc-party-fields">
+            <input id="gc-room-code" name="roomCode" maxlength="20" autocomplete="off" placeholder="VD: HH13AB" ${connected ? "" : "disabled"}>
+            <button class="gc-btn" type="submit" name="intent" value="join" ${connected ? "" : "disabled"}>Vào party</button>
+            <button class="gc-btn" type="submit" name="intent" value="spectate" ${connected ? "" : "disabled"}>Xem với vai trò khán giả</button>
+          </div>
+        </form>
+        <div class="gc-feed-item">
+          <strong>Spectator mode</strong>
+          <span class="gc-muted">${spectator.status === "watching" ? `Đang xem phòng ${escapeHtml(spectator.roomCode)}` : "Replay local nằm trong Arcade; xem phòng trực tiếp cần realtime adapter xác nhận."}</span>
         </div>
       </div>
     `;
@@ -1036,11 +1261,14 @@
             <main class="gc-section gc-glass">
               <div class="gc-section-head">
                 <div>
-                  <span class="gc-kicker">Friends</span>
-                  <h2>Bạn bè online và lịch sử chơi</h2>
+                  <span class="gc-kicker">Party & spectator</span>
+                  <h2>Phòng chơi có trạng thái xác minh</h2>
                 </div>
                 <button class="gc-btn" type="button" data-gc-action="tab" data-tab="overview">Quay lại</button>
               </div>
+              ${renderParty()}
+              <div style="height:14px"></div>
+              <div class="gc-section-head"><h2>Bạn bè</h2><span class="gc-pill">${state.realtime.status === "connected" ? "Provider" : "Local"}</span></div>
               <div class="gc-friends">${renderFriends()}</div>
             </main>
             <aside class="gc-side">
@@ -1049,7 +1277,7 @@
                 <div class="gc-feed">${renderHistory()}</div>
               </section>
               <section class="gc-section gc-glass">
-                <div class="gc-section-head"><h2>Bảng xếp hạng</h2><span class="gc-pill">Top</span></div>
+                <div class="gc-section-head"><h2>Bảng xếp hạng</h2><span class="gc-pill">${escapeHtml(state.leaderboardMeta.label)}</span></div>
                 <div class="gc-leaderboard">${renderLeaderboard()}</div>
               </section>
             </aside>
@@ -1227,7 +1455,7 @@
             <button class="gc-tab ${state.activeTab === "inventory" ? "is-active" : ""}" type="button" data-gc-action="tab" data-tab="inventory">Inventory</button>
             <button class="gc-tab ${state.activeTab === "shop" ? "is-active" : ""}" type="button" data-gc-action="tab" data-tab="shop">Shop</button>
             <button class="gc-tab ${state.activeTab === "pass" ? "is-active" : ""}" type="button" data-gc-action="tab" data-tab="pass">Season Pass</button>
-            <button class="gc-tab ${state.activeTab === "social" ? "is-active" : ""}" type="button" data-gc-action="tab" data-tab="social">Bạn bè</button>
+            <button class="gc-tab ${state.activeTab === "social" ? "is-active" : ""}" type="button" data-gc-action="tab" data-tab="social">Party & xem</button>
             <button class="gc-tab ${state.activeTab === "history" ? "is-active" : ""}" type="button" data-gc-action="tab" data-tab="history">Lịch sử</button>
             <div class="gc-shell-right">
               <span class="gc-pill gc-status-${cloud.status}">Cloud: ${escapeHtml(cloud.label)}</span>
@@ -1246,6 +1474,15 @@
     rootEl.querySelectorAll("[data-gc-action]").forEach((button) => {
       button.addEventListener("click", onAction);
     });
+    rootEl.querySelector("[data-gc-party-form]")?.addEventListener("submit", onPartySubmit);
+  }
+
+  function onPartySubmit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const submitter = event.submitter;
+    const code = form.elements.roomCode?.value || "";
+    joinConnectedParty(code, submitter?.value === "spectate");
   }
 
   function onAction(event) {
@@ -1277,37 +1514,23 @@
       return;
     }
     if (action === "sync") {
-      state.cloud = { status: "syncing", label: "Đang đồng bộ...", updatedAt: new Date().toISOString() };
-      state.realtime = { status: "syncing", label: "Đang ping realtime...", updatedAt: new Date().toISOString() };
-      saveLocal();
-      scheduleRender();
       syncCloud("save");
       syncRealtime();
-      showToast("Đang đồng bộ cloud/realtime...", "info");
+      showToast("Đang yêu cầu adapter xác nhận kết nối...", "info");
       return;
     }
     if (action === "claim-mission") {
-      const mission = missionById(id);
-      if (!mission) return;
-      if (mission.progress < mission.target) {
-        const delta = mission.target === 1 ? 1 : Math.max(1, Math.round(mission.target / 2));
-        if (completeMission(id, delta)) progressSeason(20);
-        else {
-          mission.progress = Math.min(mission.target, mission.progress + delta);
-          saveLocal();
-          scheduleRender();
-          showToast(`Đã cộng tiến độ cho ${mission.title}`, "info");
-        }
-      } else {
-        showToast("Nhiệm vụ này đã hoàn thành.", "warn");
-      }
+      showToast("Tiến độ nhiệm vụ chỉ tăng từ kết quả game thật.", "info");
       return;
     }
     if (action === "reward-event") {
       const eventItem = state.events.find((entry) => entry.id === id);
-      if (!eventItem) return;
+      if (!eventItem || eventItem.completed !== true || eventItem.claimed === true) {
+        showToast("Cần kết quả sự kiện đã được game hoặc adapter xác nhận.", "warn");
+        return;
+      }
+      eventItem.claimed = true;
       rewardPlayer({ xp: eventItem.reward.xp, coins: eventItem.reward.coins, reason: `Nhận thưởng từ sự kiện ${eventItem.title}.` });
-      progressSeason(15);
       showToast(`Đã nhận thưởng sự kiện: ${eventItem.title}`, "success");
       return;
     }
@@ -1326,10 +1549,19 @@
       return;
     }
     if (action === "claim-season") {
-      progressSeason(25);
-      saveLocal();
-      scheduleRender();
-      showToast("Season Pass đã tiến thêm", "success");
+      showToast("Season chỉ tăng theo XP từ lượt chơi đã hoàn tất.", "info");
+      return;
+    }
+    if (action === "create-party-local") {
+      createLocalParty();
+      return;
+    }
+    if (action === "create-party-online") {
+      createConnectedParty();
+      return;
+    }
+    if (action === "leave-party") {
+      leaveParty();
     }
   }
 
@@ -1347,25 +1579,45 @@
     if (state.activeTab == null) state.activeTab = DEFAULT_TAB;
     state.player.lastRoute ||= "/entertainment/astra-hh";
     state.player.lastGame ||= "HH Astra Universe";
+    if (state.dailyMissionDay !== todayKey()) {
+      state.dailyMissionDay = todayKey();
+      state.missions.daily = DAILY_MISSIONS.map((item) => ({ ...item, progress: 0 }));
+    }
+    if (state.weeklyMissionWeek !== weekKey()) {
+      state.weeklyMissionWeek = weekKey();
+      state.missions.weekly = WEEKLY_MISSIONS.map((item) => ({ ...item, progress: 0 }));
+    }
+    if (state.season.id !== seasonKey() && state.season.source === "local-device") state.season = defaultState().season;
     state.lastVisit = state.lastVisit || todayKey();
     if (state.lastVisit !== todayKey()) {
       state.lastVisit = todayKey();
       state.player.streak += 1;
       completeMission("daily-login", 1);
     }
+    completeMission("daily-login", 1);
     rewardListener = (event) => {
       const payload = event?.detail || {};
-      const game = state.games.find((item) => item.id === String(payload.gameId || payload.game || "astra-hh")) || state.games[0];
+      const rawGameId = cleanId(payload.gameId || payload.game, "astra-hh");
+      const game = state.games.find((item) => item.id === rawGameId);
       rewardPlayer({
-        gameId: game.id,
-        xp: Number(payload.xp || game.reward.xp),
-        coins: Number(payload.coins || game.reward.coins),
-        reason: payload.reason ? String(payload.reason) : `Nhận thưởng từ ${game.title}.`
+        gameId: rawGameId,
+        gameTitle: game?.title || cleanText(payload.gameTitle || rawGameId, 80),
+        xp: safeNumber(payload.xp, 0, 100000, 0),
+        coins: safeNumber(payload.coins, 0, 100000, 0),
+        score: safeNumber(payload.score, 0),
+        duration: safeNumber(payload.duration, 0, 1440, 0),
+        reason: payload.reason ? cleanText(payload.reason, 160) : `Nhận kết quả từ ${game?.title || rawGameId}.`
       });
     };
     window.addEventListener("hh:game-reward", rewardListener);
-    state.cloud = { ...state.cloud, label: state.cloud.label || "Đang dùng lưu local" };
-    state.realtime = { ...state.realtime, label: state.realtime.label || "Realtime fallback local" };
+    sessionListener = (event) => {
+      const replay = event?.detail;
+      if (!replay || replay.schema !== "hh.game.replay.v1") return;
+      state.replays.unshift({ schema: "hh.game.replay.v1", gameId: cleanId(replay.gameId), score: safeNumber(replay.score, 0), duration: safeNumber(replay.duration, 0, 1440), createdAt: cleanText(replay.createdAt, 40) });
+      state.replays = state.replays.slice(0, 8);
+      saveLocal();
+    };
+    window.addEventListener("hh:game-session", sessionListener);
     saveLocal();
     hostEl.innerHTML = "";
     rootEl = document.createElement("div");
@@ -1380,7 +1632,9 @@
 
   function unmount() {
     if (rewardListener) window.removeEventListener("hh:game-reward", rewardListener);
+    if (sessionListener) window.removeEventListener("hh:game-session", sessionListener);
     rewardListener = null;
+    sessionListener = null;
     if (hostEl) hostEl.replaceChildren();
     hostEl = null;
     rootEl = null;
@@ -1391,6 +1645,8 @@
     return {
       mounted: Boolean(rootEl),
       tab: state?.activeTab || DEFAULT_TAB,
+      schema: SCHEMA,
+      version: INTEGRATION_VERSION,
       storageKey: STORAGE_KEY,
       player: state?.player || null,
       missions: state?.missions || null,
@@ -1398,6 +1654,9 @@
       equipment: state?.equipment || {},
       cloud: state?.cloud || null,
       realtime: state?.realtime || null,
+      leaderboard: { meta: state?.leaderboardMeta || null, entries: state?.leaderboard || [] },
+      party: state?.party || null,
+      spectator: state?.spectator || null,
       history: state?.history || [],
       games: state?.games?.map((game) => ({ id: game.id, route: game.route })) || []
     };

@@ -12,39 +12,39 @@
     },
     home: {
       styles: [
-        "dashboard-aurora.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=2",
+        "dashboard-aurora.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=3",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=3", "command-center-pro.js?v=5", "home-daily-command.js?v=2",
+        "dashboard-aurora.js?v=3", "command-center-pro.js?v=5", "home-daily-command.js?v=3",
         "home-command-search.js?v=2", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
       ]
     },
     platform: {
       styles: [
         "professional-tools.css?v=3", "feature-lab.css?v=3", "extension-suite.css?v=1",
-        "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1", "platform-p0.css?v=1"
+        "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1", "platform-p0.css?v=1", "system-platform.css?v=1"
       ],
       scripts: [
         "extension-suite.js?v=2", "professional-tools.js?v=4", "feature-lab.js?v=4",
-        "feature-engines.js?v=2", "ai-center-advanced.js?v=1", "platform-p0.js?v=1"
+        "feature-engines.js?v=2", "ai-center-advanced.js?v=1", "platform-p0.js?v=1", "system-platform.js?v=1"
       ]
     },
     dev: {
       styles: [
-        "professional-tools.css?v=3", "dev-pro-suite.css?v=1", "dev-smart-recipe.css?v=1", "dev-api-studio.css?v=1",
+        "professional-tools.css?v=3", "dev-pro-suite.css?v=1", "dev-delivery-workflow.css?v=1", "dev-smart-recipe.css?v=1", "dev-api-studio.css?v=1",
         "dev-data-security.css?v=1", "dev-regex-database.css?v=1", "dev-code-git.css?v=1",
         "dev-diagnostics-ai.css?v=1"
       ],
       scripts: [
         "professional-tools.js?v=4", "dev-smart-recipe.js?v=1", "dev-api-studio.js?v=1",
         "dev-data-security.js?v=1", "dev-regex-database.js?v=1", "dev-code-git.js?v=1",
-        "dev-diagnostics-ai.js?v=1", "dev-pro-suite.js?v=1"
+        "dev-diagnostics-ai.js?v=1", "dev-delivery-workflow.js?v=1", "dev-pro-suite.js?v=2"
       ]
     },
     media: {
       styles: [
-        "media-design-pro.css?v=1", "media-design-page.css?v=8", "universal-media-project.css?v=1",
+        "media-design-pro.css?v=1", "media-design-page.css?v=9", "media-production-workflow.css?v=1", "universal-media-project.css?v=1",
         "media-design-advanced.css?v=3", "media-design-publish.css?v=1", "video-editor-studio.css?v=2",
         "video-editor-resolve.css?v=6", "photo-editor-pro.css?v=4", "editor-workflow-pro.css?v=1"
       ],
@@ -52,23 +52,23 @@
         "media-design-studio.js?v=1", "media-design-pro.js?v=2", "media-design-advanced.js?v=3",
         "media-design-publish.js?v=1", "video-editor-studio.js?v=2", "video-editor-resolve.js?v=7",
         "photo-editor-pro.js?v=3", "editor-workflow-pro.js?v=1", "universal-media-project.js?v=1",
-        "media-design-page.js?v=8"
+        "media-production-workflow.js?v=1", "media-design-page.js?v=9"
       ]
     },
     graphic: {
-      styles: ["graphic-design-studio.css?v=5"],
+      styles: ["graphic-design-studio.css?v=6"],
       scripts: [
         "graphic-design-animation.js?v=1", "graphic-design-3d.js?v=2", "graphic-design-prototype.js?v=1",
         "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1",
         "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=2", "graphic-design-state-machine.js?v=2",
         "graphic-design-adaptive.js?v=2", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=2",
-        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-studio.js?v=5"
+        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-workflow.js?v=1", "graphic-design-studio.js?v=6"
       ]
     },
     creative: {
       styles: ["creative-suite.css?v=5", "creative-os.css?v=1", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
       scripts: [
-        "creative-os.js?v=1", "creative-suite.js?v=5", "ai-center-advanced.js?v=1"
+        "creative-os.js?v=2", "creative-suite.js?v=5", "ai-center-advanced.js?v=1"
       ]
     },
     music: {
@@ -77,28 +77,28 @@
         "music-audio-labs.css?v=1", "music-mix-master.css?v=1", "music-visual-studio.css?v=1",
         "music-publishing-rights.css?v=1", "music-intelligence-engine.css?v=1", "music-generative-arrangement.css?v=1",
         "music-adaptive-library.css?v=1", "music-mix-performance.css?v=1", "music-project-governance.css?v=1",
-        "music-ai-studio.css?v=5", "music-ai-apps.css?v=2", "youtube-publisher.css?v=2"
+        "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "youtube-publisher.css?v=2"
       ],
       scripts: [
         "youtube-publisher.js?v=2", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
         "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=1",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",
-        "music-production-suite.js?v=1", "music-ai-apps.js?v=2", "music-ai-studio.js?v=6"
+        "music-production-suite.js?v=1", "music-ai-apps.js?v=2", "music-ai-studio.js?v=7"
       ]
     },
     communication: {
       styles: [
-        "communication-overview.css?v=1", "communication-suite.css?v=1", "communication-workspace-fix.css?v=1",
-        "communication-command-center.css?v=1", "communication-messenger-next.css?v=1",
+        "communication-overview.css?v=1", "communication-suite.css?v=2", "communication-workspace-fix.css?v=1",
+        "communication-command-center.css?v=1", "communication-messenger-next.css?v=2",
         "communication-channels-forum.css?v=1", "communication-live-room.css?v=1",
-        "communication-canvas-automation.css?v=1", "communication-intelligence.css?v=1",
+        "communication-canvas-automation.css?v=1", "communication-intelligence.css?v=2",
         "community-social-pro.css?v=3", "community-platform-v2.css?v=10", "community-messenger-pro.css?v=1"
       ],
       scripts: [
-        "communication-overview.js?v=2", "communication-command-center.js?v=1", "communication-messenger-next.js?v=1",
-        "communication-channels-forum.js?v=1", "communication-live-room.js?v=1",
-        "communication-canvas-automation.js?v=1", "communication-intelligence.js?v=1", "communication-suite.js?v=1",
+        "communication-overview.js?v=2", "communication-command-center.js?v=2", "communication-messenger-next.js?v=2",
+        "communication-channels-forum.js?v=2", "communication-live-room.js?v=1",
+        "communication-canvas-automation.js?v=1", "communication-intelligence.js?v=2", "communication-suite.js?v=2",
         "community-social-pro.js?v=4", "community-platform-v2.js?v=12", "community-calls.js?v=1"
       ]
     },
@@ -107,34 +107,34 @@
       scripts: ["search-watch-center.js?v=7"]
     },
     work: {
-      styles: ["work-center.css?v=1", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
-      scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=1"]
+      styles: ["work-center.css?v=2", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
+      scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=2"]
     },
     game: {
-      styles: ["space-explorer.css?v=3", "game-center.css?v=2", "astra-universe-expansion.css?v=3", "game-arcade.css?v=2"],
-      scripts: ["space-explorer.js?v=3", "game-center.js?v=2", "astra-universe-expansion.js?v=3", "game-arcade.js?v=2"]
+      styles: ["space-explorer.css?v=3", "game-center.css?v=3", "astra-universe-expansion.css?v=3", "game-arcade.css?v=3"],
+      scripts: ["space-explorer.js?v=3", "game-center.js?v=3", "astra-universe-expansion.js?v=3", "game-arcade.js?v=3"]
     },
     learning: {
       styles: [
-        "learning-suite.css?v=2", "learning-home.css?v=2", "learning-paths.css?v=2", "learning-review.css?v=2",
-        "learning-lesson-player.css?v=2", "learning-coach-labs.css?v=2", "learning-classroom.css?v=2"
+        "learning-suite.css?v=3", "learning-home.css?v=2", "learning-paths.css?v=2", "learning-review.css?v=2",
+        "learning-lesson-player.css?v=2", "learning-coach-labs.css?v=3", "learning-classroom.css?v=3"
       ],
       scripts: [
-        "learning-platform-core.js?v=2", "learning-home.js?v=2", "learning-paths.js?v=2", "learning-review.js?v=2",
-        "learning-lesson-player.js?v=2", "learning-coach-labs.js?v=2", "learning-classroom.js?v=2", "learning-suite.js?v=2"
+        "learning-platform-core.js?v=3", "learning-home.js?v=2", "learning-paths.js?v=2", "learning-review.js?v=2",
+        "learning-lesson-player.js?v=2", "learning-coach-labs.js?v=3", "learning-classroom.js?v=3", "learning-suite.js?v=3"
       ]
     },
     english: {
-      styles: ["english-learning.css?v=11", "english-voice-coach.css?v=1"],
-      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-learning.js?v=13"]
+      styles: ["english-learning.css?v=11", "english-voice-coach.css?v=2"],
+      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-learning.js?v=14"]
     },
     analytics: {
-      styles: ["insights-pro.css?v=1", "community-admin.css?v=5"],
-      scripts: ["insights-pro.js?v=4", "community-admin.js?v=7"]
+      styles: ["insights-pro.css?v=2", "community-admin.css?v=5"],
+      scripts: ["insights-pro.js?v=5", "community-admin.js?v=7"]
     },
     support: {
-      styles: ["support-platform.css?v=8"],
-      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=11"]
+      styles: ["support-platform.css?v=9"],
+      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=12"]
     }
   });
 

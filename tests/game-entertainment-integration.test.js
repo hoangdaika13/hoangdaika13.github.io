@@ -10,12 +10,12 @@ test("Game Center, ASTRA expansion and Arcade assets load offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
   const assets = [
-    "game-center.css?v=2",
-    "game-center.js?v=2",
+    "game-center.css?v=3",
+    "game-center.js?v=3",
     "astra-universe-expansion.css?v=3",
     "astra-universe-expansion.js?v=3",
-    "game-arcade.css?v=2",
-    "game-arcade.js?v=2"
+    "game-arcade.css?v=3",
+    "game-arcade.js?v=3"
   ];
   assets.forEach((asset) => {
     assert.ok(html.includes(asset), `${asset} must be loaded by index.html`);

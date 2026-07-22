@@ -20,8 +20,8 @@ test("Universal Media Project is reachable from the shell and cached offline", (
     "photo-editor-pro.js?v=3",
     "video-editor-resolve.css?v=6",
     "video-editor-resolve.js?v=7",
-    "media-design-page.css?v=8",
-    "media-design-page.js?v=8"
+    "media-design-page.css?v=9",
+    "media-design-page.js?v=9"
   ]) {
     const pattern = new RegExp(escapeRegExp(asset));
     assert.match(html, pattern);

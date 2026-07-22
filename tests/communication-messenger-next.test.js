@@ -54,6 +54,21 @@ test("local store creates rooms, pages messages and persists versioned data", ()
   assert.equal(JSON.parse(values.get(api.STORAGE_KEY)).version, 1);
 });
 
+test("message delivery and translation stay truthful until an adapter acknowledges them", () => {
+  const { api } = loadModule();
+  const store = api.createStore({ getItem: () => null, setItem() {} });
+  const created = store.addMessage(store.snapshot().activeRoomId, { text: "Xin chào" });
+  assert.equal(created.status, "local");
+  assert.equal(api.normalizeTranslationResult({ text: "Hello" }), null);
+  assert.equal(api.normalizeTranslationResult({ ok: true, connected: false, text: "Hello" }), null);
+  const translated = api.normalizeTranslationResult({ ok: true, connected: true, translatedText: "Hello", provider: "HH", targetLanguage: "en" });
+  assert.equal(translated.translatedText, "Hello");
+  assert.equal(translated.provider, "HH");
+  assert.equal(translated.targetLanguage, "en");
+  assert.match(source, /data-hmn-action="translate"/);
+  assert.match(source, /translateAdapter/);
+});
+
 test("message actions cover reply metadata, edit window, reaction, pin and recall", () => {
   const { api } = loadModule();
   const store = api.createStore({ getItem: () => null, setItem() {} });

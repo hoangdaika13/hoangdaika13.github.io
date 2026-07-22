@@ -8,6 +8,23 @@
   const MAX_HISTORY = 240;
   const LEVELS = Object.freeze(["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
   const MASTERY_STATES = Object.freeze(["new", "familiar", "mastered", "review"]);
+  // Project practice is deliberately small and local-first: every stage creates
+  // evidence the learner can inspect instead of pretending to be a graded task.
+  const PROJECT_STATUSES = Object.freeze(["planned", "active", "completed"]);
+  const PROJECT_STAGE_STATUSES = Object.freeze(["todo", "active", "done"]);
+  const PROJECT_STAGES = Object.freeze([
+    { id: "brief", title: "Define a real brief", prompt: "What useful outcome will this project deliver?" },
+    { id: "research", title: "Research and collect examples", prompt: "Which source or example supports your choice?" },
+    { id: "build", title: "Build a first version", prompt: "What did you make and which skill did you practise?" },
+    { id: "test", title: "Test and get feedback", prompt: "What changed after a test or peer review?" },
+    { id: "reflect", title: "Reflect and share", prompt: "What evidence shows what you can do now?" }
+  ]);
+  const PROJECT_TEMPLATES = Object.freeze({
+    communication: { title: "Real-world conversation kit", goal: "Prepare and practise a useful conversation for a real situation.", skills: ["speaking", "listening"] },
+    technology: { title: "Technical explainer", goal: "Create a short explainer and demo for a technical workflow.", skills: ["reading", "writing", "project"] },
+    design: { title: "Mini design case study", goal: "Turn a design brief into a tested, explainable case study.", skills: ["speaking", "writing", "project"] },
+    academic: { title: "Evidence-led mini presentation", goal: "Build a short presentation from cited sources and clear reasoning.", skills: ["reading", "writing", "project"] }
+  });
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
   const clean = (value, max = 180) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
@@ -64,6 +81,87 @@
 
   const LESSONS = Object.freeze(seedLessons());
 
+  function projectTemplate(trackId = "communication") {
+    const track = TRACKS.find((item) => item.id === trackId) || TRACKS[0];
+    const template = PROJECT_TEMPLATES[track.id] || { title: `${track.title} practice project`, goal: `Create and explain a small ${track.title} outcome.`, skills: track.focus };
+    return { trackId: track.id, title: template.title, goal: template.goal, skills: [...new Set([...(template.skills || []), ...(track.focus || []), "project"])].slice(0, 4) };
+  }
+
+  function createProjectPlan(profile = {}, payload = {}, now = Date.now()) {
+    const trackId = TRACKS.some((track) => track.id === payload.trackId) ? payload.trackId
+      : TRACKS.some((track) => track.id === profile.career) ? profile.career : "communication";
+    const level = LEVELS.includes(payload.level) ? payload.level : LEVELS.includes(profile.level) ? profile.level : "A0";
+    const template = projectTemplate(trackId);
+    const title = clean(payload.title || template.title, 180) || template.title;
+    const goal = clean(payload.goal || template.goal, 600) || template.goal;
+    return {
+      id: uid("project"), trackId, level, title, goal,
+      skills: safeArray(payload.skills, 6).map((skill) => clean(skill, 30)).filter((skill) => SKILLS.some((item) => item.id === skill)).length
+        ? safeArray(payload.skills, 6).map((skill) => clean(skill, 30)).filter((skill) => SKILLS.some((item) => item.id === skill)).slice(0, 4)
+        : template.skills,
+      status: "planned",
+      evidence: [],
+      stages: PROJECT_STAGES.map((stage, index) => ({ id: stage.id, title: stage.title, prompt: stage.prompt, order: index + 1, status: index === 0 ? "active" : "todo", note: "", evidence: "", completedAt: null })),
+      createdAt: new Date(now).toISOString(), updatedAt: new Date(now).toISOString(), source: "local"
+    };
+  }
+
+  function normalizeProject(value, now = Date.now()) {
+    const profile = { career: value?.trackId, level: value?.level };
+    const base = createProjectPlan(profile, { title: value?.title, goal: value?.goal, trackId: value?.trackId, level: value?.level, skills: value?.skills }, now);
+    const stages = safeArray(value?.stages, PROJECT_STAGES.length).map((item, index) => {
+      const template = PROJECT_STAGES[index] || PROJECT_STAGES[0];
+      return {
+        id: clean(item?.id || template.id, 40), title: clean(item?.title || template.title, 180), prompt: clean(item?.prompt || template.prompt, 300), order: clamp(item?.order || index + 1, 1, PROJECT_STAGES.length),
+        status: PROJECT_STAGE_STATUSES.includes(item?.status) ? item.status : Boolean(item?.completed) ? "done" : index === 0 ? "active" : "todo",
+        note: clean(item?.note, 600), evidence: clean(item?.evidence, 600), completedAt: item?.completedAt ? clean(item.completedAt, 40) : null
+      };
+    });
+    const done = stages.filter((stage) => stage.status === "done").length;
+    return {
+      id: clean(value?.id || base.id, 100), trackId: TRACKS.some((track) => track.id === value?.trackId) ? value.trackId : base.trackId,
+      level: LEVELS.includes(value?.level) ? value.level : base.level, title: clean(value?.title || base.title, 180), goal: clean(value?.goal || base.goal, 600),
+      skills: safeArray(value?.skills, 6).map((skill) => clean(skill, 30)).filter((skill) => SKILLS.some((item) => item.id === skill)).slice(0, 4).length
+        ? safeArray(value?.skills, 6).map((skill) => clean(skill, 30)).filter((skill) => SKILLS.some((item) => item.id === skill)).slice(0, 4) : base.skills,
+      status: PROJECT_STATUSES.includes(value?.status) ? value.status : done >= stages.length ? "completed" : done ? "active" : "planned",
+      evidence: safeArray(value?.evidence, 12).map((item) => clean(item, 600)).filter(Boolean), stages: stages.length ? stages : base.stages,
+      createdAt: value?.createdAt ? clean(value.createdAt, 40) : base.createdAt, updatedAt: value?.updatedAt ? clean(value.updatedAt, 40) : base.updatedAt, source: "local"
+    };
+  }
+
+  function projectProgress(project) {
+    const stages = safeArray(project?.stages, PROJECT_STAGES.length);
+    const completed = stages.filter((stage) => stage.status === "done").length;
+    return { completed, total: stages.length, percent: stages.length ? Math.round(completed / stages.length * 100) : 0, next: stages.find((stage) => stage.status !== "done") || null };
+  }
+
+  function updateProjectStage(input, projectId, stageId, patch = {}, now = Date.now()) {
+    const state = normalizeState(input, now);
+    const project = state.projects.find((item) => item.id === clean(projectId, 100));
+    if (!project) throw new Error("Project not found.");
+    const stage = project.stages.find((item) => item.id === clean(stageId, 40));
+    if (!stage) throw new Error("Project stage not found.");
+    const complete = patch.completed === true || patch.status === "done";
+    stage.status = complete ? "done" : patch.status === "active" ? "active" : stage.status;
+    stage.note = clean(patch.note ?? stage.note, 600);
+    stage.evidence = clean(patch.evidence ?? stage.evidence, 600);
+    if (complete) stage.completedAt = new Date(now).toISOString();
+    const next = project.stages.find((item) => item.status !== "done");
+    if (next && !next.status) next.status = "active";
+    if (next) next.status = next.status === "done" ? "done" : "active";
+    project.status = projectProgress(project).percent >= 100 ? "completed" : "active";
+    project.updatedAt = new Date(now).toISOString();
+    return { state: normalizeState(state, now), project: clone(project), progress: projectProgress(project) };
+  }
+
+  function createProject(input, payload = {}, now = Date.now()) {
+    const state = normalizeState(input, now);
+    const project = normalizeProject(createProjectPlan(state.profile, payload, now), now);
+    state.projects.unshift(project);
+    state.projects = state.projects.slice(0, 80);
+    return { state: normalizeState(state, now), project };
+  }
+
   function masterySeed() {
     return Object.fromEntries(SKILLS.map((skill) => [skill.id, {
       skillId: skill.id,
@@ -104,6 +202,7 @@
       certificates: [],
       passport: [],
       notes: [],
+      projects: [],
       settings: { reducedMotion: false, sound: true, beginnerMode: true },
       updatedAt: new Date(now).toISOString()
     };
@@ -184,6 +283,7 @@
       certificates: safeArray(value.certificates, 50).map((item) => ({ id: clean(item.id || uid("certificate"), 100), title: clean(item.title, 160), code: clean(item.code, 40), issuedAt: clean(item.issuedAt, 40), score: clamp(item.score, 0, 100), verified: false })),
       passport: safeArray(value.passport, 200).map((item) => ({ id: clean(item.id || uid("passport"), 100), skillId: clean(item.skillId, 30), title: clean(item.title, 160), evidence: clean(item.evidence, 300), earnedAt: clean(item.earnedAt || new Date(now).toISOString(), 40) })),
       notes: safeArray(value.notes, 100).map((item) => ({ id: clean(item.id || uid("note"), 100), lessonId: clean(item.lessonId, 100), text: clean(item.text, 3000), updatedAt: clean(item.updatedAt || new Date(now).toISOString(), 40) })),
+      projects: safeArray(value.projects, 80).map((item) => normalizeProject(item, now)),
       settings: { reducedMotion: Boolean(value.settings?.reducedMotion), sound: value.settings?.sound !== false, beginnerMode: value.settings?.beginnerMode !== false },
       updatedAt: new Date(now).toISOString()
     };
@@ -251,6 +351,9 @@
     const active = LESSONS.find((lesson) => lesson.id === state.activeLessonId) || path.find((lesson) => state.progress[lesson.id]?.status !== "completed") || path[0];
     const due = state.reviews.filter((review) => Date.parse(review.dueAt) <= now).sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt));
     const upcoming = state.deadlines.filter((item) => !item.completed).sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0] || null;
+    const nextProject = state.projects.map((project) => ({ project, progress: projectProgress(project) }))
+      .filter((item) => item.project.status !== "completed" && item.progress.next)
+      .sort((a, b) => Date.parse(a.project.updatedAt || 0) - Date.parse(b.project.updatedAt || 0))[0] || null;
     const percent = clamp(Math.round(state.daily.minutes / state.profile.dailyMinutes * 100), 0, 100);
     return {
       continueLesson: active,
@@ -259,6 +362,7 @@
       goal: { targetMinutes: state.profile.dailyMinutes, completedMinutes: state.daily.minutes, percent },
       weakSkills: weakSkills(state),
       upcomingDeadline: upcoming,
+      nextProject,
       path,
       streak: state.streak,
       daily: state.daily
@@ -289,6 +393,20 @@
     if (payload.lessonId && LESSONS.some((lesson) => lesson.id === payload.lessonId)) {
       state.progress[payload.lessonId] = { status: payload.completed === false ? "started" : "completed", score, attempts: clamp((state.progress[payload.lessonId]?.attempts || 0) + 1, 1, 999), seconds: minutes * 60, completedAt: payload.completed === false ? null : new Date(now).toISOString() };
       state.activeLessonId = pathForProfile(state.profile).find((lesson) => state.progress[lesson.id]?.status !== "completed")?.id || payload.lessonId;
+    }
+    if (payload.projectId && state.projects.some((project) => project.id === payload.projectId)) {
+      const project = state.projects.find((item) => item.id === payload.projectId);
+      const stage = project.stages.find((item) => item.id === payload.stageId);
+      if (stage) {
+        stage.status = payload.completed === false ? "active" : "done";
+        stage.note = clean(payload.note, 600);
+        stage.evidence = clean(payload.evidence, 600);
+        stage.completedAt = stage.status === "done" ? new Date(now).toISOString() : null;
+        const next = project.stages.find((item) => item.status !== "done");
+        if (next) next.status = "active";
+        project.status = projectProgress(project).percent >= 100 ? "completed" : "active";
+        project.updatedAt = new Date(now).toISOString();
+      }
     }
     return normalizeState(state, now);
   }
@@ -329,6 +447,10 @@
     lessons: LESSONS,
     lessonTypes: LESSON_TYPES,
     masteryStates: MASTERY_STATES,
+    projectStatuses: PROJECT_STATUSES,
+    projectStageStatuses: PROJECT_STAGE_STATUSES,
+    projectStages: PROJECT_STAGES,
+    projectTemplates: PROJECT_TEMPLATES,
     defaultState,
     normalizeState,
     normalizeMastery,
@@ -336,6 +458,12 @@
     updateMastery,
     adaptiveDifficulty,
     pathForProfile,
+    projectTemplate,
+    createProjectPlan,
+    normalizeProject,
+    projectProgress,
+    createProject,
+    updateProjectStage,
     weakSkills,
     buildDailyPlan,
     recordStudy,

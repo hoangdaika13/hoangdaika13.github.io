@@ -2,12 +2,14 @@
   "use strict";
 
   const STORAGE_KEY = "hh.graphic-design.hub.v2";
+  const INTEGRATION_VERSION = 6;
   const MAX_PROJECTS = 40;
   const MAX_ASSETS = 16;
   const MAX_ASSET_BYTES = 850000;
 
   const VIEWS = [
     { id: "overview", label: "Tổng quan", icon: "◇", description: "Dự án, template và tài nguyên" },
+    { id: "workflow", label: "Design Workflow", icon: "↗", description: "Vector đến dev handoff trong một luồng" },
     { id: "vector", label: "Vector Core", icon: "⌁", description: "Bezier, shape, mask và timeline" },
     { id: "nondestructive", label: "Non-destructive", icon: "◐", description: "Smart Object, filter và modifier stack" },
     { id: "typography", label: "Typography Pro", icon: "T", description: "Variable font, OpenType và text path" },
@@ -94,6 +96,7 @@
   let objectUrls = [];
   const engineLoads = new Map();
   const PRO_ENGINES = Object.freeze({
+    workflow: { selector: "[data-graphic-design-workflow]", api: "HHGraphicDesignWorkflow", source: "graphic-design-workflow.js?v=1" },
     nondestructive: { selector: "[data-graphic-nondestructive]", api: "HHGraphicNondestructive", source: "graphic-design-nondestructive.js?v=1" },
     typography: { selector: "[data-graphic-typography-pro]", api: "HHGraphicTypographyPro", source: "graphic-design-typography-pro.js?v=1" },
     effects: { selector: "[data-graphic-node-effects]", api: "HHGraphicNodeEffects", source: "graphic-design-node-effects.js?v=1" },
@@ -241,6 +244,7 @@
     const completed = state.checklist.filter((item) => item.done).length;
     return `
       <section class="gd-command-strip" aria-label="Thao tác nhanh">
+        <button type="button" data-gd-route="workflow"><span>↗</span><b>Design Workflow</b><small>Design → Deliver</small></button>
         <button type="button" data-gd-template="social"><span>▦</span><b>Bài đăng mới</b><small>1080 × 1080</small></button>
         <button type="button" data-gd-template="video"><span>▶</span><b>Video mới</b><small>16:9 · Motion</small></button>
         <button type="button" data-gd-template="web"><span>⌘</span><b>UI mới</b><small>Responsive</small></button>
@@ -313,6 +317,7 @@
 
   function studioCard(item) {
     const meta = {
+      workflow: ["VECTOR · SYSTEM · QA · REVIEW · DELIVER", "Một luồng local-first nối editor, variant, Brand Kit, contrast, cộng tác thật và dev handoff"],
       vector: ["SVG · BEZIER · MOTION PATH", "Pen, shape, mask, blend, smart guide và timeline nhiều track"],
       nondestructive: ["SMART OBJECT · FILTER · MASK", "Adjustment layer, modifier stack và chỉnh sửa không phá hủy"],
       typography: ["VARIABLE FONT · OPENTYPE · TEXT PATH", "Kerning, ligature, style dùng lại và kiểm tra font"],
@@ -377,6 +382,7 @@
 
   function focusedContent(view) {
     const selectors = {
+      workflow: "data-graphic-design-workflow",
       vector: "data-graphic-vector-core",
       nondestructive: "data-graphic-nondestructive",
       typography: "data-graphic-typography-pro",
@@ -536,7 +542,7 @@
       }
       const action = event.target.closest("[data-gd-action]")?.dataset.gdAction;
       if (!action) return;
-      if (action === "new-project") root.querySelector("[data-gd-template-list]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (action === "new-project") location.hash = `#${routeFor("workflow")}`;
       else if (action === "continue-project") state.projects[0] ? openProject(state.projects[0]) : showToast(root, "Chưa có dự án để tiếp tục.");
       else if (action === "import-hub") root.querySelector("[data-gd-import]")?.click();
       else if (action === "choose-assets") root.querySelector("[data-gd-assets]")?.click();
@@ -639,6 +645,7 @@
   }
 
   function unmount() {
+    globalThis.HHGraphicDesignWorkflow?.unmount?.(activeRoot?.querySelector("[data-graphic-design-workflow]"));
     globalThis.HHGraphicVectorCore?.unmount?.(activeRoot?.querySelector("[data-graphic-vector-core]"));
     globalThis.HHGraphicNondestructive?.unmount?.(activeRoot?.querySelector("[data-graphic-nondestructive]"));
     globalThis.HHGraphicTypographyPro?.unmount?.(activeRoot?.querySelector("[data-graphic-typography-pro]"));
@@ -671,5 +678,5 @@
     activeRoot = null;
   }
 
-  globalThis.HHGraphicDesign = Object.freeze({ mount, unmount, views: VIEWS.map((item) => ({ ...item })), templates: TEMPLATES.map((item) => ({ ...item })) });
+  globalThis.HHGraphicDesign = Object.freeze({ INTEGRATION_VERSION, mount, unmount, views: VIEWS.map((item) => ({ ...item })), templates: TEMPLATES.map((item) => ({ ...item })) });
 })();

@@ -31,6 +31,17 @@
     try { return Array.from(root.speechSynthesis?.getVoices?.() || []).filter((voice) => /^en(?:-|_)/i.test(voice.lang || "")); }
     catch { return []; }
   };
+  // Browser capability is reported as-is; no remote pronunciation or audio adapter is assumed.
+  const speechAdapterStatus = (env = root) => {
+    const speechOutput = Boolean(env?.speechSynthesis && typeof env?.SpeechSynthesisUtterance === "function");
+    const recognition = Boolean(env?.SpeechRecognition || env?.webkitSpeechRecognition);
+    const microphone = Boolean(env?.navigator?.mediaDevices?.getUserMedia);
+    return {
+      speechOutput: { supported: speechOutput, status: speechOutput ? "available" : "unavailable" },
+      recognition: { supported: recognition, status: recognition ? "available" : "unavailable" },
+      microphone: { supported: microphone, status: microphone ? "permission required" : "unavailable" }
+    };
+  };
   const rankVoice = (voice, settings = {}) => {
     const profile = voiceProfileById(settings.voiceProfile);
     const voiceLang = String(voice.lang || "").replace("_", "-").toLowerCase();
@@ -48,10 +59,11 @@
   const compareTranscript = (spoken = "", target = "") => {
     const expected = normalize(target).split(" ").filter(Boolean);
     const actual = normalize(spoken).split(" ").filter(Boolean);
-    if (!expected.length) return { score: 0, matched: [], missed: [] };
+    const transparency = { method: "local-token-overlap-v1", disclaimer: "Local word-coverage heuristic; it does not measure phonemes, accent, or pronunciation accuracy." };
+    if (!expected.length) return { score: 0, matched: [], missed: [], extra: actual, ...transparency };
     const pool = [...actual]; const matched = []; const missed = [];
     expected.forEach((word) => { const index = pool.indexOf(word); if (index >= 0) { matched.push(word); pool.splice(index, 1); } else missed.push(word); });
-    return { score: Math.round(matched.length / expected.length * 100), matched, missed };
+    return { score: Math.round(matched.length / expected.length * 100), matched, missed, extra: pool, ...transparency };
   };
 
   const unitVocabulary = {
@@ -221,7 +233,7 @@
     onboarding: { completed: false, dismissed: false, rewarded: false, completedAt: "" },
     learnerProfile: { confidence: "", focusSkill: "speaking", needsPlacement: false },
     careerProfile: { roleStage: "student", skillFocus: "speaking", intensity: "foundation" },
-    settings: { voiceRate: 0.85, voicePitch: 1, voiceProfile: "us-female", voiceURI: "", interfaceLanguage: "vi", reducedMotion: false, beginnerMode: true, theme: "night", learnerType: "student", goal: "Giao tiếp hằng ngày" },
+    settings: { voiceRate: 0.85, voicePitch: 1, voiceProfile: "us-female", voiceURI: "", audioPlaybackConsent: false, microphoneConsent: false, interfaceLanguage: "vi", reducedMotion: false, beginnerMode: true, theme: "night", learnerType: "student", goal: "Giao tiếp hằng ngày" },
     speakingScenario: "workplace", speakingAttempts: []
   });
   const mergeState = (stored = {}) => {
@@ -251,7 +263,21 @@
       return state;
     } catch { return defaultState(); }
   };
-  const writeState = (state) => localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, version: APP_VERSION }));
+  const writeState = (state) => {
+    let previous = {};
+    let openedNext = false;
+    try { previous = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (_) { /* fresh/private storage */ }
+    const justCompleted = state.activeView === "lesson" && state.activeLesson && state.completed?.[state.activeLesson] && !previous.completed?.[state.activeLesson];
+    if (justCompleted) {
+      const lesson = getLesson(state.activeLesson);
+      const track = lesson.trackId ? careerTrackById(lesson.trackId) : null;
+      const pool = track?.lessons || levelById(lesson.level || selectedLevelId(state)).units.flatMap((unit) => unit.lessons);
+      const next = pool.find((item) => !state.completed?.[item.id]) || null;
+      if (next && next.id !== lesson.id) { state.activeLesson = next.id; openedNext = true; }
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, version: APP_VERSION }));
+    if (openedNext && host) root.setTimeout?.(() => { if (host) { render({ focusView: true }); toast("Bài tiếp theo đã tự mở.", "success"); } }, 450);
+  };
   const getLesson = (id) => allLessons.find((lesson) => lesson.id === id) || courses[0].lessons[0];
   const selectedLevelId = (state) => levelOrder.includes(state.selectedLevel) ? state.selectedLevel : "A0";
   const levelLessonIds = (levelId) => levelById(levelId).units.flatMap((unit) => unit.lessons.map((lesson) => lesson.id));
@@ -484,6 +510,7 @@
   };
   const speak = (text, settings = {}, options = {}) => {
     if (!root.speechSynthesis || typeof root.SpeechSynthesisUtterance !== "function") return false;
+    if (settings.audioPlaybackConsent !== true) return false;
     root.speechSynthesis.cancel();
     const effectiveSettings = { ...settings, ...(options.profile ? { voiceProfile: options.profile, voiceURI: "" } : {}) };
     const profile = voiceProfileById(effectiveSettings.voiceProfile);
@@ -581,7 +608,9 @@
     const voices = englishVoices();
     const selected = selectVoice(voices, state.settings);
     const profile = voiceProfileById(state.settings.voiceProfile);
-    return `<section class="hhe-voice-studio ${compact ? "compact" : ""}">
+    const adapter = speechAdapterStatus();
+    const permissionMarkup = `<div class="hhe-voice-permissions"><label><input type="checkbox" data-hhe-audio-consent ${state.settings.audioPlaybackConsent ? "checked" : ""}> Cho phép phát âm thanh khi tôi bấm nút nghe</label><label><input type="checkbox" data-hhe-mic-consent ${state.settings.microphoneConsent ? "checked" : ""}> Cho phép HH xin quyền microphone cho nhận dạng shadowing</label><small data-hhe-adapter-status>Voice output: ${adapter.speechOutput.status} · Recognition: ${adapter.recognition.status} · Microphone: ${adapter.microphone.status}. Điểm là heuristic cục bộ, không phải chấm phát âm AI.</small></div>`;
+    return `<section class="hhe-voice-studio ${compact ? "compact" : ""}">${permissionMarkup}
       <header><div><small>HH VOICE STUDIO</small><h3>${compact ? "Chọn giọng trước khi nghe" : "Một câu, nhiều chất giọng thật trên thiết bị"}</h3><p>${voices.length ? `${voices.length} giọng tiếng Anh đang khả dụng. HH sẽ ưu tiên đúng vùng và kiểu giọng bạn chọn.` : "Đang nạp danh sách giọng của trình duyệt. Nếu thiết bị chỉ có một giọng, HH vẫn giữ đúng vùng phát âm gần nhất."}</p></div><span>${escapeHtml(profile.flag)} · ${escapeHtml(profile.gender === "female" ? "NỮ" : "NAM")}</span></header>
       <div class="hhe-voice-presets">${voiceProfiles.map((item) => `<button type="button" class="${item.id === profile.id ? "active" : ""}" data-hhe-voice-profile="${item.id}"><b>${item.flag}</b><span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></span>${item.id === profile.id ? "<i>✓</i>" : ""}</button>`).join("")}</div>
       <div class="hhe-voice-controls"><label><span>Giọng cài trên thiết bị</span><select data-hhe-voice-uri>${voices.length ? voices.map((voice) => `<option value="${escapeHtml(voice.voiceURI)}" ${voice.voiceURI === (state.settings.voiceURI || selected?.voiceURI) ? "selected" : ""}>${escapeHtml(voice.name)} · ${escapeHtml(voice.lang)}${inferVoiceGender(voice) === "unknown" ? "" : ` · ${inferVoiceGender(voice) === "female" ? "nữ" : "nam"}`}</option>`).join("") : `<option value="">Giọng mặc định của trình duyệt</option>`}</select></label><label><span>Tốc độ</span><select data-hhe-voice-rate>${[[0.65,"0.65× · Chậm"],[0.85,"0.85× · Học"],[1,"1× · Tự nhiên"],[1.1,"1.1× · Thử thách"]].map(([value,label]) => `<option value="${value}" ${Number(state.settings.voiceRate) === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><div><button type="button" data-hhe-speak="${escapeHtml(phrase)}" data-hhe-speak-rate="0.65">◁ Nghe chậm</button><button class="primary" type="button" data-hhe-speak="${escapeHtml(phrase)}">▶ Nghe giọng đã chọn</button></div></div>
@@ -1232,6 +1261,7 @@
     const output = host.querySelector("[data-hhe-transcript]");
     if (!Recognition) { output.textContent = "Trình duyệt chưa hỗ trợ nhận dạng giọng nói. Bạn vẫn có thể dùng phần ghi âm bên cạnh."; return; }
     const stateAtStart = readState();
+    if (stateAtStart.settings.microphoneConsent !== true) { output.textContent = "Hãy bật quyền microphone ở Voice Studio trước khi bắt đầu shadowing."; return; }
     const recognition = new Recognition(); recognition.lang = voiceProfileById(stateAtStart.settings.voiceProfile).lang; recognition.interimResults = true; recognition.continuous = false;
     output.textContent = "Đang nghe… Âm thanh có thể được trình duyệt gửi tới dịch vụ nhận dạng của nhà cung cấp.";
     recognition.onresult = (event) => {
@@ -1257,6 +1287,7 @@
   };
   const startRecording = async () => {
     const status = host.querySelector("[data-hhe-record-status]");
+    if (readState().settings.microphoneConsent !== true) { status.textContent = "Hãy bật quyền microphone ở Voice Studio trước khi ghi."; return; }
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { status.textContent = "Thiết bị chưa hỗ trợ ghi âm trong trình duyệt."; return; }
     try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); recordedChunks = []; mediaRecorder = new MediaRecorder(stream); mediaRecorder.ondataavailable = (event) => { if (event.data.size) recordedChunks.push(event.data); }; mediaRecorder.onstop = () => { stream.getTracks().forEach((track) => track.stop()); const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "audio/webm" }); if (recordingUrl) URL.revokeObjectURL(recordingUrl); recordingUrl = URL.createObjectURL(blob); const audio = host.querySelector("[data-hhe-audio]"); audio.src = recordingUrl; audio.hidden = false; host.querySelector("[data-hhe-delete-record]").disabled = false; host.querySelector("[data-hhe-record]").disabled = false; host.querySelector("[data-hhe-stop]").disabled = true; status.textContent = "Đã ghi xong. Hãy nghe lại trước khi xóa hoặc thu lại."; }; mediaRecorder.start(); host.querySelector("[data-hhe-record]").disabled = true; host.querySelector("[data-hhe-stop]").disabled = false; status.textContent = "Đang ghi…"; }
     catch (error) { status.textContent = error.name === "NotAllowedError" ? "Bạn chưa cho phép dùng micro." : `Không thể ghi âm: ${error.message}`; }
@@ -1264,6 +1295,26 @@
 
   const handleChange = async (event) => {
     event.stopPropagation();
+    if (event.target.matches("[data-hhe-audio-consent]")) {
+      const state = readState();
+      state.settings.audioPlaybackConsent = event.target.checked === true;
+      writeState(state);
+      toast(state.settings.audioPlaybackConsent ? "Voice output enabled for button presses only." : "Voice output disabled.", state.settings.audioPlaybackConsent ? "success" : "error");
+      return;
+    }
+    if (event.target.matches("[data-hhe-mic-consent]")) {
+      const state = readState();
+      if (!event.target.checked) { state.settings.microphoneConsent = false; writeState(state); toast("Microphone permission disabled."); return; }
+      if (!speechAdapterStatus().microphone.supported) { event.target.checked = false; toast("This browser cannot request microphone permission.", "error"); return; }
+      try {
+        const stream = await root.navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks?.().forEach((track) => track.stop());
+        state.settings.microphoneConsent = true;
+        writeState(state);
+        toast("Microphone permission granted; recording remains local.", "success");
+      } catch (_) { event.target.checked = false; state.settings.microphoneConsent = false; writeState(state); toast("Microphone permission was not granted.", "error"); }
+      return;
+    }
     if (event.target.matches("[data-hhe-voice-uri]")) {
       const state = readState(); state.settings.voiceURI = event.target.value; writeState(state);
       speak("This is your selected English voice.", state.settings); toast("Đã lưu giọng đọc trên thiết bị."); return;
@@ -1297,6 +1348,6 @@
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
   const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
-  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
-  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
+  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
+  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
 })();

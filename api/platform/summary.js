@@ -3,7 +3,7 @@ const privacyConsentHandler = require("../../utils/privacy-consent-api");
 
 const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
 const TELEMETRY_RETENTION_SECONDS = 30 * 24 * 60 * 60;
-const TELEMETRY_TYPES = new Set(["page_view", "route_change", "feature_open", "action", "error", "performance", "heartbeat", "session_start", "session_end", "diagnostic", "export", "refresh", "form_start", "form_submit", "form_validation", "control_change"]);
+const TELEMETRY_TYPES = new Set(["page_view", "action", "error", "performance", "session_start", "session_end", "diagnostic", "export", "refresh", "form_start", "form_submit", "form_validation", "control_change", "experiment_exposure", "experiment_conversion", "conversion"]);
 
 function safeRoute(value) {
   const input = clean(value || "/", 300).split("?")[0];
@@ -25,7 +25,15 @@ function safeTelemetryMeta(value = {}) {
     lengthBucket: enumValue(clean(value.lengthBucket, 20), ["", "empty", "1-20", "21-80", "81-240", "241-1000", "1000+"], ""),
     interactionBucket: enumValue(clean(value.interactionBucket, 20), ["", "none", "1-5", "6-20", "21-60", "60+"], ""),
     durationBucket: enumValue(clean(value.durationBucket, 20), ["", "0-5s", "6-30s", "31-120s", "2-10m", "10m+"], ""),
-    valid: value.valid !== false
+    valid: value.valid !== false,
+    region: enumValue(clean(value.region, 30), ["", "top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"], ""),
+    source: enumValue(clean(value.source, 20), ["", "direct", "internal", "search", "social", "referral"], ""),
+    metric: enumValue(safeKey(value.metric, ""), ["", "lcp", "cls", "inp", "fcp", "ttfb", "load"], ""),
+    value: Math.max(0, Math.min(600000, Number(value.value || 0))),
+    rating: enumValue(clean(value.rating, 30), ["", "good", "needs-improvement", "poor", "unknown"], ""),
+    errorKind: enumValue(clean(value.errorKind, 30), ["", "runtime", "resource", "unhandled-rejection"], ""),
+    experimentId: safeKey(value.experimentId, "").slice(0, 64),
+    variant: enumValue(clean(value.variant, 2).toUpperCase(), ["", "A", "B", "C", "D"], "")
   };
 }
 
@@ -190,7 +198,7 @@ module.exports = async function handler(req, res) {
         db.collection("communityFeatureFlags").find({}, { projection: { key: 1, enabled: 1, rollout: 1 } }).limit(200).toArray()
       ]);
       const disabledFeatures = flags.filter((flag) => !flag.enabled || rolloutBucket(identity, clean(flag.key, 100)) >= Math.max(0, Math.min(100, Number(flag.rollout || 0)))).map((flag) => clean(flag.key, 100)).filter(Boolean);
-      return res.status(200).json({ ok: true, acceptedEvents: events.length, online, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, checkedAt: now, policy: { restrictedFeatures: user && Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [], disabledFeatures }, privacy: { interactionMetadataStored: analyticsConsent, presenceDetailStored: analyticsConsent, rawKeystrokesStored: false, formValuesStored: false, promptBodiesStored: false, passwordsStored: false, tokensStored: false, privateMessagesStored: false, retentionDays: 30 } });
+      return res.status(200).json({ ok: true, acceptedEvents: events.length, online, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, checkedAt: now, adapter: { confirmed: true, mode: "backend", provider: "mongodb", aggregateOnly: true }, policy: { restrictedFeatures: user && Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [], disabledFeatures }, privacy: { interactionMetadataStored: analyticsConsent, presenceDetailStored: analyticsConsent, rawKeystrokesStored: false, formValuesStored: false, promptBodiesStored: false, passwordsStored: false, tokensStored: false, privateMessagesStored: false, errorMessagesStored: false, stackTracesStored: false, retentionDays: 30 } });
     }
     if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
     if (req.query.view === "health") {
@@ -199,6 +207,33 @@ module.exports = async function handler(req, res) {
     }
     const user = await currentUser(req);
     if (!isAdminUser(user)) return res.status(403).json({ error: "Tài khoản không có quyền truy cập Admin Panel." });
+    if (req.query.view === "analytics") {
+      const now = new Date();
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+      const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
+      const [events5m, events30m, errors30m, online, topRoutes] = await Promise.all([
+        db.collection("telemetryEvents").countDocuments({ createdAt: { $gte: fiveMinutesAgo } }),
+        db.collection("telemetryEvents").countDocuments({ createdAt: { $gte: thirtyMinutesAgo } }),
+        db.collection("telemetryEvents").countDocuments({ type: "error", createdAt: { $gte: thirtyMinutesAgo } }),
+        db.collection("presence").countDocuments({ lastSeenAt: { $gte: new Date(now.getTime() - ACTIVE_WINDOW_MS) } }),
+        db.collection("telemetryEvents").aggregate([
+          { $match: { createdAt: { $gte: thirtyMinutesAgo }, type: "page_view" } },
+          { $group: { _id: "$route", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 10 },
+          { $project: { _id: 0, route: "$_id", count: 1 } }
+        ]).toArray()
+      ]);
+      return res.status(200).json({
+        ok: true,
+        checkedAt: now,
+        adapter: { confirmed: true, mode: "backend", provider: "mongodb", aggregateOnly: true },
+        windows: { fiveMinutes: { events: events5m }, thirtyMinutes: { events: events30m, errors: errors30m } },
+        online,
+        topRoutes,
+        privacy: { aggregateOnly: true, identitiesReturned: false, sessionsReturned: false, rawInputReturned: false, errorMessagesReturned: false }
+      });
+    }
     if (req.query.view === "users") {
       const rows = await db.collection("users")
         .find({}, { projection: { passwordHash: 0, providerId: 0, tokenVersion: 0 } })
@@ -251,3 +286,5 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, counts, audience: { registeredUsers: counts.users || 0, onlineVisitors, onlineRegistered, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, activeVisitors }, recentEvents, checkedAt: new Date() });
   });
 };
+
+module.exports.__test = Object.freeze({ safeTelemetryEvent, safeTelemetryMeta, safeRoute, TELEMETRY_TYPES });

@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = "hh.media-design.page.v1";
   const TOOLS = [
+    { id: "production-workflow", icon: "PW", name: "Production Workflow", group: "Dự án & tài nguyên", code: "PROD", description: "Media Bin dùng chung, timeline không phá hủy, phụ đề, review và render queue trung thực.", caps: ["Shared Media Bin", "Proxy adapter", "Subtitle", "Server render"] },
     { id: "universal-media", icon: "UM", name: "Universal Media Project", group: "Dự án & tài nguyên", code: "PROJECT", description: "Dự án media dùng chung cho ảnh, video, âm thanh, font, LUT và SVG.", caps: ["Media Bin", "Autosave", "Version history", ".hhmedia"] },
     { id: "asset-manager", icon: "AM", name: "Asset Manager", group: "Dự án & tài nguyên", code: "ASSET", description: "Quản lý metadata, thumbnail, file trùng, media offline, Smart Collection và proxy.", caps: ["Metadata", "Duplicate scan", "Smart Collection", "Proxy plan"] },
     { id: "photo-editor", icon: "✎", name: "Photo Editor", group: "Biên tập nâng cao", code: "PHOTO", description: "Chỉnh sửa ảnh nhiều lớp như một Photoshop thu gọn ngay trong trình duyệt.", caps: ["Layers", "Blend & filters", "Undo · Redo", "High-res export"] },
@@ -28,6 +29,7 @@
   ];
   const GROUPS = ["Dự án & tài nguyên", "Biên tập nâng cao", "Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên", "Xuất bản"];
   const PRODUCTION_FLOW = [
+    { code: "PW", label: "Production Workflow", tool: "production-workflow", description: "Proxy, subtitle, review và render thật" },
     { code: "UP", label: "Universal Project", tool: "universal-media", description: "Dự án và Media Bin dùng chung" },
     { code: "PE", label: "Photo Editor Pro", tool: "photo-editor", description: "Layer và chỉnh sửa không phá hủy" },
     { code: "VE", label: "Video Editor Pro", tool: "video-editor", description: "Dựng, màu, âm thanh và deliver" },
@@ -43,9 +45,9 @@
   const loadState = () => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      return { active: saved.active || TOOLS[0].name, favorites: Array.isArray(saved.favorites) ? saved.favorites : [], recent: Array.isArray(saved.recent) ? saved.recent : [], usage: saved.usage || {} };
+      return { active: saved.active || "Universal Media Project", favorites: Array.isArray(saved.favorites) ? saved.favorites : [], recent: Array.isArray(saved.recent) ? saved.recent : [], usage: saved.usage || {} };
     } catch {
-      return { active: TOOLS[0].name, favorites: [], recent: [], usage: {} };
+      return { active: "Universal Media Project", favorites: [], recent: [], usage: {} };
     }
   };
   let pageState = loadState();
@@ -53,7 +55,7 @@
   let activeFilter = "all";
 
   const saveState = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(pageState));
-  const toolByName = (name) => TOOLS.find((tool) => tool.name === name) || TOOLS[0];
+  const toolByName = (name) => TOOLS.find((tool) => tool.name === name) || TOOLS.find((tool) => tool.id === "universal-media") || TOOLS[0];
   const toolById = (id) => TOOLS.find((tool) => tool.id === id);
   const visibleTools = (query = "") => {
     const term = normalize(query);
@@ -97,6 +99,7 @@
     const tool = toolByName(name);
     window.HHMediaDesign?.cleanup?.();
     window.HHUniversalMediaProject?.unmount?.();
+    window.HHMediaProductionWorkflow?.unmount?.();
     pageState.active = tool.name;
     pageState.recent = [tool.name, ...pageState.recent.filter((item) => item !== tool.name)].slice(0, 12);
     pageState.usage[tool.name] = (pageState.usage[tool.name] || 0) + 1;
@@ -104,7 +107,9 @@
     renderCatalog(root);
     renderContext(root, tool);
     const work = root.querySelector("[data-mdp-work]");
-    if (["Universal Media Project", "Asset Manager"].includes(tool.name) && window.HHUniversalMediaProject?.mount) {
+    if (tool.name === "Production Workflow" && window.HHMediaProductionWorkflow?.mount) {
+      window.HHMediaProductionWorkflow.mount(work).catch?.(() => showNotice(root, "Không khởi động được Production Workflow.", "error"));
+    } else if (["Universal Media Project", "Asset Manager"].includes(tool.name) && window.HHUniversalMediaProject?.mount) {
       window.HHUniversalMediaProject.mount(work, { view: tool.name === "Asset Manager" ? "assets" : "project" });
     } else if (window.HHMediaDesign?.supports?.(tool.name)) window.HHMediaDesign.render(work, tool.name);
     else work.innerHTML = '<div class="mdp-engine-error"><strong>Engine chưa sẵn sàng</strong><p>Hãy tải lại trang để khởi động Media Engine.</p><button type="button" data-mdp-retry>Thử lại</button></div>';
@@ -147,6 +152,7 @@
     if (!host) return;
     window.HHMediaDesign?.cleanup?.();
     window.HHUniversalMediaProject?.unmount?.();
+    window.HHMediaProductionWorkflow?.unmount?.();
     const requestedTool = toolById(options.toolId || host.dataset.mediaDesignTool);
     if (requestedTool) pageState.active = requestedTool.name;
     host.innerHTML = `<section class="media-design-page ${requestedTool ? "is-tool-view" : ""}" data-media-design-page>
@@ -235,6 +241,7 @@
     if (!location.hash.includes("/media-design")) {
       window.HHMediaDesign?.cleanup?.();
       window.HHUniversalMediaProject?.unmount?.();
+      window.HHMediaProductionWorkflow?.unmount?.();
     }
   });
 

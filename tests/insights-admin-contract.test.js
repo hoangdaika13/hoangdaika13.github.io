@@ -48,7 +48,7 @@ test("Admin Panel is absent for members, route-guarded, and mounts the full RBAC
   assert.match(communityAdmin, /users\.features/);
 });
 
-test("Phân tích ships interactive telemetry, filters, diagnostics and exports", () => {
+test("Phân tích ships privacy-safe realtime intelligence and aggregate admin data", () => {
   const html = read("index.html");
   const client = read("insights-pro.js");
   const css = read("insights-pro.css");
@@ -57,25 +57,38 @@ test("Phân tích ships interactive telemetry, filters, diagnostics and exports"
   assert.match(html, /insights-pro\.js\?v=4/);
   assert.match(client, /PerformanceObserver/);
   assert.match(client, /data-insights-range/);
-  assert.match(client, /data-insights-event-search/);
   assert.match(client, /data-insights-health/);
   assert.match(client, /text\/csv/);
   assert.match(client, /application\/json/);
   assert.match(client, /REMOTE_BATCH_SIZE/);
   assert.match(client, /analyticsConsent/);
   assert.match(client, /restrictedFeatures/);
+  assert.match(client, /PUBLIC_EVENT_CATALOG/);
+  assert.match(client, /hh\.insights\.analytics\.v3/);
+  assert.match(client, /"5m"/);
+  assert.match(client, /"30m"/);
+  assert.match(client, /cohortRows/);
+  assert.match(client, /clickRegion/);
+  assert.match(client, /detectAnomalies/);
+  assert.match(client, /assignExperiment/);
+  assert.match(client, /adapter\?\.confirmed === true/);
+  assert.match(client, /Demo cục bộ/);
   assert.match(client, /form_start/);
   assert.match(client, /form_submit/);
   assert.match(client, /form_validation/);
   assert.match(client, /sensitiveField/);
   assert.match(client, /lengthBucket/);
+  assert.doesNotMatch(client, /field\.value|new FormData\(|event\.reason|event\.message|\.stack\b/);
   assert.doesNotMatch(client, /event\.key\b/);
   assert.match(read("api/platform/summary.js"), /TELEMETRY_RETENTION_SECONDS/);
+  assert.match(read("api/platform/summary.js"), /view === "analytics"/);
+  assert.match(read("api/platform/summary.js"), /aggregateOnly: true/);
   assert.match(read("api/platform/summary.js"), /presence.*expiresAt/s);
   assert.match(read("api/platform/summary.js"), /formValuesStored:\s*false/);
   assert.match(read("api/platform/summary.js"), /rawKeystrokesStored:\s*false/);
   assert.match(read("api/platform/summary.js"), /tokensStored:\s*false/);
   assert.doesNotMatch(read("api/platform/summary.js"), /passwordHash:\s*1/);
   assert.match(css, /@media \(max-width: 560px\)/);
+  assert.match(css, /@media \(max-width: 375px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });

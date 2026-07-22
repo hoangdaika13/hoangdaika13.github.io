@@ -52,8 +52,8 @@
         { id: "ch-team", name: "nhóm-dự-án", type: "private", description: "Không gian riêng dành cho thành viên dự án.", tags: ["Dự án"], slowModeSeconds: 15, muted: false, ownerId: "member-owner", memberIds: ["member-owner"], createdAt }
       ],
       members: [
-        { id: "member-owner", name: "Hoàng Đại Ka", role: "owner", online: true, blocked: false, muted: false },
-        { id: "member-mod", name: "HH Moderator", role: "moderator", online: true, blocked: false, muted: false },
+        { id: "member-owner", name: "Hoàng Đại Ka", role: "owner", online: false, blocked: false, muted: false },
+        { id: "member-mod", name: "HH Moderator", role: "moderator", online: false, blocked: false, muted: false },
         { id: "member-guest", name: "Thành viên mới", role: "member", online: false, blocked: false, muted: false }
       ],
       posts: [
@@ -156,6 +156,19 @@
     return runtime?.state.channels.find((channel) => channel.id === runtime.state.activeChannelId) || runtime?.state.channels[0] || null;
   }
 
+  function hasConfirmedConnection(options = runtime?.options || {}) {
+    try {
+      if (options.socket?.connected === true || options.adapter?.connected === true) return true;
+      return typeof options.adapter?.isConnected === "function" && options.adapter.isConnected() === true;
+    } catch {
+      return false;
+    }
+  }
+
+  function connectionIsLive() {
+    return Boolean(runtime?.connectionConfirmed && hasConfirmedConnection(runtime.options));
+  }
+
   function emitAdapter(type, payload) {
     if (!runtime) return;
     const detail = { type, payload: clone(payload), source: "HHCommunicationChannelsForum", timestamp: nowIso() };
@@ -194,16 +207,16 @@
     return `<section class="hcf-app" data-hcf-root data-view="${runtime.view}" aria-label="Channel và Forum HH">
       <header class="hcf-hero">
         <div><span class="hcf-kicker">COMMUNICATION · CHANNEL & FORUM</span><h2>Thảo luận rõ ràng,<br><em>không để ý tưởng bị trôi.</em></h2><p>Channel, thread, hướng dẫn và kiểm duyệt trong một workspace local-first.</p></div>
-        <div class="hcf-hero-stats"><article><strong>${runtime.state.channels.length}</strong><span>Channel</span></article><article><strong>${runtime.state.posts.length}</strong><span>Chủ đề</span></article><article><strong>${runtime.state.members.filter((item) => item.online).length}</strong><span>Online</span></article></div>
+        <div class="hcf-hero-stats"><article><strong>${runtime.state.channels.length}</strong><span>Channel</span></article><article><strong>${runtime.state.posts.length}</strong><span>Chủ đề</span></article><article><strong>${connectionIsLive() ? runtime.state.members.filter((item) => item.online).length : "—"}</strong><span>${connectionIsLive() ? "Online đã xác nhận" : "Chưa có presence"}</span></article></div>
       </header>
       <nav class="hcf-view-tabs" aria-label="Chế độ Channel và Forum">${["channels", "forum", "onboarding", "moderation"].map((view) => `<button type="button" data-view-name="${view}" class="${runtime.view === view ? "is-active" : ""}" aria-current="${runtime.view === view ? "page" : "false"}">${viewLabels[view]}${view === "moderation" && runtime.state.moderationQueue.some((item) => item.status === "pending") ? `<b>${runtime.state.moderationQueue.filter((item) => item.status === "pending").length}</b>` : ""}</button>`).join("")}</nav>
       <div class="hcf-workspace">
         <aside class="hcf-library" aria-label="Danh sách channel">
-          <div class="hcf-profile"><span>${esc((member?.name || "HH").split(/\s+/).map((part) => part[0]).slice(-2).join(""))}</span><div><strong>${esc(member?.name || "Thành viên")}</strong><small><i></i>${member?.online ? "Đang online" : "Ngoại tuyến"} · ${ROLE_LABELS[member?.role] || "Guest"}</small></div></div>
+          <div class="hcf-profile"><span>${esc((member?.name || "HH").split(/\s+/).map((part) => part[0]).slice(-2).join(""))}</span><div><strong>${esc(member?.name || "Thành viên")}</strong><small><i></i>${connectionIsLive() && member?.online ? "Đang online" : "Chưa xác nhận realtime"} · ${ROLE_LABELS[member?.role] || "Guest"}</small></div></div>
           <label class="hcf-search"><span aria-hidden="true">⌕</span><input type="search" data-channel-search placeholder="Tìm channel..." aria-label="Tìm channel"></label>
           <div class="hcf-channel-groups">${["public", "private", "shared"].map((type) => `<section><h3>${TYPE_LABELS[type]} <b>${runtime.state.channels.filter((channel) => channel.type === type).length}</b></h3>${runtime.state.channels.filter((channel) => channel.type === type).map(channelButton).join("") || "<p>Chưa có channel</p>"}</section>`).join("")}</div>
           ${hasPermission(member?.role, "manage-channel") ? '<button type="button" class="hcf-add-channel" data-open-modal="channel">＋ Tạo channel</button>' : ""}
-          <div class="hcf-sync"><i></i><span>${runtime.options.adapter ? "Đã nối event adapter" : "Local-first · chờ backend adapter"}</span></div>
+          <div class="hcf-sync" data-connected="${connectionIsLive()}"><i></i><span>${connectionIsLive() ? "Adapter realtime đã xác nhận" : "Local-first · chưa xác nhận backend"}</span></div>
         </aside>
         <main class="hcf-main">${main}</main>
         <aside class="hcf-context">${aside}</aside>
@@ -492,7 +505,22 @@
   function onRemoteSync(event) {
     const next = event.detail?.state;
     if (!next || event.detail?.source === "HHCommunicationChannelsForum") return;
+    runtime.connectionConfirmed = event.detail?.connected === true && hasConfirmedConnection(runtime.options);
     runtime.state = normalizeState(next); persist(runtime.state); render();
+  }
+
+  function onRealtimeReady(event) {
+    const socket = event.detail?.socket;
+    if (socket?.connected !== true) return;
+    runtime.options.socket = socket;
+    runtime.connectionConfirmed = true;
+    render();
+  }
+
+  function onRealtimeOffline() {
+    if (!runtime) return;
+    runtime.connectionConfirmed = false;
+    render();
   }
 
   function supports(view) {
@@ -505,7 +533,7 @@
     unmount();
     const state = loadState();
     const suppliedUser = options.currentUser || { id: "member-owner", name: "Hoàng Đại Ka" };
-    if (!state.members.some((member) => member.id === suppliedUser.id)) state.members.push({ id: suppliedUser.id, name: suppliedUser.name || "Thành viên HH", role: "member", online: true, blocked: false, muted: false });
+    if (!state.members.some((member) => member.id === suppliedUser.id)) state.members.push({ id: suppliedUser.id, name: suppliedUser.name || "Thành viên HH", role: "member", online: false, blocked: false, muted: false });
     runtime = {
       host,
       options,
@@ -515,9 +543,9 @@
       ui: { threadId: "", forumQuery: "", forumFilter: "all", forumTag: "", modal: null, focusAfterRender: "" },
       toastTimer: 0,
       searchTimer: 0,
-      handlers: { click: onClick, input: onInput, change: onChange, keydown: onKeydown, submit: onSubmit, forumSearch: onForumSearch, sync: onRemoteSync }
+      connectionConfirmed: hasConfirmedConnection(options),
+      handlers: { click: onClick, input: onInput, change: onChange, keydown: onKeydown, submit: onSubmit, forumSearch: onForumSearch, sync: onRemoteSync, realtimeReady: onRealtimeReady, realtimeOffline: onRealtimeOffline }
     };
-    state.members.find((member) => member.id === suppliedUser.id).online = true;
     persist(state);
     host.addEventListener("click", onClick);
     host.addEventListener("input", onInput);
@@ -526,6 +554,8 @@
     host.addEventListener("keydown", onKeydown);
     host.addEventListener("submit", onSubmit);
     window.addEventListener("hh:communication:channels:sync", onRemoteSync);
+    window.addEventListener("hh:realtime-ready", onRealtimeReady);
+    window.addEventListener("hh:realtime-offline", onRealtimeOffline);
     render();
     emitAdapter("workspace:mounted", { view: runtime.view });
     return true;
@@ -541,6 +571,8 @@
     host.removeEventListener("keydown", handlers.keydown);
     host.removeEventListener("submit", handlers.submit);
     window.removeEventListener("hh:communication:channels:sync", handlers.sync);
+    window.removeEventListener("hh:realtime-ready", handlers.realtimeReady);
+    window.removeEventListener("hh:realtime-offline", handlers.realtimeOffline);
     window.clearTimeout(runtime.toastTimer);
     window.clearTimeout(runtime.searchTimer);
     runtime = null;
@@ -550,7 +582,7 @@
     supports,
     mount,
     unmount,
-    _test: { STORAGE_KEY, defaultState, normalizeState, assessLinkRisk, hasPermission, appendAudit, filteredForumPosts: (state, filters = {}) => {
+    _test: { STORAGE_KEY, defaultState, normalizeState, assessLinkRisk, hasPermission, hasConfirmedConnection, appendAudit, filteredForumPosts: (state, filters = {}) => {
       const query = String(filters.query || "").toLocaleLowerCase("vi");
       return normalizeState(state).posts.filter((post) => ["forum", "guide"].includes(post.kind) && (!filters.status || filters.status === "all" || (filters.status === "solved" ? post.solved : filters.status === "open" ? !post.solved : post.kind === "guide")) && (!filters.tag || post.tags.includes(filters.tag)) && (!query || `${post.title} ${post.body} ${post.tags.join(" ")}`.toLocaleLowerCase("vi").includes(query)));
     } }

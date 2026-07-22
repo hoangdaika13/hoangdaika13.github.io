@@ -9,7 +9,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const engines = [
   ["creative-command-center.js?v=1", "HHCreativeCommandCenter"],
   ["creative-preproduction.js?v=1", "HHCreativePreproduction"],
-  ["creative-ai-workflow.js?v=1", "HHCreativeAIWorkflow"],
+  ["creative-ai-workflow.js?v=2", "HHCreativeAIWorkflow"],
   ["creative-production-lab.js?v=1", "HHCreativeProductionLab"],
   ["creative-collaboration-os.js?v=1", "HHCreativeCollaborationOS"],
   ["creative-publishing.js?v=1", "HHCreativePublishing"],
@@ -23,7 +23,7 @@ test("Creative OS shell is routed, versioned and cached", () => {
   const worker = read("sw.js");
   assert.match(html, /creative-os\.css\?v=1/);
   assert.match(html, /creative-os\.js\?v=1/);
-  assert.match(html, /script\.js\?v=123/);
+  assert.match(html, /script\.js\?v=124/);
   assert.match(worker, /hh-identity-portal-v\d+/);
   assert.match(worker, /creative-os-core\.js\?v=1/);
   assert.match(script, /creativeOSViews/);

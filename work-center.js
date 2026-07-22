@@ -6,7 +6,9 @@
   const EXTENSION_KEY = "hh-extension-suite-v1";
   const DOWNLOAD_KEY = "hh-download-history";
   const STORE_CART_KEY = "hh-store-cart";
-  const WORK_KEY = "hh-work-center-v1";
+  const WORK_KEY = "hh-work-center-v2";
+  const LEGACY_WORK_KEY = "hh-work-center-v1";
+  const WORK_SCHEMA_VERSION = 2;
   const FILE_META_KEY = "hh-work-center-files-v1";
   const DB_NAME = "hh-work-center";
   const DB_STORE = "files";
@@ -74,7 +76,59 @@
     return state;
   };
   const extensionState = () => read(EXTENSION_KEY, {});
-  const workState = () => ({ focusMinutes: 25, focusRemaining: 1500, focusRunning: false, focusEnd: 0, focusSessions: 0, taskFilter: "open", ...read(WORK_KEY, {}) });
+  const planningDefaults = () => ({
+    schemaVersion: WORK_SCHEMA_VERSION,
+    revision: 0,
+    adapter: { mode: "local", status: "Local-first · chưa kết nối adapter", lastSyncAt: "" },
+    projects: [], tasks: [], milestones: [],
+    cycles: [{ id: "cycle-current", name: "Cycle hiện tại", start: day(), end: day(14), goal: "Ưu tiên việc quan trọng", status: "planned" }],
+    capacities: {}, meetings: [], actionItems: [], calendar: [],
+    focusMinutes: 25, focusRemaining: 1500, focusRunning: false, focusEnd: 0, focusSessions: 0, taskFilter: "open"
+  });
+  const normalizePlanning = (raw = {}) => {
+    const projects = Array.isArray(raw.projects) && raw.projects.length ? raw.projects : structuredClone(DEFAULT_PROJECTS);
+    const tasks = Array.isArray(raw.tasks) && raw.tasks.length ? raw.tasks : structuredClone(DEFAULT_TASKS);
+    return { ...planningDefaults(), ...raw, projects: projects.map((item) => ({ ...item, capacity: Number(item.capacity || 40) })), tasks: tasks.map((item) => ({ ...item, projectId: item.projectId || item.project || projects[0]?.id, status: item.status || item.column || "todo", column: item.column || item.status || "todo", estimate: Number(item.estimate || 1), dependsOn: Array.isArray(item.dependsOn) ? item.dependsOn : [], due: item.due || "" })), milestones: Array.isArray(raw.milestones) ? raw.milestones : [], capacities: raw.capacities && typeof raw.capacities === "object" ? raw.capacities : {}, meetings: Array.isArray(raw.meetings) ? raw.meetings : [], actionItems: Array.isArray(raw.actionItems) ? raw.actionItems : [], calendar: Array.isArray(raw.calendar) ? raw.calendar : [] };
+  };
+  const planningState = () => {
+    const stored = read(WORK_KEY, null) || read(LEGACY_WORK_KEY, {});
+    const state = normalizePlanning(stored);
+    const legacy = projectState();
+    // Keep quick-capture/project-center changes visible without overwriting
+    // planning-only fields such as cycle, estimate or dependency metadata.
+    const projects = [...state.projects, ...(legacy.projects || []).filter((item) => !state.projects.some((current) => current.id === item.id))];
+    const tasks = [...state.tasks, ...(legacy.tasks || []).filter((item) => !state.tasks.some((current) => current.id === item.id))];
+    return normalizePlanning({ ...state, projects, tasks });
+  };
+  const writePlanning = (next) => {
+    const state = normalizePlanning(typeof next === "function" ? next(planningState()) : next);
+    const result = { ...state, schemaVersion: WORK_SCHEMA_VERSION, revision: Number(state.revision || 0) + 1, updatedAt: new Date().toISOString() };
+    localStorage.setItem(WORK_KEY, JSON.stringify(result));
+    const legacy = projectState();
+    legacy.projects = result.projects;
+    legacy.tasks = result.tasks.map((task) => ({ ...task, project: task.projectId, column: task.column || task.status }));
+    write(PROJECT_KEY, legacy);
+    return result;
+  };
+  const workState = () => ({ ...planningDefaults(), ...planningState() });
+  const planningDaysUntil = (value, today = new Date()) => { if (!value) return null; const date = new Date(`${String(value).slice(0, 10)}T12:00:00`); if (Number.isNaN(date.getTime())) return null; const base = new Date(today.getFullYear(), today.getMonth(), today.getDate()); return Math.ceil((date - base) / 86400000); };
+  const detectPlanningRisks = (state, today = new Date()) => {
+    const risks = [];
+    (state.tasks || []).forEach((task) => {
+      const days = planningDaysUntil(task.due, today);
+      if (task.status !== "done" && days !== null && days < 0) risks.push({ level: "high", title: task.title, reason: `Trễ ${Math.abs(days)} ngày`, type: "deadline" });
+      if (task.status !== "done" && days !== null && days >= 0 && days <= 2) risks.push({ level: "medium", title: task.title, reason: `Còn ${days} ngày`, type: "deadline" });
+      const blocked = (task.dependsOn || []).some((id) => (state.tasks || []).find((item) => item.id === id)?.status !== "done");
+      if (blocked && task.status !== "done") risks.push({ level: "high", title: task.title, reason: "Đang chờ dependency", type: "dependency" });
+    });
+    (state.milestones || []).forEach((item) => { const days = planningDaysUntil(item.due, today); if (item.status !== "done" && days !== null && days < 0) risks.push({ level: "high", title: item.name, reason: "Milestone đã quá hạn", type: "milestone" }); });
+    (state.actionItems || []).forEach((item) => { const days = planningDaysUntil(item.due, today); if (item.status !== "done" && days !== null && days < 0) risks.push({ level: "medium", title: item.title, reason: "Action item quá hạn", type: "meeting" }); });
+    const workload = {};
+    (state.tasks || []).filter((task) => task.status !== "done").forEach((task) => { const person = task.assignee || "Chưa phân công"; workload[person] = (workload[person] || 0) + Number(task.estimate || 1); });
+    Object.entries(workload).forEach(([person, hours]) => { const capacity = Number(state.capacities?.[person] || state.projects?.[0]?.capacity || 40); if (hours > capacity) risks.push({ level: "high", title: person, reason: `${hours}h vượt capacity ${capacity}h`, type: "capacity" }); });
+    return risks;
+  };
+  const planningTimeline = (state) => [...(state.tasks || []).filter((item) => item.due).map((item) => ({ date: item.due, type: "Task", title: item.title, detail: item.assignee || "Chưa phân công" })), ...(state.milestones || []).filter((item) => item.due).map((item) => ({ date: item.due, type: "Milestone", title: item.name, detail: `${item.progress || 0}%` })), ...(state.meetings || []).filter((item) => item.date).map((item) => ({ date: item.date, type: "Meeting", title: item.title, detail: item.attendees || "" }))].sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(0, 20);
 
   const workspaceMetric = (id) => {
     const projects = projectState();
@@ -212,6 +266,20 @@
     </dialog>`;
   }
 
+  function planningMarkup() {
+    const state = planningState();
+    const risks = detectPlanningRisks(state);
+    const projects = state.projects || [];
+    const tasks = state.tasks || [];
+    const activeCycle = (state.cycles || []).find((cycle) => cycle.status !== "done") || state.cycles?.[0];
+    const responseItems = extensionState()["form-builder"]?.responses || [];
+    const projectOptions = projects.map((project) => `<option value="${esc(project.id)}">${esc(project.name)}</option>`).join("");
+    const dependencyOptions = tasks.filter((task) => task.status !== "done").map((task) => `<option value="${esc(task.id)}">${esc(task.title)}</option>`).join("");
+    const capacityRows = Object.entries(tasks.filter((task) => task.status !== "done").reduce((acc, task) => { const person = task.assignee || "Chưa phân công"; acc[person] = (acc[person] || 0) + Number(task.estimate || 1); return acc; }, {})).map(([person, hours]) => { const capacity = Number(state.capacities?.[person] || projects[0]?.capacity || 40); const ratio = Math.round(hours / capacity * 100); return `<article><div><strong>${esc(person)}</strong><span>${hours}h / ${capacity}h</span></div><i style="--capacity:${Math.min(150, ratio)}%"><b></b></i><small>${ratio > 100 ? "Quá tải" : ratio > 80 ? "Gần đầy" : "Còn chỗ"}</small></article>`; }).join("");
+    const timeline = planningTimeline(state);
+    return `<section class="work-planning" data-work-planning aria-label="Lập kế hoạch công việc"><header class="work-planning__head"><div><span>PLANNING LAYER · schema ${WORK_SCHEMA_VERSION}</span><h2>Project → cycle → task</h2><p>Lưu local-first, revision ${state.revision || 0}. ${esc(state.adapter?.status || "Adapter chưa cấu hình")}</p></div><div><button type="button" data-planning-export>Xuất JSON</button><button type="button" data-planning-sync>Kiểm tra adapter</button></div></header><nav class="work-planning__tabs" role="tablist" aria-label="Planning views"><button class="is-active" type="button" role="tab" aria-selected="true" data-planning-tab="plan">Plan</button><button type="button" role="tab" aria-selected="false" data-planning-tab="capacity">Capacity & dependency</button><button type="button" role="tab" aria-selected="false" data-planning-tab="timeline">Lịch & timeline</button><button type="button" role="tab" aria-selected="false" data-planning-tab="meeting">Meeting → actions</button><button type="button" role="tab" aria-selected="false" data-planning-tab="risk">Risk detector <b>${risks.length}</b></button></nav><section class="work-planning__pane is-active" data-planning-pane="plan"><div class="work-planning__grid"><form class="work-planning__card" data-planning-project-form><header><span>PROJECT</span><h3>Tạo project</h3></header><label>Tên project<input name="name" required maxlength="120" autocomplete="off" placeholder="Ví dụ: Website v3"></label><div class="work-planning__two"><label>Owner<input name="owner" maxlength="80" placeholder="Tên người phụ trách"></label><label>Capacity (giờ)<input name="capacity" type="number" min="1" max="1000" value="40"></label></div><div class="work-planning__two"><label>Bắt đầu<input name="start" type="date" value="${day()}"></label><label>Deadline<input name="due" type="date"></label></div><button type="submit">＋ Tạo project</button></form><form class="work-planning__card" data-planning-task-form><header><span>TASK</span><h3>Thêm task</h3></header><label>Tên task<input name="title" required maxlength="180" autocomplete="off" placeholder="Một việc có thể giao"></label><div class="work-planning__two"><label>Project<select name="projectId">${projectOptions}</select></label><label>Người phụ trách<input name="assignee" maxlength="80" placeholder="Tên hoặc email"></label></div><div class="work-planning__two"><label>Estimate (giờ)<input name="estimate" type="number" min="0.25" max="500" step="0.25" value="1"></label><label>Deadline<input name="due" type="date"></label></div><label>Dependency (tuỳ chọn)<select name="dependsOn" multiple size="3">${dependencyOptions || "<option disabled>Chưa có task để phụ thuộc</option>"}</select></label><button type="submit">＋ Tạo task</button></form><form class="work-planning__card" data-planning-cycle-form><header><span>CYCLE</span><h3>Chu kỳ làm việc</h3></header><label>Tên cycle<input name="name" required maxlength="100" value="${esc(activeCycle?.name || "Cycle mới")}"></label><div class="work-planning__two"><label>Bắt đầu<input name="start" type="date" value="${esc(activeCycle?.start || day())}"></label><label>Kết thúc<input name="end" type="date" value="${esc(activeCycle?.end || day(14))}"></label></div><label>Mục tiêu<input name="goal" maxlength="180" value="${esc(activeCycle?.goal || "")}"></label><button type="submit">＋ Tạo cycle</button></form></div><div class="work-planning__summary"><article><strong>${projects.length}</strong><span>Projects</span></article><article><strong>${tasks.filter((task) => task.status !== "done").length}</strong><span>Task đang mở</span></article><article><strong>${(state.milestones || []).length}</strong><span>Milestone</span></article><article><strong>${activeCycle ? esc(activeCycle.name) : "—"}</strong><span>Cycle hiện tại</span></article></div></section><section class="work-planning__pane" data-planning-pane="capacity"><div class="work-planning__grid"><article class="work-planning__card"><header><span>CAPACITY</span><h3>Workload theo người</h3></header><div class="work-capacity-list">${capacityRows || "<p>Chưa có task đang mở.</p>"}</div><button type="button" data-planning-capacity>Đặt capacity mặc định</button></article><article class="work-planning__card"><header><span>DEPENDENCY</span><h3>Luồng phụ thuộc</h3></header><div class="work-dependency-list">${tasks.filter((task) => task.dependsOn?.length).map((task) => `<article><strong>${esc(task.title)}</strong><span>${task.dependsOn.map((id) => esc(tasks.find((item) => item.id === id)?.title || id)).join(", ")}</span></article>`).join("") || "<p>Chưa có dependency. Chọn dependency khi tạo task.</p>"}</div></article></div><div class="work-planning__card"><header><span>MILESTONE</span><h3>Milestone đang theo dõi</h3></header><form data-planning-milestone-form class="work-planning__inline-form"><input name="name" required maxlength="140" placeholder="Tên milestone"><input name="due" type="date"><select name="projectId">${projectOptions}</select><input name="progress" type="number" min="0" max="100" value="0" aria-label="Tiến độ %"><button type="submit">＋ Thêm milestone</button></form><div class="work-milestone-list">${(state.milestones || []).map((item) => `<article><strong>${esc(item.name)}</strong><span>${esc(item.due || "Chưa đặt ngày")} · ${Number(item.progress || 0)}%</span></article>`).join("") || "<p>Chưa có milestone.</p>"}</div></div></section><section class="work-planning__pane" data-planning-pane="timeline"><div class="work-planning__card"><header><span>CALENDAR ADAPTER</span><h3>Lịch & timeline</h3><p>Lịch nội bộ chỉ hiển thị dữ liệu đã lưu; chưa giả lập Google/Outlook.</p></header><div class="work-timeline">${timeline.map((item) => `<article><time datetime="${esc(item.date)}">${esc(item.date)}</time><span>${esc(item.type)}</span><strong>${esc(item.title)}</strong><small>${esc(item.detail)}</small></article>`).join("") || "<p>Chưa có item có ngày.</p>"}</div></div></section><section class="work-planning__pane" data-planning-pane="meeting"><div class="work-planning__grid"><form class="work-planning__card" data-planning-meeting-form><header><span>MEETING</span><h3>Ghi cuộc họp</h3></header><label>Tiêu đề<input name="title" required maxlength="160" placeholder="Planning sprint"></label><label>Ngày giờ<input name="date" type="datetime-local" required></label><label>Người tham gia<input name="attendees" maxlength="240" placeholder="team@example.com"></label><label>Ghi chú<textarea name="notes" maxlength="1200" rows="3"></textarea></label><button type="submit">＋ Lưu meeting</button></form><form class="work-planning__card" data-planning-action-form><header><span>ACTION ITEM</span><h3>Meeting → action</h3></header><label>Việc cần làm<input name="title" required maxlength="180" placeholder="Chốt owner cho release"></label><div class="work-planning__two"><label>Người phụ trách<input name="assignee" maxlength="80"></label><label>Hạn xử lý<input name="due" type="date"></label></div><label>Meeting<select name="meetingId"><option value="">Không gắn meeting</option>${(state.meetings || []).map((item) => `<option value="${esc(item.id)}">${esc(item.title)}</option>`).join("")}</select></label><button type="submit">＋ Thêm action item</button></form></div><div class="work-action-list">${(state.actionItems || []).map((item) => `<article><label><input type="checkbox" data-planning-action-done="${esc(item.id)}" ${item.status === "done" ? "checked" : ""}><span><strong>${esc(item.title)}</strong><small>${esc(item.assignee || "Chưa giao")} · ${esc(item.due || "Chưa đặt hạn")}</small></span></label></article>`).join("") || "<p>Chưa có action item.</p>"}</div></section><section class="work-planning__pane" data-planning-pane="risk"><div class="work-risk-summary"><strong>${risks.length} nguy cơ</strong><span>Deadline · dependency · capacity · milestone · meeting action</span></div><div class="work-risk-list">${risks.map((risk) => `<article class="risk-${esc(risk.level)}"><b>${esc(risk.level.toUpperCase())}</b><div><strong>${esc(risk.title)}</strong><span>${esc(risk.reason)}</span></div><small>${esc(risk.type)}</small></article>`).join("") || "<p>Chưa phát hiện nguy cơ theo dữ liệu hiện tại.</p>"}</div></section><section class="work-planning__card work-form-import"><header><span>FORM → TASK</span><h3>Chuyển phản hồi thành task</h3></header><div>${responseItems.slice(0, 8).map((item) => `<article><span>#${esc(item.id || "response")}</span><strong>${esc(Object.values(item.data || {}).join(" · ").slice(0, 120) || "Phản hồi trống")}</strong><button type="button" data-form-response-task="${esc(item.id)}">Tạo task</button></article>`).join("") || "<p>Chưa có phản hồi form cục bộ.</p>"}</div></section></section></section>`;
+  }
+
   function render() {
     if (!host) return;
     const stats = getStats();
@@ -224,6 +292,8 @@
       </header>
 
       <section class="work-command"><label><span>⌕</span><input type="search" data-work-search placeholder="Tìm dự án, công việc, Wiki hoặc workspace..." autocomplete="off"><kbd>Ctrl K</kbd></label><div data-work-search-results hidden></div><button type="button" data-work-capture><span>＋</span>Tạo mới</button></section>
+
+      ${planningMarkup()}
 
       <section class="work-kpis" aria-label="Tổng quan công việc">
         <article><span>Dự án đang quản lý</span><strong>${stats.projects}</strong><small><i style="width:${stats.average}%"></i>Tiến độ TB ${stats.average}%</small></article>
@@ -261,12 +331,19 @@
     root.addEventListener("click", handleClick);
     root.addEventListener("input", handleInput);
     root.addEventListener("change", handleChange);
+    root.addEventListener("submit", handleSubmit);
     const dropzone = root.querySelector("[data-work-dropzone]");
     ["dragenter", "dragover"].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); fileDragDepth += 1; dropzone.classList.add("is-dragging"); }));
     ["dragleave", "drop"].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); fileDragDepth = Math.max(0, fileDragDepth - 1); if (!fileDragDepth || type === "drop") dropzone.classList.remove("is-dragging"); if (type === "drop") saveFiles(event.dataTransfer?.files); }));
   }
 
   function handleClick(event) {
+    const planningTab = event.target.closest("[data-planning-tab]");
+    if (planningTab) { const planning = planningTab.closest("[data-work-planning]"); planning?.querySelectorAll("[data-planning-tab]").forEach((item) => { const active = item === planningTab; item.classList.toggle("is-active", active); item.setAttribute("aria-selected", String(active)); }); planning?.querySelectorAll("[data-planning-pane]").forEach((pane) => pane.classList.toggle("is-active", pane.dataset.planningPane === planningTab.dataset.planningTab)); return; }
+    if (event.target.closest("[data-planning-export]")) { exportPlanning(); return; }
+    if (event.target.closest("[data-planning-sync]")) { planningSync(); return; }
+    if (event.target.closest("[data-planning-capacity]")) { writePlanning((state) => ({ ...state, projects: state.projects.map((project) => ({ ...project, capacity: Number(project.capacity || 40) })), capacities: Object.fromEntries(Object.keys(state.capacities || {}).map((person) => [person, Number(state.capacities[person] || 40)])) })); render(); showToast("Đã đặt capacity mặc định 40 giờ cho dữ liệu local."); return; }
+    if (event.target.closest("[data-form-response-task]")) { createTaskFromResponse(event.target.closest("[data-form-response-task]").dataset.formResponseTask); return; }
     const route = event.target.closest("[data-work-route]");
     if (route) { location.hash = `#${route.dataset.workRoute}`; return; }
     if (event.target.closest("[data-work-capture]")) { openCapture(); return; }
@@ -294,6 +371,66 @@
     if (event.target.matches("[data-work-file-input]")) { saveFiles(event.target.files); event.target.value = ""; }
     if (event.target.matches("[data-capture-type]")) updateCaptureFields(event.target.value);
     if (event.target.matches("[data-focus-minutes]")) { const state = workState(); state.focusMinutes = Number(event.target.value); state.focusRemaining = state.focusMinutes * 60; state.focusRunning = false; state.focusEnd = 0; write(WORK_KEY, state); render(); }
+    if (event.target.matches("[data-planning-action-done]")) { const id = event.target.dataset.planningActionDone; writePlanning((state) => ({ ...state, actionItems: state.actionItems.map((item) => item.id === id ? { ...item, status: event.target.checked ? "done" : "todo" } : item) })); render(); }
+  }
+
+  function formValue(form, name) { return String(form.elements[name]?.value || "").trim(); }
+  function selectedValues(form, name) { return [...(form.elements[name]?.selectedOptions || [])].map((option) => option.value).filter(Boolean); }
+  function handleSubmit(event) {
+    const form = event.target.closest("[data-work-planning] form");
+    if (!form) return;
+    event.preventDefault();
+    const state = planningState();
+    if (form.matches("[data-planning-project-form]")) {
+      const name = formValue(form, "name"); if (!name) return;
+      const project = { id: uid("project"), name, owner: formValue(form, "owner"), capacity: Math.max(1, Number(formValue(form, "capacity") || 40)), start: formValue(form, "start") || day(), due: formValue(form, "due"), status: "active", progress: 0, priority: "normal", description: "", color: ["#62e9f2", "#ff5dc8", "#f5db6d", "#8d7cff"][state.projects.length % 4] };
+      writePlanning((current) => ({ ...current, projects: [project, ...(current.projects || [])] })); render(); showToast(`Đã tạo project “${name}”.`); return;
+    }
+    if (form.matches("[data-planning-task-form]")) {
+      const title = formValue(form, "title"); if (!title) return;
+      const projectId = formValue(form, "projectId") || state.projects[0]?.id;
+      const task = { id: uid("task"), title, projectId, project: projectId, assignee: formValue(form, "assignee"), due: formValue(form, "due"), estimate: Math.max(.25, Number(formValue(form, "estimate") || 1)), dependsOn: selectedValues(form, "dependsOn"), status: "todo", column: "todo", priority: "normal", createdAt: new Date().toISOString() };
+      writePlanning((current) => ({ ...current, tasks: [task, ...(current.tasks || [])] })); render(); showToast(`Đã tạo task “${title}”.`); return;
+    }
+    if (form.matches("[data-planning-cycle-form]")) {
+      const name = formValue(form, "name"); if (!name) return;
+      const cycle = { id: uid("cycle"), name, start: formValue(form, "start"), end: formValue(form, "end"), goal: formValue(form, "goal"), status: "planned" };
+      writePlanning((current) => ({ ...current, cycles: [cycle, ...(current.cycles || [])] })); render(); showToast(`Đã tạo cycle “${name}”.`); return;
+    }
+    if (form.matches("[data-planning-milestone-form]")) {
+      const name = formValue(form, "name"); if (!name) return;
+      const milestone = { id: uid("milestone"), name, due: formValue(form, "due"), projectId: formValue(form, "projectId"), progress: Math.max(0, Math.min(100, Number(formValue(form, "progress") || 0))), status: "open" };
+      writePlanning((current) => ({ ...current, milestones: [milestone, ...(current.milestones || [])] })); render(); showToast(`Đã thêm milestone “${name}”.`); return;
+    }
+    if (form.matches("[data-planning-meeting-form]")) {
+      const title = formValue(form, "title"); if (!title) return;
+      const meeting = { id: uid("meeting"), title, date: formValue(form, "date"), attendees: formValue(form, "attendees"), notes: formValue(form, "notes"), createdAt: new Date().toISOString() };
+      writePlanning((current) => ({ ...current, meetings: [meeting, ...(current.meetings || [])] })); render(); showToast(`Đã lưu meeting “${title}”.`); return;
+    }
+    if (form.matches("[data-planning-action-form]")) {
+      const title = formValue(form, "title"); if (!title) return;
+      const action = { id: uid("action"), title, assignee: formValue(form, "assignee"), due: formValue(form, "due"), meetingId: formValue(form, "meetingId"), status: "todo", createdAt: new Date().toISOString() };
+      writePlanning((current) => ({ ...current, actionItems: [action, ...(current.actionItems || [])] })); render(); showToast(`Đã thêm action item “${title}”.`); return;
+    }
+  }
+
+  function createTaskFromResponse(responseId) {
+    const response = (extensionState()["form-builder"]?.responses || []).find((item) => String(item.id) === String(responseId));
+    if (!response) return showToast("Không tìm thấy phản hồi form cục bộ.", "error");
+    const values = Object.entries(response.data || {}).map(([key, value]) => `${key}: ${value}`).join(" · ");
+    const task = { id: uid("task"), title: `Xử lý phản hồi ${response.id || "form"}`, description: values, projectId: planningState().projects[0]?.id, project: planningState().projects[0]?.id, status: "todo", column: "todo", priority: "normal", estimate: 1, due: "", dependsOn: [], source: { type: "form-response", id: response.id }, createdAt: new Date().toISOString() };
+    writePlanning((state) => ({ ...state, tasks: [task, ...(state.tasks || [])] })); render(); showToast("Đã chuyển phản hồi thành task local.");
+  }
+
+  function exportPlanning() {
+    const data = JSON.stringify(planningState(), null, 2);
+    const anchor = document.createElement("a"); anchor.href = URL.createObjectURL(new Blob([data], { type: "application/json" })); anchor.download = `hh-work-center-${day()}.json`; anchor.click(); setTimeout(() => URL.revokeObjectURL(anchor.href), 1000); showToast("Đã xuất snapshot Work Center.");
+  }
+
+  async function planningSync() {
+    const adapter = window.HH_WORK_ADAPTER;
+    if (!adapter || typeof adapter.sync !== "function") { writePlanning((state) => ({ ...state, adapter: { mode: "local", status: "Local-first · adapter chưa cấu hình", lastSyncAt: "" } })); showToast("Chưa cấu hình adapter lịch/nhóm; dữ liệu vẫn lưu trên thiết bị."); return; }
+    try { const result = await adapter.sync(planningState()); writePlanning((state) => ({ ...state, ...(result || {}), adapter: { mode: "remote", status: "Đã đồng bộ qua adapter", lastSyncAt: new Date().toISOString() } })); render(); showToast("Đã đồng bộ qua adapter được cấu hình."); } catch (error) { showToast(`Adapter lỗi: ${error.message}`, "error"); }
   }
 
   function renderSearch(rawQuery) {

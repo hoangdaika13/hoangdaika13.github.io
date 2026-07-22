@@ -29,7 +29,11 @@
     messenger: "hh.communication.messenger.v1",
     communication: "hh.communication.intelligence.v1",
     recent: "hh.app-shell.recent",
-    aiConsent: "hh.home-daily.ai-consent.v1"
+    aiConsent: "hh.home-daily.ai-consent.v1",
+    operations: "hh.home.daily-command.v3",
+    creativePublishing: "hh.creative-publishing.v1",
+    youtubePublisher: "hh.youtube-publisher.v1",
+    musicPublishing: "hh.music.publishing-rights.v1"
   });
   const CATEGORY_META = Object.freeze({
     project: { icon: "PR", tone: "cyan", label: "Dự án" },
@@ -124,6 +128,167 @@
       const rightLate = rightDue < now ? -1 : 0;
       return leftLate - rightLate || (weight[left.priority] ?? 1) - (weight[right.priority] ?? 1) || leftDue - rightDue;
     })[0] || null;
+  }
+
+  function dayStamp(value = Date.now()) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }
+
+  function dueTime(item) {
+    return toTime(item && (item.deadline || item.due || item.dueDate || item.endDate || item.scheduledAt || item.publishAt));
+  }
+
+  function collectTodayPlan(storage = global.localStorage, now = Date.now()) {
+    const today = dayStamp(now);
+    const weight = { urgent: 0, high: 0, cao: 0, medium: 1, normal: 1, "trung bình": 1, low: 2, "thấp": 2 };
+    const commandTasks = asArray(read(storage, KEYS.todos, [])).map((item, index) => ({
+      id: cleanText(item && (item.id || `command-${index}`), 100),
+      source: "command",
+      title: cleanText(item && item.title, 120),
+      priority: cleanText(item && item.priority || "normal", 30).toLowerCase(),
+      due: cleanText(item && (item.deadline || item.due), 40),
+      completed: Boolean(item && item.completed),
+      route: "/home"
+    }));
+    const projectState = read(storage, KEYS.projects, {});
+    const projectTasks = asArray(projectState.tasks).map((item, index) => ({
+      id: cleanText(item && (item.id || `project-${index}`), 100),
+      source: "project",
+      title: cleanText(item && item.title, 120),
+      priority: cleanText(item && item.priority || "normal", 30).toLowerCase(),
+      due: cleanText(item && (item.deadline || item.due), 40),
+      completed: Boolean(item && (item.completed || item.column === "done" || item.status === "done")),
+      route: "/work/project-center"
+    }));
+    const open = [...commandTasks, ...projectTasks].filter((item) => item.title && !item.completed);
+    const dueNow = open.filter((item) => item.due && dayStamp(item.due) <= today);
+    const candidates = dueNow.length ? dueNow : open;
+    return candidates.sort((left, right) => {
+      const leftLate = left.due && dayStamp(left.due) < today ? -1 : 0;
+      const rightLate = right.due && dayStamp(right.due) < today ? -1 : 0;
+      return leftLate - rightLate || (weight[left.priority] ?? 1) - (weight[right.priority] ?? 1) || (dueTime(left) || Number.MAX_SAFE_INTEGER) - (dueTime(right) || Number.MAX_SAFE_INTEGER);
+    }).slice(0, 6).map((item) => ({ ...item, overdue: Boolean(item.due && dayStamp(item.due) < today) }));
+  }
+
+  function collectPriorityNotifications(storage = global.localStorage) {
+    const state = read(storage, KEYS.communication, {});
+    const unread = asArray(state.notifications).filter((item) => item && !item.read).map((item, index) => ({
+      id: cleanText(item.id || `notification-${index}`, 100),
+      title: cleanText(item.title || item.message || item.subject || "Thông báo", 120),
+      detail: cleanText(item.detail || item.description || item.channel || item.source || "Giao tiếp", 140),
+      priority: cleanText(item.priority || item.level || "normal", 30).toLowerCase(),
+      timestamp: newestTime(item),
+      route: /^\/[a-z0-9/_-]+$/i.test(item.route || "") ? item.route : "/communication/notifications"
+    }));
+    const important = unread.filter((item) => ["important", "urgent", "high", "critical", "cao", "khẩn"].includes(item.priority));
+    return (important.length ? important : unread).sort((left, right) => right.timestamp - left.timestamp).slice(0, 4);
+  }
+
+  function collectAtRiskProjects(storage = global.localStorage, now = Date.now()) {
+    const projects = asArray(read(storage, KEYS.projects, {}).projects);
+    const today = Date.parse(dayStamp(now) + "T00:00:00Z");
+    return projects.map((item, index) => {
+      const deadline = dueTime(item);
+      const progress = clamp(item && item.progress, 0, 100);
+      if (!deadline || progress >= 100) return null;
+      const deadlineDay = Date.parse(dayStamp(deadline) + "T00:00:00Z");
+      const days = Math.round((deadlineDay - today) / 86400000);
+      if (days > 7) return null;
+      return {
+        id: cleanText(item.id || `project-${index}`, 100),
+        title: cleanText(item.name || item.title || "Dự án", 120),
+        progress,
+        deadline: new Date(deadline).toISOString(),
+        days,
+        risk: days < 0 ? "overdue" : days <= 2 ? "critical" : "soon",
+        route: "/work/project-center"
+      };
+    }).filter(Boolean).sort((left, right) => left.days - right.days || left.progress - right.progress).slice(0, 4);
+  }
+
+  function collectApiQuotas(storage = global.localStorage) {
+    const publishing = read(storage, KEYS.creativePublishing, {});
+    return asArray(publishing.providers).map((item, index) => {
+      const limit = Math.max(0, Number(item && item.quotaLimit) || 0);
+      const used = Math.max(0, Number(item && item.quotaUsed) || 0);
+      const percent = limit ? clamp(Math.round(used / limit * 100), 0, 100) : null;
+      return {
+        id: cleanText(item.id || `provider-${index}`, 100),
+        label: cleanText(item.label || item.name || item.id || "Provider", 80),
+        configured: Boolean(item.configured),
+        status: cleanText(item.status || (item.configured ? "ready" : "not-configured"), 40),
+        used,
+        limit,
+        percent,
+        severity: percent == null ? "unknown" : percent >= 90 ? "critical" : percent >= 75 ? "warning" : "healthy",
+        route: "/create/providers"
+      };
+    }).sort((left, right) => (right.percent ?? -1) - (left.percent ?? -1)).slice(0, 5);
+  }
+
+  function collectYouTubeSchedule(storage = global.localStorage, now = Date.now()) {
+    const publishing = read(storage, KEYS.creativePublishing, {});
+    const youtubeDraft = read(storage, KEYS.youtubePublisher, {});
+    const music = read(storage, KEYS.musicPublishing, {});
+    const items = asArray(publishing.queue).filter((item) => item && item.platform === "youtube" && item.scheduledAt && ["scheduled", "queued", "draft"].includes(item.status)).map((item, index) => ({
+      id: cleanText(item.id || `creative-youtube-${index}`, 100),
+      title: cleanText(item.title || "Nội dung YouTube", 120),
+      publishAt: item.scheduledAt,
+      status: cleanText(item.status || "scheduled", 30),
+      route: "/create/publishing"
+    }));
+    if (youtubeDraft.privacyMode === "schedule" && youtubeDraft.publishAt) items.push({
+      id: "youtube-publisher-draft",
+      title: cleanText(youtubeDraft.title || "Bản nháp YouTube", 120),
+      publishAt: youtubeDraft.publishAt,
+      status: "draft",
+      route: "/music-ai/youtube-publisher"
+    });
+    const musicDraft = music.publishDraft || music.draft || {};
+    if ((musicDraft.privacy === "schedule" || musicDraft.privacyMode === "schedule") && (musicDraft.scheduleAt || musicDraft.publishAt)) items.push({
+      id: "music-release-draft",
+      title: cleanText(musicDraft.title || "Lịch phát Music AI", 120),
+      publishAt: musicDraft.scheduleAt || musicDraft.publishAt,
+      status: "draft",
+      route: "/music-ai/publish"
+    });
+    const seen = new Set();
+    return items.filter((item) => {
+      const time = toTime(item.publishAt);
+      const signature = `${item.title}|${time}`;
+      if (!time || time < now - 3600000 || seen.has(signature)) return false;
+      seen.add(signature);
+      return true;
+    }).sort((left, right) => toTime(left.publishAt) - toTime(right.publishAt)).slice(0, 5);
+  }
+
+  function recommendNextAction(snapshot) {
+    const data = snapshot || {};
+    const overdueProject = asArray(data.projects).find((item) => item.risk === "overdue");
+    if (overdueProject) return { id: "recover-project", eyebrow: "RỦI RO DEADLINE", title: `Gỡ trễ cho ${overdueProject.title}`, detail: `Dự án đã trễ ${Math.abs(overdueProject.days)} ngày và đang ở ${overdueProject.progress}%. Mở timeline để điều chỉnh phạm vi hoặc deadline.`, label: "Mở dự án", route: overdueProject.route };
+    const urgentTask = asArray(data.plan).find((item) => item.overdue || ["urgent", "high", "cao", "khẩn"].includes(item.priority));
+    if (urgentTask) return { id: "focus-task", eyebrow: "HÀNH ĐỘNG TIẾP THEO", title: urgentTask.title, detail: urgentTask.overdue ? "Việc này đã quá hạn. Hoàn thành hoặc đổi kế hoạch trước khi mở thêm công việc." : "Đây là việc ưu tiên cao nhất từ kế hoạch hôm nay.", label: "Bắt đầu", route: urgentTask.route };
+    const quota = asArray(data.quotas).find((item) => item.severity === "critical");
+    if (quota) return { id: "quota-guard", eyebrow: "BẢO VỆ HẠN MỨC", title: `Kiểm tra ${quota.label}`, detail: `Đã dùng ${quota.percent}% hạn mức đã công bố. Xem Provider Router trước khi chạy tác vụ mới.`, label: "Xem quota", route: quota.route };
+    const notification = asArray(data.notifications)[0];
+    if (notification) return { id: "review-notification", eyebrow: "THÔNG BÁO ƯU TIÊN", title: notification.title, detail: notification.detail, label: "Xem thông báo", route: notification.route };
+    const scheduled = asArray(data.youtube)[0];
+    if (scheduled) return { id: "youtube-preflight", eyebrow: "LỊCH PHÁT YOUTUBE", title: scheduled.title, detail: `Kiểm tra metadata và thumbnail trước ${formatDateTime(scheduled.publishAt)}.`, label: "Kiểm tra lịch", route: scheduled.route };
+    return { id: "plan-day", eyebrow: "TRỢ LÝ HÀNH ĐỘNG", title: "Lập việc quan trọng tiếp theo", detail: "Không có cảnh báo cục bộ. Mở Công việc để tạo task, deadline hoặc dự án cho hôm nay.", label: "Mở Công việc", route: "/work" };
+  }
+
+  function collectOperations(storage = global.localStorage, now = Date.now()) {
+    const snapshot = {
+      plan: collectTodayPlan(storage, now),
+      notifications: collectPriorityNotifications(storage),
+      projects: collectAtRiskProjects(storage, now),
+      quotas: collectApiQuotas(storage),
+      youtube: collectYouTubeSchedule(storage, now)
+    };
+    snapshot.recommendation = recommendNextAction(snapshot);
+    return snapshot;
   }
 
   function weatherText(storage) {
@@ -259,6 +424,12 @@
     return new Date(timestamp).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
   }
 
+  function formatDateTime(value) {
+    const timestamp = toTime(value);
+    if (!timestamp) return "chưa đặt lịch";
+    return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(timestamp));
+  }
+
   function make(tag, className, text) {
     const node = global.document.createElement(tag);
     if (className) node.className = className;
@@ -292,6 +463,162 @@
     zone.dataset.hdcContinue = "";
     zone.innerHTML = '<header><div><small>TIẾP TỤC CÔNG VIỆC</small><h3>Quay lại đúng nơi bạn đang làm</h3></div><span data-hdc-recent-count>0 hoạt động</span></header><div class="hdc-recent-grid" data-hdc-recent-list aria-live="polite"></div>';
     return zone;
+  }
+
+  function buildOperationsZone() {
+    const zone = make("section", "hdc-operations", null);
+    zone.dataset.hdcOperations = "";
+    zone.setAttribute("aria-label", "Trung tâm điều hành hôm nay");
+    zone.innerHTML = [
+      '<header class="hdc-operations-head"><div><small>HOME OPERATIONS</small><h3>Hôm nay cần xử lý gì?</h3><p>Tổng hợp minh bạch từ dữ liệu đã lưu trên thiết bị. Không đọc mật khẩu, token hoặc nội dung riêng tư.</p></div><button type="button" data-hdc-refresh-operations>Làm mới dữ liệu</button></header>',
+      '<div class="hdc-assistant" data-hdc-assistant aria-live="polite"></div>',
+      '<div class="hdc-operations-grid">',
+      '<section class="hdc-operation-card is-plan"><header><div><small>KẾ HOẠCH HÔM NAY</small><h4>Việc cần làm</h4></div><span data-hdc-plan-count>0 việc</span></header><div class="hdc-operation-list" data-hdc-plan></div><footer><button type="button" data-hdc-route="/work">Mở Công việc</button></footer></section>',
+      '<section class="hdc-operation-card is-alert"><header><div><small>ƯU TIÊN</small><h4>Thông báo cần xem</h4></div><span data-hdc-notification-count>0 mới</span></header><div class="hdc-operation-list" data-hdc-notifications></div><footer><button type="button" data-hdc-route="/communication/notifications">Trung tâm thông báo</button></footer></section>',
+      '<section class="hdc-operation-card is-risk"><header><div><small>PROJECT WATCH</small><h4>Dự án sắp trễ</h4></div><span data-hdc-project-count>0 rủi ro</span></header><div class="hdc-operation-list" data-hdc-projects></div><footer><button type="button" data-hdc-route="/work/project-center">Mở timeline</button></footer></section>',
+      '<section class="hdc-operation-card is-quota"><header><div><small>API GUARD</small><h4>Hạn mức đã cấu hình</h4></div><span data-hdc-quota-count>Chưa có adapter</span></header><div class="hdc-operation-list" data-hdc-quotas></div><footer><button type="button" data-hdc-route="/create/providers">Provider Router</button></footer></section>',
+      '<section class="hdc-operation-card is-youtube"><header><div><small>YOUTUBE CALENDAR</small><h4>Lịch phát sắp tới</h4></div><span data-hdc-youtube-count>0 lịch</span></header><div class="hdc-operation-list" data-hdc-youtube></div><footer><button type="button" data-hdc-route="/music-ai/youtube-publisher">Mở YouTube Publisher</button></footer></section>',
+      '</div>',
+      '<p class="hdc-operation-status" data-hdc-operation-status role="status" aria-live="polite"></p>'
+    ].join("");
+    return zone;
+  }
+
+  function emptyOperation(message, detail) {
+    const empty = make("div", "hdc-operation-empty");
+    empty.append(make("strong", "", message), make("span", "", detail));
+    return empty;
+  }
+
+  function operationCopy(title, detail, meta) {
+    const copy = make("div", "hdc-operation-copy");
+    copy.append(make("strong", "", title), make("span", "", detail));
+    if (meta) copy.append(make("small", "", meta));
+    return copy;
+  }
+
+  function renderPlan(home, items) {
+    const list = home.querySelector("[data-hdc-plan]");
+    const count = home.querySelector("[data-hdc-plan-count]");
+    if (!list || !count) return;
+    list.replaceChildren();
+    count.textContent = `${items.length} việc`;
+    if (!items.length) return list.append(emptyOperation("Chưa có kế hoạch", "Task đã tạo sẽ xuất hiện ở đây; HH không tự dựng dữ liệu mẫu."));
+    items.forEach((item) => {
+      const row = make("article", `hdc-operation-row ${item.overdue ? "is-critical" : ""}`);
+      const toggle = make("button", "hdc-task-toggle", item.completed ? "✓" : "");
+      toggle.type = "button";
+      toggle.dataset.hdcToggleTask = item.id;
+      toggle.dataset.hdcTaskSource = item.source;
+      toggle.setAttribute("aria-label", `Đánh dấu hoàn thành: ${item.title}`);
+      toggle.setAttribute("aria-pressed", String(item.completed));
+      row.append(toggle, operationCopy(item.title, item.overdue ? "Đã quá hạn" : item.due ? `Hạn ${formatDateTime(item.due)}` : "Chưa đặt hạn", cleanText(item.priority || "normal", 30)));
+      const open = button("Mở", item.route, "hdc-inline-action");
+      open.setAttribute("aria-label", `Mở ${item.title}`);
+      row.append(open);
+      list.append(row);
+    });
+  }
+
+  function renderNotifications(home, items) {
+    const list = home.querySelector("[data-hdc-notifications]");
+    const count = home.querySelector("[data-hdc-notification-count]");
+    if (!list || !count) return;
+    list.replaceChildren();
+    count.textContent = `${items.length} mới`;
+    if (!items.length) return list.append(emptyOperation("Không có ưu tiên mới", "Chỉ hiển thị thông báo chưa đọc từ Communication."));
+    items.forEach((item) => {
+      const row = make("article", "hdc-operation-row");
+      row.append(operationCopy(item.title, item.detail, item.priority));
+      const action = make("button", "hdc-inline-action", "Đã xem");
+      action.type = "button";
+      action.dataset.hdcReadNotification = item.id;
+      action.setAttribute("aria-label", `Đánh dấu đã xem: ${item.title}`);
+      row.append(action);
+      list.append(row);
+    });
+  }
+
+  function renderProjects(home, items) {
+    const list = home.querySelector("[data-hdc-projects]");
+    const count = home.querySelector("[data-hdc-project-count]");
+    if (!list || !count) return;
+    list.replaceChildren();
+    count.textContent = `${items.length} rủi ro`;
+    if (!items.length) return list.append(emptyOperation("Không có dự án sắp trễ", "Dự án có deadline trong 7 ngày sẽ được theo dõi tại đây."));
+    items.forEach((item) => {
+      const row = make("button", `hdc-risk-row is-${item.risk}`);
+      row.type = "button";
+      row.dataset.hdcRoute = item.route;
+      const status = item.days < 0 ? `Trễ ${Math.abs(item.days)} ngày` : item.days === 0 ? "Hạn hôm nay" : `Còn ${item.days} ngày`;
+      row.append(operationCopy(item.title, status, `${item.progress}% hoàn thành`));
+      const meter = make("i", "hdc-mini-meter");
+      const fill = make("span");
+      fill.style.width = `${item.progress}%`;
+      meter.append(fill);
+      row.append(meter);
+      list.append(row);
+    });
+  }
+
+  function renderQuotas(home, items) {
+    const list = home.querySelector("[data-hdc-quotas]");
+    const count = home.querySelector("[data-hdc-quota-count]");
+    if (!list || !count) return;
+    list.replaceChildren();
+    count.textContent = items.length ? `${items.length} provider` : "Chưa có adapter";
+    if (!items.length) return list.append(emptyOperation("Chưa có số liệu quota", "Cấu hình provider ở backend; Trang chủ không giả lập hạn mức."));
+    items.forEach((item) => {
+      const row = make("article", `hdc-quota-row is-${item.severity}`);
+      const text = item.percent == null ? (item.configured ? "Không đặt hạn mức" : "Chưa cấu hình") : `${item.percent}% đã dùng`;
+      row.append(operationCopy(item.label, text, item.status));
+      const meter = make("i", "hdc-mini-meter");
+      const fill = make("span");
+      fill.style.width = `${item.percent || 0}%`;
+      meter.append(fill);
+      row.append(meter);
+      list.append(row);
+    });
+  }
+
+  function renderYouTube(home, items) {
+    const list = home.querySelector("[data-hdc-youtube]");
+    const count = home.querySelector("[data-hdc-youtube-count]");
+    if (!list || !count) return;
+    list.replaceChildren();
+    count.textContent = `${items.length} lịch`;
+    if (!items.length) return list.append(emptyOperation("Chưa có lịch phát", "Chỉ hiển thị lịch YouTube đã lưu hoặc đã xếp hàng thật."));
+    items.forEach((item) => {
+      const row = make("button", "hdc-schedule-row");
+      row.type = "button";
+      row.dataset.hdcRoute = item.route;
+      row.append(operationCopy(item.title, formatDateTime(item.publishAt), item.status));
+      row.append(make("span", "hdc-schedule-arrow", "→"));
+      list.append(row);
+    });
+  }
+
+  function renderAssistant(home, recommendation) {
+    const holder = home.querySelector("[data-hdc-assistant]");
+    if (!holder || !recommendation) return;
+    holder.replaceChildren();
+    const mark = make("span", "hdc-assistant-mark", "HH");
+    mark.setAttribute("aria-hidden", "true");
+    const copy = make("div", "hdc-assistant-copy");
+    copy.append(make("small", "", recommendation.eyebrow), make("h4", "", recommendation.title), make("p", "", recommendation.detail));
+    const action = button(recommendation.label, recommendation.route, "hdc-assistant-action");
+    action.dataset.hdcRecommendation = recommendation.id;
+    holder.append(mark, copy, action);
+  }
+
+  function renderOperations(home, snapshot) {
+    if (!home.querySelector("[data-hdc-operations]")) return;
+    renderAssistant(home, snapshot.recommendation);
+    renderPlan(home, snapshot.plan);
+    renderNotifications(home, snapshot.notifications);
+    renderProjects(home, snapshot.projects);
+    renderQuotas(home, snapshot.quotas);
+    renderYouTube(home, snapshot.youtube);
   }
 
   function renderAvatar(zone, account) {
@@ -365,6 +692,7 @@
     action.textContent = consent ? "Làm mới" : "Cho phép tóm tắt cục bộ";
     action.dataset.hdcAiAction = consent ? "refresh" : "consent";
     renderRecent(home, recent);
+    renderOperations(home, collectOperations(storage, now.getTime()));
     state.lastHome = home;
     return true;
   }
@@ -376,6 +704,7 @@
     home.classList.add("hdc-home-enhanced");
     if (!hero.querySelector("[data-hdc-daily]")) hero.append(buildDailyZone());
     if (!home.querySelector("[data-hdc-continue]")) hero.insertAdjacentElement("afterend", buildContinueZone());
+    if (!home.querySelector("[data-hdc-operations]")) home.querySelector("[data-hdc-continue]").insertAdjacentElement("afterend", buildOperationsZone());
     bindHome(home);
     return refresh(home);
   }
@@ -385,6 +714,67 @@
     global.location.hash = `#${route}`;
   }
 
+  function operationState(storage = global.localStorage) {
+    const value = read(storage, KEYS.operations, {});
+    return {
+      version: 3,
+      lastAction: cleanText(value.lastAction, 80),
+      lastActionAt: cleanText(value.lastActionAt, 40),
+      refreshCount: clamp(value.refreshCount, 0, 100000)
+    };
+  }
+
+  function recordOperation(action, storage = global.localStorage) {
+    const current = operationState(storage);
+    return write(storage, KEYS.operations, { ...current, version: 3, lastAction: cleanText(action, 80), lastActionAt: new Date().toISOString() });
+  }
+
+  function togglePlanItem(storage, source, id) {
+    if (source === "command") {
+      const items = asArray(read(storage, KEYS.todos, []));
+      let changed = false;
+      const next = items.map((item, index) => {
+        const itemId = cleanText(item && (item.id || `command-${index}`), 100);
+        if (itemId !== id) return item;
+        changed = true;
+        return { ...item, completed: !item.completed, completedAt: item.completed ? "" : new Date().toISOString() };
+      });
+      return changed && write(storage, KEYS.todos, next);
+    }
+    if (source === "project") {
+      const projectState = read(storage, KEYS.projects, {});
+      let changed = false;
+      projectState.tasks = asArray(projectState.tasks).map((item, index) => {
+        const itemId = cleanText(item && (item.id || `project-${index}`), 100);
+        if (itemId !== id) return item;
+        changed = true;
+        const completed = item.completed || item.column === "done" || item.status === "done";
+        return { ...item, completed: !completed, column: completed ? "todo" : "done", updatedAt: new Date().toISOString() };
+      });
+      if (changed) projectState.updatedAt = new Date().toISOString();
+      return changed && write(storage, KEYS.projects, projectState);
+    }
+    return false;
+  }
+
+  function markNotificationRead(storage, id) {
+    const communication = read(storage, KEYS.communication, {});
+    let changed = false;
+    communication.notifications = asArray(communication.notifications).map((item, index) => {
+      const itemId = cleanText(item && (item.id || `notification-${index}`), 100);
+      if (itemId !== id) return item;
+      changed = true;
+      return { ...item, read: true, readAt: new Date().toISOString() };
+    });
+    if (changed) communication.updatedAt = new Date().toISOString();
+    return changed && write(storage, KEYS.communication, communication);
+  }
+
+  function announce(home, message) {
+    const node = home.querySelector("[data-hdc-operation-status]");
+    if (node) node.textContent = message;
+  }
+
   function bindHome(home) {
     if (home.dataset.hdcBound === "true") return;
     home.dataset.hdcBound = "true";
@@ -392,7 +782,31 @@
       const routeButton = event.target.closest("[data-hdc-route]");
       if (routeButton) {
         event.preventDefault();
+        if (routeButton.dataset.hdcRecommendation) recordOperation(`recommendation:${routeButton.dataset.hdcRecommendation}`);
         navigate(routeButton.dataset.hdcRoute);
+        return;
+      }
+      const taskButton = event.target.closest("[data-hdc-toggle-task]");
+      if (taskButton) {
+        const changed = togglePlanItem(global.localStorage, taskButton.dataset.hdcTaskSource, taskButton.dataset.hdcToggleTask);
+        recordOperation(changed ? "task-completed" : "task-not-found");
+        refresh(home);
+        announce(home, changed ? "Đã cập nhật công việc trong nguồn dữ liệu gốc." : "Không tìm thấy công việc để cập nhật.");
+        return;
+      }
+      const notificationButton = event.target.closest("[data-hdc-read-notification]");
+      if (notificationButton) {
+        const changed = markNotificationRead(global.localStorage, notificationButton.dataset.hdcReadNotification);
+        recordOperation(changed ? "notification-read" : "notification-not-found");
+        refresh(home);
+        announce(home, changed ? "Đã đánh dấu thông báo là đã xem." : "Không tìm thấy thông báo để cập nhật.");
+        return;
+      }
+      if (event.target.closest("[data-hdc-refresh-operations]")) {
+        const current = operationState(global.localStorage);
+        write(global.localStorage, KEYS.operations, { ...current, version: 3, refreshCount: current.refreshCount + 1, lastAction: "manual-refresh", lastActionAt: new Date().toISOString() });
+        refresh(home);
+        announce(home, "Đã đọc lại dữ liệu cục bộ mới nhất.");
         return;
       }
       const aiButton = event.target.closest("[data-hdc-ai-action]");
@@ -430,6 +844,15 @@
     refresh,
     collectRecentWork,
     automatedSummary,
+    collectTodayPlan,
+    collectPriorityNotifications,
+    collectAtRiskProjects,
+    collectApiQuotas,
+    collectYouTubeSchedule,
+    collectOperations,
+    recommendNextAction,
+    togglePlanItem,
+    markNotificationRead,
     cleanText,
     periodFor,
     dayProgress,

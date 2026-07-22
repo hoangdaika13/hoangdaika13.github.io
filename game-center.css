@@ -167,9 +167,44 @@
 }
 
 .gc-status-online { color: var(--gc-green); }
+.gc-status-connected { color: var(--gc-green); }
 .gc-status-local { color: var(--gc-gold); }
 .gc-status-syncing { color: var(--gc-cyan); }
+.gc-status-connecting { color: var(--gc-cyan); }
+.gc-status-disconnected { color: var(--gc-muted); }
 .gc-status-error { color: var(--gc-red); }
+
+.gc-party,
+.gc-party-form {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.gc-party-form label {
+  color: var(--gc-muted);
+  font-weight: 800;
+}
+
+.gc-party-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+}
+
+.gc-party-fields input {
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 12px;
+  color: var(--gc-text);
+  background: rgba(255,255,255,0.055);
+}
+
+.gc-party-fields input:focus-visible {
+  outline: 3px solid rgba(97,244,255,0.42);
+  outline-offset: 2px;
+}
 
 .gc-hero,
 .gc-grid {
@@ -641,6 +676,10 @@
   .gc-topbar {
     gap: 6px;
   }
+
+  .gc-party-fields {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 410px) {
@@ -654,6 +693,15 @@
 
   .gc-subtitle {
     font-size: 14px;
+  }
+
+  .gc-shell,
+  .gc-section,
+  .gc-party,
+  .gc-party-fields,
+  .gc-feed-item {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .gc-card,

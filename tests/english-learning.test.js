@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
+const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
 
 test("CEFR curriculum contains seven levels and sixty-nine complete lessons", () => {
   assert.deepEqual(courseLevels.map((level) => level.id), ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
@@ -68,10 +68,28 @@ test("voice coach supports regional male and female profiles with deterministic 
   assert.equal(selectVoice(voices, { voiceProfile: "us-female", voiceURI: "us-male" }).voiceURI, "us-male");
 });
 
+test("voice and microphone adapters are reported truthfully before permission", () => {
+  const unsupported = speechAdapterStatus({ navigator: {} });
+  assert.equal(unsupported.speechOutput.supported, false);
+  assert.equal(unsupported.recognition.supported, false);
+  assert.equal(unsupported.microphone.status, "unavailable");
+  const available = speechAdapterStatus({
+    SpeechSynthesisUtterance: function Utterance() {},
+    speechSynthesis: { speak() {} },
+    SpeechRecognition: function Recognition() {},
+    navigator: { mediaDevices: { getUserMedia() {} } }
+  });
+  assert.equal(available.speechOutput.status, "available");
+  assert.equal(available.recognition.status, "available");
+  assert.equal(available.microphone.status, "permission required");
+});
+
 test("speaking and dictation comparison reports matched and missed words", () => {
   const exact = compareTranscript("Could you clarify the next step please", "Could you clarify the next step, please?");
   assert.equal(exact.score, 100);
   assert.deepEqual(exact.missed, []);
+  assert.equal(exact.method, "local-token-overlap-v1");
+  assert.match(exact.disclaimer, /does not measure phonemes/);
   const partial = compareTranscript("clarify next step", "Could you clarify the next step, please?");
   assert.equal(partial.score, 43);
   assert.deepEqual(partial.missed, ["could", "you", "the", "please"]);

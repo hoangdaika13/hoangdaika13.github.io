@@ -9,6 +9,7 @@ const css = fs.readFileSync(path.join(__dirname, "..", "learning-suite.css"), "u
 
 test("Learning Suite maps every requested workspace to a dedicated engine", () => {
   for (const view of ["home", "profile", "paths", "mastery", "passport", "review", "mistakes", "vocabulary", "lesson", "coach", "speaking", "listening", "writing", "career-simulator", "assessments", "certificates", "classroom", "study-together", "smart-catch-up"]) assert.equal(suite.supports(view), true, view);
+  for (const alias of ["placement", "project", "projects", "project-practice"]) assert.equal(suite.supports(alias), true, alias);
   assert.equal(suite.supports("unknown"), false);
   const engines = new Set(Object.values(suite.views).map((item) => item.engine));
   assert.equal(engines.size, 6);

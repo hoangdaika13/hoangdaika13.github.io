@@ -40,6 +40,14 @@ test("uses versioned local-first state with public, private and shared channels"
   assert.deepEqual([...new Set(state.channels.map((channel) => channel.type))].sort(), ["private", "public", "shared"]);
   assert.ok(state.posts.some((post) => post.replies.length > 0), "seed includes a threaded discussion");
   assert.ok(state.posts.some((post) => post.kind === "guide" && post.solved), "seed includes a solved guide");
+  assert.ok(state.members.every((member) => member.online === false), "seed must not invent online presence");
+});
+
+test("presence is shown only after a live adapter/socket confirmation", () => {
+  const { _test } = loadModule();
+  assert.equal(_test.hasConfirmedConnection({ adapter: {} }), false);
+  assert.equal(_test.hasConfirmedConnection({ adapter: { connected: true } }), true);
+  assert.equal(_test.hasConfirmedConnection({ socket: { connected: true } }), true);
 });
 
 test("permission matrix prevents role escalation for members and guests", () => {

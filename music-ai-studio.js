@@ -71,6 +71,42 @@
     ["privateUpload", "Đã tải thử ở chế độ Riêng tư/Không công khai trước khi phát hành"]
   ];
 
+  const PRODUCER_FINISHING_STAGES = Object.freeze([
+    { id: "variants", label: "Biến thể", note: "Tạo nhiều hướng phối khí có seed, BPM và màu âm riêng.", route: "/music-ai/arrange" },
+    { id: "stems", label: "Stem workflow", note: "Tách hoặc nạp stem thật, đồng bộ mốc thời gian và xuất WAV.", route: "/music-ai/stems" },
+    { id: "regions", label: "Nhạc cụ theo vùng", note: "Thay nhạc cụ không phá hủy trên từng đoạn của arrangement.", route: "/music-ai/arrange" },
+    { id: "tempo", label: "Tempo drift", note: "Đo BPM đầu/giữa/cuối cục bộ để phát hiện track bị trôi nhịp.", route: "/music-ai/audio-qa" },
+    { id: "qa", label: "Kiểm âm", note: "Đo peak, RMS ước tính, clipping, sample rate và waveform thật.", route: "/music-ai/audio-qa" },
+    { id: "loop", label: "Loop 1–5 giờ", note: "Phân tích seam và sinh quy trình FFmpeg crossfade/ping-pong.", route: "/music-ai/loop-builder" },
+    { id: "visualizer", label: "Visualizer", note: "Waveform, spectrum, particle và cover phản ứng theo nhạc.", route: "/music-ai/visualizer" },
+    { id: "chapters", label: "Chapter", note: "Tạo timestamp hợp lệ từ tracklist và thời lượng từng phần.", route: "/music-ai/chapters" },
+    { id: "thumbnail", label: "Thumbnail", note: "Prompt 16:9, chữ ngắn và kiểm tra khả năng đọc trên điện thoại.", route: "/music-ai/youtube-pack" },
+    { id: "release", label: "YouTube release", note: "Metadata, quyền sử dụng, upload riêng tư và lịch phát OAuth.", route: "/music-ai/publish-checklist" }
+  ]);
+
+  const PRODUCER_VARIATION_RECIPES = Object.freeze({
+    piano: [
+      { name: "Felt & Rain", bpm: -2, instruments: "felt piano, rain room tone, warm tape, soft pads", palette: "deep navy, amber window light, muted teal" },
+      { name: "Moonlit Grand", bpm: 2, instruments: "soft grand piano, distant strings, subtle night ambience", palette: "moon silver, indigo, soft violet" },
+      { name: "Minimal Dawn", bpm: 0, instruments: "intimate piano, sparse harmonics, morning birds very low in mix", palette: "mist blue, pale gold, forest green" }
+    ],
+    meditation: [
+      { name: "Still Water", bpm: -3, instruments: "singing bowls, water ambience, low airy pad, sparse piano", palette: "jade, midnight blue, moon silver" },
+      { name: "Breath Cycle", bpm: 0, instruments: "warm drone, soft chimes, breath-like texture, no percussion", palette: "deep teal, violet haze, pearl" },
+      { name: "Temple Morning", bpm: 3, instruments: "wood flute accents, singing bowls, soft wind, distant birds", palette: "moss green, sunrise amber, stone gray" }
+    ],
+    jazz: [
+      { name: "After Hours", bpm: -4, instruments: "warm jazz piano, upright bass, brushed drums, sparse saxophone", palette: "burgundy, gold, midnight cyan" },
+      { name: "Rainy Vinyl", bpm: 0, instruments: "Rhodes, upright bass, vinyl texture, soft brush kit", palette: "charcoal, neon rose, rainy blue" },
+      { name: "Cafe Window", bpm: 4, instruments: "jazz guitar, piano, upright bass, gentle brushes", palette: "espresso brown, cream, emerald" }
+    ],
+    lofi: [
+      { name: "Night Coding", bpm: -3, instruments: "dusty Rhodes, mellow bass, restrained drums, rain texture", palette: "violet, cyan, deep navy" },
+      { name: "Cassette Morning", bpm: 2, instruments: "soft guitar, tape keys, warm bass, light swing drums", palette: "peach, faded blue, warm cream" },
+      { name: "Study Orbit", bpm: 5, instruments: "electric piano, muted synth pluck, rounded bass, soft drums", palette: "electric blue, magenta, black" }
+    ]
+  });
+
   const defaultState = () => ({
     project: {
       name: "HH Relax Session 01",
@@ -107,6 +143,10 @@
     automation: {
       idea: "Một đêm mưa yên tĩnh trong cabin trên núi, piano ấm áp để ngủ và thư giãn",
       trackSeconds: 60,
+      variantCount: 3,
+      diversity: 60,
+      variants: [],
+      selectedVariantId: "",
       plan: "",
       operationName: "",
       lastRunAt: "",
@@ -161,7 +201,14 @@
         project: { ...base.project, ...(saved.project || {}) },
         media: { ...base.media, ...(saved.media || {}) },
         smartLoop: { ...base.smartLoop, targetDuration: saved.smartLoop?.targetDuration || `${clamp(saved.project?.hours || base.project.hours, 1, 8)}:00:00`, ...(saved.smartLoop || {}) },
-        automation: { ...base.automation, ...(saved.automation || {}), stages: { ...base.automation.stages, ...(saved.automation?.stages || {}) } },
+        automation: {
+          ...base.automation,
+          ...(saved.automation || {}),
+          variantCount: clamp(saved.automation?.variantCount || base.automation.variantCount, 2, 6),
+          diversity: clamp(saved.automation?.diversity ?? base.automation.diversity, 0, 100),
+          variants: Array.isArray(saved.automation?.variants) ? saved.automation.variants.slice(0, 6) : [],
+          stages: { ...base.automation.stages, ...(saved.automation?.stages || {}) }
+        },
         chapters: Array.isArray(saved.chapters) && saved.chapters.length ? saved.chapters : base.chapters,
         checklist: { ...(saved.checklist || {}) }
       };
@@ -276,6 +323,123 @@
     }
     if (shouldRender && host && view === "project") render();
     return providerStatus;
+  }
+
+  function stableProducerSeed(value) {
+    let hash = 2166136261;
+    const text = String(value || "hh-music");
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  function buildProducerVariants(project, count = 3, diversity = 60, idea = "") {
+    const safeProject = project && typeof project === "object" ? project : {};
+    const genre = PRODUCER_VARIATION_RECIPES[safeProject.genre] ? safeProject.genre : "piano";
+    const recipes = PRODUCER_VARIATION_RECIPES[genre];
+    const total = Math.round(clamp(count, 2, 6));
+    const strength = clamp(diversity, 0, 100) / 100;
+    const baseBpm = clamp(safeProject.bpm || PRESETS[genre].bpm, 40, 120);
+    const seedBase = stableProducerSeed(`${safeProject.name}|${idea}|${genre}|${total}|${Math.round(strength * 100)}`);
+    return Array.from({ length: total }, (_, index) => {
+      const recipe = recipes[index % recipes.length];
+      const cycle = Math.floor(index / recipes.length);
+      const direction = index % 2 === 0 ? 1 : -1;
+      const bpm = Math.round(clamp(baseBpm + recipe.bpm * strength + cycle * direction * 2, 40, 120));
+      const seed = (seedBase + Math.imul(index + 1, 2654435761)) >>> 0;
+      return {
+        id: `variant-${seed.toString(36)}`,
+        name: `${recipe.name}${cycle ? ` ${cycle + 1}` : ""}`,
+        genre,
+        bpm,
+        instruments: recipe.instruments,
+        palette: recipe.palette,
+        seed,
+        energy: Math.round(clamp(42 + index * 9 + strength * 18, 20, 92)),
+        arrangement: index % 3 === 0 ? "A · B · A' · C · outro" : index % 3 === 1 ? "intro · A · bridge · B · reprise" : "A · evolve · B · breakdown · return"
+      };
+    });
+  }
+
+  function ensureProducerVariants(force = false) {
+    const variants = state.automation.variants || [];
+    if (!force && variants.length >= 2) return variants;
+    state.automation.variants = buildProducerVariants(state.project, state.automation.variantCount, state.automation.diversity, state.automation.idea);
+    state.automation.selectedVariantId = state.automation.variants[0]?.id || "";
+    saveState();
+    return state.automation.variants;
+  }
+
+  function producerReadiness() {
+    const variants = state.automation.variants || [];
+    const hasAudio = Boolean(generatedAudio?.blob || state.media.audioName);
+    const hasVisual = Boolean(generatedVideo?.blob || generatedImage?.blob || state.media.visualName);
+    const stemAdapter = Boolean(window.HH_MUSIC_STEM_ADAPTER || window.HH_MUSIC_STEM_ENDPOINT);
+    const chapterReady = chapterOutput().okay;
+    const checklistDone = PUBLISH_CHECKS.filter(([key]) => Boolean(state.checklist[key])).length;
+    return {
+      variants: { status: variants.length >= 2 ? "done" : "waiting", detail: variants.length >= 2 ? `${variants.length} hướng phối khí đã lưu` : "Tạo 2–6 biến thể cục bộ" },
+      stems: { status: !hasAudio ? "waiting" : stemAdapter ? "ready" : "needs-provider", detail: !hasAudio ? "Cần file audio nguồn" : stemAdapter ? "Adapter stem đã sẵn sàng" : "Nạp stem thủ công hoặc cấu hình Demucs adapter" },
+      regions: { status: variants.length ? "ready" : "waiting", detail: variants.length ? "Region editor có thể áp seed đã chọn" : "Chọn biến thể trước" },
+      tempo: { status: state.qa?.tempoBpm ? (state.qa.tempoDrift <= 1.5 ? "done" : "warning") : "waiting", detail: state.qa?.tempoBpm ? `${state.qa.tempoBpm.toFixed(1)} BPM · drift ${state.qa.tempoDrift.toFixed(2)} BPM` : "Chưa phân tích tempo đầu/giữa/cuối" },
+      qa: { status: state.qa ? (state.qa.peakDb <= -1 && state.qa.clippingPercent === 0 ? "done" : "warning") : "waiting", detail: state.qa ? `${state.qa.peakDb.toFixed(1)} dBFS · ${state.qa.clippingPercent.toFixed(3)}% clipping` : "Chưa kiểm âm file thật" },
+      loop: { status: hasAudio && hasVisual ? "ready" : "waiting", detail: hasAudio && hasVisual ? `${formatDuration(smartLoopTargetSeconds())} · ${resolvedSmartLoopMode()}` : "Cần audio và ảnh/clip" },
+      visualizer: { status: hasAudio ? "ready" : "waiting", detail: hasAudio ? "Audio sẵn sàng để preview canvas" : "Cần file audio" },
+      chapters: { status: chapterReady ? "done" : "waiting", detail: chapterReady ? `${chapterOutput().lines.length} chapter hợp lệ` : "Cần ít nhất 3 chapter từ 10 giây" },
+      thumbnail: { status: generatedImage?.blob ? "ready" : "waiting", detail: generatedImage?.blob ? "Cover sẵn sàng; prompt thumbnail đã đồng bộ" : "Prompt sẵn sàng; chưa có ảnh cover" },
+      release: { status: checklistDone === PUBLISH_CHECKS.length ? "done" : chapterReady ? "ready" : "waiting", detail: `${checklistDone}/${PUBLISH_CHECKS.length} kiểm tra · chapter ${chapterReady ? "đạt" : "chưa đạt"}` }
+    };
+  }
+
+  function applyProducerVariant(id) {
+    const variant = (state.automation.variants || []).find((item) => item.id === id);
+    if (!variant) return false;
+    state.automation.selectedVariantId = variant.id;
+    state.project.bpm = variant.bpm;
+    state.project.instruments = variant.instruments;
+    state.project.palette = variant.palette;
+    state.automation.stages.variants = { status: "done", detail: `${variant.name} · seed ${variant.seed}`, updatedAt: new Date().toISOString() };
+    saveState();
+    return true;
+  }
+
+  function producerHandoffManifest() {
+    const variants = state.automation.variants || [];
+    const selected = variants.find((item) => item.id === state.automation.selectedVariantId) || variants[0] || null;
+    const stemRoles = {
+      piano: ["piano", "ambience", "pads", "texture"],
+      meditation: ["bowls", "pads", "nature", "piano"],
+      jazz: ["piano", "bass", "drums", "saxophone"],
+      lofi: ["keys", "bass", "drums", "texture"]
+    }[state.project.genre] || ["music", "ambience", "texture", "other"];
+    let cursor = 0;
+    const regions = state.chapters.map((chapter, index) => {
+      const durationSeconds = Math.max(10, parseDuration(chapter.duration));
+      const region = {
+        id: `region-${index + 1}`,
+        label: String(chapter.name || `Part ${index + 1}`),
+        startSeconds: cursor,
+        endSeconds: cursor + durationSeconds,
+        instrument: stemRoles[index % stemRoles.length],
+        operation: "non-destructive-replace",
+        seed: selected ? (selected.seed + index * 101) >>> 0 : stableProducerSeed(`${state.project.name}-${index}`)
+      };
+      cursor += durationSeconds;
+      return region;
+    });
+    return {
+      schema: "hh.music.producer-handoff.v1",
+      createdAt: new Date().toISOString(),
+      project: { name: state.project.name, genre: state.project.genre, bpm: state.project.bpm, hours: state.project.hours },
+      selectedVariant: selected,
+      stems: stemRoles.map((role, index) => ({ id: `stem-${role}`, role, gainDb: index ? -3 : 0, pan: 0, sourceStatus: "awaiting-real-audio", syncOffsetMs: 0 })),
+      regions,
+      tempo: state.qa?.tempoBpm ? { expectedBpm: state.project.bpm, measuredBpm: state.qa.tempoBpm, driftBpm: state.qa.tempoDrift, windows: state.qa.tempoWindows } : { expectedBpm: state.project.bpm, status: "awaiting-local-analysis" },
+      loop: { targetSeconds: smartLoopTargetSeconds(), mode: resolvedSmartLoopMode(), command: ffmpegCommand() },
+      youtube: { ...youtubePack(), chapters: chapterOutput().lines, checklist: { ...state.checklist } }
+    };
   }
 
   function setPipelineStage(id, status, detail = "") {
@@ -435,6 +599,34 @@
     </header>`;
   }
 
+  function producerVariantsView() {
+    const variants = state.automation.variants || [];
+    if (!variants.length) return `<section class="mai-producer-empty"><div><strong>Chưa tạo biến thể</strong><span>Biến thể được tính cục bộ từ preset, độ đa dạng và seed dự án; không tiêu hao API.</span></div><button type="button" data-generate-variants>Tạo biến thể</button></section>`;
+    return `<section class="mai-producer-variants" aria-label="Biến thể phối khí">${variants.map((variant, index) => {
+      const selected = state.automation.selectedVariantId === variant.id;
+      return `<article class="${selected ? "is-selected" : ""}"><header><i>${String(index + 1).padStart(2, "0")}</i><span><strong>${escapeHtml(variant.name)}</strong><small>Seed ${variant.seed}</small></span><b>${variant.bpm} BPM</b></header><p>${escapeHtml(variant.instruments)}</p><footer><span>${escapeHtml(variant.arrangement)} · ${variant.energy}% energy</span><button type="button" data-select-variant="${escapeHtml(variant.id)}" aria-pressed="${selected}">${selected ? "Đang dùng" : "Áp dụng"}</button></footer></article>`;
+    }).join("")}</section>`;
+  }
+
+  function producerFinishingView() {
+    const readiness = producerReadiness();
+    const completed = PRODUCER_FINISHING_STAGES.filter((item) => ["done", "ready"].includes(readiness[item.id]?.status)).length;
+    const labels = { done: "Đã xong", ready: "Sẵn sàng", warning: "Cần sửa", "needs-provider": "Cần provider", waiting: "Đang chờ" };
+    return `<section class="mai-producer-finish"><header><div><p>PRODUCTION CONTROL ROOM</p><h4>Hoàn thiện track mà không bỏ sót bước</h4><span>Mỗi ô mở đúng workspace chuyên dụng; trạng thái dựa trên dữ liệu thật đang có trong dự án.</span></div><strong>${completed}/${PRODUCER_FINISHING_STAGES.length}</strong></header><div>${PRODUCER_FINISHING_STAGES.map((item, index) => {
+      const itemState = readiness[item.id] || { status: "waiting", detail: item.note };
+      return `<button type="button" class="is-${itemState.status}" data-app-route="${item.route}"><i>${String(index + 1).padStart(2, "0")}</i><span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(itemState.detail || item.note)}</small></span><b>${labels[itemState.status] || labels.waiting} →</b></button>`;
+    }).join("")}</div></section>`;
+  }
+
+  function producerCommandView() {
+    const automation = state.automation;
+    return `<section class="mai-panel mai-producer-command">
+      <header><div><p>LOCAL PRODUCER INTELLIGENCE</p><h3>Biến thể, hậu kỳ và kiểm soát phát hành</h3><span>Tạo hướng phối khí bằng engine xác định trên thiết bị; các bước cần GPU/provider luôn được ghi rõ và không giả lập thành công.</span></div><div class="mai-producer-command__controls"><label><span>Số biến thể</span><select data-automation-field="variantCount">${[2, 3, 4, 5, 6].map((amount) => `<option value="${amount}" ${Number(automation.variantCount) === amount ? "selected" : ""}>${amount} hướng</option>`).join("")}</select></label><label><span>Độ đa dạng · ${automation.diversity}%</span><input type="range" min="0" max="100" step="5" value="${automation.diversity}" data-automation-field="diversity"></label><button type="button" data-generate-variants>Tạo lại biến thể</button><button type="button" data-download-producer-handoff>Tải handoff JSON</button><button type="button" data-reset-producer>Đặt lại tiến trình</button></div></header>
+      ${producerVariantsView()}
+      ${producerFinishingView()}
+    </section>`;
+  }
+
   function automationView() {
     const automation = state.automation;
     const providers = providerStatus?.providers || {};
@@ -495,6 +687,7 @@
     const steps = workflowSteps.map((item, index) => `<button class="mai-flow-card" type="button" data-app-route="/music-ai/${item[0]}"><i>${String(index + 2).padStart(2, "0")}</i><span><strong>${item[1]}</strong><small>${item[2]}</small></span><b>→</b></button>`).join("");
     return `<section class="mai-view">
       ${automationView()}
+      ${producerCommandView()}
       <div class="mai-section-head"><div><p>PROJECT BLUEPRINT</p><h3>Thiết lập một lần, dùng cho cả dây chuyền</h3><span>Mọi prompt, phép tính loop và nội dung xuất bản tự cập nhật theo dự án này.</span></div><button class="mai-primary" type="button" data-action="save-project">Lưu dự án</button></div>
       <div class="mai-layout mai-layout--project">
         <form class="mai-panel mai-project-form" onsubmit="return false">
@@ -746,6 +939,9 @@
     state.automation.stages = {};
     saveState();
     render();
+    const variants = ensureProducerVariants(false);
+    const selectedVariant = variants.find((item) => item.id === state.automation.selectedVariantId) || variants[0];
+    if (selectedVariant) applyProducerVariant(selectedVariant.id);
     const pack = promptPack();
     try {
       const health = await refreshProviders(false);
@@ -776,6 +972,7 @@
         await storeAsset("audio", audioBlob);
         state.media.audioName = `${safeProjectName()}-track.mp3`;
         state.media.audioDuration = Number(trackResponse.media.durationSeconds || state.automation.trackSeconds);
+        await analyzeAudio(audioBlob);
         setPipelineStage("music", "done", `${trackResponse.media.model} · instrumental đã sẵn sàng`);
       } else {
         setPipelineStage("music", "blocked", health?.providers?.music?.configured ? "Đăng nhập tài khoản quản trị để tạo nhạc" : "Cần ELEVENLABS_API_KEY trên Vercel");
@@ -842,6 +1039,8 @@
       prompts: promptPack(),
       youtube,
       chapters: chapterOutput().lines,
+      finishingReadiness: producerReadiness(),
+      producerHandoff: producerHandoffManifest(),
       renderCommand: ffmpegCommand(),
       generatedAssets: { image: Boolean(generatedImage), audio: Boolean(generatedAudio), video: Boolean(generatedVideo) }
     };
@@ -1019,6 +1218,71 @@
     element.src = url;
   }
 
+  function median(values) {
+    const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+    if (!sorted.length) return 0;
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+
+  function estimateTempoWindow(samples, sampleRate, startSeconds, durationSeconds, expectedBpm) {
+    const envelopeRate = 100;
+    const frameSize = Math.max(1, Math.floor(sampleRate / envelopeRate));
+    const start = Math.max(0, Math.floor(startSeconds * sampleRate));
+    const end = Math.min(samples.length, start + Math.floor(durationSeconds * sampleRate));
+    const envelope = [];
+    for (let cursor = start; cursor < end; cursor += frameSize) {
+      const limit = Math.min(end, cursor + frameSize);
+      let sum = 0;
+      for (let index = cursor; index < limit; index += 1) sum += Math.abs(samples[index]);
+      envelope.push(sum / Math.max(1, limit - cursor));
+    }
+    if (envelope.length < envelopeRate * 4) return null;
+    const onsets = new Float32Array(envelope.length);
+    let onsetEnergy = 0;
+    for (let index = 1; index < envelope.length; index += 1) {
+      const onset = Math.max(0, envelope[index] - envelope[index - 1] * 0.92);
+      onsets[index] = onset;
+      onsetEnergy += onset;
+    }
+    if (onsetEnergy < 0.00001) return null;
+    let best = { bpm: 0, score: -Infinity };
+    let secondScore = -Infinity;
+    for (let bpm = 40; bpm <= 180; bpm += 1) {
+      const lag = Math.round(envelopeRate * 60 / bpm);
+      let correlation = 0;
+      for (let index = lag; index < onsets.length; index += 1) correlation += onsets[index] * onsets[index - lag];
+      const distance = expectedBpm ? Math.abs(bpm - expectedBpm) / Math.max(20, expectedBpm) : 0;
+      const score = correlation * (1 - Math.min(.18, distance * .05));
+      if (score > best.score) {
+        secondScore = best.score;
+        best = { bpm, score };
+      } else if (score > secondScore) secondScore = score;
+    }
+    const confidence = best.score > 0 ? clamp((best.score - Math.max(0, secondScore)) / best.score * 100, 0, 100) : 0;
+    return { bpm: best.bpm, confidence };
+  }
+
+  function estimateTempoDrift(samples, sampleRate, expectedBpm = 0) {
+    if (!samples?.length || !sampleRate) return { tempoBpm: 0, tempoWindows: [], tempoDrift: 0, tempoConfidence: 0 };
+    const totalSeconds = samples.length / sampleRate;
+    const windowSeconds = Math.min(30, Math.max(6, totalSeconds / 3));
+    const starts = totalSeconds <= windowSeconds * 1.35
+      ? [0]
+      : [0, Math.max(0, totalSeconds / 2 - windowSeconds / 2), Math.max(0, totalSeconds - windowSeconds)];
+    const windows = starts.map((startSeconds, index) => {
+      const result = estimateTempoWindow(samples, sampleRate, startSeconds, windowSeconds, expectedBpm);
+      return result ? { position: ["Đầu", "Giữa", "Cuối"][index] || `Vùng ${index + 1}`, startSeconds, ...result } : null;
+    }).filter(Boolean);
+    const bpms = windows.map((item) => item.bpm);
+    return {
+      tempoBpm: median(bpms),
+      tempoWindows: windows,
+      tempoDrift: bpms.length > 1 ? Math.max(...bpms) - Math.min(...bpms) : 0,
+      tempoConfidence: median(windows.map((item) => item.confidence))
+    };
+  }
+
   async function analyzeAudio(file) {
     if (file.size > 250 * 1024 * 1024) {
       toast("File trên 250 MB có thể làm trình duyệt thiếu bộ nhớ.", "error");
@@ -1049,15 +1313,17 @@
           waveform[bucket] = Math.max(waveform[bucket], absolute);
         }
       }
+      const tempo = estimateTempoDrift(buffer.getChannelData(0), buffer.sampleRate, state.project.bpm);
       state.qa = {
-        name: file.name,
+        name: file.name || state.media.audioName || "HH generated track",
         duration: buffer.duration,
         sampleRate: buffer.sampleRate,
         channels: buffer.numberOfChannels,
         peakDb: peak > 0 ? 20 * Math.log10(peak) : -120,
         rmsDb: sampled ? 20 * Math.log10(Math.sqrt(sum / sampled) || 1e-9) : -120,
         clippingPercent: sampled ? clipping / sampled * 100 : 0,
-        waveform
+        waveform,
+        ...tempo
       };
       saveState();
       render();
@@ -1107,7 +1373,7 @@
     }
     if (target.matches("[data-automation-field]")) {
       const key = target.dataset.automationField;
-      state.automation[key] = key === "trackSeconds" ? Number(target.value) : target.value;
+      state.automation[key] = ["trackSeconds", "variantCount", "diversity"].includes(key) ? Number(target.value) : target.value;
       saveState();
     }
     if (target.matches("[data-chapter-name]")) {
@@ -1135,7 +1401,7 @@
     }
     if (target.matches("[data-automation-field]")) {
       const key = target.dataset.automationField;
-      state.automation[key] = key === "trackSeconds" ? Number(target.value) : target.value;
+      state.automation[key] = ["trackSeconds", "variantCount", "diversity"].includes(key) ? Number(target.value) : target.value;
       saveState();
       return;
     }
@@ -1157,7 +1423,19 @@
       target.files[0].text().then((text) => {
         const imported = JSON.parse(text);
         const base = defaultState();
-        state = { ...base, ...imported, project: { ...base.project, ...(imported.project || {}) }, media: { ...base.media, ...(imported.media || {}) }, smartLoop: { ...base.smartLoop, ...(imported.smartLoop || {}) } };
+        state = {
+          ...base,
+          ...imported,
+          project: { ...base.project, ...(imported.project || {}) },
+          media: { ...base.media, ...(imported.media || {}) },
+          smartLoop: { ...base.smartLoop, ...(imported.smartLoop || {}) },
+          automation: {
+            ...base.automation,
+            ...(imported.automation || {}),
+            variants: Array.isArray(imported.automation?.variants) ? imported.automation.variants.slice(0, 6) : [],
+            stages: { ...(imported.automation?.stages || {}) }
+          }
+        };
         saveState();
         render();
         toast("Đã nhập dự án.");
@@ -1172,6 +1450,30 @@
     if (button.dataset.action === "save-project") { saveState(); toast("Dự án đã lưu trên thiết bị."); }
     if (button.dataset.action === "export-project") download(JSON.stringify(state, null, 2), `${state.project.name.replace(/[^a-z0-9_-]+/gi, "-")}.hhmusic.json`, "application/json");
     if (button.hasAttribute("data-run-auto")) runAutomaticPipeline();
+    if (button.hasAttribute("data-generate-variants")) {
+      ensureProducerVariants(true);
+      render();
+      toast("Đã tạo bộ biến thể mới trên thiết bị.");
+    }
+    if (button.hasAttribute("data-download-producer-handoff")) {
+      ensureProducerVariants(false);
+      download(JSON.stringify(producerHandoffManifest(), null, 2), `${safeProjectName()}-producer-handoff.json`, "application/json");
+      toast("Đã xuất metadata stem, region, tempo, loop và YouTube.");
+    }
+    if (button.dataset.selectVariant) {
+      if (applyProducerVariant(button.dataset.selectVariant)) {
+        render();
+        toast("Đã áp dụng BPM, nhạc cụ và bảng màu của biến thể.");
+      }
+    }
+    if (button.hasAttribute("data-reset-producer")) {
+      state.automation.stages = {};
+      state.automation.lastError = "";
+      state.automation.operationName = "";
+      saveState();
+      render();
+      toast("Đã đặt lại tiến trình; media và biến thể vẫn được giữ an toàn.");
+    }
     if (button.hasAttribute("data-stop-auto")) { pipelineCancelled = true; toast("Pipeline sẽ dừng sau tác vụ hiện tại."); }
     if (button.hasAttribute("data-refresh-providers")) { refreshProviders().then(() => toast("Đã cập nhật trạng thái kết nối.")); }
     if (button.dataset.downloadGenerated) {
@@ -1228,5 +1530,10 @@
     host = null;
   }
 
-  window.HHMusicAIStudio = { mount, unmount, views: VIEWS.map((item) => ({ ...item })) };
+  window.HHMusicAIStudio = {
+    mount,
+    unmount,
+    views: VIEWS.map((item) => ({ ...item })),
+    producer: { buildProducerVariants, estimateTempoDrift, producerHandoffManifest }
+  };
 })();

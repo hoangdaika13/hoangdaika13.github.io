@@ -70,3 +70,14 @@ test("certificate codes are deterministic for learner, title and day", () => {
   assert.match(first.code, /^HH-20260721-/);
   assert.equal(first.verified, false);
 });
+
+test("practice projects persist bounded evidence and feed the daily plan", () => {
+  const created = core.createProject(core.defaultState(), { trackId: "technology", level: "B1", title: "<Demo>", skills: ["project", "writing", "bad"] }, Date.UTC(2026, 6, 21));
+  assert.equal(created.project.trackId, "technology");
+  assert.deepEqual(created.project.skills, ["project", "writing"]);
+  assert.equal(created.project.stages.length, 5);
+  const updated = core.updateProjectStage(created.state, created.project.id, "brief", { completed: true, evidence: "A real brief" }, Date.UTC(2026, 6, 22));
+  assert.equal(updated.project.stages[0].status, "done");
+  assert.equal(updated.progress.completed, 1);
+  assert.equal(core.buildDailyPlan(updated.state).nextProject.project.id, created.project.id);
+});

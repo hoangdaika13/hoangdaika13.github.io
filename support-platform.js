@@ -1,6 +1,16 @@
-(() => {
+(function initHHSupportPlatform(globalScope, factory) {
+  "use strict";
+  const api = factory(globalScope || {});
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  if (globalScope) globalScope.HHSupportPage = api;
+})(typeof globalThis !== "undefined" ? globalThis : this, function supportPlatformFactory(globalScope) {
   "use strict";
 
+  const window = globalScope;
+  const VERSION = 2;
+  const INTEGRATION_VERSION = "support-platform.v12";
+  const STORAGE_KEY = "hh.support.pending.v2";
+  const LEGACY_STORAGE_KEY = "hh-payos-pending";
   let refreshTimer = 0;
   let paymentPollTimer = 0;
   let paymentCountdownTimer = 0;
@@ -10,6 +20,52 @@
   const dateText = value => value ? new Date(value).toLocaleString("vi-VN", { dateStyle: "medium", timeStyle: "short" }) : "--";
   const getUser = () => { try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}"); } catch { return {}; } };
   const downloadText = (name, content) => { const anchor = document.createElement("a"); anchor.href = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" })); anchor.download = name; anchor.click(); setTimeout(() => URL.revokeObjectURL(anchor.href), 1200); };
+
+  function normalizePending(input) {
+    if (!input || typeof input !== "object") return null;
+    const id = String(input.id || "").slice(0, 120);
+    const reference = String(input.reference || "").slice(0, 40);
+    const checkoutUrl = String(input.checkoutUrl || "").slice(0, 1200);
+    if (!id || !reference || !checkoutUrl.startsWith("https://")) return null;
+    return {
+      version: VERSION,
+      id,
+      reference,
+      amount: Math.max(0, Math.min(1000000000, Math.round(Number(input.amount) || 0))),
+      status: ["pending", "submitted", "verified", "refunded", "rejected", "payment_error"].includes(input.status) ? input.status : "pending",
+      checkoutUrl,
+      qrImage: String(input.qrImage || "").startsWith("data:image/") ? String(input.qrImage).slice(0, 1500000) : "",
+      pollUntil: Math.max(0, Number(input.pollUntil) || 0)
+    };
+  }
+
+  function createPayOSCheckoutAdapter(scope = globalScope, timeoutMs = 8000) {
+    const waitUntilReady = async () => {
+      const deadline = Date.now() + timeoutMs;
+      while (!scope.PayOSCheckout?.usePayOS && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));
+      if (!scope.PayOSCheckout?.usePayOS) throw new Error("Không tải được giao diện payOS. Hãy kiểm tra kết nối mạng rồi thử lại.");
+      return scope.PayOSCheckout;
+    };
+    return {
+      async open({ checkoutUrl, onProviderAccepted, onCancel, onExit }) {
+        if (!String(checkoutUrl || "").startsWith("https://")) throw new Error("payOS chưa trả về checkout URL hợp lệ.");
+        const sdk = await waitUntilReady();
+        const returnUrl = new URL(scope.location?.pathname || "/", scope.location?.origin || "https://localhost").href;
+        const controller = sdk.usePayOS({
+          RETURN_URL: returnUrl,
+          ELEMENT_ID: "hh-payos-embedded",
+          CHECKOUT_URL: checkoutUrl,
+          embedded: true,
+          onSuccess: () => onProviderAccepted?.(),
+          onCancel: () => onCancel?.(),
+          onExit: () => onExit?.()
+        });
+        if (!controller?.open) throw new Error("SDK payOS chưa tạo được checkout controller.");
+        controller.open();
+        return controller;
+      }
+    };
+  }
 
   function markup(user) {
     const presets = [20000, 50000, 100000, 200000, 500000, 1000000];
@@ -81,13 +137,19 @@
         <section class="support-leaderboard"><header><div><span>Top supporters</span><h3>Bảng tri ân</h3></div></header><div data-support-leaderboard><p class="support-empty">Danh sách sẽ xuất hiện sau khi đối soát.</p></div></section>
       </div>
 
+      <section class="support-history" data-support-history>
+        <header><div><span>Lịch sử của tôi</span><h3>Giao dịch và hoàn tiền</h3></div><button type="button" data-support-history-refresh>Làm mới</button></header>
+        <p>Chỉ tài khoản đang đăng nhập xem được lịch sử của chính mình. Trạng thái hoàn tiền chỉ đổi sau khi adapter phía máy chủ xác nhận.</p>
+        <div data-support-history-list><p class="support-empty">Đăng nhập để đồng bộ lịch sử ủng hộ.</p></div>
+      </section>
+
       <section class="support-transparency"><div><p class="section-kicker">MINH BẠCH</p><h3>Nguồn lực được sử dụng như thế nào?</h3><p>Mục tiêu là duy trì nền tảng ổn định, bảo vệ dữ liệu người dùng và tiếp tục phát triển công cụ miễn phí.</p></div><div class="support-allocation"><span style="--allocation:40%"><b>40%</b>Hosting & database</span><span style="--allocation:30%"><b>30%</b>AI & API services</span><span style="--allocation:20%"><b>20%</b>Phát triển sản phẩm</span><span style="--allocation:10%"><b>10%</b>Dự phòng vận hành</span></div></section>
 
       <section class="support-faq"><h3>Câu hỏi thường gặp</h3><details><summary>Khi nào khoản ủng hộ xuất hiện công khai?</summary><p>Khoản ủng hộ xuất hiện sau khi webhook payOS xác minh chữ ký, mã đơn và số tiền thành công.</p></details><details><summary>Khi nào tôi nhận được email cảm ơn?</summary><p>Ngay sau khi máy chủ xác minh đúng giao dịch. Email có mã xác nhận riêng; webhook gọi lại nhiều lần cũng không gửi trùng.</p></details><details><summary>Tại sao số tiền chưa được cộng ngay?</summary><p>Hệ thống chỉ cộng giao dịch có chữ ký hợp lệ, đúng mã đơn và đúng số tiền. Điều này ngăn số liệu giả và giao dịch bị tính hai lần.</p></details><details><summary>Thông tin nào được công khai?</summary><p>Chỉ tên hiển thị, số tiền và lời nhắn. Email, tài khoản đăng nhập và thông tin đối soát không bao giờ xuất hiện trên bảng công khai.</p></details><details><summary>Tôi có thể ủng hộ ẩn danh không?</summary><p>Có. Chọn “Ủng hộ ẩn danh” trước khi tạo giao dịch.</p></details></section>
 
       <section class="support-admin" data-support-admin hidden>
         <header><div><p class="section-kicker">OWNER CONTROL</p><h3>Đối soát giao dịch ủng hộ</h3><p>Chỉ email chủ sở hữu được API trả danh sách này.</p></div><button type="button" data-support-admin-refresh>Làm mới</button></header>
-        <div class="support-admin-toolbar"><label>Trạng thái<select data-support-admin-filter><option value="all">Tất cả</option><option value="submitted">Đã báo chuyển</option><option value="pending">Chờ chuyển</option><option value="verified">Đã xác nhận</option><option value="rejected">Từ chối</option></select></label><span data-support-admin-count>0 giao dịch</span></div>
+        <div class="support-admin-toolbar"><label>Trạng thái<select data-support-admin-filter><option value="all">Tất cả</option><option value="submitted">Đã báo chuyển</option><option value="pending">Chờ chuyển</option><option value="verified">Đã xác nhận</option><option value="refunded">Đã hoàn tiền</option><option value="rejected">Từ chối</option></select></label><span data-support-admin-count>0 giao dịch</span></div>
         <div class="support-admin-list" data-support-admin-list></div>
       </section>
     </section>`;
@@ -106,6 +168,7 @@
     let payOSAvailable = false;
     let flowStage = "details";
     let checkoutController = null;
+    const checkoutAdapter = options.checkoutAdapter || createPayOSCheckoutAdapter(window);
 
     const api = async (path = "", request = {}) => {
       if (!apiBase) throw new Error("Backend donate chưa được cấu hình.");
@@ -122,7 +185,7 @@
     const setFormStatus = (message, type = "") => { const node = page.querySelector("[data-support-form-status]"); node.textContent = message; node.dataset.state = type; };
     const selectedAmount = () => Math.round(Number(page.querySelector("[data-support-amount]").value) || 0);
     const updateAmount = amount => { page.querySelector("[data-support-amount]").value = amount; page.querySelectorAll("[data-support-preset]").forEach(button => button.classList.toggle("active", Number(button.dataset.supportPreset) === Number(amount))); };
-    const pendingKey = "hh-payos-pending";
+    const pendingKey = STORAGE_KEY;
     const submitButton = page.querySelector("[data-support-form] button[type=submit]");
     const stopPaymentPolling = () => { clearInterval(paymentPollTimer); paymentPollTimer = 0; };
     const stopPaymentCountdown = () => { clearInterval(paymentCountdownTimer); paymentCountdownTimer = 0; };
@@ -173,10 +236,11 @@
       return true;
     };
     const rememberPending = donation => {
-      try { sessionStorage.setItem(pendingKey, JSON.stringify(donation)); } catch { /* Storage may be unavailable in private mode. */ }
+      const safe = normalizePending(donation);
+      try { if (safe) sessionStorage.setItem(pendingKey, JSON.stringify(safe)); } catch { /* Storage may be unavailable in private mode. */ }
     };
     const forgetPending = () => {
-      try { sessionStorage.removeItem(pendingKey); } catch { /* Storage may be unavailable in private mode. */ }
+      try { sessionStorage.removeItem(pendingKey); sessionStorage.removeItem(LEGACY_STORAGE_KEY); } catch { /* Storage may be unavailable in private mode. */ }
     };
     const setJourney = (stage = "details", receiptStatus = "") => {
       const stages = ["details", "payment", "verify", "email"];
@@ -204,25 +268,14 @@
         }
       }
     };
-    const waitForPayOS = async () => {
-      const deadline = Date.now() + 8000;
-      while (!window.PayOSCheckout?.usePayOS && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));
-      if (!window.PayOSCheckout?.usePayOS) throw new Error("Không tải được giao diện payOS. Hãy kiểm tra kết nối mạng rồi thử lại.");
-      return window.PayOSCheckout;
-    };
     const openEmbeddedCheckout = async checkoutUrl => {
-      const sdk = await waitForPayOS();
       closeEmbeddedCheckout();
-      const returnUrl = new URL(window.location.pathname || "/", window.location.origin).href;
-      checkoutController = sdk.usePayOS({
-        RETURN_URL: returnUrl,
-        ELEMENT_ID: "hh-payos-embedded",
-        CHECKOUT_URL: checkoutUrl,
-        embedded: true,
-        onSuccess: async () => {
+      checkoutController = await checkoutAdapter.open({
+        checkoutUrl,
+        onProviderAccepted: async () => {
           showStage("verify");
-          page.querySelector("[data-support-verify-title]").textContent = "Ngân hàng đã ghi nhận thanh toán";
-          page.querySelector("[data-support-verify-status]").textContent = "Đang xác minh chữ ký webhook và hoàn tất email cảm ơn…";
+          page.querySelector("[data-support-verify-title]").textContent = "payOS đã chuyển về bước xác minh";
+          page.querySelector("[data-support-verify-status]").textContent = "Chưa báo thành công: đang chờ backend nhận webhook có chữ ký hợp lệ và đối chiếu số tiền…";
           await checkCurrentDonation(true);
           beginPaymentPolling();
         },
@@ -239,7 +292,6 @@
           if (currentDonation?.status !== "verified") setFormStatus("Giao diện VietQR đã đóng. Bấm tiếp tục để tạo lại nếu cần.");
         }
       });
-      checkoutController.open();
       const embed = page.querySelector("[data-support-payos-embed]");
       const markCheckoutReady = () => {
         if (!embed?.querySelector("iframe")) return false;
@@ -344,6 +396,15 @@
     };
 
     const loadPublic = async () => { try { renderPublic(await api()); } catch (error) { setFormStatus(error.message, "error"); } };
+    const renderHistory = items => {
+      const list = page.querySelector("[data-support-history-list]");
+      const labels = { pending: "Chờ thanh toán", submitted: "Chờ đối soát", verified: "Đã xác minh", refunded: "Đã hoàn tiền", rejected: "Từ chối", payment_error: "Lỗi tạo thanh toán" };
+      list.innerHTML = items.length ? items.map(item => `<article><div><strong>${escapeHtml(item.reference)}</strong><small>${dateText(item.createdAt)}</small></div><b>${money(item.amount)}</b><span class="support-status support-status--${escapeHtml(item.status)}">${labels[item.status] || escapeHtml(item.status)}</span>${item.refund ? `<small>Hoàn tiền: ${escapeHtml(item.refund.status || "đang chờ provider")}${item.refund.providerReference ? ` · ${escapeHtml(item.refund.providerReference)}` : ""}</small>` : ""}</article>`).join("") : '<p class="support-empty">Tài khoản này chưa có giao dịch ủng hộ.</p>';
+    };
+    const loadHistory = async () => {
+      try { const data = await api("?history=1"); renderHistory(data.donations || []); }
+      catch { page.querySelector("[data-support-history-list]").innerHTML = '<p class="support-empty">Đăng nhập để đồng bộ lịch sử ủng hộ của chính bạn.</p>'; }
+    };
     const renderAdmin = filter => {
       const list = filter && filter !== "all" ? adminItems.filter(item => item.status === filter) : adminItems;
       page.querySelector("[data-support-admin-count]").textContent = `${list.length} giao dịch`;
@@ -351,7 +412,8 @@
       page.querySelector("[data-support-admin-list]").innerHTML = list.length ? list.map(item => {
         const receipt = item.receipt || {};
         const canRetry = item.status === "verified" && receipt.status !== "sent";
-        return `<article data-donation-id="${escapeHtml(item.id)}"><header><div><strong>${escapeHtml(item.donorName)}</strong><span>${escapeHtml(item.reference)}</span></div><b>${money(item.amount)}</b></header><p>${escapeHtml(item.message || "Không có lời nhắn")}</p><dl><div><dt>Email</dt><dd>${escapeHtml(item.email || "--")}</dd></div><div><dt>Tạo lúc</dt><dd>${dateText(item.createdAt)}</dd></div><div><dt>Đã báo chuyển</dt><dd>${dateText(item.submittedAt)}</dd></div><div><dt>Trạng thái</dt><dd><span class="support-status support-status--${escapeHtml(item.status)}">${({ pending: "Chờ chuyển", submitted: "Đã báo chuyển", verified: "Đã xác nhận", rejected: "Từ chối" })[item.status] || item.status}</span></dd></div><div><dt>Thư cảm ơn</dt><dd><span class="support-status support-status--receipt-${escapeHtml(receipt.status)}">${receiptLabels[receipt.status] || receipt.status || "Đang chờ"}</span></dd></div><div><dt>Gửi lúc</dt><dd>${dateText(receipt.sentAt)}</dd></div></dl>${receipt.lastError ? `<p class="support-admin-error">${escapeHtml(receipt.lastError)}</p>` : ""}<footer><button type="button" data-support-admin-action="verified">Xác nhận đã nhận</button>${canRetry ? '<button type="button" data-support-receipt-retry>Gửi lại email</button>' : ""}<button type="button" data-support-admin-action="pending">Đưa về chờ</button><button class="danger" type="button" data-support-admin-action="rejected">Từ chối</button></footer></article>`;
+        const refundPending = item.status === "verified" && item.refund?.status && item.refund.status !== "confirmed";
+        return `<article data-donation-id="${escapeHtml(item.id)}"><header><div><strong>${escapeHtml(item.donorName)}</strong><span>${escapeHtml(item.reference)}</span></div><b>${money(item.amount)}</b></header><p>${escapeHtml(item.message || "Không có lời nhắn")}</p><dl><div><dt>Email</dt><dd>${escapeHtml(item.email || "--")}</dd></div><div><dt>Tạo lúc</dt><dd>${dateText(item.createdAt)}</dd></div><div><dt>Trạng thái</dt><dd><span class="support-status support-status--${escapeHtml(item.status)}">${({ pending: "Chờ chuyển", submitted: "Đã báo chuyển", verified: "Đã xác minh từ backend", refunded: "Đã hoàn tiền", rejected: "Từ chối" })[item.status] || item.status}</span></dd></div><div><dt>Thư cảm ơn</dt><dd><span class="support-status support-status--receipt-${escapeHtml(receipt.status)}">${receiptLabels[receipt.status] || receipt.status || "Đang chờ"}</span></dd></div><div><dt>Hoàn tiền</dt><dd>${escapeHtml(item.refund?.status || "Chưa yêu cầu")}</dd></div></dl>${receipt.lastError ? `<p class="support-admin-error">${escapeHtml(receipt.lastError)}</p>` : ""}<footer>${canRetry ? '<button type="button" data-support-receipt-retry>Gửi lại email</button>' : ""}${item.status === "verified" && !item.refund ? '<button type="button" data-support-refund-request>Yêu cầu đối soát hoàn tiền</button>' : ""}${refundPending ? '<button type="button" data-support-refund-reconcile>Kiểm tra provider</button>' : ""}${["pending","submitted"].includes(item.status) ? '<button type="button" data-support-admin-action="pending">Đưa về chờ</button><button class="danger" type="button" data-support-admin-action="rejected">Từ chối</button>' : ""}</footer></article>`;
       }).join("") : '<p class="support-empty">Không có giao dịch ở trạng thái này.</p>';
     };
     const loadAdmin = async () => {
@@ -373,6 +435,7 @@
         return;
       }
       if (event.target.closest("[data-support-refresh]")) return loadPublic();
+      if (event.target.closest("[data-support-history-refresh]")) return loadHistory();
       if (event.target.closest("[data-support-admin-refresh]")) return loadAdmin();
       if (event.target.closest("[data-support-download-receipt]") && currentDonation?.status === "verified") {
         const receipt = currentDonation.receipt || {};
@@ -383,6 +446,21 @@
         const row = receiptRetry.closest("[data-donation-id]"); receiptRetry.disabled = true;
         try { const data = await api("", { method: "POST", body: { action: "receipt:retry", id: row.dataset.donationId } }); setFormStatus(data.receipt?.status === "sent" ? "Email cảm ơn đã được gửi thành công." : "Yêu cầu gửi email đã được xử lý.", data.receipt?.status === "sent" ? "success" : ""); await loadAdmin(); }
         catch (error) { setFormStatus(error.message, "error"); receiptRetry.disabled = false; }
+        return;
+      }
+      const refundRequest = event.target.closest("[data-support-refund-request]"); if (refundRequest) {
+        const row = refundRequest.closest("[data-donation-id]");
+        const reason = String(window.prompt?.("Lý do hoàn tiền (bắt buộc):", "Yêu cầu hoàn tiền từ người ủng hộ") || "").trim();
+        if (!reason) return;
+        refundRequest.disabled = true;
+        try { await api("", { method: "POST", body: { action: "refund:request", id: row.dataset.donationId, reason } }); setFormStatus("Đã ghi nhận yêu cầu. Chưa báo hoàn tiền cho tới khi adapter server xác nhận."); await loadAdmin(); }
+        catch (error) { setFormStatus(error.message, "error"); refundRequest.disabled = false; }
+        return;
+      }
+      const refundReconcile = event.target.closest("[data-support-refund-reconcile]"); if (refundReconcile) {
+        const row = refundReconcile.closest("[data-donation-id]"); refundReconcile.disabled = true;
+        try { const data = await api("", { method: "POST", body: { action: "refund:reconcile", id: row.dataset.donationId } }); if (data.confirmed !== true) throw new Error("Provider chưa xác nhận hoàn tiền."); setFormStatus("Backend và provider đã xác nhận hoàn tiền.", "success"); await Promise.all([loadAdmin(), loadPublic(), loadHistory()]); }
+        catch (error) { setFormStatus(error.message, "error"); refundReconcile.disabled = false; }
         return;
       }
       const adminAction = event.target.closest("[data-support-admin-action]"); if (adminAction) {
@@ -424,9 +502,12 @@
 
     updateAmount(100000);
     showStage("details", false);
-    await Promise.all([loadPublic(), loadAdmin()]);
+    await Promise.all([loadPublic(), loadAdmin(), loadHistory()]);
     try {
-      const saved = JSON.parse(sessionStorage.getItem(pendingKey) || "null");
+      const current = JSON.parse(sessionStorage.getItem(pendingKey) || "null");
+      const legacy = JSON.parse(sessionStorage.getItem(LEGACY_STORAGE_KEY) || "null");
+      const saved = normalizePending(current || legacy);
+      if (legacy && saved) rememberPending(saved);
       if (saved?.id && saved?.reference && saved?.checkoutUrl && payOSAvailable) {
         currentDonation = saved;
         updatePaymentSummary();
@@ -448,5 +529,11 @@
     }, 30000);
   }
 
-  window.HHSupportPage = { mount };
-})();
+  function unmount() {
+    clearInterval(refreshTimer);
+    clearInterval(paymentPollTimer);
+    clearInterval(paymentCountdownTimer);
+  }
+
+  return Object.freeze({ VERSION, INTEGRATION_VERSION, STORAGE_KEY, normalizePending, createPayOSCheckoutAdapter, mount, unmount });
+});

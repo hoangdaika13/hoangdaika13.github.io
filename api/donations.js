@@ -59,6 +59,27 @@ function makeOrderCode() {
   return Number(`${Date.now()}${Math.floor(10 + Math.random() * 90)}`);
 }
 
+function refundAdapterReady() {
+  return Boolean(process.env.DONATION_REFUND_VERIFY_URL && process.env.DONATION_REFUND_VERIFY_TOKEN);
+}
+
+async function verifyRefundWithAdapter(donation) {
+  if (!refundAdapterReady()) return { confirmed: false, status: "not_configured" };
+  const response = await fetch(String(process.env.DONATION_REFUND_VERIFY_URL), {
+    method: "POST",
+    signal: AbortSignal.timeout(8000),
+    headers: { Authorization: `Bearer ${process.env.DONATION_REFUND_VERIFY_TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ reference: donation.reference, orderCode: donation.payosOrderCode, paymentReference: donation.payosTransactionReference, amount: donation.amount })
+  });
+  const result = await response.json().catch(() => ({}));
+  const amountMatches = Number(result.amount) === Number(donation.amount);
+  const providerReference = clean(result.providerReference || result.reference, 160);
+  if (!response.ok || result.confirmed !== true || result.status !== "refunded" || !amountMatches || !providerReference) {
+    return { confirmed: false, status: response.ok ? "pending_provider" : "adapter_error" };
+  }
+  return { confirmed: true, status: "confirmed", providerReference, provider: clean(result.provider || "refund-adapter", 80) };
+}
+
 function validEmail(value) {
   const email = clean(value, 160).toLowerCase();
   return EMAIL_PATTERN.test(email) ? email : "";
@@ -73,6 +94,33 @@ function maskEmail(value) {
 
 function receiptReady() {
   return Boolean(process.env.RESEND_API_KEY && (process.env.DONATION_FROM_EMAIL || process.env.EMAIL_FROM));
+}
+
+function createReceiptEmailAdapter() {
+  return {
+    provider: "resend",
+    configured: receiptReady(),
+    async send({ recipient, message, donationId }) {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        signal: AbortSignal.timeout(8000),
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": `donation-thanks/${String(donationId)}`
+        },
+        body: JSON.stringify({
+          from: String(process.env.DONATION_FROM_EMAIL || process.env.EMAIL_FROM),
+          to: [recipient], subject: message.subject, html: message.html, text: message.text,
+          ...(process.env.DONATION_REPLY_TO ? { reply_to: String(process.env.DONATION_REPLY_TO) } : {}),
+          tags: [{ name: "category", value: "donation_receipt" }]
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.id) throw new Error(clean(result.message || result.error || `Email provider HTTP ${response.status}`, 240));
+      return { provider: "resend", providerId: clean(result.id, 160) };
+    }
+  };
 }
 
 function receiptView(item, includeError = false) {
@@ -109,7 +157,8 @@ async function sendDonationThankYou(db, donations, donation, trigger = "payment_
     await donations.updateOne({ _id: donation._id, "receipt.sentAt": { $exists: false } }, { $set: { "receipt.status": "missing_email", "receipt.lastError": "Email người ủng hộ không hợp lệ.", "receipt.updatedAt": new Date() } });
     return { status: "missing_email" };
   }
-  if (!receiptReady()) {
+  const emailAdapter = createReceiptEmailAdapter();
+  if (!emailAdapter.configured) {
     await donations.updateOne({ _id: donation._id, "receipt.sentAt": { $exists: false } }, { $set: { "receipt.status": "not_configured", "receipt.recipientMasked": maskEmail(recipient), "receipt.updatedAt": new Date() } });
     return { status: "not_configured", recipient: maskEmail(recipient) };
   }
@@ -148,30 +197,11 @@ async function sendDonationThankYou(db, donations, donation, trigger = "payment_
 
   try {
     const message = receiptEmail(claimed);
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      signal: AbortSignal.timeout(8000),
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": `donation-thanks/${String(claimed._id)}`
-      },
-      body: JSON.stringify({
-        from: String(process.env.DONATION_FROM_EMAIL || process.env.EMAIL_FROM),
-        to: [recipient],
-        subject: message.subject,
-        html: message.html,
-        text: message.text,
-        ...(process.env.DONATION_REPLY_TO ? { reply_to: String(process.env.DONATION_REPLY_TO) } : {}),
-        tags: [{ name: "category", value: "donation_receipt" }]
-      })
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.id) throw new Error(clean(result.message || result.error || `Email provider HTTP ${response.status}`, 240));
+    const delivery = await emailAdapter.send({ recipient, message, donationId: claimed._id });
     const sentAt = new Date();
     await donations.updateOne(
       { _id: claimed._id, "receipt.leaseId": leaseId },
-      { $set: { "receipt.status": "sent", "receipt.sentAt": sentAt, "receipt.provider": "resend", "receipt.providerId": clean(result.id, 160), "receipt.updatedAt": sentAt }, $unset: { "receipt.leaseId": "", "receipt.leaseUntil": "", "receipt.lastError": "" } }
+      { $set: { "receipt.status": "sent", "receipt.sentAt": sentAt, "receipt.provider": delivery.provider, "receipt.providerId": delivery.providerId, "receipt.updatedAt": sentAt }, $unset: { "receipt.leaseId": "", "receipt.leaseUntil": "", "receipt.lastError": "" } }
     );
     await db.collection("events").updateOne(
       { type: "donation:receipt_sent", recordId: claimed._id },
@@ -187,6 +217,31 @@ async function sendDonationThankYou(db, donations, donation, trigger = "payment_
     );
     return { status: "failed", recipient: maskEmail(recipient) };
   }
+}
+
+async function reconcilePayOSStatus(db, donations, donation) {
+  if (!donation || !["pending", "submitted"].includes(donation.status) || !donation.payosOrderCode || !payOSReady()) return donation;
+  let payment;
+  try { payment = await payOS().paymentRequests.get(Number(donation.payosOrderCode)); }
+  catch { return donation; }
+  if (payment?.status !== "PAID" || Number(payment.amount) !== Number(donation.amount) || Number(payment.amountPaid) !== Number(donation.amount)) return donation;
+  const transaction = (Array.isArray(payment.transactions) ? payment.transactions : []).find(item => Number(item.amount) === Number(donation.amount));
+  const providerReference = clean(transaction?.reference, 120);
+  if (!providerReference) return donation;
+  const verifiedAt = new Date();
+  const result = await donations.updateOne(
+    { _id: donation._id, status: { $in: ["pending", "submitted"] }, amount: Number(payment.amount) },
+    { $set: { status: "verified", verifiedAt, updatedAt: verifiedAt, paymentMethod: "payos_vietqr", payosTransactionReference: providerReference, payosTransactionTime: clean(transaction.transactionDateTime, 80) }, $push: { history: { status: "verified", source: "payos_status_adapter", providerReference, at: verifiedAt } } }
+  );
+  if (!result.modifiedCount) return donations.findOne({ _id: donation._id });
+  await db.collection("events").updateOne(
+    { type: "donation:payos_verified", providerReference },
+    { $setOnInsert: { type: "donation:payos_verified", providerReference, recordId: donation._id, amount: donation.amount, source: "status_adapter", createdAt: verifiedAt } },
+    { upsert: true }
+  );
+  const verified = await donations.findOne({ _id: donation._id });
+  await sendDonationThankYou(db, donations, verified, "payos_status_adapter");
+  return donations.findOne({ _id: donation._id });
 }
 
 async function notificationSubscriptionHandler(req, res) {
@@ -222,6 +277,7 @@ module.exports = async function handler(req, res) {
       donations.createIndex({ payosOrderCode: 1 }, { unique: true, sparse: true }),
       donations.createIndex({ payosTransactionReference: 1 }, { unique: true, sparse: true }),
       donations.createIndex({ status: 1, verifiedAt: -1 }),
+      donations.createIndex({ userId: 1, createdAt: -1 }),
       donations.createIndex({ createdAt: -1 })
     ]);
     const user = await currentUser(req);
@@ -245,8 +301,8 @@ module.exports = async function handler(req, res) {
       const now = new Date();
       const providerReference = clean(payment.reference || `payos:${orderCode}`, 120);
       await donations.updateOne(
-        { _id: donation._id, status: { $ne: "verified" } },
-        { $set: { status: "verified", verifiedAt: now, updatedAt: now, paymentMethod: "payos_vietqr", payosPaymentLinkId: clean(payment.paymentLinkId, 100), payosTransactionReference: providerReference, payosTransactionTime: clean(payment.transactionDateTime, 80) } }
+        { _id: donation._id, status: { $in: ["pending", "submitted"] } },
+        { $set: { status: "verified", verifiedAt: now, updatedAt: now, paymentMethod: "payos_vietqr", payosPaymentLinkId: clean(payment.paymentLinkId, 100), payosTransactionReference: providerReference, payosTransactionTime: clean(payment.transactionDateTime, 80) }, $push: { history: { status: "verified", source: "payos_webhook", providerReference, at: now } } }
       );
       await db.collection("events").updateOne(
         { type: "donation:payos_verified", providerReference },
@@ -262,9 +318,15 @@ module.exports = async function handler(req, res) {
       const lookupId = objectId(req.query.id);
       const lookupReference = clean(req.query.reference, 40);
       if (lookupId && lookupReference) {
-        const item = await donations.findOne({ _id: lookupId, reference: lookupReference });
+        let item = await donations.findOne({ _id: lookupId, reference: lookupReference });
         if (!item) return res.status(404).json({ error: "Không tìm thấy giao dịch." });
-        return res.status(200).json({ donation: { id: String(item._id), reference: item.reference, amount: item.amount, status: item.status, paymentMethod: item.paymentMethod, verifiedAt: item.verifiedAt || null, receipt: receiptView(item) } });
+        item = await reconcilePayOSStatus(db, donations, item);
+        return res.status(200).json({ donation: { id: String(item._id), reference: item.reference, amount: item.amount, status: item.status, paymentMethod: item.paymentMethod, verifiedAt: item.verifiedAt || null, refundedAt: item.refundedAt || null, refund: item.refund ? { status: clean(item.refund.status, 40), providerReference: clean(item.refund.providerReference, 160) } : null, receipt: receiptView(item) } });
+      }
+      if (String(req.query.history || "") === "1") {
+        if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để xem lịch sử ủng hộ của mình." });
+        const items = await donations.find({ userId: user._id }, { projection: { email: 0, donorName: 0, message: 0, payosCheckoutUrl: 0, payosAccountNumber: 0 } }).sort({ createdAt: -1 }).limit(100).toArray();
+        return res.status(200).json({ donations: items.map(item => ({ id: String(item._id), reference: item.reference, amount: item.amount, status: item.status, createdAt: item.createdAt, verifiedAt: item.verifiedAt || null, refundedAt: item.refundedAt || null, refund: item.refund ? { status: clean(item.refund.status, 40), providerReference: clean(item.refund.providerReference, 160) } : null, receipt: receiptView(item) })) });
       }
       if (String(req.query.admin || "") === "1") {
         if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được quản lý giao dịch ủng hộ." });
@@ -278,6 +340,7 @@ module.exports = async function handler(req, res) {
             payosOrderCode: item.payosOrderCode || null, payosTransactionReference: item.payosTransactionReference || "",
             transferTime: item.transferTime || null, createdAt: item.createdAt,
             submittedAt: item.submittedAt || null, verifiedAt: item.verifiedAt || null,
+            refundedAt: item.refundedAt || null, refund: item.refund || null, history: (item.history || []).slice(-20),
             receipt: receiptView(item, true)
           }))
         });
@@ -301,7 +364,7 @@ module.exports = async function handler(req, res) {
         stats: { total: summary?.total || 0, count: summary?.count || 0, average: Math.round(summary?.average || 0), monthlyTotal: monthly?.total || 0, monthlyCount: monthly?.count || 0 },
         recent: verified.slice(0, 12),
         leaderboard: leaderboard.map((item) => ({ name: clean(item._id || "Thành viên HH", 100), amount: item.amount, donations: item.donations })),
-        paymentProviders: { payos: payOSReady(), receiptEmail: receiptReady() },
+        paymentProviders: { payos: payOSReady(), receiptEmail: receiptReady(), refundReconciliation: refundAdapterReady() },
         checkedAt: new Date()
       });
     }
@@ -327,6 +390,7 @@ module.exports = async function handler(req, res) {
         status: "pending", paymentMethod: "payos_vietqr",
         receipt: { status: "waiting_payment", recipientMasked: maskEmail(email), attempts: 0 },
         payosOrderCode,
+        history: [{ status: "pending", source: "payos_create", at: new Date() }],
         createdAt: new Date(), updatedAt: new Date()
       };
       const result = await donations.insertOne(doc);
@@ -368,21 +432,52 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "admin:update") {
-      if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được xác nhận giao dịch." });
+      if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được đối soát giao dịch." });
       const id = objectId(body.id);
-      const nextStatus = ["verified", "rejected", "pending"].includes(body.status) ? body.status : "";
+      const nextStatus = ["rejected", "pending"].includes(body.status) ? body.status : "";
       if (!id || !nextStatus) return res.status(400).json({ error: "Trạng thái không hợp lệ." });
-      const update = { status: nextStatus, adminNote: clean(body.adminNote, 500), updatedAt: new Date() };
-      if (nextStatus === "verified") update.verifiedAt = new Date();
-      else update.verifiedAt = null;
-      const result = await donations.updateOne({ _id: id }, { $set: update });
+      const changedAt = new Date();
+      const update = { status: nextStatus, adminNote: clean(body.adminNote, 500), updatedAt: changedAt, verifiedAt: null };
+      const result = await donations.updateOne({ _id: id, status: { $in: ["pending", "submitted", "rejected"] } }, { $set: update, $push: { history: { status: nextStatus, source: "owner_review", at: changedAt } } });
       if (!result.matchedCount) return res.status(404).json({ error: "Không tìm thấy giao dịch." });
       await db.collection("events").insertOne({ type: `donation:${nextStatus}`, userId: user._id, recordId: id, createdAt: new Date() });
       const updatedDonation = await donations.findOne({ _id: id });
-      const receipt = nextStatus === "verified"
-        ? await sendDonationThankYou(db, donations, updatedDonation, "owner_verified")
-        : receiptView(updatedDonation);
+      const receipt = receiptView(updatedDonation);
       return res.status(200).json({ ok: true, status: nextStatus, receipt: { status: receipt.status } });
+    }
+
+    if (action === "refund:request") {
+      if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được yêu cầu đối soát hoàn tiền." });
+      const id = objectId(body.id);
+      const reason = clean(body.reason, 500);
+      if (!id || reason.length < 5) return res.status(400).json({ error: "Cần giao dịch và lý do hoàn tiền hợp lệ." });
+      const requestedAt = new Date();
+      const result = await donations.updateOne(
+        { _id: id, status: "verified", refund: { $exists: false } },
+        { $set: { refund: { status: "pending_provider", amount: null, reason, requestedAt, requestedBy: user._id }, updatedAt: requestedAt }, $push: { history: { status: "refund_requested", source: "owner", at: requestedAt } } }
+      );
+      if (!result.modifiedCount) return res.status(409).json({ error: "Giao dịch không thể tạo yêu cầu hoàn tiền ở trạng thái hiện tại." });
+      return res.status(202).json({ ok: true, confirmed: false, refund: { status: "pending_provider" } });
+    }
+
+    if (action === "refund:reconcile") {
+      if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được đối soát hoàn tiền." });
+      const id = objectId(body.id);
+      const donation = id ? await donations.findOne({ _id: id, status: "verified", "refund.status": { $ne: "confirmed" } }) : null;
+      if (!donation) return res.status(404).json({ error: "Không tìm thấy yêu cầu hoàn tiền đang chờ." });
+      await enforceRateLimit(db, `donation:refund-reconcile:${id}`, 20, 60 * 60 * 1000);
+      const confirmation = await verifyRefundWithAdapter(donation);
+      if (confirmation.confirmed !== true) {
+        await donations.updateOne({ _id: id, status: "verified" }, { $set: { "refund.status": confirmation.status, "refund.checkedAt": new Date(), updatedAt: new Date() } });
+        return res.status(409).json({ error: confirmation.status === "not_configured" ? "Adapter hoàn tiền phía máy chủ chưa được cấu hình." : "Provider chưa xác nhận hoàn tiền.", confirmed: false, refund: { status: confirmation.status } });
+      }
+      const refundedAt = new Date();
+      await donations.updateOne(
+        { _id: id, status: "verified" },
+        { $set: { status: "refunded", refundedAt, updatedAt: refundedAt, refund: { ...donation.refund, status: "confirmed", amount: donation.amount, provider: confirmation.provider, providerReference: confirmation.providerReference, confirmedAt: refundedAt, checkedAt: refundedAt } }, $push: { history: { status: "refunded", source: "refund_adapter", providerReference: confirmation.providerReference, at: refundedAt } } }
+      );
+      await db.collection("events").updateOne({ type: "donation:refund_confirmed", providerReference: confirmation.providerReference }, { $setOnInsert: { type: "donation:refund_confirmed", providerReference: confirmation.providerReference, recordId: id, amount: donation.amount, createdAt: refundedAt } }, { upsert: true });
+      return res.status(200).json({ ok: true, confirmed: true, status: "refunded", refund: { status: "confirmed", providerReference: confirmation.providerReference } });
     }
 
     if (action === "receipt:retry") {
@@ -400,3 +495,5 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "Tác vụ không được hỗ trợ." });
   });
 };
+
+module.exports.__test = Object.freeze({ amountOf, maskEmail, createReceiptEmailAdapter, refundAdapterReady, verifyRefundWithAdapter, reconcilePayOSStatus });

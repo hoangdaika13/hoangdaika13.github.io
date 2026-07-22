@@ -54,6 +54,7 @@
         quietHours: { enabled: false, start: "22:00", end: "07:00" },
         importantPeople: [],
         mutedChannels: [],
+        digest: { enabled: false, cadence: "daily", time: "09:00", includeRead: false },
         pushStatus: "idle"
       },
       notifications: clone(DEFAULT_NOTIFICATIONS),
@@ -77,6 +78,14 @@
         ...defaults.preferences,
         ...preferences,
         quietHours: { ...defaults.preferences.quietHours, ...quietHours },
+        digest: {
+          ...defaults.preferences.digest,
+          ...(preferences.digest && typeof preferences.digest === "object" ? preferences.digest : {}),
+          enabled: Boolean(preferences.digest?.enabled),
+          cadence: preferences.digest?.cadence === "weekly" ? "weekly" : "daily",
+          time: /^\d{2}:\d{2}$/.test(preferences.digest?.time || "") ? preferences.digest.time : "09:00",
+          includeRead: Boolean(preferences.digest?.includeRead)
+        },
         importantPeople: asArray(preferences.importantPeople).map(String).filter(Boolean).slice(0, 50),
         mutedChannels: asArray(preferences.mutedChannels).map(String).filter(Boolean).slice(0, 50)
       },
@@ -187,22 +196,104 @@
     };
   }
 
+  const SEMANTIC_GROUPS = Object.freeze([
+    ["duyet", "phe duyet", "xac nhan", "chot", "approve", "approval"],
+    ["hop", "meeting", "call", "cuoc goi", "phong truc tiep", "live room"],
+    ["thiet ke", "thiet", "ke", "design", "giao dien", "ui", "brand", "logo"],
+    ["am thanh", "audio", "nhac", "voice", "giong noi", "mix", "master"],
+    ["cong viec", "task", "todo", "viec can lam", "action item"],
+    ["han", "deadline", "due", "ngay mai", "lich"],
+    ["loi", "bug", "error", "su co", "ticket", "ho tro"],
+    ["tep", "file", "tai lieu", "document", "asset"]
+  ]);
+
+  function semanticVariants(term) {
+    const normalized = normalizeText(term);
+    const group = SEMANTIC_GROUPS.find((entries) => entries.some((entry) => normalized === entry || entry.includes(normalized) || normalized.includes(entry)));
+    return group ? [...new Set([normalized, ...group])] : [normalized];
+  }
+
+  function semanticMatch(item, query) {
+    const normalized = normalizeIndexItem(item);
+    const terms = normalizeText(query).split(/[^a-z0-9]+/).filter((term) => term.length > 1);
+    if (!terms.length) return { matches: true, score: 0, matchedTerms: [] };
+    const fields = [
+      [normalizeText(normalized.title), 6],
+      [normalizeText(normalized.excerpt), 3],
+      [normalizeText(normalized.sender), 2],
+      [normalizeText(`${normalized.workspace} ${normalized.kind}`), 1]
+    ];
+    const matchedTerms = [];
+    let score = 0;
+    for (const term of terms) {
+      const variants = semanticVariants(term);
+      let best = 0;
+      let matched = "";
+      for (const variant of variants) {
+        for (const [field, weight] of fields) {
+          if (!field.includes(variant)) continue;
+          const exactBonus = variant === term ? 2 : 0;
+          if (weight + exactBonus > best) { best = weight + exactBonus; matched = variant; }
+        }
+      }
+      if (!best) return { matches: false, score: 0, matchedTerms: [] };
+      score += best;
+      matchedTerms.push(matched);
+    }
+    return { matches: true, score, matchedTerms };
+  }
+
   function filterIndex(items, filters = {}) {
-    const query = normalizeText(filters.query);
-    const terms = query.split(/\s+/).filter(Boolean);
     const sender = normalizeText(filters.sender);
     const reaction = normalizeText(filters.reaction);
     const now = Date.now();
     const dateLimit = filters.date === "today" ? now - DAY : filters.date === "7d" ? now - DAY * 7 : filters.date === "30d" ? now - DAY * 30 : 0;
-    return asArray(items).map(normalizeIndexItem).filter((item) => {
-      const haystack = normalizeText(`${item.title} ${item.excerpt} ${item.sender} ${item.workspace} ${item.kind}`);
-      return (!terms.length || terms.every((term) => haystack.includes(term)))
+    return asArray(items).map(normalizeIndexItem).map((item) => ({ item, semantic: semanticMatch(item, filters.query) })).filter(({ item, semantic }) => {
+      return semantic.matches
         && (!sender || normalizeText(item.sender).includes(sender))
         && (!reaction || normalizeText(item.reaction).includes(reaction))
         && (!filters.type || filters.type === "all" || item.kind === filters.type)
         && (!filters.workspace || filters.workspace === "all" || item.workspace === filters.workspace)
         && (!dateLimit || item.createdAt >= dateLimit);
-    }).sort((a, b) => b.createdAt - a.createdAt);
+    }).sort((a, b) => b.semantic.score - a.semantic.score || b.item.createdAt - a.item.createdAt).map(({ item }) => item);
+  }
+
+  function buildNotificationDigest(state, now = Date.now()) {
+    const normalized = normalizeState(state);
+    const preferences = normalized.preferences.digest;
+    const windowMs = preferences.cadence === "weekly" ? DAY * 7 : DAY;
+    const scoped = {
+      ...normalized,
+      notificationFilter: { status: preferences.includeRead ? "all" : "unread", priority: "all", source: "all" }
+    };
+    const items = visibleNotifications(scoped, now).filter((item) => item.createdAt >= now - windowMs);
+    const sources = new Map();
+    items.forEach((item) => sources.set(item.source, (sources.get(item.source) || 0) + 1));
+    return {
+      label: "DIGEST CỤC BỘ",
+      generatedAt: now,
+      cadence: preferences.cadence,
+      total: items.length,
+      unread: items.filter((item) => !item.read).length,
+      important: items.filter((item) => item.priority === "important").length,
+      sources: [...sources.entries()].sort((a, b) => b[1] - a[1]).map(([source, count]) => ({ source, count })),
+      items: items.slice(0, 8)
+    };
+  }
+
+  function normalizeCatchUpAdapterResult(remote) {
+    if (!remote || remote.ok !== true || remote.connected !== true || !Array.isArray(remote.summary)) return null;
+    const bounded = (items, limit) => asArray(items).map((item) => String(item).slice(0, 600)).filter(Boolean).slice(0, limit);
+    return {
+      summary: bounded(remote.summary, 8),
+      decisions: bounded(remote.decisions, 5),
+      actions: bounded(remote.actions, 7),
+      participants: bounded(remote.participants, 12),
+      sourceCount: Math.max(0, Math.min(1000, Number(remote.sourceCount) || 0)),
+      label: remote.ai === true && remote.provider
+        ? `BẢN AI · ${String(remote.provider).slice(0, 60).toUpperCase()}`
+        : "TÓM TẮT TỪ MÁY CHỦ ĐÃ XÁC NHẬN"
+    };
   }
 
   function splitSentences(text) {
@@ -264,7 +355,12 @@
     </nav>`;
   }
 
-  function notificationMarkup(state) {
+  function digestMarkup(digest) {
+    if (!digest) return '<div class="hci-digest-preview"><p>Tạo bản xem trước để gom các cập nhật phù hợp ngay trên thiết bị.</p></div>';
+    return `<section class="hci-digest-preview" aria-live="polite"><header><b>${escapeHtml(digest.label)}</b><span>${digest.total} mục · ${digest.important} quan trọng</span></header>${digest.items.length ? `<ol>${digest.items.slice(0, 4).map((item) => `<li><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.source)}</span></li>`).join("")}</ol>` : "<p>Không có cập nhật phù hợp trong kỳ này.</p>"}<small>Không tự gửi ra ngoài thiết bị.</small></section>`;
+  }
+
+  function notificationMarkup(state, digest = null) {
     const visible = groupNotifications(visibleNotifications(state));
     const unread = state.notifications.filter((item) => !item.read).length;
     const quiet = isQuietNow(state.preferences);
@@ -286,6 +382,8 @@
           <div class="hci-time-grid"><label><span>Từ</span><input type="time" data-hci-quiet-start value="${escapeHtml(state.preferences.quietHours.start)}"></label><label><span>Đến</span><input type="time" data-hci-quiet-end value="${escapeHtml(state.preferences.quietHours.end)}"></label></div>
           <label><span>Người quan trọng</span><input type="text" data-hci-important value="${escapeHtml(state.preferences.importantPeople.join(", "))}" placeholder="Tên, cách nhau bằng dấu phẩy"></label>
           <label><span>Channel đã tắt</span><input type="text" data-hci-muted value="${escapeHtml(state.preferences.mutedChannels.join(", "))}" placeholder="general, music..."></label>
+          <fieldset class="hci-digest-settings"><legend>Notification digest</legend><label class="hci-switch"><input type="checkbox" data-hci-digest-enabled${state.preferences.digest.enabled ? " checked" : ""}><span>Bật lịch digest</span></label><div><label><span>Chu kỳ</span><select data-hci-digest-cadence><option value="daily"${state.preferences.digest.cadence === "daily" ? " selected" : ""}>Hằng ngày</option><option value="weekly"${state.preferences.digest.cadence === "weekly" ? " selected" : ""}>Hằng tuần</option></select></label><label><span>Giờ</span><input type="time" data-hci-digest-time value="${escapeHtml(state.preferences.digest.time)}"></label></div><label class="hci-switch"><input type="checkbox" data-hci-digest-include-read${state.preferences.digest.includeRead ? " checked" : ""}><span>Gồm mục đã đọc</span></label><button type="button" data-hci-preview-digest>Tạo digest cục bộ</button></fieldset>
+          ${digestMarkup(digest)}
           <button type="button" data-hci-save-preferences>Lưu quy tắc</button><p data-hci-push-status>${escapeHtml(pushStatusText(state.preferences.pushStatus))}</p>
         </aside>
       </div>
@@ -296,7 +394,7 @@
     const results = filterIndex(items, state.search);
     const workspaces = [...new Set(items.map((item) => normalizeIndexItem(item).workspace))].sort();
     return `<section class="hci-panel hci-search" data-hci-panel="universal-search">
-      <header class="hci-section-head"><div><span>UNIVERSAL SEARCH</span><h2>Tìm đúng ngữ cảnh, mở đúng vị trí</h2><p>Tìm tin nhắn, tệp, người dùng, channel và thread từ dữ liệu đã cấp cho HH.</p></div><div class="hci-index-health"><i></i><b>${items.length}</b><span>mục đã lập chỉ mục</span></div></header>
+      <header class="hci-section-head"><div><span>UNIVERSAL SEMANTIC SEARCH</span><h2>Tìm đúng ngữ cảnh, mở đúng vị trí</h2><p>Tìm tin nhắn, tệp, người dùng, channel và thread bằng điểm liên quan cùng nhóm khái niệm cục bộ. Không dùng AI khi chưa có adapter xác nhận.</p></div><div class="hci-index-health"><i></i><b>${items.length}</b><span>mục đã lập chỉ mục</span></div></header>
       <form class="hci-search-form" data-hci-search-form><label><span aria-hidden="true">⌕</span><input type="search" data-hci-search-query value="${escapeHtml(state.search.query)}" placeholder="Tìm nội dung, người gửi hoặc workspace..." autocomplete="off"><kbd>Enter</kbd></label><button class="hci-primary" type="submit">Tìm kiếm</button></form>
       <div class="hci-search-filters">
         <label><span>Người gửi</span><input type="text" data-hci-search-filter="sender" value="${escapeHtml(state.search.sender)}" placeholder="Tên thành viên"></label>
@@ -368,12 +466,13 @@
     let state = readState();
     let index = await requestIndex(options);
     let catchUpResult = null;
+    let digestPreview = null;
     const session = { host, options, view, index, listeners: [] };
     activeSession = session;
 
     const render = () => {
       if (activeSession !== session) return;
-      host.innerHTML = `<section class="hci-shell" data-hci-shell data-view="${session.view}"><header class="hci-hero"><div class="hci-brand"><span aria-hidden="true">CI</span><div><small>HH COMMUNICATION INTELLIGENCE</small><h1>Thông tin đúng lúc, đúng ngữ cảnh.</h1></div></div><p>Thông báo thông minh, tìm kiếm xuyên workspace và Catch-up minh bạch trong một nơi.</p></header>${tabs(session.view)}${session.view === "notifications" ? notificationMarkup(state) : session.view === "universal-search" ? searchMarkup(state, index) : catchUpMarkup(state, catchUpResult, session.status || "")}</section>`;
+      host.innerHTML = `<section class="hci-shell" data-hci-shell data-view="${session.view}"><header class="hci-hero"><div class="hci-brand"><span aria-hidden="true">CI</span><div><small>HH COMMUNICATION INTELLIGENCE</small><h1>Thông tin đúng lúc, đúng ngữ cảnh.</h1></div></div><p>Thông báo thông minh, tìm kiếm xuyên workspace và Catch-up minh bạch trong một nơi.</p></header>${tabs(session.view)}${session.view === "notifications" ? notificationMarkup(state, digestPreview) : session.view === "universal-search" ? searchMarkup(state, index) : catchUpMarkup(state, catchUpResult, session.status || "")}</section>`;
     };
 
     const navigate = (next) => {
@@ -405,7 +504,18 @@
         state.preferences.quietHours = { enabled: Boolean(host.querySelector("[data-hci-quiet-enabled]")?.checked), start: host.querySelector("[data-hci-quiet-start]")?.value || "22:00", end: host.querySelector("[data-hci-quiet-end]")?.value || "07:00" };
         state.preferences.importantPeople = savePreferenceList("[data-hci-important]");
         state.preferences.mutedChannels = savePreferenceList("[data-hci-muted]");
+        state.preferences.digest = {
+          enabled: Boolean(host.querySelector("[data-hci-digest-enabled]")?.checked),
+          cadence: host.querySelector("[data-hci-digest-cadence]")?.value === "weekly" ? "weekly" : "daily",
+          time: host.querySelector("[data-hci-digest-time]")?.value || "09:00",
+          includeRead: Boolean(host.querySelector("[data-hci-digest-include-read]")?.checked)
+        };
         state = writeState(state); return render();
+      }
+      if (event.target.closest("[data-hci-preview-digest]")) {
+        digestPreview = buildNotificationDigest(state);
+        window.dispatchEvent(new CustomEvent("hh:communication:notification-digest", { detail: { generatedAt: digestPreview.generatedAt, cadence: digestPreview.cadence, total: digestPreview.total, unread: digestPreview.unread, important: digestPreview.important, localOnly: true } }));
+        return render();
       }
       if (event.target.closest("[data-hci-push]")) {
         if (!window.isSecureContext) state.preferences.pushStatus = "insecure";
@@ -467,7 +577,8 @@
         if (typeof options.catchUpAdapter === "function") {
           try {
             const remote = await options.catchUpAdapter({ text, count });
-            if (remote?.summary) result = { ...remote, label: remote.ai === true && remote.provider ? `BẢN AI · ${String(remote.provider).toUpperCase()}` : "TÓM TẮT TỪ MÁY CHỦ" };
+            result = normalizeCatchUpAdapterResult(remote);
+            if (!result) session.status = "Adapter chưa xác nhận kết nối; HH đã chuyển sang tóm tắt cục bộ.";
           } catch { session.status = "Máy chủ không khả dụng; HH đã chuyển sang bộ tóm tắt cục bộ."; }
         }
         if (!result) result = { ...summarizeExtractive(text, count), label: "TÓM TẮT CỤC BỘ · KHÔNG PHẢI AI" };
@@ -506,6 +617,9 @@
     unmount,
     summarizeExtractive,
     filterIndex,
+    semanticMatch,
+    buildNotificationDigest,
+    normalizeCatchUpAdapterResult,
     visibleNotifications,
     groupNotifications,
     normalizeState,

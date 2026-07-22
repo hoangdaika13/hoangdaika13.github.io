@@ -40,6 +40,18 @@
     return "Đang nạp";
   }
 
+  function realtimeConnected(socket = window.HHRealtimeSocket) {
+    return socket?.connected === true;
+  }
+
+  function updateRealtimeStatus(socket = window.HHRealtimeSocket) {
+    const target = currentHost?.querySelector?.("[data-comms-realtime]");
+    if (!target) return;
+    const connected = realtimeConnected(socket);
+    target.classList.toggle("is-connected", connected);
+    target.querySelector("span").textContent = connected ? "Realtime đã được socket xác nhận" : "Realtime chưa được xác nhận";
+  }
+
   function fallback(host, view) {
     const meta = VIEW_META[view];
     host.innerHTML = `<section class="comms-fallback" role="status">
@@ -84,7 +96,9 @@
       if (route.startsWith("/")) location.hash = `#${route}`;
       else if (supports(view)) navigate(view, "jump", event.detail || {});
     };
-    [["hh:communication:navigate", onNavigate], ["hh:communication:action", onAction], ["hh:communication:jump", onJump]].forEach(([name, handler]) => {
+    const onRealtimeReady = (event) => updateRealtimeStatus(event.detail?.socket);
+    const onRealtimeOffline = () => updateRealtimeStatus(null);
+    [["hh:communication:navigate", onNavigate], ["hh:communication:action", onAction], ["hh:communication:jump", onJump], ["hh:realtime-ready", onRealtimeReady], ["hh:realtime-offline", onRealtimeOffline]].forEach(([name, handler]) => {
       window.addEventListener(name, handler);
       suiteListeners.push([name, handler]);
     });
@@ -128,12 +142,13 @@
         <div class="comms-suite-actions">
           <button type="button" data-app-route="/communication/smart-catch-up"><span>↻</span>Bắt kịp</button>
           <button type="button" data-app-route="/communication/moderation"><span>◇</span>An toàn</button>
-          <span class="comms-live-state"><i></i> Realtime khi backend sẵn sàng</span>
+          <span class="comms-live-state" data-comms-realtime><i></i><span>Realtime chưa được xác nhận</span></span>
         </div>
       </header>
       <div class="comms-engine-host" data-comms-engine-host></div>
     </section>`;
     const engineHost = host.querySelector("[data-comms-engine-host]");
+    updateRealtimeStatus();
     if (engine?.mount && (!engine.supports || engine.supports(view))) {
       const controller = engine.mount(engineHost, {
         ...options,
@@ -162,5 +177,5 @@
     currentHost = null;
   }
 
-  window.HHCommunicationSuite = Object.freeze({ mount, unmount, supports, views: VIEW_META });
+  window.HHCommunicationSuite = Object.freeze({ mount, unmount, supports, realtimeConnected, views: VIEW_META });
 })();

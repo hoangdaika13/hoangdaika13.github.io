@@ -12,14 +12,18 @@ test("donation receipts are sent only after verified server-side payment", () =>
   assert.match(api, /Number\(payment\.amount\) !== Number\(donation\.amount\)/);
   assert.match(api, /donation\.status !== "verified"/);
   assert.match(api, /sendDonationThankYou\(db, donations, verifiedDonation, "payos_webhook"\)/);
-  assert.match(api, /sendDonationThankYou\(db, donations, updatedDonation, "owner_verified"\)/);
+  assert.match(api, /paymentRequests\.get\(Number\(donation\.payosOrderCode\)\)/);
+  assert.match(api, /payment\?\.status !== "PAID"/);
+  assert.match(api, /Number\(payment\.amountPaid\) !== Number\(donation\.amount\)/);
+  assert.doesNotMatch(api, /owner_verified|\["verified", "rejected", "pending"\]/);
 });
 
 test("receipt delivery is idempotent, leased and private", () => {
   const api = read("api/donations.js");
   assert.match(api, /"receipt\.sentAt": \{ \$exists: false \}/);
   assert.match(api, /"receipt\.leaseId": leaseId/);
-  assert.match(api, /"Idempotency-Key": `donation-thanks\/\$\{String\(claimed\._id\)\}`/);
+  assert.match(api, /createReceiptEmailAdapter/);
+  assert.match(api, /"Idempotency-Key": `donation-thanks\/\$\{String\(donationId\)\}`/);
   assert.match(api, /recipientMasked: maskEmail/);
   assert.doesNotMatch(api, /RESEND_API_KEY[^\n]*(json|send|status)/i);
 });
@@ -53,4 +57,37 @@ test("support UI requires email and exposes an embedded payOS journey", () => {
   assert.match(styles, /\.support-payos-embed\{[^}]*height:500px/);
   assert.doesNotMatch(client, /20223021|VietQR ACB|img\.vietqr\.io|data-support-method="manual"/);
   assert.doesNotMatch(api, /paymentProviders: \{ manual: true/);
+});
+
+test("support pending state and embedded adapter are versioned and never treat SDK success as payment confirmation", async () => {
+  const support = require("../support-platform.js");
+  assert.equal(support.STORAGE_KEY, "hh.support.pending.v2");
+  const pending = support.normalizePending({ id: "d1", reference: "HH1", amount: 50000, checkoutUrl: "https://pay.payos.vn/x", apiToken: "bad" });
+  assert.equal(pending.version, 2);
+  assert.equal("apiToken" in pending, false);
+  assert.equal(support.normalizePending({ id: "d1", reference: "HH1", checkoutUrl: "javascript:bad" }), null);
+  let accepted = 0;
+  let opened = 0;
+  const adapter = support.createPayOSCheckoutAdapter({
+    location: { pathname: "/", origin: "https://hh.example" },
+    PayOSCheckout: { usePayOS(options) { options.onSuccess(); return { open() { opened += 1; } }; } }
+  }, 10);
+  await adapter.open({ checkoutUrl: "https://pay.payos.vn/x", onProviderAccepted: () => { accepted += 1; } });
+  assert.equal(opened, 1);
+  assert.equal(accepted, 1, "SDK callback only advances to backend verification");
+  const source = read("support-platform.js");
+  assert.match(source, /Chưa báo thành công: đang chờ backend/);
+});
+
+test("history is self-scoped and refunds require a confirmed server adapter", () => {
+  const api = read("api/donations.js");
+  const client = read("support-platform.js");
+  assert.match(api, /find\(\{ userId: user\._id \}/);
+  assert.match(api, /action === "refund:request"/);
+  assert.match(api, /action === "refund:reconcile"/);
+  assert.match(api, /result\.confirmed !== true \|\| result\.status !== "refunded"/);
+  assert.match(api, /confirmation\.confirmed !== true/);
+  assert.match(api, /status: "refunded"/);
+  assert.match(client, /data-support-history-list/);
+  assert.match(client, /data-support-refund-reconcile/);
 });

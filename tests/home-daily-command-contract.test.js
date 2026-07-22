@@ -12,7 +12,8 @@ function storageFixture(values) {
   const data = new Map(Object.entries(values).map(([key, value]) => [key, JSON.stringify(value)]));
   return {
     getItem(key) { return data.has(key) ? data.get(key) : null; },
-    setItem(key, value) { data.set(key, String(value)); }
+    setItem(key, value) { data.set(key, String(value)); },
+    value(key) { return data.has(key) ? JSON.parse(data.get(key)) : null; }
   };
 }
 
@@ -87,4 +88,91 @@ test("styles are scoped, responsive and respect reduced motion", () => {
   assert.match(css, /@media\s*\(max-width:\s*700px\)/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /focus-visible/);
+});
+
+test("today plan merges real command and project tasks without inventing samples", () => {
+  const now = new Date(2026, 6, 22, 9, 0).getTime();
+  const storage = storageFixture({
+    "hh.command-center.todos.v2": [
+      { id: "c1", title: "Việc khẩn", priority: "high", deadline: "2026-07-22", completed: false },
+      { id: "c2", title: "Việc ngày mai", priority: "low", deadline: "2026-07-23", completed: false }
+    ],
+    "hh-project-center": {
+      tasks: [
+        { id: "p1", title: "Việc đã trễ", priority: "Trung bình", due: "2026-07-21", column: "doing" },
+        { id: "p2", title: "Việc đã xong", due: "2026-07-22", column: "done" }
+      ]
+    }
+  });
+  const plan = api.collectTodayPlan(storage, now);
+  assert.deepEqual(plan.map((item) => item.id), ["p1", "c1"]);
+  assert.equal(plan[0].overdue, true);
+  assert.equal(plan[1].source, "command");
+  assert.ok(api.togglePlanItem(storage, "command", "c1"));
+  assert.equal(storage.value("hh.command-center.todos.v2")[0].completed, true);
+  assert.ok(api.togglePlanItem(storage, "project", "p1"));
+  assert.equal(storage.value("hh-project-center").tasks[0].column, "done");
+});
+
+test("operations summarize priority alerts, project risk, honest quotas and YouTube schedule", () => {
+  const now = new Date(2026, 6, 22, 9, 0).getTime();
+  const storage = storageFixture({
+    "hh.communication.intelligence.v1": {
+      notifications: [
+        { id: "n1", title: "Duyệt video", priority: "important", read: false, updatedAt: "2026-07-22T01:00:00.000Z" },
+        { id: "n2", title: "Đã đọc", priority: "critical", read: true }
+      ]
+    },
+    "hh-project-center": {
+      projects: [
+        { id: "late", name: "Website", progress: 55, deadline: "2026-07-21" },
+        { id: "safe", name: "Dài hạn", progress: 20, deadline: "2026-09-01" }
+      ]
+    },
+    "hh.creative-publishing.v1": {
+      providers: [
+        { id: "gemini", label: "Gemini", configured: true, status: "ready", quotaUsed: 92, quotaLimit: 100 }
+      ],
+      queue: [
+        { id: "yt1", platform: "youtube", title: "Relax Piano", status: "scheduled", scheduledAt: "2026-07-24T12:00:00.000Z" },
+        { id: "tt1", platform: "tiktok", title: "Không phải YouTube", status: "scheduled", scheduledAt: "2026-07-24T12:00:00.000Z" }
+      ]
+    }
+  });
+  const result = api.collectOperations(storage, now);
+  assert.equal(result.notifications.length, 1);
+  assert.equal(result.projects.length, 1);
+  assert.equal(result.projects[0].risk, "overdue");
+  assert.equal(result.quotas[0].percent, 92);
+  assert.equal(result.quotas[0].severity, "critical");
+  assert.equal(result.youtube.length, 1);
+  assert.equal(result.recommendation.id, "recover-project");
+  assert.ok(api.markNotificationRead(storage, "n1"));
+  assert.equal(storage.value("hh.communication.intelligence.v1").notifications[0].read, true);
+});
+
+test("quota and YouTube cards remain explicit when adapters or schedules are absent", () => {
+  const empty = storageFixture({});
+  assert.deepEqual(api.collectApiQuotas(empty), []);
+  assert.deepEqual(api.collectYouTubeSchedule(empty, Date.now()), []);
+  const recommendation = api.recommendNextAction({ plan: [], notifications: [], projects: [], quotas: [], youtube: [] });
+  assert.equal(recommendation.id, "plan-day");
+  assert.equal(recommendation.route, "/work");
+  assert.match(source, /Trang chủ không giả lập hạn mức/);
+  assert.match(source, /Không đọc mật khẩu, token hoặc nội dung riêng tư/);
+});
+
+test("operations UI provides actionable controls, versioned state and narrow layout", () => {
+  for (const contract of [
+    "hh.home.daily-command.v3",
+    "data-hdc-operations",
+    "data-hdc-toggle-task",
+    "data-hdc-read-notification",
+    "data-hdc-refresh-operations",
+    "YOUTUBE CALENDAR",
+    "API GUARD"
+  ]) assert.ok(source.includes(contract), `Thiếu operations contract: ${contract}`);
+  assert.match(css, /\.hdc-operations-grid/);
+  assert.match(css, /grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(css, /\.hdc-assistant-action:focus-visible/);
 });

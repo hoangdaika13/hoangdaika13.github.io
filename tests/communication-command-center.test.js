@@ -100,6 +100,7 @@ test("adapter payload merges normalized items and upgrades capability state", ()
   const base = mod.normalizeState(mod.seedState());
   const merged = mod.mergeAdapterData(base, {
     source: "socket",
+    connected: true,
     onlineUsers: 12,
     supportRequests: 4,
     items: [
@@ -112,6 +113,15 @@ test("adapter payload merges normalized items and upgrades capability state", ()
   assert.equal(merged.supportRequests, 4);
   assert.equal(merged.items.find((item) => item.id === "dm-lan").preview, "Tin từ socket");
   assert.equal(merged.items.find((item) => item.id === "channel-new").source, "socket");
+});
+
+test("adapter capability is not inferred from an arbitrary payload", () => {
+  assert.equal(mod.isConfirmedAdapterPayload({ source: "socket", items: [] }), false);
+  assert.equal(mod.isConfirmedAdapterPayload({ source: "socket", connected: true }), true);
+  const local = mod.mergeAdapterData(mod.normalizeState(mod.seedState()), { onlineUsers: 99, conversations: [{ id: "x", name: "X", online: true }] });
+  assert.equal(local.mode, "local-fallback");
+  assert.equal(local.onlineUsers, 0);
+  assert.equal(local.conversations[0].online, false);
 });
 
 test("filter engine supports unread, mentions, pinned, archived, snooze and search", () => {
@@ -162,14 +172,14 @@ test("mount requests adapter data and consumes later CustomEvent updates", () =>
   let requested = 0;
   scope.addEventListener("hh:communication:request-data", (event) => {
     requested += 1;
-    event.detail.respond({ source: "test-adapter", onlineUsers: 21, items: [{ id: "live", type: "dm", title: "Realtime", preview: "Đã kết nối", unread: true }] });
+    event.detail.respond({ source: "test-adapter", connected: true, onlineUsers: 21, items: [{ id: "live", type: "dm", title: "Realtime", preview: "Đã kết nối", unread: true }] });
   });
   api.mount(mountedHost, { view: "command-center", scope });
   assert.equal(requested, 1);
-  assert.match(mountedHost.innerHTML, /Adapter đang cấp dữ liệu/);
+  assert.match(mountedHost.innerHTML, /Adapter đã xác nhận/);
   assert.equal(JSON.parse(values.get(mod.STORAGE_KEY)).onlineUsers, 21);
 
-  scope.dispatchEvent(new scope.CustomEvent("hh:communication:data", { detail: { source: "socket", onlineUsers: 22, items: [{ id: "later", type: "ticket", title: "Mới" }] } }));
+  scope.dispatchEvent(new scope.CustomEvent("hh:communication:data", { detail: { source: "socket", connected: true, onlineUsers: 22, items: [{ id: "later", type: "ticket", title: "Mới" }] } }));
   assert.equal(JSON.parse(values.get(mod.STORAGE_KEY)).onlineUsers, 22);
   assert.match(mountedHost.innerHTML, />22</);
   api.unmount();

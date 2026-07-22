@@ -81,6 +81,38 @@ test("universal search combines text and exact context filters", () => {
   assert.equal(results[0].channelId, "mix");
 });
 
+test("semantic search expands local communication concepts without claiming AI", () => {
+  const api = loadApi();
+  const results = api.filterIndex([
+    { id: "approval", kind: "message", title: "Chốt giao diện", excerpt: "Đã xác nhận phương án mới", workspace: "Design", createdAt: Date.now() },
+    { id: "other", kind: "message", title: "Ghi chú âm thanh", excerpt: "Mix bản thu", workspace: "Music", createdAt: Date.now() }
+  ], { query: "duyệt thiết kế" });
+  assert.deepEqual(results.map((item) => item.id), ["approval"]);
+  assert.match(source, /SEMANTIC_GROUPS/);
+  assert.match(source, /Không dùng AI khi chưa có adapter xác nhận/);
+});
+
+test("notification digest is local, bounded and respects mute/important rules", () => {
+  const api = loadApi();
+  const state = api.normalizeState({
+    preferences: { digest: { enabled: true, cadence: "daily", time: "09:00" }, mutedChannels: ["general"], importantPeople: ["An"] },
+    notifications: [
+      { id: "a", source: "Community", title: "A", message: "one", sender: "An", channel: "general", read: false, createdAt: Date.now() },
+      { id: "b", source: "Community", title: "B", message: "two", sender: "Bình", channel: "general", read: false, createdAt: Date.now() }
+    ]
+  });
+  const digest = api.buildNotificationDigest(state, Date.now());
+  assert.equal(digest.total, 1);
+  assert.equal(digest.items[0].id, "a");
+  assert.equal(digest.label, "DIGEST CỤC BỘ");
+});
+
+test("Catch-up adapter output needs an explicit connected acknowledgement", () => {
+  const api = loadApi();
+  assert.equal(api.normalizeCatchUpAdapterResult({ summary: ["x"] }), null);
+  assert.equal(api.normalizeCatchUpAdapterResult({ ok: true, connected: true, summary: ["x"], provider: "hh" }).label, "TÓM TẮT TỪ MÁY CHỦ ĐÃ XÁC NHẬN");
+});
+
 test("notification filters respect mute while allowing important people", () => {
   const api = loadApi();
   const state = api.normalizeState({

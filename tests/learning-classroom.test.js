@@ -104,6 +104,16 @@ test("assessment attempts retain answer history and certificate remains a local 
   assert.equal(issued.certificate.score, 100);
 });
 
+test("placement remains an explainable recommendation and every CEFR level stays selectable", () => {
+  const recommendation = learning.placementRecommendation(73);
+  assert.equal(recommendation.level, "B2");
+  assert.equal(recommendation.recommendationOnly, true);
+  assert.match(recommendation.notice, /A0–C2/);
+  const state = learning.applyPlacementRecommendation({ placement: { score: 73, recommendedLevel: "B2" } }, "A1");
+  assert.equal(state.currentUser.placementLevel, "A1");
+  assert.equal(state.placement.recommendedLevel, "B2");
+});
+
 test("classroom permissions protect assignment and grading operations", () => {
   const created = learning.createClassroom(learning.defaultState(), { name: "English 101" });
   assert.equal(created.state.currentUser.role, "teacher");
@@ -160,6 +170,16 @@ test("Study Together persists Pomodoro and bounded vector strokes without fake p
   state = learning.addWhiteboardStroke(state, created.room.id, { color: "#ff00aa", width: 4, points: [{ x: 1, y: 2 }, { x: 3, y: 4 }] });
   assert.equal(state.whiteboards[created.room.id].length, 1);
   assert.equal(state.whiteboards[created.room.id][0].points.length, 2);
+});
+
+test("project practice records stage evidence and measurable progress", () => {
+  const created = learning.createProjectLesson(learning.defaultState(), { title: "Portfolio brief", subject: "design" });
+  const step = created.project.steps[0];
+  const completed = learning.completeProjectStep(created.state, created.project.id, step.id, { evidence: "Tested with two peers" });
+  assert.equal(completed.step.completed, true);
+  assert.equal(completed.step.evidence, "Tested with two peers");
+  assert.equal(completed.project.status, "active");
+  assert.ok(completed.state.passport.skills.project);
 });
 
 test("catch-up is extractive, source-counted, and explicitly local", () => {

@@ -536,12 +536,73 @@
 body.app-music-ai-route .app-page-header { border-color: rgba(102, 238, 230, .2); background: linear-gradient(90deg, rgba(20, 42, 48, .83), rgba(18, 16, 37, .82)); }
 body.app-music-ai-route .app-workspace { overflow: visible; }
 
+.mai-producer-command { overflow: hidden; margin-top: 16px; padding: 0; border-color: rgba(100, 236, 226, .18); background: linear-gradient(145deg, rgba(11, 24, 33, .94), rgba(16, 10, 29, .93)); }
+.mai-producer-command > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 20px; border-bottom: 1px solid var(--mai-line); background: linear-gradient(100deg, rgba(93, 227, 218, .065), rgba(183, 123, 255, .04)); }
+.mai-producer-command > header p,
+.mai-producer-finish > header p { margin: 0 0 7px; color: var(--mai-cyan); font-size: 9px; font-weight: 900; letter-spacing: .14em; }
+.mai-producer-command > header h3 { margin: 0; font-size: clamp(20px, 2.2vw, 29px); letter-spacing: -.035em; }
+.mai-producer-command > header > div:first-child > span,
+.mai-producer-finish > header span { display: block; max-width: 720px; margin-top: 8px; color: var(--mai-muted); font-size: 9px; line-height: 1.55; }
+.mai-producer-command__controls { display: grid; flex: 0 1 760px; grid-template-columns: repeat(2, minmax(120px, 1fr)) repeat(3, auto); gap: 8px; align-items: end; }
+.mai-producer-command__controls label { display: grid; gap: 5px; color: #9fb4c0; font-size: 8px; font-weight: 800; }
+.mai-producer-command__controls select,
+.mai-producer-command__controls input,
+.mai-producer-command__controls button { min-height: 39px; border: 1px solid var(--mai-line); border-radius: 9px; color: var(--mai-text); background: rgba(2, 8, 13, .72); }
+.mai-producer-command__controls select { padding: 0 9px; }
+.mai-producer-command__controls input[type="range"] { min-height: 18px; accent-color: var(--mai-cyan); }
+.mai-producer-command__controls button { padding: 0 12px; color: var(--mai-cyan); font-size: 9px; font-weight: 850; cursor: pointer; white-space: nowrap; }
+
+.mai-producer-empty { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 16px 20px 0; padding: 16px; border: 1px dashed rgba(100, 236, 226, .25); border-radius: 13px; background: rgba(100, 236, 226, .025); }
+.mai-producer-empty > div { display: grid; gap: 5px; }
+.mai-producer-empty strong { font-size: 11px; }
+.mai-producer-empty span { color: var(--mai-muted); font-size: 9px; }
+.mai-producer-empty button { min-height: 38px; padding: 0 14px; border: 1px solid var(--mai-line-strong); border-radius: 9px; color: var(--mai-cyan); background: rgba(100, 236, 226, .07); font-size: 9px; font-weight: 900; cursor: pointer; }
+
+.mai-producer-variants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; padding: 16px 20px 0; }
+.mai-producer-variants article { min-width: 0; padding: 13px; border: 1px solid rgba(143, 180, 202, .13); border-radius: 12px; background: rgba(3, 9, 15, .6); }
+.mai-producer-variants article.is-selected { border-color: rgba(100, 236, 226, .48); background: linear-gradient(145deg, rgba(100, 236, 226, .09), rgba(183, 123, 255, .06)); box-shadow: inset 3px 0 0 var(--mai-cyan); }
+.mai-producer-variants header { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 9px; align-items: center; }
+.mai-producer-variants header > i { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid var(--mai-line); border-radius: 9px; color: var(--mai-cyan); font-size: 8px; font-style: normal; font-weight: 900; }
+.mai-producer-variants header > span { display: grid; min-width: 0; gap: 3px; }
+.mai-producer-variants header strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.mai-producer-variants header small { color: var(--mai-muted); font-size: 7px; }
+.mai-producer-variants header > b { color: #c8f9f5; font-size: 9px; }
+.mai-producer-variants article > p { min-height: 34px; margin: 10px 0; color: #97abb6; font-size: 8px; line-height: 1.45; }
+.mai-producer-variants footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mai-producer-variants footer > span { overflow: hidden; color: #657983; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+.mai-producer-variants footer button { min-height: 31px; padding: 0 10px; border: 1px solid var(--mai-line); border-radius: 8px; color: #b9cbd4; background: rgba(255, 255, 255, .025); font-size: 8px; font-weight: 850; cursor: pointer; }
+.mai-producer-variants .is-selected footer button { color: var(--mai-green); border-color: rgba(158, 239, 145, .28); }
+
+.mai-producer-finish { margin-top: 18px; padding: 18px 20px 20px; border-top: 1px solid var(--mai-line); }
+.mai-producer-finish > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.mai-producer-finish h4 { margin: 0; font-size: 15px; }
+.mai-producer-finish > header > strong { display: grid; flex: 0 0 58px; min-height: 48px; place-items: center; border: 1px solid var(--mai-line-strong); border-radius: 12px; color: var(--mai-cyan); background: rgba(100, 236, 226, .055); font-size: 15px; }
+.mai-producer-finish > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.mai-producer-finish > div > button { display: grid; min-width: 0; min-height: 78px; grid-template-columns: 28px minmax(0, 1fr); gap: 8px; padding: 10px; border: 1px solid rgba(143, 180, 202, .12); border-radius: 11px; color: var(--mai-text); text-align: left; background: rgba(3, 9, 15, .62); cursor: pointer; }
+.mai-producer-finish button > i { display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid var(--mai-line); border-radius: 8px; color: var(--mai-muted); font-size: 8px; font-style: normal; font-weight: 900; }
+.mai-producer-finish button > span { display: grid; min-width: 0; gap: 4px; }
+.mai-producer-finish button strong { font-size: 9px; }
+.mai-producer-finish button small { overflow: hidden; color: var(--mai-muted); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+.mai-producer-finish button > b { grid-column: 1 / -1; color: #6f838e; font-size: 7px; text-align: right; text-transform: uppercase; }
+.mai-producer-finish button.is-done,
+.mai-producer-finish button.is-ready { border-color: rgba(100, 236, 226, .25); background: rgba(100, 236, 226, .035); }
+.mai-producer-finish button.is-done > b { color: var(--mai-green); }
+.mai-producer-finish button.is-ready > b { color: var(--mai-cyan); }
+.mai-producer-finish button.is-warning > b,
+.mai-producer-finish button.is-needs-provider > b { color: #ffc276; }
+.mai-producer-command button:focus-visible,
+.mai-producer-command select:focus-visible,
+.mai-producer-command input:focus-visible { outline: 2px solid var(--mai-cyan); outline-offset: 2px; }
+
 @media (max-width: 1280px) {
   .mai-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mai-model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mai-flow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mai-export-spec { grid-template-columns: 1fr; }
   .mai-auto__connections { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mai-producer-command > header { align-items: flex-start; flex-direction: column; }
+  .mai-producer-command__controls { width: 100%; flex-basis: auto; }
+  .mai-producer-finish > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mai-smart-loop-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -560,6 +621,7 @@ body.app-music-ai-route .app-workspace { overflow: visible; }
   .mai-qa-advice { grid-template-columns: 1fr; }
   .mai-auto__body,
   .mai-auto__outputs { grid-template-columns: 1fr; }
+  .mai-producer-variants { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mai-seam-analysis__body { grid-template-columns: 1fr; }
   .mai-seam-analysis__body > p { grid-column: auto; }
 }
@@ -598,6 +660,12 @@ body.app-music-ai-route .app-workspace { overflow: visible; }
   .mai-auto__connections { grid-template-columns: 1fr; }
   .mai-auto__brief > div:not(.mai-auto__actions) { grid-template-columns: 1fr; }
   .mai-auto > footer { flex-direction: column; }
+  .mai-producer-command__controls,
+  .mai-producer-variants,
+  .mai-producer-finish > div { grid-template-columns: 1fr; }
+  .mai-producer-empty,
+  .mai-producer-finish > header { align-items: flex-start; flex-direction: column; }
+  .mai-producer-empty button { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

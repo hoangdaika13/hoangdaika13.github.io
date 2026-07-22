@@ -70,6 +70,10 @@ test("local fallback is transparent and supports mistakes, plans and career exam
   assert.equal(mistakes.source, "local");
   assert.equal(mistakes.label, "Gợi ý tự động cục bộ");
   assert.equal(mistakes.result.steps.length, 1);
+  assert.equal(mistakes.result.sourceType, "local");
+  assert.ok(mistakes.result.sources.length >= 1);
+  assert.match(mistakes.result.explanation, /Deterministic local guidance/);
+  assert.match(mistakes.result.disclaimer, /no external AI/i);
 
   const plan = await labs.runCoachTask("weekly-plan", { dailyMinutes: 25 });
   assert.equal(plan.result.days.length, 7);

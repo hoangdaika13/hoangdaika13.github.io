@@ -7,6 +7,7 @@
     { name: "HHDevDataSecurity", tools: ["json-data-lab", "security-encoding"] },
     { name: "HHDevRegexDatabase", tools: ["regex-studio", "database-playground"] },
     { name: "HHDevCodeGit", tools: ["code-playground", "git-diff-studio"] },
+    { name: "HHDevDeliveryWorkflow", tools: ["delivery-workflow"] },
     { name: "HHDevDiagnosticsAI", tools: ["web-diagnostics", "ai-developer"] }
   ];
   const TOOLS = [
@@ -20,6 +21,7 @@
     { id: "database-playground", icon: "DB", group: "Phân tích", title: "Database Playground", description: "SQL, schema, dữ liệu CSV/JSON và Mongo query builder.", caps: ["SQL", "Schema", "Import"] },
     { id: "code-playground", icon: "CP", group: "Code & Git", title: "Code Playground", description: "Multi-file editor, preview sandbox, console và live reload.", caps: ["HTML/CSS/JS", "Sandbox", "Project"] },
     { id: "git-diff-studio", icon: "GD", group: "Code & Git", title: "Git & Diff Studio", description: "Diff, merge, commit, changelog và workflow CI/CD.", caps: ["3-way merge", "Generator", "YAML"] },
+    { id: "delivery-workflow", icon: "DW", group: "Code & Git", title: "Delivery Workflow", description: "GitHub issue đến branch, sandbox, scan, preview và rollback có approval gate.", caps: ["OAuth server", "Human gate", "Rollback"] },
     { id: "web-diagnostics", icon: "WD", group: "Quan sát & AI", title: "Web Diagnostics", description: "Hiệu suất, header, CORS, CSP, bundle và error timeline.", caps: ["Vitals", "Network", "Audit"] },
     { id: "ai-developer", icon: "AI", group: "Quan sát & AI", title: "AI Developer Assistant", description: "Giải thích, tạo test, review diff và chỉ áp dụng sau khi duyệt.", caps: ["Preview first", "Redaction", "Server AI"] }
   ];
@@ -60,7 +62,7 @@
     const groups = [...new Set(TOOLS.map((tool) => tool.group))];
     return `<section class="dev-pro-home" data-dev-pro-home>
       <header class="dev-pro-hero">
-        <div><span class="dev-pro-kicker">HH DEVELOPER OS · 12 WORKSPACES</span><h2>Phân tích, thử nghiệm và xây dựng trong một nơi.</h2><p>Dữ liệu đi qua một luồng thống nhất: nhận diện, biến đổi, kiểm thử, quan sát và chỉ áp dụng thay đổi sau khi bạn duyệt.</p><div class="dev-pro-hero-actions"><button type="button" data-dev-pro-open="smart-input">Dán dữ liệu thông minh</button><button type="button" data-dev-pro-open="api-studio">Mở API Studio</button></div></div>
+        <div><span class="dev-pro-kicker">HH DEVELOPER OS · 13 WORKSPACES</span><h2>Phân tích, thử nghiệm và xây dựng trong một nơi.</h2><p>Dữ liệu đi qua một luồng thống nhất: nhận diện, biến đổi, kiểm thử, quan sát và chỉ áp dụng thay đổi sau khi bạn duyệt.</p><div class="dev-pro-hero-actions"><button type="button" data-dev-pro-open="smart-input">Dán dữ liệu thông minh</button><button type="button" data-dev-pro-open="api-studio">Mở API Studio</button></div></div>
         <div class="dev-pro-orbit" aria-hidden="true"><i></i><i></i><i></i><strong>DEV</strong><span>LOCAL FIRST</span></div>
       </header>
       <div class="dev-pro-capabilities" aria-label="Khả năng trình duyệt">${capabilityMarkup()}</div>

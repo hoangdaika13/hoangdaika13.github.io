@@ -9,10 +9,21 @@
   const MAX_LOGS = 160;
   const MAX_CACHE = 100;
   const MAX_VARIANTS = 40;
+  const MAX_CAMPAIGN_ITEMS = 90;
   const MAX_TEXT = 12000;
   const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
   const VIEWS = Object.freeze(["workflow", "ai-director", "prompt-studio"]);
   const NODE_TYPES = Object.freeze(["Brief", "Prompt", "Script", "Image", "Voice", "Video", "Subtitle", "Review", "Publish"]);
+  const CAMPAIGN_CHANNELS = Object.freeze(["youtube", "tiktok", "instagram", "facebook", "website", "podcast"]);
+  const CAMPAIGN_METRICS = Object.freeze(["ctr", "retention", "completion", "conversion"]);
+  const CHANNEL_META = Object.freeze({
+    youtube: { label: "YouTube", hour: 12, content: "Video chủ lực + thumbnail" },
+    tiktok: { label: "TikTok", hour: 19, content: "Hook dọc 15–45 giây" },
+    instagram: { label: "Instagram", hour: 18, content: "Reel + carousel" },
+    facebook: { label: "Facebook", hour: 20, content: "Video + bài viết cộng đồng" },
+    website: { label: "Website", hour: 9, content: "Landing page + bài chuyên sâu" },
+    podcast: { label: "Podcast", hour: 7, content: "Audio + show notes" }
+  });
   const AI_CAPABLE = new Set(["Prompt", "Script", "Image", "Voice", "Video", "Subtitle"]);
   const NODE_META = Object.freeze({
     Brief: { icon: "BR", title: "Brief", note: "Mục tiêu và đối tượng", color: "#67e8f9" },
@@ -184,7 +195,76 @@
       promptStudio: {
         draft: { text: "", negative: "", seed: 42, camera: "Medium shot", lighting: "Soft studio", style: "Cinematic", firstFrame: null, lastFrame: null, references: [] },
         variants: [], selected: []
+      },
+      campaign: {
+        status: "draft",
+        startDate: "",
+        channels: ["youtube"],
+        brandKit: { voice: "", colors: [], fonts: [], requiredTerms: [], bannedTerms: [] },
+        characterBible: [],
+        experiments: [],
+        calendar: [],
+        lastAudit: null,
+        plannedAt: ""
       }
+    };
+  }
+
+  function textList(value, limit, maxLength) {
+    const source = Array.isArray(value) ? value : String(value == null ? "" : value).split(/[\n,;]+/);
+    return source.map((item) => safeText(item, "", maxLength || 120)).filter(Boolean).filter((item, index, list) => list.indexOf(item) === index).slice(0, limit || 20);
+  }
+
+  function normalizeCampaign(raw) {
+    const source = raw && typeof raw === "object" ? raw : {};
+    const kit = source.brandKit && typeof source.brandKit === "object" ? source.brandKit : {};
+    return {
+      status: ["draft", "planned", "in-production", "review", "ready"].includes(source.status) ? source.status : "draft",
+      startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(source.startDate || "")) ? String(source.startDate) : "",
+      channels: textList(source.channels, CAMPAIGN_CHANNELS.length, 20).filter((item) => CAMPAIGN_CHANNELS.includes(item)),
+      brandKit: {
+        voice: safeText(kit.voice, "", 400),
+        colors: textList(kit.colors, 12, 40),
+        fonts: textList(kit.fonts, 12, 80),
+        requiredTerms: textList(kit.requiredTerms, 30, 100),
+        bannedTerms: textList(kit.bannedTerms, 30, 100)
+      },
+      characterBible: (Array.isArray(source.characterBible) ? source.characterBible : []).slice(0, 16).map((item, index) => ({
+        id: safeId(item && item.id, `character-${index + 1}`),
+        name: safeText(item && item.name, `Nhân vật ${index + 1}`, 100),
+        anchors: textList(item && item.anchors, 20, 120),
+        voice: safeText(item && item.voice, "", 240),
+        locked: item && item.locked !== false
+      })),
+      experiments: (Array.isArray(source.experiments) ? source.experiments : []).slice(-MAX_CAMPAIGN_ITEMS).map((item, index) => {
+        const variants = Array.isArray(item && item.variants) ? item.variants : [];
+        return {
+          id: safeId(item && item.id, `experiment-${index + 1}`),
+          name: safeText(item && item.name, `Thử nghiệm ${index + 1}`, 140),
+          metric: CAMPAIGN_METRICS.includes(item && item.metric) ? item.metric : "ctr",
+          hypothesis: safeText(item && item.hypothesis, "", 500),
+          variants: ["A", "B"].map((label) => ({ label, content: safeLongText(variants.find((variant) => variant && variant.label === label)?.content, "", 2000) })),
+          split: 50,
+          status: ["draft", "running", "complete"].includes(item && item.status) ? item.status : "draft",
+          createdAt: safeText(item && item.createdAt, nowIso(), 40)
+        };
+      }),
+      calendar: (Array.isArray(source.calendar) ? source.calendar : []).slice(0, MAX_CAMPAIGN_ITEMS).map((item, index) => ({
+        id: safeId(item && item.id, `slot-${index + 1}`),
+        channel: CAMPAIGN_CHANNELS.includes(item && item.channel) ? item.channel : "youtube",
+        title: safeText(item && item.title, `Nội dung ${index + 1}`, 180),
+        contentType: safeText(item && item.contentType, "Nội dung chủ lực", 120),
+        scheduledAt: safeText(item && item.scheduledAt, "", 40),
+        status: ["planned", "ready", "published", "blocked"].includes(item && item.status) ? item.status : "planned"
+      })),
+      lastAudit: source.lastAudit && typeof source.lastAudit === "object" ? {
+        score: Math.round(clamp(source.lastAudit.score, 0, 100, 0)),
+        brandScore: Math.round(clamp(source.lastAudit.brandScore, 0, 100, 0)),
+        characterScore: Math.round(clamp(source.lastAudit.characterScore, 0, 100, 0)),
+        issues: textList(source.lastAudit.issues, 40, 300),
+        checkedAt: safeText(source.lastAudit.checkedAt, "", 40)
+      } : null,
+      plannedAt: safeText(source.plannedAt, "", 40)
     };
   }
 
@@ -356,7 +436,8 @@
         },
         variants,
         selected: (Array.isArray(input.promptStudio && input.promptStudio.selected) ? input.promptStudio.selected : []).map((id) => safeId(id, "")).filter((id, index, list) => variantIds.has(id) && list.indexOf(id) === index).slice(0, 3)
-      }
+      },
+      campaign: normalizeCampaign(input.campaign)
     };
   }
 
@@ -415,6 +496,7 @@
     const reviewNodes = project.workflow.nodes.filter((node) => node.type === "Review" && node.enabled);
     if (reviewNodes.some((node) => !["success", "cached"].includes(node.status))) throw new Error("Cần hoàn tất node Review trước khi duyệt Publish.");
     project.workflow.approvals.publish = { approved: true, by: safeText(reviewer, "Người duyệt", 100), at: nowIso() };
+    project.campaign.status = "review";
     addLog(project, "publish", "success", `Gate Publish đã được ${project.workflow.approvals.publish.by} duyệt thủ công.`);
     project.updatedAt = nowIso();
     return project;
@@ -423,6 +505,7 @@
   function revokePublishApproval(projectInput, reason) {
     const project = normalizeProject(projectInput);
     project.workflow.approvals.publish = { approved: false, by: "", at: "" };
+    if (["review", "ready"].includes(project.campaign.status)) project.campaign.status = project.campaign.calendar.length ? "planned" : "draft";
     addLog(project, "publish", "warning", reason || "Gate Publish cần được duyệt lại.");
     return project;
   }
@@ -491,6 +574,9 @@
       node.cacheKey = cacheKey;
       node.error = "";
       node.updatedAt = nowIso();
+      if (node.type === "Publish") project.campaign.status = "ready";
+      else if (node.type === "Review") project.campaign.status = "review";
+      else if (project.campaign.status !== "ready") project.campaign.status = "in-production";
       addLog(project, node.id, "success", "Đã dùng kết quả cache theo hash đầu vào.");
       return project;
     }
@@ -514,6 +600,9 @@
       const cacheKeys = Object.keys(project.workflow.cache);
       while (cacheKeys.length > MAX_CACHE) delete project.workflow.cache[cacheKeys.shift()];
       if (node.type !== "Publish") project.workflow.approvals.publish = { approved: false, by: "", at: "" };
+      if (node.type === "Publish") project.campaign.status = "ready";
+      else if (node.type === "Review") project.campaign.status = "review";
+      else if (project.campaign.status !== "ready") project.campaign.status = "in-production";
       addLog(project, node.id, "success", output.mode === "external-ai" ? "runAI đã trả kết quả; cần người dùng kiểm tra." : "Đã tạo kế hoạch cục bộ; chưa gọi AI bên ngoài.");
     } catch (error) {
       node.status = "failed";
@@ -693,6 +782,149 @@
     }));
   }
 
+  function createContentExperiment(projectInput, input) {
+    const project = normalizeProject(projectInput);
+    const source = input && typeof input === "object" ? input : {};
+    const experiment = normalizeCampaign({ experiments: [{
+      id: uid("experiment"),
+      name: source.name || `A/B · ${project.brief.product || "Chiến dịch"}`,
+      metric: source.metric,
+      hypothesis: source.hypothesis,
+      variants: [
+        { label: "A", content: source.variantA },
+        { label: "B", content: source.variantB }
+      ],
+      status: "draft",
+      createdAt: nowIso()
+    }] }).experiments[0];
+    project.campaign.experiments.push(experiment);
+    project.campaign.experiments = project.campaign.experiments.slice(-MAX_CAMPAIGN_ITEMS);
+    project.updatedAt = nowIso();
+    return project;
+  }
+
+  function buildCampaignPlan(projectInput, options) {
+    const project = normalizeProject(projectInput);
+    const settings = options && typeof options === "object" ? options : {};
+    const mappedChannel = Object.entries(CHANNEL_META).find(([, meta]) => meta.label.toLowerCase() === project.brief.platform.toLowerCase())?.[0];
+    const channels = textList(settings.channels || project.campaign.channels, CAMPAIGN_CHANNELS.length, 20).filter((item) => CAMPAIGN_CHANNELS.includes(item));
+    project.campaign.channels = channels.length ? channels : [mappedChannel || "youtube"];
+    const startDate = /^\d{4}-\d{2}-\d{2}$/.test(String(settings.startDate || project.campaign.startDate || ""))
+      ? String(settings.startDate || project.campaign.startDate)
+      : nowIso().slice(0, 10);
+    project.campaign.startDate = startDate;
+    const baseTime = Date.parse(`${startDate}T00:00:00.000Z`);
+    const title = project.brief.product || project.name || "Chiến dịch sáng tạo";
+    const calendar = [];
+    project.campaign.channels.forEach((channel, channelIndex) => {
+      const meta = CHANNEL_META[channel];
+      [0, 1, 2].forEach((cycle) => {
+        const timestamp = new Date(baseTime + ((cycle * 3) + channelIndex) * 86400000);
+        timestamp.setUTCHours(meta.hour, 0, 0, 0);
+        calendar.push({
+          id: `slot-${channel}-${cycle + 1}-${deterministicHash([project.id, startDate]).slice(0, 6)}`,
+          channel,
+          title: `${title} · ${cycle === 0 ? "Ra mắt" : cycle === 1 ? "Giá trị" : "Chuyển đổi"}`,
+          contentType: meta.content,
+          scheduledAt: timestamp.toISOString(),
+          status: "planned"
+        });
+      });
+    });
+    project.campaign.calendar = calendar.slice(0, MAX_CAMPAIGN_ITEMS);
+    if (!project.campaign.experiments.length) {
+      const goal = project.brief.goal || `Giới thiệu ${title}`;
+      const audience = project.brief.audience || "đối tượng mục tiêu";
+      const planned = createContentExperiment(project, {
+        name: `Hook ra mắt · ${title}`,
+        metric: "ctr",
+        hypothesis: "Hook nêu lợi ích cụ thể sẽ tăng CTR so với hook nêu vấn đề.",
+        variantA: `${goal}. Khám phá giá trị chính ngay hôm nay.`,
+        variantB: `${audience}: đây là cách ${title} giúp bạn đạt mục tiêu nhanh hơn.`
+      });
+      project.campaign.experiments = planned.campaign.experiments;
+    }
+    project.campaign.status = "planned";
+    project.campaign.plannedAt = nowIso();
+    project.updatedAt = nowIso();
+    return normalizeProject(project);
+  }
+
+  function checkBrandCompliance(projectInput, content) {
+    const project = normalizeProject(projectInput);
+    const text = safeLongText(content, "", MAX_TEXT).toLocaleLowerCase("vi");
+    const kit = project.campaign.brandKit;
+    const missingRequired = kit.requiredTerms.filter((term) => !text.includes(term.toLocaleLowerCase("vi")));
+    const bannedMatches = kit.bannedTerms.filter((term) => text.includes(term.toLocaleLowerCase("vi")));
+    const checks = kit.requiredTerms.length + kit.bannedTerms.length;
+    const failures = missingRequired.length + bannedMatches.length;
+    const score = checks ? Math.max(0, Math.round((1 - failures / checks) * 100)) : (kit.voice || kit.colors.length ? 80 : 60);
+    return {
+      score,
+      passed: failures === 0,
+      missingRequired,
+      bannedMatches,
+      notice: checks ? "Kiểm tra từ khóa Brand Kit được thực hiện cục bộ." : "Brand Kit chưa có quy tắc từ khóa; điểm chỉ phản ánh mức độ cấu hình."
+    };
+  }
+
+  function checkCharacterConsistency(projectInput, characterName, candidate) {
+    const project = normalizeProject(projectInput);
+    const name = safeText(characterName, "", 100).toLocaleLowerCase("vi");
+    const character = project.campaign.characterBible.find((item) => item.name.toLocaleLowerCase("vi") === name) || project.campaign.characterBible[0];
+    if (!character) return { score: 100, consistent: true, character: "", missingAnchors: [], notice: "Chưa khóa nhân vật; không có quy tắc để đối chiếu." };
+    const text = safeLongText(candidate, "", MAX_TEXT).toLocaleLowerCase("vi");
+    const missingAnchors = character.anchors.filter((anchor) => !text.includes(anchor.toLocaleLowerCase("vi")));
+    const score = character.anchors.length ? Math.round(((character.anchors.length - missingAnchors.length) / character.anchors.length) * 100) : 75;
+    return {
+      score,
+      consistent: score >= 80,
+      character: character.name,
+      missingAnchors,
+      notice: character.anchors.length ? "Đối chiếu mô tả với các anchor đã khóa; kiểm tra hình ảnh chuyên sâu cần adapter thị giác." : "Nhân vật chưa có anchor để đối chiếu."
+    };
+  }
+
+  function auditCampaignAsset(projectInput, input) {
+    const project = normalizeProject(projectInput);
+    const source = input && typeof input === "object" ? input : {};
+    const brand = checkBrandCompliance(project, source.content);
+    const character = checkCharacterConsistency(project, source.characterName, source.characterDescription || source.content);
+    const issues = [
+      ...brand.missingRequired.map((item) => `Thiếu từ bắt buộc: ${item}`),
+      ...brand.bannedMatches.map((item) => `Có từ cấm: ${item}`),
+      ...character.missingAnchors.map((item) => `Nhân vật thiếu anchor: ${item}`)
+    ];
+    const report = {
+      score: Math.round((brand.score + character.score) / 2),
+      brandScore: brand.score,
+      characterScore: character.score,
+      issues,
+      checkedAt: nowIso()
+    };
+    project.campaign.lastAudit = report;
+    project.updatedAt = nowIso();
+    return { project: normalizeProject(project), report, brand, character };
+  }
+
+  function evaluateCampaignReadiness(projectInput) {
+    const project = normalizeProject(projectInput);
+    const completed = project.workflow.nodes.filter((node) => ["success", "cached"].includes(node.status)).length;
+    const total = Math.max(1, project.workflow.nodes.length);
+    const gates = [
+      { id: "brief", label: "Brief đủ sản phẩm, đối tượng và mục tiêu", passed: Boolean(project.brief.product && project.brief.audience && project.brief.goal), weight: 15 },
+      { id: "brand", label: "Brand Kit có giọng thương hiệu và màu", passed: Boolean(project.campaign.brandKit.voice && project.campaign.brandKit.colors.length), weight: 10 },
+      { id: "character", label: "Nhân vật đã khóa anchor hoặc chiến dịch không dùng nhân vật", passed: !project.campaign.characterBible.length || project.campaign.characterBible.every((item) => item.anchors.length), weight: 10 },
+      { id: "calendar", label: "Có lịch nội dung đa nền tảng", passed: project.campaign.calendar.length > 0, weight: 10 },
+      { id: "experiment", label: "Có thử nghiệm A/B với hai biến thể", passed: project.campaign.experiments.some((item) => item.variants.every((variant) => variant.content)), weight: 10 },
+      { id: "production", label: `Pipeline hoàn tất ${completed}/${total} bước`, passed: completed === total || project.workflow.nodes.filter((node) => node.type !== "Publish").every((node) => ["success", "cached"].includes(node.status)), weight: 25 },
+      { id: "audit", label: "Kiểm tra Brand/Character đạt từ 80", passed: Boolean(project.campaign.lastAudit && project.campaign.lastAudit.score >= 80), weight: 10 },
+      { id: "approval", label: "Publish đã được người dùng duyệt", passed: project.workflow.approvals.publish.approved, weight: 10 }
+    ];
+    const score = gates.reduce((sum, gate) => sum + (gate.passed ? gate.weight : 0), 0);
+    return { score, ready: score === 100, completed, total, gates, nextAction: gates.find((gate) => !gate.passed)?.label || "Sẵn sàng chuyển sang hàng đợi xuất bản." };
+  }
+
   function exportProject(projectInput) {
     return JSON.stringify(normalizeProject(projectInput), null, 2);
   }
@@ -725,11 +957,40 @@
     }
   }
 
-  function createStoreAdapter(store) {
+  function sharedProjectFor(store, projectId) {
+    if (!store || typeof store.getState !== "function") return null;
+    const state = store.getState() || {};
+    if (!Array.isArray(state.projects)) return null;
+    const id = safeId(projectId || state.activeProjectId, "");
+    return state.projects.find((item) => item && item.id === id) || state.projects.find((item) => item && item.id === state.activeProjectId) || state.projects[0] || null;
+  }
+
+  function projectFromShared(shared) {
+    if (!shared || typeof shared !== "object") return null;
+    const saved = shared.workflows && shared.workflows.aiWorkflow;
+    if (saved && typeof saved === "object") return normalizeProject({ ...saved, id: shared.id, name: shared.name, brief: { ...(saved.brief || {}), ...(shared.brief || {}) } });
+    const project = createDefaultProject();
+    project.id = shared.id || project.id;
+    project.name = shared.name || project.name;
+    project.brief = { ...project.brief, ...(shared.brief || {}), brand: shared.brand?.name || shared.brief?.brand || "", tone: shared.brand?.voice || shared.brief?.tone || project.brief.tone };
+    project.campaign.brandKit = {
+      voice: shared.brand?.voice || "",
+      colors: textList(shared.brand?.colors, 12, 40),
+      fonts: textList(shared.brand?.fonts, 12, 80),
+      requiredTerms: textList(shared.brand?.ctaRules, 30, 100),
+      bannedTerms: textList(shared.brand?.bannedWords, 30, 100)
+    };
+    project.campaign.characterBible = (Array.isArray(shared.world?.characterConsistency) ? shared.world.characterConsistency : []).slice(0, 16);
+    return normalizeProject(project);
+  }
+
+  function createStoreAdapter(store, projectId) {
     const key = "creativeAIWorkflow";
     return {
       read() {
         try {
+          const sharedProject = sharedProjectFor(store, projectId);
+          if (sharedProject) return projectFromShared(sharedProject) || readLocal();
           if (store && typeof store.getProject === "function") return store.getProject(key) || readLocal();
           if (store && typeof store.get === "function") return store.get(key) || readLocal();
           if (store && typeof store.getState === "function") {
@@ -744,7 +1005,35 @@
         const normalized = normalizeProject(project);
         let shared = false;
         try {
-          if (store && typeof store.updateProject === "function") { store.updateProject(key, clone(normalized)); shared = true; }
+          const sharedProject = sharedProjectFor(store, projectId || normalized.id);
+          if (sharedProject && store && typeof store.updateProject === "function") {
+            const campaignPublications = normalized.campaign.calendar.map((item) => ({
+              id: `creative-${item.id}`,
+              platform: CHANNEL_META[item.channel]?.label || item.channel,
+              title: item.title,
+              scheduledAt: item.scheduledAt,
+              status: item.status === "published" ? "published" : item.status === "ready" ? "queued" : item.status === "blocked" ? "failed" : "scheduled",
+              metadata: { source: "creative-ai-workflow", contentType: item.contentType }
+            }));
+            const existingPublishing = (Array.isArray(sharedProject.publishing) ? sharedProject.publishing : []).filter((item) => item?.metadata?.source !== "creative-ai-workflow");
+            store.updateProject(sharedProject.id, {
+              brief: { ...(sharedProject.brief || {}), ...clone(normalized.brief) },
+              workflows: { ...(sharedProject.workflows || {}), aiWorkflow: clone(normalized) },
+              brand: {
+                ...(sharedProject.brand || {}),
+                name: normalized.brief.brand || sharedProject.brand?.name || "",
+                voice: normalized.campaign.brandKit.voice,
+                colors: clone(normalized.campaign.brandKit.colors),
+                fonts: clone(normalized.campaign.brandKit.fonts),
+                ctaRules: clone(normalized.campaign.brandKit.requiredTerms),
+                bannedWords: clone(normalized.campaign.brandKit.bannedTerms)
+              },
+              world: { ...(sharedProject.world || {}), characterConsistency: clone(normalized.campaign.characterBible) },
+              publishing: [...existingPublishing, ...campaignPublications].slice(-100)
+            });
+            shared = true;
+          }
+          else if (store && typeof store.updateProject === "function") { store.updateProject(key, clone(normalized)); shared = true; }
           else if (store && typeof store.set === "function") { store.set(key, clone(normalized)); shared = true; }
           else if (store && typeof store.setState === "function") {
             const current = typeof store.getState === "function" ? store.getState() || {} : {};
@@ -796,9 +1085,53 @@
     </section>`;
   }
 
+  function campaignMarkup(project) {
+    const campaign = project.campaign;
+    const readiness = evaluateCampaignReadiness(project);
+    const primaryCharacter = campaign.characterBible[0] || { name: "", anchors: [], voice: "" };
+    const audit = campaign.lastAudit;
+    return `<section class="hhcaw-campaign" aria-labelledby="hhcaw-campaign-title">
+      <header class="hhcaw-campaign-head"><div><span>CAMPAIGN CONTROL</span><h3 id="hhcaw-campaign-title">Brief → sản xuất → lịch đa nền tảng</h3><p>Một dữ liệu gốc cho Brand Kit, nhân vật, A/B và lịch. Không tự đăng nếu provider chưa xác nhận.</p></div><div class="hhcaw-readiness" style="--readiness:${readiness.score}"><strong>${readiness.score}</strong><small>/100 sẵn sàng</small></div></header>
+      <div class="hhcaw-campaign-grid">
+        <details class="hhcaw-campaign-card" open><summary><span>01</span><strong>Thiết lập chiến dịch</strong><small>${campaign.channels.length} kênh</small></summary>
+          <form data-hhcaw-campaign-form>
+            <div class="hhcaw-form-grid">
+              <label><span>Sản phẩm / series</span><input name="product" maxlength="240" required value="${escapeHtml(project.brief.product)}" placeholder="Tên chiến dịch"></label>
+              <label><span>Ngày bắt đầu</span><input name="startDate" type="date" required value="${escapeHtml(campaign.startDate || nowIso().slice(0, 10))}"></label>
+              <label class="is-wide"><span>Mục tiêu</span><textarea name="goal" maxlength="500" required rows="2" placeholder="Kết quả cần đạt...">${escapeHtml(project.brief.goal)}</textarea></label>
+              <label class="is-wide"><span>Đối tượng</span><input name="audience" maxlength="500" required value="${escapeHtml(project.brief.audience)}" placeholder="Người xem chính"></label>
+              <fieldset class="is-wide"><legend>Kênh xuất bản</legend><div class="hhcaw-channel-pills">${CAMPAIGN_CHANNELS.map((channel) => `<label><input type="checkbox" name="channels" value="${channel}" ${campaign.channels.includes(channel) ? "checked" : ""}><span>${CHANNEL_META[channel].label}</span></label>`).join("")}</div></fieldset>
+              <label><span>Brand voice</span><input name="brandVoice" maxlength="400" value="${escapeHtml(campaign.brandKit.voice)}" placeholder="Ấm áp, rõ ràng..."></label>
+              <label><span>Màu thương hiệu</span><input name="brandColors" maxlength="400" value="${escapeHtml(campaign.brandKit.colors.join(", "))}" placeholder="#67e8f9, #f472b6"></label>
+              <label><span>Font</span><input name="brandFonts" maxlength="400" value="${escapeHtml(campaign.brandKit.fonts.join(", "))}" placeholder="Inter, Be Vietnam Pro"></label>
+              <label><span>Từ bắt buộc</span><input name="requiredTerms" maxlength="1000" value="${escapeHtml(campaign.brandKit.requiredTerms.join(", "))}" placeholder="HH, sáng tạo"></label>
+              <label><span>Từ cấm</span><input name="bannedTerms" maxlength="1000" value="${escapeHtml(campaign.brandKit.bannedTerms.join(", "))}" placeholder="cam kết quá mức..."></label>
+              <label><span>Nhân vật khóa</span><input name="characterName" maxlength="100" value="${escapeHtml(primaryCharacter.name)}" placeholder="Tên nhân vật chính"></label>
+              <label class="is-wide"><span>Anchor nhân vật</span><input name="characterAnchors" maxlength="1600" value="${escapeHtml(primaryCharacter.anchors.join(", "))}" placeholder="tóc đen, áo cyan, kính tròn..."></label>
+            </div>
+            <button class="is-primary" type="submit">Tạo kế hoạch chiến dịch</button>
+          </form>
+        </details>
+        <aside class="hhcaw-campaign-card hhcaw-gates"><header><span>QUALITY GATES</span><strong>Hành động tiếp theo</strong><p>${escapeHtml(readiness.nextAction)}</p></header><ol>${readiness.gates.map((gate) => `<li class="${gate.passed ? "is-pass" : ""}"><i>${gate.passed ? "✓" : "!"}</i><span>${escapeHtml(gate.label)}</span><b>${gate.weight}</b></li>`).join("")}</ol></aside>
+      </div>
+      <div class="hhcaw-campaign-results">
+        <details class="hhcaw-campaign-card" ${campaign.calendar.length ? "open" : ""}><summary><span>02</span><strong>Lịch nội dung</strong><small>${campaign.calendar.length} slot</small></summary><div class="hhcaw-calendar">${campaign.calendar.length ? campaign.calendar.map((item) => `<article><time>${escapeHtml(new Date(item.scheduledAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }))}<small>${escapeHtml(new Date(item.scheduledAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }))}</small></time><i>${escapeHtml(item.channel.slice(0, 2).toUpperCase())}</i><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.contentType)} · ${escapeHtml(CHANNEL_META[item.channel].label)}</small></div></article>`).join("") : `<p class="hhcaw-empty">Tạo kế hoạch để sinh lịch cục bộ có thể chỉnh tiếp ở Publishing.</p>`}</div></details>
+        <details class="hhcaw-campaign-card" ${campaign.experiments.length ? "open" : ""}><summary><span>03</span><strong>A/B Content Lab</strong><small>${campaign.experiments.length} thử nghiệm</small></summary>
+          <form class="hhcaw-experiment-form" data-hhcaw-experiment-form><label>Tên<input name="name" maxlength="140" placeholder="Hook ra mắt"></label><label>Chỉ số<select name="metric">${CAMPAIGN_METRICS.map((metric) => `<option value="${metric}">${metric.toUpperCase()}</option>`).join("")}</select></label><label class="is-wide">Giả thuyết<input name="hypothesis" maxlength="500" placeholder="Hook lợi ích tăng CTR..."></label><label>Biến thể A<textarea name="variantA" maxlength="2000" required rows="3"></textarea></label><label>Biến thể B<textarea name="variantB" maxlength="2000" required rows="3"></textarea></label><button type="submit">Lưu thử nghiệm 50/50</button></form>
+          <div class="hhcaw-experiments">${campaign.experiments.slice().reverse().map((item) => `<article><header><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.metric.toUpperCase())} · 50/50</span></header><p>${escapeHtml(item.hypothesis || "Chưa ghi giả thuyết")}</p><div>${item.variants.map((variant) => `<section><b>${variant.label}</b><span>${escapeHtml(variant.content || "Chưa có nội dung")}</span></section>`).join("")}</div></article>`).join("")}</div>
+        </details>
+        <details class="hhcaw-campaign-card"><summary><span>04</span><strong>Brand & Character QA</strong><small>${audit ? `${audit.score}/100` : "chưa kiểm"}</small></summary>
+          <form class="hhcaw-audit-form" data-hhcaw-audit-form><label>Nội dung cần kiểm<textarea name="content" maxlength="${MAX_TEXT}" rows="5" required placeholder="Dán tiêu đề, kịch bản hoặc prompt..."></textarea></label><label>Mô tả nhân vật trong asset<textarea name="characterDescription" maxlength="${MAX_TEXT}" rows="5" placeholder="Mô tả ngoại hình, trang phục, giọng..."></textarea></label><input type="hidden" name="characterName" value="${escapeHtml(primaryCharacter.name)}"><button type="submit">Chạy kiểm tra cục bộ</button></form>
+          ${audit ? `<div class="hhcaw-audit-result ${audit.score >= 80 ? "is-pass" : ""}"><strong>${audit.score}/100</strong><div><b>Brand ${audit.brandScore} · Character ${audit.characterScore}</b><p>${audit.issues.length ? escapeHtml(audit.issues.join(" · ")) : "Đạt các quy tắc đã cấu hình."}</p></div></div>` : ""}
+        </details>
+      </div>
+    </section>`;
+  }
+
   function workflowMarkup(project, running) {
     const workflow = project.workflow;
     return `<section class="hhcaw-workflow">
+      ${campaignMarkup(project)}
       <div class="hhcaw-toolbar">
         <label><span>Preset</span><select data-hhcaw-preset><option value="full-production" ${workflow.preset === "full-production" ? "selected" : ""}>Full production</option><option value="short-video" ${workflow.preset === "short-video" ? "selected" : ""}>Short video</option><option value="audio" ${workflow.preset === "audio" ? "selected" : ""}>Audio</option><option value="custom" ${workflow.preset === "custom" ? "selected" : ""}>Custom</option></select></label>
         <button class="is-primary" type="button" data-hhcaw-action="run-all" ${running ? "disabled" : ""}>${running ? "Đang chạy..." : "Chạy toàn bộ"}</button>
@@ -880,7 +1213,7 @@
     if (!root || typeof root.querySelector !== "function") throw new TypeError("HHCreativeAIWorkflow.mount cần một root element.");
     unmount(root);
     const opts = options && typeof options === "object" ? options : {};
-    const adapter = createStoreAdapter(opts.store);
+    const adapter = createStoreAdapter(opts.store, opts.projectId);
     let project = normalizeProject(adapter.read() || opts.project || createDefaultProject());
     let view = VIEWS.includes(opts.view) ? opts.view : project.activeView;
     let running = false;
@@ -1009,7 +1342,52 @@
     });
 
     listen(root, "submit", async (event) => {
-      if (event.target.matches("[data-hhcaw-edge-form]")) {
+      if (event.target.matches("[data-hhcaw-campaign-form]")) {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        project.brief = {
+          ...project.brief,
+          product: form.get("product"),
+          goal: form.get("goal"),
+          audience: form.get("audience"),
+          brand: project.brief.brand || form.get("product")
+        };
+        project.campaign = {
+          ...project.campaign,
+          startDate: form.get("startDate"),
+          channels: form.getAll("channels"),
+          brandKit: {
+            voice: form.get("brandVoice"),
+            colors: textList(form.get("brandColors"), 12, 40),
+            fonts: textList(form.get("brandFonts"), 12, 80),
+            requiredTerms: textList(form.get("requiredTerms"), 30, 100),
+            bannedTerms: textList(form.get("bannedTerms"), 30, 100)
+          },
+          characterBible: form.get("characterName") ? [{
+            id: safeId(form.get("characterName"), "character-main"),
+            name: form.get("characterName"),
+            anchors: textList(form.get("characterAnchors"), 20, 120),
+            voice: form.get("brandVoice"),
+            locked: true
+          }] : []
+        };
+        setProject(buildCampaignPlan(project, { startDate: form.get("startDate"), channels: form.getAll("channels") }), "Đã tạo Campaign Plan và đồng bộ Brand Kit, A/B, lịch xuất bản.");
+        if (typeof opts.onCampaignPlan === "function") opts.onCampaignPlan(clone(project.campaign), clone(project));
+      } else if (event.target.matches("[data-hhcaw-experiment-form]")) {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        setProject(createContentExperiment(project, {
+          name: form.get("name"), metric: form.get("metric"), hypothesis: form.get("hypothesis"),
+          variantA: form.get("variantA"), variantB: form.get("variantB")
+        }), "Đã lưu thử nghiệm A/B 50/50; chưa có kết quả cho đến khi nhập dữ liệu thật ở Analytics.");
+      } else if (event.target.matches("[data-hhcaw-audit-form]")) {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const result = auditCampaignAsset(project, {
+          content: form.get("content"), characterName: form.get("characterName"), characterDescription: form.get("characterDescription")
+        });
+        setProject(result.project, result.report.score >= 80 ? "Asset đạt kiểm tra Brand & Character cục bộ." : `Asset còn ${result.report.issues.length} điểm cần sửa.`);
+      } else if (event.target.matches("[data-hhcaw-edge-form]")) {
         event.preventDefault();
         const form = new FormData(event.target);
         try { setProject(connectNodes(project, form.get("from"), form.get("to")), "Đã nối edge; Publish cần duyệt lại."); }
@@ -1085,12 +1463,13 @@
   }
 
   const api = Object.freeze({
-    STORAGE_KEY, FORMAT, VERSION, VIEWS, NODE_TYPES, NODE_META,
-    createDefaultProject, createPreset, normalizeProject, normalizeWorkflow,
+    STORAGE_KEY, FORMAT, VERSION, VIEWS, NODE_TYPES, NODE_META, CAMPAIGN_CHANNELS, CAMPAIGN_METRICS, CHANNEL_META,
+    createDefaultProject, createPreset, normalizeProject, normalizeWorkflow, normalizeCampaign,
     deterministicHash, stableStringify, hasPath, topologicalSort, connectNodes, disconnectNodes,
     approvePublish, revokePublishApproval, runWorkflowNode, runWorkflow, retryFailed,
     directorStepsFor, proposeDirectorPlan, setDirectorStepApproval, applyDirectorPlan,
     buildPromptPayload, createPromptVariant, addPromptVariant, reproduceVariant, getVariantLineage, compareVariants,
+    createContentExperiment, buildCampaignPlan, checkBrandCompliance, checkCharacterConsistency, auditCampaignAsset, evaluateCampaignReadiness,
     exportProject, importProject, createStoreAdapter, fileMeta,
     mount, unmount, mountAll
   });
