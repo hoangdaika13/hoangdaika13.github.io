@@ -5278,7 +5278,19 @@ function initAppShell() {
       ],
       shortcuts: [{ label: "Google + YouTube", icon: "G", tab: "google" }]
     },
-    { id: "entertainment", label: "Giải trí", icon: "◉", accent: "#ff8a5b", route: "/entertainment", items: [], pages: [{ id: "astra-hh", title: "ASTRA HH", route: "/entertainment/astra-hh" }] },
+    {
+      id: "entertainment",
+      label: "Giải trí",
+      icon: "◉",
+      accent: "#ff8a5b",
+      route: "/entertainment",
+      items: [],
+      pages: [
+        { id: "game-center", title: "Game Center", route: "/entertainment" },
+        { id: "astra-hh", title: "ASTRA MMO RPG", route: "/entertainment/astra-hh" },
+        { id: "arcade", title: "Arcade Galaxy", route: "/entertainment/arcade" }
+      ]
+    },
     { id: "insights", label: "Phân tích", icon: "↗", accent: "#ffbd69", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
     {
       id: "learn",
@@ -5526,7 +5538,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "astra-hh": "ASTRA HH", analytics: "Phân tích", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "game-center": "Game Center", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerToolItems : knownTools;
     let crumbRoute = "";
@@ -5586,7 +5598,12 @@ function initAppShell() {
       window.HHDeveloperTools?.cleanup?.();
       window.HHDevProSuite?.cleanup?.();
     }
-    if (route !== "/entertainment" && !route.startsWith("/entertainment/")) window.HHSpaceExplorer?.unmount?.();
+    if (route !== "/entertainment") window.HHGameCenter?.unmount?.();
+    if (route !== "/entertainment/arcade") window.HHGameArcade?.unmount?.();
+    if (route !== "/entertainment/astra-hh") {
+      window.HHSpaceExplorer?.unmount?.();
+      window.HHAstraExpansion?.unmount?.();
+    }
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
@@ -5640,11 +5657,38 @@ function initAppShell() {
       workspace.innerHTML = "";
       if (window.HHSupportPage?.mount) window.HHSupportPage.mount(workspace, { apiBase: REALTIME_URL });
       else mountSimpleView("Ủng hộ nhà phát triển", "Không thể tải giao diện ủng hộ. Vui lòng làm mới trang.", "");
-    } else if (route === "/entertainment" || route === "/entertainment/astra-hh") {
+    } else if (route === "/entertainment") {
+      updatePageHeader("HH Game Center", "Game MMO RPG, arcade vũ trụ, nhiệm vụ ngày, XP, huy hiệu, bảng xếp hạng và phòng chơi realtime.", route);
+      pageActions.innerHTML = `<button class="app-primary-action" type="button" data-app-route="/entertainment/astra-hh">Vào ASTRA MMO</button><button type="button" data-app-route="/entertainment/arcade">Arcade Galaxy</button>`;
+      workspace.innerHTML = '<div data-game-center-host></div>';
+      if (window.HHGameCenter?.mount) window.HHGameCenter.mount(workspace.firstElementChild, {
+        apiBase: REALTIME_URL,
+        socketUrl: SOCKET_URL,
+        currentUser: readCurrentAuthUser(),
+        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
+      });
+      else mountSimpleView("HH Game Center", "Đang tải trung tâm game...", "");
+    } else if (route === "/entertainment/astra-hh") {
       updatePageHeader("ASTRA HH: Tín Hiệu Vô Tận", "Lái tàu, quét ngoại hành tinh, khai thác tài nguyên và truy tìm nguồn phát HH-13.", route);
-      workspace.innerHTML = '<div data-space-explorer-host></div>';
-      if (window.HHSpaceExplorer?.mount) window.HHSpaceExplorer.mount(workspace.firstElementChild, { apiBase: REALTIME_URL });
+      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button type="button" data-app-route="/entertainment/arcade">Arcade Galaxy</button>`;
+      workspace.innerHTML = '<div data-astra-expansion-host></div><div data-space-explorer-host></div>';
+      if (window.HHAstraExpansion?.mount) window.HHAstraExpansion.mount(workspace.querySelector("[data-astra-expansion-host]"), {
+        apiBase: REALTIME_URL,
+        socketUrl: SOCKET_URL,
+        currentUser: readCurrentAuthUser()
+      });
+      if (window.HHSpaceExplorer?.mount) window.HHSpaceExplorer.mount(workspace.querySelector("[data-space-explorer-host]"), { apiBase: REALTIME_URL });
       else mountSimpleView("ASTRA HH", "Đang khởi động động cơ khám phá vũ trụ...", "");
+    } else if (route === "/entertainment/arcade") {
+      updatePageHeader("Arcade Galaxy", "10 game phụ trong vũ trụ HH: đua tàu, thủ thành, thuộc địa, khai khoáng, rhythm, quiz và sinh tồn co-op.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button>`;
+      workspace.innerHTML = '<div data-game-arcade-host></div>';
+      if (window.HHGameArcade?.mount) window.HHGameArcade.mount(workspace.firstElementChild, {
+        apiBase: REALTIME_URL,
+        socketUrl: SOCKET_URL,
+        currentUser: readCurrentAuthUser()
+      });
+      else mountSimpleView("Arcade Galaxy", "Đang tải khu game phụ...", "");
     } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHLearningSuite?.supports?.(parts[1]))) {
       const learningRouteView = route === "/learn" ? "home" : parts[1];
       const learningMeta = window.HHLearningSuite?.views?.[learningRouteView];
@@ -5876,7 +5920,7 @@ function initAppShell() {
       route: item.route,
       key: `${item.title} ${item.section || ""} ${item.description} AI DAW music composer lyrics timeline stems vocal mix master visualizer youtube rights`
     }));
-    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "ASTRA HH: Tín Hiệu Vô Tận", description: "Game khám phá vũ trụ, quét hành tinh, nâng cấp tàu và bảng xếp hạng online.", route: "/entertainment/astra-hh", key: "giải trí game astra hh vũ trụ phi thuyền hành tinh khám phá space explorer" }, { type: "Studio", title: "Media & Design", description: "22 công cụ với Universal Media Project, Photo, Video, Asset Manager, thương hiệu và xuất bản.", route: "/media-design", key: "media design universal project asset manager media bin hhmedia creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "DEV Command Center", description: "12 workspace DEV Pro cùng 22 tiện ích nhanh cho dữ liệu, API, bảo mật, code, Git và diagnostics.", route: "/dev-tools", key: "developer dev smart input recipe pipeline api mock json data security regex database code playground git diff diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "HH Game Center", description: "Tổng quan giải trí chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "10 game phụ: Neon Drift, Galaxy Defense, Star Colony, Cipher Run, Asteroid Miner, Rhythm Reactor, Quiz Arena, Creative Sandbox, Space Chess và Survival Orbit.", route: "/entertainment/arcade", key: "arcade galaxy game phụ neon drift defense colony cipher miner rhythm quiz sandbox chess survival" }, { type: "Studio", title: "Media & Design", description: "22 công cụ với Universal Media Project, Photo, Video, Asset Manager, thương hiệu và xuất bản.", route: "/media-design", key: "media design universal project asset manager media bin hhmedia creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "DEV Command Center", description: "12 workspace DEV Pro cùng 22 tiện ích nhanh cho dữ liệu, API, bảo mật, code, Git và diagnostics.", route: "/dev-tools", key: "developer dev smart input recipe pipeline api mock json data security regex database code playground git diff diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
@@ -6125,6 +6169,9 @@ function initAppShell() {
   });
   window.addEventListener("hh:developer-tools-ready", renderRouteSafely);
   window.addEventListener("hh:space-explorer-ready", renderRouteSafely);
+  window.addEventListener("hh:game-center-ready", renderRouteSafely);
+  window.addEventListener("hh:game-arcade-ready", renderRouteSafely);
+  window.addEventListener("hh:astra-expansion-ready", renderRouteSafely);
   window.addEventListener("hh:auth-change", () => { setShellVisibility(); setUser(); });
   const initial = stored();
   const syncResponsiveSidebar = (isMobile = mobileSidebarQuery.matches) => {

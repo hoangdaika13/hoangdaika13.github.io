@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v183";
+const CACHE = "hh-identity-portal-v184";
 const CORE = [
   "./",
   "./index.html",
@@ -28,7 +28,7 @@ const CORE = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=8",
-  "./script.js?v=119",
+  "./script.js?v=120",
   "./graphic-design-studio.css?v=5",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -158,6 +158,9 @@ const CORE = [
   "./platform-p0.js?v=1",
   "./sidebar-navigation-pro.css?v=4",
   "./space-explorer.css?v=3",
+  "./game-center.css?v=1",
+  "./astra-universe-expansion.css?v=1",
+  "./game-arcade.css?v=1",
   "./learning-suite.css?v=2",
   "./learning-home.css?v=2",
   "./learning-paths.css?v=2",
@@ -219,6 +222,9 @@ const CORE = [
   "./feature-lab.js?v=4",
   "./feature-engines.js?v=2",
   "./space-explorer.js?v=3",
+  "./game-center.js?v=1",
+  "./astra-universe-expansion.js?v=1",
+  "./game-arcade.js?v=1",
   "./learning-platform-core.js?v=2",
   "./learning-home.js?v=2",
   "./learning-paths.js?v=2",
