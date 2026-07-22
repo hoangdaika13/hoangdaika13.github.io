@@ -28,11 +28,20 @@ test("mode-aware motion is responsive, accessible and versioned", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const css = read("auth-form-motion.css");
-  assert.match(html, /auth-form-motion\.css\?v=3/);
-  assert.match(loader, /auth-form-motion\.js\?v=2/);
-  assert.match(worker, /auth-form-motion\.css\?v=3/);
-  assert.match(worker, /auth-form-motion\.js\?v=2/);
+  assert.match(html, /auth-form-motion\.css\?v=4/);
+  assert.match(loader, /auth-form-motion\.js\?v=3/);
+  assert.match(worker, /auth-form-motion\.css\?v=4/);
+  assert.match(worker, /auth-form-motion\.js\?v=3/);
   assert.match(css, /data-auth-view="register"/);
   assert.match(css, /@media \(max-width:\s*560px\)/);
   assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)/);
+});
+
+test("password-manager autofill refreshes progress without exposing values", () => {
+  const source = read("auth-form-motion.js");
+  const css = read("auth-form-motion.css");
+  assert.match(source, /animationName === "afm-autofill-detected"/);
+  assert.match(source, /\[500, 1400, 3200\]/);
+  assert.match(css, /input:-webkit-autofill/);
+  assert.match(css, /@keyframes afm-autofill-detected/);
 });

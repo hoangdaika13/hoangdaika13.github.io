@@ -22,6 +22,7 @@
     let destroyed = false;
     let lastView = "";
     let readinessFrame = 0;
+    const readinessTimers = [];
 
     const status = gate.querySelector("#authGateStatus, [data-auth-status]");
     const readinessOutput = document.createElement("span");
@@ -321,6 +322,9 @@
       syncField(event.target.closest?.(".auth-field"));
       scheduleReadiness();
     });
+    on(gate, "animationstart", (event) => {
+      if (event.animationName === "afm-autofill-detected") scheduleReadiness();
+    });
     on(gate, "keydown", syncCaps);
     on(gate, "keyup", syncCaps);
     on(gate, "click", (event) => {
@@ -382,6 +386,7 @@
       if (frame) cancelAnimationFrame(frame);
       if (syncFrame) cancelAnimationFrame(syncFrame);
       if (readinessFrame) cancelAnimationFrame(readinessFrame);
+      readinessTimers.splice(0).forEach((timer) => clearTimeout(timer));
       resetPointer();
       readinessOutput.remove();
       gate.classList.remove(
@@ -417,7 +422,9 @@
     syncVisibility();
     handleMotionPreference();
     syncReadiness();
-    window.setTimeout(scheduleReadiness, 700);
+    [500, 1400, 3200].forEach((delay) => {
+      readinessTimers.push(window.setTimeout(scheduleReadiness, delay));
+    });
 
     window.HHAuthFormMotion = Object.freeze({
       available: true,

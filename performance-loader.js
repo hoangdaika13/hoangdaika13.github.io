@@ -6,7 +6,7 @@
       scripts: [
         "auth-living-background.js?v=1", "auth-identity-constellation.js?v=2", "auth-creative-universe.js?v=4",
         "auth-universe-memory.js?v=2", "auth-logo-motion.js?v=1", "auth-emotional-logo.js?v=1",
-        "auth-form-motion.js?v=2", "auth-transition-runtime.js?v=2", "auth-quantum-flow.js?v=2",
+        "auth-form-motion.js?v=3", "auth-transition-runtime.js?v=2", "auth-quantum-flow.js?v=2",
         "auth-trust-director.js?v=2", "auth-spatial-aurora.js?v=1"
       ]
     },

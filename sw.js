@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v192";
+const CACHE = "hh-identity-portal-v193";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
@@ -104,7 +104,7 @@ const RUNTIME_ASSETS = [
   "./auth-universe-memory.css?v=1",
   "./auth-logo-motion.css?v=1",
   "./auth-emotional-logo.css?v=1",
-  "./auth-form-motion.css?v=3",
+  "./auth-form-motion.css?v=4",
   "./auth-quantum-flow.css?v=1",
   "./auth-transition-runtime.css?v=1",
   "./auth-trust-director.css?v=1",
@@ -120,7 +120,7 @@ const RUNTIME_ASSETS = [
   "./auth-universe-memory.js?v=2",
   "./auth-logo-motion.js?v=1",
   "./auth-emotional-logo.js?v=1",
-  "./auth-form-motion.js?v=2",
+  "./auth-form-motion.js?v=3",
   "./auth-transition-runtime.js?v=2",
   "./auth-quantum-flow.js?v=2",
   "./auth-trust-director.js?v=2",
