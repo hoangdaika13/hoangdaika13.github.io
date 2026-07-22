@@ -1,10 +1,14 @@
-const CACHE = "hh-identity-portal-v179";
+const CACHE = "hh-identity-portal-v180";
 const CORE = [
   "./",
   "./index.html",
   "./app-shell.css?v=50",
   "./dashboard-aurora.css?v=3",
   "./command-center-pro.css?v=4",
+  "./home-daily-command.css?v=1",
+  "./home-command-search.css?v=1",
+  "./home-widget-project-pulse.css?v=1",
+  "./home-health-focus.css?v=1",
   "./professional-tools.css?v=3",
   "./dev-pro-suite.css?v=1",
   "./dev-smart-recipe.css?v=1",
@@ -87,6 +91,10 @@ const CORE = [
   "./music-ai-studio.js?v=6",
   "./dashboard-aurora.js?v=3",
   "./command-center-pro.js?v=5",
+  "./home-daily-command.js?v=1",
+  "./home-command-search.js?v=1",
+  "./home-widget-project-pulse.js?v=1",
+  "./home-health-focus.js?v=1",
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=6",
   "./auth-living-background.css?v=1",

@@ -311,7 +311,7 @@
     return Object.freeze({
       get: () => clone(state),
       set: (next) => { state = normalizeState(next); persist(); return clone(state); },
-      update: (recipe) => { const draft = clone(state); const result = typeof recipe === "function" ? recipe(draft) : { ...draft, ...(recipe || {}) }; state = normalizeState(result || draft); persist(); return clone(state); },
+      update: (recipe, now = Date.now()) => { const draft = clone(state); const result = typeof recipe === "function" ? recipe(draft) : { ...draft, ...(recipe || {}) }; state = normalizeState(result || draft, now); persist(); return clone(state); },
       recordStudy: (payload) => { state = recordStudy(state, payload); persist(); return clone(state); },
       subscribe: (listener) => { if (typeof listener !== "function") return () => {}; listeners.add(listener); return () => listeners.delete(listener); },
       export: () => JSON.stringify({ format: "hh-learning", version: SCHEMA_VERSION, exportedAt: new Date().toISOString(), state }, null, 2),

@@ -192,7 +192,7 @@
         xp: { again: 1, hard: 2, good: 3, easy: 4 }[grade],
         skills: [scheduled.skillId]
       }, now);
-    });
+    }, now);
     return scheduled;
   }
 
