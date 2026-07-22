@@ -414,6 +414,7 @@
     else scheduleMount();
     global.addEventListener?.("hashchange", scheduleMount);
     global.addEventListener?.("pageshow", scheduleMount);
+    global.addEventListener?.("hh:auth-change", scheduleMount);
     global.addEventListener?.("storage", (event) => {
       if (!event.key || Object.values(KEYS).includes(event.key)) refresh();
     });

@@ -23,6 +23,7 @@ test("daily enhancement mounts only on the home shell and preserves the existing
   assert.doesNotMatch(source, /hero\.innerHTML\s*=/);
   assert.match(source, /data-hdc-daily/);
   assert.match(source, /data-hdc-continue/);
+  assert.match(source, /hh:auth-change/, "Daily Command must refresh immediately after login or guest entry.");
 });
 
 test("daily brief exposes the required truthful local signals", () => {

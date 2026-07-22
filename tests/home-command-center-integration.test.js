@@ -9,14 +9,14 @@ const index = read("index.html");
 const worker = read("sw.js");
 
 const assets = [
-  "home-daily-command.css?v=1",
-  "home-command-search.css?v=1",
-  "home-widget-project-pulse.css?v=1",
-  "home-health-focus.css?v=1",
-  "home-daily-command.js?v=1",
-  "home-command-search.js?v=1",
-  "home-widget-project-pulse.js?v=1",
-  "home-health-focus.js?v=1"
+  "home-daily-command.css?v=2",
+  "home-command-search.css?v=2",
+  "home-widget-project-pulse.css?v=2",
+  "home-health-focus.css?v=2",
+  "home-daily-command.js?v=2",
+  "home-command-search.js?v=2",
+  "home-widget-project-pulse.js?v=2",
+  "home-health-focus.js?v=2"
 ];
 
 test("home experience assets are loaded and cached", () => {
@@ -24,7 +24,7 @@ test("home experience assets are loaded and cached", () => {
     assert.ok(index.includes(asset), `${asset} must be loaded by index.html`);
     assert.ok(worker.includes(`./${asset}`), `${asset} must be cached for offline use`);
   }
-  assert.match(worker, /const CACHE = "hh-identity-portal-v180"/);
+  assert.match(worker, /const CACHE = "hh-identity-portal-v181"/);
 });
 
 test("home enhancements load after the existing Command Center runtime", () => {
