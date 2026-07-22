@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v198";
+const CACHE = "hh-identity-portal-v199";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -6,7 +6,7 @@ const CACHE = "hh-identity-portal-v198";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
-  "./app-shell.css?v=50",
+  "./app-shell.css?v=51",
   "./dashboard-aurora.css?v=3",
   "./command-center-pro.css?v=4",
   "./home-daily-command.css?v=4",
@@ -34,7 +34,7 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=124",
+  "./script.js?v=125",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -118,7 +118,7 @@ const RUNTIME_ASSETS = [
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
   "./assets/hh-neon-logo-v2.png?v=3",
-  "./auth-platform.js?v=5",
+  "./auth-platform.js?v=6",
   "./auth-experience.js?v=8",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
@@ -259,7 +259,7 @@ const RUNTIME_ASSETS = [
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=50",
+  "./app-shell.css?v=51",
   "./sidebar-navigation-pro.css?v=4",
   "./auth-experience.css?v=6",
   "./auth-zoom-resilience.css?v=3",
@@ -271,8 +271,8 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./performance-loader.js?v=4",
-  "./auth-platform.js?v=5",
-  "./script.js?v=124"
+  "./auth-platform.js?v=6",
+  "./script.js?v=125"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

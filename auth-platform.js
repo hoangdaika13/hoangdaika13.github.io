@@ -80,6 +80,10 @@
       creativeColor: user.creativeColor || "#f05caf",
       interests: Array.isArray(user.interests) ? user.interests : [],
       roles: Array.isArray(user.roles) ? user.roles : [],
+      systemRoles: Array.isArray(user.systemRoles) ? user.systemRoles : [],
+      access: user.access && typeof user.access === "object"
+        ? { admin: user.access.admin === true, owner: user.access.owner === true }
+        : undefined,
       guest: Boolean(user.guest),
       lastWorkspace: user.lastWorkspace || localStorage.getItem("hh.auth.last-workspace") || "Command Center",
       lastSeenAt: new Date().toISOString()

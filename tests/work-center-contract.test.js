@@ -45,7 +45,7 @@ test("Device Vault persists real files with IndexedDB", () => {
 test("Work assets are versioned and available offline", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-for (const asset of ["work-center.css?v=3", "work-center.js?v=3", "script.js?v=124", "insights-pro.css?v=2", "insights-pro.js?v=6"]) {
+for (const asset of ["work-center.css?v=3", "work-center.js?v=3", "script.js?v=125", "insights-pro.css?v=2", "insights-pro.js?v=6"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

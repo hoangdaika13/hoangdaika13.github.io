@@ -20,9 +20,16 @@ const readCurrentAuthUser = () => {
   try { return JSON.parse(localStorage.getItem("hh-auth-user") || "null"); }
   catch { return null; }
 };
-const isCurrentUserAdmin = (user = readCurrentAuthUser()) => Boolean(
-  user && Array.isArray(user.roles) && user.roles.some((role) => HH_ADMIN_ROLES.has(String(role || "").toLowerCase()))
-);
+const isCurrentUserAdmin = (user = readCurrentAuthUser()) => {
+  if (!user) return false;
+  const roles = [
+    ...(Array.isArray(user.roles) ? user.roles : []),
+    ...(Array.isArray(user.systemRoles) ? user.systemRoles : []),
+    user.role
+  ].map((role) => String(role || "").trim().toLowerCase());
+  return user.access?.admin === true
+    || roles.some((role) => HH_ADMIN_ROLES.has(role));
+};
 window.HHAuthz = Object.freeze({ currentUser: readCurrentAuthUser, isAdmin: isCurrentUserAdmin });
 const readAuthSessionToken = () => window.HHAuthSession?.token?.() || "";
 
@@ -6079,6 +6086,7 @@ function initAppShell() {
     }
     const routeButton = event.target.closest("[data-app-route]");
     if (routeButton) {
+      event.preventDefault();
       const route = routeButton.dataset.appRoute;
       const sidebarGroup = routeButton.parentElement?.classList.contains("app-sidebar__group") ? routeButton.parentElement : null;
       if (sidebarGroup?.querySelector(":scope > .app-sidebar__submenu") && event.target.closest("[data-sidebar-toggle]")) {

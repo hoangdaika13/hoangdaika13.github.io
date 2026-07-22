@@ -43,7 +43,11 @@ function isOwnerUser(user) {
 function isAdminUser(user) {
   if (!user) return false;
   if (isOwnerUser(user)) return true;
-  return (Array.isArray(user.systemRoles) ? user.systemRoles : [])
+  return [
+    ...(Array.isArray(user.systemRoles) ? user.systemRoles : []),
+    ...(Array.isArray(user.roles) ? user.roles : []),
+    user.role
+  ]
     .some((role) => ADMIN_ROLES.has(clean(role, 40).toLowerCase()) && clean(role, 40).toLowerCase() !== "owner");
 }
 
@@ -162,10 +166,16 @@ function verifyOAuthState(state, provider) {
 
 function publicUser(user) {
   if (!user) return null;
-  const roles = new Set((Array.isArray(user.systemRoles) ? user.systemRoles : [])
+  const roles = new Set([
+    ...(Array.isArray(user.systemRoles) ? user.systemRoles : []),
+    ...(Array.isArray(user.roles) ? user.roles : []),
+    user.role
+  ]
     .map((role) => clean(role, 40).toLowerCase())
     .filter((role) => ADMIN_ROLES.has(role) && role !== "owner"));
-  if (isOwnerUser(user)) roles.add("owner");
+  const owner = isOwnerUser(user);
+  const admin = owner || roles.size > 0;
+  if (owner) roles.add("owner");
   return {
     id: String(user._id),
     name: user.name || "",
@@ -181,7 +191,8 @@ function publicUser(user) {
     consent: Boolean(user.consent),
     restrictedFeatures: Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [],
     roles: [...roles],
-    verified: Boolean(user.verifiedAt || user.emailVerifiedAt)
+    verified: Boolean(user.verifiedAt || user.emailVerifiedAt),
+    access: { admin, owner }
   };
 }
 
