@@ -56,6 +56,7 @@
     const tabs = [
       ["dashboard", "⌂", "Tổng quan", "dashboard.view"],
       ["security", "◇", "Bảo mật", "security.view"],
+      ["privacy", "◌", "Quyền riêng tư", "privacy.view"],
       ["activity", "◉", "Hoạt động live", "activity.view"],
       ["users", "◎", "Người dùng", "users.view"],
       ["reports", "!", "Báo cáo", "reports.manage"],
@@ -113,6 +114,21 @@
     const events = (data.recentSecurityEvents || []).map((item) => `<article><i class="${item.success === false ? "error" : ""}"></i><span><strong>${esc(item.type || "auth:event")}</strong><small>${esc(item.reason || `${item.browser || "Browser"} · ${item.platform || "Thiết bị"}`)}</small></span><time>${dateText(item.createdAt)}</time></article>`).join("") || '<p class="hh-admin-empty">Chưa có sự kiện xác thực gần đây.</p>';
     const content = `<section class="hh-admin-metrics hh-admin-security-metrics">${metrics}</section><section class="hh-admin-security-grid"><article class="hh-admin-security-posture"><header><div><small>SECURITY POSTURE</small><strong>Lớp bảo vệ production</strong></div><span>${Number(data.posture?.ownerEmailCount || 0) + Number(data.posture?.ownerIdCount || 0)} owner đã cấu hình</span></header><div>${checks}</div></article><article class="hh-admin-event-timeline"><header><div><small>AUTHENTICATION EVENTS</small><strong>Đăng nhập và cảnh báo gần đây</strong></div><span>Không hiển thị mật khẩu hoặc secret</span></header><div>${events}</div></article></section>`;
     panelRef.innerHTML = shell(content, "Security Center", "Theo dõi cấu hình xác thực, phiên đăng nhập và tín hiệu rủi ro mà không truy cập dữ liệu riêng tư.");
+  }
+
+  async function renderPrivacy() {
+    panelRef.innerHTML = shell(loading("Đang tải sổ đồng ý quyền riêng tư..."), "Privacy & Consent");
+    const data = await api("privacy");
+    const metrics = [
+      ["Lựa chọn · 30 ngày", data.metrics?.decisions30d, "cyan", "◌"],
+      ["Cho phép phân tích", data.metrics?.analyticsGranted30d, "green", "✓"],
+      ["Cho phép cá nhân hóa", data.metrics?.personalizationGranted30d, "pink", "✦"],
+      ["Từ chối tùy chọn", data.metrics?.declinedOptional30d, "gold", "—"]
+    ].map(([label, value, color, icon]) => `<article class="${color}"><i>${icon}</i><small>${esc(label)}</small><strong>${Number(value || 0).toLocaleString("vi-VN")}</strong><span>Dữ liệu đồng ý, không phải cookie thô</span></article>`).join("");
+    const inventory = (data.inventory || []).map((item) => `<article><header><strong>${esc(item.name)}</strong><b>${esc(item.type)}</b></header><p>${esc(item.purpose)}</p><footer><span>${esc(item.category)}</span><span>${esc(item.retention)}</span><span>${item.readableByJavaScript ? "Có thể đọc ở trình duyệt" : "HttpOnly · không đọc bằng JS"}</span></footer></article>`).join("") || '<p class="hh-admin-empty">Chưa có danh mục lưu trữ.</p>';
+    const recent = (data.recent || []).map((item) => `<article><i class="${item.analytics ? "granted" : "declined"}"></i><span><strong>${esc(item.subject || "Khách ẩn danh")}</strong><small>${esc(item.kind)} · ${esc(item.source || "privacy-center")}</small></span><div><b>Analytics ${item.analytics ? "bật" : "tắt"}</b><b>Cá nhân hóa ${item.personalization ? "bật" : "tắt"}</b></div><time>${dateText(item.createdAt)}</time></article>`).join("") || '<p class="hh-admin-empty">Chưa có lựa chọn trong 30 ngày.</p>';
+    const content = `<section class="hh-admin-metrics hh-admin-privacy-metrics">${metrics}</section><section class="hh-admin-privacy-grid"><article class="hh-admin-privacy-inventory"><header><div><small>FIRST-PARTY INVENTORY</small><strong>Website đang lưu gì</strong></div><span>Policy ${esc(data.policyVersion || "privacy-v1")}</span></header><div>${inventory}</div></article><article class="hh-admin-privacy-decisions"><header><div><small>CONSENT AUDIT</small><strong>Lựa chọn gần đây</strong></div><span>TTL 365 ngày</span></header><div>${recent}</div></article></section><section class="hh-admin-privacy-boundary"><i>◈</i><div><strong>Ranh giới quản trị</strong><p>Admin chỉ xem thống kê, loại dữ liệu và lựa chọn đã đồng ý. Không hiển thị mật khẩu, token, cookie value, raw IP, phím gõ, prompt, nội dung chat riêng hoặc cookie bên thứ ba.</p></div></section>`;
+    panelRef.innerHTML = shell(content, "Privacy & Consent", "Kiểm soát dữ liệu first-party minh bạch, tối thiểu và có thể audit.");
   }
 
   function rankingMarkup(items, empty = "Chưa đủ dữ liệu") {
@@ -256,6 +272,7 @@
     activeView = view;
     if (view === "dashboard") return renderDashboard();
     if (view === "security") return renderSecurity();
+    if (view === "privacy") return renderPrivacy();
     if (view === "activity") return renderActivity();
     if (view === "users") return renderUsers();
     if (["reports", "appeals"].includes(view)) return renderQueue(view);

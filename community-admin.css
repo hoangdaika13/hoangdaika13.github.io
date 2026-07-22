@@ -331,13 +331,49 @@
 .home-neon .hh-admin-security-posture article small { color: #738894; font-size: 7px; line-height: 1.4; }
 .home-neon .hh-admin-security-posture article > b { font-size: 7px; text-transform: uppercase; }
 
+.home-neon .hh-admin-privacy-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 10px; margin-top: 10px; }
+.home-neon .hh-admin-privacy-grid > article { overflow: hidden; border: 1px solid #2b414c; border-radius: 8px; background: linear-gradient(145deg, rgba(15, 27, 36, .96), rgba(8, 15, 22, .98)); }
+.home-neon .hh-admin-privacy-grid > article > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; border-bottom: 1px solid #263a45; }
+.home-neon .hh-admin-privacy-grid > article > header > div { display: grid; gap: 3px; }
+.home-neon .hh-admin-privacy-grid > article > header small { color: var(--admin-cyan); font-size: 7px; font-weight: 900; letter-spacing: .08em; }
+.home-neon .hh-admin-privacy-grid > article > header strong { color: #f4f8fa; font-size: 12px; }
+.home-neon .hh-admin-privacy-grid > article > header > span { color: #91a5af; font-size: 8px; }
+.home-neon .hh-admin-privacy-inventory > div { display: grid; gap: 1px; background: #243741; }
+.home-neon .hh-admin-privacy-inventory > div > article { display: grid; gap: 6px; padding: 12px 14px; background: #0d161e; }
+.home-neon .hh-admin-privacy-inventory article header,
+.home-neon .hh-admin-privacy-inventory article footer { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.home-neon .hh-admin-privacy-inventory article header { justify-content: space-between; }
+.home-neon .hh-admin-privacy-inventory article b,
+.home-neon .hh-admin-privacy-inventory article footer span { padding: 3px 5px; border: 1px solid #314954; border-radius: 4px; color: #8da4ae; font-size: 7px; }
+.home-neon .hh-admin-privacy-inventory article p { margin: 0; color: #a3b3ba; font-size: 8px; }
+.home-neon .hh-admin-privacy-decisions > div { max-height: 440px; overflow: auto; }
+.home-neon .hh-admin-privacy-decisions > div > article { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto auto; align-items: center; gap: 9px; min-height: 52px; padding: 8px 14px; border-top: 1px solid #22343e; }
+.home-neon .hh-admin-privacy-decisions article > i { width: 7px; height: 7px; border-radius: 50%; background: var(--admin-gold); box-shadow: 0 0 8px currentColor; }
+.home-neon .hh-admin-privacy-decisions article > i.granted { background: var(--admin-green); }
+.home-neon .hh-admin-privacy-decisions article > span { display: grid; min-width: 0; gap: 2px; }
+.home-neon .hh-admin-privacy-decisions article strong { color: #e8f0f3; font-size: 8px; }
+.home-neon .hh-admin-privacy-decisions article small,
+.home-neon .hh-admin-privacy-decisions article time { color: #748994; font-size: 7px; }
+.home-neon .hh-admin-privacy-decisions article > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.home-neon .hh-admin-privacy-decisions article > div b { padding: 3px 5px; border-radius: 4px; background: rgba(98, 215, 231, .07); color: #93dfe8; font-size: 7px; }
+.home-neon .hh-admin-privacy-boundary { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 13px 14px; border: 1px solid rgba(103, 219, 161, .25); border-radius: 8px; background: rgba(103, 219, 161, .045); }
+.home-neon .hh-admin-privacy-boundary > i { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--admin-green); border-radius: 8px; color: var(--admin-green); font-style: normal; }
+.home-neon .hh-admin-privacy-boundary > div { display: grid; gap: 3px; }
+.home-neon .hh-admin-privacy-boundary strong { color: #e9f5ef; font-size: 9px; }
+.home-neon .hh-admin-privacy-boundary p { margin: 0; color: #81969f; font-size: 8px; line-height: 1.5; }
+
 @media (max-width: 900px) {
-  .home-neon .hh-admin-security-grid { grid-template-columns: 1fr; }
+  .home-neon .hh-admin-security-grid,
+  .home-neon .hh-admin-privacy-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
   .home-neon .hh-admin-security-posture > div { grid-template-columns: 1fr; }
   .home-neon .hh-admin-security-posture > header { align-items: flex-start; flex-direction: column; }
+  .home-neon .hh-admin-privacy-grid > article > header { align-items: flex-start; flex-direction: column; }
+  .home-neon .hh-admin-privacy-decisions > div > article { grid-template-columns: 8px minmax(0, 1fr); }
+  .home-neon .hh-admin-privacy-decisions article > div,
+  .home-neon .hh-admin-privacy-decisions article time { grid-column: 2; }
 }
 
 @keyframes hh-admin-spin { to { transform: rotate(360deg); } }

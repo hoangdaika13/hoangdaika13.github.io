@@ -82,8 +82,10 @@
       meta: safeMeta(detail.meta),
       createdAt: new Date().toISOString()
     };
-    writeJson(STORE_KEY, [row, ...events()].slice(0, MAX_EVENTS));
-    if (analyticsAllowed()) remoteQueue.push({ ...row, label: "" });
+    if (analyticsAllowed()) {
+      writeJson(STORE_KEY, [row, ...events()].slice(0, MAX_EVENTS));
+      remoteQueue.push({ ...row, label: "" });
+    }
     return row;
   }
 
@@ -170,6 +172,12 @@
       } else lastAllowedRoute = current;
     });
   }
+
+  window.addEventListener("hh:privacy-changed", (event) => {
+    if (event.detail?.analytics === true) return;
+    remoteQueue = [];
+    writeJson(STORE_KEY, []);
+  });
 
   function installTelemetry() {
     if (window.__HH_INSIGHTS_TRACKING__) return;

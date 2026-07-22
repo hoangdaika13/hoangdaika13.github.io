@@ -1,4 +1,5 @@
 const { clean, currentUser, enforceRateLimit, isAdminUser, withApi } = require("../../utils/platform");
+const privacyConsentHandler = require("../../utils/privacy-consent-api");
 
 const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
 const TELEMETRY_RETENTION_SECONDS = 30 * 24 * 60 * 60;
@@ -142,6 +143,7 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
 }
 
 module.exports = async function handler(req, res) {
+  if (req.query.privacyRoute === "consent") return privacyConsentHandler(req, res);
   return withApi(req, res, async ({ db }) => {
     if (req.method === "POST") {
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
@@ -155,14 +157,14 @@ module.exports = async function handler(req, res) {
       const analyticsConsent = body.analyticsConsent === true;
       const incoming = Array.isArray(body.events) ? body.events.slice(0, 20) : [];
       const events = analyticsConsent ? incoming.map((item) => safeTelemetryEvent(item, now)).filter(Boolean) : [];
-      const page = safeRoute(body.page || events[0]?.route || "/");
+      const page = analyticsConsent ? safeRoute(body.page || events[0]?.route || "/") : "/private";
       const latest = events.at(-1) || null;
-      const module = safeKey(body.module || latest?.module || page.split("/").filter(Boolean).at(-1) || "home", "home");
+      const module = analyticsConsent ? safeKey(body.module || latest?.module || page.split("/").filter(Boolean).at(-1) || "home", "home") : "private";
       const activityState = ["active", "idle", "background"].includes(body.activityState) ? body.activityState : "active";
-      const device = ["desktop", "tablet", "mobile"].includes(body.device) ? body.device : "unknown";
-      const browser = safeKey(body.browser, "browser").slice(0, 40);
-      const viewport = safeKey(body.viewport, "unknown").slice(0, 40);
-      const presenceState = { identity, kind: user ? "registered" : "guest", userId: user?._id || null, sessionId, lastSeenAt: now, expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000), page, module, activityState, activeSeconds: Math.max(0, Math.min(86400, Number(body.activeSeconds || 0))), device, browser, viewport, analyticsConsent };
+      const device = analyticsConsent && ["desktop", "tablet", "mobile"].includes(body.device) ? body.device : "unknown";
+      const browser = analyticsConsent ? safeKey(body.browser, "browser").slice(0, 40) : "private";
+      const viewport = analyticsConsent ? safeKey(body.viewport, "unknown").slice(0, 40) : "private";
+      const presenceState = { identity, kind: user ? "registered" : "guest", userId: user?._id || null, sessionId, lastSeenAt: now, expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000), page, module, activityState, activeSeconds: analyticsConsent ? Math.max(0, Math.min(86400, Number(body.activeSeconds || 0))) : 0, device, browser, viewport, analyticsConsent };
       if (latest) presenceState.lastAction = clean(latest.label || latest.action, 100);
       await Promise.all([
         db.collection("presence").createIndex({ lastSeenAt: -1 }),
@@ -188,7 +190,7 @@ module.exports = async function handler(req, res) {
         db.collection("communityFeatureFlags").find({}, { projection: { key: 1, enabled: 1, rollout: 1 } }).limit(200).toArray()
       ]);
       const disabledFeatures = flags.filter((flag) => !flag.enabled || rolloutBucket(identity, clean(flag.key, 100)) >= Math.max(0, Math.min(100, Number(flag.rollout || 0)))).map((flag) => clean(flag.key, 100)).filter(Boolean);
-      return res.status(200).json({ ok: true, acceptedEvents: events.length, online, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, checkedAt: now, policy: { restrictedFeatures: user && Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [], disabledFeatures }, privacy: { interactionMetadataStored: true, rawKeystrokesStored: false, formValuesStored: false, promptBodiesStored: false, passwordsStored: false, tokensStored: false, privateMessagesStored: false, retentionDays: 30 } });
+      return res.status(200).json({ ok: true, acceptedEvents: events.length, online, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, checkedAt: now, policy: { restrictedFeatures: user && Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [], disabledFeatures }, privacy: { interactionMetadataStored: analyticsConsent, presenceDetailStored: analyticsConsent, rawKeystrokesStored: false, formValuesStored: false, promptBodiesStored: false, passwordsStored: false, tokensStored: false, privateMessagesStored: false, retentionDays: 30 } });
     }
     if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
     if (req.query.view === "health") {

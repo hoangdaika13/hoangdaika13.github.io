@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v187";
+const CACHE = "hh-identity-portal-v188";
 const CORE = [
   "./",
   "./index.html",
@@ -28,7 +28,7 @@ const CORE = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=8",
-  "./script.js?v=122",
+  "./script.js?v=123",
   "./graphic-design-studio.css?v=5",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -176,11 +176,13 @@ const CORE = [
   "./community-platform-v2.js?v=12",
   "./community-messenger-pro.css?v=1",
   "./community-calls.js?v=1",
-  "./community-admin.css?v=3",
-  "./community-admin.js?v=5",
+  "./community-admin.css?v=5",
+  "./community-admin.js?v=7",
   "./insights-pro.css?v=1",
+  "./privacy-consent-center.css?v=2",
   "./motion-comfort.css?v=1",
-  "./insights-pro.js?v=3",
+  "./insights-pro.js?v=4",
+  "./privacy-consent-center.js?v=2",
   "./creative-suite.js?v=5",
   "./creative-os.css?v=1",
   "./creative-os.js?v=1",

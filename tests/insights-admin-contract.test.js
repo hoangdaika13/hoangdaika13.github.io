@@ -54,7 +54,7 @@ test("Phân tích ships interactive telemetry, filters, diagnostics and exports"
   const css = read("insights-pro.css");
 
   assert.match(html, /insights-pro\.css\?v=1/);
-  assert.match(html, /insights-pro\.js\?v=3/);
+  assert.match(html, /insights-pro\.js\?v=4/);
   assert.match(client, /PerformanceObserver/);
   assert.match(client, /data-insights-range/);
   assert.match(client, /data-insights-event-search/);

@@ -19,6 +19,10 @@
       "destination": "/api/community?adminRoute=1"
     },
     {
+      "source": "/api/privacy/consent",
+      "destination": "/api/platform/summary?privacyRoute=consent"
+    },
+    {
       "source": "/api/votes",
       "destination": "/api/donations?resource=votes"
     },

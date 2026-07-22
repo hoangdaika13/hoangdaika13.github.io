@@ -23,7 +23,7 @@ test("Creative OS shell is routed, versioned and cached", () => {
   const worker = read("sw.js");
   assert.match(html, /creative-os\.css\?v=1/);
   assert.match(html, /creative-os\.js\?v=1/);
-  assert.match(html, /script\.js\?v=119/);
+  assert.match(html, /script\.js\?v=123/);
   assert.match(worker, /hh-identity-portal-v\d+/);
   assert.match(worker, /creative-os-core\.js\?v=1/);
   assert.match(script, /creativeOSViews/);

@@ -45,7 +45,7 @@ test("HH English keeps a focused path and moves secondary tools into a searchabl
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-for (const asset of ["app-shell.css?v=50", "script.js?v=119", "sidebar-navigation-pro.css?v=4", "english-learning.css?v=11", "english-learning.js?v=13", "motion-comfort.css?v=1"]) {
+for (const asset of ["app-shell.css?v=50", "script.js?v=123", "sidebar-navigation-pro.css?v=4", "english-learning.css?v=11", "english-learning.js?v=13", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

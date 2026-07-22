@@ -32,6 +32,13 @@ function escapeRegex(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function maskedEmail(value) {
+  const email = String(value || "").trim().toLowerCase();
+  const [name, domain] = email.split("@");
+  if (!name || !domain) return "";
+  return `${name.slice(0, 1)}${name.length > 1 ? "***" : ""}@${domain}`;
+}
+
 function requiredReason(body) {
   const reason = clean(body.reason, 1000);
   if (reason.length < 5) {
@@ -133,11 +140,48 @@ module.exports = async function handler(req, res) {
       db.collection("telemetryEvents").createIndex({ type: 1, createdAt: -1 }),
       db.collection("telemetryEvents").createIndex({ userId: 1, createdAt: -1 }),
       db.collection("telemetryEvents").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-      db.collection("presence").createIndex({ userId: 1, lastSeenAt: -1 })
+      db.collection("presence").createIndex({ userId: 1, lastSeenAt: -1 }),
+      db.collection("privacyConsentEvents").createIndex({ createdAt: -1 }),
+      db.collection("privacyConsentEvents").createIndex({ userId: 1, createdAt: -1 }),
+      db.collection("privacyConsentEvents").createIndex({ identityHash: 1, createdAt: -1 }),
+      db.collection("privacyConsentEvents").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
     ]);
 
     if (req.method === "GET" && view === "me") {
       return res.status(200).json({ ok: true, access, user: presentUser(admin), privacy: { privateMessagesVisibleToAdmin: false, passwordsVisibleToAdmin: false } });
+    }
+
+    if (req.method === "GET" && view === "privacy") {
+      requirePermission(admin, "privacy.view");
+      const now = new Date();
+      const since30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const consent = db.collection("privacyConsentEvents");
+      const [total, analytics, personalization, denied, recent] = await Promise.all([
+        consent.countDocuments({ createdAt: { $gte: since30 } }),
+        consent.countDocuments({ createdAt: { $gte: since30 }, "preferences.analytics": true }),
+        consent.countDocuments({ createdAt: { $gte: since30 }, "preferences.personalization": true }),
+        consent.countDocuments({ createdAt: { $gte: since30 }, "preferences.analytics": false, "preferences.personalization": false }),
+        consent.find({ createdAt: { $gte: since30 } }).sort({ createdAt: -1 }).limit(60).toArray()
+      ]);
+      const userIds = recent.map((item) => item.userId).filter(Boolean);
+      const users = userIds.length ? await db.collection("users").find({ _id: { $in: userIds } }, { projection: { email: 1 } }).toArray() : [];
+      const usersById = new Map(users.map((user) => [String(user._id), user]));
+      return res.status(200).json({
+        ok: true,
+        policyVersion: "privacy-v1-2026-07",
+        metrics: { decisions30d: total, analyticsGranted30d: analytics, personalizationGranted30d: personalization, declinedOptional30d: denied },
+        inventory: [
+          { name: "hh_session", type: "Cookie", category: "Thiết yếu", purpose: "Phiên đăng nhập", readableByJavaScript: false, retention: "Tối đa 12 giờ" },
+          { name: "hh-consent-preferences.v1", type: "Local storage", category: "Thiết yếu", purpose: "Nhớ lựa chọn quyền riêng tư", readableByJavaScript: true, retention: "Trên thiết bị" },
+          { name: "hh-tracking-consent", type: "Local storage", category: "Phân tích", purpose: "Bật/tắt telemetry đã làm sạch", readableByJavaScript: true, retention: "Trên thiết bị" }
+        ],
+        recent: recent.map((item) => ({
+          kind: item.kind === "registered" ? "registered" : "guest",
+          subject: item.userId && usersById.get(String(item.userId)) ? maskedEmail(usersById.get(String(item.userId)).email) : `Khách ${String(item.identityHash || "").slice(-6) || "ẩn danh"}`,
+          analytics: Boolean(item.preferences?.analytics), personalization: Boolean(item.preferences?.personalization), marketing: false,
+          source: clean(item.source || "privacy-center", 40), createdAt: item.createdAt || null
+        }))
+      });
     }
 
     if (req.method === "GET" && view === "dashboard") {

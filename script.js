@@ -5801,6 +5801,12 @@ function initAppShell() {
       };
       mountAdmin();
       remember("admin-panel");
+    } else if (route === "/system/cookie-consent-manager") {
+      updatePageHeader("Trung tâm quyền riêng tư", "Kiểm soát cookie thiết yếu, phân tích và cá nhân hóa trên thiết bị này.", route, module);
+      workspace.innerHTML = '<div data-privacy-consent-host></div>';
+      if (window.HHPrivacyConsent?.mount) window.HHPrivacyConsent.mount(workspace.firstElementChild);
+      else mountSimpleView("Trung tâm quyền riêng tư", "Không thể tải trình quản lý quyền riêng tư.", "");
+      remember("cookie-consent-manager");
     } else if (module) {
       updatePageHeader(module.title, module.description, route, module);
       mountPlatform(module.id);
