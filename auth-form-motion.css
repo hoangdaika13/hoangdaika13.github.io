@@ -306,3 +306,194 @@
     display: none;
   }
 }
+
+/* State-aware motion: movement explains progress instead of adding visual noise. */
+.home-neon.auth-locked #authGate.auth-form-motion {
+  --auth-readiness: 18%;
+  --afm-mode-a: #69eaf0;
+  --afm-mode-b: #f05caf;
+  --afm-mode-glow: rgba(105, 234, 240, .16);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion[data-auth-view="register"] {
+  --afm-mode-a: #f05caf;
+  --afm-mode-b: #ffd36a;
+  --afm-mode-glow: rgba(240, 92, 175, .17);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion[data-auth-view="recovery"] {
+  --afm-mode-a: #ffd36a;
+  --afm-mode-b: #9a7cff;
+  --afm-mode-glow: rgba(255, 211, 106, .15);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion[data-auth-view="qr"] {
+  --afm-mode-a: #67dba1;
+  --afm-mode-b: #69eaf0;
+  --afm-mode-glow: rgba(103, 219, 161, .16);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion[data-auth-view="verify-email"] {
+  --afm-mode-a: #9a7cff;
+  --afm-mode-b: #69eaf0;
+  --afm-mode-glow: rgba(154, 124, 255, .16);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion [data-auth-card] {
+  box-shadow:
+    0 30px 84px rgba(0, 0, 0, .54),
+    0 0 0 1px rgba(255, 255, 255, .035) inset,
+    -18px 18px 52px color-mix(in srgb, var(--afm-mode-a) 9%, transparent),
+    18px -14px 48px color-mix(in srgb, var(--afm-mode-b) 8%, transparent);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion [data-auth-card]::before {
+  background-image: linear-gradient(110deg, var(--afm-mode-a), var(--afm-mode-b), var(--afm-cyan), var(--afm-mode-a));
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion [data-auth-card].afm-view-shift {
+  animation: afm-view-shift 430ms cubic-bezier(.22, .8, .22, 1);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-gate-status {
+  isolation: isolate;
+  overflow: hidden;
+  padding-right: 116px;
+  border-color: color-mix(in srgb, var(--afm-mode-a) 34%, transparent);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--afm-mode-a) 10%, transparent), transparent 58%),
+    rgba(9, 15, 23, .72);
+  color: color-mix(in srgb, var(--afm-mode-a) 74%, white);
+  transition: border-color 280ms ease, background 280ms ease, color 280ms ease;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-gate-status::after {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--auth-readiness);
+  height: 2px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(90deg, var(--afm-mode-a), var(--afm-mode-b));
+  box-shadow: 0 0 12px var(--afm-mode-a);
+  content: "";
+  transition: width 420ms cubic-bezier(.22, .8, .22, 1), background 280ms ease;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-readiness-output {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  right: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: #dbe7f3;
+  font: inherit;
+  transform: translateY(-50%);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-readiness-output span {
+  color: #8796aa;
+  font-size: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-readiness-output b {
+  min-width: 34px;
+  color: var(--afm-mode-a);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  text-shadow: 0 0 12px var(--afm-mode-glow);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-input-shell {
+  position: relative;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-input-shell::after {
+  position: absolute;
+  right: 12%;
+  bottom: -1px;
+  left: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--afm-mode-a), var(--afm-mode-b), transparent);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: scaleX(.35);
+  transition: opacity 180ms ease, transform 280ms cubic-bezier(.22, .8, .22, 1);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.afm-is-focused .auth-input-shell::after,
+.home-neon.auth-locked #authGate.auth-form-motion .auth-field.is-focused .auth-input-shell::after {
+  opacity: .86;
+  transform: scaleX(1);
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion :where(.auth-submit, .auth-provider, .auth-step-next, .auth-passkey-row button, .auth-guest-row button, [data-recovery-action], [data-email-verify-action]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.home-neon.auth-locked #authGate.auth-form-motion .afm-action-ripple {
+  position: absolute;
+  z-index: 4;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, .72), color-mix(in srgb, var(--afm-mode-a) 42%, transparent) 45%, transparent 72%);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(.15);
+  animation: afm-action-ripple 620ms ease-out forwards;
+}
+
+@keyframes afm-view-shift {
+  0% { filter: saturate(.86); transform: perspective(1400px) translateY(5px) scale(.993); }
+  55% { filter: saturate(1.12); }
+  100% { filter: saturate(1); transform: perspective(1400px) rotateX(var(--afm-tilt-x)) rotateY(var(--afm-tilt-y)); }
+}
+
+@keyframes afm-action-ripple {
+  to { opacity: 0; transform: translate(-50%, -50%) scale(10); }
+}
+
+@media (max-width: 560px) {
+  .home-neon.auth-locked #authGate.auth-form-motion .auth-mode-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    min-height: 48px;
+  }
+
+  .home-neon.auth-locked #authGate.auth-form-motion .auth-mode-tabs > button {
+    min-width: 0;
+    min-height: 44px;
+    padding-inline: 8px;
+    white-space: nowrap;
+  }
+
+  .home-neon.auth-locked #authGate.auth-form-motion .auth-gate-status {
+    padding-right: 54px;
+  }
+
+  .home-neon.auth-locked #authGate.auth-form-motion .auth-readiness-output span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-neon.auth-locked #authGate.auth-form-motion [data-auth-card].afm-view-shift,
+  .home-neon.auth-locked #authGate.auth-form-motion .afm-action-ripple {
+    animation: none !important;
+  }
+
+  .home-neon.auth-locked #authGate.auth-form-motion .auth-gate-status::after,
+  .home-neon.auth-locked #authGate.auth-form-motion .auth-input-shell::after {
+    transition: none !important;
+  }
+}

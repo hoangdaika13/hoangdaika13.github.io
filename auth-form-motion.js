@@ -20,6 +20,15 @@
     let hotButton = null;
     let oauthOverride = null;
     let destroyed = false;
+    let lastView = "";
+    let readinessFrame = 0;
+
+    const status = gate.querySelector("#authGateStatus, [data-auth-status]");
+    const readinessOutput = document.createElement("span");
+    readinessOutput.className = "auth-readiness-output";
+    readinessOutput.setAttribute("aria-hidden", "true");
+    readinessOutput.innerHTML = '<span data-auth-readiness-label>Sẵn sàng</span><b data-auth-readiness-value>20%</b>';
+    status?.append(readinessOutput);
 
     const on = (target, type, handler, options) => {
       if (!target?.addEventListener) return;
@@ -28,6 +37,99 @@
     };
 
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+    const hasValue = (control) => String(control?.value ?? "").trim().length > 0;
+
+    const validEmail = (control) => {
+      const value = String(control?.value ?? "").trim();
+      return Boolean(value && /^\S+@\S+\.\S+$/.test(value));
+    };
+
+    const syncReadiness = () => {
+      readinessFrame = 0;
+      const view = gate.dataset.authView || "login";
+      let progress = 18;
+      let label = "Bắt đầu";
+
+      if (view === "login") {
+        const form = gate.querySelector("#gateLoginForm");
+        const emailReady = validEmail(form?.querySelector('[name="email"]'));
+        const passwordReady = hasValue(form?.querySelector('[name="password"]'));
+        progress = 15 + (emailReady ? 40 : 0) + (passwordReady ? 45 : 0);
+        label = progress >= 100 ? "Sẵn sàng" : emailReady ? "Thêm mật khẩu" : "Nhập email";
+      } else if (view === "register") {
+        const step = clamp(Number(gate.dataset.signupStep || 1), 1, 3);
+        const panel = gate.querySelector(`[data-signup-step="${step}"]`);
+        const required = [...(panel?.querySelectorAll("input[required], select[required], textarea[required]") || [])]
+          .filter((control) => control.type !== "hidden" && !control.disabled);
+        const complete = required.filter((control) => {
+          if (control.type === "checkbox" || control.type === "radio") return control.checked;
+          return hasValue(control) && control.validity.valid;
+        }).length;
+        const interestChoice = step === 3
+          ? Boolean(panel?.querySelector('input[name="interests"]:checked'))
+          : true;
+        const ratio = required.length
+          ? (complete + (step === 3 && interestChoice ? 1 : 0)) / (required.length + (step === 3 ? 1 : 0))
+          : 0;
+        const floors = [12, 42, 74];
+        const spans = [22, 22, 24];
+        progress = Math.round(floors[step - 1] + ratio * spans[step - 1]);
+        label = `Bước ${step}/3`;
+      } else if (view === "recovery") {
+        const emailReady = validEmail(gate.querySelector("[data-recovery-email]"));
+        const codeReady = String(gate.querySelector("[data-recovery-code]")?.value || "").trim().length === 6;
+        const passwordReady = String(gate.querySelector("[data-recovery-password]")?.value || "").length >= 8;
+        progress = 12 + (emailReady ? 38 : 0) + (codeReady ? 24 : 0) + (passwordReady ? 26 : 0);
+        label = progress >= 100 ? "Sẵn sàng" : "Khôi phục";
+      } else if (view === "verify-email") {
+        const codeReady = String(gate.querySelector("[data-email-verify-code]")?.value || "").trim().length === 6;
+        progress = codeReady ? 100 : 56;
+        label = codeReady ? "Sẵn sàng" : "Xác minh";
+      } else if (view === "qr") {
+        progress = 72;
+        label = "Chờ quét QR";
+      }
+
+      progress = clamp(Math.round(progress), 0, 100);
+      gate.style.setProperty("--auth-readiness", `${progress}%`);
+      gate.dataset.authReadiness = progress >= 100 ? "ready" : progress >= 55 ? "progress" : "start";
+      const valueNode = readinessOutput.querySelector("[data-auth-readiness-value]");
+      const labelNode = readinessOutput.querySelector("[data-auth-readiness-label]");
+      if (valueNode.textContent !== `${progress}%`) valueNode.textContent = `${progress}%`;
+      if (labelNode.textContent !== label) labelNode.textContent = label;
+
+      if (lastView !== view) {
+        lastView = view;
+        gate.dataset.authPolishMode = view;
+        card?.classList.remove("afm-view-shift");
+        if (!reducedMotion.matches) {
+          void card?.offsetWidth;
+          card?.classList.add("afm-view-shift");
+        }
+      }
+    };
+
+    const scheduleReadiness = () => {
+      if (readinessFrame || destroyed) return;
+      readinessFrame = requestAnimationFrame(syncReadiness);
+    };
+
+    const paintActionRipple = (event) => {
+      const button = event.target.closest?.(".auth-submit, .auth-provider, .auth-step-next, .auth-passkey-row button, .auth-guest-row button, [data-recovery-action], [data-email-verify-action]");
+      if (!button || !gate.contains(button) || reducedMotion.matches) return;
+      const bounds = button.getBoundingClientRect();
+      const ripple = document.createElement("span");
+      ripple.className = "afm-action-ripple";
+      ripple.setAttribute("aria-hidden", "true");
+      const x = Number.isFinite(event.clientX) && event.clientX ? event.clientX - bounds.left : bounds.width / 2;
+      const y = Number.isFinite(event.clientY) && event.clientY ? event.clientY - bounds.top : bounds.height / 2;
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      button.append(ripple);
+      ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+      window.setTimeout(() => ripple.remove(), 900);
+    };
 
     const motionAllowed = () => (
       !destroyed
@@ -183,6 +285,7 @@
         syncErrors();
         syncOAuth();
         syncPlatformState();
+        scheduleReadiness();
       });
     };
 
@@ -192,7 +295,7 @@
       childList: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ["class", "hidden", "aria-selected", "aria-busy", "data-auth-state", "data-auth-status"]
+      attributeFilter: ["class", "hidden", "aria-selected", "aria-busy", "data-auth-state", "data-auth-status", "data-auth-view", "data-signup-step"]
     });
 
     on(card, "pointermove", queuePointer, { passive: true });
@@ -210,12 +313,20 @@
       syncField(field);
       if (event.target.matches?.('input[type="password"]')) clearCaps(field);
     });
-    on(gate, "input", (event) => syncField(event.target.closest?.(".auth-field")));
-    on(gate, "change", (event) => syncField(event.target.closest?.(".auth-field")));
+    on(gate, "input", (event) => {
+      syncField(event.target.closest?.(".auth-field"));
+      scheduleReadiness();
+    });
+    on(gate, "change", (event) => {
+      syncField(event.target.closest?.(".auth-field"));
+      scheduleReadiness();
+    });
     on(gate, "keydown", syncCaps);
     on(gate, "keyup", syncCaps);
     on(gate, "click", (event) => {
+      paintActionRipple(event);
       if (event.target.closest?.("[data-auth-tab], .auth-mode-tabs [role='tab']")) requestAnimationFrame(syncTabs);
+      scheduleReadiness();
     });
 
     const handleMotionPreference = () => {
@@ -270,7 +381,9 @@
       listeners.splice(0).forEach((remove) => remove());
       if (frame) cancelAnimationFrame(frame);
       if (syncFrame) cancelAnimationFrame(syncFrame);
+      if (readinessFrame) cancelAnimationFrame(readinessFrame);
       resetPointer();
+      readinessOutput.remove();
       gate.classList.remove(
         "auth-form-motion",
         "auth-form-motion-ready",
@@ -282,6 +395,9 @@
       );
       delete gate.dataset.authFormMotionReady;
       delete gate.dataset.afmState;
+      delete gate.dataset.authPolishMode;
+      delete gate.dataset.authReadiness;
+      gate.style.removeProperty("--auth-readiness");
       gate.querySelectorAll(".afm-is-focused, .afm-has-value, .afm-caps-active, .afm-visible, .afm-pointer-hot, .afm-has-inline-error").forEach((node) => {
         node.classList.remove("afm-is-focused", "afm-has-value", "afm-caps-active", "afm-visible", "afm-pointer-hot", "afm-has-inline-error");
       });
@@ -300,6 +416,8 @@
     syncPlatformState();
     syncVisibility();
     handleMotionPreference();
+    syncReadiness();
+    window.setTimeout(scheduleReadiness, 700);
 
     window.HHAuthFormMotion = Object.freeze({
       available: true,
