@@ -1,19 +1,32 @@
-const { clean, isOwnerEmail } = require("./platform");
+const { clean, isOwnerUser } = require("./platform");
 
 const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
-  super_admin: ["dashboard.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
-  admin: ["dashboard.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
+  super_admin: ["dashboard.view", "security.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
+  admin: ["dashboard.view", "security.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
   moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
   support: ["dashboard.view", "users.view", "reports.manage", "appeals.manage"],
   analyst: ["dashboard.view", "activity.view", "users.view", "audit.view", "reports.export"]
 });
+const ROLE_RANK = Object.freeze({ owner: 50, super_admin: 40, admin: 30, moderator: 20, support: 10, analyst: 10, member: 0 });
 
 function rolesFor(user) {
   if (!user) return [];
-  const roles = new Set((Array.isArray(user.systemRoles) ? user.systemRoles : []).map((role) => clean(role, 40).toLowerCase()).filter((role) => ROLE_PERMISSIONS[role]));
-  if (isOwnerEmail(user.email)) roles.add("owner");
+  const roles = new Set((Array.isArray(user.systemRoles) ? user.systemRoles : [])
+    .map((role) => clean(role, 40).toLowerCase())
+    .filter((role) => ROLE_PERMISSIONS[role] && role !== "owner"));
+  if (isOwnerUser(user)) roles.add("owner");
   return [...roles];
+}
+
+function highestRole(user) {
+  return rolesFor(user).sort((left, right) => (ROLE_RANK[right] || 0) - (ROLE_RANK[left] || 0))[0] || "member";
+}
+
+function canGrantRole(user, role) {
+  const targetRank = ROLE_RANK[clean(role, 40).toLowerCase()];
+  const actorRank = ROLE_RANK[highestRole(user)] || 0;
+  return Number.isFinite(targetRank) && targetRank < actorRank && clean(role, 40).toLowerCase() !== "owner";
 }
 
 function accessFor(user) {
@@ -75,4 +88,4 @@ async function writeAdminAudit(db, req, admin, entry = {}) {
   return record;
 }
 
-module.exports = { ROLE_PERMISSIONS, accessFor, hasPermission, requirePermission, rolesFor, writeAdminAudit };
+module.exports = { ROLE_PERMISSIONS, ROLE_RANK, accessFor, canGrantRole, hasPermission, highestRole, requirePermission, rolesFor, writeAdminAudit };

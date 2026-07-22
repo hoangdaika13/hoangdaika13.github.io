@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 const http = require("http");
-const { randomUUID } = require("crypto");
+const { randomUUID, timingSafeEqual } = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
@@ -30,10 +30,16 @@ for (const method of ["get", "post", "put", "patch", "delete"]) {
 
 const PORT = Number(process.env.PORT || 4000);
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:4173";
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+const JWT_SECRET = String(process.env.JWT_SECRET || "");
 const MONGODB_URI = process.env.MONGODB_URI;
 const MONGODB_DB = process.env.MONGODB_DB || "hoangdaika13_site";
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
+const ADMIN_TOKEN = String(process.env.ADMIN_TOKEN || "");
+const ADMIN_EMAILS = new Set([
+  ...String(process.env.ADMIN_EMAIL || "").split(","),
+  ...String(process.env.ADMIN_EMAILS || "").split(",")
+].map((value) => value.trim().toLowerCase()).filter(Boolean));
+const ADMIN_USER_IDS = new Set(String(process.env.ADMIN_USER_IDS || "").split(",").map((value) => value.trim()).filter((value) => /^[a-f0-9]{24}$/i.test(value)));
+const ADMIN_ROLES = new Set(["super_admin", "admin", "moderator", "support", "analyst"]);
 const MAX_CALL_PARTICIPANTS = Math.max(2, Math.min(12, Number(process.env.MAX_CALL_PARTICIPANTS || 8)));
 const STUN_URLS = (process.env.STUN_URLS || "stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302").split(",").map((item) => item.trim()).filter(Boolean);
 const ICE_SERVERS = [
@@ -67,6 +73,16 @@ const allowedOrigins = [...new Set([
   "http://localhost:4173"
 ].filter(Boolean))];
 
+app.disable("x-powered-by");
+app.use((_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+  next();
+});
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
 app.use(passport.initialize());
@@ -106,6 +122,48 @@ const seedProducts = [
 
 function cleanString(value, max = 2000) {
   return String(value || "").trim().slice(0, max);
+}
+
+function jwtSecret() {
+  if (JWT_SECRET.length >= 32) return JWT_SECRET;
+  const error = new Error("JWT_SECRET must contain at least 32 characters");
+  error.code = "SECURITY_CONFIG_MISSING";
+  throw error;
+}
+
+function safeTokenEquals(left, right) {
+  const a = Buffer.from(String(left || ""));
+  const b = Buffer.from(String(right || ""));
+  return a.length === b.length && a.length > 0 && timingSafeEqual(a, b);
+}
+
+function isOwnerUser(user) {
+  if (!user) return false;
+  if (ADMIN_USER_IDS.has(String(user._id || ""))) return true;
+  return Boolean(user.emailVerifiedAt || user.verifiedAt) && ADMIN_EMAILS.has(String(user.email || "").trim().toLowerCase());
+}
+
+function adminRoles(user) {
+  const roles = new Set((Array.isArray(user?.systemRoles) ? user.systemRoles : [])
+    .map((role) => cleanString(role, 40).toLowerCase())
+    .filter((role) => ADMIN_ROLES.has(role)));
+  if (isOwnerUser(user)) roles.add("owner");
+  return [...roles];
+}
+
+const httpRateBuckets = new Map();
+function enforceHttpRateLimit(req, res, scope, limit, windowMs) {
+  const ip = cleanString(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0], 100);
+  const key = `${scope}:${ip}`;
+  const now = Date.now();
+  const current = httpRateBuckets.get(key);
+  const bucket = !current || current.expiresAt <= now ? { count: 0, expiresAt: now + windowMs } : current;
+  bucket.count += 1;
+  httpRateBuckets.set(key, bucket);
+  if (bucket.count <= limit) return true;
+  res.setHeader("Retry-After", String(Math.max(1, Math.ceil((bucket.expiresAt - now) / 1000))));
+  res.status(429).json({ error: "Too many requests. Try again later." });
+  return false;
 }
 
 function designRoomCode(value) {
@@ -294,18 +352,26 @@ function ownerFrom(user, fallback = {}) {
     : { anonymousId: cleanString(fallback.anonymousId, 160), user: null };
 }
 
-function requireAdmin(req, res) {
-  if (!ADMIN_TOKEN || req.headers.authorization !== `Bearer ${ADMIN_TOKEN}`) {
-    res.status(401).json({ error: "Unauthorized" });
-    return false;
+async function requireAdmin(req, res) {
+  const token = readBearer(req);
+  if (ADMIN_TOKEN.length >= 32 && safeTokenEquals(token, ADMIN_TOKEN)) return { type: "service", roles: ["service_admin"] };
+  const user = await verifyToken(token);
+  if (!user) {
+    res.status(401).json({ error: "Authentication required" });
+    return null;
   }
-  return true;
+  const roles = adminRoles(user);
+  if (!roles.some((role) => ["owner", "super_admin", "admin"].includes(role))) {
+    res.status(403).json({ error: "Administrator permission required" });
+    return null;
+  }
+  return { type: "user", user: publicUser(user), roles };
 }
 
 function signUser(user) {
   return jwt.sign(
     { sub: String(user._id), email: user.email, name: user.name || user.displayName || "", ver: Number(user.tokenVersion || 0) },
-    JWT_SECRET,
+    jwtSecret(),
     { algorithm: "HS256", expiresIn: "12h", issuer: "hh-platform", audience: "hh-web" }
   );
 }
@@ -313,7 +379,7 @@ function signUser(user) {
 async function verifyToken(token) {
   if (!token) return null;
   try {
-    const payload = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"], issuer: "hh-platform", audience: "hh-web" });
+    const payload = jwt.verify(token, jwtSecret(), { algorithms: ["HS256"], issuer: "hh-platform", audience: "hh-web" });
     const collection = await users();
     const user = await collection.findOne({ _id: new ObjectId(payload.sub) }, { projection: { passwordHash: 0 } });
     const disabled = ["deleted", "suspended", "locked", "banned"].includes(String(user?.status || "").toLowerCase());
@@ -357,6 +423,7 @@ async function upsertOAuthUser(profile, provider) {
     displayName: profile.displayName || email,
     name: profile.displayName || email,
     avatar: profile.photos?.[0]?.value || "",
+    emailVerifiedAt: new Date(),
     updatedAt: new Date(),
     lastLoginAt: new Date()
   };
@@ -388,10 +455,12 @@ app.get("/live", (_req, res) => {
 
 app.get("/health", async (_req, res) => {
   try {
+    if (JWT_SECRET.length < 32) return res.status(503).json({ ok: false, service: "hoangdaika13-realtime", code: "SECURITY_CONFIG_MISSING", security: { jwtConfigured: false }, checkedAt: new Date().toISOString() });
     await db();
     return res.json({
       ok: true,
       service: "hoangdaika13-realtime",
+      security: { jwtConfigured: true, adminAllowlistConfigured: ADMIN_EMAILS.size > 0 || ADMIN_USER_IDS.size > 0, adminTokenConfigured: ADMIN_TOKEN.length >= 32 },
       database: { configured: true, connected: true },
       calls: { turnConfigured: Boolean(process.env.TURN_URL && process.env.TURN_USERNAME && process.env.TURN_CREDENTIAL) },
       checkedAt: new Date().toISOString()
@@ -409,8 +478,9 @@ app.get("/health", async (_req, res) => {
 });
 
 app.post("/api/auth/register", async (req, res) => {
+  if (!enforceHttpRateLimit(req, res, "register", 10, 60 * 60 * 1000)) return;
   const { name, email, password, consent } = req.body || {};
-  if (!name || !email || !password || password.length < 8) {
+  if (!name || !/^\S+@\S+\.\S+$/.test(String(email || "")) || !password || password.length < 8 || Buffer.byteLength(String(password), "utf8") > 72) {
     return res.status(400).json({ error: "Ten, email va mat khau toi thieu 8 ky tu la bat buoc." });
   }
   const collection = await users();
@@ -423,6 +493,9 @@ app.post("/api/auth/register", async (req, res) => {
     name: String(name).trim(),
     email: normalizedEmail,
     passwordHash,
+    tokenVersion: 0,
+    status: "active",
+    emailVerifiedAt: null,
     consent: Boolean(consent),
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -433,11 +506,15 @@ app.post("/api/auth/register", async (req, res) => {
 });
 
 app.post("/api/auth/login", async (req, res) => {
+  if (!enforceHttpRateLimit(req, res, "login", 20, 15 * 60 * 1000)) return;
   const { email, password } = req.body || {};
   const collection = await users();
   const user = await collection.findOne({ email: String(email || "").trim().toLowerCase(), provider: "local" });
   if (!user || !user.passwordHash || !(await bcrypt.compare(password || "", user.passwordHash))) {
     return res.status(401).json({ error: "Sai email hoac mat khau." });
+  }
+  if (["deleted", "suspended", "locked", "banned"].includes(String(user.status || "").toLowerCase())) {
+    return res.status(403).json({ error: "Tai khoan hien khong duoc phep dang nhap." });
   }
   await collection.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
   res.json({ token: signUser(user), user: publicUser(user) });
@@ -621,14 +698,14 @@ app.post("/api/notifications/subscribe", async (req, res) => {
 });
 
 app.get("/api/admin/events", async (req, res) => {
-  if (!requireAdmin(req, res)) return;
+  if (!await requireAdmin(req, res)) return;
   const collection = await events();
   const rows = await collection.find({}).sort({ createdAt: -1 }).limit(200).toArray();
   res.json({ events: rows });
 });
 
 app.get("/api/admin/overview", async (req, res) => {
-  if (!requireAdmin(req, res)) return;
+  if (!await requireAdmin(req, res)) return;
   const database = await db();
   const names = ["users", "sessions", "events", "moduleRecords", "moduleActions", "tickets", "orders", "storageFiles", "notificationSubscriptions"];
   const counts = {};

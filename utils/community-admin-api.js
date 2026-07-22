@@ -1,6 +1,6 @@
 const { ObjectId } = require("mongodb");
-const { clean, currentUser, enforceRateLimit, withApi } = require("./platform");
-const { accessFor, hasPermission, requirePermission, rolesFor, writeAdminAudit } = require("./community-admin");
+const { adminEmails, adminUserIds, clean, currentUser, enforceRateLimit, withApi } = require("./platform");
+const { ROLE_RANK, accessFor, canGrantRole, hasPermission, highestRole, requirePermission, rolesFor, writeAdminAudit } = require("./community-admin");
 
 const USER_PROJECTION = Object.freeze({
   name: 1,
@@ -99,10 +99,12 @@ function pageParams(query) {
 }
 
 async function assertTargetAllowed(admin, target) {
-  const actorRoles = rolesFor(admin);
-  const targetRoles = rolesFor(target);
-  if (!actorRoles.includes("owner") && targetRoles.some((role) => ["owner", "super_admin"].includes(role))) {
-    const error = new Error("Chỉ chủ hệ thống có thể quản trị tài khoản đặc quyền này.");
+  const actorRole = highestRole(admin);
+  const targetRole = highestRole(target);
+  const actorRank = ROLE_RANK[actorRole] || 0;
+  const targetRank = ROLE_RANK[targetRole] || 0;
+  if (targetRank > 0 && actorRank <= targetRank) {
+    const error = new Error("Bạn không thể quản trị tài khoản có quyền ngang hoặc cao hơn mình.");
     error.statusCode = 403;
     throw error;
   }
@@ -190,6 +192,38 @@ module.exports = async function handler(req, res) {
         system: { api: "operational", database: "operational", databaseLatencyMs, queue: failedJobs ? "degraded" : "operational", generatedAt: now },
         recentErrors,
         activeVisitors
+      });
+    }
+
+    if (req.method === "GET" && view === "security") {
+      requirePermission(admin, "security.view");
+      const now = new Date();
+      const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const [activeSessions, failedLogins24h, lockedAccounts, recentSecurityEvents, auditEvents7d] = await Promise.all([
+        db.collection("authSessions").countDocuments({ revokedAt: null, expiresAt: { $gt: now } }),
+        db.collection("loginEvents").countDocuments({ success: false, createdAt: { $gte: dayAgo } }),
+        db.collection("users").countDocuments({ status: { $in: ["locked", "suspended", "banned"] } }),
+        db.collection("loginEvents").find({}, { projection: { userId: 1, type: 1, success: 1, reason: 1, platform: 1, browser: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(30).toArray(),
+        db.collection("communityAdminAuditLogs").countDocuments({ createdAt: { $gte: weekAgo } })
+      ]);
+      return res.status(200).json({
+        ok: true,
+        posture: {
+          ownerAllowlistConfigured: adminEmails().size > 0 || adminUserIds().size > 0,
+          ownerEmailCount: adminEmails().size,
+          ownerIdCount: adminUserIds().size,
+          jwtConfigured: String(process.env.JWT_SECRET || "").length >= 32,
+          otpSecretConfigured: String(process.env.AUTH_OTP_SECRET || "").length >= 32,
+          captchaConfigured: Boolean(process.env.TURNSTILE_SECRET_KEY && process.env.TURNSTILE_SITE_KEY),
+          securityEmailConfigured: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
+          passkeyConfigured: Boolean(process.env.PASSKEY_RP_ID && (process.env.PASSKEY_ORIGINS || process.env.PASSKEY_ORIGIN)),
+          originPolicyConfigured: Boolean(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN)
+        },
+        metrics: { activeSessions, failedLogins24h, lockedAccounts, auditEvents7d },
+        recentSecurityEvents: recentSecurityEvents.map((item) => ({ ...item, id: String(item._id), _id: undefined, userId: item.userId ? String(item.userId) : "" })),
+        privacy: { passwordsVisibleToAdmin: false, privateMessagesVisibleToAdmin: false, secretsVisibleToAdmin: false },
+        generatedAt: now
       });
     }
 
@@ -349,7 +383,10 @@ module.exports = async function handler(req, res) {
       if (action === "user:verify") update = body.verified === false ? { $unset: { verifiedAt: "" }, $set: { updatedAt: now } } : { $set: { verifiedAt: now, updatedAt: now } };
       if (action === "user:revoke-sessions") update = { $inc: { tokenVersion: 1 }, $set: { sessionsRevokedAt: now, updatedAt: now } };
       if (action === "user:roles") {
-        const nextRoles = [...new Set((Array.isArray(body.roles) ? body.roles : []).map((role) => clean(role, 40)).filter((role) => ALLOWED_ROLES.has(role)))];
+        const requestedRoles = [...new Set((Array.isArray(body.roles) ? body.roles : []).map((role) => clean(role, 40).toLowerCase()).filter(Boolean))];
+        if (requestedRoles.some((role) => !ALLOWED_ROLES.has(role))) return res.status(400).json({ error: "Vai trò quản trị không hợp lệ." });
+        if (requestedRoles.some((role) => !canGrantRole(admin, role))) return res.status(403).json({ error: "Bạn không thể cấp vai trò ngang hoặc cao hơn quyền hiện tại." });
+        const nextRoles = requestedRoles;
         update = { $set: { systemRoles: nextRoles, updatedAt: now } };
       }
       if (action === "user:feature-access") {

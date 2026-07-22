@@ -1,4 +1,5 @@
 // Shared server runtime. Kept outside /api so Vercel never counts it as a function.
+const { createHash } = require("crypto");
 const { MongoClient, ObjectId } = require("mongodb");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -8,34 +9,52 @@ const dbName = process.env.MONGODB_DB || "hoangdaika13_site";
 let cachedClient;
 let rateLimitIndexReady = false;
 
-const DEFAULT_ADMIN_EMAILS = Object.freeze([
-  "nhhoang130803@gmail.com",
-  "dungnguyen29082000@gmail.com"
-]);
 const ADMIN_ROLES = new Set(["owner", "super_admin", "admin", "moderator", "support", "analyst"]);
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 function adminEmails() {
   return new Set([
-    ...DEFAULT_ADMIN_EMAILS,
     ...String(process.env.ADMIN_EMAIL || "").split(","),
     ...String(process.env.ADMIN_EMAILS || "").split(",")
   ].map((email) => String(email || "").trim().toLowerCase()).filter(Boolean));
+}
+
+function adminUserIds() {
+  return new Set(String(process.env.ADMIN_USER_IDS || "")
+    .split(",")
+    .map((id) => String(id || "").trim())
+    .filter((id) => /^[a-f0-9]{24}$/i.test(id)));
 }
 
 function isOwnerEmail(email) {
   return adminEmails().has(String(email || "").trim().toLowerCase());
 }
 
+function isVerifiedIdentity(user) {
+  return Boolean(user?.emailVerifiedAt || user?.verifiedAt);
+}
+
+function isOwnerUser(user) {
+  if (!user) return false;
+  if (adminUserIds().has(String(user._id || user.id || ""))) return true;
+  return isOwnerEmail(user.email) && isVerifiedIdentity(user);
+}
+
 function isAdminUser(user) {
   if (!user) return false;
-  if (isOwnerEmail(user.email)) return true;
+  if (isOwnerUser(user)) return true;
   return (Array.isArray(user.systemRoles) ? user.systemRoles : [])
-    .some((role) => ADMIN_ROLES.has(clean(role, 40).toLowerCase()));
+    .some((role) => ADMIN_ROLES.has(clean(role, 40).toLowerCase()) && clean(role, 40).toLowerCase() !== "owner");
 }
 
 function jwtSecret() {
   const secret = String(process.env.JWT_SECRET || "");
-  if (secret.length < 32) throw new Error("Server security configuration is incomplete");
+  if (secret.length < 32) {
+    const error = new Error("Server security configuration is incomplete");
+    error.statusCode = 503;
+    error.code = "SECURITY_CONFIG_MISSING";
+    throw error;
+  }
   return secret;
 }
 
@@ -48,14 +67,18 @@ async function database() {
   return cachedClient.db(dbName);
 }
 
-function setCors(req, res) {
-  const allowed = [...new Set([
+function allowedOrigins() {
+  return [...new Set([
     "https://nhhoang13all.xyz",
     "https://www.nhhoang13all.xyz",
     "https://hoangdaika13.github.io",
     "https://hoangdaika13githubio.vercel.app",
     ...String(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "").split(",").map((v) => v.trim())
   ].filter(Boolean))];
+}
+
+function setCors(req, res) {
+  const allowed = allowedOrigins();
   const origin = String(req.headers.origin || "");
   if (origin && allowed.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
@@ -63,12 +86,31 @@ function setCors(req, res) {
   }
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-HH-CSRF");
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+  res.setHeader("Origin-Agent-Cluster", "?1");
+}
+
+function assertTrustedMutation(req) {
+  if (!MUTATING_METHODS.has(String(req.method || "").toUpperCase())) return;
+  const authorization = String(req.headers.authorization || "").trim();
+  if (authorization) return;
+  if (!requestCookie(req, "hh_session")) return;
+  const origin = String(req.headers.origin || "").trim();
+  const referer = String(req.headers.referer || "").trim();
+  let refererOrigin = "";
+  try { refererOrigin = new URL(referer).origin; } catch {}
+  if (allowedOrigins().includes(origin) || allowedOrigins().includes(refererOrigin)) return;
+  const error = new Error("Yêu cầu đăng nhập không có nguồn tin cậy.");
+  error.statusCode = 403;
+  error.code = "CSRF_ORIGIN_REJECTED";
+  throw error;
 }
 
 function bodyOf(req) {
@@ -120,8 +162,10 @@ function verifyOAuthState(state, provider) {
 
 function publicUser(user) {
   if (!user) return null;
-  const roles = new Set((Array.isArray(user.systemRoles) ? user.systemRoles : []).map((role) => clean(role, 40)).filter(Boolean));
-  if (isOwnerEmail(user.email)) roles.add("owner");
+  const roles = new Set((Array.isArray(user.systemRoles) ? user.systemRoles : [])
+    .map((role) => clean(role, 40).toLowerCase())
+    .filter((role) => ADMIN_ROLES.has(role) && role !== "owner"));
+  if (isOwnerUser(user)) roles.add("owner");
   return {
     id: String(user._id),
     name: user.name || "",
@@ -143,14 +187,24 @@ function publicUser(user) {
 
 async function currentUser(req) {
   const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-  const token = bearer || requestCookie(req, "hh_session");
+  const cookieToken = requestCookie(req, "hh_session");
+  const token = bearer || cookieToken;
   if (!token) return null;
   try {
     const payload = jwt.verify(token, jwtSecret(), { algorithms: ["HS256"], issuer: "hh-platform", audience: "hh-web" });
     const db = await database();
     const user = await db.collection("users").findOne({ _id: new ObjectId(payload.sub) }, { projection: { passwordHash: 0 } });
     const disabled = ["deleted", "suspended", "locked", "banned"].includes(String(user?.status || "").toLocaleLowerCase("en-US"));
-    return user && !disabled && Number(payload.ver || 0) === Number(user.tokenVersion || 0) ? user : null;
+    if (!user || disabled || Number(payload.ver || 0) !== Number(user.tokenVersion || 0)) return null;
+    if (cookieToken && !bearer) {
+      const session = await db.collection("authSessions").findOne({
+        tokenHash: createHash("sha256").update(cookieToken).digest("hex"),
+        revokedAt: null,
+        expiresAt: { $gt: new Date() }
+      }, { projection: { _id: 1 } });
+      if (!session) return null;
+    }
+    return user;
   } catch {
     return null;
   }
@@ -166,6 +220,7 @@ async function withApi(req, res, handler) {
   setCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
   try {
+    assertTrustedMutation(req);
     return await handler({ db: await database(), body: bodyOf(req) });
   } catch (error) {
     console.error("API error", error?.message || error);
@@ -200,12 +255,14 @@ async function enforceRateLimit(db, key, limit = 10, windowMs = 15 * 60 * 1000) 
 
 module.exports = {
   adminEmails,
+  adminUserIds,
   bcrypt,
   bodyOf,
   clean,
   currentUser,
   database,
   enforceRateLimit,
+  isOwnerUser,
   isAdminUser,
   isOwnerEmail,
   ownerFrom,

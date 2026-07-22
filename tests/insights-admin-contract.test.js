@@ -10,12 +10,14 @@ test("server uses one admin policy for both owner accounts and RBAC roles", () =
   const platform = read("utils/platform.js");
   const communityAdmin = read("utils/community-admin.js");
 
-  assert.match(platform, /nhhoang130803@gmail\.com/);
-  assert.match(platform, /dungnguyen29082000@gmail\.com/);
+  assert.match(platform, /ADMIN_EMAILS/);
+  assert.match(platform, /ADMIN_USER_IDS/);
+  assert.doesNotMatch(platform, /DEFAULT_ADMIN_EMAILS/);
   assert.match(platform, /function isOwnerEmail/);
+  assert.match(platform, /function isOwnerUser/);
   assert.match(platform, /function isAdminUser/);
   assert.match(platform, /roles\.add\("owner"\)/);
-  assert.match(communityAdmin, /isOwnerEmail\(user\.email\)/);
+  assert.match(communityAdmin, /isOwnerUser\(user\)/);
 
   for (const file of ["api/platform/summary.js", "api/modules/[moduleId]/items.js", "api/helpdesk/tickets.js", "api/donations.js"]) {
     assert.match(read(file), /isAdminUser/);

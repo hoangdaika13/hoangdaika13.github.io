@@ -55,6 +55,7 @@
   function shell(content, title = "Trung tâm quản trị", description = "Vận hành Community theo vai trò và audit log.") {
     const tabs = [
       ["dashboard", "⌂", "Tổng quan", "dashboard.view"],
+      ["security", "◇", "Bảo mật", "security.view"],
       ["activity", "◉", "Hoạt động live", "activity.view"],
       ["users", "◎", "Người dùng", "users.view"],
       ["reports", "!", "Báo cáo", "reports.manage"],
@@ -85,6 +86,33 @@
     const presence = (data.activeVisitors || []).map((item) => `<article><i>${item.avatar ? `<img src="${esc(item.avatar)}" alt="">` : esc((item.name || "HH").slice(0, 2).toUpperCase())}</i><span><strong>${esc(item.name)}</strong><small>${esc(item.email || (item.kind === "registered" ? "Đã đăng nhập" : "Khách ẩn danh"))}</small></span><code>${esc(item.page || "/")}</code><time>${dateText(item.lastSeenAt)}</time></article>`).join("") || '<p class="hh-admin-empty">Chưa có người truy cập trong 2 phút gần nhất.</p>';
     const content = `<section class="hh-admin-metrics">${cards}</section><section class="hh-admin-dashboard-grid"><article class="hh-admin-system"><header><div><small>SYSTEM HEALTH</small><strong>Tình trạng hệ thống</strong></div><span class="${data.system?.queue === "operational" ? "online" : "warning"}">${data.system?.queue === "operational" ? "Ổn định" : "Cần kiểm tra"}</span></header>${[["Frontend","operational"],["API",data.system?.api],["Database",data.system?.database],["Queue",data.system?.queue],["Authentication","operational"],["Storage","operational"]].map(([name, state]) => `<div><i class="${state === "operational" ? "online" : "warning"}"></i><strong>${name}</strong><span>${state === "operational" ? "Hoạt động" : "Suy giảm"}</span></div>`).join("")}<footer>Database latency: <b>${Number(data.system?.databaseLatencyMs || 0)} ms</b></footer></article><article class="hh-admin-errors"><header><div><small>OBSERVABILITY</small><strong>Lỗi gần đây</strong></div></header>${errors}</article><article class="hh-admin-presence"><header><div><small>REALTIME PRESENCE · 2 PHÚT</small><strong>Người đang sử dụng website</strong></div><span>${Number(data.metrics?.onlineVisitors || 0)} online</span></header><div>${presence}</div></article></section>`;
     panelRef.innerHTML = shell(content);
+  }
+
+  async function renderSecurity() {
+    panelRef.innerHTML = shell(loading("Đang kiểm tra cấu hình bảo mật..."), "Security Center");
+    const data = await api("security");
+    const postureLabels = {
+      ownerAllowlistConfigured: ["Owner allowlist", "Chỉ cấp owner từ biến môi trường"],
+      jwtConfigured: ["JWT secret", "Secret tối thiểu 32 ký tự"],
+      otpSecretConfigured: ["OTP signing", "Khóa ký OTP độc lập"],
+      captchaConfigured: ["Adaptive CAPTCHA", "Bật khi đăng nhập có dấu hiệu bất thường"],
+      securityEmailConfigured: ["Security email", "Cảnh báo thiết bị và khôi phục tài khoản"],
+      passkeyConfigured: ["Passkey", "WebAuthn theo đúng domain"],
+      originPolicyConfigured: ["Origin policy", "Allowlist CORS và chống CSRF"]
+    };
+    const checks = Object.entries(postureLabels).map(([key, [label, detail]]) => {
+      const enabled = Boolean(data.posture?.[key]);
+      return `<article class="${enabled ? "ready" : "missing"}"><i>${enabled ? "✓" : "!"}</i><span><strong>${esc(label)}</strong><small>${esc(detail)}</small></span><b>${enabled ? "Sẵn sàng" : "Cần cấu hình"}</b></article>`;
+    }).join("");
+    const metrics = [
+      ["Phiên đang hoạt động", data.metrics?.activeSessions, "cyan", "S"],
+      ["Đăng nhập lỗi · 24h", data.metrics?.failedLogins24h, "red", "!"],
+      ["Tài khoản hạn chế", data.metrics?.lockedAccounts, "gold", "L"],
+      ["Audit · 7 ngày", data.metrics?.auditEvents7d, "green", "A"]
+    ].map(([label, value, color, icon]) => `<article class="${color}"><i>${icon}</i><small>${esc(label)}</small><strong>${Number(value || 0).toLocaleString("vi-VN")}</strong><span>Dữ liệu hệ thống thật</span></article>`).join("");
+    const events = (data.recentSecurityEvents || []).map((item) => `<article><i class="${item.success === false ? "error" : ""}"></i><span><strong>${esc(item.type || "auth:event")}</strong><small>${esc(item.reason || `${item.browser || "Browser"} · ${item.platform || "Thiết bị"}`)}</small></span><time>${dateText(item.createdAt)}</time></article>`).join("") || '<p class="hh-admin-empty">Chưa có sự kiện xác thực gần đây.</p>';
+    const content = `<section class="hh-admin-metrics hh-admin-security-metrics">${metrics}</section><section class="hh-admin-security-grid"><article class="hh-admin-security-posture"><header><div><small>SECURITY POSTURE</small><strong>Lớp bảo vệ production</strong></div><span>${Number(data.posture?.ownerEmailCount || 0) + Number(data.posture?.ownerIdCount || 0)} owner đã cấu hình</span></header><div>${checks}</div></article><article class="hh-admin-event-timeline"><header><div><small>AUTHENTICATION EVENTS</small><strong>Đăng nhập và cảnh báo gần đây</strong></div><span>Không hiển thị mật khẩu hoặc secret</span></header><div>${events}</div></article></section>`;
+    panelRef.innerHTML = shell(content, "Security Center", "Theo dõi cấu hình xác thực, phiên đăng nhập và tín hiệu rủi ro mà không truy cập dữ liệu riêng tư.");
   }
 
   function rankingMarkup(items, empty = "Chưa đủ dữ liệu") {
@@ -227,6 +255,7 @@
     clearTimeout(activityTimer);
     activeView = view;
     if (view === "dashboard") return renderDashboard();
+    if (view === "security") return renderSecurity();
     if (view === "activity") return renderActivity();
     if (view === "users") return renderUsers();
     if (["reports", "appeals"].includes(view)) return renderQueue(view);
