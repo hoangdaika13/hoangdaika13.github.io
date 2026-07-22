@@ -649,7 +649,7 @@
     gate.querySelectorAll("input[type=password]").forEach((input) => {
       input.addEventListener("keydown", (event) => {
         const warning = input.closest(".auth-field")?.querySelector("[data-caps-warning]");
-        if (warning) warning.hidden = !event.getModifierState("CapsLock");
+        if (warning && typeof event.getModifierState === "function") warning.hidden = !event.getModifierState("CapsLock");
       });
     });
     registerForm.querySelectorAll("[data-auth-next-step]").forEach((button) => button.addEventListener("click", () => {

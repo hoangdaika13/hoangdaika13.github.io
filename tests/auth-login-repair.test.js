@@ -23,6 +23,7 @@ test("auth runtime publishes the active view for responsive layout", () => {
   assert.match(runtime, /gate\.dataset\.authView = name/);
   assert.match(runtime, /Bước 2\/3 · Hoàn thiện hồ sơ hiển thị/);
   assert.match(runtime, /Khôi phục mật khẩu bằng email đã xác minh/);
+  assert.match(runtime, /typeof event\.getModifierState === "function"/);
   assert.match(experience, /if \(!window\.HHAuthPlatform\?\.init\)/);
 });
 
