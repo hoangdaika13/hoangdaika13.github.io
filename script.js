@@ -5867,7 +5867,33 @@ function initAppShell() {
     legacyMain.hidden = true;
     renderedRoute = activeRoute;
   };
+  let pendingAssetRoute = "";
+  const renderRouteLoading = (route) => {
+    activeRoute = route;
+    updatePageHeader("Đang mở workspace", "HH chỉ tải tài nguyên cần cho màn hình này để trang luôn nhẹ và mượt.", route);
+    workspace.innerHTML = `<section class="app-route-loader" role="status" aria-live="polite"><i></i><div><strong>Đang tải chức năng cần thiết</strong><p>Các workspace khác vẫn được để nghỉ cho đến khi bạn mở.</p></div></section>`;
+    legacyMain.hidden = true;
+  };
   const renderRouteSafely = () => {
+    const requestedRoute = routeFromHash();
+    const loader = window.HHAssetLoader;
+    if (loader && !loader.isRouteReady(requestedRoute)) {
+      if (pendingAssetRoute !== requestedRoute) {
+        pendingAssetRoute = requestedRoute;
+        renderRouteLoading(requestedRoute);
+        loader.ensureForRoute(requestedRoute).then(() => {
+          if (routeFromHash() !== requestedRoute) return;
+          pendingAssetRoute = "";
+          renderRouteWithTransition();
+        }).catch((error) => {
+          if (routeFromHash() !== requestedRoute) return;
+          pendingAssetRoute = "";
+          renderRouteFailure(error);
+        });
+      }
+      return true;
+    }
+    pendingAssetRoute = "";
     try { renderRoute(); return true; }
     catch (error) { renderRouteFailure(error); return false; }
   };
@@ -6223,9 +6249,6 @@ function initPlatformOnDemand(initializer) {
     initializer();
   };
   window.addEventListener("hh:workspace-open", start);
-  window.addEventListener("hh:auth-change", (event) => {
-    if (event.detail?.user && event.detail?.token) start();
-  });
 }
 
 resizeCanvas();

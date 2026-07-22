@@ -1,5 +1,5 @@
-const CACHE = "hh-identity-portal-v188";
-const CORE = [
+const CACHE = "hh-identity-portal-v189";
+const RUNTIME_ASSETS = [
   "./",
   "./index.html",
   "./app-shell.css?v=50",
@@ -110,7 +110,7 @@ const CORE = [
   "./auth-trust-director.css?v=1",
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
-  "./assets/hh-neon-logo-v2.png?v=2",
+  "./assets/hh-neon-logo-v2.png?v=3",
   "./auth-platform.js?v=3",
   "./auth-experience.js?v=7",
   "./auth-living-background.js?v=1",
@@ -242,6 +242,22 @@ const CORE = [
   "./config.js?v=8",
   "./data/ai-super-platform-modules.json"
 ];
+const CORE = [
+  "./",
+  "./index.html",
+  "./app-shell.css?v=50",
+  "./sidebar-navigation-pro.css?v=4",
+  "./auth-experience.css?v=6",
+  "./auth-zoom-resilience.css?v=3",
+  "./auth-typography-unified.css?v=2",
+  "./privacy-consent-center.css?v=2",
+  "./motion-comfort.css?v=1",
+  "./assets/hh-neon-logo-v2.png?v=3",
+  "./config.js?v=8",
+  "./performance-loader.js?v=1",
+  "./auth-platform.js?v=3",
+  "./script.js?v=123"
+];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", event => {
@@ -255,16 +271,29 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  event.respondWith(fetch(request).then(response => {
-    if (response.ok && response.type === "basic") {
-      const copy = response.clone();
-      caches.open(CACHE).then(cache => cache.put(request, copy));
+  if (request.mode === "navigate") {
+    event.respondWith(fetch(request).then(response => {
+      if (response.ok && response.type === "basic") {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE).then(cache => cache.put("./index.html", copy)));
+      }
+      return response;
+    }).catch(() => caches.match("./index.html")));
+    return;
+  }
+
+  event.respondWith(caches.match(request).then(cached => {
+    const refresh = fetch(request).then(response => {
+      if (response.ok && response.type === "basic") {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE).then(cache => cache.put(request, copy)));
+      }
+      return response;
+    });
+    if (cached) {
+      event.waitUntil(refresh.catch(() => undefined));
+      return cached;
     }
-    return response;
-  }).catch(async () => {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    if (request.mode === "navigate") return caches.match("./index.html");
-    return Response.error();
+    return refresh.catch(() => Response.error());
   }));
 });
