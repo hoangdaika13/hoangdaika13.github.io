@@ -5680,7 +5680,7 @@ function initAppShell() {
       if (window.HHSpaceExplorer?.mount) window.HHSpaceExplorer.mount(workspace.querySelector("[data-space-explorer-host]"), { apiBase: REALTIME_URL });
       else mountSimpleView("ASTRA HH", "Đang khởi động động cơ khám phá vũ trụ...", "");
     } else if (route === "/entertainment/arcade") {
-      updatePageHeader("Arcade Galaxy", "10 game phụ trong vũ trụ HH: đua tàu, thủ thành, thuộc địa, khai khoáng, rhythm, quiz và sinh tồn co-op.", route);
+      updatePageHeader("Arcade Galaxy", "22 game phụ trong vũ trụ HH: nông trại, câu cá, mecha, xây hành tinh, thẻ bài, đua tàu, boss rush và sinh tồn co-op.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button>`;
       workspace.innerHTML = '<div data-game-arcade-host></div>';
       if (window.HHGameArcade?.mount) window.HHGameArcade.mount(workspace.firstElementChild, {
@@ -6169,9 +6169,9 @@ function initAppShell() {
   });
   window.addEventListener("hh:developer-tools-ready", renderRouteSafely);
   window.addEventListener("hh:space-explorer-ready", renderRouteSafely);
-  window.addEventListener("hh:game-center-ready", renderRouteSafely);
-  window.addEventListener("hh:game-arcade-ready", renderRouteSafely);
-  window.addEventListener("hh:astra-expansion-ready", renderRouteSafely);
+  // Game modules are loaded before the shell mounts them. Their ready events
+  // are intentionally informational; re-rendering the route here would mount
+  // the same module again and recurse through its own ready event.
   window.addEventListener("hh:auth-change", () => { setShellVisibility(); setUser(); });
   const initial = stored();
   const syncResponsiveSidebar = (isMobile = mobileSidebarQuery.matches) => {

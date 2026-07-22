@@ -6,6 +6,7 @@ const ROOM_IDLE_TTL = 5 * 60 * 1000;
 const ROOM_NAME_MAX = 80;
 const CHAT_MAX = 1200;
 const STATE_MAX = 16000;
+const INVITE_TTL = 24 * 60 * 60 * 1000;
 
 function clean(value, max = 2000) {
   return String(value || "").trim().slice(0, max);
@@ -80,6 +81,7 @@ function publicMember(member) {
     ready: member.ready,
     score: member.score,
     state: member.state,
+    spectator: Boolean(member.spectator),
     joinedAt: member.joinedAt,
     lastSeenAt: member.lastSeenAt
   };
@@ -98,8 +100,11 @@ function publicRoom(room) {
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
     members: [...room.members.values()].map(publicMember),
+    spectators: [...room.spectators.values()].map(publicMember),
     chat: room.chat.slice(-50),
+    leaderboard: room.leaderboard.slice(0, 50),
     settings: room.settings,
+    bossRaid: room.bossRaid,
     transportSecurity: "TLS when deployed behind HTTPS/WSS",
     endToEndEncryption: false
   };
@@ -123,9 +128,27 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
     io.to(socketRoom(room.code)).emit("game:presence", {
       room: room.code,
       online: room.members.size,
+      spectators: room.spectators.size,
       members: [...room.members.values()].map(publicMember),
+      spectatorMembers: [...room.spectators.values()].map(publicMember),
       updatedAt: room.updatedAt
     });
+  };
+
+  const broadcastLeaderboard = (room) => {
+    if (!room) return;
+    room.leaderboard = [...room.members.values()]
+      .map((member) => ({
+        socketId: member.socketId,
+        user: member.user,
+        score: member.score,
+        ready: member.ready,
+        spectator: Boolean(member.spectator)
+      }))
+      .sort((a, b) => Number(b.score?.value || 0) - Number(a.score?.value || 0))
+      .slice(0, 50)
+      .map((item, index) => ({ position: index + 1, ...item }));
+    io.to(socketRoom(room.code)).emit("game:leaderboard", { room: room.code, leaderboard: room.leaderboard, updatedAt: new Date().toISOString() });
   };
 
   const leaveRoom = async (socket, reason = "left") => {
@@ -135,8 +158,9 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
     const room = store.rooms.get(code);
     await socket.leave(socketRoom(code));
     if (!room) return;
-    const member = room.members.get(socket.id);
+    const member = room.members.get(socket.id) || room.spectators.get(socket.id);
     room.members.delete(socket.id);
+    room.spectators.delete(socket.id);
     if (member) {
       socket.to(socketRoom(code)).emit("game:member:left", { room: code, socketId: socket.id, user: member.user, reason, updatedAt: new Date().toISOString() });
     }
@@ -149,36 +173,47 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
       timer.unref?.();
       return;
     }
-    if (![...room.members.values()].some((item) => item.user.id === room.hostId)) {
+    if (member && member.user.id === room.hostId && ![...room.members.values()].some((item) => item.user.id === room.hostId)) {
       const nextHost = room.members.values().next().value;
       room.hostId = nextHost.user.id;
       nextHost.role = "host";
       io.to(socketRoom(code)).emit("game:host", { room: code, hostId: room.hostId, host: nextHost.user });
     }
     emitPresence(room);
+    broadcastLeaderboard(room);
   };
 
   const joinRoom = async (socket, room, auth, payload = {}, done = () => {}) => {
     if (!room) return done({ ok: false, error: "Không tìm thấy phòng game." });
-    if (room.members.size >= room.maxPlayers && !room.members.has(socket.id)) return done({ ok: false, error: "Phòng game đã đủ người." });
+    const spectator = Boolean(payload.spectator || payload.watch || payload.mode === "spectator");
+    if (!spectator && room.members.size >= room.maxPlayers && !room.members.has(socket.id)) return done({ ok: false, error: "Phòng game đã đủ người." });
     const currentCode = store.socketRoomById.get(socket.id);
     if (currentCode && currentCode !== room.code) await leaveRoom(socket, "switched");
     const identity = publicUser(socket, { ...auth, ...payload });
+    const inviteCode = clean(payload.inviteCode || payload.invite, 80);
+    const invite = inviteCode ? room.invites.get(inviteCode) : null;
+    const inviteValid = room.visibility === "public"
+      || identity.id === room.hostId
+      || Boolean(invite && (!invite.expiresAt || invite.expiresAt > Date.now()) && (invite.gameId === room.gameId || !invite.gameId));
+    if (!inviteValid && !spectator) return done({ ok: false, error: "Phòng riêng yêu cầu mã mời hợp lệ." });
+    if (!inviteValid && spectator && room.visibility === "private") return done({ ok: false, error: "Khán giả cần mã mời hợp lệ." });
     const member = {
       socketId: socket.id,
       user: identity,
-      role: identity.id === room.hostId ? "host" : "player",
+      role: identity.id === room.hostId ? "host" : spectator ? "spectator" : "player",
       ready: false,
       score: { value: 0, level: 1, rank: "Tân binh", updatedAt: Date.now() },
       state: safeJson(payload.state || {}),
+      spectator,
       joinedAt: new Date().toISOString(),
       lastSeenAt: new Date().toISOString()
     };
-    room.members.set(socket.id, member);
+    (spectator ? room.spectators : room.members).set(socket.id, member);
     store.socketRoomById.set(socket.id, room.code);
     await socket.join(socketRoom(room.code));
     socket.to(socketRoom(room.code)).emit("game:member:joined", { room: room.code, member: publicMember(member) });
     emitPresence(room);
+    broadcastLeaderboard(room);
     done({ ok: true, room: publicRoom(room), selfSocketId: socket.id });
   };
 
@@ -200,8 +235,12 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
           maxPlayers: Math.max(MIN_PLAYERS, Math.min(cappedMaxPlayers, Number(payload.maxPlayers || cappedMaxPlayers))),
           status: "waiting",
           settings: safeJson(payload.settings || {}, 8000),
+          invites: new Map(),
           members: new Map(),
+          spectators: new Map(),
           chat: [],
+          leaderboard: [],
+          bossRaid: { active: false, bossId: "", name: "", hp: 0, maxHp: 0, phase: "idle", participants: [], updatedAt: new Date().toISOString() },
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
@@ -238,8 +277,12 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
             maxPlayers: Math.max(MIN_PLAYERS, Math.min(cappedMaxPlayers, Number(payload.maxPlayers || cappedMaxPlayers))),
             status: "waiting",
             settings: safeJson(payload.settings || {}, 8000),
+            invites: new Map(),
             members: new Map(),
+            spectators: new Map(),
             chat: [],
+            leaderboard: [],
+            bossRaid: { active: false, bossId: "", name: "", hp: 0, maxHp: 0, phase: "idle", participants: [], updatedAt: new Date().toISOString() },
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           };
@@ -262,12 +305,14 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
       const room = store.rooms.get(store.socketRoomById.get(socket.id));
       const member = room?.members.get(socket.id);
       if (!room || !member) return done({ ok: false, error: "Bạn chưa ở trong phòng game." });
+      if (member.spectator) return done({ ok: false, error: "Khán giả không thể sẵn sàng." });
       member.ready = payload.ready !== false;
       member.lastSeenAt = new Date().toISOString();
       const allReady = room.members.size >= MIN_PLAYERS && [...room.members.values()].every((item) => item.ready);
       room.status = allReady ? "ready" : "waiting";
       io.to(socketRoom(room.code)).emit("game:ready", { room: room.code, socketId: socket.id, user: member.user, ready: member.ready, allReady, updatedAt: member.lastSeenAt });
       emitPresence(room);
+      broadcastLeaderboard(room);
       done({ ok: true, allReady, room: publicRoom(room) });
     });
 
@@ -282,6 +327,7 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
       room.startedAt = new Date().toISOString();
       io.to(socketRoom(room.code)).emit("game:start", { room: room.code, gameId: room.gameId, seed: room.seed, startedAt: room.startedAt });
       emitPresence(room);
+      broadcastLeaderboard(room);
       done({ ok: true, room: publicRoom(room) });
     });
 
@@ -306,6 +352,7 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
       if (!room || !member || !rate(socket, "State", 35)) return;
       member.state = safeJson(payload.state || payload, STATE_MAX);
       member.lastSeenAt = new Date().toISOString();
+      if (member.spectator) return;
       socket.to(socketRoom(room.code)).volatile.emit("game:state", {
         room: room.code,
         socketId: socket.id,
@@ -320,6 +367,7 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
       const room = store.rooms.get(store.socketRoomById.get(socket.id));
       const member = room?.members.get(socket.id);
       if (!room || !member) return done({ ok: false, error: "Bạn chưa ở trong phòng game." });
+      if (member.spectator) return done({ ok: false, error: "Khán giả không thể cập nhật điểm." });
       if (!rate(socket, "Score", 200)) return done({ ok: false, error: "Bạn đồng bộ điểm quá nhanh." });
       member.score = {
         value: number(payload.score ?? payload.value),
@@ -329,6 +377,7 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
         updatedAt: Date.now()
       };
       io.to(socketRoom(room.code)).emit("game:score", { room: room.code, socketId: socket.id, user: member.user, score: member.score });
+      broadcastLeaderboard(room);
       done({ ok: true, score: member.score });
     });
 
@@ -339,6 +388,83 @@ function registerGameCenterRealtime({ io, maxPlayers = Number(process.env.MAX_GA
       if (!room || !member) return done({ ok: false, error: "Bạn chưa ở trong phòng game." });
       member.lastSeenAt = new Date().toISOString();
       done({ ok: true, now: Date.now(), room: room.code, echo: payload.echo || null });
+    });
+
+    socket.on("game:invite:create", (payload = {}, callback) => {
+      const done = typeof callback === "function" ? callback : () => {};
+      const room = store.rooms.get(store.socketRoomById.get(socket.id));
+      const member = room?.members.get(socket.id);
+      if (!room || !member || member.user.id !== room.hostId) return done({ ok: false, error: "Chỉ chủ phòng được tạo mã mời." });
+      if (!rate(socket, "Invite", 500)) return done({ ok: false, error: "Bạn tạo mã mời quá nhanh." });
+      const code = clean(payload.code || randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase(), 20).replace(/[^A-Z0-9]/g, "").slice(0, 12);
+      const invite = {
+        code,
+        room: room.code,
+        gameId: room.gameId,
+        role: clean(payload.role || "player", 20),
+        expiresAt: Date.now() + Math.max(5 * 60 * 1000, number(payload.ttl, 5 * 60 * 1000, INVITE_TTL, INVITE_TTL)),
+        createdAt: new Date().toISOString(),
+        createdBy: member.user
+      };
+      room.invites.set(code, invite);
+      io.to(socketRoom(room.code)).emit("game:invite", { room: room.code, invite });
+      done({ ok: true, invite });
+    });
+
+    socket.on("game:spectate:join", async (payload = {}, callback) => {
+      const done = typeof callback === "function" ? callback : () => {};
+      try {
+        await joinRoom(socket, store.rooms.get(roomCode(payload.code)), auth, { ...payload, spectator: true }, done);
+      } catch (error) {
+        done({ ok: false, error: error.message || "Không thể vào chế độ khán giả." });
+      }
+    });
+
+    socket.on("game:boss:spawn", (payload = {}, callback) => {
+      const done = typeof callback === "function" ? callback : () => {};
+      const room = store.rooms.get(store.socketRoomById.get(socket.id));
+      const member = room?.members.get(socket.id);
+      if (!room || !member || member.user.id !== room.hostId) return done({ ok: false, error: "Chỉ chủ phòng được triệu hồi boss." });
+      const boss = {
+        bossId: clean(payload.bossId || randomUUID(), 80),
+        name: clean(payload.name || "Boss vũ trụ", 80),
+        hp: Math.max(1, number(payload.hp, 1, 9999999, 10000)),
+        maxHp: Math.max(1, number(payload.maxHp, 1, 9999999, 10000)),
+        phase: clean(payload.phase || "spawn", 20),
+        participants: [...new Set((payload.participants || []).map((item) => clean(item, 80)).filter(Boolean))].slice(0, 20),
+        updatedAt: new Date().toISOString()
+      };
+      room.bossRaid = { active: true, ...boss };
+      io.to(socketRoom(room.code)).emit("game:boss", { room: room.code, boss: room.bossRaid });
+      done({ ok: true, boss: room.bossRaid });
+    });
+
+    socket.on("game:boss:state", (payload = {}, callback) => {
+      const done = typeof callback === "function" ? callback : () => {};
+      const room = store.rooms.get(store.socketRoomById.get(socket.id));
+      const member = room?.members.get(socket.id);
+      if (!room || !member) return done({ ok: false, error: "Bạn chưa ở trong phòng game." });
+      if (!rate(socket, "Boss", 80)) return done({ ok: false, error: "Boss state update quá nhanh." });
+      room.bossRaid = {
+        ...room.bossRaid,
+        active: Boolean(payload.active ?? room.bossRaid.active),
+        hp: Math.max(0, number(payload.hp, 0, room.bossRaid.maxHp || 9999999, room.bossRaid.hp)),
+        maxHp: Math.max(1, number(payload.maxHp, 1, 9999999, room.bossRaid.maxHp || 1)),
+        phase: clean(payload.phase || room.bossRaid.phase || "fight", 20),
+        participants: [...new Set((payload.participants || room.bossRaid.participants || []).map((item) => clean(item, 80)).filter(Boolean))].slice(0, 20),
+        updatedAt: new Date().toISOString()
+      };
+      io.to(socketRoom(room.code)).emit("game:boss", { room: room.code, boss: room.bossRaid });
+      done({ ok: true, boss: room.bossRaid });
+    });
+
+    socket.on("game:leaderboard:sync", (payload = {}, callback) => {
+      const done = typeof callback === "function" ? callback : () => {};
+      const room = store.rooms.get(store.socketRoomById.get(socket.id));
+      const member = room?.members.get(socket.id);
+      if (!room || !member) return done({ ok: false, error: "Bạn chưa ở trong phòng game." });
+      broadcastLeaderboard(room);
+      done({ ok: true, leaderboard: room.leaderboard });
     });
 
     socket.on("disconnect", () => {

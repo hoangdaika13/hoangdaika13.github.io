@@ -9,6 +9,10 @@
     captain: "Nova HH",
     faction: "Liên Minh Aurora",
     className: "Explorer",
+    level: 12,
+    xp: 1460,
+    seasonPoints: 380,
+    region: "HH Station Prime",
     roomCode: "ASTRA13",
     ship: { engine: 2, shield: 2, weapon: 1, radar: 2, cargo: 2 },
     inventory: { ore: 52, crystal: 22, plasma: 12, relic: 3 },
@@ -16,16 +20,29 @@
     skills: { pilot: 32, combat: 24, mining: 28, trade: 18, science: 22 },
     party: ["Bạn", "AI Navigator"],
     chat: [{ who: "AI Navigator", text: "Tín hiệu HH-13 đang dao động mạnh ở rìa Orion." }],
+    pet: { name: "Lumi", level: 3, type: "Nebula Fox" },
+    crafted: { repairKit: 0, plasmaCell: 0, scanner: 0 },
+    cloud: { status: "local", updatedAt: "" },
     completed: {}
   };
   const tabs = [
     ["overview", "Tổng quan"],
+    ["map", "Bản đồ"],
     ["ship", "Lắp tàu"],
     ["quests", "Nhiệm vụ"],
     ["party", "Party"],
     ["base", "Căn cứ"],
     ["skills", "Skill tree"],
+    ["craft", "Chế tạo"],
     ["events", "Boss/Raid"]
+  ];
+  const zones = [
+    { id: "prime", title: "HH Station Prime", type: "An toàn", color: "cyan", desc: "Trung tâm hồi phục, ghép party và nhận nhiệm vụ." },
+    { id: "frontier", title: "Aurora Frontier", type: "PvE", color: "green", desc: "Drone tuần tra, convoy và anomaly cấp thấp." },
+    { id: "mines", title: "Delta Crystal Belt", type: "Khai khoáng", color: "gold", desc: "Mỏ ore, crystal và relic theo chu kỳ." },
+    { id: "market", title: "Solaris Exchange", type: "Chợ", color: "pink", desc: "Giao thương module, vật phẩm và nguyên liệu." },
+    { id: "dungeon", title: "Obsidian Rift", type: "Dungeon", color: "violet", desc: "Tường dungeon, bẫy và set đồ hiếm." },
+    { id: "leviathan", title: "Leviathan Nebula", type: "Boss Raid", color: "red", desc: "Raid 2-10 người, có spectator và bảng mùa." }
   ];
   const quests = [
     { id: "mining", title: "Khai khoáng tinh vân", xp: 90, desc: "Khai thác 20 ore, tìm 2 crystal và craft radar tạm thời." },
@@ -43,14 +60,82 @@
   let active = "overview";
   let options = {};
   let socketHandlers = [];
+  let cloudTimer = null;
   let state = load();
 
   function load() {
-    try { return { ...DEFAULT_STATE, ...JSON.parse(globalScope.localStorage?.getItem(STORE) || "{}") }; }
+    try {
+      const stored = JSON.parse(globalScope.localStorage?.getItem(STORE) || "{}");
+      return {
+        ...DEFAULT_STATE,
+        ...stored,
+        ship: { ...DEFAULT_STATE.ship, ...(stored.ship || {}) },
+        inventory: { ...DEFAULT_STATE.inventory, ...(stored.inventory || {}) },
+        base: { ...DEFAULT_STATE.base, ...(stored.base || {}) },
+        skills: { ...DEFAULT_STATE.skills, ...(stored.skills || {}) },
+        pet: { ...DEFAULT_STATE.pet, ...(stored.pet || {}) },
+        crafted: { ...DEFAULT_STATE.crafted, ...(stored.crafted || {}) },
+        cloud: { ...DEFAULT_STATE.cloud, ...(stored.cloud || {}) },
+        completed: { ...DEFAULT_STATE.completed, ...(stored.completed || {}) }
+      };
+    }
     catch { return { ...DEFAULT_STATE }; }
   }
   function save() {
     try { globalScope.localStorage?.setItem(STORE, JSON.stringify(state)); } catch {}
+    if (cloudTimer) globalScope.clearTimeout?.(cloudTimer);
+    if (cloudEnabled()) cloudTimer = globalScope.setTimeout?.(() => { syncCloud(); }, 850);
+  }
+  function cloudBase() {
+    return String(options.apiBase || "").replace(/\/$/, "");
+  }
+  function cloudEnabled() {
+    const host = String(globalScope.location?.hostname || "");
+    return Boolean(cloudBase() || (host && host !== "localhost" && host !== "127.0.0.1"));
+  }
+  async function syncCloud() {
+    if (!cloudEnabled() || typeof globalScope.fetch !== "function") return;
+    const base = cloudBase();
+    const endpoint = `${base}/api/games?resource=cloud-save&gameId=astra-hh&slot=main`;
+    try {
+      const response = await globalScope.fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resource: "cloud-save", gameId: "astra-hh", slot: "main", version: Date.now(), season: "current", data: state })
+      });
+      if (!response.ok) throw new Error(`cloud-save ${response.status}`);
+      state.cloud = { status: "online", updatedAt: new Date().toISOString() };
+      try { globalScope.localStorage?.setItem(STORE, JSON.stringify(state)); } catch {}
+    } catch {
+      state.cloud = { status: "local", updatedAt: new Date().toISOString() };
+      try { globalScope.localStorage?.setItem(STORE, JSON.stringify(state)); } catch {}
+    }
+  }
+  async function hydrateCloud() {
+    if (!cloudEnabled() || typeof globalScope.fetch !== "function") return;
+    const base = cloudBase();
+    try {
+      const response = await globalScope.fetch(`${base}/api/games?resource=cloud-save&gameId=astra-hh&slot=main`, { credentials: "include", cache: "no-store" });
+      if (!response.ok) throw new Error(`cloud-load ${response.status}`);
+      const payload = await response.json();
+      const remote = payload?.item?.data;
+      if (remote && typeof remote === "object") {
+        state = {
+          ...state, ...remote,
+          ship: { ...state.ship, ...(remote.ship || {}) },
+          inventory: { ...state.inventory, ...(remote.inventory || {}) },
+          base: { ...state.base, ...(remote.base || {}) },
+          skills: { ...state.skills, ...(remote.skills || {}) },
+          pet: { ...state.pet, ...(remote.pet || {}) },
+          crafted: { ...state.crafted, ...(remote.crafted || {}) },
+          completed: { ...state.completed, ...(remote.completed || {}) },
+          cloud: { status: "online", updatedAt: new Date().toISOString() }
+        };
+        try { globalScope.localStorage?.setItem(STORE, JSON.stringify(state)); } catch {}
+        render();
+      }
+    } catch {}
   }
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
@@ -75,9 +160,61 @@
     if (id === "trade") state.inventory.plasma = Math.max(0, state.inventory.plasma - 2);
     if (id === "defense") state.base.shield = Math.min(100, state.base.shield + 14);
     if (id === "boss") state.inventory.relic += 1;
+    state.xp = Number(state.xp || 0) + quest.xp;
+    state.level = Math.max(Number(state.level || 1), Math.floor(state.xp / 500) + 1);
+    state.seasonPoints = Number(state.seasonPoints || 0) + Math.ceil(quest.xp / 10);
     setLog(`Hoàn thành "${quest.title}" và nhận ${quest.xp} XP.`);
     save();
     emitReward(`astra-${id}`, quest.xp);
+    render();
+  }
+  function travelZone(id) {
+    const zone = zones.find((item) => item.id === id);
+    if (!zone) return;
+    state.region = zone.title;
+    setLog(`Đã warp tới ${zone.title} - khu ${zone.type}.`);
+    options.socket?.emit?.("astra:state", {
+      roomCode: state.roomCode,
+      captain: state.captain,
+      region: state.region,
+      level: state.level
+    });
+    save();
+    emitReward(`astra-zone-${id}`, 18);
+    render();
+  }
+  function craftItem(key) {
+    const recipes = {
+      repairKit: { ore: 8, crystal: 1, label: "Repair Kit" },
+      plasmaCell: { ore: 5, crystal: 2, label: "Plasma Cell" },
+      scanner: { ore: 12, crystal: 4, label: "Anomaly Scanner" }
+    };
+    const recipe = recipes[key];
+    if (!recipe) return;
+    if (state.inventory.ore < recipe.ore || state.inventory.crystal < recipe.crystal) {
+      setLog(`Chưa đủ nguyên liệu chế tạo ${recipe.label}.`);
+      render();
+      return;
+    }
+    state.inventory.ore -= recipe.ore;
+    state.inventory.crystal -= recipe.crystal;
+    state.crafted[key] = Number(state.crafted[key] || 0) + 1;
+    setLog(`Đã chế tạo ${recipe.label}.`);
+    save();
+    emitReward(`astra-craft-${key}`, 30);
+    render();
+  }
+  function trainPet() {
+    if (state.inventory.ore < 4) {
+      setLog("Cần 4 ore để huấn luyện pet.");
+      render();
+      return;
+    }
+    state.inventory.ore -= 4;
+    state.pet.level = Number(state.pet.level || 1) + 1;
+    setLog(`${state.pet.name} đã lên cấp ${state.pet.level}.`);
+    save();
+    emitReward("astra-pet", 24);
     render();
   }
   function upgradeShip(key) {
@@ -160,6 +297,17 @@
     return `<article class="au-card"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(text)}</p>${action ? `<button type="button" ${action}>${escapeHtml(button)}</button>` : ""}</article>`;
   }
   function renderContent() {
+    if (active === "map") {
+      return `<div class="au-grid au-zone-grid">${zones.map((zone) => `<article class="au-card au-zone-card" data-zone-tone="${zone.color}"><span class="au-zone-type">${escapeHtml(zone.type)}</span><h4>${escapeHtml(zone.title)}</h4><p>${escapeHtml(zone.desc)}</p><button type="button" data-au-zone="${zone.id}">${state.region === zone.title ? "Đang ở đây" : "Warp tới khu vực"}</button></article>`).join("")}</div>`;
+    }
+    if (active === "craft") {
+      const recipes = [
+        ["repairKit", "Repair Kit", "8 ore + 1 crystal", "Hồi phục khiên sau trận."],
+        ["plasmaCell", "Plasma Cell", "5 ore + 2 crystal", "Tăng sát thương vũ khí tạm thời."],
+        ["scanner", "Anomaly Scanner", "12 ore + 4 crystal", "Mở tín hiệu relic ở vùng sâu."]
+      ];
+      return `<div class="au-grid"><article class="au-card au-pet-card"><span class="au-zone-type">ĐỒNG HÀNH</span><h4>${escapeHtml(state.pet.name)} · ${escapeHtml(state.pet.type)}</h4><p>Pet hỗ trợ khai khoáng và tăng phần thưởng khám phá.</p>${meter(Math.min(100, state.pet.level * 12))}<button type="button" data-au-pet>Huấn luyện · cấp ${state.pet.level}</button></article>${recipes.map(([key, title, cost, desc]) => card(`${title} · x${state.crafted[key] || 0}`, `${cost}. ${desc}`, `data-au-craft="${key}"`, "Chế tạo")).join("")}</div>`;
+    }
     if (active === "ship") {
       return `<div class="au-grid">${Object.entries(state.ship).map(([key, value]) => card(`${key.toUpperCase()} cấp ${value}`, "Nâng module bằng ore. Engine tăng tốc, shield tăng sống sót, radar mở anomaly, cargo tăng khai khoáng.", `data-au-ship="${key}"`, "Nâng cấp")).join("")}</div>`;
     }
@@ -178,7 +326,7 @@
     if (active === "events") {
       return `<div class="au-grid">${events.map((event, index) => card(`Sự kiện ${index + 1}`, event, index === 1 ? 'data-au-quest="boss"' : 'data-au-quest="trade"', index === 1 ? "Tạo raid" : "Tham gia")).join("")}</div>`;
     }
-    return `<div class="au-grid">${card("Captain & Faction", `${state.captain} - ${state.className} của ${state.faction}. Faction ảnh hưởng nhiệm vụ, giao thương và bonus raid.`)}${card("Tàu Starling-X", `Engine ${state.ship.engine}, shield ${state.ship.shield}, weapon ${state.ship.weapon}, radar ${state.ship.radar}, cargo ${state.ship.cargo}.`, 'data-au-tab="ship"', "Lắp tàu")}${card("Inventory", `Ore ${state.inventory.ore}, crystal ${state.inventory.crystal}, plasma ${state.inventory.plasma}, relic ${state.inventory.relic}.`, 'data-au-quest="mining"', "Khai thác")}${card("Bản đồ MMO", "Khu cố định: HH Station, Delta Market, Nebula Raid. Khu sinh tự động: hành tinh, mỏ, anomaly và dungeon.", 'data-au-tab="events"', "Xem bản đồ")}</div>`;
+    return `<div class="au-grid">${card("Captain & Faction", `${state.captain} - ${state.className} của ${state.faction}. Faction ảnh hưởng nhiệm vụ, giao thương và bonus raid.`)}${card("Hồ sơ tiến trình", `Level ${state.level} · ${state.xp} XP · ${state.seasonPoints} điểm mùa. Đang ở ${state.region}.`, 'data-au-tab="map"', "Mở bản đồ")}${card("Tàu Starling-X", `Engine ${state.ship.engine}, shield ${state.ship.shield}, weapon ${state.ship.weapon}, radar ${state.ship.radar}, cargo ${state.ship.cargo}.`, 'data-au-tab="ship"', "Lắp tàu")}${card("Inventory", `Ore ${state.inventory.ore}, crystal ${state.inventory.crystal}, plasma ${state.inventory.plasma}, relic ${state.inventory.relic}.`, 'data-au-quest="mining"', "Khai thác")}${card("Bản đồ MMO", "Khu cố định: HH Station, Delta Market, Nebula Raid. Khu sinh tự động: hành tinh, mỏ, anomaly và dungeon.", 'data-au-tab="map"', "Xem bản đồ")}</div>`;
   }
   function render() {
     if (!root) return;
@@ -193,8 +341,9 @@
           </div>
           <aside class="au-status">
             <p class="au-label">Trạng thái phòng</p>
-            <strong>${state.party.length}/10 online</strong>
-            <span>${options.socketUrl ? "Realtime server sẵn hook" : "Local co-op fallback"}</span>
+            <strong>${state.party.length}/10 online · Level ${state.level}</strong>
+            <span>${escapeHtml(state.region)} · ${state.seasonPoints} điểm mùa</span>
+            <small>${options.socketUrl ? "Realtime server sẵn hook" : "Local co-op fallback"}</small>
             ${meter(state.base.shield)}
           </aside>
         </div>
@@ -210,6 +359,9 @@
     root.querySelectorAll("[data-au-ship]").forEach((button) => button.addEventListener("click", () => upgradeShip(button.dataset.auShip)));
     root.querySelectorAll("[data-au-skill]").forEach((button) => button.addEventListener("click", () => upgradeSkill(button.dataset.auSkill)));
     root.querySelectorAll("[data-au-base]").forEach((button) => button.addEventListener("click", () => buildBase(button.dataset.auBase)));
+    root.querySelectorAll("[data-au-zone]").forEach((button) => button.addEventListener("click", () => travelZone(button.dataset.auZone)));
+    root.querySelectorAll("[data-au-craft]").forEach((button) => button.addEventListener("click", () => craftItem(button.dataset.auCraft)));
+    root.querySelectorAll("[data-au-pet]").forEach((button) => button.addEventListener("click", trainPet));
     root.querySelectorAll("[data-au-party]").forEach((button) => button.addEventListener("click", addParty));
     const faction = root.querySelector("[data-au-faction]");
     faction?.addEventListener("change", () => { state.faction = faction.value; save(); render(); });
@@ -226,6 +378,7 @@
       options = mountOptions;
       bindSocket();
       render();
+      hydrateCloud();
       return api;
     },
     unmount() {
@@ -234,7 +387,7 @@
       root = null;
       options = {};
     },
-    inspect() { return { state, active, quests, events }; }
+    inspect() { return { state, active, zones, quests, events }; }
   };
   globalScope.HHAstraExpansion = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

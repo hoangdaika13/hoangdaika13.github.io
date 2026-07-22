@@ -17,6 +17,16 @@ function emitAck(socket, event, payload = {}) {
   });
 }
 
+function emitResponse(socket, event, payload = {}) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${event} acknowledgement timed out`)), 5000);
+    socket.emit(event, payload, (response = {}) => {
+      clearTimeout(timer);
+      resolve(response);
+    });
+  });
+}
+
 function once(socket, event, timeout = 5000) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`${event} event timed out`)), timeout);
@@ -67,11 +77,12 @@ test("Game Center realtime rooms support 2-10 player presence, chat, ready and s
     child.once("exit", (code) => reject(new Error(`Realtime server exited with code ${code}`)));
   });
 
-  const [one, two] = await Promise.all([
+  const [one, two, spectator] = await Promise.all([
     connectPlayer("game-player-one", "Game Player One"),
-    connectPlayer("game-player-two", "Game Player Two")
+    connectPlayer("game-player-two", "Game Player Two"),
+    connectPlayer("game-spectator", "Spectator")
   ]);
-  sockets.push(one, two);
+  sockets.push(one, two, spectator);
 
   const created = await emitAck(one, "game:room:create", {
     gameId: "hh-astra-mmo",
@@ -83,10 +94,22 @@ test("Game Center realtime rooms support 2-10 player presence, chat, ready and s
   assert.equal(created.room.maxPlayers, 10);
   assert.equal(created.room.members[0].role, "host");
 
+  const rejected = await emitResponse(two, "game:room:join", { code: created.room.code, gameId: "hh-astra-mmo" });
+  assert.equal(rejected.ok, false);
+  assert.match(rejected.error, /mã mời/);
+
+  const invite = await emitAck(one, "game:invite:create", { role: "player", ttl: 60_000 });
+  assert.match(invite.invite.code, /^[A-Z0-9]{10}$/);
+
   const joinedEvent = once(one, "game:member:joined");
-  const joined = await emitAck(two, "game:room:join", { code: created.room.code, gameId: "hh-astra-mmo" });
+  const joined = await emitAck(two, "game:room:join", { code: created.room.code, gameId: "hh-astra-mmo", inviteCode: invite.invite.code });
   assert.equal(joined.room.members.length, 2);
   assert.equal((await joinedEvent).member.user.name, "Game Player Two");
+
+  const spectatorJoined = await emitAck(spectator, "game:spectate:join", { code: created.room.code, inviteCode: invite.invite.code });
+  assert.equal(spectatorJoined.room.members.length, 2);
+  assert.equal(spectatorJoined.room.spectators.length, 1);
+  assert.equal(spectatorJoined.room.spectators[0].role, "spectator");
 
   const chatEvent = once(one, "game:chat");
   await emitAck(two, "game:chat", { body: "Sẵn sàng khám phá thiên hà!" });
@@ -106,14 +129,25 @@ test("Game Center realtime rooms support 2-10 player presence, chat, ready and s
   await emitAck(one, "game:start", { seed: 138200312 });
   assert.equal((await startEvent).gameId, "hh-astra-mmo");
 
+  const bossEvent = once(two, "game:boss");
+  const boss = await emitAck(one, "game:boss:spawn", { name: "Nebula Leviathan", hp: 5000, maxHp: 5000, phase: "spawn" });
+  assert.equal(boss.boss.name, "Nebula Leviathan");
+  assert.equal((await bossEvent).boss.hp, 5000);
+
+  const bossDamageEvent = once(one, "game:boss");
+  await emitAck(two, "game:boss:state", { hp: 4200, maxHp: 5000, phase: "fight", participants: ["game-player-one", "game-player-two"] });
+  assert.equal((await bossDamageEvent).boss.phase, "fight");
+
   const stateEvent = once(two, "game:state");
   one.emit("game:state", { state: { x: 44, y: -12, map: "Orion" } });
   assert.equal((await stateEvent).state.map, "Orion");
 
   const scoreEvent = once(one, "game:score");
+  const leaderboardEvent = once(spectator, "game:leaderboard");
   const score = await emitAck(two, "game:score", { score: 20260, level: 9, rank: "Captain" });
   assert.equal(score.score.value, 20260);
   assert.equal((await scoreEvent).score.rank, "Captain");
+  assert.equal((await leaderboardEvent).leaderboard[0].user.name, "Game Player Two");
 
   const leftEvent = once(one, "game:member:left");
   await emitAck(two, "game:room:leave");

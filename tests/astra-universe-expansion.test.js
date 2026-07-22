@@ -70,3 +70,22 @@ test("stylesheet is namespaced and responsive", () => {
   assert.match(css, /@media \(max-width: 860px\)/);
   assert.match(css, /prefers-reduced-motion/);
 });
+
+test("ASTRA exposes galaxy zones, progression, crafting, pets and cloud save", () => {
+  const source = read("astra-universe-expansion.js");
+  const css = read("astra-universe-expansion.css");
+  [
+    "const zones",
+    "HH Station Prime",
+    "Leviathan Nebula",
+    "seasonPoints",
+    "data-au-zone",
+    "data-au-craft",
+    "data-au-pet",
+    "cloud-save",
+    "hydrateCloud"
+  ].forEach((token) => assert.ok(source.includes(token), `Missing ${token}`));
+  assert.match(css, /\.astra-expansion \.au-layout/);
+  assert.match(css, /\.astra-expansion \.au-zone-card/);
+  assert.match(css, /@media \(max-width: 560px\)/);
+});

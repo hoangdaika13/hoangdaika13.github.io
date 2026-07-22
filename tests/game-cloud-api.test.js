@@ -26,12 +26,12 @@ function createResponse() {
   return response;
 }
 
-async function call(method, query = {}, body = {}) {
+async function call(method, query = {}, body = {}, headers = {}) {
   const req = {
     method,
     query,
     body,
-    headers: { "x-hh-anonymous-id": "api-test-player" },
+    headers: { "x-hh-anonymous-id": "api-test-player", ...headers },
     socket: { remoteAddress: "127.0.0.1" }
   };
   const res = createResponse();
@@ -70,7 +70,17 @@ test("Game Center API stores progress, cloud save and leaderboard defensively", 
   });
   assert.equal(progress.statusCode, 200);
   assert.equal(progress.payload.item.level, 7);
+  assert.equal(progress.payload.item.version, 1);
   assert.deepEqual(progress.payload.item.achievements.slice(0, 2), ["first-warp", "<unsafe>"]);
+
+  const inventory = await call("POST", { resource: "inventory", gameId: "hh-astra-mmo", season: "alpha" }, {
+    anonymousId: "api-test-player",
+    version: 2,
+    items: { ore: 10, relic: 1 },
+    currency: { coins: 500 }
+  });
+  assert.equal(inventory.statusCode, 200);
+  assert.equal(inventory.payload.item.version, 2);
 
   const cloudSave = await call("POST", { resource: "cloud-save", gameId: "hh-astra-mmo" }, {
     anonymousId: "api-test-player",
@@ -80,18 +90,68 @@ test("Game Center API stores progress, cloud save and leaderboard defensively", 
   });
   assert.equal(cloudSave.statusCode, 200);
   assert.equal(cloudSave.payload.slot, "main");
+  assert.equal(cloudSave.payload.item.version, 3);
+
+  const replay = await call("POST", { resource: "cloud-save", gameId: "hh-astra-mmo" }, {
+    anonymousId: "api-test-player",
+    slot: "main",
+    version: 4,
+    data: { sector: "Should not overwrite replay" }
+  }, { "idempotency-key": "save-main-once" });
+  const replayAgain = await call("POST", { resource: "cloud-save", gameId: "hh-astra-mmo" }, {
+    anonymousId: "api-test-player",
+    slot: "main",
+    version: 5,
+    data: { sector: "Replay" }
+  }, { "idempotency-key": "save-main-once" });
+  assert.equal(replayAgain.payload.item.version, replay.payload.item.version);
+  assert.equal(replayAgain.payload.item.idempotentReplay, true);
 
   const score = await call("POST", { resource: "score", gameId: "hh-astra-mmo" }, {
     anonymousId: "api-test-player",
     playerName: "Astra Tester",
+    season: "alpha",
     score: 9800,
     level: 7,
     rank: "Explorer"
   });
   assert.equal(score.statusCode, 200);
   assert.equal(score.payload.leaderboard[0].score, 9800);
+  assert.equal(score.payload.leaderboard[0].season, "alpha");
 
-  const leaderboard = await call("GET", { resource: "leaderboard", gameId: "hh-astra-mmo" });
+  const leaderboard = await call("GET", { resource: "leaderboard", gameId: "hh-astra-mmo", season: "alpha" });
   assert.equal(leaderboard.statusCode, 200);
   assert.equal(leaderboard.payload.items[0].rank, "Explorer");
+});
+
+test("Game Center API grants daily rewards once and tracks presence", async () => {
+  const reward = await call("POST", { resource: "daily-reward", gameId: "hh-astra-mmo" }, {
+    anonymousId: "daily-player",
+    coins: 777,
+    xp: 333,
+    items: ["crystal", "fuel"]
+  });
+  assert.equal(reward.statusCode, 200);
+  assert.equal(reward.payload.claimed, true);
+  assert.equal(reward.payload.reward.coins, 777);
+
+  const rewardAgain = await call("POST", { resource: "daily-reward", gameId: "hh-astra-mmo" }, {
+    anonymousId: "daily-player",
+    coins: 1
+  });
+  assert.equal(rewardAgain.statusCode, 200);
+  assert.equal(rewardAgain.payload.alreadyClaimed, true);
+
+  const presence = await call("POST", { resource: "presence", gameId: "hh-astra-mmo" }, {
+    anonymousId: "api-test-player",
+    online: true,
+    activity: "Đang ở lobby",
+    roomCode: "ABC123"
+  });
+  assert.equal(presence.statusCode, 200);
+  assert.equal(presence.payload.presence.activity, "Đang ở lobby");
+
+  const listed = await call("GET", { resource: "presence", gameId: "hh-astra-mmo" });
+  assert.equal(listed.statusCode, 200);
+  assert.ok(listed.payload.presences.some((item) => item.roomCode === "ABC123"));
 });
