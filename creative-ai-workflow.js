@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = "hh.creative-ai-workflow.v1";
   const FORMAT = "hh-creative-ai-workflow";
+  const HANDOFF_SCHEMA = "hh.creative-production-handoff.v1";
   const VERSION = 1;
   const MAX_NODES = 40;
   const MAX_EDGES = 100;
@@ -925,6 +926,61 @@
     return { score, ready: score === 100, completed, total, gates, nextAction: gates.find((gate) => !gate.passed)?.label || "Sẵn sàng chuyển sang hàng đợi xuất bản." };
   }
 
+  function createProductionHandoff(projectInput) {
+    const project = normalizeProject(projectInput);
+    const readiness = evaluateCampaignReadiness(project);
+    const stages = project.workflow.nodes.map((node, index) => ({
+      order: index + 1,
+      id: node.id,
+      type: node.type,
+      status: node.status,
+      executableOutput: ["success", "cached"].includes(node.status) && node.output != null,
+      output: node.output == null ? null : boundedValue(node.output)
+    }));
+    const completedTypes = new Set(stages.filter((stage) => stage.executableOutput).map((stage) => stage.type));
+    const sourceAssets = [
+      project.promptStudio.draft.firstFrame,
+      project.promptStudio.draft.lastFrame,
+      ...project.promptStudio.draft.references
+    ].filter(Boolean).map((asset) => ({
+      ...normalizeFileMeta(asset),
+      availability: "metadata-only",
+      nextAction: "Relink tệp gốc trong Media Bin trước khi render."
+    }));
+    const transfers = [
+      { id: "graphic-design", route: "/graphic-design/workflow", consumes: ["brandKit", "prompt", "image-spec"], requiredStages: ["Prompt", "Image"] },
+      { id: "music-ai", route: "/music-ai/project", consumes: ["brief", "voice-spec", "audio-direction"], requiredStages: ["Script", "Voice"] },
+      { id: "media-design", route: "/media-design/production-workflow", consumes: ["script", "image-spec", "voice-spec", "video-spec", "subtitle-spec"], requiredStages: ["Script", "Video", "Subtitle"] },
+      { id: "publishing", route: "/create/publishing", consumes: ["review", "calendar", "experiments"], requiredStages: ["Review"] }
+    ].map((transfer) => {
+      const missingStages = transfer.requiredStages.filter((type) => !completedTypes.has(type));
+      return { ...transfer, status: missingStages.length ? "blocked" : "ready", missingStages };
+    });
+    const payload = {
+      schema: HANDOFF_SCHEMA,
+      version: 1,
+      project: { id: project.id, name: project.name, brief: clone(project.brief) },
+      governance: { readiness: clone(readiness), publishApproval: clone(project.workflow.approvals.publish), autoPublish: false },
+      brandKit: clone(project.campaign.brandKit),
+      characterBible: clone(project.campaign.characterBible),
+      experiments: clone(project.campaign.experiments),
+      calendar: clone(project.campaign.calendar),
+      stages,
+      sourceAssets,
+      transfers
+    };
+    return {
+      ...payload,
+      fingerprint: deterministicHash(payload),
+      createdAt: nowIso(),
+      notice: "Handoff chỉ chứa spec/output đã lưu và metadata asset; không giả lập binary hoặc trạng thái provider."
+    };
+  }
+
+  function exportProductionHandoff(projectInput) {
+    return JSON.stringify(createProductionHandoff(projectInput), null, 2);
+  }
+
   function exportProject(projectInput) {
     return JSON.stringify(normalizeProject(projectInput), null, 2);
   }
@@ -1091,7 +1147,7 @@
     const primaryCharacter = campaign.characterBible[0] || { name: "", anchors: [], voice: "" };
     const audit = campaign.lastAudit;
     return `<section class="hhcaw-campaign" aria-labelledby="hhcaw-campaign-title">
-      <header class="hhcaw-campaign-head"><div><span>CAMPAIGN CONTROL</span><h3 id="hhcaw-campaign-title">Brief → sản xuất → lịch đa nền tảng</h3><p>Một dữ liệu gốc cho Brand Kit, nhân vật, A/B và lịch. Không tự đăng nếu provider chưa xác nhận.</p></div><div class="hhcaw-readiness" style="--readiness:${readiness.score}"><strong>${readiness.score}</strong><small>/100 sẵn sàng</small></div></header>
+      <header class="hhcaw-campaign-head"><div><span>CAMPAIGN CONTROL</span><h3 id="hhcaw-campaign-title">Brief → sản xuất → lịch đa nền tảng</h3><p>Một dữ liệu gốc cho Brand Kit, nhân vật, A/B và lịch. Không tự đăng nếu provider chưa xác nhận.</p></div><div class="hhcaw-readiness" style="--readiness:${readiness.score}"><strong>${readiness.score}</strong><small>/100 sẵn sàng</small></div><button class="hhcaw-handoff" type="button" data-hhcaw-action="export-handoff">Xuất handoff</button></header>
       <div class="hhcaw-campaign-grid">
         <details class="hhcaw-campaign-card" open><summary><span>01</span><strong>Thiết lập chiến dịch</strong><small>${campaign.channels.length} kênh</small></summary>
           <form data-hhcaw-campaign-form>
@@ -1296,6 +1352,7 @@
         try { setProject(approvePublish(project, "Người dùng HH"), "Publish đã được duyệt thủ công."); }
         catch (error) { const status = root.querySelector("[data-hhcaw-status]"); if (status) status.textContent = error.message; }
       } else if (action === "export") download(`${safeId(project.name, "creative-workflow")}.json`, exportProject(project));
+      else if (action === "export-handoff") download(`${safeId(project.name, "creative-production")}.handoff.json`, exportProductionHandoff(project));
       else if (action === "apply-director") {
         try { setProject(applyDirectorPlan(project), "Đã áp dụng pipeline được duyệt."); setView("workflow"); }
         catch (error) { const status = root.querySelector("[data-hhcaw-status]"); if (status) status.textContent = error.message; }
@@ -1463,13 +1520,14 @@
   }
 
   const api = Object.freeze({
-    STORAGE_KEY, FORMAT, VERSION, VIEWS, NODE_TYPES, NODE_META, CAMPAIGN_CHANNELS, CAMPAIGN_METRICS, CHANNEL_META,
+    STORAGE_KEY, FORMAT, HANDOFF_SCHEMA, VERSION, VIEWS, NODE_TYPES, NODE_META, CAMPAIGN_CHANNELS, CAMPAIGN_METRICS, CHANNEL_META,
     createDefaultProject, createPreset, normalizeProject, normalizeWorkflow, normalizeCampaign,
     deterministicHash, stableStringify, hasPath, topologicalSort, connectNodes, disconnectNodes,
     approvePublish, revokePublishApproval, runWorkflowNode, runWorkflow, retryFailed,
     directorStepsFor, proposeDirectorPlan, setDirectorStepApproval, applyDirectorPlan,
     buildPromptPayload, createPromptVariant, addPromptVariant, reproduceVariant, getVariantLineage, compareVariants,
     createContentExperiment, buildCampaignPlan, checkBrandCompliance, checkCharacterConsistency, auditCampaignAsset, evaluateCampaignReadiness,
+    createProductionHandoff, exportProductionHandoff,
     exportProject, importProject, createStoreAdapter, fileMeta,
     mount, unmount, mountAll
   });

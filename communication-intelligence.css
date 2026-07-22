@@ -232,6 +232,9 @@
 .hci-catch-output { min-height: 480px; padding: 18px; border: 1px solid var(--hci-line); border-radius: 8px; background: rgba(13, 18, 27, 0.9); }
 .hci-catch-layout form > div { display: grid; grid-template-columns: minmax(100px, 0.6fr) auto auto; gap: 8px; align-items: end; margin-top: 10px; }
 .hci-catch-layout form > small { display: block; margin-top: 12px; color: var(--hci-muted); line-height: 1.5; }
+.hci-catch-layout form > .hci-catch-consent { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: start; gap: 8px; margin-top: 12px; color: var(--hci-muted); font-size: 11px; line-height: 1.45; }
+.hci-catch-consent input { width: 16px; height: 16px; margin: 0; accent-color: var(--hci-cyan); }
+.hci-catch-consent:focus-within { color: var(--hci-text); }
 .hci-catch-output { display: grid; align-content: start; }
 .hci-summary header { display: flex; justify-content: space-between; gap: 16px; align-items: start; padding-bottom: 14px; border-bottom: 1px solid var(--hci-line); }
 .hci-summary header span { color: var(--hci-cyan); font-size: 10px; font-weight: 900; }

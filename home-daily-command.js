@@ -31,6 +31,7 @@
     recent: "hh.app-shell.recent",
     aiConsent: "hh.home-daily.ai-consent.v1",
     operations: "hh.home.daily-command.v3",
+    orchestrator: "hh.platform.orchestrator.v2",
     creativePublishing: "hh.creative-publishing.v1",
     youtubePublisher: "hh.youtube-publisher.v1",
     musicPublishing: "hh.music.publishing-rights.v1"
@@ -264,8 +265,57 @@
     }).sort((left, right) => toTime(left.publishAt) - toTime(right.publishAt)).slice(0, 5);
   }
 
+  function collectBackgroundJobs(storage = global.localStorage, runtime = runtimeSnapshot()) {
+    const persisted = read(storage, KEYS.orchestrator, {});
+    const rows = [...asArray(persisted.jobs), ...asArray(runtime && runtime.jobs)];
+    const seen = new Set();
+    return rows.map((job, index) => {
+      const id = cleanText(job && (job.id || `job-${index}`), 100);
+      const state = cleanText(job && (job.state || job.status || "queued"), 30).toLowerCase();
+      return {
+        id,
+        title: cleanText(job && (job.label || job.name || job.type || "Tác vụ nền"), 120),
+        state,
+        progress: clamp(job && job.progress, 0, 100),
+        error: cleanText(job && job.error, 160),
+        updatedAt: newestTime(job),
+        route: /^\/[a-z0-9/_-]+$/i.test(job && job.route || "") ? job.route : "/system"
+      };
+    }).filter((job) => {
+      if (!job.id || seen.has(job.id) || ["completed", "cancelled"].includes(job.state)) return false;
+      seen.add(job.id);
+      return ["queued", "running", "waiting", "failed"].includes(job.state);
+    }).sort((left, right) => {
+      const weight = { failed: 0, waiting: 1, running: 2, queued: 3 };
+      return (weight[left.state] ?? 4) - (weight[right.state] ?? 4) || right.updatedAt - left.updatedAt;
+    }).slice(0, 8);
+  }
+
+  function collectOperationalErrors(storage = global.localStorage, jobs = collectBackgroundJobs(storage)) {
+    const persisted = read(storage, KEYS.orchestrator, {});
+    const jobErrors = asArray(jobs).filter((job) => job.state === "failed" || job.state === "waiting").map((job) => ({
+      id: `job-error-${job.id}`,
+      title: job.state === "failed" ? `Tác vụ thất bại: ${job.title}` : `Tác vụ đang chờ: ${job.title}`,
+      detail: job.error || (job.state === "waiting" ? "Cần cấu hình provider hoặc backend trước khi tiếp tục." : "Mở Hệ thống để xem trạng thái đã lưu."),
+      severity: job.state === "failed" ? "critical" : "warning",
+      route: job.route
+    }));
+    const providerErrors = asArray(persisted.providers).filter((provider) => ["offline", "limited", "needs-setup"].includes(provider && provider.status)).map((provider, index) => ({
+      id: `provider-error-${cleanText(provider.id || index, 100)}`,
+      title: cleanText(provider.label || provider.id || "Provider", 100),
+      detail: provider.status === "needs-setup" ? "Chưa cấu hình; không thể chạy tác vụ phụ thuộc backend." : provider.status === "limited" ? "Provider đã báo giới hạn." : "Provider đang ngoại tuyến.",
+      severity: provider.status === "offline" ? "critical" : "warning",
+      route: "/system"
+    }));
+    return [...jobErrors, ...providerErrors].slice(0, 8);
+  }
+
   function recommendNextAction(snapshot) {
     const data = snapshot || {};
+    const failedJob = asArray(data.jobs).find((item) => item.state === "failed");
+    if (failedJob) return { id: "recover-job", eyebrow: "TÁC VỤ CẦN XỬ LÝ", title: failedJob.title, detail: failedJob.error || "Tác vụ nền đã thất bại. Xem trạng thái thật trước khi thử lại.", label: "Xem tác vụ", route: failedJob.route };
+    const criticalError = asArray(data.errors).find((item) => item.severity === "critical");
+    if (criticalError) return { id: "system-error", eyebrow: "CẢNH BÁO HỆ THỐNG", title: criticalError.title, detail: criticalError.detail, label: "Mở Hệ thống", route: criticalError.route };
     const overdueProject = asArray(data.projects).find((item) => item.risk === "overdue");
     if (overdueProject) return { id: "recover-project", eyebrow: "RỦI RO DEADLINE", title: `Gỡ trễ cho ${overdueProject.title}`, detail: `Dự án đã trễ ${Math.abs(overdueProject.days)} ngày và đang ở ${overdueProject.progress}%. Mở timeline để điều chỉnh phạm vi hoặc deadline.`, label: "Mở dự án", route: overdueProject.route };
     const urgentTask = asArray(data.plan).find((item) => item.overdue || ["urgent", "high", "cao", "khẩn"].includes(item.priority));
@@ -308,6 +358,8 @@
     const queued = asArray(runtime.jobs).filter((job) => ["queued", "running"].includes(job.state));
     const runtimeNotices = [...waiting.map((job) => ({ id: `job-${job.id}`, title: `Cần cấu hình: ${cleanText(job.type, 80)}`, detail: cleanText(job.error || "Bộ xử lý chưa sẵn sàng", 140), priority: "high", route: "/system" })), ...queued.map((job) => ({ id: `running-${job.id}`, title: `Đang xử lý: ${cleanText(job.type, 80)}`, detail: `${job.progress || 0}% · trạng thái ${job.state}`, priority: "normal", route: "/system" }))];
     snapshot.notifications = [...runtimeNotices, ...snapshot.notifications].slice(0, 8);
+    snapshot.jobs = collectBackgroundJobs(global.localStorage, runtime);
+    snapshot.errors = collectOperationalErrors(global.localStorage, snapshot.jobs);
     const providerRows = asArray(runtime.providers).map((provider) => ({
       id: `runtime-${provider.id}`,
       label: cleanText(provider.label || provider.id, 100),
@@ -332,15 +384,19 @@
   }
 
   function collectOperations(storage = global.localStorage, now = Date.now()) {
+    const runtime = runtimeSnapshot();
+    const jobs = collectBackgroundJobs(storage, runtime);
     const snapshot = {
       plan: collectTodayPlan(storage, now),
       notifications: collectPriorityNotifications(storage),
       projects: collectAtRiskProjects(storage, now),
       quotas: collectApiQuotas(storage),
-      youtube: collectYouTubeSchedule(storage, now)
+      youtube: collectYouTubeSchedule(storage, now),
+      jobs,
+      errors: collectOperationalErrors(storage, jobs)
     };
     snapshot.recommendation = recommendNextAction(snapshot);
-    return mergeRuntimeOperations(snapshot, runtimeSnapshot(), now);
+    return mergeRuntimeOperations(snapshot, runtime, now);
   }
 
   function weatherText(storage) {
@@ -528,6 +584,8 @@
       '<section class="hdc-operation-card is-plan"><header><div><small>KẾ HOẠCH HÔM NAY</small><h4>Việc cần làm</h4></div><span data-hdc-plan-count>0 việc</span></header><div class="hdc-operation-list" data-hdc-plan></div><footer><button type="button" data-hdc-route="/work">Mở Công việc</button></footer></section>',
       '<section class="hdc-operation-card is-alert"><header><div><small>ƯU TIÊN</small><h4>Thông báo cần xem</h4></div><span data-hdc-notification-count>0 mới</span></header><div class="hdc-operation-list" data-hdc-notifications></div><footer><button type="button" data-hdc-route="/communication/notifications">Trung tâm thông báo</button></footer></section>',
       '<section class="hdc-operation-card is-risk"><header><div><small>PROJECT WATCH</small><h4>Dự án sắp trễ</h4></div><span data-hdc-project-count>0 rủi ro</span></header><div class="hdc-operation-list" data-hdc-projects></div><footer><button type="button" data-hdc-route="/work/project-center">Mở timeline</button></footer></section>',
+      '<section class="hdc-operation-card is-job"><header><div><small>BACKGROUND JOBS</small><h4>Tác vụ đang xử lý</h4></div><span data-hdc-job-count>0 tác vụ</span></header><div class="hdc-operation-list" data-hdc-jobs></div><footer><button type="button" data-hdc-route="/system">Mở hàng đợi</button></footer></section>',
+      '<section class="hdc-operation-card is-error"><header><div><small>ERROR WATCH</small><h4>Lỗi cần can thiệp</h4></div><span data-hdc-error-count>0 lỗi</span></header><div class="hdc-operation-list" data-hdc-errors></div><footer><button type="button" data-hdc-route="/system">Kiểm tra hệ thống</button></footer></section>',
       '<section class="hdc-operation-card is-quota"><header><div><small>API GUARD</small><h4>Hạn mức đã cấu hình</h4></div><span data-hdc-quota-count>Chưa có adapter</span></header><div class="hdc-operation-list" data-hdc-quotas></div><footer><button type="button" data-hdc-route="/create/providers">Provider Router</button></footer></section>',
       '<section class="hdc-operation-card is-youtube"><header><div><small>YOUTUBE CALENDAR</small><h4>Lịch phát sắp tới</h4></div><span data-hdc-youtube-count>0 lịch</span></header><div class="hdc-operation-list" data-hdc-youtube></div><footer><button type="button" data-hdc-route="/music-ai/youtube-publisher">Mở YouTube Publisher</button></footer></section>',
       '</div>',
@@ -613,6 +671,44 @@
     });
   }
 
+  function renderJobs(home, items) {
+    const list = home.querySelector("[data-hdc-jobs]");
+    const count = home.querySelector("[data-hdc-job-count]");
+    if (!list || !count) return;
+    list.replaceChildren();
+    count.textContent = `${items.length} tác vụ`;
+    if (!items.length) return list.append(emptyOperation("Không có tác vụ nền", "Chỉ hiển thị job queued, running, waiting hoặc failed đã được runtime lưu thật."));
+    items.forEach((item) => {
+      const row = make("button", `hdc-job-row is-${item.state}`);
+      row.type = "button";
+      row.dataset.hdcRoute = item.route;
+      row.append(operationCopy(item.title, item.error || `${item.progress}% hoàn tất`, item.state));
+      const meter = make("i", "hdc-mini-meter");
+      const fill = make("span");
+      fill.style.width = `${item.progress}%`;
+      meter.append(fill);
+      row.append(meter);
+      list.append(row);
+    });
+  }
+
+  function renderErrors(home, items) {
+    const list = home.querySelector("[data-hdc-errors]");
+    const count = home.querySelector("[data-hdc-error-count]");
+    if (!list || !count) return;
+    list.replaceChildren();
+    count.textContent = `${items.length} lỗi`;
+    if (!items.length) return list.append(emptyOperation("Chưa có lỗi cần xử lý", "Trang chủ chỉ báo lỗi do job hoặc provider đã công bố; không đọc log riêng tư."));
+    items.forEach((item) => {
+      const row = make("button", `hdc-error-row is-${item.severity}`);
+      row.type = "button";
+      row.dataset.hdcRoute = item.route;
+      row.append(operationCopy(item.title, item.detail, item.severity));
+      row.append(make("span", "hdc-schedule-arrow", "→"));
+      list.append(row);
+    });
+  }
+
   function renderQuotas(home, items) {
     const list = home.querySelector("[data-hdc-quotas]");
     const count = home.querySelector("[data-hdc-quota-count]");
@@ -669,6 +765,8 @@
     renderPlan(home, snapshot.plan);
     renderNotifications(home, snapshot.notifications);
     renderProjects(home, snapshot.projects);
+    renderJobs(home, snapshot.jobs || []);
+    renderErrors(home, snapshot.errors || []);
     renderQuotas(home, snapshot.quotas);
     renderYouTube(home, snapshot.youtube);
   }
@@ -902,6 +1000,8 @@
     collectAtRiskProjects,
     collectApiQuotas,
     collectYouTubeSchedule,
+    collectBackgroundJobs,
+    collectOperationalErrors,
     collectOperations,
     recommendNextAction,
     togglePlanItem,

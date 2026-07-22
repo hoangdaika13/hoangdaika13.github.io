@@ -10,7 +10,7 @@
   const STATE_KEY = SCHEMA;
   const VERSION = 1;
   const TIMELINE_SCHEMA = "hh.media-timeline.v1";
-  const LIMITS = Object.freeze({ tracks: 16, clips: 500, subtitles: 1000, comments: 500, jobs: 100, history: 100, text: 2000 });
+  const LIMITS = Object.freeze({ tracks: 16, clips: 500, subtitles: 1000, comments: 500, jobs: 100, history: 100, versions: 50, text: 2000 });
   const activeInstances = new Set();
   const REMOTE_STATUSES = new Set(["queued", "running", "completed", "failed", "canceled"]);
 
@@ -189,6 +189,52 @@
     catch (_) { return createReviewComment({ ...input, seconds: 0 }, fps); }
   }
 
+  function normalizeTimelineVersion(input, index) {
+    const source = input && typeof input === "object" ? input : {};
+    const timeline = normalizeTimeline(source.timeline);
+    return {
+      id: safeId(source.id, `version-${index + 1}`),
+      label: cleanText(source.label, 120, `Phiên bản revision ${timeline.revision}`),
+      note: cleanText(source.note, 500),
+      createdAt: source.createdAt || now(),
+      timeline,
+      reviews: (Array.isArray(source.reviews) ? source.reviews : []).slice(0, LIMITS.comments).map((comment) => normalizeReviewComment(comment, timeline.fps))
+    };
+  }
+
+  function createTimelineVersion(stateInput, input) {
+    const state = normalizeState(stateInput);
+    const options = input && typeof input === "object" ? input : {};
+    const version = normalizeTimelineVersion({
+      id: options.id || uid("version"),
+      label: options.label || `Revision ${state.timeline.revision}`,
+      note: options.note || `Snapshot trước khi chỉnh sửa revision ${state.timeline.revision}.`,
+      createdAt: options.createdAt || now(),
+      timeline: state.timeline,
+      reviews: state.reviews
+    }, state.versions.length);
+    return normalizeState({ ...state, versions: [...state.versions, version].slice(-LIMITS.versions) });
+  }
+
+  function restoreTimelineVersion(stateInput, versionId) {
+    const state = normalizeState(stateInput);
+    const version = state.versions.find((item) => item.id === safeId(versionId));
+    if (!version) throw new Error("Không tìm thấy phiên bản timeline cần khôi phục.");
+    const restoreEntry = {
+      id: uid("edit"),
+      type: "restore-version",
+      at: now(),
+      detail: `Khôi phục ${version.label}; bản nguồn vẫn được giữ trong lịch sử phiên bản`
+    };
+    const timeline = normalizeTimeline({
+      ...version.timeline,
+      id: state.timeline.id,
+      revision: state.timeline.revision + 1,
+      history: [...state.timeline.history, restoreEntry].slice(-LIMITS.history)
+    });
+    return normalizeState({ ...state, timeline, reviews: version.reviews });
+  }
+
   function safeOutputUrl(value, base) {
     if (!value) return "";
     try {
@@ -221,6 +267,7 @@
       transcriptionJobs: (Array.isArray(source.transcriptionJobs) ? source.transcriptionJobs : []).slice(-LIMITS.jobs).map((job) => normalizeJob(job, "transcription")),
       batchJobs: (Array.isArray(source.batchJobs) ? source.batchJobs : []).slice(-LIMITS.jobs).map((job) => normalizeJob(job, "image")),
       renderQueue: (Array.isArray(source.renderQueue) ? source.renderQueue : []).slice(-LIMITS.jobs).map((job) => normalizeJob(job, "render")),
+      versions: (Array.isArray(source.versions) ? source.versions : []).slice(-LIMITS.versions).map(normalizeTimelineVersion),
       updatedAt: now()
     };
   }
@@ -458,7 +505,8 @@
       return `<section class="hmpw-panel"><header><div><small>SHARED INDEXEDDB</small><h3>Media Bin dùng chung</h3></div><label class="hmpw-file">Thêm media<input type="file" multiple data-hmpw-import></label></header><div class="hmpw-assets">${assets.length ? assets.map((asset) => `<article><div><b>${escapeHtml(asset.kind?.toUpperCase?.() || "FILE")}</b><span><strong>${escapeHtml(asset.name)}</strong><small>${Math.round((asset.size || 0) / 1024)} KB · ${escapeHtml(asset.availability)}</small></span></div>${asset.kind === "video" ? `<button type="button" data-hmpw-proxy="${escapeHtml(asset.id)}">Tạo proxy</button>` : ""}</article>`).join("") : `<p class="hmpw-empty">Chưa có asset. Tệp nhập ở đây cũng xuất hiện trong Universal Media Project.</p>`}</div><div class="hmpw-jobs">${state.proxyJobs.slice().reverse().map((job) => jobCard(job, job.status === "completed" && outputs.has(job.id) ? `<button type="button" data-hmpw-download="${job.id}">Tải proxy</button>` : "")).join("")}</div></section>`;
     }
     function timelinePanel() {
-      return `<section class="hmpw-panel"><header><div><small>${escapeHtml(state.timeline.schema)} · REV ${state.timeline.revision}</small><h3>Timeline không phá hủy</h3></div><div class="hmpw-inline"><select data-hmpw-timeline-asset aria-label="Asset thêm vào timeline">${assetOptions(["video", "audio", "image", "svg"])}</select><button type="button" data-hmpw-add-clip>Thêm clip</button></div></header><p class="hmpw-note">Trim, split, move và effect chỉ thay tham chiếu; binary trong Media Bin không bị sửa.</p><div class="hmpw-timeline">${state.timeline.clips.length ? state.timeline.clips.map((clip) => `<article><span>${escapeHtml(secondsToTimecode(clip.start, state.timeline.fps))}</span><div><strong>${escapeHtml(clip.name)}</strong><small>${escapeHtml(clip.trackId)} · nguồn ${clip.sourceIn.toFixed(2)}–${clip.sourceOut.toFixed(2)}s · ${clip.effects.length} effect</small></div><button type="button" data-hmpw-split="${clip.id}">Split giữa</button><button type="button" data-hmpw-remove-clip="${clip.id}">Gỡ</button></article>`).join("") : `<p class="hmpw-empty">Chưa có clip trên timeline.</p>`}</div></section>`;
+      const versions = state.versions.slice().reverse();
+      return `<section class="hmpw-panel"><header><div><small>${escapeHtml(state.timeline.schema)} · REV ${state.timeline.revision}</small><h3>Timeline không phá hủy</h3></div><div class="hmpw-inline"><select data-hmpw-timeline-asset aria-label="Asset thêm vào timeline">${assetOptions(["video", "audio", "image", "svg"])}</select><button type="button" data-hmpw-add-clip>Thêm clip</button><button type="button" data-hmpw-create-version>Lưu phiên bản</button></div></header><p class="hmpw-note">Trim, split, move và effect chỉ thay tham chiếu; binary trong Media Bin không bị sửa.</p><div class="hmpw-timeline">${state.timeline.clips.length ? state.timeline.clips.map((clip) => `<article><span>${escapeHtml(secondsToTimecode(clip.start, state.timeline.fps))}</span><div><strong>${escapeHtml(clip.name)}</strong><small>${escapeHtml(clip.trackId)} · nguồn ${clip.sourceIn.toFixed(2)}–${clip.sourceOut.toFixed(2)}s · ${clip.effects.length} effect</small></div><button type="button" data-hmpw-split="${clip.id}">Split giữa</button><button type="button" data-hmpw-remove-clip="${clip.id}">Gỡ</button></article>`).join("") : `<p class="hmpw-empty">Chưa có clip trên timeline.</p>`}</div><section class="hmpw-versions" aria-label="Lịch sử phiên bản timeline"><header><div><small>VERSION HISTORY</small><strong>${versions.length} phiên bản có thể khôi phục</strong></div><span>Khôi phục tạo revision mới, không ghi đè snapshot.</span></header><div>${versions.length ? versions.map((version) => `<article><div><strong>${escapeHtml(version.label)}</strong><small>${escapeHtml(version.note || "Snapshot timeline và review")} · ${escapeHtml(new Date(version.createdAt).toLocaleString("vi-VN"))}</small></div><b>REV ${version.timeline.revision}</b><button type="button" data-hmpw-restore-version="${escapeHtml(version.id)}">Khôi phục</button></article>`).join("") : `<p class="hmpw-empty">Lưu phiên bản trước một thay đổi lớn để có thể quay lại cả timeline và nhận xét review.</p>`}</div></section></section>`;
     }
     function transcriptionPanel() {
       return `<section class="hmpw-panel"><header><div><small>${transcriptionAdapter ? `ADAPTER · ${escapeHtml(transcriptionAdapter.name || "local/custom")}` : "ADAPTER · CHƯA CẤU HÌNH"}</small><h3>Transcription & subtitle</h3></div><div class="hmpw-inline"><select data-hmpw-transcript-asset aria-label="Audio hoặc video cần phiên âm">${assetOptions(["audio", "video"])}</select><select data-hmpw-language aria-label="Ngôn ngữ"><option value="vi">Tiếng Việt</option><option value="en">English</option></select><button type="button" data-hmpw-transcribe>Phiên âm</button></div></header><p class="hmpw-note">Chỉ báo hoàn tất khi local transcriber/adapter trả segment thật. Web Speech live không được giả làm phiên âm tệp.</p><div class="hmpw-jobs">${state.transcriptionJobs.slice().reverse().map((job) => jobCard(job, job.status === "completed" ? `<button type="button" data-hmpw-vtt="${job.id}">Tải WebVTT</button>` : "")).join("") || `<p class="hmpw-empty">Chưa có tác vụ phiên âm.</p>`}</div></section>`;
@@ -515,6 +563,18 @@
         const duration = clamp(asset.metadata?.duration, 0.04, 86400, asset.kind === "image" || asset.kind === "svg" ? 5 : 10);
         state.timeline = applyTimelineEdit(state.timeline, { type: "add-clip", clip: { assetId: asset.id, name: asset.name, trackId: asset.kind === "audio" ? "a1" : "v1", sourceOut: duration } });
         persist(); announce("Đã thêm tham chiếu clip; asset nguồn không bị sửa.", "success"); return;
+      }
+      if (event.target.closest("[data-hmpw-create-version]")) {
+        state = createTimelineVersion(state);
+        persist(); announce(`Đã lưu snapshot revision ${state.timeline.revision}; timeline và review có thể khôi phục.`, "success"); return;
+      }
+      const restoreVersion = event.target.closest("[data-hmpw-restore-version]");
+      if (restoreVersion) {
+        try {
+          state = restoreTimelineVersion(state, restoreVersion.dataset.hmpwRestoreVersion);
+          persist(); announce(`Đã khôi phục thành revision ${state.timeline.revision} mà không xóa lịch sử phiên bản.`, "success");
+        } catch (error) { announce(error.message, "error"); }
+        return;
       }
       const split = event.target.closest("[data-hmpw-split]");
       if (split) { const clip = state.timeline.clips.find((item) => item.id === split.dataset.hmpwSplit); state.timeline = applyTimelineEdit(state.timeline, { type: "split", clipId: clip.id, at: clip.start + (clip.sourceOut - clip.sourceIn) / clip.playbackRate / 2 }); persist(); return; }
@@ -622,7 +682,7 @@
   return Object.freeze({
     SCHEMA, STATE_KEY, VERSION, TIMELINE_SCHEMA, LIMITS,
     escapeHtml, secondsToTimecode, timecodeToSeconds, normalizeTimeline, applyTimelineEdit,
-    createReviewComment, updateReviewComment, normalizeState, createStateStore,
+    createReviewComment, updateReviewComment, normalizeTimelineVersion, createTimelineVersion, restoreTimelineVersion, normalizeState, createStateStore,
     runProxyJob, createLocalTranscriptionAdapter, runTranscriptionJob, toWebVtt,
     transformImageLocal, runImageBatch, createServerRenderAdapter, enqueueRenderJob, refreshRenderJob, cancelRenderJob,
     mount, unmount

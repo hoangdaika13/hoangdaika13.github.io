@@ -9,11 +9,11 @@ const index = read("index.html");
 const worker = read("sw.js");
 
 const assets = [
-  "home-daily-command.css?v=3",
+  "home-daily-command.css?v=4",
   "home-command-search.css?v=2",
   "home-widget-project-pulse.css?v=2",
   "home-health-focus.css?v=2",
-  "home-daily-command.js?v=4",
+  "home-daily-command.js?v=5",
   "home-command-search.js?v=2",
   "home-widget-project-pulse.js?v=2",
   "home-health-focus.js?v=2"

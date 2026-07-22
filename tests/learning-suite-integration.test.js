@@ -17,7 +17,7 @@ const styles = [
 ];
 
 const scripts = [
-  "learning-platform-core.js?v=4",
+  "learning-platform-core.js?v=5",
   "learning-home.js?v=2",
   "learning-paths.js?v=3",
   "learning-review.js?v=3",

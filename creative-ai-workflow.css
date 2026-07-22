@@ -1069,6 +1069,17 @@
   font-size: 8px;
 }
 
+.hhcaw-handoff {
+  min-height: 38px;
+  padding: 8px 12px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(103, 232, 249, .32);
+  border-radius: 7px;
+  background: rgba(103, 232, 249, .08);
+  color: var(--caw-cyan);
+  font-weight: 800;
+}
+
 .hhcaw-campaign-grid,
 .hhcaw-campaign-results {
   display: grid;
@@ -1478,7 +1489,9 @@
   }
 
   .hhcaw-campaign { padding: 8px; }
-  .hhcaw-campaign-head { align-items: flex-start; }
+  .hhcaw-campaign-head { align-items: flex-start; flex-wrap: wrap; }
+  .hhcaw-campaign-head > div:first-child { flex-basis: calc(100% - 86px); }
+  .hhcaw-handoff { width: 100%; }
   .hhcaw-readiness { flex-basis: 68px; width: 68px; }
   .hhcaw-campaign-card > summary { grid-template-columns: 28px minmax(0, 1fr); }
   .hhcaw-campaign-card > summary > small { grid-column: 2; }

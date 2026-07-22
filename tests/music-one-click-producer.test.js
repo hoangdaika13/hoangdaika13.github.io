@@ -52,6 +52,16 @@ test("Tempo drift analyzer measures the beginning, middle and end locally", () =
   assert.ok(result.tempoDrift <= 1);
 });
 
+test("Smart Loop enforces the product contract of one to five hours", () => {
+  const producer = loadProducer();
+  assert.equal(producer.normalizeLoopTargetSeconds("00:10:00"), 3600);
+  assert.equal(producer.normalizeLoopTargetSeconds("03:30:00"), 12600);
+  assert.equal(producer.normalizeLoopTargetSeconds("08:00:00"), 18000);
+  assert.equal(producer.normalizeLoopTargetSeconds("invalid", 7200), 7200);
+  assert.match(source, /từ 1 đến 5 giờ/);
+  assert.doesNotMatch(source, /tối đa 8 giờ/);
+});
+
 test("Producer handoff carries honest stem, region, loop and YouTube metadata", () => {
   const producer = loadProducer();
   const handoff = producer.producerHandoffManifest();

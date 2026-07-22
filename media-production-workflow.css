@@ -52,6 +52,19 @@
 .hmpw-assets strong, .hmpw-timeline strong, .hmpw-job strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .hmpw-assets small, .hmpw-timeline small, .hmpw-job small { color: var(--hmpw-muted); font-size: 10px; }
 .hmpw-timeline article > span, .hmpw-reviews time { flex: 0 0 auto; color: var(--hmpw-lime); font: 700 11px ui-monospace, Consolas, monospace; }
+.hmpw-versions { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--hmpw-line); }
+.hmpw-versions > header { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.hmpw-versions > header > div { display: grid; gap: 3px; }
+.hmpw-versions > header small { color: var(--hmpw-cyan); font-size: 9px; font-weight: 850; letter-spacing: .12em; }
+.hmpw-versions > header strong { font-size: 13px; }
+.hmpw-versions > header span { color: var(--hmpw-muted); font-size: 10px; }
+.hmpw-versions > div { display: grid; gap: 7px; }
+.hmpw-versions article { min-width: 0; padding: 10px 11px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; border: 1px solid var(--hmpw-line); border-radius: 8px; background: rgba(16, 25, 35, .72); }
+.hmpw-versions article > div { min-width: 0; display: grid; gap: 3px; }
+.hmpw-versions article strong, .hmpw-versions article small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hmpw-versions article strong { font-size: 12px; }
+.hmpw-versions article small { color: var(--hmpw-muted); font-size: 10px; }
+.hmpw-versions article b { color: var(--hmpw-lime); font: 750 10px ui-monospace, Consolas, monospace; }
 .hmpw-job { align-items: start; flex-wrap: wrap; }
 .hmpw-job > p { width: min(420px, 100%); margin: 0; color: var(--hmpw-muted); font-size: 11px; }
 .hmpw-job[data-status="completed"] { border-left: 3px solid var(--hmpw-lime); }
@@ -83,6 +96,9 @@
   .hmpw-assets article, .hmpw-timeline article, .hmpw-reviews article { align-items: stretch; flex-direction: column; }
   .hmpw-assets article > div { width: 100%; }
   .hmpw-assets article > button, .hmpw-timeline article > button, .hmpw-reviews article > button { width: 100%; }
+  .hmpw-versions > header { align-items: stretch; flex-direction: column; }
+  .hmpw-versions article { grid-template-columns: 1fr auto; }
+  .hmpw-versions article > div { grid-column: 1 / -1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

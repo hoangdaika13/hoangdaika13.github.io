@@ -55,6 +55,27 @@ test("timeline edits stay non-destructive and preserve source asset references",
   assert.equal(timeline.clips[1].assetId, "master-video");
 });
 
+test("timeline versions snapshot review state and restore as a new revision", () => {
+  let state = media.normalizeState({
+    timeline: { id: "cut", revision: 4, clips: [{ id: "hero", assetId: "master", sourceIn: 0, sourceOut: 12 }] },
+    reviews: [{ timecode: "00:00:02:00", author: "QA", text: "Giữ nhịp này" }]
+  });
+  state = media.createTimelineVersion(state, { id: "approved-cut", label: "Bản duyệt nội bộ", note: "Trước khi đổi hook" });
+  assert.equal(state.versions.length, 1);
+  assert.equal(state.versions[0].timeline.revision, 4);
+  assert.equal(state.versions[0].reviews[0].text, "Giữ nhịp này");
+
+  state.timeline = media.applyTimelineEdit(state.timeline, { type: "trim", clipId: "hero", sourceIn: 2, sourceOut: 8 });
+  state.reviews = [];
+  const restored = media.restoreTimelineVersion(state, "approved-cut");
+  assert.equal(restored.timeline.revision, 6);
+  assert.equal(restored.timeline.clips[0].sourceIn, 0);
+  assert.equal(restored.reviews[0].text, "Giữ nhịp này");
+  assert.equal(restored.versions.length, 1);
+  assert.match(restored.timeline.history.at(-1).detail, /khôi phục/i);
+  assert.throws(() => media.restoreTimelineVersion(restored, "missing"), /phiên bản/i);
+});
+
 test("proxy jobs never claim success without an output Blob", async () => {
   const asset = { id: "video", name: "master.mp4", blob: new Blob(["source"], { type: "video/mp4" }) };
   const unavailable = await media.runProxyJob(asset, null);
@@ -147,7 +168,7 @@ test("Media & Design integration exposes the workflow with accessible responsive
   assert.match(page, /id: "production-workflow"/);
   assert.match(page, /HHMediaProductionWorkflow\?\.mount/);
   assert.match(page, /HHMediaProductionWorkflow\?\.unmount/);
-  for (const token of ["Media Bin dùng chung", "Timeline không phá hủy", "Transcription & subtitle", "Review theo khung hình", "Render queue phía máy chủ", "role=\"tab\"", "aria-live=\"polite\""]) assert.ok(source.includes(token), `missing ${token}`);
+  for (const token of ["Media Bin dùng chung", "Timeline không phá hủy", "Transcription & subtitle", "Review theo khung hình", "Render queue phía máy chủ", "Lịch sử phiên bản timeline", "data-hmpw-create-version", "data-hmpw-restore-version", "role=\"tab\"", "aria-live=\"polite\""]) assert.ok(source.includes(token), `missing ${token}`);
   assert.match(css, /@media \(max-width: 420px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /:focus-visible/);

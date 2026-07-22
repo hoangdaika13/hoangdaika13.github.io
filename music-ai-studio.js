@@ -190,6 +190,12 @@
     return parts[0];
   };
 
+  function normalizeLoopTargetSeconds(value, fallbackSeconds = 3600) {
+    const parsed = typeof value === "number" ? value : parseDuration(value);
+    const fallback = clamp(fallbackSeconds, 3600, 5 * 3600);
+    return Math.round(clamp(parsed || fallback, 3600, 5 * 3600));
+  }
+
   function loadState() {
     const base = defaultState();
     try {
@@ -200,7 +206,11 @@
         ...saved,
         project: { ...base.project, ...(saved.project || {}) },
         media: { ...base.media, ...(saved.media || {}) },
-        smartLoop: { ...base.smartLoop, targetDuration: saved.smartLoop?.targetDuration || `${clamp(saved.project?.hours || base.project.hours, 1, 8)}:00:00`, ...(saved.smartLoop || {}) },
+        smartLoop: {
+          ...base.smartLoop,
+          ...(saved.smartLoop || {}),
+          targetDuration: formatDuration(normalizeLoopTargetSeconds(saved.smartLoop?.targetDuration, clamp(saved.project?.hours || base.project.hours, 1, 5) * 3600))
+        },
         automation: {
           ...base.automation,
           ...(saved.automation || {}),
@@ -505,8 +515,7 @@
   }
 
   function smartLoopTargetSeconds() {
-    const parsed = parseDuration(state.smartLoop?.targetDuration);
-    return Math.round(clamp(parsed || projectMath().targetSeconds, 5, 8 * 3600));
+    return normalizeLoopTargetSeconds(state.smartLoop?.targetDuration, projectMath().targetSeconds);
   }
 
   function resolvedSmartLoopMode() {
@@ -761,7 +770,7 @@
       <section class="mai-panel mai-smart-loop-controls">
         <header><div><p>LOOP ENGINE</p><strong>${modeNames[profile.mode]} · ${formatDuration(targetSeconds)}</strong></div><span class="is-${analysis ? analysis.seamScore >= 70 ? "good" : analysis.seamScore >= 45 ? "medium" : "low" : "waiting"}">${analysis ? `${analysis.seamScore}% liền mạch` : "Chờ clip"}</span></header>
         <div class="mai-smart-loop-form">
-          <label><span>Thời lượng đầu ra</span><input data-smart-loop-field="targetDuration" value="${escapeHtml(state.smartLoop.targetDuration)}" placeholder="03:00:00"><small>HH:MM:SS · tối đa 8 giờ</small></label>
+          <label><span>Thời lượng đầu ra</span><input data-smart-loop-field="targetDuration" value="${escapeHtml(state.smartLoop.targetDuration)}" placeholder="03:00:00"><small>HH:MM:SS · từ 1 đến 5 giờ</small></label>
           <label><span>Chế độ nối</span><select data-smart-loop-field="mode"><option value="auto" ${state.smartLoop.mode === "auto" ? "selected" : ""}>Tự động thông minh</option><option value="crossfade" ${state.smartLoop.mode === "crossfade" ? "selected" : ""}>Smart Crossfade</option><option value="pingpong" ${state.smartLoop.mode === "pingpong" ? "selected" : ""}>Ping-pong mềm</option><option value="direct" ${state.smartLoop.mode === "direct" ? "selected" : ""}>Nối thẳng</option></select><small>Auto dựa trên phân tích đầu–cuối</small></label>
           <label><span>Vùng chuyển tiếp</span><input type="number" min="0.15" max="1.5" step="0.05" data-smart-loop-field="transitionSeconds" value="${escapeHtml(state.smartLoop.transitionSeconds)}"><small>Khuyến nghị 0.6–1.0 giây</small></label>
           <label class="mai-smart-toggle"><input type="checkbox" data-smart-loop-field="interpolation" ${state.smartLoop.interpolation ? "checked" : ""}><span><strong>Nội suy chuyển động</strong><small>Motion-compensated · mượt hơn, render nặng hơn</small></span></label>
@@ -1068,7 +1077,7 @@
     const numeric = ["hours", "bpm", "masterMinutes", "visualSeconds", "fps"].includes(key);
     state.project[key] = numeric ? number(target.value, state.project[key]) : target.value;
     if (key === "hours" && parseDuration(state.smartLoop.targetDuration) === Number(previousHours) * 3600) {
-      state.smartLoop.targetDuration = `${clamp(state.project.hours, 1, 8)}:00:00`;
+      state.smartLoop.targetDuration = `${clamp(state.project.hours, 1, 5)}:00:00`;
     }
     saveState();
     updateProjectPreview();
@@ -1394,7 +1403,7 @@
       clearTimeout(handleInput.smartLoopTimer);
       const key = target.dataset.smartLoopField;
       state.smartLoop[key] = target.type === "checkbox" ? target.checked : key === "transitionSeconds" ? Number(target.value) : target.value;
-      if (key === "targetDuration" && !parseDuration(target.value)) state.smartLoop.targetDuration = "01:00:00";
+      if (key === "targetDuration") state.smartLoop.targetDuration = formatDuration(normalizeLoopTargetSeconds(target.value, projectMath().targetSeconds));
       saveState();
       render();
       return;
@@ -1534,6 +1543,6 @@
     mount,
     unmount,
     views: VIEWS.map((item) => ({ ...item })),
-    producer: { buildProducerVariants, estimateTempoDrift, producerHandoffManifest }
+    producer: { buildProducerVariants, normalizeLoopTargetSeconds, estimateTempoDrift, producerHandoffManifest }
   };
 })();

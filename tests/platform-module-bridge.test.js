@@ -62,3 +62,29 @@ test("unchanged source does not duplicate background jobs or activity", () => {
   assert.equal(second.jobs.length, first.jobs.length);
   assert.equal(second.activities.length, first.activities.length);
 });
+
+test("bridge synchronizes immediately when a module publishes a privacy-safe change event", () => {
+  const listeners = new Map();
+  const removed = [];
+  const eventTarget = {
+    addEventListener(name, handler) { listeners.set(name, handler); },
+    removeEventListener(name) { removed.push(name); listeners.delete(name); },
+    setInterval() { return 17; },
+    clearInterval() {}
+  };
+  const storage = memoryStorage();
+  const runtime = orchestrator.createRuntime({ storage });
+  const instance = bridge.createBridge({ runtime, storage, eventTarget, intervalMs: 60000 });
+  bridge.MODULE_CHANGE_EVENTS.forEach((name) => assert.equal(typeof listeners.get(name), "function"));
+
+  storage.setItem("hh.dev.delivery-workflow.v1", JSON.stringify({
+    repository: { status: "imported", owner: "hh", name: "instant-sync" },
+    change: { status: "drafted", branch: "feat/instant" },
+    checks: {}
+  }));
+  listeners.get("hh:dev-delivery-change")();
+  assert.ok(runtime.listProjects().some((item) => item.id === "dev:hh-instant-sync"));
+
+  instance.stop();
+  bridge.MODULE_CHANGE_EVENTS.forEach((name) => assert.ok(removed.includes(name)));
+});

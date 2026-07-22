@@ -59,6 +59,19 @@ test("session and health adapters require backend-confirmed responses", async ()
   assert.doesNotMatch(JSON.stringify(calls), /Bearer|Authorization/);
 });
 
+test("system whitelists session and quota payloads and reports browser capabilities truthfully", () => {
+  const session = system.sanitizeSession({ id: "s1", current: true, ip: "203.0.113.1", userId: "other", token: "secret", device: { label: "Chrome", browser: "Chrome", fingerprint: "private" } });
+  assert.deepEqual(Object.keys(session).sort(), ["createdAt", "current", "device", "expiresAt", "id", "lastSeenAt"]);
+  assert.equal("ip" in session, false);
+  assert.equal("fingerprint" in session.device, false);
+  const quota = system.normalizeQuota({ provider: "youtube", used: 120, limit: 100, apiKey: "secret" });
+  assert.equal(quota.remaining, 0);
+  assert.equal("apiKey" in quota, false);
+  assert.deepEqual(system.capabilitySnapshot({ navigator: { onLine: false, serviceWorker: {} }, caches: {}, matchMedia: () => ({ matches: true }) }), {
+    online: false, serviceWorker: true, cacheStorage: true, installMode: "standalone", backgroundSync: false, truthful: true
+  });
+});
+
 test("RBAC is explanatory and server-enforced; UI covers system contracts accessibly", () => {
   const access = system.accessSnapshot({ roles: ["admin", "analyst"] });
   assert.deepEqual(access.roles, ["admin", "analyst"]);

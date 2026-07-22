@@ -61,7 +61,7 @@ function verifiedState(now = Date.UTC(2026, 6, 22, 9)) {
 }
 
 test("publishes a versioned local-first workflow and fixed least-privilege scopes", () => {
-  assert.equal(dev.VERSION, 1);
+  assert.equal(dev.VERSION, 2);
   assert.equal(dev.SCHEMA, "hh.dev.delivery-workflow.v1");
   assert.equal(dev.STORAGE_KEY, dev.SCHEMA);
   assert.deepEqual(dev.TOOL_IDS, ["delivery-workflow"]);
@@ -215,6 +215,36 @@ test("merge and deploy gates require all four checks plus exact human confirmati
   assert.equal(dev.canPerform(bothApproved, "deploy").allowed, true);
 });
 
+test("release readiness exposes the next safe action without copying private issue or diff content", () => {
+  const initial = dev.buildReleaseReadiness(dev.defaultState());
+  assert.equal(initial.score, 0);
+  assert.equal(initial.nextAction.id, "provider");
+
+  let state = verifiedState();
+  state = dev.approveGate(state, "deploy", "Ops Lead", "APPROVE DEPLOY");
+  const awaitingMergeApproval = dev.buildReleaseReadiness(state);
+  assert.equal(awaitingMergeApproval.checksPassed, 4);
+  assert.equal(awaitingMergeApproval.nextAction.id, "approval");
+
+  const snapshot = dev.runtimeSnapshot(state);
+  const serialized = JSON.stringify(snapshot);
+  assert.equal(snapshot.readiness.score, awaitingMergeApproval.score);
+  assert.doesNotMatch(serialized, /Return a health status|module\.exports|acceptance/i);
+  assert.deepEqual(Object.keys(snapshot.checks), dev.CHECK_IDS);
+});
+
+test("runtime change emits a privacy-safe module event for immediate platform synchronization", () => {
+  const events = [];
+  class FakeCustomEvent {
+    constructor(type, init) { this.type = type; this.detail = init.detail; }
+  }
+  const target = { CustomEvent: FakeCustomEvent, dispatchEvent(event) { events.push(event); return true; } };
+  assert.equal(dev.emitRuntimeChange(changesetState(), target), true);
+  assert.equal(events[0].type, "hh:dev-delivery-change");
+  assert.equal(events[0].detail.route, "/dev/delivery-workflow");
+  assert.equal(Object.hasOwn(events[0].detail, "issue"), false);
+});
+
 test("a changed check revokes prior approvals and prevents stale-revision delivery", () => {
   let state = verifiedState();
   state = dev.approveGate(state, "merge", "Reviewer", "APPROVE MERGE");
@@ -292,7 +322,7 @@ test("workflow markup is semantic, truthful and exposes all security gates", () 
   const html = dev.workflowMarkup(changesetState());
   for (const marker of [
     "GitHub server-side", "không token ở client", "Sandbox test", "Code review", "Dependency scan", "Secret scan",
-    "Human approval", "Preview deployment", "Merge pull request", "Rollback deployment", "data-hdw-live"
+    "Human approval", "Preview deployment", "Merge pull request", "Rollback deployment", "RELEASE CONTROL", "data-hdw-live"
   ]) assert.match(html, new RegExp(marker, "i"));
   assert.match(html, /<main class="hdw"/);
   assert.match(html, /aria-live="polite"/);

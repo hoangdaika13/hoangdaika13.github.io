@@ -66,6 +66,7 @@ test("support pending state and embedded adapter are versioned and never treat S
   assert.equal(pending.version, 2);
   assert.equal("apiToken" in pending, false);
   assert.equal(support.normalizePending({ id: "d1", reference: "HH1", checkoutUrl: "javascript:bad" }), null);
+  assert.equal(support.normalizePending({ id: "d1", reference: "HH1", checkoutUrl: "https://evil.example/looks-like-payos" }), null);
   let accepted = 0;
   let opened = 0;
   const adapter = support.createPayOSCheckoutAdapter({
@@ -77,6 +78,18 @@ test("support pending state and embedded adapter are versioned and never treat S
   assert.equal(accepted, 1, "SDK callback only advances to backend verification");
   const source = read("support-platform.js");
   assert.match(source, /Chưa báo thành công: đang chờ backend/);
+});
+
+test("support lifecycle never calls a refund confirmed without provider evidence", () => {
+  const support = require("../support-platform.js");
+  const verified = support.donationLifecycle({ status: "verified", receipt: { status: "sent" } });
+  assert.equal(verified.paymentConfirmed, true);
+  assert.equal(verified.steps.find((step) => step.id === "receipt").state, "done");
+  const incompleteRefund = support.donationLifecycle({ status: "refunded", refund: { status: "confirmed" } });
+  assert.equal(incompleteRefund.refundConfirmed, false);
+  const confirmedRefund = support.donationLifecycle({ status: "refunded", refund: { status: "confirmed", providerReference: "rf-1" } });
+  assert.equal(confirmedRefund.refundConfirmed, true);
+  assert.equal(confirmedRefund.source, "backend-status-only");
 });
 
 test("history is self-scoped and refunds require a confirmed server adapter", () => {

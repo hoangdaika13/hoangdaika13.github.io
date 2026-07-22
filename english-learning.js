@@ -65,6 +65,47 @@
     expected.forEach((word) => { const index = pool.indexOf(word); if (index >= 0) { matched.push(word); pool.splice(index, 1); } else missed.push(word); });
     return { score: Math.round(matched.length / expected.length * 100), matched, missed, extra: pool, ...transparency };
   };
+  const soundCueCatalog = Object.freeze([
+    { id: "th", pattern: /th/i, cue: "th", tip: "Đặt đầu lưỡi nhẹ giữa hai hàm răng; phân biệt /θ/ và /ð/ bằng độ rung cổ họng." },
+    { id: "sh", pattern: /sh/i, cue: "sh", tip: "Giữ luồng hơi dài, môi hơi tròn; không bật thành /s/." },
+    { id: "ch", pattern: /ch/i, cue: "ch", tip: "Bắt đầu bằng điểm chặn rồi nhả hơi nhanh /tʃ/." },
+    { id: "r", pattern: /r/i, cue: "r", tip: "Lưỡi không chạm vòm miệng; giữ âm liền với nguyên âm sau." },
+    { id: "l", pattern: /l/i, cue: "l", tip: "Đầu lưỡi chạm lợi trên; chú ý âm /l/ cuối từ." },
+    { id: "v", pattern: /v/i, cue: "v", tip: "Răng trên chạm nhẹ môi dưới và giữ độ rung." },
+    { id: "w", pattern: /w/i, cue: "w", tip: "Tròn môi trước khi chuyển nhanh sang nguyên âm." },
+    { id: "ending", pattern: /(?:s|z|t|d|k|g|p|b)$/i, cue: "âm cuối", tip: "Khép rõ âm cuối nhưng không thêm một nguyên âm mới." }
+  ]);
+  const syllableEstimate = (word = "") => {
+    const cleanWord = normalize(word).replace(/[^a-z]/g, "");
+    if (!cleanWord) return 0;
+    const groups = cleanWord.replace(/(?:e|es|ed)$/, "").match(/[aeiouy]+/g);
+    return Math.max(1, groups?.length || 1);
+  };
+  const buildPhonemeFeedback = (spoken = "", target = "") => {
+    const comparison = compareTranscript(spoken, target);
+    const expected = normalize(target).split(" ").filter(Boolean).slice(0, 40);
+    const remaining = normalize(spoken).split(" ").filter(Boolean);
+    const words = expected.map((word) => {
+      const index = remaining.indexOf(word);
+      const recognized = index >= 0;
+      if (recognized) remaining.splice(index, 1);
+      return {
+        word,
+        recognized,
+        syllables: syllableEstimate(word),
+        cues: soundCueCatalog.filter((item) => item.pattern.test(word)).map(({ id, cue, tip }) => ({ id, cue, tip })).slice(0, 3)
+      };
+    });
+    const focusSounds = words.filter((item) => !item.recognized).flatMap((item) => item.cues).filter((item, index, rows) => rows.findIndex((row) => row.id === item.id) === index).slice(0, 5);
+    return {
+      transcriptCoverage: comparison.score,
+      words,
+      focusSounds,
+      canScorePhonemes: false,
+      method: "local-transcript-sound-cues-v1",
+      disclaimer: "Transcript coverage can identify words to revisit and show sound cues, but it cannot score individual phonemes, stress, accent, or audio quality."
+    };
+  };
 
   const unitVocabulary = {
     sounds: [
@@ -1319,11 +1360,13 @@
       const finalResult = Array.from(event.results).every((result) => result.isFinal);
       if (!finalResult || !target) return;
       const comparison = compareTranscript(transcript, target);
+      const phonemeFeedback = buildPhonemeFeedback(transcript, target);
       const scoreNode = host.querySelector("[data-hhe-pron-score]");
       if (scoreNode) {
         scoreNode.hidden = false;
         scoreNode.className = `hhe-pron-score ${comparison.score >= 80 ? "good" : comparison.score >= 55 ? "fair" : "retry"}`;
-        scoreNode.innerHTML = `<b>${comparison.score}%</b><span><strong>${comparison.score >= 80 ? "Khớp từ rất tốt" : comparison.score >= 55 ? "Đã đúng phần lớn cụm từ" : "Hãy nghe chậm và nói theo từng cụm"}</strong><small>${comparison.missed.length ? `Từ chưa nhận ra: ${escapeHtml(comparison.missed.join(" · "))}` : "Trình duyệt nhận ra đầy đủ từ trong câu."}</small></span>`;
+        const soundCues = phonemeFeedback.focusSounds.length ? phonemeFeedback.focusSounds.map((item) => `<li><b>${escapeHtml(item.cue)}</b><span>${escapeHtml(item.tip)}</span></li>`).join("") : "";
+        scoreNode.innerHTML = `<b>${comparison.score}%</b><span><strong>${comparison.score >= 80 ? "Khớp từ rất tốt" : comparison.score >= 55 ? "Đã đúng phần lớn cụm từ" : "Hãy nghe chậm và nói theo từng cụm"}</strong><small>${comparison.missed.length ? `Từ chưa nhận ra: ${escapeHtml(comparison.missed.join(" · "))}` : "Trình duyệt nhận ra đầy đủ từ trong câu."}</small>${soundCues ? `<ul class="hhe-sound-cues">${soundCues}</ul>` : ""}<em>Không chấm phoneme thật: đây là độ phủ transcript và gợi ý vị trí âm để tự nghe lại.</em></span>`;
       }
       const state = readState();
       state.speakingAttempts = Array.isArray(state.speakingAttempts) ? state.speakingAttempts : [];
@@ -1397,6 +1440,6 @@
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
   const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
-  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
-  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
+  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
+  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
 })();

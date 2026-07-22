@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
+const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
 
 test("CEFR curriculum contains seven levels and sixty-nine complete lessons", () => {
   assert.deepEqual(courseLevels.map((level) => level.id), ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
@@ -106,6 +106,17 @@ test("speaking and dictation comparison reports matched and missed words", () =>
   const partial = compareTranscript("clarify next step", "Could you clarify the next step, please?");
   assert.equal(partial.score, 43);
   assert.deepEqual(partial.missed, ["could", "you", "the", "please"]);
+});
+
+test("sound feedback targets missed words without claiming phoneme scoring", () => {
+  const feedback = buildPhonemeFeedback("clarify the step", "Could you clarify the next step");
+  assert.equal(feedback.transcriptCoverage, 50);
+  assert.equal(feedback.canScorePhonemes, false);
+  assert.equal(feedback.method, "local-transcript-sound-cues-v1");
+  assert.ok(feedback.words.some((item) => item.word === "could" && item.recognized === false));
+  assert.ok(feedback.words.every((item) => item.syllables >= 1));
+  assert.ok(feedback.focusSounds.some((item) => item.id === "l"));
+  assert.match(feedback.disclaimer, /cannot score individual phonemes/);
 });
 
 test("career selector changes vocabulary and exercises for different learner profiles", () => {

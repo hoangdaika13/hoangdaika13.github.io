@@ -162,6 +162,28 @@ test("quota and YouTube cards remain explicit when adapters or schedules are abs
   assert.match(source, /Không đọc mật khẩu, token hoặc nội dung riêng tư/);
 });
 
+test("background jobs and operational errors come from the versioned runtime snapshot", () => {
+  const storage = storageFixture({
+    "hh.platform.orchestrator.v2": {
+      version: 2,
+      jobs: [
+        { id: "render", type: "video-render", state: "running", progress: 42, updatedAt: "2026-07-22T02:00:00.000Z" },
+        { id: "caption", type: "caption", state: "failed", progress: 60, error: "Worker unavailable", updatedAt: "2026-07-22T03:00:00.000Z" },
+        { id: "done", type: "thumbnail", state: "completed", progress: 100 }
+      ],
+      providers: [{ id: "youtube", label: "YouTube", status: "offline" }]
+    }
+  });
+  const jobs = api.collectBackgroundJobs(storage, null);
+  assert.deepEqual(jobs.map((item) => item.id), ["caption", "render"]);
+  assert.equal(jobs[1].progress, 42);
+  const errors = api.collectOperationalErrors(storage, jobs);
+  assert.equal(errors.length, 2);
+  assert.equal(errors[0].severity, "critical");
+  assert.match(errors[1].detail, /ngoại tuyến/);
+  assert.equal(api.recommendNextAction({ jobs, errors }).id, "recover-job");
+});
+
 test("operations UI provides actionable controls, versioned state and narrow layout", () => {
   for (const contract of [
     "hh.home.daily-command.v3",
@@ -169,6 +191,8 @@ test("operations UI provides actionable controls, versioned state and narrow lay
     "data-hdc-toggle-task",
     "data-hdc-read-notification",
     "data-hdc-refresh-operations",
+    "data-hdc-jobs",
+    "data-hdc-errors",
     "YOUTUBE CALENDAR",
     "API GUARD"
   ]) assert.ok(source.includes(contract), `Thiếu operations contract: ${contract}`);

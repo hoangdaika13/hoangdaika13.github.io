@@ -70,6 +70,28 @@ test("contrast audit uses WCAG luminance thresholds without external calls", () 
   assert.doesNotMatch(source, /fetch\s*\(|XMLHttpRequest|sendBeacon/i);
 });
 
+test("Creative handoff applies Brand Kit safely and preserves relink truth", () => {
+  const result = workflow.applyCreativeHandoff(workflow.createDefaultState(), {
+    schema: "hh.creative-production-handoff.v1",
+    version: 1,
+    fingerprint: "campaign-123",
+    project: { name: "Launch", brief: { brand: "HH Studio" } },
+    governance: { readiness: { score: 85 } },
+    brandKit: { colors: ["#123456", "#ABCDEF", "javascript:bad"], fonts: ["Be Vietnam Pro", "Inter"] },
+    sourceAssets: [{ name: "hero.png", availability: "metadata-only" }]
+  });
+  assert.equal(result.state.projectName, "Launch");
+  assert.equal(result.state.activeStep, "qa");
+  assert.equal(result.state.brand.name, "HH Studio");
+  assert.equal(result.state.brand.primary, "#123456");
+  assert.equal(result.state.brand.secondary, "#ABCDEF");
+  assert.equal(result.state.brand.accent, "#C9F26F");
+  assert.equal(result.state.brand.heading, "Be Vietnam Pro");
+  assert.equal(result.provenance.requiresRelink, true);
+  assert.match(result.warnings.join(" "), /relink/i);
+  assert.throws(() => workflow.applyCreativeHandoff({}, { schema: "unknown", version: 1 }), /schema/i);
+});
+
 test("snapshots capture and restore real vector and component controller state", () => {
   const calls = [];
   const controllers = {

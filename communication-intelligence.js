@@ -55,6 +55,7 @@
         importantPeople: [],
         mutedChannels: [],
         digest: { enabled: false, cadence: "daily", time: "09:00", includeRead: false },
+        rememberCatchUp: false,
         pushStatus: "idle"
       },
       notifications: clone(DEFAULT_NOTIFICATIONS),
@@ -87,7 +88,8 @@
           includeRead: Boolean(preferences.digest?.includeRead)
         },
         importantPeople: asArray(preferences.importantPeople).map(String).filter(Boolean).slice(0, 50),
-        mutedChannels: asArray(preferences.mutedChannels).map(String).filter(Boolean).slice(0, 50)
+        mutedChannels: asArray(preferences.mutedChannels).map(String).filter(Boolean).slice(0, 50),
+        rememberCatchUp: Boolean(preferences.rememberCatchUp)
       },
       notifications: Array.isArray(state.notifications) ? state.notifications.map(normalizeNotification).slice(0, 500) : clone(defaults.notifications),
       notificationFilter: { ...defaults.notificationFilter, ...(state.notificationFilter || {}) },
@@ -412,7 +414,7 @@
   function catchUpMarkup(state, result = null, status = "") {
     return `<section class="hci-panel hci-catch-up" data-hci-panel="smart-catch-up">
       <header class="hci-section-head"><div><span>SMART CATCH-UP</span><h2>Nắm lại cuộc trò chuyện theo cách minh bạch</h2><p>Bộ tóm tắt cục bộ chọn câu quan trọng theo từ khóa, ý định và thời gian. Đây không phải AI.</p></div><div class="hci-local-badge"><i></i><b>Xử lý cục bộ</b><span>Không gửi nội dung đi</span></div></header>
-      <div class="hci-catch-layout"><form data-hci-catch-form><label><span>Nội dung cần nắm lại</span><textarea rows="13" data-hci-catch-input placeholder="Dán đoạn chat hoặc ghi chú cuộc họp, mỗi tin nhắn có thể nằm trên một dòng..."></textarea></label><div><label><span>Số ý chính</span><select data-hci-catch-count><option value="3">3 ý</option><option value="5" selected>5 ý</option><option value="7">7 ý</option></select></label><button type="button" data-hci-catch-index>Dùng dữ liệu đã lập chỉ mục</button><button class="hci-primary" type="submit">Tạo Catch-up</button></div><small>HH chỉ xử lý phần bạn chủ động dán hoặc chọn trong chỉ mục giao tiếp.</small></form>
+      <div class="hci-catch-layout"><form data-hci-catch-form><label><span>Nội dung cần nắm lại</span><textarea rows="13" data-hci-catch-input placeholder="Dán đoạn chat hoặc ghi chú cuộc họp, mỗi tin nhắn có thể nằm trên một dòng..."></textarea></label><div><label><span>Số ý chính</span><select data-hci-catch-count><option value="3">3 ý</option><option value="5" selected>5 ý</option><option value="7">7 ý</option></select></label><button type="button" data-hci-catch-index>Dùng dữ liệu đã lập chỉ mục</button><button class="hci-primary" type="submit">Tạo Catch-up</button></div><label class="hci-catch-consent"><input type="checkbox" data-hci-remote-consent><span>Cho phép gửi đúng phần trên tới adapter đã cấu hình trong lần này</span></label><label class="hci-catch-consent"><input type="checkbox" data-hci-remember-catch${state.preferences.rememberCatchUp ? " checked" : ""}><span>Lưu bản tóm tắt vào lịch sử trên thiết bị</span></label><small>Mặc định HH xử lý cục bộ và không lưu lịch sử. Nội dung chỉ rời thiết bị khi bạn chọn quyền cho lần này.</small></form>
         <div class="hci-catch-output" aria-live="polite">${result ? catchUpResultMarkup(result) : `<div class="hci-empty"><span>✦</span><h3>Bản tóm tắt sẽ xuất hiện ở đây</h3><p>Ý chính, quyết định và việc cần làm được tách riêng để dễ theo dõi.</p></div>`}<p class="hci-catch-status">${escapeHtml(status)}</p></div></div>
       ${state.catchUpHistory.length ? `<section class="hci-catch-history"><header><span>Lịch sử trên thiết bị</span><button type="button" data-hci-clear-catch-history>Xóa lịch sử</button></header>${state.catchUpHistory.slice(0, 5).map((item) => `<button type="button" data-hci-history-id="${escapeHtml(item.id)}"><span>${escapeHtml(item.label || "Bản tóm tắt cục bộ")}</span><strong>${escapeHtml(item.summary?.[0] || "Không có nội dung")}</strong><time>${relativeTime(item.createdAt)}</time></button>`).join("")}</section>` : ""}
     </section>`;
@@ -574,7 +576,9 @@
         const count = Number(host.querySelector("[data-hci-catch-count]")?.value || 5);
         session.status = "Đang tạo bản tóm tắt minh bạch..."; render();
         let result = null;
-        if (typeof options.catchUpAdapter === "function") {
+        const remoteConsent = Boolean(host.querySelector("[data-hci-remote-consent]")?.checked);
+        const rememberCatchUp = Boolean(host.querySelector("[data-hci-remember-catch]")?.checked);
+        if (remoteConsent && typeof options.catchUpAdapter === "function") {
           try {
             const remote = await options.catchUpAdapter({ text, count });
             result = normalizeCatchUpAdapterResult(remote);
@@ -583,9 +587,10 @@
         }
         if (!result) result = { ...summarizeExtractive(text, count), label: "TÓM TẮT CỤC BỘ · KHÔNG PHẢI AI" };
         catchUpResult = { ...result, id: uid("catchup"), createdAt: Date.now() };
-        state.catchUpHistory = [catchUpResult, ...state.catchUpHistory].slice(0, 20);
+        state.preferences.rememberCatchUp = rememberCatchUp;
+        state.catchUpHistory = rememberCatchUp ? [catchUpResult, ...state.catchUpHistory].slice(0, 20) : state.catchUpHistory;
         state = writeState(state);
-        session.status = result.label.startsWith("TÓM TẮT CỤC BỘ") ? "Đã xử lý hoàn toàn trên thiết bị." : "Đã nhận kết quả từ adapter được cấu hình.";
+        session.status = result.label.startsWith("TÓM TẮT CỤC BỘ") ? `Đã xử lý hoàn toàn trên thiết bị${rememberCatchUp ? " và lưu theo lựa chọn của bạn" : "; không lưu lịch sử"}.` : `Đã nhận kết quả từ adapter được cấu hình${rememberCatchUp ? " và lưu cục bộ" : "; không lưu lịch sử"}.`;
         return render();
       }
     };

@@ -12,7 +12,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  const VERSION = 1;
+  const VERSION = 2;
   const MARKER_KEY = "hh.platform.module-bridge.v1";
   const SOURCE_KEYS = Object.freeze({
     creative: "hh.creative-ai-workflow.v1",
@@ -21,6 +21,13 @@
     dev: "hh.dev.delivery-workflow.v1",
     work: "hh-work-center-v2"
   });
+  const MODULE_CHANGE_EVENTS = Object.freeze([
+    "hh:creative-workflow-change",
+    "hh:music-studio-change",
+    "hh:media-production-change",
+    "hh:dev-delivery-change",
+    "hh:work-center-change"
+  ]);
   const SECRET_VALUE_RE = /(?:-----BEGIN [A-Z ]*PRIVATE KEY-----|\bBearer\s+[A-Za-z0-9._~+/=-]{12,}|\bgh(?:p|o|u|s|r)_[A-Za-z0-9]{20,}|\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|(?:api[_-]?key|secret|password|passwd|access[_-]?token)\s*[:=]\s*\S{8,})/gi;
   const ACTIVE_JOB_STATES = new Set(["queued", "running", "waiting", "needs-adapter", "pending"]);
 
@@ -359,6 +366,7 @@
         eventTarget.addEventListener("hashchange", sync);
         eventTarget.addEventListener("pageshow", sync);
         eventTarget.addEventListener("hh:asset-group-ready", sync);
+        MODULE_CHANGE_EVENTS.forEach((eventName) => eventTarget.addEventListener(eventName, sync));
       }
       if (typeof eventTarget?.setInterval === "function") timer = eventTarget.setInterval(sync, intervalMs);
       return api;
@@ -370,6 +378,7 @@
         eventTarget.removeEventListener("hashchange", sync);
         eventTarget.removeEventListener("pageshow", sync);
         eventTarget.removeEventListener("hh:asset-group-ready", sync);
+        MODULE_CHANGE_EVENTS.forEach((eventName) => eventTarget.removeEventListener(eventName, sync));
       }
       if (timer && typeof eventTarget?.clearInterval === "function") eventTarget.clearInterval(timer);
       timer = null;
@@ -380,7 +389,7 @@
   }
 
   return {
-    VERSION, MARKER_KEY, SOURCE_KEYS, cleanText, safeId, stableHash,
+    VERSION, MARKER_KEY, SOURCE_KEYS, MODULE_CHANGE_EVENTS, cleanText, safeId, stableHash,
     summarizeCreative, summarizeMusic, summarizeMedia, summarizeDev, summarizeWork,
     collectModuleSnapshots, createBridge
   };

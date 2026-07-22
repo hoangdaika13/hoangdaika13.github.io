@@ -25,7 +25,7 @@
     source: ["", "direct", "internal", "search", "social", "referral"],
     metric: ["", "lcp", "cls", "inp", "fcp", "ttfb", "load"],
     rating: ["", "good", "needs-improvement", "poor", "unknown"],
-    errorKind: ["", "runtime", "resource", "unhandled-rejection"],
+    errorKind: ["", "runtime", "script-resource", "style-resource", "image-resource", "media-resource", "resource", "csp", "unhandled-rejection"],
     variant: ["", "A", "B", "C", "D"]
   });
   const runtimeVitals = { lcp: 0, cls: 0, inp: 0, fcp: 0, ttfb: 0, load: 0 };
@@ -182,6 +182,13 @@
     window.addEventListener("hashchange", () => { const current = routeName(); if (routeIsRestricted(current)) { location.hash = `#${lastAllowedRoute}`; window.HHCommunity?.notice?.("Bạn không có quyền mở tính năng này.", "error"); } else lastAllowedRoute = current; });
   }
   const vitalRating = (metric, value) => { const thresholds = { lcp: [2500, 4000], cls: [.1, .25], inp: [200, 500], fcp: [1800, 3000], ttfb: [800, 1800], load: [3000, 5000] }[metric]; return !thresholds ? "unknown" : value <= thresholds[0] ? "good" : value <= thresholds[1] ? "needs-improvement" : "poor"; };
+  const classifyBrowserError = (event = {}) => {
+    if (event.type === "securitypolicyviolation") return "csp";
+    const target = event.target;
+    if (!target || target === window) return "runtime";
+    const tag = String(target.tagName || "").toLowerCase();
+    return ({ script: "script-resource", link: "style-resource", img: "image-resource", audio: "media-resource", video: "media-resource", source: "media-resource" })[tag] || "resource";
+  };
   function publishVital(metric, value) { const cleanValue = metric === "cls" ? Number(Number(value || 0).toFixed(3)) : Math.round(Number(value || 0)); runtimeVitals[metric] = cleanValue; record("performance", { action: `web-vital-${metric}`, meta: { metric, value: cleanValue, rating: vitalRating(metric, cleanValue) } }); }
   function installTelemetry() {
     if (window.__HH_INSIGHTS_TRACKING__) return;
@@ -198,8 +205,9 @@
     document.addEventListener("submit", (event) => { const form = event.target.closest?.("form"); if (!form) return; const state = formTelemetry.get(form) || { startedAt: Date.now() }; record("form_submit", { action: `${formKind(form)}-submit`, meta: { form: formKey(form), kind: formKind(form), fieldCount: form.querySelectorAll("input, textarea, select").length, durationBucket: durationBucket(Date.now() - state.startedAt), valid: form.checkValidity() } }); formTelemetry.delete(form); flushRemote(true); }, true);
     document.addEventListener("visibilitychange", updateSession);
     window.addEventListener("pagehide", () => { record("session_end", { action: "session-end" }); flushRemote(true); });
-    window.addEventListener("error", (event) => record("error", { action: event.target && event.target !== window ? "resource-error" : "runtime-error", meta: { errorKind: event.target && event.target !== window ? "resource" : "runtime" } }));
+    window.addEventListener("error", (event) => { const errorKind = classifyBrowserError(event); record("error", { action: `${errorKind}-error`, meta: { errorKind } }); });
     window.addEventListener("unhandledrejection", () => record("error", { action: "unhandled-rejection", meta: { errorKind: "unhandled-rejection" } }));
+    document.addEventListener("securitypolicyviolation", (event) => record("error", { action: "csp-violation", meta: { errorKind: classifyBrowserError(event) } }));
     setInterval(updateSession, 15000); setInterval(() => flushRemote(), REMOTE_FLUSH_MS); setTimeout(() => flushRemote(true), 1200);
     if ("PerformanceObserver" in window) {
       try { new PerformanceObserver((list) => { const last = list.getEntries().at(-1); if (last) publishVital("lcp", last.startTime); }).observe({ type: "largest-contentful-paint", buffered: true }); } catch {}
@@ -220,7 +228,7 @@
     rows.forEach((row) => { if (!row.sessionId) return; const day = String(row.createdAt).slice(0, 10); if (!sessions.has(row.sessionId)) sessions.set(row.sessionId, new Set()); sessions.get(row.sessionId).add(day); });
     const cohorts = new Map();
     sessions.forEach((days, id) => { const first = [...days].sort()[0]; if (!cohorts.has(first)) cohorts.set(first, []); cohorts.get(first).push({ id, days }); });
-    return [...cohorts.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7).map(([date, members]) => { const plus = (offset) => { const day = new Date(`${date}T00:00:00`); day.setDate(day.getDate() + offset); return day.toISOString().slice(0, 10); }; return { date, size: members.length, d1: members.filter((item) => item.days.has(plus(1))).length, d7: members.filter((item) => item.days.has(plus(7))).length }; });
+    return [...cohorts.entries()].sort((a, b) => b[0].localeCompare(a[0])).slice(0, 7).map(([date, members]) => { const plus = (offset) => { const day = new Date(`${date}T00:00:00Z`); day.setUTCDate(day.getUTCDate() + offset); return day.toISOString().slice(0, 10); }; return { date, size: members.length, d1: members.filter((item) => item.days.has(plus(1))).length, d7: members.filter((item) => item.days.has(plus(7))).length, d30: members.filter((item) => item.days.has(plus(30))).length }; });
   }
   function experimentRows(rows) {
     const groups = new Map();
@@ -231,7 +239,7 @@
     const now = Date.now(); const current = allRows.filter((row) => new Date(row.createdAt).getTime() >= now - 300000); const previous = allRows.filter((row) => { const time = new Date(row.createdAt).getTime(); return time >= now - 600000 && time < now - 300000; });
     const alerts = [];
     if (current.length >= Math.max(8, previous.length * 2.5)) alerts.push({ level: "warn", title: "Tăng đột biến sự kiện", note: `${current.length} trong 5 phút, kỳ trước ${previous.length}.` });
-    const errors = current.filter((row) => row.type === "error").length; if (errors) alerts.push({ level: "danger", title: "Có lỗi JavaScript", note: `${errors} lỗi đã được phân loại; không lưu message hoặc stack.` });
+    const errors = current.filter((row) => row.type === "error").length; const previousErrors = previous.filter((row) => row.type === "error").length; if (errors) alerts.push({ level: "danger", title: errors >= Math.max(3, previousErrors * 2) ? "Lỗi JavaScript tăng bất thường" : "Có lỗi JavaScript", note: `${errors} lỗi đã được phân loại; kỳ trước ${previousErrors}; không lưu nội dung lỗi hoặc stack.` });
     Object.entries(runtimeVitals).forEach(([metric, value]) => { if (value && vitalRating(metric, value) === "poor") alerts.push({ level: "warn", title: `${metric.toUpperCase()} kém`, note: `Giá trị phiên hiện tại: ${value}.` }); });
     return alerts;
   }
@@ -277,7 +285,7 @@
   }
   function journeyPanel(data) {
     const cohort = data.cohorts;
-    return `<div class="insights-analysis-grid"><section class="insights-analysis-card insights-wide"><small>COHORT & RETENTION</small><h3>Phiên quay lại theo ngày đầu</h3><div class="insights-table-scroll"><table><caption>Dữ liệu cục bộ định hướng; một session được nhận diện bằng ID ngẫu nhiên có version.</caption><thead><tr><th>Cohort</th><th>Phiên</th><th>D+1</th><th>D+7</th></tr></thead><tbody>${cohort.map((row) => `<tr><th>${row.date}</th><td>${row.size}</td><td>${row.d1} · ${row.size ? Math.round(row.d1 / row.size * 100) : 0}%</td><td>${row.d7} · ${row.size ? Math.round(row.d7 / row.size * 100) : 0}%</td></tr>`).join("") || '<tr><td colspan="4">Cần dữ liệu nhiều ngày để tính retention.</td></tr>'}</tbody></table></div></section><section class="insights-analysis-card"><small>TOP MODULE</small><h3>Khu vực sử dụng</h3><ul class="insights-bar-list">${barRows(data.topModules)}</ul></section><section class="insights-analysis-card"><small>Funnel note</small><h3>Định nghĩa minh bạch</h3><p>Visit → action → form start → submit → conversion. Không suy đoán nội dung form hay danh tính người dùng.</p></section></div>`;
+    return `<div class="insights-analysis-grid"><section class="insights-analysis-card insights-wide"><small>COHORT & RETENTION</small><h3>Phiên quay lại theo ngày đầu</h3><div class="insights-table-scroll"><table><caption>Dữ liệu cục bộ định hướng; một session được nhận diện bằng ID ngẫu nhiên có version.</caption><thead><tr><th>Cohort</th><th>Phiên</th><th>D+1</th><th>D+7</th><th>D+30</th></tr></thead><tbody>${cohort.map((row) => `<tr><th>${row.date}</th><td>${row.size}</td><td>${row.d1} · ${row.size ? Math.round(row.d1 / row.size * 100) : 0}%</td><td>${row.d7} · ${row.size ? Math.round(row.d7 / row.size * 100) : 0}%</td><td>${row.d30} · ${row.size ? Math.round(row.d30 / row.size * 100) : 0}%</td></tr>`).join("") || '<tr><td colspan="5">Cần dữ liệu nhiều ngày để tính retention.</td></tr>'}</tbody></table></div></section><section class="insights-analysis-card"><small>TOP MODULE</small><h3>Khu vực sử dụng</h3><ul class="insights-bar-list">${barRows(data.topModules)}</ul></section><section class="insights-analysis-card"><small>Funnel note</small><h3>Định nghĩa minh bạch</h3><p>Visit → action → form start → submit → conversion. Không suy đoán nội dung form hay danh tính người dùng.</p></section></div>`;
   }
   function qualityPanel(data) {
     const vitalCards = Object.entries(data.vitals).map(([metric, value]) => `<article class="${vitalRating(metric, value)}"><span>${metric.toUpperCase()}</span><strong>${metric === "cls" ? Number(value).toFixed(3) : `${value || "-"}${value ? " ms" : ""}`}</strong><small>${value ? vitalRating(metric, value) : "chưa đo"}</small></article>`).join("");
@@ -323,6 +331,6 @@
 
   installFeatureAccessGuard();
   installTelemetry();
-  window.HHInsights = Object.freeze({ mountOverview, mountAnalytics, record, flush: () => flushRemote(true), snapshot: aggregate, experiment: Object.freeze({ assign: assignExperiment, convert: convertExperiment }), eventCatalog: Object.freeze(Object.keys(PUBLIC_EVENT_CATALOG)), stateVersion: STATE_VERSION });
+  window.HHInsights = Object.freeze({ mountOverview, mountAnalytics, record, flush: () => flushRemote(true), snapshot: aggregate, experiment: Object.freeze({ assign: assignExperiment, convert: convertExperiment }), eventCatalog: Object.freeze(Object.keys(PUBLIC_EVENT_CATALOG)), errorTaxonomy: Object.freeze(META_ENUMS.errorKind.filter(Boolean)), stateVersion: STATE_VERSION });
   window.dispatchEvent(new CustomEvent("hh:insights-ready"));
 })();

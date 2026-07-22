@@ -216,6 +216,49 @@
     return cleanText(componentCss, 100000) ? `${css}\n\n/* Component tokens */\n${String(componentCss)}` : css;
   }
 
+  function applyCreativeHandoff(stateInput, handoffInput) {
+    const parsed = typeof handoffInput === "string" ? JSON.parse(handoffInput) : handoffInput;
+    if (!parsed || parsed.schema !== "hh.creative-production-handoff.v1" || Number(parsed.version) !== 1) {
+      throw new Error("Creative handoff không đúng schema hh.creative-production-handoff.v1.");
+    }
+    const state = normalizeState(stateInput);
+    const kit = parsed.brandKit && typeof parsed.brandKit === "object" ? parsed.brandKit : {};
+    const colors = (Array.isArray(kit.colors) ? kit.colors : []).map((color) => safeColor(color, "")).filter(Boolean).slice(0, 6);
+    const fonts = (Array.isArray(kit.fonts) ? kit.fonts : []).map((font) => safeFont(font, "")).filter(Boolean).slice(0, 2);
+    const brandName = cleanText(parsed.project?.brief?.brand || parsed.project?.name, 80);
+    state.projectName = cleanText(parsed.project?.name, 120) || state.projectName;
+    state.activeStep = "qa";
+    state.brand = normalizeBrand({
+      ...state.brand,
+      name: brandName || state.brand.name,
+      primary: colors[0] || state.brand.primary,
+      secondary: colors[1] || state.brand.secondary,
+      accent: colors[2] || state.brand.accent,
+      background: colors[3] || state.brand.background,
+      surface: colors[4] || state.brand.surface,
+      text: colors[5] || state.brand.text,
+      heading: fonts[0] || state.brand.heading,
+      body: fonts[1] || fonts[0] || state.brand.body
+    });
+    state.updatedAt = new Date().toISOString();
+    const sourceAssets = Array.isArray(parsed.sourceAssets) ? parsed.sourceAssets : [];
+    return {
+      state,
+      provenance: {
+        schema: parsed.schema,
+        fingerprint: cleanText(parsed.fingerprint, 100),
+        readinessScore: Number(parsed.governance?.readiness?.score) || 0,
+        sourceAssetCount: sourceAssets.length,
+        requiresRelink: sourceAssets.some((asset) => asset?.availability === "metadata-only")
+      },
+      warnings: [
+        ...(colors.length ? [] : ["Brand Kit chưa có màu hợp lệ; giữ token hiện tại."]),
+        ...(fonts.length ? [] : ["Brand Kit chưa có font; giữ font hiện tại."]),
+        ...(sourceAssets.some((asset) => asset?.availability === "metadata-only") ? ["Cần relink asset gốc trong Media Bin trước khi xuất media."] : [])
+      ]
+    };
+  }
+
   function captureSnapshot(stateInput, controllers, label) {
     const state = normalizeState(stateInput);
     const snapshot = normalizeSnapshot({
@@ -768,6 +811,7 @@
       createSnapshot: snapshot,
       restoreSnapshot(snapshotId) { const result = restoreSnapshot(state, snapshotId, controllers); if (result.ok) { state = result.state; renderBrand(root, state); renderHistory(root, state); persist(); } return result; },
       buildHandoff: () => buildHandoff(state, controllers, apis),
+      applyCreativeHandoff(handoff) { const result = applyCreativeHandoff(state, handoff); state = result.state; renderBrand(root, state); persist(); announce(result.warnings[0] || "Đã áp dụng Brand Kit từ Creative handoff."); return result; },
       serialize: () => serializePackage(state, controllers),
       openCollaboration: ensureCollaboration,
       export(kind) { exportArtifact(kind); },
@@ -807,7 +851,7 @@
     VERSION, INTEGRATION_VERSION, FORMAT, STORAGE_KEY, MAX_HISTORY, STEPS, DEPENDENCIES,
     cleanText, escapeHtml, safeColor, normalizeBrand, createDefaultState, normalizeState,
     createStorageDriver, hexToRgb, relativeLuminance, contrastRatio, auditContrast,
-    buildBrandCss, captureSnapshot, restoreSnapshot, buildHandoff, serializePackage, parsePackage,
+    buildBrandCss, applyCreativeHandoff, captureSnapshot, restoreSnapshot, buildHandoff, serializePackage, parsePackage,
     mount, unmount
   });
 

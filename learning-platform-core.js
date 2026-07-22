@@ -327,6 +327,30 @@
     };
   }
 
+  function reviewForecast(input, horizonDays = 7, now = Date.now()) {
+    const state = normalizeState(input, now);
+    const horizon = clamp(horizonDays, 1, 30);
+    const start = Date.parse(`${dayKey(now)}T00:00:00.000Z`);
+    const buckets = Array.from({ length: horizon }, (_, offset) => ({
+      date: dayKey(start + offset * DAY),
+      due: 0,
+      new: 0,
+      relearning: 0
+    }));
+    let overdue = 0;
+    state.reviews.forEach((review) => {
+      const dueAt = Date.parse(review.dueAt);
+      if (!Number.isFinite(dueAt)) return;
+      if (dueAt < start) overdue += 1;
+      const offset = Math.max(0, Math.floor((dueAt - start) / DAY));
+      if (offset >= horizon) return;
+      buckets[offset].due += 1;
+      if (!review.repetitions) buckets[offset].new += 1;
+      if (review.lastRating === "again" || review.lapses > 0 && review.intervalDays < 1) buckets[offset].relearning += 1;
+    });
+    return { horizonDays: horizon, overdue, totalDue: buckets.reduce((total, bucket) => total + bucket.due, 0), buckets, deterministic: true };
+  }
+
   function updateMastery(item, correct, now = Date.now()) {
     const current = item || {};
     const attempts = clamp((current.attempts || 0) + 1, 0, 100_000);
@@ -446,6 +470,7 @@
       weakSkills: weakSkills(state),
       upcomingDeadline: upcoming,
       nextProject,
+      reviewForecast: reviewForecast(state, 7, now),
       path,
       adaptivePath,
       streak: state.streak,
@@ -544,6 +569,7 @@
     normalizeState,
     normalizeMastery,
     scheduleReview,
+    reviewForecast,
     updateMastery,
     adaptiveDifficulty,
     buildSkillGraph,

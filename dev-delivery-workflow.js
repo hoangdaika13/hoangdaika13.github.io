@@ -1,7 +1,7 @@
 (function (globalScope) {
   "use strict";
 
-  const VERSION = 1;
+  const VERSION = 2;
   const SCHEMA = "hh.dev.delivery-workflow.v1";
   const STORAGE_KEY = SCHEMA;
   const TOOL_IDS = Object.freeze(["delivery-workflow"]);
@@ -653,6 +653,90 @@
     return { allowed: reasons.length === 0, reasons };
   }
 
+  function buildReleaseReadiness(stateInput) {
+    const state = normalizeState(stateInput);
+    const checksPassed = CHECK_IDS.filter((id) => state.checks[id].status === "passed").length;
+    const revisionReady = Boolean(state.change.revision && state.change.diff && state.change.tests.length);
+    const deployApprovalReady = state.approvals.deploy.approved && state.approvals.deploy.revision === state.change.revision;
+    const mergeApprovalReady = state.approvals.merge.approved && state.approvals.merge.revision === state.change.revision;
+    const stages = [
+      { id: "provider", label: "GitHub OAuth", done: state.provider.connected, weight: 10 },
+      { id: "repository", label: "Repository snapshot", done: state.repository.status === "imported", weight: 10 },
+      { id: "issue", label: "Issue & acceptance criteria", done: Boolean(state.issue.title && state.issue.body), weight: 10 },
+      { id: "changeset", label: "Branch, diff & test plan", done: revisionReady, weight: 15 },
+      { id: "verification", label: `Security & test ${checksPassed}/${CHECK_IDS.length}`, done: checksPassed === CHECK_IDS.length, weight: 20 },
+      { id: "approval", label: "Human approval", done: deployApprovalReady && mergeApprovalReady, weight: 10 },
+      { id: "preview", label: "Preview deployment", done: state.delivery.preview.status === "succeeded", weight: 15 },
+      { id: "merge", label: "Merge verified revision", done: state.delivery.mergeStatus === "merged", weight: 10 }
+    ];
+    const score = stages.reduce((total, stage) => total + (stage.done ? stage.weight : 0), 0);
+    const next = stages.find((stage) => !stage.done) || null;
+    const actionByStage = {
+      provider: "Kiểm tra hoặc kết nối GitHub OAuth phía máy chủ.",
+      repository: "Nhập repository để tạo snapshot đã xác minh.",
+      issue: "Bổ sung issue và acceptance criteria rõ ràng.",
+      changeset: "Yêu cầu agent tạo branch, unified diff và test plan allowlist.",
+      verification: "Chạy đủ sandbox, code review, dependency scan và secret scan.",
+      approval: "Người có trách nhiệm duyệt cả preview và merge cho revision hiện tại.",
+      preview: "Tạo preview deployment đã được duyệt rồi kiểm tra thủ công.",
+      merge: "Merge pull request sau khi preview đã được xác nhận."
+    };
+    const blockers = [];
+    if (!state.provider.connected) blockers.push("github-session");
+    if (state.repository.status !== "imported") blockers.push("repository-snapshot");
+    if (!revisionReady) blockers.push("verified-changeset");
+    CHECK_IDS.forEach((id) => { if (state.checks[id].status !== "passed") blockers.push(`check:${id}`); });
+    if (!deployApprovalReady) blockers.push("approval:deploy");
+    if (!mergeApprovalReady) blockers.push("approval:merge");
+    return {
+      score,
+      status: score === 100 ? "released" : blockers.some((item) => item.startsWith("check:") && state.checks[item.slice(6)]?.status === "failed") ? "blocked" : "in-progress",
+      checksPassed,
+      stages: stages.map(({ weight, ...stage }) => stage),
+      blockers,
+      nextAction: next ? { id: next.id, label: actionByStage[next.id] } : { id: "monitor", label: "Theo dõi deployment và giữ rollback target sẵn sàng." }
+    };
+  }
+
+  function runtimeSnapshot(stateInput) {
+    const state = normalizeState(stateInput);
+    const readiness = buildReleaseReadiness(state);
+    return {
+      schema: SCHEMA,
+      route: "/dev/delivery-workflow",
+      updatedAt: state.updatedAt,
+      repository: {
+        owner: state.repository.owner,
+        name: state.repository.name,
+        status: state.repository.status
+      },
+      change: {
+        status: state.change.status,
+        branch: state.change.branch,
+        revision: state.change.revision
+      },
+      checks: Object.fromEntries(CHECK_IDS.map((id) => [id, state.checks[id].status])),
+      delivery: {
+        preview: state.delivery.preview.status,
+        merge: state.delivery.mergeStatus,
+        rollback: state.delivery.rollback.status
+      },
+      readiness: {
+        score: readiness.score,
+        status: readiness.status,
+        blockers: readiness.blockers.length,
+        nextAction: readiness.nextAction.id
+      }
+    };
+  }
+
+  function emitRuntimeChange(stateInput, eventTarget = globalScope) {
+    const EventConstructor = eventTarget && (eventTarget.CustomEvent || globalScope.CustomEvent);
+    if (!eventTarget || typeof eventTarget.dispatchEvent !== "function" || typeof EventConstructor !== "function") return false;
+    eventTarget.dispatchEvent(new EventConstructor("hh:dev-delivery-change", { detail: runtimeSnapshot(stateInput) }));
+    return true;
+  }
+
   function validateDeliveryResult(payload, action) {
     const result = stripSensitive(payload || {});
     const expectedStatus = action === "merge" ? "merged" : "succeeded";
@@ -777,6 +861,7 @@
     const mergeReady = canPerform(state, "merge");
     const deployReady = canPerform(state, "deploy");
     const rollbackReady = canPerform(state, "rollback");
+    const readiness = buildReleaseReadiness(state);
     const stages = [
       ["Repo", repoReady], ["Issue → diff", changeReady], ["4 checks", allChecksPassed(state)],
       ["Deploy", state.delivery.preview.status === "succeeded"], ["Merge", state.delivery.mergeStatus === "merged"]
@@ -791,6 +876,12 @@
       </header>
 
       <ol class="hdw-stage" aria-label="Tiến độ workflow">${stages.map(([label, done], index) => `<li class="${done ? "is-done" : ""}"><span>${index + 1}</span><b>${label}</b></li>`).join("")}</ol>
+
+      <section class="hdw-readiness is-${escapeHtml(readiness.status)}" aria-labelledby="hdw-readiness-title">
+        <div><small>RELEASE CONTROL</small><h3 id="hdw-readiness-title">Mức sẵn sàng ${readiness.score}%</h3><p>${escapeHtml(readiness.nextAction.label)}</p></div>
+        <meter min="0" max="100" value="${readiness.score}">${readiness.score}%</meter>
+        <ol>${readiness.stages.map((stage) => `<li class="${stage.done ? "is-done" : ""}"><span>${stage.done ? "✓" : "·"}</span>${escapeHtml(stage.label)}</li>`).join("")}</ol>
+      </section>
 
       <section class="hdw-boundary" aria-labelledby="hdw-boundary-title">
         <div><small>SECURITY BOUNDARY</small><h3 id="hdw-boundary-title">Quyền tối thiểu, không token ở client</h3><p>Frontend chỉ dùng cookie phiên cùng-origin. Client secret, access token và refresh token không được nhập, xuất hoặc lưu localStorage.</p></div>
@@ -862,6 +953,7 @@
 
     function persist() {
       state = store.save(state);
+      emitRuntimeChange(state, options.eventTarget || globalScope);
       return state;
     }
 
@@ -1013,7 +1105,7 @@
     defaultState, normalizeState, stateForStorage, serializeState, createStore, addAudit, revokeApprovals,
     revisionFor, applyProviderStatus, validateRepositoryResult, applyRepositoryResult, safeBranchName, buildLocalIssueBrief,
     validateIssuePlanResult, applyIssuePlanResult, reviewDiff, validateSandboxPlan, validateCheckResult, recordCheck,
-    runLocalSecretCheck, allChecksPassed, approveGate, canPerform, validateDeliveryResult, recordDelivery,
+    runLocalSecretCheck, allChecksPassed, approveGate, canPerform, buildReleaseReadiness, runtimeSnapshot, emitRuntimeChange, validateDeliveryResult, recordDelivery,
     createServerAdapter, workflowMarkup, mount, unmount
   });
 

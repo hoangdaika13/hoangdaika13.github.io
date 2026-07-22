@@ -9,7 +9,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const engines = [
   ["creative-command-center.js?v=1", "HHCreativeCommandCenter"],
   ["creative-preproduction.js?v=1", "HHCreativePreproduction"],
-  ["creative-ai-workflow.js?v=2", "HHCreativeAIWorkflow"],
+  ["creative-ai-workflow.js?v=3", "HHCreativeAIWorkflow"],
   ["creative-production-lab.js?v=1", "HHCreativeProductionLab"],
   ["creative-collaboration-os.js?v=1", "HHCreativeCollaborationOS"],
   ["creative-publishing.js?v=1", "HHCreativePublishing"],

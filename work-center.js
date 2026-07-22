@@ -8,7 +8,7 @@
   const STORE_CART_KEY = "hh-store-cart";
   const WORK_KEY = "hh-work-center-v2";
   const LEGACY_WORK_KEY = "hh-work-center-v1";
-  const WORK_SCHEMA_VERSION = 2;
+  const WORK_SCHEMA_VERSION = 3;
   const FILE_META_KEY = "hh-work-center-files-v1";
   const DB_NAME = "hh-work-center";
   const DB_STORE = "files";
@@ -80,15 +80,15 @@
     schemaVersion: WORK_SCHEMA_VERSION,
     revision: 0,
     adapter: { mode: "local", status: "Local-first · chưa kết nối adapter", lastSyncAt: "" },
-    projects: [], tasks: [], milestones: [],
+    initiatives: [], projects: [], tasks: [], milestones: [],
     cycles: [{ id: "cycle-current", name: "Cycle hiện tại", start: day(), end: day(14), goal: "Ưu tiên việc quan trọng", status: "planned" }],
-    capacities: {}, meetings: [], actionItems: [], calendar: [],
+    capacities: {}, meetings: [], actionItems: [], cycleRolloverLog: [], calendar: [],
     focusMinutes: 25, focusRemaining: 1500, focusRunning: false, focusEnd: 0, focusSessions: 0, taskFilter: "open"
   });
   const normalizePlanning = (raw = {}) => {
     const projects = Array.isArray(raw.projects) && raw.projects.length ? raw.projects : structuredClone(DEFAULT_PROJECTS);
     const tasks = Array.isArray(raw.tasks) && raw.tasks.length ? raw.tasks : structuredClone(DEFAULT_TASKS);
-    return { ...planningDefaults(), ...raw, projects: projects.map((item) => ({ ...item, capacity: Number(item.capacity || 40) })), tasks: tasks.map((item) => ({ ...item, projectId: item.projectId || item.project || projects[0]?.id, status: item.status || item.column || "todo", column: item.column || item.status || "todo", estimate: Number(item.estimate || 1), dependsOn: Array.isArray(item.dependsOn) ? item.dependsOn : [], due: item.due || "" })), milestones: Array.isArray(raw.milestones) ? raw.milestones : [], capacities: raw.capacities && typeof raw.capacities === "object" ? raw.capacities : {}, meetings: Array.isArray(raw.meetings) ? raw.meetings : [], actionItems: Array.isArray(raw.actionItems) ? raw.actionItems : [], calendar: Array.isArray(raw.calendar) ? raw.calendar : [] };
+    return { ...planningDefaults(), ...raw, initiatives: Array.isArray(raw.initiatives) ? raw.initiatives : [], projects: projects.map((item) => ({ ...item, initiativeId: item.initiativeId || "", capacity: Number(item.capacity || 40) })), tasks: tasks.map((item) => ({ ...item, projectId: item.projectId || item.project || projects[0]?.id, cycleId: item.cycleId || "", status: item.status || item.column || "todo", column: item.column || item.status || "todo", estimate: Number(item.estimate || 1), dependsOn: Array.isArray(item.dependsOn) ? item.dependsOn : [], due: item.due || "" })), milestones: Array.isArray(raw.milestones) ? raw.milestones : [], cycles: Array.isArray(raw.cycles) ? raw.cycles : planningDefaults().cycles, capacities: raw.capacities && typeof raw.capacities === "object" ? raw.capacities : {}, meetings: Array.isArray(raw.meetings) ? raw.meetings : [], actionItems: Array.isArray(raw.actionItems) ? raw.actionItems : [], cycleRolloverLog: Array.isArray(raw.cycleRolloverLog) ? raw.cycleRolloverLog : [], calendar: Array.isArray(raw.calendar) ? raw.calendar : [] };
   };
   const planningState = () => {
     const stored = read(WORK_KEY, null) || read(LEGACY_WORK_KEY, {});
@@ -112,6 +112,48 @@
   };
   const workState = () => ({ ...planningDefaults(), ...planningState() });
   const planningDaysUntil = (value, today = new Date()) => { if (!value) return null; const date = new Date(`${String(value).slice(0, 10)}T12:00:00`); if (Number.isNaN(date.getTime())) return null; const base = new Date(today.getFullYear(), today.getMonth(), today.getDate()); return Math.ceil((date - base) / 86400000); };
+  const addPlanningDays = (value, amount) => {
+    const date = new Date(`${String(value || day()).slice(0, 10)}T12:00:00`);
+    if (Number.isNaN(date.getTime())) return day(amount);
+    date.setDate(date.getDate() + Number(amount || 0));
+    return date.toISOString().slice(0, 10);
+  };
+  const cycleCapacity = (state, cycleId) => {
+    const tasks = (state.tasks || []).filter((task) => task.cycleId === cycleId && task.status !== "done");
+    const committed = tasks.reduce((sum, task) => sum + Number(task.estimate || 0), 0);
+    const people = [...new Set(tasks.map((task) => task.assignee || "Chưa phân công"))];
+    const available = people.reduce((sum, person) => sum + Number(state.capacities?.[person] || state.projects?.[0]?.capacity || 40), 0) || Number(state.projects?.[0]?.capacity || 40);
+    return { committed, available, percent: available ? Math.round(committed / available * 100) : 0, taskCount: tasks.length };
+  };
+  const assignOpenTasksToCycle = (rawState, cycleId) => {
+    const state = normalizePlanning(rawState);
+    if (!(state.cycles || []).some((cycle) => cycle.id === cycleId)) return state;
+    return normalizePlanning({ ...state, tasks: state.tasks.map((task) => task.status !== "done" && !task.cycleId ? { ...task, cycleId } : task) });
+  };
+  const rolloverCycle = (rawState, cycleId, now = new Date()) => {
+    const state = normalizePlanning(rawState);
+    const source = state.cycles.find((cycle) => cycle.id === cycleId);
+    if (!source) return { state, moved: 0, nextCycleId: "" };
+    let next = state.cycles.filter((cycle) => cycle.id !== source.id && cycle.status !== "done" && String(cycle.start || "") >= String(source.end || "")).sort((left, right) => String(left.start).localeCompare(String(right.start)))[0];
+    const cycles = state.cycles.map((cycle) => cycle.id === source.id ? { ...cycle, status: "done", completedAt: now.toISOString() } : cycle);
+    if (!next) {
+      const duration = Math.max(1, planningDaysUntil(source.end, new Date(`${source.start || day()}T12:00:00`)) || 14);
+      next = { id: uid("cycle"), name: `${source.name || "Cycle"} · tiếp theo`, start: addPlanningDays(source.end || day(), 1), end: addPlanningDays(source.end || day(), duration), goal: source.goal || "", status: "planned" };
+      cycles.unshift(next);
+    }
+    let moved = 0;
+    const tasks = state.tasks.map((task) => {
+      if (task.status === "done" || task.cycleId !== source.id) return task;
+      moved += 1;
+      return { ...task, cycleId: next.id, rolloverFrom: source.id, rolloverCount: Number(task.rolloverCount || 0) + 1 };
+    });
+    const entry = { id: uid("rollover"), fromCycleId: source.id, toCycleId: next.id, moved, createdAt: now.toISOString() };
+    return { state: normalizePlanning({ ...state, cycles, tasks, cycleRolloverLog: [entry, ...(state.cycleRolloverLog || [])].slice(0, 100) }), moved, nextCycleId: next.id };
+  };
+  const extractMeetingActions = (meeting) => String(meeting?.notes || "").split(/\r?\n/).map((line) => line.trim()).map((line) => {
+    const match = line.match(/^(?:[-*]\s*)?(?:\[\s?\]|TODO\s*:|ACTION\s*:|HÀNH ĐỘNG\s*:)(.+)$/i);
+    return match ? match[1].trim().slice(0, 180) : "";
+  }).filter(Boolean).slice(0, 20);
   const detectPlanningRisks = (state, today = new Date()) => {
     const risks = [];
     (state.tasks || []).forEach((task) => {
@@ -126,6 +168,7 @@
     const workload = {};
     (state.tasks || []).filter((task) => task.status !== "done").forEach((task) => { const person = task.assignee || "Chưa phân công"; workload[person] = (workload[person] || 0) + Number(task.estimate || 1); });
     Object.entries(workload).forEach(([person, hours]) => { const capacity = Number(state.capacities?.[person] || state.projects?.[0]?.capacity || 40); if (hours > capacity) risks.push({ level: "high", title: person, reason: `${hours}h vượt capacity ${capacity}h`, type: "capacity" }); });
+    (state.cycles || []).filter((cycle) => cycle.status !== "done").forEach((cycle) => { const capacity = cycleCapacity(state, cycle.id); if (capacity.percent > 100) risks.push({ level: "high", title: cycle.name, reason: `${capacity.committed}h vượt cycle capacity ${capacity.available}h`, type: "cycle-capacity" }); });
     return risks;
   };
   const planningTimeline = (state) => [...(state.tasks || []).filter((item) => item.due).map((item) => ({ date: item.due, type: "Task", title: item.title, detail: item.assignee || "Chưa phân công" })), ...(state.milestones || []).filter((item) => item.due).map((item) => ({ date: item.due, type: "Milestone", title: item.name, detail: `${item.progress || 0}%` })), ...(state.meetings || []).filter((item) => item.date).map((item) => ({ date: item.date, type: "Meeting", title: item.title, detail: item.attendees || "" }))].sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(0, 20);
@@ -280,6 +323,20 @@
     return `<section class="work-planning" data-work-planning aria-label="Lập kế hoạch công việc"><header class="work-planning__head"><div><span>PLANNING LAYER · schema ${WORK_SCHEMA_VERSION}</span><h2>Project → cycle → task</h2><p>Lưu local-first, revision ${state.revision || 0}. ${esc(state.adapter?.status || "Adapter chưa cấu hình")}</p></div><div><button type="button" data-planning-export>Xuất JSON</button><button type="button" data-planning-sync>Kiểm tra adapter</button></div></header><nav class="work-planning__tabs" role="tablist" aria-label="Planning views"><button class="is-active" type="button" role="tab" aria-selected="true" data-planning-tab="plan">Plan</button><button type="button" role="tab" aria-selected="false" data-planning-tab="capacity">Capacity & dependency</button><button type="button" role="tab" aria-selected="false" data-planning-tab="timeline">Lịch & timeline</button><button type="button" role="tab" aria-selected="false" data-planning-tab="meeting">Meeting → actions</button><button type="button" role="tab" aria-selected="false" data-planning-tab="risk">Risk detector <b>${risks.length}</b></button></nav><section class="work-planning__pane is-active" data-planning-pane="plan"><div class="work-planning__grid"><form class="work-planning__card" data-planning-project-form><header><span>PROJECT</span><h3>Tạo project</h3></header><label>Tên project<input name="name" required maxlength="120" autocomplete="off" placeholder="Ví dụ: Website v3"></label><div class="work-planning__two"><label>Owner<input name="owner" maxlength="80" placeholder="Tên người phụ trách"></label><label>Capacity (giờ)<input name="capacity" type="number" min="1" max="1000" value="40"></label></div><div class="work-planning__two"><label>Bắt đầu<input name="start" type="date" value="${day()}"></label><label>Deadline<input name="due" type="date"></label></div><button type="submit">＋ Tạo project</button></form><form class="work-planning__card" data-planning-task-form><header><span>TASK</span><h3>Thêm task</h3></header><label>Tên task<input name="title" required maxlength="180" autocomplete="off" placeholder="Một việc có thể giao"></label><div class="work-planning__two"><label>Project<select name="projectId">${projectOptions}</select></label><label>Người phụ trách<input name="assignee" maxlength="80" placeholder="Tên hoặc email"></label></div><div class="work-planning__two"><label>Estimate (giờ)<input name="estimate" type="number" min="0.25" max="500" step="0.25" value="1"></label><label>Deadline<input name="due" type="date"></label></div><label>Dependency (tuỳ chọn)<select name="dependsOn" multiple size="3">${dependencyOptions || "<option disabled>Chưa có task để phụ thuộc</option>"}</select></label><button type="submit">＋ Tạo task</button></form><form class="work-planning__card" data-planning-cycle-form><header><span>CYCLE</span><h3>Chu kỳ làm việc</h3></header><label>Tên cycle<input name="name" required maxlength="100" value="${esc(activeCycle?.name || "Cycle mới")}"></label><div class="work-planning__two"><label>Bắt đầu<input name="start" type="date" value="${esc(activeCycle?.start || day())}"></label><label>Kết thúc<input name="end" type="date" value="${esc(activeCycle?.end || day(14))}"></label></div><label>Mục tiêu<input name="goal" maxlength="180" value="${esc(activeCycle?.goal || "")}"></label><button type="submit">＋ Tạo cycle</button></form></div><div class="work-planning__summary"><article><strong>${projects.length}</strong><span>Projects</span></article><article><strong>${tasks.filter((task) => task.status !== "done").length}</strong><span>Task đang mở</span></article><article><strong>${(state.milestones || []).length}</strong><span>Milestone</span></article><article><strong>${activeCycle ? esc(activeCycle.name) : "—"}</strong><span>Cycle hiện tại</span></article></div></section><section class="work-planning__pane" data-planning-pane="capacity"><div class="work-planning__grid"><article class="work-planning__card"><header><span>CAPACITY</span><h3>Workload theo người</h3></header><div class="work-capacity-list">${capacityRows || "<p>Chưa có task đang mở.</p>"}</div><button type="button" data-planning-capacity>Đặt capacity mặc định</button></article><article class="work-planning__card"><header><span>DEPENDENCY</span><h3>Luồng phụ thuộc</h3></header><div class="work-dependency-list">${tasks.filter((task) => task.dependsOn?.length).map((task) => `<article><strong>${esc(task.title)}</strong><span>${task.dependsOn.map((id) => esc(tasks.find((item) => item.id === id)?.title || id)).join(", ")}</span></article>`).join("") || "<p>Chưa có dependency. Chọn dependency khi tạo task.</p>"}</div></article></div><div class="work-planning__card"><header><span>MILESTONE</span><h3>Milestone đang theo dõi</h3></header><form data-planning-milestone-form class="work-planning__inline-form"><input name="name" required maxlength="140" placeholder="Tên milestone"><input name="due" type="date"><select name="projectId">${projectOptions}</select><input name="progress" type="number" min="0" max="100" value="0" aria-label="Tiến độ %"><button type="submit">＋ Thêm milestone</button></form><div class="work-milestone-list">${(state.milestones || []).map((item) => `<article><strong>${esc(item.name)}</strong><span>${esc(item.due || "Chưa đặt ngày")} · ${Number(item.progress || 0)}%</span></article>`).join("") || "<p>Chưa có milestone.</p>"}</div></div></section><section class="work-planning__pane" data-planning-pane="timeline"><div class="work-planning__card"><header><span>CALENDAR ADAPTER</span><h3>Lịch & timeline</h3><p>Lịch nội bộ chỉ hiển thị dữ liệu đã lưu; chưa giả lập Google/Outlook.</p></header><div class="work-timeline">${timeline.map((item) => `<article><time datetime="${esc(item.date)}">${esc(item.date)}</time><span>${esc(item.type)}</span><strong>${esc(item.title)}</strong><small>${esc(item.detail)}</small></article>`).join("") || "<p>Chưa có item có ngày.</p>"}</div></div></section><section class="work-planning__pane" data-planning-pane="meeting"><div class="work-planning__grid"><form class="work-planning__card" data-planning-meeting-form><header><span>MEETING</span><h3>Ghi cuộc họp</h3></header><label>Tiêu đề<input name="title" required maxlength="160" placeholder="Planning sprint"></label><label>Ngày giờ<input name="date" type="datetime-local" required></label><label>Người tham gia<input name="attendees" maxlength="240" placeholder="team@example.com"></label><label>Ghi chú<textarea name="notes" maxlength="1200" rows="3"></textarea></label><button type="submit">＋ Lưu meeting</button></form><form class="work-planning__card" data-planning-action-form><header><span>ACTION ITEM</span><h3>Meeting → action</h3></header><label>Việc cần làm<input name="title" required maxlength="180" placeholder="Chốt owner cho release"></label><div class="work-planning__two"><label>Người phụ trách<input name="assignee" maxlength="80"></label><label>Hạn xử lý<input name="due" type="date"></label></div><label>Meeting<select name="meetingId"><option value="">Không gắn meeting</option>${(state.meetings || []).map((item) => `<option value="${esc(item.id)}">${esc(item.title)}</option>`).join("")}</select></label><button type="submit">＋ Thêm action item</button></form></div><div class="work-action-list">${(state.actionItems || []).map((item) => `<article><label><input type="checkbox" data-planning-action-done="${esc(item.id)}" ${item.status === "done" ? "checked" : ""}><span><strong>${esc(item.title)}</strong><small>${esc(item.assignee || "Chưa giao")} · ${esc(item.due || "Chưa đặt hạn")}</small></span></label></article>`).join("") || "<p>Chưa có action item.</p>"}</div></section><section class="work-planning__pane" data-planning-pane="risk"><div class="work-risk-summary"><strong>${risks.length} nguy cơ</strong><span>Deadline · dependency · capacity · milestone · meeting action</span></div><div class="work-risk-list">${risks.map((risk) => `<article class="risk-${esc(risk.level)}"><b>${esc(risk.level.toUpperCase())}</b><div><strong>${esc(risk.title)}</strong><span>${esc(risk.reason)}</span></div><small>${esc(risk.type)}</small></article>`).join("") || "<p>Chưa phát hiện nguy cơ theo dữ liệu hiện tại.</p>"}</div></section><section class="work-planning__card work-form-import"><header><span>FORM → TASK</span><h3>Chuyển phản hồi thành task</h3></header><div>${responseItems.slice(0, 8).map((item) => `<article><span>#${esc(item.id || "response")}</span><strong>${esc(Object.values(item.data || {}).join(" · ").slice(0, 120) || "Phản hồi trống")}</strong><button type="button" data-form-response-task="${esc(item.id)}">Tạo task</button></article>`).join("") || "<p>Chưa có phản hồi form cục bộ.</p>"}</div></section></section></section>`;
   }
 
+  function renderPlanningEnhancements() {
+    const planning = host?.querySelector("[data-work-planning]");
+    if (!planning) return;
+    const state = planningState();
+    const projectOptions = (state.projects || []).map((project) => `<option value="${esc(project.id)}">${esc(project.name)}</option>`).join("");
+    const initiativeRows = (state.initiatives || []).map((item) => `<article><div><strong>${esc(item.name)}</strong><span>${esc(item.owner || "Chưa có owner")} · ${esc(item.target || "Chưa đặt mục tiêu")}</span></div><small>${(item.projectIds || []).length} project</small></article>`).join("") || "<p>Chưa có initiative. Initiative chỉ nhóm các project đã chọn.</p>";
+    const cycleRows = (state.cycles || []).map((cycle) => { const capacity = cycleCapacity(state, cycle.id); return `<article class="work-cycle-row"><div><strong>${esc(cycle.name)}</strong><span>${esc(cycle.start || "—")} → ${esc(cycle.end || "—")} · ${capacity.taskCount} task</span></div><b class="${capacity.percent > 100 ? "is-over" : ""}">${capacity.committed}h / ${capacity.available}h</b><button type="button" data-planning-cycle-assign="${esc(cycle.id)}">Gán việc chưa xếp</button>${cycle.status !== "done" ? `<button type="button" data-planning-cycle-rollover="${esc(cycle.id)}">Rollover</button>` : ""}</article>`; }).join("") || "<p>Chưa có cycle.</p>";
+    const planPane = planning.querySelector('[data-planning-pane="plan"]');
+    planPane?.insertAdjacentHTML("beforeend", `<section class="work-planning__initiative"><form class="work-planning__card" data-planning-initiative-form><header><span>INITIATIVE</span><h3>Nhóm project theo mục tiêu</h3></header><label>Tên initiative<input name="name" required maxlength="140" placeholder="Ví dụ: Tăng trưởng Q3"></label><div class="work-planning__two"><label>Owner<input name="owner" maxlength="80"></label><label>Mục tiêu<input name="target" maxlength="160"></label></div><label>Projects<select name="projectIds" multiple size="4">${projectOptions}</select></label><button type="submit">＋ Tạo initiative</button></form><article class="work-planning__card"><header><span>INITIATIVE MAP</span><h3>Mục tiêu → project</h3></header><div class="work-initiative-list">${initiativeRows}</div></article></section><section class="work-planning__card work-cycle-control"><header><span>CYCLE CONTROL</span><h3>Capacity, assignment & rollover</h3><p>Rollover chỉ chuyển task chưa hoàn thành; task đã xong được giữ nguyên trong cycle cũ.</p></header><div class="work-cycle-list">${cycleRows}</div><small>${(state.cycleRolloverLog || []).length} lần rollover đã lưu trong revision local.</small></section>`);
+    const meetingPane = planning.querySelector('[data-planning-pane="meeting"]');
+    const meetingRows = (state.meetings || []).map((meeting) => `<article><div><strong>${esc(meeting.title)}</strong><span>${esc(meeting.date || "Chưa đặt ngày")} · ${extractMeetingActions(meeting).length} dòng action rõ ràng</span></div><button type="button" data-planning-meeting-actions="${esc(meeting.id)}">Tách action</button></article>`).join("") || "<p>Chưa có meeting để chuyển đổi.</p>";
+    meetingPane?.insertAdjacentHTML("beforeend", `<section class="work-planning__card work-meeting-converter"><header><span>LOCAL PARSER</span><h3>Ghi chú → action items</h3><p>Chỉ chạy khi bạn bấm; nhận dòng bắt đầu bằng TODO:, ACTION: hoặc [ ]. Không gửi nội dung ra ngoài thiết bị.</p></header><div>${meetingRows}</div></section>`);
+  }
+
   function render() {
     if (!host) return;
     const stats = getStats();
@@ -319,6 +376,7 @@
       ${captureDialog()}
       <div class="work-toast" data-work-toast role="status" aria-live="polite"></div>
     </section>`;
+    renderPlanningEnhancements();
     bindRoot();
     updateClock();
     startFocusTicker();
@@ -337,11 +395,31 @@
     ["dragleave", "drop"].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); fileDragDepth = Math.max(0, fileDragDepth - 1); if (!fileDragDepth || type === "drop") dropzone.classList.remove("is-dragging"); if (type === "drop") saveFiles(event.dataTransfer?.files); }));
   }
 
+  function convertMeetingNotes(meetingId) {
+    const state = planningState();
+    const meeting = (state.meetings || []).find((item) => item.id === meetingId);
+    if (!meeting) return showToast("Không tìm thấy meeting trên thiết bị.", "error");
+    const titles = extractMeetingActions(meeting);
+    if (!titles.length) return showToast("Không có dòng TODO:, ACTION: hoặc [ ] để chuyển đổi.", "error");
+    const existing = new Set((state.actionItems || []).filter((item) => item.meetingId === meetingId).map((item) => String(item.title).toLocaleLowerCase("vi")));
+    const additions = titles.filter((title) => !existing.has(title.toLocaleLowerCase("vi"))).map((title) => ({ id: uid("action"), title, assignee: "", due: "", meetingId, status: "todo", source: "meeting-note-local", createdAt: new Date().toISOString() }));
+    if (!additions.length) return showToast("Các action rõ ràng đã được tạo trước đó.");
+    writePlanning((current) => ({ ...current, actionItems: [...additions, ...(current.actionItems || [])] }));
+    render();
+    showToast(`Đã tạo ${additions.length} action item từ ghi chú cục bộ.`);
+  }
+
   function handleClick(event) {
     const planningTab = event.target.closest("[data-planning-tab]");
     if (planningTab) { const planning = planningTab.closest("[data-work-planning]"); planning?.querySelectorAll("[data-planning-tab]").forEach((item) => { const active = item === planningTab; item.classList.toggle("is-active", active); item.setAttribute("aria-selected", String(active)); }); planning?.querySelectorAll("[data-planning-pane]").forEach((pane) => pane.classList.toggle("is-active", pane.dataset.planningPane === planningTab.dataset.planningTab)); return; }
     if (event.target.closest("[data-planning-export]")) { exportPlanning(); return; }
     if (event.target.closest("[data-planning-sync]")) { planningSync(); return; }
+    const cycleAssign = event.target.closest("[data-planning-cycle-assign]");
+    if (cycleAssign) { writePlanning((state) => assignOpenTasksToCycle(state, cycleAssign.dataset.planningCycleAssign)); render(); showToast("Đã gán task chưa xếp vào cycle đã chọn."); return; }
+    const cycleRollover = event.target.closest("[data-planning-cycle-rollover]");
+    if (cycleRollover) { let result; writePlanning((state) => { result = rolloverCycle(state, cycleRollover.dataset.planningCycleRollover); return result.state; }); render(); showToast(`Đã rollover ${result?.moved || 0} task chưa hoàn thành.`); return; }
+    const meetingActions = event.target.closest("[data-planning-meeting-actions]");
+    if (meetingActions) { convertMeetingNotes(meetingActions.dataset.planningMeetingActions); return; }
     if (event.target.closest("[data-planning-capacity]")) { writePlanning((state) => ({ ...state, projects: state.projects.map((project) => ({ ...project, capacity: Number(project.capacity || 40) })), capacities: Object.fromEntries(Object.keys(state.capacities || {}).map((person) => [person, Number(state.capacities[person] || 40)])) })); render(); showToast("Đã đặt capacity mặc định 40 giờ cho dữ liệu local."); return; }
     if (event.target.closest("[data-form-response-task]")) { createTaskFromResponse(event.target.closest("[data-form-response-task]").dataset.formResponseTask); return; }
     const route = event.target.closest("[data-work-route]");
@@ -381,6 +459,12 @@
     if (!form) return;
     event.preventDefault();
     const state = planningState();
+    if (form.matches("[data-planning-initiative-form]")) {
+      const name = formValue(form, "name"); if (!name) return;
+      const projectIds = selectedValues(form, "projectIds");
+      const initiative = { id: uid("initiative"), name, owner: formValue(form, "owner"), target: formValue(form, "target"), projectIds, status: "active", createdAt: new Date().toISOString() };
+      writePlanning((current) => ({ ...current, initiatives: [initiative, ...(current.initiatives || [])], projects: current.projects.map((project) => projectIds.includes(project.id) ? { ...project, initiativeId: initiative.id } : project) })); render(); showToast(`Đã tạo initiative “${name}”.`); return;
+    }
     if (form.matches("[data-planning-project-form]")) {
       const name = formValue(form, "name"); if (!name) return;
       const project = { id: uid("project"), name, owner: formValue(form, "owner"), capacity: Math.max(1, Number(formValue(form, "capacity") || 40)), start: formValue(form, "start") || day(), due: formValue(form, "due"), status: "active", progress: 0, priority: "normal", description: "", color: ["#62e9f2", "#ff5dc8", "#f5db6d", "#8d7cff"][state.projects.length % 4] };
@@ -389,7 +473,8 @@
     if (form.matches("[data-planning-task-form]")) {
       const title = formValue(form, "title"); if (!title) return;
       const projectId = formValue(form, "projectId") || state.projects[0]?.id;
-      const task = { id: uid("task"), title, projectId, project: projectId, assignee: formValue(form, "assignee"), due: formValue(form, "due"), estimate: Math.max(.25, Number(formValue(form, "estimate") || 1)), dependsOn: selectedValues(form, "dependsOn"), status: "todo", column: "todo", priority: "normal", createdAt: new Date().toISOString() };
+      const activeCycle = (state.cycles || []).find((cycle) => cycle.status !== "done");
+      const task = { id: uid("task"), title, projectId, project: projectId, cycleId: activeCycle?.id || "", assignee: formValue(form, "assignee"), due: formValue(form, "due"), estimate: Math.max(.25, Number(formValue(form, "estimate") || 1)), dependsOn: selectedValues(form, "dependsOn"), status: "todo", column: "todo", priority: "normal", createdAt: new Date().toISOString() };
       writePlanning((current) => ({ ...current, tasks: [task, ...(current.tasks || [])] })); render(); showToast(`Đã tạo task “${title}”.`); return;
     }
     if (form.matches("[data-planning-cycle-form]")) {
@@ -682,5 +767,5 @@
     host = null;
   }
 
-  window.HHWorkCenter = { mount, unmount, refresh: render, openCapture };
+  window.HHWorkCenter = { mount, unmount, refresh: render, openCapture, planning: Object.freeze({ normalizePlanning, cycleCapacity, assignOpenTasksToCycle, rolloverCycle, extractMeetingActions, detectPlanningRisks }) };
 })();

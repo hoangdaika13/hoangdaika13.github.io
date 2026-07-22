@@ -183,6 +183,21 @@ test("variant comparison is bounded and contains reproducibility metadata", () =
   });
 });
 
+test("production handoff routes reviewed specs without pretending local metadata is binary", async () => {
+  let project = workflow.createDefaultProject();
+  project.promptStudio.draft.references = [workflow.fileMeta({ name: "hero.png", type: "image/png", size: 2048 })];
+  project = await workflow.runWorkflow(project);
+  const handoff = workflow.createProductionHandoff(project);
+  assert.equal(handoff.schema, workflow.HANDOFF_SCHEMA);
+  assert.equal(handoff.governance.autoPublish, false);
+  assert.ok(handoff.stages.some((stage) => stage.type === "Video" && stage.executableOutput));
+  assert.ok(handoff.transfers.some((transfer) => transfer.id === "media-design" && transfer.status === "ready"));
+  assert.equal(handoff.sourceAssets[0].availability, "metadata-only");
+  assert.match(handoff.sourceAssets[0].nextAction, /Relink/);
+  assert.doesNotMatch(JSON.stringify(handoff), /data:image|blob:/);
+  assert.equal(JSON.parse(workflow.exportProductionHandoff(project)).fingerprint, handoff.fingerprint);
+});
+
 test("project import/export validates format, bounds input and sanitizes text", () => {
   const project = workflow.createDefaultProject();
   project.name = "<script>alert(1)</script> Safe project";
@@ -223,7 +238,7 @@ test("UI contract includes real controls, live status, keyboard support and safe
     'role="tablist"', 'aria-live="polite"', 'data-hhcaw-action="run-all"',
     'data-hhcaw-action="retry"', 'data-hhcaw-action="approve"', "data-hhcaw-director-form",
     "data-hhcaw-edge-form", "data-hhcaw-remove-edge", "data-hhcaw-prompt-form", "data-hhcaw-prompt-mode",
-    "data-hhcaw-asset", "data-hhcaw-reproduce", "data-hhcaw-lineage",
+    "data-hhcaw-asset", "data-hhcaw-reproduce", "data-hhcaw-lineage", 'data-hhcaw-action="export-handoff"',
     "event.ctrlKey", "escapeHtml", "AbortController", "maxlength=\"4000\""
   ].forEach((contract) => assert.match(source, new RegExp(contract)));
   assert.doesNotMatch(source, /\beval\s*\(|new\s+Function\s*\(/);

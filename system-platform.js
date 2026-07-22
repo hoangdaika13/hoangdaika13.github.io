@@ -38,6 +38,50 @@
     }, {});
   }
 
+  function sanitizeSession(input = {}) {
+    const device = input.device && typeof input.device === "object" ? input.device : {};
+    return {
+      id: text(input.id, 120),
+      current: input.current === true,
+      device: {
+        label: text(device.label, 120),
+        browser: text(device.browser, 60),
+        platform: text(device.platform, 60),
+        type: text(device.type, 40)
+      },
+      createdAt: text(input.createdAt, 40),
+      lastSeenAt: text(input.lastSeenAt, 40),
+      expiresAt: text(input.expiresAt, 40)
+    };
+  }
+
+  function normalizeQuota(input = {}) {
+    const limit = Math.max(0, Number(input.limit) || 0);
+    const used = Math.max(0, Number(input.used) || 0);
+    return {
+      provider: text(input.provider, 80),
+      used,
+      limit,
+      remaining: Math.max(0, Number.isFinite(Number(input.remaining)) ? Number(input.remaining) : limit - used),
+      note: text(input.note, 160),
+      source: text(input.source, 80),
+      resetAt: text(input.resetAt, 40)
+    };
+  }
+
+  function capabilitySnapshot(scope = globalScope) {
+    const navigatorRef = scope?.navigator || {};
+    const standalone = scope?.matchMedia?.("(display-mode: standalone)")?.matches === true || navigatorRef.standalone === true;
+    return {
+      online: navigatorRef.onLine !== false,
+      serviceWorker: Boolean(navigatorRef.serviceWorker),
+      cacheStorage: Boolean(scope?.caches),
+      installMode: standalone ? "standalone" : "browser",
+      backgroundSync: Boolean(scope?.SyncManager),
+      truthful: true
+    };
+  }
+
   function defaultState() {
     return {
       version: VERSION,
@@ -138,11 +182,11 @@
       async gatewayStatus() {
         const data = await request("/api/platform/summary?view=gateway-quotas");
         if (data.ok !== true || data.confirmed !== true || !Array.isArray(data.quotas)) throw new Error("Gateway chưa xác nhận quota.");
-        return { confirmed: true, checkedAt: data.checkedAt || now(), quotas: data.quotas.map(item => sanitize(item)).filter(Boolean) };
+        return { confirmed: true, checkedAt: data.checkedAt || now(), quotas: data.quotas.map(normalizeQuota).filter(item => item.provider) };
       },
       async sessions() {
         const data = await request("/api/auth/sessions");
-        return (Array.isArray(data.sessions) ? data.sessions : []).slice(0, 50).map(item => sanitize(item)).filter(Boolean);
+        return (Array.isArray(data.sessions) ? data.sessions : []).slice(0, 50).map(sanitizeSession).filter(item => item.id);
       },
       async revokeSession(sessionId) {
         const data = await request("/api/auth/session-revoke", { method: "POST", body: JSON.stringify({ sessionId: text(sessionId, 120) }) });
@@ -214,8 +258,8 @@
     updateOnline();
     globalScope.addEventListener?.("online", updateOnline, { signal });
     globalScope.addEventListener?.("offline", updateOnline, { signal });
-    const standalone = globalScope.matchMedia?.("(display-mode: standalone)")?.matches || globalScope.navigator?.standalone === true;
-    page.querySelector("[data-system-pwa]").textContent = standalone ? "Đang chạy dạng ứng dụng" : globalScope.navigator?.serviceWorker ? "Trình duyệt hỗ trợ" : "Không hỗ trợ";
+    const capabilities = capabilitySnapshot(globalScope);
+    page.querySelector("[data-system-pwa]").textContent = capabilities.installMode === "standalone" ? "Đang chạy dạng ứng dụng" : capabilities.serviceWorker ? "Trình duyệt hỗ trợ" : "Không hỗ trợ";
 
     const renderSessions = sessions => {
       page.querySelector("[data-system-sessions]").innerHTML = sessions.length ? sessions.map(session => `<article><div><strong>${escapeHtml(session.device?.label || `${session.device?.browser || "Trình duyệt"} · ${session.device?.platform || "Thiết bị"}`)}</strong><small>${session.current ? "Phiên hiện tại" : `Hoạt động ${escapeHtml(session.lastSeenAt ? new Date(session.lastSeenAt).toLocaleString("vi-VN") : "chưa rõ")}`}</small></div><button type="button" data-system-revoke="${escapeHtml(session.id)}">${session.current ? "Đăng xuất phiên này" : "Thu hồi"}</button></article>`).join("") : '<p class="system-empty">Không có phiên đang hoạt động hoặc backend chưa trả dữ liệu.</p>';
@@ -284,5 +328,5 @@
     else controllers.forEach?.(controller => controller.abort());
   }
 
-  return Object.freeze({ VERSION, INTEGRATION_VERSION, STORAGE_KEY, BACKUP_SCHEMA, sanitize, migrate, createStore, createFetchAdapter, accessSnapshot, mount, unmount });
+  return Object.freeze({ VERSION, INTEGRATION_VERSION, STORAGE_KEY, BACKUP_SCHEMA, sanitize, sanitizeSession, normalizeQuota, capabilitySnapshot, migrate, createStore, createFetchAdapter, accessSnapshot, mount, unmount });
 });

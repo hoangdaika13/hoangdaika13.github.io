@@ -113,6 +113,17 @@ test("Catch-up adapter output needs an explicit connected acknowledgement", () =
   assert.equal(api.normalizeCatchUpAdapterResult({ ok: true, connected: true, summary: ["x"], provider: "hh" }).label, "TÓM TẮT TỪ MÁY CHỦ ĐÃ XÁC NHẬN");
 });
 
+test("Catch-up is private by default and gates adapter transfer per action", () => {
+  const api = loadApi();
+  const state = api.normalizeState({ preferences: {} });
+  assert.equal(state.preferences.rememberCatchUp, false);
+  assert.match(source, /data-hci-remote-consent/);
+  assert.match(source, /data-hci-remember-catch/);
+  assert.match(source, /remoteConsent && typeof options\.catchUpAdapter/);
+  assert.match(source, /rememberCatchUp \? \[catchUpResult/);
+  assert.match(css, /\.hci-catch-consent/);
+});
+
 test("notification filters respect mute while allowing important people", () => {
   const api = loadApi();
   const state = api.normalizeState({

@@ -70,6 +70,9 @@ test("Phân tích ships privacy-safe realtime intelligence and aggregate admin d
   assert.match(client, /cohortRows/);
   assert.match(client, /clickRegion/);
   assert.match(client, /detectAnomalies/);
+  assert.match(client, /classifyBrowserError/);
+  assert.match(client, /securitypolicyviolation/);
+  assert.match(client, /d30:/);
   assert.match(client, /assignExperiment/);
   assert.match(client, /adapter\?\.confirmed === true/);
   assert.match(client, /Demo cục bộ/);

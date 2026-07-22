@@ -44,6 +44,23 @@ test("adaptive review scheduling responds to all four ratings", () => {
   assert.equal(good.history[0].rating, "good");
 });
 
+test("review forecast separates overdue, new and relearning load", () => {
+  const now = Date.UTC(2026, 6, 22, 12);
+  const state = core.defaultState(now);
+  state.reviews = [
+    { id: "overdue", prompt: "a", answer: "b", dueAt: "2026-07-20T09:00:00.000Z", skillId: "vocabulary", repetitions: 2, lapses: 0, intervalDays: 2 },
+    { id: "new", prompt: "c", answer: "d", dueAt: "2026-07-22T18:00:00.000Z", skillId: "grammar", repetitions: 0, lapses: 0, intervalDays: 0 },
+    { id: "again", prompt: "e", answer: "f", dueAt: "2026-07-23T08:00:00.000Z", skillId: "speaking", repetitions: 3, lapses: 1, lastRating: "again", intervalDays: 0 }
+  ];
+  const forecast = core.reviewForecast(state, 7, now);
+  assert.equal(forecast.overdue, 1);
+  assert.equal(forecast.totalDue, 3);
+  assert.equal(forecast.buckets[0].new, 1);
+  assert.equal(forecast.buckets[1].relearning, 1);
+  assert.equal(forecast.deterministic, true);
+  assert.equal(core.buildDailyPlan(state, now).reviewForecast.totalDue, 3);
+});
+
 test("skill graph and adaptive path explain recommendations without locking CEFR", () => {
   const state = core.defaultState();
   state.profile.level = "B1";

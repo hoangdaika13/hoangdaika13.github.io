@@ -11,6 +11,7 @@
   const INTEGRATION_VERSION = "support-platform.v12";
   const STORAGE_KEY = "hh.support.pending.v2";
   const LEGACY_STORAGE_KEY = "hh-payos-pending";
+  const DONATION_STATUSES = Object.freeze(["pending", "submitted", "verified", "refunded", "rejected", "payment_error"]);
   let refreshTimer = 0;
   let paymentPollTimer = 0;
   let paymentCountdownTimer = 0;
@@ -20,19 +21,45 @@
   const dateText = value => value ? new Date(value).toLocaleString("vi-VN", { dateStyle: "medium", timeStyle: "short" }) : "--";
   const getUser = () => { try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}"); } catch { return {}; } };
   const downloadText = (name, content) => { const anchor = document.createElement("a"); anchor.href = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" })); anchor.download = name; anchor.click(); setTimeout(() => URL.revokeObjectURL(anchor.href), 1200); };
+  const isPayOSCheckoutUrl = value => {
+    try { const url = new URL(String(value || "")); return url.protocol === "https:" && (url.hostname === "payos.vn" || url.hostname.endsWith(".payos.vn")); }
+    catch { return false; }
+  };
+
+  function donationLifecycle(input = {}) {
+    const status = DONATION_STATUSES.includes(input.status) ? input.status : "pending";
+    const receiptStatus = String(input.receipt?.status || "waiting_payment").slice(0, 40);
+    const refundStatus = String(input.refund?.status || "not_requested").slice(0, 40);
+    const paymentConfirmed = status === "verified" || status === "refunded";
+    const refundConfirmed = status === "refunded" && refundStatus === "confirmed" && Boolean(String(input.refund?.providerReference || "").trim());
+    return {
+      status,
+      paymentConfirmed,
+      refundConfirmed,
+      terminal: ["refunded", "rejected", "payment_error"].includes(status),
+      steps: [
+        { id: "intent", state: "done" },
+        { id: "payment", state: ["rejected", "payment_error"].includes(status) ? "failed" : paymentConfirmed || status === "submitted" ? "done" : "current" },
+        { id: "verification", state: paymentConfirmed ? "done" : ["rejected", "payment_error"].includes(status) ? "blocked" : "waiting" },
+        { id: "receipt", state: receiptStatus === "sent" ? "done" : paymentConfirmed ? ["failed", "not_configured", "missing_email"].includes(receiptStatus) ? "attention" : "current" : "waiting" },
+        { id: "refund", state: refundConfirmed ? "done" : input.refund ? "waiting-provider" : "not-requested" }
+      ],
+      source: "backend-status-only"
+    };
+  }
 
   function normalizePending(input) {
     if (!input || typeof input !== "object") return null;
     const id = String(input.id || "").slice(0, 120);
     const reference = String(input.reference || "").slice(0, 40);
     const checkoutUrl = String(input.checkoutUrl || "").slice(0, 1200);
-    if (!id || !reference || !checkoutUrl.startsWith("https://")) return null;
+    if (!id || !reference || !isPayOSCheckoutUrl(checkoutUrl)) return null;
     return {
       version: VERSION,
       id,
       reference,
       amount: Math.max(0, Math.min(1000000000, Math.round(Number(input.amount) || 0))),
-      status: ["pending", "submitted", "verified", "refunded", "rejected", "payment_error"].includes(input.status) ? input.status : "pending",
+      status: ["pending", "submitted"].includes(input.status) ? input.status : "pending",
       checkoutUrl,
       qrImage: String(input.qrImage || "").startsWith("data:image/") ? String(input.qrImage).slice(0, 1500000) : "",
       pollUntil: Math.max(0, Number(input.pollUntil) || 0)
@@ -48,7 +75,7 @@
     };
     return {
       async open({ checkoutUrl, onProviderAccepted, onCancel, onExit }) {
-        if (!String(checkoutUrl || "").startsWith("https://")) throw new Error("payOS chưa trả về checkout URL hợp lệ.");
+        if (!isPayOSCheckoutUrl(checkoutUrl)) throw new Error("payOS chưa trả về checkout URL hợp lệ.");
         const sdk = await waitUntilReady();
         const returnUrl = new URL(scope.location?.pathname || "/", scope.location?.origin || "https://localhost").href;
         const controller = sdk.usePayOS({
@@ -411,9 +438,10 @@
       const receiptLabels = { sent: "Đã gửi", sending: "Đang gửi", failed: "Gửi lỗi", not_configured: "Chưa cấu hình", missing_email: "Thiếu email", pending: "Đang chờ", waiting_payment: "Chờ thanh toán" };
       page.querySelector("[data-support-admin-list]").innerHTML = list.length ? list.map(item => {
         const receipt = item.receipt || {};
+        const lifecycle = donationLifecycle(item);
         const canRetry = item.status === "verified" && receipt.status !== "sent";
         const refundPending = item.status === "verified" && item.refund?.status && item.refund.status !== "confirmed";
-        return `<article data-donation-id="${escapeHtml(item.id)}"><header><div><strong>${escapeHtml(item.donorName)}</strong><span>${escapeHtml(item.reference)}</span></div><b>${money(item.amount)}</b></header><p>${escapeHtml(item.message || "Không có lời nhắn")}</p><dl><div><dt>Email</dt><dd>${escapeHtml(item.email || "--")}</dd></div><div><dt>Tạo lúc</dt><dd>${dateText(item.createdAt)}</dd></div><div><dt>Trạng thái</dt><dd><span class="support-status support-status--${escapeHtml(item.status)}">${({ pending: "Chờ chuyển", submitted: "Đã báo chuyển", verified: "Đã xác minh từ backend", refunded: "Đã hoàn tiền", rejected: "Từ chối" })[item.status] || item.status}</span></dd></div><div><dt>Thư cảm ơn</dt><dd><span class="support-status support-status--receipt-${escapeHtml(receipt.status)}">${receiptLabels[receipt.status] || receipt.status || "Đang chờ"}</span></dd></div><div><dt>Hoàn tiền</dt><dd>${escapeHtml(item.refund?.status || "Chưa yêu cầu")}</dd></div></dl>${receipt.lastError ? `<p class="support-admin-error">${escapeHtml(receipt.lastError)}</p>` : ""}<footer>${canRetry ? '<button type="button" data-support-receipt-retry>Gửi lại email</button>' : ""}${item.status === "verified" && !item.refund ? '<button type="button" data-support-refund-request>Yêu cầu đối soát hoàn tiền</button>' : ""}${refundPending ? '<button type="button" data-support-refund-reconcile>Kiểm tra provider</button>' : ""}${["pending","submitted"].includes(item.status) ? '<button type="button" data-support-admin-action="pending">Đưa về chờ</button><button class="danger" type="button" data-support-admin-action="rejected">Từ chối</button>' : ""}</footer></article>`;
+        return `<article data-donation-id="${escapeHtml(item.id)}"><header><div><strong>${escapeHtml(item.donorName)}</strong><span>${escapeHtml(item.reference)}</span></div><b>${money(item.amount)}</b></header><p>${escapeHtml(item.message || "Không có lời nhắn")}</p><dl><div><dt>Email</dt><dd>${escapeHtml(item.email || "--")}</dd></div><div><dt>Tạo lúc</dt><dd>${dateText(item.createdAt)}</dd></div><div><dt>Trạng thái</dt><dd><span class="support-status support-status--${escapeHtml(item.status)}">${({ pending: "Chờ chuyển", submitted: "Đã báo chuyển", verified: "Đã xác minh từ backend", refunded: "Đã hoàn tiền", rejected: "Từ chối" })[item.status] || item.status}</span></dd></div><div><dt>Thư cảm ơn</dt><dd><span class="support-status support-status--receipt-${escapeHtml(receipt.status)}">${receiptLabels[receipt.status] || receipt.status || "Đang chờ"}</span></dd></div><div><dt>Hoàn tiền</dt><dd>${escapeHtml(item.refund?.status || "Chưa yêu cầu")}</dd></div></dl><small data-support-reconciliation="${escapeHtml(lifecycle.source)}">Đối soát: ${lifecycle.steps.map((step) => `${step.id}:${step.state}`).join(" · ")}</small>${receipt.lastError ? `<p class="support-admin-error">${escapeHtml(receipt.lastError)}</p>` : ""}<footer>${canRetry ? '<button type="button" data-support-receipt-retry>Gửi lại email</button>' : ""}${item.status === "verified" && !item.refund ? '<button type="button" data-support-refund-request>Yêu cầu đối soát hoàn tiền</button>' : ""}${refundPending ? '<button type="button" data-support-refund-reconcile>Kiểm tra provider</button>' : ""}${["pending","submitted"].includes(item.status) ? '<button type="button" data-support-admin-action="pending">Đưa về chờ</button><button class="danger" type="button" data-support-admin-action="rejected">Từ chối</button>' : ""}</footer></article>`;
       }).join("") : '<p class="support-empty">Không có giao dịch ở trạng thái này.</p>';
     };
     const loadAdmin = async () => {
@@ -478,7 +506,7 @@
       try {
         const data = await api("", { method: "POST", body: { action: "payos:create", amount: selectedAmount(), donorName: page.querySelector("[data-support-name]").value, email: page.querySelector("[data-support-email]").value, message: page.querySelector("[data-support-message]").value, anonymous: page.querySelector("[data-support-anonymous]").checked } });
         const checkoutUrl = String(data.payos?.checkoutUrl || "");
-        if (!checkoutUrl.startsWith("https://")) throw new Error("payOS chưa trả về giao diện VietQR hợp lệ.");
+        if (!isPayOSCheckoutUrl(checkoutUrl)) throw new Error("payOS chưa trả về giao diện VietQR hợp lệ.");
         currentDonation = { ...data.donation, checkoutUrl, qrImage: String(data.payos?.qrImage || ""), pollUntil: Date.now() + (Number(data.payos?.expiresIn) || 1800) * 1000 };
         rememberPending(currentDonation);
         updatePaymentSummary();
@@ -535,5 +563,5 @@
     clearInterval(paymentCountdownTimer);
   }
 
-  return Object.freeze({ VERSION, INTEGRATION_VERSION, STORAGE_KEY, normalizePending, createPayOSCheckoutAdapter, mount, unmount });
+  return Object.freeze({ VERSION, INTEGRATION_VERSION, STORAGE_KEY, isPayOSCheckoutUrl, normalizePending, donationLifecycle, createPayOSCheckoutAdapter, mount, unmount });
 });
