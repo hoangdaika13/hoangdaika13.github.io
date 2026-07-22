@@ -239,7 +239,7 @@ const CORE = [
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
   "./english-learning.js?v=13",
-  "./config.js?v=7",
+  "./config.js?v=8",
   "./data/ai-super-platform-modules.json"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
