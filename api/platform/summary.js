@@ -50,6 +50,47 @@ function rolloutBucket(identity, key) {
   return [...`${identity}:${key}`].reduce((value, character) => ((value * 31) + character.charCodeAt(0)) >>> 0, 7) % 100;
 }
 
+function readinessSnapshot({ databaseConnected = false } = {}) {
+  const has = (...names) => names.every((name) => Boolean(String(process.env[name] || "").trim()));
+  const gemini = Boolean(String(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "").trim());
+  const googleSearch = has("GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID");
+  const youtube = Boolean(String(process.env.YOUTUBE_API_KEY || "").trim());
+  const payos = has("PAYOS_CLIENT_ID", "PAYOS_API_KEY", "PAYOS_CHECKSUM_KEY");
+  const email = has("RESEND_API_KEY", "EMAIL_FROM");
+  const eleven = Boolean(String(process.env.ELEVENLABS_API_KEY || "").trim());
+  const downloader = Boolean(String(process.env.VIDEO_DOWNLOADER_API_URL || "").trim());
+  const objectStorage = has("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY");
+  const missing = [];
+  if (!email) missing.push({ id: "email-verification", label: "Xác minh email", connect: "Resend API + EMAIL_FROM đã xác minh" });
+  if (!googleSearch) missing.push({ id: "google-search", label: "Google JSON Search", connect: "Google Custom Search JSON API + Engine ID" });
+  if (!eleven) missing.push({ id: "elevenlabs", label: "Music/Sound AI", connect: "ELEVENLABS_API_KEY" });
+  if (!downloader) missing.push({ id: "download-engine", label: "Download Center", connect: "VIDEO_DOWNLOADER_API_URL và khóa engine" });
+  if (!objectStorage) missing.push({ id: "object-storage", label: "Cloud Storage file lớn", connect: "S3/R2 bucket và credentials server-side" });
+  missing.push({ id: "realtime-server", label: "Realtime/Socket.io", connect: "Render cần MONGODB_URI và JWT_SECRET giống Vercel" });
+  return {
+    checkedAt: new Date(),
+    database: { configured: Boolean(process.env.MONGODB_URI), connected: databaseConnected, database: process.env.MONGODB_DB || "hoangdaika13_site" },
+    auth: {
+      googleOAuth: has("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"),
+      passkey: true,
+      emailVerification: email,
+      captcha: has("TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY")
+    },
+    search: {
+      googleConfigured: googleSearch,
+      youtubeConfigured: youtube,
+      provider: process.env.VERTEX_SEARCH_PROJECT_ID && process.env.VERTEX_SEARCH_APP_ID ? "vertex-ai-search" : googleSearch ? "programmable-search" : "none",
+      note: googleSearch ? "Đã có khóa; cần live query để xác minh API đã được bật trong Google Cloud." : "Chưa có đủ cấu hình."
+    },
+    ai: { gemini: gemini, geminiKeySource: process.env.GEMINI_API_KEYS ? "gemini-pool" : process.env.GEMINI_API_KEY ? "gemini" : process.env.GOOGLE_AI_API_KEY ? "google-ai" : "none", elevenLabs: eleven },
+    payments: { payos, donationReceiptEmail: email },
+    storage: { metadata: true, smallTextPayload: true, objectStorage },
+    download: { engine: downloader },
+    realtime: { configuredInVercel: false, note: "Socket.io chạy ở Render, không nằm trong Vercel Function." },
+    requiresConnection: missing
+  };
+}
+
 module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db }) => {
     if (req.method === "POST") {
@@ -100,6 +141,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, acceptedEvents: events.length, online, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, checkedAt: now, policy: { restrictedFeatures: user && Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [], disabledFeatures }, privacy: { interactionMetadataStored: true, rawKeystrokesStored: false, formValuesStored: false, promptBodiesStored: false, passwordsStored: false, tokensStored: false, privateMessagesStored: false, retentionDays: 30 } });
     }
     if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+    if (req.query.view === "health") return res.status(200).json({ ok: true, health: readinessSnapshot({ databaseConnected: Boolean(db) }) });
     const user = await currentUser(req);
     if (!isAdminUser(user)) return res.status(403).json({ error: "Tài khoản không có quyền truy cập Admin Panel." });
     if (req.query.view === "users") {

@@ -15,6 +15,18 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
+// Express 4 does not forward rejected async handlers to its error middleware.
+// Keep dependency failures (especially MongoDB) from taking down the process.
+const asyncRoute = (handler) => (req, res, next) => {
+  Promise.resolve(handler(req, res, next)).catch(next);
+};
+for (const method of ["get", "post", "put", "patch", "delete"]) {
+  const register = app[method].bind(app);
+  app[method] = (...args) => register(...args.map((arg) => (
+    typeof arg === "function" && arg.constructor?.name === "AsyncFunction" ? asyncRoute(arg) : arg
+  )));
+}
+
 const PORT = Number(process.env.PORT || 4000);
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:4173";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
@@ -374,8 +386,25 @@ app.get("/live", (_req, res) => {
 });
 
 app.get("/health", async (_req, res) => {
-  await db();
-  res.json({ ok: true, service: "hoangdaika13-realtime" });
+  try {
+    await db();
+    return res.json({
+      ok: true,
+      service: "hoangdaika13-realtime",
+      database: { configured: true, connected: true },
+      calls: { turnConfigured: Boolean(process.env.TURN_URL && process.env.TURN_USERNAME && process.env.TURN_CREDENTIAL) },
+      checkedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    return res.status(503).json({
+      ok: false,
+      service: "hoangdaika13-realtime",
+      code: MONGODB_URI ? "DATABASE_UNAVAILABLE" : "DATABASE_NOT_CONFIGURED",
+      database: { configured: Boolean(MONGODB_URI), connected: false },
+      calls: { turnConfigured: Boolean(process.env.TURN_URL && process.env.TURN_USERNAME && process.env.TURN_CREDENTIAL) },
+      checkedAt: new Date().toISOString()
+    });
+  }
 });
 
 app.post("/api/auth/register", async (req, res) => {
@@ -634,6 +663,12 @@ registerCommunicationV2({
   hasMongo: Boolean(MONGODB_URI),
   hasRedis: false,
   hasObjectStorage: false
+});
+
+app.use((error, _req, res, _next) => {
+  console.error("Realtime HTTP error:", error?.message || error);
+  if (res.headersSent) return;
+  res.status(503).json({ ok: false, error: "Realtime backend dependency is unavailable." });
 });
 
 io.on("connection", async (socket) => {
@@ -1352,5 +1387,9 @@ io.on("connection", async (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Realtime server listening on ${PORT}`);
+  console.log(`Realtime server listening on ${PORT}`, {
+    databaseConfigured: Boolean(MONGODB_URI),
+    googleOAuthConfigured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    turnConfigured: Boolean(process.env.TURN_URL && process.env.TURN_USERNAME && process.env.TURN_CREDENTIAL)
+  });
 });
