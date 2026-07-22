@@ -413,18 +413,22 @@
   confirmPassword?.addEventListener("blur", () => syncPasswordConfirmation(confirmPassword, true));
   if (registerPassword) updatePasswordStrength(registerPassword);
 
-  gate.querySelectorAll("[data-auth-next-step]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      if (validateSignupStep()) setSignupStep(signupStep + 1);
+  // auth-platform owns real registration state. Keep this visual fallback only
+  // for standalone previews so one click can never run two competing steppers.
+  if (!window.HHAuthPlatform?.init) {
+    gate.querySelectorAll("[data-auth-next-step]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (validateSignupStep()) setSignupStep(signupStep + 1);
+      });
     });
-  });
-  gate.querySelectorAll("[data-auth-prev-step]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      setSignupStep(signupStep - 1);
+    gate.querySelectorAll("[data-auth-prev-step]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        setSignupStep(signupStep - 1);
+      });
     });
-  });
+  }
 
   const logos = [...gate.querySelectorAll('img[src*="hh-neon-logo"]')];
   const markLogoLoaded = (image) => {

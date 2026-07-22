@@ -146,6 +146,7 @@
     const note = document.querySelector("#realtimeNote");
     const consent = document.querySelector("#trackingConsent");
     if (!gate || !loginForm || !registerForm) return;
+    gate.dataset.authView = "login";
 
     let user = null;
     let socket = null;
@@ -273,14 +274,21 @@
       const qr = gate.querySelector("[data-qr-panel]");
       const emailVerify = gate.querySelector("[data-email-verify-panel]");
       const special = name === "recovery" || name === "qr" || name === "verify-email";
+      gate.dataset.authView = name;
       [authForms, social, divider, tabs].forEach((node) => { if (node) node.hidden = special; });
       if (recovery) recovery.hidden = name !== "recovery";
       if (qr) qr.hidden = name !== "qr";
       if (emailVerify) emailVerify.hidden = name !== "verify-email";
       if (!special) selectAuthPanel(name);
+      else setStatus({
+        recovery: "Khôi phục mật khẩu bằng email đã xác minh.",
+        qr: "Đăng nhập an toàn bằng thiết bị khác.",
+        "verify-email": "Nhập mã 6 số để hoàn tất xác minh email."
+      }[name]);
     };
 
     const selectAuthPanel = (name) => {
+      gate.dataset.authView = name;
       gate.querySelectorAll("[data-auth-tab]").forEach((tab) => {
         const active = tab.dataset.authTab === name;
         tab.classList.toggle("active", active);
@@ -300,6 +308,12 @@
         button.classList.toggle("complete", current < signupStep);
         button.setAttribute("aria-current", current === signupStep ? "step" : "false");
       });
+      const stepMessages = {
+        1: "Bước 1/3 · Tạo thông tin đăng nhập an toàn.",
+        2: "Bước 2/3 · Hoàn thiện hồ sơ hiển thị.",
+        3: "Bước 3/3 · Chọn sở thích để cá nhân hóa HH."
+      };
+      if (!registerForm.hidden) setStatus(stepMessages[signupStep]);
       window.HHAuthExperience?.setSignupStep?.(signupStep);
       const active = registerForm.querySelector(`[data-signup-step="${signupStep}"]`);
       active?.querySelector("input:not([type=hidden]), button")?.focus({ preventScroll: true });

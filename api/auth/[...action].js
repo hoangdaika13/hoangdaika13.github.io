@@ -688,6 +688,21 @@ module.exports = async function handler(req, res) {
       const frontend = frontendOrigin(req.query.returnTo);
       if (!clientId || !clientSecret) return redirectError(res, frontend, "Đăng nhập Google chưa được cấu hình trên máy chủ.");
       const redirectUri = callbackUrl(req, provider);
+      // OAuth state is bound to an HttpOnly nonce cookie. When a legacy callback URL
+      // points at another Vercel alias, start the flow on that same origin so the
+      // browser returns the nonce cookie to the callback instead of rejecting every
+      // Google sign-in as an expired session.
+      try {
+        const callbackOrigin = new URL(redirectUri).origin;
+        const requestOrigin = appOrigin(req);
+        if (callbackOrigin !== requestOrigin) {
+          const bootstrap = new URL(`/api/auth/${provider}`, callbackOrigin);
+          bootstrap.searchParams.set("returnTo", frontend);
+          return res.redirect(bootstrap.toString());
+        }
+      } catch {
+        return redirectError(res, frontend, "Địa chỉ callback Google không hợp lệ.");
+      }
       const nonce = crypto.randomBytes(24).toString("base64url");
       const state = signOAuthState(provider, frontend, nonce);
       oauthCookie(res, provider, nonce);

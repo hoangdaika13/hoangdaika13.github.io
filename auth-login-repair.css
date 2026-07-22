@@ -1,0 +1,206 @@
+/* Login repair layer: keep the primary authentication path visible and reachable. */
+@layer pages {
+  .home-neon.auth-locked #authGate {
+    align-items: start;
+    padding: 18px clamp(18px, 3vw, 44px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .home-neon.auth-locked #authGate .auth-gate-card {
+    gap: 10px;
+    width: min(610px, 100%);
+    max-height: none;
+    padding: 18px 20px;
+    overflow: visible;
+  }
+
+  /* These status visualizations duplicate the live status and returning-user card. */
+  .home-neon.auth-locked #authGate :where(.hh-quantum-flow, .auth-memory-ribbon, .auth-motion-control, .auth-card-footer) {
+    display: none !important;
+  }
+
+  .home-neon.auth-locked #authGate .auth-card-heading {
+    min-height: 48px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-gate-status {
+    min-height: 34px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-mode-tabs button {
+    min-height: 42px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-provider {
+    min-height: 48px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-gate-forms form,
+  .home-neon.auth-locked #authGate .auth-step-panel {
+    gap: 9px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-input-shell,
+  .home-neon.auth-locked #authGate .auth-gate-forms input[type="text"],
+  .home-neon.auth-locked #authGate .auth-gate-forms input[type="email"],
+  .home-neon.auth-locked #authGate .auth-gate-forms input[type="password"] {
+    min-height: 44px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-privacy-panel {
+    min-height: 40px;
+    padding: 9px 11px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-privacy-panel summary {
+    min-height: 20px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-guest-row > button {
+    min-height: 48px;
+  }
+
+  @media (min-width: 1101px) {
+    .home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: end;
+      column-gap: 10px;
+    }
+
+    .home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm > :where(.auth-captcha, .auth-passkey-row, .auth-trust-row) {
+      grid-column: 1 / -1;
+    }
+
+    .home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm .auth-form-options,
+    .home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm .auth-submit {
+      min-height: 44px;
+    }
+
+    .home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm .auth-submit {
+      align-self: stretch;
+    }
+
+    .home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm .auth-passkey-row > button {
+      min-height: 50px;
+    }
+
+    .home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm .auth-trust-row {
+      display: none;
+    }
+  }
+
+  @media (min-width: 1101px) and (max-height: 820px) {
+    .home-neon.auth-locked #authGate .auth-gate-brand {
+      gap: 12px;
+    }
+
+    .home-neon.auth-locked #authGate .auth-gate-brand > p:not(.section-kicker),
+    .home-neon.auth-locked #authGate .auth-benefits {
+      display: none !important;
+    }
+
+    .home-neon.auth-locked #authGate .auth-gate-brand > h1 {
+      font-size: clamp(38px, 4vw, 52px);
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .home-neon.auth-locked #authGate {
+      padding: 14px;
+    }
+
+    .home-neon.auth-locked #authGate .auth-gate-card {
+      order: 1;
+      justify-self: center;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .home-neon.auth-locked #authGate {
+      display: block !important;
+      padding: 8px;
+    }
+
+    .home-neon.auth-locked #authGate .auth-gate-brand {
+      display: none !important;
+    }
+
+    .home-neon.auth-locked #authGate .auth-gate-card {
+      width: 100%;
+      padding: 14px 12px;
+      border-radius: 16px;
+    }
+
+    .home-neon.auth-locked #authGate .auth-card-heading {
+      grid-template-columns: 40px minmax(0, 1fr);
+    }
+
+    .home-neon.auth-locked #authGate .auth-secure-badge {
+      display: none;
+    }
+
+    .home-neon.auth-locked #authGate .auth-passkey-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+}
+
+/* Consent center ships unlayered rules, so these overrides must also be unlayered. */
+body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) {
+  right: 14px;
+  bottom: 14px;
+  left: auto;
+  display: grid !important;
+  width: min(430px, calc(100vw - 28px));
+  gap: 10px;
+  padding: 14px;
+}
+
+body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+}
+
+body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) button {
+  min-width: 0;
+  padding: 9px 8px;
+  white-space: normal;
+}
+
+@media (max-width: 560px) {
+  body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) {
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    width: calc(100vw - 16px);
+    max-height: min(44vh, 350px);
+    gap: 7px;
+    padding: 11px;
+    overflow: auto;
+  }
+
+  body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) small {
+    font-size: 11px;
+  }
+
+  body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) strong {
+    font-size: 14px;
+  }
+
+  body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) p {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) > div:last-child {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) button.primary {
+    grid-column: 1 / -1;
+  }
+}

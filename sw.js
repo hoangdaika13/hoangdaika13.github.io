@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v189";
+const CACHE = "hh-identity-portal-v190";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
@@ -111,8 +111,8 @@ const RUNTIME_ASSETS = [
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
   "./assets/hh-neon-logo-v2.png?v=3",
-  "./auth-platform.js?v=3",
-  "./auth-experience.js?v=7",
+  "./auth-platform.js?v=4",
+  "./auth-experience.js?v=8",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -180,6 +180,7 @@ const RUNTIME_ASSETS = [
   "./community-admin.js?v=7",
   "./insights-pro.css?v=1",
   "./privacy-consent-center.css?v=2",
+  "./auth-login-repair.css?v=1",
   "./motion-comfort.css?v=1",
   "./insights-pro.js?v=4",
   "./privacy-consent-center.js?v=2",
@@ -255,7 +256,7 @@ const CORE = [
   "./assets/hh-neon-logo-v2.png?v=3",
   "./config.js?v=8",
   "./performance-loader.js?v=1",
-  "./auth-platform.js?v=3",
+  "./auth-platform.js?v=4",
   "./script.js?v=123"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
