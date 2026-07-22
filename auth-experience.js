@@ -203,7 +203,8 @@
     const field = input.closest(".auth-field");
     if (!field) return;
     const hasValue = Boolean(input.value.trim());
-    const valid = input.checkValidity();
+    // Reading validity avoids recursively firing the `invalid` listener.
+    const valid = input.validity.valid;
     const shouldShowInvalid = touched && !valid;
     field.classList.toggle("has-value", hasValue);
     field.classList.toggle("is-valid", hasValue && valid);

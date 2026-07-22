@@ -24,7 +24,7 @@ test("home experience assets are loaded and cached", () => {
     assert.ok(index.includes(asset), `${asset} must be loaded by index.html`);
     assert.ok(worker.includes(`./${asset}`), `${asset} must be cached for offline use`);
   }
-  assert.match(worker, /const CACHE = "hh-identity-portal-v181"/);
+  assert.match(worker, /const CACHE = "hh-identity-portal-v182"/);
 });
 
 test("home enhancements load after the existing Command Center runtime", () => {

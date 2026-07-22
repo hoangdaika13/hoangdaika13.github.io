@@ -2,51 +2,101 @@
   "use strict";
 
   const STORAGE_KEY = "hh.auth.selected-universe";
+  const PENDING_ROUTE_KEY = "hh.auth.pending-route";
   const ROTATION_DELAY = 8000;
   const INTERACTION_PAUSE = 16000;
-  const modules = [
+  const modules = Object.freeze([
     {
-      id: "ai",
-      short: "AI",
-      label: "AI Center",
-      eyebrow: "Trí tuệ sáng tạo",
-      description: "Khám phá chat đa mô hình, prompt thông minh và workflow AI trong chế độ xem trước an toàn.",
-      capabilities: ["Multi AI", "Prompt Lab", "Workflow"]
+      id: "home", short: "HH", label: "Trang chủ", eyebrow: "Trung tâm điều khiển", route: "/home",
+      color: "#62e9f2", orbit: 1, angle: 0,
+      description: "Đi vào Command Center với lịch, công việc, ghi chú, trạng thái hệ thống và các lối tắt cá nhân.",
+      capabilities: ["Command Center", "Widgets", "Today"]
     },
     {
-      id: "music",
-      short: "MU",
-      label: "Music Studio",
-      eyebrow: "Âm thanh và sản xuất",
-      description: "Xem trước không gian sáng tác, phối khí, mix, master và chuẩn bị nội dung xuất bản.",
+      id: "create", short: "AI", label: "Sáng tạo", eyebrow: "AI và sản xuất nội dung", route: "/create",
+      color: "#ff5dc8", orbit: 1, angle: 120,
+      description: "Không gian AI Center, Kịch bản AI, Creator Studio, Media Center và tự động hóa sáng tạo.",
+      capabilities: ["AI Center", "Creator", "Automation"]
+    },
+    {
+      id: "music-ai", short: "MU", label: "Làm nhạc AI", eyebrow: "Âm thanh và xuất bản", route: "/music-ai/studio",
+      color: "#72eadb", orbit: 1, angle: 240,
+      description: "Sáng tác, viết lời, phối khí, mix, master, làm video và chuẩn bị nội dung xuất bản YouTube.",
       capabilities: ["Composer", "Timeline", "Master"]
     },
     {
-      id: "design",
-      short: "DS",
-      label: "Design Studio",
-      eyebrow: "Thiết kế đa phương tiện",
-      description: "Khám phá photo, video, motion và bộ công cụ thiết kế dùng chung trong HH Creative Lab.",
-      capabilities: ["Photo", "Video", "Motion"]
+      id: "media-design", short: "MD", label: "Media & Design", eyebrow: "Biên tập đa phương tiện", route: "/media-design",
+      color: "#c87cff", orbit: 2, angle: 18,
+      description: "Photo Editor, Video Editor và bộ công cụ xử lý ảnh, tài liệu, màu sắc cùng typography.",
+      capabilities: ["Photo", "Video", "Toolkit"]
     },
     {
-      id: "learning",
-      short: "LE",
-      label: "Learning",
-      eyebrow: "Học tập cá nhân hóa",
-      description: "Xem lộ trình, bài học ngắn, ôn tập thông minh và phòng luyện kỹ năng theo mục tiêu.",
-      capabilities: ["Learning Path", "Smart Review", "Coach"]
+      id: "graphic-design", short: "GD", label: "Thiết kế đồ họa", eyebrow: "Motion, 3D và nhân vật", route: "/graphic-design",
+      color: "#ff65cf", orbit: 2, angle: 90,
+      description: "Thiết kế vector, hoạt ảnh, nhân vật, scene 3D, prototype và State Machine trong một studio.",
+      capabilities: ["Motion", "3D", "Character"]
     },
     {
-      id: "community",
-      short: "CO",
-      label: "Community",
-      eyebrow: "Kết nối thời gian thực",
-      description: "Xem trước bảng tin, Messenger HH, nhóm sáng tạo và không gian cộng tác của cộng đồng.",
-      capabilities: ["Feed", "Messenger", "Groups"]
+      id: "dev", short: "DV", label: "DEV", eyebrow: "Bộ công cụ lập trình", route: "/dev-tools",
+      color: "#61e7ff", orbit: 2, angle: 162,
+      description: "Xử lý dữ liệu, API, bảo mật, regex, database, code playground, Git và chẩn đoán web.",
+      capabilities: ["API Studio", "Data Lab", "Diagnostics"]
+    },
+    {
+      id: "work", short: "CV", label: "Công việc", eyebrow: "Dự án và cộng tác", route: "/work",
+      color: "#baf46b", orbit: 2, angle: 234,
+      description: "Quản lý project, cloud, download, wiki, store, team collaboration và workflow công việc.",
+      capabilities: ["Projects", "Team", "Workflow"]
+    },
+    {
+      id: "communication", short: "GT", label: "Giao tiếp", eyebrow: "Kết nối thời gian thực", route: "/communication",
+      color: "#5ee8d7", orbit: 2, angle: 306,
+      description: "Community, Messenger HH, thông báo, hỗ trợ, phản hồi và hồ sơ người dùng trong một nơi.",
+      capabilities: ["Community", "Messenger", "Inbox"]
+    },
+    {
+      id: "entertainment", short: "GX", label: "Giải trí", eyebrow: "Trải nghiệm và trò chơi", route: "/entertainment",
+      color: "#ff8a5b", orbit: 3, angle: 0,
+      description: "Khám phá các trải nghiệm tương tác, trò chơi vũ trụ và nội dung giải trí của HH Platform.",
+      capabilities: ["Universe", "Games", "Realtime"]
+    },
+    {
+      id: "insights", short: "PT", label: "Phân tích", eyebrow: "Dữ liệu và vận hành", route: "/analytics",
+      color: "#ffbd69", orbit: 3, angle: 60,
+      description: "Theo dõi analytics, tìm kiếm thông minh, quản trị, API, bảo mật và tình trạng nền tảng.",
+      capabilities: ["Analytics", "Search", "Admin"]
+    },
+    {
+      id: "learn", short: "HL", label: "Học tập", eyebrow: "Lộ trình cá nhân hóa", route: "/learn",
+      color: "#9a86ff", orbit: 3, angle: 120,
+      description: "Khóa học, bài luyện, Smart Review, kiểm tra, lớp học và AI Learning Coach theo mục tiêu.",
+      capabilities: ["Learning Path", "Review", "Classroom"]
+    },
+    {
+      id: "english", short: "EN", label: "HH English", eyebrow: "Tiếng Anh A0 đến C2", route: "/english",
+      color: "#60e9f2", orbit: 3, angle: 180,
+      description: "Học tiếng Anh theo trình độ, nghề nghiệp và kỹ năng với từ vựng, nghe nói và khảo sát tiến bộ.",
+      capabilities: ["A0-C2", "Speaking", "Vocabulary"]
+    },
+    {
+      id: "system", short: "SY", label: "Hệ thống", eyebrow: "Cài đặt và quyền riêng tư", route: "/system",
+      color: "#68dda8", orbit: 3, angle: 240,
+      description: "Quản lý cài đặt, giao diện, phiên đăng nhập, dữ liệu, quyền riêng tư và tính năng nền tảng.",
+      capabilities: ["Settings", "Security", "Privacy"]
+    },
+    {
+      id: "support", short: "UH", label: "Ủng hộ", eyebrow: "Đồng hành cùng HH", route: "/support",
+      color: "#ff6fae", orbit: 3, angle: 300,
+      description: "Ủng hộ nhà phát triển, theo dõi mục tiêu và cùng duy trì những công cụ miễn phí của HH.",
+      capabilities: ["Donate", "Goals", "Supporters"]
     }
-  ];
+  ]);
 
+  const orbitSettings = Object.freeze({
+    1: { radius: 72, duration: 38 },
+    2: { radius: 124, duration: 54 },
+    3: { radius: 176, duration: 72 }
+  });
   let instance = null;
 
   const readSelection = () => {
@@ -58,55 +108,83 @@
     }
   };
 
-  const writeSelection = (id) => {
-    try { sessionStorage.setItem(STORAGE_KEY, id); }
-    catch { /* Session storage can be unavailable in restricted browsing modes. */ }
+  const writeSelection = (item) => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, item.id);
+      sessionStorage.setItem(PENDING_ROUTE_KEY, `#${item.route}`);
+    } catch {
+      // Session storage can be unavailable in restricted browsing modes.
+    }
   };
 
+  const buildStars = () => Array.from({ length: 28 }, (_, index) => {
+    const x = (index * 37 + 11) % 97;
+    const y = (index * 53 + 7) % 93;
+    const size = 1 + (index % 3);
+    const delay = -((index * 0.37) % 4).toFixed(2);
+    return `<i style="--star-x:${x}%;--star-y:${y}%;--star-size:${size}px;--star-delay:${delay}s"></i>`;
+  }).join("");
+
   const buildMarkup = () => {
-    const planets = modules.map((item, index) => `
-      <span class="auth-universe-carrier">
-        <button
-          class="auth-universe-planet"
-          type="button"
-          role="tab"
-          id="authUniverseTab-${item.id}"
-          aria-controls="authUniversePreview"
-          aria-label="Xem trước ${item.label} ở chế độ khách"
-          aria-selected="${index === 0 ? "true" : "false"}"
-          tabindex="${index === 0 ? "0" : "-1"}"
-          data-universe-id="${item.id}"
+    const planets = modules.map((item, index) => {
+      const orbit = orbitSettings[item.orbit];
+      return `
+        <span
+          class="auth-universe-carrier"
+          data-orbit="${item.orbit}"
+          style="--orbit-radius:${orbit.radius}px;--orbit-angle:${item.angle}deg;--counter-angle:${-item.angle}deg;--orbit-duration:${orbit.duration}s"
         >
-          <span class="auth-universe-planet-face" aria-hidden="true">${item.short}</span>
-          <small aria-hidden="true">${item.label}</small>
-        </button>
-      </span>`).join("");
+          <button
+            class="auth-solar-planet"
+            type="button"
+            role="tab"
+            id="authUniverseTab-${item.id}"
+            aria-controls="authUniversePreview"
+            aria-label="Chọn ${item.label} làm không gian mở sau đăng nhập"
+            aria-selected="${index === 0 ? "true" : "false"}"
+            tabindex="${index === 0 ? "0" : "-1"}"
+            data-universe-id="${item.id}"
+            data-universe-route="${item.route}"
+            style="--planet-color:${item.color}"
+          >
+            <span class="auth-universe-planet-face" aria-hidden="true">${item.short}</span>
+            <small aria-hidden="true">${item.label}</small>
+          </button>
+        </span>`;
+    }).join("");
 
     return `
       <header class="auth-universe-heading">
-        <span>Creative Universe</span>
-        <small>5 không gian · Xem trước miễn phí</small>
+        <span>HH Solar Universe</span>
+        <small>${modules.length} hành tinh · Chọn nơi bắt đầu</small>
       </header>
       <div class="auth-universe-layout">
-        <div class="auth-universe-stage" role="tablist" aria-label="Chọn không gian HH để xem trước">
-          <span class="auth-universe-ring" aria-hidden="true"></span>
-          <span class="auth-universe-core" aria-hidden="true">HH</span>
+        <div class="auth-universe-stage" role="tablist" aria-label="Chọn không gian lớn trong HH Platform">
+          <span class="auth-universe-starfield" aria-hidden="true">${buildStars()}</span>
+          <span class="auth-universe-nebula" aria-hidden="true"></span>
+          <span class="auth-universe-orbit-ring" data-orbit="1" aria-hidden="true"></span>
+          <span class="auth-universe-orbit-ring" data-orbit="2" aria-hidden="true"></span>
+          <span class="auth-universe-orbit-ring" data-orbit="3" aria-hidden="true"></span>
+          <span class="auth-universe-core" aria-hidden="true"><b>HH</b><small>PLATFORM</small></span>
           ${planets}
         </div>
         <article
           class="auth-universe-preview"
           id="authUniversePreview"
           role="tabpanel"
-          aria-labelledby="authUniverseTab-ai"
-          data-active-universe="ai"
+          aria-labelledby="authUniverseTab-home"
+          data-active-universe="home"
         >
           <small data-universe-eyebrow></small>
           <h2 data-universe-title></h2>
           <p data-universe-description></p>
           <div class="auth-universe-capabilities" data-universe-capabilities aria-label="Chức năng tiêu biểu"></div>
+          <button class="auth-universe-select" type="button" data-universe-open>
+            <span>Chọn không gian này</span><b aria-hidden="true">→</b>
+          </button>
           <div class="auth-universe-guest-status">
-            <span data-universe-status>Di chuột hoặc dùng phím mũi tên để khám phá</span>
-            <b>Không rời trang đăng nhập</b>
+            <span data-universe-status aria-live="polite">Hành tinh đã chọn sẽ mở ngay sau khi đăng nhập</span>
+            <b data-universe-route-label></b>
           </div>
         </article>
       </div>`;
@@ -125,9 +203,11 @@
 
     const root = document.createElement("section");
     root.className = "auth-creative-universe";
-    root.setAttribute("aria-label", "Vũ trụ sản phẩm HH");
+    root.setAttribute("aria-label", "Hệ Mặt Trời sản phẩm HH");
     root.innerHTML = buildMarkup();
     brand.insertBefore(root, showcase);
+    showcase.classList.add("auth-universe-replaced");
+    showcase.setAttribute("aria-hidden", "true");
 
     const buttons = [...root.querySelectorAll("[data-universe-id]")];
     const preview = root.querySelector("#authUniversePreview");
@@ -136,6 +216,8 @@
     const description = root.querySelector("[data-universe-description]");
     const capabilities = root.querySelector("[data-universe-capabilities]");
     const status = root.querySelector("[data-universe-status]");
+    const routeLabel = root.querySelector("[data-universe-route-label]");
+    const openButton = root.querySelector("[data-universe-open]");
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)") || null;
     const pauseReasons = new Set();
     const cleanupTasks = [];
@@ -197,10 +279,12 @@
       if (preview) {
         preview.dataset.activeUniverse = item.id;
         preview.setAttribute("aria-labelledby", `authUniverseTab-${item.id}`);
+        preview.style.setProperty("--preview-color", item.color);
       }
       if (eyebrow) eyebrow.textContent = item.eyebrow;
       if (title) title.textContent = item.label;
       if (description) description.textContent = item.description;
+      if (routeLabel) routeLabel.textContent = item.route;
       if (capabilities) {
         capabilities.replaceChildren(...item.capabilities.map((label) => {
           const chip = document.createElement("span");
@@ -208,8 +292,8 @@
           return chip;
         }));
       }
-      if (status && announce) status.textContent = `Đã mở bản xem trước ${item.label}`;
-      else if (status && source === "auto") status.textContent = "Đang tự động khám phá các không gian HH";
+      if (status && announce) status.textContent = `Đã chọn ${item.label} · Sẵn sàng mở sau đăng nhập`;
+      else if (status && source === "auto") status.textContent = "Đang khám phá tự động toàn bộ vũ trụ HH";
 
       root.classList.remove("is-guest-preview");
       if (announce && !reducedMotion?.matches) {
@@ -220,18 +304,20 @@
       if (focus) buttons[activeIndex]?.focus({ preventScroll: true });
     }
 
-    const selectGuestPreview = (index, inputType) => {
+    const selectUniverse = (index, inputType) => {
       setActive(index, { source: inputType, announce: true });
       const item = modules[activeIndex];
-      writeSelection(item.id);
+      writeSelection(item);
       pauseAfterInteraction();
-      root.dispatchEvent(new CustomEvent("hh:auth-universe-select", {
-        bubbles: true,
+      window.dispatchEvent(new CustomEvent("hh:auth-universe-select", {
         detail: {
           id: item.id,
           label: item.label,
+          title: item.label,
+          route: item.route,
           index: activeIndex,
-          mode: "guest-preview",
+          mode: "login-destination",
+          source: inputType,
           inputType
         }
       }));
@@ -243,7 +329,7 @@
       listen(button, "click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        selectGuestPreview(index, event.detail === 0 ? "keyboard" : "pointer");
+        selectUniverse(index, event.detail === 0 ? "keyboard" : "pointer");
       });
       listen(button, "keydown", (event) => {
         const navigationKeys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
@@ -259,6 +345,7 @@
       });
     });
 
+    listen(openButton, "click", () => selectUniverse(activeIndex, "preview-button"));
     listen(root, "pointerenter", () => setPause("hover", true));
     listen(root, "pointerleave", () => setPause("hover", false));
     listen(root, "pointerdown", pauseAfterInteraction, { passive: true });
@@ -284,6 +371,8 @@
       interactionTimer = 0;
       cleanupTasks.splice(0).forEach((cleanup) => cleanup());
       observer?.disconnect();
+      showcase.classList.remove("auth-universe-replaced");
+      showcase.removeAttribute("aria-hidden");
       root.remove();
       instance = null;
     };
@@ -306,9 +395,10 @@
     instance = Object.freeze({
       available: true,
       root,
+      modules: modules.map(({ id, label, route }) => ({ id, label, route })),
       select: (id) => {
         const index = modules.findIndex((item) => item.id === id);
-        if (index >= 0) selectGuestPreview(index, "api");
+        if (index >= 0) selectUniverse(index, "api");
       },
       selected: () => modules[activeIndex].id,
       destroy

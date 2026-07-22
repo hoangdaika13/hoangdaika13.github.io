@@ -37,11 +37,15 @@ test("background animation is adaptive and pauses when it is not useful", () => 
 test("creative universe is keyboard accessible and remembers the selected module", () => {
   const css = read("auth-creative-universe.css");
   const client = read("auth-creative-universe.js");
-  for (const module of ["AI", "Music", "Design", "Learning", "Community"]) {
+  for (const module of [
+    "Trang chủ", "Sáng tạo", "Làm nhạc AI", "Media & Design", "Thiết kế đồ họa", "DEV",
+    "Công việc", "Giao tiếp", "Giải trí", "Phân tích", "Học tập", "HH English", "Hệ thống", "Ủng hộ"
+  ]) {
     assert.match(client, new RegExp(module, "i"));
   }
   assert.match(css, /orbit/i);
   assert.match(client, /hh\.auth\.selected-universe/);
+  assert.match(client, /hh\.auth\.pending-route/);
   assert.match(client, /hh:auth-universe-select/);
   assert.match(client, /ArrowLeft|ArrowRight|ArrowUp|ArrowDown/);
   assert.match(client, /8000|8_000/);
