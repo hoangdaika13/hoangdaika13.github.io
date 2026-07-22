@@ -12,6 +12,8 @@
   ];
   let frame = 0;
   let lastViewport = "";
+  let initialScrollReset = false;
+  let layoutSettled = false;
 
   const visible = (element) => Boolean(element && !element.hidden && element.getClientRects().length);
 
@@ -44,6 +46,13 @@
     }
   };
 
+  const resetRestoredScroll = () => {
+    if (initialScrollReset) return;
+    gate.scrollTop = 0;
+    gate.scrollLeft = 0;
+    initialScrollReset = true;
+  };
+
   const update = ({ reveal = false } = {}) => {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
@@ -57,7 +66,7 @@
       const hasSpecialPanel = specialPanels.some((selector) => visible(gate.querySelector(selector)));
       gate.dataset.authSpecialPanel = String(hasSpecialPanel);
 
-      if (reveal && panel && signature !== lastViewport) {
+      if (reveal && layoutSettled && panel && signature !== lastViewport) {
         panel.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
       }
       lastViewport = signature;
@@ -76,6 +85,11 @@
   window.visualViewport?.addEventListener("scroll", keepFocusReachable, { passive: true });
   gate.addEventListener("focusin", keepFocusReachable);
   update();
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    resetRestoredScroll();
+    layoutSettled = true;
+  }));
+  window.addEventListener("pageshow", resetRestoredScroll, { once: true });
 
   window.HHAuthZoomResilience = {
     inspect() {

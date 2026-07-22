@@ -163,8 +163,8 @@
       node.setAttribute("aria-label", "Quyền riêng tư và chuyển động");
       node.innerHTML = `
         <header class="auth-trust-director__heading">
-          <div><strong>Live Privacy Lens</strong><small>Chỉ hiển thị nhận dạng công khai trên thiết bị này</small></div>
-          <span class="auth-trust-director__live">Live</span>
+          <div><strong>QUYỀN RIÊNG TƯ TRỰC TIẾP</strong><small>Chỉ hiển thị nhận dạng công khai trên thiết bị này</small></div>
+          <span class="auth-trust-director__live">TRỰC TIẾP</span>
         </header>
         <section class="auth-trust-director__lens" aria-labelledby="authPrivacyLensTitle">
           <div class="auth-trust-director__section-head"><div><strong id="authPrivacyLensTitle">Dữ liệu đang được dùng</strong><small>Cập nhật trực tiếp, không gửi thêm dữ liệu</small></div></div>
@@ -180,11 +180,11 @@
           <small class="auth-trust-director__note" data-trust-note aria-live="polite">Bạn kiểm soát dữ liệu nhận dạng được ghi nhớ trên thiết bị.</small>
         </section>
         <section class="auth-trust-director__motion" aria-labelledby="authMotionDirectorTitle">
-          <div class="auth-trust-director__section-head"><div><strong id="authMotionDirectorTitle">Motion Director</strong><small>Chọn mức chuyển động phù hợp với thiết bị</small></div></div>
+          <div class="auth-trust-director__section-head"><div><strong id="authMotionDirectorTitle">CHẾ ĐỘ CHUYỂN ĐỘNG</strong><small>Chọn mức chuyển động phù hợp với thiết bị</small></div></div>
           <div class="auth-trust-director__motion-options" role="group" aria-label="Mức chuyển động">
             <button type="button" data-trust-motion="static" aria-pressed="false"><span>Tĩnh</span><small>Tối giản</small></button>
             <button type="button" data-trust-motion="balanced" aria-pressed="false"><span>Cân bằng</span><small>Mượt nhẹ</small></button>
-            <button type="button" data-trust-motion="cinematic" aria-pressed="false"><span>Cinematic</span><small>Đầy đủ</small></button>
+            <button type="button" data-trust-motion="cinematic" aria-pressed="false"><span>Điện ảnh</span><small>Đầy đủ</small></button>
           </div>
           <span class="auth-trust-director__motion-status" data-trust-motion-status aria-live="polite">Chuyển động đang hoạt động</span>
         </section>`;

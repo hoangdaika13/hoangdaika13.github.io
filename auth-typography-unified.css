@@ -1,0 +1,536 @@
+/* Final auth presentation layer: one readable type scale and one responsive layout. */
+.home-neon.auth-locked #authGate {
+  --auth-font: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --auth-text-xs: 11px;
+  --auth-text-sm: 12px;
+  --auth-text-md: 14px;
+  --auth-text-lg: 18px;
+  --auth-leading: 1.5;
+  align-content: start;
+  align-items: start;
+  gap: 48px;
+  padding: 48px;
+  color: #eef5ff;
+  font-family: var(--auth-font);
+  font-size: var(--auth-text-md);
+  font-synthesis: none;
+  line-height: var(--auth-leading);
+  scroll-padding-block: 24px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.home-neon.auth-locked #authGate,
+.home-neon.auth-locked #authGate *,
+.home-neon.auth-locked #authGate *::before,
+.home-neon.auth-locked #authGate *::after {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+.home-neon.auth-locked #authGate :where(button, input, select, textarea) {
+  font-family: var(--auth-font);
+  letter-spacing: 0;
+}
+
+.home-neon.auth-locked #authGate :where(p, small, strong, span, label, button, output, dt, dd, li) {
+  overflow-wrap: anywhere;
+}
+
+.home-neon.auth-locked #authGate .auth-gate-brand {
+  width: min(680px, 100%);
+  gap: 18px;
+}
+
+.home-neon.auth-locked #authGate .auth-brand-lockup .section-kicker {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.home-neon.auth-locked #authGate .auth-brand-lockup > div > span {
+  color: #b4c0d2;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.home-neon.auth-locked #authGate .auth-gate-brand > h1 {
+  max-width: 660px;
+  font-size: 50px;
+  line-height: 1.08;
+}
+
+.home-neon.auth-locked #authGate .auth-gate-brand > p:not(.section-kicker) {
+  max-width: 640px;
+  color: #c0cad8;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.home-neon.auth-locked #authGate .auth-gate-card {
+  width: min(610px, 100%);
+  gap: 14px;
+  padding: 24px;
+  border-radius: 18px;
+  color: #eaf2fc;
+}
+
+.home-neon.auth-locked #authGate .auth-card-heading {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.home-neon.auth-locked #authGate .auth-card-heading > div > small {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.home-neon.auth-locked #authGate .auth-card-heading strong {
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.home-neon.auth-locked #authGate .auth-card-heading p {
+  color: #a6b2c4;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.home-neon.auth-locked #authGate .auth-secure-badge {
+  min-height: 30px;
+  padding: 6px 9px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.home-neon.auth-locked #authGate .auth-gate-status,
+.home-neon.auth-locked #authGate .auth-provider-notice {
+  min-height: 40px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.home-neon.auth-locked #authGate .auth-mode-tabs button {
+  min-height: 46px;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.home-neon.auth-locked #authGate .auth-provider > span {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.home-neon.auth-locked #authGate .auth-provider span small,
+.home-neon.auth-locked #authGate .auth-divider,
+.home-neon.auth-locked #authGate .auth-field > span:first-child small {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.home-neon.auth-locked #authGate .auth-field {
+  gap: 7px;
+  color: #d4ddea;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.home-neon.auth-locked #authGate .auth-gate-forms input[type="text"],
+.home-neon.auth-locked #authGate .auth-gate-forms input[type="email"],
+.home-neon.auth-locked #authGate .auth-gate-forms input[type="password"],
+.home-neon.auth-locked #authGate .auth-recovery-otp input {
+  min-height: 48px;
+  color: #f7fbff;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.home-neon.auth-locked #authGate .auth-input-shell > i,
+.home-neon.auth-locked #authGate .auth-password button {
+  font-size: 11px;
+}
+
+.home-neon.auth-locked #authGate .auth-form-options,
+.home-neon.auth-locked #authGate .auth-captcha,
+.home-neon.auth-locked #authGate .password-strength,
+.home-neon.auth-locked #authGate .auth-password-rules,
+.home-neon.auth-locked #authGate .consent-line,
+.home-neon.auth-locked #authGate .auth-form-note {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.home-neon.auth-locked #authGate .auth-inline-error,
+.home-neon.auth-locked #authGate .auth-caps-warning,
+.home-neon.auth-locked #authGate .auth-field-hint {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.home-neon.auth-locked #authGate .auth-submit,
+.home-neon.auth-locked #authGate .auth-step-actions button,
+.home-neon.auth-locked #authGate .auth-mini-action {
+  min-height: 46px;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.home-neon.auth-locked #authGate .auth-passkey-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.home-neon.auth-locked #authGate .auth-passkey-row > button {
+  grid-template-columns: 34px minmax(0, 1fr);
+  min-height: 58px;
+}
+
+.home-neon.auth-locked #authGate .auth-passkey-row b,
+.home-neon.auth-locked #authGate .auth-guest-row b,
+.home-neon.auth-locked #authGate :where(.auth-passkey-row, .auth-guest-row) strong {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.home-neon.auth-locked #authGate :where(.auth-passkey-row, .auth-guest-row) > button > i,
+.home-neon.auth-locked #authGate :where(.auth-passkey-row, .auth-guest-row) > button > span {
+  font-size: 11px;
+}
+
+.home-neon.auth-locked #authGate .auth-passkey-row small,
+.home-neon.auth-locked #authGate .auth-guest-row small,
+.home-neon.auth-locked #authGate :where(.auth-passkey-row, .auth-guest-row) small {
+  color: #9ba9bc;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.home-neon.auth-locked #authGate .auth-guest-row > button > strong {
+  font-size: 11px;
+}
+
+.home-neon.auth-locked #authGate .auth-trust-row {
+  gap: 12px;
+  color: #98a7ba;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.home-neon.auth-locked #authGate .auth-returning-card strong {
+  font-size: 13px;
+}
+
+.home-neon.auth-locked #authGate .auth-returning-card small,
+.home-neon.auth-locked #authGate .auth-returning-card button {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.home-neon.auth-locked #authGate .auth-signup-steps > :where(button, li) {
+  min-height: 42px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.home-neon.auth-locked #authGate .auth-interest-fieldset legend {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.home-neon.auth-locked #authGate .auth-interest-fieldset > p,
+.home-neon.auth-locked #authGate .auth-avatar-picker small,
+.home-neon.auth-locked #authGate .auth-interest-grid :where(button, label) {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.home-neon.auth-locked #authGate :where(.auth-recovery-panel, .auth-email-verify-panel, .auth-qr-panel) > header strong {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.home-neon.auth-locked #authGate :where(.auth-recovery-panel, .auth-email-verify-panel, .auth-qr-panel) > header p,
+.home-neon.auth-locked #authGate :where(.auth-recovery-panel, .auth-email-verify-panel, .auth-qr-panel) [aria-live="polite"] {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.home-neon.auth-locked #authGate .auth-privacy-panel summary {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.home-neon.auth-locked #authGate .auth-privacy-panel p,
+.home-neon.auth-locked #authGate .auth-privacy-panel li {
+  color: #aebaca;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.home-neon.auth-locked #authGate .auth-card-footer span {
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+/* Live authentication progress. */
+.home-neon.auth-locked #authGate .hh-quantum-flow__header > span,
+.home-neon.auth-locked #authGate .hh-quantum-flow__header > output {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.home-neon.auth-locked #authGate .hh-quantum-step__node {
+  font-size: 10px;
+}
+
+.home-neon.auth-locked #authGate .hh-quantum-step__copy strong {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.home-neon.auth-locked #authGate .hh-quantum-step__copy small {
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+/* Recent workspace ribbon. */
+.home-neon.auth-locked #authGate .auth-memory-ribbon__head > span,
+.home-neon.auth-locked #authGate .auth-memory-ribbon__clear,
+.home-neon.auth-locked #authGate .auth-memory-ribbon__mark,
+.home-neon.auth-locked #authGate .auth-memory-ribbon__continue,
+.home-neon.auth-locked #authGate .auth-memory-ribbon__item,
+.home-neon.auth-locked #authGate .auth-memory-ribbon__empty {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.home-neon.auth-locked #authGate .auth-memory-ribbon__copy strong {
+  font-size: 12px;
+}
+
+.home-neon.auth-locked #authGate .auth-memory-ribbon__copy small {
+  font-size: 10px;
+}
+
+/* Privacy and motion controls. */
+.home-neon.auth-locked #authGate .auth-trust-director__heading strong,
+.home-neon.auth-locked #authGate .auth-trust-director__section-head strong {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.home-neon.auth-locked #authGate .auth-trust-director__heading small,
+.home-neon.auth-locked #authGate .auth-trust-director__section-head small,
+.home-neon.auth-locked #authGate .auth-trust-director__motion-status,
+.home-neon.auth-locked #authGate .auth-trust-director__note,
+.home-neon.auth-locked #authGate .auth-trust-director__live,
+.home-neon.auth-locked #authGate .auth-trust-director__identity dt,
+.home-neon.auth-locked #authGate .auth-trust-director__identity dd,
+.home-neon.auth-locked #authGate .auth-trust-director__switch,
+.home-neon.auth-locked #authGate .auth-trust-director__delete,
+.home-neon.auth-locked #authGate .auth-trust-director__motion-options button,
+.home-neon.auth-locked #authGate .auth-error-recovery {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.home-neon.auth-locked #authGate .auth-trust-director__motion-options button span {
+  font-size: 11px;
+}
+
+.home-neon.auth-locked #authGate .auth-trust-director__motion-options button small {
+  font-size: 10px;
+}
+
+.home-neon.auth-locked #authGate .auth-motion-control__label,
+.home-neon.auth-locked #authGate .auth-motion-control__options button,
+.home-neon.auth-locked #authGate .auth-emotional-sound-toggle {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* Product universe. Decorative labels remain compact but legible. */
+.home-neon.auth-locked #authGate .auth-universe-heading > span,
+.home-neon.auth-locked #authGate .auth-universe-heading > small {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.home-neon.auth-locked #authGate .auth-universe-core b {
+  font-size: 20px;
+}
+
+.home-neon.auth-locked #authGate .auth-universe-core small {
+  font-size: 9px;
+}
+
+.home-neon.auth-locked #authGate .auth-universe-planet-face {
+  font-size: 10px;
+}
+
+.home-neon.auth-locked #authGate .auth-solar-planet small {
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.home-neon.auth-locked #authGate .auth-universe-preview > small,
+.home-neon.auth-locked #authGate .auth-universe-capabilities span,
+.home-neon.auth-locked #authGate .auth-universe-guest-status {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.home-neon.auth-locked #authGate .auth-universe-preview h2 {
+  font-size: 26px;
+  line-height: 1.12;
+}
+
+.home-neon.auth-locked #authGate .auth-universe-preview p,
+.home-neon.auth-locked #authGate .auth-universe-select {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.home-neon.auth-locked #authGate .auth-benefits b {
+  font-size: 13px;
+}
+
+.home-neon.auth-locked #authGate .auth-benefits small,
+.home-neon.auth-locked #authGate .auth-benefits i {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+@media (max-width: 1280px) {
+  .home-neon.auth-locked #authGate {
+    gap: 24px;
+    padding: 28px 24px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-gate-brand > h1 {
+    font-size: 42px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .home-neon.auth-locked #authGate {
+    gap: 18px;
+    padding: 20px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-gate-card,
+  .home-neon.auth-locked #authGate .auth-gate-brand {
+    width: min(640px, 100%);
+  }
+}
+
+@media (max-width: 600px) {
+  .home-neon.auth-locked #authGate {
+    gap: 12px;
+    padding: 10px;
+    scroll-padding-block: 10px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-gate-card {
+    gap: 12px;
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-card-heading {
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .home-neon.auth-locked #authGate .auth-card-heading > span {
+    width: 44px;
+    height: 44px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-card-heading strong {
+    font-size: 17px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-secure-badge {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .home-neon.auth-locked #authGate .auth-gate-forms input[type="text"],
+  .home-neon.auth-locked #authGate .auth-gate-forms input[type="email"],
+  .home-neon.auth-locked #authGate .auth-gate-forms input[type="password"],
+  .home-neon.auth-locked #authGate .auth-recovery-otp input {
+    font-size: 16px;
+  }
+
+  .home-neon.auth-locked #authGate .hh-quantum-flow__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .home-neon.auth-locked #authGate .hh-quantum-flow__steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-neon.auth-locked #authGate .hh-quantum-step {
+    grid-template-columns: 30px minmax(0, 1fr);
+    min-height: 60px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-passkey-row,
+  .home-neon.auth-locked #authGate .auth-interest-grid,
+  .home-neon.auth-locked #authGate .auth-trust-director__identity {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-neon.auth-locked #authGate .auth-guest-row > button {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .home-neon.auth-locked #authGate .auth-guest-row > button > strong {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .home-neon.auth-locked #authGate .auth-signup-steps > :where(button, li) {
+    font-size: 11px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-universe-preview {
+    gap: 9px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-universe-preview h2 {
+    font-size: 22px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-universe-preview p {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  .home-neon.auth-locked #authGate {
+    padding: 6px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-gate-card {
+    padding: 15px 12px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-mode-tabs,
+  .home-neon.auth-locked #authGate .auth-step-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-neon.auth-locked #authGate .auth-step-actions {
+    display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-neon.auth-locked #authGate {
+    scroll-behavior: auto;
+  }
+}

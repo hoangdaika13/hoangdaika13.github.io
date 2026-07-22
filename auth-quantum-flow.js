@@ -6,7 +6,7 @@
     device: { number: "01", title: "Thiết bị", pending: "Chờ kiểm tra", active: "Đang kiểm tra", complete: "Thiết bị sẵn sàng", error: "Lỗi thiết bị" },
     identity: { number: "02", title: "Danh tính", pending: "Chờ xác minh", active: "Đang xác minh", complete: "Đã xác minh", error: "Lỗi danh tính" },
     session: { number: "03", title: "Phiên bảo mật", pending: "Chờ thiết lập", active: "Đang thiết lập", complete: "Phiên đã bảo vệ", error: "Lỗi phiên" },
-    workspace: { number: "04", title: "Workspace", pending: "Chờ mở", active: "Đang mở", complete: "Đã sẵn sàng", error: "Lỗi workspace" }
+    workspace: { number: "04", title: "Không gian", pending: "Chờ mở", active: "Đang mở", complete: "Đã sẵn sàng", error: "Lỗi không gian" }
   };
 
   const boot = () => {
@@ -50,7 +50,7 @@
     flow.setAttribute("aria-label", "Tiến trình xác thực");
     flow.innerHTML = `
       <header class="hh-quantum-flow__header">
-        <span>Quantum Authentication</span>
+        <span>TIẾN TRÌNH XÁC THỰC</span>
         <output data-quantum-summary>Đang đọc trạng thái xác thực</output>
       </header>
       <ol class="hh-quantum-flow__steps">

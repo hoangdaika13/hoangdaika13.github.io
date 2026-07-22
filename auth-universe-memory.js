@@ -211,7 +211,7 @@
     ribbon.setAttribute("aria-label", "Tiếp tục công việc gần đây");
     ribbon.innerHTML = `
       <header class="auth-memory-ribbon__head">
-        <span>Memory Ribbon</span>
+        <span>TIẾP TỤC CÔNG VIỆC</span>
         <button class="auth-memory-ribbon__clear" type="button" data-auth-memory-clear>Xóa lịch sử</button>
       </header>
       <div data-auth-memory-content></div>

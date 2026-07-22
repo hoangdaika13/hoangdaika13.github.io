@@ -58,6 +58,7 @@
   <link rel="stylesheet" href="auth-transition-runtime.css?v=1">
   <link rel="stylesheet" href="auth-trust-director.css?v=1">
   <link rel="stylesheet" href="auth-zoom-resilience.css?v=3">
+  <link rel="stylesheet" href="auth-typography-unified.css?v=2">
   <link rel="stylesheet" href="search-watch-center.css?v=5">
   <link rel="stylesheet" href="communication-overview.css?v=1">
   <link rel="stylesheet" href="communication-suite.css?v=1">
@@ -133,12 +134,12 @@
     <div class="auth-gate-brand">
       <div class="auth-brand-lockup">
         <span class="brand-mark"><img src="assets/hh-neon-logo-v2.png?v=2" alt="Logo HH neon" width="64" height="64"></span>
-        <div><p class="section-kicker">HH Super Platform</p><span><i></i> Creative system online</span></div>
+        <div><p class="section-kicker">HH Super Platform</p><span><i></i> Hệ sinh thái sáng tạo trực tuyến</span></div>
       </div>
       <h1><span>Đăng nhập.</span> Bật chế độ sáng tạo.</h1>
       <p>Một tài khoản cho workspace cá nhân, AI, công cụ sáng tạo và cộng đồng HH theo thời gian thực.</p>
       <section class="auth-feature-showcase" aria-label="Khám phá chức năng tiêu biểu">
-        <header><span><i></i> LIVE PRODUCT TOUR</span><small data-auth-demo-counter>01 / 05</small></header>
+        <header><span><i></i> KHÁM PHÁ SẢN PHẨM</span><small data-auth-demo-counter>01 / 05</small></header>
         <div class="auth-feature-switcher" role="tablist" aria-label="Chọn chức năng để xem trước">
           <button class="active" type="button" role="tab" aria-selected="true" data-auth-demo="ai"><i>AI</i><span><b>AI Center</b><small>Chat · Prompt · Workflow</small></span></button>
           <button type="button" role="tab" aria-selected="false" data-auth-demo="script"><i>KS</i><span><b>Kịch bản AI</b><small>Series · Batch · Training</small></span></button>
@@ -149,8 +150,8 @@
       </section>
       <div class="auth-benefits" aria-label="Quyền lợi tài khoản">
         <span><i>01</i><b>97+ công cụ</b><small>Trong một workspace</small></span>
-        <span><i>02</i><b>Realtime</b><small>Chat và cộng đồng</small></span>
-        <span><i>03</i><b>Private</b><small>Dữ liệu có kiểm soát</small></span>
+        <span><i>02</i><b>Trực tuyến</b><small>Chat và cộng đồng</small></span>
+        <span><i>03</i><b>Riêng tư</b><small>Dữ liệu có kiểm soát</small></span>
       </div>
       <div class="auth-product-preview" aria-hidden="true">
         <header><span><i></i><i></i><i></i></span><b>HH Command Center · Interactive Preview</b><small><i></i> LIVE</small></header>
@@ -173,14 +174,14 @@
     <div class="auth-gate-card interactive-card" data-auth-card data-auth-state="idle">
       <header class="auth-card-heading">
         <span><img src="assets/hh-neon-logo-v2.png?v=2" alt="Logo HH neon" width="46" height="46"></span>
-        <div><small>WELCOME TO HH</small><strong>Chào mừng bạn trở lại</strong><p>Đăng nhập hoặc tạo tài khoản miễn phí</p></div>
+        <div><small>CHÀO MỪNG ĐẾN HH</small><strong>Chào mừng bạn trở lại</strong><p>Đăng nhập hoặc tạo tài khoản miễn phí</p></div>
         <b class="auth-secure-badge"><i></i> Bảo mật</b>
       </header>
       <div class="auth-gate-status" id="authGateStatus" role="status" aria-live="polite"><i></i><span>Đang kiểm tra phiên đăng nhập...</span></div>
 
       <section class="auth-returning-card" data-returning-user data-auth-returning hidden>
         <span class="auth-returning-avatar" data-returning-avatar>HH</span>
-        <div><small>WELCOME BACK</small><strong>Chào mừng <span data-returning-name>bạn</span> quay lại</strong><p><span data-returning-workspace data-auth-recent-workspace>Command Center</span> · <span data-returning-device data-auth-last-device>Thiết bị gần nhất</span></p><button type="button" class="auth-returning-project" data-auth-recent-project data-auth-continue-project>Tiếp tục dự án gần đây →</button></div>
+        <div><small>CHÀO MỪNG TRỞ LẠI</small><strong>Chào mừng <span data-returning-name>bạn</span> quay lại</strong><p><span data-returning-workspace data-auth-recent-workspace>Trung tâm điều khiển</span> · <span data-returning-device data-auth-last-device>Thiết bị gần nhất</span></p><button type="button" class="auth-returning-project" data-auth-recent-project data-auth-continue-project>Tiếp tục dự án gần đây →</button></div>
         <button type="button" class="auth-mini-action" data-switch-account>Đổi tài khoản</button>
       </section>
 
@@ -219,7 +220,7 @@
             <input name="avatar" type="hidden" data-avatar-value>
             <label class="auth-field"><span>Tên hiển thị <small>Mọi người sẽ nhìn thấy</small></span><span class="auth-input-shell"><i>◇</i><input name="name" type="text" placeholder="Tên hiển thị của bạn" autocomplete="name" minlength="2" maxlength="160" required></span><small class="auth-inline-error" data-field-error="name"></small></label>
             <label class="auth-field"><span>Biệt danh <small>Dùng trong Community</small></span><span class="auth-input-shell"><i>#</i><input name="nickname" type="text" placeholder="Ví dụ: hoangcreative" autocomplete="nickname" minlength="2" maxlength="40"></span></label>
-            <label class="auth-color-field"><span>Màu Creative Identity</span><input name="creativeColor" type="color" value="#f05caf" aria-label="Chọn màu đại diện"></label>
+            <label class="auth-color-field"><span>Màu nhận diện cá nhân</span><input name="creativeColor" type="color" value="#f05caf" aria-label="Chọn màu đại diện"></label>
             <div class="auth-step-actions"><button type="button" data-auth-prev-step="1" data-signup-previous>← Quay lại</button><button class="button secondary interactive" type="button" data-auth-next-step="3">Chọn sở thích →</button></div>
           </section>
 
@@ -254,8 +255,8 @@
       </section>
 
       <div class="auth-guest-row"><button type="button" data-guest-login data-auth-guest><i>◎</i><span><b>Tiếp tục với tư cách khách</b><small>Dùng các công cụ local, không đồng bộ dữ liệu</small></span><strong>Thử ngay →</strong></button></div>
-      <details class="auth-privacy-panel" data-auth-privacy><summary><span>Privacy Center</span><small>Dữ liệu nào được lưu?</small></summary><p>HH lưu hồ sơ công khai, lựa chọn cá nhân hóa và hoạt động bạn chủ động đồng bộ. Mật khẩu và API key không được lưu trong trình duyệt. Bạn có thể quản lý phiên và thu hồi thiết bị trong Security Center.</p></details>
-      <footer class="auth-card-footer"><span>HH ID</span><span>Privacy first</span><span>Realtime ready</span></footer>
+      <details class="auth-privacy-panel" data-auth-privacy><summary><span>Trung tâm quyền riêng tư</span><small>Dữ liệu nào được lưu?</small></summary><p>HH lưu hồ sơ công khai, lựa chọn cá nhân hóa và hoạt động bạn chủ động đồng bộ. Mật khẩu và API key không được lưu trong trình duyệt. Bạn có thể quản lý phiên và thu hồi thiết bị trong Trung tâm bảo mật.</p></details>
+      <footer class="auth-card-footer"><span>HH ID</span><span>Ưu tiên riêng tư</span><span>Đồng bộ trực tuyến</span></footer>
     </div>
   </section>
 
@@ -1141,16 +1142,16 @@
   <script src="auth-experience.js?v=7"></script>
   <script src="auth-living-background.js?v=1"></script>
   <script src="auth-identity-constellation.js?v=2"></script>
-  <script src="auth-creative-universe.js?v=3"></script>
-  <script src="auth-universe-memory.js?v=1"></script>
+  <script src="auth-creative-universe.js?v=4"></script>
+  <script src="auth-universe-memory.js?v=2"></script>
   <script src="auth-logo-motion.js?v=1"></script>
   <script src="auth-emotional-logo.js?v=1"></script>
   <script src="auth-form-motion.js?v=1"></script>
   <script src="auth-transition-runtime.js?v=2"></script>
-  <script src="auth-quantum-flow.js?v=1"></script>
-  <script src="auth-trust-director.js?v=1"></script>
+  <script src="auth-quantum-flow.js?v=2"></script>
+  <script src="auth-trust-director.js?v=2"></script>
   <script src="auth-spatial-aurora.js?v=1"></script>
-  <script src="auth-zoom-resilience.js?v=2"></script>
+  <script src="auth-zoom-resilience.js?v=3"></script>
   <script src="feature-lab.js?v=4"></script>
   <script src="feature-engines.js?v=2"></script>
   <script src="search-watch-center.js?v=7"></script>

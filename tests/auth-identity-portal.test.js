@@ -73,7 +73,7 @@ test("universe morph and memory ribbon resume real routes", () => {
 
 test("privacy lens never reads secrets and recovery stays inline", () => {
   const source = read("auth-trust-director.js");
-  assert.match(source, /Live Privacy Lens|Privacy Lens/i);
+  assert.match(source, /Live Privacy Lens|Privacy Lens|QUYỀN RIÊNG TƯ TRỰC TIẾP/i);
   assert.match(source, /personalization/i);
   assert.match(source, /network|oauth|email|passkey/);
   assert.match(source, /static|balanced|cinematic/);
@@ -102,6 +102,22 @@ test("zoom resilience keeps hidden panels hidden and switches layout early", () 
   assert.match(css, /auth-gate-card[\s\S]{0,260}overflow-y:\s*visible/);
   assert.match(source, /visualViewport/);
   assert.match(source, /scrollIntoView/);
+  assert.match(source, /resetRestoredScroll/);
+  assert.match(source, /scrollTop\s*=\s*0/);
+  assert.match(source, /layoutSettled/);
+});
+
+test("auth typography remains readable and consistent across breakpoints", () => {
+  const html = read("index.html");
+  const worker = read("sw.js");
+  const css = read("auth-typography-unified.css");
+  assert.match(html, /auth-typography-unified\.css\?v=\d+/);
+  assert.match(worker, /auth-typography-unified\.css\?v=\d+/);
+  assert.match(css, /--auth-font:/);
+  assert.match(css, /font-synthesis:\s*none/);
+  assert.match(css, /@media\s*\(max-width:\s*600px\)/);
+  assert.match(css, /font-size:\s*16px/);
+  assert.match(css, /hh-quantum-flow__steps[\s\S]{0,180}repeat\(2,/);
 });
 
 test("all identity portal motion modules honor reduced motion", () => {

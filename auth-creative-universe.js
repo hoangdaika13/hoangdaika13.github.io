@@ -10,85 +10,85 @@
       id: "home", short: "HH", label: "Trang chủ", eyebrow: "Trung tâm điều khiển", route: "/home",
       color: "#62e9f2", orbit: 1, angle: 0,
       description: "Đi vào Command Center với lịch, công việc, ghi chú, trạng thái hệ thống và các lối tắt cá nhân.",
-      capabilities: ["Command Center", "Widgets", "Today"]
+      capabilities: ["Trung tâm điều khiển", "Tiện ích", "Hôm nay"]
     },
     {
       id: "create", short: "AI", label: "Sáng tạo", eyebrow: "AI và sản xuất nội dung", route: "/create",
       color: "#ff5dc8", orbit: 1, angle: 120,
       description: "Không gian AI Center, Kịch bản AI, Creator Studio, Media Center và tự động hóa sáng tạo.",
-      capabilities: ["AI Center", "Creator", "Automation"]
+      capabilities: ["Trợ lý AI", "Sản xuất nội dung", "Tự động hóa"]
     },
     {
       id: "music-ai", short: "MU", label: "Làm nhạc AI", eyebrow: "Âm thanh và xuất bản", route: "/music-ai/studio",
       color: "#72eadb", orbit: 1, angle: 240,
       description: "Sáng tác, viết lời, phối khí, mix, master, làm video và chuẩn bị nội dung xuất bản YouTube.",
-      capabilities: ["Composer", "Timeline", "Master"]
+      capabilities: ["Sáng tác", "Dòng thời gian", "Hoàn thiện âm thanh"]
     },
     {
       id: "media-design", short: "MD", label: "Media & Design", eyebrow: "Biên tập đa phương tiện", route: "/media-design",
       color: "#c87cff", orbit: 2, angle: 18,
       description: "Photo Editor, Video Editor và bộ công cụ xử lý ảnh, tài liệu, màu sắc cùng typography.",
-      capabilities: ["Photo", "Video", "Toolkit"]
+      capabilities: ["Ảnh", "Video", "Bộ công cụ"]
     },
     {
       id: "graphic-design", short: "GD", label: "Thiết kế đồ họa", eyebrow: "Motion, 3D và nhân vật", route: "/graphic-design",
       color: "#ff65cf", orbit: 2, angle: 90,
       description: "Thiết kế vector, hoạt ảnh, nhân vật, scene 3D, prototype và State Machine trong một studio.",
-      capabilities: ["Motion", "3D", "Character"]
+      capabilities: ["Hoạt ảnh", "3D", "Nhân vật"]
     },
     {
       id: "dev", short: "DV", label: "DEV", eyebrow: "Bộ công cụ lập trình", route: "/dev-tools",
       color: "#61e7ff", orbit: 2, angle: 162,
       description: "Xử lý dữ liệu, API, bảo mật, regex, database, code playground, Git và chẩn đoán web.",
-      capabilities: ["API Studio", "Data Lab", "Diagnostics"]
+      capabilities: ["API Studio", "Dữ liệu", "Chẩn đoán"]
     },
     {
       id: "work", short: "CV", label: "Công việc", eyebrow: "Dự án và cộng tác", route: "/work",
       color: "#baf46b", orbit: 2, angle: 234,
       description: "Quản lý project, cloud, download, wiki, store, team collaboration và workflow công việc.",
-      capabilities: ["Projects", "Team", "Workflow"]
+      capabilities: ["Dự án", "Nhóm", "Quy trình"]
     },
     {
       id: "communication", short: "GT", label: "Giao tiếp", eyebrow: "Kết nối thời gian thực", route: "/communication",
       color: "#5ee8d7", orbit: 2, angle: 306,
       description: "Community, Messenger HH, thông báo, hỗ trợ, phản hồi và hồ sơ người dùng trong một nơi.",
-      capabilities: ["Community", "Messenger", "Inbox"]
+      capabilities: ["Cộng đồng", "Nhắn tin", "Hộp thư"]
     },
     {
       id: "entertainment", short: "GX", label: "Giải trí", eyebrow: "Trải nghiệm và trò chơi", route: "/entertainment",
       color: "#ff8a5b", orbit: 3, angle: 0,
       description: "Khám phá các trải nghiệm tương tác, trò chơi vũ trụ và nội dung giải trí của HH Platform.",
-      capabilities: ["Universe", "Games", "Realtime"]
+      capabilities: ["Vũ trụ", "Trò chơi", "Trực tuyến"]
     },
     {
       id: "insights", short: "PT", label: "Phân tích", eyebrow: "Dữ liệu và vận hành", route: "/analytics",
       color: "#ffbd69", orbit: 3, angle: 60,
       description: "Theo dõi analytics, tìm kiếm thông minh, quản trị, API, bảo mật và tình trạng nền tảng.",
-      capabilities: ["Analytics", "Search", "Admin"]
+      capabilities: ["Dữ liệu", "Tìm kiếm", "Quản trị"]
     },
     {
       id: "learn", short: "HL", label: "Học tập", eyebrow: "Lộ trình cá nhân hóa", route: "/learn",
       color: "#9a86ff", orbit: 3, angle: 120,
       description: "Khóa học, bài luyện, Smart Review, kiểm tra, lớp học và AI Learning Coach theo mục tiêu.",
-      capabilities: ["Learning Path", "Review", "Classroom"]
+      capabilities: ["Lộ trình", "Ôn tập", "Lớp học"]
     },
     {
       id: "english", short: "EN", label: "HH English", eyebrow: "Tiếng Anh A0 đến C2", route: "/english",
       color: "#60e9f2", orbit: 3, angle: 180,
       description: "Học tiếng Anh theo trình độ, nghề nghiệp và kỹ năng với từ vựng, nghe nói và khảo sát tiến bộ.",
-      capabilities: ["A0-C2", "Speaking", "Vocabulary"]
+      capabilities: ["A0-C2", "Luyện nói", "Từ vựng"]
     },
     {
       id: "system", short: "SY", label: "Hệ thống", eyebrow: "Cài đặt và quyền riêng tư", route: "/system",
       color: "#68dda8", orbit: 3, angle: 240,
       description: "Quản lý cài đặt, giao diện, phiên đăng nhập, dữ liệu, quyền riêng tư và tính năng nền tảng.",
-      capabilities: ["Settings", "Security", "Privacy"]
+      capabilities: ["Cài đặt", "Bảo mật", "Quyền riêng tư"]
     },
     {
       id: "support", short: "UH", label: "Ủng hộ", eyebrow: "Đồng hành cùng HH", route: "/support",
       color: "#ff6fae", orbit: 3, angle: 300,
       description: "Ủng hộ nhà phát triển, theo dõi mục tiêu và cùng duy trì những công cụ miễn phí của HH.",
-      capabilities: ["Donate", "Goals", "Supporters"]
+      capabilities: ["VietQR", "Mục tiêu", "Tri ân"]
     }
   ]);
 
@@ -155,7 +155,7 @@
 
     return `
       <header class="auth-universe-heading">
-        <span>HH Solar Universe</span>
+        <span>VŨ TRỤ SẢN PHẨM HH</span>
         <small>${modules.length} hành tinh · Chọn nơi bắt đầu</small>
       </header>
       <div class="auth-universe-layout">
@@ -165,7 +165,7 @@
           <span class="auth-universe-orbit-ring" data-orbit="1" aria-hidden="true"></span>
           <span class="auth-universe-orbit-ring" data-orbit="2" aria-hidden="true"></span>
           <span class="auth-universe-orbit-ring" data-orbit="3" aria-hidden="true"></span>
-          <span class="auth-universe-core" aria-hidden="true"><b>HH</b><small>PLATFORM</small></span>
+          <span class="auth-universe-core" aria-hidden="true"><b>HH</b><small>NỀN TẢNG</small></span>
           ${planets}
         </div>
         <article
