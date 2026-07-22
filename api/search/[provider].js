@@ -85,10 +85,12 @@ function vertexSearchConfig() {
 function configuredServices() {
   const vertex = vertexSearchConfig();
   const programmableSearch = Boolean(String(process.env.GOOGLE_SEARCH_API_KEY || "").trim() && String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim());
+  const freeCse = Boolean(String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim());
   const geminiPool = Boolean(String(process.env.GEMINI_API_KEYS || "").trim());
   return {
-    google: vertex.configured || programmableSearch,
-    googleProvider: vertex.configured ? "vertex-ai-search" : programmableSearch ? "programmable-search" : "none",
+    google: vertex.configured || programmableSearch || freeCse,
+    googleProvider: vertex.configured ? "vertex-ai-search" : programmableSearch ? "programmable-search" : freeCse ? "programmable-search-element" : "none",
+    googleFreeCse: freeCse,
     youtube: Boolean(String(process.env.YOUTUBE_API_KEY || "").trim()),
     gemini: geminiPool || Boolean(String(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "").trim()),
     geminiKeySource: process.env.GEMINI_API_KEY

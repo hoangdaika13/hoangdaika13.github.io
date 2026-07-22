@@ -86,7 +86,10 @@ async function realtimeReadiness() {
 function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
   const has = (...names) => names.every((name) => Boolean(String(process.env[name] || "").trim()));
   const gemini = Boolean(String(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "").trim());
-  const googleSearch = has("GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID");
+  const googleJsonApi = has("GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID");
+  const googleFreeCse = Boolean(String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim());
+  const vertexSearch = has("VERTEX_SEARCH_PROJECT_ID", "VERTEX_SEARCH_APP_ID", "VERTEX_SEARCH_API_KEY");
+  const googleSearch = googleJsonApi || googleFreeCse || vertexSearch;
   const youtube = Boolean(String(process.env.YOUTUBE_API_KEY || "").trim());
   const payos = has("PAYOS_CLIENT_ID", "PAYOS_API_KEY", "PAYOS_CHECKSUM_KEY");
   const email = has("RESEND_API_KEY", "EMAIL_FROM");
@@ -95,7 +98,7 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
   const objectStorage = has("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY");
   const missing = [];
   if (!email) missing.push({ id: "email-verification", label: "Xác minh email", connect: "Resend API + EMAIL_FROM đã xác minh" });
-  if (!googleSearch) missing.push({ id: "google-search", label: "Google JSON Search", connect: "Google Custom Search JSON API + Engine ID" });
+  if (!googleSearch) missing.push({ id: "google-search", label: "Google Search", connect: "Google Search Engine ID hoặc Agent Search/Vertex" });
   if (!eleven) missing.push({ id: "elevenlabs", label: "Music/Sound AI", connect: "ELEVENLABS_API_KEY" });
   if (!downloader) missing.push({ id: "download-engine", label: "Download Center", connect: "VIDEO_DOWNLOADER_API_URL và khóa engine" });
   if (!objectStorage) missing.push({ id: "object-storage", label: "Cloud Storage file lớn", connect: "S3/R2 bucket và credentials server-side" });
@@ -111,9 +114,15 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
     },
     search: {
       googleConfigured: googleSearch,
+      googleJsonApiConfigured: googleJsonApi,
+      googleFreeCse,
       youtubeConfigured: youtube,
-      provider: process.env.VERTEX_SEARCH_PROJECT_ID && process.env.VERTEX_SEARCH_APP_ID ? "vertex-ai-search" : googleSearch ? "programmable-search" : "none",
-      note: googleSearch ? "Đã có khóa; cần live query để xác minh API đã được bật trong Google Cloud." : "Chưa có đủ cấu hình."
+      provider: vertexSearch ? "vertex-ai-search" : googleFreeCse ? "programmable-search-element" : "none",
+      note: vertexSearch
+        ? "Agent Search/Vertex AI Search đã cấu hình."
+        : googleFreeCse
+          ? "Google Programmable Search Element miễn phí đang sẵn sàng; JSON API chỉ là đường tùy chọn."
+          : "Chưa có đủ cấu hình."
     },
     ai: { gemini: gemini, geminiKeySource: process.env.GEMINI_API_KEYS ? "gemini-pool" : process.env.GEMINI_API_KEY ? "gemini" : process.env.GOOGLE_AI_API_KEY ? "google-ai" : "none", elevenLabs: eleven },
     payments: { payos, donationReceiptEmail: email },
