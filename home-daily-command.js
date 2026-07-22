@@ -279,6 +279,58 @@
     return { id: "plan-day", eyebrow: "TRỢ LÝ HÀNH ĐỘNG", title: "Lập việc quan trọng tiếp theo", detail: "Không có cảnh báo cục bộ. Mở Công việc để tạo task, deadline hoặc dự án cho hôm nay.", label: "Mở Công việc", route: "/work" };
   }
 
+  function runtimeSnapshot() {
+    try {
+      const runtime = global.HHPlatformRuntime;
+      return runtime?.inspect?.() || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function mergeRuntimeOperations(snapshot, runtime, now = Date.now()) {
+    if (!runtime) return snapshot;
+    const projectRows = asArray(runtime.projects).map((project) => {
+      const due = toTime(project.dueAt);
+      const days = due ? Math.ceil((due - now) / 86400000) : 99;
+      return {
+        id: `runtime-${project.id}`,
+        title: cleanText(project.name || "Dự án", 120),
+        progress: clamp(project.progress, 0, 100),
+        days,
+        risk: project.status === "blocked" ? "blocked" : days < 0 && project.status !== "completed" ? "overdue" : days <= 2 ? "soon" : "planned",
+        route: "/work/project-center"
+      };
+    });
+    const existingProjects = new Set(asArray(snapshot.projects).map((item) => item.title));
+    snapshot.projects = [...snapshot.projects, ...projectRows.filter((item) => !existingProjects.has(item.title))].slice(0, 8);
+    const waiting = asArray(runtime.jobs).filter((job) => job.state === "waiting");
+    const queued = asArray(runtime.jobs).filter((job) => ["queued", "running"].includes(job.state));
+    const runtimeNotices = [...waiting.map((job) => ({ id: `job-${job.id}`, title: `Cần cấu hình: ${cleanText(job.type, 80)}`, detail: cleanText(job.error || "Bộ xử lý chưa sẵn sàng", 140), priority: "high", route: "/system" })), ...queued.map((job) => ({ id: `running-${job.id}`, title: `Đang xử lý: ${cleanText(job.type, 80)}`, detail: `${job.progress || 0}% · trạng thái ${job.state}`, priority: "normal", route: "/system" }))];
+    snapshot.notifications = [...runtimeNotices, ...snapshot.notifications].slice(0, 8);
+    const providerRows = asArray(runtime.providers).map((provider) => ({
+      id: `runtime-${provider.id}`,
+      label: cleanText(provider.label || provider.id, 100),
+      configured: Boolean(provider.configured),
+      status: cleanText(provider.status || "needs-setup", 40),
+      percent: provider.quotaLimit ? Math.round(provider.quotaUsed / provider.quotaLimit * 100) : null,
+      severity: provider.status === "limited" ? "critical" : "normal",
+      route: "/system"
+    }));
+    const existingProviders = new Set(asArray(snapshot.quotas).map((item) => item.label));
+    snapshot.quotas = [...snapshot.quotas, ...providerRows.filter((item) => !existingProviders.has(item.label))].slice(0, 8);
+    const suggestion = asArray(runtime.suggestions)[0];
+    if (suggestion && suggestion.label) snapshot.recommendation = {
+      id: `runtime-${suggestion.kind || "action"}`,
+      eyebrow: "HH WORKFLOW",
+      title: cleanText(suggestion.label, 140),
+      detail: "Hành động này được tổng hợp từ Project, Job và Provider Router đã lưu.",
+      label: suggestion.kind === "quota" ? "Xem hệ thống" : "Mở workspace",
+      route: suggestion.kind === "quota" || suggestion.kind === "adapter" ? "/system" : "/work/project-center"
+    };
+    return snapshot;
+  }
+
   function collectOperations(storage = global.localStorage, now = Date.now()) {
     const snapshot = {
       plan: collectTodayPlan(storage, now),
@@ -288,7 +340,7 @@
       youtube: collectYouTubeSchedule(storage, now)
     };
     snapshot.recommendation = recommendNextAction(snapshot);
-    return snapshot;
+    return mergeRuntimeOperations(snapshot, runtimeSnapshot(), now);
   }
 
   function weatherText(storage) {
@@ -832,6 +884,7 @@
     global.addEventListener?.("storage", (event) => {
       if (!event.key || Object.values(KEYS).includes(event.key)) refresh();
     });
+    global.addEventListener?.("hh:orchestrator:change", () => refresh());
     global.setInterval?.(() => {
       const home = global.document.querySelector(SELECTORS.home);
       if (home && home.isConnected) refresh(home);

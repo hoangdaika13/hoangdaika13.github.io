@@ -16,7 +16,7 @@
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=3", "command-center-pro.js?v=5", "home-daily-command.js?v=3",
+        "dashboard-aurora.js?v=3", "command-center-pro.js?v=5", "home-daily-command.js?v=4",
         "home-command-search.js?v=2", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
       ]
     },
@@ -27,7 +27,7 @@
       ],
       scripts: [
         "extension-suite.js?v=2", "professional-tools.js?v=4", "feature-lab.js?v=4",
-        "feature-engines.js?v=2", "ai-center-advanced.js?v=1", "platform-p0.js?v=1", "system-platform.js?v=1"
+        "feature-engines.js?v=2", "ai-center-advanced.js?v=1", "platform-p0.js?v=1", "system-platform.js?v=2"
       ]
     },
     dev: {
@@ -116,17 +116,17 @@
     },
     learning: {
       styles: [
-        "learning-suite.css?v=3", "learning-home.css?v=2", "learning-paths.css?v=2", "learning-review.css?v=2",
+        "learning-suite.css?v=3", "learning-home.css?v=2", "learning-paths.css?v=3", "learning-review.css?v=3",
         "learning-lesson-player.css?v=2", "learning-coach-labs.css?v=3", "learning-classroom.css?v=3"
       ],
       scripts: [
-        "learning-platform-core.js?v=3", "learning-home.js?v=2", "learning-paths.js?v=2", "learning-review.js?v=2",
-        "learning-lesson-player.js?v=2", "learning-coach-labs.js?v=3", "learning-classroom.js?v=3", "learning-suite.js?v=3"
+        "learning-platform-core.js?v=4", "learning-home.js?v=2", "learning-paths.js?v=3", "learning-review.js?v=3",
+        "learning-lesson-player.js?v=2", "learning-coach-labs.js?v=3", "learning-classroom.js?v=4", "learning-suite.js?v=3"
       ]
     },
     english: {
-      styles: ["english-learning.css?v=11", "english-voice-coach.css?v=2"],
-      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-learning.js?v=14"]
+      styles: ["english-learning.css?v=11", "english-voice-coach.css?v=3"],
+      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-learning.js?v=15"]
     },
     analytics: {
       styles: ["insights-pro.css?v=2", "community-admin.css?v=5"],

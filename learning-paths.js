@@ -293,6 +293,8 @@
       const mastery = state.mastery[skill.id];
       const meta = MASTERY_META[mastery.state] || MASTERY_META.new;
       const evidence = evidenceForSkill(state, skill.id);
+      const graphNode = core().buildSkillGraph?.(state)?.nodes?.find((item) => item.id === skill.id);
+      const prerequisiteLabels = (graphNode?.prerequisites || []).map((id) => skillById(id).label);
       const isSelected = selectedMasterySkill === skill.id;
       return `<article class="hlp-mastery-row${isSelected ? " is-selected" : ""}" data-state="${mastery.state}">
         <button type="button" data-action="select-skill" data-skill-id="${skill.id}" aria-expanded="${isSelected}">
@@ -303,7 +305,8 @@
         </button>
         ${isSelected ? `<div class="hlp-evidence-panel">
           <p>${esc(meta.hint)}</p>
-          <dl><div><dt>Độ chính xác</dt><dd>${evidence.accuracy}%</dd></div><div><dt>Lượt luyện</dt><dd>${evidence.attempts}</dd></div><div><dt>Bài hoàn thành</dt><dd>${evidence.completedLessons}</dd></div><div><dt>Lỗi cần sửa</dt><dd>${evidence.openMistakes}</dd></div><div><dt>Điểm gần nhất</dt><dd>${evidence.recentScore}%</dd></div><div><dt>Phiên học</dt><dd>${evidence.studySessions}</dd></div></dl>
+          <dl><div><dt>Độ chính xác</dt><dd>${evidence.accuracy}%</dd></div><div><dt>Lượt luyện</dt><dd>${evidence.attempts}</dd></div><div><dt>Bài hoàn thành</dt><dd>${evidence.completedLessons}</dd></div><div><dt>Lỗi cần sửa</dt><dd>${evidence.openMistakes}</dd></div><div><dt>Điểm gần nhất</dt><dd>${evidence.recentScore}%</dd></div><div><dt>Độ sẵn sàng</dt><dd>${graphNode?.readiness ?? mastery.score}%</dd></div></dl>
+          <p class="hlp-skill-links"><strong>Kỹ năng hỗ trợ:</strong> ${esc(prerequisiteLabels.join(", ") || "Kỹ năng nền tảng")}. Quan hệ chỉ dùng để đề xuất, không khóa bài học.</p>
           <p class="hlp-adaptive">Độ khó đề xuất: <strong>${core().adaptiveDifficulty(state, skill.id)}/7</strong></p>
           ${mastery.state === "mastered" ? `<button type="button" data-action="add-passport" data-skill-id="${skill.id}">Lưu bằng chứng vào Learning Passport</button>` : `<button type="button" data-action="practice-skill" data-skill-id="${skill.id}">Luyện kỹ năng này</button>`}
         </div>` : ""}

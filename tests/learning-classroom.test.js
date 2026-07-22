@@ -215,6 +215,16 @@ test("adapter hook fails honestly when no backend handles the request", async ()
   learning.setAdapter(null);
 });
 
+test("adapter state is connected only after a confirmed capability handshake", () => {
+  assert.throws(() => learning.verifyAdapterResult({ state: learning.defaultState() }), /chưa xác nhận adapter/i);
+  assert.throws(() => learning.verifyAdapterResult({ confirmed: true, capabilities: ["presence"] }), /classroom-sync/);
+  const verified = learning.verifyAdapterResult({ confirmed: true, name: "school-adapter", capabilities: ["classroom-sync"], token: "must-not-persist", state: learning.defaultState() }, "classroom-sync", Date.UTC(2026, 6, 22));
+  assert.equal(verified.adapter.connected, true);
+  assert.equal(verified.adapter.confirmed, true);
+  assert.deepEqual(verified.adapter.capabilities, ["classroom-sync"]);
+  assert.equal("token" in verified.adapter, false);
+});
+
 test("mount renders all views, escapes user content, and cleans listeners", () => {
   const storage = memoryStorage();
   const scope = { localStorage: storage, FormData, CustomEvent: class CustomEvent {}, print() {} };

@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
+const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
 
 test("CEFR curriculum contains seven levels and sixty-nine complete lessons", () => {
   assert.deepEqual(courseLevels.map((level) => level.id), ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
@@ -82,6 +82,19 @@ test("voice and microphone adapters are reported truthfully before permission", 
   assert.equal(available.speechOutput.status, "available");
   assert.equal(available.recognition.status, "available");
   assert.equal(available.microphone.status, "permission required");
+});
+
+test("career roleplay brief and feedback stay deterministic and transparent", () => {
+  const career = careerTracks.find((item) => item.id === "software-development");
+  const brief = buildRoleplayBrief("workplace", career, { roleStage: "specialist" });
+  assert.equal(brief.scenarioId, "workplace");
+  assert.match(brief.learner, /·/);
+  assert.deepEqual(brief.signals, ["take", "confirm", "by"]);
+  const result = evaluateRoleplayReply("I can take the ticket, confirm the scope, and finish by Friday.", brief);
+  assert.equal(result.score, 100);
+  assert.deepEqual(result.missing, []);
+  assert.equal(result.method, "local-roleplay-signals-v1");
+  assert.match(result.disclaimer, /not an AI evaluation/);
 });
 
 test("speaking and dictation comparison reports matched and missed words", () => {

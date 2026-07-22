@@ -44,11 +44,13 @@ test("session and health adapters require backend-confirmed responses", async ()
   const calls = [];
   const adapter = system.createFetchAdapter(async (url, options) => {
     calls.push([url, options]);
+    if (url.includes("view=gateway-quotas")) return { ok: true, json: async () => ({ ok: true, confirmed: true, quotas: [{ provider: "youtube", used: 101, limit: 10000, remaining: 9899, source: "hh-gateway" }] }) };
     if (url.includes("summary")) return { ok: true, json: async () => ({ ok: true, health: { checkedAt: "2026-07-22T00:00:00.000Z", payments: { payos: true } } }) };
     if (url.endsWith("/sessions")) return { ok: true, json: async () => ({ sessions: [{ id: "self-1", token: "must-redact", device: { label: "Chrome · Windows" } }] }) };
     return { ok: true, json: async () => ({ ok: false }) };
   }, "https://backend.example");
   assert.equal((await adapter.health()).confirmed, true);
+  assert.equal((await adapter.gatewayStatus()).quotas[0].remaining, 9899);
   const sessions = await adapter.sessions();
   assert.equal(sessions[0].id, "self-1");
   assert.equal("token" in sessions[0], false);

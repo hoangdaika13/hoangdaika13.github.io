@@ -285,6 +285,7 @@
     const active = queue.find((card) => card.id === view.activeCardId) || queue[0] || null;
     const answerVisible = active && view.revealedId === active.id;
     const previews = active ? ratingPreview(active, state.profile.retentionGoal, now) : {};
+    const recentHistory = active && Array.isArray(active.history) ? active.history.slice(-5).reverse() : [];
     return `<div class="lr-workspace lr-review-workspace">
       <section class="lr-session" aria-live="polite">
         ${active ? `<div class="lr-card-meta"><span class="is-${active.priority.status}">${escapeHTML(statusLabel(active.priority))}</span><small>${escapeHTML(skillLabel(active.skillId))} · độ khó ${active.difficulty}/10</small></div>
@@ -293,7 +294,8 @@
             <div class="lr-answer" ${answerVisible ? "" : "aria-hidden=\"true\""}><span>ĐÁP ÁN</span><p>${answerVisible ? escapeHTML(active.answer) : "Nhấn Space hoặc nút bên dưới để xem đáp án."}</p></div>
           </article>
           <button class="lr-reveal" type="button" data-lr-action="reveal">${answerVisible ? "Ẩn đáp án" : "Hiện đáp án"}<kbd>Space</kbd></button>
-          <div class="lr-ratings" aria-label="Đánh giá mức ghi nhớ">${RATINGS.map((rating) => `<button type="button" class="is-${rating.tone}" data-lr-rate="${rating.id}" ${answerVisible ? "" : "disabled"}><kbd>${rating.key}</kbd><span>${rating.label}<small>${escapeHTML(previews[rating.id]?.label || "")}</small></span></button>`).join("")}</div>`
+          <div class="lr-ratings" aria-label="Đánh giá mức ghi nhớ">${RATINGS.map((rating) => `<button type="button" class="is-${rating.tone}" data-lr-rate="${rating.id}" ${answerVisible ? "" : "disabled"}><kbd>${rating.key}</kbd><span>${rating.label}<small>${escapeHTML(previews[rating.id]?.label || "")}</small></span></button>`).join("")}</div>
+          <details class="lr-review-history"><summary>Lịch sử ôn (${active.repetitions || recentHistory.length})</summary>${recentHistory.length ? `<ol>${recentHistory.map((entry) => `<li><span>${escapeHTML(RATINGS.find((rating) => rating.id === entry.rating)?.label || entry.rating)}</span><time>${escapeHTML(formatDate(entry.reviewedAt, true))}</time><small>${entry.intervalDays || 0} ngày</small></li>`).join("")}</ol>` : `<p>Chưa có lần đánh giá trước.</p>`}</details>`
         : `<div class="lr-empty"><span aria-hidden="true">✓</span><h2>Hôm nay đã ôn xong</h2><p>Bật “Xem thẻ sắp đến hạn” hoặc thêm thẻ mới để tiếp tục.</p></div>`}
       </section>
       <aside class="lr-queue"><header><div><span>HÀNG ĐỢI THÍCH ỨNG</span><strong>${queue.length} thẻ</strong></div><label><input type="checkbox" data-lr-upcoming ${view.includeUpcoming ? "checked" : ""}> Xem thẻ sắp đến hạn</label></header>

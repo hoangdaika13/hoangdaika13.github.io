@@ -42,6 +42,15 @@
     { id: "writing", label: "Viết", color: "#f28c65" },
     { id: "project", label: "Dự án", color: "#7aa8ff" }
   ]);
+  const SKILL_RELATIONS = Object.freeze({
+    vocabulary: [],
+    grammar: ["vocabulary"],
+    listening: ["vocabulary"],
+    speaking: ["listening", "vocabulary"],
+    reading: ["vocabulary", "grammar"],
+    writing: ["reading", "grammar"],
+    project: ["speaking", "writing"]
+  });
 
   const TRACKS = Object.freeze([
     ["communication", "Tiếng Anh giao tiếp", "Giao tiếp tự nhiên trong đời sống", ["speaking", "listening"]],
@@ -266,12 +275,15 @@
         stability: clamp(item.stability || 1, 0.1, 3650),
         intervalDays: clamp(item.intervalDays || 0, 0, 3650),
         lapses: clamp(item.lapses, 0, 999),
+        repetitions: clamp(item.repetitions, 0, 100_000),
         dueAt: item.dueAt ? clean(item.dueAt, 40) : new Date(now).toISOString(),
+        reviewedAt: item.reviewedAt ? clean(item.reviewedAt, 40) : null,
+        history: safeArray(item.history, 60).map((entry) => ({ rating: ["again", "hard", "good", "easy"].includes(entry?.rating) ? entry.rating : "good", reviewedAt: clean(entry?.reviewedAt || new Date(now).toISOString(), 40), dueAt: clean(entry?.dueAt || new Date(now).toISOString(), 40), intervalDays: clamp(entry?.intervalDays, 0, 3650) })),
         lastRating: ["again", "hard", "good", "easy"].includes(item.lastRating) ? item.lastRating : null
       })).filter((item) => item.prompt),
       mistakes: safeArray(value.mistakes, MAX_HISTORY).map((item) => ({
         id: clean(item.id || uid("mistake"), 100), lessonId: clean(item.lessonId, 100), skillId: clean(item.skillId || "vocabulary", 30),
-        prompt: clean(item.prompt, 300), answer: clean(item.answer, 600), userAnswer: clean(item.userAnswer, 600), createdAt: clean(item.createdAt || new Date(now).toISOString(), 40), resolved: Boolean(item.resolved)
+        prompt: clean(item.prompt, 300), answer: clean(item.answer, 600), userAnswer: clean(item.userAnswer, 600), category: clean(item.category || "practice", 60), explanation: clean(item.explanation, 600), occurrences: clamp(item.occurrences || 1, 1, 999), createdAt: clean(item.createdAt || new Date(now).toISOString(), 40), lastSeenAt: clean(item.lastSeenAt || item.createdAt || new Date(now).toISOString(), 40), nextReviewAt: clean(item.nextReviewAt || new Date(now).toISOString(), 40), resolved: Boolean(item.resolved)
       })),
       sessions: safeArray(value.sessions, MAX_HISTORY).map((item) => ({ id: clean(item.id || uid("session"), 100), type: clean(item.type, 40), minutes: clamp(item.minutes, 0, 480), score: clamp(item.score, 0, 100), createdAt: clean(item.createdAt || new Date(now).toISOString(), 40) })),
       assessments: safeArray(value.assessments, 100).map((item) => ({ id: clean(item.id || uid("assessment"), 100), type: clean(item.type, 40), score: clamp(item.score, 0, 100), level: LEVELS.includes(item.level) ? item.level : level, createdAt: clean(item.createdAt || new Date(now).toISOString(), 40), official: false })),
@@ -299,14 +311,19 @@
     const multipliers = { again: 0, hard: 1.25, good: 2.25, easy: 3.6 };
     const intervalDays = grade === "again" ? 0 : clamp(Math.max(1, (previous || stability) * multipliers[grade] / retentionFactor), 1, 3650);
     const dueDelay = grade === "again" ? 10 * 60_000 : Math.round(intervalDays * DAY);
+    const dueAt = new Date(now + dueDelay).toISOString();
+    const history = [...safeArray(source.history, 59), { rating: grade, reviewedAt: new Date(now).toISOString(), dueAt, intervalDays: Number(intervalDays.toFixed(2)) }].slice(-60);
     return {
       ...source,
       stability: grade === "again" ? Math.max(0.5, stability * 0.55) : clamp(stability + intervalDays * 0.18, 0.5, 3650),
       difficulty: clamp((source.difficulty || 3) + ({ again: 1, hard: 0.35, good: -0.1, easy: -0.35 })[grade], 1, 10),
       intervalDays: Number(intervalDays.toFixed(2)),
       lapses: clamp((source.lapses || 0) + (grade === "again" ? 1 : 0), 0, 999),
+      repetitions: clamp((source.repetitions || 0) + 1, 0, 100_000),
       lastRating: grade,
-      dueAt: new Date(now + dueDelay).toISOString()
+      reviewedAt: new Date(now).toISOString(),
+      history,
+      dueAt
     };
   }
 
@@ -345,9 +362,75 @@
     }).slice(0, 3);
   }
 
+  function buildSkillGraph(input) {
+    const state = normalizeState(input);
+    const nodes = SKILLS.map((skill) => {
+      const mastery = state.mastery[skill.id];
+      const prerequisites = SKILL_RELATIONS[skill.id] || [];
+      const prerequisiteScore = prerequisites.length ? Math.round(prerequisites.reduce((total, id) => total + (state.mastery[id]?.score || 0), 0) / prerequisites.length) : 100;
+      const readiness = clamp(Math.round(mastery.score * 0.7 + prerequisiteScore * 0.3), 0, 100);
+      const openMistakes = state.mistakes.filter((item) => item.skillId === skill.id && !item.resolved).reduce((total, item) => total + (item.occurrences || 1), 0);
+      return { ...skill, ...mastery, prerequisites: [...prerequisites], prerequisiteScore, readiness, openMistakes, recommendation: openMistakes ? "review-mistakes" : mastery.state === "mastered" ? "project-practice" : "guided-practice" };
+    });
+    const edges = nodes.flatMap((node) => node.prerequisites.map((source) => ({ source, target: node.id, relation: "supports" })));
+    return { nodes, edges, generatedFrom: ["mastery", "attempts", "mistakes"], deterministic: true, recommendationOnly: true };
+  }
+
+  function recordMistake(input, payload = {}, now = Date.now()) {
+    const state = normalizeState(input, now);
+    const prompt = clean(payload.prompt, 300);
+    const answer = clean(payload.answer, 600);
+    const userAnswer = clean(payload.userAnswer, 600);
+    const skillId = SKILLS.some((skill) => skill.id === payload.skillId) ? payload.skillId : "vocabulary";
+    if (!prompt || !answer) throw new Error("Mistake needs a prompt and correct answer.");
+    const signature = `${skillId}:${prompt.toLocaleLowerCase("vi")}:${answer.toLocaleLowerCase("vi")}`;
+    const existing = state.mistakes.find((item) => !item.resolved && `${item.skillId}:${item.prompt.toLocaleLowerCase("vi")}:${item.answer.toLocaleLowerCase("vi")}` === signature);
+    if (existing) {
+      existing.occurrences = clamp(existing.occurrences + 1, 1, 999);
+      existing.userAnswer = userAnswer || existing.userAnswer;
+      existing.explanation = clean(payload.explanation || existing.explanation, 600);
+      existing.lastSeenAt = new Date(now).toISOString();
+      existing.nextReviewAt = new Date(now + 10 * 60_000).toISOString();
+      existing.resolved = false;
+      return { state: normalizeState(state, now), mistake: clone(existing), created: false };
+    }
+    const mistake = { id: uid("mistake"), lessonId: clean(payload.lessonId, 100), skillId, prompt, answer, userAnswer, category: clean(payload.category || "practice", 60), explanation: clean(payload.explanation, 600), occurrences: 1, createdAt: new Date(now).toISOString(), lastSeenAt: new Date(now).toISOString(), nextReviewAt: new Date(now).toISOString(), resolved: false };
+    state.mistakes.unshift(mistake);
+    state.mistakes = state.mistakes.slice(0, MAX_HISTORY);
+    return { state: normalizeState(state, now), mistake: clone(mistake), created: true };
+  }
+
+  function mistakeInsights(input, now = Date.now()) {
+    const state = normalizeState(input, now);
+    const open = state.mistakes.filter((item) => !item.resolved);
+    const bySkill = Object.fromEntries(SKILLS.map((skill) => [skill.id, open.filter((item) => item.skillId === skill.id).reduce((total, item) => total + item.occurrences, 0)]));
+    const repeated = [...open].filter((item) => item.occurrences > 1).sort((a, b) => b.occurrences - a.occurrences).slice(0, 8);
+    return { open: open.length, due: open.filter((item) => Date.parse(item.nextReviewAt) <= now).length, bySkill, repeated, deterministic: true };
+  }
+
+  function buildAdaptivePath(input, options = {}) {
+    const state = normalizeState(input, Number(options.now) || Date.now());
+    const trackId = TRACKS.some((track) => track.id === options.trackId) ? options.trackId : state.profile.career;
+    const lessons = LESSONS.filter((lesson) => lesson.trackId === trackId);
+    const weak = weakSkills(state);
+    const weakIds = new Set(weak.map((item) => item.skillId));
+    const targetDifficulty = weak.length ? Math.round(weak.reduce((total, item) => total + adaptiveDifficulty(state, item.skillId), 0) / weak.length) : Math.max(1, LEVELS.indexOf(state.profile.level) + 1);
+    const ranked = lessons.map((lesson) => {
+      const completed = state.progress[lesson.id]?.status === "completed";
+      const weakMatches = lesson.skills.filter((skill) => weakIds.has(skill)).length;
+      const score = (completed ? -1000 : 0) + weakMatches * 35 - Math.abs(lesson.difficulty - targetDifficulty) * 8 + (lesson.level === state.profile.level ? 12 : 0);
+      return { lesson, score, inputs: { completed, weakMatches, targetDifficulty, level: state.profile.level } };
+    }).sort((a, b) => b.score - a.score);
+    const recommendation = ranked.find((item) => !item.inputs.completed) || ranked[0] || null;
+    const reviewsDue = state.reviews.filter((item) => Date.parse(item.dueAt) <= (Number(options.now) || Date.now())).length;
+    const mistakes = mistakeInsights(state, Number(options.now) || Date.now());
+    return { trackId, levels: [...LEVELS], ranked, recommendation, reviewsDue, mistakeCount: mistakes.open, reason: recommendation ? `Prioritised ${recommendation.inputs.weakMatches} weak-skill match(es) near difficulty ${targetDifficulty}/7; ${reviewsDue} review card(s) are due.` : "No lesson is available for this track.", deterministic: true, recommendationOnly: true };
+  }
+
   function buildDailyPlan(input, now = Date.now()) {
     const state = normalizeState(input, now);
     const path = pathForProfile(state.profile);
+    const adaptivePath = buildAdaptivePath(state, { now });
     const active = LESSONS.find((lesson) => lesson.id === state.activeLessonId) || path.find((lesson) => state.progress[lesson.id]?.status !== "completed") || path[0];
     const due = state.reviews.filter((review) => Date.parse(review.dueAt) <= now).sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt));
     const upcoming = state.deadlines.filter((item) => !item.completed).sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0] || null;
@@ -364,6 +447,7 @@
       upcomingDeadline: upcoming,
       nextProject,
       path,
+      adaptivePath,
       streak: state.streak,
       daily: state.daily
     };
@@ -390,6 +474,10 @@
     safeArray(payload.skills, 8).forEach((skillId) => {
       if (state.mastery[skillId]) state.mastery[skillId] = updateMastery(state.mastery[skillId], score >= 60, now);
     });
+    if (payload.correct === false && payload.prompt && payload.answer) {
+      const recorded = recordMistake(state, { lessonId: payload.lessonId, skillId: safeArray(payload.skills, 1)[0], prompt: payload.prompt, answer: payload.answer, userAnswer: payload.userAnswer, category: payload.category, explanation: payload.explanation }, now);
+      state.mistakes = recorded.state.mistakes;
+    }
     if (payload.lessonId && LESSONS.some((lesson) => lesson.id === payload.lessonId)) {
       state.progress[payload.lessonId] = { status: payload.completed === false ? "started" : "completed", score, attempts: clamp((state.progress[payload.lessonId]?.attempts || 0) + 1, 1, 999), seconds: minutes * 60, completedAt: payload.completed === false ? null : new Date(now).toISOString() };
       state.activeLessonId = pathForProfile(state.profile).find((lesson) => state.progress[lesson.id]?.status !== "completed")?.id || payload.lessonId;
@@ -443,6 +531,7 @@
     storageKey: STORAGE_KEY,
     levels: LEVELS,
     skills: SKILLS,
+    skillRelations: SKILL_RELATIONS,
     tracks: TRACKS,
     lessons: LESSONS,
     lessonTypes: LESSON_TYPES,
@@ -457,13 +546,17 @@
     scheduleReview,
     updateMastery,
     adaptiveDifficulty,
+    buildSkillGraph,
     pathForProfile,
+    buildAdaptivePath,
     projectTemplate,
     createProjectPlan,
     normalizeProject,
     projectProgress,
     createProject,
     updateProjectStage,
+    recordMistake,
+    mistakeInsights,
     weakSkills,
     buildDailyPlan,
     recordStudy,

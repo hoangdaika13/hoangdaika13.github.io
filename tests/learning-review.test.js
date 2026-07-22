@@ -92,6 +92,8 @@ test("render exposes accessible review controls, retention choices and local FSR
   assert.match(html, /aria-label="Đánh giá mức ghi nhớ"/);
   assert.match(html, /data-lr-rate="again"/);
   assert.match(html, /data-lr-retention="95"/);
+  assert.match(html, /class="lr-review-history"/);
+  assert.match(html, /Lịch sử ôn/);
   assert.match(html, /lấy cảm hứng từ FSRS/);
   assert.match(html, /không tuyên bố đây là FSRS chuẩn/i);
 });

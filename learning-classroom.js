@@ -90,7 +90,7 @@
       studyRooms: [],
       pomodoro: { mode: "focus", duration: 25 * 60, remaining: 25 * 60, running: false, updatedAt: iso(), rounds: 0 },
       whiteboards: {},
-      adapter: { connected: false, name: "local", lastSyncAt: null, error: "" },
+      adapter: { connected: false, confirmed: false, name: "local", capabilities: [], lastSyncAt: null, confirmedAt: null, error: "" },
       ui: { selectedClassId: "", selectedAssessmentId: "", notice: "", timerStartedAt: null },
       updatedAt: iso()
     };
@@ -165,7 +165,7 @@
       studyRooms: list(value.studyRooms, 30).map((item) => ({ id: clean(item?.id || uid("room"), 80), code: clean(item?.code || classCode(), 12).toUpperCase(), name: clean(item?.name || "Phòng học", 100), ownerId: clean(item?.ownerId, 80), memberIds: list(item?.memberIds, 50).map((id) => clean(id, 80)), createdAt: validDate(item?.createdAt), mode: "local" })),
       pomodoro: { mode: value.pomodoro?.mode === "break" ? "break" : "focus", duration: clamp(value.pomodoro?.duration || 1500, 60, 7200), remaining: clamp(value.pomodoro?.remaining ?? value.pomodoro?.duration ?? 1500, 0, 7200), running: Boolean(value.pomodoro?.running), updatedAt: validDate(value.pomodoro?.updatedAt), rounds: clamp(value.pomodoro?.rounds, 0, 9999) },
       whiteboards: Object.fromEntries(Object.entries(value.whiteboards || {}).slice(0, 30).map(([roomId, strokes]) => [clean(roomId, 80), list(strokes, MAX.strokes).map((stroke) => ({ color: /^#[0-9a-f]{6}$/i.test(stroke?.color) ? stroke.color : "#53cbd6", width: clamp(stroke?.width || 3, 1, 20), points: list(stroke?.points, 300).map((point) => ({ x: clamp(point?.x, 0, 5000), y: clamp(point?.y, 0, 5000) })) })).filter((stroke) => stroke.points.length > 1)])),
-      adapter: { connected: Boolean(value.adapter?.connected && value.adapter?.confirmedAt), name: clean(value.adapter?.name || "local", 80), lastSyncAt: value.adapter?.lastSyncAt ? validDate(value.adapter.lastSyncAt) : null, confirmedAt: value.adapter?.confirmedAt ? validDate(value.adapter.confirmedAt) : null, error: clean(value.adapter?.error, 300) },
+      adapter: { connected: Boolean(value.adapter?.connected && value.adapter?.confirmed && value.adapter?.confirmedAt), confirmed: Boolean(value.adapter?.confirmed && value.adapter?.confirmedAt), name: clean(value.adapter?.name || "local", 80), capabilities: list(value.adapter?.capabilities, 20).map((item) => clean(item, 60)).filter(Boolean), lastSyncAt: value.adapter?.lastSyncAt ? validDate(value.adapter.lastSyncAt) : null, confirmedAt: value.adapter?.confirmedAt ? validDate(value.adapter.confirmedAt) : null, error: clean(value.adapter?.error, 300) },
       ui: { selectedClassId: clean(value.ui?.selectedClassId, 80), selectedAssessmentId: clean(value.ui?.selectedAssessmentId, 80), notice: clean(value.ui?.notice, 300), timerStartedAt: value.ui?.timerStartedAt ? validDate(value.ui.timerStartedAt) : null },
       updatedAt: iso()
     };
@@ -520,6 +520,24 @@
     });
   }
 
+  function verifyAdapterResult(result, requiredCapability = "classroom-sync", now = Date.now()) {
+    if (!result || result.confirmed !== true) throw new Error("Backend chưa xác nhận adapter; dữ liệu vẫn chỉ lưu trên thiết bị này.");
+    const capabilities = list(result.capabilities, 20).map((item) => clean(item, 60)).filter(Boolean);
+    if (capabilities.length && !capabilities.includes(requiredCapability)) throw new Error(`Adapter chưa xác nhận capability ${clean(requiredCapability, 60)}.`);
+    return {
+      state: result.state && typeof result.state === "object" ? normalizeState(result.state) : null,
+      adapter: {
+        connected: true,
+        confirmed: true,
+        name: clean(result.name || result.adapterId || "confirmed-backend", 80),
+        capabilities: capabilities.length ? capabilities : [requiredCapability],
+        lastSyncAt: iso(now),
+        confirmedAt: iso(now),
+        error: ""
+      }
+    };
+  }
+
   const assessmentOptions = () => ASSESSMENT_TYPES.map((type) => `<option value="${type}">${escapeHTML(TYPE_LABELS[type])}</option>`).join("");
   const nav = (active) => VIEWS.map((view) => `<button type="button" class="hlc-nav__item${view === active ? " is-active" : ""}" data-hlc-view="${view}">${escapeHTML({ assessments: "Đánh giá", certificates: "Chứng chỉ", classroom: "Lớp học", "study-together": "Học cùng nhau", "catch-up": "Bắt kịp" }[view])}</button>`).join("");
 
@@ -591,7 +609,7 @@
       if (target.hasAttribute("data-hlc-print")) return scope.print?.();
       if (target.hasAttribute("data-hlc-create-class")) { const name = promptValue(scope, "Tên lớp học", "Lớp học HH"); if (name) { const result = createClassroom(state, { name }); setState(result.state, `Đã tạo lớp ${result.classroom.code} trên thiết bị này.`); } return; }
       if (target.hasAttribute("data-hlc-join-class")) { const code = promptValue(scope, "Nhập mã lớp"); if (code) { try { const result = joinClassroom(state, { code }); setState(result.state, "Đã tham gia lớp trên thiết bị này."); } catch (error) { setState(state, error.message); } } return; }
-      if (target.hasAttribute("data-hlc-sync")) { try { const result = await requestAdapter(scope, "sync", { state }); if (result?.confirmed !== true) throw new Error("Backend chưa xác nhận đồng bộ; dữ liệu vẫn chỉ lưu trên thiết bị này."); const next = normalizeState(result?.state || state); next.adapter = { connected: true, name: clean(result?.name || "confirmed-backend", 80), lastSyncAt: iso(), confirmedAt: iso(), error: "" }; setState(next, "Đồng bộ backend đã được xác nhận."); } catch (error) { const next = clone(state); next.adapter = { connected: false, name: "local", lastSyncAt: null, confirmedAt: null, error: clean(error.message, 300) }; setState(next, error.message); } return; }
+      if (target.hasAttribute("data-hlc-sync")) { try { const result = await requestAdapter(scope, "sync", { state }); const verified = verifyAdapterResult(result, "classroom-sync"); const next = verified.state || normalizeState(state); next.adapter = verified.adapter; setState(next, "Đồng bộ backend đã được adapter xác nhận."); } catch (error) { const next = clone(state); next.adapter = { connected: false, confirmed: false, name: "local", capabilities: [], lastSyncAt: null, confirmedAt: null, error: clean(error.message, 300) }; setState(next, error.message); } return; }
       if (target.dataset.hlcSubmitAssignment) { const text = promptValue(scope, "Nội dung bài nộp"); if (text) { try { const result = submitAssignment(state, { assignmentId: target.dataset.hlcSubmitAssignment, text }); setState(result.state, "Đã lưu metadata bài nộp trên thiết bị."); } catch (error) { setState(state, error.message); } } return; }
       if (target.dataset.hlcGrade) { const score = promptValue(scope, "Điểm số", "80"); const feedback = promptValue(scope, "Nhận xét", "Đã hoàn thành yêu cầu."); if (score != null) { try { const result = gradeSubmission(state, { submissionId: target.dataset.hlcGrade, score, feedback }); setState(result.state, "Đã lưu điểm và phản hồi."); } catch (error) { setState(state, error.message); } } return; }
       if (target.hasAttribute("data-hlc-create-room")) { const name = promptValue(scope, "Tên phòng học", "Focus Room"); if (name) { const result = createStudyRoom(state, { name }); setState(result.state, "Phòng local đã sẵn sàng. Backend cần thiết cho nhiều người."); } return; }
@@ -660,7 +678,7 @@
     supports: (view) => VIEWS.includes(VIEW_ALIASES[view] || view), defaultState, normalizeState, shuffled, createAssessment, placementRecommendation, gradeAssessment, submitAttempt, applyPlacementRecommendation,
     issueCertificate, createClassroom, joinClassroom, createAssignment, submitAssignment, gradeSubmission, addDiscussion,
     updatePassport, addMistake, reviewMistake, createProjectLesson, completeProjectStep, createStudyGroup, completeDailyMission, addKnowledgeItem,
-    createStudyRoom, updatePomodoro, addWhiteboardStroke, buildCatchUp, createStore, setAdapter, requestAdapter, mount, unmount
+    createStudyRoom, updatePomodoro, addWhiteboardStroke, buildCatchUp, createStore, setAdapter, requestAdapter, verifyAdapterResult, mount, unmount
   });
 
   root.HHLearningClassroom = API;

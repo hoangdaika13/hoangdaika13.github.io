@@ -1,5 +1,6 @@
 const { clean, currentUser, enforceRateLimit, isAdminUser, withApi } = require("../../utils/platform");
 const privacyConsentHandler = require("../../utils/privacy-consent-api");
+const { quotaStatus, requireRoles } = require("../../services/apiGateway");
 
 const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
 const TELEMETRY_RETENTION_SECONDS = 30 * 24 * 60 * 60;
@@ -205,7 +206,22 @@ module.exports = async function handler(req, res) {
       const realtime = await realtimeReadiness();
       return res.status(200).json({ ok: true, health: readinessSnapshot({ databaseConnected: Boolean(db), realtime }) });
     }
+    if (req.query.view === "gateway-quotas") {
+      const quotas = await quotaStatus(db);
+      return res.status(200).json({ ok: true, confirmed: true, quotas, checkedAt: new Date(), privacy: { aggregateOnly: true, identitiesReturned: false, queriesStored: false, secretsReturned: false } });
+    }
     const user = await currentUser(req);
+    if (req.query.view === "gateway-audit") {
+      requireRoles(user, ["admin"]);
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const summary = await db.collection("gatewayAuditLogs").aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        { $group: { _id: { provider: "$provider", outcome: "$outcome" }, requests: { $sum: 1 }, units: { $sum: "$cost" } } },
+        { $project: { _id: 0, provider: "$_id.provider", outcome: "$_id.outcome", requests: 1, units: 1 } },
+        { $sort: { provider: 1, outcome: 1 } }
+      ]).toArray();
+      return res.status(200).json({ ok: true, confirmed: true, windowHours: 24, summary, privacy: { aggregateOnly: true, actorHashesReturned: false, queriesStored: false, secretsReturned: false } });
+    }
     if (!isAdminUser(user)) return res.status(403).json({ error: "Tài khoản không có quyền truy cập Admin Panel." });
     if (req.query.view === "analytics") {
       const now = new Date();

@@ -9,21 +9,21 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const styles = [
   "learning-suite.css?v=2",
   "learning-home.css?v=2",
-  "learning-paths.css?v=2",
-  "learning-review.css?v=2",
+  "learning-paths.css?v=3",
+  "learning-review.css?v=3",
   "learning-lesson-player.css?v=2",
   "learning-coach-labs.css?v=2",
   "learning-classroom.css?v=2"
 ];
 
 const scripts = [
-  "learning-platform-core.js?v=2",
+  "learning-platform-core.js?v=4",
   "learning-home.js?v=2",
-  "learning-paths.js?v=2",
-  "learning-review.js?v=2",
+  "learning-paths.js?v=3",
+  "learning-review.js?v=3",
   "learning-lesson-player.js?v=2",
   "learning-coach-labs.js?v=2",
-  "learning-classroom.js?v=2",
+  "learning-classroom.js?v=4",
   "learning-suite.js?v=2"
 ];
 

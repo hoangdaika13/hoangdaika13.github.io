@@ -39,6 +39,36 @@ test("adaptive review scheduling responds to all four ratings", () => {
   assert.ok(hard.intervalDays < good.intervalDays);
   assert.ok(good.intervalDays < easy.intervalDays);
   assert.equal(again.lapses, 1);
+  assert.equal(good.repetitions, 1);
+  assert.equal(good.history.length, 1);
+  assert.equal(good.history[0].rating, "good");
+});
+
+test("skill graph and adaptive path explain recommendations without locking CEFR", () => {
+  const state = core.defaultState();
+  state.profile.level = "B1";
+  state.profile.career = "technology";
+  state.mastery.writing = { ...state.mastery.writing, attempts: 5, correct: 2, accuracy: 40, score: 35, state: "review" };
+  const graph = core.buildSkillGraph(state);
+  assert.equal(graph.nodes.length, core.skills.length);
+  assert.ok(graph.edges.some((edge) => edge.source === "writing" && edge.target === "project"));
+  assert.equal(graph.recommendationOnly, true);
+  const path = core.buildAdaptivePath(state, { trackId: "technology", now: Date.UTC(2026, 6, 22) });
+  assert.deepEqual(path.levels, core.levels);
+  assert.equal(path.deterministic, true);
+  assert.ok(path.recommendation.lesson);
+  assert.match(path.reason, /weak-skill/);
+});
+
+test("mistake notebook aggregates repeats and keeps bounded local explanations", () => {
+  const first = core.recordMistake(core.defaultState(), { skillId: "grammar", prompt: "He go", answer: "He goes", userAnswer: "He go", explanation: "Third-person singular" }, Date.UTC(2026, 6, 21));
+  const second = core.recordMistake(first.state, { skillId: "grammar", prompt: "He go", answer: "He goes", userAnswer: "He go again" }, Date.UTC(2026, 6, 22));
+  assert.equal(second.created, false);
+  assert.equal(second.mistake.occurrences, 2);
+  assert.equal(second.state.mistakes.length, 1);
+  const insights = core.mistakeInsights(second.state, Date.UTC(2026, 6, 22));
+  assert.equal(insights.bySkill.grammar, 2);
+  assert.equal(insights.repeated[0].occurrences, 2);
 });
 
 test("study records update streak, daily goal, mastery and lesson progress", () => {

@@ -1,7 +1,7 @@
 const { ObjectId } = require("mongodb");
 const { PayOS } = require("@payos/node");
 const QRCode = require("qrcode");
-const { randomUUID } = require("crypto");
+const { createHash, randomUUID } = require("crypto");
 const { clean, currentUser, enforceRateLimit, isAdminUser, ownerFrom, withApi } = require("../utils/platform");
 const votesHandler = require("../utils/votes");
 
@@ -300,10 +300,15 @@ module.exports = async function handler(req, res) {
       if (Number(payment.amount) !== Number(donation.amount)) return res.status(409).json({ error: "Số tiền webhook không khớp giao dịch." });
       const now = new Date();
       const providerReference = clean(payment.reference || `payos:${orderCode}`, 120);
-      await donations.updateOne(
+      const verificationUpdate = await donations.updateOne(
         { _id: donation._id, status: { $in: ["pending", "submitted"] } },
         { $set: { status: "verified", verifiedAt: now, updatedAt: now, paymentMethod: "payos_vietqr", payosPaymentLinkId: clean(payment.paymentLinkId, 100), payosTransactionReference: providerReference, payosTransactionTime: clean(payment.transactionDateTime, 80) }, $push: { history: { status: "verified", source: "payos_webhook", providerReference, at: now } } }
       );
+      if (!verificationUpdate.modifiedCount) {
+        const current = await donations.findOne({ _id: donation._id }, { projection: { status: 1, payosTransactionReference: 1, receipt: 1, email: 1, reference: 1 } });
+        if (clean(current?.payosTransactionReference, 120) !== providerReference) return res.status(409).json({ error: "Webhook trùng orderCode nhưng khác mã giao dịch provider." });
+        return res.status(200).json({ success: true, duplicate: true, status: current.status, receipt: { status: receiptView(current).status } });
+      }
       await db.collection("events").updateOne(
         { type: "donation:payos_verified", providerReference },
         { $setOnInsert: { type: "donation:payos_verified", providerReference, recordId: donation._id, amount: donation.amount, createdAt: now } },
@@ -311,13 +316,15 @@ module.exports = async function handler(req, res) {
       );
       const verifiedDonation = await donations.findOne({ _id: donation._id });
       const receipt = await sendDonationThankYou(db, donations, verifiedDonation, "payos_webhook");
-      return res.status(200).json({ success: true, receipt: { status: receipt.status } });
+      return res.status(200).json({ success: true, duplicate: false, receipt: { status: receipt.status } });
     }
 
     if (req.method === "GET") {
       const lookupId = objectId(req.query.id);
       const lookupReference = clean(req.query.reference, 40);
       if (lookupId && lookupReference) {
+        const pollIdentity = createHash("sha256").update(`${lookupId}:${lookupReference}`).digest("hex").slice(0, 32);
+        await enforceRateLimit(db, `donation:poll:${pollIdentity}`, 180, 60 * 60 * 1000);
         let item = await donations.findOne({ _id: lookupId, reference: lookupReference });
         if (!item) return res.status(404).json({ error: "Không tìm thấy giao dịch." });
         item = await reconcilePayOSStatus(db, donations, item);
@@ -472,10 +479,15 @@ module.exports = async function handler(req, res) {
         return res.status(409).json({ error: confirmation.status === "not_configured" ? "Adapter hoàn tiền phía máy chủ chưa được cấu hình." : "Provider chưa xác nhận hoàn tiền.", confirmed: false, refund: { status: confirmation.status } });
       }
       const refundedAt = new Date();
-      await donations.updateOne(
+      const refundUpdate = await donations.updateOne(
         { _id: id, status: "verified" },
         { $set: { status: "refunded", refundedAt, updatedAt: refundedAt, refund: { ...donation.refund, status: "confirmed", amount: donation.amount, provider: confirmation.provider, providerReference: confirmation.providerReference, confirmedAt: refundedAt, checkedAt: refundedAt } }, $push: { history: { status: "refunded", source: "refund_adapter", providerReference: confirmation.providerReference, at: refundedAt } } }
       );
+      if (!refundUpdate.modifiedCount) {
+        const current = await donations.findOne({ _id: id }, { projection: { status: 1, refund: 1 } });
+        if (current?.status === "refunded" && current.refund?.providerReference === confirmation.providerReference) return res.status(200).json({ ok: true, confirmed: true, duplicate: true, status: "refunded", refund: { status: "confirmed", providerReference: confirmation.providerReference } });
+        return res.status(409).json({ error: "Trạng thái hoàn tiền đã thay đổi trong lúc đối soát.", confirmed: false });
+      }
       await db.collection("events").updateOne({ type: "donation:refund_confirmed", providerReference: confirmation.providerReference }, { $setOnInsert: { type: "donation:refund_confirmed", providerReference: confirmation.providerReference, recordId: id, amount: donation.amount, createdAt: refundedAt } }, { upsert: true });
       return res.status(200).json({ ok: true, confirmed: true, status: "refunded", refund: { status: "confirmed", providerReference: confirmation.providerReference } });
     }

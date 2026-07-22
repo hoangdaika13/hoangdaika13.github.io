@@ -163,6 +163,7 @@
 .hlp-score { font-weight: 850; text-align: right; }
 .hlp-evidence-panel { padding: 0 16px 17px 42px; }
 .hlp-evidence-panel > p { color: var(--hlp-muted); }
+.hlp-evidence-panel .hlp-skill-links { padding: 9px 11px; border-left: 3px solid #2dbdc3; background: rgba(45, 189, 195, .06); }
 .hlp-evidence-panel dl { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
 .hlp-evidence-panel dl div { padding: 10px; background: var(--hlp-surface-soft); border-radius: 5px; }
 .hlp-evidence-panel dt { color: var(--hlp-muted); font-size: 11px; }

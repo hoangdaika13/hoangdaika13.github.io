@@ -166,7 +166,7 @@ test("mastery graph renders four states, adaptive difficulty and evidence", () =
   const host = createHost();
   api.mount(host, { view: "mastery", skillId: "speaking", store });
   for (const label of ["Đang làm quen", "Đã hiểu", "Thành thạo", "Cần ôn lại"]) assert.ok(host.innerHTML.includes(label));
-  for (const token of ["Độ chính xác", "Lượt luyện", "Bài hoàn thành", "Lỗi cần sửa", "Độ khó đề xuất", "Learning Passport"]) assert.ok(host.innerHTML.includes(token));
+  for (const token of ["Độ chính xác", "Lượt luyện", "Bài hoàn thành", "Lỗi cần sửa", "Độ sẵn sàng", "Kỹ năng hỗ trợ", "Độ khó đề xuất", "Learning Passport"]) assert.ok(host.innerHTML.includes(token));
   assert.equal((host.innerHTML.match(/class="hlp-mastery-row/g) || []).length, core.skills.length);
   assert.match(host.innerHTML, /88%/);
   api.unmount();

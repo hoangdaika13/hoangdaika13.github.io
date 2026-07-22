@@ -1,5 +1,6 @@
 const { clean, setCors } = require("../../utils/platform");
 const youtubePublisherHandler = require("../../utils/youtubePublisher");
+const { beginGateway } = require("../../services/apiGateway");
 
 const GOOGLE_ENDPOINT = "https://customsearch.googleapis.com/customsearch/v1";
 const VERTEX_SEARCH_ENDPOINT = "https://discoveryengine.googleapis.com/v1";
@@ -7,32 +8,6 @@ const YOUTUBE_SEARCH_ENDPOINT = "https://www.googleapis.com/youtube/v3/search";
 const YOUTUBE_VIDEOS_ENDPOINT = "https://www.googleapis.com/youtube/v3/videos";
 const YOUTUBE_CHANNELS_ENDPOINT = "https://www.googleapis.com/youtube/v3/channels";
 const YOUTUBE_PLAYLIST_ITEMS_ENDPOINT = "https://www.googleapis.com/youtube/v3/playlistItems";
-const rateBuckets = new Map();
-
-function requestIp(req) {
-  return clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "guest").split(",")[0], 120);
-}
-
-function rateLimit(key, limit = 50, windowMs = 10 * 60 * 1000) {
-  const now = Date.now();
-  const current = rateBuckets.get(key);
-  if (!current || current.expiresAt <= now) {
-    rateBuckets.set(key, { count: 1, expiresAt: now + windowMs });
-    return;
-  }
-  current.count += 1;
-  if (current.count > limit) {
-    const error = new Error("Bạn thao tác quá nhanh. Vui lòng thử lại sau.");
-    error.statusCode = 429;
-    error.code = "RATE_LIMITED";
-    throw error;
-  }
-  if (rateBuckets.size > 500) {
-    for (const [bucketKey, bucket] of rateBuckets) {
-      if (bucket.expiresAt <= now) rateBuckets.delete(bucketKey);
-    }
-  }
-}
 
 async function readJson(url, options = {}) {
   const controller = new AbortController();
@@ -101,6 +76,12 @@ function configuredServices() {
           ? "gemini-pool"
         : "none"
   };
+}
+
+function serverProviderConfigured(provider) {
+  if (provider === "youtube") return Boolean(String(process.env.YOUTUBE_API_KEY || "").trim());
+  const vertex = vertexSearchConfig();
+  return vertex.configured || Boolean(String(process.env.GOOGLE_SEARCH_API_KEY || "").trim() && String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim());
 }
 
 function firstText(...values) {
@@ -401,6 +382,7 @@ module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
+  let gateway = null;
   try {
     if (String(req.query.health || "") === "1") {
       res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60");
@@ -413,8 +395,15 @@ module.exports = async function handler(req, res) {
     if (!new Set(["google", "youtube"]).has(provider)) return res.status(404).json({ error: "Dịch vụ tìm kiếm không tồn tại." });
     if (provider === "google" && action !== "search") return res.status(400).json({ error: "Google Search chỉ hỗ trợ action=search." });
     if (action === "search" && !query) return res.status(400).json({ error: "Hãy nhập nội dung cần tìm." });
+    if (!serverProviderConfigured(provider)) {
+      return res.status(503).json({
+        error: `${provider === "google" ? "Google Search" : "YouTube Search"} chưa được kết nối trên máy chủ.`,
+        code: "SEARCH_NOT_CONFIGURED", provider,
+        required: provider === "google" ? ["GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID"] : ["YOUTUBE_API_KEY"]
+      });
+    }
 
-    rateLimit(`search:${provider}:${action}:${requestIp(req)}`, action === "search" ? 50 : 80);
+    gateway = await beginGateway(req, res, { provider, action });
     const result = provider === "google" ? await googleSearch(req, query) : action === "search" ? await youtubeSearch(req, query) : await youtubeResource(req, action);
     if (result.invalid) return res.status(400).json({ error: result.invalid });
     if (result.notConfigured) {
@@ -425,9 +414,11 @@ module.exports = async function handler(req, res) {
         required: result.required
       });
     }
+    await gateway.complete("success", 200);
     res.setHeader("Cache-Control", "public, max-age=30, s-maxage=180, stale-while-revalidate=300");
     return res.status(200).json(result);
   } catch (error) {
+    await gateway?.complete("failed", Number(error?.statusCode || 500), clean(error?.code || "SEARCH_FAILED", 80)).catch(() => {});
     console.error("Search API error", error?.message || error);
     return res.status(Number(error?.statusCode || 500)).json({
       error: clean(error?.message || "Máy chủ không thể xử lý yêu cầu.", 300),

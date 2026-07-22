@@ -234,7 +234,7 @@
     learnerProfile: { confidence: "", focusSkill: "speaking", needsPlacement: false },
     careerProfile: { roleStage: "student", skillFocus: "speaking", intensity: "foundation" },
     settings: { voiceRate: 0.85, voicePitch: 1, voiceProfile: "us-female", voiceURI: "", audioPlaybackConsent: false, microphoneConsent: false, interfaceLanguage: "vi", reducedMotion: false, beginnerMode: true, theme: "night", learnerType: "student", goal: "Giao tiếp hằng ngày" },
-    speakingScenario: "workplace", speakingAttempts: []
+    speakingScenario: "workplace", speakingAttempts: [], speakingRoleplays: []
   });
   const mergeState = (stored = {}) => {
     const fallback = defaultState();
@@ -604,6 +604,29 @@
     { id: "travel", icon: "✦", title: "Du lịch", context: "Hỏi đường và kiểm tra thông tin", phrase: "Is this the right platform for the city centre?" },
     { id: "social", icon: "◉", title: "Giao tiếp", context: "Duy trì một cuộc trò chuyện", phrase: "That sounds interesting. How did you get started?" }
   ];
+  const roleplayBriefs = {
+    workplace: { partner: "Team lead", learner: "Project contributor", opener: "We need a clear owner for the next step. What do you suggest?", frame: "I can take ... and confirm ... by ...", signals: ["take", "confirm", "by"] },
+    interview: { partner: "Hiring manager", learner: "Candidate", opener: "Tell me about a time you solved a difficult problem.", frame: "The situation was ... I decided to ... The result was ...", signals: ["situation", "decided", "result"] },
+    presentation: { partner: "Stakeholder", learner: "Presenter", opener: "What is the main decision you need from us today?", frame: "Today I need ... because ... The next step is ...", signals: ["need", "because", "next"] },
+    customer: { partner: "Customer", learner: "Support specialist", opener: "My order is late and I have not received an update.", frame: "I understand ... I will check ... and update you by ...", signals: ["understand", "check", "update"] },
+    travel: { partner: "Station staff", learner: "Traveller", opener: "The next city-centre train leaves from platform six.", frame: "Could you confirm ... and tell me ...?", signals: ["confirm", "tell", "platform"] },
+    social: { partner: "New colleague", learner: "Conversation partner", opener: "I started this role two weeks ago.", frame: "That sounds ... What ...?", signals: ["sounds", "what"] }
+  };
+  const buildRoleplayBrief = (scenarioId = "workplace", career = {}, profile = {}) => {
+    const scenario = speakingScenarios.find((item) => item.id === scenarioId) || speakingScenarios[0];
+    const base = roleplayBriefs[scenario.id] || roleplayBriefs.workplace;
+    const careerRole = Array.isArray(career.roles) && career.roles.length ? career.roles[0] : base.learner;
+    return { ...base, scenarioId: scenario.id, scenarioTitle: scenario.title, careerName: career.viName || career.name || "General workplace", learner: `${careerRole} · ${careerStageLabels[profile.roleStage] || "Learner"}` };
+  };
+  const evaluateRoleplayReply = (reply = "", brief = roleplayBriefs.workplace) => {
+    const words = normalize(reply).split(" ").filter(Boolean);
+    const signals = Array.isArray(brief.signals) ? brief.signals : [];
+    const covered = signals.filter((signal) => words.includes(normalize(signal)));
+    const missing = signals.filter((signal) => !covered.includes(signal));
+    const signalScore = signals.length ? covered.length / signals.length : 0;
+    const lengthScore = Math.min(1, words.length / 8);
+    return { score: Math.round((signalScore * 0.7 + lengthScore * 0.3) * 100), covered, missing, method: "local-roleplay-signals-v1", disclaimer: "Deterministic local checklist; it is not an AI evaluation of fluency or professional quality." };
+  };
   const voiceStudioMarkup = (state, phrase, compact = false) => {
     const voices = englishVoices();
     const selected = selectVoice(voices, state.settings);
@@ -846,9 +869,15 @@
     const scenario = speakingScenarios.find((item) => item.id === state.speakingScenario) || speakingScenarios[0];
     const phrase = scenario.phrase;
     const attempts = Array.isArray(state.speakingAttempts) ? state.speakingAttempts.filter((item) => item.level === levelId).slice(0, 4) : [];
+    const career = careerTrackById(selectedCareerId(state));
+    const brief = buildRoleplayBrief(scenario.id, career, state.careerProfile);
+    const roleplays = Array.isArray(state.speakingRoleplays) ? state.speakingRoleplays.filter((item) => item.scenario === scenario.id).slice(0, 3) : [];
+    const next = nextLessonFor(state, levelId);
+    const roleplayMarkup = `<section class="hhe-roleplay-workflow"><header><div><small>04 · CAREER ROLEPLAY</small><h3>${escapeHtml(brief.learner)} ↔ ${escapeHtml(brief.partner)}</h3><p>${escapeHtml(brief.careerName)} · ${escapeHtml(brief.scenarioTitle)}</p></div><span>${roleplays.length} lượt đã lưu</span></header><div class="hhe-roleplay-turn"><small>${escapeHtml(brief.partner.toUpperCase())}</small><blockquote>${escapeHtml(brief.opener)}</blockquote><button type="button" data-hhe-speak="${escapeHtml(brief.opener)}">▶ Nghe lời mở đầu</button></div><form data-hhe-roleplay data-scenario="${escapeHtml(brief.scenarioId)}"><label><span>Trả lời trong vai ${escapeHtml(brief.learner)}</span><textarea name="reply" rows="3" placeholder="${escapeHtml(brief.frame)}"></textarea></label><p>Tín hiệu cần thử: ${brief.signals.map((item) => `<code>${escapeHtml(item)}</code>`).join(" ")}. Checklist chạy cục bộ, không phải AI chấm độ trôi chảy.</p><div><button type="button" data-hhe-speak-roleplay>Nghe câu của tôi</button><button class="primary" type="submit">Kiểm tra & lưu lượt</button></div><output data-hhe-roleplay-feedback aria-live="polite">${roleplays[0] ? `Lần gần nhất: ${roleplays[0].score}% checklist` : "Viết một câu trả lời để hoàn tất bước ứng dụng."}</output></form><footer><div><small>BÀI HỌC TIẾP THEO</small><strong>${escapeHtml(next.title)}</strong></div><button type="button" data-hhe-open-lesson="${escapeHtml(next.id)}">Mở bài tiếp theo →</button></footer></section>`;
     return `<section class="hhe-speaking"><header class="hhe-section-head"><div><small>${levelId} · LISTEN & SPEAK COACH</small><h2>Nghe nhiều giọng, nhại theo và dùng ngay</h2><p>Một phiên học hoàn chỉnh gồm nghe đối chiếu vùng giọng, shadowing, nhận dạng từ đã nói và chép chính tả. Phản hồi là gợi ý luyện tập, không phải điểm phát âm chuyên gia.</p></div><span>${attempts.length} lượt gần đây</span></header>
       <section class="hhe-speaking-flow"><article class="active"><b>01</b><span><strong>Nghe</strong><small>Anh-Mỹ / Anh-Anh</small></span></article><i></i><article><b>02</b><span><strong>Nhại</strong><small>Shadowing theo cụm</small></span></article><i></i><article><b>03</b><span><strong>Đối chiếu</strong><small>Từ nhận dạng được</small></span></article><i></i><article><b>04</b><span><strong>Ứng dụng</strong><small>Chép và nói tự do</small></span></article></section>
       ${voiceStudioMarkup(state, phrase)}
+      ${roleplayMarkup}
       <section class="hhe-scenario-picker"><header><div><small>REAL-WORLD ROLE PLAY</small><h3>Chọn tình huống muốn luyện</h3><p>Mỗi lựa chọn cập nhật ngay câu luyện và mở đầy đủ công cụ phía dưới.</p></div><span>${escapeHtml(levelId)} · 6 tình huống</span></header><div>${speakingScenarios.map((item) => `<button type="button" class="${item.id === scenario.id ? "active" : ""}" data-hhe-speaking-scenario="${item.id}"><b>${item.icon}</b><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.context)}</small></span><i>${item.id === scenario.id ? "Đang học" : "Mở →"}</i></button>`).join("")}</div></section>
       <div class="hhe-speaking-lab-grid"><section class="hhe-shadowing-card"><header><span>02</span><div><small>SHADOWING COACH</small><h3>Nghe theo cụm, rồi nói liền mạch</h3></div></header><div class="hhe-phrase-card"><small>${escapeHtml(scenario.title.toUpperCase())}</small><strong data-hhe-speaking-phrase>${escapeHtml(phrase)}</strong><span>${escapeHtml(prompt.ipa || "Nghe nhịp và trọng âm của cả cụm, không đọc từng từ rời.")}</span></div><ol><li><b>1</b><span>Nghe chậm một lượt</span><button type="button" data-hhe-speak="${escapeHtml(phrase)}" data-hhe-speak-rate="0.65">Phát chậm</button></li><li><b>2</b><span>Nghe tốc độ tự nhiên</span><button type="button" data-hhe-speak="${escapeHtml(phrase)}">Phát chuẩn</button></li><li><b>3</b><span>Nói lại và nhận transcript</span><button class="primary" type="button" data-hhe-recognize data-hhe-target="${escapeHtml(phrase)}">Bắt đầu nói</button></li></ol><output data-hhe-transcript>Transcript và mức khớp từ sẽ xuất hiện tại đây.</output><div class="hhe-pron-score" data-hhe-pron-score hidden></div></section>
       <section class="hhe-dictation-card"><header><span>03</span><div><small>LISTENING DICTATION</small><h3>Nghe mà không nhìn đáp án</h3></div></header><p>Phát câu bằng giọng đã chọn, nhập những gì bạn nghe được rồi xem từng từ còn thiếu.</p><button type="button" data-hhe-speak="${escapeHtml(phrase)}">▶ Phát câu bí mật</button><form data-hhe-dictation data-answer="${escapeHtml(phrase)}"><label><span>Nhập câu nghe được</span><textarea name="dictation" autocomplete="off" spellcheck="false" placeholder="Type what you hear..."></textarea></label><button class="primary" type="submit">Kiểm tra từng từ</button><output data-hhe-dictation-feedback></output></form><aside><small>CÂU THEO CẤP ${levelId}</small><strong>${escapeHtml(prompt.phrase)}</strong><button type="button" data-hhe-speak="${escapeHtml(prompt.phrase)}">Nghe câu CEFR hôm nay</button></aside></section></div>
@@ -1107,6 +1136,8 @@
     if (careerButton) { const state = readState(); if (!careerTracks.some((item) => item.id === careerButton.dataset.hheCareer)) return; state.selectedCareer = careerButton.dataset.hheCareer; state.activeView = "career"; activeCareerCategory = "all"; writeState(state); focusAfterRender = true; if (!syncViewRoute("career")) { render({ focusView: true }); toast(`Đã mở ${careerTrackById(state.selectedCareer).viName}.`); } return; }
     const lessonButton = event.target.closest("[data-hhe-open-lesson]");
     if (lessonButton) { navigatorOpen = false; const state = readState(); const lesson = getLesson(lessonButton.dataset.hheOpenLesson); state.activeView = "lesson"; state.activeLesson = lesson.id; state.selectedLevel = lesson.level || "A0"; if (lesson.trackId) state.selectedCareer = lesson.trackId; writeState(state); focusAfterRender = true; if (!syncViewRoute("lesson")) render({ focusView: true }); return; }
+    const roleplaySpeech = event.target.closest("[data-hhe-speak-roleplay]");
+    if (roleplaySpeech) { const state = readState(); const text = roleplaySpeech.closest("[data-hhe-roleplay]")?.querySelector('[name="reply"]')?.value?.trim() || ""; if (!text) toast("Hãy viết câu trả lời trước khi nghe lại.", "error"); else if (!speak(text, state.settings)) toast(state.settings.audioPlaybackConsent ? "Voice output is unavailable." : "Hãy bật quyền phát âm thanh ở Voice Studio.", "error"); return; }
     const speakButton = event.target.closest("[data-hhe-speak]");
     if (speakButton) { const state = readState(); if (!speak(speakButton.dataset.hheSpeak, state.settings, { rate: Number(speakButton.dataset.hheSpeakRate) || undefined })) toast("Thiết bị này chưa hỗ trợ giọng đọc.", "error"); return; }
     const saveWord = event.target.closest("[data-hhe-save-word]");
@@ -1145,6 +1176,24 @@
 
   const handleSubmit = (event) => {
     event.stopPropagation();
+    const roleplayForm = event.target.closest("[data-hhe-roleplay]");
+    if (roleplayForm) {
+      event.preventDefault();
+      const reply = String(new FormData(roleplayForm).get("reply") || "").trim();
+      const state = readState();
+      const career = careerTrackById(selectedCareerId(state));
+      const brief = buildRoleplayBrief(roleplayForm.dataset.scenario, career, state.careerProfile);
+      const output = roleplayForm.querySelector("[data-hhe-roleplay-feedback]");
+      if (!reply) { output.textContent = "Hãy viết ít nhất một câu trả lời."; toast("Roleplay cần một câu trả lời trước khi lưu.", "error"); return; }
+      const result = evaluateRoleplayReply(reply, brief);
+      output.innerHTML = `<strong>${result.score}% checklist cục bộ</strong><span>${result.missing.length ? `Thử thêm: ${escapeHtml(result.missing.join(" · "))}` : "Đã dùng đủ tín hiệu giao tiếp."}</span><small>${escapeHtml(result.disclaimer)}</small>`;
+      state.speakingRoleplays = Array.isArray(state.speakingRoleplays) ? state.speakingRoleplays : [];
+      state.speakingRoleplays.unshift({ scenario: brief.scenarioId, careerId: career.id, role: brief.learner, reply, score: result.score, method: result.method, createdAt: new Date().toISOString() });
+      state.speakingRoleplays = state.speakingRoleplays.slice(0, 30);
+      writeState(state);
+      toast(result.score >= 70 ? "Đã hoàn tất lượt roleplay nghề nghiệp." : "Đã lưu lượt roleplay; hãy thử thêm các tín hiệu còn thiếu.", result.score >= 70 ? "success" : "error");
+      return;
+    }
     const dictationForm = event.target.closest("[data-hhe-dictation]");
     if (dictationForm) {
       event.preventDefault();
@@ -1348,6 +1397,6 @@
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
   const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
-  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
-  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
+  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
+  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
 })();

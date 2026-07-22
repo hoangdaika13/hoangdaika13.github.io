@@ -14,8 +14,9 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function platformOrchestratorFactory() {
   "use strict";
 
-  const VERSION = 1;
-  const STORAGE_KEY = "hh.platform.orchestrator.v1";
+  const VERSION = 2;
+  const STORAGE_KEY = "hh.platform.orchestrator.v2";
+  const LEGACY_STORAGE_KEY = "hh.platform.orchestrator.v1";
   const JOB_STATES = Object.freeze(["queued", "running", "waiting", "completed", "failed", "cancelled"]);
   const TERMINAL_JOB_STATES = new Set(["completed", "failed", "cancelled"]);
   const SENSITIVE_KEY = /(?:password|passcode|secret|token|authorization|cookie|credential|private[-_]?key|api[-_]?key|card|cvv)/i;
@@ -27,6 +28,8 @@
     failed: ["queued"],
     cancelled: ["queued"]
   });
+  const ASSET_STATES = Object.freeze(["draft", "processing", "ready", "review", "published", "archived"]);
+  const INTEGRATION_STATES = Object.freeze(["connected", "degraded", "offline", "needs-setup"]);
 
   const clone = (value) => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
   const now = () => new Date().toISOString();
@@ -62,9 +65,13 @@
       version: VERSION,
       activeProjectId: "",
       projects: [],
+      assets: [],
+      versions: [],
       jobs: [],
       providers: [],
+      integrations: [],
       guides: {},
+      activities: [],
       audit: [],
       updatedAt: now()
     };
@@ -105,6 +112,62 @@
     };
   }
 
+  function normalizeAsset(input = {}) {
+    const createdAt = text(input.createdAt || now(), 40);
+    return {
+      id: text(input.id || uid("asset"), 100),
+      projectId: text(input.projectId, 100),
+      kind: text(input.kind || "file", 80),
+      name: text(input.name || "Tài sản chưa đặt tên", 200),
+      state: ASSET_STATES.includes(input.state) ? input.state : "draft",
+      uri: text(input.uri, 2000),
+      mimeType: text(input.mimeType, 120),
+      size: clamp(input.size, 0, Number.MAX_SAFE_INTEGER, 0),
+      metadata: sanitize(input.metadata || {}) || {},
+      createdAt,
+      updatedAt: text(input.updatedAt || createdAt, 40)
+    };
+  }
+
+  function normalizeVersion(input = {}) {
+    const createdAt = text(input.createdAt || now(), 40);
+    return {
+      id: text(input.id || uid("version"), 100),
+      projectId: text(input.projectId, 100),
+      assetId: text(input.assetId, 100),
+      label: text(input.label || "Bản nháp", 160),
+      state: ASSET_STATES.includes(input.state) ? input.state : "draft",
+      snapshot: sanitize(input.snapshot || {}) || {},
+      createdAt,
+      createdBy: text(input.createdBy || "local", 120)
+    };
+  }
+
+  function normalizeIntegration(input = {}) {
+    return {
+      id: text(input.id || uid("integration"), 100),
+      providerId: text(input.providerId || input.id, 100),
+      area: text(input.area || "platform", 80),
+      label: text(input.label || input.providerId || input.id || "Integration", 160),
+      state: INTEGRATION_STATES.includes(input.state) ? input.state : "needs-setup",
+      capabilities: [...new Set((Array.isArray(input.capabilities) ? input.capabilities : []).map((item) => text(item, 100)).filter(Boolean))],
+      lastCheckedAt: text(input.lastCheckedAt || now(), 40),
+      detail: text(input.detail, 300)
+    };
+  }
+
+  function normalizeActivity(input = {}) {
+    return {
+      id: text(input.id || uid("activity"), 100),
+      projectId: text(input.projectId, 100),
+      type: text(input.type || "note", 80),
+      message: text(input.message || "Hoạt động mới", 300),
+      actor: text(input.actor || "local", 120),
+      metadata: sanitize(input.metadata || {}) || {},
+      createdAt: text(input.createdAt || now(), 40)
+    };
+  }
+
   function normalizeProvider(input = {}, existing = {}) {
     const limit = clamp(input.quotaLimit ?? existing.quotaLimit, 0, Number.MAX_SAFE_INTEGER, 0);
     return {
@@ -122,13 +185,18 @@
 
   function migrate(input) {
     if (!input || typeof input !== "object") return defaultState();
+    const projects = (Array.isArray(input.projects) ? input.projects : []).slice(0, 200).map(normalizeProject);
     return {
       version: VERSION,
-      activeProjectId: text(input.activeProjectId, 100),
-      projects: (Array.isArray(input.projects) ? input.projects : []).slice(0, 200).map(normalizeProject),
+      activeProjectId: text(input.activeProjectId, 100) || projects[0]?.id || "",
+      projects,
+      assets: (Array.isArray(input.assets) ? input.assets : []).slice(-500).map(normalizeAsset),
+      versions: (Array.isArray(input.versions) ? input.versions : []).slice(-500).map(normalizeVersion),
       jobs: (Array.isArray(input.jobs) ? input.jobs : []).slice(-500).map(normalizeJob),
       providers: (Array.isArray(input.providers) ? input.providers : []).slice(0, 100).map((item) => normalizeProvider(item)),
+      integrations: (Array.isArray(input.integrations) ? input.integrations : []).slice(0, 100).map(normalizeIntegration),
       guides: sanitize(input.guides || {}) || {},
+      activities: (Array.isArray(input.activities) ? input.activities : []).slice(-500).map(normalizeActivity),
       audit: (Array.isArray(input.audit) ? input.audit : []).slice(-300).map((item) => sanitize(item)).filter(Boolean),
       updatedAt: text(input.updatedAt || now(), 40)
     };
@@ -139,7 +207,10 @@
     const eventTarget = options.eventTarget || null;
     const adapters = new Map();
     let state = defaultState();
-    try { state = migrate(JSON.parse(storage?.getItem?.(STORAGE_KEY) || "null")); } catch { state = defaultState(); }
+    try {
+      const raw = storage?.getItem?.(STORAGE_KEY) || storage?.getItem?.(LEGACY_STORAGE_KEY) || "null";
+      state = migrate(JSON.parse(raw));
+    } catch { state = defaultState(); }
 
     function emit(name, detail) {
       if (!eventTarget?.dispatchEvent) return;
@@ -176,6 +247,47 @@
       audit("project.activated", { projectId });
       persist();
       return getActiveProject();
+    }
+
+    function upsertAsset(input) {
+      const existingIndex = state.assets.findIndex((asset) => asset.id === input?.id);
+      const existing = existingIndex >= 0 ? state.assets[existingIndex] : {};
+      const asset = normalizeAsset({ ...existing, ...input, updatedAt: now() });
+      if (existingIndex >= 0) state.assets[existingIndex] = asset;
+      else state.assets.unshift(asset);
+      state.assets = state.assets.slice(0, 500);
+      audit(existingIndex >= 0 ? "asset.updated" : "asset.created", { assetId: asset.id, projectId: asset.projectId, kind: asset.kind });
+      persist();
+      return clone(asset);
+    }
+
+    function addVersion(input) {
+      const version = normalizeVersion(input);
+      state.versions.unshift(version);
+      state.versions = state.versions.slice(0, 500);
+      recordActivity({ projectId: version.projectId, type: "version.created", message: `Đã tạo ${version.label}`, metadata: { versionId: version.id, assetId: version.assetId } });
+      return clone(version);
+    }
+
+    function recordActivity(input) {
+      const activity = normalizeActivity(input);
+      state.activities.unshift(activity);
+      state.activities = state.activities.slice(0, 500);
+      audit("activity.recorded", { activityId: activity.id, projectId: activity.projectId, type: activity.type });
+      persist();
+      return clone(activity);
+    }
+
+    function setIntegration(input) {
+      if (!input?.providerId && !input?.id) throw new Error("Integration cần providerId hoặc id.");
+      const providerId = text(input.providerId || input.id, 100);
+      const index = state.integrations.findIndex((item) => item.providerId === providerId && item.area === text(input.area || "platform", 80));
+      const integration = normalizeIntegration({ ...(index >= 0 ? state.integrations[index] : {}), ...input, providerId });
+      if (index >= 0) state.integrations[index] = integration;
+      else state.integrations.push(integration);
+      audit("integration.updated", { providerId, area: integration.area, state: integration.state });
+      persist();
+      return clone(integration);
     }
 
     function getActiveProject() {
@@ -290,9 +402,13 @@
         version: VERSION,
         activeProjectId: state.activeProjectId,
         projects: state.projects,
+        assets: state.assets,
+        versions: state.versions,
         jobs: state.jobs,
         providers: state.providers,
+        integrations: state.integrations,
         guides: state.guides,
+        activities: state.activities,
         audit: state.audit,
         suggestions: suggestions(),
         updatedAt: state.updatedAt
@@ -300,11 +416,15 @@
     }
 
     return {
-      upsertProject, activateProject, getActiveProject, enqueue, transitionJob, registerAdapter, run,
-      setProvider, consumeQuota, updateGuide, suggestions, inspect,
+      upsertProject, activateProject, getActiveProject, upsertAsset, addVersion, recordActivity, setIntegration,
+      enqueue, transitionJob, registerAdapter, run, setProvider, consumeQuota, updateGuide, suggestions, inspect,
       listJobs: (filter = {}) => clone(state.jobs.filter((job) => Object.entries(filter).every(([key, value]) => job[key] === value))),
       listProjects: () => clone(state.projects),
+      listAssets: (filter = {}) => clone(state.assets.filter((asset) => Object.entries(filter).every(([key, value]) => asset[key] === value))),
+      listVersions: (filter = {}) => clone(state.versions.filter((version) => Object.entries(filter).every(([key, value]) => version[key] === value))),
       listProviders: () => clone(state.providers),
+      listIntegrations: () => clone(state.integrations),
+      listActivities: (projectId = "") => clone(state.activities.filter((activity) => !projectId || activity.projectId === projectId)),
       isTerminalJobState: (value) => TERMINAL_JOB_STATES.has(value)
     };
   }

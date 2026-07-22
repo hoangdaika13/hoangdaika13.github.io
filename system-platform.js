@@ -8,7 +8,7 @@
   "use strict";
 
   const VERSION = 1;
-  const INTEGRATION_VERSION = "system-platform.v1";
+  const INTEGRATION_VERSION = "system-platform.v2";
   const STORAGE_KEY = "hh.system.center.v1";
   const BACKUP_SCHEMA = "hh.system.backup.v1";
   const SENSITIVE_KEY = /(?:password|passcode|secret|token|authorization|cookie|credential|private[-_]?key|api[-_]?key|card|cvv)/i;
@@ -135,6 +135,11 @@
         if (data.ok !== true || !data.health) throw new Error("Backend chưa xác nhận trạng thái hệ thống.");
         return { confirmed: true, checkedAt: data.health.checkedAt || now(), health: sanitize(data.health) || {} };
       },
+      async gatewayStatus() {
+        const data = await request("/api/platform/summary?view=gateway-quotas");
+        if (data.ok !== true || data.confirmed !== true || !Array.isArray(data.quotas)) throw new Error("Gateway chưa xác nhận quota.");
+        return { confirmed: true, checkedAt: data.checkedAt || now(), quotas: data.quotas.map(item => sanitize(item)).filter(Boolean) };
+      },
       async sessions() {
         const data = await request("/api/auth/sessions");
         return (Array.isArray(data.sessions) ? data.sessions : []).slice(0, 50).map(item => sanitize(item)).filter(Boolean);
@@ -216,7 +221,7 @@
       page.querySelector("[data-system-sessions]").innerHTML = sessions.length ? sessions.map(session => `<article><div><strong>${escapeHtml(session.device?.label || `${session.device?.browser || "Trình duyệt"} · ${session.device?.platform || "Thiết bị"}`)}</strong><small>${session.current ? "Phiên hiện tại" : `Hoạt động ${escapeHtml(session.lastSeenAt ? new Date(session.lastSeenAt).toLocaleString("vi-VN") : "chưa rõ")}`}</small></div><button type="button" data-system-revoke="${escapeHtml(session.id)}">${session.current ? "Đăng xuất phiên này" : "Thu hồi"}</button></article>`).join("") : '<p class="system-empty">Không có phiên đang hoạt động hoặc backend chưa trả dữ liệu.</p>';
     };
     const loadSessions = async () => { try { renderSessions(await adapter.sessions()); notice("Đã đồng bộ phiên đăng nhập của bạn.", "success"); } catch (error) { renderSessions([]); notice(error.message, "error"); } };
-    const renderHealth = result => {
+    const renderHealth = (result, gatewayStatus = {}) => {
       const health = result.health || {};
       page.querySelector("[data-system-backend]").textContent = result.confirmed ? "Backend đã xác nhận" : "Chưa xác nhận";
       page.querySelector("[data-system-backend-time]").textContent = `Kiểm tra ${new Date(result.checkedAt || Date.now()).toLocaleString("vi-VN")}`;
@@ -224,9 +229,17 @@
         ["Database", health.database?.connected], ["Google OAuth", health.auth?.googleOAuth], ["Email", health.auth?.emailVerification], ["Gemini", health.ai?.gemini], ["ElevenLabs", health.ai?.elevenLabs], ["payOS", health.payments?.payos], ["Object Storage", health.storage?.objectStorage], ["Realtime", health.realtime?.connected]
       ];
       page.querySelector("[data-system-integrations]").innerHTML = integrations.map(([label, ready]) => `<p><span>${escapeHtml(label)}</span><b data-state="${ready ? "ready" : "setup"}">${ready ? "Đã cấu hình" : "Cần cấu hình server"}</b></p>`).join("");
-      page.querySelector("[data-system-quotas]").innerHTML = '<p class="system-empty">Backend hiện chưa cung cấp số quota đã dùng/giới hạn. Không hiển thị số liệu ước đoán.</p>';
+      page.querySelector("[data-system-quotas]").innerHTML = gatewayStatus.confirmed && gatewayStatus.quotas?.length
+        ? gatewayStatus.quotas.map(item => `<p><span>${escapeHtml(item.provider)} <small>${escapeHtml(item.note || "Lượt qua HH Gateway")}</small></span><b>${Number(item.used || 0)} / ${Number(item.limit || 0)} · còn ${Number(item.remaining || 0)}</b></p>`).join("")
+        : '<p class="system-empty">Gateway chưa cung cấp quota đã xác nhận. Không hiển thị số liệu ước đoán.</p>';
     };
-    const loadHealth = async () => { try { const result = await adapter.health(); renderHealth(result); notice("Trạng thái tích hợp đã được backend xác nhận.", "success"); } catch (error) { notice(error.message, "error"); } };
+    const loadHealth = async () => {
+      try {
+        const [result, gatewayStatus] = await Promise.all([adapter.health(), adapter.gatewayStatus?.().catch(error => ({ confirmed: false, error: error.message, quotas: [] })) || Promise.resolve({ confirmed: false, quotas: [] })]);
+        renderHealth(result, gatewayStatus);
+        notice(gatewayStatus.confirmed ? "Trạng thái tích hợp và quota gateway đã được backend xác nhận." : "Trạng thái tích hợp đã xác nhận; quota gateway chưa sẵn sàng.", gatewayStatus.confirmed ? "success" : "");
+      } catch (error) { notice(error.message, "error"); }
+    };
 
     page.addEventListener("click", async event => {
       const tab = event.target.closest("[data-system-tab]");
