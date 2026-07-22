@@ -50,7 +50,40 @@ function rolloutBucket(identity, key) {
   return [...`${identity}:${key}`].reduce((value, character) => ((value * 31) + character.charCodeAt(0)) >>> 0, 7) % 100;
 }
 
-function readinessSnapshot({ databaseConnected = false } = {}) {
+const DEFAULT_REALTIME_SERVER_URL = "https://hoangdaika13-astra-realtime.onrender.com";
+
+async function realtimeReadiness() {
+  const baseUrl = String(process.env.REALTIME_SERVER_URL || DEFAULT_REALTIME_SERVER_URL).trim().replace(/\/$/, "");
+  if (!baseUrl) return { configured: false, connected: false, url: "", error: "missing-url" };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3500);
+  try {
+    const response = await fetch(`${baseUrl}/health`, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal
+    });
+    const data = await response.json().catch(() => ({}));
+    return {
+      configured: true,
+      connected: response.ok && data?.ok === true && data?.database?.connected === true,
+      url: baseUrl,
+      databaseConnected: data?.database?.connected === true,
+      turnConfigured: data?.calls?.turnConfigured === true,
+      checkedAt: data?.checkedAt || new Date()
+    };
+  } catch (error) {
+    return {
+      configured: true,
+      connected: false,
+      url: baseUrl,
+      error: error?.name === "AbortError" ? "timeout" : "unreachable"
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
   const has = (...names) => names.every((name) => Boolean(String(process.env[name] || "").trim()));
   const gemini = Boolean(String(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "").trim());
   const googleSearch = has("GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID");
@@ -66,7 +99,7 @@ function readinessSnapshot({ databaseConnected = false } = {}) {
   if (!eleven) missing.push({ id: "elevenlabs", label: "Music/Sound AI", connect: "ELEVENLABS_API_KEY" });
   if (!downloader) missing.push({ id: "download-engine", label: "Download Center", connect: "VIDEO_DOWNLOADER_API_URL và khóa engine" });
   if (!objectStorage) missing.push({ id: "object-storage", label: "Cloud Storage file lớn", connect: "S3/R2 bucket và credentials server-side" });
-  missing.push({ id: "realtime-server", label: "Realtime/Socket.io", connect: "Render cần MONGODB_URI và JWT_SECRET giống Vercel" });
+  if (!realtime.connected) missing.push({ id: "realtime-server", label: "Realtime/Socket.io", connect: "Render cần online, kết nối MongoDB và dùng cùng JWT_SECRET với Vercel" });
   return {
     checkedAt: new Date(),
     database: { configured: Boolean(process.env.MONGODB_URI), connected: databaseConnected, database: process.env.MONGODB_DB || "hoangdaika13_site" },
@@ -86,7 +119,15 @@ function readinessSnapshot({ databaseConnected = false } = {}) {
     payments: { payos, donationReceiptEmail: email },
     storage: { metadata: true, smallTextPayload: true, objectStorage },
     download: { engine: downloader },
-    realtime: { configuredInVercel: false, note: "Socket.io chạy ở Render, không nằm trong Vercel Function." },
+    realtime: {
+      configured: Boolean(realtime.configured),
+      connected: Boolean(realtime.connected),
+      databaseConnected: Boolean(realtime.databaseConnected),
+      turnConfigured: Boolean(realtime.turnConfigured),
+      provider: "Render + Socket.IO",
+      checkedAt: realtime.checkedAt || new Date(),
+      error: realtime.error || ""
+    },
     requiresConnection: missing
   };
 }
@@ -141,7 +182,10 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, acceptedEvents: events.length, online, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, checkedAt: now, policy: { restrictedFeatures: user && Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [], disabledFeatures }, privacy: { interactionMetadataStored: true, rawKeystrokesStored: false, formValuesStored: false, promptBodiesStored: false, passwordsStored: false, tokensStored: false, privateMessagesStored: false, retentionDays: 30 } });
     }
     if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
-    if (req.query.view === "health") return res.status(200).json({ ok: true, health: readinessSnapshot({ databaseConnected: Boolean(db) }) });
+    if (req.query.view === "health") {
+      const realtime = await realtimeReadiness();
+      return res.status(200).json({ ok: true, health: readinessSnapshot({ databaseConnected: Boolean(db), realtime }) });
+    }
     const user = await currentUser(req);
     if (!isAdminUser(user)) return res.status(403).json({ error: "Tài khoản không có quyền truy cập Admin Panel." });
     if (req.query.view === "users") {
