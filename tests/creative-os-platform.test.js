@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 const engines = [
-  ["creative-command-center.js?v=1", "HHCreativeCommandCenter"],
+  ["creative-command-center.js?v=2", "HHCreativeCommandCenter"],
   ["creative-preproduction.js?v=1", "HHCreativePreproduction"],
   ["creative-ai-workflow.js?v=3", "HHCreativeAIWorkflow"],
   ["creative-production-lab.js?v=1", "HHCreativeProductionLab"],

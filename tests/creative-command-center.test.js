@@ -30,7 +30,7 @@ function sampleState() {
 }
 
 test("Command Center exposes mount lifecycle and pure rendering helpers", () => {
-  for (const method of ["mount", "unmount", "renderOverview", "renderProject", "calculateMetrics", "projectProgress", "escapeHTML"]) {
+  for (const method of ["mount", "unmount", "renderOverview", "renderProject", "calculateMetrics", "projectProgress", "pipelineState", "actionQueue", "escapeHTML"]) {
     assert.equal(typeof command[method], "function", method);
   }
   assert.match(source, /globalScope\.HHCreativeCommandCenter = api/);
@@ -94,6 +94,35 @@ test("project progress derives from content until an explicit progress exists", 
   assert.equal(command.projectProgress(explicit), 87);
 });
 
+test("Creative Launchpad derives an honest pipeline and actionable queue", () => {
+  const blank = core.normalizeProject({ name: "Blank" });
+  const complete = sampleState().projects[0];
+  assert.equal(command.pipelineState(blank).percent, 0);
+  assert.equal(command.pipelineState(complete).percent, 100);
+  assert.equal(command.pipelineState(complete).completed, 6);
+  const actions = command.actionQueue(blank);
+  assert.equal(actions[0].tab, "brief");
+  assert.ok(actions.length <= 4);
+  assert.ok(actions.every((action) => action.tab || action.route));
+});
+
+test("Creative Launchpad exposes templates, pipeline navigation, shortcuts and asset intake", () => {
+  const html = command.renderOverview(sampleState());
+  for (const token of [
+    "CREATIVE LAUNCHPAD",
+    "data-action=\"create-template\"",
+    "data-template=\"youtube-series\"",
+    "data-action=\"open-project-tab\"",
+    "data-overview-asset-input",
+    "Production readiness"
+  ]) assert.match(html, new RegExp(token));
+  for (const token of ["create-template", "open-project-tab", "open-route", "data-overview-asset-input"]) {
+    assert.match(source, new RegExp(token));
+  }
+  assert.match(source, /event\.key === "\/"/);
+  assert.match(source, /event\.key\.toLowerCase\(\) === "n"/);
+});
+
 test("UI contract covers autosave, keyboard tabs, drag-drop, import/export, and accessible status", () => {
   for (const token of [
     "queueAutosave", "flushAutosave", "ArrowLeft", "ArrowRight", "dataTransfer?.files",
@@ -110,6 +139,9 @@ test("CSS is scoped, responsive at 375px, keyboard visible, and reduced-motion s
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /overflow-x: auto/);
   assert.match(css, /grid-template-columns: 1fr/);
+  assert.match(css, /\.cco-launchpad/);
+  assert.match(css, /\.cco-pipeline/);
+  assert.match(css, /\.cco-template-grid/);
   assert.doesNotMatch(css, /font-size:\s*\d+(?:\.\d+)?vw/);
 });
 

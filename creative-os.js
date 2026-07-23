@@ -35,8 +35,8 @@
   ];
 
   const ENGINES = Object.freeze({
-    overview: { api: "HHCreativeCommandCenter", js: "creative-command-center.js?v=1", css: "creative-command-center.css?v=1" },
-    project: { api: "HHCreativeCommandCenter", js: "creative-command-center.js?v=1", css: "creative-command-center.css?v=1" },
+    overview: { api: "HHCreativeCommandCenter", js: "creative-command-center.js?v=2", css: "creative-command-center.css?v=2" },
+    project: { api: "HHCreativeCommandCenter", js: "creative-command-center.js?v=2", css: "creative-command-center.css?v=2" },
     brief: { api: "HHCreativePreproduction", js: "creative-preproduction.js?v=1", css: "creative-preproduction.css?v=1" },
     moodboard: { api: "HHCreativePreproduction", js: "creative-preproduction.js?v=1", css: "creative-preproduction.css?v=1" },
     storyboard: { api: "HHCreativePreproduction", js: "creative-preproduction.js?v=1", css: "creative-preproduction.css?v=1" },

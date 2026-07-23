@@ -15,6 +15,20 @@
   ]);
   const STATUS_LABELS = Object.freeze({ draft: "Bản nháp", review: "Đang duyệt", approved: "Đã duyệt", published: "Đã xuất bản" });
   const PUBLISH_LABELS = Object.freeze({ draft: "Bản nháp", scheduled: "Đã lên lịch", publishing: "Đang đăng", published: "Đã đăng", failed: "Lỗi" });
+  const CREATIVE_TEMPLATES = Object.freeze([
+    { id: "youtube-series", icon: "YT", title: "YouTube Series", accent: "cyan", description: "Kịch bản dài, storyboard, thumbnail và lịch phát hành.", platform: "YouTube", format: "Video series 16:9", tone: "Cuốn hút, rõ ràng, giữ chân", goal: "Xây một series video nhất quán từ ý tưởng đến lịch xuất bản." },
+    { id: "social-campaign", icon: "SC", title: "Social Campaign", accent: "pink", description: "Một concept thành Post, Story, Reel và nội dung quảng bá.", platform: "Đa nền tảng", format: "Post, Story, Reel, Short", tone: "Năng động, đúng Brand Voice", goal: "Tạo chiến dịch đa định dạng với thông điệp và nhận diện thống nhất." },
+    { id: "product-launch", icon: "PL", title: "Product Launch", accent: "amber", description: "Brief sản phẩm, key visual, landing page và video giới thiệu.", platform: "Website", format: "Launch kit đa phương tiện", tone: "Cao cấp, thuyết phục", goal: "Chuẩn bị trọn bộ tài sản và nội dung cho một đợt ra mắt sản phẩm." },
+    { id: "podcast-show", icon: "PC", title: "Podcast Show", accent: "violet", description: "Outline, lời dẫn, audio, artwork và lịch phát sóng.", platform: "Podcast", format: "Audio episode và social cut", tone: "Tự nhiên, gần gũi", goal: "Sản xuất tập podcast có cấu trúc, nhận diện và nội dung quảng bá đi kèm." }
+  ]);
+  const PIPELINE_STEPS = Object.freeze([
+    { id: "brief", label: "Brief", tab: "brief", complete: (project) => Boolean(project?.brief?.product && project?.brief?.audience && project?.brief?.goal) },
+    { id: "prompt", label: "Prompt", tab: "prompt", complete: (project) => Boolean(project?.prompts?.length) },
+    { id: "script", label: "Kịch bản", tab: "script", complete: (project) => Boolean(project?.scripts?.length) },
+    { id: "storyboard", label: "Storyboard", tab: "storyboard", complete: (project) => Boolean(project?.storyboard?.length) },
+    { id: "assets", label: "Asset", tab: "assets", complete: (project) => Boolean(project?.assets?.length) },
+    { id: "publish", label: "Xuất bản", tab: "publish", complete: (project) => Boolean(project?.publishing?.length) }
+  ]);
 
   function escapeHTML(value) {
     return String(value == null ? "" : value).replace(/[&<>'"]/g, (char) => ({
@@ -127,6 +141,59 @@
     return items.map((item) => `<div class="cco-calendar-row"><time><b>${new Date(item.scheduledAt).getDate()}</b><small>${new Intl.DateTimeFormat("vi-VN", { month: "short" }).format(new Date(item.scheduledAt))}</small></time><div><strong>${escapeHTML(item.title)}</strong><small>${escapeHTML(item.platform)} · ${escapeHTML(item.projectName)}</small></div><span class="is-${escapeHTML(item.status)}">${escapeHTML(PUBLISH_LABELS[item.status] || item.status)}</span></div>`).join("");
   }
 
+  function pipelineState(project) {
+    if (!project) return { completed: 0, percent: 0, steps: [] };
+    const steps = PIPELINE_STEPS.map((step) => ({ ...step, done: step.complete(project) }));
+    const completed = steps.filter((step) => step.done).length;
+    return { completed, percent: Math.round((completed / steps.length) * 100), steps };
+  }
+
+  function actionQueue(project) {
+    if (!project) return [];
+    const actions = [];
+    const pushTab = (id, title, description, tab, tone) => actions.push({ id, title, description, tab, tone });
+    if (!project.brief?.product || !project.brief?.audience || !project.brief?.goal) pushTab("brief", "Hoàn thiện Creative Brief", "Bổ sung sản phẩm, đối tượng và mục tiêu để các bước sau bám đúng định hướng.", "brief", "cyan");
+    if (!project.prompts?.length) pushTab("prompt", "Tạo prompt gốc", "Lưu model, seed và negative prompt để kết quả có thể tái tạo.", "prompt", "violet");
+    if (!project.scripts?.length) pushTab("script", "Viết kịch bản đầu tiên", "Chuyển brief thành cấu trúc nội dung có thể sản xuất.", "script", "pink");
+    if (!project.storyboard?.length) pushTab("storyboard", "Dựng storyboard", "Chia kịch bản thành cảnh, thời lượng, góc máy và âm thanh.", "storyboard", "amber");
+    if (!project.assets?.length) pushTab("assets", "Thêm asset tham chiếu", "Kéo ảnh, video hoặc âm thanh từ thiết bị vào Universal Project.", "assets", "green");
+    if (project.review?.status === "draft" && actions.length < 4) actions.push({ id: "review", title: "Chuẩn bị vòng duyệt", description: "Mở Creative Review để comment, so sánh và khóa bản được duyệt.", route: "/create/review", tone: "violet" });
+    if (!project.publishing?.length && actions.length < 4) pushTab("publish", "Lập lịch xuất bản", "Tạo đầu việc phát hành theo nền tảng và thời gian dự kiến.", "publish", "cyan");
+    return actions.slice(0, 4);
+  }
+
+  function templatesMarkup() {
+    return CREATIVE_TEMPLATES.map((template) => `<button type="button" class="cco-template is-${template.accent}" data-action="create-template" data-template="${template.id}">
+      <span aria-hidden="true">${template.icon}</span>
+      <div><strong>${escapeHTML(template.title)}</strong><p>${escapeHTML(template.description)}</p><small>${escapeHTML(template.platform)} · ${escapeHTML(template.format)}</small></div>
+      <b aria-hidden="true">+</b>
+    </button>`).join("");
+  }
+
+  function creativeLaunchpad(state, active) {
+    const pipeline = pipelineState(active);
+    const actions = actionQueue(active);
+    return `<section class="cco-launchpad" aria-labelledby="cco-launchpad-title">
+      <header class="cco-launchpad-head">
+        <div><p class="cco-eyebrow">CREATIVE LAUNCHPAD</p><h2 id="cco-launchpad-title">${active ? escapeHTML(active.name) : "Bắt đầu từ một quy trình rõ ràng"}</h2><p>${active ? `${pipeline.completed}/${PIPELINE_STEPS.length} chặng đã có dữ liệu thật trong Universal Project.` : "Chọn mẫu để tạo sẵn brief và cấu trúc dự án. Bạn có thể chỉnh mọi trường sau khi tạo."}</p></div>
+        ${active ? `<div class="cco-readiness" aria-label="Mức sẵn sàng ${pipeline.percent}%"><strong>${pipeline.percent}%</strong><span><i style="width:${pipeline.percent}%"></i></span><small>Production readiness</small></div>` : ""}
+      </header>
+      ${active ? `<div class="cco-pipeline" aria-label="Creative pipeline">${pipeline.steps.map((step, index) => `<button type="button" class="${step.done ? "is-done" : ""}" data-action="open-project-tab" data-tab="${step.tab}"><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHTML(step.label)}</strong><small>${step.done ? "Đã có dữ liệu" : "Cần thực hiện"}</small></button>`).join("")}</div>` : ""}
+      <div class="cco-launchpad-grid">
+        <section class="cco-template-panel"><div class="cco-mini-head"><div><span>MẪU DỰ ÁN</span><strong>Tạo nhanh và chỉnh tự do</strong></div><small>${CREATIVE_TEMPLATES.length} workflow</small></div><div class="cco-template-grid">${templatesMarkup()}</div></section>
+        <section class="cco-action-panel"><div class="cco-mini-head"><div><span>HÀNH ĐỘNG TIẾP THEO</span><strong>${active ? "Tập trung đúng việc cần làm" : "Mở công cụ sáng tạo"}</strong></div></div>
+          ${active && actions.length ? `<div class="cco-action-list">${actions.map((action) => `<button type="button" class="is-${action.tone}" data-action="${action.route ? "open-route" : "open-project-tab"}" ${action.route ? `data-route="${action.route}"` : `data-tab="${action.tab}"`}><span>${action.id.slice(0, 2).toUpperCase()}</span><div><strong>${escapeHTML(action.title)}</strong><p>${escapeHTML(action.description)}</p></div><b aria-hidden="true">→</b></button>`).join("")}</div>` : `<div class="cco-module-grid">
+            <button type="button" data-action="open-route" data-route="/create/moodboard"><span>MB</span><strong>Moodboard</strong><small>Gom concept và tham chiếu</small></button>
+            <button type="button" data-action="open-route" data-route="/create/workflow"><span>WF</span><strong>Workflow</strong><small>Nối pipeline bằng node</small></button>
+            <button type="button" data-action="open-route" data-route="/create/repurpose"><span>RE</span><strong>Repurpose</strong><small>Nhân bản đa định dạng</small></button>
+            <button type="button" data-action="open-route" data-route="/create/publishing"><span>PB</span><strong>Publishing</strong><small>Lập lịch đa nền tảng</small></button>
+          </div>`}
+        </section>
+      </div>
+      ${active ? `<label class="cco-asset-inbox"><input type="file" data-overview-asset-input multiple accept="image/*,video/*,audio/*,.pdf,.txt,.md"><span>＋</span><div><strong>Asset Inbox</strong><small>Chọn ảnh, video, audio hoặc tài liệu từ thiết bị để thêm ngay vào dự án đang mở.</small></div><b>Chọn tệp</b></label>` : ""}
+    </section>`;
+  }
+
   function renderOverview(state, options = {}) {
     const metrics = calculateMetrics(state);
     const active = state.projects.find((project) => project.id === state.activeProjectId) || state.projects[0];
@@ -145,6 +212,7 @@
         ${metricCard("PB", "Đã lên lịch", metrics.publishing, "Nội dung chờ xuất bản", "green")}
         ${metricCard("%", "Tiến độ", `${metrics.averageProgress}%`, "Trung bình workspace", "pink")}
       </div>
+      ${creativeLaunchpad(state, active)}
       <div class="cco-dashboard-grid">
         <section class="cco-projects-panel" aria-labelledby="cco-projects-title">
           <header class="cco-section-head"><div><p class="cco-eyebrow">WORKSPACE</p><h2 id="cco-projects-title">Dự án đang làm</h2></div><span>${metrics.projects}/${CreativeCore?.MAX_PROJECTS || 50}</span></header>
@@ -386,7 +454,39 @@
     const button = event.target.closest("button");
     if (!button || !instance.root.contains(button)) return;
     try {
-      if (button.dataset.tab) {
+      if (button.dataset.action === "create-template") {
+        const template = CREATIVE_TEMPLATES.find((item) => item.id === button.dataset.template);
+        if (!template) throw new Error("Không tìm thấy mẫu dự án.");
+        const project = instance.store.createProject({
+          name: `${template.title} · ${new Date().toLocaleDateString("vi-VN")}`,
+          brief: {
+            product: template.title,
+            platform: template.platform,
+            format: template.format,
+            tone: template.tone,
+            goal: template.goal,
+            description: template.description
+          }
+        });
+        instance.view = "project";
+        instance.projectId = project.id;
+        instance.tab = "brief";
+        instance.store.setActiveProject(project.id);
+        render(instance);
+      } else if (button.dataset.action === "open-project-tab") {
+        const project = currentProject(instance);
+        if (!project) throw new Error("Hãy tạo hoặc chọn một dự án trước.");
+        flushAutosave(instance);
+        instance.view = "project";
+        instance.projectId = project.id;
+        instance.tab = button.dataset.tab || "brief";
+        instance.store.setActiveProject(project.id);
+        render(instance);
+      } else if (button.dataset.action === "open-route") {
+        const route = String(button.dataset.route || "");
+        if (!route.startsWith("/create/")) throw new Error("Đường dẫn Creative không hợp lệ.");
+        if (typeof window !== "undefined") window.location.hash = `#${route}`;
+      } else if (button.dataset.tab) {
         flushAutosave(instance);
         instance.tab = button.dataset.tab;
         render(instance);
@@ -457,6 +557,8 @@
         render(instance);
       } else if (target.matches("[data-asset-input]") && target.files?.length) {
         await addFiles(instance, target.files);
+      } else if (target.matches("[data-overview-asset-input]") && target.files?.length) {
+        await addFiles(instance, target.files);
       }
     } catch (err) {
       notify(instance, err.message || "Không thể đọc tệp.", "error");
@@ -502,6 +604,14 @@
       event.preventDefault();
       flushAutosave(instance);
       notify(instance, "Đã lưu dự án trên thiết bị.");
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "n" && instance.view === "overview") {
+      event.preventDefault();
+      instance.root.querySelector("[data-quick-create] input")?.focus();
+    }
+    if (event.key === "/" && instance.view === "overview" && !/^(?:INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName)) {
+      event.preventDefault();
+      instance.root.querySelector("[data-project-search]")?.focus();
     }
   }
 
@@ -558,5 +668,15 @@
     return true;
   }
 
-  return Object.freeze({ mount, unmount, renderOverview, renderProject, calculateMetrics, projectProgress, escapeHTML });
+  return Object.freeze({
+    mount,
+    unmount,
+    renderOverview,
+    renderProject,
+    calculateMetrics,
+    projectProgress,
+    pipelineState,
+    actionQueue,
+    escapeHTML
+  });
 });
