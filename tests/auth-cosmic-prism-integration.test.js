@@ -18,10 +18,10 @@ test("Cosmic Prism is lazy-loaded with the authentication experience and cached"
   const html = read("index.html");
 
   for (const module of modules) {
-    assert.match(loader, new RegExp(`${module}\\.css\\?v=1`));
-    assert.match(loader, new RegExp(`${module}\\.js\\?v=1`));
-    assert.match(worker, new RegExp(`${module}\\.css\\?v=1`));
-    assert.match(worker, new RegExp(`${module}\\.js\\?v=1`));
+    assert.match(loader, new RegExp(`${module}\\.css\\?v=2`));
+    assert.match(loader, new RegExp(`${module}\\.js\\?v=2`));
+    assert.match(worker, new RegExp(`${module}\\.css\\?v=2`));
+    assert.match(worker, new RegExp(`${module}\\.js\\?v=2`));
   }
 
   assert.match(html, /performance-loader\.js\?v=\d+/);
@@ -48,4 +48,30 @@ test("Cosmic Prism keeps a stable form at mobile widths and reduced motion", () 
   assert.match(css, /:focus-visible/);
   assert.match(css, /overflow-wrap|word-break/);
   assert.doesNotMatch(css, /font-size:\s*clamp\([^;]*vw/);
+});
+
+test("Cosmic Prism scene styles can never capture the entire authentication gate", () => {
+  const background = read("auth-cosmic-prism-background.css");
+  const interactions = read("auth-cosmic-prism-interactions.css");
+  const interactionRuntime = read("auth-cosmic-prism-interactions.js");
+
+  assert.match(background, /\.hh-cosmic-prism:not\(#authGate\)\s*\{/);
+  assert.doesNotMatch(background, /(?:^|\})\s*\.hh-cosmic-prism\s*\{/m);
+  assert.match(interactions, /#authGate\.hh-cosmic-prism\s*\{[\s\S]*?position:\s*fixed/);
+  assert.match(interactions, /#authGate\.hh-cosmic-prism\s*\{[\s\S]*?pointer-events:\s*auto/);
+  assert.match(interactions, /overflow-y:\s*auto/);
+  assert.match(interactionRuntime, /createNode\("details",\s*"hcp-control-cluster"/);
+});
+
+test("Authentication typography remains stable while the page is zoomed", () => {
+  const files = [
+    "auth-cosmic-prism-background.css",
+    "auth-cosmic-prism-form.css",
+    "auth-cosmic-prism-interactions.css",
+    "auth-creative-universe.css",
+    "auth-transition-runtime.css",
+    "auth-login-repair.css"
+  ];
+  const css = files.map(read).join("\n");
+  assert.doesNotMatch(css, /font(?:-size)?:\s*[^;]*clamp\([^;]*vw/i);
 });

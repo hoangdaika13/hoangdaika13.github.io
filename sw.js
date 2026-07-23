@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v204";
+const CACHE = "hh-identity-portal-v205";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -107,21 +107,21 @@ const RUNTIME_ASSETS = [
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
   "./auth-identity-constellation.css?v=1",
-  "./auth-creative-universe.css?v=3",
+  "./auth-creative-universe.css?v=4",
   "./auth-universe-memory.css?v=1",
   "./auth-logo-motion.css?v=1",
   "./auth-emotional-logo.css?v=1",
   "./auth-form-motion.css?v=4",
   "./auth-quantum-flow.css?v=1",
-  "./auth-transition-runtime.css?v=1",
+  "./auth-transition-runtime.css?v=2",
   "./auth-trust-director.css?v=1",
-  "./auth-cosmic-prism-background.css?v=1",
-  "./auth-cosmic-prism-form.css?v=1",
-  "./auth-cosmic-prism-interactions.css?v=1",
+  "./auth-cosmic-prism-background.css?v=2",
+  "./auth-cosmic-prism-form.css?v=2",
+  "./auth-cosmic-prism-interactions.css?v=2",
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
   "./assets/hh-neon-logo-v2.png?v=3",
-  "./auth-platform.js?v=6",
+  "./auth-platform.js?v=7",
   "./auth-experience.js?v=8",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
@@ -134,9 +134,9 @@ const RUNTIME_ASSETS = [
   "./auth-transition-runtime.js?v=2",
   "./auth-quantum-flow.js?v=2",
   "./auth-trust-director.js?v=2",
-  "./auth-cosmic-prism-background.js?v=1",
-  "./auth-cosmic-prism-form.js?v=1",
-  "./auth-cosmic-prism-interactions.js?v=1",
+  "./auth-cosmic-prism-background.js?v=2",
+  "./auth-cosmic-prism-form.js?v=2",
+  "./auth-cosmic-prism-interactions.js?v=2",
   "./auth-zoom-resilience.js?v=3",
   "./search-watch-center.css?v=5",
   "./search-watch-center.js?v=7",
@@ -198,7 +198,7 @@ const RUNTIME_ASSETS = [
   "./community-admin.js?v=8",
   "./insights-pro.css?v=2",
   "./privacy-consent-center.css?v=2",
-  "./auth-login-repair.css?v=1",
+  "./auth-login-repair.css?v=2",
   "./motion-comfort.css?v=1",
   "./insights-pro.js?v=6",
   "./privacy-consent-center.js?v=2",
@@ -279,8 +279,8 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=7",
-  "./auth-platform.js?v=6",
+  "./performance-loader.js?v=8",
+  "./auth-platform.js?v=7",
   "./script.js?v=127"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));

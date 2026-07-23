@@ -239,7 +239,7 @@
   }
 
   .auth-transition-runtime__copy strong {
-    font-size: clamp(18px, 4vw, 25px);
+    font-size: 22px;
     line-height: 1.18;
   }
 

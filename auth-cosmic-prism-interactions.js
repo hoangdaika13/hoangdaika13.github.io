@@ -138,32 +138,39 @@
     });
     rememberNode(liveRegion);
 
-    const controls = createNode("section", "hcp-control-cluster", {
-      "aria-label": "Tuy chinh Cosmic Prism"
+    const controls = createNode("details", "hcp-control-cluster", {
+      "aria-label": "Tùy chỉnh Cosmic Prism"
     });
     controls.innerHTML = `
-      <div class="hcp-control-row">
-        <span class="hcp-control-label"><i></i>Motion Director</span>
-        <div class="hcp-segmented hcp-motion-options" role="group" aria-label="Muc chuyen dong">
-          <button type="button" data-hcp-motion="static">Tĩnh</button>
-          <button type="button" data-hcp-motion="balanced">Cân bằng</button>
-          <button type="button" data-hcp-motion="cinematic">Điện ảnh</button>
+      <summary class="hcp-control-summary">
+        <span><i></i>Hiệu ứng đăng nhập</span>
+        <small>Chuyển động, màu sắc và âm thanh</small>
+      </summary>
+      <div class="hcp-control-body">
+        <div class="hcp-control-row">
+          <span class="hcp-control-label"><i></i>Motion Director</span>
+          <div class="hcp-segmented hcp-motion-options" role="group" aria-label="Mức chuyển động">
+            <button type="button" data-hcp-motion="static">Tĩnh</button>
+            <button type="button" data-hcp-motion="balanced">Cân bằng</button>
+            <button type="button" data-hcp-motion="cinematic">Điện ảnh</button>
+          </div>
+        </div>
+        <div class="hcp-control-row">
+          <span class="hcp-control-label"><i></i>Theme Portal</span>
+          <div class="hcp-segmented hcp-theme-options" role="group" aria-label="Chọn giao diện">
+            <button type="button" data-hcp-theme="aurora" style="--hcp-swatch:#72f6a7">Aurora</button>
+            <button type="button" data-hcp-theme="cyberpunk" style="--hcp-swatch:#ff4fb8">Cyberpunk</button>
+            <button type="button" data-hcp-theme="solar" style="--hcp-swatch:#ffe66d">Solar</button>
+            <button type="button" data-hcp-theme="ocean" style="--hcp-swatch:#44e7f2">Ocean</button>
+            <button type="button" data-hcp-theme="rainbow" style="--hcp-swatch:#a989ff">Rainbow</button>
+          </div>
+        </div>
+        <div class="hcp-utility-row">
+          <span class="hcp-network-state" data-hcp-network-state><i></i><span></span></span>
+          <button class="hcp-mute-toggle" type="button" data-hcp-mute></button>
         </div>
       </div>
-      <div class="hcp-control-row">
-        <span class="hcp-control-label"><i></i>Theme Portal</span>
-        <div class="hcp-segmented hcp-theme-options" role="group" aria-label="Chon giao dien">
-          <button type="button" data-hcp-theme="aurora" style="--hcp-swatch:#72f6a7">Aurora</button>
-          <button type="button" data-hcp-theme="cyberpunk" style="--hcp-swatch:#ff4fb8">Cyberpunk</button>
-          <button type="button" data-hcp-theme="solar" style="--hcp-swatch:#ffe66d">Solar</button>
-          <button type="button" data-hcp-theme="ocean" style="--hcp-swatch:#44e7f2">Ocean</button>
-          <button type="button" data-hcp-theme="rainbow" style="--hcp-swatch:#a989ff">Rainbow</button>
-        </div>
-      </div>
-      <div class="hcp-utility-row">
-        <span class="hcp-network-state" data-hcp-network-state><i></i><span></span></span>
-        <button class="hcp-mute-toggle" type="button" data-hcp-mute></button>
-      </div>`;
+    `;
     const cardFooter = card?.querySelector(".auth-card-footer");
     if (cardFooter) {
       cardFooter.before(controls);

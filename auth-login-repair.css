@@ -102,7 +102,7 @@
     }
 
     .home-neon.auth-locked #authGate .auth-gate-brand > h1 {
-      font-size: clamp(38px, 4vw, 52px);
+      font-size: 48px;
     }
   }
 

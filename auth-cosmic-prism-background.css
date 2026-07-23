@@ -15,7 +15,7 @@
     display: none;
   }
 
-  .hh-cosmic-prism {
+  .hh-cosmic-prism:not(#authGate) {
     --cp-cyan: #44e7f2;
     --cp-pink: #ff4fb8;
     --cp-yellow: #ffe66d;
@@ -46,15 +46,15 @@
     pointer-events: none;
   }
 
-  .hh-cosmic-prism::before,
-  .hh-cosmic-prism::after {
+  .hh-cosmic-prism:not(#authGate)::before,
+  .hh-cosmic-prism:not(#authGate)::after {
     position: absolute;
     inset: 0;
     content: "";
     pointer-events: none;
   }
 
-  .hh-cosmic-prism::before {
+  .hh-cosmic-prism:not(#authGate)::before {
     z-index: 1;
     background:
       linear-gradient(rgba(255, 255, 255, .025) 1px, transparent 1px),
@@ -64,7 +64,7 @@
     opacity: .6;
   }
 
-  .hh-cosmic-prism::after {
+  .hh-cosmic-prism:not(#authGate)::after {
     z-index: 8;
     border: 1px solid color-mix(in srgb, var(--cp-active) 30%, transparent);
     border-radius: inherit;
@@ -511,17 +511,17 @@
     background: var(--cp-active);
   }
 
-  .hh-cosmic-prism.is-interacting .hh-cosmic-prism__carrier,
-  .hh-cosmic-prism.is-interacting .hh-cosmic-prism__planet,
-  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__carrier,
-  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__planet,
-  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__nebula,
-  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__sun,
-  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__sun::before {
+  .hh-cosmic-prism:not(#authGate).is-interacting .hh-cosmic-prism__carrier,
+  .hh-cosmic-prism:not(#authGate).is-interacting .hh-cosmic-prism__planet,
+  .hh-cosmic-prism:not(#authGate)[data-running="false"] .hh-cosmic-prism__carrier,
+  .hh-cosmic-prism:not(#authGate)[data-running="false"] .hh-cosmic-prism__planet,
+  .hh-cosmic-prism:not(#authGate)[data-running="false"] .hh-cosmic-prism__nebula,
+  .hh-cosmic-prism:not(#authGate)[data-running="false"] .hh-cosmic-prism__sun,
+  .hh-cosmic-prism:not(#authGate)[data-running="false"] .hh-cosmic-prism__sun::before {
     animation-play-state: paused;
   }
 
-  .hh-cosmic-prism.is-sun-pulsing .hh-cosmic-prism__sun {
+  .hh-cosmic-prism:not(#authGate).is-sun-pulsing .hh-cosmic-prism__sun {
     animation: hh-cosmic-sun-activate .7s ease both;
   }
 
@@ -566,7 +566,7 @@
   }
 
   @media (max-width: 720px) {
-    .hh-cosmic-prism {
+    .hh-cosmic-prism:not(#authGate) {
       min-height: 430px;
     }
 
@@ -667,7 +667,7 @@
   }
 
   @media (max-width: 420px) {
-    .hh-cosmic-prism {
+    .hh-cosmic-prism:not(#authGate) {
       min-height: 410px;
     }
 
@@ -694,9 +694,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hh-cosmic-prism *,
-    .hh-cosmic-prism *::before,
-    .hh-cosmic-prism *::after {
+    .hh-cosmic-prism:not(#authGate) *,
+    .hh-cosmic-prism:not(#authGate) *::before,
+    .hh-cosmic-prism:not(#authGate) *::after {
       scroll-behavior: auto !important;
       animation-duration: .001ms !important;
       animation-iteration-count: 1 !important;

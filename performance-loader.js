@@ -5,17 +5,17 @@
     "auth-effects": {
       styles: [
         "auth-living-background.css?v=1", "auth-spatial-aurora.css?v=1", "auth-identity-constellation.css?v=1",
-        "auth-creative-universe.css?v=3", "auth-universe-memory.css?v=1", "auth-logo-motion.css?v=1",
+        "auth-creative-universe.css?v=4", "auth-universe-memory.css?v=1", "auth-logo-motion.css?v=1",
         "auth-emotional-logo.css?v=1", "auth-form-motion.css?v=4", "auth-quantum-flow.css?v=1",
-        "auth-transition-runtime.css?v=1", "auth-trust-director.css?v=1",
-        "auth-cosmic-prism-background.css?v=1", "auth-cosmic-prism-form.css?v=1", "auth-cosmic-prism-interactions.css?v=1"
+        "auth-transition-runtime.css?v=2", "auth-trust-director.css?v=1",
+        "auth-cosmic-prism-background.css?v=2", "auth-cosmic-prism-form.css?v=2", "auth-cosmic-prism-interactions.css?v=2"
       ],
       scripts: [
         "auth-living-background.js?v=1", "auth-identity-constellation.js?v=2", "auth-creative-universe.js?v=4",
         "auth-universe-memory.js?v=2", "auth-logo-motion.js?v=1", "auth-emotional-logo.js?v=1",
         "auth-form-motion.js?v=3", "auth-transition-runtime.js?v=2", "auth-quantum-flow.js?v=2",
         "auth-trust-director.js?v=2", "auth-spatial-aurora.js?v=1",
-        "auth-cosmic-prism-background.js?v=1", "auth-cosmic-prism-form.js?v=1", "auth-cosmic-prism-interactions.js?v=1"
+        "auth-cosmic-prism-background.js?v=2", "auth-cosmic-prism-form.js?v=2", "auth-cosmic-prism-interactions.js?v=2"
       ]
     },
     home: {

@@ -421,7 +421,7 @@
     grid-row: 2;
     margin: 0;
     color: #fff;
-    font-size: clamp(20px, 2.1vw, 28px);
+    font-size: 24px;
     font-weight: 900;
     line-height: 1.05;
     letter-spacing: 0;

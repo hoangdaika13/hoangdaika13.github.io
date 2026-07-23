@@ -9,7 +9,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("login repair stylesheet loads last and keeps the primary form compact", () => {
   const html = read("index.html");
   const css = read("auth-login-repair.css");
-  assert.match(html, /motion-comfort\.css[^>]+>\s*<link rel="stylesheet" href="auth-login-repair\.css\?v=1"/);
+  assert.match(html, /motion-comfort\.css[^>]+>\s*<link rel="stylesheet" href="auth-login-repair\.css\?v=2"/);
   assert.match(css, /data-auth-view="login"[^}]+#gateLoginForm/);
   assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/);
   assert.match(css, /\.hh-consent-banner\[data-privacy-banner\]/);
@@ -25,6 +25,19 @@ test("auth runtime publishes the active view for responsive layout", () => {
   assert.match(runtime, /Khôi phục mật khẩu bằng email đã xác minh/);
   assert.match(runtime, /typeof event\.getModifierState === "function"/);
   assert.match(experience, /if \(!window\.HHAuthPlatform\?\.init\)/);
+});
+
+test("auth requests time out cleanly instead of leaving the form busy forever", () => {
+  const runtime = read("auth-platform.js");
+  const html = read("index.html");
+  const worker = read("sw.js");
+  assert.match(runtime, /AUTH_REQUEST_TIMEOUT\s*=\s*15000/);
+  assert.match(runtime, /new AbortController\(\)/);
+  assert.match(runtime, /controller\.abort\("auth-timeout"\)/);
+  assert.match(runtime, /Máy chủ phản hồi quá lâu/);
+  assert.match(runtime, /finally\s*\{[\s\S]*?clearTimeout\(timeoutId\)/);
+  assert.match(html, /auth-platform\.js\?v=7/);
+  assert.match(worker, /auth-platform\.js\?v=7/);
 });
 
 test("Google OAuth bootstraps on the configured callback origin", () => {

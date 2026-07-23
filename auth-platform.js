@@ -4,6 +4,7 @@
   const GUEST_KEY = "hh.auth.guest";
   const LAST_PROFILE_KEY = "hh.auth.last-profile";
   const STREAK_KEY = "hh.auth.login-streak";
+  const AUTH_REQUEST_TIMEOUT = 15000;
   let memoryToken = "";
   let initialized = false;
   let qrPoll = 0;
@@ -214,25 +215,50 @@
 
     const api = async (path, options = {}) => {
       if (!realtimeUrl) throw new Error("Backend đăng nhập chưa được cấu hình.");
-      const response = await fetch(`${realtimeUrl}${path}`, {
-        ...options,
-        credentials: "include",
-        cache: "no-store",
-        headers: {
-          ...(options.body ? { "Content-Type": "application/json" } : {}),
-          ...(token() ? { Authorization: `Bearer ${token()}` } : {}),
-          ...(options.headers || {})
+      const {
+        timeout = AUTH_REQUEST_TIMEOUT,
+        signal: externalSignal,
+        ...requestOptions
+      } = options;
+      const controller = new AbortController();
+      const abortFromCaller = () => controller.abort(externalSignal?.reason);
+      if (externalSignal?.aborted) abortFromCaller();
+      else externalSignal?.addEventListener?.("abort", abortFromCaller, { once: true });
+      const timeoutId = window.setTimeout(() => controller.abort("auth-timeout"), Math.max(1000, Number(timeout) || AUTH_REQUEST_TIMEOUT));
+
+      try {
+        const response = await fetch(`${realtimeUrl}${path}`, {
+          ...requestOptions,
+          credentials: "include",
+          cache: "no-store",
+          signal: controller.signal,
+          headers: {
+            ...(requestOptions.body ? { "Content-Type": "application/json" } : {}),
+            ...(token() ? { Authorization: `Bearer ${token()}` } : {}),
+            ...(requestOptions.headers || {})
+          }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const error = new Error(data.error || "Không thể kết nối máy chủ.");
+          error.code = data.code || "";
+          error.status = response.status;
+          error.fields = data.fields || {};
+          throw error;
         }
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const error = new Error(data.error || "Không thể kết nối máy chủ.");
-        error.code = data.code || "";
-        error.status = response.status;
-        error.fields = data.fields || {};
+        return data;
+      } catch (error) {
+        if (controller.signal.aborted && !externalSignal?.aborted) {
+          const timeoutError = new Error("Máy chủ phản hồi quá lâu. Hãy kiểm tra kết nối và thử lại.");
+          timeoutError.code = "AUTH_TIMEOUT";
+          timeoutError.status = 408;
+          throw timeoutError;
+        }
         throw error;
+      } finally {
+        window.clearTimeout(timeoutId);
+        externalSignal?.removeEventListener?.("abort", abortFromCaller);
       }
-      return data;
     };
 
     const loadTurnstile = () => {
