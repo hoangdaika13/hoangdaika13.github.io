@@ -16,6 +16,11 @@ const memory = globalThis.__HH_GAME_CENTER_MEMORY__ || {
 globalThis.__HH_GAME_CENTER_MEMORY__ = memory;
 
 const MAX_JSON = 128 * 1024;
+const MAX_SAVE_SLOTS = 3;
+const MAX_SCORE_DELTA = 5000;
+const SAVE_SLOTS = new Set(["main", "autosave", "checkpoint", "slot1", "slot2", "slot3"]);
+const SECRET_KEYS = /password|token|secret|authorization|cookie|api[-_]?key|private[-_]?key/i;
+const SERVER_DAILY_REWARD = Object.freeze({ xp: 250, coins: 100, items: ["daily-cache"] });
 const DEFAULT_GAMES = Object.freeze([
   "astra-hh",
   "neon-drift",
@@ -64,6 +69,79 @@ function safeObject(value, maxBytes = MAX_JSON) {
     throw error;
   }
   return value;
+}
+
+function stripSecrets(value, depth = 0) {
+  if (depth > 6 || value === null || value === undefined) return value;
+  if (Array.isArray(value)) return value.slice(0, 500).map((item) => stripSecrets(item, depth + 1));
+  if (typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value)
+    .filter(([key]) => !SECRET_KEYS.test(key))
+    .slice(0, 200)
+    .map(([key, item]) => [key, stripSecrets(item, depth + 1)]));
+}
+
+function persistedObject(value, maxBytes = MAX_JSON) {
+  return stripSecrets(safeObject(value, maxBytes));
+}
+
+function saveSlotOf(value) {
+  const raw = clean(value || "main", 40).toLowerCase().replace(/[^a-z0-9_-]/g, "") || "main";
+  return raw === "default" ? "main" : raw;
+}
+
+function assertSaveSlot(slot) {
+  if (!SAVE_SLOTS.has(slot)) {
+    const error = new Error("Cloud save chỉ hỗ trợ tối đa 3 slot: main, autosave, checkpoint hoặc slot1-slot3.");
+    error.statusCode = 422;
+    throw error;
+  }
+  return slot;
+}
+
+function scoreRank(score) {
+  if (score >= 50000) return "Huyền thoại";
+  if (score >= 20000) return "Captain";
+  if (score >= 10000) return "Explorer";
+  if (score >= 5000) return "Phi công";
+  return "Tân binh";
+}
+
+function validateScoreUpdate(current, body = {}) {
+  const requested = body.score ?? body.data?.score;
+  const deltaValue = body.delta ?? body.data?.delta;
+  if (deltaValue !== undefined && deltaValue !== null) {
+    const delta = number(deltaValue, 0, MAX_SCORE_DELTA, -1);
+    if (delta < 0) {
+      const error = new Error("Score delta không hợp lệ.");
+      error.statusCode = 422;
+      throw error;
+    }
+    return current + delta;
+  }
+  if (requested === undefined || requested === null) {
+    const error = new Error("Thiếu score hoặc delta đã được server kiểm tra.");
+    error.statusCode = 422;
+    throw error;
+  }
+  const absolute = number(requested, 0, 999999999, -1);
+  if (absolute < current || absolute - current > MAX_SCORE_DELTA) {
+    const error = new Error("Score update vượt giới hạn server cho phép.");
+    error.statusCode = 422;
+    throw error;
+  }
+  return absolute;
+}
+
+function backendStatus(db) {
+  return {
+    mode: db ? "mongodb" : "memory-fallback",
+    persistent: Boolean(db),
+    configured: Boolean(process.env.MONGODB_URI),
+    note: db
+      ? "Dữ liệu Game Center đang lưu trong MongoDB."
+      : "MongoDB chưa cấu hình hoặc tạm thời không khả dụng; dữ liệu chỉ lưu trong tiến trình hiện tại."
+  };
 }
 
 function safeArray(value, maxItems = 500, maxText = 80) {
@@ -186,6 +264,7 @@ function publicScore(item = {}) {
     level: number(item.level, 1, 9999, 1),
     rank: clean(item.rank || "Tân binh", 60),
     stats: item.stats && typeof item.stats === "object" ? item.stats : {},
+    integrity: item.integrity === "server-validated" ? "server-validated" : "unverified",
     updatedAt: item.updatedAt || new Date()
   };
 }
@@ -210,13 +289,16 @@ async function runIdempotent(db, key, userKey, handler) {
 
 async function saveVersionedRecord(db, kind, query, value) {
   const previous = await findRecord(db, kind, query);
-  const version = Math.max(1, number(value.version, 1, 999999999, Number(previous?.version || 0) + 1));
+  const { serverVersion, ...recordValue } = value || {};
+  const version = serverVersion
+    ? Number(previous?.version || 0) + 1
+    : Math.max(1, number(recordValue.version, 1, 999999999, Number(previous?.version || 0) + 1));
   if (previous?.version && version < Number(previous.version)) {
     const error = new Error("Phiên bản mới không được nhỏ hơn phiên bản hiện tại.");
     error.statusCode = 409;
     throw error;
   }
-  const saved = await upsertRecord(db, kind, query, { ...value, version, previousVersion: previous?.version || 0 });
+  const saved = await upsertRecord(db, kind, query, { ...recordValue, version, previousVersion: previous?.version || 0 });
   const versionDoc = {
     kind: "versions",
     resourceKind: kind,
@@ -244,6 +326,54 @@ async function listVersions(db, kind, query, limit = 20) {
       .toArray();
   }
   return (memory.versions.get(JSON.stringify({ kind, ...query })) || []).slice(-limit).reverse();
+}
+
+async function listSaveSlots(db, userKey, gameId) {
+  if (db) {
+    return db.collection("gameCenterRecords")
+      .find({ kind: "saves", userKey, gameId }, { projection: { slot: 1, version: 1, checkpointId: 1, updatedAt: 1 } })
+      .sort({ updatedAt: -1 })
+      .limit(MAX_SAVE_SLOTS)
+      .toArray();
+  }
+  return [...memory.saves.values()]
+    .filter((item) => item.userKey === userKey && item.gameId === gameId)
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    .slice(0, MAX_SAVE_SLOTS);
+}
+
+async function assertSaveSlotCapacity(db, userKey, gameId, slot) {
+  const existing = await findRecord(db, "saves", { userKey, gameId, slot });
+  if (existing) return;
+  const slots = await listSaveSlots(db, userKey, gameId);
+  const distinct = new Set(slots.map((item) => item.slot).filter(Boolean));
+  if (distinct.size >= MAX_SAVE_SLOTS) {
+    const error = new Error("Bạn đã dùng đủ 3 slot cloud save cho game này.");
+    error.statusCode = 409;
+    throw error;
+  }
+}
+
+async function restoreSave(db, query, version) {
+  const wanted = number(version, 1, 999999999, 0);
+  if (!wanted) {
+    const error = new Error("Thiếu version cần khôi phục.");
+    error.statusCode = 422;
+    throw error;
+  }
+  const versions = await listVersions(db, "saves", query, 50);
+  const source = versions.find((item) => Number(item.version) === wanted);
+  if (!source?.snapshot) {
+    const error = new Error("Không tìm thấy bản cloud save cần khôi phục.");
+    error.statusCode = 404;
+    throw error;
+  }
+  return saveVersionedRecord(db, "saves", query, {
+    ...source.snapshot,
+    data: persistedObject(source.snapshot.data, MAX_JSON),
+    restoredFromVersion: wanted,
+    serverVersion: true
+  });
 }
 
 async function storePresence(db, userKey, payload = {}) {
@@ -289,9 +419,12 @@ async function friendsCollection(db) {
 }
 
 function respond(res, status, payload) {
+  const storage = memory.backendStatus || backendStatus(null);
   return res.status(status).json({
     ok: status < 400,
-    backend: process.env.MONGODB_URI ? "mongodb-or-memory-fallback" : "memory",
+    backend: storage.mode === "mongodb" ? "mongodb" : "memory",
+    persistence: storage.persistent,
+    backendStatus: storage,
     ...payload
   });
 }
@@ -302,6 +435,7 @@ module.exports = async function handler(req, res) {
   try {
     const body = bodyOf(req);
     const db = await openDb();
+    memory.backendStatus = backendStatus(db);
     const user = await currentUser(req);
     const userKey = userKeyOf(user, req, body);
     const player = publicPlayer(user, body);
@@ -324,7 +458,14 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "GET" && ["profile", "progress", "inventory", "equipment", "quests", "season", "cloud-save"].includes(resource)) {
       const kind = resource === "cloud-save" ? "saves" : resource === "profile" ? "profiles" : "progress";
-      const query = resource === "profile" ? { userKey } : resource === "cloud-save" ? { userKey, gameId, slot: clean(req.query.slot || body.slot || "default", 40) || "default" } : { userKey, gameId, season };
+      const query = resource === "profile"
+        ? { userKey }
+        : resource === "cloud-save"
+          ? { userKey, gameId, slot: assertSaveSlot(saveSlotOf(req.query.slot || body.slot)) }
+          : { userKey, gameId, season };
+      if (resource === "cloud-save" && ["slots", "list"].includes(String(req.query.view || "").toLowerCase())) {
+        return respond(res, 200, { resource, gameId, slots: await listSaveSlots(db, userKey, gameId) });
+      }
       const record = await findRecord(db, kind, query);
       const versions = req.query.view === "versions" ? await listVersions(db, kind, query, Math.max(1, Math.min(50, Number(req.query.limit || 20)))) : null;
       return respond(res, 200, { resource, gameId, season, item: record || null, versions });
@@ -344,6 +485,21 @@ module.exports = async function handler(req, res) {
       return respond(res, 200, { resource, gameId, presences: await listPresence(db, gameId, limit) });
     }
 
+    if (req.method === "DELETE" && resource === "cloud-save") {
+      const slot = assertSaveSlot(saveSlotOf(req.query.slot || body.slot));
+      const query = { userKey, gameId, slot };
+      let deleted = false;
+      if (db) {
+        const result = await db.collection("gameCenterRecords").deleteOne({ kind: "saves", ...query });
+        await db.collection("gameCenterRecordVersions").deleteMany({ resourceKind: "saves", ...query });
+        deleted = Boolean(result.deletedCount);
+      } else {
+        deleted = ensureMemoryCollection("saves").delete(JSON.stringify({ kind: "saves", ...query }));
+        memory.versions.delete(JSON.stringify({ kind: "saves", ...query }));
+      }
+      return respond(res, 200, { resource, gameId, slot, deleted });
+    }
+
     if (!["POST", "PUT", "PATCH"].includes(req.method)) {
       return respond(res, 405, { error: "Method not allowed" });
     }
@@ -357,6 +513,14 @@ module.exports = async function handler(req, res) {
       season: "season"
     };
     const versionedResource = versionedKindMap[resource] || versionedKindMap[action];
+
+    if (versionedResource === "inventory" && (body.items || body.currency)) {
+      return respond(res, 403, {
+        resource: "inventory",
+        authoritative: false,
+        error: "Inventory chỉ được thay đổi bởi server game; client không thể tự cấp item hoặc currency."
+      });
+    }
 
     if (versionedResource) {
       return respond(res, 200, {
@@ -386,7 +550,7 @@ module.exports = async function handler(req, res) {
             shared.achievements = safeArray(body.achievements, 500);
             shared.badges = safeArray(body.badges, 300);
             shared.missions = safeObject(body.missions, 64 * 1024);
-            shared.inventory = safeObject(body.inventory, 64 * 1024);
+            shared.reportedInventory = persistedObject(body.inventory, 64 * 1024);
             shared.equipment = safeObject(body.equipment, 64 * 1024);
             shared.quests = safeObject(body.quests, 64 * 1024);
           }
@@ -405,20 +569,28 @@ module.exports = async function handler(req, res) {
           if (versionedResource === "season") {
             shared.season = season;
             shared.progress = safeObject(body.progress, 32 * 1024);
-            shared.rewards = safeObject(body.rewards, 32 * 1024);
+            shared.reportedRewards = persistedObject(body.rewards, 32 * 1024);
           }
           return saveVersionedRecord(db, versionedResource, { userKey, gameId, season }, shared);
         })
       });
     }
 
-    if (resource === "cloud-save" || action === "cloud-save" || action === "save") {
-      const slot = clean(body.slot || "default", 40).replace(/[^a-zA-Z0-9_-]/g, "") || "default";
-      const save = await runIdempotent(db, idemKey, userKey, async () => saveVersionedRecord(db, "saves", { userKey, gameId, slot }, {
+    if (resource === "cloud-save" || resource === "restore" || action === "cloud-save" || action === "save" || action === "restore") {
+      const slot = assertSaveSlot(saveSlotOf(body.slot));
+      const query = { userKey, gameId, slot };
+      if (action === "restore" || resource === "restore") {
+        const restored = await runIdempotent(db, idemKey, userKey, () => restoreSave(db, query, body.version || body.restoreVersion));
+        return respond(res, 200, { resource: "cloud-save", gameId, slot, restored: true, item: restored });
+      }
+      await assertSaveSlotCapacity(db, userKey, gameId, slot);
+      const save = await runIdempotent(db, idemKey, userKey, async () => saveVersionedRecord(db, "saves", query, {
         player,
-        version: number(body.version, 1, 999999, 1),
+        serverVersion: true,
         checksum: clean(body.checksum, 160),
-        data: safeObject(body.data, MAX_JSON),
+        checkpointId: clean(body.checkpointId || body.checkpoint, 80),
+        checkpointLabel: clean(body.checkpointLabel, 120),
+        data: persistedObject(body.data, MAX_JSON),
         season
       }));
       return respond(res, 200, { resource: "cloud-save", gameId, slot, item: save });
@@ -436,9 +608,8 @@ module.exports = async function handler(req, res) {
         gameId,
         dayKey,
         reward: {
-          xp: number(body.xp, 50, 5000, 250),
-          coins: number(body.coins, 0, 999999, 100),
-          items: safeArray(body.items, 20, 100)
+          ...SERVER_DAILY_REWARD,
+          items: [...SERVER_DAILY_REWARD.items]
         },
         claimedAt: new Date().toISOString()
       };
@@ -495,13 +666,17 @@ module.exports = async function handler(req, res) {
     }
 
     if (resource === "score" || action === "score" || action === "leaderboard") {
+      const previousScore = await findRecord(db, "scores", { userKey, gameId, season });
+      const validatedScore = validateScoreUpdate(number(previousScore?.score, 0, 999999999, 0), body);
       const score = await runIdempotent(db, idemKey, userKey, async () => saveVersionedRecord(db, "scores", { userKey, gameId, season }, {
         player,
-        score: number(body.score ?? body.data?.score),
-        level: number(body.level ?? body.data?.level, 1, 9999, 1),
-        rank: clean(body.rank || body.data?.rank || "Tân binh", 60),
-        stats: safeObject(body.stats || body.data || {}, 64 * 1024),
-        season
+        score: validatedScore,
+        level: Math.floor(validatedScore / 1000) + 1,
+        rank: scoreRank(validatedScore),
+        stats: persistedObject(body.stats || {}, 16 * 1024),
+        integrity: "server-validated",
+        season,
+        serverVersion: true
       }));
       if (db) await db.collection("events").insertOne({ type: "game:center:score", gameId, userKey, season, score: score.score, createdAt: new Date() });
       else memory.events.push({ type: "game:center:score", gameId, userKey, season, score: score.score, createdAt: new Date() });

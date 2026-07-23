@@ -18,10 +18,12 @@ const modules = [
 
 test("identity portal assets are versioned in HTML and offline cache", () => {
   const html = read("index.html");
+  const loader = read("performance-loader.js");
   const worker = read("sw.js");
+  const shellAssets = `${html}\n${loader}`;
   for (const module of modules) {
-    assert.match(html, new RegExp(`${module}\\.css\\?v=\\d+`), `${module}.css is not loaded`);
-    assert.match(html, new RegExp(`${module}\\.js\\?v=\\d+`), `${module}.js is not loaded`);
+    assert.match(shellAssets, new RegExp(`${module}\\.css\\?v=\\d+`), `${module}.css is not registered`);
+    assert.match(shellAssets, new RegExp(`${module}\\.js\\?v=\\d+`), `${module}.js is not registered`);
     assert.match(worker, new RegExp(`${module}\\.(?:css|js)\\?v=\\d+`), `${module} is not cached`);
   }
   assert.match(worker, /hh-identity-portal-v\d+/);

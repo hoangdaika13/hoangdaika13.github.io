@@ -472,6 +472,12 @@
 .astra-expansion .au-status strong { font-size: clamp(18px, 2.4vw, 28px); }
 .astra-expansion .au-status span,
 .astra-expansion .au-status small { color: var(--au-muted); }
+.astra-expansion .au-status > small:first-of-type { display: none; }
+.astra-expansion .au-status .au-connection-state { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 5px 8px; border: 1px solid rgba(249, 221, 126, .26); border-radius: 999px; color: var(--au-gold); font-size: 11px; font-weight: 800; }
+.astra-expansion .au-connection-state::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; content: ""; }
+.astra-expansion .au-connection-state[data-state="online"] { border-color: rgba(134, 239, 172, .34); color: var(--au-green); }
+.astra-expansion .au-card:focus-within { border-color: rgba(244, 114, 182, .56); box-shadow: 0 0 24px rgba(244, 114, 182, .1); }
+.astra-expansion button:disabled { cursor: not-allowed; opacity: .5; }
 .astra-expansion .au-tabs { display: flex; gap: 7px; overflow-x: auto; padding: 2px; scrollbar-width: thin; }
 .astra-expansion .au-tabs button { flex: 0 0 auto; }
 .astra-expansion .au-layout { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(0, 1.5fr) minmax(210px, .78fr); gap: 12px; align-items: start; min-width: 0; }

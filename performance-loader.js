@@ -117,8 +117,8 @@
       scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=3"]
     },
     game: {
-      styles: ["space-explorer.css?v=3", "game-center.css?v=3", "astra-universe-expansion.css?v=3", "game-arcade.css?v=3"],
-      scripts: ["space-explorer.js?v=3", "game-center.js?v=3", "astra-universe-expansion.js?v=3", "game-arcade.js?v=3"]
+      styles: ["game-runtime.css?v=1", "space-explorer.css?v=4", "game-center.css?v=4", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "space-explorer.js?v=4", "game-center.js?v=4", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
     },
     learning: {
       styles: [

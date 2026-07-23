@@ -9,6 +9,7 @@ const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 test("Universal Media Project is reachable from the shell and cached offline", () => {
   const html = read("index.html");
+  const loader = read("performance-loader.js");
   const shell = read("script.js");
   const page = read("media-design-page.js");
   const worker = read("sw.js");
@@ -24,7 +25,7 @@ test("Universal Media Project is reachable from the shell and cached offline", (
     "media-design-page.js?v=9"
   ]) {
     const pattern = new RegExp(escapeRegExp(asset));
-    assert.match(html, pattern);
+    assert.match(`${html}\n${loader}`, pattern);
     assert.match(worker, pattern);
   }
 

@@ -32,6 +32,7 @@ test("support UI requires email and exposes an embedded payOS journey", () => {
   const client = read("support-platform.js");
   const styles = read("support-platform.css");
   const html = read("index.html");
+  const loader = read("performance-loader.js");
   const api = read("api/donations.js");
   assert.match(client, /data-support-email[^>]+required/);
   assert.match(client, /data-support-step="payment"/);
@@ -39,7 +40,7 @@ test("support UI requires email and exposes an embedded payOS journey", () => {
   assert.match(client, /data-support-step="email"/);
   assert.match(client, /data-support-receipt-status/);
   assert.match(client, /data-support-receipt-retry/);
-  assert.match(html, /https:\/\/cdn\.payos\.vn\/payos-checkout\/v1\/stable\/payos-initialize\.js/);
+  assert.match(`${html}\n${loader}`, /https:\/\/cdn\.payos\.vn\/payos-checkout\/v1\/stable\/payos-initialize\.js/);
   assert.match(client, /ELEMENT_ID: "hh-payos-embedded"/);
   assert.match(client, /embedded: true/);
   assert.match(client, /data-support-payos-qr-image/);

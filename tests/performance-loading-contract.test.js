@@ -14,7 +14,7 @@ test("the first paint only loads the shell and identity portal", () => {
 
   assert.ok(styles.length <= 20, `initial stylesheet budget exceeded: ${styles.length}`);
   assert.ok(scripts.length <= 15, `initial script budget exceeded: ${scripts.length}`);
-  assert.match(executableHtml, /performance-loader\.js\?v=1/);
+  assert.match(executableHtml, /performance-loader\.js\?v=\d+/);
   assert.doesNotMatch(executableHtml, /<script[^>]+(?:space-explorer|video-editor-resolve|english-learning|music-ai-studio)\.js/i);
 });
 

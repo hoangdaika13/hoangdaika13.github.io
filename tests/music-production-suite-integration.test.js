@@ -26,11 +26,13 @@ test("suite dispatches every specialized room to a real engine", () => {
 
 test("application shell loads every advanced music engine before the suite", () => {
   const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const loader = fs.readFileSync(path.join(root, "performance-loader.js"), "utf8");
+  const registeredAssets = `${html}\n${loader}`;
   const engines = ["music-intelligence-engine", "music-generative-arrangement", "music-adaptive-library", "music-mix-performance", "music-project-governance"];
   for (const name of engines) {
-    assert.match(html, new RegExp(`${name}\\.css\\?v=1`));
-    assert.match(html, new RegExp(`${name}\\.js\\?v=1`));
-    assert.ok(html.indexOf(`${name}.js?v=1`) < html.indexOf("music-production-suite.js?v=1"));
+    assert.match(registeredAssets, new RegExp(`${name}\\.css\\?v=1`));
+    assert.match(registeredAssets, new RegExp(`${name}\\.js\\?v=1`));
+    assert.ok(loader.indexOf(`${name}.js?v=1`) < loader.indexOf("music-production-suite.js?v=1"));
   }
 });
 

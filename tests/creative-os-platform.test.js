@@ -18,12 +18,14 @@ const engines = [
 
 test("Creative OS shell is routed, versioned and cached", () => {
   const html = read("index.html");
+  const loader = read("performance-loader.js");
   const script = read("script.js");
   const shell = read("creative-os.js");
   const worker = read("sw.js");
-  assert.match(html, /creative-os\.css\?v=1/);
-  assert.match(html, /creative-os\.js\?v=1/);
-  assert.match(html, /script\.js\?v=124/);
+  const registeredAssets = `${html}\n${loader}`;
+  assert.match(registeredAssets, /creative-os\.css\?v=1/);
+  assert.match(registeredAssets, /creative-os\.js\?v=\d+/);
+  assert.match(html, /script\.js\?v=\d+/);
   assert.match(worker, /hh-identity-portal-v\d+/);
   assert.match(worker, /creative-os-core\.js\?v=1/);
   assert.match(script, /creativeOSViews/);

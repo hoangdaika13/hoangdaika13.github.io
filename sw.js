@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v202";
+const CACHE = "hh-identity-portal-v203";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -34,7 +34,7 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=126",
+  "./script.js?v=127",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -168,10 +168,11 @@ const RUNTIME_ASSETS = [
   "./system-platform.css?v=1",
   "./system-platform.js?v=3",
   "./sidebar-navigation-pro.css?v=5",
-  "./space-explorer.css?v=3",
-  "./game-center.css?v=3",
-  "./astra-universe-expansion.css?v=3",
-  "./game-arcade.css?v=3",
+  "./game-runtime.css?v=1",
+  "./space-explorer.css?v=4",
+  "./game-center.css?v=4",
+  "./astra-universe-expansion.css?v=4",
+  "./game-arcade.css?v=4",
   "./learning-suite.css?v=3",
   "./learning-home.css?v=2",
   "./learning-paths.css?v=3",
@@ -237,10 +238,12 @@ const RUNTIME_ASSETS = [
   "./media-design-page.js?v=9",
   "./feature-lab.js?v=4",
   "./feature-engines.js?v=2",
-  "./space-explorer.js?v=3",
-  "./game-center.js?v=3",
-  "./astra-universe-expansion.js?v=3",
-  "./game-arcade.js?v=3",
+  "./game-platform-adapters.js?v=1",
+  "./game-runtime.js?v=1",
+  "./space-explorer.js?v=4",
+  "./game-center.js?v=4",
+  "./astra-universe-expansion.js?v=4",
+  "./game-arcade.js?v=4",
   "./learning-platform-core.js?v=5",
   "./learning-home.js?v=2",
   "./learning-paths.js?v=3",
@@ -270,9 +273,9 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=5",
+  "./performance-loader.js?v=6",
   "./auth-platform.js?v=6",
-  "./script.js?v=126"
+  "./script.js?v=127"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

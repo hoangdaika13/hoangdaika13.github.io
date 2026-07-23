@@ -16,9 +16,11 @@ const modules = [
 
 test("living gateway modules are loaded by the auth shell", () => {
   const html = read("index.html");
+  const loader = read("performance-loader.js");
+  const shellAssets = `${html}\n${loader}`;
   for (const module of modules) {
-    assert.match(html, new RegExp(`${module}\\.css\\?v=\\d+`), `${module}.css is not loaded`);
-    assert.match(html, new RegExp(`${module}\\.js\\?v=\\d+`), `${module}.js is not loaded`);
+    assert.match(shellAssets, new RegExp(`${module}\\.css\\?v=\\d+`), `${module}.css is not registered`);
+    assert.match(shellAssets, new RegExp(`${module}\\.js\\?v=\\d+`), `${module}.js is not registered`);
   }
 });
 

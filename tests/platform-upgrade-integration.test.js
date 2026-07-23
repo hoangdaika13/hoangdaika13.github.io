@@ -8,7 +8,9 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("P0 and P1 workspace upgrades are loaded and available offline", () => {
   const html = read("index.html");
+  const loader = read("performance-loader.js");
   const worker = read("sw.js");
+  const registeredAssets = `${html}\n${loader}`;
   const assets = [
     "command-center-pro.css?v=4",
     "command-center-pro.js?v=5",
@@ -22,7 +24,7 @@ test("P0 and P1 workspace upgrades are loaded and available offline", () => {
 
   for (const asset of assets) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
-    assert.match(html, pattern);
+    assert.match(registeredAssets, pattern);
     assert.match(worker, pattern);
   }
   assert.match(worker, /hh-identity-portal-v\d+/);

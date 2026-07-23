@@ -2,6 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "hh.astra-explorer.v1";
+  const SAVE_SLOTS_KEY = "hh.astra-explorer.slots.v1";
   const SAVE_VERSION = 1;
   const WORLD = { width: 12000, height: 8000 };
   const TAU = Math.PI * 2;
@@ -37,6 +38,17 @@
   };
   const pick = (list, random) => list[Math.floor(random() * list.length) % list.length];
   const localDateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const DIFFICULTIES = {
+    explorer: { label: "Nhà thám hiểm", description: "Va chạm nhẹ, ít hao nhiên liệu, phù hợp làm quen.", damage: .65, fuel: .72, reward: .85 },
+    pilot: { label: "Phi công", description: "Cân bằng giữa khám phá, tài nguyên và hiểm họa.", damage: 1, fuel: 1, reward: 1 },
+    legend: { label: "Huyền thoại", description: "Hiểm họa mạnh, tài nguyên khắt khe và phần thưởng cao.", damage: 1.45, fuel: 1.28, reward: 1.35 }
+  };
+  const TUTORIAL_STEPS = [
+    { title: "Điều khiển Asteria", copy: "Dùng WASD, phím mũi tên, vùng chạm hoặc tay cầm để lái tàu.", action: "move" },
+    { title: "Phát xung quét", copy: "Nhấn Space hoặc QUÉT để nhận diện mục tiêu gần tàu.", action: "scan" },
+    { title: "Khảo sát mục tiêu", copy: "Tiếp cận tín hiệu đã quét rồi nhấn E hoặc TƯƠNG TÁC.", action: "interact" },
+    { title: "Lưu checkpoint", copy: "Mở tab Tàu để chọn một trong ba slot và tạo checkpoint.", action: "checkpoint" }
+  ];
 
   const SECTOR_PREFIXES = ["Nadir", "Lumen", "Aster", "Eos", "Vela", "Orion", "Cygnus", "Lyra", "Helios", "Zenith", "Caelum", "Nova"];
   const SECTOR_SUFFIXES = ["Rift", "Reach", "Drift", "Gate", "Veil", "Expanse", "Horizon", "Echo", "Crown", "Abyss"];
@@ -155,6 +167,9 @@
     artifacts: [],
     achievements: [],
     mission: { cycle: 0, type: "scan", progress: 0 },
+    run: { status: "ready", wins: 0, losses: 0, lastOutcome: "", startedAt: 0 },
+    tutorial: { completed: false, step: 0 },
+    cloud: { status: "local", updatedAt: "", error: "" },
     daily: { date: localDateKey(), scan: 0, crystal: 0, warp: 0, claimed: false },
     streak: { count: 0, multiplier: 1, expiresAt: 0 },
     reputation: { archive: 0, freelance: 0, echo: 0 },
@@ -163,7 +178,7 @@
     modules: { probe: true, drone: false, tractor: false, spectrometer: false },
     stats: { scans: 0, distance: 0, sectors: 1, discoveries: 0, crystals: 0, artifacts: 0, encounters: 0, decodeWins: 0, probes: 0, perfectSurveys: 0, rareDiscoveries: 0, playSeconds: 0 },
     logs: [{ time: Date.now(), text: "Tàu thám hiểm Asteria đã sẵn sàng tại Trạm HH." }],
-    settings: { sound: true, reducedEffects: false, quality: "auto", calmReminder: true, camera: "chase", hudScale: "normal", colorVision: "default", ambient: true, shipClass: "asteria" }
+    settings: { sound: true, volume: .65, reducedEffects: false, quality: "auto", calmReminder: true, camera: "chase", hudScale: "normal", colorVision: "default", ambient: true, shipClass: "asteria", difficulty: "pilot", haptics: true }
   });
 
   function normalizeState(raw) {
@@ -175,6 +190,9 @@
       ship: { ...base.ship, ...(raw.ship || {}) },
       upgrades: { ...base.upgrades, ...(raw.upgrades || {}) },
       mission: { ...base.mission, ...(raw.mission || {}) },
+      run: { ...base.run, ...(raw.run || {}) },
+      tutorial: { ...base.tutorial, ...(raw.tutorial || {}) },
+      cloud: { ...base.cloud, ...(raw.cloud || {}) },
       daily: raw.daily?.date === localDateKey() ? { ...base.daily, ...raw.daily } : base.daily,
       streak: { ...base.streak, ...(raw.streak || {}), expiresAt: 0 },
       reputation: { ...base.reputation, ...(raw.reputation || {}) },
@@ -199,7 +217,7 @@
     return `
       <section class="astra-game" data-astra-game tabindex="0" aria-label="ASTRA HH - game khám phá vũ trụ">
         <header class="astra-topbar">
-          <div class="astra-brand"><span class="astra-brand__mark">AH</span><div><strong>ASTRA HH: Tín Hiệu Vô Tận</strong><small>Deep space expedition</small></div><span class="astra-live"><i></i> Online</span></div>
+          <div class="astra-brand"><span class="astra-brand__mark">AH</span><div><strong>ASTRA HH: Tín Hiệu Vô Tận</strong><small>Deep space expedition</small></div><span class="astra-live is-local" data-connection-badge><i></i><b data-connection-label>LOCAL</b></span></div>
           <div class="astra-sector"><div><small>Vùng sao hiện tại</small><strong data-sector-name>Đang giải mã...</strong></div><span class="astra-hazard-chip" data-hazard-name>Không gian tĩnh</span><span class="astra-sector-coordinates" data-coordinates>X 0000 · Y 0000</span></div>
           <div class="astra-top-actions">
             <button class="astra-text-button astra-coop-button" type="button" data-modal-open="coop"><i></i><span data-coop-label>CO-OP</span></button>
@@ -210,6 +228,7 @@
             <button class="astra-icon-button is-active" type="button" data-action="sound" aria-label="Bật hoặc tắt âm thanh" title="Âm thanh">♪</button>
             <button class="astra-icon-button" type="button" data-action="fullscreen" aria-label="Toàn màn hình" title="Toàn màn hình">□</button>
             <button class="astra-icon-button" type="button" data-action="pause" aria-label="Tạm dừng" title="Tạm dừng">Ⅱ</button>
+            <button class="astra-icon-button" type="button" data-action="restart" aria-label="Chơi lại từ đầu" title="Chơi lại">↺</button>
           </div>
         </header>
 
@@ -258,6 +277,17 @@
           <main class="astra-stage" data-astra-stage>
             <canvas data-astra-canvas aria-label="Không gian điều khiển tàu Asteria"></canvas>
             <div class="astra-vignette" aria-hidden="true"></div><div class="astra-crosshair" aria-hidden="true"></div>
+            <section class="astra-objective-bar" data-objective-bar aria-live="polite">
+              <span><i data-run-led></i><b data-run-status>SẴN SÀNG</b></span>
+              <p><small>MỤC TIÊU</small><strong data-objective-title>Khởi động Asteria</strong><em data-objective-copy>Hoàn thành nhiệm vụ hiện tại để chiến thắng chuyến bay.</em></p>
+              <div><b data-difficulty-label>Phi công</b><small data-quality-status>AUTO · 60 FPS</small></div>
+            </section>
+            <section class="astra-tutorial" data-tutorial hidden aria-live="polite">
+              <span data-tutorial-index>01 / 04</span>
+              <div><strong data-tutorial-title>Điều khiển Asteria</strong><p data-tutorial-copy></p></div>
+              <button type="button" data-action="tutorial-next">Tiếp theo</button>
+              <button type="button" data-action="tutorial-skip">Bỏ qua</button>
+            </section>
             <div class="astra-flight-hud"><div class="astra-hud-left"><span class="astra-flight-mode" data-flight-mode>FLIGHT · CRUISE</span><span class="astra-streak" data-streak hidden>CHUỖI 1 · x1.0</span><span class="astra-camera-chip" data-camera-label>CAM · ĐUỔI THEO</span></div><div class="astra-flight-stats"><span>TỐC ĐỘ<strong data-speed>0 u/s</strong></span><span>HƯỚNG<strong data-heading>000°</strong></span><span>ĐỘ PHƠI SÁNG<strong data-exposure>EV +0.0</strong></span></div></div>
             <section class="astra-target-card" data-target-card hidden><small data-target-type>Mục tiêu</small><strong data-target-name>Chưa có mục tiêu</strong><div class="astra-target__distance"><span data-target-note>Phát xung quét để nhận diện</span><b data-target-distance>-- u</b></div><div class="astra-survey-meter" data-survey-meter hidden><i></i><span data-survey-meter-label>KHẢO SÁT 0%</span></div><div class="astra-target-telemetry"><span>VẬN TỐC TƯƠNG ĐỐI <b data-relative-speed>0 u/s</b></span><span>BỨC XẠ <b data-radiation>0 μSv</b></span></div></section>
             <div class="astra-instrument-ribbon" aria-label="Thiết bị thăm dò"><span><i data-probe-led></i>PROBE <b data-probe-count>3</b></span><span><i data-drone-led></i>DRONE <b data-drone-status>OFFLINE</b></span><span>CARGO <b data-cargo>0/18</b></span><span>SCAN <b data-scan-charge>READY</b></span></div>
@@ -272,11 +302,11 @@
             <section class="astra-intro" data-intro>
               <div class="astra-intro__content">
                 <div class="astra-intro__visual"><span class="astra-intro__planet"></span><span class="astra-intro__ship">➤</span></div>
-                <div class="astra-intro__body"><span>Năm 2189 · Nhiệm vụ Asteria</span><h1>ASTRA HH<br><em>Tín Hiệu Vô Tận</em></h1><p>Một xung vô tuyến mang mã HH-13 vừa thức tỉnh sau 700 năm im lặng. Lái tàu Asteria qua những thế giới chưa ai đặt tên, giải mã các bài hát vũ trụ và quyết định tương lai của ba phe đang truy tìm bảy đài phát cổ đại.</p><div class="astra-intro__facts"><span><strong>Vũ trụ biến đổi</strong>Hiểm họa và sự kiện khác nhau</span><span><strong>Khám phá có chiều sâu</strong>Cổ vật, phe phái, nghiên cứu</span><span><strong>Thành tích online</strong>Đồng bộ điểm với tài khoản HH</span></div><div class="astra-intro__actions"><button class="astra-primary-button" type="button" data-start-game>${hasProgress ? "Tiếp tục hành trình" : "Khởi động Asteria"}</button><button class="astra-secondary-button" type="button" data-modal-open="guide">Cách chơi</button></div></div>
+                <div class="astra-intro__body"><span>Năm 2189 · Nhiệm vụ Asteria</span><h1>ASTRA HH<br><em>Tín Hiệu Vô Tận</em></h1><p>Một xung vô tuyến mang mã HH-13 vừa thức tỉnh sau 700 năm im lặng. Lái tàu Asteria qua những thế giới chưa ai đặt tên, giải mã các bài hát vũ trụ và quyết định tương lai của ba phe đang truy tìm bảy đài phát cổ đại.</p><div class="astra-intro__facts"><span><strong>Vũ trụ biến đổi</strong>Hiểm họa và sự kiện khác nhau</span><span><strong>Khám phá có chiều sâu</strong>Cổ vật, phe phái, nghiên cứu</span><span><strong>Lưu minh bạch</strong>Local mặc định, cloud khi máy chủ xác nhận</span></div><label class="astra-intro__difficulty"><span>Độ khó chuyến bay</span><select data-difficulty>${Object.entries(DIFFICULTIES).map(([id, item]) => `<option value="${id}">${item.label}</option>`).join("")}</select><small data-difficulty-copy>${DIFFICULTIES.pilot.description}</small></label><div class="astra-intro__actions"><button class="astra-primary-button" type="button" data-start-game>${hasProgress ? "Tiếp tục hành trình" : "Khởi động Asteria"}</button><button class="astra-secondary-button" type="button" data-action="tutorial-start">Hướng dẫn tương tác</button><button class="astra-secondary-button" type="button" data-modal-open="guide">Cẩm nang</button></div></div>
               </div>
             </section>
 
-            <section class="astra-modal" data-modal="guide" hidden><div class="astra-modal__content"><header class="astra-modal__head"><div><span class="astra-eyebrow">Flight manual</span><h2>Cẩm nang phi công</h2></div><button type="button" data-modal-close aria-label="Đóng">×</button></header><div class="astra-guide-grid"><article><span>01 · DI CHUYỂN</span><strong>WASD / phím mũi tên</strong><p>W tăng tốc, A/D đổi hướng, S phanh. Giữ Shift để boost; Q bật autopilot tới mục tiêu.</p></article><article><span>02 · KHÁM PHÁ</span><strong>Space để phát xung quét</strong><p>Khám phá liên tiếp tạo chuỗi điểm. Hiểm họa từng vùng làm thay đổi scanner và hệ thống tàu.</p></article><article><span>03 · TƯƠNG TÁC</span><strong>E khi ở gần mục tiêu</strong><p>Lấy mẫu hành tinh, giải dạng sóng Echo, nghe dữ liệu thiên thể hoặc thu hồi cổ vật.</p></article><article><span>04 · TIẾN TRÌNH</span><strong>Lab và ba phe phái</strong><p>Dùng dữ liệu mở cây nghiên cứu; lựa chọn của bạn thay đổi uy tín với từng phe.</p></article><article><span>05 · WARP</span><strong>Chi phí giảm theo công nghệ</strong><p>Đi tới vùng sao kế tiếp để gặp sự kiện hiếm, hiểm họa mới và những mảnh truyện HH-13.</p></article><article><span>06 · DỮ LIỆU</span><strong>Tự động lưu trên thiết bị</strong><p>Điểm cao được đồng bộ an toàn với tài khoản HH khi backend khả dụng.</p></article></div></div></section>
+            <section class="astra-modal" data-modal="guide" hidden><div class="astra-modal__content"><header class="astra-modal__head"><div><span class="astra-eyebrow">Flight manual</span><h2>Cẩm nang phi công</h2></div><button type="button" data-modal-close aria-label="Đóng">×</button></header><div class="astra-guide-grid"><article><span>01 · DI CHUYỂN</span><strong>WASD, cảm ứng hoặc gamepad</strong><p>W tăng tốc, A/D đổi hướng, S phanh. Giữ Shift để boost; Q bật autopilot tới mục tiêu.</p></article><article><span>02 · KHÁM PHÁ</span><strong>Space để phát xung quét</strong><p>Khám phá liên tiếp tạo chuỗi điểm. Hiểm họa từng vùng làm thay đổi scanner và hệ thống tàu.</p></article><article><span>03 · TƯƠNG TÁC</span><strong>E khi ở gần mục tiêu</strong><p>Lấy mẫu hành tinh, giải dạng sóng Echo, nghe dữ liệu thiên thể hoặc thu hồi cổ vật.</p></article><article><span>04 · THẮNG / THUA</span><strong>Hoàn thành nhiệm vụ hiện tại</strong><p>Mỗi nhiệm vụ hoàn tất là một chiến thắng. Thân tàu về 0 là thất bại và kích hoạt cứu hộ.</p></article><article><span>05 · CHECKPOINT</span><strong>Ba slot lưu độc lập</strong><p>Tự động lưu local; checkpoint cho phép khôi phục tiến trình gần nhất trong tab Tàu.</p></article><article><span>06 · KẾT NỐI</span><strong>Không giả trạng thái online</strong><p>CO-OP và cloud chỉ hiện trực tuyến sau khi Socket.IO hoặc API xác nhận; nếu không game chạy local.</p></article></div></div></section>
             <section class="astra-modal" data-modal="map" hidden><div class="astra-modal__content"><header class="astra-modal__head"><div><span class="astra-eyebrow">Galactic navigation</span><h2>Bản đồ hành trình</h2></div><button type="button" data-modal-close aria-label="Đóng">×</button></header><div class="astra-map-grid" data-map-grid></div><button class="astra-primary-button" type="button" data-action="warp">Warp tới vùng kế tiếp · 25% nhiên liệu</button></div></section>
             <section class="astra-modal" data-modal="decode" hidden><div class="astra-modal__content astra-decode-modal"><header class="astra-modal__head"><div><span class="astra-eyebrow">Echo signal lab</span><h2>Giải mã tín hiệu HH-13</h2></div><button type="button" data-modal-close aria-label="Đóng">×</button></header><p class="astra-modal-copy">Chạm từng bộ cộng hưởng để khớp dạng sóng mục tiêu. Mỗi lần thử sai tiêu hao 4 năng lượng.</p><div class="astra-wave-target" data-decode-target></div><div class="astra-wave-controls" data-decode-controls></div><p class="astra-decode-feedback" data-decode-feedback>Đồng bộ bốn tần số để mở khóa dữ liệu.</p><button class="astra-primary-button" type="button" data-decode-submit>GIẢI MÃ TÍN HIỆU</button></div></section>
             <section class="astra-modal" data-modal="encounter" hidden><div class="astra-modal__content astra-encounter-modal"><header class="astra-modal__head"><div><span class="astra-eyebrow">Deep-space encounter</span><h2 data-encounter-title>Sự kiện vùng sâu</h2></div><button type="button" data-modal-close aria-label="Đóng">×</button></header><div class="astra-encounter-visual" data-encounter-visual>◇</div><p class="astra-modal-copy" data-encounter-copy></p><div class="astra-encounter-choices" data-encounter-choices></div></div></section>
@@ -301,14 +331,14 @@
           <aside class="astra-panel astra-panel--right" aria-label="Máy quét, nâng cấp và nhật ký khám phá">
             <nav class="astra-tabbar" aria-label="Bảng điều khiển"><button class="is-active" type="button" data-tab="scanner">Scanner</button><button type="button" data-tab="ship">Tàu</button><button type="button" data-tab="lab">Lab</button><button type="button" data-tab="codex">Codex</button><button type="button" data-tab="ranking">Hạng</button></nav>
             <section class="astra-pane is-active" data-pane="scanner"><div class="astra-scanner-visual"><span class="astra-scanner-sweep"></span><i class="astra-scanner-center"></i><div class="astra-spectrum" data-spectrum aria-label="Quang phổ mục tiêu"></div></div><div class="astra-observatory-strip"><span><small>SAO CHỦ</small><b data-star-class>G · 5.700 K</b></span><span><small>GIÓ SAO</small><b data-space-weather>Ổn định</b></span><span><small>ĐỘ SÂU KHẢO SÁT</small><b data-survey-depth>0%</b></span></div><div class="astra-target-info" data-target-info><div><small>Không có mục tiêu</small><strong>Phát xung quét</strong><p>Scanner sẽ phân tích các vật thể trong vùng lân cận.</p></div></div></section>
-            <section class="astra-pane" data-pane="ship"><header class="astra-card-head"><div><span class="astra-eyebrow">Shipyard</span><h3>Nâng cấp Asteria</h3></div><b data-ship-power>4 MOD</b></header><div class="astra-upgrades">${[["engine", "Động cơ Vector", "Tốc độ và gia tốc"], ["scanner", "Scanner Lượng tử", "Tầm quét và hồi chiêu"], ["shield", "Khiên Plasma", "Sức chịu va chạm"], ["reactor", "Lò phản ứng", "Dung lượng năng lượng"]].map(([id, name, description]) => `<article class="astra-upgrade"><span><strong>${name} · MK-<b data-upgrade-level="${id}">1</b></strong><small>${description}</small></span><button type="button" data-upgrade="${id}">120 CR</button></article>`).join("")}</div><h4 class="astra-pane-title">Loadout thám hiểm</h4><div class="astra-modules" data-ship-modules></div><div class="astra-service-actions"><button type="button" data-service="repair">Sửa thân tàu · 45 CR</button><button type="button" data-service="refuel">Nạp nhiên liệu · 5 ◆</button><button type="button" data-service="probes">Nạp 3 probe · 60 CR</button><button type="button" data-service="drone">Nạp drone · 35 CR</button></div><div class="astra-visual-settings"><label class="astra-quality"><span>Chất lượng đồ họa</span><select data-quality><option value="auto">Tự động 60 FPS</option><option value="ultra">Cực đẹp</option><option value="eco">Tiết kiệm</option></select></label><label class="astra-quality"><span>Camera</span><select data-camera-select>${Object.entries(CAMERA_MODES).map(([id, item]) => `<option value="${id}">${item.label}</option>`).join("")}</select></label><label class="astra-quality"><span>Hỗ trợ màu sắc</span><select data-color-vision><option value="default">Mặc định</option><option value="deuteranopia">Đỏ - lục</option><option value="tritanopia">Lam - vàng</option></select></label></div></section>
+            <section class="astra-pane" data-pane="ship"><header class="astra-card-head"><div><span class="astra-eyebrow">Shipyard</span><h3>Nâng cấp Asteria</h3></div><b data-ship-power>4 MOD</b></header><div class="astra-upgrades">${[["engine", "Động cơ Vector", "Tốc độ và gia tốc"], ["scanner", "Scanner Lượng tử", "Tầm quét và hồi chiêu"], ["shield", "Khiên Plasma", "Sức chịu va chạm"], ["reactor", "Lò phản ứng", "Dung lượng năng lượng"]].map(([id, name, description]) => `<article class="astra-upgrade"><span><strong>${name} · MK-<b data-upgrade-level="${id}">1</b></strong><small>${description}</small></span><button type="button" data-upgrade="${id}">120 CR</button></article>`).join("")}</div><h4 class="astra-pane-title">Loadout thám hiểm</h4><div class="astra-modules" data-ship-modules></div><div class="astra-service-actions"><button type="button" data-service="repair">Sửa thân tàu · 45 CR</button><button type="button" data-service="refuel">Nạp nhiên liệu · 5 ◆</button><button type="button" data-service="probes">Nạp 3 probe · 60 CR</button><button type="button" data-service="drone">Nạp drone · 35 CR</button></div><h4 class="astra-pane-title">Checkpoint và khôi phục</h4><div class="astra-save-panel"><label><span>Save slot</span><select data-save-slot><option value="slot-1">Slot 1</option><option value="slot-2">Slot 2</option><option value="slot-3">Slot 3</option></select></label><p data-slot-summary>Chưa có checkpoint.</p><div><button type="button" data-save-action="checkpoint">Lưu checkpoint</button><button type="button" data-save-action="restore">Khôi phục</button></div></div><h4 class="astra-pane-title">Thiết lập chuyến bay</h4><div class="astra-visual-settings"><label class="astra-quality"><span>Độ khó</span><select data-difficulty>${Object.entries(DIFFICULTIES).map(([id, item]) => `<option value="${id}">${item.label}</option>`).join("")}</select></label><label class="astra-quality"><span>Chất lượng đồ họa</span><select data-quality><option value="auto">Tự động 60 FPS</option><option value="ultra">Cực đẹp</option><option value="eco">Tiết kiệm</option></select></label><label class="astra-quality"><span>Âm lượng <b data-volume-value>65%</b></span><input type="range" min="0" max="100" step="5" value="65" data-volume></label><label class="astra-quality"><span>Camera</span><select data-camera-select>${Object.entries(CAMERA_MODES).map(([id, item]) => `<option value="${id}">${item.label}</option>`).join("")}</select></label><label class="astra-quality"><span>Hỗ trợ màu sắc</span><select data-color-vision><option value="default">Mặc định</option><option value="deuteranopia">Đỏ - lục</option><option value="tritanopia">Lam - vàng</option></select></label></div><div class="astra-input-status"><span data-keyboard-status>⌨ Bàn phím sẵn sàng</span><span data-touch-status>◉ Cảm ứng tự nhận</span><span data-gamepad-status>⌁ Chưa có tay cầm</span></div></section>
             <section class="astra-pane" data-pane="lab"><header class="astra-card-head"><div><span class="astra-eyebrow">Research & factions</span><h3>Phòng nghiên cứu</h3></div><b data-artifact-count>0 ART</b></header><div class="astra-factions" data-factions></div><h4 class="astra-pane-title">Cây công nghệ</h4><div class="astra-research-tree" data-research-tree></div><h4 class="astra-pane-title">Kho cổ vật</h4><div class="astra-artifacts" data-artifacts></div></section>
             <section class="astra-pane" data-pane="codex"><header class="astra-card-head"><div><span class="astra-eyebrow">Discovery archive</span><h3>Nhật ký thiên hà</h3></div><b data-discovery-count>0</b></header><div class="astra-codex" data-codex></div></section>
             <section class="astra-pane" data-pane="ranking"><header class="astra-card-head"><div><span class="astra-eyebrow">Online pilots</span><h3>Bảng xếp hạng</h3></div><button class="astra-icon-button" type="button" data-refresh-ranking title="Làm mới">↻</button></header><p class="astra-online-status" data-online-status>Đang kết nối trạm chỉ huy...</p><ol class="astra-leaderboard" data-leaderboard></ol></section>
           </aside>
         </div>
 
-        <footer class="astra-statusbar"><div><strong data-save-status>ĐÃ LƯU CỤC BỘ</strong><span data-session-time>00:00</span><span data-sector-progress>0 thiên thể đã nhận diện</span><span data-fps>60 FPS</span><span data-hazard-status>Không gian tĩnh</span></div><div><span>WASD Lái tàu</span><span>Q Autopilot</span><span>SPACE Quét</span><span>E Tương tác</span><span>R Probe</span><span>G Drone</span><span>C Camera</span><span>M Bản đồ</span></div></footer>
+        <footer class="astra-statusbar"><div><strong data-save-status>ĐÃ LƯU LOCAL</strong><span data-session-time>00:00</span><span data-sector-progress>0 thiên thể đã nhận diện</span><span data-fps>60 FPS</span><span data-hazard-status>Không gian tĩnh</span></div><div><button type="button" data-action="retry-connection">Thử kết nối</button><span>WASD Lái tàu</span><span>SPACE Quét</span><span>E Tương tác</span><span>P Tạm dừng</span></div></footer>
         <div class="astra-toast" data-toast role="status" aria-live="polite"></div>
       </section>`;
   }
@@ -317,6 +347,8 @@
     constructor(host, options = {}) {
       this.host = host;
       this.apiBase = String(options.apiBase || window.HH_REALTIME_URL || "").replace(/\/$/, "");
+      this.saveSlots = this.loadSaveSlots();
+      this.activeSlot = this.saveSlots.active || "slot-1";
       this.state = this.load();
       this.discovered = new Set(this.state.discoveries);
       this.collected = new Set(this.state.collected);
@@ -360,7 +392,15 @@
       this.currentFps = 60;
       this.fpsFrames = 0;
       this.fpsWindowStarted = performance.now();
+      this.lowFpsWindows = 0;
       this.adaptiveReduced = false;
+      this.gamepadIndex = null;
+      this.gamepadScanAt = 0;
+      this.gamepadActionLatch = {};
+      this.connectionState = navigator.onLine === false ? "offline" : "local";
+      this.lastConnectionError = "";
+      this.cloudSaveTimer = 0;
+      this.gameRuntime = null;
       this.nextCalmReminder = (Math.floor(this.state.stats.playSeconds / 2700) + 1) * 2700;
       this.uiCache = Object.create(null);
       this.toastTimer = 0;
@@ -373,9 +413,11 @@
       this.context = this.canvas.getContext("2d", { alpha: false, desynchronized: true });
       this.minimap = this.root.querySelector("[data-astra-minimap]");
       this.minimapContext = this.minimap.getContext("2d");
+      this.initGameRuntime();
       this.generateSector();
       this.bind();
       this.resize();
+      this.applySettingsToControls();
       this.updateUi(true);
       this.loadLeaderboard();
       this.initRealtime();
@@ -383,7 +425,10 @@
     }
 
     load() {
-      try { return normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY) || "null")); }
+      try {
+        const slotState = this.saveSlots?.slots?.[this.activeSlot]?.state;
+        return normalizeState(slotState || JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"));
+      }
       catch { return defaultState(); }
     }
 
@@ -394,10 +439,238 @@
       this.state.sampled = [...this.sampled].slice(-500);
       this.state.decoded = [...this.decoded].slice(-120);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      this.persistSlotSnapshot("Autosave", false);
       this.lastSave = performance.now();
       const status = this.root?.querySelector("[data-save-status]");
-      if (status) status.textContent = `ĐÃ LƯU · ${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+      if (status) status.textContent = `ĐÃ LƯU LOCAL · ${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+      this.gameRuntime?.save?.(this.snapshot(), { slot: this.activeSlot, local: true });
+      this.scheduleCloudSave();
       if (sync) this.syncScore();
+    }
+
+    loadSaveSlots() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(SAVE_SLOTS_KEY) || "null");
+        if (stored?.version === 1 && stored.slots && typeof stored.slots === "object") return stored;
+      } catch {}
+      return { version: 1, active: "slot-1", slots: {} };
+    }
+
+    snapshot() {
+      return {
+        ...this.state,
+        discoveries: [...this.discovered].slice(-800),
+        collected: [...this.collected].slice(-1200),
+        sampled: [...this.sampled].slice(-500),
+        decoded: [...this.decoded].slice(-120)
+      };
+    }
+
+    persistSlotSnapshot(label = "Checkpoint", manual = true) {
+      const now = Date.now();
+      this.saveSlots.active = this.activeSlot;
+      this.saveSlots.slots[this.activeSlot] = {
+        label,
+        manual,
+        savedAt: now,
+        sector: this.state.sector,
+        level: this.state.level,
+        score: this.state.score,
+        state: this.snapshot()
+      };
+      try { localStorage.setItem(SAVE_SLOTS_KEY, JSON.stringify(this.saveSlots)); } catch {}
+      this.updateSaveSlotUi();
+      return this.saveSlots.slots[this.activeSlot];
+    }
+
+    saveCheckpoint(label = "Checkpoint thủ công") {
+      const entry = this.persistSlotSnapshot(label, true);
+      this.gameRuntime?.checkpoint?.(entry.state, { slot: this.activeSlot, label });
+      this.notify(`Đã lưu ${this.activeSlot.replace("-", " ")} · vùng ${entry.sector + 1}.`);
+      this.scheduleCloudSave(true);
+      this.completeTutorialAction("checkpoint");
+      return entry;
+    }
+
+    restoreCheckpoint(slot = this.activeSlot) {
+      const entry = this.saveSlots.slots[slot];
+      if (!entry?.state) {
+        this.notify("Slot này chưa có checkpoint để khôi phục.", true);
+        return false;
+      }
+      this.activeSlot = slot;
+      this.saveSlots.active = slot;
+      this.state = normalizeState(entry.state);
+      this.discovered = new Set(this.state.discoveries);
+      this.collected = new Set(this.state.collected);
+      this.sampled = new Set(this.state.sampled);
+      this.decoded = new Set(this.state.decoded);
+      this.running = false;
+      this.paused = true;
+      this.state.run.status = "ready";
+      this.generateSector();
+      this.applySettingsToControls();
+      this.save();
+      this.gameRuntime?.restore?.(this.snapshot(), { slot });
+      this.notify(`Đã khôi phục ${slot.replace("-", " ")} · vùng ${this.state.sector + 1}.`);
+      return true;
+    }
+
+    switchSaveSlot(slot) {
+      if (!["slot-1", "slot-2", "slot-3"].includes(slot)) return;
+      this.activeSlot = slot;
+      this.saveSlots.active = slot;
+      try { localStorage.setItem(SAVE_SLOTS_KEY, JSON.stringify(this.saveSlots)); } catch {}
+      this.updateSaveSlotUi();
+    }
+
+    initGameRuntime() {
+      const runtime = window.HHGameRuntime;
+      if (!runtime) return;
+      try {
+        this.gameRuntime = typeof runtime.create === "function"
+          ? runtime.create({ gameId: "astra-hh", getState: () => this.snapshot() })
+          : runtime;
+        this.gameRuntime?.register?.({ gameId: "astra-hh", getState: () => this.snapshot() });
+      } catch (error) {
+        this.gameRuntime = null;
+        this.lastConnectionError = error.message || "HHGameRuntime không khả dụng";
+      }
+    }
+
+    difficultyProfile() {
+      return DIFFICULTIES[this.state.settings.difficulty] || DIFFICULTIES.pilot;
+    }
+
+    applySettingsToControls() {
+      if (!this.root) return;
+      const settings = this.state.settings;
+      const setValue = (selector, value) => {
+        const control = this.root.querySelector(selector);
+        if (control) control.value = value;
+      };
+      setValue("[data-difficulty]", settings.difficulty);
+      setValue("[data-quality]", settings.quality);
+      setValue("[data-camera-select]", settings.camera);
+      setValue("[data-color-vision]", settings.colorVision);
+      setValue("[data-volume]", Math.round(Number(settings.volume ?? .65) * 100));
+      this.root.querySelector("[data-volume-value]")?.replaceChildren(`${Math.round(Number(settings.volume ?? .65) * 100)}%`);
+      this.root.dataset.qualityMode = settings.quality;
+      this.root.dataset.colorVision = settings.colorVision;
+      this.root.dataset.difficulty = settings.difficulty;
+      this.updateSaveSlotUi();
+      this.updateConnectionUi();
+    }
+
+    updateSaveSlotUi() {
+      if (!this.root) return;
+      const select = this.root.querySelector("[data-save-slot]");
+      if (select) select.value = this.activeSlot;
+      const summary = this.root.querySelector("[data-slot-summary]");
+      const entries = ["slot-1", "slot-2", "slot-3"].map((slot) => {
+        const item = this.saveSlots.slots[slot];
+        return `${slot.replace("-", " ")}: ${item ? `vùng ${(Number(item.sector || 0) + 1)} · LV.${item.level || 1}` : "trống"}`;
+      });
+      if (summary) summary.textContent = entries.join(" · ");
+    }
+
+    updateConnectionUi() {
+      if (!this.root) return;
+      const connected = Boolean(this.realtimeSocket?.connected);
+      const state = connected ? "online" : (navigator.onLine === false ? "offline" : "local");
+      this.connectionState = state;
+      const label = state === "online" ? "REALTIME" : state === "offline" ? "OFFLINE" : "LOCAL";
+      const badge = this.root.querySelector("[data-connection-badge]");
+      badge?.classList.toggle("is-online", state === "online");
+      badge?.classList.toggle("is-offline", state === "offline");
+      badge?.classList.toggle("is-local", state === "local");
+      const connectionLabel = this.root.querySelector("[data-connection-label]");
+      if (connectionLabel) connectionLabel.textContent = label;
+      const status = this.root.querySelector("[data-save-status]");
+      if (status && state !== "online" && this.state.cloud.status !== "online") status.textContent = state === "offline" ? "ĐANG LƯU LOCAL · OFFLINE" : "ĐÃ LƯU LOCAL";
+      const onlineStatus = this.root.querySelector("[data-online-status]");
+      if (onlineStatus && !this.loadingLeaderboard) onlineStatus.textContent = state === "online" ? "Realtime đang hoạt động." : state === "offline" ? "Ngoại tuyến · bảng local vẫn dùng được." : "Local fallback · chưa xác nhận realtime.";
+    }
+
+    scheduleCloudSave(immediate = false) {
+      if (!this.apiBase || !window.HHAuthSession?.token?.()) return;
+      clearTimeout(this.cloudSaveTimer);
+      const run = () => this.syncCloudSave();
+      if (immediate) run();
+      else this.cloudSaveTimer = window.setTimeout(run, 1200);
+    }
+
+    async syncCloudSave() {
+      const token = window.HHAuthSession?.token?.() || "";
+      if (!this.apiBase || !token || navigator.onLine === false) return;
+      try {
+        const response = await fetch(`${this.apiBase}/api/games?resource=cloud-save&gameId=astra-hh&slot=${encodeURIComponent(this.activeSlot)}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ resource: "cloud-save", gameId: "astra-hh", slot: this.activeSlot, version: Date.now(), data: this.snapshot() })
+        });
+        if (!response.ok) throw new Error(`cloud-save ${response.status}`);
+        this.state.cloud = { status: "online", updatedAt: new Date().toISOString(), error: "" };
+        this.updateConnectionUi();
+      } catch (error) {
+        this.state.cloud = { status: "local", updatedAt: new Date().toISOString(), error: error.message || "Cloud save thất bại" };
+        this.updateConnectionUi();
+      }
+    }
+
+    setDifficulty(value) {
+      if (!DIFFICULTIES[value]) return;
+      this.state.settings.difficulty = value;
+      this.root.dataset.difficulty = value;
+      const copy = this.root.querySelector("[data-difficulty-copy]");
+      if (copy) copy.textContent = DIFFICULTIES[value].description;
+      this.root.querySelector("[data-difficulty-label]")?.replaceChildren(DIFFICULTIES[value].label);
+      this.save();
+      this.notify(`Độ khó · ${DIFFICULTIES[value].label}`);
+    }
+
+    setVolume(value) {
+      this.state.settings.volume = clamp(Number(value) / 100, 0, 1);
+      this.root.querySelector("[data-volume-value]")?.replaceChildren(`${Math.round(this.state.settings.volume * 100)}%`);
+      if (this.ambientNodes?.master) this.ambientNodes.master.gain.value = this.state.settings.sound ? .0065 * this.state.settings.volume : .0001;
+      this.save();
+    }
+
+    completeTutorialAction(action) {
+      if (this.state.tutorial.completed) return;
+      const step = TUTORIAL_STEPS[this.state.tutorial.step];
+      if (!step || step.action !== action) return;
+      this.state.tutorial.step += 1;
+      if (this.state.tutorial.step >= TUTORIAL_STEPS.length) this.state.tutorial.completed = true;
+      this.renderTutorial();
+      this.save();
+    }
+
+    renderTutorial() {
+      const panel = this.root.querySelector("[data-tutorial]");
+      if (!panel || this.state.tutorial.completed || !this.running) {
+        if (panel) panel.hidden = true;
+        return;
+      }
+      const step = TUTORIAL_STEPS[this.state.tutorial.step] || TUTORIAL_STEPS[0];
+      panel.hidden = false;
+      panel.querySelector("[data-tutorial-index]")?.replaceChildren(`${String(this.state.tutorial.step + 1).padStart(2, "0")} / ${TUTORIAL_STEPS.length}`);
+      panel.querySelector("[data-tutorial-title]")?.replaceChildren(step.title);
+      panel.querySelector("[data-tutorial-copy]")?.replaceChildren(step.copy);
+    }
+
+    tutorialNext() {
+      if (this.state.tutorial.completed) return;
+      this.state.tutorial.step = Math.min(TUTORIAL_STEPS.length - 1, this.state.tutorial.step + 1);
+      this.renderTutorial();
+      this.save();
+    }
+
+    tutorialSkip() {
+      this.state.tutorial.completed = true;
+      this.renderTutorial();
+      this.save();
     }
 
     initRealtime() {
@@ -409,7 +682,20 @@
         this.coopRoom = null;
         this.remoteShips.clear();
         this.updateCoopUi();
+        this.updateConnectionUi();
       });
+      this.listen(window, "online", () => {
+        this.notify("Đã có mạng trở lại · đang thử kết nối.", false);
+        this.updateConnectionUi();
+        if (window.HHRealtimeSocket) attach(window.HHRealtimeSocket);
+        this.scheduleCloudSave(true);
+      });
+      this.listen(window, "offline", () => {
+        this.lastConnectionError = "Thiết bị đang ngoại tuyến";
+        this.updateConnectionUi();
+        this.notify("Ngoại tuyến · tiến trình vẫn được lưu local.", true);
+      });
+      this.updateConnectionUi();
     }
 
     attachRealtime(socket) {
@@ -441,13 +727,23 @@
         if (!payload || !Number.isFinite(Number(payload.sector))) return;
         if (Number(payload.sector) !== this.state.sector) this.performWarp(Number(payload.sector), true);
       });
-      on("connect", () => this.updateCoopUi());
+      on("connect", () => {
+        this.lastConnectionError = "";
+        this.updateCoopUi();
+        this.updateConnectionUi();
+      });
+      on("connect_error", (error) => {
+        this.lastConnectionError = error?.message || "Không kết nối được realtime";
+        this.updateConnectionUi();
+      });
       on("disconnect", () => {
         this.coopRoom = null;
         this.remoteShips.clear();
         this.updateCoopUi();
+        this.updateConnectionUi();
       });
       this.updateCoopUi();
+      this.updateConnectionUi();
     }
 
     detachRealtime() {
@@ -671,7 +967,21 @@
       });
       this.listen(window, "blur", () => Object.keys(this.input).forEach((key) => { this.input[key] = false; }));
       this.listen(document, "visibilitychange", () => {
-        if (document.hidden) { this.save(); this.paused = true; }
+        if (document.hidden) {
+          this.save();
+          this.paused = true;
+          this.state.run.status = "paused";
+          this.gameRuntime?.pause?.({ gameId: "astra-hh", reason: "hidden-tab" });
+        }
+      });
+      this.listen(window, "gamepadconnected", (event) => {
+        this.gamepadIndex = event.gamepad.index;
+        this.root.querySelector("[data-gamepad-status]")?.replaceChildren(`⌁ ${event.gamepad.id.slice(0, 22)}`);
+        this.notify("Tay cầm đã kết nối · dùng stick trái để lái.");
+      });
+      this.listen(window, "gamepaddisconnected", (event) => {
+        if (this.gamepadIndex === event.gamepad.index) this.gamepadIndex = null;
+        this.root.querySelector("[data-gamepad-status]")?.replaceChildren("⌁ Chưa có tay cầm");
       });
       this.listen(window, "resize", () => this.resize(), { passive: true });
 
@@ -695,6 +1005,21 @@
         if (action === "autopilot") this.toggleAutopilot();
         if (action === "camera") this.cycleCamera();
         if (action === "photo-mode") this.togglePhotoMode();
+        if (action === "restart") this.restart();
+        if (action === "retry-connection") {
+          if (window.HHRealtimeSocket) this.attachRealtime(window.HHRealtimeSocket);
+          this.scheduleCloudSave(true);
+          this.loadLeaderboard(true);
+          this.notify("Đã gửi yêu cầu kết nối lại.");
+        }
+        if (action === "tutorial-start") {
+          this.state.tutorial.completed = false;
+          this.state.tutorial.step = 0;
+          this.start();
+          this.renderTutorial();
+        }
+        if (action === "tutorial-next") this.tutorialNext();
+        if (action === "tutorial-skip") this.tutorialSkip();
         if (action === "capture") this.capturePhoto();
         if (action === "create-room") this.createCoopRoom(false);
         if (action === "match-room") this.createCoopRoom(true);
@@ -737,6 +1062,15 @@
         if (camera) this.setCamera(camera.value);
         const colorVision = event.target.closest("[data-color-vision]");
         if (colorVision) this.setColorVision(colorVision.value);
+        const difficulty = event.target.closest("[data-difficulty]");
+        if (difficulty) this.setDifficulty(difficulty.value);
+        const volume = event.target.closest("[data-volume]");
+        if (volume) this.setVolume(volume.value);
+        const saveSlot = event.target.closest("[data-save-slot]");
+        if (saveSlot) this.switchSaveSlot(saveSlot.value);
+        const saveAction = event.target.closest("[data-save-action]");
+        if (saveAction && saveAction.dataset.saveAction === "checkpoint") this.saveCheckpoint();
+        if (saveAction && saveAction.dataset.saveAction === "restore") this.restoreCheckpoint(this.activeSlot);
       });
 
       this.listen(this.canvas, "wheel", (event) => {
@@ -769,20 +1103,75 @@
       this.closeModals();
       this.running = true;
       this.paused = false;
+      this.state.run.status = "playing";
+      this.state.run.startedAt ||= Date.now();
+      this.gameRuntime?.start?.({ gameId: "astra-hh", difficulty: this.state.settings.difficulty });
       this.root.focus({ preventScroll: true });
       if (this.state.settings.sound) this.ensureAudio();
       if (this.state.settings.sound && this.state.settings.ambient) this.startAmbient();
       this.tone(420, .07, "sine", .035);
       this.tone(680, .12, "triangle", .025, .08);
       this.notify("Asteria đã rời bến. Chúc phi công một hành trình an toàn.");
+      this.renderTutorial();
+      this.updateUi(true);
     }
 
     togglePause() {
       if (!this.running) return this.start();
       this.paused = !this.paused;
+      this.state.run.status = this.paused ? "paused" : "playing";
       const button = this.root.querySelector('[data-action="pause"]');
       if (button) button.textContent = this.paused ? "▶" : "Ⅱ";
+      this.gameRuntime?.[this.paused ? "pause" : "resume"]?.({ gameId: "astra-hh" });
       this.notify(this.paused ? "Đã tạm dừng chuyến bay." : "Tiếp tục hành trình.");
+      this.updateUi(true);
+    }
+
+    restart() {
+      const settings = { ...this.state.settings };
+      this.state = defaultState();
+      this.state.settings = { ...this.state.settings, ...settings };
+      this.discovered = new Set();
+      this.collected = new Set();
+      this.sampled = new Set();
+      this.decoded = new Set();
+      this.running = false;
+      this.paused = true;
+      this.probeMission = null;
+      this.pendingDecode = null;
+      this.state.run.status = "ready";
+      this.generateSector();
+      this.save();
+      this.gameRuntime?.restart?.({ gameId: "astra-hh", difficulty: this.state.settings.difficulty });
+      this.root.querySelector("[data-intro]").hidden = false;
+      this.notify("Đã tạo chuyến bay mới. Tiến trình cũ vẫn còn trong các slot.", false);
+      this.updateUi(true);
+    }
+
+    pollGamepad(now) {
+      if (now - this.gamepadScanAt < 80 || !navigator.getGamepads) return;
+      this.gamepadScanAt = now;
+      const pads = navigator.getGamepads();
+      const pad = this.gamepadIndex !== null ? pads[this.gamepadIndex] : [...pads].find(Boolean);
+      if (!pad) return;
+      this.gamepadIndex = pad.index;
+      const axisX = Number(pad.axes?.[0] || 0);
+      const axisY = Number(pad.axes?.[1] || 0);
+      this.input.left = axisX < -.28;
+      this.input.right = axisX > .28;
+      this.input.thrust = axisY < -.28;
+      this.input.brake = axisY > .28;
+      this.input.boost = Boolean(pad.buttons?.[4]?.pressed || pad.buttons?.[5]?.pressed);
+      const press = (index, action) => {
+        const pressed = Boolean(pad.buttons?.[index]?.pressed);
+        if (pressed && !this.gamepadActionLatch[index]) this[action]?.();
+        this.gamepadActionLatch[index] = pressed;
+      };
+      press(0, "scan");
+      press(1, "interact");
+      press(2, "togglePause");
+      press(3, "warp");
+      this.root.querySelector("[data-gamepad-status]")?.replaceChildren(`⌁ ${pad.id.slice(0, 22)}`);
     }
 
     toggleSound() {
@@ -816,8 +1205,9 @@
       const volume = context.createGain();
       oscillator.type = type;
       oscillator.frequency.setValueAtTime(frequency, context.currentTime + delay);
+      const level = Number(this.state.settings.volume ?? .65);
       volume.gain.setValueAtTime(.0001, context.currentTime + delay);
-      volume.gain.exponentialRampToValueAtTime(gain, context.currentTime + delay + .012);
+      volume.gain.exponentialRampToValueAtTime(gain * level, context.currentTime + delay + .012);
       volume.gain.exponentialRampToValueAtTime(.0001, context.currentTime + delay + duration);
       oscillator.connect(volume).connect(context.destination);
       oscillator.start(context.currentTime + delay);
@@ -834,7 +1224,7 @@
       const lfo = context.createOscillator();
       const lfoGain = context.createGain();
       master.gain.setValueAtTime(.0001, context.currentTime);
-      master.gain.exponentialRampToValueAtTime(.0065, context.currentTime + 1.8);
+      master.gain.exponentialRampToValueAtTime(.0065 * Number(this.state.settings.volume ?? .65), context.currentTime + 1.8);
       filter.type = "lowpass";
       filter.frequency.value = 420;
       filter.Q.value = .7;
@@ -858,7 +1248,7 @@
     }
 
     haptic(pattern = 10) {
-      if (document.hidden || !navigator.vibrate) return;
+      if (!this.state.settings.haptics || document.hidden || !navigator.vibrate) return;
       try { navigator.vibrate(pattern); } catch {}
     }
 
@@ -1046,13 +1436,13 @@
     maxEnergy() { return 100 + (this.state.upgrades.reactor - 1) * 22; }
     maxSpeed() { return 245 + this.state.upgrades.engine * 42; }
     scanRange() { return 390 + this.state.upgrades.scanner * 95 + this.researchLevel("astrolabe") * 70 + this.artifactBonus("scanner") + Number(this.hazard?.scanBonus || 0); }
-    scanEnergyCost() { return Math.max(8, 18 - this.researchLevel("pulse") * 2); }
-    warpCost() { return Math.max(10, Math.round(25 - this.researchLevel("warpCore") * 3 - this.artifactBonus("warp"))); }
+    scanEnergyCost() { return Math.max(8, Math.round((18 - this.researchLevel("pulse") * 2) * this.difficultyProfile().fuel)); }
+    warpCost() { return Math.max(10, Math.round((25 - this.researchLevel("warpCore") * 3 - this.artifactBonus("warp")) * this.difficultyProfile().fuel)); }
 
     addScore(amount, useStreak = false) {
       const streakMultiplier = useStreak ? Number(this.state.streak.multiplier || 1) : 1;
       const artifactMultiplier = 1 + Math.min(.4, this.artifactBonus("score"));
-      const total = Math.max(0, Math.round(Number(amount || 0) * streakMultiplier * artifactMultiplier));
+      const total = Math.max(0, Math.round(Number(amount || 0) * streakMultiplier * artifactMultiplier * this.difficultyProfile().reward));
       this.state.score += total;
       return total;
     }
@@ -1148,14 +1538,21 @@
         this.fpsFrames = 0;
         this.fpsWindowStarted = now;
         if (this.state.settings.quality === "auto") {
-          if (this.currentFps < 43) this.adaptiveReduced = true;
-          else if (this.currentFps > 56) this.adaptiveReduced = false;
+          if (this.currentFps < 43) {
+            this.lowFpsWindows += 1;
+            if (this.lowFpsWindows >= 2) this.adaptiveReduced = true;
+          } else if (this.currentFps > 56) {
+            this.lowFpsWindows = 0;
+            this.adaptiveReduced = false;
+          }
         }
       }
+      this.pollGamepad(now);
       if (this.running && !this.paused && !document.hidden) this.update(dt, now);
       this.draw(now / 1000);
       if (now - this.lastUi > 140) { this.updateUi(); this.lastUi = now; }
       if (this.running && now - this.lastSave > 10000) this.save();
+      this.gameRuntime?.update?.({ gameId: "astra-hh", fps: this.currentFps, status: this.state.run.status });
       this.frame = requestAnimationFrame((time) => this.loop(time));
     }
 
@@ -1163,6 +1560,7 @@
       const ship = this.state.ship;
       const rotation = 2.55 * dt;
       const manualInput = this.input.left || this.input.right || this.input.thrust || this.input.brake;
+      if (manualInput) this.completeTutorialAction("move");
       if (manualInput && this.autopilot) this.autopilot = false;
       this.autopilotThrust = false;
       if (this.autopilot) {
@@ -1185,7 +1583,7 @@
         const acceleration = (135 + this.state.upgrades.engine * 34) * (boosting ? 1.65 : 1);
         ship.vx += Math.cos(ship.angle) * acceleration * dt;
         ship.vy += Math.sin(ship.angle) * acceleration * dt;
-        ship.fuel = Math.max(0, ship.fuel - dt * (boosting ? 1.25 : .46));
+        ship.fuel = Math.max(0, ship.fuel - dt * (boosting ? 1.25 : .46) * this.difficultyProfile().fuel);
       } else ship.fuel = Math.min(100, ship.fuel + dt * .08 * this.state.upgrades.reactor);
       if (this.input.brake) { ship.vx *= Math.pow(.12, dt); ship.vy *= Math.pow(.12, dt); }
       const speed = Math.hypot(ship.vx, ship.vy);
@@ -1282,7 +1680,7 @@
       if (now < this.damageCooldown) return;
       const hit = this.objects.find((item) => item.type === "asteroid" && distance(item, this.state.ship) < item.radius + 10);
       if (!hit || speed < 38) return;
-      const damage = clamp(Math.round(speed / 18), 4, 22);
+      const damage = clamp(Math.round(speed / 18 * this.difficultyProfile().damage), 4, 28);
       this.damageCooldown = now + 950;
       this.cameraShake = Math.min(1, this.cameraShake + .72);
       if (this.state.ship.shield > 0) this.state.ship.shield = Math.max(0, this.state.ship.shield - damage);
@@ -1304,9 +1702,13 @@
       this.state.ship = { ...this.state.ship, x: 0, y: 0, vx: 0, vy: 0, hull: 55, shield: 25, fuel: Math.max(30, this.state.ship.fuel) };
       this.state.credits = Math.max(0, this.state.credits - 80);
       this.state.score = Math.max(0, this.state.score - 120);
+      this.state.run.losses += 1;
+      this.state.run.lastOutcome = "lose";
+      this.state.run.status = "playing";
       this.log("Đội cứu hộ HH đã kéo Asteria về điểm neo. Phí cứu hộ: 80 CR.");
       this.notify("Asteria đã được cứu hộ và phục hồi khẩn cấp.", true);
       this.save({ sync: true });
+      this.updateUi(true);
     }
 
     surveyDepth(target) { return clamp(Number(this.state.surveys[target?.id] || 0), 0, 100); }
@@ -1477,6 +1879,7 @@
       this.haptic(12);
       this.broadcastAction("scan", this.selectedId, `${found}`);
       this.notify(found ? `Scanner đã nhận diện ${found} tín hiệu mới.` : "Không có tín hiệu mới trong tầm quét.");
+      this.completeTutorialAction("scan");
       this.updateTarget();
       this.save();
     }
@@ -1508,6 +1911,7 @@
       if (!target || distance(target, this.state.ship) > target.radius + 135) return this.notify("Hãy tiếp cận một mục tiêu đã quét để tương tác.", true);
       if (this.sampled.has(target.id)) return this.notify("Mục tiêu này đã được khai thác dữ liệu.");
       this.selectedId = target.id;
+      this.completeTutorialAction("interact");
       if (target.type === "beacon" && !this.decoded.has(target.id)) return this.startDecode(target);
       this.resolveInteraction(target);
     }
@@ -1620,6 +2024,9 @@
       this.state.research += mission.data;
       this.state.xp += mission.xp;
       this.state.score += mission.credits + mission.xp;
+      this.state.run.wins += 1;
+      this.state.run.lastOutcome = "win";
+      this.state.run.status = "playing";
       this.log(`Hoàn thành nhiệm vụ “${mission.title}”.`);
       this.notify(`Nhiệm vụ hoàn tất · +${mission.credits} CR · +${mission.xp} XP`);
       this.levelUp();
@@ -1847,6 +2254,7 @@
       if (!["auto", "ultra", "eco"].includes(value)) return;
       this.state.settings.quality = value;
       this.adaptiveReduced = value === "eco";
+      this.root.dataset.qualityMode = value;
       const random = randomFrom(this.getSectorSeed() ^ 0x7a11);
       const targetCount = value === "eco" ? 110 : value === "ultra" ? 245 : 180;
       this.stars = Array.from({ length: targetCount }, () => ({ x: random(), y: random(), size: .35 + random() * 1.65, depth: .15 + random() * .85, hue: pick([188, 205, 226, 38, 282, 330], random) }));
@@ -1911,6 +2319,15 @@
       const ship = this.state.ship;
       const mission = this.missionTemplate();
       const set = (selector, value) => { const node = this.root.querySelector(selector); if (node && (force || node.textContent !== String(value))) node.textContent = value; };
+      const difficulty = this.difficultyProfile();
+      const runLabel = this.state.run.status === "paused" ? "TẠM DỪNG" : this.state.run.status === "playing" ? "ĐANG BAY" : this.state.run.status === "won" ? "CHIẾN THẮNG" : this.state.run.status === "lost" ? "THẤT BẠI" : "SẴN SÀNG";
+      set("[data-run-status]", runLabel);
+      set("[data-objective-title]", mission.title);
+      set("[data-objective-copy]", `${mission.description} · ${this.state.mission.progress || 0}/${mission.target}`);
+      set("[data-difficulty-label]", difficulty.label);
+      set("[data-quality-status]", `${this.state.settings.quality.toUpperCase()} · ${this.currentFps} FPS${this.adaptiveReduced ? " · ADAPT" : ""}`);
+      this.root.querySelector("[data-run-led]")?.classList.toggle("is-live", this.state.run.status === "playing");
+      this.renderTutorial();
       set("[data-sector-name]", this.sectorName);
       set("[data-hazard-name]", this.hazard?.label || "Không gian tĩnh");
       set("[data-hazard-status]", this.hazard?.label || "Không gian tĩnh");
@@ -1983,10 +2400,17 @@
       set("[data-artifact-count]", `${this.state.artifacts.length} ART`);
       const quality = this.root.querySelector("[data-quality]");
       if (quality && quality.value !== this.state.settings.quality) quality.value = this.state.settings.quality;
+      const difficultySelect = this.root.querySelector("[data-difficulty]");
+      if (difficultySelect && difficultySelect.value !== this.state.settings.difficulty) difficultySelect.value = this.state.settings.difficulty;
+      const volume = this.root.querySelector("[data-volume]");
+      if (volume && Number(volume.value) !== Math.round(Number(this.state.settings.volume ?? .65) * 100)) volume.value = Math.round(Number(this.state.settings.volume ?? .65) * 100);
+      set("[data-volume-value]", `${Math.round(Number(this.state.settings.volume ?? .65) * 100)}%`);
       const cameraSelect = this.root.querySelector("[data-camera-select]");
       if (cameraSelect && cameraSelect.value !== this.state.settings.camera) cameraSelect.value = this.state.settings.camera;
       const colorVision = this.root.querySelector("[data-color-vision]");
       if (colorVision && colorVision.value !== this.state.settings.colorVision) colorVision.value = this.state.settings.colorVision;
+      this.updateSaveSlotUi();
+      this.updateConnectionUi();
       const moduleSignature = `${this.state.credits}:${JSON.stringify(this.state.modules)}`;
       if (force || this.uiCache.modules !== moduleSignature) {
         const modules = this.root.querySelector("[data-ship-modules]");
@@ -2061,6 +2485,11 @@
       }
       const soundButton = this.root.querySelector('[data-action="sound"]');
       soundButton?.classList.toggle("is-active", this.state.settings.sound);
+      const pauseButton = this.root.querySelector('[data-action="pause"]');
+      if (pauseButton) {
+        pauseButton.textContent = this.paused ? "▶" : "Ⅱ";
+        pauseButton.setAttribute("aria-label", this.paused ? "Tiếp tục" : "Tạm dừng");
+      }
       const autopilotButton = this.root.querySelector('[data-action="autopilot"]');
       autopilotButton?.classList.toggle("is-pressed", this.autopilot);
       if (force) this.updateCoopUi();

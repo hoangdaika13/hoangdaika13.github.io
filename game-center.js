@@ -17,6 +17,8 @@
       genre: "MMO RPG vũ trụ",
       color: "#61f4ff",
       status: "Highlight chính",
+      release: "ready",
+      realtimeEligible: true,
       description: "Khám phá thiên hà, chế tạo tàu, chiến đấu boss, khai khoáng, giao thương, xây căn cứ và co-op 2-10 người.",
       tags: ["MMO RPG", "Co-op", "Boss", "Crafting"],
       reward: { xp: 180, coins: 90 }
@@ -29,6 +31,8 @@
       genre: "Đua tàu tốc độ",
       color: "#ff63c7",
       status: "Arcade",
+      release: "ready",
+      realtimeEligible: false,
       description: "Boost, drift, né thiên thạch và săn kỷ lục hằng ngày.",
       tags: ["Speed", "Combo", "Rank"],
       reward: { xp: 70, coins: 28 }
@@ -41,6 +45,8 @@
       genre: "Thủ thành",
       color: "#ffe37a",
       status: "Arcade",
+      release: "ready",
+      realtimeEligible: false,
       description: "Đặt trụ plasma, nâng cấp laser và bảo vệ căn cứ trước các đợt tấn công.",
       tags: ["Tower", "Strategy", "Wave"],
       reward: { xp: 75, coins: 30 }
@@ -53,6 +59,8 @@
       genre: "Xây dựng thuộc địa",
       color: "#74f2a9",
       status: "Arcade",
+      release: "ready",
+      realtimeEligible: false,
       description: "Quản lý oxy, dân cư, năng lượng, khai thác và mở rộng thuộc địa.",
       tags: ["Builder", "Economy", "Survival"],
       reward: { xp: 80, coins: 32 }
@@ -65,6 +73,8 @@
       genre: "Giải đố mật mã",
       color: "#a98bff",
       status: "Arcade",
+      release: "ready",
+      realtimeEligible: false,
       description: "Giải khóa hệ thống cổ đại bằng logic, pattern và phản xạ.",
       tags: ["Puzzle", "Code", "Logic"],
       reward: { xp: 65, coins: 26 }
@@ -77,6 +87,8 @@
       genre: "Sinh tồn co-op",
       color: "#ff8a5b",
       status: "Sắp có phòng riêng",
+      release: "experimental",
+      realtimeEligible: true,
       description: "Sửa trạm, chia vai trò, giữ oxy và sống sót qua bão mặt trời cùng đội 2-10 người.",
       tags: ["Co-op", "Role", "Survival"],
       reward: { xp: 95, coins: 38 }
@@ -183,6 +195,32 @@
     return cleanText(value, 80).toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 64) || fallback;
   }
 
+  function normalizeSaveSlots(value) {
+    const source = Array.isArray(value) ? value : [];
+    return [1, 2, 3].map((number) => {
+      const id = `slot-${number}`;
+      const saved = source.find((slot) => slot?.id === id);
+      if (!saved || !saved.snapshot || typeof saved.snapshot !== "object") {
+        return { id, title: `Ô lưu ${number}`, storedAt: "", gameId: "", gameTitle: "", level: 0, xp: 0, source: "empty", snapshot: null };
+      }
+      return {
+        id,
+        title: cleanText(saved.title || `Ô lưu ${number}`, 60),
+        storedAt: cleanText(saved.storedAt, 40),
+        gameId: cleanId(saved.gameId),
+        gameTitle: cleanText(saved.gameTitle, 80),
+        level: safeNumber(saved.level, 1, 9999, 1),
+        xp: safeNumber(saved.xp, 0),
+        source: saved.source === "cloud" ? "cloud" : "local",
+        snapshot: clone(saved.snapshot)
+      };
+    });
+  }
+
+  function isAuthenticatedUser(user) {
+    return Boolean(user && (user.id || user._id || user.email || user.username) && user.isGuest !== true);
+  }
+
   function safeNumber(value, min = 0, max = 999999999, fallback = 0) {
     const next = Number(value);
     return Number.isFinite(next) ? Math.max(min, Math.min(max, next)) : fallback;
@@ -192,7 +230,15 @@
     const allowed = new Set(["local", "connecting", "connected", "error", "disconnected"]);
     const safeStatus = allowed.has(status) ? status : "local";
     const fallback = kind === "cloud" ? "Chỉ lưu trên thiết bị" : "Chưa kết nối realtime";
-    return { status: safeStatus, label: cleanText(label || fallback, 120), provider: "", confirmed: false, updatedAt: new Date().toISOString() };
+    return {
+      status: safeStatus,
+      label: cleanText(label || fallback, 120),
+      provider: "",
+      confirmed: false,
+      connected: false,
+      durable: false,
+      updatedAt: new Date().toISOString()
+    };
   }
 
   function todayKey() {
@@ -226,6 +272,10 @@
     return {
       schema: SCHEMA,
       version: 3,
+      session: {
+        mode: isAuthenticatedUser(user) ? "account" : "guest",
+        label: isAuthenticatedUser(user) ? "Tài khoản HH" : "Khách · chỉ lưu local"
+      },
       player: {
         name: user.displayName || user.name || user.username || "Người chơi local",
         avatar: initials(user.displayName || user.name || "HH Gamer"),
@@ -272,7 +322,12 @@
       spectator: { mode: "off", status: "idle", roomCode: "", gameId: "", updatedAt: new Date().toISOString() },
       replays: [],
       playedGames: [],
-      history: []
+      history: [],
+      saveSlots: normalizeSaveSlots([]),
+      lobbies: [],
+      socialMeta: { confirmed: false, label: "Chưa tải dữ liệu xã hội", updatedAt: new Date().toISOString() },
+      safety: { blockedIds: [], reports: [] },
+      operations: {}
     };
   }
 
@@ -288,6 +343,7 @@
       schema: SCHEMA,
       version: 3,
       player: { ...base.player, ...(saved.player || {}) },
+      session: { ...base.session, ...(saved.session || {}) },
       games: base.games,
       missions: {
         daily: mergeMissionList(base.missions.daily, saved.missions?.daily),
@@ -317,7 +373,23 @@
       spectator: { ...base.spectator, mode: "off", status: "idle", roomCode: "" },
       replays: Array.isArray(saved.replays) ? saved.replays.slice(0, 8) : [],
       playedGames: Array.isArray(saved.playedGames) ? saved.playedGames : base.playedGames,
-      history: Array.isArray(saved.history) && saved.history.length ? saved.history : base.history
+      history: Array.isArray(saved.history) && saved.history.length ? saved.history : base.history,
+      saveSlots: normalizeSaveSlots(saved.saveSlots),
+      // Provider presence and lobbies are runtime-only and must be confirmed again.
+      lobbies: [],
+      socialMeta: { ...base.socialMeta, confirmed: false, label: "Chưa tải dữ liệu xã hội" },
+      safety: {
+        blockedIds: Array.isArray(saved.safety?.blockedIds) ? saved.safety.blockedIds.map((id) => cleanId(id)).filter(Boolean).slice(0, 200) : [],
+        reports: Array.isArray(saved.safety?.reports) ? saved.safety.reports.slice(0, 50).map((report) => ({
+          id: cleanId(report?.id, `report-${Date.now()}`),
+          targetId: cleanId(report?.targetId),
+          targetName: cleanText(report?.targetName, 80),
+          reason: cleanText(report?.reason || "Báo cáo từ Game Center", 160),
+          status: report?.status === "submitted" ? "submitted" : "pending",
+          createdAt: cleanText(report?.createdAt, 40)
+        })) : []
+      },
+      operations: {}
     };
     normalized.player.name = cleanText(normalized.player.name || base.player.name, 80);
     normalized.player.xp = safeNumber(normalized.player.xp, 0);
@@ -330,7 +402,12 @@
       game: cleanText(entry?.game || entry?.gameId || "Game HH", 80),
       scope: cleanText(entry?.scope || normalized.leaderboardMeta.source, 30)
     }));
-    normalized.friends = normalized.friends.slice(0, 100).map((friend) => ({ name: cleanText(friend?.name, 80), status: cleanText(friend?.status, 100), online: friend?.online === true }));
+    normalized.friends = normalized.friends.slice(0, 100).map((friend) => ({
+      id: cleanId(friend?.id || friend?.userId || friend?.name),
+      name: cleanText(friend?.name, 80),
+      status: cleanText(friend?.status || "Đã lưu trong danh sách", 100),
+      online: false
+    }));
     return normalized;
   }
 
@@ -352,6 +429,10 @@
       persisted.version = 3;
       persisted.cloud = connectionState("cloud");
       persisted.realtime = connectionState("realtime", "disconnected");
+      persisted.operations = {};
+      persisted.lobbies = [];
+      persisted.socialMeta = { confirmed: false, label: "Chưa tải dữ liệu xã hội", updatedAt: new Date().toISOString() };
+      persisted.friends = (persisted.friends || []).map((friend) => ({ ...friend, online: false }));
       if (persisted.party?.mode === "connected") persisted.party = defaultState().party;
       persisted.spectator = defaultState().spectator;
       persisted.history = (persisted.history || []).slice(0, 20);
@@ -439,8 +520,76 @@
     };
   }
 
-  function isConfirmed(result, requireDurable = false) {
+  function isConfirmed(result, requireDurable = true) {
     return Boolean(result && result.confirmed === true && result.connected === true && (!requireDurable || result.durable === true));
+  }
+
+  function hasVerifiedConnection(connection) {
+    return Boolean(connection
+      && connection.status === "connected"
+      && connection.confirmed === true
+      && connection.connected === true
+      && connection.durable === true);
+  }
+
+  function gameCapabilityBadges(game, snapshot = state) {
+    const cloud = hasVerifiedConnection(snapshot?.cloud);
+    const realtime = game?.realtimeEligible === true && hasVerifiedConnection(snapshot?.realtime);
+    return [
+      {
+        kind: "release",
+        active: game?.release === "ready",
+        label: game?.release === "ready" ? "Ready" : "Experimental"
+      },
+      { kind: "local", active: true, label: "Local" },
+      { kind: "cloud", active: cloud, label: cloud ? "Cloud đã xác nhận" : "Cloud chưa xác nhận" },
+      {
+        kind: "realtime",
+        active: realtime,
+        label: game?.realtimeEligible === true
+          ? (realtime ? "Realtime đã xác nhận" : "Realtime chưa xác nhận")
+          : "Không hỗ trợ realtime"
+      }
+    ];
+  }
+
+  function operation(id) {
+    return state?.operations?.[id] || { status: "idle", label: "", error: "" };
+  }
+
+  function setOperation(id, status, label = "", error = "") {
+    if (!state) return;
+    state.operations ||= {};
+    state.operations[id] = {
+      status,
+      label: cleanText(label, 100),
+      error: cleanText(error, 160),
+      updatedAt: new Date().toISOString()
+    };
+    scheduleRender();
+  }
+
+  async function runOperation(id, label, task) {
+    if (operation(id).status === "loading") return false;
+    setOperation(id, "loading", label);
+    try {
+      const result = await task();
+      setOperation(id, result === false ? "error" : "success", result === false ? "Chưa hoàn tất" : "Hoàn tất");
+      return result;
+    } catch (error) {
+      setOperation(id, "error", "Không thể hoàn tất", error?.message || "Lỗi không xác định");
+      showToast(cleanText(error?.message || "Không thể hoàn tất thao tác.", 120), "error");
+      return false;
+    }
+  }
+
+  function actionButton(action, label, options = {}) {
+    const op = operation(options.operation || action);
+    const loading = op.status === "loading";
+    const classes = `gc-btn${options.primary ? " gc-btn-primary" : ""}`;
+    const id = options.id ? ` data-id="${escapeHtml(options.id)}"` : "";
+    const disabled = options.disabled || loading ? " disabled" : "";
+    return `<button class="${classes}" type="button" data-gc-action="${escapeHtml(action)}"${id}${disabled} aria-busy="${loading ? "true" : "false"}">${loading ? "Đang xử lý..." : escapeHtml(label)}</button>`;
   }
 
   function setLocalConnection(kind, label, status = "local") {
@@ -460,17 +609,25 @@
     try {
       const confirmation = await adapter.connect({ schema: SCHEMA, version: 3, player: { name: state.player.name } });
       if (!isConfirmed(confirmation, true)) throw new Error("Cloud adapter chưa xác nhận lưu bền vững");
-      const confirmedCloud = { status: "connected", label: `Đã kết nối ${cleanText(confirmation.provider || "cloud", 60)}`, provider: cleanText(confirmation.provider || "cloud", 60), confirmed: true, updatedAt: new Date().toISOString() };
+      const confirmedCloud = {
+        status: "connected",
+        label: `Đã kết nối ${cleanText(confirmation.provider || "cloud", 60)}`,
+        provider: cleanText(confirmation.provider || "cloud", 60),
+        confirmed: true,
+        connected: true,
+        durable: true,
+        updatedAt: new Date().toISOString()
+      };
       state.cloud = confirmedCloud;
       if (mode === "load") {
         if (typeof adapter.load === "function") {
           const result = await adapter.load({ key: STORAGE_KEY, schema: SCHEMA });
-          if (result?.confirmed === true && result.data && typeof result.data === "object") state = normalizeState({ ...state, ...result.data });
+          if (isConfirmed(result, true) && result.data && typeof result.data === "object") state = normalizeState({ ...state, ...result.data });
         }
       } else {
         if (typeof adapter.save !== "function") throw new Error("Cloud adapter không hỗ trợ save");
         const result = await adapter.save({ key: STORAGE_KEY, schema: SCHEMA, version: 3, data: clone(state) });
-        if (result?.confirmed !== true) throw new Error("Cloud adapter chưa xác nhận bản lưu");
+        if (!isConfirmed(result, true)) throw new Error("Cloud adapter chưa xác nhận bản lưu");
       }
       state.cloud = confirmedCloud;
       saveLocal();
@@ -496,11 +653,23 @@
     try {
       const result = await adapter.connect({ channel: "games", schema: SCHEMA });
       if (!isConfirmed(result)) throw new Error("Realtime adapter chưa xác nhận phiên");
-      state.realtime = { status: "connected", label: `Đã kết nối ${cleanText(result.provider || "realtime", 60)}`, provider: cleanText(result.provider || "realtime", 60), confirmed: true, updatedAt: new Date().toISOString() };
+      state.realtime = {
+        status: "connected",
+        label: `Đã kết nối ${cleanText(result.provider || "realtime", 60)}`,
+        provider: cleanText(result.provider || "realtime", 60),
+        confirmed: true,
+        connected: true,
+        durable: true,
+        updatedAt: new Date().toISOString()
+      };
+      await refreshSocialData();
       scheduleRender();
       return true;
     } catch (error) {
       setLocalConnection("realtime", `Chưa kết nối realtime · ${cleanText(error?.message || "không có xác nhận", 90)}`, "error");
+      state.friends = state.friends.map((friend) => ({ ...friend, online: false }));
+      state.lobbies = [];
+      state.socialMeta = { confirmed: false, label: "Chưa có dữ liệu realtime", updatedAt: new Date().toISOString() };
       scheduleRender();
     }
     return false;
@@ -511,7 +680,7 @@
     if (state.cloud.status !== "connected" || typeof adapter?.leaderboard !== "function") return false;
     try {
       const result = await adapter.leaderboard({ season: state.season.id || "local-season", limit: 50 });
-      if (result?.confirmed !== true || !Array.isArray(result.entries)) throw new Error("Bảng xếp hạng chưa được xác nhận");
+      if (!isConfirmed(result, true) || !Array.isArray(result.entries)) throw new Error("Bảng xếp hạng chưa được xác nhận");
       state.leaderboard = result.entries.slice(0, 50).map((entry) => ({ name: cleanText(entry.name, 80), level: safeNumber(entry.level, 1, 9999, 1), xp: safeNumber(entry.xp ?? entry.score, 0), game: cleanText(entry.game || entry.gameId, 80), scope: "provider" }));
       state.leaderboardMeta = { source: "provider", label: cleanText(result.label || "Bảng xếp hạng đã xác nhận", 100), confirmed: true, updatedAt: new Date().toISOString() };
       scheduleRender();
@@ -535,6 +704,49 @@
     }];
   }
 
+  async function refreshSocialData() {
+    const adapter = settings.realtimeAdapter;
+    if (!hasVerifiedConnection(state?.realtime)) return false;
+    const result = await runOperation("social", "Đang tải bạn bè và phòng chơi", async () => {
+      let changed = false;
+      if (typeof adapter.listFriends === "function") {
+        const friends = await adapter.listFriends({ limit: 100 });
+        if (!isConfirmed(friends, true) || !Array.isArray(friends.items)) throw new Error("Danh sách bạn bè chưa được xác nhận");
+        state.friends = friends.items.slice(0, 100).map((friend) => ({
+          id: cleanId(friend.id || friend.userId || friend.name),
+          name: cleanText(friend.name || friend.displayName, 80),
+          status: cleanText(friend.status || "Đang hoạt động", 100),
+          online: friend.online === true
+        }));
+        changed = true;
+      }
+      if (typeof adapter.listLobbies === "function") {
+        const lobbies = await adapter.listLobbies({ gameId: "astra-hh", limit: 30 });
+        if (!isConfirmed(lobbies, true) || !Array.isArray(lobbies.items)) throw new Error("Danh sách lobby chưa được xác nhận");
+        state.lobbies = lobbies.items.slice(0, 30).map((lobby) => ({
+          id: cleanId(lobby.id || lobby.roomCode),
+          roomCode: cleanText(lobby.roomCode, 20).toUpperCase(),
+          gameId: cleanId(lobby.gameId, "astra-hh"),
+          title: cleanText(lobby.title || "Phòng HH", 80),
+          members: safeNumber(lobby.members, 0, 10, 0),
+          capacity: safeNumber(lobby.capacity, 1, 10, 10)
+        }));
+        changed = true;
+      }
+      if (!changed) throw new Error("Realtime adapter chưa hỗ trợ dữ liệu xã hội");
+      state.socialMeta = { confirmed: true, label: "Dữ liệu realtime đã xác nhận", updatedAt: new Date().toISOString() };
+      return true;
+    });
+    if (result === false) {
+      state.friends = state.friends.map((friend) => ({ ...friend, online: false }));
+      state.lobbies = [];
+      state.socialMeta = { confirmed: false, label: "Chưa có dữ liệu realtime", updatedAt: new Date().toISOString() };
+    }
+    saveLocal();
+    scheduleRender();
+    return result;
+  }
+
   function createLocalParty() {
     const code = `LOCAL-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     state.party = {
@@ -553,13 +765,13 @@
 
   async function createConnectedParty() {
     const adapter = settings.realtimeAdapter;
-    if (state.realtime.status !== "connected" || state.realtime.confirmed !== true || typeof adapter?.createParty !== "function") {
+    if (!hasVerifiedConnection(state.realtime) || typeof adapter?.createParty !== "function") {
       showToast("Chưa có realtime adapter được xác nhận. Bạn vẫn có thể tạo party local.", "warn");
       return false;
     }
     try {
       const result = await adapter.createParty({ gameId: "astra-hh", player: { name: state.player.name } });
-      if (result?.confirmed !== true || !result.roomCode) throw new Error("Máy chủ chưa xác nhận phòng");
+      if (!isConfirmed(result, true) || !result.roomCode) throw new Error("Máy chủ chưa xác nhận phòng");
       state.party = { mode: "connected", status: cleanText(result.status || "waiting", 20), roomCode: cleanText(result.roomCode, 20), role: "host", members: Array.isArray(result.members) ? result.members.slice(0, 10) : [], spectators: [], updatedAt: new Date().toISOString() };
       scheduleRender();
       showToast(`Đã tạo phòng ${state.party.roomCode}.`, "success");
@@ -578,13 +790,13 @@
       showToast("Nhập mã phòng hợp lệ.", "warn");
       return false;
     }
-    if (state.realtime.status !== "connected" || state.realtime.confirmed !== true || typeof adapter?.[method] !== "function") {
+    if (!hasVerifiedConnection(state.realtime) || typeof adapter?.[method] !== "function") {
       showToast("Chế độ này cần realtime adapter đã xác nhận.", "warn");
       return false;
     }
     try {
       const result = await adapter[method]({ roomCode: code, player: { name: state.player.name } });
-      if (result?.confirmed !== true || cleanText(result.roomCode, 20) !== code) throw new Error("Máy chủ chưa xác nhận vào phòng");
+      if (!isConfirmed(result, true) || cleanText(result.roomCode, 20) !== code) throw new Error("Máy chủ chưa xác nhận vào phòng");
       if (spectator) state.spectator = { mode: "connected", status: "watching", roomCode: code, gameId: cleanId(result.gameId, "astra-hh"), updatedAt: new Date().toISOString() };
       else state.party = { mode: "connected", status: cleanText(result.status || "waiting", 20), roomCode: code, role: "player", members: Array.isArray(result.members) ? result.members.slice(0, 10) : [], spectators: [], updatedAt: new Date().toISOString() };
       scheduleRender();
@@ -677,7 +889,7 @@
     window.dispatchEvent(new CustomEvent("hh:game-center-updated", { detail: inspect() }));
   }
 
-  function openGame(gameId) {
+  async function openGame(gameId) {
     const game = state.games.find((item) => item.id === gameId) || state.games[0];
     state.player.lastGame = game.title;
     state.player.lastRoute = game.route;
@@ -685,12 +897,181 @@
     state.history = state.history.slice(0, 8);
     addActivity(`Mở ${game.title}. XP chỉ được cộng sau khi game gửi kết quả.`);
     saveLocal();
+    const runtime = settings.gameRuntime || window.HHGameRuntime;
+    const launcher = runtime && (runtime.launch || runtime.start);
+    if (typeof launcher === "function") {
+      try {
+        const result = await launcher.call(runtime, {
+          game: clone(game),
+          player: clone(state.player),
+          guest: state.session.mode === "guest",
+          route: game.route,
+          onNavigate: navigate
+        });
+        if (result?.handled === true || result?.started === true || result?.mounted === true) return true;
+      } catch (error) {
+        showToast(`Game Runtime lỗi, đang mở bằng điều hướng: ${cleanText(error?.message, 80)}`, "warn");
+      }
+    }
     navigate(game.route);
+    return true;
   }
 
-  function continueLastGame() {
+  async function continueLastGame() {
     const game = state.games.find((item) => item.title === state.player.lastGame) || state.games[0];
-    openGame(game.id);
+    return openGame(game.id);
+  }
+
+  function createSaveSnapshot() {
+    const snapshot = clone(state);
+    delete snapshot.saveSlots;
+    delete snapshot.operations;
+    delete snapshot.lobbies;
+    snapshot.cloud = connectionState("cloud");
+    snapshot.realtime = connectionState("realtime", "disconnected");
+    snapshot.socialMeta = { confirmed: false, label: "Chưa tải dữ liệu xã hội", updatedAt: new Date().toISOString() };
+    snapshot.friends = (snapshot.friends || []).map((friend) => ({ ...friend, online: false }));
+    if (snapshot.party?.mode === "connected") snapshot.party = defaultState().party;
+    snapshot.spectator = defaultState().spectator;
+    return snapshot;
+  }
+
+  async function saveToSlot(slotId) {
+    const slot = state.saveSlots.find((item) => item.id === slotId);
+    if (!slot) throw new Error("Ô lưu không hợp lệ");
+    const storedAt = new Date().toISOString();
+    Object.assign(slot, {
+      title: `${state.player.lastGame || "Game HH"} · Lv.${levelFromXp(state.player.xp)}`,
+      storedAt,
+      gameId: state.history[0]?.id || cleanId(state.player.lastGame, "astra-hh"),
+      gameTitle: state.player.lastGame,
+      level: levelFromXp(state.player.xp),
+      xp: state.player.xp,
+      source: "local",
+      snapshot: createSaveSnapshot()
+    });
+    saveLocal();
+    addActivity(`Đã lưu tiến trình vào ${slot.title}.`);
+
+    if (hasVerifiedConnection(state.cloud) && typeof settings.cloudAdapter?.save === "function") {
+      try {
+        const result = await settings.cloudAdapter.save({
+          key: `${STORAGE_KEY}.${slot.id}`,
+          schema: SCHEMA,
+          version: 3,
+          data: clone(slot.snapshot)
+        });
+        if (!isConfirmed(result, true)) throw new Error("Cloud chưa xác nhận ô lưu");
+        slot.source = "cloud";
+        saveLocal();
+        showToast(`${slot.title} đã lưu local và cloud.`, "success");
+        scheduleRender();
+        return true;
+      } catch (error) {
+        showToast(`Đã lưu local; cloud chưa xác nhận: ${cleanText(error?.message, 90)}`, "warn");
+      }
+    } else {
+      showToast(`${slot.title} đã lưu trên thiết bị.`, "success");
+    }
+    scheduleRender();
+    return true;
+  }
+
+  async function loadFromSlot(slotId) {
+    const slot = state.saveSlots.find((item) => item.id === slotId);
+    if (!slot?.snapshot) throw new Error("Ô lưu này đang trống");
+    const slots = normalizeSaveSlots(state.saveSlots);
+    const safety = clone(state.safety);
+    const activeTab = state.activeTab;
+    state = normalizeState({ ...clone(slot.snapshot), saveSlots: slots, safety, activeTab });
+    addActivity(`Đã khôi phục ${slot.title}.`);
+    saveLocal();
+    scheduleRender();
+    showToast(`Đã khôi phục ${slot.title}.`, "success");
+    return true;
+  }
+
+  async function deleteSaveSlot(slotId) {
+    const index = state.saveSlots.findIndex((item) => item.id === slotId);
+    if (index < 0) throw new Error("Ô lưu không hợp lệ");
+    const number = index + 1;
+    state.saveSlots[index] = normalizeSaveSlots([])[index];
+    saveLocal();
+    if (hasVerifiedConnection(state.cloud) && typeof settings.cloudAdapter?.delete === "function") {
+      try {
+        const result = await settings.cloudAdapter.delete({ key: `${STORAGE_KEY}.${slotId}`, schema: SCHEMA });
+        if (!isConfirmed(result, true)) throw new Error("Cloud chưa xác nhận xóa");
+      } catch (error) {
+        showToast(`Đã xóa local; bản cloud chưa được xác nhận xóa: ${cleanText(error?.message, 80)}`, "warn");
+        scheduleRender();
+        return true;
+      }
+    }
+    showToast(`Đã làm trống ô lưu ${number}.`, "success");
+    scheduleRender();
+    return true;
+  }
+
+  async function reportPlayer(targetId) {
+    const friend = state.friends.find((item) => item.id === targetId);
+    if (!friend) throw new Error("Không tìm thấy người chơi");
+    const report = {
+      id: `report-${Date.now()}`,
+      targetId,
+      targetName: friend.name,
+      reason: "Báo cáo an toàn từ Game Center",
+      status: "pending",
+      createdAt: new Date().toISOString()
+    };
+    state.safety.reports.unshift(report);
+    state.safety.reports = state.safety.reports.slice(0, 50);
+    saveLocal();
+    if (hasVerifiedConnection(state.realtime) && typeof settings.realtimeAdapter?.reportPlayer === "function") {
+      const result = await settings.realtimeAdapter.reportPlayer({
+        targetId,
+        reason: report.reason,
+        source: "game-center"
+      });
+      if (!isConfirmed(result, true)) throw new Error("Máy chủ chưa xác nhận báo cáo");
+      report.status = "submitted";
+      saveLocal();
+      showToast("Báo cáo đã được máy chủ xác nhận.", "success");
+      return true;
+    }
+    showToast("Báo cáo đã lưu chờ gửi; chưa có backend được xác nhận.", "warn");
+    return true;
+  }
+
+  async function toggleBlockPlayer(targetId) {
+    const friend = state.friends.find((item) => item.id === targetId);
+    if (!friend) throw new Error("Không tìm thấy người chơi");
+    const blocked = state.safety.blockedIds.includes(targetId);
+    state.safety.blockedIds = blocked
+      ? state.safety.blockedIds.filter((id) => id !== targetId)
+      : state.safety.blockedIds.concat(targetId).slice(-200);
+    saveLocal();
+    if (hasVerifiedConnection(state.realtime) && typeof settings.realtimeAdapter?.blockPlayer === "function") {
+      const result = await settings.realtimeAdapter.blockPlayer({ targetId, blocked: !blocked });
+      if (!isConfirmed(result, true)) {
+        showToast("Đã áp dụng trên thiết bị; backend chưa xác nhận.", "warn");
+        scheduleRender();
+        return true;
+      }
+    }
+    showToast(blocked ? "Đã bỏ chặn trên thiết bị." : "Đã chặn trên thiết bị.", "success");
+    scheduleRender();
+    return true;
+  }
+
+  async function retryBackend() {
+    const [cloud, realtime] = await Promise.all([syncCloud("save"), syncRealtime()]);
+    return cloud || realtime;
+  }
+
+  async function joinLobby(lobbyId) {
+    const lobby = state.lobbies.find((item) => item.id === lobbyId);
+    if (!lobby) throw new Error("Lobby không còn tồn tại");
+    return joinConnectedParty(lobby.roomCode, false);
   }
 
   function openChest() {
@@ -804,16 +1185,28 @@
     return `<div class="gc-progress"><span style="width:${Math.max(0, Math.min(100, value))}%"></span></div>`;
   }
 
+  function renderCapabilityBadges(game) {
+    return `<div class="gc-capabilities">${gameCapabilityBadges(game).map((badge) => `
+      <span class="gc-capability ${badge.active ? "is-active" : "is-muted"} gc-capability-${badge.kind}" title="${escapeHtml(badge.label)}">
+        <span class="gc-capability-dot" aria-hidden="true"></span>${escapeHtml(badge.label)}
+      </span>
+    `).join("")}</div>`;
+  }
+
   function renderGames() {
     return state.games.map((game) => `
       <article class="gc-card" style="--game-color:${game.color}">
         <div class="gc-card-icon">${escapeHtml(game.short)}</div>
-        <p class="gc-pill">${escapeHtml(game.genre)} · ${escapeHtml(game.status)}</p>
+        <div class="gc-card-meta">
+          <span class="gc-pill">${escapeHtml(game.genre)}</span>
+          <span class="gc-pill">${escapeHtml(game.status)}</span>
+        </div>
         <h3>${escapeHtml(game.title)}</h3>
         <p>${escapeHtml(game.description)}</p>
+        ${renderCapabilityBadges(game)}
         <div class="gc-card-foot">
           <span class="gc-pill">${game.tags.map((tag) => escapeHtml(tag)).join("</span><span class=\"gc-pill\">")}</span>
-          <button class="gc-btn gc-btn-primary" type="button" data-gc-action="play" data-gc-play="${escapeHtml(game.id)}" data-id="${escapeHtml(game.id)}">Chơi</button>
+          <button class="gc-btn gc-btn-primary" type="button" data-gc-action="play" data-gc-play="${escapeHtml(game.id)}" data-id="${escapeHtml(game.id)}" aria-busy="false">Chơi</button>
         </div>
       </article>
     `).join("");
@@ -873,16 +1266,79 @@
   }
 
   function renderFriends() {
-    const items = state.friends.map((friend) => `
+    const visible = state.friends.filter((friend) => !state.safety.blockedIds.includes(friend.id));
+    const items = visible.map((friend) => `
       <div class="gc-friend">
         <div>
           <strong>${escapeHtml(friend.name)}</strong>
           <div class="gc-muted">${escapeHtml(friend.status)}</div>
         </div>
-        <span class="gc-pill" style="color:${friend.online ? "var(--gc-green)" : "var(--gc-muted)"}">${friend.online ? "Online" : "Offline"}</span>
+        <div class="gc-social-actions">
+          <span class="gc-pill" style="color:${friend.online ? "var(--gc-green)" : "var(--gc-muted)"}">${friend.online ? "Online" : "Offline"}</span>
+          ${friend.id ? actionButton("report-player", "Báo cáo", { id: friend.id }) : ""}
+          ${friend.id ? actionButton("block-player", "Chặn", { id: friend.id }) : ""}
+        </div>
       </div>
     `).join("");
     return items || `<div class="gc-empty">Chưa có danh sách bạn bè từ nhà cung cấp đã xác nhận.</div>`;
+  }
+
+  function renderLobbies() {
+    if (!state.socialMeta.confirmed) return `<div class="gc-empty">Lobby chỉ hiển thị sau khi realtime adapter xác nhận dữ liệu.</div>`;
+    const items = state.lobbies.map((lobby) => `
+      <div class="gc-feed-item gc-lobby">
+        <div class="gc-mission-top">
+          <div>
+            <strong>${escapeHtml(lobby.title)}</strong>
+            <div class="gc-muted">${escapeHtml(lobby.roomCode)} · ${escapeHtml(lobby.gameId)}</div>
+          </div>
+          <span class="gc-pill">${lobby.members}/${lobby.capacity}</span>
+        </div>
+        ${actionButton("join-lobby", "Vào phòng", { id: lobby.id, primary: true, operation: "social" })}
+      </div>
+    `).join("");
+    return items || `<div class="gc-empty">Chưa có lobby công khai đã xác nhận.</div>`;
+  }
+
+  function renderSaveSlots() {
+    return state.saveSlots.map((slot) => `
+      <div class="gc-save-slot ${slot.snapshot ? "is-filled" : "is-empty"}">
+        <div class="gc-save-slot-head">
+          <div>
+            <strong>${escapeHtml(slot.title)}</strong>
+            <span class="gc-muted">${slot.snapshot ? `${escapeHtml(slot.gameTitle)} · Lv.${slot.level} · ${new Date(slot.storedAt).toLocaleString("vi-VN")}` : "Chưa có tiến trình"}</span>
+          </div>
+          <span class="gc-pill">${slot.snapshot ? (slot.source === "cloud" ? "Cloud" : "Local") : "Trống"}</span>
+        </div>
+        <div class="gc-save-slot-actions">
+          ${actionButton("save-slot", "Lưu vào đây", { id: slot.id, primary: true, operation: `save-${slot.id}` })}
+          ${actionButton("load-slot", "Khôi phục", { id: slot.id, disabled: !slot.snapshot, operation: `load-${slot.id}` })}
+          ${actionButton("delete-slot", "Xóa", { id: slot.id, disabled: !slot.snapshot, operation: `delete-${slot.id}` })}
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderBackendStatus() {
+    const cloudVerified = hasVerifiedConnection(state.cloud);
+    const realtimeVerified = hasVerifiedConnection(state.realtime);
+    const backendOp = operation("backend");
+    return `
+      <div class="gc-backend-status" aria-live="polite">
+        <div class="gc-backend-row">
+          <span class="gc-status-led ${cloudVerified ? "is-good" : ""}" aria-hidden="true"></span>
+          <div><strong>Cloud save</strong><span class="gc-muted">${escapeHtml(state.cloud.label)}</span></div>
+          <span class="gc-pill">${cloudVerified ? "Đã xác nhận" : "Local"}</span>
+        </div>
+        <div class="gc-backend-row">
+          <span class="gc-status-led ${realtimeVerified ? "is-good" : ""}" aria-hidden="true"></span>
+          <div><strong>Realtime</strong><span class="gc-muted">${escapeHtml(state.realtime.label)}</span></div>
+          <span class="gc-pill">${realtimeVerified ? "Đã xác nhận" : "Local"}</span>
+        </div>
+        ${backendOp.error ? `<div class="gc-backend-error">${escapeHtml(backendOp.error)}</div>` : ""}
+        ${actionButton("retry-backend", backendOp.status === "loading" ? "Đang kiểm tra..." : "Kiểm tra / thử lại", { operation: "backend", primary: true })}
+      </div>
+    `;
   }
 
   function renderBadgeList() {
@@ -1000,7 +1456,7 @@
   function renderParty() {
     const party = state.party;
     const spectator = state.spectator;
-    const connected = state.realtime.status === "connected" && state.realtime.confirmed === true;
+    const connected = hasVerifiedConnection(state.realtime);
     return `
       <div class="gc-party" aria-live="polite">
         <div class="gc-feed-item">
@@ -1126,10 +1582,13 @@
             <main class="gc-section gc-glass">
               <div class="gc-section-head"><h2>Sự kiện giới hạn</h2><span class="gc-pill">Limited</span></div>
               <div class="gc-feed">${renderEvents()}</div>
-            </main>
-            <aside class="gc-side">
-              <section class="gc-section gc-glass">
-                <div class="gc-section-head"><h2>Bạn bè online</h2><span class="gc-pill">API/local</span></div>
+              </main>
+              <aside class="gc-side">
+                <section class="gc-section gc-glass">
+                <div class="gc-section-head">
+                  <div><h2>Bạn bè online</h2><span class="gc-muted">${escapeHtml(state.socialMeta.label)}</span></div>
+                  ${actionButton("refresh-social", "Làm mới", { operation: "social" })}
+                </div>
                 <div class="gc-friends">${renderFriends()}</div>
               </section>
               <section class="gc-section gc-glass">
@@ -1178,6 +1637,32 @@
                     <span class="gc-muted">${realtimeText}</span>
                   </div>
                 </div>
+              </section>
+            </aside>
+          </section>
+
+          <section class="gc-grid gc-operations-grid">
+            <main class="gc-section gc-glass">
+              <div class="gc-section-head">
+                <div>
+                  <span class="gc-kicker">Continue Playing</span>
+                  <h2>Ô lưu tiến trình</h2>
+                </div>
+                <span class="gc-pill">3 slots</span>
+              </div>
+              <div class="gc-save-slots">${renderSaveSlots()}</div>
+            </main>
+            <aside class="gc-side">
+              <section class="gc-section gc-glass">
+                <div class="gc-section-head"><h2>Backend status</h2><span class="gc-pill">${state.session.mode === "guest" ? "Guest local" : "Account"}</span></div>
+                ${renderBackendStatus()}
+              </section>
+              <section class="gc-section gc-glass">
+                <div class="gc-section-head">
+                  <div><h2>Lobby đang mở</h2><span class="gc-muted">${escapeHtml(state.socialMeta.label)}</span></div>
+                  ${actionButton("refresh-social", "Làm mới", { operation: "social" })}
+                </div>
+                <div class="gc-feed">${renderLobbies()}</div>
               </section>
             </aside>
           </section>
@@ -1268,8 +1753,14 @@
               </div>
               ${renderParty()}
               <div style="height:14px"></div>
-              <div class="gc-section-head"><h2>Bạn bè</h2><span class="gc-pill">${state.realtime.status === "connected" ? "Provider" : "Local"}</span></div>
+              <div class="gc-section-head">
+                <div><h2>Bạn bè</h2><span class="gc-muted">${escapeHtml(state.socialMeta.label)}</span></div>
+                ${actionButton("refresh-social", "Làm mới", { operation: "social" })}
+              </div>
               <div class="gc-friends">${renderFriends()}</div>
+              <div style="height:14px"></div>
+              <div class="gc-section-head"><h2>Lobby công khai</h2><span class="gc-pill">${state.lobbies.length}</span></div>
+              <div class="gc-feed">${renderLobbies()}</div>
             </main>
             <aside class="gc-side">
               <section class="gc-section gc-glass">
@@ -1514,9 +2005,40 @@
       return;
     }
     if (action === "sync") {
-      syncCloud("save");
-      syncRealtime();
+      runOperation("backend", "Đang kiểm tra backend", retryBackend);
       showToast("Đang yêu cầu adapter xác nhận kết nối...", "info");
+      return;
+    }
+    if (action === "retry-backend") {
+      runOperation("backend", "Đang kiểm tra backend", retryBackend);
+      return;
+    }
+    if (action === "refresh-social") {
+      refreshSocialData();
+      return;
+    }
+    if (action === "save-slot") {
+      runOperation(`save-${id}`, "Đang lưu tiến trình", () => saveToSlot(id));
+      return;
+    }
+    if (action === "load-slot") {
+      runOperation(`load-${id}`, "Đang khôi phục tiến trình", () => loadFromSlot(id));
+      return;
+    }
+    if (action === "delete-slot") {
+      runOperation(`delete-${id}`, "Đang xóa ô lưu", () => deleteSaveSlot(id));
+      return;
+    }
+    if (action === "join-lobby") {
+      runOperation("social", "Đang vào lobby", () => joinLobby(id));
+      return;
+    }
+    if (action === "report-player") {
+      runOperation("report-player", "Đang gửi báo cáo", () => reportPlayer(id));
+      return;
+    }
+    if (action === "block-player") {
+      runOperation("block-player", "Đang cập nhật chặn", () => toggleBlockPlayer(id));
       return;
     }
     if (action === "claim-mission") {
@@ -1572,6 +2094,11 @@
     settings = opts || {};
     state = normalizeState(loadLocal());
     if (typeof opts.navigate === "function") settings.navigate = opts.navigate;
+    const currentUser = settings.currentUser || {};
+    state.session = {
+      mode: isAuthenticatedUser(currentUser) ? "account" : "guest",
+      label: isAuthenticatedUser(currentUser) ? "Tài khoản HH" : "Khách · chỉ lưu local"
+    };
     if (settings.currentUser) {
       state.player.name = settings.currentUser.displayName || settings.currentUser.name || state.player.name;
       state.player.avatar = initials(settings.currentUser.displayName || settings.currentUser.name || state.player.name);
@@ -1588,6 +2115,10 @@
       state.missions.weekly = WEEKLY_MISSIONS.map((item) => ({ ...item, progress: 0 }));
     }
     if (state.season.id !== seasonKey() && state.season.source === "local-device") state.season = defaultState().season;
+    state.saveSlots = normalizeSaveSlots(state.saveSlots);
+    state.lobbies = [];
+    state.friends = state.friends.map((friend) => ({ ...friend, online: false }));
+    state.operations = {};
     state.lastVisit = state.lastVisit || todayKey();
     if (state.lastVisit !== todayKey()) {
       state.lastVisit = todayKey();
@@ -1648,6 +2179,7 @@
       schema: SCHEMA,
       version: INTEGRATION_VERSION,
       storageKey: STORAGE_KEY,
+      session: state?.session || null,
       player: state?.player || null,
       missions: state?.missions || null,
       inventory: state?.inventory || [],
@@ -1657,10 +2189,21 @@
       leaderboard: { meta: state?.leaderboardMeta || null, entries: state?.leaderboard || [] },
       party: state?.party || null,
       spectator: state?.spectator || null,
+      saveSlots: state?.saveSlots || [],
+      lobbies: state?.lobbies || [],
+      social: state?.socialMeta || null,
+      safety: { blockedCount: state?.safety?.blockedIds?.length || 0, reportCount: state?.safety?.reports?.length || 0 },
       history: state?.history || [],
       games: state?.games?.map((game) => ({ id: game.id, route: game.route })) || []
     };
   }
 
   window.HHGameCenter = { mount, unmount, inspect };
+  // Stable, side-effect-free hooks keep the playability contract testable without
+  // exposing runtime state or granting access to private player data.
+  window.HHGameCenter.__test = Object.freeze({
+    isConfirmed,
+    gameCapabilityBadges,
+    normalizeSaveSlots
+  });
 })();

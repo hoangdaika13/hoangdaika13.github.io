@@ -8,10 +8,12 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("Graphic Design is a first-class application section", () => {
   const html = read("index.html");
+  const loader = read("performance-loader.js");
   const client = read("script.js");
   const worker = read("sw.js");
+  const registeredAssets = `${html}\n${loader}`;
   for (const asset of ["graphic-design-studio.css?v=6", "graphic-design-workflow.js?v=2", "graphic-design-animation.js?v=1", "graphic-design-3d.js?v=2", "graphic-design-prototype.js?v=1", "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1", "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=2", "graphic-design-state-machine.js?v=2", "graphic-design-adaptive.js?v=2", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=2", "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-studio.js?v=6"]) {
-    assert.match(html, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(registeredAssets, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
   assert.match(worker, /vendor\/three\.module\.min\.js/);

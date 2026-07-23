@@ -14,6 +14,16 @@ const CLOUD_VOTE_API = window.HH_VOTE_API_URL || "";
 const REALTIME_URL = window.HH_REALTIME_URL || "";
 const SOCKET_URL = typeof window.HH_SOCKET_URL === "string" ? window.HH_SOCKET_URL : REALTIME_URL;
 let adminRealtimeTimer = 0;
+const createGameAdapters = () => {
+  if (typeof window.HHGameAdapters?.create !== "function") return {};
+  let anonymousId = "";
+  try { anonymousId = localStorage.getItem("hh-anonymous-id") || ""; } catch { /* local storage may be blocked */ }
+  return window.HHGameAdapters.create({
+    apiBase: REALTIME_URL,
+    socket: window.HHRealtimeSocket,
+    anonymousId
+  });
+};
 
 const HH_ADMIN_ROLES = new Set(["owner", "super_admin", "admin", "moderator", "support", "analyst"]);
 const readCurrentAuthUser = () => {
@@ -5673,6 +5683,7 @@ function initAppShell() {
         apiBase: REALTIME_URL,
         socketUrl: SOCKET_URL,
         currentUser: readCurrentAuthUser(),
+        ...createGameAdapters(),
         navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
       });
       else mountSimpleView("HH Game Center", "Đang tải trung tâm game...", "");
@@ -5683,7 +5694,8 @@ function initAppShell() {
       if (window.HHAstraExpansion?.mount) window.HHAstraExpansion.mount(workspace.querySelector("[data-astra-expansion-host]"), {
         apiBase: REALTIME_URL,
         socketUrl: SOCKET_URL,
-        currentUser: readCurrentAuthUser()
+        currentUser: readCurrentAuthUser(),
+        socket: window.HHRealtimeSocket
       });
       if (window.HHSpaceExplorer?.mount) window.HHSpaceExplorer.mount(workspace.querySelector("[data-space-explorer-host]"), { apiBase: REALTIME_URL });
       else mountSimpleView("ASTRA HH", "Đang khởi động động cơ khám phá vũ trụ...", "");
@@ -5694,7 +5706,8 @@ function initAppShell() {
       if (window.HHGameArcade?.mount) window.HHGameArcade.mount(workspace.firstElementChild, {
         apiBase: REALTIME_URL,
         socketUrl: SOCKET_URL,
-        currentUser: readCurrentAuthUser()
+        currentUser: readCurrentAuthUser(),
+        socket: window.HHRealtimeSocket
       });
       else mountSimpleView("Arcade Galaxy", "Đang tải khu game phụ...", "");
     } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHLearningSuite?.supports?.(parts[1]))) {
@@ -5989,7 +6002,7 @@ function initAppShell() {
       route: item.route,
       key: `${item.title} ${item.section || ""} ${item.description} AI DAW music composer lyrics timeline stems vocal mix master visualizer youtube rights`
     }));
-    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "HH Game Center", description: "Tổng quan giải trí chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "10 game phụ: Neon Drift, Galaxy Defense, Star Colony, Cipher Run, Asteroid Miner, Rhythm Reactor, Quiz Arena, Creative Sandbox, Space Chess và Survival Orbit.", route: "/entertainment/arcade", key: "arcade galaxy game phụ neon drift defense colony cipher miner rhythm quiz sandbox chess survival" }, { type: "Studio", title: "Media & Design", description: "22 công cụ với Universal Media Project, Photo, Video, Asset Manager, thương hiệu và xuất bản.", route: "/media-design", key: "media design universal project asset manager media bin hhmedia creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "DEV Command Center", description: "12 workspace DEV Pro cùng 22 tiện ích nhanh cho dữ liệu, API, bảo mật, code, Git và diagnostics.", route: "/dev-tools", key: "developer dev smart input recipe pipeline api mock json data security regex database code playground git diff diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "HH Game Center", description: "Tổng quan giải trí chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "22 game hoàn chỉnh thuộc bốn nhóm Action, Strategy, Puzzle và Simulation, dùng chung tiến trình, nhiệm vụ, thành tích và điều khiển đa thiết bị.", route: "/entertainment/arcade", key: "arcade galaxy 22 game action strategy puzzle simulation neon drift defense colony cipher miner rhythm quiz sandbox chess survival farm fishing mecha planet pet dungeon card tycoon runner black hole nebula boss rush" }, { type: "Studio", title: "Media & Design", description: "22 công cụ với Universal Media Project, Photo, Video, Asset Manager, thương hiệu và xuất bản.", route: "/media-design", key: "media design universal project asset manager media bin hhmedia creative studio photo editor photoshop video editor premiere timeline background remover collage image pdf qr svg color typography compressor converter social post brand kit favicon meme" }, { type: "Developer", title: "DEV Command Center", description: "12 workspace DEV Pro cùng 22 tiện ích nhanh cho dữ liệu, API, bảo mật, code, Git và diagnostics.", route: "/dev-tools", key: "developer dev smart input recipe pipeline api mock json data security regex database code playground git diff diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();

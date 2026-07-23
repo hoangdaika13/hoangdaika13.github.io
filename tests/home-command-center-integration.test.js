@@ -6,7 +6,9 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const index = read("index.html");
+const loader = read("performance-loader.js");
 const worker = read("sw.js");
+const registeredAssets = `${index}\n${loader}`;
 
 const assets = [
   "home-daily-command.css?v=4",
@@ -21,16 +23,16 @@ const assets = [
 
 test("home experience assets are loaded and cached", () => {
   for (const asset of assets) {
-    assert.ok(index.includes(asset), `${asset} must be loaded by index.html`);
+    assert.ok(registeredAssets.includes(asset), `${asset} must be registered by the route loader`);
     assert.ok(worker.includes(`./${asset}`), `${asset} must be cached for offline use`);
   }
   assert.match(worker, /const CACHE = "hh-identity-portal-v\d+"/);
 });
 
 test("home enhancements load after the existing Command Center runtime", () => {
-  const base = index.indexOf("command-center-pro.js?v=5");
+  const base = loader.indexOf("command-center-pro.js?v=5");
   assert.ok(base >= 0);
-  for (const file of assets.filter((asset) => asset.endsWith(".js?v=1"))) {
-    assert.ok(index.indexOf(file) > base, `${file} must enhance the initialized runtime`);
+  for (const file of assets.filter((asset) => asset.includes(".js?v="))) {
+    assert.ok(loader.indexOf(file) > base, `${file} must enhance the initialized runtime`);
   }
 });

@@ -93,6 +93,12 @@ test("Game Center realtime rooms support 2-10 player presence, chat, ready and s
   assert.match(created.room.code, /^[A-Z0-9]{6}$/);
   assert.equal(created.room.maxPlayers, 10);
   assert.equal(created.room.members[0].role, "host");
+  assert.equal(created.room.backendStatus.durable, false);
+  assert.ok(created.reconnectToken);
+
+  const privateRooms = await emitAck(spectator, "game:rooms:list", { gameId: "hh-astra-mmo" });
+  assert.deepEqual(privateRooms.rooms, []);
+  assert.equal(privateRooms.backendStatus.durable, false);
 
   const rejected = await emitResponse(two, "game:room:join", { code: created.room.code, gameId: "hh-astra-mmo" });
   assert.equal(rejected.ok, false);
@@ -135,7 +141,7 @@ test("Game Center realtime rooms support 2-10 player presence, chat, ready and s
   assert.equal((await bossEvent).boss.hp, 5000);
 
   const bossDamageEvent = once(one, "game:boss");
-  await emitAck(two, "game:boss:state", { hp: 4200, maxHp: 5000, phase: "fight", participants: ["game-player-one", "game-player-two"] });
+  await emitAck(two, "game:boss:state", { damage: 800, maxHp: 5000, phase: "fight", participants: ["game-player-one", "game-player-two"] });
   assert.equal((await bossDamageEvent).boss.phase, "fight");
 
   const stateEvent = once(two, "game:state");
@@ -144,9 +150,9 @@ test("Game Center realtime rooms support 2-10 player presence, chat, ready and s
 
   const scoreEvent = once(one, "game:score");
   const leaderboardEvent = once(spectator, "game:leaderboard");
-  const score = await emitAck(two, "game:score", { score: 20260, level: 9, rank: "Captain" });
-  assert.equal(score.score.value, 20260);
-  assert.equal((await scoreEvent).score.rank, "Captain");
+  const score = await emitAck(two, "game:score", { delta: 5000, level: 9999, rank: "Captain" });
+  assert.equal(score.score.value, 5000);
+  assert.equal((await scoreEvent).score.rank, "Phi công");
   assert.equal((await leaderboardEvent).leaderboard[0].user.name, "Game Player Two");
 
   const leftEvent = once(one, "game:member:left");

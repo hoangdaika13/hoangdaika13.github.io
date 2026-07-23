@@ -93,6 +93,14 @@
     const host = String(globalScope.location?.hostname || "");
     return Boolean(cloudBase() || (host && host !== "localhost" && host !== "127.0.0.1"));
   }
+  function realtimeConnected() {
+    return Boolean(options.socket?.connected);
+  }
+  function connectionLabel() {
+    if (realtimeConnected()) return "Realtime đang hoạt động";
+    if (globalScope.navigator?.onLine === false) return "Ngoại tuyến · local fallback";
+    return "Local fallback · chưa xác nhận realtime";
+  }
   async function syncCloud() {
     if (!cloudEnabled() || typeof globalScope.fetch !== "function") return;
     const base = cloudBase();
@@ -281,10 +289,20 @@
       save();
       render();
     };
+    const onConnectionChange = () => render();
     options.socket.on("astra:chat", onChat);
     options.socket.on("astra:presence", onPresence);
+    options.socket.on("connect", onConnectionChange);
+    options.socket.on("disconnect", onConnectionChange);
+    options.socket.on("connect_error", onConnectionChange);
     options.socket.emit?.("astra:room:join", { roomCode: state.roomCode, captain: state.captain });
-    socketHandlers = [["astra:chat", onChat], ["astra:presence", onPresence]];
+    socketHandlers = [
+      ["astra:chat", onChat],
+      ["astra:presence", onPresence],
+      ["connect", onConnectionChange],
+      ["disconnect", onConnectionChange],
+      ["connect_error", onConnectionChange]
+    ];
   }
   function unbindSocket() {
     socketHandlers.forEach(([eventName, handler]) => options.socket?.off?.(eventName, handler));
@@ -344,6 +362,7 @@
             <strong>${state.party.length}/10 online · Level ${state.level}</strong>
             <span>${escapeHtml(state.region)} · ${state.seasonPoints} điểm mùa</span>
             <small>${options.socketUrl ? "Realtime server sẵn hook" : "Local co-op fallback"}</small>
+            <small class="au-connection-state" data-au-connection-status data-state="${realtimeConnected() ? "online" : "local"}">${escapeHtml(connectionLabel())}</small>
             ${meter(state.base.shield)}
           </aside>
         </div>

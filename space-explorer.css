@@ -489,6 +489,77 @@
 .astra-encounter-choices strong { color: #e9f3fc; font-size: 8px; }
 .astra-encounter-choices span { margin-top: 5px; color: #71869a; font-size: 7px; line-height: 1.45; }
 
+.astra-objective-bar {
+  position: absolute;
+  z-index: 12;
+  top: 12px;
+  right: 12px;
+  left: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-height: 48px;
+  padding: 8px 11px;
+  border: 1px solid rgba(94, 233, 255, .18);
+  border-radius: 8px;
+  background: rgba(4, 10, 20, .74);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .16);
+  backdrop-filter: blur(14px);
+}
+.astra-objective-bar > span { display: flex; align-items: center; gap: 7px; color: var(--astra-lime); font-size: 7px; font-weight: 900; letter-spacing: .08em; }
+.astra-objective-bar > span i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 9px currentColor; }
+.astra-objective-bar > span i.is-live { animation: astra-pulse 1.4s ease-in-out infinite; }
+.astra-objective-bar p { display: grid; min-width: 0; margin: 0; }
+.astra-objective-bar p small, .astra-objective-bar > div small { color: var(--astra-muted); font-size: 6px; text-transform: uppercase; }
+.astra-objective-bar p strong { overflow: hidden; color: #f4fbff; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.astra-objective-bar p em { overflow: hidden; color: #8295ac; font-size: 7px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.astra-objective-bar > div { display: grid; justify-items: end; gap: 2px; }
+.astra-objective-bar > div b { color: var(--astra-cyan); font-size: 7px; }
+
+.astra-tutorial {
+  position: absolute;
+  z-index: 20;
+  bottom: 104px;
+  left: 50%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  width: min(520px, calc(100% - 24px));
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 200, 87, .34);
+  border-radius: 8px;
+  background: rgba(7, 13, 25, .9);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, .28);
+  transform: translateX(-50%);
+  backdrop-filter: blur(12px);
+}
+.astra-tutorial > span { color: var(--astra-amber); font-family: ui-monospace, monospace; font-size: 8px; font-weight: 900; }
+.astra-tutorial strong { display: block; color: #fff; font-size: 9px; }
+.astra-tutorial p { margin: 3px 0 0; color: #8ea1b4; font-size: 7px; line-height: 1.4; }
+.astra-tutorial button { min-height: 27px; padding: 0 8px; border: 1px solid var(--astra-line); border-radius: 5px; background: rgba(255, 255, 255, .04); color: #d9eaf5; font-size: 7px; font-weight: 800; }
+.astra-tutorial button:first-of-type { border-color: rgba(94, 233, 255, .42); color: var(--astra-cyan); }
+
+.astra-game .astra-live.is-online { color: var(--astra-lime); }
+.astra-game .astra-live.is-local { color: var(--astra-amber); }
+.astra-game .astra-live.is-offline { color: #ff9b9b; }
+.astra-game .astra-live b { font-size: 7px; font-weight: 900; }
+
+.astra-intro__difficulty { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, .65fr); gap: 5px 10px; max-width: 380px; margin-top: 13px; color: #8196ab; font-size: 7px; font-weight: 850; text-transform: uppercase; }
+.astra-intro__difficulty select { grid-column: 2; grid-row: 1 / 3; min-height: 32px; padding: 0 8px; border: 1px solid rgba(94, 233, 255, .3); border-radius: 5px; background: rgba(0, 0, 0, .25); color: #eaf9ff; }
+.astra-intro__difficulty small { grid-column: 1; color: #647a91; font-size: 7px; font-weight: 500; line-height: 1.45; text-transform: none; }
+
+.astra-save-panel { display: grid; gap: 7px; padding: 8px; border: 1px solid rgba(94, 233, 255, .14); border-radius: 6px; background: rgba(255, 255, 255, .018); }
+.astra-save-panel label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; color: #7890a5; font-size: 7px; text-transform: uppercase; }
+.astra-save-panel select, .astra-quality input[type="range"] { min-height: 28px; width: 100%; border: 1px solid var(--astra-line); border-radius: 5px; background: rgba(0, 0, 0, .25); color: #e7f6ff; }
+.astra-save-panel p { min-height: 20px; margin: 0; color: #71869a; font-size: 7px; line-height: 1.45; }
+.astra-save-panel > div { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.astra-save-panel button { min-height: 28px; border: 1px solid rgba(94, 233, 255, .24); border-radius: 5px; background: rgba(94, 233, 255, .045); color: #a9ecf4; font-size: 7px; font-weight: 800; }
+.astra-input-status { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.astra-input-status span { padding: 4px 6px; border: 1px solid rgba(142, 180, 218, .12); border-radius: 999px; color: #6f8498; font-size: 6px; }
+.astra-quality input[type="range"] { accent-color: var(--astra-cyan); }
+
 .astra-toast { position: absolute; z-index: 35; top: 66px; left: 50%; max-width: min(420px, calc(100% - 24px)); padding: 9px 12px; border: 1px solid rgba(94, 233, 255, .34); border-radius: 6px; background: rgba(5, 16, 28, .92); color: #e9fbff; font-size: 9px; box-shadow: 0 12px 36px rgba(0, 0, 0, .36); opacity: 0; pointer-events: none; transform: translate(-50%, -8px); transition: opacity .2s ease, transform .2s ease; }
 .astra-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
 .astra-toast.is-warn { border-color: rgba(255, 200, 87, .5); color: #ffe4a1; }
@@ -497,6 +568,7 @@
 .astra-statusbar > div { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .astra-statusbar strong { color: var(--astra-lime); font-weight: 700; }
 .astra-statusbar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.astra-statusbar button { min-height: 20px; padding: 0 5px; border: 1px solid rgba(255, 200, 87, .25); border-radius: 4px; background: transparent; color: #b99e59; font-size: 6px; }
 .astra-mobile-pad { display: none; }
 .astra-game.is-warping .astra-stage::after { position: absolute; z-index: 30; inset: 0; background: repeating-radial-gradient(ellipse at center, transparent 0 8px, rgba(94, 233, 255, .15) 9px 10px); content: ""; animation: astra-warp .9s ease-in forwards; }
 .astra-game[data-camera="cockpit"] .astra-stage::before { position: absolute; z-index: 4; inset: 0; pointer-events: none; background: linear-gradient(72deg, rgba(2,7,14,.94) 0 5%, transparent 12% 88%, rgba(2,7,14,.94) 95%), linear-gradient(to bottom, rgba(2,7,14,.9), transparent 10% 82%, rgba(2,7,14,.92)), radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,.38) 86%); clip-path: polygon(0 0, 100% 0, 100% 100%, 86% 100%, 80% 91%, 20% 91%, 14% 100%, 0 100%); content: ""; }
@@ -542,7 +614,8 @@
 @media (max-width: 620px) {
   .astra-game { min-height: calc(100dvh - 58px); }
   .astra-topbar { padding-inline: 9px; }
-  .astra-brand small, .astra-live, .astra-top-actions button:nth-child(2) { display: none; }
+  .astra-brand small, .astra-top-actions button:nth-child(2) { display: none; }
+  .astra-live { display: flex; margin-left: 0; }
   .astra-panel--left { grid-template-columns: 1fr; }
   .astra-panel--left .astra-panel-section:nth-child(3) { display: none; }
   .astra-stage { min-height: 66dvh; }
@@ -573,6 +646,16 @@
   .astra-intro__body { padding: 15px; }
   .astra-intro__facts { grid-template-columns: 1fr 1fr; }
   .astra-intro__facts span:last-child { display: none; }
+  .astra-intro__difficulty { max-width: none; }
+  .astra-intro__difficulty select { min-width: 0; }
+  .astra-objective-bar { top: 7px; grid-template-columns: auto minmax(0, 1fr); gap: 7px; }
+  .astra-objective-bar > div { display: none; }
+  .astra-objective-bar p em { display: none; }
+  .astra-tutorial { bottom: 104px; grid-template-columns: auto minmax(0, 1fr); gap: 7px; }
+  .astra-tutorial button { grid-row: 2; }
+  .astra-tutorial button:first-of-type { grid-column: 1 / 2; }
+  .astra-tutorial button:last-of-type { grid-column: 2 / 3; justify-self: end; }
+  .astra-save-panel label { grid-template-columns: 1fr; }
   .astra-statusbar > div:last-child { display: none; }
 }
 
