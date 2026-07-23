@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v205";
+const CACHE = "hh-identity-portal-v209";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -22,7 +22,10 @@ const RUNTIME_ASSETS = [
   "./dev-regex-database.css?v=1",
   "./dev-code-git.css?v=1",
   "./dev-diagnostics-ai.css?v=1",
-  "./feature-lab.css?v=3",
+  "./feature-lab.css?v=5",
+  "./platform-tools.css?v=1",
+  "./tool-workspace-pro.css?v=1",
+  "./utility-lab-tools.css?v=9",
   "./media-design-pro.css?v=1",
   "./media-design-page.css?v=9",
   "./media-production-workflow.css?v=2",
@@ -242,7 +245,12 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.js?v=1",
   "./support-platform.js?v=13",
   "./media-design-page.js?v=9",
-  "./feature-lab.js?v=4",
+  "./tool-manifests.js?v=1",
+  "./tool-runtime.js?v=1",
+  "./feature-lab.js?v=6",
+  "./platform-tools.js?v=1",
+  "./tool-workspace-pro.js?v=1",
+  "./utility-lab-tools.js?v=9",
   "./feature-engines.js?v=2",
   "./game-platform-adapters.js?v=1",
   "./game-runtime.js?v=1",
@@ -279,7 +287,7 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=8",
+  "./performance-loader.js?v=14",
   "./auth-platform.js?v=7",
   "./script.js?v=127"
 ];

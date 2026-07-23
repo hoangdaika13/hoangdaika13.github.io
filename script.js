@@ -5857,12 +5857,26 @@ function initAppShell() {
       if (window.HHPrivacyConsent?.mount) window.HHPrivacyConsent.mount(workspace.firstElementChild);
       else mountSimpleView("Trung tâm quyền riêng tư", "Không thể tải trình quản lý quyền riêng tư.", "");
       remember("cookie-consent-manager");
+    } else if (route === "/tools" || route.startsWith("/tools/")) {
+      const toolId = parts[1] || "global-search";
+      const toolMeta = window.HHFeatureLab?.getTool?.(toolId);
+      updatePageHeader(toolMeta?.name || "HH Professional Toolkit", toolMeta?.description || "86 công cụ có engine, lịch sử, trạng thái và giao diện riêng theo đúng chức năng.", route);
+      workspace.innerHTML = '<div data-feature-lab-route-host></div>';
+      const toolHost = workspace.firstElementChild;
+      if (window.HHFeatureLab?.mount) {
+        window.HHFeatureLab.mount(toolHost, {
+          toolId,
+          onNavigate: (nextToolId) => { location.hash = `#/tools/${nextToolId}`; }
+        });
+      } else {
+        mountSimpleView("HH Professional Toolkit", "Đang tải hệ thống công cụ chuyên nghiệp...", "");
+      }
     } else if (module) {
       updatePageHeader(module.title, module.description, route, module);
       mountPlatform(module.id);
       remember(module.id);
-    } else if (route === "/tools" || groups.some((group) => group.route === route)) {
-      const currentGroup = route === "/tools" ? null : groups.find((group) => group.route === route);
+    } else if (groups.some((group) => group.route === route)) {
+      const currentGroup = groups.find((group) => group.route === route);
       updatePageHeader(currentGroup?.label || "Tất cả công cụ", "Chọn một việc để mở thành màn hình độc lập, không phải cuộn qua các module khác.", route);
       mountModuleHub(currentGroup);
     } else if (route === "/favorites" || route === "/recent") {

@@ -1,7 +1,7 @@
 "use strict";
 
-const { clean, currentUser, withApi } = require("../../utils/platform");
-const { TOOL_POLICIES, executeServerTool, policyFor, publicPolicy } = require("../../services/toolGateway");
+const { clean, currentUser, withApi } = require("../utils/platform");
+const { TOOL_POLICIES, executeServerTool, policyFor, publicPolicy } = require("../services/toolGateway");
 
 module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {

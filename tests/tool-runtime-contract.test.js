@@ -99,15 +99,18 @@ test("server gateway uses an allowlist, redacts secrets and exposes no provider 
   assert.ok(gateway.providerStatus().every((item) => item.secretsExposed === false));
 });
 
-test("six gateway endpoints exist and contractually protect auth, ownership, consent and secrets", () => {
-  const files = ["api/tools/run.js", "api/jobs.js", "api/files.js", "api/ai.js", "api/integrations.js", "api/events.js"];
+test("six gateway endpoints share one Vercel function and protect auth, ownership, consent and secrets", () => {
+  const files = ["tool-api/tools.js", "tool-api/jobs.js", "tool-api/files.js", "tool-api/ai.js", "tool-api/integrations.js", "tool-api/events.js"];
   files.forEach((file) => assert.ok(fs.existsSync(path.join(root, file)), file));
   const sources = files.map(read).join("\n");
   assert.match(sources, /currentUser\(req\)/);
-  assert.match(read("api/jobs.js"), /findJob\(db, user/);
-  assert.match(read("api/files.js"), /userId: user\._id/);
-  assert.match(read("api/events.js"), /ANALYTICS_CONSENT_REQUIRED/);
-  assert.match(read("api/ai.js"), /x-goog-api-key/);
+  assert.match(read("tool-api/jobs.js"), /findJob\(db, user/);
+  assert.match(read("tool-api/files.js"), /userId: user\._id/);
+  assert.match(read("tool-api/events.js"), /ANALYTICS_CONSENT_REQUIRED/);
+  assert.match(read("tool-api/ai.js"), /x-goog-api-key/);
+  const vercel = read("vercel.json");
+  for (const route of ["tools/run", "jobs", "files", "ai", "integrations", "events"]) assert.match(vercel, new RegExp(`/api/${route.replace("/", "\\/")}`));
+  assert.match(read("api/store/[resource].js"), /TOOL_GATEWAYS/);
   assert.doesNotMatch(sources, /json\s*\(\s*\{[^}]*process\.env/s);
   assert.doesNotMatch(read("services/toolGateway.js"), /properties:\s*body\.properties/);
 });

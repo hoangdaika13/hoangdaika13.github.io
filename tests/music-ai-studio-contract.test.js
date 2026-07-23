@@ -115,7 +115,7 @@ test("Music AI assets are loaded by the page and offline worker", () => {
   const index = read("index.html");
   const worker = read("sw.js");
   const loader = read("performance-loader.js");
-  for (const asset of ["music-production-suite.css?v=1", "music-production-suite.js?v=1", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1", "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=1", "music-publishing-rights.js?v=1", "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "music-ai-apps.js?v=2", "music-ai-studio.js?v=8", "youtube-publisher.css?v=2", "youtube-publisher.js?v=2", "script.js?v=126", "app-shell.css?v=51"]) {
+  for (const asset of ["music-production-suite.css?v=1", "music-production-suite.js?v=1", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1", "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=1", "music-publishing-rights.js?v=1", "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "music-ai-apps.js?v=2", "music-ai-studio.js?v=8", "youtube-publisher.css?v=2", "youtube-publisher.js?v=2", "script.js?v=127", "app-shell.css?v=51"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index + worker + loader, pattern);
   }

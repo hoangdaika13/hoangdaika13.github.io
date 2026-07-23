@@ -30,12 +30,14 @@
     },
     platform: {
       styles: [
-        "professional-tools.css?v=3", "feature-lab.css?v=3", "extension-suite.css?v=1",
-        "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1", "platform-p0.css?v=1", "system-platform.css?v=1"
+        "professional-tools.css?v=3", "feature-lab.css?v=5", "extension-suite.css?v=1",
+        "platform-tools.css?v=1", "tool-workspace-pro.css?v=1", "utility-lab-tools.css?v=9", "ai-center-pro.css?v=1",
+        "ai-center-advanced.css?v=1", "platform-p0.css?v=1", "system-platform.css?v=1"
       ],
       scripts: [
-        "extension-suite.js?v=2", "professional-tools.js?v=4", "feature-lab.js?v=4",
-        "feature-engines.js?v=2", "ai-center-advanced.js?v=1", "platform-p0.js?v=1", "system-platform.js?v=3"
+        "extension-suite.js?v=2", "professional-tools.js?v=4", "tool-manifests.js?v=1", "tool-runtime.js?v=1",
+        "feature-lab.js?v=6", "platform-tools.js?v=1", "tool-workspace-pro.js?v=1", "utility-lab-tools.js?v=9", "feature-engines.js?v=2",
+        "ai-center-advanced.js?v=1", "platform-p0.js?v=1", "system-platform.js?v=3"
       ]
     },
     dev: {
@@ -176,7 +178,7 @@
     if (value === "/analytics/admin-panel") return ["admin"];
     if (value.startsWith("/analytics")) return ["analytics"];
     if (value.startsWith("/create")) return ["creative", "platform"];
-    if (value.startsWith("/system") || value === "/tools" || value === "/favorites" || value === "/recent") return ["platform"];
+    if (value.startsWith("/system") || value.startsWith("/tools") || value === "/favorites" || value === "/recent") return ["platform"];
     return [];
   }
 

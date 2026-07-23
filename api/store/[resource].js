@@ -1,5 +1,14 @@
 const { clean, currentUser, ownerFrom, setCors, withApi } = require("../../utils/platform");
 
+const TOOL_GATEWAYS = Object.freeze({
+  tools: require("../../tool-api/tools"),
+  jobs: require("../../tool-api/jobs"),
+  files: require("../../tool-api/files"),
+  ai: require("../../tool-api/ai"),
+  integrations: require("../../tool-api/integrations"),
+  events: require("../../tool-api/events")
+});
+
 const products = [
   { id: "hh-voice-lite", title: "HH Voice Studio Lite", price: 0, currency: "VND", type: "download" },
   { id: "kich-ban-ai-source", title: "Kich ban AI Source", price: 0, currency: "VND", type: "source" },
@@ -7,6 +16,8 @@ const products = [
 ];
 
 module.exports = async function handler(req, res) {
+  const gateway = clean(req.query?.gateway, 30).toLocaleLowerCase("en-US");
+  if (gateway && TOOL_GATEWAYS[gateway]) return TOOL_GATEWAYS[gateway](req, res);
   const resource = clean(req.query?.resource, 30).toLocaleLowerCase("en-US");
 
   if (resource === "products") {

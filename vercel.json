@@ -7,6 +7,30 @@
   },
   "rewrites": [
     {
+      "source": "/api/tools/run",
+      "destination": "/api/store/tool-gateway?gateway=tools"
+    },
+    {
+      "source": "/api/jobs",
+      "destination": "/api/store/tool-gateway?gateway=jobs"
+    },
+    {
+      "source": "/api/files",
+      "destination": "/api/store/tool-gateway?gateway=files"
+    },
+    {
+      "source": "/api/ai",
+      "destination": "/api/store/tool-gateway?gateway=ai"
+    },
+    {
+      "source": "/api/integrations",
+      "destination": "/api/store/tool-gateway?gateway=integrations"
+    },
+    {
+      "source": "/api/events",
+      "destination": "/api/store/tool-gateway?gateway=events"
+    },
+    {
       "source": "/api/games",
       "destination": "/api/social?service=games"
     },
