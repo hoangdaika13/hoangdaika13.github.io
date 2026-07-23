@@ -32,6 +32,11 @@ test("sidebar uses one shared visual system for every primary group", () => {
   assert.doesNotMatch(creativeCss, /\.is-creative-group/);
   assert.match(sidebarCss, /Unified navigation system/);
   assert.match(sidebarCss, /\.app-sidebar__group>\.app-sidebar__item,/);
+  assert.match(sidebarCss, /\.app-sidebar__subitem,\s*\.app-sidebar__studio-item/);
+  assert.match(sidebarCss, /--item-accent/);
+  assert.match(creativeClient, /"ai-script":[\s\S]*color: "#ff62c8"/);
+  assert.match(creativeCss, /Kịch bản AI shares the same visual language/);
+  assert.match(creativeCss, /\.creative-ai-script-stage \.neon-tabs \.mini-tab\.active/);
 });
 
 test("authentication uses calm motion with pausable automatic previews", () => {

@@ -20,7 +20,7 @@
       name: "Kịch bản AI",
       note: "Biên kịch, batch và URL research",
       description: "Viết kịch bản dài, phân tích retention, training profile, dịch, batch và quản lý series.",
-      color: "#ff9d66",
+      color: "#ff62c8",
       route: "/create/ai-script"
     },
     "creator-studio": {
@@ -226,6 +226,7 @@
       const item = meta[id];
       button.dataset.creativeIcon = item.icon;
       button.style.setProperty("--creative-item", item.color);
+      button.style.setProperty("--item-accent", item.color);
       button.title = `${item.name} · ${item.note}`;
       if (button.classList.contains("app-sidebar__subitem") && !button.querySelector("small")) {
         button.insertAdjacentHTML("beforeend", `<small>${escapeHtml(item.note)}</small>`);

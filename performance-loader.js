@@ -66,9 +66,9 @@
       ]
     },
     creative: {
-      styles: ["creative-suite.css?v=5", "creative-os.css?v=1", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
+      styles: ["creative-suite.css?v=6", "creative-os.css?v=1", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
       scripts: [
-        "creative-os.js?v=3", "creative-suite.js?v=6", "ai-center-advanced.js?v=1"
+        "creative-os.js?v=3", "creative-suite.js?v=7", "ai-center-advanced.js?v=1"
       ]
     },
     music: {

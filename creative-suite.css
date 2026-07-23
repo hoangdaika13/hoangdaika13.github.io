@@ -9,6 +9,15 @@
 }
 
 .creative-ai-script-host.tool-neon-page {
+  --neon-bg: #080d14;
+  --neon-panel: #0d1520;
+  --neon-field: #09111a;
+  --neon-text: #edf5fb;
+  --neon-muted: #91a3b5;
+  --neon-pink: var(--creative-pink);
+  --neon-purple: var(--creative-violet);
+  --neon-cyan: var(--creative-cyan);
+  --neon-lime: var(--creative-lime);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   width: 100%;
@@ -16,10 +25,13 @@
   min-height: 690px;
   margin: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 157, 102, .22);
+  border: 1px solid rgba(151, 176, 201, .2);
   border-radius: 16px;
-  background: #05000a;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(255, 98, 200, .08), transparent 28%),
+    radial-gradient(circle at 92% 8%, rgba(99, 230, 255, .08), transparent 30%),
+    var(--neon-bg);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .3), inset 0 1px rgba(255, 255, 255, .025);
 }
 
 .creative-ai-script-host > .creative-suite-switcher {
@@ -39,6 +51,8 @@
 .creative-ai-script-stage > .neon-app {
   height: 100%;
   min-height: 0;
+  color: var(--neon-text);
+  background: var(--neon-bg);
   grid-template-rows: 40px minmax(0, 1fr);
 }
 
@@ -64,9 +78,10 @@
 .creative-ai-script-loading i {
   width: 34px;
   height: 34px;
-  border: 3px solid rgba(255, 157, 102, .18);
-  border-top-color: #ff9d66;
+  border: 3px solid rgba(99, 230, 255, .16);
+  border-top-color: var(--creative-cyan);
   border-radius: 50%;
+  box-shadow: 0 0 22px rgba(255, 98, 200, .18);
   animation: creative-spin .8s linear infinite;
 }
 
@@ -76,6 +91,205 @@
 
 .creative-ai-script-loading span {
   font-size: 10px;
+}
+
+/* Kịch bản AI shares the same visual language as every Creative OS workspace. */
+.creative-ai-script-stage .neon-app {
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+}
+
+.creative-ai-script-stage .neon-titlebar {
+  min-height: 40px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--creative-border);
+  color: var(--neon-text);
+  background:
+    linear-gradient(90deg, rgba(255, 98, 200, .08), rgba(99, 230, 255, .035) 58%, transparent),
+    #0a111a;
+}
+
+.creative-ai-script-stage .neon-title {
+  color: #f8fbff;
+  text-shadow: 0 0 18px rgba(255, 98, 200, .32);
+}
+
+.creative-ai-script-stage .neon-titlebar span {
+  color: var(--neon-muted);
+}
+
+.creative-ai-script-stage .neon-sidebar {
+  padding: 12px;
+  border-right: 1px solid var(--creative-border);
+  background:
+    radial-gradient(circle at 0 0, rgba(255, 98, 200, .07), transparent 30%),
+    #0b121b;
+  scrollbar-color: rgba(99, 230, 255, .38) transparent;
+}
+
+.creative-ai-script-stage .neon-main {
+  padding: 0 10px 12px 12px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(159, 140, 255, .055), transparent 31%),
+    #080d14;
+  scrollbar-color: rgba(99, 230, 255, .32) transparent;
+}
+
+.creative-ai-script-stage .neon-panel {
+  gap: 10px;
+  margin-bottom: 14px;
+  color: var(--neon-text);
+}
+
+.creative-ai-script-stage .neon-panel h2,
+.creative-ai-script-stage .neon-editors h3 {
+  color: #f2f7fb;
+  letter-spacing: 0;
+}
+
+.creative-ai-script-stage .neon-panel p,
+.creative-ai-script-stage .neon-panel label,
+.creative-ai-script-stage .neon-editors span {
+  color: var(--neon-muted);
+}
+
+.creative-ai-script-stage :is(.neon-panel input, .neon-panel select, .neon-panel textarea, .neon-chat-row input, .neon-chat-row select, .neon-inline-textarea) {
+  min-height: 36px;
+  border: 1px solid rgba(151, 176, 201, .24);
+  border-radius: 8px;
+  padding: 7px 9px;
+  color: var(--neon-text);
+  background: var(--neon-field);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .018);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.creative-ai-script-stage :is(.neon-panel input, .neon-panel select, .neon-panel textarea, .neon-chat-row input, .neon-chat-row select, .neon-inline-textarea):focus {
+  border-color: rgba(99, 230, 255, .68);
+  background: #0b1520;
+  box-shadow: 0 0 0 3px rgba(99, 230, 255, .08);
+}
+
+.creative-ai-script-stage .neon-tabs {
+  gap: 4px;
+  padding: 6px 4px 0;
+  border-bottom: 1px solid var(--creative-border);
+}
+
+.creative-ai-script-stage .neon-tabs .mini-tab {
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: 7px 7px 0 0;
+  padding: 0 12px;
+  color: #91a3b5;
+  background: transparent;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.creative-ai-script-stage .neon-tabs .mini-tab:hover {
+  color: #edf5fb;
+  background: rgba(255, 255, 255, .035);
+}
+
+.creative-ai-script-stage .neon-tabs .mini-tab.active {
+  border-color: rgba(255, 98, 200, .24);
+  border-bottom-color: var(--creative-pink);
+  color: #fff;
+  background: linear-gradient(180deg, rgba(255, 98, 200, .11), rgba(255, 98, 200, .025));
+  box-shadow: 0 7px 20px rgba(255, 98, 200, .07);
+}
+
+.creative-ai-script-stage .neon-workflows {
+  gap: 10px;
+  padding: 30px 4px 14px;
+}
+
+.creative-ai-script-stage .neon-workflow,
+.creative-ai-script-stage .neon-report {
+  border: 1px solid rgba(151, 176, 201, .2);
+  border-radius: 10px;
+  color: var(--neon-text);
+  background:
+    linear-gradient(145deg, rgba(255, 98, 200, .035), transparent 46%),
+    #0b121b;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .02);
+}
+
+.creative-ai-script-stage .neon-workflow h3 {
+  color: var(--creative-pink);
+}
+
+.creative-ai-script-stage .neon-btn {
+  min-height: 36px;
+  border: 1px solid rgba(99, 230, 255, .34);
+  border-radius: 8px;
+  color: #edf5fb;
+  background: linear-gradient(135deg, rgba(99, 230, 255, .1), rgba(159, 140, 255, .07));
+  box-shadow: none;
+  transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.creative-ai-script-stage .neon-btn:hover {
+  border-color: rgba(99, 230, 255, .7);
+  background: linear-gradient(135deg, rgba(99, 230, 255, .18), rgba(255, 98, 200, .09));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .18), 0 0 18px rgba(99, 230, 255, .08);
+  transform: translateY(-1px);
+}
+
+.creative-ai-script-stage .neon-btn:active {
+  transform: scale(.985);
+}
+
+.creative-ai-script-stage .neon-btn.magenta {
+  border-color: rgba(255, 98, 200, .55);
+  background: linear-gradient(135deg, rgba(255, 98, 200, .2), rgba(159, 140, 255, .12));
+}
+
+.creative-ai-script-stage .neon-btn.lime {
+  border-color: rgba(199, 243, 107, .5);
+  background: rgba(199, 243, 107, .09);
+}
+
+.creative-ai-script-stage .neon-btn.cyan {
+  border-color: rgba(99, 230, 255, .5);
+  background: rgba(99, 230, 255, .09);
+}
+
+.creative-ai-script-stage .neon-editors {
+  gap: 10px;
+}
+
+.creative-ai-script-stage .neon-editors section {
+  overflow: hidden;
+  border: 1px solid rgba(151, 176, 201, .18);
+  border-radius: 10px;
+  background: #0b121b;
+}
+
+.creative-ai-script-stage .neon-editors header {
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(151, 176, 201, .14);
+}
+
+.creative-ai-script-stage .neon-editors textarea {
+  min-height: 420px;
+  border: 0;
+  padding: 12px;
+  color: #e7f1f8;
+  background: #070d14;
+  scrollbar-color: rgba(99, 230, 255, .32) transparent;
+}
+
+.creative-ai-script-stage :is(.neon-btn, .mini-tab, input, select, textarea):focus-visible {
+  outline: 2px solid rgba(99, 230, 255, .78);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .creative-ai-script-stage .neon-btn,
+  .creative-ai-script-stage .neon-tabs .mini-tab {
+    transition: none;
+  }
 }
 
 .creative-hub,
