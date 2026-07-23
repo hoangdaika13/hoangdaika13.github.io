@@ -103,6 +103,7 @@ test("zoom resilience keeps hidden panels hidden and switches layout early", () 
   assert.match(css, /auth-gate-card[\s\S]{0,220}max-height:\s*none/);
   assert.match(css, /auth-gate-card[\s\S]{0,260}overflow-y:\s*visible/);
   assert.match(source, /visualViewport/);
+  assert.match(source, /authViewportMode/);
   assert.match(source, /scrollIntoView/);
   assert.match(source, /resetRestoredScroll/);
   assert.match(source, /scrollTop\s*=\s*0/);

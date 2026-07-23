@@ -10,7 +10,7 @@
     "auth-living-background.css?v=1", "auth-living-background.js?v=1",
     "auth-spatial-aurora.css?v=1", "auth-spatial-aurora.js?v=1",
     "auth-identity-constellation.css?v=1", "auth-identity-constellation.js?v=2",
-    "auth-creative-universe.css?v=4", "auth-creative-universe.js?v=4",
+    "auth-creative-universe.css?v=5", "auth-creative-universe.js?v=5",
     "auth-universe-memory.css?v=1", "auth-universe-memory.js?v=2",
     "auth-logo-motion.css?v=1", "auth-logo-motion.js?v=1",
     "auth-emotional-logo.css?v=1", "auth-emotional-logo.js?v=1",
@@ -26,13 +26,12 @@
   const groups = Object.freeze({
     "auth-effects": {
       /*
-       * HH Neon Gateway is loaded directly by index.html. The former effect
-       * bundle mounted multiple independent canvases, mutation observers and
-       * pointer runtimes over the same form. Keeping this group empty avoids
-       * duplicated motion while preserving the loader contract.
+       * Restore only the lightweight product-universe runtime. The rest of
+       * the former effect bundle remains disabled so independent canvases and
+       * observers cannot stack up again.
        */
       styles: [],
-      scripts: []
+      scripts: ["auth-creative-universe.js?v=5"]
     },
     home: {
       styles: [],
@@ -336,7 +335,10 @@
 
   function registerServiceWorkerWhenIdle() {
     if (!("serviceWorker" in navigator) || !/^https?:$/.test(global.location.protocol)) return;
-    const register = () => navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
+    const register = () => navigator.serviceWorker.register("./sw.js", {
+      scope: "./",
+      updateViaCache: "none"
+    }).then((registration) => registration.update()).catch(() => {});
     const schedule = () => {
       if ("requestIdleCallback" in global) global.requestIdleCallback(register, { timeout: 4000 });
       else global.setTimeout(register, 1800);

@@ -66,6 +66,8 @@ test("solar universe replaces the duplicate product tour and has mobile and acce
   assert.match(css, /grid-template-columns:\s*repeat\(4/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@media \(prefers-contrast: more\)/);
+  assert.match(client, /IntersectionObserver/);
+  assert.match(client, /setPause\("offscreen"/);
 });
 
 test("auth field validation does not recursively dispatch invalid events", () => {

@@ -357,6 +357,13 @@
     const handleVisibility = () => setPause("hidden", document.visibilityState !== "visible");
     const handleMotionPreference = () => setPause("reduced-motion", Boolean(reducedMotion?.matches));
     listen(document, "visibilitychange", handleVisibility);
+    if ("IntersectionObserver" in window) {
+      const visibilityObserver = new IntersectionObserver(([entry]) => {
+        setPause("offscreen", !entry?.isIntersecting);
+      }, { threshold: 0.04 });
+      visibilityObserver.observe(root);
+      cleanupTasks.push(() => visibilityObserver.disconnect());
+    }
     if (reducedMotion?.addEventListener) listen(reducedMotion, "change", handleMotionPreference);
     else if (reducedMotion?.addListener) {
       reducedMotion.addListener(handleMotionPreference);

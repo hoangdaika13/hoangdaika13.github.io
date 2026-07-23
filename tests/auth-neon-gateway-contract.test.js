@@ -9,14 +9,15 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("HH Neon Gateway assets are wired into the application shell", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  assert.match(html, /auth-neon-gateway\.css\?v=4/);
+  assert.match(html, /auth-neon-gateway\.css\?v=5/);
   assert.match(html, /auth-neon-gateway\.js\?v=3/);
-  assert.match(worker, /auth-neon-gateway\.css\?v=4/);
+  assert.match(worker, /auth-neon-gateway\.css\?v=5/);
   assert.match(worker, /auth-neon-gateway\.js\?v=3/);
+  assert.match(html, /auth-creative-universe\.css\?v=5/);
+  assert.match(read("performance-loader.js"), /scripts:\s*\["auth-creative-universe\.js\?v=5"\]/);
   assert.match(html, /data-auth-motion-toggle/);
   assert.match(html, /class="auth-gateway-scene"/);
-  assert.match(html, /class="auth-solar-system"/);
-  assert.equal((html.match(/auth-planet-orbit--/g) || []).length, 4);
+  assert.doesNotMatch(html, /class="auth-solar-system"/);
 });
 
 test("login showcase exposes the four product workflows without Facebook auth", () => {
@@ -44,11 +45,11 @@ test("gateway supports state, performance fallback and reduced motion", () => {
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /data-motion-level="off"/);
   assert.match(css, /grid-template-columns:\s*repeat\(4/);
-  assert.match(css, /gateway-planet-orbit/);
   assert.match(css, /html\.hh-page-hidden/);
-  assert.doesNotMatch(css, /is-gateway-opening \.auth-solar-system[\s\S]{0,160}scale\((?:[2-9]|1\.[1-9])/);
   assert.match(css, /data-auth-state="success"[\s\S]{0,260}animation:\s*none/);
   assert.doesNotMatch(script, /classList\.add\("is-gateway-opening"\)/);
+  assert.match(css, /data-auth-viewport-mode="single"/);
+  assert.match(css, /display:\s*flex\s*!important/);
 });
 
 test("session startup always releases the login gate and home extras are deferred", () => {

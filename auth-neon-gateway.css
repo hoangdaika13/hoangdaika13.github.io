@@ -34,8 +34,9 @@ body.home-neon.auth-locked #authGate {
   --gateway-pointer-x: 50vw;
   --gateway-pointer-y: 46vh;
   isolation: isolate;
-  display: grid !important;
-  grid-template-columns: minmax(0, 58fr) minmax(430px, 42fr) !important;
+  display: flex !important;
+  flex-direction: column;
+  grid-template-columns: minmax(0, 1fr) !important;
   grid-auto-flow: row;
   align-items: start !important;
   gap: clamp(26px, 4vw, 68px) !important;
@@ -53,6 +54,71 @@ body.home-neon.auth-locked #authGate {
     linear-gradient(135deg, #090512 0%, #050713 48%, #04151c 100%) !important;
   scrollbar-width: thin;
   scrollbar-color: rgba(85, 230, 255, .35) transparent;
+}
+
+/*
+ * A single column is the safe first paint. The split gateway is enabled only
+ * when the viewport is genuinely wide enough, so zoom cannot push the login
+ * card outside the visible screen.
+ */
+@media (min-width: 1101px) {
+  body.home-neon.auth-locked #authGate {
+    display: grid !important;
+    grid-template-columns: minmax(0, 58fr) minmax(430px, 42fr) !important;
+  }
+}
+
+body.home-neon.auth-locked #authGate[data-auth-viewport-mode="single"] {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-content: start !important;
+  align-items: stretch !important;
+  gap: 18px !important;
+  padding: 16px !important;
+}
+
+body.home-neon.auth-locked #authGate[data-auth-viewport-mode="single"] .auth-gate-card {
+  flex: 0 0 auto !important;
+  order: 1;
+  align-self: center;
+  justify-self: center;
+  width: min(100%, 650px) !important;
+  max-height: none !important;
+}
+
+body.home-neon.auth-locked #authGate[data-auth-viewport-mode="single"] .auth-gate-brand {
+  flex: 0 0 auto !important;
+  order: 2;
+  align-self: center;
+  justify-self: center;
+  width: min(100%, 760px);
+}
+
+/*
+ * auth-experience.css defines its original grid inside the `pages` cascade
+ * layer. Important layered declarations outrank unlayered important rules, so
+ * mirror the viewport contract in that same layer to make the fix deterministic.
+ */
+@layer pages {
+  body.home-neon.auth-locked #authGate {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  @media (min-width: 1101px) {
+    body.home-neon.auth-locked #authGate {
+      display: grid !important;
+      grid-template-columns: minmax(0, 58fr) minmax(430px, 42fr) !important;
+    }
+  }
+
+  body.home-neon.auth-locked #authGate[data-auth-viewport-mode="single"] {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }
 
 /* Decorative runtimes are always a visual layer, never a grid item. */
@@ -223,143 +289,6 @@ body.home-neon.auth-locked #authGate .auth-gateway-scene {
   content: "";
   opacity: var(--gateway-spot-opacity, .8);
   transition: opacity .35s ease;
-}
-
-.auth-solar-system {
-  position: absolute;
-  top: -10%;
-  left: clamp(360px, 32vw, 610px);
-  display: grid;
-  width: clamp(240px, 28vw, 450px);
-  aspect-ratio: 1;
-  place-items: center;
-  contain: layout paint style;
-  opacity: .78;
-  transform: translate3d(calc(var(--gateway-parallax-x, 0px) * -.35), calc(var(--gateway-parallax-y, 0px) * -.35), 0);
-  transition: transform .5s ease;
-}
-
-.auth-solar-system::before,
-.auth-solar-system::after {
-  position: absolute;
-  border-radius: 50%;
-  content: "";
-  pointer-events: none;
-}
-
-.auth-solar-system::before {
-  inset: 5%;
-  background: radial-gradient(circle, rgba(255, 209, 102, .08), transparent 66%);
-  box-shadow: 0 0 72px rgba(139, 92, 246, .1);
-}
-
-.auth-solar-system::after {
-  inset: 45%;
-  background: #fff3b0;
-  box-shadow:
-    0 0 14px #fff,
-    0 0 34px rgba(255, 209, 102, .92),
-    0 0 72px rgba(255, 79, 216, .56);
-  animation: gateway-sun-breathe 4.8s ease-in-out infinite;
-}
-
-.auth-sun {
-  position: relative;
-  z-index: 5;
-  display: grid;
-  width: 20%;
-  aspect-ratio: 1;
-  place-items: center;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 30%, #fff, rgba(85, 230, 255, .75) 18%, rgba(139, 92, 246, .62) 49%, rgba(255, 79, 216, .22) 68%, transparent 72%);
-  box-shadow:
-    0 0 18px rgba(255, 255, 255, .56),
-    0 0 48px rgba(85, 230, 255, .42),
-    0 0 86px rgba(255, 79, 216, .25);
-  animation: gateway-sun-float 6s ease-in-out infinite;
-}
-
-.auth-sun img {
-  width: 74%;
-  height: 74%;
-  border-radius: 24%;
-  object-fit: cover;
-  filter: saturate(1.12) contrast(1.06);
-}
-
-.auth-planet-orbit {
-  --orbit-inset: 36%;
-  --orbit-time: 14s;
-  --planet-size: 8px;
-  position: absolute;
-  inset: var(--orbit-inset);
-  z-index: 3;
-  border: 1px solid rgba(125, 228, 255, .4);
-  border-radius: 50%;
-  box-shadow: inset 0 0 18px rgba(85, 230, 255, .035);
-  transform: translateZ(0);
-  animation: gateway-planet-orbit var(--orbit-time) linear infinite;
-  will-change: transform;
-}
-
-.auth-planet-orbit > :where(i, b) {
-  position: absolute;
-  top: 50%;
-  width: var(--planet-size);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  box-shadow: 0 0 10px currentColor, inset -2px -2px 3px rgba(0, 0, 0, .34);
-}
-
-.auth-planet-orbit > i {
-  left: 0;
-  color: var(--planet-a, var(--gateway-cyan));
-  background: radial-gradient(circle at 35% 28%, #fff, currentColor 35%, color-mix(in srgb, currentColor 55%, #111) 72%);
-  transform: translate(-50%, -50%);
-}
-
-.auth-planet-orbit > b {
-  right: 0;
-  color: var(--planet-b, var(--gateway-pink));
-  background: radial-gradient(circle at 35% 28%, #fff, currentColor 35%, color-mix(in srgb, currentColor 55%, #111) 72%);
-  transform: translate(50%, -50%);
-}
-
-.auth-planet-orbit--one {
-  --orbit-inset: 34%;
-  --orbit-time: 11s;
-  --planet-size: 7px;
-  --planet-a: #55e6ff;
-  --planet-b: #b8ff65;
-}
-
-.auth-planet-orbit--two {
-  --orbit-inset: 25%;
-  --orbit-time: 18s;
-  --planet-size: 9px;
-  --planet-a: #ff4fd8;
-  --planet-b: #ffd166;
-  animation-direction: reverse;
-}
-
-.auth-planet-orbit--three {
-  --orbit-inset: 15%;
-  --orbit-time: 28s;
-  --planet-size: 11px;
-  --planet-a: #8b5cf6;
-  --planet-b: #55e6ff;
-  border-style: dashed;
-}
-
-.auth-planet-orbit--four {
-  --orbit-inset: 4%;
-  --orbit-time: 42s;
-  --planet-size: 13px;
-  --planet-a: #ffd166;
-  --planet-b: #ff4fd8;
-  border-color: rgba(255, 79, 216, .2);
-  animation-direction: reverse;
 }
 
 .auth-gateway-stars {
@@ -682,11 +611,6 @@ body.home-neon.auth-locked #authGate .auth-gate-card[data-auth-state="success"] 
   animation: none !important;
 }
 
-body.home-neon.auth-locked #authGate.is-gateway-opening .auth-solar-system {
-  opacity: .78;
-  transform: none;
-}
-
 body.home-neon.auth-locked #authGate.is-gateway-opening .auth-gate-brand,
 body.home-neon.auth-locked #authGate.is-gateway-opening .auth-gate-card {
   opacity: 1;
@@ -922,19 +846,13 @@ body.home-neon.auth-locked #authGate[data-motion-level="soft"] .auth-gateway-sce
   opacity: .56;
 }
 
-body.home-neon.auth-locked #authGate[data-motion-level="soft"] :where(.auth-gateway-grid, .auth-planet-orbit, .auth-gateway-stars i) {
+body.home-neon.auth-locked #authGate[data-motion-level="soft"] :where(.auth-gateway-grid, .auth-gateway-stars i) {
   animation-duration: 30s !important;
-}
-
-body.home-neon.auth-locked #authGate[data-motion-level="soft"] .auth-solar-system {
-  opacity: .42;
 }
 
 html.hh-page-hidden body.home-neon.auth-locked #authGate :where(
   .auth-gateway-aurora,
   .auth-gateway-grid,
-  .auth-planet-orbit,
-  .auth-sun,
   .auth-gateway-stars i,
   .auth-gate-card,
   .auth-submit
@@ -942,7 +860,6 @@ html.hh-page-hidden body.home-neon.auth-locked #authGate :where(
   animation-play-state: paused !important;
 }
 
-html.hh-page-hidden body.home-neon.auth-locked #authGate .auth-solar-system::after,
 html.hh-page-hidden body.home-neon.auth-locked #authGate .auth-gate-card::before {
   animation-play-state: paused !important;
 }
@@ -1026,20 +943,6 @@ body.home-neon.auth-locked #authGate[data-motion-level="off"] *::after {
 
 @keyframes gateway-grid-drift {
   to { background-position: 48px 48px; }
-}
-
-@keyframes gateway-planet-orbit {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes gateway-sun-float {
-  0%, 100% { transform: translate3d(0, -2px, 0) scale(.98); }
-  50% { transform: translate3d(0, 3px, 0) scale(1.035); }
-}
-
-@keyframes gateway-sun-breathe {
-  0%, 100% { opacity: .58; transform: scale(.84); }
-  50% { opacity: .92; transform: scale(1.14); }
 }
 
 @keyframes gateway-star-drift {

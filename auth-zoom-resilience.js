@@ -59,6 +59,7 @@
       const viewport = getViewport();
       const signature = `${viewport.width}x${viewport.height}`;
       gate.dataset.authLayout = classify(viewport);
+      gate.dataset.authViewportMode = viewport.width <= 1100 ? "single" : "split";
       gate.style.setProperty("--auth-viewport-width", `${viewport.width}px`);
       gate.style.setProperty("--auth-viewport-height", `${viewport.height}px`);
 
@@ -97,6 +98,7 @@
       return {
         ...viewport,
         layout: gate.dataset.authLayout,
+        viewportMode: gate.dataset.authViewportMode,
         specialPanel: gate.dataset.authSpecialPanel === "true",
         scrollHeight: gate.scrollHeight,
         overflowX: gate.scrollWidth > gate.clientWidth + 1
