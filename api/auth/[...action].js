@@ -131,6 +131,49 @@ function providerPayload(req) {
   };
 }
 
+function startGoogleOAuth(req, res) {
+  const provider = "google";
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const frontend = frontendOrigin(req.query.returnTo);
+  if (!clientId || !clientSecret) {
+    return redirectError(res, frontend, "Đăng nhập Google chưa được cấu hình trên máy chủ.");
+  }
+
+  const redirectUri = callbackUrl(req, provider);
+  // OAuth state is bound to an HttpOnly nonce cookie. When a legacy callback
+  // points at another alias, start and finish the flow on that same origin.
+  try {
+    const callbackOrigin = new URL(redirectUri).origin;
+    const requestOrigin = appOrigin(req);
+    if (callbackOrigin !== requestOrigin) {
+      const bootstrap = new URL(`/api/auth/${provider}`, callbackOrigin);
+      bootstrap.searchParams.set("returnTo", frontend);
+      return res.redirect(bootstrap.toString());
+    }
+  } catch {
+    return redirectError(res, frontend, "Địa chỉ callback Google không hợp lệ.");
+  }
+
+  try {
+    const nonce = crypto.randomBytes(24).toString("base64url");
+    const state = signOAuthState(provider, frontend, nonce);
+    oauthCookie(res, provider, nonce);
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrl.search = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "openid email profile",
+      state,
+      prompt: "select_account"
+    });
+    return res.redirect(authUrl.toString());
+  } catch {
+    return redirectError(res, frontend, "Cấu hình bảo mật đăng nhập chưa hoàn tất.");
+  }
+}
+
 async function settleOptionalTasks(tasks, timeoutMs = 700) {
   let timeoutId;
   try {
@@ -409,6 +452,7 @@ async function passkeyLoginVerify(req, res, db, body) {
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Credentials", "true");
   const route = requestRoute(req);
+  const action = route.split("/").filter(Boolean);
 
   // These bootstrap checks are deliberately independent from MongoDB. They
   // keep the login form interactive during an Atlas or Vercel cold start.
@@ -419,6 +463,10 @@ module.exports = async function handler(req, res) {
   if (route === "me" && req.method === "GET" && !req.headers.authorization && !parseCookies(req).hh_session) {
     setCors(req, res);
     return res.status(200).json({ user: null, loginHistory: [] });
+  }
+  if (route === "google" && req.method === "GET") {
+    setCors(req, res);
+    return startGoogleOAuth(req, res);
   }
 
   return withApi(req, res, async ({ db, body }) => {
@@ -715,34 +763,6 @@ module.exports = async function handler(req, res) {
     }
 
     const provider = action[0];
-    if (provider === "google" && action.length === 1 && req.method === "GET") {
-      const clientId = process.env.GOOGLE_CLIENT_ID;
-      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-      const frontend = frontendOrigin(req.query.returnTo);
-      if (!clientId || !clientSecret) return redirectError(res, frontend, "Đăng nhập Google chưa được cấu hình trên máy chủ.");
-      const redirectUri = callbackUrl(req, provider);
-      // OAuth state is bound to an HttpOnly nonce cookie. When a legacy callback URL
-      // points at another Vercel alias, start the flow on that same origin so the
-      // browser returns the nonce cookie to the callback instead of rejecting every
-      // Google sign-in as an expired session.
-      try {
-        const callbackOrigin = new URL(redirectUri).origin;
-        const requestOrigin = appOrigin(req);
-        if (callbackOrigin !== requestOrigin) {
-          const bootstrap = new URL(`/api/auth/${provider}`, callbackOrigin);
-          bootstrap.searchParams.set("returnTo", frontend);
-          return res.redirect(bootstrap.toString());
-        }
-      } catch {
-        return redirectError(res, frontend, "Địa chỉ callback Google không hợp lệ.");
-      }
-      const nonce = crypto.randomBytes(24).toString("base64url");
-      const state = signOAuthState(provider, frontend, nonce);
-      oauthCookie(res, provider, nonce);
-      const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-      authUrl.search = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: "code", scope: "openid email profile", state, prompt: "select_account" });
-      return res.redirect(authUrl.toString());
-    }
     if (provider === "google" && action[1] === "callback" && req.method === "GET") return oauthCallback(req, res, db, provider, req.query.code, req.query.state);
     return res.status(405).json({ error: "Phương thức hoặc tuyến API không được hỗ trợ." });
   });

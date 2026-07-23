@@ -119,6 +119,64 @@ test("public provider and anonymous session checks work without opening MongoDB"
   }
 });
 
+test("Google OAuth starts without MongoDB and redirects with a state cookie", async () => {
+  const handler = require("../api/auth/[...action].js");
+  const previous = {
+    mongo: process.env.MONGODB_URI,
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callback: process.env.GOOGLE_CALLBACK_URL,
+    frontend: process.env.FRONTEND_URL,
+    jwt: process.env.JWT_SECRET
+  };
+  delete process.env.MONGODB_URI;
+  process.env.GOOGLE_CLIENT_ID = "test-client.apps.googleusercontent.com";
+  process.env.GOOGLE_CLIENT_SECRET = "test-secret";
+  process.env.GOOGLE_CALLBACK_URL = "https://nhhoang13all.xyz/api/auth/google/callback";
+  process.env.FRONTEND_URL = "https://nhhoang13all.xyz";
+  process.env.JWT_SECRET = "test-only-jwt-secret-with-more-than-thirty-two-characters";
+
+  const result = { statusCode: 0, location: "", headers: {} };
+  const req = {
+    method: "GET",
+    query: { action: ["google"], returnTo: "https://nhhoang13all.xyz" },
+    url: "/api/auth/google?returnTo=https%3A%2F%2Fnhhoang13all.xyz",
+    headers: {
+      host: "nhhoang13all.xyz",
+      origin: "https://nhhoang13all.xyz",
+      "x-forwarded-proto": "https"
+    }
+  };
+  const res = {
+    setHeader(name, value) { result.headers[name] = value; },
+    getHeader(name) { return result.headers[name]; },
+    status(code) { result.statusCode = code; return this; },
+    json(body) { result.body = body; return this; },
+    redirect(location) { result.statusCode = 302; result.location = location; return this; },
+    end() { return this; }
+  };
+
+  try {
+    await handler(req, res);
+    assert.equal(result.statusCode, 302);
+    assert.match(result.location, /^https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?/);
+    assert.match(result.location, /redirect_uri=https%3A%2F%2Fnhhoang13all\.xyz%2Fapi%2Fauth%2Fgoogle%2Fcallback/);
+    assert.match(String(result.headers["Set-Cookie"]), /hh_oauth_google=/);
+    assert.match(String(result.headers["Set-Cookie"]), /HttpOnly/);
+  } finally {
+    const restore = (name, value) => {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    };
+    restore("MONGODB_URI", previous.mongo);
+    restore("GOOGLE_CLIENT_ID", previous.clientId);
+    restore("GOOGLE_CLIENT_SECRET", previous.clientSecret);
+    restore("GOOGLE_CALLBACK_URL", previous.callback);
+    restore("FRONTEND_URL", previous.frontend);
+    restore("JWT_SECRET", previous.jwt);
+  }
+});
+
 test("Google OAuth bootstraps on the configured callback origin", () => {
   const api = read("api/auth/[...action].js");
   assert.match(api, /const callbackOrigin = new URL\(redirectUri\)\.origin/);
