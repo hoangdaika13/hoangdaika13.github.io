@@ -19,12 +19,49 @@ const MESSAGE_EDIT_MINUTES = Math.max(1, Math.min(1440, Number(process.env.MESSA
 const MESSAGE_RECALL_MINUTES = Math.max(1, Math.min(10080, Number(process.env.MESSAGE_RECALL_MINUTES || 60)));
 const MESSAGE_PAGE_SIZE = 40;
 const EPHEMERAL_SECONDS = new Set([0, 60, 300, 3600, 86400, 604800]);
+let communityIndexesPromise;
 const DEFAULT_CHAT_ROOMS = [
   { id: "general", name: "Chung", description: "Trò chuyện và cập nhật chung của cộng đồng." },
   { id: "creator", name: "Sáng tạo", description: "Chia sẻ ý tưởng, hình ảnh, video và quy trình sáng tạo." },
   { id: "projects", name: "Dự án", description: "Phối hợp dự án và theo dõi tiến độ." },
   { id: "support", name: "Hỗ trợ", description: "Hỏi đáp và nhận trợ giúp từ cộng đồng." }
 ];
+
+function ensureCommunityIndexes(db) {
+  if (!communityIndexesPromise) {
+    communityIndexesPromise = (async () => {
+      const posts = db.collection("communityPosts");
+      await Promise.all([
+        posts.createIndex({ createdAt: -1 }),
+        posts.createIndex({ userId: 1, deletedAt: 1, archived: 1, createdAt: -1 }),
+        posts.createIndex({ privacy: 1, scheduledAt: 1, createdAt: -1 }),
+        db.collection("communityStories").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+        db.collection("communityFollows").createIndex({ followerId: 1, targetId: 1 }, { unique: true }),
+        db.collection("communityFeedPreferences").createIndex({ userId: 1 }, { unique: true }),
+        db.collection("communityMedia").createIndex({ userId: 1, createdAt: -1 }),
+        db.collection("communityMedia").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+        db.collection("communityMessages").createIndex({ room: 1, createdAt: -1 }),
+        db.collection("communityMessages").createIndex({ room: 1, userId: 1, createdAt: -1 }),
+        db.collection("communityMessages").createIndex({ userId: 1, createdAt: -1 }),
+        db.collection("communityMessages").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+        db.collection("communityChatRooms").createIndex({ slug: 1 }, { unique: true }),
+        db.collection("communityMessageReads").createIndex({ userId: 1, room: 1 }, { unique: true }),
+        db.collection("communityChatPreferences").createIndex({ userId: 1, room: 1 }, { unique: true }),
+        db.collection("communityMessagePins").createIndex({ room: 1, messageId: 1 }, { unique: true }),
+        db.collection("communityMessagePins").createIndex({ room: 1, createdAt: -1 })
+      ]);
+      try {
+        await posts.createIndex({ content: "text", topic: "text", "author.name": "text" });
+      } catch {
+        // An existing compatible text index is sufficient.
+      }
+    })().catch((error) => {
+      communityIndexesPromise = null;
+      throw error;
+    });
+  }
+  return communityIndexesPromise;
+}
 
 function idOf(value) {
   try { return new ObjectId(String(value || "")); } catch { return null; }
@@ -362,25 +399,7 @@ module.exports = async function handler(req, res) {
     const messageReads = db.collection("communityMessageReads");
     const chatPreferences = db.collection("communityChatPreferences");
     const messagePins = db.collection("communityMessagePins");
-    await Promise.all([
-      posts.createIndex({ createdAt: -1 }),
-      posts.createIndex({ userId: 1, deletedAt: 1, archived: 1, createdAt: -1 }),
-      posts.createIndex({ privacy: 1, scheduledAt: 1, createdAt: -1 }),
-      stories.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-      follows.createIndex({ followerId: 1, targetId: 1 }, { unique: true }),
-      db.collection("communityFeedPreferences").createIndex({ userId: 1 }, { unique: true }),
-      mediaFiles.createIndex({ userId: 1, createdAt: -1 }),
-      mediaFiles.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-      messages.createIndex({ room: 1, createdAt: -1 }),
-      messages.createIndex({ room: 1, userId: 1, createdAt: -1 }),
-      messages.createIndex({ userId: 1, createdAt: -1 }),
-      messages.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-      chatRooms.createIndex({ slug: 1 }, { unique: true }),
-      messageReads.createIndex({ userId: 1, room: 1 }, { unique: true }),
-      chatPreferences.createIndex({ userId: 1, room: 1 }, { unique: true }),
-      messagePins.createIndex({ room: 1, messageId: 1 }, { unique: true }),
-      messagePins.createIndex({ room: 1, createdAt: -1 })
-    ]);
+    await ensureCommunityIndexes(db);
     const user = await currentUser(req);
     const viewerId = user ? String(user._id) : "";
 
@@ -587,7 +606,6 @@ module.exports = async function handler(req, res) {
         ]
       };
       if (query) filter.$text = { $search: query };
-      try { await posts.createIndex({ content: "text", topic: "text", "author.name": "text" }); } catch { /* Existing index is usable. */ }
       const [rawItems, activeStories, rawSuggestions, notifications, groups, communityEvents] = await Promise.all([
         posts.find(filter).sort({ pinned: -1, createdAt: -1 }).limit(feedMode === "latest" ? 40 : 120).toArray(),
         stories.find({ expiresAt: { $gt: new Date() }, deletedAt: { $exists: false } }).sort({ createdAt: -1 }).limit(80).toArray(),

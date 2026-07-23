@@ -27,6 +27,14 @@ test("Messenger client actions are implemented by the Community API", () => {
   assert.match(client, /scrollIntoView/);
 });
 
+test("Community indexes are initialized once per warm server process", () => {
+  const api = read("api/community.js");
+  assert.match(api, /let communityIndexesPromise/);
+  assert.match(api, /function ensureCommunityIndexes\(db\)/);
+  assert.match(api, /if \(!communityIndexesPromise\)/);
+  assert.match(api, /await ensureCommunityIndexes\(db\)/);
+});
+
 test("WebRTC client and signaling server share the call protocol", () => {
   const client = read("community-calls.js");
   const server = read("realtime-server/src/server.js");
