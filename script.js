@@ -5803,8 +5803,32 @@ function initAppShell() {
         }
         try { await window.HHCommunityAdmin.mount(host); }
         catch (error) {
-          host.innerHTML = '<section class="insights-error"><strong>Quyền truy cập bị từ chối</strong><p></p></section>';
+          const user = readCurrentAuthUser();
+          host.innerHTML = `
+            <section class="insights-error admin-access-recovery">
+              <strong>Quyền truy cập bị từ chối</strong>
+              <p></p>
+              <div class="admin-access-card">
+                <span>Tài khoản đang kiểm tra</span>
+                <b>${escapeHtml(user?.email || user?.name || "Chưa nhận diện")}</b>
+                <small>Admin Panel chỉ mở cho tài khoản đã xác minh email và nằm trong allowlist production.</small>
+              </div>
+              <nav>
+                <button class="button primary interactive" type="button" data-admin-access-retry>Kiểm tra lại quyền</button>
+                <button class="button interactive" type="button" data-auth-start>Đăng nhập lại</button>
+              </nav>
+            </section>`;
           host.querySelector("p").textContent = String(error.message || error);
+          host.querySelector("[data-admin-access-retry]")?.addEventListener("click", async () => {
+            host.innerHTML = '<div class="admin-panel-route" data-admin-application-host><section class="insights-loading"><i></i><strong>Đang kiểm tra lại quyền quản trị...</strong></section></div>';
+            try {
+              await window.HHCommunityAdmin.refreshAccess?.();
+              await window.HHCommunityAdmin.mount(host);
+            } catch (retryError) {
+              host.innerHTML = '<section class="insights-error"><strong>Quyền truy cập bị từ chối</strong><p></p><button class="button primary interactive" type="button" data-app-route="/home">Về trang chủ</button></section>';
+              host.querySelector("p").textContent = String(retryError.message || retryError);
+            }
+          }, { once: true });
         }
       };
       mountAdmin();

@@ -35,7 +35,12 @@
       cache: "no-store"
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Community Admin không phản hồi.");
+    if (!response.ok) {
+      const error = new Error(data.error || "Community Admin không phản hồi.");
+      error.status = response.status;
+      error.code = data.code || "";
+      throw error;
+    }
     return data;
   }
 
@@ -281,10 +286,10 @@
     if (view === "settings") return renderSettings();
   }
 
-  async function discoverAccess() {
+  async function discoverAccess({ force = false } = {}) {
     const token = window.HHAuthSession?.token?.() || "";
     if (!token || !API_BASE) { access = null; accessToken = token; return null; }
-    if (access && accessToken === token) return access;
+    if (!force && access && accessToken === token) return access;
     accessToken = token;
     try { const data = await api("me"); access = data.access?.admin ? data.access : null; }
     catch { access = null; }
@@ -307,7 +312,7 @@
 
   async function mount(panel) {
     panelRef = panel;
-    const currentAccess = await discoverAccess();
+    const currentAccess = await discoverAccess({ force: true });
     if (!currentAccess) throw new Error("Tài khoản không có quyền truy cập Community Admin.");
     activeView = "dashboard";
     await renderDashboard();
@@ -349,5 +354,10 @@
   window.addEventListener("hh:auth-ready", () => { access = null; ensureNav(); });
   ensureNav();
 
-  window.HHCommunityAdmin = Object.freeze({ mount, refresh: () => panelRef ? render(activeView) : Promise.resolve(), access: () => access });
+  window.HHCommunityAdmin = Object.freeze({
+    mount,
+    refresh: () => panelRef ? render(activeView) : Promise.resolve(),
+    refreshAccess: () => discoverAccess({ force: true }),
+    access: () => access
+  });
 })();

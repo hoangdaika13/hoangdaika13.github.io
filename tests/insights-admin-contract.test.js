@@ -41,6 +41,7 @@ test("Admin Panel is absent for members, route-guarded, and mounts the full RBAC
   assert.match(adminApi, /report:export/);
   assert.match(adminClient, /data-admin-activity-refresh/);
   assert.match(adminClient, /Behavior Center/);
+  assert.match(adminClient, /refreshAccess/);
   assert.match(adminApi, /view === "activity"/);
   assert.match(adminApi, /telemetryEvents/);
   assert.match(adminApi, /user:feature-access/);
