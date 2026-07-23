@@ -3,6 +3,12 @@
 
   const groups = Object.freeze({
     "auth-effects": {
+      styles: [
+        "auth-living-background.css?v=1", "auth-spatial-aurora.css?v=1", "auth-identity-constellation.css?v=1",
+        "auth-creative-universe.css?v=3", "auth-universe-memory.css?v=1", "auth-logo-motion.css?v=1",
+        "auth-emotional-logo.css?v=1", "auth-form-motion.css?v=4", "auth-quantum-flow.css?v=1",
+        "auth-transition-runtime.css?v=1", "auth-trust-director.css?v=1"
+      ],
       scripts: [
         "auth-living-background.js?v=1", "auth-identity-constellation.js?v=2", "auth-creative-universe.js?v=4",
         "auth-universe-memory.js?v=2", "auth-logo-motion.js?v=1", "auth-emotional-logo.js?v=1",
@@ -129,8 +135,12 @@
       scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-learning.js?v=16"]
     },
     analytics: {
-      styles: ["insights-pro.css?v=2", "community-admin.css?v=5"],
-      scripts: ["insights-pro.js?v=6", "community-admin.js?v=7"]
+      styles: ["insights-pro.css?v=2"],
+      scripts: ["insights-pro.js?v=6"]
+    },
+    admin: {
+      styles: ["community-admin.css?v=6"],
+      scripts: ["community-admin.js?v=8"]
     },
     support: {
       styles: ["support-platform.css?v=9"],
@@ -158,9 +168,11 @@
     if (value.startsWith("/learn")) return ["learning"];
     if (value.startsWith("/english")) return ["english"];
     if (value.startsWith("/support")) return ["support"];
-    if (value.startsWith("/communication")) return ["communication", "search", "platform"];
-    if (value.startsWith("/work")) return ["work", "platform"];
-    if (value.startsWith("/analytics")) return ["analytics", "platform"];
+    if (value === "/communication/google-youtube") return ["search"];
+    if (value.startsWith("/communication")) return ["communication"];
+    if (value.startsWith("/work")) return ["work"];
+    if (value === "/analytics/admin-panel") return ["admin"];
+    if (value.startsWith("/analytics")) return ["analytics"];
     if (value.startsWith("/create")) return ["creative", "platform"];
     if (value.startsWith("/system") || value === "/tools" || value === "/favorites" || value === "/recent") return ["platform"];
     return [];
@@ -244,10 +256,37 @@
     else global.setTimeout(start, 900);
   }
 
-  function loadAuthEffectsWhenIdle() {
-    const start = () => ensureGroup("auth-effects").catch(() => {});
-    if ("requestIdleCallback" in global) global.requestIdleCallback(start, { timeout: 1200 });
-    else global.setTimeout(start, 350);
+  function loadAuthEffectsWhenNeeded() {
+    let started = false;
+    const start = () => {
+      if (started || !document.body?.classList.contains("auth-locked")) return;
+      started = true;
+      ensureGroup("auth-effects").catch(() => {});
+    };
+    const returningUser = (() => {
+      try { return Boolean(global.localStorage?.getItem("hh-auth-user")); }
+      catch { return false; }
+    })();
+    global.addEventListener("hh:auth-change", (event) => {
+      if (!event.detail?.user) start();
+    }, { once: true });
+    const schedule = () => {
+      if ("requestIdleCallback" in global) global.requestIdleCallback(start, { timeout: returningUser ? 3500 : 700 });
+      else global.setTimeout(start, returningUser ? 2800 : 350);
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", schedule, { once: true });
+    else schedule();
+  }
+
+  function registerServiceWorkerWhenIdle() {
+    if (!("serviceWorker" in navigator) || !/^https?:$/.test(global.location.protocol)) return;
+    const register = () => navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
+    const schedule = () => {
+      if ("requestIdleCallback" in global) global.requestIdleCallback(register, { timeout: 4000 });
+      else global.setTimeout(register, 1800);
+    };
+    if (document.readyState === "complete") schedule();
+    else global.addEventListener("load", schedule, { once: true });
   }
 
   document.addEventListener("pointerdown", (event) => {
@@ -269,5 +308,6 @@
 
   global.HHAssetLoader = Object.freeze({ ensureForRoute, ensureGroup, isRouteReady, groupsForRoute, loadedGroups: () => [...loaded] });
   loadFontWhenIdle();
-  loadAuthEffectsWhenIdle();
+  loadAuthEffectsWhenNeeded();
+  registerServiceWorkerWhenIdle();
 })(window);

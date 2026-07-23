@@ -23,6 +23,33 @@ const USER_PROJECTION = Object.freeze({
 const ALLOWED_ROLES = new Set(["super_admin", "admin", "moderator", "support", "analyst"]);
 const ALLOWED_USER_STATUS = new Set(["active", "locked", "suspended", "banned"]);
 const CONTENT_COLLECTIONS = Object.freeze({ post: "communityPosts", story: "communityStories" });
+let adminIndexesPromise = null;
+
+function ensureAdminIndexes(db) {
+  if (!adminIndexesPromise) {
+    adminIndexesPromise = Promise.all([
+      db.collection("communityAdminAuditLogs").createIndex({ createdAt: -1 }),
+      db.collection("communityAdminAuditLogs").createIndex({ adminId: 1, createdAt: -1 }),
+      db.collection("communityFeatureFlags").createIndex({ key: 1 }, { unique: true }),
+      db.collection("communitySystemConfig").createIndex({ key: 1 }, { unique: true }),
+      db.collection("communityEmailTemplates").createIndex({ key: 1 }, { unique: true }),
+      db.collection("communityModerationKeywords").createIndex({ value: 1 }, { unique: true }),
+      db.collection("telemetryEvents").createIndex({ createdAt: -1 }),
+      db.collection("telemetryEvents").createIndex({ type: 1, createdAt: -1 }),
+      db.collection("telemetryEvents").createIndex({ userId: 1, createdAt: -1 }),
+      db.collection("telemetryEvents").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      db.collection("presence").createIndex({ userId: 1, lastSeenAt: -1 }),
+      db.collection("privacyConsentEvents").createIndex({ createdAt: -1 }),
+      db.collection("privacyConsentEvents").createIndex({ userId: 1, createdAt: -1 }),
+      db.collection("privacyConsentEvents").createIndex({ identityHash: 1, createdAt: -1 }),
+      db.collection("privacyConsentEvents").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+    ]).catch((error) => {
+      adminIndexesPromise = null;
+      throw error;
+    });
+  }
+  return adminIndexesPromise;
+}
 
 function idOf(value) {
   try { return new ObjectId(String(value || "")); } catch { return null; }
@@ -129,27 +156,15 @@ module.exports = async function handler(req, res) {
     const view = clean(req.query.view || "me", 40);
     const access = accessFor(admin);
 
-    await Promise.all([
-      db.collection("communityAdminAuditLogs").createIndex({ createdAt: -1 }),
-      db.collection("communityAdminAuditLogs").createIndex({ adminId: 1, createdAt: -1 }),
-      db.collection("communityFeatureFlags").createIndex({ key: 1 }, { unique: true }),
-      db.collection("communitySystemConfig").createIndex({ key: 1 }, { unique: true }),
-      db.collection("communityEmailTemplates").createIndex({ key: 1 }, { unique: true }),
-      db.collection("communityModerationKeywords").createIndex({ value: 1 }, { unique: true }),
-      db.collection("telemetryEvents").createIndex({ createdAt: -1 }),
-      db.collection("telemetryEvents").createIndex({ type: 1, createdAt: -1 }),
-      db.collection("telemetryEvents").createIndex({ userId: 1, createdAt: -1 }),
-      db.collection("telemetryEvents").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-      db.collection("presence").createIndex({ userId: 1, lastSeenAt: -1 }),
-      db.collection("privacyConsentEvents").createIndex({ createdAt: -1 }),
-      db.collection("privacyConsentEvents").createIndex({ userId: 1, createdAt: -1 }),
-      db.collection("privacyConsentEvents").createIndex({ identityHash: 1, createdAt: -1 }),
-      db.collection("privacyConsentEvents").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
-    ]);
-
     if (req.method === "GET" && view === "me") {
       return res.status(200).json({ ok: true, access, user: presentUser(admin), privacy: { privateMessagesVisibleToAdmin: false, passwordsVisibleToAdmin: false } });
     }
+
+    // Index creation is initialization work. Do not block every read-only
+    // admin screen on repeated createIndex round trips.
+    const indexesReady = ensureAdminIndexes(db);
+    if (req.method !== "GET") await indexesReady;
+    else indexesReady.catch((error) => console.error("Admin index initialization failed", error?.message || error));
 
     if (req.method === "GET" && view === "privacy") {
       requirePermission(admin, "privacy.view");
@@ -232,6 +247,7 @@ module.exports = async function handler(req, res) {
       const onlineRegistered = activeVisitors.filter((item) => item.kind === "registered").length;
       return res.status(200).json({
         ok: true,
+        access,
         metrics: { totalUsers, activeUsers, onlineVisitors: activeVisitors.length, onlineRegistered, newUsers, newPosts, newMessages, mediaUploads, pendingReports, lockedAccounts, groups, pages, events, marketplace, pendingJobs, failedJobs },
         system: { api: "operational", database: "operational", databaseLatencyMs, queue: failedJobs ? "degraded" : "operational", generatedAt: now },
         recentErrors,

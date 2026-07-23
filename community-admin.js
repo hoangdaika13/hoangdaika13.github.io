@@ -12,6 +12,7 @@
   let contentQuery = { type: "post", status: "active" };
   let auditEntries = [];
   let featureFlags = [];
+  const REQUEST_TIMEOUT_MS = 12000;
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const dateText = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("vi-VN"); };
@@ -28,12 +29,23 @@
     const token = window.HHAuthSession?.token?.() || "";
     if (!token) throw new Error("Bạn cần đăng nhập để mở Community Admin.");
     const query = new URLSearchParams({ view, ...(options.query || {}) });
-    const response = await fetch(`${API_BASE}/api/community-admin?${query}`, {
-      method: options.method || "GET",
-      headers: { Authorization: `Bearer ${token}`, ...(options.body ? { "Content-Type": "application/json" } : {}) },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-      cache: "no-store"
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let response;
+    try {
+      response = await fetch(`${API_BASE}/api/community-admin?${query}`, {
+        method: options.method || "GET",
+        headers: { Authorization: `Bearer ${token}`, ...(options.body ? { "Content-Type": "application/json" } : {}) },
+        body: options.body ? JSON.stringify(options.body) : undefined,
+        cache: "no-store",
+        signal: controller.signal
+      });
+    } catch (error) {
+      if (error?.name === "AbortError") throw new Error("Máy chủ phản hồi quá chậm. Hãy bấm Thử lại sau vài giây.");
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       const error = new Error(data.error || "Community Admin không phản hồi.");
@@ -77,9 +89,10 @@
     return `<section class="hh-admin-loading"><i></i><strong>${esc(label)}</strong></section>`;
   }
 
-  async function renderDashboard() {
+  async function renderDashboard(initialData = null) {
     panelRef.innerHTML = shell(loading());
-    const data = await api("dashboard");
+    const data = initialData || await api("dashboard");
+    if (data.access?.admin) access = data.access;
     const labels = {
       totalUsers: ["Tổng người dùng", "◎", "cyan"], onlineVisitors: ["Online realtime", "●", "green"], onlineRegistered: ["Online đăng nhập", "◉", "cyan"], activeUsers: ["Đã đăng nhập 15 phút", "◌", "green"], newUsers: ["Người dùng mới", "+", "pink"],
       newPosts: ["Bài viết mới", "▤", "gold"], newMessages: ["Tin nhắn 24h", "◌", "cyan"], mediaUploads: ["Media upload", "▧", "pink"],
@@ -312,10 +325,12 @@
 
   async function mount(panel) {
     panelRef = panel;
-    const currentAccess = await discoverAccess({ force: true });
-    if (!currentAccess) throw new Error("Tài khoản không có quyền truy cập Community Admin.");
+    const data = await api("dashboard");
+    if (!data.access?.admin) throw new Error("Tài khoản không có quyền truy cập Community Admin.");
+    access = data.access;
+    accessToken = window.HHAuthSession?.token?.() || "";
     activeView = "dashboard";
-    await renderDashboard();
+    await renderDashboard(data);
   }
 
   document.addEventListener("click", async (event) => {

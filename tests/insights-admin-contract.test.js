@@ -54,8 +54,8 @@ test("Phân tích ships privacy-safe realtime intelligence and aggregate admin d
   const client = read("insights-pro.js");
   const css = read("insights-pro.css");
 
-  assert.match(html, /insights-pro\.css\?v=1/);
-  assert.match(html, /insights-pro\.js\?v=4/);
+  assert.match(html, /insights-pro\.css\?v=2/);
+  assert.match(html, /insights-pro\.js\?v=6/);
   assert.match(client, /PerformanceObserver/);
   assert.match(client, /data-insights-range/);
   assert.match(client, /data-insights-health/);

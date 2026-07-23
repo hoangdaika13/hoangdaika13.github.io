@@ -8,6 +8,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("Game Center, ASTRA expansion and Arcade assets load offline", () => {
   const html = read("index.html");
+  const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const assets = [
     "game-center.css?v=3",
@@ -18,7 +19,7 @@ test("Game Center, ASTRA expansion and Arcade assets load offline", () => {
     "game-arcade.js?v=3"
   ];
   assets.forEach((asset) => {
-    assert.ok(html.includes(asset), `${asset} must be loaded by index.html`);
+    assert.ok((html + loader).includes(asset), `${asset} must be declared by the route loader`);
     assert.ok(worker.includes(`./${asset}`), `${asset} must be cached by sw.js`);
   });
 });
