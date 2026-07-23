@@ -4,6 +4,7 @@ const {
   bcrypt,
   clean,
   enforceRateLimit,
+  setCors,
   signOAuthState,
   verifyOAuthState,
   withApi
@@ -109,6 +110,37 @@ function safeState(req, provider, state) {
 
 function callbackUrl(req, provider) {
   return process.env[`${provider.toUpperCase()}_CALLBACK_URL`] || `${appOrigin(req)}/api/auth/${provider}/callback`;
+}
+
+function requestRoute(req) {
+  let action = Array.isArray(req.query.action) ? req.query.action : (typeof req.query.action === "string" ? [req.query.action] : []);
+  if (!action.length) action = String(req.url || "").split("?")[0].split("/").filter(Boolean).slice(2);
+  if (req.query.oauthCallback === "google") action = [req.query.oauthCallback, "callback"];
+  const rawRoute = action.join("/");
+  return ROUTE_ALIASES[rawRoute] || rawRoute;
+}
+
+function providerPayload(req) {
+  return {
+    google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    passkey: (() => { try { webauthnServer(); return true; } catch { return false; } })(),
+    email: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
+    captcha: Boolean(process.env.TURNSTILE_SECRET_KEY && process.env.TURNSTILE_SITE_KEY),
+    turnstileSiteKey: process.env.TURNSTILE_SECRET_KEY ? clean(process.env.TURNSTILE_SITE_KEY, 200) : "",
+    callbacks: { google: callbackUrl(req, "google") }
+  };
+}
+
+async function settleOptionalTasks(tasks, timeoutMs = 700) {
+  let timeoutId;
+  try {
+    await Promise.race([
+      Promise.allSettled(tasks),
+      new Promise((resolve) => { timeoutId = setTimeout(resolve, timeoutMs); })
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function publicSession(row, currentHash = "") {
@@ -376,22 +408,21 @@ async function passkeyLoginVerify(req, res, db, body) {
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Credentials", "true");
+  const route = requestRoute(req);
+
+  // These bootstrap checks are deliberately independent from MongoDB. They
+  // keep the login form interactive during an Atlas or Vercel cold start.
+  if (route === "providers" && req.method === "GET") {
+    setCors(req, res);
+    return res.status(200).json(providerPayload(req));
+  }
+  if (route === "me" && req.method === "GET" && !req.headers.authorization && !parseCookies(req).hh_session) {
+    setCors(req, res);
+    return res.status(200).json({ user: null, loginHistory: [] });
+  }
+
   return withApi(req, res, async ({ db, body }) => {
     await ensureIndexes(db);
-    let action = Array.isArray(req.query.action) ? req.query.action : (typeof req.query.action === "string" ? [req.query.action] : []);
-    if (!action.length) action = String(req.url || "").split("?")[0].split("/").filter(Boolean).slice(2);
-    if (req.query.oauthCallback === "google") action = [req.query.oauthCallback, "callback"];
-    const rawRoute = action.join("/");
-    const route = ROUTE_ALIASES[rawRoute] || rawRoute;
-
-    if (route === "providers" && req.method === "GET") return res.status(200).json({
-      google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-      passkey: (() => { try { webauthnServer(); return true; } catch { return false; } })(),
-      email: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
-      captcha: Boolean(process.env.TURNSTILE_SECRET_KEY && process.env.TURNSTILE_SITE_KEY),
-      turnstileSiteKey: process.env.TURNSTILE_SECRET_KEY ? clean(process.env.TURNSTILE_SITE_KEY, 200) : "",
-      callbacks: { google: callbackUrl(req, "google") }
-    });
 
     if (route === "exchange" && req.method === "POST") {
       const exchangeCode = clean(body.code, 240);
@@ -495,8 +526,10 @@ module.exports = async function handler(req, res) {
       await db.collection("users").updateOne({ _id: user._id }, { $set: { lastLoginAt: now, lastSeenAt: now, loginFailures: 0, loginLockedUntil: null } });
       const session = await createSession(db, user, req, { type: "password", remember: Boolean(body.remember) });
       setSessionCookie(res, session.token, session.ttlSeconds);
-      await notifyNewDevice(db, user, req, session);
-      await recordLoginEvent(db, user, req, "login");
+      await settleOptionalTasks([
+        notifyNewDevice(db, user, req, session),
+        recordLoginEvent(db, user, req, "login")
+      ]);
       return res.status(200).json(authResponse(user, session));
     }
 

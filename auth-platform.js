@@ -423,19 +423,19 @@
       gate.classList.add("auth-success");
       setStatus(`${message} · Chuỗi hoạt động ${streak} ngày`, "success");
       writePublicProfile(user);
-      const transition = window.HHAuthTransitionRuntime;
-      if (transition?.available && typeof transition.play === "function") {
-        try { await transition.play({ user, message }); }
-        catch { await new Promise((resolve) => setTimeout(resolve, 520)); }
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 520));
-      }
       const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || "#/home";
       sessionStorage.removeItem("hh.auth.pending-route");
       finishSessionCheck();
       if (location.hash !== pendingRoute) history.replaceState({}, document.title, `${location.pathname}${location.search}${pendingRoute}`);
       setGateState();
       connectSocket();
+
+      // The workspace is already unlocked. The cinematic transition is visual
+      // polish only and must never hold the authenticated session hostage.
+      const transition = window.HHAuthTransitionRuntime;
+      if (transition?.available && typeof transition.play === "function") {
+        Promise.resolve(transition.play({ user, message })).catch(() => {});
+      }
     };
 
     const loadMe = async () => {
@@ -876,4 +876,30 @@
 
   window.HHAuthSession = Object.freeze({ token, setToken });
   window.HHAuthPlatform = Object.freeze({ init, token, setToken, publicKeyOptions, credentialJSON });
+
+  const start = () => {
+    if (initialized) return;
+    const fallbackRandomId = () => {
+      if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+      const bytes = new Uint32Array(4);
+      window.crypto?.getRandomValues?.(bytes);
+      return `auth-${Date.now()}-${Array.from(bytes).map((value) => value.toString(16)).join("")}`;
+    };
+    init({
+      realtimeUrl: String(window.HH_REALTIME_URL || ""),
+      socketUrl: String(window.HH_SOCKET_URL || window.HH_REALTIME_URL || ""),
+      randomId: fallbackRandomId
+    });
+    document.documentElement.dataset.authBootstrap = "ready";
+    window.dispatchEvent(new CustomEvent("hh:auth-bootstrap-ready"));
+  };
+
+  if (document.querySelector("#authGate")) {
+    start();
+  } else if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
+  window.HHAuthBootstrap = Object.freeze({ start, isStarted: () => initialized });
 })();

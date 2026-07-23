@@ -137,17 +137,22 @@ async function recordLoginEvent(db, user, req, type, extra = {}) {
 
 async function sendSecurityEmail({ to, subject, html, text }) {
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return { configured: false, provider: null };
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3500);
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html, text })
+      body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html, text }),
+      signal: controller.signal
     });
     if (!response.ok) return { configured: true, delivered: false, provider: "resend" };
     const result = await response.json();
     return { configured: true, delivered: true, provider: "resend", id: clean(result.id, 120) };
   } catch {
     return { configured: true, delivered: false, provider: "resend" };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
