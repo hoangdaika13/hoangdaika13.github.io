@@ -306,7 +306,12 @@
   const mountHub = () => {
     if (routeNow() !== "/create") return;
     const workspace = document.getElementById("appWorkspace");
-    if (!workspace || workspace.querySelector("[data-creative-hub]")) return;
+    if (!workspace) return;
+    if (window.HHCreativeOS?.mount) {
+      workspace.querySelector("[data-creative-hub]")?.remove();
+      return;
+    }
+    if (workspace.querySelector("[data-creative-hub]")) return;
     workspace.innerHTML = hubMarkup();
   };
 
@@ -1271,6 +1276,9 @@
   addEventListener("hashchange", () => setTimeout(enhanceAll));
   addEventListener("hh:workspace-open", () => setTimeout(enhanceAll));
   addEventListener("hh:modules-ready", () => setTimeout(enhanceAll));
+  addEventListener("hh:assets-ready", () => {
+    if (window.HHCreativeOS?.mount) document.querySelector("[data-creative-hub]")?.remove();
+  });
   addEventListener("DOMContentLoaded", enhanceAll);
   setTimeout(enhanceAll, 300);
 
@@ -1279,6 +1287,6 @@
     mountHub,
     mountScriptStudio,
     readState,
-    version: 4
+    version: 5
   };
 })();
