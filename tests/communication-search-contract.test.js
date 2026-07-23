@@ -39,11 +39,16 @@ test("Search API validates advanced filters on the server", () => {
 
 test("Google search falls back to the official free Search Element", () => {
   const source = read("search-watch-center.js");
+  const api = read("api/search/[provider].js");
   const config = read("config.js");
   assert.match(config, /HH_GOOGLE_CSE_ID\s*=\s*"67d13c3a6642e4d27"/);
   assert.match(source, /cse\.google\.com\/cse\.js/);
   assert.match(source, /searchresults-only/);
   assert.match(source, /API_ACCESS_DENIED/);
+  assert.match(source, /data\.fallback && data\.source === "programmable-search-element"/);
+  assert.match(api, /googleSearchElementFallback/);
+  assert.match(api, /error\?\.code === "API_ACCESS_DENIED"/);
+  assert.match(api, /source: "programmable-search-element"/);
   assert.match(source, /Google miễn phí đang hoạt động/);
   assert.doesNotMatch(source, /GOOGLE_SEARCH_API_KEY\s*=/);
 });
@@ -51,7 +56,7 @@ test("Google search falls back to the official free Search Element", () => {
 test("Versioned assets are available offline", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=2", "search-watch-center.css?v=5", "search-watch-center.js?v=7"]) {
+  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=2", "search-watch-center.css?v=5", "search-watch-center.js?v=8"]) {
     assert.match(index, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }

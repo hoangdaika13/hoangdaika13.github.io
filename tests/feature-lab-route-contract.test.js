@@ -22,7 +22,7 @@ test("Professional Toolkit uses dedicated dynamic routes and mounts the selected
 
 test("platform loader includes runtime, manifests, dedicated suites and nested tool routes", () => {
   const loader = read("performance-loader.js");
-  assert.match(read("index.html"), /performance-loader\.js\?v=14/);
+  assert.match(read("index.html"), /performance-loader\.js\?v=17/);
   for (const asset of [
     "tool-manifests.js?v=1",
     "tool-runtime.js?v=1",
@@ -40,7 +40,7 @@ test("toolkit source is UTF-8 and service worker publishes the new assets", () =
     assert.doesNotMatch(source, /Ã.|Â.|â€|Ä‘|Æ°|\uFFFD/, `${file} contains mojibake`);
   }
   const worker = read("sw.js");
-  assert.match(worker, /hh-identity-portal-v209/);
+  assert.match(worker, /hh-identity-portal-v219/);
   assert.match(worker, /platform-tools\.css\?v=1/);
   assert.match(worker, /tool-workspace-pro\.js\?v=1/);
   assert.match(worker, /utility-lab-tools\.js\?v=9/);

@@ -673,7 +673,9 @@
         return;
       }
       const data = await fetchSearch(provider, query);
-      if (provider === "google") renderGoogle(data);
+      if (provider === "google" && data.fallback && data.source === "programmable-search-element") {
+        await renderFreeGoogleSearch(query);
+      } else if (provider === "google") renderGoogle(data);
       else renderYouTube(data);
     } catch (error) {
       if (provider === "google" && canUseFreeGoogle(error)) await renderFreeGoogleSearch(query);

@@ -81,7 +81,7 @@ function configuredServices() {
 function serverProviderConfigured(provider) {
   if (provider === "youtube") return Boolean(String(process.env.YOUTUBE_API_KEY || "").trim());
   const vertex = vertexSearchConfig();
-  return vertex.configured || Boolean(String(process.env.GOOGLE_SEARCH_API_KEY || "").trim() && String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim());
+  return vertex.configured || Boolean(String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim());
 }
 
 function firstText(...values) {
@@ -183,13 +183,34 @@ function isoDuration(value) {
     .join(":");
 }
 
+function googleSearchElementFallback(req, query) {
+  const kind = req.query.kind === "images" ? "images" : "web";
+  const searchParams = new URLSearchParams({ q: query });
+  if (kind === "images") searchParams.set("tbm", "isch");
+  return {
+    provider: "google",
+    source: "programmable-search-element",
+    fallback: true,
+    query,
+    kind,
+    page: 1,
+    total: 0,
+    searchTime: 0,
+    hasPrevious: false,
+    hasNext: false,
+    items: [],
+    searchUrl: `https://www.google.com/search?${searchParams}`
+  };
+}
+
 async function googleSearch(req, query) {
   const vertex = vertexSearchConfig();
   if (vertex.configured) return vertexSearch(req, query, vertex);
 
   const key = String(process.env.GOOGLE_SEARCH_API_KEY || "").trim();
   const cx = String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim();
-  if (!key || !cx) return { notConfigured: true, required: ["GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID"] };
+  if (!cx) return { notConfigured: true, required: ["GOOGLE_SEARCH_ENGINE_ID"] };
+  if (!key) return googleSearchElementFallback(req, query);
 
   const page = Math.max(1, Math.min(10, Number(req.query.page || 1)));
   const kind = req.query.kind === "images" ? "images" : "web";
@@ -214,7 +235,13 @@ async function googleSearch(req, query) {
   if (fileType && kind === "web") params.set("fileType", fileType);
   if (site && kind === "web") params.set("siteSearch", site);
 
-  const data = await readJson(`${GOOGLE_ENDPOINT}?${params}`);
+  let data;
+  try {
+    data = await readJson(`${GOOGLE_ENDPOINT}?${params}`);
+  } catch (error) {
+    if (error?.code === "API_ACCESS_DENIED") return googleSearchElementFallback(req, query);
+    throw error;
+  }
   const items = (data.items || []).map((item) => {
     const isImage = kind === "images";
     return {
