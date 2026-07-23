@@ -9,7 +9,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("login repair stylesheet loads last and keeps the primary form compact", () => {
   const html = read("index.html");
   const css = read("auth-login-repair.css");
-  assert.match(html, /motion-comfort\.css[^>]+>\s*<link rel="stylesheet" href="auth-login-repair\.css\?v=2"/);
+  assert.match(html, /motion-comfort\.css[^>]+>\s*<link rel="stylesheet" href="auth-login-repair\.css\?v=3"/);
   assert.match(css, /data-auth-view="login"[^}]+#gateLoginForm/);
   assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/);
   assert.match(css, /\.hh-consent-banner\[data-privacy-banner\]/);

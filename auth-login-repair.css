@@ -55,7 +55,15 @@
   }
 
   .home-neon.auth-locked #authGate .auth-privacy-panel summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     min-height: 20px;
+  }
+
+  .home-neon.auth-locked #authGate .auth-privacy-panel summary small {
+    flex: 0 0 auto;
   }
 
   .home-neon.auth-locked #authGate .auth-guest-row > button {
