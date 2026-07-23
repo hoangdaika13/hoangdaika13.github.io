@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v210-neon-gateway";
+const CACHE = "hh-identity-portal-v215";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -37,7 +37,7 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=127",
+  "./script.js?v=130",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -107,7 +107,7 @@ const RUNTIME_ASSETS = [
   "./home-health-focus.js?v=2",
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=6",
-  "./auth-neon-gateway.css?v=1",
+  "./auth-neon-gateway.css?v=4",
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
   "./auth-identity-constellation.css?v=1",
@@ -125,9 +125,9 @@ const RUNTIME_ASSETS = [
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
   "./assets/hh-neon-logo-v2.png?v=3",
-  "./auth-platform.js?v=7",
+  "./auth-platform.js?v=10",
   "./auth-experience.js?v=8",
-  "./auth-neon-gateway.js?v=1",
+  "./auth-neon-gateway.js?v=3",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -281,6 +281,7 @@ const CORE = [
   "./app-shell.css?v=51",
   "./sidebar-navigation-pro.css?v=5",
   "./auth-experience.css?v=6",
+  "./auth-neon-gateway.css?v=4",
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
   "./privacy-consent-center.css?v=2",
@@ -289,9 +290,10 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=15",
-  "./auth-platform.js?v=7",
-  "./script.js?v=127"
+  "./performance-loader.js?v=16",
+  "./auth-platform.js?v=10",
+  "./auth-neon-gateway.js?v=3",
+  "./script.js?v=130"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

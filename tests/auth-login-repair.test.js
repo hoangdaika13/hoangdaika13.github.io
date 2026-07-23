@@ -31,13 +31,17 @@ test("auth requests time out cleanly instead of leaving the form busy forever", 
   const runtime = read("auth-platform.js");
   const html = read("index.html");
   const worker = read("sw.js");
-  assert.match(runtime, /AUTH_REQUEST_TIMEOUT\s*=\s*15000/);
+  assert.match(runtime, /AUTH_REQUEST_TIMEOUT\s*=\s*9000/);
+  assert.match(runtime, /Cổng đăng nhập đã sẵn sàng · đang khôi phục phiên nền/);
+  assert.match(runtime, /authEpoch\s*\+=\s*1/);
   assert.match(runtime, /new AbortController\(\)/);
   assert.match(runtime, /controller\.abort\("auth-timeout"\)/);
   assert.match(runtime, /Máy chủ phản hồi quá lâu/);
   assert.match(runtime, /finally\s*\{[\s\S]*?clearTimeout\(timeoutId\)/);
-  assert.match(html, /auth-platform\.js\?v=7/);
-  assert.match(worker, /auth-platform\.js\?v=7/);
+  assert.match(html, /auth-platform\.js\?v=10/);
+  assert.match(worker, /auth-platform\.js\?v=10/);
+  assert.match(runtime, /hh:logout-request/);
+  assert.match(runtime, /history\.replaceState\(\{\}, document\.title/);
 });
 
 test("Google OAuth bootstraps on the configured callback origin", () => {

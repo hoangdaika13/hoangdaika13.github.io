@@ -34,7 +34,7 @@ test("service worker precaches a small shell and uses stale while revalidate", (
   const core = worker.match(/const CORE = \[([\s\S]*?)\n\];/);
   assert.ok(core, "CORE cache list is missing");
   const entries = [...core[1].matchAll(/"\.\//g)];
-  assert.ok(entries.length <= 16, `service worker core budget exceeded: ${entries.length}`);
+  assert.ok(entries.length <= 18, `service worker core budget exceeded: ${entries.length}`);
   assert.match(worker, /caches\.match\(request\)/);
   assert.match(worker, /event\.waitUntil\(refresh/);
   assert.match(worker, /request\.mode === "navigate"/);

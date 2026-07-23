@@ -5073,6 +5073,18 @@ function initAppShell() {
   const userMenu = byId("appUserMenu");
   if (!shell || !workspace || !navigation || !platform) return;
 
+  /*
+   * The SPA shell replaces the former portfolio below the login gate. Keeping
+   * both complete applications in the live DOM made the first unlock perform
+   * layout/style work for thousands of hidden descendants at once. Preserve
+   * the reusable module platform, then release the obsolete landing nodes.
+   */
+  if (legacyMain) {
+    legacyMain.replaceChildren(platform);
+    legacyMain.hidden = true;
+  }
+  document.body.querySelectorAll(":scope > .site-header, :scope > section#music, :scope > .neon-footer").forEach((node) => node.remove());
+
   const stateKey = "hh.app-shell.v1";
   const mobileSidebarQuery = window.matchMedia("(max-width: 760px)");
   const localShellPreview = ["localhost", "127.0.0.1"].includes(location.hostname) && new URLSearchParams(location.search).has("shell-preview");
@@ -5365,15 +5377,28 @@ function initAppShell() {
     try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}").name || "Tài khoản"; } catch { return "Tài khoản"; }
   };
   const isUnlocked = () => localShellPreview || document.body.classList.contains("auth-unlocked");
+  let shellRevealFrame = 0;
   const setShellVisibility = () => {
     const unlocked = isUnlocked();
     if (localShellPreview) {
       document.body.classList.add("auth-unlocked");
       document.body.classList.remove("auth-locked");
     }
+    if (unlocked && legacyMain) legacyMain.hidden = true;
     shell.hidden = !unlocked;
     document.body.classList.toggle("app-shell-enabled", unlocked);
-    if (unlocked) renderRouteSafely();
+    if (!unlocked) {
+      cancelAnimationFrame(shellRevealFrame);
+      return;
+    }
+    if (renderedRoute) {
+      renderRouteSafely();
+      return;
+    }
+    cancelAnimationFrame(shellRevealFrame);
+    shellRevealFrame = requestAnimationFrame(() => {
+      shellRevealFrame = requestAnimationFrame(renderRouteSafely);
+    });
   };
   const setUser = () => {
     const name = userName();
@@ -5423,8 +5448,8 @@ function initAppShell() {
       const studioMenu = group.studioItems ? `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
       const fullSubmenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
       const submenuCount = (group.shortcuts?.length || 0) + (group.pages?.length || 0) + (group.studioItems?.length || 0) + moduleEntries.length;
-      const submenu = fullSubmenu;
-      const hasSubmenu = Boolean(submenu);
+      const submenu = expanded ? fullSubmenu : "";
+      const hasSubmenu = submenuCount > 0;
       const countBadge = hasSubmenu ? `<small class="app-sidebar__count" aria-label="${submenuCount} chức năng">${submenuCount}</small>` : "";
       return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}" data-nav-group="${group.id}" style="--nav-accent:${group.accent || "#56eaff"}">
         <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.landingRoute || group.route}" data-nav-label="${safeText(group.label)}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}${hasSubmenu ? " và hiển thị chức năng" : ""}"><span>${group.icon}</span><b>${group.label}</b>${countBadge}<i class="app-sidebar__chevron" ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
@@ -6194,7 +6219,7 @@ function initAppShell() {
     if (event.target.closest("[data-drawer-close]")) { closeOverlays(); return; }
     if (event.target.closest("[data-shell-logout]")) {
       closeOverlays({ restoreFocus: false });
-      byId("logoutButton")?.click();
+      window.dispatchEvent(new CustomEvent("hh:logout-request"));
       return;
     }
     const favorite = event.target.closest("[data-shell-favorite]");

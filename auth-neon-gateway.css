@@ -10,6 +10,19 @@ body.home-neon.auth-locked {
   background: #050713;
 }
 
+body.home-neon.auth-unlocked > :where(
+  main#top,
+  .scroll-meter,
+  .ambient-canvas,
+  .neon-grid-bg,
+  .cursor-glow,
+  .site-header,
+  section#music,
+  .neon-footer
+) {
+  display: none !important;
+}
+
 body.home-neon.auth-locked #authGate {
   --gateway-bg: #050713;
   --gateway-panel: rgba(12, 17, 32, .78);
@@ -158,8 +171,8 @@ body.home-neon.auth-locked #authGate .auth-gateway-scene {
   width: min(68vw, 980px);
   aspect-ratio: 1.4;
   border-radius: 50%;
-  filter: blur(38px);
-  opacity: .25;
+  filter: blur(28px);
+  opacity: .22;
   transform: translate3d(0, 0, 0);
   will-change: transform;
 }
@@ -212,51 +225,141 @@ body.home-neon.auth-locked #authGate .auth-gateway-scene {
   transition: opacity .35s ease;
 }
 
-.auth-gateway-portal {
+.auth-solar-system {
   position: absolute;
-  top: 16%;
-  left: clamp(40px, 19vw, 330px);
+  top: -10%;
+  left: clamp(360px, 32vw, 610px);
   display: grid;
-  width: clamp(210px, 24vw, 390px);
+  width: clamp(240px, 28vw, 450px);
   aspect-ratio: 1;
   place-items: center;
-  opacity: .22;
+  contain: layout paint style;
+  opacity: .78;
   transform: translate3d(calc(var(--gateway-parallax-x, 0px) * -.35), calc(var(--gateway-parallax-y, 0px) * -.35), 0);
   transition: transform .5s ease;
 }
 
-.auth-gateway-portal > :where(i, b) {
+.auth-solar-system::before,
+.auth-solar-system::after {
   position: absolute;
   border-radius: 50%;
+  content: "";
+  pointer-events: none;
 }
 
-.auth-gateway-portal > i {
-  inset: 4%;
-  border: 1px solid rgba(85, 230, 255, .58);
-  box-shadow: inset 0 0 30px rgba(85, 230, 255, .08), 0 0 22px rgba(85, 230, 255, .08);
-  animation: gateway-orbit 18s linear infinite;
+.auth-solar-system::before {
+  inset: 5%;
+  background: radial-gradient(circle, rgba(255, 209, 102, .08), transparent 66%);
+  box-shadow: 0 0 72px rgba(139, 92, 246, .1);
 }
 
-.auth-gateway-portal > i:nth-child(2) {
-  inset: 18%;
-  border-style: dashed;
-  border-color: rgba(255, 79, 216, .72);
-  animation-duration: 13s;
+.auth-solar-system::after {
+  inset: 45%;
+  background: #fff3b0;
+  box-shadow:
+    0 0 14px #fff,
+    0 0 34px rgba(255, 209, 102, .92),
+    0 0 72px rgba(255, 79, 216, .56);
+  animation: gateway-sun-breathe 4.8s ease-in-out infinite;
+}
+
+.auth-sun {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  width: 20%;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, #fff, rgba(85, 230, 255, .75) 18%, rgba(139, 92, 246, .62) 49%, rgba(255, 79, 216, .22) 68%, transparent 72%);
+  box-shadow:
+    0 0 18px rgba(255, 255, 255, .56),
+    0 0 48px rgba(85, 230, 255, .42),
+    0 0 86px rgba(255, 79, 216, .25);
+  animation: gateway-sun-float 6s ease-in-out infinite;
+}
+
+.auth-sun img {
+  width: 74%;
+  height: 74%;
+  border-radius: 24%;
+  object-fit: cover;
+  filter: saturate(1.12) contrast(1.06);
+}
+
+.auth-planet-orbit {
+  --orbit-inset: 36%;
+  --orbit-time: 14s;
+  --planet-size: 8px;
+  position: absolute;
+  inset: var(--orbit-inset);
+  z-index: 3;
+  border: 1px solid rgba(125, 228, 255, .4);
+  border-radius: 50%;
+  box-shadow: inset 0 0 18px rgba(85, 230, 255, .035);
+  transform: translateZ(0);
+  animation: gateway-planet-orbit var(--orbit-time) linear infinite;
+  will-change: transform;
+}
+
+.auth-planet-orbit > :where(i, b) {
+  position: absolute;
+  top: 50%;
+  width: var(--planet-size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor, inset -2px -2px 3px rgba(0, 0, 0, .34);
+}
+
+.auth-planet-orbit > i {
+  left: 0;
+  color: var(--planet-a, var(--gateway-cyan));
+  background: radial-gradient(circle at 35% 28%, #fff, currentColor 35%, color-mix(in srgb, currentColor 55%, #111) 72%);
+  transform: translate(-50%, -50%);
+}
+
+.auth-planet-orbit > b {
+  right: 0;
+  color: var(--planet-b, var(--gateway-pink));
+  background: radial-gradient(circle at 35% 28%, #fff, currentColor 35%, color-mix(in srgb, currentColor 55%, #111) 72%);
+  transform: translate(50%, -50%);
+}
+
+.auth-planet-orbit--one {
+  --orbit-inset: 34%;
+  --orbit-time: 11s;
+  --planet-size: 7px;
+  --planet-a: #55e6ff;
+  --planet-b: #b8ff65;
+}
+
+.auth-planet-orbit--two {
+  --orbit-inset: 25%;
+  --orbit-time: 18s;
+  --planet-size: 9px;
+  --planet-a: #ff4fd8;
+  --planet-b: #ffd166;
   animation-direction: reverse;
 }
 
-.auth-gateway-portal > i:nth-child(3) {
-  inset: 31%;
-  border-color: rgba(184, 255, 101, .65);
-  animation-duration: 9s;
+.auth-planet-orbit--three {
+  --orbit-inset: 15%;
+  --orbit-time: 28s;
+  --planet-size: 11px;
+  --planet-a: #8b5cf6;
+  --planet-b: #55e6ff;
+  border-style: dashed;
 }
 
-.auth-gateway-portal > b {
-  width: 34%;
-  aspect-ratio: 1;
-  background: radial-gradient(circle, rgba(255, 255, 255, .72), rgba(139, 92, 246, .28) 22%, transparent 70%);
-  filter: blur(8px);
-  animation: gateway-core-pulse 4.8s ease-in-out infinite;
+.auth-planet-orbit--four {
+  --orbit-inset: 4%;
+  --orbit-time: 42s;
+  --planet-size: 13px;
+  --planet-a: #ffd166;
+  --planet-b: #ff4fd8;
+  border-color: rgba(255, 79, 216, .2);
+  animation-direction: reverse;
 }
 
 .auth-gateway-stars {
@@ -575,21 +678,20 @@ body.home-neon.auth-locked #authGate .auth-gate-card[data-auth-state="error"] {
 
 body.home-neon.auth-locked #authGate .auth-gate-card[data-auth-state="success"] {
   border-color: rgba(184, 255, 101, .65) !important;
-  box-shadow: 0 34px 96px rgba(0, 0, 0, .52), 0 0 80px rgba(85, 230, 255, .2), 0 0 130px rgba(184, 255, 101, .12) !important;
-  animation: gateway-success-card .7s cubic-bezier(.16, 1, .3, 1) both !important;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, .48), 0 0 0 1px rgba(184, 255, 101, .24) !important;
+  animation: none !important;
 }
 
-body.home-neon.auth-locked #authGate.is-gateway-opening .auth-gateway-portal {
-  opacity: .82;
-  transform: scale(3.4);
-  transition: opacity .45s ease, transform .85s cubic-bezier(.16, 1, .3, 1);
+body.home-neon.auth-locked #authGate.is-gateway-opening .auth-solar-system {
+  opacity: .78;
+  transform: none;
 }
 
 body.home-neon.auth-locked #authGate.is-gateway-opening .auth-gate-brand,
 body.home-neon.auth-locked #authGate.is-gateway-opening .auth-gate-card {
-  opacity: 0;
-  transform: scale(.94);
-  transition: opacity .38s ease, transform .55s ease;
+  opacity: 1;
+  transform: none;
+  transition: none;
 }
 
 /* Consent stays out of the form's way on desktop. */
@@ -673,14 +775,65 @@ body.home-neon.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([h
 
 @media (max-width: 760px) {
   body.home-neon.auth-locked #authGate {
+    box-sizing: border-box;
     padding: 8px !important;
   }
 
   body.home-neon.auth-locked #authGate .auth-gate-card {
     display: grid !important;
+    box-sizing: border-box;
     width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     padding: 14px 12px 16px !important;
     border-radius: 18px !important;
+  }
+
+  body.home-neon.auth-locked #authGate :where(
+    .auth-card-heading,
+    .auth-gate-status,
+    .auth-mode-tabs,
+    .auth-provider,
+    .auth-gate-forms,
+    .auth-gate-forms form,
+    .auth-field,
+    .auth-input-shell,
+    .auth-form-options,
+    .auth-passkey-row,
+    .auth-guest-row,
+    .auth-privacy-panel
+  ) {
+    box-sizing: border-box;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  body.home-neon.auth-locked #authGate .auth-mode-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body.home-neon.auth-locked #authGate .auth-mode-tabs button,
+  body.home-neon.auth-locked #authGate .auth-provider,
+  body.home-neon.auth-locked #authGate .auth-input-shell,
+  body.home-neon.auth-locked #authGate .auth-submit,
+  body.home-neon.auth-locked #authGate .auth-guest-row > button {
+    box-sizing: border-box;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body.home-neon.auth-locked #authGate .auth-form-options {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  body.home-neon.auth-locked #authGate .auth-guest-row > button {
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+  }
+
+  body.home-neon.auth-locked #authGate .auth-guest-row > button > strong {
+    display: none;
   }
 
   body.home-neon.auth-locked #authGate .auth-gate-brand {
@@ -769,8 +922,29 @@ body.home-neon.auth-locked #authGate[data-motion-level="soft"] .auth-gateway-sce
   opacity: .56;
 }
 
-body.home-neon.auth-locked #authGate[data-motion-level="soft"] :where(.auth-gateway-grid, .auth-gateway-portal, .auth-gateway-stars i) {
+body.home-neon.auth-locked #authGate[data-motion-level="soft"] :where(.auth-gateway-grid, .auth-planet-orbit, .auth-gateway-stars i) {
   animation-duration: 30s !important;
+}
+
+body.home-neon.auth-locked #authGate[data-motion-level="soft"] .auth-solar-system {
+  opacity: .42;
+}
+
+html.hh-page-hidden body.home-neon.auth-locked #authGate :where(
+  .auth-gateway-aurora,
+  .auth-gateway-grid,
+  .auth-planet-orbit,
+  .auth-sun,
+  .auth-gateway-stars i,
+  .auth-gate-card,
+  .auth-submit
+) {
+  animation-play-state: paused !important;
+}
+
+html.hh-page-hidden body.home-neon.auth-locked #authGate .auth-solar-system::after,
+html.hh-page-hidden body.home-neon.auth-locked #authGate .auth-gate-card::before {
+  animation-play-state: paused !important;
 }
 
 body.home-neon.auth-locked #authGate[data-motion-level="off"] > :where(.hh-identity-constellation, .auth-living-background, .auth-spatial-aurora, .auth-gateway-scene, .auth-motion-field, .auth-spectrum) {
@@ -854,13 +1028,18 @@ body.home-neon.auth-locked #authGate[data-motion-level="off"] *::after {
   to { background-position: 48px 48px; }
 }
 
-@keyframes gateway-orbit {
+@keyframes gateway-planet-orbit {
   to { transform: rotate(360deg); }
 }
 
-@keyframes gateway-core-pulse {
-  0%, 100% { opacity: .45; transform: scale(.82); }
-  50% { opacity: .9; transform: scale(1.14); }
+@keyframes gateway-sun-float {
+  0%, 100% { transform: translate3d(0, -2px, 0) scale(.98); }
+  50% { transform: translate3d(0, 3px, 0) scale(1.035); }
+}
+
+@keyframes gateway-sun-breathe {
+  0%, 100% { opacity: .58; transform: scale(.84); }
+  50% { opacity: .92; transform: scale(1.14); }
 }
 
 @keyframes gateway-star-drift {

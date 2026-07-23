@@ -35,6 +35,10 @@
       scripts: []
     },
     home: {
+      styles: [],
+      scripts: []
+    },
+    "home-enhancements": {
       styles: [
         "dashboard-aurora.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
@@ -171,6 +175,7 @@
   const loaded = new Set();
   const pending = new Map();
   const assetPromises = new Map();
+  let homeEnhancementsScheduled = false;
 
   function normalizeRoute(route) {
     const value = String(route || global.location.hash.replace(/^#/, "") || "/home");
@@ -235,10 +240,16 @@
     if (pending.has(name)) return pending.get(name);
     const group = groups[name];
     if (!group) return Promise.resolve(name);
-    const promise = Promise.all([
-      Promise.all((group.styles || []).map(loadStyle)),
-      Promise.all((group.scripts || []).map(loadScript))
-    ]).then(() => {
+    const stylePromise = Promise.all((group.styles || []).map(loadStyle));
+    const scriptPromise = (group.scripts || []).reduce(
+      (chain, url) => chain
+        .then(() => loadScript(url))
+        .then(() => name === "home-enhancements"
+          ? new Promise((resolve) => global.setTimeout(resolve, 80))
+          : undefined),
+      Promise.resolve()
+    );
+    const promise = Promise.all([stylePromise, scriptPromise]).then(() => {
       loaded.add(name);
       pending.delete(name);
       global.dispatchEvent(new CustomEvent("hh:asset-group-ready", { detail: { group: name } }));
@@ -251,6 +262,26 @@
     return promise;
   }
 
+  function scheduleHomeEnhancements() {
+    if (homeEnhancementsScheduled || loaded.has("home-enhancements")) return;
+    homeEnhancementsScheduled = true;
+    const start = () => {
+      if (document.hidden) {
+        homeEnhancementsScheduled = false;
+        return;
+      }
+      ensureGroup("home-enhancements").catch(() => {
+        homeEnhancementsScheduled = false;
+      });
+    };
+    /*
+     * The static Command Center is complete and interactive without these
+     * telemetry widgets. Opt in only when a dashboard action explicitly asks
+     * for them; never start six observer/timer runtimes during login handoff.
+     */
+    global.addEventListener("hh:home-enhancements-request", start, { once: true });
+  }
+
   function ensureForRoute(route) {
     const value = normalizeRoute(route);
     const names = groupsForRoute(value);
@@ -259,6 +290,7 @@
     return Promise.all(names.map(ensureGroup)).then(() => {
       document.body?.classList.remove("hh-assets-loading");
       global.dispatchEvent(new CustomEvent("hh:assets-ready", { detail: { route: value, groups: names } }));
+      if (value === "/home") scheduleHomeEnhancements();
       return value;
     }).catch((error) => {
       document.body?.classList.remove("hh-assets-loading");

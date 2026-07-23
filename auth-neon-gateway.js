@@ -15,6 +15,7 @@
   };
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const finePointer = matchMedia("(pointer: fine) and (min-width: 921px)");
+  const modestDevice = Number(navigator.deviceMemory || 8) <= 4 || Number(navigator.hardwareConcurrency || 8) <= 4;
   let pointerFrame = 0;
   let lastPointer = null;
   let stateLock = "";
@@ -85,7 +86,13 @@
       || /đăng nhập thành công|xác thực thành công|chào mừng/i.test(statusText)
     ) {
       setState("success", true);
-      gate.classList.add("is-gateway-opening");
+      /*
+       * The application shell hides the gate as soon as authentication is
+       * accepted. Expanding a full-viewport blurred layer in that same frame
+       * used to stall Chromium on desktop GPUs. Keep the state signal, but let
+       * the shell perform the lightweight cross-fade.
+       */
+      gate.classList.remove("is-gateway-opening");
       return;
     }
     if (status?.classList.contains("is-error") || card.classList.contains("auth-error")) {
@@ -171,7 +178,8 @@
 
   gate.classList.add("hh-neon-gateway");
   normalizeDecorativeLayers();
-  setMotionLevel(safeRead(MOTION_KEY) || "high");
+  setMotionLevel(safeRead(MOTION_KEY) || (modestDevice ? "soft" : "high"));
+  if (modestDevice && !safeRead(MOTION_KEY)) gate.dataset.motionAdaptive = "device";
   setState(card.dataset.authState || "idle");
 
   motionButton?.addEventListener("click", nextMotionLevel);
@@ -206,6 +214,21 @@
 
   reducedMotion.addEventListener?.("change", () => setMotionLevel(safeRead(MOTION_KEY) || "high"));
   finePointer.addEventListener?.("change", resetPointer);
+  document.addEventListener("visibilitychange", () => {
+    document.documentElement.classList.toggle("hh-page-hidden", document.hidden);
+    if (document.hidden) {
+      cancelAnimationFrame(pointerFrame);
+      cancelAnimationFrame(fpsFrame);
+      pointerFrame = 0;
+      fpsFrame = 0;
+      return;
+    }
+    if (!fpsFrame && !reducedMotion.matches && gate.dataset.motionLevel === "high") {
+      fpsStartedAt = performance.now();
+      fpsSamples = 0;
+      fpsFrame = requestAnimationFrame(monitorFps);
+    }
+  });
 
   const stateObserver = new MutationObserver(deriveState);
   stateObserver.observe(card, {
@@ -241,7 +264,7 @@
   }, { once: true });
 
   window.HHNeonGateway = Object.freeze({
-    version: "1.0.0",
+    version: "3.0.0",
     setMotionLevel,
     state: () => card.dataset.authState,
     motion: () => gate.dataset.motionLevel

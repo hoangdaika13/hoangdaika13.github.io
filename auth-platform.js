@@ -4,7 +4,8 @@
   const GUEST_KEY = "hh.auth.guest";
   const LAST_PROFILE_KEY = "hh.auth.last-profile";
   const STREAK_KEY = "hh.auth.login-streak";
-  const AUTH_REQUEST_TIMEOUT = 15000;
+  const AUTH_REQUEST_TIMEOUT = 9000;
+  const SESSION_VISUAL_TIMEOUT = 4200;
   let memoryToken = "";
   let initialized = false;
   let qrPoll = 0;
@@ -155,11 +156,13 @@
 
     let user = null;
     let socket = null;
-    let oauthProviders = {};
+    let oauthProviders = realtimeUrl ? { google: true, email: true } : {};
     let signupStep = 1;
     let emailTimer = 0;
     let captchaToken = "";
     let captchaWidgetId = null;
+    let sessionWatchdog = 0;
+    let authEpoch = 0;
     const anonymousIdKey = "hh-anonymous-id";
     let anonymousId = localStorage.getItem(anonymousIdKey);
     if (!anonymousId) {
@@ -171,11 +174,26 @@
       if (statusText) statusText.textContent = message;
       statusNode?.classList.toggle("is-error", kind === "error");
       statusNode?.classList.toggle("is-success", kind === "success");
+      statusNode?.classList.toggle("is-loading", kind === "loading");
       gate.dataset.authStatus = kind;
       const authCard = gate.querySelector("[data-auth-card]");
       if (authCard) authCard.dataset.authState = kind;
       window.HHAuthExperience?.setStatus?.(message, kind);
     };
+
+    const finishSessionCheck = () => {
+      window.clearTimeout(sessionWatchdog);
+      gate.dataset.authSession = "ready";
+      gate.removeAttribute("aria-busy");
+    };
+
+    gate.dataset.authSession = "background";
+    gate.removeAttribute("aria-busy");
+    setStatus("Cổng đăng nhập đã sẵn sàng · đang khôi phục phiên nền.", "info");
+    sessionWatchdog = window.setTimeout(() => {
+      if (gate.dataset.authSession !== "background" || user) return;
+      setStatus("Sẵn sàng đăng nhập an toàn.", "info");
+    }, SESSION_VISUAL_TIMEOUT);
 
     const setOAuthError = (message) => {
       setStatus(message, "error");
@@ -412,38 +430,56 @@
       } else {
         await new Promise((resolve) => setTimeout(resolve, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 520));
       }
-      setGateState();
       const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || "#/home";
       sessionStorage.removeItem("hh.auth.pending-route");
-      location.hash = pendingRoute;
+      finishSessionCheck();
+      if (location.hash !== pendingRoute) history.replaceState({}, document.title, `${location.pathname}${location.search}${pendingRoute}`);
+      setGateState();
       connectSocket();
     };
 
     const loadMe = async () => {
-      if (sessionStorage.getItem(GUEST_KEY) === "1") {
-        user = readJSON(sessionStorage, "hh.auth.guest-user", { id: "guest", name: "Khách HH", email: "", roles: [], guest: true });
-        setStatus("Đang dùng chế độ khách · dữ liệu chỉ lưu trên thiết bị.", "success");
-        return setGateState();
-      }
-      if (!realtimeUrl) return setStatus("Bạn có thể dùng thử công cụ local với chế độ khách.");
+      const restoreEpoch = authEpoch;
       try {
-        const data = await api("/api/auth/me");
+        if (sessionStorage.getItem(GUEST_KEY) === "1") {
+          user = readJSON(sessionStorage, "hh.auth.guest-user", { id: "guest", name: "Khách HH", email: "", roles: [], guest: true });
+          setStatus("Đang dùng chế độ khách · dữ liệu chỉ lưu trên thiết bị.", "success");
+          return;
+        }
+        if (!realtimeUrl) {
+          setStatus("Bạn có thể dùng thử công cụ local với chế độ khách.");
+          return;
+        }
+        const data = await api("/api/auth/me", { timeout: 6500 });
+        if (restoreEpoch !== authEpoch) return;
         user = data.user || null;
         if (user) {
           writePublicProfile(user);
           setStatus(`Chào mừng ${user.name || user.email} quay lại.`, "success");
         } else setStatus("Sẵn sàng đăng nhập an toàn.");
       } catch (error) {
+        if (restoreEpoch !== authEpoch) return;
         setToken("");
         user = null;
         const localPreview = ["localhost", "127.0.0.1"].includes(location.hostname) && [0, 404].includes(Number(error.status || 0));
-        setStatus(localPreview ? "Bản xem trước local · đăng nhập máy chủ cần Vercel, chế độ khách vẫn hoạt động." : error.message, localPreview ? "info" : "error");
+        setStatus(
+          localPreview
+            ? "Bản xem trước local · đăng nhập máy chủ cần Vercel, chế độ khách vẫn hoạt động."
+            : "Không khôi phục được phiên cũ · bạn vẫn có thể đăng nhập ngay.",
+          "info"
+        );
+      } finally {
+        if (restoreEpoch === authEpoch) {
+          finishSessionCheck();
+          setGateState();
+        }
       }
-      setGateState();
     };
 
     const login = async (event) => {
       event.preventDefault();
+      authEpoch += 1;
+      finishSessionCheck();
       clearErrors(loginForm);
       const data = new FormData(loginForm);
       const email = String(data.get("email") || "").trim();
@@ -472,6 +508,8 @@
 
     const register = async (event) => {
       event.preventDefault();
+      authEpoch += 1;
+      finishSessionCheck();
       if (signupStep < 3) return setSignupStep(signupStep + 1);
       if (!validateStep(1) || !validateStep(2)) return;
       if (oauthProviders.email === false) {
@@ -742,31 +780,46 @@
       setStatus("Đăng nhập để tiếp tục dự án gần đây.");
     });
     gate.querySelector("[data-guest-login]")?.addEventListener("click", () => {
+      authEpoch += 1;
       const guestUser = { id: `guest-${anonymousId}`, name: "Khách HH", email: "", roles: [], guest: true, interests: [] };
       sessionStorage.setItem(GUEST_KEY, "1");
       sessionStorage.setItem("hh.auth.guest-user", JSON.stringify(guestUser));
       user = guestUser;
-      setStatus("Đã mở workspace local. Tính năng đồng bộ cần tài khoản.", "success");
+      setStatus("Đã mở workspace local. Tính năng đồng bộ cần tài khoản.", "info");
+      finishSessionCheck();
+      if (location.hash !== "#/home") history.replaceState({}, document.title, `${location.pathname}${location.search}#/home`);
       setGateState();
-      location.hash = "#/home";
     });
     gate.querySelectorAll("[data-oauth-provider]").forEach((button) => button.addEventListener("click", () => {
+      authEpoch += 1;
+      finishSessionCheck();
       if (!realtimeUrl || !oauthProviders.google) return setOAuthError("Google OAuth chưa được cấu hình trên máy chủ.");
       sessionStorage.setItem("hh-auth-return-to", location.hash || "#/home");
       location.assign(`${realtimeUrl}/api/auth/google?returnTo=${encodeURIComponent(location.origin)}`);
     }));
-    logoutButton?.addEventListener("click", async () => {
-      try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch {}
+    let logoutPending = false;
+    const handleLogout = () => {
+      if (logoutPending) return;
+      logoutPending = true;
+      const revoke = user?.guest
+        ? Promise.resolve()
+        : api("/api/auth/logout", { method: "POST", body: "{}", timeout: 4500 }).catch(() => {});
       setToken("");
       user = null;
       sessionStorage.removeItem(GUEST_KEY);
       sessionStorage.removeItem("hh.auth.guest-user");
       localStorage.removeItem("hh-auth-user");
       if (socket) socket.disconnect();
+      gate.classList.remove("auth-success", "is-auth-success", "is-gateway-opening");
+      setStatus("Đã đăng xuất an toàn.", "info");
       setGateState();
       showPanel("login");
-      location.hash = "";
-    });
+      history.replaceState({}, document.title, `${location.pathname}${location.search}`);
+      window.dispatchEvent(new CustomEvent("hh:auth-change", { detail: { user: null, token: "", guest: false } }));
+      Promise.resolve(revoke).finally(() => { logoutPending = false; });
+    };
+    logoutButton?.addEventListener("click", handleLogout);
+    window.addEventListener("hh:logout-request", handleLogout);
     consent?.addEventListener("change", () => localStorage.setItem("hh-tracking-consent", consent.checked ? "yes" : "no"));
 
     const params = new URLSearchParams(location.search);
@@ -781,7 +834,7 @@
     renderReturningUser();
     setSignupStep(1);
     setGateState();
-    Promise.resolve(realtimeUrl ? api("/api/auth/providers") : {}).then((providers) => {
+    Promise.resolve(realtimeUrl ? api("/api/auth/providers", { timeout: 6500 }) : {}).then((providers) => {
       oauthProviders = providers || {};
       const providerNotice = gate.querySelector("[data-register-provider-notice]");
       const registerSubmit = registerForm?.querySelector('button[type="submit"]');
@@ -802,14 +855,23 @@
         button.title = oauthProviders.google ? "Đăng nhập an toàn với Google" : "Google OAuth chưa được cấu hình";
       });
     }).catch(() => {
-      oauthProviders = {};
+      oauthProviders = realtimeUrl ? { google: true } : {};
       gate.dataset.authEmailDelivery = "unknown";
       gate.querySelectorAll("[data-oauth-provider]").forEach((button) => {
-        button.disabled = true;
-        button.title = "Không kết nối được Google OAuth";
+        button.disabled = !realtimeUrl;
+        button.title = realtimeUrl ? "Thử kết nối trực tiếp với Google" : "Backend đăng nhập chưa được cấu hình";
       });
     });
-    exchangeOAuthCode().then((exchanged) => exchanged ? true : loadMe().then(approveQrFromUrl).then(connectSocket));
+    Promise.resolve()
+      .then(exchangeOAuthCode)
+      .then((exchanged) => exchanged ? true : loadMe().then(approveQrFromUrl).then(connectSocket))
+      .catch((error) => {
+        finishSessionCheck();
+        setToken("");
+        user = null;
+        setStatus(error?.message || "Không thể khởi tạo phiên đăng nhập. Bạn vẫn có thể thử lại hoặc dùng chế độ khách.", "error");
+        setGateState();
+      });
   }
 
   window.HHAuthSession = Object.freeze({ token, setToken });
