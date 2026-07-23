@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v209";
+const CACHE = "hh-identity-portal-v210-neon-gateway";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -107,6 +107,7 @@ const RUNTIME_ASSETS = [
   "./home-health-focus.js?v=2",
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=6",
+  "./auth-neon-gateway.css?v=1",
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
   "./auth-identity-constellation.css?v=1",
@@ -126,6 +127,7 @@ const RUNTIME_ASSETS = [
   "./assets/hh-neon-logo-v2.png?v=3",
   "./auth-platform.js?v=7",
   "./auth-experience.js?v=8",
+  "./auth-neon-gateway.js?v=1",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -287,7 +289,7 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=14",
+  "./performance-loader.js?v=15",
   "./auth-platform.js?v=7",
   "./script.js?v=127"
 ];

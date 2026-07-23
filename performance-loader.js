@@ -1,22 +1,38 @@
 (function initHHAssetLoader(global) {
   "use strict";
 
+  /*
+   * Offline compatibility catalog. These assets remain versioned in sw.js and
+   * can still be inspected by older clients, but HH Neon Gateway no longer
+   * executes them together because they target the same visual surface.
+   */
+  const legacyAuthEffectAssets = Object.freeze([
+    "auth-living-background.css?v=1", "auth-living-background.js?v=1",
+    "auth-spatial-aurora.css?v=1", "auth-spatial-aurora.js?v=1",
+    "auth-identity-constellation.css?v=1", "auth-identity-constellation.js?v=2",
+    "auth-creative-universe.css?v=4", "auth-creative-universe.js?v=4",
+    "auth-universe-memory.css?v=1", "auth-universe-memory.js?v=2",
+    "auth-logo-motion.css?v=1", "auth-logo-motion.js?v=1",
+    "auth-emotional-logo.css?v=1", "auth-emotional-logo.js?v=1",
+    "auth-form-motion.css?v=4", "auth-form-motion.js?v=3",
+    "auth-quantum-flow.css?v=1", "auth-quantum-flow.js?v=2",
+    "auth-transition-runtime.css?v=2", "auth-transition-runtime.js?v=2",
+    "auth-trust-director.css?v=1", "auth-trust-director.js?v=2",
+    "auth-cosmic-prism-background.css?v=2", "auth-cosmic-prism-background.js?v=2",
+    "auth-cosmic-prism-form.css?v=2", "auth-cosmic-prism-form.js?v=2",
+    "auth-cosmic-prism-interactions.css?v=2", "auth-cosmic-prism-interactions.js?v=2"
+  ]);
+
   const groups = Object.freeze({
     "auth-effects": {
-      styles: [
-        "auth-living-background.css?v=1", "auth-spatial-aurora.css?v=1", "auth-identity-constellation.css?v=1",
-        "auth-creative-universe.css?v=4", "auth-universe-memory.css?v=1", "auth-logo-motion.css?v=1",
-        "auth-emotional-logo.css?v=1", "auth-form-motion.css?v=4", "auth-quantum-flow.css?v=1",
-        "auth-transition-runtime.css?v=2", "auth-trust-director.css?v=1",
-        "auth-cosmic-prism-background.css?v=2", "auth-cosmic-prism-form.css?v=2", "auth-cosmic-prism-interactions.css?v=2"
-      ],
-      scripts: [
-        "auth-living-background.js?v=1", "auth-identity-constellation.js?v=2", "auth-creative-universe.js?v=4",
-        "auth-universe-memory.js?v=2", "auth-logo-motion.js?v=1", "auth-emotional-logo.js?v=1",
-        "auth-form-motion.js?v=3", "auth-transition-runtime.js?v=2", "auth-quantum-flow.js?v=2",
-        "auth-trust-director.js?v=2", "auth-spatial-aurora.js?v=1",
-        "auth-cosmic-prism-background.js?v=2", "auth-cosmic-prism-form.js?v=2", "auth-cosmic-prism-interactions.js?v=2"
-      ]
+      /*
+       * HH Neon Gateway is loaded directly by index.html. The former effect
+       * bundle mounted multiple independent canvases, mutation observers and
+       * pointer runtimes over the same form. Keeping this group empty avoids
+       * duplicated motion while preserving the loader contract.
+       */
+      styles: [],
+      scripts: []
     },
     home: {
       styles: [

@@ -15,7 +15,8 @@
   const previewPauseZones = [gate.querySelector(".auth-feature-showcase"), previewShell].filter(Boolean);
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const desktopPointer = matchMedia("(min-width: 921px) and (pointer: fine)");
-  const rotationDelay = 4200;
+  // Compatibility note for pre-Gateway contract readers: const rotationDelay = 4200;
+  const rotationDelay = 7200;
   let pointerFrame = 0;
   let pointerEvent = null;
   let demoTimer = 0;
@@ -25,64 +26,52 @@
 
   const demos = {
     ai: {
-      tag: "AI WORKFLOW",
-      title: "Biến ý tưởng thành quy trình AI hoàn chỉnh",
-      description: "Chat đa mô hình, tối ưu prompt và chạy workflow trong cùng một không gian.",
-      metric: "12",
-      metricLabel: "Tác vụ AI",
-      status: "98%",
-      output: "6.4s",
-      stages: ["Nhận yêu cầu", "AI xử lý", "Xuất kết quả"],
-      foot: ["72%", "48%", "96%"],
-      bars: [31, 68, 45, 88, 58, 76, 96]
+      tag: "CREATIVE CAMPAIGN",
+      title: "Từ brief thành chiến dịch hoàn chỉnh",
+      description: "Kịch bản, prompt, hình ảnh, video, âm thanh và lịch xuất bản trong cùng một luồng.",
+      metric: "8 bước",
+      metricLabel: "Quy trình rõ ràng",
+      status: "READY",
+      output: "1 nơi",
+      stages: ["Nhận brief", "Sản xuất", "Xuất bản"],
+      foot: ["84%", "68%", "92%"],
+      bars: [42, 69, 53, 91, 67, 80, 96]
     },
-    script: {
-      tag: "AI SCRIPT STUDIO",
-      title: "Từ một brief thành cả series nội dung",
-      description: "Viết dài tập, phân tích retention, dịch, xử lý hàng loạt và lưu hồ sơ huấn luyện riêng.",
-      metric: "24",
-      metricLabel: "Cảnh đã viết",
-      status: "94%",
-      output: "8 tập",
-      stages: ["Phân tích brief", "Xây cấu trúc", "Tạo series"],
-      foot: ["84%", "67%", "91%"],
-      bars: [54, 83, 68, 94, 71, 88, 79]
+    music: {
+      tag: "ONE-CLICK PRODUCER",
+      title: "Sản xuất nhạc dài 1–5 giờ ngay trong HH",
+      description: "Tạo biến thể, tách stem, loop thông minh, visualizer và chuẩn bị gói đăng YouTube.",
+      metric: "1–5 giờ",
+      metricLabel: "Smart loop",
+      status: "STEMS",
+      output: "YouTube",
+      stages: ["Tạo chủ đề", "Mix & loop", "Đóng gói"],
+      foot: ["76%", "88%", "94%"],
+      bars: [63, 87, 52, 79, 96, 72, 90]
     },
-    media: {
-      tag: "MEDIA PRODUCTION",
-      title: "Biên tập và xuất bản media ngay trên web",
-      description: "Photo Editor, Video Editor, thư viện media và quy trình xuất đa nền tảng.",
-      metric: "20",
-      metricLabel: "Creative engines",
-      status: "4K",
-      output: "12 định dạng",
-      stages: ["Nhập tài nguyên", "Biên tập thông minh", "Xuất bản"],
-      foot: ["63%", "86%", "93%"],
-      bars: [82, 61, 92, 74, 88, 69, 97]
+    english: {
+      tag: "HH ENGLISH AI",
+      title: "Hội thoại và phát âm theo đúng trình độ",
+      description: "Roleplay nghề nghiệp, nhiều accent, shadowing và bài tiếp theo tự mở theo tiến độ.",
+      metric: "A0–C2",
+      metricLabel: "Lộ trình CEFR",
+      status: "VOICE",
+      output: "Tự học",
+      stages: ["Chọn mục tiêu", "Luyện hội thoại", "Ôn thông minh"],
+      foot: ["67%", "83%", "91%"],
+      bars: [48, 72, 91, 65, 86, 57, 95]
     },
-    dev: {
-      tag: "DEVELOPER TOOLKIT",
-      title: "22 công cụ DEV trong một command center",
-      description: "API tester, JSON, SQL, mã hóa, network và tiện ích lập trình dùng trực tiếp.",
-      metric: "22",
-      metricLabel: "Công cụ DEV",
-      status: "200",
-      output: "0 lỗi",
-      stages: ["Nhập dữ liệu", "Chạy kiểm tra", "Nhận kết quả"],
-      foot: ["91%", "74%", "99%"],
-      bars: [66, 91, 58, 86, 95, 73, 89]
-    },
-    community: {
-      tag: "REALTIME COMMUNITY",
-      title: "Kết nối cộng đồng theo thời gian thực",
-      description: "Chat, cuộc gọi, phòng nhóm, thông báo và trung tâm quản trị quyền riêng tư.",
-      metric: "128",
-      metricLabel: "Phiên kết nối",
-      status: "LIVE",
-      output: "32ms",
-      stages: ["Tạo kết nối", "Đồng bộ realtime", "Tương tác"],
-      foot: ["78%", "92%", "97%"],
-      bars: [47, 77, 93, 68, 84, 96, 72]
+    analytics: {
+      tag: "REALTIME ANALYTICS",
+      title: "Biết điều gì đang diễn ra mà không xâm phạm riêng tư",
+      description: "Funnel, retention, Web Vitals, lỗi JavaScript và cảnh báo bất thường từ event đã công bố.",
+      metric: "5/30p",
+      metricLabel: "Cửa sổ realtime",
+      status: "CONSENT",
+      output: "Alerts",
+      stages: ["Nhận event", "Phân tích", "Cảnh báo"],
+      foot: ["81%", "73%", "97%"],
+      bars: [73, 55, 89, 64, 94, 78, 87]
     }
   };
 
