@@ -1,0 +1,676 @@
+:root {
+  --hcp-cyan: #44e7f2;
+  --hcp-pink: #ff4fb8;
+  --hcp-yellow: #ffe66d;
+  --hcp-green: #72f6a7;
+  --hcp-coral: #ff766d;
+  --hcp-violet: #a989ff;
+  --hcp-ink: #070a12;
+}
+
+#authGate.hh-cosmic-prism {
+  --hcp-theme-a: var(--hcp-cyan);
+  --hcp-theme-b: var(--hcp-pink);
+  --hcp-theme-c: var(--hcp-yellow);
+  --hcp-theme-d: var(--hcp-green);
+  --hcp-pointer-x: 50%;
+  --hcp-pointer-y: 42%;
+  --hcp-card-rotate-x: 0deg;
+  --hcp-card-rotate-y: 0deg;
+  isolation: isolate;
+  overflow-x: clip;
+  background:
+    radial-gradient(circle at var(--hcp-pointer-x) var(--hcp-pointer-y), color-mix(in srgb, var(--hcp-theme-a) 17%, transparent) 0, transparent 29rem),
+    linear-gradient(145deg, #070a12 0%, #0c1020 52%, #090712 100%);
+}
+
+#authGate.hh-cosmic-prism[data-cp-theme="cyberpunk"] {
+  --hcp-theme-a: #44e7f2;
+  --hcp-theme-b: #ff4fb8;
+  --hcp-theme-c: #ffe66d;
+  --hcp-theme-d: #a989ff;
+}
+
+#authGate.hh-cosmic-prism[data-cp-theme="solar"] {
+  --hcp-theme-a: #ffe66d;
+  --hcp-theme-b: #ff766d;
+  --hcp-theme-c: #ff4fb8;
+  --hcp-theme-d: #72f6a7;
+}
+
+#authGate.hh-cosmic-prism[data-cp-theme="ocean"] {
+  --hcp-theme-a: #44e7f2;
+  --hcp-theme-b: #4895ff;
+  --hcp-theme-c: #72f6a7;
+  --hcp-theme-d: #a989ff;
+}
+
+#authGate.hh-cosmic-prism[data-cp-theme="rainbow"] {
+  --hcp-theme-a: #44e7f2;
+  --hcp-theme-b: #ff4fb8;
+  --hcp-theme-c: #ffe66d;
+  --hcp-theme-d: #72f6a7;
+}
+
+.hcp-cosmic-layer {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.hcp-cosmic-layer::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  background:
+    radial-gradient(ellipse at 18% 22%, color-mix(in srgb, var(--hcp-theme-b) 33%, transparent), transparent 31%),
+    radial-gradient(ellipse at 79% 17%, color-mix(in srgb, var(--hcp-theme-a) 26%, transparent), transparent 28%),
+    radial-gradient(ellipse at 72% 80%, color-mix(in srgb, var(--hcp-theme-d) 20%, transparent), transparent 27%),
+    conic-gradient(from 120deg at 50% 55%, transparent, color-mix(in srgb, var(--hcp-theme-c) 13%, transparent), transparent 35%, color-mix(in srgb, var(--hcp-theme-b) 12%, transparent), transparent 72%);
+  filter: blur(36px) saturate(135%);
+  transform: translate3d(-2%, -1%, 0) rotate(-3deg) scale(1.08);
+  animation: hcp-nebula-drift 34s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.hcp-cosmic-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: .22;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--hcp-theme-a) 13%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--hcp-theme-b) 10%, transparent) 1px, transparent 1px);
+  background-size: 58px 58px;
+  mask-image: radial-gradient(circle at 50% 42%, #000 10%, transparent 78%);
+}
+
+.hcp-star {
+  position: absolute;
+  left: var(--hcp-star-x);
+  top: var(--hcp-star-y);
+  width: var(--hcp-star-size);
+  height: var(--hcp-star-size);
+  border-radius: 50%;
+  opacity: var(--hcp-star-opacity);
+  background: var(--hcp-star-color);
+  box-shadow: 0 0 calc(var(--hcp-star-size) * 5) var(--hcp-star-color);
+  animation: hcp-star-pulse var(--hcp-star-speed) ease-in-out infinite alternate;
+}
+
+.hcp-meteor {
+  position: absolute;
+  top: var(--hcp-meteor-y);
+  left: -14rem;
+  width: 9rem;
+  height: 1px;
+  opacity: 0;
+  transform: rotate(-18deg);
+  background: linear-gradient(90deg, transparent, var(--hcp-theme-a), #fff);
+  filter: drop-shadow(0 0 7px var(--hcp-theme-a));
+  animation: hcp-meteor var(--hcp-meteor-speed) linear infinite var(--hcp-meteor-delay);
+}
+
+#authGate.hh-cosmic-prism .auth-gate-card {
+  transform: perspective(1100px) rotateX(var(--hcp-card-rotate-x)) rotateY(var(--hcp-card-rotate-y));
+  transform-style: preserve-3d;
+  border-color: color-mix(in srgb, var(--hcp-theme-a) 44%, rgba(255, 255, 255, .2));
+  background:
+    linear-gradient(145deg, rgba(20, 28, 44, .82), rgba(7, 10, 18, .73)),
+    radial-gradient(circle at var(--hcp-pointer-x) var(--hcp-pointer-y), color-mix(in srgb, var(--hcp-theme-b) 13%, transparent), transparent 45%);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, .46),
+    0 0 34px color-mix(in srgb, var(--hcp-theme-a) 10%, transparent),
+    inset 0 1px rgba(255, 255, 255, .13);
+  backdrop-filter: blur(26px) saturate(145%);
+  transition: transform 180ms ease, border-color 260ms ease, box-shadow 260ms ease;
+}
+
+#authGate.hh-cosmic-prism .auth-gate-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  opacity: .76;
+  background: conic-gradient(from var(--hcp-border-angle, 0deg), var(--hcp-theme-a), var(--hcp-theme-b), var(--hcp-theme-c), var(--hcp-theme-d), var(--hcp-theme-a));
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: hcp-border-orbit 13s linear infinite;
+  pointer-events: none;
+}
+
+#authGate.hh-cosmic-prism .auth-input-shell {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background-color 180ms ease;
+}
+
+#authGate.hh-cosmic-prism .auth-field:focus-within .auth-input-shell {
+  border-color: var(--hcp-theme-a);
+  background: color-mix(in srgb, var(--hcp-theme-a) 7%, rgba(7, 10, 18, .82));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hcp-theme-a) 13%, transparent), 0 0 22px color-mix(in srgb, var(--hcp-theme-a) 12%, transparent);
+  transform: translateY(-1px);
+}
+
+#authGate.hh-cosmic-prism .auth-submit {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(105deg, var(--hcp-theme-b), var(--hcp-theme-a) 46%, var(--hcp-theme-d));
+  color: #071018;
+  box-shadow: 0 11px 30px color-mix(in srgb, var(--hcp-theme-a) 22%, transparent);
+}
+
+#authGate.hh-cosmic-prism .auth-submit::after {
+  content: "";
+  position: absolute;
+  inset: -2px auto -2px -42%;
+  z-index: -1;
+  width: 36%;
+  transform: skewX(-22deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .8), transparent);
+  transition: left 520ms ease;
+}
+
+#authGate.hh-cosmic-prism .auth-submit:hover::after,
+#authGate.hh-cosmic-prism .auth-submit:focus-visible::after {
+  left: 112%;
+}
+
+.hcp-logo-host {
+  --hcp-logo-x: 0px;
+  --hcp-logo-y: 0px;
+  position: relative;
+  isolation: isolate;
+  transform: translate3d(var(--hcp-logo-x), var(--hcp-logo-y), 0);
+  transition: transform 180ms ease, filter 220ms ease;
+}
+
+.hcp-logo-host::before,
+.hcp-logo-host::after {
+  content: "";
+  position: absolute;
+  inset: -22%;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hcp-logo-host::before {
+  border: 1px solid color-mix(in srgb, var(--hcp-theme-a) 60%, transparent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--hcp-theme-a) 38%, transparent), inset 0 0 20px color-mix(in srgb, var(--hcp-theme-b) 18%, transparent);
+  animation: hcp-logo-breathe 3.8s ease-in-out infinite;
+}
+
+.hcp-logo-host::after {
+  opacity: 0;
+  background: conic-gradient(from 0deg, transparent, var(--hcp-theme-a), var(--hcp-theme-b), transparent 55%, var(--hcp-theme-c), transparent);
+  filter: blur(9px);
+  transition: opacity 180ms ease, transform 320ms ease;
+}
+
+.hcp-logo-host[data-cp-logo-state="focus"] {
+  filter: saturate(1.25) brightness(1.08);
+}
+
+.hcp-logo-host[data-cp-logo-state="caps-lock"]::before {
+  border-color: var(--hcp-yellow);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--hcp-yellow) 65%, transparent);
+  animation: hcp-caps-warning 850ms ease-in-out infinite alternate;
+}
+
+.hcp-logo-host[data-cp-logo-state="loading"]::after {
+  opacity: .9;
+  animation: hcp-logo-spin 1.1s linear infinite;
+}
+
+.hcp-logo-host[data-cp-logo-state="success"]::before {
+  border-color: var(--hcp-green);
+  box-shadow: 0 0 42px color-mix(in srgb, var(--hcp-green) 66%, transparent), 0 0 78px color-mix(in srgb, var(--hcp-cyan) 28%, transparent);
+  transform: scale(1.18);
+}
+
+.hcp-logo-host[data-cp-logo-state="success"]::after {
+  opacity: 1;
+  transform: scale(1.45) rotate(90deg);
+}
+
+.hcp-logo-host[data-cp-logo-state="error"] {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--hcp-coral) 70%, transparent));
+  animation: hcp-error-nudge 260ms ease-in-out 2;
+}
+
+#authGate.hh-cosmic-prism .auth-universe-core {
+  background:
+    radial-gradient(circle at 36% 31%, #fff 0 3%, var(--hcp-theme-a) 12%, var(--hcp-theme-b) 42%, #160c2c 74%);
+  box-shadow:
+    0 0 18px #fff,
+    0 0 52px color-mix(in srgb, var(--hcp-theme-a) 72%, transparent),
+    0 0 100px color-mix(in srgb, var(--hcp-theme-b) 38%, transparent);
+}
+
+#authGate.hh-cosmic-prism [data-universe-id] {
+  --hcp-planet-color: var(--hcp-cyan);
+  border-color: color-mix(in srgb, var(--hcp-planet-color) 64%, rgba(255, 255, 255, .2));
+  box-shadow: 0 0 20px color-mix(in srgb, var(--hcp-planet-color) 22%, transparent), inset 0 0 14px color-mix(in srgb, var(--hcp-planet-color) 12%, transparent);
+  transition: border-color 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+#authGate.hh-cosmic-prism [data-universe-id="create"],
+#authGate.hh-cosmic-prism [data-universe-id="community"] { --hcp-planet-color: var(--hcp-pink); }
+#authGate.hh-cosmic-prism [data-universe-id="music"],
+#authGate.hh-cosmic-prism [data-universe-id="work"] { --hcp-planet-color: var(--hcp-yellow); }
+#authGate.hh-cosmic-prism [data-universe-id="design"],
+#authGate.hh-cosmic-prism [data-universe-id="learning"] { --hcp-planet-color: var(--hcp-green); }
+#authGate.hh-cosmic-prism [data-universe-id="dev"],
+#authGate.hh-cosmic-prism [data-universe-id="analytics"] { --hcp-planet-color: var(--hcp-violet); }
+#authGate.hh-cosmic-prism [data-universe-id="entertainment"],
+#authGate.hh-cosmic-prism [data-universe-id="support"] { --hcp-planet-color: var(--hcp-coral); }
+
+#authGate.hh-cosmic-prism [data-universe-id]:hover,
+#authGate.hh-cosmic-prism [data-universe-id]:focus-visible,
+#authGate.hh-cosmic-prism [data-universe-id][aria-selected="true"] {
+  filter: brightness(1.25) saturate(1.22);
+  box-shadow: 0 0 14px var(--hcp-planet-color), 0 0 38px color-mix(in srgb, var(--hcp-planet-color) 45%, transparent), inset 0 0 18px color-mix(in srgb, var(--hcp-planet-color) 20%, transparent);
+}
+
+.hcp-connection-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+#authGate.hh-cosmic-prism.is-cp-authenticating .hcp-connection-layer {
+  opacity: 1;
+}
+
+.hcp-connection-layer line {
+  stroke: var(--hcp-line-color, var(--hcp-theme-a));
+  stroke-width: 1.25;
+  stroke-dasharray: 4 9;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 5px var(--hcp-line-color, var(--hcp-theme-a)));
+  animation: hcp-line-flow 650ms linear infinite;
+}
+
+.hcp-control-cluster {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid rgba(151, 188, 218, .18);
+  border-radius: 12px;
+  background: rgba(5, 10, 19, .58);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .05);
+}
+
+.hcp-control-row {
+  display: grid;
+  grid-template-columns: minmax(116px, .62fr) minmax(0, 1.38fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.hcp-control-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #dce8f4;
+  font: 700 11px/1.2 inherit;
+}
+
+.hcp-control-label i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hcp-theme-a);
+  box-shadow: 0 0 10px var(--hcp-theme-a);
+}
+
+.hcp-segmented {
+  display: grid;
+  grid-template-columns: repeat(var(--hcp-options, 3), minmax(0, 1fr));
+  gap: 4px;
+  min-width: 0;
+}
+
+.hcp-segmented button,
+.hcp-mute-toggle,
+.hcp-portal-skip {
+  min-height: 34px;
+  border: 1px solid rgba(151, 188, 218, .2);
+  border-radius: 8px;
+  background: rgba(16, 24, 38, .82);
+  color: #aebdca;
+  font: 700 10px/1.1 inherit;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.hcp-segmented button:hover,
+.hcp-segmented button:focus-visible,
+.hcp-mute-toggle:hover,
+.hcp-mute-toggle:focus-visible {
+  color: #fff;
+  border-color: var(--hcp-theme-a);
+  transform: translateY(-1px);
+}
+
+.hcp-segmented button[aria-pressed="true"] {
+  color: #071018;
+  border-color: transparent;
+  background: linear-gradient(105deg, var(--hcp-theme-a), var(--hcp-theme-d));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--hcp-theme-a) 28%, transparent);
+}
+
+.hcp-theme-options {
+  --hcp-options: 5;
+}
+
+.hcp-theme-options button {
+  position: relative;
+  min-width: 0;
+  padding: 0 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hcp-theme-options button::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: var(--hcp-swatch, var(--hcp-theme-a));
+  box-shadow: 0 0 7px var(--hcp-swatch, var(--hcp-theme-a));
+  vertical-align: 1px;
+}
+
+.hcp-utility-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hcp-network-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #90a3b5;
+  font-size: 10px;
+}
+
+.hcp-network-state i {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--hcp-green);
+  box-shadow: 0 0 9px var(--hcp-green);
+}
+
+#authGate.hh-cosmic-prism[data-cp-network="offline"] .hcp-network-state i {
+  background: var(--hcp-coral);
+  box-shadow: 0 0 9px var(--hcp-coral);
+}
+
+#authGate.hh-cosmic-prism[data-cp-network="degraded"] .hcp-network-state i {
+  background: var(--hcp-yellow);
+  box-shadow: 0 0 9px var(--hcp-yellow);
+}
+
+#authGate.hh-cosmic-prism[data-cp-network="offline"] .hcp-cosmic-layer,
+#authGate.hh-cosmic-prism[data-cp-network="degraded"] .hcp-cosmic-layer {
+  filter: saturate(.62) brightness(.7);
+}
+
+.hcp-mute-toggle {
+  min-width: 104px;
+  padding: 0 10px;
+}
+
+.hcp-portal-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--hcp-theme-a) 25%, transparent), transparent 24%),
+    rgba(4, 6, 13, .86);
+  backdrop-filter: blur(9px);
+  transition: opacity 150ms ease, visibility 150ms ease;
+}
+
+.hcp-portal-transition.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.hcp-portal-ring {
+  position: relative;
+  width: min(56vw, 420px);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--hcp-theme-a) 54%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 40px color-mix(in srgb, var(--hcp-theme-a) 42%, transparent), inset 0 0 62px color-mix(in srgb, var(--hcp-theme-b) 34%, transparent);
+  transform: scale(.28);
+  animation: hcp-portal-open var(--hcp-portal-duration, 980ms) cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+.hcp-portal-ring::before,
+.hcp-portal-ring::after {
+  content: "";
+  position: absolute;
+  inset: 9%;
+  border-radius: inherit;
+  border: 3px solid transparent;
+  border-top-color: var(--hcp-theme-a);
+  border-right-color: var(--hcp-theme-b);
+  animation: hcp-logo-spin 820ms linear infinite;
+}
+
+.hcp-portal-ring::after {
+  inset: 21%;
+  border-top-color: var(--hcp-theme-c);
+  border-right-color: var(--hcp-theme-d);
+  animation-direction: reverse;
+}
+
+.hcp-portal-core {
+  position: absolute;
+  inset: 34%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #071018;
+  font: 900 clamp(20px, 4vw, 42px)/1 inherit;
+  box-shadow: 0 0 40px #fff, 0 0 90px var(--hcp-theme-a), 0 0 140px var(--hcp-theme-b);
+}
+
+.hcp-portal-copy {
+  position: absolute;
+  top: calc(50% + min(31vw, 235px));
+  left: 50%;
+  width: min(86vw, 420px);
+  transform: translateX(-50%);
+  text-align: center;
+  color: #eaf7ff;
+}
+
+.hcp-portal-copy strong,
+.hcp-portal-copy span {
+  display: block;
+}
+
+.hcp-portal-copy strong {
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+
+.hcp-portal-copy span {
+  color: #9cb0c3;
+  font-size: 12px;
+}
+
+.hcp-portal-skip {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  min-width: 140px;
+  color: #fff;
+  border-color: color-mix(in srgb, var(--hcp-theme-a) 58%, transparent);
+}
+
+.hcp-live-region {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+#authGate.hh-cosmic-prism[data-cp-motion="static"] *,
+#authGate.hh-cosmic-prism.hcp-paused * {
+  animation-play-state: paused !important;
+}
+
+#authGate.hh-cosmic-prism[data-cp-motion="static"] .hcp-cosmic-layer::before,
+#authGate.hh-cosmic-prism[data-cp-motion="static"] .hcp-star,
+#authGate.hh-cosmic-prism[data-cp-motion="static"] .hcp-meteor {
+  animation: none !important;
+}
+
+#authGate.hh-cosmic-prism[data-cp-motion="static"] .auth-gate-card,
+#authGate.hh-cosmic-prism[data-cp-motion="balanced"] .auth-gate-card {
+  --hcp-card-rotate-x: 0deg !important;
+  --hcp-card-rotate-y: 0deg !important;
+}
+
+#authGate.hh-cosmic-prism[data-cp-motion="static"] .hcp-connection-layer line {
+  animation: none;
+}
+
+@property --hcp-border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes hcp-nebula-drift {
+  0% { transform: translate3d(-3%, -1%, 0) rotate(-4deg) scale(1.07); }
+  50% { transform: translate3d(3%, 2%, 0) rotate(2deg) scale(1.13); }
+  100% { transform: translate3d(-1%, 4%, 0) rotate(5deg) scale(1.09); }
+}
+
+@keyframes hcp-star-pulse {
+  from { opacity: calc(var(--hcp-star-opacity) * .45); transform: scale(.72); }
+  to { opacity: var(--hcp-star-opacity); transform: scale(1.28); }
+}
+
+@keyframes hcp-meteor {
+  0%, 80% { opacity: 0; transform: translate3d(0, 0, 0) rotate(-18deg); }
+  82% { opacity: .8; }
+  100% { opacity: 0; transform: translate3d(calc(100vw + 23rem), 31vh, 0) rotate(-18deg); }
+}
+
+@keyframes hcp-border-orbit { to { --hcp-border-angle: 360deg; } }
+@keyframes hcp-logo-spin { to { transform: rotate(360deg); } }
+@keyframes hcp-logo-breathe { 50% { transform: scale(1.08); opacity: .76; } }
+@keyframes hcp-caps-warning { to { transform: scale(1.12); opacity: .72; } }
+@keyframes hcp-line-flow { to { stroke-dashoffset: -13; } }
+@keyframes hcp-error-nudge {
+  33% { transform: translate3d(-2px, 0, 0); }
+  66% { transform: translate3d(2px, 0, 0); }
+}
+@keyframes hcp-portal-open {
+  0% { transform: scale(.25) rotate(-18deg); opacity: .2; }
+  58% { transform: scale(1.08) rotate(4deg); opacity: 1; }
+  100% { transform: scale(3.2) rotate(12deg); opacity: 0; }
+}
+
+@media (max-width: 760px) {
+  #authGate.hh-cosmic-prism {
+    overflow-x: hidden;
+  }
+
+  #authGate.hh-cosmic-prism .auth-gate-card {
+    transform: none;
+    backdrop-filter: blur(18px) saturate(132%);
+  }
+
+  .hcp-control-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hcp-theme-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hcp-theme-options button:nth-child(n + 4) {
+    display: none;
+  }
+
+  .hcp-cosmic-layer .hcp-star:nth-child(3n),
+  .hcp-meteor:nth-of-type(n + 2) {
+    display: none;
+  }
+
+  .hcp-portal-skip {
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #authGate.hh-cosmic-prism *,
+  .hcp-portal-transition * {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  #authGate.hh-cosmic-prism .auth-gate-card {
+    transform: none !important;
+  }
+
+  .hcp-meteor,
+  .hcp-connection-layer {
+    display: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  #authGate.hh-cosmic-prism .auth-gate-card,
+  .hcp-control-cluster,
+  .hcp-segmented button,
+  .hcp-mute-toggle {
+    border-color: #fff;
+  }
+
+  .hcp-control-label,
+  .hcp-network-state,
+  .hcp-segmented button {
+    color: #fff;
+  }
+}

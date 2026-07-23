@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v203";
+const CACHE = "hh-identity-portal-v204";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -115,6 +115,9 @@ const RUNTIME_ASSETS = [
   "./auth-quantum-flow.css?v=1",
   "./auth-transition-runtime.css?v=1",
   "./auth-trust-director.css?v=1",
+  "./auth-cosmic-prism-background.css?v=1",
+  "./auth-cosmic-prism-form.css?v=1",
+  "./auth-cosmic-prism-interactions.css?v=1",
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
   "./assets/hh-neon-logo-v2.png?v=3",
@@ -131,6 +134,9 @@ const RUNTIME_ASSETS = [
   "./auth-transition-runtime.js?v=2",
   "./auth-quantum-flow.js?v=2",
   "./auth-trust-director.js?v=2",
+  "./auth-cosmic-prism-background.js?v=1",
+  "./auth-cosmic-prism-form.js?v=1",
+  "./auth-cosmic-prism-interactions.js?v=1",
   "./auth-zoom-resilience.js?v=3",
   "./search-watch-center.css?v=5",
   "./search-watch-center.js?v=7",
@@ -273,7 +279,7 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=6",
+  "./performance-loader.js?v=7",
   "./auth-platform.js?v=6",
   "./script.js?v=127"
 ];

@@ -1,0 +1,726 @@
+@layer auth-cosmic-prism {
+  .hh-cosmic-prism-host {
+    position: relative;
+    isolation: isolate;
+    min-height: var(--hh-cosmic-prism-min-height, 420px);
+    overflow: hidden;
+  }
+
+  .hh-cosmic-prism-host > :not(.hh-cosmic-prism) {
+    position: relative;
+    z-index: 2;
+  }
+
+  #authGate .auth-creative-universe.hh-cosmic-prism-host > :not(.hh-cosmic-prism) {
+    display: none;
+  }
+
+  .hh-cosmic-prism {
+    --cp-cyan: #44e7f2;
+    --cp-pink: #ff4fb8;
+    --cp-yellow: #ffe66d;
+    --cp-green: #72f6a7;
+    --cp-coral: #ff766d;
+    --cp-violet: #a989ff;
+    --cp-ink: #070a12;
+    --cp-active: #ff4fb8;
+    --cp-mouse-x: 50%;
+    --cp-mouse-y: 50%;
+    --cp-tilt-x: 0deg;
+    --cp-tilt-y: 0deg;
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    min-width: 0;
+    min-height: 420px;
+    overflow: hidden;
+    border-radius: inherit;
+    background:
+      radial-gradient(circle at 50% 48%, rgba(255, 230, 109, .11), transparent 12%),
+      radial-gradient(circle at 18% 22%, rgba(68, 231, 242, .1), transparent 29%),
+      radial-gradient(circle at 83% 76%, rgba(255, 79, 184, .11), transparent 34%),
+      linear-gradient(145deg, #090c18, var(--cp-ink) 48%, #080716);
+    color: #f7f9ff;
+    contain: layout paint style;
+    isolation: isolate;
+    pointer-events: none;
+  }
+
+  .hh-cosmic-prism::before,
+  .hh-cosmic-prism::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+  }
+
+  .hh-cosmic-prism::before {
+    z-index: 1;
+    background:
+      linear-gradient(rgba(255, 255, 255, .025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, .025) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(circle at 50% 45%, #000, transparent 82%);
+    opacity: .6;
+  }
+
+  .hh-cosmic-prism::after {
+    z-index: 8;
+    border: 1px solid color-mix(in srgb, var(--cp-active) 30%, transparent);
+    border-radius: inherit;
+    box-shadow:
+      inset 0 0 55px rgba(68, 231, 242, .025),
+      inset 0 -25px 80px rgba(255, 79, 184, .03);
+    transition: border-color .35s ease;
+  }
+
+  .hh-cosmic-prism__canvas,
+  .hh-cosmic-prism__mouse-light,
+  .hh-cosmic-prism__nebula {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .hh-cosmic-prism__canvas {
+    z-index: 2;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hh-cosmic-prism__mouse-light {
+    z-index: 3;
+    inset: 0;
+    background: radial-gradient(circle 180px at var(--cp-mouse-x) var(--cp-mouse-y), color-mix(in srgb, var(--cp-active) 18%, transparent), transparent 72%);
+    mix-blend-mode: screen;
+    opacity: .78;
+    transition: opacity .25s ease;
+  }
+
+  .hh-cosmic-prism__nebula {
+    z-index: 1;
+    width: 55%;
+    height: 55%;
+    border-radius: 50%;
+    filter: blur(45px);
+    opacity: .72;
+    will-change: transform;
+  }
+
+  .hh-cosmic-prism__nebula--cyan {
+    top: -20%;
+    left: -16%;
+    background: conic-gradient(from 20deg, transparent, rgba(68, 231, 242, .25), transparent 37%, rgba(169, 137, 255, .18), transparent);
+    animation: hh-cosmic-nebula-cyan 34s ease-in-out infinite alternate;
+  }
+
+  .hh-cosmic-prism__nebula--pink {
+    right: -17%;
+    bottom: -22%;
+    background: conic-gradient(from 160deg, transparent, rgba(255, 79, 184, .25), transparent 40%, rgba(255, 118, 109, .15), transparent);
+    animation: hh-cosmic-nebula-pink 39s ease-in-out infinite alternate;
+  }
+
+  .hh-cosmic-prism__nebula--gold {
+    top: 27%;
+    left: 37%;
+    width: 31%;
+    height: 31%;
+    background: radial-gradient(circle, rgba(255, 230, 109, .2), rgba(114, 246, 167, .08) 42%, transparent 70%);
+    filter: blur(33px);
+    animation: hh-cosmic-nebula-gold 29s ease-in-out infinite alternate;
+  }
+
+  .hh-cosmic-prism__chrome {
+    position: absolute;
+    z-index: 5;
+    inset: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    gap: 8px;
+    min-width: 0;
+    min-height: 0;
+    padding: clamp(10px, 2vw, 18px);
+    transform: perspective(900px) rotateX(var(--cp-tilt-y)) rotateY(var(--cp-tilt-x));
+    transform-style: preserve-3d;
+    transition: transform .22s ease-out;
+    pointer-events: none;
+  }
+
+  .hh-cosmic-prism__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    color: rgba(226, 235, 250, .82);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .hh-cosmic-prism__heading span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .hh-cosmic-prism__heading i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--cp-green);
+    box-shadow: 0 0 14px var(--cp-green);
+  }
+
+  .hh-cosmic-prism__heading small {
+    overflow: hidden;
+    color: var(--cp-cyan);
+    font-size: 9px;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hh-cosmic-prism__system {
+    --cp-radius: clamp(100px, 20vmin, 172px);
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    min-height: 250px;
+  }
+
+  .hh-cosmic-prism__orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1px solid color-mix(in srgb, var(--cp-cyan) 20%, transparent);
+    border-radius: 50%;
+    box-shadow: inset 0 0 36px rgba(68, 231, 242, .025);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .hh-cosmic-prism__orbit::after {
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--cp-yellow);
+    box-shadow: 0 0 10px var(--cp-yellow);
+    content: "";
+  }
+
+  .hh-cosmic-prism__orbit--outer {
+    width: calc(var(--cp-radius) * 2);
+    height: calc(var(--cp-radius) * 2);
+  }
+
+  .hh-cosmic-prism__orbit--inner {
+    width: calc(var(--cp-radius) * 1.22);
+    height: calc(var(--cp-radius) * 1.22);
+    border-color: rgba(255, 79, 184, .12);
+    transform: translate(-50%, -50%) rotate(22deg);
+  }
+
+  .hh-cosmic-prism__sun {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    width: clamp(68px, 9vw, 92px);
+    aspect-ratio: 1;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, .78);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 33% 26%, #fff 0 4%, transparent 13%),
+      conic-gradient(from 20deg, var(--cp-cyan), var(--cp-green), var(--cp-yellow), var(--cp-coral), var(--cp-pink), var(--cp-violet), var(--cp-cyan));
+    color: #090714;
+    box-shadow:
+      0 0 0 9px rgba(255, 230, 109, .035),
+      0 0 30px rgba(255, 230, 109, .55),
+      0 0 72px rgba(255, 79, 184, .28),
+      0 0 110px rgba(68, 231, 242, .14);
+    cursor: pointer;
+    animation: hh-cosmic-sun-breathe 4.6s ease-in-out infinite;
+    pointer-events: auto;
+  }
+
+  .hh-cosmic-prism__sun::before,
+  .hh-cosmic-prism__sun::after {
+    position: absolute;
+    border-radius: inherit;
+    content: "";
+    pointer-events: none;
+  }
+
+  .hh-cosmic-prism__sun::before {
+    inset: -12px;
+    border: 1px dashed rgba(255, 255, 255, .2);
+    animation: hh-cosmic-spin 16s linear infinite;
+  }
+
+  .hh-cosmic-prism__sun::after {
+    inset: 6px;
+    border: 1px solid rgba(255, 255, 255, .4);
+  }
+
+  .hh-cosmic-prism__sun span,
+  .hh-cosmic-prism__sun small {
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0;
+  }
+
+  .hh-cosmic-prism__sun span {
+    font-size: 28px;
+    font-weight: 950;
+    line-height: .9;
+  }
+
+  .hh-cosmic-prism__sun small {
+    margin-top: 5px;
+    font-size: 6px;
+    font-weight: 900;
+    letter-spacing: .08em;
+  }
+
+  .hh-cosmic-prism__sun:focus-visible,
+  .hh-cosmic-prism__planet:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 4px;
+  }
+
+  .hh-cosmic-prism__planets {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .hh-cosmic-prism__carrier {
+    --cp-orbit-duration: 52s;
+    position: absolute;
+    z-index: 4;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transform: rotate(var(--cp-start));
+    animation: hh-cosmic-orbit var(--cp-orbit-duration) linear infinite;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .hh-cosmic-prism__planet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    width: 72px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: rgba(237, 242, 252, .88);
+    cursor: pointer;
+    transform: translate(-50%, -50%) translateX(var(--cp-radius)) rotate(var(--cp-counter));
+    transform-origin: 50% 50%;
+    animation: hh-cosmic-counter-orbit var(--cp-orbit-duration) linear infinite;
+    pointer-events: auto;
+    will-change: transform;
+  }
+
+  .hh-cosmic-prism__planet-face {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 46px;
+    aspect-ratio: 1;
+    border: 1px solid color-mix(in srgb, var(--module-color) 75%, #fff);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .58), transparent 12%),
+      radial-gradient(circle, color-mix(in srgb, var(--module-color) 42%, #111827), color-mix(in srgb, var(--module-color) 13%, #050710));
+    color: #fff;
+    box-shadow:
+      inset -7px -8px 14px rgba(0, 0, 0, .32),
+      0 0 18px color-mix(in srgb, var(--module-color) 34%, transparent);
+    transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
+  }
+
+  .hh-cosmic-prism__planet-face::before {
+    position: absolute;
+    inset: -5px;
+    border: 1px solid color-mix(in srgb, var(--module-color) 30%, transparent);
+    border-radius: 50%;
+    content: "";
+    transform: rotateX(66deg);
+  }
+
+  .hh-cosmic-prism__planet-face b {
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0;
+  }
+
+  .hh-cosmic-prism__planet small {
+    overflow: hidden;
+    width: 100%;
+    color: color-mix(in srgb, var(--module-color) 70%, #fff);
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: 0;
+    line-height: 1.2;
+    text-align: center;
+    text-overflow: ellipsis;
+    text-shadow: 0 2px 8px #000;
+    white-space: nowrap;
+  }
+
+  .hh-cosmic-prism__planet:hover .hh-cosmic-prism__planet-face,
+  .hh-cosmic-prism__planet:focus-visible .hh-cosmic-prism__planet-face,
+  .hh-cosmic-prism__planet[aria-selected="true"] .hh-cosmic-prism__planet-face {
+    filter: saturate(1.22) brightness(1.1);
+    box-shadow:
+      inset -7px -8px 14px rgba(0, 0, 0, .24),
+      0 0 8px color-mix(in srgb, var(--module-color) 78%, transparent),
+      0 0 30px color-mix(in srgb, var(--module-color) 52%, transparent);
+    transform: scale(1.15);
+  }
+
+  .hh-cosmic-prism__preview {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--cp-active) 42%, rgba(255, 255, 255, .08));
+    border-radius: 12px;
+    background: linear-gradient(105deg, rgba(13, 18, 31, .82), rgba(7, 10, 18, .68));
+    box-shadow: inset 0 1px rgba(255, 255, 255, .06), 0 12px 30px rgba(0, 0, 0, .18);
+    backdrop-filter: blur(16px) saturate(1.2);
+    transition: border-color .3s ease, box-shadow .3s ease;
+    pointer-events: none;
+  }
+
+  .hh-cosmic-prism__preview-mark {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    aspect-ratio: 1;
+    border: 1px solid color-mix(in srgb, var(--cp-active) 70%, #fff);
+    border-radius: 10px;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--cp-active) 76%, #fff), color-mix(in srgb, var(--cp-active) 38%, #08101c));
+    color: #071018;
+    font-size: 11px;
+    font-weight: 950;
+    box-shadow: 0 0 22px color-mix(in srgb, var(--cp-active) 25%, transparent);
+  }
+
+  .hh-cosmic-prism__preview > div {
+    min-width: 0;
+  }
+
+  .hh-cosmic-prism__preview small {
+    display: block;
+    overflow: hidden;
+    color: var(--cp-active);
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hh-cosmic-prism__preview h2 {
+    margin: 2px 0 1px;
+    color: #f7f9ff;
+    font-size: 18px;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .hh-cosmic-prism__preview p {
+    overflow: hidden;
+    margin: 0;
+    color: rgba(217, 225, 239, .72);
+    font-size: 9px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hh-cosmic-prism__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .hh-cosmic-prism__chips span,
+  .hh-cosmic-prism__route {
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .045);
+    color: rgba(234, 240, 251, .75);
+    font-size: 7px;
+    font-weight: 750;
+  }
+
+  .hh-cosmic-prism__chips span {
+    padding: 3px 6px;
+  }
+
+  .hh-cosmic-prism__route {
+    max-width: 120px;
+    overflow: hidden;
+    padding: 5px 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hh-cosmic-prism__mobile-dots {
+    display: none;
+    justify-content: center;
+    gap: 6px;
+    pointer-events: auto;
+  }
+
+  .hh-cosmic-prism__mobile-dots button {
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .22);
+    cursor: pointer;
+    transition: width .2s ease, background-color .2s ease;
+  }
+
+  .hh-cosmic-prism__mobile-dots button[aria-current="true"] {
+    width: 19px;
+    border-radius: 5px;
+    background: var(--cp-active);
+  }
+
+  .hh-cosmic-prism.is-interacting .hh-cosmic-prism__carrier,
+  .hh-cosmic-prism.is-interacting .hh-cosmic-prism__planet,
+  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__carrier,
+  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__planet,
+  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__nebula,
+  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__sun,
+  .hh-cosmic-prism[data-running="false"] .hh-cosmic-prism__sun::before {
+    animation-play-state: paused;
+  }
+
+  .hh-cosmic-prism.is-sun-pulsing .hh-cosmic-prism__sun {
+    animation: hh-cosmic-sun-activate .7s ease both;
+  }
+
+  @keyframes hh-cosmic-orbit {
+    from { transform: rotate(var(--cp-start)); }
+    to { transform: rotate(calc(var(--cp-start) + 360deg)); }
+  }
+
+  @keyframes hh-cosmic-counter-orbit {
+    from { transform: translate(-50%, -50%) translateX(var(--cp-radius)) rotate(var(--cp-counter)); }
+    to { transform: translate(-50%, -50%) translateX(var(--cp-radius)) rotate(calc(var(--cp-counter) - 360deg)); }
+  }
+
+  @keyframes hh-cosmic-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes hh-cosmic-sun-breathe {
+    0%, 100% { filter: saturate(1); transform: scale(1); }
+    50% { filter: saturate(1.18) brightness(1.08); transform: scale(1.035); }
+  }
+
+  @keyframes hh-cosmic-sun-activate {
+    0% { transform: scale(1); }
+    45% { filter: brightness(1.35); transform: scale(1.17); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes hh-cosmic-nebula-cyan {
+    from { transform: translate3d(-3%, -2%, 0) rotate(-8deg) scale(1); }
+    to { transform: translate3d(19%, 13%, 0) rotate(17deg) scale(1.18); }
+  }
+
+  @keyframes hh-cosmic-nebula-pink {
+    from { transform: translate3d(4%, 3%, 0) rotate(9deg) scale(1.08); }
+    to { transform: translate3d(-18%, -12%, 0) rotate(-14deg) scale(1.22); }
+  }
+
+  @keyframes hh-cosmic-nebula-gold {
+    from { transform: translate3d(-12%, 5%, 0) scale(.92); }
+    to { transform: translate3d(15%, -8%, 0) scale(1.2); }
+  }
+
+  @media (max-width: 720px) {
+    .hh-cosmic-prism {
+      min-height: 430px;
+    }
+
+    .hh-cosmic-prism__chrome {
+      gap: 6px;
+      padding: 10px;
+      transform: none;
+    }
+
+    .hh-cosmic-prism__heading small {
+      max-width: 47%;
+    }
+
+    .hh-cosmic-prism__system {
+      display: flex;
+      align-items: center;
+      min-height: 250px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 82px 44vw 22px;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+
+    .hh-cosmic-prism__system::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hh-cosmic-prism__orbit {
+      display: none;
+    }
+
+    .hh-cosmic-prism__sun {
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      width: 66px;
+      transform: translateX(-50%);
+      animation: none;
+    }
+
+    .hh-cosmic-prism__sun::before {
+      animation: none;
+    }
+
+    .hh-cosmic-prism__planets {
+      position: static;
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .hh-cosmic-prism__carrier {
+      position: relative;
+      top: auto;
+      left: auto;
+      flex: 0 0 88px;
+      width: 88px;
+      height: 96px;
+      transform: none;
+      animation: none;
+      scroll-snap-align: center;
+    }
+
+    .hh-cosmic-prism__planet {
+      position: relative;
+      top: auto;
+      left: auto;
+      width: 88px;
+      transform: none;
+      animation: none;
+    }
+
+    .hh-cosmic-prism__planet-face {
+      width: 54px;
+    }
+
+    .hh-cosmic-prism__preview {
+      grid-template-columns: auto minmax(0, 1fr);
+      padding: 9px;
+    }
+
+    .hh-cosmic-prism__route {
+      display: none;
+    }
+
+    .hh-cosmic-prism__preview p {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      white-space: normal;
+    }
+
+    .hh-cosmic-prism__mobile-dots {
+      display: flex;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .hh-cosmic-prism {
+      min-height: 410px;
+    }
+
+    .hh-cosmic-prism__heading {
+      font-size: 8px;
+    }
+
+    .hh-cosmic-prism__heading small {
+      font-size: 7px;
+    }
+
+    .hh-cosmic-prism__system {
+      min-height: 232px;
+      padding-top: 76px;
+    }
+
+    .hh-cosmic-prism__preview-mark {
+      width: 36px;
+    }
+
+    .hh-cosmic-prism__chips span:nth-child(n + 3) {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hh-cosmic-prism *,
+    .hh-cosmic-prism *::before,
+    .hh-cosmic-prism *::after {
+      scroll-behavior: auto !important;
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+    }
+
+    .hh-cosmic-prism__chrome {
+      transform: none !important;
+    }
+
+    .hh-cosmic-prism__mouse-light {
+      display: none;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    .hh-cosmic-prism__preview,
+    .hh-cosmic-prism__planet-face {
+      border-width: 2px;
+    }
+
+    .hh-cosmic-prism__preview p,
+    .hh-cosmic-prism__planet small {
+      color: #fff;
+    }
+  }
+}

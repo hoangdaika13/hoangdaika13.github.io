@@ -1,0 +1,603 @@
+/* HH Cosmic Prism auth form.
+ * Progressive visual layer: authentication behavior remains owned by auth-platform.
+ */
+
+:root {
+  --hcp-cyan: #44e7f2;
+  --hcp-pink: #ff4fb8;
+  --hcp-yellow: #ffe66d;
+  --hcp-green: #72f6a7;
+  --hcp-coral: #ff766d;
+  --hcp-violet: #a989ff;
+  --hcp-night: #070a12;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form {
+  --hcp-pointer-x: 50%;
+  --hcp-pointer-y: 18%;
+  --hcp-tab-count: 2;
+  --hcp-tab-index: 0;
+  --hcp-module-color: var(--hcp-cyan);
+  --hcp-module-color-2: var(--hcp-violet);
+  --hcp-strength-color: var(--hcp-coral);
+  --hcp-glass: rgba(11, 16, 29, .76);
+  --hcp-glass-strong: rgba(14, 21, 36, .92);
+  --hcp-line: rgba(218, 238, 255, .16);
+  --hcp-text: #f7f9ff;
+  --hcp-muted: #a9b7ca;
+  --hcp-danger: #ff8a9f;
+  --hcp-radius: 24px;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="creative"],
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="script"],
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="ai"] {
+  --hcp-module-color: var(--hcp-pink);
+  --hcp-module-color-2: var(--hcp-violet);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="music"] {
+  --hcp-module-color: var(--hcp-cyan);
+  --hcp-module-color-2: var(--hcp-pink);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="media"],
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="design"] {
+  --hcp-module-color: var(--hcp-violet);
+  --hcp-module-color-2: var(--hcp-pink);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="dev"] {
+  --hcp-module-color: var(--hcp-green);
+  --hcp-module-color-2: var(--hcp-cyan);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="learning"] {
+  --hcp-module-color: var(--hcp-yellow);
+  --hcp-module-color-2: var(--hcp-green);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="game"] {
+  --hcp-module-color: var(--hcp-coral);
+  --hcp-module-color-2: var(--hcp-yellow);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form[data-hcp-module="community"] {
+  --hcp-module-color: var(--hcp-green);
+  --hcp-module-color-2: var(--hcp-violet);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .hcp-card {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--hcp-radius);
+  background:
+    radial-gradient(
+      440px circle at var(--hcp-pointer-x) var(--hcp-pointer-y),
+      color-mix(in srgb, var(--hcp-module-color) 18%, transparent),
+      transparent 62%
+    ) padding-box,
+    linear-gradient(145deg, rgba(15, 22, 38, .9), rgba(7, 10, 18, .82)) padding-box,
+    conic-gradient(
+      from 210deg at var(--hcp-pointer-x) var(--hcp-pointer-y),
+      color-mix(in srgb, var(--hcp-module-color) 88%, white 12%),
+      var(--hcp-pink),
+      var(--hcp-yellow),
+      var(--hcp-green),
+      var(--hcp-cyan),
+      var(--hcp-violet),
+      color-mix(in srgb, var(--hcp-module-color-2) 84%, white 16%)
+    ) border-box;
+  box-shadow:
+    0 32px 90px rgba(0, 0, 0, .52),
+    0 0 0 1px rgba(255, 255, 255, .055) inset,
+    -18px 16px 48px color-mix(in srgb, var(--hcp-module-color) 12%, transparent),
+    18px -14px 52px color-mix(in srgb, var(--hcp-module-color-2) 11%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(145%);
+  backdrop-filter: blur(26px) saturate(145%);
+  transition: box-shadow 260ms ease, background 260ms ease;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .hcp-card::before {
+  position: absolute;
+  z-index: -1;
+  inset: 1px;
+  overflow: hidden;
+  border-radius: calc(var(--hcp-radius) - 2px);
+  background:
+    linear-gradient(118deg, rgba(255, 255, 255, .12), transparent 22%, transparent 70%, rgba(255, 255, 255, .045)),
+    radial-gradient(330px circle at 8% 5%, color-mix(in srgb, var(--hcp-module-color) 15%, transparent), transparent 70%),
+    radial-gradient(300px circle at 96% 96%, color-mix(in srgb, var(--hcp-module-color-2) 13%, transparent), transparent 72%);
+  content: "";
+  pointer-events: none;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .hcp-card::after {
+  position: absolute;
+  z-index: 0;
+  top: -42%;
+  left: -34%;
+  width: 78%;
+  aspect-ratio: 1.5;
+  border-radius: 50%;
+  background: linear-gradient(105deg, rgba(255, 255, 255, .11), rgba(255, 255, 255, .01) 64%);
+  content: "";
+  opacity: .62;
+  pointer-events: none;
+  transform: rotate(-12deg);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .hcp-card > * {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form.hcp-pointer-active .hcp-card {
+  box-shadow:
+    0 34px 94px rgba(0, 0, 0, .55),
+    0 0 0 1px color-mix(in srgb, var(--hcp-module-color) 28%, transparent) inset,
+    -20px 18px 54px color-mix(in srgb, var(--hcp-module-color) 15%, transparent),
+    20px -16px 56px color-mix(in srgb, var(--hcp-module-color-2) 14%, transparent);
+}
+
+/* Shared tab indicator: the real tab buttons stay in the DOM and retain semantics. */
+body.home-neon.auth-locked #authGate.hcp-form .auth-mode-tabs {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(var(--hcp-tab-count), minmax(0, 1fr));
+  overflow: hidden;
+  padding: 5px;
+  border: 1px solid var(--hcp-line);
+  border-radius: 14px;
+  background: rgba(3, 7, 15, .56);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .2) inset;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-mode-tabs::before {
+  position: absolute;
+  z-index: 0;
+  inset: 5px auto 5px 5px;
+  width: calc((100% - 10px) / var(--hcp-tab-count));
+  border: 1px solid color-mix(in srgb, var(--hcp-module-color) 58%, white 8%);
+  border-radius: 10px;
+  background:
+    linear-gradient(110deg,
+      color-mix(in srgb, var(--hcp-module-color) 32%, transparent),
+      color-mix(in srgb, var(--hcp-module-color-2) 24%, transparent));
+  box-shadow:
+    0 8px 22px color-mix(in srgb, var(--hcp-module-color) 15%, transparent),
+    0 0 18px color-mix(in srgb, var(--hcp-module-color-2) 12%, transparent) inset;
+  content: "";
+  pointer-events: none;
+  transform: translate3d(calc(var(--hcp-tab-index) * 100%), 0, 0);
+  transition: transform 340ms cubic-bezier(.22, .8, .22, 1), background 260ms ease;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-mode-tabs > button {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 44px;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--hcp-muted);
+  transition: color 180ms ease;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-mode-tabs > button[aria-selected="true"],
+body.home-neon.auth-locked #authGate.hcp-form .auth-mode-tabs > button.active {
+  color: var(--hcp-text);
+}
+
+/* Floating labels remain ordinary label content, so autofill and managers stay intact. */
+body.home-neon.auth-locked #authGate.hcp-form .auth-field {
+  position: relative;
+  min-width: 0;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-field > span:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  max-width: 100%;
+  color: var(--hcp-muted);
+  transform: translate3d(0, 0, 0);
+  transform-origin: left bottom;
+  transition: color 170ms ease, transform 190ms ease;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-field:focus-within > span:first-child,
+body.home-neon.auth-locked #authGate.hcp-form .auth-field.hcp-has-value > span:first-child,
+body.home-neon.auth-locked #authGate.hcp-form .auth-field:has(input:not(:placeholder-shown)) > span:first-child {
+  color: color-mix(in srgb, var(--hcp-module-color) 76%, white 24%);
+  transform: translate3d(0, -2px, 0) scale(.97);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-field > span:first-child small {
+  overflow: hidden;
+  color: #7f8da2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell {
+  position: relative;
+  min-width: 0;
+  border: 1px solid rgba(199, 222, 246, .18);
+  border-radius: 13px;
+  background:
+    linear-gradient(145deg, rgba(4, 8, 16, .78), rgba(12, 19, 32, .72));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .035) inset;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell::after {
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--hcp-module-color), var(--hcp-module-color-2));
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: scaleX(.35);
+  transition: opacity 180ms ease, transform 220ms ease;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-field:focus-within .auth-input-shell {
+  border-color: color-mix(in srgb, var(--hcp-module-color) 66%, white 8%);
+  background: linear-gradient(145deg, rgba(6, 11, 21, .9), rgba(13, 22, 37, .84));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--hcp-module-color) 10%, transparent),
+    0 12px 30px rgba(0, 0, 0, .18);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-field:focus-within .auth-input-shell::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell > i {
+  color: color-mix(in srgb, var(--hcp-module-color) 68%, white 12%);
+  transition: color 180ms ease, filter 180ms ease, transform 180ms ease;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-field:focus-within .auth-input-shell > i {
+  color: var(--hcp-module-color);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--hcp-module-color) 48%, transparent));
+  transform: scale(1.06);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell input,
+body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell select,
+body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell textarea {
+  min-width: 0;
+  max-width: 100%;
+  color: var(--hcp-text);
+  caret-color: var(--hcp-module-color);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell input:-webkit-autofill,
+body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell input:-webkit-autofill:hover,
+body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--hcp-text);
+  transition: background-color 99999s ease-out 0s;
+  box-shadow: 0 0 0 1000px rgba(10, 17, 29, .96) inset;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-field.hcp-invalid .auth-input-shell,
+body.home-neon.auth-locked #authGate.hcp-form .auth-field:has([aria-invalid="true"]) .auth-input-shell {
+  border-color: color-mix(in srgb, var(--hcp-danger) 72%, transparent);
+  box-shadow: 0 0 0 3px rgba(255, 138, 159, .08);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-inline-error,
+body.home-neon.auth-locked #authGate.hcp-form .hcp-inline-error {
+  display: none;
+  width: 100%;
+  margin: 0;
+  color: #ffc1cc;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-inline-error:not(:empty),
+body.home-neon.auth-locked #authGate.hcp-form .hcp-inline-error:not(:empty),
+body.home-neon.auth-locked #authGate.hcp-form .auth-inline-error.hcp-visible {
+  display: block;
+  padding: 7px 9px;
+  border-left: 2px solid var(--hcp-danger);
+  border-radius: 0 7px 7px 0;
+  background: rgba(255, 118, 109, .075);
+  animation: hcp-message-in 190ms ease-out both;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-caps-warning {
+  display: none;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-field.hcp-caps-active .auth-caps-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 7px 9px;
+  border-left: 2px solid var(--hcp-yellow);
+  border-radius: 0 7px 7px 0;
+  background: rgba(255, 230, 109, .08);
+  color: #fff0a7;
+  animation: hcp-message-in 190ms ease-out both;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-field.hcp-caps-active .auth-input-shell {
+  border-color: rgba(255, 230, 109, .58);
+  box-shadow: 0 0 0 3px rgba(255, 230, 109, .07);
+}
+
+/* Strength styling consumes a score emitted by the existing auth meter. */
+body.home-neon.auth-locked #authGate.hcp-form .password-strength {
+  --hcp-strength: 0%;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  color: var(--hcp-muted);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .password-strength i {
+  position: relative;
+  overflow: hidden;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .07);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .password-strength i::after {
+  width: var(--hcp-strength) !important;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--hcp-coral), var(--hcp-yellow), var(--hcp-strength-color)) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--hcp-strength-color) 42%, transparent);
+  transition: width 260ms ease, background 260ms ease;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .password-strength[data-score="1"] { --hcp-strength: 20%; --hcp-strength-color: var(--hcp-coral); }
+body.home-neon.auth-locked #authGate.hcp-form .password-strength[data-score="2"] { --hcp-strength: 40%; --hcp-strength-color: #ffaf62; }
+body.home-neon.auth-locked #authGate.hcp-form .password-strength[data-score="3"] { --hcp-strength: 60%; --hcp-strength-color: var(--hcp-yellow); }
+body.home-neon.auth-locked #authGate.hcp-form .password-strength[data-score="4"] { --hcp-strength: 80%; --hcp-strength-color: var(--hcp-cyan); }
+body.home-neon.auth-locked #authGate.hcp-form .password-strength[data-score="5"] { --hcp-strength: 100%; --hcp-strength-color: var(--hcp-green); }
+
+/* Provider choices use one clear hierarchy without changing their click handlers. */
+body.home-neon.auth-locked #authGate.hcp-form .auth-social-row,
+body.home-neon.auth-locked #authGate.hcp-form .auth-passkey-row,
+body.home-neon.auth-locked #authGate.hcp-form .auth-guest-row {
+  min-width: 0;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-social-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-provider--google {
+  min-height: 50px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 13px;
+  background: linear-gradient(120deg, rgba(255, 255, 255, .98), rgba(235, 244, 255, .94));
+  color: #172033;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .18);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-provider--google:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--hcp-cyan) 58%, white);
+  box-shadow: 0 15px 34px rgba(0, 0, 0, .22), 0 0 24px rgba(68, 231, 242, .09);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-passkey-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-passkey-row > button,
+body.home-neon.auth-locked #authGate.hcp-form .auth-guest-row > button {
+  min-width: 0;
+  min-height: 54px;
+  border: 1px solid var(--hcp-line);
+  border-radius: 13px;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--hcp-module-color) 9%, rgba(9, 15, 27, .92)),
+      color-mix(in srgb, var(--hcp-module-color-2) 7%, rgba(9, 15, 27, .92)));
+  color: var(--hcp-text);
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-passkey-row > button:hover,
+body.home-neon.auth-locked #authGate.hcp-form .auth-guest-row > button:hover {
+  border-color: color-mix(in srgb, var(--hcp-module-color) 50%, transparent);
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--hcp-module-color) 15%, rgba(9, 15, 27, .94)),
+      color-mix(in srgb, var(--hcp-module-color-2) 12%, rgba(9, 15, 27, .94)));
+  transform: translateY(-1px);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-guest-row {
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(218, 238, 255, .09);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-guest-row > button {
+  width: 100%;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form :where(button, input, select, textarea):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--hcp-module-color) 82%, white 18%);
+  outline-offset: 3px;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-submit {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--hcp-module-color) 62%, white 8%);
+  background:
+    linear-gradient(105deg,
+      color-mix(in srgb, var(--hcp-module-color) 78%, #10182a 22%),
+      color-mix(in srgb, var(--hcp-module-color-2) 76%, #11172a 24%));
+  color: #071019;
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--hcp-module-color) 18%, transparent);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-submit::before {
+  position: absolute;
+  inset: 0 auto 0 -42%;
+  width: 34%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .48), transparent);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: skewX(-18deg);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form .auth-submit:hover::before,
+body.home-neon.auth-locked #authGate.hcp-form .auth-submit:focus-visible::before {
+  opacity: .72;
+  animation: hcp-button-shine 720ms ease-out;
+}
+
+body.home-neon.auth-locked #authGate.hcp-form.hcp-offline .hcp-card {
+  --hcp-module-color: #7e8a9d;
+  --hcp-module-color-2: #4f5d73;
+  filter: saturate(.72);
+}
+
+body.home-neon.auth-locked #authGate.hcp-form.hcp-document-hidden *,
+body.home-neon.auth-locked #authGate.hcp-form.hcp-document-hidden *::before,
+body.home-neon.auth-locked #authGate.hcp-form.hcp-document-hidden *::after {
+  animation-play-state: paused !important;
+}
+
+@keyframes hcp-message-in {
+  from { opacity: 0; transform: translate3d(0, -5px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes hcp-button-shine {
+  from { left: -42%; }
+  to { left: 118%; }
+}
+
+/* Mobile, narrow windows, and 200% zoom collapse to a stable single column. */
+@media (max-width: 920px), (max-height: 700px) and (min-resolution: 1.75dppx) {
+  body.home-neon.auth-locked #authGate.hcp-form {
+    overflow-x: hidden;
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .hcp-card {
+    width: min(100%, 620px);
+    max-width: 100%;
+    margin-inline: auto;
+    border-radius: 20px;
+    -webkit-backdrop-filter: blur(18px) saturate(132%);
+    backdrop-filter: blur(18px) saturate(132%);
+  }
+}
+
+@media (max-width: 560px) {
+  body.home-neon.auth-locked #authGate.hcp-form {
+    --hcp-radius: 18px;
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .hcp-card {
+    padding-inline: clamp(14px, 4vw, 20px);
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .auth-passkey-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .auth-field > span:first-child {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .auth-field > span:first-child small {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .auth-mode-tabs > button {
+    min-height: 48px;
+    padding-inline: 8px;
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .auth-provider,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-passkey-row > button,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-guest-row > button,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-submit {
+    min-height: 50px;
+  }
+}
+
+/* At 200% browser zoom CSS pixels commonly fall below this width. */
+@media (max-width: 720px) {
+  body.home-neon.auth-locked #authGate.hcp-form .auth-card-heading,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-returning-card,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-step-actions,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-form-options {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .auth-card-heading > div,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-returning-card > div {
+    min-width: 0;
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .auth-card-heading :where(strong, p),
+  body.home-neon.auth-locked #authGate.hcp-form .auth-returning-card :where(strong, p),
+  body.home-neon.auth-locked #authGate.hcp-form button,
+  body.home-neon.auth-locked #authGate.hcp-form label,
+  body.home-neon.auth-locked #authGate.hcp-form small {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.home-neon.auth-locked #authGate.hcp-form *,
+  body.home-neon.auth-locked #authGate.hcp-form *::before,
+  body.home-neon.auth-locked #authGate.hcp-form *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  body.home-neon.auth-locked #authGate.hcp-form .hcp-card::after,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-submit::before {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  body.home-neon.auth-locked #authGate.hcp-form .hcp-card,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-input-shell,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-mode-tabs,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-provider,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-passkey-row > button,
+  body.home-neon.auth-locked #authGate.hcp-form .auth-guest-row > button {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+}
