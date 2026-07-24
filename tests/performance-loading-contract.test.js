@@ -27,6 +27,9 @@ test("heavy workspaces load by route and retain deterministic dependencies", () 
   assert.match(loader, /script\.async\s*=\s*false/);
   assert.match(loader, /requestIdleCallback/);
   assert.match(loader, /data-search-watch-open/);
+  assert.match(loader, /data-auth-motion-toggle/);
+  assert.match(loader, /visual universe is opt-in/i);
+  assert.doesNotMatch(loader, /requestIdleCallback\(start,\s*\{\s*timeout:\s*returningUser/);
 });
 
 test("service worker precaches a small shell and uses stale while revalidate", () => {

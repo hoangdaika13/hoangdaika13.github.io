@@ -318,19 +318,20 @@
         global.HHCosmicPrismInteractions?.mount?.();
       }).catch(() => {});
     };
-    const returningUser = (() => {
-      try { return Boolean(global.localStorage?.getItem("hh-auth-user")); }
-      catch { return false; }
-    })();
-    global.addEventListener("hh:auth-change", (event) => {
-      if (!event.detail?.user) start();
-    }, { once: true });
-    const schedule = () => {
-      if ("requestIdleCallback" in global) global.requestIdleCallback(start, { timeout: returningUser ? 3500 : 700 });
-      else global.setTimeout(start, returningUser ? 2800 : 350);
+    /*
+     * Keep the authentication form responsive on slower desktop GPUs and
+     * browsers with heavy extensions. The visual universe is opt-in: first
+     * paint keeps the lightweight showcase, while the motion control
+     * explicitly requests the richer scene. Login, Google OAuth and guest
+     * mode never compete with its canvases, filters or observers.
+     */
+    const requestEffects = (event) => {
+      if (event.target?.closest?.("[data-auth-motion-toggle]")) start();
     };
-    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", schedule, { once: true });
-    else schedule();
+    document.addEventListener("click", requestEffects, { capture: true });
+    global.addEventListener("hh:auth-change", (event) => {
+      if (event.detail?.user) document.removeEventListener("click", requestEffects, { capture: true });
+    }, { once: true });
   }
 
   function registerServiceWorkerWhenIdle() {
