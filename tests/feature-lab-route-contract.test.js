@@ -40,7 +40,7 @@ test("toolkit source is UTF-8 and service worker publishes the new assets", () =
     assert.doesNotMatch(source, /Ã.|Â.|â€|Ä‘|Æ°|\uFFFD/, `${file} contains mojibake`);
   }
   const worker = read("sw.js");
-  assert.match(worker, /hh-identity-portal-v220/);
+  assert.match(worker, /hh-identity-portal-v221/);
   assert.match(worker, /platform-tools\.css\?v=1/);
   assert.match(worker, /tool-workspace-pro\.js\?v=1/);
   assert.match(worker, /utility-lab-tools\.js\?v=9/);

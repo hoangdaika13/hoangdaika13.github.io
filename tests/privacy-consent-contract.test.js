@@ -8,6 +8,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("privacy choices are explicit, reversible and marketing stays disabled", () => {
   const client = read("privacy-consent-center.js");
+  const styles = read("privacy-consent-center.css");
   const endpoint = read("utils/privacy-consent-api.js");
 
   assert.match(client, /data-banner-accept/);
@@ -17,6 +18,8 @@ test("privacy choices are explicit, reversible and marketing stays disabled", ()
   assert.match(client, /data-privacy-reset/);
   assert.match(client, /necessary:\s*true/);
   assert.match(client, /marketing:\s*false/);
+  assert.match(styles, /bottom:calc\(78px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(styles, /max-height:calc\(100dvh - 100px - env\(safe-area-inset-bottom\)\)/);
   assert.match(endpoint, /necessary:\s*true/);
   assert.match(endpoint, /marketing:\s*false/);
   assert.match(endpoint, /privacyConsentEvents/);
