@@ -1147,6 +1147,21 @@
   .home-neon.auth-unlocked:not(.auth-panel-open) .auth-gate {
     display: none !important;
   }
+  .home-neon.auth-unlocked :is(
+    #authGate,
+    .auth-transition-runtime,
+    .hcp-portal-transition
+  ) {
+    pointer-events: none !important;
+  }
+  .home-neon.auth-unlocked:not(.auth-panel-open) :is(
+    #authGate,
+    .auth-transition-runtime,
+    .hcp-portal-transition
+  ) {
+    display: none !important;
+    visibility: hidden !important;
+  }
   .auth-gate-close {
     position: absolute;
     top: 18px;

@@ -38,25 +38,33 @@ test("auth requests time out cleanly instead of leaving the form busy forever", 
   assert.match(runtime, /controller\.abort\("auth-timeout"\)/);
   assert.match(runtime, /Máy chủ phản hồi quá lâu/);
   assert.match(runtime, /finally\s*\{[\s\S]*?clearTimeout\(timeoutId\)/);
-  assert.match(html, /auth-platform\.js\?v=11/);
-  assert.match(worker, /auth-platform\.js\?v=11/);
+  assert.match(html, /auth-platform\.js\?v=12/);
+  assert.match(worker, /auth-platform\.js\?v=12/);
   assert.match(runtime, /hh:logout-request/);
   assert.match(runtime, /history\.replaceState\(\{\}, document\.title/);
 });
 
 test("successful authentication unlocks the workspace before optional animation", () => {
   const runtime = read("auth-platform.js");
+  const shellRuntime = read("script.js");
+  const shellStyles = read("app-shell.css");
   const completeAuth = runtime.slice(runtime.indexOf("const completeAuth"), runtime.indexOf("const loadMe"));
   assert.match(completeAuth, /setGateState\(\);[\s\S]*connectSocket\(\);/);
   assert.match(completeAuth, /Promise\.resolve\(transition\.play/);
   assert.doesNotMatch(completeAuth, /await\s+transition\.play/);
+  assert.match(runtime, /gate\.hidden\s*=\s*authenticated/);
+  assert.match(runtime, /gate\.inert\s*=\s*authenticated/);
+  assert.match(runtime, /HHAuthCreativeUniverse\?\.destroy/);
+  assert.match(shellRuntime, /const releaseAuthInteractionLocks/);
+  assert.match(shellRuntime, /gate\.style\.pointerEvents\s*=\s*"none"/);
+  assert.match(shellStyles, /auth-unlocked[\s\S]*?#authGate[\s\S]*?pointer-events:\s*none\s*!important/);
 });
 
 test("authentication boots independently from the large application bundle", () => {
   const html = read("index.html");
   const runtime = read("auth-platform.js");
   const worker = read("sw.js");
-  assert.match(html, /auth-platform\.js\?v=11[\s\S]*script\.js\?v=130/);
+  assert.match(html, /auth-platform\.js\?v=12[\s\S]*script\.js\?v=131/);
   assert.match(runtime, /realtimeUrl:\s*String\(window\.HH_REALTIME_URL/);
   assert.match(runtime, /socketUrl:\s*String\(window\.HH_SOCKET_URL/);
   assert.match(runtime, /hh:auth-bootstrap-ready/);

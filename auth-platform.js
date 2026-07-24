@@ -407,8 +407,18 @@
       document.body.classList.toggle("auth-authenticated", authenticated);
       document.body.classList.toggle("auth-guest", Boolean(user?.guest));
       gate.setAttribute("aria-hidden", String(authenticated));
+      gate.hidden = authenticated;
+      gate.inert = authenticated;
+      gate.style.pointerEvents = authenticated ? "none" : "";
       if (appShell) appShell.hidden = !authenticated;
       if (authenticated) {
+        document.body.classList.remove("auth-panel-open", "app-route-changing");
+        document.querySelectorAll(".auth-transition-runtime, .hcp-portal-transition").forEach((overlay) => {
+          overlay.classList.remove("is-active", "is-playing");
+          overlay.setAttribute("aria-hidden", "true");
+          overlay.style.pointerEvents = "none";
+        });
+        window.HHAuthCreativeUniverse?.destroy?.();
         writePublicProfile(user);
         window.dispatchEvent(new CustomEvent("hh:auth-change", { detail: { user, token: token(), guest: Boolean(user.guest) } }));
       }

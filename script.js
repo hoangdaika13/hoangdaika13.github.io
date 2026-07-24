@@ -5377,6 +5377,24 @@ function initAppShell() {
     try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}").name || "Tài khoản"; } catch { return "Tài khoản"; }
   };
   const isUnlocked = () => localShellPreview || document.body.classList.contains("auth-unlocked");
+  const releaseAuthInteractionLocks = () => {
+    if (!isUnlocked()) return;
+    const gate = byId("authGate");
+    if (gate) {
+      gate.hidden = true;
+      gate.inert = true;
+      gate.setAttribute("aria-hidden", "true");
+      gate.style.pointerEvents = "none";
+    }
+    document.querySelectorAll(".auth-transition-runtime, .hcp-portal-transition").forEach((overlay) => {
+      overlay.classList.remove("is-active", "is-playing");
+      overlay.setAttribute("aria-hidden", "true");
+      overlay.style.pointerEvents = "none";
+    });
+    document.body.classList.remove("auth-panel-open", "app-route-changing");
+    window.HHAuthCreativeUniverse?.destroy?.();
+    window.HHNeonGateway?.destroy?.();
+  };
   let shellRevealFrame = 0;
   const setShellVisibility = () => {
     const unlocked = isUnlocked();
@@ -5391,6 +5409,7 @@ function initAppShell() {
       cancelAnimationFrame(shellRevealFrame);
       return;
     }
+    releaseAuthInteractionLocks();
     if (renderedRoute) {
       renderRouteSafely();
       return;
@@ -6294,7 +6313,12 @@ function initAppShell() {
   // Game modules are loaded before the shell mounts them. Their ready events
   // are intentionally informational; re-rendering the route here would mount
   // the same module again and recurse through its own ready event.
-  window.addEventListener("hh:auth-change", () => { setShellVisibility(); setUser(); });
+  window.addEventListener("hh:auth-change", () => {
+    setShellVisibility();
+    setUser();
+    requestAnimationFrame(releaseAuthInteractionLocks);
+    window.setTimeout(releaseAuthInteractionLocks, 600);
+  });
   const initial = stored();
   const syncResponsiveSidebar = (isMobile = mobileSidebarQuery.matches) => {
     document.body.classList.toggle("app-sidebar-collapsed", isMobile || Boolean(stored().collapsed));

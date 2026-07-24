@@ -256,17 +256,30 @@
     fpsFrame = requestAnimationFrame(monitorFps);
   }
 
-  window.addEventListener("pagehide", () => {
+  let cleanedUp = false;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
     cancelAnimationFrame(pointerFrame);
     cancelAnimationFrame(fpsFrame);
+    pointerFrame = 0;
+    fpsFrame = 0;
     stateObserver.disconnect();
     layerObserver.disconnect();
-  }, { once: true });
+    gate.removeEventListener("pointermove", queuePointer);
+    gate.removeEventListener("pointerleave", resetPointer);
+  };
+
+  window.addEventListener("pagehide", cleanup, { once: true });
+  window.addEventListener("hh:auth-change", (event) => {
+    if (event.detail?.user) cleanup();
+  });
 
   window.HHNeonGateway = Object.freeze({
     version: "3.0.0",
     setMotionLevel,
     state: () => card.dataset.authState,
-    motion: () => gate.dataset.motionLevel
+    motion: () => gate.dataset.motionLevel,
+    destroy: cleanup
   });
 })();
