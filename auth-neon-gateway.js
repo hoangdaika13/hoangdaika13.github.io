@@ -275,8 +275,16 @@
     if (event.detail?.user) cleanup();
   });
 
+  if (gate.querySelector("[data-hh-galaxy]") && !window.HHHGalaxy) {
+    const galaxyRuntime = document.createElement("script");
+    galaxyRuntime.src = "auth-h-galaxy.js?v=1";
+    galaxyRuntime.defer = true;
+    galaxyRuntime.dataset.hhGalaxyRuntime = "true";
+    document.head.append(galaxyRuntime);
+  }
+
   window.HHNeonGateway = Object.freeze({
-    version: "3.0.0",
+    version: "4.0.0",
     setMotionLevel,
     state: () => card.dataset.authState,
     motion: () => gate.dataset.motionLevel,

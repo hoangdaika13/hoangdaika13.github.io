@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="motion-comfort.css?v=1">
   <link rel="stylesheet" href="auth-login-repair.css?v=3">
   <link rel="stylesheet" href="auth-neon-gateway.css?v=5">
-  <link rel="stylesheet" href="auth-h-galaxy.css?v=1">
+  <link rel="stylesheet" href="auth-h-galaxy.css?v=2">
   <link rel="stylesheet" href="auth-creative-universe.css?v=5">
   <!-- Lazy style manifest. performance-loader.js fetches only the active workspace. dashboard-aurora.css?v=3 command-center-pro.css?v=4 home-daily-command.css?v=2 home-command-search.css?v=2 home-widget-project-pulse.css?v=2 home-health-focus.css?v=2 professional-tools.css?v=3 dev-pro-suite.css?v=1 dev-smart-recipe.css?v=1 dev-api-studio.css?v=1 dev-data-security.css?v=1 dev-regex-database.css?v=1 dev-code-git.css?v=1 dev-diagnostics-ai.css?v=1 feature-lab.css?v=3 media-design-pro.css?v=1 media-design-page.css?v=8 universal-media-project.css?v=1 media-design-advanced.css?v=3 media-design-publish.css?v=1 video-editor-studio.css?v=2 video-editor-resolve.css?v=6 photo-editor-pro.css?v=4 editor-workflow-pro.css?v=1 support-platform.css?v=8 extension-suite.css?v=1 search-watch-center.css?v=5 communication-overview.css?v=1 communication-suite.css?v=1 communication-workspace-fix.css?v=1 communication-command-center.css?v=1 communication-messenger-next.css?v=1 communication-channels-forum.css?v=1 communication-live-room.css?v=1 communication-canvas-automation.css?v=1 communication-intelligence.css?v=1 work-center.css?v=1 download-center-pro.css?v=1 team-collaboration-pro.css?v=2 creative-suite.css?v=6 creative-os.css?v=1 graphic-design-studio.css?v=5 ai-center-pro.css?v=1 ai-center-advanced.css?v=1 platform-p0.css?v=1 space-explorer.css?v=3 game-center.css?v=2 astra-universe-expansion.css?v=3 game-arcade.css?v=2 learning-suite.css?v=2 learning-home.css?v=2 learning-paths.css?v=2 learning-review.css?v=2 learning-lesson-player.css?v=2 learning-coach-labs.css?v=2 learning-classroom.css?v=2 english-learning.css?v=11 english-voice-coach.css?v=1 community-social-pro.css?v=3 community-platform-v2.css?v=10 community-messenger-pro.css?v=1 community-admin.css?v=6 insights-pro.css?v=2 music-production-suite.css?v=1 music-daw-workspace.css?v=1 music-composer-lyrics.css?v=1 music-audio-labs.css?v=1 music-mix-master.css?v=1 music-visual-studio.css?v=1 music-publishing-rights.css?v=1 music-intelligence-engine.css?v=1 music-generative-arrangement.css?v=1 music-adaptive-library.css?v=1 music-mix-performance.css?v=1 music-project-governance.css?v=1 music-ai-studio.css?v=6 music-ai-apps.css?v=2 youtube-publisher.css?v=2 -->
   <script src="config.js?v=8" defer></script>
@@ -64,24 +64,55 @@
       <span class="auth-gateway-aurora auth-gateway-aurora--lime"></span>
       <span class="auth-gateway-grid"></span>
       <span class="auth-gateway-stars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-      <div class="hh-h-galaxy">
-        <span class="hh-galaxy-cloud hh-galaxy-cloud--one"></span>
-        <span class="hh-galaxy-cloud hh-galaxy-cloud--two"></span>
-        <div class="hh-galaxy-system">
-          <div class="hh-galaxy-orbits">
-            <span class="hh-galaxy-orbit hh-galaxy-orbit--one"><i data-hh-planet="1"></i><i data-hh-planet="2"></i></span>
-            <span class="hh-galaxy-orbit hh-galaxy-orbit--two"><i data-hh-planet="3"></i><i data-hh-planet="4"></i></span>
-            <span class="hh-galaxy-orbit hh-galaxy-orbit--three"><i data-hh-planet="5"></i><i data-hh-planet="6"></i></span>
-            <span class="hh-galaxy-orbit hh-galaxy-orbit--four"><i data-hh-planet="7"></i><i data-hh-planet="8"></i></span>
-            <span class="hh-galaxy-orbit hh-galaxy-orbit--five"><i data-hh-planet="9"></i><i data-hh-planet="10"></i></span>
-            <span class="hh-galaxy-orbit hh-galaxy-orbit--six"><i data-hh-planet="11"></i><i data-hh-planet="12"></i></span>
-            <span class="hh-galaxy-orbit hh-galaxy-orbit--seven"><i data-hh-planet="13"></i><i data-hh-planet="14"></i></span>
-          </div>
-          <div class="hh-galaxy-sun"><span>H</span><small>CREATIVE SUN</small></div>
-          <div class="hh-galaxy-signature"><span>HH GALAXY</span><b>14 WORLDS · ONE UNIVERSE</b></div>
-        </div>
-      </div>
     </div>
+    <section class="hh-h-galaxy" data-hh-galaxy aria-label="Ngân hà 14 lĩnh vực của HH Platform">
+      <span class="hh-galaxy-cloud hh-galaxy-cloud--one" aria-hidden="true"></span>
+      <span class="hh-galaxy-cloud hh-galaxy-cloud--two" aria-hidden="true"></span>
+      <span class="hh-galaxy-cloud hh-galaxy-cloud--three" aria-hidden="true"></span>
+      <span class="hh-galaxy-comet hh-galaxy-comet--one" aria-hidden="true"></span>
+      <span class="hh-galaxy-comet hh-galaxy-comet--two" aria-hidden="true"></span>
+      <div class="hh-galaxy-system">
+        <div class="hh-galaxy-orbits" role="tablist" aria-label="Chọn một lĩnh vực để xem chức năng">
+          <span class="hh-galaxy-orbit hh-galaxy-orbit--one">
+            <button class="hh-galaxy-planet is-active" type="button" role="tab" aria-selected="true" aria-controls="hhGalaxyInspector" data-hh-planet="1" data-hh-galaxy-key="home"><span aria-hidden="true">⌂</span><em>Trang chủ</em></button>
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="2" data-hh-galaxy-key="system"><span aria-hidden="true">⚙</span><em>Hệ thống</em></button>
+          </span>
+          <span class="hh-galaxy-orbit hh-galaxy-orbit--two">
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="3" data-hh-galaxy-key="creative"><span aria-hidden="true">✦</span><em>Sáng tạo</em></button>
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="4" data-hh-galaxy-key="music"><span aria-hidden="true">♫</span><em>Làm nhạc AI</em></button>
+          </span>
+          <span class="hh-galaxy-orbit hh-galaxy-orbit--three">
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="5" data-hh-galaxy-key="media"><span aria-hidden="true">◈</span><em>Media & Design</em></button>
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="6" data-hh-galaxy-key="graphic"><span aria-hidden="true">✺</span><em>Thiết kế đồ họa</em></button>
+          </span>
+          <span class="hh-galaxy-orbit hh-galaxy-orbit--four">
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="7" data-hh-galaxy-key="dev"><span aria-hidden="true">⌘</span><em>DEV</em></button>
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="8" data-hh-galaxy-key="work"><span aria-hidden="true">□</span><em>Công việc</em></button>
+          </span>
+          <span class="hh-galaxy-orbit hh-galaxy-orbit--five">
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="9" data-hh-galaxy-key="communication"><span aria-hidden="true">◌</span><em>Giao tiếp</em></button>
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="10" data-hh-galaxy-key="entertainment"><span aria-hidden="true">◉</span><em>Giải trí</em></button>
+          </span>
+          <span class="hh-galaxy-orbit hh-galaxy-orbit--six">
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="11" data-hh-galaxy-key="analytics"><span aria-hidden="true">↗</span><em>Phân tích</em></button>
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="12" data-hh-galaxy-key="learning"><span aria-hidden="true">◫</span><em>Học tập</em></button>
+          </span>
+          <span class="hh-galaxy-orbit hh-galaxy-orbit--seven">
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="13" data-hh-galaxy-key="english"><span aria-hidden="true">E</span><em>HH English</em></button>
+            <button class="hh-galaxy-planet" type="button" role="tab" aria-selected="false" aria-controls="hhGalaxyInspector" tabindex="-1" data-hh-planet="14" data-hh-galaxy-key="support"><span aria-hidden="true">♥</span><em>Ủng hộ HH</em></button>
+          </span>
+        </div>
+        <div class="hh-galaxy-sun" aria-hidden="true"><span>H</span><small>CREATIVE SUN</small></div>
+        <div class="hh-galaxy-signature" aria-hidden="true"><span>HH GALAXY</span><b>14 LĨNH VỰC · MỘT VŨ TRỤ</b></div>
+      </div>
+      <aside class="hh-galaxy-inspector" id="hhGalaxyInspector" role="tabpanel" aria-live="polite">
+        <header><span data-hh-galaxy-index>HÀNH TINH 01 / 14</span><small>DI CHUỘT · CHẠM · PHÍM MŨI TÊN</small></header>
+        <div><i data-hh-galaxy-icon>⌂</i><span><small data-hh-galaxy-kicker>TRUNG TÂM ĐIỀU KHIỂN</small><strong data-hh-galaxy-title>Trang chủ</strong></span><b data-hh-galaxy-count>1 MỤC</b></div>
+        <p data-hh-galaxy-description>Tổng quan ngày, Command Center, thời tiết, thiết bị và các lối tắt quan trọng.</p>
+        <ul data-hh-galaxy-features><li>Dashboard</li><li>Command Center</li><li>Weather & AQI</li><li>Sticky Notes</li></ul>
+        <footer><span><i></i> Hành tinh đang chọn</span><small data-hh-galaxy-route>#/home</small></footer>
+      </aside>
+    </section>
     <button class="auth-motion-toggle" type="button" data-auth-motion-toggle aria-pressed="false"><i></i><span>Hiệu ứng: Cao</span></button>
     <div class="auth-gate-brand">
       <div class="auth-brand-lockup">
@@ -90,20 +121,6 @@
       </div>
       <h1><span>Đăng nhập.</span> Bật chế độ sáng tạo.</h1>
       <p>Một tài khoản cho workspace cá nhân, AI, công cụ sáng tạo và cộng đồng HH theo thời gian thực.</p>
-      <section class="auth-feature-showcase" aria-label="Khám phá chức năng tiêu biểu">
-        <header><span><i></i> KHÁM PHÁ HỆ SINH THÁI</span><small data-auth-demo-counter>01 / 04</small></header>
-        <div class="auth-feature-switcher" role="tablist" aria-label="Chọn chức năng để xem trước">
-          <button class="active" type="button" role="tab" aria-selected="true" data-auth-demo="ai"><i>AI</i><span><b>AI Creative Campaign</b><small>Brief → nội dung → xuất bản</small></span></button>
-          <button type="button" role="tab" aria-selected="false" data-auth-demo="music"><i>♪</i><span><b>AI Music Producer</b><small>Nhạc · Loop · Visualizer</small></span></button>
-          <button type="button" role="tab" aria-selected="false" data-auth-demo="english"><i>EN</i><span><b>HH English AI</b><small>Hội thoại · Phát âm · Lộ trình</small></span></button>
-          <button type="button" role="tab" aria-selected="false" data-auth-demo="analytics"><i>↗</i><span><b>Realtime Analytics</b><small>Funnel · Web Vitals · Cảnh báo</small></span></button>
-        </div>
-      </section>
-      <div class="auth-benefits" aria-label="Quyền lợi tài khoản">
-        <span><i>01</i><b>97+ công cụ</b><small>Trong một workspace</small></span>
-        <span><i>02</i><b>Trực tuyến</b><small>Chat và cộng đồng</small></span>
-        <span><i>03</i><b>Riêng tư</b><small>Dữ liệu có kiểm soát</small></span>
-      </div>
       <div class="auth-product-preview" aria-hidden="true">
         <header><span><i></i><i></i><i></i></span><b>HH Command Center · Interactive Preview</b><small><i></i> LIVE</small></header>
         <div class="auth-preview-grid">
@@ -1005,7 +1022,7 @@
   <script src="auth-platform.js?v=12" defer></script>
   <script src="script.js?v=131" data-compat-src="script.js?v=130" defer></script>
   <script src="auth-experience.js?v=8" defer></script>
-  <script src="auth-neon-gateway.js?v=3" defer></script>
+  <script src="auth-neon-gateway.js?v=4" defer></script>
   <!-- Deferred auth effects: auth-creative-universe.js?v=5 auth-living-background.js?v=1 auth-identity-constellation.js?v=2 auth-universe-memory.js?v=2 auth-logo-motion.js?v=1 auth-emotional-logo.js?v=1 auth-form-motion.js?v=3 auth-transition-runtime.js?v=2 auth-quantum-flow.js?v=2 auth-trust-director.js?v=2 auth-spatial-aurora.js?v=1 auth-cosmic-prism-background.js?v=2 auth-cosmic-prism-form.js?v=2 auth-cosmic-prism-interactions.js?v=2 -->
   <script src="auth-zoom-resilience.js?v=4" defer></script>
   <script src="privacy-consent-center.js?v=2" defer></script>

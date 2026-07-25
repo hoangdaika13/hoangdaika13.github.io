@@ -42,12 +42,15 @@ test("sidebar uses one shared visual system for every primary group", () => {
 test("authentication uses calm motion with pausable automatic previews", () => {
   const html = read("index.html");
   const css = read("auth-experience.css");
+  const galaxyCss = read("auth-h-galaxy.css");
   const comfort = read("motion-comfort.css");
   const client = read("auth-experience.js");
+  const galaxyClient = read("auth-h-galaxy.js");
 
   assert.match(html, /auth-motion-field/);
-  assert.match(html, /auth-feature-showcase/);
-  assert.match(html, /data-auth-demo="ai"/);
+  assert.match(html, /data-hh-galaxy/);
+  assert.match(html, /data-hh-galaxy-key="creative"/);
+  assert.match(html, /hh-galaxy-inspector/);
   assert.match(html, /auth-tool-stream/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /auth-card-arrive/);
@@ -62,6 +65,11 @@ test("authentication uses calm motion with pausable automatic previews", () => {
   assert.match(client, /rotationPaused/);
   assert.match(client, /pointer: fine/);
   assert.match(client, /requestAnimationFrame/);
+  assert.match(galaxyClient, /pointerover/);
+  assert.match(galaxyClient, /keydown/);
+  assert.match(galaxyClient, /selectPlanet/);
+  assert.match(galaxyCss, /prefers-reduced-motion:\s*reduce/);
+  assert.match(galaxyCss, /is-selected-orbit/);
   assert.match(comfort, /Authentication remains rich/);
   assert.match(comfort, /auth-product-preview/);
   assert.match(comfort, /auth-tool-stream > div/);
