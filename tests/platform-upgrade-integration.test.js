@@ -17,7 +17,7 @@ test("P0 and P1 workspace upgrades are loaded and available offline", () => {
     "team-collaboration-pro.css?v=2",
     "team-collaboration-pro.js?v=2",
     "ai-center-advanced.css?v=1",
-    "ai-center-advanced.js?v=1",
+    "ai-center-advanced.js?v=2",
     "platform-p0.css?v=1",
     "platform-p0.js?v=1"
   ];

@@ -62,6 +62,7 @@
   let activeApi = null;
   let activeEngineRoot = null;
   let activeEngineHandle = null;
+  let galaxyHandle = null;
   let activeStore = null;
   let unsubscribe = null;
   let rootAbort = null;
@@ -112,7 +113,7 @@
 
   async function ensureStore() {
     if (activeStore) return activeStore;
-    await loadScript("creative-os-core.js?v=1");
+    await loadScript("creative-os-core.js?v=2");
     if (!window.HHCreativeCore?.createStore) throw new Error("Creative project store chưa sẵn sàng.");
     activeStore = window.__HH_CREATIVE_STORE__ || window.HHCreativeCore.createStore();
     window.__HH_CREATIVE_STORE__ = activeStore;
@@ -145,6 +146,7 @@
     const current = viewMeta(view);
     const groups = [...new Set(VIEWS.map((item) => item.group))];
     return `<section class="creative-os" data-creative-os data-view="${escapeHTML(current.id)}">
+      <div class="creative-os__galaxy" data-cos-galaxy></div>
       <header class="creative-os__hero">
         <div class="creative-os__identity"><span>HH CREATIVE OS · LOCAL-FIRST PRODUCTION</span><h2>Biến ý tưởng thành sản phẩm</h2><p>Brief, kịch bản, media, cộng tác và xuất bản dùng chung một dự án có phiên bản.</p></div>
         <div class="creative-os__project"><small>DỰ ÁN ĐANG HOẠT ĐỘNG</small><strong data-cos-active-project>Đang tải...</strong><div><span>Tiến độ</span><b data-cos-progress>0%</b></div><button type="button" data-cos-new-project>+ Dự án mới</button></div>
@@ -237,6 +239,7 @@
 
   function unmount() {
     mountToken += 1;
+    try { galaxyHandle?.destroy?.(); } catch {}
     try { activeEngineHandle?.unmount?.(); } catch {}
     try { activeApi?.unmount?.(activeEngineRoot); } catch {}
     try { unsubscribe?.(); } catch {}
@@ -244,6 +247,7 @@
     activeApi = null;
     activeEngineRoot = null;
     activeEngineHandle = null;
+    galaxyHandle = null;
     unsubscribe = null;
     rootAbort = null;
     if (activeRoot) activeRoot.replaceChildren();
@@ -255,6 +259,7 @@
     const view = normalizeView(options.view);
     if (activeRoot && activeRoot !== root) unmount();
     else {
+      try { galaxyHandle?.destroy?.(); } catch {}
       try { activeEngineHandle?.unmount?.(); } catch {}
       try { activeApi?.unmount?.(activeEngineRoot); } catch {}
       try { unsubscribe?.(); } catch {}
@@ -262,6 +267,7 @@
       activeApi = null;
       activeEngineRoot = null;
       activeEngineHandle = null;
+      galaxyHandle = null;
       unsubscribe = null;
       rootAbort = null;
     }
@@ -272,6 +278,13 @@
     try {
       const store = await ensureStore();
       if (token !== mountToken) return;
+      const galaxyRoot = root.querySelector("[data-cos-galaxy]");
+      if (galaxyRoot && window.HHCreativeGalaxy?.mount) {
+        galaxyHandle = window.HHCreativeGalaxy.mount(galaxyRoot, {
+          store,
+          onNavigate: (target) => navigate(target, options)
+        });
+      }
       unsubscribe = store.subscribe?.(renderContext) || null;
       renderContext();
     } catch {}

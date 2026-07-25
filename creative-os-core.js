@@ -347,6 +347,15 @@
       persist(normalized);
       state = normalized;
       listeners.forEach((listener) => listener(clone(state), clone(action)));
+      if (typeof globalThis?.dispatchEvent === "function" && typeof globalThis.CustomEvent === "function") {
+        globalThis.dispatchEvent(new globalThis.CustomEvent("hh:creative-project-change", {
+          detail: {
+            action: cleanText(action?.type || "update", 80),
+            projectId: cleanId(action?.payload?.projectId || state.activeProjectId || "", "project"),
+            updatedAt: state.updatedAt
+          }
+        }));
+      }
       return clone(state);
     }
 

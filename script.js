@@ -5654,6 +5654,7 @@ function initAppShell() {
     document.body.classList.toggle("app-work-route", route === "/work");
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
     document.body.classList.toggle("app-creative-os-route", isCreativeOSRoute(route));
+    document.body.classList.toggle("app-creative-route", route === "/create" || route.startsWith("/create/"));
     document.body.classList.toggle("app-music-ai-route", route === "/music-ai" || route.startsWith("/music-ai/"));
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) {
       window.HHDeveloperTools?.cleanup?.();

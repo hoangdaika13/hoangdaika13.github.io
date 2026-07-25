@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v243";
+const CACHE = "hh-identity-portal-v244";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -41,7 +41,7 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=131",
+  "./script.js?v=132",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -181,7 +181,7 @@ const RUNTIME_ASSETS = [
   "./creative-suite.css?v=6",
   "./ai-center-pro.css?v=1",
   "./ai-center-advanced.css?v=1",
-  "./ai-center-advanced.js?v=1",
+  "./ai-center-advanced.js?v=2",
   "./platform-p0.css?v=1",
   "./platform-p0.js?v=1",
   "./platform-orchestrator.js?v=2",
@@ -219,8 +219,10 @@ const RUNTIME_ASSETS = [
   "./privacy-consent-center.js?v=2",
   "./creative-suite.js?v=7",
   "./creative-os.css?v=1",
-  "./creative-os.js?v=3",
-  "./creative-os-core.js?v=1",
+  "./creative-galaxy.css?v=1",
+  "./creative-galaxy.js?v=1",
+  "./creative-os.js?v=4",
+  "./creative-os-core.js?v=2",
   "./creative-command-center.css?v=2",
   "./creative-command-center.js?v=2",
   "./creative-preproduction.css?v=1",
@@ -300,10 +302,10 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=36",
+  "./performance-loader.js?v=37",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=131"
+  "./script.js?v=132"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

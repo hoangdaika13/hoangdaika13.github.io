@@ -27,11 +27,11 @@ test("Creative OS shell is routed, versioned and cached", () => {
   assert.match(registeredAssets, /creative-os\.js\?v=\d+/);
   assert.match(html, /script\.js\?v=\d+/);
   assert.match(worker, /hh-identity-portal-v\d+/);
-  assert.match(worker, /creative-os-core\.js\?v=1/);
+  assert.match(worker, /creative-os-core\.js\?v=2/);
   assert.match(script, /creativeOSViews/);
   assert.match(script, /routeParts\[0\] === "create" && creativeOSViews\.has\(routeParts\[1\]\)/);
   assert.match(script, /window\.HHCreativeOS\.mount/);
-  assert.match(shell, /loadScript\("creative-os-core\.js\?v=1"\)/);
+  assert.match(shell, /loadScript\("creative-os-core\.js\?v=2"\)/);
   for (const [asset, api] of engines) {
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(shell, new RegExp(asset.replace(/[.?]/g, "\\$&")));

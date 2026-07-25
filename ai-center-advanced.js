@@ -7,6 +7,7 @@
   const MAX_TEMPLATES = 12;
   const MAX_PROMPT_LENGTH = 6000;
   const MAX_OUTPUT_LENGTH = 12000;
+  const CREATIVE_RETRY_KEY = "hh.creative.retry.pending.v1";
 
   const DEFAULT_TEMPLATES = [
     {
@@ -281,6 +282,91 @@
     return run?.versions?.[run.versions.length - 1] || null;
   }
 
+  function creativeStore() {
+    if (globalScope.__HH_CREATIVE_STORE__?.getState) return globalScope.__HH_CREATIVE_STORE__;
+    if (!globalScope.HHCreativeCore?.createStore) return null;
+    globalScope.__HH_CREATIVE_STORE__ = globalScope.HHCreativeCore.createStore();
+    return globalScope.__HH_CREATIVE_STORE__;
+  }
+
+  function activeCreativeProject(store) {
+    const state = store?.getState?.();
+    return state?.projects?.find((project) => project.id === state.activeProjectId) || state?.projects?.[0] || null;
+  }
+
+  function bridgeRunToCreative(run, version, action = {}) {
+    const store = creativeStore();
+    const project = activeCreativeProject(store);
+    if (!store || !project || !run || !version) return false;
+    try {
+      store.addRun(project.id, {
+        id: `${run.id}-${version.id}`,
+        provider: version.provider,
+        model: version.model,
+        action: run.taskType || "creative",
+        tokens: version.usage?.totalTokens || 0,
+        estimatedCost: Number(action.estimatedCost || action.cost || 0) || 0,
+        latencyMs: version.latencyMs || 0,
+        status: version.status === "error" ? "failed" : version.status,
+        createdAt: version.createdAt
+      });
+      return true;
+    } catch { return false; }
+  }
+
+  function saveLatestToCreativeProject(instance, target) {
+    const run = instance.state.runs.find((item) => item.id === instance.state.selectedRunId) || instance.state.runs[0];
+    const version = latestVersion(run);
+    const output = clampText(version?.output, MAX_OUTPUT_LENGTH).trim();
+    const store = creativeStore();
+    const project = activeCreativeProject(store);
+    if (!output) {
+      instance.status = "Run được chọn chưa có output để lưu.";
+      renderShell(instance);
+      return;
+    }
+    if (!store || !project) {
+      instance.status = "Chưa có Universal Project. Hãy tạo dự án trong Creative Command Center.";
+      renderShell(instance);
+      return;
+    }
+    const now = new Date().toISOString();
+    try {
+      if (target === "brief") {
+        store.updateProject(project.id, { brief: { ...project.brief, description: output } });
+      } else if (target === "script") {
+        store.updateProject(project.id, {
+          scripts: [{
+            id: safeId("script"), title: run.title, content: output, language: "vi",
+            status: "draft", createdAt: now, updatedAt: now
+          }, ...(project.scripts || [])]
+        });
+      } else if (target === "brand") {
+        store.updateProject(project.id, { brand: { ...project.brand, voice: output } });
+      } else if (target === "media") {
+        const asset = store.addAsset(project.id, {
+          id: safeId("asset"), name: `AI output - ${run.title}.md`, type: "text/markdown",
+          kind: "document", size: new Blob([output]).size, license: "User-generated AI output",
+          tags: ["ai-output", run.taskType], createdAt: now
+        });
+        const latest = activeCreativeProject(store);
+        store.updateProject(project.id, {
+          workflows: {
+            ...latest.workflows,
+            outputs: [{
+              id: safeId("output"), assetId: asset.id, runId: run.id, content: output,
+              provider: version.provider, model: version.model, createdAt: now
+            }, ...(latest.workflows?.outputs || [])].slice(0, 100)
+          }
+        });
+      }
+      instance.status = `Đã lưu vào ${target === "media" ? "Media Center" : target === "script" ? "Kịch bản" : target === "brand" ? "Brand Kit" : "Creative Brief"} của “${project.name}”.`;
+    } catch (error) {
+      instance.status = error.message || "Không thể lưu vào Universal Project.";
+    }
+    renderShell(instance);
+  }
+
   function templateOptions(state) {
     return allTemplates(state).map((template) => `<option value="${escapeHtml(template.id)}" ${template.id === state.selectedTemplateId ? "selected" : ""}>${escapeHtml(template.name)}</option>`).join("");
   }
@@ -363,7 +449,7 @@
             <article><span>Token${latest?.usage?.estimated ? " ước tính" : ""}</span><strong>${telemetry.tokenTotal.toLocaleString("vi-VN")}</strong><i style="--aica-level:${Math.min(100, telemetry.tokenTotal / 80)}%"></i></article>
             <article><span>Độ trễ TB</span><strong>${telemetry.averageLatency ? `${telemetry.averageLatency}ms` : "--"}</strong><i style="--aica-level:${Math.min(100, telemetry.averageLatency / 40)}%"></i></article>
           </section>
-          <section class="aica-latest-output"><header><div><span>OUTPUT GẦN NHẤT</span><strong>${escapeHtml(latestRun?.title || "Chưa có kết quả")}</strong></div>${latest ? `<div><button type="button" data-aica-retry="${escapeHtml(latestRun.id)}">Retry</button><button type="button" data-aica-copy-run="${escapeHtml(latestRun.id)}">Copy</button><button type="button" data-aica-export-run="${escapeHtml(latestRun.id)}">Export</button></div>` : ""}</header><pre>${escapeHtml(latest?.output || latest?.error || "Chạy một prompt để nhận output từ backend AI Center.")}</pre></section>
+          <section class="aica-latest-output"><header><div><span>OUTPUT GẦN NHẤT</span><strong>${escapeHtml(latestRun?.title || "Chưa có kết quả")}</strong></div>${latest ? `<div><button type="button" data-aica-retry="${escapeHtml(latestRun.id)}">Retry</button><button type="button" data-aica-copy-run="${escapeHtml(latestRun.id)}">Copy</button><button type="button" data-aica-export-run="${escapeHtml(latestRun.id)}">Export</button></div>` : ""}</header><pre>${escapeHtml(latest?.output || latest?.error || "Chạy một prompt để nhận output từ backend AI Center.")}</pre>${latest?.output ? '<div class="aica-project-actions"><span>Lưu output vào Universal Project đang mở</span><button type="button" data-aica-save-project="brief">Creative Brief</button><button type="button" data-aica-save-project="script">Kịch bản</button><button type="button" data-aica-save-project="brand">Brand Kit</button><button type="button" data-aica-save-project="media">Media Center</button></div>' : ""}</section>
         </section>
         <section class="aica-pane ${state.activeView === "workflow" ? "is-active" : ""}" data-aica-pane="workflow">
           <div class="aica-workflow-rail">${phases.map((phase, index) => `<span class="${index < activePhaseIndex ? "is-done" : index === activePhaseIndex ? "is-active" : ""}"><i>${index + 1}</i><b>${phaseLabel[phase]}</b></span>`).join("")}</div>
@@ -462,6 +548,7 @@
         status,
         error: errorMessage
       });
+      bridgeRunToCreative(run, latestVersion(run), action || {});
       if (options.workflow && status === "success") {
         state.workflow.review = output;
         state.workflow.phase = "review";
@@ -512,6 +599,11 @@
     }
     if (target.closest("[data-aica-run]")) {
       runPrompt(instance);
+      return;
+    }
+    const saveProject = target.closest("[data-aica-save-project]");
+    if (saveProject) {
+      saveLatestToCreativeProject(instance, saveProject.dataset.aicaSaveProject);
       return;
     }
     if (target.closest("[data-aica-save-template]")) {
@@ -634,6 +726,20 @@
     shell.addEventListener("change", (event) => handleChange(instance, event));
     shell.addEventListener("input", (event) => handleInput(instance, event));
     renderShell(instance);
+    setTimeout(() => {
+      try {
+        const pending = JSON.parse(storage.getItem(CREATIVE_RETRY_KEY) || "null");
+        if (!pending || Date.now() - Number(pending.requestedAt || 0) > 120000) return;
+        storage.removeItem(CREATIVE_RETRY_KEY);
+        const run = instance.state.runs.find((item) => item.id === pending.runId);
+        const version = latestVersion(run);
+        if (run && version) runPrompt(instance, { prompt: version.prompt, runId: run.id, taskType: run.taskType, title: run.title });
+        else {
+          instance.status = "Không tìm thấy AI run lỗi để chạy lại.";
+          renderShell(instance);
+        }
+      } catch {}
+    }, 0);
   }
 
   function ensureStyles() {

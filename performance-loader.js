@@ -67,7 +67,7 @@
       scripts: [
         "extension-suite.js?v=2", "professional-tools.js?v=4", "tool-manifests.js?v=1", "tool-runtime.js?v=1",
         "feature-lab.js?v=6", "platform-tools.js?v=1", "tool-workspace-pro.js?v=1", "utility-lab-tools.js?v=9", "feature-engines.js?v=2",
-        "ai-center-advanced.js?v=1", "platform-p0.js?v=1", "system-platform.js?v=3"
+        "ai-center-advanced.js?v=2", "platform-p0.js?v=1", "system-platform.js?v=3"
       ]
     },
     dev: {
@@ -106,9 +106,9 @@
       ]
     },
     creative: {
-      styles: ["creative-suite.css?v=6", "creative-os.css?v=1", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
+      styles: ["creative-suite.css?v=6", "creative-os.css?v=1", "creative-galaxy.css?v=1", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
       scripts: [
-        "creative-os.js?v=3", "creative-suite.js?v=7", "ai-center-advanced.js?v=1"
+        "creative-os-core.js?v=2", "creative-galaxy.js?v=1", "creative-os.js?v=4", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
       ]
     },
     music: {

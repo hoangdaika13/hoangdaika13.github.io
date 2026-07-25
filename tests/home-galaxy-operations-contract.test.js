@@ -18,7 +18,7 @@ test("Galaxy Operations V3 is versioned on home and offline shell", () => {
     assert.ok(loader.includes(asset), `loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }
-  assert.match(worker, /hh-identity-portal-v243/);
+  assert.match(worker, /hh-identity-portal-v244/);
   assert.match(index, /performance-loader\.js\?v=36/);
 });
 
