@@ -16,7 +16,7 @@ test("interactive H galaxy exposes exactly fourteen unique product planets", () 
   assert.equal(keys.length, 14);
   assert.equal(new Set(keys).size, 14);
   assert.match(html, /id="hhGalaxyInspector" role="tabpanel"/);
-  assert.match(html, /auth-h-galaxy\.css\?v=3/);
+  assert.match(html, /auth-h-galaxy\.css\?v=4/);
   assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=2/);
   assert.match(html, /data-hh-galaxy-detail/);
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);
@@ -47,7 +47,11 @@ test("galaxy visuals retain motion comfort and responsive fallbacks", () => {
 
   assert.match(css, /\.hh-galaxy-inspector/);
   assert.match(css, /\.hh-galaxy-planet:is\(:hover, :focus-visible, \.is-active\)/);
-  assert.match(css, /animation:\s*hh-galaxy-orbit-spin/);
+  assert.match(css, /offset-path:\s*ellipse/);
+  assert.match(css, /animation:\s*hh-galaxy-planet-orbit/);
+  assert.match(css, /min-height:\s*0/);
+  assert.match(css, /aspect-ratio:\s*1/);
+  assert.doesNotMatch(css, /\.hh-galaxy-planet[\s\S]{0,1800}rotateX\(-61deg\)/);
   assert.match(css, /animation:\s*hh-galaxy-planet-surface/);
   assert.match(css, /--planet-texture/);
   assert.match(css, /var\(--galaxy-accent\)/);

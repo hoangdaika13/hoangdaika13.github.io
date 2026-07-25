@@ -155,58 +155,63 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 .hh-galaxy-orbits {
   position: absolute;
   inset: 0;
-  transform: perspective(980px) rotateX(61deg) rotateZ(-9deg);
-  transform-style: preserve-3d;
+  transform: rotateZ(-9deg);
+  transform-style: flat;
 }
 
 .hh-galaxy-orbit {
   --orbit-color: rgba(101, 226, 255, .25);
   --orbit-speed: 26s;
+  --orbit-half-speed: 13s;
+  --orbit-delay: 0s;
+  --orbit-direction: normal;
+  --static-start: 0%;
   position: absolute;
   left: 50%;
   top: 50%;
   display: block;
   width: var(--orbit-size);
   aspect-ratio: 1;
-  border: 1px solid var(--orbit-color);
-  border-radius: 50%;
-  box-shadow:
-    0 0 18px color-mix(in srgb, var(--orbit-color) 48%, transparent),
-    inset 0 0 12px color-mix(in srgb, var(--orbit-color) 34%, transparent);
   transform: translate(-50%, -50%);
   transform-origin: center;
-  animation: hh-galaxy-orbit-spin var(--orbit-speed) linear infinite;
-  transform-style: preserve-3d;
-  will-change: transform;
+  transform-style: flat;
 }
 
 .hh-galaxy-orbit::before {
   position: absolute;
-  inset: -1px;
+  left: 0;
+  top: 22%;
+  width: 100%;
+  height: 56%;
   border: 1px solid transparent;
+  border-color: var(--orbit-color);
   border-top-color: color-mix(in srgb, var(--orbit-color) 82%, white 18%);
   border-right-color: color-mix(in srgb, var(--orbit-color) 64%, transparent);
-  border-radius: inherit;
+  border-radius: 50%;
   content: "";
   filter: drop-shadow(0 0 5px var(--orbit-color));
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--orbit-color) 42%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--orbit-color) 28%, transparent);
+  pointer-events: none;
 }
 
-.hh-galaxy-orbit.is-selected-orbit {
+.hh-galaxy-orbit.is-selected-orbit::before {
   border-color: color-mix(in srgb, var(--orbit-color) 72%, white);
+}
+
+.hh-galaxy-orbit.is-selected-orbit .hh-galaxy-planet,
+.hh-galaxy-orbit:has(.hh-galaxy-planet:hover) .hh-galaxy-planet {
   animation-play-state: paused;
 }
 
-.hh-galaxy-orbit:has(.hh-galaxy-planet:hover) {
-  animation-play-state: paused;
-}
-
-.hh-galaxy-orbit--one { --orbit-size: 20%; --orbit-speed: 22s; --orbit-color: rgba(255, 199, 86, .38); animation-delay: -4s; }
-.hh-galaxy-orbit--two { --orbit-size: 30%; --orbit-speed: 28s; --orbit-color: rgba(255, 92, 210, .34); animation-delay: -12s; animation-direction: reverse; }
-.hh-galaxy-orbit--three { --orbit-size: 41%; --orbit-speed: 34s; --orbit-color: rgba(84, 231, 255, .31); animation-delay: -21s; }
-.hh-galaxy-orbit--four { --orbit-size: 52%; --orbit-speed: 41s; --orbit-color: rgba(179, 121, 255, .32); animation-delay: -33s; animation-direction: reverse; }
-.hh-galaxy-orbit--five { --orbit-size: 64%; --orbit-speed: 48s; --orbit-color: rgba(157, 255, 102, .29); animation-delay: -9s; }
-.hh-galaxy-orbit--six { --orbit-size: 77%; --orbit-speed: 57s; --orbit-color: rgba(255, 135, 80, .28); animation-delay: -42s; animation-direction: reverse; }
-.hh-galaxy-orbit--seven { --orbit-size: 92%; --orbit-speed: 66s; --orbit-color: rgba(108, 161, 255, .3); animation-delay: -18s; }
+.hh-galaxy-orbit--one { --orbit-size: 20%; --orbit-speed: 22s; --orbit-half-speed: 11s; --orbit-delay: -4s; --static-start: 4%; --orbit-color: rgba(255, 199, 86, .38); }
+.hh-galaxy-orbit--two { --orbit-size: 30%; --orbit-speed: 28s; --orbit-half-speed: 14s; --orbit-delay: -12s; --static-start: 12%; --orbit-direction: reverse; --orbit-color: rgba(255, 92, 210, .34); }
+.hh-galaxy-orbit--three { --orbit-size: 41%; --orbit-speed: 34s; --orbit-half-speed: 17s; --orbit-delay: -21s; --static-start: 20%; --orbit-color: rgba(84, 231, 255, .31); }
+.hh-galaxy-orbit--four { --orbit-size: 52%; --orbit-speed: 41s; --orbit-half-speed: 20.5s; --orbit-delay: -33s; --static-start: 28%; --orbit-direction: reverse; --orbit-color: rgba(179, 121, 255, .32); }
+.hh-galaxy-orbit--five { --orbit-size: 64%; --orbit-speed: 48s; --orbit-half-speed: 24s; --orbit-delay: -9s; --static-start: 36%; --orbit-color: rgba(157, 255, 102, .29); }
+.hh-galaxy-orbit--six { --orbit-size: 77%; --orbit-speed: 57s; --orbit-half-speed: 28.5s; --orbit-delay: -42s; --static-start: 42%; --orbit-direction: reverse; --orbit-color: rgba(255, 135, 80, .28); }
+.hh-galaxy-orbit--seven { --orbit-size: 92%; --orbit-speed: 66s; --orbit-half-speed: 33s; --orbit-delay: -18s; --static-start: 8%; --orbit-color: rgba(108, 161, 255, .3); }
 
 .hh-galaxy-planet {
   --planet-a: #54e7ff;
@@ -217,14 +222,18 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
     radial-gradient(circle at 28% 34%, rgba(255, 255, 255, .74) 0 4%, transparent 5%),
     radial-gradient(circle at 66% 60%, rgba(0, 0, 0, .55) 0 8%, transparent 10%);
   position: absolute;
-  left: 50%;
+  left: 0;
   top: 0;
   z-index: 8;
   display: grid;
   place-items: center;
   width: var(--planet-size);
   min-width: 0;
+  max-width: var(--planet-size);
   height: var(--planet-size);
+  min-height: 0;
+  max-height: var(--planet-size);
+  aspect-ratio: 1;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, .78);
   border-radius: 50%;
@@ -244,9 +253,16 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   font: inherit;
   filter: brightness(1.08) saturate(1.25);
   opacity: .98;
-  transform: translate(-50%, -50%) rotateX(-61deg) rotateZ(var(--planet-tilt)) scale(.92);
-  transform-style: preserve-3d;
+  offset-path: ellipse(50% 28% at 50% 50%);
+  offset-distance: 0%;
+  offset-rotate: 0deg;
+  transform: rotateZ(var(--planet-tilt)) scale(.92);
+  transform-style: flat;
   transition: border-color .22s ease, box-shadow .22s ease, filter .22s ease, opacity .22s ease, transform .22s ease;
+  animation: hh-galaxy-planet-orbit var(--orbit-speed) linear infinite;
+  animation-delay: var(--orbit-delay);
+  animation-direction: var(--orbit-direction);
+  will-change: offset-distance;
   pointer-events: auto;
 }
 
@@ -270,7 +286,8 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 }
 
 .hh-galaxy-planet:nth-of-type(2) {
-  top: 100%;
+  offset-distance: 50%;
+  animation-delay: calc(var(--orbit-delay) - var(--orbit-half-speed));
 }
 
 .hh-galaxy-planet > span {
@@ -324,7 +341,7 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
     0 0 52px color-mix(in srgb, var(--planet-a) 54%, transparent),
     inset 6px 5px 9px rgba(255, 255, 255, .25),
     inset -9px -10px 15px rgba(0, 0, 0, .56);
-  transform: translate(-50%, -50%) rotateX(-61deg) rotateZ(var(--planet-tilt)) scale(1.14);
+  transform: rotateZ(var(--planet-tilt)) scale(1.14);
 }
 
 .hh-galaxy-planet:is(:hover, :focus-visible, .is-active) > em {
@@ -670,12 +687,16 @@ body.home-neon.auth-locked #authGate[data-auth-motion="off"] .hh-h-galaxy * {
   animation-play-state: paused !important;
 }
 
-html[data-motion-level="soft"] .hh-galaxy-orbit {
-  animation-duration: 56s;
+html[data-motion-level="soft"] .hh-galaxy-planet {
+  animation-duration: 70s;
 }
 
-@keyframes hh-galaxy-orbit-spin {
-  to { transform: translate(-50%, -50%) rotate(1turn); }
+html[data-motion-level="soft"] .hh-galaxy-planet:nth-of-type(2) {
+  animation-delay: calc(var(--orbit-delay) - 35s);
+}
+
+@keyframes hh-galaxy-planet-orbit {
+  to { offset-distance: 100%; }
 }
 
 @keyframes hh-galaxy-planet-surface {
@@ -791,13 +812,14 @@ html[data-motion-level="soft"] .hh-galaxy-orbit {
   }
 
   .hh-galaxy-orbit {
-    transform: translate(-50%, -50%) rotate(var(--reduced-rotation, 0deg));
+    transform: translate(-50%, -50%);
   }
 
-  .hh-galaxy-orbit--two { --reduced-rotation: 24deg; }
-  .hh-galaxy-orbit--three { --reduced-rotation: 48deg; }
-  .hh-galaxy-orbit--four { --reduced-rotation: 72deg; }
-  .hh-galaxy-orbit--five { --reduced-rotation: 96deg; }
-  .hh-galaxy-orbit--six { --reduced-rotation: 120deg; }
-  .hh-galaxy-orbit--seven { --reduced-rotation: 144deg; }
+  .hh-galaxy-orbit .hh-galaxy-planet {
+    offset-distance: var(--static-start);
+  }
+
+  .hh-galaxy-orbit .hh-galaxy-planet:nth-of-type(2) {
+    offset-distance: calc(var(--static-start) + 50%);
+  }
 }

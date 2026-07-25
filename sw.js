@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v225";
+const CACHE = "hh-identity-portal-v226";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -108,7 +108,7 @@ const RUNTIME_ASSETS = [
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=5",
-  "./auth-h-galaxy.css?v=3",
+  "./auth-h-galaxy.css?v=4",
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
   "./auth-identity-constellation.css?v=1",
