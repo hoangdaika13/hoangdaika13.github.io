@@ -32,7 +32,7 @@ test("daily brief exposes the required truthful local signals", () => {
     "hh-auth-user",
     "hh.command-center.todos.v2",
     "hh.command-center.pomodoro.v1",
-    "hh.dashboard.weather.v1",
+    "hh.dashboard.weather.v2",
     "TÓM TẮT TỰ ĐỘNG · TRÊN THIẾT BỊ",
     "Cho phép tóm tắt cục bộ",
     "Tiếp tục công việc gần nhất"

@@ -16,7 +16,7 @@
     account: "hh-auth-user",
     todos: "hh.command-center.todos.v2",
     focus: "hh.command-center.pomodoro.v1",
-    weather: "hh.dashboard.weather.v1",
+    weather: "hh.dashboard.weather.v2",
     projects: "hh-project-center",
     music: "hh.music-ai-studio.v1",
     musicApps: "hh.music-ai.apps.v1",
