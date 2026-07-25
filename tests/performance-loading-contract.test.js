@@ -24,8 +24,8 @@ test("heavy workspaces load by route and retain deterministic dependencies", () 
     assert.match(loader, new RegExp(`${JSON.stringify(group)}|\\b${group}:`), `${group} is not registered`);
   }
   assert.match(loader, /ensureForRoute/);
-  assert.match(loader, /home:\s*\{[\s\S]*?dashboard-aurora\.css\?v=3/);
-  assert.match(loader, /home:\s*\{[\s\S]*?dashboard-aurora\.js\?v=3/);
+  assert.match(loader, /home:\s*\{[\s\S]*?dashboard-aurora\.css\?v=4/);
+  assert.match(loader, /home:\s*\{[\s\S]*?dashboard-aurora\.js\?v=5/);
   assert.match(loader, /script\.async\s*=\s*false/);
   assert.match(loader, /requestIdleCallback/);
   assert.match(loader, /data-search-watch-open/);

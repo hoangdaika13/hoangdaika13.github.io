@@ -2,17 +2,20 @@
   "use strict";
 
   const NOTES_KEY = "hh.dashboard.sticky-notes.v1";
-  const WEATHER_KEY = "hh.dashboard.weather.v1";
+  const WEATHER_KEY = "hh.dashboard.weather.v2";
   const WEATHER_LOCATION_KEY = "hh.dashboard.weather-location.v1";
+  const WEATHER_FRESH_MS = 10 * 60 * 1000;
+  const WEATHER_TIMEOUT_MS = 5500;
   const noteColors = ["#fff17a", "#75f2d0", "#ff91d9", "#9cb8ff", "#ffb56f", "#c8ff78"];
   const graphs = { cpu: [], ram: [], disk: [], gpu: [] };
   let initialized = false;
+  let weatherRequestId = 0;
   let weatherLocation = { name: "Hà Nội", latitude: 21.0285, longitude: 105.8542 };
-  let lastFrame = performance.now();
   let frameCount = 0;
-  let fps = 60;
+  let fps = 0;
+  let gpuRenderer = "Đang nhận diện WebGL";
   let lastFpsSample = performance.now();
-  let expectedTick = performance.now() + 1000;
+  let lastTick = performance.now();
   let tabLag = 0;
 
   const byId = (id) => document.getElementById(id);
@@ -80,32 +83,46 @@
     return { label: "Nguy hại", color: "#a65b72" };
   }
 
-  async function fetchJson(url) {
+  async function fetchJson(url, timeoutMs = WEATHER_TIMEOUT_MS) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetch(url, { signal: controller.signal });
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { Accept: "application/json" },
+        cache: "no-store"
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return await response.json();
     } finally { clearTimeout(timer); }
   }
 
-  function renderWeather(payload, location, cached = false) {
+  function relativeAge(savedAt) {
+    const minutes = Math.max(0, Math.round((Date.now() - Number(savedAt || Date.now())) / 60000));
+    if (minutes < 1) return "vừa xong";
+    if (minutes < 60) return `${minutes} phút trước`;
+    return `${Math.round(minutes / 60)} giờ trước`;
+  }
+
+  function renderWeather(payload, location, options = {}) {
     const currentNode = byId("dashboardWeatherCurrent");
     const forecastNode = byId("dashboardForecast");
-    if (!currentNode || !forecastNode) return;
+    if (!currentNode || !forecastNode || !payload?.weather) return;
     const weather = payload.weather;
-    const air = payload.air;
+    const air = payload.air || null;
     const current = weather.current || {};
     const daily = weather.daily || {};
     const info = weatherInfo(current.weather_code, Boolean(current.is_day));
-    const aqi = aqiInfo(air.current?.us_aqi);
+    const airValue = Number(air?.current?.us_aqi);
+    const hasAir = Number.isFinite(airValue);
+    const aqi = aqiInfo(airValue);
     const sunrise = daily.sunrise?.[0] ? new Date(daily.sunrise[0]).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "--";
     const sunset = daily.sunset?.[0] ? new Date(daily.sunset[0]).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "--";
     const moonAge = ((Date.now() / 86400000 - 6.75) % 29.53059 + 29.53059) % 29.53059;
     const moon = moonAge < 1.85 ? "Trăng mới" : moonAge < 7.38 ? "Lưỡi liềm" : moonAge < 9.23 ? "Bán nguyệt" : moonAge < 14.77 ? "Trăng khuyết" : moonAge < 16.61 ? "Trăng tròn" : moonAge < 22.15 ? "Khuyết dần" : moonAge < 23.99 ? "Hạ huyền" : "Lưỡi liềm cuối";
     const uv = Math.round(daily.uv_index_max?.[0] ?? 0);
-    currentNode.innerHTML = `<div class="dashboard-weather-main"><span class="dashboard-weather-icon">${info.icon}</span><div><h4>${escapeHtml(location.name)}</h4><strong>${Math.round(current.temperature_2m ?? 0)}°C</strong><small>${escapeHtml(info.label)} · Cảm giác ${Math.round(current.apparent_temperature ?? 0)}°</small></div></div><div class="dashboard-aqi" style="--aqi-color:${aqi.color}"><span>CHẤT LƯỢNG KHÔNG KHÍ</span><strong>AQI ${Math.round(air.current?.us_aqi ?? 0)}</strong><small>${escapeHtml(aqi.label)} · PM2.5 ${Math.round(air.current?.pm2_5 ?? 0)} · PM10 ${Math.round(air.current?.pm10 ?? 0)} µg/m³</small></div><div class="dashboard-weather-details"><span><b>${Math.round(current.relative_humidity_2m ?? 0)}%</b>Độ ẩm</span><span><b>${Math.round(current.wind_speed_10m ?? 0)} km/h</b>Gió</span><span><b>${Math.round(current.surface_pressure ?? 0)} hPa</b>Áp suất</span><span><b>${uv}</b>UV cao nhất</span><span><b>${sunrise}</b>Bình minh</span><span><b>${sunset}</b>Hoàng hôn</span><span><b>${escapeHtml(moon)}</b>Pha Mặt Trăng</span></div>`;
+    currentNode.dataset.state = options.cached ? "cached" : "live";
+    currentNode.innerHTML = `<div class="dashboard-weather-main"><span class="dashboard-weather-icon">${info.icon}</span><div><h4>${escapeHtml(location.name)}</h4><strong>${Math.round(current.temperature_2m ?? 0)}°C</strong><small>${escapeHtml(info.label)} · Cảm giác ${Math.round(current.apparent_temperature ?? 0)}°</small></div></div><div class="dashboard-aqi${hasAir ? "" : " is-pending"}" style="--aqi-color:${hasAir ? aqi.color : "#9b7bff"}"><span>CHẤT LƯỢNG KHÔNG KHÍ</span><strong>${hasAir ? `AQI ${Math.round(airValue)}` : "AQI đang tải"}</strong><small>${hasAir ? `${escapeHtml(aqi.label)} · PM2.5 ${Math.round(air.current?.pm2_5 ?? 0)} · PM10 ${Math.round(air.current?.pm10 ?? 0)} µg/m³` : "Dự báo đã sẵn sàng · đang nối nguồn CAMS"}</small></div><div class="dashboard-weather-details"><span><b>${Math.round(current.relative_humidity_2m ?? 0)}%</b>Độ ẩm</span><span><b>${Math.round(current.wind_speed_10m ?? 0)} km/h</b>Gió</span><span><b>${Math.round(current.surface_pressure ?? 0)} hPa</b>Áp suất</span><span><b>${uv}</b>UV cao nhất</span><span><b>${sunrise}</b>Bình minh</span><span><b>${sunset}</b>Hoàng hôn</span><span><b>${escapeHtml(moon)}</b>Pha Mặt Trăng</span></div>`;
     const days = Array.isArray(daily.time) ? daily.time.slice(0, 7) : [];
     forecastNode.innerHTML = days.map((date, index) => {
       const dayInfo = weatherInfo(daily.weather_code?.[index], true);
@@ -113,7 +130,12 @@
       return `<article><span>${escapeHtml(label)}</span><b title="${escapeHtml(dayInfo.label)}">${dayInfo.icon}</b><strong>${Math.round(daily.temperature_2m_max?.[index] ?? 0)}° / ${Math.round(daily.temperature_2m_min?.[index] ?? 0)}°</strong><small>☂ ${Math.round(daily.precipitation_probability_max?.[index] ?? 0)}%</small></article>`;
     }).join("");
     const updated = byId("dashboardWeatherUpdated");
-    if (updated) updated.textContent = `${cached ? "Dữ liệu lưu gần nhất" : "Cập nhật"} · ${new Date(payload.savedAt || Date.now()).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+    if (updated) {
+      updated.dataset.state = options.refreshing ? "refreshing" : (options.cached ? "cached" : "live");
+      updated.textContent = options.refreshing
+        ? `Hiện dữ liệu ${relativeAge(payload.savedAt)} · đang làm mới nền`
+        : `${options.cached ? "Bản lưu an toàn" : "Trực tiếp"} · ${relativeAge(payload.savedAt)}`;
+    }
     const city = byId("dashboardWeatherCity");
     if (city) city.value = location.name;
   }
@@ -126,28 +148,66 @@
   }
 
   async function loadWeather(location = weatherLocation, force = false) {
+    const requestId = ++weatherRequestId;
     weatherLocation = location;
     writeJson(WEATHER_LOCATION_KEY, location);
     const cached = readJson(WEATHER_KEY, null);
-    if (!force && cached?.payload && cached?.location && Date.now() - cached.savedAt < 30 * 60 * 1000 && Math.abs(cached.location.latitude - location.latitude) < .01 && Math.abs(cached.location.longitude - location.longitude) < .01) {
-      renderWeather(cached.payload, cached.location, true);
-      return;
-    }
+    const sameLocation = cached?.payload?.weather && cached?.location
+      && Math.abs(cached.location.latitude - location.latitude) < .01
+      && Math.abs(cached.location.longitude - location.longitude) < .01;
+    const cacheAge = sameLocation ? Date.now() - Number(cached.savedAt || 0) : Infinity;
+    if (sameLocation) renderWeather(cached.payload, cached.location, { cached: true, refreshing: force || cacheAge >= WEATHER_FRESH_MS });
+    if (!force && sameLocation && cacheAge < WEATHER_FRESH_MS) return;
+
     const current = byId("dashboardWeatherCurrent");
-    if (current) current.innerHTML = `<div class="dashboard-widget-skeleton"></div>`;
+    if (!sameLocation && current) current.innerHTML = `<div class="dashboard-widget-skeleton"><span>Đang kết nối dự báo…</span></div>`;
+    const updated = byId("dashboardWeatherUpdated");
+    if (updated && !sameLocation) {
+      updated.dataset.state = "refreshing";
+      updated.textContent = "Đang kết nối Open-Meteo…";
+    }
     const weatherUrl = new URL("https://api.open-meteo.com/v1/forecast");
     weatherUrl.search = new URLSearchParams({ latitude: location.latitude, longitude: location.longitude, current: "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,surface_pressure", daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max", timezone: "auto", forecast_days: "7" });
     const airUrl = new URL("https://air-quality-api.open-meteo.com/v1/air-quality");
     airUrl.search = new URLSearchParams({ latitude: location.latitude, longitude: location.longitude, current: "us_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,ozone", timezone: "auto", forecast_days: "7" });
-    try {
-      const [weather, air] = await Promise.all([fetchJson(weatherUrl), fetchJson(airUrl)]);
-      const payload = { weather, air, savedAt: Date.now() };
-      writeJson(WEATHER_KEY, { payload, location, savedAt: Date.now() });
+
+    let freshWeather = null;
+    let freshAir = sameLocation ? cached.payload.air || null : null;
+    const weatherPromise = fetchJson(weatherUrl);
+    const airPromise = fetchJson(airUrl);
+
+    weatherPromise.then((weather) => {
+      if (requestId !== weatherRequestId) return;
+      freshWeather = weather;
+      renderWeather({ weather, air: freshAir, savedAt: Date.now() }, location);
+    }).catch(() => {});
+    airPromise.then((air) => {
+      if (requestId !== weatherRequestId) return;
+      freshAir = air;
+      if (freshWeather) renderWeather({ weather: freshWeather, air, savedAt: Date.now() }, location);
+    }).catch(() => {});
+
+    const [weatherResult, airResult] = await Promise.allSettled([weatherPromise, airPromise]);
+    if (requestId !== weatherRequestId) return;
+    if (weatherResult.status === "fulfilled") {
+      const savedAt = Date.now();
+      const payload = {
+        weather: weatherResult.value,
+        air: airResult.status === "fulfilled" ? airResult.value : freshAir,
+        savedAt
+      };
+      writeJson(WEATHER_KEY, { payload, location, savedAt });
       renderWeather(payload, location);
-    } catch (error) {
-      if (cached?.payload) renderWeather(cached.payload, cached.location || location, true);
-      else renderWeatherError(error.name === "AbortError" ? "Yêu cầu quá thời gian. Hãy thử lại." : "Kiểm tra kết nối mạng rồi thử lại.");
+      if (airResult.status === "rejected" && updated) updated.textContent = `Dự báo trực tiếp · AQI tạm gián đoạn · ${relativeAge(savedAt)}`;
+      return;
     }
+    if (sameLocation) {
+      renderWeather(cached.payload, cached.location, { cached: true });
+      if (updated) updated.textContent = `Mạng chậm · đang dùng bản lưu ${relativeAge(cached.savedAt)}`;
+      return;
+    }
+    const error = weatherResult.reason;
+    renderWeatherError(error?.name === "AbortError" ? "Máy chủ phản hồi chậm. Hãy thử lại." : "Kiểm tra kết nối mạng rồi thử lại.");
   }
 
   async function searchCity(query) {
@@ -337,58 +397,76 @@
     if (graph) graph.setAttribute("points", points);
   }
 
+  function setDeviceCard(name, value, meta, score, state = "live") {
+    const prefix = name[0].toUpperCase() + name.slice(1);
+    const valueNode = byId(`dashboard${prefix}Value`);
+    const metaNode = byId(`dashboard${prefix}Meta`);
+    const card = document.querySelector(`[data-device-card="${name}"]`);
+    if (valueNode) valueNode.textContent = value;
+    if (metaNode) metaNode.textContent = meta;
+    if (card) {
+      card.dataset.state = state;
+      card.style.setProperty("--device-level", `${clamp(score, 0, 100)}%`);
+    }
+    pushGraph(name, score);
+  }
+
   function trackFps(timestamp) {
+    if (document.hidden) {
+      frameCount = 0;
+      lastFpsSample = timestamp;
+      requestAnimationFrame(trackFps);
+      return;
+    }
     frameCount += 1;
-    if (timestamp - lastFpsSample >= 1000) {
+    if (timestamp - lastFpsSample >= 650) {
       fps = Math.round((frameCount * 1000) / (timestamp - lastFpsSample));
       frameCount = 0;
       lastFpsSample = timestamp;
     }
-    lastFrame = timestamp;
     requestAnimationFrame(trackFps);
   }
 
   async function updateDeviceStats() {
     const cores = navigator.hardwareConcurrency || 0;
     const cpuScore = clamp(tabLag * 3.2, 2, 100);
-    if (byId("dashboardCpuValue")) byId("dashboardCpuValue").textContent = cores ? `${cores} luồng` : `${Math.round(tabLag)} ms`;
-    if (byId("dashboardCpuMeta")) byId("dashboardCpuMeta").textContent = `Độ trễ tab ${Math.round(tabLag)} ms`;
-    pushGraph("cpu", cpuScore);
+    const lagLabel = tabLag < 18 ? "Mượt" : tabLag < 50 ? "Ổn định" : "Đang bận";
+    setDeviceCard("cpu", `${Math.round(tabLag)} ms`, `${lagLabel} · ${cores ? `${cores} luồng logic` : "số luồng được ẩn"}`, cpuScore, tabLag < 50 ? "good" : "busy");
 
     const memory = performance.memory;
     const usedHeap = memory?.usedJSHeapSize || 0;
     const heapLimit = memory?.jsHeapSizeLimit || 0;
     const deviceMemory = navigator.deviceMemory;
-    if (byId("dashboardRamValue")) byId("dashboardRamValue").textContent = usedHeap ? formatBytes(usedHeap) : (deviceMemory ? `~${deviceMemory} GB` : "Riêng tư");
-    if (byId("dashboardRamMeta")) byId("dashboardRamMeta").textContent = usedHeap ? `Heap tab · máy ~${deviceMemory || "?"} GB` : "Trình duyệt không cung cấp heap";
-    pushGraph("ram", heapLimit ? (usedHeap / heapLimit) * 100 : (deviceMemory ? 32 : 18));
+    const memoryScore = heapLimit ? (usedHeap / heapLimit) * 100 : (deviceMemory ? 32 : 0);
+    if (usedHeap) setDeviceCard("ram", formatBytes(usedHeap), `Heap JavaScript · giới hạn ${formatBytes(heapLimit)}`, memoryScore, "good");
+    else if (deviceMemory) setDeviceCard("ram", `~${deviceMemory} GB`, "RAM thiết bị do trình duyệt công bố", memoryScore, "limited");
+    else setDeviceCard("ram", "Được bảo vệ", "Trình duyệt không công bố bộ nhớ", 0, "limited");
+
+    if (fps) setDeviceCard("gpu", `${fps} FPS`, `${fps >= 50 ? "Chuyển động mượt" : fps >= 30 ? "Chuyển động ổn định" : "Tab đang bận"} · ${gpuRenderer}`, clamp((fps / 60) * 100, 0, 100), fps >= 45 ? "good" : "busy");
+    else setDeviceCard("gpu", "Đang đo", "Lấy mẫu khung hình thực trong tab", 0, "sampling");
 
     try {
       const storage = await navigator.storage?.estimate?.();
       const usage = storage?.usage || 0;
       const quota = storage?.quota || 0;
-      if (byId("dashboardDiskValue")) byId("dashboardDiskValue").textContent = formatBytes(usage);
-      if (byId("dashboardDiskMeta")) byId("dashboardDiskMeta").textContent = quota ? `Hạn mức ${formatBytes(quota)}` : "Storage API bị giới hạn";
-      pushGraph("disk", quota ? (usage / quota) * 100 : 0);
+      setDeviceCard("disk", formatBytes(usage), quota ? `Dữ liệu web · hạn mức ${formatBytes(quota)}` : "Hạn mức lưu trữ được bảo vệ", quota ? (usage / quota) * 100 : 0, "good");
     } catch {
-      if (byId("dashboardDiskValue")) byId("dashboardDiskValue").textContent = "Riêng tư";
+      setDeviceCard("disk", "Được bảo vệ", "Storage API không khả dụng", 0, "limited");
     }
-
-    if (byId("dashboardGpuValue")) byId("dashboardGpuValue").textContent = `${fps} FPS`;
-    pushGraph("gpu", clamp((fps / 60) * 100, 0, 100));
   }
 
   function wireDeviceStats() {
-    const gpu = rendererName();
-    if (byId("dashboardGpuMeta")) byId("dashboardGpuMeta").textContent = gpu;
+    gpuRenderer = rendererName();
+    lastTick = performance.now();
     requestAnimationFrame(trackFps);
     setInterval(() => {
       const now = performance.now();
-      tabLag = Math.max(0, now - expectedTick);
-      expectedTick = now + 1000;
+      tabLag = Math.max(0, now - lastTick - 1000);
+      lastTick = now;
     }, 1000);
     updateDeviceStats();
-    setInterval(updateDeviceStats, 2200);
+    setTimeout(updateDeviceStats, 700);
+    setInterval(() => { if (!document.hidden) updateDeviceStats(); }, 2200);
   }
 
   function wireWeather() {
@@ -400,11 +478,11 @@
     byId("dashboardUseLocation")?.addEventListener("click", useLocation);
     document.addEventListener("click", (event) => { if (event.target.closest("[data-weather-retry]")) loadWeather(weatherLocation, true); });
     loadWeather(weatherLocation);
-    setInterval(() => loadWeather(weatherLocation, true), 30 * 60 * 1000);
+    setInterval(() => { if (!document.hidden) loadWeather(weatherLocation, true); }, 15 * 60 * 1000);
   }
 
   function init() {
-    if (initialized || !byId("dashboardStickyBoard")) return;
+    if (initialized || !byId("dashboardWeatherCurrent")) return;
     initialized = true;
     updateClock();
     setInterval(updateClock, 1000);
@@ -413,13 +491,21 @@
     wireDeviceStats();
   }
 
+  function scheduleInit() {
+    requestAnimationFrame(() => requestAnimationFrame(init));
+  }
+
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => {
-    if (document.body.classList.contains("auth-unlocked")) init();
+    if (document.body.classList.contains("auth-unlocked")) scheduleInit();
   });
-  else if (document.body.classList.contains("auth-unlocked")) init();
+  else if (document.body.classList.contains("auth-unlocked")) scheduleInit();
   window.addEventListener("hh:auth-change", () => {
-    if (document.body.classList.contains("auth-unlocked")) init();
+    if (document.body.classList.contains("auth-unlocked")) scheduleInit();
   });
+  window.addEventListener("hh:assets-ready", (event) => {
+    if (event.detail?.route === "/home") scheduleInit();
+  });
+  window.addEventListener("hh:workspace-open", scheduleInit);
   window.addEventListener("hh:command-center-sync", () => {
     if (!initialized || !byId("dashboardStickyBoard")) return;
     notes = readJson(NOTES_KEY, notes);
@@ -428,6 +514,7 @@
   window.addEventListener("hashchange", () => {
     if (!location.hash.includes("/home")) return;
     requestAnimationFrame(() => {
+      init();
       if (!byId("dashboardStickyBoard")) return;
       notes = readJson(NOTES_KEY, notes);
       renderNotes();
