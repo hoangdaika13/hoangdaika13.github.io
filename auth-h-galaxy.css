@@ -7,6 +7,8 @@
 body.home-neon.auth-locked #authGate > .hh-h-galaxy {
   --galaxy-x: 27vw;
   --galaxy-y: 52%;
+  --galaxy-accent: #ffd76b;
+  --galaxy-accent-2: #ff6e8f;
   position: fixed !important;
   inset: 0 !important;
   z-index: 11;
@@ -15,7 +17,7 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy {
   height: 100dvh;
   overflow: hidden;
   color: #f8fbff;
-  clip-path: inset(0 40% 0 0);
+  clip-path: inset(0 41.5% 0 0);
   isolation: isolate;
   pointer-events: none;
 }
@@ -198,18 +200,22 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   animation-play-state: paused;
 }
 
-.hh-galaxy-orbit--one { --orbit-size: 20%; --orbit-speed: 22s; --orbit-color: rgba(255, 199, 86, .38); }
-.hh-galaxy-orbit--two { --orbit-size: 30%; --orbit-speed: 28s; --orbit-color: rgba(255, 92, 210, .34); animation-direction: reverse; }
-.hh-galaxy-orbit--three { --orbit-size: 41%; --orbit-speed: 34s; --orbit-color: rgba(84, 231, 255, .31); }
-.hh-galaxy-orbit--four { --orbit-size: 52%; --orbit-speed: 41s; --orbit-color: rgba(179, 121, 255, .32); animation-direction: reverse; }
-.hh-galaxy-orbit--five { --orbit-size: 64%; --orbit-speed: 48s; --orbit-color: rgba(157, 255, 102, .29); }
-.hh-galaxy-orbit--six { --orbit-size: 77%; --orbit-speed: 57s; --orbit-color: rgba(255, 135, 80, .28); animation-direction: reverse; }
-.hh-galaxy-orbit--seven { --orbit-size: 92%; --orbit-speed: 66s; --orbit-color: rgba(108, 161, 255, .3); }
+.hh-galaxy-orbit--one { --orbit-size: 20%; --orbit-speed: 22s; --orbit-color: rgba(255, 199, 86, .38); animation-delay: -4s; }
+.hh-galaxy-orbit--two { --orbit-size: 30%; --orbit-speed: 28s; --orbit-color: rgba(255, 92, 210, .34); animation-delay: -12s; animation-direction: reverse; }
+.hh-galaxy-orbit--three { --orbit-size: 41%; --orbit-speed: 34s; --orbit-color: rgba(84, 231, 255, .31); animation-delay: -21s; }
+.hh-galaxy-orbit--four { --orbit-size: 52%; --orbit-speed: 41s; --orbit-color: rgba(179, 121, 255, .32); animation-delay: -33s; animation-direction: reverse; }
+.hh-galaxy-orbit--five { --orbit-size: 64%; --orbit-speed: 48s; --orbit-color: rgba(157, 255, 102, .29); animation-delay: -9s; }
+.hh-galaxy-orbit--six { --orbit-size: 77%; --orbit-speed: 57s; --orbit-color: rgba(255, 135, 80, .28); animation-delay: -42s; animation-direction: reverse; }
+.hh-galaxy-orbit--seven { --orbit-size: 92%; --orbit-speed: 66s; --orbit-color: rgba(108, 161, 255, .3); animation-delay: -18s; }
 
 .hh-galaxy-planet {
   --planet-a: #54e7ff;
   --planet-b: #165cff;
-  --planet-size: 25px;
+  --planet-size: 28px;
+  --planet-tilt: -12deg;
+  --planet-texture:
+    radial-gradient(circle at 28% 34%, rgba(255, 255, 255, .74) 0 4%, transparent 5%),
+    radial-gradient(circle at 66% 60%, rgba(0, 0, 0, .55) 0 8%, transparent 10%);
   position: absolute;
   left: 50%;
   top: 0;
@@ -220,24 +226,47 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   min-width: 0;
   height: var(--planet-size);
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, .62);
+  border: 1px solid rgba(255, 255, 255, .78);
   border-radius: 50%;
   outline: none;
   background:
-    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, .98) 0 7%, transparent 17%),
-    radial-gradient(circle at 36% 32%, var(--planet-a), var(--planet-b) 61%, #02040b 100%);
+    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 1) 0 5%, rgba(255, 255, 255, .48) 8%, transparent 19%),
+    radial-gradient(circle at 70% 74%, rgba(0, 0, 0, .56) 0 14%, transparent 48%),
+    conic-gradient(from 215deg at 38% 34%, var(--planet-a), var(--planet-b) 44%, color-mix(in srgb, var(--planet-b) 58%, #050713) 72%, var(--planet-a));
   box-shadow:
-    0 0 8px var(--planet-a),
-    0 0 22px color-mix(in srgb, var(--planet-a) 62%, transparent),
-    inset -4px -5px 8px rgba(0, 0, 0, .46);
+    0 0 3px rgba(255, 255, 255, .94),
+    0 0 10px var(--planet-a),
+    0 0 27px color-mix(in srgb, var(--planet-a) 68%, transparent),
+    inset 5px 4px 8px rgba(255, 255, 255, .22),
+    inset -8px -9px 13px rgba(0, 0, 0, .72);
   color: #fff;
   cursor: pointer;
   font: inherit;
-  opacity: .9;
-  transform: translate(-50%, -50%) rotateX(-61deg) scale(.9);
+  filter: brightness(1.08) saturate(1.25);
+  opacity: .98;
+  transform: translate(-50%, -50%) rotateX(-61deg) rotateZ(var(--planet-tilt)) scale(.92);
   transform-style: preserve-3d;
-  transition: border-color .22s ease, box-shadow .22s ease, filter .22s ease, opacity .22s ease;
+  transition: border-color .22s ease, box-shadow .22s ease, filter .22s ease, opacity .22s ease, transform .22s ease;
   pointer-events: auto;
+}
+
+.hh-galaxy-planet::after {
+  position: absolute;
+  inset: 7%;
+  z-index: 1;
+  border-radius: inherit;
+  background:
+    var(--planet-texture),
+    linear-gradient(118deg, rgba(255, 255, 255, .38), transparent 35% 64%, rgba(0, 0, 0, .58));
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, .24),
+    inset -3px -4px 6px rgba(0, 0, 0, .46);
+  content: "";
+  opacity: .58;
+  transform: translateZ(2px) rotate(0);
+  animation: hh-galaxy-planet-surface 12s linear infinite;
+  mix-blend-mode: normal;
+  pointer-events: none;
 }
 
 .hh-galaxy-planet:nth-of-type(2) {
@@ -293,7 +322,9 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
     0 0 10px #fff,
     0 0 28px var(--planet-a),
     0 0 52px color-mix(in srgb, var(--planet-a) 54%, transparent),
-    inset -4px -5px 8px rgba(0, 0, 0, .34);
+    inset 6px 5px 9px rgba(255, 255, 255, .25),
+    inset -9px -10px 15px rgba(0, 0, 0, .56);
+  transform: translate(-50%, -50%) rotateX(-61deg) rotateZ(var(--planet-tilt)) scale(1.14);
 }
 
 .hh-galaxy-planet:is(:hover, :focus-visible, .is-active) > em {
@@ -306,20 +337,20 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   outline-offset: 5px;
 }
 
-[data-hh-planet="1"] { --planet-a: #ffe781; --planet-b: #ff7a21; --planet-size: 25px; }
-[data-hh-planet="2"] { --planet-a: #ff72dc; --planet-b: #a518e7; --planet-size: 23px; }
-[data-hh-planet="3"] { --planet-a: #65efff; --planet-b: #0876d7; --planet-size: 29px; }
-[data-hh-planet="4"] { --planet-a: #ffab63; --planet-b: #df304a; --planet-size: 31px; }
-[data-hh-planet="5"] { --planet-a: #b8ff72; --planet-b: #15a765; --planet-size: 27px; }
-[data-hh-planet="6"] { --planet-a: #bf93ff; --planet-b: #5c32d8; --planet-size: 33px; }
-[data-hh-planet="7"] { --planet-a: #ffffff; --planet-b: #338bff; --planet-size: 25px; }
-[data-hh-planet="8"] { --planet-a: #ff6fcf; --planet-b: #7c1cd5; --planet-size: 35px; }
-[data-hh-planet="9"] { --planet-a: #64ffd3; --planet-b: #037e87; --planet-size: 29px; }
-[data-hh-planet="10"] { --planet-a: #ffd26d; --planet-b: #d43b27; --planet-size: 27px; }
-[data-hh-planet="11"] { --planet-a: #72cbff; --planet-b: #1641c8; --planet-size: 33px; }
-[data-hh-planet="12"] { --planet-a: #f899ff; --planet-b: #9622a9; --planet-size: 25px; }
-[data-hh-planet="13"] { --planet-a: #dfff7b; --planet-b: #459129; --planet-size: 35px; }
-[data-hh-planet="14"] { --planet-a: #ff896b; --planet-b: #8d183a; --planet-size: 29px; }
+[data-hh-planet="1"] { --planet-a: #ffe781; --planet-b: #ff7a21; --planet-size: 29px; --planet-tilt: -8deg; --planet-texture: radial-gradient(ellipse at 36% 54%, rgba(119, 55, 21, .7) 0 13%, transparent 15%), radial-gradient(ellipse at 70% 33%, rgba(255, 242, 141, .62) 0 10%, transparent 12%); }
+[data-hh-planet="2"] { --planet-a: #ff72dc; --planet-b: #a518e7; --planet-size: 27px; --planet-tilt: 17deg; --planet-texture: repeating-linear-gradient(76deg, transparent 0 4px, rgba(255, 255, 255, .36) 5px, transparent 7px); }
+[data-hh-planet="3"] { --planet-a: #65efff; --planet-b: #0876d7; --planet-size: 33px; --planet-tilt: -22deg; --planet-texture: radial-gradient(ellipse at 30% 68%, rgba(9, 43, 124, .74) 0 16%, transparent 18%), radial-gradient(ellipse at 70% 32%, rgba(136, 255, 245, .54) 0 14%, transparent 16%); }
+[data-hh-planet="4"] { --planet-a: #ffab63; --planet-b: #df304a; --planet-size: 35px; --planet-tilt: 11deg; --planet-texture: repeating-linear-gradient(0deg, rgba(255, 239, 151, .38) 0 2px, transparent 3px 6px); }
+[data-hh-planet="5"] { --planet-a: #b8ff72; --planet-b: #15a765; --planet-size: 31px; --planet-tilt: -14deg; --planet-texture: radial-gradient(ellipse at 32% 35%, rgba(8, 87, 70, .72) 0 18%, transparent 20%), radial-gradient(ellipse at 69% 66%, rgba(229, 255, 133, .44) 0 15%, transparent 17%); }
+[data-hh-planet="6"] { --planet-a: #bf93ff; --planet-b: #5c32d8; --planet-size: 37px; --planet-tilt: 21deg; --planet-texture: repeating-radial-gradient(ellipse at center, transparent 0 4px, rgba(255, 255, 255, .24) 5px, transparent 7px); }
+[data-hh-planet="7"] { --planet-a: #ffffff; --planet-b: #338bff; --planet-size: 29px; --planet-tilt: -19deg; --planet-texture: linear-gradient(90deg, transparent 46%, rgba(28, 43, 89, .7) 48% 52%, transparent 54%), linear-gradient(0deg, transparent 46%, rgba(28, 43, 89, .7) 48% 52%, transparent 54%); }
+[data-hh-planet="8"] { --planet-a: #ff6fcf; --planet-b: #7c1cd5; --planet-size: 39px; --planet-tilt: 9deg; --planet-texture: radial-gradient(circle at 31% 32%, rgba(255, 215, 246, .42) 0 7%, transparent 9%), radial-gradient(circle at 67% 63%, rgba(48, 8, 94, .7) 0 12%, transparent 14%); }
+[data-hh-planet="9"] { --planet-a: #64ffd3; --planet-b: #037e87; --planet-size: 33px; --planet-tilt: -25deg; --planet-texture: repeating-linear-gradient(18deg, transparent 0 5px, rgba(204, 255, 248, .37) 6px, transparent 8px); }
+[data-hh-planet="10"] { --planet-a: #ffd26d; --planet-b: #d43b27; --planet-size: 31px; --planet-tilt: 15deg; --planet-texture: radial-gradient(circle at 35% 38%, rgba(91, 24, 20, .64) 0 9%, transparent 11%), radial-gradient(circle at 68% 64%, rgba(255, 237, 156, .42) 0 12%, transparent 14%); }
+[data-hh-planet="11"] { --planet-a: #72cbff; --planet-b: #1641c8; --planet-size: 37px; --planet-tilt: -12deg; --planet-texture: repeating-linear-gradient(-8deg, rgba(217, 246, 255, .28) 0 2px, transparent 3px 7px); }
+[data-hh-planet="12"] { --planet-a: #f899ff; --planet-b: #9622a9; --planet-size: 29px; --planet-tilt: 23deg; --planet-texture: radial-gradient(ellipse at 36% 62%, rgba(74, 13, 83, .66) 0 16%, transparent 18%), radial-gradient(ellipse at 70% 30%, rgba(255, 218, 255, .4) 0 12%, transparent 14%); }
+[data-hh-planet="13"] { --planet-a: #dfff7b; --planet-b: #459129; --planet-size: 39px; --planet-tilt: -16deg; --planet-texture: repeating-linear-gradient(4deg, transparent 0 4px, rgba(247, 255, 189, .3) 5px, transparent 8px); }
+[data-hh-planet="14"] { --planet-a: #ff896b; --planet-b: #8d183a; --planet-size: 33px; --planet-tilt: 18deg; --planet-texture: radial-gradient(circle at 29% 40%, rgba(72, 11, 40, .68) 0 10%, transparent 12%), radial-gradient(circle at 68% 60%, rgba(255, 212, 190, .38) 0 13%, transparent 15%); }
 
 [data-hh-planet="4"]::before,
 [data-hh-planet="8"]::before,
@@ -436,20 +467,22 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   bottom: 20px;
   z-index: 30;
   display: grid;
-  gap: 10px;
-  width: min(330px, calc(40vw - 38px));
-  padding: 13px 14px 12px;
+  gap: 9px;
+  width: min(360px, calc(40vw - 38px));
+  padding: 14px 15px 13px;
   overflow: hidden;
   border: 1px solid transparent;
   border-radius: 17px;
   background:
-    linear-gradient(145deg, rgba(8, 12, 27, .9), rgba(8, 9, 19, .96)) padding-box,
-    linear-gradient(115deg, rgba(77, 231, 255, .76), rgba(255, 79, 184, .7), rgba(190, 255, 96, .64)) border-box;
+    radial-gradient(circle at 94% 5%, color-mix(in srgb, var(--galaxy-accent-2) 16%, transparent), transparent 38%) padding-box,
+    linear-gradient(145deg, rgba(8, 12, 27, .92), rgba(8, 9, 19, .97)) padding-box,
+    linear-gradient(115deg, var(--galaxy-accent), var(--galaxy-accent-2), color-mix(in srgb, var(--galaxy-accent) 55%, white)) border-box;
   box-shadow:
     0 22px 54px rgba(0, 0, 0, .46),
-    0 0 32px rgba(70, 225, 255, .1),
+    0 0 38px color-mix(in srgb, var(--galaxy-accent) 16%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, .08);
   backdrop-filter: blur(19px) saturate(1.25);
+  transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
   pointer-events: auto;
 }
 
@@ -457,8 +490,8 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(110deg, rgba(80, 229, 255, .07), transparent 42%, rgba(255, 65, 197, .08)),
-    radial-gradient(circle at 88% 10%, rgba(166, 99, 255, .18), transparent 34%);
+    linear-gradient(110deg, color-mix(in srgb, var(--galaxy-accent) 11%, transparent), transparent 42%, color-mix(in srgb, var(--galaxy-accent-2) 12%, transparent)),
+    radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--galaxy-accent-2) 21%, transparent), transparent 34%);
   content: "";
   pointer-events: none;
 }
@@ -482,7 +515,7 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 }
 
 .hh-galaxy-inspector > header span {
-  color: #71efff;
+  color: var(--galaxy-accent);
   font-size: 8px;
   font-weight: 900;
   letter-spacing: .11em;
@@ -507,14 +540,14 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   place-items: center;
   width: 43px;
   aspect-ratio: 1;
-  border: 1px solid rgba(91, 230, 255, .42);
+  border: 1px solid color-mix(in srgb, var(--galaxy-accent) 58%, transparent);
   border-radius: 13px;
-  background: linear-gradient(145deg, rgba(63, 225, 255, .17), rgba(255, 70, 196, .11));
-  box-shadow: 0 0 22px rgba(75, 226, 255, .13);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--galaxy-accent) 22%, transparent), color-mix(in srgb, var(--galaxy-accent-2) 15%, transparent));
+  box-shadow: 0 0 24px color-mix(in srgb, var(--galaxy-accent) 18%, transparent), inset 0 0 15px color-mix(in srgb, var(--galaxy-accent-2) 10%, transparent);
   color: #fff;
   font-size: 18px;
   font-style: normal;
-  text-shadow: 0 0 12px #54e7ff;
+  text-shadow: 0 0 12px var(--galaxy-accent);
 }
 
 .hh-galaxy-inspector > div > span {
@@ -544,10 +577,10 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 
 .hh-galaxy-inspector > div > b {
   padding: 5px 7px;
-  border: 1px solid rgba(255, 111, 208, .28);
+  border: 1px solid color-mix(in srgb, var(--galaxy-accent-2) 45%, transparent);
   border-radius: 999px;
-  background: rgba(255, 74, 198, .08);
-  color: #ff91da;
+  background: color-mix(in srgb, var(--galaxy-accent-2) 11%, transparent);
+  color: color-mix(in srgb, var(--galaxy-accent-2) 76%, white);
   font-size: 7px;
   letter-spacing: .04em;
   white-space: nowrap;
@@ -561,6 +594,30 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   line-height: 1.55;
 }
 
+.hh-galaxy-detail {
+  display: grid;
+  gap: 4px;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--galaxy-accent) 20%, rgba(255, 255, 255, .06));
+  border-radius: 10px;
+  background:
+    linear-gradient(115deg, color-mix(in srgb, var(--galaxy-accent) 9%, transparent), color-mix(in srgb, var(--galaxy-accent-2) 7%, transparent));
+}
+
+.hh-galaxy-detail > span {
+  color: var(--galaxy-accent);
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.hh-galaxy-detail > p {
+  margin: 0;
+  color: #909eb3;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
 .hh-galaxy-inspector > ul {
   display: flex;
   flex-wrap: wrap;
@@ -572,9 +629,9 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 
 .hh-galaxy-inspector > ul li {
   padding: 4px 7px;
-  border: 1px solid rgba(109, 230, 255, .17);
+  border: 1px solid color-mix(in srgb, var(--galaxy-accent) 23%, rgba(255, 255, 255, .07));
   border-radius: 7px;
-  background: rgba(64, 205, 237, .07);
+  background: color-mix(in srgb, var(--galaxy-accent) 8%, rgba(6, 10, 20, .78));
   color: #c5d6e9;
   font-size: 7px;
   font-weight: 750;
@@ -597,12 +654,12 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #76f2ac;
-  box-shadow: 0 0 10px #76f2ac;
+  background: var(--galaxy-accent);
+  box-shadow: 0 0 10px var(--galaxy-accent);
 }
 
 .hh-galaxy-inspector > footer small {
-  color: #6edff0;
+  color: var(--galaxy-accent);
   font-size: 7px;
   font-weight: 800;
 }
@@ -619,6 +676,10 @@ html[data-motion-level="soft"] .hh-galaxy-orbit {
 
 @keyframes hh-galaxy-orbit-spin {
   to { transform: translate(-50%, -50%) rotate(1turn); }
+}
+
+@keyframes hh-galaxy-planet-surface {
+  to { transform: translateZ(2px) rotate(1turn); }
 }
 
 @keyframes hh-galaxy-cloud-spin {

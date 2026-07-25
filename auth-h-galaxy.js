@@ -15,8 +15,11 @@
       kicker: "TRUNG TÂM ĐIỀU KHIỂN",
       count: "1 MỤC",
       route: "#/home",
+      accent: "#ffd76b",
+      accent2: "#ff6e8f",
       description: "Tổng quan ngày, Command Center, thời tiết, thiết bị và các lối tắt quan trọng.",
-      features: ["Dashboard", "Command Center", "Weather & AQI", "Sticky Notes"]
+      detail: "Theo dõi nhịp làm việc, mở nhanh tác vụ đang ưu tiên và gom các tín hiệu quan trọng vào một màn hình.",
+      features: ["Dashboard", "Command Center", "Weather & AQI", "Sticky Notes", "Quick Actions"]
     },
     system: {
       icon: "⚙",
@@ -24,8 +27,11 @@
       kicker: "CẤU HÌNH NỀN TẢNG",
       count: "7 MỤC",
       route: "#/system",
+      accent: "#55f1ff",
+      accent2: "#72ffa8",
       description: "Điều chỉnh giao diện, quyền riêng tư, PWA, widget, thông báo và trạng thái hệ thống.",
-      features: ["Settings", "PWA Center", "Widget Engine", "Diagnostics"]
+      detail: "Cá nhân hóa trải nghiệm, kiểm tra sức khỏe ứng dụng và quản lý các quyền hoạt động trên từng thiết bị.",
+      features: ["Settings", "PWA Center", "Widget Engine", "Diagnostics", "Privacy"]
     },
     creative: {
       icon: "✦",
@@ -33,8 +39,11 @@
       kicker: "AI CREATIVE UNIVERSE",
       count: "25 MỤC",
       route: "#/create",
+      accent: "#ff68cf",
+      accent2: "#9d72ff",
       description: "Biến ý tưởng thành nội dung bằng AI, prompt, chiến dịch và quy trình xuất bản tự động.",
-      features: ["AI Center", "Creator Studio", "Prompt Lab", "Automation"]
+      detail: "Từ brief ban đầu đến nội dung hoàn chỉnh: lên ý tưởng, tạo tài sản, tổ chức phiên bản và chuẩn bị xuất bản.",
+      features: ["AI Center", "Creator Studio", "Prompt Lab", "Automation", "Campaign Flow"]
     },
     music: {
       icon: "♫",
@@ -42,8 +51,11 @@
       kicker: "MUSIC PRODUCTION",
       count: "26 MỤC",
       route: "#/music-ai",
+      accent: "#ffb35f",
+      accent2: "#ff4c75",
       description: "Sáng tác, phối khí, dựng loop, mix & master và tạo visualizer cho bản nhạc.",
-      features: ["AI Composer", "DAW Workspace", "Mix & Master", "Visualizer"]
+      detail: "Phát triển bài hát theo từng lớp âm thanh, quản lý project và hoàn thiện bản phát hành trong cùng một studio.",
+      features: ["AI Composer", "DAW Workspace", "Mix & Master", "Visualizer", "Publishing"]
     },
     media: {
       icon: "◈",
@@ -51,8 +63,11 @@
       kicker: "MEDIA PRODUCTION",
       count: "22 MỤC",
       route: "#/media-design",
+      accent: "#a8ff68",
+      accent2: "#4de9ff",
       description: "Không gian sản xuất ảnh, video, thumbnail, nội dung đa phương tiện và xuất bản.",
-      features: ["Photo Editor", "Video Studio", "Thumbnail Lab", "Publishing"]
+      detail: "Xử lý media theo quy trình có cấu trúc, xem trước nhiều định dạng và chuẩn hóa đầu ra cho từng nền tảng.",
+      features: ["Photo Editor", "Video Studio", "Thumbnail Lab", "Publishing", "Asset Library"]
     },
     graphic: {
       icon: "✺",
@@ -60,8 +75,11 @@
       kicker: "GRAPHIC DESIGN",
       count: "25 MỤC",
       route: "#/graphic-design",
+      accent: "#c49aff",
+      accent2: "#6d7cff",
       description: "Thiết kế vector, typography, nhân vật, mockup, chuyển động và hệ thống component.",
-      features: ["Vector Core", "Typography", "Mockup", "Motion Design"]
+      detail: "Xây dựng thiết kế không phá hủy, tái sử dụng component và xuất nhiều phiên bản từ một nguồn sáng tạo.",
+      features: ["Vector Core", "Typography", "Mockup", "Motion Design", "Components"]
     },
     dev: {
       icon: "⌘",
@@ -69,8 +87,11 @@
       kicker: "DEVELOPER TOOLKIT",
       count: "34 MỤC",
       route: "#/dev-tools",
+      accent: "#66d7ff",
+      accent2: "#6f86ff",
       description: "Bộ công cụ lập trình, API, Git, regex, cơ sở dữ liệu, bảo mật và chẩn đoán.",
-      features: ["API Studio", "Git Workspace", "Regex Database", "Security"]
+      detail: "Thiết kế, kiểm thử và chẩn đoán luồng kỹ thuật với các workspace chuyên biệt cho quá trình phát triển.",
+      features: ["API Studio", "Git Workspace", "Regex Database", "Security", "Diagnostics"]
     },
     work: {
       icon: "□",
@@ -78,8 +99,11 @@
       kicker: "WORK OPERATIONS",
       count: "9 MỤC",
       route: "#/work",
+      accent: "#ff79d7",
+      accent2: "#b66dff",
       description: "Quản lý dự án, task, tài liệu, cửa hàng số, tệp tải xuống và tiến độ nhóm.",
-      features: ["Project Center", "Task Flow", "Digital Store", "Cloud Files"]
+      detail: "Lập kế hoạch, theo dõi tiến độ, lưu bằng chứng công việc và chuyển giao đầu ra trong một luồng thống nhất.",
+      features: ["Project Center", "Task Flow", "Digital Store", "Cloud Files", "Team Board"]
     },
     communication: {
       icon: "◌",
@@ -87,8 +111,11 @@
       kicker: "COMMUNICATION HUB",
       count: "21 MỤC",
       route: "#/communication",
+      accent: "#5ff5dc",
+      accent2: "#48bfff",
       description: "Kết nối cộng đồng qua messenger, forum, phòng trực tiếp và trung tâm thông báo.",
-      features: ["Community", "Messenger", "Forum", "Live Room"]
+      detail: "Trao đổi theo phòng, theo dõi hội thoại quan trọng và cộng tác trực tiếp mà không rời khỏi HH Platform.",
+      features: ["Community", "Messenger", "Forum", "Live Room", "Notifications"]
     },
     entertainment: {
       icon: "◉",
@@ -96,8 +123,11 @@
       kicker: "ENTERTAINMENT",
       count: "3 MỤC",
       route: "#/entertainment",
+      accent: "#ffd46a",
+      accent2: "#ff754f",
       description: "Thư giãn với game center, arcade và hành trình khám phá không gian ASTRA.",
-      features: ["Game Center", "Arcade", "ASTRA Space", "Realtime Play"]
+      detail: "Khám phá trải nghiệm tương tác, thử thách điểm số và những hành trình vũ trụ có thể chơi ngay trên trình duyệt.",
+      features: ["Game Center", "Arcade", "ASTRA Space", "Realtime Play", "Achievements"]
     },
     analytics: {
       icon: "↗",
@@ -105,8 +135,11 @@
       kicker: "INSIGHTS & ANALYTICS",
       count: "8 MỤC",
       route: "#/analytics",
+      accent: "#69c8ff",
+      accent2: "#6575ff",
       description: "Theo dõi hành trình, hiệu suất, Web Vitals, báo cáo và tín hiệu vận hành.",
-      features: ["Realtime Insights", "Web Vitals", "Reports", "Admin Panel"]
+      detail: "Biến dữ liệu hoạt động thành tín hiệu dễ đọc để phát hiện xu hướng, điểm nghẽn và cơ hội cải thiện.",
+      features: ["Realtime Insights", "Web Vitals", "Reports", "Admin Panel", "Journey Map"]
     },
     learning: {
       icon: "◫",
@@ -114,8 +147,11 @@
       kicker: "LEARNING PLATFORM",
       count: "17 MỤC",
       route: "#/learn",
+      accent: "#f19aff",
+      accent2: "#8d72ff",
       description: "Xây dựng lộ trình học, lớp học, bài luyện tập, ôn tập và kho kiến thức.",
-      features: ["Learning Paths", "Classroom", "Review", "Knowledge Center"]
+      detail: "Học theo lộ trình rõ ràng, luyện tập theo bước và lưu tiến độ để tiếp tục đúng nơi bạn đã dừng.",
+      features: ["Learning Paths", "Classroom", "Review", "Knowledge Center", "Study Coach"]
     },
     english: {
       icon: "E",
@@ -123,8 +159,11 @@
       kicker: "ENGLISH AI COACH",
       count: "A1 → C2",
       route: "#/english",
+      accent: "#d8ff78",
+      accent2: "#55e58b",
       description: "Học tiếng Anh theo CEFR, luyện phát âm, hội thoại nghề nghiệp và lộ trình cá nhân.",
-      features: ["CEFR Courses", "Voice Coach", "Career English", "Placement"]
+      detail: "Kết hợp bài học theo cấp độ, luyện giọng nói và ngữ cảnh nghề nghiệp để tạo kế hoạch học phù hợp.",
+      features: ["CEFR Courses", "Voice Coach", "Career English", "Placement", "Vocabulary"]
     },
     support: {
       icon: "♥",
@@ -132,8 +171,11 @@
       kicker: "SUPPORT THE CREATOR",
       count: "KẾT NỐI",
       route: "#/support",
+      accent: "#ff8a6c",
+      accent2: "#ff5ca8",
       description: "Ủng hộ nhà phát triển, gửi phản hồi, xem roadmap và kết nối trung tâm hỗ trợ.",
-      features: ["Ủng hộ", "Feedback", "Roadmap", "Support Center"]
+      detail: "Đồng hành cùng quá trình phát triển HH, góp ý cho tính năng tiếp theo và nhận hỗ trợ khi cần.",
+      features: ["Ủng hộ", "Feedback", "Roadmap", "Support Center", "Creator Updates"]
     }
   });
 
@@ -159,12 +201,16 @@
     });
 
     galaxy.dataset.activeCategory = key;
+    galaxy.style.setProperty("--galaxy-accent", data.accent);
+    galaxy.style.setProperty("--galaxy-accent-2", data.accent2);
+    inspector?.setAttribute("data-theme", key);
     write("[data-hh-galaxy-index]", `HÀNH TINH ${String(planets.indexOf(planet) + 1).padStart(2, "0")} / ${String(planets.length).padStart(2, "0")}`);
     write("[data-hh-galaxy-icon]", data.icon);
     write("[data-hh-galaxy-kicker]", data.kicker);
     write("[data-hh-galaxy-title]", data.title);
     write("[data-hh-galaxy-count]", data.count);
     write("[data-hh-galaxy-description]", data.description);
+    write("[data-hh-galaxy-detail]", data.detail);
     write("[data-hh-galaxy-route]", data.route);
     featureNodes.forEach((node, index) => {
       node.textContent = data.features[index] || "";
