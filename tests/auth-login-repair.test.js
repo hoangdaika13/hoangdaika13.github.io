@@ -64,7 +64,7 @@ test("authentication boots independently from the large application bundle", () 
   const html = read("index.html");
   const runtime = read("auth-platform.js");
   const worker = read("sw.js");
-  assert.match(html, /auth-platform\.js\?v=12[\s\S]*script\.js\?v=131/);
+  assert.match(html, /auth-platform\.js\?v=12[\s\S]*script\.js\?v=133/);
   assert.match(runtime, /realtimeUrl:\s*String\(window\.HH_REALTIME_URL/);
   assert.match(runtime, /socketUrl:\s*String\(window\.HH_SOCKET_URL/);
   assert.match(runtime, /hh:auth-bootstrap-ready/);

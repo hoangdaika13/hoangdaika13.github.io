@@ -5464,7 +5464,11 @@ function initAppShell() {
             }).join("");
           })()
         : (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
-      const studioMenu = group.studioItems ? `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>` : "";
+      const studioMenu = group.studioItems
+        ? (group.id === "create" && window.HHCreativeStarMap?.markup
+          ? window.HHCreativeStarMap.markup({ items: group.studioItems, route })
+          : `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => `<section data-media-sidebar-group data-studio-category="${groupIndex}"><small>${studioGroup}<b>${group.studioItems.filter((item) => item.group === studioGroup).length}</b></small>${group.studioItems.filter((item) => item.group === studioGroup).map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}"><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`).join("")}</div></div>`)
+        : "";
       const fullSubmenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
       const submenuCount = (group.shortcuts?.length || 0) + (group.pages?.length || 0) + (group.studioItems?.length || 0) + moduleEntries.length;
       const submenu = expanded ? fullSubmenu : "";
@@ -5948,6 +5952,7 @@ function initAppShell() {
     });
     legacyMain.hidden = true;
     renderedRoute = route;
+    window.dispatchEvent(new CustomEvent("hh:route-rendered", { detail: { route } }));
   };
   const runtimeIssueKey = "hh.runtime.issues.v1";
   const readRuntimeIssues = () => {

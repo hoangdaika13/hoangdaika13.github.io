@@ -202,9 +202,19 @@
         }
       });
       renderContext();
+      if (typeof window.dispatchEvent === "function" && typeof window.CustomEvent === "function") {
+        window.dispatchEvent(new window.CustomEvent("hh:creative-workspace-ready", {
+          detail: { view, route: view === "overview" ? "/create" : `/create/${view}` }
+        }));
+      }
     } catch (error) {
       if (token !== mountToken || !host) return;
       host.innerHTML = `<section class="creative-os__error"><strong>Không thể mở workspace</strong><p>${escapeHTML(error.message || error)}</p><button type="button" data-cos-retry>Thử lại</button></section>`;
+      if (typeof window.dispatchEvent === "function" && typeof window.CustomEvent === "function") {
+        window.dispatchEvent(new window.CustomEvent("hh:creative-workspace-error", {
+          detail: { view, route: view === "overview" ? "/create" : `/create/${view}`, message: error.message || String(error) }
+        }));
+      }
     }
   }
 

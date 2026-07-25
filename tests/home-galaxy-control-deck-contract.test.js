@@ -19,8 +19,8 @@ test("Galaxy Control Deck V3 is versioned in the route loader and offline shell"
     assert.ok(loader.includes(asset), `loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }
-  assert.match(worker, /hh-identity-portal-v244/);
-  assert.match(index, /performance-loader\.js\?v=36/);
+  assert.match(worker, /hh-identity-portal-v245/);
+  assert.match(index, /performance-loader\.js\?v=38/);
 });
 
 test("one-screen control deck has eight planetary tabs and a live three-column layout", () => {

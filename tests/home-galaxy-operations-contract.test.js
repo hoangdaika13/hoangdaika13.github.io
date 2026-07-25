@@ -18,8 +18,8 @@ test("Galaxy Operations V3 is versioned on home and offline shell", () => {
     assert.ok(loader.includes(asset), `loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }
-  assert.match(worker, /hh-identity-portal-v244/);
-  assert.match(index, /performance-loader\.js\?v=36/);
+  assert.match(worker, /hh-identity-portal-v245/);
+  assert.match(index, /performance-loader\.js\?v=38/);
 });
 
 test("Command Center reads and writes the existing work stores without fake counters", () => {

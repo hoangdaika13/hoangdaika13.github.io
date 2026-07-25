@@ -12,6 +12,7 @@
   const HOME_PREF_KEY = "hh.home.galaxy.preferences.v2";
   const CORE_KEY = "hh.creative-os.v1";
   const RETRY_KEY = "hh.creative.retry.pending.v1";
+  const ENGINE_ROUTES = new Set(["overview", "project", "brief", "moodboard", "storyboard", "world-bible", "workflow", "ai-director", "prompt-studio", "repurpose", "brand", "audio-dubbing", "prototype", "review", "collaboration", "publishing", "analytics", "rights", "providers", "marketplace"]);
 
   const CLUSTERS = Object.freeze([
     {
@@ -114,6 +115,9 @@
   ]);
 
   const instances = new WeakMap();
+  const mountedRoots = new Set();
+  let wormholeState = null;
+  let autoMounted = false;
   const clean = (value, limit = 220) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, limit);
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -313,7 +317,7 @@
       }
     };
     return {
-      projects, project, progress, runs: relevantRuns, pendingRuns, failedRuns, assets, comments, unread,
+      projects, project, progress, runs: relevantRuns, allRuns: runs, pendingRuns, failedRuns, assets, comments, unread,
       publishing, pendingPublishing, deadline, providers, providerRecords, cost, averageLatency, quotaUsed, quotaLimit, rightsCount, widgets
     };
   }
@@ -333,6 +337,48 @@
     if (!prefs.syncTheme) return prefs.theme;
     const home = read(HOME_PREF_KEY, {});
     return THEMES.some((item) => item[0] === home.theme) ? home.theme : prefs.theme;
+  }
+
+  function visualProfile(prefs = {}) {
+    const home = read(HOME_PREF_KEY, {});
+    const synced = prefs.syncTheme !== false;
+    const reduced = Boolean(global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+    const motion = reduced ? "off" : synced ? clean(home.motion || prefs.motion || "balanced", 20) : prefs.motion || "balanced";
+    const metric = (key, fallback) => Number.isFinite(Number(home[key])) ? Number(home[key]) : fallback;
+    return {
+      theme: resolvedTheme(prefs),
+      motion,
+      stars: clamp(synced ? metric("stars", 64) : 70, 0, 100),
+      particles: clamp(synced ? metric("particles", 64) : 65, 0, 100),
+      nebula: clamp(synced ? metric("nebula", 68) : 68, 0, 100),
+      glow: clamp(synced ? metric("glow", 70) : 70, 0, 100),
+      parallax: clamp(synced ? metric("parallax", 55) : 55, 0, 100),
+      effectComet: !reduced && (synced ? home.effectComet !== false : true),
+      effectNova: !reduced && (synced ? home.effectNova !== false : true),
+      effectWormhole: !reduced && (synced ? home.effectWormhole !== false : true),
+      reduced
+    };
+  }
+
+  function projectLevel(project, runs = []) {
+    if (!project) return "empty";
+    if (runs.some((run) => run.projectId === project.id && run.status === "failed") || asArray(project.rights?.warnings).length) return "error";
+    if (runs.some((run) => run.projectId === project.id && ["queued", "running"].includes(run.status)) || project.review?.status === "review") return "processing";
+    return asArray(project.assets).length || project.brief?.goal || project.brief?.description ? "active" : "empty";
+  }
+
+  function projectStages(data) {
+    const project = data.project;
+    if (!project) return [];
+    return [
+      ["Brief", "/create/brief", Boolean(project.brief?.goal || project.brief?.description), false],
+      ["Prompt", "/create/ai-center", Boolean(asArray(project.prompts).length || data.runs.length), Boolean(data.failedRuns.length)],
+      ["Script", "/create/ai-script", Boolean(asArray(project.scripts).length), false],
+      ["Storyboard", "/create/storyboard", Boolean(asArray(project.storyboard).length), false],
+      ["Assets", "/create/media-center", Boolean(data.assets.length), Boolean(data.rightsCount)],
+      ["Review", "/create/review", ["review", "approved", "published"].includes(project.review?.status), false],
+      ["Publish", "/create/publishing", Boolean(data.publishing.length), data.publishing.some((item) => item.status === "failed")]
+    ];
   }
 
   function liveMarkup(instance, data) {
@@ -355,11 +401,17 @@
       <header class="cg-universe-head"><span><small>CREATIVE GALAXY COMMAND CENTER</small><h2>Biến ý tưởng thành sản phẩm</h2><p>Sáu cụm chức năng dùng chung một Universal Project có phiên bản, quyền và lịch sử thật.</p></span>
         <div><button type="button" data-cg-new-project>+ Dự án mới</button><button type="button" data-cg-continue>Tiếp tục công việc →</button></div>
       </header>
-      <div class="cg-orbits" aria-label="Sáu cụm thiên hà sáng tạo">
+      <div class="cg-view-controls" aria-label="Điều khiển bản đồ"><button type="button" data-cg-view="out" aria-label="Thu nhỏ">−</button><button type="button" data-cg-view="reset">100%</button><button type="button" data-cg-view="in" aria-label="Phóng to">+</button></div>
+      <div class="cg-orbits" aria-label="Sáu cụm thiên hà sáng tạo" style="--galaxy-x:${instance.view?.x || 0}px;--galaxy-y:${instance.view?.y || 0}px;--galaxy-zoom:${instance.view?.zoom || 1}">
         <div class="cg-orbit-line o1"></div><div class="cg-orbit-line o2"></div><div class="cg-orbit-line o3"></div>
         <button class="cg-sun" type="button" data-cg-sun aria-label="Mở dự án đang hoạt động">
           <i></i><span>H</span><b>CREATIVE SUN</b><small>${data.project ? esc(data.project.name) : "CHƯA CÓ DỰ ÁN"}</small><em style="--progress:${data.progress}%"></em>
         </button>
+        <div class="cg-project-stars" aria-label="Các cụm sao dự án">${data.projects.slice(0, 6).map((project, index) => {
+          const level = projectLevel(project, data.allRuns);
+          const activeProject = project.id === data.project?.id;
+          return `<button type="button" class="is-${level}${activeProject ? " is-active" : ""}" data-cg-project="${esc(project.id)}" style="--project-index:${index}" aria-pressed="${activeProject}" title="${esc(project.name)}"><i></i><span>${esc(project.name)}</span></button>`;
+        }).join("")}</div>
         ${visibleClusters.map((cluster, index) => {
           const signal = clusterSignal(cluster, data);
           const pinned = cluster.tools.filter((tool) => instance.prefs.pinnedTools.includes(tool[0])).length;
@@ -371,15 +423,7 @@
       </div>
       <div class="cg-project-constellation">
         <header><span>PROJECT CONSTELLATION</span><b>${data.project ? `${asArray(data.project.versions).length} phiên bản · ${data.assets.length} asset` : "Chưa có dữ liệu"}</b></header>
-        <div>${data.project ? [
-          ["Brief", Boolean(data.project.brief?.goal || data.project.brief?.description)],
-          ["Prompt", Boolean(asArray(data.project.prompts).length)],
-          ["Script", Boolean(asArray(data.project.scripts).length)],
-          ["Storyboard", Boolean(asArray(data.project.storyboard).length)],
-          ["Assets", Boolean(data.assets.length)],
-          ["Review", ["review", "approved", "published"].includes(data.project.review?.status)],
-          ["Publish", Boolean(data.publishing.length)]
-        ].map(([label, done], index) => `<span class="${done ? "is-done" : ""}" style="--step:${index}"><i></i><b>${label}</b></span>`).join("") : "<p>Hãy tạo dự án đầu tiên để hình thành chòm sao sản xuất.</p>"}</div>
+        <div>${data.project ? projectStages(data).map(([label, route, done, error], index) => `<button type="button" data-cg-route="${route}" class="${done ? "is-done" : ""}${error ? " is-error" : ""}" style="--step:${index}" title="Mở ${label}"><i></i><b>${label}</b></button>`).join("") : "<p>Hãy tạo dự án đầu tiên để hình thành chòm sao sản xuất.</p>"}</div>
       </div>
       ${active ? focusMarkup(instance, active, data) : ""}
       <div class="cg-event-layer" data-cg-event-layer aria-live="polite"></div>
@@ -397,6 +441,12 @@
       <header><span><i>${cluster.icon}</i><small>CREATIVE FOCUS GALAXY</small><strong>${esc(cluster.label)}</strong></span><button type="button" data-cg-focus-close aria-label="Đóng">×</button></header>
       <p>${esc(cluster.description)}</p>
       <section class="cg-focus-signal"><span class="is-${signal.level}"><i></i>${esc(signal.value)}</span><small>${esc(signal.detail)}</small></section>
+      <section class="cg-focus-metrics">
+        <span><small>Tiến độ</small><b>${data.project ? `${data.progress}%` : "—"}</b></span>
+        <span><small>AI job</small><b>${data.pendingRuns.length || data.failedRuns.length || "0"}</b></span>
+        <span><small>Asset</small><b>${data.assets.length}</b></span>
+        <span class="${data.rightsCount ? "is-warning" : ""}"><small>Cảnh báo</small><b>${data.rightsCount}</b></span>
+      </section>
       <div class="cg-focus-tools">${cluster.tools.map((tool) => `<button type="button" data-cg-route="${tool[2]}" class="${instance.prefs.pinnedTools.includes(tool[0]) ? "is-pinned" : ""}"><i>${instance.prefs.pinnedTools.includes(tool[0]) ? "★" : "◇"}</i><span><b>${esc(tool[1])}</b><small>${esc(toolStatus(tool[0], data))}</small></span><em>→</em></button>`).join("") || '<div class="cg-empty">Tất cả công cụ trong cụm đang bị ẩn.</div>'}</div>
       <section class="cg-focus-history"><header><span>LỊCH SỬ DỰ ÁN THẬT</span><b>${activities.length} tín hiệu</b></header>${activities.length ? activities.map((item) => `<p class="is-${esc(item.type)}"><i></i><span>${esc(item.text)}</span><time>${formatDate(item.at)}</time></p>`).join("") : "<p>Chưa có hoạt động được ghi nhận.</p>"}</section>
       <footer><button type="button" data-cg-continue-cluster="${cluster.id}">Tiếp tục</button><button type="button" data-cg-route="/create/project">Mở dự án</button>${data.failedRuns.length ? '<button type="button" data-cg-retry>Chạy lại</button>' : ""}<button class="is-primary" type="button" data-cg-review>Gửi duyệt</button></footer>
@@ -461,12 +511,20 @@
   function render(instance) {
     const state = instance.store?.getState?.() || readCoreState();
     instance.data = snapshot(state, instance.prefs);
-    const theme = resolvedTheme(instance.prefs);
+    instance.profile = visualProfile(instance.prefs);
+    const theme = instance.profile.theme;
     const themeMeta = THEMES.find((item) => item[0] === theme) || THEMES[0];
     instance.root.innerHTML = `${liveMarkup(instance, instance.data)}${galaxyMarkup(instance, instance.data)}`;
     instance.root.dataset.theme = theme;
-    instance.root.dataset.motion = instance.prefs.motion;
+    instance.root.dataset.motion = instance.profile.motion;
+    instance.root.dataset.effectComet = String(instance.profile.effectComet);
+    instance.root.dataset.effectNova = String(instance.profile.effectNova);
+    instance.root.dataset.effectWormhole = String(instance.profile.effectWormhole);
     instance.root.dataset.creativeGalaxy = "";
+    instance.root.style.setProperty("--cg-star-density", String(instance.profile.stars / 100));
+    instance.root.style.setProperty("--cg-nebula-strength", String(instance.profile.nebula / 100));
+    instance.root.style.setProperty("--cg-glow-strength", String(instance.profile.glow / 100));
+    instance.root.style.setProperty("--cg-parallax-strength", String(instance.profile.parallax / 100));
     global.document?.body?.style?.setProperty("--cg-a", themeMeta[2]);
     global.document?.body?.style?.setProperty("--cg-b", themeMeta[3]);
     global.document?.body?.style?.setProperty("--cg-c", themeMeta[2]);
@@ -480,8 +538,63 @@
       instance.prefs.updatedAt = Date.now();
       write(PREF_KEY, instance.prefs);
     }
-    if (typeof instance.options.onNavigate === "function") instance.options.onNavigate(route);
-    else if (global.location) global.location.hash = `#${route}`;
+    const go = () => {
+      if (typeof instance.options.onNavigate === "function") instance.options.onNavigate(route);
+      else if (global.location) global.location.hash = `#${route}`;
+    };
+    if (instance.profile?.effectWormhole) openWormhole(route, go);
+    else go();
+  }
+
+  function wormholeNeedsEngine(route) {
+    const id = String(route || "").split("/").filter(Boolean)[1] || "overview";
+    return ENGINE_ROUTES.has(id);
+  }
+
+  function closeWormhole(success = true, message = "") {
+    const state = wormholeState;
+    if (!state) return false;
+    clearTimeout(state.timeout);
+    const overlay = global.document?.querySelector?.("[data-cg-wormhole]");
+    if (!overlay) { wormholeState = null; return false; }
+    if (!success) {
+      overlay.classList.add("is-reverse", "is-error");
+      const status = overlay.querySelector("[data-cg-wormhole-status]");
+      if (status) status.textContent = message || "Workspace chưa sẵn sàng.";
+      overlay.querySelector("[data-cg-wormhole-retry]")?.removeAttribute("hidden");
+      return true;
+    }
+    overlay.classList.add("is-complete");
+    setTimeout(() => overlay.remove(), 260);
+    wormholeState = null;
+    return true;
+  }
+
+  function openWormhole(route, onNavigate) {
+    const profile = visualProfile({ syncTheme: true, motion: "balanced", theme: "neon" });
+    const reduced = profile.reduced || profile.motion === "off" || profile.effectWormhole === false;
+    if (!global.document || reduced) {
+      onNavigate?.();
+      return false;
+    }
+    global.document.querySelector("[data-cg-wormhole]")?.remove();
+    const tool = allTools().find((item) => item[2] === route);
+    const label = tool?.[1] || "Creative Workspace";
+    const overlay = global.document.createElement("section");
+    overlay.className = "cg-wormhole";
+    overlay.dataset.cgWormhole = "";
+    overlay.dataset.route = clean(route, 220);
+    overlay.innerHTML = `<div aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><section role="status" aria-live="polite"><span>H</span><small>WORMHOLE NAVIGATION</small><strong>${esc(label)}</strong><p data-cg-wormhole-status>Đang chuẩn bị workspace và dữ liệu dự án...</p><button type="button" data-cg-wormhole-retry hidden>Thử lại</button></section>`;
+    global.document.body.append(overlay);
+    const navigate = typeof onNavigate === "function" ? onNavigate : () => { global.location.hash = `#${route}`; };
+    wormholeState = { route, navigate, needsEngine: wormholeNeedsEngine(route), timeout: 0 };
+    global.requestAnimationFrame?.(() => overlay.classList.add("is-active"));
+    setTimeout(() => {
+      if (!wormholeState || wormholeState.route !== route) return;
+      navigate();
+      wormholeState.timeout = setTimeout(() => closeWormhole(false, "Không thể xác nhận workspace đã tải xong. Dữ liệu của bạn vẫn được giữ nguyên."), 12000);
+    }, 350);
+    return true;
   }
 
   function announce(instance, text, tone = "") {
@@ -494,8 +607,10 @@
 
   function triggerEvent(instance, type) {
     const layer = instance.root.querySelector("[data-cg-event-layer]");
-    if (!layer || ["off", "minimal"].includes(instance.prefs.motion)) return;
+    if (!layer || ["off", "minimal"].includes(instance.profile?.motion || instance.prefs.motion)) return;
     const className = type === "success" ? "nova" : type === "error" ? "flare" : type === "comment" ? "comet" : "pulse";
+    if (className === "nova" && instance.profile?.effectNova === false) return;
+    if (className === "comet" && instance.profile?.effectComet === false) return;
     layer.insertAdjacentHTML("beforeend", `<i class="cg-${className}" aria-hidden="true"></i>`);
     setTimeout(() => layer.querySelector(`.cg-${className}`)?.remove(), 1500);
   }
@@ -504,13 +619,14 @@
     global.cancelAnimationFrame?.(instance.canvasFrame);
     const canvas = instance.root.querySelector("[data-cg-canvas]");
     const context = canvas?.getContext?.("2d");
-    if (!canvas || !context || instance.prefs.motion === "off") return;
+    const profile = instance.profile || visualProfile(instance.prefs);
+    if (!canvas || !context || profile.motion === "off") return;
     const rect = canvas.getBoundingClientRect();
     const ratio = Math.min(2, global.devicePixelRatio || 1);
     canvas.width = Math.max(1, Math.round(rect.width * ratio));
     canvas.height = Math.max(1, Math.round(rect.height * ratio));
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    const count = instance.prefs.motion === "minimal" ? 30 : instance.prefs.motion === "cinematic" ? 110 : 70;
+    const count = Math.max(18, Math.round((profile.motion === "minimal" ? 38 : profile.motion === "hyper" ? 140 : 110) * profile.stars / 100));
     const stars = Array.from({ length: count }, (_, index) => ({
       x: Math.random() * rect.width, y: Math.random() * rect.height, z: .2 + Math.random() * .8,
       r: .35 + Math.random() * 1.25, hue: [188, 215, 275, 324, 45][index % 5]
@@ -520,15 +636,19 @@
       if (!instance.root.isConnected || instance.destroyed) return;
       instance.canvasFrame = global.requestAnimationFrame?.(draw);
       if (global.document.hidden) return;
-      const adaptive = instance.prefs.motion === "adaptive";
-      const speed = adaptive && instance.fps < 40 ? .004 : instance.prefs.motion === "cinematic" ? .022 : .01;
+      const adaptive = profile.motion === "adaptive";
+      const delta = Math.min(50, time - previous || 16);
+      instance.fps = instance.fps * .88 + (1000 / Math.max(1, delta)) * .12;
+      const speed = adaptive && instance.fps < 40 ? .004 : ["cinematic", "hyper"].includes(profile.motion) ? .022 : profile.motion === "vivid" ? .016 : .01;
       context.clearRect(0, 0, rect.width, rect.height);
-      stars.forEach((star) => {
-        star.y += speed * star.z * Math.min(34, time - previous || 16);
+      const visibleStars = adaptive && instance.fps < 42 ? Math.ceil(stars.length * .52) : stars.length;
+      stars.forEach((star, index) => {
+        star.y += speed * star.z * Math.min(34, delta);
         if (star.y > rect.height + 2) { star.y = -2; star.x = Math.random() * rect.width; }
+        if (index >= visibleStars) return;
         context.beginPath();
         context.fillStyle = `hsla(${star.hue},90%,78%,${.2 + star.z * .62})`;
-        context.arc(star.x + instance.pointerX * star.z * 8, star.y + instance.pointerY * star.z * 5, star.r * star.z, 0, Math.PI * 2);
+        context.arc(star.x + instance.pointerX * star.z * 12 * profile.parallax / 100, star.y + instance.pointerY * star.z * 8 * profile.parallax / 100, star.r * star.z, 0, Math.PI * 2);
         context.fill();
       });
       previous = time;
@@ -635,6 +755,19 @@
     }
   }
 
+  function applyGalaxyView(instance) {
+    const orbit = instance.root.querySelector(".cg-orbits");
+    if (!orbit) return;
+    instance.view.zoom = clamp(instance.view.zoom, .72, 1.42);
+    instance.view.x = clamp(instance.view.x, -180, 180);
+    instance.view.y = clamp(instance.view.y, -100, 100);
+    orbit.style.setProperty("--galaxy-x", `${instance.view.x}px`);
+    orbit.style.setProperty("--galaxy-y", `${instance.view.y}px`);
+    orbit.style.setProperty("--galaxy-zoom", String(instance.view.zoom));
+    const reset = instance.root.querySelector('[data-cg-view="reset"]');
+    if (reset) reset.textContent = `${Math.round(instance.view.zoom * 100)}%`;
+  }
+
   function bind(instance) {
     instance.root.addEventListener("pointermove", (event) => {
       const rect = instance.root.getBoundingClientRect();
@@ -642,12 +775,46 @@
       instance.pointerY = (event.clientY - rect.top) / Math.max(1, rect.height) - .5;
       instance.root.style.setProperty("--pointer-x", `${(instance.pointerX + .5) * 100}%`);
       instance.root.style.setProperty("--pointer-y", `${(instance.pointerY + .5) * 100}%`);
+      if (instance.dragView) {
+        instance.view.x = instance.dragView.x + event.clientX - instance.dragView.clientX;
+        instance.view.y = instance.dragView.y + event.clientY - instance.dragView.clientY;
+        applyGalaxyView(instance);
+      }
     }, { signal: instance.controller.signal });
+    instance.root.addEventListener("pointerdown", (event) => {
+      if (!event.target.closest("[data-cg-universe]") || event.target.closest("button, aside, .cg-project-constellation, .cg-universe-head")) return;
+      instance.dragView = { clientX: event.clientX, clientY: event.clientY, x: instance.view.x, y: instance.view.y };
+      instance.root.classList.add("is-dragging-galaxy");
+      event.target.setPointerCapture?.(event.pointerId);
+    }, { signal: instance.controller.signal });
+    const stopDrag = () => { instance.dragView = null; instance.root.classList.remove("is-dragging-galaxy"); };
+    instance.root.addEventListener("pointerup", stopDrag, { signal: instance.controller.signal });
+    instance.root.addEventListener("pointercancel", stopDrag, { signal: instance.controller.signal });
+    instance.root.addEventListener("wheel", (event) => {
+      if (!event.target.closest("[data-cg-universe]") || event.target.closest(".cg-focus, .cg-project-constellation")) return;
+      event.preventDefault();
+      instance.view.zoom += event.deltaY > 0 ? -.06 : .06;
+      applyGalaxyView(instance);
+    }, { passive: false, signal: instance.controller.signal });
     instance.root.addEventListener("click", (event) => {
       const target = event.target;
       if (target.closest("[data-cg-settings-panel]")) return handleSettingsClick(instance, event);
       const route = target.closest("[data-cg-route]");
       if (route) return navigate(instance, route.dataset.cgRoute);
+      const project = target.closest("[data-cg-project]");
+      if (project) {
+        instance.store?.setActiveProject?.(project.dataset.cgProject);
+        announce(instance, "Đã chuyển Universal Project đang hoạt động.", "success");
+        return navigate(instance, "/create/project");
+      }
+      const viewControl = target.closest("[data-cg-view]");
+      if (viewControl) {
+        const action = viewControl.dataset.cgView;
+        if (action === "reset") instance.view = { x: 0, y: 0, zoom: 1 };
+        else instance.view.zoom += action === "in" ? .1 : -.1;
+        applyGalaxyView(instance);
+        return;
+      }
       const cluster = target.closest("[data-cg-cluster]");
       if (cluster) {
         instance.focusCluster = instance.focusCluster === cluster.dataset.cgCluster ? "" : cluster.dataset.cgCluster;
@@ -719,6 +886,7 @@
       prefs: normalizePrefs(read(PREF_KEY, {})),
       focusCluster: "",
       pointerX: 0, pointerY: 0, fps: 60,
+      view: { x: 0, y: 0, zoom: 1 },
       destroyed: false,
       startCanvas: null
     };
@@ -749,6 +917,7 @@
     });
     instance.api = api;
     instances.set(root, instance);
+    mountedRoots.add(root);
     return api;
   }
 
@@ -763,6 +932,7 @@
     global.document?.documentElement?.classList.remove("cg-settings-open");
     root.replaceChildren();
     instances.delete(root);
+    mountedRoots.delete(root);
     return true;
   }
 
@@ -795,7 +965,8 @@
   }
 
   function autoMount() {
-    if (!global.document) return false;
+    if (!global.document || autoMounted) return false;
+    autoMounted = true;
     let frame = 0;
     const attach = () => {
       global.cancelAnimationFrame?.(frame);
@@ -809,6 +980,37 @@
       const mini = global.document.querySelector("[data-cg-mini]");
       if (mini) { mini.remove(); attach(); }
     });
+    global.addEventListener?.("hh:home-galaxy-preferences-applied", () => {
+      mountedRoots.forEach((root) => {
+        const instance = instances.get(root);
+        if (instance) render(instance);
+      });
+      const mini = global.document.querySelector("[data-cg-mini]");
+      if (mini) { mini.remove(); attach(); }
+    });
+    global.addEventListener?.("hh:route-rendered", (event) => {
+      if (!wormholeState || event.detail?.route !== wormholeState.route || wormholeState.needsEngine) return;
+      setTimeout(() => closeWormhole(true), 80);
+    });
+    global.addEventListener?.("hh:creative-workspace-ready", (event) => {
+      const targetView = String(wormholeState?.route || "").split("/").filter(Boolean)[1] || "overview";
+      if (wormholeState && (event.detail?.route === wormholeState.route || event.detail?.view === targetView)) closeWormhole(true);
+    });
+    global.addEventListener?.("hh:creative-workspace-error", (event) => {
+      const targetView = String(wormholeState?.route || "").split("/").filter(Boolean)[1] || "overview";
+      if (wormholeState && (event.detail?.route === wormholeState.route || event.detail?.view === targetView)) closeWormhole(false, event.detail?.message || "Workspace tải lỗi.");
+    });
+    global.document.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-cg-wormhole-retry]") || !wormholeState) return;
+      const overlay = global.document.querySelector("[data-cg-wormhole]");
+      overlay?.classList.remove("is-reverse", "is-error");
+      const status = overlay?.querySelector("[data-cg-wormhole-status]");
+      if (status) status.textContent = "Đang thử mở lại workspace...";
+      event.target.setAttribute("hidden", "");
+      clearTimeout(wormholeState.timeout);
+      wormholeState.timeout = setTimeout(() => closeWormhole(false), 12000);
+      global.dispatchEvent?.(new HashChangeEvent("hashchange"));
+    });
     if (typeof global.MutationObserver === "function") {
       const observer = new global.MutationObserver(attach);
       observer.observe(global.document.documentElement, { childList: true, subtree: true });
@@ -818,7 +1020,7 @@
 
   return Object.freeze({
     VERSION, PREF_KEY, CORE_KEY, CLUSTERS, WIDGETS, THEMES, PRESETS,
-    normalizePrefs, applyPreset, snapshot, clusterSignal, projectProgress,
-    mount, unmount, autoMount
+    normalizePrefs, applyPreset, snapshot, clusterSignal, projectProgress, visualProfile,
+    mount, unmount, autoMount, openWormhole, closeWormhole
   });
 });
