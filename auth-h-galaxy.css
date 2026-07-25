@@ -1,0 +1,455 @@
+/*
+ * HH H-Galaxy
+ * A single composited solar scene for the identity portal: seven orbital
+ * tracks, two planets per track and one central H sun.
+ */
+
+body.home-neon.auth-locked #authGate .hh-h-galaxy {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+body.home-neon.auth-locked #authGate .hh-h-galaxy::before,
+body.home-neon.auth-locked #authGate .hh-h-galaxy::after {
+  position: absolute;
+  left: 27vw;
+  top: 52%;
+  width: min(66vw, 980px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  content: "";
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  pointer-events: none;
+}
+
+body.home-neon.auth-locked #authGate .hh-h-galaxy::before {
+  background:
+    conic-gradient(
+      from 38deg,
+      transparent 0 9%,
+      rgba(80, 229, 255, .16) 13%,
+      transparent 19% 30%,
+      rgba(255, 66, 210, .19) 36%,
+      transparent 43% 58%,
+      rgba(175, 112, 255, .18) 64%,
+      transparent 70% 84%,
+      rgba(183, 255, 87, .11) 90%,
+      transparent 96%
+    );
+  filter: blur(22px);
+  opacity: .78;
+  animation: hh-galaxy-cloud-spin 54s linear infinite;
+  mask-image: radial-gradient(circle, transparent 0 9%, #000 18% 62%, transparent 76%);
+}
+
+body.home-neon.auth-locked #authGate .hh-h-galaxy::after {
+  width: min(54vw, 780px);
+  background:
+    radial-gradient(circle at 31% 27%, rgba(255, 255, 255, .9) 0 1px, transparent 2px),
+    radial-gradient(circle at 68% 18%, rgba(98, 237, 255, .9) 0 1px, transparent 2px),
+    radial-gradient(circle at 82% 59%, rgba(255, 114, 221, .9) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 22% 72%, rgba(190, 255, 105, .85) 0 1px, transparent 2px),
+    radial-gradient(circle at 54% 84%, rgba(255, 209, 102, .9) 0 1px, transparent 2px);
+  background-size: 84px 96px, 132px 118px, 156px 172px, 112px 148px, 178px 126px;
+  filter: drop-shadow(0 0 8px rgba(108, 229, 255, .58));
+  opacity: .62;
+  animation: hh-galaxy-stars-pulse 5.8s ease-in-out infinite alternate;
+}
+
+.hh-galaxy-cloud {
+  position: absolute;
+  left: 27vw;
+  top: 52%;
+  width: min(55vw, 820px);
+  aspect-ratio: 1.8;
+  border-radius: 50%;
+  opacity: .42;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  filter: blur(48px);
+}
+
+.hh-galaxy-cloud--one {
+  background: radial-gradient(ellipse, rgba(255, 57, 196, .38), rgba(117, 75, 255, .14) 48%, transparent 72%);
+  animation: hh-galaxy-nebula-one 16s ease-in-out infinite alternate;
+}
+
+.hh-galaxy-cloud--two {
+  background: radial-gradient(ellipse, rgba(49, 225, 255, .34), rgba(42, 128, 255, .12) 48%, transparent 72%);
+  transform: translate(-50%, -50%) rotate(24deg);
+  animation: hh-galaxy-nebula-two 19s ease-in-out infinite alternate;
+}
+
+.hh-galaxy-system {
+  position: absolute;
+  left: 27vw;
+  top: 52%;
+  width: min(48vw, 700px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  filter: drop-shadow(0 34px 48px rgba(0, 0, 0, .42));
+}
+
+.hh-galaxy-orbits {
+  position: absolute;
+  inset: 0;
+  transform: perspective(980px) rotateX(61deg) rotateZ(-9deg);
+  transform-style: preserve-3d;
+}
+
+.hh-galaxy-orbit {
+  --orbit-color: rgba(101, 226, 255, .22);
+  --orbit-speed: 14s;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  width: var(--orbit-size);
+  aspect-ratio: 1;
+  border: 1px solid var(--orbit-color);
+  border-radius: 50%;
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--orbit-color) 48%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--orbit-color) 34%, transparent);
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  animation: hh-galaxy-orbit-spin var(--orbit-speed) linear infinite;
+  will-change: transform;
+}
+
+.hh-galaxy-orbit::before {
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  border-top-color: color-mix(in srgb, var(--orbit-color) 82%, white 18%);
+  border-right-color: color-mix(in srgb, var(--orbit-color) 64%, transparent);
+  border-radius: inherit;
+  content: "";
+  filter: drop-shadow(0 0 5px var(--orbit-color));
+}
+
+.hh-galaxy-orbit > i {
+  --planet-a: #54e7ff;
+  --planet-b: #165cff;
+  --planet-size: 13px;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 3;
+  display: block;
+  width: var(--planet-size);
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, .58);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 31% 25%, rgba(255, 255, 255, .98) 0 8%, transparent 18%),
+    radial-gradient(circle at 37% 32%, var(--planet-a), var(--planet-b) 61%, #02040b 100%);
+  box-shadow:
+    0 0 7px var(--planet-a),
+    0 0 20px color-mix(in srgb, var(--planet-a) 66%, transparent),
+    inset -3px -4px 6px rgba(0, 0, 0, .42);
+  transform: translate(-50%, -50%) rotateX(-61deg);
+  transform-style: preserve-3d;
+}
+
+.hh-galaxy-orbit > i:nth-child(2) {
+  top: 100%;
+  transform: translate(-50%, -50%) rotateX(-61deg);
+}
+
+.hh-galaxy-orbit > i::after {
+  position: absolute;
+  inset: 19%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .32), transparent 46%);
+  content: "";
+}
+
+.hh-galaxy-orbit--one {
+  --orbit-size: 20%;
+  --orbit-speed: 7.8s;
+  --orbit-color: rgba(255, 199, 86, .32);
+}
+
+.hh-galaxy-orbit--two {
+  --orbit-size: 30%;
+  --orbit-speed: 10.7s;
+  --orbit-color: rgba(255, 92, 210, .3);
+  animation-direction: reverse;
+}
+
+.hh-galaxy-orbit--three {
+  --orbit-size: 41%;
+  --orbit-speed: 13.9s;
+  --orbit-color: rgba(84, 231, 255, .27);
+}
+
+.hh-galaxy-orbit--four {
+  --orbit-size: 52%;
+  --orbit-speed: 17.4s;
+  --orbit-color: rgba(179, 121, 255, .28);
+  animation-direction: reverse;
+}
+
+.hh-galaxy-orbit--five {
+  --orbit-size: 64%;
+  --orbit-speed: 21.8s;
+  --orbit-color: rgba(157, 255, 102, .25);
+}
+
+.hh-galaxy-orbit--six {
+  --orbit-size: 77%;
+  --orbit-speed: 27.6s;
+  --orbit-color: rgba(255, 135, 80, .24);
+  animation-direction: reverse;
+}
+
+.hh-galaxy-orbit--seven {
+  --orbit-size: 92%;
+  --orbit-speed: 34s;
+  --orbit-color: rgba(108, 161, 255, .25);
+}
+
+[data-hh-planet="1"] { --planet-a: #ffe781; --planet-b: #ff7a21; --planet-size: 10px; }
+[data-hh-planet="2"] { --planet-a: #ff72dc; --planet-b: #a518e7; --planet-size: 9px; }
+[data-hh-planet="3"] { --planet-a: #65efff; --planet-b: #0876d7; --planet-size: 13px; }
+[data-hh-planet="4"] { --planet-a: #ffab63; --planet-b: #df304a; --planet-size: 16px; }
+[data-hh-planet="5"] { --planet-a: #b8ff72; --planet-b: #15a765; --planet-size: 12px; }
+[data-hh-planet="6"] { --planet-a: #bf93ff; --planet-b: #5c32d8; --planet-size: 18px; }
+[data-hh-planet="7"] { --planet-a: #ffffff; --planet-b: #59a8ff; --planet-size: 11px; }
+[data-hh-planet="8"] { --planet-a: #ff6fcf; --planet-b: #7c1cd5; --planet-size: 20px; }
+[data-hh-planet="9"] { --planet-a: #64ffd3; --planet-b: #037e87; --planet-size: 14px; }
+[data-hh-planet="10"] { --planet-a: #ffd26d; --planet-b: #d43b27; --planet-size: 12px; }
+[data-hh-planet="11"] { --planet-a: #72cbff; --planet-b: #1641c8; --planet-size: 17px; }
+[data-hh-planet="12"] { --planet-a: #f899ff; --planet-b: #9622a9; --planet-size: 10px; }
+[data-hh-planet="13"] { --planet-a: #dfff7b; --planet-b: #459129; --planet-size: 19px; }
+[data-hh-planet="14"] { --planet-a: #ff896b; --planet-b: #8d183a; --planet-size: 13px; }
+
+[data-hh-planet="4"]::before,
+[data-hh-planet="8"]::before,
+[data-hh-planet="13"]::before {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 165%;
+  height: 38%;
+  border: 1px solid color-mix(in srgb, var(--planet-a) 72%, white 28%);
+  border-radius: 50%;
+  content: "";
+  opacity: .78;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--planet-a) 60%, transparent);
+}
+
+.hh-galaxy-sun {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: clamp(72px, 7.4vw, 106px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, .86);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 30%, #fff 0 5%, transparent 18%),
+    radial-gradient(circle, #fff8cb 0 9%, #ffe05d 24%, #ff6d31 54%, #ef2c89 72%, #7226d4 100%);
+  color: #fff;
+  box-shadow:
+    0 0 18px #fff3b1,
+    0 0 42px rgba(255, 183, 67, .94),
+    0 0 92px rgba(255, 69, 180, .64),
+    0 0 150px rgba(90, 214, 255, .28),
+    inset -9px -12px 22px rgba(128, 15, 109, .3);
+  transform: translate(-50%, -50%);
+  animation: hh-galaxy-sun-breathe 4.4s ease-in-out infinite;
+}
+
+.hh-galaxy-sun::before,
+.hh-galaxy-sun::after {
+  position: absolute;
+  inset: -18%;
+  border: 1px solid rgba(255, 218, 101, .38);
+  border-radius: 50%;
+  content: "";
+  animation: hh-galaxy-sun-wave 3.6s ease-out infinite;
+}
+
+.hh-galaxy-sun::after {
+  inset: -36%;
+  border-color: rgba(255, 85, 204, .22);
+  animation-delay: -1.8s;
+}
+
+.hh-galaxy-sun span {
+  position: relative;
+  z-index: 2;
+  font: 950 clamp(34px, 4vw, 58px)/1 "Be Vietnam Pro", system-ui, sans-serif;
+  letter-spacing: -.08em;
+  text-shadow:
+    0 2px 0 rgba(127, 35, 112, .36),
+    0 0 14px rgba(255, 255, 255, .86);
+  transform: translateX(-.04em);
+}
+
+.hh-galaxy-sun small {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 17px);
+  width: max-content;
+  color: rgba(255, 238, 181, .92);
+  font: 850 7px/1 "Be Vietnam Pro", system-ui, sans-serif;
+  letter-spacing: .19em;
+  text-shadow: 0 0 12px rgba(255, 184, 70, .82);
+  transform: translateX(-50%);
+}
+
+.hh-galaxy-signature {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + clamp(105px, 10vw, 142px));
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: max-content;
+  padding: 6px 9px;
+  border: 1px solid rgba(101, 231, 255, .2);
+  border-radius: 999px;
+  background: rgba(5, 9, 20, .58);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .07), 0 12px 34px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(10px);
+  transform: translateX(-50%);
+}
+
+.hh-galaxy-signature span {
+  color: #70ecff;
+  font: 900 7px/1 "Be Vietnam Pro", system-ui, sans-serif;
+  letter-spacing: .14em;
+}
+
+.hh-galaxy-signature b {
+  color: rgba(235, 241, 255, .72);
+  font: 750 6px/1 "Be Vietnam Pro", system-ui, sans-serif;
+  letter-spacing: .09em;
+}
+
+body.home-neon.auth-locked #authGate[data-motion-level="soft"] .hh-h-galaxy {
+  opacity: .58;
+}
+
+body.home-neon.auth-locked #authGate[data-motion-level="soft"] .hh-galaxy-orbit {
+  animation-duration: 44s;
+}
+
+body.home-neon.auth-locked #authGate[data-motion-level="off"] .hh-h-galaxy {
+  display: none;
+}
+
+html.hh-page-hidden body.home-neon.auth-locked #authGate :where(
+  .hh-h-galaxy::before,
+  .hh-h-galaxy::after,
+  .hh-galaxy-cloud,
+  .hh-galaxy-orbit,
+  .hh-galaxy-sun
+) {
+  animation-play-state: paused !important;
+}
+
+@media (max-width: 1100px) {
+  body.home-neon.auth-locked #authGate .hh-h-galaxy {
+    opacity: .48;
+  }
+
+  body.home-neon.auth-locked #authGate .hh-h-galaxy::before,
+  body.home-neon.auth-locked #authGate .hh-h-galaxy::after,
+  .hh-galaxy-cloud,
+  .hh-galaxy-system {
+    left: 50vw;
+    top: 62%;
+  }
+
+  .hh-galaxy-system {
+    width: min(82vw, 700px);
+  }
+
+  .hh-galaxy-signature {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-neon.auth-locked #authGate .hh-h-galaxy {
+    opacity: .34;
+  }
+
+  body.home-neon.auth-locked #authGate .hh-h-galaxy::before,
+  body.home-neon.auth-locked #authGate .hh-h-galaxy::after,
+  .hh-galaxy-cloud,
+  .hh-galaxy-system {
+    left: 50vw;
+    top: 38%;
+  }
+
+  body.home-neon.auth-locked #authGate .hh-h-galaxy::before {
+    width: 150vw;
+  }
+
+  .hh-galaxy-system {
+    width: min(126vw, 560px);
+  }
+
+  .hh-galaxy-orbit > i {
+    --planet-size: 9px;
+  }
+
+  .hh-galaxy-sun {
+    width: 64px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.home-neon.auth-locked #authGate .hh-h-galaxy {
+    display: none;
+  }
+}
+
+@keyframes hh-galaxy-orbit-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes hh-galaxy-cloud-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes hh-galaxy-stars-pulse {
+  0% { opacity: .38; transform: translate(-50%, -50%) scale(.97); }
+  100% { opacity: .78; transform: translate(-50%, -50%) scale(1.035); }
+}
+
+@keyframes hh-galaxy-nebula-one {
+  0% { opacity: .28; transform: translate(-54%, -50%) rotate(-23deg) scale(.92); }
+  100% { opacity: .5; transform: translate(-44%, -47%) rotate(-10deg) scale(1.08); }
+}
+
+@keyframes hh-galaxy-nebula-two {
+  0% { opacity: .26; transform: translate(-46%, -47%) rotate(18deg) scale(.94); }
+  100% { opacity: .44; transform: translate(-55%, -54%) rotate(31deg) scale(1.1); }
+}
+
+@keyframes hh-galaxy-sun-breathe {
+  0%, 100% { filter: saturate(1) brightness(1); transform: translate(-50%, -50%) scale(.98); }
+  50% { filter: saturate(1.18) brightness(1.08); transform: translate(-50%, -50%) scale(1.045); }
+}
+
+@keyframes hh-galaxy-sun-wave {
+  0% { opacity: .72; transform: scale(.78); }
+  100% { opacity: 0; transform: scale(1.34); }
+}
