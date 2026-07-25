@@ -277,14 +277,14 @@
 
   if (gate.querySelector("[data-hh-galaxy]") && !window.HHHGalaxy) {
     const galaxyRuntime = document.createElement("script");
-    galaxyRuntime.src = "auth-h-galaxy.js?v=2";
+    galaxyRuntime.src = "auth-h-galaxy.js?v=3";
     galaxyRuntime.defer = true;
     galaxyRuntime.dataset.hhGalaxyRuntime = "true";
     document.head.append(galaxyRuntime);
   }
 
   window.HHNeonGateway = Object.freeze({
-    version: "5.0.0",
+    version: "6.0.0",
     setMotionLevel,
     state: () => card.dataset.authState,
     motion: () => gate.dataset.motionLevel,

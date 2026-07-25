@@ -4,6 +4,7 @@
   const galaxy = document.querySelector("[data-hh-galaxy]");
   if (!galaxy) return;
 
+  const gate = galaxy.closest("#authGate");
   const planets = [...galaxy.querySelectorAll("[data-hh-galaxy-key]")];
   const inspector = galaxy.querySelector("#hhGalaxyInspector");
   const featureNodes = [...galaxy.querySelectorAll("[data-hh-galaxy-features] li")];
@@ -203,6 +204,9 @@
     galaxy.dataset.activeCategory = key;
     galaxy.style.setProperty("--galaxy-accent", data.accent);
     galaxy.style.setProperty("--galaxy-accent-2", data.accent2);
+    gate?.style.setProperty("--auth-planet-accent", data.accent);
+    gate?.style.setProperty("--auth-planet-accent-2", data.accent2);
+    if (gate) gate.dataset.hhPlanetTheme = key;
     inspector?.setAttribute("data-theme", key);
     write("[data-hh-galaxy-index]", `HÀNH TINH ${String(planets.indexOf(planet) + 1).padStart(2, "0")} / ${String(planets.length).padStart(2, "0")}`);
     write("[data-hh-galaxy-icon]", data.icon);
@@ -227,7 +231,7 @@
 
     if (focus) planet.focus({ preventScroll: true });
     galaxy.dispatchEvent(new CustomEvent("hh:galaxy-category-change", {
-      detail: { key, route: data.route, title: data.title, pinned: pin }
+      detail: { key, route: data.route, title: data.title, accent: data.accent, accent2: data.accent2, pinned: pin }
     }));
     return true;
   };

@@ -16,8 +16,8 @@ test("interactive H galaxy exposes exactly fourteen unique product planets", () 
   assert.equal(keys.length, 14);
   assert.equal(new Set(keys).size, 14);
   assert.match(html, /id="hhGalaxyInspector" role="tabpanel"/);
-  assert.match(html, /auth-h-galaxy\.css\?v=4/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=2/);
+  assert.match(html, /auth-h-galaxy\.css\?v=5/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=3/);
   assert.match(html, /data-hh-galaxy-detail/);
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);
 });
@@ -38,6 +38,8 @@ test("galaxy interactions support hover, touch, focus and keyboard navigation", 
   assert.match(script, /aria-selected/);
   assert.match(script, /featureNodes\.forEach/);
   assert.match(script, /--galaxy-accent/);
+  assert.match(script, /--auth-planet-accent/);
+  assert.match(script, /hhPlanetTheme/);
   assert.match(script, /data-hh-galaxy-detail/);
   assert.doesNotMatch(script, /localStorage|sessionStorage|password|token/i);
 });
@@ -56,6 +58,8 @@ test("galaxy visuals retain motion comfort and responsive fallbacks", () => {
   assert.match(css, /--planet-texture/);
   assert.match(css, /var\(--galaxy-accent\)/);
   assert.match(css, /\.hh-galaxy-detail/);
+  assert.match(css, /--comet-y:\s*-\d+vw/);
+  assert.match(css, /data-hh-planet-theme/);
   assert.match(css, /\.hh-galaxy-orbit\.is-selected-orbit/);
   assert.match(css, /animation-play-state:\s*paused/);
   assert.match(css, /@media \(max-width: 1100px\)/);
