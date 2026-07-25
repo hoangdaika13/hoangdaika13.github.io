@@ -551,10 +551,34 @@
     return ENGINE_ROUTES.has(id);
   }
 
+  function normalizedRoute(value) {
+    const route = String(value || "").replace(/^#/, "") || "/home";
+    return route.startsWith("/") ? route : `/${route}`;
+  }
+
+  function wormholeWorkspaceReady(state = wormholeState) {
+    if (!state || normalizedRoute(global.location?.hash) !== normalizedRoute(state.route)) return false;
+    if (!state.needsEngine) return true;
+    const view = String(state.route || "").split("/").filter(Boolean)[1] || "overview";
+    const shell = global.document?.querySelector?.(`[data-creative-os][data-view="${view}"]`);
+    const host = shell?.querySelector?.("[data-cos-workspace]");
+    return Boolean(host && host.children.length && !host.querySelector(".creative-os__loader, .creative-os__error"));
+  }
+
+  function probeWormhole(state = wormholeState) {
+    if (!state || state !== wormholeState) return;
+    clearInterval(state.probe);
+    state.probe = setInterval(() => {
+      if (state !== wormholeState) return clearInterval(state.probe);
+      if (wormholeWorkspaceReady(state)) closeWormhole(true);
+    }, 80);
+  }
+
   function closeWormhole(success = true, message = "") {
     const state = wormholeState;
     if (!state) return false;
     clearTimeout(state.timeout);
+    clearInterval(state.probe);
     const overlay = global.document?.querySelector?.("[data-cg-wormhole]");
     if (!overlay) { wormholeState = null; return false; }
     if (!success) {
@@ -587,13 +611,33 @@
     overlay.innerHTML = `<div aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><section role="status" aria-live="polite"><span>H</span><small>WORMHOLE NAVIGATION</small><strong>${esc(label)}</strong><p data-cg-wormhole-status>Đang chuẩn bị workspace và dữ liệu dự án...</p><button type="button" data-cg-wormhole-retry hidden>Thử lại</button></section>`;
     global.document.body.append(overlay);
     const navigate = typeof onNavigate === "function" ? onNavigate : () => { global.location.hash = `#${route}`; };
-    wormholeState = { route, navigate, needsEngine: wormholeNeedsEngine(route), timeout: 0 };
+    wormholeState = {
+      route: normalizedRoute(route),
+      navigate,
+      needsEngine: wormholeNeedsEngine(route),
+      timeout: 0,
+      probe: 0
+    };
     global.requestAnimationFrame?.(() => overlay.classList.add("is-active"));
-    setTimeout(() => {
-      if (!wormholeState || wormholeState.route !== route) return;
-      navigate();
-      wormholeState.timeout = setTimeout(() => closeWormhole(false, "Không thể xác nhận workspace đã tải xong. Dữ liệu của bạn vẫn được giữ nguyên."), 12000);
-    }, 350);
+    const startedAt = Date.now();
+    const preparation = global.HHCreativeOS?.prepareRoute?.(route);
+    Promise.resolve(preparation).catch(() => null).then(() => {
+      const wait = Math.max(0, 280 - (Date.now() - startedAt));
+      setTimeout(() => {
+        const state = wormholeState;
+        if (!state || state.route !== normalizedRoute(route)) return;
+        const wasCurrentRoute = normalizedRoute(global.location?.hash) === state.route;
+        state.timeout = setTimeout(() => {
+          if (wormholeWorkspaceReady(state) || normalizedRoute(global.location?.hash) === state.route) closeWormhole(true);
+          else closeWormhole(false, "Không thể mở workspace. Hãy thử lại.");
+        }, 7000);
+        navigate();
+        if (wasCurrentRoute && typeof global.dispatchEvent === "function" && typeof global.Event === "function") {
+          global.dispatchEvent(new global.Event("hashchange"));
+        }
+        probeWormhole(state);
+      }, wait);
+    });
     return true;
   }
 
@@ -1008,8 +1052,17 @@
       if (status) status.textContent = "Đang thử mở lại workspace...";
       event.target.setAttribute("hidden", "");
       clearTimeout(wormholeState.timeout);
-      wormholeState.timeout = setTimeout(() => closeWormhole(false), 12000);
-      global.dispatchEvent?.(new HashChangeEvent("hashchange"));
+      const state = wormholeState;
+      global.HHCreativeOS?.prepareRoute?.(state.route).catch?.(() => {});
+      state.navigate?.();
+      if (typeof global.dispatchEvent === "function" && typeof global.Event === "function") {
+        global.dispatchEvent(new global.Event("hashchange"));
+      }
+      state.timeout = setTimeout(() => {
+        if (normalizedRoute(global.location?.hash) === state.route) closeWormhole(true);
+        else closeWormhole(false);
+      }, 7000);
+      probeWormhole(state);
     });
     if (typeof global.MutationObserver === "function") {
       const observer = new global.MutationObserver(attach);

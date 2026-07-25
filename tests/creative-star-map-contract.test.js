@@ -23,6 +23,25 @@ test("Creative Star Map has six color-coded clusters and all 25 workspaces", () 
   ]);
 });
 
+test("all 25 planets resolve to a real Creative OS engine or an existing production module", () => {
+  const shell = read("creative-os.js");
+  const router = read("script.js");
+  const engineViews = new Set([
+    "overview", "project", "brief", "moodboard", "storyboard", "world-bible",
+    "workflow", "ai-director", "prompt-studio", "repurpose", "brand",
+    "audio-dubbing", "prototype", "review", "collaboration", "publishing",
+    "analytics", "rights", "providers", "marketplace"
+  ]);
+  const legacyViews = new Set(["ai-center", "ai-script", "creator-studio", "media-center", "ai-automation"]);
+  for (const id of starMap.GROUPS.flatMap((group) => group.tools)) {
+    if (engineViews.has(id)) assert.match(shell, new RegExp(`["']${id}["']`), `missing engine route ${id}`);
+    else {
+      assert.ok(legacyViews.has(id), `planet ${id} has no workspace type`);
+      assert.match(router, new RegExp(`["']${id}["']`), `missing production module ${id}`);
+    }
+  }
+});
+
 test("Star Map, Focus and Compact modes are persisted safely", () => {
   assert.equal(starMap.normalizePrefs({ mode: "map" }).mode, "map");
   assert.equal(starMap.normalizePrefs({ mode: "focus" }).mode, "focus");
@@ -79,13 +98,16 @@ test("Main Creative Galaxy supports project constellations, drag zoom and wormho
   const script = read("script.js");
   for (const token of [
     "visualProfile", "data-cg-project", "data-cg-view", "pointerdown", "wheel",
-    "openWormhole", "hh:creative-workspace-ready", "hh:creative-workspace-error"
+    "openWormhole", "probeWormhole", "wasCurrentRoute", "hh:creative-workspace-ready", "hh:creative-workspace-error"
   ]) assert.match(galaxy, new RegExp(token));
   assert.match(css, /\.cg-project-stars/);
   assert.match(css, /\.cg-wormhole/);
   assert.match(css, /\.cg-focus-metrics/);
   assert.match(shell, /hh:creative-workspace-ready/);
   assert.match(shell, /hh:creative-workspace-error/);
+  assert.match(shell, /prepareRoute/);
+  assert.match(shell, /dataset\.hhRuntimeAsset === "script"/);
+  assert.match(read("creative-star-map.js"), /prepareRoute[\s\S]*pointerover/);
   assert.match(script, /HHCreativeStarMap\.markup/);
   assert.match(script, /hh:route-rendered/);
 });
@@ -95,14 +117,14 @@ test("Creative Star Map release assets are versioned and cached", () => {
   const worker = read("sw.js");
   const html = read("index.html");
   for (const asset of [
-    "creative-star-map.css?v=1", "creative-star-map.js?v=1",
-    "creative-galaxy.css?v=2", "creative-galaxy.js?v=2", "creative-os.js?v=5"
+    "creative-star-map.css?v=1", "creative-star-map.js?v=2",
+    "creative-galaxy.css?v=2", "creative-galaxy.js?v=3", "creative-os.js?v=6"
   ]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v245/);
-  assert.match(html, /performance-loader\.js\?v=38/);
+  assert.match(worker, /hh-identity-portal-v246/);
+  assert.match(html, /performance-loader\.js\?v=39/);
   assert.match(html, /script\.js\?v=133/);
 });

@@ -204,6 +204,41 @@ test("mounting all routes reuses one store and unmount removes root listeners", 
   assert.equal(host.listenerCount("click"), 0);
 });
 
+test("Creative OS immediately reuses core assets already loaded by the route loader", async () => {
+  const core = require(path.join(root, "creative-os-core.js"));
+  const document = createFakeDocument();
+  const preloadedCore = new FakeNode("script");
+  preloadedCore.src = "https://example.test/creative-os-core.js?v=2";
+  preloadedCore.dataset.hhRuntimeAsset = "script";
+  document.scripts.push(preloadedCore);
+  let mounted = false;
+  const context = {
+    console,
+    document,
+    location: { hash: "#/create" },
+    AbortController,
+    Blob,
+    URL,
+    setTimeout,
+    clearTimeout,
+    queueMicrotask,
+    HHCreativeCore: core,
+    HHCreativeCommandCenter: {
+      mount() {
+        mounted = true;
+        return { unmount() {} };
+      },
+      unmount() {}
+    }
+  };
+  context.window = context;
+  vm.runInNewContext(read("creative-os.js"), context, { filename: "creative-os.js" });
+  const host = new FakeNode("div");
+  await context.HHCreativeOS.mount(host, { view: "overview" });
+  assert.equal(mounted, true, "the preloaded core script was mistaken for a still-loading asset");
+  assert.equal(context.HHCreativeOS.isPrepared("/create/overview"), true);
+});
+
 test("external publishing stays blocked until a configured adapter confirms success", async () => {
   const publishing = require(path.join(root, "creative-publishing.js"));
   const store = publishing.createStore({ storage: null, providerAdapters: {} });

@@ -237,6 +237,13 @@
         });
       }
     }, true);
+    const preparePlanet = (event) => {
+      const planet = event.target.closest?.("[data-csm-wormhole-route]");
+      if (!planet?.closest("[data-creative-star-map]")) return;
+      global.HHCreativeOS?.prepareRoute?.(planet.dataset.csmWormholeRoute).catch?.(() => {});
+    };
+    global.document.addEventListener("pointerover", preparePlanet, { passive: true });
+    global.document.addEventListener("focusin", preparePlanet);
     global.addEventListener?.("hh:home-galaxy-preferences-applied", (event) => {
       const profile = homeProfile(event.detail?.preferences || {});
       global.document.querySelectorAll("[data-creative-star-map]").forEach((root) => applyProfile(root, profile));

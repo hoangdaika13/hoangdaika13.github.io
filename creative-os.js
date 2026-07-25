@@ -77,7 +77,11 @@
     const promise = new Promise((resolve, reject) => {
       const existing = [...document.scripts].find((node) => node.src.includes(source.split("?")[0]));
       if (existing) {
-        if (existing.dataset.loaded === "true") resolve();
+        if (
+          existing.dataset.loaded === "true"
+          || existing.dataset.hhRuntimeAsset === "script"
+          || ["complete", "loaded"].includes(existing.readyState)
+        ) resolve();
         else {
           existing.addEventListener("load", resolve, { once: true });
           existing.addEventListener("error", () => reject(new Error(`Không tải được ${source}`)), { once: true });
@@ -118,6 +122,30 @@
     activeStore = window.__HH_CREATIVE_STORE__ || window.HHCreativeCore.createStore();
     window.__HH_CREATIVE_STORE__ = activeStore;
     return activeStore;
+  }
+
+  function routeView(routeOrView) {
+    const value = String(routeOrView || "overview").replace(/^#/, "");
+    if (!value.includes("/")) return normalizeView(value);
+    const parts = value.split("/").filter(Boolean);
+    return normalizeView(parts[0] === "create" ? (parts[1] || "overview") : value);
+  }
+
+  function isPrepared(routeOrView) {
+    const view = routeView(routeOrView);
+    const engine = ENGINES[view];
+    return Boolean(engine && window[engine.api]?.mount);
+  }
+
+  async function prepareRoute(routeOrView) {
+    const view = routeView(routeOrView);
+    const engine = ENGINES[view];
+    if (!engine) return { view, legacy: true, ready: true };
+    const work = [ensureStore(), loadStyle(engine.css)];
+    if (!window[engine.api]?.mount) work.push(loadScript(engine.js));
+    await Promise.all(work);
+    if (!window[engine.api]?.mount) throw new Error(`${engine.api} chưa sẵn sàng.`);
+    return { view, legacy: false, ready: true };
   }
 
   function stateMetrics(state) {
@@ -172,8 +200,7 @@
     const engine = ENGINES[view];
     if (!host || !engine) return;
     try {
-      const store = await ensureStore();
-      await Promise.all([loadStyle(engine.css), loadScript(engine.js)]);
+      const [store] = await Promise.all([ensureStore(), prepareRoute(view)]);
       if (token !== mountToken || !activeRoot) return;
       const api = window[engine.api];
       if (!api?.mount) throw new Error(`${engine.api} chưa cung cấp mount().`);
@@ -285,6 +312,7 @@
     const token = ++mountToken;
     root.innerHTML = shellMarkup(view);
     bind(root, view, options);
+    const engineTask = mountEngine(view, options, token);
     try {
       const store = await ensureStore();
       if (token !== mountToken) return;
@@ -298,8 +326,17 @@
       unsubscribe = store.subscribe?.(renderContext) || null;
       renderContext();
     } catch {}
-    mountEngine(view, options, token);
+    await engineTask;
   }
 
-  window.HHCreativeOS = { mount, unmount, views: VIEWS.map((item) => ({ ...item })), normalizeView, stateMetrics, version: 1 };
+  window.HHCreativeOS = {
+    mount,
+    unmount,
+    prepareRoute,
+    isPrepared,
+    views: VIEWS.map((item) => ({ ...item })),
+    normalizeView,
+    stateMetrics,
+    version: 2
+  };
 })();

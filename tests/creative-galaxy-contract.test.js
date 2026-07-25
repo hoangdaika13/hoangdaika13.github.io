@@ -109,13 +109,13 @@ test("Creative Galaxy assets are versioned and precached", () => {
   const worker = read("sw.js");
   const html = read("index.html");
   for (const asset of [
-    "creative-galaxy.css?v=2", "creative-galaxy.js?v=2", "creative-star-map.css?v=1",
-    "creative-star-map.js?v=1", "creative-os-core.js?v=2", "creative-os.js?v=5", "ai-center-advanced.js?v=2"
+    "creative-galaxy.css?v=2", "creative-galaxy.js?v=3", "creative-star-map.css?v=1",
+    "creative-star-map.js?v=2", "creative-os-core.js?v=2", "creative-os.js?v=6", "ai-center-advanced.js?v=2"
   ]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(`${loader}\n${worker}`, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v245/);
-  assert.match(html, /performance-loader\.js\?v=38/);
+  assert.match(worker, /hh-identity-portal-v246/);
+  assert.match(html, /performance-loader\.js\?v=39/);
   assert.match(html, /script\.js\?v=133/);
 });

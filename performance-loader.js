@@ -108,7 +108,7 @@
     creative: {
       styles: ["creative-suite.css?v=6", "creative-os.css?v=1", "creative-galaxy.css?v=2", "creative-star-map.css?v=1", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
       scripts: [
-        "creative-os-core.js?v=2", "creative-galaxy.js?v=2", "creative-star-map.js?v=1", "creative-os.js?v=5", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
+        "creative-os-core.js?v=2", "creative-galaxy.js?v=3", "creative-star-map.js?v=2", "creative-os.js?v=6", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
       ]
     },
     music: {
@@ -237,7 +237,10 @@
       script.src = url;
       script.async = false;
       script.dataset.hhRuntimeAsset = "script";
-      script.onload = () => resolve(url);
+      script.onload = () => {
+        script.dataset.loaded = "true";
+        resolve(url);
+      };
       script.onerror = () => reject(new Error(`Khong tai duoc chuc nang ${url}`));
       document.head.append(script);
     });
