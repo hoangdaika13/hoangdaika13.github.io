@@ -7,6 +7,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/health",
+      "destination": "/api/platform/summary?view=health"
+    },
+    {
       "source": "/api/tools/run",
       "destination": "/api/store/tool-gateway?gateway=tools"
     },

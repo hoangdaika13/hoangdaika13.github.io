@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v232";
+const CACHE = "hh-identity-portal-v238";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -9,6 +9,7 @@ const RUNTIME_ASSETS = [
   "./app-shell.css?v=52",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=3",
+  "./home-galaxy-mission.css?v=4",
   "./command-center-pro.css?v=4",
   "./home-daily-command.css?v=4",
   "./home-command-search.css?v=2",
@@ -102,6 +103,7 @@ const RUNTIME_ASSETS = [
   "./music-ai-studio.js?v=8",
   "./dashboard-aurora.js?v=5",
   "./home-galaxy-command.js?v=3",
+  "./home-galaxy-mission.js?v=6",
   "./command-center-pro.js?v=5",
   "./home-daily-command.js?v=5",
   "./home-command-search.js?v=2",
@@ -294,7 +296,7 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=25",
+  "./performance-loader.js?v=31",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=131"
