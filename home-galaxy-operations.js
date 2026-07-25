@@ -535,6 +535,19 @@
     const safeRoute = /^\/[a-z0-9/_-]+$/i.test(String(route || "")) ? String(route) : "/home";
     if (instance.wormholeBusy) return false;
     instance.wormholeBusy = true;
+    if (instance.shell.dataset.effectWormhole === "false") {
+      try {
+        await prepareRoute(safeRoute);
+        global.location.hash = `#${safeRoute}`;
+        await waitForRoute(safeRoute);
+        return true;
+      } catch {
+        global.location.hash = `#${safeRoute}`;
+        return false;
+      } finally {
+        instance.wormholeBusy = false;
+      }
+    }
     const overlay = bodyOverlay();
     overlay.hidden = false;
     overlay.dataset.phase = "preparing";
@@ -566,7 +579,7 @@
   }
 
   function showNova(instance, anchor = instance.portal) {
-    if (!anchor || instance.shell.dataset.motion === "static") return;
+    if (!anchor || ["static", "off"].includes(instance.shell.dataset.motion) || instance.shell.dataset.effectNova === "false") return;
     const rect = anchor.getBoundingClientRect();
     const shellRect = instance.shell.getBoundingClientRect();
     const nova = instance.shell.querySelector("[data-hgo-nova]");
@@ -589,10 +602,12 @@
     instance.lastActivityId = latest.id;
     const old = instance.shell.querySelector("[data-hgo-event-comet]");
     old?.remove();
-    instance.shell.insertAdjacentHTML("beforeend", notificationMarkup(latest));
-    const node = instance.shell.querySelector("[data-hgo-event-comet]");
-    global.requestAnimationFrame(() => node?.classList.add("is-flying"));
-    setTimeout(() => node?.classList.remove("is-flying"), 5200);
+    if (instance.shell.dataset.effectComet !== "false") {
+      instance.shell.insertAdjacentHTML("beforeend", notificationMarkup(latest));
+      const node = instance.shell.querySelector("[data-hgo-event-comet]");
+      global.requestAnimationFrame(() => node?.classList.add("is-flying"));
+      setTimeout(() => node?.classList.remove("is-flying"), 5200);
+    }
     if (latest.type === "task-completed") showNova(instance);
     if (latest.type === "deployment-ready") instance.shell.dataset.deployState = "success";
     if (latest.type === "deployment-failed") instance.shell.dataset.deployState = "failed";

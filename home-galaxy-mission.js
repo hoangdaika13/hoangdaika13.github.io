@@ -71,14 +71,38 @@
     theme: "neon",
     motion: "balanced",
     stars: 64,
+    planetSpeed: 50,
+    orbitSpeed: 46,
+    parallax: 52,
+    particles: 64,
+    meteors: 48,
+    nebula: 68,
+    glow: 72,
+    orbitScale: 100,
     sound: false,
+    soundVolume: 35,
     hideUnsupported: false,
+    autoQuality: true,
+    batteryAware: true,
+    highContrast: false,
+    fontScale: 100,
+    effectWormhole: true,
+    effectNova: true,
+    effectComet: true,
+    syncColors: true,
     defaultPlanet: "creative",
     planetOrder: PLANETS.map((item) => item.id),
+    visiblePlanets: PLANETS.map((item) => item.id),
+    pinnedPlanets: ["creative", "work", "dev"],
+    notificationPlanets: PLANETS.map((item) => item.id),
+    focusPlanets: PLANETS.map((item) => item.id),
     widgetOrder: WIDGETS.map((item) => item.id),
     widgets: WIDGETS.map((item) => item.id),
     widgetSizes: Object.fromEntries(WIDGETS.map((item) => [item.id, "medium"])),
+    widgetTones: Object.fromEntries(WIDGETS.map((item) => [item.id, item.color])),
+    widgetRefresh: Object.fromEntries(WIDGETS.map((item) => [item.id, 15])),
     pinnedActions: ["task", "ai", "note", "search"],
+    preset: "custom",
     updatedAt: 0
   });
 
@@ -141,28 +165,70 @@
 
   function normalizePrefs(raw = {}) {
     const legacy = raw && typeof raw === "object" ? raw : {};
-    const validSize = (value) => ["small", "medium", "large"].includes(value) ? value : "medium";
+    const validSize = (value) => ["small", "medium", "large", "wide"].includes(value) ? value : "medium";
     const allowedWidgets = new Set(WIDGETS.map((item) => item.id));
     const allowedActions = new Set(ACTIONS.map((item) => item.id));
+    const allowedPlanets = new Set(PLANETS.map((item) => item.id));
+    const themes = ["neon", "purple", "solar", "deep", "aurora", "magenta", "emerald", "quantum", "golden", "crimson", "ice", "blackhole", "time"];
+    const motions = ["static", "off", "minimal", "balanced", "vivid", "cinematic", "hyper", "adaptive"];
     const widgetSizes = {};
+    const widgetTones = {};
+    const widgetRefresh = {};
     WIDGETS.forEach((widget) => { widgetSizes[widget.id] = validSize(legacy.widgetSizes?.[widget.id]); });
+    WIDGETS.forEach((widget) => {
+      const tone = String(legacy.widgetTones?.[widget.id] || "");
+      widgetTones[widget.id] = /^#[0-9a-f]{6}$/i.test(tone) ? tone : widget.color;
+      widgetRefresh[widget.id] = [5, 15, 30, 60].includes(Number(legacy.widgetRefresh?.[widget.id])) ? Number(legacy.widgetRefresh[widget.id]) : 15;
+    });
     return {
       version: 2,
-      theme: ["neon", "purple", "solar", "deep"].includes(legacy.theme) ? legacy.theme : DEFAULT_PREFS.theme,
-      motion: ["static", "balanced", "cinematic"].includes(legacy.motion) ? legacy.motion : DEFAULT_PREFS.motion,
+      theme: themes.includes(legacy.theme) ? legacy.theme : DEFAULT_PREFS.theme,
+      motion: motions.includes(legacy.motion) ? legacy.motion : DEFAULT_PREFS.motion,
       stars: clamp(legacy.stars ?? DEFAULT_PREFS.stars, 20, 100),
+      planetSpeed: clamp(legacy.planetSpeed ?? DEFAULT_PREFS.planetSpeed, 0, 100),
+      orbitSpeed: clamp(legacy.orbitSpeed ?? DEFAULT_PREFS.orbitSpeed, 0, 100),
+      parallax: clamp(legacy.parallax ?? DEFAULT_PREFS.parallax, 0, 100),
+      particles: clamp(legacy.particles ?? DEFAULT_PREFS.particles, 0, 100),
+      meteors: clamp(legacy.meteors ?? DEFAULT_PREFS.meteors, 0, 100),
+      nebula: clamp(legacy.nebula ?? DEFAULT_PREFS.nebula, 0, 100),
+      glow: clamp(legacy.glow ?? DEFAULT_PREFS.glow, 0, 100),
+      orbitScale: clamp(legacy.orbitScale ?? DEFAULT_PREFS.orbitScale, 75, 125),
       sound: legacy.sound === true,
+      soundVolume: clamp(legacy.soundVolume ?? DEFAULT_PREFS.soundVolume, 0, 100),
       hideUnsupported: legacy.hideUnsupported === true,
+      autoQuality: legacy.autoQuality !== false,
+      batteryAware: legacy.batteryAware !== false,
+      highContrast: legacy.highContrast === true,
+      fontScale: clamp(legacy.fontScale ?? DEFAULT_PREFS.fontScale, 90, 120),
+      effectWormhole: legacy.effectWormhole !== false,
+      effectNova: legacy.effectNova !== false,
+      effectComet: legacy.effectComet !== false,
+      syncColors: legacy.syncColors !== false,
       defaultPlanet: PLANETS.some((item) => item.id === legacy.defaultPlanet) ? legacy.defaultPlanet : DEFAULT_PREFS.defaultPlanet,
       planetOrder: safeOrder(legacy.planetOrder || legacy.planets, PLANETS, DEFAULT_PREFS.planetOrder),
+      visiblePlanets: Array.isArray(legacy.visiblePlanets) && legacy.visiblePlanets.length
+        ? [...new Set(legacy.visiblePlanets.filter((id) => allowedPlanets.has(id)))]
+        : [...DEFAULT_PREFS.visiblePlanets],
+      pinnedPlanets: Array.isArray(legacy.pinnedPlanets)
+        ? [...new Set(legacy.pinnedPlanets.filter((id) => allowedPlanets.has(id)))].slice(0, 4)
+        : [...DEFAULT_PREFS.pinnedPlanets],
+      notificationPlanets: Array.isArray(legacy.notificationPlanets)
+        ? [...new Set(legacy.notificationPlanets.filter((id) => allowedPlanets.has(id)))]
+        : [...DEFAULT_PREFS.notificationPlanets],
+      focusPlanets: Array.isArray(legacy.focusPlanets)
+        ? [...new Set(legacy.focusPlanets.filter((id) => allowedPlanets.has(id)))]
+        : [...DEFAULT_PREFS.focusPlanets],
       widgetOrder: safeOrder(legacy.widgetOrder || legacy.widgets, WIDGETS, DEFAULT_PREFS.widgetOrder),
       widgets: Array.isArray(legacy.widgets)
         ? [...new Set(legacy.widgets.filter((id) => allowedWidgets.has(id)))]
         : [...DEFAULT_PREFS.widgets],
       widgetSizes,
+      widgetTones,
+      widgetRefresh,
       pinnedActions: Array.isArray(legacy.pinnedActions)
         ? [...new Set(legacy.pinnedActions.filter((id) => allowedActions.has(id)))].slice(0, 4)
         : [...DEFAULT_PREFS.pinnedActions],
+      preset: cleanText(legacy.preset || DEFAULT_PREFS.preset, 32) || "custom",
       updatedAt: Math.max(0, Number(legacy.updatedAt) || 0)
     };
   }
@@ -185,6 +251,9 @@
     instance.prefs = normalizePrefs({ ...instance.prefs, updatedAt: options.keepTimestamp ? instance.prefs.updatedAt : Date.now() });
     writeJson(PREF_KEY, instance.prefs);
     applyPreferenceState(instance);
+    global.dispatchEvent?.(new CustomEvent("hh:home-galaxy-preferences-applied", {
+      detail: { preferences: JSON.parse(JSON.stringify(instance.prefs)), source: options.source || "galaxy-mission" }
+    }));
     if (!options.silent) announce(instance, "Đã lưu cấu hình Galaxy trên thiết bị.", "success");
     if (options.sync !== false && isSignedIn()) scheduleAccountSync(instance, "push");
   }
@@ -816,9 +885,10 @@
 
   function widgetMarkup(instance, widget, data) {
     const size = instance.prefs.widgetSizes[widget.id] || "medium";
+    const tone = instance.prefs.widgetTones?.[widget.id] || widget.color;
     const unsupported = data?.supported === false;
     const hidden = !instance.prefs.widgets.includes(widget.id) || (instance.prefs.hideUnsupported && unsupported);
-    return `<article class="hgm-live-card is-${size}${unsupported ? " is-unsupported" : ""}" data-hgm-widget="${widget.id}" data-size="${size}" draggable="true" style="--widget:${widget.color}" ${hidden ? "hidden" : ""}>
+    return `<article class="hgm-live-card is-${size}${unsupported ? " is-unsupported" : ""}" data-hgm-widget="${widget.id}" data-size="${size}" data-refresh="${instance.prefs.widgetRefresh?.[widget.id] || 15}" draggable="true" style="--widget:${tone}" ${hidden ? "hidden" : ""}>
       <button type="button" data-hgm-live-open="${widget.id}" aria-expanded="false">
         <span class="hgm-satellite"><i>${widget.icon}</i><b></b></span>
         <span class="hgm-live-copy"><small>${escapeHtml(widget.label)}</small><strong>${escapeHtml(data?.value || "Đang đồng bộ")}</strong><em>${escapeHtml(data?.meta || "Chưa có dữ liệu")}</em></span>
@@ -830,10 +900,12 @@
 
   function planetMarkup(instance, planet, index) {
     const data = instance.planetData?.[planet.id];
-    const unread = instance.activities.filter((item) => item.planet === planet.id && !item.read).length;
+    const notificationsEnabled = instance.prefs.notificationPlanets?.includes(planet.id) !== false;
+    const unread = notificationsEnabled ? instance.activities.filter((item) => item.planet === planet.id && !item.read).length : 0;
     const active = instance.focusPlanet === planet.id;
+    const pinned = instance.prefs.pinnedPlanets?.includes(planet.id);
     const status = data?.status || "Đang đọc dữ liệu";
-    return `<button class="hgm-planet hgm-planet--${index + 1}${unread ? " has-signal" : ""}${data?.alert ? " has-alert" : ""}${data?.processing ? " is-processing" : ""}${active ? " is-selected" : ""}" type="button" data-hgm-planet="${planet.id}" style="--planet:${planet.color};--planet-index:${index}" aria-pressed="${active}" aria-label="${escapeHtml(`${planet.label}: ${status}`)}">
+    return `<button class="hgm-planet hgm-planet--${index + 1}${unread ? " has-signal" : ""}${data?.alert ? " has-alert" : ""}${data?.processing ? " is-processing" : ""}${active ? " is-selected" : ""}${pinned ? " is-pinned" : ""}" type="button" data-hgm-planet="${planet.id}" data-pinned="${pinned ? "true" : "false"}" style="--planet:${planet.color};--planet-index:${index}" aria-pressed="${active}" aria-label="${escapeHtml(`${planet.label}: ${status}`)}">
       <span class="hgm-planet-sphere"><i>${planet.icon}</i><b></b><em></em></span>
       <strong>${escapeHtml(planet.label)}</strong>
       <small>${escapeHtml(status)}</small>
@@ -953,7 +1025,23 @@
     instance.root.dataset.hgcMotion = instance.prefs.motion;
     shell.dataset.theme = instance.prefs.theme;
     shell.dataset.motion = instance.prefs.motion;
+    shell.dataset.effectWormhole = String(instance.prefs.effectWormhole);
+    shell.dataset.effectNova = String(instance.prefs.effectNova);
+    shell.dataset.effectComet = String(instance.prefs.effectComet);
+    shell.dataset.syncColors = String(instance.prefs.syncColors);
+    shell.dataset.highContrast = String(instance.prefs.highContrast);
+    shell.dataset.autoQuality = String(instance.prefs.autoQuality);
     shell.style.setProperty("--hgm-star-density", String(instance.prefs.stars / 100));
+    shell.style.setProperty("--hgm-planet-speed", String(instance.prefs.planetSpeed / 100));
+    shell.style.setProperty("--hgm-orbit-speed", String(instance.prefs.orbitSpeed / 100));
+    shell.style.setProperty("--hgm-parallax", String(instance.prefs.parallax / 100));
+    shell.style.setProperty("--hgm-particles", String(instance.prefs.particles / 100));
+    shell.style.setProperty("--hgm-meteors", String(instance.prefs.meteors / 100));
+    shell.style.setProperty("--hgm-nebula-strength", String(instance.prefs.nebula / 100));
+    shell.style.setProperty("--hgm-glow-strength", String(instance.prefs.glow / 100));
+    shell.style.setProperty("--hgm-orbit-scale", String(instance.prefs.orbitScale / 100));
+    shell.style.setProperty("--hgm-font-scale", String(instance.prefs.fontScale / 100));
+    instance.widgetNextRefresh = {};
     renderLive(instance);
     renderPlanets(instance);
     const dock = shell.querySelector("[data-hgm-dock]");
@@ -968,11 +1056,18 @@
   function renderLive(instance) {
     const deck = instance.shell?.querySelector("[data-hgm-live-deck]");
     if (!deck) return;
-    instance.liveData = collectLiveData(instance);
-    Object.entries(instance.liveData).forEach(([id, item]) => {
-      instance.histories[id] ||= [];
-      instance.histories[id].push(clamp(item.score, 0, 100));
-      instance.histories[id] = instance.histories[id].slice(-18);
+    const incoming = collectLiveData(instance);
+    const now = Date.now();
+    instance.liveData ||= {};
+    instance.widgetNextRefresh ||= {};
+    Object.entries(incoming).forEach(([id, item]) => {
+      if (!instance.liveData[id] || now >= Number(instance.widgetNextRefresh[id] || 0)) {
+        instance.liveData[id] = item;
+        instance.widgetNextRefresh[id] = now + Number(instance.prefs.widgetRefresh?.[id] || 15) * 1000;
+        instance.histories[id] ||= [];
+        instance.histories[id].push(clamp(item.score, 0, 100));
+        instance.histories[id] = instance.histories[id].slice(-18);
+      }
     });
     deck.innerHTML = instance.prefs.widgetOrder.slice(0, MAX_WIDGETS).map((id) => {
       const widget = WIDGETS.find((item) => item.id === id);
@@ -984,7 +1079,8 @@
     const host = instance.shell?.querySelector("[data-hgm-planets]");
     if (!host) return;
     instance.planetData = collectPlanetData(instance);
-    const order = instance.prefs.planetOrder.map((id) => PLANETS.find((planet) => planet.id === id)).filter(Boolean);
+    const visible = new Set(instance.prefs.visiblePlanets || DEFAULT_PREFS.visiblePlanets);
+    const order = instance.prefs.planetOrder.map((id) => PLANETS.find((planet) => planet.id === id)).filter((planet) => planet && visible.has(planet.id));
     host.innerHTML = order.map((planet, index) => planetMarkup(instance, planet, index)).join("");
     instance.shell.classList.toggle("has-ai-energy", Boolean(instance.planetData.creative?.processing));
     instance.shell.classList.toggle("has-overdue", Boolean(instance.planetData.work?.overdue));
@@ -1022,7 +1118,7 @@
   }
 
   function showBurst(instance, planetId) {
-    if (instance.prefs.motion === "static") return;
+    if (["static", "off"].includes(instance.prefs.motion) || !instance.prefs.effectNova) return;
     const planet = instance.shell?.querySelector(`[data-hgm-planet="${planetId}"]`);
     const burst = instance.shell?.querySelector("[data-hgm-burst]");
     if (!planet || !burst) return;
@@ -1037,7 +1133,7 @@
   }
 
   function showComet(instance, activity) {
-    if (instance.prefs.motion === "static" || global.document.hidden) return;
+    if (["static", "off"].includes(instance.prefs.motion) || global.document.hidden || !instance.prefs.effectComet || !instance.prefs.notificationPlanets?.includes(activity.planet)) return;
     const comet = instance.shell?.querySelector("[data-hgm-comet]");
     const planet = activityForPlanet(activity.planet);
     if (!comet) return;
@@ -1064,7 +1160,8 @@
       const gain = instance.audio.createGain();
       oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(.0001, instance.audio.currentTime);
-      gain.gain.exponentialRampToValueAtTime(.04, instance.audio.currentTime + .015);
+      const volume = clamp(instance.prefs.soundVolume ?? 35, 0, 100) / 100;
+      gain.gain.exponentialRampToValueAtTime(Math.max(.0002, .08 * volume), instance.audio.currentTime + .015);
       gain.gain.exponentialRampToValueAtTime(.0001, instance.audio.currentTime + .11);
       oscillator.connect(gain).connect(instance.audio.destination);
       oscillator.start();
@@ -1074,6 +1171,11 @@
 
   function openFocus(instance, planetId) {
     if (!PLANETS.some((planet) => planet.id === planetId)) return;
+    if (!instance.prefs.focusPlanets?.includes(planetId)) {
+      const route = PLANETS.find((planet) => planet.id === planetId)?.route;
+      if (route) navigate(route);
+      return;
+    }
     instance.focusPlanet = planetId;
     instance.shell.dataset.focusPlanet = planetId;
     instance.shell.classList.add("is-focus");
@@ -1082,7 +1184,7 @@
     renderPlanets(instance);
     playTone(instance, 440 + PLANETS.findIndex((planet) => planet.id === planetId) * 35);
     const panel = instance.shell.querySelector("[data-hgm-focus]");
-    if (global.innerWidth <= 700) panel?.scrollIntoView?.({ behavior: instance.prefs.motion === "static" ? "auto" : "smooth", block: "end" });
+    if (global.innerWidth <= 700) panel?.scrollIntoView?.({ behavior: ["static", "off"].includes(instance.prefs.motion) ? "auto" : "smooth", block: "end" });
   }
 
   function closeFocus(instance) {
@@ -1329,7 +1431,10 @@
       if (time - last >= 1000) {
         const fps = Math.round(frames * 1000 / Math.max(1, time - last));
         instance.fps = fps;
-        instance.quality = fps < 35 ? "low" : fps < 52 ? "medium" : "high";
+        const measuredQuality = fps < 35 ? "low" : fps < 52 ? "medium" : "high";
+        instance.quality = instance.batteryLow
+          ? "low"
+          : (instance.prefs.autoQuality || instance.prefs.motion === "adaptive" ? measuredQuality : "high");
         instance.shell.dataset.quality = instance.quality;
         frames = 0;
         last = time;
@@ -1342,6 +1447,30 @@
       instance.tabLag = Math.max(0, now - lagExpected);
       lagExpected = now + 1000;
     }, 1000);
+    if (typeof global.navigator?.getBattery === "function") {
+      global.navigator.getBattery().then((battery) => {
+        if (instance.destroyed) return;
+        const updateBattery = () => {
+          const constrained = instance.prefs.batteryAware !== false && !battery.charging && battery.level <= .2;
+          instance.batteryLow = constrained;
+          instance.shell.dataset.battery = constrained ? "low" : battery.charging ? "charging" : "normal";
+          if (constrained) {
+            instance.quality = "low";
+            instance.shell.dataset.quality = "low";
+          }
+          instance.resetCanvas?.();
+        };
+        instance.battery = battery;
+        instance.batteryHandler = updateBattery;
+        battery.addEventListener?.("levelchange", updateBattery);
+        battery.addEventListener?.("chargingchange", updateBattery);
+        updateBattery();
+      }).catch(() => {
+        instance.shell.dataset.battery = "unsupported";
+      });
+    } else {
+      instance.shell.dataset.battery = "unsupported";
+    }
   }
 
   function startCanvas(instance) {
@@ -1356,7 +1485,8 @@
       canvas.height = Math.max(1, Math.round(rect.height * ratio));
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       stars.length = 0;
-      const count = Math.round((instance.prefs.stars || 60) * (instance.quality === "low" ? .45 : instance.quality === "medium" ? .72 : 1.05));
+      const particleFactor = .35 + (instance.prefs.particles || 60) / 100 * .9;
+      const count = Math.round((instance.prefs.stars || 60) * particleFactor * (instance.quality === "low" ? .45 : instance.quality === "medium" ? .72 : 1.05));
       for (let index = 0; index < count; index += 1) stars.push({ x: Math.random() * rect.width, y: Math.random() * rect.height, z: .25 + Math.random() * .75, r: .4 + Math.random() * 1.3, hue: [188, 214, 276, 328, 44][index % 5] });
     };
     reset();
@@ -1368,20 +1498,29 @@
     let previous = 0;
     const draw = (time) => {
       if (instance.destroyed) return;
-      if (global.document.hidden || instance.prefs.motion === "static") {
+      if (global.document.hidden || ["static", "off"].includes(instance.prefs.motion)) {
         instance.canvasFrame = global.requestAnimationFrame?.(draw);
         return;
       }
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       context.clearRect(0, 0, width, height);
-      const speed = instance.prefs.motion === "cinematic" ? .035 : .014;
+      const motionSpeed = {
+        minimal: .007,
+        balanced: .014,
+        vivid: .024,
+        cinematic: .035,
+        hyper: .052,
+        adaptive: instance.quality === "low" ? .007 : instance.quality === "medium" ? .015 : .026
+      }[instance.prefs.motion] || .014;
+      const speed = motionSpeed * (.35 + (instance.prefs.planetSpeed || 50) / 100 * 1.3);
       stars.forEach((star) => {
         star.y += speed * star.z * Math.min(32, time - previous || 16);
         if (star.y > height + 3) { star.y = -3; star.x = Math.random() * width; }
         context.beginPath();
         context.fillStyle = `hsla(${star.hue},90%,76%,${.25 + star.z * .58})`;
-        context.arc(star.x + instance.pointerX * star.z * 8, star.y + instance.pointerY * star.z * 6, star.r * star.z, 0, Math.PI * 2);
+        const parallax = (instance.prefs.parallax || 50) / 50;
+        context.arc(star.x + instance.pointerX * star.z * 8 * parallax, star.y + instance.pointerY * star.z * 6 * parallax, star.r * star.z, 0, Math.PI * 2);
         context.fill();
       });
       previous = time;
@@ -1705,6 +1844,7 @@
       prefs: readPrefs(),
       activities: readActivity(),
       histories: Object.fromEntries(WIDGETS.map((item) => [item.id, []])),
+      widgetNextRefresh: {},
       vitals: {},
       resources: {},
       storage: {},
@@ -1733,6 +1873,7 @@
     root.classList.add("hgm-active");
     root.innerHTML = markup(instance);
     instance.shell = root.querySelector("[data-hgm-shell]");
+    applyPreferenceState(instance);
     instances.set(root, instance);
     bind(instance);
     startPerformanceObservers(instance);
@@ -1760,6 +1901,12 @@
       activity: () => JSON.parse(JSON.stringify(instance.activities)),
       openPlanet: (id) => openFocus(instance, id),
       sync: () => syncAccount(instance, "auto"),
+      applyPreferences: (preferences, options = {}) => {
+        instance.prefs = normalizePrefs(preferences);
+        savePrefs(instance, { sync: options.sync !== false, source: options.source || "galaxy-control-deck" });
+        instance.resetCanvas?.();
+        return JSON.parse(JSON.stringify(instance.prefs));
+      },
       destroy: () => unmount(root)
     });
     instance.api = api;
@@ -1779,6 +1926,8 @@
     global.cancelAnimationFrame?.(instance.canvasFrame);
     instance.observers.forEach((observer) => observer.disconnect?.());
     instance.resizeObserver?.disconnect?.();
+    instance.battery?.removeEventListener?.("levelchange", instance.batteryHandler);
+    instance.battery?.removeEventListener?.("chargingchange", instance.batteryHandler);
     instance.audio?.close?.();
     root.classList.remove("hgm-active");
     root.innerHTML = "";
