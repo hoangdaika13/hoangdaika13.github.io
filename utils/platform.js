@@ -34,10 +34,19 @@ function isVerifiedIdentity(user) {
   return Boolean(user?.emailVerifiedAt || user?.verifiedAt);
 }
 
+function isGoogleVerifiedIdentity(user) {
+  const provider = String(user?.lastProvider || user?.provider || "").trim().toLowerCase();
+  return Boolean(
+    user?.googleVerifiedAt
+    || user?.verifiedProviders?.google
+    || (provider === "google" && isVerifiedIdentity(user))
+  );
+}
+
 function isOwnerUser(user) {
   if (!user) return false;
   if (adminUserIds().has(String(user._id || user.id || ""))) return true;
-  return isOwnerEmail(user.email) && isVerifiedIdentity(user);
+  return isOwnerEmail(user.email) && isGoogleVerifiedIdentity(user);
 }
 
 function isAdminUser(user) {
@@ -174,6 +183,7 @@ function publicUser(user) {
     .filter((role) => ADMIN_ROLES.has(role) && role !== "owner"));
   const owner = isOwnerUser(user);
   const admin = owner || roles.size > 0;
+  const googleVerified = isGoogleVerifiedIdentity(user);
   if (owner) roles.add("owner");
   return {
     id: String(user._id),
@@ -191,7 +201,12 @@ function publicUser(user) {
     restrictedFeatures: Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [],
     roles: [...roles],
     verified: Boolean(user.verifiedAt || user.emailVerifiedAt),
-    access: { admin, owner }
+    access: {
+      admin,
+      owner,
+      identityVerified: googleVerified,
+      identityProvider: googleVerified ? "google" : ""
+    }
   };
 }
 
@@ -283,6 +298,7 @@ module.exports = {
   isOwnerUser,
   isAdminUser,
   isOwnerEmail,
+  isGoogleVerifiedIdentity,
   ownerFrom,
   publicUser,
   setCors,

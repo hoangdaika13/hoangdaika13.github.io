@@ -269,7 +269,11 @@ async function upsertOAuthUser(db, profile, provider) {
     name: clean(profile.name, 160) || email.split("@")[0], email,
     avatar: clean(profile.avatar, 800), lastProvider: provider,
     emailVerifiedAt: now, lastLoginAt: now, lastSeenAt: now, updatedAt: now,
-    [`oauth.${provider}.id`]: providerId
+    [`oauth.${provider}.id`]: providerId,
+    ...(provider === "google" ? {
+      googleVerifiedAt: now,
+      "verifiedProviders.google": now
+    } : {})
   };
   if (existing) {
     if (["deleted", "suspended", "locked", "banned"].includes(String(existing.status || "").toLowerCase())) {
@@ -279,9 +283,11 @@ async function upsertOAuthUser(db, profile, provider) {
     return users.findOne({ _id: existing._id });
   }
   delete fields[`oauth.${provider}.id`];
+  delete fields["verifiedProviders.google"];
   const result = await users.insertOne({
     ...fields, status: "active", provider, providerId,
     oauth: { [provider]: { id: providerId } }, tokenVersion: 0,
+    ...(provider === "google" ? { verifiedProviders: { google: now } } : {}),
     consent: false, createdAt: now
   });
   return users.findOne({ _id: result.insertedId });

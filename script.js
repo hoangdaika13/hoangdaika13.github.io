@@ -25,21 +25,11 @@ const createGameAdapters = () => {
   });
 };
 
-const HH_ADMIN_ROLES = new Set(["owner", "super_admin", "admin", "moderator", "support", "analyst"]);
 const readCurrentAuthUser = () => {
   try { return JSON.parse(localStorage.getItem("hh-auth-user") || "null"); }
   catch { return null; }
 };
-const isCurrentUserAdmin = (user = readCurrentAuthUser()) => {
-  if (!user) return false;
-  const roles = [
-    ...(Array.isArray(user.roles) ? user.roles : []),
-    ...(Array.isArray(user.systemRoles) ? user.systemRoles : []),
-    user.role
-  ].map((role) => String(role || "").trim().toLowerCase());
-  return user.access?.admin === true
-    || roles.some((role) => HH_ADMIN_ROLES.has(role));
-};
+const isCurrentUserAdmin = (user = readCurrentAuthUser()) => user?.access?.admin === true;
 window.HHAuthz = Object.freeze({ currentUser: readCurrentAuthUser, isAdmin: isCurrentUserAdmin });
 const readAuthSessionToken = () => window.HHAuthSession?.token?.() || "";
 
@@ -5343,7 +5333,8 @@ function initAppShell() {
         { id: "arcade", title: "Arcade Galaxy", route: "/entertainment/arcade" }
       ]
     },
-    { id: "insights", label: "Phân tích", icon: "↗", accent: "#ffbd69", route: "/analytics", items: ["analytics", "smart-search", "admin-panel", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
+    { id: "insights", label: "Phân tích", icon: "↗", accent: "#ffbd69", route: "/analytics", items: ["analytics", "smart-search", "api-center", "developer-hub", "security-center", "status-page", "feature-flag-dashboard"] },
+    { id: "admin", label: "Admin Panel", icon: "A", accent: "#ff5eaa", route: "/admin", items: ["admin-panel"], adminOnly: true },
     {
       id: "learn",
       label: "Học tập",
@@ -5393,6 +5384,7 @@ function initAppShell() {
   const moduleList = () => Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
   const moduleById = (id) => moduleList().find((item) => item.id === id);
   const routeForModule = (id) => {
+    if (id === "admin-panel") return "/admin";
     const group = groups.find((item) => item.items.includes(id) || item.studioItems?.some((tool) => tool.id === id));
     return `${group?.route || "/tools"}/${id}`;
   };
@@ -5460,10 +5452,11 @@ function initAppShell() {
   const renderNavigation = () => {
     const route = activeRoute;
     const advancedMode = Boolean(stored().advanced);
-    navigation.innerHTML = groups.map((group) => {
+    const visibleGroups = groups.filter((group) => !group.adminOnly || isCurrentUserAdmin());
+    navigation.innerHTML = visibleGroups.map((group) => {
       const routeMatches = route === group.route || route.startsWith(`${group.route}/`);
       const expanded = advancedMode ? (Object.hasOwn(sidebarGroupState, group.id) ? Boolean(sidebarGroupState[group.id]) : routeMatches) : (routeMatches && sidebarGroupState[group.id] !== false);
-      const moduleEntries = group.items.filter((id) => id !== "admin-panel" || isCurrentUserAdmin()).map((id) => {
+      const moduleEntries = group.items.map((id) => {
         const module = moduleById(id);
         if (!module) return "";
         const moduleRoute = routeForModule(id);
@@ -5626,7 +5619,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "game-center": "Game Center", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "game-center": "Game Center", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerToolItems : knownTools;
     let crumbRoute = "";
@@ -5663,8 +5656,11 @@ function initAppShell() {
     if (!isUnlocked()) return;
     const hash = location.hash.replace(/^#/, "") || "/home";
     let route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
-    if (route.endsWith("/admin-panel")) {
-      route = isCurrentUserAdmin() ? "/analytics/admin-panel" : "/analytics";
+    if (route === "/analytics/admin-panel" || route.endsWith("/admin-panel")) {
+      route = isCurrentUserAdmin() ? "/admin" : "/analytics";
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
+    } else if ((route === "/admin" || route.startsWith("/admin/")) && !isCurrentUserAdmin()) {
+      route = "/analytics";
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
     }
     activeRoute = route;
@@ -5876,7 +5872,7 @@ function initAppShell() {
       workspace.innerHTML = '<div data-insights-analytics-host></div>';
       window.HHInsights?.mountAnalytics?.(workspace.firstElementChild);
       remember("analytics");
-    } else if (route === "/analytics/admin-panel") {
+    } else if (route === "/admin") {
       updatePageHeader("Admin Panel", "Theo dõi hoạt động realtime, quản trị người dùng, phiên, quyền tính năng, nội dung, audit log và sức khỏe hệ thống.", route, module);
       workspace.innerHTML = '<div class="admin-panel-route" data-admin-application-host><section class="insights-loading"><i></i><strong>Đang xác minh quyền quản trị...</strong></section></div>';
       const host = workspace.firstElementChild;
@@ -5896,7 +5892,7 @@ function initAppShell() {
               <div class="admin-access-card">
                 <span>Tài khoản đang kiểm tra</span>
                 <b>${escapeHtml(user?.email || user?.name || "Chưa nhận diện")}</b>
-                <small>Admin Panel chỉ mở cho tài khoản đã xác minh email và nằm trong allowlist production.</small>
+                <small>Admin Panel chỉ mở sau khi máy chủ xác minh email Google và đối chiếu allowlist quản trị.</small>
               </div>
               <nav>
                 <button class="button primary interactive" type="button" data-admin-access-retry>Kiểm tra lại quyền</button>

@@ -169,8 +169,8 @@
       scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-learning.js?v=16"]
     },
     analytics: {
-      styles: ["insights-pro.css?v=2"],
-      scripts: ["insights-pro.js?v=6"]
+      styles: ["insights-pro.css?v=3"],
+      scripts: ["insights-pro.js?v=7"]
     },
     admin: {
       styles: ["community-admin.css?v=6"],
@@ -206,7 +206,7 @@
     if (value === "/communication/google-youtube") return ["search"];
     if (value.startsWith("/communication")) return ["communication"];
     if (value.startsWith("/work")) return ["work"];
-    if (value === "/analytics/admin-panel") return ["admin"];
+    if (value === "/admin" || value.startsWith("/admin/") || value === "/analytics/admin-panel") return ["analytics", "admin"];
     if (value.startsWith("/analytics")) return ["analytics"];
     if (value.startsWith("/create")) return ["creative", "platform"];
     if (value.startsWith("/system") || value.startsWith("/tools") || value === "/favorites" || value === "/recent") return ["platform"];

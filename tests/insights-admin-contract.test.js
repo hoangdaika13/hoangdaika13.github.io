@@ -12,8 +12,9 @@ test("server uses one admin policy for both owner accounts and RBAC roles", () =
 
   assert.match(platform, /ADMIN_EMAILS/);
   assert.match(platform, /ADMIN_USER_IDS/);
-  assert.doesNotMatch(platform, /DEFAULT_ADMIN_EMAILS/);
+  assert.doesNotMatch(platform, /nhhoang130803@gmail\.com|dungnguyen29082000@gmail\.com/);
   assert.match(platform, /function isOwnerEmail/);
+  assert.match(platform, /function isGoogleVerifiedIdentity/);
   assert.match(platform, /function isOwnerUser/);
   assert.match(platform, /function isAdminUser/);
   assert.match(platform, /roles\.add\("owner"\)/);
@@ -24,15 +25,27 @@ test("server uses one admin policy for both owner accounts and RBAC roles", () =
   }
 });
 
-test("Admin Panel is absent for members, route-guarded, and mounts the full RBAC app", () => {
+test("Admin Panel is a top-level admin-only area guarded by server-projected access", () => {
   const client = read("script.js");
+  const loader = read("performance-loader.js");
+  const authApi = read("api/auth/[...action].js");
   const adminClient = read("community-admin.js");
   const adminApi = read("utils/community-admin-api.js");
   const communityAdmin = read("utils/community-admin.js");
 
-  assert.match(client, /id !== "admin-panel" \|\| isCurrentUserAdmin\(\)/);
-  assert.match(client, /route\.endsWith\("\/admin-panel"\)/);
+  assert.match(client, /id: "insights".*items: \["analytics", "smart-search", "api-center"/);
+  assert.match(client, /id: "admin".*route: "\/admin".*adminOnly: true/);
+  assert.match(client, /groups\.filter\(\(group\) => !group\.adminOnly \|\| isCurrentUserAdmin\(\)\)/);
+  assert.match(client, /isCurrentUserAdmin.*user\?\.access\?\.admin === true/);
+  assert.match(client, /route === "\/admin".*!isCurrentUserAdmin\(\)/s);
+  assert.match(client, /route === "\/analytics\/admin-panel"/);
+  assert.match(client, /route === "\/admin"\)/);
+  assert.match(loader, /value === "\/admin"/);
   assert.match(client, /HHCommunityAdmin\.mount\(host\)/);
+  assert.match(authApi, /person\.email_verified/);
+  assert.match(authApi, /googleVerifiedAt/);
+  assert.match(authApi, /verifiedProviders\.google/);
+  assert.doesNotMatch(client, /dungnguyen29082000@gmail\.com|PLATFORM_ADMIN_EMAILS/);
   assert.match(adminClient, /\["dashboard".*\["users".*\["reports".*\["appeals".*\["content".*\["settings".*\["audit"/s);
   assert.match(adminApi, /user:roles/);
   assert.match(adminApi, /user:revoke-sessions/);
@@ -54,8 +67,12 @@ test("Phân tích ships privacy-safe realtime intelligence and aggregate admin d
   const client = read("insights-pro.js");
   const css = read("insights-pro.css");
 
-  assert.match(html, /insights-pro\.css\?v=2/);
-  assert.match(html, /insights-pro\.js\?v=6/);
+  assert.match(read("performance-loader.js"), /insights-pro\.css\?v=3/);
+  assert.match(read("performance-loader.js"), /insights-pro\.js\?v=7/);
+  assert.match(client, /DECISION QUEUE/);
+  assert.match(client, /\["decisions", "Quyết định"\]/);
+  assert.match(client, /độ tin cậy dữ liệu/);
+  assert.doesNotMatch(client, /Admin Control Center|route: "\/analytics\/admin-panel"/);
   assert.match(client, /PerformanceObserver/);
   assert.match(client, /data-insights-range/);
   assert.match(client, /data-insights-health/);

@@ -44,10 +44,12 @@ test("Device Vault persists real files with IndexedDB", () => {
 
 test("Work assets are versioned and available offline", () => {
   const index = read("index.html");
+  const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["work-center.css?v=3", "work-center.js?v=3", "script.js?v=138", "insights-pro.css?v=2", "insights-pro.js?v=6"]) {
+  assert.match(index, /script\.js\?v=139/);
+  for (const asset of ["work-center.css?v=3", "work-center.js?v=3", "insights-pro.css?v=3", "insights-pro.js?v=7"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
-    assert.match(index, pattern);
+    assert.match(loader, pattern);
     assert.match(worker, pattern);
   }
 });
