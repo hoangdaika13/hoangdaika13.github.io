@@ -33,7 +33,7 @@ test("application shell loads every advanced music engine before the suite", () 
   for (const name of engines) {
     assert.match(registeredAssets, new RegExp(`${name}\\.css\\?v=1`));
     assert.match(registeredAssets, new RegExp(`${name}\\.js\\?v=1`));
-    assert.ok(loader.indexOf(`${name}.js?v=1`) < loader.indexOf("music-production-suite.js?v=2"));
+    assert.ok(loader.indexOf(`${name}.js?v=1`) < loader.indexOf("music-production-suite.js?v=3"));
   }
 });
 

@@ -117,7 +117,7 @@
 
   async function ensureStore() {
     if (activeStore) return activeStore;
-    await loadScript("creative-os-core.js?v=2");
+    await loadScript("creative-os-core.js?v=4");
     if (!window.HHCreativeCore?.createStore) throw new Error("Creative project store chưa sẵn sàng.");
     activeStore = window.__HH_CREATIVE_STORE__ || window.HHCreativeCore.createStore();
     window.__HH_CREATIVE_STORE__ = activeStore;

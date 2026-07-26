@@ -223,8 +223,8 @@
       music: (() => {
         const music = sanitizeValue(input.music || {}) || {};
         return {
-        schemaVersion: 2,
         ...music,
+        schemaVersion: 3,
         project: {
           name: "", genre: "", purpose: "", audience: "", platform: "", durationHours: 1,
           bpm: 96, key: "C minor", timeSignature: "4/4", mood: "", instruments: "",
@@ -240,12 +240,44 @@
         },
         variations: Array.isArray(music.variations) ? music.variations : [],
         arrangement: Array.isArray(music.arrangement) ? music.arrangement : [],
+        arrangementVersions: { A: [], B: [], C: [], ...(music.arrangementVersions || {}) },
+        generation: {
+          jobs: [], paused: false, dailyBudget: 0, lastWorkspace: "studio",
+          ...(music.generation || {})
+        },
+        composer: {
+          preset: "custom", creativity: 72, similarity: 35, complexity: 60, variationStrength: 65,
+          locks: { melody: false, chord: false, vocal: false, tempo: false, drums: false },
+          referenceAnalysis: null,
+          ...(music.composer || {}),
+          locks: {
+            melody: false, chord: false, vocal: false, tempo: false, drums: false,
+            ...(music.composer?.locks || {})
+          }
+        },
+        midi: {
+          quantize: "1/16", scaleHighlight: true, humanizeTiming: 8, humanizeVelocity: 12,
+          chordSuggestions: [], ...(music.midi || {})
+        },
         lyrics: { content: "", language: "vi", syncMode: "syllable", difficultLines: [], ...(music.lyrics || {}) },
         stems: Array.isArray(music.stems) ? music.stems : [],
         vocals: Array.isArray(music.vocals) ? music.vocals : [],
-        mix: { target: "youtube", loudness: -14, truePeak: -1, notes: "", ...(music.mix || {}) },
-        visual: { mode: "particle", aspectRatio: "16:9", palette: "", coverAssetId: "", ...(music.visual || {}) },
-        release: { title: "", platforms: [], splits: [], checklist: {}, scheduledAt: "", ...(music.release || {}) },
+        consent: { note: "", ready: false, records: [], ...(music.consent || {}) },
+        mix: {
+          target: "youtube", loudness: -14, truePeak: -1, notes: "", analysis: null,
+          previewEnabled: false, referenceProfile: null, ...(music.mix || {})
+        },
+        visual: {
+          mode: "particle", aspectRatio: "16:9", palette: "", coverAssetId: "",
+          theme: "deep-space", layers: ["planet", "spectrum", "particles", "lyrics"],
+          stemMappings: { bass: "planet-scale", vocal: "aurora", drums: "solar-flare" },
+          ...(music.visual || {})
+        },
+        release: {
+          title: "", platforms: [], splits: [], checklist: {}, scheduledAt: "",
+          author: "", producer: "", isrc: "", artworkAssetId: "", codecPreview: "",
+          ...(music.release || {})
+        },
         sync: { source: "creative-core", lastMusicWriteAt: "", lastCreativeReadAt: "", ...(music.sync || {}) }
         };
       })(),

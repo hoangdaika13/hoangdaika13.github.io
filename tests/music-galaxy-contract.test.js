@@ -45,7 +45,7 @@ test("Universal Project maps Creative fields, music metadata and typed prompts",
     assert.match(core, new RegExp(field));
   }
   assert.match(core, /type: cleanText\(input\.type \|\| "general"/);
-  assert.match(loader, /creative-os-core\.js\?v=3[\s\S]*music-production-suite\.js\?v=2/);
+  assert.match(loader, /creative-os-core\.js\?v=4[\s\S]*music-production-suite\.js\?v=3/);
 });
 
 test("Creative Core preserves normalized Music DNA and generation provenance", () => {
