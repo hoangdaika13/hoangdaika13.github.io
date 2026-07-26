@@ -23,6 +23,8 @@ test("Admin Galaxy exposes seven permission-gated operational areas", () => {
   }
 
   assert.match(client, /data-admin-theme-select/);
+  assert.match(client, /data-admin-text-select/);
+  assert.match(client, /data-admin-text=/);
   assert.match(client, /Deep Space Admin/);
   assert.match(client, /Aurora Shield/);
   assert.match(client, /Cyber Command/);
@@ -33,6 +35,8 @@ test("Admin Galaxy exposes seven permission-gated operational areas", () => {
   assert.match(css, /hh-admin-orbit-planet/);
   assert.match(css, /@media \(max-width: 375px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(css, /Admin Galaxy readability scale v3/);
+  assert.match(css, /--admin-reading-size/);
 });
 
 test("Admin Galaxy backend returns real, privacy-safe control-plane data", () => {
@@ -62,8 +66,8 @@ test("Admin Galaxy backend returns real, privacy-safe control-plane data", () =>
 });
 
 test("Admin Galaxy cache manifest ships the current assets", () => {
-  assert.match(read("performance-loader.js"), /community-admin\.css\?v=7/);
-  assert.match(read("performance-loader.js"), /community-admin\.js\?v=9/);
-  assert.match(read("sw.js"), /hh-identity-portal-v257/);
-  assert.match(read("index.html"), /performance-loader\.js\?v=46/);
+  assert.match(read("performance-loader.js"), /community-admin\.css\?v=8/);
+  assert.match(read("performance-loader.js"), /community-admin\.js\?v=10/);
+  assert.match(read("sw.js"), /hh-identity-portal-v258/);
+  assert.match(read("index.html"), /performance-loader\.js\?v=47/);
 });

@@ -49,15 +49,17 @@
     ["golden", "Golden Observatory"]
   ]);
   const MOTION_LEVELS = Object.freeze([["static", "Tĩnh"], ["balanced", "Cân bằng"], ["cinematic", "Điện ảnh"]]);
+  const TEXT_SCALES = Object.freeze([["comfortable", "Dễ đọc"], ["large", "Lớn"]]);
   const readPreferences = () => {
     try {
       const value = JSON.parse(localStorage.getItem(PREFERENCES_KEY) || "{}");
       return {
         theme: THEMES.some(([id]) => id === value.theme) ? value.theme : "deep-space",
-        motion: MOTION_LEVELS.some(([id]) => id === value.motion) ? value.motion : "balanced"
+        motion: MOTION_LEVELS.some(([id]) => id === value.motion) ? value.motion : "balanced",
+        textScale: TEXT_SCALES.some(([id]) => id === value.textScale) ? value.textScale : "comfortable"
       };
     } catch {
-      return { theme: "deep-space", motion: "balanced" };
+      return { theme: "deep-space", motion: "balanced", textScale: "comfortable" };
     }
   };
   let preferences = readPreferences();
@@ -125,13 +127,15 @@
     const planets = PLANETS.filter((planet) => has(planet.permission));
     const themeOptions = THEMES.map(([id, label]) => `<option value="${id}" ${preferences.theme === id ? "selected" : ""}>${esc(label)}</option>`).join("");
     const motionOptions = MOTION_LEVELS.map(([id, label]) => `<option value="${id}" ${preferences.motion === id ? "selected" : ""}>Hiệu ứng: ${esc(label)}</option>`).join("");
-    return `<section class="hh-admin-app hh-admin-galaxy" data-admin-theme="${esc(preferences.theme)}" data-admin-motion="${esc(preferences.motion)}" data-admin-planet="${esc(activePlanet)}">
+    const textOptions = TEXT_SCALES.map(([id, label]) => `<option value="${id}" ${preferences.textScale === id ? "selected" : ""}>Chữ: ${esc(label)}</option>`).join("");
+    return `<section class="hh-admin-app hh-admin-galaxy" data-admin-theme="${esc(preferences.theme)}" data-admin-motion="${esc(preferences.motion)}" data-admin-text="${esc(preferences.textScale)}" data-admin-planet="${esc(activePlanet)}">
       <span class="hh-admin-stardust" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       <header class="hh-admin-galaxy-header">
         <div class="hh-admin-galaxy-brand"><span class="hh-admin-core-mark" aria-hidden="true">HH<i></i></span><div><small>HH ADMIN GALAXY · SERVER RBAC</small><h5>${esc(title)}</h5><p>${esc(description)}</p></div></div>
         <div class="hh-admin-galaxy-controls">
           <label><span class="sr-only">Chủ đề Admin Galaxy</span><select data-admin-theme-select aria-label="Chủ đề Admin Galaxy">${themeOptions}</select></label>
           <label><span class="sr-only">Mức hiệu ứng</span><select data-admin-motion-select aria-label="Mức hiệu ứng">${motionOptions}</select></label>
+          <label><span class="sr-only">Cỡ chữ Admin Galaxy</span><select data-admin-text-select aria-label="Cỡ chữ Admin Galaxy">${textOptions}</select></label>
           <span class="hh-admin-role">${esc((access?.roles || []).join(" · "))}</span>
           ${has("reports.export") ? '<button type="button" data-admin-export>⇩ Xuất báo cáo</button>' : ""}
         </div>
@@ -642,14 +646,17 @@
   document.addEventListener("change", (event) => {
     const theme = event.target.closest("[data-admin-theme-select]");
     const motion = event.target.closest("[data-admin-motion-select]");
-    if (!theme && !motion) return;
+    const textScale = event.target.closest("[data-admin-text-select]");
+    if (!theme && !motion && !textScale) return;
     if (theme) preferences.theme = THEMES.some(([id]) => id === theme.value) ? theme.value : "deep-space";
     if (motion) preferences.motion = MOTION_LEVELS.some(([id]) => id === motion.value) ? motion.value : "balanced";
+    if (textScale) preferences.textScale = TEXT_SCALES.some(([id]) => id === textScale.value) ? textScale.value : "comfortable";
     try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences)); } catch {}
     const app = panelRef?.querySelector(".hh-admin-galaxy");
     if (app) {
       app.dataset.adminTheme = preferences.theme;
       app.dataset.adminMotion = preferences.motion;
+      app.dataset.adminText = preferences.textScale;
     }
   });
 

@@ -1213,3 +1213,71 @@
   .home-neon .hh-admin-stardust > i,
   .is-admin-wormhole .hh-admin-galaxy::after { display: none; }
 }
+
+/* Admin Galaxy readability scale v3 */
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] {
+  --admin-reading-size: 11px;
+  --admin-detail-size: 10px;
+  --admin-small-size: 9px;
+  --admin-control-size: 10px;
+  --admin-card-title-size: 11px;
+  font-size: var(--admin-reading-size);
+  line-height: 1.5;
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text="large"] {
+  --admin-reading-size: 12px;
+  --admin-detail-size: 11px;
+  --admin-small-size: 10px;
+  --admin-control-size: 11px;
+  --admin-card-title-size: 12px;
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] :where(p, time, code, dt, dd) {
+  font-size: var(--admin-detail-size);
+  line-height: 1.55;
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] small {
+  font-size: var(--admin-small-size);
+  line-height: 1.45;
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] :where(button, select, input, textarea) {
+  font-size: var(--admin-control-size);
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-planets > button strong,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-action-queue article strong,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-change-stream article strong,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-service-reactor article strong,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-platform-services article strong,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-provider-grid article strong,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-payment-health article strong,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-ai-cost article strong,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-data-boundary strong,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-deploy-strip strong {
+  font-size: var(--admin-card-title-size);
+  line-height: 1.35;
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-table td {
+  font-size: var(--admin-reading-size);
+  line-height: 1.5;
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-table th,
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-status {
+  font-size: var(--admin-small-size);
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-core-star > span small {
+  font-size: 7px;
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-orbit-planet > span {
+  font-size: max(8px, var(--admin-small-size));
+  line-height: 1.25;
+}
+.home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-orbit-planet > b {
+  font-size: 8px;
+}
+@media (max-width: 375px) {
+  .home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-planets > button strong {
+    font-size: var(--admin-card-title-size);
+  }
+  .home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text] .hh-admin-galaxy-controls {
+    gap: 7px;
+  }
+}
