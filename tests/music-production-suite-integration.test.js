@@ -9,7 +9,8 @@ const css = fs.readFileSync(path.join(root, "music-production-suite.css"), "utf8
 
 test("production suite exposes the shared mount contract", () => {
   assert.match(source, /HHMusicProductionSuite/);
-  assert.match(source, /Object\.freeze\(\{ supports, mount, unmount \}\)/);
+  assert.match(source, /const api = Object\.freeze/);
+  assert.match(source, /HHMusicGalaxy/);
   for (const view of ["composer", "lyrics", "arrange", "record", "mix", "master", "video", "publish"]) {
     assert.match(source, new RegExp(`id: "${view}"`));
   }
@@ -32,13 +33,14 @@ test("application shell loads every advanced music engine before the suite", () 
   for (const name of engines) {
     assert.match(registeredAssets, new RegExp(`${name}\\.css\\?v=1`));
     assert.match(registeredAssets, new RegExp(`${name}\\.js\\?v=1`));
-    assert.ok(loader.indexOf(`${name}.js?v=1`) < loader.indexOf("music-production-suite.js?v=1"));
+    assert.ok(loader.indexOf(`${name}.js?v=1`) < loader.indexOf("music-production-suite.js?v=2"));
   }
 });
 
 test("overview is responsive and honors reduced motion", () => {
-  assert.match(css, /@media \(max-width:480px\)/);
+  assert.match(css, /@media \(max-width:375px\)/);
   assert.match(css, /@media \(prefers-reduced-motion:reduce\)/);
-  assert.match(source, /hh\.music\.production-suite\.v1/);
-  assert.match(source, /navigator\.mediaDevices\?\.getUserMedia/);
+  assert.match(source, /hh\.music\.galaxy\.v2/);
+  assert.match(source, /deviceMemory/);
+  assert.match(source, /hardwareConcurrency/);
 });

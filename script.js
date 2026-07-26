@@ -5194,7 +5194,16 @@ function initAppShell() {
     { id: "youtube-publisher", icon: "UP", section: "Xuất bản", title: "Đăng YouTube tự động", description: "Chọn kênh, lịch phát và upload", route: "/music-ai/youtube-publisher" },
     { id: "publish-checklist", icon: "OK", section: "Xuất bản", title: "Kiểm tra xuất bản", description: "Chốt chất lượng và quyền sử dụng", route: "/music-ai/publish-checklist" }
   ];
-  const musicAIAllPageItems = [...musicAIPageItems, ...musicAILegacyPageItems];
+  const musicAIPlanetItems = [
+    { id: "ideas-lyrics", icon: "IL", section: "Music Galaxy", title: "Ý tưởng & Lyrics", description: "Creative Brief, Prompt Composer và Lyrics Sync", route: "/music-ai/ideas-lyrics", routes: ["/music-ai/composer", "/music-ai/lyrics", "/music-ai/concept-lab", "/music-ai/prompt-studio"] },
+    { id: "compose-midi", icon: "CM", section: "Music Galaxy", title: "Sáng tác & MIDI", description: "Song DNA, Variation Galaxy, chord, melody và MIDI", route: "/music-ai/compose-midi", routes: ["/music-ai/musical-brain", "/music-ai/audio-midi", "/music-ai/session-band", "/music-ai/region-editor", "/music-ai/music-lab"] },
+    { id: "arrange-record", icon: "AR", section: "Music Galaxy", title: "Phối khí & Thu âm", description: "Arrangement Canvas, DAW, stem và vocal", route: "/music-ai/arrange-record", routes: ["/music-ai/arrange", "/music-ai/record", "/music-ai/stems", "/music-ai/vocal", "/music-ai/sound-design", "/music-ai/sample-browser", "/music-ai/adaptive-soundtrack", "/music-ai/render-lab", "/music-ai/loop-builder"] },
+    { id: "mix-master-hub", icon: "MM", section: "Music Galaxy", title: "Mix & Master", description: "AI Mix Doctor, mixer, loudness và master targets", route: "/music-ai/mix-master-hub", routes: ["/music-ai/mix", "/music-ai/master", "/music-ai/mix-doctor", "/music-ai/live-performance", "/music-ai/audio-qa"] },
+    { id: "visual-universe", icon: "VU", section: "Music Galaxy", title: "Visual Universe", description: "Cover, lyric video, visualizer và motion", route: "/music-ai/visual-universe", routes: ["/music-ai/video", "/music-ai/image-music", "/music-ai/visualizer", "/music-ai/realtime-jam", "/music-ai/image-lab", "/music-ai/veo-lab"] },
+    { id: "release-control", icon: "RC", section: "Music Galaxy", title: "Xuất bản & Bản quyền", description: "Metadata, split, provenance, checklist và lịch đăng", route: "/music-ai/release-control", routes: ["/music-ai/publish", "/music-ai/rights", "/music-ai/release-manager", "/music-ai/project-branches", "/music-ai/youtube-pack", "/music-ai/chapters", "/music-ai/youtube-publisher", "/music-ai/publish-checklist"] }
+  ];
+  const musicItemMatchesRoute = (item, route) => route === item.route || item.routes?.includes(route);
+  const musicAIAllPageItems = [...musicAIPlanetItems, ...musicAIPageItems, ...musicAILegacyPageItems];
   const developerToolItems = [
     { id: "smart-input", icon: "SI", title: "Smart Input", group: "DEV Pro" },
     { id: "developer-recipe", icon: "DR", title: "Developer Recipe", group: "DEV Pro" },
@@ -5242,7 +5251,7 @@ function initAppShell() {
       route: "/music-ai",
       landingRoute: "/music-ai/studio",
       items: [],
-      pages: musicAIPageItems
+      pages: musicAIPlanetItems
     },
     { id: "media-design", label: "Media & Design", icon: "◈", accent: "#c87cff", route: "/media-design", items: [], studioItems: mediaStudioItems },
     {
@@ -5450,8 +5459,8 @@ function initAppShell() {
       const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
       const pageItems = group.id === "music-ai"
         ? (() => {
-            const activePage = group.pages.find((item) => route === item.route || (route === group.route && item.id === "project"));
-            const openSection = musicSidebarSection === "__none__" ? "" : (musicSidebarSection || activePage?.section || "Bắt đầu");
+            const activePage = group.pages.find((item) => musicItemMatchesRoute(item, route));
+            const openSection = musicSidebarSection === "__none__" ? "" : (musicSidebarSection || activePage?.section || "Music Galaxy");
             return [...new Set(group.pages.map((item) => item.section))].map((section) => {
               const sectionItems = group.pages.filter((item) => item.section === section);
               const sectionOpen = section === openSection;
@@ -5459,7 +5468,7 @@ function initAppShell() {
                 <button class="app-sidebar__page-section-toggle" type="button" data-music-section="${safeText(section)}" aria-expanded="${sectionOpen}">
                   <span>${safeText(section)}</span><b>${sectionItems.length}</b><i aria-hidden="true">›</i>
                 </button>
-                <div class="app-sidebar__page-section-items" aria-hidden="${!sectionOpen}">${sectionItems.map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--music ${route === item.route || (route === group.route && item.id === "project") ? "is-active" : ""}" type="button" data-app-route="${item.route}" title="${safeText(item.description)}" ${sectionOpen ? "" : "tabindex=-1"} ${route === item.route || (route === group.route && item.id === "project") ? "aria-current=page" : ""}><b>${safeText(item.icon)}</b><span>${safeText(item.title)}</span><i>›</i></button>`).join("")}</div>
+                <div class="app-sidebar__page-section-items" aria-hidden="${!sectionOpen}">${sectionItems.map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--music ${musicItemMatchesRoute(item, route) ? "is-active" : ""}" type="button" data-app-route="${item.route}" title="${safeText(item.description)}" ${sectionOpen ? "" : "tabindex=-1"} ${musicItemMatchesRoute(item, route) ? "aria-current=page" : ""}><b>${safeText(item.icon)}</b><span>${safeText(item.title)}</span><i>›</i></button>`).join("")}</div>
               </section>`;
             }).join("");
           })()
@@ -6014,7 +6023,7 @@ function initAppShell() {
   const isExpectedRuntimeCancellation = (error) => {
     const name = String(error?.name || "");
     const message = String(error?.message || error || "");
-    return name === "AbortError" || /transition was skipped|operation was aborted|request was cancelled/i.test(message);
+    return name === "AbortError" || /transition was skipped|transition was aborted|operation was aborted|request was cancelled|timeout in dom update/i.test(message);
   };
   window.HHRuntimeDiagnostics = Object.freeze({
     list: () => readRuntimeIssues().map((item) => ({ ...item })),
@@ -6196,7 +6205,7 @@ function initAppShell() {
           const opening = !sidebarGroup.classList.contains("is-expanded");
           sidebarGroupState[group.id] = opening;
           if (opening && group.id === "music-ai") {
-            const activeMusicPage = musicAIPageItems.find((item) => activeRoute === item.route) || musicAIPageItems[0];
+            const activeMusicPage = musicAIPlanetItems.find((item) => musicItemMatchesRoute(item, activeRoute)) || musicAIPlanetItems[0];
             saveMusicSidebarSection(activeMusicPage.section);
           }
           saveSidebarGroups();
@@ -6210,7 +6219,7 @@ function initAppShell() {
           const musicSidebarToolLink = targetGroup.id === "music-ai" && routeButton.matches(".app-sidebar__subitem--music");
           sidebarGroupState[targetGroup.id] = !musicSidebarToolLink;
           if (musicSidebarToolLink) {
-            const selectedMusicPage = musicAIPageItems.find((item) => item.route === route) || musicAIPageItems[0];
+            const selectedMusicPage = musicAIPlanetItems.find((item) => musicItemMatchesRoute(item, route)) || musicAIPlanetItems[0];
             saveMusicSidebarSection(selectedMusicPage.section);
           }
           saveSidebarGroups();

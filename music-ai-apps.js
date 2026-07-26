@@ -46,6 +46,7 @@
 
   function saveState() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+    window.HHMusicGalaxy?.ingestAppsState?.(state);
   }
 
   function toast(message, type = "success") {
@@ -67,6 +68,19 @@
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || `Music AI HTTP ${response.status}`);
+    if (method !== "GET" && !/status/i.test(body?.actionType || "")) {
+      window.HHMusicGalaxy?.recordRun?.({
+        provider: body?.actionType?.includes("image") ? "image" : body?.actionType?.includes("video") ? "video" : body?.actionType?.includes("track") ? "music" : "concept",
+        model: data.model || body?.meta?.model || "",
+        action: body?.actionType || path || "music-app",
+        prompt: body?.input || "",
+        seed: data.seed || body?.meta?.seed || "",
+        estimatedCost: data.estimatedCost || data.cost || 0,
+        usageRights: data.usageRights || data.rights || "",
+        version: data.version || "apps-v1",
+        status: "success"
+      });
+    }
     return data;
   }
 
@@ -125,6 +139,13 @@
     if (urls[key]) URL.revokeObjectURL(urls[key]);
     urls[key] = URL.createObjectURL(blob);
     outputs[key] = blob;
+    window.HHMusicGalaxy?.recordAsset?.({
+      name: `${state.concept?.genre || "music-project"}-${key}`,
+      kind: key,
+      type: blob.type,
+      size: blob.size,
+      provider: key === "audio" ? "music" : key === "video" ? "video" : "image"
+    });
   }
 
   function appShell(content, title, subtitle, badge = "APP ĐỘC LẬP") {

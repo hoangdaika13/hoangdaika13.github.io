@@ -108,23 +108,23 @@
     creative: {
       styles: ["creative-suite.css?v=6", "creative-os.css?v=1", "creative-galaxy.css?v=3", "creative-star-map.css?v=2", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
       scripts: [
-        "creative-os-core.js?v=2", "creative-galaxy.js?v=4", "creative-star-map.js?v=2", "creative-os.js?v=6", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
+        "creative-os-core.js?v=3", "creative-galaxy.js?v=4", "creative-star-map.js?v=2", "creative-os.js?v=6", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
       ]
     },
     music: {
       styles: [
-        "music-production-suite.css?v=1", "music-daw-workspace.css?v=1", "music-composer-lyrics.css?v=1",
+        "music-production-suite.css?v=2", "music-daw-workspace.css?v=1", "music-composer-lyrics.css?v=1",
         "music-audio-labs.css?v=1", "music-mix-master.css?v=1", "music-visual-studio.css?v=1",
         "music-publishing-rights.css?v=1", "music-intelligence-engine.css?v=1", "music-generative-arrangement.css?v=1",
         "music-adaptive-library.css?v=1", "music-mix-performance.css?v=1", "music-project-governance.css?v=1",
         "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "youtube-publisher.css?v=2"
       ],
       scripts: [
-        "youtube-publisher.js?v=2", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
+        "creative-os-core.js?v=3", "youtube-publisher.js?v=2", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
         "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=1",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",
-        "music-production-suite.js?v=1", "music-ai-apps.js?v=2", "music-ai-studio.js?v=8"
+        "music-production-suite.js?v=2", "music-ai-apps.js?v=3", "music-ai-studio.js?v=9"
       ]
     },
     communication: {
