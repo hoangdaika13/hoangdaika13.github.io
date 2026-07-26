@@ -2,13 +2,16 @@ const { clean, isOwnerUser } = require("./platform");
 
 const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
-  super_admin: ["dashboard.view", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
-  admin: ["dashboard.view", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
+  super_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
+  admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
+  security_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "sessions.revoke", "platform.view", "audit.view", "reports.export"],
+  release_manager: ["dashboard.view", "incidents.view", "platform.view", "platform.manage", "config.manage", "flags.manage", "audit.view", "reports.export"],
+  content_moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
   moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
-  support: ["dashboard.view", "users.view", "reports.manage", "appeals.manage"],
-  analyst: ["dashboard.view", "privacy.view", "activity.view", "users.view", "audit.view", "reports.export"]
+  support: ["dashboard.view", "incidents.view", "users.view", "users.moderate", "reports.manage", "appeals.manage"],
+  analyst: ["dashboard.view", "privacy.view", "activity.view", "users.view", "growth.view", "audit.view", "reports.export"]
 });
-const ROLE_RANK = Object.freeze({ owner: 50, super_admin: 40, admin: 30, moderator: 20, support: 10, analyst: 10, member: 0 });
+const ROLE_RANK = Object.freeze({ owner: 60, super_admin: 50, admin: 40, security_admin: 30, release_manager: 30, content_moderator: 20, moderator: 20, support: 10, analyst: 10, member: 0 });
 
 function rolesFor(user) {
   if (!user) return [];

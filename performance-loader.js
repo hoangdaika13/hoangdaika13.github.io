@@ -173,8 +173,8 @@
       scripts: ["insights-pro.js?v=7"]
     },
     admin: {
-      styles: ["community-admin.css?v=6"],
-      scripts: ["community-admin.js?v=8"]
+      styles: ["community-admin.css?v=7"],
+      scripts: ["community-admin.js?v=9"]
     },
     support: {
       styles: ["support-platform.css?v=9"],
