@@ -380,6 +380,10 @@ module.exports = async function handler(req, res) {
     const action = clean(body.action || "payos:create", 40);
 
     if (action === "payos:create") {
+      const paymentLock = await db.collection("communityControlPolicies").findOne({ key: "payments.locked" }, { projection: { value: 1, note: 1 } });
+      if (paymentLock?.value === true || String(paymentLock?.value).toLowerCase() === "true") {
+        return res.status(503).json({ error: "Kênh thanh toán đang được quản trị viên tạm khóa để bảo trì hoặc đối soát." });
+      }
       const ip = clean(String(req.headers["x-forwarded-for"] || "").split(",")[0], 80) || "unknown";
       await enforceRateLimit(db, `donation:create:${user?._id || ip}`, 12, 60 * 60 * 1000);
       const amount = amountOf(body.amount);

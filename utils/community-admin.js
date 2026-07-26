@@ -1,29 +1,165 @@
+const crypto = require("crypto");
 const { clean, isOwnerUser } = require("./platform");
+
+const POWER_PERMISSIONS = Object.freeze([
+  "permissions.simulate",
+  "privileges.activate",
+  "approvals.request",
+  "approvals.approve",
+  "roles.custom.manage",
+  "roles.custom.assign",
+  "platform.deployments.view",
+  "platform.production.promote",
+  "platform.production.rollback",
+  "platform.domains.manage",
+  "platform.cron.manage",
+  "platform.webhooks.manage",
+  "platform.maintenance.manage",
+  "security.waf.manage",
+  "security.rate-limits.manage",
+  "security.network-blocks.manage",
+  "security.providers.disable",
+  "security.secrets.rotate",
+  "security.sessions.revoke-all",
+  "database.health.view",
+  "database.backup.request",
+  "database.indexes.analyze",
+  "database.migrations.request",
+  "database.retention.manage",
+  "database.restore.request",
+  "payments.view",
+  "payments.reconcile",
+  "payments.webhooks.replay",
+  "payments.lock",
+  "payments.refunds.request",
+  "payments.refunds.approve",
+  "ai.providers.view",
+  "ai.providers.manage",
+  "ai.budgets.manage",
+  "ai.queue.manage",
+  "ai.fallback.manage",
+  "content.bulk-manage",
+  "content.publishing.lock",
+  "observability.view",
+  "observability.logs.view",
+  "observability.traces.view",
+  "observability.slo.manage",
+  "observability.alerts.manage",
+  "audit.access-review"
+]);
 
 const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
-  super_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
+  super_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export", ...POWER_PERMISSIONS],
   admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
-  security_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "sessions.revoke", "platform.view", "audit.view", "reports.export"],
-  release_manager: ["dashboard.view", "incidents.view", "platform.view", "platform.manage", "config.manage", "flags.manage", "audit.view", "reports.export"],
+  security_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "sessions.revoke", "platform.view", "audit.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "security.waf.manage", "security.rate-limits.manage", "security.network-blocks.manage", "security.providers.disable", "observability.view", "observability.logs.view", "observability.traces.view", "observability.alerts.manage"],
+  release_manager: ["dashboard.view", "incidents.view", "platform.view", "platform.manage", "config.manage", "flags.manage", "audit.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "platform.deployments.view", "platform.production.promote", "platform.production.rollback", "platform.cron.manage", "platform.webhooks.manage", "platform.maintenance.manage", "observability.view"],
   content_moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
   moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
   support: ["dashboard.view", "incidents.view", "users.view", "users.moderate", "reports.manage", "appeals.manage"],
-  analyst: ["dashboard.view", "privacy.view", "activity.view", "users.view", "growth.view", "audit.view", "reports.export"]
+  analyst: ["dashboard.view", "privacy.view", "activity.view", "users.view", "growth.view", "audit.view", "reports.export", "observability.view"]
 });
 const ROLE_RANK = Object.freeze({ owner: 60, super_admin: 50, admin: 40, security_admin: 30, release_manager: 30, content_moderator: 20, moderator: 20, support: 10, analyst: 10, member: 0 });
+
+const CRITICAL_PERMISSIONS = new Set([
+  "platform.production.rollback",
+  "platform.domains.manage",
+  "security.secrets.rotate",
+  "security.sessions.revoke-all",
+  "database.restore.request",
+  "payments.refunds.approve"
+]);
+const ELEVATED_PERMISSIONS = new Set([
+  ...POWER_PERMISSIONS.filter((permission) => !CRITICAL_PERMISSIONS.has(permission)),
+  "users.roles",
+  "config.manage",
+  "flags.manage"
+]);
+const PERMISSION_LABELS = Object.freeze({
+  "roles.custom.manage": "Tạo và sửa vai trò tùy chỉnh",
+  "roles.custom.assign": "Gán vai trò tùy chỉnh",
+  "platform.production.promote": "Promote deployment production",
+  "platform.production.rollback": "Rollback production",
+  "platform.domains.manage": "Quản lý domain",
+  "security.sessions.revoke-all": "Đăng xuất toàn bộ phiên",
+  "security.secrets.rotate": "Yêu cầu xoay secret",
+  "database.restore.request": "Yêu cầu khôi phục database",
+  "payments.refunds.approve": "Phê duyệt hoàn tiền",
+  "observability.slo.manage": "Quản lý SLO",
+  "content.publishing.lock": "Khóa phát hành nội dung",
+  "ai.budgets.manage": "Quản lý ngân sách AI"
+});
+const allPermissionIds = [...new Set(Object.values(ROLE_PERMISSIONS).flat().filter((permission) => permission !== "*"))].sort();
+const permissionGroup = (permission) => {
+  const prefix = String(permission).split(".")[0];
+  return ({
+    users: "Identity",
+    sessions: "Identity",
+    roles: "Identity",
+    permissions: "Identity",
+    privileges: "Identity",
+    approvals: "Identity",
+    platform: "Platform",
+    flags: "Platform",
+    config: "Platform",
+    templates: "Platform",
+    security: "Security",
+    incidents: "Security",
+    privacy: "Security",
+    database: "Database",
+    payments: "PayOS",
+    ai: "AI Providers",
+    content: "Content",
+    reports: "Content",
+    appeals: "Content",
+    observability: "Observability",
+    audit: "Observability",
+    activity: "Observability",
+    growth: "Growth",
+    dashboard: "Mission Control"
+  })[prefix] || "Platform";
+};
+const PERMISSION_CATALOG = Object.freeze(allPermissionIds.map((id) => Object.freeze({
+  id,
+  label: PERMISSION_LABELS[id] || id.split(".").map((part) => part.replace(/-/g, " ")).join(" · "),
+  group: permissionGroup(id),
+  tier: CRITICAL_PERMISSIONS.has(id) ? "critical" : ELEVATED_PERMISSIONS.has(id) ? "elevated" : "standing"
+})));
+const KNOWN_PERMISSIONS = new Set(PERMISSION_CATALOG.map((item) => item.id));
+
+function normalizePermissions(values) {
+  return [...new Set((Array.isArray(values) ? values : [])
+    .map((permission) => clean(permission, 100).toLowerCase())
+    .filter((permission) => KNOWN_PERMISSIONS.has(permission)))].slice(0, 120);
+}
+
+function simulatePermissions(current = [], requested = []) {
+  const baseline = new Set(normalizePermissions(current));
+  const selected = normalizePermissions(requested);
+  const unknown = [...new Set((Array.isArray(requested) ? requested : []).map((item) => clean(item, 100).toLowerCase()).filter((item) => item && !KNOWN_PERMISSIONS.has(item)))];
+  const newAccess = selected.filter((permission) => !baseline.has(permission));
+  const critical = selected.filter((permission) => CRITICAL_PERMISSIONS.has(permission));
+  const elevated = selected.filter((permission) => ELEVATED_PERMISSIONS.has(permission) && !CRITICAL_PERMISSIONS.has(permission));
+  const conflicts = [];
+  if (selected.includes("payments.refunds.approve") && !selected.includes("payments.reconcile")) conflicts.push("Nên cấp payments.reconcile trước quyền phê duyệt hoàn tiền.");
+  if (selected.includes("platform.production.rollback") && !selected.includes("platform.deployments.view")) conflicts.push("Rollback cần quyền xem deployment để kiểm tra phiên bản.");
+  if (selected.includes("security.waf.manage") && !selected.includes("security.view")) conflicts.push("Quản lý WAF cần quyền xem Security Center.");
+  const riskScore = Math.min(100, critical.length * 28 + elevated.length * 9 + newAccess.length * 2);
+  return { selected, newAccess, elevated, critical, unknown, conflicts, riskScore, valid: unknown.length === 0 && !selected.includes("*") };
+}
 
 function rolesFor(user) {
   if (!user) return [];
   const roles = new Set((Array.isArray(user.systemRoles) ? user.systemRoles : [])
     .map((role) => clean(role, 40).toLowerCase())
-    .filter((role) => ROLE_PERMISSIONS[role] && role !== "owner"));
+    .filter((role) => (ROLE_PERMISSIONS[role] || (/^custom:[a-z0-9][a-z0-9_-]{2,31}$/.test(role) && normalizePermissions(user.adminCustomPermissions).length)) && role !== "owner"));
   if (isOwnerUser(user)) roles.add("owner");
   return [...roles];
 }
 
 function highestRole(user) {
-  return rolesFor(user).sort((left, right) => (ROLE_RANK[right] || 0) - (ROLE_RANK[left] || 0))[0] || "member";
+  const rank = (role) => ROLE_RANK[role] || (String(role).startsWith("custom:") ? 15 : 0);
+  return rolesFor(user).sort((left, right) => rank(right) - rank(left))[0] || "member";
 }
 
 function canGrantRole(user, role) {
@@ -34,8 +170,18 @@ function canGrantRole(user, role) {
 
 function accessFor(user) {
   const roles = rolesFor(user);
-  const permissions = new Set(roles.flatMap((role) => ROLE_PERMISSIONS[role] || []));
-  return { roles, permissions: [...permissions], admin: roles.length > 0 };
+  const permissions = new Set([
+    ...roles.flatMap((role) => ROLE_PERMISSIONS[role] || []),
+    ...(roles.some((role) => role.startsWith("custom:")) ? normalizePermissions(user?.adminCustomPermissions) : [])
+  ]);
+  const permissionList = [...permissions];
+  return {
+    roles,
+    permissions: permissionList,
+    admin: roles.length > 0,
+    tier: roles.includes("owner") ? "root" : roles.includes("super_admin") ? "super" : "delegated",
+    permissionCount: permissionList.includes("*") ? "all" : permissionList.length
+  };
 }
 
 function hasPermission(user, permission) {
@@ -74,6 +220,7 @@ function requestMeta(req) {
 async function writeAdminAudit(db, req, admin, entry = {}) {
   const now = new Date();
   const access = accessFor(admin);
+  const previous = await db.collection("communityAdminAuditLogs").findOne({}, { projection: { recordHash: 1 }, sort: { createdAt: -1 } });
   const record = {
     adminId: admin._id,
     admin: { id: String(admin._id), name: clean(admin.name, 120), email: clean(admin.email, 180) },
@@ -84,11 +231,30 @@ async function writeAdminAudit(db, req, admin, entry = {}) {
     reason: clean(entry.reason, 1000),
     before: auditSafe(entry.before),
     after: auditSafe(entry.after),
+    previousHash: clean(previous?.recordHash || "genesis", 128),
+    integrityVersion: "sha256-chain-v1",
     ...requestMeta(req),
     createdAt: now
   };
+  record.recordHash = crypto.createHash("sha256").update(JSON.stringify(record)).digest("hex");
   await db.collection("communityAdminAuditLogs").insertOne(record);
   return record;
 }
 
-module.exports = { ROLE_PERMISSIONS, ROLE_RANK, accessFor, canGrantRole, hasPermission, highestRole, requirePermission, rolesFor, writeAdminAudit };
+module.exports = {
+  CRITICAL_PERMISSIONS,
+  ELEVATED_PERMISSIONS,
+  PERMISSION_CATALOG,
+  POWER_PERMISSIONS,
+  ROLE_PERMISSIONS,
+  ROLE_RANK,
+  accessFor,
+  canGrantRole,
+  hasPermission,
+  highestRole,
+  normalizePermissions,
+  requirePermission,
+  rolesFor,
+  simulatePermissions,
+  writeAdminAudit
+};

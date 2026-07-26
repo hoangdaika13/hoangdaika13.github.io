@@ -69,5 +69,5 @@ test("v3 assets are versioned in loader and service worker", () => {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
-  assert.match(worker, /hh-identity-portal-v258/);
+  assert.match(worker, /hh-identity-portal-v259/);
 });

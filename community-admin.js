@@ -11,7 +11,11 @@
   let userQuery = {};
   let contentQuery = { type: "post", status: "active" };
   let auditEntries = [];
+  let auditQuery = {};
   let featureFlags = [];
+  let customAdminRoles = [];
+  let permissionCatalog = [];
+  let privilege = { active: false, tier: "standing", minutesRemaining: 0, googleReauthRecent: false };
   const REQUEST_TIMEOUT_MS = 12000;
   const PREFERENCES_KEY = "hh.admin-galaxy.preferences.v1";
   const PLANETS = Object.freeze([
@@ -26,6 +30,7 @@
   const VIEW_PLANETS = Object.freeze({
     dashboard: "dashboard",
     identity: "identity",
+    power: "identity",
     users: "identity",
     audit: "identity",
     security: "security",
@@ -46,20 +51,26 @@
     ["aurora", "Aurora Shield"],
     ["cyber", "Cyber Command"],
     ["nebula", "Nebula Rose"],
-    ["golden", "Golden Observatory"]
+    ["golden", "Golden Observatory"],
+    ["quantum", "Quantum Authority"],
+    ["solar-crown", "Solar Crown"],
+    ["aurora-command", "Aurora Command"],
+    ["black-hole", "Black Hole Security"]
   ]);
   const MOTION_LEVELS = Object.freeze([["static", "Tĩnh"], ["balanced", "Cân bằng"], ["cinematic", "Điện ảnh"]]);
-  const TEXT_SCALES = Object.freeze([["comfortable", "Dễ đọc"], ["large", "Lớn"]]);
+  const TEXT_SCALES = Object.freeze([["standard", "Tiêu chuẩn"], ["comfortable", "Dễ đọc"], ["large", "Lớn"], ["xlarge", "Rất lớn"]]);
+  const DENSITY_LEVELS = Object.freeze([["compact", "Gọn"], ["comfortable", "Dễ đọc"], ["spacious", "Rộng"]]);
   const readPreferences = () => {
     try {
       const value = JSON.parse(localStorage.getItem(PREFERENCES_KEY) || "{}");
       return {
         theme: THEMES.some(([id]) => id === value.theme) ? value.theme : "deep-space",
         motion: MOTION_LEVELS.some(([id]) => id === value.motion) ? value.motion : "balanced",
-        textScale: TEXT_SCALES.some(([id]) => id === value.textScale) ? value.textScale : "comfortable"
+        textScale: TEXT_SCALES.some(([id]) => id === value.textScale) ? value.textScale : "comfortable",
+        density: DENSITY_LEVELS.some(([id]) => id === value.density) ? value.density : "comfortable"
       };
     } catch {
-      return { theme: "deep-space", motion: "balanced", textScale: "comfortable" };
+      return { theme: "deep-space", motion: "balanced", textScale: "comfortable", density: "comfortable" };
     }
   };
   let preferences = readPreferences();
@@ -100,6 +111,9 @@
       clearTimeout(timeout);
     }
     const data = await response.json().catch(() => ({}));
+    if (data.privilege) privilege = { ...privilege, ...data.privilege };
+    if (Array.isArray(data.customRoles)) customAdminRoles = data.customRoles;
+    if (Array.isArray(data.permissionCatalog)) permissionCatalog = data.permissionCatalog;
     if (!response.ok) {
       const error = new Error(data.error || "Community Admin không phản hồi.");
       error.status = response.status;
@@ -128,7 +142,9 @@
     const themeOptions = THEMES.map(([id, label]) => `<option value="${id}" ${preferences.theme === id ? "selected" : ""}>${esc(label)}</option>`).join("");
     const motionOptions = MOTION_LEVELS.map(([id, label]) => `<option value="${id}" ${preferences.motion === id ? "selected" : ""}>Hiệu ứng: ${esc(label)}</option>`).join("");
     const textOptions = TEXT_SCALES.map(([id, label]) => `<option value="${id}" ${preferences.textScale === id ? "selected" : ""}>Chữ: ${esc(label)}</option>`).join("");
-    return `<section class="hh-admin-app hh-admin-galaxy" data-admin-theme="${esc(preferences.theme)}" data-admin-motion="${esc(preferences.motion)}" data-admin-text="${esc(preferences.textScale)}" data-admin-planet="${esc(activePlanet)}">
+    const densityOptions = DENSITY_LEVELS.map(([id, label]) => `<option value="${id}" ${preferences.density === id ? "selected" : ""}>Bảng: ${esc(label)}</option>`).join("");
+    const privilegeMinutes = privilege.expiresAt ? Math.max(0, Math.ceil((new Date(privilege.expiresAt).getTime() - Date.now()) / 60000)) : 0;
+    return `<section class="hh-admin-app hh-admin-galaxy" data-admin-theme="${esc(preferences.theme)}" data-admin-motion="${esc(preferences.motion)}" data-admin-text="${esc(preferences.textScale)}" data-admin-density="${esc(preferences.density)}" data-admin-planet="${esc(activePlanet)}">
       <span class="hh-admin-stardust" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       <header class="hh-admin-galaxy-header">
         <div class="hh-admin-galaxy-brand"><span class="hh-admin-core-mark" aria-hidden="true">HH<i></i></span><div><small>HH ADMIN GALAXY · SERVER RBAC</small><h5>${esc(title)}</h5><p>${esc(description)}</p></div></div>
@@ -136,10 +152,19 @@
           <label><span class="sr-only">Chủ đề Admin Galaxy</span><select data-admin-theme-select aria-label="Chủ đề Admin Galaxy">${themeOptions}</select></label>
           <label><span class="sr-only">Mức hiệu ứng</span><select data-admin-motion-select aria-label="Mức hiệu ứng">${motionOptions}</select></label>
           <label><span class="sr-only">Cỡ chữ Admin Galaxy</span><select data-admin-text-select aria-label="Cỡ chữ Admin Galaxy">${textOptions}</select></label>
+          <label><span class="sr-only">Mật độ bảng Admin Galaxy</span><select data-admin-density-select aria-label="Mật độ bảng Admin Galaxy">${densityOptions}</select></label>
           <span class="hh-admin-role">${esc((access?.roles || []).join(" · "))}</span>
+          <button type="button" data-admin-command aria-keyshortcuts="Control+K">⌘ Tìm nhanh</button>
           ${has("reports.export") ? '<button type="button" data-admin-export>⇩ Xuất báo cáo</button>' : ""}
         </div>
       </header>
+      <section class="hh-admin-root-crown" aria-label="Root Authority status">
+        <span><i></i><small>PRODUCTION</small><strong>nhhoang13all.xyz</strong></span>
+        <span><i></i><small>AUTHORITY</small><strong>${esc(access?.tier === "root" ? "Root Super Admin" : access?.tier === "super" ? "Super Admin" : "Delegated Admin")}</strong></span>
+        <span class="${privilege.active ? "active" : "standing"}"><i></i><small>PRIVILEGE SESSION</small><strong>${privilege.active ? `Nâng cao · còn ${privilegeMinutes} phút` : "Quyền thường trực"}</strong></span>
+        <span><i></i><small>APPROVAL POLICY</small><strong>2 Super Admin</strong></span>
+        ${has("privileges.activate") && !privilege.active ? '<button type="button" data-admin-privilege-activate>⚡ Kích hoạt quyền nâng cao</button>' : '<button type="button" data-admin-view="power">Mở Root Console →</button>'}
+      </section>
       <div class="hh-admin-galaxy-layout">
         <nav class="hh-admin-planets" aria-label="Bảy khu vực quản trị">${planets.map((planet, index) => `<button type="button" data-admin-view="${planet.id}" class="${activePlanet === planet.id ? "active" : ""}" style="--planet:${planet.color}" aria-current="${activePlanet === planet.id ? "page" : "false"}"><i><b>${planet.icon}</b><em></em></i><span><small>0${index + 1} · ${esc(planet.eyebrow)}</small><strong>${esc(planet.label)}</strong></span></button>`).join("")}<footer><i>◈</i><span><strong>Privacy boundary</strong><small>Không hiển thị secret, mật khẩu, raw prompt hoặc tin nhắn riêng.</small></span></footer></nav>
         <main data-admin-content tabindex="-1">${content}</main>
@@ -216,9 +241,11 @@
       ["Google verified identity", data.policy?.googleVerificationRequired],
       ["Owner từ môi trường server", data.policy?.ownerSource === "server-environment"],
       ["Chặn quản trị tài khoản ngang/cao hơn", data.policy?.equalOrHigherRoleProtection],
-      ["Bắt buộc lý do cho hành động nhạy cảm", data.policy?.reasonRequiredForSensitiveActions]
+      ["Bắt buộc lý do cho hành động nhạy cảm", data.policy?.reasonRequiredForSensitiveActions],
+      ["Audit bất biến theo chuỗi SHA-256", data.policy?.immutableAuditChain],
+      ["Hai người duyệt thao tác tối quan trọng", Number(data.policy?.criticalActionApprovals || 0) === 2]
     ].map(([label, ready]) => `<span class="${ready ? "ready" : "missing"}"><i>${ready ? "✓" : "!"}</i>${esc(label)}</span>`).join("");
-    const content = `${subnav([["identity", "Tổng quan IAM"], ["users", "Người dùng", "users.view"], ["audit", "Audit quyền", "audit.view"]])}
+    const content = `${subnav([["identity", "Tổng quan IAM"], ["power", "Root Authority", "dashboard.view"], ["users", "Người dùng", "users.view"], ["audit", "Audit quyền", "audit.view"]])}
       <section class="hh-admin-identity-metrics">${metrics}</section>
       <section class="hh-admin-identity-grid">
         <article class="hh-admin-access-policy"><header><span><small>ZERO-TRUST ACCESS</small><strong>Chính sách danh tính</strong></span><b>${Number(data.policy?.ownerCount || 0)} Super Admin</b></header><div>${policyChecks}</div><p>Hai Super Admin hiện tại được xác định từ email Google đã xác minh. Vai trò giao diện không thể tự cấp quyền.</p></article>
@@ -226,6 +253,42 @@
       </section>
       <section class="hh-admin-role-matrix"><header><span><small>PRIVILEGE MATRIX</small><strong>Vai trò và quyền theo tác vụ</strong></span><p>Owner không thể được cấp từ Admin Panel.</p></header><div>${roles}</div></section>`;
     panelRef.innerHTML = shell(content, "Identity & Access", "Danh tính Google đã xác minh, phiên đăng nhập và quyền chi tiết theo từng tác vụ.");
+  }
+
+  async function renderPower() {
+    panelRef.innerHTML = shell(loading("Đang mở Root Authority Console..."), "Root Authority Console");
+    const [data, identity] = await Promise.all([api("control-plane"), api("identity")]);
+    customAdminRoles = identity.customRoles || [];
+    const capabilityGroups = [...new Set((data.capabilities || []).map((item) => item.group))];
+    const capabilities = capabilityGroups.map((group) => {
+      const items = (data.capabilities || []).filter((item) => item.group === group);
+      return `<article class="hh-admin-power-sector"><header><span><small>${esc(group.toUpperCase())}</small><strong>${esc(group)}</strong></span><b>${items.filter((item) => item.connected).length}/${items.length} adapter</b></header><div>${items.map((item) => `<section class="${esc(item.tier)} ${item.connected ? "connected" : "adapter-needed"}"><i>${item.tier === "critical" ? "!" : item.connected ? "✓" : "◇"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.adapterLabel)} · ${item.tier === "critical" ? "phê duyệt kép" : "quyền tạm thời"}</small></span>${item.allowed ? `<button type="button" data-admin-control="${esc(item.id)}" data-control-tier="${esc(item.tier)}" data-control-connected="${item.connected ? "true" : "false"}">${item.tier === "critical" ? "Tạo yêu cầu" : "Điều khiển"}</button>` : '<b class="denied">Không có quyền</b>'}</section>`).join("")}</div></article>`;
+    }).join("");
+    const adapters = (data.adapters || []).map((item, index) => `<article class="${item.connected ? "connected" : "missing"}" style="--satellite-index:${index}"><i>${item.connected ? "✓" : "◇"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.id)} · ${item.connected ? "đã kết nối" : "cần cấu hình server"}</small></span></article>`).join("");
+    const approvals = (data.approvals || []).map((item) => `<article class="${esc(item.status)}"><i>${item.tier === "critical" ? "!" : "◇"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.requestedBy?.email)} · ${Number(item.approvals?.length || 0)}/${Number(item.requiredApprovals || 2)} phê duyệt</small><p>${esc(item.reason)}</p></span><div><b>${esc(item.status)}</b>${item.canApprove && has("approvals.approve") ? `<button type="button" data-admin-approval="${esc(item.id)}" data-approval-decision="approve">Phê duyệt</button><button type="button" data-admin-approval="${esc(item.id)}" data-approval-decision="reject">Từ chối</button>` : item.status === "pending" ? "<small>Chờ Super Admin còn lại</small>" : ""}</div></article>`).join("") || '<p class="hh-admin-empty">Không có yêu cầu tối quan trọng đang chờ.</p>';
+    const policies = (data.policies || []).map((item) => `<article><i>◆</i><span><strong>${esc(item.key)}</strong><small>${esc(String(item.value))} · ${dateText(item.updatedAt)}</small></span></article>`).join("") || '<p class="hh-admin-empty">Chưa có chính sách điều khiển tùy chỉnh.</p>';
+    const permissionGroups = [...new Set((identity.permissionCatalog || []).map((item) => item.group))].map((group, index) => {
+      const permissions = (identity.permissionCatalog || []).filter((item) => item.group === group);
+      const critical = permissions.filter((item) => item.tier === "critical").length;
+      return `<article style="--constellation-index:${index}"><i>${String(index + 1).padStart(2, "0")}</i><span><strong>${esc(group)}</strong><small>${permissions.length} quyền · ${critical} tối quan trọng</small></span><b>${critical ? "!" : "✓"}</b></article>`;
+    }).join("");
+    const roles = customAdminRoles.map((role) => `<article><span><strong>${esc(role.name)}</strong><small>custom:${esc(role.key)} · ${role.permissions.length} quyền</small></span><b class="${Number(role.simulation?.riskScore || 0) >= 50 ? "high" : ""}">Risk ${Number(role.simulation?.riskScore || 0)}</b></article>`).join("") || '<p class="hh-admin-empty">Chưa tạo vai trò tùy chỉnh.</p>';
+    const content = `${subnav([["identity", "IAM Overview"], ["power", "Root Authority"], ["users", "Người dùng", "users.view"], ["audit", "Immutable Audit", "audit.view"]])}
+      <section class="hh-admin-root-hero">
+        <div><small>ROOT AUTHORITY SESSION</small><strong>${privilege.active ? `Quyền nâng cao đang hoạt động · ${Number(privilege.minutesRemaining || 0)} phút` : "Đang dùng quyền thường trực"}</strong><p>Quyền nâng cao cần đăng nhập Google gần đây; thao tác tối quan trọng cần hai Super Admin khác nhau.</p><span><b>${privilege.googleReauthRecent ? "Google reauth sẵn sàng" : "Cần đăng nhập lại Google"}</b><b>Audit SHA-256 chain</b></span></div>
+        <aside><i>⚡</i><strong>Privilege Elevation</strong><p>15, 30 hoặc 60 phút. Tự hết hạn và luôn lưu lý do.</p>${privilege.active ? `<b>Hết hạn ${dateText(privilege.expiresAt)}</b>` : '<button type="button" data-admin-privilege-activate>Kích hoạt quyền nâng cao</button>'}</aside>
+      </section>
+      <section class="hh-admin-root-grid">
+        <article class="hh-admin-permission-constellation"><header><span><small>PERMISSION CONSTELLATION</small><strong>Bản đồ quyền toàn hệ thống</strong></span><div><button type="button" data-admin-permission-simulate>Permission Simulator</button><button type="button" data-admin-custom-role>Tạo custom role</button></div></header><div>${permissionGroups}</div></article>
+        <article class="hh-admin-infrastructure-map"><header><span><small>LIVE INFRASTRUCTURE MAP</small><strong>Provider và adapter</strong></span><b>${Number(data.infrastructure?.databaseCollections || 0)} collections</b></header><div><span class="hh-admin-infra-core"><i>HH</i><strong>${esc(data.infrastructure?.environment || "production")}</strong></span>${adapters}</div></article>
+      </section>
+      <section class="hh-admin-power-grid">${capabilities}</section>
+      <section class="hh-admin-approval-grid">
+        <article class="hh-admin-approval-queue"><header><span><small>DUAL CONTROL</small><strong>Yêu cầu cần hai Super Admin</strong></span><b>${Number(data.approvals?.length || 0)} hồ sơ</b></header><div>${approvals}</div></article>
+        <article class="hh-admin-policy-stream"><header><span><small>ACTIVE CONTROL POLICIES</small><strong>Chính sách đang lưu</strong></span><b>Không chứa secret</b></header><div>${policies}</div></article>
+      </section>
+      <section class="hh-admin-custom-role-strip"><header><span><small>CUSTOM ADMIN ROLES</small><strong>Vai trò tùy chỉnh đang hoạt động</strong></span><button type="button" data-admin-custom-role>＋ Tạo vai trò</button></header><div>${roles}</div></section>`;
+    panelRef.innerHTML = shell(content, "Root Authority Console", "Quyền tùy chỉnh, nâng quyền tạm thời, phê duyệt kép và điều khiển hạ tầng trong một trung tâm.");
   }
 
   async function renderSecurity() {
@@ -253,8 +316,15 @@
     const events = (data.recentSecurityEvents || []).map((item) => `<article><i class="${item.success === false ? "error" : ""}"></i><span><strong>${esc(item.type || "auth:event")}</strong><small>${esc(item.reason || `${item.browser || "Browser"} · ${item.platform || "Thiết bị"}`)}</small></span><time>${dateText(item.createdAt)}</time></article>`).join("") || '<p class="hh-admin-empty">Chưa có sự kiện xác thực gần đây.</p>';
     const findings = (incidents.findings || []).map((item) => `<article class="${esc(item.severity)} ${esc(item.status)}"><header><span><i>${item.severity === "critical" ? "!" : "◇"}</i><b>${esc(item.severity.toUpperCase())}</b><small>${esc(item.source)}</small></span><em>${esc(statusLabel(item.status))}</em></header><strong>${esc(item.title)}</strong><p>${esc(item.description)}</p><dl><div><dt>Đối tượng</dt><dd>${esc(item.targetType)} · ${esc(item.targetId)}</dd></div><div><dt>Phụ trách</dt><dd>${esc(item.assignee || "Chưa phân công")}</dd></div><div><dt>Phát hiện</dt><dd>${dateText(item.detectedAt)}</dd></div></dl><footer><span>${esc(item.suggestedAction)}</span>${has("incidents.manage") ? `<button type="button" data-admin-incident="${esc(item.signalKey)}" data-incident-status="${esc(item.status)}" data-incident-assignee="${esc(item.assignee)}">Điều tra</button>` : ""}</footer></article>`).join("") || '<p class="hh-admin-empty">Không có finding đang hoạt động.</p>';
     const severity = ["critical", "high", "medium", "low"].map((level) => `<article class="${level}"><i></i><small>${level.toUpperCase()}</small><strong>${Number(incidents.summary?.[level] || 0)}</strong></article>`).join("");
+    const focusFinding = (incidents.findings || [])[0];
+    const investigation = focusFinding ? `<section class="hh-admin-investigation-workspace">
+      <article><header><small>FINDING</small><strong>${esc(focusFinding.title)}</strong></header><p>${esc(focusFinding.description)}</p><dl><div><dt>Severity</dt><dd>${esc(focusFinding.severity)}</dd></div><div><dt>Resource</dt><dd>${esc(focusFinding.targetType)} · ${esc(focusFinding.targetId)}</dd></div></dl></article>
+      <article><header><small>TIMELINE / LOGS</small><strong>Bằng chứng đã làm sạch</strong></header><div>${(focusFinding.timeline || []).map((entry) => `<span><i></i><strong>${esc(statusLabel(entry.status))}</strong><small>${esc(entry.note)} · ${dateText(entry.at)}</small></span>`).join("") || "<p>Chưa có cập nhật điều tra. Raw token, IP và secret không được đưa vào giao diện.</p>"}</div></article>
+      <article><header><small>ACTION & AUDIT</small><strong>Bước xử lý an toàn</strong></header><p>${esc(focusFinding.suggestedAction)}</p><span><b>${esc(focusFinding.assignee || "Chưa phân công")}</b><small>${esc(statusLabel(focusFinding.status))}</small></span>${has("incidents.manage") ? `<button type="button" data-admin-incident="${esc(focusFinding.signalKey)}" data-incident-status="${esc(focusFinding.status)}" data-incident-assignee="${esc(focusFinding.assignee)}">Mở hồ sơ điều tra</button>` : ""}</article>
+    </section>` : "";
     const content = `${subnav([["security", "Findings"], ["privacy", "Privacy & Consent", "privacy.view"], ["audit", "Audit log", "audit.view"]])}
       <section class="hh-admin-severity-strip">${severity}</section>
+      ${investigation}
       <section class="hh-admin-finding-layout">
         <article class="hh-admin-findings"><header><span><small>THREAT FINDINGS</small><strong>Cảnh báo và điều tra</strong></span><b>${Number(incidents.summary?.investigating || 0)} đang điều tra</b></header><div>${findings}</div></article>
         <aside class="hh-admin-security-side">
@@ -332,9 +402,14 @@
     dialog.querySelector("footer .primary")?.addEventListener("click", () => { dialog.close(); dialog.remove(); });
   }
 
-  function userAction(userId, mode, currentVerified = false, currentFeatures = []) {
+  async function userAction(userId, mode, currentVerified = false, currentFeatures = []) {
+    if (mode === "roles") await ensurePermissionCatalog();
     const labels = { status: "Cập nhật trạng thái", verify: "Xác minh tài khoản", revoke: "Thu hồi toàn bộ phiên", roles: "Phân quyền hệ thống", features: "Giới hạn quyền dùng tính năng" };
-    const content = `${mode === "status" ? '<label><span>Trạng thái</span><select name="status"><option value="active">Hoạt động / mở khóa</option><option value="locked">Khóa</option><option value="suspended">Tạm đình chỉ</option><option value="banned">Cấm</option></select></label><label><span>Đình chỉ đến</span><input name="suspendedUntil" type="datetime-local"></label>' : ""}${mode === "verify" ? `<label><span>Trạng thái xác minh</span><select name="verified"><option value="true" ${currentVerified ? "" : "selected"}>Xác minh tài khoản</option><option value="false" ${currentVerified ? "selected" : ""}>Bỏ xác minh</option></select></label>` : ""}${mode === "roles" ? `<section class="hh-admin-role-picker">${["super_admin","admin","security_admin","release_manager","content_moderator","support","analyst"].map((role) => `<label><input name="roles" type="checkbox" value="${role}"><span>${role}</span></label>`).join("")}</section>` : ""}${mode === "features" ? `<label class="wide"><span>ID module cần giới hạn</span><textarea name="restrictedFeatures" maxlength="4000" placeholder="Ví dụ: ai-center, media-center, music-ai">${esc(currentFeatures.join("\n"))}</textarea><small>Mỗi dòng hoặc dấu phẩy là một ID module. Để trống để mở lại toàn bộ.</small></label>` : ""}<label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`;
+    const roleChoices = [
+      ...["super_admin","admin","security_admin","release_manager","content_moderator","support","analyst"].map((role) => [role, role]),
+      ...customAdminRoles.map((role) => [`custom:${role.key}`, `${role.name} · custom`])
+    ];
+    const content = `${mode === "status" ? '<label><span>Trạng thái</span><select name="status"><option value="active">Hoạt động / mở khóa</option><option value="locked">Khóa</option><option value="suspended">Tạm đình chỉ</option><option value="banned">Cấm</option></select></label><label><span>Đình chỉ đến</span><input name="suspendedUntil" type="datetime-local"></label>' : ""}${mode === "verify" ? `<label><span>Trạng thái xác minh</span><select name="verified"><option value="true" ${currentVerified ? "" : "selected"}>Xác minh tài khoản</option><option value="false" ${currentVerified ? "selected" : ""}>Bỏ xác minh</option></select></label>` : ""}${mode === "roles" ? `<section class="hh-admin-role-picker">${roleChoices.map(([role, label]) => `<label><input name="roles" type="checkbox" value="${esc(role)}"><span>${esc(label)}</span></label>`).join("")}</section>` : ""}${mode === "features" ? `<label class="wide"><span>ID module cần giới hạn</span><textarea name="restrictedFeatures" maxlength="4000" placeholder="Ví dụ: ai-center, media-center, music-ai">${esc(currentFeatures.join("\n"))}</textarea><small>Mỗi dòng hoặc dấu phẩy là một ID module. Để trống để mở lại toàn bộ.</small></label>` : ""}<label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`;
     const dialog = modal(labels[mode], content, "Thực hiện");
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -406,12 +481,15 @@
     dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const reason = new FormData(event.currentTarget).get("reason"); try { await api("action", { method: "POST", body: { action: "content:moderate", targetId: id, targetType: type, mode, reason } }); dialog.close(); dialog.remove(); notice("Nội dung đã được cập nhật và ghi audit log."); await renderContent(); } catch (error) { notice(error.message, "error"); } });
   }
 
-  async function renderAudit() {
+  async function renderAudit(query = {}) {
+    auditQuery = { ...auditQuery, ...query };
     panelRef.innerHTML = shell(loading(), "Audit log");
-    const data = await api("audit");
+    const data = await api("audit", { query: auditQuery });
     auditEntries = data.items || [];
     const rows = auditEntries.map((item) => `<tr><td><strong>${esc(item.action)}</strong><small>${esc(item.targetType)} · ${esc(item.targetId)}</small></td><td>${esc(item.admin?.name || "Admin")}<small>${esc(item.admin?.email || "")}</small></td><td>${esc(item.reason || "-")}</td><td>${esc(item.ip || "-")}</td><td>${dateText(item.createdAt)}</td><td><button type="button" data-admin-audit-open="${esc(item.id)}">Chi tiết</button></td></tr>`).join("") || '<tr><td colspan="6">Chưa có audit log.</td></tr>';
-    panelRef.innerHTML = shell(`${subnav([["identity", "Identity & Access", "users.view"], ["security", "Security", "security.view"], ["platform", "Platform", "platform.view"], ["audit", "Audit log"]])}<section class="hh-admin-table"><table><thead><tr><th>Hành động</th><th>Admin</th><th>Lý do</th><th>IP</th><th>Thời gian</th><th></th></tr></thead><tbody>${rows}</tbody></table></section>`, "Audit log", "Theo dõi admin, hành động, đối tượng, IP, user agent và dữ liệu trước/sau.");
+    const filters = `<form class="hh-admin-toolbar hh-admin-audit-filters" data-admin-audit-filter><label><span>⌕</span><input name="q" value="${esc(auditQuery.q || "")}" placeholder="Tìm toàn bộ audit"></label><input name="actor" value="${esc(auditQuery.actor || "")}" placeholder="Email admin"><input name="action" value="${esc(auditQuery.action || "")}" placeholder="Hành động"><input name="target" value="${esc(auditQuery.target || "")}" placeholder="Đối tượng"><input name="from" type="date" value="${esc(auditQuery.from || "")}" aria-label="Từ ngày"><input name="to" type="date" value="${esc(auditQuery.to || "")}" aria-label="Đến ngày"><button type="submit">Lọc audit</button></form>`;
+    const integrity = `<section class="hh-admin-audit-integrity"><i>◆</i><span><strong>Immutable Audit Chain</strong><small>${Number(data.integrity?.chainedEntries || 0)} bản ghi trang này có SHA-256 chain · không chứa secret</small></span><button type="button" data-admin-access-review>Hoàn tất Access Review tháng</button></section>`;
+    panelRef.innerHTML = shell(`${subnav([["identity", "Identity & Access", "users.view"], ["power", "Root Authority", "dashboard.view"], ["security", "Security", "security.view"], ["platform", "Platform", "platform.view"], ["audit", "Audit log"]])}${filters}${integrity}<section class="hh-admin-table"><table><thead><tr><th>Hành động</th><th>Admin</th><th>Lý do</th><th>IP</th><th>Thời gian</th><th></th></tr></thead><tbody>${rows}</tbody></table></section>`, "Immutable Audit Log", "Lọc theo admin, hành động, đối tượng và thời gian; xem dữ liệu trước/sau đã loại bỏ secret.");
   }
 
   function openAudit(id) {
@@ -517,6 +595,156 @@
     });
   }
 
+  function startGoogleReauthentication() {
+    try { sessionStorage.setItem("hh-auth-return-to", "#/admin"); } catch {}
+    location.assign(`${API_BASE}/api/auth/google?returnTo=${encodeURIComponent(location.origin)}`);
+  }
+
+  function activatePrivilege() {
+    const reauth = privilege.googleReauthRecent
+      ? '<span class="hh-admin-elevation-ready">✓ Google vừa xác minh danh tính</span>'
+      : '<button type="button" class="hh-admin-google-reauth" data-admin-google-reauth>Đăng nhập lại bằng Google trước</button>';
+    const dialog = modal("Kích hoạt quyền nâng cao", `<section class="wide hh-admin-elevation-preview"><i>⚡</i><span><strong>Temporary Privilege Elevation</strong><p>Quyền tự hết hạn, không thay đổi vai trò thường trực và mọi hành động đều được ghi audit.</p>${reauth}</span></section><label><span>Thời hạn</span><select name="durationMinutes"><option value="15">15 phút</option><option value="30" selected>30 phút</option><option value="60">60 phút</option></select></label><label class="wide"><span>Lý do kích hoạt</span><textarea name="reason" required minlength="5" maxlength="1000" placeholder="Công việc cụ thể cần quyền nâng cao"></textarea></label>`, "Kích hoạt quyền");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      try {
+        const data = await api("action", { method: "POST", body: { action: "privilege:activate", ...values, durationMinutes: Number(values.durationMinutes) } });
+        privilege = data.privilege || privilege;
+        dialog.close();
+        dialog.remove();
+        notice(`Quyền nâng cao đã kích hoạt trong ${Number(values.durationMinutes)} phút.`);
+        await render(activeView);
+      } catch (error) {
+        notice(error.message, "error");
+      }
+    });
+  }
+
+  async function ensurePermissionCatalog() {
+    if (permissionCatalog.length) return permissionCatalog;
+    const data = await api("identity");
+    permissionCatalog = data.permissionCatalog || [];
+    customAdminRoles = data.customRoles || [];
+    return permissionCatalog;
+  }
+
+  async function openPermissionSimulator() {
+    await ensurePermissionCatalog();
+    const groups = [...new Set(permissionCatalog.map((item) => item.group))];
+    const fields = groups.map((group) => `<fieldset><legend>${esc(group)}</legend>${permissionCatalog.filter((item) => item.group === group).map((item) => `<label class="${esc(item.tier)}"><input name="permissions" type="checkbox" value="${esc(item.id)}"><span><strong>${esc(item.label)}</strong><small>${esc(item.id)} · ${esc(item.tier)}</small></span></label>`).join("")}</fieldset>`).join("");
+    const dialog = modal("Permission Simulator", `<section class="wide hh-admin-simulator-intro"><strong>Kiểm tra quyền trước khi cấp</strong><p>Simulator chỉ phân tích; không ghi vai trò hoặc thay đổi quyền của bất kỳ tài khoản nào.</p></section><section class="wide hh-admin-permission-picker">${fields}</section><output class="wide hh-admin-simulator-result" aria-live="polite">Chọn quyền rồi bấm Phân tích.</output>`, "Phân tích quyền");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const permissions = new FormData(event.currentTarget).getAll("permissions");
+      try {
+        const data = await api("action", { method: "POST", body: { action: "permission:simulate", permissions } });
+        const result = data.simulation || {};
+        const output = dialog.querySelector(".hh-admin-simulator-result");
+        output.innerHTML = `<span class="${Number(result.riskScore || 0) >= 60 ? "critical" : Number(result.riskScore || 0) >= 30 ? "elevated" : "standing"}"><strong>Risk score ${Number(result.riskScore || 0)}/100</strong><small>${Number(result.newAccess?.length || 0)} quyền mới · ${Number(result.elevated?.length || 0)} nâng cao · ${Number(result.critical?.length || 0)} tối quan trọng</small></span>${(result.conflicts || []).map((item) => `<p>⚠ ${esc(item)}</p>`).join("") || "<p>Không phát hiện xung đột quyền.</p>"}`;
+      } catch (error) {
+        notice(error.message, "error");
+      }
+    });
+  }
+
+  async function openCustomRole() {
+    await ensurePermissionCatalog();
+    const groups = [...new Set(permissionCatalog.map((item) => item.group))];
+    const fields = groups.map((group) => `<fieldset><legend>${esc(group)}</legend>${permissionCatalog.filter((item) => item.group === group).map((item) => `<label class="${esc(item.tier)}"><input name="permissions" type="checkbox" value="${esc(item.id)}"><span><strong>${esc(item.label)}</strong><small>${esc(item.id)}</small></span></label>`).join("")}</fieldset>`).join("");
+    const dialog = modal("Tạo vai trò quản trị tùy chỉnh", `<label><span>Mã vai trò</span><input name="key" required minlength="3" maxlength="32" pattern="[a-z][a-z0-9_-]{2,31}" placeholder="security_operator"></label><label><span>Tên hiển thị</span><input name="name" required minlength="3" maxlength="120" placeholder="Security Operator"></label><label class="wide"><span>Mô tả phạm vi</span><textarea name="description" maxlength="500"></textarea></label><section class="wide hh-admin-permission-picker">${fields}</section><label class="wide"><span>Lý do tạo/cập nhật</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, "Lưu custom role");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const body = { action: "custom-role:save", key: form.get("key"), name: form.get("name"), description: form.get("description"), permissions: form.getAll("permissions"), reason: form.get("reason") };
+      try {
+        await api("action", { method: "POST", body });
+        dialog.close();
+        dialog.remove();
+        notice("Vai trò tùy chỉnh đã được lưu và ghi immutable audit.");
+        await renderPower();
+      } catch (error) {
+        notice(error.message, "error");
+      }
+    });
+  }
+
+  function controlAction(actionId, tier, connected) {
+    const booleanActions = new Set(["platform.maintenance", "payos.lock", "ai.provider", "content.lock-publishing"]);
+    const valueField = booleanActions.has(actionId)
+      ? '<label><span>Trạng thái mới</span><select name="value"><option value="true">Bật / khóa</option><option value="false">Tắt / mở lại</option></select></label>'
+      : '<label><span>Giá trị hoặc phiên bản</span><input name="value" maxlength="240" placeholder="Giá trị an toàn, không nhập secret"></label>';
+    const dialog = modal(tier === "critical" ? "Tạo yêu cầu phê duyệt kép" : "Điều khiển Root Console", `<section class="wide hh-admin-control-preview ${esc(tier)}"><header><span><small>${esc(tier.toUpperCase())}</small><strong>${esc(actionId)}</strong></span><b>${connected ? "Adapter sẵn sàng" : "Cần adapter server"}</b></header><div><article><small>TRƯỚC</small><strong>Cấu hình production hiện tại</strong><p>Giá trị bí mật không được tải về trình duyệt.</p></article><i>→</i><article><small>SAU</small><strong>Thay đổi theo yêu cầu bên dưới</strong><p>${tier === "critical" ? "Chỉ chạy sau phê duyệt của Super Admin thứ hai." : "Cần privilege session còn hiệu lực."}</p></article></div></section><label><span>Đối tượng</span><input name="target" maxlength="160" placeholder="provider, domain, môi trường hoặc resource ID"></label>${valueField}<label class="wide"><span>Ghi chú runbook</span><textarea name="note" maxlength="500"></textarea></label><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, tier === "critical" ? "Gửi yêu cầu 2 người" : "Preview và thực hiện");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      if (booleanActions.has(actionId)) values.value = values.value === "true";
+      const apiAction = tier === "critical" ? "approval:request" : "control:execute";
+      try {
+        const data = await api("action", { method: "POST", body: { action: apiAction, actionId, ...values } });
+        dialog.close();
+        dialog.remove();
+        notice(tier === "critical" ? "Đã tạo yêu cầu; cần Super Admin còn lại phê duyệt." : data.result?.detail || "Điều khiển đã được ghi nhận.");
+        await renderPower();
+      } catch (error) {
+        notice(error.message, "error");
+      }
+    });
+  }
+
+  function decideApproval(requestId, decision) {
+    const dialog = modal(decision === "approve" ? "Phê duyệt thao tác tối quan trọng" : "Từ chối yêu cầu", `<section class="wide hh-admin-kill-switch"><strong>${esc(requestId)}</strong><p>Super Admin yêu cầu và Super Admin quyết định phải là hai tài khoản khác nhau.</p><span>Quyết định này sẽ được nối vào immutable audit chain.</span></section><label class="wide"><span>Lý do quyết định</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, decision === "approve" ? "Phê duyệt và thực thi" : "Từ chối");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const reason = new FormData(event.currentTarget).get("reason");
+      try {
+        const data = await api("action", { method: "POST", body: { action: decision === "approve" ? "approval:approve" : "approval:reject", requestId, reason } });
+        dialog.close();
+        dialog.remove();
+        notice(data.approval?.result?.detail || "Quyết định đã được ghi audit.");
+        await renderPower();
+      } catch (error) {
+        notice(error.message, "error");
+      }
+    });
+  }
+
+  function completeAccessReview() {
+    const dialog = modal("Hoàn tất Access Review tháng", '<section class="wide hh-admin-kill-switch"><strong>Monthly Access Review</strong><p>Hệ thống sẽ thống kê quản trị viên, custom role, tài khoản quản trị bị khóa và lưu snapshot vào audit.</p></section><label class="wide"><span>Kết luận và lý do</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>', "Hoàn tất review");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const reason = new FormData(event.currentTarget).get("reason");
+      try {
+        await api("action", { method: "POST", body: { action: "access-review:complete", reason } });
+        dialog.close();
+        dialog.remove();
+        notice("Access Review tháng đã hoàn tất và được ghi audit.");
+        await renderAudit();
+      } catch (error) {
+        notice(error.message, "error");
+      }
+    });
+  }
+
+  function openCommandPalette() {
+    const commands = [
+      ["dashboard", "Mission Control", "Sức khỏe website và action queue"],
+      ["power", "Root Authority", "Quyền, adapter và phê duyệt kép"],
+      ["identity", "Identity & Access", "Vai trò và danh tính Google"],
+      ["users", "Tìm người dùng", "Khóa, xác minh và thu hồi phiên"],
+      ["security", "Security Findings", "Điều tra cảnh báo production"],
+      ["platform", "Platform & Release", "Deployment, queue và provider"],
+      ["audit", "Immutable Audit", "Lọc hành động trước/sau"],
+      ["growth", "Growth & Data", "PayOS, funnel và AI usage"]
+    ];
+    const dialog = modal("Admin Command Palette", `<label class="wide hh-admin-command-search"><span>⌕</span><input data-admin-command-search autofocus placeholder="Tìm người dùng, incident, deployment hoặc công cụ"></label><section class="wide hh-admin-command-results">${commands.map(([view, label, detail]) => `<button type="button" data-admin-view="${view}" data-command-text="${esc(`${label} ${detail}`.toLowerCase())}"><i>→</i><span><strong>${esc(label)}</strong><small>${esc(detail)}</small></span></button>`).join("")}</section>`, "Đóng");
+    dialog.querySelector("[data-admin-command-search]")?.addEventListener("input", (event) => {
+      const query = String(event.target.value || "").trim().toLowerCase();
+      dialog.querySelectorAll("[data-command-text]").forEach((button) => { button.hidden = Boolean(query && !button.dataset.commandText.includes(query)); });
+    });
+    dialog.querySelector("footer .primary")?.addEventListener("click", () => { dialog.close(); dialog.remove(); });
+  }
+
   function updateIncident(signalKey, currentStatus = "new", currentAssignee = "") {
     const content = `<label><span>Trạng thái</span><select name="status">${[["new", "Mới"], ["investigating", "Đang điều tra"], ["mitigated", "Đã giảm thiểu"], ["resolved", "Đã giải quyết"]].map(([value, label]) => `<option value="${value}" ${currentStatus === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Người phụ trách</span><input name="assignee" maxlength="180" value="${esc(currentAssignee)}" placeholder="Email quản trị viên"></label><label class="wide"><span>Kết luận hoặc hướng xử lý</span><textarea name="resolution" maxlength="1000"></textarea></label><label class="wide"><span>Ghi chú timeline bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`;
     const dialog = modal("Cập nhật incident", content, "Lưu vào timeline");
@@ -563,6 +791,7 @@
     }
     if (view === "dashboard") return renderDashboard();
     if (view === "identity") return renderIdentity();
+    if (view === "power") return renderPower();
     if (view === "security") return renderSecurity();
     if (view === "privacy") return renderPrivacy();
     if (["activity", "community"].includes(view)) return renderActivity();
@@ -612,9 +841,17 @@
 
   document.addEventListener("click", async (event) => {
     if (!event.target.closest(".hh-admin-app, .hh-admin-modal")) return;
-    const view = event.target.closest("[data-admin-view]"); if (view) { await render(view.dataset.adminView).catch((error) => notice(error.message, "error")); return; }
+    const view = event.target.closest("[data-admin-view]"); if (view) { document.querySelector("[data-community-admin-modal]")?.remove(); await render(view.dataset.adminView).catch((error) => notice(error.message, "error")); return; }
+    if (event.target.closest("[data-admin-command]")) { openCommandPalette(); return; }
+    if (event.target.closest("[data-admin-privilege-activate]")) { activatePrivilege(); return; }
+    if (event.target.closest("[data-admin-google-reauth]")) { startGoogleReauthentication(); return; }
+    if (event.target.closest("[data-admin-permission-simulate]")) { await openPermissionSimulator().catch((error) => notice(error.message, "error")); return; }
+    if (event.target.closest("[data-admin-custom-role]")) { await openCustomRole().catch((error) => notice(error.message, "error")); return; }
+    const control = event.target.closest("[data-admin-control]"); if (control) { controlAction(control.dataset.adminControl, control.dataset.controlTier, control.dataset.controlConnected === "true"); return; }
+    const approval = event.target.closest("[data-admin-approval]"); if (approval) { decideApproval(approval.dataset.adminApproval, approval.dataset.approvalDecision); return; }
+    if (event.target.closest("[data-admin-access-review]")) { completeAccessReview(); return; }
     const open = event.target.closest("[data-admin-user-open]"); if (open) { await openUser(open.dataset.adminUserOpen).catch((error) => notice(error.message, "error")); return; }
-    const action = event.target.closest("[data-admin-user-action]"); if (action) { document.querySelector("[data-community-admin-modal]")?.remove(); userAction(action.dataset.userId, action.dataset.adminUserAction, action.dataset.userVerified === "true", String(action.dataset.userFeatures || "").split(",").filter(Boolean)); return; }
+    const action = event.target.closest("[data-admin-user-action]"); if (action) { document.querySelector("[data-community-admin-modal]")?.remove(); await userAction(action.dataset.userId, action.dataset.adminUserAction, action.dataset.userVerified === "true", String(action.dataset.userFeatures || "").split(",").filter(Boolean)).catch((error) => notice(error.message, "error")); return; }
     const page = event.target.closest("[data-admin-users-page]"); if (page) { await renderUsers({ page: page.dataset.adminUsersPage }); return; }
     const resolve = event.target.closest("[data-admin-resolve]"); if (resolve) { resolveRecord(resolve.dataset.adminResolve, resolve.dataset.kind); return; }
     const content = event.target.closest("[data-admin-content-action]"); if (content) { moderateContent(content.dataset.contentId, content.dataset.contentType, content.dataset.adminContentAction); return; }
@@ -640,6 +877,12 @@
     if (contentForm) {
       event.preventDefault();
       await renderContent(Object.fromEntries(new FormData(contentForm))).catch((error) => notice(error.message, "error"));
+      return;
+    }
+    const auditForm = event.target.closest("[data-admin-audit-filter]");
+    if (auditForm) {
+      event.preventDefault();
+      await renderAudit(Object.fromEntries(new FormData(auditForm))).catch((error) => notice(error.message, "error"));
     }
   });
 
@@ -647,17 +890,26 @@
     const theme = event.target.closest("[data-admin-theme-select]");
     const motion = event.target.closest("[data-admin-motion-select]");
     const textScale = event.target.closest("[data-admin-text-select]");
-    if (!theme && !motion && !textScale) return;
+    const density = event.target.closest("[data-admin-density-select]");
+    if (!theme && !motion && !textScale && !density) return;
     if (theme) preferences.theme = THEMES.some(([id]) => id === theme.value) ? theme.value : "deep-space";
     if (motion) preferences.motion = MOTION_LEVELS.some(([id]) => id === motion.value) ? motion.value : "balanced";
     if (textScale) preferences.textScale = TEXT_SCALES.some(([id]) => id === textScale.value) ? textScale.value : "comfortable";
+    if (density) preferences.density = DENSITY_LEVELS.some(([id]) => id === density.value) ? density.value : "comfortable";
     try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences)); } catch {}
     const app = panelRef?.querySelector(".hh-admin-galaxy");
     if (app) {
       app.dataset.adminTheme = preferences.theme;
       app.dataset.adminMotion = preferences.motion;
       app.dataset.adminText = preferences.textScale;
+      app.dataset.adminDensity = preferences.density;
     }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "k" || !panelRef?.querySelector(".hh-admin-galaxy")) return;
+    event.preventDefault();
+    openCommandPalette();
   });
 
   const observer = new MutationObserver(ensureNav);
