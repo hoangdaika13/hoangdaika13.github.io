@@ -5,3 +5,5 @@ node_modules/
 !.env.example
 artifacts-communication-*.png
 online-communication-debug.png
+.env*
+!.env.example

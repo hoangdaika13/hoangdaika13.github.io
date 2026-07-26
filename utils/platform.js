@@ -1,5 +1,5 @@
 // Shared server runtime. Kept outside /api so Vercel never counts it as a function.
-const { createHash } = require("crypto");
+const { createHash, createHmac } = require("crypto");
 const { MongoClient, ObjectId } = require("mongodb");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -103,14 +103,13 @@ function setCors(req, res) {
 
 function assertTrustedMutation(req) {
   if (!MUTATING_METHODS.has(String(req.method || "").toUpperCase())) return;
-  const authorization = String(req.headers.authorization || "").trim();
-  if (authorization) return;
-  if (!requestCookie(req, "hh_session")) return;
   const origin = String(req.headers.origin || "").trim();
   const referer = String(req.headers.referer || "").trim();
   let refererOrigin = "";
   try { refererOrigin = new URL(referer).origin; } catch {}
-  if (allowedOrigins().includes(origin) || allowedOrigins().includes(refererOrigin)) return;
+  const browserOrigin = origin || (referer ? refererOrigin || "__invalid_referer__" : "");
+  if (browserOrigin && allowedOrigins().includes(browserOrigin)) return;
+  if (!browserOrigin && !requestCookie(req, "hh_session")) return;
   const error = new Error("Yêu cầu đăng nhập không có nguồn tin cậy.");
   error.statusCode = 403;
   error.code = "CSRF_ORIGIN_REJECTED";
@@ -239,7 +238,10 @@ async function withApi(req, res, handler) {
     if (explicitStatus >= 400 && explicitStatus <= 503 && explicitStatus !== 429) {
       return res.status(explicitStatus).json({ error: clean(error.message, 300), code: clean(error.code, 80) || undefined });
     }
-    if (error?.statusCode === 429) return res.status(429).json({ error: "Bạn thao tác quá nhanh. Vui lòng thử lại sau." });
+    if (error?.statusCode === 429) {
+      if (Number.isFinite(error.retryAfter)) res.setHeader("Retry-After", String(Math.max(1, Math.ceil(error.retryAfter))));
+      return res.status(429).json({ error: "Bạn thao tác quá nhanh. Vui lòng thử lại sau." });
+    }
     if (error?.message === "Request body too large") return res.status(413).json({ error: "Yêu cầu vượt quá giới hạn cho phép." });
     return res.status(500).json({ error: "Máy chủ không thể xử lý yêu cầu." });
   }
@@ -248,18 +250,22 @@ async function withApi(req, res, handler) {
 async function enforceRateLimit(db, key, limit = 10, windowMs = 15 * 60 * 1000) {
   const now = new Date();
   const bucket = new Date(Math.floor(now.getTime() / windowMs) * windowMs);
+  const keyHash = createHmac("sha256", process.env.GATEWAY_AUDIT_SALT || jwtSecret())
+    .update(`rate-limit:${clean(key, 300)}`)
+    .digest("hex");
   if (!rateLimitIndexReady) {
     await db.collection("rateLimits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     rateLimitIndexReady = true;
   }
   const result = await db.collection("rateLimits").findOneAndUpdate(
-    { _id: `${clean(key, 300)}:${bucket.toISOString()}` },
+    { _id: `${keyHash}:${bucket.toISOString()}` },
     { $inc: { count: 1 }, $setOnInsert: { createdAt: now, expiresAt: new Date(bucket.getTime() + windowMs * 2) } },
     { upsert: true, returnDocument: "after" }
   );
   if (Number(result?.count || 0) > limit) {
     const error = new Error("Rate limit exceeded");
     error.statusCode = 429;
+    error.retryAfter = Math.ceil((bucket.getTime() + windowMs - now.getTime()) / 1000);
     throw error;
   }
 }
@@ -267,6 +273,7 @@ async function enforceRateLimit(db, key, limit = 10, windowMs = 15 * 60 * 1000) 
 module.exports = {
   adminEmails,
   adminUserIds,
+  assertTrustedMutation,
   bcrypt,
   bodyOf,
   clean,
@@ -282,5 +289,6 @@ module.exports = {
   signOAuthState,
   signUser,
   verifyOAuthState,
-  withApi
+  withApi,
+  __test: Object.freeze({ allowedOrigins, assertTrustedMutation, requestCookie })
 };
