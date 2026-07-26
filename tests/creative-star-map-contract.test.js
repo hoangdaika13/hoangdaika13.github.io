@@ -87,20 +87,26 @@ test("Star Map source and styles provide planets, tooltips and accessibility", (
   ]) assert.match(source, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   for (const token of [
     ".csm-sun", ".csm-cluster-core", ".csm-planet", ".csm-planet > em",
-    '[data-csm-mode="focus"]', '[data-csm-mode="compact"]', "prefers-reduced-motion"
+    '[data-csm-mode="focus"]', '[data-csm-mode="compact"]', "calc(var(--csm-stars) * .24)",
+    "grid-template-columns: 292px", "white-space:normal", "prefers-reduced-motion"
   ]) assert.match(css, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
-test("Main Creative Galaxy supports project constellations, drag zoom and wormhole readiness", () => {
+test("Main Creative Galaxy keeps a fixed constellation view and preserves wormhole readiness", () => {
   const galaxy = read("creative-galaxy.js");
   const css = read("creative-galaxy.css");
   const shell = read("creative-os.js");
   const script = read("script.js");
   for (const token of [
-    "visualProfile", "data-cg-project", "data-cg-view", "pointerdown", "wheel",
+    "visualProfile", "data-cg-project",
     "openWormhole", "probeWormhole", "wasCurrentRoute", "hh:creative-workspace-ready", "hh:creative-workspace-error"
   ]) assert.match(galaxy, new RegExp(token));
+  assert.doesNotMatch(galaxy, /addEventListener\("wheel"/);
+  assert.doesNotMatch(galaxy, /data-cg-view=/);
+  assert.doesNotMatch(galaxy, /setPointerCapture/);
   assert.match(css, /\.cg-project-stars/);
+  assert.match(css, /translate\(-50%, -50%\) scale\(\.92\)/);
+  assert.match(css, /\.cg-universe::after/);
   assert.match(css, /\.cg-wormhole/);
   assert.match(css, /\.cg-focus-metrics/);
   assert.match(shell, /hh:creative-workspace-ready/);
@@ -117,14 +123,14 @@ test("Creative Star Map release assets are versioned and cached", () => {
   const worker = read("sw.js");
   const html = read("index.html");
   for (const asset of [
-    "creative-star-map.css?v=1", "creative-star-map.js?v=2",
-    "creative-galaxy.css?v=2", "creative-galaxy.js?v=3", "creative-os.js?v=6"
+    "creative-star-map.css?v=2", "creative-star-map.js?v=2",
+    "creative-galaxy.css?v=3", "creative-galaxy.js?v=4", "creative-os.js?v=6"
   ]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v246/);
-  assert.match(html, /performance-loader\.js\?v=39/);
+  assert.match(worker, /hh-identity-portal-v247/);
+  assert.match(html, /performance-loader\.js\?v=40/);
   assert.match(html, /script\.js\?v=133/);
 });

@@ -12,8 +12,9 @@ body.app-creative-route {
   --cg-b: #ff59d5;
   --cg-c: #a887ff;
   background:
-    radial-gradient(circle at 16% 4%, color-mix(in srgb, var(--cg-a) 15%, transparent), transparent 30rem),
-    radial-gradient(circle at 90% 28%, color-mix(in srgb, var(--cg-b) 13%, transparent), transparent 34rem),
+    radial-gradient(circle at 16% 4%, color-mix(in srgb, var(--cg-a) 19%, transparent), transparent 30rem),
+    radial-gradient(circle at 90% 28%, color-mix(in srgb, var(--cg-b) 17%, transparent), transparent 34rem),
+    radial-gradient(circle at 50% 90%, color-mix(in srgb, var(--cg-c) 12%, transparent), transparent 32rem),
     #050713;
 }
 
@@ -226,6 +227,21 @@ body.app-creative-route #appWorkspace {
   overflow: hidden;
 }
 
+.cg-universe::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 18% -12% auto;
+  height: 46%;
+  opacity: calc(.12 + var(--cg-nebula-strength, .68) * .24);
+  background:
+    linear-gradient(105deg, transparent 8%, color-mix(in srgb, var(--cg-a) 38%, transparent) 31%, color-mix(in srgb, var(--cg-b) 30%, transparent) 54%, color-mix(in srgb, var(--cg-c) 35%, transparent) 73%, transparent 92%);
+  filter: blur(38px) saturate(1.4);
+  transform: rotate(-6deg);
+  animation: cg-aurora 14s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
 .cg-universe canvas,
 .cg-nebula {
   position: absolute;
@@ -274,21 +290,12 @@ body.app-creative-route #appWorkspace {
   z-index: 2;
   left: 50%;
   top: 54%;
-  width: min(760px, 78vw);
+  width: min(760px, calc(100% - 40px));
   aspect-ratio: 1.7;
-  transform: translate(calc(-50% + var(--galaxy-x, 0px)), calc(-50% + var(--galaxy-y, 0px))) scale(var(--galaxy-zoom, 1));
+  transform: translate(-50%, -50%) scale(.92);
   transform-origin: center;
-  transition: transform .18s ease;
   perspective: 1000px;
 }
-
-.creative-galaxy.is-dragging-galaxy,
-.creative-galaxy.is-dragging-galaxy * {
-  cursor: grabbing !important;
-  user-select: none;
-}
-
-.creative-galaxy.is-dragging-galaxy .cg-orbits { transition: none; }
 
 .cg-view-controls {
   position: absolute;
@@ -663,6 +670,7 @@ body.app-creative-route [data-ai-center-advanced] {
 @keyframes cg-spin { to { transform:rotate(360deg); } }
 @keyframes cg-pulse { 50% { opacity:.35; transform:scale(.75); } }
 @keyframes cg-drift { to { transform:translate(14%,10%) scale(1.18); } }
+@keyframes cg-aurora { to { transform:translateY(7%) rotate(4deg) scaleX(1.06); filter:blur(46px) saturate(1.7) hue-rotate(28deg); } }
 @keyframes cg-sun { 50% { filter:hue-rotate(12deg) brightness(1.08); transform:translate(-50%,-50%) scale(1.025); } }
 @keyframes cg-planet { 50% { transform:rotateY(18deg) translateY(-4px); filter:hue-rotate(20deg); } }
 @keyframes cg-alert { 50% { transform:scale(1.08); box-shadow:inset -13px -12px 20px #000a,0 0 45px #ff553c; } }

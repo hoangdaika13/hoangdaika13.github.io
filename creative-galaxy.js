@@ -401,8 +401,7 @@
       <header class="cg-universe-head"><span><small>CREATIVE GALAXY COMMAND CENTER</small><h2>Biến ý tưởng thành sản phẩm</h2><p>Sáu cụm chức năng dùng chung một Universal Project có phiên bản, quyền và lịch sử thật.</p></span>
         <div><button type="button" data-cg-new-project>+ Dự án mới</button><button type="button" data-cg-continue>Tiếp tục công việc →</button></div>
       </header>
-      <div class="cg-view-controls" aria-label="Điều khiển bản đồ"><button type="button" data-cg-view="out" aria-label="Thu nhỏ">−</button><button type="button" data-cg-view="reset">100%</button><button type="button" data-cg-view="in" aria-label="Phóng to">+</button></div>
-      <div class="cg-orbits" aria-label="Sáu cụm thiên hà sáng tạo" style="--galaxy-x:${instance.view?.x || 0}px;--galaxy-y:${instance.view?.y || 0}px;--galaxy-zoom:${instance.view?.zoom || 1}">
+      <div class="cg-orbits" aria-label="Sáu cụm thiên hà sáng tạo">
         <div class="cg-orbit-line o1"></div><div class="cg-orbit-line o2"></div><div class="cg-orbit-line o3"></div>
         <button class="cg-sun" type="button" data-cg-sun aria-label="Mở dự án đang hoạt động">
           <i></i><span>H</span><b>CREATIVE SUN</b><small>${data.project ? esc(data.project.name) : "CHƯA CÓ DỰ ÁN"}</small><em style="--progress:${data.progress}%"></em>
@@ -670,7 +669,7 @@
     canvas.width = Math.max(1, Math.round(rect.width * ratio));
     canvas.height = Math.max(1, Math.round(rect.height * ratio));
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    const count = Math.max(18, Math.round((profile.motion === "minimal" ? 38 : profile.motion === "hyper" ? 140 : 110) * profile.stars / 100));
+    const count = Math.max(8, Math.round((profile.motion === "minimal" ? 18 : profile.motion === "hyper" ? 56 : 44) * profile.stars / 100));
     const stars = Array.from({ length: count }, (_, index) => ({
       x: Math.random() * rect.width, y: Math.random() * rect.height, z: .2 + Math.random() * .8,
       r: .35 + Math.random() * 1.25, hue: [188, 215, 275, 324, 45][index % 5]
@@ -691,7 +690,7 @@
         if (star.y > rect.height + 2) { star.y = -2; star.x = Math.random() * rect.width; }
         if (index >= visibleStars) return;
         context.beginPath();
-        context.fillStyle = `hsla(${star.hue},90%,78%,${.2 + star.z * .62})`;
+        context.fillStyle = `hsla(${star.hue},90%,78%,${.12 + star.z * .38})`;
         context.arc(star.x + instance.pointerX * star.z * 12 * profile.parallax / 100, star.y + instance.pointerY * star.z * 8 * profile.parallax / 100, star.r * star.z, 0, Math.PI * 2);
         context.fill();
       });
@@ -799,19 +798,6 @@
     }
   }
 
-  function applyGalaxyView(instance) {
-    const orbit = instance.root.querySelector(".cg-orbits");
-    if (!orbit) return;
-    instance.view.zoom = clamp(instance.view.zoom, .72, 1.42);
-    instance.view.x = clamp(instance.view.x, -180, 180);
-    instance.view.y = clamp(instance.view.y, -100, 100);
-    orbit.style.setProperty("--galaxy-x", `${instance.view.x}px`);
-    orbit.style.setProperty("--galaxy-y", `${instance.view.y}px`);
-    orbit.style.setProperty("--galaxy-zoom", String(instance.view.zoom));
-    const reset = instance.root.querySelector('[data-cg-view="reset"]');
-    if (reset) reset.textContent = `${Math.round(instance.view.zoom * 100)}%`;
-  }
-
   function bind(instance) {
     instance.root.addEventListener("pointermove", (event) => {
       const rect = instance.root.getBoundingClientRect();
@@ -819,27 +805,7 @@
       instance.pointerY = (event.clientY - rect.top) / Math.max(1, rect.height) - .5;
       instance.root.style.setProperty("--pointer-x", `${(instance.pointerX + .5) * 100}%`);
       instance.root.style.setProperty("--pointer-y", `${(instance.pointerY + .5) * 100}%`);
-      if (instance.dragView) {
-        instance.view.x = instance.dragView.x + event.clientX - instance.dragView.clientX;
-        instance.view.y = instance.dragView.y + event.clientY - instance.dragView.clientY;
-        applyGalaxyView(instance);
-      }
     }, { signal: instance.controller.signal });
-    instance.root.addEventListener("pointerdown", (event) => {
-      if (!event.target.closest("[data-cg-universe]") || event.target.closest("button, aside, .cg-project-constellation, .cg-universe-head")) return;
-      instance.dragView = { clientX: event.clientX, clientY: event.clientY, x: instance.view.x, y: instance.view.y };
-      instance.root.classList.add("is-dragging-galaxy");
-      event.target.setPointerCapture?.(event.pointerId);
-    }, { signal: instance.controller.signal });
-    const stopDrag = () => { instance.dragView = null; instance.root.classList.remove("is-dragging-galaxy"); };
-    instance.root.addEventListener("pointerup", stopDrag, { signal: instance.controller.signal });
-    instance.root.addEventListener("pointercancel", stopDrag, { signal: instance.controller.signal });
-    instance.root.addEventListener("wheel", (event) => {
-      if (!event.target.closest("[data-cg-universe]") || event.target.closest(".cg-focus, .cg-project-constellation")) return;
-      event.preventDefault();
-      instance.view.zoom += event.deltaY > 0 ? -.06 : .06;
-      applyGalaxyView(instance);
-    }, { passive: false, signal: instance.controller.signal });
     instance.root.addEventListener("click", (event) => {
       const target = event.target;
       if (target.closest("[data-cg-settings-panel]")) return handleSettingsClick(instance, event);
@@ -850,14 +816,6 @@
         instance.store?.setActiveProject?.(project.dataset.cgProject);
         announce(instance, "Đã chuyển Universal Project đang hoạt động.", "success");
         return navigate(instance, "/create/project");
-      }
-      const viewControl = target.closest("[data-cg-view]");
-      if (viewControl) {
-        const action = viewControl.dataset.cgView;
-        if (action === "reset") instance.view = { x: 0, y: 0, zoom: 1 };
-        else instance.view.zoom += action === "in" ? .1 : -.1;
-        applyGalaxyView(instance);
-        return;
       }
       const cluster = target.closest("[data-cg-cluster]");
       if (cluster) {
@@ -930,7 +888,6 @@
       prefs: normalizePrefs(read(PREF_KEY, {})),
       focusCluster: "",
       pointerX: 0, pointerY: 0, fps: 60,
-      view: { x: 0, y: 0, zoom: 1 },
       destroyed: false,
       startCanvas: null
     };
