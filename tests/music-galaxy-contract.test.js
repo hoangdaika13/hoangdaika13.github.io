@@ -23,6 +23,11 @@ test("Music Galaxy replaces the long sidebar with six production planets", () =>
   }
   const planetBlock = shell.match(/const musicAIPlanetItems = \[([\s\S]*?)\n  \];/)?.[1] || "";
   assert.equal((planetBlock.match(/route: "\/music-ai\//g) || []).length, 6);
+  assert.equal((planetBlock.match(/identity: "/g) || []).length, 6);
+  assert.match(shell, /data-music-planet=/);
+  const navigationStyles = read("sidebar-navigation-pro.css");
+  assert.match(navigationStyles, /max-height:min\(286px,48vh\)/);
+  assert.match(navigationStyles, /overflow-y:auto/);
 });
 
 test("hero, orbit navigation and transport implement the Music Galaxy interaction model", () => {

@@ -304,3 +304,83 @@ body.app-sidebar-collapsed .app-sidebar__count{display:none}
   background:color-mix(in srgb,var(--nav-accent) 14%,#0d141e);
   color:#f3fbff;
 }
+
+/* Music Galaxy sidebar v2: keep all six planets visible and visually distinct. */
+[data-nav-group="music-ai"] .app-sidebar__page-section-items{
+  scrollbar-width:thin;
+  scrollbar-color:color-mix(in srgb,var(--nav-accent) 34%,transparent) transparent;
+}
+[data-nav-group="music-ai"] .app-sidebar__page-section.is-open>.app-sidebar__page-section-items{
+  max-height:min(286px,48vh);
+  padding:4px 2px 6px 0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+[data-nav-group="music-ai"] .app-sidebar__page-section-items::-webkit-scrollbar{width:4px}
+[data-nav-group="music-ai"] .app-sidebar__page-section-items::-webkit-scrollbar-thumb{
+  border-radius:999px;
+  background:color-mix(in srgb,var(--nav-accent) 34%,transparent);
+}
+[data-nav-group="music-ai"] .app-sidebar__subitem--music{
+  --item-accent:var(--music-planet);
+  min-height:40px!important;
+  border-color:color-mix(in srgb,var(--music-planet) 10%,transparent)!important;
+}
+[data-nav-group="music-ai"] .app-sidebar__subitem--music>b{
+  position:relative;
+  overflow:visible;
+  border-color:color-mix(in srgb,var(--music-planet) 62%,#344354);
+  border-radius:50%;
+  color:#f8fbff!important;
+  background:
+    radial-gradient(circle at 32% 25%,rgba(255,255,255,.8) 0 1px,transparent 2px),
+    radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--music-planet) 82%,#fff),var(--music-planet-accent) 58%,#111a25 100%);
+  box-shadow:inset -4px -5px 8px rgba(0,0,0,.35),0 0 13px color-mix(in srgb,var(--music-planet) 28%,transparent);
+  text-shadow:0 1px 4px rgba(0,0,0,.8);
+}
+[data-nav-group="music-ai"] .app-sidebar__subitem--music>b::after{
+  position:absolute;
+  inset:-4px;
+  border:1px solid color-mix(in srgb,var(--music-planet) 25%,transparent);
+  border-radius:50%;
+  content:"";
+  transform:scaleY(.38) rotate(-16deg);
+}
+[data-nav-group="music-ai"] .app-sidebar__subitem--music[data-music-planet="constellation"]>b::before{
+  position:absolute;
+  inset:-5px;
+  border-radius:50%;
+  background:radial-gradient(circle at 12% 18%,#fff 0 1px,transparent 1.5px),radial-gradient(circle at 88% 68%,#fff 0 1px,transparent 1.5px);
+  content:"";
+}
+[data-nav-group="music-ai"] .app-sidebar__subitem--music[data-music-planet="electric-midi"]>b{
+  background-image:repeating-linear-gradient(90deg,transparent 0 4px,rgba(255,255,255,.18) 4px 5px),radial-gradient(circle at 35% 28%,var(--music-planet),var(--music-planet-accent) 64%,#111a25);
+}
+[data-nav-group="music-ai"] .app-sidebar__subitem--music[data-music-planet="reactor"]>b{
+  box-shadow:inset 0 0 8px var(--music-planet),0 0 14px color-mix(in srgb,var(--music-planet) 36%,transparent);
+}
+[data-nav-group="music-ai"] .app-sidebar__subitem--music[data-music-planet="satellites"]>b::before{
+  position:absolute;
+  top:-3px;
+  right:-3px;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:-19px 20px 0 var(--music-planet);
+  content:"";
+}
+[data-nav-group="music-ai"] .app-sidebar__subitem--music:hover,
+[data-nav-group="music-ai"] .app-sidebar__subitem--music.is-active{
+  border-color:color-mix(in srgb,var(--music-planet) 42%,#273442)!important;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--music-planet) 15%,#101720),#0e151e)!important;
+  box-shadow:inset 2px 0 var(--music-planet),0 7px 20px color-mix(in srgb,var(--music-planet) 8%,transparent);
+}
+@media(max-height:620px){
+  [data-nav-group="music-ai"] .app-sidebar__page-section.is-open>.app-sidebar__page-section-items{max-height:220px}
+}
+@media(prefers-reduced-motion:reduce){
+  [data-nav-group="music-ai"] .app-sidebar__subitem--music>b{animation:none!important}
+}
