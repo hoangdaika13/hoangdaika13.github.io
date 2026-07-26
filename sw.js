@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v252";
+const CACHE = "hh-identity-portal-v253";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -31,8 +31,9 @@ const RUNTIME_ASSETS = [
   "./tool-workspace-pro.css?v=1",
   "./utility-lab-tools.css?v=9",
   "./media-design-pro.css?v=1",
-  "./media-design-page.css?v=9",
-  "./media-production-workflow.css?v=2",
+  "./media-design-page.css?v=10",
+  "./media-cosmos.css?v=1",
+  "./media-production-workflow.css?v=3",
   "./universal-media-project.css?v=1",
   "./media-design-advanced.css?v=3",
   "./media-design-publish.css?v=1",
@@ -41,7 +42,7 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=135",
+  "./script.js?v=136",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -257,10 +258,11 @@ const RUNTIME_ASSETS = [
   "./video-editor-resolve.js?v=7",
   "./photo-editor-pro.js?v=3",
   "./universal-media-project.js?v=1",
-  "./media-production-workflow.js?v=2",
+  "./media-production-workflow.js?v=3",
+  "./media-cosmos.js?v=1",
   "./editor-workflow-pro.js?v=1",
   "./support-platform.js?v=13",
-  "./media-design-page.js?v=9",
+  "./media-design-page.js?v=10",
   "./tool-manifests.js?v=1",
   "./tool-runtime.js?v=1",
   "./feature-lab.js?v=6",
@@ -287,7 +289,6 @@ const RUNTIME_ASSETS = [
   "./english-career-curriculum.js?v=2",
   "./english-learning.js?v=16",
   "./config.js?v=8",
-  "./vercel-observability.js?v=2",
   "./data/ai-super-platform-modules.json"
 ];
 const CORE = [
@@ -303,13 +304,12 @@ const CORE = [
   "./motion-comfort.css?v=1",
   "./assets/hh-neon-logo-v2.png?v=3",
   "./config.js?v=8",
-  "./vercel-observability.js?v=2",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=41",
+  "./performance-loader.js?v=42",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=135"
+  "./script.js?v=136"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

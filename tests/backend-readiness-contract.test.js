@@ -11,7 +11,7 @@ test("backend exposes a safe readiness report without returning credentials", ()
   const storageSource = read("api/storage/files.js");
   assert.match(source, /readinessSnapshot/);
   assert.match(source, /requiresConnection/);
-  assert.match(storageSource, /largeBinaryFiles: false/);
+  assert.match(storageSource, /largeBinaryFiles: objectStorage/);
   assert.match(source, /passkey: true/);
   assert.doesNotMatch(source, /process\.env\.(?:MONGODB_URI|JWT_SECRET|PAYOS_API_KEY|GEMINI_API_KEYS)\s*[,}]/);
 });

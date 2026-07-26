@@ -81,7 +81,8 @@ test("custom domain branding and Google-only OAuth stay in sync", () => {
   const platform = read("utils/platform.js");
   const manifest = read("manifest.webmanifest");
 
-  assert.equal(fs.existsSync(path.join(root, "CNAME")), false);
+  assert.equal(fs.existsSync(path.join(root, "CNAME")), true);
+  assert.match(read("CNAME"), /nhhoang13all\.xyz/);
   assert.match(html, /<title>Nhhoang \| HH Neon Platform<\/title>/);
   assert.match(html, /rel="canonical" href="https:\/\/nhhoang13all\.xyz\/"/);
   assert.match(html, /data-oauth-provider="google"/);

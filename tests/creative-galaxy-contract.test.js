@@ -115,7 +115,7 @@ test("Creative Galaxy assets are versioned and precached", () => {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(`${loader}\n${worker}`, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v252/);
-  assert.match(html, /performance-loader\.js\?v=41/);
-  assert.match(html, /script\.js\?v=134/);
+  assert.match(worker, /hh-identity-portal-v253/);
+  assert.match(html, /performance-loader\.js\?v=42/);
+  assert.match(html, /script\.js\?v=136/);
 });

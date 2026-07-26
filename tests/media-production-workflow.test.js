@@ -127,7 +127,7 @@ test("server render adapter mirrors remote states and requires output URL for co
   const responses = [
     { id: "remote-1", status: "queued", progress: 0.1 },
     { id: "remote-1", status: "running", progress: 0.6 },
-    { id: "remote-1", status: "completed", progress: 1, outputUrl: "https://cdn.example.test/render.webm" }
+    { id: "remote-1", status: "completed", progress: 1, outputUrl: "https://cdn.example.test/render.webm", provider: "verified-render", cost: 0.031, currency: "USD" }
   ];
   const adapter = media.createServerRenderAdapter({
     endpoint: "https://render.example.test/api",
@@ -145,6 +145,9 @@ test("server render adapter mirrors remote states and requires output URL for co
   job = await media.refreshRenderJob(adapter, job);
   assert.equal(job.status, "completed");
   assert.equal(job.outputUrl, "https://cdn.example.test/render.webm");
+  assert.equal(job.provider, "verified-render");
+  assert.equal(job.cost, 0.031);
+  assert.equal(job.currency, "USD");
   assert.equal(requests[0].init.method, "POST");
   assert.match(requests[0].init.body, /hh\.media-production\.v1/);
   assert.throws(() => media.createServerRenderAdapter({ endpoint: "http://render.example.test", fetchImpl() {} }), /HTTPS/);

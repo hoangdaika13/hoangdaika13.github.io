@@ -27,7 +27,23 @@
     { id: "favicon", icon: "◈", name: "Favicon Studio", group: "Xuất bản", code: "FAV", description: "Sinh favicon, Apple Touch Icon, app icon và Web Manifest.", caps: ["9 sizes", "Safe padding", "App shapes", "Manifest"] },
     { id: "meme", icon: "▰", name: "Meme Maker", group: "Xuất bản", code: "MEM", description: "Tạo meme, caption card và ảnh phản ứng với chữ viền sắc nét.", caps: ["Top · Bottom", "Text stroke", "Watermark", "High-res"] }
   ];
-  const GROUPS = ["Dự án & tài nguyên", "Biên tập nâng cao", "Hình ảnh", "Tài liệu", "Thương hiệu", "Tài nguyên", "Xuất bản"];
+  const PLANET_GROUPS = Object.freeze([
+    { id: "universal", label: "Universal Project", tools: ["universal-media", "asset-manager"] },
+    { id: "photo", label: "Photo & Image", tools: ["photo-editor", "background-remover", "collage", "inspector", "compress", "convert", "image", "picker"] },
+    { id: "video", label: "Video & Motion", tools: ["video-editor"] },
+    { id: "documents", label: "Documents & Utility", tools: ["pdf", "qr"] },
+    { id: "brand", label: "Brand Universe", tools: ["color", "type", "gradient", "brand-kit"] },
+    { id: "assets", label: "Asset Galaxy", tools: ["icon", "svg"] },
+    { id: "export", label: "Export & Publishing", tools: ["production-workflow", "social-post", "favicon", "meme"] }
+  ]);
+  TOOLS.forEach((tool) => {
+    const planet = PLANET_GROUPS.find((item) => item.tools.includes(tool.id));
+    if (planet) {
+      tool.group = planet.label;
+      tool.planet = planet.id;
+    }
+  });
+  const GROUPS = PLANET_GROUPS.map((planet) => planet.label);
   const PRODUCTION_FLOW = [
     { code: "PW", label: "Production Workflow", tool: "production-workflow", description: "Proxy, subtitle, review và render thật" },
     { code: "UP", label: "Universal Project", tool: "universal-media", description: "Dự án và Media Bin dùng chung" },
@@ -97,6 +113,7 @@
   };
   const selectTool = (root, name, focus = false) => {
     const tool = toolByName(name);
+    window.HHMediaCosmos?.recordTool?.(tool.id, tool.name);
     window.HHMediaDesign?.cleanup?.();
     window.HHUniversalMediaProject?.unmount?.();
     window.HHMediaProductionWorkflow?.unmount?.();
@@ -150,6 +167,7 @@
 
   const mount = (host, options = {}) => {
     if (!host) return;
+    window.HHMediaCosmos?.unmount?.();
     window.HHMediaDesign?.cleanup?.();
     window.HHUniversalMediaProject?.unmount?.();
     window.HHMediaProductionWorkflow?.unmount?.();
@@ -179,6 +197,19 @@
     </section>`;
     const root = host.querySelector("[data-media-design-page]");
     activeRoot = root;
+    const cosmosState = window.HHMediaCosmos?.getState?.();
+    if (cosmosState?.theme) root.dataset.mediaTheme = cosmosState.theme;
+    if (!requestedTool && window.HHMediaCosmos?.mount) {
+      root.classList.add("is-cosmos-view");
+      root.innerHTML = '<div data-media-cosmos-host></div><div class="mdp-notice" data-mdp-notice role="status" aria-live="polite" hidden></div>';
+      window.HHMediaCosmos.mount(root.querySelector("[data-media-cosmos-host]"), {
+        tools: TOOLS,
+        mediaApi: window.HHUniversalMediaProject,
+        productionApi: window.HHMediaProductionWorkflow,
+        onNavigate: (route) => { location.hash = `#${route}`; }
+      }).catch?.(() => showNotice(root, "Không khởi động được Media Cosmos.", "error"));
+      return;
+    }
     selectTool(root, pageState.active);
 
     root.addEventListener("click", (event) => {
@@ -222,6 +253,7 @@
 
   addEventListener("keydown", (event) => {
     if (!activeRoot?.isConnected || !location.hash.includes("/media-design")) return;
+    if (activeRoot.classList.contains("is-cosmos-view")) return;
     if (event.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")) {
       event.preventDefault();
       activeRoot.querySelector("[data-mdp-search]")?.focus();
@@ -239,6 +271,7 @@
   });
   addEventListener("hashchange", () => {
     if (!location.hash.includes("/media-design")) {
+      window.HHMediaCosmos?.unmount?.();
       window.HHMediaDesign?.cleanup?.();
       window.HHUniversalMediaProject?.unmount?.();
       window.HHMediaProductionWorkflow?.unmount?.();

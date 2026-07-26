@@ -21,8 +21,8 @@ test("Universal Media Project is reachable from the shell and cached offline", (
     "photo-editor-pro.js?v=3",
     "video-editor-resolve.css?v=6",
     "video-editor-resolve.js?v=7",
-    "media-design-page.css?v=9",
-    "media-design-page.js?v=9"
+    "media-design-page.css?v=10",
+    "media-design-page.js?v=10"
   ]) {
     const pattern = new RegExp(escapeRegExp(asset));
     assert.match(`${html}\n${loader}`, pattern);
@@ -32,7 +32,7 @@ test("Universal Media Project is reachable from the shell and cached offline", (
   assert.match(worker, /hh-identity-portal-v\d+/);
   assert.match(shell, /id: "universal-media"/);
   assert.match(shell, /id: "asset-manager"/);
-  assert.match(shell, /22 .*Universal Media Project/);
+  assert.match(shell, /23 .*Media Cosmos.*Universal Project/);
   assert.match(page, /HHUniversalMediaProject\?\.mount/);
   assert.match(page, /HHUniversalMediaProject\?\.unmount/);
 });
