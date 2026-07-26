@@ -74,10 +74,10 @@ test("Media Cosmos is loaded before the Media page and remains responsive and mo
   const worker = read("sw.js");
   const page = read("media-design-page.js");
   const css = read("media-cosmos.css");
-  assert.match(loader, /media-cosmos\.css\?v=1/);
-  assert.match(loader, /media-cosmos\.js\?v=1[\s\S]*media-design-page\.js/);
-  assert.match(worker, /media-cosmos\.css\?v=1/);
-  assert.match(worker, /media-cosmos\.js\?v=1/);
+  assert.match(loader, /media-cosmos\.css\?v=2/);
+  assert.match(loader, /media-cosmos\.js\?v=2[\s\S]*media-design-page\.js/);
+  assert.match(worker, /media-cosmos\.css\?v=2/);
+  assert.match(worker, /media-cosmos\.js\?v=2/);
   assert.match(page, /HHMediaCosmos\?\.mount/);
   assert.match(page, /HHMediaCosmos\?\.recordTool/);
   assert.match(css, /@media\(max-width:520px\)/);

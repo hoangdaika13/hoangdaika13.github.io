@@ -3,10 +3,13 @@
 
   const STORAGE_KEY = "hh.media-design.page.v1";
   const TOOLS = [
+    { id: "media-core", icon: "UP", name: "Universal Project Pro", group: "Dự án & tài nguyên", code: "CORE", description: "Media Graph, branch, recovery, review, quyền và audit cho toàn bộ dự án.", caps: ["Media Graph", "Branch · Recovery", "Review · Rights", "Health score"] },
     { id: "production-workflow", icon: "PW", name: "Production Workflow", group: "Dự án & tài nguyên", code: "PROD", description: "Media Bin dùng chung, timeline không phá hủy, phụ đề, review và render queue trung thực.", caps: ["Shared Media Bin", "Proxy adapter", "Subtitle", "Server render"] },
     { id: "universal-media", icon: "UM", name: "Universal Media Project", group: "Dự án & tài nguyên", code: "PROJECT", description: "Dự án media dùng chung cho ảnh, video, âm thanh, font, LUT và SVG.", caps: ["Media Bin", "Autosave", "Version history", ".hhmedia"] },
     { id: "asset-manager", icon: "AM", name: "Asset Manager", group: "Dự án & tài nguyên", code: "ASSET", description: "Quản lý metadata, thumbnail, file trùng, media offline, Smart Collection và proxy.", caps: ["Metadata", "Duplicate scan", "Smart Collection", "Proxy plan"] },
+    { id: "photo-workspace", icon: "PI", name: "Photo & Image Pro", group: "Biên tập nâng cao", code: "PHOTO+", description: "Điều hành layer, snapshot, action, selection, scope và AI có kiểm soát.", caps: ["Layer system", "Snapshot · Action", "PSD workflow", "Controlled AI"] },
     { id: "photo-editor", icon: "✎", name: "Photo Editor", group: "Biên tập nâng cao", code: "PHOTO", description: "Chỉnh sửa ảnh nhiều lớp như một Photoshop thu gọn ngay trong trình duyệt.", caps: ["Layers", "Blend & filters", "Undo · Redo", "High-res export"] },
+    { id: "video-workspace", icon: "VM", name: "Video & Motion Pro", group: "Biên tập nâng cao", code: "VIDEO+", description: "Source/Program, three-point edit, transcript proposal, color và audio bus.", caps: ["Source · Program", "Timeline trim", "Color management", "Audio bus"] },
     { id: "video-editor", icon: "▶", name: "Video Editor", group: "Biên tập nâng cao", code: "RESOLVE", description: "Studio hậu kỳ tiếng Việt với Media, Cut, Edit, Fusion, Color, Fairlight và Deliver.", caps: ["Timeline nhiều rãnh", "Color & scopes", "Fusion nodes", "Fairlight mixer"] },
     { id: "background-remover", icon: "✂", name: "Background Remover", group: "Biên tập nâng cao", code: "CUT", description: "Xóa nền theo màu, lấy mẫu pixel và làm mềm đường biên.", caps: ["Color key", "Edge feather", "PNG alpha"] },
     { id: "collage", icon: "▦", name: "Collage Maker", group: "Biên tập nâng cao", code: "COL", description: "Ghép nhiều ảnh theo lưới, ảnh nổi bật hoặc dải ngang.", caps: ["12 images", "Smart cover", "High-res"] },
@@ -14,27 +17,31 @@
     { id: "compress", icon: "⇣", name: "Image Compressor", group: "Hình ảnh", code: "IMG", description: "Nén nhiều ảnh, đặt dung lượng đích và tối ưu WebP/JPEG.", caps: ["Batch 20 ảnh", "Target size", "So sánh trước/sau"] },
     { id: "convert", icon: "⇄", name: "Image Converter", group: "Hình ảnh", code: "IMG", description: "Đổi định dạng hàng loạt, đổi kích thước và giữ chất lượng.", caps: ["PNG · JPEG · WebP", "Resize", "Tải hàng loạt"] },
     { id: "image", icon: "◫", name: "Image Toolkit", group: "Hình ảnh", code: "IMG", description: "Cắt, xoay, lật, cân chỉnh và áp dụng bộ lọc trực tiếp.", caps: ["Transform", "Filter presets", "Canvas preview"] },
+    { id: "document-workspace", icon: "DU", name: "Documents & Utility Pro", group: "Tài liệu", code: "DOC+", description: "Document inbox, OCR/redaction adapter, forms, PDF/A, compare và Dynamic QR.", caps: ["Document queue", "OCR · Redaction", "Forms · Sign", "PDF/A · Compare"] },
     { id: "pdf", icon: "▤", name: "PDF Toolkit", group: "Tài liệu", code: "DOC", description: "Gộp, tách, xoay, watermark và chỉnh metadata PDF.", caps: ["Merge · Split", "Watermark", "Metadata"] },
     { id: "qr", icon: "⌗", name: "QR Toolkit", group: "Tài liệu", code: "QR", description: "Tạo QR tùy chỉnh hoặc quét QR từ ảnh trên thiết bị.", caps: ["Live QR", "Scan image", "PNG export"] },
+    { id: "brand-workspace", icon: "BU", name: "Brand Universe Pro", group: "Thương hiệu", code: "BRAND+", description: "Multi Brand Kit, design token, mode, component lock, lint và localization.", caps: ["Multi Brand", "Token · Mode", "Brand lint", "CSS · JSON"] },
     { id: "color", icon: "◉", name: "Color Studio", group: "Thương hiệu", code: "CLR", description: "Tạo bảng màu, trích màu từ ảnh và kiểm tra WCAG.", caps: ["Palette", "WCAG", "Image extraction"] },
     { id: "type", icon: "T", name: "Typography Studio", group: "Thương hiệu", code: "TYP", description: "Thiết kế type scale, xem trực tiếp và xuất CSS sẵn dùng.", caps: ["Type scale", "Live preview", "CSS export"] },
     { id: "icon", icon: "◇", name: "Icon Browser", group: "Tài nguyên", code: "ICO", description: "Tìm biểu tượng Lucide và xuất SVG hoặc PNG theo kích thước.", caps: ["Lucide", "Search", "SVG · PNG"] },
     { id: "svg", icon: "⌁", name: "SVG Editor", group: "Tài nguyên", code: "SVG", description: "Chỉnh mã vector, xem trước tức thì và xuất tệp an toàn.", caps: ["Live editor", "Sanitize", "Export"] },
     { id: "gradient", icon: "◒", name: "Gradient Generator", group: "Thương hiệu", code: "GRD", description: "Tạo gradient nhiều điểm màu cho CSS và ảnh PNG.", caps: ["4 color stops", "3 modes", "CSS · PNG"] },
     { id: "picker", icon: "⌾", name: "Color Picker", group: "Hình ảnh", code: "PCK", description: "Lấy màu pixel, chuyển HEX/RGB/HSL và đo độ tương phản.", caps: ["EyeDropper", "Pixel sample", "Contrast"] },
+    { id: "asset-workspace", icon: "AG", name: "Asset Galaxy Pro", group: "Tài nguyên", code: "ASSET+", description: "Verified ingest, SHA-256, provenance, license, font/LUT và private cloud adapter.", caps: ["Verified ingest", "Provenance", "License · Consent", "Private Blob"] },
     { id: "social-post", icon: "▣", name: "Social Post Maker", group: "Xuất bản", code: "SOC", description: "Tạo post, story, cover và thumbnail theo kích thước chuẩn mạng xã hội.", caps: ["9 presets", "Live canvas", "Brand overlay", "PNG · JPG · WebP"] },
     { id: "brand-kit", icon: "◆", name: "Brand Kit", group: "Xuất bản", code: "BRD", description: "Tạo brand board, bảng màu, hệ chữ và token CSS/JSON.", caps: ["Brand board", "Color tokens", "Typography", "PNG · JSON · CSS"] },
     { id: "favicon", icon: "◈", name: "Favicon Studio", group: "Xuất bản", code: "FAV", description: "Sinh favicon, Apple Touch Icon, app icon và Web Manifest.", caps: ["9 sizes", "Safe padding", "App shapes", "Manifest"] },
-    { id: "meme", icon: "▰", name: "Meme Maker", group: "Xuất bản", code: "MEM", description: "Tạo meme, caption card và ảnh phản ứng với chữ viền sắc nét.", caps: ["Top · Bottom", "Text stroke", "Watermark", "High-res"] }
+    { id: "meme", icon: "▰", name: "Meme Maker", group: "Xuất bản", code: "MEM", description: "Tạo meme, caption card và ảnh phản ứng với chữ viền sắc nét.", caps: ["Top · Bottom", "Text stroke", "Watermark", "High-res"] },
+    { id: "export-workspace", icon: "EP", name: "Export & Publishing Pro", group: "Xuất bản", code: "EXPORT+", description: "Preflight, codec recipe, adaptive job, rights gate, manifest và external worker.", caps: ["Preflight", "Idempotent queue", "Adaptive export", "Manifest · C2PA"] }
   ];
   const PLANET_GROUPS = Object.freeze([
-    { id: "universal", label: "Universal Project", tools: ["universal-media", "asset-manager"] },
-    { id: "photo", label: "Photo & Image", tools: ["photo-editor", "background-remover", "collage", "inspector", "compress", "convert", "image", "picker"] },
-    { id: "video", label: "Video & Motion", tools: ["video-editor"] },
-    { id: "documents", label: "Documents & Utility", tools: ["pdf", "qr"] },
-    { id: "brand", label: "Brand Universe", tools: ["color", "type", "gradient", "brand-kit"] },
-    { id: "assets", label: "Asset Galaxy", tools: ["icon", "svg"] },
-    { id: "export", label: "Export & Publishing", tools: ["production-workflow", "social-post", "favicon", "meme"] }
+    { id: "universal", label: "Universal Project", tools: ["media-core", "universal-media", "asset-manager"] },
+    { id: "photo", label: "Photo & Image", tools: ["photo-workspace", "photo-editor", "background-remover", "collage", "inspector", "compress", "convert", "image", "picker"] },
+    { id: "video", label: "Video & Motion", tools: ["video-workspace", "video-editor"] },
+    { id: "documents", label: "Documents & Utility", tools: ["document-workspace", "pdf", "qr"] },
+    { id: "brand", label: "Brand Universe", tools: ["brand-workspace", "color", "type", "gradient", "brand-kit"] },
+    { id: "assets", label: "Asset Galaxy", tools: ["asset-workspace", "icon", "svg"] },
+    { id: "export", label: "Export & Publishing", tools: ["export-workspace", "production-workflow", "social-post", "favicon", "meme"] }
   ]);
   TOOLS.forEach((tool) => {
     const planet = PLANET_GROUPS.find((item) => item.tools.includes(tool.id));
@@ -45,6 +52,7 @@
   });
   const GROUPS = PLANET_GROUPS.map((planet) => planet.label);
   const PRODUCTION_FLOW = [
+    { code: "MC", label: "Media Core Pro", tool: "media-core", description: "Graph, branch, review và rights" },
     { code: "PW", label: "Production Workflow", tool: "production-workflow", description: "Proxy, subtitle, review và render thật" },
     { code: "UP", label: "Universal Project", tool: "universal-media", description: "Dự án và Media Bin dùng chung" },
     { code: "PE", label: "Photo Editor Pro", tool: "photo-editor", description: "Layer và chỉnh sửa không phá hủy" },
@@ -117,6 +125,7 @@
     window.HHMediaDesign?.cleanup?.();
     window.HHUniversalMediaProject?.unmount?.();
     window.HHMediaProductionWorkflow?.unmount?.();
+    window.HHMediaProfessionalSuite?.unmount?.();
     pageState.active = tool.name;
     pageState.recent = [tool.name, ...pageState.recent.filter((item) => item !== tool.name)].slice(0, 12);
     pageState.usage[tool.name] = (pageState.usage[tool.name] || 0) + 1;
@@ -124,7 +133,9 @@
     renderCatalog(root);
     renderContext(root, tool);
     const work = root.querySelector("[data-mdp-work]");
-    if (tool.name === "Production Workflow" && window.HHMediaProductionWorkflow?.mount) {
+    if (window.HHMediaProfessionalSuite?.WORKSPACE_BY_ID?.[tool.id] && window.HHMediaProfessionalSuite?.mount) {
+      window.HHMediaProfessionalSuite.mount(work, { workspace: tool.id, onNavigate: (route) => { location.hash = `#${route}`; } });
+    } else if (tool.name === "Production Workflow" && window.HHMediaProductionWorkflow?.mount) {
       window.HHMediaProductionWorkflow.mount(work).catch?.(() => showNotice(root, "Không khởi động được Production Workflow.", "error"));
     } else if (["Universal Media Project", "Asset Manager"].includes(tool.name) && window.HHUniversalMediaProject?.mount) {
       window.HHUniversalMediaProject.mount(work, { view: tool.name === "Asset Manager" ? "assets" : "project" });
@@ -171,6 +182,7 @@
     window.HHMediaDesign?.cleanup?.();
     window.HHUniversalMediaProject?.unmount?.();
     window.HHMediaProductionWorkflow?.unmount?.();
+    window.HHMediaProfessionalSuite?.unmount?.();
     const requestedTool = toolById(options.toolId || host.dataset.mediaDesignTool);
     if (requestedTool) pageState.active = requestedTool.name;
     host.innerHTML = `<section class="media-design-page ${requestedTool ? "is-tool-view" : ""}" data-media-design-page>
@@ -206,6 +218,7 @@
         tools: TOOLS,
         mediaApi: window.HHUniversalMediaProject,
         productionApi: window.HHMediaProductionWorkflow,
+        professionalApi: window.HHMediaProfessionalSuite,
         onNavigate: (route) => { location.hash = `#${route}`; }
       }).catch?.(() => showNotice(root, "Không khởi động được Media Cosmos.", "error"));
       return;
@@ -275,6 +288,7 @@
       window.HHMediaDesign?.cleanup?.();
       window.HHUniversalMediaProject?.unmount?.();
       window.HHMediaProductionWorkflow?.unmount?.();
+      window.HHMediaProfessionalSuite?.unmount?.();
     }
   });
 

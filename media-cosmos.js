@@ -18,13 +18,13 @@
     { id: "golden-cinema", label: "Golden Cinema" }
   ]);
   const PLANETS = Object.freeze([
-    { id: "universal", code: "UP", label: "Universal Project", color: "#56ecff", accent: "#27a8ff", route: "/media-design/universal-media", tools: ["universal-media", "asset-manager"] },
-    { id: "photo", code: "PI", label: "Photo & Image", color: "#ff63d8", accent: "#9a68ff", route: "/media-design/photo-editor", tools: ["photo-editor", "background-remover", "collage", "inspector", "compress", "convert", "image", "picker"] },
-    { id: "video", code: "VM", label: "Video & Motion", color: "#a56cff", accent: "#635bff", route: "/media-design/video-editor", tools: ["video-editor"] },
-    { id: "documents", code: "DU", label: "Documents & Utility", color: "#55efd2", accent: "#21bba7", route: "/media-design/pdf", tools: ["pdf", "qr"] },
-    { id: "brand", code: "BU", label: "Brand Universe", color: "#ffbd59", accent: "#ff7a4d", route: "/media-design/brand-kit", tools: ["color", "type", "gradient", "brand-kit"] },
-    { id: "assets", code: "AG", label: "Asset Galaxy", color: "#5c9dff", accent: "#36d6ff", route: "/media-design/icon", description: "Icon · SVG · Font · LUT", tools: ["icon", "svg"] },
-    { id: "export", code: "EP", label: "Export & Publishing", color: "#ffe36d", accent: "#ffad35", route: "/media-design/production-workflow", tools: ["production-workflow", "social-post", "favicon", "meme"] }
+    { id: "universal", code: "UP", label: "Universal Project", color: "#56ecff", accent: "#27a8ff", route: "/media-design/media-core", tools: ["media-core", "universal-media", "asset-manager"] },
+    { id: "photo", code: "PI", label: "Photo & Image", color: "#ff63d8", accent: "#9a68ff", route: "/media-design/photo-workspace", tools: ["photo-workspace", "photo-editor", "background-remover", "collage", "inspector", "compress", "convert", "image", "picker"] },
+    { id: "video", code: "VM", label: "Video & Motion", color: "#a56cff", accent: "#635bff", route: "/media-design/video-workspace", tools: ["video-workspace", "video-editor"] },
+    { id: "documents", code: "DU", label: "Documents & Utility", color: "#55efd2", accent: "#21bba7", route: "/media-design/document-workspace", tools: ["document-workspace", "pdf", "qr"] },
+    { id: "brand", code: "BU", label: "Brand Universe", color: "#ffbd59", accent: "#ff7a4d", route: "/media-design/brand-workspace", tools: ["brand-workspace", "color", "type", "gradient", "brand-kit"] },
+    { id: "assets", code: "AG", label: "Asset Galaxy", color: "#5c9dff", accent: "#36d6ff", route: "/media-design/asset-workspace", description: "Icon · SVG · Font · LUT", tools: ["asset-workspace", "icon", "svg"] },
+    { id: "export", code: "EP", label: "Export & Publishing", color: "#ffe36d", accent: "#ffad35", route: "/media-design/export-workspace", tools: ["export-workspace", "production-workflow", "social-post", "favicon", "meme"] }
   ]);
   const ADAPTIVE_PRESETS = Object.freeze([
     { id: "youtube-16x9", label: "YouTube / 16:9", width: 1920, height: 1080, kind: "video" },
@@ -197,6 +197,9 @@
   function assessCosmosWarnings(project, assets, renderJobs, options) {
     const mediaApi = options?.mediaApi;
     const warnings = mediaApi?.assessWarnings ? mediaApi.assessWarnings(project, assets, { availableFonts: options?.availableFonts || [] }) : [];
+    const professionalHealth = options?.professionalApi?.calculateHealth?.(options?.professionalState);
+    (professionalHealth?.blockers || []).forEach((item) => warnings.push({ code: item.code, level: "error", message: item.message }));
+    (professionalHealth?.warnings || []).forEach((item) => warnings.push({ code: item.code, level: "warning", message: item.message }));
     (Array.isArray(assets) ? assets : []).forEach((asset) => {
       const generated = Boolean(asset?.metadata?.aiProvider || asset?.metadata?.provider || asset?.metadata?.generatedByAI);
       const rights = cleanText(asset?.metadata?.rights || asset?.metadata?.license || asset?.metadata?.licenseId, 120);
@@ -280,12 +283,15 @@
     let state = store.load();
     const mediaApi = options?.mediaApi || globalScope.HHUniversalMediaProject;
     const productionApi = options?.productionApi || globalScope.HHMediaProductionWorkflow;
+    const professionalApi = options?.professionalApi || globalScope.HHMediaProfessionalSuite;
     const mediaStore = options?.mediaStore || mediaApi?.createStore?.();
     const productionStore = productionApi?.createStateStore?.(options?.storage || globalScope.localStorage);
+    const professionalStore = professionalApi?.createStateStore?.(options?.storage || globalScope.localStorage);
     let project = null;
     let assets = [];
     let snapshots = [];
     let productionState = productionStore?.load?.() || { proxyJobs: [], renderQueue: [] };
+    let professionalState = professionalStore?.load?.() || null;
     let availableFonts = [];
     let message = "";
 
@@ -322,11 +328,13 @@
         snapshots = await mediaStore.listSnapshots(project.id);
       }
       productionState = productionStore?.load?.() || productionState;
+      professionalState = professionalStore?.load?.() || professionalState;
     };
 
     const render = () => {
       const jobs = allJobs();
-      const warnings = assessCosmosWarnings(project, assets, jobs, { mediaApi, availableFonts });
+      const professionalHealth = professionalApi?.calculateHealth?.(professionalState);
+      const warnings = assessCosmosWarnings(project, assets, jobs, { mediaApi, availableFonts, professionalApi, professionalState });
       const graph = buildProvenanceGraph(project, assets);
       const visualActivity = jobs.some((job) => job.status === "running") ? "render" : state.activity;
       const effects = getEffectsPolicy(globalScope, visualActivity);
@@ -357,6 +365,7 @@
                 <article><small>Asset mới</small><strong>${newAssets}</strong><span>trong 7 ngày</span></article>
                 <article><small>Dung lượng</small><strong>${formatBytes(totalBytes)}</strong><span>local-first</span></article>
                 <article><small>Chi phí AI</small><strong>${escapeHtml(formatCost(jobs))}</strong><span>không ước tính giả</span></article>
+                <article><small>Project Health</small><strong>${professionalHealth ? `${professionalHealth.score}/100` : "—"}</strong><span>${professionalHealth ? `${professionalHealth.blockers.length} blocker` : "Mở Media Core để khởi tạo"}</span></article>
               </div></section>
               <section class="mcs-panel mcs-panel--alerts"><header><div><small>PRE-FLIGHT</small><h3>Cảnh báo cần xử lý</h3></div><b>${warnings.length}</b></header><div>${warningsMarkup(warnings)}</div></section>
               <section class="mcs-panel mcs-panel--recent"><header><div><small>CONTINUE</small><h3>Tiếp tục chỉnh sửa gần nhất</h3></div></header><button type="button" data-mcs-continue><span>${escapeHtml(String(state.lastToolName).slice(0, 2).toUpperCase())}</span><div><strong>${escapeHtml(state.lastToolName)}</strong><small>${new Date(state.lastOpenedAt).toLocaleString("vi-VN")}</small></div><b>Tiếp tục →</b></button><div class="mcs-bridges"><button type="button" data-mcs-route="/create"><i>CG</i><span><b>Creative Galaxy</b><small>Brief, palette và prompt</small></span></button><button type="button" data-mcs-route="/music-ai/studio"><i>MG</i><span><b>Music Galaxy</b><small>Audio, stem và visual</small></span></button></div></section>
@@ -374,7 +383,7 @@
         </header>
         <section class="mcs-galaxy" aria-label="Bản đồ Media Cosmos">
           <div class="mcs-orbit mcs-orbit--one" aria-hidden="true"></div><div class="mcs-orbit mcs-orbit--two" aria-hidden="true"></div><div class="mcs-orbit mcs-orbit--three" aria-hidden="true"></div>
-          <button class="mcs-star" type="button" data-mcs-route="/media-design/universal-media">
+          <button class="mcs-star" type="button" data-mcs-route="/media-design/media-core">
             <span aria-hidden="true"><i>UP</i></span><small>UNIVERSAL MEDIA PROJECT</small><strong>${escapeHtml(project.name)}</strong><b>${assets.length} asset · ${snapshots.length} phiên bản</b>
           </button>
           ${planetButtons}
