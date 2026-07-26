@@ -18,12 +18,12 @@
     { id: "golden-cinema", label: "Golden Cinema" }
   ]);
   const PLANETS = Object.freeze([
-    { id: "universal", code: "UP", label: "Universal Project", color: "#56ecff", accent: "#27a8ff", route: "/media-design/media-core", tools: ["media-core", "universal-media", "asset-manager"] },
-    { id: "photo", code: "PI", label: "Photo & Image", color: "#ff63d8", accent: "#9a68ff", route: "/media-design/photo-workspace", tools: ["photo-workspace", "photo-editor", "background-remover", "collage", "inspector", "compress", "convert", "image", "picker"] },
-    { id: "video", code: "VM", label: "Video & Motion", color: "#a56cff", accent: "#635bff", route: "/media-design/video-workspace", tools: ["video-workspace", "video-editor"] },
+    { id: "universal", code: "UP", label: "Universal Project", color: "#56ecff", accent: "#27a8ff", route: "/media-design/media-core", tools: ["media-core", "universal-media", "asset-manager", "review-studio", "universal-canvas"] },
+    { id: "photo", code: "PI", label: "Photo & Image", color: "#ff63d8", accent: "#9a68ff", route: "/media-design/photo-workspace", tools: ["photo-workspace", "ai-task-center", "photo-editor", "background-remover", "collage", "inspector", "compress", "convert", "image", "picker"] },
+    { id: "video", code: "VM", label: "Video & Motion", color: "#a56cff", accent: "#635bff", route: "/media-design/video-workspace", tools: ["video-workspace", "motion-compositor", "video-editor"] },
     { id: "documents", code: "DU", label: "Documents & Utility", color: "#55efd2", accent: "#21bba7", route: "/media-design/document-workspace", tools: ["document-workspace", "pdf", "qr"] },
-    { id: "brand", code: "BU", label: "Brand Universe", color: "#ffbd59", accent: "#ff7a4d", route: "/media-design/brand-workspace", tools: ["brand-workspace", "color", "type", "gradient", "brand-kit"] },
-    { id: "assets", code: "AG", label: "Asset Galaxy", color: "#5c9dff", accent: "#36d6ff", route: "/media-design/asset-workspace", description: "Icon · SVG · Font · LUT", tools: ["asset-workspace", "icon", "svg"] },
+    { id: "brand", code: "BU", label: "Brand Universe", color: "#ffbd59", accent: "#ff7a4d", route: "/media-design/brand-workspace", tools: ["brand-workspace", "dev-handoff", "color", "type", "gradient", "brand-kit"] },
+    { id: "assets", code: "AG", label: "Asset Galaxy", color: "#5c9dff", accent: "#36d6ff", route: "/media-design/asset-workspace", description: "Cloud · Icon · SVG · Font · LUT", tools: ["asset-workspace", "media-cloud", "icon", "svg"] },
     { id: "export", code: "EP", label: "Export & Publishing", color: "#ffe36d", accent: "#ffad35", route: "/media-design/export-workspace", tools: ["export-workspace", "production-workflow", "social-post", "favicon", "meme"] }
   ]);
   const ADAPTIVE_PRESETS = Object.freeze([

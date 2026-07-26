@@ -130,7 +130,7 @@ test("Creative Star Map release assets are versioned and cached", () => {
     assert.match(loader, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v254/);
-  assert.match(html, /performance-loader\.js\?v=43/);
-  assert.match(html, /script\.js\?v=136/);
+  assert.match(worker, /hh-identity-portal-v255/);
+  assert.match(html, /performance-loader\.js\?v=44/);
+  assert.match(html, /script\.js\?v=138/);
 });

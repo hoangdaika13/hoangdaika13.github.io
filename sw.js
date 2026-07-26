@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v254";
+const CACHE = "hh-identity-portal-v255";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -34,6 +34,7 @@ const RUNTIME_ASSETS = [
   "./media-design-page.css?v=11",
   "./media-cosmos.css?v=2",
   "./media-professional-suite.css?v=1",
+  "./media-next-suite.css?v=1",
   "./media-production-workflow.css?v=3",
   "./universal-media-project.css?v=1",
   "./media-design-advanced.css?v=3",
@@ -43,7 +44,7 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=137",
+  "./script.js?v=138",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -261,10 +262,12 @@ const RUNTIME_ASSETS = [
   "./universal-media-project.js?v=1",
   "./media-production-workflow.js?v=3",
   "./media-cosmos.js?v=2",
-  "./media-professional-suite.js?v=1",
+  "./media-professional-suite.js?v=2",
+  "./vendor/vercel-blob-client.min.js?v=1",
+  "./media-next-suite.js?v=1",
   "./editor-workflow-pro.js?v=1",
   "./support-platform.js?v=13",
-  "./media-design-page.js?v=11",
+  "./media-design-page.js?v=12",
   "./tool-manifests.js?v=1",
   "./tool-runtime.js?v=1",
   "./feature-lab.js?v=6",
@@ -308,10 +311,10 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=43",
+  "./performance-loader.js?v=44",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=137"
+  "./script.js?v=138"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

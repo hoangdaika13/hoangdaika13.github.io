@@ -511,7 +511,7 @@
         <label class="mps-dropzone">Đưa asset vào Galaxy<input type="file" data-mps-asset-file multiple><span>Tạo SHA-256 trên thiết bị khi trình duyệt hỗ trợ; không tải file lên cloud.</span></label>
         <div class="mps-asset-table">${state.assets.items.slice(-12).reverse().map((asset) => `<article data-status="${asset.status}"><span>${escapeHtml(asset.type.split("/")[0].toUpperCase())}</span><div><strong>${escapeHtml(asset.name)}</strong><small>${escapeHtml(asset.checksum.slice(0, 18))} · ${asset.size} bytes</small></div><b>${escapeHtml(asset.status)}</b></article>`).join("") || "<p>Media Bin chuyên nghiệp đang trống.</p>"}</div>
       </section>
-      <section class="mps-card"><header><div><small>PRIVATE CLOUD</small><h3>Vercel Blob</h3></div><b>CẦN ADAPTER</b></header><p>Upload private, multipart và signed URL phải đi qua API xác thực. Không lưu token Blob trong JavaScript phía trình duyệt.</p><button type="button" class="mps-button" data-mps-route="/media-design/universal-media">Mở Media Bin</button></section>
+      <section class="mps-card"><header><div><small>PRIVATE CLOUD</small><h3>Vercel Private Blob</h3></div><b>MEDIA CLOUD</b></header><p>Upload private, multipart, checksum, quota và signed URL đi qua API xác thực. Token Blob không nằm trong JavaScript phía trình duyệt.</p><button type="button" class="mps-button" data-mps-route="/media-design/media-cloud">Mở Media Cloud</button></section>
       <section class="mps-card"><header><div><small>SMART COLLECTION</small><h3>License · Font · LUT</h3></div></header><p>Collection và metadata được lưu cục bộ. Semantic search chỉ bật khi vector adapter trả kết quả thật.</p></section>
     </div>`;
   }
