@@ -64,10 +64,26 @@ test("major navigation groups use the shared cosmic planet treatment", () => {
   assert.match(css, /\.app-sidebar__studio-item>span::after[\s\S]*?scaleY\(\.38\)/);
 });
 
+test("every route gets a shared cosmic loading state with progress and fallback", () => {
+  const html = read("index.html");
+  const client = read("script.js");
+  const css = read("app-shell.css");
+
+  assert.match(html, /id="appCosmicLoader"/);
+  assert.match(html, /data-cosmic-loader-step/);
+  assert.match(client, /const describeRouteFeedback =/);
+  assert.match(client, /window\.HHCosmicRouteLoader/);
+  assert.match(client, /hh:assets-loading/);
+  assert.match(client, /finishCosmicRouteLoader\(\{ error: true/);
+  assert.match(css, /\.app-cosmic-loader\.is-active/);
+  assert.match(css, /@keyframes appCosmicTunnel/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?app-cosmic-loader__space/);
+});
+
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=52", "script.js?v=143", "sidebar-navigation-pro.css?v=8", "english-learning.css?v=11", "english-learning.js?v=16", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=53", "script.js?v=144", "sidebar-navigation-pro.css?v=8", "english-learning.css?v=11", "english-learning.js?v=16", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

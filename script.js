@@ -5047,6 +5047,11 @@ function initAppShell() {
   const pageActions = byId("appPageActions");
   const routeProgress = byId("appRouteProgress");
   const routeAnnouncer = byId("appRouteAnnouncer");
+  const cosmicRouteLoader = byId("appCosmicLoader");
+  const cosmicLoaderIcon = byId("appCosmicLoaderIcon");
+  const cosmicLoaderEyebrow = byId("appCosmicLoaderEyebrow");
+  const cosmicLoaderTitle = byId("appCosmicLoaderTitle");
+  const cosmicLoaderStatus = byId("appCosmicLoaderStatus");
   const contextBar = byId("appContextBar");
   const contextGroup = byId("appContextGroup");
   const contextLabel = byId("appContextLabel");
@@ -5688,14 +5693,127 @@ function initAppShell() {
     const hash = location.hash.replace(/^#/, "") || "/home";
     return hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
   };
+  let cosmicLoaderRoute = "";
+  let cosmicLoaderShownAt = 0;
+  let cosmicLoaderHideTimer = 0;
+  let cosmicLoaderPhaseTimers = [];
+  const cosmicLoaderMessages = {
+    home: "Đang đồng bộ Command Center và trạng thái hệ thống...",
+    create: "Đang kết nối Universal Project và Creative Core...",
+    "music-ai": "Đang nạp Music Galaxy, dự án và audio engine...",
+    "davinci-resolve": "Đang kiểm tra cầu nối Resolve và Render Queue...",
+    "media-design": "Đang chuẩn bị Media Cosmos và thư viện tài nguyên...",
+    "graphic-design": "Đang khởi tạo canvas, layer và bộ máy đồ họa...",
+    dev: "Đang nạp Developer Galaxy và môi trường công cụ...",
+    work: "Đang đồng bộ dự án, nhiệm vụ và lịch làm việc...",
+    communication: "Đang kết nối tin nhắn, kênh và cộng tác realtime...",
+    entertainment: "Đang khởi động Game Galaxy và dữ liệu tiến trình...",
+    insights: "Đang tổng hợp dữ liệu và bảng phân tích...",
+    admin: "Đang xác minh quyền và tải trung tâm quản trị...",
+    learn: "Đang chuẩn bị lộ trình và dữ liệu học tập...",
+    english: "Đang nạp bài học và tiến độ HH English...",
+    system: "Đang kiểm tra cấu hình và dịch vụ hệ thống...",
+    support: "Đang mở trung tâm hỗ trợ và thanh toán an toàn..."
+  };
+  const describeRouteFeedback = (route) => {
+    const normalized = String(route || "/home").split("?")[0];
+    const parts = normalized.split("/").filter(Boolean);
+    const group = groups.find((item) => normalized === item.route || normalized.startsWith(`${item.route}/`)) || groups[0];
+    const routePage = group?.id === "music-ai"
+      ? musicAIAllPageItems.find((item) => item.route === normalized || item.routes?.includes(normalized))
+      : (group?.pages || []).find((item) => item.route === normalized);
+    const studioItem = (group?.studioItems || []).find((item) => item.id === parts[1]);
+    const moduleItem = moduleById(parts.at(-1));
+    const title = routePage?.title || studioItem?.title || moduleItem?.title || group?.label || "HH Platform";
+    const icon = routePage?.icon || studioItem?.icon || group?.icon || "H";
+    return {
+      accent: group?.accent || "#62e9f2",
+      eyebrow: `${group?.label || "HH Platform"} · COSMIC NAVIGATION`,
+      icon: String(icon || "H").replace(/[^\p{L}\p{N}✦♫⌂◇◈⚙♥]/gu, "").slice(0, 2) || "H",
+      message: cosmicLoaderMessages[group?.id] || "Đang chuẩn bị giao diện và dữ liệu cần thiết...",
+      title
+    };
+  };
+  const clearCosmicLoaderTimers = () => {
+    cosmicLoaderPhaseTimers.forEach((timer) => clearTimeout(timer));
+    cosmicLoaderPhaseTimers = [];
+    clearTimeout(cosmicLoaderHideTimer);
+  };
+  const setCosmicLoaderPhase = (phase, progress, message = "") => {
+    if (!cosmicRouteLoader) return;
+    cosmicRouteLoader.style.setProperty("--loader-progress", `${Math.max(0, Math.min(100, progress))}%`);
+    if (message && cosmicLoaderStatus) cosmicLoaderStatus.textContent = message;
+    cosmicRouteLoader.querySelectorAll("[data-cosmic-loader-step]").forEach((step, index) => {
+      step.classList.toggle("is-done", index < phase);
+      step.classList.toggle("is-active", index === phase);
+    });
+  };
+  const hideCosmicRouteLoaderImmediately = () => {
+    if (!cosmicRouteLoader) return;
+    clearCosmicLoaderTimers();
+    cosmicRouteLoader.classList.remove("is-active", "is-complete", "is-error");
+    cosmicRouteLoader.hidden = true;
+    cosmicRouteLoader.setAttribute("aria-hidden", "true");
+    cosmicLoaderRoute = "";
+  };
+  const showCosmicRouteLoader = (route = routeFromHash()) => {
+    if (!cosmicRouteLoader) return;
+    if (document.querySelector("[data-cg-wormhole].is-active")) {
+      hideCosmicRouteLoaderImmediately();
+      return;
+    }
+    const normalized = String(route || "/home").split("?")[0];
+    const continuing = cosmicRouteLoader.classList.contains("is-active") && cosmicLoaderRoute === normalized;
+    const meta = describeRouteFeedback(normalized);
+    clearCosmicLoaderTimers();
+    cosmicLoaderRoute = normalized;
+    cosmicRouteLoader.hidden = false;
+    cosmicRouteLoader.setAttribute("aria-hidden", "false");
+    cosmicRouteLoader.classList.remove("is-complete", "is-error");
+    cosmicRouteLoader.style.setProperty("--loader-accent", meta.accent);
+    if (cosmicLoaderIcon) cosmicLoaderIcon.textContent = meta.icon;
+    if (cosmicLoaderEyebrow) cosmicLoaderEyebrow.textContent = meta.eyebrow;
+    if (cosmicLoaderTitle) cosmicLoaderTitle.textContent = meta.title;
+    if (!continuing) {
+      cosmicLoaderShownAt = performance.now();
+      setCosmicLoaderPhase(0, 16, meta.message);
+    } else {
+      setCosmicLoaderPhase(1, 54, meta.message);
+    }
+    requestAnimationFrame(() => cosmicRouteLoader.classList.add("is-active"));
+    cosmicLoaderPhaseTimers.push(
+      setTimeout(() => setCosmicLoaderPhase(1, 46, "Đang nạp giao diện và các engine cần thiết..."), 170),
+      setTimeout(() => setCosmicLoaderPhase(2, 78, "Đang khôi phục dữ liệu và trạng thái làm việc..."), 360)
+    );
+  };
+  const finishCosmicRouteLoader = ({ error = false, message = "" } = {}) => {
+    if (!cosmicRouteLoader || cosmicRouteLoader.hidden || !cosmicRouteLoader.classList.contains("is-active")) return;
+    clearCosmicLoaderTimers();
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const minimumVisible = reducedMotion ? 100 : 560;
+    const wait = Math.max(0, minimumVisible - (performance.now() - cosmicLoaderShownAt));
+    setCosmicLoaderPhase(2, 100, error ? (message || "Workspace chưa thể khởi tạo.") : "Workspace đã sẵn sàng.");
+    cosmicLoaderHideTimer = setTimeout(() => {
+      cosmicRouteLoader.classList.toggle("is-error", error);
+      if (!error) cosmicRouteLoader.classList.add("is-complete");
+      cosmicLoaderHideTimer = setTimeout(hideCosmicRouteLoaderImmediately, error ? 1100 : 260);
+    }, wait);
+  };
+  window.HHCosmicRouteLoader = Object.freeze({
+    start: (route) => showCosmicRouteLoader(route),
+    finish: () => finishCosmicRouteLoader(),
+    fail: (message) => finishCosmicRouteLoader({ error: true, message })
+  });
   const beginRouteFeedback = (route = routeFromHash()) => {
     document.body.classList.add("app-route-changing");
     routeProgress?.setAttribute("aria-hidden", "false");
+    showCosmicRouteLoader(route);
     if (routeAnnouncer) routeAnnouncer.textContent = `Đang mở ${route.split("/").filter(Boolean).at(-1) || "trang chủ"}`;
   };
   const endRouteFeedback = () => {
     document.body.classList.remove("app-route-changing");
     routeProgress?.setAttribute("aria-hidden", "true");
+    finishCosmicRouteLoader();
     if (routeAnnouncer) routeAnnouncer.textContent = `${pageHeader.querySelector("h1")?.textContent || "Trang"} đã sẵn sàng`;
   };
   const renderRoute = () => {
@@ -6073,10 +6191,15 @@ function initAppShell() {
     mountSimpleView("Workspace gặp lỗi", "Bạn có thể thử tải lại module hoặc trở về Command Center.", `<section class="app-runtime-error" role="alert"><span>!</span><div><strong>${escapeRouteHtml(issue.name)}</strong><p>${escapeRouteHtml(issue.message)}</p><small>Mã: ${escapeRouteHtml(issue.id)} · Không lưu nội dung riêng tư.</small></div><div><button type="button" data-shell-retry-route>Thử lại</button><button type="button" data-app-route="/home">Về Command Center</button></div></section>`);
     legacyMain.hidden = true;
     renderedRoute = activeRoute;
+    document.body.classList.remove("app-route-changing");
+    routeProgress?.setAttribute("aria-hidden", "true");
+    finishCosmicRouteLoader({ error: true, message: issue.message });
   };
   let pendingAssetRoute = "";
   const renderRouteLoading = (route) => {
     activeRoute = route;
+    showCosmicRouteLoader(route);
+    setCosmicLoaderPhase(1, 42, "Đang tải tài nguyên chuyên dụng cho workspace...");
     updatePageHeader("Đang mở workspace", "HH chỉ tải tài nguyên cần cho màn hình này để trang luôn nhẹ và mượt.", route);
     workspace.innerHTML = `<section class="app-route-loader" role="status" aria-live="polite"><i></i><div><strong>Đang tải chức năng cần thiết</strong><p>Các workspace khác vẫn được để nghỉ cho đến khi bạn mở.</p></div></section>`;
     legacyMain.hidden = true;
@@ -6129,7 +6252,7 @@ function initAppShell() {
     routeTransition?.skipTransition?.();
     if (!canTransition) {
       renderRouteSafely();
-      requestAnimationFrame(endRouteFeedback);
+      if (!pendingAssetRoute) requestAnimationFrame(endRouteFeedback);
       return;
     }
     document.documentElement.dataset.routeDirection = nextRoute.split("/").length >= renderedRoute.split("/").length ? "forward" : "back";
@@ -6137,7 +6260,7 @@ function initAppShell() {
     Promise.resolve(routeTransition.finished).catch(() => {}).finally(() => {
       routeTransition = null;
       delete document.documentElement.dataset.routeDirection;
-      endRouteFeedback();
+      if (!pendingAssetRoute) endRouteFeedback();
     });
   };
   const searchItems = () => {
@@ -6403,6 +6526,21 @@ function initAppShell() {
     }
   });
   paletteInput?.addEventListener("input", () => renderPalette(paletteInput.value));
+  window.addEventListener("hh:assets-loading", (event) => {
+    if (event.detail?.route && String(event.detail.route).split("?")[0] === cosmicLoaderRoute) {
+      setCosmicLoaderPhase(1, 48, "Đang tải tài nguyên chuyên dụng cho workspace...");
+    }
+  });
+  window.addEventListener("hh:assets-ready", (event) => {
+    if (event.detail?.route && String(event.detail.route).split("?")[0] === cosmicLoaderRoute) {
+      setCosmicLoaderPhase(2, 82, "Đang khởi tạo module và khôi phục trạng thái...");
+    }
+  });
+  window.addEventListener("hh:route-rendered", (event) => {
+    if (event.detail?.route && String(event.detail.route).split("?")[0] === cosmicLoaderRoute) {
+      setCosmicLoaderPhase(2, 96, "Workspace đã sẵn sàng, đang hoàn thiện hiển thị...");
+    }
+  });
   window.addEventListener("hashchange", renderRouteWithTransition);
   window.addEventListener("hh:modules-ready", () => {
     renderNavigation();

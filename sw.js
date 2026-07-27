@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v267";
+const CACHE = "hh-identity-portal-v268";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 performance-loader.js?v=51 performance-loader.js?v=52
@@ -7,7 +7,7 @@ const CACHE = "hh-identity-portal-v267";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
-  "./app-shell.css?v=52",
+  "./app-shell.css?v=53",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=3",
   "./home-galaxy-mission.css?v=4",
@@ -46,7 +46,7 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=143",
+  "./script.js?v=144",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -302,7 +302,7 @@ const RUNTIME_ASSETS = [
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=52",
+  "./app-shell.css?v=53",
   "./sidebar-navigation-pro.css?v=8",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=5",
@@ -317,7 +317,7 @@ const CORE = [
   "./performance-loader.js?v=53",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=143"
+  "./script.js?v=144"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
