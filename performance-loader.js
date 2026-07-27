@@ -100,13 +100,13 @@
       scripts: ["davinci-resolve-hub.js?v=2"]
     },
     graphic: {
-      styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=1"],
+      styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],
       scripts: [
         "graphic-design-animation.js?v=1", "graphic-design-3d.js?v=2", "graphic-design-prototype.js?v=1",
         "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1",
         "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=2", "graphic-design-state-machine.js?v=2",
         "graphic-design-adaptive.js?v=2", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=2",
-        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-workflow.js?v=2", "graphic-design-universal.js?v=1", "graphic-design-studio.js?v=7"
+        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-workflow.js?v=2", "graphic-design-universal.js?v=4", "graphic-design-studio.js?v=7"
       ]
     },
     creative: {

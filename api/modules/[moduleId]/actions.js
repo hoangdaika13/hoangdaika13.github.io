@@ -196,7 +196,7 @@ function requestIp(req) {
   return clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "guest").split(",")[0], 120);
 }
 
-const musicMediaActions = new Set(["music-image", "music-track", "music-sfx", "music-video-start", "music-video-status"]);
+const musicMediaActions = new Set(["music-image", "design-image", "music-track", "music-sfx", "music-video-start", "music-video-status"]);
 
 function musicProviderStatus(user) {
   const geminiConfigured = geminiKeys().length > 0;
@@ -492,13 +492,13 @@ async function musicMediaAction(req, res) {
     if (actionType === "music-video-status") await enforceRateLimit(db, `music-media-status:${String(user._id)}`, 140, 60 * 60 * 1000);
     else await enforceRateLimit(db, `music-media:${String(user._id)}`, 12, 60 * 60 * 1000);
     let result;
-    if (actionType === "music-image") result = await generateMusicImage(body);
+    if (actionType === "music-image" || actionType === "design-image") result = await generateMusicImage(body);
     else if (actionType === "music-track") result = await generateMusicTrack(body);
     else if (actionType === "music-sfx") result = await generateMusicSoundEffect(body);
     else if (actionType === "music-video-start") result = await startMusicVideo(body);
     else if (actionType === "music-video-status") result = await musicVideoStatus(body);
     else return res.status(400).json({ error: "Tác vụ media không được hỗ trợ." });
-    await db.collection("events").insertOne({ type: "music-ai:media", actionType, userId: user._id, provider: actionType === "music-track" ? "eleven-music" : actionType === "music-sfx" ? "eleven-sfx" : "gemini-media", createdAt: new Date() });
+    await db.collection("events").insertOne({ type: actionType === "design-image" ? "graphic-design:media" : "music-ai:media", actionType, userId: user._id, provider: actionType === "music-track" ? "eleven-music" : actionType === "music-sfx" ? "eleven-sfx" : "gemini-media", createdAt: new Date() });
     return res.status(200).json(result);
   } catch (error) {
     console.error("Music media error", error?.message || error);

@@ -55,6 +55,145 @@ test("commands update one document and support exact undo and redo", () => {
   assert.equal(document.layers.find((layer) => layer.id === layerId).opacity, 0.5);
 });
 
+test("command log stores bounded entity patches instead of full document snapshots", () => {
+  let document = universal.defaultDocument({ id: "patch-log" });
+  document = universal.operation(document, "add-layer", {
+    type: "rect",
+    name: "Patch target",
+    x: 24,
+    y: 32
+  });
+  const command = document.commandLog.at(-1);
+
+  assert.ok(command.changes.some((change) => change.kind === "entity" && change.collection === "layers"));
+  assert.deepEqual(command.before, { commandLog: [] });
+  assert.deepEqual(command.after, { commandLog: [] });
+  assert.ok(JSON.stringify(command).length < JSON.stringify(universal.snapshotDocument(document)).length);
+});
+
+test("Auto Layout, variables, components and prototype actions mutate the same scene graph", () => {
+  let document = universal.defaultDocument({ id: "layout-system" });
+  document = universal.operation(document, "add-layer", {
+    type: "group",
+    name: "Button group",
+    x: 40,
+    y: 60,
+    width: 360,
+    height: 140
+  });
+  const parentId = document.selectedLayerId;
+  document = universal.operation(document, "add-layer", {
+    type: "rect",
+    name: "Button",
+    parentId,
+    x: 0,
+    y: 0,
+    width: 120,
+    height: 48
+  });
+  const childId = document.selectedLayerId;
+  document = universal.operation(document, "set-variable", {
+    key: "button/background",
+    value: "#2255ff",
+    variableType: "color"
+  });
+  document = universal.operation(document, "bind-variable", {
+    id: childId,
+    property: "fill",
+    variableKey: "button/background"
+  });
+  document = universal.operation(document, "set-auto-layout", {
+    id: parentId,
+    changes: { direction: "horizontal", gap: 12, paddingLeft: 20, paddingTop: 16 }
+  });
+  document = universal.operation(document, "create-component", {
+    ids: [childId],
+    name: "Primary button"
+  });
+  document = universal.operation(document, "add-prototype-action", {
+    id: childId,
+    action: { trigger: "click", action: "open-url", url: "https://example.com" }
+  });
+
+  const parent = document.layers.find((layer) => layer.id === parentId);
+  const child = document.layers.find((layer) => layer.id === childId);
+  assert.equal(parent.autoLayout.enabled, true);
+  assert.equal(child.x, 60);
+  assert.equal(child.y, 80);
+  assert.equal(child.variableBindings.fill, "button/background");
+  assert.equal(document.components.at(-1).name, "Primary button");
+  assert.equal(child.prototypeActions.length, 1);
+  assert.equal(document.prototype.actions.length, 1);
+});
+
+test("Vector and non-destructive raster operations are undoable", () => {
+  let document = universal.defaultDocument({ id: "vector-raster" });
+  document = universal.operation(document, "add-layer", {
+    type: "path",
+    name: "Bezier",
+    pathPoints: [
+      { x: 20, y: 20, outX: 40, outY: 0 },
+      { x: 180, y: 100, inX: -40, inY: 0 }
+    ],
+    stroke: "#63e8ff",
+    fill: "none"
+  });
+  const pathId = document.selectedLayerId;
+  assert.match(document.layers.find((layer) => layer.id === pathId).pathData, /^M .* C /);
+
+  document = universal.operation(document, "add-adjustment", {
+    id: pathId,
+    adjustmentType: "brightness",
+    value: 1.25
+  });
+  document = universal.operation(document, "add-mask", {
+    id: pathId,
+    maskType: "ellipse"
+  });
+  assert.equal(document.layers.find((layer) => layer.id === pathId).adjustments.length, 1);
+  assert.equal(document.layers.find((layer) => layer.id === pathId).masks.length, 1);
+
+  document = universal.undo(document);
+  assert.equal(document.layers.find((layer) => layer.id === pathId).masks.length, 0);
+  document = universal.redo(document);
+  assert.equal(document.layers.find((layer) => layer.id === pathId).masks.length, 1);
+});
+
+test("AI proposals remain reviewable and apply operation-specific document changes", () => {
+  let document = universal.defaultDocument({ id: "ai-diff" });
+  document = universal.operation(document, "add-layer", {
+    type: "image",
+    name: "Hero image",
+    fill: "#445566",
+    altText: ""
+  });
+  const imageId = document.selectedLayerId;
+  const beforeLayers = document.layers.length;
+
+  document = universal.operation(document, "apply-ai-plan", {
+    operation: "recolor",
+    inputLayerIds: [imageId],
+    plan: { palette: ["#1122aa", "#ee44bb"] }
+  });
+  assert.equal(document.layers.find((layer) => layer.id === imageId).fill, "#1122aa");
+  assert.equal(document.layers.length, beforeLayers);
+
+  document = universal.operation(document, "apply-ai-plan", {
+    operation: "alt-text",
+    inputLayerIds: [imageId],
+    plan: { summary: "Minh họa hành tinh neon trên nền trời sao." }
+  });
+  assert.match(document.layers.find((layer) => layer.id === imageId).altText, /hành tinh neon/);
+
+  document = universal.operation(document, "apply-ai-plan", {
+    operation: "responsive",
+    inputLayerIds: [imageId],
+    plan: { summary: "Mobile and tablet variants" }
+  });
+  assert.ok(document.frames.some((frame) => frame.breakpoint === "mobile"));
+  assert.ok(document.frames.some((frame) => frame.breakpoint === "tablet"));
+});
+
 test("Brand Kit and Asset Observatory mutations share the same document", () => {
   let document = universal.defaultDocument({ id: "shared-data" });
   document = universal.operation(document, "set-brand-token", {
@@ -136,16 +275,23 @@ test("Graphic Design AI uses the configured backend without client secrets", () 
 
   assert.match(client, /\/api\/modules\/ai-center\/actions/);
   assert.match(client, /actionType:\s*"design-plan"/);
+  assert.match(client, /actionType:\s*"design-image"/);
+  assert.match(client, /new AbortController\(\)/);
+  assert.match(client, /requestAnimationFrame/);
+  assert.doesNotMatch(client, /return <div \/>/);
   assert.match(client, /requireProvider:\s*true/);
   assert.match(client, /data-gdu-compact/);
   assert.match(client, /"queued", "running", "completed", "failed", "cancelled"/);
   assert.doesNotMatch(client, /AIza[0-9A-Za-z_-]{20,}/);
   assert.doesNotMatch(client, /sk-[0-9A-Za-z_-]{20,}/);
   assert.match(backend, /const designPlanSchema =/);
+  assert.match(backend, /"design-image"/);
+  assert.match(backend, /graphic-design:media/);
   assert.match(backend, /if \(actionType === "design-plan"\) return designPlanSchema/);
   assert.match(backend, /function geminiSchema\(schema\)/);
   assert.match(backend, /if \(key === "additionalProperties"\) continue/);
   assert.match(backend, /palette/);
   assert.match(backend, /accessibility/);
   assert.match(backend, /nextActions/);
+  assert.match(read("graphic-design-universal.css"), /\.gdu-shell \[hidden\]\s*\{[\s\S]*display:\s*none\s*!important/);
 });
