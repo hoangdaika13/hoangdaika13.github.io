@@ -31,9 +31,15 @@ test("Projects and Tasks provides all proposed operational views", () => {
   for (const view of ["list", "board", "calendar", "timeline", "gantt", "workload", "table", "milestones"]) {
     assert.match(source, new RegExp(`"${view}"`));
   }
-  for (const token of ["data-work-task-status", "data-work-active-project", "data-work-save-view", "dependsOn", "data-work-task-query"]) {
+  for (const token of ["data-work-task-view", "data-work-task-status", "data-work-active-project", "data-work-save-view", "dependsOn", "data-work-task-query"]) {
     assert.match(source, new RegExp(token));
   }
+});
+
+test("Nested controls cannot be swallowed by the active page container", () => {
+  assert.match(source, /data-work-active-view=/);
+  assert.match(source, /closest\("\[data-work-task-view\]"\)/);
+  assert.doesNotMatch(source, /closest\("\[data-work-view\]"\)/);
 });
 
 test("Team, automation and portfolio controls persist real local actions", () => {

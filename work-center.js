@@ -391,7 +391,7 @@
     const milestoneMarkup = `<div class="work-milestone-galaxy">${(state.milestones || []).map((item, index) => `<article style="--milestone:${clamp(item.progress)}%;--milestone-index:${index}"><span>${String(index + 1).padStart(2, "0")}</span><div><strong>${esc(item.name)}</strong><small>${esc(projectName(state, item.projectId))} · ${item.due ? formatDate(item.due) : "Chưa đặt hạn"}</small><i><b></b></i></div><b>${clamp(item.progress)}%</b></article>`).join("") || `<div class="work-galaxy-empty"><span>◇</span><strong>Chưa có milestone</strong><small>Thêm milestone trong Roadmap & Planning.</small></div>`}</div>`;
     const content = view === "board" ? board : ["calendar"].includes(view) ? calendar : ["timeline", "gantt"].includes(view) ? timeline : view === "workload" ? workloadMarkup : view === "milestones" ? milestoneMarkup : list;
     return `<section class="work-task-workspace"><header class="work-view-toolbar"><div><span>PROJECTS & TASKS</span><h1>Nhiều góc nhìn, cùng một task</h1></div><div><label>Dự án<select data-work-active-project>${state.projects.map((project) => `<option value="${esc(project.id)}" ${project.id === projectId ? "selected" : ""}>${esc(project.name)}</option>`).join("")}</select></label><label>Tìm task<input type="search" data-work-task-query value="${esc(state.taskQuery || "")}" placeholder="Tên, người phụ trách..."></label><button type="button" data-work-capture>＋ Task</button></div></header>
-      <nav class="work-view-switcher" aria-label="Góc nhìn công việc">${[["list", "List"], ["board", "Board"], ["calendar", "Calendar"], ["timeline", "Timeline"], ["gantt", "Gantt"], ["workload", "Workload"], ["table", "Table"], ["milestones", "Milestones"]].map(([id, label]) => `<button type="button" data-work-view="${id}" class="${view === id ? "is-active" : ""}" aria-pressed="${view === id}">${label}</button>`).join("")}<button type="button" data-work-save-view>＋ Lưu view</button></nav>
+      <nav class="work-view-switcher" aria-label="Góc nhìn công việc">${[["list", "List"], ["board", "Board"], ["calendar", "Calendar"], ["timeline", "Timeline"], ["gantt", "Gantt"], ["workload", "Workload"], ["table", "Table"], ["milestones", "Milestones"]].map(([id, label]) => `<button type="button" data-work-task-view="${id}" class="${view === id ? "is-active" : ""}" aria-pressed="${view === id}">${label}</button>`).join("")}<button type="button" data-work-save-view>＋ Lưu view</button></nav>
       <div class="work-saved-views">${(state.savedViews || []).map((item) => `<button type="button" data-work-apply-view="${esc(item.id)}"><span>✦</span>${esc(item.name)}<small>${esc(item.view)}</small></button>`).join("")}</div>
       ${content}
     </section>`;
@@ -622,7 +622,7 @@
   function render() {
     if (!host) return;
     const state = planningState();
-    host.innerHTML = `<section class="work-center work-galaxy" data-work-view="${esc(activeView)}" data-work-theme="${esc(state.theme)}" data-work-effects="${esc(state.effects)}" aria-label="HH Work Galaxy">
+    host.innerHTML = `<section class="work-center work-galaxy" data-work-active-view="${esc(activeView)}" data-work-theme="${esc(state.theme)}" data-work-effects="${esc(state.effects)}" aria-label="HH Work Galaxy">
       <div class="work-aurora work-aurora--galaxy" aria-hidden="true"><i></i><i></i><i></i><b></b><b></b><b></b></div>
       ${rootCrownMarkup(state)}
       ${galaxyNavMarkup(state)}
@@ -720,8 +720,8 @@
       location.hash = `#${route === "/work" ? "/work/projects-tasks" : route}`;
       return;
     }
-    const workView = event.target.closest("[data-work-view]");
-    if (workView) { writePlanning((state) => ({ ...state, taskView: workView.dataset.workView })); render(); return; }
+    const taskView = event.target.closest("[data-work-task-view]");
+    if (taskView) { writePlanning((state) => ({ ...state, taskView: taskView.dataset.workTaskView })); render(); return; }
     if (event.target.closest("[data-work-save-view]")) {
       const state = planningState();
       const saved = { id: uid("view"), name: `${statusLabel(state.taskView)} · ${projectName(state, state.activeProjectId)}`, view: state.taskView, projectId: state.activeProjectId, createdAt: new Date().toISOString() };
