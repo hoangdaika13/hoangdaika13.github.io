@@ -42,10 +42,21 @@ test("HH English keeps a focused path and moves secondary tools into a searchabl
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
 });
 
+test("expanded major sections expose every nested module without clipping", () => {
+  const css = read("sidebar-navigation-pro.css");
+
+  assert.match(css, /Sidebar overflow recovery v3/);
+  assert.match(css, /\.app-sidebar__group\.is-expanded>\.app-sidebar__submenu[\s\S]*?max-height:none!important/);
+  assert.match(css, /\.app-sidebar__group\.is-expanded>\.app-sidebar__submenu[\s\S]*?overflow:visible!important/);
+  assert.match(css, /\.app-sidebar__group\.is-expanded \.app-sidebar__studio>div[\s\S]*?max-height:none!important/);
+  assert.match(css, /\.app-sidebar__page-section\.is-open>\.app-sidebar__page-section-items[\s\S]*?overflow:visible!important/);
+  assert.match(css, /padding-bottom:max\(32px,env\(safe-area-inset-bottom\)\)!important/);
+});
+
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=52", "script.js?v=141", "sidebar-navigation-pro.css?v=6", "english-learning.css?v=11", "english-learning.js?v=16", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=52", "script.js?v=141", "sidebar-navigation-pro.css?v=7", "english-learning.css?v=11", "english-learning.js?v=16", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);
