@@ -53,10 +53,21 @@ test("expanded major sections expose every nested module without clipping", () =
   assert.match(css, /padding-bottom:max\(32px,env\(safe-area-inset-bottom\)\)!important/);
 });
 
+test("major navigation groups use the shared cosmic planet treatment", () => {
+  const css = read("sidebar-navigation-pro.css");
+
+  assert.match(css, /Cosmic primary navigation v1/);
+  assert.match(css, /\.app-sidebar::after[\s\S]*?background-image:/);
+  assert.match(css, /\.app-sidebar__group>\.app-sidebar__item>span:first-child::before[\s\S]*?border-radius:50%/);
+  assert.match(css, /\.app-sidebar__group>\.app-sidebar__item>span:first-child::after[\s\S]*?background:var\(--nav-accent\)/);
+  assert.match(css, /\.app-sidebar__subitem:not\(\.app-sidebar__subitem--search\)/);
+  assert.match(css, /\.app-sidebar__studio-item>span::after[\s\S]*?scaleY\(\.38\)/);
+});
+
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=52", "script.js?v=141", "sidebar-navigation-pro.css?v=7", "english-learning.css?v=11", "english-learning.js?v=16", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=52", "script.js?v=141", "sidebar-navigation-pro.css?v=8", "english-learning.css?v=11", "english-learning.js?v=16", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);
