@@ -4,6 +4,8 @@
   const STORAGE_KEY = "hh.davinci.resolve.v1";
   const SESSION_KEY = "hh.davinci.resolve.bridge-key";
   const DEFAULT_ENDPOINT = "http://127.0.0.1:8765";
+  const AUTO_CONNECT_PROTOCOL = "h-cosmic-auto-v2";
+  const AUTO_RETRY_MS = 3500;
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -194,6 +196,8 @@
 
   let activeRoot = null;
   let pollTimer = 0;
+  let autoRetryTimer = 0;
+  let autoConnecting = false;
   let state = loadState();
 
   function loadState() {
@@ -205,6 +209,8 @@
         profiles: saved.profiles || clone(DEFAULT_PROFILES),
         view: saved.view || "command",
         connected: false,
+        resolveConnected: false,
+        autoConnect: true,
         busy: false,
         task: "",
         progress: 0,
@@ -218,7 +224,7 @@
     } catch {
       return {
         endpoint: DEFAULT_ENDPOINT, config: clone(DEFAULT_CONFIG), profiles: clone(DEFAULT_PROFILES),
-        view: "command", connected: false, busy: false, task: "", progress: 0,
+        view: "command", connected: false, resolveConnected: false, autoConnect: true, busy: false, task: "", progress: 0,
         progressText: "Bridge chưa kết nối", dashboard: {}, result: {}, events: [],
         lastEventId: 0, error: ""
       };
@@ -236,13 +242,14 @@
 
   const bridgeKey = () => sessionStorage.getItem(SESSION_KEY) || "";
   async function api(path, options = {}) {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    };
+    if (!options.skipKey) headers["X-H-Cosmic-Key"] = bridgeKey();
     const response = await fetch(`${state.endpoint}${path}`, {
       method: options.method || "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "X-H-Cosmic-Key": bridgeKey(),
-        ...(options.headers || {})
-      },
+      headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
       cache: "no-store"
     });
@@ -307,19 +314,20 @@
 
   function commandView() {
     const result = state.result || {};
+    const ready = state.connected && state.resolveConnected;
     return `<section class="dr-view dr-command-view">
       <div class="dr-command-grid">
         <section class="dr-panel dr-live-panel">
-          <header><div><span>MISSION CONTROL</span><h3>Phiên sản xuất hàng loạt</h3></div><b class="${state.connected ? "is-online" : ""}">${state.connected ? "BRIDGE ONLINE" : "BRIDGE OFFLINE"}</b></header>
+          <header><div><span>MISSION CONTROL</span><h3>Phiên sản xuất hàng loạt</h3></div><b class="${ready ? "is-online" : ""}">${ready ? "RESOLVE ONLINE" : state.connected ? "WAITING FOR RESOLVE" : "AUTO CONNECTING"}</b></header>
           <div class="dr-live-metrics">${dashboardMarkup()}</div>
           <div class="dr-progress"><i style="width:${Math.round(number(state.progress) * 100)}%"></i></div>
           <div class="dr-progress-copy"><strong>${escapeHtml(state.progressText)}</strong><span>${Math.round(number(state.progress) * 100)}%</span></div>
           <div class="dr-primary-actions">
-            <button class="is-precheck" type="button" data-dr-run="preflight" ${!state.connected || state.busy ? "disabled" : ""}>PRECHECK</button>
-            <button type="button" data-dr-run="build" ${!state.connected || state.busy ? "disabled" : ""}>Tạo timeline</button>
-            <button type="button" data-dr-run="queue" ${!state.connected || state.busy ? "disabled" : ""}>Đưa vào Queue</button>
-            <button class="is-primary" type="button" data-dr-run="render" ${!state.connected || state.busy ? "disabled" : ""}>Làm toàn bộ + Render</button>
-            <button type="button" data-dr-run="resume" ${!state.connected || state.busy ? "disabled" : ""}>Resume</button>
+            <button class="is-precheck" type="button" data-dr-run="preflight" ${!ready || state.busy ? "disabled" : ""}>PRECHECK</button>
+            <button type="button" data-dr-run="build" ${!ready || state.busy ? "disabled" : ""}>Tạo timeline</button>
+            <button type="button" data-dr-run="queue" ${!ready || state.busy ? "disabled" : ""}>Đưa vào Queue</button>
+            <button class="is-primary" type="button" data-dr-run="render" ${!ready || state.busy ? "disabled" : ""}>Làm toàn bộ + Render</button>
+            <button type="button" data-dr-run="resume" ${!ready || state.busy ? "disabled" : ""}>Resume</button>
             <button class="is-danger" type="button" data-dr-run="cancel" ${!state.connected || !state.busy ? "disabled" : ""}>Hủy an toàn</button>
           </div>
           ${state.error ? `<p class="dr-error">${escapeHtml(state.error)}</p>` : ""}
@@ -356,7 +364,7 @@
       "Manifest nguyên tử sau từng action; output lỗi vào _retry hoặc _failed"
     ];
     return `<section class="dr-view dr-audit-view">
-      <header class="dr-view-header"><div><span>QUALITY & RECOVERY</span><h2>Preflight, manifest và hậu kiểm</h2><p>Không video nào được coi là hoàn tất chỉ vì Render Queue báo Complete.</p></div><button class="is-primary" type="button" data-dr-run="preflight" ${!state.connected || state.busy ? "disabled" : ""}>Chạy PRECHECK ngay</button></header>
+      <header class="dr-view-header"><div><span>QUALITY & RECOVERY</span><h2>Preflight, manifest và hậu kiểm</h2><p>Không video nào được coi là hoàn tất chỉ vì Render Queue báo Complete.</p></div><button class="is-primary" type="button" data-dr-run="preflight" ${!state.connected || !state.resolveConnected || state.busy ? "disabled" : ""}>Chạy PRECHECK ngay</button></header>
       <div class="dr-audit-grid">
         <section class="dr-panel"><header><div><span>PRECHECK</span><h3>PASS / WARNING / BLOCKED</h3></div></header><ol>${checks.map((check, index) => `<li><i>${String(index + 1).padStart(2, "0")}</i><span>${escapeHtml(check)}</span></li>`).join("")}</ol></section>
         <section class="dr-panel dr-manifest-card"><header><div><span>CHECKPOINT</span><h3>Resume chính xác từng job</h3></div></header><pre>{
@@ -367,7 +375,7 @@
   "output": "Video_023_TikTok.mp4"
 }</pre><p>Manifest: <b>&lt;output&gt;/.hcosmic/manifests/</b></p><p>Phân loại: <b>_verified / _retry / _failed</b></p></section>
       </div>
-      <section class="dr-panel dr-security"><div><span>LOCAL BRIDGE SECURITY</span><h3>Website không nhận quyền hệ thống trực tiếp</h3><p>Bridge chỉ lắng nghe trên 127.0.0.1, yêu cầu mã ghép nối, chỉ chấp nhận origin nhhoang13all.xyz và không lưu mã vào localStorage.</p></div><a href="/downloads/h-cosmic-davinci-resolve.zip" download>Tải H Cosmic Studio Desktop</a></section>
+      <section class="dr-panel dr-security"><div><span>LOCAL BRIDGE SECURITY</span><h3>Tự động kết nối, vẫn giới hạn trong máy</h3><p>Bridge chỉ lắng nghe trên 127.0.0.1. Tự ghép nối chỉ chấp nhận origin nhhoang13all.xyz; khóa phiên nằm trong sessionStorage và hết hiệu lực khi bridge khởi động lại.</p></div><a href="/downloads/h-cosmic-davinci-resolve.zip" download>Tải H Cosmic Studio Desktop</a></section>
     </section>`;
   }
 
@@ -379,13 +387,23 @@
   }
 
   function rootMarkup() {
+    const bridgeTitle = state.resolveConnected
+      ? "DaVinci Resolve đã tự động kết nối"
+      : state.connected
+        ? "Bridge online · đang chờ mở Resolve"
+        : "Đang tự tìm H Cosmic Bridge";
+    const bridgeAction = state.resolveConnected
+      ? "AUTO CONNECTED"
+      : state.connected
+        ? "WAITING FOR RESOLVE"
+        : "Thử kết nối ngay";
     return `<section class="dr-hub" data-dr-hub>
       <header class="dr-hero">
         <div class="dr-hero__brand"><span class="dr-h-logo"><b>H</b><i></i></span><div><small>HH COSMIC PRODUCTION SYSTEM</small><h1>Davinci Resolve</h1><p>Điều khiển H Cosmic Studio, sản xuất hàng loạt và hậu kiểm Resolve từ một trung tâm chỉ huy.</p></div></div>
-        <div class="dr-bridge-card">
-          <div><span class="${state.connected ? "is-online" : ""}"></span><b>${state.connected ? "Desktop Bridge đã kết nối" : "Desktop Bridge chưa kết nối"}</b><small>${escapeHtml(state.endpoint)}</small></div>
-          <label><span>Mã ghép nối</span><input type="password" data-dr-bridge-key placeholder="8 ký tự" value="${escapeHtml(bridgeKey())}" autocomplete="one-time-code"></label>
-          <button class="${state.connected ? "is-connected" : ""}" type="button" data-dr-connect>${state.connected ? "Ngắt kết nối" : "Kết nối Resolve"}</button>
+        <div class="dr-bridge-card ${state.connected ? "is-auto" : ""}">
+          <div><span class="${state.resolveConnected ? "is-online" : state.connected ? "is-waiting" : ""}"></span><b>${bridgeTitle}</b><small>${escapeHtml(state.endpoint)} · zero-click</small></div>
+          <label class="dr-manual-pair"><span>Mã dự phòng</span><input type="password" data-dr-bridge-key placeholder="Không cần nếu Auto Bridge đang chạy" value="${escapeHtml(bridgeKey())}" autocomplete="one-time-code"></label>
+          <button class="${state.connected ? "is-connected" : ""}" type="button" data-dr-connect ${state.connected ? "disabled" : ""}>${bridgeAction}</button>
         </div>
       </header>
       <nav class="dr-nav" aria-label="Davinci Resolve">
@@ -414,13 +432,25 @@
     const status = activeRoot.querySelector(".dr-bridge-card");
     if (status) {
       const dot = status.querySelector("div>span");
-      dot?.classList.toggle("is-online", state.connected);
+      dot?.classList.toggle("is-online", state.resolveConnected);
+      dot?.classList.toggle("is-waiting", state.connected && !state.resolveConnected);
       const title = status.querySelector("div>b");
-      if (title) title.textContent = state.connected ? "Desktop Bridge đã kết nối" : "Desktop Bridge chưa kết nối";
+      if (title) {
+        title.textContent = state.resolveConnected
+          ? "DaVinci Resolve đã tự động kết nối"
+          : state.connected
+            ? "Bridge online · đang chờ mở Resolve"
+            : "Đang tự tìm H Cosmic Bridge";
+      }
       const connect = status.querySelector("[data-dr-connect]");
       if (connect) {
-        connect.textContent = state.connected ? "Ngắt kết nối" : "Kết nối Resolve";
+        connect.textContent = state.resolveConnected
+          ? "AUTO CONNECTED"
+          : state.connected
+            ? "WAITING FOR RESOLVE"
+            : "Thử kết nối ngay";
         connect.classList.toggle("is-connected", state.connected);
+        connect.disabled = state.connected;
       }
     }
   }
@@ -458,36 +488,109 @@
     persist();
   }
 
-  async function connect() {
-    if (state.connected) {
-      state.connected = false;
-      state.busy = false;
-      clearTimeout(pollTimer);
-      sessionStorage.removeItem(SESSION_KEY);
-      render(true);
-      toast("Đã ngắt phiên ghép nối.");
-      return;
-    }
-    const keyInput = activeRoot.querySelector("[data-dr-bridge-key]");
-    const key = String(keyInput?.value || "").trim().toUpperCase();
-    if (!key) return toast("Nhập mã ghép nối hiển thị trong H Cosmic Studio.", "error");
+  async function establishConnection(key, quiet = false) {
     sessionStorage.setItem(SESSION_KEY, key);
     try {
-      await api("/api/health");
+      const health = await api("/api/health");
       const config = await api("/api/config");
       state.config = { ...clone(DEFAULT_CONFIG), ...config };
       state.connected = true;
+      state.resolveConnected = Boolean(health.resolve_connected);
+      state.autoConnect = Boolean(health.auto_connect);
+      state.progressText = state.resolveConnected
+        ? "DaVinci Resolve đã tự động kết nối"
+        : "Bridge online · đang chờ mở DaVinci Resolve";
       state.error = "";
       persist();
       render(true);
-      toast("Đã kết nối H Cosmic Studio trên máy này.");
+      if (!quiet) {
+        toast(
+          state.resolveConnected
+            ? "Đã tự động kết nối DaVinci Resolve trên máy này."
+            : "Bridge đã kết nối và đang chờ DaVinci Resolve."
+        );
+      }
       pollStatus();
+      return true;
     } catch (error) {
       sessionStorage.removeItem(SESSION_KEY);
       state.connected = false;
+      state.resolveConnected = false;
+      throw error;
+    }
+  }
+
+  function scheduleAutoConnect() {
+    clearTimeout(autoRetryTimer);
+    if (activeRoot && !state.connected) {
+      autoRetryTimer = setTimeout(() => autoConnect(false), AUTO_RETRY_MS);
+    }
+  }
+
+  async function autoConnect(showErrors = false) {
+    if (!activeRoot || state.connected || autoConnecting) return;
+    clearTimeout(autoRetryTimer);
+    autoConnecting = true;
+    state.progressText = "Đang tự tìm H Cosmic Bridge trên máy này…";
+    state.error = "";
+    render();
+    try {
+      let key = bridgeKey();
+      if (key) {
+        try {
+          await establishConnection(key, true);
+          return;
+        } catch {
+          sessionStorage.removeItem(SESSION_KEY);
+          key = "";
+        }
+      }
+      const claim = await api("/api/claim", {
+        method: "POST",
+        skipKey: true,
+        headers: { "X-H-Cosmic-Auto-Connect": AUTO_CONNECT_PROTOCOL },
+        body: { client: "nhhoang13all-davinci-hub", protocol: 2 }
+      });
+      key = String(claim.access_key || "").trim().toUpperCase();
+      if (!claim.paired || !key) throw new Error("Auto Bridge chưa sẵn sàng.");
+      await establishConnection(key, true);
+      toast(
+        state.resolveConnected
+          ? "Zero-click: DaVinci Resolve đã kết nối."
+          : "Auto Bridge online; sẽ tự nhận Resolve khi bạn mở ứng dụng."
+      );
+    } catch (error) {
+      sessionStorage.removeItem(SESSION_KEY);
+      state.connected = false;
+      state.resolveConnected = false;
+      state.busy = false;
+      state.progressText = "Chưa thấy Auto Bridge · sẽ tự thử lại";
+      state.error = "";
+      render();
+      if (showErrors) {
+        toast(
+          "Chưa tìm thấy Auto Bridge. Hãy cài bản Desktop mới hoặc nhập mã dự phòng.",
+          "error"
+        );
+      }
+    } finally {
+      autoConnecting = false;
+      scheduleAutoConnect();
+    }
+  }
+
+  async function connect() {
+    if (state.connected) return;
+    const keyInput = activeRoot?.querySelector("[data-dr-bridge-key]");
+    const key = String(keyInput?.value || "").trim().toUpperCase();
+    if (!key) return autoConnect(true);
+    try {
+      await establishConnection(key);
+    } catch (error) {
       state.error = error.message;
       render(true);
-      toast(`${error.message} Hãy bật Website Bridge trong tool desktop.`, "error");
+      toast(`${error.message} Auto Bridge sẽ tiếp tục thử lại.`, "error");
+      scheduleAutoConnect();
     }
   }
 
@@ -496,22 +599,31 @@
     if (!state.connected) return;
     try {
       const payload = await api(`/api/status?after=${state.lastEventId}`);
+      const wasResolveConnected = state.resolveConnected;
+      state.resolveConnected = Boolean(payload.resolve_connected);
       state.busy = Boolean(payload.busy);
       state.task = payload.task || "";
       state.progress = number(payload.progress);
-      state.progressText = payload.progress_text || "Sẵn sàng";
+      state.progressText = !state.resolveConnected && !state.busy
+        ? "Bridge online · đang chờ mở DaVinci Resolve"
+        : payload.progress_text || "Sẵn sàng";
       state.dashboard = payload.dashboard || {};
       state.result = payload.result || {};
       state.error = payload.error || "";
       state.lastEventId = number(payload.last_event_id, state.lastEventId);
       if (payload.events?.length) state.events = [...state.events, ...payload.events].slice(-1000);
       render();
+      if (!wasResolveConnected && state.resolveConnected) {
+        toast("Đã tự động phát hiện và kết nối DaVinci Resolve.");
+      }
     } catch (error) {
       state.connected = false;
+      state.resolveConnected = false;
       state.busy = false;
-      state.error = error.message;
+      state.error = "";
+      sessionStorage.removeItem(SESSION_KEY);
       render(true);
-      toast("Mất kết nối Desktop Bridge.", "error");
+      scheduleAutoConnect();
       return;
     }
     pollTimer = setTimeout(pollStatus, state.busy ? 1200 : 3500);
@@ -530,7 +642,9 @@
 
   async function run(action) {
     readForm();
-    if (!state.connected) return toast("Desktop Bridge chưa kết nối.", "error");
+    if (!state.connected || !state.resolveConnected) {
+      return toast("Đang chờ DaVinci Resolve. Hãy mở Resolve và project cần sản xuất.", "error");
+    }
     try {
       if (action === "cancel") {
         await api("/api/cancel", { method: "POST", body: {} });
@@ -623,11 +737,13 @@
     if (options.view && ["command", "config", "profiles", "audit"].includes(options.view)) state.view = options.view;
     host.innerHTML = rootMarkup();
     bind(host);
-    if (bridgeKey()) connect();
+    autoConnect(false);
   }
 
   function unmount() {
     clearTimeout(pollTimer);
+    clearTimeout(autoRetryTimer);
+    autoConnecting = false;
     if (activeRoot) activeRoot.replaceChildren();
     activeRoot = null;
   }

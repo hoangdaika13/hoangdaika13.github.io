@@ -96,8 +96,8 @@
       ]
     },
     davinci: {
-      styles: ["davinci-resolve-hub.css?v=1"],
-      scripts: ["davinci-resolve-hub.js?v=1"]
+      styles: ["davinci-resolve-hub.css?v=2"],
+      scripts: ["davinci-resolve-hub.js?v=2"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6"],

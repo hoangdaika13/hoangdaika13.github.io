@@ -15,9 +15,9 @@ test("Davinci Resolve is a first-class routed workspace", () => {
   assert.match(script, /id:\s*"davinci-resolve"/);
   assert.match(script, /route:\s*"\/davinci-resolve"/);
   assert.match(hub, /window\.HHDavinciResolveHub\s*=\s*\{\s*mount/);
-  assert.match(loader, /davinci:\s*\{\s*styles:\s*\["davinci-resolve-hub\.css\?v=1"\]/);
+  assert.match(loader, /davinci:\s*\{\s*styles:\s*\["davinci-resolve-hub\.css\?v=2"\]/);
   assert.match(loader, /startsWith\("\/davinci-resolve"\)/);
-  assert.match(html, /performance-loader\.js\?v=52/);
+  assert.match(html, /performance-loader\.js\?v=53/);
 });
 
 test("the website bridge is local-only and key protected", () => {
@@ -30,6 +30,10 @@ test("the website bridge is local-only and key protected", () => {
   assert.match(hub, /\/api\/preflight/);
   assert.match(hub, /\/api\/run/);
   assert.match(hub, /\/api\/status\?after=/);
+  assert.match(hub, /\/api\/claim/);
+  assert.match(hub, /h-cosmic-auto-v2/);
+  assert.match(hub, /autoConnect\(false\)/);
+  assert.match(hub, /resolve_connected/);
   assert.match(vercel, /http:\/\/127\.0\.0\.1:8765/);
   assert.match(html, /http:\/\/localhost:8765/);
   assert.doesNotMatch(hub, /localStorage\.setItem\([^)]*bridge/i);
