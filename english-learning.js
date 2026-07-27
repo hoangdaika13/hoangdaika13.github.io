@@ -15,6 +15,8 @@
     { id: "gb-male", lang: "en-GB", gender: "male", flag: "UK", label: "Nam · Anh-Anh", detail: "Giọng Anh tự nhiên, cân bằng" },
     { id: "au-female", lang: "en-AU", gender: "female", flag: "AU", label: "Nữ · Anh-Úc", detail: "Luyện nghe biến thể quốc tế" },
     { id: "au-male", lang: "en-AU", gender: "male", flag: "AU", label: "Nam · Anh-Úc", detail: "Mở rộng khả năng nghe thực tế" },
+    { id: "ca-female", lang: "en-CA", gender: "female", flag: "CA", label: "Nữ · Anh-Canada", detail: "Giọng Bắc Mỹ rõ và cân bằng" },
+    { id: "ca-male", lang: "en-CA", gender: "male", flag: "CA", label: "Nam · Anh-Canada", detail: "Luyện nghe môi trường quốc tế" },
     { id: "in-female", lang: "en-IN", gender: "female", flag: "IN", label: "Nữ · Anh-Ấn", detail: "Hữu ích cho môi trường toàn cầu" },
     { id: "in-male", lang: "en-IN", gender: "male", flag: "IN", label: "Nam · Anh-Ấn", detail: "Làm quen nhiều chất giọng" }
   ];
@@ -275,11 +277,12 @@
     learnerProfile: { confidence: "", focusSkill: "speaking", needsPlacement: false },
     careerProfile: { roleStage: "student", skillFocus: "speaking", intensity: "foundation" },
     settings: { voiceRate: 0.85, voicePitch: 1, voiceProfile: "us-female", voiceURI: "", audioPlaybackConsent: false, microphoneConsent: false, interfaceLanguage: "vi", reducedMotion: false, beginnerMode: true, theme: "night", learnerType: "student", goal: "Giao tiếp hằng ngày" },
-    speakingScenario: "workplace", speakingAttempts: [], speakingRoleplays: []
+    speakingScenario: "workplace", speakingAttempts: [], speakingRoleplays: [],
+    ...(root.HHEnglishGalaxy?.defaultState?.() || {})
   });
   const mergeState = (stored = {}) => {
     const fallback = defaultState();
-    return {
+    const merged = {
       ...fallback,
       ...stored,
       streak: { ...fallback.streak, ...(stored.streak || {}) },
@@ -291,6 +294,7 @@
       careerProfile: { ...fallback.careerProfile, ...(stored.careerProfile || {}) },
       settings: { ...fallback.settings, ...(stored.settings || {}) }
     };
+    return root.HHEnglishGalaxy?.mergeState?.(merged, stored, fallback) || merged;
   };
   const readState = () => {
     try {
@@ -316,7 +320,9 @@
       const next = pool.find((item) => !state.completed?.[item.id]) || null;
       if (next && next.id !== lesson.id) { state.activeLesson = next.id; openedNext = true; }
     }
+    if (state.galaxy) state.galaxy.lastSavedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, version: APP_VERSION }));
+    root.dispatchEvent?.(new CustomEvent("hh:english-state-changed", { detail: { version: APP_VERSION, activeView: state.activeView, savedAt: state.galaxy?.lastSavedAt || new Date().toISOString() } }));
     if (openedNext && host) root.setTimeout?.(() => { if (host) { render({ focusView: true }); toast("Bài tiếp theo đã tự mở.", "success"); } }, 450);
   };
   const getLesson = (id) => allLessons.find((lesson) => lesson.id === id) || courses[0].lessons[0];
@@ -570,13 +576,13 @@
   };
 
   const navItems = [
-    ["dashboard", "⌂", "Hôm nay"], ["plan", "✓", "Kế hoạch"], ["learn", "▶", "Bài học"], ["career", "▦", "Chuyên ngành"], ["practice", "✦", "Luyện tập"], ["placement", "◎", "Xếp lớp"], ["survey", "◈", "Khảo sát nghề"], ["vocabulary", "◇", "Sổ từ"],
+    ["dashboard", "☉", "English Galaxy"], ["listening", "◖", "Luyện nghe"], ["reading", "Aa", "Đọc hiểu"], ["listen-read", "∞", "Nghe & đọc"], ["plan", "✓", "Kế hoạch"], ["learn", "▶", "Bài học"], ["career", "▦", "Chuyên ngành"], ["practice", "✦", "Luyện tập"], ["placement", "◎", "Xếp lớp"], ["survey", "◈", "Khảo sát nghề"], ["vocabulary", "◇", "Sổ từ"],
     ["speaking", "◉", "Luyện nói"], ["writing", "✎", "Luyện viết"], ["progress", "↗", "Tiến độ"], ["settings", "⚙", "Cài đặt"]
   ];
   const beginnerNavIds = new Set(["dashboard", "learn", "vocabulary", "speaking", "progress"]);
   const navigatorGroups = [
     { id: "start", icon: "01", title: "Bắt đầu đúng chỗ", detail: "Kế hoạch, lộ trình và kiểm tra trình độ", views: ["plan", "learn", "placement"] },
-    { id: "skills", icon: "Aa", title: "Luyện từng kỹ năng", detail: "Bài ngắn, có phản hồi và bước tiếp theo", views: ["practice", "vocabulary", "speaking", "writing"] },
+    { id: "skills", icon: "Aa", title: "Luyện từng kỹ năng", detail: "Bài ngắn, có phản hồi và bước tiếp theo", views: ["listening", "reading", "listen-read", "practice", "vocabulary", "speaking", "writing"] },
     { id: "career", icon: "▦", title: "Tiếng Anh công việc", detail: "Khảo sát nghề và bài học theo chuyên ngành", views: ["survey", "career"] },
     { id: "personal", icon: "◎", title: "Cá nhân của bạn", detail: "Theo dõi kết quả và điều chỉnh trải nghiệm", views: ["progress", "settings"] }
   ];
@@ -685,7 +691,7 @@
     const levelId = selectedLevelId(state); const level = levelById(levelId); const done = completedCount(state, levelId); const total = levelLessonIds(levelId).length;
     const next = nextLessonFor(state, levelId);
     const navButton = ([id, icon, label]) => `<button type="button" class="${state.activeView === id ? "active" : ""}" data-hhe-view="${id}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><i>${icon}</i><span>${label}</span></button>`;
-    const focusedNav = [navItems[0], navItems[1], navItems[4], navItems[10]];
+    const focusedNav = ["dashboard", "listening", "reading", "progress"].map((id) => navItems.find(([view]) => view === id));
     const currentLabel = state.activeView === "lesson" ? "Bài học đang mở" : (navItems.find(([id]) => id === state.activeView)?.[2] || "Hôm nay");
     return `<section class="hhe-app" data-hhe-app data-view="${state.activeView}" data-theme="${state.settings.theme}">
     <header class="hhe-topbar"><div class="hhe-brand"><span>HH</span><div><small>HỌC TIẾNG ANH MIỄN PHÍ</small><strong>HH English</strong></div></div><div class="hhe-top-stats"><span><i>◆</i><b>${state.streak.current}</b> ngày học</span><span><i>◷</i><b>${state.dailyGoal}</b> phút/ngày</span></div><button type="button" class="hhe-top-voice" data-hhe-view="speaking" aria-label="Mở phòng giọng đọc"><b>${escapeHtml(voiceProfileById(state.settings.voiceProfile).flag)}</b> ${escapeHtml(voiceProfileById(state.settings.voiceProfile).gender === "female" ? "Nữ" : "Nam")}</button><button type="button" class="hhe-top-explore" data-hhe-navigator-open aria-label="Mở bản đồ học tập">⌕ Khám phá</button><button type="button" data-hhe-onboarding-open aria-label="Mở hướng dẫn bắt đầu" title="Hướng dẫn cho người mới">?</button><button type="button" data-hhe-theme aria-label="Đổi màu giao diện">${state.settings.theme === "day" ? "☀ Sáng" : "◐ Tối"}</button></header>
@@ -908,7 +914,7 @@
   const speakingView = (state) => {
     const levelId = selectedLevelId(state); const prompt = levelById(levelId).speaking;
     const scenario = speakingScenarios.find((item) => item.id === state.speakingScenario) || speakingScenarios[0];
-    const phrase = scenario.phrase;
+    const phrase = state.galaxy?.shadowingTarget || scenario.phrase;
     const attempts = Array.isArray(state.speakingAttempts) ? state.speakingAttempts.filter((item) => item.level === levelId).slice(0, 4) : [];
     const career = careerTrackById(selectedCareerId(state));
     const brief = buildRoleplayBrief(scenario.id, career, state.careerProfile);
@@ -962,7 +968,14 @@
     const shouldFocus = options === true || Boolean(options.focusView) || focusAfterRender;
     focusAfterRender = false;
     const state = readState(); let content = "";
-    if (state.activeView === "plan") content = smartPlanView(state);
+    const galaxyContent = root.HHEnglishGalaxy?.renderView?.(state, {
+      courseLevels, careerTracks, allLessons, levelOrder, selectedLevelId, selectedCareerId,
+      completedCount, levelProgress, levelPractice, nextLessonFor, speechAdapterStatus,
+      englishVoices, voiceProfiles, voiceProfileById, selectVoice, compareTranscript,
+      escapeHtml, normalize, todayKey
+    });
+    if (typeof galaxyContent === "string") content = galaxyContent;
+    else if (state.activeView === "plan") content = smartPlanView(state);
     else if (state.activeView === "learn") content = learnView(state);
     else if (state.activeView === "career") content = careerView(state);
     else if (state.activeView === "survey") content = careerSurveyView(state);
@@ -982,6 +995,11 @@
     host.querySelector("[data-hhe-career-search]")?.addEventListener("input", filterCareerTracks);
     host.querySelector("[data-hhe-navigator-search]")?.addEventListener("input", filterNavigator);
     host.querySelector('[name="voiceRate"]')?.addEventListener("input", (event) => { event.target.nextElementSibling.textContent = `${event.target.value}×`; });
+    root.HHEnglishGalaxy?.bind?.({
+      host, state, readState, writeState, render, toast, speak, selectVoice, englishVoices,
+      voiceProfileById, compareTranscript, escapeHtml, selectedLevelId, todayKey,
+      scheduleReview, updateStreak
+    });
     updateFocusClock();
     if (shouldFocus) focusCurrentView();
   };
@@ -1438,7 +1456,7 @@
     render();
   };
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
-  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
+  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishGalaxy?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
   root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
   if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };

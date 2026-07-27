@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v247";
+const CACHE = "hh-identity-portal-v248";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -202,6 +202,7 @@ const RUNTIME_ASSETS = [
   "./learning-coach-labs.css?v=3",
   "./learning-classroom.css?v=3",
   "./english-learning.css?v=11",
+  "./english-learning-galaxy.css?v=1",
   "./english-voice-coach.css?v=4",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
@@ -285,7 +286,8 @@ const RUNTIME_ASSETS = [
   "./english-curriculum.js?v=1",
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
-  "./english-learning.js?v=16",
+  "./english-learning-galaxy.js?v=1",
+  "./english-learning.js?v=17",
   "./config.js?v=8",
   "./data/ai-super-platform-modules.json"
 ];
@@ -304,7 +306,7 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=40",
+  "./performance-loader.js?v=41",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=133"
