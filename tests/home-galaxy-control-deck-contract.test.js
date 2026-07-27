@@ -19,7 +19,7 @@ test("Galaxy Control Deck V3 is versioned in the route loader and offline shell"
     assert.ok(loader.includes(asset), `loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }
-  assert.match(worker, /hh-identity-portal-v259/);
+  assert.match(worker, /hh-identity-portal-v260/);
   assert.match(index, /performance-loader\.js\?v=48/);
 });
 
