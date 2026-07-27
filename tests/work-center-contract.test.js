@@ -46,8 +46,8 @@ test("Work assets are versioned and available offline", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  assert.match(index, /script\.js\?v=139/);
-  for (const asset of ["work-center.css?v=3", "work-center.js?v=3", "insights-pro.css?v=3", "insights-pro.js?v=7"]) {
+  assert.match(index, /script\.js\?v=141/);
+  for (const asset of ["work-center.css?v=4", "work-center.js?v=4", "insights-pro.css?v=3", "insights-pro.js?v=7"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);

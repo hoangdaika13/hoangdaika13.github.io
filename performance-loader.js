@@ -147,8 +147,8 @@
       scripts: ["search-watch-center.js?v=7"]
     },
     work: {
-      styles: ["work-center.css?v=3", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
-      scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=3"]
+      styles: ["work-center.css?v=4", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
+      scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=4"]
     },
     game: {
       styles: ["game-runtime.css?v=1", "space-explorer.css?v=4", "game-center.css?v=4", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],

@@ -5255,6 +5255,16 @@ function initAppShell() {
     { id: "observability-radar", icon: "OR", title: "Observability Radar", group: "Developer Galaxy", description: "Logs, traces, Web Vitals, incident và AI" }
   ];
   const developerAllToolItems = [...developerToolItems, ...developerWorkspaceItems];
+  const workLegacyModuleIds = ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"];
+  const workGalaxyPageItems = [
+    { id: "mission-control", icon: "MC", title: "Mission Control", route: "/work/mission-control", color: "#62ecf2", description: "Việc hôm nay, rủi ro, lịch, focus và trạng thái dữ liệu thật." },
+    { id: "projects-tasks", icon: "PT", title: "Projects & Tasks", route: "/work/projects-tasks", color: "#8f7cff", description: "List, Board, Calendar, Timeline, Gantt, Workload và Milestone." },
+    { id: "roadmap-planning", icon: "RP", title: "Roadmap & Planning", route: "/work/roadmap-planning", color: "#ff70bf", description: "Initiative, cycle, dependency, capacity và risk detector." },
+    { id: "team-orbit", icon: "TO", title: "Team Orbit", route: "/work/team-orbit", color: "#5b9dff", description: "Capacity, workload, meeting và action item." },
+    { id: "knowledge-assets", icon: "KA", title: "Knowledge & Assets", route: "/work/knowledge-assets", color: "#49e4ad", description: "Wiki, tệp, Form và chín workspace kết nối." },
+    { id: "automation-lab", icon: "AL", title: "Automation Lab", route: "/work/automation-lab", color: "#ff9a62", description: "Rule builder, approval, dry run và lịch sử thực thi." },
+    { id: "portfolio-observatory", icon: "PO", title: "Portfolio Observatory", route: "/work/portfolio-observatory", color: "#ffd76a", description: "Sức khỏe, deadline, velocity, workload và snapshot." }
+  ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
     { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: [], studioItems: creativeStudioItems },
@@ -5305,7 +5315,7 @@ function initAppShell() {
       ]
     },
     { id: "dev", label: "DEV", icon: "⌘", accent: "#61e7ff", route: "/dev-tools", items: [], studioItems: developerToolItems },
-    { id: "work", label: "Công việc", icon: "□", accent: "#baf46b", route: "/work", items: ["project-center", "cloud-storage", "download-center", "knowledge-center", "store", "wishlist-compare", "team-collaboration", "form-builder", "workflow-automation"] },
+    { id: "work", label: "Công việc", icon: "□", accent: "#baf46b", route: "/work", items: [], pages: workGalaxyPageItems, legacyItems: workLegacyModuleIds },
     {
       id: "communication",
       label: "Giao tiếp",
@@ -5396,7 +5406,7 @@ function initAppShell() {
   const moduleById = (id) => moduleList().find((item) => item.id === id);
   const routeForModule = (id) => {
     if (id === "admin-panel") return "/admin";
-    const group = groups.find((item) => item.items.includes(id) || item.studioItems?.some((tool) => tool.id === id));
+    const group = groups.find((item) => item.items.includes(id) || item.legacyItems?.includes(id) || item.studioItems?.some((tool) => tool.id === id));
     return `${group?.route || "/tools"}/${id}`;
   };
   const userName = () => {
@@ -5490,7 +5500,9 @@ function initAppShell() {
               </section>`;
             }).join("");
           })()
-        : (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
+        : group.id === "work"
+          ? (group.pages || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--work ${route === item.route || (item.id === "mission-control" && route === "/work") ? "is-active" : ""}" type="button" data-app-route="${item.route}" style="--work-nav-color:${safeText(item.color || group.accent)}" title="${safeText(item.description || item.title)}" ${route === item.route || (item.id === "mission-control" && route === "/work") ? "aria-current=page" : ""}><b>${safeText(item.icon || "W")}</b><span>${safeText(item.title)}</span><i>›</i></button>`).join("")
+          : (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
       const studioMenu = group.studioItems
         ? (group.id === "create" && window.HHCreativeStarMap?.markup
           ? window.HHCreativeStarMap.markup({ items: group.studioItems, route })
@@ -5611,11 +5623,11 @@ function initAppShell() {
     }
     mountSimpleView("Giao tiếp", "Không gian kết nối, tìm kiếm và cộng đồng của HH Platform.", '<button class="app-primary-action" type="button" data-search-watch-open="google">Mở Google + YouTube</button>');
   };
-  const mountWorkOverview = () => {
+  const mountWorkOverview = (view = "mission-control") => {
     workspace.innerHTML = '<div data-work-center-host></div>';
     const host = workspace.firstElementChild;
     if (window.HHWorkCenter?.mount) {
-      window.HHWorkCenter.mount(host, { apiBase: REALTIME_URL });
+      window.HHWorkCenter.mount(host, { apiBase: REALTIME_URL, view });
       return;
     }
     mountSimpleView("Công việc", "Không gian dự án, tài liệu, tệp và tự động hóa của HH Platform.", '<button class="app-primary-action" type="button" data-app-route="/work/project-center">Mở Project Center</button>');
@@ -5631,8 +5643,8 @@ function initAppShell() {
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
     const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "game-center": "Game Center", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
-    const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems];
-    const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerAllToolItems : knownTools;
+    const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems];
+    const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
     let crumbRoute = "";
     breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Trang chủ</button>` : [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => {
       crumbRoute += `/${crumb}`;
@@ -5685,7 +5697,7 @@ function initAppShell() {
     document.body.classList.toggle("app-learning-route", route === "/learn" || route.startsWith("/learn/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     document.body.classList.toggle("app-communication-route", route === "/communication" || route.startsWith("/communication/"));
-    document.body.classList.toggle("app-work-route", route === "/work");
+    document.body.classList.toggle("app-work-route", route === "/work" || route.startsWith("/work/"));
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
     document.body.classList.toggle("app-creative-os-route", isCreativeOSRoute(route));
     document.body.classList.toggle("app-creative-route", route === "/create" || route.startsWith("/create/"));
@@ -5707,7 +5719,7 @@ function initAppShell() {
     const learningView = route === "/learn" ? "home" : route.split("/").filter(Boolean)[1];
     if (!(route === "/learn" || window.HHLearningSuite?.supports?.(learningView))) window.HHLearningSuite?.unmount?.();
     if (route !== "/system") window.HHSystemPlatform?.unmount?.();
-    if (route !== "/work") window.HHWorkCenter?.unmount?.();
+    if (!(route === "/work" || workGalaxyPageItems.some((item) => item.route === route))) window.HHWorkCenter?.unmount?.();
     if (route !== "/music-ai" && !route.startsWith("/music-ai/")) {
       window.HHMusicAIStudio?.unmount?.();
       window.HHMusicProductionSuite?.unmount?.();
@@ -5732,10 +5744,12 @@ function initAppShell() {
       updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
       workspace.replaceChildren(dashboardHome);
       updateDashboard();
-    } else if (route === "/work") {
-      updatePageHeader("Công việc", "Điều hành dự án, đầu việc, tài liệu, tệp và tự động hóa trong một workspace thống nhất.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/work/project-center">Project Center</button><button class="app-primary-action" type="button" data-work-capture>+ Tạo công việc</button>`;
-      mountWorkOverview();
+    } else if (route === "/work" || workGalaxyPageItems.some((item) => item.route === route)) {
+      const workView = route === "/work" ? "mission-control" : parts[1];
+      const workPage = workGalaxyPageItems.find((item) => item.id === workView) || workGalaxyPageItems[0];
+      updatePageHeader(workPage.title, workPage.description, route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/work/portfolio-observatory">Portfolio</button><button class="app-primary-action" type="button" data-work-capture>+ Tạo công việc</button>`;
+      mountWorkOverview(workView);
     } else if (route === "/communication" || (route.startsWith("/communication/") && window.HHCommunicationSuite?.supports?.(parts[1]))) {
       const communicationRouteView = route === "/communication" ? "command-center" : parts[1];
       const communicationMeta = window.HHCommunicationSuite?.views?.[communicationRouteView];
@@ -6089,6 +6103,7 @@ function initAppShell() {
     ];
     const creativeTools = creativeStudioItems.map((item) => ({ type: "Sáng tạo", title: item.title, description: item.description || item.group, route: `/create/${item.id}`, key: `${item.title} ${item.group} ${item.description || ""} creative sáng tạo kịch bản ai` }));
     const developerTools = developerAllToolItems.map((item) => ({ type: "DEV", title: item.title, description: item.description || item.group, route: `/dev-tools/${item.id}`, key: `${item.title} ${item.description || ""} ${item.group} developer galaxy toolbox` }));
+    const workGalaxy = workGalaxyPageItems.map((item) => ({ type: "Công việc", title: item.title, description: item.description, route: item.route, key: `${item.title} ${item.description} work galaxy công việc project task board calendar timeline gantt workload roadmap planning team knowledge automation portfolio` }));
     const musicAI = musicAIAllPageItems.map((item) => ({
       type: "Làm nhạc AI",
       title: item.title,
@@ -6096,7 +6111,7 @@ function initAppShell() {
       route: item.route,
       key: `${item.title} ${item.section || ""} ${item.description} AI DAW music composer lyrics timeline stems vocal mix master visualizer youtube rights`
     }));
-    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "HH Game Center", description: "Tổng quan giải trí chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "22 game hoàn chỉnh thuộc bốn nhóm Action, Strategy, Puzzle và Simulation, dùng chung tiến trình, nhiệm vụ, thành tích và điều khiển đa thiết bị.", route: "/entertainment/arcade", key: "arcade galaxy 22 game action strategy puzzle simulation neon drift defense colony cipher miner rhythm quiz sandbox chess survival farm fishing mecha planet pet dungeon card tycoon runner black hole nebula boss rush" }, { type: "Studio", title: "Media & Design", description: "36 công cụ trong Media Cosmos với Media Cloud, Review Studio, Motion Compositing, Universal Canvas, AI Task Center và Dev Handoff.", route: "/media-design", key: "media design media cosmos professional universal project media cloud private blob multipart review studio annotation version compare approval universal canvas infinite artboard motion compositing node graph ai task center provenance dev mode handoff storybook photo editor photoshop video editor premiere render queue rights consent c2pa" }, { type: "Developer", title: "Developer Galaxy", description: "8 hành tinh DEV, 13 workspace chuyên sâu và 34 công cụ cho project, code, API, data, Git, delivery, security và observability.", route: "/dev-tools", key: "developer galaxy dev project code api data git delivery security observability smart input recipe pipeline mock json regex database playground diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...workGalaxy, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "HH Game Center", description: "Tổng quan giải trí chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "22 game hoàn chỉnh thuộc bốn nhóm Action, Strategy, Puzzle và Simulation, dùng chung tiến trình, nhiệm vụ, thành tích và điều khiển đa thiết bị.", route: "/entertainment/arcade", key: "arcade galaxy 22 game action strategy puzzle simulation neon drift defense colony cipher miner rhythm quiz sandbox chess survival farm fishing mecha planet pet dungeon card tycoon runner black hole nebula boss rush" }, { type: "Studio", title: "Media & Design", description: "36 công cụ trong Media Cosmos với Media Cloud, Review Studio, Motion Compositing, Universal Canvas, AI Task Center và Dev Handoff.", route: "/media-design", key: "media design media cosmos professional universal project media cloud private blob multipart review studio annotation version compare approval universal canvas infinite artboard motion compositing node graph ai task center provenance dev mode handoff storybook photo editor photoshop video editor premiere render queue rights consent c2pa" }, { type: "Developer", title: "Developer Galaxy", description: "8 hành tinh DEV, 13 workspace chuyên sâu và 34 công cụ cho project, code, API, data, Git, delivery, security và observability.", route: "/dev-tools", key: "developer galaxy dev project code api data git delivery security observability smart input recipe pipeline mock json regex database playground diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
