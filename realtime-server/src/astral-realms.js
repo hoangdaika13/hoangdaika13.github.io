@@ -7,6 +7,12 @@ const ATTACK_COOLDOWN_MS = 320;
 const SKILL_COOLDOWN_MS = 2600;
 const INPUT_RATE_MS = 24;
 const ELEMENTS = new Set(["plasma", "cryo", "void", "nature", "quantum", "solar"]);
+const CHARACTER_PROFILES = Object.freeze({
+  lyra: { element: "plasma", attackScale: 1, speedScale: 1 },
+  cael: { element: "cryo", attackScale: 0.92, speedScale: 1.12 },
+  nyx: { element: "void", attackScale: 1.08, speedScale: 1.06 },
+  sol: { element: "solar", attackScale: 1.18, speedScale: 0.94 }
+});
 
 function clamp(value, min, max) {
   const number = Number(value);
@@ -26,6 +32,7 @@ function publicPlayer(player) {
     id: player.id,
     socketId: player.socketId,
     name: player.name,
+    characterId: player.characterId,
     x: Number(player.x.toFixed(3)),
     z: Number(player.z.toFixed(3)),
     rotation: Number(player.rotation.toFixed(3)),
@@ -48,6 +55,10 @@ function publicEnemy(enemy) {
     health: Math.round(enemy.health),
     maxHealth: enemy.maxHealth,
     boss: enemy.boss,
+    bossPhase: enemy.bossPhase,
+    shield: Math.round(enemy.shield || 0),
+    maxShield: enemy.maxShield || 0,
+    weakPointOpen: Boolean(enemy.boss && enemy.bossPhase >= 2 && enemy.shield <= 0),
     defeated: enemy.health <= 0,
     respawnAt: enemy.respawnAt || 0
   };
@@ -64,6 +75,9 @@ function makeEnemy(id, type, x, z, health, boss = false) {
     health,
     maxHealth: health,
     boss,
+    bossPhase: boss ? 1 : 0,
+    shield: boss ? 320 : 0,
+    maxShield: boss ? 320 : 0,
     respawnAt: 0,
     attackAt: 0,
     targetId: ""
@@ -138,7 +152,17 @@ function applyAttack(shard, player, input, now) {
   player[cooldownKey] = now;
   player.action = action;
   const base = action === "attack" ? 24 : action === "skill" ? 58 : 120;
-  const damage = Math.round(base * clamp(input.power || 1, 0.75, 1.25));
+  const profile = CHARACTER_PROFILES[player.characterId] || CHARACTER_PROFILES.lyra;
+  let damage = Math.round(base * profile.attackScale * clamp(input.power || 1, 0.75, 1.25));
+  if (target.boss) {
+    target.bossPhase = target.health / target.maxHealth > 0.66 ? 1 : target.health / target.maxHealth > 0.33 ? 2 : 3;
+    if (target.bossPhase >= 2 && target.shield <= 0 && action !== "attack") damage = Math.round(damage * 1.35);
+    if (target.shield > 0) {
+      const absorbed = Math.min(target.shield, damage);
+      target.shield -= absorbed;
+      damage -= absorbed;
+    }
+  }
   target.health = Math.max(0, target.health - damage);
   if (!target.health) target.respawnAt = now + (target.boss ? 120000 : 25000);
 }
@@ -151,6 +175,8 @@ function updateEnemies(shard, dt, now) {
         enemy.x = enemy.homeX;
         enemy.z = enemy.homeZ;
         enemy.respawnAt = 0;
+        enemy.bossPhase = enemy.boss ? 1 : 0;
+        enemy.shield = enemy.maxShield || 0;
       }
       return;
     }
@@ -168,12 +194,13 @@ function updateEnemies(shard, dt, now) {
 
     enemy.targetId = target.id;
     if (nearest.distance > 2.2) {
-      const speed = enemy.boss ? 2.1 : 2.8;
+      const phaseSpeed = enemy.boss && enemy.bossPhase === 3 ? 2.9 : enemy.boss && enemy.bossPhase === 2 ? 2.5 : enemy.boss ? 2.1 : 2.8;
+      const speed = phaseSpeed;
       enemy.x += ((target.x - enemy.x) / nearest.distance) * dt * speed;
       enemy.z += ((target.z - enemy.z) / nearest.distance) * dt * speed;
     } else if (now - enemy.attackAt >= (enemy.boss ? 1300 : 900)) {
       enemy.attackAt = now;
-      target.health = Math.max(0, target.health - (enemy.boss ? 22 : 11));
+      target.health = Math.max(0, target.health - (enemy.boss ? (enemy.bossPhase === 3 ? 28 : enemy.bossPhase === 2 ? 25 : 22) : 11));
       target.action = "hit";
     }
   });
@@ -217,6 +244,7 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
           id: identity.id,
           socketId: socket.id,
           name: identity.name,
+          characterId: "lyra",
           x: clamp(payload.spawn?.x, -WORLD_LIMIT, WORLD_LIMIT),
           z: clamp(payload.spawn?.z, -WORLD_LIMIT, WORLD_LIMIT),
           rotation: 0,
@@ -239,6 +267,10 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
       player.sprint = payload.sprint === true;
       player.rotation = clamp(payload.rotation, -Math.PI * 4, Math.PI * 4);
       player.element = ELEMENTS.has(payload.element) ? payload.element : player.element;
+      if (CHARACTER_PROFILES[payload.characterId]) {
+        player.characterId = payload.characterId;
+        player.element = CHARACTER_PROFILES[payload.characterId].element;
+      }
       player.updatedAt = new Date().toISOString();
       applyAttack(context.shard, player, payload, now);
       done({ ok: true, seq: player.seq, integrity: "server-authoritative" });
@@ -270,7 +302,8 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
       shard.players.forEach((player) => {
         const move = player.move || { x: 0, z: 0 };
         const sprinting = player.sprint && player.stamina > 0;
-        const speed = sprinting ? MAX_MOVE_SPEED : 5.2;
+        const profile = CHARACTER_PROFILES[player.characterId] || CHARACTER_PROFILES.lyra;
+        const speed = (sprinting ? MAX_MOVE_SPEED : 5.2) * profile.speedScale;
         player.x = clamp(player.x + move.x * speed * dt, -WORLD_LIMIT, WORLD_LIMIT);
         player.z = clamp(player.z + move.z * speed * dt, -WORLD_LIMIT, WORLD_LIMIT);
         player.stamina = clamp(player.stamina + (sprinting ? -22 : 14) * dt, 0, 100);

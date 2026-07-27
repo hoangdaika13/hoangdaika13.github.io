@@ -96,9 +96,13 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
   assert.equal(snapshot.gameId, "astral-realms");
   assert.equal(snapshot.players.length, 1);
   assert.equal(snapshot.players[0].socketId, socket.id);
+  assert.equal(snapshot.players[0].characterId, "lyra");
   assert.ok(Math.hypot(snapshot.players[0].x + 45, snapshot.players[0].z - 19) < 2.5);
 
   const target = snapshot.enemies.find((enemy) => enemy.id === "aurora-wisp-1");
   assert.ok(target);
   assert.equal(target.health, 80);
+  const boss = snapshot.enemies.find((enemy) => enemy.id === "nexus-warden");
+  assert.equal(boss.bossPhase, 1);
+  assert.equal(boss.maxShield, 320);
 });
