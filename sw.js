@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v266";
+const CACHE = "hh-identity-portal-v267";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 performance-loader.js?v=51 performance-loader.js?v=52
@@ -46,7 +46,7 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=142",
+  "./script.js?v=143",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -317,7 +317,7 @@ const CORE = [
   "./performance-loader.js?v=53",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=142"
+  "./script.js?v=143"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

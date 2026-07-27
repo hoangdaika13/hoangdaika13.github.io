@@ -67,7 +67,7 @@ test("major navigation groups use the shared cosmic planet treatment", () => {
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=52", "script.js?v=141", "sidebar-navigation-pro.css?v=8", "english-learning.css?v=11", "english-learning.js?v=16", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=52", "script.js?v=143", "sidebar-navigation-pro.css?v=8", "english-learning.css?v=11", "english-learning.js?v=16", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);
