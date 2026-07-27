@@ -45,7 +45,8 @@ function publicDonation(item) {
     message: clean(item.message, 500),
     anonymous: Boolean(item.anonymous),
     verifiedAt: item.verifiedAt,
-    createdAt: item.createdAt
+    createdAt: item.createdAt,
+    receiptSentAt: item.receipt?.sentAt || null
   };
 }
 
