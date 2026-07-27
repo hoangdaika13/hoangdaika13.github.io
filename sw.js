@@ -1,8 +1,9 @@
 const CACHE = "hh-identity-portal-v272";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
-// script.js?v=141 performance-loader.js?v=51 performance-loader.js?v=52
+// script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57
 // Graphic Design Universal compatibility aliases: graphic-design-universal.css?v=1 graphic-design-universal.js?v=1
+// Entertainment v4 compatibility aliases: ./game-center.css?v=4 ./game-center.js?v=4
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
 // learning-suite.css?v=2 learning-home.css?v=2 learning-paths.css?v=2 learning-review.css?v=2 learning-lesson-player.css?v=2 learning-coach-labs.css?v=2 learning-classroom.css?v=2 learning-platform-core.js?v=2 learning-home.js?v=2 learning-paths.js?v=2 learning-review.js?v=2 learning-lesson-player.js?v=2 learning-coach-labs.js?v=2 learning-classroom.js?v=2 learning-suite.js?v=2
 const RUNTIME_ASSETS = [
@@ -47,7 +48,7 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=145",
+  "./script.js?v=146",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -198,8 +199,9 @@ const RUNTIME_ASSETS = [
   "./system-platform.js?v=3",
   "./sidebar-navigation-pro.css?v=9",
   "./game-runtime.css?v=1",
+  "./astral-realms.css?v=1",
   "./space-explorer.css?v=4",
-  "./game-center.css?v=4",
+  "./game-center.css?v=5",
   "./astra-universe-expansion.css?v=4",
   "./game-arcade.css?v=4",
   "./learning-suite.css?v=3",
@@ -285,8 +287,9 @@ const RUNTIME_ASSETS = [
   "./feature-engines.js?v=2",
   "./game-platform-adapters.js?v=1",
   "./game-runtime.js?v=1",
+  "./astral-realms.js?v=1",
   "./space-explorer.js?v=4",
-  "./game-center.js?v=4",
+  "./game-center.js?v=5",
   "./astra-universe-expansion.js?v=4",
   "./game-arcade.js?v=4",
   "./learning-platform-core.js?v=5",
@@ -321,10 +324,10 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=57",
+  "./performance-loader.js?v=58",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=145"
+  "./script.js?v=146"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

@@ -22,6 +22,7 @@ const SAVE_SLOTS = new Set(["main", "autosave", "checkpoint", "slot1", "slot2", 
 const SECRET_KEYS = /password|token|secret|authorization|cookie|api[-_]?key|private[-_]?key/i;
 const SERVER_DAILY_REWARD = Object.freeze({ xp: 250, coins: 100, items: ["daily-cache"] });
 const DEFAULT_GAMES = Object.freeze([
+  "astral-realms",
   "astra-hh",
   "neon-drift",
   "galaxy-defense",

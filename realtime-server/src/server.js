@@ -11,6 +11,7 @@ const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
 const { MongoClient, ObjectId } = require("mongodb");
 const { registerCommunicationV2 } = require("./communication-v2");
 const { registerGameCenterRealtime } = require("./game-center");
+const { registerAstralRealmsRealtime } = require("./astral-realms");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -743,7 +744,8 @@ registerCommunicationV2({
   hasObjectStorage: false
 });
 
-registerGameCenterRealtime({ io });
+const gameCenterRealtime = registerGameCenterRealtime({ io });
+registerAstralRealmsRealtime({ io, gameCenter: gameCenterRealtime });
 
 app.use((error, _req, res, _next) => {
   console.error("Realtime HTTP error:", error?.message || error);

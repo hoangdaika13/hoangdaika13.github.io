@@ -10,6 +10,20 @@
 
   const CATALOG = [
     {
+      id: "astral-realms",
+      title: "HH Astral Realms",
+      short: "AR",
+      route: "/entertainment/astral-realms",
+      genre: "Action RPG thế giới mở 3D",
+      color: "#ff6dca",
+      status: "Game mới",
+      release: "ready",
+      realtimeEligible: true,
+      description: "Khám phá H-Central, Aurora Vale, Crimson Forge và Void Garden; chiến đấu nguyên tố, làm nhiệm vụ, chế tạo và co-op 1–4 người.",
+      tags: ["Open World", "Action RPG", "Co-op", "3D"],
+      reward: { xp: 200, coins: 100 }
+    },
+    {
       id: "astra-hh",
       title: "HH Astra Universe",
       short: "AU",

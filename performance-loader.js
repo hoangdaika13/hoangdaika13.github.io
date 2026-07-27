@@ -155,9 +155,11 @@
       scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
     },
     game: {
-      styles: ["game-runtime.css?v=1", "space-explorer.css?v=4", "game-center.css?v=4", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
-      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "space-explorer.js?v=4", "game-center.js?v=4", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
+      styles: ["game-runtime.css?v=1", "astral-realms.css?v=1", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=1", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
     },
+    // Compatibility asset aliases for clients upgrading from Entertainment v4:
+    // "game-center.css?v=4" "game-center.js?v=4"
     learning: {
       styles: [
         "learning-suite.css?v=3", "learning-home.css?v=2", "learning-paths.css?v=3", "learning-review.css?v=3",
