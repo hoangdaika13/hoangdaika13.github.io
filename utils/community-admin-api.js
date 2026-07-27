@@ -741,6 +741,7 @@ module.exports = async function handler(req, res) {
           googleOAuth: providerState(envReady("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"), "Đăng nhập Google"),
           email: providerState(envReady("RESEND_API_KEY", "EMAIL_FROM"), "Email giao dịch"),
           youtube: providerState(Boolean(process.env.YOUTUBE_API_KEY), "YouTube Data API"),
+          openai: providerState(Boolean(process.env.OPENAI_API_KEYS || process.env.OPENAI_API_KEY), "OpenAI Responses API"),
           gemini: providerState(Boolean(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY), "Google AI"),
           objectStorage: providerState(Boolean(process.env.BLOB_READ_WRITE_TOKEN || envReady("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")), "Vercel Blob hoặc S3/R2")
         },

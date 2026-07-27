@@ -15,6 +15,13 @@ const {
   canTryAnotherKey,
   parseGeminiKeys
 } = require("../../../utils/gemini-key-pool");
+const {
+  OPENAI_MODELS,
+  normalizeOpenAIModel,
+  parseOpenAIKeys,
+  runOpenAIResponse
+} = require("../../../utils/openai-provider");
+const { createHmac } = require("node:crypto");
 
 const downloadHosts = [
   "youtube.com", "youtu.be", "tiktok.com", "facebook.com", "fb.watch",
@@ -26,6 +33,7 @@ const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai
 const allowedModels = new Set(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
 const contentPackSchema = {
   type: "object",
+  additionalProperties: false,
   properties: {
     title: { type: "string", description: "Ba đến năm tiêu đề có khả năng thu hút đúng đối tượng." },
     script: { type: "string", description: "Kịch bản hoàn chỉnh có hook, nội dung, cao trào, kết và CTA." },
@@ -42,6 +50,8 @@ const contentPackSchema = {
 
 let cachedGeminiPool = null;
 let cachedGeminiPoolSignature = "";
+let cachedOpenAIPool = null;
+let cachedOpenAIPoolSignature = "";
 
 function geminiKeys() {
   return parseGeminiKeys(process.env);
@@ -63,6 +73,28 @@ function geminiKeySource() {
   if (process.env.GEMINI_API_KEYS) return "gemini-pool";
   if (process.env.GEMINI_API_KEY) return "gemini";
   if (process.env.GOOGLE_AI_API_KEY) return "google-ai";
+  return "none";
+}
+
+function openAIKeys() {
+  return parseOpenAIKeys(process.env);
+}
+
+function openAIPool() {
+  const keys = openAIKeys();
+  const signature = keys.join("\u001f");
+  if (!cachedOpenAIPool || signature !== cachedOpenAIPoolSignature) {
+    cachedOpenAIPool = new GeminiKeyPool(keys, {
+      maxAttempts: Math.min(4, Math.max(1, Number(process.env.OPENAI_MAX_KEY_ATTEMPTS) || 2))
+    });
+    cachedOpenAIPoolSignature = signature;
+  }
+  return cachedOpenAIPool;
+}
+
+function openAIKeySource() {
+  if (process.env.OPENAI_API_KEYS) return "openai-pool";
+  if (process.env.OPENAI_API_KEY) return "openai";
   return "none";
 }
 
@@ -1154,6 +1186,77 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
   throw lastError || new Error("Gemini provider is unavailable.");
 }
 
+function requestedCreativeProvider(meta = {}) {
+  const provider = clean(meta.provider, 40).toLowerCase();
+  if (["auto", "openai", "gemini", "local"].includes(provider)) return provider;
+  const model = clean(meta.model, 80).toLowerCase();
+  if (model.startsWith("openai:") || OPENAI_MODELS.has(model)) return "openai";
+  if (allowedModels.has(model)) return "gemini";
+  if (["local", "smart-local", "creative", "analyst", "fast", "hh-local"].includes(model)) return "local";
+  return "auto";
+}
+
+function creativeProviderOrder(meta = {}) {
+  const requested = requestedCreativeProvider(meta);
+  if (requested === "local") return [];
+  const allowFallback = meta.allowProviderFallback !== false;
+  if (requested === "openai") return allowFallback ? ["openai", "gemini"] : ["openai"];
+  if (requested === "gemini") return allowFallback ? ["gemini", "openai"] : ["gemini"];
+  const preferred = clean(process.env.CREATIVE_AI_PROVIDER || "openai", 40).toLowerCase();
+  return preferred === "gemini" ? ["gemini", "openai"] : ["openai", "gemini"];
+}
+
+function safetyIdentifierFor(req, user, body = {}) {
+  const identity = user?._id
+    ? `user:${user._id}`
+    : `guest:${clean(body.anonymousId, 160) || requestIp(req)}`;
+  const secret = process.env.JWT_SECRET || "hh-creative-safety-identifier";
+  return createHmac("sha256", secret).update(identity).digest("hex").slice(0, 64);
+}
+
+async function runOpenAI(moduleId, actionType, input, meta = {}, safetyIdentifier = "") {
+  const pool = openAIPool();
+  if (!pool.keys.length) return null;
+  const model = normalizeOpenAIModel(meta.model);
+  const useWebSearch = Boolean(meta.useGoogleSearch || meta.useWebSearch)
+    || ["research", "url-research"].includes(actionType);
+  const useStructuredOutput = actionType === "content-pack";
+  const prompt = promptFor(moduleId, actionType, input, meta);
+  const customInstruction = clean(meta.systemPrompt, 2000);
+  const instruction = [systemInstruction(moduleId, actionType), customInstruction].filter(Boolean).join("\n\n");
+  const history = sanitizeHistory(meta.history);
+  const attachments = sanitizeAttachments(meta.attachments);
+  const candidates = pool.candidates();
+  const startedAt = Date.now();
+  let lastError = null;
+  for (let attempt = 0; attempt < candidates.length; attempt += 1) {
+    const apiKey = candidates[attempt];
+    try {
+      const result = await runOpenAIResponse({
+        apiKey,
+        model,
+        prompt,
+        instruction,
+        history,
+        attachments,
+        reasoningEffort: meta.reasoningEffort || meta.thinking,
+        useWebSearch,
+        structuredSchema: useStructuredOutput ? contentPackSchema : null,
+        safetyIdentifier
+      });
+      pool.reportSuccess(apiKey);
+      return { ...result, keyAttempts: attempt + 1, keyPoolSize: pool.keys.length };
+    } catch (error) {
+      lastError = error;
+      const status = Number(error.status || 0);
+      pool.reportFailure(apiKey, status, error.message);
+      if (!canTryAnotherKey(status, error.message) || attempt === candidates.length - 1 || Date.now() - startedAt > 32000) break;
+      await wait(retryDelay(attempt, status));
+    }
+  }
+  throw lastError || new Error("OpenAI provider is unavailable.");
+}
+
 module.exports = async function handler(req, res) {
   if (req.query.moduleId === "download-center") return downloadCenterAction(req, res);
   if (req.query.moduleId === "music-ai" && (req.query.media === "veo" || musicMediaActions.has(clean(req.body?.actionType, 80)))) {
@@ -1170,15 +1273,42 @@ module.exports = async function handler(req, res) {
         : (anonymousId ? { anonymousId } : { anonymousId: "__not_available__" });
       const actions = await collection.find({ moduleId, ...ownerQuery }).sort({ createdAt: -1 }).limit(50).toArray();
       const pool = geminiPool();
+      const openai = openAIPool();
+      const creativeConfigured = pool.keys.length > 0 || openai.keys.length > 0;
       return res.status(200).json({
         moduleId,
-        configured: creativeModules.has(moduleId) ? pool.keys.length > 0 : undefined,
-        keySource: creativeModules.has(moduleId) ? geminiKeySource() : undefined,
+        configured: creativeModules.has(moduleId) ? creativeConfigured : undefined,
+        keySource: creativeModules.has(moduleId)
+          ? (openai.keys.length ? openAIKeySource() : geminiKeySource())
+          : undefined,
         keyPoolSize: creativeModules.has(moduleId) ? pool.keys.length : undefined,
         availableKeyCount: creativeModules.has(moduleId) ? pool.availableCount() : undefined,
-        defaultModel: "gemini-3.5-flash",
+        defaultProvider: creativeModules.has(moduleId)
+          ? (openai.keys.length ? "openai" : (pool.keys.length ? "gemini" : "local"))
+          : undefined,
+        defaultModel: openai.keys.length
+          ? normalizeOpenAIModel(process.env.OPENAI_MODEL)
+          : "gemini-3.5-flash",
+        providers: creativeModules.has(moduleId)
+          ? {
+              openai: {
+                configured: openai.keys.length > 0,
+                keyPoolSize: openai.keys.length,
+                availableKeyCount: openai.availableCount(),
+                defaultModel: normalizeOpenAIModel(process.env.OPENAI_MODEL),
+                api: "responses-v1"
+              },
+              gemini: {
+                configured: pool.keys.length > 0,
+                keyPoolSize: pool.keys.length,
+                availableKeyCount: pool.availableCount(),
+                defaultModel: process.env.GEMINI_MODEL || "gemini-3.5-flash",
+                api: "generateContent"
+              }
+            }
+          : undefined,
         supports: creativeModules.has(moduleId)
-          ? { history: true, images: true, googleSearch: true, structuredOutput: true }
+          ? { history: true, images: true, webSearch: true, googleSearch: true, structuredOutput: true, providerFallback: true }
           : undefined,
         ...(moduleId === "music-ai" ? musicProviderStatus(user) : {}),
         actions
@@ -1196,17 +1326,32 @@ module.exports = async function handler(req, res) {
     const meta = body.meta && typeof body.meta === "object" ? body.meta : {};
     let result = null;
     let provider = "local";
-    let providerError = "";
+    const providerErrors = [];
 
     if (creativeModules.has(moduleId)) {
-      try {
-        result = await runGemini(moduleId, actionType, input, meta);
-        if (result) provider = "gemini";
-      } catch (error) {
-        providerError = clean(error.message, 260);
+      const safetyIdentifier = safetyIdentifierFor(req, user, body);
+      for (const candidate of creativeProviderOrder(meta)) {
+        try {
+          result = candidate === "openai"
+            ? await runOpenAI(moduleId, actionType, input, meta, safetyIdentifier)
+            : await runGemini(moduleId, actionType, input, meta);
+          if (result) {
+            provider = candidate;
+            break;
+          }
+          providerErrors.push(`${candidate}: chưa cấu hình`);
+        } catch (error) {
+          providerErrors.push(`${candidate}: ${clean(error.message, 220)}`);
+        }
       }
     }
     if (!result) {
+      if (creativeModules.has(moduleId) && meta.requireProvider === true && requestedCreativeProvider(meta) !== "local") {
+        const error = new Error(providerErrors.join(" | ") || "Chưa cấu hình OpenAI hoặc Gemini trên máy chủ.");
+        error.statusCode = 503;
+        error.code = "CREATIVE_AI_PROVIDER_UNAVAILABLE";
+        throw error;
+      }
       result = await localCreativeOutput(moduleId, actionType, input, meta);
       if (result.provider) provider = result.provider;
     }
@@ -1218,9 +1363,10 @@ module.exports = async function handler(req, res) {
       output: result.output,
       structured: result.structured || null,
       provider,
-      providerError,
+      providerError: providerErrors.join(" | "),
       model: result.model || "hh-local",
       interactionId: result.interactionId || "",
+      requestId: result.requestId || "",
       usage: result.usage || null,
       sources: result.sources || [],
       providerApi: result.providerApi || (provider === "local" ? "local" : ""),

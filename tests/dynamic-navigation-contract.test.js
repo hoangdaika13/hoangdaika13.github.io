@@ -99,7 +99,7 @@ test("every route gets a shared cosmic loading state with progress and fallback"
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=53", "script.js?v=144", "sidebar-navigation-pro.css?v=9", "english-learning.css?v=12", "english-galaxy.css?v=1", "english-galaxy.js?v=1", "english-learning-galaxy.css?v=1", "english-learning-galaxy.js?v=1", "english-learning.js?v=17", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=53", "script.js?v=145", "sidebar-navigation-pro.css?v=9", "english-learning.css?v=12", "english-galaxy.css?v=1", "english-galaxy.js?v=1", "english-learning-galaxy.css?v=1", "english-learning-galaxy.js?v=1", "english-learning.js?v=17", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

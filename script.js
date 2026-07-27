@@ -1188,8 +1188,8 @@ function initSuperPlatform() {
       ...state,
       sessions: sessions.slice(0, 30),
       activeSessionId: sessions.some((session) => session.id === state.activeSessionId) ? state.activeSessionId : sessions[0].id,
-      model: state.model || "gemini-3.5-flash",
-      systemPrompt: state.systemPrompt || "Bạn là HH Gemini, trợ lý sáng tạo chính xác, hữu ích và trả lời bằng tiếng Việt tự nhiên.",
+      model: state.model || "auto",
+      systemPrompt: state.systemPrompt || "Bạn là HH Creative AI, trợ lý sáng tạo chính xác, hữu ích và trả lời bằng tiếng Việt tự nhiên.",
       creativity: Number.isFinite(Number(state.creativity)) ? Number(state.creativity) : 72,
       useGoogleSearch: state.useGoogleSearch !== false
     };
@@ -1201,7 +1201,7 @@ function initSuperPlatform() {
   };
   const aiMessageMarkup = (message) => {
     const sources = (Array.isArray(message.sources) ? message.sources : []).map((source) => ({ ...source, url: aiSafeSourceUrl(source.url) })).filter((source) => source.url).slice(0, 5);
-    return `<article class="ai-message ${message.role === "user" ? "user" : "assistant"}" data-ai-message-id="${escapeHtml(message.id || "")}"><span>${message.role === "user" ? "Bạn" : "HH"}</span><div><strong>${message.role === "user" ? "Bạn" : `HH Gemini${message.provider ? ` · ${escapeHtml(message.provider)}` : ""}`}</strong><p>${escapeHtml(message.text || "")}</p>${sources.length ? `<nav class="ai-message-sources" aria-label="Nguồn tham khảo">${sources.map((source, index) => `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${index + 1}. ${escapeHtml(source.title || new URL(source.url).hostname)}</a>`).join("")}</nav>` : ""}<small>${escapeHtml(message.time || "")}</small>${message.role !== "user" ? `<div class="ai-message-tools"><button type="button" data-ai-copy-message="${escapeHtml(message.id || "")}">Sao chép</button><button type="button" data-ai-regenerate="${escapeHtml(message.id || "")}">Tạo lại</button></div>` : ""}</div></article>`;
+    return `<article class="ai-message ${message.role === "user" ? "user" : "assistant"}" data-ai-message-id="${escapeHtml(message.id || "")}"><span>${message.role === "user" ? "Bạn" : "HH"}</span><div><strong>${message.role === "user" ? "Bạn" : `HH Creative AI${message.provider ? ` · ${escapeHtml(message.provider)}` : ""}`}</strong><p>${escapeHtml(message.text || "")}</p>${sources.length ? `<nav class="ai-message-sources" aria-label="Nguồn tham khảo">${sources.map((source, index) => `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${index + 1}. ${escapeHtml(source.title || new URL(source.url).hostname)}</a>`).join("")}</nav>` : ""}<small>${escapeHtml(message.time || "")}</small>${message.role !== "user" ? `<div class="ai-message-tools"><button type="button" data-ai-copy-message="${escapeHtml(message.id || "")}">Sao chép</button><button type="button" data-ai-regenerate="${escapeHtml(message.id || "")}">Tạo lại</button></div>` : ""}</div></article>`;
   };
   const aiSessionListMarkup = (state) => state.sessions.slice(0, 20).map((item) => `<button class="interactive ${item.id === state.activeSessionId ? "active" : ""}" type="button" data-ai-session="${escapeHtml(item.id)}"><span>${escapeHtml(item.title || "Phiên AI")}</span><small>${escapeHtml(new Date(item.updatedAt || item.createdAt).toLocaleString("vi-VN"))}</small><i data-ai-delete-session="${escapeHtml(item.id)}" role="button" tabindex="0" aria-label="Xóa phiên">×</i></button>`).join("");
 
@@ -1212,13 +1212,13 @@ function initSuperPlatform() {
       <section class="ai-center-app ai-center-pro" data-ai-center>
         <header class="ai-center-hero">
           <div><p class="section-kicker">AI Center 02</p><h4>Trung tâm trí tuệ sáng tạo</h4><span>Chat, thiết kế prompt, tối ưu, dịch và chạy workflow trong một không gian.</span></div>
-          <div class="ai-model-status" data-ai-provider-state="checking"><i></i><div><strong data-ai-status>Đang kiểm tra Gemini...</strong><span data-ai-status-detail>Khóa API chỉ tồn tại trên Vercel</span></div><b data-ai-pool>--</b></div>
+          <div class="ai-model-status" data-ai-provider-state="checking"><i></i><div><strong data-ai-status>Đang kiểm tra Creative AI...</strong><span data-ai-status-detail>Khóa API chỉ tồn tại trên Vercel</span></div><b data-ai-pool>--</b></div>
         </header>
         <div class="ai-center-toolbar">
           <div class="ai-tool-tabs" role="tablist">
             ${[["chat","Chat AI"],["prompt","Prompt Studio"],["optimize","Tối ưu"],["translate","Dịch"],["workflow","Workflow"]].map(([id,label], index) => `<button class="interactive ${index === 0 ? "active" : ""}" type="button" data-ai-tab="${id}">${label}</button>`).join("")}
           </div>
-          <label class="ai-model-select">Model<select data-ai-model><option value="gemini-3.5-flash" ${state.model === "gemini-3.5-flash" ? "selected" : ""}>Gemini 3.5 Flash</option><option value="gemini-3.1-flash-lite" ${state.model === "gemini-3.1-flash-lite" ? "selected" : ""}>Gemini 3.1 Flash Lite</option><option value="smart-local" ${state.model === "smart-local" ? "selected" : ""}>HH Smart Local</option><option value="creative" ${state.model === "creative" ? "selected" : ""}>Creative Writer Local</option><option value="analyst" ${state.model === "analyst" ? "selected" : ""}>Deep Analyst Local</option><option value="fast" ${state.model === "fast" ? "selected" : ""}>Fast Assistant Local</option></select></label>
+          <label class="ai-model-select">Model<select data-ai-model><option value="auto" ${state.model === "auto" ? "selected" : ""}>Tự động · OpenAI → Gemini</option><option value="openai:gpt-5.6-sol" ${state.model === "openai:gpt-5.6-sol" ? "selected" : ""}>OpenAI GPT-5.6 Sol</option><option value="openai:gpt-5.6-terra" ${state.model === "openai:gpt-5.6-terra" ? "selected" : ""}>OpenAI GPT-5.6 Terra</option><option value="openai:gpt-5.6-luna" ${state.model === "openai:gpt-5.6-luna" ? "selected" : ""}>OpenAI GPT-5.6 Luna</option><option value="gemini-3.5-flash" ${state.model === "gemini-3.5-flash" ? "selected" : ""}>Gemini 3.5 Flash</option><option value="gemini-3.1-flash-lite" ${state.model === "gemini-3.1-flash-lite" ? "selected" : ""}>Gemini 3.1 Flash Lite</option><option value="smart-local" ${state.model === "smart-local" ? "selected" : ""}>HH Smart Local</option><option value="creative" ${state.model === "creative" ? "selected" : ""}>Creative Writer Local</option><option value="analyst" ${state.model === "analyst" ? "selected" : ""}>Deep Analyst Local</option><option value="fast" ${state.model === "fast" ? "selected" : ""}>Fast Assistant Local</option></select></label>
         </div>
         <div class="ai-center-layout">
           <aside class="ai-sidebar">
@@ -1232,11 +1232,11 @@ function initSuperPlatform() {
           </aside>
           <main class="ai-workspace">
             <section class="ai-pane active" data-ai-pane="chat">
-              <div class="ai-chat-stream" data-ai-stream>${activeSession.messages.length ? activeSession.messages.map(aiMessageMarkup).join("") : '<article class="ai-message assistant"><span>HH</span><div><strong>HH Gemini Assistant</strong><p>Xin chào. Tôi có thể trò chuyện nhiều lượt, phân tích ảnh, tra cứu Google và hỗ trợ sáng tạo nội dung.</p></div></article>'}</div>
+              <div class="ai-chat-stream" data-ai-stream>${activeSession.messages.length ? activeSession.messages.map(aiMessageMarkup).join("") : '<article class="ai-message assistant"><span>HH</span><div><strong>HH Creative AI</strong><p>Xin chào. Tôi có thể dùng OpenAI hoặc Gemini để trò chuyện nhiều lượt, phân tích ảnh, tra cứu web và hỗ trợ sáng tạo nội dung.</p></div></article>'}</div>
               <form class="ai-composer" data-ai-chat-form>
                 <textarea data-ai-chat-input rows="3" placeholder="Nhập câu hỏi, ý tưởng, đoạn code hoặc nội dung cần xử lý..."></textarea>
                 <div class="ai-attachment-tray" data-ai-attachments hidden></div>
-                <div><span><b data-ai-char-count>0</b> ký tự</span><label class="ai-attach-button interactive" title="Đính kèm ảnh hoặc tệp văn bản">＋ Tệp<input type="file" data-ai-attach accept="image/png,image/jpeg,image/webp,image/gif,.txt,.md,.json,.csv" multiple></label><button class="interactive" type="button" data-ai-clear-chat>Xóa</button><button class="interactive ai-stop" type="button" data-ai-stop hidden>Dừng</button><button class="button primary interactive" type="submit" data-ai-send>Gửi Gemini</button></div>
+                <div><span><b data-ai-char-count>0</b> ký tự</span><label class="ai-attach-button interactive" title="Đính kèm ảnh hoặc tệp văn bản">＋ Tệp<input type="file" data-ai-attach accept="image/png,image/jpeg,image/webp,image/gif,.txt,.md,.json,.csv" multiple></label><button class="interactive" type="button" data-ai-clear-chat>Xóa</button><button class="interactive ai-stop" type="button" data-ai-stop hidden>Dừng</button><button class="button primary interactive" type="submit" data-ai-send>Gửi Creative AI</button></div>
               </form>
             </section>
             <section class="ai-pane" data-ai-pane="prompt">
@@ -2061,7 +2061,10 @@ const securityCenterMarkup=()=>`<section class="security-app" data-security><hea
   let aiPendingAttachments = [];
   let aiActiveController = null;
   let aiLastPrompt = "";
-  const aiIsCloudModel = (model) => String(model || "").startsWith("gemini-");
+  const aiIsCloudModel = (model) => {
+    const value = String(model || "");
+    return value === "auto" || value.startsWith("gemini-") || value.startsWith("openai:") || value.startsWith("gpt-5.6");
+  };
   const renderAIConversation = () => {
     const panel = aiPanel();
     if (!panel) return;
@@ -2073,7 +2076,7 @@ const securityCenterMarkup=()=>`<section class="security-app" data-security><hea
     if (stream) {
       stream.innerHTML = session.messages.length
         ? session.messages.map(aiMessageMarkup).join("")
-        : '<article class="ai-message assistant"><span>HH</span><div><strong>HH Gemini Assistant</strong><p>Phiên mới đã sẵn sàng. Bạn muốn sáng tạo điều gì?</p></div></article>';
+        : '<article class="ai-message assistant"><span>HH</span><div><strong>HH Creative AI</strong><p>Phiên mới đã sẵn sàng. Bạn muốn sáng tạo điều gì?</p></div></article>';
       stream.scrollTop = stream.scrollHeight;
     }
   };
@@ -2100,11 +2103,16 @@ const securityCenterMarkup=()=>`<section class="security-app" data-security><hea
       const status = panel.querySelector("[data-ai-status]");
       const detail = panel.querySelector("[data-ai-status-detail]");
       const pool = panel.querySelector("[data-ai-pool]");
-      if (status) status.textContent = data.configured ? "Gemini đã kết nối an toàn" : "Chế độ HH Local";
-      if (detail) detail.textContent = data.configured ? `${data.defaultModel} · server-side` : "Cần cấu hình GEMINI_API_KEYS trên Vercel";
-      if (pool) pool.textContent = data.configured ? `${data.availableKeyCount || 0}/${data.keyPoolSize || 0} key` : "LOCAL";
+      const openai = data.providers?.openai || {};
+      const gemini = data.providers?.gemini || {};
+      const connected = [openai.configured ? "OpenAI" : "", gemini.configured ? "Gemini" : ""].filter(Boolean);
+      if (status) status.textContent = data.configured ? `${connected.join(" + ")} đã kết nối an toàn` : "Chưa cấu hình Creative AI";
+      if (detail) detail.textContent = data.configured ? `${data.defaultModel} · server-side · tự động dự phòng` : "Cần cấu hình OPENAI_API_KEY hoặc GEMINI_API_KEYS trên Vercel";
+      if (pool) pool.textContent = data.configured
+        ? `OAI ${openai.availableKeyCount || 0}/${openai.keyPoolSize || 0} · G ${gemini.availableKeyCount || 0}/${gemini.keyPoolSize || 0}`
+        : "OFFLINE";
       const provider = panel.querySelector("[data-ai-provider]");
-      if (provider) provider.textContent = `Provider: ${data.configured ? "Gemini" : "HH Local"}`;
+      if (provider) provider.textContent = `Provider: ${connected.join(" → ") || "Chưa cấu hình"}`;
     } catch (error) {
       panel.querySelector("[data-ai-provider-state]")?.setAttribute("data-ai-provider-state", "offline");
       const status = panel.querySelector("[data-ai-status]");
@@ -2150,7 +2158,7 @@ const securityCenterMarkup=()=>`<section class="security-app" data-security><hea
     const text = overrideText || input?.value.trim() || "";
     if (!text) return input?.focus();
     const stream = panel?.querySelector("[data-ai-stream]");
-    const model = panel?.querySelector("[data-ai-model]")?.value || "smart-local";
+    const model = panel?.querySelector("[data-ai-model]")?.value || "auto";
     const state = readAIState();
     const session = aiActiveSession(state);
     const history = session.messages.slice(-12).map((message) => ({ role: message.role === "assistant" ? "model" : "user", text: message.text }));
@@ -2163,7 +2171,7 @@ const securityCenterMarkup=()=>`<section class="security-app" data-security><hea
     state.useGoogleSearch = Boolean(panel?.querySelector("[data-ai-google-search]")?.checked);
     writeAIState(state);
     renderAIConversation();
-    stream?.insertAdjacentHTML("beforeend", '<article class="ai-message assistant thinking" data-ai-thinking><span>HH</span><div><strong>Gemini đang suy nghĩ...</strong><p>Đang đọc ngữ cảnh và chuẩn bị câu trả lời.</p></div></article>');
+    stream?.insertAdjacentHTML("beforeend", '<article class="ai-message assistant thinking" data-ai-thinking><span>HH</span><div><strong>Creative AI đang xử lý...</strong><p>Đang đọc ngữ cảnh và chuẩn bị câu trả lời.</p></div></article>');
     if (input) input.value = "";
     aiLastPrompt = text;
     let answer = "";
@@ -2183,17 +2191,18 @@ const securityCenterMarkup=()=>`<section class="security-app" data-security><hea
           systemPrompt: state.systemPrompt,
           creativity: state.creativity,
           useGoogleSearch: state.useGoogleSearch,
+          requireProvider: true,
           attachments: aiPendingAttachments.filter((file) => file.mimeType.startsWith("image/")).map(({ name, mimeType, size, data }) => ({ name, mimeType, size, data }))
         }, { signal: aiActiveController.signal });
-        answer = action.output || aiLocalAnswer(text, "analyst");
+        answer = action.output || "Creative AI không trả về nội dung.";
       } catch (error) {
         if (error.name === "AbortError") answer = "Đã dừng yêu cầu theo lựa chọn của bạn.";
-        else answer = `${aiLocalAnswer(text, "smart-local")}\n\n[Gemini chưa sẵn sàng, đang dùng HH Local: ${error.message}]`;
+        else answer = `Creative AI chưa thể hoàn thành yêu cầu: ${error.message}\n\nKhông tạo dữ liệu mẫu. Hãy kiểm tra kết nối OpenAI/Gemini rồi bấm “Tạo lại”.`;
       }
     } else answer = aiLocalAnswer(text, model);
     const latestState = readAIState();
     const latestSession = aiActiveSession(latestState);
-    latestSession.messages.push({ id: `m-${Date.now()}`, role: "assistant", text: answer, time: new Date().toLocaleTimeString("vi-VN"), provider: action?.provider || (aiIsCloudModel(model) ? "fallback" : "local"), sources: action?.sources || [] });
+    latestSession.messages.push({ id: `m-${Date.now()}`, role: "assistant", text: answer, time: new Date().toLocaleTimeString("vi-VN"), provider: action?.provider || (aiIsCloudModel(model) ? "provider-error" : "local"), sources: action?.sources || [] });
     latestSession.updatedAt = new Date().toISOString();
     writeAIState(latestState);
     renderAIConversation();
@@ -2201,7 +2210,7 @@ const securityCenterMarkup=()=>`<section class="security-app" data-security><hea
     const provider = panel?.querySelector("[data-ai-provider]");
     const usage = panel?.querySelector("[data-ai-usage]");
     const latency = panel?.querySelector("[data-ai-latency]");
-    if (provider) provider.textContent = `Provider: ${action?.provider || (aiIsCloudModel(model) ? "HH Local fallback" : "HH Local")}${action?.model ? ` · ${action.model}` : ""}`;
+    if (provider) provider.textContent = `Provider: ${action?.provider || (aiIsCloudModel(model) ? "Chưa phản hồi" : "HH Local")}${action?.model ? ` · ${action.model}` : ""}`;
     if (usage) usage.textContent = `Token: ${action?.usage?.totalTokenCount || action?.usage?.total_tokens || "--"}`;
     if (latency) latency.textContent = `Độ trễ: ${Math.round(performance.now() - startedAt)}ms`;
     if (stopButton) stopButton.hidden = true;
@@ -2669,6 +2678,107 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
   });
 
   grid.addEventListener("click", async (event) => {
+    const automationRun = event.target.closest("[data-auto-run]");
+    if (automationRun) {
+      const automation = automationRun.closest("[data-automation]");
+      const input = automation?.querySelector("[data-auto-input]")?.value.trim() || "";
+      if (!input) {
+        automation?.querySelector("[data-auto-input]")?.focus();
+        return;
+      }
+      const config = {
+        platform: automation.querySelector("[data-auto-platform]")?.value || "YouTube",
+        language: automation.querySelector("[data-auto-language]")?.value || "Tiếng Việt",
+        style: automation.querySelector("[data-auto-style]")?.value || "Chuyên nghiệp",
+        steps: Array.from(automation.querySelectorAll("[data-auto-step]:checked")).map((item) => item.dataset.autoStep)
+      };
+      const output = automation.querySelector("[data-auto-output]");
+      const status = automation.querySelector("[data-auto-status]");
+      const progress = automation.querySelector("[data-auto-progress]");
+      automationRun.disabled = true;
+      if (output) output.textContent = "Creative AI đang chạy pipeline thật...";
+      if (status) status.textContent = `Đang xử lý ${config.steps.length} tác vụ`;
+      if (progress) progress.style.width = "24%";
+      try {
+        const action = await creativeAIRequest(
+          "ai-automation",
+          JSON.stringify({ input, ...config }, null, 2),
+          "workflow",
+          { model: "auto", requireProvider: true, allowProviderFallback: true, config }
+        );
+        if (output) output.textContent = action.output || "Provider không trả về nội dung.";
+        if (status) status.textContent = `Hoàn tất bằng ${action.provider} · ${action.model}`;
+        if (progress) progress.style.width = "100%";
+      } catch (error) {
+        if (output) output.textContent = `Không chạy được workflow: ${error.message}`;
+        if (status) status.textContent = "Pipeline thất bại · có thể thử lại";
+        if (progress) progress.style.width = "0%";
+      } finally {
+        automationRun.disabled = false;
+      }
+      return;
+    }
+
+    const creatorGenerate = event.target.closest("[data-creator-generate]");
+    if (creatorGenerate) {
+      const creator = creatorGenerate.closest("[data-creator]");
+      const topic = creator?.querySelector("[data-creator-topic]")?.value.trim() || "";
+      if (!topic) {
+        creator?.querySelector("[data-creator-topic]")?.focus();
+        return;
+      }
+      const config = {
+        platform: creator.querySelector("[data-creator-platform]")?.value || "YouTube",
+        length: creator.querySelector("[data-creator-length]")?.value || "",
+        audience: creator.querySelector("[data-creator-audience]")?.value.trim() || "",
+        tone: creator.querySelector("[data-creator-tone]")?.value || "Cảm xúc"
+      };
+      const output = creator.querySelector("[data-creator-output]");
+      creatorGenerate.disabled = true;
+      creatorGenerate.textContent = "Creative AI đang tạo...";
+      if (output) output.textContent = "Đang tạo gói nội dung thật và lưu lịch sử chạy...";
+      try {
+        const action = await creativeAIRequest(
+          "creator-studio",
+          topic,
+          "content-pack",
+          { model: "auto", requireProvider: true, allowProviderFallback: true, config }
+        );
+        let structured = action.structured;
+        if (!structured && action.output) {
+          try { structured = JSON.parse(String(action.output).replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")); } catch {}
+        }
+        const outputs = {
+          title: structured?.title || action.output || "",
+          script: structured?.script || "",
+          seo: structured?.seo || "",
+          thumbnail: structured?.thumbnail || ""
+        };
+        creator.dataset.outputs = JSON.stringify(outputs);
+        if (output) output.textContent = outputs.title;
+        const firstTitle = outputs.title.split("\n").map((item) => item.replace(/^\s*\d+[.)-]?\s*/, "").trim()).find(Boolean) || topic;
+        const score = [
+          firstTitle.length > 0 && firstTitle.length <= 70 ? 25 : 0,
+          firstTitle.toLowerCase().includes(topic.toLowerCase().split(/\s+/)[0]) ? 20 : 0,
+          outputs.seo.length >= 60 ? 20 : 0,
+          outputs.script.length >= 300 ? 20 : 0,
+          outputs.thumbnail.length >= 40 ? 15 : 0
+        ].reduce((sum, value) => sum + value, 0);
+        creator.querySelector("[data-creator-score]").textContent = String(score);
+        const preview = creator.querySelector("[data-thumbnail-preview] small");
+        if (preview) preview.textContent = firstTitle.slice(0, 54);
+        const tags = [...new Set((outputs.seo.match(/#[\p{L}\p{N}_-]+/gu) || topic.toLowerCase().split(/\s+/).filter((word) => word.length > 3).map((word) => `#${word}`)).slice(0, 8))];
+        const tagHost = creator.querySelector("[data-creator-tags]");
+        if (tagHost) tagHost.innerHTML = tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("");
+      } catch (error) {
+        if (output) output.textContent = `Không tạo được nội dung: ${error.message}\n\nKhông có dữ liệu mẫu được tạo.`;
+      } finally {
+        creatorGenerate.disabled = false;
+        creatorGenerate.textContent = "Tạo bộ nội dung";
+      }
+      return;
+    }
+
     const notification=event.target.closest("[data-notification]");if(notification){const readState=()=>{try{return JSON.parse(localStorage.getItem("hh-notification-center")||"{}");}catch{return {};}};const defaults=[{title:"Chào mừng đến HH Platform",message:"Các trung tâm 01-15 đã sẵn sàng để sử dụng.",time:"Hôm nay",read:false,type:"system"},{title:"Media Center v22",message:"Thư viện media đã được nâng cấp.",time:"Gần đây",read:true,type:"update"}];const save=(state)=>localStorage.setItem("hh-notification-center",JSON.stringify(state));if(event.target.closest("[data-notification-enable]")){if("Notification" in window)Notification.requestPermission().then((permission)=>{event.target.closest("[data-notification-enable]").textContent=permission==="granted"?"Đã cho phép":"Chưa được cho phép";});return;}const filter=event.target.closest("[data-notification-filter]");if(filter){notification.querySelectorAll("[data-notification-filter]").forEach((item)=>item.classList.toggle("active",item===filter));notification.querySelectorAll("[data-notification-item]").forEach((item)=>item.hidden=filter.dataset.notificationFilter==="unread"&&item.classList.contains("read")||!["all","unread"].includes(filter.dataset.notificationFilter)&&item.dataset.notificationType!==filter.dataset.notificationFilter);return;}const read=event.target.closest("[data-notification-read]");if(read){const state=readState();state.inbox=state.inbox||defaults;state.inbox[Number(read.dataset.notificationRead)].read=true;save(state);rerenderModule("notification-center");return;}if(event.target.closest("[data-notification-read-all]")){const state=readState();state.inbox=(state.inbox||defaults).map((item)=>({...item,read:true}));save(state);rerenderModule("notification-center");return;}if(event.target.closest("[data-notification-subscribe]")){const status=notification.querySelector("[data-notification-status]");(async()=>{try{const token=window.HHAuthSession?.token?.() || "";const response=await fetch(`${REALTIME_URL}/api/notifications/subscribe`,{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({channel:notification.querySelector("[data-notification-channel]").value,target:notification.querySelector("[data-notification-target]").value,preferences:Object.fromEntries(Array.from(notification.querySelectorAll("[data-notification-pref]")).map((item)=>[item.dataset.notificationPref,item.checked]))})});const data=await response.json();if(!response.ok)throw new Error(data.error||"Lưu thất bại");status.textContent=`Đã lưu đăng ký ${data.subscription.channel}. ${data.subscription.note}`;}catch(error){status.textContent=error.message;}})();return;}}
     const apiCenter=event.target.closest("[data-api-center]");if(apiCenter){const endpoints=[{method:"GET",path:"/api/auth/me",name:"Phiên người dùng",description:"Trả về tài khoản hiện tại và lịch sử đăng nhập."},{method:"GET",path:"/api/store/products",name:"Sản phẩm",description:"Danh sách sản phẩm số công khai."},{method:"GET",path:"/api/storage/files",name:"Cloud files",description:"Metadata file riêng của tài khoản."},{method:"GET",path:"/api/platform/summary",name:"Admin summary",description:"Thống kê chỉ dành cho chủ sở hữu."},{method:"POST",path:"/api/notifications/subscribe",name:"Đăng ký thông báo",description:"Lưu kênh thông báo vào MongoDB."},{method:"POST",path:"/api/store/orders",name:"Tạo đơn hàng",description:"Tạo đơn chờ thanh toán thủ công."},{method:"GET",path:"/api/search/google?health=1",name:"Search Gateway",description:"Một function động dùng chung cho Google và YouTube."},{method:"GET",path:"/api/search/youtube?q=music",name:"YouTube Search",description:"Tìm video, channel hoặc playlist qua YouTube Data API."},{method:"GET",path:"/api/search/google?q=AI",name:"Google Search",description:"Tìm web hoặc hình ảnh qua Programmable Search."}];const open=event.target.closest("[data-api-open]");if(open){const item=endpoints[Number(open.dataset.apiOpen)];apiCenter.querySelectorAll("[data-api-open]").forEach((node)=>node.classList.toggle("active",node===open));apiCenter.querySelector("[data-api-method]").value=item.method;apiCenter.querySelector("[data-api-path]").value=item.path;apiCenter.querySelector("[data-api-doc-title]").textContent=item.name;apiCenter.querySelector("[data-api-doc-path]").textContent=`${item.method} ${item.path}`;apiCenter.querySelector("[data-api-doc-description]").textContent=item.description;return;}if(event.target.closest("[data-api-send]")){const method=apiCenter.querySelector("[data-api-method]").value;const path=apiCenter.querySelector("[data-api-path]").value;const output=apiCenter.querySelector("[data-api-response]");const start=performance.now();output.textContent="Đang gửi request...";(async()=>{try{const token=window.HHAuthSession?.token?.() || "";const options={method,headers:{"Content-Type":"application/json",...(token?{Authorization:`Bearer ${token}`}:{})}};if(method!=="GET")options.body=apiCenter.querySelector("[data-api-body]").value||"{}";const response=await fetch(`${REALTIME_URL}${path}`,options);const data=await response.json().catch(()=>({}));output.textContent=JSON.stringify({status:response.status,ok:response.ok,data},null,2);apiCenter.querySelector("[data-api-timing]").textContent=`${Math.round(performance.now()-start)} ms · HTTP ${response.status}`;}catch(error){output.textContent=error.message;}})();return;}if(event.target.closest("[data-api-copy-curl]")){const method=apiCenter.querySelector("[data-api-method]").value;const path=apiCenter.querySelector("[data-api-path]").value;navigator.clipboard.writeText(`curl -X ${method} "${REALTIME_URL}${path}" -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json"`);return;}}
     const developer=event.target.closest("[data-developer]");if(developer){const tab=event.target.closest("[data-dev-tab]");if(tab){developer.querySelectorAll("[data-dev-tab]").forEach((item)=>item.classList.toggle("active",item===tab));developer.querySelectorAll("[data-dev-pane]").forEach((item)=>item.classList.toggle("active",item.dataset.devPane===tab.dataset.devTab));return;}}
@@ -2921,7 +3031,7 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
         if (aiIsCloudModel(ai.querySelector("[data-ai-model]")?.value)) {
           aiResult("Đang tối ưu với Gemini 3.5", "Creative AI đang phân tích cấu trúc và ràng buộc...");
           try {
-            const action = await creativeAIRequest("ai-center", `Tối ưu prompt sau với các tiêu chí ${options.join(", ")}:\n\n${input}`, "chat", { model: ai.querySelector("[data-ai-model]")?.value, mode: "prompt-optimizer" });
+            const action = await creativeAIRequest("ai-center", `Tối ưu prompt sau với các tiêu chí ${options.join(", ")}:\n\n${input}`, "chat", { model: ai.querySelector("[data-ai-model]")?.value, mode: "prompt-optimizer", requireProvider: true });
             const scoreNode = ai.querySelector("[data-ai-score]"); if (scoreNode) scoreNode.textContent = "96";
             aiResult("Prompt tối ưu · Gemini 3.5", action.output || "");
           } catch (error) {
@@ -2949,7 +3059,7 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
         if (aiIsCloudModel(ai.querySelector("[data-ai-model]")?.value)) {
           aiResult("Đang dịch với Gemini 3.5", "Giữ nguyên ý nghĩa, tone và thuật ngữ...");
           try {
-            const action = await creativeAIRequest("ai-center", `Dịch tự nhiên sang ${target === "en" ? "English" : "Tiếng Việt"}:\n\n${input}`, "translate", { model: ai.querySelector("[data-ai-model]")?.value, target });
+            const action = await creativeAIRequest("ai-center", `Dịch tự nhiên sang ${target === "en" ? "English" : "Tiếng Việt"}:\n\n${input}`, "translate", { model: ai.querySelector("[data-ai-model]")?.value, target, requireProvider: true });
             const output = ai.querySelector("[data-ai-translate-output]"); if (output) output.value = action.output || "";
             aiResult("Bản dịch Gemini 3.5", action.output || "");
           } catch (error) {
@@ -2976,7 +3086,7 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
         if (aiIsCloudModel(ai.querySelector("[data-ai-model]")?.value)) {
           aiResult("Workflow Gemini đang chạy", "Các bước được gửi trong một tác vụ gộp để tiết kiệm quota...");
           try {
-            const action = await creativeAIRequest("ai-center", JSON.stringify({ input: source, platform: "General", language: "Tiếng Việt", style: "Chuyên nghiệp", steps: steps.map((id) => ({ id, enabled: true })) }), "workflow", { model: ai.querySelector("[data-ai-model]")?.value });
+            const action = await creativeAIRequest("ai-center", JSON.stringify({ input: source, platform: "General", language: "Tiếng Việt", style: "Chuyên nghiệp", steps: steps.map((id) => ({ id, enabled: true })) }), "workflow", { model: ai.querySelector("[data-ai-model]")?.value, requireProvider: true });
             aiResult("Workflow Gemini hoàn tất", action.output || "");
           } catch (error) {
             aiResult("Cloud workflow chưa sẵn sàng", error.message);
@@ -4481,7 +4591,7 @@ function loadProjectPayload(payload) {
   setValue("cta", payload.cta || "");
   setValue("rewriteMode", payload.mode || "");
   setValue("platform", payload.platform || "YouTube");
-  setValue("modelName", payload.model || "gemini-3.5-flash");
+  setValue("modelName", payload.model || "auto");
   setValue("thinkingMode", payload.thinking || "balanced");
   if (byId("creativity")) byId("creativity").value = String(payload.creativity || 72);
   setText("creativityValue", `${payload.creativity || 72}%`);
@@ -4558,9 +4668,13 @@ async function checkCreativeAIStatus() {
     const response = await fetch(`${base}/api/modules/ai-script/actions`, { cache: "no-store" });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "Không kết nối được.");
+    const connected = [
+      data.providers?.openai?.configured ? "OpenAI" : "",
+      data.providers?.gemini?.configured ? "Gemini" : ""
+    ].filter(Boolean);
     target.textContent = data.configured
-      ? `Đã kết nối · ${data.defaultModel || "Gemini 3.5 Flash"}`
-      : "Chế độ local · chưa cấu hình GEMINI_API_KEY";
+      ? `Đã kết nối ${connected.join(" + ")} · ${data.defaultModel || "Creative AI"}`
+      : "Chế độ local · chưa cấu hình OPENAI_API_KEY hoặc GEMINI_API_KEYS";
     target.classList.toggle("is-online", Boolean(data.configured));
   } catch {
     target.textContent = "Chế độ local · máy chủ AI tạm thời ngoại tuyến";
@@ -4570,13 +4684,15 @@ async function checkCreativeAIStatus() {
 
 function aiScriptMeta(extra = {}) {
   return {
-    model: valueOf("modelName") || "gemini-3.5-flash",
+    model: valueOf("modelName") || "auto",
     config: config(),
     context: valueOf("trainingProfile"),
     thinking: valueOf("thinkingMode") || "balanced",
     creativity: Number(byId("creativity")?.value || 72),
     stream: Boolean(byId("streamOutput")?.checked),
     useCache: Boolean(byId("useCache")?.checked),
+    requireProvider: valueOf("modelName") !== "local",
+    allowProviderFallback: true,
     ...extra
   };
 }
@@ -4584,15 +4700,17 @@ function aiScriptMeta(extra = {}) {
 async function runScriptAI(actionType, input, statusMessage) {
   setStatus(statusMessage || "Creative AI đang phân tích...");
   const action = await creativeAIRequest("ai-script", input, actionType, aiScriptMeta());
-  const suffix = String(action.provider || "").startsWith("gemini")
-    ? `Gemini ${action.model || "3.5"}`
-    : "HH Local fallback";
+  const suffix = action.provider === "openai"
+    ? `OpenAI ${action.model || "GPT-5.6"}`
+    : action.provider === "gemini"
+      ? `Gemini ${action.model || "3.5"}`
+      : "HH Local";
   return { action, suffix };
 }
 
 async function callGemini() {
   try {
-    const { action, suffix } = await runScriptAI("rewrite", buildPrompt(), "Gemini đang viết kịch bản hoàn chỉnh...");
+    const { action, suffix } = await runScriptAI("rewrite", buildPrompt(), "Creative AI đang viết kịch bản hoàn chỉnh...");
     setOutput(action.output || "AI không trả về nội dung.", `Đã hoàn tất bằng ${suffix}.`);
     if (byId("autoTranslate")?.checked) byId("translateGemini")?.click();
   } catch (error) {
@@ -6005,7 +6123,12 @@ function initAppShell() {
             try { payload = JSON.stringify(input, null, 2); } catch { throw new Error("Dữ liệu AI không thể chuyển thành JSON an toàn."); }
           }
           const actionType = String(input?.task || meta.actionType || "chat").slice(0, 80);
-          return creativeAIRequest("creative-os", payload, actionType, meta);
+          return creativeAIRequest("creative-os", payload, actionType, {
+            model: "auto",
+            requireProvider: true,
+            allowProviderFallback: true,
+            ...meta
+          });
         },
         onNavigate: (target) => { location.hash = `#${target}`; }
       });

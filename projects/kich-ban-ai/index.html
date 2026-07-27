@@ -77,6 +77,10 @@
         </label>
         <label>Model
           <select id="modelName">
+            <option value="auto">Tự động · OpenAI → Gemini</option>
+            <option value="openai:gpt-5.6-sol">OpenAI GPT-5.6 Sol · chất lượng cao</option>
+            <option value="openai:gpt-5.6-terra">OpenAI GPT-5.6 Terra · cân bằng</option>
+            <option value="openai:gpt-5.6-luna">OpenAI GPT-5.6 Luna · nhanh, tiết kiệm</option>
             <option value="gemini-3.5-flash">Gemini 3.5 Flash · mạnh nhất</option>
             <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite · tiết kiệm</option>
             <option value="local">HH Local · không dùng API</option>
@@ -103,7 +107,7 @@
         <label class="neon-check"><input id="streamOutput" type="checkbox" checked> Hiện tiến trình khi Gemini đang viết</label>
         <label class="neon-check"><input id="useCache" type="checkbox" checked> Dùng cache dự án để tiết kiệm API</label>
         <label class="neon-check"><input id="autoTranslate" type="checkbox"> Tự dịch kiểm tra sau khi viết</label>
-        <p>Khóa Gemini chỉ lưu trong Environment Variables của Vercel, không gửi xuống trình duyệt.</p>
+        <p>Khóa OpenAI và Gemini chỉ lưu trong Environment Variables của Vercel, không gửi xuống trình duyệt.</p>
       </section>
     </aside>
 
@@ -147,7 +151,7 @@
               <button class="neon-btn cyan" id="resumeBatch" type="button">Resume batch</button>
               <button class="neon-btn cyan" id="runUrlBatch" type="button">Batch URL</button>
               <button class="neon-btn lime" id="makePrompt" type="button">Nâng cấp draft</button>
-              <button class="neon-btn magenta" id="callGemini" type="button">Viết bằng Gemini</button>
+              <button class="neon-btn magenta" id="callGemini" type="button">Viết bằng Creative AI</button>
             </div>
           </section>
 

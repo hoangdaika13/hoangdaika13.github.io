@@ -62,7 +62,7 @@ test("Developer Galaxy visual system supports all themes, 375px and reduced moti
 test("cache manifests ship the new Developer Galaxy assets", () => {
   assert.match(loader, /dev-pro-suite\.css\?v=2/);
   assert.match(loader, /dev-pro-suite\.js\?v=3/);
-  assert.match(worker, /hh-identity-portal-v271/);
+  assert.match(worker, /hh-identity-portal-v272/);
   assert.match(worker, /dev-pro-suite\.css\?v=2/);
   assert.match(worker, /dev-pro-suite\.js\?v=3/);
 });

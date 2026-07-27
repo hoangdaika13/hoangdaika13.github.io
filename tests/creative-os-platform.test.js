@@ -55,11 +55,14 @@ test("Creative OS client assets contain no obvious credentials or dynamic code e
   }
 });
 
-test("Creative OS AI tasks use the server-side Gemini provider without exposing keys", () => {
+test("Creative OS AI tasks use server-side OpenAI/Gemini failover without exposing keys", () => {
   const script = read("script.js");
   const actionsApi = read("api/modules/[moduleId]/actions.js");
   assert.match(actionsApi, /creativeModules = new Set\([^\n]+"creative-os"/);
   assert.match(actionsApi, /"creative-os": "Đóng vai creative director/);
-  assert.match(script, /creativeAIRequest\("creative-os", payload, actionType, meta\)/);
+  assert.match(script, /creativeAIRequest\("creative-os", payload, actionType, \{/);
+  assert.match(script, /requireProvider: true/);
+  assert.match(actionsApi, /creativeProviderOrder\(meta\)/);
   assert.doesNotMatch(script, /GEMINI_API_KEY\s*[:=]\s*["'][^"']+/);
+  assert.doesNotMatch(script, /OPENAI_API_KEY\s*[:=]\s*["'][^"']+/);
 });
