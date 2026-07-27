@@ -530,17 +530,8 @@ body.app-sidebar-collapsed .app-sidebar__count{display:none}
   animation:sidebar-cosmic-orbit 8s linear infinite;
 }
 .app-sidebar__group>.app-sidebar__item>span:first-child::after{
-  position:absolute;
-  top:-6px;
-  right:-8px;
-  width:5px;
-  height:5px;
-  border:1px solid rgba(255,255,255,.74);
-  border-radius:50%;
-  background:var(--nav-accent);
-  box-shadow:-22px 25px 0 color-mix(in srgb,var(--nav-accent) 74%,#fff);
-  content:"";
-  pointer-events:none;
+  display:none;
+  content:none;
 }
 .app-sidebar__group>.app-sidebar__item>b{
   color:#dce8f2;
