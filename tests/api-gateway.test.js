@@ -21,7 +21,8 @@ test("cookie mutations enforce trusted Origin while safe reads remain available"
   assert.equal(gateway.assertCsrf({ method: "POST", headers: { cookie: "hh_session=opaque", origin: "https://nhhoang13all.xyz" } }), true);
   assert.throws(() => gateway.assertCsrf({ method: "POST", headers: { cookie: "hh_session=opaque", origin: "https://evil.example" } }), error => error.code === "CSRF_ORIGIN_REJECTED");
   const auth = read("utils/auth-security.js");
-  assert.match(auth, /HttpOnly; Secure; SameSite=None/);
+  assert.match(auth, /SESSION_COOKIE_SAMESITE \|\| "Lax"/);
+  assert.match(auth, /HttpOnly; Secure; SameSite=\$\{sameSite\}; Priority=High/);
 });
 
 test("RBAC is server-side and provider quota costs are explicit", () => {

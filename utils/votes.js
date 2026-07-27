@@ -1,61 +1,84 @@
-const { MongoClient } = require("mongodb");
+const { createHmac } = require("crypto");
+const { clean, enforceRateLimit, withApi } = require("./platform");
 
-const uri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB || "hoangdaika13_site";
 const collectionName = process.env.MONGODB_COLLECTION || "votes";
 const siteId = process.env.SITE_ID || "hoangdaika13.github.io";
-
-let cachedClient;
-
-async function getCollection() {
-  if (!uri) throw new Error("Missing MONGODB_URI");
-  if (!cachedClient) {
-    cachedClient = new MongoClient(uri);
-    await cachedClient.connect();
-  }
-  return cachedClient.db(dbName).collection(collectionName);
-}
+let indexesReady = false;
 
 function normalize(doc) {
   const stats = doc || { likes: 0, votes: [0, 0, 0, 0, 0] };
   return {
-    likes: Number(stats.likes || 0),
-    votes: Array.from({ length: 5 }, (_, index) => Number(stats.votes?.[index] || 0))
+    likes: Math.max(0, Number(stats.likes || 0)),
+    votes: Array.from({ length: 5 }, (_, index) => Math.max(0, Number(stats.votes?.[index] || 0)))
   };
 }
 
-function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Cache-Control", "no-store");
+function actorHash(req) {
+  const ip = clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0], 80);
+  const userAgent = clean(req.headers["user-agent"], 300);
+  const secret = String(process.env.GATEWAY_AUDIT_SALT || process.env.JWT_SECRET || "");
+  if (secret.length < 32) {
+    const error = new Error("Server security configuration is incomplete");
+    error.statusCode = 503;
+    error.code = "SECURITY_CONFIG_MISSING";
+    throw error;
+  }
+  return createHmac("sha256", secret).update(`votes:${siteId}\0${ip}\0${userAgent}`).digest("hex");
 }
 
 module.exports = async function votesHandler(req, res) {
-  setCors(res);
-  if (req.method === "OPTIONS") return res.status(204).end();
-
-  try {
-    const collection = await getCollection();
+  return withApi(req, res, async ({ db, body }) => {
+    const collection = db.collection(collectionName);
+    const actors = db.collection("voteActors");
+    if (!indexesReady) {
+      await Promise.all([
+        collection.createIndex({ siteId: 1 }, { unique: true }),
+        actors.createIndex({ siteId: 1, actorHash: 1 }, { unique: true })
+      ]);
+      indexesReady = true;
+    }
     if (req.method === "GET") return res.status(200).json(normalize(await collection.findOne({ siteId })));
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
-    const update = { $setOnInsert: { siteId, createdAt: new Date() }, $set: { updatedAt: new Date() } };
+    const identity = actorHash(req);
+    await enforceRateLimit(db, `votes:${siteId}:${identity}`, 60, 60 * 60 * 1000);
+    const now = new Date();
+    let actorUpdate;
+    let nextRating = 0;
     if (body.action === "like") {
-      update.$inc = { likes: body.liked ? 1 : -1 };
+      if (typeof body.liked !== "boolean") return res.status(400).json({ error: "Invalid like state" });
+      actorUpdate = { $set: { liked: body.liked, updatedAt: now }, $setOnInsert: { siteId, actorHash: identity, createdAt: now } };
     } else if (body.action === "rating") {
-      const rating = Math.max(1, Math.min(5, Number(body.rating || 0)));
-      const previous = Math.max(0, Math.min(5, Number(body.previous || 0)));
-      update.$inc = { [`votes.${rating - 1}`]: 1 };
-      if (previous && previous !== rating) update.$inc[`votes.${previous - 1}`] = -1;
+      nextRating = Number(body.rating);
+      if (!Number.isInteger(nextRating) || nextRating < 1 || nextRating > 5) return res.status(400).json({ error: "Invalid rating" });
+      actorUpdate = { $set: { rating: nextRating, updatedAt: now }, $setOnInsert: { siteId, actorHash: identity, createdAt: now } };
     } else {
       return res.status(400).json({ error: "Invalid action" });
     }
 
-    await collection.updateOne({ siteId }, update, { upsert: true });
+    const previous = await actors.findOneAndUpdate(
+      { siteId, actorHash: identity },
+      actorUpdate,
+      { upsert: true, returnDocument: "before", includeResultMetadata: false }
+    );
+    const increments = {};
+    if (body.action === "like") {
+      increments.likes = Number(body.liked) - Number(Boolean(previous?.liked));
+    } else {
+      if (previous?.rating && previous.rating !== nextRating) increments[`votes.${previous.rating - 1}`] = -1;
+      if (previous?.rating !== nextRating) increments[`votes.${nextRating - 1}`] = 1;
+    }
+
+    await collection.updateOne(
+      { siteId },
+      { $setOnInsert: { siteId, likes: 0, votes: [0, 0, 0, 0, 0], createdAt: now } },
+      { upsert: true }
+    );
+    if (Object.values(increments).some(Boolean)) {
+      await collection.updateOne({ siteId }, { $inc: increments, $set: { updatedAt: now } });
+    }
     return res.status(200).json(normalize(await collection.findOne({ siteId })));
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
-  }
+  });
 };
+
+module.exports.__test = Object.freeze({ actorHash, normalize });

@@ -419,7 +419,7 @@ module.exports = async function handler(req, res) {
       const bytes = Buffer.isBuffer(item.data) ? item.data : Buffer.from(item.data?.buffer || item.data || []);
       res.setHeader("Content-Type", item.mimeType || "application/octet-stream");
       res.setHeader("Content-Length", bytes.length);
-      const disposition = /^(image|video|audio)\//.test(item.mimeType || "") || item.mimeType === "application/pdf" ? "inline" : "attachment";
+      const disposition = /^(image|video|audio)\//.test(item.mimeType || "") ? "inline" : "attachment";
       res.setHeader("Content-Disposition", `${disposition}; filename="${String(item.filename || "community-media").replace(/[\r\n"\\]/g, "")}"`);
       const publicMedia = linkedPost ? (linkedPost.privacy || "public") === "public" : linkedStory ? (linkedStory.privacy || "public") === "public" : false;
       res.setHeader("Cache-Control", publicMedia ? "public, max-age=3600" : "private, no-store");

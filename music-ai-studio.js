@@ -230,6 +230,7 @@
   function saveState() {
     state.updatedAt = new Date().toISOString();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+    window.HHMusicGalaxy?.ingestStudioState?.(state);
   }
 
   function assetDatabase() {
@@ -253,6 +254,13 @@
       transaction.onerror = () => reject(transaction.error);
     });
     db.close();
+    window.HHMusicGalaxy?.recordAsset?.({
+      name: `${state.project.name || "music-project"}-${kind}`,
+      kind,
+      type: blob.type,
+      size: blob.size,
+      provider: kind === "audio" ? "music" : kind === "video" ? "video" : "image"
+    });
   }
 
   async function readAsset(kind) {
@@ -320,6 +328,17 @@
       error.status = response.status;
       throw error;
     }
+    window.HHMusicGalaxy?.recordRun?.({
+      provider: actionType.includes("image") ? "image" : actionType.includes("video") ? "video" : actionType.includes("track") ? "music" : "concept",
+      model: data.model || meta.model || "",
+      action: actionType,
+      prompt: input,
+      seed: data.seed || meta.seed || "",
+      estimatedCost: data.estimatedCost || data.cost || 0,
+      usageRights: data.usageRights || data.rights || "",
+      version: data.version || "studio-v1",
+      status: "success"
+    });
     return data;
   }
 

@@ -42,10 +42,64 @@ test("HH English keeps a focused path and moves secondary tools into a searchabl
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
 });
 
+test("HH English exposes the cosmic vocabulary galaxy and all practice modes", () => {
+  const client = read("english-learning.js");
+  const galaxy = read("english-galaxy.js");
+  const css = read("english-galaxy.css");
+
+  assert.match(client, /data-hhe-galaxy-start/);
+  assert.match(client, /data-hhe-galaxy-challenge/);
+  assert.match(client, /galaxyTopic/);
+  assert.match(galaxy, /const learningModes = Object\.freeze/);
+  assert.match(galaxy, /picture-vocabulary/);
+  assert.match(galaxy, /const targets = Object\.freeze/);
+  assert.match(css, /\.hhe-galaxy-hero/);
+  assert.match(css, /\.hhe-mode-orbit/);
+  assert.match(css, /prefers-reduced-motion/);
+});
+
+test("expanded major sections expose every nested module without clipping", () => {
+  const css = read("sidebar-navigation-pro.css");
+
+  assert.match(css, /Sidebar overflow recovery v3/);
+  assert.match(css, /\.app-sidebar__group\.is-expanded>\.app-sidebar__submenu[\s\S]*?max-height:none!important/);
+  assert.match(css, /\.app-sidebar__group\.is-expanded>\.app-sidebar__submenu[\s\S]*?overflow:visible!important/);
+  assert.match(css, /\.app-sidebar__group\.is-expanded \.app-sidebar__studio>div[\s\S]*?max-height:none!important/);
+  assert.match(css, /\.app-sidebar__page-section\.is-open>\.app-sidebar__page-section-items[\s\S]*?overflow:visible!important/);
+  assert.match(css, /padding-bottom:max\(32px,env\(safe-area-inset-bottom\)\)!important/);
+});
+
+test("major navigation groups use the shared cosmic planet treatment", () => {
+  const css = read("sidebar-navigation-pro.css");
+
+  assert.match(css, /Cosmic primary navigation v1/);
+  assert.match(css, /\.app-sidebar::after[\s\S]*?background-image:/);
+  assert.match(css, /\.app-sidebar__group>\.app-sidebar__item>span:first-child::before[\s\S]*?border-radius:50%/);
+  assert.match(css, /\.app-sidebar__group>\.app-sidebar__item>span:first-child::after[\s\S]*?background:var\(--nav-accent\)/);
+  assert.match(css, /\.app-sidebar__subitem:not\(\.app-sidebar__subitem--search\)/);
+  assert.match(css, /\.app-sidebar__studio-item>span::after[\s\S]*?scaleY\(\.38\)/);
+});
+
+test("every route gets a shared cosmic loading state with progress and fallback", () => {
+  const html = read("index.html");
+  const client = read("script.js");
+  const css = read("app-shell.css");
+
+  assert.match(html, /id="appCosmicLoader"/);
+  assert.match(html, /data-cosmic-loader-step/);
+  assert.match(client, /const describeRouteFeedback =/);
+  assert.match(client, /window\.HHCosmicRouteLoader/);
+  assert.match(client, /hh:assets-loading/);
+  assert.match(client, /finishCosmicRouteLoader\(\{ error: true/);
+  assert.match(css, /\.app-cosmic-loader\.is-active/);
+  assert.match(css, /@keyframes appCosmicTunnel/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?app-cosmic-loader__space/);
+});
+
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=52", "script.js?v=133", "sidebar-navigation-pro.css?v=5", "english-learning.css?v=11", "english-learning-galaxy.css?v=1", "english-learning-galaxy.js?v=1", "english-learning.js?v=17", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=53", "script.js?v=144", "sidebar-navigation-pro.css?v=8", "english-learning.css?v=12", "english-galaxy.css?v=1", "english-galaxy.js?v=1", "english-learning-galaxy.css?v=1", "english-learning-galaxy.js?v=1", "english-learning.js?v=17", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

@@ -219,6 +219,13 @@
     }
     return { categories: [], tracks: [] };
   })();
+  const galaxyData = (() => {
+    if (root.HHEnglishGalaxy) return root.HHEnglishGalaxy;
+    if (typeof require === "function") {
+      try { return require("./english-galaxy.js"); } catch { return null; }
+    }
+    return null;
+  })();
   const a0Level = {
     id: "A0", name: "Mất gốc", band: "Foundation", color: "#63e8ff",
     description: "Xây lại bảng chữ cái, âm, câu chào hỏi và vốn từ thiết yếu từ con số 0.",
@@ -273,12 +280,13 @@
   const defaultState = () => ({
     version: APP_VERSION, activeView: "dashboard", activeLesson: lessonIds[0], completed: {}, attempts: {}, savedWords: {}, reviewQueue: {}, xp: 0,
     streak: { current: 0, longest: 0, lastDate: "" }, dailyGoal: 15, studyDays: [1, 2, 3, 4, 5], minutesByDay: {}, placement: null, placementRewarded: false, selectedLevel: "A0", selectedCareer: careerTracks[0]?.id || "", careerSurvey: null, careerSurveyRewarded: false, favoriteCareers: [], writingDraft: "", writingDrafts: {}, writingHistory: [], practice: { listening: 0, reading: 0, grammar: 0 }, practiceByLevel: {},
+    galaxyTopic: "all", galaxyLevel: "all", galaxyPackStatus: {}, galaxyMode: "flashcards", galaxyCursor: 0, galaxySession: { correct: 0, attempts: 0, startedAt: "" }, wordMastery: {}, mistakeNotebook: [], modeStats: {},
     onboarding: { completed: false, dismissed: false, rewarded: false, completedAt: "" },
     learnerProfile: { confidence: "", focusSkill: "speaking", needsPlacement: false },
     careerProfile: { roleStage: "student", skillFocus: "speaking", intensity: "foundation" },
     settings: { voiceRate: 0.85, voicePitch: 1, voiceProfile: "us-female", voiceURI: "", audioPlaybackConsent: false, microphoneConsent: false, interfaceLanguage: "vi", reducedMotion: false, beginnerMode: true, theme: "night", learnerType: "student", goal: "Giao tiếp hằng ngày" },
     speakingScenario: "workplace", speakingAttempts: [], speakingRoleplays: [],
-    ...(root.HHEnglishGalaxy?.defaultState?.() || {})
+    ...(root.HHEnglishLearningGalaxy?.defaultState?.() || {})
   });
   const mergeState = (stored = {}) => {
     const fallback = defaultState();
@@ -288,13 +296,18 @@
       streak: { ...fallback.streak, ...(stored.streak || {}) },
       practice: { ...fallback.practice, ...(stored.practice || {}) },
       practiceByLevel: { ...(stored.practiceByLevel || {}) },
+      galaxyPackStatus: { ...(stored.galaxyPackStatus || {}) },
+      wordMastery: { ...(stored.wordMastery || {}) },
+      modeStats: { ...(stored.modeStats || {}) },
+      galaxySession: { ...fallback.galaxySession, ...(stored.galaxySession || {}) },
+      mistakeNotebook: Array.isArray(stored.mistakeNotebook) ? stored.mistakeNotebook : [],
       writingDrafts: { ...(stored.writingDrafts || {}) },
       onboarding: { ...fallback.onboarding, ...(stored.onboarding || {}) },
       learnerProfile: { ...fallback.learnerProfile, ...(stored.learnerProfile || {}) },
       careerProfile: { ...fallback.careerProfile, ...(stored.careerProfile || {}) },
       settings: { ...fallback.settings, ...(stored.settings || {}) }
     };
-    return root.HHEnglishGalaxy?.mergeState?.(merged, stored, fallback) || merged;
+    return root.HHEnglishLearningGalaxy?.mergeState?.(merged, stored, fallback) || merged;
   };
   const readState = () => {
     try {
@@ -576,13 +589,13 @@
   };
 
   const navItems = [
-    ["dashboard", "☉", "English Galaxy"], ["listening", "◖", "Luyện nghe"], ["reading", "Aa", "Đọc hiểu"], ["listen-read", "∞", "Nghe & đọc"], ["plan", "✓", "Kế hoạch"], ["learn", "▶", "Bài học"], ["career", "▦", "Chuyên ngành"], ["practice", "✦", "Luyện tập"], ["placement", "◎", "Xếp lớp"], ["survey", "◈", "Khảo sát nghề"], ["vocabulary", "◇", "Sổ từ"],
+    ["dashboard", "☉", "English Galaxy"], ["listening", "◖", "Luyện nghe"], ["reading", "Aa", "Đọc hiểu"], ["listen-read", "∞", "Nghe & đọc"], ["galaxy", "✦", "Bản đồ từ vựng"], ["lab", "◌", "16 chế độ học"], ["plan", "✓", "Kế hoạch"], ["learn", "▶", "Bài học"], ["career", "▦", "Chuyên ngành"], ["practice", "✦", "Luyện tập"], ["placement", "◎", "Xếp lớp"], ["survey", "◈", "Khảo sát nghề"], ["vocabulary", "◇", "Sổ từ"],
     ["speaking", "◉", "Luyện nói"], ["writing", "✎", "Luyện viết"], ["progress", "↗", "Tiến độ"], ["settings", "⚙", "Cài đặt"]
   ];
-  const beginnerNavIds = new Set(["dashboard", "learn", "vocabulary", "speaking", "progress"]);
+  const beginnerNavIds = new Set(["dashboard", "listening", "reading", "listen-read", "galaxy", "lab", "learn", "vocabulary", "speaking", "progress"]);
   const navigatorGroups = [
     { id: "start", icon: "01", title: "Bắt đầu đúng chỗ", detail: "Kế hoạch, lộ trình và kiểm tra trình độ", views: ["plan", "learn", "placement"] },
-    { id: "skills", icon: "Aa", title: "Luyện từng kỹ năng", detail: "Bài ngắn, có phản hồi và bước tiếp theo", views: ["listening", "reading", "listen-read", "practice", "vocabulary", "speaking", "writing"] },
+    { id: "skills", icon: "Aa", title: "Luyện từng kỹ năng", detail: "Nghe, đọc, học từ và thực hành có phản hồi", views: ["listening", "reading", "listen-read", "galaxy", "lab", "practice", "vocabulary", "speaking", "writing"] },
     { id: "career", icon: "▦", title: "Tiếng Anh công việc", detail: "Khảo sát nghề và bài học theo chuyên ngành", views: ["survey", "career"] },
     { id: "personal", icon: "◎", title: "Cá nhân của bạn", detail: "Theo dõi kết quả và điều chỉnh trải nghiệm", views: ["progress", "settings"] }
   ];
@@ -957,6 +970,55 @@
 
   const settingsView = (state) => `<section class="hhe-settings"><header class="hhe-section-head"><div><small>LEARNING PREFERENCES</small><h2>Cài đặt HH English</h2><p>Tùy chỉnh cấp độ, chuyên ngành, mục tiêu, hướng dẫn người mới, tốc độ giọng đọc và dữ liệu học tập.</p></div><button type="button" data-hhe-onboarding-open>Mở Smart Start</button></header><form data-hhe-settings><label><span>Cấp độ đang học<small>Mọi cấp từ A0 đến C2 đều có thể chọn</small></span><select name="selectedLevel">${courseLevels.map((level) => `<option value="${level.id}" ${selectedLevelId(state) === level.id ? "selected" : ""}>${level.id} · ${escapeHtml(level.name)}</option>`).join("")}</select></label><label><span>Chuyên ngành đang học<small>${careerTracks.length} lộ trình nghề nghiệp đều mở miễn phí</small></span><select name="selectedCareer">${careerTracks.map((item) => `<option value="${item.id}" ${selectedCareerId(state) === item.id ? "selected" : ""}>${escapeHtml(item.code)} · ${escapeHtml(item.viName)}</option>`).join("")}</select></label><label><span>Bạn đang là<small>Giúp nội dung gợi ý phù hợp nhịp sống</small></span><select name="learnerType"><option value="student" ${state.settings.learnerType === "student" ? "selected" : ""}>Học sinh / sinh viên</option><option value="worker" ${state.settings.learnerType === "worker" ? "selected" : ""}>Người đi làm</option><option value="independent" ${state.settings.learnerType === "independent" ? "selected" : ""}>Người tự học linh hoạt</option></select></label><label><span>Mục tiêu học<small>Hiển thị trong kế hoạch cá nhân</small></span><select name="goal">${["Giao tiếp hằng ngày", "Học tập và thi cử", "Du lịch", "Công việc", "Xây nền từ mất gốc", "Học thuật C1-C2", "Tiếng Anh chuyên ngành"].map((goal) => `<option ${state.settings.goal === goal ? "selected" : ""}>${goal}</option>`).join("")}</select></label><label><span>Mục tiêu mỗi ngày<small>5–60 phút; có thể học lại không giới hạn</small></span><input type="number" name="dailyGoal" min="5" max="60" step="5" value="${state.dailyGoal}"></label><label><span>Tốc độ giọng đọc<small>Chậm 0.6× · Bình thường 1×</small></span><input type="range" name="voiceRate" min="0.6" max="1.2" step="0.05" value="${state.settings.voiceRate}"><output>${state.settings.voiceRate}×</output></label><label><span>Chế độ người mới<small>Hiện checklist và lời giải thích ngắn trên trang tổng quan</small></span><input type="checkbox" name="beginnerMode" ${state.settings.beginnerMode ? "checked" : ""}></label><label><span>Giảm chuyển động<small>Tôn trọng khả năng tập trung và prefers-reduced-motion</small></span><input type="checkbox" name="reducedMotion" ${state.settings.reducedMotion ? "checked" : ""}></label><button class="primary" type="submit">Lưu cài đặt</button></form><section class="hhe-data-tools"><div><h3>Dữ liệu cá nhân</h3><p>Xuất bản sao JSON hoặc nhập lại trên thiết bị khác.</p></div><button type="button" data-hhe-export>Xuất JSON</button><label>Nhập JSON<input type="file" accept="application/json" data-hhe-import></label><button class="danger" type="button" data-hhe-reset>Xóa toàn bộ dữ liệu học</button></section><section class="hhe-sources"><h3>Nguồn học miễn phí được tuyển chọn</h3><a href="https://learnenglish.britishcouncil.org/" target="_blank" rel="noopener">British Council · LearnEnglish</a><a href="https://www.cambridgeenglish.org/learning-english/" target="_blank" rel="noopener">Cambridge English · Free activities</a><a href="https://learningenglish.voanews.com/" target="_blank" rel="noopener">VOA · Learning English</a><a href="https://www.coe.int/en/web/common-european-framework-reference-languages" target="_blank" rel="noopener">Council of Europe · CEFR</a><a href="https://www.onetonline.org/find/career?c=0" target="_blank" rel="noopener">O*NET · Career Clusters</a><a href="https://esco.ec.europa.eu/en/classification" target="_blank" rel="noopener">ESCO · Skills & occupations</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API" target="_blank" rel="noopener">MDN · Web Speech API</a></section></section>`;
 
+  const galaxyCatalog = () => galaxyData?.catalog || [];
+  const galaxyTopics = () => galaxyData?.topicSystems || [];
+  const galaxyStats = () => galaxyData?.stats?.() || { catalog: 0, unique: 0, targets: {} };
+  const galaxyFilteredWords = (state) => galaxyCatalog().filter((word) =>
+    (state.galaxyTopic === "all" || word.topic === state.galaxyTopic) &&
+    (state.galaxyLevel === "all" || word.level === state.galaxyLevel)
+  );
+  const masteryFor = (state, word) => Number(state.wordMastery?.[word.term]?.score || 0);
+  const masteryLabel = (score) => score >= 90 ? "Thành thạo" : score >= 65 ? "Gần nhớ" : score > 0 ? "Đang học" : "Mới";
+  const galaxyPlanMarkup = (state) => {
+    const due = dueVocabulary(state).length;
+    const mastery = Object.values(state.wordMastery || {});
+    const mastered = mastery.filter((item) => Number(item.score) >= 90).length;
+    return `<section class="hhe-galaxy-mission">
+      <header><div><small>MISSION CONTROL · HỌC THÍCH ỨNG</small><h3>Hôm nay bạn muốn bay tới đâu?</h3><p>HH ưu tiên ${due ? `${due} từ đến hạn` : "từ mới theo cấp độ"} và kỹ năng ${escapeHtml(skillLabels[weakSkillFor(state)] || "giao tiếp")} dựa trên các lần trả lời cục bộ.</p></div><span>${mastered} từ thành thạo</span></header>
+      <div><button type="button" data-hhe-galaxy-start="speed-review"><b>⚡</b><strong>Ôn nhanh 60 giây</strong><small>${due || 0} từ đang chờ</small></button><button type="button" data-hhe-galaxy-start="typed-recall"><b>⌨</b><strong>Đánh thức trí nhớ</strong><small>Nhìn nghĩa và tự gõ</small></button><button type="button" data-hhe-galaxy-start="role-play"><b>◎</b><strong>Giao tiếp thực tế</strong><small>Role-play theo nghề</small></button></div>
+      <footer><span><i></i> Dữ liệu và điểm được lưu trên thiết bị</span><button type="button" data-hhe-view="progress">Xem báo cáo học tập →</button></footer>
+    </section>`;
+  };
+  const galaxyView = (state) => {
+    const stats = galaxyStats();
+    const words = galaxyFilteredWords(state);
+    const topics = galaxyTopics();
+    const currentLevel = state.galaxyLevel === "all" ? selectedLevelId(state) : state.galaxyLevel;
+    const currentPlanet = galaxyData?.packs?.find((pack) => pack.level === currentLevel);
+    const mastered = Object.values(state.wordMastery || {}).filter((item) => Number(item.score) >= 90).length;
+    const activeTopic = topics.find((topic) => topic.id === state.galaxyTopic);
+    return `<section class="hhe-galaxy">
+      <header class="hhe-galaxy-hero"><div><small>ENGLISH LEARNING GALAXY · H COSMOS</small><h2>Biến mỗi từ thành một ngôi sao.</h2><p>Bản đồ học tiếng Anh từ A0 đến C2, 70 Career Galaxies và 16 cách luyện. Độ sáng của sao tăng theo mức ghi nhớ của bạn.</p><div><button class="primary" type="button" data-hhe-galaxy-start="flashcards">Bắt đầu chuyến bay →</button><button type="button" data-hhe-view="lab">Mở 16 chế độ học</button></div></div><div class="hhe-galaxy-sun" aria-label="Hồ sơ người học"><span>H</span><b>${mastered}</b><small>STARS MASTERED</small><i></i><i></i><i></i></div></header>
+      ${galaxyPlanMarkup(state)}
+      <section class="hhe-galaxy-map"><header><div><small>CEFR PLANET MAP</small><h3>Bảy hành tinh trình độ</h3></div><span>${currentPlanet ? `${currentPlanet.count} từ đã nạp` : "Chọn một hành tinh"}</span></header><div class="hhe-galaxy-planets">${(galaxyData?.packs || []).map((pack) => `<button type="button" class="${pack.level === currentLevel ? "active" : ""}" style="--planet:${pack.color}" data-hhe-galaxy-level="${pack.level}"><i>${pack.level === "A0" ? "H" : pack.level}</i><strong>${escapeHtml(pack.title)}</strong><small>${pack.count}/${pack.target} từ · ${pack.count ? Math.round(pack.count / pack.target * 100) : 0}% gói hiện có</small><b>${pack.level === currentLevel ? "Đang bay" : "Mở hành tinh"}</b></button>`).join("")}</div></section>
+      <section class="hhe-galaxy-systems"><header><div><small>TOPIC STAR SYSTEMS</small><h3>Chọn hệ sao để học theo ngữ cảnh</h3></div><span>${activeTopic ? escapeHtml(activeTopic.vi) : "Tất cả chủ đề"}</span></header><div class="hhe-galaxy-topic-tabs"><button type="button" class="${state.galaxyTopic === "all" ? "active" : ""}" data-hhe-galaxy-topic="all">✦ Tất cả</button>${topics.map((topic) => `<button type="button" class="${state.galaxyTopic === topic.id ? "active" : ""}" style="--topic:${topic.color}" data-hhe-galaxy-topic="${topic.id}">${topic.icon} ${escapeHtml(topic.vi)}</button>`).join("")}</div><div class="hhe-galaxy-starfield">${words.slice(0, 18).map((word) => `<article class="hhe-galaxy-star-card" style="--star:${galaxyData.levelColors[word.level] || "#63e8ff"};--glow:${Math.max(.25, masteryFor(state, word) / 100)}"><span class="hhe-star"></span><div><small>${escapeHtml(word.level)} · ${escapeHtml(word.topic)}</small><h4>${escapeHtml(word.term)}</h4><p>${escapeHtml(word.meaning)}</p><em>${masteryLabel(masteryFor(state, word))}</em></div><button type="button" data-hhe-galaxy-speak="${escapeHtml(word.example || word.term)}" aria-label="Nghe ${escapeHtml(word.term)}">▶</button></article>`).join("") || `<p class="hhe-empty-state">Gói từ đang chuẩn bị. Hãy chọn một hành tinh để nạp dữ liệu.</p>`}</div><footer><span>${words.length} mục đang hiển thị · ${stats.unique} mục độc nhất đã lập chỉ mục</span><button type="button" data-hhe-view="vocabulary">Mở sổ từ chi tiết →</button></footer></section>
+      <section class="hhe-galaxy-packs"><header><div><small>LAZY VOCABULARY PACKS</small><h3>Nạp đúng gói, giữ website nhẹ</h3></div><span>Chỉ tải khi bạn bấm</span></header><div>${(galaxyData?.packs || []).map((pack) => `<article style="--pack:${pack.color}"><span>${pack.level}</span><div><strong>${escapeHtml(pack.title)}</strong><p>${pack.count} mục hiện có · mục tiêu ${pack.target} từ trong gói</p><i style="--p:${Math.min(100, Math.round(pack.count / Math.max(1, pack.target) * 100))}%"></i></div><button type="button" data-hhe-galaxy-pack="${pack.id}">${state.galaxyPackStatus?.[pack.id] ? "Đã nạp ✓" : "Nạp gói"}</button></article>`).join("")}</div></section>
+    </section>`;
+  };
+  const labView = (state) => {
+    const words = galaxyFilteredWords(state);
+    const mode = state.galaxyMode || "flashcards";
+    const challenge = galaxyData?.buildChallenge?.(mode, words, state.galaxyCursor) || { mode, modeTitle: "Flashcard", type: "choice", prompt: "Chưa có dữ liệu", answer: "", options: [] };
+    const word = challenge.word || words[0];
+    const optionMarkup = challenge.options?.length ? `<div class="hhe-lab-options">${challenge.options.map((option, index) => `<label><input type="radio" name="galaxyAnswer" value="${escapeHtml(option)}" required><span><b>${String.fromCharCode(65 + index)}</b>${escapeHtml(option)}</span></label>`).join("")}</div>` : "";
+    const answerMarkup = challenge.type === "flashcard" ? `<article class="hhe-lab-flashcard"><button type="button" data-hhe-galaxy-reveal>Lật thẻ · xem nghĩa</button><div hidden data-hhe-galaxy-reveal-panel><strong>${escapeHtml(challenge.answer)}</strong><p>${escapeHtml(challenge.sentence)}</p><footer><button type="button" data-hhe-galaxy-rate="again" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Again</button><button type="button" data-hhe-galaxy-rate="hard" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Hard</button><button type="button" class="primary" data-hhe-galaxy-rate="good" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Good</button><button type="button" data-hhe-galaxy-rate="easy" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Easy</button></footer></div></article>` : challenge.type === "choice" ? optionMarkup : challenge.type === "story" ? `<article class="hhe-lab-story"><p>${escapeHtml(challenge.sentence)}</p><button type="button" class="primary" data-hhe-galaxy-rate="easy" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Tôi đã hiểu từ này ✓</button></article>` : `<label class="hhe-lab-input"><span>${challenge.type === "textarea" ? "Câu trả lời của bạn" : "Câu trả lời"}</span>${challenge.type === "textarea" ? `<textarea name="galaxyAnswer" required placeholder="Write your answer in English..."></textarea>` : `<input name="galaxyAnswer" required autocomplete="off" placeholder="Type in English...">`}</label>`;
+    return `<section class="hhe-lab"><header class="hhe-lab-hero"><div><small>MISSION CONTROL · PRACTICE LAB</small><h2>16 cách học, một trí nhớ bền hơn.</h2><p>Đổi phương pháp bất cứ lúc nào. HH ghi lại độ đúng, lỗi và khoảng ôn tiếp theo trên thiết bị.</p></div><aside><strong>${state.galaxySession?.correct || 0}</strong><span>đúng trong phiên</span><b>${formatFocusTime(Math.max(0, 60 - (state.galaxySession?.attempts || 0) * 4))}</b><small>nhịp speed review</small></aside></header>
+      <nav class="hhe-mode-orbit" aria-label="Các chế độ học">${(galaxyData?.learningModes || []).map((item) => `<button type="button" class="${item.id === mode ? "active" : ""}" data-hhe-mode="${item.id}"><b>${item.icon}</b><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.detail)}</small></button>`).join("")}</nav>
+      <section class="hhe-lab-chamber"><header><div><small>${escapeHtml(challenge.modeTitle || "PRACTICE")}</small><h3>${escapeHtml(challenge.prompt || "")}</h3></div><button type="button" data-hhe-view="galaxy">← Về bản đồ Galaxy</button></header><div class="hhe-lab-word"><span>${escapeHtml(word?.level || selectedLevelId(state))} · ${escapeHtml(word?.topic || "daily")}</span><strong>${escapeHtml(word?.term || "Ready")}</strong><button type="button" data-hhe-speak="${escapeHtml(challenge.sentence || word?.term || "")}">▶ Nghe câu mẫu</button><p>${escapeHtml(challenge.sentence || "")}</p></div><form data-hhe-galaxy-challenge data-answer="${escapeHtml(challenge.answer || "")}" data-word="${escapeHtml(word?.term || "")}">${answerMarkup}${challenge.type !== "story" && challenge.type !== "flashcard" ? `<footer><span data-hhe-galaxy-feedback></span><button class="primary" type="submit">Kiểm tra →</button></footer>` : ""}</form></section>
+      <section class="hhe-lab-footer"><article><b>Ôn thích nghi</b><p>Again / Hard / Good / Easy điều chỉnh ease factor và ngày ôn, không dùng lịch cố định.</p></article><article><b>Mistake Notebook</b><p>${state.mistakeNotebook?.length || 0} lỗi đang được giữ lại để mở bằng chế độ riêng.</p></article><article><b>Chế độ hiện tại</b><p>${escapeHtml((galaxyData?.learningModes || []).find((item) => item.id === mode)?.detail || "")}</p></article></section>
+    </section>`;
+  };
+
   const focusCurrentView = () => root.requestAnimationFrame?.(() => {
     const heading = host?.querySelector(".hhe-main h2, .hhe-main h3");
     heading?.scrollIntoView?.({ behavior: "auto", block: "start" });
@@ -968,13 +1030,15 @@
     const shouldFocus = options === true || Boolean(options.focusView) || focusAfterRender;
     focusAfterRender = false;
     const state = readState(); let content = "";
-    const galaxyContent = root.HHEnglishGalaxy?.renderView?.(state, {
+    const learningGalaxyContent = root.HHEnglishLearningGalaxy?.renderView?.(state, {
       courseLevels, careerTracks, allLessons, levelOrder, selectedLevelId, selectedCareerId,
       completedCount, levelProgress, levelPractice, nextLessonFor, speechAdapterStatus,
       englishVoices, voiceProfiles, voiceProfileById, selectVoice, compareTranscript,
       escapeHtml, normalize, todayKey
     });
-    if (typeof galaxyContent === "string") content = galaxyContent;
+    if (typeof learningGalaxyContent === "string") content = learningGalaxyContent;
+    else if (state.activeView === "galaxy") content = galaxyView(state);
+    else if (state.activeView === "lab") content = labView(state);
     else if (state.activeView === "plan") content = smartPlanView(state);
     else if (state.activeView === "learn") content = learnView(state);
     else if (state.activeView === "career") content = careerView(state);
@@ -995,7 +1059,7 @@
     host.querySelector("[data-hhe-career-search]")?.addEventListener("input", filterCareerTracks);
     host.querySelector("[data-hhe-navigator-search]")?.addEventListener("input", filterNavigator);
     host.querySelector('[name="voiceRate"]')?.addEventListener("input", (event) => { event.target.nextElementSibling.textContent = `${event.target.value}×`; });
-    root.HHEnglishGalaxy?.bind?.({
+    root.HHEnglishLearningGalaxy?.bind?.({
       host, state, readState, writeState, render, toast, speak, selectVoice, englishVoices,
       voiceProfileById, compareTranscript, escapeHtml, selectedLevelId, todayKey,
       scheduleReview, updateStreak
@@ -1103,6 +1167,59 @@
     if (event.target.matches("[data-hhe-navigator-backdrop]")) { navigatorOpen = false; render(); return; }
     if (event.target.closest("[data-hhe-navigator-open]")) { navigatorOpen = true; render(); root.requestAnimationFrame?.(() => host?.querySelector("[data-hhe-navigator-search]")?.focus()); return; }
     if (event.target.closest("[data-hhe-navigator-close]")) { navigatorOpen = false; render(); return; }
+    const galaxyStart = event.target.closest("[data-hhe-galaxy-start]");
+    if (galaxyStart) {
+      const state = readState();
+      state.galaxyMode = galaxyStart.dataset.hheGalaxyStart || "flashcards";
+      state.activeView = "lab";
+      state.galaxySession = { correct: 0, attempts: 0, startedAt: new Date().toISOString() };
+      writeState(state); focusAfterRender = true;
+      if (!syncViewRoute("lab")) render({ focusView: true });
+      return;
+    }
+    const galaxyMode = event.target.closest("[data-hhe-mode]");
+    if (galaxyMode) {
+      const state = readState();
+      state.galaxyMode = galaxyMode.dataset.hheMode || "flashcards";
+      state.activeView = "lab";
+      state.galaxyCursor = (Number(state.galaxyCursor) || 0) + 1;
+      writeState(state); render({ focusView: true });
+      return;
+    }
+    const galaxyTopic = event.target.closest("[data-hhe-galaxy-topic]");
+    if (galaxyTopic) {
+      const state = readState(); state.galaxyTopic = galaxyTopic.dataset.hheGalaxyTopic || "all"; writeState(state); render({ focusView: true }); return;
+    }
+    const galaxyLevel = event.target.closest("[data-hhe-galaxy-level]");
+    if (galaxyLevel) {
+      const state = readState(); state.galaxyLevel = galaxyLevel.dataset.hheGalaxyLevel || "all"; state.selectedLevel = levelOrder.includes(state.galaxyLevel) ? state.galaxyLevel : state.selectedLevel; writeState(state); render({ focusView: true }); return;
+    }
+    const galaxyPack = event.target.closest("[data-hhe-galaxy-pack]");
+    if (galaxyPack) {
+      const state = readState(); const id = galaxyPack.dataset.hheGalaxyPack; state.galaxyPackStatus[id] = true; writeState(state); render(); toast(`Đã nạp gói từ ${id.toUpperCase()} · chỉ tải dữ liệu cần dùng.`); return;
+    }
+    const galaxySpeak = event.target.closest("[data-hhe-galaxy-speak]");
+    if (galaxySpeak) {
+      const state = readState();
+      if (!speak(galaxySpeak.dataset.hheGalaxySpeak, state.settings)) toast(state.settings.audioPlaybackConsent ? "Thiết bị chưa có giọng đọc tiếng Anh." : "Hãy bật quyền phát âm thanh trong Voice Studio.", "error");
+      return;
+    }
+    const galaxyReveal = event.target.closest("[data-hhe-galaxy-reveal]");
+    if (galaxyReveal) {
+      const panel = galaxyReveal.closest("[data-hhe-galaxy-challenge]")?.querySelector("[data-hhe-galaxy-reveal-panel]");
+      if (panel) { panel.hidden = false; galaxyReveal.hidden = true; }
+      return;
+    }
+    const galaxyRate = event.target.closest("[data-hhe-galaxy-rate]");
+    if (galaxyRate) {
+      const state = readState(); const word = galaxyRate.dataset.hheGalaxyWord || ""; const rating = galaxyRate.dataset.hheGalaxyRate || "good";
+      const previous = state.wordMastery[word] || { score: 0, attempts: 0, correct: 0 };
+      const quality = { again: -18, hard: 6, good: 16, easy: 24 }[rating] || 6;
+      state.wordMastery[word] = { ...previous, score: Math.max(0, Math.min(100, Number(previous.score || 0) + quality)), attempts: Number(previous.attempts || 0) + 1, correct: Number(previous.correct || 0) + (rating === "again" ? 0 : 1), lastRating: rating, updatedAt: new Date().toISOString() };
+      state.reviewQueue[word] = scheduleReview(state.reviewQueue[word], rating);
+      state.galaxyCursor = (Number(state.galaxyCursor) || 0) + 1; writeState(state); render(); toast("Đã ghi nhận mức nhớ và lên lịch ôn thích nghi.");
+      return;
+    }
     if (event.target.matches("[data-hhe-onboarding-backdrop]")) { closeOnboarding(); return; }
     if (event.target.closest("[data-hhe-onboarding-open]")) { navigatorOpen = false; guideOpen = true; render(); return; }
     if (event.target.closest("[data-hhe-onboarding-close]")) { closeOnboarding(); return; }
@@ -1235,6 +1352,31 @@
 
   const handleSubmit = (event) => {
     event.stopPropagation();
+    const galaxyForm = event.target.closest("[data-hhe-galaxy-challenge]");
+    if (galaxyForm) {
+      event.preventDefault();
+      const state = readState();
+      const answer = String(new FormData(galaxyForm).get("galaxyAnswer") || "").trim();
+      const selected = String(new FormData(galaxyForm).get("galaxyAnswer") || "").trim();
+      const expected = String(galaxyForm.dataset.answer || "").trim();
+      const mode = state.galaxyMode || "flashcards";
+      const correct = mode === "role-play" ? normalize(answer).includes(normalize(expected)) : normalize(selected) === normalize(expected);
+      const word = galaxyForm.dataset.word || expected;
+      const previous = state.wordMastery[word] || { score: 0, attempts: 0, correct: 0 };
+      const rating = correct ? "good" : "again";
+      const quality = correct ? 16 : -18;
+      state.wordMastery[word] = { ...previous, score: Math.max(0, Math.min(100, Number(previous.score || 0) + quality)), attempts: Number(previous.attempts || 0) + 1, correct: Number(previous.correct || 0) + (correct ? 1 : 0), lastRating: rating, updatedAt: new Date().toISOString() };
+      state.reviewQueue[word] = scheduleReview(state.reviewQueue[word], rating);
+      state.galaxySession = { ...state.galaxySession, attempts: Number(state.galaxySession?.attempts || 0) + 1, correct: Number(state.galaxySession?.correct || 0) + (correct ? 1 : 0), startedAt: state.galaxySession?.startedAt || new Date().toISOString() };
+      state.modeStats[mode] = { attempts: Number(state.modeStats?.[mode]?.attempts || 0) + 1, correct: Number(state.modeStats?.[mode]?.correct || 0) + (correct ? 1 : 0), lastAt: new Date().toISOString() };
+      if (!correct) state.mistakeNotebook = [{ word, mode, expected, answer, createdAt: new Date().toISOString() }, ...(state.mistakeNotebook || [])].slice(0, 100);
+      state.galaxyCursor = (Number(state.galaxyCursor) || 0) + 1;
+      writeState(state);
+      const feedback = galaxyForm.querySelector("[data-hhe-galaxy-feedback]");
+      if (feedback) feedback.innerHTML = `<strong class="${correct ? "correct" : "wrong"}">${correct ? "Chính xác · +16 điểm nhớ" : `Chưa đúng · đáp án: ${escapeHtml(expected)}`}</strong><span>${correct ? "Khoảng ôn tiếp theo đã được tính lại." : "Lỗi này đã được đưa vào Mistake Notebook."}</span>`;
+      root.setTimeout?.(() => { if (host?.querySelector("[data-hhe-galaxy-challenge]") === galaxyForm) render(); }, 900);
+      return;
+    }
     const roleplayForm = event.target.closest("[data-hhe-roleplay]");
     if (roleplayForm) {
       event.preventDefault();
@@ -1456,8 +1598,8 @@
     render();
   };
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
-  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishGalaxy?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
+  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishLearningGalaxy?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
-  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
-  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson };
+  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, galaxyData };
+  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, galaxyData };
 })();

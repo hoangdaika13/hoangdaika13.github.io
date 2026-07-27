@@ -105,13 +105,15 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
   const email = has("RESEND_API_KEY", "EMAIL_FROM");
   const eleven = Boolean(String(process.env.ELEVENLABS_API_KEY || "").trim());
   const downloader = Boolean(String(process.env.VIDEO_DOWNLOADER_API_URL || "").trim());
-  const objectStorage = has("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY");
+  const vercelBlob = Boolean(String(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN || "").trim());
+  const s3Storage = has("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY");
+  const objectStorage = vercelBlob || s3Storage;
   const missing = [];
   if (!email) missing.push({ id: "email-verification", label: "Xác minh email", connect: "Resend API + EMAIL_FROM đã xác minh" });
   if (!googleSearch) missing.push({ id: "google-search", label: "Google Search", connect: "Google Search Engine ID hoặc Agent Search/Vertex" });
   if (!eleven) missing.push({ id: "elevenlabs", label: "Music/Sound AI", connect: "ELEVENLABS_API_KEY" });
   if (!downloader) missing.push({ id: "download-engine", label: "Download Center", connect: "VIDEO_DOWNLOADER_API_URL và khóa engine" });
-  if (!objectStorage) missing.push({ id: "object-storage", label: "Cloud Storage file lớn", connect: "S3/R2 bucket và credentials server-side" });
+  if (!objectStorage) missing.push({ id: "object-storage", label: "Cloud Storage file lớn", connect: "Vercel Blob hoặc S3/R2" });
   if (!realtime.connected) missing.push({ id: "realtime-server", label: "Realtime/Socket.io", connect: "Render cần online, kết nối MongoDB và dùng cùng JWT_SECRET với Vercel" });
   return {
     checkedAt: new Date(),
@@ -136,7 +138,7 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
     },
     ai: { gemini: gemini, geminiKeySource: process.env.GEMINI_API_KEYS ? "gemini-pool" : process.env.GEMINI_API_KEY ? "gemini" : process.env.GOOGLE_AI_API_KEY ? "google-ai" : "none", elevenLabs: eleven },
     payments: { payos, donationReceiptEmail: email },
-    storage: { metadata: true, smallTextPayload: true, objectStorage },
+    storage: { metadata: true, smallTextPayload: true, objectStorage, provider: vercelBlob ? "vercel-blob-private" : s3Storage ? "s3-compatible" : "mongodb" },
     download: { engine: downloader },
     realtime: {
       configured: Boolean(realtime.configured),

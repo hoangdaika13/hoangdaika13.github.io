@@ -8,9 +8,11 @@
     "test:ai": "node --test tests/ai-center-contract.test.js",
     "test:space": "node --test tests/space-explorer-contract.test.js",
     "test:auth": "node --test tests/auth-neon-gateway-contract.test.js",
+    "test:security": "node --test tests/security-*.test.js",
     "test:english": "node --test tests/english-learning.test.js",
     "test:communication": "node --test tests/communication-*.test.js",
     "test:youtube-publisher": "node --test tests/youtube-publisher-contract.test.js",
+    "test:music-galaxy": "node --test tests/music-galaxy-contract.test.js tests/music-production-suite-integration.test.js tests/music-ai-studio-contract.test.js",
     "test:learning": "node --test tests/learning-*.test.js",
     "test:games": "node --test tests/game-*.test.js tests/astra-universe-expansion.test.js tests/game-entertainment-integration.test.js",
     "test:games:backend": "node --test tests/game-cloud-api.test.js realtime-server/test/game-center.test.js realtime-server/test/astra-realtime.test.js"
@@ -18,6 +20,7 @@
   "dependencies": {
     "@payos/node": "^2.0.5",
     "@simplewebauthn/server": "^13.2.2",
+    "@vercel/blob": "^2.6.1",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.20.0",

@@ -8,7 +8,7 @@
   const STORE_CART_KEY = "hh-store-cart";
   const WORK_KEY = "hh-work-center-v2";
   const LEGACY_WORK_KEY = "hh-work-center-v1";
-  const WORK_SCHEMA_VERSION = 3;
+  const WORK_SCHEMA_VERSION = 4;
   const FILE_META_KEY = "hh-work-center-files-v1";
   const DB_NAME = "hh-work-center";
   const DB_STORE = "files";
@@ -41,9 +41,30 @@
     { id: "workflow-automation", icon: "A", label: "Tự động hóa", title: "Workflow Automation", description: "Trigger, điều kiện, hành động và lịch sử chạy.", route: "/work/workflow-automation", accent: "lime", features: ["Trigger", "Rules", "Runs"] }
   ];
 
+  const WORK_PLANETS = Object.freeze([
+    { id: "mission-control", icon: "MC", title: "Mission Control", subtitle: "Điều hành hôm nay", route: "/work/mission-control", color: "#62ecf2", accent: "#7cf8ca", description: "Việc cần làm, rủi ro, lịch, focus và trạng thái dữ liệu thật." },
+    { id: "projects-tasks", icon: "PT", title: "Projects & Tasks", subtitle: "Thực thi đa góc nhìn", route: "/work/projects-tasks", color: "#8f7cff", accent: "#cf75ff", description: "List, Board, Calendar, Timeline, Gantt, Workload và Milestone." },
+    { id: "roadmap-planning", icon: "RP", title: "Roadmap & Planning", subtitle: "Mục tiêu đến kế hoạch", route: "/work/roadmap-planning", color: "#ff70bf", accent: "#ff9f74", description: "Initiative, cycle, dependency, capacity, baseline và risk detector." },
+    { id: "team-orbit", icon: "TO", title: "Team Orbit", subtitle: "Cộng tác & năng lực", route: "/work/team-orbit", color: "#5b9dff", accent: "#56e6e0", description: "Workload, capacity, meeting, action item và quyền làm việc nhóm." },
+    { id: "knowledge-assets", icon: "KA", title: "Knowledge & Assets", subtitle: "Tri thức & tài nguyên", route: "/work/knowledge-assets", color: "#49e4ad", accent: "#b9f36a", description: "Wiki, tệp thiết bị, biểu mẫu và chín workspace cũ được kết nối." },
+    { id: "automation-lab", icon: "AL", title: "Automation Lab", subtitle: "Luồng có kiểm soát", route: "/work/automation-lab", color: "#ff9a62", accent: "#ffe16b", description: "Trigger → condition → action → approval, dry run và lịch sử." },
+    { id: "portfolio-observatory", icon: "PO", title: "Portfolio Observatory", subtitle: "Sức khỏe toàn danh mục", route: "/work/portfolio-observatory", color: "#ffd76a", accent: "#ff8c63", description: "Deadline, tiến độ, velocity, workload, rủi ro và snapshot xuất được." }
+  ]);
+  const WORK_THEMES = Object.freeze({
+    aurora: "Aurora Office",
+    quantum: "Quantum Workflow",
+    nebula: "Nebula Focus",
+    cyber: "Cyber Productivity",
+    solar: "Solar Planner",
+    deep: "Deep Space Calm"
+  });
+  const TASK_VIEWS = Object.freeze(["list", "board", "calendar", "timeline", "gantt", "workload", "table", "milestones"]);
+
   let host = null;
+  let activeView = "mission-control";
   let clockTimer = 0;
   let focusTimer = 0;
+  let taskSearchTimer = 0;
   let fileDragDepth = 0;
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -65,14 +86,14 @@
   };
   const projectState = () => {
     const state = read(PROJECT_KEY, {});
-    if (!Array.isArray(state.projects) || !state.projects.length) state.projects = structuredClone(DEFAULT_PROJECTS);
-    if (!Array.isArray(state.tasks) || !state.tasks.length) state.tasks = structuredClone(DEFAULT_TASKS);
+    if (!Array.isArray(state.projects)) state.projects = structuredClone(DEFAULT_PROJECTS);
+    if (!Array.isArray(state.tasks)) state.tasks = structuredClone(DEFAULT_TASKS);
     state.activity = Array.isArray(state.activity) ? state.activity : [];
     return state;
   };
   const wikiState = () => {
     const state = read(WIKI_KEY, {});
-    if (!Array.isArray(state.articles) || !state.articles.length) state.articles = structuredClone(DEFAULT_ARTICLES);
+    if (!Array.isArray(state.articles)) state.articles = structuredClone(DEFAULT_ARTICLES);
     return state;
   };
   const extensionState = () => read(EXTENSION_KEY, {});
@@ -83,12 +104,54 @@
     initiatives: [], projects: [], tasks: [], milestones: [],
     cycles: [{ id: "cycle-current", name: "Cycle hiện tại", start: day(), end: day(14), goal: "Ưu tiên việc quan trọng", status: "planned" }],
     capacities: {}, meetings: [], actionItems: [], cycleRolloverLog: [], calendar: [],
+    universalProject: { id: "work-universe", name: "HH Universal Work Project", goal: "Tập trung công việc quan trọng và hoàn thành đúng hạn", owner: "", status: "active", updatedAt: "" },
+    members: [],
+    goals: [],
+    automations: [],
+    automationRuns: [],
+    inbox: [],
+    savedViews: [],
+    activeProjectId: "",
+    taskView: "board",
+    taskQuery: "",
+    theme: "aurora",
+    effects: "balanced",
+    lastContext: "/work/projects-tasks",
     focusMinutes: 25, focusRemaining: 1500, focusRunning: false, focusEnd: 0, focusSessions: 0, taskFilter: "open"
   });
   const normalizePlanning = (raw = {}) => {
-    const projects = Array.isArray(raw.projects) && raw.projects.length ? raw.projects : structuredClone(DEFAULT_PROJECTS);
-    const tasks = Array.isArray(raw.tasks) && raw.tasks.length ? raw.tasks : structuredClone(DEFAULT_TASKS);
-    return { ...planningDefaults(), ...raw, initiatives: Array.isArray(raw.initiatives) ? raw.initiatives : [], projects: projects.map((item) => ({ ...item, initiativeId: item.initiativeId || "", capacity: Number(item.capacity || 40) })), tasks: tasks.map((item) => ({ ...item, projectId: item.projectId || item.project || projects[0]?.id, cycleId: item.cycleId || "", status: item.status || item.column || "todo", column: item.column || item.status || "todo", estimate: Number(item.estimate || 1), dependsOn: Array.isArray(item.dependsOn) ? item.dependsOn : [], due: item.due || "" })), milestones: Array.isArray(raw.milestones) ? raw.milestones : [], cycles: Array.isArray(raw.cycles) ? raw.cycles : planningDefaults().cycles, capacities: raw.capacities && typeof raw.capacities === "object" ? raw.capacities : {}, meetings: Array.isArray(raw.meetings) ? raw.meetings : [], actionItems: Array.isArray(raw.actionItems) ? raw.actionItems : [], cycleRolloverLog: Array.isArray(raw.cycleRolloverLog) ? raw.cycleRolloverLog : [], calendar: Array.isArray(raw.calendar) ? raw.calendar : [] };
+    const projects = Array.isArray(raw.projects) ? raw.projects : structuredClone(DEFAULT_PROJECTS);
+    const tasks = Array.isArray(raw.tasks) ? raw.tasks : structuredClone(DEFAULT_TASKS);
+    const defaults = planningDefaults();
+    const theme = Object.hasOwn(WORK_THEMES, raw.theme) ? raw.theme : defaults.theme;
+    const effects = ["static", "balanced", "cinematic"].includes(raw.effects) ? raw.effects : defaults.effects;
+    const taskView = TASK_VIEWS.includes(raw.taskView) ? raw.taskView : defaults.taskView;
+    return {
+      ...defaults,
+      ...raw,
+      schemaVersion: WORK_SCHEMA_VERSION,
+      universalProject: { ...defaults.universalProject, ...(raw.universalProject && typeof raw.universalProject === "object" ? raw.universalProject : {}) },
+      initiatives: Array.isArray(raw.initiatives) ? raw.initiatives : [],
+      projects: projects.map((item) => ({ ...item, initiativeId: item.initiativeId || "", capacity: Number(item.capacity || 40) })),
+      tasks: tasks.map((item) => ({ ...item, projectId: item.projectId || item.project || projects[0]?.id, cycleId: item.cycleId || "", status: item.status || item.column || "todo", column: item.column || item.status || "todo", estimate: Number(item.estimate || 1), dependsOn: Array.isArray(item.dependsOn) ? item.dependsOn : [], due: item.due || "", assignee: item.assignee || "" })),
+      milestones: Array.isArray(raw.milestones) ? raw.milestones : [],
+      cycles: Array.isArray(raw.cycles) ? raw.cycles : defaults.cycles,
+      capacities: raw.capacities && typeof raw.capacities === "object" ? raw.capacities : {},
+      meetings: Array.isArray(raw.meetings) ? raw.meetings : [],
+      actionItems: Array.isArray(raw.actionItems) ? raw.actionItems : [],
+      cycleRolloverLog: Array.isArray(raw.cycleRolloverLog) ? raw.cycleRolloverLog : [],
+      calendar: Array.isArray(raw.calendar) ? raw.calendar : [],
+      members: Array.isArray(raw.members) ? raw.members : [],
+      goals: Array.isArray(raw.goals) ? raw.goals : [],
+      automations: Array.isArray(raw.automations) ? raw.automations : [],
+      automationRuns: Array.isArray(raw.automationRuns) ? raw.automationRuns : [],
+      inbox: Array.isArray(raw.inbox) ? raw.inbox : [],
+      savedViews: Array.isArray(raw.savedViews) ? raw.savedViews : [],
+      theme,
+      effects,
+      taskView,
+      activeProjectId: raw.activeProjectId && projects.some((item) => item.id === raw.activeProjectId) ? raw.activeProjectId : projects[0]?.id || ""
+    };
   };
   const planningState = () => {
     const stored = read(WORK_KEY, null) || read(LEGACY_WORK_KEY, {});
@@ -172,6 +235,225 @@
     return risks;
   };
   const planningTimeline = (state) => [...(state.tasks || []).filter((item) => item.due).map((item) => ({ date: item.due, type: "Task", title: item.title, detail: item.assignee || "Chưa phân công" })), ...(state.milestones || []).filter((item) => item.due).map((item) => ({ date: item.due, type: "Milestone", title: item.name, detail: `${item.progress || 0}%` })), ...(state.meetings || []).filter((item) => item.date).map((item) => ({ date: item.date, type: "Meeting", title: item.title, detail: item.attendees || "" }))].sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(0, 20);
+
+  const statusLabel = (status) => ({ todo: "Cần làm", doing: "Đang làm", review: "Chờ duyệt", done: "Hoàn tất" })[status] || status || "Cần làm";
+  const clamp = (value, min = 0, max = 100) => Math.max(min, Math.min(max, Number(value || 0)));
+  const progressAverage = (items) => items.length ? Math.round(items.reduce((sum, item) => sum + clamp(item.progress), 0) / items.length) : 0;
+  const workloadByPerson = (state) => {
+    const workload = {};
+    (state.tasks || []).filter((task) => task.status !== "done").forEach((task) => {
+      const person = task.assignee || "Chưa phân công";
+      workload[person] = (workload[person] || 0) + Number(task.estimate || 1);
+    });
+    return workload;
+  };
+  const workMetrics = (state = planningState()) => {
+    const tasks = state.tasks || [];
+    const projects = state.projects || [];
+    const open = tasks.filter((task) => task.status !== "done");
+    const done = tasks.filter((task) => task.status === "done");
+    const overdue = open.filter((task) => planningDaysUntil(task.due) < 0);
+    const dueSoon = open.filter((task) => { const days = planningDaysUntil(task.due); return days !== null && days >= 0 && days <= 3; });
+    const risks = detectPlanningRisks(state);
+    const blocked = open.filter((task) => (task.dependsOn || []).some((id) => tasks.find((item) => item.id === id)?.status !== "done"));
+    const estimated = tasks.reduce((sum, task) => sum + Number(task.estimate || 0), 0);
+    const completedEstimate = done.reduce((sum, task) => sum + Number(task.estimate || 0), 0);
+    const completion = tasks.length ? Math.round(done.length / tasks.length * 100) : 0;
+    return {
+      projects: projects.length,
+      open: open.length,
+      done: done.length,
+      overdue: overdue.length,
+      dueSoon: dueSoon.length,
+      blocked: blocked.length,
+      risks,
+      completion,
+      average: progressAverage(projects),
+      estimated,
+      completedEstimate,
+      velocity: tasks.length ? Math.round(completedEstimate / Math.max(1, estimated) * 100) : 0,
+      meetings: (state.meetings || []).length,
+      automations: (state.automations || []).filter((item) => item.enabled).length,
+      assets: read(FILE_META_KEY, []).length + wikiState().articles.length
+    };
+  };
+  const planetTelemetry = (planetId, state, metrics = workMetrics(state)) => {
+    const activeCycle = (state.cycles || []).find((cycle) => cycle.status !== "done");
+    const values = {
+      "mission-control": { value: metrics.open, unit: "việc mở", alert: metrics.overdue },
+      "projects-tasks": { value: metrics.completion, unit: "% hoàn tất", alert: metrics.blocked },
+      "roadmap-planning": { value: (state.milestones || []).length, unit: "milestone", alert: metrics.risks.length },
+      "team-orbit": { value: Object.keys(workloadByPerson(state)).length, unit: "thành viên", alert: metrics.risks.filter((risk) => risk.type.includes("capacity")).length },
+      "knowledge-assets": { value: metrics.assets, unit: "tài nguyên", alert: 0 },
+      "automation-lab": { value: metrics.automations, unit: "đang bật", alert: (state.automationRuns || []).filter((run) => run.status === "failed").length },
+      "portfolio-observatory": { value: metrics.average, unit: "% sức khỏe", alert: metrics.overdue }
+    };
+    const telemetry = values[planetId] || { value: 0, unit: "mục", alert: 0 };
+    return { ...telemetry, status: telemetry.alert ? (telemetry.alert > 2 ? "critical" : "watch") : (activeCycle ? "healthy" : "watch") };
+  };
+  const activeProject = (state) => state.projects.find((project) => project.id === state.activeProjectId) || state.projects[0];
+  const projectName = (state, id) => state.projects.find((project) => project.id === id)?.name || "Universal Work Project";
+  const currentWorkRoute = () => activeView === "mission-control" ? "/work" : `/work/${activeView}`;
+
+  function rootCrownMarkup(state) {
+    const metrics = workMetrics(state);
+    const project = activeProject(state);
+    return `<header class="work-root-crown">
+      <div class="work-root-crown__brand"><span>W</span><div><small>HH WORK GALAXY · SCHEMA ${WORK_SCHEMA_VERSION}</small><strong>${esc(state.universalProject?.name || "Universal Work Project")}</strong></div></div>
+      <div class="work-root-crown__status"><span data-status="${navigator.onLine ? "online" : "offline"}"><i></i>${navigator.onLine ? "Local data ready" : "Offline local-first"}</span><b>${metrics.risks.length} cảnh báo</b><time data-work-clock>--:--</time></div>
+      <div class="work-root-crown__controls">
+        <label><span>Theme</span><select data-work-theme>${Object.entries(WORK_THEMES).map(([id, label]) => `<option value="${id}" ${state.theme === id ? "selected" : ""}>${label}</option>`).join("")}</select></label>
+        <label><span>Hiệu ứng</span><select data-work-effects><option value="static" ${state.effects === "static" ? "selected" : ""}>Tĩnh</option><option value="balanced" ${state.effects === "balanced" ? "selected" : ""}>Cân bằng</option><option value="cinematic" ${state.effects === "cinematic" ? "selected" : ""}>Điện ảnh</option></select></label>
+      </div>
+    </header>`;
+  }
+
+  function galaxyNavMarkup(state) {
+    const metrics = workMetrics(state);
+    return `<nav class="work-galaxy-nav" aria-label="Các hành tinh Công việc">${WORK_PLANETS.map((planet) => {
+      const telemetry = planetTelemetry(planet.id, state, metrics);
+      const active = planet.id === activeView;
+      return `<button type="button" class="${active ? "is-active" : ""}" data-work-route="${planet.route}" data-planet-status="${telemetry.status}" style="--planet:${planet.color};--planet-accent:${planet.accent}" ${active ? "aria-current=page" : ""}><span>${planet.icon}</span><div><strong>${planet.title}</strong><small>${telemetry.value} ${telemetry.unit}</small></div><i></i></button>`;
+    }).join("")}</nav>`;
+  }
+
+  function commandMarkup() {
+    return `<section class="work-command work-command--galaxy"><label><span>⌕</span><input type="search" data-work-search placeholder="Tìm task, project, Wiki hoặc workspace..." autocomplete="off"><kbd>Ctrl K</kbd></label><div data-work-search-results hidden></div><button type="button" data-work-capture><span>＋</span>Tạo mới</button></section>`;
+  }
+
+  function projectStarMarkup(state) {
+    const metrics = workMetrics(state);
+    const project = activeProject(state);
+    const progress = clamp(project?.progress ?? metrics.completion);
+    return `<section class="work-galaxy-hero" aria-label="Universal Work Project">
+      <div class="work-cosmic-field" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="work-galaxy-hero__copy"><span>UNIVERSAL WORK PROJECT</span><h1>${esc(state.universalProject?.name || "HH Work Galaxy")}</h1><p>${esc(state.universalProject?.goal || "Mọi dự án, công việc, tri thức và tự động hóa cùng một quỹ đạo.")}</p><div><button type="button" data-work-continue>▶ Tiếp tục công việc gần nhất</button><button type="button" data-work-capture>＋ Quick Capture</button></div><details class="work-universal-editor"><summary>⚙ Thiết lập Project Star</summary><form data-work-universal-form><label>Tên không gian<input name="name" required maxlength="120" value="${esc(state.universalProject?.name || "")}"></label><label>Mục tiêu<textarea name="goal" maxlength="300" rows="2">${esc(state.universalProject?.goal || "")}</textarea></label><label>Owner<input name="owner" maxlength="100" value="${esc(state.universalProject?.owner || "")}"></label><button type="submit">Lưu Universal Project</button></form></details></div>
+      <div class="work-project-star" style="--star-progress:${progress * 3.6}deg"><div><span>${esc(String(project?.name || "HH").slice(0, 2).toUpperCase())}</span><strong>${progress}%</strong><small>PROJECT STAR</small></div><i></i><i></i><i></i></div>
+      <div class="work-orbit-system" aria-label="Bảy hành tinh vận hành">${WORK_PLANETS.map((planet, index) => {
+        const telemetry = planetTelemetry(planet.id, state, metrics);
+        return `<button type="button" data-work-route="${planet.route}" data-planet-status="${telemetry.status}" style="--orbit-index:${index};--planet:${planet.color};--planet-accent:${planet.accent}" title="${esc(planet.description)}"><span>${planet.icon}</span><b>${esc(planet.title)}</b><small>${telemetry.value} ${esc(telemetry.unit)}</small></button>`;
+      }).join("")}</div>
+    </section>`;
+  }
+
+  function metricCardsMarkup(state) {
+    const metrics = workMetrics(state);
+    return `<section class="work-galaxy-metrics" aria-label="Số liệu công việc thật">
+      <article style="--metric:#62ecf2"><span>Đang mở</span><strong>${metrics.open}</strong><small>${metrics.dueSoon} việc đến hạn trong 3 ngày</small><i><b style="width:${Math.min(100, metrics.open * 8)}%"></b></i></article>
+      <article style="--metric:#8f7cff"><span>Hoàn thành</span><strong>${metrics.completion}%</strong><small>${metrics.done} task đã đóng</small><i><b style="width:${metrics.completion}%"></b></i></article>
+      <article style="--metric:#ff708f"><span>Rủi ro</span><strong>${metrics.risks.length}</strong><small>${metrics.overdue} quá hạn · ${metrics.blocked} bị chặn</small><i><b style="width:${Math.min(100, metrics.risks.length * 18)}%"></b></i></article>
+      <article style="--metric:#ffd76a"><span>Portfolio health</span><strong>${metrics.average}%</strong><small>${metrics.projects} dự án đang theo dõi</small><i><b style="width:${metrics.average}%"></b></i></article>
+    </section>`;
+  }
+
+  function actionQueueMarkup(state) {
+    const metrics = workMetrics(state);
+    const actions = [
+      ...metrics.risks.slice(0, 4).map((risk) => ({ tone: risk.level, title: risk.title, detail: risk.reason, route: "/work/roadmap-planning" })),
+      ...(state.actionItems || []).filter((item) => item.status !== "done").slice(0, 3).map((item) => ({ tone: "info", title: item.title, detail: `${item.assignee || "Chưa giao"} · ${item.due || "chưa đặt hạn"}`, route: "/work/team-orbit" }))
+    ];
+    return `<section class="work-galaxy-panel work-action-queue"><header><div><span>NEXT ACTIONS</span><h2>Việc cần xử lý tiếp</h2></div><b>${actions.length}</b></header><div>${actions.map((item) => `<button type="button" data-work-route="${item.route}" data-tone="${item.tone}"><i></i><div><strong>${esc(item.title)}</strong><small>${esc(item.detail)}</small></div><span>→</span></button>`).join("") || `<div class="work-galaxy-empty"><span>✓</span><strong>Quỹ đạo đang ổn định</strong><small>Chưa có rủi ro hoặc action item đang mở.</small></div>`}</div></section>`;
+  }
+
+  function compactTaskMarkup(task, state) {
+    const project = projectName(state, task.projectId || task.project);
+    const blocked = (task.dependsOn || []).some((id) => state.tasks.find((item) => item.id === id)?.status !== "done");
+    return `<article class="work-galaxy-task" data-status="${esc(task.status)}" data-blocked="${blocked}">
+      <button type="button" data-work-task-toggle="${esc(task.id)}" aria-label="${task.status === "done" ? "Mở lại" : "Hoàn thành"} ${esc(task.title)}">${task.status === "done" ? "✓" : ""}</button>
+      <div><strong>${esc(task.title)}</strong><span>${esc(project)} · ${esc(task.assignee || "Chưa phân công")}</span><small>${task.due ? formatDate(task.due) : "Chưa đặt hạn"} · ${Number(task.estimate || 1)}h${blocked ? " · Đang bị chặn" : ""}</small></div>
+      <select data-work-task-status="${esc(task.id)}" aria-label="Trạng thái ${esc(task.title)}">${["todo", "doing", "review", "done"].map((status) => `<option value="${status}" ${task.status === status ? "selected" : ""}>${statusLabel(status)}</option>`).join("")}</select>
+      <button type="button" data-work-task-delete="${esc(task.id)}" aria-label="Xóa ${esc(task.title)}">×</button>
+    </article>`;
+  }
+
+  function missionControlMarkup(state) {
+    const tasks = (state.tasks || []).filter((task) => task.status !== "done").sort((left, right) => String(left.due || "9999").localeCompare(String(right.due || "9999"))).slice(0, 6);
+    return `${projectStarMarkup(state)}${metricCardsMarkup(state)}
+      <div class="work-mission-grid">
+        <section class="work-galaxy-panel work-today-panel"><header><div><span>MY ORBIT</span><h2>Việc đang bay gần nhất</h2></div><button type="button" data-work-route="/work/projects-tasks">Tất cả →</button></header><div>${tasks.map((task) => compactTaskMarkup(task, state)).join("") || `<div class="work-galaxy-empty"><span>✦</span><strong>Chưa có việc đang mở</strong><small>Dùng Quick Capture để tạo task đầu tiên.</small></div>`}</div></section>
+        <aside>${actionQueueMarkup(state)}${focusMarkup()}</aside>
+      </div>
+      <section class="work-planet-directory"><header><div><span>WORK GALAXY</span><h2>Bảy hành tinh, một nguồn dữ liệu</h2><p>Mọi tiến độ và cảnh báo đều được tính từ dự án, task, deadline và adapter đã lưu.</p></div></header><div>${WORK_PLANETS.map((planet) => { const telemetry = planetTelemetry(planet.id, state); return `<button type="button" data-work-route="${planet.route}" data-planet-status="${telemetry.status}" style="--planet:${planet.color};--planet-accent:${planet.accent}"><span>${planet.icon}</span><div><small>${esc(planet.subtitle)}</small><strong>${esc(planet.title)}</strong><p>${esc(planet.description)}</p></div><b>${telemetry.value}<small>${esc(telemetry.unit)}</small></b></button>`; }).join("")}</div></section>`;
+  }
+
+  function taskWorkspaceMarkup(state) {
+    const view = state.taskView;
+    const query = String(state.taskQuery || "").trim().toLocaleLowerCase("vi");
+    const projectId = state.activeProjectId;
+    const tasks = (state.tasks || []).filter((task) => (!projectId || task.projectId === projectId || task.project === projectId) && (!query || `${task.title} ${task.assignee || ""} ${task.priority || ""}`.toLocaleLowerCase("vi").includes(query)));
+    const board = `<div class="work-task-board">${["todo", "doing", "review", "done"].map((status) => `<section><header><strong>${statusLabel(status)}</strong><b>${tasks.filter((task) => task.status === status).length}</b></header><div>${tasks.filter((task) => task.status === status).map((task) => compactTaskMarkup(task, state)).join("") || "<p>Chưa có task</p>"}</div></section>`).join("")}</div>`;
+    const list = `<div class="work-task-list-view">${tasks.map((task) => compactTaskMarkup(task, state)).join("") || `<div class="work-galaxy-empty"><span>⌕</span><strong>Không có task phù hợp</strong><small>Thử bỏ bộ lọc hoặc tạo task mới.</small></div>`}</div>`;
+    const calendarGroups = [...new Set(tasks.map((task) => task.due || "no-date"))].sort();
+    const calendar = `<div class="work-calendar-grid">${calendarGroups.map((date) => `<section><header><time>${date === "no-date" ? "Chưa đặt ngày" : formatDate(date, { weekday: "short", day: "2-digit", month: "2-digit" })}</time><b>${tasks.filter((task) => (task.due || "no-date") === date).length}</b></header>${tasks.filter((task) => (task.due || "no-date") === date).map((task) => `<article><i data-status="${task.status}"></i><strong>${esc(task.title)}</strong><small>${esc(task.assignee || "Chưa giao")}</small></article>`).join("")}</section>`).join("")}</div>`;
+    const timeline = `<div class="work-gantt"><header><span>Task</span><span>Quỹ đạo thời gian</span><span>Hạn</span></header>${tasks.map((task, index) => { const due = planningDaysUntil(task.due); const width = task.status === "done" ? 100 : clamp(28 + Number(task.estimate || 1) * 7, 24, 90); const start = clamp((index * 13) % 46, 0, 46); return `<article><strong>${esc(task.title)}</strong><div><i style="--gantt-start:${start}%;--gantt-width:${width}%" data-status="${task.status}"><b></b></i></div><time data-overdue="${due !== null && due < 0}">${task.due ? esc(task.due) : "—"}</time></article>`; }).join("") || "<p>Chưa có task để hiển thị.</p>"}</div>`;
+    const workload = workloadByPerson({ ...state, tasks });
+    const workloadMarkup = `<div class="work-workload-grid">${Object.entries(workload).map(([person, hours]) => { const capacity = Number(state.capacities?.[person] || activeProject(state)?.capacity || 40); const ratio = Math.round(hours / Math.max(1, capacity) * 100); return `<article data-overload="${ratio > 100}"><div><span>${esc(person.slice(0, 2).toUpperCase())}</span><div><strong>${esc(person)}</strong><small>${hours}h / ${capacity}h</small></div><b>${ratio}%</b></div><i><b style="width:${Math.min(100, ratio)}%"></b></i><small>${ratio > 100 ? "Cần cân bằng lại tải" : ratio > 80 ? "Gần đầy capacity" : "Còn năng lực"}</small></article>`; }).join("") || "<p>Chưa có assignee trên task đang mở.</p>"}</div>`;
+    const milestoneMarkup = `<div class="work-milestone-galaxy">${(state.milestones || []).map((item, index) => `<article style="--milestone:${clamp(item.progress)}%;--milestone-index:${index}"><span>${String(index + 1).padStart(2, "0")}</span><div><strong>${esc(item.name)}</strong><small>${esc(projectName(state, item.projectId))} · ${item.due ? formatDate(item.due) : "Chưa đặt hạn"}</small><i><b></b></i></div><b>${clamp(item.progress)}%</b></article>`).join("") || `<div class="work-galaxy-empty"><span>◇</span><strong>Chưa có milestone</strong><small>Thêm milestone trong Roadmap & Planning.</small></div>`}</div>`;
+    const content = view === "board" ? board : ["calendar"].includes(view) ? calendar : ["timeline", "gantt"].includes(view) ? timeline : view === "workload" ? workloadMarkup : view === "milestones" ? milestoneMarkup : list;
+    return `<section class="work-task-workspace"><header class="work-view-toolbar"><div><span>PROJECTS & TASKS</span><h1>Nhiều góc nhìn, cùng một task</h1></div><div><label>Dự án<select data-work-active-project>${state.projects.map((project) => `<option value="${esc(project.id)}" ${project.id === projectId ? "selected" : ""}>${esc(project.name)}</option>`).join("")}</select></label><label>Tìm task<input type="search" data-work-task-query value="${esc(state.taskQuery || "")}" placeholder="Tên, người phụ trách..."></label><button type="button" data-work-capture>＋ Task</button></div></header>
+      <nav class="work-view-switcher" aria-label="Góc nhìn công việc">${[["list", "List"], ["board", "Board"], ["calendar", "Calendar"], ["timeline", "Timeline"], ["gantt", "Gantt"], ["workload", "Workload"], ["table", "Table"], ["milestones", "Milestones"]].map(([id, label]) => `<button type="button" data-work-task-view="${id}" class="${view === id ? "is-active" : ""}" aria-pressed="${view === id}">${label}</button>`).join("")}<button type="button" data-work-save-view>＋ Lưu view</button></nav>
+      <div class="work-saved-views">${(state.savedViews || []).map((item) => `<button type="button" data-work-apply-view="${esc(item.id)}"><span>✦</span>${esc(item.name)}<small>${esc(item.view)}</small></button>`).join("")}</div>
+      ${content}
+    </section>`;
+  }
+
+  function teamOrbitMarkup(state) {
+    const workload = workloadByPerson(state);
+    const names = [...new Set([...Object.keys(workload), ...(state.members || []).map((item) => item.name).filter(Boolean)])];
+    return `<section class="work-page-intro" style="--page-color:#5b9dff;--page-accent:#56e6e0"><div><span>TEAM ORBIT</span><h1>Năng lực nhóm nhìn thấy được</h1><p>Capacity lấy từ task đang mở; ghi chú họp và action item chỉ được phân tích cục bộ khi bạn chủ động yêu cầu.</p></div><button type="button" data-work-route="/work/projects-tasks">Mở Workload →</button></section>
+      <div class="work-team-grid">
+        <section class="work-galaxy-panel"><header><div><span>CAPACITY MAP</span><h2>Quỹ đạo thành viên</h2></div><b>${names.length}</b></header><div class="work-team-orbits">${names.map((name, index) => { const hours = Number(workload[name] || 0); const capacity = Number(state.capacities?.[name] || activeProject(state)?.capacity || 40); const ratio = Math.round(hours / Math.max(1, capacity) * 100); return `<article style="--member-index:${index};--load:${Math.min(100, ratio)}%" data-overload="${ratio > 100}"><span>${esc(name.slice(0, 2).toUpperCase())}</span><div><strong>${esc(name)}</strong><small>${hours}h cam kết · ${capacity}h capacity</small><i><b></b></i></div><b>${ratio}%</b></article>`; }).join("") || `<div class="work-galaxy-empty"><span>＋</span><strong>Chưa có thành viên</strong><small>Gán assignee cho task hoặc thêm capacity bên dưới.</small></div>`}</div>
+          <form class="work-inline-form" data-work-capacity-form><label>Tên thành viên<input name="person" required maxlength="80" placeholder="Nguyễn Hoàng"></label><label>Capacity/chu kỳ<input name="capacity" type="number" min="1" max="1000" value="40"></label><button type="submit">Lưu capacity</button></form>
+        </section>
+        <section class="work-galaxy-panel"><header><div><span>MEETING → ACTION</span><h2>Buổi họp gần đây</h2></div><b>${(state.meetings || []).length}</b></header><div class="work-meeting-stream">${(state.meetings || []).slice(0, 6).map((meeting) => `<article><time>${esc(meeting.date || "Chưa đặt")}</time><div><strong>${esc(meeting.title)}</strong><small>${esc(meeting.attendees || "Chưa ghi người tham gia")} · ${extractMeetingActions(meeting).length} action rõ ràng</small></div><button type="button" data-planning-meeting-actions="${esc(meeting.id)}">Tách action</button></article>`).join("") || "<p>Chưa có meeting.</p>"}</div>
+          <form class="work-stack-form" data-work-meeting-form><label>Tiêu đề<input name="title" required maxlength="160" placeholder="Weekly sync"></label><div><label>Ngày giờ<input name="date" type="datetime-local" required></label><label>Người tham gia<input name="attendees" maxlength="240"></label></div><label>Ghi chú<textarea name="notes" rows="4" maxlength="1200" placeholder="TODO: Chốt người phụ trách"></textarea></label><button type="submit">Lưu meeting</button></form>
+        </section>
+      </div>
+      <section class="work-galaxy-panel work-action-items"><header><div><span>ACTION ITEMS</span><h2>Cam kết sau cuộc họp</h2></div><b>${(state.actionItems || []).filter((item) => item.status !== "done").length} mở</b></header><div>${(state.actionItems || []).map((item) => `<label><input type="checkbox" data-planning-action-done="${esc(item.id)}" ${item.status === "done" ? "checked" : ""}><span><strong>${esc(item.title)}</strong><small>${esc(item.assignee || "Chưa giao")} · ${esc(item.due || "Chưa đặt hạn")}</small></span></label>`).join("") || "<p>Chưa có action item.</p>"}</div></section>`;
+  }
+
+  function knowledgeAssetsMarkup(state) {
+    return `<section class="work-page-intro" style="--page-color:#49e4ad;--page-accent:#b9f36a"><div><span>KNOWLEDGE & ASSETS</span><h1>Tri thức, tệp và công cụ cùng quỹ đạo</h1><p>Chín workspace cũ vẫn hoạt động độc lập, nay trở thành vệ tinh của Universal Work Project.</p></div><button type="button" data-work-route="/work/knowledge-center">Viết Wiki →</button></section>
+      <section class="work-satellite-grid">${WORKSPACES.map((item, index) => { const [value, label] = workspaceMetric(item.id); return `<button type="button" data-work-route="${item.route}" data-workspace-card data-search-text="${esc(`${item.title} ${item.description} ${item.features.join(" ")}`.toLowerCase())}" style="--satellite-index:${index}"><span class="work-accent--${item.accent}">${item.icon}</span><div><small>${esc(item.label)}</small><strong>${esc(item.title)}</strong><p>${esc(item.description)}</p></div><b>${value}<small>${esc(label)}</small></b></button>`; }).join("")}</section><div data-workspace-empty class="work-galaxy-empty" hidden><strong>Không tìm thấy workspace.</strong></div>
+      <div class="work-knowledge-grid">
+        <section class="work-galaxy-panel work-files"><header><div><span>DEVICE VAULT</span><h2>Tệp cục bộ</h2></div><b>${read(FILE_META_KEY, []).length}</b></header><label data-work-dropzone><input type="file" data-work-file-input multiple><span>⇧</span><strong>Thả tệp hoặc bấm để chọn</strong><small>Lưu riêng trên thiết bị · tối đa 100 MB/tệp</small></label><div data-work-file-list><p>Đang đọc kho tệp...</p></div></section>
+        <section class="work-galaxy-panel"><header><div><span>KNOWLEDGE STREAM</span><h2>Wiki gần đây</h2></div><b>${wikiState().articles.length}</b></header><div class="work-wiki-stream">${wikiState().articles.slice(0, 8).map((item) => `<button type="button" data-work-route="/work/knowledge-center"><span>K</span><div><strong>${esc(item.title)}</strong><small>${esc(item.category)} · ${(item.tags || []).map(esc).join(", ")}</small></div><i>→</i></button>`).join("")}</div></section>
+      </div>`;
+  }
+
+  function automationLabMarkup(state) {
+    const rules = state.automations || [];
+    const runs = state.automationRuns || [];
+    return `<section class="work-page-intro" style="--page-color:#ff9a62;--page-accent:#ffe16b"><div><span>AUTOMATION LAB</span><h1>Tự động hóa có Preview và lịch sử</h1><p>Dry run chỉ đánh giá dữ liệu cục bộ. Hành động ngoài website chỉ chạy khi có adapter được cấu hình và người dùng phê duyệt.</p></div><button type="button" data-work-route="/work/workflow-automation">Mở Workflow cũ →</button></section>
+      <div class="work-automation-grid">
+        <form class="work-galaxy-panel work-automation-builder" data-work-automation-form><header><div><span>RULE BUILDER</span><h2>Trigger → condition → action</h2></div><b>LOCAL</b></header><label>Tên quy tắc<input name="name" required maxlength="120" placeholder="Nhắc việc sắp quá hạn"></label><div><label>Trigger<select name="trigger"><option value="task-created">Task được tạo</option><option value="due-soon">Deadline còn 2 ngày</option><option value="status-changed">Trạng thái thay đổi</option><option value="form-response">Có phản hồi Form</option></select></label><label>Điều kiện<select name="condition"><option value="open">Task chưa hoàn thành</option><option value="high-priority">Ưu tiên cao</option><option value="unassigned">Chưa phân công</option><option value="always">Luôn đúng</option></select></label></div><label>Hành động<select name="action"><option value="create-inbox">Tạo mục trong Inbox</option><option value="create-task">Tạo task theo dõi</option><option value="mark-risk">Đánh dấu rủi ro</option><option value="adapter-notify">Gửi qua notification adapter</option></select></label><label class="work-check"><input type="checkbox" name="approval" checked><span>Yêu cầu phê duyệt trước hành động ngoài thiết bị</span></label><button type="submit">＋ Tạo quy tắc</button></form>
+        <section class="work-galaxy-panel"><header><div><span>RULE ORBITS</span><h2>Quy tắc đang quản lý</h2></div><b>${rules.length}</b></header><div class="work-rule-list">${rules.map((rule) => `<article data-enabled="${Boolean(rule.enabled)}"><span>${rule.enabled ? "ON" : "OFF"}</span><div><strong>${esc(rule.name)}</strong><small>${esc(rule.trigger)} → ${esc(rule.condition)} → ${esc(rule.action)}</small></div><button type="button" data-work-automation-toggle="${esc(rule.id)}">${rule.enabled ? "Tắt" : "Bật"}</button><button type="button" data-work-automation-dry-run="${esc(rule.id)}">Dry run</button><button type="button" data-work-automation-duplicate="${esc(rule.id)}">Nhân bản</button></article>`).join("") || `<div class="work-galaxy-empty"><span>⚡</span><strong>Chưa có automation</strong><small>Tạo quy tắc đầu tiên bằng builder.</small></div>`}</div></section>
+      </div>
+      <section class="work-galaxy-panel work-run-history"><header><div><span>RUN HISTORY</span><h2>Lịch sử thực thi có thể kiểm tra</h2></div><b>${runs.length}</b></header><div>${runs.slice(0, 20).map((run) => `<article data-status="${esc(run.status)}"><span>${run.status === "success" ? "✓" : run.status === "failed" ? "!" : "◇"}</span><div><strong>${esc(run.ruleName)}</strong><small>${esc(run.message)} · ${new Date(run.createdAt).toLocaleString("vi-VN")}</small></div><b>${esc(run.mode)}</b>${run.status === "failed" ? `<button type="button" data-work-automation-retry="${esc(run.id)}">Retry</button>` : ""}</article>`).join("") || "<p>Chưa có lượt chạy. Dry run một quy tắc để kiểm tra điều kiện.</p>"}</div></section>`;
+  }
+
+  function portfolioMarkup(state) {
+    const metrics = workMetrics(state);
+    const risks = metrics.risks;
+    const maxTasks = Math.max(1, ...state.projects.map((project) => state.tasks.filter((task) => task.projectId === project.id).length));
+    return `<section class="work-page-intro" style="--page-color:#ffd76a;--page-accent:#ff8c63"><div><span>PORTFOLIO OBSERVATORY</span><h1>Quan sát danh mục bằng dữ liệu thật</h1><p>Sức khỏe, deadline, workload và velocity được suy ra từ task, estimate, dependency và milestone đã lưu.</p></div><button type="button" data-work-export>Xuất snapshot JSON</button></section>
+      ${metricCardsMarkup(state)}
+      <div class="work-portfolio-grid">
+        <section class="work-galaxy-panel work-portfolio-map"><header><div><span>PROJECT CONSTELLATION</span><h2>Sức khỏe từng dự án</h2></div><b>${state.projects.length}</b></header><div>${state.projects.map((project, index) => { const tasks = state.tasks.filter((task) => task.projectId === project.id || task.project === project.id); const open = tasks.filter((task) => task.status !== "done").length; const overdue = tasks.filter((task) => task.status !== "done" && planningDaysUntil(task.due) < 0).length; const completion = tasks.length ? Math.round(tasks.filter((task) => task.status === "done").length / tasks.length * 100) : clamp(project.progress); return `<button type="button" data-work-select-project="${esc(project.id)}" style="--project:${esc(project.color || "#62ecf2")};--project-size:${Math.max(36, Math.round(tasks.length / maxTasks * 76))}px;--project-index:${index}"><span>${completion}%</span><div><strong>${esc(project.name)}</strong><small>${open} mở · ${overdue} quá hạn · ${Number(project.capacity || 40)}h capacity</small><i><b style="width:${completion}%"></b></i></div></button>`; }).join("")}</div></section>
+        <section class="work-galaxy-panel work-risk-radar"><header><div><span>RISK RADAR</span><h2>Điểm cần chú ý</h2></div><b>${risks.length}</b></header><div>${risks.slice(0, 12).map((risk) => `<article data-level="${esc(risk.level)}"><span>${risk.level === "high" ? "!" : "•"}</span><div><strong>${esc(risk.title)}</strong><small>${esc(risk.reason)}</small></div><b>${esc(risk.type)}</b></article>`).join("") || `<div class="work-galaxy-empty"><span>✓</span><strong>Không phát hiện rủi ro</strong><small>Risk detector sẽ cập nhật khi dữ liệu thay đổi.</small></div>`}</div></section>
+      </div>
+      <section class="work-galaxy-panel work-velocity-panel"><header><div><span>VELOCITY & DELIVERY</span><h2>Khối lượng đã hoàn tất</h2></div><b>${metrics.velocity}% estimate</b></header><div><article><span>Estimate toàn bộ</span><strong>${metrics.estimated}h</strong></article><article><span>Đã hoàn tất</span><strong>${metrics.completedEstimate}h</strong></article><article><span>Task bị chặn</span><strong>${metrics.blocked}</strong></article><article><span>Meeting đã lưu</span><strong>${metrics.meetings}</strong></article></div></section>`;
+  }
+
+  function pageMarkup(state) {
+    if (activeView === "projects-tasks") return taskWorkspaceMarkup(state);
+    if (activeView === "roadmap-planning") return `<section class="work-page-intro" style="--page-color:#ff70bf;--page-accent:#ff9f74"><div><span>ROADMAP & PLANNING</span><h1>Từ mục tiêu đến chu kỳ thực thi</h1><p>Initiative, project, cycle, dependency, capacity, meeting và risk cùng một revision local-first.</p></div><button type="button" data-work-route="/work/portfolio-observatory">Xem portfolio →</button></section>${planningMarkup()}`;
+    if (activeView === "team-orbit") return teamOrbitMarkup(state);
+    if (activeView === "knowledge-assets") return knowledgeAssetsMarkup(state);
+    if (activeView === "automation-lab") return automationLabMarkup(state);
+    if (activeView === "portfolio-observatory") return portfolioMarkup(state);
+    return missionControlMarkup(state);
+  }
 
   const workspaceMetric = (id) => {
     const projects = projectState();
@@ -339,48 +621,21 @@
 
   function render() {
     if (!host) return;
-    const stats = getStats();
-    const completed = stats.done + stats.open ? Math.round(stats.done / (stats.done + stats.open) * 100) : 0;
-    host.innerHTML = `<section class="work-center" aria-label="Trung tâm công việc HH">
-      <div class="work-aurora" aria-hidden="true"><i></i><i></i><i></i></div>
-      <header class="work-hero">
-        <div class="work-hero__copy"><span><i></i> WORK OPERATING SYSTEM</span><h2>${greeting()}, <b>${esc(userName())}</b></h2><p>Quản lý dự án, tài liệu, tệp và tự động hóa trong một luồng làm việc thống nhất.</p><div><button type="button" data-work-capture>＋ Quick Capture</button><button type="button" data-work-route="/work/project-center">Mở Project Center</button></div></div>
-        <div class="work-hero__status"><time data-work-clock>--:--</time><span data-work-date>Đang tải ngày...</span><div><i></i><b>${navigator.onLine ? "Đang trực tuyến" : "Ngoại tuyến"}</b><span>${stats.open} việc đang mở</span></div></div>
-      </header>
-
-      <section class="work-command"><label><span>⌕</span><input type="search" data-work-search placeholder="Tìm dự án, công việc, Wiki hoặc workspace..." autocomplete="off"><kbd>Ctrl K</kbd></label><div data-work-search-results hidden></div><button type="button" data-work-capture><span>＋</span>Tạo mới</button></section>
-
-      ${planningMarkup()}
-
-      <section class="work-kpis" aria-label="Tổng quan công việc">
-        <article><span>Dự án đang quản lý</span><strong>${stats.projects}</strong><small><i style="width:${stats.average}%"></i>Tiến độ TB ${stats.average}%</small></article>
-        <article><span>Đầu việc đang mở</span><strong>${stats.open}</strong><small><i style="width:${Math.min(100, stats.open * 12)}%"></i>${stats.overdue ? `${stats.overdue} việc quá hạn` : "Đúng tiến độ"}</small></article>
-        <article><span>Hoàn thành</span><strong>${completed}%</strong><small><i style="width:${completed}%"></i>${stats.done} việc đã xong</small></article>
-        <article><span>Dữ liệu thiết bị</span><strong>${read(FILE_META_KEY, []).length}</strong><small><i style="width:${Math.min(100, read(FILE_META_KEY, []).length * 8)}%"></i>Tệp làm việc cục bộ</small></article>
-      </section>
-
-      <div class="work-layout">
-        <main>
-          <section class="work-panel work-my-day"><header><div><span>MY DAY</span><h2>Việc cần tập trung</h2></div><nav>${[["open", "Đang mở"], ["today", "Hôm nay"], ["overdue", "Quá hạn"], ["done", "Đã xong"]].map(([id, label]) => `<button type="button" class="${workState().taskFilter === id ? "is-active" : ""}" data-task-filter="${id}">${label}</button>`).join("")}</nav><button type="button" data-work-capture aria-label="Thêm công việc">＋</button></header><div data-work-task-list>${taskRows()}</div></section>
-          <section class="work-panel work-projects"><header><div><span>PORTFOLIO</span><h2>Sức khỏe dự án</h2></div><button type="button" data-work-route="/work/project-center">Xem tất cả ↗</button></header><div>${projectRows()}</div></section>
-          <section class="work-workspaces"><header><div><span>CONNECTED WORKSPACES</span><h2>Toàn bộ công cụ công việc</h2><p>Mỗi workspace có dữ liệu và luồng thao tác riêng, được kết nối tại đây.</p></div><b>9 ứng dụng</b></header><div data-workspace-grid>${workspaceCards()}</div><div class="work-no-results" data-workspace-empty hidden>Không có workspace phù hợp.</div></section>
-        </main>
-        <aside>
-          ${focusMarkup()}
-          <section class="work-panel work-deadlines"><header><div><span>LỊCH SẮP TỚI</span><h2>Deadline</h2></div><button type="button" data-work-route="/work/project-center">Mở lịch</button></header><div>${deadlineRows()}</div></section>
-          <section class="work-panel work-files"><header><div><span>DEVICE VAULT</span><h2>Tệp làm việc</h2></div><button type="button" data-work-route="/work/cloud-storage">Cloud ↗</button></header><label data-work-dropzone><input type="file" data-work-file-input multiple><span>⇧</span><strong>Thả tệp hoặc bấm để chọn</strong><small>Lưu riêng trên thiết bị · tối đa 100 MB/tệp</small></label><div data-work-file-list><p>Đang đọc kho tệp...</p></div></section>
-          <section class="work-panel work-knowledge"><header><div><span>KNOWLEDGE</span><h2>Wiki gần đây</h2></div><button type="button" data-work-route="/work/knowledge-center">Viết bài</button></header><div>${knowledgeRows()}</div></section>
-          <section class="work-panel work-activity"><header><div><span>LIVE ACTIVITY</span><h2>Dòng hoạt động</h2></div><button type="button" data-work-activity-clear>Dọn</button></header><div>${activityRows()}</div></section>
-        </aside>
-      </div>
+    const state = planningState();
+    host.innerHTML = `<section class="work-center work-galaxy" data-work-active-view="${esc(activeView)}" data-work-theme="${esc(state.theme)}" data-work-effects="${esc(state.effects)}" aria-label="HH Work Galaxy">
+      <div class="work-aurora work-aurora--galaxy" aria-hidden="true"><i></i><i></i><i></i><b></b><b></b><b></b></div>
+      ${rootCrownMarkup(state)}
+      ${galaxyNavMarkup(state)}
+      ${commandMarkup()}
+      <main class="work-galaxy-page">${pageMarkup(state)}</main>
       ${captureDialog()}
       <div class="work-toast" data-work-toast role="status" aria-live="polite"></div>
     </section>`;
-    renderPlanningEnhancements();
+    if (activeView === "roadmap-planning") renderPlanningEnhancements();
     bindRoot();
     updateClock();
     startFocusTicker();
-    renderDeviceFiles();
+    if (host.querySelector("[data-work-file-list]")) renderDeviceFiles();
   }
 
   function bindRoot() {
@@ -391,8 +646,10 @@
     root.addEventListener("change", handleChange);
     root.addEventListener("submit", handleSubmit);
     const dropzone = root.querySelector("[data-work-dropzone]");
-    ["dragenter", "dragover"].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); fileDragDepth += 1; dropzone.classList.add("is-dragging"); }));
-    ["dragleave", "drop"].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); fileDragDepth = Math.max(0, fileDragDepth - 1); if (!fileDragDepth || type === "drop") dropzone.classList.remove("is-dragging"); if (type === "drop") saveFiles(event.dataTransfer?.files); }));
+    if (dropzone) {
+      ["dragenter", "dragover"].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); fileDragDepth += 1; dropzone.classList.add("is-dragging"); }));
+      ["dragleave", "drop"].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); fileDragDepth = Math.max(0, fileDragDepth - 1); if (!fileDragDepth || type === "drop") dropzone.classList.remove("is-dragging"); if (type === "drop") saveFiles(event.dataTransfer?.files); }));
+    }
   }
 
   function convertMeetingNotes(meetingId) {
@@ -409,7 +666,110 @@
     showToast(`Đã tạo ${additions.length} action item từ ghi chú cục bộ.`);
   }
 
+  function updateTaskStatus(taskId, status) {
+    if (!["todo", "doing", "review", "done"].includes(status)) return;
+    writePlanning((state) => ({
+      ...state,
+      tasks: state.tasks.map((task) => task.id === taskId ? { ...task, status, column: status, updatedAt: new Date().toISOString() } : task)
+    }));
+    render();
+    showToast(`Đã chuyển task sang “${statusLabel(status)}”.`);
+  }
+
+  function evaluateAutomation(rule, state) {
+    const openTasks = (state.tasks || []).filter((task) => task.status !== "done");
+    const matched = openTasks.filter((task) => {
+      if (rule.condition === "high-priority") return ["cao", "high"].includes(String(task.priority || "").toLowerCase());
+      if (rule.condition === "unassigned") return !task.assignee;
+      if (rule.condition === "open") return task.status !== "done";
+      return true;
+    });
+    return { matched: matched.length, sample: matched.slice(0, 3).map((task) => task.title) };
+  }
+
+  function dryRunAutomation(ruleId, mode = "dry-run") {
+    const state = planningState();
+    const rule = (state.automations || []).find((item) => item.id === ruleId);
+    if (!rule) return showToast("Không tìm thấy automation.", "error");
+    try {
+      const result = evaluateAutomation(rule, state);
+      const run = {
+        id: uid("run"),
+        ruleId: rule.id,
+        ruleName: rule.name,
+        mode,
+        status: "success",
+        matched: result.matched,
+        message: `${result.matched} task khớp điều kiện; không chạy hành động ngoài thiết bị`,
+        createdAt: new Date().toISOString()
+      };
+      writePlanning((current) => ({ ...current, automationRuns: [run, ...(current.automationRuns || [])].slice(0, 100) }));
+      render();
+      showToast(`Dry run hoàn tất: ${result.matched} task khớp.`);
+    } catch (error) {
+      const run = { id: uid("run"), ruleId: rule.id, ruleName: rule.name, mode, status: "failed", message: String(error.message || error).slice(0, 240), createdAt: new Date().toISOString() };
+      writePlanning((current) => ({ ...current, automationRuns: [run, ...(current.automationRuns || [])].slice(0, 100) }));
+      render();
+      showToast("Dry run thất bại; đã ghi lịch sử.", "error");
+    }
+  }
+
   function handleClick(event) {
+    if (event.target.closest("[data-work-continue]")) {
+      const route = planningState().lastContext || "/work/projects-tasks";
+      location.hash = `#${route === "/work" ? "/work/projects-tasks" : route}`;
+      return;
+    }
+    const taskView = event.target.closest("[data-work-task-view]");
+    if (taskView) { writePlanning((state) => ({ ...state, taskView: taskView.dataset.workTaskView })); render(); return; }
+    if (event.target.closest("[data-work-save-view]")) {
+      const state = planningState();
+      const saved = { id: uid("view"), name: `${statusLabel(state.taskView)} · ${projectName(state, state.activeProjectId)}`, view: state.taskView, projectId: state.activeProjectId, createdAt: new Date().toISOString() };
+      writePlanning((current) => ({ ...current, savedViews: [saved, ...(current.savedViews || [])].slice(0, 12) }));
+      render();
+      showToast("Đã lưu góc nhìn trên thiết bị.");
+      return;
+    }
+    const applyView = event.target.closest("[data-work-apply-view]");
+    if (applyView) {
+      const saved = planningState().savedViews.find((item) => item.id === applyView.dataset.workApplyView);
+      if (saved) writePlanning((state) => ({ ...state, taskView: saved.view, activeProjectId: saved.projectId || state.activeProjectId }));
+      render();
+      return;
+    }
+    const selectProject = event.target.closest("[data-work-select-project]");
+    if (selectProject) {
+      writePlanning((state) => ({ ...state, activeProjectId: selectProject.dataset.workSelectProject, lastContext: "/work/projects-tasks" }));
+      location.hash = "#/work/projects-tasks";
+      return;
+    }
+    if (event.target.closest("[data-work-export]")) { exportPlanning(); return; }
+    const automationToggle = event.target.closest("[data-work-automation-toggle]");
+    if (automationToggle) {
+      writePlanning((state) => ({ ...state, automations: state.automations.map((rule) => rule.id === automationToggle.dataset.workAutomationToggle ? { ...rule, enabled: !rule.enabled, updatedAt: new Date().toISOString() } : rule) }));
+      render();
+      showToast("Đã cập nhật trạng thái automation.");
+      return;
+    }
+    const automationDryRun = event.target.closest("[data-work-automation-dry-run]");
+    if (automationDryRun) { dryRunAutomation(automationDryRun.dataset.workAutomationDryRun); return; }
+    const automationDuplicate = event.target.closest("[data-work-automation-duplicate]");
+    if (automationDuplicate) {
+      writePlanning((state) => {
+        const source = state.automations.find((rule) => rule.id === automationDuplicate.dataset.workAutomationDuplicate);
+        if (!source) return state;
+        return { ...state, automations: [{ ...source, id: uid("automation"), name: `${source.name} · bản sao`, enabled: false, createdAt: new Date().toISOString() }, ...state.automations] };
+      });
+      render();
+      showToast("Đã nhân bản quy tắc ở trạng thái tắt.");
+      return;
+    }
+    const automationRetry = event.target.closest("[data-work-automation-retry]");
+    if (automationRetry) {
+      const run = planningState().automationRuns.find((item) => item.id === automationRetry.dataset.workAutomationRetry);
+      if (run) dryRunAutomation(run.ruleId, "retry-dry-run");
+      return;
+    }
     const planningTab = event.target.closest("[data-planning-tab]");
     if (planningTab) { const planning = planningTab.closest("[data-work-planning]"); planning?.querySelectorAll("[data-planning-tab]").forEach((item) => { const active = item === planningTab; item.classList.toggle("is-active", active); item.setAttribute("aria-selected", String(active)); }); planning?.querySelectorAll("[data-planning-pane]").forEach((pane) => pane.classList.toggle("is-active", pane.dataset.planningPane === planningTab.dataset.planningTab)); return; }
     if (event.target.closest("[data-planning-export]")) { exportPlanning(); return; }
@@ -443,11 +803,26 @@
 
   function handleInput(event) {
     if (event.target.matches("[data-work-search]")) renderSearch(event.target.value);
+    if (event.target.matches("[data-work-task-query]")) {
+      const value = event.target.value;
+      clearTimeout(taskSearchTimer);
+      taskSearchTimer = setTimeout(() => {
+        writePlanning((state) => ({ ...state, taskQuery: value }));
+        render();
+        const input = host?.querySelector("[data-work-task-query]");
+        input?.focus({ preventScroll: true });
+        input?.setSelectionRange(value.length, value.length);
+      }, 220);
+    }
   }
 
   function handleChange(event) {
     if (event.target.matches("[data-work-file-input]")) { saveFiles(event.target.files); event.target.value = ""; }
     if (event.target.matches("[data-capture-type]")) updateCaptureFields(event.target.value);
+    if (event.target.matches("[data-work-theme]")) { writePlanning((state) => ({ ...state, theme: event.target.value })); render(); return; }
+    if (event.target.matches("[data-work-effects]")) { writePlanning((state) => ({ ...state, effects: event.target.value })); render(); return; }
+    if (event.target.matches("[data-work-active-project]")) { writePlanning((state) => ({ ...state, activeProjectId: event.target.value })); render(); return; }
+    if (event.target.matches("[data-work-task-status]")) { updateTaskStatus(event.target.dataset.workTaskStatus, event.target.value); return; }
     if (event.target.matches("[data-focus-minutes]")) { const state = workState(); state.focusMinutes = Number(event.target.value); state.focusRemaining = state.focusMinutes * 60; state.focusRunning = false; state.focusEnd = 0; write(WORK_KEY, state); render(); }
     if (event.target.matches("[data-planning-action-done]")) { const id = event.target.dataset.planningActionDone; writePlanning((state) => ({ ...state, actionItems: state.actionItems.map((item) => item.id === id ? { ...item, status: event.target.checked ? "done" : "todo" } : item) })); render(); }
   }
@@ -455,8 +830,44 @@
   function formValue(form, name) { return String(form.elements[name]?.value || "").trim(); }
   function selectedValues(form, name) { return [...(form.elements[name]?.selectedOptions || [])].map((option) => option.value).filter(Boolean); }
   function handleSubmit(event) {
-    const form = event.target.closest("[data-work-planning] form");
-    if (!form) return;
+    const form = event.target.closest("form");
+    if (!form || !form.closest(".work-center")) return;
+    if (form.matches("[data-work-universal-form]")) {
+      event.preventDefault();
+      const name = formValue(form, "name"); if (!name) return;
+      writePlanning((state) => ({ ...state, universalProject: { ...state.universalProject, name, goal: formValue(form, "goal"), owner: formValue(form, "owner"), updatedAt: new Date().toISOString() } }));
+      render();
+      showToast("Đã cập nhật Universal Work Project.");
+      return;
+    }
+    if (form.matches("[data-work-automation-form]")) {
+      event.preventDefault();
+      const name = formValue(form, "name"); if (!name) return;
+      const rule = { id: uid("automation"), name, trigger: formValue(form, "trigger"), condition: formValue(form, "condition"), action: formValue(form, "action"), approval: Boolean(form.elements.approval?.checked), enabled: true, createdAt: new Date().toISOString() };
+      writePlanning((state) => ({ ...state, automations: [rule, ...(state.automations || [])] }));
+      render();
+      showToast(`Đã tạo automation “${name}”.`);
+      return;
+    }
+    if (form.matches("[data-work-capacity-form]")) {
+      event.preventDefault();
+      const person = formValue(form, "person"); if (!person) return;
+      const capacity = Math.max(1, Number(formValue(form, "capacity") || 40));
+      writePlanning((state) => ({ ...state, capacities: { ...state.capacities, [person]: capacity }, members: state.members.some((item) => item.name === person) ? state.members : [...state.members, { id: uid("member"), name: person, role: "Member", createdAt: new Date().toISOString() }] }));
+      render();
+      showToast(`Đã lưu capacity ${capacity}h cho ${person}.`);
+      return;
+    }
+    if (form.matches("[data-work-meeting-form]")) {
+      event.preventDefault();
+      const title = formValue(form, "title"); if (!title) return;
+      const meeting = { id: uid("meeting"), title, date: formValue(form, "date"), attendees: formValue(form, "attendees"), notes: formValue(form, "notes"), createdAt: new Date().toISOString() };
+      writePlanning((state) => ({ ...state, meetings: [meeting, ...(state.meetings || [])] }));
+      render();
+      showToast(`Đã lưu meeting “${title}”.`);
+      return;
+    }
+    if (!form.closest("[data-work-planning]")) return;
     event.preventDefault();
     const state = planningState();
     if (form.matches("[data-planning-initiative-form]")) {
@@ -520,17 +931,20 @@
 
   function renderSearch(rawQuery) {
     const query = rawQuery.trim().toLowerCase();
-    const results = host.querySelector("[data-work-search-results]");
+    const results = host?.querySelector("[data-work-search-results]");
+    if (!results) return;
     const cards = host.querySelectorAll("[data-workspace-card]");
     cards.forEach((card) => { card.hidden = Boolean(query) && !card.dataset.searchText.includes(query); });
-    host.querySelector("[data-workspace-empty]").hidden = [...cards].some((card) => !card.hidden);
+    const workspaceEmpty = host.querySelector("[data-workspace-empty]");
+    if (workspaceEmpty) workspaceEmpty.hidden = [...cards].some((card) => !card.hidden);
     if (!query) { results.hidden = true; results.innerHTML = ""; return; }
-    const projects = projectState();
+    const projects = planningState();
     const wiki = wikiState();
     const items = [
+      ...WORK_PLANETS.map((item) => ({ type: "Hành tinh", title: item.title, detail: item.description, route: item.route, key: `${item.title} ${item.subtitle} ${item.description}` })),
       ...WORKSPACES.map((item) => ({ type: "Workspace", title: item.title, detail: item.description, route: item.route, key: `${item.title} ${item.description} ${item.features.join(" ")}` })),
-      ...projects.projects.map((item) => ({ type: "Dự án", title: item.name, detail: `${item.progress}% · ${item.status}`, route: "/work/project-center", key: `${item.name} ${item.description} ${item.status}` })),
-      ...projects.tasks.map((item) => ({ type: "Công việc", title: item.title, detail: `${item.priority} · ${item.column}`, route: "/work/project-center", key: `${item.title} ${item.priority}` })),
+      ...projects.projects.map((item) => ({ type: "Dự án", title: item.name, detail: `${item.progress}% · ${item.status}`, route: "/work/projects-tasks", key: `${item.name} ${item.description} ${item.status}` })),
+      ...projects.tasks.map((item) => ({ type: "Công việc", title: item.title, detail: `${item.priority || "Thường"} · ${statusLabel(item.status)}`, route: "/work/projects-tasks", key: `${item.title} ${item.priority} ${item.assignee || ""}` })),
       ...wiki.articles.map((item) => ({ type: "Wiki", title: item.title, detail: `${item.category} · ${(item.tags || []).join(", ")}`, route: "/work/knowledge-center", key: `${item.title} ${item.category} ${(item.tags || []).join(" ")} ${item.content}` }))
     ].filter((item) => item.key.toLowerCase().includes(query)).slice(0, 8);
     results.innerHTML = items.length ? items.map((item) => `<button type="button" data-work-route="${item.route}"><span>${item.type}</span><div><strong>${esc(item.title)}</strong><small>${esc(item.detail)}</small></div><b>↗</b></button>`).join("") : `<p>Không tìm thấy “${esc(rawQuery)}”.</p>`;
@@ -587,21 +1001,26 @@
   }
 
   function toggleTask(id) {
-    const state = projectState();
+    const state = planningState();
     const task = state.tasks.find((item) => item.id === id);
     if (!task) return;
-    task.column = task.column === "done" ? "todo" : "done";
-    state.activity.unshift(`${task.column === "done" ? "Hoàn thành" : "Mở lại"} “${task.title}”`);
-    write(PROJECT_KEY, state);
+    const status = task.status === "done" ? "todo" : "done";
+    writePlanning((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === id ? { ...item, status, column: status, updatedAt: new Date().toISOString() } : item) }));
+    const legacy = projectState();
+    legacy.activity.unshift(`${status === "done" ? "Hoàn thành" : "Mở lại"} “${task.title}”`);
+    write(PROJECT_KEY, legacy);
     render();
   }
 
   function deleteTask(id) {
-    const state = projectState();
+    const state = planningState();
     const task = state.tasks.find((item) => item.id === id);
-    state.tasks = state.tasks.filter((item) => item.id !== id);
-    if (task) state.activity.unshift(`Xóa công việc “${task.title}”`);
-    write(PROJECT_KEY, state);
+    writePlanning((current) => ({ ...current, tasks: current.tasks.filter((item) => item.id !== id) }));
+    if (task) {
+      const legacy = projectState();
+      legacy.activity.unshift(`Xóa công việc “${task.title}”`);
+      write(PROJECT_KEY, legacy);
+    }
     render();
   }
 
@@ -633,16 +1052,21 @@
     if (!files.length) return;
     const accepted = files.filter((file) => file.size <= MAX_FILE_SIZE);
     if (!accepted.length) return showToast("Tệp vượt giới hạn 100 MB.", "error");
+    if (!("indexedDB" in window)) return showToast("Trình duyệt này không hỗ trợ Device Vault. Hãy dùng trình duyệt Chromium mới.", "error");
     showToast(`Đang lưu ${accepted.length} tệp trên thiết bị...`);
-    const meta = read(FILE_META_KEY, []);
-    for (const file of accepted) {
-      const id = uid("file");
-      await databaseAction("readwrite", (store) => store.put({ id, name: file.name, type: file.type || "application/octet-stream", size: file.size, createdAt: new Date().toISOString(), blob: file }));
-      meta.unshift({ id, name: file.name, type: file.type || "Tệp", size: file.size, createdAt: new Date().toISOString() });
+    try {
+      const meta = read(FILE_META_KEY, []);
+      for (const file of accepted) {
+        const id = uid("file");
+        await databaseAction("readwrite", (store) => store.put({ id, name: file.name, type: file.type || "application/octet-stream", size: file.size, createdAt: new Date().toISOString(), blob: file }));
+        meta.unshift({ id, name: file.name, type: file.type || "Tệp", size: file.size, createdAt: new Date().toISOString() });
+      }
+      write(FILE_META_KEY, meta.slice(0, 100));
+      await renderDeviceFiles();
+      showToast(`Đã lưu ${accepted.length} tệp. Dữ liệu không rời thiết bị.`);
+    } catch (error) {
+      showToast(`Không thể lưu tệp: ${String(error.message || error)}`, "error");
     }
-    write(FILE_META_KEY, meta.slice(0, 100));
-    await renderDeviceFiles();
-    showToast(`Đã lưu ${accepted.length} tệp. Dữ liệu không rời thiết bị.`);
   }
 
   async function renderDeviceFiles() {
@@ -751,21 +1175,38 @@
     toast.dataset.timer = String(setTimeout(() => toast.classList.remove("is-visible"), 2800));
   }
 
-  function mount(target) {
+  function mount(target, options = {}) {
     unmount();
     host = target;
+    const requestedView = String(options.view || "mission-control");
+    activeView = WORK_PLANETS.some((planet) => planet.id === requestedView) ? requestedView : "mission-control";
+    if (activeView !== "mission-control") {
+      const state = planningState();
+      const route = currentWorkRoute();
+      if (state.lastContext !== route) writePlanning({ ...state, lastContext: route });
+    }
     render();
   }
 
   function unmount() {
     clearInterval(clockTimer);
     clearInterval(focusTimer);
+    clearTimeout(taskSearchTimer);
     clockTimer = 0;
     focusTimer = 0;
+    taskSearchTimer = 0;
     fileDragDepth = 0;
     if (host) host.replaceChildren();
     host = null;
   }
 
-  window.HHWorkCenter = { mount, unmount, refresh: render, openCapture, planning: Object.freeze({ normalizePlanning, cycleCapacity, assignOpenTasksToCycle, rolloverCycle, extractMeetingActions, detectPlanningRisks }) };
+  window.HHWorkCenter = {
+    mount,
+    unmount,
+    refresh: render,
+    openCapture,
+    supports: (view) => WORK_PLANETS.some((planet) => planet.id === view),
+    views: Object.freeze(Object.fromEntries(WORK_PLANETS.map((planet) => [planet.id, planet]))),
+    planning: Object.freeze({ normalizePlanning, cycleCapacity, assignOpenTasksToCycle, rolloverCycle, extractMeetingActions, detectPlanningRisks, workMetrics, evaluateAutomation })
+  };
 })();

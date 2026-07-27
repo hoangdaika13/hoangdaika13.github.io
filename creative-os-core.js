@@ -93,6 +93,7 @@
     const input = item && typeof item === "object" ? item : { content: item };
     return {
       id: cleanId(input.id, `prompt-${index + 1}`),
+      type: cleanText(input.type || "general", 40),
       title: cleanText(input.title || `Prompt ${index + 1}`, 160),
       content: cleanText(input.content, 30000),
       model: cleanText(input.model, 120),
@@ -168,6 +169,10 @@
       provider: cleanText(input.provider || "local", 80),
       model: cleanText(input.model, 120),
       action: cleanText(input.action || "creative-task", 160),
+      prompt: cleanText(input.prompt, 4000),
+      seed: cleanText(input.seed, 160),
+      usageRights: cleanText(input.usageRights || input.rights, 600),
+      version: cleanText(input.version, 120),
       tokens: clamp(input.tokens, 0, 100_000_000, 0),
       estimatedCost: clamp(input.estimatedCost, 0, 1_000_000, 0),
       latencyMs: clamp(input.latencyMs, 0, 86_400_000, 0),
@@ -215,6 +220,67 @@
         records: [], warnings: [], verified: false,
         ...(sanitizeValue(input.rights || {}) || {})
       },
+      music: (() => {
+        const music = sanitizeValue(input.music || {}) || {};
+        return {
+        ...music,
+        schemaVersion: 3,
+        project: {
+          name: "", genre: "", purpose: "", audience: "", platform: "", durationHours: 1,
+          bpm: 96, key: "C minor", timeSignature: "4/4", mood: "", instruments: "",
+          structure: "Intro, Verse, Chorus, Bridge, Outro", scene: "", palette: "",
+          ...(music.project || {})
+        },
+        songDNA: {
+          chords: "Cm - Ab - Eb - Bb", energy: 56, groove: "balanced", texture: "",
+          melodyNotes: "", bassline: "", ...(music.songDNA || {})
+        },
+        promptComposer: {
+          music: "", image: "", motion: "", lyrics: "", negative: "", ...(music.promptComposer || {})
+        },
+        variations: Array.isArray(music.variations) ? music.variations : [],
+        arrangement: Array.isArray(music.arrangement) ? music.arrangement : [],
+        arrangementVersions: { A: [], B: [], C: [], ...(music.arrangementVersions || {}) },
+        generation: {
+          jobs: [], paused: false, dailyBudget: 0, lastWorkspace: "studio",
+          ...(music.generation || {})
+        },
+        composer: {
+          preset: "custom", creativity: 72, similarity: 35, complexity: 60, variationStrength: 65,
+          locks: { melody: false, chord: false, vocal: false, tempo: false, drums: false },
+          referenceAnalysis: null,
+          ...(music.composer || {}),
+          locks: {
+            melody: false, chord: false, vocal: false, tempo: false, drums: false,
+            ...(music.composer?.locks || {})
+          }
+        },
+        midi: {
+          quantize: "1/16", scaleHighlight: true, humanizeTiming: 8, humanizeVelocity: 12,
+          chordSuggestions: [], ...(music.midi || {})
+        },
+        lyrics: { content: "", language: "vi", syncMode: "syllable", difficultLines: [], ...(music.lyrics || {}) },
+        stems: Array.isArray(music.stems) ? music.stems : [],
+        vocals: Array.isArray(music.vocals) ? music.vocals : [],
+        consent: { note: "", ready: false, records: [], ...(music.consent || {}) },
+        mix: {
+          target: "youtube", loudness: -14, truePeak: -1, notes: "", analysis: null,
+          previewEnabled: false, referenceProfile: null, ...(music.mix || {})
+        },
+        visual: {
+          mode: "particle", aspectRatio: "16:9", palette: "", coverAssetId: "",
+          theme: "deep-space", layers: ["planet", "spectrum", "particles", "lyrics"],
+          stemMappings: { bass: "planet-scale", vocal: "aurora", drums: "solar-flare" },
+          ...(music.visual || {})
+        },
+        release: {
+          title: "", platforms: [], splits: [], checklist: {}, scheduledAt: "",
+          author: "", producer: "", isrc: "", artworkAssetId: "", codecPreview: "",
+          ...(music.release || {})
+        },
+        sync: { source: "creative-core", lastMusicWriteAt: "", lastCreativeReadAt: "", ...(music.sync || {}) }
+        };
+      })(),
       createdAt: now,
       updatedAt: isoDate(input.updatedAt || now)
     };

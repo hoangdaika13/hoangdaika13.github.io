@@ -21,8 +21,13 @@ test("Universal Media Project is reachable from the shell and cached offline", (
     "photo-editor-pro.js?v=3",
     "video-editor-resolve.css?v=6",
     "video-editor-resolve.js?v=7",
-    "media-design-page.css?v=9",
-    "media-design-page.js?v=9"
+    "media-professional-suite.css?v=1",
+    "media-professional-suite.js?v=2",
+    "media-design-page.css?v=11",
+    "media-next-suite.css?v=1",
+    "vendor/vercel-blob-client.min.js?v=1",
+    "media-next-suite.js?v=1",
+    "media-design-page.js?v=12"
   ]) {
     const pattern = new RegExp(escapeRegExp(asset));
     assert.match(`${html}\n${loader}`, pattern);
@@ -32,7 +37,7 @@ test("Universal Media Project is reachable from the shell and cached offline", (
   assert.match(worker, /hh-identity-portal-v\d+/);
   assert.match(shell, /id: "universal-media"/);
   assert.match(shell, /id: "asset-manager"/);
-  assert.match(shell, /22 .*Universal Media Project/);
+  assert.match(shell, /36 .*Media Cosmos.*Media Cloud/);
   assert.match(page, /HHUniversalMediaProject\?\.mount/);
   assert.match(page, /HHUniversalMediaProject\?\.unmount/);
 });
@@ -67,6 +72,8 @@ test("Professional engines publish stable browser contracts", () => {
     ["universal-media-project.js", "HHUniversalMediaProject", /function mount\s*\(/],
     ["photo-editor-pro.js", "HHPhotoEditorPro", /function createProject\s*\(/],
     ["video-editor-resolve.js", "HHVideoEditorResolveOps", /const createProject\s*=/],
+    ["media-professional-suite.js", "HHMediaProfessionalSuite", /function mount\s*\(/],
+    ["media-next-suite.js", "HHMediaNextSuite", /function mount\s*\(/],
     ["graphic-design-adaptive.js", "HHGraphicAdaptive", /function mount\s*\(/],
     ["graphic-design-export-center.js", "HHGraphicExportCenter", /function mount\s*\(/],
     ["graphic-design-review.js", "HHGraphicReview", /function mount\s*\(/],

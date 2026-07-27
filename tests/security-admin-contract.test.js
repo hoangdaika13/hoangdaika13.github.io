@@ -6,7 +6,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("owner access comes only from configured and verified identities", () => {
+test("owner access comes only from configured IDs or Google-verified allowlisted identities", () => {
   const previousEmails = process.env.ADMIN_EMAILS;
   const previousEmail = process.env.ADMIN_EMAIL;
   const previousIds = process.env.ADMIN_USER_IDS;
@@ -20,7 +20,9 @@ test("owner access comes only from configured and verified identities", () => {
   const admin = require("../utils/community-admin");
 
   assert.equal(platform.isOwnerUser({ _id: "other", email: "owner@example.test", emailVerifiedAt: null }), false);
-  assert.equal(platform.isOwnerUser({ _id: "other", email: "owner@example.test", emailVerifiedAt: new Date() }), true);
+  assert.equal(platform.isOwnerUser({ _id: "other", email: "owner@example.test", emailVerifiedAt: new Date(), lastProvider: "password" }), false);
+  assert.equal(platform.isOwnerUser({ _id: "other", email: "owner@example.test", emailVerifiedAt: new Date(), lastProvider: "google" }), true);
+  assert.equal(platform.isOwnerUser({ _id: "other", email: "owner@example.test", googleVerifiedAt: new Date() }), true);
   assert.equal(platform.isOwnerUser({ _id: "507f1f77bcf86cd799439011", email: "member@example.test" }), true);
   assert.deepEqual(admin.rolesFor({ email: "member@example.test", systemRoles: ["owner"] }), []);
 
@@ -36,7 +38,7 @@ test("role hierarchy prevents administrators from granting equal or higher privi
   delete require.cache[require.resolve("../utils/platform")];
   delete require.cache[require.resolve("../utils/community-admin")];
   const { canGrantRole, hasPermission } = require("../utils/community-admin");
-  const owner = { email: "owner@example.test", emailVerifiedAt: new Date() };
+  const owner = { email: "owner@example.test", googleVerifiedAt: new Date() };
   const superAdmin = { email: "super@example.test", systemRoles: ["super_admin"] };
   const admin = { email: "admin@example.test", systemRoles: ["admin"] };
 

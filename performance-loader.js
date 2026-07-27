@@ -72,19 +72,19 @@
     },
     dev: {
       styles: [
-        "professional-tools.css?v=3", "dev-pro-suite.css?v=1", "dev-delivery-workflow.css?v=2", "dev-smart-recipe.css?v=1", "dev-api-studio.css?v=1",
+        "professional-tools.css?v=3", "dev-pro-suite.css?v=2", "dev-delivery-workflow.css?v=2", "dev-smart-recipe.css?v=1", "dev-api-studio.css?v=1",
         "dev-data-security.css?v=1", "dev-regex-database.css?v=1", "dev-code-git.css?v=1",
         "dev-diagnostics-ai.css?v=1"
       ],
       scripts: [
         "professional-tools.js?v=4", "dev-smart-recipe.js?v=1", "dev-api-studio.js?v=1",
         "dev-data-security.js?v=1", "dev-regex-database.js?v=1", "dev-code-git.js?v=1",
-        "dev-diagnostics-ai.js?v=1", "dev-delivery-workflow.js?v=2", "dev-pro-suite.js?v=2"
+        "dev-diagnostics-ai.js?v=1", "dev-delivery-workflow.js?v=2", "dev-pro-suite.js?v=3"
       ]
     },
     media: {
       styles: [
-        "media-design-pro.css?v=1", "media-design-page.css?v=9", "media-production-workflow.css?v=2", "universal-media-project.css?v=1",
+        "media-design-pro.css?v=1", "media-design-page.css?v=11", "media-cosmos.css?v=2", "media-professional-suite.css?v=1", "media-next-suite.css?v=1", "media-production-workflow.css?v=3", "universal-media-project.css?v=1",
         "media-design-advanced.css?v=3", "media-design-publish.css?v=1", "video-editor-studio.css?v=2",
         "video-editor-resolve.css?v=6", "photo-editor-pro.css?v=4", "editor-workflow-pro.css?v=1"
       ],
@@ -92,8 +92,12 @@
         "media-design-studio.js?v=1", "media-design-pro.js?v=2", "media-design-advanced.js?v=3",
         "media-design-publish.js?v=1", "video-editor-studio.js?v=2", "video-editor-resolve.js?v=7",
         "photo-editor-pro.js?v=3", "editor-workflow-pro.js?v=1", "universal-media-project.js?v=1",
-        "media-production-workflow.js?v=2", "media-design-page.js?v=9"
+        "media-production-workflow.js?v=3", "media-cosmos.js?v=2", "media-professional-suite.js?v=2", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=1", "media-design-page.js?v=12"
       ]
+    },
+    davinci: {
+      styles: ["davinci-resolve-hub.css?v=2"],
+      scripts: ["davinci-resolve-hub.js?v=2"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6"],
@@ -108,23 +112,23 @@
     creative: {
       styles: ["creative-suite.css?v=6", "creative-os.css?v=1", "creative-galaxy.css?v=3", "creative-star-map.css?v=2", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
       scripts: [
-        "creative-os-core.js?v=2", "creative-galaxy.js?v=4", "creative-star-map.js?v=2", "creative-os.js?v=6", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
+        "creative-os-core.js?v=4", "creative-galaxy.js?v=4", "creative-star-map.js?v=2", "creative-os.js?v=6", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
       ]
     },
     music: {
       styles: [
-        "music-production-suite.css?v=1", "music-daw-workspace.css?v=1", "music-composer-lyrics.css?v=1",
+        "music-production-suite.css?v=3", "music-daw-workspace.css?v=1", "music-composer-lyrics.css?v=1",
         "music-audio-labs.css?v=1", "music-mix-master.css?v=1", "music-visual-studio.css?v=1",
         "music-publishing-rights.css?v=1", "music-intelligence-engine.css?v=1", "music-generative-arrangement.css?v=1",
         "music-adaptive-library.css?v=1", "music-mix-performance.css?v=1", "music-project-governance.css?v=1",
         "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "youtube-publisher.css?v=2"
       ],
       scripts: [
-        "youtube-publisher.js?v=2", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
+        "creative-os-core.js?v=4", "youtube-publisher.js?v=2", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
         "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=1",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",
-        "music-production-suite.js?v=1", "music-ai-apps.js?v=2", "music-ai-studio.js?v=8"
+        "music-production-suite.js?v=3", "music-ai-apps.js?v=3", "music-ai-studio.js?v=9"
       ]
     },
     communication: {
@@ -147,8 +151,8 @@
       scripts: ["search-watch-center.js?v=7"]
     },
     work: {
-      styles: ["work-center.css?v=3", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
-      scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=3"]
+      styles: ["work-center.css?v=4", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
+      scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
     },
     game: {
       styles: ["game-runtime.css?v=1", "space-explorer.css?v=4", "game-center.css?v=4", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
@@ -165,16 +169,16 @@
       ]
     },
     english: {
-      styles: ["english-learning.css?v=11", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=1"],
-      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-learning-galaxy.js?v=1", "english-learning.js?v=17"]
+      styles: ["english-learning.css?v=12", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=1"],
+      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=1", "english-learning-galaxy.js?v=1", "english-learning.js?v=17"]
     },
     analytics: {
-      styles: ["insights-pro.css?v=2"],
-      scripts: ["insights-pro.js?v=6"]
+      styles: ["insights-pro.css?v=3"],
+      scripts: ["insights-pro.js?v=7"]
     },
     admin: {
-      styles: ["community-admin.css?v=6"],
-      scripts: ["community-admin.js?v=8"]
+      styles: ["community-admin.css?v=9"],
+      scripts: ["community-admin.js?v=11"]
     },
     support: {
       styles: ["support-platform.css?v=9"],
@@ -196,6 +200,7 @@
     const value = normalizeRoute(route);
     if (value === "/home") return ["home"];
     if (value.startsWith("/dev-tools")) return ["dev"];
+    if (value.startsWith("/davinci-resolve")) return ["davinci"];
     if (value.startsWith("/media-design")) return ["media"];
     if (value.startsWith("/graphic-design")) return ["graphic"];
     if (value.startsWith("/music-ai")) return ["music"];
@@ -206,7 +211,7 @@
     if (value === "/communication/google-youtube") return ["search"];
     if (value.startsWith("/communication")) return ["communication"];
     if (value.startsWith("/work")) return ["work"];
-    if (value === "/analytics/admin-panel") return ["admin"];
+    if (value === "/admin" || value.startsWith("/admin/") || value === "/analytics/admin-panel") return ["analytics", "admin"];
     if (value.startsWith("/analytics")) return ["analytics"];
     if (value.startsWith("/create")) return ["creative", "platform"];
     if (value.startsWith("/system") || value.startsWith("/tools") || value === "/favorites" || value === "/recent") return ["platform"];

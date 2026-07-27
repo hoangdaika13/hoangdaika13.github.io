@@ -30,7 +30,9 @@ function appendCookie(res, value) {
 }
 
 function setSessionCookie(res, token, maxAge = SESSION_TTL_SECONDS) {
-  appendCookie(res, `${SESSION_COOKIE}=${encodeURIComponent(token)}; Max-Age=${Math.max(0, Number(maxAge) || 0)}; Path=/; HttpOnly; Secure; SameSite=None`);
+  const configured = clean(process.env.SESSION_COOKIE_SAMESITE || "Lax", 10);
+  const sameSite = ["Lax", "Strict", "None"].includes(configured) ? configured : "Lax";
+  appendCookie(res, `${SESSION_COOKIE}=${encodeURIComponent(token)}; Max-Age=${Math.max(0, Number(maxAge) || 0)}; Path=/; HttpOnly; Secure; SameSite=${sameSite}; Priority=High`);
 }
 
 function clearSessionCookie(res) {

@@ -246,12 +246,13 @@
 
   function normalizeJob(input, kind) {
     const source = input && typeof input === "object" ? input : {};
-    const allowed = new Set(["queued", "running", "completed", "failed", "canceled", "needs-adapter", "missing-source", "unsupported", "partial"]);
+    const allowed = new Set(["planned", "queued", "paused", "running", "completed", "failed", "canceled", "needs-adapter", "missing-source", "unsupported", "partial"]);
     return {
       id: safeId(source.id, uid(kind || "job")), kind: cleanText(source.kind, 40, kind || "job"),
       name: cleanText(source.name, 240, "Tác vụ media"), status: allowed.has(source.status) ? source.status : "queued",
       progress: clamp(source.progress, 0, 1, 0), message: cleanText(source.message, 500), createdAt: source.createdAt || now(), updatedAt: source.updatedAt || now(),
       remoteId: safeId(source.remoteId), outputUrl: safeOutputUrl(source.outputUrl), assetId: safeId(source.assetId),
+      provider: cleanText(source.provider, 80), cost: Math.max(0, Number(source.cost ?? source.costUsd) || 0), currency: cleanText(source.currency, 12, "USD"),
       segments: normalizeSegments(source.segments, source.fps || 30), output: source.output instanceof Blob ? source.output : null
     };
   }
@@ -419,7 +420,11 @@
       if (!body?.id && !fallbackId) throw new Error("Render server không trả job id.");
       const outputUrl = safeOutputUrl(body?.outputUrl, endpoint);
       if (status === "completed" && !outputUrl) throw new Error("Render server báo hoàn tất nhưng thiếu output URL HTTPS hợp lệ.");
-      return { id: safeId(body?.id || fallbackId), status, progress: clamp(body?.progress, 0, 1, status === "completed" ? 1 : 0), outputUrl, message: cleanText(body?.message, 500) };
+      return {
+        id: safeId(body?.id || fallbackId), status, progress: clamp(body?.progress, 0, 1, status === "completed" ? 1 : 0),
+        outputUrl, message: cleanText(body?.message, 500), provider: cleanText(body?.provider, 80),
+        cost: Math.max(0, Number(body?.cost ?? body?.costUsd) || 0), currency: cleanText(body?.currency, 12, "USD")
+      };
     };
     return Object.freeze({
       kind: "server", endpoint,
@@ -434,7 +439,7 @@
     if (!resolveAdapter(adapter, "enqueue")) return normalizeJob({ ...job, status: "needs-adapter", message: "Chưa cấu hình render server; chưa gửi tác vụ." }, "render");
     try {
       const remote = await adapter.enqueue({ schema: SCHEMA, version: VERSION, projectId: safeId(payload?.projectId), timeline: normalizeTimeline(payload?.timeline), preset: cleanText(payload?.preset, 80, "web-1080p"), name: cleanText(payload?.name, 240, "HH render") });
-      return normalizeJob({ ...job, remoteId: remote.id, status: remote.status, progress: remote.progress, outputUrl: remote.outputUrl, message: remote.message || `Render server: ${remote.status}.` }, "render");
+      return normalizeJob({ ...job, remoteId: remote.id, status: remote.status, progress: remote.progress, outputUrl: remote.outputUrl, message: remote.message || `Render server: ${remote.status}.`, provider: remote.provider, cost: remote.cost, currency: remote.currency }, "render");
     } catch (error) { return normalizeJob({ ...job, status: "failed", message: error?.message || "Không gửi được render job." }, "render"); }
   }
 
@@ -443,7 +448,7 @@
     if (!current.remoteId || !resolveAdapter(adapter, "status")) return normalizeJob({ ...current, status: current.remoteId ? "needs-adapter" : current.status, message: current.remoteId ? "Không có adapter để đọc trạng thái server." : current.message }, "render");
     try {
       const remote = await adapter.status(current.remoteId);
-      return normalizeJob({ ...current, status: remote.status, progress: remote.progress, outputUrl: remote.outputUrl, message: remote.message || `Render server: ${remote.status}.`, updatedAt: now() }, "render");
+      return normalizeJob({ ...current, status: remote.status, progress: remote.progress, outputUrl: remote.outputUrl, message: remote.message || `Render server: ${remote.status}.`, provider: remote.provider || current.provider, cost: remote.cost || current.cost, currency: remote.currency || current.currency, updatedAt: now() }, "render");
     } catch (error) { return normalizeJob({ ...current, status: "failed", message: error?.message || "Không đọc được trạng thái render." }, "render"); }
   }
 

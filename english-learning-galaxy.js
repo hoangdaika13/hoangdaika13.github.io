@@ -1055,10 +1055,10 @@
     instances.delete(host);
   };
 
-  root.HHEnglishGalaxy = Object.freeze({
+  root.HHEnglishLearningGalaxy = Object.freeze({
     VERSION, VIEWS: [...VIEWS], listeningLibrary, readingLibrary,
     defaultState, mergeState, renderView, bind, unmount, timedSentences,
     progressForListening, progressForReading
   });
-  if (typeof module !== "undefined" && module.exports) module.exports = root.HHEnglishGalaxy;
+  if (typeof module !== "undefined" && module.exports) module.exports = root.HHEnglishLearningGalaxy;
 })();
