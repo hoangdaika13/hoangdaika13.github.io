@@ -69,6 +69,24 @@ function schemaForAction(actionType) {
   return null;
 }
 
+function geminiSchema(schema) {
+  if (!schema || typeof schema !== "object") return null;
+  const output = {};
+  for (const [key, value] of Object.entries(schema)) {
+    if (key === "additionalProperties") continue;
+    if (key === "properties" && value && typeof value === "object") {
+      output.properties = Object.fromEntries(
+        Object.entries(value).map(([property, propertySchema]) => [property, geminiSchema(propertySchema)])
+      );
+    } else if (key === "items") {
+      output.items = geminiSchema(value);
+    } else {
+      output[key] = value;
+    }
+  }
+  return output;
+}
+
 let cachedGeminiPool = null;
 let cachedGeminiPoolSignature = "";
 let cachedOpenAIPool = null;
@@ -1005,7 +1023,7 @@ async function runInteractionsGemini({
       ...(useGoogleSearch ? [{ type: "google_search" }] : [])
     ],
     ...(useStructuredOutput
-      ? { response_format: [{ type: "text", mime_type: "application/json", schema: structuredSchema }] }
+      ? { response_format: [{ type: "text", mime_type: "application/json", schema: geminiSchema(structuredSchema) }] }
       : {}),
     stream: false,
     background: false,
@@ -1071,7 +1089,7 @@ async function runGeminiWithKey({
       temperature,
       maxOutputTokens: useStructuredOutput ? 8192 : 2048,
       ...(useStructuredOutput
-        ? { responseMimeType: "application/json", responseSchema: structuredSchema }
+        ? { responseMimeType: "application/json", responseSchema: geminiSchema(structuredSchema) }
         : {})
     },
     ...(tools.length ? { tools } : {})

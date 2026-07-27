@@ -143,6 +143,8 @@ test("Graphic Design AI uses the configured backend without client secrets", () 
   assert.doesNotMatch(client, /sk-[0-9A-Za-z_-]{20,}/);
   assert.match(backend, /const designPlanSchema =/);
   assert.match(backend, /if \(actionType === "design-plan"\) return designPlanSchema/);
+  assert.match(backend, /function geminiSchema\(schema\)/);
+  assert.match(backend, /if \(key === "additionalProperties"\) continue/);
   assert.match(backend, /palette/);
   assert.match(backend, /accessibility/);
   assert.match(backend, /nextActions/);
