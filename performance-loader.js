@@ -169,8 +169,8 @@
       ]
     },
     english: {
-      styles: ["english-learning.css?v=11", "english-voice-coach.css?v=4"],
-      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-learning.js?v=16"]
+      styles: ["english-learning.css?v=12", "english-galaxy.css?v=1", "english-voice-coach.css?v=4"],
+      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=1", "english-learning.js?v=17"]
     },
     analytics: {
       styles: ["insights-pro.css?v=3"],

@@ -42,6 +42,22 @@ test("HH English keeps a focused path and moves secondary tools into a searchabl
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
 });
 
+test("HH English exposes the cosmic vocabulary galaxy and all practice modes", () => {
+  const client = read("english-learning.js");
+  const galaxy = read("english-galaxy.js");
+  const css = read("english-galaxy.css");
+
+  assert.match(client, /data-hhe-galaxy-start/);
+  assert.match(client, /data-hhe-galaxy-challenge/);
+  assert.match(client, /galaxyTopic/);
+  assert.match(galaxy, /const learningModes = Object\.freeze/);
+  assert.match(galaxy, /picture-vocabulary/);
+  assert.match(galaxy, /const targets = Object\.freeze/);
+  assert.match(css, /\.hhe-galaxy-hero/);
+  assert.match(css, /\.hhe-mode-orbit/);
+  assert.match(css, /prefers-reduced-motion/);
+});
+
 test("expanded major sections expose every nested module without clipping", () => {
   const css = read("sidebar-navigation-pro.css");
 
@@ -83,7 +99,7 @@ test("every route gets a shared cosmic loading state with progress and fallback"
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=53", "script.js?v=144", "sidebar-navigation-pro.css?v=8", "english-learning.css?v=11", "english-learning.js?v=16", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=53", "script.js?v=144", "sidebar-navigation-pro.css?v=8", "english-learning.css?v=12", "english-galaxy.css?v=1", "english-galaxy.js?v=1", "english-learning.js?v=17", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);
