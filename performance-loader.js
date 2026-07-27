@@ -95,6 +95,10 @@
         "media-production-workflow.js?v=3", "media-cosmos.js?v=2", "media-professional-suite.js?v=2", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=1", "media-design-page.js?v=12"
       ]
     },
+    davinci: {
+      styles: ["davinci-resolve-hub.css?v=1"],
+      scripts: ["davinci-resolve-hub.js?v=1"]
+    },
     graphic: {
       styles: ["graphic-design-studio.css?v=6"],
       scripts: [
@@ -196,6 +200,7 @@
     const value = normalizeRoute(route);
     if (value === "/home") return ["home"];
     if (value.startsWith("/dev-tools")) return ["dev"];
+    if (value.startsWith("/davinci-resolve")) return ["davinci"];
     if (value.startsWith("/media-design")) return ["media"];
     if (value.startsWith("/graphic-design")) return ["graphic"];
     if (value.startsWith("/music-ai")) return ["music"];

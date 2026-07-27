@@ -5265,6 +5265,12 @@ function initAppShell() {
     { id: "automation-lab", icon: "AL", title: "Automation Lab", route: "/work/automation-lab", color: "#ff9a62", description: "Rule builder, approval, dry run và lịch sử thực thi." },
     { id: "portfolio-observatory", icon: "PO", title: "Portfolio Observatory", route: "/work/portfolio-observatory", color: "#ffd76a", description: "Sức khỏe, deadline, velocity, workload và snapshot." }
   ];
+  const davinciResolvePages = [
+    { id: "command", icon: "MC", title: "Mission Control", route: "/davinci-resolve/command", description: "Dashboard live, Action Graph, ETA, GPU và Render Queue." },
+    { id: "config", icon: "CF", title: "Cấu hình sản xuất", route: "/davinci-resolve/config", description: "Nguồn media, timeline, template, Deliver và 50 tùy chọn." },
+    { id: "profiles", icon: "PF", title: "Multi-profile", route: "/davinci-resolve/profiles", description: "TikTok, YouTube, preset, overlay, nhạc, output và priority." },
+    { id: "audit", icon: "QA", title: "Preflight & Recovery", route: "/davinci-resolve/audit", description: "Checkpoint, FFprobe, retry, rollback và hậu kiểm output." }
+  ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
     { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: [], studioItems: creativeStudioItems },
@@ -5277,6 +5283,16 @@ function initAppShell() {
       landingRoute: "/music-ai/studio",
       items: [],
       pages: musicAIPlanetItems
+    },
+    {
+      id: "davinci-resolve",
+      label: "Davinci Resolve",
+      icon: "H",
+      accent: "#6be8ff",
+      route: "/davinci-resolve",
+      landingRoute: "/davinci-resolve/command",
+      items: [],
+      pages: davinciResolvePages
     },
     { id: "media-design", label: "Media & Design", icon: "◈", accent: "#c87cff", route: "/media-design", items: [], studioItems: mediaStudioItems },
     {
@@ -5642,9 +5658,9 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "game-center": "Game Center", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
-    const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems];
-    const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", "davinci-resolve": "Davinci Resolve", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Giải trí", "game-center": "Game Center", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
+    const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
     let crumbRoute = "";
     breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Trang chủ</button>` : [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => {
       crumbRoute += `/${crumb}`;
@@ -5690,6 +5706,7 @@ function initAppShell() {
     const activeGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
     shell.style.setProperty("--route-accent", activeGroup?.accent || "#56eaff");
     shell.dataset.activeSection = activeGroup?.id || "home";
+    document.body.classList.toggle("app-davinci-resolve-route", route === "/davinci-resolve" || route.startsWith("/davinci-resolve/"));
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
@@ -5705,6 +5722,9 @@ function initAppShell() {
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) {
       window.HHDeveloperTools?.cleanup?.();
       window.HHDevProSuite?.cleanup?.();
+    }
+    if (route !== "/davinci-resolve" && !route.startsWith("/davinci-resolve/")) {
+      window.HHDavinciResolveHub?.unmount?.();
     }
     if (route !== "/entertainment") window.HHGameCenter?.unmount?.();
     if (route !== "/entertainment/arcade") window.HHGameArcade?.unmount?.();
@@ -5863,6 +5883,20 @@ function initAppShell() {
       workspace.innerHTML = '<div class="creative-ai-script-host tool-neon-page" data-ai-script-host><div class="creative-ai-script-loading"><i></i><strong>Đang mở Kịch bản AI Studio...</strong></div></div>';
       window.HHCreativeSuite?.mountScriptStudio?.(workspace.firstElementChild);
       remember("ai-script");
+    } else if (route === "/davinci-resolve" || route.startsWith("/davinci-resolve/")) {
+      const resolveView = parts[1] || "command";
+      const resolvePage = davinciResolvePages.find((item) => item.id === resolveView) || davinciResolvePages[0];
+      updatePageHeader(
+        resolvePage.title === "Mission Control" ? "Davinci Resolve" : `Davinci Resolve · ${resolvePage.title}`,
+        resolvePage.description,
+        route,
+        resolvePage
+      );
+      workspace.innerHTML = '<div data-davinci-resolve-host></div>';
+      const resolveHost = workspace.firstElementChild;
+      resolveHost.dataset.davinciResolveView = resolveView;
+      window.HHDavinciResolveHub?.mount(resolveHost, { view: resolveView });
+      remember(`davinci-resolve-${resolveView}`);
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {
       updatePageHeader("Media & Design", "Universal Media Project kết nối ảnh, video, âm thanh, motion, review và xuất bản trong một quy trình.", route);
       workspace.innerHTML = '<div data-media-design-page-host></div>';
@@ -6111,7 +6145,7 @@ function initAppShell() {
       route: item.route,
       key: `${item.title} ${item.section || ""} ${item.description} AI DAW music composer lyrics timeline stems vocal mix master visualizer youtube rights`
     }));
-    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...workGalaxy, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Game", title: "HH Game Center", description: "Tổng quan giải trí chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "22 game hoàn chỉnh thuộc bốn nhóm Action, Strategy, Puzzle và Simulation, dùng chung tiến trình, nhiệm vụ, thành tích và điều khiển đa thiết bị.", route: "/entertainment/arcade", key: "arcade galaxy 22 game action strategy puzzle simulation neon drift defense colony cipher miner rhythm quiz sandbox chess survival farm fishing mecha planet pet dungeon card tycoon runner black hole nebula boss rush" }, { type: "Studio", title: "Media & Design", description: "36 công cụ trong Media Cosmos với Media Cloud, Review Studio, Motion Compositing, Universal Canvas, AI Task Center và Dev Handoff.", route: "/media-design", key: "media design media cosmos professional universal project media cloud private blob multipart review studio annotation version compare approval universal canvas infinite artboard motion compositing node graph ai task center provenance dev mode handoff storybook photo editor photoshop video editor premiere render queue rights consent c2pa" }, { type: "Developer", title: "Developer Galaxy", description: "8 hành tinh DEV, 13 workspace chuyên sâu và 34 công cụ cho project, code, API, data, Git, delivery, security và observability.", route: "/dev-tools", key: "developer galaxy dev project code api data git delivery security observability smart input recipe pipeline mock json regex database playground diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...workGalaxy, ...musicAI, { type: "Học tập", title: "HH English", description: "517 bài tiếng Anh miễn phí A0-C2, Smart Start và 64 lộ trình chuyên ngành tự thích ứng theo vai trò, kỹ năng, độ khó.", route: "/english", key: "hh english tiếng anh ngoại ngữ a0 a1 a2 b1 b2 c1 c2 cefr smart start người mới kế hoạch hôm nay cá nhân hóa chuyên ngành nghề nghiệp khảo sát từ vựng phát âm speaking writing placement career business technology healthcare education tourism engineering cloud fintech veterinary film audio" }, { type: "Sản xuất video", title: "Davinci Resolve", description: "H Cosmic Studio điều khiển Resolve thật: batch video, template timeline, multi-profile, checkpoint, FFprobe và render scheduler.", route: "/davinci-resolve", key: "davinci resolve h cosmic studio batch production render queue preflight ffprobe checkpoint resume template timeline multi profile tiktok youtube gpu scheduler" }, { type: "Game", title: "HH Game Center", description: "Tổng quan giải trí chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "22 game hoàn chỉnh thuộc bốn nhóm Action, Strategy, Puzzle và Simulation, dùng chung tiến trình, nhiệm vụ, thành tích và điều khiển đa thiết bị.", route: "/entertainment/arcade", key: "arcade galaxy 22 game action strategy puzzle simulation neon drift defense colony cipher miner rhythm quiz sandbox chess survival farm fishing mecha planet pet dungeon card tycoon runner black hole nebula boss rush" }, { type: "Studio", title: "Media & Design", description: "36 công cụ trong Media Cosmos với Media Cloud, Review Studio, Motion Compositing, Universal Canvas, AI Task Center và Dev Handoff.", route: "/media-design", key: "media design media cosmos professional universal project media cloud private blob multipart review studio annotation version compare approval universal canvas infinite artboard motion compositing node graph ai task center provenance dev mode handoff storybook photo editor photoshop video editor premiere render queue rights consent c2pa" }, { type: "Developer", title: "Developer Galaxy", description: "8 hành tinh DEV, 13 workspace chuyên sâu và 34 công cụ cho project, code, API, data, Git, delivery, security và observability.", route: "/dev-tools", key: "developer galaxy dev project code api data git delivery security observability smart input recipe pipeline mock json regex database playground diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();

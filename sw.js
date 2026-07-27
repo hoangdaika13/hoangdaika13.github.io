@@ -1,6 +1,7 @@
-const CACHE = "hh-identity-portal-v262";
+const CACHE = "hh-identity-portal-v263";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
+// script.js?v=141 performance-loader.js?v=51
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
 // learning-suite.css?v=2 learning-home.css?v=2 learning-paths.css?v=2 learning-review.css?v=2 learning-lesson-player.css?v=2 learning-coach-labs.css?v=2 learning-classroom.css?v=2 learning-platform-core.js?v=2 learning-home.js?v=2 learning-paths.js?v=2 learning-review.js?v=2 learning-lesson-player.js?v=2 learning-coach-labs.js?v=2 learning-classroom.js?v=2 learning-suite.js?v=2
 const RUNTIME_ASSETS = [
@@ -41,10 +42,11 @@ const RUNTIME_ASSETS = [
   "./media-design-publish.css?v=1",
   "./video-editor-studio.css?v=2",
   "./video-editor-resolve.css?v=6",
+  "./davinci-resolve-hub.css?v=1",
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=1",
   "./support-platform.css?v=9",
-  "./script.js?v=141",
+  "./script.js?v=142",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-animation.js?v=1",
   "./graphic-design-3d.js?v=2",
@@ -258,6 +260,7 @@ const RUNTIME_ASSETS = [
   "./media-design-publish.js?v=1",
   "./video-editor-studio.js?v=2",
   "./video-editor-resolve.js?v=7",
+  "./davinci-resolve-hub.js?v=1",
   "./photo-editor-pro.js?v=3",
   "./universal-media-project.js?v=1",
   "./media-production-workflow.js?v=3",
@@ -311,10 +314,10 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=51",
+  "./performance-loader.js?v=52",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=141"
+  "./script.js?v=142"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
