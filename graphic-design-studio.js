@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "hh.graphic-design.hub.v2";
-  const INTEGRATION_VERSION = 6;
+  const INTEGRATION_VERSION = 7;
   const MAX_PROJECTS = 40;
   const MAX_ASSETS = 16;
   const MAX_ASSET_BYTES = 850000;
@@ -456,7 +456,7 @@
     showToast.timer = setTimeout(() => { toast.hidden = true; }, 2600);
   }
 
-  function bindOverview(root, state) {
+  function bindOverview(root, state, universalController) {
     const refreshProjectList = (query = "") => {
       const list = root.querySelector("[data-gd-project-list]");
       if (list) list.innerHTML = renderProjects(state.projects, query);
@@ -477,6 +477,16 @@
         if (state.assets.length >= MAX_ASSETS) return showToast(root, `Đã đạt giới hạn ${MAX_ASSETS} asset.`);
         const asset = { id: uid("asset"), name: file.name.slice(0, 120), size: file.size, type: file.type || "file", dataUrl: "" };
         state.assets.unshift(asset);
+        universalController?.dispatch?.("add-asset", {
+          id: asset.id,
+          name: asset.name,
+          kind: file.type.startsWith("image/") ? "image" : "other",
+          type: asset.type,
+          size: asset.size,
+          source: "local-device",
+          license: "unknown",
+          status: "ready"
+        });
         const shouldPreview = file.type.startsWith("image/") && file.size <= MAX_ASSET_BYTES;
         if (!shouldPreview) {
           saveState(state);
@@ -536,6 +546,7 @@
       const removeAsset = event.target.closest("[data-gd-remove-asset]");
       if (removeAsset) {
         state.assets = state.assets.filter((item) => item.id !== removeAsset.dataset.gdRemoveAsset);
+        universalController?.dispatch?.("remove-asset", { id: removeAsset.dataset.gdRemoveAsset });
         saveState(state);
         refreshAssets();
         return;
@@ -557,7 +568,15 @@
     root.addEventListener("input", (event) => {
       if (event.target.matches("[data-gd-project-search]")) refreshProjectList(event.target.value);
       if (event.target.matches("[data-gd-brand]")) {
-        state.brand[event.target.dataset.gdBrand] = event.target.value;
+        const brandKey = event.target.dataset.gdBrand;
+        state.brand[brandKey] = event.target.value;
+        const tokenKey = {
+          primary: "color.brand.primary",
+          secondary: "color.brand.secondary",
+          accent: "color.brand.accent"
+        }[brandKey];
+        if (tokenKey) universalController?.dispatch?.("set-brand-token", { key: tokenKey, value: event.target.value });
+        if (["heading", "body"].includes(brandKey)) universalController?.dispatch?.("set-brand-font", { key: brandKey, value: event.target.value });
         saveState(state);
         applyBrand(root, state.brand);
         const preview = root.querySelector(".gd-brand-preview");
@@ -619,32 +638,39 @@
       <footer class="gd-footer"><span><i></i> Sẵn sàng làm việc</span><span>Thiết kế được lưu trên thiết bị này</span><span data-gd-status>${escapeHTML(viewLabel(view))} · đã sẵn sàng</span></footer>
       <div class="gd-toast" data-gd-toast hidden></div>`;
 
-    if (view === "overview") bindOverview(root, state);
+    const universalController = globalThis.HHGraphicDesignUniversal?.mount?.(root, options);
+    const workspaceOptions = {
+      ...options,
+      designDocument: universalController?.document,
+      designDocumentController: universalController
+    };
+    if (view === "overview") bindOverview(root, state, universalController);
     else {
       root.addEventListener("click", (event) => {
         const routeButton = event.target.closest("[data-gd-route]");
         if (routeButton) location.hash = `#${routeFor(normalizeView(routeButton.dataset.gdRoute))}`;
         const retryButton = event.target.closest("[data-gd-retry-engine]");
-        if (retryButton) mountProEngine(root, normalizeView(retryButton.dataset.gdRetryEngine), options);
+        if (retryButton) mountProEngine(root, normalizeView(retryButton.dataset.gdRetryEngine), workspaceOptions);
       });
-      if (PRO_ENGINES[view]) mountProEngine(root, view, options);
-      else if (view === "vector") mountChild(root, "[data-graphic-vector-core]", globalThis.HHGraphicVectorCore, options);
-      else if (view === "quick-motion") mountChild(root, "[data-graphic-quick-motion]", globalThis.HHGraphicQuickMotion, options);
-      else if (view === "animation") mountChild(root, "[data-graphic-animation]", globalThis.HHGraphicAnimation);
-      else if (view === "state-machine") mountChild(root, "[data-graphic-state-machine]", globalThis.HHGraphicStateMachine, options);
-      else if (view === "3d") mountChild(root, "[data-graphic-3d]", globalThis.HHGraphic3D);
-      else if (view === "mockup") mountChild(root, "[data-graphic-mockup]", globalThis.HHGraphicMockup);
-      else if (view === "prototype") mountChild(root, "[data-graphic-prototype]", globalThis.HHGraphicPrototype);
-      else if (view === "motion") mountChild(root, "[data-graphic-motion]", globalThis.HHGraphicMotion);
-      else if (view === "adaptive") mountChild(root, "[data-graphic-adaptive]", globalThis.HHGraphicAdaptive, options);
-      else if (view === "projects") mountChild(root, "[data-graphic-project-store]", globalThis.HHGraphicProjectStore, options);
-      else if (view === "collaboration") mountChild(root, "[data-graphic-collaboration]", globalThis.HHGraphicCollaboration, options);
-      else if (view === "dev-ai") mountChild(root, "[data-graphic-dev-ai]", globalThis.HHGraphicDevAI, options);
-      else if (view === "composer") mountChild(root, "[data-graphic-composer]", globalThis.HHGraphicComposer, options);
+      if (PRO_ENGINES[view]) mountProEngine(root, view, workspaceOptions);
+      else if (view === "vector") mountChild(root, "[data-graphic-vector-core]", globalThis.HHGraphicVectorCore, workspaceOptions);
+      else if (view === "quick-motion") mountChild(root, "[data-graphic-quick-motion]", globalThis.HHGraphicQuickMotion, workspaceOptions);
+      else if (view === "animation") mountChild(root, "[data-graphic-animation]", globalThis.HHGraphicAnimation, workspaceOptions);
+      else if (view === "state-machine") mountChild(root, "[data-graphic-state-machine]", globalThis.HHGraphicStateMachine, workspaceOptions);
+      else if (view === "3d") mountChild(root, "[data-graphic-3d]", globalThis.HHGraphic3D, workspaceOptions);
+      else if (view === "mockup") mountChild(root, "[data-graphic-mockup]", globalThis.HHGraphicMockup, workspaceOptions);
+      else if (view === "prototype") mountChild(root, "[data-graphic-prototype]", globalThis.HHGraphicPrototype, workspaceOptions);
+      else if (view === "motion") mountChild(root, "[data-graphic-motion]", globalThis.HHGraphicMotion, workspaceOptions);
+      else if (view === "adaptive") mountChild(root, "[data-graphic-adaptive]", globalThis.HHGraphicAdaptive, workspaceOptions);
+      else if (view === "projects") mountChild(root, "[data-graphic-project-store]", globalThis.HHGraphicProjectStore, workspaceOptions);
+      else if (view === "collaboration") mountChild(root, "[data-graphic-collaboration]", globalThis.HHGraphicCollaboration, workspaceOptions);
+      else if (view === "dev-ai") mountChild(root, "[data-graphic-dev-ai]", globalThis.HHGraphicDevAI, workspaceOptions);
+      else if (view === "composer") mountChild(root, "[data-graphic-composer]", globalThis.HHGraphicComposer, workspaceOptions);
     }
   }
 
   function unmount() {
+    globalThis.HHGraphicDesignUniversal?.unmount?.(activeRoot);
     globalThis.HHGraphicDesignWorkflow?.unmount?.(activeRoot?.querySelector("[data-graphic-design-workflow]"));
     globalThis.HHGraphicVectorCore?.unmount?.(activeRoot?.querySelector("[data-graphic-vector-core]"));
     globalThis.HHGraphicNondestructive?.unmount?.(activeRoot?.querySelector("[data-graphic-nondestructive]"));

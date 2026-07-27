@@ -1,0 +1,112 @@
+.gdu-shell {
+  isolation: isolate;
+}
+
+.gdu-shell::before,
+.gdu-shell::after {
+  position: absolute;
+  z-index: -1;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  content: "";
+  filter: blur(70px);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.gdu-shell::before {
+  top: -160px;
+  right: 8%;
+  background: var(--gdu-pink, #ff5fc8);
+}
+
+.gdu-shell::after {
+  bottom: -190px;
+  left: 14%;
+  background: var(--gdu-cyan, #63e8ff);
+}
+
+.gdu-shell[data-gdu-mode="galaxy"]::before,
+.gdu-shell[data-gdu-mode="galaxy"]::after {
+  opacity: 0.28;
+  animation: gdu-nebula-drift 10s ease-in-out infinite alternate;
+}
+
+.gdu-shell[data-gdu-mode="focus"]::before,
+.gdu-shell[data-gdu-mode="focus"]::after {
+  display: none;
+}
+
+.gdu-shell[data-gdu-compact="true"] .gdu-layout {
+  display: none;
+}
+
+.gdu-shell[data-gdu-compact="true"] .gdu-footer {
+  border-top: 0;
+}
+
+.gdu-shell[data-gdu-mode="galaxy"] .gdu-planet.is-active i {
+  animation: gdu-planet-pulse 2.4s ease-in-out infinite;
+}
+
+.gdu-shell[data-gdu-motion="off"]::before,
+.gdu-shell[data-gdu-motion="off"]::after,
+.gdu-shell[data-gdu-motion="off"] .gdu-planet i {
+  animation: none !important;
+}
+
+.gdu-shell .gdu-stage {
+  scrollbar-color: rgba(99, 232, 255, 0.5) rgba(5, 11, 22, 0.8);
+  scrollbar-width: thin;
+}
+
+.gdu-shell .gdu-stage:focus-within {
+  border-color: rgba(99, 232, 255, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(99, 232, 255, 0.15);
+}
+
+.gdu-shell .gdu-job {
+  display: -webkit-box;
+  max-height: 74px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+@keyframes gdu-nebula-drift {
+  to {
+    transform: translate3d(32px, 18px, 0) scale(1.12);
+  }
+}
+
+@keyframes gdu-planet-pulse {
+  50% {
+    transform: scale(1.13);
+    box-shadow: 0 0 22px var(--planet-tone);
+  }
+}
+
+@media (max-width: 680px) {
+  .gdu-shell {
+    border-radius: 14px;
+  }
+
+  .gdu-shell .gdu-top-actions {
+    flex-wrap: nowrap;
+    padding-bottom: 3px;
+    overflow-x: auto;
+  }
+
+  .gdu-shell .gdu-top-actions button {
+    flex: 0 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gdu-shell::before,
+  .gdu-shell::after,
+  .gdu-shell .gdu-planet i {
+    animation: none !important;
+  }
+}

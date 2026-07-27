@@ -37,7 +37,7 @@ test("Graphic Design Pro engines are loaded, routed and cached", () => {
   }
   assert.match(worker, /hh-identity-portal-v\d+/);
   assert.match(html, /script\.js\?v=144/);
-  assert.match(`${html}\n${read("performance-loader.js")}`, /graphic-design-studio\.js\?v=6/);
+  assert.match(`${html}\n${read("performance-loader.js")}`, /graphic-design-studio\.js\?v=7/);
   assert.doesNotMatch(html, /graphic-design-nondestructive\.js\?v=1/);
   assert.match(studio, /engineLoads/);
   assert.match(studio, /script\.async = true/);

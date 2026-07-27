@@ -47,6 +47,27 @@ const contentPackSchema = {
   },
   required: ["title", "script", "seo", "thumbnail", "description", "outline", "chapters", "shorts", "calendar"]
 };
+const designPlanSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    summary: { type: "string", description: "Tóm tắt concept và mục tiêu thiết kế có thể triển khai ngay." },
+    layout: { type: "string", description: "Bố cục, phân cấp thị giác, grid và hành vi responsive." },
+    palette: { type: "array", items: { type: "string" }, description: "Danh sách màu HEX hoặc token màu có vai trò rõ ràng." },
+    typography: { type: "string", description: "Cặp font, cỡ chữ, độ đậm, line-height và fallback hỗ trợ tiếng Việt." },
+    components: { type: "array", items: { type: "string" }, description: "Các component hoặc layer cần tạo trong tài liệu thiết kế." },
+    responsive: { type: "string", description: "Constraints và thay đổi ở desktop, tablet và mobile." },
+    accessibility: { type: "array", items: { type: "string" }, description: "Các yêu cầu contrast, focus, alt text và reduced motion." },
+    nextActions: { type: "array", items: { type: "string" }, description: "Các bước tiếp theo theo thứ tự ưu tiên." }
+  },
+  required: ["summary", "layout", "palette", "typography", "components", "responsive", "accessibility", "nextActions"]
+};
+
+function schemaForAction(actionType) {
+  if (actionType === "content-pack") return contentPackSchema;
+  if (actionType === "design-plan") return designPlanSchema;
+  return null;
+}
 
 let cachedGeminiPool = null;
 let cachedGeminiPoolSignature = "";
@@ -873,6 +894,7 @@ function promptFor(moduleId, actionType, input, meta = {}) {
     "url-research": "Dùng URL context và Google Search để tổng hợp các URL, so sánh góc nhìn và đề xuất hướng nội dung nguyên bản.",
     workflow: "Chạy toàn bộ pipeline theo đúng thứ tự các bước đã bật; mỗi phần phải có tiêu đề và đầu ra hoàn chỉnh.",
     "content-pack": "Tạo gói nội dung hoàn chỉnh theo JSON schema. Mỗi trường phải là nội dung thực, không phải hướng dẫn chung.",
+    "design-plan": "Tạo kế hoạch thiết kế theo JSON schema từ brief và cấu trúc tài liệu hiện tại. Đưa ra bố cục, palette, typography, component, responsive, accessibility và bước triển khai cụ thể; không tuyên bố đã tạo asset hoặc layer nếu hệ thống chưa thực hiện.",
     "music-plan": "Lập production brief hoàn chỉnh cho một video nhạc AI dài: concept, mood, BPM, cấu trúc master, biến thể track, hình ảnh chủ đạo, chuyển động loop, tiêu chí kiểm âm, tiêu đề và rủi ro bản quyền. Trả nội dung có nhãn rõ, ngắn gọn và dùng được ngay."
   };
   return [
@@ -966,8 +988,9 @@ async function runInteractionsGemini({
   temperature,
   useGoogleSearch,
   useUrlContext,
-  useStructuredOutput
+  structuredSchema
 }) {
+  const useStructuredOutput = Boolean(structuredSchema);
   const payload = {
     model,
     input: prompt,
@@ -982,7 +1005,7 @@ async function runInteractionsGemini({
       ...(useGoogleSearch ? [{ type: "google_search" }] : [])
     ],
     ...(useStructuredOutput
-      ? { response_format: [{ type: "text", mime_type: "application/json", schema: contentPackSchema }] }
+      ? { response_format: [{ type: "text", mime_type: "application/json", schema: structuredSchema }] }
       : {}),
     stream: false,
     background: false,
@@ -1037,9 +1060,10 @@ async function runGeminiWithKey({
   tools,
   useGoogleSearch,
   useUrlContext,
-  useStructuredOutput,
+  structuredSchema,
   canUseInteractions
 }) {
+  const useStructuredOutput = Boolean(structuredSchema);
   const payload = {
     systemInstruction: { parts: [{ text: instruction }] },
     contents,
@@ -1047,7 +1071,7 @@ async function runGeminiWithKey({
       temperature,
       maxOutputTokens: useStructuredOutput ? 8192 : 2048,
       ...(useStructuredOutput
-        ? { responseMimeType: "application/json", responseSchema: contentPackSchema }
+        ? { responseMimeType: "application/json", responseSchema: structuredSchema }
         : {})
     },
     ...(tools.length ? { tools } : {})
@@ -1074,7 +1098,7 @@ async function runGeminiWithKey({
           temperature,
           useGoogleSearch,
           useUrlContext,
-          useStructuredOutput
+          structuredSchema
         });
       } catch (interactionError) {
         const error = new Error(clean(`${providerMessage} Interactions: ${interactionError.message}`, 300));
@@ -1098,7 +1122,7 @@ async function runGeminiWithKey({
       temperature,
       useGoogleSearch,
       useUrlContext,
-      useStructuredOutput
+      structuredSchema
     });
   }
   if (!output) {
@@ -1127,7 +1151,7 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
     : (allowedModels.has(process.env.GEMINI_MODEL) ? process.env.GEMINI_MODEL : "gemini-3.5-flash");
   const useGoogleSearch = Boolean(meta.useGoogleSearch) || ["research", "url-research"].includes(actionType);
   const useUrlContext = actionType === "url-research";
-  const useStructuredOutput = actionType === "content-pack";
+  const structuredSchema = schemaForAction(actionType);
   const creativity = Number(meta.creativity);
   const temperature = Number.isFinite(creativity)
     ? Math.max(0.2, Math.min(1.2, creativity / 100))
@@ -1170,7 +1194,7 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
         tools,
         useGoogleSearch,
         useUrlContext,
-        useStructuredOutput,
+        structuredSchema,
         canUseInteractions: attachments.length === 0 && history.length === 0
       });
       pool.reportSuccess(apiKey);
@@ -1220,7 +1244,7 @@ async function runOpenAI(moduleId, actionType, input, meta = {}, safetyIdentifie
   const model = normalizeOpenAIModel(meta.model);
   const useWebSearch = Boolean(meta.useGoogleSearch || meta.useWebSearch)
     || ["research", "url-research"].includes(actionType);
-  const useStructuredOutput = actionType === "content-pack";
+  const structuredSchema = schemaForAction(actionType);
   const prompt = promptFor(moduleId, actionType, input, meta);
   const customInstruction = clean(meta.systemPrompt, 2000);
   const instruction = [systemInstruction(moduleId, actionType), customInstruction].filter(Boolean).join("\n\n");
@@ -1241,7 +1265,7 @@ async function runOpenAI(moduleId, actionType, input, meta = {}, safetyIdentifie
         attachments,
         reasoningEffort: meta.reasoningEffort || meta.thinking,
         useWebSearch,
-        structuredSchema: useStructuredOutput ? contentPackSchema : null,
+        structuredSchema,
         safetyIdentifier
       });
       pool.reportSuccess(apiKey);

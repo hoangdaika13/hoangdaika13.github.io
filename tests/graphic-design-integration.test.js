@@ -12,7 +12,7 @@ test("Graphic Design is a first-class application section", () => {
   const client = read("script.js");
   const worker = read("sw.js");
   const registeredAssets = `${html}\n${loader}`;
-  for (const asset of ["graphic-design-studio.css?v=6", "graphic-design-workflow.js?v=2", "graphic-design-animation.js?v=1", "graphic-design-3d.js?v=2", "graphic-design-prototype.js?v=1", "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1", "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=2", "graphic-design-state-machine.js?v=2", "graphic-design-adaptive.js?v=2", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=2", "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-studio.js?v=6"]) {
+  for (const asset of ["graphic-design-universal.css?v=1", "graphic-design-universal.js?v=1", "graphic-design-studio.css?v=6", "graphic-design-workflow.js?v=2", "graphic-design-animation.js?v=1", "graphic-design-3d.js?v=2", "graphic-design-prototype.js?v=1", "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1", "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=2", "graphic-design-state-machine.js?v=2", "graphic-design-adaptive.js?v=2", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=2", "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-studio.js?v=7"]) {
     assert.match(registeredAssets, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
@@ -29,4 +29,14 @@ test("Graphic Design is a first-class application section", () => {
   for (const route of ["vector", "state-machine", "adaptive", "projects", "collaboration", "dev-ai", "composer"]) {
     assert.match(client, new RegExp(`/graphic-design/${route}`));
   }
+});
+
+test("Graphic Design Studio mounts and unmounts the Universal Design engine", () => {
+  const studio = read("graphic-design-studio.js");
+
+  assert.match(studio, /HHGraphicDesignUniversal\?\.mount\?\.\(root, options\)/);
+  assert.match(studio, /HHGraphicDesignUniversal\?\.unmount\?\.\(activeRoot\)/);
+  assert.match(studio, /designDocumentController:\s*universalController/);
+  assert.match(studio, /universalController\?\.dispatch\?\.\("add-asset"/);
+  assert.match(studio, /universalController\?\.dispatch\?\.\("set-brand-token"/);
 });

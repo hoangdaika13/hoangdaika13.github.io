@@ -158,7 +158,7 @@ test("the UI uses real engines, honest realtime capability and working export co
 });
 
 test("studio exposes workflow route and integration version without shell edits", () => {
-  assert.match(studioSource, /const INTEGRATION_VERSION = 6/);
+  assert.match(studioSource, /const INTEGRATION_VERSION = 7/);
   assert.match(studioSource, /id: "workflow"/);
   assert.match(studioSource, /graphic-design-workflow\.js\?v=1/);
   assert.match(studioSource, /data-graphic-design-workflow/);
