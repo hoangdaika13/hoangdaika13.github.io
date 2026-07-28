@@ -95,6 +95,17 @@
     { id: "station", name: "Astral Station", x: -118, z: 90, radius: 27, color: "#ffd36b", weather: "Cực quang nhân tạo", description: "Trạm trung chuyển, chợ và hub xã hội ngoài quỹ đạo." },
     { id: "abyss", name: "Nexus Abyss", x: 124, z: 94, radius: 31, color: "#ff5e9f", weather: "Nhật thực Nexus", description: "Vực cuối nơi không gian, trọng lực và ánh sáng cùng biến dạng." }
   ]);
+  const BIOME_PROFILES = Object.freeze({
+    central: { accent: "#6feeff", fog: 0x102a3f, fogDensity: 0.0056, particle: 0x73eaff, wind: 0.35, precipitation: "neon-rain", actor: "traffic" },
+    aurora: { accent: "#65f1c7", fog: 0x173e45, fogDensity: 0.0082, particle: 0xc5fff4, wind: 0.62, precipitation: "snow", actor: "wisps" },
+    crimson: { accent: "#ff805f", fog: 0x471d18, fogDensity: 0.0094, particle: 0xff8b52, wind: 0.78, precipitation: "embers", actor: "forge-drones" },
+    void: { accent: "#ae78ff", fog: 0x211039, fogDensity: 0.0102, particle: 0xc996ff, wind: 0.22, precipitation: "spores", actor: "void-mantas" },
+    sky: { accent: "#9ad7ff", fog: 0x3d5774, fogDensity: 0.0068, particle: 0xd7f2ff, wind: 1.25, precipitation: "quantum-wind", actor: "sky-rays" },
+    ocean: { accent: "#4de1ff", fog: 0x0c4560, fogDensity: 0.0088, particle: 0x8ff6ff, wind: 0.74, precipitation: "star-rain", actor: "lumen-fish" },
+    station: { accent: "#ffd36b", fog: 0x252738, fogDensity: 0.0048, particle: 0xffe5a1, wind: 0.08, precipitation: "orbital-dust", actor: "shuttles" },
+    abyss: { accent: "#ff5e9f", fog: 0x170516, fogDensity: 0.012, particle: 0xff83bb, wind: 0.18, precipitation: "gravity-shards", actor: "fractures" },
+    dungeon: { accent: "#ff70cf", fog: 0x16051f, fogDensity: 0.014, particle: 0xff8ee1, wind: 0.12, precipitation: "void-static", actor: "fractures" }
+  });
   const FACTIONS = Object.freeze([
     { id: "h-central", name: "H-Central Federation", short: "HCF", color: "#6feeff", description: "Giữ mạng lưới cổng và bảo vệ các thành phố lõi.", perk: "Mở tuyến dịch chuyển và nâng cấp checkpoint." },
     { id: "aurora-keepers", name: "Aurora Keepers", short: "AUR", color: "#65f1c7", description: "Bảo vệ tinh thể và hệ sinh thái Aurora Vale.", perk: "Mở công thức hồi phục và tuyến lượn cực quang." },
@@ -395,6 +406,8 @@
         renderStyle: "realistic",
         rendererMode: "auto",
         visualStyle: "photoreal",
+        vfxLevel: "balanced",
+        livingWorld: true,
         dynamicResolution: true,
         shadows: "high",
         postFx: true,
@@ -575,6 +588,8 @@
     if (!["realistic", "cinematic", "anime"].includes(state.settings.renderStyle)) state.settings.renderStyle = "realistic";
     if (!["auto", "webgpu", "webgl"].includes(state.settings.rendererMode)) state.settings.rendererMode = "auto";
     if (!["photoreal", "hybrid", "performance"].includes(state.settings.visualStyle)) state.settings.visualStyle = "photoreal";
+    if (!["static", "balanced", "cinematic"].includes(state.settings.vfxLevel)) state.settings.vfxLevel = "balanced";
+    state.settings.livingWorld = state.settings.livingWorld !== false;
     state.settings.dynamicResolution = state.settings.dynamicResolution !== false;
     state.settings.weatherDensity = clamp(state.settings.weatherDensity, 0, 100);
     state.settings.cameraShake = clamp(state.settings.cameraShake, 0, 100);
@@ -713,6 +728,14 @@
       this.remotePlayers = new Map();
       this.effects = [];
       this.environmentActors = [];
+      this.livingWorldActors = [];
+      this.zoneFxGroups = new Map();
+      this.footprints = [];
+      this.footprintCursor = 0;
+      this.lastFootprintAt = 0;
+      this.lastFootprintPosition = { x: Number.NaN, z: Number.NaN };
+      this.runtimeFailureCount = 0;
+      this.lastRenderSuccessAt = 0;
       this.streamingGroups = new Map();
       this.puzzleNodes = new Map();
       this.cloudLayers = [];
@@ -795,13 +818,15 @@
           <div class="har-stage" data-har-stage>
             <canvas data-har-world aria-label="Thế giới 3D HH Astral Realms"></canvas>
             <div class="har-postfx" aria-hidden="true"></div>
+            <div class="har-biome-fx" data-har-biome-fx aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="har-cinematic-bars" aria-hidden="true"></div>
             <div class="har-crosshair" aria-hidden="true"></div>
           </div>
 
           <div class="har-topbar">
             <div class="har-brand">
               <div class="har-brand__core" aria-hidden="true">H</div>
-              <div class="har-brand__copy"><strong>HH Astral Realms</strong><span>Photoreal Living World · Visual V6</span></div>
+              <div class="har-brand__copy"><strong>HH Astral Realms</strong><span>Photoreal Living World · Visual V7</span></div>
             </div>
             <div class="har-live-orbit" aria-label="Trạng thái game realtime">
               <div class="har-signal" data-tone="cyan"><small>Khu vực</small><strong data-har-zone>H-Central</strong></div>
@@ -987,6 +1012,8 @@
       if (!constrained) return false;
       this.state.settings.quality = "low";
       this.state.settings.rendererMode = "webgl";
+      this.state.settings.visualStyle = forced ? "performance" : this.state.settings.visualStyle;
+      this.state.settings.vfxLevel = "static";
       this.state.settings.dynamicResolution = true;
       this.state.settings.shadows = "low";
       this.state.settings.postFx = false;
@@ -1019,12 +1046,15 @@
         const compatibilityMode = this.applyCompatibilityProfile({ forced: this.forceCompatibility });
         this.root.dataset.quality = this.state.settings.quality;
         this.root.dataset.visualStyle = this.state.settings.visualStyle;
+        this.root.dataset.vfx = this.state.settings.vfxLevel;
         this.setLoading(12, "Đang kiểm tra trình duyệt và bộ nhớ đồ họa...");
         if (!this.supportsRenderer()) throw new Error("Trình duyệt không hỗ trợ WebGL hoặc WebGPU. Hãy bật tăng tốc phần cứng hoặc dùng trình duyệt mới hơn.");
         this.setLoading(28, compatibilityMode
           ? "Đã bật cấu hình nhẹ cho thiết bị này · đang khởi tạo WebGL..."
           : "Đang chọn WebGPU hoặc WebGL2 phù hợp với thiết bị...");
-        const wantsWebGPU = this.state.settings.rendererMode !== "webgl"
+        // WebGPU remains opt-in. Some Chromium/GPU combinations terminate the
+        // graphics process instead of throwing a recoverable initialization error.
+        const wantsWebGPU = this.state.settings.rendererMode === "webgpu"
           && this.webgpuAvailable
           && this.state.settings.quality !== "low";
         if (wantsWebGPU) {
@@ -1054,6 +1084,9 @@
         this.bindGameEvents();
         this.initRealtime();
         this.setLoading(96, "Đang đồng bộ checkpoint gần nhất...");
+        this.updateCamera(true, 0.016);
+        this.renderer.render(this.scene, this.camera);
+        this.lastRenderSuccessAt = performance.now();
         this.running = true;
         this.paused = false;
         this.root.querySelector("[data-har-start]").hidden = true;
@@ -1065,6 +1098,7 @@
         this.toast(this.savedRecord?.data ? "Đã khôi phục checkpoint gần nhất." : "Hành trình mới bắt đầu tại H-Central.", "success");
         this.syncCloud(false);
       } catch (error) {
+        this.resetGraphicsAfterFailure();
         this.started = false;
         continueButton.disabled = false;
         newButton.disabled = false;
@@ -1073,6 +1107,50 @@
         this.root.querySelector("[data-har-loading-text]")?.classList.add("har-unsupported");
         if (recovery) recovery.hidden = false;
       }
+    }
+
+    resetGraphicsAfterFailure() {
+      if (this.frameHandle) cancelAnimationFrame(this.frameHandle);
+      this.frameHandle = 0;
+      try { this.renderer?.dispose?.(); } catch {}
+      this.renderer = null;
+      this.scene = null;
+      this.camera = null;
+      this.world = null;
+      this.playerMesh = null;
+      this.characterMeshes.clear();
+      this.entities.clear();
+      this.enemies.clear();
+      this.collectibles.clear();
+      this.npcs.clear();
+      this.portals.clear();
+      this.streamingGroups.clear();
+      this.zoneFxGroups.clear();
+      this.livingWorldActors = [];
+      this.footprints = [];
+      Object.values(this.photorealAssets).forEach((texture) => texture?.dispose?.());
+      this.photorealAssets = { panorama: null, characterAtlas: null };
+      this.photorealStatus = "pending";
+    }
+
+    enterRendererRecovery(reason = "Renderer bị gián đoạn.") {
+      if (this.destroyed) return;
+      this.runtimeFailureCount += 1;
+      this.forceCompatibility = true;
+      this.running = false;
+      this.paused = true;
+      this.started = false;
+      this.resetGraphicsAfterFailure();
+      const start = this.root.querySelector("[data-har-start]");
+      const recovery = this.root.querySelector("[data-har-loading-recovery]");
+      const continueButton = this.root.querySelector("[data-har-continue]");
+      const newButton = this.root.querySelector("[data-har-new]");
+      if (start) start.hidden = false;
+      if (recovery) recovery.hidden = false;
+      if (continueButton) continueButton.disabled = false;
+      if (newButton) newButton.disabled = false;
+      this.setLoading(0, `${reason} Hãy chọn “Chạy cấu hình nhẹ” để tự khôi phục.`);
+      this.root.querySelector("[data-har-loading-text]")?.classList.add("har-unsupported");
     }
 
     supportsRenderer() {
@@ -1133,13 +1211,23 @@
       if ("physicallyCorrectLights" in this.renderer) this.renderer.physicallyCorrectLights = true;
       if (this.renderer.shadowMap) {
         this.renderer.shadowMap.enabled = quality !== "low";
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.type = THREE.PCFShadowMap;
         this.renderer.shadowMap.autoUpdate = true;
       }
       this.root.dataset.renderer = this.rendererBackend;
       const rendererLabel = this.root.querySelector("[data-har-renderer]");
       if (rendererLabel) rendererLabel.textContent = this.rendererBackend === "webgpu" ? "WEBGPU · PBR" : "WEBGL2 · PBR";
       this.clock = new THREE.Clock();
+      if (this.rendererBackend === "webgl2") {
+        this.listen(canvas, "webglcontextlost", (event) => {
+          event.preventDefault();
+          this.enterRendererRecovery("Kết nối với GPU đã bị mất.");
+        });
+        this.listen(canvas, "webglcontextrestored", () => {
+          this.forceCompatibility = true;
+          this.toast("GPU đã phục hồi. Game sẽ khởi động bằng cấu hình an toàn.", "success");
+        });
+      }
       this.resize();
     }
 
@@ -1156,7 +1244,10 @@
       }
       this.photorealStatus = "loading";
       const loader = new THREE.TextureLoader();
-      const loadTexture = (url) => new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
+      const loadTexture = (url) => Promise.race([
+        new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject)),
+        new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Quá thời gian tải ${url}`)), 8000))
+      ]);
       const atlasPromise = loadTexture(PHOTOREAL_ASSETS.characterAtlas);
       const panoramaPromise = saveData || lowMemory || this.state.settings.quality === "low"
         ? Promise.resolve(null)
@@ -1296,6 +1387,9 @@
       this.createInstancedNature();
       this.createElementalPuzzles();
       this.createWeatherField();
+      this.createLivingWorldEffects();
+      this.createFootprintPool();
+      this.applyBiomeVisualState(this.currentZone);
     }
 
     createToonGradient() {
@@ -1939,6 +2033,250 @@
       this.scene.add(this.weatherField);
     }
 
+    createLivingWorldEffects() {
+      if (!this.state.settings.livingWorld) return;
+      const THREE = this.THREE;
+      const qualityScale = this.state.settings.quality === "low"
+        ? 0.42
+        : this.state.settings.quality === "medium"
+          ? 0.7
+          : this.state.settings.quality === "cinematic"
+            ? 1.35
+            : 1;
+      const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
+
+      ZONES.forEach((zone, zoneIndex) => {
+        const profile = BIOME_PROFILES[zone.id] || BIOME_PROFILES.central;
+        const group = new THREE.Group();
+        group.name = `LivingBiome:${zone.id}`;
+        group.position.set(zone.x, 0, zone.z);
+        group.userData.zoneId = zone.id;
+        this.world.add(group);
+        this.zoneFxGroups.set(zone.id, group);
+
+        const particleCount = Math.max(10, Math.round((reduced ? 18 : 42) * qualityScale));
+        const positions = new Float32Array(particleCount * 3);
+        for (let index = 0; index < particleCount; index += 1) {
+          const angle = ((index * 137.5 + zoneIndex * 29) * Math.PI) / 180;
+          const radius = 4 + ((index * 17 + zoneIndex * 11) % Math.max(8, Math.round(zone.radius - 4)));
+          positions[index * 3] = Math.cos(angle) * radius;
+          positions[index * 3 + 1] = 1.4 + ((index * 13) % 18) * 0.72;
+          positions[index * 3 + 2] = Math.sin(angle) * radius;
+        }
+        const particleGeometry = new THREE.BufferGeometry();
+        particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        const particleField = new THREE.Points(
+          particleGeometry,
+          new THREE.PointsMaterial({
+            color: profile.particle,
+            size: zone.id === "crimson" || zone.id === "abyss" ? 0.34 : 0.22,
+            transparent: true,
+            opacity: reduced ? 0.2 : 0.48,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+          })
+        );
+        particleField.userData = { livingParticles: true, baseOpacity: reduced ? 0.2 : 0.48, wind: profile.wind };
+        group.add(particleField);
+
+        const actorCount = reduced ? 1 : (this.state.settings.quality === "cinematic" ? 4 : 2);
+        for (let index = 0; index < actorCount; index += 1) {
+          const material = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color(profile.accent).multiplyScalar(0.52),
+            emissive: new THREE.Color(profile.accent),
+            emissiveIntensity: 0.38,
+            roughness: profile.actor === "traffic" || profile.actor === "shuttles" ? 0.22 : 0.52,
+            metalness: profile.actor === "traffic" || profile.actor === "shuttles" || profile.actor === "forge-drones" ? 0.68 : 0.18,
+            clearcoat: 0.42
+          });
+          const geometry = profile.actor === "traffic" || profile.actor === "shuttles"
+            ? new THREE.BoxGeometry(1.25, 0.34, 0.58)
+            : profile.actor === "fractures"
+              ? new THREE.TetrahedronGeometry(0.78, 0)
+              : profile.actor === "forge-drones"
+                ? new THREE.DodecahedronGeometry(0.58, 0)
+                : new THREE.ConeGeometry(0.72, 1.45, 5);
+          const actor = new THREE.Mesh(geometry, material);
+          actor.scale.set(
+            profile.actor === "void-mantas" || profile.actor === "sky-rays" ? 1.8 : 1,
+            profile.actor === "lumen-fish" ? 0.58 : 1,
+            profile.actor === "void-mantas" || profile.actor === "sky-rays" ? 0.34 : 1
+          );
+          const radius = 6 + index * 4.2;
+          const angle = zoneIndex * 0.71 + index * Math.PI;
+          actor.position.set(Math.cos(angle) * radius, 3.4 + index * 1.35, Math.sin(angle) * radius);
+          actor.castShadow = this.state.settings.quality === "cinematic" && index === 0;
+          actor.userData.livingActor = true;
+          group.add(actor);
+          this.livingWorldActors.push({
+            mesh: actor,
+            zoneId: zone.id,
+            radius,
+            angle,
+            speed: (0.08 + index * 0.025) * (index % 2 ? -1 : 1),
+            baseY: actor.position.y,
+            vertical: profile.actor === "fractures" ? 1.1 : 0.38
+          });
+        }
+
+        if (zone.id === "central") {
+          for (let index = 0; index < 5; index += 1) {
+            const panel = new THREE.Mesh(
+              new THREE.PlaneGeometry(2.6, 1.05),
+              new THREE.MeshBasicMaterial({
+                color: index % 2 ? 0xff69cc : 0x6feeff,
+                transparent: true,
+                opacity: 0.24,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+              })
+            );
+            const angle = (index / 5) * Math.PI * 2;
+            panel.position.set(Math.cos(angle) * 17, 4.5 + (index % 2) * 2.2, Math.sin(angle) * 17);
+            panel.lookAt(0, panel.position.y, 0);
+            panel.userData.hologram = true;
+            group.add(panel);
+          }
+        } else if (zone.id === "aurora") {
+          for (let index = 0; index < 3; index += 1) {
+            const ribbon = new THREE.Mesh(
+              new THREE.TorusGeometry(8 + index * 3.2, 0.12 + index * 0.03, 6, 72),
+              new THREE.MeshBasicMaterial({ color: index % 2 ? 0x7ee7ff : 0x71ffc7, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false })
+            );
+            ribbon.rotation.set(Math.PI / 2.5, index * 0.42, index * 0.6);
+            ribbon.position.y = 12 + index * 3.2;
+            ribbon.userData.spin = (index % 2 ? -1 : 1) * 0.045;
+            group.add(ribbon);
+          }
+        } else if (zone.id === "crimson") {
+          for (let index = 0; index < 4; index += 1) {
+            const heat = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.9 + index * 0.28, 1.5 + index * 0.35, 7 + index, 18, 1, true),
+              new THREE.MeshBasicMaterial({ color: 0xff5d32, transparent: true, opacity: 0.055, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })
+            );
+            heat.position.set(Math.cos(index * 1.7) * 11, 4.2, Math.sin(index * 1.7) * 11);
+            heat.userData.heatColumn = true;
+            group.add(heat);
+          }
+        } else if (zone.id === "sky") {
+          for (let index = 0; index < 3; index += 1) {
+            const fall = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.18, 0.5, 13 + index * 3, 10, 1, true),
+              new THREE.MeshBasicMaterial({ color: 0xa9edff, transparent: true, opacity: 0.13, side: THREE.DoubleSide, depthWrite: false })
+            );
+            fall.position.set(-8 + index * 8, -1.5, 3 + index * 2);
+            group.add(fall);
+          }
+        } else if (zone.id === "station" || zone.id === "abyss") {
+          for (let index = 0; index < 3; index += 1) {
+            const orbit = new THREE.Mesh(
+              new THREE.TorusGeometry(7 + index * 3.4, 0.09 + index * 0.025, 8, 80),
+              new THREE.MeshBasicMaterial({ color: profile.particle, transparent: true, opacity: 0.22, depthWrite: false })
+            );
+            orbit.rotation.set(Math.PI / (2.3 + index * 0.25), index * 0.4, index * 0.7);
+            orbit.position.y = 5.2;
+            orbit.userData.spin = (index % 2 ? -1 : 1) * (zone.id === "abyss" ? 0.2 : 0.08);
+            group.add(orbit);
+          }
+        }
+      });
+    }
+
+    createFootprintPool() {
+      if (this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static") return;
+      const THREE = this.THREE;
+      const count = this.state.settings.quality === "cinematic" ? 32 : 18;
+      for (let index = 0; index < count; index += 1) {
+        const footprint = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.2, 0.48),
+          new THREE.MeshBasicMaterial({ color: 0x9fefff, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide })
+        );
+        footprint.rotation.x = -Math.PI / 2;
+        footprint.visible = false;
+        footprint.renderOrder = 2;
+        footprint.userData = { life: 0, maxLife: 3.6 };
+        this.world.add(footprint);
+        this.footprints.push(footprint);
+      }
+    }
+
+    emitFootprint(time) {
+      if (!this.footprints.length || time - this.lastFootprintAt < 145) return;
+      const player = this.state.player;
+      const distance = Math.hypot(player.x - this.lastFootprintPosition.x, player.z - this.lastFootprintPosition.z);
+      if (Number.isFinite(distance) && distance < 0.48) return;
+      const footprint = this.footprints[this.footprintCursor % this.footprints.length];
+      this.footprintCursor += 1;
+      const side = this.footprintCursor % 2 ? -0.14 : 0.14;
+      const cos = Math.cos(player.rotation);
+      const sin = Math.sin(player.rotation);
+      footprint.position.set(player.x + cos * side, 1.095, player.z - sin * side);
+      footprint.rotation.z = -player.rotation;
+      footprint.material.color.set(BIOME_PROFILES[this.currentZone.id]?.particle || 0x9fefff);
+      footprint.material.opacity = 0.38;
+      footprint.userData.life = footprint.userData.maxLife;
+      footprint.visible = true;
+      this.lastFootprintAt = time;
+      this.lastFootprintPosition = { x: player.x, z: player.z };
+    }
+
+    applyBiomeVisualState(zone = this.currentZone) {
+      const profile = BIOME_PROFILES[zone?.id] || BIOME_PROFILES.central;
+      this.root.dataset.biome = zone?.id || "central";
+      this.root.dataset.precipitation = profile.precipitation;
+      this.root.style.setProperty("--har-biome-accent", profile.accent);
+      this.root.style.setProperty("--har-biome-wind", String(profile.wind));
+      if (this.scene?.fog) {
+        this.scene.fog.color.set(profile.fog);
+        this.scene.fog.density = profile.fogDensity;
+      }
+    }
+
+    updateLivingWorld(dt, time) {
+      this.livingWorldActors.forEach((actor) => {
+        actor.angle += dt * actor.speed;
+        actor.mesh.position.x = Math.cos(actor.angle) * actor.radius;
+        actor.mesh.position.z = Math.sin(actor.angle) * actor.radius;
+        actor.mesh.position.y = actor.baseY + Math.sin(time * 0.0013 + actor.radius) * actor.vertical;
+        actor.mesh.rotation.y = -actor.angle + Math.PI / 2;
+        actor.mesh.rotation.z += dt * 0.18;
+      });
+      this.zoneFxGroups.forEach((group) => {
+        group.children.forEach((object) => {
+          if (object.userData?.livingParticles) {
+            object.rotation.y += dt * 0.012 * object.userData.wind;
+            object.material.opacity = object.userData.baseOpacity * (0.78 + Math.sin(time * 0.0015 + group.position.x) * 0.22);
+          }
+          if (object.userData?.hologram) {
+            object.material.opacity = 0.17 + Math.sin(time * 0.003 + object.position.x) * 0.08;
+          }
+          if (object.userData?.heatColumn) {
+            object.scale.y = 0.92 + Math.sin(time * 0.004 + object.position.x) * 0.12;
+            object.material.opacity = 0.04 + Math.abs(Math.sin(time * 0.002 + object.position.z)) * 0.05;
+          }
+        });
+      });
+      this.npcs.forEach((npc, index) => {
+        const schedule = npc.userData.schedule;
+        if (!schedule) return;
+        const angle = time * schedule.speed + schedule.phase;
+        const targetX = schedule.homeX + Math.cos(angle) * schedule.radius;
+        const targetZ = schedule.homeZ + Math.sin(angle) * schedule.radius;
+        npc.position.x += (targetX - npc.position.x) * clamp(dt * 0.7, 0, 1);
+        npc.position.z += (targetZ - npc.position.z) * clamp(dt * 0.7, 0, 1);
+        npc.rotation.y = Math.atan2(targetX - npc.position.x, targetZ - npc.position.z);
+        const sprite = npc.userData.photoSprite;
+        if (sprite) sprite.position.y = 0.08 + Math.sin(time * 0.002 + index) * 0.025;
+      });
+      this.footprints.forEach((footprint) => {
+        if (!footprint.visible) return;
+        footprint.userData.life -= dt;
+        footprint.material.opacity = 0.38 * clamp(footprint.userData.life / footprint.userData.maxLife, 0, 1);
+        if (footprint.userData.life <= 0) footprint.visible = false;
+      });
+    }
+
     addWorldLabel(text, x, y, z, color = "#ffffff", scale = 1) {
       const THREE = this.THREE;
       const canvas = document.createElement("canvas");
@@ -2025,7 +2363,19 @@
         ? this.createPhotorealCharacterModel(npcProfile, 0.88)
         : this.createCharacterMesh({ body: color, accent: "#f5fbff", scale: 0.88, label: name });
       mesh.position.set(x, 1.08, z);
-      mesh.userData = { ...mesh.userData, type: "npc", id, name };
+      mesh.userData = {
+        ...mesh.userData,
+        type: "npc",
+        id,
+        name,
+        schedule: {
+          homeX: x,
+          homeZ: z,
+          radius: id === "luma" ? 1.35 : 1.8,
+          phase: id === "luma" ? 0 : Math.PI,
+          speed: id === "luma" ? 0.00011 : 0.000085
+        }
+      };
       this.world.add(mesh);
       this.npcs.set(id, mesh);
       return mesh;
@@ -2081,7 +2431,7 @@
       const surface = (color, options = {}) => {
         if (!realistic) return toon(color, options);
         const Physical = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
-        const material = new Physical({
+        const parameters = {
           color,
           roughness: options.roughness ?? 0.44,
           metalness: options.metalness ?? 0.08,
@@ -2092,9 +2442,10 @@
           emissive: options.emissive || 0x000000,
           emissiveIntensity: options.emissiveIntensity || 0,
           transparent: Boolean(options.transparent),
-          opacity: options.opacity ?? 1,
-          side: options.side
-        });
+          opacity: options.opacity ?? 1
+        };
+        if (options.side !== undefined) parameters.side = options.side;
+        const material = new Physical(parameters);
         material.userData.astralSurface = true;
         return material;
       };
@@ -2515,7 +2866,7 @@
       const sprite = new this.THREE.Sprite(material);
       sprite.name = `PhotorealHuman:${profile.id}`;
       sprite.center.set(0.5, 0.08);
-      sprite.scale.set(profile.id === "sol" ? 2.15 : 1.92, profile.id === "sol" ? 3.38 : 3.25, 1);
+      sprite.scale.set(profile.id === "sol" ? 3.7 : 3.35, profile.id === "sol" ? 5.9 : 5.65, 1);
       sprite.position.set(0, 0.08, 0);
       sprite.renderOrder = 3;
       sprite.userData.baseScale = { x: sprite.scale.x, y: sprite.scale.y };
@@ -3000,7 +3351,7 @@
       const armStride = moving ? -stride * 0.82 : Math.sin(time * 0.0017) * 0.035;
       const photoSprite = this.playerMesh?.userData?.photoSprite;
       if (photoSprite) {
-        const baseScale = photoSprite.userData.baseScale || { x: 1.92, y: 3.25 };
+        const baseScale = photoSprite.userData.baseScale || { x: 3.35, y: 5.65 };
         const gait = moving ? Math.abs(Math.sin(time * speed)) : Math.sin(time * 0.0014) * 0.5 + 0.5;
         photoSprite.position.y = 0.08 + gait * (moving ? 0.055 : 0.018);
         photoSprite.scale.set(baseScale.x * (1 + gait * 0.008), baseScale.y * (1 - gait * 0.004), 1);
@@ -3083,32 +3434,38 @@
 
     frame(time) {
       if (this.destroyed) return;
-      const dt = Math.min(0.05, Math.max(0.001, (time - this.lastFrameAt) / 1000));
-      this.lastFrameAt = time;
+      try {
+        const dt = Math.min(0.05, Math.max(0.001, (time - this.lastFrameAt) / 1000));
+        this.lastFrameAt = time;
 
-      if (this.visible && this.renderer && this.scene && this.camera) {
-        if (this.running && !this.paused && !this.menuPaused && time >= this.hitStopUntil) {
-          this.pollGamepad();
-          this.updatePlayer(dt, time);
-          if (!this.authoritative) this.updateEnemies(dt, time);
-          this.updateWorld(dt, time);
-          this.updateEffects(dt);
-          this.updateNearby();
-          this.sendRealtimeInput(time);
-          this.state.playTime += dt;
-          this.state.worldTime = (this.state.worldTime + dt * this.worldHoursPerSecond) % 24;
+        if (this.visible && this.renderer && this.scene && this.camera) {
+          if (this.running && !this.paused && !this.menuPaused && time >= this.hitStopUntil) {
+            this.pollGamepad();
+            this.updatePlayer(dt, time);
+            if (!this.authoritative) this.updateEnemies(dt, time);
+            this.updateWorld(dt, time);
+            this.updateEffects(dt);
+            this.updateNearby();
+            this.sendRealtimeInput(time);
+            this.state.playTime += dt;
+            this.state.worldTime = (this.state.worldTime + dt * this.worldHoursPerSecond) % 24;
+          }
+          this.updateCamera(false, dt);
+          this.renderer.render(this.scene, this.camera);
+          this.lastRenderSuccessAt = time;
+          this.trackFps(time);
+          if (time - this.lastUiAt > 120) {
+            this.lastUiAt = time;
+            this.updateUi(false);
+          }
+          if (time - this.lastMinimapAt > 180) {
+            this.lastMinimapAt = time;
+            this.renderMinimap();
+          }
         }
-        this.updateCamera(false, dt);
-        this.renderer.render(this.scene, this.camera);
-        this.trackFps(time);
-        if (time - this.lastUiAt > 120) {
-          this.lastUiAt = time;
-          this.updateUi(false);
-        }
-        if (time - this.lastMinimapAt > 180) {
-          this.lastMinimapAt = time;
-          this.renderMinimap();
-        }
+      } catch (error) {
+        this.enterRendererRecovery(error?.message || "Renderer không thể vẽ khung hình.");
+        return;
       }
       this.frameHandle = requestAnimationFrame((next) => this.frame(next));
     }
@@ -3237,6 +3594,7 @@
         mesh.rotation.y = player.rotation;
       });
       this.updateCharacterAnimation(dt, time, input, sprinting);
+      if (input.active && this.isGrounded && !this.isSwimming && !this.isClimbing) this.emitFootprint(time);
       this.root.classList.toggle("is-swimming", this.isSwimming);
       this.root.classList.toggle("is-climbing", this.isClimbing);
       this.playerShadow.position.set(player.x, 1.08, player.z);
@@ -3254,6 +3612,7 @@
           this.saveProgress(`Khám phá ${zone.name}`);
         }
         this.toast(`${zone.name} · ${zone.weather}`);
+        this.applyBiomeVisualState(zone);
         this.updateWeatherAppearance();
       }
       this.trainingActive = this.trainingSession && Math.hypot(player.x - 17, player.z + 10) < 7;
@@ -3317,6 +3676,9 @@
         this.cinematicTarget = { object: enemy, until: performance.now() + 1250, phase: nextPhase };
         this.cameraShake = Math.max(this.cameraShake, 0.9);
         this.spawnPulse(enemy.position.x, 1.2, enemy.position.z, nextPhase === 2 ? "#ffc565" : "#ff507e", 1.1, 8.5);
+        this.spawnElementBurst(enemy.position.x, enemy.position.y + 1.5, enemy.position.z, nextPhase === 2 ? "solar" : "void", 2.4);
+        this.root.classList.add("is-world-event");
+        root.setTimeout(() => this.root?.classList.remove("is-world-event"), 900);
         this.toast(`Nexus Warden · Phase ${nextPhase}${nextPhase === 2 ? " · Weak Point mở" : nextPhase === 3 ? " · Void Overdrive" : ""}`, "error");
       }
 
@@ -3361,6 +3723,7 @@
       this.portals.forEach((portal) => {
         portal.rotation.y += dt * 0.08;
       });
+      this.updateLivingWorld(dt, time);
 
       const dayAmount = (Math.sin(((this.state.worldTime - 6) / 24) * Math.PI * 2) + 1) / 2;
       const celestialAngle = (this.state.worldTime / 24) * Math.PI * 2 - Math.PI / 2;
@@ -3371,8 +3734,16 @@
         Math.max(8, Math.sin(celestialAngle) * 68),
         Math.sin(celestialAngle * 0.7) * 38
       );
-      this.scene.background.setRGB(0.018 + dayAmount * 0.035, 0.026 + dayAmount * 0.04, 0.07 + dayAmount * 0.08);
-      this.scene.fog.color.copy(this.scene.background);
+      const dayColor = new this.THREE.Color().setRGB(
+        0.018 + dayAmount * 0.035,
+        0.026 + dayAmount * 0.04,
+        0.07 + dayAmount * 0.08
+      );
+      if (this.scene.background?.isColor) this.scene.background.copy(dayColor);
+      const biomeProfile = BIOME_PROFILES[this.currentZone.id] || BIOME_PROFILES.central;
+      const biomeFog = new this.THREE.Color(biomeProfile.fog).lerp(dayColor, 0.24 + dayAmount * 0.16);
+      this.scene.fog.color.lerp(biomeFog, clamp(dt * 2.6, 0, 1));
+      this.scene.fog.density += (biomeProfile.fogDensity - this.scene.fog.density) * clamp(dt * 1.8, 0, 1);
       this.hemisphereLight.intensity = 0.85 + dayAmount * 1.2;
       this.sunLight.intensity = 0.45 + dayAmount * 2.15;
       this.hLight.intensity = 35 + (1 - dayAmount) * 25;
@@ -3436,6 +3807,12 @@
         const distance = Math.hypot(player.x - zone.x, player.z - zone.z);
         group.visible = distance <= visibleRadius || zoneId === this.currentZone.id;
       });
+      this.zoneFxGroups.forEach((group, zoneId) => {
+        const zone = ZONES.find((entry) => entry.id === zoneId);
+        if (!zone) return;
+        const distance = Math.hypot(player.x - zone.x, player.z - zone.z);
+        group.visible = distance <= visibleRadius * 1.08 || zoneId === this.currentZone.id;
+      });
       const shadowRadius = quality === "cinematic" ? 58 : quality === "high" ? 42 : 24;
       this.world.traverse((object) => {
         if (!object.isMesh || object === this.playerMesh || object.userData?.boss) return;
@@ -3447,6 +3824,7 @@
 
     updateWeatherAppearance() {
       if (!this.weatherField) return;
+      this.applyBiomeVisualState(this.currentZone);
       const colors = {
         central: 0x72eaff,
         aurora: 0x9effe9,
@@ -3571,8 +3949,10 @@
       const cinematic = this.cinematicTarget;
       if (!cinematic || performance.now() >= cinematic.until || !cinematic.object) {
         this.cinematicTarget = null;
+        this.root.classList.remove("is-cinematic");
         return desired;
       }
+      this.root.classList.add("is-cinematic");
       const targetPosition = cinematic.object.getWorldPosition
         ? cinematic.object.getWorldPosition(new this.THREE.Vector3())
         : cinematic.object.position.clone();
@@ -3693,6 +4073,13 @@
           : 155;
       this.swingAnimation(kind);
       this.spawnPulse(this.state.player.x, this.state.player.y + 1.2, this.state.player.z, ELEMENTS[element].color, kind === "ultimate" ? 1.2 : 0.42, kind === "ultimate" ? 8 : 3.2);
+      this.spawnElementBurst(
+        this.state.player.x,
+        this.state.player.y + 1.1,
+        this.state.player.z,
+        element,
+        kind === "ultimate" ? 2.2 : kind === "skill" ? 1.35 : 0.72
+      );
       this.sound(kind);
       this.cameraShake = Math.max(this.cameraShake, kind === "ultimate" ? 0.95 : kind === "skill" ? 0.42 : 0.18);
       if (kind === "ultimate") this.cinematicTarget = { object: target || this.playerMesh, until: now + 780, phase: 0 };
@@ -3771,6 +4158,7 @@
       this.state.stats.highestHit = Math.max(this.state.stats.highestHit, dealt);
       this.state.player.ultimate = clamp(this.state.player.ultimate + (kind === "attack" ? 8 : 15), 0, 100);
       this.spawnHitEffect(target.position, ELEMENTS[element].color);
+      this.spawnElementBurst(target.position.x, target.position.y + 1.1, target.position.z, element, kind === "ultimate" ? 2 : 1);
       if (!data.health) this.defeatEnemy(target);
     }
 
@@ -3848,6 +4236,45 @@
       mesh.lookAt(this.camera.position);
       this.scene.add(mesh);
       this.effects.push({ mesh, life: 0.32, maxLife: 0.32, grow: 5, opacity: 0.9 });
+    }
+
+    spawnElementBurst(x, y, z, element = "plasma", intensity = 1) {
+      if (!this.THREE || this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static") return;
+      const THREE = this.THREE;
+      const profile = {
+        plasma: { color: 0xff68c9, spread: 1.25, vertical: 1.3 },
+        cryo: { color: 0x8ee8ff, spread: 0.92, vertical: 1.65 },
+        void: { color: 0xb77aff, spread: 1.5, vertical: 0.9 },
+        nature: { color: 0x7cf2a8, spread: 1.15, vertical: 1.8 },
+        quantum: { color: 0x64efff, spread: 1.7, vertical: 1.15 },
+        solar: { color: 0xffd36b, spread: 1.34, vertical: 1.48 }
+      }[element] || { color: 0xffffff, spread: 1, vertical: 1 };
+      const cinematicMultiplier = this.state.settings.vfxLevel === "cinematic" ? 1.55 : 1;
+      const count = Math.max(8, Math.round(18 * intensity * cinematicMultiplier));
+      const positions = new Float32Array(count * 3);
+      for (let index = 0; index < count; index += 1) {
+        const angle = (index / count) * Math.PI * 2 + Math.random() * 0.36;
+        const radius = (0.22 + Math.random() * profile.spread) * intensity;
+        positions[index * 3] = Math.cos(angle) * radius;
+        positions[index * 3 + 1] = (Math.random() - 0.2) * profile.vertical * intensity;
+        positions[index * 3 + 2] = Math.sin(angle) * radius;
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const mesh = new THREE.Points(
+        geometry,
+        new THREE.PointsMaterial({
+          color: profile.color,
+          size: element === "cryo" ? 0.16 : element === "solar" ? 0.24 : 0.2,
+          transparent: true,
+          opacity: 0.9,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      mesh.position.set(x, y, z);
+      this.scene.add(mesh);
+      this.effects.push({ mesh, life: 0.48 + intensity * 0.12, maxLife: 0.48 + intensity * 0.12, grow: 0.9 + intensity * 0.35, opacity: 0.9 });
     }
 
     spawnPulse(x, y, z, color, life = 0.5, size = 3) {
@@ -4947,9 +5374,11 @@
         <div class="har-section"><h3>Đồ họa và điều khiển</h3><p>Chế độ Auto tự giảm độ phân giải, sao và thời tiết nếu FPS thấp.</p>
           <div class="har-form-row">
             <label class="har-field">Chất lượng<select data-setting="quality"><option value="auto">Tự động theo FPS</option><option value="low">Tiết kiệm</option><option value="medium">Vừa</option><option value="high">Cao</option><option value="cinematic">Điện ảnh</option></select></label>
-            <label class="har-field">Renderer<select data-setting="rendererMode"><option value="auto">Auto · WebGPU/WebGL2</option><option value="webgpu">Ưu tiên WebGPU</option><option value="webgl">WebGL2 ổn định</option></select></label>
+            <label class="har-field">Renderer<select data-setting="rendererMode"><option value="auto">Auto ổn định · WebGL2</option><option value="webgpu">WebGPU thử nghiệm</option><option value="webgl">WebGL2 bắt buộc</option></select></label>
             <label class="har-field">Model hiển thị<select data-setting="visualStyle"><option value="photoreal">Người thật · Cảnh thật</option><option value="hybrid">PBR 3D nhẹ · tùy biến</option><option value="performance">Toon hiệu năng</option></select></label>
             <label class="har-field">Kết xuất 3D<select data-setting="renderStyle"><option value="realistic">Realistic PBR</option><option value="cinematic">Cinematic PBR</option><option value="anime">Anime Toon</option></select></label>
+            <label class="har-field">Mức VFX<select data-setting="vfxLevel"><option value="static">Tĩnh · nhẹ nhất</option><option value="balanced">Cân bằng</option><option value="cinematic">Điện ảnh</option></select></label>
+            <label class="har-field">Thế giới sống<select data-setting="livingWorld"><option value="true">Bật NPC, sinh vật và giao thông</option><option value="false">Tắt để tăng FPS</option></select></label>
             <label class="har-field">Dynamic resolution<select data-setting="dynamicResolution"><option value="true">Bật theo FPS</option><option value="false">Khóa độ phân giải</option></select></label>
             <label class="har-field">Âm lượng<input type="range" min="0" max="100" value="${this.state.settings.volume}" data-setting="volume"></label>
             <label class="har-field">Độ nhạy camera<input type="range" min="10" max="100" value="${this.state.settings.cameraSensitivity}" data-setting="cameraSensitivity"></label>
@@ -5042,7 +5471,7 @@
         } else if (event.target.matches("[data-setting]")) {
           const key = event.target.dataset.setting;
           let value = event.target.value;
-          if (["reduceEffects", "dynamicResolution", "postFx"].includes(key)) value = value === "true";
+          if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld"].includes(key)) value = value === "true";
           if (["volume", "cameraSensitivity", "cameraShake", "weatherDensity"].includes(key)) value = Number(value);
           this.state.settings[key] = value;
           if (key === "quality") {
@@ -5054,6 +5483,11 @@
           if (key === "rendererMode") this.toast("Renderer sẽ áp dụng ở lần mở game kế tiếp.");
           if (key === "renderStyle") this.refreshCharacterMaterials();
           if (key === "visualStyle") this.toast("Phong cách nhân vật và cảnh quan sẽ áp dụng ở lần mở game kế tiếp.");
+          if (key === "vfxLevel") {
+            this.root.dataset.vfx = value;
+            this.toast("Mức hiệu ứng đã được cập nhật.", "success");
+          }
+          if (key === "livingWorld") this.toast("Thế giới sống sẽ áp dụng ở lần mở game kế tiếp.");
           if (key === "dynamicResolution") this.dynamicResolution = value ? this.renderScale : 1;
           if (key === "volume" && this.audioMaster) this.audioMaster.gain.value = value / 100 * 0.15;
           this.saveProgress("Thay đổi thiết lập");
@@ -5069,6 +5503,8 @@
       setSelect('[data-setting="rendererMode"]', this.state.settings.rendererMode);
       setSelect('[data-setting="renderStyle"]', this.state.settings.renderStyle);
       setSelect('[data-setting="visualStyle"]', this.state.settings.visualStyle);
+      setSelect('[data-setting="vfxLevel"]', this.state.settings.vfxLevel);
+      setSelect('[data-setting="livingWorld"]', this.state.settings.livingWorld);
       setSelect('[data-setting="dynamicResolution"]', this.state.settings.dynamicResolution);
       setSelect('[data-setting="reduceEffects"]', this.state.settings.reduceEffects);
     }
@@ -6013,7 +6449,18 @@
         fps: this.fps,
         renderer: this.renderer ? this.rendererBackend.toUpperCase() : "not-started",
         visualStyle: this.state.settings.visualStyle,
+        vfxLevel: this.state.settings.vfxLevel,
         photorealAssets: this.photorealStatus,
+        livingWorld: {
+          enabled: this.state.settings.livingWorld,
+          actors: this.livingWorldActors.length,
+          biome: this.currentZone?.id || "central",
+          footprints: this.footprints.filter((footprint) => footprint.visible).length
+        },
+        rendererHealth: {
+          failures: this.runtimeFailureCount,
+          lastFrameAt: this.lastRenderSuccessAt
+        },
         authoritative: this.authoritative,
         roomCode: this.state.party.roomCode,
         saveVersion: this.savedRecord?.version || 0,

@@ -38,7 +38,7 @@ test("visual V3 exposes adaptive modes and character portraits", () => {
   assert.match(source, /Người thật · Cảnh thật/);
   assert.match(source, /PBR 3D nhẹ/);
   assert.match(source, /Toon hiệu năng/);
-  assert.match(css, /Astral Realms Visual V6/);
+  assert.match(css, /Astral Realms Visual V7/);
   assert.match(css, /har-team-portrait/);
   assert.match(css, /har-character-card__avatar > i/);
   assert.match(css, /prefers-reduced-motion/);
@@ -47,7 +47,7 @@ test("visual V3 exposes adaptive modes and character portraits", () => {
 test("runtime and offline cache request the V3 bundle", () => {
   const loader = read("performance-loader.js");
   const serviceWorker = read("sw.js");
-  for (const token of ["astral-realms.css?v=6", "astral-realms.js?v=6"]) {
+  for (const token of ["astral-realms.css?v=7", "astral-realms.js?v=7"]) {
     assert.match(loader, new RegExp(token.replace(/[.?]/g, "\\$&")));
     assert.match(serviceWorker, new RegExp(token.replace(/[.?]/g, "\\$&")));
   }
