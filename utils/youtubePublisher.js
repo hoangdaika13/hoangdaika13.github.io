@@ -466,10 +466,10 @@ module.exports = async function handler(req, res) {
     const states = db.collection("youtubeOauthStates");
     const uploads = db.collection("youtubeUploads");
     await Promise.all([
-      connections.createIndex({ userId: 1, channelId: 1 }, { unique: true, sparse: true, name: "youtube_owner_channel_unique" }),
-      connections.createIndex({ userId: 1, active: 1, updatedAt: -1 }, { name: "youtube_owner_active" }),
-      uploads.createIndex({ userId: 1, channelId: 1, createdAt: -1 }, { name: "youtube_upload_owner_channel" }),
-      states.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, name: "youtube_oauth_state_ttl" })
+      connections.createIndex({ userId: 1, channelId: 1 }, { unique: true, sparse: true }),
+      connections.createIndex({ userId: 1, active: 1, updatedAt: -1 }),
+      uploads.createIndex({ userId: 1, channelId: 1, createdAt: -1 }),
+      states.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
     ]);
 
     if (route === "oauth/callback" && req.method === "GET") {
