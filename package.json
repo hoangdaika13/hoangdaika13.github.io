@@ -11,7 +11,7 @@
     "test:security": "node --test tests/security-*.test.js",
     "test:english": "node --test tests/english-learning.test.js",
     "test:communication": "node --test tests/communication-*.test.js",
-    "test:youtube-publisher": "node --test tests/youtube-publisher-contract.test.js",
+    "test:youtube-publisher": "node --test tests/youtube-publisher-contract.test.js tests/youtube-creator-galaxy.test.js",
     "test:music-galaxy": "node --test tests/music-galaxy-contract.test.js tests/music-production-suite-integration.test.js tests/music-ai-studio-contract.test.js",
     "test:learning": "node --test tests/learning-*.test.js",
     "test:games": "node --test tests/game-*.test.js tests/astra-universe-expansion.test.js tests/game-entertainment-integration.test.js",

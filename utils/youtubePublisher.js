@@ -1,6 +1,7 @@
 const crypto = require("node:crypto");
 const { ObjectId } = require("mongodb");
 const { clean, currentUser, enforceRateLimit, withApi } = require("./platform");
+const { quotaStatus } = require("../services/apiGateway");
 
 const YOUTUBE_ORIGIN = "https://www.googleapis.com";
 const OAUTH_ORIGIN = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -10,7 +11,8 @@ const SCOPES = [
   "email",
   "profile",
   "https://www.googleapis.com/auth/youtube.upload",
-  "https://www.googleapis.com/auth/youtube.force-ssl"
+  "https://www.googleapis.com/auth/youtube.force-ssl",
+  "https://www.googleapis.com/auth/yt-analytics.readonly"
 ];
 const VIDEO_MIME = new Set(["video/mp4", "video/webm", "video/quicktime", "video/x-matroska", "application/octet-stream"]);
 const IMAGE_MIME = new Set(["image/jpeg", "image/png"]);
@@ -140,13 +142,194 @@ function publicChannel(connection) {
 }
 
 function publicConnection(connection, allConnections = []) {
+  const scopes = new Set(String(connection?.scopes || "").split(/\s+/).filter(Boolean));
   return {
     connected: Boolean(connection),
     channel: publicChannel(connection),
     channels: allConnections.map(publicChannel),
     connectedAt: connection?.connectedAt || null,
-    updatedAt: connection?.updatedAt || null
+    updatedAt: connection?.updatedAt || null,
+    permissions: {
+      read: Boolean(connection),
+      upload: scopes.has("https://www.googleapis.com/auth/youtube.upload"),
+      manage: scopes.has("https://www.googleapis.com/auth/youtube.force-ssl"),
+      analytics: scopes.has("https://www.googleapis.com/auth/yt-analytics.readonly")
+    }
   };
+}
+
+function safeReturnHash(value) {
+  const route = clean(value, 220);
+  return /^#\/(?:davinci-resolve\/youtube|music-ai\/youtube-publisher)(?:[/?#].*)?$/.test(route)
+    ? route
+    : "#/davinci-resolve/youtube";
+}
+
+function youtubeHeaders(accessToken, json = false) {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    ...(json ? { "Content-Type": "application/json" } : {})
+  };
+}
+
+function queryUrl(path, params = {}) {
+  const url = new URL(path, YOUTUBE_ORIGIN);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
+  });
+  return url.toString();
+}
+
+async function youtubeJson(accessToken, path, params = {}, options = {}) {
+  return googleJson(queryUrl(path, params), {
+    ...options,
+    headers: {
+      ...youtubeHeaders(accessToken, Boolean(options.body)),
+      ...(options.headers || {})
+    }
+  });
+}
+
+async function analyticsJson(accessToken, params = {}) {
+  const url = new URL("https://youtubeanalytics.googleapis.com/v2/reports");
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
+  });
+  return googleJson(url.toString(), { headers: youtubeHeaders(accessToken) });
+}
+
+function isoDay(value) {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function normalizedVideo(item) {
+  return {
+    id: clean(item?.id, 40),
+    title: clean(item?.snippet?.title, 160),
+    description: clean(item?.snippet?.description, 1000),
+    publishedAt: item?.snippet?.publishedAt || null,
+    scheduledAt: item?.status?.publishAt || null,
+    privacyStatus: clean(item?.status?.privacyStatus, 24),
+    uploadStatus: clean(item?.status?.uploadStatus, 30),
+    processingStatus: clean(item?.processingDetails?.processingStatus, 30),
+    thumbnail: clean(item?.snippet?.thumbnails?.medium?.url || item?.snippet?.thumbnails?.default?.url, 800),
+    views: Number(item?.statistics?.viewCount || 0),
+    likes: Number(item?.statistics?.likeCount || 0),
+    comments: Number(item?.statistics?.commentCount || 0)
+  };
+}
+
+async function recentVideos(accessToken) {
+  const channels = await youtubeJson(accessToken, "/youtube/v3/channels", {
+    part: "contentDetails",
+    mine: "true"
+  });
+  const uploadsId = channels.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+  if (!uploadsId) return [];
+  const playlist = await youtubeJson(accessToken, "/youtube/v3/playlistItems", {
+    part: "contentDetails",
+    playlistId: uploadsId,
+    maxResults: 12
+  });
+  const ids = (playlist.items || []).map((item) => item.contentDetails?.videoId).filter(Boolean);
+  if (!ids.length) return [];
+  const videos = await youtubeJson(accessToken, "/youtube/v3/videos", {
+    part: "snippet,status,statistics,processingDetails",
+    id: ids.join(",")
+  });
+  return (videos.items || []).map(normalizedVideo);
+}
+
+function normalizedComment(item) {
+  const top = item?.snippet?.topLevelComment || item;
+  const snippet = top?.snippet || {};
+  return {
+    id: clean(top?.id || item?.id, 120),
+    threadId: clean(item?.id, 120),
+    videoId: clean(snippet.videoId, 40),
+    author: clean(snippet.authorDisplayName, 120),
+    avatar: clean(snippet.authorProfileImageUrl, 800),
+    text: clean(snippet.textDisplay || snippet.textOriginal, 1600),
+    publishedAt: snippet.publishedAt || null,
+    updatedAt: snippet.updatedAt || null,
+    likeCount: Number(snippet.likeCount || 0),
+    replyCount: Number(item?.snippet?.totalReplyCount || 0),
+    moderationStatus: clean(snippet.moderationStatus || "published", 40)
+  };
+}
+
+async function recentComments(accessToken, channelId) {
+  const data = await youtubeJson(accessToken, "/youtube/v3/commentThreads", {
+    part: "snippet",
+    allThreadsRelatedToChannelId: channelId,
+    order: "time",
+    maxResults: 30,
+    textFormat: "plainText"
+  });
+  return (data.items || []).map(normalizedComment);
+}
+
+function normalizedBroadcast(item) {
+  return {
+    id: clean(item?.id, 120),
+    title: clean(item?.snippet?.title, 160),
+    description: clean(item?.snippet?.description, 1000),
+    scheduledStartTime: item?.snippet?.scheduledStartTime || null,
+    actualStartTime: item?.snippet?.actualStartTime || null,
+    actualEndTime: item?.snippet?.actualEndTime || null,
+    lifeCycleStatus: clean(item?.status?.lifeCycleStatus, 40),
+    privacyStatus: clean(item?.status?.privacyStatus, 24),
+    recordingStatus: clean(item?.status?.recordingStatus, 40),
+    liveChatId: clean(item?.snippet?.liveChatId, 120)
+  };
+}
+
+async function broadcasts(accessToken) {
+  const data = await youtubeJson(accessToken, "/youtube/v3/liveBroadcasts", {
+    part: "id,snippet,status",
+    broadcastStatus: "all",
+    mine: "true",
+    maxResults: 20
+  });
+  return (data.items || []).map(normalizedBroadcast);
+}
+
+function analyticsRows(data) {
+  const headers = (data.columnHeaders || []).map((item) => item.name);
+  return (data.rows || []).map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index]])));
+}
+
+async function channelAnalytics(accessToken, options = {}) {
+  const endDate = options.endDate || isoDay(Date.now() - 24 * 60 * 60 * 1000);
+  const startDate = options.startDate || isoDay(Date.now() - 28 * 24 * 60 * 60 * 1000);
+  const query = {
+    ids: "channel==MINE",
+    startDate,
+    endDate,
+    metrics: "views,estimatedMinutesWatched,averageViewDuration,subscribersGained,subscribersLost",
+    ...(options.videoId
+      ? {
+          filters: `video==${clean(options.videoId, 40)}`,
+          metrics: "views,estimatedMinutesWatched,averageViewDuration,likes,comments"
+        }
+      : {})
+  };
+  const [trendData, totalData] = await Promise.all([
+    analyticsJson(accessToken, { ...query, dimensions: "day", sort: "day" }),
+    analyticsJson(accessToken, query)
+  ]);
+  const rows = analyticsRows(trendData);
+  const totals = analyticsRows(totalData)[0] || {};
+  return { startDate, endDate, rows, totals };
+}
+
+async function settledResult(work, fallback, warnings, label) {
+  try {
+    return await work();
+  } catch (error) {
+    warnings.push({ source: label, code: clean(error.code, 80), message: clean(error.message, 220) });
+    return fallback;
+  }
 }
 
 async function channelBundle(accessToken) {
@@ -271,7 +454,8 @@ module.exports = async function handler(req, res) {
       const stateHash = crypto.createHash("sha256").update(rawState).digest("hex");
       const state = await states.findOne({ stateHash, expiresAt: { $gt: new Date() } });
       const frontend = safeFrontend(state?.returnTo);
-      if (!state || !req.query.code) return res.redirect(`${frontend}/?youtubeError=${encodeURIComponent("Phiên kết nối YouTube đã hết hạn.")}#/music-ai/youtube-publisher`);
+      const returnHash = safeReturnHash(state?.returnHash);
+      if (!state || !req.query.code) return res.redirect(`${frontend}/?youtubeError=${encodeURIComponent("Phiên kết nối YouTube đã hết hạn.")}${returnHash}`);
       await states.deleteOne({ _id: state._id });
       try {
         const tokenResponse = await fetch(TOKEN_ENDPOINT, {
@@ -306,9 +490,9 @@ module.exports = async function handler(req, res) {
           connectedAt: previous?.connectedAt || now,
           updatedAt: now
         } }, { upsert: true });
-        return res.redirect(`${frontend}/?youtubeConnected=1#/music-ai/youtube-publisher`);
+        return res.redirect(`${frontend}/?youtubeConnected=1${returnHash}`);
       } catch (error) {
-        return res.redirect(`${frontend}/?youtubeError=${encodeURIComponent(clean(error.message, 180))}#/music-ai/youtube-publisher`);
+        return res.redirect(`${frontend}/?youtubeError=${encodeURIComponent(clean(error.message, 180))}${returnHash}`);
       }
     }
 
@@ -321,7 +505,14 @@ module.exports = async function handler(req, res) {
       await states.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
       const rawState = crypto.randomBytes(36).toString("base64url");
       const stateHash = crypto.createHash("sha256").update(rawState).digest("hex");
-      await states.insertOne({ stateHash, userId: user._id, returnTo: safeFrontend(body.returnTo), createdAt: new Date(), expiresAt: new Date(Date.now() + 10 * 60 * 1000) });
+      await states.insertOne({
+        stateHash,
+        userId: user._id,
+        returnTo: safeFrontend(body.returnTo),
+        returnHash: safeReturnHash(body.returnHash),
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+      });
       const authUrl = new URL(OAUTH_ORIGIN);
       authUrl.search = new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID,
@@ -347,6 +538,252 @@ module.exports = async function handler(req, res) {
         playlists: connection?.playlists || [],
         history: history.map((item) => ({ id: String(item._id), videoId: item.videoId || "", title: item.title, fileName: item.fileName, status: item.status, privacyStatus: item.privacyStatus, publishAt: item.publishAt || null, createdAt: item.createdAt, completedAt: item.completedAt || null, error: item.error || "" }))
       });
+    }
+
+    if (route === "dashboard" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const warnings = [];
+      const [videos, analytics, comments, live, quotas, pendingUploads] = await Promise.all([
+        settledResult(() => recentVideos(accessToken), [], warnings, "videos"),
+        settledResult(() => channelAnalytics(accessToken), null, warnings, "analytics"),
+        settledResult(() => recentComments(accessToken, connection.channelId), [], warnings, "comments"),
+        settledResult(() => broadcasts(accessToken), [], warnings, "live"),
+        settledResult(async () => (await quotaStatus(db)).find((item) => item.provider === "youtube") || null, null, warnings, "quota"),
+        uploads.find({ userId: user._id, status: { $in: ["uploading", "processing", "error"] } }).sort({ updatedAt: -1 }).limit(20).toArray()
+      ]);
+      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
+      return res.status(200).json({
+        ok: true,
+        confirmed: true,
+        ...publicConnection(connection, allConnections),
+        videos,
+        analytics,
+        comments,
+        live,
+        quota: quotas,
+        uploads: pendingUploads.map((item) => ({
+          id: String(item._id),
+          videoId: item.videoId || "",
+          title: item.title,
+          fileName: item.fileName,
+          status: item.status,
+          privacyStatus: item.privacyStatus,
+          publishAt: item.publishAt || null,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          error: item.error || ""
+        })),
+        warnings,
+        syncedAt: new Date()
+      });
+    }
+
+    if (route === "videos" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      return res.status(200).json({ ok: true, confirmed: true, videos: await recentVideos(accessToken), syncedAt: new Date() });
+    }
+
+    if (route === "analytics" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const videoId = clean(req.query.videoId, 40);
+      const analytics = await channelAnalytics(accessToken, {
+        videoId,
+        startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.startDate || "")) ? req.query.startDate : undefined,
+        endDate: /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.endDate || "")) ? req.query.endDate : undefined
+      });
+      return res.status(200).json({ ok: true, confirmed: true, analytics, videoId, syncedAt: new Date() });
+    }
+
+    if (route === "comments" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const comments = await recentComments(accessToken, connection.channelId);
+      return res.status(200).json({ ok: true, confirmed: true, comments, syncedAt: new Date() });
+    }
+
+    if (route === "comments/reply" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const parentId = clean(body.parentId, 120);
+      const textOriginal = clean(body.text, 10000);
+      if (!parentId || !textOriginal) throw fail("Bình luận hoặc nội dung trả lời đang trống.", 400, "YOUTUBE_COMMENT_INVALID");
+      const data = await youtubeJson(accessToken, "/youtube/v3/comments", { part: "snippet" }, {
+        method: "POST",
+        body: JSON.stringify({ snippet: { parentId, textOriginal } })
+      });
+      await db.collection("events").insertOne({ type: "youtube:comment-replied", userId: user._id, commentId: parentId, createdAt: new Date() });
+      return res.status(201).json({ ok: true, confirmed: true, comment: normalizedComment(data), syncedAt: new Date() });
+    }
+
+    if (route === "comments/moderate" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const id = clean(body.id, 120);
+      const moderationStatus = ["published", "heldForReview", "rejected"].includes(body.moderationStatus)
+        ? body.moderationStatus
+        : "";
+      if (!id || !moderationStatus) throw fail("Trạng thái kiểm duyệt không hợp lệ.", 400, "YOUTUBE_MODERATION_INVALID");
+      await youtubeJson(accessToken, "/youtube/v3/comments/setModerationStatus", {
+        id,
+        moderationStatus,
+        banAuthor: body.banAuthor === true ? "true" : "false"
+      }, { method: "POST" });
+      await db.collection("events").insertOne({ type: "youtube:comment-moderated", userId: user._id, commentId: id, moderationStatus, createdAt: new Date() });
+      return res.status(200).json({ ok: true, confirmed: true, id, moderationStatus });
+    }
+
+    if (route === "videos/update" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const videoId = clean(body.videoId, 40);
+      if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
+      const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet", id: videoId });
+      const video = current.items?.[0];
+      if (!video) throw fail("Không tìm thấy video trên kênh đang kết nối.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
+      const snippet = {
+        ...video.snippet,
+        title: clean(body.title || video.snippet.title, 100),
+        description: clean(body.description ?? video.snippet.description, 5000),
+        tags: body.tags === undefined ? video.snippet.tags : normalizedTags(body.tags),
+        categoryId: /^\d{1,3}$/.test(String(body.categoryId || "")) ? String(body.categoryId) : video.snippet.categoryId
+      };
+      const updated = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet" }, {
+        method: "PUT",
+        body: JSON.stringify({ id: videoId, snippet })
+      });
+      await db.collection("events").insertOne({ type: "youtube:metadata-updated", userId: user._id, videoId, createdAt: new Date() });
+      return res.status(200).json({ ok: true, confirmed: true, video: normalizedVideo(updated.items?.[0] || { id: videoId, snippet }) });
+    }
+
+    if (route === "captions" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const videoId = clean(req.query.videoId, 40);
+      if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
+      const data = await youtubeJson(accessToken, "/youtube/v3/captions", { part: "id,snippet", videoId });
+      const captions = (data.items || []).map((item) => ({
+        id: clean(item.id, 120),
+        name: clean(item.snippet?.name, 160),
+        language: clean(item.snippet?.language, 24),
+        trackKind: clean(item.snippet?.trackKind, 40),
+        status: clean(item.snippet?.status, 40),
+        isDraft: Boolean(item.snippet?.isDraft),
+        lastUpdated: item.snippet?.lastUpdated || null
+      }));
+      return res.status(200).json({ ok: true, confirmed: true, captions, syncedAt: new Date() });
+    }
+
+    if (route === "captions/upload" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const videoId = clean(body.videoId, 40);
+      const language = clean(body.language || "vi", 24);
+      const name = clean(body.name || `HH ${language}`, 160);
+      const format = body.format === "vtt" ? "vtt" : "srt";
+      const content = String(body.content || "");
+      if (!/^[\w-]{6,20}$/.test(videoId) || !content.trim() || Buffer.byteLength(content) > 512 * 1024) {
+        throw fail("Caption không hợp lệ hoặc lớn hơn 512 KB.", 400, "YOUTUBE_CAPTION_INVALID");
+      }
+      const boundary = `hh-caption-${crypto.randomBytes(12).toString("hex")}`;
+      const metadata = JSON.stringify({ snippet: { videoId, language, name, isDraft: Boolean(body.isDraft) } });
+      const multipart = Buffer.concat([
+        Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`),
+        Buffer.from(`--${boundary}\r\nContent-Type: ${format === "vtt" ? "text/vtt" : "application/x-subrip"}; charset=UTF-8\r\n\r\n${content}\r\n`),
+        Buffer.from(`--${boundary}--\r\n`)
+      ]);
+      const data = await googleJson(queryUrl("/upload/youtube/v3/captions", { part: "snippet", uploadType: "multipart" }), {
+        method: "POST",
+        headers: {
+          ...youtubeHeaders(accessToken),
+          "Content-Type": `multipart/related; boundary=${boundary}`,
+          "Content-Length": String(multipart.length)
+        },
+        body: multipart
+      });
+      await db.collection("events").insertOne({ type: "youtube:caption-uploaded", userId: user._id, videoId, language, createdAt: new Date() });
+      return res.status(201).json({ ok: true, confirmed: true, captionId: clean(data.id, 120), status: clean(data.snippet?.status, 40) });
+    }
+
+    if (route === "live" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      return res.status(200).json({ ok: true, confirmed: true, broadcasts: await broadcasts(accessToken), syncedAt: new Date() });
+    }
+
+    if (route === "live/create" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const title = clean(body.title, 100);
+      const scheduledStartTime = new Date(body.scheduledStartTime);
+      if (!title || !Number.isFinite(scheduledStartTime.getTime()) || scheduledStartTime.getTime() < Date.now() + 60_000) {
+        throw fail("Tên livestream hoặc thời gian bắt đầu không hợp lệ.", 400, "YOUTUBE_LIVE_INVALID");
+      }
+      const privacyStatus = ["private", "unlisted", "public"].includes(body.privacyStatus) ? body.privacyStatus : "private";
+      let broadcast = null;
+      let stream = null;
+      try {
+        stream = await youtubeJson(accessToken, "/youtube/v3/liveStreams", { part: "snippet,cdn,status" }, {
+          method: "POST",
+          body: JSON.stringify({
+            snippet: { title: `${title} · HH Stream` },
+            cdn: { ingestionType: "rtmp", resolution: clean(body.resolution || "1080p", 20), frameRate: clean(body.frameRate || "30fps", 20) },
+            contentDetails: { isReusable: false }
+          })
+        });
+        broadcast = await youtubeJson(accessToken, "/youtube/v3/liveBroadcasts", { part: "snippet,status,contentDetails" }, {
+          method: "POST",
+          body: JSON.stringify({
+            snippet: { title, description: clean(body.description, 5000), scheduledStartTime: scheduledStartTime.toISOString() },
+            status: { privacyStatus, selfDeclaredMadeForKids: Boolean(body.madeForKids) },
+            contentDetails: { enableAutoStart: false, enableAutoStop: false, enableDvr: true, recordFromStart: true }
+          })
+        });
+        await youtubeJson(accessToken, "/youtube/v3/liveBroadcasts/bind", {
+          part: "id,contentDetails",
+          id: broadcast.id,
+          streamId: stream.id
+        }, { method: "POST" });
+      } catch (error) {
+        await Promise.allSettled([
+          broadcast?.id
+            ? youtubeJson(accessToken, "/youtube/v3/liveBroadcasts", { id: broadcast.id }, { method: "DELETE" })
+            : Promise.resolve(),
+          stream?.id
+            ? youtubeJson(accessToken, "/youtube/v3/liveStreams", { id: stream.id }, { method: "DELETE" })
+            : Promise.resolve()
+        ]);
+        throw error;
+      }
+      await db.collection("events").insertOne({ type: "youtube:live-created", userId: user._id, broadcastId: broadcast.id, createdAt: new Date() });
+      return res.status(201).json({
+        ok: true,
+        confirmed: true,
+        broadcast: normalizedBroadcast(broadcast),
+        stream: {
+          id: clean(stream.id, 120),
+          status: clean(stream.status?.streamStatus, 40),
+          ingestionAddress: clean(stream.cdn?.ingestionInfo?.ingestionAddress, 800),
+          streamName: clean(stream.cdn?.ingestionInfo?.streamName, 800)
+        }
+      });
+    }
+
+    if (route === "live/transition" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const id = clean(body.id, 120);
+      const broadcastStatus = ["testing", "live", "complete"].includes(body.broadcastStatus) ? body.broadcastStatus : "";
+      if (!id || !broadcastStatus) throw fail("Trạng thái livestream không hợp lệ.", 400, "YOUTUBE_LIVE_TRANSITION_INVALID");
+      const data = await youtubeJson(accessToken, "/youtube/v3/liveBroadcasts/transition", {
+        part: "id,snippet,status",
+        id,
+        broadcastStatus
+      }, { method: "POST" });
+      await db.collection("events").insertOne({ type: `youtube:live-${broadcastStatus}`, userId: user._id, broadcastId: id, createdAt: new Date() });
+      return res.status(200).json({ ok: true, confirmed: true, broadcast: normalizedBroadcast(data) });
     }
 
     if (route === "channel/refresh" && req.method === "POST") {

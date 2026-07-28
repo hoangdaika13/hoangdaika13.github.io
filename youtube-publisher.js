@@ -380,7 +380,10 @@
 
   async function connectChannel() {
     try {
-      const data = await api("oauth/start", "POST", { returnTo: location.origin });
+      const returnHash = location.hash.startsWith("#/music-ai/youtube-publisher")
+        ? "#/music-ai/youtube-publisher"
+        : "#/davinci-resolve/youtube";
+      const data = await api("oauth/start", "POST", { returnTo: location.origin, returnHash });
       location.assign(data.authorizeUrl);
     } catch (error) { notify(error.message, "error"); }
   }

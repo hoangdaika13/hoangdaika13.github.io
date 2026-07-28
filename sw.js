@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v281";
+const CACHE = "hh-identity-portal-v283";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -9,7 +9,7 @@ const CACHE = "hh-identity-portal-v281";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
-  "./app-shell.css?v=53",
+  "./app-shell.css?v=54",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=3",
   "./home-galaxy-mission.css?v=4",
@@ -46,11 +46,12 @@ const RUNTIME_ASSETS = [
   "./video-editor-resolve.css?v=8",
   "./davinci-resolve-hub.css?v=4",
   "./video-editor-auto.css?v=1",
+  "./youtube-creator-galaxy.css?v=1",
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=152",
+  "./script.js?v=153",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -86,8 +87,9 @@ const RUNTIME_ASSETS = [
   "./vendor/three.core.min.js",
   "./music-ai-studio.css?v=6",
   "./music-ai-apps.css?v=2",
-  "./youtube-publisher.css?v=2",
-  "./youtube-publisher.js?v=2",
+  "./youtube-publisher.css?v=3",
+  "./youtube-publisher.js?v=3",
+  "./youtube-creator-galaxy.js?v=2",
   "./music-production-suite.css?v=3",
   "./music-daw-workspace.css?v=1",
   "./music-composer-lyrics.css?v=1",
@@ -316,7 +318,7 @@ const RUNTIME_ASSETS = [
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=53",
+  "./app-shell.css?v=54",
   "./sidebar-navigation-pro.css?v=9",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=5",
@@ -328,10 +330,10 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=65",
+  "./performance-loader.js?v=66",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=152"
+  "./script.js?v=153"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
