@@ -9,6 +9,19 @@ const MIN_AMOUNT = 1000;
 const MAX_AMOUNT = 1000000000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const RECEIPT_LEASE_MS = 2 * 60 * 1000;
+const SUPPORT_VISIBILITIES = new Set(["public", "alias", "anonymous"]);
+const MISSION_STATUSES = new Set(["active", "completed", "paused"]);
+const CONTRIBUTION_TYPES = new Set(["asset", "translation", "bug", "code", "tester", "feedback"]);
+const MISSION_DEFINITIONS = Object.freeze([
+  { id: "infrastructure", label: "Máy chủ & Database", shortLabel: "Hạ tầng", color: "#65ebff", defaultGoal: 3000000, route: "#/system" },
+  { id: "domain-services", label: "Domain & Dịch vụ", shortLabel: "Domain", color: "#8f8cff", defaultGoal: 1200000, route: "#/system" },
+  { id: "astral-realms", label: "HH Astral Realms", shortLabel: "Astral Realms", color: "#ff68c8", defaultGoal: 5000000, route: "#/entertainment/astral-realms" },
+  { id: "ai-provider", label: "AI Provider", shortLabel: "AI", color: "#ffb65c", defaultGoal: 3500000, route: "#/creative/ai-center" },
+  { id: "hh-english", label: "HH English", shortLabel: "English", color: "#68f1be", defaultGoal: 2500000, route: "#/english" },
+  { id: "graphic-design", label: "Thiết kế đồ họa", shortLabel: "Design", color: "#b77aff", defaultGoal: 3000000, route: "#/graphic-design" },
+  { id: "reserve", label: "Quỹ dự phòng", shortLabel: "Dự phòng", color: "#f3dc6b", defaultGoal: 1800000, route: "#/support" }
+]);
+const MISSION_IDS = new Set(MISSION_DEFINITIONS.map((mission) => mission.id));
 let payOSClient;
 
 function payOSReady() {
@@ -36,17 +49,121 @@ function amountOf(value) {
   return Number.isFinite(amount) && amount >= MIN_AMOUNT && amount <= MAX_AMOUNT ? amount : 0;
 }
 
+function missionIdOf(value) {
+  const id = clean(value, 60);
+  return MISSION_IDS.has(id) ? id : "reserve";
+}
+
+function visibilityOf(value, anonymous = false) {
+  if (anonymous) return "anonymous";
+  const visibility = clean(value, 20);
+  return SUPPORT_VISIBILITIES.has(visibility) ? visibility : "public";
+}
+
+function publicName(item) {
+  const visibility = visibilityOf(item.visibility, item.anonymous);
+  if (visibility === "anonymous") return "Người ủng hộ ẩn danh";
+  if (visibility === "alias") return clean(item.donorAlias || "Supporter HH", 60);
+  return clean(item.donorName || "Thành viên HH", 100);
+}
+
 function publicDonation(item) {
   return {
     id: String(item._id),
     reference: item.reference,
-    name: item.anonymous ? "Người ủng hộ ẩn danh" : clean(item.donorName || "Thành viên HH", 100),
+    name: publicName(item),
     amount: item.amount,
     message: clean(item.message, 500),
-    anonymous: Boolean(item.anonymous),
+    visibility: visibilityOf(item.visibility, item.anonymous),
+    anonymous: visibilityOf(item.visibility, item.anonymous) === "anonymous",
+    missionId: missionIdOf(item.missionId),
     verifiedAt: item.verifiedAt,
     createdAt: item.createdAt
   };
+}
+
+function validHttpsUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" ? url.href.slice(0, 1200) : "";
+  } catch {
+    return "";
+  }
+}
+
+function safeImpactLink(value) {
+  const input = clean(value, 1200);
+  if (/^#\/[a-z0-9/_-]+(?:\?.*)?$/i.test(input)) return input;
+  const url = validHttpsUrl(input);
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    const site = new URL(String(process.env.PUBLIC_SITE_URL || "https://nhhoang13all.xyz"));
+    return parsed.hostname === site.hostname || parsed.hostname === "github.com" ? parsed.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function envEmailSet(name) {
+  return new Set(String(process.env[name] || "").split(/[\s,;]+/).map((item) => item.trim().toLowerCase()).filter(Boolean));
+}
+
+function donationAdminRole(user) {
+  if (isAdminUser(user)) return "owner";
+  const email = String(user?.email || "").trim().toLowerCase();
+  if (email && envEmailSet("DONATION_SUPPORT_OPERATOR_EMAILS").has(email)) return "support_operator";
+  if (email && envEmailSet("DONATION_VIEWER_EMAILS").has(email)) return "viewer";
+  return "";
+}
+
+function canViewDonationAdmin(role) {
+  return ["viewer", "support_operator", "owner"].includes(role);
+}
+
+function canOperateDonationSupport(role) {
+  return ["support_operator", "owner"].includes(role);
+}
+
+function monthKey(value = new Date()) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function recentMonthKeys(count = 6) {
+  const result = [];
+  const now = new Date();
+  for (let offset = count - 1; offset >= 0; offset -= 1) {
+    result.push(monthKey(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - offset, 1))));
+  }
+  return result;
+}
+
+function missionGoalFromEnvironment(mission) {
+  const envKey = `DONATION_MISSION_${mission.id.replace(/-/g, "_").toUpperCase()}_GOAL`;
+  return Math.max(100000, Number(process.env[envKey] || mission.defaultGoal));
+}
+
+async function appendDonationAudit(db, { action, actor, role, recordId = null, metadata = {} }) {
+  const audits = db.collection("donationAudit");
+  const previous = await audits.find({}).sort({ createdAt: -1, _id: -1 }).limit(1).next();
+  const createdAt = new Date();
+  const safeMetadata = Object.fromEntries(Object.entries(metadata || {}).slice(0, 12).map(([key, value]) => [clean(key, 60), clean(value, 240)]));
+  const actorId = String(actor?._id || "");
+  const payload = JSON.stringify({ action: clean(action, 80), actorId, role: clean(role, 40), recordId: String(recordId || ""), metadata: safeMetadata, createdAt: createdAt.toISOString(), previousHash: previous?.hash || "" });
+  const hash = createHash("sha256").update(payload).digest("hex");
+  await audits.insertOne({
+    action: clean(action, 80),
+    actorId,
+    actorEmailHash: createHash("sha256").update(String(actor?.email || "").toLowerCase()).digest("hex").slice(0, 20),
+    role: clean(role, 40),
+    recordId,
+    metadata: safeMetadata,
+    previousHash: previous?.hash || "",
+    hash,
+    createdAt
+  });
+  return hash;
 }
 
 function makeReference() {
@@ -244,6 +361,117 @@ async function reconcilePayOSStatus(db, donations, donation) {
   return donations.findOne({ _id: donation._id });
 }
 
+async function missionViews(db, donations) {
+  const [settings, funding, impacts] = await Promise.all([
+    db.collection("supportMissionSettings").find({ missionId: { $in: [...MISSION_IDS] } }).toArray(),
+    donations.aggregate([
+      { $match: { status: "verified" } },
+      { $group: { _id: { $ifNull: ["$missionId", "reserve"] }, verified: { $sum: "$amount" }, supporters: { $sum: 1 } } }
+    ]).toArray(),
+    db.collection("supportImpactEvents").aggregate([
+      { $match: { published: true } },
+      { $group: { _id: "$missionId", used: { $sum: { $ifNull: ["$amountUsed", 0] } }, latestAt: { $max: "$occurredAt" } } }
+    ]).toArray()
+  ]);
+  const settingsById = new Map(settings.map((item) => [item.missionId, item]));
+  const fundingById = new Map(funding.map((item) => [missionIdOf(item._id), item]));
+  const impactById = new Map(impacts.map((item) => [missionIdOf(item._id), item]));
+  return MISSION_DEFINITIONS.map((definition) => {
+    const setting = settingsById.get(definition.id) || {};
+    const funded = fundingById.get(definition.id) || {};
+    const impact = impactById.get(definition.id) || {};
+    const goal = Math.max(100000, Number(setting.goal || missionGoalFromEnvironment(definition)));
+    const verified = Math.max(0, Number(funded.verified || 0));
+    const used = Math.max(0, Number(impact.used || 0));
+    const status = MISSION_STATUSES.has(setting.status) ? setting.status : verified >= goal ? "completed" : "active";
+    return {
+      ...definition,
+      goal,
+      verified,
+      used,
+      supporters: Number(funded.supporters || 0),
+      percent: Math.min(100, Number((verified / goal * 100).toFixed(1))),
+      status,
+      result: clean(setting.result, 240),
+      resultUrl: safeImpactLink(setting.resultUrl),
+      latestImpactAt: impact.latestAt || null
+    };
+  });
+}
+
+async function transparencyView(db, donations) {
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const keys = recentMonthKeys(6);
+  const periodStart = new Date(`${keys[0]}-01T00:00:00.000Z`);
+  const [incomeRows, expenseRows, monthlyIncome, monthlyExpense, feeSummary, impactItems] = await Promise.all([
+    donations.aggregate([
+      { $match: { status: "verified", verifiedAt: { $gte: periodStart } } },
+      { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$verifiedAt" } }, income: { $sum: "$amount" } } }
+    ]).toArray(),
+    db.collection("supportImpactEvents").aggregate([
+      { $match: { published: true, occurredAt: { $gte: periodStart } } },
+      { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$occurredAt" } }, spent: { $sum: { $ifNull: ["$amountUsed", 0] } } } }
+    ]).toArray(),
+    donations.aggregate([{ $match: { status: "verified", verifiedAt: { $gte: monthStart } } }, { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } }]).next(),
+    db.collection("supportImpactEvents").aggregate([{ $match: { published: true, occurredAt: { $gte: monthStart } } }, { $group: { _id: null, total: { $sum: { $ifNull: ["$amountUsed", 0] } } } }]).next(),
+    donations.aggregate([{ $match: { status: "verified", verifiedAt: { $gte: monthStart }, providerFee: { $exists: true } } }, { $group: { _id: null, total: { $sum: "$providerFee" }, count: { $sum: 1 } } }]).next(),
+    db.collection("supportImpactEvents").find({ published: true }, { projection: { internalNote: 0, createdBy: 0 } }).sort({ occurredAt: -1 }).limit(30).toArray()
+  ]);
+  const incomeMap = new Map(incomeRows.map((item) => [item._id, Number(item.income || 0)]));
+  const expenseMap = new Map(expenseRows.map((item) => [item._id, Number(item.spent || 0)]));
+  const series = keys.map((key) => ({ month: key, income: incomeMap.get(key) || 0, spent: expenseMap.get(key) || 0 }));
+  const income = Number(monthlyIncome?.total || 0);
+  const spent = Number(monthlyExpense?.total || 0);
+  const fees = Number(feeSummary?.total || 0);
+  return {
+    month: { income, count: Number(monthlyIncome?.count || 0), spent, fees, feesTracked: Number(feeSummary?.count || 0) > 0, carry: Math.max(0, income - spent - fees) },
+    series,
+    impacts: impactItems.map((item) => ({
+      id: String(item._id),
+      missionId: missionIdOf(item.missionId),
+      type: clean(item.type, 40),
+      title: clean(item.title, 160),
+      description: clean(item.description, 500),
+      amountUsed: Math.max(0, Number(item.amountUsed || 0)),
+      link: safeImpactLink(item.link),
+      status: clean(item.status || "completed", 40),
+      occurredAt: item.occurredAt,
+      createdAt: item.createdAt
+    }))
+  };
+}
+
+function donationRiskViews(items) {
+  const sorted = [...items].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const duplicateIds = new Set();
+  for (let index = 0; index < sorted.length; index += 1) {
+    const current = sorted[index];
+    const currentEmail = validEmail(current.email);
+    if (!currentEmail) continue;
+    for (let previousIndex = Math.max(0, index - 12); previousIndex < index; previousIndex += 1) {
+      const previous = sorted[previousIndex];
+      const closeInTime = Math.abs(new Date(current.createdAt) - new Date(previous.createdAt)) <= 30 * 60 * 1000;
+      if (closeInTime && validEmail(previous.email) === currentEmail && Number(previous.amount) === Number(current.amount)) {
+        duplicateIds.add(String(current._id));
+        duplicateIds.add(String(previous._id));
+      }
+    }
+  }
+  return new Map(items.map((item) => {
+    const ageMs = Date.now() - new Date(item.createdAt).getTime();
+    const webhookState = item.status === "verified" || item.status === "refunded"
+      ? "confirmed"
+      : item.status === "payment_error"
+        ? "failed"
+        : ["pending", "submitted"].includes(item.status) && ageMs > 20 * 60 * 1000
+          ? "delayed"
+          : "waiting";
+    return [String(item._id), { duplicateCandidate: duplicateIds.has(String(item._id)), webhookState }];
+  }));
+}
+
 async function notificationSubscriptionHandler(req, res) {
   return withApi(req, res, async ({ db, body }) => {
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -277,11 +505,20 @@ module.exports = async function handler(req, res) {
       donations.createIndex({ payosOrderCode: 1 }, { unique: true, sparse: true }),
       donations.createIndex({ payosTransactionReference: 1 }, { unique: true, sparse: true }),
       donations.createIndex({ status: 1, verifiedAt: -1 }),
+      donations.createIndex({ missionId: 1, status: 1, verifiedAt: -1 }),
       donations.createIndex({ userId: 1, createdAt: -1 }),
-      donations.createIndex({ createdAt: -1 })
+      donations.createIndex({ createdAt: -1 }),
+      db.collection("supportImpactEvents").createIndex({ published: 1, occurredAt: -1 }),
+      db.collection("supportImpactEvents").createIndex({ missionId: 1, published: 1 }),
+      db.collection("supportMissionSettings").createIndex({ missionId: 1 }, { unique: true }),
+      db.collection("supporterProfiles").createIndex({ userId: 1 }, { unique: true }),
+      db.collection("supportRequests").createIndex({ userId: 1, createdAt: -1 }),
+      db.collection("supportContributions").createIndex({ userId: 1, createdAt: -1 }),
+      db.collection("donationAudit").createIndex({ createdAt: -1 })
     ]);
     const user = await currentUser(req);
     const isOwner = isAdminUser(user);
+    const adminRole = donationAdminRole(user);
 
     if (req.method === "POST" && String(req.query.provider || "") === "payos") {
       if (!payOSReady()) return res.status(503).json({ error: "payOS chưa được cấu hình." });
@@ -328,33 +565,78 @@ module.exports = async function handler(req, res) {
         let item = await donations.findOne({ _id: lookupId, reference: lookupReference });
         if (!item) return res.status(404).json({ error: "Không tìm thấy giao dịch." });
         item = await reconcilePayOSStatus(db, donations, item);
-        return res.status(200).json({ donation: { id: String(item._id), reference: item.reference, amount: item.amount, status: item.status, paymentMethod: item.paymentMethod, verifiedAt: item.verifiedAt || null, refundedAt: item.refundedAt || null, refund: item.refund ? { status: clean(item.refund.status, 40), providerReference: clean(item.refund.providerReference, 160) } : null, receipt: receiptView(item) } });
+        return res.status(200).json({ donation: { id: String(item._id), reference: item.reference, amount: item.amount, status: item.status, paymentMethod: item.paymentMethod, missionId: missionIdOf(item.missionId), visibility: visibilityOf(item.visibility, item.anonymous), donorAlias: clean(item.donorAlias, 60), verifiedAt: item.verifiedAt || null, refundedAt: item.refundedAt || null, refund: item.refund ? { status: clean(item.refund.status, 40), providerReference: clean(item.refund.providerReference, 160) } : null, receipt: receiptView(item) } });
       }
       if (String(req.query.history || "") === "1") {
         if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để xem lịch sử ủng hộ của mình." });
-        const items = await donations.find({ userId: user._id }, { projection: { email: 0, donorName: 0, message: 0, payosCheckoutUrl: 0, payosAccountNumber: 0 } }).sort({ createdAt: -1 }).limit(100).toArray();
-        return res.status(200).json({ donations: items.map(item => ({ id: String(item._id), reference: item.reference, amount: item.amount, status: item.status, createdAt: item.createdAt, verifiedAt: item.verifiedAt || null, refundedAt: item.refundedAt || null, refund: item.refund ? { status: clean(item.refund.status, 40), providerReference: clean(item.refund.providerReference, 160) } : null, receipt: receiptView(item) })) });
+        const [items, profile, requests, verifiedSummary] = await Promise.all([
+          donations.find({ userId: user._id }, { projection: { email: 0, payosCheckoutUrl: 0, payosAccountNumber: 0, payosTransactionReference: 0 } }).sort({ createdAt: -1 }).limit(100).toArray(),
+          db.collection("supporterProfiles").findOne({ userId: user._id }),
+          db.collection("supportRequests").find({ userId: user._id }, { projection: { internalNote: 0 } }).sort({ createdAt: -1 }).limit(20).toArray(),
+          donations.aggregate([{ $match: { userId: user._id, status: "verified" } }, { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } }]).next()
+        ]);
+        const verifiedSupporter = Number(verifiedSummary?.count || 0) > 0;
+        return res.status(200).json({
+          wallet: {
+            verifiedSupporter,
+            total: Number(verifiedSummary?.total || 0),
+            count: Number(verifiedSummary?.count || 0),
+            preferences: {
+              displayBadge: Boolean(profile?.displayBadge),
+              creditsOptIn: Boolean(profile?.creditsOptIn),
+              supporterTheme: Boolean(profile?.supporterTheme),
+              roadmapVoting: profile?.roadmapVoting !== false,
+              earlyAccess: Boolean(profile?.earlyAccess),
+              developmentReports: profile?.developmentReports !== false
+            },
+            entitlements: verifiedSupporter ? { badge: true, credits: Boolean(profile?.creditsOptIn), theme: true, roadmapVoting: true, earlyAccess: true, reports: true, gameBenefits: "cosmetic-only" } : {}
+          },
+          donations: items.map(item => ({
+            id: String(item._id), reference: item.reference, amount: item.amount, status: item.status,
+            donorName: clean(item.donorName, 100), donorAlias: clean(item.donorAlias, 60),
+            visibility: visibilityOf(item.visibility, item.anonymous), missionId: missionIdOf(item.missionId),
+            message: clean(item.message, 500), createdAt: item.createdAt, verifiedAt: item.verifiedAt || null,
+            refundedAt: item.refundedAt || null,
+            refund: item.refund ? { status: clean(item.refund.status, 40), providerReference: clean(item.refund.providerReference, 160), reason: clean(item.refund.reason, 500) } : null,
+            receipt: receiptView(item)
+          })),
+          requests: requests.map((item) => ({ id: String(item._id), type: clean(item.type, 40), subject: clean(item.subject, 160), status: clean(item.status, 40), createdAt: item.createdAt, updatedAt: item.updatedAt }))
+        });
       }
       if (String(req.query.admin || "") === "1") {
-        if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được quản lý giao dịch ủng hộ." });
-        const items = await donations.find({}).sort({ createdAt: -1 }).limit(200).toArray();
+        if (!canViewDonationAdmin(adminRole)) return res.status(403).json({ error: "Tài khoản không có quyền xem Donation Mission Control." });
+        const [items, contributions, audit, missionSettings] = await Promise.all([
+          donations.find({}).sort({ createdAt: -1 }).limit(200).toArray(),
+          db.collection("supportContributions").find({}).sort({ createdAt: -1 }).limit(100).toArray(),
+          db.collection("donationAudit").find({}).sort({ createdAt: -1 }).limit(100).toArray(),
+          db.collection("supportMissionSettings").find({}).toArray()
+        ]);
+        const risks = donationRiskViews(items);
+        const exposePrivate = adminRole === "owner";
         return res.status(200).json({
-          owner: true,
+          owner: adminRole === "owner",
+          adminRole,
+          capabilities: { view: true, operate: canOperateDonationSupport(adminRole), financial: adminRole === "owner", configure: adminRole === "owner" },
           donations: items.map((item) => ({
-            id: String(item._id), reference: item.reference, donorName: item.donorName,
-            email: item.email, amount: item.amount, message: item.message,
-            anonymous: Boolean(item.anonymous), status: item.status, paymentMethod: item.paymentMethod,
+            id: String(item._id), reference: item.reference, donorName: exposePrivate ? item.donorName : publicName(item),
+            email: exposePrivate ? item.email : maskEmail(item.email), amount: item.amount, message: exposePrivate ? item.message : "Nội dung được ẩn theo quyền quản trị",
+            donorAlias: clean(item.donorAlias, 60), visibility: visibilityOf(item.visibility, item.anonymous),
+            missionId: missionIdOf(item.missionId), anonymous: visibilityOf(item.visibility, item.anonymous) === "anonymous", status: item.status, paymentMethod: item.paymentMethod,
             payosOrderCode: item.payosOrderCode || null, payosTransactionReference: item.payosTransactionReference || "",
             transferTime: item.transferTime || null, createdAt: item.createdAt,
             submittedAt: item.submittedAt || null, verifiedAt: item.verifiedAt || null,
             refundedAt: item.refundedAt || null, refund: item.refund || null, history: (item.history || []).slice(-20),
-            receipt: receiptView(item, true)
-          }))
+            receipt: receiptView(item, true),
+            risk: risks.get(String(item._id)) || { duplicateCandidate: false, webhookState: "waiting" }
+          })),
+          contributions: contributions.map((item) => ({ id: String(item._id), type: clean(item.type, 40), title: clean(item.title, 160), details: clean(item.details, 1200), link: safeImpactLink(item.link), status: clean(item.status, 40), createdAt: item.createdAt })),
+          audit: audit.map((item) => ({ id: String(item._id), action: clean(item.action, 80), role: clean(item.role, 40), recordId: String(item.recordId || ""), metadata: item.metadata || {}, hash: clean(item.hash, 80), previousHash: clean(item.previousHash, 80), createdAt: item.createdAt })),
+          missionSettings: missionSettings.map((item) => ({ missionId: missionIdOf(item.missionId), goal: Math.max(100000, Number(item.goal || 0)), status: MISSION_STATUSES.has(item.status) ? item.status : "active", result: clean(item.result, 240), resultUrl: safeImpactLink(item.resultUrl) }))
         });
       }
 
       const goal = Math.max(100000, Number(process.env.DONATION_GOAL || 10000000));
-      const [summary, recent, monthly, leaderboard] = await Promise.all([
+      const [summary, recent, monthly, leaderboard, statusSignals, missions, transparency] = await Promise.all([
         donations.aggregate([{ $match: { status: "verified" } }, { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 }, average: { $avg: "$amount" } } }]).next(),
         donations.find({ status: "verified" }).sort({ verifiedAt: -1 }).limit(30).toArray(),
         donations.aggregate([{ $match: { status: "verified", verifiedAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } } }, { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } }]).next(),
@@ -363,15 +645,24 @@ module.exports = async function handler(req, res) {
           { $group: { _id: "$donorName", amount: { $sum: "$amount" }, donations: { $sum: 1 } } },
           { $sort: { amount: -1, donations: -1 } },
           { $limit: 8 }
-        ]).toArray()
+        ]).toArray(),
+        donations.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]).toArray(),
+        missionViews(db, donations),
+        transparencyView(db, donations)
       ]);
       const verified = recent.map(publicDonation);
+      const statusMap = new Map(statusSignals.map((item) => [item._id, Number(item.count || 0)]));
+      const recurringCheckoutUrl = validHttpsUrl(process.env.DONATION_RECURRING_CHECKOUT_URL);
       return res.status(200).json({
         goal,
         stats: { total: summary?.total || 0, count: summary?.count || 0, average: Math.round(summary?.average || 0), monthlyTotal: monthly?.total || 0, monthlyCount: monthly?.count || 0 },
         recent: verified.slice(0, 12),
         leaderboard: leaderboard.map((item) => ({ name: clean(item._id || "Thành viên HH", 100), amount: item.amount, donations: item.donations })),
-        paymentProviders: { payos: payOSReady(), receiptEmail: receiptReady(), refundReconciliation: refundAdapterReady() },
+        signals: { pending: (statusMap.get("pending") || 0) + (statusMap.get("submitted") || 0), verified: statusMap.get("verified") || 0, failed: (statusMap.get("payment_error") || 0) + (statusMap.get("rejected") || 0) },
+        missions,
+        transparency,
+        paymentProviders: { payos: payOSReady(), receiptEmail: receiptReady(), refundReconciliation: refundAdapterReady(), recurring: Boolean(recurringCheckoutUrl), recurringCheckoutUrl },
+        providerHealth: { payos: payOSReady() ? "configured" : "not_configured", webhook: recent[0]?.verifiedAt ? "receiving_verified_events" : "waiting_for_verified_event", receiptEmail: receiptReady() ? "configured" : "not_configured", lastVerifiedAt: recent[0]?.verifiedAt || null },
         checkedAt: new Date()
       });
     }
@@ -390,6 +681,9 @@ module.exports = async function handler(req, res) {
       if (!amount) return res.status(400).json({ error: "Số tiền ủng hộ phải từ 1.000đ đến 1.000.000.000đ." });
       const donorName = clean(body.donorName || user?.name || "Thành viên HH", 100);
       const email = validEmail(body.email || user?.email);
+      const missionId = missionIdOf(body.missionId);
+      const visibility = visibilityOf(body.visibility, body.anonymous === true);
+      const donorAlias = clean(body.donorAlias || donorName, 60);
       if (!donorName) return res.status(400).json({ error: "Hãy nhập tên người ủng hộ." });
       if (!email) return res.status(400).json({ error: "Hãy nhập email hợp lệ để nhận thư cảm ơn và mã xác nhận." });
       const reference = makeReference();
@@ -397,7 +691,7 @@ module.exports = async function handler(req, res) {
       const payosOrderCode = makeOrderCode();
       const doc = {
         userId: user?._id || null, reference, donorName, email, amount,
-        message: clean(body.message, 500), anonymous: Boolean(body.anonymous),
+        message: clean(body.message, 500), anonymous: visibility === "anonymous", visibility, donorAlias, missionId,
         status: "pending", paymentMethod: "payos_vietqr",
         receipt: { status: "waiting_payment", recipientMasked: maskEmail(email), attempts: 0 },
         payosOrderCode,
@@ -405,14 +699,14 @@ module.exports = async function handler(req, res) {
         createdAt: new Date(), updatedAt: new Date()
       };
       const result = await donations.insertOne(doc);
-      await db.collection("events").insertOne({ type: "donation:intent", userId: user?._id || null, recordId: result.insertedId, createdAt: new Date() });
+      await db.collection("events").insertOne({ type: "donation:intent", userId: user?._id || null, recordId: result.insertedId, missionId, visibility, createdAt: new Date() });
       const siteUrl = String(process.env.PUBLIC_SITE_URL || "https://nhhoang13all.xyz").replace(/\/$/, "");
       try {
         const payment = await payOS().paymentRequests.create({
           orderCode: payosOrderCode,
           amount,
           description: reference,
-          items: [{ name: "Ủng hộ HH Platform", quantity: 1, price: amount }],
+          items: [{ name: `Ủng hộ ${MISSION_DEFINITIONS.find((item) => item.id === missionId)?.shortLabel || "HH Platform"}`, quantity: 1, price: amount }],
           buyerName: donorName,
           ...(email ? { buyerEmail: email } : {}),
           cancelUrl: `${siteUrl}/`,
@@ -424,11 +718,82 @@ module.exports = async function handler(req, res) {
           if (payment.qrCode) qrImage = await QRCode.toDataURL(String(payment.qrCode), { width: 560, margin: 2, errorCorrectionLevel: "M", color: { dark: "#07131c", light: "#ffffff" } });
         } catch { /* The official payOS checkout remains available as a fallback. */ }
         await donations.updateOne({ _id: result.insertedId }, { $set: { payosPaymentLinkId: payment.paymentLinkId, payosCheckoutUrl: payment.checkoutUrl, payosAccountNumber: payment.accountNumber, updatedAt: new Date() } });
-        return res.status(201).json({ ok: true, donation: { id: String(result.insertedId), reference, amount, status: doc.status, paymentMethod: doc.paymentMethod }, payos: { checkoutUrl: payment.checkoutUrl, paymentLinkId: payment.paymentLinkId, qrImage, expiresIn: 1800 } });
+        return res.status(201).json({ ok: true, donation: { id: String(result.insertedId), reference, amount, status: doc.status, paymentMethod: doc.paymentMethod, missionId, visibility }, payos: { checkoutUrl: payment.checkoutUrl, paymentLinkId: payment.paymentLinkId, qrImage, expiresIn: 1800 } });
       } catch (error) {
         await donations.updateOne({ _id: result.insertedId }, { $set: { status: "payment_error", paymentError: clean(error?.message, 300), updatedAt: new Date() } });
         return res.status(502).json({ error: "payOS chưa thể tạo VietQR. Vui lòng thử lại sau." });
       }
+    }
+
+    if (action === "wallet:preferences") {
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để lưu tùy chọn Supporter Wallet." });
+      const preferences = body.preferences && typeof body.preferences === "object" ? body.preferences : {};
+      const update = {
+        userId: user._id,
+        displayBadge: Boolean(preferences.displayBadge),
+        creditsOptIn: Boolean(preferences.creditsOptIn),
+        supporterTheme: Boolean(preferences.supporterTheme),
+        roadmapVoting: preferences.roadmapVoting !== false,
+        earlyAccess: Boolean(preferences.earlyAccess),
+        developmentReports: preferences.developmentReports !== false,
+        updatedAt: new Date()
+      };
+      await db.collection("supporterProfiles").updateOne({ userId: user._id }, { $set: update, $setOnInsert: { createdAt: new Date() } }, { upsert: true });
+      await appendDonationAudit(db, { action: "wallet:preferences", actor: user, role: "supporter", metadata: { displayBadge: update.displayBadge, creditsOptIn: update.creditsOptIn } });
+      return res.status(200).json({ ok: true, preferences: update });
+    }
+
+    if (action === "wallet:visibility:update") {
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để cập nhật quyền hiển thị." });
+      const id = objectId(body.id);
+      if (!id) return res.status(400).json({ error: "Giao dịch không hợp lệ." });
+      const visibility = visibilityOf(body.visibility, body.visibility === "anonymous");
+      const result = await donations.updateOne({ _id: id, userId: user._id }, { $set: { visibility, anonymous: visibility === "anonymous", donorAlias: clean(body.donorAlias, 60), updatedAt: new Date() } });
+      if (!result.matchedCount) return res.status(404).json({ error: "Không tìm thấy giao dịch thuộc tài khoản." });
+      return res.status(200).json({ ok: true, visibility });
+    }
+
+    if (action === "wallet:message:delete") {
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để ẩn lời nhắn." });
+      const id = objectId(body.id);
+      const result = id ? await donations.updateOne({ _id: id, userId: user._id }, { $set: { message: "", messageDeletedAt: new Date(), updatedAt: new Date() } }) : { matchedCount: 0 };
+      if (!result.matchedCount) return res.status(404).json({ error: "Không tìm thấy giao dịch thuộc tài khoản." });
+      return res.status(200).json({ ok: true, message: "Lời nhắn công khai đã được ẩn. Bản ghi giao dịch vẫn được giữ." });
+    }
+
+    if (action === "wallet:refund:request") {
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để gửi yêu cầu hoàn tiền." });
+      const id = objectId(body.id);
+      const reason = clean(body.reason, 500);
+      if (!id || reason.length < 5) return res.status(400).json({ error: "Cần giao dịch và lý do hợp lệ." });
+      const requestedAt = new Date();
+      const result = await donations.updateOne(
+        { _id: id, userId: user._id, status: "verified", refund: { $exists: false } },
+        { $set: { refund: { status: "requested_by_supporter", amount: null, reason, requestedAt, requestedBy: user._id }, updatedAt: requestedAt }, $push: { history: { status: "refund_requested", source: "supporter_wallet", at: requestedAt } } }
+      );
+      if (!result.modifiedCount) return res.status(409).json({ error: "Giao dịch không thể gửi yêu cầu hoàn tiền ở trạng thái hiện tại." });
+      await appendDonationAudit(db, { action: "wallet:refund:request", actor: user, role: "supporter", recordId: id, metadata: { reason } });
+      return res.status(202).json({ ok: true, confirmed: false, refund: { status: "requested_by_supporter" } });
+    }
+
+    if (action === "wallet:support:create") {
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để gửi yêu cầu hỗ trợ." });
+      const subject = clean(body.subject, 160);
+      const details = clean(body.details, 1600);
+      if (subject.length < 3 || details.length < 5) return res.status(400).json({ error: "Hãy nhập tiêu đề và nội dung hỗ trợ." });
+      const result = await db.collection("supportRequests").insertOne({ userId: user._id, type: "support", subject, details, donationId: objectId(body.donationId), status: "open", createdAt: new Date(), updatedAt: new Date() });
+      return res.status(201).json({ ok: true, request: { id: String(result.insertedId), status: "open" } });
+    }
+
+    if (action === "contribution:create") {
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để gửi đóng góp cộng đồng." });
+      const type = clean(body.type, 40);
+      const title = clean(body.title, 160);
+      const details = clean(body.details, 1200);
+      if (!CONTRIBUTION_TYPES.has(type) || title.length < 3 || details.length < 5) return res.status(400).json({ error: "Loại đóng góp hoặc nội dung chưa hợp lệ." });
+      const result = await db.collection("supportContributions").insertOne({ userId: user._id, type, title, details, link: safeImpactLink(body.link), status: "received", createdAt: new Date(), updatedAt: new Date() });
+      await appendDonationAudit(db, { action: "contribution:create", actor: user, role: "supporter", recordId: result.insertedId, metadata: { type, title } });
+      return res.status(201).json({ ok: true, contribution: { id: String(result.insertedId), type, status: "received" } });
     }
 
     if (action === "submit") {
@@ -443,7 +808,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "admin:update") {
-      if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được đối soát giao dịch." });
+      if (!canOperateDonationSupport(adminRole)) return res.status(403).json({ error: "Tài khoản không có quyền đối soát giao dịch." });
       const id = objectId(body.id);
       const nextStatus = ["rejected", "pending"].includes(body.status) ? body.status : "";
       if (!id || !nextStatus) return res.status(400).json({ error: "Trạng thái không hợp lệ." });
@@ -452,22 +817,24 @@ module.exports = async function handler(req, res) {
       const result = await donations.updateOne({ _id: id, status: { $in: ["pending", "submitted", "rejected"] } }, { $set: update, $push: { history: { status: nextStatus, source: "owner_review", at: changedAt } } });
       if (!result.matchedCount) return res.status(404).json({ error: "Không tìm thấy giao dịch." });
       await db.collection("events").insertOne({ type: `donation:${nextStatus}`, userId: user._id, recordId: id, createdAt: new Date() });
+      await appendDonationAudit(db, { action: `admin:update:${nextStatus}`, actor: user, role: adminRole, recordId: id, metadata: { status: nextStatus } });
       const updatedDonation = await donations.findOne({ _id: id });
       const receipt = receiptView(updatedDonation);
       return res.status(200).json({ ok: true, status: nextStatus, receipt: { status: receipt.status } });
     }
 
     if (action === "refund:request") {
-      if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được yêu cầu đối soát hoàn tiền." });
+      if (!isOwner) return res.status(403).json({ error: "Chỉ Owner được yêu cầu đối soát hoàn tiền." });
       const id = objectId(body.id);
       const reason = clean(body.reason, 500);
       if (!id || reason.length < 5) return res.status(400).json({ error: "Cần giao dịch và lý do hoàn tiền hợp lệ." });
       const requestedAt = new Date();
       const result = await donations.updateOne(
-        { _id: id, status: "verified", refund: { $exists: false } },
+        { _id: id, status: "verified", $or: [{ refund: { $exists: false } }, { "refund.status": "requested_by_supporter" }] },
         { $set: { refund: { status: "pending_provider", amount: null, reason, requestedAt, requestedBy: user._id }, updatedAt: requestedAt }, $push: { history: { status: "refund_requested", source: "owner", at: requestedAt } } }
       );
       if (!result.modifiedCount) return res.status(409).json({ error: "Giao dịch không thể tạo yêu cầu hoàn tiền ở trạng thái hiện tại." });
+      await appendDonationAudit(db, { action: "refund:request", actor: user, role: adminRole, recordId: id, metadata: { reason } });
       return res.status(202).json({ ok: true, confirmed: false, refund: { status: "pending_provider" } });
     }
 
@@ -493,11 +860,12 @@ module.exports = async function handler(req, res) {
         return res.status(409).json({ error: "Trạng thái hoàn tiền đã thay đổi trong lúc đối soát.", confirmed: false });
       }
       await db.collection("events").updateOne({ type: "donation:refund_confirmed", providerReference: confirmation.providerReference }, { $setOnInsert: { type: "donation:refund_confirmed", providerReference: confirmation.providerReference, recordId: id, amount: donation.amount, createdAt: refundedAt } }, { upsert: true });
+      await appendDonationAudit(db, { action: "refund:reconcile", actor: user, role: adminRole, recordId: id, metadata: { providerReference: confirmation.providerReference } });
       return res.status(200).json({ ok: true, confirmed: true, status: "refunded", refund: { status: "confirmed", providerReference: confirmation.providerReference } });
     }
 
     if (action === "receipt:retry") {
-      if (!isOwner) return res.status(403).json({ error: "Chỉ chủ sở hữu được gửi lại thư xác nhận." });
+      if (!canOperateDonationSupport(adminRole)) return res.status(403).json({ error: "Tài khoản không có quyền gửi lại thư xác nhận." });
       const id = objectId(body.id);
       if (!id) return res.status(400).json({ error: "Giao dịch không hợp lệ." });
       await enforceRateLimit(db, `donation:receipt-retry:${id}`, 5, 60 * 60 * 1000);
@@ -505,7 +873,50 @@ module.exports = async function handler(req, res) {
       if (!donation) return res.status(404).json({ error: "Không tìm thấy giao dịch." });
       if (donation.status !== "verified") return res.status(409).json({ error: "Chỉ gửi thư sau khi giao dịch đã được xác nhận." });
       const receipt = await sendDonationThankYou(db, donations, donation, "owner_retry");
+      await appendDonationAudit(db, { action: "receipt:retry", actor: user, role: adminRole, recordId: id, metadata: { status: receipt.status } });
       return res.status(200).json({ ok: receipt.status === "sent", receipt });
+    }
+
+    if (action === "mission:update") {
+      if (!isOwner) return res.status(403).json({ error: "Chỉ Owner được cập nhật Funding Mission." });
+      const missionId = missionIdOf(body.missionId);
+      const definition = MISSION_DEFINITIONS.find((item) => item.id === missionId);
+      const goal = Math.max(100000, Math.min(100000000000, Math.round(Number(body.goal) || missionGoalFromEnvironment(definition))));
+      const status = MISSION_STATUSES.has(body.status) ? body.status : "active";
+      const result = clean(body.result, 240);
+      const resultUrl = safeImpactLink(body.resultUrl);
+      await db.collection("supportMissionSettings").updateOne(
+        { missionId },
+        { $set: { missionId, goal, status, result, resultUrl, updatedAt: new Date(), updatedBy: user._id }, $setOnInsert: { createdAt: new Date() } },
+        { upsert: true }
+      );
+      await appendDonationAudit(db, { action: "mission:update", actor: user, role: adminRole, metadata: { missionId, goal, status } });
+      return res.status(200).json({ ok: true, mission: { missionId, goal, status, result, resultUrl } });
+    }
+
+    if (action === "impact:create") {
+      if (!isOwner) return res.status(403).json({ error: "Chỉ Owner được công bố Impact Timeline." });
+      const missionId = missionIdOf(body.missionId);
+      const title = clean(body.title, 160);
+      const description = clean(body.description, 500);
+      const type = clean(body.type || "release", 40);
+      const amountUsed = Math.max(0, Math.min(100000000000, Math.round(Number(body.amountUsed) || 0)));
+      const occurredAt = new Date(body.occurredAt || Date.now());
+      if (title.length < 3 || description.length < 5 || Number.isNaN(occurredAt.getTime())) return res.status(400).json({ error: "Impact cần tiêu đề, mô tả và thời điểm hợp lệ." });
+      const result = await db.collection("supportImpactEvents").insertOne({ missionId, type, title, description, amountUsed, link: safeImpactLink(body.link), status: "completed", published: body.published !== false, occurredAt, createdAt: new Date(), createdBy: user._id });
+      await appendDonationAudit(db, { action: "impact:create", actor: user, role: adminRole, recordId: result.insertedId, metadata: { missionId, title, amountUsed } });
+      return res.status(201).json({ ok: true, impact: { id: String(result.insertedId), missionId, title, amountUsed } });
+    }
+
+    if (action === "contribution:update") {
+      if (!canOperateDonationSupport(adminRole)) return res.status(403).json({ error: "Tài khoản không có quyền xử lý đóng góp cộng đồng." });
+      const id = objectId(body.id);
+      const status = ["received", "in_review", "accepted", "rejected", "completed"].includes(body.status) ? body.status : "";
+      if (!id || !status) return res.status(400).json({ error: "Trạng thái đóng góp không hợp lệ." });
+      const result = await db.collection("supportContributions").updateOne({ _id: id }, { $set: { status, adminNote: clean(body.adminNote, 500), updatedAt: new Date(), updatedBy: user._id } });
+      if (!result.matchedCount) return res.status(404).json({ error: "Không tìm thấy đóng góp." });
+      await appendDonationAudit(db, { action: `contribution:update:${status}`, actor: user, role: adminRole, recordId: id, metadata: { status } });
+      return res.status(200).json({ ok: true, status });
     }
 
     return res.status(400).json({ error: "Tác vụ không được hỗ trợ." });
