@@ -21,6 +21,27 @@ test("Universal Design Document owns every shared design domain", () => {
   assert.equal(document.canvas.width, 1440);
   assert.equal(document.canvas.height, 900);
   assert.equal(universal.PLANETS.length, 11);
+  assert.deepEqual(document.layers[0].adjustments, []);
+  assert.deepEqual(document.layers[0].masks, []);
+  assert.deepEqual(document.layers[0].strokeDash, []);
+  assert.deepEqual(document.layers[0].prototypeActions, []);
+});
+
+test("fresh and legacy documents are render-safe before any command runs", () => {
+  const fresh = universal.defaultDocument();
+  const legacy = universal.normalizeDocument({
+    ...fresh,
+    layers: fresh.layers.map(({ adjustments, masks, strokeDash, prototypeActions, ...layer }) => layer)
+  });
+
+  for (const document of [fresh, legacy]) {
+    assert.doesNotThrow(() => document.layers.forEach((layer) => {
+      layer.adjustments.filter((item) => item.enabled);
+      layer.masks.filter((item) => item.enabled);
+      layer.strokeDash.filter(Boolean);
+      layer.prototypeActions.filter(Boolean);
+    }));
+  }
 });
 
 test("commands update one document and support exact undo and redo", () => {

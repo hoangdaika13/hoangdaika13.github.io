@@ -137,7 +137,7 @@
         background: "#07101d",
         breakpoint: "desktop"
       }],
-      layers: [{
+      layers: [normalizeLayer({
         id: titleId,
         frameId,
         name: "Bắt đầu thiết kế",
@@ -159,7 +159,7 @@
         strokeWidth: 0,
         blendMode: "normal",
         altText: ""
-      }],
+      }, frameId)],
       assets: [],
       components: [],
       variables: {
@@ -1268,9 +1268,9 @@
         globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(serializableDocument(migrated)));
         return migrated;
       }
-      return defaultDocument();
+      return normalizeDocument(defaultDocument());
     } catch {
-      return defaultDocument();
+      return normalizeDocument(defaultDocument());
     }
   }
 
@@ -1767,7 +1767,9 @@
     if (instances.has(root)) return instances.get(root);
     addStyles();
     const host = root.querySelector(".gd-main") || root;
-    let documentState = readStored();
+    // Repair fresh and legacy documents before any renderer calls array
+    // methods on layer masks, adjustments, strokes or prototype actions.
+    let documentState = normalizeDocument(readStored());
     const instance = {
       document: documentState,
       zoom: documentState.canvas.zoom || 1,

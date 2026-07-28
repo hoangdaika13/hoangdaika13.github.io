@@ -66,8 +66,8 @@ test("Media and Design exposes a connected professional production flow", () => 
   const mediaBundle = loader.match(/media:\s*\{[\s\S]*?\n\s*\},\n\s*davinci:/)?.[0] || "";
   const davinciBundle = loader.match(/davinci:\s*\{[\s\S]*?\n\s*\},\n\s*graphic:/)?.[0] || "";
   assert.doesNotMatch(mediaBundle, /video-editor-(?:studio|resolve)\.(?:css|js)/);
-  assert.match(davinciBundle, /video-editor-studio\.js\?v=4/);
-  assert.match(davinciBundle, /video-editor-resolve\.js\?v=9/);
+  assert.match(davinciBundle, /video-editor-studio\.js\?v=5/);
+  assert.match(davinciBundle, /video-editor-resolve\.js\?v=10/);
   assert.doesNotMatch(`${page}\n${read("script.js")}\n${read("home-command-search.js")}\n${read("home-daily-command.js")}`, /\/media-design\/video-editor/);
   assert.match(styles, /\.mdp-production-flow/);
   assert.match(styles, /scroll-snap-type/);

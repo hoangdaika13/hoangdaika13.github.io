@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v279";
+const CACHE = "hh-identity-portal-v281";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -50,7 +50,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=150",
+  "./script.js?v=152",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -80,7 +80,7 @@ const RUNTIME_ASSETS = [
   "./graphic-design-review.js?v=2",
   "./graphic-design-performance.js?v=1",
   "./graphic-design-workflow.js?v=2",
-  "./graphic-design-universal.js?v=4",
+  "./graphic-design-universal.js?v=5",
   "./graphic-design-studio.js?v=7",
   "./vendor/three.module.min.js",
   "./vendor/three.core.min.js",
@@ -268,9 +268,9 @@ const RUNTIME_ASSETS = [
   "./media-design-pro.js?v=2",
   "./media-design-advanced.js?v=3",
   "./media-design-publish.js?v=1",
-  "./video-editor-studio.js?v=4",
-  "./video-editor-resolve.js?v=9",
-  "./davinci-resolve-hub.js?v=4",
+  "./video-editor-studio.js?v=5",
+  "./video-editor-resolve.js?v=10",
+  "./davinci-resolve-hub.js?v=5",
   "./video-editor-auto.js?v=1",
   "./photo-editor-pro.js?v=3",
   "./universal-media-project.js?v=1",
@@ -328,10 +328,10 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=63",
+  "./performance-loader.js?v=65",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=150"
+  "./script.js?v=152"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

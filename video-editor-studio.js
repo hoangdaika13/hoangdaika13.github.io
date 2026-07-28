@@ -10,11 +10,30 @@
   const DB_NAME = "hh-video-editor-media";
   const DB_STORE = "assets";
   const MAX_WAVEFORM_BYTES = 128 * 1024 * 1024;
+  const MP4_MIME_TYPES = Object.freeze([
+    'video/mp4;codecs="avc1.424028,mp4a.40.2"',
+    'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+    "video/mp4;codecs=avc1.424028,mp4a.40.2",
+    "video/mp4"
+  ]);
+  const WEBM_MIME_TYPES = Object.freeze([
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm"
+  ]);
   const $ = (root, selector) => root?.querySelector(selector);
   const $$ = (root, selector) => [...(root?.querySelectorAll(selector) || [])];
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
   const uid = (prefix) => `${prefix}-${crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+  const recorderMimeCandidates = (requested = "") => String(requested).startsWith("video/mp4")
+    ? [requested, ...MP4_MIME_TYPES].filter((value, index, rows) => value && rows.indexOf(value) === index)
+    : [requested, ...WEBM_MIME_TYPES].filter((value, index, rows) => value && rows.indexOf(value) === index);
+  const resolveRecorderMime = (requested = "") => {
+    if (!window.MediaRecorder) return "";
+    return recorderMimeCandidates(requested).find((mime) => !MediaRecorder.isTypeSupported || MediaRecorder.isTypeSupported(mime)) || "";
+  };
+  const isMp4Mime = (mime = "") => String(mime).startsWith("video/mp4");
   const formatTime = (value, frames = false) => {
     const seconds = Math.max(0, Number(value) || 0), hours = Math.floor(seconds / 3600), minutes = Math.floor(seconds % 3600 / 60), secs = Math.floor(seconds % 60);
     const baseTime = [hours, minutes, secs].map((part) => String(part).padStart(2, "0")).join(":");
@@ -158,7 +177,7 @@
       <input type="file" accept="video/*,audio/*,image/*" multiple data-ve-file hidden><input type="file" accept="application/json,.json" data-ve-project-file hidden><input type="file" accept=".srt,.vtt,text/vtt,application/x-subrip,text/plain" data-ve-subtitle-file hidden>
       <div class="ve-dialog" data-ve-dialog="shortcuts" hidden><section><header>${icon("keyboard")}<div><strong>Keyboard Shortcuts</strong><span>Editing workspace</span></div><button data-ve-action="dialog-close">${icon("x")}</button></header><div class="ve-shortcuts">${[["Space","Play / Pause"],["V","Selection Tool"],["C","Razor Tool"],["Ctrl K","Add Edit"],["I / O","Mark In / Out"],["M","Add Marker"],["J K L","Shuttle playback"],["← / →","Previous / Next frame"],["↑ / ↓","Previous / Next edit"],["Home / End","Sequence bounds"],["Ctrl Z","Undo"],["Ctrl Shift Z","Redo"],["Delete","Delete clip"],["Shift Delete","Ripple delete"],["Ctrl D","Duplicate clip"],["Ctrl S","Save project"],["Ctrl M","Export media"],["+ / -","Timeline zoom"]].map(([key,label]) => `<span><kbd>${key}</kbd>${label}</span>`).join("")}</div></section></div>
       <div class="ve-dialog" data-ve-dialog="versions" hidden><section><header>${icon("history")}<div><strong>Lịch sử phiên bản</strong><span>Tối đa 12 snapshot cục bộ</span></div><button data-ve-action="dialog-close">${icon("x")}</button></header><div class="ve-version-list" data-ve-version-list></div><footer><button data-ve-action="version-save">Lưu phiên bản hiện tại</button><button data-ve-action="dialog-close">Đóng</button></footer></section></div>
-      <div class="ve-dialog" data-ve-dialog="export" hidden><section><header>${icon("share-2")}<div><strong>Export Media</strong><span>Render sequence in real time</span></div><button data-ve-action="render-cancel">${icon("x")}</button></header><div class="ve-export-settings"><label>File name<input value="hh-sequence" data-ve-export-name></label><label>Format<select data-ve-export-format><option value="video/webm;codecs=vp9,opus">WebM · VP9</option><option value="video/webm;codecs=vp8,opus">WebM · VP8</option></select></label><label>Resolution<select data-ve-export-size><option value="1280x720">1280 × 720</option><option value="1920x1080">1920 × 1080</option><option value="1080x1920">1080 × 1920</option><option value="1080x1080">1080 × 1080</option></select></label><label>Video bitrate<select data-ve-export-bitrate><option value="4000000">4 Mbps</option><option value="8000000">8 Mbps</option><option value="12000000">12 Mbps</option></select></label><p>Export chạy theo thời lượng thực của timeline. Trình duyệt sẽ tạo WebM và tự tải xuống khi hoàn tất.</p><div class="ve-export-progress"><i data-ve-export-progress></i><span data-ve-export-status>Ready to export</span></div></div><footer><button data-ve-action="render-cancel">Hủy</button><button class="is-primary" data-ve-action="render-confirm">Export</button></footer></section></div>
+      <div class="ve-dialog" data-ve-dialog="export" hidden><section><header>${icon("share-2")}<div><strong>Export Media</strong><span>Render sequence in real time</span></div><button data-ve-action="render-cancel">${icon("x")}</button></header><div class="ve-export-settings"><label>File name<input value="hh-sequence" data-ve-export-name></label><label>Format<select data-ve-export-format><option value="video/mp4;codecs=&quot;avc1.424028,mp4a.40.2&quot;">MP4 · H.264 + AAC</option><option value="video/webm;codecs=vp9,opus">WebM · VP9</option><option value="video/webm;codecs=vp8,opus">WebM · VP8</option></select></label><label>Resolution<select data-ve-export-size><option value="1280x720">1280 × 720</option><option value="1920x1080">1920 × 1080</option><option value="1080x1920">1080 × 1920</option><option value="1080x1080">1080 × 1080</option></select></label><label>Video bitrate<select data-ve-export-bitrate><option value="4000000">4 Mbps</option><option value="8000000">8 Mbps</option><option value="12000000">12 Mbps</option></select></label><p data-ve-export-note>Đang kiểm tra bộ mã hóa trên thiết bị…</p><div class="ve-export-progress"><i data-ve-export-progress></i><span data-ve-export-status>Ready to export</span></div></div><footer><button data-ve-action="render-cancel">Hủy</button><button class="is-primary" data-ve-action="render-confirm">Export</button></footer></section></div>
     </div>`;
   }
 
@@ -627,6 +646,28 @@
       ctx.fillText(title.text, x, y);
     }
   }
+  function updateExportCapability() {
+    const select = $(state.work, "[data-ve-export-format]");
+    const note = $(state.work, "[data-ve-export-note]");
+    const button = $(state.work, '[data-ve-action="render-confirm"]');
+    if (!select || !note) return "";
+    const requested = select.value;
+    const supported = resolveRecorderMime(requested);
+    const mp4 = isMp4Mime(requested);
+    note.textContent = supported
+      ? mp4
+        ? "MP4 H.264/AAC được trình duyệt xác nhận hỗ trợ. Tệp sẽ được kết xuất thật trên thiết bị."
+        : "WebM được trình duyệt xác nhận hỗ trợ. Tệp sẽ được kết xuất thật trên thiết bị."
+      : mp4
+        ? "Thiết bị này không cung cấp bộ mã hóa MP4 H.264/AAC qua MediaRecorder. Hãy dùng Chrome/Edge mới hoặc chọn WebM."
+        : "Thiết bị này không cung cấp codec WebM đã chọn.";
+    note.dataset.state = supported ? "ready" : "unsupported";
+    if (button) {
+      button.disabled = !supported;
+      button.title = supported ? "" : "Codec hoặc container chưa được trình duyệt hỗ trợ";
+    }
+    return supported;
+  }
   async function renderExport() {
     if (!state.project.clips.length) return status("Timeline is empty.", "error");
     if (!window.MediaRecorder || !window.HTMLCanvasElement?.prototype?.captureStream) {
@@ -635,11 +676,13 @@
       return;
     }
     const [width, height] = $(state.work, "[data-ve-export-size]").value.split("x").map(Number), canvas = $(state.work, "[data-ve-export-canvas]"); canvas.width = width; canvas.height = height; canvas.hidden = false;
-    const mime = $(state.work, "[data-ve-export-format]").value, supported = !MediaRecorder.isTypeSupported || MediaRecorder.isTypeSupported(mime) ? mime : !MediaRecorder.isTypeSupported || MediaRecorder.isTypeSupported("video/webm") ? "video/webm" : "";
+    const mime = $(state.work, "[data-ve-export-format]").value;
+    const supported = resolveRecorderMime(mime);
     if (!supported) {
       canvas.hidden = true;
-      status("Trình duyệt không cung cấp codec WebM có thể ghi.", "error");
-      window.dispatchEvent(new CustomEvent("hh:video-export-status", { detail: { status: "failed", message: "Codec WebM không được hỗ trợ" } }));
+      const label = isMp4Mime(mime) ? "MP4 H.264/AAC" : "WebM";
+      status(`Trình duyệt không cung cấp bộ mã hóa ${label}.`, "error");
+      window.dispatchEvent(new CustomEvent("hh:video-export-status", { detail: { status: "failed", message: `Codec ${label} không được hỗ trợ` } }));
       return;
     }
     const stream = canvas.captureStream(state.project.fps), video = $(state.work, "[data-ve-video]");
@@ -652,7 +695,11 @@
     state.exportCancelled = false;
     state.exportProgressStep = -5;
     try {
-      state.recorder = new MediaRecorder(stream, { mimeType: supported, videoBitsPerSecond: Number($(state.work, "[data-ve-export-bitrate]").value) });
+      state.recorder = new MediaRecorder(stream, {
+        mimeType: supported,
+        videoBitsPerSecond: Number($(state.work, "[data-ve-export-bitrate]").value),
+        audioBitsPerSecond: 128000
+      });
     } catch (error) {
       canvas.hidden = true;
       status(`Không thể khởi tạo bộ xuất: ${error.message}`, "error");
@@ -669,8 +716,10 @@
       window.dispatchEvent(new CustomEvent("hh:video-export-status", { detail: { status: "failed", message } }));
     };
     state.recorder.onstop = () => {
-      const blob = new Blob(state.chunks, { type: supported });
-      const name = `${$(state.work, "[data-ve-export-name]").value || "hh-sequence"}.webm`;
+      const outputMime = state.recorder?.mimeType || supported;
+      const blob = new Blob(state.chunks, { type: outputMime });
+      const extension = isMp4Mime(outputMime) ? "mp4" : "webm";
+      const name = `${$(state.work, "[data-ve-export-name]").value || "hh-sequence"}.${extension}`;
       state.exporting = false;
       pause();
       canvas.hidden = true;
@@ -688,7 +737,7 @@
       }
       downloadBlob(blob, name);
       status(`Đã xuất ${name} · ${bytes(blob.size)}`, "success");
-      window.dispatchEvent(new CustomEvent("hh:video-export-status", { detail: { status: "completed", name, size: blob.size, mime: supported } }));
+      window.dispatchEvent(new CustomEvent("hh:video-export-status", { detail: { status: "completed", name, size: blob.size, mime: outputMime } }));
     };
     state.exporting = true; seek(0); drawExportFrame(); state.recorder.start(1000); play(); $(state.work, "[data-ve-export-status]").textContent = "Rendering sequence…";
     window.dispatchEvent(new CustomEvent("hh:video-export-status", { detail: { status: "processing", progress: 0 } }));
@@ -709,7 +758,7 @@
     $$ (state.work, `[${tabAttr}]`).forEach((button) => button.classList.toggle("is-active", button.getAttribute(tabAttr) === id));
     $$ (state.work, `[${paneAttr}]`).forEach((pane) => { const active = pane.getAttribute(paneAttr) === id; pane.classList.toggle("is-active", active); pane.hidden = !active; });
   }
-  function openDialog(id) { const dialog = $(state.work, `[data-ve-dialog="${id}"]`); if (dialog) dialog.hidden = false; ensureLucide(); }
+  function openDialog(id) { const dialog = $(state.work, `[data-ve-dialog="${id}"]`); if (dialog) dialog.hidden = false; if (id === "export") updateExportCapability(); ensureLucide(); }
   function closeDialogs() { $$(state.work, "[data-ve-dialog]").forEach((dialog) => dialog.hidden = true); }
   function exportProjectFile() { const project = { ...state.project, history: [], historyIndex: -1, assets: state.assets.map(({ id, name, type, size, duration }) => ({ id, name, type, size, duration })) }; downloadBlob(new Blob([JSON.stringify(project, null, 2)], { type: "application/json" }), "hh-video-project.json"); }
   async function importProjectFile(file) { const project = JSON.parse(await file.text()); state.project = normalizeProject(project); pushHistory("Open project"); renderAll(); syncPreview(true); status("Project loaded. Missing media can be re-imported by file name.", "success"); }
@@ -899,6 +948,7 @@
     if (event.target.matches("[data-ve-file]")) { await importFiles([...event.target.files]); event.target.value = ""; return; }
     if (event.target.matches("[data-ve-project-file]")) { const file = event.target.files?.[0]; if (file) await importProjectFile(file); return; }
     if (event.target.matches("[data-ve-subtitle-file]")) { const file = event.target.files?.[0]; if (file) importSubtitles(parseSubtitles(await file.text())); event.target.value = ""; return; }
+    if (event.target.matches("[data-ve-export-format]")) { updateExportCapability(); return; }
     if (event.target.matches("[data-ve-prop]")) { pushHistory("Change clip property"); renderAll(); return; }
     if (event.target.matches("[data-ve-snap]")) state.project.snap = event.target.checked;
     if (event.target.matches("[data-ve-sequence]")) { const [width, height] = event.target.value.split("x").map(Number); state.project.width = width; state.project.height = height; $(state.work, "[data-ve-footer-sequence]").textContent = `${width}×${height} · ${state.project.fps}fps`; updateMonitorFrame(); saveProject(false); }
@@ -930,6 +980,12 @@
     if (key === "k") return pause(); if (key === "j") { pause(); return seek(state.project.playhead - .5); }
   });
 
+  window.HHVideoExport = Object.freeze({
+    resolveRecorderMime,
+    isMp4Mime,
+    mp4Supported: () => Boolean(resolveRecorderMime(MP4_MIME_TYPES[0])),
+    webmSupported: () => Boolean(resolveRecorderMime(WEBM_MIME_TYPES[0]))
+  });
   window.HHMediaDesign = {
     supports: (name) => name === TOOL || base.supports(name),
     render(outer, name) { if (name === TOOL) setup(outer); else base.render(outer, name); },

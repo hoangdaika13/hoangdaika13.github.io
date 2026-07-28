@@ -231,13 +231,15 @@
     return commit(project, (next) => {
       if (next.exportQueue.length >= LIMITS.queue) return;
       const mime = cleanText(job.mime || "video/webm;codecs=vp9,opus", 100);
-      const serverRequested = /^video\/mp4/i.test(mime);
+      const mp4Requested = /^video\/mp4/i.test(mime);
       const supported = Boolean(capabilities.mediaRecorder && capabilities.canvasCapture && (!capabilities.isTypeSupported || capabilities.isTypeSupported(mime)));
-      const status = serverRequested ? capabilities.serverRender ? "queued" : "provider-not-configured" : supported ? "queued" : "unsupported";
+      const status = supported ? "queued" : "unsupported";
       const notice = status === "queued"
-        ? serverRequested ? "Đã xếp hàng cho provider render máy chủ." : "Đã xếp hàng cho bộ kết xuất WebM cục bộ của trình duyệt."
-        : status === "provider-not-configured"
-          ? "Chưa cấu hình provider render MP4/H.264. Không tạo tệp hoặc tiến trình giả."
+        ? mp4Requested
+          ? "Đã xếp hàng cho bộ mã hóa MP4 H.264/AAC thật trên thiết bị."
+          : "Đã xếp hàng cho bộ kết xuất WebM cục bộ của trình duyệt."
+        : mp4Requested
+          ? "Trình duyệt chưa cung cấp bộ mã hóa MP4 H.264/AAC qua MediaRecorder."
           : "Trình duyệt chưa hỗ trợ tổ hợp MediaRecorder, Canvas capture hoặc codec đã chọn.";
       next.exportQueue.push({ id: cleanText(job.id || makeId("export", `${next.revision}-${next.exportQueue.length}`), 80), name: cleanText(job.name || "HH Export", 120), mime, size: cleanText(job.size || "1920x1080", 24), status, notice, createdAt: Date.now() });
     });
@@ -449,7 +451,13 @@
       const labels = $$(exportDialog, ".ve-export-settings>label");
       ["Tên tệp", "Định dạng", "Độ phân giải", "Bitrate video"].forEach((label, index) => { if (labels[index]) labels[index].childNodes[0].textContent = label; });
       const note = $(exportDialog, ".ve-export-settings p");
-      if (note) note.textContent = "Trình duyệt sẽ kết xuất timeline thành WebM và tự tải xuống khi hoàn tất. Giữ tab này hoạt động trong lúc xuất.";
+      if (note) {
+        const mp4Ready = Boolean(window.HHVideoExport?.mp4Supported?.());
+        note.textContent = mp4Ready
+          ? "MP4 H.264/AAC và WebM được kết xuất thật trên thiết bị. Giữ tab này hoạt động trong lúc xuất."
+          : "Thiết bị chưa hỗ trợ MP4 qua MediaRecorder; WebM vẫn khả dụng nếu codec được trình duyệt cung cấp.";
+        note.dataset.state = mp4Ready ? "ready" : "unsupported";
+      }
       const buttons = $$(exportDialog, "footer button");
       if (buttons[0]) buttons[0].textContent = "Hủy";
       if (buttons[1]) buttons[1].textContent = "Bắt đầu xuất";
@@ -655,12 +663,12 @@
     return `<div class="vr-deliver-layout">
       <section class="vr-deliver-settings"><header><strong>Cài đặt kết xuất</strong><span>Web Export</span></header>
         <div class="vr-render-presets"><button data-vr-preset="youtube">${icon("youtube")} YouTube 1080p</button><button data-vr-preset="vertical">${icon("smartphone")} TikTok / Reels</button><button data-vr-preset="archive">${icon("archive")} Master chất lượng cao</button></div>
-        <label>Tên tệp<input data-vr-render-name value="hh-resolve-project"></label><label>Định dạng<select data-vr-render-format><option value="video/webm;codecs=vp9,opus">WebM VP9 + Opus · trên thiết bị</option><option value="video/webm;codecs=vp8,opus">WebM VP8 + Opus · trên thiết bị</option><option value="video/mp4;codecs=avc1.42E01E,mp4a.40.2">MP4 H.264 + AAC · cần server</option></select></label>
+        <label>Tên tệp<input data-vr-render-name value="hh-resolve-project"></label><label>Định dạng<select data-vr-render-format><option value="video/mp4;codecs=&quot;avc1.424028,mp4a.40.2&quot;">MP4 H.264 + AAC · trên thiết bị nếu hỗ trợ</option><option value="video/webm;codecs=vp9,opus">WebM VP9 + Opus · trên thiết bị</option><option value="video/webm;codecs=vp8,opus">WebM VP8 + Opus · trên thiết bị</option></select></label>
         <div class="vr-render-grid"><label>Độ phân giải<select data-vr-render-size><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="1080x1920">1080 × 1920</option><option value="1080x1080">1080 × 1080</option></select></label><label>Bitrate<select data-vr-render-bitrate><option value="4000000">4 Mbps</option><option value="8000000" selected>8 Mbps</option><option value="12000000">12 Mbps</option></select></label></div>
         <label class="vr-check"><input type="checkbox" checked> Xuất âm thanh</label><label class="vr-check"><input type="checkbox" checked> Tối ưu phát trực tuyến</label><button class="is-primary" data-vr-action="queue-add">${icon("list-plus")} Thêm vào hàng đợi</button>
       </section>
       <div class="vr-slot vr-slot--monitor" data-vr-slot="monitor"></div>
-      <aside class="vr-render-queue"><header><div><strong>Hàng đợi kết xuất</strong><span>${state.data.pro.exportQueue.length} tác vụ</span></div><button data-vr-action="queue-clear">Xóa hết</button></header><div data-vr-queue>${queue}</div><footer><p>HH không giả lập MP4/H.264. Tác vụ được chuyển sang bộ xuất WebM thật của editor gốc khi trình duyệt hỗ trợ.</p><button class="is-primary" data-vr-action="queue-start">${icon("play")} Mở tác vụ khả dụng</button></footer></aside>
+      <aside class="vr-render-queue"><header><div><strong>Hàng đợi kết xuất</strong><span>${state.data.pro.exportQueue.length} tác vụ</span></div><button data-vr-action="queue-clear">Xóa hết</button></header><div data-vr-queue>${queue}</div><footer><p>MP4 H.264/AAC và WebM chỉ được xếp hàng khi MediaRecorder xác nhận codec thật trên thiết bị.</p><button class="is-primary" data-vr-action="queue-start">${icon("play")} Xuất tác vụ khả dụng</button></footer></aside>
     </div>`;
   }
 
@@ -970,17 +978,29 @@
     const capabilities = {
       mediaRecorder: Boolean(window.MediaRecorder),
       canvasCapture: Boolean(window.HTMLCanvasElement?.prototype?.captureStream),
-      serverRender: false,
-      isTypeSupported: (type) => !window.MediaRecorder?.isTypeSupported || window.MediaRecorder.isTypeSupported(type)
+      isTypeSupported: (type) => Boolean(window.HHVideoExport?.resolveRecorderMime?.(type)
+        || (!window.MediaRecorder?.isTypeSupported || window.MediaRecorder.isTypeSupported(type)))
     };
     const next = resolveOps.enqueueExport(state.data.pro, { id: uid("render"), name, mime, size }, capabilities);
-    commitPro(next, next.exportQueue.at(-1)?.status === "unsupported" ? "Đã thêm tác vụ nhưng codec hoặc API trình duyệt chưa được hỗ trợ." : "Đã thêm tác vụ WebM khả dụng vào hàng đợi.");
+    const queued = next.exportQueue.at(-1);
+    commitPro(next, queued?.status === "unsupported"
+      ? "Codec đã chọn chưa được MediaRecorder trên thiết bị này hỗ trợ."
+      : `Đã thêm tác vụ ${queued?.mime?.startsWith("video/mp4") ? "MP4" : "WebM"} khả dụng vào hàng đợi.`);
     renderPage("deliver");
   }
 
-  function configureExport() {
+  function configureExport(job) {
     const pairs = [["[data-ve-export-name]", "[data-vr-render-name]"], ["[data-ve-export-format]", "[data-vr-render-format]"], ["[data-ve-export-size]", "[data-vr-render-size]"], ["[data-ve-export-bitrate]", "[data-vr-render-bitrate]"]];
     pairs.forEach(([targetSelector, sourceSelector]) => { const target = $(state.root, targetSelector), source = $(state.root, sourceSelector); if (target && source) target.value = source.value; });
+    if (job) {
+      const name = $(state.root, "[data-ve-export-name]");
+      const format = $(state.root, "[data-ve-export-format]");
+      const size = $(state.root, "[data-ve-export-size]");
+      if (name) name.value = job.name;
+      if (format) format.value = job.mime;
+      if (size) size.value = job.size;
+      format?.dispatchEvent(new Event("change", { bubbles: true }));
+    }
   }
 
   function nudgeBaseProperty(key, delta) {
@@ -1121,13 +1141,13 @@
     else if (action === "queue-remove") { const id = event.target.closest("[data-job-id]").dataset.jobId; state.data.pro.exportQueue = state.data.pro.exportQueue.filter((job) => job.id !== id); state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderPage("deliver"); }
     else if (action === "queue-clear") { state.data.pro.exportQueue = []; state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderPage("deliver"); }
     else if (action === "queue-start") {
-      const job = state.data.pro.exportQueue.find((item) => item.status === "queued" && item.mime.startsWith("video/webm"));
+      const job = state.data.pro.exportQueue.find((item) => item.status === "queued" && /^video\/(?:mp4|webm)/i.test(item.mime));
       if (!job) return status(state.data.pro.exportQueue.length ? "Không có tác vụ nào được trình duyệt xác nhận hỗ trợ." : "Hãy thêm ít nhất một tác vụ vào hàng đợi.", "error");
-      configureExport(); job.status = "processing"; job.notice = "MediaRecorder đang kết xuất timeline thật trên thiết bị."; state.data.pro = resolveOps.normalizeProject(state.data.pro); save();
+      configureExport(job); job.status = "processing"; job.notice = `MediaRecorder đang kết xuất ${job.mime.startsWith("video/mp4") ? "MP4" : "WebM"} thật trên thiết bị.`; state.data.pro = resolveOps.normalizeProject(state.data.pro); save();
       clickBase('[data-ve-action="render"]');
       clickBase('[data-ve-action="render-confirm"]');
       renderPage("deliver");
-      status("Đã bắt đầu kết xuất WebM trên thiết bị.", "success");
+      status(`Đã bắt đầu kết xuất ${job.mime.startsWith("video/mp4") ? "MP4 H.264/AAC" : "WebM"} trên thiết bị.`, "success");
     }
     return true;
   }
@@ -1166,7 +1186,7 @@
     if (!state.root?.isConnected) return;
     const detail = event.detail || {};
     const job = state.data.pro.exportQueue.find((item) => item.status === "processing")
-      || state.data.pro.exportQueue.find((item) => item.status === "queued" && item.mime.startsWith("video/webm"));
+      || state.data.pro.exportQueue.find((item) => item.status === "queued" && /^video\/(?:mp4|webm)/i.test(item.mime));
     if (!job) return;
     const statusMap = { processing: "processing", completed: "completed", failed: "failed", cancelled: "cancelled" };
     job.status = statusMap[detail.status] || job.status;

@@ -24,9 +24,10 @@ test("HH Video Studio is a first-class routed browser workspace", () => {
   assert.match(hub, /window\.HHDavinciResolveHub\s*=\s*\{\s*mount/);
   assert.match(loader, /davinci:\s*\{[\s\S]*davinci-resolve-hub\.css\?v=4/);
   assert.match(loader, /video-editor-auto\.js\?v=1/);
-  assert.match(loader, /video-editor-studio\.js\?v=4/);
-  assert.match(loader, /video-editor-resolve\.js\?v=9/);
-  assert.match(html, /performance-loader\.js\?v=63/);
+  assert.match(loader, /video-editor-studio\.js\?v=5/);
+  assert.match(loader, /video-editor-resolve\.js\?v=10/);
+  assert.match(loader, /davinci-resolve-hub\.js\?v=5/);
+  assert.match(html, /performance-loader\.js\?v=65/);
 });
 
 test("the workspace is independent from the desktop app and reports browser capability truthfully", () => {
@@ -43,7 +44,9 @@ test("the workspace is independent from the desktop app and reports browser capa
     "indexedDB",
     "hh.video-editor.project.v1",
     "provider-not-configured",
-    "Không cần cài ứng dụng desktop"
+    "Không cần cài ứng dụng desktop",
+    "mp4Recorder",
+    "MP4 H.264"
   ]) assert.match(hub, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
   assert.doesNotMatch(hub, /127\.0\.0\.1|localhost:8765|X-H-Cosmic-Key|\/api\/claim/);
@@ -67,7 +70,8 @@ test("web editor contracts cover media, timeline, subtitles, versions and real e
     "createWaveform", "data-ve-waveform", "cropTop", "fadeIn", "version-save", "version-history",
     "render-cancel", "completed", "failed", "cancelled", "clipRenderProperties",
     "hh:video-keyframe-add", "hh:video-keyframe-delete", "__hhProcessedAudioStream",
-    "getComputedStyle(source).filter"
+    "getComputedStyle(source).filter", "video/mp4", "HHVideoExport", "resolveRecorderMime",
+    "MP4 H.264", "extension = isMp4Mime"
   ]) assert.match(studio, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
   for (const marker of [

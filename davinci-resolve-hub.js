@@ -48,6 +48,14 @@
   };
   const capabilities = () => ({
     mediaRecorder: Boolean(window.MediaRecorder && window.HTMLCanvasElement?.prototype?.captureStream),
+    mp4Recorder: Boolean(window.HTMLCanvasElement?.prototype?.captureStream && (
+      window.HHVideoExport?.mp4Supported?.()
+      || (typeof window.MediaRecorder?.isTypeSupported === "function" && [
+        'video/mp4;codecs="avc1.424028,mp4a.40.2"',
+        'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+        "video/mp4"
+      ].some((mime) => window.MediaRecorder.isTypeSupported(mime)))
+    )),
     webCodecs: Boolean(window.VideoEncoder && window.VideoDecoder),
     webGpu: Boolean(navigator.gpu),
     indexedDb: Boolean(window.indexedDB),
@@ -111,12 +119,13 @@
             <div>
               <small>HH CREATIVE · BROWSER VIDEO ENGINE</small>
               <h2>HH Video Studio</h2>
-              <p>Dựng, chỉnh màu, xử lý âm thanh và xuất WebM trực tiếp trên website. Không cần cài ứng dụng desktop.</p>
+              <p>Dựng, chỉnh màu, xử lý âm thanh và xuất MP4 hoặc WebM trực tiếp trên website. Không cần cài ứng dụng desktop.</p>
             </div>
           </div>
           <div class="dr-web-capabilities" aria-label="Khả năng của trình duyệt">
             <span data-state="${caps.indexedDb ? "ready" : "unsupported"}">${capabilityLabel(caps.indexedDb, "IndexedDB · sẵn sàng", "IndexedDB · không hỗ trợ")}</span>
-            <span data-state="${caps.mediaRecorder ? "ready" : "unsupported"}">${capabilityLabel(caps.mediaRecorder, "WebM · sẵn sàng", "WebM · không hỗ trợ")}</span>
+            <span data-state="${caps.mp4Recorder ? "ready" : "unsupported"}">${capabilityLabel(caps.mp4Recorder, "MP4 H.264 · sẵn sàng", "MP4 · thiết bị không hỗ trợ")}</span>
+            <span data-state="${caps.mediaRecorder ? "ready" : "unsupported"}">${capabilityLabel(caps.mediaRecorder, "MediaRecorder · sẵn sàng", "MediaRecorder · không hỗ trợ")}</span>
             <span data-state="${caps.webCodecs ? "ready" : "limited"}">${capabilityLabel(caps.webCodecs, "WebCodecs · sẵn sàng", "WebCodecs · giới hạn")}</span>
             <span data-state="${caps.webGpu ? "ready" : "limited"}">${capabilityLabel(caps.webGpu, "WebGPU · sẵn sàng", "WebGL · dự phòng")}</span>
             <span data-dr-online data-state="${caps.online ? "ready" : "offline"}">${caps.online ? "Online" : "Offline · local-first"}</span>
@@ -130,7 +139,7 @@
           </div>
         </header>
         <nav class="dr-web-tabs" aria-label="Không gian dựng phim">
-          ${Object.keys(VIEW_PAGE).map((id) => `<button type="button" data-dr-view="${id}" class="${id === view ? "is-active" : ""}"><span>${escapeHtml(VIEW_LABEL[id])}</span><small>${id === "titles" ? "SRT · VTT" : id === "deliver" ? "WebM · Queue" : VIEW_PAGE[id]}</small></button>`).join("")}
+          ${Object.keys(VIEW_PAGE).map((id) => `<button type="button" data-dr-view="${id}" class="${id === view ? "is-active" : ""}"><span>${escapeHtml(VIEW_LABEL[id])}</span><small>${id === "titles" ? "SRT · VTT" : id === "deliver" ? "MP4 · WebM" : VIEW_PAGE[id]}</small></button>`).join("")}
         </nav>
         <section class="dr-web-live" aria-label="Trạng thái dự án">
           <div><span>DỰ ÁN</span><strong data-dr-project-name>Chưa có project</strong></div>
@@ -233,7 +242,7 @@
     window.addEventListener("hh:video-auto-applied", () => {
       refreshEditor();
       refreshMetrics();
-      status("Timeline Auto Ä‘Ã£ Ä‘Æ°á»£c ghi vÃ o project. Má»Ÿ Edit Ä‘á»ƒ kiá»ƒm tra hoáº·c xuáº¥t WebM.", "success");
+      status("Timeline Auto Ä‘Ã£ Ä‘Æ°á»£c ghi vÃ o project. Má»Ÿ Edit Ä‘á»ƒ kiá»ƒm tra hoáº·c xuáº¥t MP4/WebM.", "success");
     }, options);
     window.addEventListener("hh:video-export-status", (event) => {
       const detail = event.detail || {};

@@ -101,9 +101,9 @@
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1"
       ],
       scripts: [
-        "media-design-studio.js?v=1", "video-editor-studio.js?v=4",
-        "video-editor-resolve.js?v=9", "editor-workflow-pro.js?v=2",
-        "davinci-resolve-hub.js?v=4", "video-editor-auto.js?v=1"
+        "media-design-studio.js?v=1", "video-editor-studio.js?v=5",
+        "video-editor-resolve.js?v=10", "editor-workflow-pro.js?v=2",
+        "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1"
       ]
     },
     graphic: {
@@ -113,7 +113,7 @@
         "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1",
         "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=2", "graphic-design-state-machine.js?v=2",
         "graphic-design-adaptive.js?v=2", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=2",
-        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-workflow.js?v=2", "graphic-design-universal.js?v=4", "graphic-design-studio.js?v=7"
+        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-workflow.js?v=2", "graphic-design-universal.js?v=5", "graphic-design-studio.js?v=7"
       ]
     },
     creative: {
