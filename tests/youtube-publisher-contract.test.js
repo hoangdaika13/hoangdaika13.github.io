@@ -37,6 +37,7 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   const source = read("utils/youtubePublisher.js");
   const searchGateway = read("api/search/[provider].js");
   const deployment = read("vercel.json");
+  const envExample = read(".env.example");
   assert.match(source, /youtube\.upload/);
   assert.match(source, /youtube\.force-ssl/);
   assert.match(source, /aes-256-gcm/);
@@ -47,6 +48,8 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   assert.doesNotMatch(source, /refreshToken:\s*decrypt/);
   assert.match(searchGateway, /youtubePublisherHandler/);
   assert.match(deployment, /\/api\/youtube\/:action\*/);
+  assert.match(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/nhhoang13all\.xyz\/api\/youtube\/oauth\/callback/);
+  assert.doesNotMatch(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/hoangdaika13githubio\.vercel\.app/);
 });
 
 test("Versioned publisher assets are loaded and cached", () => {
