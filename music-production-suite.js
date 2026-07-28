@@ -1907,7 +1907,7 @@
         musicGalaxyLink: { projectId: project?.id || "", palette: state.palette, mood: state.mood, bpm: state.bpm, source: "music-galaxy", linkedAt: new Date().toISOString() }
       };
       try { localStorage.setItem("hh.video-editor.project.v1", JSON.stringify(linked)); } catch {}
-      location.hash = "#/media-design/video-editor";
+      location.hash = "#/davinci-resolve";
     }
   }
 

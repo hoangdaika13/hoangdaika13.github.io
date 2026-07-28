@@ -44,8 +44,8 @@
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=7", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=5", "home-daily-command.js?v=5",
-        "home-command-search.js?v=2", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
+        "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=7", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=5", "home-daily-command.js?v=6",
+        "home-command-search.js?v=3", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
       ]
     },
     "home-enhancements": {
@@ -54,8 +54,8 @@
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=7", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=5", "home-daily-command.js?v=5",
-        "home-command-search.js?v=2", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
+        "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=7", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=5", "home-daily-command.js?v=6",
+        "home-command-search.js?v=3", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
       ]
     },
     platform: {
@@ -85,24 +85,24 @@
     media: {
       styles: [
         "media-design-pro.css?v=1", "media-design-page.css?v=11", "media-cosmos.css?v=2", "media-professional-suite.css?v=1", "media-next-suite.css?v=1", "media-production-workflow.css?v=3", "universal-media-project.css?v=1",
-        "media-design-advanced.css?v=3", "media-design-publish.css?v=1", "video-editor-studio.css?v=3",
-        "video-editor-resolve.css?v=7", "photo-editor-pro.css?v=4", "editor-workflow-pro.css?v=2"
+        "media-design-advanced.css?v=3", "media-design-publish.css?v=1",
+        "photo-editor-pro.css?v=4", "editor-workflow-pro.css?v=2"
       ],
       scripts: [
         "media-design-studio.js?v=1", "media-design-pro.js?v=2", "media-design-advanced.js?v=3",
-        "media-design-publish.js?v=1", "video-editor-studio.js?v=3", "video-editor-resolve.js?v=8",
+        "media-design-publish.js?v=1",
         "photo-editor-pro.js?v=3", "editor-workflow-pro.js?v=2", "universal-media-project.js?v=1",
-        "media-production-workflow.js?v=3", "media-cosmos.js?v=2", "media-professional-suite.js?v=2", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=1", "media-design-page.js?v=12"
+        "media-production-workflow.js?v=3", "media-cosmos.js?v=2", "media-professional-suite.js?v=3", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=2", "media-design-page.js?v=13"
       ]
     },
     davinci: {
       styles: [
-        "video-editor-studio.css?v=3", "video-editor-resolve.css?v=7",
+        "video-editor-studio.css?v=4", "video-editor-resolve.css?v=8",
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=3"
       ],
       scripts: [
-        "media-design-studio.js?v=1", "video-editor-studio.js?v=3",
-        "video-editor-resolve.js?v=8", "editor-workflow-pro.js?v=2",
+        "media-design-studio.js?v=1", "video-editor-studio.js?v=4",
+        "video-editor-resolve.js?v=9", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=3"
       ]
     },
@@ -132,10 +132,10 @@
       ],
       scripts: [
         "creative-os-core.js?v=4", "youtube-publisher.js?v=2", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
-        "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=1",
+        "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=2",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",
-        "music-production-suite.js?v=3", "music-ai-apps.js?v=3", "music-ai-studio.js?v=9"
+        "music-production-suite.js?v=4", "music-ai-apps.js?v=3", "music-ai-studio.js?v=9"
       ]
     },
     communication: {

@@ -14,7 +14,6 @@
     { id: "photo-editor", icon: "✎", name: "Photo Editor", group: "Biên tập nâng cao", code: "PHOTO", description: "Chỉnh sửa ảnh nhiều lớp như một Photoshop thu gọn ngay trong trình duyệt.", caps: ["Layers", "Blend & filters", "Undo · Redo", "High-res export"] },
     { id: "video-workspace", icon: "VM", name: "Video & Motion Pro", group: "Biên tập nâng cao", code: "VIDEO+", description: "Source/Program, three-point edit, transcript proposal, color và audio bus.", caps: ["Source · Program", "Timeline trim", "Color management", "Audio bus"] },
     { id: "motion-compositor", icon: "FX", name: "Motion & Compositing", group: "Biên tập nâng cao", code: "MOTION", description: "Node graph, keyframe, camera 2.5D, particle theo audio, tracking và cache manifest.", caps: ["Node graph", "Keyframe · Camera", "Audio reactive", "Cache manifest"] },
-    { id: "video-editor", icon: "▶", name: "Video Editor", group: "Biên tập nâng cao", code: "RESOLVE", description: "Studio hậu kỳ tiếng Việt với Media, Cut, Edit, Fusion, Color, Fairlight và Deliver.", caps: ["Timeline nhiều rãnh", "Color & scopes", "Fusion nodes", "Fairlight mixer"] },
     { id: "background-remover", icon: "✂", name: "Background Remover", group: "Biên tập nâng cao", code: "CUT", description: "Xóa nền theo màu, lấy mẫu pixel và làm mềm đường biên.", caps: ["Color key", "Edge feather", "PNG alpha"] },
     { id: "collage", icon: "▦", name: "Collage Maker", group: "Biên tập nâng cao", code: "COL", description: "Ghép nhiều ảnh theo lưới, ảnh nổi bật hoặc dải ngang.", caps: ["12 images", "Smart cover", "High-res"] },
     { id: "inspector", icon: "⌕", name: "Image Inspector", group: "Biên tập nâng cao", code: "META", description: "Đọc EXIF, SHA-256, màu đại diện và xóa metadata.", caps: ["EXIF", "SHA-256", "Strip metadata"] },
@@ -43,7 +42,7 @@
   const PLANET_GROUPS = Object.freeze([
     { id: "universal", label: "Universal Project", tools: ["media-core", "universal-media", "asset-manager", "review-studio", "universal-canvas"] },
     { id: "photo", label: "Photo & Image", tools: ["photo-workspace", "ai-task-center", "photo-editor", "background-remover", "collage", "inspector", "compress", "convert", "image", "picker"] },
-    { id: "video", label: "Video & Motion", tools: ["video-workspace", "motion-compositor", "video-editor"] },
+    { id: "video", label: "Video & Motion", tools: ["video-workspace", "motion-compositor"] },
     { id: "documents", label: "Documents & Utility", tools: ["document-workspace", "pdf", "qr"] },
     { id: "brand", label: "Brand Universe", tools: ["brand-workspace", "dev-handoff", "color", "type", "gradient", "brand-kit"] },
     { id: "assets", label: "Asset Galaxy", tools: ["asset-workspace", "media-cloud", "icon", "svg"] },
@@ -64,7 +63,6 @@
     { code: "RV", label: "Review Studio", tool: "review-studio", description: "Frame review, version compare và approval" },
     { code: "UC", label: "Universal Canvas", tool: "universal-canvas", description: "Artboard, sequence, component và comment" },
     { code: "PE", label: "Photo Editor Pro", tool: "photo-editor", description: "Layer và chỉnh sửa không phá hủy" },
-    { code: "VE", label: "Video Editor Pro", tool: "video-editor", description: "Dựng, màu, âm thanh và deliver" },
     { code: "MV", label: "Motion & Vector", route: "/graphic-design/vector", description: "Bezier, keyframe và state" },
     { code: "DS", label: "Design System", route: "/graphic-design/components", description: "Component, variant và token" },
     { code: "AD", label: "Adaptive Content", route: "/graphic-design/adaptive", description: "Đa kích thước và bulk create" },
@@ -77,7 +75,13 @@
   const loadState = () => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      return { active: saved.active || "Universal Media Project", favorites: Array.isArray(saved.favorites) ? saved.favorites : [], recent: Array.isArray(saved.recent) ? saved.recent : [], usage: saved.usage || {} };
+      const availableNames = new Set(TOOLS.map((tool) => tool.name));
+      return {
+        active: availableNames.has(saved.active) ? saved.active : "Universal Media Project",
+        favorites: Array.isArray(saved.favorites) ? saved.favorites.filter((name) => availableNames.has(name)) : [],
+        recent: Array.isArray(saved.recent) ? saved.recent.filter((name) => availableNames.has(name)).slice(0, 12) : [],
+        usage: Object.fromEntries(Object.entries(saved.usage || {}).filter(([name]) => availableNames.has(name)))
+      };
     } catch {
       return { active: "Universal Media Project", favorites: [], recent: [], usage: {} };
     }

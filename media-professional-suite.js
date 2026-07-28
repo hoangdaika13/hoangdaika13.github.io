@@ -455,7 +455,7 @@
 
   function videoMarkup(state) {
     return `<div class="mps-work-grid">
-      <section class="mps-card mps-card--launch"><span>VM</span><div><small>EDIT · FUSION · COLOR · AUDIO</small><h3>Video Editor Pro</h3><p>Source/Program, timeline đa rãnh, nodes, scopes, audio mixer và Deliver.</p></div><button type="button" data-mps-route="/media-design/video-editor">Mở Video Editor</button></section>
+      <section class="mps-card mps-card--launch"><span>VM</span><div><small>EDIT · FUSION · COLOR · AUDIO</small><h3>HH Video Studio</h3><p>Source/Program, timeline đa rãnh, nodes, scopes, audio mixer và Deliver.</p></div><button type="button" data-mps-route="/davinci-resolve">Mở studio độc lập</button></section>
       <section class="mps-card"><header><div><small>THREE-POINT EDIT</small><h3>Source marks</h3></div><b>${state.video.sourceMarks.length}</b></header>
         <form class="mps-inline-form" data-mps-source-mark-form><input name="in" placeholder="In 00:00:00" required><input name="out" placeholder="Out 00:00:05" required><button type="submit">Lưu mark</button></form>
         <div class="mps-chip-list">${state.video.sourceMarks.slice(-6).reverse().map((item) => `<span>${escapeHtml(item.in)} → ${escapeHtml(item.out)}<small>Source monitor</small></span>`).join("") || "<p>Chưa đặt In/Out.</p>"}</div>

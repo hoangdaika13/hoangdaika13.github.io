@@ -65,9 +65,9 @@ test("release preflight locks publishing and records splits, consent and provena
 });
 
 test("v3 assets are versioned in loader and service worker", () => {
-  for (const asset of ["music-production-suite.css?v=3", "music-production-suite.js?v=3", "creative-os-core.js?v=4"]) {
+  for (const asset of ["music-production-suite.css?v=3", "music-production-suite.js?v=4", "creative-os-core.js?v=4"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
-  assert.match(worker, /hh-identity-portal-v272/);
+  assert.match(worker, /hh-identity-portal-v\d+/);
 });

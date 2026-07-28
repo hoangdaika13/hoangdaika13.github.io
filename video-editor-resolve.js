@@ -218,6 +218,8 @@
       if (!channel) return;
       if (patch.gain != null) channel.gain = clamp(patch.gain, 0, 1.5);
       if (patch.pan != null) channel.pan = clamp(patch.pan, -1, 1);
+      if (patch.muted != null) channel.muted = Boolean(patch.muted);
+      if (patch.solo != null) channel.solo = Boolean(patch.solo);
       if (patch.eq) channel.eq = { low: clamp(patch.eq.low ?? channel.eq.low, -18, 18), mid: clamp(patch.eq.mid ?? channel.eq.mid, -18, 18), high: clamp(patch.eq.high ?? channel.eq.high, -18, 18) };
       if (patch.compressor) channel.compressor = { ...channel.compressor, ...patch.compressor, threshold: clamp(patch.compressor.threshold ?? channel.compressor.threshold, -60, 0), ratio: clamp(patch.compressor.ratio ?? channel.compressor.ratio, 1, 20) };
       if (patch.noiseReduction) channel.noiseReduction = { enabled: Boolean(patch.noiseReduction.enabled), amount: clamp(patch.noiseReduction.amount, 0, 1) };
@@ -277,7 +279,7 @@
     page: "edit",
     proxy: false,
     grade: { exposure: 0, contrast: 100, saturation: 100, temperature: 0, tint: 0, lift: 0, gamma: 0, gain: 0, highlights: 0, shadows: 0, blur: 0, sharpen: 0 },
-    audio: { master: 100, pan: 0, low: 0, mid: 0, high: 0, threshold: -24, reverb: 0 },
+    audio: { master: 100, pan: 0, low: 0, mid: 0, high: 0, threshold: -24, muted: false, solo: false, armed: false },
     nodes: [
       { id: "media-in", name: "MediaIn1", type: "input", enabled: true },
       { id: "color-corrector", name: "ColorCorrector1", type: "color", enabled: true },
@@ -321,7 +323,8 @@
         audio: { ...defaults.audio, ...(saved.audio || {}) },
         nodes: Array.isArray(saved.nodes) && saved.nodes.length ? saved.nodes : structuredClone(defaults.nodes),
         queue: Array.isArray(saved.queue) ? saved.queue : [],
-        bins: Array.isArray(saved.bins) && saved.bins.length ? saved.bins : [...defaults.bins],
+        bins: [...defaults.bins],
+        selectedBin: defaults.bins.includes(saved.selectedBin) ? saved.selectedBin : defaults.selectedBin,
         pro: resolveOps.normalizeProject(saved.pro || defaults.pro)
       };
       state.page = saved.page === "fairlight" ? "audio" : pages.some(([id]) => id === saved.page) ? saved.page : "edit";
@@ -557,10 +560,31 @@
     if (host && panel) host.append(panel);
   }
 
+  function mediaBinKind(bin) {
+    const index = state.data.bins.indexOf(bin);
+    return index === 1 ? "video" : index === 2 ? "audio" : index === 3 ? "image" : index === 0 ? "all" : "custom";
+  }
+
+  function applyMediaBinFilter() {
+    const kind = mediaBinKind(state.data.selectedBin);
+    let visible = 0;
+    $$(state.root, "[data-ve-asset]").forEach((asset) => {
+      const show = kind === "all" || asset.dataset.assetKind === kind;
+      asset.hidden = !show;
+      if (show) visible += 1;
+    });
+    const count = $(state.root, "[data-ve-asset-count]");
+    if (count) count.textContent = `${visible} / ${$$(state.root, "[data-ve-asset]").length} media`;
+  }
+
   function mediaPage() {
-    const bins = state.data.bins.map((bin) => `<button class="${state.data.selectedBin === bin ? "is-active" : ""}" data-vr-bin="${esc(bin)}">${icon(bin === "Master" ? "folder-open" : "folder")}<span>${esc(bin)}</span><b>${bin === "Master" ? $$(state.root, "[data-ve-asset]").length : 0}</b></button>`).join("");
+    const counts = { all: $$(state.root, "[data-ve-asset]").length, video: $$(state.root, '[data-asset-kind="video"]').length, audio: $$(state.root, '[data-asset-kind="audio"]').length, image: $$(state.root, '[data-asset-kind="image"]').length, custom: 0 };
+    const bins = state.data.bins.map((bin) => {
+      const kind = mediaBinKind(bin);
+      return `<button class="${state.data.selectedBin === bin ? "is-active" : ""}" data-vr-bin="${esc(bin)}">${icon(kind === "all" ? "folder-open" : "folder")}<span>${esc(bin)}</span><b>${counts[kind] || 0}</b></button>`;
+    }).join("");
     return `<div class="vr-media-layout">
-      <aside class="vr-bins"><header><strong>Nhóm media</strong><button data-vr-action="new-bin" title="Tạo bin">${icon("folder-plus")}</button></header>${bins}<section><strong>Smart Bins</strong><button>${icon("video")} Video</button><button>${icon("audio-lines")} Âm thanh</button><button>${icon("image")} Hình ảnh</button></section></aside>
+      <aside class="vr-bins"><header><strong>Nhóm media</strong><span>${icon("folders")} Smart bins</span></header>${bins}<section><strong>Lọc nhanh theo loại media</strong><small>Video, âm thanh và hình ảnh dùng các bin có số lượng thật ở trên.</small></section></aside>
       <div class="vr-slot vr-slot--project" data-vr-slot="project"></div>
       <div class="vr-slot vr-slot--monitor" data-vr-slot="monitor"></div>
       <aside class="vr-media-info"><header><strong>Chuẩn bị media</strong><span>LOCAL</span></header>
@@ -601,7 +625,7 @@
       <aside class="vr-color-nodes"><header><strong>Nút màu</strong><button data-vr-action="auto-color">${icon("wand-sparkles")} Cân bằng cục bộ</button></header>${state.data.pro.color.nodes.map((node, index) => `<button class="${index === 0 ? "is-active" : ""}"><span>${String(index + 1).padStart(2, "0")}</span><b>${esc(node.type)}</b><small>${node.enabled ? "Đang bật" : "Đã bỏ qua"}</small></button>`).join("")}<button data-vr-action="add-serial-node"><span>+</span><b>Thêm nút nối tiếp</b><small>Alt+S</small></button></aside>
       <section class="vr-color-controls"><header><div><strong>Primary Wheels</strong><span>DaVinci YRGB</span></div><button data-vr-action="grade-reset">Đặt lại</button><button data-vr-action="copy-grade">Sao chép màu</button></header>
         <div class="vr-wheels">${[["lift","Lift","#78b9d9"],["gamma","Gamma","#cf8cc8"],["gain","Gain","#e0c276"],["exposure","Offset","#91d3a2"]].map(([id,label,color]) => `<label style="--wheel:${color}"><i><span></span></i><b>${label}</b><input type="range" min="-100" max="100" value="${state.data.grade[id]}" data-vr-grade="${id}"><output data-vr-grade-value="${id}">${state.data.grade[id]}</output></label>`).join("")}</div>
-        <div class="vr-grade-sliders"><label><span>LUT cục bộ<b>${esc(state.data.pro.color.lut)}</b></span><select data-vr-lut><option value="none">Không dùng LUT</option><option value="cinema">Cinema 709</option><option value="warm">Warm Film</option><option value="cool">Cool Night</option></select></label>${rangeControl("temperature","Nhiệt độ",-100,100)}${rangeControl("tint","Sắc độ",-100,100)}${rangeControl("contrast","Tương phản",0,200)}${rangeControl("saturation","Bão hòa",0,200)}${rangeControl("highlights","Vùng sáng",-100,100)}${rangeControl("shadows","Vùng tối",-100,100)}${rangeControl("blur","Làm mờ",0,12,.2,"px")}${rangeControl("sharpen","Độ nét",0,100)}<div class="vr-curve-model"><strong>Curves</strong><svg viewBox="0 0 100 60" role="img" aria-label="Đường cong màu"><path d="M0 60 L100 0"></path>${state.data.pro.color.curves.map((point) => `<circle cx="${point.x * 100}" cy="${60 - point.y * 60}" r="2.5"></circle>`).join("")}</svg><button data-vr-action="curve-contrast">S-Curve</button></div></div>
+        <div class="vr-grade-sliders"><label><span>LUT cục bộ<b>${esc(state.data.pro.color.lut)}</b></span><select data-vr-lut><option value="none">Không dùng LUT</option><option value="cinema">Cinema 709</option><option value="warm">Warm Film</option><option value="cool">Cool Night</option></select></label>${rangeControl("temperature","Nhiệt độ",-100,100)}${rangeControl("tint","Sắc độ",-100,100)}${rangeControl("contrast","Tương phản",0,200)}${rangeControl("saturation","Bão hòa",0,200)}${rangeControl("highlights","Vùng sáng",-100,100)}${rangeControl("shadows","Vùng tối",-100,100)}${rangeControl("blur","Làm mờ",0,12,.2,"px")}<div class="vr-curve-model"><strong>Curves</strong><svg viewBox="0 0 100 60" role="img" aria-label="Đường cong màu"><path d="M0 60 L100 0"></path>${state.data.pro.color.curves.map((point) => `<circle cx="${point.x * 100}" cy="${60 - point.y * 60}" r="2.5"></circle>`).join("")}</svg><button data-vr-action="curve-contrast">S-Curve</button></div></div>
       </section>
       <div class="vr-slot vr-slot--timeline" data-vr-slot="timeline"></div>
     </div>`;
@@ -618,7 +642,7 @@
       <div class="vr-slot vr-slot--timeline" data-vr-slot="timeline"></div>
       <section class="vr-mixer"><header><strong>Mixer</strong><span>Bus 1</span></header>
         <article class="vr-channel"><div><b>A1</b><small>Timeline Audio</small></div><canvas width="38" height="168" data-vr-meter></canvas>${audioControl("master","Fader",0,150,1,"%")}${audioControl("pan","Pan",-100,100)}<div class="vr-channel-buttons"><button data-vr-action="audio-mute">M</button><button data-vr-action="audio-solo">S</button><button data-vr-action="audio-arm">R</button></div></article>
-        <article class="vr-channel vr-channel--eq"><header><b>EQ và Dynamics</b><button data-vr-action="eq-reset">Đặt lại</button></header>${audioControl("low","Low",-18,18,.5," dB")}${audioControl("mid","Mid",-18,18,.5," dB")}${audioControl("high","High",-18,18,.5," dB")}${audioControl("threshold","Compressor",-60,0,1," dB")}${audioControl("reverb","Reverb",0,100,1,"%")}</article>
+        <article class="vr-channel vr-channel--eq"><header><b>EQ và Dynamics</b><button data-vr-action="eq-reset">Đặt lại</button></header>${audioControl("low","Low",-18,18,.5," dB")}${audioControl("mid","Mid",-18,18,.5," dB")}${audioControl("high","High",-18,18,.5," dB")}${audioControl("threshold","Compressor",-60,0,1," dB")}</article>
         <article class="vr-audio-fx"><header><strong>Audio FX cục bộ</strong></header><button data-vr-action="audio-noise">Noise Reduction<small>EQ + bộ lọc Web Audio, không phải AI isolation</small></button><button data-vr-action="audio-deesser">De-Esser<small>Giảm dải cao bằng EQ</small></button><button data-vr-action="audio-hum">Hum Remover<small>Lọc dải tần thấp</small></button><button data-vr-action="audio-limiter">Compressor<small>Giới hạn đỉnh âm thanh</small></button><div class="vr-automation-lane"><strong>Automation</strong><span>${state.data.pro.audio.channels[0]?.automation.length || 0} điểm</span><i></i></div></article>
       </section>
       <div class="vr-slot vr-slot--monitor" data-vr-slot="monitor"></div>
@@ -665,7 +689,7 @@
     state.stage.hidden = false;
     const renderers = { media: mediaPage, cut: cutPage, fusion: fusionPage, color: colorPage, audio: audioPage, deliver: deliverPage };
     state.stage.innerHTML = renderers[state.page]?.() || "";
-    if (state.page === "media") { slot("project", state.panels.project); slot("monitor", state.panels.monitor); }
+    if (state.page === "media") { slot("project", state.panels.project); slot("monitor", state.panels.monitor); applyMediaBinFilter(); }
     if (state.page === "cut") { slot("project", state.panels.project); slot("monitor", state.panels.monitor); slot("timeline", state.panels.timeline); }
     if (state.page === "fusion") { slot("monitor", state.panels.monitor); renderNodes(); }
     if (state.page === "color") { slot("monitor", state.panels.monitor); slot("timeline", state.panels.timeline); applyGrade(); drawScopes(); }
@@ -709,7 +733,9 @@
   function addKeyframe() {
     const timecode = $(state.root, "[data-ve-timecode]")?.textContent || "00:00:00:00", parts = timecode.split(":").map(Number);
     const value = (key, fallback = 0) => Number($(state.root, `[data-ve-prop="${key}"]`)?.value ?? fallback);
-    state.data.keyframes.push({ id: uid("keyframe"), timecode, time: (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0) + (parts[3] || 0) / 30, x: value("x"), y: value("y"), scale: value("scale",100), rotation: value("rotation"), opacity: value("opacity",100), speed: value("speed",100) });
+    const values = { x: value("x"), y: value("y"), scale: value("scale",100), rotation: value("rotation"), opacity: value("opacity",100), volume: value("volume",100) };
+    state.root.dispatchEvent(new CustomEvent("hh:video-keyframe-add", { detail: { values } }));
+    state.data.keyframes.push({ id: uid("keyframe"), timecode, time: (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0) + (parts[3] || 0) / 30, ...values, speed: value("speed",100) });
     state.data.keyframes = state.data.keyframes.slice(-80);
     const next = resolveOps.addKeyframe(state.data.pro, { id: state.data.keyframes.at(-1).id, property: "transform", time: timecodeSeconds(), value: value("scale", 100), easing: "ease-in-out" });
     commitPro(next, "Đã lưu keyframe vào graph chuyển động.");
@@ -747,9 +773,56 @@
     status(`Đã áp dụng look ${look}.`, "success");
   }
 
+  async function saveStill() {
+    const video = $(state.root, "[data-ve-video]");
+    const image = $(state.root, "[data-ve-image]");
+    const source = !image?.hidden && image?.complete && image.naturalWidth ? image : video?.readyState >= 2 && video.videoWidth ? video : null;
+    if (!source) return status("Chưa có khung hình media thật để lưu still.", "error");
+    const sequence = ($(state.root, "[data-ve-sequence]")?.value || "1920x1080").split("x").map(Number);
+    const width = clamp(sequence[0], 320, 3840);
+    const height = clamp(sequence[1], 180, 2160);
+    const isImage = source === image;
+    const sourceWidth = isImage ? source.naturalWidth : source.videoWidth;
+    const sourceHeight = isImage ? source.naturalHeight : source.videoHeight;
+    const ratio = Math.min(width / sourceWidth, height / sourceHeight);
+    const drawWidth = sourceWidth * ratio;
+    const drawHeight = sourceHeight * ratio;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#000";
+    context.fillRect(0, 0, width, height);
+    context.filter = gradeFilter();
+    context.drawImage(source, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob?.size) return status("Trình duyệt không thể tạo tệp PNG từ khung hình này.", "error");
+    const anchor = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    anchor.href = url;
+    anchor.download = `hh-still-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    const stills = JSON.parse(localStorage.getItem(`${STORE_KEY}.stills`) || "[]");
+    stills.unshift({ at: Date.now(), width, height, size: blob.size, grade: { ...state.data.grade } });
+    localStorage.setItem(`${STORE_KEY}.stills`, JSON.stringify(stills.slice(0, 12)));
+    status(`Đã tạo PNG ${width}×${height} · ${Math.round(blob.size / 1024)} KB.`, "success");
+  }
+
+  async function copyGrade() {
+    if (!navigator.clipboard?.writeText) return status("Trình duyệt không cho phép ghi clipboard trong ngữ cảnh này.", "error");
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(state.data.grade, null, 2));
+      status("Đã sao chép thông số màu thật vào clipboard.", "success");
+    } catch {
+      status("Không thể ghi clipboard. Hãy cấp quyền rồi thử lại.", "error");
+    }
+  }
+
   function drawScopes() {
     if (state.page !== "color") return;
     const video = $(state.root, "[data-ve-video]");
+    const image = $(state.root, "[data-ve-image]");
     const waveform = $(state.root, '[data-vr-scope="waveform"]');
     const histogram = $(state.root, '[data-vr-scope="histogram"]');
     if (!waveform || !histogram) return;
@@ -761,9 +834,10 @@
     const wctx = waveform.getContext("2d"), hctx = histogram.getContext("2d");
     drawGrid(wctx, waveform.width, waveform.height); drawGrid(hctx, histogram.width, histogram.height);
     try {
-      if (video?.readyState >= 2 && video.videoWidth) {
+      const source = !image?.hidden && image?.complete && image.naturalWidth ? image : video?.readyState >= 2 && video.videoWidth ? video : null;
+      if (source) {
         const sample = document.createElement("canvas"); sample.width = 128; sample.height = 72;
-        const sctx = sample.getContext("2d", { willReadFrequently: true }); sctx.drawImage(video, 0, 0, sample.width, sample.height);
+        const sctx = sample.getContext("2d", { willReadFrequently: true }); sctx.filter = gradeFilter(); sctx.drawImage(source, 0, 0, sample.width, sample.height);
         const pixels = sctx.getImageData(0, 0, sample.width, sample.height).data, bins = [new Uint16Array(64), new Uint16Array(64), new Uint16Array(64)];
         wctx.globalAlpha = .22;
         for (let i = 0; i < pixels.length; i += 16) {
@@ -776,8 +850,6 @@
           const max = Math.max(...bins[channel], 1); hctx.strokeStyle = color; hctx.beginPath();
           bins[channel].forEach((count, index) => { const x = index / 63 * histogram.width, y = histogram.height - count / max * (histogram.height - 8); index ? hctx.lineTo(x, y) : hctx.moveTo(x, y); }); hctx.stroke();
         });
-      } else {
-        wctx.strokeStyle = "#5ee4cc"; wctx.beginPath(); for (let x = 0; x < waveform.width; x += 4) { const y = waveform.height * .55 + Math.sin(x / 13) * 12 + Math.sin(x / 5) * 4; x ? wctx.lineTo(x, y) : wctx.moveTo(x, y); } wctx.stroke();
       }
     } catch {}
     state.scopeFrame = requestAnimationFrame(() => setTimeout(drawScopes, 220));
@@ -789,17 +861,23 @@
     graph.innerHTML = `<svg aria-hidden="true">${state.data.nodes.slice(0, -1).map((node, index) => `<line x1="${130 + index * 160}" y1="120" x2="${210 + index * 160}" y2="120"></line>`).join("")}</svg>${state.data.nodes.map((node, index) => `<button class="vr-node ${state.data.selectedNode === node.id ? "is-active" : ""} ${node.enabled === false ? "is-disabled" : ""}" style="left:${45 + index * 160}px;top:${78 + (index % 2) * 22}px" data-vr-node="${node.id}"><i>${index + 1}</i><span>${esc(node.name)}</span><small>${esc(node.type)}</small><b></b></button>`).join("")}`;
     const selected = state.data.nodes.find((node) => node.id === state.data.selectedNode);
     const inspector = $(state.root, "[data-vr-node-inspector]");
-    if (inspector) inspector.innerHTML = selected ? `<div class="vr-selected-node"><i>${icon("git-merge")}</i><strong>${esc(selected.name)}</strong><span>${selected.enabled === false ? "Đang bỏ qua" : "Đang hoạt động"}</span></div><label>Tên nút<input value="${esc(selected.name)}" data-vr-node-name></label><label>Độ trộn<input type="range" min="0" max="100" value="100"></label><label>Kênh<select><option>RGBA</option><option>RGB</option><option>Alpha</option></select></label><button data-vr-action="node-toggle">${selected.enabled === false ? "Bật nút" : "Bỏ qua nút"}</button>` : "<p>Chọn một nút để chỉnh thuộc tính.</p>";
+    if (inspector) inspector.innerHTML = selected ? `<div class="vr-selected-node"><i>${icon("git-merge")}</i><strong>${esc(selected.name)}</strong><span>${selected.enabled === false ? "Đang bỏ qua" : "Đang hoạt động"}</span></div><label>Tên nút<input value="${esc(selected.name)}" data-vr-node-name></label><p>${["input", "output"].includes(selected.type) ? "Nút luồng media." : "Nút này được nối với hiệu ứng thật của preview và file xuất khi engine hỗ trợ."}</p><button data-vr-action="node-toggle">${selected.enabled === false ? "Bật nút" : "Bỏ qua nút"}</button>` : "<p>Chọn một nút để chỉnh thuộc tính.</p>";
     window.lucide?.createIcons?.({ attrs: { width: 15, height: 15 } });
   }
 
   function addNode(type) {
     const names = { blur: "GaussianBlur", color: "ColorCorrector", transform: "Transform", text: "TextPlus", glow: "SoftGlow", mask: "PolygonMask", merge: "Merge", keyer: "DeltaKeyer" };
+    if (["mask", "merge", "keyer"].includes(type)) {
+      status("Compositor mask/merge/keyer cần renderer pixel nhiều lớp; chức năng này chưa được bật thay vì tạo kết quả giả.", "error");
+      return;
+    }
     const outputIndex = Math.max(1, state.data.nodes.findIndex((node) => node.type === "output"));
     const node = { id: uid("node"), name: `${names[type] || "Tool"}${state.data.nodes.length}`, type, enabled: true };
     state.data.nodes.splice(outputIndex, 0, node); state.data.selectedNode = node.id; save(); renderNodes();
-    const effectMap = { blur: "blur", color: "cinema", glow: "vivid", keyer: "cool" };
+    const effectMap = { blur: "blur", color: "cinema", glow: "vivid" };
     if (effectMap[type]) clickBase(`[data-ve-effect="${effectMap[type]}"]`);
+    if (type === "text") clickBase('[data-ve-action="title"]');
+    if (type === "transform") clickBase('[data-ve-inspector-tab="effect"]');
     status(`Đã thêm nút ${node.name}.`, "success");
   }
 
@@ -809,10 +887,13 @@
     if (!video || !(window.AudioContext || window.webkitAudioContext)) return null;
     try {
       const context = new (window.AudioContext || window.webkitAudioContext)();
-      const source = context.createMediaElementSource(video), low = context.createBiquadFilter(), mid = context.createBiquadFilter(), high = context.createBiquadFilter(), compressor = context.createDynamicsCompressor(), panner = context.createStereoPanner(), gain = context.createGain(), analyser = context.createAnalyser();
+      const source = context.createMediaElementSource(video), low = context.createBiquadFilter(), mid = context.createBiquadFilter(), high = context.createBiquadFilter(), compressor = context.createDynamicsCompressor(), panner = context.createStereoPanner(), gain = context.createGain(), analyser = context.createAnalyser(), exportDestination = context.createMediaStreamDestination();
       low.type = "lowshelf"; low.frequency.value = 180; mid.type = "peaking"; mid.frequency.value = 1200; mid.Q.value = .8; high.type = "highshelf"; high.frequency.value = 6200; analyser.fftSize = 256;
-      source.connect(low).connect(mid).connect(high).connect(compressor).connect(panner).connect(gain).connect(analyser).connect(context.destination);
-      state.audio = { context, source, low, mid, high, compressor, panner, gain, analyser };
+      source.connect(low).connect(mid).connect(high).connect(compressor).connect(panner).connect(gain).connect(analyser);
+      analyser.connect(context.destination);
+      analyser.connect(exportDestination);
+      video.__hhProcessedAudioStream = exportDestination.stream;
+      state.audio = { context, source, low, mid, high, compressor, panner, gain, analyser, exportDestination, video };
       applyAudio();
     } catch {}
     return state.audio;
@@ -825,6 +906,8 @@
     }
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return status("Trình duyệt này chưa hỗ trợ thu âm.", "error");
     try {
+      state.data.audio.armed = true;
+      save();
       state.micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       const mime = ["audio/webm;codecs=opus", "audio/webm"].find((type) => MediaRecorder.isTypeSupported(type)) || "";
       state.micChunks = [];
@@ -838,11 +921,15 @@
         if (input) { input.files = transfer.files; input.dispatchEvent(new Event("change", { bubbles: true })); }
         state.micStream?.getTracks().forEach((track) => track.stop());
         state.micStream = null; state.micRecorder = null; state.micChunks = [];
+        state.data.audio.armed = false;
+        save();
         status("Đã lưu bản thu vào Media Pool và timeline.", "success");
       };
       state.micRecorder.start(250);
       status("Đang thu âm · bấm Thu âm lần nữa để dừng.", "success");
     } catch {
+      state.data.audio.armed = false;
+      save();
       status("Không thể truy cập micro. Hãy kiểm tra quyền của trình duyệt.", "error");
     }
   }
@@ -853,7 +940,7 @@
     if (master) { master.value = String(a.master); master.dispatchEvent(new Event("input", { bubbles: true })); }
     if (graph) {
       const at = graph.context.currentTime;
-      graph.gain.gain.setTargetAtTime(a.master / 100, at, .015); graph.panner.pan.setTargetAtTime(a.pan / 100, at, .015);
+      graph.gain.gain.setTargetAtTime(a.muted ? 0 : a.master / 100, at, .015); graph.panner.pan.setTargetAtTime(a.pan / 100, at, .015);
       graph.low.gain.setTargetAtTime(a.low, at, .015); graph.mid.gain.setTargetAtTime(a.mid, at, .015); graph.high.gain.setTargetAtTime(a.high, at, .015); graph.compressor.threshold.setTargetAtTime(a.threshold, at, .015);
     }
     save();
@@ -952,6 +1039,7 @@
       const plan = enabled ? resolveOps.planProxy({ id: "active-media", size: 0 }, .5) : resolveOps.createProject().proxyPlan;
       const next = resolveOps.normalizeProject({ ...state.data.pro, proxyPlan: plan });
       commitPro(next, enabled ? "Đã bật chế độ xem nhẹ và tạo kế hoạch proxy. Chưa có tệp proxy mới." : "Đã quay lại phát media nguồn.");
+      if (enabled) status("Proxy file chưa được tạo: cần ffmpeg worker hoặc render provider. Preview vẫn dùng media nguồn.", "info");
       updateProxy();
     }
     else if (action === "inspector") { const panel = state.panels.properties; if (panel) panel.hidden = !panel.hidden; }
@@ -974,15 +1062,15 @@
     }
     else if (action === "pro-close") toggleProDrawer(false);
     else if (action === "pro-keyframe-add") addKeyframe();
-    else if (action === "pro-keyframe-delete") { state.data.keyframes.pop(); state.data.pro.keyframes.pop(); state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderKeyframes(); renderProSummary(); }
+    else if (action === "pro-keyframe-delete") { state.root.dispatchEvent(new CustomEvent("hh:video-keyframe-delete")); state.data.keyframes.pop(); state.data.pro.keyframes.pop(); state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderKeyframes(); renderProSummary(); status("Đã xóa keyframe cuối khỏi clip và mô hình chuyển động.", "success"); }
     else if (action === "pro-caption" || action === "subtitle-add") { clickBase('[data-ve-action="caption"]'); commitPro(resolveOps.addSubtitle(state.data.pro, { start: timecodeSeconds(), duration: 3, text: "Phụ đề mới", language: "vi" }), "Đã thêm phụ đề vào timeline và mô hình phụ đề."); }
     else if (action === "pro-speed" || action === "motion-ramp") {
       const clip = selectedModelClip(); if (!clip) return status("Hãy chọn một clip trước khi tạo Speed Ramp.", "error");
       const speed = $(state.root, '[data-ve-prop="speed"]'); if (speed) { speed.value = "150"; speed.dispatchEvent(new Event("input", { bubbles: true })); speed.dispatchEvent(new Event("change", { bubbles: true })); }
-      commitPro(resolveOps.setMotionModel(state.data.pro, "speedRamp", { enabled: true, points: [{ time: clip.start, speed: 1 }, { time: clip.start + clip.duration / 2, speed: 1.5 }, { time: clip.start + clip.duration, speed: 1 }] }), "Đã tạo mô hình Speed Ramp và đặt tốc độ clip thành 150% khi Thanh tra hỗ trợ.");
+      commitPro(resolveOps.setMotionModel(state.data.pro, "speedRamp", { enabled: true, points: [{ time: clip.start, speed: 1.5 }, { time: clip.start + clip.duration, speed: 1.5 }] }), "Đã đặt tốc độ clip thật thành 150% và lưu mô hình tốc độ.");
     }
-    else if (action === "pro-stabilize" || action === "motion-stabilize") { if (!selectedModelClip()) return status("Hãy chọn một clip để ổn định.", "error"); clickBase('[data-ve-action="reset-motion"]'); commitPro(resolveOps.setMotionModel(state.data.pro, "stabilization", { enabled: true, strength: .5, status: "local-transform" }), "Đã cân lại transform cục bộ. Đây không phải optical stabilization."); }
-    else if (action === "motion-track") { if (!selectedModelClip()) return status("Hãy chọn một clip để tạo tracking model.", "error"); commitPro(resolveOps.setMotionModel(state.data.pro, "tracking", { status: "planned", points: [{ time: timecodeSeconds(), x: 0.5, y: 0.5 }] }), "Đã tạo điểm tracking model. Chưa chạy optical-flow bên ngoài trình duyệt."); }
+    else if (action === "pro-stabilize" || action === "motion-stabilize") { if (!selectedModelClip()) return status("Hãy chọn một clip để ổn định.", "error"); clickBase('[data-ve-action="reset-motion"]'); commitPro(resolveOps.setMotionModel(state.data.pro, "stabilization", { enabled: true, strength: .5, status: "local-transform" }), "Đã cân transform clip về tâm."); status("Optical stabilization chưa có worker phân tích chuyển động; hệ thống không giả kết quả.", "info"); }
+    else if (action === "motion-track") { if (!selectedModelClip()) return status("Hãy chọn một clip để tạo tracking model.", "error"); commitPro(resolveOps.setMotionModel(state.data.pro, "tracking", { status: "provider-not-configured", points: [] }), "Đã ghi yêu cầu tracking vào project."); status("Motion tracking cần optical-flow worker chưa được cấu hình; chưa có điểm tracking giả nào được tạo.", "info"); }
     else if (action === "timeline-blade") runTimelineOperation("blade");
     else if (action === "timeline-ripple") runTimelineOperation("ripple-delete");
     else if (action === "timeline-slip-back") runTimelineOperation("slip", -1);
@@ -990,14 +1078,13 @@
     else if (action === "timeline-slide-back") runTimelineOperation("slide", -1);
     else if (action === "timeline-slide-forward") runTimelineOperation("slide", 1);
     else if (action === "timeline-snap") { const next = resolveOps.applyTimelineOperation(state.data.pro, { type: "toggle-snap" }); const checkbox = $(state.root, "[data-ve-snap]"); if (checkbox) { checkbox.checked = next.snap.enabled; checkbox.dispatchEvent(new Event("change", { bubbles: true })); } commitPro(next, `Bám dính đã ${next.snap.enabled ? "bật" : "tắt"}.`); }
-    else if (action === "nested-create") { const clip = selectedModelClip(); if (!clip) return status("Hãy chọn clip để tạo sequence lồng.", "error"); commitPro(resolveOps.createNestedSequence(state.data.pro, [clip.id], `Nested ${state.data.pro.nestedSequences.length + 1}`), "Đã tạo mô hình sequence lồng trong project Pro; phát lại vẫn dùng timeline gốc."); }
+    else if (action === "nested-create") { const clip = selectedModelClip(); if (!clip) return status("Hãy chọn clip để tạo sequence lồng.", "error"); commitPro(resolveOps.createNestedSequence(state.data.pro, [clip.id], `Nested ${state.data.pro.nestedSequences.length + 1}`), "Đã lưu sequence lồng vào project."); status("Sequence lồng đã được lưu nhưng renderer playback lồng chưa hỗ trợ; timeline gốc không bị thay đổi giả.", "info"); }
     else if (action === "pro-undo") undoPro("undo");
     else if (action === "pro-redo") undoPro("redo");
     else if (action === "pro-scopes") renderPage("color");
     else if (action === "pro-audio") renderPage("audio");
     else if (action === "pro-media") renderPage("media");
-    else if (action === "new-bin") { state.data.bins.push(`Bin ${state.data.bins.length}`); save(); renderPage("media"); status("Đã tạo bin mới.", "success"); }
-    else if (action === "sync-media") status("Đã chuẩn bị điểm đồng bộ theo waveform cục bộ. Hãy phát media để Web Audio lấy mẫu thật.", "success");
+    else if (action === "sync-media") status("Đồng bộ A/V tự động cần ít nhất hai waveform và bộ so khớp chưa được bật; chưa có clip nào bị di chuyển.", "info");
     else if (action === "analyze-media") status(`Đã đọc metadata trình duyệt của ${$$(state.root, "[data-ve-asset]").length} media đang có trên thiết bị.`, "success");
     else if (action === "source-tape") { clickBase('[data-ve-panel-tab="project"]'); status("Source Tape hiển thị toàn bộ media theo thứ tự."); }
     else if (action === "append") { const asset = $(state.root, "[data-ve-asset]"); asset?.querySelector('[data-ve-action="asset-add"]')?.click(); }
@@ -1008,22 +1095,22 @@
     else if (action === "add-node") addNode(event.target.closest("[data-node-type]").dataset.nodeType);
     else if (action === "node-delete") { const index = state.data.nodes.findIndex((item) => item.id === state.data.selectedNode); if (index > 0 && index < state.data.nodes.length - 1) { state.data.nodes.splice(index, 1); state.data.selectedNode = state.data.nodes[Math.max(0, index - 1)].id; save(); renderNodes(); } else status("Không thể xóa nút đầu vào hoặc đầu ra.", "error"); }
     else if (action === "node-duplicate") { const selected = state.data.nodes.find((item) => item.id === state.data.selectedNode); if (selected && !["input", "output"].includes(selected.type)) { const copy = { ...selected, id: uid("node"), name: `${selected.name} Copy` }; state.data.nodes.splice(state.data.nodes.indexOf(selected) + 1, 0, copy); state.data.selectedNode = copy.id; save(); renderNodes(); } }
-    else if (action === "node-toggle") { const selected = state.data.nodes.find((item) => item.id === state.data.selectedNode); if (selected) { selected.enabled = selected.enabled === false; save(); renderNodes(); } }
-    else if (action === "node-organize") { renderNodes(); status("Đã sắp xếp đồ thị nút.", "success"); }
+    else if (action === "node-toggle") { const selected = state.data.nodes.find((item) => item.id === state.data.selectedNode); if (selected) { selected.enabled = selected.enabled === false; const effectMap = { blur: "blur", color: "cinema", glow: "vivid" }; clickBase(`[data-ve-effect="${selected.enabled === false ? "none" : effectMap[selected.type] || "none"}"]`); save(); renderNodes(); status(`${selected.name} đã ${selected.enabled === false ? "bỏ qua" : "bật"}.`, "success"); } }
+    else if (action === "node-organize") { const rank = (node) => node.type === "input" ? 0 : node.type === "output" ? 2 : 1; state.data.nodes = state.data.nodes.map((node, index) => ({ node, index })).sort((a, b) => rank(a.node) - rank(b.node) || a.index - b.index).map((row) => row.node); save(); renderNodes(); status("Đã sắp xếp và lưu lại thứ tự đồ thị nút.", "success"); }
     else if (action === "grade-reset") { state.data.grade = { ...defaults.grade }; commitPro(resolveOps.updateColor(state.data.pro, { lut: "none", wheels: { lift: 0, gamma: 0, gain: 0, offset: 0 }, curves: [{ x: 0, y: 0 }, { x: 1, y: 1 }] }), "Đã đặt lại toàn bộ hiệu chỉnh màu cục bộ."); renderPage("color"); }
     else if (action === "auto-color") { Object.assign(state.data.grade, { exposure: 6, contrast: 112, saturation: 108, temperature: 4, shadows: 8, highlights: -10 }); renderPage("color"); status("Đã áp dụng preset cân bằng cục bộ. Đây không phải phân tích AI.", "success"); }
     else if (action === "apply-look") applyLook(event.target.closest("[data-look]")?.dataset.look || "cinema");
-    else if (action === "save-still") { const stills = JSON.parse(localStorage.getItem(`${STORE_KEY}.stills`) || "[]"); stills.unshift({ at: Date.now(), grade: { ...state.data.grade } }); localStorage.setItem(`${STORE_KEY}.stills`, JSON.stringify(stills.slice(0, 12))); status("Đã lưu still và thông số màu.", "success"); }
-    else if (action === "copy-grade") { navigator.clipboard?.writeText(JSON.stringify(state.data.grade, null, 2)); status("Đã sao chép thông số màu.", "success"); }
+    else if (action === "save-still") saveStill().catch((error) => status(`Không thể lưu still: ${error.message}`, "error"));
+    else if (action === "copy-grade") copyGrade();
     else if (action === "add-serial-node") { commitPro(resolveOps.updateColor(state.data.pro, { addNode: { id: uid("corrector"), type: "corrector", enabled: true } }), "Đã thêm nút chỉnh màu nối tiếp."); renderPage("color"); }
     else if (action === "curve-contrast") { commitPro(resolveOps.updateColor(state.data.pro, { curves: [{ x: 0, y: 0 }, { x: .25, y: .18 }, { x: .75, y: .82 }, { x: 1, y: 1 }] }), "Đã tạo S-Curve không phá hủy trong mô hình màu."); renderPage("color"); }
     else if (action === "audio-normalize") clickBase('[data-ve-action="normalize"]');
     else if (action === "audio-noise") { state.data.audio.high = -2; state.data.audio.low = -4; applyAudio(); state.data.pro = resolveOps.updateAudioChannel(state.data.pro, "A1", { eq: { low: -4, mid: 0, high: -2 }, noiseReduction: { enabled: true, amount: .35 } }); save(); renderPage("audio"); status("Đã áp dụng EQ giảm nhiễu cục bộ. Không giả nhận diện giọng nói AI.", "success"); }
     else if (action === "audio-duck") { state.data.audio.master = 76; applyAudio(); state.data.pro = resolveOps.updateAudioChannel(state.data.pro, "A1", { gain: .76, automation: [{ time: timecodeSeconds(), value: .76 }] }); save(); renderPage("audio"); status("Đã thêm điểm ducking vào automation A1.", "success"); }
-    else if (action === "audio-fade") { clickBase('[data-ve-effect="fade"]'); status("Đã tạo fade cho clip đang chọn.", "success"); }
-    else if (action === "audio-mute") { state.data.audio.master = state.data.audio.master ? 0 : 100; applyAudio(); renderPage("audio"); }
-    else if (action === "audio-solo") status("Đã solo rãnh A1.", "success");
-    else if (action === "audio-arm") status("Rãnh A1 đã sẵn sàng thu.", "success");
+    else if (action === "audio-fade") { const fadeIn = $(state.root, '[data-ve-prop="fadeIn"]'), fadeOut = $(state.root, '[data-ve-prop="fadeOut"]'); if (!fadeIn || fadeIn.closest("form")?.hidden) return status("Hãy chọn một clip có âm thanh trước.", "error"); [fadeIn, fadeOut].forEach((field) => { field.value = "1"; field.dispatchEvent(new Event("input", { bubbles: true })); field.dispatchEvent(new Event("change", { bubbles: true })); }); status("Đã đặt fade in/out 1 giây vào clip thật.", "success"); }
+    else if (action === "audio-mute") { state.data.audio.muted = !state.data.audio.muted; state.data.pro = resolveOps.updateAudioChannel(state.data.pro, "A1", { muted: state.data.audio.muted }); applyAudio(); renderPage("audio"); status(`Rãnh A1 đã ${state.data.audio.muted ? "tắt tiếng" : "bật tiếng"}.`, "success"); }
+    else if (action === "audio-solo") { state.data.audio.solo = !state.data.audio.solo; state.data.pro = resolveOps.updateAudioChannel(state.data.pro, "A1", { solo: state.data.audio.solo }); save(); renderPage("audio"); status(`Solo A1 đã ${state.data.audio.solo ? "bật" : "tắt"} và được lưu vào project.`, "success"); }
+    else if (action === "audio-arm") { state.data.audio.armed = !state.data.audio.armed; save(); renderPage("audio"); status(state.data.audio.armed ? "A1 đã được arm. Bấm Thu âm để cấp quyền micro và ghi file thật." : "Đã bỏ arm rãnh A1.", "success"); }
     else if (action === "audio-record") toggleAudioRecord();
     else if (action === "audio-deesser") { state.data.audio.high = -5; applyAudio(); renderPage("audio"); status("Đã giảm dải cao bằng EQ cục bộ.", "success"); }
     else if (action === "audio-hum") { state.data.audio.low = -8; applyAudio(); renderPage("audio"); status("Đã giảm dải tần thấp bằng EQ cục bộ.", "success"); }
@@ -1138,12 +1225,13 @@
     if (state.exportListener) window.removeEventListener("hh:video-export-status", state.exportListener);
     if (state.micRecorder?.state === "recording") state.micRecorder.stop();
     state.micStream?.getTracks().forEach((track) => track.stop());
+    if (state.audio?.video) delete state.audio.video.__hhProcessedAudioStream;
     if (state.audio?.context && state.audio.context.state !== "closed") state.audio.context.close().catch(() => {});
     Object.assign(state, { root: null, outer: null, workspace: null, stage: null, panels: {}, audio: null, micRecorder: null, micStream: null, micChunks: [], scopeFrame: 0, meterFrame: 0, exportListener: null });
   }
 
   addEventListener("keydown", (event) => {
-    if (!state.root?.isConnected || (!location.hash.includes("/media-design/video-editor") && !location.hash.includes("/davinci-resolve/"))) return;
+    if (!state.root?.isConnected || !location.hash.includes("/davinci-resolve")) return;
     const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "") || document.activeElement?.isContentEditable;
     if (event.shiftKey && /^[1-7]$/.test(event.key) && !typing) { event.preventDefault(); renderPage(pages[Number(event.key) - 1][0]); }
     if (!typing && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "b") { event.preventDefault(); runTimelineOperation("blade"); }

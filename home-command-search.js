@@ -25,7 +25,7 @@
     ["Media Center", "/create/media-center", "Sáng tạo", "media video audio library"],
     ["Music Production Studio", "/music-ai/studio", "Âm nhạc", "music nhạc daw composer mix master"],
     ["Photo Editor", "/media-design/photo-editor", "Media & Design", "photoshop ảnh layer mask"],
-    ["Video Editor", "/media-design/video-editor", "Media & Design", "davinci premiere video timeline"],
+    ["HH Video Studio", "/davinci-resolve", "Sản xuất video", "davinci resolve video timeline webm"],
     ["Media & Design", "/media-design", "Media & Design", "ảnh video pdf qr color typography"],
     ["Thiết kế đồ họa", "/graphic-design", "Thiết kế", "vector motion character 3d prototype"],
     ["DEV Command Center", "/dev-tools", "DEV", "developer json api regex database code git"],

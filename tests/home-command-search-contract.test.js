@@ -41,7 +41,7 @@ test("index covers routes and truthful local sources without sensitive storage d
   assert.ok(index.some((item) => item.title.includes("Ý tưởng video")));
   assert.ok(index.some((item) => item.title === "HH Creative"));
   assert.ok(index.some((item) => item.title === "Linh Design" && item.category === "Thành viên"));
-  assert.ok(index.some((item) => item.route === "/media-design/video-editor"));
+  assert.ok(index.some((item) => item.route === "/davinci-resolve"));
   assert.equal(index.some((item) => item.searchText.includes("must-not-be-indexed")), false);
 });
 

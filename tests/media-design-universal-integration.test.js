@@ -19,15 +19,13 @@ test("Universal Media Project is reachable from the shell and cached offline", (
     "universal-media-project.js?v=1",
     "photo-editor-pro.css?v=4",
     "photo-editor-pro.js?v=3",
-    "video-editor-resolve.css?v=7",
-    "video-editor-resolve.js?v=8",
     "media-professional-suite.css?v=1",
-    "media-professional-suite.js?v=2",
+    "media-professional-suite.js?v=3",
     "media-design-page.css?v=11",
     "media-next-suite.css?v=1",
     "vendor/vercel-blob-client.min.js?v=1",
-    "media-next-suite.js?v=1",
-    "media-design-page.js?v=12"
+    "media-next-suite.js?v=2",
+    "media-design-page.js?v=13"
   ]) {
     const pattern = new RegExp(escapeRegExp(asset));
     assert.match(`${html}\n${loader}`, pattern);
@@ -37,19 +35,20 @@ test("Universal Media Project is reachable from the shell and cached offline", (
   assert.match(worker, /hh-identity-portal-v\d+/);
   assert.match(shell, /id: "universal-media"/);
   assert.match(shell, /id: "asset-manager"/);
-  assert.match(shell, /36 .*Media Cosmos.*Media Cloud/);
+  assert.match(shell, /35 .*Media Cosmos.*Media Cloud/);
   assert.match(page, /HHUniversalMediaProject\?\.mount/);
   assert.match(page, /HHUniversalMediaProject\?\.unmount/);
 });
 
 test("Media and Design exposes a connected professional production flow", () => {
   const page = read("media-design-page.js");
+  const loader = read("performance-loader.js");
   const styles = read("media-design-page.css");
 
   for (const item of [
     "Universal Project",
     "Photo Editor",
-    "Video Editor",
+    "Video & Motion Pro",
     "Motion & Vector",
     "Design System",
     "Adaptive Content",
@@ -62,6 +61,14 @@ test("Media and Design exposes a connected professional production flow", () => 
 
   assert.match(page, /data-mdp-flow-tool/);
   assert.match(page, /data-mdp-flow-route/);
+  assert.doesNotMatch(page, /id:\s*"video-editor"|name:\s*"Video Editor"/);
+  assert.match(page, /availableNames\.has\(saved\.active\)/);
+  const mediaBundle = loader.match(/media:\s*\{[\s\S]*?\n\s*\},\n\s*davinci:/)?.[0] || "";
+  const davinciBundle = loader.match(/davinci:\s*\{[\s\S]*?\n\s*\},\n\s*graphic:/)?.[0] || "";
+  assert.doesNotMatch(mediaBundle, /video-editor-(?:studio|resolve)\.(?:css|js)/);
+  assert.match(davinciBundle, /video-editor-studio\.js\?v=4/);
+  assert.match(davinciBundle, /video-editor-resolve\.js\?v=9/);
+  assert.doesNotMatch(`${page}\n${read("script.js")}\n${read("home-command-search.js")}\n${read("home-daily-command.js")}`, /\/media-design\/video-editor/);
   assert.match(styles, /\.mdp-production-flow/);
   assert.match(styles, /scroll-snap-type/);
   assert.match(styles, /prefers-reduced-motion/);

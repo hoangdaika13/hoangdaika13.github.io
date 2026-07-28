@@ -19,9 +19,9 @@ test("HH Video Studio is a first-class routed browser workspace", () => {
   }
   assert.match(hub, /window\.HHDavinciResolveHub\s*=\s*\{\s*mount/);
   assert.match(loader, /davinci:\s*\{[\s\S]*davinci-resolve-hub\.css\?v=3/);
-  assert.match(loader, /video-editor-studio\.js\?v=3/);
-  assert.match(loader, /video-editor-resolve\.js\?v=8/);
-  assert.match(html, /performance-loader\.js\?v=60/);
+  assert.match(loader, /video-editor-studio\.js\?v=4/);
+  assert.match(loader, /video-editor-resolve\.js\?v=9/);
+  assert.match(html, /performance-loader\.js\?v=62/);
 });
 
 test("the workspace is independent from the desktop app and reports browser capability truthfully", () => {
@@ -59,12 +59,19 @@ test("web editor contracts cover media, timeline, subtitles, versions and real e
   for (const marker of [
     "video/*,audio/*,image/*", "data-ve-subtitle-file", "parseSubtitles", "exportSubtitles",
     "createWaveform", "data-ve-waveform", "cropTop", "fadeIn", "version-save", "version-history",
-    "render-cancel", "completed", "failed", "cancelled"
+    "render-cancel", "completed", "failed", "cancelled", "clipRenderProperties",
+    "hh:video-keyframe-add", "hh:video-keyframe-delete", "__hhProcessedAudioStream",
+    "getComputedStyle(source).filter"
   ]) assert.match(studio, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
-  for (const marker of ["queued", "processing", "completed", "failed", "cancelled", "unsupported", "provider-not-configured"]) {
+  for (const marker of [
+    "queued", "processing", "completed", "failed", "cancelled", "unsupported",
+    "provider-not-configured", "saveStill", "createMediaStreamDestination",
+    "__hhProcessedAudioStream", "Motion tracking cần optical-flow worker"
+  ]) {
     assert.match(resolve, new RegExp(marker));
   }
+  assert.doesNotMatch(resolve, /Math\.sin\(x\s*\/\s*13\)/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /@media\(max-width:760px\)/);
 });

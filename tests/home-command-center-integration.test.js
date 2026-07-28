@@ -15,8 +15,8 @@ const assets = [
   "home-command-search.css?v=2",
   "home-widget-project-pulse.css?v=2",
   "home-health-focus.css?v=2",
-  "home-daily-command.js?v=5",
-  "home-command-search.js?v=2",
+  "home-daily-command.js?v=6",
+  "home-command-search.js?v=3",
   "home-widget-project-pulse.js?v=2",
   "home-health-focus.js?v=2"
 ];

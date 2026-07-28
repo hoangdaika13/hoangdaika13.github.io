@@ -400,7 +400,7 @@
 
   function motionMarkup(state) {
     return `<div class="mnx-grid">
-      <section class="mnx-card mnx-card--wide"><header><div><small>FUSION-STYLE GRAPH</small><h3>Compositing không phá hủy</h3></div><button type="button" data-mnx-route="/media-design/video-editor">Mở Video Editor</button></header>
+      <section class="mnx-card mnx-card--wide"><header><div><small>FUSION-STYLE GRAPH</small><h3>Compositing không phá hủy</h3></div><button type="button" data-mnx-route="/davinci-resolve/fusion">Mở HH Video Studio</button></header>
         <div class="mnx-node-toolbar">${["mask", "transform", "merge", "text", "particle", "keyer", "tracker", "camera", "light"].map((type) => `<button type="button" data-mnx-add-motion="${type}">+ ${type}</button>`).join("")}</div>
         <div class="mnx-node-graph">${state.motion.edges.map((edge) => `<i data-from="${escapeHtml(edge.from)}" data-to="${escapeHtml(edge.to)}"></i>`).join("")}${state.motion.nodes.map((node) => `<button type="button" class="mnx-motion-node" data-node-id="${node.id}" data-type="${node.type}" data-mnx-toggle-motion="${node.id}" style="left:${node.x}px;top:${node.y}px" aria-pressed="${node.enabled}"><small>${escapeHtml(node.type)}</small><strong>${escapeHtml(node.name)}</strong><span>${node.enabled ? "LIVE" : "BYPASS"}</span></button>`).join("")}</div>
       </section>

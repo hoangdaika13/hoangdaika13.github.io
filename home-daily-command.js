@@ -461,9 +461,9 @@
     const photo = read(storage, KEYS.photo, {});
     if (has(storage, KEYS.photo)) candidates.push(normalizeItem("design", photo.name || "Photo Editor", `${asArray(photo.layers).length} layer · bản chỉnh sửa cục bộ`, "/media-design/photo-editor", newestTime(photo)));
     const video = read(storage, KEYS.video, {});
-    if (has(storage, KEYS.video)) candidates.push(normalizeItem("design", video.project?.name || video.name || "Video Editor", `${asArray(video.pro?.clips || video.clips).length} clip · timeline cục bộ`, "/media-design/video-editor", newestTime(video, video.project)));
+    if (has(storage, KEYS.video)) candidates.push(normalizeItem("design", video.project?.name || video.name || "HH Video Studio", `${asArray(video.pro?.clips || video.clips).length} clip · timeline cục bộ`, "/davinci-resolve", newestTime(video, video.project)));
     const legacyVideo = read(storage, KEYS.videoLegacy, {});
-    if (has(storage, KEYS.videoLegacy)) candidates.push(normalizeItem("design", legacyVideo.name || "Video Editor", `${asArray(legacyVideo.clips).length} clip · dự án đã lưu`, "/media-design/video-editor", newestTime(legacyVideo)));
+    if (has(storage, KEYS.videoLegacy)) candidates.push(normalizeItem("design", legacyVideo.name || "HH Video Studio", `${asArray(legacyVideo.clips).length} clip · dự án đã lưu`, "/davinci-resolve", newestTime(legacyVideo)));
     const history = asArray(read(storage, KEYS.mediaHistory, []));
     const latest = [...history].sort((a, b) => newestTime(b) - newestTime(a))[0];
     if (latest) candidates.push(normalizeItem("design", latest.title || latest.tool || "Media & Design", latest.detail || latest.tool || "Hoạt động gần đây", "/media-design", newestTime(latest)));

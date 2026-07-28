@@ -29,7 +29,16 @@
     speed: 1, volume: 1, muted: false, fadeIn: 0, fadeOut: 0, opacity: 1,
     scale: 100, x: 0, y: 0, rotation: 0, cropTop: 0, cropRight: 0,
     cropBottom: 0, cropLeft: 0, blend: "Normal", effect: "none", track: "V1",
-    ...clip
+    ...clip,
+    keyframes: Array.isArray(clip.keyframes) ? clip.keyframes.slice(-120).map((frame) => ({
+      time: Math.max(0, Number(frame.time) || 0),
+      x: Number(frame.x) || 0,
+      y: Number(frame.y) || 0,
+      scale: clamp(frame.scale ?? 100, 10, 400),
+      rotation: clamp(frame.rotation, -360, 360),
+      opacity: clamp(frame.opacity ?? 1, 0, 1),
+      volume: clamp(frame.volume ?? 1, 0, 1.5)
+    })) : []
   });
   const normalizeProject = (project = {}) => ({
     ...defaultProject(),
@@ -104,7 +113,7 @@
         </section>
 
         <section class="ve-monitor-panel">
-          <header class="ve-monitor-tabs"><button class="is-active" data-ve-monitor-tab="source">Source</button><button data-ve-monitor-tab="program">Program: <span data-ve-sequence-name>HH Sequence 01</span></button><span></span><button data-ve-action="fit-preview" title="Vừa toàn bộ khung hình">${icon("maximize")}</button><button data-ve-action="safe-margins" title="Safe margins">${icon("scan")}</button><button data-ve-action="monitor-settings" title="Monitor settings">${icon("settings-2")}</button></header>
+          <header class="ve-monitor-tabs"><button class="is-active" data-ve-monitor-tab="source">Source</button><button data-ve-monitor-tab="program">Program: <span data-ve-sequence-name>HH Sequence 01</span></button><span></span><button data-ve-action="fit-preview" title="Vừa toàn bộ khung hình">${icon("maximize")}</button><button data-ve-action="safe-margins" title="Safe margins">${icon("scan")}</button></header>
           <div class="ve-monitor" data-ve-monitor>
             <div class="ve-monitor-frame" data-ve-monitor-frame>
               <video data-ve-video playsinline preload="metadata"></video>
@@ -366,7 +375,10 @@
   function renderAssets(query = "") {
     const list = $(state.work, "[data-ve-assets]"); if (!list) return;
     const term = query.toLowerCase(); const rows = state.assets.filter((asset) => asset.name.toLowerCase().includes(term));
-    list.innerHTML = rows.length ? rows.map((asset) => `<article draggable="true" data-ve-asset="${asset.id}"><span>${icon(asset.type.startsWith("audio") ? "audio-waveform" : asset.type.startsWith("image") ? "image" : "film")}</span><button type="button" data-ve-action="asset-add" data-asset-id="${asset.id}"><strong>${esc(asset.name)}</strong><small>${bytes(asset.size)} · ${esc(asset.type.split("/")[1]?.toUpperCase() || "FILE")}</small></button><b>${formatTime(asset.duration)}</b><button data-ve-action="asset-remove" data-asset-id="${asset.id}" title="Remove">${icon("x")}</button></article>`).join("") : `<div class="ve-bin-empty">${icon("folder-open")}<strong>Media Pool đang trống</strong><span>Thả video, audio hoặc hình ảnh vào đây.</span><button data-ve-action="import">Nhập media</button></div>`;
+    list.innerHTML = rows.length ? rows.map((asset) => {
+      const kind = asset.type.startsWith("audio") ? "audio" : asset.type.startsWith("image") ? "image" : "video";
+      return `<article draggable="true" data-ve-asset="${asset.id}" data-asset-kind="${kind}"><span>${icon(kind === "audio" ? "audio-waveform" : kind === "image" ? "image" : "film")}</span><button type="button" data-ve-action="asset-add" data-asset-id="${asset.id}"><strong>${esc(asset.name)}</strong><small>${bytes(asset.size)} · ${esc(asset.type.split("/")[1]?.toUpperCase() || "FILE")}</small></button><b>${formatTime(asset.duration)}</b><button data-ve-action="asset-remove" data-asset-id="${asset.id}" title="Remove">${icon("x")}</button></article>`;
+    }).join("") : `<div class="ve-bin-empty">${icon("folder-open")}<strong>Media Pool đang trống</strong><span>Thả video, audio hoặc hình ảnh vào đây.</span><button data-ve-action="import">Nhập media</button></div>`;
     $(state.work, "[data-ve-asset-count]").textContent = `${state.assets.length} items`; ensureLucide();
   }
   function timelineWidth() { return Math.max(900, Math.ceil(projectDuration() + 12) * state.project.zoom); }
@@ -429,20 +441,43 @@
 
   function activeTitle(time = state.project.playhead) { return state.project.disabledTracks.includes("V2") ? null : state.project.titles.find((title) => time >= title.start && time < title.start + title.duration); }
   function activeTimelineClip(time = state.project.playhead) { const video = state.project.disabledTracks.includes("V1") ? null : state.project.clips.filter((clip) => clip.track === "V1" && time >= clip.start && time < clip.start + clipDuration(clip)).sort((a, b) => b.start - a.start)[0]; return video || (state.project.disabledTracks.includes("A1") ? null : state.project.clips.find((clip) => clip.track === "A1" && time >= clip.start && time < clip.start + clipDuration(clip))); }
+  function clipRenderProperties(clip, time = state.project.playhead) {
+    const base = {
+      x: Number(clip.x) || 0,
+      y: Number(clip.y) || 0,
+      scale: clamp(clip.scale ?? 100, 10, 400),
+      rotation: clamp(clip.rotation, -360, 360),
+      opacity: clamp(clip.opacity ?? 1, 0, 1),
+      volume: clamp(clip.volume ?? 1, 0, 1.5)
+    };
+    const frames = (clip.keyframes || []).slice().sort((a, b) => a.time - b.time);
+    if (!frames.length) return base;
+    const localTime = Math.max(0, time - clip.start);
+    const before = [...frames].reverse().find((frame) => frame.time <= localTime) || frames[0];
+    const after = frames.find((frame) => frame.time >= localTime) || frames.at(-1);
+    if (before === after || after.time <= before.time) return { ...base, ...before };
+    const ratio = clamp((localTime - before.time) / (after.time - before.time), 0, 1);
+    return Object.fromEntries(Object.keys(base).map((key) => {
+      const from = Number(before[key] ?? base[key]);
+      const to = Number(after[key] ?? from);
+      return [key, from + (to - from) * ratio];
+    }));
+  }
   function applyPreviewStyle(clip) {
     const video = $(state.work, "[data-ve-video]"), image = $(state.work, "[data-ve-image]"), asset = assetById(clip?.assetId);
     const media = asset?.type.startsWith("image") ? image : video;
     if (!media || !clip) return;
+    const render = clipRenderProperties(clip);
     const local = state.project.playhead - clip.start, duration = clipDuration(clip), edge = Math.min(.45, duration / 4), fade = clip.effect === "fade" ? Math.min(1, local / edge, (duration - local) / edge) : 1;
     const filters = { none: "none", cinema: "contrast(1.2) saturate(.84) sepia(.08)", vivid: "contrast(1.08) saturate(1.45)", mono: "grayscale(1) contrast(1.14)", warm: "sepia(.18) saturate(1.16)", cool: "hue-rotate(10deg) saturate(1.08)", blur: "blur(5px)", fade: "none" };
-    media.style.transform = `translate(${clip.x}px,${clip.y}px) scale(${clip.scale / 100}) rotate(${clip.rotation}deg)`;
-    media.style.opacity = String(clip.opacity * fade);
+    media.style.transform = `translate(${render.x}px,${render.y}px) scale(${render.scale / 100}) rotate(${render.rotation}deg)`;
+    media.style.opacity = String(render.opacity * fade);
     media.style.filter = filters[clip.effect] || "none";
     media.style.mixBlendMode = clip.blend.toLowerCase().replace("normal", "normal");
     media.style.clipPath = `inset(${clamp(clip.cropTop, 0, 95)}% ${clamp(clip.cropRight, 0, 95)}% ${clamp(clip.cropBottom, 0, 95)}% ${clamp(clip.cropLeft, 0, 95)}%)`;
     const fadeIn = Number(clip.fadeIn) || 0, fadeOut = Number(clip.fadeOut) || 0;
     const audioEnvelope = Math.min(1, fadeIn ? local / fadeIn : 1, fadeOut ? (duration - local) / fadeOut : 1);
-    video.volume = clip.muted || state.project.disabledTracks.includes("A1") ? 0 : clamp(clip.volume * audioEnvelope * Number($(state.work, "[data-ve-master-volume]")?.value || 100) / 100, 0, 1);
+    video.volume = clip.muted || state.project.disabledTracks.includes("A1") ? 0 : clamp(render.volume * audioEnvelope * Number($(state.work, "[data-ve-master-volume]")?.value || 100) / 100, 0, 1);
     video.playbackRate = clamp(clip.speed, .1, 8);
   }
   function updateMonitorFrame() {
@@ -564,14 +599,18 @@
     const asset = clip && assetById(clip.assetId), isImage = asset?.type.startsWith("image"), source = isImage ? image : video;
     const sourceWidth = isImage ? image?.naturalWidth : video?.videoWidth, sourceHeight = isImage ? image?.naturalHeight : video?.videoHeight;
     if (clip && sourceWidth && sourceHeight && (isImage ? image.complete : video.readyState >= 2)) {
+      const render = clipRenderProperties(clip);
       const left = clamp(clip.cropLeft, 0, 95) / 100 * sourceWidth, right = clamp(clip.cropRight, 0, 95) / 100 * sourceWidth, top = clamp(clip.cropTop, 0, 95) / 100 * sourceHeight, bottom = clamp(clip.cropBottom, 0, 95) / 100 * sourceHeight;
       const cropWidth = Math.max(1, sourceWidth - left - right), cropHeight = Math.max(1, sourceHeight - top - bottom);
-      const ratio = Math.min(canvas.width / cropWidth, canvas.height / cropHeight), width = cropWidth * ratio * clip.scale / 100, height = cropHeight * ratio * clip.scale / 100;
+      const ratio = Math.min(canvas.width / cropWidth, canvas.height / cropHeight), width = cropWidth * ratio * render.scale / 100, height = cropHeight * ratio * render.scale / 100;
       ctx.save();
-      ctx.globalAlpha = clip.opacity;
-      ctx.translate(canvas.width / 2 + clip.x, canvas.height / 2 + clip.y);
-      ctx.rotate(clip.rotation * Math.PI / 180);
-      ctx.filter = { cinema: "contrast(120%) saturate(84%) sepia(8%)", vivid: "contrast(108%) saturate(145%)", mono: "grayscale(100%) contrast(114%)", warm: "sepia(18%) saturate(116%)", cool: "hue-rotate(10deg) saturate(108%)", blur: "blur(5px)" }[clip.effect] || "none";
+      ctx.globalAlpha = render.opacity;
+      ctx.translate(canvas.width / 2 + render.x, canvas.height / 2 + render.y);
+      ctx.rotate(render.rotation * Math.PI / 180);
+      const previewFilter = getComputedStyle(source).filter;
+      ctx.filter = previewFilter && previewFilter !== "none"
+        ? previewFilter
+        : ({ cinema: "contrast(120%) saturate(84%) sepia(8%)", vivid: "contrast(108%) saturate(145%)", mono: "grayscale(100%) contrast(114%)", warm: "sepia(18%) saturate(116%)", cool: "hue-rotate(10deg) saturate(108%)", blur: "blur(5px)" }[clip.effect] || "none");
       ctx.drawImage(source, left, top, cropWidth, cropHeight, -width / 2, -height / 2, width, height);
       ctx.restore();
     }
@@ -604,7 +643,11 @@
       return;
     }
     const stream = canvas.captureStream(state.project.fps), video = $(state.work, "[data-ve-video]");
-    try { const mediaStream = video.captureStream?.(); mediaStream?.getAudioTracks().forEach((track) => stream.addTrack(track)); } catch {}
+    try {
+      const processed = video.__hhProcessedAudioStream;
+      const mediaStream = processed?.getAudioTracks?.().length ? processed : video.captureStream?.();
+      mediaStream?.getAudioTracks().forEach((track) => stream.addTrack(track));
+    } catch {}
     state.chunks = [];
     state.exportCancelled = false;
     state.exportProgressStep = -5;
@@ -721,6 +764,32 @@
       const rect = $(state.work, "[data-ve-track-content]").getBoundingClientRect();
       addAssetToTimeline(id, (event.clientX - rect.left) / state.project.zoom, track.dataset.veTrack);
     });
+    state.work.addEventListener("hh:video-keyframe-add", (event) => {
+      const clip = clipById();
+      if (!clip) return;
+      const values = event.detail?.values || {};
+      const frame = {
+        time: clamp(state.project.playhead - clip.start, 0, clipDuration(clip)),
+        x: Number(values.x ?? clip.x) || 0,
+        y: Number(values.y ?? clip.y) || 0,
+        scale: clamp(values.scale ?? clip.scale, 10, 400),
+        rotation: clamp(values.rotation ?? clip.rotation, -360, 360),
+        opacity: clamp((values.opacity ?? clip.opacity * 100) / 100, 0, 1),
+        volume: clamp((values.volume ?? clip.volume * 100) / 100, 0, 1.5)
+      };
+      clip.keyframes = [...(clip.keyframes || []).filter((item) => Math.abs(item.time - frame.time) > .0001), frame].sort((a, b) => a.time - b.time).slice(-120);
+      pushHistory("Add keyframe");
+      saveProject(false);
+      syncPreview(true);
+    });
+    state.work.addEventListener("hh:video-keyframe-delete", () => {
+      const clip = clipById();
+      if (!clip?.keyframes?.length) return;
+      clip.keyframes.pop();
+      pushHistory("Delete keyframe");
+      saveProject(false);
+      syncPreview(true);
+    });
     $(state.work, "[data-ve-timeline]").addEventListener("click", (event) => { if (event.target.closest("[data-ve-clip],[data-ve-title],[data-ve-marker]")) return; const rect = $(state.work, "[data-ve-track-content]").getBoundingClientRect(); seek((event.clientX - rect.left) / state.project.zoom); });
     const sequence = $(state.work, "[data-ve-sequence]"); if (sequence) sequence.value = `${state.project.width}x${state.project.height}`;
     $(state.work, "[data-ve-project-name]").textContent = state.project.name; $(state.work, "[data-ve-sequence-name]").textContent = state.project.name;
@@ -794,12 +863,22 @@
     if (actionId === "prev-edit" || actionId === "next-edit") { const edits = [0, ...state.project.clips.flatMap((item) => [item.start, item.start + clipDuration(item)])].sort((a, b) => a - b); const next = actionId === "next-edit" ? edits.find((time) => time > state.project.playhead + .01) : [...edits].reverse().find((time) => time < state.project.playhead - .01); return seek(next ?? (actionId === "next-edit" ? projectDuration() : 0)); }
     if (actionId === "safe-margins") { const safe = $(state.work, "[data-ve-safe]"); safe.hidden = !safe.hidden; return; }
     if (actionId === "fit-preview") return fitPreview();
-    if (actionId === "monitor-settings") return status("Program Monitor · Fit · High quality playback");
     if (actionId === "asset-add") return addAssetToTimeline(event.target.closest("[data-asset-id]").dataset.assetId);
     if (actionId === "asset-remove") { const id = event.target.closest("[data-asset-id]").dataset.assetId; if (state.project.clips.some((item) => item.assetId === id)) return status("Remove clips using this media from the timeline first.", "error"); state.assets = state.assets.filter((item) => item.id !== id); await dbDelete(id); renderAssets(); return; }
     if (actionId === "asset-clear") { if (state.project.clips.length) return status("Clear timeline clips before emptying the project bin.", "error"); await Promise.all(state.assets.map((item) => dbDelete(item.id))); state.assets = []; renderAssets(); return; }
     if (actionId === "asset-view") { $(state.work, "[data-ve-assets]").classList.toggle("is-compact"); return; }
-    if (actionId === "normalize") { const selected = clipById(); if (selected) { selected.volume = 1; renderProperties(); syncPreview(); status("Clip normalized to 0.0 dB."); } return; }
+    if (actionId === "normalize") {
+      const selected = clipById();
+      const asset = selected && assetById(selected.assetId);
+      if (!selected || !asset?.waveform?.length) return status("Không có waveform thật để đo peak cho clip này.", "error");
+      const peak = Math.max(...asset.waveform, .0001);
+      selected.volume = clamp(.98 / peak, 0, 1.5);
+      pushHistory("Peak normalize");
+      renderProperties();
+      syncPreview();
+      status(`Đã chuẩn hóa peak thật về -0.2 dB · gain ${selected.volume.toFixed(2)}×.`, "success");
+      return;
+    }
     if (actionId === "reset-motion") { const selected = clipById(); if (selected) { Object.assign(selected, { x: 0, y: 0, scale: 100, rotation: 0 }); pushHistory("Reset motion"); renderProperties(); syncPreview(); } }
     if (actionId === "reset-crop") { const selected = clipById(); if (selected) { Object.assign(selected, { cropTop: 0, cropRight: 0, cropBottom: 0, cropLeft: 0 }); pushHistory("Reset crop"); renderProperties(); syncPreview(); } }
   }
@@ -827,7 +906,7 @@
   }
 
   addEventListener("keydown", (event) => {
-    if (!state.work?.isConnected || (!location.hash.includes("/media-design/video-editor") && !location.hash.includes("/davinci-resolve/"))) return;
+    if (!state.work?.isConnected || !location.hash.includes("/davinci-resolve")) return;
     if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")) return;
     const key = event.key.toLowerCase(), command = event.ctrlKey || event.metaKey;
     if (command && key === "z") { event.preventDefault(); return restoreHistory(state.project.historyIndex + (event.shiftKey ? 1 : -1)); }

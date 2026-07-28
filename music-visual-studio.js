@@ -1288,7 +1288,7 @@
     }
 
     openVideoEditor() {
-      const route = safeText(this.options.videoEditorRoute || "/media-design/video-editor", 200);
+      const route = safeText(this.options.videoEditorRoute || "/davinci-resolve", 200);
       this.host.dispatchEvent(new CustomEvent("hh:navigate", { bubbles: true, detail: { route } }));
       if (globalScope.location) globalScope.location.hash = route.startsWith("#") ? route : `#${route}`;
     }
