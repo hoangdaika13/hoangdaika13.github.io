@@ -13,6 +13,55 @@ const CHARACTER_PROFILES = Object.freeze({
   nyx: { element: "void", attackScale: 1.08, speedScale: 1.06 },
   sol: { element: "solar", attackScale: 1.18, speedScale: 0.94 }
 });
+const APPEARANCE_VERSION = 3;
+const APPEARANCE_BASE_MODELS = new Set(["human-adult-a01", "human-adult-b01"]);
+const APPEARANCE_SKINS = new Set(["warm-04", "neutral-03", "cool-02", "deep-05"]);
+const APPEARANCE_HAIRS = new Set(["astral-layered-07", "aurora-short-02", "void-long-04", "solar-braid-03"]);
+const APPEARANCE_OUTFITS = new Set(["central-jacket-02", "combat-boots-01", "aurora-suit-01", "void-coat-01"]);
+const APPEARANCE_MORPHS = new Set([
+  "headLength", "foreheadHeight", "cheekboneWidth", "cheekFullness", "jawWidth", "jawAngle", "chinLength", "faceFullness",
+  "eyeSize", "eyeSpacing", "eyeDepth", "upperLid", "lowerLid", "eyeAngle", "irisSize", "pupilSize", "eyeReflection", "eyeLeft", "eyeRight",
+  "browShape", "browThickness", "browHeight", "browAngle",
+  "noseBridge", "noseLength", "noseTip", "noseWing", "nostrilWidth", "noseProjection", "noseCurve",
+  "mouthWidth", "upperLip", "lowerLip", "mouthCorner", "mouthProjection", "teethShape", "teethSize", "philtrum", "smileLine",
+  "earSize", "earAngle", "earProtrusion", "earLobe", "earLeft", "earRight",
+  "neckLength", "neckWidth", "shoulderWidth", "shoulderSlope", "clavicle",
+  "armLength", "upperArm", "forearm", "handSize", "fingerLength", "armLeft", "armRight",
+  "legLength", "thighSize", "calfSize", "kneeSize", "footSize", "legLeft", "legRight",
+  "height", "torsoLength", "backWidth", "waist", "belly", "legTorsoRatio", "ribcage", "posture",
+  "chestSize", "chestWidth", "chestFullness", "chestPosition", "chestSymmetry",
+  "hipWidth", "gluteFullness", "gluteProjection", "waistHipRatio", "hipTilt",
+  "muscle", "bodyFat", "tone", "abs", "bodyMass", "softness", "weightDistribution",
+  "blink", "smile", "sad", "angry", "surprised", "pain", "cheekPuff", "squint", "mouthA", "mouthO"
+]);
+
+function sanitizeAppearance(input = {}) {
+  const source = input && typeof input === "object" ? input : {};
+  const morphs = {};
+  if (source.morphs && typeof source.morphs === "object") {
+    APPEARANCE_MORPHS.forEach((key) => {
+      const value = Number(source.morphs[key]);
+      if (Number.isFinite(value)) morphs[key] = clamp(value, 0, 1);
+    });
+  }
+  const safeHex = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value).toLowerCase() : fallback;
+  return {
+    appearanceVersion: APPEARANCE_VERSION,
+    baseModel: APPEARANCE_BASE_MODELS.has(source.baseModel) ? source.baseModel : "human-adult-a01",
+    bodyPreset: clean(source.bodyPreset, 24) || "balanced",
+    style: source.style === "human-cinematic" ? "human-cinematic" : "anime-realistic",
+    symmetry: source.symmetry !== false,
+    morphs,
+    skin: APPEARANCE_SKINS.has(source.skin) ? source.skin : "warm-04",
+    skinColor: safeHex(source.skinColor, "#ffd5c5"),
+    eyeColor: safeHex(source.eyeColor, "#63efff"),
+    hair: APPEARANCE_HAIRS.has(source.hair) ? source.hair : "astral-layered-07",
+    hairColor: safeHex(source.hairColor, "#dffbff"),
+    outfit: Array.isArray(source.outfit)
+      ? [...new Set(source.outfit.filter((id) => APPEARANCE_OUTFITS.has(id)))].slice(0, 4)
+      : ["central-jacket-02", "combat-boots-01"]
+  };
+}
 
 function clamp(value, min, max) {
   const number = Number(value);
@@ -40,6 +89,7 @@ function publicPlayer(player) {
     maxHealth: player.maxHealth,
     stamina: Math.round(player.stamina),
     element: player.element,
+    appearance: player.appearance,
     action: player.action,
     seq: player.seq,
     updatedAt: player.updatedAt
@@ -256,6 +306,7 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
           maxHealth: 100,
           stamina: 100,
           element: "plasma",
+          appearance: sanitizeAppearance(payload.appearance),
           action: "idle",
           seq: 0,
           inputAt: 0,
@@ -274,6 +325,9 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
       if (CHARACTER_PROFILES[payload.characterId]) {
         player.characterId = payload.characterId;
         player.element = CHARACTER_PROFILES[payload.characterId].element;
+      }
+      if (payload.appearance && typeof payload.appearance === "object") {
+        player.appearance = sanitizeAppearance(payload.appearance);
       }
       player.updatedAt = new Date().toISOString();
       applyAttack(context.shard, player, payload, now);

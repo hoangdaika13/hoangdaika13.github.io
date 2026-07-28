@@ -9,6 +9,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("Astral Realms defaults to a physical material character pass", () => {
   const source = read("astral-realms.js");
   assert.match(source, /renderStyle:\s*"realistic"/);
+  assert.match(source, /APPEARANCE_GROUPS/);
+  assert.match(source, /APPEARANCE_CONTROL_MAP/);
+  assert.match(source, /defaultAppearanceRecipe/);
+  assert.match(source, /appearance-undo/);
+  assert.match(source, /Procedural fallback/);
   assert.match(source, /MeshPhysicalMaterial\s*\|\|\s*THREE\.MeshStandardMaterial/);
   assert.match(source, /clearcoatRoughness/);
   assert.match(source, /refreshCharacterMaterials/);
@@ -31,18 +36,22 @@ test("small realtime shards reconnect and interpolate remote players", () => {
 
   assert.match(client, /connect_error/);
   assert.match(client, /rejoinPartyAfterReconnect/);
+  assert.match(client, /appearance:\s*compactAppearanceRecipe/);
+  assert.match(client, /appearanceFingerprint/);
   assert.match(client, /targetPosition/);
   assert.match(client, /targetRotation/);
   assert.match(realtime, /mode:\s*"free-small-shard"/);
+  assert.match(realtime, /sanitizeAppearance/);
+  assert.match(realtime, /appearance:\s*player\.appearance/);
   assert.match(realtime, /maxPlayers:\s*4/);
   assert.match(server, /registerGameCenterRealtime/);
   assert.match(render, /MAX_GAME_PLAYERS[\s\S]*value:\s*"4"/);
 });
 
-test("the release loader and service worker request Astral Realms v3", () => {
+test("the release loader and service worker request Astral Realms v4", () => {
   for (const file of ["performance-loader.js", "sw.js"]) {
     const source = read(file);
-    assert.match(source, /astral-realms\.css\?v=3/);
-    assert.match(source, /astral-realms\.js\?v=3/);
+    assert.match(source, /astral-realms\.css\?v=4/);
+    assert.match(source, /astral-realms\.js\?v=4/);
   }
 });

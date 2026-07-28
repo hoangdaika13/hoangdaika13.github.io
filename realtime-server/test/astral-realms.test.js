@@ -75,6 +75,15 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
     move: { x: 999, z: 999 },
     sprint: true,
     element: "plasma",
+    appearance: {
+      appearanceVersion: 3,
+      baseModel: "human-adult-a01",
+      style: "human-cinematic",
+      morphs: { eyeSize: 0.74, chestSize: 0.66, gluteProjection: 0.7, height: 0.62 },
+      skinColor: "#f2c4aa",
+      eyeColor: "#72efff",
+      outfit: ["central-jacket-02", "combat-boots-01", "unknown-paid-item"]
+    },
     action: "attack",
     targetId: "aurora-wisp-1",
     power: 999
@@ -97,6 +106,10 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
   assert.equal(snapshot.players.length, 1);
   assert.equal(snapshot.players[0].socketId, socket.id);
   assert.equal(snapshot.players[0].characterId, "lyra");
+  assert.equal(snapshot.players[0].appearance.appearanceVersion, 3);
+  assert.equal(snapshot.players[0].appearance.style, "human-cinematic");
+  assert.equal(snapshot.players[0].appearance.morphs.eyeSize, 0.74);
+  assert.deepEqual(snapshot.players[0].appearance.outfit, ["central-jacket-02", "combat-boots-01"]);
   assert.ok(Math.hypot(snapshot.players[0].x + 45, snapshot.players[0].z - 19) < 2.5);
 
   const target = snapshot.enemies.find((enemy) => enemy.id === "aurora-wisp-1");

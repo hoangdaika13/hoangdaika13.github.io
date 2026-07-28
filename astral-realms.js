@@ -2,7 +2,7 @@
   "use strict";
 
   const GAME_ID = "astral-realms";
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
   const DB_NAME = "hh-astral-realms";
   const DB_VERSION = 1;
   const STORE_NAME = "saves";
@@ -40,6 +40,39 @@
     }
   });
   const CHARACTER_ORDER = Object.freeze(Object.keys(CHARACTERS));
+  const APPEARANCE_VERSION = 3;
+  const APPEARANCE_GROUPS = Object.freeze([
+    { id: "face", label: "Khuôn mặt", focus: "head", controls: [["headLength", "Chiều dài đầu"], ["foreheadHeight", "Chiều cao trán"], ["cheekboneWidth", "Gò má"], ["cheekFullness", "Độ đầy má"], ["jawWidth", "Độ rộng hàm"], ["jawAngle", "Góc hàm"], ["chinLength", "Chiều dài cằm"], ["faceFullness", "Độ đầy khuôn mặt"]] },
+    { id: "eyes", label: "Mắt", focus: "head", controls: [["eyeSize", "Kích thước mắt"], ["eyeSpacing", "Khoảng cách mắt"], ["eyeDepth", "Độ sâu mắt"], ["upperLid", "Mí trên"], ["lowerLid", "Mí dưới"], ["eyeAngle", "Góc mắt"], ["irisSize", "Kích thước tròng"], ["pupilSize", "Kích thước đồng tử"], ["eyeReflection", "Phản chiếu mắt"], ["eyeLeft", "Mắt trái"], ["eyeRight", "Mắt phải"]] },
+    { id: "brows", label: "Lông mày", focus: "head", controls: [["browShape", "Hình dáng"], ["browThickness", "Độ dày"], ["browHeight", "Chiều cao"], ["browAngle", "Góc nghiêng"]] },
+    { id: "nose", label: "Mũi", focus: "head", controls: [["noseBridge", "Sống mũi"], ["noseLength", "Chiều dài"], ["noseTip", "Đầu mũi"], ["noseWing", "Cánh mũi"], ["nostrilWidth", "Lỗ mũi"], ["noseProjection", "Độ nhô"], ["noseCurve", "Độ cong"]] },
+    { id: "mouth", label: "Miệng", focus: "head", controls: [["mouthWidth", "Độ rộng miệng"], ["upperLip", "Môi trên"], ["lowerLip", "Môi dưới"], ["mouthCorner", "Khóe miệng"], ["mouthProjection", "Độ nhô"], ["teethShape", "Hình răng"], ["teethSize", "Kích thước răng"], ["philtrum", "Nhân trung"], ["smileLine", "Rãnh cười"]] },
+    { id: "ears", label: "Tai", focus: "head", controls: [["earSize", "Kích thước tai"], ["earAngle", "Góc tai"], ["earProtrusion", "Độ vểnh"], ["earLobe", "Dái tai"], ["earLeft", "Tai trái"], ["earRight", "Tai phải"]] },
+    { id: "shoulders", label: "Cổ & vai", focus: "upper", controls: [["neckLength", "Chiều dài cổ"], ["neckWidth", "Độ rộng cổ"], ["shoulderWidth", "Độ rộng vai"], ["shoulderSlope", "Độ dốc vai"], ["clavicle", "Xương quai xanh"]] },
+    { id: "arms", label: "Tay", focus: "upper", controls: [["armLength", "Chiều dài tay"], ["upperArm", "Bắp tay"], ["forearm", "Cẳng tay"], ["handSize", "Bàn tay"], ["fingerLength", "Ngón tay"], ["armLeft", "Tay trái"], ["armRight", "Tay phải"]] },
+    { id: "legs", label: "Chân", focus: "lower", controls: [["legLength", "Chiều dài chân"], ["thighSize", "Đùi"], ["calfSize", "Bắp chân"], ["kneeSize", "Đầu gối"], ["footSize", "Bàn chân"], ["legLeft", "Chân trái"], ["legRight", "Chân phải"]] },
+    { id: "torso", label: "Thân người", focus: "body", controls: [["height", "Chiều cao"], ["torsoLength", "Chiều dài thân"], ["backWidth", "Độ rộng lưng"], ["waist", "Vòng eo"], ["belly", "Bụng"], ["legTorsoRatio", "Tỷ lệ chân–thân"], ["ribcage", "Lồng ngực"], ["posture", "Tư thế"]] },
+    { id: "chest", label: "Ngực", focus: "upper", controls: [["chestSize", "Kích thước"], ["chestWidth", "Độ rộng"], ["chestFullness", "Độ đầy"], ["chestPosition", "Vị trí"], ["chestSymmetry", "Độ cân đối"]] },
+    { id: "hips", label: "Hông & mông", focus: "lower", controls: [["hipWidth", "Độ rộng hông"], ["gluteFullness", "Độ đầy"], ["gluteProjection", "Độ nhô"], ["waistHipRatio", "Tỷ lệ eo–hông"], ["hipTilt", "Độ nghiêng hông"]] },
+    { id: "body", label: "Cơ thể", focus: "body", controls: [["muscle", "Lượng cơ"], ["bodyFat", "Lượng mỡ"], ["tone", "Độ săn chắc"], ["abs", "Cơ bụng"], ["bodyMass", "Khối lượng cơ thể"], ["softness", "Độ mềm mô"], ["weightDistribution", "Phân bố hình thể"]] },
+    { id: "expression", label: "Biểu cảm", focus: "head", defaultValue: 0, controls: [["blink", "Chớp mắt"], ["smile", "Vui"], ["sad", "Buồn"], ["angry", "Tức giận"], ["surprised", "Bất ngờ"], ["pain", "Đau"], ["cheekPuff", "Má phồng"], ["squint", "Nheo mắt"], ["mouthA", "Âm A"], ["mouthO", "Âm O"]] }
+  ]);
+  const APPEARANCE_CONTROL_MAP = Object.freeze(Object.fromEntries(
+    APPEARANCE_GROUPS.flatMap((group) => group.controls.map(([id, label]) => [id, { id, label, group: group.id, defaultValue: group.defaultValue ?? 0.5 }]))
+  ));
+  const APPEARANCE_ASSETS = Object.freeze({
+    baseModels: ["human-adult-a01", "human-adult-b01"],
+    skins: ["warm-04", "neutral-03", "cool-02", "deep-05"],
+    hairs: ["astral-layered-07", "aurora-short-02", "void-long-04", "solar-braid-03"],
+    outfits: ["central-jacket-02", "combat-boots-01", "aurora-suit-01", "void-coat-01"]
+  });
+  const APPEARANCE_PRESETS = Object.freeze({
+    balanced: { label: "Cân bằng", bodyPreset: "balanced", morphs: {} },
+    athletic: { label: "Thể thao", bodyPreset: "athletic", morphs: { shoulderWidth: 0.62, upperArm: 0.61, thighSize: 0.6, calfSize: 0.58, muscle: 0.68, tone: 0.72, bodyFat: 0.36, abs: 0.64 } },
+    soft: { label: "Mềm mại", bodyPreset: "soft", morphs: { cheekFullness: 0.62, faceFullness: 0.58, shoulderWidth: 0.45, waist: 0.47, chestFullness: 0.61, hipWidth: 0.6, gluteFullness: 0.62, softness: 0.7, muscle: 0.38 } },
+    heroic: { label: "Anh hùng", bodyPreset: "heroic", morphs: { height: 0.67, jawWidth: 0.58, shoulderWidth: 0.7, chestWidth: 0.65, chestSize: 0.6, backWidth: 0.64, muscle: 0.72, posture: 0.7 } },
+    agile: { label: "Nhanh nhẹn", bodyPreset: "agile", morphs: { height: 0.54, shoulderWidth: 0.48, armLength: 0.58, legLength: 0.66, waist: 0.43, bodyMass: 0.38, muscle: 0.54, tone: 0.66 } }
+  });
   const ELEMENT_REACTIONS = Object.freeze({
     "cryo+plasma": { name: "Sốc nhiệt", multiplier: 1.55, color: "#ff9bd6" },
     "quantum+void": { name: "Sụp đổ lượng tử", multiplier: 1.75, color: "#b591ff" },
@@ -109,6 +142,83 @@
     return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
   }
 
+  function defaultAppearanceRecipe(characterId = "lyra") {
+    const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
+    return {
+      appearanceVersion: APPEARANCE_VERSION,
+      baseModel: "human-adult-a01",
+      bodyPreset: "balanced",
+      style: "anime-realistic",
+      symmetry: true,
+      advanced: false,
+      morphs: Object.fromEntries(Object.values(APPEARANCE_CONTROL_MAP).map((control) => [control.id, control.defaultValue])),
+      skin: "warm-04",
+      skinColor: "#ffd5c5",
+      eyeColor: profile.eyes,
+      hair: "astral-layered-07",
+      hairColor: profile.hair,
+      outfit: ["central-jacket-02", "combat-boots-01"],
+      decals: { freckles: 0, scars: 0, moles: 0, makeup: 0, tattoos: 0 },
+      updatedAt: nowIso()
+    };
+  }
+
+  function normalizeAppearanceRecipe(input, characterId = "lyra") {
+    const base = defaultAppearanceRecipe(characterId);
+    const recipe = input && typeof input === "object" ? input : {};
+    const morphs = Object.fromEntries(Object.values(APPEARANCE_CONTROL_MAP).map((control) => [
+      control.id,
+      Number.isFinite(Number(recipe.morphs?.[control.id])) ? clamp(recipe.morphs[control.id], 0, 1) : control.defaultValue
+    ]));
+    const validHex = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value).toLowerCase() : fallback;
+    return {
+      ...base,
+      appearanceVersion: APPEARANCE_VERSION,
+      baseModel: APPEARANCE_ASSETS.baseModels.includes(recipe.baseModel) ? recipe.baseModel : base.baseModel,
+      bodyPreset: APPEARANCE_PRESETS[recipe.bodyPreset] ? recipe.bodyPreset : base.bodyPreset,
+      style: ["human-cinematic", "anime-realistic"].includes(recipe.style) ? recipe.style : base.style,
+      symmetry: recipe.symmetry !== false,
+      advanced: recipe.advanced === true,
+      morphs,
+      skin: APPEARANCE_ASSETS.skins.includes(recipe.skin) ? recipe.skin : base.skin,
+      skinColor: validHex(recipe.skinColor, base.skinColor),
+      eyeColor: validHex(recipe.eyeColor, base.eyeColor),
+      hair: APPEARANCE_ASSETS.hairs.includes(recipe.hair) ? recipe.hair : base.hair,
+      hairColor: validHex(recipe.hairColor, base.hairColor),
+      outfit: Array.isArray(recipe.outfit)
+        ? [...new Set(recipe.outfit.filter((id) => APPEARANCE_ASSETS.outfits.includes(id)))].slice(0, 4)
+        : base.outfit,
+      decals: Object.fromEntries(Object.keys(base.decals).map((id) => [
+        id,
+        Number.isFinite(Number(recipe.decals?.[id])) ? clamp(recipe.decals[id], 0, 1) : base.decals[id]
+      ])),
+      updatedAt: typeof recipe.updatedAt === "string" ? recipe.updatedAt.slice(0, 40) : nowIso()
+    };
+  }
+
+  function compactAppearanceRecipe(recipe, characterId = "lyra") {
+    const normalized = normalizeAppearanceRecipe(recipe, characterId);
+    return {
+      appearanceVersion: APPEARANCE_VERSION,
+      baseModel: normalized.baseModel,
+      bodyPreset: normalized.bodyPreset,
+      style: normalized.style,
+      symmetry: normalized.symmetry,
+      morphs: Object.fromEntries(Object.entries(normalized.morphs).map(([id, value]) => [id, Number(value.toFixed(3))])),
+      skin: normalized.skin,
+      skinColor: normalized.skinColor,
+      eyeColor: normalized.eyeColor,
+      hair: normalized.hair,
+      hairColor: normalized.hairColor,
+      outfit: normalized.outfit.slice(0, 4),
+      decals: Object.fromEntries(Object.entries(normalized.decals).map(([id, value]) => [id, Number(value.toFixed(3))]))
+    };
+  }
+
+  function appearanceFingerprint(recipe, characterId = "lyra") {
+    return JSON.stringify(compactAppearanceRecipe(recipe, characterId));
+  }
+
   function defaultQuestState() {
     return Object.fromEntries(QUESTS.map((quest, index) => [quest.id, {
       status: index === 0 ? "active" : "locked",
@@ -153,6 +263,11 @@
           maxHealth: 100,
           ultimate: 0
         }]))
+      },
+      appearance: {
+        recipes: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, defaultAppearanceRecipe(id)])),
+        savedPresets: [],
+        lastSavedAt: ""
       },
       inventory: {
         "starter-blade": { quantity: 1, favorite: true, locked: true, acquiredAt: nowIso() }
@@ -203,6 +318,22 @@
         ...base.roster,
         ...(input.roster || {}),
         members: { ...base.roster.members, ...(input.roster?.members || {}) }
+      },
+      appearance: {
+        recipes: Object.fromEntries(CHARACTER_ORDER.map((id) => [
+          id,
+          normalizeAppearanceRecipe(input.appearance?.recipes?.[id], id)
+        ])),
+        savedPresets: Array.isArray(input.appearance?.savedPresets)
+          ? input.appearance.savedPresets.slice(-12).map((preset) => ({
+            id: String(preset?.id || uid("look")).slice(0, 80),
+            name: String(preset?.name || "Ngoại hình").slice(0, 40),
+            characterId: CHARACTERS[preset?.characterId] ? preset.characterId : "lyra",
+            recipe: normalizeAppearanceRecipe(preset?.recipe, preset?.characterId),
+            createdAt: String(preset?.createdAt || nowIso()).slice(0, 40)
+          }))
+          : [],
+        lastSavedAt: String(input.appearance?.lastSavedAt || "").slice(0, 40)
       },
       inventory: input.inventory && typeof input.inventory === "object" ? input.inventory : base.inventory,
       quests: { ...base.quests, ...(input.quests || {}) },
@@ -402,6 +533,12 @@
       this.nearby = null;
       this.currentZone = ZONES[0];
       this.currentPanel = "";
+      this.appearanceGroup = "face";
+      this.appearanceHistory = [];
+      this.appearanceFuture = [];
+      this.appearanceCompareRecipe = null;
+      this.appearanceDirty = true;
+      this.appearanceFocus = "";
       this.toastTimer = 0;
       this.frameHandle = 0;
       this.autosaveTimer = 0;
@@ -1483,6 +1620,8 @@
       const accentMaterial = surface(profile.accent, { emissive: profile.accent, emissiveIntensity: 0.24, roughness: 0.25, clearcoat: 0.62 });
       const hairMaterial = surface(profile.hair, { emissive: profile.accent, emissiveIntensity: 0.035, roughness: 0.3, clearcoat: 0.48, sheen: 0.52 });
       const darkMaterial = surface(0x16162c, { roughness: 0.5, metalness: 0.22 });
+      skinMaterial.userData.materialRole = "skin";
+      hairMaterial.userData.materialRole = "hair";
       const outlineMaterial = realistic
         ? new THREE.MeshBasicMaterial({ color: 0x100d20, transparent: true, opacity: 0, depthWrite: false })
         : new THREE.MeshBasicMaterial({ color: 0x100d20, side: THREE.BackSide });
@@ -1517,6 +1656,31 @@
       faceShadow.scale.set(0.92, 1.05, 0.9);
       group.add(faceShadow);
 
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.19, 0.38, 14), skinMaterial);
+      neck.position.set(0, 2.08, 0);
+      neck.castShadow = true;
+      group.add(neck);
+
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.22, 12), skinMaterial);
+      nose.position.set(0, 2.43, -0.43);
+      nose.rotation.x = -Math.PI / 2;
+      nose.scale.set(0.72, 1, 0.78);
+      group.add(nose);
+      const mouth = new THREE.Mesh(
+        new THREE.SphereGeometry(0.105, 14, 8),
+        surface(0xb94f68, { roughness: 0.34, clearcoat: 0.2 })
+      );
+      mouth.position.set(0, 2.29, -0.405);
+      mouth.scale.set(1, 0.22, 0.25);
+      group.add(mouth);
+      const leftEar = new THREE.Mesh(new THREE.SphereGeometry(0.105, 12, 9), skinMaterial);
+      const rightEar = leftEar.clone();
+      leftEar.position.set(-0.415, 2.51, 0);
+      rightEar.position.set(0.415, 2.51, 0);
+      leftEar.scale.set(0.42, 1, 0.55);
+      rightEar.scale.copy(leftEar.scale);
+      group.add(leftEar, rightEar);
+
       const eyeMaterial = surface(profile.eyes, {
         roughness: 0.08,
         metalness: 0.14,
@@ -1537,6 +1701,16 @@
         group.add(eye);
         eyes.push(eye);
       });
+      eyeMaterial.userData.materialRole = "eyes";
+      const browMaterial = surface(profile.hair, { roughness: 0.42 });
+      browMaterial.userData.materialRole = "hair";
+      const leftBrow = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.025, 0.025), browMaterial);
+      const rightBrow = leftBrow.clone();
+      leftBrow.position.set(-0.15, 2.68, -0.397);
+      rightBrow.position.set(0.15, 2.68, -0.397);
+      leftBrow.rotation.z = -0.08;
+      rightBrow.rotation.z = 0.08;
+      group.add(leftBrow, rightBrow);
 
       const hair = new THREE.Group();
       const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.455, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMaterial);
@@ -1560,12 +1734,26 @@
       leftArm.rotation.z = -0.06;
       rightArm.rotation.z = 0.06;
       group.add(leftArm, rightArm);
+      const leftHand = new THREE.Mesh(new THREE.SphereGeometry(0.145, 12, 9), skinMaterial);
+      const rightHand = leftHand.clone();
+      leftHand.position.set(-0.55, 0.95, 0);
+      rightHand.position.set(0.55, 0.95, 0);
+      leftHand.scale.set(0.72, 1.18, 0.55);
+      rightHand.scale.copy(leftHand.scale);
+      group.add(leftHand, rightHand);
 
       const leftLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.74, 5, 8), darkMaterial);
       const rightLeg = leftLeg.clone();
       leftLeg.position.set(-0.22, 0.46, 0);
       rightLeg.position.set(0.22, 0.46, 0);
       group.add(leftLeg, rightLeg);
+      const leftFoot = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.22, 5, 8), darkMaterial);
+      const rightFoot = leftFoot.clone();
+      leftFoot.position.set(-0.22, 0.02, -0.1);
+      rightFoot.position.set(0.22, 0.02, -0.1);
+      leftFoot.rotation.x = Math.PI / 2;
+      rightFoot.rotation.x = Math.PI / 2;
+      group.add(leftFoot, rightFoot);
 
       const coat = new THREE.Mesh(new THREE.ConeGeometry(0.68, 0.92, 8, 1, true), accentMaterial);
       coat.position.y = 1.05;
@@ -1609,11 +1797,214 @@
 
       group.userData.parts = {
         leftLeg, rightLeg, leftArm, rightArm, torso, head, hair, cape, halo, eyes,
-        faceShadow, weaponAnchor, leftWing, rightWing
+        faceShadow, weaponAnchor, leftWing, rightWing, neck, nose, mouth, leftEar, rightEar,
+        leftBrow, rightBrow, leftHand, rightHand, leftFoot, rightFoot, coat
       };
       group.userData.characterId = profile.id;
       group.userData.renderStyle = this.state.settings.renderStyle;
+      this.applyAppearanceToMesh(group, this.state.appearance?.recipes?.[profile.id] || defaultAppearanceRecipe(profile.id), profile.id);
       return group;
+    }
+
+    applyNamedMorphTargets(mesh, recipe) {
+      const candidates = Object.values(APPEARANCE_CONTROL_MAP)
+        .map((control) => ({
+          ...control,
+          value: recipe.morphs[control.id],
+          delta: Math.abs(recipe.morphs[control.id] - control.defaultValue)
+        }))
+        .filter((control) => control.delta > 0.015)
+        .sort((a, b) => b.delta - a.delta)
+        .slice(0, 20);
+      let supportedTargets = 0;
+      mesh.traverse((object) => {
+        const dictionary = object.morphTargetDictionary;
+        const influences = object.morphTargetInfluences;
+        if (!dictionary || !influences) return;
+        Object.values(dictionary).forEach((index) => {
+          if (Number.isInteger(index) && index < influences.length) influences[index] = 0;
+        });
+        candidates.forEach((control) => {
+          const centered = control.value - control.defaultValue;
+          const aliases = [
+            [control.id, control.value],
+            [`AR_${control.id}`, control.value],
+            [`${control.id}Positive`, Math.max(0, centered * 2)],
+            [`${control.id}Negative`, Math.max(0, -centered * 2)]
+          ];
+          aliases.forEach(([name, value]) => {
+            const index = dictionary[name];
+            if (!Number.isInteger(index) || index >= influences.length) return;
+            influences[index] = clamp(value, 0, 1);
+            supportedTargets += 1;
+          });
+        });
+      });
+      mesh.userData.activeMorphs = candidates.map((control) => control.id);
+      return supportedTargets;
+    }
+
+    applyAppearanceToMesh(mesh, inputRecipe, characterId = "lyra") {
+      if (!mesh?.userData?.parts) return;
+      const recipe = normalizeAppearanceRecipe(inputRecipe, characterId);
+      const parts = mesh.userData.parts;
+      const morph = (id) => recipe.morphs[id] ?? APPEARANCE_CONTROL_MAP[id]?.defaultValue ?? 0.5;
+      const delta = (id) => morph(id) - (APPEARANCE_CONTROL_MAP[id]?.defaultValue ?? 0.5);
+      const symmetric = recipe.symmetry || !recipe.advanced;
+      const side = (leftId, rightId, wanted) => {
+        if (!symmetric) return morph(wanted === "left" ? leftId : rightId);
+        return (morph(leftId) + morph(rightId)) / 2;
+      };
+
+      const torsoLift = delta("torsoLength") * 0.34 + delta("height") * 0.22;
+      const legLift = delta("legLength") * 0.36 + delta("legTorsoRatio") * 0.2;
+      const headLift = torsoLift + legLift;
+      const shoulder = 0.55 + delta("shoulderWidth") * 0.32;
+      const hip = 0.22 + delta("hipWidth") * 0.22;
+      const bodyDepth = 0.68 + delta("belly") * 0.22 + delta("bodyMass") * 0.14;
+      const torsoWidth = 0.95 + delta("backWidth") * 0.22 + delta("chestWidth") * 0.2 - delta("waist") * 0.08;
+      const torsoHeight = 1 + delta("torsoLength") * 0.42 + delta("height") * 0.16;
+      parts.torso.scale.set(torsoWidth, torsoHeight, bodyDepth);
+      parts.torso.position.y = 1.45 + legLift * 0.72;
+      parts.torso.rotation.x = delta("posture") * -0.08;
+
+      const headWidth = 0.92 + delta("cheekboneWidth") * 0.17 + delta("jawWidth") * 0.13 + delta("faceFullness") * 0.12;
+      const headHeight = 1.08 + delta("headLength") * 0.22 + delta("foreheadHeight") * 0.1 - delta("faceFullness") * 0.04;
+      const headDepth = 0.9 + delta("cheekFullness") * 0.16 + delta("faceFullness") * 0.1;
+      parts.head.scale.set(headWidth, headHeight, headDepth);
+      parts.head.position.y = 2.52 + headLift;
+      parts.faceShadow.position.y = 2.49 + headLift;
+      parts.faceShadow.scale.set(headWidth, headHeight * 0.98, headDepth);
+
+      parts.neck.position.y = 2.08 + legLift + torsoLift * 0.45;
+      parts.neck.scale.set(
+        1 + delta("neckWidth") * 0.5,
+        1 + delta("neckLength") * 0.5,
+        1 + delta("neckWidth") * 0.36
+      );
+
+      const eyeSpacing = 0.15 + delta("eyeSpacing") * 0.11;
+      const eyeSize = 1 + delta("eyeSize") * 0.62;
+      const eyeDepth = -0.385 - delta("eyeDepth") * 0.055;
+      parts.eyes.forEach((eye, index) => {
+        const eyeSide = index === 0 ? side("eyeLeft", "eyeRight", "left") : side("eyeLeft", "eyeRight", "right");
+        eye.position.set(index === 0 ? -eyeSpacing : eyeSpacing, 2.56 + headLift, eyeDepth);
+        eye.scale.set(0.72 * eyeSize * (0.88 + eyeSide * 0.24), 1.15 * eyeSize * (0.86 + morph("upperLid") * 0.16), 0.36);
+        eye.userData.baseScaleY = eye.scale.y;
+        eye.rotation.z = (index === 0 ? -1 : 1) * delta("eyeAngle") * 0.28;
+      });
+      const irisScale = 0.78 + morph("irisSize") * 0.34;
+      parts.eyes.forEach((eye) => {
+        eye.children.forEach((shine) => shine.scale.setScalar(0.7 + morph("eyeReflection") * 0.7));
+        eye.scale.x *= irisScale;
+      });
+
+      parts.nose.position.set(0, 2.43 + headLift, -0.43 - delta("noseProjection") * 0.08);
+      parts.nose.scale.set(
+        0.58 + morph("noseWing") * 0.34,
+        0.78 + morph("noseLength") * 0.42,
+        0.62 + morph("noseTip") * 0.32
+      );
+      parts.mouth.position.set(0, 2.29 + headLift - delta("chinLength") * 0.035, -0.405 - delta("mouthProjection") * 0.04);
+      parts.mouth.scale.set(
+        0.62 + morph("mouthWidth") * 0.76,
+        0.12 + (morph("upperLip") + morph("lowerLip")) * 0.15,
+        0.22 + morph("mouthProjection") * 0.08
+      );
+      const earSize = 0.7 + morph("earSize") * 0.58;
+      [["leftEar", -1, "left"], ["rightEar", 1, "right"]].forEach(([partId, direction, wanted]) => {
+        const ear = parts[partId];
+        const perSide = side("earLeft", "earRight", wanted);
+        ear.position.set(direction * (0.415 + delta("earProtrusion") * 0.08), 2.51 + headLift, 0);
+        ear.scale.set(0.32 + morph("earProtrusion") * 0.2, earSize * (0.85 + perSide * 0.2), 0.44 + morph("earLobe") * 0.18);
+        ear.rotation.z = direction * delta("earAngle") * 0.32;
+      });
+      parts.leftBrow.position.set(-eyeSpacing, 2.68 + headLift + delta("browHeight") * 0.08, -0.397);
+      parts.rightBrow.position.set(eyeSpacing, 2.68 + headLift + delta("browHeight") * 0.08, -0.397);
+      parts.leftBrow.scale.set(0.75 + morph("browShape") * 0.5, 0.55 + morph("browThickness"), 1);
+      parts.rightBrow.scale.copy(parts.leftBrow.scale);
+      parts.leftBrow.rotation.z = -0.08 - delta("browAngle") * 0.34;
+      parts.rightBrow.rotation.z = 0.08 + delta("browAngle") * 0.34;
+
+      const armLength = 1 + delta("armLength") * 0.45 + delta("height") * 0.08;
+      [["leftArm", -1, "left"], ["rightArm", 1, "right"]].forEach(([partId, direction, wanted]) => {
+        const arm = parts[partId];
+        const perSide = side("armLeft", "armRight", wanted);
+        arm.position.set(direction * shoulder, 1.48 + legLift + torsoLift * 0.45, 0);
+        arm.scale.set(0.78 + morph("upperArm") * 0.44, armLength * (0.9 + perSide * 0.2), 0.78 + morph("upperArm") * 0.36);
+      });
+      [["leftHand", -1, "left"], ["rightHand", 1, "right"]].forEach(([partId, direction, wanted]) => {
+        const hand = parts[partId];
+        const perSide = side("armLeft", "armRight", wanted);
+        hand.position.set(direction * shoulder, 0.95 + legLift + torsoLift * 0.2 - delta("armLength") * 0.22, 0);
+        hand.scale.setScalar((0.72 + morph("handSize") * 0.38) * (0.9 + perSide * 0.18));
+      });
+
+      const legLength = 1 + delta("legLength") * 0.48 + delta("height") * 0.12 + delta("legTorsoRatio") * 0.18;
+      [["leftLeg", -1, "left"], ["rightLeg", 1, "right"]].forEach(([partId, direction, wanted]) => {
+        const leg = parts[partId];
+        const perSide = side("legLeft", "legRight", wanted);
+        leg.position.set(direction * hip, 0.46 + legLift * 0.3, 0);
+        leg.scale.set(0.78 + morph("thighSize") * 0.44, legLength * (0.9 + perSide * 0.2), 0.78 + morph("thighSize") * 0.38);
+      });
+      [["leftFoot", -1, "left"], ["rightFoot", 1, "right"]].forEach(([partId, direction, wanted]) => {
+        const foot = parts[partId];
+        const perSide = side("legLeft", "legRight", wanted);
+        foot.position.set(direction * hip, 0.02, -0.1 - delta("footSize") * 0.07);
+        foot.scale.setScalar((0.76 + morph("footSize") * 0.42) * (0.9 + perSide * 0.16));
+      });
+
+      parts.coat.position.y = 1.05 + legLift * 0.72;
+      parts.coat.scale.set(
+        0.88 + morph("hipWidth") * 0.26 + morph("chestSize") * 0.1,
+        0.92 + delta("torsoLength") * 0.2,
+        0.86 + morph("gluteProjection") * 0.24 + morph("belly") * 0.12
+      );
+      parts.cape.position.y = 1.5 + legLift + torsoLift * 0.4;
+      parts.hair.position.y = 2.67 + headLift;
+      parts.hair.scale.set(headWidth, headHeight * 0.96, headDepth);
+      parts.halo.position.y = 2.98 + headLift;
+      parts.weaponAnchor.position.set(shoulder + 0.03, 1.45 + legLift + torsoLift * 0.42, 0);
+
+      mesh.traverse((object) => {
+        const material = object.material;
+        if (!material?.color) return;
+        if (material.userData?.materialRole === "skin") material.color.set(recipe.skinColor);
+        if (material.userData?.materialRole === "hair") material.color.set(recipe.hairColor);
+        if (material.userData?.materialRole === "eyes") {
+          material.color.set(recipe.eyeColor);
+          if ("clearcoat" in material) material.clearcoat = 0.55 + morph("eyeReflection") * 0.45;
+        }
+      });
+
+      const supportedTargets = this.applyNamedMorphTargets(mesh, recipe);
+      mesh.userData.appearance = compactAppearanceRecipe(recipe, characterId);
+      mesh.userData.appearanceFingerprint = appearanceFingerprint(recipe, characterId);
+      mesh.userData.appearanceCapability = supportedTargets ? "gltf-morph-targets" : "procedural-fallback";
+      mesh.userData.visualHeight = 1 + delta("height") * 0.12;
+      mesh.userData.gameplayCollider = { radius: 0.48, height: 2.95 };
+    }
+
+    applyCorrectiveMorphs(mesh) {
+      if (!mesh?.userData?.parts) return;
+      const parts = mesh.userData.parts;
+      const values = {
+        correctiveShoulder: clamp((Math.abs(parts.leftArm.rotation.x) + Math.abs(parts.rightArm.rotation.x)) * 0.45, 0, 1),
+        correctiveHip: clamp((Math.abs(parts.leftLeg.rotation.x) + Math.abs(parts.rightLeg.rotation.x)) * 0.4, 0, 1),
+        correctiveElbow: clamp(Math.max(Math.abs(parts.leftArm.rotation.z), Math.abs(parts.rightArm.rotation.z)) * 0.6, 0, 1),
+        correctiveKnee: clamp(Math.max(Math.abs(parts.leftLeg.rotation.x), Math.abs(parts.rightLeg.rotation.x)) * 0.7, 0, 1),
+        correctiveChest: clamp(Math.abs(parts.torso.rotation.z) * 2.5, 0, 1)
+      };
+      mesh.traverse((object) => {
+        const dictionary = object.morphTargetDictionary;
+        const influences = object.morphTargetInfluences;
+        if (!dictionary || !influences) return;
+        Object.entries(values).forEach(([name, value]) => {
+          const index = dictionary[name];
+          if (Number.isInteger(index) && index < influences.length) influences[index] = value;
+        });
+      });
+      mesh.userData.correctives = values;
     }
 
     createPlayerWeapon(profile) {
@@ -2071,6 +2462,10 @@
         eye.rotation.y = clamp((this.cameraYaw - this.state.player.rotation) * 0.08, -0.16, 0.16);
         eye.rotation.x = Math.sin(time * 0.0008 + index) * 0.025;
       });
+      const blink = Math.max(0, Math.sin(time * 0.00115) > 0.985 ? 1 : 0);
+      parts.eyes.forEach((eye) => {
+        eye.scale.y = (eye.userData.baseScaleY || eye.scale.y) * (1 - blink * 0.72);
+      });
       parts.cape.rotation.x = (sprinting ? 0.72 : this.gliding ? 0.48 : moving ? 0.32 : 0.12) + Math.sin(time * 0.004) * 0.04;
       parts.halo.rotation.z += dt * 0.7;
       parts.leftWing.visible = this.gliding;
@@ -2079,6 +2474,7 @@
         parts.leftWing.rotation.z = -0.28 + Math.sin(time * 0.003) * 0.06;
         parts.rightWing.rotation.z = 0.28 - Math.sin(time * 0.003) * 0.06;
       }
+      this.applyCorrectiveMorphs(this.playerMesh);
     }
 
     togglePhotoMode(force) {
@@ -2524,6 +2920,17 @@
         player.z + Math.cos(this.cameraYaw) * horizontal
       );
       const focus = new this.THREE.Vector3(player.x, player.y + 1.35, player.z);
+      if (this.currentPanel === "creator") {
+        const focusOffset = { head: 1.1, upper: 0.62, body: 0.88, lower: 0.28 }[this.appearanceFocus] ?? 0.88;
+        focus.set(player.x, player.y + focusOffset, player.z);
+        const creatorDistance = clamp(this.cameraDistance, 6.5, 12);
+        const creatorHorizontal = Math.cos(this.cameraPitch) * creatorDistance;
+        desired.set(
+          player.x + Math.sin(this.cameraYaw) * creatorHorizontal,
+          player.y + focusOffset + Math.sin(this.cameraPitch) * creatorDistance,
+          player.z + Math.cos(this.cameraYaw) * creatorHorizontal
+        );
+      }
       desired = this.updateCinematicCamera(desired, focus, dt);
       if (!this.photoMode) {
         const colliderObjects = this.climbables.map((entry) => entry.object).filter(Boolean);
@@ -3371,6 +3778,7 @@
         craft: () => this.renderCraftPanel(),
         skills: () => this.renderSkillsPanel(),
         characters: () => this.renderCharactersPanel(),
+        creator: () => this.renderCharacterCreatorPanel(),
         party: () => this.renderPartyPanel(),
         settings: () => this.renderSettingsPanel(),
         paused: () => this.renderPausePanel(),
@@ -3383,6 +3791,7 @@
         craft: ["Astral Forge", "Crafting Station", "#ffaf67"],
         skills: ["Cây kỹ năng", "Resonance Matrix", "#ff70ce"],
         characters: ["Đội hình Astral", "Character Observatory", "#ff78d2"],
+        creator: ["Character Creator", "Appearance Observatory", "#71efff"],
         party: ["Co-op 1–4", "Realtime Shard", "#73eaff"],
         settings: ["Thiết lập", "Graphics & Controls", "#ffd36b"],
         paused: ["Tạm dừng", "Game Paused", "#a78bff"],
@@ -3409,7 +3818,68 @@
             <button class="har-chip ${active ? "is-active" : ""}" type="button" data-panel-action="switch-character" data-character="${id}">${active ? "Đang dùng" : `Đổi [${index + 1}]`}</button>
           </li>`;
         }).join("")}</ul>
-        <div class="har-section"><h3>Hồ sơ hình ảnh</h3><p>Toon shader, face shadow, highlight mắt, tóc nhiều lớp, cape và cánh lượn đang được dựng realtime bằng renderer hiện tại.</p></div>`;
+        <div class="har-section"><h3>Hồ sơ hình ảnh</h3><p>Recipe ngoại hình được lưu theo từng nhân vật, dùng cho preset, multiplayer và model GLB/VRM khi asset được kết nối.</p>
+          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Creator</button></div>
+        </div>`;
+    }
+
+    activeAppearanceRecipe() {
+      const id = this.state.roster.activeId;
+      this.state.appearance ||= { recipes: {}, savedPresets: [], lastSavedAt: "" };
+      this.state.appearance.recipes[id] ||= defaultAppearanceRecipe(id);
+      this.state.appearance.recipes[id] = normalizeAppearanceRecipe(this.state.appearance.recipes[id], id);
+      return this.state.appearance.recipes[id];
+    }
+
+    renderCharacterCreatorPanel() {
+      const id = this.state.roster.activeId;
+      const profile = CHARACTERS[id] || CHARACTERS.lyra;
+      const recipe = this.activeAppearanceRecipe();
+      const group = APPEARANCE_GROUPS.find((item) => item.id === this.appearanceGroup) || APPEARANCE_GROUPS[0];
+      const mesh = this.characterMeshes.get(id);
+      const capability = mesh?.userData?.appearanceCapability === "gltf-morph-targets"
+        ? "GLB morph target đang hoạt động"
+        : "Procedural fallback · chờ GLB/VRM asset";
+      const saved = this.state.appearance.savedPresets || [];
+      return `
+        <div class="har-creator">
+          <div class="har-creator__hero">
+            <div><small>CHARACTER CREATOR · ${escapeHtml(profile.name)}</small><h3>${recipe.style === "human-cinematic" ? "Human Cinematic" : "Anime Realistic"}</h3><p>${escapeHtml(capability)} · collider gameplay giữ cố định để multiplayer công bằng.</p></div>
+            <span class="har-chip ${capability.startsWith("GLB") ? "is-active" : ""}">${capability.startsWith("GLB") ? "MORPH READY" : "FALLBACK"}</span>
+          </div>
+          <div class="har-creator__toolbar">
+            <label class="har-field">Model nền<select data-appearance-setting="baseModel">${APPEARANCE_ASSETS.baseModels.map((value) => `<option value="${value}" ${recipe.baseModel === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="har-field">Preset cơ thể<select data-appearance-setting="bodyPreset">${Object.entries(APPEARANCE_PRESETS).map(([value, item]) => `<option value="${value}" ${recipe.bodyPreset === value ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
+            <label class="har-field">Phong cách<select data-appearance-setting="style"><option value="anime-realistic" ${recipe.style === "anime-realistic" ? "selected" : ""}>Anime Realistic</option><option value="human-cinematic" ${recipe.style === "human-cinematic" ? "selected" : ""}>Human Cinematic</option></select></label>
+          </div>
+          <div class="har-creator__options">
+            <label><input type="checkbox" data-appearance-setting="symmetry" ${recipe.symmetry ? "checked" : ""}> Chỉnh đối xứng</label>
+            <label><input type="checkbox" data-appearance-setting="advanced" ${recipe.advanced ? "checked" : ""}> Chế độ nâng cao trái–phải</label>
+            <label class="har-creator__color">Da <input type="color" value="${recipe.skinColor}" data-appearance-setting="skinColor"></label>
+            <label class="har-creator__color">Mắt <input type="color" value="${recipe.eyeColor}" data-appearance-setting="eyeColor"></label>
+            <label class="har-creator__color">Tóc <input type="color" value="${recipe.hairColor}" data-appearance-setting="hairColor"></label>
+          </div>
+          <div class="har-creator__tabs" role="tablist" aria-label="Nhóm ngoại hình">
+            ${APPEARANCE_GROUPS.map((item) => `<button type="button" class="${item.id === group.id ? "is-active" : ""}" data-appearance-group="${item.id}" role="tab" aria-selected="${item.id === group.id}">${item.label}</button>`).join("")}
+          </div>
+          <div class="har-creator__sliders">
+            ${group.controls.map(([controlId, label]) => {
+              const control = APPEARANCE_CONTROL_MAP[controlId];
+              const value = recipe.morphs[controlId] ?? control.defaultValue;
+              return `<label class="har-appearance-slider"><span>${escapeHtml(label)}<output data-appearance-output="${controlId}">${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-appearance-morph="${controlId}" aria-label="${escapeHtml(label)}"></label>`;
+            }).join("")}
+          </div>
+          <div class="har-creator__actions">
+            <button class="har-secondary-button" type="button" data-panel-action="appearance-undo" ${this.appearanceHistory.length ? "" : "disabled"}>↶ Hoàn tác</button>
+            <button class="har-secondary-button" type="button" data-panel-action="appearance-redo" ${this.appearanceFuture.length ? "" : "disabled"}>↷ Làm lại</button>
+            <button class="har-secondary-button" type="button" data-panel-action="appearance-random">Ngẫu nhiên có kiểm soát</button>
+            <button class="har-secondary-button" type="button" data-panel-action="appearance-reset">Khôi phục</button>
+            <input class="har-creator__name" type="text" maxlength="40" data-appearance-name placeholder="Tên preset">
+            <button class="har-primary-button" type="button" data-panel-action="appearance-save">Lưu preset</button>
+          </div>
+          <div class="har-section har-creator__presets"><h3>Preset đã lưu</h3><div class="har-inline-actions">${saved.length ? saved.slice().reverse().map((preset) => `<button class="har-chip" type="button" data-panel-action="appearance-load-preset" data-preset-id="${escapeHtml(preset.id)}">${escapeHtml(preset.name)}</button>`).join("") : "<span>Chưa có preset ngoại hình.</span>"}</div></div>
+          <div class="har-section har-creator__note"><p>Thanh trượt dùng recipe chuẩn hóa. Khi asset GLB/VRM có morph target, game tự chuyển sang morph thật; hiện tại model procedural hiển thị fallback trung thực và không thay đổi hitbox.</p></div>
+        </div>`;
     }
 
     renderMapPanel() {
@@ -3572,6 +4042,131 @@
       this.toast(`Đã áp dụng phong cách ${this.state.settings.renderStyle === "anime" ? "Anime Toon" : this.state.settings.renderStyle === "cinematic" ? "Cinematic PBR" : "Realistic PBR"}.`, "success");
     }
 
+    recordAppearanceChange(beforeRecipe) {
+      const id = this.state.roster.activeId;
+      const after = appearanceFingerprint(this.activeAppearanceRecipe(), id);
+      if (appearanceFingerprint(beforeRecipe, id) === after) return;
+      this.appearanceHistory.push(normalizeAppearanceRecipe(beforeRecipe, id));
+      this.appearanceHistory = this.appearanceHistory.slice(-30);
+      this.appearanceFuture = [];
+      this.appearanceDirty = true;
+      this.state.appearance.lastSavedAt = nowIso();
+      this.saveProgress("Cập nhật ngoại hình");
+    }
+
+    updateAppearanceDraft(key, value) {
+      const id = this.state.roster.activeId;
+      const recipe = this.activeAppearanceRecipe();
+      if (!this.appearanceInputStart) this.appearanceInputStart = clone(recipe);
+      if (key in recipe.morphs) recipe.morphs[key] = clamp(value, 0, 1);
+      else if (["symmetry", "advanced"].includes(key)) recipe[key] = Boolean(value);
+      else if (["baseModel", "bodyPreset", "style", "skinColor", "eyeColor", "hairColor"].includes(key)) recipe[key] = value;
+      recipe.updatedAt = nowIso();
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), recipe, id);
+      this.appearanceDirty = true;
+    }
+
+    commitAppearanceDraft() {
+      if (!this.appearanceInputStart) return;
+      const before = this.appearanceInputStart;
+      this.appearanceInputStart = null;
+      this.recordAppearanceChange(before);
+    }
+
+    applyAppearancePreset(presetId) {
+      const preset = APPEARANCE_PRESETS[presetId];
+      if (!preset) return;
+      const before = clone(this.activeAppearanceRecipe());
+      const recipe = this.activeAppearanceRecipe();
+      recipe.bodyPreset = presetId;
+      Object.entries(preset.morphs).forEach(([id, value]) => {
+        if (id in recipe.morphs) recipe.morphs[id] = value;
+      });
+      recipe.updatedAt = nowIso();
+      this.applyAppearanceToMesh(this.characterMeshes.get(this.state.roster.activeId), recipe, this.state.roster.activeId);
+      this.recordAppearanceChange(before);
+      this.renderCurrentPanel();
+    }
+
+    randomAppearance() {
+      const before = clone(this.activeAppearanceRecipe());
+      const recipe = this.activeAppearanceRecipe();
+      const seed = Math.floor(Math.random() * 0xffffff);
+      this.appearanceSeed = seed;
+      Object.values(APPEARANCE_CONTROL_MAP).forEach((control, index) => {
+        if (control.group === "expression") return;
+        const wave = Math.sin(seed * 0.001 + index * 1.73) * 0.5 + 0.5;
+        recipe.morphs[control.id] = Number((0.28 + wave * 0.44).toFixed(3));
+      });
+      recipe.bodyPreset = "balanced";
+      recipe.updatedAt = nowIso();
+      this.applyAppearanceToMesh(this.characterMeshes.get(this.state.roster.activeId), recipe, this.state.roster.activeId);
+      this.recordAppearanceChange(before);
+      this.toast("Đã tạo ngoại hình ngẫu nhiên có kiểm soát.", "success");
+      this.renderCurrentPanel();
+    }
+
+    resetAppearance() {
+      const before = clone(this.activeAppearanceRecipe());
+      const id = this.state.roster.activeId;
+      this.state.appearance.recipes[id] = defaultAppearanceRecipe(id);
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      this.recordAppearanceChange(before);
+      this.renderCurrentPanel();
+    }
+
+    undoAppearance() {
+      const id = this.state.roster.activeId;
+      const previous = this.appearanceHistory.pop();
+      if (!previous) return;
+      this.appearanceFuture.push(clone(this.activeAppearanceRecipe()));
+      this.state.appearance.recipes[id] = normalizeAppearanceRecipe(previous, id);
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      this.appearanceDirty = true;
+      this.saveProgress("Hoàn tác ngoại hình");
+      this.renderCurrentPanel();
+    }
+
+    redoAppearance() {
+      const id = this.state.roster.activeId;
+      const next = this.appearanceFuture.pop();
+      if (!next) return;
+      this.appearanceHistory.push(clone(this.activeAppearanceRecipe()));
+      this.state.appearance.recipes[id] = normalizeAppearanceRecipe(next, id);
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      this.appearanceDirty = true;
+      this.saveProgress("Làm lại ngoại hình");
+      this.renderCurrentPanel();
+    }
+
+    saveAppearancePreset(name = "") {
+      const id = this.state.roster.activeId;
+      const recipe = clone(this.activeAppearanceRecipe());
+      const preset = {
+        id: uid("look"),
+        name: String(name || `${CHARACTERS[id]?.name || "Nhân vật"} · ${this.state.appearance.savedPresets.length + 1}`).slice(0, 40),
+        characterId: id,
+        recipe,
+        createdAt: nowIso()
+      };
+      this.state.appearance.savedPresets = [...(this.state.appearance.savedPresets || []), preset].slice(-12);
+      this.state.appearance.lastSavedAt = nowIso();
+      this.saveProgress("Lưu preset ngoại hình");
+      this.toast(`Đã lưu preset “${preset.name}”.`, "success");
+      this.renderCurrentPanel();
+    }
+
+    loadAppearancePreset(presetId) {
+      const preset = (this.state.appearance.savedPresets || []).find((item) => item.id === presetId);
+      if (!preset) return;
+      const before = clone(this.activeAppearanceRecipe());
+      const id = this.state.roster.activeId;
+      this.state.appearance.recipes[id] = normalizeAppearanceRecipe(preset.recipe, id);
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      this.recordAppearanceChange(before);
+      this.renderCurrentPanel();
+    }
+
     renderSettingsPanel() {
       const record = this.savedRecord;
       const histories = record?.history || [];
@@ -3610,9 +4205,29 @@
     bindPanelControls() {
       const body = this.root.querySelector("[data-har-panel-body]");
       body.onclick = (event) => {
+        const groupButton = event.target.closest("[data-appearance-group]");
+        if (groupButton) {
+          this.appearanceGroup = groupButton.dataset.appearanceGroup || "face";
+          const group = APPEARANCE_GROUPS.find((item) => item.id === this.appearanceGroup);
+          this.appearanceFocus = group?.focus || "";
+          this.renderCurrentPanel();
+          return;
+        }
         const button = event.target.closest("[data-panel-action]");
         if (!button || button.disabled) return;
         this.handlePanelAction(button.dataset.panelAction, button.dataset);
+      };
+      body.oninput = (event) => {
+        const morph = event.target.closest("[data-appearance-morph]");
+        const setting = event.target.closest("[data-appearance-setting]");
+        if (morph) {
+          const value = Number(morph.value);
+          this.updateAppearanceDraft(morph.dataset.appearanceMorph, value);
+          const output = body.querySelector(`[data-appearance-output="${morph.dataset.appearanceMorph}"]`);
+          if (output) output.textContent = String(Math.round(value * 100));
+        } else if (setting && ["color", "range"].includes(setting.type)) {
+          this.updateAppearanceDraft(setting.dataset.appearanceSetting, setting.value);
+        }
       };
       body.onchange = (event) => {
         if (event.target.matches("[data-inventory-filter]")) {
@@ -3621,6 +4236,19 @@
         } else if (event.target.matches("[data-inventory-sort]")) {
           this.inventorySort = event.target.value;
           this.renderCurrentPanel();
+        } else if (event.target.matches("[data-appearance-morph]")) {
+          this.commitAppearanceDraft();
+          this.renderCurrentPanel();
+        } else if (event.target.matches("[data-appearance-setting]")) {
+          const setting = event.target.dataset.appearanceSetting;
+          const value = setting === "symmetry" || setting === "advanced" ? event.target.checked : event.target.value;
+          if (setting === "bodyPreset") {
+            this.applyAppearancePreset(value);
+          } else {
+            this.updateAppearanceDraft(setting, value);
+            this.commitAppearanceDraft();
+            this.renderCurrentPanel();
+          }
         } else if (event.target.matches("[data-setting]")) {
           const key = event.target.dataset.setting;
           let value = event.target.value;
@@ -3671,6 +4299,13 @@
       else if (action === "craft") this.craft(data.recipe);
       else if (action === "upgrade-skill") this.upgradeSkill(data.skill);
       else if (action === "switch-character") this.switchCharacter(data.character);
+      else if (action === "open-character-creator") this.openPanel("creator");
+      else if (action === "appearance-undo") this.undoAppearance();
+      else if (action === "appearance-redo") this.redoAppearance();
+      else if (action === "appearance-random") this.randomAppearance();
+      else if (action === "appearance-reset") this.resetAppearance();
+      else if (action === "appearance-save") this.saveAppearancePreset(bodyValue(this.root, "[data-appearance-name]"));
+      else if (action === "appearance-load-preset") this.loadAppearancePreset(data.presetId);
       else if (action === "manual-save") await this.saveProgress("Checkpoint thủ công");
       else if (action === "sync-cloud") await this.syncCloud(true);
       else if (action === "restore-save") await this.restoreLocalVersion(Number(data.version));
@@ -4123,7 +4758,8 @@
       const forwardZ = -Math.cos(this.cameraYaw);
       const rightX = Math.cos(this.cameraYaw);
       const rightZ = -Math.sin(this.cameraYaw);
-      this.socket.emit("astral-realms:input", {
+      const includeAppearance = Boolean(extra.appearance || this.appearanceDirty || extra.spawn);
+      const payload = {
         seq: ++this.inputSeq,
         move: {
           x: forwardX * input.z + rightX * input.x,
@@ -4134,8 +4770,11 @@
         element: this.state.player.element,
         characterId: this.state.roster.activeId,
         spawn: { x: this.state.player.x, z: this.state.player.z },
+        ...(includeAppearance ? { appearance: compactAppearanceRecipe(this.activeAppearanceRecipe(), this.state.roster.activeId) } : {}),
         ...extra
-      });
+      };
+      this.socket.emit("astral-realms:input", payload);
+      if (includeAppearance) this.appearanceDirty = false;
     }
 
     sendRealtimeInput(time) {
@@ -4173,11 +4812,17 @@
         }
         if (!mesh) {
           mesh = this.createAnimeCharacterMesh(profile, 0.92);
-          mesh.userData = { type: "remote-player", id: player.socketId, name: player.name, characterId: profile.id };
+          mesh.userData = { ...mesh.userData, type: "remote-player", id: player.socketId, name: player.name, characterId: profile.id };
           mesh.userData.targetPosition = new this.THREE.Vector3(player.x, 1.08, player.z);
           mesh.userData.targetRotation = player.rotation;
           this.world.add(mesh);
           this.remotePlayers.set(player.socketId, mesh);
+        }
+        if (player.appearance) {
+          const remoteAppearance = normalizeAppearanceRecipe(player.appearance, profile.id);
+          if (mesh.userData.appearanceFingerprint !== appearanceFingerprint(remoteAppearance, profile.id)) {
+            this.applyAppearanceToMesh(mesh, remoteAppearance, profile.id);
+          }
         }
         mesh.userData.targetPosition.set(player.x, 1.08, player.z);
         mesh.userData.targetRotation = player.rotation;

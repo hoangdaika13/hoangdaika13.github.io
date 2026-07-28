@@ -1681,6 +1681,176 @@ button.har-chip {
 .har-character-card > div:nth-child(2) strong { font-size: 11px; }
 .har-character-card > div:nth-child(2) span { color: var(--character-color); font-size: 8px; }
 .har-character-card > div:nth-child(2) small { color: #91a4c4; font-size: 8px; }
+
+.har-creator {
+  display: grid;
+  gap: 11px;
+}
+
+.har-creator__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid color-mix(in srgb, var(--panel-accent, var(--har-cyan)) 36%, transparent);
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--panel-accent, var(--har-cyan)) 20%, transparent), transparent 42%),
+    rgba(255, 255, 255, .035);
+}
+
+.har-creator__hero small {
+  display: block;
+  color: var(--panel-accent, var(--har-cyan));
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.har-creator__hero h3 {
+  margin: 5px 0 4px;
+  font-size: 17px;
+}
+
+.har-creator__hero p {
+  max-width: 270px;
+  margin: 0;
+  color: #91a7c4;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.har-creator__toolbar,
+.har-creator__options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.har-creator__options {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  padding: 9px;
+  border: 1px solid rgba(145, 204, 255, .12);
+  border-radius: 13px;
+  color: #a2b5d0;
+  background: rgba(2, 7, 18, .45);
+  font-size: 8px;
+}
+
+.har-creator__options label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.har-creator__options input[type="checkbox"] {
+  accent-color: var(--panel-accent, var(--har-cyan));
+}
+
+.har-creator__color {
+  color: #c7d9ec;
+}
+
+.har-creator__color input[type="color"] {
+  width: 28px;
+  height: 24px;
+  padding: 2px;
+  border: 1px solid rgba(145, 204, 255, .2);
+  border-radius: 8px;
+  background: #071023;
+}
+
+.har-creator__tabs {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 3px 1px 6px;
+  scrollbar-width: thin;
+}
+
+.har-creator__tabs button {
+  flex: 0 0 auto;
+  min-height: 29px;
+  padding: 0 9px;
+  border: 1px solid rgba(145, 204, 255, .17);
+  border-radius: 99px;
+  color: #93a9c6;
+  background: rgba(4, 10, 24, .72);
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.har-creator__tabs button.is-active {
+  color: #04121c;
+  border-color: var(--panel-accent, var(--har-cyan));
+  background: var(--panel-accent, var(--har-cyan));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--panel-accent, var(--har-cyan)) 28%, transparent);
+}
+
+.har-creator__sliders {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px 13px;
+  padding: 12px;
+  border: 1px solid rgba(145, 204, 255, .13);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(9, 22, 42, .75), rgba(7, 9, 25, .82));
+}
+
+.har-appearance-slider {
+  display: grid;
+  gap: 5px;
+  color: #a7b9d0;
+  font-size: 9px;
+}
+
+.har-appearance-slider > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.har-appearance-slider output {
+  color: var(--panel-accent, var(--har-cyan));
+  font-variant-numeric: tabular-nums;
+}
+
+.har-appearance-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--panel-accent, var(--har-cyan));
+}
+
+.har-creator__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.har-creator__name {
+  min-width: 120px;
+  flex: 1 1 140px;
+  min-height: 32px;
+  padding: 0 9px;
+  border: 1px solid rgba(145, 204, 255, .2);
+  border-radius: 10px;
+  color: #eaf7ff;
+  background: rgba(3, 7, 18, .78);
+  font-size: 9px;
+}
+
+.har-creator__presets span {
+  color: #8295b4;
+  font-size: 9px;
+}
+
+.har-creator__note {
+  margin-bottom: 0;
+}
 .har-shell.is-swimming .har-action-dock::after, .har-shell.is-climbing .har-action-dock::after { position: absolute; left: 50%; bottom: -22px; transform: translateX(-50%); padding: 4px 8px; border: 1px solid rgba(111, 231, 255, .32); border-radius: 8px; background: rgba(2, 8, 22, .8); color: #9befff; font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
 .har-shell.is-swimming .har-action-dock::after { content: "SWIMMING · STAMINA"; }
 .har-shell.is-climbing .har-action-dock::after { content: "CLIMBING · HOLD SPACE"; }
@@ -1696,4 +1866,9 @@ button.har-chip {
   .har-photo { right: 12px; bottom: 12px; width: calc(100% - 24px); }
   .har-character-card { grid-template-columns: 36px minmax(0, 1fr); }
   .har-character-card > button { grid-column: 2; justify-self: start; }
+  .har-creator__toolbar,
+  .har-creator__options,
+  .har-creator__sliders { grid-template-columns: 1fr; }
+  .har-creator__options { align-items: start; }
+  .har-creator__hero { flex-direction: column; }
 }
