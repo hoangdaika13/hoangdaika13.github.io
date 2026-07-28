@@ -1982,6 +1982,7 @@
           loader.loadAsync(url),
           new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Quá thời gian tải ${url}`)), 12000))
         ]);
+        this.sanitizeBuiltInCharacterAsset(gltf);
         gltf.scene.traverse?.((object) => {
           if (!object.isMesh && !object.isSkinnedMesh) return;
           object.userData ||= {};
@@ -2008,6 +2009,48 @@
       });
       this.builtInCharacterStatus = this.builtInCharacterAssets.size === entries.length ? "ready" : this.builtInCharacterAssets.size ? "partial" : "fallback";
       this.root.dataset.builtInCharacter = this.builtInCharacterStatus;
+    }
+
+    sanitizeBuiltInCharacterAsset(gltf) {
+      if (!gltf?.scene) return;
+      const THREE = this.THREE;
+      const slots = ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap"];
+      let brokenTextures = 0;
+      let meshCount = 0;
+      gltf.scene.traverse?.((object) => {
+        if (!object.isMesh && !object.isSkinnedMesh) return;
+        meshCount += 1;
+        object.visible = true;
+        object.frustumCulled = false;
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.filter(Boolean).forEach((material) => {
+          material.userData ||= {};
+          slots.forEach((slot) => {
+            const texture = material[slot];
+            if (!texture?.isTexture) return;
+            const image = texture.image || texture.source?.data;
+            const invalid = !image || (Number(image.width) === 0 && Number(image.height) === 0);
+            if (invalid) {
+              material[slot] = null;
+              brokenTextures += 1;
+            }
+          });
+          material.transparent = false;
+          material.opacity = 1;
+          material.alphaTest = 0;
+          material.depthWrite = true;
+          material.depthTest = true;
+          material.side = THREE.DoubleSide;
+          if (material.color && (!material.map || brokenTextures)) {
+            const identity = `${object.name || ""} ${material.name || ""}`.toLowerCase();
+            material.color.set(/visor|eye|glass/.test(identity) ? 0x6feeff : /skin|face|body|head/.test(identity) ? 0xb98273 : 0x6f7f98);
+          }
+          material.needsUpdate = true;
+        });
+      });
+      gltf.userData ||= {};
+      gltf.userData.hhTextureFallbacks = brokenTextures;
+      gltf.userData.hhRenderableMeshes = meshCount;
     }
 
     disposeBuiltInCharacterAssets() {
@@ -4000,6 +4043,8 @@
       const modelId = BUILTIN_CHARACTER_ASSETS[recipe.baseModel] ? recipe.baseModel : defaultAppearanceRecipe(profile.id).baseModel;
       const source = this.builtInCharacterAssets.get(modelId);
       if (!source?.scene || !this.cloneSkinnedCharacter) return null;
+      const assetNeedsVisualRecovery = Number(source.userData?.hhTextureFallbacks || 0) > 0
+        || Number(source.userData?.hhRenderableMeshes || 0) < 1;
       const THREE = this.THREE;
       const wrapper = new THREE.Group();
       wrapper.name = `HHHumanRig:${profile.id}`;
@@ -4048,7 +4093,7 @@
       wrapper.add(asset);
       const crowdProxy = this.createCharacterMesh({ body: profile.body, accent: profile.accent, scale: 0.94 });
       crowdProxy.name = `HHHuman3DProxy:${profile.id}`;
-      crowdProxy.visible = false;
+      crowdProxy.visible = assetNeedsVisualRecovery;
       crowdProxy.userData.isCharacterLodProxy = true;
       wrapper.add(crowdProxy);
       const rightHandAliases = HH_HUMANOID_SKELETON.rightHand.map(normalizeBoneName);
@@ -4061,7 +4106,7 @@
       });
       const weaponAnchor = new THREE.Group();
       weaponAnchor.name = "HHWeaponSocket";
-      (rightHand || wrapper).add(weaponAnchor);
+      (assetNeedsVisualRecovery ? crowdProxy.userData?.parts?.weaponAnchor : rightHand || wrapper)?.add(weaponAnchor);
       const heroDetails = [];
       let riggedHair = null;
       let riggedAccessory = null;
@@ -4142,26 +4187,41 @@
         headBone.add(riggedAccessory);
         heroDetails.push(cuff, visor, mark);
       }
+      if (assetNeedsVisualRecovery) {
+        heroMeshes.forEach((object) => { object.visible = false; });
+        heroDetails.forEach((object) => { object.visible = false; });
+        if (riggedHair) riggedHair.visible = false;
+        if (riggedAccessory) riggedAccessory.visible = false;
+      }
       const useProxy = this.state.settings.characterMode === "portrait";
-      heroMeshes.forEach((object) => { object.visible = !useProxy; });
-      crowdProxy.visible = useProxy;
+      heroMeshes.forEach((object) => { object.visible = !useProxy && !assetNeedsVisualRecovery; });
+      crowdProxy.visible = useProxy || assetNeedsVisualRecovery;
+      const visualMode = assetNeedsVisualRecovery ? "procedural-3d-recovery" : "builtin-rigged";
+      const initialTier = useProxy || assetNeedsVisualRecovery ? "impostor" : "hero";
+      const activeHeroMeshes = assetNeedsVisualRecovery ? [crowdProxy] : [...heroMeshes, ...heroDetails];
       wrapper.userData = {
         characterId: profile.id,
-        visualMode: "builtin-rigged",
-        sourceProvider: modelId === "human-adult-a01" ? "HH Asteria Human Rig" : "HH Vanguard Human Rig",
-        modelTier: useProxy ? "impostor" : "hero",
+        visualMode,
+        sourceProvider: assetNeedsVisualRecovery
+          ? "HH Articulated PBR Recovery"
+          : modelId === "human-adult-a01" ? "HH Asteria Human Rig" : "HH Vanguard Human Rig",
+        modelTier: initialTier,
         appearanceCapability: "skeleton-proportions",
         gameplayCollider: { radius: 0.48, height: 2.95 },
         gltfAsset: asset,
         builtInModelId: modelId,
         builtInAnimations: this.builtInCharacterAssets.get("human-adult-b01")?.animations || source.animations || [],
-        parts: { weaponAnchor, hair: riggedHair, accessory: riggedAccessory },
+        parts: {
+          weaponAnchor,
+          hair: assetNeedsVisualRecovery ? null : riggedHair,
+          accessory: assetNeedsVisualRecovery ? null : riggedAccessory
+        },
         lodVariants: {
-          hero: [...heroMeshes, ...heroDetails],
-          near: [...heroMeshes, ...heroDetails],
+          hero: activeHeroMeshes,
+          near: activeHeroMeshes,
           crowd: [crowdProxy],
           impostor: [crowdProxy],
-          heroDetails
+          heroDetails: assetNeedsVisualRecovery ? [] : heroDetails
         }
       };
       this.applyRiggedBodyProportions(wrapper, recipe);

@@ -60,7 +60,8 @@ test("built-in heroes are actual rigged GLB assets with shared animation", () =>
   }
   assert.match(source, /SkeletonUtils\.js/);
   assert.match(source, /cloneSkinnedCharacter/);
-  assert.match(source, /visualMode:\s*"builtin-rigged"/);
+  assert.match(source, /"builtin-rigged"/);
+  assert.match(source, /"procedural-3d-recovery"/);
   assert.match(source, /builtInAnimations/);
   assert.match(source, /AnimationMixer/);
 });
@@ -89,11 +90,11 @@ test("Character V11 supersedes V10 with updated route, offline cache and respons
   const index = read("index.html");
   const css = read("astral-realms.css");
   assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*11/);
-  for (const asset of ["astral-realms.css?v=11", "astral-realms.js?v=11"]) {
+  for (const asset of ["astral-realms.css?v=12", "astral-realms.js?v=12"]) {
     assert.ok(loader.includes(asset));
     assert.ok(worker.includes(asset));
   }
-  assert.match(worker, /hh-identity-portal-v288/);
+  assert.match(worker, /hh-identity-portal-v289/);
   assert.match(index, /performance-loader\.js\?v=69/);
   assert.match(css, /Astral Realms Character V11/);
   assert.match(css, /\.har-genesis/);

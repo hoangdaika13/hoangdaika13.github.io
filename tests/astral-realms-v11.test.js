@@ -106,3 +106,17 @@ test("Genesis adds a live silhouette safety check, auto-fit action and motion-sa
   assert.match(source, /extremes\.length/);
   assert.match(source, /cameraYaw = \(this\.cameraYaw \+ dt \* 0\.34\)/);
 });
+
+test("broken embedded GLB textures recover to a visible articulated PBR character", () => {
+  for (const token of [
+    "sanitizeBuiltInCharacterAsset",
+    "hhTextureFallbacks",
+    "hhRenderableMeshes",
+    "assetNeedsVisualRecovery",
+    "procedural-3d-recovery",
+    "HH Articulated PBR Recovery"
+  ]) assert.ok(source.includes(token), `missing visibility recovery ${token}`);
+  assert.match(source, /object\.frustumCulled = false/);
+  assert.match(source, /material\.opacity = 1/);
+  assert.match(source, /crowdProxy\.visible = useProxy \|\| assetNeedsVisualRecovery/);
+});
