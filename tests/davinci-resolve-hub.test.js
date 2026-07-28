@@ -13,15 +13,17 @@ test("HH Video Studio is a first-class routed browser workspace", () => {
   const hub = read("davinci-resolve-hub.js");
 
   assert.match(script, /id:\s*"davinci-resolve"/);
-  assert.match(script, /landingRoute:\s*"\/davinci-resolve\/edit"/);
-  for (const route of ["media", "cut", "edit", "fusion", "color", "audio", "titles", "deliver"]) {
+  assert.match(script, /label:\s*"Tool"/);
+  assert.match(script, /landingRoute:\s*"\/davinci-resolve"/);
+  for (const route of ["davinci", "auto", "media", "cut", "edit", "fusion", "color", "audio", "titles", "deliver"]) {
     assert.match(script, new RegExp(`\\/davinci-resolve\\/${route}`), `route ${route} missing`);
   }
   assert.match(hub, /window\.HHDavinciResolveHub\s*=\s*\{\s*mount/);
-  assert.match(loader, /davinci:\s*\{[\s\S]*davinci-resolve-hub\.css\?v=3/);
+  assert.match(loader, /davinci:\s*\{[\s\S]*davinci-resolve-hub\.css\?v=4/);
+  assert.match(loader, /video-editor-auto\.js\?v=1/);
   assert.match(loader, /video-editor-studio\.js\?v=4/);
   assert.match(loader, /video-editor-resolve\.js\?v=9/);
-  assert.match(html, /performance-loader\.js\?v=62/);
+  assert.match(html, /performance-loader\.js\?v=63/);
 });
 
 test("the workspace is independent from the desktop app and reports browser capability truthfully", () => {
@@ -49,6 +51,7 @@ test("web editor contracts cover media, timeline, subtitles, versions and real e
   const hub = read("davinci-resolve-hub.js");
   const studio = read("video-editor-studio.js");
   const resolve = read("video-editor-resolve.js");
+  const auto = read("video-editor-auto.js");
   const css = read("davinci-resolve-hub.css");
 
   for (const marker of [
@@ -71,6 +74,11 @@ test("web editor contracts cover media, timeline, subtitles, versions and real e
   ]) {
     assert.match(resolve, new RegExp(marker));
   }
+  for (const marker of [
+    "hh.video-editor.project.v1", "hh-video-editor-media", "analyzeImage", "analyzeVideo",
+    "waveform", "buildPlan", "applyPlan", "restoreBackup", "hh:video-auto-applied",
+    "status: \"ready\"", "status: \"failed\"", "status: \"unsupported\""
+  ]) assert.match(auto, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.doesNotMatch(resolve, /Math\.sin\(x\s*\/\s*13\)/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /@media\(max-width:760px\)/);

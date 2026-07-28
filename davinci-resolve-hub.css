@@ -113,7 +113,7 @@
 .dr-web-actions button{padding:0 10px}
 .dr-web-actions button:hover,.dr-web-tabs button:hover{border-color:var(--dr-cyan);color:#fff;transform:translateY(-1px)}
 .dr-web-actions button.is-primary{border-color:#8b68f4;background:linear-gradient(135deg,#674fc8,#a249aa);color:#fff;box-shadow:0 0 20px #8e62e838}
-.dr-web-tabs{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;padding:5px;border-radius:13px}
+.dr-web-tabs{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px;padding:5px;border-radius:13px}
 .dr-web-tabs button{display:grid;gap:2px;padding:7px 8px;text-align:left}
 .dr-web-tabs button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dr-web-tabs button small{color:#64738f;font-size:7px;text-transform:uppercase}
@@ -132,6 +132,8 @@
   overflow:hidden;
 }
 .dr-web-editor-frame>[data-dr-editor-host]{height:100%;min-width:0}
+.dr-web-editor-frame>[data-dr-auto-host]{height:100%;min-width:0}
+.dr-web-editor-frame>[data-dr-auto-host][hidden],.dr-web-editor-frame>[data-dr-editor-host][hidden]{display:none!important}
 .dr-web-loading{position:absolute;z-index:3;inset:0;display:grid;place-items:center;align-content:center;gap:8px;background:#060914;color:#cbdaf1}
 .dr-web-loading i{width:34px;height:34px;border:2px solid #35405d;border-top-color:var(--dr-cyan);border-radius:50%;animation:dr-web-spin 1s linear infinite}
 .dr-web-loading span{max-width:480px;color:#8ea0bf;font-size:10px;text-align:center}

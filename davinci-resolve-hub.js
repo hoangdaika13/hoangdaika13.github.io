@@ -6,6 +6,7 @@
   const DB_NAME = "hh-video-editor-media";
   const DB_STORE = "assets";
   const VIEW_PAGE = Object.freeze({
+    auto: "auto",
     media: "media",
     cut: "cut",
     edit: "edit",
@@ -16,6 +17,7 @@
     deliver: "deliver"
   });
   const VIEW_LABEL = Object.freeze({
+    auto: "Auto Director",
     media: "Media Pool",
     cut: "Cut",
     edit: "Edit",
@@ -28,6 +30,7 @@
 
   let activeRoot = null;
   let editorHost = null;
+  let autoHost = null;
   let controller = null;
   let metricsTimer = 0;
   let activeView = "edit";
@@ -138,6 +141,7 @@
         </section>
         <main class="dr-web-editor-frame">
           <div class="dr-web-loading" data-dr-loading><i></i><strong>Đang khởi tạo video engine…</strong></div>
+          <div data-dr-auto-host hidden></div>
           <div data-dr-editor-host></div>
         </main>
         <footer class="dr-web-footer">
@@ -180,6 +184,16 @@
     if (!activeRoot) return;
     activeRoot.querySelector("[data-dr-web-view]")?.setAttribute("data-dr-web-view", activeView);
     activeRoot.querySelectorAll("[data-dr-view]").forEach((button) => button.classList.toggle("is-active", button.dataset.drView === activeView));
+    const isAuto = activeView === "auto";
+    if (autoHost) {
+      autoHost.hidden = !isAuto;
+      if (isAuto && !autoHost.hasChildNodes()) window.HHVideoAutoTool?.mount?.(autoHost);
+    }
+    if (editorHost) editorHost.hidden = isAuto;
+    if (isAuto) {
+      if (announce) status("ÄÃ£ má»Ÿ Auto Video Director. HÃ£y quÃ©t Media Pool Ä‘á»ƒ láº­p káº¿ hoáº¡ch tháº­t.", "success");
+      return;
+    }
     const page = VIEW_PAGE[activeView];
     const pageButton = editorHost?.querySelector(`[data-vr-page="${page}"]`);
     pageButton?.click();
@@ -216,6 +230,11 @@
       if (editorHost?.contains(event.target)) window.HHMediaDesign?.handleChange?.(event, editorHost, TOOL);
     }, options);
     window.addEventListener("hh:video-project-change", refreshMetrics, options);
+    window.addEventListener("hh:video-auto-applied", () => {
+      refreshEditor();
+      refreshMetrics();
+      status("Timeline Auto Ä‘Ã£ Ä‘Æ°á»£c ghi vÃ o project. Má»Ÿ Edit Ä‘á»ƒ kiá»ƒm tra hoáº·c xuáº¥t WebM.", "success");
+    }, options);
     window.addEventListener("hh:video-export-status", (event) => {
       const detail = event.detail || {};
       const messages = {
@@ -244,6 +263,7 @@
     activeRoot = host;
     activeView = VIEW_PAGE[options.view] ? options.view : "edit";
     activeRoot.innerHTML = shellMarkup(activeView);
+    autoHost = activeRoot.querySelector("[data-dr-auto-host]");
     editorHost = activeRoot.querySelector("[data-dr-editor-host]");
     bind();
     if (!window.HHMediaDesign?.supports?.(TOOL)) {
@@ -269,10 +289,24 @@
     metricsTimer = 0;
     controller?.abort();
     controller = null;
+    window.HHVideoAutoTool?.unmount?.();
     if (editorHost) window.HHMediaDesign?.cleanup?.();
     if (activeRoot) activeRoot.innerHTML = "";
     activeRoot = null;
     editorHost = null;
+    autoHost = null;
+  }
+
+  function refreshEditor() {
+    if (!editorHost || !window.HHMediaDesign?.supports?.(TOOL)) return;
+    window.HHMediaDesign?.cleanup?.();
+    editorHost.innerHTML = "";
+    try {
+      window.HHMediaDesign.render(editorHost, TOOL);
+      if (activeView !== "auto") requestAnimationFrame(() => activateView(activeView, false));
+    } catch (error) {
+      status(`KhÃ´ng thá»ƒ lÃ m má»›i Video Studio: ${error?.message || error}`, "error");
+    }
   }
 
   window.HHDavinciResolveHub = { mount, unmount, activateView, capabilities };

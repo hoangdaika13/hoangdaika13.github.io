@@ -5388,6 +5388,8 @@ function initAppShell() {
     { id: "portfolio-observatory", icon: "PO", title: "Portfolio Observatory", route: "/work/portfolio-observatory", color: "#ffd76a", description: "Sức khỏe, deadline, velocity, workload và snapshot." }
   ];
   const davinciResolvePages = [
+    { id: "davinci", icon: "DV", title: "DaVinci Resolve", route: "/davinci-resolve/davinci", description: "HH Video Studio chạy trực tiếp trên web: Media Pool, timeline, màu, audio, title và xuất WebM." },
+    { id: "auto", icon: "AD", title: "Auto Video Director", route: "/davinci-resolve/auto", description: "Quét media thật, đo sáng–màu–waveform và tạo timeline tự động trước khi bạn xác nhận." },
     { id: "media", icon: "MP", title: "Media Pool", route: "/davinci-resolve/media", description: "Nhập video, ảnh, âm thanh và quản lý media cục bộ bằng IndexedDB." },
     { id: "cut", icon: "CT", title: "Cut", route: "/davinci-resolve/cut", description: "Blade, trim, ripple delete, slip, slide và snapping trên timeline thật." },
     { id: "edit", icon: "ED", title: "Edit", route: "/davinci-resolve/edit", description: "Timeline nhiều rãnh, marker, transform, crop, tốc độ và keyframe." },
@@ -5412,11 +5414,11 @@ function initAppShell() {
     },
     {
       id: "davinci-resolve",
-      label: "Davinci Resolve",
+      label: "Tool",
       icon: "H",
       accent: "#6be8ff",
       route: "/davinci-resolve",
-      landingRoute: "/davinci-resolve/edit",
+      landingRoute: "/davinci-resolve",
       items: [],
       pages: davinciResolvePages
     },
@@ -6160,7 +6162,7 @@ function initAppShell() {
       const resolveView = parts[1] || "edit";
       const resolvePage = davinciResolvePages.find((item) => item.id === resolveView) || davinciResolvePages.find((item) => item.id === "edit");
       updatePageHeader(
-        resolvePage.title === "Edit" ? "HH Video Studio" : `HH Video Studio · ${resolvePage.title}`,
+        resolvePage.id === "davinci" ? "Tool · DaVinci Resolve" : resolvePage.title === "Edit" ? "HH Video Studio" : `HH Video Studio · ${resolvePage.title}`,
         resolvePage.description,
         route,
         resolvePage

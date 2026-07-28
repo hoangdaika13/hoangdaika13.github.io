@@ -98,12 +98,12 @@
     davinci: {
       styles: [
         "video-editor-studio.css?v=4", "video-editor-resolve.css?v=8",
-        "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=3"
+        "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1"
       ],
       scripts: [
         "media-design-studio.js?v=1", "video-editor-studio.js?v=4",
         "video-editor-resolve.js?v=9", "editor-workflow-pro.js?v=2",
-        "davinci-resolve-hub.js?v=3"
+        "davinci-resolve-hub.js?v=4", "video-editor-auto.js?v=1"
       ]
     },
     graphic: {
