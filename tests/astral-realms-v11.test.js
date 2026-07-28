@@ -91,3 +91,18 @@ test("Digital Human controls stay usable on narrow screens and reduced motion re
   assert.match(css, /\.har-creator__surface/);
   assert.match(css, /\.har-face-performance-lab/);
 });
+
+test("Genesis adds a live silhouette safety check, auto-fit action and motion-safe turntable", () => {
+  for (const token of [
+    "buildAppearanceFitReport",
+    "autoFitCharacter",
+    "data-genesis-action=\"auto-fit\"",
+    "data-genesis-action=\"toggle-turntable\"",
+    "genesisTurntable",
+    "FIT & SILHOUETTE CHECK",
+    "prefers-reduced-motion"
+  ]) assert.ok(source.includes(token), `missing Genesis V11.1 feature ${token}`);
+  assert.match(css, /\.har-genesis-fit/);
+  assert.match(source, /extremes\.length/);
+  assert.match(source, /cameraYaw = \(this\.cameraYaw \+ dt \* 0\.34\)/);
+});

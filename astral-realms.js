@@ -989,6 +989,7 @@
       this.menuPaused = false;
       this.genesisActive = false;
       this.genesisCompleting = false;
+      this.genesisTurntable = false;
       this.runtimeStarted = false;
       this.destroyed = false;
       this.started = false;
@@ -1413,6 +1414,7 @@
       const group = APPEARANCE_GROUPS.find((item) => item.id === this.appearanceGroup) || APPEARANCE_GROUPS[0];
       const mesh = this.characterMeshes.get(id);
       const runtime = this.characterRuntimes.get(id);
+      const fit = this.buildAppearanceFitReport(recipe, mesh);
       const modelLabels = {
         "human-adult-a01": ["Asteria Human", "Human Rig · 16K vertices · Digital Human runtime"],
         "human-adult-b01": ["Vanguard Human", "Combat Rig · 7K vertices · LOD hiệu năng"]
@@ -1431,6 +1433,14 @@
           <div><small>SURFACE</small><strong>5 lớp</strong><span>pore · roughness · SSS · flush · wetness</span></div>
           <div><small>MOTION</small><strong>8 hướng</strong><span>crossfade · inertial response · IK-ready</span></div>
           <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "hero")}</strong><span>${CHARACTER_MODEL_TIERS[mesh?.userData?.modelTier || "hero"]?.updateHz || 60} Hz update</span></div>
+        </div>
+        <div class="har-genesis-fit ${fit.level}" aria-live="polite">
+          <div><span class="har-genesis-fit__orb"></span><div><small>FIT & SILHOUETTE CHECK</small><strong>${escapeHtml(fit.label)} · ${fit.score}%</strong><span>${escapeHtml(fit.summary)}</span></div></div>
+          <div class="har-genesis-fit__actions">
+            <button type="button" data-genesis-action="auto-fit">Tự cân đối</button>
+            <button type="button" class="${this.genesisTurntable ? "is-active" : ""}" data-genesis-action="toggle-turntable" aria-pressed="${this.genesisTurntable}">${this.genesisTurntable ? "Dừng xoay 360°" : "Xoay 360°"}</button>
+          </div>
+          ${fit.warnings.length ? `<ul>${fit.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>` : ""}
         </div>
         <label class="har-genesis-name">Tên Nhà du hành
           <input type="text" maxlength="40" value="${escapeHtml(this.state.player.name || "")}" data-genesis-name autocomplete="off">
@@ -1551,6 +1561,7 @@
     openGenesisCreator() {
       this.genesisActive = true;
       this.genesisMotion = "idle";
+      this.genesisTurntable = false;
       this.facePreview = { expression: "neutral", viseme: "neutral", until: 0 };
       this.genesisOriginalLighting = {
         worldTime: this.state.worldTime,
@@ -1572,6 +1583,56 @@
       this.setGenesisMotion("idle");
       this.refreshGenesisCreator();
       this.updateCamera(true, 0.016);
+    }
+
+    buildAppearanceFitReport(inputRecipe, mesh) {
+      const recipe = normalizeAppearanceRecipe(inputRecipe, this.state.roster.activeId);
+      const values = Object.entries(recipe.morphs || {}).map(([id, raw]) => ({
+        id,
+        value: clamp(Number(raw), 0, 1),
+        distance: Math.abs(Number(raw) - 0.5)
+      }));
+      const extremes = values.filter((item) => item.distance > 0.43);
+      const asymmetry = recipe.advanced && !recipe.symmetry
+        ? ["eyeLeft", "eyeRight", "earLeft", "earRight", "armLeft", "armRight", "legLeft", "legRight"]
+          .map((id) => Math.abs((recipe.morphs?.[id] ?? 0.5) - 0.5))
+          .reduce((sum, value) => sum + value, 0)
+        : 0;
+      const scale = Number(mesh?.userData?.visualHeight || 1);
+      const score = clamp(Math.round(100 - extremes.length * 3 - asymmetry * 5 - (scale < 0.86 || scale > 1.14 ? 7 : 0)), 56, 100);
+      const warnings = [];
+      if (extremes.length) warnings.push(`${extremes.length} vùng đang ở gần giới hạn morph; đã giữ collider gameplay an toàn.`);
+      if (asymmetry > 0.9) warnings.push("Độ lệch trái–phải cao; nên kiểm tra vai, mắt và chân trong turntable.");
+      if (recipe.surface.wetness > 0.82) warnings.push("Độ ẩm da cao; giảm nếu đang dùng cảnh mưa để tránh highlight quá mạnh.");
+      if (recipe.decals.age > 0.82 && recipe.decals.wrinkles < 0.35) warnings.push("Tuổi sinh học cao nhưng nếp nhăn thấp; có thể tăng chi tiết da để tự nhiên hơn.");
+      const runtime = mesh?.userData?.characterRuntime;
+      if (runtime?.qaReport && runtime.qaReport.faceMorphTargets < 52) warnings.push(`GLB hiện có ${runtime.qaReport.faceMorphTargets || 0}/52 morph native; fallback 52 kênh vẫn đang hoạt động.`);
+      const level = score >= 90 ? "is-safe" : score >= 75 ? "is-watch" : "is-review";
+      return {
+        score,
+        level,
+        label: level === "is-safe" ? "Sẵn sàng" : level === "is-watch" ? "Cần xem lại" : "Cần cân đối",
+        summary: warnings[0] || "Tỷ lệ cơ thể, vật liệu và collider đang nằm trong vùng an toàn.",
+        warnings
+      };
+    }
+
+    autoFitCharacter() {
+      const id = this.state.roster.activeId;
+      const before = clone(this.activeAppearanceRecipe());
+      const recipe = this.activeAppearanceRecipe();
+      Object.keys(recipe.morphs || {}).forEach((key) => {
+        const value = Number(recipe.morphs[key]);
+        if (!Number.isFinite(value)) return;
+        recipe.morphs[key] = Number(clamp(value, 0.12, 0.88).toFixed(3));
+      });
+      recipe.morphs.height = Number(clamp(recipe.morphs.height, 0.22, 0.78).toFixed(3));
+      recipe.morphs.bodyMass = Number(clamp(recipe.morphs.bodyMass, 0.18, 0.82).toFixed(3));
+      recipe.updatedAt = nowIso();
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), recipe, id);
+      this.recordAppearanceChange(before);
+      this.appearanceDirty = true;
+      this.toast("Đã cân đối silhouette, tỷ lệ và vùng collider.", "success");
     }
 
     setGenesisMotion(motion = "idle") {
@@ -5453,6 +5514,13 @@
         if (genesisAction) {
           if (genesisAction === "rotate-left") this.cameraYaw -= 0.34;
           else if (genesisAction === "rotate-right") this.cameraYaw += 0.34;
+          else if (genesisAction === "toggle-turntable") {
+            this.genesisTurntable = !this.genesisTurntable;
+            this.refreshGenesisCreator();
+          } else if (genesisAction === "auto-fit") {
+            this.autoFitCharacter();
+            this.refreshGenesisCreator();
+          }
           else if (genesisAction === "focus-body") {
             this.appearanceFocus = "body";
             this.cameraDistance = 7.8;
@@ -6019,6 +6087,9 @@
               sprinting: this.genesisMotion === "run",
               direction: this.genesisMotion === "strafe" ? 0.8 : 0
             });
+            if (this.genesisTurntable && !this.state.settings.reduceEffects) {
+              this.cameraYaw = (this.cameraYaw + dt * 0.34) % (Math.PI * 2);
+            }
           }
           this.updateCamera(false, dt);
           this.renderer.render(this.scene, this.camera);

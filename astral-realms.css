@@ -3306,6 +3306,100 @@ button.har-chip {
 .har-face-performance-lab { margin-top: 0; }
 .har-character-dna { margin-top: 0; }
 
+.har-genesis-fit {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(116, 239, 255, .22);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(18, 42, 62, .84), rgba(21, 13, 46, .82));
+  box-shadow: inset 0 1px rgba(255,255,255,.06), 0 10px 30px rgba(27, 230, 255, .06);
+}
+
+.har-genesis-fit > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.har-genesis-fit__orb {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #6ef2a8;
+  box-shadow: 0 0 0 5px rgba(110,242,168,.08), 0 0 20px currentColor;
+}
+
+.har-genesis-fit.is-watch { border-color: rgba(255, 211, 107, .35); }
+.har-genesis-fit.is-watch .har-genesis-fit__orb { background: #ffd36b; color: #ffd36b; }
+.har-genesis-fit.is-review { border-color: rgba(255, 105, 204, .42); }
+.har-genesis-fit.is-review .har-genesis-fit__orb { background: #ff69cc; color: #ff69cc; }
+
+.har-genesis-fit small {
+  display: block;
+  color: #79eaff;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .08em;
+}
+
+.har-genesis-fit strong {
+  display: block;
+  margin-top: 2px;
+  color: #f3f8ff;
+  font-size: 12px;
+}
+
+.har-genesis-fit span:not(.har-genesis-fit__orb) {
+  display: block;
+  margin-top: 3px;
+  color: #9eb0c8;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.har-genesis-fit__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.har-genesis-fit button {
+  min-height: 28px;
+  padding: 5px 9px;
+  color: #b7c8dc;
+  border: 1px solid rgba(142,181,222,.24);
+  border-radius: 8px;
+  background: rgba(5, 12, 25, .72);
+  font: inherit;
+  font-size: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.har-genesis-fit button:hover,
+.har-genesis-fit button.is-active {
+  color: #06121f;
+  border-color: transparent;
+  background: linear-gradient(135deg, #74efff, #d39cff);
+}
+
+.har-genesis-fit ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0 0 0 16px;
+  color: #ffd98b;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .har-genesis-fit__orb { box-shadow: 0 0 0 4px rgba(110,242,168,.08); }
+}
+
 @media (max-width: 720px) {
   .har-genesis-capabilities { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .har-genesis-assets,
