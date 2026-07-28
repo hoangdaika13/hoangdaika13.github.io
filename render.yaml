@@ -35,5 +35,7 @@ services:
         value: https://hoangdaika13-astra-realtime.onrender.com/api/auth/google/callback
       - key: MAX_ASTRA_PLAYERS
         value: "10"
+      - key: MAX_GAME_PLAYERS
+        value: "4"
       - key: MAX_CALL_PARTICIPANTS
         value: "8"

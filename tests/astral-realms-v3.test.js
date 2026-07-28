@@ -1,0 +1,48 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const root = path.resolve(__dirname, "..");
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+
+test("Astral Realms defaults to a physical material character pass", () => {
+  const source = read("astral-realms.js");
+  assert.match(source, /renderStyle:\s*"realistic"/);
+  assert.match(source, /MeshPhysicalMaterial\s*\|\|\s*THREE\.MeshStandardMaterial/);
+  assert.match(source, /clearcoatRoughness/);
+  assert.match(source, /refreshCharacterMaterials/);
+  assert.match(source, /Realistic PBR/);
+});
+
+test("cinematic lighting and adaptive shadows remain bounded by quality", () => {
+  const source = read("astral-realms.js");
+  assert.match(source, /toneMapping\s*=\s*THREE\.ACESFilmicToneMapping/);
+  assert.match(source, /shadowSize\s*=\s*quality\s*===\s*"cinematic"\s*\?\s*2048/);
+  assert.match(source, /fillLight/);
+  assert.match(source, /rimLight/);
+});
+
+test("small realtime shards reconnect and interpolate remote players", () => {
+  const client = read("astral-realms.js");
+  const realtime = read("realtime-server/src/astral-realms.js");
+  const server = read("realtime-server/src/server.js");
+  const render = read("render.yaml");
+
+  assert.match(client, /connect_error/);
+  assert.match(client, /rejoinPartyAfterReconnect/);
+  assert.match(client, /targetPosition/);
+  assert.match(client, /targetRotation/);
+  assert.match(realtime, /mode:\s*"free-small-shard"/);
+  assert.match(realtime, /maxPlayers:\s*4/);
+  assert.match(server, /registerGameCenterRealtime/);
+  assert.match(render, /MAX_GAME_PLAYERS[\s\S]*value:\s*"4"/);
+});
+
+test("the release loader and service worker request Astral Realms v3", () => {
+  for (const file of ["performance-loader.js", "sw.js"]) {
+    const source = read(file);
+    assert.match(source, /astral-realms\.css\?v=3/);
+    assert.match(source, /astral-realms\.js\?v=3/);
+  }
+});

@@ -226,6 +226,10 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
     gameId: GAME_ID,
     room: shard.code,
     tick: Date.now(),
+    serverTime: new Date().toISOString(),
+    mode: "free-small-shard",
+    maxPlayers: 4,
+    transport: "socket.io",
     integrity: "server-authoritative",
     players: [...shard.players.values()].map(publicPlayer),
     enemies: [...shard.enemies.values()].map(publicEnemy)

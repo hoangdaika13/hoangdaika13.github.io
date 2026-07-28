@@ -166,6 +166,7 @@
       skills: { plasmaDrive: 0, astralGuard: 0, staminaCore: 0 },
       settings: {
         quality: "auto",
+        renderStyle: "realistic",
         rendererMode: "auto",
         dynamicResolution: true,
         shadows: "high",
@@ -219,6 +220,7 @@
     state.player.x = clamp(state.player.x, -WORLD_LIMIT, WORLD_LIMIT);
     state.player.z = clamp(state.player.z, -WORLD_LIMIT, WORLD_LIMIT);
     if (!["auto", "low", "medium", "high", "cinematic"].includes(state.settings.quality)) state.settings.quality = "auto";
+    if (!["realistic", "cinematic", "anime"].includes(state.settings.renderStyle)) state.settings.renderStyle = "realistic";
     if (!["auto", "webgpu", "webgl"].includes(state.settings.rendererMode)) state.settings.rendererMode = "auto";
     state.settings.dynamicResolution = state.settings.dynamicResolution !== false;
     state.settings.weatherDensity = clamp(state.settings.weatherDensity, 0, 100);
@@ -720,10 +722,12 @@
       }
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure = 1.08;
+      this.renderer.toneMappingExposure = quality === "cinematic" ? 1.18 : 1.04;
+      if ("physicallyCorrectLights" in this.renderer) this.renderer.physicallyCorrectLights = true;
       if (this.renderer.shadowMap) {
         this.renderer.shadowMap.enabled = quality !== "low";
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.autoUpdate = true;
       }
       this.root.dataset.renderer = this.rendererBackend;
       const rendererLabel = this.root.querySelector("[data-har-renderer]");
@@ -745,7 +749,8 @@
       const sun = new THREE.DirectionalLight(0xffe6bf, 2.15);
       sun.position.set(-24, 42, 18);
       sun.castShadow = Boolean(this.renderer.shadowMap?.enabled);
-      sun.shadow.mapSize.set(1024, 1024);
+      const shadowSize = quality === "cinematic" ? 2048 : quality === "high" ? 1536 : quality === "medium" ? 1024 : 768;
+      sun.shadow.mapSize.set(shadowSize, shadowSize);
       sun.shadow.camera.left = -75;
       sun.shadow.camera.right = 75;
       sun.shadow.camera.top = 75;
@@ -758,9 +763,24 @@
       this.scene.add(hLight);
       this.hLight = hLight;
 
+      const fill = new THREE.DirectionalLight(0x9bbdff, 0.55);
+      fill.position.set(28, 18, -34);
+      this.scene.add(fill);
+      this.fillLight = fill;
+      const rim = new THREE.DirectionalLight(0xff74c8, 0.72);
+      rim.position.set(-18, 15, -42);
+      this.scene.add(rim);
+      this.rimLight = rim;
+
       const ground = new THREE.Mesh(
         new THREE.CircleGeometry(112, 96),
-        new THREE.MeshStandardMaterial({ color: 0x091124, roughness: 0.93, metalness: 0.08 })
+        new THREE.MeshPhysicalMaterial({
+          color: 0x091124,
+          roughness: 0.88,
+          metalness: 0.12,
+          clearcoat: 0.18,
+          clearcoatRoughness: 0.55
+        })
       );
       ground.rotation.x = -Math.PI / 2;
       ground.receiveShadow = true;
@@ -1425,21 +1445,48 @@
       const group = new THREE.Group();
       group.name = `Character:${profile.id}`;
       group.scale.setScalar(scale);
+      const realistic = this.state.settings.renderStyle !== "anime";
 
-      const toon = (color, options = {}) => new THREE.MeshToonMaterial({
+      const toon = (color, options = {}) => {
+        const material = new THREE.MeshToonMaterial({
         color,
         gradientMap: this.toonGradient,
         emissive: options.emissive || 0x000000,
         emissiveIntensity: options.emissiveIntensity || 0,
         transparent: Boolean(options.transparent),
         opacity: options.opacity ?? 1
-      });
-      const skinMaterial = toon(0xffd5c5);
-      const bodyMaterial = toon(profile.body, { emissive: profile.body, emissiveIntensity: 0.08 });
-      const accentMaterial = toon(profile.accent, { emissive: profile.accent, emissiveIntensity: 0.34 });
-      const hairMaterial = toon(profile.hair, { emissive: profile.accent, emissiveIntensity: 0.06 });
-      const darkMaterial = toon(0x16162c);
-      const outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x100d20, side: THREE.BackSide });
+        });
+        material.userData.astralSurface = true;
+        return material;
+      };
+      const surface = (color, options = {}) => {
+        if (!realistic) return toon(color, options);
+        const Physical = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
+        const material = new Physical({
+          color,
+          roughness: options.roughness ?? 0.44,
+          metalness: options.metalness ?? 0.08,
+          clearcoat: options.clearcoat ?? 0.22,
+          clearcoatRoughness: options.clearcoatRoughness ?? 0.32,
+          sheen: options.sheen ?? 0.16,
+          emissive: options.emissive || 0x000000,
+          emissiveIntensity: options.emissiveIntensity || 0,
+          transparent: Boolean(options.transparent),
+          opacity: options.opacity ?? 1,
+          side: options.side
+        });
+        material.userData.astralSurface = true;
+        return material;
+      };
+      const skinMaterial = surface(0xffd5c5, { roughness: 0.58, sheen: 0.42 });
+      const bodyMaterial = surface(profile.body, { emissive: profile.body, emissiveIntensity: 0.06, roughness: 0.36, clearcoat: 0.42 });
+      const accentMaterial = surface(profile.accent, { emissive: profile.accent, emissiveIntensity: 0.24, roughness: 0.25, clearcoat: 0.62 });
+      const hairMaterial = surface(profile.hair, { emissive: profile.accent, emissiveIntensity: 0.035, roughness: 0.3, clearcoat: 0.48, sheen: 0.52 });
+      const darkMaterial = surface(0x16162c, { roughness: 0.5, metalness: 0.22 });
+      const outlineMaterial = realistic
+        ? new THREE.MeshBasicMaterial({ color: 0x100d20, transparent: true, opacity: 0, depthWrite: false })
+        : new THREE.MeshBasicMaterial({ color: 0x100d20, side: THREE.BackSide });
+      outlineMaterial.userData.astralOutline = true;
 
       const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.43, 0.92, 8, 14), bodyMaterial);
       torso.position.y = 1.45;
@@ -1470,8 +1517,15 @@
       faceShadow.scale.set(0.92, 1.05, 0.9);
       group.add(faceShadow);
 
-      const eyeMaterial = new THREE.MeshBasicMaterial({ color: profile.eyes });
-      const eyeGlow = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const eyeMaterial = surface(profile.eyes, {
+        roughness: 0.08,
+        metalness: 0.14,
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.08,
+        emissive: profile.eyes,
+        emissiveIntensity: realistic ? 0.18 : 0.08
+      });
+      const eyeGlow = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 });
       const eyes = [];
       [-0.15, 0.15].forEach((x) => {
         const eye = new THREE.Mesh(new THREE.SphereGeometry(0.062, 12, 8), eyeMaterial);
@@ -1488,11 +1542,12 @@
       const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.455, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMaterial);
       hairCap.scale.set(1.02, 1.08, 1.04);
       hair.add(hairCap);
-      for (let index = 0; index < 7; index += 1) {
-        const lock = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.82 + (index % 3) * 0.18, 5), hairMaterial);
+      for (let index = 0; index < (realistic ? 11 : 7); index += 1) {
+        const lock = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.82 + (index % 3) * 0.18, realistic ? 8 : 5), hairMaterial);
         const angle = ((index - 3) / 7) * Math.PI * 1.25;
         lock.position.set(Math.sin(angle) * 0.36, -0.22 - (index % 2) * 0.08, Math.cos(angle) * 0.32);
         lock.rotation.z = Math.sin(angle) * 0.18;
+        lock.userData.secondaryMotion = 0.035 + (index % 3) * 0.012;
         hair.add(lock);
       }
       hair.position.set(0, 2.67, 0.02);
@@ -1557,26 +1612,40 @@
         faceShadow, weaponAnchor, leftWing, rightWing
       };
       group.userData.characterId = profile.id;
+      group.userData.renderStyle = this.state.settings.renderStyle;
       return group;
     }
 
     createPlayerWeapon(profile) {
       const THREE = this.THREE;
       const weapon = new THREE.Group();
-      const blade = new THREE.Mesh(
-        new THREE.BoxGeometry(0.09, profile.id === "sol" ? 1.75 : 1.52, 0.18),
-        new THREE.MeshToonMaterial({
+      const weaponSurface = this.state.settings.renderStyle === "anime"
+        ? new THREE.MeshToonMaterial({
           color: 0xf2fbff,
           emissive: profile.accent,
           emissiveIntensity: 0.86,
           gradientMap: this.toonGradient
         })
+        : new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({
+          color: 0xf2fbff,
+          emissive: profile.accent,
+          emissiveIntensity: 0.62,
+          roughness: 0.16,
+          metalness: 0.82,
+          clearcoat: 0.7
+        });
+      const blade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.09, profile.id === "sol" ? 1.75 : 1.52, 0.18),
+        weaponSurface
       );
       blade.position.y = 0.45;
       weapon.add(blade);
+      const guardMaterial = this.state.settings.renderStyle === "anime"
+        ? new THREE.MeshToonMaterial({ color: profile.accent, emissive: profile.accent, emissiveIntensity: 0.55, gradientMap: this.toonGradient })
+        : new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({ color: profile.accent, emissive: profile.accent, emissiveIntensity: 0.34, roughness: 0.22, metalness: 0.72, clearcoat: 0.58 });
       const guard = new THREE.Mesh(
         new THREE.BoxGeometry(0.58, 0.09, 0.14),
-        new THREE.MeshToonMaterial({ color: profile.accent, emissive: profile.accent, emissiveIntensity: 0.55, gradientMap: this.toonGradient })
+        guardMaterial
       );
       guard.position.y = -0.31;
       weapon.add(guard);
@@ -1994,6 +2063,14 @@
       parts.torso.rotation.z = moving ? Math.sin(time * speed * 0.5) * 0.035 : Math.sin(time * 0.0013) * 0.018;
       parts.head.rotation.y = Math.sin(time * 0.00065) * (moving ? 0.025 : 0.08);
       parts.hair.rotation.x = 0.02 + Math.sin(time * 0.003) * (moving ? 0.055 : 0.025);
+      parts.hair.children.forEach((lock, index) => {
+        if (!lock.userData.secondaryMotion) return;
+        lock.rotation.x = Math.sin(time * 0.0024 + index * 0.7) * lock.userData.secondaryMotion * (sprinting ? 2.2 : moving ? 1.35 : 0.65);
+      });
+      parts.eyes.forEach((eye, index) => {
+        eye.rotation.y = clamp((this.cameraYaw - this.state.player.rotation) * 0.08, -0.16, 0.16);
+        eye.rotation.x = Math.sin(time * 0.0008 + index) * 0.025;
+      });
       parts.cape.rotation.x = (sprinting ? 0.72 : this.gliding ? 0.48 : moving ? 0.32 : 0.12) + Math.sin(time * 0.004) * 0.04;
       parts.halo.rotation.z += dt * 0.7;
       parts.leftWing.visible = this.gliding;
@@ -2289,6 +2366,22 @@
       this.world.traverse((object) => {
         if (object.userData?.spin) object.rotation.z += dt * object.userData.spin;
       });
+      this.remotePlayers.forEach((remote) => {
+        const target = remote.userData.targetPosition;
+        if (!target) return;
+        const blend = Math.min(1, dt * 14);
+        remote.position.lerp(target, blend);
+        if (Number.isFinite(remote.userData.targetRotation)) {
+          const delta = Math.atan2(Math.sin(remote.userData.targetRotation - remote.rotation.y), Math.cos(remote.userData.targetRotation - remote.rotation.y));
+          remote.rotation.y += delta * blend;
+        }
+        const parts = remote.userData.parts;
+        if (parts?.leftLeg && parts?.rightLeg) {
+          const stride = Math.sin(time * 0.012 + remote.position.x * 0.2) * 0.08;
+          parts.leftLeg.rotation.x = stride;
+          parts.rightLeg.rotation.x = -stride;
+        }
+      });
       this.collectibles.forEach((node) => {
         if (!node.visible) return;
         node.position.y = node.userData.floatBase + Math.sin(time * 0.002 + node.position.x) * 0.25;
@@ -2312,6 +2405,8 @@
       this.hemisphereLight.intensity = 0.85 + dayAmount * 1.2;
       this.sunLight.intensity = 0.45 + dayAmount * 2.15;
       this.hLight.intensity = 35 + (1 - dayAmount) * 25;
+      if (this.fillLight) this.fillLight.intensity = 0.28 + dayAmount * 0.45;
+      if (this.rimLight) this.rimLight.intensity = 0.38 + (1 - dayAmount) * 0.52;
       if (this.skyDome) {
         this.skyDome.material.color.set(dayAmount > 0.4 ? 0x8fa9d8 : 0x524084);
         this.skyDome.material.color.multiplyScalar(0.42 + dayAmount * 0.58);
@@ -3420,6 +3515,8 @@
       const roomCode = this.state.party.roomCode || "";
       const statusCopy = !navigator.onLine
         ? "Thiết bị đang ngoại tuyến. Game tiếp tục chạy bằng mô phỏng local."
+        : this.state.party.status === "reconnecting"
+          ? "Đang kết nối lại shard miễn phí. Không hiển thị người chơi giả."
         : !connected
           ? "Realtime server chưa kết nối. Không hiển thị người chơi hoặc phòng giả."
           : roomCode
@@ -3440,6 +3537,41 @@
         <div class="har-section" style="margin-top:10px"><p>Phiên bản này xác nhận vị trí, tốc độ, nhịp tấn công, HP quái và sát thương trên server khi phòng realtime hoạt động. Redis/PostgreSQL shard bền vững sẽ là giai đoạn MMO-lite tiếp theo.</p></div>`;
     }
 
+    refreshCharacterMaterials() {
+      const replaceMesh = (oldMesh, profile, scale, metadata = {}) => {
+        const parent = oldMesh.parent || this.world;
+        const next = this.createAnimeCharacterMesh(profile, scale);
+        next.position.copy(oldMesh.position);
+        next.rotation.copy(oldMesh.rotation);
+        next.visible = oldMesh.visible;
+        next.userData = { ...oldMesh.userData, ...next.userData, characterId: profile.id, renderStyle: this.state.settings.renderStyle, ...metadata };
+        if (!metadata.remote) {
+          const weapon = this.createPlayerWeapon(profile);
+          next.userData.parts.weaponAnchor.add(weapon);
+          next.userData.weapon = weapon;
+        }
+        parent.add(next);
+        parent.remove(oldMesh);
+        oldMesh.traverse((object) => {
+          object.geometry?.dispose?.();
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.filter(Boolean).forEach((material) => material.dispose?.());
+        });
+        return next;
+      };
+      this.characterMeshes.forEach((mesh, id) => {
+        const profile = CHARACTERS[id];
+        if (profile) this.characterMeshes.set(id, replaceMesh(mesh, profile, 1));
+      });
+      this.remotePlayers.forEach((mesh, id) => {
+        const profile = CHARACTERS[mesh.userData.characterId] || CHARACTERS.lyra;
+        this.remotePlayers.set(id, replaceMesh(mesh, profile, 0.92, { remote: true, id }));
+      });
+      this.playerMesh = this.characterMeshes.get(this.state.roster.activeId) || this.characterMeshes.get("lyra");
+      this.playerWeapon = this.playerMesh?.userData.weapon || null;
+      this.toast(`Đã áp dụng phong cách ${this.state.settings.renderStyle === "anime" ? "Anime Toon" : this.state.settings.renderStyle === "cinematic" ? "Cinematic PBR" : "Realistic PBR"}.`, "success");
+    }
+
     renderSettingsPanel() {
       const record = this.savedRecord;
       const histories = record?.history || [];
@@ -3448,6 +3580,7 @@
           <div class="har-form-row">
             <label class="har-field">Chất lượng<select data-setting="quality"><option value="auto">Tự động theo FPS</option><option value="low">Tiết kiệm</option><option value="medium">Vừa</option><option value="high">Cao</option><option value="cinematic">Điện ảnh</option></select></label>
             <label class="har-field">Renderer<select data-setting="rendererMode"><option value="auto">Auto · WebGPU/WebGL2</option><option value="webgpu">Ưu tiên WebGPU</option><option value="webgl">WebGL2 ổn định</option></select></label>
+            <label class="har-field">Phong cách hình ảnh<select data-setting="renderStyle"><option value="realistic">Realistic PBR</option><option value="cinematic">Cinematic PBR</option><option value="anime">Anime Toon</option></select></label>
             <label class="har-field">Dynamic resolution<select data-setting="dynamicResolution"><option value="true">Bật theo FPS</option><option value="false">Khóa độ phân giải</option></select></label>
             <label class="har-field">Âm lượng<input type="range" min="0" max="100" value="${this.state.settings.volume}" data-setting="volume"></label>
             <label class="har-field">Độ nhạy camera<input type="range" min="10" max="100" value="${this.state.settings.cameraSensitivity}" data-setting="cameraSensitivity"></label>
@@ -3501,6 +3634,7 @@
           }
           if (key === "weatherDensity") this.updateWeatherAppearance();
           if (key === "rendererMode") this.toast("Renderer sẽ áp dụng ở lần mở game kế tiếp.");
+          if (key === "renderStyle") this.refreshCharacterMaterials();
           if (key === "dynamicResolution") this.dynamicResolution = value ? this.renderScale : 1;
           if (key === "volume" && this.audioMaster) this.audioMaster.gain.value = value / 100 * 0.15;
           this.saveProgress("Thay đổi thiết lập");
@@ -3514,6 +3648,7 @@
       setSelect("[data-inventory-sort]", this.inventorySort || "recent");
       setSelect('[data-setting="quality"]', this.state.settings.quality);
       setSelect('[data-setting="rendererMode"]', this.state.settings.rendererMode);
+      setSelect('[data-setting="renderStyle"]', this.state.settings.renderStyle);
       setSelect('[data-setting="dynamicResolution"]', this.state.settings.dynamicResolution);
       setSelect('[data-setting="reduceEffects"]', this.state.settings.reduceEffects);
     }
@@ -3808,10 +3943,17 @@
         connect: () => {
           this.state.party.status = this.state.party.roomCode ? "room" : "ready";
           this.updateConnectionUi();
+          if (this.state.party.roomCode) this.rejoinPartyAfterReconnect();
+        },
+        connectError: () => {
+          this.authoritative = false;
+          this.state.party.status = navigator.onLine ? "reconnecting" : "offline";
+          this.state.party.integrity = "local-simulation";
+          this.updateConnectionUi();
         },
         disconnect: () => {
           this.authoritative = false;
-          this.state.party.status = navigator.onLine ? "local" : "offline";
+          this.state.party.status = navigator.onLine ? (this.state.party.roomCode ? "reconnecting" : "local") : "offline";
           this.state.party.integrity = "local-simulation";
           this.updateConnectionUi();
         },
@@ -3838,6 +3980,7 @@
         snapshot: (payload) => this.applyAuthoritativeSnapshot(payload)
       };
       socket.on?.("connect", this.socketHandlers.connect);
+      socket.on?.("connect_error", this.socketHandlers.connectError);
       socket.on?.("disconnect", this.socketHandlers.disconnect);
       socket.on?.("game:room", this.socketHandlers.room);
       socket.on?.("game:presence", this.socketHandlers.presence);
@@ -3849,6 +3992,7 @@
     unbindSocket() {
       if (!this.socket || !this.socketHandlers) return;
       this.socket.off?.("connect", this.socketHandlers.connect);
+      this.socket.off?.("connect_error", this.socketHandlers.connectError);
       this.socket.off?.("disconnect", this.socketHandlers.disconnect);
       this.socket.off?.("game:room", this.socketHandlers.room);
       this.socket.off?.("game:presence", this.socketHandlers.presence);
@@ -3891,6 +4035,32 @@
         this.toast(`Đã tạo phòng ${this.state.party.roomCode}.`, "success");
       } catch (error) {
         this.toast(error.message || "Không tạo được phòng.", "error");
+      }
+    }
+
+    async rejoinPartyAfterReconnect() {
+      if (this.rejoiningParty || !this.socket?.connected || !this.state.party.roomCode) return;
+      this.rejoiningParty = true;
+      const code = this.state.party.roomCode;
+      try {
+        const response = await this.emitAck("game:room:join", {
+          code,
+          gameName: this.state.player.name,
+          state: { x: this.state.player.x, z: this.state.player.z, level: this.state.player.level }
+        }, 6000);
+        if (response.room?.gameId !== GAME_ID) throw new Error("Phòng đã chuyển sang game khác.");
+        this.acceptRoom(response);
+        this.toast(`Đã kết nối lại phòng ${code}.`, "success");
+      } catch {
+        this.state.party.roomCode = "";
+        this.state.party.members = [];
+        this.state.party.status = "ready";
+        this.authoritative = false;
+        this.room = null;
+        this.updateConnectionUi();
+        if (this.currentPanel === "party") this.renderCurrentPanel();
+      } finally {
+        this.rejoiningParty = false;
       }
     }
 
@@ -4004,11 +4174,13 @@
         if (!mesh) {
           mesh = this.createAnimeCharacterMesh(profile, 0.92);
           mesh.userData = { type: "remote-player", id: player.socketId, name: player.name, characterId: profile.id };
+          mesh.userData.targetPosition = new this.THREE.Vector3(player.x, 1.08, player.z);
+          mesh.userData.targetRotation = player.rotation;
           this.world.add(mesh);
           this.remotePlayers.set(player.socketId, mesh);
         }
-        mesh.position.lerp(new this.THREE.Vector3(player.x, 1.08, player.z), 0.35);
-        mesh.rotation.y = player.rotation;
+        mesh.userData.targetPosition.set(player.x, 1.08, player.z);
+        mesh.userData.targetRotation = player.rotation;
       });
       this.remotePlayers.forEach((mesh, id) => {
         if (!activeRemoteIds.has(id)) {
