@@ -1579,7 +1579,10 @@
       this.root.classList.add("is-genesis");
       const section = this.root.querySelector("[data-har-genesis]");
       if (section) section.hidden = false;
-      this.playerMesh.position.set(this.state.player.x, this.state.player.y, this.state.player.z);
+      // Keep the creator in a dedicated aerial studio. Using the gameplay
+      // checkpoint here can place the camera inside a hill, platform or prop
+      // and make a valid character look invisible.
+      this.playerMesh.position.set(this.state.player.x, Math.max(24, this.state.player.y + 24), this.state.player.z);
       this.setGenesisMotion("idle");
       this.refreshGenesisCreator();
       this.updateCamera(true, 0.016);
@@ -1772,6 +1775,7 @@
       this.root.classList.remove("is-genesis");
       this.genesisActive = false;
       this.genesisCompleting = false;
+      this.playerMesh?.position.set(this.state.player.x, this.state.player.y, this.state.player.z);
       this.updateUi(true);
       this.beginRuntimeSession(`${this.state.player.name} đã sẵn sàng · bước vào H-Central.`);
     }
@@ -6616,30 +6620,33 @@
     updateCamera(immediate = false, dt = 0.016) {
       if (!this.camera || !this.playerMesh) return;
       const player = this.state.player;
+      const cameraOrigin = this.genesisActive || this.currentPanel === "creator"
+        ? this.playerMesh.position
+        : player;
       const horizontal = Math.cos(this.cameraPitch) * this.cameraDistance;
       let desired = new this.THREE.Vector3(
-        player.x + Math.sin(this.cameraYaw) * horizontal,
-        player.y + 2.2 + Math.sin(this.cameraPitch) * this.cameraDistance,
-        player.z + Math.cos(this.cameraYaw) * horizontal
+        cameraOrigin.x + Math.sin(this.cameraYaw) * horizontal,
+        cameraOrigin.y + 2.2 + Math.sin(this.cameraPitch) * this.cameraDistance,
+        cameraOrigin.z + Math.cos(this.cameraYaw) * horizontal
       );
-      const focus = new this.THREE.Vector3(player.x, player.y + 1.35, player.z);
+      const focus = new this.THREE.Vector3(cameraOrigin.x, cameraOrigin.y + 1.35, cameraOrigin.z);
       if (this.currentPanel === "creator" || this.genesisActive) {
         const focusOffset = this.genesisActive
           ? ({ head: 2.35, upper: 1.78, body: 1.46, lower: 0.76 }[this.appearanceFocus] ?? 1.46)
           : ({ head: 1.1, upper: 0.62, body: 0.88, lower: 0.28 }[this.appearanceFocus] ?? 0.88);
-        focus.set(player.x, player.y + focusOffset, player.z);
+        focus.set(cameraOrigin.x, cameraOrigin.y + focusOffset, cameraOrigin.z);
         const creatorDistance = this.genesisActive
           ? clamp(this.cameraDistance, 4.5, 8.5)
           : clamp(this.cameraDistance, 6.5, 12);
         const creatorHorizontal = Math.cos(this.cameraPitch) * creatorDistance;
         desired.set(
-          player.x + Math.sin(this.cameraYaw) * creatorHorizontal,
-          player.y + focusOffset + Math.sin(this.cameraPitch) * creatorDistance,
-          player.z + Math.cos(this.cameraYaw) * creatorHorizontal
+          cameraOrigin.x + Math.sin(this.cameraYaw) * creatorHorizontal,
+          cameraOrigin.y + focusOffset + Math.sin(this.cameraPitch) * creatorDistance,
+          cameraOrigin.z + Math.cos(this.cameraYaw) * creatorHorizontal
         );
       }
       desired = this.updateCinematicCamera(desired, focus, dt);
-      if (!this.photoMode) {
+      if (!this.photoMode && !this.genesisActive && this.currentPanel !== "creator") {
         const colliderObjects = this.climbables.map((entry) => entry.object).filter(Boolean);
         if (colliderObjects.length) {
           this.cameraRaycaster ||= new this.THREE.Raycaster();

@@ -120,3 +120,10 @@ test("broken embedded GLB textures recover to a visible articulated PBR characte
   assert.match(source, /material\.opacity = 1/);
   assert.match(source, /crowdProxy\.visible = useProxy \|\| assetNeedsVisualRecovery/);
 });
+
+test("Character Genesis uses a clear aerial studio instead of rendering inside terrain", () => {
+  assert.match(source, /Math\.max\(24,\s*this\.state\.player\.y \+ 24\)/);
+  assert.match(source, /const cameraOrigin = this\.genesisActive \|\| this\.currentPanel === "creator"/);
+  assert.match(source, /!this\.photoMode && !this\.genesisActive && this\.currentPanel !== "creator"/);
+  assert.match(source, /this\.playerMesh\?\.position\.set\(this\.state\.player\.x,\s*this\.state\.player\.y,\s*this\.state\.player\.z\)/);
+});
