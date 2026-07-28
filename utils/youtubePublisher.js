@@ -68,6 +68,16 @@ function safeFrontend(value) {
   }
 }
 
+async function ensureIndex(collection, keys, options = {}) {
+  try {
+    await collection.createIndex(keys, options);
+  } catch (error) {
+    const compatibleExistingIndex = ["IndexKeySpecsConflict", "IndexOptionsConflict"].includes(error?.codeName)
+      || /already exists with a different name/i.test(String(error?.message || ""));
+    if (!compatibleExistingIndex) throw error;
+  }
+}
+
 async function googleJson(url, options = {}) {
   const response = await fetch(url, { ...options, signal: AbortSignal.timeout(26000) });
   const data = await response.json().catch(() => ({}));
@@ -466,10 +476,10 @@ module.exports = async function handler(req, res) {
     const states = db.collection("youtubeOauthStates");
     const uploads = db.collection("youtubeUploads");
     await Promise.all([
-      connections.createIndex({ userId: 1, channelId: 1 }, { unique: true, sparse: true }),
-      connections.createIndex({ userId: 1, active: 1, updatedAt: -1 }),
-      uploads.createIndex({ userId: 1, channelId: 1, createdAt: -1 }),
-      states.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+      ensureIndex(connections, { userId: 1, channelId: 1 }, { unique: true, sparse: true }),
+      ensureIndex(connections, { userId: 1, active: 1, updatedAt: -1 }),
+      ensureIndex(uploads, { userId: 1, channelId: 1, createdAt: -1 }),
+      ensureIndex(states, { expiresAt: 1 }, { expireAfterSeconds: 0 })
     ]);
 
     if (route === "oauth/callback" && req.method === "GET") {
