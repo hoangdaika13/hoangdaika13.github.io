@@ -63,7 +63,7 @@ test("Photo Mode and cinematic graphics settings create real output controls", (
 test("V2 assets are versioned in the route loader and offline cache", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["astral-realms.css?v=14", "astral-realms.js?v=14"]) {
+  for (const asset of ["astral-realms.css?v=15", "astral-realms.js?v=15"]) {
     assert.ok(loader.includes(asset), `loader missing ${asset}`);
     assert.ok(worker.includes(asset), `worker missing ${asset}`);
   }

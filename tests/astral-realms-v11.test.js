@@ -119,6 +119,8 @@ test("broken embedded GLB textures recover to a visible articulated PBR characte
   assert.match(source, /object\.frustumCulled = false/);
   assert.match(source, /material\.opacity = 1/);
   assert.match(source, /crowdProxy\.visible = useProxy \|\| assetNeedsVisualRecovery/);
+  assert.match(source, /manager\.hhPreferTextureLoader = true/);
+  assert.match(read("vendor/addons/loaders/GLTFLoader.js"), /manager\?\.hhPreferTextureLoader === true/);
 });
 
 test("Character Genesis uses a clear aerial studio instead of rendering inside terrain", () => {

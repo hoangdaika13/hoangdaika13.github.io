@@ -1981,7 +1981,12 @@
       this.builtInCharacterStatus = "loading";
       let assetLoadError = false;
       const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
-      if (manager) manager.onError = () => { assetLoadError = true; };
+      if (manager) {
+        // Embedded GLB images are more reliable through HTMLImageElement on
+        // Chromium devices that reject createImageBitmap(blob) decoding.
+        manager.hhPreferTextureLoader = true;
+        manager.onError = () => { assetLoadError = true; };
+      }
       const loader = new this.GLTFLoaderClass(manager);
       const entries = Object.entries(BUILTIN_CHARACTER_ASSETS);
       const results = await Promise.allSettled(entries.map(async ([id, url]) => {
