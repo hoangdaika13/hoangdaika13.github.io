@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v290";
+const CACHE = "hh-identity-portal-v291";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -349,7 +349,7 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=69",
+  "./performance-loader.js?v=70",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=153"
