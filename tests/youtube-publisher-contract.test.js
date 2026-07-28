@@ -25,11 +25,20 @@ test("Publisher supports real files, metadata, scheduling and resumable upload",
     "hasPaidProductPlacement",
     "notifySubscribers",
     "queryResumableOffset",
+    "hh-youtube-upload-v1",
+    "indexedDB.open",
+    "upload/progress",
+    "upload/resume",
+    "upload/cancel",
+    "RETRYABLE_UPLOAD_STATUS",
+    "Retry-After",
+    "etaSeconds",
     "Content-Range",
     "thumbnail/session",
     "upload/complete"
   ]) assert.match(source, new RegExp(feature.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /dataTransfer\?\.files/);
+  assert.match(source, /Đang xác thực và khôi phục phiên upload từ backend/);
   assert.doesNotMatch(source, /GOOGLE_CLIENT_SECRET\s*=/);
 });
 
@@ -49,6 +58,9 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   assert.match(security, /setAAD\(tokenContext\(connection\)\)/);
   assert.match(security, /hh-youtube-token:/);
   assert.match(source, /uploadType: "resumable"/);
+  assert.match(source, /uploadSession:\s*encryptToken\(session\.uploadUrl,\s*connection\)/);
+  assert.match(source, /decryptToken\(record\.uploadSession,\s*connection\)/);
+  assert.match(source, /route === "upload\/resume"/);
   assert.match(source, /status\.publishAt/);
   assert.match(source, /paidProductPlacementDetails/);
   assert.match(source, /playlistItems\?part=snippet/);
@@ -65,13 +77,15 @@ test("Publisher draft and channel switching are private to the current HH accoun
   assert.match(source, /sessionStorage\.setItem\(privateStorageKey\(\)/);
   assert.match(source, /data-yap-channel-select/);
   assert.match(source, /hh:auth-change/);
+  assert.match(source, /currentChannelId\(\)/);
+  assert.match(source, /ownerId:\s*currentIdentityId\(\)/);
   assert.doesNotMatch(source, /localStorage\.setItem\(STORAGE_KEY/);
 });
 
 test("Versioned publisher assets are loaded and cached", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["youtube-publisher.css?v=3", "youtube-publisher.js?v=4"]) {
+  for (const asset of ["youtube-publisher.css?v=4", "youtube-publisher.js?v=5"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

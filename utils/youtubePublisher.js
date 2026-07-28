@@ -25,6 +25,23 @@ const SCOPES = [
 ];
 const VIDEO_MIME = new Set(["video/mp4", "video/webm", "video/quicktime", "video/x-matroska", "application/octet-stream"]);
 const IMAGE_MIME = new Set(["image/jpeg", "image/png"]);
+const DEFAULT_QUOTA_COSTS = Object.freeze({
+  "dashboard:read": 5,
+  "videos:list": 3,
+  "analytics:read": 2,
+  "analytics:retention": 2,
+  "comments:list": 1,
+  "comments:reply": 50,
+  "comments:moderate": 50,
+  "videos:update": 50,
+  "captions:list": 50,
+  "captions:upload": 400,
+  "live:list": 1,
+  "live:create": 100,
+  "live:transition": 50,
+  "upload:create": 100,
+  "thumbnail:upload": 50
+});
 
 function fail(message, statusCode = 400, code = "YOUTUBE_PUBLISHER_ERROR") {
   return Object.assign(new Error(message), { statusCode, code });
@@ -66,6 +83,138 @@ function safeFrontend(value) {
   } catch {
     return fallback;
   }
+}
+
+function quotaCosts() {
+  try {
+    const configured = JSON.parse(process.env.YOUTUBE_QUOTA_COSTS_JSON || "{}");
+    return { ...DEFAULT_QUOTA_COSTS, ...(configured && typeof configured === "object" ? configured : {}) };
+  } catch {
+    return { ...DEFAULT_QUOTA_COSTS };
+  }
+}
+
+function quotaCost(action) {
+  return Math.max(0, Number(quotaCosts()[action] || 0));
+}
+
+async function writeAudit(db, entry) {
+  const action = clean(entry.action, 100);
+  const record = {
+    userId: entry.userId,
+    channelId: clean(entry.channelId, 120),
+    action,
+    targetId: clean(entry.targetId, 160),
+    status: ["started", "completed", "failed", "cancelled"].includes(entry.status) ? entry.status : "completed",
+    quotaCost: Number.isFinite(Number(entry.quotaCost)) ? Math.max(0, Number(entry.quotaCost)) : quotaCost(action),
+    source: clean(entry.source || "youtube-creator-os", 80),
+    detail: clean(entry.detail, 300),
+    createdAt: new Date()
+  };
+  await db.collection("youtubeAudits").insertOne(record);
+  await db.collection("youtubeConnections").updateOne(
+    { userId: entry.userId, channelId: record.channelId },
+    { $set: { lastApiAt: record.createdAt } }
+  );
+  return record;
+}
+
+function publicAudit(item) {
+  return {
+    id: String(item._id || ""),
+    action: clean(item.action, 100),
+    targetId: clean(item.targetId, 160),
+    status: clean(item.status, 30),
+    quotaCost: Math.max(0, Number(item.quotaCost || 0)),
+    detail: clean(item.detail, 300),
+    createdAt: item.createdAt || null
+  };
+}
+
+async function observedQuota(db, userId, channelId) {
+  const start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  const rows = await db.collection("youtubeAudits").find({
+    userId,
+    channelId,
+    createdAt: { $gte: start },
+    status: { $in: ["started", "completed"] }
+  }).sort({ createdAt: -1 }).limit(500).toArray();
+  const used = rows.reduce((sum, item) => sum + Math.max(0, Number(item.quotaCost || 0)), 0);
+  const dailyLimit = Math.max(0, Number(process.env.YOUTUBE_QUOTA_DAILY_LIMIT || 0));
+  const buckets = {};
+  rows.forEach((item) => {
+    const bucket = String(item.action || "").split(":")[0] || "other";
+    buckets[bucket] = (buckets[bucket] || 0) + Math.max(0, Number(item.quotaCost || 0));
+  });
+  return {
+    source: "HH observed API ledger",
+    exactGoogleBalance: false,
+    used,
+    dailyLimit: dailyLimit || null,
+    remaining: dailyLimit ? Math.max(0, dailyLimit - used) : null,
+    buckets,
+    resetAt: new Date(start.getTime() + 24 * 60 * 60 * 1000),
+    note: dailyLimit
+      ? "Ước tính từ thao tác HH đã ghi nhận; Google Console là nguồn quyết định."
+      : "Đã ghi mức dùng quan sát; chưa cấu hình hạn mức Google Cloud cho dự án."
+  };
+}
+
+function normalizePublishProject(value, current = {}) {
+  const input = value && typeof value === "object" ? value : {};
+  const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata : {};
+  const captions = Array.isArray(input.captions) ? input.captions : [];
+  const thumbnails = Array.isArray(input.thumbnails) ? input.thumbnails : [];
+  const approvals = input.approvals && typeof input.approvals === "object" ? input.approvals : {};
+  const publishAt = metadata.publishAt ? new Date(metadata.publishAt) : null;
+  return {
+    title: clean(input.title || current.title || "Dự án xuất bản", 160),
+    sourceProjectId: clean(input.sourceProjectId, 160),
+    sourceAssetId: clean(input.sourceAssetId, 160),
+    videoId: clean(input.videoId, 40),
+    renderStatus: ["idle", "queued", "processing", "completed", "failed", "cancelled"].includes(input.renderStatus)
+      ? input.renderStatus
+      : "idle",
+    metadata: {
+      title: clean(metadata.title, 100),
+      description: clean(metadata.description, 5000),
+      tags: normalizedTags(metadata.tags),
+      privacyStatus: ["private", "unlisted", "public"].includes(metadata.privacyStatus) ? metadata.privacyStatus : "private",
+      publishAt: publishAt && Number.isFinite(publishAt.getTime()) ? publishAt : null,
+      playlistId: clean(metadata.playlistId, 120)
+    },
+    thumbnails: thumbnails.slice(0, 3).map((item, index) => ({
+      id: clean(item?.id || `variant-${index + 1}`, 120),
+      variant: ["A", "B", "C"].includes(item?.variant) ? item.variant : ["A", "B", "C"][index],
+      assetId: clean(item?.assetId, 160),
+      status: ["draft", "approved"].includes(item?.status) ? item.status : "draft"
+    })),
+    captions: captions.slice(0, 30).map((item) => ({
+      language: clean(item?.language, 24),
+      name: clean(item?.name, 160),
+      status: ["draft", "approved", "uploaded"].includes(item?.status) ? item.status : "draft",
+      captionId: clean(item?.captionId, 120)
+    })),
+    rightsManifest: {
+      confirmed: Boolean(input.rightsManifest?.confirmed),
+      assetCount: Math.max(0, Number(input.rightsManifest?.assetCount || 0)),
+      missingLicenseCount: Math.max(0, Number(input.rightsManifest?.missingLicenseCount || 0))
+    },
+    approvals: {
+      metadata: Boolean(approvals.metadata),
+      thumbnail: Boolean(approvals.thumbnail),
+      captions: Boolean(approvals.captions),
+      publish: Boolean(approvals.publish)
+    },
+    automation: {
+      enabled: Boolean(input.automation?.enabled),
+      approvalGate: input.automation?.approvalGate !== false,
+      stage: clean(input.automation?.stage || "draft", 40),
+      idempotencyKey: clean(input.automation?.idempotencyKey, 160)
+    },
+    updatedAt: new Date()
+  };
 }
 
 async function ensureIndex(collection, keys, options = {}) {
@@ -177,6 +326,9 @@ function publicConnection(connection, allConnections = []) {
     channels: allConnections.map(publicChannel),
     connectedAt: connection?.connectedAt || null,
     updatedAt: connection?.updatedAt || null,
+    expiresAt: connection?.expiresAt ? new Date(Number(connection.expiresAt)) : null,
+    lastApiAt: connection?.lastApiAt || null,
+    scopeNames: [...scopes].map((scope) => scope.split("/").pop()).filter(Boolean),
     permissions: {
       read: Boolean(connection),
       upload: scopes.has("https://www.googleapis.com/auth/youtube.upload"),
@@ -351,6 +503,46 @@ async function channelAnalytics(accessToken, options = {}) {
   return { startDate, endDate, rows, totals };
 }
 
+async function retentionAnalytics(accessToken, videoId, options = {}) {
+  const id = clean(videoId, 40);
+  if (!/^[\w-]{6,20}$/.test(id)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
+  const endDate = options.endDate || isoDay(Date.now() - 24 * 60 * 60 * 1000);
+  const startDate = options.startDate || isoDay(Date.now() - 365 * 24 * 60 * 60 * 1000);
+  const data = await analyticsJson(accessToken, {
+    ids: "channel==MINE",
+    startDate,
+    endDate,
+    dimensions: "elapsedVideoTimeRatio",
+    metrics: "audienceWatchRatio,relativeRetentionPerformance",
+    filters: `video==${id}`,
+    sort: "elapsedVideoTimeRatio"
+  });
+  return {
+    startDate,
+    endDate,
+    points: analyticsRows(data).slice(0, 100).map((item) => ({
+      ratio: Math.max(0, Math.min(1, Number(item.elapsedVideoTimeRatio || 0))),
+      audienceWatchRatio: Math.max(0, Number(item.audienceWatchRatio || 0)),
+      relativeRetentionPerformance: Number(item.relativeRetentionPerformance || 0)
+    }))
+  };
+}
+
+async function videoComparisonAnalytics(accessToken, options = {}) {
+  const endDate = options.endDate || isoDay(Date.now() - 24 * 60 * 60 * 1000);
+  const startDate = options.startDate || isoDay(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const data = await analyticsJson(accessToken, {
+    ids: "channel==MINE",
+    startDate,
+    endDate,
+    dimensions: "video",
+    metrics: "views,estimatedMinutesWatched,averageViewDuration,subscribersGained,subscribersLost",
+    sort: "-views",
+    maxResults: 10
+  });
+  return { startDate, endDate, rows: analyticsRows(data).slice(0, 10) };
+}
+
 async function settledResult(work, fallback, warnings, label) {
   try {
     return await work();
@@ -475,10 +667,16 @@ module.exports = async function handler(req, res) {
     const connections = db.collection("youtubeConnections");
     const states = db.collection("youtubeOauthStates");
     const uploads = db.collection("youtubeUploads");
+    const audits = db.collection("youtubeAudits");
+    const projects = db.collection("youtubePublishProjects");
+    const commentDrafts = db.collection("youtubeCommentDrafts");
     await Promise.all([
       ensureIndex(connections, { userId: 1, channelId: 1 }, { unique: true, sparse: true }),
       ensureIndex(connections, { userId: 1, active: 1, updatedAt: -1 }),
       ensureIndex(uploads, { userId: 1, channelId: 1, createdAt: -1 }),
+      ensureIndex(audits, { userId: 1, channelId: 1, createdAt: -1 }),
+      ensureIndex(projects, { userId: 1, channelId: 1 }, { unique: true }),
+      ensureIndex(commentDrafts, { userId: 1, channelId: 1, createdAt: -1 }),
       ensureIndex(states, { expiresAt: 1 }, { expireAfterSeconds: 0 })
     ]);
 
@@ -533,6 +731,14 @@ module.exports = async function handler(req, res) {
           connectedAt: previous?.connectedAt || now,
           updatedAt: now
         } }, { upsert: true });
+        await writeAudit(db, {
+          userId: state.userId,
+          channelId: bundle.channel.channelId,
+          action: "channel:connect",
+          targetId: bundle.channel.channelId,
+          status: "completed",
+          quotaCost: 0
+        });
         grantedTokenForCleanup = "";
         return res.redirect(`${frontend}/?youtubeConnected=1${returnHash}`);
       } catch (error) {
@@ -543,7 +749,8 @@ module.exports = async function handler(req, res) {
 
     const user = await currentUser(req);
     if (!user) throw fail("Đăng nhập HH Platform để dùng YouTube Publisher.", 401, "AUTH_REQUIRED");
-    await enforceRateLimit(db, `youtube:${route}:${user._id}`, route === "upload/session" ? 12 : 40, 15 * 60 * 1000);
+    const routeLimit = route === "upload/session" ? 12 : route === "upload/progress" ? 360 : 80;
+    await enforceRateLimit(db, `youtube:${route}:${user._id}`, routeLimit, 15 * 60 * 1000);
 
     if (route === "oauth/start" && req.method === "POST") {
       if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) throw fail("Google OAuth chưa được cấu hình trên Vercel.", 503, "GOOGLE_OAUTH_NOT_CONFIGURED");
@@ -582,15 +789,88 @@ module.exports = async function handler(req, res) {
         callbackUrl: callbackUrl(req),
         ...publicConnection(connection, allConnections),
         playlists: connection?.playlists || [],
-        history: history.map((item) => ({ id: String(item._id), videoId: item.videoId || "", title: item.title, fileName: item.fileName, status: item.status, privacyStatus: item.privacyStatus, publishAt: item.publishAt || null, createdAt: item.createdAt, completedAt: item.completedAt || null, error: item.error || "" }))
+        history: history.map((item) => ({
+          id: String(item._id),
+          videoId: item.videoId || "",
+          title: item.title,
+          fileName: item.fileName,
+          status: item.status,
+          privacyStatus: item.privacyStatus,
+          publishAt: item.publishAt || null,
+          bytesUploaded: Number(item.bytesUploaded || 0),
+          totalBytes: Number(item.totalBytes || item.fileSize || 0),
+          speedBps: Number(item.speedBps || 0),
+          etaSeconds: Number(item.etaSeconds || 0),
+          processingStatus: item.processingStatus || "",
+          createdAt: item.createdAt,
+          completedAt: item.completedAt || null,
+          error: item.error || ""
+        }))
       });
+    }
+
+    if (route === "audit" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const rows = await audits.find({ userId: user._id, channelId: connection.channelId })
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .toArray();
+      return res.status(200).json({
+        ok: true,
+        confirmed: true,
+        audit: rows.map(publicAudit),
+        quota: await observedQuota(db, user._id, connection.channelId),
+        syncedAt: new Date()
+      });
+    }
+
+    if (route === "project" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const project = await projects.findOne({ userId: user._id, channelId: connection.channelId });
+      return res.status(200).json({ ok: true, confirmed: true, project: project ? {
+        id: String(project._id),
+        title: project.title,
+        sourceProjectId: project.sourceProjectId || "",
+        sourceAssetId: project.sourceAssetId || "",
+        videoId: project.videoId || "",
+        renderStatus: project.renderStatus || "idle",
+        metadata: project.metadata || {},
+        thumbnails: project.thumbnails || [],
+        captions: project.captions || [],
+        rightsManifest: project.rightsManifest || {},
+        approvals: project.approvals || {},
+        automation: project.automation || {},
+        updatedAt: project.updatedAt || null
+      } : null });
+    }
+
+    if (route === "project" && req.method === "PUT") {
+      const connection = await connectionFor(db, user);
+      const current = await projects.findOne({ userId: user._id, channelId: connection.channelId });
+      const project = normalizePublishProject(body.project, current || {});
+      await projects.updateOne(
+        { userId: user._id, channelId: connection.channelId },
+        {
+          $set: { ...project, userId: user._id, channelId: connection.channelId },
+          $setOnInsert: { createdAt: new Date() }
+        },
+        { upsert: true }
+      );
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: connection.channelId,
+        action: "project:update",
+        status: "completed",
+        detail: project.title
+      });
+      return res.status(200).json({ ok: true, confirmed: true, project });
     }
 
     if (route === "dashboard" && req.method === "GET") {
       const connection = await connectionFor(db, user);
       const accessToken = await refreshAccessToken(connection, connections);
       const warnings = [];
-      const [videos, analytics, comments, live, quotas, pendingUploads] = await Promise.all([
+      const [videos, analytics, comments, live, quotas, pendingUploads, auditRows, creatorProject, quotaLedger] = await Promise.all([
         settledResult(() => recentVideos(accessToken), [], warnings, "videos"),
         settledResult(() => channelAnalytics(accessToken), null, warnings, "analytics"),
         settledResult(() => recentComments(accessToken, connection.channelId), [], warnings, "comments"),
@@ -600,8 +880,32 @@ module.exports = async function handler(req, res) {
           userId: user._id,
           channelId: connection.channelId,
           status: { $in: ["uploading", "processing", "error"] }
-        }).sort({ updatedAt: -1 }).limit(20).toArray()
+        }).sort({ updatedAt: -1 }).limit(20).toArray(),
+        audits.find({ userId: user._id, channelId: connection.channelId }).sort({ createdAt: -1 }).limit(30).toArray(),
+        projects.findOne({ userId: user._id, channelId: connection.channelId }),
+        observedQuota(db, user._id, connection.channelId)
       ]);
+      await Promise.allSettled(videos.map((video) => {
+        const processingStatus = video.processingStatus || "";
+        const nextStatus = processingStatus === "succeeded"
+          ? "uploaded"
+          : processingStatus === "terminated"
+            ? "error"
+            : processingStatus
+              ? "processing"
+              : "";
+        if (!nextStatus) return Promise.resolve();
+        return uploads.updateMany(
+          { userId: user._id, channelId: connection.channelId, videoId: video.id, status: { $in: ["uploaded", "processing"] } },
+          { $set: { status: nextStatus, processingStatus, updatedAt: new Date(), ...(nextStatus === "uploaded" ? { completedAt: new Date() } : {}) } }
+        );
+      }));
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: connection.channelId,
+        action: "dashboard:read",
+        status: "completed"
+      });
       const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
       return res.status(200).json({
         ok: true,
@@ -612,6 +916,23 @@ module.exports = async function handler(req, res) {
         comments,
         live,
         quota: quotas,
+        quotaLedger,
+        audit: auditRows.map(publicAudit),
+        project: creatorProject ? {
+          id: String(creatorProject._id),
+          title: creatorProject.title,
+          sourceProjectId: creatorProject.sourceProjectId || "",
+          sourceAssetId: creatorProject.sourceAssetId || "",
+          videoId: creatorProject.videoId || "",
+          renderStatus: creatorProject.renderStatus || "idle",
+          metadata: creatorProject.metadata || {},
+          thumbnails: creatorProject.thumbnails || [],
+          captions: creatorProject.captions || [],
+          rightsManifest: creatorProject.rightsManifest || {},
+          approvals: creatorProject.approvals || {},
+          automation: creatorProject.automation || {},
+          updatedAt: creatorProject.updatedAt || null
+        } : null,
         uploads: pendingUploads.map((item) => ({
           id: String(item._id),
           videoId: item.videoId || "",
@@ -620,6 +941,11 @@ module.exports = async function handler(req, res) {
           status: item.status,
           privacyStatus: item.privacyStatus,
           publishAt: item.publishAt || null,
+          bytesUploaded: Number(item.bytesUploaded || 0),
+          totalBytes: Number(item.totalBytes || item.fileSize || 0),
+          speedBps: Number(item.speedBps || 0),
+          etaSeconds: Number(item.etaSeconds || 0),
+          processingStatus: item.processingStatus || "",
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
           error: item.error || ""
@@ -647,11 +973,113 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, confirmed: true, analytics, videoId, syncedAt: new Date() });
     }
 
+    if (route === "analytics/retention" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const videoId = clean(req.query.videoId, 40);
+      const retention = await retentionAnalytics(accessToken, videoId, {
+        startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.startDate || "")) ? req.query.startDate : undefined,
+        endDate: /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.endDate || "")) ? req.query.endDate : undefined
+      });
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: connection.channelId,
+        action: "analytics:retention",
+        targetId: videoId,
+        status: "completed"
+      });
+      return res.status(200).json({ ok: true, confirmed: true, videoId, retention, syncedAt: new Date() });
+    }
+
+    if (route === "analytics/comparison" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const accessToken = await refreshAccessToken(connection, connections);
+      const comparison = await videoComparisonAnalytics(accessToken, {
+        startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.startDate || "")) ? req.query.startDate : undefined,
+        endDate: /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.endDate || "")) ? req.query.endDate : undefined
+      });
+      return res.status(200).json({ ok: true, confirmed: true, comparison, syncedAt: new Date() });
+    }
+
     if (route === "comments" && req.method === "GET") {
       const connection = await connectionFor(db, user);
       const accessToken = await refreshAccessToken(connection, connections);
       const comments = await recentComments(accessToken, connection.channelId);
       return res.status(200).json({ ok: true, confirmed: true, comments, syncedAt: new Date() });
+    }
+
+    if (route === "comments/drafts" && req.method === "GET") {
+      const connection = await connectionFor(db, user);
+      const drafts = await commentDrafts.find({ userId: user._id, channelId: connection.channelId })
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .toArray();
+      return res.status(200).json({
+        ok: true,
+        confirmed: true,
+        drafts: drafts.map((item) => ({
+          id: String(item._id),
+          parentId: item.parentId,
+          text: item.text,
+          status: item.status,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          sentAt: item.sentAt || null
+        }))
+      });
+    }
+
+    if (route === "comments/drafts" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const parentId = clean(body.parentId, 120);
+      const text = clean(body.text, 10000);
+      if (!parentId || !text) throw fail("Bình luận hoặc nội dung bản nháp đang trống.", 400, "YOUTUBE_COMMENT_INVALID");
+      const now = new Date();
+      const result = await commentDrafts.insertOne({
+        userId: user._id,
+        channelId: connection.channelId,
+        parentId,
+        text,
+        status: "draft",
+        createdAt: now,
+        updatedAt: now
+      });
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: connection.channelId,
+        action: "comments:draft",
+        targetId: parentId,
+        status: "completed"
+      });
+      return res.status(201).json({ ok: true, confirmed: true, draft: { id: String(result.insertedId), parentId, text, status: "draft", createdAt: now } });
+    }
+
+    if (route === "comments/drafts/send" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const draftId = clean(body.draftId, 80);
+      if (!ObjectId.isValid(draftId) || body.approved !== true) {
+        throw fail("Bản nháp chưa được người dùng duyệt.", 400, "YOUTUBE_COMMENT_APPROVAL_REQUIRED");
+      }
+      const draft = await commentDrafts.findOne({ _id: new ObjectId(draftId), userId: user._id, channelId: connection.channelId, status: "draft" });
+      if (!draft) throw fail("Không tìm thấy bản nháp của kênh hiện tại.", 404, "YOUTUBE_COMMENT_DRAFT_NOT_FOUND");
+      const accessToken = await refreshAccessToken(connection, connections);
+      const data = await youtubeJson(accessToken, "/youtube/v3/comments", { part: "snippet" }, {
+        method: "POST",
+        body: JSON.stringify({ snippet: { parentId: draft.parentId, textOriginal: draft.text } })
+      });
+      const sentAt = new Date();
+      await commentDrafts.updateOne(
+        { _id: draft._id, userId: user._id, channelId: connection.channelId },
+        { $set: { status: "sent", sentAt, updatedAt: sentAt } }
+      );
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: connection.channelId,
+        action: "comments:reply",
+        targetId: draft.parentId,
+        status: "completed"
+      });
+      return res.status(201).json({ ok: true, confirmed: true, comment: normalizedComment(data), sentAt });
     }
 
     if (route === "comments/reply" && req.method === "POST") {
@@ -665,6 +1093,7 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify({ snippet: { parentId, textOriginal } })
       });
       await db.collection("events").insertOne({ type: "youtube:comment-replied", userId: user._id, commentId: parentId, createdAt: new Date() });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "comments:reply", targetId: parentId, status: "completed" });
       return res.status(201).json({ ok: true, confirmed: true, comment: normalizedComment(data), syncedAt: new Date() });
     }
 
@@ -682,6 +1111,7 @@ module.exports = async function handler(req, res) {
         banAuthor: body.banAuthor === true ? "true" : "false"
       }, { method: "POST" });
       await db.collection("events").insertOne({ type: "youtube:comment-moderated", userId: user._id, commentId: id, moderationStatus, createdAt: new Date() });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "comments:moderate", targetId: id, status: "completed", detail: moderationStatus });
       return res.status(200).json({ ok: true, confirmed: true, id, moderationStatus });
     }
 
@@ -705,6 +1135,7 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify({ id: videoId, snippet })
       });
       await db.collection("events").insertOne({ type: "youtube:metadata-updated", userId: user._id, videoId, createdAt: new Date() });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "videos:update", targetId: videoId, status: "completed" });
       return res.status(200).json({ ok: true, confirmed: true, video: normalizedVideo(updated.items?.[0] || { id: videoId, snippet }) });
     }
 
@@ -754,6 +1185,7 @@ module.exports = async function handler(req, res) {
         body: multipart
       });
       await db.collection("events").insertOne({ type: "youtube:caption-uploaded", userId: user._id, videoId, language, createdAt: new Date() });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "captions:upload", targetId: videoId, status: "completed", detail: language });
       return res.status(201).json({ ok: true, confirmed: true, captionId: clean(data.id, 120), status: clean(data.snippet?.status, 40) });
     }
 
@@ -808,6 +1240,7 @@ module.exports = async function handler(req, res) {
         throw error;
       }
       await db.collection("events").insertOne({ type: "youtube:live-created", userId: user._id, broadcastId: broadcast.id, createdAt: new Date() });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "live:create", targetId: broadcast.id, status: "completed" });
       return res.status(201).json({
         ok: true,
         confirmed: true,
@@ -833,6 +1266,7 @@ module.exports = async function handler(req, res) {
         broadcastStatus
       }, { method: "POST" });
       await db.collection("events").insertOne({ type: `youtube:live-${broadcastStatus}`, userId: user._id, broadcastId: id, createdAt: new Date() });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "live:transition", targetId: id, status: "completed", detail: broadcastStatus });
       return res.status(200).json({ ok: true, confirmed: true, broadcast: normalizedBroadcast(data) });
     }
 
@@ -851,6 +1285,7 @@ module.exports = async function handler(req, res) {
       if (!selected) throw fail("Kênh YouTube không tồn tại trong tài khoản HH này.", 404, "YOUTUBE_CHANNEL_NOT_FOUND");
       await connections.updateMany({ userId: user._id }, { $set: { active: false } });
       await connections.updateOne(ownedConnectionFilter(selected), { $set: { active: true, updatedAt: new Date() } });
+      await writeAudit(db, { userId: user._id, channelId, action: "channel:select", targetId: channelId, status: "completed", quotaCost: 0 });
       const refreshed = await connections.findOne(ownedConnectionFilter(selected));
       const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
       return res.status(200).json({ ...publicConnection(refreshed, allConnections), playlists: refreshed.playlists || [] });
@@ -868,6 +1303,15 @@ module.exports = async function handler(req, res) {
         channelId: active.channelId,
         providerRevoked,
         createdAt: new Date()
+      });
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: active.channelId,
+        action: "channel:disconnect",
+        targetId: active.channelId,
+        status: "completed",
+        quotaCost: 0,
+        detail: providerRevoked ? "Google token revoked" : "Connection removed"
       });
       return res.status(200).json({ ok: true, providerRevoked });
     }
@@ -887,17 +1331,95 @@ module.exports = async function handler(req, res) {
         publishAt: session.resource.status.publishAt || null,
         playlistId: clean(body.playlistId, 120),
         status: "uploading",
+        uploadSession: encryptToken(session.uploadUrl, connection),
+        bytesUploaded: 0,
+        totalBytes: Number(body.fileSize),
+        speedBps: 0,
+        etaSeconds: 0,
         createdAt: new Date(),
         updatedAt: new Date()
       };
       const result = await uploads.insertOne(record);
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: connection.channelId,
+        action: "upload:create",
+        targetId: String(result.insertedId),
+        status: "started",
+        detail: record.fileName
+      });
       return res.status(201).json({ uploadId: String(result.insertedId), uploadUrl: session.uploadUrl, chunkSize: 8 * 1024 * 1024 });
+    }
+
+    if (route === "upload/resume" && req.method === "POST") {
+      const uploadId = clean(body.uploadId, 80);
+      if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
+      const record = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id, status: { $in: ["uploading", "error"] } });
+      if (!record?.uploadSession) throw fail("Phiên upload không còn khả dụng. Hãy tạo phiên mới.", 404, "YOUTUBE_UPLOAD_SESSION_EXPIRED");
+      const connection = await connectionFor(db, user, record.channelId);
+      const uploadUrl = decryptToken(record.uploadSession, connection);
+      await uploads.updateOne(
+        { _id: record._id, userId: user._id, channelId: record.channelId },
+        { $set: { status: "uploading", error: "", updatedAt: new Date() } }
+      );
+      return res.status(200).json({
+        ok: true,
+        confirmed: true,
+        uploadId,
+        uploadUrl,
+        chunkSize: 8 * 1024 * 1024,
+        bytesUploaded: Number(record.bytesUploaded || 0),
+        totalBytes: Number(record.totalBytes || record.fileSize || 0)
+      });
+    }
+
+    if (route === "upload/progress" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const uploadId = clean(body.uploadId, 80);
+      if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
+      const totalBytes = Math.max(0, Number(body.totalBytes || 0));
+      const bytesUploaded = Math.max(0, Math.min(totalBytes || Number.MAX_SAFE_INTEGER, Number(body.bytesUploaded || 0)));
+      const speedBps = Math.max(0, Number(body.speedBps || 0));
+      const etaSeconds = Math.max(0, Number(body.etaSeconds || 0));
+      const result = await uploads.updateOne(
+        { _id: new ObjectId(uploadId), userId: user._id, channelId: connection.channelId, status: { $in: ["uploading", "processing"] } },
+        { $set: { bytesUploaded, totalBytes, speedBps, etaSeconds, updatedAt: new Date() } }
+      );
+      if (!result.matchedCount) throw fail("Không tìm thấy phiên upload của kênh hiện tại.", 404, "YOUTUBE_UPLOAD_NOT_FOUND");
+      return res.status(200).json({ ok: true, confirmed: true, bytesUploaded, totalBytes, speedBps, etaSeconds });
+    }
+
+    if (route === "upload/cancel" && req.method === "POST") {
+      const connection = await connectionFor(db, user);
+      const uploadId = clean(body.uploadId, 80);
+      if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
+      const cancelledAt = new Date();
+      const result = await uploads.updateOne(
+        { _id: new ObjectId(uploadId), userId: user._id, channelId: connection.channelId, status: { $in: ["uploading", "processing", "error"] } },
+        { $set: { status: "cancelled", cancelledAt, updatedAt: cancelledAt }, $unset: { uploadSession: "" } }
+      );
+      if (!result.matchedCount) throw fail("Không tìm thấy phiên upload của kênh hiện tại.", 404, "YOUTUBE_UPLOAD_NOT_FOUND");
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: connection.channelId,
+        action: "upload:cancel",
+        targetId: uploadId,
+        status: "cancelled"
+      });
+      return res.status(200).json({ ok: true, confirmed: true, cancelledAt });
     }
 
     if (route === "thumbnail/session" && req.method === "POST") {
       const connection = await connectionFor(db, user);
       const accessToken = await refreshAccessToken(connection, connections);
       const uploadUrl = await initiateThumbnail(accessToken, clean(body.videoId, 30), body);
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: connection.channelId,
+        action: "thumbnail:upload",
+        targetId: clean(body.videoId, 30),
+        status: "started"
+      });
       return res.status(201).json({ uploadUrl });
     }
 
@@ -922,9 +1444,21 @@ module.exports = async function handler(req, res) {
         playlistAdded = true;
       }
       const completedAt = new Date();
+      const processingStatus = clean(video.items[0].processingDetails?.processingStatus || "processing", 40);
       await uploads.updateOne(
         { _id: record._id, userId: user._id, channelId: record.channelId },
-        { $set: { videoId, status: "uploaded", playlistAdded, completedAt, updatedAt: completedAt } }
+        { $set: {
+          videoId,
+          status: processingStatus === "succeeded" ? "uploaded" : processingStatus === "terminated" ? "error" : "processing",
+          processingStatus,
+          bytesUploaded: Number(record.fileSize || 0),
+          totalBytes: Number(record.fileSize || 0),
+          speedBps: 0,
+          etaSeconds: 0,
+          playlistAdded,
+          completedAt,
+          updatedAt: completedAt
+        }, $unset: { uploadSession: "" } }
       );
       await db.collection("events").insertOne({
         type: "music-ai:youtube-upload",
@@ -933,12 +1467,38 @@ module.exports = async function handler(req, res) {
         videoId,
         createdAt: completedAt
       });
-      return res.status(200).json({ ok: true, videoId, url: `https://youtu.be/${videoId}`, playlistAdded, processingStatus: video.items[0].processingDetails?.processingStatus || "processing" });
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: record.channelId,
+        action: "upload:create",
+        targetId: videoId,
+        status: "completed",
+        quotaCost: 0,
+        detail: record.title
+      });
+      return res.status(200).json({ ok: true, videoId, url: `https://youtu.be/${videoId}`, playlistAdded, processingStatus });
     }
 
     if (route === "upload/error" && req.method === "POST") {
       const uploadId = clean(body.uploadId, 80);
-      if (ObjectId.isValid(uploadId)) await uploads.updateOne({ _id: new ObjectId(uploadId), userId: user._id }, { $set: { status: "error", error: clean(body.error, 400), updatedAt: new Date() } });
+      if (ObjectId.isValid(uploadId)) {
+        const record = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id });
+        if (record) {
+          await uploads.updateOne(
+            { _id: record._id, userId: user._id, channelId: record.channelId },
+            { $set: { status: "error", error: clean(body.error, 400), updatedAt: new Date() } }
+          );
+          await writeAudit(db, {
+            userId: user._id,
+            channelId: record.channelId,
+            action: "upload:error",
+            targetId: uploadId,
+            status: "failed",
+            quotaCost: 0,
+            detail: clean(body.error, 300)
+          });
+        }
+      }
       return res.status(200).json({ ok: true });
     }
 

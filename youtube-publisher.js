@@ -2,7 +2,10 @@
   "use strict";
 
   const STORAGE_KEY = "hh.youtube-publisher.v1";
+  const UPLOAD_DB = "hh-youtube-upload-v1";
+  const UPLOAD_STORE = "uploads";
   const MAX_THUMBNAIL = 2 * 1024 * 1024;
+  const RETRYABLE_UPLOAD_STATUS = new Set([0, 500, 502, 503, 504]);
   const CATEGORIES = [
     ["10", "Âm nhạc"], ["22", "Con người & Blog"], ["24", "Giải trí"],
     ["26", "Hướng dẫn & Phong cách"], ["27", "Giáo dục"], ["28", "Khoa học & Công nghệ"]
@@ -39,6 +42,8 @@
   let currentXhr = null;
   let paused = false;
   let cancelled = false;
+  let progressReportedAt = 0;
+  let checkpointTimer = 0;
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
   const apiBase = () => String(options.apiBase || window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
@@ -64,8 +69,16 @@
     return String(user?.id || user?._id || "guest").replace(/[^a-z0-9_-]/gi, "").slice(0, 80) || "guest";
   }
 
+  function currentChannelId() {
+    return String(status?.channel?.id || "unassigned").replace(/[^a-z0-9_-]/gi, "").slice(0, 120) || "unassigned";
+  }
+
   function privateStorageKey() {
-    return `${STORAGE_KEY}:${currentIdentityId()}`;
+    return `${STORAGE_KEY}:${currentIdentityId()}:${currentChannelId()}`;
+  }
+
+  function uploadRecordKey() {
+    return `${currentIdentityId()}:${currentChannelId()}`;
   }
 
   function loadDraft() {
@@ -75,6 +88,122 @@
 
   function saveDraft() {
     try { sessionStorage.setItem(privateStorageKey(), JSON.stringify(draft)); } catch {}
+  }
+
+  function openUploadDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error("Trình duyệt không hỗ trợ IndexedDB."));
+      const request = indexedDB.open(UPLOAD_DB, 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains(UPLOAD_STORE)) {
+          request.result.createObjectStore(UPLOAD_STORE, { keyPath: "key" });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Không mở được kho upload cục bộ."));
+    });
+  }
+
+  async function putUploadRecord(record) {
+    const db = await openUploadDb();
+    try {
+      await new Promise((resolve, reject) => {
+        const transaction = db.transaction(UPLOAD_STORE, "readwrite");
+        transaction.objectStore(UPLOAD_STORE).put(record);
+        transaction.oncomplete = resolve;
+        transaction.onerror = () => reject(transaction.error);
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  async function getUploadRecord() {
+    const db = await openUploadDb();
+    try {
+      return await new Promise((resolve, reject) => {
+        const request = db.transaction(UPLOAD_STORE, "readonly").objectStore(UPLOAD_STORE).get(uploadRecordKey());
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  async function deleteUploadRecord() {
+    const db = await openUploadDb();
+    try {
+      await new Promise((resolve, reject) => {
+        const transaction = db.transaction(UPLOAD_STORE, "readwrite");
+        transaction.objectStore(UPLOAD_STORE).delete(uploadRecordKey());
+        transaction.oncomplete = resolve;
+        transaction.onerror = () => reject(transaction.error);
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  function checkpointPayload() {
+    if (!videoFile && !activeUpload) return null;
+    return {
+      key: uploadRecordKey(),
+      ownerId: currentIdentityId(),
+      channelId: currentChannelId(),
+      videoFile,
+      thumbnailFile,
+      draft: { ...draft },
+      activeUpload: activeUpload ? {
+        uploadId: activeUpload.uploadId || "",
+        chunkSize: Number(activeUpload.chunkSize || 8 * 1024 * 1024),
+        fileKey: activeUpload.fileKey || "",
+        offset: Number(activeUpload.offset || 0),
+        stage: ["preparing", "uploading", "paused", "error"].includes(activeUpload.stage) ? "paused" : activeUpload.stage,
+        progress: Number(activeUpload.progress || 0),
+        bytesUploaded: Number(activeUpload.bytesUploaded || activeUpload.offset || 0),
+        speedBps: Number(activeUpload.speedBps || 0),
+        etaSeconds: Number(activeUpload.etaSeconds || 0),
+        detail: activeUpload.detail || ""
+      } : null,
+      savedAt: new Date().toISOString()
+    };
+  }
+
+  function persistCheckpoint(immediate = false) {
+    clearTimeout(checkpointTimer);
+    const record = checkpointPayload();
+    if (!record) return;
+    const run = () => putUploadRecord(record).catch(() => {});
+    if (immediate) run();
+    else checkpointTimer = setTimeout(run, 250);
+  }
+
+  async function restoreCheckpoint() {
+    const record = await getUploadRecord().catch(() => null);
+    if (!record || record.ownerId !== currentIdentityId() || record.channelId !== currentChannelId()) return false;
+    videoFile = record.videoFile instanceof Blob ? record.videoFile : null;
+    thumbnailFile = record.thumbnailFile instanceof Blob ? record.thumbnailFile : null;
+    if (record.draft && typeof record.draft === "object") draft = { ...DEFAULT_DRAFT, ...record.draft };
+    activeUpload = record.activeUpload && typeof record.activeUpload === "object"
+      ? {
+          uploadId: String(record.activeUpload.uploadId || ""),
+          chunkSize: Number(record.activeUpload.chunkSize || 8 * 1024 * 1024),
+          fileKey: String(record.activeUpload.fileKey || ""),
+          offset: Number(record.activeUpload.offset || 0),
+          stage: record.activeUpload.stage === "done" ? "done" : "paused",
+          progress: Number(record.activeUpload.progress || 0),
+          bytesUploaded: Number(record.activeUpload.bytesUploaded || record.activeUpload.offset || 0),
+          totalBytes: Number(record.activeUpload.totalBytes || videoFile?.size || 0),
+          speedBps: 0,
+          etaSeconds: Number(record.activeUpload.etaSeconds || 0),
+          detail: String(record.activeUpload.detail || "")
+        }
+      : null;
+    if (videoFile) videoUrl = URL.createObjectURL(videoFile);
+    if (thumbnailFile) thumbnailUrl = URL.createObjectURL(thumbnailFile);
+    saveDraft();
+    return Boolean(videoFile || activeUpload);
   }
 
   async function api(path, method = "GET", body) {
@@ -126,7 +255,12 @@
 
   async function refreshStatus(showMessage = false) {
     try {
+      const previousChannel = currentChannelId();
       status = await api("status");
+      if (currentChannelId() !== previousChannel && !activeUpload) {
+        draft = loadDraft();
+        await restoreCheckpoint();
+      }
       render();
       if (showMessage) notify("Đã đồng bộ kênh và lịch sử upload.");
     } catch (error) {
@@ -159,8 +293,8 @@
   function fileCard() {
     return `<section class="yap-panel yap-files"><header><div><small>BƯỚC 2</small><h3>Media từ thiết bị</h3></div><span>Không lưu video vào database HH</span></header>
       <div class="yap-file-grid">
-        <label class="yap-drop ${videoFile ? "has-file" : ""}"><input type="file" accept="video/mp4,video/webm,video/quicktime,video/x-matroska" data-yap-file="video"><b>${videoFile ? "✓" : "+"}</b><strong>${videoFile ? esc(videoFile.name) : "Chọn hoặc kéo video vào đây"}</strong><span>${videoFile ? `${fileSize(videoFile.size)} · ${esc(videoFile.type || "video")}` : "MP4, WebM, MOV, MKV · upload thẳng lên YouTube"}</span></label>
-        <label class="yap-drop yap-drop--thumb ${thumbnailFile ? "has-file" : ""}"><input type="file" accept="image/jpeg,image/png" data-yap-file="thumbnail"><b>${thumbnailFile ? "✓" : "▧"}</b><strong>${thumbnailFile ? esc(thumbnailFile.name) : "Thumbnail tùy chỉnh"}</strong><span>${thumbnailFile ? `${fileSize(thumbnailFile.size)} · sẵn sàng` : "JPG hoặc PNG · tối đa 2 MB · khuyến nghị 1280×720"}</span></label>
+        <label class="yap-drop ${videoFile ? "has-file" : ""}"><input type="file" accept="video/mp4,video/webm,video/quicktime,video/x-matroska" data-yap-file="video"><b>${videoFile ? "✓" : "+"}</b><strong>${videoFile ? esc(videoFile.name || "video-khoi-phuc") : "Chọn hoặc kéo video vào đây"}</strong><span>${videoFile ? `${fileSize(videoFile.size)} · ${esc(videoFile.type || "video")}` : "MP4, WebM, MOV, MKV · upload thẳng lên YouTube"}</span></label>
+        <label class="yap-drop yap-drop--thumb ${thumbnailFile ? "has-file" : ""}"><input type="file" accept="image/jpeg,image/png" data-yap-file="thumbnail"><b>${thumbnailFile ? "✓" : "▧"}</b><strong>${thumbnailFile ? esc(thumbnailFile.name || "thumbnail-khoi-phuc") : "Thumbnail tùy chỉnh"}</strong><span>${thumbnailFile ? `${fileSize(thumbnailFile.size)} · sẵn sàng` : "JPG hoặc PNG · tối đa 2 MB · khuyến nghị 1280×720"}</span></label>
       </div>
       <div class="yap-preview ${videoFile ? "is-ready" : ""}">${videoFile ? '<video data-yap-video-preview controls playsinline preload="metadata"></video>' : '<div><i>▶</i><strong>Video preview</strong><span>Chọn file để kiểm tra trước khi upload</span></div>'}${thumbnailFile ? '<img data-yap-thumbnail-preview alt="Xem trước thumbnail">' : ""}</div>
     </section>`;
@@ -206,7 +340,7 @@
         <article class="${draft.title.trim() ? "is-ok" : ""}"><i>${draft.title.trim() ? "✓" : "3"}</i><span><strong>Metadata</strong><small>${draft.title.trim() ? "Hợp lệ" : "Thiếu tiêu đề"}</small></span></article>
         <article class="${draft.privacyMode !== "schedule" || draft.publishAt ? "is-ok" : ""}"><i>${draft.privacyMode !== "schedule" || draft.publishAt ? "✓" : "4"}</i><span><strong>Phát hành</strong><small>${draft.privacyMode === "schedule" ? (draft.publishAt ? formatDate(draft.publishAt) : "Thiếu lịch") : draft.privacyMode}</small></span></article>
       </div>
-      <div class="yap-progress"><div><span style="width:${progress}%"></span></div><p><strong data-yap-progress-label>${labels[stage] || labels.ready}</strong><b data-yap-progress-value>${progress.toFixed(1)}%</b></p><small data-yap-progress-detail>${esc(activeUpload?.detail || "Video được upload trực tiếp từ thiết bị lên máy chủ YouTube bằng HTTPS.")}</small></div>
+      <div class="yap-progress"><div><span style="width:${progress}%"></span></div><p><strong data-yap-progress-label>${labels[stage] || labels.ready}</strong><b data-yap-progress-value>${progress.toFixed(1)}%</b></p><small data-yap-progress-detail>${esc(activeUpload?.detail || "Video được upload trực tiếp từ thiết bị lên máy chủ YouTube bằng HTTPS.")}</small>${activeUpload?.bytesUploaded ? `<div class="yap-transfer-stats"><span>${fileSize(activeUpload.bytesUploaded)} / ${fileSize(videoFile?.size || activeUpload.totalBytes)}</span><span>${activeUpload.speedBps ? `${fileSize(activeUpload.speedBps)}/s` : "Đang đo tốc độ"}</span><span>${activeUpload.etaSeconds ? `Còn khoảng ${Math.ceil(activeUpload.etaSeconds / 60)} phút` : "ETA đang tính"}</span></div>` : ""}</div>
       <div class="yap-publish__actions">
         <button class="yap-primary" type="button" data-yap-action="upload" ${status.connected && videoFile && draft.title.trim() && !["preparing", "uploading", "thumbnail", "finalizing"].includes(stage) ? "" : "disabled"}>${stage === "paused" ? "Tiếp tục upload" : "Bắt đầu upload"}</button>
         <button type="button" data-yap-action="pause" ${stage === "uploading" ? "" : "disabled"}>Tạm dừng</button>
@@ -256,6 +390,7 @@
     if (label) label.textContent = labels[stage] || stage;
     if (value) value.textContent = `${activeUpload.progress.toFixed(1)}%`;
     if (info) info.textContent = detail;
+    persistCheckpoint();
   }
 
   function xhrPut(url, blob, start, total, mimeType, onProgress) {
@@ -272,9 +407,15 @@
           const range = xhr.getResponseHeader("Range") || "";
           const match = range.match(/bytes=0-(\d+)/i);
           resolve({ status: xhr.status, offset: match ? Number(match[1]) + 1 : start + blob.size, data: (() => { try { return JSON.parse(xhr.responseText || "{}"); } catch { return {}; } })() });
-        } else reject(new Error(`YouTube upload HTTP ${xhr.status}: ${xhr.responseText.slice(0, 240)}`));
+        } else reject(Object.assign(
+          new Error(`YouTube upload HTTP ${xhr.status}: ${xhr.responseText.slice(0, 240)}`),
+          { status: xhr.status, retryAfter: Number(xhr.getResponseHeader("Retry-After") || 0) }
+        ));
       };
-      xhr.onerror = () => { currentXhr = null; reject(new Error("Mất kết nối khi upload video.")); };
+      xhr.onerror = () => {
+        currentXhr = null;
+        reject(Object.assign(new Error("Mất kết nối khi upload video."), { status: 0 }));
+      };
       xhr.onabort = () => { currentXhr = null; reject(Object.assign(new Error("Upload đã tạm dừng."), { paused: true })); };
       xhr.send(blob);
     });
@@ -310,14 +451,43 @@
 
   async function uploadBinary(url, file, startOffset = 0, chunkSize = 8 * 1024 * 1024) {
     let offset = startOffset;
+    const transferStartedAt = Date.now();
+    const transferStartedAtOffset = offset;
     while (offset < file.size) {
       if (paused) throw Object.assign(new Error("Upload đã tạm dừng."), { paused: true });
       const blob = file.slice(offset, Math.min(file.size, offset + chunkSize));
-      const result = await xhrPut(url, blob, offset, file.size, file.type || "application/octet-stream", (sent) => {
-        updateProgress("uploading", sent / file.size * 100, `${fileSize(sent)} / ${fileSize(file.size)} · có thể tạm dừng và tiếp tục`);
-      });
+      let result = null;
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        try {
+          result = await xhrPut(url, blob, offset, file.size, file.type || "application/octet-stream", (sent) => {
+            const elapsedSeconds = Math.max(.25, (Date.now() - transferStartedAt) / 1000);
+            const speedBps = Math.max(0, (sent - transferStartedAtOffset) / elapsedSeconds);
+            const etaSeconds = speedBps > 0 ? Math.max(0, (file.size - sent) / speedBps) : 0;
+            activeUpload = { ...activeUpload, bytesUploaded: sent, totalBytes: file.size, speedBps, etaSeconds };
+            updateProgress("uploading", sent / file.size * 100, `${fileSize(sent)} / ${fileSize(file.size)} · ${fileSize(speedBps)}/s · còn khoảng ${Math.ceil(etaSeconds / 60)} phút`);
+            reportProgress(sent, file.size).catch(() => {});
+          });
+          break;
+        } catch (error) {
+          if (error.paused || !RETRYABLE_UPLOAD_STATUS.has(Number(error.status || 0)) || attempt >= 5) throw error;
+          const delay = error.retryAfter > 0
+            ? Math.min(60_000, error.retryAfter * 1000)
+            : Math.min(32_000, 1000 * 2 ** attempt + Math.floor(Math.random() * 650));
+          updateProgress("uploading", offset / file.size * 100, `YouTube tạm gián đoạn. Thử lại lần ${attempt + 1}/5 sau ${Math.ceil(delay / 1000)} giây…`);
+          await wait(delay);
+          const resume = await queryResumableOffset(url, file.size, file.type || "application/octet-stream");
+          if (resume.complete) return resume.data;
+          if (resume.offset !== offset) {
+            offset = resume.offset;
+            break;
+          }
+        }
+      }
+      if (!result) continue;
       offset = Math.max(offset + blob.size, result.offset);
-      activeUpload.offset = offset;
+      activeUpload = { ...activeUpload, offset, bytesUploaded: offset, totalBytes: file.size };
+      persistCheckpoint(true);
+      reportProgress(offset, file.size, true).catch(() => {});
       if ([200, 201].includes(result.status)) return result.data;
     }
     throw new Error("YouTube chưa xác nhận video sau khi tải xong.");
@@ -334,7 +504,7 @@
     return {
       ...draft,
       tags: draft.tags.split(",").map((item) => item.trim()).filter(Boolean),
-      fileName: videoFile.name,
+      fileName: videoFile.name || "restored-video.mp4",
       fileSize: videoFile.size,
       mimeType: videoFile.type || "application/octet-stream",
       privacyStatus: draft.privacyMode === "schedule" ? "private" : draft.privacyMode,
@@ -349,10 +519,22 @@
     paused = false;
     cancelled = false;
     try {
-      if (!activeUpload?.uploadUrl || activeUpload.fileKey !== `${videoFile.name}:${videoFile.size}:${videoFile.lastModified}`) {
+      const fileKey = `${videoFile.name || "restored-video"}:${videoFile.size}:${videoFile.lastModified || 0}`;
+      if (activeUpload?.uploadId && !activeUpload.uploadUrl && activeUpload.fileKey === fileKey) {
+        updateProgress("preparing", activeUpload.progress || 0, "Đang xác thực và khôi phục phiên upload từ backend…");
+        const resumedSession = await api("upload/resume", "POST", { uploadId: activeUpload.uploadId });
+        activeUpload = {
+          ...activeUpload,
+          ...resumedSession,
+          offset: Math.max(Number(activeUpload.offset || 0), Number(resumedSession.bytesUploaded || 0)),
+          stage: "paused"
+        };
+      }
+      if (!activeUpload?.uploadUrl || activeUpload.fileKey !== fileKey) {
         updateProgress("preparing", 0, "Đang gửi metadata và tạo phiên upload bảo mật…");
         const session = await api("upload/session", "POST", uploadPayload());
-        activeUpload = { ...activeUpload, ...session, fileKey: `${videoFile.name}:${videoFile.size}:${videoFile.lastModified}`, offset: 0, stage: "uploading", progress: 0 };
+        activeUpload = { ...activeUpload, ...session, fileKey, offset: 0, bytesUploaded: 0, totalBytes: videoFile.size, stage: "uploading", progress: 0 };
+        persistCheckpoint(true);
       } else if (activeUpload.stage === "paused") {
         updateProgress("preparing", activeUpload.progress || 0, "Đang đồng bộ byte cuối với YouTube…");
         const resume = await queryResumableOffset(activeUpload.uploadUrl, videoFile.size, videoFile.type);
@@ -370,22 +552,27 @@
       updateProgress("finalizing", 100, "Đang thêm playlist và xác minh video…");
       const completed = await api("upload/complete", "POST", { uploadId: activeUpload.uploadId, videoId, playlistId: draft.playlistId });
       activeUpload = { ...activeUpload, stage: "done", progress: 100, detail: `Hoàn tất: ${completed.url}`, videoId };
+      await deleteUploadRecord().catch(() => {});
       render();
       notify("Video đã được gửi lên YouTube thành công.");
       await refreshStatus();
     } catch (error) {
       if (error.paused) {
         if (cancelled) {
+          if (activeUpload?.uploadId) await api("upload/cancel", "POST", { uploadId: activeUpload.uploadId }).catch(() => {});
+          await deleteUploadRecord().catch(() => {});
           activeUpload = null;
           render();
           notify("Đã hủy hàng đợi cục bộ.");
           return;
         }
         activeUpload = { ...activeUpload, stage: "paused", detail: `Đã dừng ở ${fileSize(activeUpload.offset || 0)}. Bấm Tiếp tục để upload tiếp.` };
+        persistCheckpoint(true);
         render();
         return;
       }
       activeUpload = { ...activeUpload, stage: "error", detail: error.message };
+      persistCheckpoint(true);
       render();
       notify(error.message, "error");
       if (activeUpload?.uploadId) api("upload/error", "POST", { uploadId: activeUpload.uploadId, error: error.message }).catch(() => {});
@@ -402,8 +589,30 @@
     } catch (error) { notify(error.message, "error"); }
   }
 
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  async function reportProgress(sent, total, force = false) {
+    if (!activeUpload?.uploadId) return;
+    const now = Date.now();
+    if (!force && now - progressReportedAt < 1800) return;
+    progressReportedAt = now;
+    await api("upload/progress", "POST", {
+      uploadId: activeUpload.uploadId,
+      bytesUploaded: sent,
+      totalBytes: total,
+      speedBps: activeUpload.speedBps || 0,
+      etaSeconds: activeUpload.etaSeconds || 0
+    }).catch(() => {});
+  }
+
   async function disconnectChannel() {
-    try { await api("disconnect", "POST", {}); await refreshStatus(); notify("Đã gỡ kênh YouTube khỏi HH Publisher."); }
+    try {
+      if (activeUpload && !confirm("Kênh đang có phiên upload cục bộ. Ngắt kết nối và xóa checkpoint này?")) return;
+      await api("disconnect", "POST", {});
+      await deleteUploadRecord().catch(() => {});
+      await refreshStatus();
+      notify("Đã gỡ kênh YouTube khỏi HH Publisher.");
+    }
     catch (error) { notify(error.message, "error"); }
   }
 
@@ -416,11 +625,13 @@
       videoFile = file;
       videoUrl = URL.createObjectURL(file);
       activeUpload = null;
+      persistCheckpoint();
     } else {
       if (![/image\/jpeg/, /image\/png/].some((rule) => rule.test(file.type)) || file.size > MAX_THUMBNAIL) return notify("Thumbnail phải là JPG/PNG và không quá 2 MB.", "error");
       if (thumbnailUrl) URL.revokeObjectURL(thumbnailUrl);
       thumbnailFile = file;
       thumbnailUrl = URL.createObjectURL(file);
+      persistCheckpoint();
     }
     render();
   }
@@ -433,12 +644,14 @@
       videoFile = file;
       videoUrl = URL.createObjectURL(file);
       activeUpload = null;
+      persistCheckpoint();
     } else {
       if (!file.type.startsWith("image/")) return notify("Thumbnail phải là ảnh JPG hoặc PNG.", "error");
       if (file.size > MAX_THUMBNAIL) return notify("Thumbnail phải nhỏ hơn 2 MB.", "error");
       if (thumbnailUrl) URL.revokeObjectURL(thumbnailUrl);
       thumbnailFile = file;
       thumbnailUrl = URL.createObjectURL(file);
+      persistCheckpoint();
     }
     render();
   }
@@ -475,8 +688,22 @@
     const target = event.target;
     if (target.matches("[data-yap-file]")) return changeFile(target);
     if (target.matches("[data-yap-channel-select]")) {
+      const previousKey = uploadRecordKey();
+      if (activeUpload && !confirm("Tạm dừng phiên upload hiện tại và chuyển kênh?")) {
+        target.value = status.channel?.id || "";
+        return;
+      }
+      if (currentXhr) { paused = true; currentXhr.abort(); }
+      persistCheckpoint(true);
       api("channel/select", "POST", { channelId: target.value }).then((data) => {
         status = { ...status, ...data };
+        if (previousKey !== uploadRecordKey()) {
+          videoFile = null;
+          thumbnailFile = null;
+          activeUpload = null;
+          draft = loadDraft();
+          restoreCheckpoint().then(() => render()).catch(() => render());
+        }
         render();
         notify("Đã chuyển kênh xuất bản.");
       }).catch((error) => notify(error.message, "error"));
@@ -503,14 +730,20 @@
       draft.containsSyntheticMedia = true;
       saveDraft(); render();
     }
-    if (action === "save-draft") { saveDraft(); notify("Đã lưu bản nháp trên thiết bị."); }
+    if (action === "save-draft") { saveDraft(); persistCheckpoint(true); notify("Đã lưu bản nháp và checkpoint trên thiết bị."); }
     if (action === "upload") startUpload();
     if (action === "pause" && currentXhr) { paused = true; currentXhr.abort(); }
     if (action === "cancel") {
       cancelled = true;
       paused = true;
       if (currentXhr) currentXhr.abort();
-      else { activeUpload = null; render(); notify("Đã hủy hàng đợi cục bộ."); }
+      else {
+        if (activeUpload?.uploadId) await api("upload/cancel", "POST", { uploadId: activeUpload.uploadId }).catch(() => {});
+        await deleteUploadRecord().catch(() => {});
+        activeUpload = null;
+        render();
+        notify("Đã hủy hàng đợi cục bộ.");
+      }
     }
   }
 
@@ -529,6 +762,7 @@
     host.addEventListener("dragleave", handleDragLeave, { signal: controller.signal });
     host.addEventListener("drop", handleDrop, { signal: controller.signal });
     window.addEventListener("hh:auth-change", () => {
+      persistCheckpoint(true);
       currentXhr?.abort();
       currentXhr = null;
       activeUpload = null;
@@ -545,6 +779,11 @@
   }
 
   function unmount() {
+    if (activeUpload && !["done"].includes(activeUpload.stage)) {
+      paused = true;
+      persistCheckpoint(true);
+    }
+    clearTimeout(checkpointTimer);
     controller?.abort();
     controller = null;
     currentXhr?.abort();

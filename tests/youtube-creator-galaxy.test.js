@@ -42,7 +42,7 @@ test("Tool exposes one YouTube Creator Galaxy route with thirteen real workspace
     "saveThumbnailToMediaPool",
     "videos/update",
     "captions/upload",
-    "comments/reply",
+    "comments/drafts/send",
     "comments/moderate",
     "live/create",
     "live/transition",
@@ -76,6 +76,12 @@ test("YouTube backend keeps tokens server-side and implements data, analytics, c
     'route === "dashboard"',
     'route === "videos"',
     'route === "analytics"',
+    'route === "analytics/retention"',
+    'route === "analytics/comparison"',
+    'route === "project"',
+    'route === "audit"',
+    'route === "comments/drafts"',
+    'route === "comments/drafts/send"',
     'route === "comments/reply"',
     'route === "comments/moderate"',
     'route === "videos/update"',
@@ -87,6 +93,28 @@ test("YouTube backend keeps tokens server-side and implements data, analytics, c
   assert.match(security, /AES|aes-256-gcm/i);
   assert.match(server, /safeReturnHash/);
   assert.doesNotMatch(read("youtube-creator-galaxy.js"), /GOOGLE_CLIENT_SECRET|YOUTUBE_TOKEN_ENCRYPTION_KEY\s*=/);
+});
+
+test("Creator OS uses verified project gates, retention data, audit ledger and explicit comment approval", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const server = read("utils/youtubePublisher.js");
+  for (const capability of [
+    "universalProjectPayload",
+    "automationReadiness",
+    "retentionData",
+    "audienceWatchRatio",
+    "approved: true",
+    "quotaLedger",
+    "idempotencyKey"
+  ]) assert.match(client, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  for (const capability of [
+    "youtubePublishProjects",
+    "youtubeCommentDrafts",
+    "youtubeAudits",
+    "observedQuota",
+    "retentionAnalytics",
+    "YOUTUBE_COMMENT_APPROVAL_REQUIRED"
+  ]) assert.match(server, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
 test("Creator Galaxy supports private multi-channel accounts without shared browser drafts", () => {
@@ -104,13 +132,13 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=2", "youtube-creator-galaxy.js?v=3"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=3", "youtube-creator-galaxy.js?v=4"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v284/);
+  assert.match(worker, /hh-identity-portal-v285/);
 });
 
 test("Creator Galaxy keeps mobile layouts, focus visibility and reduced motion", () => {
