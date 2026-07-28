@@ -2102,7 +2102,7 @@ button.har-chip {
   height: 48px;
   border: 1px solid color-mix(in srgb, var(--character-color) 54%, rgba(255, 255, 255, .16));
   border-radius: 10px;
-  background-image: url("./assets/astral-realms/astral-crew-atlas-v1.webp");
+  background-image: url("./assets/astral-realms/astral-crew-atlas-v2.webp");
   background-repeat: no-repeat;
   background-position: var(--portrait-x, 0%) center;
   background-size: 400% 100%;
@@ -2133,7 +2133,7 @@ button.har-chip {
   overflow: hidden;
   color: transparent;
   background-color: #091322;
-  background-image: url("./assets/astral-realms/astral-crew-atlas-v1.webp");
+  background-image: url("./assets/astral-realms/astral-crew-atlas-v2.webp");
   background-repeat: no-repeat;
   background-position: var(--portrait-x, 0%) center;
   background-size: 400% 100%;
@@ -2149,7 +2149,7 @@ button.har-chip {
   position: absolute;
   inset: -5px 0 0;
   border-radius: 12px;
-  background-image: url("./assets/astral-realms/astral-crew-atlas-v1.webp");
+  background-image: url("./assets/astral-realms/astral-crew-atlas-v2.webp");
   background-repeat: no-repeat;
   background-position: var(--portrait-x, 0%) center;
   background-size: 400% 100%;
@@ -2375,8 +2375,8 @@ button.har-chip {
   .har-cinematic-bars::after { transition: none; }
 }
 
-/* Astral Realms Character V8 · rigged web heroes and local GLB lab */
-.har-character-v8-hero {
+/* Astral Realms Character V9 · photoreal PBR, decoded GLB QA and real LOD proxies */
+.har-character-v9-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -2392,15 +2392,15 @@ button.har-chip {
     0 14px 36px rgba(0, 0, 0, .2);
 }
 
-.har-character-v8-hero::before,
-.har-character-v8-hero::after {
+.har-character-v9-hero::before,
+.har-character-v9-hero::after {
   position: absolute;
   z-index: -1;
   content: "";
   pointer-events: none;
 }
 
-.har-character-v8-hero::before {
+.har-character-v9-hero::before {
   top: 19px;
   right: 32px;
   width: 72px;
@@ -2412,10 +2412,10 @@ button.har-chip {
   box-shadow:
     0 0 32px rgba(103, 232, 255, .32),
     0 0 54px rgba(255, 74, 192, .18);
-  animation: har-v8-character-core 5.8s ease-in-out infinite alternate;
+  animation: har-v9-character-core 5.8s ease-in-out infinite alternate;
 }
 
-.har-character-v8-hero::after {
+.har-character-v9-hero::after {
   top: 55px;
   right: 11px;
   width: 115px;
@@ -2426,12 +2426,12 @@ button.har-chip {
   box-shadow: 0 -4px 13px rgba(255, 88, 198, .16);
 }
 
-.har-character-v8-hero > * {
+.har-character-v9-hero > * {
   position: relative;
   max-width: calc(100% - 118px);
 }
 
-.har-character-v8-hero > small {
+.har-character-v9-hero > small {
   color: #80efff;
   font-size: 8px;
   font-weight: 900;
@@ -2544,6 +2544,30 @@ button.har-chip {
     rgba(4, 9, 23, .72);
 }
 
+.har-character-qa {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(108, 244, 212, .3);
+  background:
+    radial-gradient(circle at 86% 14%, rgba(85, 255, 199, .14), transparent 34%),
+    linear-gradient(135deg, rgba(4, 18, 29, .92), rgba(16, 8, 35, .88));
+}
+
+.har-character-qa::after {
+  position: absolute;
+  top: -34px;
+  right: -24px;
+  width: 110px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(116, 245, 223, .18);
+  border-radius: 50%;
+  content: "";
+  box-shadow:
+    0 0 0 16px rgba(125, 101, 255, .04),
+    0 0 0 32px rgba(255, 90, 196, .025);
+  pointer-events: none;
+}
+
 .har-character-file {
   position: relative;
   display: inline-grid;
@@ -2613,24 +2637,24 @@ button.har-chip {
   pointer-events: none;
 }
 
-@keyframes har-v8-character-core {
+@keyframes har-v9-character-core {
   from { transform: scale(.92) rotate(-4deg); filter: saturate(.92); }
   to { transform: scale(1.08) rotate(5deg); filter: saturate(1.22); }
 }
 
 @media (max-width: 760px) {
-  .har-character-v8-hero > * { max-width: calc(100% - 76px); }
-  .har-character-v8-hero::before { right: 13px; width: 58px; }
-  .har-character-v8-hero::after { right: -4px; width: 90px; }
+  .har-character-v9-hero > * { max-width: calc(100% - 76px); }
+  .har-character-v9-hero::before { right: 13px; width: 58px; }
+  .har-character-v9-hero::after { right: -4px; width: 90px; }
   .har-character-runtime-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .har-character-import,
   .har-face-pilot { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 420px) {
-  .har-character-v8-hero > * { max-width: 100%; }
-  .har-character-v8-hero::before,
-  .har-character-v8-hero::after { opacity: .28; }
+  .har-character-v9-hero > * { max-width: 100%; }
+  .har-character-v9-hero::before,
+  .har-character-v9-hero::after { opacity: .28; }
   .har-character-pipeline,
   .har-character-runtime-grid { grid-template-columns: 1fr; }
   .har-motion-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -2638,5 +2662,5 @@ button.har-chip {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .har-character-v8-hero::before { animation: none; }
+  .har-character-v9-hero::before { animation: none; }
 }

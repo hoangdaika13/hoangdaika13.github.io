@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v285";
+const CACHE = "hh-identity-portal-v286";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -203,11 +203,23 @@ const RUNTIME_ASSETS = [
   "./system-platform.js?v=3",
   "./sidebar-navigation-pro.css?v=9",
   "./game-runtime.css?v=1",
-  "./astral-realms.css?v=8",
+  "./astral-realms.css?v=9",
   "./assets/astral-realms/astral-realms-panorama-v1.webp",
-  "./assets/astral-realms/astral-crew-atlas-v1.webp",
+  "./assets/astral-realms/astral-crew-atlas-v2.webp",
   "./vendor/three.webgpu.min.js",
   "./vendor/addons/loaders/GLTFLoader.js",
+  "./vendor/addons/loaders/DRACOLoader.js",
+  "./vendor/addons/loaders/KTX2Loader.js",
+  "./vendor/addons/libs/meshopt_decoder.module.js",
+  "./vendor/addons/libs/ktx-parse.module.js",
+  "./vendor/addons/libs/zstddec.module.js",
+  "./vendor/addons/libs/basis/basis_transcoder.js",
+  "./vendor/addons/libs/basis/basis_transcoder.wasm",
+  "./vendor/addons/libs/draco/gltf/draco_decoder.js",
+  "./vendor/addons/libs/draco/gltf/draco_decoder.wasm",
+  "./vendor/addons/libs/draco/gltf/draco_wasm_wrapper.js",
+  "./vendor/addons/math/ColorSpaces.js",
+  "./vendor/addons/utils/WorkerPool.js",
   "./vendor/addons/utils/BufferGeometryUtils.js",
   "./vendor/addons/utils/SkeletonUtils.js",
   "./space-explorer.css?v=4",
@@ -298,7 +310,7 @@ const RUNTIME_ASSETS = [
   "./feature-engines.js?v=2",
   "./game-platform-adapters.js?v=1",
   "./game-runtime.js?v=1",
-  "./astral-realms.js?v=8",
+  "./astral-realms.js?v=9",
   "./space-explorer.js?v=4",
   "./game-center.js?v=5",
   "./astra-universe-expansion.js?v=4",
@@ -335,7 +347,7 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=66",
+  "./performance-loader.js?v=67",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=153"

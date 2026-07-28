@@ -6,9 +6,9 @@ const assert = require("node:assert/strict");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Character V8 defines browser-safe model tiers and one humanoid contract", () => {
+test("Character V9 preserves browser-safe model tiers and one humanoid contract", () => {
   const source = read("astral-realms.js");
-  assert.match(source, /CHARACTER_VISUAL_VERSION = 8/);
+  assert.match(source, /CHARACTER_VISUAL_VERSION = 9/);
   assert.match(source, /CHARACTER_MODEL_TIERS/);
   for (const tier of ["hero", "near", "crowd", "impostor"]) {
     assert.match(source, new RegExp(`${tier}: \\{[^\\n]+triangles:`));
@@ -27,7 +27,7 @@ test("local GLB import analyzes and installs a rigged character without uploadin
   assert.match(source, /installImportedCharacter/);
   assert.match(source, /file\.arrayBuffer\(\)/);
   assert.match(source, /loader\.parse\(buffer/);
-  assert.match(source, /File chỉ được xử lý trong phiên trình duyệt hiện tại/);
+  assert.match(source, /không tải lên máy chủ HH/);
   assert.doesNotMatch(source, /fetch\([^)]*file\.arrayBuffer/);
 });
 
@@ -72,15 +72,15 @@ test("Character Lab exposes runtime metrics, motion preview and adaptive materia
   ]) {
     assert.ok(source.includes(token) || css.includes(token), `missing ${token}`);
   }
-  assert.match(css, /Astral Realms Character V8/);
+  assert.match(css, /Astral Realms Character V9/);
   assert.match(css, /max-width: 420px/);
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
 
-test("GLTF dependencies and the V8 bundle are available offline", () => {
+test("GLTF dependencies and the V9 bundle are available offline", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const token of ["astral-realms.css?v=8", "astral-realms.js?v=8"]) {
+  for (const token of ["astral-realms.css?v=9", "astral-realms.js?v=9"]) {
     assert.ok(loader.includes(token), `route loader missing ${token}`);
     assert.ok(worker.includes(token), `service worker missing ${token}`);
   }

@@ -11,7 +11,7 @@ test("Astral Realms V3 loads original photoreal human and environment assets", (
   for (const token of [
     "PHOTOREAL_ASSETS",
     "astral-realms-panorama-v1.webp",
-    "astral-crew-atlas-v1.webp",
+    "astral-crew-atlas-v2.webp",
     "loadPhotorealAssets",
     "createPhotorealCharacterModel",
     "SpriteMaterial",
@@ -23,7 +23,7 @@ test("Astral Realms V3 loads original photoreal human and environment assets", (
 test("photoreal assets are optimized for browser delivery", () => {
   const files = [
     "assets/astral-realms/astral-realms-panorama-v1.webp",
-    "assets/astral-realms/astral-crew-atlas-v1.webp"
+    "assets/astral-realms/astral-crew-atlas-v2.webp"
   ];
   for (const file of files) {
     const stat = fs.statSync(path.join(root, file));
@@ -35,7 +35,7 @@ test("photoreal assets are optimized for browser delivery", () => {
 test("visual V3 exposes adaptive modes and character portraits", () => {
   const source = read("astral-realms.js");
   const css = read("astral-realms.css");
-  assert.match(source, /Người thật · Cảnh thật/);
+  assert.match(source, /Photoreal PBR · Atlas V2/);
   assert.match(source, /PBR 3D nhẹ/);
   assert.match(source, /Toon hiệu năng/);
   assert.match(css, /Astral Realms Visual V7/);
@@ -47,10 +47,10 @@ test("visual V3 exposes adaptive modes and character portraits", () => {
 test("runtime and offline cache request the V3 bundle", () => {
   const loader = read("performance-loader.js");
   const serviceWorker = read("sw.js");
-  for (const token of ["astral-realms.css?v=8", "astral-realms.js?v=8"]) {
+  for (const token of ["astral-realms.css?v=9", "astral-realms.js?v=9"]) {
     assert.match(loader, new RegExp(token.replace(/[.?]/g, "\\$&")));
     assert.match(serviceWorker, new RegExp(token.replace(/[.?]/g, "\\$&")));
   }
   assert.match(serviceWorker, /assets\/astral-realms\/astral-realms-panorama-v1\.webp/);
-  assert.match(serviceWorker, /assets\/astral-realms\/astral-crew-atlas-v1\.webp/);
+  assert.match(serviceWorker, /assets\/astral-realms\/astral-crew-atlas-v2\.webp/);
 });

@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "createdAt": "2026-07-28",
   "generator": "OpenAI built-in ImageGen",
   "rights": "Original project assets generated for HH Astral Realms; no celebrity likenesses, logos or third-party characters were requested.",
@@ -11,10 +11,10 @@
       "sha256": "B590837463BC8A0C5A9581DD399109491BF848B2767EB8AF2027C361ECAABC0C"
     },
     {
-      "file": "astral-crew-atlas-v1.webp",
+      "file": "astral-crew-atlas-v2.webp",
       "role": "Four-character photorealistic human atlas with transparent background",
-      "promptSummary": "Original adult sci-fi explorers Lyra, Cael, Nyx and Sol with realistic anatomy and game-ready costumes.",
-      "sha256": "32658F0529F2BBB9927477744A698B0649CF7880D00F0BFD619F3CF8CFBDB7B2"
+      "promptSummary": "Preserved Lyra, Cael, Nyx and Sol identities, outfits and order in a clean photoreal full-body lineup; generated on chroma and converted to a transparent web atlas.",
+      "sha256": "D42931B98EB245B5A69DECC3C5A569CD3CBDF3C748CCF2496DF63A8618F018A7"
     }
   ]
 }
