@@ -47,7 +47,7 @@ test("visual V3 exposes adaptive modes and character portraits", () => {
 test("runtime and offline cache request the V3 bundle", () => {
   const loader = read("performance-loader.js");
   const serviceWorker = read("sw.js");
-  for (const token of ["astral-realms.css?v=7", "astral-realms.js?v=7"]) {
+  for (const token of ["astral-realms.css?v=8", "astral-realms.js?v=8"]) {
     assert.match(loader, new RegExp(token.replace(/[.?]/g, "\\$&")));
     assert.match(serviceWorker, new RegExp(token.replace(/[.?]/g, "\\$&")));
   }

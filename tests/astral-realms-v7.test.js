@@ -53,10 +53,10 @@ test("V7 visual effects remain responsive and motion-safe", () => {
   assert.match(css, /max-width: 760px/);
 });
 
-test("the route loader and offline cache request Visual V7", () => {
+test("the route loader and offline cache keep the latest Astral Realms bundle", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const token of ["astral-realms.css?v=7", "astral-realms.js?v=7"]) {
+  for (const token of ["astral-realms.css?v=8", "astral-realms.js?v=8"]) {
     assert.ok(loader.includes(token), `loader missing ${token}`);
     assert.ok(worker.includes(token), `worker missing ${token}`);
   }

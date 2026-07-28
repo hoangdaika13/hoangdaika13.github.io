@@ -13,7 +13,7 @@ test("Astral Realms defaults to a physical material character pass", () => {
   assert.match(source, /APPEARANCE_CONTROL_MAP/);
   assert.match(source, /defaultAppearanceRecipe/);
   assert.match(source, /appearance-undo/);
-  assert.match(source, /Procedural fallback/);
+  assert.match(source, /procedural-fallback/);
   assert.match(source, /MeshPhysicalMaterial\s*\|\|\s*THREE\.MeshStandardMaterial/);
   assert.match(source, /clearcoatRoughness/);
   assert.match(source, /refreshCharacterMaterials/);
@@ -48,10 +48,10 @@ test("small realtime shards reconnect and interpolate remote players", () => {
   assert.match(render, /MAX_GAME_PLAYERS[\s\S]*value:\s*"8"/);
 });
 
-test("the release loader and service worker request Astral Realms v7", () => {
+test("the release loader and service worker request the latest Astral Realms bundle", () => {
   for (const file of ["performance-loader.js", "sw.js"]) {
     const source = read(file);
-    assert.match(source, /astral-realms\.css\?v=7/);
-    assert.match(source, /astral-realms\.js\?v=7/);
+    assert.match(source, /astral-realms\.css\?v=8/);
+    assert.match(source, /astral-realms\.js\?v=8/);
   }
 });
