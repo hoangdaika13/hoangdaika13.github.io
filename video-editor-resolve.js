@@ -67,7 +67,7 @@
       id: cleanText(item.id || makeId("subtitle", index), 80), start: clamp(item.start, 0, 86400), duration: clamp(item.duration || 2, .1, 3600), text: cleanText(item.text || "Phụ đề mới", 500), language: cleanText(item.language || "vi", 12)
     }));
     const keyframes = (Array.isArray(raw.keyframes) ? raw.keyframes : []).slice(-LIMITS.keyframes).map((item, index) => ({ id: cleanText(item.id || makeId("kf", index), 80), property: cleanText(item.property || "position", 40), time: clamp(item.time, 0, 86400), value: number(item.value), easing: ["linear", "ease-in", "ease-out", "ease-in-out"].includes(item.easing) ? item.easing : "ease-in-out" }));
-    const queue = (Array.isArray(raw.exportQueue) ? raw.exportQueue : []).slice(-LIMITS.queue).map((job, index) => ({ id: cleanText(job.id || makeId("export", index), 80), name: cleanText(job.name || "HH Export", 120), mime: cleanText(job.mime || "video/webm", 100), size: cleanText(job.size || "1920x1080", 24), status: ["waiting", "configured", "unsupported", "done", "error"].includes(job.status) ? job.status : "waiting", notice: cleanText(job.notice || "Chưa bắt đầu kết xuất.", 240), createdAt: number(job.createdAt, Date.now()) }));
+    const queue = (Array.isArray(raw.exportQueue) ? raw.exportQueue : []).slice(-LIMITS.queue).map((job, index) => ({ id: cleanText(job.id || makeId("export", index), 80), name: cleanText(job.name || "HH Export", 120), mime: cleanText(job.mime || "video/webm", 100), size: cleanText(job.size || "1920x1080", 24), status: ["queued", "processing", "completed", "failed", "cancelled", "unsupported", "provider-not-configured"].includes(job.status) ? job.status : "queued", notice: cleanText(job.notice || "Chưa bắt đầu kết xuất.", 240), createdAt: number(job.createdAt, Date.now()) }));
     return {
       ...base, ...raw,
       version: 2, revision: Math.max(0, Math.floor(number(raw.revision))),
@@ -229,8 +229,15 @@
     return commit(project, (next) => {
       if (next.exportQueue.length >= LIMITS.queue) return;
       const mime = cleanText(job.mime || "video/webm;codecs=vp9,opus", 100);
+      const serverRequested = /^video\/mp4/i.test(mime);
       const supported = Boolean(capabilities.mediaRecorder && capabilities.canvasCapture && (!capabilities.isTypeSupported || capabilities.isTypeSupported(mime)));
-      next.exportQueue.push({ id: cleanText(job.id || makeId("export", `${next.revision}-${next.exportQueue.length}`), 80), name: cleanText(job.name || "HH Export", 120), mime, size: cleanText(job.size || "1920x1080", 24), status: supported ? "waiting" : "unsupported", notice: supported ? "Sẵn sàng chuyển cho bộ kết xuất WebM cục bộ của trình duyệt." : "Trình duyệt chưa hỗ trợ tổ hợp MediaRecorder, Canvas capture hoặc codec đã chọn.", createdAt: Date.now() });
+      const status = serverRequested ? capabilities.serverRender ? "queued" : "provider-not-configured" : supported ? "queued" : "unsupported";
+      const notice = status === "queued"
+        ? serverRequested ? "Đã xếp hàng cho provider render máy chủ." : "Đã xếp hàng cho bộ kết xuất WebM cục bộ của trình duyệt."
+        : status === "provider-not-configured"
+          ? "Chưa cấu hình provider render MP4/H.264. Không tạo tệp hoặc tiến trình giả."
+          : "Trình duyệt chưa hỗ trợ tổ hợp MediaRecorder, Canvas capture hoặc codec đã chọn.";
+      next.exportQueue.push({ id: cleanText(job.id || makeId("export", `${next.revision}-${next.exportQueue.length}`), 80), name: cleanText(job.name || "HH Export", 120), mime, size: cleanText(job.size || "1920x1080", 24), status, notice, createdAt: Date.now() });
     });
   }
 
@@ -243,8 +250,6 @@
 });
 
 (() => {
-  "use strict";
-
   if (typeof window === "undefined") return;
 
   const base = window.HHMediaDesign;
@@ -302,7 +307,8 @@
     micStream: null,
     micChunks: [],
     proHistory: resolveOps.createHistory(defaults.pro),
-    timer: 0
+    timer: 0,
+    exportListener: null
   };
 
   function load() {
@@ -620,12 +626,12 @@
   }
 
   function deliverPage() {
-    const labels = { waiting: "Sẵn sàng", configured: "Đã cấu hình", unsupported: "Không hỗ trợ", done: "Đã xong", error: "Có lỗi" };
+    const labels = { queued: "Đã xếp hàng", processing: "Đang xử lý", completed: "Hoàn tất", failed: "Thất bại", cancelled: "Đã hủy", unsupported: "Không hỗ trợ", "provider-not-configured": "Chưa cấu hình" };
     const queue = state.data.pro.exportQueue.map((job) => `<article data-vr-job="${job.id}"><span class="${job.status}"></span><div><strong>${esc(job.name)}</strong><small>${esc(job.mime)} · ${esc(job.size)}<br>${esc(job.notice)}</small></div><b>${labels[job.status] || "Chờ"}</b><button data-vr-action="queue-remove" data-job-id="${job.id}">${icon("x")}</button></article>`).join("") || `<div class="vr-queue-empty">${icon("list-video")}<strong>Hàng đợi đang trống</strong><span>Chỉ MediaRecorder + Canvas capture được hỗ trợ thật trên trình duyệt.</span></div>`;
     return `<div class="vr-deliver-layout">
       <section class="vr-deliver-settings"><header><strong>Cài đặt kết xuất</strong><span>Web Export</span></header>
         <div class="vr-render-presets"><button data-vr-preset="youtube">${icon("youtube")} YouTube 1080p</button><button data-vr-preset="vertical">${icon("smartphone")} TikTok / Reels</button><button data-vr-preset="archive">${icon("archive")} Master chất lượng cao</button></div>
-        <label>Tên tệp<input data-vr-render-name value="hh-resolve-project"></label><label>Định dạng<select data-vr-render-format><option value="video/webm;codecs=vp9,opus">WebM VP9 + Opus</option><option value="video/webm;codecs=vp8,opus">WebM VP8 + Opus</option></select></label>
+        <label>Tên tệp<input data-vr-render-name value="hh-resolve-project"></label><label>Định dạng<select data-vr-render-format><option value="video/webm;codecs=vp9,opus">WebM VP9 + Opus · trên thiết bị</option><option value="video/webm;codecs=vp8,opus">WebM VP8 + Opus · trên thiết bị</option><option value="video/mp4;codecs=avc1.42E01E,mp4a.40.2">MP4 H.264 + AAC · cần server</option></select></label>
         <div class="vr-render-grid"><label>Độ phân giải<select data-vr-render-size><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="1080x1920">1080 × 1920</option><option value="1080x1080">1080 × 1080</option></select></label><label>Bitrate<select data-vr-render-bitrate><option value="4000000">4 Mbps</option><option value="8000000" selected>8 Mbps</option><option value="12000000">12 Mbps</option></select></label></div>
         <label class="vr-check"><input type="checkbox" checked> Xuất âm thanh</label><label class="vr-check"><input type="checkbox" checked> Tối ưu phát trực tuyến</label><button class="is-primary" data-vr-action="queue-add">${icon("list-plus")} Thêm vào hàng đợi</button>
       </section>
@@ -722,7 +728,9 @@
 
   function applyGrade() {
     const video = $(state.root, "[data-ve-video]");
+    const image = $(state.root, "[data-ve-image]");
     if (video) video.style.setProperty("filter", gradeFilter(), "important");
+    if (image) image.style.setProperty("filter", gradeFilter(), "important");
     save();
   }
 
@@ -875,6 +883,7 @@
     const capabilities = {
       mediaRecorder: Boolean(window.MediaRecorder),
       canvasCapture: Boolean(window.HTMLCanvasElement?.prototype?.captureStream),
+      serverRender: false,
       isTypeSupported: (type) => !window.MediaRecorder?.isTypeSupported || window.MediaRecorder.isTypeSupported(type)
     };
     const next = resolveOps.enqueueExport(state.data.pro, { id: uid("render"), name, mime, size }, capabilities);
@@ -1025,10 +1034,13 @@
     else if (action === "queue-remove") { const id = event.target.closest("[data-job-id]").dataset.jobId; state.data.pro.exportQueue = state.data.pro.exportQueue.filter((job) => job.id !== id); state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderPage("deliver"); }
     else if (action === "queue-clear") { state.data.pro.exportQueue = []; state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderPage("deliver"); }
     else if (action === "queue-start") {
-      const job = state.data.pro.exportQueue.find((item) => item.status === "waiting");
+      const job = state.data.pro.exportQueue.find((item) => item.status === "queued" && item.mime.startsWith("video/webm"));
       if (!job) return status(state.data.pro.exportQueue.length ? "Không có tác vụ nào được trình duyệt xác nhận hỗ trợ." : "Hãy thêm ít nhất một tác vụ vào hàng đợi.", "error");
-      configureExport(); job.status = "configured"; job.notice = "Đã chuyển cấu hình sang hộp thoại xuất WebM. Chưa đánh dấu hoàn tất."; state.data.pro = resolveOps.normalizeProject(state.data.pro); save();
-      clickBase('[data-ve-action="render"]'); renderPage("deliver"); status("Đã cấu hình tác vụ. Bấm Bắt đầu xuất trong hộp thoại để chạy MediaRecorder thật.", "success");
+      configureExport(); job.status = "processing"; job.notice = "MediaRecorder đang kết xuất timeline thật trên thiết bị."; state.data.pro = resolveOps.normalizeProject(state.data.pro); save();
+      clickBase('[data-ve-action="render"]');
+      clickBase('[data-ve-action="render-confirm"]');
+      renderPage("deliver");
+      status("Đã bắt đầu kết xuất WebM trên thiết bị.", "success");
     }
     return true;
   }
@@ -1063,6 +1075,31 @@
     return false;
   }
 
+  function handleExportStatus(event) {
+    if (!state.root?.isConnected) return;
+    const detail = event.detail || {};
+    const job = state.data.pro.exportQueue.find((item) => item.status === "processing")
+      || state.data.pro.exportQueue.find((item) => item.status === "queued" && item.mime.startsWith("video/webm"));
+    if (!job) return;
+    const statusMap = { processing: "processing", completed: "completed", failed: "failed", cancelled: "cancelled" };
+    job.status = statusMap[detail.status] || job.status;
+    if (detail.status === "processing") job.notice = `Đang kết xuất trên thiết bị · ${Math.round(detail.progress || 0)}%.`;
+    if (detail.status === "completed") job.notice = `Đã tạo tệp ${detail.name || job.name} · ${Math.round((detail.size || 0) / 1024)} KB.`;
+    if (detail.status === "failed") job.notice = `Kết xuất thất bại · ${detail.message || "Không xác định"}.`;
+    if (detail.status === "cancelled") job.notice = "Người dùng đã hủy tác vụ kết xuất.";
+    state.data.pro = resolveOps.normalizeProject(state.data.pro);
+    save();
+    const article = $(state.root, `[data-vr-job="${job.id}"]`);
+    if (article) {
+      const dot = article.querySelector(":scope>span");
+      if (dot) dot.className = job.status;
+      const notice = article.querySelector("small");
+      if (notice) notice.innerHTML = `${esc(job.mime)} · ${esc(job.size)}<br>${esc(job.notice)}`;
+      const label = article.querySelector(":scope>b");
+      if (label) label.textContent = ({ processing: "Đang xử lý", completed: "Hoàn tất", failed: "Thất bại", cancelled: "Đã hủy" })[job.status] || job.status;
+    }
+  }
+
   function observeCore() {
     const video = $(state.root, "[data-ve-video]");
     if (video) {
@@ -1089,6 +1126,8 @@
     if (dock) state.workspace.after(dock);
     if (toast) dock?.after(toast);
     observeCore(); applyGrade(); updateProxy(); renderPage(state.page);
+    state.exportListener = handleExportStatus;
+    window.addEventListener("hh:video-export-status", state.exportListener);
     state.root.classList.toggle("is-vr-multicam", state.data.multicam);
     window.lucide?.createIcons?.({ attrs: { width: 15, height: 15, "stroke-width": 1.7 } });
   }
@@ -1096,14 +1135,15 @@
   function cleanupOwn() {
     clearTimeout(state.timer); cancelAnimationFrame(state.scopeFrame); cancelAnimationFrame(state.meterFrame);
     state.observers.splice(0).forEach((observer) => observer.disconnect());
+    if (state.exportListener) window.removeEventListener("hh:video-export-status", state.exportListener);
     if (state.micRecorder?.state === "recording") state.micRecorder.stop();
     state.micStream?.getTracks().forEach((track) => track.stop());
     if (state.audio?.context && state.audio.context.state !== "closed") state.audio.context.close().catch(() => {});
-    Object.assign(state, { root: null, outer: null, workspace: null, stage: null, panels: {}, audio: null, micRecorder: null, micStream: null, micChunks: [], scopeFrame: 0, meterFrame: 0 });
+    Object.assign(state, { root: null, outer: null, workspace: null, stage: null, panels: {}, audio: null, micRecorder: null, micStream: null, micChunks: [], scopeFrame: 0, meterFrame: 0, exportListener: null });
   }
 
   addEventListener("keydown", (event) => {
-    if (!state.root?.isConnected || !location.hash.includes("/media-design/video-editor")) return;
+    if (!state.root?.isConnected || (!location.hash.includes("/media-design/video-editor") && !location.hash.includes("/davinci-resolve/"))) return;
     const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "") || document.activeElement?.isContentEditable;
     if (event.shiftKey && /^[1-7]$/.test(event.key) && !typing) { event.preventDefault(); renderPage(pages[Number(event.key) - 1][0]); }
     if (!typing && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "b") { event.preventDefault(); runTimelineOperation("blade"); }

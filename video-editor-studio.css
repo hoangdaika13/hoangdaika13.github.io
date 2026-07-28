@@ -26,3 +26,16 @@
 .ve-assets.is-compact article{grid-template-columns:20px minmax(0,1fr) 40px 20px;min-height:31px}.ve-assets.is-compact article>span{width:19px;height:19px}.ve-assets.is-compact article small{display:none}.ve-track-heads button.is-off{color:#e66c78;opacity:.65}.ve-track-heads button.is-locked{background:#453747;color:#ef79bd}
 .ve-monitor{container-type:size}.ve-monitor-frame{--ve-monitor-ratio:1.7778;position:relative;width:100%;height:100%;max-width:calc(100cqh * var(--ve-monitor-ratio));max-height:calc(100cqw / var(--ve-monitor-ratio));overflow:hidden;border:1px solid #414951;border-radius:3px;background:#000;box-shadow:0 0 0 1px #000,0 8px 28px #0009}.ve-monitor-frame>video{width:100%;height:100%;background:#000;object-fit:contain;object-position:center}.ve-app[data-ve-monitor-mode=source] .ve-monitor-frame>video{transform:none!important;filter:none!important;opacity:1!important;mix-blend-mode:normal!important}
 @media(prefers-reduced-motion:reduce){.ve-monitor video,.ve-meter i:after,.ve-export-progress i{transition:none}}
+
+/* HH Video Studio v3 · browser-native media, waveform, subtitles and versions */
+.ve-monitor-frame>[data-ve-image]{width:100%;height:100%;background:#000;object-fit:contain;object-position:center;transform-origin:center}
+.ve-title-overlay .is-watermark{position:absolute;right:4%;bottom:4%;max-width:52%;padding:.38em .62em;border:1px solid #ffffff24;border-radius:.4em;color:var(--title-color);background:var(--title-bg);font-size:calc(var(--title-size)*.7);line-height:1;opacity:.82}
+.ve-clip canvas[data-ve-waveform]{position:absolute;z-index:0;inset:2px 3px;width:calc(100% - 6px);height:calc(100% - 4px);pointer-events:none;opacity:.68}
+.ve-clip canvas[data-ve-waveform]~i,.ve-clip canvas[data-ve-waveform]~b{position:relative;z-index:1}
+.ve-app.is-file-dragging::after{content:"Thả video, audio, hình ảnh hoặc phụ đề SRT/VTT";position:absolute;z-index:80;inset:38px 8px 8px;display:grid;place-items:center;border:2px dashed #66e7f2;border-radius:8px;background:#071222e8;color:#bffaff;font-size:13px;font-weight:800;letter-spacing:.03em;pointer-events:none;box-shadow:inset 0 0 55px #62e9f222}
+.ve-version-list{display:grid;gap:6px;min-width:min(560px,82vw);max-height:56vh;padding:12px;overflow:auto}
+.ve-version-list article{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px;border:1px solid #3a4553;border-radius:5px;background:#1b2026}
+.ve-version-list article>span{display:grid;width:34px;height:34px;place-items:center;border:1px solid #4f7da5;border-radius:50%;background:#142333;color:#8cecff;font-size:8px;font-weight:900}
+.ve-version-list article div{display:grid;gap:2px;min-width:0}.ve-version-list article strong{overflow:hidden;color:#eef6fb;font-size:9px;text-overflow:ellipsis;white-space:nowrap}.ve-version-list article small{color:#8d9ba8;font-size:7px}
+.ve-version-list article button{min-height:27px;padding:0 8px;border:1px solid #4a5a68;border-radius:4px;background:#252c33;color:#dbeaf1;font-size:8px}
+.ve-version-empty{display:grid;min-height:150px;place-items:center;align-content:center;gap:5px;color:#81909f}.ve-version-empty strong{color:#d5e3eb}

@@ -6,42 +6,65 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Davinci Resolve is a first-class routed workspace", () => {
+test("HH Video Studio is a first-class routed browser workspace", () => {
   const script = read("script.js");
   const loader = read("performance-loader.js");
   const html = read("index.html");
   const hub = read("davinci-resolve-hub.js");
 
   assert.match(script, /id:\s*"davinci-resolve"/);
-  assert.match(script, /route:\s*"\/davinci-resolve"/);
-  assert.match(hub, /window\.HHDavinciResolveHub\s*=\s*\{\s*mount/);
-  assert.match(loader, /davinci:\s*\{\s*styles:\s*\["davinci-resolve-hub\.css\?v=2"\]/);
-  assert.match(loader, /startsWith\("\/davinci-resolve"\)/);
-  assert.match(html, /performance-loader\.js\?v=53/);
-});
-
-test("the website bridge is local-only and key protected", () => {
-  const hub = read("davinci-resolve-hub.js");
-  const vercel = read("vercel.json");
-  const html = read("index.html");
-
-  assert.match(hub, /127\.0\.0\.1:8765/);
-  assert.match(hub, /X-H-Cosmic-Key/);
-  assert.match(hub, /\/api\/preflight/);
-  assert.match(hub, /\/api\/run/);
-  assert.match(hub, /\/api\/status\?after=/);
-  assert.match(hub, /\/api\/claim/);
-  assert.match(hub, /h-cosmic-auto-v2/);
-  assert.match(hub, /autoConnect\(false\)/);
-  assert.match(hub, /resolve_connected/);
-  assert.match(vercel, /http:\/\/127\.0\.0\.1:8765/);
-  assert.match(html, /http:\/\/localhost:8765/);
-  assert.doesNotMatch(hub, /localStorage\.setItem\([^)]*bridge/i);
-});
-
-test("the hub exposes production safety controls", () => {
-  const hub = read("davinci-resolve-hub.js");
-  for (const label of ["PRECHECK", "data-dr-run=\"render\"", "data-dr-run=\"resume\"", "ACTION GRAPH", "HUMAN ACTION BLUEPRINT", "FFprobe", "Checkpoint"]) {
-    assert.match(hub, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${label} missing`);
+  assert.match(script, /landingRoute:\s*"\/davinci-resolve\/edit"/);
+  for (const route of ["media", "cut", "edit", "fusion", "color", "audio", "titles", "deliver"]) {
+    assert.match(script, new RegExp(`\\/davinci-resolve\\/${route}`), `route ${route} missing`);
   }
+  assert.match(hub, /window\.HHDavinciResolveHub\s*=\s*\{\s*mount/);
+  assert.match(loader, /davinci:\s*\{[\s\S]*davinci-resolve-hub\.css\?v=3/);
+  assert.match(loader, /video-editor-studio\.js\?v=3/);
+  assert.match(loader, /video-editor-resolve\.js\?v=8/);
+  assert.match(html, /performance-loader\.js\?v=60/);
+});
+
+test("the workspace is independent from the desktop app and reports browser capability truthfully", () => {
+  const hub = read("davinci-resolve-hub.js");
+  const loader = read("performance-loader.js");
+
+  for (const marker of [
+    "HHMediaDesign.render",
+    "VideoEncoder",
+    "VideoDecoder",
+    "navigator.gpu",
+    "MediaRecorder",
+    "captureStream",
+    "indexedDB",
+    "hh.video-editor.project.v1",
+    "provider-not-configured",
+    "Không cần cài ứng dụng desktop"
+  ]) assert.match(hub, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+
+  assert.doesNotMatch(hub, /127\.0\.0\.1|localhost:8765|X-H-Cosmic-Key|\/api\/claim/);
+  assert.doesNotMatch(loader.match(/davinci:\s*\{[\s\S]*?\n\s*\},\n\s*graphic:/)?.[0] || "", /desktop-bridge/);
+});
+
+test("web editor contracts cover media, timeline, subtitles, versions and real export states", () => {
+  const hub = read("davinci-resolve-hub.js");
+  const studio = read("video-editor-studio.js");
+  const resolve = read("video-editor-resolve.js");
+  const css = read("davinci-resolve-hub.css");
+
+  for (const marker of [
+    "data-dr-project-name", "data-dr-asset-count", "data-dr-timeline", "data-dr-saved",
+    "hh:video-project-change", "hh:video-export-status", "data-dr-online"
+  ]) assert.match(hub, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+
+  for (const marker of [
+    "video/*,audio/*,image/*", "data-ve-subtitle-file", "parseSubtitles", "exportSubtitles",
+    "createWaveform", "data-ve-waveform", "cropTop", "fadeIn", "version-save", "version-history",
+    "render-cancel", "completed", "failed", "cancelled"
+  ]) assert.match(studio, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+
+  for (const marker of ["queued", "processing", "completed", "failed", "cancelled", "unsupported", "provider-not-configured"]) {
+    assert.match(resolve, new RegExp(marker));
+  }
+  assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /@media\(max-width:760px\)/);
 });

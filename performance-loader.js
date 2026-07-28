@@ -85,19 +85,26 @@
     media: {
       styles: [
         "media-design-pro.css?v=1", "media-design-page.css?v=11", "media-cosmos.css?v=2", "media-professional-suite.css?v=1", "media-next-suite.css?v=1", "media-production-workflow.css?v=3", "universal-media-project.css?v=1",
-        "media-design-advanced.css?v=3", "media-design-publish.css?v=1", "video-editor-studio.css?v=2",
-        "video-editor-resolve.css?v=6", "photo-editor-pro.css?v=4", "editor-workflow-pro.css?v=1"
+        "media-design-advanced.css?v=3", "media-design-publish.css?v=1", "video-editor-studio.css?v=3",
+        "video-editor-resolve.css?v=7", "photo-editor-pro.css?v=4", "editor-workflow-pro.css?v=2"
       ],
       scripts: [
         "media-design-studio.js?v=1", "media-design-pro.js?v=2", "media-design-advanced.js?v=3",
-        "media-design-publish.js?v=1", "video-editor-studio.js?v=2", "video-editor-resolve.js?v=7",
-        "photo-editor-pro.js?v=3", "editor-workflow-pro.js?v=1", "universal-media-project.js?v=1",
+        "media-design-publish.js?v=1", "video-editor-studio.js?v=3", "video-editor-resolve.js?v=8",
+        "photo-editor-pro.js?v=3", "editor-workflow-pro.js?v=2", "universal-media-project.js?v=1",
         "media-production-workflow.js?v=3", "media-cosmos.js?v=2", "media-professional-suite.js?v=2", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=1", "media-design-page.js?v=12"
       ]
     },
     davinci: {
-      styles: ["davinci-resolve-hub.css?v=2"],
-      scripts: ["davinci-resolve-hub.js?v=2"]
+      styles: [
+        "video-editor-studio.css?v=3", "video-editor-resolve.css?v=7",
+        "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=3"
+      ],
+      scripts: [
+        "media-design-studio.js?v=1", "video-editor-studio.js?v=3",
+        "video-editor-resolve.js?v=8", "editor-workflow-pro.js?v=2",
+        "davinci-resolve-hub.js?v=3"
+      ]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],

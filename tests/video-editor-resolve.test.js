@@ -129,10 +129,10 @@ test("keyframe, motion, color and audio models remain bounded and non-destructiv
 test("export queue never claims rendering or completion without browser capability", () => {
   const project = timelineProject();
   const unsupported = ops.enqueueExport(project, { id: "job-1", name: "MP4 giả", mime: "video/mp4", size: "1920x1080" }, { mediaRecorder: false, canvasCapture: true });
-  assert.equal(unsupported.exportQueue[0].status, "unsupported");
-  assert.match(unsupported.exportQueue[0].notice, /chưa hỗ trợ/i);
+  assert.equal(unsupported.exportQueue[0].status, "provider-not-configured");
+  assert.match(unsupported.exportQueue[0].notice, /chưa cấu hình/i);
   const supported = ops.enqueueExport(project, { id: "job-2", name: "WebM thật", mime: "video/webm", size: "1280x720" }, { mediaRecorder: true, canvasCapture: true, isTypeSupported: (mime) => mime === "video/webm" });
-  assert.equal(supported.exportQueue[0].status, "waiting");
+  assert.equal(supported.exportQueue[0].status, "queued");
   assert.doesNotMatch(supported.exportQueue[0].notice, /hoàn tất|đã xong/i);
   assert.equal(project.exportQueue.length, 0);
 });
@@ -156,7 +156,7 @@ test("UI contract exposes professional controls, truthful notices and accessibil
     "data-vr-edit-ribbon", "timeline-blade", "timeline-ripple", "timeline-slip-back", "timeline-slide-forward", "timeline-snap",
     "subtitle-add", "nested-create", "pro-multicam", "motion-track", "motion-stabilize", "motion-ramp", "pro-keyframes",
     "data-vr-scope=\"waveform\"", "data-vr-scope=\"histogram\"", "data-vr-lut", "curve-contrast", "audio-automation",
-    "Noise Reduction", "Compressor", "Hàng đợi kết xuất", "Chưa đánh dấu hoàn tất", "MediaRecorder", "captureStream",
+    "Noise Reduction", "Compressor", "Hàng đợi kết xuất", "provider-not-configured", "MediaRecorder", "captureStream",
     "Shift+1", "Shift+7", "event.key.toLowerCase() === \"b\"", "event.key.toLowerCase() === \"n\""
   ]) assert.ok(source.includes(marker), `missing UI contract ${marker}`);
   assert.doesNotMatch(source, /AIza|sk-[A-Za-z0-9]|mongodb(?:\+srv)?:\/\//i);
