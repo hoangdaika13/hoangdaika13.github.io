@@ -6,9 +6,9 @@ const assert = require("node:assert/strict");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Character V10 preserves browser-safe model tiers and one humanoid contract", () => {
+test("Character V11 preserves browser-safe model tiers and one humanoid contract", () => {
   const source = read("astral-realms.js");
-  assert.match(source, /CHARACTER_VISUAL_VERSION = 10/);
+  assert.match(source, /CHARACTER_VISUAL_VERSION = 11/);
   assert.match(source, /CHARACTER_MODEL_TIERS/);
   for (const tier of ["hero", "near", "crowd", "impostor"]) {
     assert.match(source, new RegExp(`${tier}: \\{[^\\n]+triangles:`));
@@ -77,10 +77,10 @@ test("Character Lab exposes runtime metrics, motion preview and adaptive materia
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
 
-test("GLTF dependencies and the V10 bundle are available offline", () => {
+test("GLTF dependencies and the V11 bundle are available offline", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const token of ["astral-realms.css?v=10", "astral-realms.js?v=10"]) {
+  for (const token of ["astral-realms.css?v=11", "astral-realms.js?v=11"]) {
     assert.ok(loader.includes(token), `route loader missing ${token}`);
     assert.ok(worker.includes(token), `service worker missing ${token}`);
   }

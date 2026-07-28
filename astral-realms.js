@@ -42,12 +42,12 @@
     }
   });
   const CHARACTER_ORDER = Object.freeze(Object.keys(CHARACTERS));
-  const CHARACTER_VISUAL_VERSION = 10;
+  const CHARACTER_VISUAL_VERSION = 11;
   const CHARACTER_MODEL_TIERS = Object.freeze({
-    hero: { label: "Hero LOD0", triangles: "40–65K", texture: "2K", face: 52, distance: 13 },
-    near: { label: "Hero/NPC LOD1", triangles: "18–30K", texture: "1K", face: 16, distance: 34 },
-    crowd: { label: "Crowd LOD2", triangles: "4–10K", texture: "512", face: 0, distance: 76 },
-    impostor: { label: "3D Proxy LOD3", triangles: "600–1.5K", texture: "Material PBR", face: 0, distance: 140 }
+    hero: { label: "Web Hero LOD0", triangles: "Face 18–28K · body 25–40K", texture: "2K", face: 52, distance: 13, updateHz: 60 },
+    near: { label: "Gameplay LOD1", triangles: "Face 8–14K · body 10–18K", texture: "1K", face: 52, distance: 34, updateHz: 30 },
+    crowd: { label: "Crowd LOD2", triangles: "Tổng 6–12K", texture: "512", face: 0, distance: 76, updateHz: 12 },
+    impostor: { label: "3D Proxy LOD3", triangles: "3–6K / proxy", texture: "Material PBR", face: 0, distance: 140, updateHz: 6 }
   });
   const CHARACTER_IMPORT_LIMITS = Object.freeze({
     fileBytes: 32 * 1024 * 1024,
@@ -109,6 +109,26 @@
     "mouthSmileLeft", "mouthSmileRight", "mouthStretchLeft", "mouthStretchRight", "mouthUpperUpLeft",
     "mouthUpperUpRight", "noseSneerLeft", "noseSneerRight"
   ]);
+  const CHARACTER_VISEMES = Object.freeze({
+    neutral: {},
+    A: { jawOpen: 0.72, mouthFunnel: 0.08, mouthStretchLeft: 0.18, mouthStretchRight: 0.18 },
+    E: { jawOpen: 0.34, mouthStretchLeft: 0.62, mouthStretchRight: 0.62, mouthSmileLeft: 0.22, mouthSmileRight: 0.22 },
+    I: { jawOpen: 0.24, mouthStretchLeft: 0.78, mouthStretchRight: 0.78 },
+    O: { jawOpen: 0.55, mouthFunnel: 0.84, mouthPucker: 0.42 },
+    U: { jawOpen: 0.3, mouthFunnel: 0.68, mouthPucker: 0.74 },
+    MBP: { mouthClose: 0.92, mouthPressLeft: 0.74, mouthPressRight: 0.74 },
+    FV: { mouthLowerDownLeft: 0.22, mouthLowerDownRight: 0.22, mouthPressLeft: 0.44, mouthPressRight: 0.44 },
+    L: { jawOpen: 0.38, mouthUpperUpLeft: 0.18, mouthUpperUpRight: 0.18 },
+    WQ: { jawOpen: 0.2, mouthFunnel: 0.62, mouthPucker: 0.76 }
+  });
+  const CHARACTER_EXPRESSION_PRESETS = Object.freeze({
+    neutral: {},
+    happy: { mouthSmileLeft: 0.72, mouthSmileRight: 0.72, cheekSquintLeft: 0.28, cheekSquintRight: 0.28, browInnerUp: 0.08 },
+    sad: { mouthFrownLeft: 0.64, mouthFrownRight: 0.64, browInnerUp: 0.7, eyeSquintLeft: 0.12, eyeSquintRight: 0.12 },
+    angry: { browDownLeft: 0.76, browDownRight: 0.76, eyeSquintLeft: 0.32, eyeSquintRight: 0.32, noseSneerLeft: 0.22, noseSneerRight: 0.22 },
+    surprised: { eyeWideLeft: 0.7, eyeWideRight: 0.7, browInnerUp: 0.65, browOuterUpLeft: 0.55, browOuterUpRight: 0.55, jawOpen: 0.58 },
+    pain: { browDownLeft: 0.72, browDownRight: 0.58, eyeSquintLeft: 0.68, eyeSquintRight: 0.56, mouthFrownLeft: 0.55, mouthFrownRight: 0.42, jawOpen: 0.22 }
+  });
   const CHARACTER_PIPELINE = Object.freeze([
     { id: "metahuman", name: "MetaHuman Web Hero", role: "GLB đã retopology cho hero/cinematic", state: "Kiểm tra khi nhập" },
     { id: "makehuman", name: "MakeHuman / MPFB", role: "Nguồn NPC được tối ưu bên ngoài", state: "Kiểm tra skeleton" },
@@ -117,9 +137,9 @@
     { id: "rokoko", name: "Rokoko Vision", role: "Motion capture xuất GLB", state: "Nhập clip cục bộ" },
     { id: "mediapipe", name: "MediaPipe Face", role: "52 blendshape trên thiết bị", state: "Opt-in camera" },
     { id: "environment", name: "HH Volumetric World", role: "Địa hình mesh 3D và panorama chỉ dùng làm IBL", state: "Không dùng ảnh làm phông nền" },
-    { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph và 3D LOD", state: "Runtime V10" }
+    { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V11" }
   ]);
-  const APPEARANCE_VERSION = 4;
+  const APPEARANCE_VERSION = 5;
   const APPEARANCE_GROUPS = Object.freeze([
     { id: "face", label: "Khuôn mặt", focus: "head", controls: [["headLength", "Chiều dài đầu"], ["foreheadHeight", "Chiều cao trán"], ["cheekboneWidth", "Gò má"], ["cheekFullness", "Độ đầy má"], ["jawWidth", "Độ rộng hàm"], ["jawAngle", "Góc hàm"], ["chinLength", "Chiều dài cằm"], ["faceFullness", "Độ đầy khuôn mặt"]] },
     { id: "eyes", label: "Mắt", focus: "head", controls: [["eyeSize", "Kích thước mắt"], ["eyeSpacing", "Khoảng cách mắt"], ["eyeDepth", "Độ sâu mắt"], ["upperLid", "Mí trên"], ["lowerLid", "Mí dưới"], ["eyeAngle", "Góc mắt"], ["irisSize", "Kích thước tròng"], ["pupilSize", "Kích thước đồng tử"], ["eyeReflection", "Phản chiếu mắt"], ["eyeLeft", "Mắt trái"], ["eyeRight", "Mắt phải"]] },
@@ -143,7 +163,12 @@
     baseModels: ["human-adult-a01", "human-adult-b01"],
     skins: ["warm-04", "neutral-03", "cool-02", "deep-05"],
     hairs: ["astral-layered-07", "aurora-short-02", "void-long-04", "solar-braid-03"],
-    outfits: ["central-jacket-02", "combat-boots-01", "aurora-suit-01", "void-coat-01"]
+    beards: ["none", "shadow-01", "short-boxed-02", "astral-goatee-03"],
+    brows: ["natural-01", "soft-02", "defined-03", "bold-04"],
+    makeups: ["none", "natural", "nebula", "cyber", "solar"],
+    accessories: ["none", "ear-cuff", "visor", "astral-mark"],
+    outfits: ["central-jacket-02", "combat-boots-01", "aurora-suit-01", "void-coat-01"],
+    lighting: ["daylight", "night", "neon", "cinematic"]
   });
   const APPEARANCE_PRESETS = Object.freeze({
     balanced: { label: "Cân bằng", bodyPreset: "balanced", morphs: {} },
@@ -284,6 +309,10 @@
     if (!report.animations) warnings.push("Không có animation clip; runtime giữ pose gốc.");
     if ((report.skeletonCoverage || 0) < 0.55 && report.bones) warnings.push("Skeleton chưa khớp tốt với HH Humanoid.");
     if (report.rootMotionTracks) warnings.push(`${report.rootMotionTracks} root-motion track X/Z sẽ được chuyển thành in-place để tránh trôi nhân vật.`);
+    if (report.headVertices && report.headVertices < 18000) warnings.push("Head mesh dưới 18K vertices; phù hợp gameplay nhưng chưa đạt Web Hero LOD0.");
+    if ((report.faceMorphTargets || 0) < 52) warnings.push(`Model có ${report.faceMorphTargets || 0}/52 facial morph native; HH dùng procedural/bone fallback cho kênh còn thiếu.`);
+    if ((report.maxTextureSize || 0) > 2048) warnings.push("Texture trên 2K sẽ tốn bộ nhớ; nên xuất KTX2 2K cho Web Hero.");
+    if ((report.bones || 0) > 120) warnings.push("Skeleton trên 120 bone; nên giảm bone phụ cho bản web.");
     return {
       valid: errors.length === 0,
       errors,
@@ -333,8 +362,16 @@
       eyeColor: profile.eyes,
       hair: "astral-layered-07",
       hairColor: profile.hair,
+      beard: "none",
+      brow: "natural-01",
+      makeup: "none",
+      accessory: "none",
+      lighting: "cinematic",
+      expression: "neutral",
+      viseme: "neutral",
       outfit: ["central-jacket-02", "combat-boots-01"],
-      decals: { freckles: 0, scars: 0, moles: 0, makeup: 0, tattoos: 0 },
+      decals: { freckles: 0, scars: 0, moles: 0, makeup: 0, tattoos: 0, wrinkles: 0, eyeShadow: 0, age: 0 },
+      surface: { pores: 0.72, subsurface: 0.58, roughness: 0.52, flush: 0.18, wetness: 0 },
       updatedAt: nowIso()
     };
   }
@@ -361,12 +398,23 @@
       eyeColor: validHex(recipe.eyeColor, base.eyeColor),
       hair: APPEARANCE_ASSETS.hairs.includes(recipe.hair) ? recipe.hair : base.hair,
       hairColor: validHex(recipe.hairColor, base.hairColor),
+      beard: APPEARANCE_ASSETS.beards.includes(recipe.beard) ? recipe.beard : base.beard,
+      brow: APPEARANCE_ASSETS.brows.includes(recipe.brow) ? recipe.brow : base.brow,
+      makeup: APPEARANCE_ASSETS.makeups.includes(recipe.makeup) ? recipe.makeup : base.makeup,
+      accessory: APPEARANCE_ASSETS.accessories.includes(recipe.accessory) ? recipe.accessory : base.accessory,
+      lighting: APPEARANCE_ASSETS.lighting.includes(recipe.lighting) ? recipe.lighting : base.lighting,
+      expression: CHARACTER_EXPRESSION_PRESETS[recipe.expression] ? recipe.expression : base.expression,
+      viseme: CHARACTER_VISEMES[recipe.viseme] ? recipe.viseme : base.viseme,
       outfit: Array.isArray(recipe.outfit)
         ? [...new Set(recipe.outfit.filter((id) => APPEARANCE_ASSETS.outfits.includes(id)))].slice(0, 4)
         : base.outfit,
       decals: Object.fromEntries(Object.keys(base.decals).map((id) => [
         id,
         Number.isFinite(Number(recipe.decals?.[id])) ? clamp(recipe.decals[id], 0, 1) : base.decals[id]
+      ])),
+      surface: Object.fromEntries(Object.keys(base.surface).map((id) => [
+        id,
+        Number.isFinite(Number(recipe.surface?.[id])) ? clamp(recipe.surface[id], 0, 1) : base.surface[id]
       ])),
       updatedAt: typeof recipe.updatedAt === "string" ? recipe.updatedAt.slice(0, 40) : nowIso()
     };
@@ -386,13 +434,43 @@
       eyeColor: normalized.eyeColor,
       hair: normalized.hair,
       hairColor: normalized.hairColor,
+      beard: normalized.beard,
+      brow: normalized.brow,
+      makeup: normalized.makeup,
+      accessory: normalized.accessory,
+      lighting: normalized.lighting,
+      expression: normalized.expression,
+      viseme: normalized.viseme,
       outfit: normalized.outfit.slice(0, 4),
-      decals: Object.fromEntries(Object.entries(normalized.decals).map(([id, value]) => [id, Number(value.toFixed(3))]))
+      decals: Object.fromEntries(Object.entries(normalized.decals).map(([id, value]) => [id, Number(value.toFixed(3))])),
+      surface: Object.fromEntries(Object.entries(normalized.surface).map(([id, value]) => [id, Number(value.toFixed(3))]))
     };
   }
 
   function appearanceFingerprint(recipe, characterId = "lyra") {
     return JSON.stringify(compactAppearanceRecipe(recipe, characterId));
+  }
+
+  function encodeCharacterDNA(recipe, characterId = "lyra") {
+    const payload = JSON.stringify({
+      format: "hh.character-dna.v1",
+      characterId,
+      recipe: compactAppearanceRecipe(recipe, characterId)
+    });
+    const bytes = new TextEncoder().encode(payload);
+    let binary = "";
+    bytes.forEach((value) => { binary += String.fromCharCode(value); });
+    return root.btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  function decodeCharacterDNA(value) {
+    const normalized = String(value || "").trim().replace(/-/g, "+").replace(/_/g, "/");
+    if (!normalized || normalized.length > 18000) throw new Error("Mã Character DNA không hợp lệ.");
+    const binary = root.atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder().decode(bytes));
+    if (payload?.format !== "hh.character-dna.v1" || !payload.recipe) throw new Error("Mã Character DNA không đúng định dạng HH.");
+    return payload;
   }
 
   function defaultQuestState() {
@@ -534,6 +612,8 @@
         microDetail: true,
         naturalMotion: true,
         eyePerformance: true,
+        secondaryMotion: true,
+        digitalHumanQuality: "adaptive",
         vfxLevel: "balanced",
         livingWorld: true,
         dynamicResolution: true,
@@ -725,6 +805,8 @@
     state.settings.microDetail = state.settings.microDetail !== false;
     state.settings.naturalMotion = state.settings.naturalMotion !== false;
     state.settings.eyePerformance = state.settings.eyePerformance !== false;
+    state.settings.secondaryMotion = state.settings.secondaryMotion !== false;
+    if (!["adaptive", "performance", "quality", "cinematic"].includes(state.settings.digitalHumanQuality)) state.settings.digitalHumanQuality = "adaptive";
     if (!["static", "balanced", "cinematic"].includes(state.settings.vfxLevel)) state.settings.vfxLevel = "balanced";
     state.settings.livingWorld = state.settings.livingWorld !== false;
     state.settings.dynamicResolution = state.settings.dynamicResolution !== false;
@@ -867,6 +949,9 @@
       this.lastCharacterQa = null;
       this.motionState = { gaitPhase: 0, foot: "", yawVelocity: 0 };
       this.facePilot = { status: "off", stream: null, video: null, landmarker: null, frame: 0, blendshapes: {}, error: "", lastDetectionAt: 0, lastResultAt: 0 };
+      this.facePreview = { expression: "neutral", viseme: "neutral", until: 0 };
+      this.genesisLighting = "cinematic";
+      this.genesisOriginalLighting = null;
       this.lastSurfaceUpdateAt = 0;
       this.toonGradient = null;
       this.photorealAssets = { panorama: null };
@@ -1329,14 +1414,23 @@
       const mesh = this.characterMeshes.get(id);
       const runtime = this.characterRuntimes.get(id);
       const modelLabels = {
-        "human-adult-a01": ["Asteria Human", "Gương mặt người · tóc, da và trang phục PBR"],
-        "human-adult-b01": ["Vanguard Human", "Cơ thể người · giáp không gian PBR"]
+        "human-adult-a01": ["Asteria Human", "Human Rig · 16K vertices · Digital Human runtime"],
+        "human-adult-b01": ["Vanguard Human", "Combat Rig · 7K vertices · LOD hiệu năng"]
       };
+      const faceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
+      const dna = encodeCharacterDNA(recipe, id);
+      const option = (value, label, selected) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
       return `
         <div class="har-genesis-editor__intro">
-          <small>HUMAN GENESIS · ${escapeHtml(modelLabels[recipe.baseModel]?.[0] || "HUMAN RIG")}</small>
-          <h2>Chỉnh toàn bộ hình dáng</h2>
-          <p>Thay đổi trực tiếp trên mesh 3D có xương. Camera và ánh sáng luôn dùng khung hình thật của game.</p>
+          <small>DIGITAL HUMAN CORE V${CHARACTER_VISUAL_VERSION} · ${escapeHtml(modelLabels[recipe.baseModel]?.[0] || "HUMAN RIG")}</small>
+          <h2>Tạo con người 3D của bạn</h2>
+          <p>Chỉnh trực tiếp mesh có xương, vật liệu da nhiều lớp, biểu cảm, viseme và LOD trong khung hình thật của game.</p>
+        </div>
+        <div class="har-genesis-capabilities" aria-label="Năng lực Digital Human">
+          <div><small>FACE DRIVER</small><strong>478 / 52</strong><span>landmark / blendshape · ${faceChannels} native morph</span></div>
+          <div><small>SURFACE</small><strong>5 lớp</strong><span>pore · roughness · SSS · flush · wetness</span></div>
+          <div><small>MOTION</small><strong>8 hướng</strong><span>crossfade · inertial response · IK-ready</span></div>
+          <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "hero")}</strong><span>${CHARACTER_MODEL_TIERS[mesh?.userData?.modelTier || "hero"]?.updateHz || 60} Hz update</span></div>
         </div>
         <label class="har-genesis-name">Tên Nhà du hành
           <input type="text" maxlength="40" value="${escapeHtml(this.state.player.name || "")}" data-genesis-name autocomplete="off">
@@ -1357,7 +1451,46 @@
           <label>Da<input type="color" value="${recipe.skinColor}" data-genesis-setting="skinColor"></label>
           <label>Mắt<input type="color" value="${recipe.eyeColor}" data-genesis-setting="eyeColor"></label>
           <label>Tóc<input type="color" value="${recipe.hairColor}" data-genesis-setting="hairColor"></label>
-          <span><strong>PBR thật</strong><small>roughness · normal · skin response</small></span>
+          <span><strong>Digital Skin</strong><small>micro-normal · roughness zones · skin response</small></span>
+        </div>
+        <div class="har-genesis-assets">
+          <label>Tóc<select data-genesis-setting="hair">
+            ${option("astral-layered-07", "Astral Layered", recipe.hair)}
+            ${option("aurora-short-02", "Aurora Short", recipe.hair)}
+            ${option("void-long-04", "Void Long", recipe.hair)}
+            ${option("solar-braid-03", "Solar Braid", recipe.hair)}
+          </select></label>
+          <label>Râu<select data-genesis-setting="beard">
+            ${option("none", "Không râu", recipe.beard)}
+            ${option("shadow-01", "Râu bóng nhẹ", recipe.beard)}
+            ${option("short-boxed-02", "Short Boxed", recipe.beard)}
+            ${option("astral-goatee-03", "Astral Goatee", recipe.beard)}
+          </select></label>
+          <label>Lông mày<select data-genesis-setting="brow">
+            ${option("natural-01", "Tự nhiên", recipe.brow)}
+            ${option("soft-02", "Mềm", recipe.brow)}
+            ${option("defined-03", "Sắc nét", recipe.brow)}
+            ${option("bold-04", "Đậm", recipe.brow)}
+          </select></label>
+          <label>Makeup<select data-genesis-setting="makeup">
+            ${option("none", "Không makeup", recipe.makeup)}
+            ${option("natural", "Natural", recipe.makeup)}
+            ${option("nebula", "Nebula", recipe.makeup)}
+            ${option("cyber", "Cyber", recipe.makeup)}
+            ${option("solar", "Solar", recipe.makeup)}
+          </select></label>
+          <label>Phụ kiện<select data-genesis-setting="accessory">
+            ${option("none", "Không", recipe.accessory)}
+            ${option("ear-cuff", "Ear Cuff", recipe.accessory)}
+            ${option("visor", "Astral Visor", recipe.accessory)}
+            ${option("astral-mark", "Astral Mark", recipe.accessory)}
+          </select></label>
+          <label>Trang phục<select data-genesis-setting="outfitPrimary">
+            ${option("central-jacket-02", "Central Jacket", recipe.outfit[0])}
+            ${option("combat-boots-01", "Combat Set", recipe.outfit[0])}
+            ${option("aurora-suit-01", "Aurora Suit", recipe.outfit[0])}
+            ${option("void-coat-01", "Void Coat", recipe.outfit[0])}
+          </select></label>
         </div>
         <div class="har-genesis-tabs" role="tablist" aria-label="Nhóm chỉnh ngoại hình">
           ${APPEARANCE_GROUPS.map((item) => `<button type="button" class="${item.id === group.id ? "is-active" : ""}" data-genesis-group="${item.id}" role="tab" aria-selected="${item.id === group.id}">${item.label}</button>`).join("")}
@@ -1369,15 +1502,32 @@
             return `<label><span>${escapeHtml(label)}<output data-genesis-output="${controlId}">${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-genesis-morph="${controlId}" aria-label="${escapeHtml(label)}"></label>`;
           }).join("")}
         </div>
+        <div class="har-genesis-detail-grid">
+          <fieldset><legend>Chi tiết khuôn mặt</legend>
+            ${Object.entries(recipe.decals).map(([key, value]) => `<label><span>${escapeHtml({ freckles: "Tàn nhang", scars: "Sẹo", moles: "Nốt ruồi", makeup: "Cường độ makeup", tattoos: "Hình xăm", wrinkles: "Nếp nhăn", eyeShadow: "Quầng mắt", age: "Tuổi sinh học" }[key] || key)}<output>${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-genesis-decal="${key}"></label>`).join("")}
+          </fieldset>
+          <fieldset><legend>Vật liệu da</legend>
+            ${Object.entries(recipe.surface).map(([key, value]) => `<label><span>${escapeHtml({ pores: "Lỗ chân lông", subsurface: "Tán xạ da", roughness: "Độ nhám", flush: "Độ ửng đỏ", wetness: "Độ ẩm" }[key] || key)}<output>${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-genesis-surface="${key}"></label>`).join("")}
+          </fieldset>
+        </div>
+        <div class="har-genesis-performance">
+          <div><span>Biểu cảm</span>${Object.keys(CHARACTER_EXPRESSION_PRESETS).map((name) => `<button type="button" class="${recipe.expression === name ? "is-active" : ""}" data-genesis-expression="${name}">${name}</button>`).join("")}</div>
+          <div><span>Khẩu hình</span>${Object.keys(CHARACTER_VISEMES).map((name) => `<button type="button" class="${recipe.viseme === name ? "is-active" : ""}" data-genesis-viseme="${name}">${name}</button>`).join("")}</div>
+          <div><span>Ánh sáng thử</span>${APPEARANCE_ASSETS.lighting.map((name) => `<button type="button" class="${recipe.lighting === name ? "is-active" : ""}" data-genesis-lighting="${name}">${name}</button>`).join("")}</div>
+        </div>
         <div class="har-genesis-motion">
           <span>Kiểm tra chuyển động</span>
-          ${["idle", "walk", "run", "jump"].map((motion) => `<button type="button" class="${this.genesisMotion === motion ? "is-active" : ""}" data-genesis-motion="${motion}">${motion}</button>`).join("")}
+          ${["idle", "walk", "run", "strafe", "jump", "dodge", "attack1", "talk"].map((motion) => `<button type="button" class="${this.genesisMotion === motion ? "is-active" : ""}" data-genesis-motion="${motion}">${motion}</button>`).join("")}
         </div>
         <div class="har-genesis-tools">
           <button type="button" data-genesis-action="undo" ${this.appearanceHistory.length ? "" : "disabled"}>↶ Hoàn tác</button>
           <button type="button" data-genesis-action="redo" ${this.appearanceFuture.length ? "" : "disabled"}>↷ Làm lại</button>
           <button type="button" data-genesis-action="random">Ngẫu nhiên</button>
           <button type="button" data-genesis-action="reset">Khôi phục</button>
+        </div>
+        <div class="har-genesis-dna">
+          <label>Character DNA<textarea rows="2" spellcheck="false" data-genesis-dna>${escapeHtml(dna)}</textarea></label>
+          <div><button type="button" data-genesis-action="copy-dna">Sao chép DNA</button><button type="button" data-genesis-action="apply-dna">Nạp DNA</button><button type="button" data-genesis-action="save-slot">Lưu ô ngoại hình</button></div>
         </div>
         <button class="har-genesis-confirm" type="button" data-genesis-action="confirm">
           <span>Xác nhận Nhà du hành</span><small>Lưu ngoại hình và bước vào H-Central</small>
@@ -1401,6 +1551,11 @@
     openGenesisCreator() {
       this.genesisActive = true;
       this.genesisMotion = "idle";
+      this.facePreview = { expression: "neutral", viseme: "neutral", until: 0 };
+      this.genesisOriginalLighting = {
+        worldTime: this.state.worldTime,
+        exposure: this.renderer?.toneMappingExposure || 1.08
+      };
       this.paused = true;
       this.menuPaused = true;
       this.keys.clear();
@@ -1425,6 +1580,87 @@
       if (runtime) {
         runtime.state = "";
         this.playCharacterClip(runtime, this.genesisMotion);
+      }
+    }
+
+    setCharacterFacePreview(expression = "neutral", viseme = "neutral", duration = 12000) {
+      const safeExpression = CHARACTER_EXPRESSION_PRESETS[expression] ? expression : "neutral";
+      const safeViseme = CHARACTER_VISEMES[viseme] ? viseme : "neutral";
+      const values = {
+        ...Object.fromEntries(MEDIAPIPE_FACE_CHANNELS.map((channel) => [channel, 0])),
+        ...CHARACTER_EXPRESSION_PRESETS[safeExpression],
+        ...CHARACTER_VISEMES[safeViseme]
+      };
+      this.facePreview = {
+        expression: safeExpression,
+        viseme: safeViseme,
+        values,
+        until: performance.now() + Math.max(500, Number(duration || 0))
+      };
+      const mesh = this.characterMeshes.get(this.state.roster.activeId);
+      this.applyFaceBlendshapes(mesh, values);
+      this.applyBoneFacialFallback(mesh, values, 0.78);
+    }
+
+    setGenesisLighting(preset = "cinematic") {
+      const safePreset = APPEARANCE_ASSETS.lighting.includes(preset) ? preset : "cinematic";
+      const recipe = this.activeAppearanceRecipe();
+      const before = clone(recipe);
+      recipe.lighting = safePreset;
+      recipe.updatedAt = nowIso();
+      this.genesisLighting = safePreset;
+      if (appearanceFingerprint(before, this.state.roster.activeId) !== appearanceFingerprint(recipe, this.state.roster.activeId)) {
+        this.appearanceHistory.push(normalizeAppearanceRecipe(before, this.state.roster.activeId));
+        this.appearanceHistory = this.appearanceHistory.slice(-30);
+        this.appearanceFuture = [];
+        this.appearanceDirty = true;
+      }
+      const profile = {
+        daylight: { time: 11.5, exposure: 1.04 },
+        night: { time: 22.2, exposure: 0.94 },
+        neon: { time: 1.4, exposure: 1.16 },
+        cinematic: { time: 17.8, exposure: 1.2 }
+      }[safePreset];
+      this.state.worldTime = profile.time;
+      if (this.renderer) this.renderer.toneMappingExposure = profile.exposure;
+      this.updateWorld?.(0, performance.now());
+    }
+
+    restoreGenesisLighting() {
+      if (!this.genesisOriginalLighting) return;
+      this.state.worldTime = this.genesisOriginalLighting.worldTime;
+      if (this.renderer) this.renderer.toneMappingExposure = this.genesisOriginalLighting.exposure;
+      this.genesisOriginalLighting = null;
+    }
+
+    async copyCharacterDNA() {
+      const field = this.root.querySelector("[data-genesis-dna], [data-character-dna]");
+      const value = field?.value || encodeCharacterDNA(this.activeAppearanceRecipe(), this.state.roster.activeId);
+      try {
+        await navigator.clipboard.writeText(value);
+      } catch {
+        field?.focus?.();
+        field?.select?.();
+        document.execCommand?.("copy");
+      }
+      this.toast("Đã sao chép Character DNA.", "success");
+    }
+
+    applyCharacterDNA(value) {
+      try {
+        const payload = decodeCharacterDNA(value);
+        const id = this.state.roster.activeId;
+        const before = clone(this.activeAppearanceRecipe());
+        this.state.appearance.recipes[id] = normalizeAppearanceRecipe(payload.recipe, id);
+        this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+        if (before.baseModel !== this.state.appearance.recipes[id].baseModel) this.rebuildActiveBuiltInCharacter();
+        this.recordAppearanceChange(before);
+        this.setCharacterFacePreview(this.state.appearance.recipes[id].expression, this.state.appearance.recipes[id].viseme);
+        this.refreshGenesisCreator();
+        this.renderCurrentPanel();
+        this.toast("Đã nạp Character DNA và kiểm tra giới hạn hình thể.", "success");
+      } catch (error) {
+        this.toast(error?.message || "Không đọc được Character DNA.", "error");
       }
     }
 
@@ -1468,6 +1704,7 @@
       this.state.appearance.creatorCompletedAt = nowIso();
       this.state.appearance.creatorVersion = CHARACTER_VISUAL_VERSION;
       this.state.appearance.lastSavedAt = nowIso();
+      this.restoreGenesisLighting();
       await this.saveProgress("Hoàn tất Character Genesis");
       const section = this.root.querySelector("[data-har-genesis]");
       if (section) section.hidden = true;
@@ -1479,6 +1716,7 @@
     }
 
     resetGraphicsAfterFailure() {
+      this.restoreGenesisLighting();
       if (this.frameHandle) cancelAnimationFrame(this.frameHandle);
       this.frameHandle = 0;
       try { this.renderer?.dispose?.(); } catch {}
@@ -3140,6 +3378,15 @@
       leftBrow.rotation.z = -0.08;
       rightBrow.rotation.z = 0.08;
       group.add(leftBrow, rightBrow);
+      const beard = new THREE.Mesh(
+        new THREE.SphereGeometry(0.235, 20, 12, 0.18, Math.PI - 0.36, Math.PI * 0.5, Math.PI * 0.42),
+        browMaterial
+      );
+      beard.position.set(0, 2.25, -0.34);
+      beard.rotation.y = Math.PI;
+      beard.visible = false;
+      beard.userData.heroDetail = true;
+      group.add(beard);
 
       const hair = new THREE.Group();
       const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.455, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMaterial);
@@ -3169,11 +3416,32 @@
           card.rotation.z = Math.sin(angle * 1.5) * 0.08;
           card.userData.secondaryMotion = 0.018 + (index % 4) * 0.006;
           card.userData.heroDetail = true;
+          card.userData.requiresAlpha = true;
           hair.add(card);
         }
       }
       hair.position.set(0, 2.67, 0.02);
       group.add(hair);
+      const accessory = new THREE.Group();
+      const accessoryMaterial = surface(profile.accent, { emissive: profile.accent, emissiveIntensity: 0.34, roughness: 0.2, clearcoat: 0.75 });
+      accessoryMaterial.userData.materialRole = "accessory";
+      const earCuff = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.018, 8, 22, Math.PI * 1.45), accessoryMaterial);
+      earCuff.position.set(-0.42, 2.49, -0.01);
+      earCuff.rotation.set(0, Math.PI / 2, 0.25);
+      earCuff.userData.accessoryId = "ear-cuff";
+      const visor = new THREE.Mesh(
+        new THREE.BoxGeometry(0.38, 0.105, 0.024),
+        surface(profile.eyes, { emissive: profile.accent, emissiveIntensity: 0.28, roughness: 0.08, clearcoat: 1, transparent: true, opacity: 0.72 })
+      );
+      visor.position.set(0, 2.57, -0.438);
+      visor.userData.accessoryId = "visor";
+      const astralMark = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 1), accessoryMaterial);
+      astralMark.position.set(0, 2.75, -0.395);
+      astralMark.userData.accessoryId = "astral-mark";
+      accessory.add(earCuff, visor, astralMark);
+      accessory.visible = false;
+      accessory.userData.heroDetail = true;
+      group.add(accessory);
 
       const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.74, 5, 8), bodyMaterial);
       const rightArm = leftArm.clone();
@@ -3246,7 +3514,7 @@
       group.userData.parts = {
         leftLeg, rightLeg, leftArm, rightArm, torso, head, hair, cape, halo, eyes, eyelids,
         faceShadow, weaponAnchor, leftWing, rightWing, neck, nose, mouth, leftEar, rightEar,
-        leftBrow, rightBrow, leftHand, rightHand, leftFoot, rightFoot, coat
+        leftBrow, rightBrow, leftHand, rightHand, leftFoot, rightFoot, coat, beard, accessory
       };
       group.userData.characterId = profile.id;
       group.userData.renderStyle = this.state.settings.renderStyle;
@@ -3293,6 +3561,121 @@
       return supportedTargets;
     }
 
+    applyDigitalHumanMaterials(mesh, recipe, characterId = "lyra") {
+      if (!mesh) return;
+      const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
+      const outfitPalette = {
+        "central-jacket-02": [profile.body, profile.accent],
+        "combat-boots-01": ["#1a2233", profile.accent],
+        "aurora-suit-01": ["#b9f4ff", "#65f1c7"],
+        "void-coat-01": ["#211638", "#d66cff"]
+      }[recipe.outfit?.[0]] || [profile.body, profile.accent];
+      const makeupTint = {
+        none: null,
+        natural: "#d98f94",
+        nebula: "#cb68e8",
+        cyber: "#56eaff",
+        solar: "#ffb75f"
+      }[recipe.makeup];
+      mesh.traverse?.((object) => {
+        if (!object.isMesh && !object.isSkinnedMesh) return;
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.filter(Boolean).forEach((material, materialIndex) => {
+          material.userData ||= {};
+          const identity = `${object.name || ""} ${material.name || ""}`.toLowerCase();
+          let role = material.userData.materialRole || "";
+          if (!role) {
+            if (/hair|brow|lash|beard|groom/.test(identity)) role = "hair";
+            else if (/eye|iris|cornea|sclera|tear/.test(identity)) role = "eyes";
+            else if (/skin|dermis|face|head|body_nude/.test(identity)) role = "skin";
+            else role = "outfit";
+            material.userData.materialRole = role;
+          }
+          material.userData.baseRoughness ??= material.roughness;
+          material.userData.baseClearcoat ??= material.clearcoat || 0;
+          material.userData.baseEmissiveIntensity ??= material.emissiveIntensity || 0;
+          if (material.color && !material.userData.hhOriginalColor) material.userData.hhOriginalColor = `#${material.color.getHexString()}`;
+          if (role === "skin") {
+            material.color?.set(recipe.skinColor);
+            if ("roughness" in material) material.roughness = clamp(0.26 + recipe.surface.roughness * 0.5 - recipe.surface.wetness * 0.18, 0.12, 0.86);
+            if ("clearcoat" in material) material.clearcoat = clamp(0.025 + recipe.surface.wetness * 0.72, 0, 0.82);
+            if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.56;
+            if ("sheen" in material) material.sheen = clamp(0.18 + recipe.surface.subsurface * 0.52, 0, 0.85);
+            if ("ior" in material) material.ior = 1.4;
+            if ("specularIntensity" in material) material.specularIntensity = 0.28 + recipe.surface.subsurface * 0.24;
+            if (this.state.settings.microDetail) {
+              material.normalMap ||= this.createCharacterDetailTexture("skin-normal");
+              material.roughnessMap ||= this.createCharacterDetailTexture("skin-roughness");
+              material.normalScale?.setScalar?.(0.06 + recipe.surface.pores * 0.18);
+            }
+            if (material.emissive && makeupTint) {
+              material.emissive.set(makeupTint);
+              material.emissiveIntensity = clamp(recipe.decals.makeup * 0.025 + recipe.surface.flush * 0.018, 0, 0.045);
+            }
+          } else if (role === "hair" || role === "hair-card") {
+            material.color?.set(recipe.hairColor);
+            if ("roughness" in material) material.roughness = recipe.hair.includes("long") ? 0.34 : 0.28;
+            if ("anisotropy" in material) material.anisotropy = this.state.settings.microDetail ? 0.78 : 0;
+            if ("alphaHash" in material && role === "hair-card") material.alphaHash = true;
+          } else if (role === "eyes") {
+            material.color?.set(recipe.eyeColor);
+            if ("roughness" in material) material.roughness = 0.08;
+            if ("clearcoat" in material) material.clearcoat = 0.78 + (recipe.morphs.eyeReflection || 0.5) * 0.22;
+            if ("ior" in material) material.ior = 1.376;
+            if ("transmission" in material) material.transmission = 0.04;
+          } else if (role === "outfit") {
+            const color = materialIndex % 2 ? outfitPalette[1] : outfitPalette[0];
+            if (material.color && mesh.userData.visualMode !== "builtin-rigged") material.color.set(color);
+            if ("roughness" in material) material.roughness = clamp(material.userData.baseRoughness ?? 0.45, 0.22, 0.82);
+          }
+          material.userData.hhDigitalHuman = {
+            version: CHARACTER_VISUAL_VERSION,
+            role,
+            skinLayers: role === "skin" ? 5 : 0,
+            hairCards: role === "hair-card"
+          };
+          if (material.color) material.userData.baseColor = `#${material.color.getHexString()}`;
+          material.needsUpdate = true;
+        });
+      });
+      const parts = mesh.userData?.parts;
+      if (parts?.hair?.children?.length) {
+        const visibilityPattern = {
+          "astral-layered-07": [1, 1, 1, 1, 1, 1],
+          "aurora-short-02": [1, 0, 1, 0, 0, 0],
+          "void-long-04": [1, 1, 1, 1, 1, 1],
+          "solar-braid-03": [1, 0, 0, 1, 0, 1]
+        }[recipe.hair] || [];
+        parts.hair.children.forEach((child, index) => {
+          if (index === 0) return;
+          child.visible = visibilityPattern[(index - 1) % Math.max(1, visibilityPattern.length)] !== 0
+            && (!child.userData.requiresAlpha || Boolean(child.material?.alphaMap));
+          child.scale.y = recipe.hair.includes("long") ? 1.28 : recipe.hair.includes("short") ? 0.68 : 1;
+        });
+      }
+      if (parts?.beard) {
+        parts.beard.visible = recipe.beard !== "none";
+        parts.beard.scale.set(
+          recipe.beard === "astral-goatee-03" ? 0.54 : 0.82,
+          recipe.beard === "shadow-01" ? 0.38 : recipe.beard === "astral-goatee-03" ? 1.18 : 0.72,
+          1
+        );
+      }
+      if (parts?.accessory) {
+        parts.accessory.visible = recipe.accessory !== "none";
+        parts.accessory.children.forEach((child) => {
+          child.visible = child.userData.accessoryId === recipe.accessory;
+        });
+      }
+      mesh.userData.digitalHumanSurface = {
+        skinLayers: 5,
+        eyeLayers: parts?.eyes?.length ? 3 : 0,
+        hairMode: this.state.settings.microDetail ? "hair-cards-anisotropic" : "hair-lite",
+        recipe: { ...recipe.surface },
+        decals: { ...recipe.decals }
+      };
+    }
+
     applyAppearanceToMesh(mesh, inputRecipe, characterId = "lyra") {
       if (!mesh?.userData?.parts) return;
       const recipe = normalizeAppearanceRecipe(inputRecipe, characterId);
@@ -3301,22 +3684,7 @@
       const delta = (id) => morph(id) - (APPEARANCE_CONTROL_MAP[id]?.defaultValue ?? 0.5);
       const hasProceduralRig = Boolean(parts.torso && parts.head && parts.leftArm && parts.rightArm && parts.leftLeg && parts.rightLeg);
       if (!hasProceduralRig) {
-        mesh.traverse((object) => {
-          if (!object.isMesh && !object.isSkinnedMesh) return;
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.filter(Boolean).forEach((material) => {
-            const objectName = `${object.name || ""} ${material.name || ""}`.toLowerCase();
-            const role = material.userData?.materialRole || (
-              /hair|brow|lash/.test(objectName) ? "hair"
-                : /eye|iris/.test(objectName) ? "eyes"
-                  : /skin|dermis|face/.test(objectName) ? "skin"
-                    : ""
-            );
-            if (role === "skin" && material.color) material.color.set(recipe.skinColor);
-            if (role === "hair" && material.color) material.color.set(recipe.hairColor);
-            if (role === "eyes" && material.color) material.color.set(recipe.eyeColor);
-          });
-        });
+        this.applyDigitalHumanMaterials(mesh, recipe, characterId);
         const supportedTargets = this.applyNamedMorphTargets(mesh, recipe);
         if (mesh.userData.visualMode === "builtin-rigged") {
           this.applyRiggedBodyProportions(mesh, recipe);
@@ -3497,6 +3865,7 @@
           if (Number.isInteger(index) && index < influences.length) influences[index] = value;
         });
       });
+      this.applyDigitalHumanMaterials(mesh, recipe, characterId);
       mesh.userData.correctives = values;
     }
 
@@ -3622,13 +3991,96 @@
       crowdProxy.userData.isCharacterLodProxy = true;
       wrapper.add(crowdProxy);
       const rightHandAliases = HH_HUMANOID_SKELETON.rightHand.map(normalizeBoneName);
+      const headAliases = HH_HUMANOID_SKELETON.head.map(normalizeBoneName);
       let rightHand = null;
+      let headBone = null;
       asset.traverse((object) => {
         if (!rightHand && object.isBone && rightHandAliases.includes(normalizeBoneName(object.name))) rightHand = object;
+        if (!headBone && object.isBone && headAliases.includes(normalizeBoneName(object.name))) headBone = object;
       });
       const weaponAnchor = new THREE.Group();
       weaponAnchor.name = "HHWeaponSocket";
       (rightHand || wrapper).add(weaponAnchor);
+      const heroDetails = [];
+      let riggedHair = null;
+      let riggedAccessory = null;
+      if (headBone && modelId === "human-adult-a01") {
+        const inverseFit = 1 / Math.max(0.001, fitScale);
+        const Physical = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
+        const hairMaterial = new Physical({
+          color: recipe.hairColor,
+          roughness: 0.3,
+          metalness: 0.02,
+          clearcoat: 0.34,
+          sheen: 0.48,
+          envMapIntensity: 0.74,
+          side: THREE.DoubleSide
+        });
+        hairMaterial.userData = { materialRole: "hair", baseRoughness: 0.3, baseClearcoat: 0.34, baseEmissiveIntensity: 0 };
+        riggedHair = new THREE.Group();
+        riggedHair.name = "HHWebHeroHairCards";
+        riggedHair.position.y = 0.13 * inverseFit;
+        const cap = new THREE.Mesh(
+          new THREE.SphereGeometry(0.235 * inverseFit, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.62),
+          hairMaterial
+        );
+        cap.scale.set(0.98, 1.02, 1.02);
+        cap.userData.heroDetail = true;
+        riggedHair.add(cap);
+        heroDetails.push(cap);
+        const cardMaterial = hairMaterial.clone();
+        cardMaterial.alphaMap = this.createCharacterDetailTexture("hair-alpha");
+        cardMaterial.transparent = true;
+        cardMaterial.alphaTest = 0.32;
+        cardMaterial.depthWrite = true;
+        cardMaterial.userData = { ...hairMaterial.userData, materialRole: "hair-card" };
+        for (let index = 0; index < 16; index += 1) {
+          const angle = (index / 16) * Math.PI * 2;
+          const card = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.105 * inverseFit, (0.31 + (index % 4) * 0.035) * inverseFit, 1, 3),
+            cardMaterial
+          );
+          card.position.set(
+            Math.sin(angle) * 0.205 * inverseFit,
+            (-0.08 - (index % 3) * 0.018) * inverseFit,
+            Math.cos(angle) * 0.205 * inverseFit
+          );
+          card.rotation.y = angle;
+          card.userData.heroDetail = true;
+          card.userData.secondaryMotion = 0.012 + (index % 4) * 0.004;
+          card.userData.requiresAlpha = true;
+          riggedHair.add(card);
+          heroDetails.push(card);
+        }
+        headBone.add(riggedHair);
+
+        riggedAccessory = new THREE.Group();
+        riggedAccessory.name = "HHWebHeroAccessories";
+        const accessoryMaterial = new Physical({
+          color: profile.accent,
+          emissive: profile.accent,
+          emissiveIntensity: 0.32,
+          roughness: 0.18,
+          metalness: 0.48,
+          clearcoat: 0.74
+        });
+        accessoryMaterial.userData = { materialRole: "accessory", baseRoughness: 0.18, baseClearcoat: 0.74, baseEmissiveIntensity: 0.32 };
+        const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.08 * inverseFit, 0.012 * inverseFit, 8, 20, Math.PI * 1.5), accessoryMaterial);
+        cuff.position.set(-0.205 * inverseFit, 0, 0);
+        cuff.rotation.y = Math.PI / 2;
+        cuff.userData.accessoryId = "ear-cuff";
+        const visor = new THREE.Mesh(new THREE.TorusGeometry(0.232 * inverseFit, 0.014 * inverseFit, 8, 32), accessoryMaterial);
+        visor.rotation.x = Math.PI / 2;
+        visor.position.y = 0.045 * inverseFit;
+        visor.userData.accessoryId = "visor";
+        const mark = new THREE.Mesh(new THREE.OctahedronGeometry(0.045 * inverseFit, 1), accessoryMaterial);
+        mark.position.y = 0.245 * inverseFit;
+        mark.userData.accessoryId = "astral-mark";
+        riggedAccessory.add(cuff, visor, mark);
+        riggedAccessory.visible = recipe.accessory !== "none";
+        headBone.add(riggedAccessory);
+        heroDetails.push(cuff, visor, mark);
+      }
       const useProxy = this.state.settings.characterMode === "portrait";
       heroMeshes.forEach((object) => { object.visible = !useProxy; });
       crowdProxy.visible = useProxy;
@@ -3642,16 +4094,17 @@
         gltfAsset: asset,
         builtInModelId: modelId,
         builtInAnimations: this.builtInCharacterAssets.get("human-adult-b01")?.animations || source.animations || [],
-        parts: { weaponAnchor },
+        parts: { weaponAnchor, hair: riggedHair, accessory: riggedAccessory },
         lodVariants: {
-          hero: heroMeshes,
-          near: heroMeshes,
+          hero: [...heroMeshes, ...heroDetails],
+          near: [...heroMeshes, ...heroDetails],
           crowd: [crowdProxy],
           impostor: [crowdProxy],
-          heroDetails: []
+          heroDetails
         }
       };
       this.applyRiggedBodyProportions(wrapper, recipe);
+      this.applyAppearanceToMesh(wrapper, recipe, profile.id);
       wrapper.userData.appearance = compactAppearanceRecipe(recipe, profile.id);
       wrapper.userData.appearanceFingerprint = appearanceFingerprint(recipe, profile.id);
       this.characterAssetStatus.set(profile.id, wrapper.userData.sourceProvider);
@@ -3748,7 +4201,11 @@
         animationSeconds: animations.reduce((total, clip) => total + Number(clip?.duration || 0), 0),
         rootMotionTracks: 0,
         skeletonCoverage: 0,
-        lodGroups: 0
+        lodGroups: 0,
+        headVertices: 0,
+        faceMorphTargets: 0,
+        separateEyeMeshes: 0,
+        hairCardMeshes: 0
       };
       const textureSlots = [
         "map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "alphaMap", "emissiveMap",
@@ -3793,7 +4250,21 @@
         if (object.isSkinnedMesh) report.skinnedMeshes += 1;
         const count = object.geometry?.index?.count || object.geometry?.attributes?.position?.count || 0;
         report.triangles += Math.floor(count / 3);
-        report.morphTargets += Object.keys(object.morphTargetDictionary || {}).length;
+        const vertices = object.geometry?.attributes?.position?.count || 0;
+        const identity = `${object.name || ""} ${Array.isArray(object.material) ? object.material.map((material) => material?.name || "").join(" ") : object.material?.name || ""}`.toLowerCase();
+        if (/head|face|skin_head|dermis/.test(identity)) report.headVertices += vertices;
+        if (/eye|iris|cornea|sclera|tear/.test(identity)) report.separateEyeMeshes += 1;
+        if (/hair|groom|brow|lash/.test(identity)) report.hairCardMeshes += 1;
+        const morphNames = Object.keys(object.morphTargetDictionary || {});
+        report.morphTargets += morphNames.length;
+        report.faceMorphTargets += morphNames.filter((name) => {
+          const normalized = String(name)
+            .replace(/^ARKit_/i, "")
+            .replace(/^AR_/i, "")
+            .replace(/_L$/i, "Left")
+            .replace(/_R$/i, "Right");
+          return MEDIAPIPE_FACE_CHANNELS.some((channel) => channel.toLowerCase() === normalized.toLowerCase());
+        }).length;
         const objectMaterials = Array.isArray(object.material) ? object.material : [object.material];
         objectMaterials.filter(Boolean).forEach((material) => {
           materials.add(material);
@@ -3809,6 +4280,11 @@
       report.materials = materials.size;
       report.textures = textures.size;
       report.skeletonCoverage = matchedBones.size / Object.keys(HH_HUMANOID_SKELETON).length;
+      report.digitalHumanTier = report.headVertices >= 18000 && report.faceMorphTargets >= 52
+        ? "web-hero"
+        : report.skinnedMeshes && report.bones
+          ? "gameplay-rig"
+          : "proxy";
       return report;
     }
 
@@ -3833,7 +4309,12 @@
         lodVariants: mesh.userData?.lodVariants || {},
         qaReport: this.buildCharacterQaReport(mesh, animations),
         savedMorphWeights: new Map(),
-        gaitPhase: 0
+        gaitPhase: 0,
+        motionSpeed: 0,
+        motionDirection: 0,
+        secondaryBones: [],
+        lastLodUpdateAt: 0,
+        lastFacialUpdateAt: 0
       };
       runtime.qaReport = { ...runtime.qaReport, ...validateCharacterAsset(runtime.qaReport) };
       const normalizedAliases = Object.fromEntries(Object.entries(HH_HUMANOID_SKELETON).map(([slot, aliases]) => [
@@ -3846,6 +4327,15 @@
           Object.entries(HH_HUMANOID_SKELETON).forEach(([slot, aliases]) => {
             if (!runtime.bones[slot] && normalizedAliases[slot].includes(boneName)) runtime.bones[slot] = object;
           });
+          if (/hair|ponytail|braid|cloth|cape|strap|skirt|coat|accessory/.test(boneName)) {
+            object.userData ||= {};
+            object.userData.hhSecondaryBase ||= {
+              x: object.rotation.x,
+              y: object.rotation.y,
+              z: object.rotation.z
+            };
+            runtime.secondaryBones.push(object);
+          }
         }
         if (object.isMesh || object.isSkinnedMesh) {
           const count = object.geometry?.index?.count || object.geometry?.attributes?.position?.count || 0;
@@ -3920,11 +4410,26 @@
         next.setLoop(this.THREE.LoopRepeat, Infinity);
         next.clampWhenFinished = false;
       }
-      if (runtime.currentAction) runtime.currentAction.crossFadeTo(next, state === "dodge" || state.startsWith("attack") ? 0.11 : 0.2, true);
-      else next.fadeIn(0.14);
+      const locomotionStates = new Set(["idle", "walk", "run", "sprint", "strafe"]);
+      const transitionSeconds = state === "dodge" || state.startsWith("attack")
+        ? 0.11
+        : state === "land"
+          ? 0.14
+          : locomotionStates.has(state) && locomotionStates.has(runtime.previousState)
+            ? 0.18
+            : 0.24;
+      if (runtime.currentAction) runtime.currentAction.crossFadeTo(next, transitionSeconds, true);
+      else next.fadeIn(Math.min(0.16, transitionSeconds));
       next.play();
       runtime.currentAction = next;
       runtime.actionTimeScale = fittedTimeScale;
+      runtime.transition = {
+        from: runtime.previousState,
+        to: state,
+        startedAt: performance.now(),
+        duration: transitionSeconds,
+        mode: "inertial-crossfade"
+      };
     }
 
     setCharacterAction(name, duration = 420, strength = 1) {
@@ -4014,14 +4519,55 @@
           iris.position.y = 0;
         }
         const pupil = eye.userData.pupil;
-        if (pupil) pupil.scale.setScalar(pupil.userData.baseScale || 1);
+          if (pupil) pupil.scale.setScalar(pupil.userData.baseScale || 1);
+      });
+      const runtime = mesh.userData?.characterRuntime;
+      [runtime?.bones?.jaw, runtime?.bones?.leftEye, runtime?.bones?.rightEye].filter(Boolean).forEach((bone) => {
+        const base = bone.userData?.hhFaceBase;
+        if (base) bone.rotation.set(base.x, base.y, base.z);
       });
       delete mesh.userData.facePerformance;
+    }
+
+    applyBoneFacialFallback(mesh, values = {}, strength = 0.32) {
+      const runtime = mesh?.userData?.characterRuntime;
+      if (!runtime) return;
+      const jaw = runtime.bones?.jaw;
+      const leftEye = runtime.bones?.leftEye;
+      const rightEye = runtime.bones?.rightEye;
+      const dampBone = (bone, targets) => {
+        if (!bone) return;
+        bone.userData ||= {};
+        bone.userData.hhFaceBase ||= { x: bone.rotation.x, y: bone.rotation.y, z: bone.rotation.z };
+        const base = bone.userData.hhFaceBase;
+        bone.rotation.x += ((base.x + (targets.x || 0)) - bone.rotation.x) * strength;
+        bone.rotation.y += ((base.y + (targets.y || 0)) - bone.rotation.y) * strength;
+        bone.rotation.z += ((base.z + (targets.z || 0)) - bone.rotation.z) * strength;
+      };
+      dampBone(jaw, {
+        x: clamp((values.jawOpen || 0) - (values.mouthClose || 0) * 0.45, 0, 1) * 0.34,
+        y: ((values.jawLeft || 0) - (values.jawRight || 0)) * 0.08
+      });
+      const lookX = ((values.eyeLookDownLeft || 0) + (values.eyeLookDownRight || 0)
+        - (values.eyeLookUpLeft || 0) - (values.eyeLookUpRight || 0)) * 0.18;
+      const leftLookY = ((values.eyeLookOutLeft || 0) - (values.eyeLookInLeft || 0)) * 0.16;
+      const rightLookY = ((values.eyeLookInRight || 0) - (values.eyeLookOutRight || 0)) * 0.16;
+      dampBone(leftEye, { x: lookX, y: leftLookY });
+      dampBone(rightEye, { x: lookX, y: rightLookY });
+      runtime.faceFallback = {
+        driver: runtime.facialChannels ? "native-morph" : jaw || leftEye || rightEye ? "bone-assisted" : "head-rig-only",
+        channels: 52,
+        updatedAt: performance.now()
+      };
     }
 
     applyProceduralFacialPerformance(mesh, time, motion) {
       if (!mesh || !this.state.settings.facialAnimation) return;
       const parts = mesh.userData?.parts;
+      const runtime = mesh.userData?.characterRuntime;
+      const updateInterval = 1000 / Math.max(1, runtime?.updateHz || 60);
+      if (!this.genesisActive && runtime && time - runtime.lastFacialUpdateAt < updateInterval) return;
+      if (runtime) runtime.lastFacialUpdateAt = time;
       const faceState = mesh.userData.facePerformance ||= {
         nextBlinkAt: time + 1800 + Math.random() * 2400,
         blinkStartedAt: 0,
@@ -4031,27 +4577,33 @@
       };
       const pilotFresh = this.facePilot.status === "running" && time - this.facePilot.lastResultAt < 320;
       const pilot = pilotFresh ? this.facePilot.blendshapes : null;
+      const previewFresh = this.facePreview?.values && time < this.facePreview.until;
+      const talkVisemeNames = ["A", "E", "O", "MBP", "I", "U", "L"];
+      const talkViseme = motion === "talk"
+        ? CHARACTER_VISEMES[talkVisemeNames[Math.floor(time / 145) % talkVisemeNames.length]]
+        : null;
+      const drivenFace = pilot || (previewFresh ? this.facePreview.values : null) || talkViseme;
       const lowHealth = 1 - clamp(this.state.player.health / Math.max(1, this.state.player.maxHealth), 0, 1);
-      if (!pilot && time >= faceState.nextBlinkAt && !faceState.blinkStartedAt) {
+      if (!drivenFace && time >= faceState.nextBlinkAt && !faceState.blinkStartedAt) {
         faceState.blinkStartedAt = time;
         faceState.nextBlinkAt = time + 1900 + Math.random() * 4200;
       }
       const blinkElapsed = faceState.blinkStartedAt ? time - faceState.blinkStartedAt : -1;
-      const blink = pilot
-        ? Math.max(pilot.eyeBlinkLeft || 0, pilot.eyeBlinkRight || 0)
+      const blink = drivenFace
+        ? Math.max(drivenFace.eyeBlinkLeft || 0, drivenFace.eyeBlinkRight || 0)
         : blinkElapsed >= 0 && blinkElapsed < 180
           ? Math.sin((blinkElapsed / 180) * Math.PI)
           : 0;
       if (blinkElapsed >= 180) faceState.blinkStartedAt = 0;
-      const smile = pilot
-        ? ((pilot.mouthSmileLeft || 0) + (pilot.mouthSmileRight || 0)) * 0.5
+      const smile = drivenFace
+        ? ((drivenFace.mouthSmileLeft || 0) + (drivenFace.mouthSmileRight || 0)) * 0.5
         : motion === "idle" ? 0.08 : 0;
       const pain = motion === "hit" || motion === "defeated" ? 0.9 : lowHealth * 0.28;
-      const jawOpen = pilot?.jawOpen || (["skill", "ultimate"].includes(motion) ? 0.26 : 0);
+      const jawOpen = drivenFace?.jawOpen || (["skill", "ultimate"].includes(motion) ? 0.26 : 0);
       const neutralFace = Object.fromEntries(MEDIAPIPE_FACE_CHANNELS.map((channel) => [channel, 0]));
       const faceValues = {
         ...neutralFace,
-        ...(pilot || {
+        ...(drivenFace || {
           eyeBlinkLeft: blink,
           eyeBlinkRight: blink,
           mouthSmileLeft: smile,
@@ -4062,6 +4614,7 @@
         })
       };
       this.applyFaceBlendshapes(mesh, faceValues);
+      this.applyBoneFacialFallback(mesh, faceValues);
       if (!parts?.eyes || !parts?.mouth) return;
       if (time >= faceState.nextSaccadeAt) {
         faceState.nextSaccadeAt = time + 420 + Math.random() * 1900;
@@ -4070,7 +4623,7 @@
       }
       parts.eyes.forEach((eye, index) => {
         const pilotBlink = index === 0 ? faceValues.eyeBlinkLeft : faceValues.eyeBlinkRight;
-        const value = pilot ? pilotBlink || 0 : blink;
+        const value = drivenFace ? pilotBlink || 0 : blink;
         const lid = parts.eyelids?.[index];
         if (lid && this.state.settings.eyePerformance) {
           lid.scale.y += ((0.01 + value * 0.92) - lid.scale.y) * 0.58;
@@ -4110,6 +4663,9 @@
           if ("emissiveIntensity" in material && Number.isFinite(baseline.baseEmissiveIntensity)) {
             material.emissiveIntensity += (baseline.baseEmissiveIntensity - material.emissiveIntensity) * amount;
           }
+          if (material.color && baseline.baseColor) {
+            material.color.lerp(new this.THREE.Color(baseline.baseColor), amount);
+          }
         });
       });
     }
@@ -4120,6 +4676,12 @@
       const wet = ["neon-rain", "star-rain"].includes(precipitation) ? 0.62 : this.isSwimming ? 0.9 : 0;
       const snow = precipitation === "snow" ? 0.32 : 0;
       const heat = precipitation === "embers" ? 0.28 : 0;
+      const exertion = 1 - clamp(this.state.player.stamina / Math.max(1, this.state.player.maxStamina), 0, 1);
+      const injury = 1 - clamp(this.state.player.health / Math.max(1, this.state.player.maxHealth), 0, 1);
+      const sweat = clamp(exertion * 0.72 + wet * 0.55, 0, 1);
+      const dirt = clamp((this.currentZone?.id === "crimson" ? 0.28 : this.currentZone?.id === "void" ? 0.16 : 0.04) + injury * 0.12, 0, 0.5);
+      const burn = clamp(heat * 0.74 + (this.state.player.status?.burn ? 0.5 : 0), 0, 1);
+      const blood = clamp(injury * 0.52, 0, 0.58);
       this.restoreCharacterMaterialState(mesh, 0.72);
       mesh.traverse?.((object) => {
         const materials = Array.isArray(object.material) ? object.material : [object.material];
@@ -4130,15 +4692,28 @@
           material.userData.baseClearcoat ??= material.clearcoat || 0;
           material.userData.baseEmissiveIntensity ??= material.emissiveIntensity || 0;
           material.roughness = clamp(material.userData.baseRoughness - wet * 0.34 + snow * 0.2, 0.08, 1);
-          if ("clearcoat" in material && material.userData.materialRole !== "skin") {
-            material.clearcoat = Math.max(material.userData.baseClearcoat, wet * 0.58);
+          if ("clearcoat" in material) {
+            material.clearcoat = Math.max(material.userData.baseClearcoat, material.userData.materialRole === "skin" ? sweat * 0.42 : wet * 0.58);
           }
           if (material.emissive && heat && material.userData.materialRole !== "skin") {
             material.emissiveIntensity = Math.max(material.userData.baseEmissiveIntensity, heat * 0.18);
           }
+          if (material.color && material.userData.baseColor) {
+            material.color.set(material.userData.baseColor);
+            if (material.userData.materialRole === "skin") {
+              material.color.lerp(new this.THREE.Color(0xb7464e), clamp(blood * 0.1 + exertion * 0.035, 0, 0.12));
+              if (material.emissive) {
+                material.emissive.set(0x7a1f26);
+                material.emissiveIntensity = Math.max(material.userData.baseEmissiveIntensity, clamp(exertion * 0.014 + burn * 0.025, 0, 0.04));
+              }
+            } else if (material.userData.materialRole === "outfit") {
+              material.color.lerp(new this.THREE.Color(0x44382f), dirt * 0.22);
+              if (snow) material.color.lerp(new this.THREE.Color(0xe8f6ff), snow * 0.16);
+            }
+          }
         });
       });
-      mesh.userData.surfaceState = { wet, snow, heat, updatedAt: time };
+      mesh.userData.surfaceState = { wet, snow, heat, sweat, dirt, blood, burn, updatedAt: time };
       this.lastSurfaceUpdateAt = time;
     }
 
@@ -4158,7 +4733,11 @@
               : "impostor";
       const runtime = mesh.userData.characterRuntime;
       const lowDetailTier = ["crowd", "impostor"].includes(tier);
-      if (runtime) runtime.lodSuspended = lowDetailTier;
+      if (runtime) {
+        runtime.lodSuspended = lowDetailTier;
+        runtime.updateHz = CHARACTER_MODEL_TIERS[tier]?.updateHz || 30;
+        runtime.faceChannelBudget = CHARACTER_MODEL_TIERS[tier]?.face || 0;
+      }
       if (runtime && lowDetailTier) {
         mesh.traverse?.((object) => {
           if (!object.morphTargetInfluences) return;
@@ -4203,6 +4782,77 @@
         if (!object.isMesh && !object.isSkinnedMesh) return;
         object.castShadow = object.visible && !["crowd", "impostor"].includes(tier);
       });
+      this.syncCharacterModuleVisibility(mesh, tier);
+    }
+
+    syncCharacterModuleVisibility(mesh, tier = mesh?.userData?.modelTier || "hero") {
+      const parts = mesh?.userData?.parts;
+      const recipe = mesh?.userData?.appearance;
+      if (!parts || !recipe) return;
+      const detailed = tier === "hero" || tier === "near";
+      const pattern = {
+        "astral-layered-07": [1, 1, 1, 1, 1, 1],
+        "aurora-short-02": [1, 0, 1, 0, 0, 0],
+        "void-long-04": [1, 1, 1, 1, 1, 1],
+        "solar-braid-03": [1, 0, 0, 1, 0, 1]
+      }[recipe.hair] || [1];
+      parts.hair?.children?.forEach((child, index) => {
+        if (index === 0) {
+          child.visible = detailed;
+          return;
+        }
+        child.visible = detailed
+          && pattern[(index - 1) % pattern.length] !== 0
+          && (!child.userData?.requiresAlpha || Boolean(child.material?.alphaMap));
+      });
+      if (parts.beard) parts.beard.visible = detailed && recipe.beard !== "none";
+      if (parts.accessory) {
+        parts.accessory.visible = detailed && recipe.accessory !== "none";
+        parts.accessory.children.forEach((child) => {
+          child.visible = detailed && child.userData?.accessoryId === recipe.accessory;
+        });
+      }
+    }
+
+    updateSecondaryCharacterMotion(runtime, time, { moving = false, sprinting = false, direction = 0 } = {}) {
+      if (!runtime || !this.state.settings.secondaryMotion || runtime.lodSuspended) return;
+      const force = sprinting ? 1 : moving ? 0.58 : 0.2;
+      runtime.secondaryBones?.forEach((bone, index) => {
+        const base = bone.userData?.hhSecondaryBase;
+        if (!base) return;
+        const lag = Math.sin(time * 0.0025 + index * 0.72) * 0.035 * force;
+        bone.rotation.x += ((base.x + force * 0.08 + lag) - bone.rotation.x) * 0.18;
+        bone.rotation.y += ((base.y - direction * 0.035 * force) - bone.rotation.y) * 0.14;
+        bone.rotation.z += ((base.z + Math.cos(time * 0.0021 + index) * 0.025 * force) - bone.rotation.z) * 0.16;
+      });
+      runtime.mesh?.userData?.parts?.hair?.children?.forEach((card, index) => {
+        if (!card.userData?.secondaryMotion) return;
+        card.userData.hhSecondaryRotation ||= { x: card.rotation.x, z: card.rotation.z };
+        const base = card.userData.hhSecondaryRotation;
+        card.rotation.x = base.x + force * 0.055 + Math.sin(time * 0.0024 + index * 0.6) * card.userData.secondaryMotion * force;
+        card.rotation.z = base.z + Math.cos(time * 0.0019 + index * 0.42) * card.userData.secondaryMotion * 0.65;
+      });
+    }
+
+    applyFootContactIK(runtime, phase, strength = 1) {
+      if (!runtime || runtime.lodSuspended || !this.state.settings.naturalMotion) return;
+      const leftFoot = runtime.bones?.leftFoot;
+      const rightFoot = runtime.bones?.rightFoot;
+      [[leftFoot, phase], [rightFoot, -phase]].forEach(([foot, wave]) => {
+        if (!foot) return;
+        foot.userData ||= {};
+        foot.userData.hhFootBase ??= { x: foot.rotation.x, z: foot.rotation.z };
+        const base = foot.userData.hhFootBase;
+        const plant = clamp(1 - Math.max(0, wave) * 1.8, 0, 1);
+        foot.rotation.x += ((base.x - wave * 0.055 * strength) - foot.rotation.x) * (0.12 + plant * 0.12);
+        foot.rotation.z += (base.z - foot.rotation.z) * 0.18;
+      });
+      runtime.ikState = {
+        foot: "raycast-ready",
+        hand: runtime.bones?.rightHand ? "weapon-socket" : "unavailable",
+        lookAt: runtime.bones?.head ? "active" : "unavailable",
+        updatedAt: performance.now()
+      };
     }
 
     disposeCharacterObject(object, runtime = object?.userData?.characterRuntime) {
@@ -4761,6 +5411,38 @@
           this.refreshGenesisCreator();
           return;
         }
+        const genesisExpression = event.target.closest("[data-genesis-expression]");
+        if (genesisExpression) {
+          const recipe = this.activeAppearanceRecipe();
+          const before = clone(recipe);
+          recipe.expression = CHARACTER_EXPRESSION_PRESETS[genesisExpression.dataset.genesisExpression]
+            ? genesisExpression.dataset.genesisExpression
+            : "neutral";
+          recipe.updatedAt = nowIso();
+          this.recordAppearanceChange(before);
+          this.setCharacterFacePreview(recipe.expression, recipe.viseme);
+          this.refreshGenesisCreator();
+          return;
+        }
+        const genesisViseme = event.target.closest("[data-genesis-viseme]");
+        if (genesisViseme) {
+          const recipe = this.activeAppearanceRecipe();
+          const before = clone(recipe);
+          recipe.viseme = CHARACTER_VISEMES[genesisViseme.dataset.genesisViseme]
+            ? genesisViseme.dataset.genesisViseme
+            : "neutral";
+          recipe.updatedAt = nowIso();
+          this.recordAppearanceChange(before);
+          this.setCharacterFacePreview(recipe.expression, recipe.viseme);
+          this.refreshGenesisCreator();
+          return;
+        }
+        const genesisLighting = event.target.closest("[data-genesis-lighting]");
+        if (genesisLighting) {
+          this.setGenesisLighting(genesisLighting.dataset.genesisLighting);
+          this.refreshGenesisCreator();
+          return;
+        }
         const genesisMotion = event.target.closest("[data-genesis-motion]");
         if (genesisMotion) {
           this.setGenesisMotion(genesisMotion.dataset.genesisMotion);
@@ -4782,15 +5464,19 @@
             this.refreshGenesisCreator();
           } else if (genesisAction === "reset") {
             this.resetAppearance();
-            this.rebuildActiveBuiltInCharacter();
             this.refreshGenesisCreator();
           } else if (genesisAction === "undo") {
             this.undoAppearance();
-            this.rebuildActiveBuiltInCharacter();
             this.refreshGenesisCreator();
           } else if (genesisAction === "redo") {
             this.redoAppearance();
-            this.rebuildActiveBuiltInCharacter();
+            this.refreshGenesisCreator();
+          } else if (genesisAction === "copy-dna") {
+            this.copyCharacterDNA();
+          } else if (genesisAction === "apply-dna") {
+            this.applyCharacterDNA(this.root.querySelector("[data-genesis-dna]")?.value || "");
+          } else if (genesisAction === "save-slot") {
+            this.saveAppearancePreset(`${this.state.player.name || "Nhà du hành"} · DNA`);
             this.refreshGenesisCreator();
           } else if (genesisAction === "confirm") {
             this.completeGenesisCreator();
@@ -4838,6 +5524,22 @@
           if (output) output.textContent = String(Math.round(value * 100));
           return;
         }
+        const genesisDecal = event.target.closest("[data-genesis-decal]");
+        if (genesisDecal) {
+          const value = clamp(Number(genesisDecal.value), 0, 1);
+          this.updateAppearanceDetail("decals", genesisDecal.dataset.genesisDecal, value);
+          const output = genesisDecal.closest("label")?.querySelector("output");
+          if (output) output.textContent = String(Math.round(value * 100));
+          return;
+        }
+        const genesisSurface = event.target.closest("[data-genesis-surface]");
+        if (genesisSurface) {
+          const value = clamp(Number(genesisSurface.value), 0, 1);
+          this.updateAppearanceDetail("surface", genesisSurface.dataset.genesisSurface, value);
+          const output = genesisSurface.closest("label")?.querySelector("output");
+          if (output) output.textContent = String(Math.round(value * 100));
+          return;
+        }
         const genesisSetting = event.target.closest("[data-genesis-setting]");
         if (genesisSetting) {
           this.updateAppearanceDraft(genesisSetting.dataset.genesisSetting, genesisSetting.value);
@@ -4865,7 +5567,7 @@
         }
       });
       this.listen(this.root, "change", (event) => {
-        if (event.target.matches("[data-genesis-morph], [data-genesis-setting]")) {
+        if (event.target.matches("[data-genesis-morph], [data-genesis-setting], [data-genesis-decal], [data-genesis-surface]")) {
           this.commitAppearanceDraft();
           this.refreshGenesisCreator();
         }
@@ -5072,6 +5774,17 @@
       const runtime = mesh.userData.characterRuntime || this.characterRuntimes.get(this.state.roster.activeId);
       this.updateCharacterLod(mesh, 0);
       const lowDetailTier = ["crowd", "impostor"].includes(mesh.userData?.modelTier);
+      if (runtime) {
+        const targetSpeed = moving ? clamp(input?.magnitude || 1, 0, 1) * (sprinting ? 1.35 : 1) : 0;
+        runtime.motionSpeed += (targetSpeed - runtime.motionSpeed) * (1 - Math.exp(-dt * 12));
+        runtime.motionDirection += (Math.atan2(input?.x || 0, input?.z || 1) - runtime.motionDirection) * (1 - Math.exp(-dt * 10));
+        runtime.motionWarp = {
+          speed: runtime.motionSpeed,
+          direction: runtime.motionDirection,
+          target: this.lockedTargetId || "",
+          mode: this.lockedTargetId ? "combat-facing" : "locomotion-facing"
+        };
+      }
       if (runtime?.mixer && !runtime.lodSuspended) {
         this.playCharacterClip(runtime, targetAnimation);
         const locomotion = ["walk", "run", "sprint", "strafe", "swim", "climb"].includes(targetAnimation);
@@ -5119,7 +5832,7 @@
           leftArmZ: -0.06,
           rightArmZ: 0.06,
           torsoX: 0,
-          torsoZ: moving ? Math.sin(time * cadence * 0.5) * 0.035 : Math.sin(time * 0.0013) * 0.014
+          torsoZ: moving ? Math.sin(time * cadence * 0.5) * 0.035 - (input?.x || 0) * 0.045 : Math.sin(time * 0.0013) * 0.014
         };
         if (targetAnimation === "strafe") {
           pose.torsoZ = -input.x * 0.12;
@@ -5219,6 +5932,12 @@
         }
         this.applyCorrectiveMorphs(mesh);
       }
+      this.applyFootContactIK(runtime, phase, moving && this.isGrounded ? 1 : 0.25);
+      this.updateSecondaryCharacterMotion(runtime, time, {
+        moving,
+        sprinting,
+        direction: runtime?.motionDirection || 0
+      });
       if (!lowDetailTier) {
         this.applyProceduralFacialPerformance(mesh, time, targetAnimation);
         this.updateCharacterSurface(mesh, time);
@@ -5294,6 +6013,12 @@
               this.playCharacterClip(runtime, this.genesisMotion || "idle");
               runtime.mixer.update(dt);
             }
+            this.applyProceduralFacialPerformance(this.playerMesh, time, this.genesisMotion || "idle");
+            this.updateSecondaryCharacterMotion(runtime, time, {
+              moving: ["walk", "run", "strafe"].includes(this.genesisMotion),
+              sprinting: this.genesisMotion === "run",
+              direction: this.genesisMotion === "strafe" ? 0.8 : 0
+            });
           }
           this.updateCamera(false, dt);
           this.renderer.render(this.scene, this.camera);
@@ -6762,7 +7487,7 @@
     renderCharactersPanel() {
       const activeId = this.state.roster.activeId;
       return `
-        <div class="har-section har-character-v9-hero"><small>HUMAN CHARACTER SYSTEM · VISUAL V${CHARACTER_VISUAL_VERSION}</small><h3>Character V${CHARACTER_VISUAL_VERSION} · Human Rig 3D và Character Genesis</h3><p>Nhân vật mặc định là SkinnedMesh PBR toàn thân có skeleton và animation thật. Atlas chỉ còn dùng cho ảnh hồ sơ trong giao diện, không xuất hiện thay cho người chơi trong thế giới 3D.</p></div>
+        <div class="har-section har-character-v9-hero"><small>DIGITAL HUMAN CORE · VISUAL V${CHARACTER_VISUAL_VERSION}</small><h3>Character V${CHARACTER_VISUAL_VERSION} · gương mặt, da, mắt, tóc và chuyển động thế hệ mới</h3><p>Nhân vật mặc định vẫn là SkinnedMesh PBR toàn thân. Runtime V${CHARACTER_VISUAL_VERSION} bổ sung driver 52 kênh, viseme, vật liệu da năm lớp, secondary motion và LOD thích ứng; số morph native luôn được báo theo dữ liệu thật của GLB.</p></div>
         <ul class="har-character-list">${CHARACTER_ORDER.map((id, index) => {
           const profile = CHARACTERS[id];
           const member = this.state.roster.members[id] || {};
@@ -6775,7 +7500,7 @@
             <button class="har-chip ${active ? "is-active" : ""}" type="button" data-panel-action="switch-character" data-character="${id}">${active ? "Đang dùng" : `Đổi [${index + 1}]`}</button>
           </li>`;
         }).join("")}</ul>
-        <div class="har-section"><h3>Character Pipeline</h3><div class="har-character-pipeline">${CHARACTER_PIPELINE.map((item) => `<div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.role)}</span><small>${escapeHtml(item.state)}</small></div>`).join("")}</div></div>
+        <div class="har-section"><h3>Character Pipeline</h3><div class="har-character-pipeline">${CHARACTER_PIPELINE.map((item) => `<div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.role)}</span><small>${escapeHtml(item.id === "three" ? `Runtime V${CHARACTER_VISUAL_VERSION}` : item.state)}</small></div>`).join("")}</div></div>
         <div class="har-section"><h3>Nguồn hình học nhân vật</h3><p>Hai Human Rig tích hợp sẵn dùng mesh 3D PBR ở khoảng cách gần và proxy 3D ở xa. Bạn vẫn có thể nhập GLB đã tối ưu có SkinnedMesh, animation và morph; Character QA chỉ gắn nhãn “rigged” khi dữ liệu quét thực tế đáp ứng yêu cầu.</p>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Creator</button></div>
         </div>`;
@@ -6814,30 +7539,43 @@
           ? "Human Rig + proxy 3D"
           : "proxy 3D thích ứng";
       const saved = this.state.appearance.savedPresets || [];
+      const nativeFaceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
+      const dna = encodeCharacterDNA(recipe, id);
       return `
         <div class="har-creator">
           <div class="har-creator__hero">
-            <div><small>CHARACTER CREATOR V${CHARACTER_VISUAL_VERSION} · ${escapeHtml(profile.name)}</small><h3>${recipe.style === "human-cinematic" ? "Human Cinematic" : "Anime Realistic"}</h3><p>${escapeHtml(capability)} · collider gameplay giữ cố định để multiplayer công bằng.</p></div>
+            <div><small>DIGITAL HUMAN CORE V${CHARACTER_VISUAL_VERSION} · ${escapeHtml(profile.name)}</small><h3>${recipe.style === "human-cinematic" ? "Web Digital Human" : "Anime Realistic"}</h3><p>${escapeHtml(capability)} · collider gameplay giữ cố định để multiplayer công bằng.</p></div>
             <span class="har-chip ${trulyRigged ? "is-active" : ""}">${trulyRigged ? "RIGGED GLB" : gltfActive ? "GLB FALLBACK" : "PBR FALLBACK"}</span>
           </div>
           <div class="har-character-runtime-grid">
             <div><small>Motion</small><strong>${escapeHtml(runtime?.state || this.activeAnimation || "idle")}</strong><span>${runtime?.clips?.size || 0} clip GLB</span></div>
             <div><small>Skeleton</small><strong>${runtime ? Object.keys(runtime.bones || {}).length : 0}/${Object.keys(HH_HUMANOID_SKELETON).length}</strong><span>HH slots nhận diện</span></div>
-            <div><small>Face</small><strong>${runtime?.facialChannels || 0}/52</strong><span>Morph target</span></div>
+            <div><small>Face</small><strong>52 driver</strong><span>${nativeFaceChannels}/52 native morph · ${runtime?.faceFallback?.driver || "procedural fallback"}</span></div>
             <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "hero")}</strong><span>${escapeHtml(lodCapability)}</span></div>
+          </div>
+          <div class="har-section har-digital-human-stack">
+            <div><small>HEAD TARGET</small><strong>18–28K</strong><span>GLB nhập vào được đo thực tế; Human Rig tích hợp không giả nhận đủ chuẩn head mesh.</span></div>
+            <div><small>SKIN STACK</small><strong>5 lớp</strong><span>micro-normal · roughness · SSS approximation · flush · wetness</span></div>
+            <div><small>EYE SYSTEM</small><strong>3 lớp</strong><span>iris · cornea · tear response khi model có mesh tách</span></div>
+            <div><small>ANIMATION</small><strong>8 hướng</strong><span>inertial crossfade · foot contact · secondary bones</span></div>
           </div>
           <div class="har-section har-character-import">
             <div><h3>Nhập GLB nén có kiểm định</h3><p>Hỗ trợ Draco, Meshopt và KTX2. File được giải mã, đo giới hạn GPU và kiểm tra cục bộ trước khi thay nhân vật; không tải lên máy chủ HH.</p><small>Decoder: ${this.characterDecodersReady ? "Draco · Meshopt · KTX2 sẵn sàng" : "GLB cơ bản"} · tối đa ${Math.round(CHARACTER_IMPORT_LIMITS.triangles / 1000)}K triangles</small></div>
             <label class="har-character-file"><span>Chọn GLB ≤ 32 MB</span><input type="file" accept=".glb,model/gltf-binary" data-character-glb></label>
           </div>
-          ${qa ? `<div class="har-section har-character-qa"><h3>Character QA · ${Math.round(qa.score ?? 100)}/100</h3><div class="har-character-runtime-grid"><div><small>Geometry</small><strong>${Number(qa.triangles || 0).toLocaleString("vi-VN")}</strong><span>triangles</span></div><div><small>Rig</small><strong>${qa.skinnedMeshes || 0}</strong><span>SkinnedMesh · ${qa.bones || 0} bone</span></div><div><small>Textures</small><strong>${qa.textures || 0}</strong><span>tối đa ${qa.maxTextureSize || 0}px</span></div><div><small>Clips</small><strong>${qa.animations || 0}</strong><span>${Number(qa.animationSeconds || 0).toFixed(1)} giây</span></div><div><small>LOD groups</small><strong>${qa.lodGroups || 0}</strong><span>${qa.lodGroups ? "GLB explicit" : "HH fallback proxy"}</span></div></div>${qa.warnings?.length ? `<p>${qa.warnings.map(escapeHtml).join("<br>")}</p>` : "<p>Không có cảnh báo tương thích.</p>"}</div>` : ""}
+          ${qa ? `<div class="har-section har-character-qa"><h3>Character QA · ${Math.round(qa.score ?? 100)}/100 · ${escapeHtml(qa.digitalHumanTier || "gameplay-rig")}</h3><div class="har-character-runtime-grid"><div><small>Geometry</small><strong>${Number(qa.triangles || 0).toLocaleString("vi-VN")}</strong><span>triangles</span></div><div><small>Head</small><strong>${Number(qa.headVertices || 0).toLocaleString("vi-VN")}</strong><span>vertices · mục tiêu 18–28K</span></div><div><small>Face</small><strong>${qa.faceMorphTargets || 0}/52</strong><span>native facial morph</span></div><div><small>Rig</small><strong>${qa.skinnedMeshes || 0}</strong><span>SkinnedMesh · ${qa.bones || 0} bone</span></div><div><small>Eyes/Hair</small><strong>${qa.separateEyeMeshes || 0}/${qa.hairCardMeshes || 0}</strong><span>mesh tách nhận diện</span></div><div><small>Textures</small><strong>${qa.textures || 0}</strong><span>tối đa ${qa.maxTextureSize || 0}px</span></div><div><small>Clips</small><strong>${qa.animations || 0}</strong><span>${Number(qa.animationSeconds || 0).toFixed(1)} giây</span></div><div><small>LOD groups</small><strong>${qa.lodGroups || 0}</strong><span>${qa.lodGroups ? "GLB explicit" : "HH fallback proxy"}</span></div></div>${qa.warnings?.length ? `<p>${qa.warnings.map(escapeHtml).join("<br>")}</p>` : "<p>Không có cảnh báo tương thích.</p>"}</div>` : ""}
           <div class="har-section"><h3>Motion Lab</h3><p>Xem ngay state machine và crossfade trước khi đưa animation vào gameplay.</p><div class="har-motion-grid">
             ${["idle", "walk", "run", "sprint", "jump", "land", "dodge", "attack1", "attack2", "attack3", "skill", "ultimate", "hit"].map((motion) => `<button class="har-chip ${this.activeAnimation === motion ? "is-active" : ""}" type="button" data-panel-action="character-preview-motion" data-motion="${motion}">${motion}</button>`).join("")}
           </div></div>
           <div class="har-section har-face-pilot">
-            <div><h3>MediaPipe Face Pilot · 52 blendshape</h3><p>Chỉ bật sau khi bạn chủ động cấp quyền. Video xử lý trên thiết bị và không được gửi tới backend HH.</p></div>
+            <div><h3>MediaPipe Face Pilot · 478 landmark / 52 blendshape</h3><p>Chỉ bật sau khi bạn chủ động cấp quyền. Video xử lý trên thiết bị và không được gửi tới backend HH.</p></div>
             <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="toggle-face-pilot">${this.facePilot.status === "running" || this.facePilot.status === "loading" ? "Tắt Face Pilot" : "Bật Face Pilot"}</button><span class="har-chip ${this.facePilot.status === "running" ? "is-active" : ""}">${escapeHtml(this.facePilot.status.toUpperCase())}${this.facePilot.frame ? ` · ${this.facePilot.frame} frames` : ""}</span></div>
             ${this.facePilot.error ? `<small class="har-face-pilot__error">${escapeHtml(this.facePilot.error)}</small>` : ""}
+          </div>
+          <div class="har-section har-face-performance-lab">
+            <div><h3>Expression & Viseme Lab</h3><p>Thử trực tiếp 52 kênh biểu cảm, corrective fallback và khẩu hình A/E/I/O/U/MBP/FV/L/WQ.</p></div>
+            <div class="har-performance-row"><span>Biểu cảm</span>${Object.keys(CHARACTER_EXPRESSION_PRESETS).map((name) => `<button class="har-chip ${recipe.expression === name ? "is-active" : ""}" type="button" data-panel-action="character-expression" data-expression="${name}">${name}</button>`).join("")}</div>
+            <div class="har-performance-row"><span>Viseme</span>${Object.keys(CHARACTER_VISEMES).map((name) => `<button class="har-chip ${recipe.viseme === name ? "is-active" : ""}" type="button" data-panel-action="character-viseme" data-viseme="${name}">${name}</button>`).join("")}</div>
           </div>
           <div class="har-creator__toolbar">
             <label class="har-field">Model nền<select data-appearance-setting="baseModel">${APPEARANCE_ASSETS.baseModels.map((value) => `<option value="${value}" ${recipe.baseModel === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
@@ -6851,6 +7589,14 @@
             <label class="har-creator__color">Mắt <input type="color" value="${recipe.eyeColor}" data-appearance-setting="eyeColor"></label>
             <label class="har-creator__color">Tóc <input type="color" value="${recipe.hairColor}" data-appearance-setting="hairColor"></label>
           </div>
+          <div class="har-creator__modules">
+            <label class="har-field">Tóc<select data-appearance-setting="hair">${APPEARANCE_ASSETS.hairs.map((value) => `<option value="${value}" ${recipe.hair === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="har-field">Râu<select data-appearance-setting="beard">${APPEARANCE_ASSETS.beards.map((value) => `<option value="${value}" ${recipe.beard === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="har-field">Lông mày<select data-appearance-setting="brow">${APPEARANCE_ASSETS.brows.map((value) => `<option value="${value}" ${recipe.brow === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="har-field">Makeup<select data-appearance-setting="makeup">${APPEARANCE_ASSETS.makeups.map((value) => `<option value="${value}" ${recipe.makeup === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="har-field">Phụ kiện<select data-appearance-setting="accessory">${APPEARANCE_ASSETS.accessories.map((value) => `<option value="${value}" ${recipe.accessory === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="har-field">Trang phục<select data-appearance-setting="outfitPrimary">${APPEARANCE_ASSETS.outfits.map((value) => `<option value="${value}" ${recipe.outfit[0] === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+          </div>
           <div class="har-creator__tabs" role="tablist" aria-label="Nhóm ngoại hình">
             ${APPEARANCE_GROUPS.map((item) => `<button type="button" class="${item.id === group.id ? "is-active" : ""}" data-appearance-group="${item.id}" role="tab" aria-selected="${item.id === group.id}">${item.label}</button>`).join("")}
           </div>
@@ -6861,6 +7607,10 @@
               return `<label class="har-appearance-slider"><span>${escapeHtml(label)}<output data-appearance-output="${controlId}">${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-appearance-morph="${controlId}" aria-label="${escapeHtml(label)}"></label>`;
             }).join("")}
           </div>
+          <div class="har-creator__surface">
+            <fieldset><legend>Chi tiết thật</legend>${Object.entries(recipe.decals).map(([key, value]) => `<label class="har-appearance-slider"><span>${escapeHtml(key)}<output data-appearance-detail-output="decals:${key}">${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-appearance-detail="decals" data-detail-key="${key}"></label>`).join("")}</fieldset>
+            <fieldset><legend>Digital Skin</legend>${Object.entries(recipe.surface).map(([key, value]) => `<label class="har-appearance-slider"><span>${escapeHtml(key)}<output data-appearance-detail-output="surface:${key}">${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-appearance-detail="surface" data-detail-key="${key}"></label>`).join("")}</fieldset>
+          </div>
           <div class="har-creator__actions">
             <button class="har-secondary-button" type="button" data-panel-action="appearance-undo" ${this.appearanceHistory.length ? "" : "disabled"}>↶ Hoàn tác</button>
             <button class="har-secondary-button" type="button" data-panel-action="appearance-redo" ${this.appearanceFuture.length ? "" : "disabled"}>↷ Làm lại</button>
@@ -6870,6 +7620,7 @@
             <button class="har-primary-button" type="button" data-panel-action="appearance-save">Lưu preset</button>
           </div>
           <div class="har-section har-creator__presets"><h3>Preset đã lưu</h3><div class="har-inline-actions">${saved.length ? saved.slice().reverse().map((preset) => `<button class="har-chip" type="button" data-panel-action="appearance-load-preset" data-preset-id="${escapeHtml(preset.id)}">${escapeHtml(preset.name)}</button>`).join("") : "<span>Chưa có preset ngoại hình.</span>"}</div></div>
+          <div class="har-section har-character-dna"><div><h3>Character DNA</h3><p>Mã ngoại hình có phiên bản, không chứa email, tài khoản hoặc dữ liệu camera.</p></div><textarea rows="3" spellcheck="false" data-character-dna>${escapeHtml(dna)}</textarea><div class="har-inline-actions"><button class="har-secondary-button" type="button" data-panel-action="character-copy-dna">Sao chép DNA</button><button class="har-primary-button" type="button" data-panel-action="character-apply-dna">Nạp DNA</button></div></div>
           <div class="har-section har-creator__note"><p>Recipe ngoại hình và collider gameplay tách khỏi model. Material/morph chỉ được áp dụng khi asset thực sự hỗ trợ; skeleton, animation và LOD luôn hiển thị theo dữ liệu quét được, không theo tên provider.</p></div>
         </div>`;
     }
@@ -7198,7 +7949,20 @@
       if (!this.appearanceInputStart) this.appearanceInputStart = clone(recipe);
       if (key in recipe.morphs) recipe.morphs[key] = clamp(value, 0, 1);
       else if (["symmetry", "advanced"].includes(key)) recipe[key] = Boolean(value);
-      else if (["baseModel", "bodyPreset", "style", "skinColor", "eyeColor", "hairColor"].includes(key)) recipe[key] = value;
+      else if (key === "outfitPrimary" && APPEARANCE_ASSETS.outfits.includes(value)) {
+        recipe.outfit = [value, ...recipe.outfit.filter((id) => id !== value)].slice(0, 4);
+      } else if (["baseModel", "bodyPreset", "style", "skinColor", "eyeColor", "hairColor", "hair", "beard", "brow", "makeup", "accessory", "lighting", "expression", "viseme"].includes(key)) recipe[key] = value;
+      recipe.updatedAt = nowIso();
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), recipe, id);
+      this.appearanceDirty = true;
+    }
+
+    updateAppearanceDetail(section, key, value) {
+      const id = this.state.roster.activeId;
+      const recipe = this.activeAppearanceRecipe();
+      if (!recipe[section] || !(key in recipe[section])) return;
+      if (!this.appearanceInputStart) this.appearanceInputStart = clone(recipe);
+      recipe[section][key] = clamp(value, 0, 1);
       recipe.updatedAt = nowIso();
       this.applyAppearanceToMesh(this.characterMeshes.get(id), recipe, id);
       this.appearanceDirty = true;
@@ -7249,6 +8013,7 @@
       const id = this.state.roster.activeId;
       this.state.appearance.recipes[id] = defaultAppearanceRecipe(id);
       this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      if (before.baseModel !== this.state.appearance.recipes[id].baseModel) this.rebuildActiveBuiltInCharacter();
       this.recordAppearanceChange(before);
       this.renderCurrentPanel();
     }
@@ -7260,6 +8025,7 @@
       this.appearanceFuture.push(clone(this.activeAppearanceRecipe()));
       this.state.appearance.recipes[id] = normalizeAppearanceRecipe(previous, id);
       this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      if (this.appearanceFuture.at(-1)?.baseModel !== this.state.appearance.recipes[id].baseModel) this.rebuildActiveBuiltInCharacter();
       this.appearanceDirty = true;
       this.saveProgress("Hoàn tác ngoại hình");
       this.renderCurrentPanel();
@@ -7272,6 +8038,7 @@
       this.appearanceHistory.push(clone(this.activeAppearanceRecipe()));
       this.state.appearance.recipes[id] = normalizeAppearanceRecipe(next, id);
       this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      if (this.appearanceHistory.at(-1)?.baseModel !== this.state.appearance.recipes[id].baseModel) this.rebuildActiveBuiltInCharacter();
       this.appearanceDirty = true;
       this.saveProgress("Làm lại ngoại hình");
       this.renderCurrentPanel();
@@ -7301,6 +8068,7 @@
       const id = this.state.roster.activeId;
       this.state.appearance.recipes[id] = normalizeAppearanceRecipe(preset.recipe, id);
       this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      if (before.baseModel !== this.state.appearance.recipes[id].baseModel) this.rebuildActiveBuiltInCharacter();
       this.recordAppearanceChange(before);
       this.renderCurrentPanel();
     }
@@ -7319,6 +8087,8 @@
             <label class="har-field">Khuôn mặt<select data-setting="facialAnimation"><option value="true">Chớp mắt, cảm xúc và lip-sync</option><option value="false">Tắt facial animation</option></select></label>
             <label class="har-field">Mắt tự nhiên<select data-setting="eyePerformance"><option value="true">Mí mắt, đồng tử và micro-saccade</option><option value="false">Mắt tĩnh</option></select></label>
             <label class="har-field">Chuyển động tự nhiên<select data-setting="naturalMotion"><option value="true">Analog gait · yaw smoothing</option><option value="false">Chuyển động cơ bản</option></select></label>
+            <label class="har-field">Digital Human<select data-setting="digitalHumanQuality"><option value="adaptive">Tự động theo FPS</option><option value="performance">Hiệu năng</option><option value="quality">Chất lượng</option><option value="cinematic">Điện ảnh</option></select></label>
+            <label class="har-field">Tóc & vải động<select data-setting="secondaryMotion"><option value="true">Spring bone nhẹ</option><option value="false">Tắt secondary motion</option></select></label>
             <label class="har-field">Chi tiết vi mô<select data-setting="microDetail"><option value="true">Da normal/roughness · hair cards</option><option value="false">Vật liệu nhẹ</option></select></label>
             <label class="har-field">Da & trang phục<select data-setting="surfaceFx"><option value="true">Wetness, tuyết và nhiệt</option><option value="false">Vật liệu cố định</option></select></label>
             <label class="har-field">Kết xuất 3D<select data-setting="renderStyle"><option value="realistic">Realistic PBR</option><option value="cinematic">Cinematic PBR</option><option value="anime">Anime Toon</option></select></label>
@@ -7368,10 +8138,18 @@
       body.oninput = (event) => {
         const morph = event.target.closest("[data-appearance-morph]");
         const setting = event.target.closest("[data-appearance-setting]");
+        const detail = event.target.closest("[data-appearance-detail]");
         if (morph) {
           const value = Number(morph.value);
           this.updateAppearanceDraft(morph.dataset.appearanceMorph, value);
           const output = body.querySelector(`[data-appearance-output="${morph.dataset.appearanceMorph}"]`);
+          if (output) output.textContent = String(Math.round(value * 100));
+        } else if (detail) {
+          const value = Number(detail.value);
+          const section = detail.dataset.appearanceDetail;
+          const key = detail.dataset.detailKey;
+          this.updateAppearanceDetail(section, key, value);
+          const output = body.querySelector(`[data-appearance-detail-output="${section}:${key}"]`);
           if (output) output.textContent = String(Math.round(value * 100));
         } else if (setting && ["color", "range"].includes(setting.type)) {
           this.updateAppearanceDraft(setting.dataset.appearanceSetting, setting.value);
@@ -7391,6 +8169,9 @@
         } else if (event.target.matches("[data-appearance-morph]")) {
           this.commitAppearanceDraft();
           this.renderCurrentPanel();
+        } else if (event.target.matches("[data-appearance-detail]")) {
+          this.commitAppearanceDraft();
+          this.renderCurrentPanel();
         } else if (event.target.matches("[data-appearance-setting]")) {
           const setting = event.target.dataset.appearanceSetting;
           const value = setting === "symmetry" || setting === "advanced" ? event.target.checked : event.target.value;
@@ -7399,6 +8180,7 @@
           } else {
             this.updateAppearanceDraft(setting, value);
             this.commitAppearanceDraft();
+            if (setting === "baseModel") this.rebuildActiveBuiltInCharacter();
             this.renderCurrentPanel();
           }
         } else if (event.target.matches("[data-ship-name]")) {
@@ -7420,7 +8202,7 @@
         } else if (event.target.matches("[data-setting]")) {
           const key = event.target.dataset.setting;
           let value = event.target.value;
-          if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld", "facialAnimation", "surfaceFx", "microDetail", "naturalMotion", "eyePerformance"].includes(key)) value = value === "true";
+          if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld", "facialAnimation", "surfaceFx", "microDetail", "naturalMotion", "eyePerformance", "secondaryMotion"].includes(key)) value = value === "true";
           if (["volume", "cameraSensitivity", "cameraShake", "weatherDensity"].includes(key)) value = Number(value);
           this.state.settings[key] = value;
           if (key === "quality") {
@@ -7448,6 +8230,12 @@
             this.toast("Character runtime đã chuyển chế độ.", "success");
           }
           if (key === "characterQuality") this.characterMeshes.forEach((mesh) => { mesh.userData.modelTier = ""; });
+          if (key === "digitalHumanQuality") {
+            const mappedQuality = { performance: "crowd", quality: "near", cinematic: "hero" }[value] || "adaptive";
+            this.state.settings.characterQuality = mappedQuality;
+            this.characterMeshes.forEach((mesh) => { mesh.userData.modelTier = ""; });
+            this.toast("Digital Human quality đã được áp dụng.", "success");
+          }
           if (key === "visualStyle") this.toast("Phong cách nhân vật và cảnh quan sẽ áp dụng ở lần mở game kế tiếp.");
           if (key === "vfxLevel") {
             this.root.dataset.vfx = value;
@@ -7474,6 +8262,8 @@
       setSelect('[data-setting="facialAnimation"]', this.state.settings.facialAnimation);
       setSelect('[data-setting="eyePerformance"]', this.state.settings.eyePerformance);
       setSelect('[data-setting="naturalMotion"]', this.state.settings.naturalMotion);
+      setSelect('[data-setting="digitalHumanQuality"]', this.state.settings.digitalHumanQuality);
+      setSelect('[data-setting="secondaryMotion"]', this.state.settings.secondaryMotion);
       setSelect('[data-setting="microDetail"]', this.state.settings.microDetail);
       setSelect('[data-setting="surfaceFx"]', this.state.settings.surfaceFx);
       setSelect('[data-setting="vfxLevel"]', this.state.settings.vfxLevel);
@@ -7715,6 +8505,26 @@
         this.toast(`Motion preview · ${motion}`, "success");
       }
       else if (action === "toggle-face-pilot") await this.toggleFacePilot();
+      else if (action === "character-expression") {
+        const recipe = this.activeAppearanceRecipe();
+        const before = clone(recipe);
+        recipe.expression = CHARACTER_EXPRESSION_PRESETS[data.expression] ? data.expression : "neutral";
+        recipe.updatedAt = nowIso();
+        this.recordAppearanceChange(before);
+        this.setCharacterFacePreview(recipe.expression, recipe.viseme);
+        this.renderCurrentPanel();
+      }
+      else if (action === "character-viseme") {
+        const recipe = this.activeAppearanceRecipe();
+        const before = clone(recipe);
+        recipe.viseme = CHARACTER_VISEMES[data.viseme] ? data.viseme : "neutral";
+        recipe.updatedAt = nowIso();
+        this.recordAppearanceChange(before);
+        this.setCharacterFacePreview(recipe.expression, recipe.viseme);
+        this.renderCurrentPanel();
+      }
+      else if (action === "character-copy-dna") await this.copyCharacterDNA();
+      else if (action === "character-apply-dna") this.applyCharacterDNA(bodyValue(this.root, "[data-character-dna]"));
       else if (action === "appearance-undo") this.undoAppearance();
       else if (action === "appearance-redo") this.redoAppearance();
       else if (action === "appearance-random") this.randomAppearance();
@@ -8503,6 +9313,7 @@
 
     async destroy() {
       if (this.destroyed) return;
+      this.restoreGenesisLighting();
       if (this.started) await this.saveProgress("Rời game");
       this.destroyed = true;
       this.running = false;

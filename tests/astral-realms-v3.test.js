@@ -51,7 +51,7 @@ test("small realtime shards reconnect and interpolate remote players", () => {
 test("the release loader and service worker request the latest Astral Realms bundle", () => {
   for (const file of ["performance-loader.js", "sw.js"]) {
     const source = read(file);
-    assert.match(source, /astral-realms\.css\?v=10/);
-    assert.match(source, /astral-realms\.js\?v=10/);
+    assert.match(source, /astral-realms\.css\?v=11/);
+    assert.match(source, /astral-realms\.js\?v=11/);
   }
 });

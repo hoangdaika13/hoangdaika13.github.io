@@ -2665,7 +2665,7 @@ button.har-chip {
   .har-character-v9-hero::before { animation: none; }
 }
 
-/* Astral Realms Character V10 · mandatory 3D Character Genesis and mesh world */
+/* Astral Realms Character V11 · Digital Human Core */
 .har-genesis[hidden] { display: none !important; }
 
 .har-genesis {
@@ -3092,4 +3092,233 @@ button.har-chip {
 @media (prefers-reduced-motion: reduce) {
   .har-genesis::after,
   .har-genesis__scan i { animation: none !important; }
+}
+
+/* Digital Human Core V11 */
+.har-genesis-capabilities,
+.har-digital-human-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.har-genesis-capabilities > div,
+.har-digital-human-stack > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 9px 10px;
+  border: 1px solid rgba(113, 232, 255, .14);
+  border-radius: 11px;
+  background: linear-gradient(145deg, rgba(19, 45, 66, .48), rgba(32, 15, 56, .38));
+}
+
+.har-genesis-capabilities small,
+.har-digital-human-stack small {
+  color: #7defff;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .13em;
+}
+
+.har-genesis-capabilities strong,
+.har-digital-human-stack strong {
+  color: #f7fbff;
+  font-size: 13px;
+}
+
+.har-genesis-capabilities span,
+.har-digital-human-stack span {
+  color: #8594ad;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.har-genesis-assets,
+.har-creator__modules {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.har-genesis-assets label {
+  display: grid;
+  gap: 5px;
+  color: #9eacc3;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .05em;
+}
+
+.har-genesis-assets select,
+.har-genesis-dna textarea,
+.har-character-dna textarea {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 9px;
+  color: #dfeaff;
+  border: 1px solid rgba(121, 214, 255, .18);
+  border-radius: 9px;
+  outline: none;
+  background: rgba(5, 11, 25, .86);
+  font: inherit;
+  font-size: 9px;
+}
+
+.har-genesis-assets select:focus,
+.har-genesis-dna textarea:focus,
+.har-character-dna textarea:focus {
+  border-color: rgba(110, 239, 255, .66);
+  box-shadow: 0 0 0 3px rgba(91, 229, 255, .08);
+}
+
+.har-genesis-detail-grid,
+.har-creator__surface {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.har-genesis-detail-grid fieldset,
+.har-creator__surface fieldset {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid rgba(135, 194, 235, .15);
+  border-radius: 12px;
+  background: rgba(7, 13, 28, .58);
+}
+
+.har-genesis-detail-grid legend,
+.har-creator__surface legend {
+  padding: 0 5px;
+  color: #83eeff;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.har-genesis-detail-grid label,
+.har-creator__surface label {
+  display: grid;
+  gap: 3px;
+}
+
+.har-genesis-detail-grid label span,
+.har-creator__surface label span {
+  display: flex;
+  justify-content: space-between;
+  gap: 7px;
+  color: #95a5bc;
+  font-size: 8px;
+}
+
+.har-genesis-detail-grid input,
+.har-creator__surface input {
+  width: 100%;
+  accent-color: #75edff;
+}
+
+.har-genesis-detail-grid output,
+.har-creator__surface output { color: #7cefff; }
+
+.har-genesis-performance,
+.har-face-performance-lab {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid rgba(202, 113, 255, .16);
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(43, 17, 68, .48), rgba(8, 34, 53, .48));
+}
+
+.har-genesis-performance > div,
+.har-performance-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.har-genesis-performance span,
+.har-performance-row > span {
+  min-width: 60px;
+  margin-right: auto;
+  color: #a8b8ce;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .06em;
+}
+
+.har-genesis-performance button,
+.har-genesis-dna button {
+  min-height: 28px;
+  padding: 5px 8px;
+  color: #aebcd2;
+  border: 1px solid rgba(142, 181, 222, .18);
+  border-radius: 8px;
+  background: rgba(7, 13, 28, .78);
+  font: inherit;
+  font-size: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.har-genesis-performance button:hover,
+.har-genesis-performance button.is-active,
+.har-genesis-dna button:hover {
+  color: #06121f;
+  border-color: transparent;
+  background: linear-gradient(135deg, #74efff, #d39cff);
+}
+
+.har-genesis-dna,
+.har-character-dna {
+  display: grid;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.har-genesis-dna label {
+  display: grid;
+  gap: 5px;
+  color: #a6b5cb;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.har-genesis-dna textarea,
+.har-character-dna textarea {
+  min-height: 50px;
+  resize: vertical;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  line-height: 1.35;
+}
+
+.har-genesis-dna > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.har-digital-human-stack { margin: 0; }
+.har-face-performance-lab { margin-top: 0; }
+.har-character-dna { margin-top: 0; }
+
+@media (max-width: 720px) {
+  .har-genesis-capabilities { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .har-genesis-assets,
+  .har-genesis-detail-grid,
+  .har-creator__modules,
+  .har-creator__surface { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 450px) {
+  .har-genesis-capabilities,
+  .har-digital-human-stack { grid-template-columns: 1fr; }
+  .har-genesis-performance > div,
+  .har-performance-row { align-items: flex-start; }
+  .har-genesis-performance span,
+  .har-performance-row > span { flex: 0 0 100%; }
 }
