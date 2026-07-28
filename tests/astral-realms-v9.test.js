@@ -15,12 +15,12 @@ function between(startToken, endToken) {
   return source.slice(start, end);
 }
 
-test("Character V9 is the only release selected by the game route and offline catalog", () => {
+test("Character V10 is the only release selected by the game route and offline catalog", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
 
-  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*9/);
-  for (const asset of ["astral-realms.css?v=9", "astral-realms.js?v=9"]) {
+  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*10/);
+  for (const asset of ["astral-realms.css?v=10", "astral-realms.js?v=10"]) {
     assert.ok(loader.includes(asset), `route loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }
@@ -157,14 +157,15 @@ test("both CSP layers permit the explicit MediaPipe Face Pilot runtime", () => {
   }
 });
 
-test("the V9 photoreal portrait fallback uses a valid atlas v2 asset", () => {
+test("the portrait atlas remains a valid UI-only asset", () => {
   const atlasPath = path.join(root, "assets", "astral-realms", "astral-crew-atlas-v2.webp");
   const atlas = fs.readFileSync(atlasPath);
   const worker = read("sw.js");
-  const assetContract = between("const PHOTOREAL_ASSETS", "const CHARACTER_ATLAS_INDEX");
+  const manifest = read("assets/astral-realms/manifest.json");
 
-  assert.match(assetContract, /astral-crew-atlas-v2\.webp/);
-  assert.doesNotMatch(assetContract, /astral-crew-atlas-v1\.webp/);
+  assert.match(manifest, /astral-crew-atlas-v2\.webp/);
+  assert.match(manifest, /used only by interface cards/);
+  assert.doesNotMatch(source, /createCharacterImpostor|isCharacterImpostor/);
   assert.ok(atlas.length > 1_000, "atlas v2 must not be an empty placeholder");
   assert.equal(atlas.subarray(0, 4).toString("ascii"), "RIFF");
   assert.equal(atlas.subarray(8, 12).toString("ascii"), "WEBP");
@@ -172,7 +173,7 @@ test("the V9 photoreal portrait fallback uses a valid atlas v2 asset", () => {
 });
 
 test("hair-card alphaMap stores its opacity mask in RGB including the green channel", () => {
-  const textureBody = between("    createCharacterDetailTexture(kind = \"skin\") {", "    createCharacterImpostor(");
+  const textureBody = between("    createCharacterDetailTexture(kind = \"skin\") {", "    createAnimeCharacterMesh(");
   const hairBranchStart = textureBody.indexOf('kind === "hair-alpha"');
   const hairBranchEnd = textureBody.indexOf("continue;", hairBranchStart);
   const hairBranch = textureBody.slice(hairBranchStart, hairBranchEnd);
@@ -184,20 +185,17 @@ test("hair-card alphaMap stores its opacity mask in RGB including the green chan
   assert.match(textureBody, /kind\s*===\s*"hair-alpha"[\s\S]{0,180}\?\s*this\.THREE\.NoColorSpace/);
 });
 
-test("LOD changes select real variants and a distant impostor instead of changing labels only", () => {
+test("LOD changes select real variants and a distant 3D proxy instead of changing labels only", () => {
   const lodBody = between("    updateCharacterLod(mesh, distance = 0) {", "    async importCharacterGLB(file) {");
-  const impostorDefinitions = source.match(/createCharacterImpostor\s*\(/g) || [];
 
-  assert.ok(impostorDefinitions.length >= 2, "createCharacterImpostor must be defined and used");
+  assert.match(source, /createCharacterMesh\(\{ body: profile\.body, accent: profile\.accent/);
+  assert.match(source, /Imported3DProxy/);
+  assert.doesNotMatch(source, /createCharacterImpostor|isCharacterImpostor/);
   assert.match(source, /lodVariants/);
   assert.match(lodBody, /lodVariants/);
   assert.match(lodBody, /\.visible\s*=/);
   assert.match(lodBody, /impostor/);
-  assert.match(
-    source,
-    /createCharacterImpostor\s*\([^)]*\)\s*\{[\s\S]{0,3500}(?:Sprite|PlaneGeometry|Mesh)/,
-    "distant LOD needs a renderable proxy"
-  );
+  assert.match(source, /proxy3d\.userData\.isCharacterLodProxy\s*=\s*true/);
 });
 
 test("low LOD always suspends animation, zeros morphs and prevents Face Pilot inference", () => {
