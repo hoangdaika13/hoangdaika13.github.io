@@ -2,12 +2,14 @@
   "use strict";
 
   const GAME_ID = "astral-realms";
-  const SCHEMA_VERSION = 4;
+  const SCHEMA_VERSION = 5;
   const DB_NAME = "hh-astral-realms";
   const DB_VERSION = 1;
   const STORE_NAME = "saves";
   const STORAGE_FALLBACK = "hh.astral-realms.save.v1";
-  const WORLD_LIMIT = 92;
+  const WORLD_LIMIT = 188;
+  const COOP_PLAYER_LIMIT = 8;
+  const PLAYER_LEVEL_CAP = 80;
   const AUTOSAVE_MS = 15000;
   const ELEMENTS = Object.freeze({
     plasma: { label: "Plasma", short: "PL", color: "#ff68c9" },
@@ -82,7 +84,11 @@
     { id: "central", name: "H-Central", x: 0, z: 0, radius: 31, color: "#6feeff", weather: "Trời quang", description: "Thành phố trung tâm và Training Arena." },
     { id: "aurora", name: "Aurora Vale", x: -51, z: 20, radius: 30, color: "#65f1c7", weather: "Mưa tinh thể", description: "Thung lũng cực quang với tinh thể Băng tinh." },
     { id: "crimson", name: "Crimson Forge", x: 52, z: 24, radius: 30, color: "#ff805f", weather: "Tro plasma", description: "Lò rèn cổ, dung nham và máy móc tha hóa." },
-    { id: "void", name: "Void Garden", x: 2, z: -62, radius: 32, color: "#ae78ff", weather: "Bão hư không", description: "Khu rừng tím nơi Nexus Warden trú ngụ." }
+    { id: "void", name: "Void Garden", x: 2, z: -62, radius: 32, color: "#ae78ff", weather: "Bão hư không", description: "Khu rừng tím nơi Nexus Warden trú ngụ." },
+    { id: "sky", name: "Sky Ruins", x: -122, z: -48, radius: 28, color: "#9ad7ff", weather: "Gió lượng tử", description: "Quần đảo cổ trôi giữa những dòng gió lượng tử." },
+    { id: "ocean", name: "Ocean Moon", x: 122, z: -42, radius: 30, color: "#4de1ff", weather: "Mưa sao biển", description: "Mặt trăng đại dương với các rạn tinh thể phát sáng." },
+    { id: "station", name: "Astral Station", x: -118, z: 90, radius: 27, color: "#ffd36b", weather: "Cực quang nhân tạo", description: "Trạm trung chuyển, chợ và hub xã hội ngoài quỹ đạo." },
+    { id: "abyss", name: "Nexus Abyss", x: 124, z: 94, radius: 31, color: "#ff5e9f", weather: "Nhật thực Nexus", description: "Vực cuối nơi không gian, trọng lực và ánh sáng cùng biến dạng." }
   ]);
   const FACTIONS = Object.freeze([
     { id: "h-central", name: "H-Central Federation", short: "HCF", color: "#6feeff", description: "Giữ mạng lưới cổng và bảo vệ các thành phố lõi.", perk: "Mở tuyến dịch chuyển và nâng cấp checkpoint." },
@@ -109,7 +115,11 @@
     central: { core: "stable", restored: true, occupation: "h-central", weather: "clear", resources: 100, lastBossAt: "" },
     aurora: { core: "unstable", restored: false, occupation: "aurora-keepers", weather: "aurora", resources: 100, lastBossAt: "" },
     crimson: { core: "corrupted", restored: false, occupation: "crimson-union", weather: "embers", resources: 100, lastBossAt: "" },
-    void: { core: "sealed", restored: false, occupation: "void-cult", weather: "storm", resources: 100, lastBossAt: "" }
+    void: { core: "sealed", restored: false, occupation: "void-cult", weather: "storm", resources: 100, lastBossAt: "" },
+    sky: { core: "unstable", restored: false, occupation: "free-travelers", weather: "quantum-wind", resources: 100, lastBossAt: "" },
+    ocean: { core: "unstable", restored: false, occupation: "aurora-keepers", weather: "star-rain", resources: 100, lastBossAt: "" },
+    station: { core: "corrupted", restored: false, occupation: "astral-researchers", weather: "artificial-aurora", resources: 100, lastBossAt: "" },
+    abyss: { core: "sealed", restored: false, occupation: "void-cult", weather: "eclipse", resources: 100, lastBossAt: "" }
   });
   const ITEMS = Object.freeze({
     "starter-blade": { id: "starter-blade", name: "Đoản kiếm H", type: "weapon", rarity: "Khởi đầu", description: "Vũ khí tiêu chuẩn của Nhà du hành H.", attack: 8 },
@@ -135,6 +145,10 @@
     "aurora-wisp": { name: "Tinh linh Aurora", health: 105, attack: 9, speed: 2.4, color: "#6cf6d0", element: "cryo", xp: 22, drop: "aurora-shard" },
     "forge-hound": { name: "Khuyển Plasma", health: 145, attack: 12, speed: 3.1, color: "#ff765d", element: "plasma", xp: 28, drop: "plasma-core" },
     "void-stalker": { name: "Bóng săn Hư Không", health: 185, attack: 15, speed: 2.8, color: "#a875ff", element: "void", xp: 36, drop: "void-fiber" },
+    "sky-sentinel": { name: "Vệ binh Sky Ruins", health: 210, attack: 16, speed: 3.25, color: "#9ad7ff", element: "quantum", xp: 42, drop: "aurora-shard" },
+    "ocean-siren": { name: "Hải linh Ocean Moon", health: 225, attack: 17, speed: 2.7, color: "#4de1ff", element: "cryo", xp: 44, drop: "aurora-shard" },
+    "station-drone": { name: "Drone Astral lỗi", health: 245, attack: 18, speed: 3, color: "#ffd36b", element: "solar", xp: 48, drop: "plasma-core" },
+    "abyss-herald": { name: "Sứ giả Nexus Abyss", health: 290, attack: 21, speed: 3.2, color: "#ff5e9f", element: "void", xp: 56, drop: "void-fiber" },
     "nexus-warden": { name: "Nexus Warden", health: 1200, attack: 22, speed: 2.1, color: "#ff5e9f", element: "quantum", xp: 360, drop: "astral-edge", boss: true }
   });
 
@@ -358,14 +372,14 @@
         hiddenFinds: [],
         landmarks: ["central-spire"],
         codex: [],
-        mapFog: { central: 0, aurora: 100, crimson: 100, void: 100 }
+        mapFog: Object.fromEntries(ZONES.map((zone) => [zone.id, zone.id === "central" ? 0 : 100]))
       },
       progression: {
         mastery: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, { combat: 0, exploration: 0, bond: 0 }])),
         daily: { date: "", completed: 0 },
         weekly: { week: "", completed: 0 }
       },
-      checkpoints: { central: true, aurora: false, crimson: false, void: false },
+      checkpoints: Object.fromEntries(ZONES.map((zone) => [zone.id, zone.id === "central"])),
       activatedGates: [],
       collectedNodes: [],
       puzzles: {},
@@ -399,7 +413,7 @@
         expeditions: 0
       },
       cloud: { status: "local", version: 0, updatedAt: "", error: "" },
-      party: { roomCode: "", status: "local", ready: false, members: [], integrity: "local-simulation" }
+      party: { roomCode: "", status: "local", ready: false, capacity: 4, members: [], integrity: "local-simulation" }
     };
   }
 
@@ -535,11 +549,20 @@
       settings: { ...base.settings, ...(input.settings || {}) },
       stats: { ...base.stats, ...(input.stats || {}) },
       cloud: { ...base.cloud, ...(input.cloud || {}) },
-      party: { ...base.party, ...(input.party || {}), ready: input.party?.ready === true }
+      party: {
+        ...base.party,
+        ...(input.party || {}),
+        ready: input.party?.ready === true,
+        capacity: [4, 8].includes(Number(input.party?.capacity)) ? Number(input.party.capacity) : 4
+      }
     };
     state.schemaVersion = SCHEMA_VERSION;
     state.player.health = clamp(state.player.health, 0, state.player.maxHealth || 100);
     state.player.stamina = clamp(state.player.stamina, 0, state.player.maxStamina || 100);
+    state.player.level = clamp(state.player.level, 1, PLAYER_LEVEL_CAP);
+    state.player.xp = state.player.level >= PLAYER_LEVEL_CAP
+      ? 0
+      : clamp(state.player.xp, 0, Math.max(0, 120 + (state.player.level - 1) * 70 - 1));
     state.player.x = clamp(state.player.x, -WORLD_LIMIT, WORLD_LIMIT);
     state.player.z = clamp(state.player.z, -WORLD_LIMIT, WORLD_LIMIT);
     if (!["auto", "low", "medium", "high", "cinematic"].includes(state.settings.quality)) state.settings.quality = "auto";
@@ -739,6 +762,7 @@
       this.fps = 0;
       this.renderScale = 1;
       this.dynamicResolution = 1;
+      this.forceCompatibility = false;
       this.lastStreamingAt = 0;
       this.dpsSamples = [];
       this.trainingActive = false;
@@ -767,7 +791,7 @@
           <div class="har-topbar">
             <div class="har-brand">
               <div class="har-brand__core" aria-hidden="true">H</div>
-              <div class="har-brand__copy"><strong>HH Astral Realms</strong><span>Anime Open World · Visual V2</span></div>
+              <div class="har-brand__copy"><strong>HH Astral Realms</strong><span>Living Open World · Visual V5</span></div>
             </div>
             <div class="har-live-orbit" aria-label="Trạng thái game realtime">
               <div class="har-signal" data-tone="cyan"><small>Khu vực</small><strong data-har-zone>H-Central</strong></div>
@@ -820,7 +844,7 @@
             <label>Góc nhìn <input type="range" min="28" max="80" value="48" data-photo-setting="fov"></label>
             <label>Phơi sáng <input type="range" min="65" max="150" value="108" data-photo-setting="exposure"></label>
             <label>Thời gian <input type="range" min="0" max="24" step="0.1" value="8.2" data-photo-setting="time"></label>
-            <label>Thời tiết <select data-photo-setting="weather"><option value="auto">Theo khu vực</option><option value="clear">Trời quang</option><option value="aurora">Cực quang</option><option value="storm">Bão tinh thể</option><option value="embers">Tro plasma</option></select></label>
+            <label>Thời tiết <select data-photo-setting="weather"><option value="auto">Theo khu vực</option><option value="clear">Trời quang</option><option value="aurora">Cực quang</option><option value="storm">Bão tinh thể</option><option value="embers">Tro plasma</option><option value="quantum-wind">Gió lượng tử</option><option value="star-rain">Mưa sao biển</option><option value="eclipse">Nhật thực Nexus</option></select></label>
             <div class="har-photo__actions"><button type="button" data-photo-action="toggle-ui">Ẩn/hiện HUD</button><button class="is-primary" type="button" data-photo-action="capture">Chụp PNG</button></div>
           </section>
 
@@ -892,12 +916,12 @@
               <div class="har-start-sun" aria-hidden="true">H</div>
               <small>H Galaxy · Original Action RPG</small>
               <h1>Astral Realms</h1>
-              <p>Giải phóng những lõi năng lượng bị tha hóa, mở lại các cổng không gian và đối đầu Nexus Warden trong vertical slice 3D đầu tiên.</p>
+              <p>Khám phá tám khu vực được tải theo vị trí, phát triển nhân vật tới cấp 80 và chiến đấu cùng tối đa tám Nhà du hành trong shard realtime miễn phí.</p>
               <div class="har-start-features">
-                <div class="har-start-feature"><strong>04</strong>Khu vực liền mạch</div>
+                <div class="har-start-feature"><strong>08</strong>Khu vực streaming</div>
                 <div class="har-start-feature"><strong>06</strong>Nhiệm vụ thật</div>
-                <div class="har-start-feature"><strong>06</strong>Lõi nguyên tố</div>
-                <div class="har-start-feature"><strong>1–4</strong>Co-op thử nghiệm</div>
+                <div class="har-start-feature"><strong>80</strong>Cấp nhân vật tối đa</div>
+                <div class="har-start-feature"><strong>1–8</strong>Co-op realtime</div>
               </div>
               <div class="har-start-actions">
                 <button class="har-primary-button" type="button" data-har-continue>Tiếp tục hành trình</button>
@@ -906,6 +930,10 @@
               <div class="har-loading" data-har-loading hidden>
                 <div class="har-loading__track"><i data-har-loading-bar></i></div>
                 <span data-har-loading-text>Đang chuẩn bị cổng không gian...</span>
+                <div class="har-loading__recovery" data-har-loading-recovery hidden>
+                  <button class="har-secondary-button" type="button" data-har-retry>Thử lại</button>
+                  <button class="har-secondary-button" type="button" data-har-safe-mode>Chạy cấu hình nhẹ</button>
+                </div>
               </div>
               <div class="har-status-note" data-har-save-note>Đang kiểm tra tiến trình trên thiết bị...</div>
             </div>
@@ -942,11 +970,32 @@
       if (text) text.textContent = message;
     }
 
+    applyCompatibilityProfile({ forced = false } = {}) {
+      const memory = Number(root.navigator?.deviceMemory || 0);
+      const cores = Number(root.navigator?.hardwareConcurrency || 0);
+      const constrained = forced || (memory > 0 && memory <= 4) || (cores > 0 && cores <= 4);
+      if (!constrained) return false;
+      this.state.settings.quality = "low";
+      this.state.settings.rendererMode = "webgl";
+      this.state.settings.dynamicResolution = true;
+      this.state.settings.shadows = "low";
+      this.state.settings.postFx = false;
+      this.state.settings.weatherDensity = Math.min(38, Number(this.state.settings.weatherDensity || 38));
+      this.state.settings.reduceEffects = true;
+      this.root.dataset.quality = "low";
+      this.root.dataset.compatibility = "true";
+      return true;
+    }
+
     async startGame({ fresh = false } = {}) {
       if (this.started || this.destroyed) return;
       this.started = true;
       const continueButton = this.root.querySelector("[data-har-continue]");
       const newButton = this.root.querySelector("[data-har-new]");
+      const recovery = this.root.querySelector("[data-har-loading-recovery]");
+      const loadingText = this.root.querySelector("[data-har-loading-text]");
+      if (recovery) recovery.hidden = true;
+      loadingText?.classList.remove("har-unsupported");
       continueButton.disabled = true;
       newButton.disabled = true;
       try {
@@ -957,9 +1006,12 @@
         } else if (this.savedRecord?.data) {
           this.state = normalizeState(this.savedRecord.data);
         }
+        const compatibilityMode = this.applyCompatibilityProfile({ forced: this.forceCompatibility });
         this.setLoading(12, "Đang kiểm tra trình duyệt và bộ nhớ đồ họa...");
         if (!this.supportsRenderer()) throw new Error("Trình duyệt không hỗ trợ WebGL hoặc WebGPU. Hãy bật tăng tốc phần cứng hoặc dùng trình duyệt mới hơn.");
-        this.setLoading(28, "Đang chọn WebGPU hoặc WebGL2 phù hợp với thiết bị...");
+        this.setLoading(28, compatibilityMode
+          ? "Đã bật cấu hình nhẹ cho thiết bị này · đang khởi tạo WebGL..."
+          : "Đang chọn WebGPU hoặc WebGL2 phù hợp với thiết bị...");
         const wantsWebGPU = this.state.settings.rendererMode !== "webgl"
           && this.webgpuAvailable
           && this.state.settings.quality !== "low";
@@ -1005,6 +1057,7 @@
         const message = error?.message || "Không khởi động được game.";
         this.setLoading(0, message);
         this.root.querySelector("[data-har-loading-text]")?.classList.add("har-unsupported");
+        if (recovery) recovery.hidden = false;
       }
     }
 
@@ -1078,6 +1131,12 @@
 
     createWorld() {
       const THREE = this.THREE;
+      // Keep the renderer quality decision scoped to the world build as well.
+      // Previously this function referenced an undeclared `quality`, which
+      // aborted the entire start sequence after the renderer was initialized.
+      const quality = ["auto", "low", "medium", "high", "cinematic"].includes(this.state?.settings?.quality)
+        ? this.state.settings.quality
+        : "auto";
       this.world = new THREE.Group();
       this.world.name = "AstralOpenWorld";
       this.scene.add(this.world);
@@ -1135,6 +1194,7 @@
       this.createAuroraVale();
       this.createCrimsonForge();
       this.createVoidGarden();
+      this.createFrontierRegions();
       this.createDungeon();
       this.createWater();
       this.createInstancedNature();
@@ -1451,11 +1511,9 @@
         this.addWorldLabel(zone.name, zone.x, 5.8, zone.z, zone.color, 1.15);
       });
 
-      const paths = [
-        [0, 0, -51, 20, "#5cf6df"],
-        [0, 0, 52, 24, "#ff8667"],
-        [0, 0, 2, -62, "#a879ff"]
-      ];
+      const paths = ZONES
+        .filter((zone) => zone.id !== "central")
+        .map((zone) => [0, 0, zone.x, zone.z, zone.color]);
       paths.forEach(([x1, z1, x2, z2, color]) => {
         const dx = x2 - x1;
         const dz = z2 - z1;
@@ -1624,6 +1682,111 @@
       }
       this.createPortal("void", "Cổng Void", 2, -45, "#ac7aff", { checkpoint: "void" });
       this.createPortal("dungeon-entry", "Bí cảnh Hư Không", -12, -69, "#ff67ca", { dungeon: "nexus-depths" });
+    }
+
+    createFrontierRegions() {
+      const THREE = this.THREE;
+      const frontier = [
+        { id: "sky", geometry: () => new THREE.DodecahedronGeometry(1.25, 0), item: "aurora-shard" },
+        { id: "ocean", geometry: () => new THREE.IcosahedronGeometry(1.05, 1), item: "aurora-shard" },
+        { id: "station", geometry: () => new THREE.BoxGeometry(1.8, 3.4, 1.8), item: "plasma-core" },
+        { id: "abyss", geometry: () => new THREE.OctahedronGeometry(1.35, 0), item: "void-fiber" }
+      ];
+      frontier.forEach((profile, profileIndex) => {
+        const zone = ZONES.find((entry) => entry.id === profile.id);
+        if (!zone) return;
+        const group = new THREE.Group();
+        group.name = `Stream:${zone.id}`;
+        group.userData.zoneId = zone.id;
+        this.world.add(group);
+        this.streamingGroups.set(zone.id, group);
+
+        const color = new THREE.Color(zone.color);
+        const material = new THREE.MeshStandardMaterial({
+          color: color.clone().multiplyScalar(0.34),
+          emissive: color,
+          emissiveIntensity: zone.id === "abyss" ? 0.34 : 0.18,
+          metalness: zone.id === "station" ? 0.72 : 0.18,
+          roughness: zone.id === "ocean" ? 0.22 : 0.62,
+          transparent: zone.id === "ocean",
+          opacity: zone.id === "ocean" ? 0.82 : 1
+        });
+        const count = this.state.settings.quality === "low" ? 8 : 16;
+        for (let index = 0; index < count; index += 1) {
+          const angle = (index / count) * Math.PI * 2 + profileIndex * 0.22;
+          const radius = 7 + (index * 7) % Math.max(9, zone.radius - 6);
+          const object = new THREE.Mesh(profile.geometry(), material.clone());
+          const height = zone.id === "sky"
+            ? 2.4 + (index % 5) * 1.25
+            : zone.id === "station"
+              ? 2.7
+              : 1.25 + (index % 3) * 0.35;
+          object.position.set(zone.x + Math.cos(angle) * radius, height, zone.z + Math.sin(angle) * radius);
+          object.rotation.set(index * 0.17, angle, index * 0.11);
+          const scale = 0.72 + (index % 4) * 0.18;
+          object.scale.set(scale, zone.id === "station" ? 1 + (index % 3) * 0.45 : scale, scale);
+          object.castShadow = index < 6;
+          object.receiveShadow = true;
+          object.userData.zoneId = zone.id;
+          if (zone.id === "sky" || zone.id === "abyss") object.userData.spin = (index % 2 ? -1 : 1) * 0.04;
+          group.add(object);
+        }
+
+        if (zone.id === "ocean") {
+          const ocean = new THREE.Mesh(
+            new THREE.CircleGeometry(zone.radius - 3, 72),
+            new THREE.MeshPhysicalMaterial({
+              color: 0x0a6a91,
+              emissive: color,
+              emissiveIntensity: 0.22,
+              roughness: 0.12,
+              metalness: 0.08,
+              clearcoat: 0.88,
+              transparent: true,
+              opacity: 0.76
+            })
+          );
+          ocean.rotation.x = -Math.PI / 2;
+          ocean.position.set(zone.x, 1.13, zone.z);
+          ocean.userData = { water: true, baseY: 1.13, zoneId: zone.id };
+          group.add(ocean);
+          this.waterSurfaces.push(ocean);
+        } else if (zone.id === "station") {
+          const stationRing = new THREE.Mesh(
+            new THREE.TorusGeometry(11, 0.75, 12, 96),
+            new THREE.MeshStandardMaterial({ color: 0x36435b, emissive: color, emissiveIntensity: 0.42, metalness: 0.82, roughness: 0.22 })
+          );
+          stationRing.position.set(zone.x, 5.4, zone.z);
+          stationRing.rotation.x = Math.PI / 2.4;
+          stationRing.userData = { spin: 0.08, zoneId: zone.id };
+          group.add(stationRing);
+        } else if (zone.id === "abyss") {
+          const abyssCore = new THREE.Mesh(
+            new THREE.SphereGeometry(4.2, 28, 20),
+            new THREE.MeshPhysicalMaterial({
+              color: 0x05010c,
+              emissive: color,
+              emissiveIntensity: 0.62,
+              roughness: 0.08,
+              metalness: 0.7,
+              clearcoat: 1
+            })
+          );
+          abyssCore.position.set(zone.x, 5.5, zone.z);
+          abyssCore.userData = { spin: -0.12, zoneId: zone.id };
+          group.add(abyssCore);
+        }
+
+        const nodeAngle = profileIndex * 1.7 + 0.5;
+        this.createCollectible(
+          `${zone.id}-node-1`,
+          profile.item,
+          zone.x + Math.cos(nodeAngle) * 9,
+          zone.z + Math.sin(nodeAngle) * 9,
+          zone.color
+        );
+        this.createPortal(zone.id, `Cổng ${zone.name}`, zone.x, zone.z + Math.min(18, zone.radius * 0.58), zone.color, { checkpoint: zone.id });
+      });
     }
 
     createDungeon() {
@@ -2282,6 +2445,14 @@
         ["forge-hound-2", "forge-hound", 62, 14],
         ["void-stalker-1", "void-stalker", -7, -56],
         ["void-stalker-2", "void-stalker", 15, -57],
+        ["sky-sentinel-1", "sky-sentinel", -116, -43],
+        ["sky-sentinel-2", "sky-sentinel", -132, -53],
+        ["ocean-siren-1", "ocean-siren", 114, -36],
+        ["ocean-siren-2", "ocean-siren", 132, -48],
+        ["station-drone-1", "station-drone", -110, 84],
+        ["station-drone-2", "station-drone", -128, 96],
+        ["abyss-herald-1", "abyss-herald", 115, 88],
+        ["abyss-herald-2", "abyss-herald", 134, 100],
         ["nexus-warden", "nexus-warden", 8, -73],
         ["dungeon-stalker-1", "void-stalker", 71, -67],
         ["dungeon-stalker-2", "void-stalker", 81, -64]
@@ -2427,6 +2598,11 @@
         if (continueButton) return this.startGame({ fresh: false });
         const newButton = event.target.closest("[data-har-new]");
         if (newButton) return this.startGame({ fresh: true });
+        if (event.target.closest("[data-har-retry]")) return this.startGame({ fresh: false });
+        if (event.target.closest("[data-har-safe-mode]")) {
+          this.forceCompatibility = true;
+          return this.startGame({ fresh: false });
+        }
         const panelButton = event.target.closest("[data-har-panel]");
         if (panelButton) return this.openPanel(panelButton.dataset.harPanel);
         const teamButton = event.target.closest("[data-character]");
@@ -2926,6 +3102,7 @@
 
     updateEnemies(dt, time) {
       const player = this.state.player;
+      const activeRadius = this.state.settings.quality === "low" ? 52 : this.state.settings.quality === "medium" ? 72 : 96;
       this.enemies.forEach((enemy) => {
         const data = enemy.userData;
         if (data.defeated) {
@@ -2940,9 +3117,15 @@
           return;
         }
 
+        const streamDistance = Math.hypot(player.x - enemy.position.x, player.z - enemy.position.z);
+        if (streamDistance > activeRadius && !data.boss) {
+          enemy.visible = false;
+          return;
+        }
+        enemy.visible = true;
         enemy.position.y = data.floatBase + Math.sin(time * 0.002 + data.homeX) * 0.2;
         data.ring.rotation.z += dt * (data.boss ? 0.9 : 1.5);
-        const distance = Math.hypot(player.x - enemy.position.x, player.z - enemy.position.z);
+        const distance = streamDistance;
         if (data.boss) this.updateBossPhase(enemy, distance, time);
         if (distance < (data.boss ? 25 : 14) && player.health > 0) {
           enemy.lookAt(player.x, enemy.position.y, player.z);
@@ -3070,7 +3253,14 @@
         this.weatherField.position.set(this.state.player.x, 0, this.state.player.z);
         const positions = this.weatherField.geometry.attributes.position.array;
         for (let index = 1; index < positions.length; index += 3) {
-          positions[index] -= dt * (this.currentZone.id === "crimson" ? 1.1 : 3.2);
+          const fallSpeed = this.currentZone.id === "crimson"
+            ? 1.1
+            : this.currentZone.id === "sky"
+              ? 6.2
+              : this.currentZone.id === "abyss"
+                ? 0.65
+                : 3.2;
+          positions[index] -= dt * fallSpeed;
           if (positions[index] < 1) positions[index] = 18 + Math.random() * 8;
         }
         this.weatherField.geometry.attributes.position.needsUpdate = true;
@@ -3098,17 +3288,34 @@
 
     updateWeatherAppearance() {
       if (!this.weatherField) return;
-      const colors = { central: 0x72eaff, aurora: 0x9effe9, crimson: 0xff8a62, void: 0xc087ff };
+      const colors = {
+        central: 0x72eaff,
+        aurora: 0x9effe9,
+        crimson: 0xff8a62,
+        void: 0xc087ff,
+        sky: 0x9ad7ff,
+        ocean: 0x4de1ff,
+        station: 0xffd36b,
+        abyss: 0xff5e9f
+      };
       const override = this.photoMode ? this.photoSettings.weather : "auto";
       const mode = override === "auto"
         ? this.currentZone.id
-        : ({ clear: "central", aurora: "aurora", storm: "aurora", embers: "crimson" }[override] || this.currentZone.id);
+        : ({
+          clear: "central",
+          aurora: "aurora",
+          storm: "void",
+          embers: "crimson",
+          "quantum-wind": "sky",
+          "star-rain": "ocean",
+          eclipse: "abyss"
+        }[override] || this.currentZone.id);
       this.weatherField.material.color.setHex(colors[mode] || colors.central);
       const density = clamp(this.state.settings.weatherDensity, 0, 100) / 100;
       this.weatherField.material.opacity = override === "clear"
         ? 0.04
         : (mode === "central" ? 0.16 : mode === "aurora" && override === "storm" ? 0.82 : 0.58) * density;
-      this.weatherField.material.size = mode === "crimson" ? 0.34 : mode === "aurora" ? 0.24 : 0.18;
+      this.weatherField.material.size = mode === "crimson" || mode === "abyss" ? 0.34 : mode === "aurora" || mode === "ocean" ? 0.24 : 0.18;
     }
 
     updateEffects(dt) {
@@ -3705,9 +3912,14 @@
     }
 
     grantXp(amount) {
+      if (this.state.player.level >= PLAYER_LEVEL_CAP) {
+        this.state.player.level = PLAYER_LEVEL_CAP;
+        this.state.player.xp = 0;
+        return;
+      }
       this.state.player.xp += Math.max(0, Number(amount) || 0);
       let threshold = this.levelThreshold(this.state.player.level);
-      while (this.state.player.xp >= threshold) {
+      while (this.state.player.xp >= threshold && this.state.player.level < PLAYER_LEVEL_CAP) {
         this.state.player.xp -= threshold;
         this.state.player.level += 1;
         this.state.player.skillPoints += 1;
@@ -3715,6 +3927,11 @@
         this.state.player.health = this.state.player.maxHealth;
         threshold = this.levelThreshold(this.state.player.level);
         this.toast(`Thăng cấp ${this.state.player.level} · +1 điểm kỹ năng`, "success");
+      }
+      if (this.state.player.level >= PLAYER_LEVEL_CAP) {
+        this.state.player.level = PLAYER_LEVEL_CAP;
+        this.state.player.xp = 0;
+        this.toast(`Đã đạt cấp tối đa ${PLAYER_LEVEL_CAP} · Mastery vẫn tiếp tục tăng.`, "success");
       }
     }
 
@@ -3826,7 +4043,7 @@
       };
       setWidth("[data-har-health]", (player.health / player.maxHealth) * 100);
       setWidth("[data-har-stamina]", (player.stamina / player.maxStamina) * 100);
-      setWidth("[data-har-xp]", (player.xp / levelTarget) * 100);
+      setWidth("[data-har-xp]", player.level >= PLAYER_LEVEL_CAP ? 100 : (player.xp / levelTarget) * 100);
       const avatar = this.root.querySelector(".har-avatar");
       avatar?.setAttribute("data-level", String(player.level));
       this.root.querySelector("[data-har-player-name]").textContent = player.name;
@@ -3893,7 +4110,7 @@
       if (!context) return;
       const width = canvas.width;
       const center = width / 2;
-      const scale = width / 220;
+      const scale = width / (WORLD_LIMIT * 2 + 24);
       context.clearRect(0, 0, width, width);
       const gradient = context.createRadialGradient(center, center, 4, center, center, center);
       gradient.addColorStop(0, "rgba(20,46,76,.9)");
@@ -3904,7 +4121,7 @@
       context.fill();
       context.strokeStyle = "rgba(112,225,255,.15)";
       context.lineWidth = 1;
-      [30, 60, 90].forEach((radius) => {
+      [0.25, 0.5, 0.75].map((ratio) => WORLD_LIMIT * ratio).forEach((radius) => {
         context.beginPath();
         context.arc(center, center, radius * scale, 0, Math.PI * 2);
         context.stroke();
@@ -4052,7 +4269,7 @@
         skills: ["Cây kỹ năng", "Resonance Matrix", "#ff70ce"],
         characters: ["Đội hình Astral", "Character Observatory", "#ff78d2"],
         creator: ["Character Creator", "Appearance Observatory", "#71efff"],
-        party: ["Co-op 1–4", "Realtime Shard", "#73eaff"],
+        party: ["Co-op 1–8", "Realtime Shard", "#73eaff"],
         settings: ["Thiết lập", "Graphics & Controls", "#ffd36b"],
         paused: ["Tạm dừng", "Game Paused", "#a78bff"],
         defeated: ["Lõi năng lượng cạn", "Mission Interrupted", "#ff6d78"]
@@ -4376,6 +4593,7 @@
       const connected = Boolean(this.socket?.connected);
       const members = this.state.party.members || [];
       const roomCode = this.state.party.roomCode || "";
+      const capacity = clamp(this.room?.maxPlayers || this.state.party.capacity || 4, 2, COOP_PLAYER_LIMIT);
       const statusCopy = !navigator.onLine
         ? "Thiết bị đang ngoại tuyến. Game tiếp tục chạy bằng mô phỏng local."
         : this.state.party.status === "reconnecting"
@@ -4383,8 +4601,8 @@
         : !connected
           ? "Realtime server chưa kết nối. Không hiển thị người chơi hoặc phòng giả."
           : roomCode
-            ? `${members.length || 1}/4 người · ${this.state.party.integrity === "server-authoritative" ? "chiến đấu do server xác nhận" : "đang chờ snapshot server"}`
-            : "Máy chủ sẵn sàng. Tạo hoặc nhập mã phòng tối đa 4 người.";
+            ? `${members.length || 1}/${capacity} người · ${this.state.party.integrity === "server-authoritative" ? "chiến đấu do server xác nhận" : "đang chờ snapshot server"}`
+            : "Máy chủ sẵn sàng. Tạo phòng co-op 4 người hoặc world event 8 người.";
       return `
         <div class="har-section"><h3>${roomCode ? `Phòng ${escapeHtml(roomCode)}` : "Co-op thử nghiệm"}</h3><p>${escapeHtml(statusCopy)}</p></div>
         ${roomCode ? `
@@ -4393,11 +4611,12 @@
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="toggle-ready">${this.state.party.ready ? "Hủy sẵn sàng" : "Sẵn sàng"}</button><button class="har-secondary-button" type="button" data-panel-action="send-chat">Gửi</button><button class="har-secondary-button" type="button" data-panel-action="leave-party">Rời phòng</button></div>
           <div class="har-section" style="margin-top:10px"><h3>Hoạt động phòng</h3><p>${(this.partyMessages || []).length ? (this.partyMessages || []).slice(-6).map((message) => `${escapeHtml(message.user?.name || "HH")}: ${escapeHtml(message.body)}`).join("<br>") : "Chưa có tin nhắn."}</p></div>
         ` : `
-          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="create-party" ${connected ? "" : "disabled"}>Tạo phòng 4 người</button></div>
+          <div class="har-form-row"><label class="har-field" style="grid-column:1/-1">Quy mô shard<select data-party-capacity><option value="4" ${capacity === 4 ? "selected" : ""}>Expedition · 4 người</option><option value="8" ${capacity === 8 ? "selected" : ""}>World Event · 8 người</option></select></label></div>
+          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="match-party" ${connected ? "" : "disabled"}>Ghép nhanh</button><button class="har-secondary-button" type="button" data-panel-action="create-party" ${connected ? "" : "disabled"}>Tạo shard ${capacity} người</button></div>
           <div class="har-form-row"><label class="har-field" style="grid-column:1/-1">Mã phòng<input type="text" maxlength="8" data-party-code placeholder="Ví dụ: H7K2Q9"></label></div>
           <div class="har-inline-actions"><button class="har-secondary-button" type="button" data-panel-action="join-party" ${connected ? "" : "disabled"}>Tham gia phòng</button></div>
         `}
-        <div class="har-section" style="margin-top:10px"><p>Phiên bản này xác nhận vị trí, tốc độ, nhịp tấn công, HP quái và sát thương trên server khi phòng realtime hoạt động. Redis/PostgreSQL shard bền vững sẽ là giai đoạn MMO-lite tiếp theo.</p></div>`;
+        <div class="har-section" style="margin-top:10px"><p>Shard 4–8 người xác nhận vị trí, tốc độ, nhịp tấn công, HP quái, sát thương và world event trên server. Mức 20–40 người chỉ mở sau khi Redis/PostgreSQL persistence và matchmaking bền vững được cấu hình.</p></div>`;
     }
 
     refreshCharacterMaterials() {
@@ -4655,6 +4874,9 @@
           const key = event.target.dataset.loadoutSetting;
           if (["role", "weapon", "core"].includes(key)) this.state.loadouts[characterId][key] = event.target.value;
           this.state.loadouts[characterId].updatedAt = nowIso();
+        } else if (event.target.matches("[data-party-capacity]")) {
+          this.state.party.capacity = Number(event.target.value) === 8 ? 8 : 4;
+          this.renderCurrentPanel();
         } else if (event.target.matches("[data-setting]")) {
           const key = event.target.dataset.setting;
           let value = event.target.value;
@@ -4861,7 +5083,12 @@
       this.state.exploration.mapFog[zone.id] = clamp((this.state.exploration.mapFog[zone.id] || 100) - 25, 0, 100);
       this.state.world.zones[zone.id].discovered = true;
       this.recordWorldEvent({ type: "scan", title: `Đã quét ${zone.name}`, detail: "Entry mới được thêm vào Astral Codex.", zoneId: zone.id });
-      this.addItem(zone.id === "aurora" ? "aurora-shard" : zone.id === "crimson" ? "plasma-core" : "void-fiber", 1, "Scan codex");
+      const scanReward = ["aurora", "sky", "ocean"].includes(zone.id)
+        ? "aurora-shard"
+        : ["crimson", "station"].includes(zone.id)
+          ? "plasma-core"
+          : "void-fiber";
+      this.addItem(scanReward, 1, "Scan codex");
       this.saveProgress("Quét codex");
       this.renderCurrentPanel();
     }
@@ -4922,6 +5149,7 @@
         this.cloudConflict = null;
         await this.syncCloud(true, true);
       } else if (action === "create-party") await this.createParty();
+      else if (action === "match-party") await this.matchParty();
       else if (action === "join-party") await this.joinParty(bodyValue(this.root, "[data-party-code]"));
       else if (action === "leave-party") await this.leaveParty();
       else if (action === "send-chat") await this.sendPartyChat(bodyValue(this.root, "[data-party-chat]"));
@@ -5025,7 +5253,13 @@
           this.savedRecord = record;
           this.state.saveVersion = record.version;
           this.lastSaveAt = Date.now();
-          this.runtime?.checkpoint?.(this.snapshot(), { slot: "slot1", label });
+          try {
+            this.runtime?.checkpoint?.(this.snapshot(), { slot: "slot-1", label });
+          } catch {
+            // The dedicated IndexedDB save above is authoritative for local play.
+            // A shared runtime checkpoint must never turn a successful save into
+            // a visible error for the player.
+          }
           return record;
         })
         .catch((error) => {
@@ -5208,13 +5442,14 @@
         room: (payload) => {
           if (payload?.code !== this.state.party.roomCode) return;
           this.room = payload;
-          this.state.party.members = Array.isArray(payload.members) ? payload.members.slice(0, 4) : [];
+          this.state.party.capacity = clamp(payload.maxPlayers || this.state.party.capacity || 4, 2, COOP_PLAYER_LIMIT);
+          this.state.party.members = Array.isArray(payload.members) ? payload.members.slice(0, this.state.party.capacity) : [];
           this.state.party.status = "room";
           if (this.currentPanel === "party") this.renderCurrentPanel();
         },
         presence: (payload) => {
           if (payload?.room !== this.state.party.roomCode) return;
-          this.state.party.members = Array.isArray(payload.members) ? payload.members.slice(0, 4) : [];
+          this.state.party.members = Array.isArray(payload.members) ? payload.members.slice(0, this.state.party.capacity || COOP_PLAYER_LIMIT) : [];
           if (this.currentPanel === "party") this.renderCurrentPanel();
         },
         chat: (payload) => {
@@ -5278,11 +5513,13 @@
 
     async createParty() {
       try {
+        const capacity = this.state.party.capacity === 8 ? 8 : 4;
         const response = await this.emitAck("game:room:create", {
           gameId: GAME_ID,
           name: `Astral · ${this.state.player.name}`,
           visibility: "public",
-          maxPlayers: 4,
+          maxPlayers: capacity,
+          settings: { tier: capacity === 8 ? "world-event" : "expedition" },
           gameName: this.state.player.name,
           state: { x: this.state.player.x, z: this.state.player.z, level: this.state.player.level }
         });
@@ -5290,6 +5527,25 @@
         this.toast(`Đã tạo phòng ${this.state.party.roomCode}.`, "success");
       } catch (error) {
         this.toast(error.message || "Không tạo được phòng.", "error");
+      }
+    }
+
+    async matchParty() {
+      try {
+        const capacity = this.state.party.capacity === 8 ? 8 : 4;
+        const response = await this.emitAck("game:room:match", {
+          gameId: GAME_ID,
+          name: capacity === 8 ? "Astral World Event" : "Astral Expedition",
+          maxPlayers: capacity,
+          settings: { tier: capacity === 8 ? "world-event" : "expedition" },
+          gameName: this.state.player.name,
+          state: { x: this.state.player.x, z: this.state.player.z, level: this.state.player.level }
+        });
+        if (response.room?.gameId !== GAME_ID) throw new Error("Matchmaking trả về phòng không hợp lệ.");
+        this.acceptRoom(response);
+        this.toast(`Đã ghép vào shard ${this.state.party.roomCode}.`, "success");
+      } catch (error) {
+        this.toast(error.message || "Không ghép được shard phù hợp.", "error");
       }
     }
 
@@ -5338,7 +5594,8 @@
     acceptRoom(response) {
       this.room = response.room || {};
       this.state.party.roomCode = String(this.room.code || "").toUpperCase();
-      this.state.party.members = Array.isArray(this.room.members) ? this.room.members.slice(0, 4) : [];
+      this.state.party.capacity = clamp(this.room.maxPlayers || this.state.party.capacity || 4, 2, COOP_PLAYER_LIMIT);
+      this.state.party.members = Array.isArray(this.room.members) ? this.room.members.slice(0, this.state.party.capacity) : [];
       const self = this.state.party.members.find((member) => member.socketId === this.socket?.id || member.id === this.socket?.id);
       this.state.party.ready = self?.ready === true;
       this.state.party.status = "room";
@@ -5353,7 +5610,8 @@
       try {
         if (this.socket?.connected && this.state.party.roomCode) await this.emitAck("game:room:leave", { code: this.state.party.roomCode });
       } catch {}
-      this.state.party = { roomCode: "", status: this.socket?.connected ? "ready" : "local", ready: false, members: [], integrity: "local-simulation" };
+      const capacity = this.state.party.capacity === 8 ? 8 : 4;
+      this.state.party = { roomCode: "", status: this.socket?.connected ? "ready" : "local", ready: false, capacity, members: [], integrity: "local-simulation" };
       this.authoritative = false;
       this.room = null;
       this.remotePlayers.forEach((mesh) => mesh.parent?.remove(mesh));

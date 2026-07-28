@@ -1104,6 +1104,22 @@ button.har-chip {
   font-size: 9px;
 }
 
+.har-loading__recovery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.har-loading__recovery[hidden] {
+  display: none !important;
+}
+
+.har-shell[data-compatibility="true"] .har-postfx {
+  display: none;
+}
+
 .har-status-note {
   margin-top: 12px;
   color: #71839f;

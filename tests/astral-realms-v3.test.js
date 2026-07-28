@@ -43,15 +43,15 @@ test("small realtime shards reconnect and interpolate remote players", () => {
   assert.match(realtime, /mode:\s*"free-small-shard"/);
   assert.match(realtime, /sanitizeAppearance/);
   assert.match(realtime, /appearance:\s*player\.appearance/);
-  assert.match(realtime, /maxPlayers:\s*4/);
+  assert.match(realtime, /maxPlayers:\s*shard\.maxPlayers/);
   assert.match(server, /registerGameCenterRealtime/);
-  assert.match(render, /MAX_GAME_PLAYERS[\s\S]*value:\s*"4"/);
+  assert.match(render, /MAX_GAME_PLAYERS[\s\S]*value:\s*"8"/);
 });
 
-test("the release loader and service worker request Astral Realms v4", () => {
+test("the release loader and service worker request Astral Realms v5", () => {
   for (const file of ["performance-loader.js", "sw.js"]) {
     const source = read(file);
-    assert.match(source, /astral-realms\.css\?v=4/);
-    assert.match(source, /astral-realms\.js\?v=4/);
+    assert.match(source, /astral-realms\.css\?v=5/);
+    assert.match(source, /astral-realms\.js\?v=5/);
   }
 });

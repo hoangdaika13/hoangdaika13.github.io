@@ -45,8 +45,10 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
     stdio: ["ignore", "pipe", "pipe"]
   });
   let socket;
+  const peers = [];
   t.after(() => {
     socket?.close();
+    peers.forEach((peer) => peer.close());
     child.kill();
   });
 
@@ -64,8 +66,8 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
   const room = await emitAck(socket, "game:room:create", {
     gameId: "astral-realms",
     name: "Authoritative Astral Shard",
-    visibility: "private",
-    maxPlayers: 4
+    visibility: "public",
+    maxPlayers: 8
   });
   assert.match(room.room.code, /^[A-Z0-9]{6}$/);
 
@@ -118,4 +120,27 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
   const boss = snapshot.enemies.find((enemy) => enemy.id === "nexus-warden");
   assert.equal(boss.bossPhase, 1);
   assert.equal(boss.maxShield, 320);
+
+  for (let index = 0; index < 7; index += 1) {
+    const peer = await connectPlayer();
+    peers.push(peer);
+    await emitAck(peer, "game:room:join", { code: room.room.code, gameName: `Astral Peer ${index + 2}` });
+    await emitAck(peer, "astral-realms:input", {
+      seq: 1,
+      spawn: { x: index + 1, z: index + 2 },
+      move: { x: 0, z: 0 },
+      characterId: "lyra"
+    });
+  }
+  await new Promise((resolve) => setTimeout(resolve, 180));
+  const fullShard = await emitAck(socket, "astral-realms:sync");
+  assert.equal(fullShard.maxPlayers, 8);
+  assert.equal(fullShard.players.length, 8);
+
+  const overflow = await connectPlayer();
+  peers.push(overflow);
+  await assert.rejects(
+    emitAck(overflow, "game:room:join", { code: room.room.code, gameName: "Overflow Player" }),
+    /Phòng game đã đủ người/
+  );
 });

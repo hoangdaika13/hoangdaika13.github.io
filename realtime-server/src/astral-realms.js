@@ -1,7 +1,8 @@
 const GAME_ID = "astral-realms";
 const TICK_MS = 50;
 const SNAPSHOT_MS = 100;
-const WORLD_LIMIT = 92;
+const WORLD_LIMIT = 188;
+const MAX_SHARD_PLAYERS = 8;
 const MAX_MOVE_SPEED = 8;
 const ATTACK_COOLDOWN_MS = 320;
 const SKILL_COOLDOWN_MS = 2600;
@@ -18,7 +19,7 @@ const APPEARANCE_BASE_MODELS = new Set(["human-adult-a01", "human-adult-b01"]);
 const APPEARANCE_SKINS = new Set(["warm-04", "neutral-03", "cool-02", "deep-05"]);
 const APPEARANCE_HAIRS = new Set(["astral-layered-07", "aurora-short-02", "void-long-04", "solar-braid-03"]);
 const APPEARANCE_OUTFITS = new Set(["central-jacket-02", "combat-boots-01", "aurora-suit-01", "void-coat-01"]);
-const SHARD_ZONES = Object.freeze(["central", "aurora", "crimson", "void"]);
+const SHARD_ZONES = Object.freeze(["central", "aurora", "crimson", "void", "sky", "ocean", "station", "abyss"]);
 const SHARD_FACTIONS = new Set(["h-central", "aurora-keepers", "crimson-union", "void-cult", "astral-researchers", "free-travelers"]);
 const APPEARANCE_MORPHS = new Set([
   "headLength", "foreheadHeight", "cheekboneWidth", "cheekFullness", "jawWidth", "jawAngle", "chinLength", "faceFullness",
@@ -152,9 +153,10 @@ function createWorldState() {
   };
 }
 
-function createShard(code) {
+function createShard(code, requestedMaxPlayers = 4) {
   return {
     code,
+    maxPlayers: clamp(requestedMaxPlayers, 2, MAX_SHARD_PLAYERS),
     players: new Map(),
     enemies: new Map([
       makeEnemy("aurora-wisp-1", "aurora-wisp", -45, 19, 110),
@@ -164,6 +166,14 @@ function createShard(code) {
       makeEnemy("forge-hound-2", "forge-hound", 62, 14, 150),
       makeEnemy("void-stalker-1", "void-stalker", -7, -56, 190),
       makeEnemy("void-stalker-2", "void-stalker", 15, -57, 190),
+      makeEnemy("sky-sentinel-1", "sky-sentinel", -116, -43, 210),
+      makeEnemy("sky-sentinel-2", "sky-sentinel", -132, -53, 210),
+      makeEnemy("ocean-siren-1", "ocean-siren", 114, -36, 225),
+      makeEnemy("ocean-siren-2", "ocean-siren", 132, -48, 225),
+      makeEnemy("station-drone-1", "station-drone", -110, 84, 245),
+      makeEnemy("station-drone-2", "station-drone", -128, 96, 245),
+      makeEnemy("abyss-herald-1", "abyss-herald", 115, 88, 290),
+      makeEnemy("abyss-herald-2", "abyss-herald", 134, 100, 290),
       makeEnemy("nexus-warden", "nexus-warden", 8, -73, 1200, true),
       makeEnemy("dungeon-stalker-1", "void-stalker", 71, -67, 190),
       makeEnemy("dungeon-stalker-2", "void-stalker", 81, -64, 190)
@@ -233,7 +243,11 @@ function shardZoneAt(x, z) {
     ["central", 0, 0, 31],
     ["aurora", -51, 20, 30],
     ["crimson", 52, 24, 30],
-    ["void", 2, -62, 32]
+    ["void", 2, -62, 32],
+    ["sky", -122, -48, 28],
+    ["ocean", 122, -42, 30],
+    ["station", -118, 90, 27],
+    ["abyss", 124, 94, 31]
   ];
   let best = ["central", Infinity];
   zones.forEach(([id, cx, cz, radius]) => {
@@ -368,7 +382,7 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
     const code = gameCenter.socketRoomById.get(socket.id);
     const room = code ? gameCenter.rooms.get(code) : null;
     if (!room || room.gameId !== GAME_ID || !room.members?.has(socket.id)) return null;
-    const shard = shards.get(code) || createShard(code);
+    const shard = shards.get(code) || createShard(code, room.maxPlayers);
     shards.set(code, shard);
     return { code, room, shard };
   };
@@ -380,7 +394,7 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
     tick: Date.now(),
     serverTime: new Date().toISOString(),
     mode: "free-small-shard",
-    maxPlayers: 4,
+    maxPlayers: shard.maxPlayers,
     transport: "socket.io",
     integrity: "server-authoritative",
     players: [...shard.players.values()].map(publicPlayer),
