@@ -35,12 +35,19 @@ test("Publisher supports real files, metadata, scheduling and resumable upload",
 
 test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   const source = read("utils/youtubePublisher.js");
+  const security = read("utils/youtubeSecurity.js");
   const searchGateway = read("api/search/[provider].js");
   const deployment = read("vercel.json");
   const envExample = read(".env.example");
   assert.match(source, /youtube\.upload/);
   assert.match(source, /youtube\.force-ssl/);
-  assert.match(source, /aes-256-gcm/);
+  assert.match(security, /aes-256-gcm/);
+  assert.match(source, /sameOwner\(callbackUser\._id, state\.userId\)/);
+  assert.match(source, /revokeConnectionToken\(active\)/);
+  assert.match(source, /connectionFor\(db, user, record\.channelId\)/);
+  assert.match(source, /channelId: connection\.channelId/);
+  assert.match(security, /setAAD\(tokenContext\(connection\)\)/);
+  assert.match(security, /hh-youtube-token:/);
   assert.match(source, /uploadType: "resumable"/);
   assert.match(source, /status\.publishAt/);
   assert.match(source, /paidProductPlacementDetails/);
@@ -52,10 +59,19 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   assert.doesNotMatch(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/hoangdaika13githubio\.vercel\.app/);
 });
 
+test("Publisher draft and channel switching are private to the current HH account", () => {
+  const source = read("youtube-publisher.js");
+  assert.match(source, /sessionStorage\.getItem\(privateStorageKey\(\)\)/);
+  assert.match(source, /sessionStorage\.setItem\(privateStorageKey\(\)/);
+  assert.match(source, /data-yap-channel-select/);
+  assert.match(source, /hh:auth-change/);
+  assert.doesNotMatch(source, /localStorage\.setItem\(STORAGE_KEY/);
+});
+
 test("Versioned publisher assets are loaded and cached", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["youtube-publisher.css?v=3", "youtube-publisher.js?v=3"]) {
+  for (const asset of ["youtube-publisher.css?v=3", "youtube-publisher.js?v=4"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

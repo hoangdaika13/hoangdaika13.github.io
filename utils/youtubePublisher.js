@@ -1,11 +1,20 @@
 const crypto = require("node:crypto");
 const { ObjectId } = require("mongodb");
 const { clean, currentUser, enforceRateLimit, withApi } = require("./platform");
+const {
+  decryptToken,
+  encryptToken,
+  isBoundToken,
+  ownedConnectionFilter,
+  publicChannel,
+  sameOwner
+} = require("./youtubeSecurity");
 const { quotaStatus } = require("../services/apiGateway");
 
 const YOUTUBE_ORIGIN = "https://www.googleapis.com";
 const OAUTH_ORIGIN = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
+const REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke";
 const SCOPES = [
   "openid",
   "email",
@@ -59,32 +68,6 @@ function safeFrontend(value) {
   }
 }
 
-function encryptionKey() {
-  const secret = String(process.env.YOUTUBE_TOKEN_ENCRYPTION_KEY || process.env.JWT_SECRET || "");
-  if (secret.length < 32) throw fail("Máy chủ chưa cấu hình khóa mã hóa YouTube.", 503, "YOUTUBE_ENCRYPTION_MISSING");
-  return crypto.createHash("sha256").update(secret).digest();
-}
-
-function encrypt(value) {
-  if (!value) return "";
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", encryptionKey(), iv);
-  const encrypted = Buffer.concat([cipher.update(String(value), "utf8"), cipher.final()]);
-  return [iv, cipher.getAuthTag(), encrypted].map((part) => part.toString("base64url")).join(".");
-}
-
-function decrypt(value) {
-  if (!value) return "";
-  try {
-    const [iv, tag, encrypted] = String(value).split(".").map((part) => Buffer.from(part, "base64url"));
-    const decipher = crypto.createDecipheriv("aes-256-gcm", encryptionKey(), iv);
-    decipher.setAuthTag(tag);
-    return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
-  } catch {
-    throw fail("Phiên YouTube đã hỏng hoặc hết hiệu lực. Hãy kết nối lại kênh.", 401, "YOUTUBE_TOKEN_INVALID");
-  }
-}
-
 async function googleJson(url, options = {}) {
   const response = await fetch(url, { ...options, signal: AbortSignal.timeout(26000) });
   const data = await response.json().catch(() => ({}));
@@ -95,10 +78,49 @@ async function googleJson(url, options = {}) {
   return data;
 }
 
+async function revokeRawGoogleToken(token) {
+  if (!token) return false;
+  try {
+    const response = await fetch(REVOKE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token: String(token) }),
+      signal: AbortSignal.timeout(12000)
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function revokeConnectionToken(connection) {
+  if (!connection) return false;
+  try {
+    const token = connection.refreshToken
+      ? decryptToken(connection.refreshToken, connection)
+      : decryptToken(connection.accessToken, connection);
+    return revokeRawGoogleToken(token);
+  } catch {
+    return false;
+  }
+}
+
 async function refreshAccessToken(connection, connections) {
   const now = Date.now();
-  if (connection.accessToken && Number(connection.expiresAt || 0) > now + 90_000) return decrypt(connection.accessToken);
-  const refreshToken = decrypt(connection.refreshToken);
+  if (connection.accessToken && Number(connection.expiresAt || 0) > now + 90_000) {
+    const accessToken = decryptToken(connection.accessToken, connection);
+    if (!isBoundToken(connection.accessToken) || (connection.refreshToken && !isBoundToken(connection.refreshToken))) {
+      const migrated = {
+        accessToken: encryptToken(accessToken, connection),
+        ...(connection.refreshToken ? { refreshToken: encryptToken(decryptToken(connection.refreshToken, connection), connection) } : {}),
+        updatedAt: new Date()
+      };
+      await connections.updateOne(ownedConnectionFilter(connection), { $set: migrated });
+      Object.assign(connection, migrated);
+    }
+    return accessToken;
+  }
+  const refreshToken = decryptToken(connection.refreshToken, connection);
   if (!refreshToken) throw fail("YouTube chưa cấp refresh token. Hãy kết nối lại kênh.", 401, "YOUTUBE_RECONNECT_REQUIRED");
   const response = await fetch(TOKEN_ENDPOINT, {
     method: "POST",
@@ -113,38 +135,34 @@ async function refreshAccessToken(connection, connections) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data.access_token) throw fail(data.error_description || "Không làm mới được quyền YouTube.", 401, "YOUTUBE_REFRESH_FAILED");
-  const update = { accessToken: encrypt(data.access_token), expiresAt: now + Number(data.expires_in || 3600) * 1000, updatedAt: new Date() };
-  await connections.updateOne({ _id: connection._id }, { $set: update });
+  const update = {
+    accessToken: encryptToken(data.access_token, connection),
+    refreshToken: encryptToken(refreshToken, connection),
+    expiresAt: now + Number(data.expires_in || 3600) * 1000,
+    updatedAt: new Date()
+  };
+  await connections.updateOne(ownedConnectionFilter(connection), { $set: update });
   Object.assign(connection, update);
   return data.access_token;
 }
 
-async function connectionFor(db, user) {
+async function connectionFor(db, user, channelId = "") {
   const collection = db.collection("youtubeConnections");
-  const connection = await collection.findOne({ userId: user._id, active: true })
-    || await collection.findOne({ userId: user._id }, { sort: { updatedAt: -1 } });
+  const owned = { userId: user._id, ...(channelId ? { channelId: clean(channelId, 120) } : {}) };
+  const connection = channelId
+    ? await collection.findOne(owned)
+    : await collection.findOne({ ...owned, active: true })
+      || await collection.findOne(owned, { sort: { updatedAt: -1 } });
   if (!connection) throw fail("Bạn chưa kết nối kênh YouTube.", 409, "YOUTUBE_NOT_CONNECTED");
   return connection;
-}
-
-function publicChannel(connection) {
-  if (!connection) return null;
-  return {
-    id: connection.channelId || "",
-    title: connection.channelTitle || "Kênh YouTube",
-    thumbnail: connection.channelThumbnail || "",
-    subscribers: Number(connection.subscribers || 0),
-    videos: Number(connection.videoCount || 0),
-    active: Boolean(connection.active),
-    connectedAt: connection.connectedAt || null,
-    updatedAt: connection.updatedAt || null
-  };
 }
 
 function publicConnection(connection, allConnections = []) {
   const scopes = new Set(String(connection?.scopes || "").split(/\s+/).filter(Boolean));
   return {
     connected: Boolean(connection),
+    visibility: "private",
+    accountIsolated: true,
     channel: publicChannel(connection),
     channels: allConnections.map(publicChannel),
     connectedAt: connection?.connectedAt || null,
@@ -447,7 +465,12 @@ module.exports = async function handler(req, res) {
     const connections = db.collection("youtubeConnections");
     const states = db.collection("youtubeOauthStates");
     const uploads = db.collection("youtubeUploads");
-    await connections.createIndex({ userId: 1, channelId: 1 }, { unique: true, sparse: true });
+    await Promise.all([
+      connections.createIndex({ userId: 1, channelId: 1 }, { unique: true, sparse: true, name: "youtube_owner_channel_unique" }),
+      connections.createIndex({ userId: 1, active: 1, updatedAt: -1 }, { name: "youtube_owner_active" }),
+      uploads.createIndex({ userId: 1, channelId: 1, createdAt: -1 }, { name: "youtube_upload_owner_channel" }),
+      states.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, name: "youtube_oauth_state_ttl" })
+    ]);
 
     if (route === "oauth/callback" && req.method === "GET") {
       const rawState = clean(req.query.state, 180);
@@ -455,8 +478,16 @@ module.exports = async function handler(req, res) {
       const state = await states.findOne({ stateHash, expiresAt: { $gt: new Date() } });
       const frontend = safeFrontend(state?.returnTo);
       const returnHash = safeReturnHash(state?.returnHash);
+      if (state && req.query.code) {
+        const callbackUser = await currentUser(req);
+        if (!callbackUser || !sameOwner(callbackUser._id, state.userId)) {
+          await states.deleteOne({ _id: state._id });
+          return res.redirect(`${frontend}/?youtubeError=${encodeURIComponent("Phiên HH không khớp với người đã bắt đầu kết nối YouTube.")}${returnHash}`);
+        }
+      }
       if (!state || !req.query.code) return res.redirect(`${frontend}/?youtubeError=${encodeURIComponent("Phiên kết nối YouTube đã hết hạn.")}${returnHash}`);
       await states.deleteOne({ _id: state._id });
+      let grantedTokenForCleanup = "";
       try {
         const tokenResponse = await fetch(TOKEN_ENDPOINT, {
           method: "POST",
@@ -471,18 +502,20 @@ module.exports = async function handler(req, res) {
           signal: AbortSignal.timeout(18000)
         });
         const tokens = await tokenResponse.json().catch(() => ({}));
+        grantedTokenForCleanup = tokens.refresh_token || tokens.access_token || "";
         if (!tokenResponse.ok || !tokens.access_token) throw fail(tokens.error_description || "Google từ chối kết nối YouTube.", 401);
         const bundle = await channelBundle(tokens.access_token);
         const previous = await connections.findOne({ userId: state.userId, channelId: bundle.channel.channelId });
-        const refreshToken = tokens.refresh_token || (previous?.refreshToken ? decrypt(previous.refreshToken) : "");
+        const ownerContext = { userId: state.userId, channelId: bundle.channel.channelId };
+        const refreshToken = tokens.refresh_token || (previous?.refreshToken ? decryptToken(previous.refreshToken, previous) : "");
         if (!refreshToken) throw fail("Google chưa cấp quyền truy cập ngoại tuyến. Hãy kết nối lại và chấp thuận quyền.", 401);
         const now = new Date();
         await connections.updateMany({ userId: state.userId }, { $set: { active: false } });
         await connections.updateOne({ userId: state.userId, channelId: bundle.channel.channelId }, { $set: {
           userId: state.userId,
           active: true,
-          accessToken: encrypt(tokens.access_token),
-          refreshToken: encrypt(refreshToken),
+          accessToken: encryptToken(tokens.access_token, ownerContext),
+          refreshToken: encryptToken(refreshToken, ownerContext),
           expiresAt: Date.now() + Number(tokens.expires_in || 3600) * 1000,
           scopes: clean(tokens.scope, 1200),
           ...bundle.channel,
@@ -490,8 +523,10 @@ module.exports = async function handler(req, res) {
           connectedAt: previous?.connectedAt || now,
           updatedAt: now
         } }, { upsert: true });
+        grantedTokenForCleanup = "";
         return res.redirect(`${frontend}/?youtubeConnected=1${returnHash}`);
       } catch (error) {
+        await revokeRawGoogleToken(grantedTokenForCleanup);
         return res.redirect(`${frontend}/?youtubeError=${encodeURIComponent(clean(error.message, 180))}${returnHash}`);
       }
     }
@@ -502,7 +537,6 @@ module.exports = async function handler(req, res) {
 
     if (route === "oauth/start" && req.method === "POST") {
       if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) throw fail("Google OAuth chưa được cấu hình trên Vercel.", 503, "GOOGLE_OAUTH_NOT_CONFIGURED");
-      await states.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
       const rawState = crypto.randomBytes(36).toString("base64url");
       const stateHash = crypto.createHash("sha256").update(rawState).digest("hex");
       await states.insertOne({
@@ -530,7 +564,9 @@ module.exports = async function handler(req, res) {
     if (route === "status" && req.method === "GET") {
       const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
       const connection = allConnections.find((item) => item.active) || allConnections[0] || null;
-      const history = await uploads.find({ userId: user._id }).sort({ createdAt: -1 }).limit(20).toArray();
+      const history = connection
+        ? await uploads.find({ userId: user._id, channelId: connection.channelId }).sort({ createdAt: -1 }).limit(20).toArray()
+        : [];
       return res.status(200).json({
         configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
         callbackUrl: callbackUrl(req),
@@ -550,7 +586,11 @@ module.exports = async function handler(req, res) {
         settledResult(() => recentComments(accessToken, connection.channelId), [], warnings, "comments"),
         settledResult(() => broadcasts(accessToken), [], warnings, "live"),
         settledResult(async () => (await quotaStatus(db)).find((item) => item.provider === "youtube") || null, null, warnings, "quota"),
-        uploads.find({ userId: user._id, status: { $in: ["uploading", "processing", "error"] } }).sort({ updatedAt: -1 }).limit(20).toArray()
+        uploads.find({
+          userId: user._id,
+          channelId: connection.channelId,
+          status: { $in: ["uploading", "processing", "error"] }
+        }).sort({ updatedAt: -1 }).limit(20).toArray()
       ]);
       const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
       return res.status(200).json({
@@ -790,7 +830,7 @@ module.exports = async function handler(req, res) {
       const connection = await connectionFor(db, user);
       const accessToken = await refreshAccessToken(connection, connections);
       const bundle = await channelBundle(accessToken);
-      await connections.updateOne({ _id: connection._id }, { $set: { ...bundle.channel, playlists: bundle.playlists, updatedAt: new Date() } });
+      await connections.updateOne(ownedConnectionFilter(connection), { $set: { ...bundle.channel, playlists: bundle.playlists, updatedAt: new Date() } });
       const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
       return res.status(200).json({ ...publicConnection({ ...connection, ...bundle.channel }, allConnections), playlists: bundle.playlists });
     }
@@ -800,18 +840,26 @@ module.exports = async function handler(req, res) {
       const selected = await connections.findOne({ userId: user._id, channelId });
       if (!selected) throw fail("Kênh YouTube không tồn tại trong tài khoản HH này.", 404, "YOUTUBE_CHANNEL_NOT_FOUND");
       await connections.updateMany({ userId: user._id }, { $set: { active: false } });
-      await connections.updateOne({ _id: selected._id }, { $set: { active: true, updatedAt: new Date() } });
-      const refreshed = await connections.findOne({ _id: selected._id });
+      await connections.updateOne(ownedConnectionFilter(selected), { $set: { active: true, updatedAt: new Date() } });
+      const refreshed = await connections.findOne(ownedConnectionFilter(selected));
       const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
       return res.status(200).json({ ...publicConnection(refreshed, allConnections), playlists: refreshed.playlists || [] });
     }
 
     if (route === "disconnect" && req.method === "POST") {
       const active = await connectionFor(db, user);
-      await connections.deleteOne({ _id: active._id });
+      const providerRevoked = await revokeConnectionToken(active);
+      await connections.deleteOne(ownedConnectionFilter(active));
       const fallback = await connections.findOne({ userId: user._id }, { sort: { updatedAt: -1 } });
-      if (fallback) await connections.updateOne({ _id: fallback._id }, { $set: { active: true, updatedAt: new Date() } });
-      return res.status(200).json({ ok: true });
+      if (fallback) await connections.updateOne(ownedConnectionFilter(fallback), { $set: { active: true, updatedAt: new Date() } });
+      await db.collection("events").insertOne({
+        type: "youtube:connection-disconnected",
+        userId: user._id,
+        channelId: active.channelId,
+        providerRevoked,
+        createdAt: new Date()
+      });
+      return res.status(200).json({ ok: true, providerRevoked });
     }
 
     if (route === "upload/session" && req.method === "POST") {
@@ -849,7 +897,7 @@ module.exports = async function handler(req, res) {
       if (!ObjectId.isValid(uploadId) || !/^[\w-]{6,20}$/.test(videoId)) throw fail("Kết quả upload không hợp lệ.");
       const record = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id });
       if (!record) throw fail("Không tìm thấy phiên upload.", 404);
-      const connection = await connectionFor(db, user);
+      const connection = await connectionFor(db, user, record.channelId);
       const accessToken = await refreshAccessToken(connection, connections);
       const video = await googleJson(`${YOUTUBE_ORIGIN}/youtube/v3/videos?part=snippet,status,processingDetails&id=${encodeURIComponent(videoId)}`, { headers: { Authorization: `Bearer ${accessToken}` } });
       if (!video.items?.[0]) throw fail("YouTube chưa trả về video vừa upload.", 409, "YOUTUBE_VIDEO_PENDING");
@@ -864,8 +912,17 @@ module.exports = async function handler(req, res) {
         playlistAdded = true;
       }
       const completedAt = new Date();
-      await uploads.updateOne({ _id: record._id }, { $set: { videoId, status: "uploaded", playlistAdded, completedAt, updatedAt: completedAt } });
-      await db.collection("events").insertOne({ type: "music-ai:youtube-upload", userId: user._id, videoId, createdAt: completedAt });
+      await uploads.updateOne(
+        { _id: record._id, userId: user._id, channelId: record.channelId },
+        { $set: { videoId, status: "uploaded", playlistAdded, completedAt, updatedAt: completedAt } }
+      );
+      await db.collection("events").insertOne({
+        type: "music-ai:youtube-upload",
+        userId: user._id,
+        channelId: record.channelId,
+        videoId,
+        createdAt: completedAt
+      });
       return res.status(200).json({ ok: true, videoId, url: `https://youtu.be/${videoId}`, playlistAdded, processingStatus: video.items[0].processingDetails?.processingStatus || "processing" });
     }
 

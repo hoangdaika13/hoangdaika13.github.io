@@ -99,13 +99,13 @@
       styles: [
         "video-editor-studio.css?v=4", "video-editor-resolve.css?v=8",
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1",
-        "youtube-publisher.css?v=3", "youtube-creator-galaxy.css?v=1"
+        "youtube-publisher.css?v=3", "youtube-creator-galaxy.css?v=2"
       ],
       scripts: [
         "media-design-studio.js?v=1", "video-editor-studio.js?v=5",
         "video-editor-resolve.js?v=10", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1",
-        "youtube-publisher.js?v=3", "youtube-creator-galaxy.js?v=2"
+        "youtube-publisher.js?v=4", "youtube-creator-galaxy.js?v=3"
       ]
     },
     graphic: {
@@ -133,7 +133,7 @@
         "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "youtube-publisher.css?v=3"
       ],
       scripts: [
-        "creative-os-core.js?v=4", "youtube-publisher.js?v=3", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
+        "creative-os-core.js?v=4", "youtube-publisher.js?v=4", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
         "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=2",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",

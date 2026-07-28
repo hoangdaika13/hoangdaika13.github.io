@@ -71,6 +71,7 @@ test("Creator utilities normalize drafts, parse captions and calculate an explai
 
 test("YouTube backend keeps tokens server-side and implements data, analytics, community, caption and live routes", () => {
   const server = read("utils/youtubePublisher.js");
+  const security = read("utils/youtubeSecurity.js");
   for (const route of [
     'route === "dashboard"',
     'route === "videos"',
@@ -83,22 +84,33 @@ test("YouTube backend keeps tokens server-side and implements data, analytics, c
     'route === "live/transition"'
   ]) assert.match(server, new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(server, /yt-analytics\.readonly/);
-  assert.match(server, /AES|aes-256-gcm/i);
+  assert.match(security, /AES|aes-256-gcm/i);
   assert.match(server, /safeReturnHash/);
   assert.doesNotMatch(read("youtube-creator-galaxy.js"), /GOOGLE_CLIENT_SECRET|YOUTUBE_TOKEN_ENCRYPTION_KEY\s*=/);
+});
+
+test("Creator Galaxy supports private multi-channel accounts without shared browser drafts", () => {
+  const client = read("youtube-creator-galaxy.js");
+  assert.match(client, /data-ycg-channel-select/);
+  assert.match(client, /channel\/select/);
+  assert.match(client, /sessionStorage\.getItem\(privateStorageKey\(\)\)/);
+  assert.match(client, /sessionStorage\.setItem\(privateStorageKey\(\)/);
+  assert.match(client, /ownerId: currentIdentityId\(\)/);
+  assert.match(client, /hh:auth-change/);
+  assert.doesNotMatch(client, /localStorage\.setItem\(STORAGE_KEY/);
 });
 
 test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=1", "youtube-creator-galaxy.js?v=2"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=2", "youtube-creator-galaxy.js?v=3"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v283/);
+  assert.match(worker, /hh-identity-portal-v284/);
 });
 
 test("Creator Galaxy keeps mobile layouts, focus visibility and reduced motion", () => {

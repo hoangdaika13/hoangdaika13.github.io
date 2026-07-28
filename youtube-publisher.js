@@ -54,13 +54,27 @@
   };
   const formatDate = (value) => value ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "";
 
+  function currentIdentityId() {
+    const runtimeUser = window.HHAuthz?.currentUser?.();
+    let user = runtimeUser;
+    if (!user) {
+      try { user = JSON.parse(localStorage.getItem("hh-auth-user") || "null"); }
+      catch { user = null; }
+    }
+    return String(user?.id || user?._id || "guest").replace(/[^a-z0-9_-]/gi, "").slice(0, 80) || "guest";
+  }
+
+  function privateStorageKey() {
+    return `${STORAGE_KEY}:${currentIdentityId()}`;
+  }
+
   function loadDraft() {
-    try { return { ...DEFAULT_DRAFT, ...(JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || {}) }; }
+    try { return { ...DEFAULT_DRAFT, ...(JSON.parse(sessionStorage.getItem(privateStorageKey()) || "null") || {}) }; }
     catch { return { ...DEFAULT_DRAFT }; }
   }
 
   function saveDraft() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(draft)); } catch {}
+    try { sessionStorage.setItem(privateStorageKey(), JSON.stringify(draft)); } catch {}
   }
 
   async function api(path, method = "GET", body) {
@@ -504,6 +518,7 @@
     unmount();
     host = nextHost;
     options = nextOptions;
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
     draft = loadDraft();
     seedFromMusicProject(false);
     controller = new AbortController();
@@ -513,6 +528,17 @@
     host.addEventListener("dragover", handleDragOver, { signal: controller.signal });
     host.addEventListener("dragleave", handleDragLeave, { signal: controller.signal });
     host.addEventListener("drop", handleDrop, { signal: controller.signal });
+    window.addEventListener("hh:auth-change", () => {
+      currentXhr?.abort();
+      currentXhr = null;
+      activeUpload = null;
+      videoFile = null;
+      thumbnailFile = null;
+      draft = loadDraft();
+      status = { configured: false, connected: false, channel: null, channels: [], playlists: [], history: [] };
+      render();
+      refreshStatus();
+    }, { signal: controller.signal });
     render();
     handleOauthResult();
     refreshStatus();

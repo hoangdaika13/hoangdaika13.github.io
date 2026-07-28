@@ -60,6 +60,22 @@
   };
   const uid = (prefix) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
+  function currentIdentity() {
+    const fromRuntime = window.HHAuthz?.currentUser?.();
+    if (fromRuntime && typeof fromRuntime === "object") return fromRuntime;
+    try { return JSON.parse(localStorage.getItem("hh-auth-user") || "null"); }
+    catch { return null; }
+  }
+
+  function currentIdentityId() {
+    const user = currentIdentity();
+    return String(user?.id || user?._id || "guest").replace(/[^a-z0-9_-]/gi, "").slice(0, 80) || "guest";
+  }
+
+  function privateStorageKey(base = STORAGE_KEY) {
+    return `${base}:${currentIdentityId()}`;
+  }
+
   function normalizeState(value) {
     const source = value && typeof value === "object" ? value : {};
     return {
@@ -83,18 +99,22 @@
   }
 
   function loadState() {
-    try { return normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY) || "null")); }
+    try { return normalizeState(JSON.parse(sessionStorage.getItem(privateStorageKey()) || "null")); }
     catch { return normalizeState(null); }
   }
 
   function saveState() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+    try { sessionStorage.setItem(privateStorageKey(), JSON.stringify(state)); } catch {}
   }
 
   function readVideoProject() {
     try {
+      const identityId = currentIdentityId();
+      const scopedProject = JSON.parse(localStorage.getItem(privateStorageKey(VIDEO_PROJECT_KEY)) || "null");
+      if (scopedProject && typeof scopedProject === "object") return scopedProject;
       const project = JSON.parse(localStorage.getItem(VIDEO_PROJECT_KEY) || "null");
-      return project && typeof project === "object" ? project : null;
+      const ownerId = String(project?.ownerId || project?.userId || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 80);
+      return project && typeof project === "object" && ownerId === identityId ? project : null;
     } catch {
       return null;
     }
@@ -243,6 +263,7 @@
 
   function connectView() {
     const permissions = channelStatus.permissions || {};
+    const channels = Array.isArray(channelStatus.channels) ? channelStatus.channels : [];
     const rows = [
       ["Đọc dữ liệu kênh", permissions.read],
       ["Upload video", permissions.upload],
@@ -251,6 +272,11 @@
     ];
     return `<section class="ycg-panel ycg-connect">
       <header><div><small>GOOGLE OAUTH 2.0</small><h3>YouTube Channel Connect</h3></div><span class="ycg-state is-${connectionTone()[0]}"><i></i>${esc(connectionTone()[1])}</span></header>
+      <div class="ycg-account-vault">
+        <div><strong>Kho kênh riêng của tài khoản HH hiện tại</strong><small>Mỗi người chỉ nhận dữ liệu, lịch sử và token của chính họ từ máy chủ.</small></div>
+        ${channels.length ? `<label><span>Kênh đang quản lý</span><select data-ycg-channel-select>${channels.map((item) => `<option value="${esc(item.id)}" ${item.id === channelStatus.channel?.id ? "selected" : ""}>${esc(item.title)}</option>`).join("")}</select></label>` : ""}
+        <button type="button" data-ycg-action="${channelStatus.authRequired ? "signin" : "connect"}">+ Thêm tài khoản/kênh</button>
+      </div>
       <div class="ycg-connect-layout">
         <div class="ycg-channel-card">
           ${channelStatus.channel?.thumbnail ? `<img src="${esc(channelStatus.channel.thumbnail)}" alt="Ảnh kênh">` : "<span>YT</span>"}
@@ -259,7 +285,7 @@
           <div>${channelStatus.connected ? `<button data-ycg-action="refresh-channel">Làm mới kênh</button><button data-ycg-action="disconnect">Ngắt kết nối</button>` : `<button class="is-primary" data-ycg-action="${channelStatus.authRequired ? "signin" : "connect"}">${channelStatus.authRequired ? "Đăng nhập HH Platform" : "Chọn tài khoản Google"}</button>`}</div>
         </div>
         <div class="ycg-permissions"><h4>Quyền đã xác minh</h4>${rows.map(([label, ready]) => `<p class="${ready ? "is-ready" : ""}"><i>${ready ? "✓" : "!"}</i><span><strong>${label}</strong><small>${ready ? "Sẵn sàng" : channelStatus.connected ? "Kết nối lại để cấp quyền" : "Chưa kết nối"}</small></span></p>`).join("")}
-          <aside>Access token và refresh token không xuất hiện trong trình duyệt. Backend mã hóa token bằng AES‑256‑GCM trước khi lưu.</aside>
+          <aside>Access token và refresh token không xuất hiện trong trình duyệt. Backend mã hóa AES‑256‑GCM và ràng buộc token với đúng tài khoản HH cùng Channel ID trước khi lưu.</aside>
         </div>
       </div>
     </section>`;
@@ -697,6 +723,7 @@
       const transaction = db.transaction(MEDIA_STORE, "readwrite");
       transaction.objectStore(MEDIA_STORE).put({
         id,
+        ownerId: currentIdentityId(),
         name: file.name,
         type: file.type,
         size: file.size,
@@ -950,6 +977,11 @@
 
   async function handleChange(event) {
     const target = event.target;
+    if (target.matches("[data-ycg-channel-select]")) {
+      const result = await apiAction("channel/select", { channelId: target.value }, "Đã chuyển sang kênh YouTube đã chọn.");
+      if (result) await refresh();
+      return;
+    }
     if (target.matches("[data-ycg-thumb-image]")) {
       const file = target.files?.[0];
       if (!file?.type.startsWith("image/")) return;
@@ -1038,6 +1070,7 @@
   function mount(host) {
     cleanup();
     root = host;
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
     state = loadState();
     handleOauthResult();
     controller = new AbortController();
@@ -1064,6 +1097,16 @@
     }, options);
     window.addEventListener("online", () => refresh(false), options);
     window.addEventListener("offline", render, options);
+    window.addEventListener("hh:auth-change", () => {
+      if (publisherMounted) window.HHYouTubePublisher?.unmount?.();
+      publisherMounted = false;
+      state = loadState();
+      channelStatus = { configured: false, connected: false, permissions: {} };
+      dashboard = null;
+      errorMessage = "";
+      render();
+      refresh(false);
+    }, options);
     render();
     refresh();
   }
