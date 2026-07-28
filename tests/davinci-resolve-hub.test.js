@@ -15,8 +15,11 @@ test("HH Video Studio is a first-class routed browser workspace", () => {
   assert.match(script, /id:\s*"davinci-resolve"/);
   assert.match(script, /label:\s*"Tool"/);
   assert.match(script, /landingRoute:\s*"\/davinci-resolve"/);
-  for (const route of ["davinci", "auto", "media", "cut", "edit", "fusion", "color", "audio", "titles", "deliver"]) {
+  for (const route of ["davinci", "auto"]) {
     assert.match(script, new RegExp(`\\/davinci-resolve\\/${route}`), `route ${route} missing`);
+  }
+  for (const route of ["media", "cut", "edit", "fusion", "color", "audio", "titles", "deliver"]) {
+    assert.match(read("davinci-resolve-hub.js"), new RegExp(`data-dr-view=.*${route}|VIEW_PAGE[\\s\\S]*${route}`), `DaVinci tab ${route} missing`);
   }
   assert.match(hub, /window\.HHDavinciResolveHub\s*=\s*\{\s*mount/);
   assert.match(loader, /davinci:\s*\{[\s\S]*davinci-resolve-hub\.css\?v=4/);

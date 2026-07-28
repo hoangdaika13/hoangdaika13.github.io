@@ -5389,15 +5389,7 @@ function initAppShell() {
   ];
   const davinciResolvePages = [
     { id: "davinci", icon: "DV", title: "DaVinci Resolve", route: "/davinci-resolve/davinci", description: "HH Video Studio chạy trực tiếp trên web: Media Pool, timeline, màu, audio, title và xuất WebM." },
-    { id: "auto", icon: "AD", title: "Auto Video Director", route: "/davinci-resolve/auto", description: "Quét media thật, đo sáng–màu–waveform và tạo timeline tự động trước khi bạn xác nhận." },
-    { id: "media", icon: "MP", title: "Media Pool", route: "/davinci-resolve/media", description: "Nhập video, ảnh, âm thanh và quản lý media cục bộ bằng IndexedDB." },
-    { id: "cut", icon: "CT", title: "Cut", route: "/davinci-resolve/cut", description: "Blade, trim, ripple delete, slip, slide và snapping trên timeline thật." },
-    { id: "edit", icon: "ED", title: "Edit", route: "/davinci-resolve/edit", description: "Timeline nhiều rãnh, marker, transform, crop, tốc độ và keyframe." },
-    { id: "fusion", icon: "FX", title: "Fusion Lite", route: "/davinci-resolve/fusion", description: "Đồ thị hiệu ứng không phá hủy, node transform, mask, color và text." },
-    { id: "color", icon: "CL", title: "Color", route: "/davinci-resolve/color", description: "Exposure, contrast, saturation, temperature, tint, curves, LUT và scopes." },
-    { id: "audio", icon: "AU", title: "Audio", route: "/davinci-resolve/audio", description: "Waveform, mixer, pan, mute, fade, EQ, compressor và thu âm thật." },
-    { id: "titles", icon: "CC", title: "Titles & Captions", route: "/davinci-resolve/titles", description: "Title, lower-third, watermark và nhập/xuất phụ đề SRT hoặc VTT." },
-    { id: "deliver", icon: "DL", title: "Deliver", route: "/davinci-resolve/deliver", description: "Hàng đợi kết xuất, WebM trên thiết bị và trạng thái provider trung thực." }
+    { id: "auto", icon: "AD", title: "Auto Video Director", route: "/davinci-resolve/auto", description: "Quét media thật, đo sáng–màu–waveform và tạo timeline tự động trước khi bạn xác nhận." }
   ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
