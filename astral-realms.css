@@ -102,6 +102,51 @@
   pointer-events: none;
 }
 
+.har-system-dock {
+  position: absolute;
+  top: 88px;
+  left: 50%;
+  z-index: 8;
+  display: flex;
+  gap: 6px;
+  max-width: min(780px, calc(100% - 36px));
+  padding: 6px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(111, 238, 255, .18);
+  border-radius: 999px;
+  background: rgba(5, 10, 25, .66);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .26), inset 0 0 26px rgba(144, 104, 255, .08);
+  backdrop-filter: blur(14px);
+}
+
+.har-system-dock button {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(148, 166, 255, .14);
+  border-radius: 999px;
+  background: rgba(11, 19, 42, .7);
+  color: rgba(227, 238, 255, .84);
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: transform .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease;
+}
+
+.har-system-dock button span {
+  margin-right: 5px;
+  color: #82f1ff;
+}
+
+.har-system-dock button:hover,
+.har-system-dock button:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(111, 238, 255, .56);
+  color: #fff;
+  box-shadow: 0 0 18px rgba(111, 238, 255, .18);
+  outline: none;
+}
+
 .har-brand,
 .har-live-orbit,
 .har-top-actions {
@@ -1437,6 +1482,117 @@ button.har-chip {
   .har-form-row {
     grid-template-columns: 1fr;
   }
+}
+
+.har-system-hero {
+  position: relative;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--system-accent, #6feeff) 42%, rgba(148, 166, 255, .18));
+  background:
+    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--system-accent, #6feeff) 18%, transparent), transparent 54%),
+    linear-gradient(135deg, rgba(10, 18, 42, .9), rgba(5, 8, 24, .76));
+}
+
+.har-system-hero::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(115deg, transparent 25%, rgba(255, 255, 255, .05) 50%, transparent 75%);
+  transform: translateX(-110%);
+  animation: har-system-scan 7s linear infinite;
+}
+
+.har-system-hero > * { position: relative; z-index: 1; }
+.har-system-hero > small { color: var(--system-accent, #8ff6ff); font-size: 8px; letter-spacing: .14em; }
+.har-system-hero h3 { margin: 6px 0 4px; font-size: 19px; }
+
+.har-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.har-stat-grid > div {
+  min-height: 54px;
+  padding: 9px;
+  border: 1px solid rgba(151, 178, 255, .13);
+  border-radius: 10px;
+  background: rgba(4, 9, 24, .55);
+}
+
+.har-stat-grid small,
+.har-stat-grid strong { display: block; }
+.har-stat-grid small { margin-bottom: 5px; color: #8297b8; font-size: 8px; }
+.har-stat-grid strong { color: #f7fbff; font-size: 13px; }
+
+.har-event-line {
+  display: block;
+  margin: 4px 0;
+  color: #bcd0ef;
+}
+
+.har-event-line b { color: #f1f7ff; }
+.har-event-line small { display: block; color: #7286a8; font-size: 8px; }
+
+.har-inline-input {
+  width: min(100%, 260px);
+  padding: 4px 8px;
+  border: 1px solid rgba(111, 238, 255, .28);
+  border-radius: 8px;
+  color: #f7fbff;
+  background: rgba(5, 11, 27, .7);
+  font: inherit;
+}
+
+.har-codex-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.har-codex-card {
+  display: grid;
+  gap: 5px;
+  min-height: 74px;
+  padding: 10px;
+  border: 1px solid rgba(148, 166, 255, .12);
+  border-radius: 12px;
+  background: rgba(6, 11, 28, .64);
+  opacity: .5;
+}
+
+.har-codex-card.is-found {
+  border-color: color-mix(in srgb, var(--item-accent, #ae78ff) 55%, transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--item-accent, #ae78ff) 15%, transparent);
+  opacity: 1;
+}
+
+.har-codex-card strong { color: var(--item-accent, #d3dbff); }
+.har-codex-card span,
+.har-codex-card small { color: #91a5c6; font-size: 9px; }
+
+@keyframes har-system-scan { to { transform: translateX(110%); } }
+
+@media (max-width: 760px) {
+  .har-system-dock {
+    top: 86px;
+    width: calc(100% - 24px);
+    max-width: none;
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+  .har-system-dock::-webkit-scrollbar { display: none; }
+  .har-system-dock button { flex: 0 0 auto; }
+  .har-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .har-codex-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .har-system-hero::after { animation: none; }
 }
 
 @media (max-width: 430px) {

@@ -2,7 +2,7 @@
   "use strict";
 
   const GAME_ID = "astral-realms";
-  const SCHEMA_VERSION = 3;
+  const SCHEMA_VERSION = 4;
   const DB_NAME = "hh-astral-realms";
   const DB_VERSION = 1;
   const STORE_NAME = "saves";
@@ -84,6 +84,33 @@
     { id: "crimson", name: "Crimson Forge", x: 52, z: 24, radius: 30, color: "#ff805f", weather: "Tro plasma", description: "Lò rèn cổ, dung nham và máy móc tha hóa." },
     { id: "void", name: "Void Garden", x: 2, z: -62, radius: 32, color: "#ae78ff", weather: "Bão hư không", description: "Khu rừng tím nơi Nexus Warden trú ngụ." }
   ]);
+  const FACTIONS = Object.freeze([
+    { id: "h-central", name: "H-Central Federation", short: "HCF", color: "#6feeff", description: "Giữ mạng lưới cổng và bảo vệ các thành phố lõi.", perk: "Mở tuyến dịch chuyển và nâng cấp checkpoint." },
+    { id: "aurora-keepers", name: "Aurora Keepers", short: "AUR", color: "#65f1c7", description: "Bảo vệ tinh thể và hệ sinh thái Aurora Vale.", perk: "Mở công thức hồi phục và tuyến lượn cực quang." },
+    { id: "crimson-union", name: "Crimson Forge Union", short: "CFU", color: "#ff805f", description: "Thợ rèn và kỹ sư tái xây dựng Crimson Forge.", perk: "Mở nâng cấp vũ khí và mô-đun tàu." },
+    { id: "void-cult", name: "Void Garden Cult", short: "VGC", color: "#ae78ff", description: "Những người canh giữ ranh giới Hư không.", perk: "Mở kỹ năng dịch chuyển và bí cảnh Void." },
+    { id: "astral-researchers", name: "Astral Researchers", short: "AST", color: "#ffb4e5", description: "Nghiên cứu phản ứng nguyên tố và lịch sử các lõi.", perk: "Mở codex, scan và phần thưởng nghiên cứu." },
+    { id: "free-travelers", name: "Free Travelers", short: "FRT", color: "#ffd36b", description: "Đội tàu độc lập đưa người và hàng qua các vùng nguy hiểm.", perk: "Giảm chi phí chế tạo và mở nhiệm vụ vận chuyển." }
+  ]);
+  const COMPANION_STORIES = Object.freeze({
+    lyra: { title: "Tín hiệu của Lyra", summary: "Tìm lại bản ghi đầu tiên của lõi H.", support: "Có thể ổn định Plasma trong puzzle." },
+    cael: { title: "Bản đồ băng vỡ", summary: "Khôi phục ba mảnh bản đồ tại Aurora Vale.", support: "Tạo cầu Băng tinh trong khu vực nước." },
+    nyx: { title: "Vết nứt không tên", summary: "Đóng các khe nứt Hư không trước khi chúng lan rộng.", support: "Mở cổng ngắn tới điểm scan bí mật." },
+    sol: { title: "Lời thề Nhật quang", summary: "Hộ tống lõi năng lượng qua Crimson Forge.", support: "Kích hoạt lò rèn và tăng tốc chế tạo." }
+  });
+  const SHIP_MODULES = Object.freeze({
+    engine: { name: "Astral Engine", description: "Tăng tốc di chuyển giữa các khu vực.", max: 5, cost: { "plasma-core": 2 } },
+    radar: { name: "Deep Scan Radar", description: "Hiện tài nguyên và điểm bí mật trên minimap.", max: 5, cost: { "aurora-shard": 2 } },
+    hold: { name: "Cargo Hold", description: "Tăng giới hạn vật liệu có thể mang.", max: 5, cost: { "void-fiber": 2 } },
+    forge: { name: "Mobile Forge", description: "Mở chế tạo nâng cao trên tàu.", max: 5, cost: { "plasma-core": 1, "aurora-shard": 1 } },
+    garden: { name: "Life Garden", description: "Trồng lại nguyên liệu theo thời gian thật.", max: 5, cost: { "aurora-shard": 3 } }
+  });
+  const WORLD_ZONE_DEFAULTS = Object.freeze({
+    central: { core: "stable", restored: true, occupation: "h-central", weather: "clear", resources: 100, lastBossAt: "" },
+    aurora: { core: "unstable", restored: false, occupation: "aurora-keepers", weather: "aurora", resources: 100, lastBossAt: "" },
+    crimson: { core: "corrupted", restored: false, occupation: "crimson-union", weather: "embers", resources: 100, lastBossAt: "" },
+    void: { core: "sealed", restored: false, occupation: "void-cult", weather: "storm", resources: 100, lastBossAt: "" }
+  });
   const ITEMS = Object.freeze({
     "starter-blade": { id: "starter-blade", name: "Đoản kiếm H", type: "weapon", rarity: "Khởi đầu", description: "Vũ khí tiêu chuẩn của Nhà du hành H.", attack: 8 },
     "aurora-shard": { id: "aurora-shard", name: "Mảnh Aurora", type: "material", rarity: "Phổ thông", description: "Tinh thể lạnh thu được tại Aurora Vale." },
@@ -227,6 +254,28 @@
     }]));
   }
 
+  function reputationRank(value) {
+    const reputation = Number(value) || 0;
+    if (reputation >= 900) return "Exalted";
+    if (reputation >= 500) return "Allied";
+    if (reputation >= 200) return "Trusted";
+    if (reputation > 0) return "Friendly";
+    if (reputation <= -200) return "Hostile";
+    return "Neutral";
+  }
+
+  function defaultWorldState() {
+    return {
+      version: 1,
+      zones: Object.fromEntries(Object.entries(WORLD_ZONE_DEFAULTS).map(([id, value]) => [id, { ...value, discovered: id === "central", updatedAt: nowIso() }])),
+      factions: Object.fromEntries(FACTIONS.map((faction) => [faction.id, { reputation: 0, rank: "Neutral", supportedEvents: 0, updatedAt: nowIso() }])),
+      eventLog: [],
+      activeEvent: null,
+      choiceHistory: [],
+      lastSyncAt: nowIso()
+    };
+  }
+
   function defaultState() {
     return {
       schemaVersion: SCHEMA_VERSION,
@@ -273,6 +322,49 @@
         "starter-blade": { quantity: 1, favorite: true, locked: true, acquiredAt: nowIso() }
       },
       quests: defaultQuestState(),
+      world: {
+        version: 1,
+        zones: Object.fromEntries(Object.entries(WORLD_ZONE_DEFAULTS).map(([id, value]) => [id, { ...value, discovered: id === "central", updatedAt: nowIso() }])),
+        factions: Object.fromEntries(FACTIONS.map((faction) => [faction.id, { reputation: 0, rank: "Neutral", supportedEvents: 0, updatedAt: nowIso() }])),
+        eventLog: [],
+        activeEvent: null,
+        choiceHistory: [],
+        lastSyncAt: nowIso()
+      },
+      companions: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, {
+        unlocked: id === "lyra",
+        bond: id === "lyra" ? 1 : 0,
+        storyStage: 0,
+        lastActivityAt: ""
+      }])),
+      ship: {
+        name: "Horizon H",
+        level: 1,
+        fuel: 100,
+        modules: Object.fromEntries(Object.keys(SHIP_MODULES).map((id) => [id, 1])),
+        crew: ["lyra"],
+        decorations: [],
+        lastExpeditionAt: ""
+      },
+      loadouts: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, {
+        role: id === "sol" ? "support" : id === "nyx" ? "control" : "damage",
+        weapon: "starter-blade",
+        core: "none",
+        relics: [],
+        updatedAt: nowIso()
+      }])),
+      exploration: {
+        scans: [],
+        hiddenFinds: [],
+        landmarks: ["central-spire"],
+        codex: [],
+        mapFog: { central: 0, aurora: 100, crimson: 100, void: 100 }
+      },
+      progression: {
+        mastery: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, { combat: 0, exploration: 0, bond: 0 }])),
+        daily: { date: "", completed: 0 },
+        weekly: { week: "", completed: 0 }
+      },
       checkpoints: { central: true, aurora: false, crimson: false, void: false },
       activatedGates: [],
       collectedNodes: [],
@@ -300,10 +392,14 @@
         bossDefeated: 0,
         crafted: 0,
         distance: 0,
-        deaths: 0
+        deaths: 0,
+        perfectDodges: 0,
+        parries: 0,
+        worldEventsCompleted: 0,
+        expeditions: 0
       },
       cloud: { status: "local", version: 0, updatedAt: "", error: "" },
-      party: { roomCode: "", status: "local", members: [], integrity: "local-simulation" }
+      party: { roomCode: "", status: "local", ready: false, members: [], integrity: "local-simulation" }
     };
   }
 
@@ -337,13 +433,109 @@
       },
       inventory: input.inventory && typeof input.inventory === "object" ? input.inventory : base.inventory,
       quests: { ...base.quests, ...(input.quests || {}) },
+      world: {
+        ...base.world,
+        ...(input.world || {}),
+        zones: Object.fromEntries(Object.entries(WORLD_ZONE_DEFAULTS).map(([id, fallback]) => [id, {
+          ...fallback,
+          ...(input.world?.zones?.[id] || {}),
+          resources: clamp(input.world?.zones?.[id]?.resources ?? fallback.resources, 0, 100),
+          discovered: id === "central" || input.world?.zones?.[id]?.discovered === true,
+          updatedAt: String(input.world?.zones?.[id]?.updatedAt || fallback.updatedAt).slice(0, 40)
+        }])),
+        factions: Object.fromEntries(FACTIONS.map((faction) => {
+          const record = input.world?.factions?.[faction.id] || {};
+          const reputation = clamp(record.reputation ?? 0, -1000, 1000);
+          return [faction.id, {
+            reputation,
+            rank: reputationRank(reputation),
+            supportedEvents: clamp(record.supportedEvents ?? 0, 0, 999),
+            updatedAt: String(record.updatedAt || nowIso()).slice(0, 40)
+          }];
+        })),
+        eventLog: Array.isArray(input.world?.eventLog) ? input.world.eventLog.slice(-80).map((event) => ({
+          id: String(event?.id || uid("event")).slice(0, 80),
+          type: String(event?.type || "system").slice(0, 32),
+          title: String(event?.title || "Astral event").slice(0, 120),
+          detail: String(event?.detail || "").slice(0, 240),
+          zoneId: String(event?.zoneId || "").slice(0, 24),
+          createdAt: String(event?.createdAt || nowIso()).slice(0, 40)
+        })) : [],
+        activeEvent: input.world?.activeEvent && typeof input.world.activeEvent === "object" ? {
+          id: String(input.world.activeEvent.id || "").slice(0, 80),
+          title: String(input.world.activeEvent.title || "").slice(0, 120),
+          detail: String(input.world.activeEvent.detail || "").slice(0, 240),
+          zoneId: String(input.world.activeEvent.zoneId || "").slice(0, 24),
+          factionId: FACTIONS.some((faction) => faction.id === input.world.activeEvent.factionId) ? input.world.activeEvent.factionId : "h-central",
+          progress: clamp(input.world.activeEvent.progress ?? 0, 0, 99),
+          target: clamp(input.world.activeEvent.target ?? 3, 1, 99),
+          expiresAt: String(input.world.activeEvent.expiresAt || "").slice(0, 40)
+        } : null,
+        choiceHistory: Array.isArray(input.world?.choiceHistory) ? input.world.choiceHistory.slice(-40).map((choice) => ({
+          id: String(choice?.id || uid("choice")).slice(0, 80),
+          option: String(choice?.option || "").slice(0, 80),
+          outcome: String(choice?.outcome || "").slice(0, 240),
+          createdAt: String(choice?.createdAt || nowIso()).slice(0, 40)
+        })) : [],
+        lastSyncAt: String(input.world?.lastSyncAt || nowIso()).slice(0, 40)
+      },
+      companions: Object.fromEntries(CHARACTER_ORDER.map((id) => {
+        const record = input.companions?.[id] || {};
+        return [id, {
+          unlocked: id === "lyra" || record.unlocked === true,
+          bond: clamp(record.bond ?? (id === "lyra" ? 1 : 0), 0, 10),
+          storyStage: clamp(record.storyStage ?? 0, 0, 5),
+          lastActivityAt: String(record.lastActivityAt || "").slice(0, 40)
+        }];
+      })),
+      ship: {
+        ...base.ship,
+        ...(input.ship || {}),
+        name: String(input.ship?.name || base.ship.name).slice(0, 32),
+        level: clamp(input.ship?.level ?? 1, 1, 10),
+        fuel: clamp(input.ship?.fuel ?? 100, 0, 100),
+        modules: Object.fromEntries(Object.entries(SHIP_MODULES).map(([id, module]) => [id, clamp(input.ship?.modules?.[id] ?? 1, 1, module.max)])),
+        crew: Array.isArray(input.ship?.crew) ? input.ship.crew.filter((id) => CHARACTER_ORDER.includes(id)).slice(0, 4) : ["lyra"],
+        decorations: Array.isArray(input.ship?.decorations) ? input.ship.decorations.slice(0, 40).map((item) => String(item).slice(0, 40)) : [],
+        lastExpeditionAt: String(input.ship?.lastExpeditionAt || "").slice(0, 40)
+      },
+      loadouts: Object.fromEntries(CHARACTER_ORDER.map((id) => {
+        const loadout = input.loadouts?.[id] || {};
+        return [id, {
+          role: ["damage", "support", "control", "exploration"].includes(loadout.role) ? loadout.role : base.loadouts[id].role,
+          weapon: ITEMS[loadout.weapon] ? loadout.weapon : base.loadouts[id].weapon,
+          core: ITEMS[loadout.core] ? loadout.core : "none",
+          relics: Array.isArray(loadout.relics) ? loadout.relics.slice(0, 4).filter((item) => ITEMS[item]) : [],
+          updatedAt: String(loadout.updatedAt || nowIso()).slice(0, 40)
+        }];
+      })),
+      exploration: {
+        ...base.exploration,
+        ...(input.exploration || {}),
+        scans: Array.isArray(input.exploration?.scans) ? input.exploration.scans.slice(-100).map((id) => String(id).slice(0, 80)) : [],
+        hiddenFinds: Array.isArray(input.exploration?.hiddenFinds) ? input.exploration.hiddenFinds.slice(-100).map((id) => String(id).slice(0, 80)) : [],
+        landmarks: Array.isArray(input.exploration?.landmarks) ? input.exploration.landmarks.slice(-100).map((id) => String(id).slice(0, 80)) : base.exploration.landmarks,
+        codex: Array.isArray(input.exploration?.codex) ? input.exploration.codex.slice(-100).map((id) => String(id).slice(0, 80)) : [],
+        mapFog: Object.fromEntries(Object.keys(base.exploration.mapFog).map((id) => [id, clamp(input.exploration?.mapFog?.[id] ?? base.exploration.mapFog[id], 0, 100)]))
+      },
+      progression: {
+        ...base.progression,
+        ...(input.progression || {}),
+        mastery: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, {
+          combat: clamp(input.progression?.mastery?.[id]?.combat ?? 0, 0, 999999),
+          exploration: clamp(input.progression?.mastery?.[id]?.exploration ?? 0, 0, 999999),
+          bond: clamp(input.progression?.mastery?.[id]?.bond ?? 0, 0, 999999)
+        }])),
+        daily: { date: String(input.progression?.daily?.date || "").slice(0, 10), completed: clamp(input.progression?.daily?.completed ?? 0, 0, 10) },
+        weekly: { week: String(input.progression?.weekly?.week || "").slice(0, 10), completed: clamp(input.progression?.weekly?.completed ?? 0, 0, 50) }
+      },
       checkpoints: { ...base.checkpoints, ...(input.checkpoints || {}) },
       puzzles: input.puzzles && typeof input.puzzles === "object" ? input.puzzles : base.puzzles,
       skills: { ...base.skills, ...(input.skills || {}) },
       settings: { ...base.settings, ...(input.settings || {}) },
       stats: { ...base.stats, ...(input.stats || {}) },
       cloud: { ...base.cloud, ...(input.cloud || {}) },
-      party: { ...base.party, ...(input.party || {}) }
+      party: { ...base.party, ...(input.party || {}), ready: input.party?.ready === true }
     };
     state.schemaVersion = SCHEMA_VERSION;
     state.player.health = clamp(state.player.health, 0, state.player.maxHealth || 100);
@@ -550,6 +742,7 @@
       this.lastStreamingAt = 0;
       this.dpsSamples = [];
       this.trainingActive = false;
+      this.trainingSession = false;
       this.worldHoursPerSecond = 0.018;
       this.runtime = null;
       this.socket = options.socket || root.HHRealtimeSocket || null;
@@ -583,6 +776,7 @@
               <div class="har-signal" data-tone="lime"><small>Engine</small><strong data-har-fps>Chưa chạy</strong></div>
               <div class="har-signal" data-tone="violet"><small>Renderer</small><strong data-har-renderer>Đang dò GPU</strong></div>
               <div class="har-signal" data-tone="cyan"><small>Máy chủ</small><strong data-har-server>LOCAL</strong></div>
+              <div class="har-signal" data-tone="amber"><small>World state</small><strong data-har-world-state>Ổn định</strong></div>
             </div>
             <div class="har-top-actions">
               <button class="har-icon-button" type="button" data-har-panel="map" aria-label="Mở bản đồ">◇</button>
@@ -592,6 +786,15 @@
               <button class="har-icon-button" type="button" data-har-pause aria-label="Tạm dừng">Ⅱ</button>
             </div>
           </div>
+
+          <nav class="har-system-dock" aria-label="Hệ thống Astral">
+            <button type="button" data-har-panel="world"><span>✦</span>Thế giới</button>
+            <button type="button" data-har-panel="factions"><span>◈</span>Phe phái</button>
+            <button type="button" data-har-panel="companions"><span>✧</span>Đồng đội</button>
+            <button type="button" data-har-panel="ship"><span>⌁</span>Tàu H</button>
+            <button type="button" data-har-panel="training"><span>◎</span>Training</button>
+            <button type="button" data-har-panel="codex"><span>▣</span>Codex</button>
+          </nav>
 
           <div class="har-team" aria-label="Đội hình">
             ${CHARACTER_ORDER.map((id, index) => {
@@ -1242,6 +1445,7 @@
         );
         ring.rotation.x = -Math.PI / 2;
         ring.position.set(zone.x, 1.04, zone.z);
+        ring.userData.zoneId = zone.id;
         this.world.add(ring);
 
         this.addWorldLabel(zone.name, zone.x, 5.8, zone.z, zone.color, 1.15);
@@ -2191,7 +2395,25 @@
         });
       });
       this.setElement(this.state.player.element, false);
+      this.refreshWorldStateVisuals();
       this.updateCamera(true);
+    }
+
+    refreshWorldStateVisuals() {
+      if (!this.world) return;
+      this.world.traverse((object) => {
+        const zoneId = object.userData?.zoneId;
+        if (!zoneId || !object.material) return;
+        const state = this.state.world?.zones?.[zoneId];
+        const zone = ZONES.find((item) => item.id === zoneId);
+        if (!state || !zone) return;
+        const material = Array.isArray(object.material) ? object.material[0] : object.material;
+        if (material.emissive && material.emissiveIntensity !== undefined) {
+          material.emissive.set(zone.color);
+          material.emissiveIntensity = state.restored ? 0.48 : state.discovered ? 0.18 : 0.06;
+        }
+        if (material.opacity !== undefined && zoneId !== "central") material.opacity = state.restored ? 0.58 : 0.36;
+      });
     }
 
     listen(target, event, handler, options) {
@@ -2409,6 +2631,8 @@
       this.state.player.health = clamp(nextMember.health, 1, nextMember.maxHealth || 100);
       this.state.player.maxHealth = Number(nextMember.maxHealth || 100);
       this.state.player.ultimate = clamp(nextMember.ultimate, 0, 100);
+      const loadout = this.state.loadouts?.[characterId];
+      if (loadout?.weapon && this.state.inventory[loadout.weapon]?.quantity > 0) this.state.player.weapon = loadout.weapon;
 
       this.characterMeshes.forEach((mesh, id) => {
         mesh.visible = id === characterId;
@@ -2685,10 +2909,19 @@
       const zone = this.zoneAt(player.x, player.z);
       if (zone.id !== this.currentZone.id) {
         this.currentZone = zone;
+        const worldZone = this.state.world?.zones?.[zone.id];
+        if (worldZone && !worldZone.discovered) {
+          worldZone.discovered = true;
+          worldZone.updatedAt = nowIso();
+          this.state.exploration.mapFog[zone.id] = clamp((this.state.exploration.mapFog[zone.id] || 100) - 15, 0, 100);
+          this.recordWorldEvent({ type: "discovery", title: `Đã đặt chân tới ${zone.name}`, detail: "Khu vực được ghi vào world state.", zoneId: zone.id });
+          this.refreshWorldStateVisuals();
+          this.saveProgress(`Khám phá ${zone.name}`);
+        }
         this.toast(`${zone.name} · ${zone.weather}`);
         this.updateWeatherAppearance();
       }
-      this.trainingActive = Math.hypot(player.x - 17, player.z + 10) < 7;
+      this.trainingActive = this.trainingSession && Math.hypot(player.x - 17, player.z + 10) < 7;
     }
 
     updateEnemies(dt, time) {
@@ -3197,6 +3430,11 @@
       this.state.defeated[data.id] = { defeated: true, respawnAt: data.respawnAt, at: nowIso() };
       this.state.stats.enemiesDefeated += 1;
       if (data.boss) this.state.stats.bossDefeated += 1;
+      const event = this.state.world?.activeEvent;
+      if (event && event.zoneId === this.zoneAt(enemy.position.x, enemy.position.z).id) {
+        event.progress = clamp(Number(event.progress || 0) + 1, 0, Number(event.target || 3));
+        this.recordWorldEvent({ type: "event-progress", title: `${event.title} · ${event.progress}/${event.target}`, detail: `Đã hạ ${data.name}.`, zoneId: event.zoneId, factionId: event.factionId });
+      }
       this.grantXp(data.xp);
       if (data.drop && (!data.boss || this.state.quests.warden?.status !== "completed")) this.addItem(data.drop, 1, `${data.name} rơi vật phẩm`);
       this.progressQuest(data.boss ? "boss" : "defeat", 1, { enemy: data.archetype });
@@ -3321,6 +3559,7 @@
       if (data.type === "portal") return this.activatePortal(target);
       if (data.type === "puzzle") return this.activatePuzzle(target);
       if (data.type === "training") {
+        this.trainingSession = true;
         this.trainingActive = true;
         this.dpsSamples = [];
         this.root.querySelector("[data-har-dps]").classList.add("is-active");
@@ -3599,6 +3838,15 @@
       this.root.querySelector("[data-har-time]").textContent = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
       this.root.querySelector("[data-har-fps]").textContent = this.fps ? `${this.fps} FPS · scale ${Math.round(this.renderScale * 100)}%` : "Đang đo";
       this.root.querySelector("[data-har-renderer]").textContent = this.rendererBackend === "webgpu" ? "WEBGPU · TSL" : "WEBGL2 · FALLBACK";
+      const worldZone = this.state.world?.zones?.[this.currentZone.id];
+      const worldState = this.root.querySelector("[data-har-world-state]");
+      if (worldState) worldState.textContent = this.state.world?.activeEvent
+        ? "EVENT ACTIVE"
+        : worldZone?.restored
+          ? "RESTORED"
+          : worldZone?.discovered
+            ? "DISCOVERED"
+            : "UNSCANNED";
       this.root.querySelector("[data-har-minimap-label]").textContent = this.currentZone.name;
       const activeQuest = this.activeQuest();
       this.root.querySelector("[data-har-quest-title]").textContent = activeQuest?.title || "Hành trình hiện tại đã hoàn tất";
@@ -3774,6 +4022,12 @@
       const renderers = {
         map: () => this.renderMapPanel(),
         quests: () => this.renderQuestPanel(),
+        world: () => this.renderWorldPanel(),
+        factions: () => this.renderFactionPanel(),
+        companions: () => this.renderCompanionPanel(),
+        ship: () => this.renderShipPanel(),
+        training: () => this.renderTrainingPanel(),
+        codex: () => this.renderCodexPanel(),
         inventory: () => this.renderInventoryPanel(),
         craft: () => this.renderCraftPanel(),
         skills: () => this.renderSkillsPanel(),
@@ -3787,6 +4041,12 @@
       const meta = {
         map: ["Bản đồ Astral", "Astral Navigation", "#6feeff"],
         quests: ["Nhiệm vụ", "Mission Constellation", "#a986ff"],
+        world: ["Thế giới sống", "Persistent World", "#65f1c7"],
+        factions: ["Phe phái & danh tiếng", "Faction Observatory", "#ffd36b"],
+        companions: ["Đồng đội", "Companion Stories", "#ff78d2"],
+        ship: ["Personal Ship", "Horizon H Command", "#6feeff"],
+        training: ["Training Arena", "Combat Analytics", "#ff805f"],
+        codex: ["Astral Codex", "Lore & Discoveries", "#ae78ff"],
         inventory: ["Kho đồ", "Asset Vault", "#65f2ba"],
         craft: ["Astral Forge", "Crafting Station", "#ffaf67"],
         skills: ["Cây kỹ năng", "Resonance Matrix", "#ff70ce"],
@@ -3882,6 +4142,127 @@
         </div>`;
     }
 
+    renderWorldPanel() {
+      const zoneState = this.state.world?.zones?.[this.currentZone.id] || WORLD_ZONE_DEFAULTS.central;
+      const activeEvent = this.state.world?.activeEvent;
+      const coreLabels = { stable: "Ổn định", unstable: "Bất ổn", corrupted: "Tha hóa", sealed: "Đang phong ấn", restored: "Đã phục hồi" };
+      return `
+        <div class="har-section har-system-hero" style="--system-accent:${this.currentZone.color}">
+          <small>WORLD MEMORY · ${escapeHtml(this.currentZone.name)}</small>
+          <h3>${zoneState.restored ? "Khu vực đang hồi sinh" : "Lõi năng lượng cần được giải phóng"}</h3>
+          <p>${escapeHtml(this.currentZone.description)} Mọi thay đổi dưới đây được lưu trong world state và khôi phục sau khi tải lại.</p>
+          <div class="har-stat-grid">
+            <div><small>Lõi</small><strong>${coreLabels[zoneState.core] || zoneState.core}</strong></div>
+            <div><small>Kiểm soát</small><strong>${escapeHtml(FACTIONS.find((faction) => faction.id === zoneState.occupation)?.short || "Tự do")}</strong></div>
+            <div><small>Tài nguyên</small><strong>${Math.round(zoneState.resources)}%</strong></div>
+            <div><small>Khám phá</small><strong>${zoneState.discovered ? "Đã mở" : "Chưa mở"}</strong></div>
+          </div>
+        </div>
+        <div class="har-section">
+          <h3>${activeEvent ? "Sự kiện đang diễn ra" : "Khởi tạo sự kiện thế giới"}</h3>
+          ${activeEvent
+            ? `<p><strong>${escapeHtml(activeEvent.title)}</strong><br>${escapeHtml(activeEvent.detail)}<br><b>Tiến độ: ${activeEvent.progress || 0}/${activeEvent.target || 3}</b></p>
+               <div class="har-progress-row"><div class="har-meter har-meter--xp"><i style="--value:${Math.round(((activeEvent.progress || 0) / (activeEvent.target || 3)) * 100)}%"></i></div><output>${Math.round(((activeEvent.progress || 0) / (activeEvent.target || 3)) * 100)}%</output></div>
+               <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="resolve-world-event" ${(activeEvent.progress || 0) >= (activeEvent.target || 3) ? "" : "disabled"}>${(activeEvent.progress || 0) >= (activeEvent.target || 3) ? "Hoàn thành sự kiện" : "Tiếp tục chiến đấu"}</button><button class="har-secondary-button" type="button" data-panel-action="abandon-world-event">Tạm dừng</button></div>`
+            : `<p>Không có sự kiện ngẫu nhiên giả. Bạn có thể chủ động mở một nhiệm vụ cứu lõi cho khu vực hiện tại.</p>
+               <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="start-zone-event">Gửi đội hỗ trợ tới ${escapeHtml(this.currentZone.name)}</button></div>`}
+        </div>
+        <ul class="har-list">${ZONES.map((zone) => {
+          const record = this.state.world.zones[zone.id];
+          return `<li class="har-list-item ${zone.id === this.currentZone.id ? "is-active" : ""}" style="--item-accent:${zone.color}">
+            <div><strong>${escapeHtml(zone.name)}</strong><span>${escapeHtml(coreLabels[record?.core] || record?.core || "Chưa đồng bộ")} · ${record?.restored ? "đã phục hồi" : "cần cứu hộ"}</span><small>${record?.discovered ? "Đã khám phá" : "Chưa khám phá"} · tài nguyên ${Math.round(record?.resources || 0)}%</small></div>
+            <span class="har-chip">${record?.updatedAt ? new Date(record.updatedAt).toLocaleDateString("vi-VN") : "—"}</span>
+          </li>`;
+        }).join("")}</ul>
+        ${this.state.world.eventLog?.length ? `<div class="har-section"><h3>Timeline hậu quả</h3><p>${this.state.world.eventLog.slice(-5).reverse().map((event) => `<span class="har-event-line"><b>${escapeHtml(event.title)}</b> · ${escapeHtml(event.detail)} <small>${new Date(event.createdAt).toLocaleString("vi-VN")}</small></span>`).join("")}</p></div>` : ""}
+      `;
+    }
+
+    renderFactionPanel() {
+      const activeEvent = this.state.world?.activeEvent;
+      return `
+        <div class="har-section"><h3>Danh tiếng không khóa nội dung</h3><p>Mỗi phe có reputation riêng. Chọn phe hỗ trợ trong sự kiện hiện tại; phần thưởng, cửa hàng và nhiệm vụ sẽ mở theo rank.</p></div>
+        <ul class="har-list">${FACTIONS.map((faction) => {
+          const record = this.state.world.factions[faction.id] || { reputation: 0, rank: "Neutral", supportedEvents: 0 };
+          const selected = activeEvent?.factionId === faction.id;
+          return `<li class="har-list-item ${selected ? "is-active" : ""}" style="--item-accent:${faction.color}">
+            <div><strong style="color:${faction.color}">${escapeHtml(faction.name)}</strong><span>${escapeHtml(faction.description)}</span><small>Rank ${escapeHtml(record.rank)} · ${Math.round(record.reputation)} REP · ${record.supportedEvents} sự kiện</small><small>Perk: ${escapeHtml(faction.perk)}</small></div>
+            <div class="har-list-item__actions"><button class="har-chip ${selected ? "is-active" : ""}" type="button" data-panel-action="start-faction-event" data-faction="${faction.id}" ${activeEvent ? "disabled" : ""}>${selected ? "Đang hỗ trợ" : "Nhận nhiệm vụ"}</button></div>
+          </li>`;
+        }).join("")}</ul>
+      `;
+    }
+
+    renderCompanionPanel() {
+      return `
+        <div class="har-section"><h3>Companion Stories</h3><p>Mỗi cuộc trò chuyện là một hoạt động được lưu. Bond mở dần ký ức và kỹ năng hỗ trợ ngoài chiến đấu.</p></div>
+        <ul class="har-list">${CHARACTER_ORDER.map((id) => {
+          const profile = CHARACTERS[id];
+          const story = COMPANION_STORIES[id];
+          const record = this.state.companions?.[id] || { unlocked: id === "lyra", bond: 0, storyStage: 0 };
+          const cooldown = record.lastActivityAt && Date.now() - new Date(record.lastActivityAt).getTime() < 60000;
+          return `<li class="har-list-item ${id === this.state.roster.activeId ? "is-active" : ""}" style="--item-accent:${profile.accent}">
+            <div><strong>${escapeHtml(profile.name)} · Bond ${record.bond}/10</strong><span>${escapeHtml(story.title)} · ${escapeHtml(story.summary)}</span><small>${record.unlocked ? `Ký ức ${record.storyStage}/5 · Hỗ trợ: ${escapeHtml(story.support)}` : "Chưa mở khóa · bond sẽ bắt đầu khi nhân vật tham gia đội"}</small></div>
+            <div class="har-list-item__actions"><button class="har-chip ${record.unlocked ? "is-active" : ""}" type="button" data-panel-action="bond-companion" data-companion="${id}" ${cooldown ? "disabled" : ""}>${cooldown ? "Đang hồi phục" : "Trò chuyện"}</button></div>
+          </li>`;
+        }).join("")}</ul>
+      `;
+    }
+
+    renderShipPanel() {
+      const ship = this.state.ship;
+      return `
+        <div class="har-section har-system-hero" style="--system-accent:#6feeff">
+          <small>PERSONAL SHIP · HORIZON H</small>
+          <h3><input class="har-inline-input" maxlength="32" value="${escapeHtml(ship.name)}" data-ship-name aria-label="Tên tàu"></h3>
+          <p>Tàu là căn cứ lưu động: nâng cấp mô-đun, mở expedition và chuẩn bị đội hình trước khi ra vùng nguy hiểm.</p>
+          <div class="har-stat-grid"><div><small>Cấp tàu</small><strong>Lv.${ship.level}</strong></div><div><small>Nhiên liệu</small><strong>${Math.round(ship.fuel)}%</strong></div><div><small>Crew</small><strong>${ship.crew.length}/4</strong></div><div><small>Expedition</small><strong>${this.state.stats.expeditions || 0}</strong></div></div>
+          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="launch-expedition" ${ship.fuel < 20 ? "disabled" : ""}>Khởi hành expedition</button><button class="har-secondary-button" type="button" data-panel-action="open-characters">Đổi crew</button></div>
+        </div>
+        <ul class="har-list">${Object.entries(SHIP_MODULES).map(([id, module]) => {
+          const level = ship.modules[id] || 1;
+          const requirements = Object.entries(module.cost).map(([itemId, amount]) => `${ITEMS[itemId]?.name || itemId} ${this.state.inventory[itemId]?.quantity || 0}/${amount}`).join(" · ");
+          const ready = Object.entries(module.cost).every(([itemId, amount]) => Number(this.state.inventory[itemId]?.quantity || 0) >= amount);
+          return `<li class="har-list-item ${level > 1 ? "is-active" : ""}">
+            <div><strong>${escapeHtml(module.name)} · Lv.${level}/${module.max}</strong><span>${escapeHtml(module.description)}</span><small>${level >= module.max ? "Đã đạt tối đa" : `Cần ${requirements}`}</small></div>
+            <button class="har-chip ${ready && level < module.max ? "is-active" : ""}" type="button" data-panel-action="upgrade-ship" data-module="${id}" ${ready && level < module.max ? "" : "disabled"}>${level >= module.max ? "Tối đa" : "Nâng cấp"}</button>
+          </li>`;
+        }).join("")}</ul>
+      `;
+    }
+
+    renderTrainingPanel() {
+      const sample = this.dpsSamples.at(-1);
+      const dps = this.dpsSamples.length ? Math.round(this.dpsSamples.reduce((sum, item) => sum + item.damage, 0) / Math.max(1, (this.dpsSamples.at(-1).at - this.dpsSamples[0].at) / 1000)) : 0;
+      return `
+        <div class="har-section har-system-hero" style="--system-accent:#ff805f">
+          <small>TRAINING ARENA · SERVER/LOCAL ANALYTICS</small>
+          <h3>${this.trainingActive ? "Đang đo sát thương" : "Sẵn sàng kiểm tra build"}</h3>
+          <p>Chỉ số lấy từ các hit thật trong phiên hiện tại; không tạo DPS mẫu khi chưa đánh.</p>
+          <div class="har-stat-grid"><div><small>DPS hiện tại</small><strong>${dps || 0}</strong></div><div><small>Hit cao nhất</small><strong>${Math.round(this.state.stats.highestHit || 0)}</strong></div><div><small>Tổng damage</small><strong>${Math.round(this.state.stats.totalDamage || 0)}</strong></div><div><small>Perfect dodge</small><strong>${this.state.stats.perfectDodges || 0}</strong></div></div>
+          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="toggle-training">${this.trainingActive ? "Dừng đo" : "Bắt đầu đo tại Training Arena"}</button><button class="har-secondary-button" type="button" data-panel-action="open-skills">Mở build</button></div>
+        </div>
+        ${sample ? `<div class="har-section"><h3>Hit gần nhất</h3><p>${Math.round(sample.damage)} damage · ${new Date(sample.at).toLocaleTimeString("vi-VN")} · ${escapeHtml(sample.action || "combat")}</p></div>` : `<div class="har-section"><p>Chưa có hit nào trong phiên đo.</p></div>`}
+      `;
+    }
+
+    renderCodexPanel() {
+      const discovered = this.state.exploration?.codex || [];
+      const events = this.state.world?.eventLog || [];
+      return `
+        <div class="har-section"><h3>Astral Codex</h3><p>Nhật ký chỉ ghi những gì người chơi thật sự quét, mở khóa hoặc hoàn thành.</p></div>
+        <div class="har-codex-grid">
+          ${ZONES.map((zone) => {
+            const record = this.state.world.zones[zone.id];
+            return `<article class="har-codex-card ${record?.discovered ? "is-found" : ""}" style="--item-accent:${zone.color}"><strong>${escapeHtml(zone.name)}</strong><span>${record?.discovered ? "Đã ghi nhận" : "Chưa quét"}</span><small>${record?.restored ? "Lõi đã phục hồi" : "Lõi chưa ổn định"}</small></article>`;
+          }).join("")}
+        </div>
+        <div class="har-section"><h3>Khám phá đã lưu</h3><p>${discovered.length ? discovered.map((id) => `<span class="har-event-line">${escapeHtml(id)}</span>`).join("") : "Chưa có entry. Hãy mở bản đồ và tương tác với các điểm scan."}</p></div>
+        <div class="har-section"><h3>World timeline</h3><p>${events.length ? events.slice(-8).reverse().map((event) => `<span class="har-event-line"><b>${escapeHtml(event.title)}</b> · ${escapeHtml(event.detail)}</span>`).join("") : "Chưa có thay đổi thế giới."}</p></div>
+        <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="scan-codex">Quét khu vực hiện tại</button></div>
+      `;
+    }
+
     renderMapPanel() {
       return `
         <div class="har-section">
@@ -3967,8 +4348,20 @@
         ["astralGuard", "Astral Guard", "Giảm 8% sát thương nhận vào mỗi cấp.", 3],
         ["staminaCore", "Stamina Core", "Tăng 10 stamina tối đa mỗi cấp.", 4]
       ];
+      const characterId = this.state.roster.activeId;
+      const loadout = this.state.loadouts?.[characterId] || { role: "damage", weapon: "starter-blade", core: "none", relics: [] };
+      const weapons = Object.entries(this.state.inventory).filter(([id, record]) => ITEMS[id]?.type === "weapon" && Number(record.quantity || 0) > 0);
+      const materials = Object.entries(this.state.inventory).filter(([id, record]) => ITEMS[id]?.type === "material" && Number(record.quantity || 0) > 0);
       return `
         <div class="har-section"><h3>${this.state.player.skillPoints} điểm kỹ năng khả dụng</h3><p>Điểm nhận khi thăng cấp. Nâng cấp tác động trực tiếp vào chiến đấu và được lưu cùng nhân vật.</p></div>
+        <div class="har-section"><h3>Build ${escapeHtml(CHARACTERS[characterId]?.name || characterId)}</h3><p>Loadout được lưu theo nhân vật; collider và chỉ số cơ bản vẫn do game/server kiểm soát.</p>
+          <div class="har-form-row">
+            <label class="har-field">Vai trò<select data-loadout-setting="role"><option value="damage" ${loadout.role === "damage" ? "selected" : ""}>Damage</option><option value="support" ${loadout.role === "support" ? "selected" : ""}>Support</option><option value="control" ${loadout.role === "control" ? "selected" : ""}>Control</option><option value="exploration" ${loadout.role === "exploration" ? "selected" : ""}>Exploration</option></select></label>
+            <label class="har-field">Vũ khí<select data-loadout-setting="weapon">${weapons.map(([id]) => `<option value="${id}" ${loadout.weapon === id ? "selected" : ""}>${escapeHtml(ITEMS[id].name)}</option>`).join("") || "<option value=\"\">Chưa có vũ khí</option>"}</select></label>
+            <label class="har-field">Astral Core<select data-loadout-setting="core"><option value="none">Không trang bị</option>${materials.map(([id]) => `<option value="${id}" ${loadout.core === id ? "selected" : ""}>${escapeHtml(ITEMS[id].name)}</option>`).join("")}</select></label>
+          </div>
+          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="save-loadout">Lưu loadout</button></div>
+        </div>
         <ul class="har-list">${skills.map(([id, name, description, max]) => {
           const level = Number(this.state.skills[id] || 0);
           const canUpgrade = this.state.player.skillPoints > 0 && level < max;
@@ -3997,7 +4390,7 @@
         ${roomCode ? `
           <ul class="har-list">${members.length ? members.map((member) => `<li class="har-list-item"><div><strong>${escapeHtml(member.user?.name || member.name || "Nhà du hành")}</strong><span>${escapeHtml(member.role || "player")} · ${member.ready ? "Sẵn sàng" : "Trong phòng"}</span></div><span class="har-chip ${member.ready ? "is-active" : ""}">${member.ready ? "Ready" : "Online"}</span></li>`).join("") : '<li class="har-list-item"><div><strong>Bạn đang ở trong phòng</strong><span>Đang chờ dữ liệu presence từ máy chủ.</span></div></li>'}</ul>
           <div class="har-form-row"><label class="har-field" style="grid-column:1/-1">Chat tổ đội<input type="text" maxlength="240" data-party-chat placeholder="Nhập tin nhắn thật cho thành viên phòng"></label></div>
-          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="send-chat">Gửi</button><button class="har-secondary-button" type="button" data-panel-action="leave-party">Rời phòng</button></div>
+          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="toggle-ready">${this.state.party.ready ? "Hủy sẵn sàng" : "Sẵn sàng"}</button><button class="har-secondary-button" type="button" data-panel-action="send-chat">Gửi</button><button class="har-secondary-button" type="button" data-panel-action="leave-party">Rời phòng</button></div>
           <div class="har-section" style="margin-top:10px"><h3>Hoạt động phòng</h3><p>${(this.partyMessages || []).length ? (this.partyMessages || []).slice(-6).map((message) => `${escapeHtml(message.user?.name || "HH")}: ${escapeHtml(message.body)}`).join("<br>") : "Chưa có tin nhắn."}</p></div>
         ` : `
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="create-party" ${connected ? "" : "disabled"}>Tạo phòng 4 người</button></div>
@@ -4249,6 +4642,19 @@
             this.commitAppearanceDraft();
             this.renderCurrentPanel();
           }
+        } else if (event.target.matches("[data-ship-name]")) {
+          const name = String(event.target.value || "").trim().slice(0, 32);
+          if (name) {
+            this.state.ship.name = name;
+            this.recordWorldEvent({ type: "ship", title: "Đổi tên Personal Ship", detail: `Tàu hiện mang tên ${name}.`, zoneId: "central" });
+            this.saveProgress("Đổi tên tàu");
+          }
+        } else if (event.target.matches("[data-loadout-setting]")) {
+          const characterId = this.state.roster.activeId;
+          this.state.loadouts[characterId] ||= { role: "damage", weapon: "starter-blade", core: "none", relics: [], updatedAt: nowIso() };
+          const key = event.target.dataset.loadoutSetting;
+          if (["role", "weapon", "core"].includes(key)) this.state.loadouts[characterId][key] = event.target.value;
+          this.state.loadouts[characterId].updatedAt = nowIso();
         } else if (event.target.matches("[data-setting]")) {
           const key = event.target.dataset.setting;
           let value = event.target.value;
@@ -4281,6 +4687,196 @@
       setSelect('[data-setting="reduceEffects"]', this.state.settings.reduceEffects);
     }
 
+    recordWorldEvent({ type = "system", title, detail, zoneId = this.currentZone?.id || "central", factionId = "" } = {}) {
+      const event = {
+        id: uid("world-event"),
+        type: String(type).slice(0, 32),
+        title: String(title || "Astral event").slice(0, 120),
+        detail: String(detail || "").slice(0, 240),
+        zoneId: String(zoneId || "").slice(0, 24),
+        factionId: String(factionId || "").slice(0, 40),
+        createdAt: nowIso()
+      };
+      this.state.world.eventLog = [...(this.state.world.eventLog || []), event].slice(-80);
+      this.state.world.lastSyncAt = event.createdAt;
+      return event;
+    }
+
+    startZoneEvent() {
+      if (this.state.world.activeEvent) return this.toast("Đang có một sự kiện thế giới cần xử lý.", "error");
+      const zone = this.currentZone;
+      const zoneState = this.state.world.zones[zone.id];
+      if (!zoneState || zone.id === "central") return this.toast("H-Central đã ổn định; hãy tới một khu vực cần cứu hộ.", "error");
+      zoneState.discovered = true;
+      zoneState.updatedAt = nowIso();
+      this.state.world.activeEvent = {
+        id: uid("mission"),
+        title: `Giải phóng lõi ${zone.name}`,
+        detail: `Đánh bại sinh vật tha hóa và khôi phục mạng năng lượng tại ${zone.name}.`,
+        zoneId: zone.id,
+        factionId: zoneState.occupation,
+        progress: 0,
+        target: 3,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+      };
+      this.emitInput({ worldAction: { type: "start", zoneId: zone.id, factionId: zoneState.occupation, title: this.state.world.activeEvent.title, detail: this.state.world.activeEvent.detail } });
+      this.recordWorldEvent({ type: "started", title: this.state.world.activeEvent.title, detail: "Người chơi đã chủ động khởi tạo nhiệm vụ cứu lõi.", zoneId: zone.id, factionId: zoneState.occupation });
+      this.toast(`Đã mở nhiệm vụ cứu lõi tại ${zone.name}.`, "success");
+      this.saveProgress("Khởi tạo world event");
+      this.renderCurrentPanel();
+    }
+
+    startFactionEvent(factionId) {
+      if (!FACTIONS.some((faction) => faction.id === factionId)) return;
+      if (this.state.world.activeEvent) return this.toast("Hãy hoàn thành sự kiện hiện tại trước.", "error");
+      const faction = FACTIONS.find((item) => item.id === factionId);
+      const zoneId = Object.entries(this.state.world.zones).find(([, zone]) => zone.occupation === factionId && !zone.restored)?.[0] || this.currentZone.id;
+      this.state.world.activeEvent = {
+        id: uid("faction-mission"),
+        title: `Chi viện ${faction.name}`,
+        detail: `Hoàn thành hoạt động tại ${ZONES.find((zone) => zone.id === zoneId)?.name || "khu vực hiện tại"} để tăng danh tiếng thật.`,
+        zoneId,
+        factionId,
+        progress: 0,
+        target: 2,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+      };
+      this.emitInput({ worldAction: { type: "start", zoneId, factionId, title: this.state.world.activeEvent.title, detail: this.state.world.activeEvent.detail } });
+      this.recordWorldEvent({ type: "faction-start", title: this.state.world.activeEvent.title, detail: "Đã đăng ký hỗ trợ phe phái.", zoneId, factionId });
+      this.toast(`Đã nhận nhiệm vụ từ ${faction.name}.`, "success");
+      this.saveProgress("Nhận faction mission");
+      this.renderCurrentPanel();
+    }
+
+    resolveWorldEvent() {
+      const event = this.state.world.activeEvent;
+      if (!event) return;
+      if (Number(event.progress || 0) < Number(event.target || 3)) return this.toast(`Cần hoàn thành ${event.target - event.progress} mục tiêu trước.`, "error");
+      const zoneState = this.state.world.zones[event.zoneId];
+      const faction = this.state.world.factions[event.factionId];
+      if (zoneState) {
+        zoneState.discovered = true;
+        zoneState.resources = clamp(Number(zoneState.resources || 0) + 20, 0, 100);
+        zoneState.restored = true;
+        zoneState.core = "restored";
+        zoneState.updatedAt = nowIso();
+        this.state.checkpoints[event.zoneId] = true;
+        this.state.player.checkpoint = event.zoneId;
+      }
+      if (faction) {
+        faction.reputation = clamp(Number(faction.reputation || 0) + 100, -1000, 1000);
+        faction.rank = reputationRank(faction.reputation);
+        faction.supportedEvents = Number(faction.supportedEvents || 0) + 1;
+        faction.updatedAt = nowIso();
+      }
+      this.refreshWorldStateVisuals();
+      this.emitInput({ worldAction: { type: "resolve" } });
+      this.state.stats.worldEventsCompleted = Number(this.state.stats.worldEventsCompleted || 0) + 1;
+      this.state.world.activeEvent = null;
+      this.recordWorldEvent({ type: "resolved", title: `Đã phục hồi ${ZONES.find((zone) => zone.id === event.zoneId)?.name || "khu vực"}`, detail: `+100 REP cho ${FACTIONS.find((item) => item.id === event.factionId)?.name || "phe hỗ trợ"}.`, zoneId: event.zoneId, factionId: event.factionId });
+      this.grantXp(180);
+      this.spawnNova(this.state.player.x, this.state.player.y + 1, this.state.player.z, "#65f1c7");
+      this.toast("World state đã thay đổi: lõi được phục hồi và checkpoint đã mở.", "success");
+      this.saveProgress("Hoàn thành world event");
+      this.renderCurrentPanel();
+    }
+
+    abandonWorldEvent() {
+      if (!this.state.world.activeEvent) return;
+      const event = this.state.world.activeEvent;
+      this.state.world.activeEvent = null;
+      this.emitInput({ worldAction: { type: "pause" } });
+      this.recordWorldEvent({ type: "paused", title: event.title, detail: "Sự kiện được tạm dừng; không thay đổi reputation hoặc phần thưởng.", zoneId: event.zoneId, factionId: event.factionId });
+      this.saveProgress("Tạm dừng world event");
+      this.renderCurrentPanel();
+    }
+
+    bondCompanion(id) {
+      if (!CHARACTERS[id]) return;
+      const record = this.state.companions[id] || (this.state.companions[id] = { unlocked: id === "lyra", bond: 0, storyStage: 0, lastActivityAt: "" });
+      if (record.lastActivityAt && Date.now() - new Date(record.lastActivityAt).getTime() < 60000) return this.toast("Đồng đội cần một phút để hồi phục sau cuộc trò chuyện.", "error");
+      record.unlocked = true;
+      record.bond = clamp(Number(record.bond || 0) + 1, 0, 10);
+      record.storyStage = Math.min(5, Math.floor(record.bond / 2));
+      record.lastActivityAt = nowIso();
+      this.state.progression.mastery[id].bond += 10;
+      this.recordWorldEvent({ type: "companion", title: `Ký ức mở: ${COMPANION_STORIES[id].title}`, detail: `${CHARACTERS[id].name} bond ${record.bond}/10.`, zoneId: this.currentZone.id });
+      this.toast(`${CHARACTERS[id].name} đã tin tưởng bạn hơn.`, "success");
+      this.saveProgress("Tăng bond đồng đội");
+      this.renderCurrentPanel();
+    }
+
+    upgradeShipModule(moduleId) {
+      const module = SHIP_MODULES[moduleId];
+      const level = Number(this.state.ship.modules[moduleId] || 1);
+      if (!module || level >= module.max) return;
+      if (!this.removeItems(module.cost)) return this.toast("Tàu chưa đủ nguyên liệu để nâng cấp.", "error");
+      this.state.ship.modules[moduleId] = level + 1;
+      this.state.ship.level = Math.max(this.state.ship.level, Math.ceil(Object.values(this.state.ship.modules).reduce((sum, value) => sum + value, 0) / Object.keys(SHIP_MODULES).length));
+      this.recordWorldEvent({ type: "ship", title: `Nâng cấp ${module.name}`, detail: `Horizon H đạt module Lv.${level + 1}.`, zoneId: "central" });
+      this.toast(`${module.name} đã nâng lên Lv.${level + 1}.`, "success");
+      this.saveProgress("Nâng cấp tàu");
+      this.renderCurrentPanel();
+    }
+
+    launchExpedition() {
+      if (this.state.ship.fuel < 20) return this.toast("Tàu không đủ nhiên liệu.", "error");
+      if (this.state.ship.lastExpeditionAt && Date.now() - new Date(this.state.ship.lastExpeditionAt).getTime() < 60000) return this.toast("Expedition trước vẫn đang xử lý.", "error");
+      const zone = ZONES.find((item) => item.id !== "central" && this.state.checkpoints[item.id]) || ZONES[0];
+      this.state.ship.fuel = clamp(this.state.ship.fuel - 20, 0, 100);
+      this.state.ship.lastExpeditionAt = nowIso();
+      this.state.stats.expeditions = Number(this.state.stats.expeditions || 0) + 1;
+      const rewards = ["aurora-shard", "plasma-core", "void-fiber"];
+      const reward = rewards[this.state.stats.expeditions % rewards.length];
+      this.addItem(reward, 1, `Expedition ${zone.name}`);
+      this.recordWorldEvent({ type: "expedition", title: `Expedition hoàn tất tại ${zone.name}`, detail: `Thu được ${ITEMS[reward].name}.`, zoneId: zone.id });
+      this.toast(`Expedition hoàn tất · ${ITEMS[reward].name}.`, "success");
+      this.saveProgress("Hoàn tất expedition");
+      this.renderCurrentPanel();
+    }
+
+    toggleTraining() {
+      this.trainingSession = !this.trainingSession;
+      this.trainingActive = this.trainingSession;
+      if (this.trainingSession) {
+        this.teleport(17, -10, "Training Arena");
+        this.trainingActive = true;
+        this.dpsSamples = [];
+        this.toast("Training Arena bắt đầu ghi hit thật.", "success");
+        this.openPanel("training");
+      } else {
+        this.trainingActive = false;
+        this.toast("Đã dừng đo Training Arena.");
+        this.saveProgress("Kết thúc training");
+      }
+      this.renderCurrentPanel();
+    }
+
+    scanCurrentZone() {
+      const zone = this.currentZone;
+      const id = `zone:${zone.id}:scan`;
+      if (this.state.exploration.scans.includes(id)) return this.toast("Khu vực này đã được quét.");
+      this.state.exploration.scans.push(id);
+      this.state.exploration.codex.push(zone.id);
+      this.state.exploration.mapFog[zone.id] = clamp((this.state.exploration.mapFog[zone.id] || 100) - 25, 0, 100);
+      this.state.world.zones[zone.id].discovered = true;
+      this.recordWorldEvent({ type: "scan", title: `Đã quét ${zone.name}`, detail: "Entry mới được thêm vào Astral Codex.", zoneId: zone.id });
+      this.addItem(zone.id === "aurora" ? "aurora-shard" : zone.id === "crimson" ? "plasma-core" : "void-fiber", 1, "Scan codex");
+      this.saveProgress("Quét codex");
+      this.renderCurrentPanel();
+    }
+
+    saveLoadout() {
+      const id = this.state.roster.activeId;
+      const loadout = this.state.loadouts?.[id];
+      if (!loadout) return;
+      loadout.updatedAt = nowIso();
+      this.recordWorldEvent({ type: "loadout", title: `Đã lưu build ${CHARACTERS[id]?.name || id}`, detail: `${loadout.role} · ${ITEMS[loadout.weapon]?.name || "chưa có vũ khí"}.`, zoneId: this.currentZone.id });
+      this.saveProgress("Lưu loadout");
+      this.toast("Build đã được lưu vào hồ sơ nhân vật.", "success");
+      this.renderCurrentPanel();
+    }
+
     async handlePanelAction(action, data) {
       if (action === "teleport") {
         const zone = ZONES.find((item) => item.id === data.zone);
@@ -4296,6 +4892,18 @@
       } else if (action === "equip") this.equipItem(data.item);
       else if (action === "use") this.useItem(data.item);
       else if (action === "open-craft") this.openPanel("craft");
+      else if (action === "start-zone-event") this.startZoneEvent();
+      else if (action === "start-faction-event") this.startFactionEvent(data.faction);
+      else if (action === "resolve-world-event") this.resolveWorldEvent();
+      else if (action === "abandon-world-event") this.abandonWorldEvent();
+      else if (action === "bond-companion") this.bondCompanion(data.companion);
+      else if (action === "upgrade-ship") this.upgradeShipModule(data.module);
+      else if (action === "launch-expedition") this.launchExpedition();
+      else if (action === "toggle-training") this.toggleTraining();
+      else if (action === "scan-codex") this.scanCurrentZone();
+      else if (action === "open-characters") this.openPanel("characters");
+      else if (action === "open-skills") this.openPanel("skills");
+      else if (action === "save-loadout") this.saveLoadout();
       else if (action === "craft") this.craft(data.recipe);
       else if (action === "upgrade-skill") this.upgradeSkill(data.skill);
       else if (action === "switch-character") this.switchCharacter(data.character);
@@ -4317,6 +4925,7 @@
       else if (action === "join-party") await this.joinParty(bodyValue(this.root, "[data-party-code]"));
       else if (action === "leave-party") await this.leaveParty();
       else if (action === "send-chat") await this.sendPartyChat(bodyValue(this.root, "[data-party-chat]"));
+      else if (action === "toggle-ready") await this.togglePartyReady();
       else if (action === "resume") this.togglePause(false);
       else if (action === "open-inventory") this.openPanel("inventory");
       else if (action === "open-settings") this.openPanel("settings");
@@ -4525,7 +5134,11 @@
         version: this.state.saveVersion,
         player: this.state.player,
         quests: this.state.quests,
-        inventory: this.state.inventory
+        inventory: this.state.inventory,
+        world: this.state.world,
+        ship: this.state.ship,
+        companions: this.state.companions,
+        progression: this.state.progression
       });
       let hash = 2166136261;
       for (let index = 0; index < text.length; index += 1) {
@@ -4612,6 +5225,11 @@
           if (this.currentPanel === "party") this.renderCurrentPanel();
           this.toast(`${payload.user?.name || "HH"}: ${payload.body}`);
         },
+        ready: (payload) => {
+          if (payload?.room !== this.state.party.roomCode) return;
+          if (payload.socketId === this.socket?.id) this.state.party.ready = payload.ready === true;
+          if (this.currentPanel === "party") this.renderCurrentPanel();
+        },
         snapshot: (payload) => this.applyAuthoritativeSnapshot(payload)
       };
       socket.on?.("connect", this.socketHandlers.connect);
@@ -4620,6 +5238,7 @@
       socket.on?.("game:room", this.socketHandlers.room);
       socket.on?.("game:presence", this.socketHandlers.presence);
       socket.on?.("game:chat", this.socketHandlers.chat);
+      socket.on?.("game:ready", this.socketHandlers.ready);
       socket.on?.("astral-realms:snapshot", this.socketHandlers.snapshot);
       this.updateConnectionUi();
     }
@@ -4632,6 +5251,7 @@
       this.socket.off?.("game:room", this.socketHandlers.room);
       this.socket.off?.("game:presence", this.socketHandlers.presence);
       this.socket.off?.("game:chat", this.socketHandlers.chat);
+      this.socket.off?.("game:ready", this.socketHandlers.ready);
       this.socket.off?.("astral-realms:snapshot", this.socketHandlers.snapshot);
       this.socketBound = false;
       this.socketHandlers = null;
@@ -4719,6 +5339,8 @@
       this.room = response.room || {};
       this.state.party.roomCode = String(this.room.code || "").toUpperCase();
       this.state.party.members = Array.isArray(this.room.members) ? this.room.members.slice(0, 4) : [];
+      const self = this.state.party.members.find((member) => member.socketId === this.socket?.id || member.id === this.socket?.id);
+      this.state.party.ready = self?.ready === true;
       this.state.party.status = "room";
       this.state.party.integrity = "awaiting-server-snapshot";
       this.authoritative = false;
@@ -4731,7 +5353,7 @@
       try {
         if (this.socket?.connected && this.state.party.roomCode) await this.emitAck("game:room:leave", { code: this.state.party.roomCode });
       } catch {}
-      this.state.party = { roomCode: "", status: this.socket?.connected ? "ready" : "local", members: [], integrity: "local-simulation" };
+      this.state.party = { roomCode: "", status: this.socket?.connected ? "ready" : "local", ready: false, members: [], integrity: "local-simulation" };
       this.authoritative = false;
       this.room = null;
       this.remotePlayers.forEach((mesh) => mesh.parent?.remove(mesh));
@@ -4748,6 +5370,18 @@
         if (input) input.value = "";
       } catch (error) {
         this.toast(error.message || "Không gửi được chat.", "error");
+      }
+    }
+
+    async togglePartyReady() {
+      if (!this.socket?.connected || !this.state.party.roomCode) return this.toast("Cần kết nối vào một phòng trước.", "error");
+      try {
+        const ready = !this.state.party.ready;
+        await this.emitAck("game:ready", { ready });
+        this.state.party.ready = ready;
+        this.renderCurrentPanel();
+      } catch (error) {
+        this.toast(error.message || "Không cập nhật được trạng thái sẵn sàng.", "error");
       }
     }
 
@@ -4788,6 +5422,26 @@
       this.authoritative = true;
       this.state.party.integrity = "server-authoritative";
       this.state.party.status = "playing";
+      if (payload.world && typeof payload.world === "object") {
+        this.state.world.activeEvent = payload.world.activeEvent || null;
+        Object.entries(payload.world.zones || {}).forEach(([id, serverZone]) => {
+          if (!this.state.world.zones[id]) return;
+          this.state.world.zones[id] = {
+            ...this.state.world.zones[id],
+            discovered: this.state.world.zones[id].discovered || serverZone.discovered === true,
+            restored: this.state.world.zones[id].restored || serverZone.restored === true,
+            core: serverZone.restored === true ? "restored" : this.state.world.zones[id].core,
+            resources: Math.max(Number(this.state.world.zones[id].resources || 0), Number(serverZone.resources || 0)),
+            updatedAt: serverZone.updatedAt || this.state.world.zones[id].updatedAt
+          };
+          if (serverZone.restored === true) this.state.checkpoints[id] = true;
+        });
+        const known = new Map((this.state.world.eventLog || []).map((event) => [event.id, event]));
+        (payload.world.eventLog || []).forEach((event) => known.set(event.id, event));
+        this.state.world.eventLog = [...known.values()].slice(-80);
+        this.state.world.lastSyncAt = payload.serverTime || nowIso();
+        this.refreshWorldStateVisuals();
+      }
       const self = (payload.players || []).find((player) => player.socketId === this.socket?.id);
       if (self) {
         const error = Math.hypot(self.x - this.state.player.x, self.z - this.state.player.z);
@@ -4949,7 +5603,19 @@
           climbing: this.isClimbing
         },
         activeQuest: this.activeQuest()?.id || "",
-        inventoryCount: Object.keys(this.state.inventory).length
+        inventoryCount: Object.keys(this.state.inventory).length,
+        world: {
+          activeEvent: this.state.world?.activeEvent?.id || "",
+          currentZone: this.currentZone?.id || "central",
+          restoredZones: Object.values(this.state.world?.zones || {}).filter((zone) => zone.restored).length,
+          factionCount: Object.keys(this.state.world?.factions || {}).length
+        },
+        ship: {
+          name: this.state.ship?.name || "Horizon H",
+          level: this.state.ship?.level || 1,
+          modules: { ...(this.state.ship?.modules || {}) }
+        },
+        companions: Object.fromEntries(Object.entries(this.state.companions || {}).map(([id, record]) => [id, { bond: record.bond, storyStage: record.storyStage, unlocked: record.unlocked }]))
       };
     }
 

@@ -18,6 +18,8 @@ const APPEARANCE_BASE_MODELS = new Set(["human-adult-a01", "human-adult-b01"]);
 const APPEARANCE_SKINS = new Set(["warm-04", "neutral-03", "cool-02", "deep-05"]);
 const APPEARANCE_HAIRS = new Set(["astral-layered-07", "aurora-short-02", "void-long-04", "solar-braid-03"]);
 const APPEARANCE_OUTFITS = new Set(["central-jacket-02", "combat-boots-01", "aurora-suit-01", "void-coat-01"]);
+const SHARD_ZONES = Object.freeze(["central", "aurora", "crimson", "void"]);
+const SHARD_FACTIONS = new Set(["h-central", "aurora-keepers", "crimson-union", "void-cult", "astral-researchers", "free-travelers"]);
 const APPEARANCE_MORPHS = new Set([
   "headLength", "foreheadHeight", "cheekboneWidth", "cheekFullness", "jawWidth", "jawAngle", "chinLength", "faceFullness",
   "eyeSize", "eyeSpacing", "eyeDepth", "upperLid", "lowerLid", "eyeAngle", "irisSize", "pupilSize", "eyeReflection", "eyeLeft", "eyeRight",
@@ -134,6 +136,22 @@ function makeEnemy(id, type, x, z, health, boss = false) {
   };
 }
 
+function createWorldState() {
+  return {
+    version: 1,
+    zones: Object.fromEntries(SHARD_ZONES.map((id) => [id, {
+      id,
+      discovered: id === "central",
+      restored: id === "central",
+      core: id === "central" ? "stable" : id === "void" ? "sealed" : id === "crimson" ? "corrupted" : "unstable",
+      resources: 100,
+      updatedAt: new Date().toISOString()
+    }])),
+    activeEvent: null,
+    eventLog: []
+  };
+}
+
 function createShard(code) {
   return {
     code,
@@ -150,10 +168,79 @@ function createShard(code) {
       makeEnemy("dungeon-stalker-1", "void-stalker", 71, -67, 190),
       makeEnemy("dungeon-stalker-2", "void-stalker", 81, -64, 190)
     ].map((enemy) => [enemy.id, enemy])),
+    world: createWorldState(),
     lastTickAt: Date.now(),
     lastSnapshotAt: 0,
     emptyAt: 0
   };
+}
+
+function applyWorldAction(shard, player, action = {}) {
+  const type = clean(action.type, 24);
+  if (!["start", "resolve", "pause"].includes(type)) return;
+  if (type === "start") {
+    if (shard.world.activeEvent) return;
+    const zoneId = SHARD_ZONES.includes(action.zoneId) && action.zoneId !== "central" ? action.zoneId : "aurora";
+    const factionId = SHARD_FACTIONS.has(action.factionId) ? action.factionId : "h-central";
+    shard.world.activeEvent = {
+      id: `shard-event-${Date.now().toString(36)}`,
+      title: clean(action.title || `Giải phóng lõi ${zoneId}`, 120),
+      detail: clean(action.detail || "Sự kiện do người chơi trong shard khởi tạo.", 240),
+      zoneId,
+      factionId,
+      startedBy: player.id,
+      progress: 0,
+      target: factionId === "h-central" ? 3 : 2,
+      startedAt: new Date().toISOString()
+    };
+    shard.world.eventLog = [...shard.world.eventLog, { ...shard.world.activeEvent, type: "started" }].slice(-40);
+  } else if (type === "resolve" && shard.world.activeEvent && Number(shard.world.activeEvent.progress || 0) >= Number(shard.world.activeEvent.target || 3)) {
+    const event = shard.world.activeEvent;
+    const zone = shard.world.zones[event.zoneId];
+    if (zone) {
+      zone.discovered = true;
+      zone.restored = true;
+      zone.core = "restored";
+      zone.resources = Math.min(100, Number(zone.resources || 0) + 20);
+      zone.updatedAt = new Date().toISOString();
+    }
+    shard.world.eventLog = [...shard.world.eventLog, {
+      id: `shard-event-${Date.now().toString(36)}`,
+      type: "resolved",
+      title: `Đã phục hồi ${event.zoneId}`,
+      detail: `Sự kiện được ${player.name} xác nhận trong shard.`,
+      zoneId: event.zoneId,
+      factionId: event.factionId,
+      createdAt: new Date().toISOString()
+    }].slice(-40);
+    shard.world.activeEvent = null;
+  } else if (type === "pause") {
+    shard.world.eventLog = [...shard.world.eventLog, {
+      id: `shard-event-${Date.now().toString(36)}`,
+      type: "paused",
+      title: "Sự kiện được tạm dừng",
+      detail: "Không thay đổi phần thưởng hoặc trạng thái lõi.",
+      zoneId: shard.world.activeEvent?.zoneId || "",
+      createdAt: new Date().toISOString()
+    }].slice(-40);
+    shard.world.activeEvent = null;
+  }
+  shard.world.version += 1;
+}
+
+function shardZoneAt(x, z) {
+  const zones = [
+    ["central", 0, 0, 31],
+    ["aurora", -51, 20, 30],
+    ["crimson", 52, 24, 30],
+    ["void", 2, -62, 32]
+  ];
+  let best = ["central", Infinity];
+  zones.forEach(([id, cx, cz, radius]) => {
+    const distance = Math.hypot(x - cx, z - cz);
+    if (distance <= radius && distance < best[1]) best = [id, distance];
+  });
+  return best[0];
 }
 
 function safeIdentity(socket, room) {
@@ -214,7 +301,22 @@ function applyAttack(shard, player, input, now) {
     }
   }
   target.health = Math.max(0, target.health - damage);
-  if (!target.health) target.respawnAt = now + (target.boss ? 120000 : 25000);
+  if (!target.health) {
+    target.respawnAt = now + (target.boss ? 120000 : 25000);
+    const event = shard.world.activeEvent;
+    if (event && event.zoneId === shardZoneAt(target.x, target.z)) {
+      event.progress = Math.min(Number(event.target || 3), Number(event.progress || 0) + 1);
+      shard.world.eventLog = [...shard.world.eventLog, {
+        id: `shard-event-${Date.now().toString(36)}`,
+        type: "progress",
+        title: `${event.title} · ${event.progress}/${event.target}`,
+        detail: `Sinh vật ${target.type} đã bị hạ.`,
+        zoneId: event.zoneId,
+        createdAt: new Date().toISOString()
+      }].slice(-40);
+      shard.world.version += 1;
+    }
+  }
 }
 
 function updateEnemies(shard, dt, now) {
@@ -283,6 +385,13 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
     integrity: "server-authoritative",
     players: [...shard.players.values()].map(publicPlayer),
     enemies: [...shard.enemies.values()].map(publicEnemy)
+    ,
+    world: {
+      version: shard.world.version,
+      zones: shard.world.zones,
+      activeEvent: shard.world.activeEvent,
+      eventLog: shard.world.eventLog.slice(-20)
+    }
   });
 
   io.on("connection", (socket) => {
@@ -328,6 +437,9 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
       }
       if (payload.appearance && typeof payload.appearance === "object") {
         player.appearance = sanitizeAppearance(payload.appearance);
+      }
+      if (payload.worldAction && typeof payload.worldAction === "object") {
+        applyWorldAction(context.shard, player, payload.worldAction);
       }
       player.updatedAt = new Date().toISOString();
       applyAttack(context.shard, player, payload, now);
