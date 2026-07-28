@@ -2044,3 +2044,149 @@ button.har-chip {
   .har-creator__options { align-items: start; }
   .har-creator__hero { flex-direction: column; }
 }
+
+/* Astral Realms Visual V6 · photoreal human and environment pipeline */
+.har-shell[data-visual-style="photoreal"] {
+  --har-panel: rgba(6, 12, 22, .8);
+  --har-line: rgba(174, 218, 255, .26);
+}
+
+.har-shell[data-visual-style="photoreal"] .har-stage::after {
+  opacity: .045;
+}
+
+.har-shell[data-visual-style="photoreal"] .har-postfx {
+  opacity: .42;
+  background:
+    radial-gradient(ellipse at 50% 46%, transparent 48%, rgba(1, 4, 10, .36) 100%),
+    linear-gradient(180deg, rgba(255, 220, 176, .025), transparent 36%, rgba(44, 92, 145, .055));
+  mix-blend-mode: normal;
+}
+
+.har-start {
+  background:
+    linear-gradient(90deg, rgba(2, 7, 15, .86) 0%, rgba(2, 7, 15, .52) 46%, rgba(2, 7, 15, .72) 100%),
+    linear-gradient(0deg, rgba(1, 4, 10, .8), transparent 52%),
+    url("./assets/astral-realms/astral-realms-panorama-v1.webp") center / cover no-repeat,
+    #030711;
+}
+
+.har-start-card {
+  background: linear-gradient(145deg, rgba(5, 12, 24, .88), rgba(13, 10, 27, .77));
+  backdrop-filter: blur(20px) saturate(1.18);
+}
+
+.har-shell.is-photoreal .har-brand::after {
+  content: "PHOTO PBR";
+  margin-left: auto;
+  padding: 3px 6px;
+  border: 1px solid rgba(129, 239, 212, .38);
+  border-radius: 999px;
+  color: #a6f6d8;
+  background: rgba(25, 96, 75, .18);
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.har-team-slot {
+  overflow: hidden;
+  grid-template-columns: 38px minmax(0, 1fr);
+}
+
+.har-team-portrait {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: end;
+  width: 38px;
+  height: 48px;
+  border: 1px solid color-mix(in srgb, var(--character-color) 54%, rgba(255, 255, 255, .16));
+  border-radius: 10px;
+  background-image: url("./assets/astral-realms/astral-crew-atlas-v1.webp");
+  background-repeat: no-repeat;
+  background-position: var(--portrait-x, 0%) center;
+  background-size: 400% 100%;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .45));
+}
+
+.har-team-slot strong {
+  position: absolute;
+  left: 5px;
+  bottom: 4px;
+  z-index: 2;
+  width: auto;
+  min-width: 19px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(3, 8, 18, .88);
+  font-size: 6px;
+}
+
+.har-team-slot span,
+.har-team-slot small {
+  grid-column: 2;
+}
+
+.har-avatar {
+  overflow: hidden;
+  color: transparent;
+  background-color: #091322;
+  background-image: url("./assets/astral-realms/astral-crew-atlas-v1.webp");
+  background-repeat: no-repeat;
+  background-position: var(--portrait-x, 0%) center;
+  background-size: 400% 100%;
+  box-shadow: 0 0 0 2px rgba(7, 14, 29, .9), 0 0 24px rgba(101, 224, 255, .36);
+}
+
+.har-character-card__avatar {
+  overflow: visible;
+  background: rgba(4, 9, 19, .9);
+}
+
+.har-character-card__avatar > i {
+  position: absolute;
+  inset: -5px 0 0;
+  border-radius: 12px;
+  background-image: url("./assets/astral-realms/astral-crew-atlas-v1.webp");
+  background-repeat: no-repeat;
+  background-position: var(--portrait-x, 0%) center;
+  background-size: 400% 100%;
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, .46));
+}
+
+.har-character-card__avatar strong {
+  position: absolute;
+  left: 2px;
+  bottom: 0;
+  z-index: 2;
+  padding: 2px 4px;
+  border-radius: 5px;
+  color: #fff;
+  background: rgba(4, 8, 18, .84);
+  font-size: 6px;
+}
+
+@media (max-width: 760px) {
+  .har-team-portrait {
+    width: 30px;
+    height: 39px;
+  }
+
+  .har-team-slot {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .har-shell.is-photoreal .har-brand::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .har-team-portrait,
+  .har-avatar,
+  .har-character-card__avatar > i {
+    filter: none;
+  }
+}

@@ -75,6 +75,11 @@
     heroic: { label: "Anh hùng", bodyPreset: "heroic", morphs: { height: 0.67, jawWidth: 0.58, shoulderWidth: 0.7, chestWidth: 0.65, chestSize: 0.6, backWidth: 0.64, muscle: 0.72, posture: 0.7 } },
     agile: { label: "Nhanh nhẹn", bodyPreset: "agile", morphs: { height: 0.54, shoulderWidth: 0.48, armLength: 0.58, legLength: 0.66, waist: 0.43, bodyMass: 0.38, muscle: 0.54, tone: 0.66 } }
   });
+  const PHOTOREAL_ASSETS = Object.freeze({
+    panorama: "./assets/astral-realms/astral-realms-panorama-v1.webp",
+    characterAtlas: "./assets/astral-realms/astral-crew-atlas-v1.webp"
+  });
+  const CHARACTER_ATLAS_INDEX = Object.freeze({ lyra: 0, cael: 1, nyx: 2, sol: 3 });
   const ELEMENT_REACTIONS = Object.freeze({
     "cryo+plasma": { name: "Sốc nhiệt", multiplier: 1.55, color: "#ff9bd6" },
     "quantum+void": { name: "Sụp đổ lượng tử", multiplier: 1.75, color: "#b591ff" },
@@ -389,6 +394,7 @@
         quality: "auto",
         renderStyle: "realistic",
         rendererMode: "auto",
+        visualStyle: "photoreal",
         dynamicResolution: true,
         shadows: "high",
         postFx: true,
@@ -568,6 +574,7 @@
     if (!["auto", "low", "medium", "high", "cinematic"].includes(state.settings.quality)) state.settings.quality = "auto";
     if (!["realistic", "cinematic", "anime"].includes(state.settings.renderStyle)) state.settings.renderStyle = "realistic";
     if (!["auto", "webgpu", "webgl"].includes(state.settings.rendererMode)) state.settings.rendererMode = "auto";
+    if (!["photoreal", "hybrid", "performance"].includes(state.settings.visualStyle)) state.settings.visualStyle = "photoreal";
     state.settings.dynamicResolution = state.settings.dynamicResolution !== false;
     state.settings.weatherDensity = clamp(state.settings.weatherDensity, 0, 100);
     state.settings.cameraShake = clamp(state.settings.cameraShake, 0, 100);
@@ -692,6 +699,9 @@
       this.playerShadow = null;
       this.characterMeshes = new Map();
       this.toonGradient = null;
+      this.photorealAssets = { panorama: null, characterAtlas: null };
+      this.photorealStatus = "pending";
+      this.terrainTexture = null;
       this.activeAnimation = "idle";
       this.animationBlend = 0;
       this.characterSwitchAt = 0;
@@ -791,7 +801,7 @@
           <div class="har-topbar">
             <div class="har-brand">
               <div class="har-brand__core" aria-hidden="true">H</div>
-              <div class="har-brand__copy"><strong>HH Astral Realms</strong><span>Living Open World · Visual V5</span></div>
+              <div class="har-brand__copy"><strong>HH Astral Realms</strong><span>Photoreal Living World · Visual V6</span></div>
             </div>
             <div class="har-live-orbit" aria-label="Trạng thái game realtime">
               <div class="har-signal" data-tone="cyan"><small>Khu vực</small><strong data-har-zone>H-Central</strong></div>
@@ -823,7 +833,7 @@
           <div class="har-team" aria-label="Đội hình">
             ${CHARACTER_ORDER.map((id, index) => {
               const profile = CHARACTERS[id];
-              return `<button class="har-team-slot ${index === 0 ? "is-active" : ""}" type="button" data-team-slot="${index + 1}" data-character="${id}" aria-label="Đổi sang ${profile.name}" style="--character-color:${profile.accent}"><strong>${profile.short}</strong><span>${profile.name}</span><small>${ELEMENTS[profile.element].label}</small></button>`;
+              return `<button class="har-team-slot ${index === 0 ? "is-active" : ""}" type="button" data-team-slot="${index + 1}" data-character="${id}" aria-label="Đổi sang ${profile.name}" style="--character-color:${profile.accent};--portrait-x:${index * 33.333333}%"><i class="har-team-portrait" aria-hidden="true"></i><strong>${profile.short}</strong><span>${profile.name}</span><small>${ELEMENTS[profile.element].label}</small></button>`;
             }).join("")}
             <button class="har-team-preview" type="button" data-har-panel="characters">Hồ sơ đội</button>
           </div>
@@ -1007,6 +1017,8 @@
           this.state = normalizeState(this.savedRecord.data);
         }
         const compatibilityMode = this.applyCompatibilityProfile({ forced: this.forceCompatibility });
+        this.root.dataset.quality = this.state.settings.quality;
+        this.root.dataset.visualStyle = this.state.settings.visualStyle;
         this.setLoading(12, "Đang kiểm tra trình duyệt và bộ nhớ đồ họa...");
         if (!this.supportsRenderer()) throw new Error("Trình duyệt không hỗ trợ WebGL hoặc WebGPU. Hãy bật tăng tốc phần cứng hoặc dùng trình duyệt mới hơn.");
         this.setLoading(28, compatibilityMode
@@ -1028,10 +1040,12 @@
           this.rendererBackend = "webgl2";
         }
         if (this.destroyed) return;
-        this.setLoading(44, `Đang khởi tạo ${this.rendererBackend.toUpperCase()} và toon pipeline...`);
+        this.setLoading(44, `Đang khởi tạo ${this.rendererBackend.toUpperCase()} và PBR pipeline...`);
         await this.setupRenderer();
+        this.setLoading(56, "Đang nạp nhân vật người thật và cảnh quan điện ảnh...");
+        await this.loadPhotorealAssets();
         this.createWorld();
-        this.setLoading(67, "Đang triệu hồi nhân vật, sinh vật và Nexus Warden...");
+        this.setLoading(70, "Đang dựng nhân vật, sinh vật và Nexus Warden...");
         this.createActors();
         this.setLoading(82, "Đang khôi phục nhiệm vụ và kho đồ...");
         this.applyStateToWorld();
@@ -1124,9 +1138,81 @@
       }
       this.root.dataset.renderer = this.rendererBackend;
       const rendererLabel = this.root.querySelector("[data-har-renderer]");
-      if (rendererLabel) rendererLabel.textContent = this.rendererBackend === "webgpu" ? "WEBGPU · TSL" : "WEBGL2 · FALLBACK";
+      if (rendererLabel) rendererLabel.textContent = this.rendererBackend === "webgpu" ? "WEBGPU · PBR" : "WEBGL2 · PBR";
       this.clock = new THREE.Clock();
       this.resize();
+    }
+
+    async loadPhotorealAssets() {
+      const THREE = this.THREE;
+      const visualStyle = this.state.settings.visualStyle;
+      const saveData = Boolean(root.navigator?.connection?.saveData);
+      const lowMemory = Number(root.navigator?.deviceMemory || 8) <= 2;
+      this.root.dataset.visualStyle = visualStyle;
+      if (visualStyle === "performance") {
+        this.photorealStatus = "performance";
+        this.root.classList.remove("is-photoreal");
+        return;
+      }
+      this.photorealStatus = "loading";
+      const loader = new THREE.TextureLoader();
+      const loadTexture = (url) => new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
+      const atlasPromise = loadTexture(PHOTOREAL_ASSETS.characterAtlas);
+      const panoramaPromise = saveData || lowMemory || this.state.settings.quality === "low"
+        ? Promise.resolve(null)
+        : loadTexture(PHOTOREAL_ASSETS.panorama);
+      const [atlasResult, panoramaResult] = await Promise.allSettled([atlasPromise, panoramaPromise]);
+      if (atlasResult.status === "fulfilled" && atlasResult.value) {
+        const texture = atlasResult.value;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.generateMipmaps = true;
+        this.photorealAssets.characterAtlas = texture;
+      }
+      if (panoramaResult.status === "fulfilled" && panoramaResult.value) {
+        const texture = panoramaResult.value;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        this.photorealAssets.panorama = texture;
+      }
+      this.photorealStatus = this.photorealAssets.characterAtlas ? "ready" : "fallback";
+      this.root.classList.toggle("is-photoreal", this.photorealStatus === "ready");
+      this.root.dataset.photorealAssets = this.photorealStatus;
+    }
+
+    createTerrainTexture() {
+      const THREE = this.THREE;
+      const canvas = document.createElement("canvas");
+      const size = this.state.settings.quality === "low" ? 256 : 512;
+      canvas.width = size;
+      canvas.height = size;
+      const context = canvas.getContext("2d", { alpha: false });
+      const image = context.createImageData(size, size);
+      for (let y = 0; y < size; y += 1) {
+        for (let x = 0; x < size; x += 1) {
+          const index = (y * size + x) * 4;
+          const broad = Math.sin(x * 0.057) * 12 + Math.cos(y * 0.049) * 10 + Math.sin((x + y) * 0.018) * 16;
+          const grain = ((x * 17 + y * 31 + (x * y) % 67) % 29) - 14;
+          const value = clamp(72 + broad + grain, 28, 126);
+          image.data[index] = value * 0.82;
+          image.data[index + 1] = value * 0.9;
+          image.data[index + 2] = value;
+          image.data[index + 3] = 255;
+        }
+      }
+      context.putImageData(image, 0, 0);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(18, 18);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = Math.min(8, this.renderer.capabilities?.getMaxAnisotropy?.() || 1);
+      texture.needsUpdate = true;
+      this.terrainTexture = texture;
+      return texture;
     }
 
     createWorld() {
@@ -1140,12 +1226,17 @@
       this.world = new THREE.Group();
       this.world.name = "AstralOpenWorld";
       this.scene.add(this.world);
+      if (this.photorealAssets.panorama) {
+        this.scene.background = this.photorealAssets.panorama;
+        this.scene.environment = this.photorealAssets.panorama;
+        this.scene.fog = new THREE.FogExp2(0x758ba4, 0.0068);
+      }
 
-      const hemisphere = new THREE.HemisphereLight(0x9edcff, 0x10081e, 1.55);
+      const hemisphere = new THREE.HemisphereLight(0xcce8ff, 0x271b19, 1.25);
       this.scene.add(hemisphere);
       this.hemisphereLight = hemisphere;
 
-      const sun = new THREE.DirectionalLight(0xffe6bf, 2.15);
+      const sun = new THREE.DirectionalLight(0xffe6bf, 2.8);
       sun.position.set(-24, 42, 18);
       sun.castShadow = Boolean(this.renderer.shadowMap?.enabled);
       const shadowSize = quality === "cinematic" ? 2048 : quality === "high" ? 1536 : quality === "medium" ? 1024 : 768;
@@ -1171,14 +1262,19 @@
       this.scene.add(rim);
       this.rimLight = rim;
 
+      const terrainTexture = this.createTerrainTexture();
       const ground = new THREE.Mesh(
         new THREE.CircleGeometry(112, 96),
         new THREE.MeshPhysicalMaterial({
-          color: 0x091124,
-          roughness: 0.88,
-          metalness: 0.12,
+          color: 0x77818c,
+          map: terrainTexture,
+          bumpMap: terrainTexture,
+          bumpScale: 0.34,
+          roughness: 0.9,
+          metalness: 0.04,
           clearcoat: 0.18,
-          clearcoatRoughness: 0.55
+          clearcoatRoughness: 0.55,
+          envMapIntensity: this.photorealAssets.panorama ? 0.36 : 0.12
         })
       );
       ground.rotation.x = -Math.PI / 2;
@@ -1238,7 +1334,14 @@
       skyGeometry.setAttribute("color", new THREE.BufferAttribute(skyColors, 3));
       this.skyDome = new THREE.Mesh(
         skyGeometry,
-        new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })
+        new THREE.MeshBasicMaterial({
+          vertexColors: true,
+          side: THREE.BackSide,
+          fog: false,
+          depthWrite: false,
+          transparent: Boolean(this.photorealAssets.panorama),
+          opacity: this.photorealAssets.panorama ? 0.16 : 1
+        })
       );
       this.scene.add(this.skyDome);
 
@@ -1358,7 +1461,7 @@
       const grassCount = Math.max(40, Math.round(240 * density));
       const grass = new THREE.InstancedMesh(
         new THREE.ConeGeometry(0.075, 0.82, 3),
-        new THREE.MeshToonMaterial({ color: 0x4ce0a5, gradientMap: this.toonGradient, roughness: 0.88 }),
+        new THREE.MeshStandardMaterial({ color: 0x3c8a62, roughness: 0.96, metalness: 0, envMapIntensity: 0.18 }),
         grassCount
       );
       const matrix = new THREE.Matrix4();
@@ -1388,7 +1491,15 @@
         const count = Math.max(14, Math.round(baseCount * density));
         const rocks = new THREE.InstancedMesh(
           new THREE.IcosahedronGeometry(0.72, 0),
-          new THREE.MeshToonMaterial({ color, gradientMap: this.toonGradient, roughness: 0.92 }),
+          new THREE.MeshStandardMaterial({
+            color,
+            map: this.terrainTexture,
+            bumpMap: this.terrainTexture,
+            bumpScale: 0.16,
+            roughness: 0.94,
+            metalness: zoneId === "crimson" ? 0.12 : 0.02,
+            envMapIntensity: this.photorealAssets.panorama ? 0.42 : 0.12
+          }),
           count
         );
         for (let index = 0; index < count; index += 1) {
@@ -1909,9 +2020,12 @@
     }
 
     createNpc(id, name, x, z, color) {
-      const mesh = this.createCharacterMesh({ body: color, accent: "#f5fbff", scale: 0.88, label: name });
+      const npcProfile = id === "luma" ? CHARACTERS.cael : CHARACTERS.sol;
+      const mesh = this.photorealAssets.characterAtlas
+        ? this.createPhotorealCharacterModel(npcProfile, 0.88)
+        : this.createCharacterMesh({ body: color, accent: "#f5fbff", scale: 0.88, label: name });
       mesh.position.set(x, 1.08, z);
-      mesh.userData = { type: "npc", id, name };
+      mesh.userData = { ...mesh.userData, type: "npc", id, name };
       this.world.add(mesh);
       this.npcs.set(id, mesh);
       return mesh;
@@ -1949,16 +2063,17 @@
       const group = new THREE.Group();
       group.name = `Character:${profile.id}`;
       group.scale.setScalar(scale);
-      const realistic = this.state.settings.renderStyle !== "anime";
+      const realistic = this.state.settings.renderStyle !== "anime"
+        && this.state.settings.visualStyle !== "performance";
 
       const toon = (color, options = {}) => {
         const material = new THREE.MeshToonMaterial({
-        color,
-        gradientMap: this.toonGradient,
-        emissive: options.emissive || 0x000000,
-        emissiveIntensity: options.emissiveIntensity || 0,
-        transparent: Boolean(options.transparent),
-        opacity: options.opacity ?? 1
+          color,
+          gradientMap: this.toonGradient,
+          emissive: options.emissive || 0x000000,
+          emissiveIntensity: options.emissiveIntensity || 0,
+          transparent: Boolean(options.transparent),
+          opacity: options.opacity ?? 1
         });
         material.userData.astralSurface = true;
         return material;
@@ -1973,6 +2088,7 @@
           clearcoat: options.clearcoat ?? 0.22,
           clearcoatRoughness: options.clearcoatRoughness ?? 0.32,
           sheen: options.sheen ?? 0.16,
+          envMapIntensity: this.photorealAssets.panorama ? 0.72 : 0.18,
           emissive: options.emissive || 0x000000,
           emissiveIntensity: options.emissiveIntensity || 0,
           transparent: Boolean(options.transparent),
@@ -2374,6 +2490,41 @@
       mesh.userData.correctives = values;
     }
 
+    createPhotorealCharacterModel(profile, scale = 1) {
+      const group = this.createAnimeCharacterMesh(profile, scale);
+      const atlasSource = this.photorealAssets.characterAtlas;
+      if (!atlasSource || this.state.settings.visualStyle !== "photoreal") {
+        group.userData.visualMode = this.state.settings.visualStyle === "hybrid" ? "pbr-hybrid" : "procedural";
+        return group;
+      }
+      group.traverse((object) => {
+        if (object.isMesh) object.visible = false;
+      });
+      const atlas = atlasSource.clone();
+      atlas.repeat.set(0.25, 1);
+      atlas.offset.set((CHARACTER_ATLAS_INDEX[profile.id] || 0) * 0.25, 0);
+      atlas.needsUpdate = true;
+      const material = new this.THREE.SpriteMaterial({
+        map: atlas,
+        transparent: true,
+        alphaTest: 0.055,
+        depthTest: true,
+        depthWrite: true,
+        toneMapped: false
+      });
+      const sprite = new this.THREE.Sprite(material);
+      sprite.name = `PhotorealHuman:${profile.id}`;
+      sprite.center.set(0.5, 0.08);
+      sprite.scale.set(profile.id === "sol" ? 2.15 : 1.92, profile.id === "sol" ? 3.38 : 3.25, 1);
+      sprite.position.set(0, 0.08, 0);
+      sprite.renderOrder = 3;
+      sprite.userData.baseScale = { x: sprite.scale.x, y: sprite.scale.y };
+      group.add(sprite);
+      group.userData.photoSprite = sprite;
+      group.userData.visualMode = "photoreal-atlas";
+      return group;
+    }
+
     createPlayerWeapon(profile) {
       const THREE = this.THREE;
       const weapon = new THREE.Group();
@@ -2414,7 +2565,7 @@
     createActors() {
       CHARACTER_ORDER.forEach((id) => {
         const profile = CHARACTERS[id];
-        const mesh = this.createAnimeCharacterMesh(profile, 1);
+        const mesh = this.createPhotorealCharacterModel(profile, 1);
         const weapon = this.createPlayerWeapon(profile);
         mesh.userData.parts.weaponAnchor.add(weapon);
         mesh.userData.weapon = weapon;
@@ -2847,6 +2998,14 @@
       const speed = sprinting ? 0.02 : moving ? 0.013 : 0.0022;
       const stride = moving ? Math.sin(time * speed) * (sprinting ? 0.62 : 0.42) : Math.sin(time * speed) * 0.045;
       const armStride = moving ? -stride * 0.82 : Math.sin(time * 0.0017) * 0.035;
+      const photoSprite = this.playerMesh?.userData?.photoSprite;
+      if (photoSprite) {
+        const baseScale = photoSprite.userData.baseScale || { x: 1.92, y: 3.25 };
+        const gait = moving ? Math.abs(Math.sin(time * speed)) : Math.sin(time * 0.0014) * 0.5 + 0.5;
+        photoSprite.position.y = 0.08 + gait * (moving ? 0.055 : 0.018);
+        photoSprite.scale.set(baseScale.x * (1 + gait * 0.008), baseScale.y * (1 - gait * 0.004), 1);
+        photoSprite.material.rotation = moving ? -stride * 0.018 : Math.sin(time * 0.0008) * 0.006;
+      }
       parts.leftLeg.rotation.x += (stride - parts.leftLeg.rotation.x) * this.animationBlend;
       parts.rightLeg.rotation.x += (-stride - parts.rightLeg.rotation.x) * this.animationBlend;
       parts.leftArm.rotation.x += (armStride - parts.leftArm.rotation.x) * this.animationBlend;
@@ -4046,6 +4205,8 @@
       setWidth("[data-har-xp]", player.level >= PLAYER_LEVEL_CAP ? 100 : (player.xp / levelTarget) * 100);
       const avatar = this.root.querySelector(".har-avatar");
       avatar?.setAttribute("data-level", String(player.level));
+      avatar?.setAttribute("data-character", this.state.roster.activeId);
+      if (avatar) avatar.style.setProperty("--portrait-x", `${(CHARACTER_ATLAS_INDEX[this.state.roster.activeId] || 0) * 33.333333}%`);
       this.root.querySelector("[data-har-player-name]").textContent = player.name;
       this.root.querySelector("[data-har-player-meta]").textContent = `Nhà du hành · ${ELEMENTS[player.element].label} · ${Math.round(player.health)}/${player.maxHealth} HP`;
       this.root.querySelector("[data-har-zone]").textContent = this.currentZone.name;
@@ -4054,7 +4215,7 @@
       const minute = Math.floor((this.state.worldTime % 1) * 60);
       this.root.querySelector("[data-har-time]").textContent = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
       this.root.querySelector("[data-har-fps]").textContent = this.fps ? `${this.fps} FPS · scale ${Math.round(this.renderScale * 100)}%` : "Đang đo";
-      this.root.querySelector("[data-har-renderer]").textContent = this.rendererBackend === "webgpu" ? "WEBGPU · TSL" : "WEBGL2 · FALLBACK";
+      this.root.querySelector("[data-har-renderer]").textContent = `${this.rendererBackend === "webgpu" ? "WEBGPU" : "WEBGL2"} · ${this.photorealStatus === "ready" ? "PHOTO PBR" : this.rendererBackend === "webgpu" ? "TSL" : "ADAPTIVE"}`;
       const worldZone = this.state.world?.zones?.[this.currentZone.id];
       const worldState = this.root.querySelector("[data-har-world-state]");
       if (worldState) worldState.textContent = this.state.world?.activeEvent
@@ -4289,13 +4450,13 @@
           const profile = CHARACTERS[id];
           const member = this.state.roster.members[id] || {};
           const active = id === activeId;
-          return `<li class="har-character-card ${active ? "is-active" : ""}" style="--character-color:${profile.accent}">
-            <div class="har-character-card__avatar"><strong>${profile.short}</strong><span>${ELEMENTS[profile.element].short}</span></div>
+          return `<li class="har-character-card ${active ? "is-active" : ""}" style="--character-color:${profile.accent};--portrait-x:${index * 33.333333}%">
+            <div class="har-character-card__avatar"><i aria-hidden="true"></i><strong>${profile.short}</strong><span>${ELEMENTS[profile.element].short}</span></div>
             <div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.role)}</span><small>${escapeHtml(profile.description)}</small><small>Lv.${member.level || 1} · ${Math.round(member.health || 100)}/${member.maxHealth || 100} HP · ${ELEMENTS[profile.element].label}</small></div>
             <button class="har-chip ${active ? "is-active" : ""}" type="button" data-panel-action="switch-character" data-character="${id}">${active ? "Đang dùng" : `Đổi [${index + 1}]`}</button>
           </li>`;
         }).join("")}</ul>
-        <div class="har-section"><h3>Hồ sơ hình ảnh</h3><p>Recipe ngoại hình được lưu theo từng nhân vật, dùng cho preset, multiplayer và model GLB/VRM khi asset được kết nối.</p>
+        <div class="har-section"><h3>Hồ sơ hình ảnh</h3><p>Chế độ mặc định dùng atlas người thật nguyên bản và cảnh photoreal. Recipe ngoại hình vẫn được lưu theo từng nhân vật để dùng với preset, multiplayer và model GLB/VRM khi chuyển sang PBR 3D.</p>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Creator</button></div>
         </div>`;
     }
@@ -4787,7 +4948,8 @@
           <div class="har-form-row">
             <label class="har-field">Chất lượng<select data-setting="quality"><option value="auto">Tự động theo FPS</option><option value="low">Tiết kiệm</option><option value="medium">Vừa</option><option value="high">Cao</option><option value="cinematic">Điện ảnh</option></select></label>
             <label class="har-field">Renderer<select data-setting="rendererMode"><option value="auto">Auto · WebGPU/WebGL2</option><option value="webgpu">Ưu tiên WebGPU</option><option value="webgl">WebGL2 ổn định</option></select></label>
-            <label class="har-field">Phong cách hình ảnh<select data-setting="renderStyle"><option value="realistic">Realistic PBR</option><option value="cinematic">Cinematic PBR</option><option value="anime">Anime Toon</option></select></label>
+            <label class="har-field">Model hiển thị<select data-setting="visualStyle"><option value="photoreal">Người thật · Cảnh thật</option><option value="hybrid">PBR 3D nhẹ · tùy biến</option><option value="performance">Toon hiệu năng</option></select></label>
+            <label class="har-field">Kết xuất 3D<select data-setting="renderStyle"><option value="realistic">Realistic PBR</option><option value="cinematic">Cinematic PBR</option><option value="anime">Anime Toon</option></select></label>
             <label class="har-field">Dynamic resolution<select data-setting="dynamicResolution"><option value="true">Bật theo FPS</option><option value="false">Khóa độ phân giải</option></select></label>
             <label class="har-field">Âm lượng<input type="range" min="0" max="100" value="${this.state.settings.volume}" data-setting="volume"></label>
             <label class="har-field">Độ nhạy camera<input type="range" min="10" max="100" value="${this.state.settings.cameraSensitivity}" data-setting="cameraSensitivity"></label>
@@ -4891,6 +5053,7 @@
           if (key === "weatherDensity") this.updateWeatherAppearance();
           if (key === "rendererMode") this.toast("Renderer sẽ áp dụng ở lần mở game kế tiếp.");
           if (key === "renderStyle") this.refreshCharacterMaterials();
+          if (key === "visualStyle") this.toast("Phong cách nhân vật và cảnh quan sẽ áp dụng ở lần mở game kế tiếp.");
           if (key === "dynamicResolution") this.dynamicResolution = value ? this.renderScale : 1;
           if (key === "volume" && this.audioMaster) this.audioMaster.gain.value = value / 100 * 0.15;
           this.saveProgress("Thay đổi thiết lập");
@@ -4905,6 +5068,7 @@
       setSelect('[data-setting="quality"]', this.state.settings.quality);
       setSelect('[data-setting="rendererMode"]', this.state.settings.rendererMode);
       setSelect('[data-setting="renderStyle"]', this.state.settings.renderStyle);
+      setSelect('[data-setting="visualStyle"]', this.state.settings.visualStyle);
       setSelect('[data-setting="dynamicResolution"]', this.state.settings.dynamicResolution);
       setSelect('[data-setting="reduceEffects"]', this.state.settings.reduceEffects);
     }
@@ -5848,6 +6012,8 @@
         zone: this.currentZone?.id || "central",
         fps: this.fps,
         renderer: this.renderer ? this.rendererBackend.toUpperCase() : "not-started",
+        visualStyle: this.state.settings.visualStyle,
+        photorealAssets: this.photorealStatus,
         authoritative: this.authoritative,
         roomCode: this.state.party.roomCode,
         saveVersion: this.savedRecord?.version || 0,
@@ -5893,10 +6059,18 @@
       if (this.scene) {
         this.scene.traverse((object) => {
           object.geometry?.dispose?.();
-          if (Array.isArray(object.material)) object.material.forEach((material) => material?.dispose?.());
-          else object.material?.dispose?.();
+          if (Array.isArray(object.material)) object.material.forEach((material) => {
+            material?.map?.dispose?.();
+            material?.dispose?.();
+          });
+          else {
+            object.material?.map?.dispose?.();
+            object.material?.dispose?.();
+          }
         });
       }
+      Object.values(this.photorealAssets).forEach((texture) => texture?.dispose?.());
+      this.terrainTexture?.dispose?.();
       this.renderer?.dispose?.();
       try { await this.audio?.close?.(); } catch {}
       this.host?.replaceChildren();

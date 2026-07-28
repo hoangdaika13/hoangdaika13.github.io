@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "createdAt": "2026-07-28",
+  "generator": "OpenAI built-in ImageGen",
+  "rights": "Original project assets generated for HH Astral Realms; no celebrity likenesses, logos or third-party characters were requested.",
+  "assets": [
+    {
+      "file": "astral-realms-panorama-v1.webp",
+      "role": "Photorealistic distant environment panorama",
+      "promptSummary": "Original realistic alien open world with H-Central, Aurora Vale, Crimson Forge and Void Garden.",
+      "sha256": "B590837463BC8A0C5A9581DD399109491BF848B2767EB8AF2027C361ECAABC0C"
+    },
+    {
+      "file": "astral-crew-atlas-v1.webp",
+      "role": "Four-character photorealistic human atlas with transparent background",
+      "promptSummary": "Original adult sci-fi explorers Lyra, Cael, Nyx and Sol with realistic anatomy and game-ready costumes.",
+      "sha256": "32658F0529F2BBB9927477744A698B0649CF7880D00F0BFD619F3CF8CFBDB7B2"
+    }
+  ]
+}
