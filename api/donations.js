@@ -78,7 +78,8 @@ function publicDonation(item) {
     anonymous: visibilityOf(item.visibility, item.anonymous) === "anonymous",
     missionId: missionIdOf(item.missionId),
     verifiedAt: item.verifiedAt,
-    createdAt: item.createdAt
+    createdAt: item.createdAt,
+    receiptSentAt: item.receipt?.sentAt || null
   };
 }
 

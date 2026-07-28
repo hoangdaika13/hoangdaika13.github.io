@@ -8,7 +8,7 @@
 
   const window = globalScope;
   const VERSION = 2;
-  const INTEGRATION_VERSION = "support-platform.v13";
+  const INTEGRATION_VERSION = "support-platform.v14";
   const STORAGE_KEY = "hh.support.pending.v2";
   const LEGACY_STORAGE_KEY = "hh-payos-pending";
   const DONATION_STATUSES = Object.freeze(["pending", "submitted", "verified", "refunded", "rejected", "payment_error"]);
@@ -20,6 +20,18 @@
     { id: "hh-english", label: "HH English", shortLabel: "English", color: "#68f1be", icon: "◇", route: "#/english" },
     { id: "graphic-design", label: "Thiết kế đồ họa", shortLabel: "Design", color: "#b77aff", icon: "⬡", route: "#/graphic-design" },
     { id: "reserve", label: "Quỹ dự phòng", shortLabel: "Dự phòng", color: "#f3dc6b", icon: "◌", route: "#/support" }
+  ]);
+  const SUPPORT_TIERS = Object.freeze([
+    { amount: 20000, code: "MS", name: "Moon Spark", color: "#7cefff" },
+    { amount: 50000, code: "CF", name: "Comet Fuel", color: "#8a7dff" },
+    { amount: 100000, code: "NC", name: "Nebula Core", color: "#f069d1" },
+    { amount: 200000, code: "SE", name: "Stellar Engine", color: "#42e8b4" },
+    { amount: 500000, code: "GG", name: "Galaxy Guardian", color: "#ff9a62" },
+    { amount: 1000000, code: "CP", name: "Cosmic Patron", color: "#ffd968" }
+  ]);
+  const SUPPORT_THEMES = Object.freeze([
+    ["nebula", "Nebula Rose"], ["aurora", "Aurora Support"], ["cyber", "Cyber Patron"],
+    ["deep-space", "Deep Space"], ["golden", "Golden Guardian"], ["cinema", "Cosmic Cinema"]
   ]);
   const CONTRIBUTION_TYPES = Object.freeze([
     ["asset", "Asset / tài nguyên"], ["translation", "Bản dịch"], ["bug", "Báo lỗi"], ["code", "Mã nguồn"], ["tester", "Tester"], ["feedback", "Ý tưởng / phản hồi"]
@@ -137,22 +149,23 @@
     return `<section class="support-page" data-support-page>
       <section class="support-overview">
         <div class="support-overview__copy"><p class="section-kicker">DEVELOPER CORE · H GALAXY</p><h2>Cùng duy trì và phát triển HH Platform</h2><p>Mỗi tia năng lượng trong lõi H chỉ xuất hiện từ một khoản ủng hộ đã được backend xác minh. Bạn chọn đúng nhiệm vụ muốn tiếp sức, còn dữ liệu công khai luôn được ẩn danh theo lựa chọn.</p><div class="support-trust"><span>✓ Minh bạch giao dịch</span><span>✓ VietQR tự động qua payOS</span><span data-support-email-trust>✓ Email cảm ơn sau xác minh</span><span>✓ Không lưu dữ liệu ngân hàng</span></div></div>
-        <div class="support-core" data-support-core tabindex="0" aria-label="Developer Core">
+        <div class="support-core support-core-star" data-support-core tabindex="0" aria-label="Developer Core">
           <div class="support-core__orbit support-core__orbit--outer"><i data-support-core-rays></i></div>
           <button class="support-core__sun" type="button" data-support-core-sun aria-describedby="support-core-details"><span>H</span><small>DEVELOPER CORE</small></button>
           <div class="support-core__details" id="support-core-details" role="status"><strong data-support-core-month>0 ₫</strong><span><b data-support-core-supporters>0</b> người ủng hộ tháng này</span><small data-support-core-synced>Đang đồng bộ backend…</small></div>
           <div class="support-core__signals"><span data-support-core-signal="pending">◌ <b>0</b> chờ xác minh</span><span data-support-core-signal="verified">✦ <b>0</b> đã xác minh</span><span data-support-core-signal="failed">! <b>0</b> lỗi / từ chối</span></div>
         </div>
-        <div class="support-goal"><header><span>Mục tiêu phát triển</span><strong data-support-progress-label>0%</strong></header><div class="support-goal__amount"><strong data-support-total>0 ₫</strong><span>/ <b data-support-goal>10.000.000 ₫</b></span></div><i><b data-support-progress></b></i><footer><span><b data-support-count>0</b> lượt đã xác nhận</span><span>Tháng này <b data-support-month>0 ₫</b></span></footer></div>
+        <div class="support-goal"><header><span>Mục tiêu phát triển</span><strong data-support-progress-label>0%</strong></header><div class="support-goal__amount"><strong data-support-total>0 ₫</strong><span>/ <b data-support-goal>10.000.000 ₫</b></span></div><i><b data-support-progress data-support-progress-ring></b></i><footer><span><b data-support-count>0</b> lượt đã xác nhận</span><span>Tháng này <b data-support-month>0 ₫</b></span></footer></div>
+        <div class="support-galaxy-controls" aria-label="Tùy chỉnh thiên hà ủng hộ"><label>Chủ đề<select data-support-theme>${SUPPORT_THEMES.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></label><div class="support-effects" role="group" aria-label="Mức chuyển động"><button type="button" data-support-effect="static">Tĩnh</button><button type="button" data-support-effect="balanced" class="active">Cân bằng</button><button type="button" data-support-effect="cinematic">Điện ảnh</button></div></div>
       </section>
 
       <div class="support-metrics"><article><span>Tổng đã nhận</span><strong data-support-total-card>0 ₫</strong><small>Chỉ tính giao dịch đã đối soát</small></article><article><span>Người ủng hộ</span><strong data-support-count-card>0</strong><small>Cảm ơn cộng đồng HH</small></article><article><span>Ủng hộ trung bình</span><strong data-support-average>0 ₫</strong><small>Mỗi giao dịch đã xác nhận</small></article><article><span>Trạng thái</span><strong class="is-online">Đang hoạt động</strong><small data-support-checked>Cập nhật tự động 30 giây/lần</small></article></div>
 
       <section class="support-mission-map" data-support-mission-map><header><div><p class="section-kicker">FUNDING MISSION MAP</p><h3>Bảy hành tinh đang cần năng lượng</h3><p>Chọn một nhiệm vụ để khoản ủng hộ được gắn trực tiếp vào mục tiêu đó.</p></div><span data-support-mission-sync>Chưa có hoạt động</span></header><div class="support-mission-grid" data-support-mission-list><p class="support-empty">Đang tải nhiệm vụ từ backend…</p></div></section>
 
-      <section class="support-automation" data-support-automation>
+      <section class="support-automation" data-support-automation data-support-scroll-donate>
         <header><div><p class="section-kicker">VIETQR AUTOMATION</p><h3>Ủng hộ trong một luồng liền mạch</h3></div><span data-support-journey-label>Sẵn sàng</span></header>
-        <ol><li class="is-current" data-support-step="details"><b>1</b><span><strong>Thông tin</strong><small>Chọn số tiền và email</small></span></li><li data-support-step="payment"><b>2</b><span><strong>VietQR</strong><small>Quét ngay trên HH Platform</small></span></li><li data-support-step="verify"><b>3</b><span><strong>Xác minh</strong><small>Webhook payOS tự đối soát</small></span></li><li data-support-step="email"><b>4</b><span><strong>Hoàn tất</strong><small>Nhận email cảm ơn</small></span></li></ol>
+        <ol><li class="is-current" data-support-step="details" data-payment-state-item="creating"><b>1</b><span><strong>Thông tin</strong><small>Chọn số tiền và email</small></span></li><li data-support-step="payment" data-payment-state-item="waiting"><b>2</b><span><strong>VietQR</strong><small>Quét ngay trên HH Platform</small></span></li><li data-support-step="verify" data-payment-state-item="verifying"><b>3</b><span><strong>Xác minh</strong><small>Webhook payOS tự đối soát</small></span></li><li data-support-step="email" data-payment-state-item="paid"><b>4</b><span><strong>Hoàn tất</strong><small>Nhận email cảm ơn</small></span></li></ol>
         <p>Mỗi lần chỉ hiển thị đúng bước đang thực hiện. Giao dịch chỉ được ghi nhận sau khi payOS gửi webhook có chữ ký hợp lệ.</p>
       </section>
 
@@ -175,7 +188,7 @@
         </main>
       </div>
 
-      <section class="support-payos-stage" data-support-payos data-support-stage-panel="payment" hidden>
+      <section class="support-payos-stage support-wormhole" data-support-payos data-support-stage-panel="payment" hidden>
         <header><div><span>BƯỚC 2 · VIETQR PAYOS</span><h3 data-support-payos-title>Đang tạo giao diện thanh toán</h3><p data-support-payos-status>Mã VietQR sẽ xuất hiện ngay tại đây, không mở sang website khác.</p></div><div class="support-live-badge"><i></i> Tự động đối soát</div></header>
         <div class="support-payos-workspace">
           <aside class="support-payos-summary" aria-label="Tóm tắt giao dịch">
@@ -200,10 +213,10 @@
       </section>
 
       <section class="support-receipt" data-support-receipt data-support-stage-panel="email" hidden>
-        <div class="support-receipt__icon">✓</div>
+        <div class="support-receipt__icon support-hologram-envelope">✓</div>
         <div><span>XÁC NHẬN ỦNG HỘ</span><h3>Cảm ơn bạn đã đồng hành cùng Nhhoang</h3><p data-support-receipt-status>Đang hoàn tất thư cảm ơn.</p></div>
-        <dl><div><dt>Mã xác nhận</dt><dd data-support-receipt-id>--</dd></div><div><dt>Số tiền</dt><dd data-support-receipt-amount>--</dd></div><div><dt>Email</dt><dd data-support-receipt-email>--</dd></div><div><dt>Xác nhận lúc</dt><dd data-support-receipt-time>--</dd></div></dl>
-        <div class="support-receipt__actions"><button type="button" data-support-download-receipt data-format="pdf">Tải PDF</button><button type="button" data-support-download-receipt data-format="txt">Tải TXT</button></div>
+        <dl><div><dt>Mã xác nhận</dt><dd data-support-receipt-id>--</dd></div><div><dt>Số tiền</dt><dd data-support-receipt-amount>--</dd></div><div><dt>Email</dt><dd data-support-receipt-email>--</dd></div><div><dt>Xác nhận lúc</dt><dd data-support-receipt-time>--</dd></div></dl><small class="support-receipt__privacy">Email được che một phần trên giao diện công khai và chỉ dùng để gửi biên nhận.</small>
+        <div class="support-receipt__actions"><button type="button" data-support-download-receipt data-support-download-receipt-pdf data-format="pdf">Tải PDF</button><button type="button" data-support-download-receipt data-format="txt">Tải TXT</button><button type="button" data-support-download-card hidden>Thẻ PNG</button><button type="button" data-support-share-card hidden>Chia sẻ</button></div>
       </section>
       </div>
 
@@ -212,9 +225,9 @@
         <section class="support-leaderboard"><header><div><span>Top supporters</span><h3>Bảng tri ân</h3></div></header><div data-support-leaderboard><p class="support-empty">Danh sách sẽ xuất hiện sau khi đối soát.</p></div></section>
       </div>
 
-      <section class="support-constellation" data-support-constellation><header><div><p class="section-kicker">SUPPORTER CONSTELLATION</p><h3>Chòm sao người đồng hành</h3><p>Chỉ các khoản đã được xác minh mới tạo thành một ngôi sao. Màu sao theo nhiệm vụ, không theo giá trị khoản ủng hộ.</p></div><span data-support-constellation-state>Chưa có hoạt động</span></header><div class="support-constellation__sky" data-support-constellation-sky><p class="support-empty">Chưa có giao dịch xác minh để tạo chòm sao.</p></div></section>
+      <section class="support-constellation support-supporter-galaxy support-impact-constellation" data-support-constellation><header><div><p class="section-kicker">SUPPORTER CONSTELLATION</p><h3>Chòm sao người đồng hành</h3><p>Chỉ các khoản đã được xác minh mới tạo thành một ngôi sao. Màu sao theo nhiệm vụ, không theo giá trị khoản ủng hộ.</p></div><div><button type="button" data-supporter-filter="recent">Mới nhất</button><span data-support-constellation-state>Chưa có hoạt động</span></div></header><div class="support-constellation__sky" data-support-constellation-sky><p class="support-empty">Chưa có giao dịch xác minh để tạo chòm sao.</p></div></section>
 
-      <section class="support-impact" data-support-impact><header><div><p class="section-kicker">IMPACT TIMELINE</p><h3>Tiền ủng hộ đã tạo ra điều gì?</h3><p>Mỗi mốc phải liên kết với một phiên bản, workspace hoặc hoạt động đã công bố; không hiển thị kết quả mẫu.</p></div><span data-support-impact-state>Chưa có hoạt động</span></header><div class="support-impact__timeline" data-support-impact-list><p class="support-empty">Chưa có mốc phát triển được công bố.</p></div></section>
+      <section class="support-impact support-mission-log" data-support-impact><header><div><p class="section-kicker">IMPACT TIMELINE</p><h3>Tiền ủng hộ đã tạo ra điều gì?</h3><p>Mỗi mốc phải liên kết với một phiên bản, workspace hoặc hoạt động đã công bố; không hiển thị kết quả mẫu.</p></div><span data-support-impact-state>Chưa có hoạt động</span></header><div class="support-impact__timeline" data-support-impact-list><p class="support-empty">Chưa có mốc phát triển được công bố. Hệ thống không tự tạo dữ liệu giả.</p></div></section>
 
       <section class="support-channels" data-support-channels><header><div><p class="section-kicker">WAYS TO HELP</p><h3>Nhiều cách đồng hành</h3><p>Chỉ hiển thị “Sẵn sàng” khi kênh có adapter thật; kênh chưa cấu hình sẽ không tạo giao dịch giả.</p></div></header><div class="support-channels__grid" data-support-channels-list></div><form class="support-contribution-form" data-support-contribution-form hidden><span class="support-field-label">Gửi đóng góp cộng đồng</span><div class="support-form-grid"><label><span>Loại</span><select data-contribution-type>${CONTRIBUTION_TYPES.map(([id, label]) => `<option value="${id}">${label}</option>`).join("")}</select></label><label><span>Tiêu đề</span><input data-contribution-title maxlength="160" placeholder="Ví dụ: Bản dịch HH English"></label></div><label><span>Mô tả</span><textarea data-contribution-details rows="3" maxlength="1200" placeholder="Bạn muốn đóng góp điều gì?"></textarea></label><label><span>Liên kết (không bắt buộc)</span><input data-contribution-link type="url" maxlength="1200" placeholder="https://..."></label><button class="support-primary" type="submit">Gửi đóng góp</button><p class="support-form-status" data-contribution-status>Đăng nhập để gửi đóng góp bền vững.</p></form></section>
 
@@ -321,6 +334,37 @@
       ];
       lines.forEach((line, index) => pdfPage.drawText(line, { x: 46, y: 790 - index * 25, size: index === 0 ? 15 : 10, font, color: index === 0 ? rgb(0.1, 0.55, 0.63) : rgb(0.12, 0.16, 0.2) }));
       downloadBlob(`hh-transparency-${month.month || "report"}.pdf`, new Blob([await pdf.save()], { type: "application/pdf" }));
+    };
+    const createSupportCard = async donation => {
+      if (!donation?.reference || donation.status !== "verified") return null;
+      if (!window.document?.createElement) return null;
+      const canvas = document.createElement("canvas");
+      canvas.width = 1200; canvas.height = 630;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, "#07131f"); gradient.addColorStop(.52, "#1b1238"); gradient.addColorStop(1, "#35112e");
+      ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#65ebff"; ctx.lineWidth = 4; ctx.strokeRect(26, 26, canvas.width - 52, canvas.height - 52);
+      ctx.fillStyle = "#fff"; ctx.font = "900 48px Segoe UI"; ctx.fillText("HH SUPPORTER CONSTELLATION", 72, 130);
+      ctx.fillStyle = "#65ebff"; ctx.font = "700 28px Segoe UI"; ctx.fillText("Cảm ơn bạn đã tiếp năng lượng cho", 72, 190);
+      ctx.fillStyle = "#ffb5e9"; ctx.font = "900 44px Segoe UI"; ctx.fillText("HH Platform", 72, 245);
+      ctx.fillStyle = "#e6faff"; ctx.font = "600 28px Segoe UI"; ctx.fillText(`Nhiệm vụ: ${missionById(donation.missionId).label}`, 72, 330);
+      ctx.fillText(`Mã xác nhận: ${donation.receipt?.receiptId || donation.reference}`, 72, 380);
+      ctx.fillStyle = "#91a9bb"; ctx.font = "500 22px Segoe UI"; ctx.fillText("Xác nhận ủng hộ · không phải hóa đơn tài chính", 72, 520);
+      return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    };
+    const shareSupportCard = async donation => {
+      const blob = await createSupportCard(donation);
+      if (!blob) return;
+      if (navigator.share && typeof File === "function") {
+        const file = new File([blob], `hh-supporter-${donation.reference}.png`, { type: "image/png" });
+        if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+          await navigator.share({ title: "HH Supporter", text: "Mình vừa tiếp năng lượng cho HH Platform.", files: [file] });
+          return;
+        }
+      }
+      downloadBlob(`hh-supporter-${donation.reference}.png`, blob);
     };
     const selectedAmount = () => Math.round(Number(page.querySelector("[data-support-amount]").value) || 0);
     const updateAmount = amount => { page.querySelector("[data-support-amount]").value = amount; page.querySelectorAll("[data-support-preset]").forEach(button => button.classList.toggle("active", Number(button.dataset.supportPreset) === Number(amount))); };
@@ -727,6 +771,9 @@
 
     page.addEventListener("click", async event => {
       const preset = event.target.closest("[data-support-preset]"); if (preset) return updateAmount(Number(preset.dataset.supportPreset));
+      if (event.target.closest("[data-support-scroll-donate]")) { page.querySelector("[data-support-flow]")?.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      const effectButton = event.target.closest("[data-support-effect]");
+      if (effectButton) { page.dataset.effects = effectButton.dataset.supportEffect; page.querySelectorAll("[data-support-effect]").forEach(button => button.classList.toggle("active", button === effectButton)); return; }
       const missionChoice = event.target.closest("[data-support-mission-choice], [data-support-mission-map-choice]"); if (missionChoice) { chooseMission(missionChoice.dataset.supportMissionChoice || missionChoice.dataset.supportMissionMapChoice); return; }
       const channel = event.target.closest("[data-support-channel]"); if (channel) {
         if (channel.dataset.supportChannel === "recurring" && channel.dataset.supportChannelUrl) { window.open(channel.dataset.supportChannelUrl, "_blank", "noopener"); return; }
@@ -760,6 +807,18 @@
         }
         const receipt = currentDonation.receipt || {};
         downloadText(`xac-nhan-ung-ho-${currentDonation.reference}.txt`, `XÁC NHẬN ỦNG HỘ HH PLATFORM\n\nMã xác nhận: ${receipt.receiptId || `HH-RCP-${currentDonation.reference}`}\nMã giao dịch: ${currentDonation.reference}\nSố tiền: ${money(currentDonation.amount)}\nXác nhận lúc: ${dateText(currentDonation.verifiedAt)}\nTrạng thái email: ${receipt.status === "sent" ? "Đã gửi" : "Đang xử lý"}\n\nCảm ơn bạn đã đồng hành cùng Nhhoang.\nĐây là xác nhận ủng hộ, không phải hóa đơn tài chính.`);
+        return;
+      }
+      if (event.target.closest("[data-support-download-receipt-pdf]") && currentDonation?.status === "verified") {
+        try { await downloadReceiptPdf(currentDonation); setFormStatus("Đã tạo biên nhận PDF.", "success"); } catch (error) { setFormStatus(error.message, "error"); }
+        return;
+      }
+      if (event.target.closest("[data-support-download-card]") && currentDonation?.status === "verified") {
+        try { const blob = await createSupportCard(currentDonation); if (blob) downloadBlob(`hh-supporter-${currentDonation.reference}.png`, blob); } catch (error) { setFormStatus(error.message, "error"); }
+        return;
+      }
+      if (event.target.closest("[data-support-share-card]") && currentDonation?.status === "verified") {
+        try { await shareSupportCard(currentDonation); } catch (error) { setFormStatus(error.message, "error"); }
         return;
       }
       if (event.target.closest("[data-transparency-csv]") && publicData?.transparency) {
@@ -862,6 +921,7 @@
       const aliasWrap = page.querySelector("[data-support-alias-wrap]");
       if (aliasWrap) aliasWrap.hidden = event.target.value !== "alias";
     });
+    page.querySelector("[data-support-theme]")?.addEventListener("change", event => { page.dataset.theme = event.target.value; });
     page.querySelector("[data-support-admin-filter]").addEventListener("change", event => renderAdmin(event.target.value, page.querySelector("[data-support-admin-provider-filter]").value));
     page.querySelector("[data-support-admin-provider-filter]").addEventListener("change", event => renderAdmin(page.querySelector("[data-support-admin-filter]").value, event.target.value));
     page.querySelector("[data-support-impact-form]").addEventListener("submit", async event => {
