@@ -20,7 +20,7 @@ test("Character V11 is the only release selected by the game route and offline c
   const worker = read("sw.js");
 
   assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*11/);
-  for (const asset of ["astral-realms.css?v=12", "astral-realms.js?v=12"]) {
+  for (const asset of ["astral-realms.css?v=13", "astral-realms.js?v=13"]) {
     assert.ok(loader.includes(asset), `route loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }

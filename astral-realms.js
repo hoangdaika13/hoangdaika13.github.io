@@ -1975,14 +1975,21 @@
         return;
       }
       this.builtInCharacterStatus = "loading";
-      const loader = new this.GLTFLoaderClass();
+      let assetLoadError = false;
+      const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
+      if (manager) manager.onError = () => { assetLoadError = true; };
+      const loader = new this.GLTFLoaderClass(manager);
       const entries = Object.entries(BUILTIN_CHARACTER_ASSETS);
       const results = await Promise.allSettled(entries.map(async ([id, url]) => {
         const gltf = await Promise.race([
           loader.loadAsync(url),
           new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Quá thời gian tải ${url}`)), 12000))
         ]);
+        // GLTFLoader can resolve before an embedded blob texture reports its
+        // decode failure. Let LoadingManager flush those late errors before QA.
+        await new Promise((resolve) => root.setTimeout(resolve, 320));
         this.sanitizeBuiltInCharacterAsset(gltf);
+        if (assetLoadError) gltf.userData.hhTextureFallbacks = Math.max(1, Number(gltf.userData?.hhTextureFallbacks || 0));
         gltf.scene.traverse?.((object) => {
           if (!object.isMesh && !object.isSkinnedMesh) return;
           object.userData ||= {};
