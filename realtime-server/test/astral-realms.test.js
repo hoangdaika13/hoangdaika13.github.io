@@ -111,7 +111,7 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
   assert.equal(snapshot.players.length, 1);
   assert.equal(snapshot.players[0].socketId, socket.id);
   assert.equal(snapshot.players[0].characterId, "lyra");
-  assert.equal(snapshot.players[0].appearance.appearanceVersion, 7);
+  assert.equal(snapshot.players[0].appearance.appearanceVersion, 13);
   assert.equal(snapshot.players[0].appearance.baseModel, "valid-asian-f-1-casual");
   assert.equal(snapshot.players[0].appearance.style, "human-cinematic");
   assert.equal(snapshot.players[0].appearance.morphs.eyeSize, 0.74);

@@ -71,7 +71,10 @@ test("eight story missions use distinct mechanics and apply visible world conseq
     "Đối thoại quyết định"
   ]) assert.ok(source.includes(mechanic), `missing mission mechanic ${mechanic}`);
   for (const token of [
-    "advanceStoryMission",
+    "STORY_OBJECTIVES",
+    "progressStoryObjective",
+    "reconcileStoryObjective",
+    "activateStoryBeacon",
     "resolveStoryMissionChoice",
     "economyModifier",
     "weatherLabel",
@@ -80,6 +83,10 @@ test("eight story missions use distinct mechanics and apply visible world conseq
     "trustAll",
     "fearAll"
   ]) assert.ok(source.includes(token), `missing consequence system ${token}`);
+  for (const event of ["enter-zone", "beacon", "scan", "dialogue", "puzzle", "collect", "defeat"]) {
+    assert.ok(source.includes(`event: "${event}"`), `missing real gameplay objective ${event}`);
+  }
+  assert.doesNotMatch(source, /advanceStoryMission\s*\(/);
 });
 
 test("Echo Memory, companion secrets, recap, timeline and morally ambiguous endings are usable", () => {
@@ -115,19 +122,41 @@ test("Story UI is responsive, motion-safe and narrative updates stay event-drive
   assert.match(css, /@media \(max-width: 390px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.har-story-overlay/);
   const frameBody = source.slice(source.indexOf("    frame(time)"), source.indexOf("    updatePlayer(", source.indexOf("    frame(time)")));
-  for (const method of ["advanceStoryMission", "resolveStoryMissionChoice", "unlockStoryEcho", "linkZoneEchoes"]) {
+  for (const method of ["progressStoryObjective", "resolveStoryMissionChoice", "unlockStoryEcho", "linkZoneEchoes"]) {
     assert.equal(frameBody.includes(method), false, `${method} must not run in the per-frame loop`);
   }
+  assert.match(source, /if \(this\.storyOverlayMode\)[\s\S]*trapStoryFocus/);
+  assert.match(source, /role="dialog" aria-modal="true"/);
+  assert.match(source, /stateChecksum\(\)[\s\S]*story: this\.state\.story/);
+});
+
+test("Story choices, endings and New Game+ are guarded and saved without races", () => {
+  for (const token of [
+    "story-choice-preview",
+    "story-choice-confirm",
+    "choose-ending-preview",
+    "choose-ending-confirm",
+    "confirm-new-game-plus",
+    "reconcileStoryState",
+    "applyEndingConsequences",
+    "pendingSaveLabel"
+  ]) assert.ok(source.includes(token), `missing guarded story transition ${token}`);
+  assert.match(source, /async chooseStoryEnding/);
+  assert.match(source, /async startStoryNewGamePlus/);
+  assert.match(source, /await this\.saveProgress\("Checkpoint trước New Game\+"\)/);
+  assert.match(source, /this\.state\.collectedNodes = \[\]/);
+  assert.match(source, /this\.state\.puzzles = \{\}/);
+  assert.match(source, /this\.state\.defeated = \{\}/);
 });
 
 test("Story V1 assets are cache-busted for production and offline use", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const index = read("index.html");
-  for (const asset of ["astral-realms.css?v=23", "astral-realms.js?v=23"]) {
+  for (const asset of ["astral-realms.css?v=34", "astral-realms.js?v=34"]) {
     assert.ok(loader.includes(asset), `${asset} missing from route loader`);
     assert.ok(worker.includes(asset), `${asset} missing from service worker`);
   }
-  assert.match(worker, /hh-identity-portal-v307/);
-  assert.match(index, /performance-loader\.js\?v=83/);
+  assert.match(worker, /hh-identity-portal-v313/);
+  assert.match(index, /performance-loader\.js\?v=95/);
 });

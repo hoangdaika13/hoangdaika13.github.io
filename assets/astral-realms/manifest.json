@@ -1,34 +1,16 @@
 {
-  "version": 3,
-  "createdAt": "2026-07-28",
-  "generator": "OpenAI built-in ImageGen",
-  "rights": "Original visual assets generated for HH Astral Realms plus Three.js example GLB assets distributed under the MIT license in vendor/THREE-LICENSE.txt.",
+  "version": 4,
+  "createdAt": "2026-07-29",
+  "generator": "HH Hero Prime lock",
+  "rights": "Character geometry is loaded from one local MIT-licensed GLB. No low-quality player proxy or alternate player model is shipped.",
+  "heroOnly": true,
   "assets": [
     {
-      "file": "astral-realms-panorama-v1.webp",
-      "role": "Photorealistic distant environment panorama",
-      "promptSummary": "Original realistic alien open world with H-Central, Aurora Vale, Crimson Forge and Void Garden.",
-      "sha256": "B590837463BC8A0C5A9581DD399109491BF848B2767EB8AF2027C361ECAABC0C"
-    },
-    {
-      "file": "astral-crew-atlas-v2.webp",
-      "role": "Four-character portrait atlas used only by interface cards, never as in-world character geometry",
-      "promptSummary": "Preserved Lyra, Cael, Nyx and Sol identities, outfits and order in a clean photoreal full-body lineup; generated on chroma and converted to a transparent web atlas.",
-      "sha256": "D42931B98EB245B5A69DECC3C5A569CD3CBDF3C748CCF2496DF63A8618F018A7"
-    },
-    {
-      "file": "hh-human-asteria-v1.glb",
-      "role": "Actual full-body rigged PBR human base for Character Genesis",
-      "source": "Three.js examples/models/gltf/Michelle.glb",
-      "license": "MIT · vendor/THREE-LICENSE.txt",
-      "sha256": "7A87E15A99CCBC5E5877BE66E1E4ECAE0A581ADCAFA0CCE1A5569F49909E968E"
-    },
-    {
-      "file": "hh-human-vanguard-v1.glb",
-      "role": "Actual full-body rigged PBR armored human and shared locomotion clips",
-      "source": "Three.js examples/models/gltf/Soldier.glb",
-      "license": "MIT · vendor/THREE-LICENSE.txt",
-      "sha256": "DFB230FC1F942F259DD00281A1186953AD602FC5D69067CE63E24B2AA439736B"
+      "file": "characters/default/valid-asian-f-1-casual.glb",
+      "role": "Canonical HH Hero Prime · only player geometry",
+      "source": "VALID avatar local export",
+      "license": "MIT",
+      "quality": "full-quality-only"
     }
   ]
 }

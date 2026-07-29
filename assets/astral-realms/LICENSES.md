@@ -3,7 +3,7 @@
 ## VALID avatars
 
 The optional human avatar catalog and GLB conversions come from
-`c-frame/valid-avatars-glb` at commit `c539a28`.
+The player uses only the pinned local `valid-asian-f-1-casual.glb` Hero Prime export. No remote catalog or low-quality player fallback is shipped.
 
 MIT License — Copyright (c) 2022 Tiffany Do.
 

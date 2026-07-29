@@ -13,7 +13,8 @@ test("Astral Realms defaults to a physical material character pass", () => {
   assert.match(source, /APPEARANCE_CONTROL_MAP/);
   assert.match(source, /defaultAppearanceRecipe/);
   assert.match(source, /appearance-undo/);
-  assert.match(source, /procedural-fallback/);
+  assert.match(source, /native-skeleton/);
+  assert.doesNotMatch(source, /procedural-fallback/);
   assert.match(source, /MeshPhysicalMaterial\s*\|\|\s*THREE\.MeshStandardMaterial/);
   assert.match(source, /clearcoatRoughness/);
   assert.match(source, /refreshCharacterMaterials/);

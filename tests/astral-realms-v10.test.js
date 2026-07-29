@@ -15,89 +15,49 @@ function between(startToken, endToken) {
   return source.slice(start, end);
 }
 
-test("Character Genesis is mandatory once per visual schema and persists completion", () => {
-  const start = between("    async startGame(", "    resetGraphicsAfterFailure()");
+test("Character Genesis remains mandatory once per visual schema", () => {
+  const start = between("    async startGame(", "    beginRuntimeSession(");
   assert.match(source, /data-har-genesis/);
-  assert.match(source, /renderGenesisCreator/);
-  assert.match(source, /openGenesisCreator/);
-  assert.match(source, /completeGenesisCreator/);
-  assert.match(start, /!this\.state\.appearance\.creatorCompletedAt/);
   assert.match(start, /creatorVersion[\s\S]{0,100}CHARACTER_VISUAL_VERSION/);
   assert.match(start, /this\.openGenesisCreator\(\)/);
   assert.match(source, /creatorCompletedAt\s*=\s*nowIso\(\)/);
-  assert.match(source, /creatorVersion\s*=\s*CHARACTER_VISUAL_VERSION/);
-  assert.match(source, /Hoàn tất Character Genesis/);
 });
 
-test("Genesis exposes full-body appearance controls and live 3D motion preview", () => {
+test("Genesis keeps all appearance controls but locks the base Hero", () => {
   const render = between("    renderGenesisCreator()", "    refreshGenesisCreator()");
-  for (const token of [
-    "data-genesis-name",
-    "data-genesis-base",
-    "data-genesis-preset",
-    "data-genesis-setting",
-    "data-genesis-group",
-    "data-genesis-morph",
-    "data-genesis-motion",
-    "data-genesis-action=\"confirm\""
-  ]) assert.ok(render.includes(token), `missing Genesis control ${token}`);
+  for (const token of ["data-genesis-name", "data-hero-prime-lock", "data-genesis-preset", "data-genesis-setting", "data-genesis-group", "data-genesis-morph", "data-genesis-motion", "data-genesis-action=\"confirm\""]) {
+    assert.ok(render.includes(token), `missing Genesis control ${token}`);
+  }
+  assert.doesNotMatch(render, /data-genesis-base|data-genesis-catalog/);
   assert.match(source, /applyRiggedBodyProportions/);
-  assert.match(source, /setGenesisMotion/);
-  assert.match(source, /rebuildActiveBuiltInCharacter/);
-  assert.match(source, /runtime\.mixer\.update\(dt\)/);
+  assert.match(source, /applyHeroArmIK/);
 });
 
-test("built-in heroes are actual rigged GLB assets with shared animation", () => {
+test("only the canonical Hero GLB is present and cached", () => {
   const worker = read("sw.js");
-  const manifest = read("assets/astral-realms/manifest.json");
-  for (const file of ["hh-human-asteria-v1.glb", "hh-human-vanguard-v1.glb"]) {
-    const fullPath = path.join(root, "assets", "astral-realms", file);
-    const bytes = fs.readFileSync(fullPath);
-    assert.ok(bytes.length > 1_000_000, `${file} must be a real model`);
-    assert.equal(bytes.subarray(0, 4).toString("ascii"), "glTF");
-    assert.ok(worker.includes(file), `offline cache missing ${file}`);
-    assert.ok(manifest.includes(file), `manifest missing ${file}`);
-  }
+  const manifest = JSON.parse(read("assets/astral-realms/manifest.json"));
+  assert.equal(manifest.heroOnly, true);
+  assert.equal(manifest.assets.length, 1);
+  assert.equal(manifest.assets[0].file, "characters/default/valid-asian-f-1-casual.glb");
+  assert.match(worker, /characters\/default\/valid-asian-f-1-casual\.glb/);
   assert.match(source, /SkeletonUtils\.js/);
   assert.match(source, /cloneSkinnedCharacter/);
-  assert.match(source, /"builtin-rigged"/);
-  assert.match(source, /"procedural-3d-recovery"/);
-  assert.match(source, /builtInAnimations/);
-  assert.match(source, /AnimationMixer/);
 });
 
-test("characters never downgrade to a flat image in the 3D world", () => {
-  assert.doesNotMatch(source, /createCharacterImpostor|isCharacterImpostor/);
-  assert.match(source, /HHHuman3DProxy/);
-  assert.match(source, /Imported3DProxy/);
-  assert.match(source, /isCharacterLodProxy\s*=\s*true/);
+test("player never downgrades to proxy, crowd or impostor tiers", () => {
+  const tiers = between("const CHARACTER_MODEL_TIERS", "const CHARACTER_ASSET_CLASSES");
+  assert.match(tiers, /hero:/);
+  assert.doesNotMatch(tiers, /\bnear\b|\bcrowd\b|\bimpostor\b/);
+  assert.doesNotMatch(source, /data-genesis-fallback-character/);
+  const compatibility = between("    applyCompatibilityProfile(", "    async startGame(");
+  assert.match(compatibility, /characterQuality\s*=\s*"hero"/);
+  assert.doesNotMatch(compatibility, /characterQuality\s*=\s*"near"/);
 });
 
-test("the visible environment is mesh terrain and the panorama is IBL only", () => {
-  const world = between("    createWorld()", "    createToonGradient()");
-  assert.match(world, /scene\.environment\s*=\s*this\.photorealAssets\.panorama/);
-  assert.doesNotMatch(world, /scene\.background\s*=\s*this\.photorealAssets\.panorama/);
-  assert.match(world, /new THREE\.PlaneGeometry\(376,\s*376/);
-  assert.match(world, /positions\.setZ/);
-  assert.match(world, /terrainGeometry\.computeVertexNormals\(\)/);
-  assert.match(world, /MeshPhysicalMaterial/);
-  assert.match(source, /Địa hình mesh 3D và panorama chỉ dùng làm IBL/);
-});
-
-test("Character V12 supersedes V11 with updated route, offline cache and responsive UI", () => {
-  const loader = read("performance-loader.js");
-  const worker = read("sw.js");
-  const index = read("index.html");
-  const css = read("astral-realms.css");
-  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*12/);
-  for (const asset of ["astral-realms.css?v=22", "astral-realms.js?v=22"]) {
-    assert.ok(loader.includes(asset));
-    assert.ok(worker.includes(asset));
-  }
-  assert.match(worker, /hh-identity-portal-v306/);
-  assert.match(index, /performance-loader\.js\?v=82/);
-  assert.match(css, /Astral Realms Character V12/);
-  assert.match(css, /\.har-genesis/);
-  assert.match(css, /max-width: 720px/);
-  assert.match(css, /prefers-reduced-motion: reduce/);
+test("Genesis camera contains the full dynamic Hero silhouette", () => {
+  assert.match(source, /horizontalFov/);
+  assert.match(source, /safeHalfWidth/);
+  assert.match(source, /fullyContained/);
+  assert.match(source, /aspectChanged/);
+  assert.match(source, /genesisAttachmentVisibility/);
 });

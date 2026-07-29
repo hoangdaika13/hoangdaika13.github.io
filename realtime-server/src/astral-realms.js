@@ -14,8 +14,9 @@ const CHARACTER_PROFILES = Object.freeze({
   nyx: { element: "void", attackScale: 1.08, speedScale: 1.06 },
   sol: { element: "solar", attackScale: 1.18, speedScale: 0.94 }
 });
-const APPEARANCE_VERSION = 7;
-const APPEARANCE_BASE_MODELS = new Set(["human-adult-a01", "human-adult-b01"]);
+const APPEARANCE_VERSION = 13;
+const HERO_CHARACTER_MODEL_ID = "valid-asian-f-1-casual";
+const APPEARANCE_BASE_MODELS = new Set([HERO_CHARACTER_MODEL_ID]);
 const APPEARANCE_SKINS = new Set(["warm-04", "neutral-03", "cool-02", "deep-05"]);
 const APPEARANCE_HAIRS = new Set(["astral-layered-07", "aurora-short-02", "void-long-04", "solar-braid-03"]);
 const APPEARANCE_OUTFITS = new Set(["central-jacket-02", "combat-boots-01", "aurora-suit-01", "void-coat-01"]);
@@ -59,9 +60,7 @@ function sanitizeAppearance(input = {}) {
     return [key, Number.isFinite(number) ? clamp(number, 0, 1) : fallback];
   }));
   const requestedModel = clean(source.baseModel, 80);
-  const baseModel = APPEARANCE_BASE_MODELS.has(requestedModel) || /^valid-[a-z0-9-]{3,72}$/.test(requestedModel)
-    ? requestedModel
-    : "human-adult-a01";
+  const baseModel = HERO_CHARACTER_MODEL_ID;
   return {
     appearanceVersion: APPEARANCE_VERSION,
     baseModel,

@@ -42,18 +42,15 @@
     }
   });
   const CHARACTER_ORDER = Object.freeze(Object.keys(CHARACTERS));
-  const CHARACTER_VISUAL_VERSION = 12;
+  const CHARACTER_VISUAL_VERSION = 13;
+  const HERO_CHARACTER_MODEL_ID = "valid-asian-f-1-casual";
+  const HERO_CHARACTER_ASSET_URL = "./assets/astral-realms/characters/default/valid-asian-f-1-casual.glb";
   const CHARACTER_MODEL_TIERS = Object.freeze({
-    hero: { label: "Web Hero LOD0", triangles: "Face 18–28K · body 25–40K", texture: "2K", face: 52, distance: 13, updateHz: 60 },
-    near: { label: "Gameplay LOD1", triangles: "Face 8–14K · body 10–18K", texture: "1K", face: 52, distance: 34, updateHz: 30 },
-    crowd: { label: "Crowd LOD2", triangles: "Tổng 6–12K", texture: "512", face: 0, distance: 76, updateHz: 12 },
-    impostor: { label: "3D Proxy LOD3", triangles: "3–6K / proxy", texture: "Material PBR", face: 0, distance: 140, updateHz: 6 }
+    hero: { label: "Hero Prime · Full Quality", triangles: "58K+", texture: "Full atlas", face: 52, distance: Infinity, updateHz: 60 }
   });
   const CHARACTER_ASSET_CLASSES = Object.freeze({
-    hero: { id: "hero-digital-human", label: "Hero Digital Human", color: "#6ff2ff" },
-    gameplay: { id: "gameplay-human", label: "Gameplay Human", color: "#9a8cff" },
-    npc: { id: "npc-human", label: "NPC Human", color: "#ff7fcb" },
-    fallback: { id: "fallback-proxy", label: "Fallback Proxy", color: "#ffd36b" }
+    hero: { id: "hero-prime", label: "Hero Prime · Full Quality", color: "#6ff2ff" },
+    unsupported: { id: "unsupported", label: "Không được phép dùng", color: "#ff6b9f" }
   });
   const HERO_ASSET_REQUIREMENTS = Object.freeze({
     headVerticesMin: 20000,
@@ -63,7 +60,7 @@
     bonesMax: 120,
     skeletonCoverage: 0.8,
     textureMax: 2048,
-    lodGroups: 4
+    lodGroups: 1
   });
   const CHARACTER_IMPORT_LIMITS = Object.freeze({
     fileBytes: 32 * 1024 * 1024,
@@ -89,6 +86,8 @@
     rightEye: ["RightEye", "eye.R", "mixamorigRightEye", "eye_r"],
     leftHand: ["LeftHand", "hand.L", "mixamorigLeftHand", "hand_l"],
     rightHand: ["RightHand", "hand.R", "mixamorigRightHand", "hand_r"],
+    leftShoulder: ["LeftShoulder", "clavicle.L", "mixamorigLeftShoulder", "clavicle_l"],
+    rightShoulder: ["RightShoulder", "clavicle.R", "mixamorigRightShoulder", "clavicle_r"],
     leftUpperArm: ["LeftArm", "upper_arm.L", "mixamorigLeftArm", "upperarm_l"],
     rightUpperArm: ["RightArm", "upper_arm.R", "mixamorigRightArm", "upperarm_r"],
     leftForeArm: ["LeftForeArm", "forearm.L", "mixamorigLeftForeArm", "lowerarm_l"],
@@ -98,7 +97,17 @@
     leftLeg: ["LeftLeg", "shin.L", "mixamorigLeftLeg", "calf_l"],
     rightLeg: ["RightLeg", "shin.R", "mixamorigRightLeg", "calf_r"],
     leftFoot: ["LeftFoot", "foot.L", "mixamorigLeftFoot", "foot_l"],
-    rightFoot: ["RightFoot", "foot.R", "mixamorigRightFoot", "foot_r"]
+    rightFoot: ["RightFoot", "foot.R", "mixamorigRightFoot", "foot_r"],
+    leftThumb: ["LeftHandThumb1", "thumb.01.L", "mixamorigLeftHandThumb1", "thumb_01_l"],
+    rightThumb: ["RightHandThumb1", "thumb.01.R", "mixamorigRightHandThumb1", "thumb_01_r"],
+    leftIndex: ["LeftHandIndex1", "f_index.01.L", "mixamorigLeftHandIndex1", "index_01_l"],
+    rightIndex: ["RightHandIndex1", "f_index.01.R", "mixamorigRightHandIndex1", "index_01_r"],
+    leftMiddle: ["LeftHandMiddle1", "f_middle.01.L", "mixamorigLeftHandMiddle1", "middle_01_l"],
+    rightMiddle: ["RightHandMiddle1", "f_middle.01.R", "mixamorigRightHandMiddle1", "middle_01_r"],
+    leftRing: ["LeftHandRing1", "f_ring.01.L", "mixamorigLeftHandRing1", "ring_01_l"],
+    rightRing: ["RightHandRing1", "f_ring.01.R", "mixamorigRightHandRing1", "ring_01_r"],
+    leftPinky: ["LeftHandPinky1", "f_pinky.01.L", "mixamorigLeftHandPinky1", "pinky_01_l"],
+    rightPinky: ["RightHandPinky1", "f_pinky.01.R", "mixamorigRightHandPinky1", "pinky_01_r"]
   });
   const CHARACTER_MOTION_LIBRARY = Object.freeze({
     idle: ["idle", "breathing", "stand"],
@@ -158,16 +167,9 @@
     pain: { browDownLeft: 0.72, browDownRight: 0.58, eyeSquintLeft: 0.68, eyeSquintRight: 0.56, mouthFrownLeft: 0.55, mouthFrownRight: 0.42, jawOpen: 0.22 }
   });
   const CHARACTER_PIPELINE = Object.freeze([
-    { id: "character-creator", name: "Character Creator 5", role: "Web-ready GLB với morph và material đã bake", state: "Chờ manifest asset" },
-    { id: "valid-avatar", name: "VALID Human Library", role: "210 người 3D đa dạng, tải theo nhu cầu", state: "MIT · CDN pin c539a28" },
-    { id: "metahuman", name: "MetaHuman Web Hero", role: "GLB đã retopology cho hero/cinematic", state: "Kiểm tra khi nhập" },
-    { id: "makehuman", name: "MakeHuman / MPFB", role: "Nguồn NPC được tối ưu bên ngoài", state: "Kiểm tra skeleton" },
-    { id: "readyplayerme", name: "Ready Player Me", role: "Avatar GLB do người chơi tạo", state: "Draco/Meshopt/KTX2" },
-    { id: "mixamo", name: "Mixamo", role: "Clip locomotion có sẵn trong GLB", state: "Phát clip theo tên" },
-    { id: "rokoko", name: "Rokoko Vision", role: "Motion capture xuất GLB", state: "Nhập clip cục bộ" },
+    { id: "hero-core", name: "HH Hero Prime", role: "Một GLB duy nhất · Full Quality Only", state: "Local asset · Retry khi lỗi" },
     { id: "mediapipe", name: "MediaPipe Face", role: "52 blendshape trên thiết bị", state: "Opt-in camera" },
-    { id: "environment", name: "HH Volumetric World", role: "Địa hình mesh 3D và panorama chỉ dùng làm IBL", state: "Không dùng ảnh làm phông nền" },
-    { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V12" }
+    { id: "three", name: "Three.js GLTF", role: "GLB rigged, IK, morph và viseme", state: "Runtime V13 · Hero only" }
   ]);
   const GENESIS_STEPS = Object.freeze([
     { id: "identity", number: "01", label: "Nền nhân vật", focus: "body", group: "face" },
@@ -193,7 +195,7 @@
     { id: "void-low", label: "Void · trầm và bí ẩn" },
     { id: "solar-bold", label: "Solar · mạnh và sáng" }
   ]);
-  const APPEARANCE_VERSION = 7;
+  const APPEARANCE_VERSION = 13;
   const APPEARANCE_GROUPS = Object.freeze([
     { id: "face", label: "Khuôn mặt", focus: "head", controls: [["headLength", "Chiều dài đầu"], ["foreheadHeight", "Chiều cao trán"], ["cheekboneWidth", "Gò má"], ["cheekFullness", "Độ đầy má"], ["jawWidth", "Độ rộng hàm"], ["jawAngle", "Góc hàm"], ["chinLength", "Chiều dài cằm"], ["faceFullness", "Độ đầy khuôn mặt"]] },
     { id: "eyes", label: "Mắt", focus: "head", controls: [["eyeSize", "Kích thước mắt"], ["eyeSpacing", "Khoảng cách mắt"], ["eyeDepth", "Độ sâu mắt"], ["upperLid", "Mí trên"], ["lowerLid", "Mí dưới"], ["eyeAngle", "Góc mắt"], ["irisSize", "Kích thước tròng"], ["pupilSize", "Kích thước đồng tử"], ["eyeReflection", "Phản chiếu mắt"], ["eyeLeft", "Mắt trái"], ["eyeRight", "Mắt phải"]] },
@@ -214,14 +216,7 @@
     APPEARANCE_GROUPS.flatMap((group) => group.controls.map(([id, label]) => [id, { id, label, group: group.id, defaultValue: group.defaultValue ?? 0.5 }]))
   ));
   const APPEARANCE_ASSETS = Object.freeze({
-    baseModels: [
-      "valid-asian-f-1-casual",
-      "valid-asian-m-1-casual",
-      "valid-black-f-1-casual",
-      "valid-white-m-1-casual",
-      "human-adult-a01",
-      "human-adult-b01"
-    ],
+    baseModels: [HERO_CHARACTER_MODEL_ID],
     skins: ["warm-04", "neutral-03", "cool-02", "deep-05"],
     hairs: ["astral-layered-07", "aurora-short-02", "void-long-04", "solar-braid-03"],
     beards: ["none", "shadow-01", "short-boxed-02", "astral-goatee-03"],
@@ -250,19 +245,9 @@
     panorama: "./assets/astral-realms/astral-realms-panorama-v1.webp"
   });
   const BUILTIN_CHARACTER_ASSETS = Object.freeze({
-    "human-adult-a01": "./assets/astral-realms/hh-human-asteria-v1.glb",
-    "human-adult-b01": "./assets/astral-realms/hh-human-vanguard-v1.glb",
-    "valid-asian-f-1-casual": "./assets/astral-realms/hh-human-asteria-v1.glb",
-    "valid-asian-m-1-casual": "./assets/astral-realms/hh-human-vanguard-v1.glb",
-    "valid-black-f-1-casual": "./assets/astral-realms/hh-human-asteria-v1.glb",
-    "valid-white-m-1-casual": "./assets/astral-realms/hh-human-vanguard-v1.glb"
+    [HERO_CHARACTER_MODEL_ID]: HERO_CHARACTER_ASSET_URL
   });
-  // Optional web-ready exports from the recommended pipeline:
-  // MetaHuman/Character Creator/MPFB -> Blender retopology -> optimized GLB.
-  // The manifest is deliberately optional so a missing premium asset never
-  // blocks the game; the loader falls back to the bundled GLB, then procedural.
-  const CHARACTER_PIPELINE_SOURCES = Object.freeze(["auto", "metahuman", "character-creator", "mpfb", "valid-avatar", "bundled", "procedural"]);
-  const CHARACTER_PIPELINE_MANIFEST_URL = "./assets/astral-realms/characters/manifest.json";
+  const CHARACTER_PIPELINE_SOURCES = Object.freeze(["hero-core"]);
   const LICENSED_ENVIRONMENT_ASSETS = Object.freeze({
     boulder: "./assets/astral-realms/environment/boulder_01.glb",
     grass: "./assets/astral-realms/environment/grass_medium_01.glb",
@@ -413,6 +398,48 @@
       { id: "destroy", label: "Phá máy lưu trữ định mệnh", outcome: "Các tương lai không còn bị dự đoán, nhưng HH Core mất khả năng cảnh báo thảm họa và đồng đội sợ sức mạnh của bạn.", weather: "Bão xác suất", economy: 1.1, control: "void-cult", dangerous: 2, fearAll: 1 }
     ] }
   ]);
+  const STORY_OBJECTIVES = Object.freeze({
+    central: [
+      { event: "beacon", label: "Tìm và tương tác Dư ảnh Genesis cạnh HH Core", target: 1 },
+      { event: "scan", label: "Dùng Deep Scan tại H-Central", target: 1 },
+      { event: "dialogue", npcId: "luma", label: "Đối chất Navigator Luma về nhịp tim thứ năm", target: 1 }
+    ],
+    aurora: [
+      { event: "enter-zone", label: "Đặt chân tới Aurora Vale", target: 1 },
+      { event: "beacon", label: "Chạm Dư ảnh của Cael để sống lại ký ức", target: 1 },
+      { event: "puzzle", puzzleId: "aurora-resonance", label: "Giải Aurora Resonance bằng lõi Băng tinh", target: 1 }
+    ],
+    crimson: [
+      { event: "enter-zone", label: "Tiến vào Crimson Forge", target: 1 },
+      { event: "defeat", archetype: "forge-hound", label: "Mở đường qua Forge Hound", target: 2 },
+      { event: "puzzle", puzzleId: "forge-ignition", label: "Khóa phản ứng dây chuyền tại Forge Ignition", target: 1 }
+    ],
+    void: [
+      { event: "enter-zone", label: "Xâm nhập Void Garden", target: 1 },
+      { event: "beacon", label: "Giải mã lời thì thầm trong Dư ảnh Nyx", target: 1 },
+      { event: "puzzle", puzzleId: "void-lattice", label: "Ổn định Void Lattice bằng lõi Hư không", target: 1 }
+    ],
+    sky: [
+      { event: "enter-zone", label: "Lướt tới Sky Ruins", target: 1 },
+      { event: "collect", nodeId: "sky-node-1", label: "Thu hồi Lá phiếu cuối cùng trên đảo vỡ", target: 1 },
+      { event: "defeat", archetype: "sky-sentinel", label: "Bảo vệ neo quỹ đạo khỏi Sky Sentinel", target: 2 }
+    ],
+    ocean: [
+      { event: "enter-zone", label: "Hạ cánh xuống Ocean Moon", target: 1 },
+      { event: "collect", nodeId: "ocean-node-1", label: "Thu Echo từ đại dương lượng tử", target: 1 },
+      { event: "beacon", label: "Tương tác Dư ảnh Mira bên bờ thủy triều", target: 1 }
+    ],
+    station: [
+      { event: "enter-zone", label: "Cập bến Astral Station", target: 1 },
+      { event: "defeat", archetype: "station-drone", label: "Bảo vệ nhân chứng khỏi Station Drone", target: 2 },
+      { event: "beacon", label: "Mở audit Dư ảnh tại ga số 7", target: 1 }
+    ],
+    abyss: [
+      { event: "enter-zone", label: "Bước vào Nexus Abyss", target: 1 },
+      { event: "defeat", archetype: "abyss-herald", label: "Đánh bại hai tương lai của chính mình", target: 2 },
+      { event: "beacon", label: "Mở lệnh xóa nguyên bản trong Dư ảnh Aion", target: 1 }
+    ]
+  });
   const STORY_ENDINGS = Object.freeze([
     { id: "restoration", title: "Restoration", color: "#72efff", premise: "Khôi phục mọi dòng thời gian và chấp nhận một vũ trụ hỗn loạn nhưng đầy ký ức." },
     { id: "perfect-silence", title: "Perfect Silence", color: "#d6ddff", premise: "Tự xóa mình để một dòng lịch sử ổn định tiếp tục mà không còn biết cái giá đã trả." },
@@ -462,17 +489,13 @@
       { id: "anatomy", label: "Mắt, giác mạc, tear line, răng, lưỡi, lông mi, tóc tách mesh", pass: report.separateEyeMeshes >= 2 && report.corneaMeshes >= 1 && report.tearLineMeshes >= 1 && report.teethMeshes >= 1 && report.tongueMeshes >= 1 && report.eyelashMeshes >= 1 && report.hairCardMeshes >= 1, value: `${report.separateEyeMeshes || 0}/2 mắt · ${[report.corneaMeshes, report.tearLineMeshes, report.teethMeshes, report.tongueMeshes, report.eyelashMeshes, report.hairCardMeshes].filter(Boolean).length}/6 module` },
       { id: "pbr", label: "PBR skin maps", pass: report.normalMaps >= 1 && report.roughnessMaps >= 1 && report.thicknessMaps >= 1, value: `N${report.normalMaps || 0} · R${report.roughnessMaps || 0} · T${report.thicknessMaps || 0}` },
       { id: "textures", label: "Texture tối đa 2K", pass: report.maxTextureSize > 0 && report.maxTextureSize <= HERO_ASSET_REQUIREMENTS.textureMax, value: `${report.maxTextureSize || 0}px` },
-      { id: "lod", label: "LOD0/1/2/3 explicit", pass: report.lodGroups >= HERO_ASSET_REQUIREMENTS.lodGroups, value: `${report.lodGroups || 0}/4 nhóm` }
+      { id: "single-hero", label: "Một Hero mesh duy nhất", pass: report.skinnedMeshes >= 1, value: `${report.skinnedMeshes || 0} SkinnedMesh · không proxy` }
     ];
     const passed = checks.filter((check) => check.pass).length;
     const heroReady = checks.every((check) => check.pass);
-    const assetClass = heroReady
+    const assetClass = report.skinnedMeshes && report.bones
       ? CHARACTER_ASSET_CLASSES.hero
-      : report.skinnedMeshes && report.bones && Number(report.skeletonCoverage || 0) >= 0.55
-        ? CHARACTER_ASSET_CLASSES.gameplay
-        : report.skinnedMeshes && report.bones
-          ? CHARACTER_ASSET_CLASSES.npc
-          : CHARACTER_ASSET_CLASSES.fallback;
+      : CHARACTER_ASSET_CLASSES.unsupported;
     return { assetClass: assetClass.id, assetClassLabel: assetClass.label, heroReady, heroChecks: checks, heroScore: Math.round((passed / checks.length) * 100) };
   }
 
@@ -494,17 +517,17 @@
     exceeds("animationSeconds", report.animationSeconds, "Tổng thời lượng animation");
     exceeds("nodes", report.nodes, "Số node");
     exceeds("materials", report.materials, "Số material");
-    if (!report.skinnedMeshes) warnings.push("Không có SkinnedMesh; model sẽ dùng chuyển động fallback hoặc impostor.");
+    if (!report.skinnedMeshes) warnings.push("Không có SkinnedMesh; Hero Prime sẽ bị từ chối thay vì thay bằng proxy.");
     if (!report.bones) warnings.push("Không phát hiện skeleton humanoid.");
     if (!report.animations) warnings.push("Không có animation clip; runtime giữ pose gốc.");
     if ((report.skeletonCoverage || 0) < 0.55 && report.bones) warnings.push("Skeleton chưa khớp tốt với HH Humanoid.");
     if (report.rootMotionTracks) warnings.push(`${report.rootMotionTracks} root-motion track X/Z sẽ được chuyển thành in-place để tránh trôi nhân vật.`);
     if (report.headVertices && report.headVertices < HERO_ASSET_REQUIREMENTS.headVerticesMin) warnings.push("Head mesh dưới 20K vertices; phù hợp gameplay/NPC nhưng chưa đạt Hero V12.");
-    if ((report.faceMorphTargets || 0) < 52) warnings.push(`Model có ${report.faceMorphTargets || 0}/52 facial morph native; HH dùng procedural/bone fallback cho kênh còn thiếu.`);
+    if ((report.faceMorphTargets || 0) < 52) warnings.push(`Model có ${report.faceMorphTargets || 0}/52 facial morph native; các kênh còn thiếu không được giả bằng model chất lượng thấp.`);
     if ((report.maxTextureSize || 0) > 2048) warnings.push("Texture trên 2K sẽ tốn bộ nhớ; nên xuất KTX2 2K cho Web Hero.");
     if ((report.bones || 0) > 120) warnings.push("Skeleton trên 120 bone; nên giảm bone phụ cho bản web.");
     const classification = classifyCharacterAsset(report);
-    if (!classification.heroReady) warnings.push(`Hero gate đạt ${classification.heroScore}%; asset được phân loại ${classification.assetClassLabel}.`);
+    if (!classification.heroReady) warnings.push(`Hero gate kỹ thuật đạt ${classification.heroScore}%; đây vẫn là asset mạnh nhất đang được khóa duy nhất, không có visual fallback.`);
     return {
       valid: errors.length === 0,
       errors,
@@ -542,16 +565,10 @@
 
   function defaultAppearanceRecipe(characterId = "lyra") {
     const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
-    const realisticBase = {
-      lyra: "valid-asian-f-1-casual",
-      cael: "valid-asian-m-1-casual",
-      nyx: "valid-black-f-1-casual",
-      sol: "valid-white-m-1-casual"
-    }[characterId] || "valid-asian-f-1-casual";
     return {
       appearanceVersion: APPEARANCE_VERSION,
-      baseModel: realisticBase,
-      sourceProvider: "auto",
+      baseModel: HERO_CHARACTER_MODEL_ID,
+      sourceProvider: "hero-core",
       bodyPreset: "balanced",
       style: "human-cinematic",
       symmetry: true,
@@ -587,19 +604,11 @@
       Number.isFinite(Number(recipe.morphs?.[control.id])) ? clamp(recipe.morphs[control.id], 0, 1) : control.defaultValue
     ]));
     const validHex = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value).toLowerCase() : fallback;
-    const requestedModel = String(recipe.baseModel || "").slice(0, 80);
-    const isCatalogModel = /^valid-[a-z0-9-]{3,72}$/.test(requestedModel);
-    const isLegacyRecipe = Number(recipe.appearanceVersion || 0) < APPEARANCE_VERSION;
-    const normalizedBaseModel = isLegacyRecipe && ["human-adult-a01", "human-adult-b01"].includes(requestedModel)
-      ? base.baseModel
-      : APPEARANCE_ASSETS.baseModels.includes(requestedModel) || isCatalogModel
-        ? requestedModel
-        : base.baseModel;
     return {
       ...base,
       appearanceVersion: APPEARANCE_VERSION,
-      baseModel: normalizedBaseModel,
-      sourceProvider: CHARACTER_PIPELINE_SOURCES.includes(recipe.sourceProvider) ? recipe.sourceProvider : base.sourceProvider,
+      baseModel: HERO_CHARACTER_MODEL_ID,
+      sourceProvider: "hero-core",
       bodyPreset: APPEARANCE_PRESETS[recipe.bodyPreset] ? recipe.bodyPreset : base.bodyPreset,
       style: ["human-cinematic", "anime-realistic"].includes(recipe.style) ? recipe.style : base.style,
       symmetry: recipe.symmetry !== false,
@@ -738,6 +747,8 @@
     return Object.fromEntries(STORY_MISSIONS.map((mission, index) => [mission.zoneId, {
       status: index === 0 ? "active" : "locked",
       progress: 0,
+      objectiveProgress: 0,
+      completedEventKeys: [],
       choice: "",
       completedAt: ""
     }]));
@@ -764,6 +775,62 @@
       newGamePlus: 0,
       lastRecapAt: ""
     };
+  }
+
+  function reconcileStoryState(state) {
+    const story = state?.story;
+    if (!story?.missions) return state;
+
+    const seenLinks = new Set();
+    story.constellationLinks = (story.constellationLinks || []).filter((link) => {
+      const pair = [link.from, link.to].sort().join("::");
+      if (!link.from || !link.to || link.from === link.to || seenLinks.has(pair)) return false;
+      seenLinks.add(pair);
+      return true;
+    });
+
+    let openMissionFound = false;
+    let completedMissionCount = 0;
+    STORY_MISSIONS.forEach((mission) => {
+      const record = story.missions[mission.zoneId];
+      const validChoice = mission.choices.some((choice) => choice.id === record.choice);
+      const validCompletion = !openMissionFound && record.status === "completed" && validChoice;
+      if (validCompletion) {
+        record.progress = mission.steps.length;
+        record.objectiveProgress = 0;
+        story.truthShards[mission.zoneId].discovered = true;
+        story.truthShards[mission.zoneId].collectedAt ||= record.completedAt || nowIso();
+        completedMissionCount += 1;
+        if (state.checkpoints) state.checkpoints[mission.zoneId] = true;
+        return;
+      }
+
+      if (!openMissionFound) {
+        record.status = record.progress >= mission.steps.length ? "decision" : "active";
+        record.choice = "";
+        record.completedAt = "";
+        if (state.checkpoints) state.checkpoints[mission.zoneId] = true;
+        openMissionFound = true;
+        return;
+      }
+
+      record.status = "locked";
+      record.choice = "";
+      record.completedAt = "";
+    });
+
+    story.aionEvidence = Math.max(Number(story.aionEvidence || 0), completedMissionCount);
+    const activeMission = STORY_MISSIONS.find((mission) => ["active", "decision"].includes(story.missions[mission.zoneId].status));
+    story.chapter = story.endingFlags.selected
+      ? "epilogue"
+      : activeMission?.zoneId || (completedMissionCount === STORY_MISSIONS.length ? "finale" : story.prologueCompletedAt ? "central" : "prologue");
+
+    const abyssEchoIds = ECHO_MEMORIES.filter((echo) => echo.zoneId === "abyss").map((echo) => echo.id);
+    const hasAbyssLink = abyssEchoIds.length === 2 && story.constellationLinks.some((link) => (
+      [link.from, link.to].includes(abyssEchoIds[0]) && [link.from, link.to].includes(abyssEchoIds[1])
+    ));
+    if (hasAbyssLink) story.endingFlags.genesisPurpose = true;
+    return state;
   }
 
   function reputationRank(value) {
@@ -901,9 +968,9 @@
         renderStyle: "realistic",
         rendererMode: "auto",
         visualStyle: "photoreal",
-        characterMode: "rigged",
-        characterQuality: "adaptive",
-        characterPipeline: "auto",
+        characterMode: "hero",
+        characterQuality: "hero",
+        characterPipeline: "hero-core",
         characterStudio: "central",
         facialAnimation: true,
         surfaceFx: true,
@@ -911,7 +978,7 @@
         naturalMotion: true,
         eyePerformance: true,
         secondaryMotion: true,
-        digitalHumanQuality: "adaptive",
+        digitalHumanQuality: "hero",
         vfxLevel: "balanced",
         livingWorld: true,
         dynamicResolution: true,
@@ -1024,6 +1091,8 @@
           return [mission.zoneId, {
             status: ["locked", "active", "decision", "completed"].includes(record.status) ? record.status : (index === 0 ? "active" : "locked"),
             progress: clamp(record.progress ?? 0, 0, mission.steps.length),
+            objectiveProgress: clamp(record.objectiveProgress ?? 0, 0, STORY_OBJECTIVES[mission.zoneId]?.[clamp(record.progress ?? 0, 0, mission.steps.length - 1)]?.target || 1),
+            completedEventKeys: Array.isArray(record.completedEventKeys) ? [...new Set(record.completedEventKeys.map((key) => String(key).slice(0, 100)))].slice(-24) : [],
             choice: mission.choices.some((choice) => choice.id === record.choice) ? record.choice : "",
             completedAt: String(record.completedAt || "").slice(0, 40)
           }];
@@ -1076,6 +1145,10 @@
           ...fallback,
           ...(input.world?.zones?.[id] || {}),
           resources: clamp(input.world?.zones?.[id]?.resources ?? fallback.resources, 0, 100),
+          economyModifier: clamp(input.world?.zones?.[id]?.economyModifier ?? 1, 0.5, 1.5),
+          weatherSeverity: clamp(input.world?.zones?.[id]?.weatherSeverity ?? 0.58, 0.1, 1),
+          weatherLabel: String(input.world?.zones?.[id]?.weatherLabel || "").slice(0, 80),
+          controlState: String(input.world?.zones?.[id]?.controlState || "").slice(0, 60),
           discovered: id === "central" || input.world?.zones?.[id]?.discovered === true,
           updatedAt: String(input.world?.zones?.[id]?.updatedAt || fallback.updatedAt).slice(0, 40)
         }])),
@@ -1199,9 +1272,9 @@
     if (!["realistic", "cinematic", "anime"].includes(state.settings.renderStyle)) state.settings.renderStyle = "realistic";
     if (!["auto", "webgpu", "webgl"].includes(state.settings.rendererMode)) state.settings.rendererMode = "auto";
     if (!["photoreal", "hybrid", "performance"].includes(state.settings.visualStyle)) state.settings.visualStyle = "photoreal";
-    if (!["rigged", "portrait"].includes(state.settings.characterMode)) state.settings.characterMode = "rigged";
-    if (!["adaptive", "hero", "near", "crowd"].includes(state.settings.characterQuality)) state.settings.characterQuality = "adaptive";
-    if (!CHARACTER_PIPELINE_SOURCES.includes(state.settings.characterPipeline)) state.settings.characterPipeline = "auto";
+    state.settings.characterMode = "hero";
+    state.settings.characterQuality = "hero";
+    state.settings.characterPipeline = "hero-core";
     if (!GENESIS_STUDIOS[state.settings.characterStudio]) state.settings.characterStudio = "central";
     state.settings.facialAnimation = state.settings.facialAnimation !== false;
     state.settings.surfaceFx = state.settings.surfaceFx !== false;
@@ -1209,7 +1282,7 @@
     state.settings.naturalMotion = state.settings.naturalMotion !== false;
     state.settings.eyePerformance = state.settings.eyePerformance !== false;
     state.settings.secondaryMotion = state.settings.secondaryMotion !== false;
-    if (!["adaptive", "performance", "quality", "cinematic"].includes(state.settings.digitalHumanQuality)) state.settings.digitalHumanQuality = "adaptive";
+    state.settings.digitalHumanQuality = "hero";
     if (!["static", "balanced", "cinematic"].includes(state.settings.vfxLevel)) state.settings.vfxLevel = "balanced";
     state.settings.livingWorld = state.settings.livingWorld !== false;
     state.settings.dynamicResolution = state.settings.dynamicResolution !== false;
@@ -1222,7 +1295,7 @@
     if (!state.roster.unlocked.length) state.roster.unlocked = ["lyra"];
     state.activatedGates = Array.isArray(state.activatedGates) ? [...new Set(state.activatedGates)].slice(0, 8) : [];
     state.collectedNodes = Array.isArray(state.collectedNodes) ? [...new Set(state.collectedNodes)].slice(0, 200) : [];
-    return state;
+    return reconcileStoryState(state);
   }
 
   class AstralSaveStore {
@@ -1387,6 +1460,7 @@
       this.lastRenderSuccessAt = 0;
       this.streamingGroups = new Map();
       this.puzzleNodes = new Map();
+      this.storyBeacons = new Map();
       this.cloudLayers = [];
       this.waterSurfaces = [];
       this.climbables = [];
@@ -1405,10 +1479,10 @@
       this.genesisCamera = null;
       this.genesisStudioGroup = null;
       this.genesisStudioId = "central";
-      this.genesisFallbackModel = null;
       this.genesisActualModel = null;
       this.genesisOriginalParent = null;
       this.genesisOriginalTransform = null;
+      this.genesisAttachmentVisibility = [];
       this.genesisVisibility = null;
       this.lastEvolutionUpdateAt = 0;
       this.runtimeStarted = false;
@@ -1449,6 +1523,11 @@
       this.currentPanel = "";
       this.storyOverlayMode = "";
       this.storyReplayStage = "awakening";
+      this.storyFocusReturn = null;
+      this.pendingStoryChoice = null;
+      this.pendingStoryEnding = "";
+      this.pendingStoryNewGamePlus = false;
+      this.lastStoryFrameAt = 0;
       this.appearanceGroup = "face";
       this.appearanceHistory = [];
       this.appearanceFuture = [];
@@ -1458,6 +1537,7 @@
       this.toastTimer = 0;
       this.frameHandle = 0;
       this.autosaveTimer = 0;
+      this.pendingSaveLabel = "";
       this.fpsFrames = 0;
       this.fpsStartedAt = performance.now();
       this.fps = 0;
@@ -1614,7 +1694,7 @@
             <div class="har-dialogue__choices" data-har-dialogue-choices></div>
           </section>
 
-          <section class="har-story-overlay" data-har-story-overlay hidden aria-live="polite" aria-label="Astral Story">
+          <section class="har-story-overlay" data-har-story-overlay hidden role="dialog" aria-modal="true" aria-live="polite" aria-label="Astral Story">
             <div class="har-story-overlay__nebula" aria-hidden="true"><i></i><i></i><i></i></div>
             <article class="har-story-cinematic" data-har-story-content></article>
           </section>
@@ -1636,23 +1716,6 @@
                 </ol>
                 </aside>
                 <div class="har-genesis__viewport" aria-label="Xem trước nhân vật 3D">
-                <div class="har-genesis-fallback-character" data-genesis-fallback-character aria-hidden="true">
-                  <div class="har-genesis-fallback-character__frame"></div>
-                  <div class="har-genesis-fallback-character__orbit har-genesis-fallback-character__orbit--a"></div>
-                  <div class="har-genesis-fallback-character__orbit har-genesis-fallback-character__orbit--b"></div>
-                  <div class="har-genesis-fallback-character__figure">
-                    <i class="har-genesis-fallback-character__aura"></i>
-                    <i class="har-genesis-fallback-character__head"></i>
-                    <i class="har-genesis-fallback-character__neck"></i>
-                    <i class="har-genesis-fallback-character__torso"></i>
-                    <i class="har-genesis-fallback-character__arm har-genesis-fallback-character__arm--left"></i>
-                    <i class="har-genesis-fallback-character__arm har-genesis-fallback-character__arm--right"></i>
-                    <i class="har-genesis-fallback-character__leg har-genesis-fallback-character__leg--left"></i>
-                    <i class="har-genesis-fallback-character__leg har-genesis-fallback-character__leg--right"></i>
-                    <i class="har-genesis-fallback-character__visor"></i>
-                  </div>
-                  <small>GPU SAFE HUMAN PREVIEW · 3D FALLBACK</small>
-                </div>
                 <div class="har-genesis__scan"><i></i><i></i><i></i></div>
                 <div class="har-genesis__camera-note"><strong data-genesis-model-name>ASTERIA HUMAN</strong><span>Giữ và kéo trên nhân vật để xoay camera</span></div>
                 <div class="har-genesis-studios" data-genesis-studios aria-label="Studio 3D">
@@ -1690,7 +1753,7 @@
                 <span data-har-loading-text>Đang chuẩn bị cổng không gian...</span>
                 <div class="har-loading__recovery" data-har-loading-recovery hidden>
                   <button class="har-secondary-button" type="button" data-har-retry>Thử lại</button>
-                  <button class="har-secondary-button" type="button" data-har-safe-mode>Chạy cấu hình nhẹ</button>
+                  <button class="har-secondary-button" type="button" data-har-safe-mode>Khởi động lại Hero Prime</button>
                 </div>
               </div>
               <div class="har-status-note" data-har-save-note>Đang kiểm tra tiến trình trên thiết bị...</div>
@@ -1716,6 +1779,7 @@
           : "Chưa có hành trình · bản mới sẽ được lưu bằng IndexedDB.";
         continueButton.textContent = "Bắt đầu hành trình";
       }
+      this.syncMotionPreference();
       this.bindShellEvents();
       return this;
     }
@@ -1732,22 +1796,18 @@
       const memory = Number(root.navigator?.deviceMemory || 0);
       const cores = Number(root.navigator?.hardwareConcurrency || 0);
       const constrained = forced || (memory > 0 && memory <= 4) || (cores > 0 && cores <= 4);
-      if (!constrained) return false;
-      this.state.settings.quality = "low";
-      this.state.settings.rendererMode = "webgl";
-      this.state.settings.visualStyle = forced ? "performance" : this.state.settings.visualStyle;
-      this.state.settings.vfxLevel = "static";
-      this.state.settings.dynamicResolution = true;
-      this.state.settings.microDetail = false;
-      this.state.settings.characterMode = "rigged";
-      this.state.settings.characterQuality = "near";
-      this.state.settings.shadows = "low";
-      this.state.settings.postFx = false;
-      this.state.settings.weatherDensity = Math.min(38, Number(this.state.settings.weatherDensity || 38));
-      this.state.settings.reduceEffects = true;
-      this.root.dataset.quality = "low";
-      this.root.dataset.compatibility = "true";
-      return true;
+      this.state.settings.characterMode = "hero";
+      this.state.settings.characterQuality = "hero";
+      this.state.settings.characterPipeline = "hero-core";
+      this.state.settings.digitalHumanQuality = "hero";
+      this.state.settings.visualStyle = "photoreal";
+      this.state.settings.microDetail = true;
+      this.state.settings.facialAnimation = true;
+      this.state.settings.eyePerformance = true;
+      this.state.settings.secondaryMotion = true;
+      this.root.dataset.compatibility = constrained ? "hero-required" : "hero-only";
+      this.syncMotionPreference();
+      return constrained;
     }
 
     async startGame({ fresh = false } = {}) {
@@ -1758,7 +1818,7 @@
       const recovery = this.root.querySelector("[data-har-loading-recovery]");
       const loadingText = this.root.querySelector("[data-har-loading-text]");
       if (recovery) recovery.hidden = true;
-      this.root.dataset.characterPreview = "fallback";
+      this.root.dataset.characterPreview = "loading";
       loadingText?.classList.remove("har-unsupported");
       continueButton.disabled = true;
       newButton.disabled = true;
@@ -1774,11 +1834,12 @@
         this.root.dataset.quality = this.state.settings.quality;
         this.root.dataset.visualStyle = this.state.settings.visualStyle;
         this.root.dataset.vfx = this.state.settings.vfxLevel;
+        this.syncMotionPreference();
         this.setLoading(12, "Đang kiểm tra trình duyệt và bộ nhớ đồ họa...");
         if (!this.supportsRenderer()) throw new Error("Trình duyệt không hỗ trợ WebGL hoặc WebGPU. Hãy bật tăng tốc phần cứng hoặc dùng trình duyệt mới hơn.");
         this.setLoading(28, compatibilityMode
-          ? "Đã bật cấu hình nhẹ cho thiết bị này · đang khởi tạo WebGL..."
-          : "Đang chọn WebGPU hoặc WebGL2 phù hợp với thiết bị...");
+          ? "Thiết bị giới hạn đã được phát hiện · Hero Prime vẫn giữ nguyên chất lượng..."
+          : "Đang chọn WebGPU hoặc WebGL2 cho Hero Prime...");
         // WebGPU remains opt-in. Some Chromium/GPU combinations terminate the
         // graphics process instead of throwing a recoverable initialization error.
         const wantsWebGPU = this.state.settings.rendererMode === "webgpu"
@@ -1805,7 +1866,7 @@
         await this.loadCharacterModules();
         this.setLoading(66, "Đang nạp cây, đá và thảm thực vật CC0...");
         await this.loadLicensedEnvironmentAssets();
-        this.setLoading(69, "Đang nạp hai Human Rig 3D và chuyển động toàn thân...");
+        this.setLoading(69, "Đang nạp Hero Prime duy nhất · không dùng model thay thế...");
         await this.loadCharacterAssetsFromPipeline();
         this.createWorld();
         this.setLoading(76, "Đang dựng nhân vật rigged PBR, sinh vật và Nexus Warden...");
@@ -1833,6 +1894,13 @@
         if (needsGenesis) this.openGenesisCreator();
         else this.beginRuntimeSession(this.savedRecord?.data ? "Đã khôi phục checkpoint gần nhất." : "Hành trình mới bắt đầu tại H-Central.");
       } catch (error) {
+        root.__astralLastError = {
+          message: String(error?.message || error || "Unknown error"),
+          stack: String(error?.stack || ""),
+          at: nowIso()
+        };
+        this.root.dataset.heroErrorStack = String(error?.stack || error?.message || error || "Unknown error");
+        console.error?.("[HH Astral Realms] Hero Prime startup failed", error);
         this.resetGraphicsAfterFailure();
         this.started = false;
         continueButton.disabled = false;
@@ -1856,6 +1924,7 @@
         this.runtime?.resume?.({ gameId: GAME_ID, reason: "character-ready" });
       }
       this.toast(message, "success");
+      this.reconcileStoryObjective();
       this.syncCloud(false);
       root.setTimeout(() => {
         if (this.destroyed || !this.runtimeStarted) return;
@@ -1882,22 +1951,12 @@
       const mesh = this.characterMeshes.get(id);
       const runtime = this.characterRuntimes.get(id);
       const fit = this.buildAppearanceFitReport(recipe, mesh);
-      const modelLabels = {
-        "valid-asian-f-1-casual": ["Asteria Gameplay Human", "VALID rig · NPC/multiplayer/fallback · local GLB"],
-        "valid-asian-m-1-casual": ["Cael Gameplay Human", "VALID rig · NPC/multiplayer/fallback · local GLB"],
-        "valid-black-f-1-casual": ["Nyx Gameplay Human", "VALID rig · NPC/multiplayer/fallback · local GLB"],
-        "valid-white-m-1-casual": ["Sol Gameplay Human", "VALID rig · NPC/multiplayer/fallback · local GLB"],
-        "human-adult-a01": ["Asteria Human", "Human Rig · 16K vertices · Digital Human runtime"],
-        "human-adult-b01": ["Vanguard Human", "Combat Rig · 7K vertices · LOD hiệu năng"]
-      };
+      const modelLabel = ["HH Hero Prime", "58K+ triangles · 114 joints · facial morph · full quality only"];
       const faceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
       const boneCount = runtime?.bones ? Object.values(runtime.bones).filter(Boolean).length : 0;
       const visibility = this.genesisVisibility?.report;
       const qa = runtime?.qaReport || mesh?.userData?.qaReport || {};
       const heroGate = qa.heroChecks ? qa : { ...qa, ...classifyCharacterAsset(qa) };
-      const catalogModels = [...new Map(this.characterPipelineManifest
-        .filter((entry) => entry.provider === "valid-avatar")
-        .map((entry) => [entry.modelId, entry])).values()];
       const dna = encodeCharacterDNA(recipe, id);
       const slots = this.state.appearance.characterSlots || [];
       const option = (value, label, selected) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
@@ -1908,16 +1967,16 @@
         <div class="har-genesis-editor__intro">
           <small>DIGITAL HUMAN CORE V${CHARACTER_VISUAL_VERSION} · BƯỚC ${step.number}/10</small>
           <h2>${escapeHtml(step.label)}</h2>
-          <p>${escapeHtml(modelLabels[recipe.baseModel]?.[0] || "HUMAN RIG")} · Character DNA lưu ngoại hình, giọng nói, Motion DNA và tiến hóa gameplay.</p>
+          <p>${escapeHtml(modelLabel[0])} · Character DNA lưu ngoại hình, giọng nói, Motion DNA và tiến hóa gameplay.</p>
         </div>
         <div class="har-genesis-capabilities" aria-label="Năng lực Digital Human">
-          <div><small>ASSET CLASS</small><strong>${escapeHtml(heroGate.assetClassLabel || "Fallback Proxy")}</strong><span>${heroGate.heroReady ? "Đạt Hero V12" : `Hero gate ${heroGate.heroScore || 0}% · không gắn nhãn giả`}</span></div>
-          <div><small>FACE DRIVER</small><strong>${faceChannels} native / 52 driver</strong><span>${boneCount} bone nhận diện · facial LOD</span></div>
+          <div><small>ASSET CLASS</small><strong>Hero Prime duy nhất</strong><span>Không LOD thấp · không proxy · không thay model</span></div>
+          <div><small>FACE DRIVER</small><strong>${faceChannels} native / 52 driver</strong><span>${boneCount} nhóm xương nhận diện · cập nhật 60 Hz</span></div>
           <div><small>SURFACE</small><strong>5 lớp</strong><span>pore · roughness · SSS · flush · wetness</span></div>
           <div><small>MOTION DNA</small><strong>${escapeHtml(MOTION_DNA_PRESETS[recipe.motionDNA.preset]?.label || recipe.motionDNA.preset)}</strong><span>8 hướng · foot lock · motion warp</span></div>
         </div>
-        <div class="har-hero-gate ${heroGate.heroReady ? "is-ready" : "is-fallback"}">
-          <div><small>HERO ASSET GATE</small><strong>${heroGate.heroReady ? "Hero V12 sẵn sàng" : "Gameplay/NPC fallback an toàn"}</strong><span>${visibility?.ready ? "Model đang hiển thị ổn định trong camera." : "Fallback 3D được giữ cho tới khi GPU xác nhận model."}</span></div>
+        <div class="har-hero-gate is-ready">
+          <div><small>HERO PRIME LOCK</small><strong>Full Quality Only</strong><span>${visibility?.ready ? "Hero đang hiển thị ổn định trong camera." : "Đang xác minh chính Hero; nếu lỗi, game sẽ yêu cầu Thử lại."}</span></div>
           <div class="har-hero-gate__checks">${(heroGate.heroChecks || []).map((check) => `<span class="${check.pass ? "is-pass" : "is-missing"}" title="${escapeHtml(check.value)}">${check.pass ? "✓" : "○"} ${escapeHtml(check.label)}</span>`).join("")}</div>
         </div>
         <div class="har-genesis-fit ${fit.level}" data-genesis-stage="wardrobe" ${step.id === "wardrobe" ? "" : "hidden"} aria-live="polite">
@@ -1933,14 +1992,9 @@
           <input type="text" maxlength="40" value="${escapeHtml(this.state.player.name || "")}" data-genesis-name autocomplete="off">
         </label>
         <div class="har-genesis-block" data-genesis-stage="identity" ${step.id === "identity" ? "" : "hidden"}>
-          <div class="har-genesis-block__title"><strong>Nền cơ thể 3D</strong><span>${runtime?.bones ? Object.keys(runtime.bones).length : 0} bone nhận diện</span></div>
-          <label class="har-field">Thư viện người thật · ${catalogModels.length} model
-            <select data-genesis-catalog>
-              ${catalogModels.map((entry) => `<option value="${escapeHtml(entry.modelId)}" ${recipe.baseModel === entry.modelId ? "selected" : ""}>${escapeHtml(entry.label)}</option>`).join("")}
-            </select>
-          </label>
+          <div class="har-genesis-block__title"><strong>Nền cơ thể 3D · đã khóa</strong><span>${runtime?.triangles?.toLocaleString("vi-VN") || 0} triangles</span></div>
           <div class="har-genesis-models">
-            ${Object.entries(modelLabels).map(([value, item]) => `<button type="button" class="${recipe.baseModel === value ? "is-active" : ""}" data-genesis-base="${value}"><i></i><strong>${item[0]}</strong><span>${item[1]}</span></button>`).join("")}
+            <article class="is-active" data-hero-prime-lock><i></i><strong>${modelLabel[0]}</strong><span>${modelLabel[1]}</span><small>Không có bản máy yếu</small></article>
           </div>
         </div>
         <div class="har-genesis-block" data-genesis-stage="body" ${step.id === "body" ? "" : "hidden"}>
@@ -2063,13 +2117,7 @@
       const recipe = this.activeAppearanceRecipe();
       const name = this.root.querySelector("[data-genesis-model-name]");
       if (name) {
-        name.textContent = ({
-          "valid-asian-f-1-casual": "ASTERIA GAMEPLAY HUMAN",
-          "valid-asian-m-1-casual": "CAEL GAMEPLAY HUMAN",
-          "valid-black-f-1-casual": "NYX GAMEPLAY HUMAN",
-          "valid-white-m-1-casual": "SOL GAMEPLAY HUMAN",
-          "human-adult-b01": "VANGUARD HUMAN"
-        })[recipe.baseModel] || "ASTERIA HUMAN";
+        name.textContent = "HH HERO PRIME";
       }
       const status = this.root.querySelector("[data-genesis-status]");
       if (status) {
@@ -2086,7 +2134,7 @@
       this.genesisStep = step.id;
       this.appearanceGroup = step.group;
       this.appearanceFocus = step.focus;
-      this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, step.focus);
+      this.fitGenesisCamera(this.genesisActualModel, step.focus);
       this.refreshGenesisCreator();
       this.root.querySelector("[data-har-genesis-content]")?.scrollTo?.({ top: 0, behavior: this.state.settings.reduceEffects ? "auto" : "smooth" });
     }
@@ -2192,13 +2240,13 @@
         section.scrollTop = 0;
         section.scrollLeft = 0;
       }
-      this.root.dataset.characterPreview = "fallback";
+      this.root.dataset.characterPreview = "validating";
       this.setupGenesisPreview();
       this.setGenesisMotion("idle");
       this.refreshGenesisCreator();
       root.requestAnimationFrame?.(() => {
         this.resize();
-        this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, "body");
+        this.fitGenesisCamera(this.genesisActualModel, "body");
       });
     }
 
@@ -2225,13 +2273,6 @@
       this.genesisScene.add(ambient, key, fill, rim);
       this.genesisLights = { ambient, key, fill, rim };
 
-      const profile = CHARACTERS[this.state.roster.activeId] || CHARACTERS.lyra;
-      this.genesisFallbackModel = this.createAnimeCharacterMesh(profile, 1);
-      this.genesisFallbackModel.name = "HHGenesisProceduralHuman";
-      this.genesisFallbackModel.userData.hhGenesisFallback = true;
-      this.genesisFallbackModel.position.set(0, 0, 0);
-      this.genesisScene.add(this.genesisFallbackModel);
-
       this.genesisActualModel = this.playerMesh;
       this.genesisOriginalParent = this.playerMesh.parent || this.world;
       this.genesisOriginalTransform = {
@@ -2245,24 +2286,24 @@
       this.playerMesh.rotation.set(0, 0, 0);
       this.playerMesh.scale.set(1, 1, 1);
       this.playerMesh.visible = true;
-      this.setGenesisModelOpacity(this.playerMesh, 0.015);
-      this.setGenesisModelOpacity(this.genesisFallbackModel, 1);
+      this.setGenesisModelOpacity(this.playerMesh, 1);
 
       this.genesisVisibility = {
         consecutiveFrames: 0,
         validated: false,
-        crossfadeStartedAt: 0,
         startedAt: performance.now(),
         report: null
       };
       this.root.dataset.characterPreview = "validating";
       this.setGenesisStudio(this.state.settings.characterStudio || "central", { save: false });
       this.updateCharacterLod(this.playerMesh, 0);
+      this.genesisAttachmentVisibility = (this.playerMesh.userData?.lodVariants?.attachments || []).map((object) => ({ object, visible: object.visible }));
+      this.genesisAttachmentVisibility.forEach(({ object }) => { object.visible = false; });
       this.fitGenesisCamera(this.playerMesh, "body");
     }
 
     teardownGenesisPreview({ restorePlayer = true } = {}) {
-      if (!this.genesisScene && !this.genesisActualModel && !this.genesisFallbackModel) return;
+      if (!this.genesisScene && !this.genesisActualModel) return;
       if (this.genesisActualModel) {
         this.restoreGenesisModelOpacity(this.genesisActualModel);
         this.genesisScene?.remove?.(this.genesisActualModel);
@@ -2275,13 +2316,13 @@
           }
         }
       }
-      this.disposeGenesisObject(this.genesisFallbackModel);
       this.disposeGenesisObject(this.genesisStudioGroup);
+      this.genesisAttachmentVisibility.forEach(({ object, visible }) => { object.visible = visible; });
+      this.genesisAttachmentVisibility = [];
       this.genesisScene = null;
       this.genesisCamera = null;
       this.genesisCameraTarget = null;
       this.genesisStudioGroup = null;
-      this.genesisFallbackModel = null;
       this.genesisActualModel = null;
       this.genesisOriginalParent = null;
       this.genesisOriginalTransform = null;
@@ -2443,19 +2484,30 @@
       });
     }
 
-    fitGenesisCamera(object = this.genesisActualModel || this.genesisFallbackModel, focus = this.appearanceFocus || "body") {
+    fitGenesisCamera(object = this.genesisActualModel, focus = this.appearanceFocus || "body") {
       if (!object || !this.genesisCamera || !this.THREE) return false;
       object.updateMatrixWorld(true);
       const box = new this.THREE.Box3().setFromObject(object);
       const size = box.getSize(new this.THREE.Vector3());
       const center = box.getCenter(new this.THREE.Vector3());
       if (![size.x, size.y, size.z, center.x, center.y, center.z].every(Number.isFinite) || size.y < 0.2) return false;
-      const targetY = focus === "head" ? box.max.y - size.y * 0.14 : center.y;
+      const targetY = focus === "head"
+        ? box.max.y - size.y * 0.14
+        : focus === "upper"
+          ? box.min.y + size.y * 0.67
+          : center.y;
       this.genesisCameraTarget.set(center.x, targetY, center.z);
-      const visibleHeight = focus === "head" ? Math.max(size.y * 0.38, size.x * 1.3) : size.y;
-      const fov = this.THREE.MathUtils.degToRad(this.genesisCamera.fov);
-      const framing = root.innerWidth <= 720 ? 0.62 : 0.82;
-      this.cameraDistance = clamp((visibleHeight * framing) / Math.tan(fov / 2), 2.7, 9.2);
+      const focusHeight = focus === "head" ? size.y * 0.38 : focus === "upper" ? size.y * 0.62 : size.y;
+      const focusWidth = focus === "head"
+        ? Math.max(Math.min(size.x, focusHeight * 0.82), focusHeight * 0.72)
+        : Math.min(size.x, focusHeight * (focus === "upper" ? 0.64 : 0.5));
+      const verticalFov = this.THREE.MathUtils.degToRad(this.genesisCamera.fov);
+      const aspect = Math.max(0.45, Number(this.genesisCamera.aspect || 1));
+      const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * aspect);
+      const handMargin = focus === "head" ? 1.18 : focus === "upper" ? 1.28 : 1.25;
+      const verticalDistance = (focusHeight * 0.5 * handMargin) / Math.tan(verticalFov / 2);
+      const horizontalDistance = (focusWidth * 0.5 * handMargin) / Math.tan(horizontalFov / 2);
+      this.cameraDistance = clamp(Math.max(verticalDistance, horizontalDistance) + size.z * 0.55, 2.7, 10.5);
       this.updateGenesisCamera();
       return true;
     }
@@ -2504,17 +2556,32 @@
       });
       const frustumMatrix = new THREE.Matrix4().multiplyMatrices(this.genesisCamera.projectionMatrix, this.genesisCamera.matrixWorldInverse);
       const inFrustum = finiteBounds && new THREE.Frustum().setFromProjectionMatrix(frustumMatrix).intersectsBox(box);
+      const safeHalfWidth = Math.min(size.x * 0.5, size.y * 0.27);
+      const displayMinX = center.x - safeHalfWidth;
+      const displayMaxX = center.x + safeHalfWidth;
+      const projectedCorners = finiteBounds
+        ? [
+            [displayMinX, box.min.y, box.min.z], [displayMinX, box.min.y, box.max.z],
+            [displayMinX, box.max.y, box.min.z], [displayMinX, box.max.y, box.max.z],
+            [displayMaxX, box.min.y, box.min.z], [displayMaxX, box.min.y, box.max.z],
+            [displayMaxX, box.max.y, box.min.z], [displayMaxX, box.max.y, box.max.z]
+          ].map(([x, y, z]) => new THREE.Vector3(x, y, z).project(this.genesisCamera))
+        : [];
+      const fullyContained = projectedCorners.length === 8 && projectedCorners.every((point) => (
+        Math.abs(point.x) <= 0.9 && Math.abs(point.y) <= 0.9 && point.z >= -1 && point.z <= 1
+      ));
       const projectedCenter = center.clone().project(this.genesisCamera);
       const sphere = box.getBoundingSphere(new THREE.Sphere());
       const distance = Math.max(0.01, this.genesisCamera.position.distanceTo(sphere.center));
       const projectedRatio = (2 * Math.atan(Math.max(0.001, sphere.radius) / distance)) / THREE.MathUtils.degToRad(this.genesisCamera.fov);
       const centered = Math.abs(projectedCenter.x) <= 0.84 && Math.abs(projectedCenter.y) <= 0.84 && projectedCenter.z >= -1 && projectedCenter.z <= 1;
       const adequateSize = projectedRatio >= 0.18 && projectedRatio <= 1.22 && size.y >= 0.35;
-      const ready = finiteBounds && triangles > 0 && visibleMaterials > 0 && inFrustum && centered && adequateSize;
+      const ready = finiteBounds && triangles > 0 && visibleMaterials > 0 && inFrustum && fullyContained && centered && adequateSize;
       return {
         ready,
         finiteBounds,
         inFrustum,
+        fullyContained,
         centered,
         adequateSize,
         triangles,
@@ -2529,7 +2596,7 @@
               ? "no-triangles"
               : !visibleMaterials
                 ? "invisible-material"
-                : !inFrustum
+                : !inFrustum || !fullyContained
                   ? "outside-camera"
                   : !centered
                     ? "off-center"
@@ -2559,8 +2626,11 @@
       const y = clamp(canvasRect.bottom - viewRect.bottom, 0, fullHeight - 1);
       const width = clamp(viewRect.width, 1, fullWidth - x);
       const height = clamp(viewRect.height, 1, fullHeight - y);
-      this.genesisCamera.aspect = width / height;
+      const nextAspect = width / height;
+      const aspectChanged = Math.abs(this.genesisCamera.aspect - nextAspect) > 0.01;
+      this.genesisCamera.aspect = nextAspect;
       this.genesisCamera.updateProjectionMatrix();
+      if (aspectChanged) this.fitGenesisCamera(this.genesisActualModel, this.appearanceFocus || "body");
       this.renderer.setScissorTest(false);
       this.renderer.setViewport(0, 0, fullWidth, fullHeight);
       this.renderer.setClearColor(0x02050f, 1);
@@ -2582,7 +2652,7 @@
       this.root.dataset.characterBounds = report.size
         ? `${report.size.x.toFixed(2)}x${report.size.y.toFixed(2)}x${report.size.z.toFixed(2)}`
         : "missing";
-      this.genesisVisibility ||= { consecutiveFrames: 0, validated: false, crossfadeStartedAt: 0, startedAt: time, report: null };
+      this.genesisVisibility ||= { consecutiveFrames: 0, validated: false, startedAt: time, report: null };
       this.genesisVisibility.report = report;
       this.genesisVisibility.consecutiveFrames = report.ready ? this.genesisVisibility.consecutiveFrames + 1 : 0;
       const status = this.root.querySelector("[data-genesis-status]");
@@ -2590,32 +2660,21 @@
 
       if (!this.genesisVisibility.validated && this.genesisVisibility.consecutiveFrames >= 2) {
         this.genesisVisibility.validated = true;
-        this.genesisVisibility.crossfadeStartedAt = time;
         this.fitGenesisCamera(this.genesisActualModel, this.appearanceFocus || "body");
       }
       if (this.genesisVisibility.validated) {
-        const progress = clamp((time - this.genesisVisibility.crossfadeStartedAt) / 400, 0, 1);
-        this.setGenesisModelOpacity(this.genesisActualModel, progress);
-        this.setGenesisModelOpacity(this.genesisFallbackModel, 1 - progress);
-        if (progress >= 1) {
-          this.genesisFallbackModel.visible = false;
-          this.root.dataset.characterPreview = "3d";
-          if (status) status.textContent = `${report.triangles.toLocaleString("vi-VN")} triangles · trong camera · 2/2 frame`;
-          if (lodStatus) lodStatus.textContent = "Đã xác nhận trong camera";
-        } else {
-          this.root.dataset.characterPreview = "crossfade";
-          if (status) status.textContent = `Đang chuyển sang GLB · ${Math.round(progress * 100)}%`;
-        }
+        this.setGenesisModelOpacity(this.genesisActualModel, 1);
+        this.root.dataset.characterPreview = "hero";
+        if (status) status.textContent = `${report.triangles.toLocaleString("vi-VN")} triangles · Hero Prime · 2/2 frame`;
+        if (lodStatus) lodStatus.textContent = "Hero Full Quality · khóa 60 Hz";
       } else {
         this.root.dataset.characterPreview = "validating";
-        this.genesisFallbackModel.visible = true;
-        this.setGenesisModelOpacity(this.genesisFallbackModel, 1);
-        if (lodStatus) lodStatus.textContent = "Đang giữ fallback an toàn";
+        this.setGenesisModelOpacity(this.genesisActualModel, 1);
+        if (lodStatus) lodStatus.textContent = "Đang kiểm tra chính Hero Prime";
         if (time - this.genesisVisibility.startedAt > 1200) {
-          this.setGenesisModelOpacity(this.genesisActualModel, 0);
-          if (status) status.textContent = `GLB đang chờ QA · ${report.reason} · khung ${this.root.dataset.characterProjection}`;
+          if (status) status.textContent = `Hero Prime chưa qua kiểm tra khung hình · ${report.reason} · hãy dùng Thử lại nếu model không xuất hiện`;
         } else if (status) {
-          status.textContent = `Đang kiểm tra GLB · ${this.genesisVisibility.consecutiveFrames}/2 frame`;
+          status.textContent = `Đang kiểm tra Hero Prime · ${this.genesisVisibility.consecutiveFrames}/2 frame`;
         }
       }
       return true;
@@ -2642,7 +2701,7 @@
       if (recipe.surface.wetness > 0.82) warnings.push("Độ ẩm da cao; giảm nếu đang dùng cảnh mưa để tránh highlight quá mạnh.");
       if (recipe.decals.age > 0.82 && recipe.decals.wrinkles < 0.35) warnings.push("Tuổi sinh học cao nhưng nếp nhăn thấp; có thể tăng chi tiết da để tự nhiên hơn.");
       const runtime = mesh?.userData?.characterRuntime;
-      if (runtime?.qaReport && runtime.qaReport.faceMorphTargets < 52) warnings.push(`GLB hiện có ${runtime.qaReport.faceMorphTargets || 0}/52 morph native; fallback 52 kênh vẫn đang hoạt động.`);
+      if (runtime?.qaReport && runtime.qaReport.faceMorphTargets < 52) warnings.push(`GLB hiện có ${runtime.qaReport.faceMorphTargets || 0}/52 morph native; các kênh thiếu được bỏ qua, không thay bằng model yếu.`);
       const level = score >= 90 ? "is-safe" : score >= 75 ? "is-watch" : "is-review";
       return {
         score,
@@ -2655,7 +2714,7 @@
 
     autoFitCharacter() {
       if (this.genesisActive && this.genesisScene) {
-        this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, this.appearanceFocus || "body");
+        this.fitGenesisCamera(this.genesisActualModel, this.appearanceFocus || "body");
         return;
       }
       const id = this.state.roster.activeId;
@@ -2791,8 +2850,8 @@
       this.setGenesisMotion(this.genesisMotion || "idle");
       if (this.genesisActive && this.genesisScene) {
         this.genesisActualModel = next;
-        this.setGenesisModelOpacity(next, 0.015);
-        this.genesisVisibility = { consecutiveFrames: 0, validated: false, crossfadeStartedAt: 0, startedAt: performance.now(), report: null };
+        this.setGenesisModelOpacity(next, 1);
+        this.genesisVisibility = { consecutiveFrames: 0, validated: false, startedAt: performance.now(), report: null };
         this.fitGenesisCamera(next, this.appearanceFocus || "body");
       } else {
         this.updateCamera(true, 0.016);
@@ -2828,45 +2887,98 @@
       this.beginRuntimeSession(`${this.state.player.name} đã sẵn sàng · bước vào H-Central.`);
     }
 
-    showStoryPrologue({ replay = false } = {}) {
+    syncMotionPreference() {
+      if (!this.root) return;
+      const reduced = this.state.settings.reduceEffects === true || this.state.settings.vfxLevel === "static";
+      this.root.dataset.reduceEffects = String(reduced);
+      this.root.classList.toggle("is-reduced-motion", reduced);
+    }
+
+    setStoryOverlayOpen(mode) {
       const overlay = this.root.querySelector("[data-har-story-overlay]");
       if (!overlay) return;
-      this.storyOverlayMode = replay ? "replay" : "prologue";
-      if (replay) this.storyReplayStage = "awakening";
+      if (!this.storyOverlayMode) {
+        const active = document.activeElement;
+        this.storyFocusReturn = active instanceof HTMLElement && this.root.contains(active) ? active : null;
+      }
+      this.storyOverlayMode = mode;
+      this.keys.clear();
+      Array.from(this.root.children).forEach((child) => {
+        if (child !== overlay && !child.matches(".har-toast")) child.inert = true;
+      });
+      this.syncMotionPreference();
       overlay.hidden = false;
       this.root.classList.add("is-story");
       this.menuPaused = true;
+      this.lastStoryFrameAt = performance.now();
       this.renderStoryOverlay();
+    }
+
+    focusStoryOverlay() {
+      const overlay = this.root.querySelector("[data-har-story-overlay]");
+      root.requestAnimationFrame?.(() => {
+        if (!this.storyOverlayMode || !overlay || overlay.hidden) return;
+        const target = overlay.querySelector("[data-story-action]:not([disabled]), button:not([disabled]), [tabindex='0']")
+          || overlay.querySelector("[data-har-story-content]");
+        if (target && !target.hasAttribute("tabindex") && target.tagName !== "BUTTON") target.setAttribute("tabindex", "-1");
+        target?.focus?.({ preventScroll: true });
+      });
+    }
+
+    trapStoryFocus(event) {
+      if (event.key !== "Tab") return;
+      const overlay = this.root.querySelector("[data-har-story-overlay]");
+      const focusable = Array.from(overlay?.querySelectorAll("button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])") || [])
+        .filter((element) => !element.hidden && element.getClientRects().length);
+      if (!focusable.length) {
+        event.preventDefault();
+        overlay?.querySelector("[data-har-story-content]")?.focus?.();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    showStoryPrologue({ replay = false } = {}) {
+      const overlay = this.root.querySelector("[data-har-story-overlay]");
+      if (!overlay) return;
+      const mode = replay ? "replay" : "prologue";
+      if (replay) this.storyReplayStage = "awakening";
+      this.setStoryOverlayOpen(mode);
     }
 
     showStoryRecap() {
       const overlay = this.root.querySelector("[data-har-story-overlay]");
       if (!overlay || !this.state.story?.prologueCompletedAt) return;
-      this.storyOverlayMode = "recap";
-      overlay.hidden = false;
-      this.root.classList.add("is-story");
-      this.menuPaused = true;
-      this.renderStoryOverlay();
+      this.setStoryOverlayOpen("recap");
     }
 
     showStoryEnding(endingId) {
       if (!STORY_ENDINGS.some((ending) => ending.id === endingId)) return;
       const overlay = this.root.querySelector("[data-har-story-overlay]");
       if (!overlay) return;
-      this.storyOverlayMode = `ending:${endingId}`;
-      overlay.hidden = false;
-      this.root.classList.add("is-story");
-      this.menuPaused = true;
-      this.renderStoryOverlay();
+      this.pendingStoryNewGamePlus = false;
+      this.setStoryOverlayOpen(`ending:${endingId}`);
     }
 
     closeStoryOverlay() {
       const overlay = this.root.querySelector("[data-har-story-overlay]");
       if (overlay) overlay.hidden = true;
+      Array.from(this.root.children).forEach((child) => { child.inert = false; });
       this.root.classList.remove("is-story");
       this.storyOverlayMode = "";
       this.menuPaused = Boolean(this.currentPanel) && !this.authoritative;
       this.lastFrameAt = performance.now();
+      const focusReturn = this.storyFocusReturn;
+      this.storyFocusReturn = null;
+      if (focusReturn?.isConnected) root.requestAnimationFrame?.(() => focusReturn.focus?.({ preventScroll: true }));
     }
 
     storyText(value) {
@@ -2886,6 +2998,7 @@
           <div class="har-story-recap-list">${entries.length ? entries.map((entry) => `<div><i></i><strong>${escapeHtml(entry.title)}</strong><span>${escapeHtml(entry.detail)}</span></div>`).join("") : `<div><i></i><strong>Không có thay đổi mới</strong><span>Memory Constellation vẫn giữ nguyên từ lần chơi trước.</span></div>`}</div>
           ${currentMission ? `<p class="har-story-cinematic__objective"><b>Tiếp theo:</b> ${escapeHtml(currentMission.title)} · ${escapeHtml(currentMission.mechanic)}</p>` : ""}
           <div class="har-story-cinematic__actions"><button class="har-primary-button" type="button" data-story-action="close-recap">Tiếp tục công việc gần nhất</button><button class="har-secondary-button" type="button" data-story-action="open-story-board">Mở Mission Constellation</button></div>`;
+        this.focusStoryOverlay();
         return;
       }
       if (this.storyOverlayMode.startsWith("ending:")) {
@@ -2897,8 +3010,10 @@
           <h2>${escapeHtml(ending.title)}</h2>
           <p>${escapeHtml(ending.premise)}</p>
           <div class="har-story-ending-orbit" style="--story-accent:${ending.color}"><i></i><span>H</span><i></i></div>
-          <p class="har-story-cinematic__objective">Echo Memory vẫn được giữ. New Game+ sẽ thay đổi một số tín hiệu và hậu quả nhưng không xóa Character DNA.</p>
-          <div class="har-story-cinematic__actions"><button class="har-primary-button" type="button" data-story-action="new-game-plus">Bắt đầu New Game+</button><button class="har-secondary-button" type="button" data-story-action="close-ending">Ở lại thế giới này</button></div>`;
+          <p class="har-story-cinematic__objective">Echo Memory vẫn được giữ. New Game+ sẽ đưa bạn về H-Central, đặt lại nhiệm vụ, kẻ địch, puzzle và hậu quả thế giới nhưng không xóa Character DNA.</p>
+          ${this.pendingStoryNewGamePlus ? `<div class="har-story-confirm" role="alert"><b>Bắt đầu vòng thời gian mới?</b><span>Checkpoint hiện tại được lưu trước khi reset. Hành động này không thể hoàn tác trong vòng chơi mới.</span></div>` : ""}
+          <div class="har-story-cinematic__actions"><button class="har-primary-button" type="button" data-story-action="${this.pendingStoryNewGamePlus ? "confirm-new-game-plus" : "new-game-plus"}">${this.pendingStoryNewGamePlus ? "Xác nhận New Game+" : "Bắt đầu New Game+"}</button>${this.pendingStoryNewGamePlus ? `<button class="har-secondary-button" type="button" data-story-action="cancel-new-game-plus">Quay lại</button>` : ""}<button class="har-secondary-button" type="button" data-story-action="close-ending">Ở lại thế giới này</button></div>`;
+        this.focusStoryOverlay();
         return;
       }
       const replay = this.storyOverlayMode === "replay";
@@ -2918,6 +3033,7 @@
           ${replay ? `<button class="har-secondary-button" type="button" data-story-action="close-replay">Thoát bản phát lại</button>` : ""}
         </div>
         <div class="har-story-cinematic__progress">${Object.keys(STORY_PROLOGUE).map((id) => `<i class="${id === stageId ? "is-active" : ""}"></i>`).join("")}</div>`;
+      this.focusStoryOverlay();
     }
 
     recordStoryDialogue(speaker, text, zoneId = this.currentZone?.id || "central") {
@@ -2989,7 +3105,13 @@
         this.closeStoryOverlay();
         this.openPanel("story");
       } else if (action === "new-game-plus") {
-        this.startStoryNewGamePlus();
+        this.pendingStoryNewGamePlus = true;
+        this.renderStoryOverlay();
+      } else if (action === "cancel-new-game-plus") {
+        this.pendingStoryNewGamePlus = false;
+        this.renderStoryOverlay();
+      } else if (action === "confirm-new-game-plus") {
+        await this.startStoryNewGamePlus();
         this.closeStoryOverlay();
         this.openPanel("story");
       }
@@ -3014,6 +3136,8 @@
       this.collectibles.clear();
       this.npcs.clear();
       this.portals.clear();
+      this.puzzleNodes.clear();
+      this.storyBeacons.clear();
       this.streamingGroups.clear();
       this.zoneFxGroups.clear();
       this.livingWorldActors = [];
@@ -3023,7 +3147,7 @@
       this.disposeBuiltInCharacterAssets();
       this.disposeLicensedEnvironmentAssets();
       this.photorealStatus = "pending";
-      if (this.root) this.root.dataset.characterPreview = "fallback";
+      if (this.root) this.root.dataset.characterPreview = "hero-error";
     }
 
     enterRendererRecovery(reason = "Renderer bị gián đoạn.") {
@@ -3045,7 +3169,7 @@
       if (recovery) recovery.hidden = false;
       if (continueButton) continueButton.disabled = false;
       if (newButton) newButton.disabled = false;
-      this.setLoading(0, `${reason} Hãy chọn “Chạy cấu hình nhẹ” để tự khôi phục.`);
+      this.setLoading(0, `${reason} Hero Prime chưa được thay bằng bản yếu. Hãy bấm “Khởi động lại Hero Prime”.`);
       this.root.querySelector("[data-har-loading-text]")?.classList.add("har-unsupported");
     }
 
@@ -3230,154 +3354,41 @@
     }
 
     async loadCharacterPipelineManifest() {
-      this.characterPipelineManifest = [];
-      this.characterPipelineStatus = "not-configured";
-      try {
-        const response = await fetch(CHARACTER_PIPELINE_MANIFEST_URL, { cache: "no-store" });
-        if (!response.ok) return;
-        const payload = await response.json();
-        const entries = Array.isArray(payload?.sources) ? payload.sources : [];
-        const normalizedEntries = entries.map((entry) => ({
-          id: String(entry?.id || "").slice(0, 80),
-          provider: CHARACTER_PIPELINE_SOURCES.includes(entry?.provider) ? entry.provider : "",
-          modelId: String(entry?.modelId || "").slice(0, 60),
-          url: String(entry?.url || "").slice(0, 240),
-          label: String(entry?.label || entry?.provider || "Web GLB").slice(0, 100),
-          quality: String(entry?.quality || "web").slice(0, 32),
-          classification: Object.values(CHARACTER_ASSET_CLASSES).some((item) => item.id === entry?.classification) ? entry.classification : CHARACTER_ASSET_CLASSES.npc.id,
-          intendedRoles: Array.isArray(entry?.intendedRoles) ? entry.intendedRoles.filter((role) => ["hero", "npc", "multiplayer", "fallback"].includes(role)).slice(0, 4) : ["npc", "fallback"],
-          heroEligible: entry?.heroEligible === true,
-          image: String(entry?.image || "").slice(0, 240),
-          license: String(entry?.license || "").slice(0, 40),
-          ethnicity: String(entry?.ethnicity || "").slice(0, 40),
-          gender: String(entry?.gender || "").slice(0, 8),
-          outfit: String(entry?.outfit || "").slice(0, 40)
-        })).filter((entry) => entry.provider && entry.modelId && entry.url);
-        const catalogs = Array.isArray(payload?.catalogs) ? payload.catalogs : [];
-        const catalogResults = await Promise.allSettled(catalogs.map(async (catalog) => {
-          const provider = CHARACTER_PIPELINE_SOURCES.includes(catalog?.provider) ? catalog.provider : "";
-          const catalogUrl = String(catalog?.url || "").slice(0, 240);
-          const baseUrl = String(catalog?.baseUrl || "").slice(0, 240);
-          if (!provider || !catalogUrl || !/^https:\/\//.test(baseUrl)) return [];
-          const catalogResponse = await fetch(catalogUrl, { cache: "force-cache" });
-          if (!catalogResponse.ok) return [];
-          const records = await catalogResponse.json();
-          if (!Array.isArray(records)) return [];
-          return records.slice(0, 400).map((record) => {
-            const label = String(record?.text || "Human").slice(0, 100);
-            const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 64);
-            return {
-              id: `${provider}-${slug}`,
-              provider,
-              modelId: `valid-${slug}`,
-              url: `${baseUrl}${String(record?.model || "").replace(/^\/+/, "")}`.slice(0, 300),
-              image: `${baseUrl}${String(record?.image || "").replace(/^\/+/, "")}`.slice(0, 300),
-              label: `${String(catalog?.label || "VALID Human").slice(0, 40)} · ${label}`,
-              quality: "rigged-human",
-              classification: CHARACTER_ASSET_CLASSES.npc.id,
-              intendedRoles: ["npc", "multiplayer", "fallback"],
-              heroEligible: false,
-              license: String(catalog?.license || "MIT").slice(0, 40),
-              ethnicity: String(record?.ethnicity || "").slice(0, 40),
-              gender: String(record?.gender || "").slice(0, 8),
-              outfit: String(record?.outfit || "").slice(0, 40)
-            };
-          }).filter((entry) => entry.modelId.length > 8 && /\.glb(?:$|\?)/i.test(entry.url));
-        }));
-        const catalogEntries = catalogResults.flatMap((result) => result.status === "fulfilled" ? result.value : []);
-        this.characterPipelineManifest = [...normalizedEntries, ...catalogEntries];
-        this.characterPipelineStatus = this.characterPipelineManifest.length ? "configured" : "empty";
-      } catch {
-        // Missing optional manifest is valid: bundled/procedural remain usable.
-      }
+      this.characterPipelineManifest = [{
+        id: "hh-hero-prime-local",
+        provider: "hero-core",
+        modelId: HERO_CHARACTER_MODEL_ID,
+        url: HERO_CHARACTER_ASSET_URL,
+        label: "HH Hero Prime · Full Quality Only",
+        quality: "full-quality",
+        classification: CHARACTER_ASSET_CLASSES.hero.id,
+        intendedRoles: ["hero"],
+        heroEligible: true,
+        license: "MIT"
+      }];
+      this.characterPipelineStatus = "hero-only";
       this.root.dataset.characterPipeline = this.characterPipelineStatus;
     }
 
-    resolveCharacterAssetCandidates(modelId, requestedProvider = "auto") {
-      const preferred = CHARACTER_PIPELINE_SOURCES.includes(requestedProvider) ? requestedProvider : "auto";
-      if (preferred === "procedural") return [];
-      const order = preferred === "auto"
-        ? ["metahuman", "character-creator", "mpfb", "valid-avatar", "bundled"]
-        : [preferred, "bundled"];
-      const optional = this.characterPipelineManifest
-        .filter((entry) => entry.modelId === modelId && order.includes(entry.provider))
-        .sort((a, b) => order.indexOf(a.provider) - order.indexOf(b.provider));
-      const fallbackUrl = BUILTIN_CHARACTER_ASSETS[modelId]
-        || (/^valid-.*-f-/.test(modelId)
-          ? BUILTIN_CHARACTER_ASSETS["human-adult-a01"]
-          : /^valid-/.test(modelId)
-            ? BUILTIN_CHARACTER_ASSETS["human-adult-b01"]
-            : "");
-      const bundled = fallbackUrl
-        ? [{ id: `bundled-${modelId}`, provider: "bundled", modelId, url: fallbackUrl, label: "HH bundled GLB fallback", quality: "fallback-web" }]
-        : [];
-      const result = [];
-      [...optional, ...bundled].forEach((entry) => {
-        if (!result.some((candidate) => candidate.url === entry.url)) result.push(entry);
-      });
-      return result;
+    resolveCharacterAssetCandidates(modelId, requestedProvider = "hero-core") {
+      if (modelId !== HERO_CHARACTER_MODEL_ID || requestedProvider !== "hero-core") return [];
+      return [{
+        id: "hh-hero-prime-local",
+        provider: "hero-core",
+        modelId: HERO_CHARACTER_MODEL_ID,
+        url: HERO_CHARACTER_ASSET_URL,
+        label: "HH Hero Prime · Full Quality Only",
+        quality: "full-quality"
+      }];
     }
 
     async loadBuiltInCharacterAssets() {
-      if (!this.GLTFLoaderClass || !this.cloneSkinnedCharacter) {
-        this.builtInCharacterStatus = "fallback";
-        this.root.dataset.builtInCharacter = "fallback";
-        return;
-      }
-      this.builtInCharacterStatus = "loading";
-      let assetLoadError = false;
-      const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
-      if (manager) {
-        // Embedded GLB images are more reliable through HTMLImageElement on
-        // Chromium devices that reject createImageBitmap(blob) decoding.
-        manager.hhPreferTextureLoader = true;
-        manager.onError = () => { assetLoadError = true; };
-      }
-      const loader = new this.GLTFLoaderClass(manager);
-      const entries = Object.entries(BUILTIN_CHARACTER_ASSETS);
-      const results = await Promise.allSettled(entries.map(async ([id, url]) => {
-        const gltf = await Promise.race([
-          loader.loadAsync(url),
-          new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Quá thời gian tải ${url}`)), 12000))
-        ]);
-        // GLTFLoader can resolve before an embedded blob texture reports its
-        // decode failure. Let LoadingManager flush those late errors before QA.
-        await new Promise((resolve) => root.setTimeout(resolve, 320));
-        this.sanitizeBuiltInCharacterAsset(gltf);
-        if (assetLoadError) gltf.userData.hhTextureFallbacks = Math.max(1, Number(gltf.userData?.hhTextureFallbacks || 0));
-        gltf.scene.traverse?.((object) => {
-          if (!object.isMesh && !object.isSkinnedMesh) return;
-          object.userData ||= {};
-          object.userData.sharedAsset = true;
-          object.geometry?.userData && (object.geometry.userData.sharedAsset = true);
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.filter(Boolean).forEach((material) => {
-            [
-              "map", "normalMap", "roughnessMap", "metalnessMap", "aoMap",
-              "emissiveMap", "alphaMap"
-            ].forEach((slot) => {
-              if (material[slot]?.isTexture) {
-                material[slot].userData ||= {};
-                material[slot].userData.sharedAsset = true;
-              }
-            });
-          });
-        });
-        return [id, gltf];
-      }));
-      results.forEach((result) => {
-        if (result.status !== "fulfilled") return;
-        this.builtInCharacterAssets.set(result.value[0], result.value[1]);
-      });
-      this.builtInCharacterStatus = this.builtInCharacterAssets.size === entries.length ? "ready" : this.builtInCharacterAssets.size ? "partial" : "fallback";
-      this.root.dataset.builtInCharacter = this.builtInCharacterStatus;
+      return this.loadCharacterAssetsFromPipeline();
     }
 
     async loadCharacterAssetsFromPipeline() {
       if (!this.GLTFLoaderClass || !this.cloneSkinnedCharacter) {
-        this.builtInCharacterStatus = "fallback";
-        this.root.dataset.builtInCharacter = "fallback";
-        return;
+        throw new Error("Hero Prime cần GLTFLoader và SkeletonUtils. Không có model thay thế; hãy tải lại trang bằng trình duyệt hỗ trợ WebGL2.");
       }
       await this.loadCharacterPipelineManifest();
       this.builtInCharacterStatus = "loading";
@@ -3389,76 +3400,45 @@
       }
       const loader = new this.GLTFLoaderClass(manager);
       if (this.MeshoptDecoder) loader.setMeshoptDecoder(this.MeshoptDecoder);
-      const recipeModels = Object.values(this.state.appearance?.recipes || {})
-        .map((recipe) => String(recipe?.baseModel || ""))
-        .filter(Boolean);
-      const entries = [...new Set(["human-adult-b01", ...recipeModels])];
-      const results = await Promise.allSettled(entries.map(async (id) => {
-        const recipes = Object.values(this.state.appearance?.recipes || {}).filter((recipe) => recipe?.baseModel === id);
-        const requestedProvider = recipes.find((recipe) => recipe.sourceProvider && recipe.sourceProvider !== "auto")?.sourceProvider
-          || this.state.settings.characterPipeline;
-        if (requestedProvider === "procedural") {
-          this.builtInCharacterAssets.delete(id);
-          this.builtInCharacterSources.delete(id);
-          return [id, null];
-        }
-        let lastError = null;
-        for (const candidate of this.resolveCharacterAssetCandidates(id, requestedProvider)) {
-          try {
-            assetLoadError = false;
-            const gltf = await Promise.race([
-              loader.loadAsync(candidate.url),
-              new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Quá thời gian tải ${candidate.url}`)), candidate.provider === "bundled" ? 12000 : 15000))
-            ]);
-            gltf.userData ||= {};
-            gltf.userData.hhSourceProvider = candidate.provider;
-            gltf.userData.hhSourceLabel = candidate.label;
-            gltf.userData.hhAssetPath = candidate.url;
-            await new Promise((resolve) => root.setTimeout(resolve, 320));
-            this.sanitizeBuiltInCharacterAsset(gltf);
-            gltf.scene.traverse?.((object) => {
-              if (!object.isMesh && !object.isSkinnedMesh) return;
-              object.userData ||= {};
-              object.userData.sharedAsset = true;
-              object.geometry?.userData && (object.geometry.userData.sharedAsset = true);
-              const materials = Array.isArray(object.material) ? object.material : [object.material];
-              materials.filter(Boolean).forEach((material) => {
-                ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap"].forEach((slot) => {
-                  if (material[slot]?.isTexture) {
-                    material[slot].userData ||= {};
-                    material[slot].userData.sharedAsset = true;
-                  }
-                });
-              });
-            });
-            return [id, gltf];
-          } catch (error) {
-            lastError = error;
-          }
-        }
-        throw lastError || new Error(`Không có asset cho ${id}`);
-      }));
-      results.forEach((result) => {
-        if (result.status !== "fulfilled") return;
-        const [id, gltf] = result.value;
-        if (!gltf) return;
-        this.builtInCharacterAssets.set(id, gltf);
-        this.builtInCharacterSources.set(id, {
-          provider: gltf.userData?.hhSourceProvider || "bundled",
-          label: gltf.userData?.hhSourceLabel || "HH bundled GLB",
-          url: gltf.userData?.hhAssetPath || BUILTIN_CHARACTER_ASSETS[id]
+      assetLoadError = false;
+      const gltf = await Promise.race([
+        loader.loadAsync(HERO_CHARACTER_ASSET_URL),
+        new Promise((_, reject) => root.setTimeout(() => reject(new Error("Hero Prime tải quá 15 giây. Không có model dự phòng; hãy kiểm tra mạng và bấm Thử lại.")), 15000))
+      ]);
+      gltf.userData ||= {};
+      gltf.userData.hhSourceProvider = "hero-core";
+      gltf.userData.hhSourceLabel = "HH Hero Prime · Full Quality Only";
+      gltf.userData.hhAssetPath = HERO_CHARACTER_ASSET_URL;
+      await new Promise((resolve) => root.setTimeout(resolve, 320));
+      this.sanitizeBuiltInCharacterAsset(gltf);
+      if (assetLoadError || Number(gltf.userData.hhTextureFallbacks || 0) > 0 || Number(gltf.userData.hhRenderableMeshes || 0) < 1) {
+        throw new Error("Hero Prime không giải mã được đầy đủ mesh/texture. Game đã dừng để không thay bằng model yếu; hãy bấm Thử lại.");
+      }
+      gltf.scene.traverse?.((object) => {
+        if (!object.isMesh && !object.isSkinnedMesh) return;
+        object.userData ||= {};
+        object.userData.sharedAsset = true;
+        if (object.geometry?.userData) object.geometry.userData.sharedAsset = true;
+        (Array.isArray(object.material) ? object.material : [object.material]).filter(Boolean).forEach((material) => {
+          ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap"].forEach((slot) => {
+            if (!material[slot]?.isTexture) return;
+            material[slot].userData ||= {};
+            material[slot].userData.sharedAsset = true;
+          });
         });
       });
-      this.builtInCharacterStatus = this.builtInCharacterAssets.size === entries.length
-        ? "ready"
-        : this.builtInCharacterAssets.size
-          ? "partial"
-          : "fallback";
+      this.builtInCharacterAssets.clear();
+      this.builtInCharacterSources.clear();
+      this.builtInCharacterAssets.set(HERO_CHARACTER_MODEL_ID, gltf);
+      this.builtInCharacterSources.set(HERO_CHARACTER_MODEL_ID, {
+        provider: "hero-core",
+        label: "HH Hero Prime · Full Quality Only",
+        url: HERO_CHARACTER_ASSET_URL
+      });
+      this.builtInCharacterStatus = "ready";
       this.root.dataset.builtInCharacter = this.builtInCharacterStatus;
-      const activeModelId = this.activeAppearanceRecipe()?.baseModel || "";
-      const activeSource = this.builtInCharacterSources.get(activeModelId);
-      this.root.dataset.characterModel = activeModelId || "fallback";
-      this.root.dataset.characterSource = activeSource?.provider || "fallback";
+      this.root.dataset.characterModel = HERO_CHARACTER_MODEL_ID;
+      this.root.dataset.characterSource = "hero-core";
     }
 
     sanitizeBuiltInCharacterAsset(gltf) {
@@ -3668,6 +3648,7 @@
       this.createInstancedNature();
       this.createLicensedEnvironmentDecor();
       this.createElementalPuzzles();
+      this.createStoryBeacons();
       this.createWeatherField();
       this.createLivingWorldEffects();
       this.createFootprintPool();
@@ -3799,9 +3780,19 @@
       auroraLake.rotation.x = -Math.PI / 2;
       auroraLake.position.set(-51, 1.12, 20);
       auroraLake.receiveShadow = true;
-      auroraLake.userData = { water: true, baseY: 1.12, zoneId: "aurora" };
+      auroraLake.userData = { water: true, baseY: 1.12, radius: 13.5, zoneId: "aurora" };
       this.world.add(auroraLake);
       this.waterSurfaces.push(auroraLake);
+
+      const oceanMoonSea = new THREE.Mesh(new THREE.CircleGeometry(15.5, 72), waterMaterial.clone());
+      oceanMoonSea.material.color.setHex(0x2f8fd9);
+      oceanMoonSea.material.emissive.setHex(0x114c8d);
+      oceanMoonSea.rotation.x = -Math.PI / 2;
+      oceanMoonSea.position.set(124, 1.1, -43);
+      oceanMoonSea.receiveShadow = true;
+      oceanMoonSea.userData = { water: true, baseY: 1.1, radius: 15.5, zoneId: "ocean" };
+      this.world.add(oceanMoonSea);
+      this.waterSurfaces.push(oceanMoonSea);
 
       const forgeLava = new THREE.Mesh(
         new THREE.CircleGeometry(8.2, 64),
@@ -3998,6 +3989,47 @@
         group.userData = { type: "puzzle", id, name, requiredElement, color, solved, core };
         this.world.add(group);
         this.puzzleNodes.set(id, group);
+      });
+    }
+
+    createStoryBeacons() {
+      const THREE = this.THREE;
+      STORY_ZONE_ORDER.forEach((zoneId, index) => {
+        const zone = ZONES.find((item) => item.id === zoneId);
+        const shard = TRUTH_SHARDS[zoneId];
+        if (!zone || !shard) return;
+        const angle = index * 0.91 + 0.4;
+        const radius = zoneId === "central" ? 7 : Math.min(8, zone.radius * 0.3);
+        const group = new THREE.Group();
+        const material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(shard.color).multiplyScalar(0.36),
+          emissive: new THREE.Color(shard.color),
+          emissiveIntensity: 0.72,
+          metalness: 0.48,
+          roughness: 0.22,
+          transparent: true,
+          opacity: 0.9
+        });
+        const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.72, 1), material);
+        core.position.y = 1.55;
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(1.12, 0.055, 8, 42),
+          new THREE.MeshBasicMaterial({ color: shard.color, transparent: true, opacity: 0.58, depthWrite: false })
+        );
+        ring.position.y = 1.55;
+        ring.rotation.x = Math.PI / 2;
+        group.add(core, ring);
+        group.position.set(zone.x + Math.cos(angle) * radius, 1.08, zone.z + Math.sin(angle) * radius);
+        group.userData = {
+          type: "story-beacon",
+          id: `story-beacon-${zoneId}`,
+          zoneId,
+          name: `Dư ảnh ${shard.title}`,
+          core,
+          ring
+        };
+        this.world.add(group);
+        this.storyBeacons.set(zoneId, group);
       });
     }
 
@@ -4620,7 +4652,7 @@
         const distance = Math.hypot(this.state.player.x - npc.position.x, this.state.player.z - npc.position.z);
         this.updateCharacterLod(npc, distance);
         const updateInterval = 1000 / Math.max(1, runtime?.updateHz || 12);
-        const shouldAnimate = runtime && !runtime.lodSuspended && time - Number(runtime.lastAnimationUpdateAt || 0) >= updateInterval;
+        const shouldAnimate = runtime && time - Number(runtime.lastAnimationUpdateAt || 0) >= updateInterval;
         if (runtime?.mixer && shouldAnimate) {
           this.playCharacterClip(runtime, "walk");
           runtime.mixer.update(Math.min(0.1, updateInterval / 1000));
@@ -4757,7 +4789,7 @@
         type: "npc",
         id,
         name,
-        assetClass: CHARACTER_ASSET_CLASSES.npc.id,
+        assetClass: CHARACTER_ASSET_CLASSES.hero.id,
         npcDNA: compactAppearanceRecipe(npcDNA, npcProfile.id),
         sharedSkeleton: "hh-humanoid-v12",
         schedule: {
@@ -5272,7 +5304,7 @@
             if ("transmission" in material) material.transmission = 0.04;
           } else if (role === "outfit") {
             const color = materialIndex % 2 ? outfitPalette[1] : outfitPalette[0];
-            if (material.color && mesh.userData.visualMode !== "builtin-rigged") material.color.set(color);
+            if (material.color && mesh.userData.visualMode !== "hero-prime-rigged") material.color.set(color);
             if ("roughness" in material) material.roughness = clamp(material.userData.baseRoughness ?? 0.45, 0.22, 0.82);
           }
           material.userData.hhDigitalHuman = {
@@ -5340,14 +5372,14 @@
       if (!hasProceduralRig) {
         this.applyDigitalHumanMaterials(mesh, recipe, characterId);
         const supportedTargets = this.applyNamedMorphTargets(mesh, recipe);
-        if (mesh.userData.visualMode === "builtin-rigged") {
+        if (mesh.userData.visualMode === "hero-prime-rigged") {
           this.applyRiggedBodyProportions(mesh, recipe);
         }
         mesh.userData.appearance = compactAppearanceRecipe(recipe, characterId);
         mesh.userData.appearanceFingerprint = appearanceFingerprint(recipe, characterId);
         mesh.userData.appearanceCapability = supportedTargets
           ? "gltf-morph-targets"
-          : mesh.userData.visualMode === "builtin-rigged"
+          : mesh.userData.visualMode === "hero-prime-rigged"
             ? "skeleton-proportions"
             : "gltf-material-only";
         mesh.userData.visualHeight = 1 + delta("height") * 0.12;
@@ -5494,21 +5526,25 @@
       const supportedTargets = this.applyNamedMorphTargets(mesh, recipe);
       mesh.userData.appearance = compactAppearanceRecipe(recipe, characterId);
       mesh.userData.appearanceFingerprint = appearanceFingerprint(recipe, characterId);
-      mesh.userData.appearanceCapability = supportedTargets ? "gltf-morph-targets" : "procedural-fallback";
+      mesh.userData.appearanceCapability = supportedTargets ? "gltf-morph-targets" : "native-skeleton";
       mesh.userData.visualHeight = 1 + delta("height") * 0.12;
       mesh.userData.gameplayCollider = { radius: 0.48, height: 2.95 };
     }
 
     applyCorrectiveMorphs(mesh) {
-      if (!mesh?.userData?.parts) return;
-      const parts = mesh.userData.parts;
-      if (!parts.leftArm || !parts.rightArm || !parts.leftLeg || !parts.rightLeg || !parts.torso) return;
+      if (!mesh) return;
+      const runtime = mesh.userData?.characterRuntime;
+      const parts = mesh.userData?.parts || {};
+      const leftArm = runtime?.bones?.leftUpperArm;
+      const rightArm = runtime?.bones?.rightUpperArm;
+      const leftForeArm = runtime?.bones?.leftForeArm;
+      const rightForeArm = runtime?.bones?.rightForeArm;
+      if (!leftArm || !rightArm || !leftForeArm || !rightForeArm) return;
       const values = {
-        correctiveShoulder: clamp((Math.abs(parts.leftArm.rotation.x) + Math.abs(parts.rightArm.rotation.x)) * 0.45, 0, 1),
-        correctiveHip: clamp((Math.abs(parts.leftLeg.rotation.x) + Math.abs(parts.rightLeg.rotation.x)) * 0.4, 0, 1),
-        correctiveElbow: clamp(Math.max(Math.abs(parts.leftArm.rotation.z), Math.abs(parts.rightArm.rotation.z)) * 0.6, 0, 1),
-        correctiveKnee: clamp(Math.max(Math.abs(parts.leftLeg.rotation.x), Math.abs(parts.rightLeg.rotation.x)) * 0.7, 0, 1),
-        correctiveChest: clamp(Math.abs(parts.torso.rotation.z) * 2.5, 0, 1)
+        correctiveShoulder: clamp((Math.abs(leftArm.rotation.x) + Math.abs(rightArm.rotation.x)) * 0.24, 0, 1),
+        correctiveElbow: clamp((Math.abs(leftForeArm.rotation.x) + Math.abs(rightForeArm.rotation.x)) * 0.18, 0, 1),
+        shoulderCorrective: clamp((Math.abs(leftArm.rotation.z) + Math.abs(rightArm.rotation.z)) * 0.22, 0, 1),
+        wristAlignment: runtime.armIk?.enabled ? 1 : 0
       };
       mesh.traverse((object) => {
         const dictionary = object.morphTargetDictionary;
@@ -5519,7 +5555,6 @@
           if (Number.isInteger(index) && index < influences.length) influences[index] = value;
         });
       });
-      this.applyDigitalHumanMaterials(mesh, recipe, characterId);
       mesh.userData.correctives = values;
     }
 
@@ -5543,6 +5578,25 @@
         const base = target.userData.hhBaseScale || { x: 1, y: 1, z: 1 };
         target.scale.set(base.x * x, base.y * y, base.z * z);
       };
+      const captureTransform = (target) => {
+        if (!target) return null;
+        target.userData ||= {};
+        target.userData.hhBasePosition ||= target.position.clone();
+        target.userData.hhBaseQuaternion ||= target.quaternion.clone();
+        return target.userData;
+      };
+      const setSegmentScale = (target, lengthScale = 1, radialScale = 1) => {
+        if (!target) return;
+        const base = target.userData.hhBaseScale || { x: 1, y: 1, z: 1 };
+        const child = target.children?.find((item) => item.isBone);
+        const vector = child?.position;
+        const axis = vector
+          ? [Math.abs(vector.x), Math.abs(vector.y), Math.abs(vector.z)].indexOf(Math.max(Math.abs(vector.x), Math.abs(vector.y), Math.abs(vector.z)))
+          : 1;
+        const values = [radialScale, radialScale, radialScale];
+        values[axis] = lengthScale;
+        target.scale.set(base.x * values[0], base.y * values[1], base.z * values[2]);
+      };
       const head = bone("Head", "mixamorigHead");
       const neck = bone("Neck", "mixamorigNeck");
       const chest = bone("Spine2", "mixamorigSpine2", "Chest");
@@ -5552,6 +5606,10 @@
       const rightArm = bone("RightArm", "mixamorigRightArm");
       const leftForeArm = bone("LeftForeArm", "mixamorigLeftForeArm");
       const rightForeArm = bone("RightForeArm", "mixamorigRightForeArm");
+      const leftShoulder = bone("LeftShoulder", "mixamorigLeftShoulder");
+      const rightShoulder = bone("RightShoulder", "mixamorigRightShoulder");
+      const leftHand = bone("LeftHand", "mixamorigLeftHand");
+      const rightHand = bone("RightHand", "mixamorigRightHand");
       const leftUpLeg = bone("LeftUpLeg", "mixamorigLeftUpLeg");
       const rightUpLeg = bone("RightUpLeg", "mixamorigRightUpLeg");
       const leftLeg = bone("LeftLeg", "mixamorigLeftLeg");
@@ -5561,16 +5619,31 @@
       const headDepth = 1 + delta("faceFullness") * 0.14 + delta("noseProjection") * 0.05;
       setScale(head, headWidth, headHeight, headDepth);
       setScale(neck, 1 + delta("neckWidth") * 0.22, 1 + delta("neckLength") * 0.2, 1 + delta("neckWidth") * 0.2);
-      setScale(chest, 1 + delta("shoulderWidth") * 0.22 + delta("chestWidth") * 0.12, 1 + delta("torsoLength") * 0.12, 1 + delta("chestSize") * 0.16);
+      setScale(chest, 1 + delta("chestWidth") * 0.08, 1 + delta("torsoLength") * 0.1, 1 + delta("chestSize") * 0.1);
       setScale(spine, 1 + delta("waist") * 0.18 + delta("bodyMass") * 0.12, 1 + delta("torsoLength") * 0.18, 1 + delta("belly") * 0.16);
       setScale(hips, 1 + delta("hipWidth") * 0.22, 1 + delta("legTorsoRatio") * -0.08, 1 + delta("gluteProjection") * 0.2);
-      const armLength = 1 + delta("armLength") * 0.22;
-      const armMass = 1 + delta("upperArm") * 0.18 + delta("muscle") * 0.08;
-      setScale(leftArm, armMass, armLength, armMass);
-      setScale(rightArm, armMass, armLength, armMass);
-      const forearmMass = 1 + delta("forearm") * 0.18;
-      setScale(leftForeArm, forearmMass, armLength, forearmMass);
-      setScale(rightForeArm, forearmMass, armLength, forearmMass);
+      const armLength = clamp(1 + delta("armLength") * 0.1 + delta("height") * 0.03, 0.94, 1.06);
+      const armMass = clamp(1.025 + delta("upperArm") * 0.09 + delta("muscle") * 0.045, 0.96, 1.09);
+      const forearmLength = clamp(1 + delta("armLength") * 0.07, 0.95, 1.05);
+      const forearmMass = clamp(1.02 + delta("forearm") * 0.085 + delta("muscle") * 0.03, 0.965, 1.08);
+      const handScale = clamp(1.015 + delta("handSize") * 0.09, 0.97, 1.06);
+      setSegmentScale(leftArm, armLength, armMass);
+      setSegmentScale(rightArm, armLength, armMass);
+      setSegmentScale(leftForeArm, forearmLength, forearmMass);
+      setSegmentScale(rightForeArm, forearmLength, forearmMass);
+      setScale(leftHand, handScale, handScale, handScale);
+      setScale(rightHand, handScale, handScale, handScale);
+      const shoulderSpread = clamp(delta("shoulderWidth") * 0.09, -0.045, 0.045);
+      [[leftShoulder, -1], [rightShoulder, 1]].forEach(([target, side]) => {
+        const data = captureTransform(target);
+        if (!data) return;
+        const basePosition = data.hhBasePosition;
+        target.position.set(
+          basePosition.x + side * shoulderSpread,
+          basePosition.y + side * delta("shoulderSlope") * 0.035,
+          basePosition.z
+        );
+      });
       const legLength = 1 + delta("legLength") * 0.24 + delta("height") * 0.1;
       const thighMass = 1 + delta("thighSize") * 0.2 + delta("bodyMass") * 0.08;
       setScale(leftUpLeg, thighMass, legLength, thighMass);
@@ -5586,16 +5659,31 @@
         baseAssetScale.z * (1 + delta("bodyMass") * 0.06)
       );
       mesh.userData.visualHeight = 1 + delta("height") * 0.12;
+      mesh.userData.armCalibration = {
+        model: HERO_CHARACTER_MODEL_ID,
+        shoulderSpread,
+        armLength,
+        armMass,
+        forearmLength,
+        forearmMass,
+        handScale,
+        handSize: morph("handSize"),
+        bindPose: "captured"
+      };
     }
 
     createBuiltInRiggedCharacter(profile, scale = 1) {
       const recipe = normalizeAppearanceRecipe(this.state.appearance?.recipes?.[profile.id], profile.id);
-      const fallbackModelId = defaultAppearanceRecipe(profile.id).baseModel;
-      const modelId = this.builtInCharacterAssets.has(recipe.baseModel) ? recipe.baseModel : fallbackModelId;
+      const modelId = HERO_CHARACTER_MODEL_ID;
       const source = this.builtInCharacterAssets.get(modelId);
-      if (!source?.scene || !this.cloneSkinnedCharacter) return null;
+      if (!source?.scene || !this.cloneSkinnedCharacter) {
+        throw new Error("Hero Prime chưa được tải. Không có model dự phòng; hãy bấm Thử lại.");
+      }
       const assetNeedsVisualRecovery = Number(source.userData?.hhTextureFallbacks || 0) > 0
         || Number(source.userData?.hhRenderableMeshes || 0) < 1;
+      if (assetNeedsVisualRecovery) {
+        throw new Error("Hero Prime bị thiếu mesh hoặc texture. Game đã dừng thay vì hiển thị model chất lượng thấp.");
+      }
       const THREE = this.THREE;
       const wrapper = new THREE.Group();
       wrapper.name = `HHHumanRig:${profile.id}`;
@@ -5637,7 +5725,13 @@
           const materialName = `${object.name} ${material.name}`.toLowerCase();
           material.userData = {
             ...(material.userData || {}),
-            materialRole: materialName.includes("visor") ? "eyes" : "outfit",
+            materialRole: /eye|gland|cornea|visor/.test(materialName)
+              ? "eyes"
+              : /teeth|tongue|mouth/.test(materialName)
+                ? "teeth"
+                : /highres|body|skin|face|head/.test(materialName)
+                  ? "skin"
+                  : "outfit",
             baseRoughness: material.roughness,
             baseClearcoat: material.clearcoat || 0,
             baseEmissiveIntensity: material.emissiveIntensity || 0
@@ -5653,17 +5747,6 @@
         object.material = Array.isArray(object.material) ? materials : materials[0];
       });
       wrapper.add(asset);
-      // When a bundled GLB has a missing texture or cannot be decoded, keep a
-      // full articulated procedural character instead of collapsing to the
-      // tiny crowd proxy. This is the GPU-safe view that guarantees a visible
-      // human on weak devices while the original asset remains recoverable.
-      const crowdProxy = assetNeedsVisualRecovery
-        ? this.createAnimeCharacterMesh(profile, 0.94)
-        : this.createCharacterMesh({ body: profile.body, accent: profile.accent, scale: 0.94 });
-      crowdProxy.name = `HHHuman3DProxy:${profile.id}`;
-      crowdProxy.visible = assetNeedsVisualRecovery;
-      crowdProxy.userData.isCharacterLodProxy = true;
-      wrapper.add(crowdProxy);
       const rightHandAliases = HH_HUMANOID_SKELETON.rightHand.map(normalizeBoneName);
       const headAliases = HH_HUMANOID_SKELETON.head.map(normalizeBoneName);
       let rightHand = null;
@@ -5674,11 +5757,11 @@
       });
       const weaponAnchor = new THREE.Group();
       weaponAnchor.name = "HHWeaponSocket";
-      (assetNeedsVisualRecovery ? crowdProxy.userData?.parts?.weaponAnchor : rightHand || wrapper)?.add(weaponAnchor);
+      (rightHand || wrapper).add(weaponAnchor);
       const heroDetails = [];
       let riggedHair = null;
       let riggedAccessory = null;
-      if (headBone && modelId === "human-adult-a01") {
+      if (headBone && modelId === HERO_CHARACTER_MODEL_ID) {
         const inverseFit = 1 / Math.max(0.001, fitScale);
         const Physical = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
         const hairMaterial = new Physical({
@@ -5755,46 +5838,29 @@
         headBone.add(riggedAccessory);
         heroDetails.push(cuff, visor, mark);
       }
-      if (assetNeedsVisualRecovery) {
-        heroMeshes.forEach((object) => { object.visible = false; });
-        heroDetails.forEach((object) => { object.visible = false; });
-        if (riggedHair) riggedHair.visible = false;
-        if (riggedAccessory) riggedAccessory.visible = false;
-      }
-      const useProxy = this.state.settings.characterMode === "portrait";
-      heroMeshes.forEach((object) => { object.visible = !useProxy && !assetNeedsVisualRecovery; });
-      crowdProxy.visible = useProxy || assetNeedsVisualRecovery;
-      const visualMode = assetNeedsVisualRecovery ? "procedural-3d-recovery" : "builtin-rigged";
-      const initialTier = useProxy || assetNeedsVisualRecovery ? "impostor" : "hero";
-      const activeHeroMeshes = assetNeedsVisualRecovery ? [crowdProxy] : [...heroMeshes, ...heroDetails];
+      heroMeshes.forEach((object) => { object.visible = true; });
+      const activeHeroMeshes = [...heroMeshes, ...heroDetails];
       wrapper.userData = {
         characterId: profile.id,
-        visualMode,
-        sourceProvider: assetNeedsVisualRecovery
-          ? "HH Articulated PBR Recovery"
-          : sourceInfo.label || (modelId === "human-adult-a01" ? "HH Asteria Human Rig" : "HH Vanguard Human Rig"),
+        visualMode: "hero-prime-rigged",
+        sourceProvider: sourceInfo.label || "HH Hero Prime · Full Quality Only",
         sourceProviderId: sourceInfo.provider,
         sourceAssetPath: sourceInfo.url,
-        gameplayVisualLift: sourceInfo.provider === "valid-avatar" ? 1.35 : 0,
-        modelTier: initialTier,
+        gameplayVisualLift: 1.35,
+        modelTier: "hero",
         appearanceCapability: "skeleton-proportions",
         gameplayCollider: { radius: 0.48, height: 2.95 },
         gltfAsset: asset,
         builtInModelId: modelId,
-        builtInAnimations: sourceInfo.provider === "valid-avatar"
-          ? (source.animations || [])
-          : (source.animations?.length ? source.animations : this.builtInCharacterAssets.get("human-adult-b01")?.animations || []),
+        builtInAnimations: [],
         parts: {
           weaponAnchor,
-          hair: assetNeedsVisualRecovery ? null : riggedHair,
-          accessory: assetNeedsVisualRecovery ? null : riggedAccessory
+          hair: riggedHair,
+          accessory: riggedAccessory
         },
         lodVariants: {
           hero: activeHeroMeshes,
-          near: activeHeroMeshes,
-          crowd: [crowdProxy],
-          impostor: [crowdProxy],
-          heroDetails: assetNeedsVisualRecovery ? [] : heroDetails
+          heroDetails
         }
       };
       this.applyRiggedBodyProportions(wrapper, recipe);
@@ -5807,40 +5873,8 @@
 
     createPhotorealCharacterModel(profile, scale = 1) {
       const rigged = this.createBuiltInRiggedCharacter(profile, scale);
-      if (rigged) return rigged;
-      const group = this.createAnimeCharacterMesh(profile, scale);
-      const wantsRigged = this.state.settings.characterMode !== "portrait";
-      const heroMeshes = [];
-      const heroDetails = [];
-      group.traverse((object) => {
-        if (!object.isMesh) return;
-        heroMeshes.push(object);
-        if (object.userData?.heroDetail || object.userData?.astralOutline || object.material?.userData?.astralOutline) {
-          heroDetails.push(object);
-        }
-      });
-      const crowdProxy = this.createCharacterMesh({
-        body: profile.body,
-        accent: profile.accent,
-        scale: 0.96
-      });
-      crowdProxy.name = `CharacterCrowdLOD:${profile.id}`;
-      crowdProxy.visible = false;
-      crowdProxy.userData.isCharacterLodProxy = true;
-      group.add(crowdProxy);
-      const impostor = crowdProxy;
-      if (!wantsRigged) heroMeshes.forEach((object) => { object.visible = false; });
-      group.userData.visualMode = wantsRigged ? "articulated-pbr-fallback" : "procedural-3d-proxy";
-      group.userData.modelTier = wantsRigged ? "hero" : "impostor";
-      group.userData.sourceProvider = wantsRigged ? "HH Articulated PBR" : "HH Procedural 3D Proxy";
-      group.userData.lodVariants = {
-        hero: heroMeshes,
-        near: heroMeshes,
-        crowd: [crowdProxy],
-        impostor: [impostor],
-        heroDetails
-      };
-      return group;
+      if (!rigged) throw new Error("Hero Prime không thể khởi tạo và không có visual fallback.");
+      return rigged;
     }
 
     characterTrackTargetsRoot(track) {
@@ -6008,7 +6042,7 @@
         profile,
         role,
         source: mesh.userData.sourceProvider || "HH Web Hero",
-        tier: role === "hero" ? "hero" : "near",
+        tier: "hero",
         state: "idle",
         previousState: "",
         mixer: null,
@@ -6030,7 +6064,6 @@
         rootMotionPolicy: "extract-and-warp",
         footLock: { left: 0, right: 0 },
         secondaryBones: [],
-        lastLodUpdateAt: 0,
         lastFacialUpdateAt: 0
       };
       runtime.qaReport = { ...runtime.qaReport, ...validateCharacterAsset(runtime.qaReport) };
@@ -6062,12 +6095,6 @@
             runtime.morphLookup.set(object, Object.fromEntries(
               Object.entries(object.morphTargetDictionary).map(([name, index]) => [String(name).toLowerCase(), index])
             ));
-          }
-          const lodMatch = String(object.name || "").match(/^lod([0-3])(?:\b|_)/i);
-          if (lodMatch) {
-            const lodTier = ["hero", "near", "crowd", "impostor"][Number(lodMatch[1])];
-            runtime.lodVariants[lodTier] ||= [];
-            runtime.lodVariants[lodTier].push(object);
           }
         }
       });
@@ -6156,8 +6183,206 @@
       };
     }
 
+    rotateHeroBoneTowardWorldTarget(bone, endBone, targetWorld, weight = 0.72) {
+      if (!bone || !endBone || !targetWorld || !this.THREE) return false;
+      const THREE = this.THREE;
+      bone.updateWorldMatrix(true, false);
+      endBone.updateWorldMatrix(true, false);
+      const boneWorld = new THREE.Vector3();
+      const endWorld = new THREE.Vector3();
+      bone.getWorldPosition(boneWorld);
+      endBone.getWorldPosition(endWorld);
+      const currentDirection = endWorld.sub(boneWorld);
+      const desiredDirection = targetWorld.clone().sub(boneWorld);
+      if (currentDirection.lengthSq() < 1e-8 || desiredDirection.lengthSq() < 1e-8) return false;
+      currentDirection.normalize();
+      desiredDirection.normalize();
+      const delta = new THREE.Quaternion().setFromUnitVectors(currentDirection, desiredDirection);
+      const worldQuaternion = new THREE.Quaternion();
+      bone.getWorldQuaternion(worldQuaternion);
+      const desiredWorldQuaternion = delta.multiply(worldQuaternion);
+      const parentWorldQuaternion = new THREE.Quaternion();
+      if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQuaternion);
+      const desiredLocalQuaternion = parentWorldQuaternion.invert().multiply(desiredWorldQuaternion);
+      bone.quaternion.slerp(desiredLocalQuaternion, clamp(weight, 0, 1));
+      bone.updateWorldMatrix(true, false);
+      return true;
+    }
+
+    solveHeroTwoBoneArm(runtime, sideName, targetWorld, poleWorld, weight = 0.78) {
+      const mesh = runtime?.mesh;
+      const bones = runtime?.bones || {};
+      const upper = bones[`${sideName}UpperArm`];
+      const forearm = bones[`${sideName}ForeArm`];
+      const hand = bones[`${sideName}Hand`];
+      if (!mesh || !this.THREE || !upper || !forearm || !hand || !targetWorld || !poleWorld) return null;
+      const THREE = this.THREE;
+      [upper, forearm, hand].forEach((bone) => {
+        bone.userData ||= {};
+        bone.userData.hhHeroIkBindQuaternion ||= bone.quaternion.clone();
+      });
+      mesh.updateMatrixWorld(true);
+      const rootWorld = upper.getWorldPosition(new THREE.Vector3());
+      const elbowWorld = forearm.getWorldPosition(new THREE.Vector3());
+      const wristWorld = hand.getWorldPosition(new THREE.Vector3());
+      const upperLength = rootWorld.distanceTo(elbowWorld);
+      const forearmLength = elbowWorld.distanceTo(wristWorld);
+      if (upperLength < 1e-4 || forearmLength < 1e-4) return null;
+
+      const targetVector = targetWorld.clone().sub(rootWorld);
+      let requestedDistance = targetVector.length();
+      if (requestedDistance < 1e-5) {
+        targetVector.copy(wristWorld).sub(rootWorld);
+        requestedDistance = targetVector.length();
+      }
+      if (requestedDistance < 1e-5) return null;
+      const targetDirection = targetVector.multiplyScalar(1 / requestedDistance);
+      const shortestSegment = Math.min(upperLength, forearmLength);
+      const minimumReach = Math.max(0.001, Math.abs(upperLength - forearmLength) + shortestSegment * 0.08);
+      const maximumReach = Math.max(minimumReach + 0.001, (upperLength + forearmLength) * 0.985);
+      const solvedDistance = clamp(requestedDistance, minimumReach, maximumReach);
+      const solvedTarget = rootWorld.clone().addScaledVector(targetDirection, solvedDistance);
+
+      const poleDirection = poleWorld.clone().sub(rootWorld);
+      poleDirection.addScaledVector(targetDirection, -poleDirection.dot(targetDirection));
+      if (poleDirection.lengthSq() < 1e-8) {
+        poleDirection.copy(elbowWorld).sub(rootWorld);
+        poleDirection.addScaledVector(targetDirection, -poleDirection.dot(targetDirection));
+      }
+      if (poleDirection.lengthSq() < 1e-8) {
+        const anatomicalSide = Math.sign(mesh.worldToLocal(rootWorld.clone()).x) || (sideName === "left" ? -1 : 1);
+        poleDirection.set(anatomicalSide, 0, 0).transformDirection(mesh.matrixWorld);
+        poleDirection.addScaledVector(targetDirection, -poleDirection.dot(targetDirection));
+      }
+      if (poleDirection.lengthSq() < 1e-8) {
+        const fallbackAxis = Math.abs(targetDirection.y) < 0.92
+          ? new THREE.Vector3(0, 1, 0)
+          : new THREE.Vector3(0, 0, 1);
+        poleDirection.crossVectors(targetDirection, fallbackAxis);
+      }
+      poleDirection.normalize();
+
+      const elbowAlong = clamp(
+        (upperLength * upperLength - forearmLength * forearmLength + solvedDistance * solvedDistance) / (2 * solvedDistance),
+        0,
+        upperLength
+      );
+      const elbowHeight = Math.sqrt(Math.max(0, upperLength * upperLength - elbowAlong * elbowAlong));
+      const elbowTarget = rootWorld.clone()
+        .addScaledVector(targetDirection, elbowAlong)
+        .addScaledVector(poleDirection, elbowHeight);
+      const safeWeight = clamp(weight, 0, 1);
+      this.rotateHeroBoneTowardWorldTarget(upper, forearm, elbowTarget, safeWeight);
+      upper.updateWorldMatrix(true, true);
+      this.rotateHeroBoneTowardWorldTarget(forearm, hand, solvedTarget, Math.min(1, safeWeight * 1.08));
+      forearm.updateWorldMatrix(true, true);
+
+      const handBind = hand.userData.hhHeroIkBindQuaternion;
+      if (handBind) hand.quaternion.slerp(handBind, Math.min(1, safeWeight * 0.86));
+      hand.updateWorldMatrix(true, true);
+      return {
+        upperLength,
+        forearmLength,
+        requestedDistance,
+        solvedDistance,
+        minimumReach,
+        maximumReach,
+        clamped: Math.abs(requestedDistance - solvedDistance) > 1e-4
+      };
+    }
+
+    applyHeroArmIK(runtime, time, motion = "idle", dt = 0.016) {
+      const mesh = runtime?.mesh;
+      const bones = runtime?.bones || {};
+      if (!mesh || !this.THREE || !bones.leftUpperArm || !bones.rightUpperArm || !bones.leftForeArm || !bones.rightForeArm || !bones.leftHand || !bones.rightHand) return false;
+      const THREE = this.THREE;
+      const locomotion = ["walk", "run", "sprint", "strafe", "climb", "swim"].includes(motion);
+      const phase = Math.sin(time * 0.001 * (motion === "sprint" ? 10.8 : motion === "run" || motion === "strafe" ? 8.2 : motion === "walk" ? 5.1 : 1.15));
+      const swing = locomotion ? phase * (motion === "sprint" ? 0.16 : motion === "walk" ? 0.08 : 0.12) : 0;
+      const combat = Boolean(this.characterAction?.name && ["attack1", "attack2", "attack3", "skill", "ultimate"].includes(this.characterAction.name));
+      mesh.updateMatrixWorld(true);
+      const worldToLocal = (vector) => mesh.worldToLocal(vector.clone());
+      const localToWorld = (vector) => vector.applyMatrix4(mesh.matrixWorld);
+      const solutions = {};
+      [["left", -1, swing], ["right", 1, -swing]].forEach(([sideName, side, armSwing]) => {
+        const upper = bones[`${sideName}UpperArm`];
+        const forearm = bones[`${sideName}ForeArm`];
+        const hand = bones[`${sideName}Hand`];
+        if (!upper || !forearm || !hand) return;
+        const rootWorld = upper.getWorldPosition(new THREE.Vector3());
+        const elbowWorld = forearm.getWorldPosition(new THREE.Vector3());
+        const wristWorld = hand.getWorldPosition(new THREE.Vector3());
+        const reach = Math.max(0.001, rootWorld.distanceTo(elbowWorld) + elbowWorld.distanceTo(wristWorld));
+        const rootLocal = worldToLocal(rootWorld);
+        const anatomicalSide = Math.sign(rootLocal.x) || side;
+        const handLocal = rootLocal.clone().add(new THREE.Vector3(
+          anatomicalSide * reach * (combat ? 0.3 : 0.08),
+          -reach * (combat ? 0.72 : 0.91),
+          reach * (0.03 + armSwing * 0.7)
+        ));
+        const poleLocal = rootLocal.clone().add(new THREE.Vector3(
+          anatomicalSide * reach * (combat ? 0.4 : 0.18),
+          -reach * (combat ? 0.3 : 0.42),
+          reach * (combat ? 0.5 : 0.42)
+        ));
+        const ikWeight = 1 - Math.exp(-Math.max(0.001, dt) * (combat ? 15 : 10));
+        solutions[sideName] = this.solveHeroTwoBoneArm(
+          runtime,
+          sideName,
+          localToWorld(handLocal),
+          localToWorld(poleLocal),
+          ikWeight
+        );
+
+        const fingerRoots = ["Thumb", "Index", "Middle", "Ring", "Pinky"]
+          .map((finger) => bones[`${sideName}${finger}`])
+          .filter(Boolean);
+        fingerRoots.forEach((rootBone, fingerIndex) => {
+          const grip = combat ? 0.11 : 0.035;
+          const curl = grip * (fingerIndex === 0 ? 0.55 : 1 + fingerIndex * 0.04);
+          rootBone.traverse?.((fingerBone) => {
+            if (!fingerBone.isBone) return;
+            fingerBone.userData ||= {};
+            fingerBone.userData.hhHeroFingerBase ||= fingerBone.quaternion.clone();
+            const base = fingerBone.userData.hhHeroFingerBase;
+            const offset = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), curl);
+            const target = base.clone().multiply(offset);
+            fingerBone.quaternion.slerp(target, ikWeight * 0.7);
+          });
+        });
+      });
+      if (!runtime.armIkDebugAt || time - runtime.armIkDebugAt > 500) {
+        const point = (bone) => {
+          if (!bone) return null;
+          const value = new THREE.Vector3();
+          bone.getWorldPosition(value);
+          return { x: Number(value.x.toFixed(3)), y: Number(value.y.toFixed(3)), z: Number(value.z.toFixed(3)) };
+        };
+        this.root.dataset.heroArmDebug = JSON.stringify({
+          leftShoulder: point(bones.leftShoulder || bones.leftUpperArm.parent),
+          rightShoulder: point(bones.rightShoulder || bones.rightUpperArm.parent),
+          leftElbow: point(bones.leftForeArm),
+          rightElbow: point(bones.rightForeArm),
+          leftHand: point(bones.leftHand),
+          rightHand: point(bones.rightHand)
+        });
+        runtime.armIkDebugAt = time;
+      }
+      const solvedArms = Object.values(solutions).filter(Boolean);
+      runtime.armIk = {
+        enabled: solvedArms.length > 0,
+        solver: "analytic-two-bone",
+        elbowPole: "character-local-out-forward",
+        wristAlignment: "bind-local",
+        clampedTargets: solvedArms.filter((solution) => solution.clamped).length,
+        maximumReach: solvedArms.length ? Math.max(...solvedArms.map((solution) => solution.maximumReach)) : 0,
+        updatedAt: time
+      };
+      return runtime.armIk.enabled;
+    }
+
     applyProceduralRigMotion(runtime, time, motion = "idle", dt = 0.016) {
-      if (!runtime || runtime.mixer || runtime.lodSuspended) return false;
+      if (!runtime || runtime.mixer) return false;
       const bones = runtime.bones || {};
       const required = [bones.leftUpperArm, bones.rightUpperArm, bones.leftUpLeg, bones.rightUpLeg].filter(Boolean);
       if (required.length < 4) return false;
@@ -6185,11 +6410,7 @@
       const gait = Math.sin(time * 0.001 * cadence);
       const stride = locomotion ? gait * (motion === "sprint" ? 0.62 : motion === "walk" ? 0.3 : 0.46) : 0;
       const breathing = Math.sin(time * 0.00125) * 0.022;
-      const relaxedArm = motion === "glide" ? 0.22 : motion === "swim" ? 0.48 : 1.4;
-      setRotation(bones.leftUpperArm, { x: -stride * 0.72 + breathing, z: -relaxedArm });
-      setRotation(bones.rightUpperArm, { x: stride * 0.72 - breathing, z: relaxedArm });
-      setRotation(bones.leftForeArm, { x: motion === "idle" ? -0.08 : -0.16, z: -0.08 });
-      setRotation(bones.rightForeArm, { x: motion === "idle" ? -0.08 : -0.16, z: 0.08 });
+      this.applyHeroArmIK(runtime, time, motion, dt);
       setRotation(bones.leftUpLeg, { x: stride });
       setRotation(bones.rightUpLeg, { x: -stride });
       setRotation(bones.leftLeg, { x: locomotion ? Math.max(0, -stride) * 0.48 : 0 });
@@ -6559,71 +6780,24 @@
 
     updateCharacterLod(mesh, distance = 0) {
       if (!mesh) return;
-      const isProtectedCharacter = mesh === this.playerMesh || mesh === this.genesisActualModel || mesh === this.genesisFallbackModel;
-      const forced = isProtectedCharacter
-        ? "near"
-        : this.state.settings.characterMode === "portrait"
-        ? "impostor"
-        : this.state.settings.characterQuality;
-      const tier = forced !== "adaptive"
-        ? forced
-        : distance <= CHARACTER_MODEL_TIERS.hero.distance
-          ? "hero"
-          : distance <= CHARACTER_MODEL_TIERS.near.distance
-            ? "near"
-            : distance <= CHARACTER_MODEL_TIERS.crowd.distance
-              ? "crowd"
-              : "impostor";
+      const tier = "hero";
       const runtime = mesh.userData.characterRuntime;
-      const lowDetailTier = ["crowd", "impostor"].includes(tier);
       if (runtime) {
-        runtime.lodSuspended = lowDetailTier;
-        runtime.updateHz = CHARACTER_MODEL_TIERS[tier]?.updateHz || 30;
-        runtime.faceChannelBudget = CHARACTER_MODEL_TIERS[tier]?.face || 0;
-      }
-      if (runtime && lowDetailTier) {
-        mesh.traverse?.((object) => {
-          if (!object.morphTargetInfluences) return;
-          if (!runtime.savedMorphWeights.has(object)) runtime.savedMorphWeights.set(object, object.morphTargetInfluences.slice());
-          object.morphTargetInfluences.fill(0);
-        });
-        if (!mesh.userData.lodFaceReset) this.resetCharacterFace(mesh, { morphs: false });
-        mesh.userData.lodFaceReset = true;
-      } else if (runtime?.savedMorphWeights?.size) {
-        runtime.savedMorphWeights.forEach((weights, object) => {
-          if (!object.morphTargetInfluences) return;
-          weights.forEach((weight, index) => {
-            if (index < object.morphTargetInfluences.length) object.morphTargetInfluences[index] = weight;
-          });
-        });
-        runtime.savedMorphWeights.clear();
-        mesh.userData.lodFaceReset = false;
-      } else if (!lowDetailTier) {
-        mesh.userData.lodFaceReset = false;
+        runtime.updateHz = CHARACTER_MODEL_TIERS.hero.updateHz;
+        runtime.faceChannelBudget = CHARACTER_MODEL_TIERS.hero.face;
       }
       if (mesh.userData.modelTier === tier) return;
       const lodVariants = mesh.userData.lodVariants || runtime?.lodVariants || {};
-      const allVariants = new Set([
-        ...(lodVariants.hero || []),
-        ...(lodVariants.near || []),
-        ...(lodVariants.crowd || []),
-        ...(lodVariants.impostor || [])
-      ]);
+      const allVariants = new Set([...(lodVariants.hero || [])]);
       allVariants.forEach((object) => { object.visible = false; });
-      const target = lodVariants[tier]?.length
-        ? lodVariants[tier]
-        : tier === "near"
-          ? lodVariants.hero || []
-          : tier === "crowd"
-            ? lodVariants.near || lodVariants.hero || []
-            : lodVariants.crowd || lodVariants.hero || [];
+      const target = lodVariants.hero || [];
       target.forEach((object) => { object.visible = true; });
-      (lodVariants.heroDetails || []).forEach((object) => { object.visible = tier === "hero"; });
-      (lodVariants.attachments || []).forEach((object) => { object.visible = tier !== "impostor"; });
+      (lodVariants.heroDetails || []).forEach((object) => { object.visible = true; });
+      (lodVariants.attachments || []).forEach((object) => { object.visible = true; });
       mesh.userData.modelTier = tier;
       mesh.traverse?.((object) => {
         if (!object.isMesh && !object.isSkinnedMesh) return;
-        object.castShadow = object.visible && !["crowd", "impostor"].includes(tier);
+        object.castShadow = object.visible;
       });
       this.syncCharacterModuleVisibility(mesh, tier);
     }
@@ -6632,7 +6806,7 @@
       const parts = mesh?.userData?.parts;
       const recipe = mesh?.userData?.appearance;
       if (!parts || !recipe) return;
-      const detailed = tier === "hero" || tier === "near";
+      const detailed = true;
       const pattern = {
         "astral-layered-07": [1, 1, 1, 1, 1, 1],
         "aurora-short-02": [1, 0, 1, 0, 0, 0],
@@ -6658,7 +6832,7 @@
     }
 
     updateSecondaryCharacterMotion(runtime, time, { moving = false, sprinting = false, direction = 0 } = {}) {
-      if (!runtime || !this.state.settings.secondaryMotion || runtime.lodSuspended) return;
+      if (!runtime || !this.state.settings.secondaryMotion) return;
       const force = sprinting ? 1 : moving ? 0.58 : 0.2;
       runtime.secondaryBones?.forEach((bone, index) => {
         const base = bone.userData?.hhSecondaryBase;
@@ -6678,7 +6852,7 @@
     }
 
     applyFootContactIK(runtime, phase, strength = 1) {
-      if (!runtime || runtime.lodSuspended || !this.state.settings.naturalMotion) return;
+      if (!runtime || !this.state.settings.naturalMotion) return;
       const leftFoot = runtime.bones?.leftFoot;
       const rightFoot = runtime.bones?.rightFoot;
       [[leftFoot, phase], [rightFoot, -phase]].forEach(([foot, wave]) => {
@@ -6717,7 +6891,7 @@
     }
 
     applyUpperBodyIK(runtime, dt, { combat = false } = {}) {
-      if (!runtime || runtime.lodSuspended || !this.state.settings.naturalMotion) return;
+      if (!runtime || !this.state.settings.naturalMotion) return;
       const head = runtime.bones?.head;
       const chest = runtime.bones?.chest;
       const rightHand = runtime.bones?.rightHand;
@@ -6753,7 +6927,11 @@
         bone.rotation.x += ((bone.userData.hhLookBase.x + targetPitch) - bone.rotation.x) * damp;
       });
       runtime.ikState ||= {};
-      runtime.ikState.hand = rightHand && runtime.mesh?.userData?.parts?.weaponAnchor ? "weapon-socket-locked" : "unavailable";
+      runtime.ikState.hand = runtime.armIk?.enabled
+        ? "two-bone-arm-ik"
+        : rightHand && runtime.mesh?.userData?.parts?.weaponAnchor
+          ? "weapon-socket-locked"
+          : "unavailable";
       runtime.ikState.lookAt = head ? "gaze-target-active" : "unavailable";
       runtime.ikState.aimOffset = combat && chest ? "upper-body-additive" : "idle";
     }
@@ -6798,11 +6976,12 @@
       if (!file || this.characterImporting) return;
       if (!this.GLTFLoaderClass) return this.toast("GLB Loader chưa sẵn sàng trên trình duyệt này.", "error");
       if (!/\.glb$/i.test(file.name || "")) return this.toast("Hãy chọn một file .glb đã đóng gói texture.", "error");
-      if (file.size > CHARACTER_IMPORT_LIMITS.fileBytes) return this.toast("Model vượt 32 MB. Hãy tạo LOD và nén texture trước khi nhập.", "error");
+      if (file.size > CHARACTER_IMPORT_LIMITS.fileBytes) return this.toast("Model vượt giới hạn kiểm tra 32 MB.", "error");
       this.characterImporting = true;
-      this.toast("Đang giải nén và kiểm tra skeleton, texture, morph, LOD...");
+      this.toast("Đang kiểm tra cục bộ skeleton, texture và morph; Hero Prime sẽ không bị thay thế.");
       let dracoLoader = null;
       let ktx2Loader = null;
+      let inspectedScene = null;
       try {
         const buffer = await file.arrayBuffer();
         const loader = new this.GLTFLoaderClass();
@@ -6819,142 +6998,24 @@
         }
         if (this.MeshoptDecoder) loader.setMeshoptDecoder(this.MeshoptDecoder);
         const gltf = await new Promise((resolve, reject) => loader.parse(buffer, "", resolve, reject));
+        inspectedScene = gltf.scene;
         const report = this.buildCharacterQaReport(gltf.scene, gltf.animations || [], file.size);
         const validation = validateCharacterAsset(report);
         this.lastCharacterQa = { ...report, ...validation, sourceName: file.name, checkedAt: nowIso() };
         if (!validation.valid) {
-          this.disposeCharacterObject(gltf.scene);
           throw new Error(validation.errors.join(" "));
         }
-        this.installImportedCharacter(gltf, this.state.roster.activeId, file.name, this.lastCharacterQa);
         const warning = validation.warnings.length ? ` · ${validation.warnings.length} cảnh báo` : "";
-        this.toast(`Đã nạp ${file.name} · ${validation.assetClassLabel} · Hero gate ${validation.heroScore}% · QA ${validation.score}/100${warning}.`, "success");
+        this.toast(`Đã kiểm tra ${file.name} · ${validation.assetClassLabel} · Hero gate ${validation.heroScore}% · QA ${validation.score}/100${warning}. Hero Prime vẫn là model duy nhất.`, "success");
         this.renderCurrentPanel();
       } catch (error) {
-        this.toast(`Không nạp được GLB: ${error?.message || "file không hợp lệ"}`, "error");
+        this.toast(`Không kiểm tra được GLB: ${error?.message || "file không hợp lệ"}`, "error");
       } finally {
+        if (inspectedScene) this.disposeCharacterObject(inspectedScene);
         try { dracoLoader?.dispose?.(); } catch {}
         try { ktx2Loader?.dispose?.(); } catch {}
         this.characterImporting = false;
       }
-    }
-
-    installImportedCharacter(gltf, characterId, sourceName = "custom.glb", qaReport = null) {
-      const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
-      const oldMesh = this.characterMeshes.get(characterId);
-      const oldRuntime = this.characterRuntimes.get(characterId);
-      if (!oldMesh || !gltf?.scene) throw new Error("GLB không có scene nhân vật.");
-      const wrapper = new this.THREE.Group();
-      wrapper.name = `${qaReport?.heroReady ? "WebHeroV12" : "GameplayHuman"}GLB:${characterId}`;
-      const asset = gltf.scene;
-      const box = new this.THREE.Box3().setFromObject(asset);
-      const size = box.getSize(new this.THREE.Vector3());
-      const height = Math.max(0.001, size.y);
-      const scale = 2.92 / height;
-      asset.scale.setScalar(scale);
-      asset.updateMatrixWorld(true);
-      const fitted = new this.THREE.Box3().setFromObject(asset);
-      const center = fitted.getCenter(new this.THREE.Vector3());
-      asset.position.x -= center.x;
-      asset.position.z -= center.z;
-      asset.position.y -= fitted.min.y;
-      const importedMeshes = [];
-      asset.traverse((object) => {
-        if (!object.isMesh && !object.isSkinnedMesh) return;
-        importedMeshes.push(object);
-        object.castShadow = true;
-        object.receiveShadow = true;
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.filter(Boolean).forEach((material) => {
-          material.envMapIntensity = Math.max(material.envMapIntensity || 0, this.photorealAssets.panorama ? 0.72 : 0.18);
-          material.userData ||= {};
-          material.userData.baseRoughness = material.roughness;
-          material.userData.baseClearcoat = material.clearcoat || 0;
-          material.userData.baseEmissiveIntensity = material.emissiveIntensity || 0;
-        });
-      });
-      wrapper.add(asset);
-      wrapper.position.copy(oldMesh.position);
-      wrapper.rotation.copy(oldMesh.rotation);
-      wrapper.visible = oldMesh.visible;
-      wrapper.userData = {
-        characterId,
-        visualMode: "gltf-imported",
-        sourceProvider: sourceName,
-        modelTier: "",
-        appearanceCapability: "gltf-morph-targets",
-        gameplayCollider: { radius: 0.48, height: 2.95 },
-        gltfAsset: asset,
-        qaReport
-      };
-      wrapper.userData.assetClass = qaReport?.assetClass || CHARACTER_ASSET_CLASSES.gameplay.id;
-      wrapper.userData.heroReady = qaReport?.heroReady === true;
-      const explicitLods = { hero: [], near: [], crowd: [], impostor: [] };
-      asset.traverse((object) => {
-        const match = String(object.name || "").match(/^lod([0-3])(?:\b|_)/i);
-        if (!match) return;
-        const tier = ["hero", "near", "crowd", "impostor"][Number(match[1])];
-        object.traverse?.((child) => {
-          if ((child.isMesh || child.isSkinnedMesh) && !explicitLods[tier].includes(child)) explicitLods[tier].push(child);
-        });
-      });
-      const proxy3d = this.createCharacterMesh({ body: profile.body, accent: profile.accent, scale: 0.94 });
-      proxy3d.name = `Imported3DProxy:${profile.id}`;
-      proxy3d.visible = false;
-      proxy3d.userData.isCharacterLodProxy = true;
-      wrapper.add(proxy3d);
-      const lodTierOrder = ["hero", "near", "crowd", "impostor"];
-      const hasExplicitLods = lodTierOrder.some((tier) => explicitLods[tier].length);
-      const nearestExplicitLod = (tier) => {
-        if (!hasExplicitLods) return importedMeshes;
-        const tierIndex = lodTierOrder.indexOf(tier);
-        const nearestTier = lodTierOrder
-          .map((candidate, candidateIndex) => ({
-            candidate,
-            distance: Math.abs(candidateIndex - tierIndex),
-            candidateIndex
-          }))
-          .sort((left, right) => left.distance - right.distance || left.candidateIndex - right.candidateIndex)
-          .find(({ candidate }) => explicitLods[candidate].length);
-        return nearestTier ? explicitLods[nearestTier.candidate] : importedMeshes;
-      };
-      wrapper.userData.lodVariants = {
-        hero: explicitLods.hero.length ? explicitLods.hero : nearestExplicitLod("hero"),
-        near: explicitLods.near.length ? explicitLods.near : nearestExplicitLod("near"),
-        crowd: explicitLods.crowd.length ? explicitLods.crowd : nearestExplicitLod("crowd"),
-        impostor: explicitLods.impostor.length ? explicitLods.impostor : [proxy3d],
-        heroDetails: []
-      };
-      this.world.add(wrapper);
-      this.world.remove(oldMesh);
-      const weaponAnchor = new this.THREE.Group();
-      weaponAnchor.name = "HHWeaponSocket";
-      const rightHandAliases = HH_HUMANOID_SKELETON.rightHand.map(normalizeBoneName);
-      let rightHand = null;
-      asset.traverse((object) => {
-        if (!rightHand && object.isBone && rightHandAliases.includes(normalizeBoneName(object.name))) rightHand = object;
-      });
-      (rightHand || wrapper).add(weaponAnchor);
-      const weapon = this.createPlayerWeapon(profile);
-      weapon.scale.setScalar(rightHand ? 0.62 / Math.max(scale, 0.001) : 1);
-      weaponAnchor.add(weapon);
-      wrapper.userData.lodVariants.attachments = [weapon];
-      wrapper.userData.parts = { weaponAnchor };
-      wrapper.userData.weapon = weapon;
-      this.characterMeshes.set(characterId, wrapper);
-      const runtime = this.registerCharacterRuntime(wrapper, profile, characterId, "hero", gltf.animations || []);
-      runtime.qaReport = qaReport || runtime.qaReport;
-      this.playCharacterClip(runtime, "idle");
-      this.updateCharacterLod(wrapper, 0);
-      const qaLabel = qaReport ? ` · ${qaReport.assetClassLabel || "Gameplay Human"} · Hero ${qaReport.heroScore || 0}% · QA ${qaReport.score}/100` : "";
-      this.characterAssetStatus.set(characterId, `${sourceName} · ${runtime.triangles.toLocaleString("vi-VN")} tris · ${runtime.clips.size} clips · ${runtime.facialChannels} morph${qaLabel}`);
-      this.applyAppearanceToMesh(wrapper, this.activeAppearanceRecipe(), characterId);
-      if (this.state.roster.activeId === characterId) {
-        this.playerMesh = wrapper;
-        this.playerWeapon = weapon;
-      }
-      if (oldRuntime && oldRuntime !== runtime) this.disposeCharacterObject(oldMesh, oldRuntime);
-      this.updateUi(true);
     }
 
     async toggleFacePilot() {
@@ -7034,8 +7095,7 @@
       const { video, landmarker } = this.facePilot;
       const now = performance.now();
       const detectionInterval = this.state.settings.quality === "cinematic" ? 50 : 66;
-      const faceTier = this.playerMesh?.userData?.modelTier || "hero";
-      const canDetectFace = this.state.settings.facialAnimation && !["crowd", "impostor"].includes(faceTier);
+      const canDetectFace = this.state.settings.facialAnimation;
       if (this.visible && canDetectFace && now - this.facePilot.lastDetectionAt >= detectionInterval && video?.readyState >= 2 && video.currentTime !== this.facePilot.lastVideoTime) {
         this.facePilot.lastDetectionAt = now;
         this.facePilot.lastVideoTime = video.currentTime;
@@ -7111,7 +7171,7 @@
         const weapon = this.createPlayerWeapon(profile);
         mesh.userData.parts.weaponAnchor.add(weapon);
         mesh.userData.lodVariants.attachments = [weapon];
-        weapon.visible = mesh.userData.modelTier !== "impostor";
+        weapon.visible = true;
         mesh.userData.weapon = weapon;
         mesh.visible = id === this.state.roster.activeId;
         this.world.add(mesh);
@@ -7267,9 +7327,11 @@
           child.material.emissiveIntensity = solved ? 1.1 : 0.18;
         });
       });
+      this.currentZone = this.zoneAt(player.x, player.z);
       this.setElement(this.state.player.element, false);
       this.refreshWorldStateVisuals();
       this.updateCamera(true);
+      this.reconcileStoryObjective();
     }
 
     refreshWorldStateVisuals() {
@@ -7318,17 +7380,6 @@
           this.appearanceFocus = group?.focus || "body";
           this.cameraDistance = this.appearanceFocus === "head" ? 5.1 : 7.8;
           this.refreshGenesisCreator();
-          return;
-        }
-        const genesisBase = event.target.closest("[data-genesis-base]");
-        if (genesisBase) {
-          const value = genesisBase.dataset.genesisBase;
-          if (BUILTIN_CHARACTER_ASSETS[value] && value !== this.activeAppearanceRecipe().baseModel) {
-            this.updateAppearanceDraft("baseModel", value);
-            this.commitAppearanceDraft();
-            this.rebuildActiveBuiltInCharacter();
-            this.refreshGenesisCreator();
-          }
           return;
         }
         const genesisPreset = event.target.closest("[data-genesis-preset]");
@@ -7393,10 +7444,10 @@
           }
           else if (genesisAction === "focus-body") {
             this.appearanceFocus = "body";
-            this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, "body");
+            this.fitGenesisCamera(this.genesisActualModel, "body");
           } else if (genesisAction === "focus-head") {
             this.appearanceFocus = "head";
-            this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, "head");
+            this.fitGenesisCamera(this.genesisActualModel, "head");
           } else if (genesisAction === "random") {
             this.randomAppearance();
             this.refreshGenesisCreator();
@@ -7543,28 +7594,6 @@
         if (motionPreset && !this.appearanceInputStart) this.updateCharacterPerformance("motionDNA", "preset", motionPreset.value);
         if (motionDNA && !this.appearanceInputStart) this.updateCharacterPerformance("motionDNA", motionDNA.dataset.genesisMotionDna, motionDNA.value);
         if (voiceDNA && !this.appearanceInputStart) this.updateCharacterPerformance("voice", voiceDNA.dataset.genesisVoice, voiceDNA.value);
-        const genesisCatalog = event.target.closest("[data-genesis-catalog]");
-        if (genesisCatalog) {
-          const modelId = String(genesisCatalog.value || "");
-          if (/^valid-[a-z0-9-]{3,72}$/.test(modelId) && modelId !== this.activeAppearanceRecipe().baseModel) {
-            genesisCatalog.disabled = true;
-            this.root.dataset.characterCatalogLoading = "true";
-            const status = this.root.querySelector("[data-genesis-status]");
-            if (status) status.textContent = "Đang tải model người thật đã chọn...";
-            try {
-              this.updateAppearanceDraft("baseModel", modelId);
-              this.commitAppearanceDraft();
-              await this.loadCharacterAssetsFromPipeline();
-              this.rebuildActiveBuiltInCharacter();
-              this.refreshGenesisCreator();
-              const source = this.builtInCharacterSources.get(modelId);
-              this.toast(source?.provider === "valid-avatar" ? "Đã tải model người thật vào preview 3D." : "Model mạng chưa sẵn sàng; đang giữ GLB local an toàn.", source?.provider === "valid-avatar" ? "success" : "error");
-            } finally {
-              this.root.dataset.characterCatalogLoading = "false";
-            }
-          }
-          return;
-        }
         if (event.target.matches("[data-genesis-morph], [data-genesis-setting], [data-genesis-decal], [data-genesis-surface], [data-genesis-motion-preset], [data-genesis-motion-dna], [data-genesis-voice]")) {
           this.commitAppearanceDraft();
           this.refreshGenesisCreator();
@@ -7577,10 +7606,19 @@
       this.listen(root, "keydown", (event) => {
         if (!this.running || this.destroyed) return;
         if (this.genesisActive) return;
-        if (/^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName || "")) return;
+        if (this.storyOverlayMode) {
+          this.keys.clear();
+          if (event.key === "Tab") this.trapStoryFocus(event);
+          else if (event.code === "Escape") {
+            event.preventDefault();
+            if (this.storyOverlayMode !== "prologue") this.closeStoryOverlay();
+          }
+          return;
+        }
+        if (/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(event.target?.tagName || "") || event.target?.isContentEditable) return;
         const handled = [
           "KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
-          "Space", "KeyF", "KeyE", "KeyR", "KeyQ", "KeyG", "KeyT", "Tab", "Escape",
+          "Space", "KeyF", "KeyE", "KeyR", "KeyQ", "KeyG", "KeyT", "KeyL", "Escape",
           "KeyI", "KeyM", "KeyJ", "KeyK", "KeyP", "KeyC", "KeyO", "Digit1", "Digit2", "Digit3", "Digit4"
         ];
         if (handled.includes(event.code)) event.preventDefault();
@@ -7594,7 +7632,7 @@
           KeyG: "interact",
           KeyT: "interact",
           Space: "jump",
-          Tab: "lock"
+          KeyL: "lock"
         };
         if (actions[event.code]) this.performAction(actions[event.code]);
         if (event.code === "Escape") {
@@ -7771,7 +7809,6 @@
       this.animationBlend = clamp(this.animationBlend + dt * 8, 0, 1);
       const runtime = mesh.userData.characterRuntime || this.characterRuntimes.get(this.state.roster.activeId);
       this.updateCharacterLod(mesh, 0);
-      const lowDetailTier = ["crowd", "impostor"].includes(mesh.userData?.modelTier);
       if (runtime) {
         const dna = runtime.motionDNA || mesh.userData.motionDNA || MOTION_DNA_PRESETS.balanced;
         const targetSpeed = moving ? clamp(input?.magnitude || 1, 0, 1) * (sprinting ? 1.35 : 1) : 0;
@@ -7804,7 +7841,7 @@
           weapon: this.playerWeapon ? 1 : 0
         };
       }
-      if (runtime?.mixer && !runtime.lodSuspended) {
+      if (runtime?.mixer) {
         this.playCharacterClip(runtime, targetAnimation);
         const locomotion = ["walk", "run", "sprint", "strafe", "swim", "climb"].includes(targetAnimation);
         runtime.mixer.timeScale = !locomotion
@@ -7815,7 +7852,7 @@
               ? clamp(0.58 + (input?.magnitude || 0) * 0.48, 0.58, 0.92)
               : clamp(0.82 + (input?.magnitude || 0) * 0.28, 0.82, 1.1);
         runtime.mixer.update(dt);
-      } else if (runtime && !runtime.lodSuspended) {
+      } else if (runtime) {
         this.applyProceduralRigMotion(runtime, time, targetAnimation, dt);
       }
 
@@ -7844,7 +7881,7 @@
         }
       }
 
-      if (!lowDetailTier && parts?.leftLeg && parts?.rightLeg && parts?.leftArm && parts?.rightArm) {
+      if (parts?.leftLeg && parts?.rightLeg && parts?.leftArm && parts?.rightArm) {
         const actionPhase = clamp((time - this.characterAction.startedAt) / Math.max(1, this.characterAction.duration), 0, 1);
         const pose = {
           leftLegX: moving ? phase * (targetAnimation === "sprint" ? 0.68 : targetAnimation === "walk" ? 0.34 : 0.46) : Math.sin(time * 0.0015) * 0.018,
@@ -7961,10 +7998,8 @@
         sprinting,
         direction: runtime?.motionDirection || 0
       });
-      if (!lowDetailTier) {
-        this.applyProceduralFacialPerformance(mesh, time, targetAnimation);
-        this.updateCharacterSurface(mesh, time);
-      }
+      this.applyProceduralFacialPerformance(mesh, time, targetAnimation);
+      this.updateCharacterSurface(mesh, time);
     }
 
     togglePhotoMode(force) {
@@ -8018,6 +8053,12 @@
         const dt = Math.min(0.05, Math.max(0.001, (time - this.lastFrameAt) / 1000));
         this.lastFrameAt = time;
 
+        if (this.storyOverlayMode && !this.genesisActive && time - this.lastStoryFrameAt < 250) {
+          this.frameHandle = requestAnimationFrame((next) => this.frame(next));
+          return;
+        }
+        if (this.storyOverlayMode) this.lastStoryFrameAt = time;
+
         if (this.visible && this.renderer && this.scene && this.camera) {
           if (this.running && !this.paused && !this.menuPaused && time >= this.hitStopUntil) {
             this.pollGamepad();
@@ -8050,12 +8091,12 @@
             this.renderer.render(this.scene, this.camera);
           }
           this.lastRenderSuccessAt = time;
-          this.trackFps(time);
-          if (time - this.lastUiAt > 120) {
+          if (!this.storyOverlayMode) this.trackFps(time);
+          if (!this.storyOverlayMode && time - this.lastUiAt > 120) {
             this.lastUiAt = time;
             this.updateUi(false);
           }
-          if (time - this.lastMinimapAt > 180) {
+          if (!this.storyOverlayMode && time - this.lastMinimapAt > 180) {
             this.lastMinimapAt = time;
             this.renderMinimap();
           }
@@ -8114,8 +8155,12 @@
       const sprinting = (this.keys.has("ShiftLeft") || this.keys.has("ShiftRight")) && input.active && player.stamina > 0;
       const staminaBonus = Number(this.state.skills.staminaCore || 0) * 10;
       player.maxStamina = 100 + staminaBonus;
-      const inAuroraLake = Math.hypot(player.x + 51, player.z - 20) < 12.6 && player.y < 1.8;
-      this.isSwimming = inAuroraLake;
+      const swimSurface = this.waterSurfaces.find((surface) => (
+        !surface.userData?.lava
+        && Math.hypot(player.x - surface.position.x, player.z - surface.position.z) < Number(surface.userData?.radius || 0) - 0.9
+        && player.y < Number(surface.userData?.baseY || 1.1) + 0.7
+      ));
+      this.isSwimming = Boolean(swimSurface);
       const climbTarget = this.climbables.find((entry) => {
         const distance = Math.hypot(player.x - entry.object.position.x, player.z - entry.object.position.z);
         return distance <= entry.radius + 0.75 && player.y < entry.top;
@@ -8216,6 +8261,7 @@
         this.toast(`${zone.name} · ${zone.weather}`);
         this.applyBiomeVisualState(zone);
         this.updateWeatherAppearance();
+        this.progressStoryObjective("enter-zone", { zoneId: zone.id });
       }
       this.trainingActive = this.trainingSession && Math.hypot(player.x - 17, player.z + 10) < 7;
     }
@@ -8318,13 +8364,13 @@
         );
         this.updateCharacterLod(remote, playerDistance);
         const runtime = remote.userData.characterRuntime || this.characterRuntimes.get(`remote:${remote.userData.id}`);
-        if (runtime?.mixer && !runtime.lodSuspended) {
+        if (runtime?.mixer) {
           this.playCharacterClip(runtime, moving ? "run" : "idle");
           runtime.mixer.timeScale = moving ? 0.94 : 1;
           runtime.mixer.update(dt);
         }
         const parts = remote.userData.parts;
-        if (!runtime?.lodSuspended && parts?.leftLeg && parts?.rightLeg) {
+        if (parts?.leftLeg && parts?.rightLeg) {
           const stride = Math.sin(time * 0.012 + remote.position.x * 0.2) * 0.08;
           parts.leftLeg.rotation.x = stride;
           parts.rightLeg.rotation.x = -stride;
@@ -8462,11 +8508,14 @@
           "star-rain": "ocean",
           eclipse: "abyss"
         }[override] || this.currentZone.id);
+      const consequence = this.state.world?.zones?.[this.currentZone.id] || {};
+      const consequenceSeverity = override === "auto" ? clamp(consequence.weatherSeverity ?? 0.58, 0.1, 1) : 0.58;
+      this.root.dataset.weatherConsequence = consequence.weatherLabel ? "active" : "default";
       this.weatherField.material.color.setHex(colors[mode] || colors.central);
       const density = clamp(this.state.settings.weatherDensity, 0, 100) / 100;
       this.weatherField.material.opacity = override === "clear"
         ? 0.04
-        : (mode === "central" ? 0.16 : mode === "aurora" && override === "storm" ? 0.82 : 0.58) * density;
+        : (mode === "central" ? 0.16 + consequenceSeverity * 0.18 : mode === "aurora" && override === "storm" ? 0.82 : consequenceSeverity) * density;
       this.weatherField.material.size = mode === "crimson" || mode === "abyss" ? 0.34 : mode === "aurora" || mode === "ocean" ? 0.24 : 0.18;
     }
 
@@ -8827,6 +8876,8 @@
       this.grantXp(data.xp);
       if (data.drop && (!data.boss || this.state.quests.warden?.status !== "completed")) this.addItem(data.drop, 1, `${data.name} rơi vật phẩm`);
       this.progressQuest(data.boss ? "boss" : "defeat", 1, { enemy: data.archetype });
+      const defeatedZoneId = this.zoneAt(enemy.position.x, enemy.position.z).id;
+      this.progressStoryObjective("defeat", { zoneId: defeatedZoneId, archetype: data.archetype, enemyId: data.id, boss: data.boss });
       this.spawnNova(enemy.position.x, enemy.position.y + 1, enemy.position.z, ENEMY_ARCHETYPES[data.archetype].color);
       this.toast(`Đã đánh bại ${data.name} · +${data.xp} XP`, "success");
       this.saveProgress("Chiến thắng");
@@ -8954,6 +9005,7 @@
       this.collectibles.forEach((node) => add(node, 3.1));
       this.portals.forEach((portal) => add(portal, 4.6));
       this.puzzleNodes.forEach((puzzle) => add(puzzle, 4.2));
+      this.storyBeacons.forEach((beacon) => add(beacon, 4.2));
       add(this.entities.get("training-core"), 4.4);
       candidates.sort((left, right) => left.distance - right.distance);
       this.nearby = candidates[0]?.object || null;
@@ -8971,6 +9023,8 @@
             ? data.solved
               ? `${data.name} · Đã cộng hưởng`
               : `G · Kích hoạt ${data.name} bằng ${ELEMENTS[data.requiredElement]?.label || "đúng nguyên tố"}`
+          : data.type === "story-beacon"
+            ? `G · Khôi phục ${data.name}`
           : data.type === "training"
             ? "F · Tấn công Training Core để đo DPS"
             : `G · ${data.name}`;
@@ -8989,6 +9043,7 @@
       if (data.type === "collectible") return this.collectNode(target);
       if (data.type === "portal") return this.activatePortal(target);
       if (data.type === "puzzle") return this.activatePuzzle(target);
+      if (data.type === "story-beacon") return this.activateStoryBeacon(target);
       if (data.type === "training") {
         this.trainingSession = true;
         this.trainingActive = true;
@@ -9016,6 +9071,7 @@
       this.spawnNova(puzzle.position.x, puzzle.position.y + 1.5, puzzle.position.z, data.color);
       this.addItem("aurora-shard", 1, `Giải ${data.name}`);
       this.grantXp(70);
+      this.progressStoryObjective("puzzle", { zoneId: this.zoneAt(puzzle.position.x, puzzle.position.z).id, puzzleId: data.id });
       this.toast(`${data.name} đã cộng hưởng · +70 XP`, "success");
       this.saveProgress("Giải elemental puzzle");
     }
@@ -9026,6 +9082,7 @@
       this.state.collectedNodes.push(node.userData.id);
       this.addItem(node.userData.itemId, 1, "Thu thập trong thế giới");
       this.progressQuest("collect", 1, { item: node.userData.itemId });
+      this.progressStoryObjective("collect", { zoneId: this.zoneAt(node.position.x, node.position.z).id, nodeId: node.userData.id, itemId: node.userData.itemId });
       this.sound("collect");
       this.saveProgress("Thu thập vật phẩm");
     }
@@ -9106,6 +9163,7 @@
           this.state.story.hiddenSignals.lumaDeniesMira = true;
           this.recordStoryDialogue("Navigator Luma", reply, "central");
           this.unlockStoryEcho("central-mira", "Đối chất Navigator Luma");
+          this.progressStoryObjective("dialogue", { zoneId: "central", npcId: "luma", eventKey: "luma:mira" });
           this.saveProgress("Hội thoại về Mira");
         } else if (action === "close") this.closeDialogue();
       };
@@ -9195,10 +9253,16 @@
       return true;
     }
 
+    economyAdjustedRequirements(requirements) {
+      const modifier = clamp(this.state.world?.zones?.[this.currentZone.id]?.economyModifier ?? 1, 0.5, 1.5);
+      return Object.fromEntries(Object.entries(requirements || {}).map(([id, amount]) => [id, Math.max(1, Math.round(Number(amount || 0) * modifier))]));
+    }
+
     craft(recipeId) {
       const recipe = RECIPES.find((item) => item.id === recipeId);
       if (!recipe) return;
-      if (!this.removeItems(recipe.requires)) {
+      const requirements = this.economyAdjustedRequirements(recipe.requires);
+      if (!this.removeItems(requirements)) {
         this.toast("Chưa đủ nguyên liệu để chế tạo.", "error");
         return;
       }
@@ -9245,6 +9309,18 @@
       this.isGrounded = true;
       this.gliding = false;
       this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
+      const destinationZone = this.zoneAt(this.state.player.x, this.state.player.z);
+      if (destinationZone.id !== this.currentZone.id) {
+        this.currentZone = destinationZone;
+        const zoneState = this.state.world?.zones?.[destinationZone.id];
+        if (zoneState) {
+          zoneState.discovered = true;
+          zoneState.updatedAt = nowIso();
+        }
+        this.applyBiomeVisualState(destinationZone);
+        this.updateWeatherAppearance();
+        this.progressStoryObjective("enter-zone", { zoneId: destinationZone.id });
+      }
       this.updateCamera(true);
       this.closePanel();
       this.spawnPulse(this.state.player.x, this.state.player.y + 0.2, this.state.player.z, "#76eaff", 0.8, 5);
@@ -9297,11 +9373,7 @@
       const activeCharacterRuntime = this.characterRuntimes.get(this.state.roster.activeId);
       const characterRuntimeLabel = this.root.querySelector("[data-har-character-runtime]");
       if (characterRuntimeLabel) {
-        const source = activeCharacterMesh?.userData?.visualMode === "gltf-imported"
-          ? "GLB"
-          : activeCharacterMesh?.userData?.visualMode === "builtin-rigged"
-            ? "RIGGED 3D"
-            : "3D PBR";
+        const source = activeCharacterMesh?.userData?.visualMode === "hero-prime-rigged" ? "HERO PRIME" : "HERO ĐANG TẢI";
         characterRuntimeLabel.textContent = `${source} · ${(activeCharacterRuntime?.state || this.activeAnimation || "idle").toUpperCase()}`;
       }
       const worldZone = this.state.world?.zones?.[this.currentZone.id];
@@ -9480,8 +9552,12 @@
     }
 
     closePanel() {
+      if (this.currentPanel === "story") {
+        this.pendingStoryChoice = null;
+        this.pendingStoryEnding = "";
+      }
       this.currentPanel = "";
-      this.menuPaused = false;
+      this.menuPaused = Boolean(this.storyOverlayMode) || this.genesisActive;
       const panel = this.root.querySelector("[data-har-panel-root]");
       panel.classList.remove("is-open");
       panel.setAttribute("aria-hidden", "true");
@@ -9543,7 +9619,7 @@
     renderCharactersPanel() {
       const activeId = this.state.roster.activeId;
       return `
-        <div class="har-section har-character-v9-hero"><small>DIGITAL HUMAN CORE · VISUAL V${CHARACTER_VISUAL_VERSION}</small><h3>Character V${CHARACTER_VISUAL_VERSION} · gương mặt, da, mắt, tóc và chuyển động thế hệ mới</h3><p>Nhân vật mặc định vẫn là SkinnedMesh PBR toàn thân. Runtime V${CHARACTER_VISUAL_VERSION} bổ sung driver 52 kênh, viseme, vật liệu da năm lớp, secondary motion và LOD thích ứng; số morph native luôn được báo theo dữ liệu thật của GLB.</p></div>
+        <div class="har-section har-character-v9-hero"><small>HERO PRIME · FULL QUALITY ONLY · V${CHARACTER_VISUAL_VERSION}</small><h3>Nhân vật duy nhất · gương mặt, da, mắt, tay và chuyển động 60 Hz</h3><p>Bốn thân phận dùng chung một Hero Prime GLB mạnh nhất. Không có model máy yếu, không proxy và không tự hạ LOD; nếu asset lỗi, game dừng ở màn hình Retry để bảo toàn hình ảnh.</p></div>
         <ul class="har-character-list">${CHARACTER_ORDER.map((id, index) => {
           const profile = CHARACTERS[id];
           const member = this.state.roster.members[id] || {};
@@ -9556,8 +9632,8 @@
             <button class="har-chip ${active ? "is-active" : ""}" type="button" data-panel-action="switch-character" data-character="${id}">${active ? "Đang dùng" : `Đổi [${index + 1}]`}</button>
           </li>`;
         }).join("")}</ul>
-        <div class="har-section"><h3>Character Pipeline</h3><div class="har-character-pipeline">${CHARACTER_PIPELINE.map((item) => `<div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.role)}</span><small>${escapeHtml(item.id === "three" ? `Runtime V${CHARACTER_VISUAL_VERSION}` : item.state)}</small></div>`).join("")}</div></div>
-        <div class="har-section"><h3>Nguồn hình học nhân vật</h3><p>Thư viện VALID cung cấp ${this.characterPipelineManifest.filter((entry) => entry.provider === "valid-avatar").length} người 3D có rig và morph theo giấy phép MIT; chỉ model đang dùng mới được tải. GLB HH và procedural human luôn giữ vai trò fallback, nên máy yếu hoặc mạng chậm vẫn không có khung hình trống.</p>
+        <div class="har-section"><h3>Character Pipeline · Hero only</h3><div class="har-character-pipeline">${CHARACTER_PIPELINE.map((item) => `<div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.role)}</span><small>${escapeHtml(item.id === "three" ? `Runtime V${CHARACTER_VISUAL_VERSION}` : item.state)}</small></div>`).join("")}</div></div>
+        <div class="har-section"><h3>Nguồn hình học nhân vật</h3><p>HH Hero Prime là asset duy nhất được tải: ${HERO_CHARACTER_ASSET_URL}. Các catalog, GLB dự phòng và procedural proxy đã bị loại khỏi player pipeline.</p>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Creator</button></div>
         </div>`;
     }
@@ -9578,7 +9654,7 @@
       const mesh = this.characterMeshes.get(id);
       const runtime = this.characterRuntimes.get(id);
       const qa = runtime?.qaReport || mesh?.userData?.qaReport || this.lastCharacterQa;
-      const gltfActive = ["gltf-imported", "builtin-rigged"].includes(mesh?.userData?.visualMode);
+      const gltfActive = mesh?.userData?.visualMode === "hero-prime-rigged";
       const trulyRigged = Boolean(
         gltfActive
         && qa?.skinnedMeshes
@@ -9586,34 +9662,22 @@
         && runtime?.bones?.hips
         && runtime?.bones?.head
       );
-      const capability = gltfActive
-        ? `${this.characterAssetStatus.get(id) || "GLB"} · ${trulyRigged ? "SkinnedMesh hợp lệ" : "không có humanoid rig đầy đủ"}`
-        : "HH Articulated PBR · fallback nhẹ, không giả nhận là SkinnedMesh";
-      const lodCapability = qa?.lodGroups
-        ? `${qa.lodGroups} nhóm GLB`
-        : mesh?.userData?.visualMode === "builtin-rigged"
-          ? "Human Rig + proxy 3D"
-          : "proxy 3D thích ứng";
+      const capability = `${this.characterAssetStatus.get(id) || "HH Hero Prime"} · ${trulyRigged ? "SkinnedMesh duy nhất" : "đang chờ Hero"}`;
+      const lodCapability = "Hero Prime · không LOD thấp";
       const saved = this.state.appearance.savedPresets || [];
       const nativeFaceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
       const dna = encodeCharacterDNA(recipe, id);
-      const modelOptions = [...new Map([
-        ...APPEARANCE_ASSETS.baseModels.map((modelId) => [modelId, { modelId, label: modelId }]),
-        ...this.characterPipelineManifest
-          .filter((entry) => entry.provider === "valid-avatar")
-          .map((entry) => [entry.modelId, { modelId: entry.modelId, label: entry.label }])
-      ]).values()];
       return `
         <div class="har-creator">
           <div class="har-creator__hero">
             <div><small>DIGITAL HUMAN CORE V${CHARACTER_VISUAL_VERSION} · ${escapeHtml(profile.name)}</small><h3>${recipe.style === "human-cinematic" ? "Web Digital Human" : "Anime Realistic"}</h3><p>${escapeHtml(capability)} · collider gameplay giữ cố định để multiplayer công bằng.</p></div>
-            <span class="har-chip ${trulyRigged ? "is-active" : ""}">${trulyRigged ? "RIGGED GLB" : gltfActive ? "GLB FALLBACK" : "PBR FALLBACK"}</span>
+            <span class="har-chip ${trulyRigged ? "is-active" : ""}">${trulyRigged ? "HERO PRIME" : "HERO ĐANG TẢI"}</span>
           </div>
           <div class="har-character-runtime-grid">
             <div><small>Motion</small><strong>${escapeHtml(runtime?.state || this.activeAnimation || "idle")}</strong><span>${runtime?.clips?.size || 0} clip GLB</span></div>
             <div><small>Skeleton</small><strong>${runtime ? Object.keys(runtime.bones || {}).length : 0}/${Object.keys(HH_HUMANOID_SKELETON).length}</strong><span>HH slots nhận diện</span></div>
-            <div><small>Face</small><strong>52 driver</strong><span>${nativeFaceChannels}/52 native morph · ${runtime?.faceFallback?.driver || "procedural fallback"}</span></div>
-            <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "hero")}</strong><span>${escapeHtml(lodCapability)}</span></div>
+            <div><small>Face</small><strong>52 driver</strong><span>${nativeFaceChannels}/52 native morph · cập nhật cố định 60 Hz</span></div>
+            <div><small>QUALITY</small><strong>HERO</strong><span>${escapeHtml(lodCapability)}</span></div>
           </div>
           <div class="har-section har-digital-human-stack">
             <div><small>HEAD TARGET</small><strong>20–28K</strong><span>GLB nhập vào được đo thực tế; Human Rig tích hợp không giả nhận đủ chuẩn head mesh.</span></div>
@@ -9621,11 +9685,8 @@
             <div><small>EYE SYSTEM</small><strong>3 lớp</strong><span>iris · cornea · tear response khi model có mesh tách</span></div>
             <div><small>ANIMATION</small><strong>8 hướng</strong><span>inertial crossfade · foot contact · secondary bones</span></div>
           </div>
-          <div class="har-section har-character-import">
-            <div><h3>Nhập GLB nén có kiểm định</h3><p>Hỗ trợ Draco, Meshopt và KTX2. File được giải mã, đo giới hạn GPU và kiểm tra cục bộ trước khi thay nhân vật; không tải lên máy chủ HH.</p><small>Decoder: ${this.characterDecodersReady ? "Draco · Meshopt · KTX2 sẵn sàng" : "GLB cơ bản"} · tối đa ${Math.round(CHARACTER_IMPORT_LIMITS.triangles / 1000)}K triangles</small></div>
-            <label class="har-character-file"><span>Chọn GLB ≤ 32 MB</span><input type="file" accept=".glb,model/gltf-binary" data-character-glb></label>
-          </div>
-          ${qa ? `<div class="har-section har-character-qa"><h3>Character QA · ${Math.round(qa.score ?? 100)}/100 · ${escapeHtml(qa.assetClassLabel || qa.digitalHumanTier || "gameplay-rig")}</h3><p><strong>Hero gate ${qa.heroScore || 0}%:</strong> ${qa.heroReady ? "Đạt toàn bộ chuẩn Hero Digital Human V12." : "Asset vẫn chạy an toàn nhưng chỉ được xếp Gameplay/NPC/Fallback."}</p><div class="har-character-runtime-grid"><div><small>Geometry</small><strong>${Number(qa.triangles || 0).toLocaleString("vi-VN")}</strong><span>triangles</span></div><div><small>Head</small><strong>${Number(qa.headVertices || 0).toLocaleString("vi-VN")}</strong><span>vertices · mục tiêu 20–28K</span></div><div><small>Face</small><strong>${qa.faceMorphTargets || 0}/52</strong><span>native facial morph</span></div><div><small>Rig</small><strong>${qa.skinnedMeshes || 0}</strong><span>SkinnedMesh · ${qa.bones || 0} bone</span></div><div><small>Eyes/Hair</small><strong>${qa.separateEyeMeshes || 0}/${qa.hairCardMeshes || 0}</strong><span>mesh tách nhận diện</span></div><div><small>PBR maps</small><strong>N${qa.normalMaps || 0} · R${qa.roughnessMaps || 0} · T${qa.thicknessMaps || 0}</strong><span>normal · roughness · thickness</span></div><div><small>Clips</small><strong>${qa.animations || 0}</strong><span>${Number(qa.animationSeconds || 0).toFixed(1)} giây</span></div><div><small>LOD groups</small><strong>${qa.lodGroups || 0}/4</strong><span>${qa.lodGroups ? "GLB explicit" : "HH fallback proxy"}</span></div></div><div class="har-hero-gate__checks">${(qa.heroChecks || []).map((check) => `<span class="${check.pass ? "is-pass" : "is-missing"}">${check.pass ? "✓" : "○"} ${escapeHtml(check.label)} · ${escapeHtml(check.value)}</span>`).join("")}</div>${qa.warnings?.length ? `<p>${qa.warnings.map(escapeHtml).join("<br>")}</p>` : "<p>Không có cảnh báo tương thích.</p>"}</div>` : ""}
+          <div class="har-section har-character-import"><div><h3>Hero Prime đã khóa</h3><p>Không cho thay bằng asset khác trong gameplay. Mọi lỗi tải hoặc giải mã đều hiển thị lý do và nút Retry, không dựng model thay thế.</p><small>GLB local · 58K+ triangles · 114 joints · 65 facial targets</small></div></div>
+          ${qa ? `<div class="har-section har-character-qa"><h3>Hero Prime QA · ${Math.round(qa.score ?? 100)}/100 · ${escapeHtml(qa.assetClassLabel || qa.digitalHumanTier || "hero-prime")}</h3><p><strong>Asset duy nhất:</strong> ${qa.heroReady ? "Đạt toàn bộ gate kỹ thuật." : "Đang dùng asset mạnh nhất được khóa; các gate thiếu được báo minh bạch, không thay bằng proxy."}</p><div class="har-character-runtime-grid"><div><small>Geometry</small><strong>${Number(qa.triangles || 0).toLocaleString("vi-VN")}</strong><span>triangles</span></div><div><small>Head</small><strong>${Number(qa.headVertices || 0).toLocaleString("vi-VN")}</strong><span>vertices · đo thực tế</span></div><div><small>Face</small><strong>${qa.faceMorphTargets || 0}/52</strong><span>native facial morph</span></div><div><small>Rig</small><strong>${qa.skinnedMeshes || 0}</strong><span>SkinnedMesh · ${qa.bones || 0} bone</span></div><div><small>Eyes/Hair</small><strong>${qa.separateEyeMeshes || 0}/${qa.hairCardMeshes || 0}</strong><span>mesh tách nhận diện</span></div><div><small>PBR maps</small><strong>N${qa.normalMaps || 0} · R${qa.roughnessMaps || 0} · T${qa.thicknessMaps || 0}</strong><span>normal · roughness · thickness</span></div><div><small>Clips</small><strong>${qa.animations || 0}</strong><span>IK runtime · ${Number(qa.animationSeconds || 0).toFixed(1)} giây asset</span></div><div><small>Quality</small><strong>HERO</strong><span>Không LOD/proxy</span></div></div><div class="har-hero-gate__checks">${(qa.heroChecks || []).map((check) => `<span class="${check.pass ? "is-pass" : "is-missing"}">${check.pass ? "✓" : "○"} ${escapeHtml(check.label)} · ${escapeHtml(check.value)}</span>`).join("")}</div>${qa.warnings?.length ? `<p>${qa.warnings.map(escapeHtml).join("<br>")}</p>` : "<p>Không có cảnh báo tương thích.</p>"}</div>` : ""}
           <div class="har-section"><h3>Motion Lab</h3><p>Xem ngay state machine và crossfade trước khi đưa animation vào gameplay.</p><div class="har-motion-grid">
             ${["idle", "walk", "run", "sprint", "jump", "land", "dodge", "attack1", "attack2", "attack3", "skill", "ultimate", "hit"].map((motion) => `<button class="har-chip ${this.activeAnimation === motion ? "is-active" : ""}" type="button" data-panel-action="character-preview-motion" data-motion="${motion}">${motion}</button>`).join("")}
           </div></div>
@@ -9640,12 +9701,11 @@
             <div class="har-performance-row"><span>Viseme</span>${Object.keys(CHARACTER_VISEMES).map((name) => `<button class="har-chip ${recipe.viseme === name ? "is-active" : ""}" type="button" data-panel-action="character-viseme" data-viseme="${name}">${name}</button>`).join("")}</div>
           </div>
           <div class="har-creator__toolbar">
-            <label class="har-field">Web pipeline<select data-appearance-setting="sourceProvider">${CHARACTER_PIPELINE_SOURCES.map((value) => `<option value="${value}" ${recipe.sourceProvider === value ? "selected" : ""}>${value === "auto" ? "Auto: MetaHuman → CC5 → MPFB → GLB" : value}</option>`).join("")}</select></label>
-            <label class="har-field">Model nền · ${modelOptions.length} người<select data-appearance-setting="baseModel">${modelOptions.map((item) => `<option value="${escapeHtml(item.modelId)}" ${recipe.baseModel === item.modelId ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label>
+            <div class="har-field"><span>Hero model</span><strong>HH Hero Prime · Full Quality Only</strong></div>
             <label class="har-field">Preset cơ thể<select data-appearance-setting="bodyPreset">${Object.entries(APPEARANCE_PRESETS).map(([value, item]) => `<option value="${value}" ${recipe.bodyPreset === value ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
             <label class="har-field">Phong cách<select data-appearance-setting="style"><option value="anime-realistic" ${recipe.style === "anime-realistic" ? "selected" : ""}>Anime Realistic</option><option value="human-cinematic" ${recipe.style === "human-cinematic" ? "selected" : ""}>Human Cinematic</option></select></label>
           </div>
-          <div class="har-section"><p><strong>Pipeline runtime:</strong> ${escapeHtml(this.builtInCharacterSources.get(recipe.baseModel)?.label || (this.characterPipelineStatus === "configured" ? "Đang tìm asset web-ready" : "Chưa có asset MetaHuman/CC5/MPFB"))}. ${this.characterPipelineStatus === "configured" ? "Asset trong manifest sẽ được QA trước khi dùng." : "Đang dùng GLB HH hoặc procedural fallback; không có khung hình trống."}</p></div>
+          <div class="har-section"><p><strong>Pipeline runtime:</strong> HH Hero Prime · ${this.characterPipelineStatus} · không có nguồn thay thế.</p></div>
           <div class="har-creator__options">
             <label><input type="checkbox" data-appearance-setting="symmetry" ${recipe.symmetry ? "checked" : ""}> Chỉnh đối xứng</label>
             <label><input type="checkbox" data-appearance-setting="advanced" ${recipe.advanced ? "checked" : ""}> Chế độ nâng cao trái–phải</label>
@@ -9744,19 +9804,23 @@
     storyEndingStatus(endingId) {
       const shards = Object.values(this.state.story.truthShards || {}).filter((item) => item.discovered).length;
       const echoes = Object.values(this.state.story.echoes || {}).filter((item) => item.unlocked).length;
+      const regionDecisions = STORY_MISSIONS.filter((mission) => {
+        const record = this.state.story.missions?.[mission.zoneId];
+        return record?.status === "completed" && mission.choices.some((choice) => choice.id === record.choice);
+      }).length;
       const allTrust = CHARACTER_ORDER.every((id) => Number(this.state.companions[id]?.trust || 0) >= 5 && !this.state.companions[id]?.departed);
       const allShards = shards === STORY_ZONE_ORDER.length;
       const checks = {
         restoration: [allShards, Number(this.state.story.aionEvidence || 0) >= 6],
         "perfect-silence": [allShards],
-        "one-true-world": [allShards, this.state.story.decisions.length >= STORY_ZONE_ORDER.length],
+        "one-true-world": [allShards, regionDecisions >= STORY_ZONE_ORDER.length],
         "free-constellation": [allShards, this.state.story.constellationLinks.length >= 4],
         "astral-rebirth": [allShards, echoes === ECHO_MEMORIES.length, allTrust, Number(this.state.story.endingFlags.dangerousPowerUses || 0) === 0, this.state.story.endingFlags.genesisPurpose === true]
       }[endingId] || [false];
       const labels = {
         restoration: [`${shards}/8 Truth Shard`, `${this.state.story.aionEvidence}/6 bằng chứng Aion`],
         "perfect-silence": [`${shards}/8 Truth Shard`],
-        "one-true-world": [`${shards}/8 Truth Shard`, `${this.state.story.decisions.length}/8 lựa chọn khu vực`],
+        "one-true-world": [`${shards}/8 Truth Shard`, `${regionDecisions}/8 lựa chọn khu vực`],
         "free-constellation": [`${shards}/8 Truth Shard`, `${this.state.story.constellationLinks.length}/4 liên kết Echo`],
         "astral-rebirth": [`${shards}/8 Truth Shard`, `${echoes}/${ECHO_MEMORIES.length} Echo`, allTrust ? "4 đồng đội còn tin tưởng" : "Cần Trust ≥ 5 và đủ 4 đồng đội", `${this.state.story.endingFlags.dangerousPowerUses || 0} lần dùng quyền năng nguy hiểm`, this.state.story.endingFlags.genesisPurpose ? "Đã hiểu mục đích Genesis" : "Chưa hiểu mục đích Genesis"]
       }[endingId] || [];
@@ -9777,8 +9841,8 @@
           <div class="har-stat-grid"><div><small>Truth Shard</small><strong>${shardCount}/8</strong></div><div><small>Echo Memory</small><strong>${echoCount}/${ECHO_MEMORIES.length}</strong></div><div><small>Bằng chứng Aion</small><strong>${story.aionEvidence}/8</strong></div><div><small>New Game+</small><strong>${story.newGamePlus}</strong></div></div>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="story-resume">${currentMission ? `Tiếp tục · ${escapeHtml(currentMission.title)}` : "Xem các kết thúc"}</button><button class="har-secondary-button" type="button" data-panel-action="story-recap">Story Recap</button><button class="har-secondary-button" type="button" data-panel-action="story-replay">Phát lại Prologue</button></div>
         </div>
-        <div class="har-story-tabs" role="tablist" aria-label="Story systems"><span>Mission Board</span><span>Echo Constellation</span><span>Timeline</span><span>Endings</span></div>
-        <section class="har-section"><h3>Mission Constellation · 8 mảnh sự thật</h3><p>Mỗi chương có cơ chế riêng và kết thúc bằng một lựa chọn làm đổi khu vực, đồng đội, kinh tế hoặc quyền kiểm soát.</p></section>
+        <nav class="har-story-tabs" aria-label="Đi tới phần cốt truyện"><button type="button" data-panel-action="story-scroll" data-story-target="story-missions">Mission Board</button><button type="button" data-panel-action="story-scroll" data-story-target="story-echoes">Echo Constellation</button><button type="button" data-panel-action="story-scroll" data-story-target="story-timeline">Timeline</button><button type="button" data-panel-action="story-scroll" data-story-target="story-endings">Endings</button></nav>
+        <section class="har-section" id="story-missions"><h3>Mission Constellation · 8 mảnh sự thật</h3><p>Mỗi chương có cơ chế riêng và kết thúc bằng một lựa chọn làm đổi khu vực, đồng đội, kinh tế hoặc quyền kiểm soát.</p></section>
         <div class="har-story-missions">${STORY_MISSIONS.map((mission, index) => {
           const record = story.missions[mission.zoneId];
           const zone = ZONES.find((item) => item.id === mission.zoneId);
@@ -9787,16 +9851,22 @@
           const canTravel = Boolean(this.state.checkpoints[mission.zoneId]);
           const inZone = this.currentZone.id === mission.zoneId;
           const nextStep = mission.steps[Math.min(record.progress, mission.steps.length - 1)];
+          const objective = STORY_OBJECTIVES[mission.zoneId]?.[Math.min(record.progress, mission.steps.length - 1)];
+          const objectiveTarget = objective?.target || 1;
+          const progressValue = record.status === "completed" ? 100 : Math.round(((record.progress + (record.objectiveProgress || 0) / objectiveTarget) / mission.steps.length) * 100);
+          const pendingChoice = this.pendingStoryChoice?.zoneId === mission.zoneId
+            ? mission.choices.find((item) => item.id === this.pendingStoryChoice.choiceId)
+            : null;
           return `<article class="har-story-mission ${record.status === "active" || record.status === "decision" ? "is-active" : ""} ${record.status === "completed" ? "is-complete" : ""}" style="--story-accent:${shard.color}">
             <header><i>${String(index + 1).padStart(2, "0")}</i><div><small>${escapeHtml(zone.name)} · ${escapeHtml(shard.title)}</small><strong>${escapeHtml(mission.title)}</strong></div><span>${escapeHtml(record.status)}</span></header>
             <p>${escapeHtml(mission.summary)}</p><small class="har-story-mechanic">Cơ chế: ${escapeHtml(mission.mechanic)}</small>
-            ${record.status !== "locked" ? `<div class="har-progress-row"><div class="har-meter har-meter--xp"><i style="--value:${record.status === "completed" ? 100 : Math.round((record.progress / mission.steps.length) * 100)}%"></i></div><output>${record.progress}/${mission.steps.length}</output></div>` : ""}
-            ${record.status === "active" ? `<div class="har-story-step"><b>Bước tiếp:</b> ${escapeHtml(nextStep)}</div><button class="har-chip is-active" type="button" data-panel-action="${inZone ? "story-step" : "story-teleport"}" data-zone="${mission.zoneId}" ${inZone || canTravel ? "" : "disabled"}>${inZone ? "Thực hiện cơ chế" : canTravel ? `Đến ${escapeHtml(zone.name)}` : "Cổng chưa mở"}</button>` : ""}
-            ${record.status === "decision" ? `<div class="har-story-decision"><strong>${escapeHtml(mission.prompt)}</strong>${mission.choices.map((item) => `<button type="button" data-panel-action="story-choice" data-zone="${mission.zoneId}" data-choice="${item.id}"><b>${escapeHtml(item.label)}</b><span>${escapeHtml(item.outcome)}</span></button>`).join("")}</div>` : ""}
+            ${record.status !== "locked" ? `<div class="har-progress-row"><div class="har-meter har-meter--xp"><i style="--value:${progressValue}%"></i></div><output>${record.progress}/${mission.steps.length}</output></div>` : ""}
+            ${record.status === "active" ? `<div class="har-story-step"><b>${escapeHtml(nextStep)}</b><span>Mục tiêu gameplay: ${escapeHtml(objective?.label || nextStep)}${objectiveTarget > 1 ? ` · ${record.objectiveProgress || 0}/${objectiveTarget}` : ""}</span></div><button class="har-chip is-active" type="button" data-panel-action="${!inZone ? "story-teleport" : objective?.event === "scan" ? "story-scan" : "story-play"}" data-zone="${mission.zoneId}" ${inZone || canTravel ? "" : "disabled"}>${!inZone ? canTravel ? `Đến ${escapeHtml(zone.name)}` : "Cổng chưa mở" : objective?.event === "scan" ? "Bắt đầu Deep Scan" : "Trở lại gameplay"}</button>` : ""}
+            ${record.status === "decision" ? `<div class="har-story-decision"><strong>${escapeHtml(mission.prompt)}</strong>${mission.choices.map((item) => `<button type="button" data-panel-action="story-choice-preview" data-zone="${mission.zoneId}" data-choice="${item.id}" aria-pressed="${pendingChoice?.id === item.id}"><b>${escapeHtml(item.label)}</b><span>${escapeHtml(item.outcome)}</span></button>`).join("")}${pendingChoice ? `<div class="har-story-confirm" role="alert"><b>Xác nhận lựa chọn dài hạn?</b><span>${escapeHtml(pendingChoice.outcome)}</span><div><button class="har-chip is-active" type="button" data-panel-action="story-choice-confirm" data-zone="${mission.zoneId}" data-choice="${pendingChoice.id}">Xác nhận hậu quả</button><button class="har-chip" type="button" data-panel-action="story-choice-cancel">Xem lại</button></div></div>` : ""}</div>` : ""}
             ${record.status === "completed" ? `<div class="har-story-consequence"><b>${escapeHtml(choice?.label || "Đã hoàn thành")}</b><span>${escapeHtml(choice?.outcome || shard.revelation)}</span></div>` : ""}
           </article>`;
         }).join("")}</div>
-        <section class="har-section"><h3>Memory Constellation</h3><p>Tự nối các Echo để mở nghi vấn và lựa chọn mới. Game lưu bằng chứng nhưng không tự tuyên bố đâu là sự thật tuyệt đối.</p></section>
+        <section class="har-section" id="story-echoes"><h3>Memory Constellation</h3><p>Tự nối các Echo để mở nghi vấn và lựa chọn mới. Game lưu bằng chứng nhưng không tự tuyên bố đâu là sự thật tuyệt đối.</p></section>
         <div class="har-echo-constellation">${STORY_ZONE_ORDER.map((zoneId) => {
           const zone = ZONES.find((item) => item.id === zoneId);
           const echoes = ECHO_MEMORIES.filter((echo) => echo.zoneId === zoneId);
@@ -9804,13 +9874,15 @@
           const linked = story.constellationLinks.some((link) => echoes.some((echo) => echo.id === link.from) && echoes.some((echo) => echo.id === link.to));
           return `<article style="--story-accent:${TRUTH_SHARDS[zoneId].color}"><header><i></i><strong>${escapeHtml(zone.name)}</strong><span>${records.filter((item) => item.unlocked).length}/2</span></header>${echoes.map((echo) => `<div class="${story.echoes[echo.id].unlocked ? "is-found" : ""}"><b>${story.echoes[echo.id].unlocked ? escapeHtml(echo.title) : "Tín hiệu chưa xác định"}</b><span>${story.echoes[echo.id].unlocked ? escapeHtml(echo.summary) : "Hoàn thành bước nhiệm vụ hoặc quét khu vực để mở."}</span></div>`).join("")}${records.every((item) => item.unlocked) ? `<button class="har-chip ${linked ? "" : "is-active"}" type="button" data-panel-action="link-zone-echoes" data-zone="${zoneId}" ${linked ? "disabled" : ""}>${linked ? "Đã kết nối" : "Nối hai Echo"}</button>` : ""}</article>`;
         }).join("")}</div>
-        <section class="har-section"><h3>Timeline & nghi vấn</h3><p>${story.decisions.length ? story.decisions.slice(-10).reverse().map((decision) => `<span class="har-event-line"><b>${escapeHtml(decision.title)}</b> · ${escapeHtml(decision.outcome)} <small>${new Date(decision.createdAt).toLocaleString("vi-VN")}</small></span>`).join("") : "Các phần chưa biết được che lại cho tới khi bạn thật sự tạo ra lựa chọn."}</p></section>
+        <section class="har-section" id="story-timeline"><h3>Timeline & nghi vấn</h3><p>${story.decisions.length ? story.decisions.slice(-10).reverse().map((decision) => `<span class="har-event-line"><b>${escapeHtml(decision.title)}</b> · ${escapeHtml(decision.outcome)} <small>${new Date(decision.createdAt).toLocaleString("vi-VN")}</small></span>`).join("") : "Các phần chưa biết được che lại cho tới khi bạn thật sự tạo ra lựa chọn."}</p></section>
         <section class="har-section"><h3>Dialogue History</h3><p>${story.dialogueHistory.length ? story.dialogueHistory.slice(-8).reverse().map((entry) => `<span class="har-event-line"><b>${escapeHtml(entry.speaker)}</b> · ${escapeHtml(entry.text)}</span>`).join("") : "Chưa có đoạn hội thoại cốt truyện được ghi."}</p></section>
-        <section class="har-section"><h3>Năm kết thúc không tốt/xấu tuyệt đối</h3><p>Điều kiện dựa trên dữ liệu thật trong save. Astral Rebirth là kết thúc bí mật và không mở chỉ bằng việc hoàn thành tuyến chính.</p></section>
+        <section class="har-section" id="story-endings"><h3>Năm kết thúc không tốt/xấu tuyệt đối</h3><p>Điều kiện dựa trên dữ liệu thật trong save. Astral Rebirth là kết thúc bí mật và không mở chỉ bằng việc hoàn thành tuyến chính.</p></section>
         <div class="har-story-endings">${STORY_ENDINGS.map((ending) => {
           const status = this.storyEndingStatus(ending.id);
           const selected = story.endingFlags.selected === ending.id;
-          return `<article class="${status.eligible ? "is-ready" : ""} ${selected ? "is-selected" : ""}" style="--story-accent:${ending.color}"><small>${ending.id === "astral-rebirth" ? "SECRET ENDING" : "ENDING"}</small><strong>${escapeHtml(ending.title)}</strong><p>${escapeHtml(ending.premise)}</p><span>${status.labels.map((label) => escapeHtml(label)).join(" · ")}</span><button class="har-chip ${status.eligible ? "is-active" : ""}" type="button" data-panel-action="choose-ending" data-ending="${ending.id}" ${status.eligible ? "" : "disabled"}>${selected ? "Đã chọn" : status.eligible ? "Chọn kết thúc" : "Chưa đủ điều kiện"}</button></article>`;
+          const pending = this.pendingStoryEnding === ending.id && !story.endingFlags.selected;
+          const lockedByEnding = Boolean(story.endingFlags.selected) && !selected;
+          return `<article class="${status.eligible ? "is-ready" : ""} ${selected ? "is-selected" : ""}" style="--story-accent:${ending.color}"><small>${ending.id === "astral-rebirth" ? "SECRET ENDING" : "ENDING"}</small><strong>${escapeHtml(ending.title)}</strong><p>${escapeHtml(ending.premise)}</p><span>${status.labels.map((label) => escapeHtml(label)).join(" · ")}</span><button class="har-chip ${status.eligible ? "is-active" : ""}" type="button" data-panel-action="${pending ? "choose-ending-confirm" : "choose-ending-preview"}" data-ending="${ending.id}" ${status.eligible && !selected && !lockedByEnding ? "" : "disabled"}>${selected ? "Đã khóa kết thúc" : lockedByEnding ? "Đã chọn dòng thời gian khác" : pending ? "Xác nhận kết thúc" : status.eligible ? "Xem trước hậu quả" : "Chưa đủ điều kiện"}</button>${pending ? `<button class="har-chip" type="button" data-panel-action="choose-ending-cancel">Chọn lại</button>` : ""}</article>`;
         }).join("")}</div>`;
     }
 
@@ -9961,10 +10033,11 @@
     }
 
     renderCraftPanel() {
+      const economyModifier = clamp(this.state.world?.zones?.[this.currentZone.id]?.economyModifier ?? 1, 0.5, 1.5);
       return `
-        <div class="har-section"><h3>Chế tạo kiểm tra nguyên liệu thật</h3><p>Vật phẩm chỉ được thêm vào kho sau khi đã trừ đủ nguyên liệu. Toàn bộ thay đổi có autosave.</p></div>
+        <div class="har-section"><h3>Chế tạo kiểm tra nguyên liệu thật</h3><p>Vật phẩm chỉ được thêm vào kho sau khi đã trừ đủ nguyên liệu. Kinh tế ${escapeHtml(this.currentZone.name)} đang áp dụng hệ số ×${economyModifier.toFixed(2)} từ hậu quả cốt truyện.</p></div>
         <ul class="har-list">${RECIPES.map((recipe) => {
-          const requirements = Object.entries(recipe.requires);
+          const requirements = Object.entries(this.economyAdjustedRequirements(recipe.requires));
           const ready = requirements.every(([id, amount]) => Number(this.state.inventory[id]?.quantity || 0) >= amount);
           return `<li class="har-list-item ${ready ? "is-active" : ""}">
             <div><strong>${escapeHtml(recipe.name)}</strong><span>${requirements.map(([id, amount]) => `${ITEMS[id].name} ${this.state.inventory[id]?.quantity || 0}/${amount}`).join(" · ")}</span><small>Kết quả: ${recipe.amount} × ${ITEMS[recipe.result].name}</small></div>
@@ -10046,7 +10119,7 @@
           const weapon = this.createPlayerWeapon(profile);
           next.userData.parts.weaponAnchor.add(weapon);
           next.userData.lodVariants.attachments = [weapon];
-          weapon.visible = next.userData.modelTier !== "impostor";
+          weapon.visible = true;
           next.userData.weapon = weapon;
         }
         parent.add(next);
@@ -10057,11 +10130,6 @@
       this.characterMeshes.forEach((mesh, id) => {
         const profile = CHARACTERS[id];
         if (profile) {
-          if (mesh.userData.visualMode === "gltf-imported") {
-            mesh.userData.modelTier = "";
-            this.updateCharacterLod(mesh, id === this.state.roster.activeId ? 0 : 4);
-            return;
-          }
           const next = replaceMesh(mesh, profile, 1);
           this.characterMeshes.set(id, next);
           this.registerCharacterRuntime(next, profile, id, "hero", next.userData.builtInAnimations || []);
@@ -10254,12 +10322,12 @@
             <label class="har-field">Chất lượng<select data-setting="quality"><option value="auto">Tự động theo FPS</option><option value="low">Tiết kiệm</option><option value="medium">Vừa</option><option value="high">Cao</option><option value="cinematic">Điện ảnh</option></select></label>
             <label class="har-field">Renderer<select data-setting="rendererMode"><option value="auto">Auto ổn định · WebGL2</option><option value="webgpu">WebGPU thử nghiệm</option><option value="webgl">WebGL2 bắt buộc</option></select></label>
             <label class="har-field">Model hiển thị<select data-setting="visualStyle"><option value="photoreal">Human Rig + Mesh World PBR</option><option value="hybrid">PBR 3D nhẹ · tùy biến</option><option value="performance">3D hiệu năng</option></select></label>
-            <label class="har-field">Character runtime<select data-setting="characterMode"><option value="rigged">Human Rig 3D · Character V${CHARACTER_VISUAL_VERSION}</option><option value="portrait">Proxy 3D PBR · máy yếu</option></select></label>
-            <label class="har-field">Character LOD<select data-setting="characterQuality"><option value="adaptive">Thích ứng theo khoảng cách</option><option value="hero">Khóa Hero LOD0</option><option value="near">Khóa LOD1</option><option value="crowd">Khóa LOD2</option></select></label>
+            <label class="har-field">Character runtime<select data-setting="characterMode"><option value="hero">Human Rig 3D · Hero Prime V${CHARACTER_VISUAL_VERSION}</option></select></label>
+            <label class="har-field">Character quality<select data-setting="characterQuality"><option value="hero">Hero Prime · Full Quality Only</option></select></label>
             <label class="har-field">Khuôn mặt<select data-setting="facialAnimation"><option value="true">Chớp mắt, cảm xúc và lip-sync</option><option value="false">Tắt facial animation</option></select></label>
             <label class="har-field">Mắt tự nhiên<select data-setting="eyePerformance"><option value="true">Mí mắt, đồng tử và micro-saccade</option><option value="false">Mắt tĩnh</option></select></label>
             <label class="har-field">Chuyển động tự nhiên<select data-setting="naturalMotion"><option value="true">Analog gait · yaw smoothing</option><option value="false">Chuyển động cơ bản</option></select></label>
-            <label class="har-field">Digital Human<select data-setting="digitalHumanQuality"><option value="adaptive">Tự động theo FPS</option><option value="performance">Hiệu năng</option><option value="quality">Chất lượng</option><option value="cinematic">Điện ảnh</option></select></label>
+            <label class="har-field">Digital Human<select data-setting="digitalHumanQuality"><option value="hero">Hero Prime · facial 60 Hz</option></select></label>
             <label class="har-field">Tóc & vải động<select data-setting="secondaryMotion"><option value="true">Spring bone nhẹ</option><option value="false">Tắt secondary motion</option></select></label>
             <label class="har-field">Chi tiết vi mô<select data-setting="microDetail"><option value="true">Da normal/roughness · hair cards</option><option value="false">Vật liệu nhẹ</option></select></label>
             <label class="har-field">Da & trang phục<select data-setting="surfaceFx"><option value="true">Wetness, tuyết và nhiệt</option><option value="false">Vật liệu cố định</option></select></label>
@@ -10274,7 +10342,7 @@
             <label class="har-field">Hiệu ứng<select data-setting="reduceEffects"><option value="false">Đầy đủ</option><option value="true">Giảm chuyển động</option></select></label>
           </div>
         </div>
-        <div class="har-section"><h3>Điều khiển</h3><p>WASD di chuyển · Shift chạy · Space nhảy/lượn · F đánh · Q né · E kỹ năng · R tuyệt kỹ · G/T tương tác · Tab khóa mục tiêu · chuột phải xoay camera.</p></div>
+        <div class="har-section"><h3>Điều khiển</h3><p>WASD di chuyển · Shift chạy · Space nhảy/lượn · F đánh · Q né · E kỹ năng · R tuyệt kỹ · G/T tương tác · L khóa mục tiêu · chuột phải xoay camera. Tab luôn dành cho điều hướng bàn phím.</p></div>
         <div class="har-section"><h3>Lưu tiến trình</h3><p>${record ? `Local v${record.version} · ${new Date(record.updatedAt).toLocaleString("vi-VN")} · ${this.state.cloud.status}` : "Chưa có bản lưu."}</p>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="manual-save">Lưu checkpoint</button><button class="har-secondary-button" type="button" data-panel-action="sync-cloud">Đồng bộ tài khoản</button></div>
         </div>
@@ -10328,11 +10396,7 @@
         }
       };
       body.onchange = (event) => {
-        if (event.target.matches("[data-character-glb]")) {
-          const file = event.target.files?.[0];
-          if (file) this.importCharacterGLB(file);
-          event.target.value = "";
-        } else if (event.target.matches("[data-inventory-filter]")) {
+        if (event.target.matches("[data-inventory-filter]")) {
           this.inventoryFilter = event.target.value;
           this.renderCurrentPanel();
         } else if (event.target.matches("[data-inventory-sort]")) {
@@ -10397,22 +10461,26 @@
           if (key === "surfaceFx" && value === false) {
             this.characterMeshes.forEach((mesh) => this.restoreCharacterMaterialState(mesh, 1));
           }
-          if (key === "characterMode") {
+          if (key === "characterMode" || key === "characterQuality") {
+            this.state.settings.characterMode = "hero";
+            this.state.settings.characterQuality = "hero";
             this.refreshCharacterMaterials();
-            this.toast("Character runtime đã chuyển chế độ.", "success");
-          }
-          if (key === "characterQuality") this.characterMeshes.forEach((mesh) => { mesh.userData.modelTier = ""; });
-          if (key === "digitalHumanQuality") {
-            const mappedQuality = { performance: "crowd", quality: "near", cinematic: "hero" }[value] || "adaptive";
-            this.state.settings.characterQuality = mappedQuality;
             this.characterMeshes.forEach((mesh) => { mesh.userData.modelTier = ""; });
-            this.toast("Digital Human quality đã được áp dụng.", "success");
+            this.toast("Hero Prime đã khóa ở Full Quality.", "success");
+          }
+          if (key === "digitalHumanQuality") {
+            this.state.settings.digitalHumanQuality = "hero";
+            this.state.settings.characterQuality = "hero";
+            this.characterMeshes.forEach((mesh) => { mesh.userData.modelTier = ""; });
+            this.toast("Hero Prime facial 60 Hz đã được áp dụng.", "success");
           }
           if (key === "visualStyle") this.toast("Phong cách nhân vật và cảnh quan sẽ áp dụng ở lần mở game kế tiếp.");
           if (key === "vfxLevel") {
             this.root.dataset.vfx = value;
+            this.syncMotionPreference();
             this.toast("Mức hiệu ứng đã được cập nhật.", "success");
           }
+          if (key === "reduceEffects") this.syncMotionPreference();
           if (key === "livingWorld") this.toast("Thế giới sống sẽ áp dụng ở lần mở game kế tiếp.");
           if (key === "dynamicResolution") this.dynamicResolution = value ? this.renderScale : 1;
           if (key === "volume" && this.audioMaster) this.audioMaster.gain.value = value / 100 * 0.15;
@@ -10484,25 +10552,108 @@
       return true;
     }
 
-    advanceStoryMission(zoneId) {
+    storyObjective(zoneId) {
       const mission = STORY_MISSIONS.find((item) => item.zoneId === zoneId);
       const record = this.state.story.missions?.[zoneId];
-      if (!mission || !record || record.status !== "active") return;
-      if (this.currentZone.id !== zoneId) return this.toast(`Hãy tới ${ZONES.find((zone) => zone.id === zoneId)?.name || zoneId} để thực hiện bước này.`, "error");
-      const stepIndex = clamp(record.progress, 0, mission.steps.length - 1);
-      const step = mission.steps[stepIndex];
-      record.progress = clamp(record.progress + 1, 0, mission.steps.length);
-      if (stepIndex < mission.echoes.length) this.unlockStoryEcho(mission.echoes[stepIndex], `Nhiệm vụ ${mission.title}`);
-      this.recordWorldEvent({ type: "story-progress", title: `${mission.title} · ${record.progress}/${mission.steps.length}`, detail: step, zoneId });
-      if (record.progress >= mission.steps.length) {
-        record.status = "decision";
-        this.toast("Một lựa chọn dài hạn đã mở. Hãy xem kỹ hậu quả trước khi xác nhận.", "success");
-      } else this.toast(`Đã hoàn thành: ${step}`, "success");
-      this.saveProgress(`Story mission · ${mission.title}`);
-      this.renderCurrentPanel();
+      if (!mission || !record || record.status !== "active") return null;
+      const index = clamp(record.progress, 0, mission.steps.length - 1);
+      return { mission, record, index, objective: STORY_OBJECTIVES[zoneId]?.[index] || null };
     }
 
-    resolveStoryMissionChoice(zoneId, choiceId) {
+    storyEventKey(event, meta = {}) {
+      const identity = meta.eventKey || meta.enemyId || meta.nodeId || meta.puzzleId || meta.npcId || meta.zoneId || "unknown";
+      return `${String(event).slice(0, 32)}:${String(identity).slice(0, 64)}`;
+    }
+
+    matchesStoryObjective(objective, event, meta, zoneId) {
+      if (!objective || objective.event !== event) return false;
+      if (["enter-zone", "beacon", "scan", "defeat", "collect"].includes(event) && meta.zoneId !== zoneId) return false;
+      if (objective.npcId && objective.npcId !== meta.npcId) return false;
+      if (objective.puzzleId && objective.puzzleId !== meta.puzzleId) return false;
+      if (objective.archetype && objective.archetype !== meta.archetype) return false;
+      if (objective.nodeId && objective.nodeId !== meta.nodeId) return false;
+      return true;
+    }
+
+    progressStoryObjective(event, meta = {}, { silent = false } = {}) {
+      const active = STORY_MISSIONS.map((mission) => this.storyObjective(mission.zoneId)).find(Boolean);
+      if (!active || !this.matchesStoryObjective(active.objective, event, meta, active.mission.zoneId)) return false;
+      const eventKey = this.storyEventKey(event, meta);
+      active.record.completedEventKeys ||= [];
+      if (active.record.completedEventKeys.includes(eventKey)) return false;
+      active.record.completedEventKeys = [...active.record.completedEventKeys, eventKey].slice(-24);
+      active.record.objectiveProgress = clamp(Number(active.record.objectiveProgress || 0) + 1, 0, active.objective.target || 1);
+      if (active.record.objectiveProgress < (active.objective.target || 1)) {
+        if (!silent) this.toast(`${active.objective.label} · ${active.record.objectiveProgress}/${active.objective.target}`, "success");
+        this.saveProgress(`Story objective · ${active.mission.title}`);
+        if (["story", "quests"].includes(this.currentPanel)) this.renderCurrentPanel();
+        return true;
+      }
+      const completedStep = active.index;
+      active.record.progress = clamp(active.record.progress + 1, 0, active.mission.steps.length);
+      active.record.objectiveProgress = 0;
+      if (completedStep < active.mission.echoes.length) this.unlockStoryEcho(active.mission.echoes[completedStep], `Gameplay · ${active.objective.label}`);
+      this.recordWorldEvent({ type: "story-progress", title: `${active.mission.title} · ${active.record.progress}/${active.mission.steps.length}`, detail: active.objective.label, zoneId: active.mission.zoneId });
+      if (active.record.progress >= active.mission.steps.length) {
+        active.record.status = "decision";
+        if (!silent) this.toast("Gameplay đã mở một lựa chọn dài hạn. Hãy xem kỹ hậu quả trước khi xác nhận.", "success");
+      } else if (!silent) this.toast(`Hoàn thành mục tiêu: ${active.objective.label}`, "success");
+      this.saveProgress(`Story gameplay · ${active.mission.title}`);
+      if (["story", "quests"].includes(this.currentPanel)) this.renderCurrentPanel();
+      return true;
+    }
+
+    reconcileStoryObjective() {
+      for (let guard = 0; guard < 8; guard += 1) {
+        const active = STORY_MISSIONS.map((mission) => this.storyObjective(mission.zoneId)).find(Boolean);
+        if (!active?.objective) return;
+        const objective = active.objective;
+        const zoneId = active.mission.zoneId;
+        let progressed = false;
+        if (objective.event === "enter-zone" && this.currentZone.id === zoneId) progressed = this.progressStoryObjective("enter-zone", { zoneId }, { silent: true });
+        else if (objective.event === "scan" && this.state.exploration.scans.includes(`zone:${zoneId}:scan`)) progressed = this.progressStoryObjective("scan", { zoneId }, { silent: true });
+        else if (objective.event === "puzzle" && this.state.puzzles[objective.puzzleId]?.solved) progressed = this.progressStoryObjective("puzzle", { zoneId, puzzleId: objective.puzzleId }, { silent: true });
+        else if (objective.event === "collect" && this.state.collectedNodes.includes(objective.nodeId)) progressed = this.progressStoryObjective("collect", { zoneId, nodeId: objective.nodeId }, { silent: true });
+        else if (objective.event === "dialogue" && objective.npcId === "luma" && this.state.story.hiddenSignals.lumaDeniesMira) progressed = this.progressStoryObjective("dialogue", { zoneId, npcId: "luma", eventKey: "luma:mira" }, { silent: true });
+        else if (objective.event === "beacon" && this.state.story.hiddenSignals[`storyBeacon:${zoneId}`]) progressed = this.progressStoryObjective("beacon", { zoneId }, { silent: true });
+        else if (objective.event === "defeat") {
+          const defeatedIds = Object.keys(this.state.defeated || {}).filter((enemyId) => {
+            const enemy = this.enemies.get(enemyId);
+            return enemy?.userData?.archetype === objective.archetype && this.zoneAt(enemy.position.x, enemy.position.z).id === zoneId;
+          });
+          defeatedIds.forEach((enemyId) => { if (this.progressStoryObjective("defeat", { zoneId, archetype: objective.archetype, enemyId }, { silent: true })) progressed = true; });
+        }
+        if (!progressed) return;
+      }
+    }
+
+    activateStoryBeacon(beacon) {
+      const zoneId = beacon?.userData?.zoneId;
+      if (!STORY_ZONE_ORDER.includes(zoneId)) return;
+      this.state.story.hiddenSignals[`storyBeacon:${zoneId}`] = true;
+      const progressed = this.progressStoryObjective("beacon", { zoneId, eventKey: beacon.userData.id });
+      this.spawnNova(beacon.position.x, beacon.position.y + 1.4, beacon.position.z, TRUTH_SHARDS[zoneId].color);
+      if (progressed) {
+        beacon.userData.core.material.emissiveIntensity = 1.35;
+        beacon.userData.ring.material.opacity = 0.9;
+      } else {
+        this.toast("Dư ảnh này đã được ghi vào Memory Constellation.");
+        this.openPanel("story");
+      }
+    }
+
+    revealLongTermConsequences(chapter) {
+      (this.state.story.longTermConsequences || []).forEach((consequence) => {
+        if (consequence.visibleAtChapter !== chapter) return;
+        const signalKey = `consequence:${consequence.id}`;
+        if (this.state.story.hiddenSignals[signalKey]) return;
+        this.state.story.hiddenSignals[signalKey] = true;
+        this.queueStoryRecap(`Hậu quả trở lại · ${consequence.title}`, consequence.detail);
+        this.recordWorldEvent({ type: "story-consequence", title: consequence.title, detail: consequence.detail, zoneId: consequence.zoneId });
+      });
+    }
+
+    async resolveStoryMissionChoice(zoneId, choiceId) {
       const mission = STORY_MISSIONS.find((item) => item.zoneId === zoneId);
       const record = this.state.story.missions?.[zoneId];
       const choice = mission?.choices.find((item) => item.id === choiceId);
@@ -10515,6 +10666,7 @@
       zoneState.restored = true;
       zoneState.core = "restored";
       zoneState.weatherLabel = choice.weather;
+      zoneState.weatherSeverity = clamp(0.46 + Math.abs(Number(choice.economy || 1) - 1) * 1.8 + Number(choice.dangerous || 0) * 0.12, 0.35, 1);
       zoneState.economyModifier = clamp(choice.economy ?? 1, 0.5, 1.5);
       zoneState.controlState = String(choice.control || "independent").slice(0, 40);
       if (FACTIONS.some((faction) => faction.id === choice.control)) zoneState.occupation = choice.control;
@@ -10526,7 +10678,7 @@
         companion.trust = clamp(Number(companion.trust || 0) + Number(choice.trust || 0), -10, 10);
         companion.fear = clamp(Number(companion.fear || 0) + Number(choice.fear || 0), 0, 10);
         companion.loyalty = clamp(Number(companion.loyalty || 0) + Math.sign(Number(choice.trust || 0)), -10, 10);
-        companion.memoryIntegrity = clamp(Number(companion.memoryIntegrity || 10) + Number(choice.memory || 0), 0, 10);
+        companion.memoryIntegrity = clamp(Number(companion.memoryIntegrity ?? 10) + Number(choice.memory || 0), 0, 10);
         companion.departed = choice.departed === true;
         companion.storyStage = clamp(Number(companion.storyStage || 0) + 1, 0, 5);
       }
@@ -10545,7 +10697,7 @@
       const nextZoneId = STORY_ZONE_ORDER[index + 1];
       if (nextZoneId) {
         this.state.story.missions[nextZoneId].status = "active";
-        this.state.story.chapter = TRUTH_SHARDS[nextZoneId].title.toLowerCase();
+        this.state.story.chapter = nextZoneId;
         this.state.checkpoints[nextZoneId] = true;
         const portal = this.portals.get(nextZoneId);
         if (portal) portal.userData.unlocked = true;
@@ -10556,18 +10708,30 @@
           this.state.companions.lyra.trust = clamp(this.state.companions.lyra.trust + 2, -10, 10);
         }
       }
+      this.pendingStoryChoice = null;
+      this.revealLongTermConsequences(this.state.story.chapter);
       this.refreshWorldStateVisuals();
       this.grantXp(240 + index * 40);
       this.spawnNova(this.state.player.x, this.state.player.y + 1, this.state.player.z, TRUTH_SHARDS[zoneId].color);
       this.toast(`Truth Shard ${TRUTH_SHARDS[zoneId].title} đã được lưu. Hậu quả đã áp dụng vào thế giới.`, "success");
-      this.saveProgress(`Truth Shard · ${TRUTH_SHARDS[zoneId].title}`);
+      this.reconcileStoryObjective();
+      await this.saveProgress(`Truth Shard · ${TRUTH_SHARDS[zoneId].title}`);
       this.renderCurrentPanel();
     }
 
     linkZoneEchoes(zoneId) {
       const echoes = ECHO_MEMORIES.filter((echo) => echo.zoneId === zoneId);
       if (echoes.length !== 2 || !echoes.every((echo) => this.state.story.echoes[echo.id]?.unlocked)) return;
-      if (this.state.story.constellationLinks.some((link) => link.from === echoes[0].id && link.to === echoes[1].id)) return;
+      const alreadyLinked = this.state.story.constellationLinks.some((link) => (
+        [link.from, link.to].includes(echoes[0].id) && [link.from, link.to].includes(echoes[1].id)
+      ));
+      if (alreadyLinked) {
+        if (zoneId === "abyss") {
+          this.state.story.endingFlags.genesisPurpose = true;
+          this.state.story.hiddenSignals.genesisIsEscapeRoute = true;
+        }
+        return;
+      }
       this.state.story.constellationLinks.push({ id: uid("echo-link"), from: echoes[0].id, to: echoes[1].id, createdAt: nowIso() });
       if (zoneId === "abyss") {
         this.state.story.endingFlags.genesisPurpose = true;
@@ -10582,29 +10746,81 @@
     resumeStoryMission() {
       const mission = STORY_MISSIONS.find((item) => ["active", "decision"].includes(this.state.story.missions[item.zoneId]?.status));
       if (!mission) return this.openPanel("story");
+      const record = this.state.story.missions[mission.zoneId];
+      if (record.status === "decision") return this.openPanel("story");
       if (this.currentZone.id !== mission.zoneId && this.state.checkpoints[mission.zoneId]) {
         const zone = ZONES.find((item) => item.id === mission.zoneId);
         this.teleport(zone.x, zone.z + 5, zone.name);
       }
-      this.openPanel("story");
+      const objective = STORY_OBJECTIVES[mission.zoneId]?.[record.progress];
+      this.closePanel();
+      if (objective) this.toast(`Mục tiêu: ${objective.label}`);
     }
 
-    chooseStoryEnding(endingId) {
+    applyEndingConsequences(endingId) {
+      const zones = this.state.world.zones;
+      if (endingId === "restoration") {
+        Object.values(zones).forEach((zone) => {
+          zone.restored = true;
+          zone.controlState = "restored-constellation";
+          zone.weatherSeverity = Math.min(Number(zone.weatherSeverity || 0.58), 0.64);
+        });
+      } else if (endingId === "perfect-silence") {
+        this.state.world.activeEvent = null;
+        Object.values(zones).forEach((zone) => {
+          zone.controlState = "archive-stable";
+          zone.weatherLabel = "Tĩnh lặng hoàn hảo";
+          zone.weatherSeverity = 0.24;
+        });
+      } else if (endingId === "one-true-world") {
+        Object.entries(zones).forEach(([zoneId, zone]) => {
+          zone.controlState = zoneId === "central" ? "prime-world" : "merged-into-prime";
+          zone.economyModifier = zoneId === "central" ? 0.76 : 1.2;
+        });
+      } else if (endingId === "free-constellation") {
+        Object.values(zones).forEach((zone) => {
+          zone.controlState = "independent-reality";
+          zone.economyModifier = 0.92;
+        });
+      } else if (endingId === "astral-rebirth") {
+        zones.central.core = "awakened";
+        zones.central.controlState = "traveler-core";
+        zones.central.weatherLabel = "Bình minh Astral";
+        zones.central.weatherSeverity = 0.36;
+        this.state.player.ultimate = 100;
+      }
+      Object.values(zones).forEach((zone) => { zone.updatedAt = nowIso(); });
+      this.refreshWorldStateVisuals();
+      this.updateWeatherAppearance();
+    }
+
+    async chooseStoryEnding(endingId) {
       const ending = STORY_ENDINGS.find((item) => item.id === endingId);
       const status = this.storyEndingStatus(endingId);
       if (!ending || !status.eligible) return this.toast("Ending này chưa đủ điều kiện từ save hiện tại.", "error");
+      if (this.state.story.endingFlags.selected) {
+        this.toast("Dòng thời gian kết thúc đã được khóa cho vòng chơi này.", "error");
+        return;
+      }
       this.state.story.endingFlags.selected = endingId;
+      this.pendingStoryEnding = "";
       this.state.story.chapter = "epilogue";
       this.state.story.identityStatus = endingId === "astral-rebirth" ? "core" : endingId === "perfect-silence" ? "erased" : "remembered";
+      this.applyEndingConsequences(endingId);
+      this.revealLongTermConsequences("epilogue");
       this.recordWorldEvent({ type: "ending", title: ending.title, detail: ending.premise, zoneId: "abyss" });
       this.queueStoryRecap(`Ending · ${ending.title}`, ending.premise);
-      this.saveProgress(`Ending · ${ending.title}`);
+      await this.saveProgress(`Ending · ${ending.title}`);
       this.showStoryEnding(endingId);
     }
 
-    startStoryNewGamePlus() {
+    async startStoryNewGamePlus() {
+      if (!this.state.story.endingFlags.selected) return this.toast("Hãy hoàn thành và khóa một ending trước khi bắt đầu New Game+.", "error");
+      await this.saveProgress("Checkpoint trước New Game+");
       const retainedEchoes = clone(this.state.story.echoes);
       const retainedLinks = clone(this.state.story.constellationLinks);
+      const retainedGenesisPurpose = this.state.story.endingFlags.genesisPurpose === true;
+      const retainedCodex = [...(this.state.exploration.codex || [])];
       const nextCycle = Number(this.state.story.newGamePlus || 0) + 1;
       this.state.story = defaultStoryState();
       this.state.story.newGamePlus = nextCycle;
@@ -10613,16 +10829,48 @@
       this.state.story.chapter = "identity";
       this.state.story.echoes = retainedEchoes;
       this.state.story.constellationLinks = retainedLinks;
+      this.state.story.endingFlags.genesisPurpose = retainedGenesisPurpose;
       this.state.story.hiddenSignals = { echoRetentionDetected: true, aionRecognizesCycle: nextCycle };
       this.state.checkpoints = Object.fromEntries(ZONES.map((zone) => [zone.id, zone.id === "central"]));
-      Object.entries(this.state.world.zones).forEach(([zoneId, record]) => {
-        const fallback = WORLD_ZONE_DEFAULTS[zoneId];
-        Object.assign(record, fallback, { discovered: zoneId === "central", updatedAt: nowIso() });
+      this.state.world = defaultWorldState();
+      const explorationDefaults = defaultState().exploration;
+      this.state.exploration = { ...explorationDefaults, codex: retainedCodex };
+      this.state.activatedGates = [];
+      this.state.collectedNodes = [];
+      this.state.puzzles = {};
+      this.state.defeated = {};
+      Object.assign(this.state.player, {
+        x: 0,
+        y: 1.2,
+        z: 5,
+        rotation: 0,
+        checkpoint: "central",
+        health: this.state.player.maxHealth,
+        stamina: this.state.player.maxStamina,
+        ultimate: 0
       });
       this.queueStoryRecap(`New Game+ ${nextCycle}`, "Echo Memory còn nguyên nhưng Aion nhận ra vòng lặp. Một số tín hiệu và hội thoại sẽ thay đổi.");
       this.recordWorldEvent({ type: "new-game-plus", title: `New Game+ ${nextCycle}`, detail: "Character DNA và Echo Memory được giữ; Truth Shard và hậu quả thế giới đã tái phân nhánh.", zoneId: "central" });
+      this.currentZone = ZONES.find((zone) => zone.id === "central") || ZONES[0];
+      this.enemies.forEach((enemy) => {
+        enemy.userData.health = enemy.userData.maxHealth;
+        enemy.userData.defeated = false;
+        enemy.userData.respawnAt = 0;
+        enemy.visible = true;
+      });
+      this.collectibles.forEach((node) => { node.visible = true; });
+      this.puzzleNodes.forEach((puzzle) => {
+        puzzle.userData.solved = false;
+        puzzle.children.forEach((child) => { if (child.material) child.material.emissiveIntensity = 0.18; });
+      });
+      this.storyBeacons.forEach((beacon) => {
+        beacon.userData.core.material.emissiveIntensity = 0.72;
+        beacon.userData.ring.material.opacity = 0.58;
+      });
+      reconcileStoryState(this.state);
       this.applyStateToWorld();
-      this.saveProgress(`New Game+ ${nextCycle}`);
+      this.updateWeatherAppearance();
+      await this.saveProgress(`New Game+ ${nextCycle}`);
       this.toast(`New Game+ ${nextCycle} bắt đầu · Echo Memory được giữ.`, "success");
     }
 
@@ -10789,8 +11037,12 @@
 
     scanCurrentZone() {
       const zone = this.currentZone;
+      if (!STORY_ZONE_ORDER.includes(zone.id) || !this.state.world.zones[zone.id]) return this.toast("Bí cảnh này không có điểm neo ổn định để Deep Scan.", "error");
       const id = `zone:${zone.id}:scan`;
-      if (this.state.exploration.scans.includes(id)) return this.toast("Khu vực này đã được quét.");
+      if (this.state.exploration.scans.includes(id)) {
+        const progressed = this.progressStoryObjective("scan", { zoneId: zone.id });
+        return this.toast(progressed ? "Dữ liệu Deep Scan cũ đã được nối vào nhiệm vụ hiện tại." : "Khu vực này đã được quét.", progressed ? "success" : "info");
+      }
       this.state.exploration.scans.push(id);
       this.state.exploration.codex.push(zone.id);
       this.state.exploration.mapFog[zone.id] = clamp((this.state.exploration.mapFog[zone.id] || 100) - 25, 0, 100);
@@ -10798,6 +11050,7 @@
       this.recordWorldEvent({ type: "scan", title: `Đã quét ${zone.name}`, detail: "Entry mới được thêm vào Astral Codex.", zoneId: zone.id });
       const hiddenEcho = ECHO_MEMORIES.find((echo) => echo.zoneId === zone.id && !this.state.story.echoes[echo.id]?.unlocked);
       if (hiddenEcho) this.unlockStoryEcho(hiddenEcho.id, `Deep Scan tại ${zone.name}`);
+      this.progressStoryObjective("scan", { zoneId: zone.id });
       const scanReward = ["aurora", "sky", "ocean"].includes(zone.id)
         ? "aurora-shard"
         : ["crimson", "station"].includes(zone.id)
@@ -10844,17 +11097,40 @@
       else if (action === "toggle-training") this.toggleTraining();
       else if (action === "scan-codex") this.scanCurrentZone();
       else if (action === "story-resume") this.resumeStoryMission();
-      else if (action === "story-step") this.advanceStoryMission(data.zone);
-      else if (action === "story-choice") this.resolveStoryMissionChoice(data.zone, data.choice);
+      else if (action === "story-play") {
+        const active = this.storyObjective(data.zone);
+        this.closePanel();
+        if (active?.objective) this.toast(`Mục tiêu gameplay: ${active.objective.label}`);
+      }
+      else if (action === "story-scan") this.scanCurrentZone();
+      else if (action === "story-choice-preview") {
+        this.pendingStoryChoice = { zoneId: data.zone, choiceId: data.choice };
+        this.renderCurrentPanel();
+      }
+      else if (action === "story-choice-confirm") await this.resolveStoryMissionChoice(data.zone, data.choice);
+      else if (action === "story-choice-cancel") {
+        this.pendingStoryChoice = null;
+        this.renderCurrentPanel();
+      }
       else if (action === "story-teleport") {
         const zone = ZONES.find((item) => item.id === data.zone);
         if (zone && this.state.checkpoints[zone.id]) {
           this.teleport(zone.x, zone.z + 5, zone.name);
-          this.openPanel("story");
         }
       }
       else if (action === "link-zone-echoes") this.linkZoneEchoes(data.zone);
-      else if (action === "choose-ending") this.chooseStoryEnding(data.ending);
+      else if (action === "story-scroll") {
+        this.root.querySelector(`#${String(data.storyTarget || "").replace(/[^a-z-]/g, "")}`)?.scrollIntoView?.({ behavior: this.state.settings.reduceEffects ? "auto" : "smooth", block: "start" });
+      }
+      else if (action === "choose-ending-preview") {
+        this.pendingStoryEnding = data.ending;
+        this.renderCurrentPanel();
+      }
+      else if (action === "choose-ending-confirm") await this.chooseStoryEnding(data.ending);
+      else if (action === "choose-ending-cancel") {
+        this.pendingStoryEnding = "";
+        this.renderCurrentPanel();
+      }
       else if (action === "story-recap") this.showStoryRecap();
       else if (action === "story-replay") this.showStoryPrologue({ replay: true });
       else if (action === "open-characters") this.openPanel("characters");
@@ -11002,29 +11278,35 @@
 
     async saveProgress(label = "Autosave") {
       if (this.destroyed || !this.started) return null;
+      this.pendingSaveLabel = String(label || "Autosave").slice(0, 120);
       if (this.savingPromise) return this.savingPromise;
-      this.state.updatedAt = nowIso();
-      this.savingPromise = this.store.save(this.snapshot(), "slot1", label)
-        .then((record) => {
-          this.savedRecord = record;
-          this.state.saveVersion = record.version;
-          this.lastSaveAt = Date.now();
+      this.savingPromise = (async () => {
+        let latestRecord = this.savedRecord;
+        while (this.pendingSaveLabel && !this.destroyed) {
+          const label = this.pendingSaveLabel;
+          this.pendingSaveLabel = "";
+          this.state.updatedAt = nowIso();
           try {
-            this.runtime?.checkpoint?.(this.snapshot(), { slot: "slot-1", label });
-          } catch {
-            // The dedicated IndexedDB save above is authoritative for local play.
-            // A shared runtime checkpoint must never turn a successful save into
-            // a visible error for the player.
+            const record = await this.store.save(this.snapshot(), "slot1", label);
+            this.savedRecord = record;
+            this.state.saveVersion = record.version;
+            this.lastSaveAt = Date.now();
+            latestRecord = record;
+            try {
+              this.runtime?.checkpoint?.(this.snapshot(), { slot: "slot-1", label });
+            } catch {
+              // IndexedDB is authoritative; an optional shared runtime checkpoint
+              // must never turn a successful local save into a visible failure.
+            }
+          } catch (error) {
+            this.toast(error.message || "Không lưu được tiến trình.", "error");
           }
-          return record;
-        })
-        .catch((error) => {
-          this.toast(error.message || "Không lưu được tiến trình.", "error");
-          return null;
-        })
-        .finally(() => {
-          this.savingPromise = null;
-        });
+        }
+        return latestRecord;
+      })().finally(() => {
+        this.savingPromise = null;
+        if (this.pendingSaveLabel && !this.destroyed) this.saveProgress(this.pendingSaveLabel);
+      });
       return this.savingPromise;
     }
 
@@ -11128,6 +11410,7 @@
         world: this.state.world,
         ship: this.state.ship,
         companions: this.state.companions,
+        story: this.state.story,
         progression: this.state.progression
       });
       let hash = 2166136261;
@@ -11624,8 +11907,8 @@
           loaderReady: Boolean(this.GLTFLoaderClass),
           decodersReady: this.characterDecodersReady,
           source: activeCharacterRuntime?.source || activeCharacterMesh?.userData?.sourceProvider || "not-started",
-          sourceProviderId: activeCharacterMesh?.userData?.sourceProviderId || "fallback",
-          catalogModels: this.characterPipelineManifest.filter((entry) => entry.provider === "valid-avatar").length,
+          sourceProviderId: activeCharacterMesh?.userData?.sourceProviderId || "hero-core",
+          catalogModels: 0,
           visualMode: activeCharacterMesh?.userData?.visualMode || "not-started",
           tier: activeCharacterMesh?.userData?.modelTier || "not-started",
           motion: activeCharacterRuntime?.state || this.activeAnimation,

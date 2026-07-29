@@ -15,12 +15,12 @@ function between(startToken, endToken) {
   return source.slice(start, end);
 }
 
-test("Character V12 is the only release selected by the game route and offline catalog", () => {
+test("Character V13 Hero Prime is the only release selected by the game route and offline catalog", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
 
-  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*12/);
-  for (const asset of ["astral-realms.css?v=22", "astral-realms.js?v=22"]) {
+  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*13/);
+  for (const asset of ["astral-realms.css?v=34", "astral-realms.js?v=34"]) {
     assert.ok(loader.includes(asset), `route loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }
@@ -78,7 +78,7 @@ test("one-shot clips fit their duration to the requested action window", () => {
   assert.match(playClip, /runtime\.actionTimeScale\s*=\s*fittedTimeScale/);
 });
 
-test("GLB import has decoded-asset budgets, QA reporting and validation before installation", () => {
+test("GLB inspection has decoded-asset budgets and cannot replace the canonical Hero Prime", () => {
   const limitsStart = source.indexOf("const CHARACTER_IMPORT_LIMITS");
   const limitsEnd = source.indexOf("const HH_HUMANOID_SKELETON", limitsStart);
   assert.ok(limitsStart >= 0 && limitsEnd > limitsStart, "missing CHARACTER_IMPORT_LIMITS contract");
@@ -90,13 +90,16 @@ test("GLB import has decoded-asset budgets, QA reporting and validation before i
   assert.match(source, /buildCharacterQaReport\s*\(/);
   assert.match(source, /validateCharacterAsset\s*\(/);
 
-  const importBody = between("    async importCharacterGLB(file) {", "    installImportedCharacter(");
+  const importBody = between("    async importCharacterGLB(file) {", "    async toggleFacePilot()");
   const parseAt = importBody.indexOf("loader.parse");
   const validateAt = importBody.indexOf("validateCharacterAsset");
-  const installAt = importBody.indexOf("installImportedCharacter");
   assert.ok(parseAt >= 0, "GLB must be parsed locally");
   assert.ok(validateAt > parseAt, "decoded GLB must be validated after parsing");
-  assert.ok(installAt > validateAt, "invalid GLB must be rejected before scene installation");
+  assert.doesNotMatch(
+    importBody,
+    /installImportedCharacter\s*\(/,
+    "local GLB inspection must not replace the one canonical player model"
+  );
 });
 
 test("texture QA and disposal cover physical, lighting and environment map slots", () => {
@@ -128,7 +131,7 @@ test("GLTF support remains required while optional compression decoders fail ind
 });
 
 test("KTX2 transcoding detects renderer support before the GLB is parsed", () => {
-  const importBody = between("    async importCharacterGLB(file) {", "    installImportedCharacter(");
+  const importBody = between("    async importCharacterGLB(file) {", "    async toggleFacePilot()");
   const createAt = importBody.indexOf("new this.KTX2LoaderClass()");
   const detectAt = importBody.indexOf("ktx2Loader.detectSupport(this.renderer)");
   const attachAt = importBody.indexOf("loader.setKTX2Loader(ktx2Loader)");
@@ -157,15 +160,14 @@ test("both CSP layers permit the explicit MediaPipe Face Pilot runtime", () => {
   }
 });
 
-test("the portrait atlas remains a valid UI-only asset", () => {
+test("the portrait atlas remains UI-only and never enters the player geometry pipeline", () => {
   const atlasPath = path.join(root, "assets", "astral-realms", "astral-crew-atlas-v2.webp");
   const atlas = fs.readFileSync(atlasPath);
   const worker = read("sw.js");
-  const manifest = read("assets/astral-realms/manifest.json");
+  const heroFactory = between("    createBuiltInRiggedCharacter(profile, scale = 1) {", "    characterTrackTargetsRoot(");
 
-  assert.match(manifest, /astral-crew-atlas-v2\.webp/);
-  assert.match(manifest, /used only by interface cards/);
   assert.doesNotMatch(source, /createCharacterImpostor|isCharacterImpostor/);
+  assert.doesNotMatch(heroFactory, /astral-crew-atlas|portrait|SpriteMaterial/);
   assert.ok(atlas.length > 1_000, "atlas v2 must not be an empty placeholder");
   assert.equal(atlas.subarray(0, 4).toString("ascii"), "RIFF");
   assert.equal(atlas.subarray(8, 12).toString("ascii"), "WEBP");
@@ -185,79 +187,57 @@ test("hair-card alphaMap stores its opacity mask in RGB including the green chan
   assert.match(textureBody, /kind\s*===\s*"hair-alpha"[\s\S]{0,180}\?\s*this\.THREE\.NoColorSpace/);
 });
 
-test("LOD changes select real variants and a distant 3D proxy instead of changing labels only", () => {
-  const lodBody = between("    updateCharacterLod(mesh, distance = 0) {", "    async importCharacterGLB(file) {");
-
-  assert.match(source, /createCharacterMesh\(\{ body: profile\.body, accent: profile\.accent/);
-  assert.match(source, /Imported3DProxy/);
-  assert.doesNotMatch(source, /createCharacterImpostor|isCharacterImpostor/);
-  assert.match(source, /lodVariants/);
-  assert.match(lodBody, /lodVariants/);
-  assert.match(lodBody, /\.visible\s*=/);
-  assert.match(lodBody, /impostor/);
-  assert.match(source, /proxy3d\.userData\.isCharacterLodProxy\s*=\s*true/);
-});
-
-test("low LOD always suspends animation, zeros morphs and prevents Face Pilot inference", () => {
+test("Hero Prime is the only character tier and stays at facial 60 Hz at every distance", () => {
+  const tierBody = between("  const CHARACTER_MODEL_TIERS = Object.freeze({", "  const CHARACTER_ASSET_CLASSES");
   const lodBody = between("    updateCharacterLod(mesh, distance = 0) {", "    disposeCharacterObject(");
   const facePilotBody = between("    updateFacePilotFrame() {", "    stopFacePilot() {");
-  const lowTierAt = lodBody.indexOf('["crowd", "impostor"].includes(tier)');
-  const suspendAt = lodBody.indexOf("runtime.lodSuspended = lowDetailTier");
-  const zeroMorphAt = lodBody.indexOf("object.morphTargetInfluences.fill(0)");
-  const sameTierReturnAt = lodBody.indexOf("if (mesh.userData.modelTier === tier) return");
 
-  assert.ok(lowTierAt >= 0);
-  assert.ok(suspendAt > lowTierAt, "low tier must suspend its mixer runtime");
-  assert.ok(zeroMorphAt > suspendAt, "low tier must clear facial/appearance morph work");
-  assert.ok(
-    sameTierReturnAt > zeroMorphAt,
-    "suspension and morph clearing must still run when the tier label has not changed"
-  );
-  assert.match(facePilotBody, /!\["crowd",\s*"impostor"\]\.includes\(faceTier\)/);
+  assert.match(tierBody, /hero:\s*\{[^}]*face:\s*52[^}]*updateHz:\s*60/);
+  assert.doesNotMatch(tierBody, /\bnear\b|\bcrowd\b|\bimpostor\b/);
+  assert.match(lodBody, /const tier\s*=\s*"hero"/);
+  assert.match(lodBody, /runtime\.updateHz\s*=\s*CHARACTER_MODEL_TIERS\.hero\.updateHz/);
+  assert.match(lodBody, /runtime\.faceChannelBudget\s*=\s*CHARACTER_MODEL_TIERS\.hero\.face/);
+  assert.doesNotMatch(lodBody, /\bnear\b|\bcrowd\b|\bimpostor\b|morphTargetInfluences\.fill\(0\)/);
+  assert.doesNotMatch(facePilotBody, /\["crowd",\s*"impostor"\]|faceTier/);
   assert.match(facePilotBody, /this\.visible\s*&&\s*canDetectFace[\s\S]{0,700}detectForVideo/);
 });
 
-test("imported explicit LOD starts with an unset tier and is actively initialized", () => {
-  const installBody = between("    installImportedCharacter(", "    async toggleFacePilot()");
-  const unsetTierAt = installBody.indexOf('modelTier: ""');
-  const variantsAt = installBody.indexOf("wrapper.userData.lodVariants =");
-  const runtimeAt = installBody.indexOf("this.registerCharacterRuntime(wrapper");
-  const updateAt = installBody.indexOf("this.updateCharacterLod(wrapper, 0)");
-
-  assert.ok(unsetTierAt >= 0, "imported wrapper must not claim hero before its variants are initialized");
-  assert.doesNotMatch(installBody, /modelTier:\s*"hero"/);
-  assert.ok(variantsAt > unsetTierAt, "explicit LOD variants must be attached to the imported wrapper");
-  assert.ok(runtimeAt > variantsAt, "runtime must observe the imported LOD variants");
-  assert.ok(updateAt > runtimeAt, "first LOD selection must run after runtime registration");
+test("inspected GLB cannot create a player proxy or secondary LOD hierarchy", () => {
+  const inspectBody = between("    async importCharacterGLB(file) {", "    async toggleFacePilot()");
+  assert.doesNotMatch(
+    inspectBody,
+    /installImportedCharacter|Imported3DProxy|isCharacterLodProxy|createCharacterMesh\s*\(|explicitLods|nearestExplicitLod|\bnear\b|\bcrowd\b|\bimpostor\b/,
+    "an inspected GLB must never introduce fallback geometry into the player pipeline"
+  );
+  assert.match(inspectBody, /disposeCharacterObject\(inspectedScene\)/);
 });
 
-test("missing imported LOD levels reuse the nearest explicit tier, not the complete mesh set", () => {
-  const installBody = between("    installImportedCharacter(", "    async toggleFacePilot()");
-  const nearestStart = installBody.indexOf("const nearestExplicitLod");
-  const variantsStart = installBody.indexOf("wrapper.userData.lodVariants =");
-  const nearestBody = installBody.slice(nearestStart, variantsStart);
-  const variantsBody = installBody.slice(variantsStart, installBody.indexOf("this.world.add(wrapper)", variantsStart));
-
-  assert.ok(nearestStart >= 0, "imported LOD needs a nearest-tier resolver");
-  assert.match(nearestBody, /if\s*\(!hasExplicitLods\)\s*return\s+importedMeshes/);
-  assert.match(nearestBody, /Math\.abs\(candidateIndex\s*-\s*tierIndex\)/);
-  assert.match(nearestBody, /explicitLods\[nearestTier\.candidate\]/);
-  for (const tier of ["hero", "near", "crowd"]) {
-    assert.match(
-      variantsBody,
-      new RegExp(`${tier}:\\s*explicitLods\\.${tier}\\.length\\s*\\?\\s*explicitLods\\.${tier}\\s*:\\s*nearestExplicitLod\\("${tier}"\\)`),
-      `missing ${tier} must select its nearest explicit LOD`
-    );
-  }
-});
-
-test("built-in weapons are registered as LOD attachments and hidden for impostors", () => {
+test("Hero Prime attachments remain visible and are never hidden by distance", () => {
   const actorsBody = between("    createActors() {", "    createEnemy(");
   const lodBody = between("    updateCharacterLod(mesh, distance = 0) {", "    disposeCharacterObject(");
 
   assert.match(actorsBody, /lodVariants\.attachments\s*=\s*\[weapon\]/);
   assert.match(lodBody, /lodVariants\.attachments/);
-  assert.match(lodBody, /object\.visible\s*=\s*tier\s*!==\s*"impostor"/);
+  assert.match(lodBody, /lodVariants\.attachments[^\n]+object\.visible\s*=\s*true/);
+  assert.doesNotMatch(lodBody, /tier\s*!==\s*"impostor"|distance\s*[<>]=?/);
+});
+
+test("Hero Prime load failure blocks startup and exposes Retry without a model substitute", () => {
+  const loadBody = between("    async loadCharacterAssetsFromPipeline() {", "    sanitizeBuiltInCharacterAsset(gltf) {");
+  const startBody = between("    async startGame({ fresh = false } = {}) {", "    beginRuntimeSession(");
+  const heroFactory = between("    createBuiltInRiggedCharacter(profile, scale = 1) {", "    characterTrackTargetsRoot(");
+
+  assert.match(loadBody, /loader\.loadAsync\(HERO_CHARACTER_ASSET_URL\)/);
+  assert.match(loadBody, /throw new Error\(/);
+  assert.doesNotMatch(loadBody, /Promise\.allSettled|resolveCharacterAssetCandidates|createAnimeCharacterMesh|createCharacterMesh/);
+  assert.ok(
+    startBody.indexOf("await this.loadCharacterAssetsFromPipeline()") < startBody.indexOf("this.createActors()"),
+    "the canonical Hero must finish loading before any player actor is created"
+  );
+  assert.match(startBody, /catch \(error\)[\s\S]{0,900}recovery\.hidden\s*=\s*false/);
+  assert.match(source, /data-har-retry/);
+  assert.match(source, /closest\("\[data-har-retry\]"\)[^\n]+startGame\(\{ fresh: false \}\)/);
+  assert.doesNotMatch(heroFactory, /createAnimeCharacterMesh|createCharacterMesh|crowdProxy|Imported3DProxy/);
 });
 
 test("facial animation reuses a cached morph lookup on every frame", () => {
@@ -285,14 +265,14 @@ test("disabling face, eye or surface systems immediately resets their runtime st
   assert.match(resetFaceBody, /pupil/);
 });
 
-test("RIGGED GLB badge requires coverage plus detected hips and head bones", () => {
+test("Hero Prime badge requires coverage plus detected hips and head bones", () => {
   const creatorBody = between("    renderCharacterCreatorPanel() {", "    renderWorldPanel() {");
 
   assert.match(creatorBody, /qa\?\.skinnedMeshes/);
   assert.match(creatorBody, /skeletonCoverage\s*\|\|\s*0\)\s*>=\s*0\.55/);
   assert.match(creatorBody, /runtime\?\.bones\?\.hips/);
   assert.match(creatorBody, /runtime\?\.bones\?\.head/);
-  assert.match(creatorBody, /trulyRigged\s*\?\s*"RIGGED GLB"/);
+  assert.match(creatorBody, /trulyRigged\s*\?\s*"HERO PRIME"/);
 });
 
 test("weather material state is reversible and character disposal releases GPU resources", () => {
@@ -333,25 +313,27 @@ test("movement animation guards optional imported-GLB and NPC body parts", () =>
   }
 });
 
-test("footprint cadence is independent of procedural body-part availability", () => {
+test("Hero Prime footprint cadence is independent of optional body-part handles", () => {
   const animationBody = between("    updateCharacterAnimation(dt, time, input, sprinting) {", "    togglePhotoMode(");
   const cadenceAt = animationBody.indexOf("const cadence");
   const footprintAt = animationBody.indexOf("this.emitFootprint(time)");
-  const partsGuardAt = animationBody.indexOf("if (!lowDetailTier && parts?.leftLeg");
+  const partsGuardAt = animationBody.indexOf("parts?.leftLeg");
 
   assert.ok(cadenceAt >= 0);
   assert.ok(footprintAt > cadenceAt, "foot contacts must derive from the shared gait phase");
   assert.ok(
     partsGuardAt > footprintAt,
-    "GLB characters without procedural limb handles must still emit cadence footprints"
+    "the canonical Hero must emit cadence footprints even without optional limb handles"
   );
+  assert.doesNotMatch(animationBody, /modelTier\s*===\s*"(?:near|crowd|impostor)"/);
   assert.match(animationBody, /Math\.sign\(previousPhase\)\s*!==\s*Math\.sign\(phase\)/);
 });
 
-test("remote-player cleanup runs for leave, character changes and stale snapshots", () => {
+test("remote-player cleanup is complete and new remotes clone the canonical Hero Prime", () => {
   const disposeBody = between("    disposeRemotePlayer(", "    async leaveParty()");
   const leaveBody = between("    async leaveParty() {", "    async sendPartyChat(");
   const snapshotBody = between("    applyAuthoritativeSnapshot(payload) {", "    updateConnectionUi() {");
+  const factoryBody = between("    createBuiltInRiggedCharacter(profile, scale = 1) {", "    characterTrackTargetsRoot(");
 
   assert.match(disposeBody, /disposeCharacterObject\(mesh,\s*runtime\)/);
   assert.match(disposeBody, /characterRuntimes\.delete\(runtimeKey\)/);
@@ -373,6 +355,9 @@ test("remote-player cleanup runs for leave, character changes and stale snapshot
     "new remote players must use the same photoreal character pipeline"
   );
   assert.doesNotMatch(snapshotBody, /createAnimeCharacterMesh\(/);
+  assert.match(factoryBody, /const modelId\s*=\s*HERO_CHARACTER_MODEL_ID/);
+  assert.match(factoryBody, /this\.builtInCharacterAssets\.get\(modelId\)/);
+  assert.doesNotMatch(factoryBody, /fallbackModelId|crowdProxy|Imported3DProxy/);
 });
 
 test("lock-on updates character yaw even when movement input is idle", () => {
@@ -389,15 +374,18 @@ test("lock-on updates character yaw even when movement input is idle", () => {
   assert.match(playerBody, /playerMesh\.rotation\.y\s*=\s*player\.rotation/);
 });
 
-test("remote players apply distance LOD before spending mixer or limb-animation work", () => {
+test("remote players remain on Hero Prime with an active mixer at every distance", () => {
   const worldBody = between("    updateWorld(dt, time) {", "    updateWorldStreaming() {");
+  const lodBody = between("    updateCharacterLod(mesh, distance = 0) {", "    disposeCharacterObject(");
   const distanceAt = worldBody.indexOf("const playerDistance");
   const lodAt = worldBody.indexOf("this.updateCharacterLod(remote, playerDistance)");
-  const mixerAt = worldBody.indexOf("runtime?.mixer && !runtime.lodSuspended");
-  const limbsAt = worldBody.indexOf("!runtime?.lodSuspended && parts?.leftLeg");
+  const mixerAt = worldBody.indexOf("if (runtime?.mixer)");
+  const limbsAt = worldBody.indexOf("if (parts?.leftLeg && parts?.rightLeg)");
 
   assert.ok(distanceAt >= 0);
-  assert.ok(lodAt > distanceAt, "remote LOD must use actual player distance");
-  assert.ok(mixerAt > lodAt, "remote mixer update must respect the newly selected LOD");
-  assert.ok(limbsAt > mixerAt, "procedural remote limbs must also remain suspended at low LOD");
+  assert.ok(lodAt > distanceAt, "remote Hero state must be refreshed after resolving distance");
+  assert.ok(mixerAt > lodAt, "remote mixer must run after Hero state is locked");
+  assert.ok(limbsAt > mixerAt, "optional limb work must run only after the canonical mixer update");
+  assert.match(lodBody, /runtime\.updateHz\s*=\s*CHARACTER_MODEL_TIERS\.hero\.updateHz/);
+  assert.doesNotMatch(lodBody, /\bnear\b|\bcrowd\b|\bimpostor\b|distance\s*[<>]=?/);
 });

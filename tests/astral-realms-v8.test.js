@@ -6,28 +6,33 @@ const assert = require("node:assert/strict");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Character V12 preserves browser-safe model tiers and one humanoid contract", () => {
+test("Character V13 locks one Hero Prime tier and a complete humanoid arm contract", () => {
   const source = read("astral-realms.js");
-  assert.match(source, /CHARACTER_VISUAL_VERSION = 12/);
-  assert.match(source, /CHARACTER_MODEL_TIERS/);
-  for (const tier of ["hero", "near", "crowd", "impostor"]) {
-    assert.match(source, new RegExp(`${tier}: \\{[^\\n]+triangles:`));
-  }
+  assert.match(source, /CHARACTER_VISUAL_VERSION = 13/);
+  const tiers = source.slice(source.indexOf("const CHARACTER_MODEL_TIERS"), source.indexOf("const CHARACTER_ASSET_CLASSES"));
+  assert.match(tiers, /hero:\s*\{[^\n]+triangles:[^\n]+face:\s*52[^\n]+updateHz:\s*60/);
+  assert.doesNotMatch(tiers, /\bnear\b|\bcrowd\b|\bimpostor\b/);
   assert.match(source, /HH_HUMANOID_SKELETON/);
-  for (const slot of ["root", "hips", "spine", "head", "leftHand", "rightHand", "leftFoot", "rightFoot"]) {
+  for (const slot of [
+    "root", "hips", "spine", "head",
+    "leftShoulder", "rightShoulder", "leftUpperArm", "rightUpperArm",
+    "leftForeArm", "rightForeArm", "leftHand", "rightHand",
+    "leftThumb", "rightThumb", "leftIndex", "rightIndex",
+    "leftFoot", "rightFoot"
+  ]) {
     assert.match(source, new RegExp(`${slot}: \\[`));
   }
 });
 
-test("local GLB import analyzes and installs a rigged character without uploading it", () => {
+test("local GLB inspection analyzes a candidate but cannot replace Hero Prime", () => {
   const source = read("astral-realms.js");
   assert.match(source, /loadCharacterModules/);
   assert.match(source, /GLTFLoaderClass/);
   assert.match(source, /importCharacterGLB/);
-  assert.match(source, /installImportedCharacter/);
   assert.match(source, /file\.arrayBuffer\(\)/);
   assert.match(source, /loader\.parse\(buffer/);
-  assert.match(source, /không tải lên máy chủ HH/);
+  assert.match(source, /validateCharacterAsset/);
+  assert.doesNotMatch(source, /installImportedCharacter\s*\(/);
   assert.doesNotMatch(source, /fetch\([^)]*file\.arrayBuffer/);
 });
 
@@ -53,22 +58,22 @@ test("Face Pilot is explicit, camera-only and processes MediaPipe blendshapes lo
   assert.match(source, /audio: false/);
   assert.match(source, /getTracks\?\.\(\)\.forEach/);
   assert.match(source, /MEDIAPIPE_FACE_CHANNELS/);
-  assert.match(source, /Video xử lý trên thiết bị và không được gửi tới backend HH/i);
+  assert.doesNotMatch(source, /fetch\([^)]*(?:facePilot|srcObject|video)/i);
 });
 
-test("Character Lab exposes runtime metrics, motion preview and adaptive material controls", () => {
+test("Character Lab exposes Hero metrics, motion preview and full-quality controls", () => {
   const source = read("astral-realms.js");
   const css = read("astral-realms.css");
   for (const token of [
     "har-character-runtime-grid",
-    "har-character-import",
     "har-motion-grid",
     "har-face-pilot",
     "characterQuality",
     "facialAnimation",
     "surfaceFx",
     "updateCharacterSurface",
-    "updateCharacterLod"
+    "updateCharacterLod",
+    "applyHeroArmIK"
   ]) {
     assert.ok(source.includes(token) || css.includes(token), `missing ${token}`);
   }
@@ -77,10 +82,10 @@ test("Character Lab exposes runtime metrics, motion preview and adaptive materia
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
 
-test("GLTF dependencies and the V11 bundle are available offline", () => {
+test("GLTF dependencies and the V13 bundle are available offline", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const token of ["astral-realms.css?v=22", "astral-realms.js?v=22"]) {
+  for (const token of ["astral-realms.css?v=34", "astral-realms.js?v=34"]) {
     assert.ok(loader.includes(token), `route loader missing ${token}`);
     assert.ok(worker.includes(token), `service worker missing ${token}`);
   }
