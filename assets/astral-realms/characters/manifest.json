@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "pipeline": "metahuman-or-character-creator-to-blender-glb",
+  "sources": []
+}

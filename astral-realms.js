@@ -130,6 +130,7 @@
     pain: { browDownLeft: 0.72, browDownRight: 0.58, eyeSquintLeft: 0.68, eyeSquintRight: 0.56, mouthFrownLeft: 0.55, mouthFrownRight: 0.42, jawOpen: 0.22 }
   });
   const CHARACTER_PIPELINE = Object.freeze([
+    { id: "character-creator", name: "Character Creator 5", role: "Web-ready GLB với morph và material đã bake", state: "Chờ manifest asset" },
     { id: "metahuman", name: "MetaHuman Web Hero", role: "GLB đã retopology cho hero/cinematic", state: "Kiểm tra khi nhập" },
     { id: "makehuman", name: "MakeHuman / MPFB", role: "Nguồn NPC được tối ưu bên ngoài", state: "Kiểm tra skeleton" },
     { id: "readyplayerme", name: "Ready Player Me", role: "Avatar GLB do người chơi tạo", state: "Draco/Meshopt/KTX2" },
@@ -192,6 +193,12 @@
     "human-adult-a01": "./assets/astral-realms/hh-human-asteria-v1.glb",
     "human-adult-b01": "./assets/astral-realms/hh-human-vanguard-v1.glb"
   });
+  // Optional web-ready exports from the recommended pipeline:
+  // MetaHuman/Character Creator/MPFB -> Blender retopology -> optimized GLB.
+  // The manifest is deliberately optional so a missing premium asset never
+  // blocks the game; the loader falls back to the bundled GLB, then procedural.
+  const CHARACTER_PIPELINE_SOURCES = Object.freeze(["auto", "metahuman", "character-creator", "mpfb", "bundled", "procedural"]);
+  const CHARACTER_PIPELINE_MANIFEST_URL = "./assets/astral-realms/characters/manifest.json";
   const CHARACTER_ATLAS_INDEX = Object.freeze({ lyra: 0, cael: 1, nyx: 2, sol: 3 });
   const ELEMENT_REACTIONS = Object.freeze({
     "cryo+plasma": { name: "Sốc nhiệt", multiplier: 1.55, color: "#ff9bd6" },
@@ -360,6 +367,7 @@
     return {
       appearanceVersion: APPEARANCE_VERSION,
       baseModel: ["cael", "sol"].includes(characterId) ? "human-adult-b01" : "human-adult-a01",
+      sourceProvider: "auto",
       bodyPreset: "balanced",
       style: "human-cinematic",
       symmetry: true,
@@ -396,6 +404,7 @@
       ...base,
       appearanceVersion: APPEARANCE_VERSION,
       baseModel: APPEARANCE_ASSETS.baseModels.includes(recipe.baseModel) ? recipe.baseModel : base.baseModel,
+      sourceProvider: CHARACTER_PIPELINE_SOURCES.includes(recipe.sourceProvider) ? recipe.sourceProvider : base.sourceProvider,
       bodyPreset: APPEARANCE_PRESETS[recipe.bodyPreset] ? recipe.bodyPreset : base.bodyPreset,
       style: ["human-cinematic", "anime-realistic"].includes(recipe.style) ? recipe.style : base.style,
       symmetry: recipe.symmetry !== false,
@@ -433,6 +442,7 @@
     return {
       appearanceVersion: APPEARANCE_VERSION,
       baseModel: normalized.baseModel,
+      sourceProvider: normalized.sourceProvider,
       bodyPreset: normalized.bodyPreset,
       style: normalized.style,
       symmetry: normalized.symmetry,
@@ -615,6 +625,7 @@
         visualStyle: "photoreal",
         characterMode: "rigged",
         characterQuality: "adaptive",
+        characterPipeline: "auto",
         characterStudio: "central",
         facialAnimation: true,
         surfaceFx: true,
@@ -809,6 +820,7 @@
     if (!["photoreal", "hybrid", "performance"].includes(state.settings.visualStyle)) state.settings.visualStyle = "photoreal";
     if (!["rigged", "portrait"].includes(state.settings.characterMode)) state.settings.characterMode = "rigged";
     if (!["adaptive", "hero", "near", "crowd"].includes(state.settings.characterQuality)) state.settings.characterQuality = "adaptive";
+    if (!CHARACTER_PIPELINE_SOURCES.includes(state.settings.characterPipeline)) state.settings.characterPipeline = "auto";
     if (!GENESIS_STUDIOS[state.settings.characterStudio]) state.settings.characterStudio = "central";
     state.settings.facialAnimation = state.settings.facialAnimation !== false;
     state.settings.surfaceFx = state.settings.surfaceFx !== false;
@@ -954,6 +966,9 @@
       this.cloneSkinnedCharacter = null;
       this.characterDecodersReady = false;
       this.builtInCharacterAssets = new Map();
+      this.builtInCharacterSources = new Map();
+      this.characterPipelineManifest = [];
+      this.characterPipelineStatus = "not-configured";
       this.builtInCharacterStatus = "pending";
       this.characterDetailTextures = null;
       this.lastCharacterQa = null;
@@ -1397,7 +1412,7 @@
         this.setLoading(62, "Đang khởi tạo GLB, skeleton, morph và animation mixer...");
         await this.loadCharacterModules();
         this.setLoading(69, "Đang nạp hai Human Rig 3D và chuyển động toàn thân...");
-        await this.loadBuiltInCharacterAssets();
+        await this.loadCharacterAssetsFromPipeline();
         this.createWorld();
         this.setLoading(76, "Đang dựng nhân vật rigged PBR, sinh vật và Nexus Warden...");
         this.createActors();
@@ -2417,6 +2432,48 @@
       this.root.dataset.characterDecoders = this.characterDecodersReady ? "ready" : "basic";
     }
 
+    async loadCharacterPipelineManifest() {
+      this.characterPipelineManifest = [];
+      this.characterPipelineStatus = "not-configured";
+      try {
+        const response = await fetch(CHARACTER_PIPELINE_MANIFEST_URL, { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = await response.json();
+        const entries = Array.isArray(payload?.sources) ? payload.sources : [];
+        this.characterPipelineManifest = entries.map((entry) => ({
+          id: String(entry?.id || "").slice(0, 80),
+          provider: CHARACTER_PIPELINE_SOURCES.includes(entry?.provider) ? entry.provider : "",
+          modelId: String(entry?.modelId || "").slice(0, 60),
+          url: String(entry?.url || "").slice(0, 240),
+          label: String(entry?.label || entry?.provider || "Web GLB").slice(0, 100),
+          quality: String(entry?.quality || "web").slice(0, 32)
+        })).filter((entry) => entry.provider && entry.modelId && entry.url);
+        this.characterPipelineStatus = this.characterPipelineManifest.length ? "configured" : "empty";
+      } catch {
+        // Missing optional manifest is valid: bundled/procedural remain usable.
+      }
+      this.root.dataset.characterPipeline = this.characterPipelineStatus;
+    }
+
+    resolveCharacterAssetCandidates(modelId, requestedProvider = "auto") {
+      const preferred = CHARACTER_PIPELINE_SOURCES.includes(requestedProvider) ? requestedProvider : "auto";
+      if (preferred === "procedural") return [];
+      const order = preferred === "auto"
+        ? ["metahuman", "character-creator", "mpfb", "bundled"]
+        : [preferred, "bundled"];
+      const optional = this.characterPipelineManifest
+        .filter((entry) => entry.modelId === modelId && order.includes(entry.provider))
+        .sort((a, b) => order.indexOf(a.provider) - order.indexOf(b.provider));
+      const bundled = BUILTIN_CHARACTER_ASSETS[modelId]
+        ? [{ id: `bundled-${modelId}`, provider: "bundled", modelId, url: BUILTIN_CHARACTER_ASSETS[modelId], label: "HH bundled GLB", quality: "fallback-web" }]
+        : [];
+      const result = [];
+      [...optional, ...bundled].forEach((entry) => {
+        if (!result.some((candidate) => candidate.url === entry.url)) result.push(entry);
+      });
+      return result;
+    }
+
     async loadBuiltInCharacterAssets() {
       if (!this.GLTFLoaderClass || !this.cloneSkinnedCharacter) {
         this.builtInCharacterStatus = "fallback";
@@ -2469,6 +2526,86 @@
         this.builtInCharacterAssets.set(result.value[0], result.value[1]);
       });
       this.builtInCharacterStatus = this.builtInCharacterAssets.size === entries.length ? "ready" : this.builtInCharacterAssets.size ? "partial" : "fallback";
+      this.root.dataset.builtInCharacter = this.builtInCharacterStatus;
+    }
+
+    async loadCharacterAssetsFromPipeline() {
+      if (!this.GLTFLoaderClass || !this.cloneSkinnedCharacter) {
+        this.builtInCharacterStatus = "fallback";
+        this.root.dataset.builtInCharacter = "fallback";
+        return;
+      }
+      await this.loadCharacterPipelineManifest();
+      this.builtInCharacterStatus = "loading";
+      let assetLoadError = false;
+      const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
+      if (manager) {
+        manager.hhPreferTextureLoader = true;
+        manager.onError = () => { assetLoadError = true; };
+      }
+      const loader = new this.GLTFLoaderClass(manager);
+      const entries = Object.keys(BUILTIN_CHARACTER_ASSETS);
+      const results = await Promise.allSettled(entries.map(async (id) => {
+        const recipes = Object.values(this.state.appearance?.recipes || {}).filter((recipe) => recipe?.baseModel === id);
+        const requestedProvider = recipes.find((recipe) => recipe.sourceProvider && recipe.sourceProvider !== "auto")?.sourceProvider
+          || this.state.settings.characterPipeline;
+        if (requestedProvider === "procedural") {
+          this.builtInCharacterAssets.delete(id);
+          this.builtInCharacterSources.delete(id);
+          return [id, null];
+        }
+        let lastError = null;
+        for (const candidate of this.resolveCharacterAssetCandidates(id, requestedProvider)) {
+          try {
+            const gltf = await Promise.race([
+              loader.loadAsync(candidate.url),
+              new Promise((_, reject) => root.setTimeout(() => reject(new Error(`QuÃ¡ thá»i gian táº£i ${candidate.url}`)), candidate.provider === "bundled" ? 12000 : 4500))
+            ]);
+            gltf.userData ||= {};
+            gltf.userData.hhSourceProvider = candidate.provider;
+            gltf.userData.hhSourceLabel = candidate.label;
+            gltf.userData.hhAssetPath = candidate.url;
+            await new Promise((resolve) => root.setTimeout(resolve, 320));
+            this.sanitizeBuiltInCharacterAsset(gltf);
+            if (assetLoadError) gltf.userData.hhTextureFallbacks = Math.max(1, Number(gltf.userData?.hhTextureFallbacks || 0));
+            gltf.scene.traverse?.((object) => {
+              if (!object.isMesh && !object.isSkinnedMesh) return;
+              object.userData ||= {};
+              object.userData.sharedAsset = true;
+              object.geometry?.userData && (object.geometry.userData.sharedAsset = true);
+              const materials = Array.isArray(object.material) ? object.material : [object.material];
+              materials.filter(Boolean).forEach((material) => {
+                ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap"].forEach((slot) => {
+                  if (material[slot]?.isTexture) {
+                    material[slot].userData ||= {};
+                    material[slot].userData.sharedAsset = true;
+                  }
+                });
+              });
+            });
+            return [id, gltf];
+          } catch (error) {
+            lastError = error;
+          }
+        }
+        throw lastError || new Error(`KhÃ´ng cÃ³ asset cho ${id}`);
+      }));
+      results.forEach((result) => {
+        if (result.status !== "fulfilled") return;
+        const [id, gltf] = result.value;
+        if (!gltf) return;
+        this.builtInCharacterAssets.set(id, gltf);
+        this.builtInCharacterSources.set(id, {
+          provider: gltf.userData?.hhSourceProvider || "bundled",
+          label: gltf.userData?.hhSourceLabel || "HH bundled GLB",
+          url: gltf.userData?.hhAssetPath || BUILTIN_CHARACTER_ASSETS[id]
+        });
+      });
+      this.builtInCharacterStatus = this.builtInCharacterAssets.size === entries.length
+        ? "ready"
+        : this.builtInCharacterAssets.size
+          ? "partial"
+          : "fallback";
       this.root.dataset.builtInCharacter = this.builtInCharacterStatus;
     }
 
@@ -2538,6 +2675,7 @@
       textures.forEach((texture) => texture.dispose?.());
       materials.forEach((material) => material.dispose?.());
       this.builtInCharacterAssets.clear();
+      this.builtInCharacterSources.clear();
       this.builtInCharacterStatus = "pending";
     }
 
@@ -4511,6 +4649,11 @@
       wrapper.name = `HHHumanRig:${profile.id}`;
       wrapper.scale.setScalar(scale);
       const asset = this.cloneSkinnedCharacter(source.scene);
+      const sourceInfo = this.builtInCharacterSources.get(modelId) || {
+        provider: source.userData?.hhSourceProvider || "bundled",
+        label: source.userData?.hhSourceLabel || "HH bundled GLB",
+        url: source.userData?.hhAssetPath || BUILTIN_CHARACTER_ASSETS[modelId]
+      };
       asset.name = `${modelId}:${profile.id}`;
       const box = new THREE.Box3().setFromObject(asset);
       const size = box.getSize(new THREE.Vector3());
@@ -4671,7 +4814,9 @@
         visualMode,
         sourceProvider: assetNeedsVisualRecovery
           ? "HH Articulated PBR Recovery"
-          : modelId === "human-adult-a01" ? "HH Asteria Human Rig" : "HH Vanguard Human Rig",
+          : sourceInfo.label || (modelId === "human-adult-a01" ? "HH Asteria Human Rig" : "HH Vanguard Human Rig"),
+        sourceProviderId: sourceInfo.provider,
+        sourceAssetPath: sourceInfo.url,
         modelTier: initialTier,
         appearanceCapability: "skeleton-proportions",
         gameplayCollider: { radius: 0.48, height: 2.95 },
@@ -8186,10 +8331,12 @@
             <div class="har-performance-row"><span>Viseme</span>${Object.keys(CHARACTER_VISEMES).map((name) => `<button class="har-chip ${recipe.viseme === name ? "is-active" : ""}" type="button" data-panel-action="character-viseme" data-viseme="${name}">${name}</button>`).join("")}</div>
           </div>
           <div class="har-creator__toolbar">
+            <label class="har-field">Web pipeline<select data-appearance-setting="sourceProvider">${CHARACTER_PIPELINE_SOURCES.map((value) => `<option value="${value}" ${recipe.sourceProvider === value ? "selected" : ""}>${value === "auto" ? "Auto: MetaHuman → CC5 → MPFB → GLB" : value}</option>`).join("")}</select></label>
             <label class="har-field">Model nền<select data-appearance-setting="baseModel">${APPEARANCE_ASSETS.baseModels.map((value) => `<option value="${value}" ${recipe.baseModel === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
             <label class="har-field">Preset cơ thể<select data-appearance-setting="bodyPreset">${Object.entries(APPEARANCE_PRESETS).map(([value, item]) => `<option value="${value}" ${recipe.bodyPreset === value ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
             <label class="har-field">Phong cách<select data-appearance-setting="style"><option value="anime-realistic" ${recipe.style === "anime-realistic" ? "selected" : ""}>Anime Realistic</option><option value="human-cinematic" ${recipe.style === "human-cinematic" ? "selected" : ""}>Human Cinematic</option></select></label>
           </div>
+          <div class="har-section"><p><strong>Pipeline runtime:</strong> ${escapeHtml(this.builtInCharacterSources.get(recipe.baseModel)?.label || (this.characterPipelineStatus === "configured" ? "Äang tÃ¬m asset web-ready" : "ChÆ°a cÃ³ asset MetaHuman/CC5/MPFB"))}. ${this.characterPipelineStatus === "configured" ? "Asset trong manifest sáº½ Ä‘Æ°á»£c QA trÆ°á»›c khi dÃ¹ng." : "Äang dÃ¹ng GLB HH hoáº·c procedural fallback; khÃ´ng cÃ³ khung hÃ¬nh trá»‘ng."}</p></div>
           <div class="har-creator__options">
             <label><input type="checkbox" data-appearance-setting="symmetry" ${recipe.symmetry ? "checked" : ""}> Chỉnh đối xứng</label>
             <label><input type="checkbox" data-appearance-setting="advanced" ${recipe.advanced ? "checked" : ""}> Chế độ nâng cao trái–phải</label>
@@ -8539,6 +8686,23 @@
       this.toast(`Đã áp dụng phong cách ${this.state.settings.renderStyle === "anime" ? "Anime Toon" : this.state.settings.renderStyle === "cinematic" ? "Cinematic PBR" : "Realistic PBR"}.`, "success");
     }
 
+    async reloadCharacterPipeline() {
+      if (this.characterImporting || !this.GLTFLoaderClass || !this.cloneSkinnedCharacter) {
+        this.toast("Character pipeline chÆ°a sáºµn sÃ ng; Ä‘ang dÃ¹ng fallback an toÃ n.", "info");
+        return;
+      }
+      this.characterImporting = true;
+      try {
+        await this.loadCharacterAssetsFromPipeline();
+        this.refreshCharacterMaterials();
+        this.toast("ÄÃ£ Ã¡p dá»¥ng nguá»“n GLB theo pipeline web; recipe ngoáº¡i hÃ¬nh váº«n Ä‘Æ°á»£c giá»¯ riÃªng.", "success");
+      } catch {
+        this.toast("KhÃ´ng táº£i Ä‘Æ°á»£c nguá»“n GLB tÃ¹y chá»n; Ä‘Ã£ giá»¯ asset hiá»‡n táº¡i.", "error");
+      } finally {
+        this.characterImporting = false;
+      }
+    }
+
     recordAppearanceChange(beforeRecipe) {
       const id = this.state.roster.activeId;
       const after = appearanceFingerprint(this.activeAppearanceRecipe(), id);
@@ -8559,7 +8723,7 @@
       else if (["symmetry", "advanced"].includes(key)) recipe[key] = Boolean(value);
       else if (key === "outfitPrimary" && APPEARANCE_ASSETS.outfits.includes(value)) {
         recipe.outfit = [value, ...recipe.outfit.filter((id) => id !== value)].slice(0, 4);
-      } else if (["baseModel", "bodyPreset", "style", "skinColor", "eyeColor", "hairColor", "hair", "beard", "brow", "makeup", "accessory", "lighting", "expression", "viseme"].includes(key)) recipe[key] = value;
+      } else if (["baseModel", "sourceProvider", "bodyPreset", "style", "skinColor", "eyeColor", "hairColor", "hair", "beard", "brow", "makeup", "accessory", "lighting", "expression", "viseme"].includes(key)) recipe[key] = value;
       recipe.updatedAt = nowIso();
       this.applyAppearanceToMesh(this.characterMeshes.get(id), recipe, id);
       this.appearanceDirty = true;
@@ -8789,6 +8953,7 @@
             this.updateAppearanceDraft(setting, value);
             this.commitAppearanceDraft();
             if (setting === "baseModel") this.rebuildActiveBuiltInCharacter();
+            if (setting === "sourceProvider") this.reloadCharacterPipeline();
             this.renderCurrentPanel();
           }
         } else if (event.target.matches("[data-ship-name]")) {
