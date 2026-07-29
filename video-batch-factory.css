@@ -16,3 +16,63 @@
 @media(max-width:850px){.bvf-hero{grid-template-columns:auto 1fr}.bvf-hero aside{grid-column:1/-1;justify-items:start;text-align:left}.bvf-live{display:flex;overflow:auto;scroll-snap-type:x mandatory}.bvf-live article{flex:0 0 155px;scroll-snap-align:start}.bvf-layout>aside{grid-template-columns:1fr}.bvf-fields,.bvf-preset-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.bvf-shell{padding:8px}.bvf-hero{grid-template-columns:1fr}.bvf-core{width:58px;height:58px}.bvf-hero h2{font-size:20px}.bvf-fields,.bvf-preset-grid,.bvf-preflight{grid-template-columns:1fr}.bvf-import-bar,.bvf-action-row,.bvf-queue-actions{display:grid}.bvf-table-wrap{overflow:auto}.bvf-table-wrap table{min-width:760px}.bvf-shell footer{display:grid}.bvf-job-list>article{grid-template-columns:auto 1fr auto}.bvf-job-list>article>:where(a,button){grid-column:2}}
 @media(prefers-reduced-motion:reduce){.bvf-shell *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
+/* Readability pass: keep the dense creator layout, but make every control legible. */
+.bvf-shell{font-size:13px}
+.bvf-shell button,.bvf-file{min-height:42px;padding:0 14px;font-size:13px}
+.bvf-hero{gap:20px;padding:22px}
+.bvf-hero small,.bvf-panel header small{font-size:11px}
+.bvf-hero h2{font-size:32px;line-height:1.15}
+.bvf-hero p{font-size:13px;line-height:1.45}
+.bvf-hero aside{gap:8px}
+.bvf-hero aside span{padding:8px 12px;font-size:11px}
+.bvf-hero aside small{font-size:11px}
+.bvf-live{gap:10px;margin:12px 0}
+.bvf-live article{gap:7px;padding:13px}
+.bvf-live span{font-size:10px}
+.bvf-live strong{font-size:16px}
+.bvf-panel{padding:17px}
+.bvf-panel>header{margin-bottom:14px}
+.bvf-panel h3{font-size:19px}
+.bvf-panel header>span{font-size:11px}
+.bvf-preset-grid{gap:9px}
+.bvf-preset-grid button{min-height:76px;gap:4px 10px}
+.bvf-preset-grid i{width:30px;height:30px}
+.bvf-preset-grid strong{font-size:12px}
+.bvf-preset-grid small{font-size:10px}
+.bvf-fields{gap:10px;margin-top:14px}
+.bvf-fields label{gap:6px;font-size:11px}
+.bvf-shell input,.bvf-shell select{padding:10px;font-size:13px;min-height:42px}
+.bvf-fields input[type=color]{height:42px}
+.bvf-action-row,.bvf-import-bar,.bvf-queue-actions{gap:8px;margin-top:14px}
+.bvf-honesty{margin-top:14px;padding:11px;font-size:11px;line-height:1.45}
+.bvf-output-options{gap:12px 18px;margin-top:14px;font-size:12px}
+.bvf-output-options input{width:18px;height:18px}
+.bvf-output-options span{padding:9px 11px}
+.bvf-folder-summary{gap:8px;margin-top:11px}
+.bvf-folder-summary span{padding:8px 11px;font-size:10px}
+.bvf-table-wrap{margin-top:12px}
+.bvf-table-wrap th{padding:10px;font-size:10px}
+.bvf-table-wrap td{padding:7px}
+.bvf-table-wrap p{padding:22px;font-size:11px}
+.bvf-table-wrap td>button{width:36px;min-height:36px}
+.bvf-preview>p{margin-top:10px;font-size:11px;line-height:1.4}
+.bvf-preflight{gap:8px}
+.bvf-preflight span{gap:3px 9px;padding:10px}
+.bvf-preflight i{width:28px;height:28px}
+.bvf-preflight b{font-size:11px}
+.bvf-preflight small{font-size:10px;line-height:1.25}
+.bvf-job-list{gap:8px;margin-top:12px}
+.bvf-job-list>article{gap:9px;padding:10px}
+.bvf-job-list>article>i{width:30px;height:30px;font-size:11px}
+.bvf-job-list strong{font-size:12px}
+.bvf-job-list small{font-size:10px}
+.bvf-job-list em{font-size:11px}
+.bvf-job-list a{min-height:34px;padding:0 10px;font-size:11px}
+.bvf-shell footer{padding:12px 4px;font-size:10px;line-height:1.4}
+@media(max-width:560px){
+  .bvf-hero h2{font-size:26px}
+  .bvf-hero p{font-size:12px}
+  .bvf-panel h3{font-size:18px}
+  .bvf-shell button,.bvf-file{font-size:12px}
+}
