@@ -4,7 +4,8 @@
   const STORAGE_KEY = "hh.video-batch-factory.v1";
   const DB_NAME = "hh-video-editor-media";
   const DB_STORE = "assets";
-  const MAX_ROWS = 100;
+  const MAX_ROWS = 250;
+  const MAX_LIBRARY_FILES = 500;
   const MAX_INPUT_SIZE = 2 * 1024 * 1024 * 1024;
   const PRESETS = Object.freeze([
     { id: "youtube", name: "YouTube Landscape", width: 1920, height: 1080, duration: 8, fps: 30, accent: "#6be8ff", background: "#071020", layout: "left", motion: "cinematic" },
@@ -14,13 +15,34 @@
     { id: "promo", name: "Product Promo", width: 1920, height: 1080, duration: 8, fps: 30, accent: "#56e6b1", background: "#061612", layout: "left", motion: "cinematic" },
     { id: "news", name: "News & Lower Third", width: 1920, height: 1080, duration: 12, fps: 30, accent: "#ff765f", background: "#150a0a", layout: "left", motion: "slide" }
   ]);
+  const COLOR_PRESETS = Object.freeze([
+    { id: "auto", name: "Tự gợi ý theo ảnh", filter: "none", accent: "#6be8ff" },
+    { id: "natural", name: "Natural Clean", filter: "brightness(1.02) contrast(1.04) saturate(1.05)", accent: "#d8f4ff" },
+    { id: "cinematic", name: "Cinematic Teal–Orange", filter: "brightness(.98) contrast(1.14) saturate(1.2) sepia(.12) hue-rotate(-8deg)", accent: "#ff9c67" },
+    { id: "neon", name: "Neon Galaxy", filter: "brightness(1.06) contrast(1.16) saturate(1.45) hue-rotate(8deg)", accent: "#ff65c8" },
+    { id: "aurora", name: "Aurora Cyan", filter: "brightness(1.05) contrast(1.08) saturate(1.26) hue-rotate(15deg)", accent: "#55f0df" },
+    { id: "solar", name: "Solar Fire", filter: "brightness(1.05) contrast(1.12) saturate(1.3) sepia(.22) hue-rotate(-14deg)", accent: "#ff9c55" },
+    { id: "moonlight", name: "Blue Moonlight", filter: "brightness(.94) contrast(1.1) saturate(.92) hue-rotate(18deg)", accent: "#80a8ff" },
+    { id: "emerald", name: "Emerald Cosmos", filter: "brightness(1.02) contrast(1.1) saturate(1.2) hue-rotate(35deg)", accent: "#59e9a9" },
+    { id: "vintage", name: "Vintage Film", filter: "brightness(.98) contrast(1.08) saturate(.78) sepia(.3)", accent: "#e0ba78" },
+    { id: "pastel", name: "Pastel Dream", filter: "brightness(1.08) contrast(.92) saturate(.9) sepia(.08)", accent: "#efafe7" },
+    { id: "mono", name: "Monochrome Pro", filter: "grayscale(1) contrast(1.16) brightness(1.02)", accent: "#e5e9f2" },
+    { id: "punch", name: "High Contrast Social", filter: "brightness(1.04) contrast(1.24) saturate(1.3)", accent: "#ffe56b" }
+  ]);
   const DEFAULT_STATE = Object.freeze({
     presetId: "youtube",
-    template: { ...PRESETS[0], titleSize: 88, subtitleSize: 34, ctaSize: 28, overlay: 58, logo: "H", watermark: "HH PLATFORM", format: "mp4", bitrate: 8_000_000 },
+    template: {
+      ...PRESETS[0], titleSize: 88, subtitleSize: 34, ctaSize: 28, overlay: 58,
+      logo: "H", watermark: "HH PLATFORM", format: "mp4", bitrate: 8_000_000,
+      colorPreset: "auto", colorIntensity: 100, imageMotion: "kenburns",
+      effectOpacity: 90, effectMode: "random", musicMode: "shuffle",
+      musicVolume: 70, musicFade: .5, renderEngine: "auto", renderProfile: "balanced"
+    },
     rows: [],
     jobs: [],
     autoDownload: false,
-    saveToMediaPool: true
+    saveToMediaPool: true,
+    outputDirectoryName: ""
   });
 
   let root = null;
@@ -32,6 +54,8 @@
   let cancelRequested = false;
   let recorder = null;
   let frameId = 0;
+  let outputDirectoryHandle = null;
+  let gpuStatus = { state: "checking", label: "Đang nhận diện GPU", vendor: "" };
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -79,6 +103,17 @@
       watermark: String(source.watermark || "HH PLATFORM").slice(0, 60),
       format: source.format === "webm" ? "webm" : "mp4",
       bitrate: clamp(source.bitrate, 1_000_000, 30_000_000) || 8_000_000
+      ,
+      colorPreset: COLOR_PRESETS.some((item) => item.id === source.colorPreset) ? source.colorPreset : "auto",
+      colorIntensity: source.colorIntensity === undefined ? 100 : clamp(source.colorIntensity, 0, 100),
+      imageMotion: ["kenburns", "zoom", "pan", "float", "none"].includes(source.imageMotion) ? source.imageMotion : "kenburns",
+      effectOpacity: source.effectOpacity === undefined ? 90 : clamp(source.effectOpacity, 0, 100),
+      effectMode: ["random", "shuffle", "none"].includes(source.effectMode) ? source.effectMode : "random",
+      musicMode: ["random", "shuffle", "none"].includes(source.musicMode) ? source.musicMode : "shuffle",
+      musicVolume: source.musicVolume === undefined ? 70 : clamp(source.musicVolume, 0, 100),
+      musicFade: source.musicFade === undefined ? .5 : clamp(source.musicFade, 0, 5),
+      renderEngine: ["auto", "gpu", "compatibility"].includes(source.renderEngine) ? source.renderEngine : "auto",
+      renderProfile: ["fast", "balanced", "high", "cinematic"].includes(source.renderProfile) ? source.renderProfile : "balanced"
     };
   }
 
@@ -92,7 +127,10 @@
       cta: String(source.cta || "").slice(0, 120),
       accent: /^#[\da-f]{6}$/i.test(source.accent) ? source.accent : "",
       sourceId: String(source.sourceId || "").slice(0, 120),
-      sourceName: String(source.sourceName || "").slice(0, 240)
+      sourceName: String(source.sourceName || "").slice(0, 240),
+      colorPreset: COLOR_PRESETS.some((item) => item.id === source.colorPreset) ? source.colorPreset : "",
+      suggestedColor: COLOR_PRESETS.some((item) => item.id === source.suggestedColor) ? source.suggestedColor : "natural",
+      duration: source.duration ? clamp(source.duration, 1, 60) : 0
     };
   }
 
@@ -109,6 +147,8 @@
       outputName: String(source.outputName || "").slice(0, 240),
       outputSize: Math.max(0, Number(source.outputSize || 0)),
       outputMime: String(source.outputMime || "").slice(0, 120),
+      musicId: String(source.musicId || "").slice(0, 120),
+      effectId: String(source.effectId || "").slice(0, 120),
       error: String(source.error || "").slice(0, 300),
       createdAt: source.createdAt || new Date().toISOString(),
       completedAt: source.completedAt || null
@@ -120,6 +160,7 @@
     return {
       ...DEFAULT_STATE,
       ...source,
+      outputDirectoryName: String(source.outputDirectoryName || "").slice(0, 160),
       template: normalizeTemplate(source.template || DEFAULT_STATE.template),
       rows: Array.isArray(source.rows) ? source.rows.slice(0, MAX_ROWS).map(normalizeRow) : [],
       jobs: Array.isArray(source.jobs) ? source.jobs.slice(0, MAX_ROWS * 2).map(normalizeJob) : []
@@ -170,10 +211,28 @@
     } finally { db.close(); }
   }
 
+  async function dbDelete(id) {
+    const db = await openDb();
+    try {
+      await new Promise((resolve, reject) => {
+        const transaction = db.transaction(DB_STORE, "readwrite");
+        transaction.objectStore(DB_STORE).delete(id);
+        transaction.oncomplete = resolve;
+        transaction.onerror = () => reject(transaction.error);
+      });
+    } finally { db.close(); }
+  }
+
+  async function replaceAssetSource(source) {
+    const existing = (await dbAll().catch(() => [])).filter((item) => item.ownerId === ownerId() && item.source === source);
+    await Promise.all(existing.map((item) => dbDelete(item.id)));
+  }
+
   async function refreshAssets() {
     const all = await dbAll().catch(() => []);
     assets = all.filter((item) => item.ownerId === ownerId() && (
-      item.source === "batch-video-input" || item.source === "batch-video-output"
+      item.source === "batch-video-input" || item.source === "batch-video-music"
+      || item.source === "batch-video-effect" || item.source === "batch-video-output"
     ));
     outputUrls.forEach((url) => URL.revokeObjectURL(url));
     outputUrls.clear();
@@ -189,7 +248,35 @@
       || (window.MediaRecorder?.isTypeSupported?.("video/mp4") ? "video/mp4" : "");
     const webmMime = window.HHVideoExport?.resolveRecorderMime?.("video/webm;codecs=vp9,opus")
       || (window.MediaRecorder?.isTypeSupported?.("video/webm;codecs=vp9,opus") ? "video/webm;codecs=vp9,opus" : "video/webm");
-    return { capture, recorderReady, mp4Mime, webmMime, indexedDb: Boolean(window.indexedDB) };
+    return {
+      capture, recorderReady, mp4Mime, webmMime,
+      indexedDb: Boolean(window.indexedDB),
+      audio: Boolean(window.AudioContext || window.webkitAudioContext),
+      folderInput: "webkitdirectory" in document.createElement("input"),
+      outputDirectory: typeof window.showDirectoryPicker === "function",
+      gpu: gpuStatus
+    };
+  }
+
+  async function detectGpu() {
+    if (!navigator.gpu?.requestAdapter) {
+      gpuStatus = { state: "fallback", label: "WebGPU không hỗ trợ · dùng Canvas/codec trình duyệt", vendor: "" };
+      return gpuStatus;
+    }
+    try {
+      const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+      if (!adapter) throw new Error("Không có adapter");
+      const info = adapter.info || {};
+      const raw = [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ");
+      gpuStatus = {
+        state: "ready",
+        label: raw ? `GPU hiệu năng cao: ${raw}` : "GPU hiệu năng cao đã được trình duyệt cấp",
+        vendor: raw
+      };
+    } catch {
+      gpuStatus = { state: "fallback", label: "Không nhận được WebGPU · dùng Canvas/codec trình duyệt", vendor: "" };
+    }
+    return gpuStatus;
   }
 
   function status(message, kind = "info") {
@@ -201,6 +288,18 @@
 
   function sourceAssets() {
     return assets.filter((item) => item.source === "batch-video-input");
+  }
+
+  function musicAssets() {
+    return assets.filter((item) => item.source === "batch-video-music");
+  }
+
+  function effectAssets() {
+    return assets.filter((item) => item.source === "batch-video-effect");
+  }
+
+  function colorOptions(selected = "") {
+    return COLOR_PRESETS.map((item) => `<option value="${item.id}" ${selected === item.id ? "selected" : ""}>${esc(item.name)}</option>`).join("");
   }
 
   function inputOptions(selected = "") {
@@ -221,9 +320,19 @@
         <label>FPS<select data-bvf-template="fps">${[24,25,30,50,60].map((fps) => `<option ${template.fps === fps ? "selected" : ""}>${fps}</option>`).join("")}</select></label>
         <label>Định dạng<select data-bvf-template="format"><option value="mp4" ${template.format === "mp4" ? "selected" : ""}>MP4 H.264</option><option value="webm" ${template.format === "webm" ? "selected" : ""}>WebM VP9</option></select></label>
         <label>Bitrate<select data-bvf-template="bitrate">${[[4_000_000,"4 Mbps"],[8_000_000,"8 Mbps"],[12_000_000,"12 Mbps"],[20_000_000,"20 Mbps"]].map(([value,label]) => `<option value="${value}" ${template.bitrate === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>
+        <label>Hồ sơ render<select data-bvf-render-profile>${[["fast","Nhanh"],["balanced","Cân bằng"],["high","Chất lượng cao"],["cinematic","Điện ảnh"]].map(([value,label]) => `<option value="${value}" ${template.renderProfile === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>
+        <label>Engine<select data-bvf-template="renderEngine"><option value="auto" ${template.renderEngine === "auto" ? "selected" : ""}>Tự động · ưu tiên GPU</option><option value="gpu" ${template.renderEngine === "gpu" ? "selected" : ""}>GPU hiệu năng cao</option><option value="compatibility" ${template.renderEngine === "compatibility" ? "selected" : ""}>Tương thích</option></select></label>
         <label>Màu nền<input type="color" data-bvf-template="background" value="${template.background}"></label>
         <label>Màu tín hiệu<input type="color" data-bvf-template="accent" value="${template.accent}"></label>
         <label>Kiểu chuyển động<select data-bvf-template="motion">${["cinematic","pulse","orbit","drift","slide","none"].map((value) => `<option value="${value}" ${template.motion === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+        <label>Chuyển động ảnh<select data-bvf-template="imageMotion"><option value="kenburns" ${template.imageMotion === "kenburns" ? "selected" : ""}>Ken Burns</option><option value="zoom" ${template.imageMotion === "zoom" ? "selected" : ""}>Zoom pulse</option><option value="pan" ${template.imageMotion === "pan" ? "selected" : ""}>Pan ngang</option><option value="float" ${template.imageMotion === "float" ? "selected" : ""}>Float</option><option value="none" ${template.imageMotion === "none" ? "selected" : ""}>Tĩnh</option></select></label>
+        <label>Phong cách màu<select data-bvf-template="colorPreset">${colorOptions(template.colorPreset)}</select></label>
+        <label>Cường độ màu ${template.colorIntensity}%<input type="range" min="0" max="100" data-bvf-template="colorIntensity" value="${template.colorIntensity}"></label>
+        <label>Overlay Screen ${template.effectOpacity}%<input type="range" min="0" max="100" data-bvf-template="effectOpacity" value="${template.effectOpacity}"></label>
+        <label>Chọn hiệu ứng<select data-bvf-template="effectMode"><option value="random" ${template.effectMode === "random" ? "selected" : ""}>Ngẫu nhiên</option><option value="shuffle" ${template.effectMode === "shuffle" ? "selected" : ""}>Trộn không lặp</option><option value="none" ${template.effectMode === "none" ? "selected" : ""}>Tắt</option></select></label>
+        <label>Chọn nhạc<select data-bvf-template="musicMode"><option value="random" ${template.musicMode === "random" ? "selected" : ""}>Ngẫu nhiên</option><option value="shuffle" ${template.musicMode === "shuffle" ? "selected" : ""}>Trộn không lặp</option><option value="none" ${template.musicMode === "none" ? "selected" : ""}>Tắt</option></select></label>
+        <label>Âm lượng nhạc ${template.musicVolume}%<input type="range" min="0" max="100" data-bvf-template="musicVolume" value="${template.musicVolume}"></label>
+        <label>Fade nhạc<input type="number" min="0" max="5" step=".1" data-bvf-template="musicFade" value="${template.musicFade}"></label>
         <label>Bố cục<select data-bvf-template="layout"><option value="left" ${template.layout === "left" ? "selected" : ""}>Căn trái</option><option value="center" ${template.layout === "center" ? "selected" : ""}>Căn giữa</option></select></label>
         <label>Logo<input data-bvf-template="logo" value="${esc(template.logo)}" maxlength="4"></label>
         <label>Watermark<input data-bvf-template="watermark" value="${esc(template.watermark)}" maxlength="60"></label>
@@ -232,7 +341,10 @@
       <div class="bvf-output-options">
         <label><input type="checkbox" data-bvf-option="saveToMediaPool" ${state.saveToMediaPool ? "checked" : ""}> Lưu file xuất vào Media Pool</label>
         <label><input type="checkbox" data-bvf-option="autoDownload" ${state.autoDownload ? "checked" : ""}> Tự tải từng file sau khi render</label>
+        <button type="button" data-bvf-action="select-output-folder">Chọn thư mục lưu</button>
+        <span data-bvf-output-folder>${esc(state.outputDirectoryName || "Chưa chọn · lưu Media Pool/tải xuống")}</span>
       </div>
+      <p class="bvf-honesty">Chế độ GPU yêu cầu adapter <code>high-performance</code>, dùng WebGL2 cho scale, color grade và Screen effect. Chrome tự chọn GPU/codec phần cứng; website không thể ép NVENC hoặc tự nhận là NVIDIA khi trình duyệt không cung cấp tên thiết bị.</p>
     </section>`;
   }
 
@@ -240,19 +352,25 @@
     return `<section class="bvf-panel bvf-data">
       <header><div><small>DATA MERGE · ${state.rows.length}/${MAX_ROWS}</small><h3>Danh sách video cần tạo</h3></div><span>Mỗi dòng → một video</span></header>
       <div class="bvf-import-bar">
-        <label class="bvf-file">Nhập ảnh/video<input type="file" multiple accept="image/*,video/mp4,video/webm,video/quicktime" data-bvf-assets></label>
+        <label class="bvf-file is-folder">Chọn folder ảnh · mỗi ảnh 1 video<input type="file" multiple webkitdirectory directory accept="image/*" data-bvf-image-folder></label>
+        <label class="bvf-file">Thêm ảnh/video lẻ<input type="file" multiple accept="image/*,video/mp4,video/webm,video/quicktime" data-bvf-assets></label>
+        <label class="bvf-file is-folder">Chọn folder nhạc<input type="file" multiple webkitdirectory directory accept="audio/*" data-bvf-music-folder></label>
+        <label class="bvf-file is-folder">Chọn folder hiệu ứng Screen<input type="file" multiple webkitdirectory directory accept="image/*,video/*" data-bvf-effect-folder></label>
         <label class="bvf-file">Nhập CSV/JSON<input type="file" accept=".csv,.json,text/csv,application/json" data-bvf-data-file></label>
         <button data-bvf-action="sample-csv">Tải CSV mẫu</button>
         <button data-bvf-action="add-row">+ Thêm dòng</button>
       </div>
-      <div class="bvf-table-wrap"><table><thead><tr><th>#</th><th>Tiêu đề</th><th>Dòng phụ</th><th>CTA</th><th>Media</th><th></th></tr></thead><tbody>${state.rows.length ? state.rows.map((row, index) => `<tr data-bvf-row="${esc(row.id)}">
+      <div class="bvf-folder-summary"><span>${sourceAssets().length} ảnh/video</span><span>${musicAssets().length} bản nhạc</span><span>${effectAssets().length} hiệu ứng Screen</span></div>
+      <div class="bvf-table-wrap"><table><thead><tr><th>#</th><th>Tiêu đề</th><th>Dòng phụ</th><th>CTA</th><th>Media</th><th>Giây</th><th>Màu</th><th></th></tr></thead><tbody>${state.rows.length ? state.rows.map((row, index) => `<tr data-bvf-row="${esc(row.id)}">
         <td>${index + 1}</td>
         <td><input data-bvf-row-field="title" value="${esc(row.title)}" maxlength="180"></td>
         <td><input data-bvf-row-field="subtitle" value="${esc(row.subtitle)}" maxlength="300"></td>
         <td><input data-bvf-row-field="cta" value="${esc(row.cta)}" maxlength="120"></td>
         <td><select data-bvf-row-field="sourceId">${inputOptions(row.sourceId)}</select></td>
+        <td><input type="number" min="1" max="60" placeholder="${state.template.duration}" data-bvf-row-field="duration" value="${row.duration || ""}"></td>
+        <td><select data-bvf-row-field="colorPreset"><option value="">Theo sườn</option>${colorOptions(row.colorPreset)}</select></td>
         <td><button data-bvf-remove-row="${esc(row.id)}" aria-label="Xóa dòng">×</button></td>
-      </tr>`).join("") : `<tr><td colspan="6"><p>Chưa có dữ liệu. Nhập CSV/JSON, chọn nhiều media hoặc thêm dòng thủ công.</p></td></tr>`}</tbody></table></div>
+      </tr>`).join("") : `<tr><td colspan="8"><p>Chưa có dữ liệu. Chọn folder ảnh để tự tạo một video cho mỗi ảnh.</p></td></tr>`}</tbody></table></div>
       <p class="bvf-honesty">CSV dùng các cột: <code>title, subtitle, cta, accent, sourceName</code>. Tool ghép dữ liệu vào sườn; không tự tạo nội dung mẫu hoặc dùng asset ngoài Media Pool.</p>
     </section>`;
   }
@@ -266,7 +384,9 @@
       <div class="bvf-queue-actions"><button data-bvf-action="build-queue">Tạo lại hàng đợi</button><button class="is-primary" data-bvf-action="render-all" ${running ? "disabled" : ""}>Render tất cả</button><button data-bvf-action="cancel" ${running ? "" : "disabled"}>Dừng sau job hiện tại</button><button data-bvf-action="download-all" ${completed ? "" : "disabled"}>Tải tất cả file xong</button></div>
       <div class="bvf-job-list">${state.jobs.length ? state.jobs.map((job) => {
         const url = outputUrls.get(job.outputAssetId);
-        return `<article class="is-${job.status}" data-bvf-job="${esc(job.id)}"><i>${job.status === "completed" ? "✓" : job.status === "failed" ? "!" : job.status === "processing" ? "●" : "○"}</i><div><strong>${esc(job.title)}</strong><small>${esc(job.error || job.outputName || job.status)}${job.outputSize ? ` · ${formatBytes(job.outputSize)}` : ""}</small><span><b style="width:${job.progress}%"></b></span></div><em>${Math.round(job.progress)}%</em>${url ? `<a href="${esc(url)}" download="${esc(job.outputName)}">Tải</a>` : job.status === "failed" || job.status === "cancelled" ? `<button data-bvf-retry="${esc(job.id)}">Thử lại</button>` : ""}</article>`;
+        const musicName = musicAssets().find((item) => item.id === job.musicId)?.name || "Không nhạc";
+        const effectName = effectAssets().find((item) => item.id === job.effectId)?.name || "Không effect";
+        return `<article class="is-${job.status}" data-bvf-job="${esc(job.id)}"><i>${job.status === "completed" ? "✓" : job.status === "failed" ? "!" : job.status === "processing" ? "●" : "○"}</i><div><strong>${esc(job.title)}</strong><small>${esc(job.error || job.outputName || `${job.status} · ♫ ${musicName} · FX ${effectName}`)}${job.outputSize ? ` · ${formatBytes(job.outputSize)}` : ""}</small><span><b style="width:${job.progress}%"></b></span></div><em>${Math.round(job.progress)}%</em>${url ? `<a href="${esc(url)}" download="${esc(job.outputName)}">Tải</a>` : job.status === "failed" || job.status === "cancelled" ? `<button data-bvf-retry="${esc(job.id)}">Thử lại</button>` : ""}</article>`;
       }).join("") : "<p>Chưa có hàng đợi. Mỗi dòng dữ liệu sẽ trở thành một job.</p>"}</div>
     </section>`;
   }
@@ -275,8 +395,8 @@
     if (!root) return;
     const caps = capabilities();
     root.innerHTML = `<section class="bvf-shell">
-      <header class="bvf-hero"><div class="bvf-core"><b>H</b><i></i></div><div><small>TOOL · BATCH VIDEO FACTORY</small><h2>Một sườn, hàng loạt video thật</h2><p>Trộn dữ liệu và media vào một template, kiểm tra từng biến thể rồi kết xuất tuần tự ngay trên thiết bị.</p></div><aside><span class="is-${caps.recorderReady ? "ready" : "unsupported"}">${caps.recorderReady ? "Renderer sẵn sàng" : "Thiết bị không hỗ trợ render"}</span><small>${caps.mp4Mime ? "MP4 H.264 khả dụng" : "MP4 không có · dùng WebM fallback"} · IndexedDB ${caps.indexedDb ? "sẵn sàng" : "không hỗ trợ"}</small></aside></header>
-      <section class="bvf-live"><article><span>SƯỜN</span><strong>${esc(state.template.name)}</strong></article><article><span>BIẾN THỂ</span><strong>${state.rows.length}</strong></article><article><span>JOB</span><strong>${state.jobs.length}</strong></article><article><span>THỜI LƯỢNG ƯỚC TÍNH</span><strong>${Math.ceil(state.rows.length * state.template.duration / 60)} phút</strong></article><article><span>RENDER</span><strong>${running ? "Đang chạy" : "Local-first"}</strong></article></section>
+      <header class="bvf-hero"><div class="bvf-core"><b>H</b><i></i></div><div><small>TOOL · BATCH VIDEO FACTORY</small><h2>Mỗi ảnh thành một video hoàn chỉnh</h2><p>Chọn folder ảnh, trộn nhạc và hiệu ứng ngẫu nhiên, color grade rồi kết xuất hàng loạt ngay trên thiết bị.</p></div><aside><span class="is-${caps.recorderReady ? "ready" : "unsupported"}">${caps.recorderReady ? "Renderer sẵn sàng" : "Thiết bị không hỗ trợ render"}</span><small>${esc(caps.gpu.label)} · ${caps.mp4Mime ? "MP4 H.264" : "WebM fallback"}</small></aside></header>
+      <section class="bvf-live"><article><span>ẢNH/VIDEO</span><strong>${sourceAssets().length}</strong></article><article><span>NHẠC</span><strong>${musicAssets().length}</strong></article><article><span>SCREEN FX</span><strong>${effectAssets().length}</strong></article><article><span>THỜI LƯỢNG ƯỚC TÍNH</span><strong>${Math.ceil(state.rows.reduce((sum,row) => sum + (row.duration || state.template.duration), 0) / 60)} phút</strong></article><article><span>THƯ MỤC LƯU</span><strong>${esc(state.outputDirectoryName || "Media Pool")}</strong></article></section>
       <div class="bvf-layout"><main>${templateMarkup()}${dataMarkup()}</main><aside><section class="bvf-panel bvf-preview"><header><div><small>LIVE PREVIEW</small><h3>Khung đầu ra</h3></div><span>Canvas thật</span></header><canvas data-bvf-canvas width="${state.template.width}" height="${state.template.height}"></canvas><p>Preview dùng dòng đầu tiên. Hiệu ứng render giữ cùng sườn, màu và safe zone.</p></section>${queueMarkup()}</aside></div>
       <footer><span data-bvf-status role="status" aria-live="polite">Sẵn sàng · file nguồn và kết quả nằm trong Media Pool của thiết bị này.</span><span>Render trình duyệt chạy theo thời lượng thật; tab cần được giữ hoạt động.</span></footer>
     </section>`;
@@ -310,8 +430,157 @@
     ctx.drawImage(media, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
   }
 
-  function drawFrame(canvas, row, progress = 0, media = null) {
-    const ctx = canvas.getContext("2d");
+  function resolvedColorPreset(row) {
+    const requested = row?.colorPreset || state.template.colorPreset;
+    if (requested !== "auto") return COLOR_PRESETS.find((item) => item.id === requested) || COLOR_PRESETS[1];
+    const suggested = row?.suggestedColor || "natural";
+    return COLOR_PRESETS.find((item) => item.id === suggested) || COLOR_PRESETS[1];
+  }
+
+  function colorFilter(row) {
+    const preset = resolvedColorPreset(row);
+    if (state.template.colorIntensity >= 99) return preset.filter;
+    if (state.template.colorIntensity <= 1) return "none";
+    const strength = state.template.colorIntensity / 100;
+    return `${preset.filter} opacity(${.72 + strength * .28})`;
+  }
+
+  function imageMotion(progress) {
+    const mode = state.template.imageMotion;
+    if (mode === "kenburns") return { scale: 1.02 + progress * .1, x: (progress - .5) * -.035, y: (progress - .5) * -.018 };
+    if (mode === "zoom") return { scale: 1.03 + Math.sin(progress * Math.PI) * .08, x: 0, y: 0 };
+    if (mode === "pan") return { scale: 1.09, x: (progress - .5) * .09, y: 0 };
+    if (mode === "float") return { scale: 1.05, x: Math.sin(progress * Math.PI * 2) * .018, y: Math.cos(progress * Math.PI * 2) * .018 };
+    return { scale: 1, x: 0, y: 0 };
+  }
+
+  function colorParameters(row) {
+    const id = resolvedColorPreset(row).id;
+    return ({
+      natural: [1.02, 1.04, 1.05, 1, 1, 1],
+      cinematic: [.99, 1.14, 1.2, 1.08, .98, .9],
+      neon: [1.05, 1.17, 1.45, 1.04, .95, 1.12],
+      aurora: [1.04, 1.08, 1.26, .9, 1.08, 1.1],
+      solar: [1.05, 1.12, 1.3, 1.12, 1.02, .86],
+      moonlight: [.95, 1.1, .92, .85, .95, 1.15],
+      emerald: [1.02, 1.1, 1.2, .88, 1.12, .96],
+      vintage: [.98, 1.08, .78, 1.08, 1.01, .84],
+      pastel: [1.08, .92, .9, 1.05, .98, 1.05],
+      mono: [1.02, 1.16, 0, 1, 1, 1],
+      punch: [1.04, 1.24, 1.3, 1, 1, 1]
+    })[id] || [1.02, 1.04, 1.05, 1, 1, 1];
+  }
+
+  function createGpuCompositor(width, height) {
+    const gpuCanvas = document.createElement("canvas");
+    gpuCanvas.width = width; gpuCanvas.height = height;
+    const gl = gpuCanvas.getContext("webgl2", {
+      alpha: false, antialias: false, desynchronized: true,
+      preserveDrawingBuffer: true, powerPreference: "high-performance"
+    });
+    if (!gl) return null;
+    const vertexSource = `#version 300 es
+      in vec2 a_position; out vec2 v_uv;
+      void main(){ v_uv=(a_position+1.0)*0.5; gl_Position=vec4(a_position,0.0,1.0); }`;
+    const fragmentSource = `#version 300 es
+      precision highp float; in vec2 v_uv; out vec4 outColor;
+      uniform sampler2D u_source; uniform sampler2D u_effect;
+      uniform vec2 u_uvScale; uniform vec2 u_uvOffset;
+      uniform vec3 u_tint; uniform vec3 u_grade;
+      uniform float u_effectOpacity; uniform bool u_hasEffect;
+      void main(){
+        vec2 uv=(v_uv-.5)*u_uvScale+.5+u_uvOffset;
+        vec3 color=texture(u_source,clamp(uv,0.0,1.0)).rgb;
+        float light=dot(color,vec3(.299,.587,.114));
+        color=mix(vec3(light),color,u_grade.z);
+        color=(color-.5)*u_grade.y+.5;
+        color=clamp(color*u_grade.x*u_tint,0.0,1.0);
+        if(u_hasEffect){
+          vec3 fx=texture(u_effect,v_uv).rgb;
+          vec3 screened=1.0-(1.0-color)*(1.0-fx);
+          color=mix(color,screened,u_effectOpacity);
+        }
+        outColor=vec4(color,1.0);
+      }`;
+    const compile = (type, source) => {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source); gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader));
+      return shader;
+    };
+    try {
+      const program = gl.createProgram();
+      gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSource));
+      gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSource));
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+      gl.useProgram(program);
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+      const position = gl.getAttribLocation(program, "a_position");
+      gl.enableVertexAttribArray(position);
+      gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+      const makeTexture = (unit) => {
+        const texture = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        return texture;
+      };
+      const sourceTexture = makeTexture(0);
+      const effectTexture = makeTexture(1);
+      gl.uniform1i(gl.getUniformLocation(program, "u_source"), 0);
+      gl.uniform1i(gl.getUniformLocation(program, "u_effect"), 1);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      return {
+        canvas: gpuCanvas,
+        draw(source, effect, progress, row) {
+          if (!source) return null;
+          const sourceWidth = source.videoWidth || source.naturalWidth || width;
+          const sourceHeight = source.videoHeight || source.naturalHeight || height;
+          const sourceAspect = sourceWidth / sourceHeight;
+          const targetAspect = width / height;
+          const movement = imageMotion(progress);
+          const uvScale = sourceAspect > targetAspect
+            ? [targetAspect / sourceAspect / movement.scale, 1 / movement.scale]
+            : [1 / movement.scale, sourceAspect / targetAspect / movement.scale];
+          const params = colorParameters(row);
+          const strength = state.template.colorIntensity / 100;
+          const grade = [1 + (params[0] - 1) * strength, 1 + (params[1] - 1) * strength, 1 + (params[2] - 1) * strength];
+          const tint = [1 + (params[3] - 1) * strength, 1 + (params[4] - 1) * strength, 1 + (params[5] - 1) * strength];
+          gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, sourceTexture);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+          let hasEffect = false;
+          if (effect) {
+            gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, effectTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, effect);
+            hasEffect = true;
+          }
+          gl.uniform2f(gl.getUniformLocation(program, "u_uvScale"), uvScale[0], uvScale[1]);
+          gl.uniform2f(gl.getUniformLocation(program, "u_uvOffset"), movement.x, -movement.y);
+          gl.uniform3fv(gl.getUniformLocation(program, "u_grade"), grade);
+          gl.uniform3fv(gl.getUniformLocation(program, "u_tint"), tint);
+          gl.uniform1f(gl.getUniformLocation(program, "u_effectOpacity"), state.template.effectOpacity / 100);
+          gl.uniform1i(gl.getUniformLocation(program, "u_hasEffect"), hasEffect && state.template.effectMode !== "none" ? 1 : 0);
+          gl.viewport(0, 0, width, height);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+          return gpuCanvas;
+        },
+        destroy() {
+          gl.deleteTexture(sourceTexture); gl.deleteTexture(effectTexture);
+          gl.deleteBuffer(buffer); gl.deleteProgram(program);
+        }
+      };
+    } catch { return null; }
+  }
+
+  function drawFrame(canvas, row, progress = 0, media = null, effect = null, precomposited = false) {
+    const ctx = canvas._bvfContext || (canvas._bvfContext = canvas.getContext("2d", {
+      alpha: false, desynchronized: state.template.renderEngine !== "compatibility"
+    }));
     const template = state.template;
     const width = canvas.width;
     const height = canvas.height;
@@ -327,9 +596,19 @@
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
     if (media) {
+      const movement = precomposited ? { scale: 1, x: 0, y: 0 } : imageMotion(progress);
       ctx.save();
       ctx.globalAlpha = .86;
-      drawCover(ctx, media, width, height, drift);
+      ctx.filter = precomposited ? "none" : colorFilter(row);
+      ctx.translate(width * movement.x, height * movement.y);
+      drawCover(ctx, media, width, height, movement.scale * (precomposited ? 1 : drift));
+      ctx.restore();
+    }
+    if (!precomposited && effect && state.template.effectMode !== "none" && state.template.effectOpacity > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = state.template.effectOpacity / 100;
+      drawCover(ctx, effect, width, height, 1.01);
       ctx.restore();
     }
     const overlay = ctx.createLinearGradient(template.layout === "left" ? 0 : width / 2, 0, width, 0);
@@ -402,8 +681,8 @@
     }
   }
 
-  async function mediaForRow(row) {
-    const asset = assets.find((item) => item.id === row.sourceId && item.file instanceof Blob);
+  async function mediaForAsset(assetId) {
+    const asset = assets.find((item) => item.id === assetId && item.file instanceof Blob);
     if (!asset) return null;
     const url = URL.createObjectURL(asset.file);
     if (asset.type?.startsWith("image/")) {
@@ -414,6 +693,18 @@
         image.src = url;
       });
       return { element: image, url, type: "image" };
+    }
+    if (asset.type?.startsWith("audio/") || asset.source === "batch-video-music") {
+      const audio = document.createElement("audio");
+      audio.src = url;
+      audio.preload = "auto";
+      audio.loop = true;
+      await new Promise((resolve, reject) => {
+        audio.onloadeddata = resolve;
+        audio.onerror = () => reject(new Error(`Không đọc được nhạc ${asset.name}.`));
+        audio.load();
+      });
+      return { element: audio, url, type: "audio" };
     }
     const video = document.createElement("video");
     video.src = url;
@@ -428,6 +719,8 @@
     return { element: video, url, type: "video" };
   }
 
+  const mediaForRow = (row) => mediaForAsset(row.sourceId);
+
   function drawPreview() {
     const canvas = root?.querySelector("[data-bvf-canvas]");
     if (!canvas) return;
@@ -436,10 +729,14 @@
     const row = state.rows[0] || normalizeRow({ title: "MỘT SƯỜN · NHIỀU VIDEO", subtitle: "CSV, media, transition và render queue", cta: "BẮT ĐẦU" });
     drawFrame(canvas, row, .25);
     if (row.sourceId) {
-      mediaForRow(row).then((media) => {
+      Promise.all([
+        mediaForRow(row),
+        state.template.effectMode === "none" ? Promise.resolve(null) : mediaForAsset(effectAssets()[0]?.id)
+      ]).then(([media, effect]) => {
         if (!root?.isConnected || !media) return;
-        drawFrame(canvas, row, .25, media.element);
+        drawFrame(canvas, row, .25, media.element, effect?.element || null);
         URL.revokeObjectURL(media.url);
+        if (effect?.url) URL.revokeObjectURL(effect.url);
       }).catch(() => {});
     }
   }
@@ -455,6 +752,9 @@
       { label: requestedMp4 ? "MP4 H.264" : "WebM VP9", pass: Boolean(actualMime), detail: requestedMp4 && !caps.mp4Mime ? "Sẽ dùng WebM fallback" : actualMime || "Không có codec" },
       { label: "Dữ liệu đầu vào", pass: state.rows.length > 0, detail: `${state.rows.length} biến thể` },
       { label: "Media liên kết", pass: state.rows.every((row) => !row.sourceId || assets.some((asset) => asset.id === row.sourceId)), detail: "Asset thiếu sẽ chặn job tương ứng" },
+      { label: "Nhạc nền", pass: state.template.musicMode === "none" || !musicAssets().length || caps.audio, detail: musicAssets().length ? `${musicAssets().length} bài · ${state.template.musicMode}` : "Không có nhạc · video sẽ không có nhạc nền" },
+      { label: "GPU", pass: state.template.renderEngine !== "gpu" || caps.gpu.state === "ready", detail: caps.gpu.label },
+      { label: "Thư mục đầu ra", pass: true, detail: outputDirectoryHandle ? state.outputDirectoryName : "Media Pool hoặc tải xuống" },
       { label: "Media Pool", pass: caps.indexedDb || !state.saveToMediaPool, detail: caps.indexedDb ? "Lưu file thật" : "Không hỗ trợ" }
     ];
     return { checks, ready: checks.every((item) => item.pass), mime: actualMime };
@@ -486,6 +786,15 @@
     const outputName = `${safeName}-${job.id.slice(-5)}.${extension}`;
     const file = new File([blob], outputName, { type: mime });
     const assetId = uid("batch-output");
+    if (outputDirectoryHandle) {
+      const permission = await outputDirectoryHandle.queryPermission?.({ mode: "readwrite" });
+      const granted = permission === "granted" || await outputDirectoryHandle.requestPermission?.({ mode: "readwrite" }) === "granted";
+      if (!granted) throw new Error("Trình duyệt chưa cho phép ghi vào thư mục đã chọn.");
+      const fileHandle = await outputDirectoryHandle.getFileHandle(outputName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(file);
+      await writable.close();
+    }
     if (state.saveToMediaPool) {
       await dbPut({
         id: assetId,
@@ -493,11 +802,15 @@
         name: outputName,
         type: mime,
         size: file.size,
-        duration: state.template.duration,
+        duration: state.rows.find((item) => item.id === job.rowId)?.duration || state.template.duration,
         width: state.template.width,
         height: state.template.height,
         source: "batch-video-output",
         batchJobId: job.id,
+        musicId: job.musicId,
+        effectId: job.effectId,
+        colorPreset: state.rows.find((item) => item.id === job.rowId)?.colorPreset || state.template.colorPreset,
+        outputDirectory: state.outputDirectoryName || "",
         createdAt: new Date().toISOString(),
         file
       });
@@ -515,19 +828,37 @@
     const caps = capabilities();
     const mime = state.template.format === "mp4" ? caps.mp4Mime || caps.webmMime : caps.webmMime;
     if (!caps.recorderReady || !mime) throw new Error("Thiết bị không có bộ render video tương thích.");
+    const jobDuration = row.duration || state.template.duration;
     const canvas = document.createElement("canvas");
     canvas.width = state.template.width;
     canvas.height = state.template.height;
+    const gpuCompositor = state.template.renderEngine === "compatibility"
+      ? null
+      : createGpuCompositor(canvas.width, canvas.height);
+    if (state.template.renderEngine === "gpu" && !gpuCompositor) throw new Error("Không tạo được WebGL2 high-performance context trên GPU.");
     const stream = canvas.captureStream(state.template.fps);
     const media = await mediaForRow(row);
+    const effect = job.effectId ? await mediaForAsset(job.effectId) : null;
+    const music = job.musicId ? await mediaForAsset(job.musicId) : null;
     let audioContext = null;
-    if (media?.type === "video" && (window.AudioContext || window.webkitAudioContext)) {
+    let musicGain = null;
+    if ((media?.type === "video" || music?.type === "audio") && (window.AudioContext || window.webkitAudioContext)) {
       try {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         await audioContext.resume();
-        const source = audioContext.createMediaElementSource(media.element);
         const destination = audioContext.createMediaStreamDestination();
-        source.connect(destination);
+        if (media?.type === "video") {
+          const source = audioContext.createMediaElementSource(media.element);
+          const originalGain = audioContext.createGain();
+          originalGain.gain.value = music ? .18 : 1;
+          source.connect(originalGain).connect(destination);
+        }
+        if (music?.type === "audio") {
+          const musicSource = audioContext.createMediaElementSource(music.element);
+          musicGain = audioContext.createGain();
+          musicGain.gain.value = state.template.musicVolume / 100;
+          musicSource.connect(musicGain).connect(destination);
+        }
         destination.stream.getAudioTracks().forEach((track) => stream.addTrack(track));
       } catch {}
     }
@@ -546,11 +877,32 @@
       media.element.currentTime = 0;
       await media.element.play().catch(() => {});
     }
+    if (effect?.type === "video") {
+      effect.element.currentTime = 0;
+      effect.element.muted = true;
+      await effect.element.play().catch(() => {});
+    }
+    if (music?.type === "audio") {
+      music.element.currentTime = 0;
+      await music.element.play().catch(() => {});
+      if (audioContext && musicGain && state.template.musicFade > 0) {
+        const fade = Math.min(state.template.musicFade, jobDuration / 2);
+        musicGain.gain.setValueAtTime(state.template.musicVolume / 100, audioContext.currentTime);
+        musicGain.gain.setValueAtTime(state.template.musicVolume / 100, audioContext.currentTime + Math.max(0, jobDuration - fade));
+        musicGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + jobDuration);
+      }
+    }
     await new Promise((resolve) => {
       const frame = (now) => {
         const elapsed = (now - startedAt) / 1000;
-        const progress = Math.min(1, elapsed / state.template.duration);
-        drawFrame(canvas, row, progress, media?.element || null);
+        const progress = Math.min(1, elapsed / jobDuration);
+        const composed = gpuCompositor?.draw(media?.element || null, effect?.element || null, progress, row);
+        drawFrame(
+          canvas, row, progress,
+          composed || media?.element || null,
+          composed ? null : effect?.element || null,
+          Boolean(composed)
+        );
         updateJob(job, { progress: progress * 100 });
         if (progress >= 1 || cancelRequested) return resolve();
         frameId = requestAnimationFrame(frame);
@@ -558,11 +910,16 @@
       frameId = requestAnimationFrame(frame);
     });
     if (media?.type === "video") media.element.pause();
+    if (effect?.type === "video") effect.element.pause();
+    if (music?.type === "audio") music.element.pause();
     if (recorder.state !== "inactive") recorder.stop();
     await stopped;
     stream.getTracks().forEach((track) => track.stop());
     if (audioContext) await audioContext.close().catch(() => {});
     if (media?.url) URL.revokeObjectURL(media.url);
+    if (effect?.url) URL.revokeObjectURL(effect.url);
+    if (music?.url) URL.revokeObjectURL(music.url);
+    gpuCompositor?.destroy();
     recorder = null;
     if (cancelRequested) throw Object.assign(new Error("Đã hủy theo yêu cầu."), { cancelled: true });
     const blob = new Blob(chunks, { type: mime.split(";")[0] });
@@ -610,10 +967,18 @@
   }
 
   function buildQueue() {
-    state.jobs = state.rows.map((row) => normalizeJob({
+    const shuffledMusic = [...musicAssets()].sort(() => Math.random() - .5);
+    const shuffledEffects = [...effectAssets()].sort(() => Math.random() - .5);
+    state.jobs = state.rows.map((row, index) => normalizeJob({
       id: uid("job"),
       rowId: row.id,
       title: row.title,
+      musicId: state.template.musicMode === "none" || !shuffledMusic.length ? "" : state.template.musicMode === "shuffle"
+        ? shuffledMusic[index % shuffledMusic.length].id
+        : shuffledMusic[Math.floor(Math.random() * shuffledMusic.length)].id,
+      effectId: state.template.effectMode === "none" || !shuffledEffects.length ? "" : state.template.effectMode === "shuffle"
+        ? shuffledEffects[index % shuffledEffects.length].id
+        : shuffledEffects[Math.floor(Math.random() * shuffledEffects.length)].id,
       status: "queued",
       progress: 0,
       createdAt: new Date().toISOString()
@@ -680,41 +1045,131 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  async function importAssets(files) {
-    const accepted = [...files].filter((file) => (
-      (file.type.startsWith("image/") || file.type.startsWith("video/")) && file.size <= MAX_INPUT_SIZE
-    )).slice(0, MAX_ROWS);
+  const isImage = (file) => file.type.startsWith("image/") || /\.(png|jpe?g|webp|avif|gif)$/i.test(file.name);
+  const isVideo = (file) => file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(file.name);
+  const isAudio = (file) => file.type.startsWith("audio/") || /\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i.test(file.name);
+  const inferredType = (file) => file.type || (
+    /\.mp3$/i.test(file.name) ? "audio/mpeg"
+      : /\.(m4a|aac)$/i.test(file.name) ? "audio/mp4"
+        : /\.wav$/i.test(file.name) ? "audio/wav"
+          : /\.(ogg|opus)$/i.test(file.name) ? "audio/ogg"
+            : /\.webm$/i.test(file.name) ? "video/webm"
+              : /\.(mp4|m4v|mov)$/i.test(file.name) ? "video/mp4"
+                : /\.png$/i.test(file.name) ? "image/png"
+                  : /\.(jpe?g)$/i.test(file.name) ? "image/jpeg"
+                    : /\.webp$/i.test(file.name) ? "image/webp"
+                      : "application/octet-stream"
+  );
+
+  async function suggestColorForFile(file) {
+    if (!isImage(file) || !window.createImageBitmap) return "natural";
+    try {
+      const bitmap = await createImageBitmap(file, { resizeWidth: 32, resizeHeight: 32 });
+      const canvas = document.createElement("canvas");
+      canvas.width = 32; canvas.height = 32;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(bitmap, 0, 0, 32, 32);
+      bitmap.close?.();
+      const pixels = context.getImageData(0, 0, 32, 32).data;
+      let red = 0; let green = 0; let blue = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        red += pixels[index]; green += pixels[index + 1]; blue += pixels[index + 2];
+      }
+      const count = pixels.length / 4;
+      red /= count; green /= count; blue /= count;
+      const brightness = red * .299 + green * .587 + blue * .114;
+      const spread = Math.max(red, green, blue) - Math.min(red, green, blue);
+      if (brightness < 65) return "aurora";
+      if (spread < 20) return "punch";
+      if (red > blue + 28) return "cinematic";
+      if (blue > red + 25) return "solar";
+      if (green > red + 20) return "emerald";
+      if (brightness > 205) return "pastel";
+      return "natural";
+    } catch { return "natural"; }
+  }
+
+  async function storeInputFiles(files, source, predicate) {
+    const limit = source === "batch-video-input" ? MAX_ROWS : MAX_LIBRARY_FILES;
+    const accepted = [...files].filter((file) => predicate(file) && file.size <= MAX_INPUT_SIZE).slice(0, limit);
+    const stored = [];
     for (const file of accepted) {
       const id = uid("batch-input");
-      await dbPut({
+      const record = {
         id,
         ownerId: ownerId(),
         name: file.name,
-        type: file.type || "application/octet-stream",
+        type: inferredType(file),
         size: file.size,
-        source: "batch-video-input",
+        source,
+        relativePath: String(file.webkitRelativePath || "").slice(0, 500),
         createdAt: new Date().toISOString(),
         file
-      });
+      };
+      await dbPut(record);
+      stored.push(record);
     }
+    return stored;
+  }
+
+  async function importImageFolder(files) {
+    await replaceAssetSource("batch-video-input");
+    const stored = await storeInputFiles(files, "batch-video-input", isImage);
+    await refreshAssets();
+    state.rows = [];
+    for (const [index, asset] of stored.entries()) {
+      const original = [...files].find((file) => file.name === asset.name);
+      const suggestedColor = original ? await suggestColorForFile(original) : "natural";
+      state.rows.push(normalizeRow({
+        title: asset.name.replace(/\.[^.]+$/, ""),
+        sourceId: asset.id,
+        sourceName: asset.name,
+        suggestedColor
+      }, index));
+    }
+    state.jobs = [];
+    saveState(); render();
+    status(`Đã tạo ${stored.length} video từ ${stored.length} ảnh trong folder.`, stored.length ? "success" : "error");
+  }
+
+  async function importMusicFolder(files) {
+    await replaceAssetSource("batch-video-music");
+    const stored = await storeInputFiles(files, "batch-video-music", isAudio);
+    state.jobs = [];
+    saveState(); await refreshAssets(); render();
+    status(`Đã thêm ${stored.length} bản nhạc. Hàng đợi mới sẽ trộn nhạc ${state.template.musicMode}.`, stored.length ? "success" : "error");
+  }
+
+  async function importEffectFolder(files) {
+    await replaceAssetSource("batch-video-effect");
+    const stored = await storeInputFiles(files, "batch-video-effect", (file) => isImage(file) || isVideo(file));
+    state.jobs = [];
+    saveState(); await refreshAssets(); render();
+    status(`Đã thêm ${stored.length} overlay. Khi render sẽ ghép Screen ở ${state.template.effectOpacity}%.`, stored.length ? "success" : "error");
+  }
+
+  async function importAssets(files) {
+    const stored = await storeInputFiles(files, "batch-video-input", (file) => isImage(file) || isVideo(file));
     await refreshAssets();
     const unassigned = state.rows.filter((row) => !row.sourceId);
-    accepted.forEach((file, index) => {
-      const asset = sourceAssets().find((item) => item.name === file.name);
-      if (asset && unassigned[index]) {
+    stored.forEach((asset, index) => {
+      if (unassigned[index]) {
         unassigned[index].sourceId = asset.id;
         unassigned[index].sourceName = asset.name;
-      } else if (asset && state.rows.length < MAX_ROWS) {
-        state.rows.push(normalizeRow({ title: file.name.replace(/\.[^.]+$/, ""), sourceId: asset.id, sourceName: asset.name }, state.rows.length));
+      } else if (state.rows.length < MAX_ROWS) {
+        state.rows.push(normalizeRow({ title: asset.name.replace(/\.[^.]+$/, ""), sourceId: asset.id, sourceName: asset.name }, state.rows.length));
       }
     });
     saveState();
     render();
-    status(`Đã nhập ${accepted.length} asset thật vào Media Pool.`, accepted.length ? "success" : "error");
+    status(`Đã nhập ${stored.length} asset thật vào Media Pool.`, stored.length ? "success" : "error");
   }
 
   async function handleFileChange(event) {
     const target = event.target;
+    if (target.matches("[data-bvf-image-folder]")) return importImageFolder(target.files || []);
+    if (target.matches("[data-bvf-music-folder]")) return importMusicFolder(target.files || []);
+    if (target.matches("[data-bvf-effect-folder]")) return importEffectFolder(target.files || []);
     if (target.matches("[data-bvf-assets]")) return importAssets(target.files || []);
     if (target.matches("[data-bvf-template-file]")) {
       const file = target.files?.[0];
@@ -742,7 +1197,7 @@
     const target = event.target;
     if (target.matches("[data-bvf-template]")) {
       const key = target.dataset.bvfTemplate;
-      const numeric = ["duration", "fps", "bitrate"].includes(key);
+      const numeric = ["duration", "fps", "bitrate", "colorIntensity", "effectOpacity", "musicVolume", "musicFade"].includes(key);
       state.template[key] = numeric ? Number(target.value) : target.value;
       state.template = normalizeTemplate(state.template);
       state.presetId = "custom";
@@ -756,6 +1211,18 @@
       state.presetId = "custom";
       saveState(); drawPreview(); return;
     }
+    if (target.matches("[data-bvf-render-profile]")) {
+      const profiles = {
+        fast: { fps: 24, bitrate: 4_000_000 },
+        balanced: { fps: 30, bitrate: 8_000_000 },
+        high: { fps: 30, bitrate: 12_000_000 },
+        cinematic: { fps: 60, bitrate: 20_000_000 }
+      };
+      const profile = profiles[target.value] || profiles.balanced;
+      state.template = normalizeTemplate({ ...state.template, ...profile, renderProfile: target.value });
+      saveState(); render();
+      return status(`Đã áp dụng hồ sơ render ${target.options[target.selectedIndex]?.text || target.value}.`, "success");
+    }
     if (target.matches("[data-bvf-option]")) {
       state[target.dataset.bvfOption] = target.checked;
       saveState();
@@ -766,6 +1233,7 @@
       const row = state.rows.find((item) => item.id === rowElement.dataset.bvfRow);
       if (!row) return;
       row[target.dataset.bvfRowField] = target.value;
+      if (target.dataset.bvfRowField === "duration") row.duration = target.value ? clamp(target.value, 1, 60) : 0;
       if (target.dataset.bvfRowField === "sourceId") row.sourceName = assets.find((item) => item.id === target.value)?.name || "";
       saveState();
       if (state.rows[0]?.id === row.id) drawPreview();
@@ -811,6 +1279,13 @@
       return;
     }
     if (action === "preview") { drawPreview(); return status("Đã cập nhật preview từ sườn và dòng đầu tiên.", "success"); }
+    if (action === "select-output-folder") {
+      if (typeof window.showDirectoryPicker !== "function") return status("Trình duyệt này chưa hỗ trợ chọn thư mục lưu. File vẫn được lưu vào Media Pool hoặc tải xuống.", "error");
+      outputDirectoryHandle = await window.showDirectoryPicker({ mode: "readwrite", id: "hh-batch-video-output" });
+      state.outputDirectoryName = outputDirectoryHandle.name || "Thư mục đã chọn";
+      saveState(); render();
+      return status(`Sẽ ghi trực tiếp file hoàn thành vào ${state.outputDirectoryName}.`, "success");
+    }
     if (action === "export-template") {
       return downloadBlob(new Blob([JSON.stringify({ version: 1, template: state.template }, null, 2)], { type: "application/json" }), "hh-video-template.json");
     }
@@ -829,6 +1304,8 @@
     unmount();
     root = host;
     state = loadState();
+    outputDirectoryHandle = null;
+    state.outputDirectoryName = "";
     controller = new AbortController();
     const options = { signal: controller.signal };
     root.addEventListener("click", (event) => handleClick(event).catch((error) => status(error.message, "error")), options);
@@ -842,6 +1319,7 @@
     }, options);
     render();
     await refreshAssets();
+    await detectGpu();
     render();
   }
 
@@ -850,6 +1328,7 @@
     cancelAnimationFrame(frameId);
     if (recorder?.state === "recording") recorder.stop();
     recorder = null;
+    outputDirectoryHandle = null;
     running = false;
     controller?.abort();
     controller = null;
@@ -866,7 +1345,8 @@
     normalizeTemplate,
     normalizeRow,
     parseCsv,
-    capabilities
+    capabilities,
+    colorPresets: COLOR_PRESETS
   });
   window.dispatchEvent(new CustomEvent("hh:video-batch-ready"));
 })();

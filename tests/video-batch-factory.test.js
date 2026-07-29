@@ -32,9 +32,14 @@ function loadApi() {
 test("Batch Video Factory exposes reusable template and CSV contracts", () => {
   const api = loadApi();
   assert.equal(api.presets.length, 6);
+  assert.equal(api.colorPresets.length, 12);
   assert.equal(api.normalizeTemplate({ duration: 999 }).duration, 60);
   assert.equal(api.normalizeTemplate({ duration: -5 }).duration, 1);
   assert.equal(api.normalizeTemplate({}).overlay, 58);
+  assert.equal(api.normalizeTemplate({}).effectOpacity, 90);
+  assert.equal(api.normalizeTemplate({ musicVolume: 999 }).musicVolume, 100);
+  assert.equal(api.normalizeTemplate({ colorPreset: "cinematic" }).colorPreset, "cinematic");
+  assert.equal(api.normalizeRow({ duration: 99 }).duration, 60);
   const rows = api.parseCsv('title,subtitle,cta,media\n"Xin chào, bạn","Dòng phụ","Xem ngay","cover.mp4"');
   assert.equal(rows.length, 1);
   assert.equal(rows[0].title, "Xin chào, bạn");
@@ -51,16 +56,21 @@ test("Batch Video Factory is a real routed Tool workspace", () => {
   assert.match(script, /id:\s*"batch"[\s\S]*\/davinci-resolve\/batch/);
   assert.match(script, /HHVideoBatchFactory\?\.mount/);
   assert.match(script, /HHVideoBatchFactory\?\.unmount/);
-  assert.match(loader, /video-batch-factory\.css\?v=1/);
-  assert.match(loader, /video-batch-factory\.js\?v=1/);
-  assert.match(worker, /hh-identity-portal-v294/);
-  assert.match(worker, /video-batch-factory\.js\?v=1/);
-  assert.match(worker, /video-batch-factory\.css\?v=1/);
+  assert.match(loader, /video-batch-factory\.css\?v=2/);
+  assert.match(loader, /video-batch-factory\.js\?v=2/);
+  assert.match(worker, /hh-identity-portal-v295/);
+  assert.match(worker, /video-batch-factory\.js\?v=2/);
+  assert.match(worker, /video-batch-factory\.css\?v=2/);
 
   for (const contract of [
     /hh-video-editor-media/, /indexedDB\.open/, /captureStream/, /MediaRecorder/,
     /resolveRecorderMime/, /processing/, /completed/, /failed/, /cancelled/,
-    /hh:media-asset-created/, /saveToMediaPool/, /autoDownload/
+    /hh:media-asset-created/, /saveToMediaPool/, /autoDownload/,
+    /data-bvf-image-folder/, /data-bvf-music-folder/, /data-bvf-effect-folder/,
+    /webkitdirectory/, /globalCompositeOperation\s*=\s*"screen"/,
+    /showDirectoryPicker/, /createWritable/, /powerPreference:\s*"high-performance"/,
+    /getContext\("webgl2"/, /batch-video-music/, /batch-video-effect/,
+    /musicGain\.gain\.linearRampToValueAtTime/, /suggestColorForFile/
   ]) assert.match(source, contract);
 
   assert.match(css, /@media\(max-width:850px\)/);

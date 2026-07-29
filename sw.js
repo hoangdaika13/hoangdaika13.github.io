@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v294";
+const CACHE = "hh-identity-portal-v295";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -43,7 +43,7 @@ const RUNTIME_ASSETS = [
   "./media-design-advanced.css?v=3",
   "./media-design-publish.css?v=1",
   "./video-editor-studio.css?v=4",
-  "./video-batch-factory.css?v=1",
+  "./video-batch-factory.css?v=2",
   "./video-editor-resolve.css?v=8",
   "./davinci-resolve-hub.css?v=4",
   "./video-editor-auto.css?v=1",
@@ -291,7 +291,7 @@ const RUNTIME_ASSETS = [
   "./media-design-advanced.js?v=3",
   "./media-design-publish.js?v=1",
   "./video-editor-studio.js?v=5",
-  "./video-batch-factory.js?v=1",
+  "./video-batch-factory.js?v=2",
   "./video-editor-resolve.js?v=10",
   "./davinci-resolve-hub.js?v=5",
   "./video-editor-auto.js?v=1",
@@ -351,7 +351,7 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=73",
+  "./performance-loader.js?v=74",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=154"
