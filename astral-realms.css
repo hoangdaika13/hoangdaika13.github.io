@@ -2427,6 +2427,113 @@ button.har-chip {
   .har-cinematic-bars::after { transition: none; }
 }
 
+/* Astral Realms World Art V3 · story-authored photoreal atmosphere */
+.har-shell[data-world-art="v3"] {
+  --har-world-wetness: .2;
+  --har-world-pressure: .12;
+}
+
+.har-shell[data-world-art="v3"] .har-postfx {
+  opacity: .74;
+  background:
+    radial-gradient(ellipse at 50% 42%, transparent 30%, rgba(1, 3, 12, .44) 100%),
+    linear-gradient(118deg, color-mix(in srgb, var(--har-biome-accent) 8%, transparent), transparent 38% 67%, rgba(255, 99, 192, .045));
+}
+
+.har-shell[data-world-art="v3"][data-weather-consequence="active"] .har-biome-fx {
+  opacity: .46;
+}
+
+.har-shell[data-precipitation="memory-snow"] .har-biome-fx::before,
+.har-shell[data-precipitation="dawn-snow"] .har-biome-fx::before {
+  inset: -12%;
+  opacity: .3;
+  background:
+    radial-gradient(circle, rgba(225, 255, 249, .86) 0 1px, transparent 2px) 5px 8px / 52px 61px,
+    radial-gradient(circle, color-mix(in srgb, var(--har-biome-accent) 74%, white) 0 1px, transparent 2px) 21px 29px / 89px 97px;
+  animation: har-v7-drift 10s linear infinite;
+}
+
+.har-shell[data-precipitation="settling-ash"] .har-biome-fx::before,
+.har-shell[data-precipitation="industrial-heatstorm"] .har-biome-fx::before {
+  inset: -14%;
+  opacity: .3;
+  background:
+    radial-gradient(ellipse, rgba(255, 119, 69, .78) 0 1px, transparent 3px) 0 0 / 67px 91px,
+    radial-gradient(ellipse, rgba(255, 215, 157, .48) 0 1px, transparent 4px) 19px 37px / 127px 141px;
+  animation: har-v7-embers 7s linear infinite;
+}
+
+.har-shell[data-precipitation="resonant-spores"] .har-biome-fx::before,
+.har-shell[data-precipitation="transparent-aurora"] .har-biome-fx::before,
+.har-shell[data-precipitation="lockdown-dust"] .har-biome-fx::before {
+  inset: -10%;
+  opacity: .24;
+  background:
+    radial-gradient(circle, var(--har-biome-accent) 0 1px, transparent 3px) 2px 11px / 61px 69px,
+    radial-gradient(circle, rgba(255, 255, 255, .66) 0 1px, transparent 2px) 29px 39px / 103px 109px;
+  animation: har-v7-drift 12s linear infinite;
+}
+
+.har-shell[data-precipitation="branching-wind"] .har-biome-fx::before,
+.har-shell[data-precipitation="ordered-clouds"] .har-biome-fx::before {
+  inset: -8%;
+  opacity: .22;
+  background: repeating-linear-gradient(168deg, transparent 0 72px, color-mix(in srgb, var(--har-biome-accent) 52%, transparent) 74px, transparent 78px 142px);
+  animation: har-v7-wind 3.2s linear infinite;
+}
+
+.har-shell[data-precipitation="rebirth-star-rain"] .har-biome-fx::before,
+.har-shell[data-precipitation="memorial-tide"] .har-biome-fx::before {
+  inset: -24% -10%;
+  opacity: .26;
+  background: repeating-linear-gradient(110deg, transparent 0 34px, color-mix(in srgb, var(--har-biome-accent) 66%, white) 35px 36px, transparent 37px 61px);
+  animation: har-v7-rain 1.55s linear infinite;
+}
+
+.har-shell[data-precipitation="truce-eclipse"] .har-biome-fx::before,
+.har-shell[data-precipitation="probability-shards"] .har-biome-fx::before {
+  inset: -12%;
+  opacity: .32;
+  background:
+    radial-gradient(ellipse, var(--har-biome-accent) 0 1px, transparent 4px) 0 0 / 83px 107px,
+    radial-gradient(ellipse, rgba(255, 210, 142, .58) 0 1px, transparent 4px) 31px 47px / 139px 157px;
+  animation: har-v7-embers 8s linear infinite reverse;
+}
+
+.har-shell[data-precipitation="controlled-clear"] .har-biome-fx,
+.har-shell[data-precipitation="void-silence"] .har-biome-fx {
+  opacity: .1;
+}
+
+.har-shell[data-story-environment="publish"] .har-postfx,
+.har-shell[data-story-environment="embody"] .har-postfx,
+.har-shell[data-story-environment="forgive"] .har-postfx {
+  filter: saturate(1.08) contrast(1.025);
+}
+
+.har-shell[data-story-environment="forge"] .har-postfx,
+.har-shell[data-story-environment="destroy"] .har-postfx {
+  filter: saturate(1.14) contrast(1.045);
+}
+
+.har-shell[data-story-environment="sever"] .har-postfx,
+.har-shell[data-story-environment="detain"] .har-postfx {
+  filter: saturate(.78) contrast(1.06);
+}
+
+@media (max-width: 760px) {
+  .har-shell[data-world-art="v3"] .har-postfx { opacity: .66; }
+  .har-shell[data-world-art="v3"] .har-biome-fx { opacity: .26; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .har-shell[data-world-art="v3"] .har-biome-fx::before,
+  .har-shell[data-world-art="v3"] .har-biome-fx::after {
+    animation: none !important;
+  }
+}
+
 /* Astral Realms Character V9 · photoreal PBR, decoded GLB QA and real LOD proxies */
 .har-character-v9-hero {
   position: relative;

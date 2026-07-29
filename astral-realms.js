@@ -283,6 +283,210 @@
     abyss: { accent: "#ff5e9f", fog: 0x170516, fogDensity: 0.012, particle: 0xff83bb, wind: 0.18, precipitation: "gravity-shards", actor: "fractures" },
     dungeon: { accent: "#ff70cf", fog: 0x16051f, fogDensity: 0.014, particle: 0xff8ee1, wind: 0.12, precipitation: "void-static", actor: "fractures" }
   });
+  const WORLD_ART_VERSION = 3;
+  const WORLD_ART_PROFILES = Object.freeze({
+    central: Object.freeze({
+      truth: "Identity",
+      motif: "fifth-heartbeat-archive",
+      landmark: "Genesis Archive Spire",
+      horizon: "#244c69",
+      zenith: "#07152b",
+      lowerSky: "#130d24",
+      ground: "#506575",
+      fog: "#123249",
+      key: "#c9ecff",
+      fill: "#76b9ff",
+      rim: "#ff69c8",
+      fogDensity: 0.0058,
+      exposure: 1.04,
+      wetness: 0.58,
+      emissive: 0.42,
+      wind: 0.36,
+      life: 0.84
+    }),
+    aurora: Object.freeze({
+      truth: "Memory",
+      motif: "three-hundred-seventeen-memories",
+      landmark: "House That Never Existed",
+      horizon: "#285b68",
+      zenith: "#111b46",
+      lowerSky: "#10262e",
+      ground: "#55766f",
+      fog: "#1a4650",
+      key: "#c9fff4",
+      fill: "#72d8ff",
+      rim: "#b18cff",
+      fogDensity: 0.0082,
+      exposure: 1,
+      wetness: 0.48,
+      emissive: 0.52,
+      wind: 0.54,
+      life: 0.68
+    }),
+    crimson: Object.freeze({
+      truth: "Sacrifice",
+      motif: "thirteenth-survivor",
+      landmark: "Sacrifice Reactor",
+      horizon: "#6d3025",
+      zenith: "#220c16",
+      lowerSky: "#32130e",
+      ground: "#62433a",
+      fog: "#482018",
+      key: "#ffd0a8",
+      fill: "#ff6c42",
+      rim: "#fff0bd",
+      fogDensity: 0.0094,
+      exposure: 1.02,
+      wetness: 0.08,
+      emissive: 0.68,
+      wind: 0.78,
+      life: 0.42
+    }),
+    void: Object.freeze({
+      truth: "Fear",
+      motif: "nyx-aion-resonance",
+      landmark: "Twin Resonance Tree",
+      horizon: "#39205e",
+      zenith: "#100921",
+      lowerSky: "#1d0d2b",
+      ground: "#423154",
+      fog: "#24133d",
+      key: "#dbc9ff",
+      fill: "#6ae5dc",
+      rim: "#d36fff",
+      fogDensity: 0.0102,
+      exposure: 1.01,
+      wetness: 0.38,
+      emissive: 0.62,
+      wind: 0.22,
+      life: 0.56
+    }),
+    sky: Object.freeze({
+      truth: "Freedom",
+      motif: "last-free-vote",
+      landmark: "Free Constellation Archive",
+      horizon: "#7193b5",
+      zenith: "#18345a",
+      lowerSky: "#344b62",
+      ground: "#667782",
+      fog: "#405b75",
+      key: "#eff8ff",
+      fill: "#9bdcff",
+      rim: "#fff1b8",
+      fogDensity: 0.006,
+      exposure: 1.06,
+      wetness: 0.3,
+      emissive: 0.46,
+      wind: 1.18,
+      life: 0.62
+    }),
+    ocean: Object.freeze({
+      truth: "Grief",
+      motif: "million-quantum-funerals",
+      landmark: "Mira Memory Lighthouse",
+      horizon: "#176581",
+      zenith: "#071f45",
+      lowerSky: "#06283a",
+      ground: "#376b78",
+      fog: "#0c435d",
+      key: "#c9f5ff",
+      fill: "#55cfff",
+      rim: "#ff78cf",
+      fogDensity: 0.0088,
+      exposure: 1,
+      wetness: 0.94,
+      emissive: 0.5,
+      wind: 0.62,
+      life: 0.72
+    }),
+    station: Object.freeze({
+      truth: "Betrayal",
+      motif: "gate-seven-audit",
+      landmark: "Immutable Gate 7",
+      horizon: "#4d5062",
+      zenith: "#151927",
+      lowerSky: "#24222d",
+      ground: "#59606b",
+      fog: "#292d3b",
+      key: "#fff3d0",
+      fill: "#8adfff",
+      rim: "#ffc65e",
+      fogDensity: 0.0048,
+      exposure: 1.06,
+      wetness: 0.12,
+      emissive: 0.55,
+      wind: 0.08,
+      life: 0.9
+    }),
+    abyss: Object.freeze({
+      truth: "Truth",
+      motif: "voluntary-erasure-order",
+      landmark: "Original Erasure Archive",
+      horizon: "#4a163c",
+      zenith: "#09030f",
+      lowerSky: "#1f0618",
+      ground: "#33253a",
+      fog: "#190718",
+      key: "#ffd0e4",
+      fill: "#8b5cff",
+      rim: "#ffbd65",
+      fogDensity: 0.012,
+      exposure: 0.94,
+      wetness: 0.2,
+      emissive: 0.76,
+      wind: 0.18,
+      life: 0.18
+    })
+  });
+  const STORY_ENVIRONMENT_VARIANTS = Object.freeze({
+    central: Object.freeze({
+      publish: Object.freeze({ kind: "neon-rain", accent: "#72efff", fog: "#103449", fogDensity: 0.0072, exposure: 1.02, wetness: 0.85, wind: 0.48, life: 0.96, emissive: 0.72, landmarkState: "civilian-inquiry" }),
+      seal: Object.freeze({ kind: "controlled-clear", accent: "#8ab8ff", fog: "#13283a", fogDensity: 0.0048, exposure: 1.08, wetness: 0.15, wind: 0.12, life: 0.38, emissive: 0.44, landmarkState: "core-quarantine" })
+    }),
+    aurora: Object.freeze({
+      past: Object.freeze({ kind: "memory-snow", accent: "#98ddff", fog: "#173e52", fogDensity: 0.01, exposure: 0.98, wetness: 0.52, wind: 0.28, life: 0.52, emissive: 0.78, landmarkState: "echo-houses" }),
+      present: Object.freeze({ kind: "dawn-snow", accent: "#ffe6c2", fog: "#244e58", fogDensity: 0.0068, exposure: 1.1, wetness: 0.36, wind: 0.42, life: 0.9, emissive: 0.46, landmarkState: "present-home" })
+    }),
+    crimson: Object.freeze({
+      people: Object.freeze({ kind: "settling-ash", accent: "#ffb07c", fog: "#3b2723", fogDensity: 0.0065, exposure: 0.98, wetness: 0.06, wind: 0.18, life: 0.88, emissive: 0.5, landmarkState: "survivor-memorial" }),
+      forge: Object.freeze({ kind: "industrial-heatstorm", accent: "#ff5f36", fog: "#4b1812", fogDensity: 0.012, exposure: 1.05, wetness: 0.02, wind: 1, life: 0.28, emissive: 0.9, landmarkState: "military-bastion" })
+    }),
+    void: Object.freeze({
+      share: Object.freeze({ kind: "resonant-spores", accent: "#c982ff", fog: "#251142", fogDensity: 0.013, exposure: 1.08, wetness: 0.42, wind: 0.2, life: 0.8, emissive: 0.92, landmarkState: "living-gate" }),
+      sever: Object.freeze({ kind: "void-silence", accent: "#b9adc9", fog: "#17131f", fogDensity: 0.0075, exposure: 0.92, wetness: 0.18, wind: 0.02, life: 0.16, emissive: 0.24, landmarkState: "severed-scar" })
+    }),
+    sky: Object.freeze({
+      free: Object.freeze({ kind: "branching-wind", accent: "#b8e8ff", fog: "#405b75", fogDensity: 0.0055, exposure: 1.08, wetness: 0.28, wind: 1.4, life: 0.86, emissive: 0.68, landmarkState: "independent-docks" }),
+      unified: Object.freeze({ kind: "ordered-clouds", accent: "#dceeff", fog: "#51647a", fogDensity: 0.006, exposure: 1.02, wetness: 0.2, wind: 0.55, life: 0.7, emissive: 0.48, landmarkState: "anchor-lattice" })
+    }),
+    ocean: Object.freeze({
+      embody: Object.freeze({ kind: "rebirth-star-rain", accent: "#7cf5ff", fog: "#0d4663", fogDensity: 0.01, exposure: 1.04, wetness: 1, wind: 0.35, life: 0.76, emissive: 0.84, landmarkState: "mira-echo" }),
+      release: Object.freeze({ kind: "memorial-tide", accent: "#78bfe8", fog: "#0b3852", fogDensity: 0.009, exposure: 0.96, wetness: 0.92, wind: 0.25, life: 0.44, emissive: 0.52, landmarkState: "tide-memorial" })
+    }),
+    station: Object.freeze({
+      forgive: Object.freeze({ kind: "transparent-aurora", accent: "#ffe19a", fog: "#25303e", fogDensity: 0.0038, exposure: 1.1, wetness: 0.08, wind: 0.06, life: 1, emissive: 0.7, landmarkState: "public-audit" }),
+      detain: Object.freeze({ kind: "lockdown-dust", accent: "#ffbd61", fog: "#332b25", fogDensity: 0.006, exposure: 0.93, wetness: 0.04, wind: 0.03, life: 0.34, emissive: 0.4, landmarkState: "gate-lockdown" })
+    }),
+    abyss: Object.freeze({
+      accept: Object.freeze({ kind: "truce-eclipse", accent: "#ffd0a1", fog: "#170817", fogDensity: 0.01, exposure: 0.9, wetness: 0.14, wind: 0.04, life: 0.36, emissive: 0.66, landmarkState: "ceasefire-archive" }),
+      destroy: Object.freeze({ kind: "probability-shards", accent: "#ff5e9f", fog: "#230719", fogDensity: 0.015, exposure: 1.02, wetness: 0.12, wind: 0.65, life: 0.12, emissive: 1, landmarkState: "shattered-destiny" })
+    })
+  });
+  const WORLD_ART_BUDGETS = Object.freeze({
+    static: Object.freeze({ vistaInstances: 6, localParticles: 12, activeRadius: 70, shadowRadius: 28, skyUpdateMs: 120 }),
+    balanced: Object.freeze({ vistaInstances: 10, localParticles: 28, activeRadius: 92, shadowRadius: 44, skyUpdateMs: 72 }),
+    cinematic: Object.freeze({ vistaInstances: 16, localParticles: 48, activeRadius: 112, shadowRadius: 62, skyUpdateMs: 48 })
+  });
+  const WORLD_WEATHER_KIND_ALIASES = Object.freeze({
+    clear: "controlled-clear",
+    aurora: "snow",
+    embers: "embers",
+    storm: "spores",
+    "quantum-wind": "quantum-wind",
+    "star-rain": "star-rain",
+    "artificial-aurora": "orbital-dust",
+    eclipse: "gravity-shards"
+  });
   const FACTIONS = Object.freeze([
     { id: "h-central", name: "H-Central Federation", short: "HCF", color: "#6feeff", description: "Giữ mạng lưới cổng và bảo vệ các thành phố lõi.", perk: "Mở tuyến dịch chuyển và nâng cấp checkpoint." },
     { id: "aurora-keepers", name: "Aurora Keepers", short: "AUR", color: "#65f1c7", description: "Bảo vệ tinh thể và hệ sinh thái Aurora Vale.", perk: "Mở công thức hồi phục và tuyến lượn cực quang." },
@@ -305,14 +509,14 @@
     garden: { name: "Life Garden", description: "Trồng lại nguyên liệu theo thời gian thật.", max: 5, cost: { "aurora-shard": 3 } }
   });
   const WORLD_ZONE_DEFAULTS = Object.freeze({
-    central: { core: "stable", restored: true, occupation: "h-central", weather: "clear", resources: 100, lastBossAt: "" },
-    aurora: { core: "unstable", restored: false, occupation: "aurora-keepers", weather: "aurora", resources: 100, lastBossAt: "" },
-    crimson: { core: "corrupted", restored: false, occupation: "crimson-union", weather: "embers", resources: 100, lastBossAt: "" },
-    void: { core: "sealed", restored: false, occupation: "void-cult", weather: "storm", resources: 100, lastBossAt: "" },
-    sky: { core: "unstable", restored: false, occupation: "free-travelers", weather: "quantum-wind", resources: 100, lastBossAt: "" },
-    ocean: { core: "unstable", restored: false, occupation: "aurora-keepers", weather: "star-rain", resources: 100, lastBossAt: "" },
-    station: { core: "corrupted", restored: false, occupation: "astral-researchers", weather: "artificial-aurora", resources: 100, lastBossAt: "" },
-    abyss: { core: "sealed", restored: false, occupation: "void-cult", weather: "eclipse", resources: 100, lastBossAt: "" }
+    central: { core: "stable", restored: true, occupation: "h-central", weather: "clear", environmentVariant: "", resources: 100, lastBossAt: "" },
+    aurora: { core: "unstable", restored: false, occupation: "aurora-keepers", weather: "aurora", environmentVariant: "", resources: 100, lastBossAt: "" },
+    crimson: { core: "corrupted", restored: false, occupation: "crimson-union", weather: "embers", environmentVariant: "", resources: 100, lastBossAt: "" },
+    void: { core: "sealed", restored: false, occupation: "void-cult", weather: "storm", environmentVariant: "", resources: 100, lastBossAt: "" },
+    sky: { core: "unstable", restored: false, occupation: "free-travelers", weather: "quantum-wind", environmentVariant: "", resources: 100, lastBossAt: "" },
+    ocean: { core: "unstable", restored: false, occupation: "aurora-keepers", weather: "star-rain", environmentVariant: "", resources: 100, lastBossAt: "" },
+    station: { core: "corrupted", restored: false, occupation: "astral-researchers", weather: "artificial-aurora", environmentVariant: "", resources: 100, lastBossAt: "" },
+    abyss: { core: "sealed", restored: false, occupation: "void-cult", weather: "eclipse", environmentVariant: "", resources: 100, lastBossAt: "" }
   });
   const ITEMS = Object.freeze({
     "starter-blade": { id: "starter-blade", name: "Đoản kiếm H", type: "weapon", rarity: "Khởi đầu", description: "Vũ khí tiêu chuẩn của Nhà du hành H.", attack: 8 },
@@ -1437,6 +1641,7 @@
           weatherSeverity: clamp(input.world?.zones?.[id]?.weatherSeverity ?? 0.58, 0.1, 1),
           weatherLabel: String(input.world?.zones?.[id]?.weatherLabel || "").slice(0, 80),
           controlState: String(input.world?.zones?.[id]?.controlState || "").slice(0, 60),
+          environmentVariant: String(input.world?.zones?.[id]?.environmentVariant || "").slice(0, 60),
           discovered: id === "central" || input.world?.zones?.[id]?.discovered === true,
           updatedAt: String(input.world?.zones?.[id]?.updatedAt || fallback.updatedAt).slice(0, 40)
         }])),
@@ -1758,6 +1963,16 @@
       this.streamingGroups = new Map();
       this.puzzleNodes = new Map();
       this.storyBeacons = new Map();
+      this.storyEnvironmentGroups = new Map();
+      this.worldArtSurfaces = new Map();
+      this.worldArtZoneLights = new Map();
+      this.worldArtAnimatedObjects = [];
+      this.worldArtShadowCandidates = [];
+      this.worldArtCurrent = null;
+      this.worldArtTarget = null;
+      this.worldArtSignature = "";
+      this.worldArtLastSkyUpdateAt = 0;
+      this.worldArtScratchPosition = null;
       this.cloudLayers = [];
       this.waterSurfaces = [];
       this.climbables = [];
@@ -1805,8 +2020,8 @@
       this.isSwimming = false;
       this.isClimbing = false;
       this.cameraYaw = 0;
-      this.cameraPitch = 0.58;
-      this.cameraDistance = 12;
+      this.cameraPitch = 0.38;
+      this.cameraDistance = 8.6;
       this.cameraShake = 0;
       this.cameraFovTarget = 58;
       this.cinematicTarget = null;
@@ -3456,6 +3671,15 @@
       this.storyBeacons.clear();
       this.streamingGroups.clear();
       this.zoneFxGroups.clear();
+      this.storyEnvironmentGroups.clear();
+      this.worldArtSurfaces.clear();
+      this.worldArtZoneLights.clear();
+      this.worldArtAnimatedObjects = [];
+      this.worldArtShadowCandidates = [];
+      this.worldArtCurrent = null;
+      this.worldArtTarget = null;
+      this.worldArtSignature = "";
+      this.worldArtScratchPosition = null;
       this.livingWorldActors = [];
       this.footprints = [];
       Object.values(this.photorealAssets).forEach((texture) => texture?.dispose?.());
@@ -3965,10 +4189,12 @@
       this.createLicensedEnvironmentDecor();
       this.createElementalPuzzles();
       this.createStoryBeacons();
+      this.createWorldArtLandmarks();
       this.createWeatherField();
       this.createLivingWorldEffects();
       this.createFootprintPool();
-      this.applyBiomeVisualState(this.currentZone);
+      this.cacheWorldRuntimeObjects();
+      this.applyBiomeVisualState(this.currentZone, { immediate: true });
     }
 
     createToonGradient() {
@@ -4084,12 +4310,15 @@
         color: 0x3fdacb,
         emissive: 0x0c6d75,
         emissiveIntensity: 0.2,
+        bumpMap: this.terrainTexture,
+        bumpScale: 0.055,
         roughness: 0.18,
         metalness: 0.06,
         transparent: true,
         opacity: 0.72,
         clearcoat: 0.85,
         clearcoatRoughness: 0.12,
+        envMapIntensity: this.photorealAssets.panorama ? 0.72 : 0.28,
         side: THREE.DoubleSide
       });
       const auroraLake = new THREE.Mesh(new THREE.CircleGeometry(13.5, 72), waterMaterial);
@@ -4100,13 +4329,13 @@
       this.world.add(auroraLake);
       this.waterSurfaces.push(auroraLake);
 
-      const oceanMoonSea = new THREE.Mesh(new THREE.CircleGeometry(15.5, 72), waterMaterial.clone());
+      const oceanMoonSea = new THREE.Mesh(new THREE.CircleGeometry(27, 96), waterMaterial.clone());
       oceanMoonSea.material.color.setHex(0x2f8fd9);
       oceanMoonSea.material.emissive.setHex(0x114c8d);
       oceanMoonSea.rotation.x = -Math.PI / 2;
-      oceanMoonSea.position.set(124, 1.1, -43);
+      oceanMoonSea.position.set(122, 1.1, -42);
       oceanMoonSea.receiveShadow = true;
-      oceanMoonSea.userData = { water: true, baseY: 1.1, radius: 15.5, zoneId: "ocean" };
+      oceanMoonSea.userData = { water: true, baseY: 1.1, radius: 27, zoneId: "ocean" };
       this.world.add(oceanMoonSea);
       this.waterSurfaces.push(oceanMoonSea);
 
@@ -4279,11 +4508,14 @@
           const angle = (index / 3) * Math.PI * 2;
           const pylon = new THREE.Mesh(
             new THREE.CylinderGeometry(0.32, 0.52, 2.8, 6),
-            new THREE.MeshToonMaterial({
+            new THREE.MeshPhysicalMaterial({
               color: solved ? color : 0x243047,
               emissive: color,
               emissiveIntensity: solved ? 0.85 : 0.16,
-              gradientMap: this.toonGradient
+              roughness: solved ? 0.22 : 0.46,
+              metalness: 0.58,
+              clearcoat: 0.52,
+              envMapIntensity: 0.56
             })
           );
           pylon.position.set(Math.cos(angle) * 1.8, 1.4, Math.sin(angle) * 1.8);
@@ -4291,11 +4523,14 @@
         }
         const core = new THREE.Mesh(
           new THREE.OctahedronGeometry(0.72, 1),
-          new THREE.MeshToonMaterial({
+          new THREE.MeshPhysicalMaterial({
             color,
             emissive: color,
             emissiveIntensity: solved ? 1.4 : 0.36,
-            gradientMap: this.toonGradient
+            roughness: 0.16,
+            metalness: 0.4,
+            clearcoat: 0.78,
+            envMapIntensity: 0.68
           })
         );
         core.position.y = 1.8;
@@ -4347,6 +4582,303 @@
         this.world.add(group);
         this.storyBeacons.set(zoneId, group);
       });
+    }
+
+    createWorldArtLandmarks() {
+      const THREE = this.THREE;
+      const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
+      const budgetKey = reduced ? "static" : (this.state.settings.vfxLevel === "cinematic" ? "cinematic" : "balanced");
+      const budget = WORLD_ART_BUDGETS[budgetKey];
+      const shared = {
+        box: new THREE.BoxGeometry(1.25, 2.8, 1.25),
+        crystal: new THREE.ConeGeometry(0.72, 3.2, 7),
+        forge: new THREE.CylinderGeometry(0.72, 1.05, 3.1, 10),
+        tree: new THREE.CylinderGeometry(0.36, 0.78, 3.4, 8),
+        island: new THREE.DodecahedronGeometry(1.25, 0),
+        reef: new THREE.IcosahedronGeometry(1.08, 1),
+        station: new THREE.BoxGeometry(1.35, 3.8, 1.35),
+        fracture: new THREE.TetrahedronGeometry(1.25, 0)
+      };
+      const vistaGeometry = {
+        central: shared.box,
+        aurora: shared.crystal,
+        crimson: shared.forge,
+        void: shared.tree,
+        sky: shared.island,
+        ocean: shared.reef,
+        station: shared.station,
+        abyss: shared.fracture
+      };
+      const landmarkGeometry = (zoneId) => {
+        if (zoneId === "central") return new THREE.OctahedronGeometry(1.45, 1);
+        if (zoneId === "aurora") return new THREE.IcosahedronGeometry(1.36, 2);
+        if (zoneId === "crimson") return new THREE.CylinderGeometry(1.2, 1.75, 3.8, 16);
+        if (zoneId === "void") return new THREE.TorusKnotGeometry(1.05, 0.28, 74, 10, 2, 3);
+        if (zoneId === "sky") return new THREE.TetrahedronGeometry(1.85, 1);
+        if (zoneId === "ocean") return new THREE.SphereGeometry(1.55, 28, 18);
+        if (zoneId === "station") return new THREE.BoxGeometry(2.15, 3.35, 0.62, 2, 3, 1);
+        return new THREE.DodecahedronGeometry(1.72, 1);
+      };
+      const variantGeometry = (zoneId, variantIndex) => {
+        if (variantIndex === 1) {
+          if (zoneId === "sky") return new THREE.BoxGeometry(0.34, 3.4, 0.34);
+          if (zoneId === "ocean") return new THREE.ConeGeometry(0.42, 2.4, 8);
+          if (zoneId === "abyss") return new THREE.TetrahedronGeometry(0.72, 0);
+          return new THREE.CylinderGeometry(0.25, 0.42, 2.8, 8);
+        }
+        if (zoneId === "central" || zoneId === "station") return new THREE.BoxGeometry(1.55, 0.92, 0.1);
+        if (zoneId === "aurora") return new THREE.BoxGeometry(1.4, 1.75, 1.2);
+        if (zoneId === "crimson") return new THREE.TorusGeometry(0.72, 0.16, 8, 28);
+        if (zoneId === "void") return new THREE.OctahedronGeometry(0.68, 1);
+        if (zoneId === "sky") return new THREE.TetrahedronGeometry(0.86, 0);
+        if (zoneId === "ocean") return new THREE.SphereGeometry(0.58, 16, 10);
+        return new THREE.DodecahedronGeometry(0.62, 0);
+      };
+
+      ZONES.forEach((zone, zoneIndex) => {
+        const profile = WORLD_ART_PROFILES[zone.id] || WORLD_ART_PROFILES.central;
+        const biome = BIOME_PROFILES[zone.id] || BIOME_PROFILES.central;
+        const group = new THREE.Group();
+        group.name = `WorldArtV${WORLD_ART_VERSION}:${zone.id}:${profile.motif}`;
+        group.position.set(zone.x, 0, zone.z);
+        group.userData.zoneId = zone.id;
+        group.userData.worldArtVersion = WORLD_ART_VERSION;
+
+        const surfaceMaterial = new THREE.MeshPhysicalMaterial({
+          color: profile.ground,
+          emissive: profile.accent || biome.accent,
+          emissiveIntensity: 0.08,
+          map: this.terrainTexture,
+          bumpMap: this.terrainTexture,
+          bumpScale: 0.28,
+          roughness: clamp(0.92 - profile.wetness * 0.46, 0.32, 0.92),
+          metalness: zone.id === "station" || zone.id === "central" ? 0.24 : 0.04,
+          clearcoat: profile.wetness * 0.68,
+          clearcoatRoughness: clamp(0.76 - profile.wetness * 0.52, 0.18, 0.78),
+          transparent: true,
+          opacity: 0.88,
+          envMapIntensity: this.photorealAssets.panorama ? 0.58 : 0.24,
+          side: THREE.DoubleSide
+        });
+        const storySurface = new THREE.Mesh(
+          new THREE.RingGeometry(3.4, Math.min(8.4, zone.radius * 0.32), 72, 4),
+          surfaceMaterial
+        );
+        storySurface.rotation.x = -Math.PI / 2;
+        storySurface.position.y = 1.085;
+        storySurface.receiveShadow = true;
+        storySurface.userData = { zoneId: zone.id, worldArtSurface: true };
+        group.add(storySurface);
+
+        const vistaMaterial = new THREE.MeshPhysicalMaterial({
+          color: new THREE.Color(profile.ground).multiplyScalar(zone.id === "abyss" ? 0.34 : 0.62),
+          emissive: new THREE.Color(biome.accent),
+          emissiveIntensity: zone.id === "abyss" ? 0.24 : 0.08,
+          map: this.terrainTexture,
+          bumpMap: this.terrainTexture,
+          bumpScale: 0.22,
+          roughness: zone.id === "station" ? 0.26 : 0.82,
+          metalness: zone.id === "station" || zone.id === "central" ? 0.5 : 0.08,
+          envMapIntensity: this.photorealAssets.panorama ? 0.48 : 0.2
+        });
+        const vistaCount = budget.vistaInstances;
+        const vista = new THREE.InstancedMesh(vistaGeometry[zone.id], vistaMaterial, vistaCount);
+        const matrix = new THREE.Matrix4();
+        const quaternion = new THREE.Quaternion();
+        for (let index = 0; index < vistaCount; index += 1) {
+          const seed = Math.sin((index + 1) * 67.31 + zoneIndex * 19.73) * 43758.5453;
+          const random = seed - Math.floor(seed);
+          const angle = (index / vistaCount) * Math.PI * 2 + zoneIndex * 0.39;
+          const radius = zone.radius * (0.58 + random * 0.3);
+          const height = zone.id === "sky" ? 4 + (index % 4) * 1.8 : 1.15 + (index % 3) * 0.18;
+          quaternion.setFromEuler(new THREE.Euler(
+            zone.id === "sky" || zone.id === "abyss" ? random * 0.45 : 0,
+            angle + random,
+            zone.id === "abyss" ? random * 0.6 : 0
+          ));
+          const scale = 0.62 + random * 1.15;
+          matrix.compose(
+            new THREE.Vector3(Math.cos(angle) * radius, height, Math.sin(angle) * radius),
+            quaternion,
+            new THREE.Vector3(scale, zone.id === "central" || zone.id === "station" ? 0.85 + random * 2.2 : scale, scale)
+          );
+          vista.setMatrixAt(index, matrix);
+        }
+        vista.instanceMatrix.needsUpdate = true;
+        vista.castShadow = !reduced;
+        vista.receiveShadow = true;
+        vista.userData = { zoneId: zone.id, worldArtVista: true };
+        group.add(vista);
+
+        const landmarkMaterial = new THREE.MeshPhysicalMaterial({
+          color: new THREE.Color(biome.accent).multiplyScalar(0.42),
+          emissive: new THREE.Color(biome.accent),
+          emissiveIntensity: profile.emissive,
+          roughness: 0.2,
+          metalness: zone.id === "station" || zone.id === "central" ? 0.72 : 0.34,
+          clearcoat: 0.82,
+          clearcoatRoughness: 0.2,
+          envMapIntensity: 0.72
+        });
+        const landmark = new THREE.Mesh(landmarkGeometry(zone.id), landmarkMaterial);
+        landmark.position.y = zone.id === "crimson" || zone.id === "station" ? 3.15 : 3.45;
+        landmark.castShadow = !reduced;
+        landmark.userData = { zoneId: zone.id, worldArtLandmark: profile.landmark, storyMotion: "float" };
+        group.add(landmark);
+
+        const haloMaterial = new THREE.MeshBasicMaterial({
+          color: biome.accent,
+          transparent: true,
+          opacity: 0.42,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const halo = new THREE.Mesh(new THREE.TorusGeometry(2.55, 0.075, 8, 64), haloMaterial);
+        halo.position.y = 3.45;
+        halo.rotation.x = Math.PI / 2;
+        halo.userData = { zoneId: zone.id, storyMotion: "orbit", spin: zoneIndex % 2 ? -0.09 : 0.09 };
+        group.add(halo);
+
+        const motifCounts = { central: 5, aurora: 8, crimson: 13, void: 2, sky: 8, ocean: 12, station: 7, abyss: 2 };
+        const motifCount = motifCounts[zone.id] || 5;
+        const motifMarkers = new THREE.InstancedMesh(
+          new THREE.SphereGeometry(0.13, 8, 6),
+          new THREE.MeshBasicMaterial({ color: biome.accent, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false }),
+          motifCount
+        );
+        for (let index = 0; index < motifCount; index += 1) {
+          const angle = (index / motifCount) * Math.PI * 2;
+          const scale = zone.id === "central" && index === 4 ? 1.65 : 0.78 + (index % 3) * 0.14;
+          matrix.compose(
+            new THREE.Vector3(Math.cos(angle) * 3.15, 3.45 + Math.sin(angle * 2) * 0.16, Math.sin(angle) * 3.15),
+            new THREE.Quaternion(),
+            new THREE.Vector3(scale, scale, scale)
+          );
+          motifMarkers.setMatrixAt(index, matrix);
+        }
+        motifMarkers.instanceMatrix.needsUpdate = true;
+        motifMarkers.userData = { zoneId: zone.id, storyMotif: profile.motif, spin: zoneIndex % 2 ? 0.055 : -0.055 };
+        group.add(motifMarkers);
+
+        const metricEchoes = new THREE.Group();
+        metricEchoes.name = `MetricEchoes:${zone.id}`;
+        for (let index = 0; index < 3; index += 1) {
+          const echo = new THREE.Mesh(
+            new THREE.OctahedronGeometry(0.38 + index * 0.08, 0),
+            new THREE.MeshBasicMaterial({
+              color: index === 0 ? profile.rim : biome.accent,
+              transparent: true,
+              opacity: 0,
+              blending: THREE.AdditiveBlending,
+              depthWrite: false
+            })
+          );
+          const angle = (index / 3) * Math.PI * 2 + zoneIndex * 0.33;
+          echo.position.set(Math.cos(angle) * (3.4 + index * 0.45), 2.6 + index * 1.2, Math.sin(angle) * (3.4 + index * 0.45));
+          echo.userData = { zoneId: zone.id, metricEcho: index, storyMotion: "echo" };
+          metricEchoes.add(echo);
+        }
+        group.add(metricEchoes);
+
+        const variantGroups = new Map();
+        Object.entries(STORY_ENVIRONMENT_VARIANTS[zone.id] || {}).forEach(([choiceId, variant], variantIndex) => {
+          const variantGroup = new THREE.Group();
+          variantGroup.name = `StoryVariant:${zone.id}:${choiceId}:${variant.landmarkState}`;
+          variantGroup.userData = { zoneId: zone.id, storyVariant: choiceId, landmarkState: variant.landmarkState };
+          const material = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color(variant.accent).multiplyScalar(0.46),
+            emissive: new THREE.Color(variant.accent),
+            emissiveIntensity: variant.emissive,
+            transparent: true,
+            opacity: 0.82,
+            roughness: variantIndex ? 0.38 : 0.2,
+            metalness: zone.id === "central" || zone.id === "station" ? 0.64 : 0.18,
+            clearcoat: 0.62,
+            depthWrite: true
+          });
+          const count = reduced ? 4 : 7;
+          const instances = new THREE.InstancedMesh(variantGeometry(zone.id, variantIndex), material, count);
+          for (let index = 0; index < count; index += 1) {
+            const angle = (index / count) * Math.PI * 2 + variantIndex * 0.37;
+            const radius = variantIndex ? 4.5 + (index % 2) * 1.1 : 4.2 + (index % 3) * 0.72;
+            const altitude = variantIndex
+              ? 2.2 + (index % 3) * 0.5
+              : zone.id === "sky" ? 3.1 + (index % 3) : 2.25 + (index % 2) * 1.15;
+            quaternion.setFromEuler(new THREE.Euler(
+              zone.id === "ocean" ? Math.PI / 2 : variantIndex ? 0 : Math.sin(angle) * 0.16,
+              -angle + Math.PI / 2,
+              zone.id === "abyss" ? angle * 0.22 : 0
+            ));
+            const scale = variantIndex ? 0.82 + (index % 2) * 0.22 : 0.72 + (index % 3) * 0.16;
+            matrix.compose(
+              new THREE.Vector3(Math.cos(angle) * radius, altitude, Math.sin(angle) * radius),
+              quaternion,
+              new THREE.Vector3(scale, scale, scale)
+            );
+            instances.setMatrixAt(index, matrix);
+          }
+          instances.instanceMatrix.needsUpdate = true;
+          instances.castShadow = !reduced && variantIndex === 1;
+          instances.userData = { zoneId: zone.id, storyVariant: choiceId };
+          variantGroup.add(instances);
+          const orbit = new THREE.Mesh(
+            new THREE.TorusGeometry(4.7 + variantIndex * 0.65, 0.055 + variantIndex * 0.025, 8, 58),
+            new THREE.MeshBasicMaterial({ color: variant.accent, transparent: true, opacity: 0.32, depthWrite: false, blending: THREE.AdditiveBlending })
+          );
+          orbit.position.y = 2.15 + variantIndex * 0.7;
+          orbit.rotation.x = Math.PI / 2.25;
+          orbit.userData = { zoneId: zone.id, storyVariant: choiceId, spin: (variantIndex ? -1 : 1) * 0.08 };
+          variantGroup.add(orbit);
+          variantGroup.visible = false;
+          group.add(variantGroup);
+          variantGroups.set(choiceId, variantGroup);
+        });
+
+        const atmosphere = new THREE.Mesh(
+          new THREE.CylinderGeometry(zone.radius * 0.58, zone.radius * 0.78, 14, 40, 1, true),
+          new THREE.MeshBasicMaterial({
+            color: biome.accent,
+            transparent: true,
+            opacity: reduced ? 0.012 : 0.026,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+          })
+        );
+        atmosphere.position.y = 7.2;
+        atmosphere.userData = { zoneId: zone.id, worldArtAtmosphere: true };
+        group.add(atmosphere);
+
+        group.userData.worldArt = {
+          profile,
+          surface: storySurface,
+          vista,
+          landmark,
+          halo,
+          motifMarkers,
+          atmosphere,
+          metricEchoes,
+          variantGroups
+        };
+        this.world.add(group);
+        this.storyEnvironmentGroups.set(zone.id, group);
+        this.worldArtSurfaces.set(zone.id, storySurface);
+      });
+      this.root.dataset.worldArt = `v${WORLD_ART_VERSION}`;
+    }
+
+    cacheWorldRuntimeObjects() {
+      if (!this.world) return;
+      this.worldArtAnimatedObjects = [];
+      this.worldArtShadowCandidates = [];
+      this.world.traverse((object) => {
+        if (object.userData?.spin || object.userData?.storyMotion) this.worldArtAnimatedObjects.push(object);
+        if (object.isMesh && object !== this.playerMesh && !object.userData?.boss) {
+          object.userData.baseCastShadow = Boolean(object.castShadow);
+          this.worldArtShadowCandidates.push(object);
+        }
+      });
+      this.worldArtScratchPosition = new this.THREE.Vector3();
     }
 
     createStarfield() {
@@ -4635,24 +5167,23 @@
         }
 
         if (zone.id === "ocean") {
-          const ocean = new THREE.Mesh(
-            new THREE.CircleGeometry(zone.radius - 3, 72),
-            new THREE.MeshPhysicalMaterial({
-              color: 0x0a6a91,
-              emissive: color,
-              emissiveIntensity: 0.22,
-              roughness: 0.12,
-              metalness: 0.08,
-              clearcoat: 0.88,
-              transparent: true,
-              opacity: 0.76
-            })
-          );
-          ocean.rotation.x = -Math.PI / 2;
-          ocean.position.set(zone.x, 1.13, zone.z);
-          ocean.userData = { water: true, baseY: 1.13, zoneId: zone.id };
-          group.add(ocean);
-          this.waterSurfaces.push(ocean);
+          [25.6, 26.4].forEach((radius, ringIndex) => {
+            const shoreline = new THREE.Mesh(
+              new THREE.RingGeometry(radius, radius + 0.22 + ringIndex * 0.08, 96),
+              new THREE.MeshBasicMaterial({
+                color: ringIndex ? 0x8ff6ff : 0xd4ffff,
+                transparent: true,
+                opacity: ringIndex ? 0.14 : 0.24,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                side: THREE.DoubleSide
+              })
+            );
+            shoreline.rotation.x = -Math.PI / 2;
+            shoreline.position.set(0, 1.145 + ringIndex * 0.006, 0);
+            shoreline.userData = { zoneId: zone.id, spin: ringIndex ? -0.008 : 0.012, shorelineFoam: true };
+            group.add(shoreline);
+          });
         } else if (zone.id === "station") {
           const stationRing = new THREE.Mesh(
             new THREE.TorusGeometry(11, 0.75, 12, 96),
@@ -4741,6 +5272,7 @@
             ? 1.35
             : 1;
       const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
+      const worldBudget = WORLD_ART_BUDGETS[reduced ? "static" : (this.state.settings.vfxLevel === "cinematic" ? "cinematic" : "balanced")];
 
       ZONES.forEach((zone, zoneIndex) => {
         const profile = BIOME_PROFILES[zone.id] || BIOME_PROFILES.central;
@@ -4751,7 +5283,7 @@
         this.world.add(group);
         this.zoneFxGroups.set(zone.id, group);
 
-        const particleCount = Math.max(10, Math.round((reduced ? 18 : 42) * qualityScale));
+        const particleCount = Math.max(10, Math.round(worldBudget.localParticles * qualityScale));
         const positions = new Float32Array(particleCount * 3);
         for (let index = 0; index < particleCount; index += 1) {
           const angle = ((index * 137.5 + zoneIndex * 29) * Math.PI) / 180;
@@ -4910,7 +5442,7 @@
       const sin = Math.sin(player.rotation);
       footprint.position.set(player.x + cos * side, 1.095, player.z - sin * side);
       footprint.rotation.z = -player.rotation;
-      footprint.material.color.set(BIOME_PROFILES[this.currentZone.id]?.particle || 0x9fefff);
+      footprint.material.color.copy(this.worldArtCurrent?.accent || new this.THREE.Color(BIOME_PROFILES[this.currentZone.id]?.particle || 0x9fefff));
       footprint.material.opacity = 0.38;
       footprint.userData.life = footprint.userData.maxLife;
       footprint.visible = true;
@@ -4918,21 +5450,320 @@
       this.lastFootprintPosition = { x: player.x, z: player.z };
     }
 
-    applyBiomeVisualState(zone = this.currentZone) {
-      const profile = BIOME_PROFILES[zone?.id] || BIOME_PROFILES.central;
-      this.root.dataset.biome = zone?.id || "central";
-      this.root.dataset.precipitation = profile.precipitation;
-      this.root.style.setProperty("--har-biome-accent", profile.accent);
-      this.root.style.setProperty("--har-biome-wind", String(profile.wind));
-      if (this.scene?.fog) {
-        this.scene.fog.color.set(profile.fog);
-        this.scene.fog.density = profile.fogDensity;
+    resolveWorldArtState(zoneId = this.currentZone?.id || "central") {
+      const base = WORLD_ART_PROFILES[zoneId] || WORLD_ART_PROFILES.central;
+      const biome = BIOME_PROFILES[zoneId] || BIOME_PROFILES.central;
+      const zoneDefinition = ZONES.find((zone) => zone.id === zoneId) || ZONES[0];
+      const zoneState = this.state.world?.zones?.[zoneId] || WORLD_ZONE_DEFAULTS[zoneId] || WORLD_ZONE_DEFAULTS.central;
+      const missionState = this.state.story?.missions?.[zoneId] || {};
+      const persistedChoice = Object.entries(STORY_ENVIRONMENT_VARIANTS[zoneId] || {})
+        .find(([, candidate]) => candidate.landmarkState === zoneState.environmentVariant)?.[0] || "";
+      const choiceId = String(missionState.choice || persistedChoice);
+      const variant = STORY_ENVIRONMENT_VARIANTS[zoneId]?.[choiceId] || null;
+      const metrics = this.state.story?.metrics || STORY_METRIC_DEFAULTS;
+      const identityIntegrity = clamp(Number(metrics.identityIntegrity ?? STORY_METRIC_DEFAULTS.identityIntegrity), 0, 100);
+      const memoryDebt = clamp(Number(metrics.memoryDebt ?? STORY_METRIC_DEFAULTS.memoryDebt), 0, 100);
+      const causalityPressure = clamp(Number(metrics.causalityPressure ?? STORY_METRIC_DEFAULTS.causalityPressure), 0, 100);
+      const zoneEchoes = ECHO_MEMORIES.filter((echo) => echo.zoneId === zoneId);
+      const unlockedEchoes = zoneEchoes.filter((echo) => this.state.story?.echoes?.[echo.id]?.unlocked).length;
+      const echoRatio = zoneEchoes.length ? unlockedEchoes / zoneEchoes.length : 0;
+      const restored = zoneState.restored === true;
+      const discovered = zoneState.discovered === true || zoneId === "central";
+      const ending = String(this.state.story?.endingFlags?.selected || "");
+      const ngPlus = clamp(Number(this.state.story?.newGamePlus || 0), 0, 99);
+      let fogDensity = Number(variant?.fogDensity ?? base.fogDensity);
+      let exposure = Number(variant?.exposure ?? base.exposure);
+      let wind = Number(variant?.wind ?? base.wind);
+      let wetness = Number(variant?.wetness ?? base.wetness);
+      let emissive = Number(variant?.emissive ?? base.emissive);
+      let life = Number(variant?.life ?? base.life);
+      let weatherStrength = clamp(Number(zoneState.weatherSeverity ?? (variant ? 0.66 : 0.48)), 0.06, 1);
+      if (memoryDebt >= 50) fogDensity *= 1 + Math.min(0.16, (memoryDebt - 50) / 310);
+      if (causalityPressure >= 60) weatherStrength = clamp(weatherStrength + Math.min(0.15, (causalityPressure - 60) / 260), 0.06, 1);
+      if (identityIntegrity < 40) emissive = clamp(emissive + (40 - identityIntegrity) / 220, 0.1, 1.08);
+      if (ending === "perfect-silence") {
+        fogDensity *= 0.62;
+        wind *= 0.12;
+        weatherStrength = Math.min(weatherStrength, 0.24);
+        emissive *= 0.62;
+        life *= 0.35;
+        exposure = Math.min(exposure, 0.96);
+      } else if (ending === "restoration") {
+        fogDensity *= 0.84;
+        life = clamp(life + 0.18, 0, 1);
+        emissive = clamp(emissive + 0.12, 0, 1.08);
+      } else if (ending === "free-constellation") {
+        wind = clamp(wind * 1.12, 0, 1.6);
+        life = clamp(life + 0.12, 0, 1);
+      } else if (ending === "astral-rebirth" && zoneId === "central") {
+        exposure = 1.12;
+        emissive = 1;
+        weatherStrength = 0.28;
+      } else if (ending === "one-true-world") {
+        life *= zoneId === "central" ? 1 : 0.32;
+        fogDensity *= zoneId === "central" ? 0.78 : 1.18;
+      }
+      return {
+        version: WORLD_ART_VERSION,
+        zoneId,
+        zoneX: zoneDefinition.x,
+        zoneZ: zoneDefinition.z,
+        truth: base.truth,
+        motif: base.motif,
+        landmark: base.landmark,
+        choiceId,
+        landmarkState: variant?.landmarkState || "unresolved-echo",
+        weatherKind: variant?.kind || WORLD_WEATHER_KIND_ALIASES[zoneState.weather] || biome.precipitation,
+        weatherLabel: String(zoneState.weatherLabel || zoneDefinition.weather || ""),
+        horizon: base.horizon,
+        zenith: base.zenith,
+        lowerSky: base.lowerSky,
+        ground: base.ground,
+        fog: variant?.fog || base.fog,
+        key: base.key,
+        fill: base.fill,
+        rim: base.rim,
+        accent: variant?.accent || biome.accent,
+        fogDensity: clamp(fogDensity, 0.0032, 0.018),
+        exposure: clamp(exposure, 0.86, 1.18),
+        wetness: clamp(wetness, 0, 1),
+        emissive: clamp(emissive, 0.08, 1.08),
+        wind: clamp(wind, 0, 1.6),
+        life: clamp(life, 0, 1),
+        weatherStrength,
+        identityIntegrity,
+        memoryDebt,
+        causalityPressure,
+        echoRatio,
+        restored,
+        discovered,
+        ending,
+        ngPlus
+      };
+    }
+
+    environmentSignature(snapshot) {
+      return [
+        snapshot.zoneId,
+        snapshot.choiceId || "base",
+        Math.floor(snapshot.identityIntegrity / 20),
+        Math.floor(snapshot.memoryDebt / 25),
+        Math.floor(snapshot.causalityPressure / 20),
+        snapshot.restored ? 1 : 0,
+        snapshot.discovered ? 1 : 0,
+        snapshot.ending || "none",
+        snapshot.ngPlus
+      ].join(":");
+    }
+
+    makeWorldArtVisualState(snapshot) {
+      const THREE = this.THREE;
+      const horizon = new THREE.Color(snapshot.horizon);
+      const accent = new THREE.Color(snapshot.accent);
+      horizon.lerp(accent, snapshot.choiceId ? 0.16 : 0.06);
+      return {
+        snapshot,
+        horizon,
+        zenith: new THREE.Color(snapshot.zenith),
+        lowerSky: new THREE.Color(snapshot.lowerSky),
+        ground: new THREE.Color(snapshot.ground).lerp(accent, snapshot.restored ? 0.08 : 0.02),
+        fog: new THREE.Color(snapshot.fog),
+        key: new THREE.Color(snapshot.key),
+        fill: new THREE.Color(snapshot.fill),
+        rim: new THREE.Color(snapshot.rim),
+        accent,
+        fogDensity: snapshot.fogDensity,
+        exposure: snapshot.exposure,
+        wetness: snapshot.wetness,
+        emissive: snapshot.emissive,
+        wind: snapshot.wind,
+        life: snapshot.life,
+        weatherStrength: snapshot.weatherStrength
+      };
+    }
+
+    cloneWorldArtVisualState(source) {
+      return {
+        snapshot: source.snapshot,
+        horizon: source.horizon.clone(),
+        zenith: source.zenith.clone(),
+        lowerSky: source.lowerSky.clone(),
+        ground: source.ground.clone(),
+        fog: source.fog.clone(),
+        key: source.key.clone(),
+        fill: source.fill.clone(),
+        rim: source.rim.clone(),
+        accent: source.accent.clone(),
+        fogDensity: source.fogDensity,
+        exposure: source.exposure,
+        wetness: source.wetness,
+        emissive: source.emissive,
+        wind: source.wind,
+        life: source.life,
+        weatherStrength: source.weatherStrength
+      };
+    }
+
+    syncStoryEnvironmentGroups() {
+      this.storyEnvironmentGroups.forEach((group, zoneId) => {
+        const snapshot = this.resolveWorldArtState(zoneId);
+        const art = group.userData.worldArt;
+        if (!art) return;
+        art.variantGroups.forEach((variantGroup, choiceId) => {
+          variantGroup.visible = snapshot.choiceId === choiceId;
+          variantGroup.children.forEach((child) => {
+            if (!child.material) return;
+            child.material.opacity = snapshot.choiceId === choiceId ? (snapshot.restored ? 0.88 : 0.6) : 0;
+          });
+        });
+        art.landmark.material.emissive.set(snapshot.accent);
+        art.landmark.material.emissiveIntensity = snapshot.restored ? snapshot.emissive : snapshot.discovered ? snapshot.emissive * 0.54 : 0.12;
+        art.halo.material.color.set(snapshot.accent);
+        art.halo.material.opacity = snapshot.restored ? 0.52 : snapshot.discovered ? 0.28 : 0.1;
+        art.motifMarkers.material.color.set(snapshot.accent);
+        art.motifMarkers.material.opacity = snapshot.restored ? 0.72 : snapshot.discovered ? 0.4 : 0.14;
+        art.surface.material.color.set(snapshot.ground);
+        art.surface.material.roughness = clamp(0.92 - snapshot.wetness * 0.48, 0.3, 0.92);
+        art.surface.material.clearcoat = snapshot.wetness * 0.72;
+        art.surface.material.emissive.set(snapshot.accent);
+        art.surface.material.emissiveIntensity = snapshot.restored ? 0.13 : 0.045;
+        art.atmosphere.material.color.set(snapshot.accent);
+        art.atmosphere.material.opacity = (this.state.settings.reduceEffects ? 0.01 : 0.022) * (0.65 + snapshot.weatherStrength * 0.7);
+        art.atmosphere.visible = zoneId === this.currentZone?.id;
+        art.metricEchoes.children.forEach((echo, index) => {
+          const memoryOpacity = snapshot.memoryDebt >= 25 ? clamp((snapshot.memoryDebt - 18) / 360, 0.025, 0.18) : 0;
+          const ngPlusOpacity = index < Math.min(3, snapshot.ngPlus) ? 0.055 : 0;
+          echo.material.opacity = Math.max(memoryOpacity * (1 - index * 0.18), ngPlusOpacity);
+          echo.visible = echo.material.opacity > 0.01;
+        });
+        group.userData.environmentSnapshot = snapshot;
+        group.userData.storySignature = this.environmentSignature(snapshot);
+        const beacon = this.storyBeacons.get(zoneId);
+        const shardFound = this.state.story?.truthShards?.[zoneId]?.discovered === true;
+        if (beacon?.userData?.core?.material) {
+          beacon.userData.core.material.emissiveIntensity = shardFound ? 1.22 : 0.72;
+          beacon.userData.core.scale.setScalar(shardFound ? 1.16 : 1);
+          beacon.userData.ring.material.opacity = shardFound ? 0.76 : 0.58;
+        }
+      });
+    }
+
+    applyBiomeVisualState(zone = this.currentZone, { immediate = false } = {}) {
+      const snapshot = this.resolveWorldArtState(zone?.id || "central");
+      const signature = this.environmentSignature(snapshot);
+      const next = this.makeWorldArtVisualState(snapshot);
+      if (!this.worldArtCurrent || immediate) this.worldArtCurrent = this.cloneWorldArtVisualState(next);
+      this.worldArtTarget = next;
+      this.worldArtSignature = signature;
+      this.root.dataset.biome = snapshot.zoneId;
+      this.root.dataset.precipitation = snapshot.weatherKind;
+      this.root.dataset.storyEnvironment = snapshot.choiceId || "unresolved";
+      this.root.dataset.truthMotif = snapshot.motif;
+      this.root.dataset.worldArt = `v${WORLD_ART_VERSION}`;
+      this.root.style.setProperty("--har-biome-accent", snapshot.accent);
+      this.root.style.setProperty("--har-biome-wind", String(snapshot.wind));
+      this.root.style.setProperty("--har-world-wetness", String(snapshot.wetness));
+      this.root.style.setProperty("--har-world-pressure", String(snapshot.causalityPressure / 100));
+      this.syncStoryEnvironmentGroups();
+      if (immediate) this.updateWorldArtTransition(1, performance.now(), 0.58, true);
+    }
+
+    updateSkyGradient(time, dayAmount, force = false) {
+      if (!this.skyDome?.geometry?.attributes?.color || !this.worldArtCurrent) return;
+      const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
+      const budget = WORLD_ART_BUDGETS[reduced ? "static" : (this.state.settings.vfxLevel === "cinematic" ? "cinematic" : "balanced")];
+      if (!force && time - this.worldArtLastSkyUpdateAt < budget.skyUpdateMs) return;
+      this.worldArtLastSkyUpdateAt = time;
+      this.worldArtSkyPalette ||= {
+        horizon: new this.THREE.Color(),
+        zenith: new this.THREE.Color(),
+        lower: new this.THREE.Color(),
+        daylight: new this.THREE.Color(0xa9c8ef),
+        scratch: new this.THREE.Color()
+      };
+      const palette = this.worldArtSkyPalette;
+      palette.horizon.copy(this.worldArtCurrent.horizon).lerp(palette.daylight, dayAmount * 0.18);
+      palette.zenith.copy(this.worldArtCurrent.zenith).lerp(palette.daylight, dayAmount * 0.1);
+      palette.lower.copy(this.worldArtCurrent.lowerSky).lerp(palette.horizon, dayAmount * 0.12);
+      const positions = this.skyDome.geometry.attributes.position;
+      const colors = this.skyDome.geometry.attributes.color;
+      for (let index = 0; index < positions.count; index += 1) {
+        const y = positions.getY(index) / 280;
+        palette.scratch.copy(palette.horizon).lerp(y >= 0 ? palette.zenith : palette.lower, clamp(Math.abs(y), 0, 1));
+        colors.setXYZ(index, palette.scratch.r, palette.scratch.g, palette.scratch.b);
+      }
+      colors.needsUpdate = true;
+      this.skyDome.material.color.set(0xffffff);
+    }
+
+    updateWorldArtTransition(dt, time, dayAmount, force = false) {
+      const current = this.worldArtCurrent;
+      const target = this.worldArtTarget;
+      if (!current || !target || !this.scene) return;
+      const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
+      const blend = force || reduced ? 1 : clamp(1 - Math.exp(-dt * 2.35), 0, 1);
+      ["horizon", "zenith", "lowerSky", "ground", "fog", "key", "fill", "rim", "accent"].forEach((key) => current[key].lerp(target[key], blend));
+      ["fogDensity", "exposure", "wetness", "emissive", "wind", "life", "weatherStrength"].forEach((key) => {
+        current[key] += (target[key] - current[key]) * blend;
+      });
+      current.snapshot = target.snapshot;
+      if (this.scene.fog) {
+        this.scene.fog.color.lerp(current.fog, clamp(dt * 3.4, 0, 1));
+        this.scene.fog.density += (current.fogDensity - this.scene.fog.density) * clamp(dt * 2.2, 0, 1);
+      }
+      if (this.hemisphereLight) {
+        this.hemisphereLight.color.lerp(current.fill, blend);
+        this.hemisphereLight.groundColor.lerp(current.ground, blend);
+        this.hemisphereLight.intensity = (0.72 + dayAmount * 1.08) * (0.78 + current.life * 0.24);
+      }
+      if (this.sunLight) {
+        this.sunLight.color.lerp(current.key, blend);
+        this.sunLight.intensity = (0.42 + dayAmount * 2.05) * (0.8 + current.exposure * 0.2);
+      }
+      if (this.fillLight) {
+        this.fillLight.color.lerp(current.fill, blend);
+        this.fillLight.intensity = (0.24 + dayAmount * 0.42) * (0.82 + current.life * 0.2);
+      }
+      if (this.rimLight) {
+        this.rimLight.color.lerp(current.rim, blend);
+        this.rimLight.intensity = 0.32 + (1 - dayAmount) * 0.5 + current.emissive * 0.12;
+      }
+      if (this.hLight) {
+        this.hLight.color.lerp(current.accent, blend);
+        this.hLight.intensity = 28 + (1 - dayAmount) * 22 + current.emissive * 12;
+        this.hLight.position.x += (current.snapshot.zoneX - this.hLight.position.x) * blend;
+        this.hLight.position.y += (9.5 - this.hLight.position.y) * blend;
+        this.hLight.position.z += (current.snapshot.zoneZ - this.hLight.position.z) * blend;
+      }
+      if (this.groundMesh?.material) {
+        this.groundMesh.material.color.lerp(current.ground, blend * 0.34);
+        this.groundMesh.material.roughness += (clamp(0.94 - current.wetness * 0.48, 0.38, 0.94) - this.groundMesh.material.roughness) * blend;
+        this.groundMesh.material.clearcoat += (current.wetness * 0.38 - this.groundMesh.material.clearcoat) * blend;
+      }
+      if (this.renderer && !this.photoMode) this.renderer.toneMappingExposure += (current.exposure - this.renderer.toneMappingExposure) * blend;
+      this.updateSkyGradient(time, dayAmount, force);
+      const activeGroup = this.storyEnvironmentGroups.get(current.snapshot.zoneId);
+      const activeArt = activeGroup?.userData?.worldArt;
+      if (activeArt) {
+        activeArt.surface.material.color.lerp(current.ground, blend);
+        activeArt.surface.material.roughness += (clamp(0.92 - current.wetness * 0.48, 0.3, 0.92) - activeArt.surface.material.roughness) * blend;
+        activeArt.surface.material.clearcoat += (current.wetness * 0.72 - activeArt.surface.material.clearcoat) * blend;
+        activeArt.landmark.material.emissive.lerp(current.accent, blend);
+        activeArt.halo.material.color.lerp(current.accent, blend);
+        activeArt.motifMarkers.material.color.lerp(current.accent, blend);
+        activeArt.atmosphere.material.color.lerp(current.accent, blend);
       }
     }
 
     updateLivingWorld(dt, time) {
+      const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
       this.livingWorldActors.forEach((actor) => {
-        actor.angle += dt * actor.speed;
+        if (!actor.mesh.parent?.visible) return;
+        const snapshot = this.storyEnvironmentGroups.get(actor.zoneId)?.userData?.environmentSnapshot;
+        const life = snapshot?.life ?? 0.72;
+        actor.mesh.visible = life > 0.18;
+        if (reduced || !actor.mesh.visible) return;
+        actor.angle += dt * actor.speed * (0.55 + life * 0.7);
         actor.mesh.position.x = Math.cos(actor.angle) * actor.radius;
         actor.mesh.position.z = Math.sin(actor.angle) * actor.radius;
         actor.mesh.position.y = actor.baseY + Math.sin(time * 0.0013 + actor.radius) * actor.vertical;
@@ -4940,17 +5771,21 @@
         actor.mesh.rotation.z += dt * 0.18;
       });
       this.zoneFxGroups.forEach((group) => {
+        if (!group.visible) return;
+        const snapshot = this.storyEnvironmentGroups.get(group.userData.zoneId)?.userData?.environmentSnapshot;
         group.children.forEach((object) => {
           if (object.userData?.livingParticles) {
-            object.rotation.y += dt * 0.012 * object.userData.wind;
-            object.material.opacity = object.userData.baseOpacity * (0.78 + Math.sin(time * 0.0015 + group.position.x) * 0.22);
+            object.rotation.y += dt * 0.012 * object.userData.wind * (reduced ? 0 : 1);
+            object.material.opacity = object.userData.baseOpacity
+              * (0.52 + (snapshot?.weatherStrength ?? 0.58) * 0.48)
+              * (reduced ? 0.55 : 0.78 + Math.sin(time * 0.0015 + group.position.x) * 0.22);
           }
           if (object.userData?.hologram) {
-            object.material.opacity = 0.17 + Math.sin(time * 0.003 + object.position.x) * 0.08;
+            object.material.opacity = reduced ? 0.17 : 0.17 + Math.sin(time * 0.003 + object.position.x) * 0.08;
           }
           if (object.userData?.heatColumn) {
-            object.scale.y = 0.92 + Math.sin(time * 0.004 + object.position.x) * 0.12;
-            object.material.opacity = 0.04 + Math.abs(Math.sin(time * 0.002 + object.position.z)) * 0.05;
+            object.scale.y = reduced ? 0.92 : 0.92 + Math.sin(time * 0.004 + object.position.x) * 0.12;
+            object.material.opacity = reduced ? 0.035 : 0.04 + Math.abs(Math.sin(time * 0.002 + object.position.z)) * 0.05;
           }
         });
       });
@@ -7087,10 +7922,19 @@
 
     updateCharacterSurface(mesh, time) {
       if (!mesh || !this.state.settings.surfaceFx || time - this.lastSurfaceUpdateAt < 180) return;
-      const precipitation = BIOME_PROFILES[this.currentZone?.id]?.precipitation || "";
-      const wet = ["neon-rain", "star-rain"].includes(precipitation) ? 0.62 : this.isSwimming ? 0.9 : 0;
-      const snow = precipitation === "snow" ? 0.32 : 0;
-      const heat = precipitation === "embers" ? 0.28 : 0;
+      const environment = this.worldArtTarget?.snapshot?.zoneId === this.currentZone?.id
+        ? this.worldArtTarget.snapshot
+        : this.resolveWorldArtState(this.currentZone?.id || "central");
+      const precipitation = String(environment.weatherKind || "").toLowerCase();
+      const wet = this.isSwimming
+        ? 0.9
+        : precipitation.includes("rain") || precipitation.includes("tide")
+          ? clamp(environment.wetness * environment.weatherStrength, 0, 0.82)
+          : 0;
+      const snow = precipitation.includes("snow") ? clamp(environment.weatherStrength * 0.42, 0, 0.42) : 0;
+      const heat = precipitation.includes("heat") || precipitation.includes("ember") || precipitation.includes("ash")
+        ? clamp(environment.weatherStrength * 0.36, 0, 0.42)
+        : 0;
       const exertion = 1 - clamp(this.state.player.stamina / Math.max(1, this.state.player.maxStamina), 0, 1);
       const injury = 1 - clamp(this.state.player.health / Math.max(1, this.state.player.maxHealth), 0, 1);
       const sweat = clamp(exertion * 0.72 + wet * 0.55, 0, 1);
@@ -7706,19 +8550,9 @@
 
     refreshWorldStateVisuals() {
       if (!this.world) return;
-      this.world.traverse((object) => {
-        const zoneId = object.userData?.zoneId;
-        if (!zoneId || !object.material) return;
-        const state = this.state.world?.zones?.[zoneId];
-        const zone = ZONES.find((item) => item.id === zoneId);
-        if (!state || !zone) return;
-        const material = Array.isArray(object.material) ? object.material[0] : object.material;
-        if (material.emissive && material.emissiveIntensity !== undefined) {
-          material.emissive.set(zone.color);
-          material.emissiveIntensity = state.restored ? 0.48 : state.discovered ? 0.18 : 0.06;
-        }
-        if (material.opacity !== undefined && zoneId !== "central") material.opacity = state.restored ? 0.58 : 0.36;
-      });
+      this.syncStoryEnvironmentGroups();
+      this.applyBiomeVisualState(this.currentZone);
+      if (this.weatherField) this.updateWeatherAppearance();
     }
 
     listen(target, event, handler, options) {
@@ -8207,7 +9041,7 @@
           breathing: clamp(0.22 + (1 - this.state.player.stamina / Math.max(1, this.state.player.maxStamina)) * 0.78, 0, 1),
           fatigue: clamp(1 - this.state.player.stamina / Math.max(1, this.state.player.maxStamina), 0, 1),
           injury: clamp(1 - this.state.player.health / Math.max(1, this.state.player.maxHealth), 0, 1),
-          cold: BIOME_PROFILES[this.currentZone?.id]?.precipitation === "snow" ? 0.65 : 0,
+          cold: String(this.worldArtTarget?.snapshot?.weatherKind || "").includes("snow") ? 0.65 : 0,
           weapon: this.playerWeapon ? 1 : 0
         };
       }
@@ -8716,8 +9550,19 @@
         this.centralCore.position.y = this.centralCore.userData.floatBase + Math.sin(time * 0.0015) * 0.32;
         this.centralCore.rotation.y += dt * 0.28;
       }
-      this.world.traverse((object) => {
-        if (object.userData?.spin) object.rotation.z += dt * object.userData.spin;
+      const worldMotion = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static" ? 0 : 1;
+      this.worldArtAnimatedObjects.forEach((object, index) => {
+        if (!object.visible || !object.parent?.visible) return;
+        if (object.userData?.spin) object.rotation.z += dt * object.userData.spin * worldMotion;
+        if (!object.userData?.storyMotion || !worldMotion) return;
+        if (object.userData.storyBaseY === undefined) object.userData.storyBaseY = object.position.y;
+        if (object.userData.storyMotion === "float") {
+          object.position.y = object.userData.storyBaseY + Math.sin(time * 0.00125 + index * 0.61) * 0.22;
+          object.rotation.y += dt * 0.12;
+        } else if (object.userData.storyMotion === "echo") {
+          object.position.y = object.userData.storyBaseY + Math.sin(time * 0.0018 + index) * 0.28;
+          object.rotation.y -= dt * 0.2;
+        }
       });
       this.remotePlayers.forEach((remote) => {
         const target = remote.userData.targetPosition;
@@ -8767,37 +9612,26 @@
         Math.max(8, Math.sin(celestialAngle) * 68),
         Math.sin(celestialAngle * 0.7) * 38
       );
-      const dayColor = new this.THREE.Color().setRGB(
+      this.worldArtDayColor ||= new this.THREE.Color();
+      this.worldArtDayColor.setRGB(
         0.018 + dayAmount * 0.035,
         0.026 + dayAmount * 0.04,
         0.07 + dayAmount * 0.08
       );
-      if (this.scene.background?.isColor) this.scene.background.copy(dayColor);
-      const biomeProfile = BIOME_PROFILES[this.currentZone.id] || BIOME_PROFILES.central;
-      const biomeFog = new this.THREE.Color(biomeProfile.fog).lerp(dayColor, 0.24 + dayAmount * 0.16);
-      this.scene.fog.color.lerp(biomeFog, clamp(dt * 2.6, 0, 1));
-      this.scene.fog.density += (biomeProfile.fogDensity - this.scene.fog.density) * clamp(dt * 1.8, 0, 1);
-      this.hemisphereLight.intensity = 0.85 + dayAmount * 1.2;
-      this.sunLight.intensity = 0.45 + dayAmount * 2.15;
-      this.hLight.intensity = 35 + (1 - dayAmount) * 25;
-      if (this.fillLight) this.fillLight.intensity = 0.28 + dayAmount * 0.45;
-      if (this.rimLight) this.rimLight.intensity = 0.38 + (1 - dayAmount) * 0.52;
-      if (this.skyDome) {
-        this.skyDome.material.color.set(dayAmount > 0.4 ? 0x8fa9d8 : 0x524084);
-        this.skyDome.material.color.multiplyScalar(0.42 + dayAmount * 0.58);
-      }
+      if (this.scene.background?.isColor) this.scene.background.lerp(this.worldArtDayColor, clamp(dt * 2.2, 0, 1));
+      this.updateWorldArtTransition(dt, time, dayAmount);
       if (this.auroraVeil) {
-        this.auroraVeil.rotation.z += dt * 0.018;
+        this.auroraVeil.rotation.z += dt * 0.018 * worldMotion;
         this.auroraVeil.material.opacity = (1 - dayAmount) * 0.18 + (this.currentZone.id === "aurora" ? 0.09 : 0.02);
       }
       this.cloudLayers.forEach((cloud) => {
-        cloud.rotation.y += dt * 0.006;
-        cloud.position.x += dt * cloud.userData.drift;
+        cloud.rotation.y += dt * 0.006 * worldMotion;
+        cloud.position.x += dt * cloud.userData.drift * worldMotion;
         if (cloud.position.x > 115) cloud.position.x = -115;
       });
       this.waterSurfaces.forEach((water, index) => {
-        water.position.y = water.userData.baseY + Math.sin(time * 0.0017 + index) * 0.035;
-        water.rotation.z += dt * (water.userData.lava ? 0.035 : -0.012);
+        water.position.y = water.userData.baseY + Math.sin(time * 0.0017 + index) * 0.035 * worldMotion;
+        water.rotation.z += dt * (water.userData.lava ? 0.035 : -0.012) * worldMotion;
         water.material.emissiveIntensity = water.userData.lava
           ? 1.15 + Math.sin(time * 0.003) * 0.25
           : 0.16 + Math.sin(time * 0.0015) * 0.06;
@@ -8815,16 +9649,19 @@
       if (this.weatherField) {
         this.weatherField.position.set(this.state.player.x, 0, this.state.player.z);
         const positions = this.weatherField.geometry.attributes.position.array;
-        for (let index = 1; index < positions.length; index += 3) {
-          const fallSpeed = this.currentZone.id === "crimson"
-            ? 1.1
-            : this.currentZone.id === "sky"
-              ? 6.2
-              : this.currentZone.id === "abyss"
-                ? 0.65
-                : 3.2;
-          positions[index] -= dt * fallSpeed;
-          if (positions[index] < 1) positions[index] = 18 + Math.random() * 8;
+        const motion = this.weatherField.userData.motion || { x: 0, y: -3.2, z: 0 };
+        const motionScale = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static" ? 0 : 1;
+        for (let index = 0; index < positions.length; index += 3) {
+          const reverse = this.weatherField.userData.reverseEvery && (index / 3) % this.weatherField.userData.reverseEvery === 0 ? -0.34 : 1;
+          positions[index] += dt * motion.x * motionScale;
+          positions[index + 1] += dt * motion.y * reverse * motionScale;
+          positions[index + 2] += dt * motion.z * motionScale;
+          if (positions[index + 1] < 1) positions[index + 1] = 18 + ((index * 17) % 9);
+          if (positions[index + 1] > 27) positions[index + 1] = 2 + ((index * 13) % 8);
+          if (positions[index] < -28) positions[index] = 28;
+          if (positions[index] > 28) positions[index] = -28;
+          if (positions[index + 2] < -28) positions[index + 2] = 28;
+          if (positions[index + 2] > 28) positions[index + 2] = -28;
         }
         this.weatherField.geometry.attributes.position.needsUpdate = true;
       }
@@ -8832,8 +9669,9 @@
 
     updateWorldStreaming() {
       const player = this.state.player;
-      const quality = this.state.settings.quality;
-      const visibleRadius = quality === "low" ? 46 : quality === "medium" ? 63 : 86;
+      const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
+      const budget = WORLD_ART_BUDGETS[reduced ? "static" : (this.state.settings.vfxLevel === "cinematic" ? "cinematic" : "balanced")];
+      const visibleRadius = budget.activeRadius;
       this.streamingGroups.forEach((group, zoneId) => {
         const zone = ZONES.find((entry) => entry.id === zoneId);
         if (!zone) return;
@@ -8846,49 +9684,61 @@
         const distance = Math.hypot(player.x - zone.x, player.z - zone.z);
         group.visible = distance <= visibleRadius * 1.08 || zoneId === this.currentZone.id;
       });
-      const shadowRadius = quality === "cinematic" ? 58 : quality === "high" ? 42 : 24;
-      this.world.traverse((object) => {
-        if (!object.isMesh || object === this.playerMesh || object.userData?.boss) return;
-        if (object.userData.baseCastShadow === undefined) object.userData.baseCastShadow = Boolean(object.castShadow);
-        const distance = Math.hypot(player.x - object.position.x, player.z - object.position.z);
-        object.castShadow = Boolean(object.userData.baseCastShadow && this.renderer.shadowMap?.enabled && distance < shadowRadius);
+      this.storyEnvironmentGroups.forEach((group, zoneId) => {
+        const zone = ZONES.find((entry) => entry.id === zoneId);
+        if (!zone) return;
+        const distance = Math.hypot(player.x - zone.x, player.z - zone.z);
+        group.visible = distance <= visibleRadius * 1.12 || zoneId === this.currentZone.id;
+      });
+      const scratch = this.worldArtScratchPosition || new this.THREE.Vector3();
+      this.worldArtScratchPosition = scratch;
+      this.worldArtShadowCandidates.forEach((object) => {
+        object.getWorldPosition(scratch);
+        const distance = Math.hypot(player.x - scratch.x, player.z - scratch.z);
+        object.castShadow = Boolean(object.userData.baseCastShadow && this.renderer.shadowMap?.enabled && distance < budget.shadowRadius);
       });
     }
 
     updateWeatherAppearance() {
       if (!this.weatherField) return;
       this.applyBiomeVisualState(this.currentZone);
-      const colors = {
-        central: 0x72eaff,
-        aurora: 0x9effe9,
-        crimson: 0xff8a62,
-        void: 0xc087ff,
-        sky: 0x9ad7ff,
-        ocean: 0x4de1ff,
-        station: 0xffd36b,
-        abyss: 0xff5e9f
-      };
+      const snapshot = this.resolveWorldArtState(this.currentZone.id);
       const override = this.photoMode ? this.photoSettings.weather : "auto";
-      const mode = override === "auto"
-        ? this.currentZone.id
-        : ({
-          clear: "central",
-          aurora: "aurora",
-          storm: "void",
-          embers: "crimson",
-          "quantum-wind": "sky",
-          "star-rain": "ocean",
-          eclipse: "abyss"
-        }[override] || this.currentZone.id);
-      const consequence = this.state.world?.zones?.[this.currentZone.id] || {};
-      const consequenceSeverity = override === "auto" ? clamp(consequence.weatherSeverity ?? 0.58, 0.1, 1) : 0.58;
-      this.root.dataset.weatherConsequence = consequence.weatherLabel ? "active" : "default";
-      this.weatherField.material.color.setHex(colors[mode] || colors.central);
+      const kind = override === "auto" ? snapshot.weatherKind : override;
+      const normalized = String(kind || "").toLowerCase();
+      const isClear = normalized.includes("clear") || normalized.includes("silence");
+      const isSnow = normalized.includes("snow") || normalized.includes("aurora");
+      const isEmber = normalized.includes("ash") || normalized.includes("heat") || normalized.includes("ember");
+      const isSpore = normalized.includes("spore");
+      const isWind = normalized.includes("wind") || normalized.includes("cloud");
+      const isRain = normalized.includes("rain") || normalized.includes("tide");
+      const isAbyss = normalized.includes("eclipse") || normalized.includes("probability") || normalized.includes("shard");
+      const color = isEmber ? "#ff8a62"
+        : isSnow ? "#b8fff1"
+          : isSpore ? "#c087ff"
+            : isWind ? "#b8e8ff"
+              : isRain ? "#62e9ff"
+                : isAbyss ? "#ff6ba9"
+                  : snapshot.accent;
+      const consequenceSeverity = override === "auto" ? snapshot.weatherStrength : 0.58;
+      this.root.dataset.weatherConsequence = snapshot.choiceId ? "active" : "default";
+      this.root.dataset.precipitation = kind;
+      this.weatherField.material.color.set(color);
       const density = clamp(this.state.settings.weatherDensity, 0, 100) / 100;
-      this.weatherField.material.opacity = override === "clear"
-        ? 0.04
-        : (mode === "central" ? 0.16 + consequenceSeverity * 0.18 : mode === "aurora" && override === "storm" ? 0.82 : consequenceSeverity) * density;
-      this.weatherField.material.size = mode === "crimson" || mode === "abyss" ? 0.34 : mode === "aurora" || mode === "ocean" ? 0.24 : 0.18;
+      this.weatherField.material.opacity = isClear || override === "clear"
+        ? 0.035
+        : clamp(consequenceSeverity * density, 0.04, 0.92);
+      this.weatherField.material.size = isEmber || isAbyss ? 0.34 : isSnow || isRain || isSpore ? 0.24 : 0.18;
+      this.weatherField.userData.motion = isEmber
+        ? { x: snapshot.wind * 0.35, y: 1.25, z: snapshot.wind * -0.16 }
+        : isWind
+          ? { x: 6.4 + snapshot.wind * 2.2, y: -0.4, z: 2.1 }
+          : isAbyss
+            ? { x: snapshot.wind * 1.4, y: 0.62, z: -snapshot.wind * 0.8 }
+            : isSpore
+              ? { x: snapshot.wind * 0.42, y: 0.18, z: snapshot.wind * 0.28 }
+              : { x: snapshot.wind * 0.72, y: isSnow ? -1.4 : -4.6, z: snapshot.wind * 0.22 };
+      this.weatherField.userData.reverseEvery = normalized.includes("memory") || normalized.includes("probability") ? 7 : 0;
     }
 
     updateEffects(dt) {
@@ -9749,14 +10599,22 @@
         characterRuntimeLabel.textContent = `${source} · ${(activeCharacterRuntime?.state || this.activeAnimation || "idle").toUpperCase()}`;
       }
       const worldZone = this.state.world?.zones?.[this.currentZone.id];
+      const worldArtState = this.worldArtTarget?.snapshot?.zoneId === this.currentZone.id
+        ? this.worldArtTarget.snapshot
+        : this.resolveWorldArtState(this.currentZone.id);
       const worldState = this.root.querySelector("[data-har-world-state]");
-      if (worldState) worldState.textContent = this.state.world?.activeEvent
-        ? "EVENT ACTIVE"
-        : worldZone?.restored
-          ? "RESTORED"
-          : worldZone?.discovered
-            ? "DISCOVERED"
-            : "UNSCANNED";
+      if (worldState) {
+        worldState.textContent = this.state.world?.activeEvent
+          ? "EVENT ACTIVE"
+          : worldArtState.choiceId
+            ? `${worldArtState.truth.toUpperCase()} · ${worldArtState.choiceId.toUpperCase()}`
+            : worldZone?.restored
+              ? `${worldArtState.truth.toUpperCase()} · RESTORED`
+              : worldZone?.discovered
+                ? `${worldArtState.truth.toUpperCase()} · DISCOVERED`
+                : `${worldArtState.truth.toUpperCase()} · UNSCANNED`;
+        worldState.title = `${worldArtState.landmark} · World Art V${WORLD_ART_VERSION}`;
+      }
       this.root.querySelector("[data-har-minimap-label]").textContent = this.currentZone.name;
       const activeQuest = this.activeQuest();
       const activeStoryMission = this.state.story?.prologueCompletedAt
@@ -11160,9 +12018,15 @@
       zoneState.weatherSeverity = clamp(0.46 + Math.abs(Number(choice.economy || 1) - 1) * 1.8 + Number(choice.dangerous || 0) * 0.12, 0.35, 1);
       zoneState.economyModifier = clamp(choice.economy ?? 1, 0.5, 1.5);
       zoneState.controlState = String(choice.control || "independent").slice(0, 40);
+      const environmentVariant = STORY_ENVIRONMENT_VARIANTS[zoneId]?.[choice.id];
+      zoneState.environmentVariant = String(environmentVariant?.landmarkState || choice.id).slice(0, 60);
       if (FACTIONS.some((faction) => faction.id === choice.control)) zoneState.occupation = choice.control;
       zoneState.resources = clamp(Number(zoneState.resources || 0) + (choice.economy <= 0.9 ? 22 : 12), 0, 100);
       zoneState.updatedAt = nowIso();
+      const landmarkId = `world-art-v${WORLD_ART_VERSION}:${zoneId}:${zoneState.environmentVariant}`;
+      if (!this.state.exploration.landmarks.includes(landmarkId)) {
+        this.state.exploration.landmarks = [...this.state.exploration.landmarks, landmarkId].slice(-100);
+      }
       const companion = choice.companion ? this.state.companions[choice.companion] : null;
       if (companion) {
         companion.unlocked = true;
@@ -12444,6 +13308,16 @@
           footprints: this.footprints.filter((footprint) => footprint.visible).length,
           licensedEnvironment: this.licensedEnvironmentStatus,
           licensedModels: this.licensedEnvironmentAssets.size
+        },
+        worldArt: {
+          version: WORLD_ART_VERSION,
+          signature: this.worldArtSignature,
+          environment: this.worldArtTarget?.snapshot || this.resolveWorldArtState(this.currentZone?.id || "central"),
+          storyGroups: this.storyEnvironmentGroups.size,
+          animatedObjects: this.worldArtAnimatedObjects.length,
+          shadowCandidates: this.worldArtShadowCandidates.length,
+          transition: this.state.settings.reduceEffects ? "instant" : "lerp",
+          visibilityPaused: document.visibilityState === "hidden"
         },
         rendererHealth: {
           failures: this.runtimeFailureCount,

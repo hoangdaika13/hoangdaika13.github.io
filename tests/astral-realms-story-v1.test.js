@@ -153,10 +153,10 @@ test("Story V1 assets are cache-busted for production and offline use", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const index = read("index.html");
-  for (const asset of ["astral-realms.css?v=35", "astral-realms.js?v=35"]) {
+  for (const asset of ["astral-realms.css?v=36", "astral-realms.js?v=36"]) {
     assert.ok(loader.includes(asset), `${asset} missing from route loader`);
     assert.ok(worker.includes(asset), `${asset} missing from service worker`);
   }
-  assert.match(worker, /hh-identity-portal-v314/);
+  assert.match(worker, /hh-identity-portal-v315/);
   assert.match(index, /performance-loader\.js\?v=96/);
 });
