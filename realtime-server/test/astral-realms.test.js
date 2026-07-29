@@ -78,12 +78,15 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
     sprint: true,
     element: "plasma",
     appearance: {
-      appearanceVersion: 3,
-      baseModel: "human-adult-a01",
+      appearanceVersion: 7,
+      baseModel: "valid-asian-f-1-casual",
       style: "human-cinematic",
       morphs: { eyeSize: 0.74, chestSize: 0.66, gluteProjection: 0.7, height: 0.62 },
       skinColor: "#f2c4aa",
       eyeColor: "#72efff",
+      voice: { id: "aurora-soft", pitch: 0.62, pace: 0.55, emotion: 0.7 },
+      motionDNA: { preset: "agile", posture: 0.58, stride: 0.66, acceleration: 0.82, braking: 0.78, turnResponse: 0.86, combatWeight: 0.38, secondaryMotion: 0.68, dodgeStyle: "dash" },
+      evolution: { persistentScars: 0.2, clothingDamage: 0.1, auraPower: 0.7 },
       outfit: ["central-jacket-02", "combat-boots-01", "unknown-paid-item"]
     },
     action: "attack",
@@ -108,10 +111,15 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
   assert.equal(snapshot.players.length, 1);
   assert.equal(snapshot.players[0].socketId, socket.id);
   assert.equal(snapshot.players[0].characterId, "lyra");
-  assert.equal(snapshot.players[0].appearance.appearanceVersion, 3);
+  assert.equal(snapshot.players[0].appearance.appearanceVersion, 7);
+  assert.equal(snapshot.players[0].appearance.baseModel, "valid-asian-f-1-casual");
   assert.equal(snapshot.players[0].appearance.style, "human-cinematic");
   assert.equal(snapshot.players[0].appearance.morphs.eyeSize, 0.74);
   assert.deepEqual(snapshot.players[0].appearance.outfit, ["central-jacket-02", "combat-boots-01"]);
+  assert.equal(snapshot.players[0].appearance.voice.id, "aurora-soft");
+  assert.equal(snapshot.players[0].appearance.motionDNA.preset, "agile");
+  assert.equal(snapshot.players[0].appearance.motionDNA.dodgeStyle, "dash");
+  assert.equal(snapshot.players[0].appearance.evolution.auraPower, 0.7);
   assert.ok(Math.hypot(snapshot.players[0].x + 45, snapshot.players[0].z - 19) < 2.5);
 
   const target = snapshot.enemies.find((enemy) => enemy.id === "aurora-wisp-1");

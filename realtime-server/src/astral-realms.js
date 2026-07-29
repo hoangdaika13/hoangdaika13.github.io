@@ -14,11 +14,17 @@ const CHARACTER_PROFILES = Object.freeze({
   nyx: { element: "void", attackScale: 1.08, speedScale: 1.06 },
   sol: { element: "solar", attackScale: 1.18, speedScale: 0.94 }
 });
-const APPEARANCE_VERSION = 3;
+const APPEARANCE_VERSION = 7;
 const APPEARANCE_BASE_MODELS = new Set(["human-adult-a01", "human-adult-b01"]);
 const APPEARANCE_SKINS = new Set(["warm-04", "neutral-03", "cool-02", "deep-05"]);
 const APPEARANCE_HAIRS = new Set(["astral-layered-07", "aurora-short-02", "void-long-04", "solar-braid-03"]);
 const APPEARANCE_OUTFITS = new Set(["central-jacket-02", "combat-boots-01", "aurora-suit-01", "void-coat-01"]);
+const APPEARANCE_BEARDS = new Set(["none", "shadow-01", "short-boxed-02", "astral-goatee-03"]);
+const APPEARANCE_BROWS = new Set(["natural-01", "soft-02", "defined-03", "bold-04"]);
+const APPEARANCE_MAKEUPS = new Set(["none", "natural", "nebula", "cyber", "solar"]);
+const APPEARANCE_ACCESSORIES = new Set(["none", "ear-cuff", "visor", "astral-mark"]);
+const CHARACTER_VOICES = new Set(["aurora-soft", "central-clear", "void-low", "solar-bold"]);
+const MOTION_PRESETS = new Set(["balanced", "agile", "grounded", "cinematic"]);
 const SHARD_ZONES = Object.freeze(["central", "aurora", "crimson", "void", "sky", "ocean", "station", "abyss"]);
 const SHARD_FACTIONS = new Set(["h-central", "aurora-keepers", "crimson-union", "void-cult", "astral-researchers", "free-travelers"]);
 const APPEARANCE_MORPHS = new Set([
@@ -48,9 +54,17 @@ function sanitizeAppearance(input = {}) {
     });
   }
   const safeHex = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value).toLowerCase() : fallback;
+  const unitMap = (value, keys, fallback = 0) => Object.fromEntries(keys.map((key) => {
+    const number = Number(value?.[key]);
+    return [key, Number.isFinite(number) ? clamp(number, 0, 1) : fallback];
+  }));
+  const requestedModel = clean(source.baseModel, 80);
+  const baseModel = APPEARANCE_BASE_MODELS.has(requestedModel) || /^valid-[a-z0-9-]{3,72}$/.test(requestedModel)
+    ? requestedModel
+    : "human-adult-a01";
   return {
     appearanceVersion: APPEARANCE_VERSION,
-    baseModel: APPEARANCE_BASE_MODELS.has(source.baseModel) ? source.baseModel : "human-adult-a01",
+    baseModel,
     bodyPreset: clean(source.bodyPreset, 24) || "balanced",
     style: source.style === "human-cinematic" ? "human-cinematic" : "anime-realistic",
     symmetry: source.symmetry !== false,
@@ -60,6 +74,25 @@ function sanitizeAppearance(input = {}) {
     eyeColor: safeHex(source.eyeColor, "#63efff"),
     hair: APPEARANCE_HAIRS.has(source.hair) ? source.hair : "astral-layered-07",
     hairColor: safeHex(source.hairColor, "#dffbff"),
+    beard: APPEARANCE_BEARDS.has(source.beard) ? source.beard : "none",
+    brow: APPEARANCE_BROWS.has(source.brow) ? source.brow : "natural-01",
+    makeup: APPEARANCE_MAKEUPS.has(source.makeup) ? source.makeup : "none",
+    accessory: APPEARANCE_ACCESSORIES.has(source.accessory) ? source.accessory : "none",
+    voice: {
+      id: CHARACTER_VOICES.has(source.voice?.id) ? source.voice.id : "central-clear",
+      ...unitMap(source.voice, ["pitch", "pace", "emotion"], 0.5)
+    },
+    motionDNA: {
+      preset: MOTION_PRESETS.has(source.motionDNA?.preset) ? source.motionDNA.preset : "balanced",
+      ...unitMap(source.motionDNA, ["posture", "stride", "acceleration", "braking", "turnResponse", "combatWeight", "secondaryMotion"], 0.5),
+      dodgeStyle: ["sidestep", "dash", "roll", "spin"].includes(source.motionDNA?.dodgeStyle) ? source.motionDNA.dodgeStyle : "sidestep",
+      rootMotion: source.motionDNA?.rootMotion !== false,
+      motionWarp: source.motionDNA?.motionWarp !== false,
+      upperBodyLayer: source.motionDNA?.upperBodyLayer !== false
+    },
+    decals: unitMap(source.decals, ["freckles", "scars", "moles", "makeup", "tattoos", "wrinkles", "eyeShadow", "age"]),
+    surface: unitMap(source.surface, ["pores", "subsurface", "roughness", "flush", "wetness"]),
+    evolution: unitMap(source.evolution, ["persistentScars", "clothingDamage", "fatigueMemory", "auraPower", "tattooResponse"]),
     outfit: Array.isArray(source.outfit)
       ? [...new Set(source.outfit.filter((id) => APPEARANCE_OUTFITS.has(id)))].slice(0, 4)
       : ["central-jacket-02", "combat-boots-01"]

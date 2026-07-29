@@ -17,8 +17,8 @@ test("HH Astral Realms is a dedicated Entertainment route with offline assets", 
   assert.match(shell, /HHAstralRealms\?\.unmount/);
   assert.match(center, /id:\s*"astral-realms"/);
   [
-    "astral-realms.css?v=19",
-    "astral-realms.js?v=19",
+    "astral-realms.css?v=22",
+    "astral-realms.js?v=22",
     "vendor/three.module.min.js"
   ].forEach((asset) => {
     assert.ok((loader + worker).includes(asset), `${asset} must be available to the game route`);

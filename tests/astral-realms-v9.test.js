@@ -15,12 +15,12 @@ function between(startToken, endToken) {
   return source.slice(start, end);
 }
 
-test("Character V11 is the only release selected by the game route and offline catalog", () => {
+test("Character V12 is the only release selected by the game route and offline catalog", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
 
-  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*11/);
-  for (const asset of ["astral-realms.css?v=19", "astral-realms.js?v=19"]) {
+  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*12/);
+  for (const asset of ["astral-realms.css?v=22", "astral-realms.js?v=22"]) {
     assert.ok(loader.includes(asset), `route loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }

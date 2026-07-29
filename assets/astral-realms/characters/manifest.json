@@ -1,6 +1,15 @@
 {
-  "version": 2,
-  "pipeline": "metahuman-or-character-creator-to-blender-glb",
+  "version": 3,
+  "pipeline": "makehuman-or-metahuman-to-blender-web-hero-v12-glb",
+  "skeletonContract": "hh-humanoid-v12",
+  "heroGate": {
+    "headVertices": "20000-28000",
+    "nativeFacialMorphs": 52,
+    "bones": "80-120",
+    "textureMax": 2048,
+    "explicitLods": 4,
+    "requiredModules": ["eyes", "cornea", "tear-line", "teeth", "tongue", "eyelashes", "hair-cards"]
+  },
   "sources": [
     {
       "id": "valid-asian-f-1-casual-local",
@@ -9,6 +18,9 @@
       "url": "./assets/astral-realms/characters/default/valid-asian-f-1-casual.glb",
       "label": "VALID Human · Asian F Casual",
       "quality": "rigged-human-local",
+      "classification": "npc-human",
+      "intendedRoles": ["npc", "multiplayer", "fallback"],
+      "heroEligible": false,
       "license": "MIT"
     },
     {
@@ -18,6 +30,9 @@
       "url": "./assets/astral-realms/characters/default/valid-asian-m-1-casual.glb",
       "label": "VALID Human · Asian M Casual",
       "quality": "rigged-human-local",
+      "classification": "npc-human",
+      "intendedRoles": ["npc", "multiplayer", "fallback"],
+      "heroEligible": false,
       "license": "MIT"
     },
     {
@@ -27,6 +42,9 @@
       "url": "./assets/astral-realms/characters/default/valid-black-f-1-casual.glb",
       "label": "VALID Human · Black F Casual",
       "quality": "rigged-human-local",
+      "classification": "npc-human",
+      "intendedRoles": ["npc", "multiplayer", "fallback"],
+      "heroEligible": false,
       "license": "MIT"
     },
     {
@@ -36,6 +54,9 @@
       "url": "./assets/astral-realms/characters/default/valid-white-m-1-casual.glb",
       "label": "VALID Human · White M Casual",
       "quality": "rigged-human-local",
+      "classification": "npc-human",
+      "intendedRoles": ["npc", "multiplayer", "fallback"],
+      "heroEligible": false,
       "license": "MIT"
     }
   ],

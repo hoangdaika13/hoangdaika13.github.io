@@ -42,12 +42,28 @@
     }
   });
   const CHARACTER_ORDER = Object.freeze(Object.keys(CHARACTERS));
-  const CHARACTER_VISUAL_VERSION = 11;
+  const CHARACTER_VISUAL_VERSION = 12;
   const CHARACTER_MODEL_TIERS = Object.freeze({
     hero: { label: "Web Hero LOD0", triangles: "Face 18–28K · body 25–40K", texture: "2K", face: 52, distance: 13, updateHz: 60 },
     near: { label: "Gameplay LOD1", triangles: "Face 8–14K · body 10–18K", texture: "1K", face: 52, distance: 34, updateHz: 30 },
     crowd: { label: "Crowd LOD2", triangles: "Tổng 6–12K", texture: "512", face: 0, distance: 76, updateHz: 12 },
     impostor: { label: "3D Proxy LOD3", triangles: "3–6K / proxy", texture: "Material PBR", face: 0, distance: 140, updateHz: 6 }
+  });
+  const CHARACTER_ASSET_CLASSES = Object.freeze({
+    hero: { id: "hero-digital-human", label: "Hero Digital Human", color: "#6ff2ff" },
+    gameplay: { id: "gameplay-human", label: "Gameplay Human", color: "#9a8cff" },
+    npc: { id: "npc-human", label: "NPC Human", color: "#ff7fcb" },
+    fallback: { id: "fallback-proxy", label: "Fallback Proxy", color: "#ffd36b" }
+  });
+  const HERO_ASSET_REQUIREMENTS = Object.freeze({
+    headVerticesMin: 20000,
+    headVerticesMax: 28000,
+    nativeFaceMorphs: 52,
+    bonesMin: 80,
+    bonesMax: 120,
+    skeletonCoverage: 0.8,
+    textureMax: 2048,
+    lodGroups: 4
   });
   const CHARACTER_IMPORT_LIMITS = Object.freeze({
     fileBytes: 32 * 1024 * 1024,
@@ -86,6 +102,10 @@
   });
   const CHARACTER_MOTION_LIBRARY = Object.freeze({
     idle: ["idle", "breathing", "stand"],
+    start: ["start", "run_start", "walk_start"],
+    stop: ["stop", "run_stop", "walk_stop"],
+    turnLeft: ["turn_left", "turnleft", "turn_-90"],
+    turnRight: ["turn_right", "turnright", "turn_90"],
     walk: ["walk", "walking"],
     run: ["run", "jog", "running"],
     sprint: ["sprint", "fast_run"],
@@ -147,9 +167,33 @@
     { id: "rokoko", name: "Rokoko Vision", role: "Motion capture xuất GLB", state: "Nhập clip cục bộ" },
     { id: "mediapipe", name: "MediaPipe Face", role: "52 blendshape trên thiết bị", state: "Opt-in camera" },
     { id: "environment", name: "HH Volumetric World", role: "Địa hình mesh 3D và panorama chỉ dùng làm IBL", state: "Không dùng ảnh làm phông nền" },
-    { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V11" }
+    { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V12" }
   ]);
-  const APPEARANCE_VERSION = 6;
+  const GENESIS_STEPS = Object.freeze([
+    { id: "identity", number: "01", label: "Nền nhân vật", focus: "body", group: "face" },
+    { id: "face", number: "02", label: "Sculpt khuôn mặt", focus: "head", group: "face" },
+    { id: "skin", number: "03", label: "Da & tuổi", focus: "head", group: "face" },
+    { id: "eyes", number: "04", label: "Mắt & makeup", focus: "head", group: "eyes" },
+    { id: "hair", number: "05", label: "Tóc & râu", focus: "head", group: "brows" },
+    { id: "body", number: "06", label: "Tỷ lệ cơ thể", focus: "body", group: "body" },
+    { id: "wardrobe", number: "07", label: "Trang phục", focus: "body", group: "shoulders" },
+    { id: "performance", number: "08", label: "Giọng & Motion DNA", focus: "body", group: "expression" },
+    { id: "preview", number: "09", label: "Kiểm tra studio", focus: "body", group: "expression" },
+    { id: "dna", number: "10", label: "DNA & Prologue", focus: "body", group: "face" }
+  ]);
+  const MOTION_DNA_PRESETS = Object.freeze({
+    balanced: { label: "Cân bằng", posture: 0.52, stride: 0.52, acceleration: 0.58, braking: 0.58, turnResponse: 0.62, combatWeight: 0.52, secondaryMotion: 0.55, dodgeStyle: "sidestep" },
+    agile: { label: "Nhanh nhẹn", posture: 0.58, stride: 0.66, acceleration: 0.82, braking: 0.78, turnResponse: 0.86, combatWeight: 0.38, secondaryMotion: 0.68, dodgeStyle: "dash" },
+    grounded: { label: "Vững chãi", posture: 0.72, stride: 0.46, acceleration: 0.42, braking: 0.66, turnResponse: 0.48, combatWeight: 0.78, secondaryMotion: 0.34, dodgeStyle: "roll" },
+    cinematic: { label: "Điện ảnh", posture: 0.64, stride: 0.6, acceleration: 0.54, braking: 0.52, turnResponse: 0.58, combatWeight: 0.64, secondaryMotion: 0.76, dodgeStyle: "spin" }
+  });
+  const CHARACTER_VOICES = Object.freeze([
+    { id: "aurora-soft", label: "Aurora · ấm và mềm" },
+    { id: "central-clear", label: "Central · rõ và cân bằng" },
+    { id: "void-low", label: "Void · trầm và bí ẩn" },
+    { id: "solar-bold", label: "Solar · mạnh và sáng" }
+  ]);
+  const APPEARANCE_VERSION = 7;
   const APPEARANCE_GROUPS = Object.freeze([
     { id: "face", label: "Khuôn mặt", focus: "head", controls: [["headLength", "Chiều dài đầu"], ["foreheadHeight", "Chiều cao trán"], ["cheekboneWidth", "Gò má"], ["cheekFullness", "Độ đầy má"], ["jawWidth", "Độ rộng hàm"], ["jawAngle", "Góc hàm"], ["chinLength", "Chiều dài cằm"], ["faceFullness", "Độ đầy khuôn mặt"]] },
     { id: "eyes", label: "Mắt", focus: "head", controls: [["eyeSize", "Kích thước mắt"], ["eyeSpacing", "Khoảng cách mắt"], ["eyeDepth", "Độ sâu mắt"], ["upperLid", "Mí trên"], ["lowerLid", "Mí dưới"], ["eyeAngle", "Góc mắt"], ["irisSize", "Kích thước tròng"], ["pupilSize", "Kích thước đồng tử"], ["eyeReflection", "Phản chiếu mắt"], ["eyeLeft", "Mắt trái"], ["eyeRight", "Mắt phải"]] },
@@ -329,6 +373,29 @@
       .toLowerCase();
   }
 
+  function classifyCharacterAsset(report = {}) {
+    const checks = [
+      { id: "head", label: "Head mesh 20–28K", pass: report.headVertices >= HERO_ASSET_REQUIREMENTS.headVerticesMin && report.headVertices <= HERO_ASSET_REQUIREMENTS.headVerticesMax, value: `${Number(report.headVertices || 0).toLocaleString("vi-VN")} vertices` },
+      { id: "face", label: "52 facial morph native", pass: report.faceMorphTargets >= HERO_ASSET_REQUIREMENTS.nativeFaceMorphs, value: `${report.faceMorphTargets || 0}/52` },
+      { id: "skeleton", label: "Skeleton web 80–120 bone", pass: report.bones >= HERO_ASSET_REQUIREMENTS.bonesMin && report.bones <= HERO_ASSET_REQUIREMENTS.bonesMax, value: `${report.bones || 0} bone` },
+      { id: "coverage", label: "HH Humanoid coverage ≥ 80%", pass: Number(report.skeletonCoverage || 0) >= HERO_ASSET_REQUIREMENTS.skeletonCoverage, value: `${Math.round(Number(report.skeletonCoverage || 0) * 100)}%` },
+      { id: "anatomy", label: "Mắt, giác mạc, tear line, răng, lưỡi, lông mi, tóc tách mesh", pass: report.separateEyeMeshes >= 2 && report.corneaMeshes >= 1 && report.tearLineMeshes >= 1 && report.teethMeshes >= 1 && report.tongueMeshes >= 1 && report.eyelashMeshes >= 1 && report.hairCardMeshes >= 1, value: `${report.separateEyeMeshes || 0}/2 mắt · ${[report.corneaMeshes, report.tearLineMeshes, report.teethMeshes, report.tongueMeshes, report.eyelashMeshes, report.hairCardMeshes].filter(Boolean).length}/6 module` },
+      { id: "pbr", label: "PBR skin maps", pass: report.normalMaps >= 1 && report.roughnessMaps >= 1 && report.thicknessMaps >= 1, value: `N${report.normalMaps || 0} · R${report.roughnessMaps || 0} · T${report.thicknessMaps || 0}` },
+      { id: "textures", label: "Texture tối đa 2K", pass: report.maxTextureSize > 0 && report.maxTextureSize <= HERO_ASSET_REQUIREMENTS.textureMax, value: `${report.maxTextureSize || 0}px` },
+      { id: "lod", label: "LOD0/1/2/3 explicit", pass: report.lodGroups >= HERO_ASSET_REQUIREMENTS.lodGroups, value: `${report.lodGroups || 0}/4 nhóm` }
+    ];
+    const passed = checks.filter((check) => check.pass).length;
+    const heroReady = checks.every((check) => check.pass);
+    const assetClass = heroReady
+      ? CHARACTER_ASSET_CLASSES.hero
+      : report.skinnedMeshes && report.bones && Number(report.skeletonCoverage || 0) >= 0.55
+        ? CHARACTER_ASSET_CLASSES.gameplay
+        : report.skinnedMeshes && report.bones
+          ? CHARACTER_ASSET_CLASSES.npc
+          : CHARACTER_ASSET_CLASSES.fallback;
+    return { assetClass: assetClass.id, assetClassLabel: assetClass.label, heroReady, heroChecks: checks, heroScore: Math.round((passed / checks.length) * 100) };
+  }
+
   function validateCharacterAsset(report = {}) {
     const errors = [];
     const warnings = [];
@@ -352,15 +419,18 @@
     if (!report.animations) warnings.push("Không có animation clip; runtime giữ pose gốc.");
     if ((report.skeletonCoverage || 0) < 0.55 && report.bones) warnings.push("Skeleton chưa khớp tốt với HH Humanoid.");
     if (report.rootMotionTracks) warnings.push(`${report.rootMotionTracks} root-motion track X/Z sẽ được chuyển thành in-place để tránh trôi nhân vật.`);
-    if (report.headVertices && report.headVertices < 18000) warnings.push("Head mesh dưới 18K vertices; phù hợp gameplay nhưng chưa đạt Web Hero LOD0.");
+    if (report.headVertices && report.headVertices < HERO_ASSET_REQUIREMENTS.headVerticesMin) warnings.push("Head mesh dưới 20K vertices; phù hợp gameplay/NPC nhưng chưa đạt Hero V12.");
     if ((report.faceMorphTargets || 0) < 52) warnings.push(`Model có ${report.faceMorphTargets || 0}/52 facial morph native; HH dùng procedural/bone fallback cho kênh còn thiếu.`);
     if ((report.maxTextureSize || 0) > 2048) warnings.push("Texture trên 2K sẽ tốn bộ nhớ; nên xuất KTX2 2K cho Web Hero.");
     if ((report.bones || 0) > 120) warnings.push("Skeleton trên 120 bone; nên giảm bone phụ cho bản web.");
+    const classification = classifyCharacterAsset(report);
+    if (!classification.heroReady) warnings.push(`Hero gate đạt ${classification.heroScore}%; asset được phân loại ${classification.assetClassLabel}.`);
     return {
       valid: errors.length === 0,
       errors,
       warnings,
-      score: clamp(100 - errors.length * 28 - warnings.length * 7, 0, 100)
+      score: clamp(100 - errors.length * 28 - warnings.length * 5, 0, 100),
+      ...classification
     };
   }
 
@@ -419,9 +489,12 @@
       lighting: "cinematic",
       expression: "neutral",
       viseme: "neutral",
+      voice: { id: "central-clear", pitch: 0.5, pace: 0.5, emotion: 0.58 },
+      motionDNA: { preset: "balanced", ...MOTION_DNA_PRESETS.balanced, rootMotion: true, motionWarp: true, upperBodyLayer: true },
       outfit: ["central-jacket-02", "combat-boots-01"],
       decals: { freckles: 0, scars: 0, moles: 0, makeup: 0, tattoos: 0, wrinkles: 0, eyeShadow: 0, age: 0 },
       surface: { pores: 0.72, subsurface: 0.58, roughness: 0.52, flush: 0.18, wetness: 0 },
+      evolution: { persistentScars: 0, clothingDamage: 0, fatigueMemory: 0, auraPower: 0, tattooResponse: 0 },
       updatedAt: nowIso()
     };
   }
@@ -464,6 +537,25 @@
       lighting: APPEARANCE_ASSETS.lighting.includes(recipe.lighting) ? recipe.lighting : base.lighting,
       expression: CHARACTER_EXPRESSION_PRESETS[recipe.expression] ? recipe.expression : base.expression,
       viseme: CHARACTER_VISEMES[recipe.viseme] ? recipe.viseme : base.viseme,
+      voice: {
+        id: CHARACTER_VOICES.some((voice) => voice.id === recipe.voice?.id) ? recipe.voice.id : base.voice.id,
+        pitch: Number.isFinite(Number(recipe.voice?.pitch)) ? clamp(recipe.voice.pitch, 0, 1) : base.voice.pitch,
+        pace: Number.isFinite(Number(recipe.voice?.pace)) ? clamp(recipe.voice.pace, 0, 1) : base.voice.pace,
+        emotion: Number.isFinite(Number(recipe.voice?.emotion)) ? clamp(recipe.voice.emotion, 0, 1) : base.voice.emotion
+      },
+      motionDNA: (() => {
+        const presetId = MOTION_DNA_PRESETS[recipe.motionDNA?.preset] ? recipe.motionDNA.preset : base.motionDNA.preset;
+        const preset = MOTION_DNA_PRESETS[presetId];
+        const bounded = ["posture", "stride", "acceleration", "braking", "turnResponse", "combatWeight", "secondaryMotion"];
+        return {
+          preset: presetId,
+          ...Object.fromEntries(bounded.map((key) => [key, Number.isFinite(Number(recipe.motionDNA?.[key])) ? clamp(recipe.motionDNA[key], 0, 1) : preset[key]])),
+          dodgeStyle: ["sidestep", "dash", "roll", "spin"].includes(recipe.motionDNA?.dodgeStyle) ? recipe.motionDNA.dodgeStyle : preset.dodgeStyle,
+          rootMotion: recipe.motionDNA?.rootMotion !== false,
+          motionWarp: recipe.motionDNA?.motionWarp !== false,
+          upperBodyLayer: recipe.motionDNA?.upperBodyLayer !== false
+        };
+      })(),
       outfit: Array.isArray(recipe.outfit)
         ? [...new Set(recipe.outfit.filter((id) => APPEARANCE_ASSETS.outfits.includes(id)))].slice(0, 4)
         : base.outfit,
@@ -474,6 +566,10 @@
       surface: Object.fromEntries(Object.keys(base.surface).map((id) => [
         id,
         Number.isFinite(Number(recipe.surface?.[id])) ? clamp(recipe.surface[id], 0, 1) : base.surface[id]
+      ])),
+      evolution: Object.fromEntries(Object.keys(base.evolution).map((id) => [
+        id,
+        Number.isFinite(Number(recipe.evolution?.[id])) ? clamp(recipe.evolution[id], 0, 1) : base.evolution[id]
       ])),
       updatedAt: typeof recipe.updatedAt === "string" ? recipe.updatedAt.slice(0, 40) : nowIso()
     };
@@ -501,9 +597,26 @@
       lighting: normalized.lighting,
       expression: normalized.expression,
       viseme: normalized.viseme,
+      voice: {
+        id: normalized.voice.id,
+        pitch: Number(normalized.voice.pitch.toFixed(3)),
+        pace: Number(normalized.voice.pace.toFixed(3)),
+        emotion: Number(normalized.voice.emotion.toFixed(3))
+      },
+      motionDNA: {
+        ...normalized.motionDNA,
+        posture: Number(normalized.motionDNA.posture.toFixed(3)),
+        stride: Number(normalized.motionDNA.stride.toFixed(3)),
+        acceleration: Number(normalized.motionDNA.acceleration.toFixed(3)),
+        braking: Number(normalized.motionDNA.braking.toFixed(3)),
+        turnResponse: Number(normalized.motionDNA.turnResponse.toFixed(3)),
+        combatWeight: Number(normalized.motionDNA.combatWeight.toFixed(3)),
+        secondaryMotion: Number(normalized.motionDNA.secondaryMotion.toFixed(3))
+      },
       outfit: normalized.outfit.slice(0, 4),
       decals: Object.fromEntries(Object.entries(normalized.decals).map(([id, value]) => [id, Number(value.toFixed(3))])),
-      surface: Object.fromEntries(Object.entries(normalized.surface).map(([id, value]) => [id, Number(value.toFixed(3))]))
+      surface: Object.fromEntries(Object.entries(normalized.surface).map(([id, value]) => [id, Number(value.toFixed(3))])),
+      evolution: Object.fromEntries(Object.entries(normalized.evolution).map(([id, value]) => [id, Number(value.toFixed(3))]))
     };
   }
 
@@ -603,6 +716,8 @@
       appearance: {
         recipes: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, defaultAppearanceRecipe(id)])),
         savedPresets: [],
+        characterSlots: [],
+        versionHistory: [],
         lastSavedAt: "",
         creatorCompletedAt: "",
         creatorVersion: 0
@@ -730,6 +845,25 @@
             characterId: CHARACTERS[preset?.characterId] ? preset.characterId : "lyra",
             recipe: normalizeAppearanceRecipe(preset?.recipe, preset?.characterId),
             createdAt: String(preset?.createdAt || nowIso()).slice(0, 40)
+          }))
+          : [],
+        characterSlots: Array.isArray(input.appearance?.characterSlots)
+          ? input.appearance.characterSlots.slice(-6).map((slot) => ({
+            id: String(slot?.id || uid("slot")).slice(0, 80),
+            name: String(slot?.name || "Nhà du hành").slice(0, 40),
+            characterId: CHARACTERS[slot?.characterId] ? slot.characterId : "lyra",
+            recipe: normalizeAppearanceRecipe(slot?.recipe, slot?.characterId),
+            createdAt: String(slot?.createdAt || nowIso()).slice(0, 40),
+            updatedAt: String(slot?.updatedAt || slot?.createdAt || nowIso()).slice(0, 40)
+          }))
+          : [],
+        versionHistory: Array.isArray(input.appearance?.versionHistory)
+          ? input.appearance.versionHistory.slice(-30).map((entry) => ({
+            id: String(entry?.id || uid("look-version")).slice(0, 80),
+            characterId: CHARACTERS[entry?.characterId] ? entry.characterId : "lyra",
+            label: String(entry?.label || "Cập nhật ngoại hình").slice(0, 80),
+            recipe: compactAppearanceRecipe(entry?.recipe, entry?.characterId),
+            createdAt: String(entry?.createdAt || nowIso()).slice(0, 40)
           }))
           : [],
         lastSavedAt: String(input.appearance?.lastSavedAt || "").slice(0, 40),
@@ -1016,9 +1150,10 @@
       this.builtInCharacterStatus = "pending";
       this.characterDetailTextures = null;
       this.lastCharacterQa = null;
-      this.motionState = { gaitPhase: 0, foot: "", yawVelocity: 0 };
+      this.motionState = { gaitPhase: 0, foot: "", yawVelocity: 0, wasMoving: false, movementChangedAt: 0, facing: 0 };
       this.facePilot = { status: "off", stream: null, video: null, landmarker: null, frame: 0, blendshapes: {}, error: "", lastDetectionAt: 0, lastResultAt: 0 };
       this.facePreview = { expression: "neutral", viseme: "neutral", until: 0 };
+      this.gazeTarget = { type: "camera", x: 0, y: 0, weight: 0.35 };
       this.genesisLighting = "cinematic";
       this.genesisOriginalLighting = null;
       this.lastSurfaceUpdateAt = 0;
@@ -1059,6 +1194,8 @@
       this.genesisActive = false;
       this.genesisCompleting = false;
       this.genesisTurntable = false;
+      this.genesisStep = "identity";
+      this.genesisCompare = { a: null, b: null, active: "live" };
       this.genesisScene = null;
       this.genesisCamera = null;
       this.genesisStudioGroup = null;
@@ -1068,6 +1205,7 @@
       this.genesisOriginalParent = null;
       this.genesisOriginalTransform = null;
       this.genesisVisibility = null;
+      this.lastEvolutionUpdateAt = 0;
       this.runtimeStarted = false;
       this.destroyed = false;
       this.started = false;
@@ -1280,11 +1418,8 @@
                 <small>BƯỚC ĐẦU TIÊN</small>
                 <h2>Định hình một con người trong thế giới Astral.</h2>
                 <p>Chọn nền cơ thể, chỉnh tỷ lệ khuôn mặt và vóc dáng, kiểm tra chuyển động rồi mới bước vào H-Central.</p>
-                <ol>
-                  <li class="is-active"><span>01</span>Nền nhân vật 3D</li>
-                  <li><span>02</span>Khuôn mặt & cơ thể</li>
-                  <li><span>03</span>Da, mắt & phong cách</li>
-                  <li><span>04</span>Chuyển động & xác nhận</li>
+                <ol data-genesis-journey>
+                  ${GENESIS_STEPS.map((step, index) => `<li class="${index === 0 ? "is-active" : ""}"><button type="button" data-genesis-step="${step.id}"><span>${step.number}</span>${step.label}</button></li>`).join("")}
                 </ol>
                 </aside>
                 <div class="har-genesis__viewport" aria-label="Xem trước nhân vật 3D">
@@ -1514,39 +1649,60 @@
     renderGenesisCreator() {
       const id = this.state.roster.activeId;
       const recipe = this.activeAppearanceRecipe();
-      const group = APPEARANCE_GROUPS.find((item) => item.id === this.appearanceGroup) || APPEARANCE_GROUPS[0];
+      const stepIndex = Math.max(0, GENESIS_STEPS.findIndex((item) => item.id === this.genesisStep));
+      const step = GENESIS_STEPS[stepIndex] || GENESIS_STEPS[0];
+      const groupsByStep = {
+        face: ["face", "nose", "mouth", "ears"],
+        eyes: ["eyes", "brows"],
+        body: ["torso", "body", "shoulders", "arms", "legs", "chest", "hips"],
+        performance: ["expression"]
+      };
+      const visibleGroupIds = groupsByStep[step.id] || APPEARANCE_GROUPS.map((item) => item.id);
+      const group = APPEARANCE_GROUPS.find((item) => item.id === this.appearanceGroup && visibleGroupIds.includes(item.id))
+        || APPEARANCE_GROUPS.find((item) => item.id === visibleGroupIds[0])
+        || APPEARANCE_GROUPS[0];
       const mesh = this.characterMeshes.get(id);
       const runtime = this.characterRuntimes.get(id);
       const fit = this.buildAppearanceFitReport(recipe, mesh);
       const modelLabels = {
-        "valid-asian-f-1-casual": ["Asteria Real Human", "VALID rig · full-body · facial morph · local GLB"],
-        "valid-asian-m-1-casual": ["Cael Real Human", "VALID rig · full-body · facial morph · local GLB"],
-        "valid-black-f-1-casual": ["Nyx Real Human", "VALID rig · full-body · facial morph · local GLB"],
-        "valid-white-m-1-casual": ["Sol Real Human", "VALID rig · full-body · facial morph · local GLB"],
+        "valid-asian-f-1-casual": ["Asteria Gameplay Human", "VALID rig · NPC/multiplayer/fallback · local GLB"],
+        "valid-asian-m-1-casual": ["Cael Gameplay Human", "VALID rig · NPC/multiplayer/fallback · local GLB"],
+        "valid-black-f-1-casual": ["Nyx Gameplay Human", "VALID rig · NPC/multiplayer/fallback · local GLB"],
+        "valid-white-m-1-casual": ["Sol Gameplay Human", "VALID rig · NPC/multiplayer/fallback · local GLB"],
         "human-adult-a01": ["Asteria Human", "Human Rig · 16K vertices · Digital Human runtime"],
         "human-adult-b01": ["Vanguard Human", "Combat Rig · 7K vertices · LOD hiệu năng"]
       };
       const faceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
       const boneCount = runtime?.bones ? Object.values(runtime.bones).filter(Boolean).length : 0;
       const visibility = this.genesisVisibility?.report;
+      const qa = runtime?.qaReport || mesh?.userData?.qaReport || {};
+      const heroGate = qa.heroChecks ? qa : { ...qa, ...classifyCharacterAsset(qa) };
       const catalogModels = [...new Map(this.characterPipelineManifest
         .filter((entry) => entry.provider === "valid-avatar")
         .map((entry) => [entry.modelId, entry])).values()];
       const dna = encodeCharacterDNA(recipe, id);
+      const slots = this.state.appearance.characterSlots || [];
       const option = (value, label, selected) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
       return `
+        <nav class="har-genesis-stepper" aria-label="10 bước tạo nhân vật">
+          ${GENESIS_STEPS.map((item, index) => `<button type="button" class="${index === stepIndex ? "is-active" : index < stepIndex ? "is-done" : ""}" data-genesis-step="${item.id}" aria-current="${index === stepIndex ? "step" : "false"}"><small>${item.number}</small><span>${item.label}</span></button>`).join("")}
+        </nav>
         <div class="har-genesis-editor__intro">
-          <small>DIGITAL HUMAN CORE V${CHARACTER_VISUAL_VERSION} · ${escapeHtml(modelLabels[recipe.baseModel]?.[0] || "HUMAN RIG")}</small>
-          <h2>Tạo con người 3D của bạn</h2>
-          <p>Chỉnh trực tiếp mesh có xương, vật liệu da nhiều lớp, biểu cảm, viseme và LOD trong khung hình thật của game.</p>
+          <small>DIGITAL HUMAN CORE V${CHARACTER_VISUAL_VERSION} · BƯỚC ${step.number}/10</small>
+          <h2>${escapeHtml(step.label)}</h2>
+          <p>${escapeHtml(modelLabels[recipe.baseModel]?.[0] || "HUMAN RIG")} · Character DNA lưu ngoại hình, giọng nói, Motion DNA và tiến hóa gameplay.</p>
         </div>
         <div class="har-genesis-capabilities" aria-label="Năng lực Digital Human">
-          <div><small>FACE DRIVER</small><strong>${faceChannels} native / 52 fallback</strong><span>${boneCount} bone nhận diện · không tạo số giả</span></div>
+          <div><small>ASSET CLASS</small><strong>${escapeHtml(heroGate.assetClassLabel || "Fallback Proxy")}</strong><span>${heroGate.heroReady ? "Đạt Hero V12" : `Hero gate ${heroGate.heroScore || 0}% · không gắn nhãn giả`}</span></div>
+          <div><small>FACE DRIVER</small><strong>${faceChannels} native / 52 driver</strong><span>${boneCount} bone nhận diện · facial LOD</span></div>
           <div><small>SURFACE</small><strong>5 lớp</strong><span>pore · roughness · SSS · flush · wetness</span></div>
-          <div><small>MOTION</small><strong>8 hướng</strong><span>crossfade · inertial response · IK-ready</span></div>
-          <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "near")}</strong><span data-genesis-lod-status>${visibility?.ready ? "Đã xác nhận trong camera" : "Đang giữ fallback an toàn"}</span></div>
+          <div><small>MOTION DNA</small><strong>${escapeHtml(MOTION_DNA_PRESETS[recipe.motionDNA.preset]?.label || recipe.motionDNA.preset)}</strong><span>8 hướng · foot lock · motion warp</span></div>
         </div>
-        <div class="har-genesis-fit ${fit.level}" aria-live="polite">
+        <div class="har-hero-gate ${heroGate.heroReady ? "is-ready" : "is-fallback"}">
+          <div><small>HERO ASSET GATE</small><strong>${heroGate.heroReady ? "Hero V12 sẵn sàng" : "Gameplay/NPC fallback an toàn"}</strong><span>${visibility?.ready ? "Model đang hiển thị ổn định trong camera." : "Fallback 3D được giữ cho tới khi GPU xác nhận model."}</span></div>
+          <div class="har-hero-gate__checks">${(heroGate.heroChecks || []).map((check) => `<span class="${check.pass ? "is-pass" : "is-missing"}" title="${escapeHtml(check.value)}">${check.pass ? "✓" : "○"} ${escapeHtml(check.label)}</span>`).join("")}</div>
+        </div>
+        <div class="har-genesis-fit ${fit.level}" data-genesis-stage="wardrobe" ${step.id === "wardrobe" ? "" : "hidden"} aria-live="polite">
           <div><span class="har-genesis-fit__orb"></span><div><small>FIT & SILHOUETTE CHECK</small><strong>${escapeHtml(fit.label)} · ${fit.score}%</strong><span>${escapeHtml(fit.summary)}</span></div></div>
           <div class="har-genesis-fit__actions">
             <button type="button" data-genesis-action="auto-fit">Tự cân đối</button>
@@ -1554,10 +1710,11 @@
           </div>
           ${fit.warnings.length ? `<ul>${fit.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>` : ""}
         </div>
-        <label class="har-genesis-name">Tên Nhà du hành
+        <div class="har-evolution-preview" data-genesis-stage="wardrobe" ${step.id === "wardrobe" ? "" : "hidden"}><small>APPEARANCE EVOLUTION</small><span>Mưa/tuyết · bụi/máu/bỏng · sẹo tồn tại · hư hỏng trang phục · mắt/aura/hình xăm phản ứng theo sức mạnh.</span></div>
+        <label class="har-genesis-name" data-genesis-stage="identity" ${step.id === "identity" ? "" : "hidden"}>Tên Nhà du hành
           <input type="text" maxlength="40" value="${escapeHtml(this.state.player.name || "")}" data-genesis-name autocomplete="off">
         </label>
-        <div class="har-genesis-block">
+        <div class="har-genesis-block" data-genesis-stage="identity" ${step.id === "identity" ? "" : "hidden"}>
           <div class="har-genesis-block__title"><strong>Nền cơ thể 3D</strong><span>${runtime?.bones ? Object.keys(runtime.bones).length : 0} bone nhận diện</span></div>
           <label class="har-field">Thư viện người thật · ${catalogModels.length} model
             <select data-genesis-catalog>
@@ -1568,19 +1725,19 @@
             ${Object.entries(modelLabels).map(([value, item]) => `<button type="button" class="${recipe.baseModel === value ? "is-active" : ""}" data-genesis-base="${value}"><i></i><strong>${item[0]}</strong><span>${item[1]}</span></button>`).join("")}
           </div>
         </div>
-        <div class="har-genesis-block">
+        <div class="har-genesis-block" data-genesis-stage="body" ${step.id === "body" ? "" : "hidden"}>
           <div class="har-genesis-block__title"><strong>Kiểu vóc dáng</strong><span>giữ collider gameplay cân bằng</span></div>
           <div class="har-genesis-presets">
             ${Object.entries(APPEARANCE_PRESETS).map(([value, item]) => `<button type="button" class="${recipe.bodyPreset === value ? "is-active" : ""}" data-genesis-preset="${value}">${item.label}</button>`).join("")}
           </div>
         </div>
-        <div class="har-genesis-colors">
+        <div class="har-genesis-colors" data-genesis-stage="surface" ${["skin", "eyes", "hair"].includes(step.id) ? "" : "hidden"}>
           <label>Da<input type="color" value="${recipe.skinColor}" data-genesis-setting="skinColor"></label>
           <label>Mắt<input type="color" value="${recipe.eyeColor}" data-genesis-setting="eyeColor"></label>
           <label>Tóc<input type="color" value="${recipe.hairColor}" data-genesis-setting="hairColor"></label>
           <span><strong>Digital Skin</strong><small>micro-normal · roughness zones · skin response</small></span>
         </div>
-        <div class="har-genesis-assets">
+        <div class="har-genesis-assets" data-genesis-stage="modules" ${["eyes", "hair", "wardrobe"].includes(step.id) ? "" : "hidden"}>
           <label>Tóc<select data-genesis-setting="hair">
             ${option("astral-layered-07", "Astral Layered", recipe.hair)}
             ${option("aurora-short-02", "Aurora Short", recipe.hair)}
@@ -1619,17 +1776,17 @@
             ${option("void-coat-01", "Void Coat", recipe.outfit[0])}
           </select></label>
         </div>
-        <div class="har-genesis-tabs" role="tablist" aria-label="Nhóm chỉnh ngoại hình">
-          ${APPEARANCE_GROUPS.map((item) => `<button type="button" class="${item.id === group.id ? "is-active" : ""}" data-genesis-group="${item.id}" role="tab" aria-selected="${item.id === group.id}">${item.label}</button>`).join("")}
+        <div class="har-genesis-tabs" data-genesis-stage="sculpt" ${["face", "eyes", "body", "performance"].includes(step.id) ? "" : "hidden"} role="tablist" aria-label="Nhóm chỉnh ngoại hình">
+          ${APPEARANCE_GROUPS.filter((item) => visibleGroupIds.includes(item.id)).map((item) => `<button type="button" class="${item.id === group.id ? "is-active" : ""}" data-genesis-group="${item.id}" role="tab" aria-selected="${item.id === group.id}">${item.label}</button>`).join("")}
         </div>
-        <div class="har-genesis-sliders">
+        <div class="har-genesis-sliders" data-genesis-stage="sculpt" ${["face", "eyes", "body", "performance"].includes(step.id) ? "" : "hidden"}>
           ${group.controls.map(([controlId, label]) => {
             const control = APPEARANCE_CONTROL_MAP[controlId];
             const value = recipe.morphs[controlId] ?? control.defaultValue;
             return `<label><span>${escapeHtml(label)}<output data-genesis-output="${controlId}">${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-genesis-morph="${controlId}" aria-label="${escapeHtml(label)}"></label>`;
           }).join("")}
         </div>
-        <div class="har-genesis-detail-grid">
+        <div class="har-genesis-detail-grid" data-genesis-stage="skin" ${step.id === "skin" ? "" : "hidden"}>
           <fieldset><legend>Chi tiết khuôn mặt</legend>
             ${Object.entries(recipe.decals).map(([key, value]) => `<label><span>${escapeHtml({ freckles: "Tàn nhang", scars: "Sẹo", moles: "Nốt ruồi", makeup: "Cường độ makeup", tattoos: "Hình xăm", wrinkles: "Nếp nhăn", eyeShadow: "Quầng mắt", age: "Tuổi sinh học" }[key] || key)}<output>${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-genesis-decal="${key}"></label>`).join("")}
           </fieldset>
@@ -1637,14 +1794,24 @@
             ${Object.entries(recipe.surface).map(([key, value]) => `<label><span>${escapeHtml({ pores: "Lỗ chân lông", subsurface: "Tán xạ da", roughness: "Độ nhám", flush: "Độ ửng đỏ", wetness: "Độ ẩm" }[key] || key)}<output>${Math.round(value * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${value}" data-genesis-surface="${key}"></label>`).join("")}
           </fieldset>
         </div>
-        <div class="har-genesis-performance">
+        <div class="har-genesis-performance" data-genesis-stage="performance" ${step.id === "performance" ? "" : "hidden"}>
           <div><span>Biểu cảm</span>${Object.keys(CHARACTER_EXPRESSION_PRESETS).map((name) => `<button type="button" class="${recipe.expression === name ? "is-active" : ""}" data-genesis-expression="${name}">${name}</button>`).join("")}</div>
           <div><span>Khẩu hình</span>${Object.keys(CHARACTER_VISEMES).map((name) => `<button type="button" class="${recipe.viseme === name ? "is-active" : ""}" data-genesis-viseme="${name}">${name}</button>`).join("")}</div>
           <div><span>Ánh sáng thử</span>${APPEARANCE_ASSETS.lighting.map((name) => `<button type="button" class="${recipe.lighting === name ? "is-active" : ""}" data-genesis-lighting="${name}">${name}</button>`).join("")}</div>
         </div>
-        <div class="har-genesis-motion">
+        <div class="har-motion-dna" data-genesis-stage="performance" ${step.id === "performance" ? "" : "hidden"}>
+          <div class="har-motion-dna__head"><div><small>MOTION DNA</small><strong>Dáng đi và phản xạ riêng</strong><span>Không thay tốc độ gameplay; chỉ điều khiển cảm giác chuyển động.</span></div><label>Preset<select data-genesis-motion-preset>${Object.entries(MOTION_DNA_PRESETS).map(([value, preset]) => option(value, preset.label, recipe.motionDNA.preset)).join("")}</select></label></div>
+          <div class="har-genesis-assets"><label>Giọng nói<select data-genesis-voice="id">${CHARACTER_VOICES.map((voice) => option(voice.id, voice.label, recipe.voice.id)).join("")}</select></label><label>Kiểu né<select data-genesis-motion-dna="dodgeStyle">${["sidestep", "dash", "roll", "spin"].map((value) => option(value, value, recipe.motionDNA.dodgeStyle)).join("")}</select></label></div>
+          <div class="har-motion-dna__ranges">${[["posture", "Tư thế"], ["stride", "Độ dài bước"], ["acceleration", "Tăng tốc"], ["braking", "Dừng"], ["turnResponse", "Đổi hướng"], ["combatWeight", "Trọng lượng chiến đấu"], ["secondaryMotion", "Tóc & vải"]].map(([key, label]) => `<label><span>${label}<output>${Math.round(recipe.motionDNA[key] * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${recipe.motionDNA[key]}" data-genesis-motion-dna="${key}"></label>`).join("")}</div>
+          <div class="har-motion-dna__ranges">${[["pitch", "Cao độ giọng"], ["pace", "Nhịp nói"], ["emotion", "Cường độ cảm xúc"]].map(([key, label]) => `<label><span>${label}<output>${Math.round(recipe.voice[key] * 100)}</output></span><input type="range" min="0" max="1" step="0.01" value="${recipe.voice[key]}" data-genesis-voice="${key}"></label>`).join("")}</div>
+        </div>
+        <div class="har-genesis-motion" data-genesis-stage="preview" ${step.id === "preview" ? "" : "hidden"}>
           <span>Kiểm tra chuyển động</span>
-          ${["idle", "walk", "run", "strafe", "jump", "dodge", "attack1", "talk"].map((motion) => `<button type="button" class="${this.genesisMotion === motion ? "is-active" : ""}" data-genesis-motion="${motion}">${motion}</button>`).join("")}
+          ${["idle", "walk", "run", "sprint", "strafe", "jump", "dodge", "attack1", "talk"].map((motion) => `<button type="button" class="${this.genesisMotion === motion ? "is-active" : ""}" data-genesis-motion="${motion}">${motion}</button>`).join("")}
+        </div>
+        <div class="har-compare-lab" data-genesis-stage="preview" ${step.id === "preview" ? "" : "hidden"}>
+          <div><small>A/B LOOK LAB</small><strong>${this.genesisCompare.active === "live" ? "Bản đang chỉnh" : `Đang xem bản ${this.genesisCompare.active.toUpperCase()}`}</strong><span>Chụp hai Character DNA rồi đổi tức thời trong cùng studio.</span></div>
+          <button type="button" data-genesis-action="capture-a">Lưu A</button><button type="button" data-genesis-action="capture-b">Lưu B</button><button type="button" data-genesis-action="view-a" ${this.genesisCompare.a ? "" : "disabled"}>Xem A</button><button type="button" data-genesis-action="view-b" ${this.genesisCompare.b ? "" : "disabled"}>Xem B</button>
         </div>
         <div class="har-genesis-tools">
           <button type="button" data-genesis-action="undo" ${this.appearanceHistory.length ? "" : "disabled"}>↶ Hoàn tác</button>
@@ -1652,27 +1819,37 @@
           <button type="button" data-genesis-action="random">Ngẫu nhiên</button>
           <button type="button" data-genesis-action="reset">Khôi phục</button>
         </div>
-        <div class="har-genesis-dna">
-          <label>Character DNA<textarea rows="2" spellcheck="false" data-genesis-dna>${escapeHtml(dna)}</textarea></label>
-          <div><button type="button" data-genesis-action="copy-dna">Sao chép DNA</button><button type="button" data-genesis-action="apply-dna">Nạp DNA</button><button type="button" data-genesis-action="save-slot">Lưu ô ngoại hình</button></div>
+        <div class="har-genesis-dna" data-genesis-stage="dna" ${step.id === "dna" ? "" : "hidden"}>
+          <label>Character DNA V12<textarea rows="3" spellcheck="false" data-genesis-dna>${escapeHtml(dna)}</textarea></label>
+          <div><button type="button" data-genesis-action="copy-dna">Sao chép DNA</button><button type="button" data-genesis-action="apply-dna">Nạp DNA</button><button type="button" data-genesis-action="save-slot">Lưu ô nhân vật</button></div>
         </div>
-        <button class="har-genesis-confirm" type="button" data-genesis-action="confirm">
-          <span>Xác nhận Nhà du hành</span><small>Lưu ngoại hình và bước vào H-Central</small>
-        </button>`;
+        <div class="har-character-slots" data-genesis-stage="dna" ${step.id === "dna" ? "" : "hidden"}>${slots.length ? slots.map((slot) => `<article><div><small>${escapeHtml(slot.characterId.toUpperCase())}</small><strong>${escapeHtml(slot.name)}</strong><span>${new Date(slot.updatedAt).toLocaleDateString("vi-VN")}</span></div><button type="button" data-genesis-slot="${escapeHtml(slot.id)}">Nạp</button></article>`).join("") : "<p>Chưa có ô nhân vật. Bạn có thể lưu tối đa 6 Character DNA.</p>"}</div>
+        <div class="har-version-summary" data-genesis-stage="dna" ${step.id === "dna" ? "" : "hidden"}><small>VERSION HISTORY</small><strong>${this.state.appearance.versionHistory?.length || 0} mốc ngoại hình</strong><span>Có thể chỉnh lại sau Prologue; lịch sử không chứa email hoặc dữ liệu camera.</span></div>
+        <div class="har-genesis-navigation">
+          <button type="button" data-genesis-action="previous-step" ${stepIndex === 0 ? "disabled" : ""}>← Bước trước</button>
+          ${stepIndex < GENESIS_STEPS.length - 1
+            ? `<button type="button" class="is-primary" data-genesis-action="next-step">Tiếp tục · ${escapeHtml(GENESIS_STEPS[stepIndex + 1].label)} →</button>`
+            : `<button class="har-genesis-confirm" type="button" data-genesis-action="confirm"><span>Xác nhận Character DNA</span><small>Lưu V12 và bước vào Prologue H-Central</small></button>`}
+        </div>`;
     }
 
     refreshGenesisCreator() {
       if (!this.genesisActive) return;
       const content = this.root.querySelector("[data-har-genesis-content]");
       if (content) content.innerHTML = this.renderGenesisCreator();
+      const activeIndex = Math.max(0, GENESIS_STEPS.findIndex((step) => step.id === this.genesisStep));
+      this.root.querySelectorAll("[data-genesis-journey] li").forEach((item, index) => {
+        item.classList.toggle("is-active", index === activeIndex);
+        item.classList.toggle("is-done", index < activeIndex);
+      });
       const recipe = this.activeAppearanceRecipe();
       const name = this.root.querySelector("[data-genesis-model-name]");
       if (name) {
         name.textContent = ({
-          "valid-asian-f-1-casual": "ASTERIA REAL HUMAN",
-          "valid-asian-m-1-casual": "CAEL REAL HUMAN",
-          "valid-black-f-1-casual": "NYX REAL HUMAN",
-          "valid-white-m-1-casual": "SOL REAL HUMAN",
+          "valid-asian-f-1-casual": "ASTERIA GAMEPLAY HUMAN",
+          "valid-asian-m-1-casual": "CAEL GAMEPLAY HUMAN",
+          "valid-black-f-1-casual": "NYX GAMEPLAY HUMAN",
+          "valid-white-m-1-casual": "SOL GAMEPLAY HUMAN",
           "human-adult-b01": "VANGUARD HUMAN"
         })[recipe.baseModel] || "ASTERIA HUMAN";
       }
@@ -1683,10 +1860,97 @@
       }
     }
 
+    setGenesisStep(stepId) {
+      const nextIndex = GENESIS_STEPS.findIndex((step) => step.id === stepId);
+      if (nextIndex < 0) return;
+      this.commitAppearanceDraft();
+      const step = GENESIS_STEPS[nextIndex];
+      this.genesisStep = step.id;
+      this.appearanceGroup = step.group;
+      this.appearanceFocus = step.focus;
+      this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, step.focus);
+      this.refreshGenesisCreator();
+      this.root.querySelector("[data-har-genesis-content]")?.scrollTo?.({ top: 0, behavior: this.state.settings.reduceEffects ? "auto" : "smooth" });
+    }
+
+    updateCharacterPerformance(section, key, rawValue) {
+      const recipe = this.activeAppearanceRecipe();
+      if (!this.appearanceInputStart) this.appearanceInputStart = clone(recipe);
+      if (section === "motionDNA") {
+        if (key === "preset" && MOTION_DNA_PRESETS[rawValue]) {
+          recipe.motionDNA = { ...recipe.motionDNA, ...MOTION_DNA_PRESETS[rawValue], preset: rawValue };
+        } else if (key === "dodgeStyle" && ["sidestep", "dash", "roll", "spin"].includes(rawValue)) {
+          recipe.motionDNA.dodgeStyle = rawValue;
+        } else if (key in recipe.motionDNA) {
+          recipe.motionDNA[key] = clamp(Number(rawValue), 0, 1);
+        }
+      } else if (section === "voice") {
+        if (key === "id" && CHARACTER_VOICES.some((voice) => voice.id === rawValue)) recipe.voice.id = rawValue;
+        else if (key in recipe.voice) recipe.voice[key] = clamp(Number(rawValue), 0, 1);
+      }
+      recipe.updatedAt = nowIso();
+      this.applyAppearanceToMesh(this.characterMeshes.get(this.state.roster.activeId), recipe, this.state.roster.activeId);
+      this.appearanceDirty = true;
+    }
+
+    setGenesisCompareSlot(slot) {
+      if (!["a", "b"].includes(slot)) return;
+      this.genesisCompare[slot] = clone(this.activeAppearanceRecipe());
+      this.genesisCompare.active = slot;
+      this.toast(`Đã chụp ngoại hình ${slot.toUpperCase()} để so sánh.`, "success");
+      this.refreshGenesisCreator();
+    }
+
+    viewGenesisCompareSlot(slot) {
+      const snapshot = this.genesisCompare?.[slot];
+      if (!snapshot) return;
+      const id = this.state.roster.activeId;
+      const before = clone(this.activeAppearanceRecipe());
+      this.state.appearance.recipes[id] = normalizeAppearanceRecipe(snapshot, id);
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      if (before.baseModel !== snapshot.baseModel) this.rebuildActiveBuiltInCharacter();
+      this.genesisCompare.active = slot;
+      this.refreshGenesisCreator();
+    }
+
+    saveCharacterSlot() {
+      const id = this.state.roster.activeId;
+      const timestamp = nowIso();
+      const slot = {
+        id: uid("slot"),
+        name: String(this.state.player.name || CHARACTERS[id]?.name || "Nhà du hành").slice(0, 40),
+        characterId: id,
+        recipe: clone(this.activeAppearanceRecipe()),
+        createdAt: timestamp,
+        updatedAt: timestamp
+      };
+      this.state.appearance.characterSlots = [...(this.state.appearance.characterSlots || []), slot].slice(-6);
+      this.state.appearance.lastSavedAt = timestamp;
+      this.saveProgress("Lưu ô Character DNA");
+      this.toast(`Đã lưu ô “${slot.name}” (${this.state.appearance.characterSlots.length}/6).`, "success");
+      this.refreshGenesisCreator();
+    }
+
+    loadCharacterSlot(slotId) {
+      const slot = (this.state.appearance.characterSlots || []).find((item) => item.id === slotId);
+      if (!slot) return;
+      const id = this.state.roster.activeId;
+      const before = clone(this.activeAppearanceRecipe());
+      this.state.appearance.recipes[id] = normalizeAppearanceRecipe(slot.recipe, id);
+      this.state.player.name = slot.name;
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
+      if (before.baseModel !== slot.recipe.baseModel) this.rebuildActiveBuiltInCharacter();
+      this.recordAppearanceChange(before, `Nạp ô ${slot.name}`);
+      this.toast(`Đã nạp Character DNA “${slot.name}”.`, "success");
+      this.refreshGenesisCreator();
+    }
+
     openGenesisCreator() {
       this.genesisActive = true;
+      this.genesisStep = "identity";
       this.genesisMotion = "idle";
       this.genesisTurntable = false;
+      this.genesisCompare = { a: null, b: null, active: "live" };
       this.facePreview = { expression: "neutral", viseme: "neutral", until: 0 };
       this.genesisOriginalLighting = {
         worldTime: this.state.worldTime,
@@ -1702,12 +1966,22 @@
       this.cameraPitch = 0.28;
       this.cameraDistance = 7.8;
       this.root.classList.add("is-genesis");
+      this.root.scrollTop = 0;
+      this.root.scrollLeft = 0;
       const section = this.root.querySelector("[data-har-genesis]");
-      if (section) section.hidden = false;
+      if (section) {
+        section.hidden = false;
+        section.scrollTop = 0;
+        section.scrollLeft = 0;
+      }
       this.root.dataset.characterPreview = "fallback";
       this.setupGenesisPreview();
       this.setGenesisMotion("idle");
       this.refreshGenesisCreator();
+      root.requestAnimationFrame?.(() => {
+        this.resize();
+        this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, "body");
+      });
     }
 
     setupGenesisPreview() {
@@ -1719,15 +1993,15 @@
       this.genesisCamera.position.set(0, 1.55, 5.2);
       this.genesisCameraTarget = new THREE.Vector3(0, 1.48, 0);
 
-      const ambient = new THREE.HemisphereLight(0xc8edff, 0x11101b, 0.92);
+      const ambient = new THREE.HemisphereLight(0xc8edff, 0x11101b, 1.12);
       ambient.name = "GenesisStudioAmbient";
-      const key = new THREE.DirectionalLight(0xffffff, 2.05);
+      const key = new THREE.DirectionalLight(0xffffff, 2.55);
       key.name = "GenesisStudioKey";
       key.position.set(3.8, 5.4, 4.7);
-      const fill = new THREE.DirectionalLight(0x79cfff, 0.88);
+      const fill = new THREE.DirectionalLight(0x79cfff, 1.12);
       fill.name = "GenesisStudioFill";
       fill.position.set(-4.2, 2.7, 2.2);
-      const rim = new THREE.PointLight(0xff68cb, 1.65, 16, 1.5);
+      const rim = new THREE.PointLight(0xff68cb, 1.92, 16, 1.5);
       rim.name = "GenesisStudioRim";
       rim.position.set(0.5, 3.3, -3.2);
       this.genesisScene.add(ambient, key, fill, rim);
@@ -1962,7 +2236,8 @@
       this.genesisCameraTarget.set(center.x, targetY, center.z);
       const visibleHeight = focus === "head" ? Math.max(size.y * 0.38, size.x * 1.3) : size.y;
       const fov = this.THREE.MathUtils.degToRad(this.genesisCamera.fov);
-      this.cameraDistance = clamp((visibleHeight * 0.82) / Math.tan(fov / 2), 2.7, 9.2);
+      const framing = root.innerWidth <= 720 ? 0.62 : 0.82;
+      this.cameraDistance = clamp((visibleHeight * framing) / Math.tan(fov / 2), 2.7, 9.2);
       this.updateGenesisCamera();
       return true;
     }
@@ -2057,6 +2332,11 @@
       const viewRect = viewport?.getBoundingClientRect?.() || canvasRect;
       const fullWidth = Math.max(1, stage?.clientWidth || canvasRect.width);
       const fullHeight = Math.max(1, stage?.clientHeight || canvasRect.height);
+      this.genesisRenderSize ||= new this.THREE.Vector2();
+      this.renderer.getSize(this.genesisRenderSize);
+      if (Math.abs(this.genesisRenderSize.x - fullWidth) > 1 || Math.abs(this.genesisRenderSize.y - fullHeight) > 1) {
+        this.renderer.setSize(fullWidth, fullHeight, false);
+      }
       const x = clamp(viewRect.left - canvasRect.left, 0, fullWidth - 1);
       const y = clamp(canvasRect.bottom - viewRect.bottom, 0, fullHeight - 1);
       const width = clamp(viewRect.width, 1, fullWidth - x);
@@ -2580,6 +2860,9 @@
           url: String(entry?.url || "").slice(0, 240),
           label: String(entry?.label || entry?.provider || "Web GLB").slice(0, 100),
           quality: String(entry?.quality || "web").slice(0, 32),
+          classification: Object.values(CHARACTER_ASSET_CLASSES).some((item) => item.id === entry?.classification) ? entry.classification : CHARACTER_ASSET_CLASSES.npc.id,
+          intendedRoles: Array.isArray(entry?.intendedRoles) ? entry.intendedRoles.filter((role) => ["hero", "npc", "multiplayer", "fallback"].includes(role)).slice(0, 4) : ["npc", "fallback"],
+          heroEligible: entry?.heroEligible === true,
           image: String(entry?.image || "").slice(0, 240),
           license: String(entry?.license || "").slice(0, 40),
           ethnicity: String(entry?.ethnicity || "").slice(0, 40),
@@ -2607,6 +2890,9 @@
               image: `${baseUrl}${String(record?.image || "").replace(/^\/+/, "")}`.slice(0, 300),
               label: `${String(catalog?.label || "VALID Human").slice(0, 40)} · ${label}`,
               quality: "rigged-human",
+              classification: CHARACTER_ASSET_CLASSES.npc.id,
+              intendedRoles: ["npc", "multiplayer", "fallback"],
+              heroEligible: false,
               license: String(catalog?.license || "MIT").slice(0, 40),
               ethnicity: String(record?.ethnicity || "").slice(0, 40),
               gender: String(record?.gender || "").slice(0, 8),
@@ -2981,6 +3267,7 @@
       ground.rotation.x = -Math.PI / 2;
       ground.receiveShadow = true;
       ground.name = "AstralGround";
+      this.groundMesh = ground;
       this.world.add(ground);
 
       this.createToonGradient();
@@ -3946,10 +4233,15 @@
         npc.position.z += (targetZ - npc.position.z) * clamp(dt * 0.7, 0, 1);
         npc.rotation.y = Math.atan2(targetX - npc.position.x, targetZ - npc.position.z);
         const runtime = npc.userData.characterRuntime;
-        if (runtime?.mixer) {
+        const distance = Math.hypot(this.state.player.x - npc.position.x, this.state.player.z - npc.position.z);
+        this.updateCharacterLod(npc, distance);
+        const updateInterval = 1000 / Math.max(1, runtime?.updateHz || 12);
+        const shouldAnimate = runtime && !runtime.lodSuspended && time - Number(runtime.lastAnimationUpdateAt || 0) >= updateInterval;
+        if (runtime?.mixer && shouldAnimate) {
           this.playCharacterClip(runtime, "walk");
-          runtime.mixer.update(dt);
-        } else {
+          runtime.mixer.update(Math.min(0.1, updateInterval / 1000));
+          runtime.lastAnimationUpdateAt = time;
+        } else if (shouldAnimate) {
           const parts = npc.userData.parts;
           if (!(parts?.leftLeg && parts?.rightLeg && parts?.leftArm && parts?.rightArm)) {
             npcIndex += 1;
@@ -3960,9 +4252,8 @@
           parts.rightLeg.rotation.x += (-stride - parts.rightLeg.rotation.x) * clamp(dt * 5, 0, 1);
           parts.leftArm.rotation.x += (-stride * 0.7 - parts.leftArm.rotation.x) * clamp(dt * 5, 0, 1);
           parts.rightArm.rotation.x += (stride * 0.7 - parts.rightArm.rotation.x) * clamp(dt * 5, 0, 1);
+          runtime.lastAnimationUpdateAt = time;
         }
-        const distance = Math.hypot(this.state.player.x - npc.position.x, this.state.player.z - npc.position.z);
-        this.updateCharacterLod(npc, distance);
         npcIndex += 1;
       });
       this.footprints.forEach((footprint) => {
@@ -4053,15 +4344,38 @@
       return group;
     }
 
+    buildNpcCharacterDNA(id, profileId = "sol") {
+      const seed = [...String(id || "npc")].reduce((total, character) => ((total * 33) ^ character.charCodeAt(0)) >>> 0, 2166136261);
+      const recipe = defaultAppearanceRecipe(profileId);
+      const models = APPEARANCE_ASSETS.baseModels.filter((modelId) => modelId.startsWith("valid-"));
+      recipe.baseModel = models[seed % models.length] || recipe.baseModel;
+      recipe.bodyPreset = ["balanced", "athletic", "soft", "agile"][seed % 4];
+      Object.values(APPEARANCE_CONTROL_MAP).forEach((control, index) => {
+        if (control.group === "expression") return;
+        const wave = Math.sin(seed * 0.00017 + index * 1.913) * 0.5 + 0.5;
+        recipe.morphs[control.id] = Number((0.34 + wave * 0.32).toFixed(3));
+      });
+      const motionPreset = ["balanced", "agile", "grounded", "cinematic"][(seed >>> 4) % 4];
+      recipe.motionDNA = { ...recipe.motionDNA, ...MOTION_DNA_PRESETS[motionPreset], preset: motionPreset };
+      recipe.hair = APPEARANCE_ASSETS.hairs[(seed >>> 6) % APPEARANCE_ASSETS.hairs.length];
+      recipe.outfit = [APPEARANCE_ASSETS.outfits[(seed >>> 8) % APPEARANCE_ASSETS.outfits.length]];
+      recipe.updatedAt = nowIso();
+      return normalizeAppearanceRecipe(recipe, profileId);
+    }
+
     createNpc(id, name, x, z, color) {
       const npcProfile = id === "luma" ? CHARACTERS.cael : CHARACTERS.sol;
       const mesh = this.createPhotorealCharacterModel(npcProfile, 0.88);
+      const npcDNA = this.buildNpcCharacterDNA(id, npcProfile.id);
       mesh.position.set(x, 1.08, z);
       mesh.userData = {
         ...mesh.userData,
         type: "npc",
         id,
         name,
+        assetClass: CHARACTER_ASSET_CLASSES.npc.id,
+        npcDNA: compactAppearanceRecipe(npcDNA, npcProfile.id),
+        sharedSkeleton: "hh-humanoid-v12",
         schedule: {
           homeX: x,
           homeZ: z,
@@ -4072,7 +4386,10 @@
       };
       this.world.add(mesh);
       this.npcs.set(id, mesh);
-      this.registerCharacterRuntime(mesh, npcProfile, `npc:${id}`, "npc", mesh.userData.builtInAnimations || []);
+      const runtime = this.registerCharacterRuntime(mesh, npcProfile, `npc:${id}`, "npc", mesh.userData.builtInAnimations || []);
+      runtime.motionDNA = npcDNA.motionDNA;
+      runtime.deterministicSeed = id;
+      this.applyAppearanceToMesh(mesh, npcDNA, npcProfile.id);
       return mesh;
     }
 
@@ -4625,6 +4942,13 @@
     applyAppearanceToMesh(mesh, inputRecipe, characterId = "lyra") {
       if (!mesh?.userData?.parts) return;
       const recipe = normalizeAppearanceRecipe(inputRecipe, characterId);
+      mesh.userData.motionDNA = { ...recipe.motionDNA };
+      mesh.userData.voiceDNA = { ...recipe.voice };
+      mesh.userData.evolution = { ...recipe.evolution };
+      if (mesh.userData.characterRuntime) {
+        mesh.userData.characterRuntime.motionDNA = mesh.userData.motionDNA;
+        mesh.userData.characterRuntime.voiceDNA = mesh.userData.voiceDNA;
+      }
       const parts = mesh.userData.parts;
       const morph = (id) => recipe.morphs[id] ?? APPEARANCE_CONTROL_MAP[id]?.defaultValue ?? 0.5;
       const delta = (id) => morph(id) - (APPEARANCE_CONTROL_MAP[id]?.defaultValue ?? 0.5);
@@ -5191,7 +5515,15 @@
         headVertices: 0,
         faceMorphTargets: 0,
         separateEyeMeshes: 0,
-        hairCardMeshes: 0
+        corneaMeshes: 0,
+        tearLineMeshes: 0,
+        teethMeshes: 0,
+        tongueMeshes: 0,
+        eyelashMeshes: 0,
+        hairCardMeshes: 0,
+        normalMaps: 0,
+        roughnessMaps: 0,
+        thicknessMaps: 0
       };
       const textureSlots = [
         "map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "alphaMap", "emissiveMap",
@@ -5240,6 +5572,11 @@
         const identity = `${object.name || ""} ${Array.isArray(object.material) ? object.material.map((material) => material?.name || "").join(" ") : object.material?.name || ""}`.toLowerCase();
         if (/head|face|skin_head|dermis/.test(identity)) report.headVertices += vertices;
         if (/eye|iris|cornea|sclera|tear/.test(identity)) report.separateEyeMeshes += 1;
+        if (/cornea/.test(identity)) report.corneaMeshes += 1;
+        if (/tear|tearline|waterline/.test(identity)) report.tearLineMeshes += 1;
+        if (/teeth|tooth|dental/.test(identity)) report.teethMeshes += 1;
+        if (/tongue/.test(identity)) report.tongueMeshes += 1;
+        if (/eyelash|eye_lash|lashes/.test(identity)) report.eyelashMeshes += 1;
         if (/hair|groom|brow|lash/.test(identity)) report.hairCardMeshes += 1;
         const morphNames = Object.keys(object.morphTargetDictionary || {});
         report.morphTargets += morphNames.length;
@@ -5258,6 +5595,9 @@
             const texture = material[slot];
             if (!texture?.isTexture) return;
             textures.add(texture);
+            if (slot === "normalMap") report.normalMaps += 1;
+            if (slot === "roughnessMap") report.roughnessMaps += 1;
+            if (slot === "thicknessMap") report.thicknessMaps += 1;
             const image = texture.image || texture.source?.data;
             report.maxTextureSize = Math.max(report.maxTextureSize, Number(image?.width || 0), Number(image?.height || 0));
           });
@@ -5266,11 +5606,13 @@
       report.materials = materials.size;
       report.textures = textures.size;
       report.skeletonCoverage = matchedBones.size / Object.keys(HH_HUMANOID_SKELETON).length;
-      report.digitalHumanTier = report.headVertices >= 18000 && report.faceMorphTargets >= 52
-        ? "web-hero"
+      const classification = classifyCharacterAsset(report);
+      report.digitalHumanTier = classification.heroReady
+        ? "web-hero-v12"
         : report.skinnedMeshes && report.bones
           ? "gameplay-rig"
           : "proxy";
+      Object.assign(report, classification);
       return report;
     }
 
@@ -5298,6 +5640,11 @@
         gaitPhase: 0,
         motionSpeed: 0,
         motionDirection: 0,
+        directionalBlend: { forward: 0, backward: 0, left: 0, right: 0 },
+        motionDNA: mesh.userData?.motionDNA || normalizeAppearanceRecipe(this.state.appearance?.recipes?.[profile.id], profile.id).motionDNA,
+        skeletonContract: "hh-humanoid-v12",
+        rootMotionPolicy: "extract-and-warp",
+        footLock: { left: 0, right: 0 },
         secondaryBones: [],
         lastLodUpdateAt: 0,
         lastFacialUpdateAt: 0
@@ -5359,6 +5706,8 @@
       if (["jump", "land", "dodge", "attack1", "attack2", "attack3", "skill", "ultimate", "hit", "defeated"].includes(state)) {
         return null;
       }
+      if (state === "start") return this.findCharacterClip(runtime, "run");
+      if (["stop", "turnLeft", "turnRight"].includes(state)) return this.findCharacterClip(runtime, "idle");
       if (["sprint", "walk", "strafe"].includes(state)) return this.findCharacterClip(runtime, "run");
       if (["fall", "land", "glide"].includes(state)) return this.findCharacterClip(runtime, "jump");
       if (state !== "idle") {
@@ -5404,8 +5753,10 @@
           : locomotionStates.has(state) && locomotionStates.has(runtime.previousState)
             ? 0.18
             : 0.24;
-      if (runtime.currentAction) runtime.currentAction.crossFadeTo(next, transitionSeconds, true);
-      else next.fadeIn(Math.min(0.16, transitionSeconds));
+      const dna = runtime.motionDNA || MOTION_DNA_PRESETS.balanced;
+      const dnaTransition = clamp(transitionSeconds * (1.35 - Number(dna.turnResponse || 0.5) * 0.58), 0.08, 0.28);
+      if (runtime.currentAction) runtime.currentAction.crossFadeTo(next, dnaTransition, true);
+      else next.fadeIn(Math.min(0.16, dnaTransition));
       next.play();
       runtime.currentAction = next;
       runtime.actionTimeScale = fittedTimeScale;
@@ -5413,8 +5764,11 @@
         from: runtime.previousState,
         to: state,
         startedAt: performance.now(),
-        duration: transitionSeconds,
-        mode: "inertial-crossfade"
+        duration: dnaTransition,
+        mode: "inertial-crossfade",
+        upperBodyLayer: Boolean(dna.upperBodyLayer && (state.startsWith("attack") || ["skill", "ultimate", "talk"].includes(state))),
+        motionWarp: Boolean(dna.motionWarp && oneShot),
+        rootMotion: Boolean(dna.rootMotion && oneShot)
       };
     }
 
@@ -5484,6 +5838,13 @@
       if (this.isSwimming) return "swim";
       if (this.dodgeUntil && time < this.dodgeUntil) return "dodge";
       if (!this.isGrounded) return this.gliding ? "glide" : this.verticalVelocity > 0.8 ? "jump" : "fall";
+      const isMoving = Boolean(input?.active);
+      if (isMoving !== this.motionState.wasMoving) {
+        this.motionState.wasMoving = isMoving;
+        this.motionState.movementChangedAt = time;
+      }
+      const transitionAge = time - Number(this.motionState.movementChangedAt || 0);
+      if (transitionAge < 180) return isMoving ? "start" : "stop";
       if (input?.active) {
         if (this.lockedTargetId && Math.abs(input.x) > Math.abs(input.z) * 1.25) return "strafe";
         if ((input.magnitude || 1) < 0.56) return "walk";
@@ -5593,6 +5954,38 @@
       };
     }
 
+    blendFacialLayers(layers = []) {
+      const blended = Object.fromEntries(MEDIAPIPE_FACE_CHANNELS.map((channel) => [channel, 0]));
+      layers.filter((layer) => layer?.values && layer.weight > 0).forEach((layer) => {
+        Object.entries(layer.values).forEach(([channel, raw]) => {
+          if (!(channel in blended)) return;
+          const value = clamp(Number(raw) * clamp(layer.weight, 0, 1), 0, 1);
+          blended[channel] = clamp(blended[channel] + value * (1 - blended[channel]), 0, 1);
+        });
+      });
+      return blended;
+    }
+
+    applyFacialCorrectives(mesh, values = {}) {
+      const correctiveValues = {
+        correctiveSmile: Math.max(values.mouthSmileLeft || 0, values.mouthSmileRight || 0) * Math.max(values.cheekSquintLeft || 0, values.cheekSquintRight || 0),
+        correctiveJawOpen: Math.max(0, (values.jawOpen || 0) - 0.55) / 0.45,
+        correctiveLipSeal: (values.mouthClose || 0) * Math.max(values.mouthPressLeft || 0, values.mouthPressRight || 0),
+        correctiveEyeSquint: Math.max(values.eyeSquintLeft || 0, values.eyeSquintRight || 0),
+        correctiveNeck: Math.max(values.jawOpen || 0, values.mouthStretchLeft || 0, values.mouthStretchRight || 0) * 0.55
+      };
+      mesh?.traverse?.((object) => {
+        if (!object.morphTargetDictionary || !object.morphTargetInfluences) return;
+        const lookup = Object.fromEntries(Object.entries(object.morphTargetDictionary).map(([name, index]) => [String(name).replace(/[._\-\s]/g, "").toLowerCase(), index]));
+        Object.entries(correctiveValues).forEach(([name, raw]) => {
+          const index = lookup[name.toLowerCase()];
+          if (!Number.isInteger(index)) return;
+          object.morphTargetInfluences[index] += (clamp(raw, 0, 1) - object.morphTargetInfluences[index]) * 0.36;
+        });
+      });
+      mesh.userData.facialCorrectives = correctiveValues;
+    }
+
     applyProceduralFacialPerformance(mesh, time, motion) {
       if (!mesh || !this.state.settings.facialAnimation) return;
       const parts = mesh.userData?.parts;
@@ -5614,20 +6007,34 @@
       const talkViseme = motion === "talk"
         ? CHARACTER_VISEMES[talkVisemeNames[Math.floor(time / 145) % talkVisemeNames.length]]
         : null;
-      const drivenFace = pilot || (previewFresh ? this.facePreview.values : null) || talkViseme;
       const lowHealth = 1 - clamp(this.state.player.health / Math.max(1, this.state.player.maxHealth), 0, 1);
-      if (!drivenFace && time >= faceState.nextBlinkAt && !faceState.blinkStartedAt) {
+      const emotionWeight = Number(mesh.userData?.voiceDNA?.emotion || 0.58);
+      const emotion = motion === "hit" || motion === "defeated"
+        ? CHARACTER_EXPRESSION_PRESETS.pain
+        : this.lockedTargetId
+          ? CHARACTER_EXPRESSION_PRESETS.angry
+          : lowHealth > 0.6
+            ? CHARACTER_EXPRESSION_PRESETS.sad
+            : null;
+      const drivenFace = this.blendFacialLayers([
+        { values: pilot, weight: pilot ? 1 : 0 },
+        { values: previewFresh ? this.facePreview.values : null, weight: previewFresh ? 1 : 0 },
+        { values: talkViseme, weight: talkViseme ? 0.9 : 0 },
+        { values: emotion, weight: emotion ? emotionWeight : 0 }
+      ]);
+      const hasDrivenFace = pilot || previewFresh || talkViseme || emotion;
+      if (!hasDrivenFace && time >= faceState.nextBlinkAt && !faceState.blinkStartedAt) {
         faceState.blinkStartedAt = time;
         faceState.nextBlinkAt = time + 1900 + Math.random() * 4200;
       }
       const blinkElapsed = faceState.blinkStartedAt ? time - faceState.blinkStartedAt : -1;
-      const blink = drivenFace
+      const blink = hasDrivenFace
         ? Math.max(drivenFace.eyeBlinkLeft || 0, drivenFace.eyeBlinkRight || 0)
         : blinkElapsed >= 0 && blinkElapsed < 180
           ? Math.sin((blinkElapsed / 180) * Math.PI)
           : 0;
       if (blinkElapsed >= 180) faceState.blinkStartedAt = 0;
-      const smile = drivenFace
+      const smile = hasDrivenFace
         ? ((drivenFace.mouthSmileLeft || 0) + (drivenFace.mouthSmileRight || 0)) * 0.5
         : motion === "idle" ? 0.08 : 0;
       const pain = motion === "hit" || motion === "defeated" ? 0.9 : lowHealth * 0.28;
@@ -5635,7 +6042,7 @@
       const neutralFace = Object.fromEntries(MEDIAPIPE_FACE_CHANNELS.map((channel) => [channel, 0]));
       const faceValues = {
         ...neutralFace,
-        ...(drivenFace || {
+        ...(hasDrivenFace ? drivenFace : {
           eyeBlinkLeft: blink,
           eyeBlinkRight: blink,
           mouthSmileLeft: smile,
@@ -5647,6 +6054,7 @@
       };
       this.applyFaceBlendshapes(mesh, faceValues);
       this.applyBoneFacialFallback(mesh, faceValues);
+      this.applyFacialCorrectives(mesh, faceValues);
       if (!parts?.eyes || !parts?.mouth) return;
       if (time >= faceState.nextSaccadeAt) {
         faceState.nextSaccadeAt = time + 420 + Math.random() * 1900;
@@ -5655,7 +6063,7 @@
       }
       parts.eyes.forEach((eye, index) => {
         const pilotBlink = index === 0 ? faceValues.eyeBlinkLeft : faceValues.eyeBlinkRight;
-        const value = drivenFace ? pilotBlink || 0 : blink;
+        const value = hasDrivenFace ? pilotBlink || 0 : blink;
         const lid = parts.eyelids?.[index];
         if (lid && this.state.settings.eyePerformance) {
           lid.scale.y += ((0.01 + value * 0.92) - lid.scale.y) * 0.58;
@@ -5714,6 +6122,18 @@
       const dirt = clamp((this.currentZone?.id === "crimson" ? 0.28 : this.currentZone?.id === "void" ? 0.16 : 0.04) + injury * 0.12, 0, 0.5);
       const burn = clamp(heat * 0.74 + (this.state.player.status?.burn ? 0.5 : 0), 0, 1);
       const blood = clamp(injury * 0.52, 0, 0.58);
+      const recipe = this.state.appearance?.recipes?.[this.state.roster.activeId];
+      if (recipe?.evolution && time - this.lastEvolutionUpdateAt > 5000) {
+        recipe.evolution.persistentScars = clamp(Math.max(recipe.evolution.persistentScars, injury > 0.72 ? injury * 0.42 : 0, burn * 0.35), 0, 1);
+        recipe.evolution.clothingDamage = clamp(Math.max(recipe.evolution.clothingDamage, injury * 0.32 + burn * 0.28), 0, 1);
+        recipe.evolution.fatigueMemory += (exertion - recipe.evolution.fatigueMemory) * 0.08;
+        recipe.evolution.auraPower = clamp(this.state.player.ultimate / 100, 0, 1);
+        recipe.evolution.tattooResponse = clamp((recipe.decals?.tattoos || 0) * recipe.evolution.auraPower, 0, 1);
+        recipe.updatedAt = nowIso();
+        mesh.userData.evolution = { ...recipe.evolution };
+        this.lastEvolutionUpdateAt = time;
+      }
+      const evolution = recipe?.evolution || mesh.userData.evolution || { persistentScars: 0, clothingDamage: 0, fatigueMemory: 0, auraPower: 0, tattooResponse: 0 };
       this.restoreCharacterMaterialState(mesh, 0.72);
       mesh.traverse?.((object) => {
         const materials = Array.isArray(object.material) ? object.material : [object.material];
@@ -5733,19 +6153,23 @@
           if (material.color && material.userData.baseColor) {
             material.color.set(material.userData.baseColor);
             if (material.userData.materialRole === "skin") {
-              material.color.lerp(new this.THREE.Color(0xb7464e), clamp(blood * 0.1 + exertion * 0.035, 0, 0.12));
+              material.color.lerp(new this.THREE.Color(0xb7464e), clamp(blood * 0.1 + exertion * 0.035 + evolution.persistentScars * 0.04, 0, 0.16));
               if (material.emissive) {
-                material.emissive.set(0x7a1f26);
-                material.emissiveIntensity = Math.max(material.userData.baseEmissiveIntensity, clamp(exertion * 0.014 + burn * 0.025, 0, 0.04));
+                material.emissive.set(evolution.tattooResponse > 0.1 ? 0x5feeff : 0x7a1f26);
+                material.emissiveIntensity = Math.max(material.userData.baseEmissiveIntensity, clamp(exertion * 0.014 + burn * 0.025 + evolution.tattooResponse * 0.1, 0, 0.14));
               }
             } else if (material.userData.materialRole === "outfit") {
-              material.color.lerp(new this.THREE.Color(0x44382f), dirt * 0.22);
+              material.color.lerp(new this.THREE.Color(0x44382f), dirt * 0.22 + evolution.clothingDamage * 0.16);
               if (snow) material.color.lerp(new this.THREE.Color(0xe8f6ff), snow * 0.16);
+              material.roughness = clamp(material.roughness + evolution.clothingDamage * 0.14, 0.08, 1);
+            } else if (material.userData.materialRole === "hair" || material.userData.materialRole === "hair-card") {
+              material.roughness = clamp(material.roughness - wet * 0.18 + snow * 0.22, 0.08, 1);
+              if (snow && material.color) material.color.lerp(new this.THREE.Color(0xe8f6ff), snow * 0.12);
             }
           }
         });
       });
-      mesh.userData.surfaceState = { wet, snow, heat, sweat, dirt, blood, burn, updatedAt: time };
+      mesh.userData.surfaceState = { wet, snow, heat, sweat, dirt, blood, burn, wounds: injury, scars: evolution.persistentScars, clothingDamage: evolution.clothingDamage, aura: evolution.auraPower, tattooResponse: evolution.tattooResponse, updatedAt: time };
       this.lastSurfaceUpdateAt = time;
     }
 
@@ -5879,15 +6303,75 @@
         foot.userData.hhFootBase ??= { x: foot.rotation.x, z: foot.rotation.z };
         const base = foot.userData.hhFootBase;
         const plant = clamp(1 - Math.max(0, wave) * 1.8, 0, 1);
-        foot.rotation.x += ((base.x - wave * 0.055 * strength) - foot.rotation.x) * (0.12 + plant * 0.12);
-        foot.rotation.z += (base.z - foot.rotation.z) * 0.18;
+        let slopeX = 0;
+        let slopeZ = 0;
+        let contactDistance = null;
+        if (this.THREE && this.groundMesh && runtime.mesh?.visible && plant > 0.45) {
+          this.footRaycaster ||= new this.THREE.Raycaster();
+          const origin = foot.getWorldPosition(new this.THREE.Vector3());
+          origin.y += 0.34;
+          this.footRaycaster.set(origin, new this.THREE.Vector3(0, -1, 0));
+          this.footRaycaster.far = 0.9;
+          const hit = this.footRaycaster.intersectObject(this.groundMesh, false)[0];
+          if (hit?.face?.normal) {
+            const normal = hit.face.normal.clone().transformDirection(this.groundMesh.matrixWorld);
+            slopeX = Math.atan2(normal.z, Math.max(0.001, normal.y));
+            slopeZ = -Math.atan2(normal.x, Math.max(0.001, normal.y));
+            contactDistance = hit.distance;
+          }
+        }
+        foot.rotation.x += ((base.x + slopeX * plant - wave * 0.055 * strength) - foot.rotation.x) * (0.12 + plant * 0.12);
+        foot.rotation.z += ((base.z + slopeZ * plant) - foot.rotation.z) * 0.18;
+        runtime.footLock[foot === leftFoot ? "left" : "right"] = { plant, contactDistance, grounded: contactDistance !== null };
       });
       runtime.ikState = {
-        foot: "raycast-ready",
+        foot: "terrain-raycast",
         hand: runtime.bones?.rightHand ? "weapon-socket" : "unavailable",
         lookAt: runtime.bones?.head ? "active" : "unavailable",
         updatedAt: performance.now()
       };
+    }
+
+    applyUpperBodyIK(runtime, dt, { combat = false } = {}) {
+      if (!runtime || runtime.lodSuspended || !this.state.settings.naturalMotion) return;
+      const head = runtime.bones?.head;
+      const chest = runtime.bones?.chest;
+      const rightHand = runtime.bones?.rightHand;
+      const targetObject = this.lockedTargetId
+        ? this.enemies.get(this.lockedTargetId)
+        : this.nearby?.object || null;
+      const targetPosition = targetObject?.getWorldPosition?.(new this.THREE.Vector3());
+      const actorPosition = runtime.mesh?.getWorldPosition?.(new this.THREE.Vector3());
+      let yaw = 0;
+      let pitch = 0;
+      let weight = 0.18;
+      if (targetPosition && actorPosition) {
+        const dx = targetPosition.x - actorPosition.x;
+        const dz = targetPosition.z - actorPosition.z;
+        const dy = targetPosition.y - actorPosition.y;
+        const facing = runtime.mesh.rotation.y || 0;
+        yaw = Math.atan2(dx, dz) - facing;
+        yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+        pitch = -Math.atan2(dy, Math.max(0.1, Math.hypot(dx, dz)));
+        weight = combat ? 0.72 : 0.42;
+        runtime.gazeTarget = { type: combat ? "combat" : "interaction", id: this.lockedTargetId || this.nearby?.id || "", yaw, pitch, weight };
+      } else {
+        const cameraDelta = Math.atan2(Math.sin(this.cameraYaw - (runtime.mesh.rotation.y || 0)), Math.cos(this.cameraYaw - (runtime.mesh.rotation.y || 0)));
+        yaw = cameraDelta * 0.24;
+        runtime.gazeTarget = { type: "camera", id: "", yaw, pitch: 0, weight };
+      }
+      const damp = 1 - Math.exp(-Math.max(0.001, dt) * 9);
+      [[head, clamp(yaw, -0.62, 0.62) * weight, clamp(pitch, -0.3, 0.3) * weight], [chest, clamp(yaw, -0.28, 0.28) * weight * 0.42, clamp(pitch, -0.16, 0.16) * weight * 0.3]].forEach(([bone, targetYaw, targetPitch]) => {
+        if (!bone) return;
+        bone.userData ||= {};
+        bone.userData.hhLookBase ||= { x: bone.rotation.x, y: bone.rotation.y };
+        bone.rotation.y += ((bone.userData.hhLookBase.y + targetYaw) - bone.rotation.y) * damp;
+        bone.rotation.x += ((bone.userData.hhLookBase.x + targetPitch) - bone.rotation.x) * damp;
+      });
+      runtime.ikState ||= {};
+      runtime.ikState.hand = rightHand && runtime.mesh?.userData?.parts?.weaponAnchor ? "weapon-socket-locked" : "unavailable";
+      runtime.ikState.lookAt = head ? "gaze-target-active" : "unavailable";
+      runtime.ikState.aimOffset = combat && chest ? "upper-body-additive" : "idle";
     }
 
     disposeCharacterObject(object, runtime = object?.userData?.characterRuntime) {
@@ -5960,7 +6444,7 @@
         }
         this.installImportedCharacter(gltf, this.state.roster.activeId, file.name, this.lastCharacterQa);
         const warning = validation.warnings.length ? ` · ${validation.warnings.length} cảnh báo` : "";
-        this.toast(`Đã nạp ${file.name} vào Character V${CHARACTER_VISUAL_VERSION} · QA ${validation.score}/100${warning}.`, "success");
+        this.toast(`Đã nạp ${file.name} · ${validation.assetClassLabel} · Hero gate ${validation.heroScore}% · QA ${validation.score}/100${warning}.`, "success");
         this.renderCurrentPanel();
       } catch (error) {
         this.toast(`Không nạp được GLB: ${error?.message || "file không hợp lệ"}`, "error");
@@ -5977,7 +6461,7 @@
       const oldRuntime = this.characterRuntimes.get(characterId);
       if (!oldMesh || !gltf?.scene) throw new Error("GLB không có scene nhân vật.");
       const wrapper = new this.THREE.Group();
-      wrapper.name = `WebHeroGLB:${characterId}`;
+      wrapper.name = `${qaReport?.heroReady ? "WebHeroV12" : "GameplayHuman"}GLB:${characterId}`;
       const asset = gltf.scene;
       const box = new this.THREE.Box3().setFromObject(asset);
       const size = box.getSize(new this.THREE.Vector3());
@@ -6019,6 +6503,8 @@
         gltfAsset: asset,
         qaReport
       };
+      wrapper.userData.assetClass = qaReport?.assetClass || CHARACTER_ASSET_CLASSES.gameplay.id;
+      wrapper.userData.heroReady = qaReport?.heroReady === true;
       const explicitLods = { hero: [], near: [], crowd: [], impostor: [] };
       asset.traverse((object) => {
         const match = String(object.name || "").match(/^lod([0-3])(?:\b|_)/i);
@@ -6076,7 +6562,7 @@
       runtime.qaReport = qaReport || runtime.qaReport;
       this.playCharacterClip(runtime, "idle");
       this.updateCharacterLod(wrapper, 0);
-      const qaLabel = qaReport ? ` · QA ${qaReport.score}/100` : "";
+      const qaLabel = qaReport ? ` · ${qaReport.assetClassLabel || "Gameplay Human"} · Hero ${qaReport.heroScore || 0}% · QA ${qaReport.score}/100` : "";
       this.characterAssetStatus.set(characterId, `${sourceName} · ${runtime.triangles.toLocaleString("vi-VN")} tris · ${runtime.clips.size} clips · ${runtime.facialChannels} morph${qaLabel}`);
       this.applyAppearanceToMesh(wrapper, this.activeAppearanceRecipe(), characterId);
       if (this.state.roster.activeId === characterId) {
@@ -6426,6 +6912,16 @@
 
     bindShellEvents() {
       this.listen(this.root, "click", (event) => {
+        const genesisStep = event.target.closest("[data-genesis-step]");
+        if (genesisStep) {
+          this.setGenesisStep(genesisStep.dataset.genesisStep);
+          return;
+        }
+        const genesisSlot = event.target.closest("[data-genesis-slot]");
+        if (genesisSlot) {
+          this.loadCharacterSlot(genesisSlot.dataset.genesisSlot);
+          return;
+        }
         const genesisGroup = event.target.closest("[data-genesis-group]");
         if (genesisGroup) {
           this.appearanceGroup = genesisGroup.dataset.genesisGroup;
@@ -6529,8 +7025,21 @@
           } else if (genesisAction === "apply-dna") {
             this.applyCharacterDNA(this.root.querySelector("[data-genesis-dna]")?.value || "");
           } else if (genesisAction === "save-slot") {
-            this.saveAppearancePreset(`${this.state.player.name || "Nhà du hành"} · DNA`);
-            this.refreshGenesisCreator();
+            this.saveCharacterSlot();
+          } else if (genesisAction === "capture-a") {
+            this.setGenesisCompareSlot("a");
+          } else if (genesisAction === "capture-b") {
+            this.setGenesisCompareSlot("b");
+          } else if (genesisAction === "view-a") {
+            this.viewGenesisCompareSlot("a");
+          } else if (genesisAction === "view-b") {
+            this.viewGenesisCompareSlot("b");
+          } else if (genesisAction === "previous-step") {
+            const index = Math.max(0, GENESIS_STEPS.findIndex((step) => step.id === this.genesisStep));
+            this.setGenesisStep(GENESIS_STEPS[Math.max(0, index - 1)].id);
+          } else if (genesisAction === "next-step") {
+            const index = Math.max(0, GENESIS_STEPS.findIndex((step) => step.id === this.genesisStep));
+            this.setGenesisStep(GENESIS_STEPS[Math.min(GENESIS_STEPS.length - 1, index + 1)].id);
           } else if (genesisAction === "confirm") {
             this.completeGenesisCreator();
           }
@@ -6569,6 +7078,25 @@
         if (touchAction) return this.performAction(touchAction);
       });
       this.listen(this.root, "input", (event) => {
+        const motionPreset = event.target.closest("[data-genesis-motion-preset]");
+        if (motionPreset) {
+          this.updateCharacterPerformance("motionDNA", "preset", motionPreset.value);
+          return;
+        }
+        const motionDNA = event.target.closest("[data-genesis-motion-dna]");
+        if (motionDNA) {
+          this.updateCharacterPerformance("motionDNA", motionDNA.dataset.genesisMotionDna, motionDNA.value);
+          const output = motionDNA.closest("label")?.querySelector("output");
+          if (output && motionDNA.type === "range") output.textContent = String(Math.round(Number(motionDNA.value) * 100));
+          return;
+        }
+        const voiceDNA = event.target.closest("[data-genesis-voice]");
+        if (voiceDNA) {
+          this.updateCharacterPerformance("voice", voiceDNA.dataset.genesisVoice, voiceDNA.value);
+          const output = voiceDNA.closest("label")?.querySelector("output");
+          if (output && voiceDNA.type === "range") output.textContent = String(Math.round(Number(voiceDNA.value) * 100));
+          return;
+        }
         const genesisMorph = event.target.closest("[data-genesis-morph]");
         if (genesisMorph) {
           const value = Number(genesisMorph.value);
@@ -6620,6 +7148,12 @@
         }
       });
       this.listen(this.root, "change", async (event) => {
+        const motionPreset = event.target.closest("[data-genesis-motion-preset]");
+        const motionDNA = event.target.closest("[data-genesis-motion-dna]");
+        const voiceDNA = event.target.closest("[data-genesis-voice]");
+        if (motionPreset && !this.appearanceInputStart) this.updateCharacterPerformance("motionDNA", "preset", motionPreset.value);
+        if (motionDNA && !this.appearanceInputStart) this.updateCharacterPerformance("motionDNA", motionDNA.dataset.genesisMotionDna, motionDNA.value);
+        if (voiceDNA && !this.appearanceInputStart) this.updateCharacterPerformance("voice", voiceDNA.dataset.genesisVoice, voiceDNA.value);
         const genesisCatalog = event.target.closest("[data-genesis-catalog]");
         if (genesisCatalog) {
           const modelId = String(genesisCatalog.value || "");
@@ -6642,7 +7176,7 @@
           }
           return;
         }
-        if (event.target.matches("[data-genesis-morph], [data-genesis-setting], [data-genesis-decal], [data-genesis-surface]")) {
+        if (event.target.matches("[data-genesis-morph], [data-genesis-setting], [data-genesis-decal], [data-genesis-surface], [data-genesis-motion-preset], [data-genesis-motion-dna], [data-genesis-voice]")) {
           this.commitAppearanceDraft();
           this.refreshGenesisCreator();
         }
@@ -6850,14 +7384,35 @@
       this.updateCharacterLod(mesh, 0);
       const lowDetailTier = ["crowd", "impostor"].includes(mesh.userData?.modelTier);
       if (runtime) {
+        const dna = runtime.motionDNA || mesh.userData.motionDNA || MOTION_DNA_PRESETS.balanced;
         const targetSpeed = moving ? clamp(input?.magnitude || 1, 0, 1) * (sprinting ? 1.35 : 1) : 0;
-        runtime.motionSpeed += (targetSpeed - runtime.motionSpeed) * (1 - Math.exp(-dt * 12));
-        runtime.motionDirection += (Math.atan2(input?.x || 0, input?.z || 1) - runtime.motionDirection) * (1 - Math.exp(-dt * 10));
+        const speedResponse = targetSpeed > runtime.motionSpeed
+          ? 5 + Number(dna.acceleration || 0.5) * 13
+          : 5 + Number(dna.braking || 0.5) * 15;
+        runtime.motionSpeed += (targetSpeed - runtime.motionSpeed) * (1 - Math.exp(-dt * speedResponse));
+        const wantedDirection = Math.atan2(input?.x || 0, input?.z || 1);
+        const deltaDirection = Math.atan2(Math.sin(wantedDirection - runtime.motionDirection), Math.cos(wantedDirection - runtime.motionDirection));
+        runtime.motionDirection += deltaDirection * (1 - Math.exp(-dt * (5 + Number(dna.turnResponse || 0.5) * 14)));
+        const localX = clamp(input?.x || 0, -1, 1);
+        const localZ = clamp(input?.z || 0, -1, 1);
+        const blendRate = 1 - Math.exp(-dt * 14);
+        const targets = { forward: Math.max(0, localZ), backward: Math.max(0, -localZ), left: Math.max(0, -localX), right: Math.max(0, localX) };
+        Object.keys(targets).forEach((key) => { runtime.directionalBlend[key] += (targets[key] - runtime.directionalBlend[key]) * blendRate; });
         runtime.motionWarp = {
           speed: runtime.motionSpeed,
           direction: runtime.motionDirection,
           target: this.lockedTargetId || "",
-          mode: this.lockedTargetId ? "combat-facing" : "locomotion-facing"
+          mode: this.lockedTargetId ? "combat-facing" : "locomotion-facing",
+          enabled: dna.motionWarp !== false,
+          rootMotion: dna.rootMotion !== false,
+          footLock: this.isGrounded
+        };
+        runtime.additiveLayers = {
+          breathing: clamp(0.22 + (1 - this.state.player.stamina / Math.max(1, this.state.player.maxStamina)) * 0.78, 0, 1),
+          fatigue: clamp(1 - this.state.player.stamina / Math.max(1, this.state.player.maxStamina), 0, 1),
+          injury: clamp(1 - this.state.player.health / Math.max(1, this.state.player.maxHealth), 0, 1),
+          cold: BIOME_PROFILES[this.currentZone?.id]?.precipitation === "snow" ? 0.65 : 0,
+          weapon: this.playerWeapon ? 1 : 0
         };
       }
       if (runtime?.mixer && !runtime.lodSuspended) {
@@ -6875,7 +7430,8 @@
         this.applyProceduralRigMotion(runtime, time, targetAnimation, dt);
       }
 
-      const cadence = targetAnimation === "sprint"
+      const strideDNA = Number(runtime?.motionDNA?.stride || 0.5);
+      const cadence = (targetAnimation === "sprint"
         ? 11.2
         : targetAnimation === "run" || targetAnimation === "strafe"
           ? 8.1
@@ -6883,7 +7439,7 @@
             ? 5.2
             : targetAnimation === "climb"
               ? 4.6
-              : 1.15;
+              : 1.15) * (0.88 + strideDNA * 0.24);
       if (runtime) {
         runtime.gaitPhase = (runtime.gaitPhase + dt * cadence * Math.max(0.42, input?.magnitude || 0.42)) % (Math.PI * 2);
       }
@@ -7010,6 +7566,7 @@
         this.applyCorrectiveMorphs(mesh);
       }
       this.applyFootContactIK(runtime, phase, moving && this.isGrounded ? 1 : 0.25);
+      this.applyUpperBodyIK(runtime, dt, { combat: Boolean(this.lockedTargetId) || targetAnimation.startsWith("attack") });
       this.updateSecondaryCharacterMotion(runtime, time, {
         moving,
         sprinting,
@@ -8596,7 +9153,7 @@
 
     activeAppearanceRecipe() {
       const id = this.state.roster.activeId;
-      this.state.appearance ||= { recipes: {}, savedPresets: [], lastSavedAt: "" };
+      this.state.appearance ||= { recipes: {}, savedPresets: [], characterSlots: [], versionHistory: [], lastSavedAt: "" };
       this.state.appearance.recipes[id] ||= defaultAppearanceRecipe(id);
       this.state.appearance.recipes[id] = normalizeAppearanceRecipe(this.state.appearance.recipes[id], id);
       return this.state.appearance.recipes[id];
@@ -8648,7 +9205,7 @@
             <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "hero")}</strong><span>${escapeHtml(lodCapability)}</span></div>
           </div>
           <div class="har-section har-digital-human-stack">
-            <div><small>HEAD TARGET</small><strong>18–28K</strong><span>GLB nhập vào được đo thực tế; Human Rig tích hợp không giả nhận đủ chuẩn head mesh.</span></div>
+            <div><small>HEAD TARGET</small><strong>20–28K</strong><span>GLB nhập vào được đo thực tế; Human Rig tích hợp không giả nhận đủ chuẩn head mesh.</span></div>
             <div><small>SKIN STACK</small><strong>5 lớp</strong><span>micro-normal · roughness · SSS approximation · flush · wetness</span></div>
             <div><small>EYE SYSTEM</small><strong>3 lớp</strong><span>iris · cornea · tear response khi model có mesh tách</span></div>
             <div><small>ANIMATION</small><strong>8 hướng</strong><span>inertial crossfade · foot contact · secondary bones</span></div>
@@ -8657,7 +9214,7 @@
             <div><h3>Nhập GLB nén có kiểm định</h3><p>Hỗ trợ Draco, Meshopt và KTX2. File được giải mã, đo giới hạn GPU và kiểm tra cục bộ trước khi thay nhân vật; không tải lên máy chủ HH.</p><small>Decoder: ${this.characterDecodersReady ? "Draco · Meshopt · KTX2 sẵn sàng" : "GLB cơ bản"} · tối đa ${Math.round(CHARACTER_IMPORT_LIMITS.triangles / 1000)}K triangles</small></div>
             <label class="har-character-file"><span>Chọn GLB ≤ 32 MB</span><input type="file" accept=".glb,model/gltf-binary" data-character-glb></label>
           </div>
-          ${qa ? `<div class="har-section har-character-qa"><h3>Character QA · ${Math.round(qa.score ?? 100)}/100 · ${escapeHtml(qa.digitalHumanTier || "gameplay-rig")}</h3><div class="har-character-runtime-grid"><div><small>Geometry</small><strong>${Number(qa.triangles || 0).toLocaleString("vi-VN")}</strong><span>triangles</span></div><div><small>Head</small><strong>${Number(qa.headVertices || 0).toLocaleString("vi-VN")}</strong><span>vertices · mục tiêu 18–28K</span></div><div><small>Face</small><strong>${qa.faceMorphTargets || 0}/52</strong><span>native facial morph</span></div><div><small>Rig</small><strong>${qa.skinnedMeshes || 0}</strong><span>SkinnedMesh · ${qa.bones || 0} bone</span></div><div><small>Eyes/Hair</small><strong>${qa.separateEyeMeshes || 0}/${qa.hairCardMeshes || 0}</strong><span>mesh tách nhận diện</span></div><div><small>Textures</small><strong>${qa.textures || 0}</strong><span>tối đa ${qa.maxTextureSize || 0}px</span></div><div><small>Clips</small><strong>${qa.animations || 0}</strong><span>${Number(qa.animationSeconds || 0).toFixed(1)} giây</span></div><div><small>LOD groups</small><strong>${qa.lodGroups || 0}</strong><span>${qa.lodGroups ? "GLB explicit" : "HH fallback proxy"}</span></div></div>${qa.warnings?.length ? `<p>${qa.warnings.map(escapeHtml).join("<br>")}</p>` : "<p>Không có cảnh báo tương thích.</p>"}</div>` : ""}
+          ${qa ? `<div class="har-section har-character-qa"><h3>Character QA · ${Math.round(qa.score ?? 100)}/100 · ${escapeHtml(qa.assetClassLabel || qa.digitalHumanTier || "gameplay-rig")}</h3><p><strong>Hero gate ${qa.heroScore || 0}%:</strong> ${qa.heroReady ? "Đạt toàn bộ chuẩn Hero Digital Human V12." : "Asset vẫn chạy an toàn nhưng chỉ được xếp Gameplay/NPC/Fallback."}</p><div class="har-character-runtime-grid"><div><small>Geometry</small><strong>${Number(qa.triangles || 0).toLocaleString("vi-VN")}</strong><span>triangles</span></div><div><small>Head</small><strong>${Number(qa.headVertices || 0).toLocaleString("vi-VN")}</strong><span>vertices · mục tiêu 20–28K</span></div><div><small>Face</small><strong>${qa.faceMorphTargets || 0}/52</strong><span>native facial morph</span></div><div><small>Rig</small><strong>${qa.skinnedMeshes || 0}</strong><span>SkinnedMesh · ${qa.bones || 0} bone</span></div><div><small>Eyes/Hair</small><strong>${qa.separateEyeMeshes || 0}/${qa.hairCardMeshes || 0}</strong><span>mesh tách nhận diện</span></div><div><small>PBR maps</small><strong>N${qa.normalMaps || 0} · R${qa.roughnessMaps || 0} · T${qa.thicknessMaps || 0}</strong><span>normal · roughness · thickness</span></div><div><small>Clips</small><strong>${qa.animations || 0}</strong><span>${Number(qa.animationSeconds || 0).toFixed(1)} giây</span></div><div><small>LOD groups</small><strong>${qa.lodGroups || 0}/4</strong><span>${qa.lodGroups ? "GLB explicit" : "HH fallback proxy"}</span></div></div><div class="har-hero-gate__checks">${(qa.heroChecks || []).map((check) => `<span class="${check.pass ? "is-pass" : "is-missing"}">${check.pass ? "✓" : "○"} ${escapeHtml(check.label)} · ${escapeHtml(check.value)}</span>`).join("")}</div>${qa.warnings?.length ? `<p>${qa.warnings.map(escapeHtml).join("<br>")}</p>` : "<p>Không có cảnh báo tương thích.</p>"}</div>` : ""}
           <div class="har-section"><h3>Motion Lab</h3><p>Xem ngay state machine và crossfade trước khi đưa animation vào gameplay.</p><div class="har-motion-grid">
             ${["idle", "walk", "run", "sprint", "jump", "land", "dodge", "attack1", "attack2", "attack3", "skill", "ultimate", "hit"].map((motion) => `<button class="har-chip ${this.activeAnimation === motion ? "is-active" : ""}" type="button" data-panel-action="character-preview-motion" data-motion="${motion}">${motion}</button>`).join("")}
           </div></div>
@@ -9044,7 +9601,7 @@
       }
     }
 
-    recordAppearanceChange(beforeRecipe) {
+    recordAppearanceChange(beforeRecipe, label = "Cập nhật ngoại hình") {
       const id = this.state.roster.activeId;
       const after = appearanceFingerprint(this.activeAppearanceRecipe(), id);
       if (appearanceFingerprint(beforeRecipe, id) === after) return;
@@ -9053,7 +9610,14 @@
       this.appearanceFuture = [];
       this.appearanceDirty = true;
       this.state.appearance.lastSavedAt = nowIso();
-      this.saveProgress("Cập nhật ngoại hình");
+      this.state.appearance.versionHistory = [...(this.state.appearance.versionHistory || []), {
+        id: uid("look-version"),
+        characterId: id,
+        label: String(label || "Cập nhật ngoại hình").slice(0, 80),
+        recipe: compactAppearanceRecipe(this.activeAppearanceRecipe(), id),
+        createdAt: nowIso()
+      }].slice(-30);
+      this.saveProgress(label);
     }
 
     updateAppearanceDraft(key, value) {

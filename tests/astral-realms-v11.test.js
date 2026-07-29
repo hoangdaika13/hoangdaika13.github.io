@@ -8,8 +8,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const source = read("astral-realms.js");
 const css = read("astral-realms.css");
 
-test("Digital Human V11 defines 52-channel facial performance and complete visemes", () => {
-  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*11/);
+test("Digital Human V12 defines 52-channel facial performance and complete visemes", () => {
+  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*12/);
   assert.match(source, /MEDIAPIPE_FACE_CHANNELS/);
   assert.match(source, /CHARACTER_VISEMES/);
   for (const viseme of ["A", "E", "I", "O", "U", "MBP", "FV", "L", "WQ"]) {
@@ -77,10 +77,10 @@ test("import QA reports real Web Digital Human capability instead of inferring i
     "separateEyeMeshes",
     "hairCardMeshes",
     "digitalHumanTier",
-    "\"web-hero\"",
+    "\"hero-digital-human\"",
     "\"gameplay-rig\""
   ]) assert.ok(source.includes(token), `missing QA signal ${token}`);
-  assert.match(source, /Head mesh dưới 18K vertices/);
+  assert.match(source, /Head mesh dưới 20K vertices/);
   assert.match(source, /\/52 facial morph native/);
 });
 

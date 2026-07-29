@@ -138,7 +138,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
     assert.match(loader, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v303/);
+  assert.match(worker, /hh-identity-portal-v306/);
 });
 
 test("Creator Galaxy keeps mobile layouts, focus visibility and reduced motion", () => {
