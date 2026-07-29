@@ -38,8 +38,8 @@ test("auth requests time out cleanly instead of leaving the form busy forever", 
   assert.match(runtime, /controller\.abort\("auth-timeout"\)/);
   assert.match(runtime, /Máy chủ phản hồi quá lâu/);
   assert.match(runtime, /finally\s*\{[\s\S]*?clearTimeout\(timeoutId\)/);
-  assert.match(html, /auth-platform\.js\?v=12/);
-  assert.match(worker, /auth-platform\.js\?v=12/);
+  assert.match(html, /auth-platform\.js\?v=13/);
+  assert.match(worker, /auth-platform\.js\?v=13/);
   assert.match(runtime, /hh:logout-request/);
   assert.match(runtime, /history\.replaceState\(\{\}, document\.title/);
 });
@@ -64,7 +64,7 @@ test("authentication boots independently from the large application bundle", () 
   const html = read("index.html");
   const runtime = read("auth-platform.js");
   const worker = read("sw.js");
-  assert.match(html, /auth-platform\.js\?v=12[\s\S]*script\.js\?v=144/);
+  assert.match(html, /auth-platform\.js\?v=13[\s\S]*script\.js\?v=144/);
   assert.match(runtime, /realtimeUrl:\s*String\(window\.HH_REALTIME_URL/);
   assert.match(runtime, /socketUrl:\s*String\(window\.HH_SOCKET_URL/);
   assert.match(runtime, /hh:auth-bootstrap-ready/);
@@ -83,6 +83,20 @@ test("auth bootstrap and security notifications cannot block on optional service
   assert.match(security, /new AbortController\(\)/);
   assert.match(security, /setTimeout\(\(\) => controller\.abort\(\), 3500\)/);
   assert.match(security, /signal:\s*controller\.signal/);
+});
+
+test("Google callback prioritizes session exchange and paints home progressively", () => {
+  const runtime = read("auth-platform.js");
+  const api = read("api/auth/[...action].js");
+  const html = read("index.html").replace(/<!--[\s\S]*?-->/g, "");
+  assert.match(runtime, /api\("\/api\/auth\/me\?compact=1",\s*\{\s*timeout:\s*5000\s*\}\)/);
+  assert.match(runtime, /const oauthCallbackPending = params\.has\("authCode"\)/);
+  assert.match(runtime, /if \(!oauthCallbackPending\) Promise\.resolve\(realtimeUrl \? api\("\/api\/auth\/providers"/);
+  assert.doesNotMatch(runtime.slice(runtime.indexOf("const completeAuth"), runtime.indexOf("const loadMe")), /writePublicProfile\(user\)/);
+  assert.match(api, /route === "exchange"[\s\S]*?settleOptionalTasks\(\[[\s\S]*?notifyNewDevice[\s\S]*?recordLoginEvent[\s\S]*?\], 350\)/);
+  assert.match(api, /route === "me"[\s\S]*?req\.query\.compact[\s\S]*?authPublicUser\(auth\.user\)/);
+  assert.match(api, /findOneAndUpdate\([\s\S]*?returnDocument:\s*"after"/);
+  assert.doesNotMatch(html, /accounts\.google\.com\/gsi\/client/);
 });
 
 test("public provider and anonymous session checks work without opening MongoDB", async () => {

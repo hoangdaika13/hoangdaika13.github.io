@@ -108,12 +108,10 @@ test("forms support password managers, inline errors and Caps Lock feedback", ()
   );
 });
 
-test("Google Identity Services and WebAuthn have real client hooks", () => {
+test("backend Google OAuth redirect and WebAuthn have real client hooks", () => {
   assert.match(html, /data-oauth-provider=["']google["']/i);
-  assertConcept(`${html}\n${client}`, "Google Identity Services", [
-    /accounts\.google\.com\/gsi\/client/i,
-    /google\.accounts\.id\.(?:initialize|renderButton|prompt)/
-  ]);
+  assertPattern(client, /location\.assign\(`\$\{realtimeUrl\}\/api\/auth\/google\?returnTo=/, "Google login must redirect through backend OAuth.");
+  assertNoPattern(html, /<script\b[^>]*src=["'][^"']*accounts\.google\.com\/gsi\/client/i, "Do not load Google GIS when login uses a backend redirect.");
   assertPattern(client, /PublicKeyCredential|navigator\.credentials/, "Thiếu feature detection WebAuthn.");
   assertPattern(client, /navigator\.credentials\.(?:create|get)\s*\(/, "Thiếu lời gọi WebAuthn thật.");
   assertPattern(client, /credentials\s*:\s*["']include["']/, "Auth fetch phải gửi cookie phiên bằng credentials: include.");

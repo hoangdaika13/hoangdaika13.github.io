@@ -20,18 +20,24 @@ test("the first paint only loads the shell and identity portal", () => {
 
 test("heavy workspaces load by route and retain deterministic dependencies", () => {
   const loader = read("performance-loader.js");
+  const executableHtml = read("index.html").replace(/<!--[\s\S]*?-->/g, "");
   for (const group of ["home", "platform", "dev", "media", "graphic", "creative", "music", "communication", "work", "game", "learning", "english", "analytics", "support"]) {
     assert.match(loader, new RegExp(`${JSON.stringify(group)}|\\b${group}:`), `${group} is not registered`);
   }
   assert.match(loader, /ensureForRoute/);
-  assert.match(loader, /home:\s*\{[\s\S]*?dashboard-aurora\.css\?v=4/);
-  assert.match(loader, /home:\s*\{[\s\S]*?dashboard-aurora\.js\?v=5/);
+  assert.match(loader, /home:\s*\{[\s\S]*?styles:\s*\[\][\s\S]*?scripts:\s*\[\]/);
+  assert.match(loader, /"home-enhancements":\s*\{[\s\S]*?dashboard-aurora\.css\?v=4/);
+  assert.match(loader, /"home-enhancements":\s*\{[\s\S]*?dashboard-aurora\.js\?v=5/);
+  assert.match(loader, /if \(value === "\/home"\) return \[\]/);
+  assert.match(loader, /requestAnimationFrame\(\(\) => global\.requestAnimationFrame\(afterFirstPaint\)\)/);
+  assert.match(loader, /hh:route-rendered[\s\S]*?scheduleHomeEnhancements/);
   assert.match(loader, /script\.async\s*=\s*false/);
   assert.match(loader, /requestIdleCallback/);
   assert.match(loader, /data-search-watch-open/);
   assert.match(loader, /data-auth-motion-toggle/);
   assert.match(loader, /visual universe is opt-in/i);
   assert.doesNotMatch(loader, /requestIdleCallback\(start,\s*\{\s*timeout:\s*returningUser/);
+  assert.doesNotMatch(executableHtml, /accounts\.google\.com\/gsi\/client/);
 });
 
 test("service worker precaches a small shell and uses stale while revalidate", () => {

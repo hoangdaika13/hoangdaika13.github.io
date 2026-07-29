@@ -432,7 +432,6 @@
       const streak = recordLoginStreak();
       gate.classList.add("auth-success");
       setStatus(`${message} · Chuỗi hoạt động ${streak} ngày`, "success");
-      writePublicProfile(user);
       const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || "#/home";
       sessionStorage.removeItem("hh.auth.pending-route");
       finishSessionCheck();
@@ -460,7 +459,7 @@
           setStatus("Bạn có thể dùng thử công cụ local với chế độ khách.");
           return;
         }
-        const data = await api("/api/auth/me", { timeout: 6500 });
+        const data = await api("/api/auth/me?compact=1", { timeout: 5000 });
         if (restoreEpoch !== authEpoch) return;
         user = data.user || null;
         if (user) {
@@ -833,6 +832,7 @@
     consent?.addEventListener("change", () => localStorage.setItem("hh-tracking-consent", consent.checked ? "yes" : "no"));
 
     const params = new URLSearchParams(location.search);
+    const oauthCallbackPending = params.has("authCode");
     if (params.has("authError")) {
       const message = params.get("authError");
       history.replaceState({}, document.title, `${location.pathname}${location.hash || "#/home"}`);
@@ -844,7 +844,9 @@
     renderReturningUser();
     setSignupStep(1);
     setGateState();
-    Promise.resolve(realtimeUrl ? api("/api/auth/providers", { timeout: 6500 }) : {}).then((providers) => {
+    // On a Google callback, prioritize the one-time exchange request. Provider
+    // discovery is only useful while the sign-in gate remains visible.
+    if (!oauthCallbackPending) Promise.resolve(realtimeUrl ? api("/api/auth/providers", { timeout: 5000 }) : {}).then((providers) => {
       oauthProviders = providers || {};
       const providerNotice = gate.querySelector("[data-register-provider-notice]");
       const registerSubmit = registerForm?.querySelector('button[type="submit"]');
