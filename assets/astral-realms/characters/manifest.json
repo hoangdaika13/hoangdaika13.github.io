@@ -1,5 +1,52 @@
 {
-  "version": 1,
+  "version": 2,
   "pipeline": "metahuman-or-character-creator-to-blender-glb",
-  "sources": []
+  "sources": [
+    {
+      "id": "valid-asian-f-1-casual-local",
+      "provider": "valid-avatar",
+      "modelId": "valid-asian-f-1-casual",
+      "url": "./assets/astral-realms/characters/default/valid-asian-f-1-casual.glb",
+      "label": "VALID Human · Asian F Casual",
+      "quality": "rigged-human-local",
+      "license": "MIT"
+    },
+    {
+      "id": "valid-asian-m-1-casual-local",
+      "provider": "valid-avatar",
+      "modelId": "valid-asian-m-1-casual",
+      "url": "./assets/astral-realms/characters/default/valid-asian-m-1-casual.glb",
+      "label": "VALID Human · Asian M Casual",
+      "quality": "rigged-human-local",
+      "license": "MIT"
+    },
+    {
+      "id": "valid-black-f-1-casual-local",
+      "provider": "valid-avatar",
+      "modelId": "valid-black-f-1-casual",
+      "url": "./assets/astral-realms/characters/default/valid-black-f-1-casual.glb",
+      "label": "VALID Human · Black F Casual",
+      "quality": "rigged-human-local",
+      "license": "MIT"
+    },
+    {
+      "id": "valid-white-m-1-casual-local",
+      "provider": "valid-avatar",
+      "modelId": "valid-white-m-1-casual",
+      "url": "./assets/astral-realms/characters/default/valid-white-m-1-casual.glb",
+      "label": "VALID Human · White M Casual",
+      "quality": "rigged-human-local",
+      "license": "MIT"
+    }
+  ],
+  "catalogs": [
+    {
+      "id": "valid-avatars",
+      "provider": "valid-avatar",
+      "url": "./assets/astral-realms/characters/valid-avatars.json",
+      "baseUrl": "https://cdn.jsdelivr.net/gh/c-frame/valid-avatars-glb@c539a28/",
+      "label": "VALID Human",
+      "license": "MIT"
+    }
+  ]
 }

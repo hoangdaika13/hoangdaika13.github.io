@@ -73,6 +73,14 @@
     rightEye: ["RightEye", "eye.R", "mixamorigRightEye", "eye_r"],
     leftHand: ["LeftHand", "hand.L", "mixamorigLeftHand", "hand_l"],
     rightHand: ["RightHand", "hand.R", "mixamorigRightHand", "hand_r"],
+    leftUpperArm: ["LeftArm", "upper_arm.L", "mixamorigLeftArm", "upperarm_l"],
+    rightUpperArm: ["RightArm", "upper_arm.R", "mixamorigRightArm", "upperarm_r"],
+    leftForeArm: ["LeftForeArm", "forearm.L", "mixamorigLeftForeArm", "lowerarm_l"],
+    rightForeArm: ["RightForeArm", "forearm.R", "mixamorigRightForeArm", "lowerarm_r"],
+    leftUpLeg: ["LeftUpLeg", "thigh.L", "mixamorigLeftUpLeg", "thigh_l"],
+    rightUpLeg: ["RightUpLeg", "thigh.R", "mixamorigRightUpLeg", "thigh_r"],
+    leftLeg: ["LeftLeg", "shin.L", "mixamorigLeftLeg", "calf_l"],
+    rightLeg: ["RightLeg", "shin.R", "mixamorigRightLeg", "calf_r"],
     leftFoot: ["LeftFoot", "foot.L", "mixamorigLeftFoot", "foot_l"],
     rightFoot: ["RightFoot", "foot.R", "mixamorigRightFoot", "foot_r"]
   });
@@ -131,6 +139,7 @@
   });
   const CHARACTER_PIPELINE = Object.freeze([
     { id: "character-creator", name: "Character Creator 5", role: "Web-ready GLB với morph và material đã bake", state: "Chờ manifest asset" },
+    { id: "valid-avatar", name: "VALID Human Library", role: "210 người 3D đa dạng, tải theo nhu cầu", state: "MIT · CDN pin c539a28" },
     { id: "metahuman", name: "MetaHuman Web Hero", role: "GLB đã retopology cho hero/cinematic", state: "Kiểm tra khi nhập" },
     { id: "makehuman", name: "MakeHuman / MPFB", role: "Nguồn NPC được tối ưu bên ngoài", state: "Kiểm tra skeleton" },
     { id: "readyplayerme", name: "Ready Player Me", role: "Avatar GLB do người chơi tạo", state: "Draco/Meshopt/KTX2" },
@@ -140,7 +149,7 @@
     { id: "environment", name: "HH Volumetric World", role: "Địa hình mesh 3D và panorama chỉ dùng làm IBL", state: "Không dùng ảnh làm phông nền" },
     { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V11" }
   ]);
-  const APPEARANCE_VERSION = 5;
+  const APPEARANCE_VERSION = 6;
   const APPEARANCE_GROUPS = Object.freeze([
     { id: "face", label: "Khuôn mặt", focus: "head", controls: [["headLength", "Chiều dài đầu"], ["foreheadHeight", "Chiều cao trán"], ["cheekboneWidth", "Gò má"], ["cheekFullness", "Độ đầy má"], ["jawWidth", "Độ rộng hàm"], ["jawAngle", "Góc hàm"], ["chinLength", "Chiều dài cằm"], ["faceFullness", "Độ đầy khuôn mặt"]] },
     { id: "eyes", label: "Mắt", focus: "head", controls: [["eyeSize", "Kích thước mắt"], ["eyeSpacing", "Khoảng cách mắt"], ["eyeDepth", "Độ sâu mắt"], ["upperLid", "Mí trên"], ["lowerLid", "Mí dưới"], ["eyeAngle", "Góc mắt"], ["irisSize", "Kích thước tròng"], ["pupilSize", "Kích thước đồng tử"], ["eyeReflection", "Phản chiếu mắt"], ["eyeLeft", "Mắt trái"], ["eyeRight", "Mắt phải"]] },
@@ -161,7 +170,14 @@
     APPEARANCE_GROUPS.flatMap((group) => group.controls.map(([id, label]) => [id, { id, label, group: group.id, defaultValue: group.defaultValue ?? 0.5 }]))
   ));
   const APPEARANCE_ASSETS = Object.freeze({
-    baseModels: ["human-adult-a01", "human-adult-b01"],
+    baseModels: [
+      "valid-asian-f-1-casual",
+      "valid-asian-m-1-casual",
+      "valid-black-f-1-casual",
+      "valid-white-m-1-casual",
+      "human-adult-a01",
+      "human-adult-b01"
+    ],
     skins: ["warm-04", "neutral-03", "cool-02", "deep-05"],
     hairs: ["astral-layered-07", "aurora-short-02", "void-long-04", "solar-braid-03"],
     beards: ["none", "shadow-01", "short-boxed-02", "astral-goatee-03"],
@@ -191,14 +207,26 @@
   });
   const BUILTIN_CHARACTER_ASSETS = Object.freeze({
     "human-adult-a01": "./assets/astral-realms/hh-human-asteria-v1.glb",
-    "human-adult-b01": "./assets/astral-realms/hh-human-vanguard-v1.glb"
+    "human-adult-b01": "./assets/astral-realms/hh-human-vanguard-v1.glb",
+    "valid-asian-f-1-casual": "./assets/astral-realms/hh-human-asteria-v1.glb",
+    "valid-asian-m-1-casual": "./assets/astral-realms/hh-human-vanguard-v1.glb",
+    "valid-black-f-1-casual": "./assets/astral-realms/hh-human-asteria-v1.glb",
+    "valid-white-m-1-casual": "./assets/astral-realms/hh-human-vanguard-v1.glb"
   });
   // Optional web-ready exports from the recommended pipeline:
   // MetaHuman/Character Creator/MPFB -> Blender retopology -> optimized GLB.
   // The manifest is deliberately optional so a missing premium asset never
   // blocks the game; the loader falls back to the bundled GLB, then procedural.
-  const CHARACTER_PIPELINE_SOURCES = Object.freeze(["auto", "metahuman", "character-creator", "mpfb", "bundled", "procedural"]);
+  const CHARACTER_PIPELINE_SOURCES = Object.freeze(["auto", "metahuman", "character-creator", "mpfb", "valid-avatar", "bundled", "procedural"]);
   const CHARACTER_PIPELINE_MANIFEST_URL = "./assets/astral-realms/characters/manifest.json";
+  const LICENSED_ENVIRONMENT_ASSETS = Object.freeze({
+    boulder: "./assets/astral-realms/environment/boulder_01.glb",
+    grass: "./assets/astral-realms/environment/grass_medium_01.glb",
+    mossRocks: "./assets/astral-realms/environment/rock_moss_set_01.glb",
+    shrub: "./assets/astral-realms/environment/shrub_01.glb",
+    deadTree: "./assets/astral-realms/environment/dead_tree_trunk_02.glb",
+    fern: "./assets/astral-realms/environment/fern_02.glb"
+  });
   const CHARACTER_ATLAS_INDEX = Object.freeze({ lyra: 0, cael: 1, nyx: 2, sol: 3 });
   const ELEMENT_REACTIONS = Object.freeze({
     "cryo+plasma": { name: "Sốc nhiệt", multiplier: 1.55, color: "#ff9bd6" },
@@ -364,9 +392,15 @@
 
   function defaultAppearanceRecipe(characterId = "lyra") {
     const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
+    const realisticBase = {
+      lyra: "valid-asian-f-1-casual",
+      cael: "valid-asian-m-1-casual",
+      nyx: "valid-black-f-1-casual",
+      sol: "valid-white-m-1-casual"
+    }[characterId] || "valid-asian-f-1-casual";
     return {
       appearanceVersion: APPEARANCE_VERSION,
-      baseModel: ["cael", "sol"].includes(characterId) ? "human-adult-b01" : "human-adult-a01",
+      baseModel: realisticBase,
       sourceProvider: "auto",
       bodyPreset: "balanced",
       style: "human-cinematic",
@@ -400,10 +434,18 @@
       Number.isFinite(Number(recipe.morphs?.[control.id])) ? clamp(recipe.morphs[control.id], 0, 1) : control.defaultValue
     ]));
     const validHex = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value).toLowerCase() : fallback;
+    const requestedModel = String(recipe.baseModel || "").slice(0, 80);
+    const isCatalogModel = /^valid-[a-z0-9-]{3,72}$/.test(requestedModel);
+    const isLegacyRecipe = Number(recipe.appearanceVersion || 0) < APPEARANCE_VERSION;
+    const normalizedBaseModel = isLegacyRecipe && ["human-adult-a01", "human-adult-b01"].includes(requestedModel)
+      ? base.baseModel
+      : APPEARANCE_ASSETS.baseModels.includes(requestedModel) || isCatalogModel
+        ? requestedModel
+        : base.baseModel;
     return {
       ...base,
       appearanceVersion: APPEARANCE_VERSION,
-      baseModel: APPEARANCE_ASSETS.baseModels.includes(recipe.baseModel) ? recipe.baseModel : base.baseModel,
+      baseModel: normalizedBaseModel,
       sourceProvider: CHARACTER_PIPELINE_SOURCES.includes(recipe.sourceProvider) ? recipe.sourceProvider : base.sourceProvider,
       bodyPreset: APPEARANCE_PRESETS[recipe.bodyPreset] ? recipe.bodyPreset : base.bodyPreset,
       style: ["human-cinematic", "anime-realistic"].includes(recipe.style) ? recipe.style : base.style,
@@ -969,6 +1011,8 @@
       this.builtInCharacterSources = new Map();
       this.characterPipelineManifest = [];
       this.characterPipelineStatus = "not-configured";
+      this.licensedEnvironmentAssets = new Map();
+      this.licensedEnvironmentStatus = "pending";
       this.builtInCharacterStatus = "pending";
       this.characterDetailTextures = null;
       this.lastCharacterQa = null;
@@ -1411,6 +1455,8 @@
         await this.loadPhotorealAssets();
         this.setLoading(62, "Đang khởi tạo GLB, skeleton, morph và animation mixer...");
         await this.loadCharacterModules();
+        this.setLoading(66, "Đang nạp cây, đá và thảm thực vật CC0...");
+        await this.loadLicensedEnvironmentAssets();
         this.setLoading(69, "Đang nạp hai Human Rig 3D và chuyển động toàn thân...");
         await this.loadCharacterAssetsFromPipeline();
         this.createWorld();
@@ -1473,12 +1519,19 @@
       const runtime = this.characterRuntimes.get(id);
       const fit = this.buildAppearanceFitReport(recipe, mesh);
       const modelLabels = {
+        "valid-asian-f-1-casual": ["Asteria Real Human", "VALID rig · full-body · facial morph · local GLB"],
+        "valid-asian-m-1-casual": ["Cael Real Human", "VALID rig · full-body · facial morph · local GLB"],
+        "valid-black-f-1-casual": ["Nyx Real Human", "VALID rig · full-body · facial morph · local GLB"],
+        "valid-white-m-1-casual": ["Sol Real Human", "VALID rig · full-body · facial morph · local GLB"],
         "human-adult-a01": ["Asteria Human", "Human Rig · 16K vertices · Digital Human runtime"],
         "human-adult-b01": ["Vanguard Human", "Combat Rig · 7K vertices · LOD hiệu năng"]
       };
       const faceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
       const boneCount = runtime?.bones ? Object.values(runtime.bones).filter(Boolean).length : 0;
       const visibility = this.genesisVisibility?.report;
+      const catalogModels = [...new Map(this.characterPipelineManifest
+        .filter((entry) => entry.provider === "valid-avatar")
+        .map((entry) => [entry.modelId, entry])).values()];
       const dna = encodeCharacterDNA(recipe, id);
       const option = (value, label, selected) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
       return `
@@ -1491,7 +1544,7 @@
           <div><small>FACE DRIVER</small><strong>${faceChannels} native / 52 fallback</strong><span>${boneCount} bone nhận diện · không tạo số giả</span></div>
           <div><small>SURFACE</small><strong>5 lớp</strong><span>pore · roughness · SSS · flush · wetness</span></div>
           <div><small>MOTION</small><strong>8 hướng</strong><span>crossfade · inertial response · IK-ready</span></div>
-          <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "near")}</strong><span>${visibility?.ready ? "Đã xác nhận trong camera" : "Procedural human đang giữ khung"}</span></div>
+          <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "near")}</strong><span data-genesis-lod-status>${visibility?.ready ? "Đã xác nhận trong camera" : "Đang giữ fallback an toàn"}</span></div>
         </div>
         <div class="har-genesis-fit ${fit.level}" aria-live="polite">
           <div><span class="har-genesis-fit__orb"></span><div><small>FIT & SILHOUETTE CHECK</small><strong>${escapeHtml(fit.label)} · ${fit.score}%</strong><span>${escapeHtml(fit.summary)}</span></div></div>
@@ -1506,6 +1559,11 @@
         </label>
         <div class="har-genesis-block">
           <div class="har-genesis-block__title"><strong>Nền cơ thể 3D</strong><span>${runtime?.bones ? Object.keys(runtime.bones).length : 0} bone nhận diện</span></div>
+          <label class="har-field">Thư viện người thật · ${catalogModels.length} model
+            <select data-genesis-catalog>
+              ${catalogModels.map((entry) => `<option value="${escapeHtml(entry.modelId)}" ${recipe.baseModel === entry.modelId ? "selected" : ""}>${escapeHtml(entry.label)}</option>`).join("")}
+            </select>
+          </label>
           <div class="har-genesis-models">
             ${Object.entries(modelLabels).map(([value, item]) => `<button type="button" class="${recipe.baseModel === value ? "is-active" : ""}" data-genesis-base="${value}"><i></i><strong>${item[0]}</strong><span>${item[1]}</span></button>`).join("")}
           </div>
@@ -1609,7 +1667,15 @@
       if (content) content.innerHTML = this.renderGenesisCreator();
       const recipe = this.activeAppearanceRecipe();
       const name = this.root.querySelector("[data-genesis-model-name]");
-      if (name) name.textContent = recipe.baseModel === "human-adult-b01" ? "VANGUARD HUMAN" : "ASTERIA HUMAN";
+      if (name) {
+        name.textContent = ({
+          "valid-asian-f-1-casual": "ASTERIA REAL HUMAN",
+          "valid-asian-m-1-casual": "CAEL REAL HUMAN",
+          "valid-black-f-1-casual": "NYX REAL HUMAN",
+          "valid-white-m-1-casual": "SOL REAL HUMAN",
+          "human-adult-b01": "VANGUARD HUMAN"
+        })[recipe.baseModel] || "ASTERIA HUMAN";
+      }
       const status = this.root.querySelector("[data-genesis-status]");
       if (status) {
         const runtime = this.characterRuntimes.get(this.state.roster.activeId);
@@ -1653,15 +1719,15 @@
       this.genesisCamera.position.set(0, 1.55, 5.2);
       this.genesisCameraTarget = new THREE.Vector3(0, 1.48, 0);
 
-      const ambient = new THREE.HemisphereLight(0xc8edff, 0x11101b, 1.48);
+      const ambient = new THREE.HemisphereLight(0xc8edff, 0x11101b, 0.92);
       ambient.name = "GenesisStudioAmbient";
-      const key = new THREE.DirectionalLight(0xffffff, 3.1);
+      const key = new THREE.DirectionalLight(0xffffff, 2.05);
       key.name = "GenesisStudioKey";
       key.position.set(3.8, 5.4, 4.7);
-      const fill = new THREE.DirectionalLight(0x79cfff, 1.7);
+      const fill = new THREE.DirectionalLight(0x79cfff, 0.88);
       fill.name = "GenesisStudioFill";
       fill.position.set(-4.2, 2.7, 2.2);
-      const rim = new THREE.PointLight(0xff68cb, 3.4, 16, 1.5);
+      const rim = new THREE.PointLight(0xff68cb, 1.65, 16, 1.5);
       rim.name = "GenesisStudioRim";
       rim.position.set(0.5, 3.3, -3.2);
       this.genesisScene.add(ambient, key, fill, rim);
@@ -1896,7 +1962,7 @@
       this.genesisCameraTarget.set(center.x, targetY, center.z);
       const visibleHeight = focus === "head" ? Math.max(size.y * 0.38, size.x * 1.3) : size.y;
       const fov = this.THREE.MathUtils.degToRad(this.genesisCamera.fov);
-      this.cameraDistance = clamp((visibleHeight * 0.62) / Math.tan(fov / 2), 2.7, 9.2);
+      this.cameraDistance = clamp((visibleHeight * 0.82) / Math.tan(fov / 2), 2.7, 9.2);
       this.updateGenesisCamera();
       return true;
     }
@@ -1950,7 +2016,7 @@
       const distance = Math.max(0.01, this.genesisCamera.position.distanceTo(sphere.center));
       const projectedRatio = (2 * Math.atan(Math.max(0.001, sphere.radius) / distance)) / THREE.MathUtils.degToRad(this.genesisCamera.fov);
       const centered = Math.abs(projectedCenter.x) <= 0.84 && Math.abs(projectedCenter.y) <= 0.84 && projectedCenter.z >= -1 && projectedCenter.z <= 1;
-      const adequateSize = projectedRatio >= 0.22 && projectedRatio <= 1.08 && size.y >= 0.35;
+      const adequateSize = projectedRatio >= 0.18 && projectedRatio <= 1.22 && size.y >= 0.35;
       const ready = finiteBounds && triangles > 0 && visibleMaterials > 0 && inFrustum && centered && adequateSize;
       return {
         ready,
@@ -1962,7 +2028,21 @@
         visibleMaterials,
         projectedRatio,
         size: { x: size.x, y: size.y, z: size.z },
-        reason: ready ? "ready" : !finiteBounds ? "invalid-bounds" : !triangles ? "no-triangles" : !visibleMaterials ? "invisible-material" : !inFrustum ? "outside-camera" : !centered ? "off-center" : "too-small"
+        reason: ready
+          ? "ready"
+          : !finiteBounds
+            ? "invalid-bounds"
+            : !triangles
+              ? "no-triangles"
+              : !visibleMaterials
+                ? "invisible-material"
+                : !inFrustum
+                  ? "outside-camera"
+                  : !centered
+                    ? "off-center"
+                    : projectedRatio > 1.22
+                      ? "too-large"
+                      : "too-small"
       };
     }
 
@@ -1998,10 +2078,17 @@
       const report = this.getGenesisVisibilityReport(this.genesisActualModel);
       report.renderedTriangles = renderedTriangles;
       report.ready = report.ready && renderedTriangles > 0;
+      this.root.dataset.characterProjection = Number.isFinite(report.projectedRatio)
+        ? report.projectedRatio.toFixed(3)
+        : "invalid";
+      this.root.dataset.characterBounds = report.size
+        ? `${report.size.x.toFixed(2)}x${report.size.y.toFixed(2)}x${report.size.z.toFixed(2)}`
+        : "missing";
       this.genesisVisibility ||= { consecutiveFrames: 0, validated: false, crossfadeStartedAt: 0, startedAt: time, report: null };
       this.genesisVisibility.report = report;
       this.genesisVisibility.consecutiveFrames = report.ready ? this.genesisVisibility.consecutiveFrames + 1 : 0;
       const status = this.root.querySelector("[data-genesis-status]");
+      const lodStatus = this.root.querySelector("[data-genesis-lod-status]");
 
       if (!this.genesisVisibility.validated && this.genesisVisibility.consecutiveFrames >= 2) {
         this.genesisVisibility.validated = true;
@@ -2016,6 +2103,7 @@
           this.genesisFallbackModel.visible = false;
           this.root.dataset.characterPreview = "3d";
           if (status) status.textContent = `${report.triangles.toLocaleString("vi-VN")} triangles · trong camera · 2/2 frame`;
+          if (lodStatus) lodStatus.textContent = "Đã xác nhận trong camera";
         } else {
           this.root.dataset.characterPreview = "crossfade";
           if (status) status.textContent = `Đang chuyển sang GLB · ${Math.round(progress * 100)}%`;
@@ -2024,9 +2112,10 @@
         this.root.dataset.characterPreview = "validating";
         this.genesisFallbackModel.visible = true;
         this.setGenesisModelOpacity(this.genesisFallbackModel, 1);
+        if (lodStatus) lodStatus.textContent = "Đang giữ fallback an toàn";
         if (time - this.genesisVisibility.startedAt > 1200) {
           this.setGenesisModelOpacity(this.genesisActualModel, 0);
-          if (status) status.textContent = `Procedural human đang hoạt động · GLB: ${report.reason}`;
+          if (status) status.textContent = `GLB đang chờ QA · ${report.reason} · khung ${this.root.dataset.characterProjection}`;
         } else if (status) {
           status.textContent = `Đang kiểm tra GLB · ${this.genesisVisibility.consecutiveFrames}/2 frame`;
         }
@@ -2233,7 +2322,10 @@
       this.root.classList.remove("is-genesis");
       this.genesisActive = false;
       this.genesisCompleting = false;
-      this.playerMesh?.position.set(this.state.player.x, this.state.player.y, this.state.player.z);
+      this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
+      this.cameraPitch = 0.42;
+      this.cameraDistance = 6.5;
+      this.updateCamera(true, 0.016);
       this.updateUi(true);
       this.beginRuntimeSession(`${this.state.player.name} đã sẵn sàng · bước vào H-Central.`);
     }
@@ -2264,6 +2356,7 @@
       Object.values(this.photorealAssets).forEach((texture) => texture?.dispose?.());
       this.photorealAssets = { panorama: null };
       this.disposeBuiltInCharacterAssets();
+      this.disposeLicensedEnvironmentAssets();
       this.photorealStatus = "pending";
       if (this.root) this.root.dataset.characterPreview = "fallback";
     }
@@ -2432,6 +2525,46 @@
       this.root.dataset.characterDecoders = this.characterDecodersReady ? "ready" : "basic";
     }
 
+    async loadLicensedEnvironmentAssets() {
+      if (!this.GLTFLoaderClass) {
+        this.licensedEnvironmentStatus = "fallback";
+        return;
+      }
+      this.licensedEnvironmentStatus = "loading";
+      const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
+      if (manager) manager.hhPreferTextureLoader = true;
+      const loader = new this.GLTFLoaderClass(manager);
+      if (this.MeshoptDecoder) loader.setMeshoptDecoder(this.MeshoptDecoder);
+      const entries = Object.entries(LICENSED_ENVIRONMENT_ASSETS);
+      const results = await Promise.allSettled(entries.map(async ([id, url]) => {
+        const gltf = await Promise.race([
+          loader.loadAsync(url),
+          new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Environment timeout: ${id}`)), 12000))
+        ]);
+        gltf.scene?.traverse?.((object) => {
+          if (!object.isMesh) return;
+          object.castShadow = true;
+          object.receiveShadow = true;
+          object.frustumCulled = true;
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.filter(Boolean).forEach((material) => {
+            material.envMapIntensity = Math.max(0.35, Number(material.envMapIntensity || 0));
+            material.needsUpdate = true;
+          });
+        });
+        return [id, gltf];
+      }));
+      results.forEach((result) => {
+        if (result.status === "fulfilled") this.licensedEnvironmentAssets.set(result.value[0], result.value[1]);
+      });
+      this.licensedEnvironmentStatus = this.licensedEnvironmentAssets.size === entries.length
+        ? "ready"
+        : this.licensedEnvironmentAssets.size
+          ? "partial"
+          : "fallback";
+      this.root.dataset.licensedEnvironment = this.licensedEnvironmentStatus;
+    }
+
     async loadCharacterPipelineManifest() {
       this.characterPipelineManifest = [];
       this.characterPipelineStatus = "not-configured";
@@ -2440,14 +2573,49 @@
         if (!response.ok) return;
         const payload = await response.json();
         const entries = Array.isArray(payload?.sources) ? payload.sources : [];
-        this.characterPipelineManifest = entries.map((entry) => ({
+        const normalizedEntries = entries.map((entry) => ({
           id: String(entry?.id || "").slice(0, 80),
           provider: CHARACTER_PIPELINE_SOURCES.includes(entry?.provider) ? entry.provider : "",
           modelId: String(entry?.modelId || "").slice(0, 60),
           url: String(entry?.url || "").slice(0, 240),
           label: String(entry?.label || entry?.provider || "Web GLB").slice(0, 100),
-          quality: String(entry?.quality || "web").slice(0, 32)
+          quality: String(entry?.quality || "web").slice(0, 32),
+          image: String(entry?.image || "").slice(0, 240),
+          license: String(entry?.license || "").slice(0, 40),
+          ethnicity: String(entry?.ethnicity || "").slice(0, 40),
+          gender: String(entry?.gender || "").slice(0, 8),
+          outfit: String(entry?.outfit || "").slice(0, 40)
         })).filter((entry) => entry.provider && entry.modelId && entry.url);
+        const catalogs = Array.isArray(payload?.catalogs) ? payload.catalogs : [];
+        const catalogResults = await Promise.allSettled(catalogs.map(async (catalog) => {
+          const provider = CHARACTER_PIPELINE_SOURCES.includes(catalog?.provider) ? catalog.provider : "";
+          const catalogUrl = String(catalog?.url || "").slice(0, 240);
+          const baseUrl = String(catalog?.baseUrl || "").slice(0, 240);
+          if (!provider || !catalogUrl || !/^https:\/\//.test(baseUrl)) return [];
+          const catalogResponse = await fetch(catalogUrl, { cache: "force-cache" });
+          if (!catalogResponse.ok) return [];
+          const records = await catalogResponse.json();
+          if (!Array.isArray(records)) return [];
+          return records.slice(0, 400).map((record) => {
+            const label = String(record?.text || "Human").slice(0, 100);
+            const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 64);
+            return {
+              id: `${provider}-${slug}`,
+              provider,
+              modelId: `valid-${slug}`,
+              url: `${baseUrl}${String(record?.model || "").replace(/^\/+/, "")}`.slice(0, 300),
+              image: `${baseUrl}${String(record?.image || "").replace(/^\/+/, "")}`.slice(0, 300),
+              label: `${String(catalog?.label || "VALID Human").slice(0, 40)} · ${label}`,
+              quality: "rigged-human",
+              license: String(catalog?.license || "MIT").slice(0, 40),
+              ethnicity: String(record?.ethnicity || "").slice(0, 40),
+              gender: String(record?.gender || "").slice(0, 8),
+              outfit: String(record?.outfit || "").slice(0, 40)
+            };
+          }).filter((entry) => entry.modelId.length > 8 && /\.glb(?:$|\?)/i.test(entry.url));
+        }));
+        const catalogEntries = catalogResults.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+        this.characterPipelineManifest = [...normalizedEntries, ...catalogEntries];
         this.characterPipelineStatus = this.characterPipelineManifest.length ? "configured" : "empty";
       } catch {
         // Missing optional manifest is valid: bundled/procedural remain usable.
@@ -2459,13 +2627,19 @@
       const preferred = CHARACTER_PIPELINE_SOURCES.includes(requestedProvider) ? requestedProvider : "auto";
       if (preferred === "procedural") return [];
       const order = preferred === "auto"
-        ? ["metahuman", "character-creator", "mpfb", "bundled"]
+        ? ["metahuman", "character-creator", "mpfb", "valid-avatar", "bundled"]
         : [preferred, "bundled"];
       const optional = this.characterPipelineManifest
         .filter((entry) => entry.modelId === modelId && order.includes(entry.provider))
         .sort((a, b) => order.indexOf(a.provider) - order.indexOf(b.provider));
-      const bundled = BUILTIN_CHARACTER_ASSETS[modelId]
-        ? [{ id: `bundled-${modelId}`, provider: "bundled", modelId, url: BUILTIN_CHARACTER_ASSETS[modelId], label: "HH bundled GLB", quality: "fallback-web" }]
+      const fallbackUrl = BUILTIN_CHARACTER_ASSETS[modelId]
+        || (/^valid-.*-f-/.test(modelId)
+          ? BUILTIN_CHARACTER_ASSETS["human-adult-a01"]
+          : /^valid-/.test(modelId)
+            ? BUILTIN_CHARACTER_ASSETS["human-adult-b01"]
+            : "");
+      const bundled = fallbackUrl
+        ? [{ id: `bundled-${modelId}`, provider: "bundled", modelId, url: fallbackUrl, label: "HH bundled GLB fallback", quality: "fallback-web" }]
         : [];
       const result = [];
       [...optional, ...bundled].forEach((entry) => {
@@ -2544,7 +2718,11 @@
         manager.onError = () => { assetLoadError = true; };
       }
       const loader = new this.GLTFLoaderClass(manager);
-      const entries = Object.keys(BUILTIN_CHARACTER_ASSETS);
+      if (this.MeshoptDecoder) loader.setMeshoptDecoder(this.MeshoptDecoder);
+      const recipeModels = Object.values(this.state.appearance?.recipes || {})
+        .map((recipe) => String(recipe?.baseModel || ""))
+        .filter(Boolean);
+      const entries = [...new Set(["human-adult-b01", ...recipeModels])];
       const results = await Promise.allSettled(entries.map(async (id) => {
         const recipes = Object.values(this.state.appearance?.recipes || {}).filter((recipe) => recipe?.baseModel === id);
         const requestedProvider = recipes.find((recipe) => recipe.sourceProvider && recipe.sourceProvider !== "auto")?.sourceProvider
@@ -2557,9 +2735,10 @@
         let lastError = null;
         for (const candidate of this.resolveCharacterAssetCandidates(id, requestedProvider)) {
           try {
+            assetLoadError = false;
             const gltf = await Promise.race([
               loader.loadAsync(candidate.url),
-              new Promise((_, reject) => root.setTimeout(() => reject(new Error(`QuÃ¡ thá»i gian táº£i ${candidate.url}`)), candidate.provider === "bundled" ? 12000 : 4500))
+              new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Quá thời gian tải ${candidate.url}`)), candidate.provider === "bundled" ? 12000 : 15000))
             ]);
             gltf.userData ||= {};
             gltf.userData.hhSourceProvider = candidate.provider;
@@ -2567,7 +2746,6 @@
             gltf.userData.hhAssetPath = candidate.url;
             await new Promise((resolve) => root.setTimeout(resolve, 320));
             this.sanitizeBuiltInCharacterAsset(gltf);
-            if (assetLoadError) gltf.userData.hhTextureFallbacks = Math.max(1, Number(gltf.userData?.hhTextureFallbacks || 0));
             gltf.scene.traverse?.((object) => {
               if (!object.isMesh && !object.isSkinnedMesh) return;
               object.userData ||= {};
@@ -2588,7 +2766,7 @@
             lastError = error;
           }
         }
-        throw lastError || new Error(`KhÃ´ng cÃ³ asset cho ${id}`);
+        throw lastError || new Error(`Không có asset cho ${id}`);
       }));
       results.forEach((result) => {
         if (result.status !== "fulfilled") return;
@@ -2607,6 +2785,10 @@
           ? "partial"
           : "fallback";
       this.root.dataset.builtInCharacter = this.builtInCharacterStatus;
+      const activeModelId = this.activeAppearanceRecipe()?.baseModel || "";
+      const activeSource = this.builtInCharacterSources.get(activeModelId);
+      this.root.dataset.characterModel = activeModelId || "fallback";
+      this.root.dataset.characterSource = activeSource?.provider || "fallback";
     }
 
     sanitizeBuiltInCharacterAsset(gltf) {
@@ -2677,6 +2859,12 @@
       this.builtInCharacterAssets.clear();
       this.builtInCharacterSources.clear();
       this.builtInCharacterStatus = "pending";
+    }
+
+    disposeLicensedEnvironmentAssets() {
+      this.licensedEnvironmentAssets.forEach((gltf) => this.disposeCharacterObject(gltf.scene));
+      this.licensedEnvironmentAssets.clear();
+      this.licensedEnvironmentStatus = "pending";
     }
 
     createTerrainTexture() {
@@ -2807,6 +2995,7 @@
       this.createDungeon();
       this.createWater();
       this.createInstancedNature();
+      this.createLicensedEnvironmentDecor();
       this.createElementalPuzzles();
       this.createWeatherField();
       this.createLivingWorldEffects();
@@ -3041,6 +3230,60 @@
         rocks.castShadow = quality === "high" || quality === "cinematic";
         rocks.receiveShadow = true;
         group.add(rocks);
+      });
+    }
+
+    createLicensedEnvironmentDecor() {
+      if (!this.licensedEnvironmentAssets.size) return;
+      const THREE = this.THREE;
+      const quality = this.state.settings.quality;
+      const amountScale = quality === "low" ? 0.42 : quality === "medium" ? 0.68 : 1;
+      const placements = [
+        ["boulder", "central", 9, 1.8, 28],
+        ["boulder", "crimson", 8, 2.3, 29],
+        ["mossRocks", "aurora", 10, 1.45, 27],
+        ["mossRocks", "void", 7, 1.65, 28],
+        ["shrub", "aurora", 15, 1.75, 29],
+        ["shrub", "void", 10, 1.95, 29],
+        ["deadTree", "void", 6, 5.8, 27],
+        ["deadTree", "crimson", 4, 4.6, 28],
+        ["fern", "aurora", 18, 1.1, 29],
+        ["fern", "void", 12, 1.25, 28],
+        ["grass", "aurora", 22, 0.9, 30]
+      ];
+      const seeded = (index, salt) => {
+        const value = Math.sin(index * 71.137 + salt * 19.71) * 43758.5453;
+        return value - Math.floor(value);
+      };
+      const instantiate = (source, targetHeight) => {
+        const wrapper = new THREE.Group();
+        const object = source.scene.clone(true);
+        object.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(object);
+        const size = bounds.getSize(new THREE.Vector3());
+        const center = bounds.getCenter(new THREE.Vector3());
+        const fit = targetHeight / Math.max(0.001, size.y);
+        object.scale.setScalar(fit);
+        object.position.set(-center.x * fit, -bounds.min.y * fit, -center.z * fit);
+        wrapper.add(object);
+        wrapper.userData = { licensedAsset: true, provider: "Poly Haven", lodPriority: "environment-near" };
+        return wrapper;
+      };
+      placements.forEach(([assetId, zoneId, requestedCount, targetHeight, maxRadius], profileIndex) => {
+        const source = this.licensedEnvironmentAssets.get(assetId);
+        const zone = ZONES.find((entry) => entry.id === zoneId);
+        if (!source?.scene || !zone) return;
+        const parent = this.streamingGroups.get(zoneId) || this.world;
+        const count = Math.max(2, Math.round(requestedCount * amountScale));
+        for (let index = 0; index < count; index += 1) {
+          const object = instantiate(source, targetHeight * (0.78 + seeded(index, profileIndex + 4) * 0.5));
+          const angle = seeded(index, profileIndex + 9) * Math.PI * 2;
+          const radius = 8 + seeded(index, profileIndex + 13) * Math.max(2, maxRadius - 8);
+          object.position.set(zone.x + Math.cos(angle) * radius, 1.05, zone.z + Math.sin(angle) * radius);
+          object.rotation.y = seeded(index, profileIndex + 17) * Math.PI * 2;
+          object.userData.zoneId = zoneId;
+          parent.add(object);
+        }
       });
     }
 
@@ -4639,7 +4882,8 @@
 
     createBuiltInRiggedCharacter(profile, scale = 1) {
       const recipe = normalizeAppearanceRecipe(this.state.appearance?.recipes?.[profile.id], profile.id);
-      const modelId = BUILTIN_CHARACTER_ASSETS[recipe.baseModel] ? recipe.baseModel : defaultAppearanceRecipe(profile.id).baseModel;
+      const fallbackModelId = defaultAppearanceRecipe(profile.id).baseModel;
+      const modelId = this.builtInCharacterAssets.has(recipe.baseModel) ? recipe.baseModel : fallbackModelId;
       const source = this.builtInCharacterAssets.get(modelId);
       if (!source?.scene || !this.cloneSkinnedCharacter) return null;
       const assetNeedsVisualRecovery = Number(source.userData?.hhTextureFallbacks || 0) > 0
@@ -4655,6 +4899,12 @@
         url: source.userData?.hhAssetPath || BUILTIN_CHARACTER_ASSETS[modelId]
       };
       asset.name = `${modelId}:${profile.id}`;
+      asset.updateMatrixWorld(true);
+      asset.traverse?.((object) => {
+        if (!object.isSkinnedMesh) return;
+        object.computeBoundingBox?.();
+        object.computeBoundingSphere?.();
+      });
       const box = new THREE.Box3().setFromObject(asset);
       const size = box.getSize(new THREE.Vector3());
       const fitScale = 2.92 / Math.max(0.001, size.y);
@@ -4817,12 +5067,15 @@
           : sourceInfo.label || (modelId === "human-adult-a01" ? "HH Asteria Human Rig" : "HH Vanguard Human Rig"),
         sourceProviderId: sourceInfo.provider,
         sourceAssetPath: sourceInfo.url,
+        gameplayVisualLift: sourceInfo.provider === "valid-avatar" ? 1.35 : 0,
         modelTier: initialTier,
         appearanceCapability: "skeleton-proportions",
         gameplayCollider: { radius: 0.48, height: 2.95 },
         gltfAsset: asset,
         builtInModelId: modelId,
-        builtInAnimations: this.builtInCharacterAssets.get("human-adult-b01")?.animations || source.animations || [],
+        builtInAnimations: sourceInfo.provider === "valid-avatar"
+          ? (source.animations || [])
+          : (source.animations?.length ? source.animations : this.builtInCharacterAssets.get("human-adult-b01")?.animations || []),
         parts: {
           weaponAnchor,
           hair: assetNeedsVisualRecovery ? null : riggedHair,
@@ -5163,6 +5416,52 @@
         duration: transitionSeconds,
         mode: "inertial-crossfade"
       };
+    }
+
+    applyProceduralRigMotion(runtime, time, motion = "idle", dt = 0.016) {
+      if (!runtime || runtime.mixer || runtime.lodSuspended) return false;
+      const bones = runtime.bones || {};
+      const required = [bones.leftUpperArm, bones.rightUpperArm, bones.leftUpLeg, bones.rightUpLeg].filter(Boolean);
+      if (required.length < 4) return false;
+      const capture = (bone) => {
+        if (!bone) return null;
+        bone.userData ||= {};
+        bone.userData.hhRigMotionBase ||= {
+          x: bone.rotation.x,
+          y: bone.rotation.y,
+          z: bone.rotation.z
+        };
+        return bone.userData.hhRigMotionBase;
+      };
+      const blend = 1 - Math.exp(-Math.max(0.001, dt) * 9);
+      const setRotation = (bone, offset = {}) => {
+        const base = capture(bone);
+        if (!bone || !base) return;
+        ["x", "y", "z"].forEach((axis) => {
+          const target = base[axis] + Number(offset[axis] || 0);
+          bone.rotation[axis] += (target - bone.rotation[axis]) * blend;
+        });
+      };
+      const locomotion = ["walk", "run", "sprint", "strafe", "climb", "swim"].includes(motion);
+      const cadence = motion === "sprint" ? 10.8 : motion === "run" || motion === "strafe" ? 8.2 : motion === "walk" ? 5.1 : 1.15;
+      const gait = Math.sin(time * 0.001 * cadence);
+      const stride = locomotion ? gait * (motion === "sprint" ? 0.62 : motion === "walk" ? 0.3 : 0.46) : 0;
+      const breathing = Math.sin(time * 0.00125) * 0.022;
+      const relaxedArm = motion === "glide" ? 0.22 : motion === "swim" ? 0.48 : 1.4;
+      setRotation(bones.leftUpperArm, { x: -stride * 0.72 + breathing, z: -relaxedArm });
+      setRotation(bones.rightUpperArm, { x: stride * 0.72 - breathing, z: relaxedArm });
+      setRotation(bones.leftForeArm, { x: motion === "idle" ? -0.08 : -0.16, z: -0.08 });
+      setRotation(bones.rightForeArm, { x: motion === "idle" ? -0.08 : -0.16, z: 0.08 });
+      setRotation(bones.leftUpLeg, { x: stride });
+      setRotation(bones.rightUpLeg, { x: -stride });
+      setRotation(bones.leftLeg, { x: locomotion ? Math.max(0, -stride) * 0.48 : 0 });
+      setRotation(bones.rightLeg, { x: locomotion ? Math.max(0, stride) * 0.48 : 0 });
+      setRotation(bones.spine, { x: motion === "sprint" ? -0.09 : breathing * 0.22, z: motion === "strafe" ? gait * 0.06 : 0 });
+      setRotation(bones.chest, { x: breathing * 0.35 });
+      setRotation(bones.head, { y: Math.sin(time * 0.00055) * 0.045, x: Math.sin(time * 0.0008) * 0.012 });
+      runtime.state = motion;
+      runtime.proceduralRig = true;
+      return true;
     }
 
     setCharacterAction(name, duration = 420, strength = 1) {
@@ -6052,20 +6351,26 @@
       return group;
     }
 
+    positionCharacterInWorld(mesh, x, y, z) {
+      if (!mesh?.position) return;
+      const lift = Number(mesh.userData?.gameplayVisualLift || 0);
+      mesh.position.set(x, y + lift, z);
+    }
+
     applyStateToWorld() {
       const player = this.state.player;
       const activeId = CHARACTERS[this.state.roster.activeId] ? this.state.roster.activeId : "lyra";
       const activeProfile = CHARACTERS[activeId];
       this.characterMeshes.forEach((mesh, id) => {
         mesh.visible = id === activeId;
-        mesh.position.set(player.x, player.y, player.z);
+        this.positionCharacterInWorld(mesh, player.x, player.y, player.z);
         mesh.rotation.y = player.rotation;
       });
       this.playerMesh = this.characterMeshes.get(activeId) || this.playerMesh;
       this.playerWeapon = this.playerMesh?.userData?.weapon || this.playerWeapon;
       player.name = activeProfile.name;
       player.element = activeProfile.element;
-      this.playerMesh.position.set(player.x, player.y, player.z);
+      this.positionCharacterInWorld(this.playerMesh, player.x, player.y, player.z);
       this.playerMesh.rotation.y = player.rotation;
       this.playerShadow.position.set(player.x, 1.08, player.z);
       this.state.collectedNodes.forEach((id) => {
@@ -6314,7 +6619,29 @@
           this.updateWeatherAppearance();
         }
       });
-      this.listen(this.root, "change", (event) => {
+      this.listen(this.root, "change", async (event) => {
+        const genesisCatalog = event.target.closest("[data-genesis-catalog]");
+        if (genesisCatalog) {
+          const modelId = String(genesisCatalog.value || "");
+          if (/^valid-[a-z0-9-]{3,72}$/.test(modelId) && modelId !== this.activeAppearanceRecipe().baseModel) {
+            genesisCatalog.disabled = true;
+            this.root.dataset.characterCatalogLoading = "true";
+            const status = this.root.querySelector("[data-genesis-status]");
+            if (status) status.textContent = "Đang tải model người thật đã chọn...";
+            try {
+              this.updateAppearanceDraft("baseModel", modelId);
+              this.commitAppearanceDraft();
+              await this.loadCharacterAssetsFromPipeline();
+              this.rebuildActiveBuiltInCharacter();
+              this.refreshGenesisCreator();
+              const source = this.builtInCharacterSources.get(modelId);
+              this.toast(source?.provider === "valid-avatar" ? "Đã tải model người thật vào preview 3D." : "Model mạng chưa sẵn sàng; đang giữ GLB local an toàn.", source?.provider === "valid-avatar" ? "success" : "error");
+            } finally {
+              this.root.dataset.characterCatalogLoading = "false";
+            }
+          }
+          return;
+        }
         if (event.target.matches("[data-genesis-morph], [data-genesis-setting], [data-genesis-decal], [data-genesis-surface]")) {
           this.commitAppearanceDraft();
           this.refreshGenesisCreator();
@@ -6489,7 +6816,7 @@
 
       this.characterMeshes.forEach((mesh, id) => {
         mesh.visible = id === characterId;
-        mesh.position.set(this.state.player.x, this.state.player.y, this.state.player.z);
+        this.positionCharacterInWorld(mesh, this.state.player.x, this.state.player.y, this.state.player.z);
         mesh.rotation.y = this.state.player.rotation;
       });
       this.playerMesh = this.characterMeshes.get(characterId);
@@ -6544,6 +6871,8 @@
               ? clamp(0.58 + (input?.magnitude || 0) * 0.48, 0.58, 0.92)
               : clamp(0.82 + (input?.magnitude || 0) * 0.28, 0.82, 1.1);
         runtime.mixer.update(dt);
+      } else if (runtime && !runtime.lodSuspended) {
+        this.applyProceduralRigMotion(runtime, time, targetAnimation, dt);
       }
 
       const cadence = targetAnimation === "sprint"
@@ -6760,6 +7089,8 @@
             if (runtime?.mixer) {
               this.playCharacterClip(runtime, this.genesisMotion || "idle");
               runtime.mixer.update(dt);
+            } else if (runtime) {
+              this.applyProceduralRigMotion(runtime, time, this.genesisMotion || "idle", dt);
             }
             this.applyProceduralFacialPerformance(this.playerMesh, time, this.genesisMotion || "idle");
             this.updateSecondaryCharacterMotion(runtime, time, {
@@ -6913,10 +7244,10 @@
         }
       }
 
-      this.playerMesh.position.set(player.x, player.y, player.z);
+      this.positionCharacterInWorld(this.playerMesh, player.x, player.y, player.z);
       this.characterMeshes.forEach((mesh, id) => {
         if (id === this.state.roster.activeId) return;
-        mesh.position.set(player.x, player.y, player.z);
+        this.positionCharacterInWorld(mesh, player.x, player.y, player.z);
         mesh.rotation.y = player.rotation;
       });
       this.updateCharacterAnimation(dt, time, input, sprinting);
@@ -7231,25 +7562,29 @@
       const cameraOrigin = this.genesisActive || this.currentPanel === "creator"
         ? this.playerMesh.position
         : player;
+      const visualLift = this.genesisActive || this.currentPanel === "creator"
+        ? 0
+        : Number(this.playerMesh.userData?.gameplayVisualLift || 0);
+      const originY = cameraOrigin.y + visualLift;
       const horizontal = Math.cos(this.cameraPitch) * this.cameraDistance;
       let desired = new this.THREE.Vector3(
         cameraOrigin.x + Math.sin(this.cameraYaw) * horizontal,
-        cameraOrigin.y + 2.2 + Math.sin(this.cameraPitch) * this.cameraDistance,
+        originY + 2.2 + Math.sin(this.cameraPitch) * this.cameraDistance,
         cameraOrigin.z + Math.cos(this.cameraYaw) * horizontal
       );
-      const focus = new this.THREE.Vector3(cameraOrigin.x, cameraOrigin.y + 1.35, cameraOrigin.z);
+      const focus = new this.THREE.Vector3(cameraOrigin.x, originY + 1.35, cameraOrigin.z);
       if (this.currentPanel === "creator" || this.genesisActive) {
         const focusOffset = this.genesisActive
           ? ({ head: 2.35, upper: 1.78, body: 1.46, lower: 0.76 }[this.appearanceFocus] ?? 1.46)
           : ({ head: 1.1, upper: 0.62, body: 0.88, lower: 0.28 }[this.appearanceFocus] ?? 0.88);
-        focus.set(cameraOrigin.x, cameraOrigin.y + focusOffset, cameraOrigin.z);
+        focus.set(cameraOrigin.x, originY + focusOffset, cameraOrigin.z);
         const creatorDistance = this.genesisActive
           ? clamp(this.cameraDistance, 4.5, 8.5)
           : clamp(this.cameraDistance, 6.5, 12);
         const creatorHorizontal = Math.cos(this.cameraPitch) * creatorDistance;
         desired.set(
           cameraOrigin.x + Math.sin(this.cameraYaw) * creatorHorizontal,
-          cameraOrigin.y + focusOffset + Math.sin(this.cameraPitch) * creatorDistance,
+          originY + focusOffset + Math.sin(this.cameraPitch) * creatorDistance,
           cameraOrigin.z + Math.cos(this.cameraYaw) * creatorHorizontal
         );
       }
@@ -7951,7 +8286,7 @@
       this.verticalVelocity = 0;
       this.isGrounded = true;
       this.gliding = false;
-      this.playerMesh.position.set(this.state.player.x, this.state.player.y, this.state.player.z);
+      this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
       this.updateCamera(true);
       this.closePanel();
       this.spawnPulse(this.state.player.x, this.state.player.y + 0.2, this.state.player.z, "#76eaff", 0.8, 5);
@@ -8254,7 +8589,7 @@
           </li>`;
         }).join("")}</ul>
         <div class="har-section"><h3>Character Pipeline</h3><div class="har-character-pipeline">${CHARACTER_PIPELINE.map((item) => `<div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.role)}</span><small>${escapeHtml(item.id === "three" ? `Runtime V${CHARACTER_VISUAL_VERSION}` : item.state)}</small></div>`).join("")}</div></div>
-        <div class="har-section"><h3>Nguồn hình học nhân vật</h3><p>Hai Human Rig tích hợp sẵn dùng mesh 3D PBR ở khoảng cách gần và proxy 3D ở xa. Bạn vẫn có thể nhập GLB đã tối ưu có SkinnedMesh, animation và morph; Character QA chỉ gắn nhãn “rigged” khi dữ liệu quét thực tế đáp ứng yêu cầu.</p>
+        <div class="har-section"><h3>Nguồn hình học nhân vật</h3><p>Thư viện VALID cung cấp ${this.characterPipelineManifest.filter((entry) => entry.provider === "valid-avatar").length} người 3D có rig và morph theo giấy phép MIT; chỉ model đang dùng mới được tải. GLB HH và procedural human luôn giữ vai trò fallback, nên máy yếu hoặc mạng chậm vẫn không có khung hình trống.</p>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Creator</button></div>
         </div>`;
     }
@@ -8294,6 +8629,12 @@
       const saved = this.state.appearance.savedPresets || [];
       const nativeFaceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
       const dna = encodeCharacterDNA(recipe, id);
+      const modelOptions = [...new Map([
+        ...APPEARANCE_ASSETS.baseModels.map((modelId) => [modelId, { modelId, label: modelId }]),
+        ...this.characterPipelineManifest
+          .filter((entry) => entry.provider === "valid-avatar")
+          .map((entry) => [entry.modelId, { modelId: entry.modelId, label: entry.label }])
+      ]).values()];
       return `
         <div class="har-creator">
           <div class="har-creator__hero">
@@ -8332,11 +8673,11 @@
           </div>
           <div class="har-creator__toolbar">
             <label class="har-field">Web pipeline<select data-appearance-setting="sourceProvider">${CHARACTER_PIPELINE_SOURCES.map((value) => `<option value="${value}" ${recipe.sourceProvider === value ? "selected" : ""}>${value === "auto" ? "Auto: MetaHuman → CC5 → MPFB → GLB" : value}</option>`).join("")}</select></label>
-            <label class="har-field">Model nền<select data-appearance-setting="baseModel">${APPEARANCE_ASSETS.baseModels.map((value) => `<option value="${value}" ${recipe.baseModel === value ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+            <label class="har-field">Model nền · ${modelOptions.length} người<select data-appearance-setting="baseModel">${modelOptions.map((item) => `<option value="${escapeHtml(item.modelId)}" ${recipe.baseModel === item.modelId ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label>
             <label class="har-field">Preset cơ thể<select data-appearance-setting="bodyPreset">${Object.entries(APPEARANCE_PRESETS).map(([value, item]) => `<option value="${value}" ${recipe.bodyPreset === value ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
             <label class="har-field">Phong cách<select data-appearance-setting="style"><option value="anime-realistic" ${recipe.style === "anime-realistic" ? "selected" : ""}>Anime Realistic</option><option value="human-cinematic" ${recipe.style === "human-cinematic" ? "selected" : ""}>Human Cinematic</option></select></label>
           </div>
-          <div class="har-section"><p><strong>Pipeline runtime:</strong> ${escapeHtml(this.builtInCharacterSources.get(recipe.baseModel)?.label || (this.characterPipelineStatus === "configured" ? "Äang tÃ¬m asset web-ready" : "ChÆ°a cÃ³ asset MetaHuman/CC5/MPFB"))}. ${this.characterPipelineStatus === "configured" ? "Asset trong manifest sáº½ Ä‘Æ°á»£c QA trÆ°á»›c khi dÃ¹ng." : "Äang dÃ¹ng GLB HH hoáº·c procedural fallback; khÃ´ng cÃ³ khung hÃ¬nh trá»‘ng."}</p></div>
+          <div class="har-section"><p><strong>Pipeline runtime:</strong> ${escapeHtml(this.builtInCharacterSources.get(recipe.baseModel)?.label || (this.characterPipelineStatus === "configured" ? "Đang tìm asset web-ready" : "Chưa có asset MetaHuman/CC5/MPFB"))}. ${this.characterPipelineStatus === "configured" ? "Asset trong manifest sẽ được QA trước khi dùng." : "Đang dùng GLB HH hoặc procedural fallback; không có khung hình trống."}</p></div>
           <div class="har-creator__options">
             <label><input type="checkbox" data-appearance-setting="symmetry" ${recipe.symmetry ? "checked" : ""}> Chỉnh đối xứng</label>
             <label><input type="checkbox" data-appearance-setting="advanced" ${recipe.advanced ? "checked" : ""}> Chế độ nâng cao trái–phải</label>
@@ -8688,16 +9029,16 @@
 
     async reloadCharacterPipeline() {
       if (this.characterImporting || !this.GLTFLoaderClass || !this.cloneSkinnedCharacter) {
-        this.toast("Character pipeline chÆ°a sáºµn sÃ ng; Ä‘ang dÃ¹ng fallback an toÃ n.", "info");
+        this.toast("Character pipeline chưa sẵn sàng; đang dùng fallback an toàn.", "info");
         return;
       }
       this.characterImporting = true;
       try {
         await this.loadCharacterAssetsFromPipeline();
         this.refreshCharacterMaterials();
-        this.toast("ÄÃ£ Ã¡p dá»¥ng nguá»“n GLB theo pipeline web; recipe ngoáº¡i hÃ¬nh váº«n Ä‘Æ°á»£c giá»¯ riÃªng.", "success");
+        this.toast("Đã áp dụng nguồn GLB theo pipeline web; recipe ngoại hình vẫn được giữ riêng.", "success");
       } catch {
-        this.toast("KhÃ´ng táº£i Ä‘Æ°á»£c nguá»“n GLB tÃ¹y chá»n; Ä‘Ã£ giá»¯ asset hiá»‡n táº¡i.", "error");
+        this.toast("Không tải được nguồn GLB tùy chọn; đã giữ asset hiện tại.", "error");
       } finally {
         this.characterImporting = false;
       }
@@ -8952,8 +9293,7 @@
           } else {
             this.updateAppearanceDraft(setting, value);
             this.commitAppearanceDraft();
-            if (setting === "baseModel") this.rebuildActiveBuiltInCharacter();
-            if (setting === "sourceProvider") this.reloadCharacterPipeline();
+            if (setting === "baseModel" || setting === "sourceProvider") this.reloadCharacterPipeline();
             this.renderCurrentPanel();
           }
         } else if (event.target.matches("[data-ship-name]")) {
@@ -10031,6 +10371,8 @@
           loaderReady: Boolean(this.GLTFLoaderClass),
           decodersReady: this.characterDecodersReady,
           source: activeCharacterRuntime?.source || activeCharacterMesh?.userData?.sourceProvider || "not-started",
+          sourceProviderId: activeCharacterMesh?.userData?.sourceProviderId || "fallback",
+          catalogModels: this.characterPipelineManifest.filter((entry) => entry.provider === "valid-avatar").length,
           visualMode: activeCharacterMesh?.userData?.visualMode || "not-started",
           tier: activeCharacterMesh?.userData?.modelTier || "not-started",
           motion: activeCharacterRuntime?.state || this.activeAnimation,
@@ -10052,7 +10394,9 @@
           enabled: this.state.settings.livingWorld,
           actors: this.livingWorldActors.length,
           biome: this.currentZone?.id || "central",
-          footprints: this.footprints.filter((footprint) => footprint.visible).length
+          footprints: this.footprints.filter((footprint) => footprint.visible).length,
+          licensedEnvironment: this.licensedEnvironmentStatus,
+          licensedModels: this.licensedEnvironmentAssets.size
         },
         rendererHealth: {
           failures: this.runtimeFailureCount,
@@ -10107,6 +10451,7 @@
       if (this.scene) this.disposeCharacterObject(this.scene);
       Object.values(this.photorealAssets).forEach((texture) => texture?.dispose?.());
       this.disposeBuiltInCharacterAssets();
+      this.disposeLicensedEnvironmentAssets();
       Object.values(this.characterDetailTextures || {}).forEach((texture) => texture?.dispose?.());
       this.toonGradient?.dispose?.();
       this.terrainTexture?.dispose?.();

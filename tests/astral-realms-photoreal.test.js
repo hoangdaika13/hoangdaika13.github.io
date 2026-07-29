@@ -35,6 +35,34 @@ test("photoreal assets are optimized for browser delivery", () => {
   }
 });
 
+test("licensed realistic avatar catalog and environment models are integrated", () => {
+  const source = read("astral-realms.js");
+  const characterManifest = JSON.parse(read("assets/astral-realms/characters/manifest.json"));
+  const avatarCatalog = JSON.parse(read("assets/astral-realms/characters/valid-avatars.json"));
+  const localAvatars = [
+    "valid-asian-f-1-casual.glb",
+    "valid-asian-m-1-casual.glb",
+    "valid-black-f-1-casual.glb",
+    "valid-white-m-1-casual.glb"
+  ];
+  assert.equal(avatarCatalog.length, 210);
+  assert.equal(characterManifest.sources.length, 4);
+  assert.equal(characterManifest.catalogs[0].license, "MIT");
+  for (const file of localAvatars) {
+    const bytes = fs.readFileSync(path.join(root, "assets", "astral-realms", "characters", "default", file));
+    assert.ok(bytes.length > 1_500_000, `${file} should contain a full realistic avatar`);
+    assert.equal(bytes.subarray(0, 4).toString("ascii"), "glTF");
+  }
+  for (const file of ["boulder_01.glb", "grass_medium_01.glb", "rock_moss_set_01.glb", "shrub_01.glb", "dead_tree_trunk_02.glb", "fern_02.glb"]) {
+    const bytes = fs.readFileSync(path.join(root, "assets", "astral-realms", "environment", file));
+    assert.ok(bytes.length > 100_000, `${file} should contain a real CC0 environment model`);
+    assert.equal(bytes.subarray(0, 4).toString("ascii"), "glTF");
+  }
+  assert.match(source, /data-genesis-catalog/);
+  assert.match(source, /applyProceduralRigMotion/);
+  assert.match(source, /characterPreview = "3d"|characterPreview = "validating"/);
+});
+
 test("visual V10 exposes adaptive 3D modes and UI portraits", () => {
   const source = read("astral-realms.js");
   const css = read("astral-realms.css");
@@ -50,7 +78,7 @@ test("visual V10 exposes adaptive 3D modes and UI portraits", () => {
 test("runtime and offline cache request the V3 bundle", () => {
   const loader = read("performance-loader.js");
   const serviceWorker = read("sw.js");
-  for (const token of ["astral-realms.css?v=18", "astral-realms.js?v=18"]) {
+  for (const token of ["astral-realms.css?v=19", "astral-realms.js?v=19"]) {
     assert.match(loader, new RegExp(token.replace(/[.?]/g, "\\$&")));
     assert.match(serviceWorker, new RegExp(token.replace(/[.?]/g, "\\$&")));
   }
