@@ -170,6 +170,14 @@
     outfits: ["central-jacket-02", "combat-boots-01", "aurora-suit-01", "void-coat-01"],
     lighting: ["daylight", "night", "neon", "cinematic"]
   });
+  const GENESIS_STUDIOS = Object.freeze({
+    central: { label: "H-Central", short: "HC", background: 0x06121f, floor: 0x163a4d, key: 0xa9f8ff, rim: 0xff68cb, accent: 0x6feeff },
+    aurora: { label: "Aurora Lake", short: "AU", background: 0x061c25, floor: 0x0f5260, key: 0xc8fff4, rim: 0x79a8ff, accent: 0x65f1c7 },
+    crimson: { label: "Crimson Forge", short: "CF", background: 0x1a0809, floor: 0x4c1714, key: 0xffd0a2, rim: 0xff4f72, accent: 0xff805f },
+    void: { label: "Void Garden", short: "VG", background: 0x10071d, floor: 0x291447, key: 0xe2c9ff, rim: 0x8f69ff, accent: 0xae78ff },
+    deep: { label: "Deep Space", short: "DS", background: 0x02050f, floor: 0x111c38, key: 0xb4d9ff, rim: 0xf46dff, accent: 0x79a8ff },
+    neutral: { label: "Neutral Studio", short: "NS", background: 0x9aa5b2, floor: 0xc8d0d7, key: 0xffffff, rim: 0xb9d8ff, accent: 0xeef7ff }
+  });
   const APPEARANCE_PRESETS = Object.freeze({
     balanced: { label: "Cân bằng", bodyPreset: "balanced", morphs: {} },
     athletic: { label: "Thể thao", bodyPreset: "athletic", morphs: { shoulderWidth: 0.62, upperArm: 0.61, thighSize: 0.6, calfSize: 0.58, muscle: 0.68, tone: 0.72, bodyFat: 0.36, abs: 0.64 } },
@@ -607,6 +615,7 @@
         visualStyle: "photoreal",
         characterMode: "rigged",
         characterQuality: "adaptive",
+        characterStudio: "central",
         facialAnimation: true,
         surfaceFx: true,
         microDetail: true,
@@ -800,6 +809,7 @@
     if (!["photoreal", "hybrid", "performance"].includes(state.settings.visualStyle)) state.settings.visualStyle = "photoreal";
     if (!["rigged", "portrait"].includes(state.settings.characterMode)) state.settings.characterMode = "rigged";
     if (!["adaptive", "hero", "near", "crowd"].includes(state.settings.characterQuality)) state.settings.characterQuality = "adaptive";
+    if (!GENESIS_STUDIOS[state.settings.characterStudio]) state.settings.characterStudio = "central";
     state.settings.facialAnimation = state.settings.facialAnimation !== false;
     state.settings.surfaceFx = state.settings.surfaceFx !== false;
     state.settings.microDetail = state.settings.microDetail !== false;
@@ -990,6 +1000,15 @@
       this.genesisActive = false;
       this.genesisCompleting = false;
       this.genesisTurntable = false;
+      this.genesisScene = null;
+      this.genesisCamera = null;
+      this.genesisStudioGroup = null;
+      this.genesisStudioId = "central";
+      this.genesisFallbackModel = null;
+      this.genesisActualModel = null;
+      this.genesisOriginalParent = null;
+      this.genesisOriginalTransform = null;
+      this.genesisVisibility = null;
       this.runtimeStarted = false;
       this.destroyed = false;
       this.started = false;
@@ -1229,6 +1248,9 @@
                 </div>
                 <div class="har-genesis__scan"><i></i><i></i><i></i></div>
                 <div class="har-genesis__camera-note"><strong data-genesis-model-name>ASTERIA HUMAN</strong><span>Giữ và kéo trên nhân vật để xoay camera</span></div>
+                <div class="har-genesis-studios" data-genesis-studios aria-label="Studio 3D">
+                  ${Object.entries(GENESIS_STUDIOS).map(([id, studio]) => `<button type="button" data-genesis-studio="${id}" title="${studio.label}" style="--studio:#${studio.accent.toString(16).padStart(6, "0")}"><i>${studio.short}</i><span>${studio.label}</span></button>`).join("")}
+                </div>
                 <div class="har-genesis__view-actions">
                   <button type="button" data-genesis-action="rotate-left" aria-label="Xoay trái">↶</button>
                   <button type="button" data-genesis-action="focus-body">Toàn thân</button>
@@ -1310,6 +1332,8 @@
       this.state.settings.vfxLevel = "static";
       this.state.settings.dynamicResolution = true;
       this.state.settings.microDetail = false;
+      this.state.settings.characterMode = "rigged";
+      this.state.settings.characterQuality = "near";
       this.state.settings.shadows = "low";
       this.state.settings.postFx = false;
       this.state.settings.weatherDensity = Math.min(38, Number(this.state.settings.weatherDensity || 38));
@@ -1377,7 +1401,6 @@
         this.createWorld();
         this.setLoading(76, "Đang dựng nhân vật rigged PBR, sinh vật và Nexus Warden...");
         this.createActors();
-        this.root.dataset.characterPreview = "3d";
         this.setLoading(84, "Đang khôi phục nhiệm vụ và kho đồ...");
         this.applyStateToWorld();
         this.initRuntime();
@@ -1439,6 +1462,8 @@
         "human-adult-b01": ["Vanguard Human", "Combat Rig · 7K vertices · LOD hiệu năng"]
       };
       const faceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
+      const boneCount = runtime?.bones ? Object.values(runtime.bones).filter(Boolean).length : 0;
+      const visibility = this.genesisVisibility?.report;
       const dna = encodeCharacterDNA(recipe, id);
       const option = (value, label, selected) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
       return `
@@ -1448,10 +1473,10 @@
           <p>Chỉnh trực tiếp mesh có xương, vật liệu da nhiều lớp, biểu cảm, viseme và LOD trong khung hình thật của game.</p>
         </div>
         <div class="har-genesis-capabilities" aria-label="Năng lực Digital Human">
-          <div><small>FACE DRIVER</small><strong>478 / 52</strong><span>landmark / blendshape · ${faceChannels} native morph</span></div>
+          <div><small>FACE DRIVER</small><strong>${faceChannels} native / 52 fallback</strong><span>${boneCount} bone nhận diện · không tạo số giả</span></div>
           <div><small>SURFACE</small><strong>5 lớp</strong><span>pore · roughness · SSS · flush · wetness</span></div>
           <div><small>MOTION</small><strong>8 hướng</strong><span>crossfade · inertial response · IK-ready</span></div>
-          <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "hero")}</strong><span>${CHARACTER_MODEL_TIERS[mesh?.userData?.modelTier || "hero"]?.updateHz || 60} Hz update</span></div>
+          <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "near")}</strong><span>${visibility?.ready ? "Đã xác nhận trong camera" : "Procedural human đang giữ khung"}</span></div>
         </div>
         <div class="har-genesis-fit ${fit.level}" aria-live="polite">
           <div><span class="har-genesis-fit__orb"></span><div><small>FIT & SILHOUETTE CHECK</small><strong>${escapeHtml(fit.label)} · ${fit.score}%</strong><span>${escapeHtml(fit.summary)}</span></div></div>
@@ -1598,13 +1623,400 @@
       this.root.classList.add("is-genesis");
       const section = this.root.querySelector("[data-har-genesis]");
       if (section) section.hidden = false;
-      // Keep the creator in a dedicated aerial studio. Using the gameplay
-      // checkpoint here can place the camera inside a hill, platform or prop
-      // and make a valid character look invisible.
-      this.playerMesh.position.set(this.state.player.x, Math.max(24, this.state.player.y + 24), this.state.player.z);
+      this.root.dataset.characterPreview = "fallback";
+      this.setupGenesisPreview();
       this.setGenesisMotion("idle");
       this.refreshGenesisCreator();
-      this.updateCamera(true, 0.016);
+    }
+
+    setupGenesisPreview() {
+      if (!this.THREE || !this.renderer || !this.playerMesh) return;
+      this.teardownGenesisPreview({ restorePlayer: true });
+      const THREE = this.THREE;
+      this.genesisScene = new THREE.Scene();
+      this.genesisCamera = new THREE.PerspectiveCamera(38, 1, 0.04, 90);
+      this.genesisCamera.position.set(0, 1.55, 5.2);
+      this.genesisCameraTarget = new THREE.Vector3(0, 1.48, 0);
+
+      const ambient = new THREE.HemisphereLight(0xc8edff, 0x11101b, 1.48);
+      ambient.name = "GenesisStudioAmbient";
+      const key = new THREE.DirectionalLight(0xffffff, 3.1);
+      key.name = "GenesisStudioKey";
+      key.position.set(3.8, 5.4, 4.7);
+      const fill = new THREE.DirectionalLight(0x79cfff, 1.7);
+      fill.name = "GenesisStudioFill";
+      fill.position.set(-4.2, 2.7, 2.2);
+      const rim = new THREE.PointLight(0xff68cb, 3.4, 16, 1.5);
+      rim.name = "GenesisStudioRim";
+      rim.position.set(0.5, 3.3, -3.2);
+      this.genesisScene.add(ambient, key, fill, rim);
+      this.genesisLights = { ambient, key, fill, rim };
+
+      const profile = CHARACTERS[this.state.roster.activeId] || CHARACTERS.lyra;
+      this.genesisFallbackModel = this.createAnimeCharacterMesh(profile, 1);
+      this.genesisFallbackModel.name = "HHGenesisProceduralHuman";
+      this.genesisFallbackModel.userData.hhGenesisFallback = true;
+      this.genesisFallbackModel.position.set(0, 0, 0);
+      this.genesisScene.add(this.genesisFallbackModel);
+
+      this.genesisActualModel = this.playerMesh;
+      this.genesisOriginalParent = this.playerMesh.parent || this.world;
+      this.genesisOriginalTransform = {
+        position: this.playerMesh.position.clone(),
+        quaternion: this.playerMesh.quaternion.clone(),
+        scale: this.playerMesh.scale.clone()
+      };
+      this.genesisOriginalParent?.remove?.(this.playerMesh);
+      this.genesisScene.add(this.playerMesh);
+      this.playerMesh.position.set(0, 0, 0);
+      this.playerMesh.rotation.set(0, 0, 0);
+      this.playerMesh.scale.set(1, 1, 1);
+      this.playerMesh.visible = true;
+      this.setGenesisModelOpacity(this.playerMesh, 0.015);
+      this.setGenesisModelOpacity(this.genesisFallbackModel, 1);
+
+      this.genesisVisibility = {
+        consecutiveFrames: 0,
+        validated: false,
+        crossfadeStartedAt: 0,
+        startedAt: performance.now(),
+        report: null
+      };
+      this.root.dataset.characterPreview = "validating";
+      this.setGenesisStudio(this.state.settings.characterStudio || "central", { save: false });
+      this.updateCharacterLod(this.playerMesh, 0);
+      this.fitGenesisCamera(this.playerMesh, "body");
+    }
+
+    teardownGenesisPreview({ restorePlayer = true } = {}) {
+      if (!this.genesisScene && !this.genesisActualModel && !this.genesisFallbackModel) return;
+      if (this.genesisActualModel) {
+        this.restoreGenesisModelOpacity(this.genesisActualModel);
+        this.genesisScene?.remove?.(this.genesisActualModel);
+        if (restorePlayer && this.genesisOriginalParent) {
+          this.genesisOriginalParent.add(this.genesisActualModel);
+          if (this.genesisOriginalTransform) {
+            this.genesisActualModel.position.copy(this.genesisOriginalTransform.position);
+            this.genesisActualModel.quaternion.copy(this.genesisOriginalTransform.quaternion);
+            this.genesisActualModel.scale.copy(this.genesisOriginalTransform.scale);
+          }
+        }
+      }
+      this.disposeGenesisObject(this.genesisFallbackModel);
+      this.disposeGenesisObject(this.genesisStudioGroup);
+      this.genesisScene = null;
+      this.genesisCamera = null;
+      this.genesisCameraTarget = null;
+      this.genesisStudioGroup = null;
+      this.genesisFallbackModel = null;
+      this.genesisActualModel = null;
+      this.genesisOriginalParent = null;
+      this.genesisOriginalTransform = null;
+      this.genesisVisibility = null;
+      this.genesisLights = null;
+    }
+
+    disposeGenesisObject(object) {
+      if (!object) return;
+      object.parent?.remove?.(object);
+      const geometries = new Set();
+      const materials = new Set();
+      object.traverse?.((node) => {
+        if (node.geometry && !node.userData?.sharedAsset) geometries.add(node.geometry);
+        (Array.isArray(node.material) ? node.material : [node.material]).filter(Boolean).forEach((material) => materials.add(material));
+      });
+      geometries.forEach((geometry) => geometry.dispose?.());
+      materials.forEach((material) => material.dispose?.());
+    }
+
+    setGenesisModelOpacity(object, opacity) {
+      if (!object) return;
+      object.traverse?.((node) => {
+        (Array.isArray(node.material) ? node.material : [node.material]).filter(Boolean).forEach((material) => {
+          material.userData ||= {};
+          if (!material.userData.hhGenesisOpacity) {
+            material.userData.hhGenesisOpacity = {
+              opacity: Number.isFinite(material.opacity) ? material.opacity : 1,
+              transparent: material.transparent === true,
+              depthWrite: material.depthWrite !== false
+            };
+          }
+          const base = material.userData.hhGenesisOpacity.opacity;
+          material.opacity = clamp(base * opacity, 0, 1);
+          material.transparent = opacity < 0.999 || material.userData.hhGenesisOpacity.transparent;
+          material.depthWrite = opacity > 0.98 && material.userData.hhGenesisOpacity.depthWrite;
+          material.needsUpdate = true;
+        });
+      });
+    }
+
+    restoreGenesisModelOpacity(object) {
+      object?.traverse?.((node) => {
+        (Array.isArray(node.material) ? node.material : [node.material]).filter(Boolean).forEach((material) => {
+          const saved = material.userData?.hhGenesisOpacity;
+          if (!saved) return;
+          material.opacity = saved.opacity;
+          material.transparent = saved.transparent;
+          material.depthWrite = saved.depthWrite;
+          delete material.userData.hhGenesisOpacity;
+          material.needsUpdate = true;
+        });
+      });
+    }
+
+    createGenesisStudio(studioId) {
+      const THREE = this.THREE;
+      const studio = GENESIS_STUDIOS[studioId] || GENESIS_STUDIOS.central;
+      const group = new THREE.Group();
+      group.name = `HHGenesisStudio:${studioId}`;
+      const floorMaterial = new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({
+        color: studio.floor,
+        roughness: studioId === "neutral" ? 0.54 : 0.18,
+        metalness: studioId === "neutral" ? 0.02 : 0.38,
+        clearcoat: studioId === "neutral" ? 0.08 : 0.72,
+        clearcoatRoughness: 0.22,
+        transparent: true,
+        opacity: 0.9
+      });
+      const floor = new THREE.Mesh(new THREE.CircleGeometry(6.8, 72), floorMaterial);
+      floor.name = "GenesisReflectiveFloor";
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -0.018;
+      floor.receiveShadow = true;
+      group.add(floor);
+      const accentMaterial = new THREE.MeshStandardMaterial({
+        color: studio.accent,
+        emissive: studio.accent,
+        emissiveIntensity: 1.15,
+        roughness: 0.26,
+        metalness: 0.35,
+        transparent: true,
+        opacity: 0.72
+      });
+
+      if (studioId === "central") {
+        [-4.2, -2.8, 2.8, 4.2].forEach((x, index) => {
+          const tower = new THREE.Mesh(new THREE.BoxGeometry(0.52, 2.5 + (index % 2) * 1.2, 0.52), accentMaterial.clone());
+          tower.position.set(x, tower.geometry.parameters.height / 2, -2.8 - Math.abs(x) * 0.12);
+          group.add(tower);
+        });
+      } else if (studioId === "aurora") {
+        [-3.8, -2.7, 2.7, 3.8].forEach((x, index) => {
+          const crystal = new THREE.Mesh(new THREE.ConeGeometry(0.32 + index * 0.03, 1.6 + (index % 2), 6), accentMaterial.clone());
+          crystal.position.set(x, crystal.geometry.parameters.height / 2, -2.4);
+          group.add(crystal);
+        });
+      } else if (studioId === "crimson") {
+        [-3.8, 3.8].forEach((x) => {
+          const forge = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.92, 3.1, 16), accentMaterial.clone());
+          forge.position.set(x, 1.55, -2.3);
+          group.add(forge);
+        });
+      } else if (studioId === "void") {
+        [-3.4, 3.4].forEach((x) => {
+          const portal = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.12, 12, 48), accentMaterial.clone());
+          portal.position.set(x, 1.75, -2.5);
+          portal.rotation.y = x < 0 ? 0.28 : -0.28;
+          group.add(portal);
+        });
+      } else if (studioId === "deep") {
+        const positions = new Float32Array(270);
+        for (let index = 0; index < positions.length; index += 3) {
+          const radius = 5 + Math.random() * 8;
+          const angle = Math.random() * Math.PI * 2;
+          positions[index] = Math.cos(angle) * radius;
+          positions[index + 1] = Math.random() * 7 - 0.5;
+          positions[index + 2] = -2 - Math.sin(angle) * radius;
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        group.add(new THREE.Points(geometry, new THREE.PointsMaterial({ color: studio.accent, size: 0.045, transparent: true, opacity: 0.86 })));
+      } else {
+        const wall = new THREE.Mesh(new THREE.PlaneGeometry(13, 8), new THREE.MeshStandardMaterial({ color: 0xd8dee5, roughness: 0.88 }));
+        wall.position.set(0, 3.7, -4.2);
+        group.add(wall);
+      }
+
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(3.15, 0.022, 8, 96), accentMaterial);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 0.035;
+      group.add(ring);
+      return group;
+    }
+
+    setGenesisStudio(studioId = "central", { save = true } = {}) {
+      if (!this.genesisScene || !this.THREE) return;
+      const safeId = GENESIS_STUDIOS[studioId] ? studioId : "central";
+      const studio = GENESIS_STUDIOS[safeId];
+      this.disposeGenesisObject(this.genesisStudioGroup);
+      this.genesisStudioGroup = this.createGenesisStudio(safeId);
+      this.genesisScene.add(this.genesisStudioGroup);
+      this.genesisScene.background = new this.THREE.Color(studio.background);
+      this.genesisScene.fog = new this.THREE.FogExp2(studio.background, safeId === "neutral" ? 0.012 : 0.035);
+      if (this.genesisLights) {
+        this.genesisLights.key.color.setHex(studio.key);
+        this.genesisLights.rim.color.setHex(studio.rim);
+        this.genesisLights.fill.color.setHex(studio.accent);
+      }
+      this.genesisStudioId = safeId;
+      if (save) {
+        this.state.settings.characterStudio = safeId;
+        this.saveProgress("Đổi Character Studio");
+      }
+      this.root.querySelectorAll("[data-genesis-studio]").forEach((button) => {
+        const active = button.dataset.genesisStudio === safeId;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+    }
+
+    fitGenesisCamera(object = this.genesisActualModel || this.genesisFallbackModel, focus = this.appearanceFocus || "body") {
+      if (!object || !this.genesisCamera || !this.THREE) return false;
+      object.updateMatrixWorld(true);
+      const box = new this.THREE.Box3().setFromObject(object);
+      const size = box.getSize(new this.THREE.Vector3());
+      const center = box.getCenter(new this.THREE.Vector3());
+      if (![size.x, size.y, size.z, center.x, center.y, center.z].every(Number.isFinite) || size.y < 0.2) return false;
+      const targetY = focus === "head" ? box.max.y - size.y * 0.14 : center.y;
+      this.genesisCameraTarget.set(center.x, targetY, center.z);
+      const visibleHeight = focus === "head" ? Math.max(size.y * 0.38, size.x * 1.3) : size.y;
+      const fov = this.THREE.MathUtils.degToRad(this.genesisCamera.fov);
+      this.cameraDistance = clamp((visibleHeight * 0.62) / Math.tan(fov / 2), 2.7, 9.2);
+      this.updateGenesisCamera();
+      return true;
+    }
+
+    updateGenesisCamera() {
+      if (!this.genesisCamera || !this.genesisCameraTarget) return;
+      const yaw = this.cameraYaw || 0;
+      const pitch = clamp(this.cameraPitch - 0.28, -0.02, 0.8);
+      const distance = Math.max(2.5, this.cameraDistance || 5.2);
+      this.genesisCamera.position.set(
+        this.genesisCameraTarget.x + Math.sin(yaw) * distance,
+        this.genesisCameraTarget.y + pitch * distance,
+        this.genesisCameraTarget.z + Math.cos(yaw) * distance
+      );
+      this.genesisCamera.lookAt(this.genesisCameraTarget);
+      this.genesisCamera.updateMatrixWorld(true);
+    }
+
+    getGenesisVisibilityReport(object = this.genesisActualModel) {
+      const THREE = this.THREE;
+      if (!object || !THREE || !this.genesisCamera) return { ready: false, reason: "missing-model", triangles: 0 };
+      object.updateMatrixWorld(true);
+      this.genesisCamera.updateMatrixWorld(true);
+      this.genesisCamera.updateProjectionMatrix();
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const finiteBounds = [box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z].every(Number.isFinite);
+      let triangles = 0;
+      let visibleMaterials = 0;
+      object.traverse?.((node) => {
+        if ((!node.isMesh && !node.isSkinnedMesh) || node.visible === false || !node.geometry) return;
+        const indexCount = Number(node.geometry.index?.count || 0);
+        const vertexCount = Number(node.geometry.attributes?.position?.count || 0);
+        triangles += indexCount ? Math.floor(indexCount / 3) : Math.floor(vertexCount / 3);
+        (Array.isArray(node.material) ? node.material : [node.material]).filter(Boolean).forEach((material) => {
+          const baseOpacity = material.userData?.hhGenesisOpacity?.opacity ?? material.opacity ?? 1;
+          const colorStrength = material.color
+            ? Math.max(material.color.r, material.color.g, material.color.b)
+            : 1;
+          const emissiveStrength = material.emissive
+            ? Math.max(material.emissive.r, material.emissive.g, material.emissive.b) * Number(material.emissiveIntensity || 0)
+            : 0;
+          if (material.visible !== false && baseOpacity > 0.04 && (material.map || colorStrength > 0.012 || emissiveStrength > 0.012)) visibleMaterials += 1;
+        });
+      });
+      const frustumMatrix = new THREE.Matrix4().multiplyMatrices(this.genesisCamera.projectionMatrix, this.genesisCamera.matrixWorldInverse);
+      const inFrustum = finiteBounds && new THREE.Frustum().setFromProjectionMatrix(frustumMatrix).intersectsBox(box);
+      const projectedCenter = center.clone().project(this.genesisCamera);
+      const sphere = box.getBoundingSphere(new THREE.Sphere());
+      const distance = Math.max(0.01, this.genesisCamera.position.distanceTo(sphere.center));
+      const projectedRatio = (2 * Math.atan(Math.max(0.001, sphere.radius) / distance)) / THREE.MathUtils.degToRad(this.genesisCamera.fov);
+      const centered = Math.abs(projectedCenter.x) <= 0.84 && Math.abs(projectedCenter.y) <= 0.84 && projectedCenter.z >= -1 && projectedCenter.z <= 1;
+      const adequateSize = projectedRatio >= 0.22 && projectedRatio <= 1.08 && size.y >= 0.35;
+      const ready = finiteBounds && triangles > 0 && visibleMaterials > 0 && inFrustum && centered && adequateSize;
+      return {
+        ready,
+        finiteBounds,
+        inFrustum,
+        centered,
+        adequateSize,
+        triangles,
+        visibleMaterials,
+        projectedRatio,
+        size: { x: size.x, y: size.y, z: size.z },
+        reason: ready ? "ready" : !finiteBounds ? "invalid-bounds" : !triangles ? "no-triangles" : !visibleMaterials ? "invisible-material" : !inFrustum ? "outside-camera" : !centered ? "off-center" : "too-small"
+      };
+    }
+
+    renderGenesisFrame(time, dt) {
+      if (!this.genesisScene || !this.genesisCamera || !this.renderer) return false;
+      if (this.genesisTurntable && !this.state.settings.reduceEffects) this.cameraYaw = (this.cameraYaw + dt * 0.34) % (Math.PI * 2);
+      this.updateGenesisCamera();
+      const canvas = this.renderer.domElement;
+      const stage = this.root.querySelector("[data-har-stage]");
+      const viewport = this.root.querySelector(".har-genesis__viewport");
+      const canvasRect = canvas.getBoundingClientRect();
+      const viewRect = viewport?.getBoundingClientRect?.() || canvasRect;
+      const fullWidth = Math.max(1, stage?.clientWidth || canvasRect.width);
+      const fullHeight = Math.max(1, stage?.clientHeight || canvasRect.height);
+      const x = clamp(viewRect.left - canvasRect.left, 0, fullWidth - 1);
+      const y = clamp(canvasRect.bottom - viewRect.bottom, 0, fullHeight - 1);
+      const width = clamp(viewRect.width, 1, fullWidth - x);
+      const height = clamp(viewRect.height, 1, fullHeight - y);
+      this.genesisCamera.aspect = width / height;
+      this.genesisCamera.updateProjectionMatrix();
+      this.renderer.setScissorTest(false);
+      this.renderer.setViewport(0, 0, fullWidth, fullHeight);
+      this.renderer.setClearColor(0x02050f, 1);
+      this.renderer.clear(true, true, true);
+      this.renderer.setViewport(x, y, width, height);
+      this.renderer.setScissor(x, y, width, height);
+      this.renderer.setScissorTest(true);
+      this.renderer.render(this.genesisScene, this.genesisCamera);
+      const renderedTriangles = Number(this.renderer.info?.render?.triangles || 0);
+      this.renderer.setScissorTest(false);
+      this.renderer.setViewport(0, 0, fullWidth, fullHeight);
+
+      const report = this.getGenesisVisibilityReport(this.genesisActualModel);
+      report.renderedTriangles = renderedTriangles;
+      report.ready = report.ready && renderedTriangles > 0;
+      this.genesisVisibility ||= { consecutiveFrames: 0, validated: false, crossfadeStartedAt: 0, startedAt: time, report: null };
+      this.genesisVisibility.report = report;
+      this.genesisVisibility.consecutiveFrames = report.ready ? this.genesisVisibility.consecutiveFrames + 1 : 0;
+      const status = this.root.querySelector("[data-genesis-status]");
+
+      if (!this.genesisVisibility.validated && this.genesisVisibility.consecutiveFrames >= 2) {
+        this.genesisVisibility.validated = true;
+        this.genesisVisibility.crossfadeStartedAt = time;
+        this.fitGenesisCamera(this.genesisActualModel, this.appearanceFocus || "body");
+      }
+      if (this.genesisVisibility.validated) {
+        const progress = clamp((time - this.genesisVisibility.crossfadeStartedAt) / 400, 0, 1);
+        this.setGenesisModelOpacity(this.genesisActualModel, progress);
+        this.setGenesisModelOpacity(this.genesisFallbackModel, 1 - progress);
+        if (progress >= 1) {
+          this.genesisFallbackModel.visible = false;
+          this.root.dataset.characterPreview = "3d";
+          if (status) status.textContent = `${report.triangles.toLocaleString("vi-VN")} triangles · trong camera · 2/2 frame`;
+        } else {
+          this.root.dataset.characterPreview = "crossfade";
+          if (status) status.textContent = `Đang chuyển sang GLB · ${Math.round(progress * 100)}%`;
+        }
+      } else {
+        this.root.dataset.characterPreview = "validating";
+        this.genesisFallbackModel.visible = true;
+        this.setGenesisModelOpacity(this.genesisFallbackModel, 1);
+        if (time - this.genesisVisibility.startedAt > 1200) {
+          this.setGenesisModelOpacity(this.genesisActualModel, 0);
+          if (status) status.textContent = `Procedural human đang hoạt động · GLB: ${report.reason}`;
+        } else if (status) {
+          status.textContent = `Đang kiểm tra GLB · ${this.genesisVisibility.consecutiveFrames}/2 frame`;
+        }
+      }
+      return true;
     }
 
     buildAppearanceFitReport(inputRecipe, mesh) {
@@ -1640,6 +2052,10 @@
     }
 
     autoFitCharacter() {
+      if (this.genesisActive && this.genesisScene) {
+        this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, this.appearanceFocus || "body");
+        return;
+      }
       const id = this.state.roster.activeId;
       const before = clone(this.activeAppearanceRecipe());
       const recipe = this.activeAppearanceRecipe();
@@ -1771,7 +2187,14 @@
       this.registerCharacterRuntime(next, profile, id, "hero", next.userData.builtInAnimations || []);
       this.applyAppearanceToMesh(next, this.activeAppearanceRecipe(), id);
       this.setGenesisMotion(this.genesisMotion || "idle");
-      this.updateCamera(true, 0.016);
+      if (this.genesisActive && this.genesisScene) {
+        this.genesisActualModel = next;
+        this.setGenesisModelOpacity(next, 0.015);
+        this.genesisVisibility = { consecutiveFrames: 0, validated: false, crossfadeStartedAt: 0, startedAt: performance.now(), report: null };
+        this.fitGenesisCamera(next, this.appearanceFocus || "body");
+      } else {
+        this.updateCamera(true, 0.016);
+      }
     }
 
     async completeGenesisCreator() {
@@ -1787,6 +2210,7 @@
       this.state.appearance.creatorCompletedAt = nowIso();
       this.state.appearance.creatorVersion = CHARACTER_VISUAL_VERSION;
       this.state.appearance.lastSavedAt = nowIso();
+      this.teardownGenesisPreview({ restorePlayer: true });
       this.restoreGenesisLighting();
       await this.saveProgress("Hoàn tất Character Genesis");
       const section = this.root.querySelector("[data-har-genesis]");
@@ -1800,6 +2224,7 @@
     }
 
     resetGraphicsAfterFailure() {
+      this.teardownGenesisPreview({ restorePlayer: false });
       this.restoreGenesisLighting();
       if (this.frameHandle) cancelAnimationFrame(this.frameHandle);
       this.frameHandle = 0;
@@ -4882,7 +5307,10 @@
 
     updateCharacterLod(mesh, distance = 0) {
       if (!mesh) return;
-      const forced = this.state.settings.characterMode === "portrait"
+      const isProtectedCharacter = mesh === this.playerMesh || mesh === this.genesisActualModel || mesh === this.genesisFallbackModel;
+      const forced = isProtectedCharacter
+        ? "near"
+        : this.state.settings.characterMode === "portrait"
         ? "impostor"
         : this.state.settings.characterQuality;
       const tier = forced !== "adaptive"
@@ -5606,6 +6034,11 @@
           this.refreshGenesisCreator();
           return;
         }
+        const genesisStudio = event.target.closest("[data-genesis-studio]");
+        if (genesisStudio) {
+          this.setGenesisStudio(genesisStudio.dataset.genesisStudio);
+          return;
+        }
         const genesisMotion = event.target.closest("[data-genesis-motion]");
         if (genesisMotion) {
           this.setGenesisMotion(genesisMotion.dataset.genesisMotion);
@@ -5625,10 +6058,10 @@
           }
           else if (genesisAction === "focus-body") {
             this.appearanceFocus = "body";
-            this.cameraDistance = 7.8;
+            this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, "body");
           } else if (genesisAction === "focus-head") {
             this.appearanceFocus = "head";
-            this.cameraDistance = 5.1;
+            this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, "head");
           } else if (genesisAction === "random") {
             this.randomAppearance();
             this.refreshGenesisCreator();
@@ -5831,7 +6264,7 @@
       this.listen(canvas, "pointercancel", stopCameraDrag);
       this.listen(canvas, "wheel", (event) => {
         event.preventDefault();
-        this.cameraDistance = clamp(this.cameraDistance + Math.sign(event.deltaY) * 1.25, 6.5, 20);
+        this.cameraDistance = clamp(this.cameraDistance + Math.sign(event.deltaY) * 1.25, this.genesisActive ? 2.6 : 6.5, this.genesisActive ? 12 : 20);
       }, { passive: false });
 
       this.bindTouchJoystick();
@@ -6189,12 +6622,11 @@
               sprinting: this.genesisMotion === "run",
               direction: this.genesisMotion === "strafe" ? 0.8 : 0
             });
-            if (this.genesisTurntable && !this.state.settings.reduceEffects) {
-              this.cameraYaw = (this.cameraYaw + dt * 0.34) % (Math.PI * 2);
-            }
+            this.renderGenesisFrame(time, dt);
+          } else {
+            this.updateCamera(false, dt);
+            this.renderer.render(this.scene, this.camera);
           }
-          this.updateCamera(false, dt);
-          this.renderer.render(this.scene, this.camera);
           this.lastRenderSuccessAt = time;
           this.trackFps(time);
           if (time - this.lastUiAt > 120) {
@@ -9446,7 +9878,10 @@
             status: this.facePilot.status,
             frames: this.facePilot.frame || 0,
             localOnly: true
-          }
+          },
+          genesisStudio: this.genesisStudioId,
+          genesisPreview: this.genesisVisibility?.report || null,
+          genesisValidated: Boolean(this.genesisVisibility?.validated)
         },
         livingWorld: {
           enabled: this.state.settings.livingWorld,
@@ -9489,6 +9924,7 @@
 
     async destroy() {
       if (this.destroyed) return;
+      this.teardownGenesisPreview({ restorePlayer: true });
       this.restoreGenesisLighting();
       if (this.started) await this.saveProgress("Rời game");
       this.destroyed = true;
