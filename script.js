@@ -5390,6 +5390,7 @@ function initAppShell() {
   const davinciResolvePages = [
     { id: "davinci", icon: "DV", title: "DaVinci Resolve", route: "/davinci-resolve/davinci", description: "HH Video Studio chạy trực tiếp trên web: Media Pool, timeline, màu, audio, title và xuất MP4/WebM." },
     { id: "auto", icon: "AD", title: "Auto Video Director", route: "/davinci-resolve/auto", description: "Quét media thật, đo sáng–màu–waveform và tạo timeline tự động trước khi bạn xác nhận." },
+    { id: "batch", icon: "BV", title: "Batch Video Factory", route: "/davinci-resolve/batch", description: "Dùng một sườn để trộn CSV, ảnh và video rồi render hàng loạt MP4/WebM với hàng đợi thật." },
     { id: "youtube", icon: "YT", title: "YouTube Creator Galaxy", route: "/davinci-resolve/youtube", description: "13 trung tâm YouTube dùng dữ liệu thật: OAuth, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight." }
   ];
   const groups = [
@@ -5969,6 +5970,7 @@ function initAppShell() {
     }
     if (route !== "/davinci-resolve" && !route.startsWith("/davinci-resolve/")) {
       window.HHDavinciResolveHub?.unmount?.();
+      window.HHVideoBatchFactory?.unmount?.();
       window.HHYouTubeCreatorGalaxy?.cleanup?.();
     }
     if (route !== "/entertainment") window.HHGameCenter?.unmount?.();
@@ -6166,8 +6168,10 @@ function initAppShell() {
       const resolveHost = workspace.firstElementChild;
       resolveHost.dataset.davinciResolveView = resolveView;
       window.HHDavinciResolveHub?.unmount?.();
+      window.HHVideoBatchFactory?.unmount?.();
       window.HHYouTubeCreatorGalaxy?.cleanup?.();
       if (resolveView === "youtube") window.HHYouTubeCreatorGalaxy?.mount(resolveHost, { view: resolveView });
+      else if (resolveView === "batch") window.HHVideoBatchFactory?.mount(resolveHost);
       else window.HHDavinciResolveHub?.mount(resolveHost, { view: resolveView });
       remember(`davinci-resolve-${resolveView}`);
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {

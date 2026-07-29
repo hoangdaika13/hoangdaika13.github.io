@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v293";
+const CACHE = "hh-identity-portal-v294";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -43,6 +43,7 @@ const RUNTIME_ASSETS = [
   "./media-design-advanced.css?v=3",
   "./media-design-publish.css?v=1",
   "./video-editor-studio.css?v=4",
+  "./video-batch-factory.css?v=1",
   "./video-editor-resolve.css?v=8",
   "./davinci-resolve-hub.css?v=4",
   "./video-editor-auto.css?v=1",
@@ -51,7 +52,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=153",
+  "./script.js?v=154",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -290,6 +291,7 @@ const RUNTIME_ASSETS = [
   "./media-design-advanced.js?v=3",
   "./media-design-publish.js?v=1",
   "./video-editor-studio.js?v=5",
+  "./video-batch-factory.js?v=1",
   "./video-editor-resolve.js?v=10",
   "./davinci-resolve-hub.js?v=5",
   "./video-editor-auto.js?v=1",
@@ -349,10 +351,10 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=72",
+  "./performance-loader.js?v=73",
   "./auth-platform.js?v=12",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=153"
+  "./script.js?v=154"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
