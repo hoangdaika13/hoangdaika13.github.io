@@ -12,12 +12,12 @@ const worker = read("sw.js");
 const vercel = read("vercel.json");
 const mission = require(path.join(root, "home-galaxy-mission.js"));
 
-test("Galaxy Mission Control V2 is versioned on home and offline shell", () => {
-  assert.equal(mission.VERSION, "2.0.0");
-  assert.match(loader, /home-galaxy-mission\.css\?v=5/);
-  assert.match(loader, /home-galaxy-mission\.js\?v=7/);
-  assert.match(worker, /home-galaxy-mission\.css\?v=5/);
-  assert.match(worker, /home-galaxy-mission\.js\?v=7/);
+test("Galaxy Mission Control V3 is versioned on home and offline shell", () => {
+  assert.equal(mission.VERSION, "3.0.0");
+  assert.match(loader, /home-galaxy-mission\.css\?v=6/);
+  assert.match(loader, /home-galaxy-mission\.js\?v=8/);
+  assert.match(worker, /home-galaxy-mission\.css\?v=6/);
+  assert.match(worker, /home-galaxy-mission\.js\?v=8/);
   assert.match(source, /hh\.home\.galaxy\.preferences\.v2/);
   assert.match(source, /newlyIntroduced/);
 });
@@ -129,8 +129,17 @@ test("cosmic rendering is adaptive, semantic, mobile-safe and motion-safe", () =
     "has-overdue",
     "has-slow-endpoint",
     "hgm-burst",
-    "hgm-aurora"
+    "hgm-aurora",
+    "hgm-living-sky",
+    "hgm-constellations",
+    "hgm-flares",
+    "data-energy"
   ]) assert.ok(source.includes(contract) || styles.includes(contract), `missing rendering contract ${contract}`);
+  for (const theme of ["aurora", "magenta", "emerald", "quantum", "golden", "crimson", "ice", "blackhole", "time"]) {
+    assert.match(styles, new RegExp(`data-theme=["']${theme}["']|data-theme="${theme}"`), `missing visual theme ${theme}`);
+  }
+  assert.match(loader, /preloadScripts\(group\.scripts\)/);
+  assert.match(loader, /link\.fetchPriority\s*=\s*"low"/);
   assert.match(styles, /@media\s*\(max-width:\s*700px\)/);
   assert.match(styles, /scroll-snap-type:\s*x mandatory/);
   assert.match(styles, /position:\s*fixed;[\s\S]*bottom:\s*0/);

@@ -44,11 +44,11 @@
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=3", "home-galaxy-mission.css?v=5", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=3", "home-galaxy-mission.css?v=6", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=7", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=5", "home-daily-command.js?v=6",
+        "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=8", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=5", "home-daily-command.js?v=6",
         "home-command-search.js?v=3", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
       ]
     },
@@ -194,6 +194,7 @@
   const loaded = new Set();
   const pending = new Map();
   const assetPromises = new Map();
+  const preloadedScripts = new Set();
   let homeEnhancementsScheduled = false;
 
   function normalizeRoute(route) {
@@ -260,11 +261,29 @@
     return promise;
   }
 
+  function preloadScripts(urls = []) {
+    urls.forEach((url) => {
+      if (!url || preloadedScripts.has(url) || assetPromises.has(`script:${url}`)) return;
+      preloadedScripts.add(url);
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "script";
+      link.href = url;
+      link.fetchPriority = "low";
+      link.dataset.hhRuntimeAsset = "script-preload";
+      document.head.append(link);
+    });
+  }
+
   function ensureGroup(name) {
     if (loaded.has(name)) return Promise.resolve(name);
     if (pending.has(name)) return pending.get(name);
     const group = groups[name];
     if (!group) return Promise.resolve(name);
+    // Download the independent Home controllers together, then execute them in
+    // their declared order below. This keeps the authenticated first paint free
+    // while avoiding ten sequential network round trips in the background.
+    if (name === "home-enhancements") preloadScripts(group.scripts);
     const stylePromise = Promise.all((group.styles || []).map(loadStyle));
     const scriptPromise = (group.scripts || []).reduce(
       (chain, url) => chain
