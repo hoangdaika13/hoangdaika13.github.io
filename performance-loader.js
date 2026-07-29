@@ -159,8 +159,8 @@
     },
     game: {
       // Offline migration markers: astral-realms.css?v=22 astral-realms.js?v=22 astral-realms.css?v=23 astral-realms.js?v=23
-      styles: ["game-runtime.css?v=1", "astral-realms.css?v=34", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
-      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=34", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
+      styles: ["game-runtime.css?v=1", "astral-realms.css?v=35", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=35", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
     },
     // Compatibility asset aliases for clients upgrading from Entertainment v4:
     // "game-center.css?v=4" "game-center.js?v=4"

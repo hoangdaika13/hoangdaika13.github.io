@@ -33,6 +33,46 @@ test("Genesis keeps all appearance controls but locks the base Hero", () => {
   assert.match(source, /applyHeroArmIK/);
 });
 
+test("Genesis step 10 exposes an early completion dock for Character DNA V13 and Prologue", () => {
+  const render = between("    renderGenesisCreator()", "    refreshGenesisCreator()");
+  const dockAt = render.search(/data-genesis-action-dock/);
+  const dnaSectionAt = render.search(/class="har-genesis-dna"/);
+  assert.ok(dockAt >= 0, "step 10 needs a sticky completion/action dock");
+  assert.ok(dnaSectionAt > dockAt, "completion dock must appear before the long DNA/history content");
+
+  const dock = render.slice(dockAt, dnaSectionAt);
+  assert.match(dock, /data-genesis-stage="dna"/);
+  assert.match(dock, /data-genesis-action="confirm"/);
+  assert.match(dock, /Hoàn tất\s*(?:&|và)\s*bắt đầu Prologue/i);
+  assert.match(render, /Character DNA V13/);
+  assert.match(dock, /aria-label|type="button"/);
+});
+
+test("post-game Character Creator exposes a sticky save-and-close dock with a real handler", () => {
+  const creator = between("    renderCharacterCreatorPanel() {", "    renderWorldPanel() {");
+  const css = read("astral-realms.css");
+  const handlerStart = source.indexOf('else if (action === "appearance-finish")');
+  const handlerEnd = source.indexOf('else if (action === "manual-save")', handlerStart);
+  assert.ok(handlerStart >= 0 && handlerEnd > handlerStart, "missing appearance-finish handler boundary");
+  const handler = source.slice(handlerStart, handlerEnd);
+  const dnaAt = creator.indexOf('class="har-section har-character-dna"');
+  const dockAt = creator.indexOf('data-appearance-action-dock');
+
+  assert.ok(dnaAt >= 0 && dockAt > dnaAt, "finish dock must follow the DNA editor content");
+  assert.match(creator, /class="har-creator__finish"[^>]*data-appearance-action-dock/);
+  assert.match(creator, /data-panel-action="appearance-finish"/);
+  assert.match(creator, /Lưu ngoại hình\s*&amp;\s*trở lại game/);
+  assert.match(creator, /data-panel-action="appearance-save"/);
+  assert.match(creator, /data-appearance-name/);
+  assert.match(source, /data-har-panel-close[^>]*aria-label="Đóng bảng"/);
+  assert.match(css, /\.har-creator__finish\s*\{[\s\S]{0,260}position:\s*sticky/);
+  assert.match(handler, /creatorVersion\s*=\s*CHARACTER_VISUAL_VERSION/);
+  assert.match(handler, /lastSavedAt\s*=\s*nowIso\(\)/);
+  assert.match(handler, /await this\.saveProgress\(/);
+  assert.match(handler, /this\.closePanel\(\)/);
+  assert.match(handler, /this\.toast\(/);
+});
+
 test("only the canonical Hero GLB is present and cached", () => {
   const worker = read("sw.js");
   const manifest = JSON.parse(read("assets/astral-realms/manifest.json"));

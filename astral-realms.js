@@ -334,7 +334,11 @@
     { id: "gates", title: "Ba cổng thất lạc", description: "Kích hoạt cổng Aurora, Crimson và Void.", type: "gate", target: 3, reward: { xp: 180 } },
     { id: "warden", title: "Nexus Warden", description: "Đánh bại boss thế giới tại Void Garden.", type: "boss", target: 1, enemy: "nexus-warden", reward: { xp: 500, item: "astral-edge", amount: 1 } }
   ]);
-  const STORY_VERSION = 1;
+  const STORY_VERSION = 2;
+  const STORY_VERSION_LABEL = "STORY V2";
+  const STORY_METRIC_KEYS = Object.freeze(["identityIntegrity", "memoryDebt", "causalityPressure"]);
+  const STORY_METRIC_DEFAULTS = Object.freeze({ identityIntegrity: 76, memoryDebt: 8, causalityPressure: 12 });
+  const STORY_BELIEF_KEYS = Object.freeze(["freeWill", "coreOrder", "playerIsThreat", "aionMayBeRight"]);
   const STORY_ZONE_ORDER = Object.freeze(["central", "aurora", "crimson", "void", "sky", "ocean", "station", "abyss"]);
   const TRUTH_SHARDS = Object.freeze({
     central: { title: "Identity", color: "#6feeff", question: "Ai đã tạo Character DNA của bạn?", revelation: "Character Genesis không tạo ra bạn; nó phục hồi một mẫu người đã bị xóa khỏi mọi kho lưu trữ." },
@@ -366,36 +370,36 @@
   ]);
   const STORY_MISSIONS = Object.freeze([
     { zoneId: "central", title: "Người không tồn tại", mechanic: "Điều tra hiện trường bằng dư ảnh thời gian", summary: "Đối chiếu DNA, dấu va chạm và nhịp tim thứ năm trên tàu H-07.", steps: ["Quét buồng Genesis bị cháy", "Dựng lại 12 giây trước va chạm", "Đối chất Navigator Luma"], echoes: ["central-genesis", "central-mira"], prompt: "H-Central sẽ đối diện với sự thật bằng cách nào?", choices: [
-      { id: "publish", label: "Công bố hồ sơ Mira", outcome: "Người dân biết lịch sử đã bị sửa; thành phố bất ổn nhưng mở cuộc điều tra độc lập.", weather: "Mưa neon điều tra", economy: 1.08, control: "civilian-council", companion: "lyra", trust: 1 },
-      { id: "seal", label: "Niêm phong để bảo vệ Core", outcome: "HH Core ổn định nhanh hơn, nhưng Luma và Lyra nghi ngờ bạn đang lặp lại lựa chọn cũ.", weather: "Trời quang kiểm soát", economy: 0.96, control: "h-central", companion: "lyra", trust: -1 }
+      { id: "publish", label: "Công bố hồ sơ Mira", outcome: "Người dân biết lịch sử đã bị sửa; thành phố bất ổn nhưng mở cuộc điều tra độc lập.", weather: "Mưa neon điều tra", economy: 1.08, control: "civilian-council", companion: "lyra", trust: 1, metrics: { identityIntegrity: 4, memoryDebt: 5, causalityPressure: 6 }, beliefs: { lyra: { freeWill: 2, coreOrder: -1, playerIsThreat: -1, aionMayBeRight: -1 } } },
+      { id: "seal", label: "Niêm phong để bảo vệ Core", outcome: "HH Core ổn định nhanh hơn, nhưng Luma và Lyra nghi ngờ bạn đang lặp lại lựa chọn cũ.", weather: "Trời quang kiểm soát", economy: 0.96, control: "h-central", companion: "lyra", trust: -1, metrics: { identityIntegrity: -3, memoryDebt: 1, causalityPressure: -4 }, beliefs: { lyra: { freeWill: -1, coreOrder: 2, playerIsThreat: 1, aionMayBeRight: 1 } } }
     ] },
     { zoneId: "aurora", title: "Cuộc đời chưa xảy ra", mechanic: "Chơi lại cùng sự kiện từ ba góc nhìn", summary: "Bước qua ký ức của Cael trước khi chúng xóa mất con người hiện tại của anh.", steps: ["Theo dấu chân không có chủ", "Sống lại ký ức của Cael", "Tách ký ức thật khỏi Echo giả"], echoes: ["aurora-home", "aurora-cost"], prompt: "Bạn sẽ giữ lại ký ức nào cho Cael?", choices: [
-      { id: "past", label: "Trả lại cuộc đời đã mất", outcome: "Cael nhớ bạn rõ hơn nhưng quên một phần gia đình hiện tại; Aurora xuất hiện những ngôi nhà từ dòng thời gian cũ.", weather: "Cực quang ký ức", economy: 0.92, control: "aurora-keepers", companion: "cael", trust: 2, memory: -2 },
-      { id: "present", label: "Bảo vệ con người hiện tại", outcome: "Cael mất bằng chứng về quá khứ nhưng giữ gia đình; anh tin lựa chọn của bạn dù đau đớn.", weather: "Tuyết trong bình minh", economy: 1.02, control: "aurora-keepers", companion: "cael", trust: 1, memory: 1 }
+      { id: "past", label: "Trả lại cuộc đời đã mất", outcome: "Cael nhớ bạn rõ hơn nhưng quên một phần gia đình hiện tại; Aurora xuất hiện những ngôi nhà từ dòng thời gian cũ.", weather: "Cực quang ký ức", economy: 0.92, control: "aurora-keepers", companion: "cael", trust: 2, memory: -2, metrics: { identityIntegrity: 2, memoryDebt: 12, causalityPressure: 7 }, beliefs: { cael: { freeWill: 1, playerIsThreat: 1, aionMayBeRight: -1 } } },
+      { id: "present", label: "Bảo vệ con người hiện tại", outcome: "Cael mất bằng chứng về quá khứ nhưng giữ gia đình; anh tin lựa chọn của bạn dù đau đớn.", weather: "Tuyết trong bình minh", economy: 1.02, control: "aurora-keepers", companion: "cael", trust: 1, memory: 1, metrics: { identityIntegrity: 4, memoryDebt: -6, causalityPressure: -3 }, beliefs: { cael: { freeWill: 1, coreOrder: 1, playerIsThreat: -1 } } }
     ] },
     { zoneId: "crimson", title: "Thành phố phải cháy", mechanic: "Boss fight đan xen đối thoại giữa các phase", summary: "Đi qua lò phản ứng sụp đổ và buộc Sol đối diện mệnh lệnh mang chữ ký của bạn.", steps: ["Hộ tống lõi qua lò rèn", "Đàm phán với Forge Warden", "Khóa phản ứng dây chuyền"], echoes: ["crimson-order", "crimson-survivor"], prompt: "Crimson Forge sẽ được tái thiết theo giá nào?", choices: [
-      { id: "people", label: "Cứu khu dân cư trước", outcome: "Lò rèn mất sản lượng, giá trang bị tăng nhưng các gia đình sống sót và Sol đặt con người lên trên mệnh lệnh.", weather: "Tro tàn lắng xuống", economy: 1.18, control: "crimson-union", companion: "sol", trust: 2 },
-      { id: "forge", label: "Giữ lò rèn hoạt động", outcome: "Crimson trở thành thành trì quân sự mạnh, đổi lại một quận dân cư bị bỏ hoang.", weather: "Bão nhiệt công nghiệp", economy: 0.82, control: "h-central", companion: "sol", trust: 1, fear: 1 }
+      { id: "people", label: "Cứu khu dân cư trước", outcome: "Lò rèn mất sản lượng, giá trang bị tăng nhưng các gia đình sống sót và Sol đặt con người lên trên mệnh lệnh.", weather: "Tro tàn lắng xuống", economy: 1.18, control: "crimson-union", companion: "sol", trust: 2, metrics: { identityIntegrity: 5, memoryDebt: 3, causalityPressure: 5 }, beliefs: { sol: { freeWill: 2, coreOrder: -2, playerIsThreat: -1, aionMayBeRight: -1 } } },
+      { id: "forge", label: "Giữ lò rèn hoạt động", outcome: "Crimson trở thành thành trì quân sự mạnh, đổi lại một quận dân cư bị bỏ hoang.", weather: "Bão nhiệt công nghiệp", economy: 0.82, control: "h-central", companion: "sol", trust: 1, fear: 1, metrics: { identityIntegrity: -3, memoryDebt: 5, causalityPressure: -5 }, beliefs: { sol: { freeWill: -1, coreOrder: 2, playerIsThreat: 1, aionMayBeRight: 1 } } }
     ] },
     { zoneId: "void", title: "Vật chủ cuối cùng", mechanic: "Xâm nhập có thể chuyển thành đàm phán hoặc chiến đấu", summary: "Đi cùng Nyx vào khu vườn nơi thực vật lặp lại giọng nói của Aion.", steps: ["Ẩn mình qua bào tử nghe lén", "Giải mã tiếng nói Nexus", "Đối thoại với bản sao Nyx"], echoes: ["void-bloodline", "void-whisper"], prompt: "Bạn sẽ làm gì với liên kết giữa Nyx và Aion?", choices: [
-      { id: "share", label: "Chia sẻ sức mạnh cùng Nyx", outcome: "Nyx kiểm soát được cổng nhưng Void lan thành hoa phát sáng; một số kỹ năng nguy hiểm được mở.", weather: "Mưa bào tử cộng hưởng", economy: 1.04, control: "void-cult", companion: "nyx", trust: 2, dangerous: 1 },
-      { id: "sever", label: "Cắt đứt cộng hưởng", outcome: "Void Garden yên ổn hơn nhưng Nyx mất một phần năng lực và lo sợ bạn sẽ xóa cô khi cần thiết.", weather: "Khoảng lặng hư không", economy: 0.98, control: "astral-researchers", companion: "nyx", trust: -1, fear: 2 }
+      { id: "share", label: "Chia sẻ sức mạnh cùng Nyx", outcome: "Nyx kiểm soát được cổng nhưng Void lan thành hoa phát sáng; một số kỹ năng nguy hiểm được mở.", weather: "Mưa bào tử cộng hưởng", economy: 1.04, control: "void-cult", companion: "nyx", trust: 2, dangerous: 1, metrics: { identityIntegrity: 3, memoryDebt: 8, causalityPressure: 10 }, beliefs: { nyx: { freeWill: 2, playerIsThreat: 2, aionMayBeRight: -1 } } },
+      { id: "sever", label: "Cắt đứt cộng hưởng", outcome: "Void Garden yên ổn hơn nhưng Nyx mất một phần năng lực và lo sợ bạn sẽ xóa cô khi cần thiết.", weather: "Khoảng lặng hư không", economy: 0.98, control: "astral-researchers", companion: "nyx", trust: -1, fear: 2, metrics: { identityIntegrity: -2, memoryDebt: 2, causalityPressure: -7 }, beliefs: { nyx: { freeWill: -2, coreOrder: 1, playerIsThreat: 2, aionMayBeRight: 1 } } }
     ] },
     { zoneId: "sky", title: "Quyền được sai lầm", mechanic: "Truy đuổi giữa môi trường đang sụp đổ", summary: "Bắt kịp kho lưu trữ tự do trước khi đảo cuối cùng rơi khỏi quỹ đạo.", steps: ["Lướt qua ba đảo vỡ", "Cứu hội đồng hay kho dữ liệu", "Neo lại thành phố trên mây"], echoes: ["sky-vote", "sky-fall"], prompt: "Ai được quyền quyết định tương lai Sky Ruins?", choices: [
-      { id: "free", label: "Trao quyền cho từng đảo", outcome: "Sky Ruins tách thành các cộng đồng tự trị; tuyến vận chuyển khó hơn nhưng nhiệm vụ đa dạng hơn.", weather: "Gió tự do phân nhánh", economy: 1.12, control: "free-travelers" },
-      { id: "unified", label: "Lập hội đồng thống nhất", outcome: "Đường bay an toàn và hàng hóa rẻ hơn, nhưng các đảo phản kháng xuất hiện.", weather: "Mây trật tự", economy: 0.86, control: "h-central" }
+      { id: "free", label: "Trao quyền cho từng đảo", outcome: "Sky Ruins tách thành các cộng đồng tự trị; tuyến vận chuyển khó hơn nhưng nhiệm vụ đa dạng hơn.", weather: "Gió tự do phân nhánh", economy: 1.12, control: "free-travelers", metrics: { identityIntegrity: 6, memoryDebt: 2, causalityPressure: 9 }, beliefsAll: { freeWill: 1, coreOrder: -1, aionMayBeRight: -1 } },
+      { id: "unified", label: "Lập hội đồng thống nhất", outcome: "Đường bay an toàn và hàng hóa rẻ hơn, nhưng các đảo phản kháng xuất hiện.", weather: "Mây trật tự", economy: 0.86, control: "h-central", metrics: { identityIntegrity: -3, memoryDebt: 0, causalityPressure: -8 }, beliefsAll: { freeWill: -1, coreOrder: 1, aionMayBeRight: 1 } }
     ] },
     { zoneId: "ocean", title: "Biển nhớ người chết", mechanic: "Nhiệm vụ ký ức làm thay đổi trọng lực và thời gian", summary: "Lặn vào đại dương lượng tử để tìm Mira mà không đánh mất hiện tại.", steps: ["Đi theo giọng hát dưới vực", "Ghép một triệu tang lễ", "Đưa một ký ức trở về bờ"], echoes: ["ocean-mira", "ocean-funerals"], prompt: "Bạn sẽ để người đã mất tồn tại theo cách nào?", choices: [
-      { id: "embody", label: "Cho ký ức một cơ thể mới", outcome: "Mira trở lại như một Echo hữu hạn; bầu trời Ocean Moon luôn mang dấu hiệu của hai dòng thời gian.", weather: "Mưa sao hồi sinh", economy: 1.06, control: "aurora-keepers" },
-      { id: "release", label: "Để ký ức hòa vào biển", outcome: "Mira không trở lại, nhưng mọi người có thể nghe lời cuối của người đã mất khi thủy triều lên.", weather: "Thủy triều tưởng niệm", economy: 0.94, control: "astral-researchers" }
+      { id: "embody", label: "Cho ký ức một cơ thể mới", outcome: "Mira trở lại như một Echo hữu hạn; bầu trời Ocean Moon luôn mang dấu hiệu của hai dòng thời gian.", weather: "Mưa sao hồi sinh", economy: 1.06, control: "aurora-keepers", metrics: { identityIntegrity: 4, memoryDebt: 14, causalityPressure: 12 }, beliefsAll: { freeWill: 1, playerIsThreat: 1, aionMayBeRight: -1 } },
+      { id: "release", label: "Để ký ức hòa vào biển", outcome: "Mira không trở lại, nhưng mọi người có thể nghe lời cuối của người đã mất khi thủy triều lên.", weather: "Thủy triều tưởng niệm", economy: 0.94, control: "astral-researchers", metrics: { identityIntegrity: 2, memoryDebt: -8, causalityPressure: -5 }, beliefsAll: { freeWill: 1, playerIsThreat: -1 } }
     ] },
     { zoneId: "station", title: "Lời hứa phản bội", mechanic: "Bảo vệ nhân chứng có mục tiêu bí mật riêng", summary: "Hộ tống Lyra qua ga số 7 trong khi cô tìm cách xóa chính biên bản bàn giao.", steps: ["Đột nhập kho audit", "Bảo vệ nhân chứng chạy trốn", "Khôi phục biên bản bàn giao"], echoes: ["station-handover", "station-promise"], prompt: "Bạn sẽ phán xét Lyra bằng ký ức nào?", choices: [
-      { id: "forgive", label: "Tin vào lời hứa cũ", outcome: "Lyra ở lại và công khai toàn bộ audit; Astral Station mất niềm tin ngắn hạn nhưng mở hệ thống minh bạch.", weather: "Cực quang minh bạch", economy: 1.03, control: "astral-researchers", companion: "lyra", trust: 3 },
-      { id: "detain", label: "Tạm giữ Lyra để điều tra", outcome: "Trạm ổn định nhưng Lyra rời đội cho tới khi bạn tìm đủ bằng chứng ở Abyss.", weather: "Đèn vàng phong tỏa", economy: 0.9, control: "h-central", companion: "lyra", trust: -3, departed: true }
+      { id: "forgive", label: "Tin vào lời hứa cũ", outcome: "Lyra ở lại và công khai toàn bộ audit; Astral Station mất niềm tin ngắn hạn nhưng mở hệ thống minh bạch.", weather: "Cực quang minh bạch", economy: 1.03, control: "astral-researchers", companion: "lyra", trust: 3, metrics: { identityIntegrity: 6, memoryDebt: 7, causalityPressure: 6 }, beliefs: { lyra: { freeWill: 2, coreOrder: -1, playerIsThreat: -2, aionMayBeRight: -1 } } },
+      { id: "detain", label: "Tạm giữ Lyra để điều tra", outcome: "Trạm ổn định nhưng Lyra rời đội cho tới khi bạn tìm đủ bằng chứng ở Abyss.", weather: "Đèn vàng phong tỏa", economy: 0.9, control: "h-central", companion: "lyra", trust: -3, departed: true, metrics: { identityIntegrity: -4, memoryDebt: 2, causalityPressure: -6 }, beliefs: { lyra: { freeWill: -2, coreOrder: 2, playerIsThreat: 3, aionMayBeRight: 2 } } }
     ] },
     { zoneId: "abyss", title: "Sự thật bạn đã chọn quên", mechanic: "Đối thoại quyết định diễn ra giữa các phase của Aion", summary: "Đối mặt Aion, phiên bản tương lai của bạn, tại nơi HH Core lưu lệnh xóa gốc.", steps: ["Đi ngược trọng lực Nexus", "Đấu với các tương lai của chính mình", "Mở lệnh xóa nguyên bản"], echoes: ["abyss-request", "abyss-purpose"], prompt: "Bạn sẽ làm gì với bằng chứng của Aion?", choices: [
-      { id: "accept", label: "Chấp nhận bằng chứng, giữ quyền chọn", outcome: "Aion ngừng chiến đấu để chờ phán quyết cuối; không dòng thời gian nào bị xóa ngay lập tức.", weather: "Nhật thực đình chiến", economy: 1, control: "free-travelers", trustAll: 1 },
-      { id: "destroy", label: "Phá máy lưu trữ định mệnh", outcome: "Các tương lai không còn bị dự đoán, nhưng HH Core mất khả năng cảnh báo thảm họa và đồng đội sợ sức mạnh của bạn.", weather: "Bão xác suất", economy: 1.1, control: "void-cult", dangerous: 2, fearAll: 1 }
+      { id: "accept", label: "Chấp nhận bằng chứng, giữ quyền chọn", outcome: "Aion ngừng chiến đấu để chờ phán quyết cuối; không dòng thời gian nào bị xóa ngay lập tức.", weather: "Nhật thực đình chiến", economy: 1, control: "free-travelers", trustAll: 1, metrics: { identityIntegrity: 3, memoryDebt: 6, causalityPressure: -4 }, beliefsAll: { freeWill: 1, playerIsThreat: -1, aionMayBeRight: 2 } },
+      { id: "destroy", label: "Phá máy lưu trữ định mệnh", outcome: "Các tương lai không còn bị dự đoán, nhưng HH Core mất khả năng cảnh báo thảm họa và đồng đội sợ sức mạnh của bạn.", weather: "Bão xác suất", economy: 1.1, control: "void-cult", dangerous: 2, fearAll: 1, metrics: { identityIntegrity: 5, memoryDebt: -2, causalityPressure: 18 }, beliefsAll: { freeWill: 2, coreOrder: -2, playerIsThreat: 3, aionMayBeRight: -2 } }
     ] }
   ]);
   const STORY_OBJECTIVES = Object.freeze({
@@ -440,6 +444,147 @@
       { event: "beacon", label: "Mở lệnh xóa nguyên bản trong Dư ảnh Aion", target: 1 }
     ]
   });
+  const STORY_INTERLUDES = Object.freeze([
+    {
+      id: "fifth-heartbeat",
+      title: "Interlude I · Nhịp tim thứ năm",
+      teaser: "Một chữ ký giọng nói tồn tại trước khi Character Genesis phục hồi bạn.",
+      revelation: "HH Core xác nhận chính Voice DNA của bạn đã cấp quyền Protocol Null, nhưng dấu thời gian của lệnh sớm hơn lần phục hồi hiện tại 31 năm. Bản ghi có thể đến từ tương lai hoặc đã bị Aion dựng lại.",
+      unlock: [
+        { type: "signal", key: "voiceAuthorizationRecovered", label: "Khôi phục ủy quyền giọng nói trong Prologue" },
+        { type: "truth", zoneId: "central", label: "Thu Truth Shard Identity" },
+        { type: "echo", echoId: "central-mira", label: "Mở Echo Tên bị gạch khỏi tàu H-07" }
+      ]
+    },
+    {
+      id: "burned-command",
+      title: "Interlude II · Mệnh lệnh cháy ngược",
+      teaser: "Sol nhớ một mệnh lệnh có chữ ký hợp lệ nhưng thời gian không hợp lệ.",
+      revelation: "Khóa sinh trắc trên lệnh thiêu hủy Crimson là thật. Điều không thể là khóa ấy được tạo ba giờ sau khi thành phố đã cháy, khiến lời khai của Sol và Forge Archive cùng đúng nhưng không thể cùng thuộc một dòng thời gian.",
+      unlock: [
+        { type: "shards", min: 3, label: "Thu ít nhất 3 Truth Shard" },
+        { type: "echo", echoId: "crimson-order", label: "Mở Echo Mệnh lệnh mang chữ ký của bạn" },
+        { type: "companionTrust", companionId: "sol", min: 2, label: "Đạt Trust 2 với Sol" }
+      ]
+    },
+    {
+      id: "mira-two-deaths",
+      title: "Interlude III · Hai cái chết của Mira",
+      teaser: "H-Central và Ocean Moon nhớ hai kết thúc khác nhau của cùng một người.",
+      revelation: "Mira vừa bị xóa trên H-07 vừa chết già bên Ocean Moon. Memory Debt không phải số ký ức bạn giữ, mà là số cuộc đời khác phải quên để ký ức ấy tiếp tục tồn tại.",
+      unlock: [
+        { type: "shards", min: 6, label: "Thu ít nhất 6 Truth Shard" },
+        { type: "echo", echoId: "ocean-mira", label: "Mở Echo Giọng nói dưới Ocean Moon" },
+        { type: "metric", key: "memoryDebt", min: 25, label: "Memory Debt đạt 25" }
+      ]
+    },
+    {
+      id: "archivist-invited",
+      title: "Interlude IV · Kẻ phản bội được mời vào",
+      teaser: "Biên bản giao nộp Lyra giấu một người ra lệnh thứ ba.",
+      revelation: "Lyra không tự tìm The Archivist. Một phiên bản của bạn đã mở cổng, giao khóa Genesis và buộc cô đóng vai kẻ phản bội để Aion tin rằng kế hoạch xóa đã hoàn tất.",
+      unlock: [
+        { type: "shards", min: 7, label: "Thu ít nhất 7 Truth Shard" },
+        { type: "echo", echoId: "station-promise", label: "Mở Echo Lời hứa không được phép nhớ" },
+        { type: "links", min: 4, label: "Nối ít nhất 4 cặp Echo" }
+      ]
+    },
+    {
+      id: "aion-remembers-cycle",
+      title: "Interlude Ω · Aion nhớ vòng lặp",
+      teaser: "Có người khác ngoài bạn giữ ký ức qua New Game+.",
+      revelation: "Aion gọi đúng số vòng chơi trước khi bạn nói. Hắn không đứng ngoài vòng lặp: mỗi New Game+ làm ký ức của hắn rõ hơn và đẩy Causality Pressure của thế giới mới lên cao hơn.",
+      unlock: [
+        { type: "ngPlus", min: 1, label: "Bắt đầu ít nhất một New Game+" },
+        { type: "signal", key: "aionRecognizesCycle", label: "Nhận tín hiệu Aion nhận ra vòng lặp" }
+      ]
+    }
+  ]);
+  const STORY_TESTIMONIES = Object.freeze([
+    {
+      id: "central-authorization",
+      zoneId: "central",
+      title: "Ai cho phép xóa Mira?",
+      left: { speaker: "Navigator Luma", text: "Mira chưa từng có tên trong thủy thủ đoàn H-07." },
+      right: { speaker: "Voice DNA của bạn", text: "Xác nhận Protocol Null: xóa nhân chứng M-01 trước khi xóa chủ thể H." },
+      insight: "Hai lời khai đều vượt kiểm tra toàn vẹn. Xung đột nằm ở dòng thời gian, không nằm ở người nói.",
+      unlock: [
+        { type: "signal", key: "voiceAuthorizationRecovered", label: "Nghe bản ủy quyền Voice DNA" },
+        { type: "echo", echoId: "central-mira", label: "Mở Echo của Mira" }
+      ]
+    },
+    {
+      id: "aurora-family",
+      zoneId: "aurora",
+      title: "Cael đã sống cùng ai?",
+      left: { speaker: "Cael", text: "Tôi nhớ bạn trong căn nhà ở triền băng suốt mười hai năm." },
+      right: { speaker: "Aurora Census", text: "Nền móng căn nhà chưa từng được xây; gia đình Cael không có thành viên thứ năm." },
+      insight: "Ký ức của Cael mang nhiệt độ và cảm giác thật, còn hồ sơ vật chất không có dấu hiệu bị sửa.",
+      unlock: [
+        { type: "truth", zoneId: "aurora", label: "Thu Truth Shard Memory" },
+        { type: "echo", echoId: "aurora-home", label: "Mở Echo Ngôi nhà không có trong lịch sử" }
+      ]
+    },
+    {
+      id: "crimson-order-time",
+      zoneId: "crimson",
+      title: "Ai ký lệnh thiêu hủy?",
+      left: { speaker: "Sol", text: "Tôi nhận lệnh trực tiếp từ bạn trước khi cổng Void vỡ." },
+      right: { speaker: "Forge Archive", text: "Khóa sinh trắc của lệnh được phát hành sau thảm họa ba giờ." },
+      insight: "Lệnh có thể đã đi ngược thời gian, hoặc một trong hai nhân chứng thuộc về dòng lịch sử khác.",
+      unlock: [
+        { type: "interlude", interludeId: "burned-command", label: "Mở Interlude Mệnh lệnh cháy ngược" }
+      ]
+    },
+    {
+      id: "void-voice",
+      zoneId: "void",
+      title: "Tiếng nói muốn cứu hay chiếm Nyx?",
+      left: { speaker: "Nyx", text: "Giọng nói bảo tôi mở Nexus để cứu bạn." },
+      right: { speaker: "Aion", text: "Tôi đã cầu xin Nyx đóng cổng vì bạn sẽ dùng nó để nhớ lại." },
+      insight: "Cả hai bản âm đều cùng tần số nhưng khác chiều thời gian; chưa thể xác định câu nào đến trước.",
+      unlock: [
+        { type: "truth", zoneId: "void", label: "Thu Truth Shard Fear" },
+        { type: "echo", echoId: "void-whisper", label: "Mở Echo Lời thì thầm ngược thời gian" }
+      ]
+    },
+    {
+      id: "ocean-mira-life",
+      zoneId: "ocean",
+      title: "Mira chết lúc nào?",
+      left: { speaker: "Ký ức H-07", text: "Mira bị xóa lúc 08:52 ngay trước mắt bạn." },
+      right: { speaker: "Quantum Sea", text: "Mira sống thêm 63 năm và để lại lời nhắn cuối dưới đáy biển." },
+      insight: "Ocean Moon không lưu bóng ma; nó lưu một cuộc đời hoàn chỉnh mà H-Central đã đánh đổi.",
+      unlock: [
+        { type: "interlude", interludeId: "mira-two-deaths", label: "Mở Interlude Hai cái chết của Mira" }
+      ]
+    },
+    {
+      id: "station-betrayal",
+      zoneId: "station",
+      title: "Lyra phản bội hay giữ lời?",
+      left: { speaker: "Lyra", text: "Tôi giao bạn cho Archivist để cứu H-Central." },
+      right: { speaker: "Giọng của bạn", text: "Khi tôi trở lại, hãy phản bội tôi lần nữa nếu đó là cách duy nhất để giữ cửa Genesis." },
+      insight: "Sự phản bội có thể là phần cuối của lời hứa, nhưng không xóa trách nhiệm của Lyra với những gì đã xảy ra.",
+      unlock: [
+        { type: "truth", zoneId: "station", label: "Thu Truth Shard Betrayal" },
+        { type: "echo", echoId: "station-promise", label: "Mở Echo Lời hứa không được phép nhớ" }
+      ]
+    },
+    {
+      id: "abyss-request",
+      zoneId: "abyss",
+      title: "Bạn là nạn nhân hay người khởi xướng?",
+      left: { speaker: "Aion", text: "Chính bạn yêu cầu tôi xóa bạn khỏi mọi dòng thời gian." },
+      right: { speaker: "Genesis Escape Route", text: "Chính bạn để lại đường phục hồi nhằm phá dòng thời gian hoàn hảo của Aion." },
+      insight: "Hai mệnh lệnh đối nghịch đều dùng cùng Character DNA. Có thể bạn đã dự phòng chống lại chính quyết định của mình.",
+      unlock: [
+        { type: "truth", zoneId: "abyss", label: "Thu Truth Shard Truth" },
+        { type: "echo", echoId: "abyss-purpose", label: "Mở Echo Mục đích thật của Genesis" },
+        { type: "interlude", interludeId: "archivist-invited", label: "Mở Interlude Kẻ phản bội được mời vào" }
+      ]
+    }
+  ]);
   const STORY_ENDINGS = Object.freeze([
     { id: "restoration", title: "Restoration", color: "#72efff", premise: "Khôi phục mọi dòng thời gian và chấp nhận một vũ trụ hỗn loạn nhưng đầy ký ức." },
     { id: "perfect-silence", title: "Perfect Silence", color: "#d6ddff", premise: "Tự xóa mình để một dòng lịch sử ổn định tiếp tục mà không còn biết cái giá đã trả." },
@@ -449,11 +594,12 @@
   ]);
   const STORY_PROLOGUE = Object.freeze({
     awakening: { kicker: "00:01 · H-07 ĐANG RƠI", title: "Bạn tỉnh dậy giữa một tai nạn chưa từng được ghi nhận", text: "Character Genesis vừa hoàn tất thì khoang ngủ đông bật tung. Bên dưới, H-Central lao tới trong mưa neon; hệ thống khẳng định con tàu không có tên trong lịch sử.", next: "dna-signal", action: "Bám lấy thành tàu" },
-    "dna-signal": { kicker: "02:14 · TÍN HIỆU KHÔNG NGUỒN", title: "Một giọng nói gọi đúng tên bạn", text: "‘{player}, đừng để họ quét lại Character DNA. Nếu Core nhận ra bạn, lịch sử sẽ bắt đầu tự xóa lần nữa.’ Tín hiệu biết cả những chỉnh sửa bạn vừa chọn trong Genesis.", next: "mirror-attack", action: "Mở kênh khẩn cấp" },
+    "dna-signal": { kicker: "02:14 · TÍN HIỆU KHÔNG NGUỒN", title: "Một giọng nói gọi đúng tên bạn", text: "‘{player}, đừng để họ quét lại Character DNA. Nếu Core nhận ra bạn, lịch sử sẽ bắt đầu tự xóa lần nữa.’ Tín hiệu biết cả những chỉnh sửa bạn vừa chọn trong Genesis.", ngPlusText: "‘{player}, vòng {cycle} đã bắt đầu.’ Giọng Aion đọc đúng số lần thế giới được tái tạo rồi nhắc lại một lựa chọn bạn chưa thực hiện trong vòng này.", next: "mirror-attack", action: "Mở kênh khẩn cấp" },
     "mirror-attack": { kicker: "04:47 · H-CENTRAL", title: "Kẻ tấn công mang khuôn mặt của bạn", text: "Sinh vật tràn qua quảng trường. Mỗi con có cùng gương mặt, vết sẹo và ánh mắt của bạn, nhưng chuyển động như những tương lai đang tranh nhau một cơ thể.", next: "first-choice", action: "Chống trả và tìm đường tới Core" },
     "first-choice": { kicker: "07:31 · LỰA CHỌN KHÔNG THỂ HOÀN TÁC", title: "Mira bị kẹt trong ga dân sự; HH Core sắp vỡ", text: "Bạn chỉ đủ thời gian đi một hướng. Mira nói cô biết vì sao mọi hồ sơ đều thiếu tên bạn. Sol yêu cầu bảo vệ Core để cứu hàng triệu người.", choice: true },
-    erasure: { kicker: "08:52 · MEMORY FAILURE", title: "Một người biến mất khỏi lịch sử", text: "Mira nhìn thẳng vào bạn rồi tan thành bụi sáng. Một giây sau, Lyra, Cael, Nyx và Sol đều hỏi: ‘Mira là ai?’ Chỉ bạn còn nhớ tên cô.", next: "aion-reveal", action: "Giữ lấy ký ức" },
-    "aion-reveal": { kicker: "09:44 · TÍN HIỆU CỦA THE ARCHIVIST", title: "Phản diện tháo mặt nạ", text: "Khuôn mặt phía sau mặt nạ là bạn, già hơn và kiệt sức. Aion nói: ‘Tôi không săn đuổi chúng ta. Tôi đang hoàn thành điều chính bạn từng yêu cầu.’", next: "departure", action: "Yêu cầu hắn đưa bằng chứng" },
+    erasure: { kicker: "08:52 · MIRA / RECORD NOT FOUND", title: "Mira bị xóa hai lần trước mắt bạn", text: "Mira tan thành bụi sáng; ngay sau đó ảnh, tên và ghế cứu nạn của cô biến mất khỏi con tàu. Lyra, Cael, Nyx và Sol đồng loạt hỏi ‘Mira là ai?’. Chỉ bạn còn nhớ, và ký ức ấy bắt đầu làm đau như một món nợ.", next: "voice-authorization", action: "Giữ tên Mira trong trí nhớ" },
+    "voice-authorization": { kicker: "09:17 · PROTOCOL NULL / VOICE MATCH", title: "Chính giọng của bạn đã cho phép cuộc xóa", text: "HH Core phát một bản dựng từ Voice DNA — không dùng microphone hiện tại. Giọng nhân vật của bạn nói: ‘Xác nhận Protocol Null. Xóa Mira trước. Xóa tôi sau.’ Chữ ký sinh trắc hợp lệ, nhưng bạn không nhớ từng nói câu đó.", ngPlusText: "HH Core phát lại Voice DNA. Lần này bản ghi thêm một câu không có ở vòng trước: ‘Nếu đây là vòng {cycle}, Aion đã bắt đầu nhớ. Đừng tin cả tôi.’", next: "aion-reveal", action: "Đối chiếu chữ ký Voice DNA" },
+    "aion-reveal": { kicker: "09:44 · TÍN HIỆU CỦA THE ARCHIVIST", title: "Phản diện tháo mặt nạ", text: "Khuôn mặt phía sau mặt nạ là bạn, già hơn và kiệt sức. Aion nói: ‘Tôi không săn đuổi chúng ta. Tôi đang hoàn thành điều chính bạn từng yêu cầu.’", ngPlusText: "Khuôn mặt phía sau mặt nạ vẫn là bạn. Aion nhìn thẳng vào ký ức của vòng {cycle}: ‘Lần trước bạn gọi tôi là quái vật. Lần này, hãy hỏi ai đã dạy tôi nhớ qua mỗi lần tái sinh.’", next: "departure", action: "Yêu cầu hắn đưa bằng chứng" },
     departure: { kicker: "10:00 · MISSION CONSTELLATION", title: "Tám mảnh sự thật đã thức tỉnh", text: "HH Core Star vỡ thành tám Truth Shard. Mỗi thế giới nhớ một phiên bản khác nhau về bạn. Hành trình bắt đầu bằng câu hỏi: vì sao cả vũ trụ phải quên bạn để tiếp tục tồn tại?", finish: true, action: "Bước vào H-Central" }
   });
   const ENEMY_ARCHETYPES = Object.freeze({
@@ -522,7 +668,7 @@
     if (!report.animations) warnings.push("Không có animation clip; runtime giữ pose gốc.");
     if ((report.skeletonCoverage || 0) < 0.55 && report.bones) warnings.push("Skeleton chưa khớp tốt với HH Humanoid.");
     if (report.rootMotionTracks) warnings.push(`${report.rootMotionTracks} root-motion track X/Z sẽ được chuyển thành in-place để tránh trôi nhân vật.`);
-    if (report.headVertices && report.headVertices < HERO_ASSET_REQUIREMENTS.headVerticesMin) warnings.push("Head mesh dưới 20K vertices; phù hợp gameplay/NPC nhưng chưa đạt Hero V12.");
+      if (report.headVertices && report.headVertices < HERO_ASSET_REQUIREMENTS.headVerticesMin) warnings.push("Head mesh dưới 20K vertices; phù hợp gameplay/NPC nhưng chưa đạt Hero V13.");
     if ((report.faceMorphTargets || 0) < 52) warnings.push(`Model có ${report.faceMorphTargets || 0}/52 facial morph native; các kênh còn thiếu không được giả bằng model chất lượng thấp.`);
     if ((report.maxTextureSize || 0) > 2048) warnings.push("Texture trên 2K sẽ tốn bộ nhớ; nên xuất KTX2 2K cho Web Hero.");
     if ((report.bones || 0) > 120) warnings.push("Skeleton trên 120 bone; nên giảm bone phụ cho bản web.");
@@ -754,6 +900,105 @@
     }]));
   }
 
+  function defaultCompanionBeliefs(id) {
+    const defaults = {
+      lyra: { freeWill: 2, coreOrder: 0, playerIsThreat: 1, aionMayBeRight: 0 },
+      cael: { freeWill: 1, coreOrder: 0, playerIsThreat: 0, aionMayBeRight: 0 },
+      nyx: { freeWill: 2, coreOrder: -1, playerIsThreat: 1, aionMayBeRight: 1 },
+      sol: { freeWill: 0, coreOrder: 2, playerIsThreat: 1, aionMayBeRight: 1 }
+    };
+    return { ...(defaults[id] || defaults.lyra) };
+  }
+
+  function defaultStoryInterludeState() {
+    return Object.fromEntries(STORY_INTERLUDES.map((interlude) => [interlude.id, {
+      unlocked: false,
+      viewed: false,
+      unlockedAt: "",
+      viewedAt: ""
+    }]));
+  }
+
+  function migrateStoryV2Metrics(inputStory) {
+    const story = inputStory && typeof inputStory === "object" ? inputStory : null;
+    if (!story) return { ...STORY_METRIC_DEFAULTS };
+    const sourceVersion = Number(story.version || 1);
+    const existing = story.metrics && typeof story.metrics === "object" ? story.metrics : null;
+    if (sourceVersion >= STORY_VERSION && existing) {
+      return Object.fromEntries(STORY_METRIC_KEYS.map((key) => [key, clamp(existing[key] ?? STORY_METRIC_DEFAULTS[key], 0, 100)]));
+    }
+    const decisions = Array.isArray(story.decisions) ? story.decisions.length : 0;
+    const echoes = story.echoes && typeof story.echoes === "object"
+      ? Object.values(story.echoes).filter((record) => record?.unlocked === true).length
+      : 0;
+    const links = Array.isArray(story.constellationLinks) ? story.constellationLinks.length : 0;
+    const dangerous = Number(story.endingFlags?.dangerousPowerUses || 0);
+    const cycle = Number(story.newGamePlus || 0);
+    return {
+      identityIntegrity: clamp(STORY_METRIC_DEFAULTS.identityIntegrity + Math.min(16, echoes) - dangerous * 4 + Math.min(8, decisions), 0, 100),
+      memoryDebt: clamp(STORY_METRIC_DEFAULTS.memoryDebt + decisions * 3 + cycle * 8 - Math.min(12, links * 2), 0, 100),
+      causalityPressure: clamp(STORY_METRIC_DEFAULTS.causalityPressure + decisions * 5 + dangerous * 8 + cycle * 10, 0, 100)
+    };
+  }
+
+  function normalizeStoryMetrics(value, fallback = STORY_METRIC_DEFAULTS) {
+    const source = value && typeof value === "object" ? value : {};
+    return Object.fromEntries(STORY_METRIC_KEYS.map((key) => [key, Math.round(clamp(source[key] ?? fallback[key], 0, 100))]));
+  }
+
+  function normalizeCompanionBeliefs(input, id) {
+    const source = input && typeof input === "object" ? input : {};
+    const fallback = defaultCompanionBeliefs(id);
+    return Object.fromEntries(STORY_BELIEF_KEYS.map((key) => [key, clamp(source[key] ?? fallback[key], key === "playerIsThreat" ? 0 : -10, 10)]));
+  }
+
+  function migrateCompanionBeliefs(inputState, id) {
+    const existing = inputState?.companions?.[id]?.beliefs;
+    if (existing && typeof existing === "object") return normalizeCompanionBeliefs(existing, id);
+    const beliefs = defaultCompanionBeliefs(id);
+    STORY_MISSIONS.forEach((mission) => {
+      const choiceId = inputState?.story?.missions?.[mission.zoneId]?.choice;
+      const choice = mission.choices.find((item) => item.id === choiceId);
+      const delta = { ...(choice?.beliefsAll || {}), ...(choice?.beliefs?.[id] || {}) };
+      STORY_BELIEF_KEYS.forEach((key) => {
+        beliefs[key] = clamp(Number(beliefs[key] || 0) + Number(delta[key] || 0), key === "playerIsThreat" ? 0 : -10, 10);
+      });
+    });
+    return beliefs;
+  }
+
+  function storyConditionMet(state, condition = {}) {
+    const story = state?.story || state || {};
+    const companions = state?.companions || story.companions || {};
+    const truths = story.truthShards || {};
+    const echoes = story.echoes || {};
+    const metrics = story.metrics || {};
+    switch (condition.type) {
+      case "truth": return truths[condition.zoneId]?.discovered === true;
+      case "echo": return echoes[condition.echoId]?.unlocked === true;
+      case "shards": return Object.values(truths).filter((record) => record?.discovered).length >= Number(condition.min || 0);
+      case "links": return Array.isArray(story.constellationLinks) && story.constellationLinks.length >= Number(condition.min || 0);
+      case "signal": return Boolean(story.hiddenSignals?.[condition.key]);
+      case "metric": {
+        const value = Number(metrics[condition.key] || 0);
+        return value >= Number(condition.min ?? 0) && (condition.max === undefined || value <= Number(condition.max));
+      }
+      case "ngPlus": return Number(story.newGamePlus || 0) >= Number(condition.min || 0);
+      case "prologue": return Boolean(story.prologueCompletedAt);
+      case "companionTrust": return Number(companions?.[condition.companionId]?.trust || 0) >= Number(condition.min || 0);
+      case "interlude": return story.interludes?.[condition.interludeId]?.unlocked === true;
+      case "decision": return story.missions?.[condition.zoneId]?.choice === condition.choice;
+      default: return false;
+    }
+  }
+
+  function storyUnlockStatus(state, unlock = []) {
+    return unlock.map((condition) => ({
+      met: storyConditionMet(state, condition),
+      label: String(condition.label || "Điều kiện ẩn")
+    }));
+  }
+
   function defaultStoryState() {
     return {
       version: STORY_VERSION,
@@ -762,6 +1007,8 @@
       prologueCompletedAt: "",
       identityStatus: "erased",
       aionEvidence: 0,
+      metrics: { ...STORY_METRIC_DEFAULTS },
+      interludes: defaultStoryInterludeState(),
       truthShards: Object.fromEntries(STORY_ZONE_ORDER.map((zoneId) => [zoneId, { discovered: false, collectedAt: "" }])),
       echoes: Object.fromEntries(ECHO_MEMORIES.map((echo) => [echo.id, { unlocked: false, viewed: false, unlockedAt: "" }])),
       constellationLinks: [],
@@ -780,6 +1027,20 @@
   function reconcileStoryState(state) {
     const story = state?.story;
     if (!story?.missions) return state;
+
+    story.metrics = normalizeStoryMetrics(story.metrics, STORY_METRIC_DEFAULTS);
+    story.interludes ||= defaultStoryInterludeState();
+    STORY_INTERLUDES.forEach((interlude) => {
+      const record = story.interludes[interlude.id] ||= { unlocked: false, viewed: false, unlockedAt: "", viewedAt: "" };
+      if (!record.unlocked && interlude.unlock.every((condition) => storyConditionMet(state, condition))) {
+        record.unlocked = true;
+        record.unlockedAt ||= nowIso();
+      }
+      record.unlocked = record.unlocked === true;
+      record.viewed = record.unlocked && record.viewed === true;
+      record.unlockedAt = String(record.unlockedAt || "").slice(0, 40);
+      record.viewedAt = String(record.viewedAt || "").slice(0, 40);
+    });
 
     const seenLinks = new Set();
     story.constellationLinks = (story.constellationLinks || []).filter((link) => {
@@ -817,6 +1078,17 @@
       record.status = "locked";
       record.choice = "";
       record.completedAt = "";
+    });
+
+    // Mission reconciliation can discover Truth Shards/checkpoints; run the
+    // unlock pass once more so a migrated V1 save exposes every eligible V2
+    // interlude immediately on first load.
+    STORY_INTERLUDES.forEach((interlude) => {
+      const record = story.interludes[interlude.id];
+      if (record && !record.unlocked && interlude.unlock.every((condition) => storyConditionMet(state, condition))) {
+        record.unlocked = true;
+        record.unlockedAt ||= nowIso();
+      }
     });
 
     story.aionEvidence = Math.max(Number(story.aionEvidence || 0), completedMissionCount);
@@ -923,6 +1195,7 @@
         loyalty: id === "lyra" ? 1 : 0,
         memoryIntegrity: 10,
         promiseFlags: [],
+        beliefs: defaultCompanionBeliefs(id),
         injured: false,
         departed: false,
         betrayed: false,
@@ -1012,6 +1285,10 @@
   function normalizeState(input) {
     const base = defaultState();
     if (!input || typeof input !== "object") return base;
+    const storyMetrics = migrateStoryV2Metrics(input.story);
+    const legacyStory = Number(input.story?.version || 1) < STORY_VERSION;
+    const legacyPrologueCompleted = Boolean(input.story?.prologueCompletedAt);
+    const legacyVoiceStagePassed = legacyStory && ["aion-reveal", "departure"].includes(input.story?.prologueStage);
     const state = {
       ...base,
       ...input,
@@ -1069,6 +1346,16 @@
         prologueCompletedAt: String(input.story?.prologueCompletedAt || "").slice(0, 40),
         identityStatus: ["erased", "remembered", "core"].includes(input.story?.identityStatus) ? input.story.identityStatus : "erased",
         aionEvidence: clamp(input.story?.aionEvidence ?? 0, 0, STORY_ZONE_ORDER.length),
+        metrics: normalizeStoryMetrics(input.story?.metrics, storyMetrics),
+        interludes: Object.fromEntries(STORY_INTERLUDES.map((interlude) => {
+          const record = input.story?.interludes?.[interlude.id] || {};
+          return [interlude.id, {
+            unlocked: record.unlocked === true,
+            viewed: record.viewed === true,
+            unlockedAt: String(record.unlockedAt || "").slice(0, 40),
+            viewedAt: String(record.viewedAt || "").slice(0, 40)
+          }];
+        })),
         truthShards: Object.fromEntries(STORY_ZONE_ORDER.map((zoneId) => [zoneId, {
           discovered: input.story?.truthShards?.[zoneId]?.discovered === true,
           collectedAt: String(input.story?.truthShards?.[zoneId]?.collectedAt || "").slice(0, 40)
@@ -1103,6 +1390,7 @@
           choice: String(decision?.choice || "").slice(0, 60),
           title: String(decision?.title || "Lựa chọn").slice(0, 120),
           outcome: String(decision?.outcome || "").slice(0, 360),
+          metrics: normalizeStoryMetrics(decision?.metrics, STORY_METRIC_DEFAULTS),
           permanent: decision?.permanent !== false,
           createdAt: String(decision?.createdAt || nowIso()).slice(0, 40)
         })) : [],
@@ -1198,6 +1486,7 @@
           loyalty: clamp(record.loyalty ?? (id === "lyra" ? 1 : 0), -10, 10),
           memoryIntegrity: clamp(record.memoryIntegrity ?? 10, 0, 10),
           promiseFlags: Array.isArray(record.promiseFlags) ? record.promiseFlags.slice(-12).map((flag) => String(flag).slice(0, 60)) : [],
+          beliefs: normalizeCompanionBeliefs(record.beliefs || migrateCompanionBeliefs(input, id), id),
           injured: record.injured === true,
           departed: record.departed === true,
           betrayed: record.betrayed === true,
@@ -1268,6 +1557,14 @@
       : clamp(state.player.xp, 0, Math.max(0, 120 + (state.player.level - 1) * 70 - 1));
     state.player.x = clamp(state.player.x, -WORLD_LIMIT, WORLD_LIMIT);
     state.player.z = clamp(state.player.z, -WORLD_LIMIT, WORLD_LIMIT);
+    if (legacyStory && (legacyPrologueCompleted || legacyVoiceStagePassed)) {
+      state.story.hiddenSignals.voiceAuthorizationRecovered = true;
+      state.story.hiddenSignals.legacyVoiceAuthorization = true;
+      state.story.hiddenSignals.playerAuthorizedErasure = true;
+    }
+    if (state.story.hiddenSignals.aionRecognizesCycle && Number(state.story.newGamePlus || 0) < 1) {
+      state.story.newGamePlus = clamp(Number(state.story.hiddenSignals.aionRecognizesCycle), 0, 99);
+    }
     if (!["auto", "low", "medium", "high", "cinematic"].includes(state.settings.quality)) state.settings.quality = "auto";
     if (!["realistic", "cinematic", "anime"].includes(state.settings.renderStyle)) state.settings.renderStyle = "realistic";
     if (!["auto", "webgpu", "webgl"].includes(state.settings.rendererMode)) state.settings.rendererMode = "auto";
@@ -1960,6 +2257,12 @@
       const dna = encodeCharacterDNA(recipe, id);
       const slots = this.state.appearance.characterSlots || [];
       const option = (value, label, selected) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
+      const navigation = `<div class="har-genesis-navigation" data-genesis-action-dock data-genesis-stage="dna" role="navigation" aria-label="Điều hướng Character Genesis">
+        <button type="button" data-genesis-action="previous-step" ${stepIndex === 0 ? "disabled" : ""}>← Bước trước</button>
+        ${stepIndex < GENESIS_STEPS.length - 1
+          ? `<button type="button" class="is-primary" data-genesis-action="next-step"><span>Tiếp tục · ${escapeHtml(GENESIS_STEPS[stepIndex + 1].label)}</span><small>Bước ${GENESIS_STEPS[stepIndex + 1].number}/10 →</small></button>`
+          : `<button class="har-genesis-confirm" type="button" data-genesis-action="confirm" data-character-dna-version="Character DNA V13"><span>✓ Hoàn tất & bắt đầu Prologue</span><small>Lưu Character DNA V13 và vào H-Central</small></button>`}
+      </div>`;
       return `
         <nav class="har-genesis-stepper" aria-label="10 bước tạo nhân vật">
           ${GENESIS_STEPS.map((item, index) => `<button type="button" class="${index === stepIndex ? "is-active" : index < stepIndex ? "is-done" : ""}" data-genesis-step="${item.id}" aria-current="${index === stepIndex ? "step" : "false"}"><small>${item.number}</small><span>${item.label}</span></button>`).join("")}
@@ -1969,6 +2272,7 @@
           <h2>${escapeHtml(step.label)}</h2>
           <p>${escapeHtml(modelLabel[0])} · Character DNA lưu ngoại hình, giọng nói, Motion DNA và tiến hóa gameplay.</p>
         </div>
+        ${navigation}
         <div class="har-genesis-capabilities" aria-label="Năng lực Digital Human">
           <div><small>ASSET CLASS</small><strong>Hero Prime duy nhất</strong><span>Không LOD thấp · không proxy · không thay model</span></div>
           <div><small>FACE DRIVER</small><strong>${faceChannels} native / 52 driver</strong><span>${boneCount} nhóm xương nhận diện · cập nhật 60 Hz</span></div>
@@ -2092,17 +2396,11 @@
           <button type="button" data-genesis-action="reset">Khôi phục</button>
         </div>
         <div class="har-genesis-dna" data-genesis-stage="dna" ${step.id === "dna" ? "" : "hidden"}>
-          <label>Character DNA V12<textarea rows="3" spellcheck="false" data-genesis-dna>${escapeHtml(dna)}</textarea></label>
+          <label>Character DNA V13<textarea rows="3" spellcheck="false" data-genesis-dna>${escapeHtml(dna)}</textarea></label>
           <div><button type="button" data-genesis-action="copy-dna">Sao chép DNA</button><button type="button" data-genesis-action="apply-dna">Nạp DNA</button><button type="button" data-genesis-action="save-slot">Lưu ô nhân vật</button></div>
         </div>
         <div class="har-character-slots" data-genesis-stage="dna" ${step.id === "dna" ? "" : "hidden"}>${slots.length ? slots.map((slot) => `<article><div><small>${escapeHtml(slot.characterId.toUpperCase())}</small><strong>${escapeHtml(slot.name)}</strong><span>${new Date(slot.updatedAt).toLocaleDateString("vi-VN")}</span></div><button type="button" data-genesis-slot="${escapeHtml(slot.id)}">Nạp</button></article>`).join("") : "<p>Chưa có ô nhân vật. Bạn có thể lưu tối đa 6 Character DNA.</p>"}</div>
-        <div class="har-version-summary" data-genesis-stage="dna" ${step.id === "dna" ? "" : "hidden"}><small>VERSION HISTORY</small><strong>${this.state.appearance.versionHistory?.length || 0} mốc ngoại hình</strong><span>Có thể chỉnh lại sau Prologue; lịch sử không chứa email hoặc dữ liệu camera.</span></div>
-        <div class="har-genesis-navigation">
-          <button type="button" data-genesis-action="previous-step" ${stepIndex === 0 ? "disabled" : ""}>← Bước trước</button>
-          ${stepIndex < GENESIS_STEPS.length - 1
-            ? `<button type="button" class="is-primary" data-genesis-action="next-step">Tiếp tục · ${escapeHtml(GENESIS_STEPS[stepIndex + 1].label)} →</button>`
-            : `<button class="har-genesis-confirm" type="button" data-genesis-action="confirm"><span>Xác nhận Character DNA</span><small>Lưu V12 và bước vào Prologue H-Central</small></button>`}
-        </div>`;
+        <div class="har-version-summary" data-genesis-stage="dna" ${step.id === "dna" ? "" : "hidden"}><small>VERSION HISTORY</small><strong>${this.state.appearance.versionHistory?.length || 0} mốc ngoại hình</strong><span>Có thể chỉnh lại sau Prologue; lịch sử không chứa email hoặc dữ liệu camera.</span></div>`;
     }
 
     refreshGenesisCreator() {
@@ -2982,7 +3280,9 @@
     }
 
     storyText(value) {
-      return String(value || "").replaceAll("{player}", this.state.player.name || "Nhà du hành");
+      return String(value || "")
+        .replaceAll("{player}", this.state.player.name || "Nhà du hành")
+        .replaceAll("{cycle}", String(Math.max(0, Number(this.state.story?.newGamePlus || 0))));
     }
 
     renderStoryOverlay() {
@@ -3019,11 +3319,12 @@
       const replay = this.storyOverlayMode === "replay";
       const stageId = replay ? this.storyReplayStage : this.state.story.prologueStage;
       const stage = STORY_PROLOGUE[stageId] || STORY_PROLOGUE.awakening;
+      const stageText = this.storyText(this.state.story.newGamePlus > 0 && stage.ngPlusText ? stage.ngPlusText : stage.text);
       content.innerHTML = `
         <div class="har-story-cinematic__time">${escapeHtml(stage.kicker.split(" · ")[0])}</div>
         <small class="har-story-cinematic__kicker">${escapeHtml(stage.kicker.split(" · ").slice(1).join(" · "))}</small>
         <h2>${escapeHtml(this.storyText(stage.title))}</h2>
-        <p>${escapeHtml(this.storyText(stage.text))}</p>
+        <p>${escapeHtml(stageText)}</p>
         ${stageId === "mirror-attack" ? `<div class="har-story-mirror" aria-hidden="true"><i></i><span>${escapeHtml((this.state.player.name || "H").slice(0, 1).toUpperCase())}</span><i></i></div>` : ""}
         <div class="har-story-cinematic__actions">
           ${stage.choice ? `
@@ -3032,7 +3333,7 @@
             : `<button class="har-primary-button" type="button" data-story-action="${stage.finish ? (replay ? "close-replay" : "finish-prologue") : (replay ? "replay-next" : "prologue-next")}">${escapeHtml(stage.action)}</button>`}
           ${replay ? `<button class="har-secondary-button" type="button" data-story-action="close-replay">Thoát bản phát lại</button>` : ""}
         </div>
-        <div class="har-story-cinematic__progress">${Object.keys(STORY_PROLOGUE).map((id) => `<i class="${id === stageId ? "is-active" : ""}"></i>`).join("")}</div>`;
+        <div class="har-story-cinematic__progress" style="grid-template-columns:repeat(${Object.keys(STORY_PROLOGUE).length},minmax(0,1fr))">${Object.keys(STORY_PROLOGUE).map((id) => `<i class="${id === stageId ? "is-active" : ""}"></i>`).join("")}</div>`;
       this.focusStoryOverlay();
     }
 
@@ -3051,9 +3352,19 @@
       const replay = this.storyOverlayMode === "replay";
       const stageId = replay ? this.storyReplayStage : this.state.story.prologueStage;
       const stage = STORY_PROLOGUE[stageId] || STORY_PROLOGUE.awakening;
+      const stageText = this.storyText(this.state.story.newGamePlus > 0 && stage.ngPlusText ? stage.ngPlusText : stage.text);
       if (action === "prologue-next" && stage.next) {
-        this.recordStoryDialogue(stageId === "dna-signal" ? "Tín hiệu vô danh" : "Astral Archive", this.storyText(stage.text), "central");
+        const speaker = stageId === "dna-signal" ? "Tín hiệu vô danh" : stageId === "voice-authorization" ? "Voice DNA của bạn" : "Astral Archive";
+        this.recordStoryDialogue(speaker, stageText, "central");
+        if (stageId === "voice-authorization") {
+          this.state.story.hiddenSignals.voiceAuthorizationRecovered = true;
+          this.state.story.hiddenSignals.playerAuthorizedErasure = true;
+          this.applyStoryMetrics({ metrics: { identityIntegrity: -4, memoryDebt: 6, causalityPressure: 4 } });
+          this.recordWorldEvent({ type: "story-authorization", title: "Voice DNA xác nhận Protocol Null", detail: "Một bản dựng giọng nói của người chơi đã cho phép xóa Mira và chủ thể H.", zoneId: "central" });
+        }
         this.state.story.prologueStage = stage.next;
+        this.refreshStoryInterludes();
+        if (stageId === "voice-authorization") await this.saveProgress("Khôi phục ủy quyền Voice DNA");
         this.renderStoryOverlay();
       } else if (action === "replay-next" && stage.next) {
         this.storyReplayStage = stage.next;
@@ -3070,14 +3381,18 @@
           : "Bạn giữ HH Core không sụp đổ, nhưng ga dân sự chịu thiệt hại nặng. Mira biến mất khỏi cả ký ức của những người được cứu.";
         const companion = this.state.companions[choice === "core" ? "sol" : "lyra"];
         companion.trust = clamp(Number(companion.trust || 0) + 1, -10, 10);
+        this.applyStoryMetrics({ metrics: choice === "civilians"
+          ? { identityIntegrity: 3, memoryDebt: 8, causalityPressure: 6 }
+          : { identityIntegrity: -2, memoryDebt: 5, causalityPressure: -3 } });
         this.state.world.zones.central.resources = choice === "core" ? 100 : 82;
         this.state.world.zones.central.controlState = choice === "core" ? "core-priority" : "civilian-rescue";
         this.state.story.hiddenSignals.miraErased = true;
-        this.state.story.decisions.push({ id: uid("story-choice"), zoneId: "central", choice, title: choice === "core" ? "Bảo vệ HH Core" : "Cứu dân thường", outcome, permanent: true, createdAt: nowIso() });
+        this.state.story.decisions.push({ id: uid("story-choice"), zoneId: "central", choice, title: choice === "core" ? "Bảo vệ HH Core" : "Cứu dân thường", outcome, metrics: { ...this.state.story.metrics }, permanent: true, createdAt: nowIso() });
         this.state.world.choiceHistory = [...(this.state.world.choiceHistory || []), { id: uid("choice"), option: choice, outcome, createdAt: nowIso() }].slice(-40);
         this.recordWorldEvent({ type: "story-choice", title: "Lựa chọn đầu tiên", detail: outcome, zoneId: "central" });
         this.recordStoryDialogue("Mira", "Dù họ quên em, đừng để anh quên vì sao mình đã chọn.", "central");
         this.state.story.prologueStage = "erasure";
+        this.refreshStoryInterludes();
         await this.saveProgress("Lựa chọn Prologue");
         this.renderStoryOverlay();
       } else if (action === "finish-prologue") {
@@ -3086,6 +3401,7 @@
         this.state.story.chapter = "identity";
         this.state.story.missions.central.status = "active";
         this.state.story.hiddenSignals.futureSelfRevealed = true;
+        this.refreshStoryInterludes();
         this.queueStoryRecap("Người không tồn tại", "Aion mang khuôn mặt tương lai của bạn. Tám Truth Shard đang giữ tám phiên bản khác nhau của sự thật.");
         this.recordStoryDialogue("Aion", "Tôi không muốn thống trị vũ trụ. Tôi đang hoàn thành điều chính chúng ta từng yêu cầu.", "central");
         await this.saveProgress("Hoàn tất Prologue");
@@ -5276,12 +5592,18 @@
           if (material.color && !material.userData.hhOriginalColor) material.userData.hhOriginalColor = `#${material.color.getHexString()}`;
           if (role === "skin") {
             material.color?.set(recipe.skinColor);
-            if ("roughness" in material) material.roughness = clamp(0.26 + recipe.surface.roughness * 0.5 - recipe.surface.wetness * 0.18, 0.12, 0.86);
-            if ("clearcoat" in material) material.clearcoat = clamp(0.025 + recipe.surface.wetness * 0.72, 0, 0.82);
-            if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.56;
-            if ("sheen" in material) material.sheen = clamp(0.18 + recipe.surface.subsurface * 0.52, 0, 0.85);
-            if ("ior" in material) material.ior = 1.4;
-            if ("specularIntensity" in material) material.specularIntensity = 0.28 + recipe.surface.subsurface * 0.24;
+            const drySkinRoughness = clamp(0.46 + recipe.surface.roughness * 0.34, 0.44, 0.76);
+            const drySkinClearcoat = 0.006;
+            if ("roughness" in material) material.roughness = clamp(drySkinRoughness - recipe.surface.wetness * 0.1, 0.38, 0.8);
+            if ("metalness" in material) material.metalness = 0;
+            if ("clearcoat" in material) material.clearcoat = clamp(drySkinClearcoat + recipe.surface.wetness * 0.38, 0, 0.48);
+            if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.78;
+            if ("sheen" in material) material.sheen = clamp(0.04 + recipe.surface.subsurface * 0.16, 0.04, 0.24);
+            if ("ior" in material) material.ior = 1.38;
+            if ("specularIntensity" in material) material.specularIntensity = clamp(0.2 + recipe.surface.subsurface * 0.14, 0.2, 0.36);
+            if ("envMapIntensity" in material) material.envMapIntensity = clamp(0.48 + recipe.surface.wetness * 0.12, 0.48, 0.62);
+            material.userData.baseRoughness = drySkinRoughness;
+            material.userData.baseClearcoat = drySkinClearcoat;
             if (this.state.settings.microDetail) {
               material.normalMap ||= this.createCharacterDetailTexture("skin-normal");
               material.roughnessMap ||= this.createCharacterDetailTexture("skin-roughness");
@@ -5585,7 +5907,7 @@
         target.userData.hhBaseQuaternion ||= target.quaternion.clone();
         return target.userData;
       };
-      const setSegmentScale = (target, lengthScale = 1, radialScale = 1) => {
+      const setSegmentScale = (target, lengthScale = 1, radialScale = 1, radialDepthScale = radialScale) => {
         if (!target) return;
         const base = target.userData.hhBaseScale || { x: 1, y: 1, z: 1 };
         const child = target.children?.find((item) => item.isBone);
@@ -5593,8 +5915,34 @@
         const axis = vector
           ? [Math.abs(vector.x), Math.abs(vector.y), Math.abs(vector.z)].indexOf(Math.max(Math.abs(vector.x), Math.abs(vector.y), Math.abs(vector.z)))
           : 1;
-        const values = [radialScale, radialScale, radialScale];
+        const radialAxes = [0, 1, 2].filter((index) => index !== axis);
+        const values = [1, 1, 1];
         values[axis] = lengthScale;
+        values[radialAxes[0]] = radialScale;
+        values[radialAxes[1]] = radialDepthScale;
+        target.scale.set(base.x * values[0], base.y * values[1], base.z * values[2]);
+      };
+      const setPalmScale = (target, lengthScale = 1, widthScale = 1, depthScale = 1) => {
+        if (!target) return;
+        const base = target.userData.hhBaseScale || { x: 1, y: 1, z: 1 };
+        const fingers = (target.children || []).filter((child) => child.isBone && !/thumb/i.test(child.name || ""));
+        const axes = [0, 1, 2];
+        const component = (vector, axis) => [vector.x, vector.y, vector.z][axis];
+        const lengthAxis = axes.reduce((best, axis) => {
+          const score = fingers.reduce((sum, child) => sum + Math.abs(component(child.position, axis)), 0);
+          return score > best.score ? { axis, score } : best;
+        }, { axis: 1, score: -1 }).axis;
+        const radialAxes = axes.filter((axis) => axis !== lengthAxis);
+        const widthAxis = radialAxes.reduce((best, axis) => {
+          const values = fingers.map((child) => component(child.position, axis));
+          const spread = values.length ? Math.max(...values) - Math.min(...values) : 0;
+          return spread > best.spread ? { axis, spread } : best;
+        }, { axis: radialAxes[0], spread: -1 }).axis;
+        const depthAxis = radialAxes.find((axis) => axis !== widthAxis) ?? radialAxes[1];
+        const values = [1, 1, 1];
+        values[lengthAxis] = lengthScale;
+        values[widthAxis] = widthScale;
+        values[depthAxis] = depthScale;
         target.scale.set(base.x * values[0], base.y * values[1], base.z * values[2]);
       };
       const head = bone("Head", "mixamorigHead");
@@ -5623,16 +5971,28 @@
       setScale(spine, 1 + delta("waist") * 0.18 + delta("bodyMass") * 0.12, 1 + delta("torsoLength") * 0.18, 1 + delta("belly") * 0.16);
       setScale(hips, 1 + delta("hipWidth") * 0.22, 1 + delta("legTorsoRatio") * -0.08, 1 + delta("gluteProjection") * 0.2);
       const armLength = clamp(1 + delta("armLength") * 0.1 + delta("height") * 0.03, 0.94, 1.06);
-      const armMass = clamp(1.025 + delta("upperArm") * 0.09 + delta("muscle") * 0.045, 0.96, 1.09);
+      const armMass = clamp(1.08 + delta("upperArm") * 0.12 + delta("muscle") * 0.055, 1.01, 1.16);
+      const armDepth = clamp(1.055 + delta("upperArm") * 0.09 + delta("muscle") * 0.045, 1, 1.13);
       const forearmLength = clamp(1 + delta("armLength") * 0.07, 0.95, 1.05);
-      const forearmMass = clamp(1.02 + delta("forearm") * 0.085 + delta("muscle") * 0.03, 0.965, 1.08);
-      const handScale = clamp(1.015 + delta("handSize") * 0.09, 0.97, 1.06);
-      setSegmentScale(leftArm, armLength, armMass);
-      setSegmentScale(rightArm, armLength, armMass);
-      setSegmentScale(leftForeArm, forearmLength, forearmMass);
-      setSegmentScale(rightForeArm, forearmLength, forearmMass);
-      setScale(leftHand, handScale, handScale, handScale);
-      setScale(rightHand, handScale, handScale, handScale);
+      const forearmMass = clamp(1.06 + delta("forearm") * 0.105 + delta("muscle") * 0.035, 1, 1.13);
+      const forearmDepth = clamp(1.04 + delta("forearm") * 0.08 + delta("muscle") * 0.025, 0.995, 1.1);
+      const palmLength = clamp(0.975 + delta("handSize") * 0.05, 0.95, 1);
+      const palmWidth = clamp(1.075 + delta("handSize") * 0.1, 1.02, 1.13);
+      const palmDepth = clamp(1.045 + delta("handSize") * 0.07, 1.01, 1.08);
+      const fingerLengthScale = clamp(0.955 + delta("fingerLength") * 0.08, 0.915, 0.995);
+      setSegmentScale(leftArm, armLength, armMass, armDepth);
+      setSegmentScale(rightArm, armLength, armMass, armDepth);
+      setSegmentScale(leftForeArm, forearmLength, forearmMass, forearmDepth);
+      setSegmentScale(rightForeArm, forearmLength, forearmMass, forearmDepth);
+      setPalmScale(leftHand, palmLength, palmWidth, palmDepth);
+      setPalmScale(rightHand, palmLength, palmWidth, palmDepth);
+      [
+        bone(...HH_HUMANOID_SKELETON.leftThumb), bone(...HH_HUMANOID_SKELETON.rightThumb),
+        bone(...HH_HUMANOID_SKELETON.leftIndex), bone(...HH_HUMANOID_SKELETON.rightIndex),
+        bone(...HH_HUMANOID_SKELETON.leftMiddle), bone(...HH_HUMANOID_SKELETON.rightMiddle),
+        bone(...HH_HUMANOID_SKELETON.leftRing), bone(...HH_HUMANOID_SKELETON.rightRing),
+        bone(...HH_HUMANOID_SKELETON.leftPinky), bone(...HH_HUMANOID_SKELETON.rightPinky)
+      ].filter(Boolean).forEach((fingerRoot) => setSegmentScale(fingerRoot, fingerLengthScale, 1.012, 1.005));
       const shoulderSpread = clamp(delta("shoulderWidth") * 0.09, -0.045, 0.045);
       [[leftShoulder, -1], [rightShoulder, 1]].forEach(([target, side]) => {
         const data = captureTransform(target);
@@ -5664,9 +6024,14 @@
         shoulderSpread,
         armLength,
         armMass,
+        armDepth,
         forearmLength,
         forearmMass,
-        handScale,
+        forearmDepth,
+        palmLength,
+        palmWidth,
+        palmDepth,
+        fingerLengthScale,
         handSize: morph("handSize"),
         bindPose: "captured"
       };
@@ -6316,16 +6681,16 @@
         const rootLocal = worldToLocal(rootWorld);
         const anatomicalSide = Math.sign(rootLocal.x) || side;
         const handLocal = rootLocal.clone().add(new THREE.Vector3(
-          anatomicalSide * reach * (combat ? 0.3 : 0.08),
-          -reach * (combat ? 0.72 : 0.91),
-          reach * (0.03 + armSwing * 0.7)
+          anatomicalSide * reach * (combat ? 0.32 : 0.12),
+          -reach * (combat ? 0.67 : 0.965),
+          reach * (0.025 + armSwing * 0.62)
         ));
         const poleLocal = rootLocal.clone().add(new THREE.Vector3(
-          anatomicalSide * reach * (combat ? 0.4 : 0.18),
-          -reach * (combat ? 0.3 : 0.42),
-          reach * (combat ? 0.5 : 0.42)
+          anatomicalSide * reach * (combat ? 0.46 : 0.16),
+          -reach * (combat ? 0.26 : 0.46),
+          reach * (combat ? 0.42 : 0.12)
         ));
-        const ikWeight = 1 - Math.exp(-Math.max(0.001, dt) * (combat ? 15 : 10));
+        const ikWeight = combat ? 0.92 : locomotion ? 0.86 : 1;
         solutions[sideName] = this.solveHeroTwoBoneArm(
           runtime,
           sideName,
@@ -6338,16 +6703,21 @@
           .map((finger) => bones[`${sideName}${finger}`])
           .filter(Boolean);
         fingerRoots.forEach((rootBone, fingerIndex) => {
-          const grip = combat ? 0.11 : 0.035;
-          const curl = grip * (fingerIndex === 0 ? 0.55 : 1 + fingerIndex * 0.04);
+          const relaxedCurl = [0.04, 0.065, 0.08, 0.095, 0.105][fingerIndex] || 0.065;
+          const actionCurl = [0.065, 0.115, 0.14, 0.16, 0.175][fingerIndex] || 0.115;
+          const curl = combat ? actionCurl : relaxedCurl;
+          let jointIndex = 0;
           rootBone.traverse?.((fingerBone) => {
             if (!fingerBone.isBone) return;
             fingerBone.userData ||= {};
             fingerBone.userData.hhHeroFingerBase ||= fingerBone.quaternion.clone();
             const base = fingerBone.userData.hhHeroFingerBase;
-            const offset = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), curl);
+            const hasBoneChild = fingerBone.children?.some((child) => child.isBone);
+            const jointCurl = hasBoneChild ? curl * (0.78 + Math.min(jointIndex, 2) * 0.13) : 0;
+            const offset = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), jointCurl);
             const target = base.clone().multiply(offset);
-            fingerBone.quaternion.slerp(target, ikWeight * 0.7);
+            fingerBone.quaternion.slerp(target, ikWeight * 0.76);
+            jointIndex += 1;
           });
         });
       });
@@ -7852,6 +8222,7 @@
               ? clamp(0.58 + (input?.magnitude || 0) * 0.48, 0.58, 0.92)
               : clamp(0.82 + (input?.magnitude || 0) * 0.28, 0.82, 1.1);
         runtime.mixer.update(dt);
+        this.applyHeroArmIK(runtime, time, targetAnimation, dt);
       } else if (runtime) {
         this.applyProceduralRigMotion(runtime, time, targetAnimation, dt);
       }
@@ -8076,6 +8447,7 @@
             if (runtime?.mixer) {
               this.playCharacterClip(runtime, this.genesisMotion || "idle");
               runtime.mixer.update(dt);
+              this.applyHeroArmIK(runtime, time, this.genesisMotion || "idle", dt);
             } else if (runtime) {
               this.applyProceduralRigMotion(runtime, time, this.genesisMotion || "idle", dt);
             }
@@ -9746,6 +10118,10 @@
           <div class="har-section har-creator__presets"><h3>Preset đã lưu</h3><div class="har-inline-actions">${saved.length ? saved.slice().reverse().map((preset) => `<button class="har-chip" type="button" data-panel-action="appearance-load-preset" data-preset-id="${escapeHtml(preset.id)}">${escapeHtml(preset.name)}</button>`).join("") : "<span>Chưa có preset ngoại hình.</span>"}</div></div>
           <div class="har-section har-character-dna"><div><h3>Character DNA</h3><p>Mã ngoại hình có phiên bản, không chứa email, tài khoản hoặc dữ liệu camera.</p></div><textarea rows="3" spellcheck="false" data-character-dna>${escapeHtml(dna)}</textarea><div class="har-inline-actions"><button class="har-secondary-button" type="button" data-panel-action="character-copy-dna">Sao chép DNA</button><button class="har-primary-button" type="button" data-panel-action="character-apply-dna">Nạp DNA</button></div></div>
           <div class="har-section har-creator__note"><p>Recipe ngoại hình và collider gameplay tách khỏi model. Material/morph chỉ được áp dụng khi asset thực sự hỗ trợ; skeleton, animation và LOD luôn hiển thị theo dữ liệu quét được, không theo tên provider.</p></div>
+          <div class="har-creator__finish" data-appearance-action-dock role="navigation" aria-label="Hoàn tất chỉnh sửa nhân vật">
+            <div><small>CHARACTER DNA V${CHARACTER_VISUAL_VERSION}</small><strong>Ngoại hình đã sẵn sàng</strong><span>Lưu mọi thay đổi và trở lại H-Central.</span></div>
+            <button class="har-primary-button" type="button" data-panel-action="appearance-finish"><span>✓ Lưu ngoại hình &amp; trở lại game</span><small>Tiếp tục với nhân vật này</small></button>
+          </div>
         </div>`;
     }
 
@@ -9827,21 +10203,65 @@
       return { eligible: checks.every(Boolean), labels };
     }
 
+    renderStoryInterludeSection() {
+      const story = this.state.story;
+      return `
+        <section class="har-section" id="story-interludes"><h3>Interlude Revelations · các mảnh sự thật ở giữa</h3><p>Không có tiết lộ giả: mỗi hồ sơ chỉ mở khi các điều kiện bên dưới được đáp ứng. Bạn có thể xem lại sau khi đã mở.</p></section>
+        <div class="har-echo-constellation">${STORY_INTERLUDES.map((interlude) => {
+          const status = this.storyInterludeStatus(interlude);
+          const record = story.interludes?.[interlude.id] || {};
+          const conditions = status.conditions.map((condition) => `<span class="har-event-line"><b>${condition.met ? "✓" : "○"}</b> ${escapeHtml(condition.label)}</span>`).join("");
+          const body = status.eligible
+            ? `<span>${escapeHtml(record.viewed ? interlude.revelation : interlude.teaser)}</span>`
+            : `<span>${escapeHtml(interlude.teaser)}</span>`;
+          return `<article style="--story-accent:#ff78cf"><header><i></i><strong>${escapeHtml(interlude.title)}</strong><span>${status.eligible ? (record.viewed ? "ĐÃ XEM" : "MỚI") : "ĐANG KHÓA"}</span></header><div class="is-found"><b>${status.eligible ? "Revelation" : "Điều kiện mở"}</b>${body}</div><div>${conditions}</div>${status.eligible && !record.viewed ? `<button class="har-chip is-active" type="button" data-panel-action="story-view-interlude" data-interlude="${escapeHtml(interlude.id)}">Mở hồ sơ</button>` : ""}</article>`;
+        }).join("")}</div>`;
+    }
+
+    renderStoryTestimonySection() {
+      return `
+        <section class="har-section" id="story-testimonies"><h3>Conflicting Testimony · Lời khai mâu thuẫn</h3><p>Hai lời khai được giữ nguyên cạnh nhau. Hệ thống không chọn “đúng” thay bạn; chỉ hiển thị nguồn, dữ liệu và điều kiện mở.</p></section>
+        <div class="har-echo-constellation">${STORY_TESTIMONIES.map((testimony) => {
+          const status = this.storyTestimonyStatus(testimony);
+          const conditions = status.conditions.map((condition) => `<span class="har-event-line"><b>${condition.met ? "✓" : "○"}</b> ${escapeHtml(condition.label)}</span>`).join("");
+          const testimonyBody = status.eligible
+            ? `<div class="is-found"><b>${escapeHtml(testimony.left.speaker)}</b><span>${escapeHtml(testimony.left.text)}</span></div><div class="is-found"><b>${escapeHtml(testimony.right.speaker)}</b><span>${escapeHtml(testimony.right.text)}</span></div><div class="is-found"><b>Ghi chú điều tra</b><span>${escapeHtml(testimony.insight)}</span></div>`
+            : `<div><b>Tín hiệu A</b><span>Lời khai đang được mã hóa cho tới khi đủ điều kiện.</span></div><div><b>Tín hiệu B</b><span>Điều kiện mở được hiển thị công khai bên dưới.</span></div>`;
+          return `<article style="--story-accent:${escapeHtml(TRUTH_SHARDS[testimony.zoneId]?.color || "#ff78cf")}"><header><i></i><strong>${escapeHtml(testimony.title)}</strong><span>${status.eligible ? "ĐÃ MỞ" : "KHÓA"}</span></header>${testimonyBody}<div>${conditions}</div></article>`;
+        }).join("")}</div>`;
+    }
+
+    storyChoiceImpactSummary(choice = {}) {
+      const labels = { identityIntegrity: "Danh tính", memoryDebt: "Nợ ký ức", causalityPressure: "Nhân quả" };
+      const metricSummary = STORY_METRIC_KEYS
+        .map((key) => ({ key, value: Number(choice.metrics?.[key] || 0) }))
+        .filter((item) => item.value !== 0)
+        .map((item) => `${labels[item.key]} ${item.value > 0 ? "+" : ""}${item.value}`);
+      const affected = choice.beliefsAll
+        ? "Niềm tin: toàn đội"
+        : Object.keys(choice.beliefs || {}).length
+          ? `Niềm tin: ${Object.keys(choice.beliefs).map((id) => CHARACTERS[id]?.name || id).join(", ")}`
+          : "";
+      return [...metricSummary, affected].filter(Boolean).join(" · ");
+    }
+
     renderStoryPanel() {
       const story = this.state.story;
       const shardCount = Object.values(story.truthShards).filter((item) => item.discovered).length;
       const echoCount = Object.values(story.echoes).filter((item) => item.unlocked).length;
+      const metrics = normalizeStoryMetrics(story.metrics, STORY_METRIC_DEFAULTS);
       const currentMission = STORY_MISSIONS.find((mission) => ["active", "decision"].includes(story.missions[mission.zoneId]?.status));
       return `
         <div class="har-section har-story-hero">
           <div class="har-story-core" aria-hidden="true"><i></i><span>H</span><i></i></div>
-          <small>STORY V${STORY_VERSION} · ${escapeHtml(story.identityStatus.toUpperCase())}</small>
+          <small>${STORY_VERSION_LABEL} · ${escapeHtml(story.identityStatus.toUpperCase())}</small>
           <h3>${escapeHtml(this.state.player.name)} · Người không tồn tại</h3>
           <p>HH Core giữ tám phiên bản mâu thuẫn về bạn. Aion không muốn thống trị: hắn tin mọi tương lai có bạn đều kết thúc bằng đại thảm họa.</p>
           <div class="har-stat-grid"><div><small>Truth Shard</small><strong>${shardCount}/8</strong></div><div><small>Echo Memory</small><strong>${echoCount}/${ECHO_MEMORIES.length}</strong></div><div><small>Bằng chứng Aion</small><strong>${story.aionEvidence}/8</strong></div><div><small>New Game+</small><strong>${story.newGamePlus}</strong></div></div>
+          <div class="har-stat-grid"><div><small>Toàn vẹn danh tính</small><strong>${metrics.identityIntegrity}%</strong></div><div><small>Nợ ký ức</small><strong>${metrics.memoryDebt}%</strong></div><div><small>Áp lực nhân quả</small><strong>${metrics.causalityPressure}%</strong></div><div><small>Ủy quyền giọng</small><strong>${story.hiddenSignals.voiceAuthorizationRecovered ? "ĐÃ ĐỐI CHIẾU" : "CHƯA BIẾT"}</strong></div></div>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="story-resume">${currentMission ? `Tiếp tục · ${escapeHtml(currentMission.title)}` : "Xem các kết thúc"}</button><button class="har-secondary-button" type="button" data-panel-action="story-recap">Story Recap</button><button class="har-secondary-button" type="button" data-panel-action="story-replay">Phát lại Prologue</button></div>
         </div>
-        <nav class="har-story-tabs" aria-label="Đi tới phần cốt truyện"><button type="button" data-panel-action="story-scroll" data-story-target="story-missions">Mission Board</button><button type="button" data-panel-action="story-scroll" data-story-target="story-echoes">Echo Constellation</button><button type="button" data-panel-action="story-scroll" data-story-target="story-timeline">Timeline</button><button type="button" data-panel-action="story-scroll" data-story-target="story-endings">Endings</button></nav>
+        <nav class="har-story-tabs" aria-label="Đi tới phần cốt truyện"><button type="button" data-panel-action="story-scroll" data-story-target="story-missions">Mission Board</button><button type="button" data-panel-action="story-scroll" data-story-target="story-echoes">Echo Constellation</button><button type="button" data-panel-action="story-scroll" data-story-target="story-interludes">Interludes</button><button type="button" data-panel-action="story-scroll" data-story-target="story-testimonies">Lời khai</button><button type="button" data-panel-action="story-scroll" data-story-target="story-timeline">Timeline</button><button type="button" data-panel-action="story-scroll" data-story-target="story-endings">Endings</button></nav>
         <section class="har-section" id="story-missions"><h3>Mission Constellation · 8 mảnh sự thật</h3><p>Mỗi chương có cơ chế riêng và kết thúc bằng một lựa chọn làm đổi khu vực, đồng đội, kinh tế hoặc quyền kiểm soát.</p></section>
         <div class="har-story-missions">${STORY_MISSIONS.map((mission, index) => {
           const record = story.missions[mission.zoneId];
@@ -9862,7 +10282,7 @@
             <p>${escapeHtml(mission.summary)}</p><small class="har-story-mechanic">Cơ chế: ${escapeHtml(mission.mechanic)}</small>
             ${record.status !== "locked" ? `<div class="har-progress-row"><div class="har-meter har-meter--xp"><i style="--value:${progressValue}%"></i></div><output>${record.progress}/${mission.steps.length}</output></div>` : ""}
             ${record.status === "active" ? `<div class="har-story-step"><b>${escapeHtml(nextStep)}</b><span>Mục tiêu gameplay: ${escapeHtml(objective?.label || nextStep)}${objectiveTarget > 1 ? ` · ${record.objectiveProgress || 0}/${objectiveTarget}` : ""}</span></div><button class="har-chip is-active" type="button" data-panel-action="${!inZone ? "story-teleport" : objective?.event === "scan" ? "story-scan" : "story-play"}" data-zone="${mission.zoneId}" ${inZone || canTravel ? "" : "disabled"}>${!inZone ? canTravel ? `Đến ${escapeHtml(zone.name)}` : "Cổng chưa mở" : objective?.event === "scan" ? "Bắt đầu Deep Scan" : "Trở lại gameplay"}</button>` : ""}
-            ${record.status === "decision" ? `<div class="har-story-decision"><strong>${escapeHtml(mission.prompt)}</strong>${mission.choices.map((item) => `<button type="button" data-panel-action="story-choice-preview" data-zone="${mission.zoneId}" data-choice="${item.id}" aria-pressed="${pendingChoice?.id === item.id}"><b>${escapeHtml(item.label)}</b><span>${escapeHtml(item.outcome)}</span></button>`).join("")}${pendingChoice ? `<div class="har-story-confirm" role="alert"><b>Xác nhận lựa chọn dài hạn?</b><span>${escapeHtml(pendingChoice.outcome)}</span><div><button class="har-chip is-active" type="button" data-panel-action="story-choice-confirm" data-zone="${mission.zoneId}" data-choice="${pendingChoice.id}">Xác nhận hậu quả</button><button class="har-chip" type="button" data-panel-action="story-choice-cancel">Xem lại</button></div></div>` : ""}</div>` : ""}
+            ${record.status === "decision" ? `<div class="har-story-decision"><strong>${escapeHtml(mission.prompt)}</strong>${mission.choices.map((item) => `<button type="button" data-panel-action="story-choice-preview" data-zone="${mission.zoneId}" data-choice="${item.id}" aria-pressed="${pendingChoice?.id === item.id}"><b>${escapeHtml(item.label)}</b><span>${escapeHtml(item.outcome)}</span><span>${escapeHtml(this.storyChoiceImpactSummary(item))}</span></button>`).join("")}${pendingChoice ? `<div class="har-story-confirm" role="alert"><b>Xác nhận lựa chọn dài hạn?</b><span>${escapeHtml(pendingChoice.outcome)}</span><span>${escapeHtml(this.storyChoiceImpactSummary(pendingChoice))}</span><div><button class="har-chip is-active" type="button" data-panel-action="story-choice-confirm" data-zone="${mission.zoneId}" data-choice="${pendingChoice.id}">Xác nhận hậu quả</button><button class="har-chip" type="button" data-panel-action="story-choice-cancel">Xem lại</button></div></div>` : ""}</div>` : ""}
             ${record.status === "completed" ? `<div class="har-story-consequence"><b>${escapeHtml(choice?.label || "Đã hoàn thành")}</b><span>${escapeHtml(choice?.outcome || shard.revelation)}</span></div>` : ""}
           </article>`;
         }).join("")}</div>
@@ -9874,6 +10294,8 @@
           const linked = story.constellationLinks.some((link) => echoes.some((echo) => echo.id === link.from) && echoes.some((echo) => echo.id === link.to));
           return `<article style="--story-accent:${TRUTH_SHARDS[zoneId].color}"><header><i></i><strong>${escapeHtml(zone.name)}</strong><span>${records.filter((item) => item.unlocked).length}/2</span></header>${echoes.map((echo) => `<div class="${story.echoes[echo.id].unlocked ? "is-found" : ""}"><b>${story.echoes[echo.id].unlocked ? escapeHtml(echo.title) : "Tín hiệu chưa xác định"}</b><span>${story.echoes[echo.id].unlocked ? escapeHtml(echo.summary) : "Hoàn thành bước nhiệm vụ hoặc quét khu vực để mở."}</span></div>`).join("")}${records.every((item) => item.unlocked) ? `<button class="har-chip ${linked ? "" : "is-active"}" type="button" data-panel-action="link-zone-echoes" data-zone="${zoneId}" ${linked ? "disabled" : ""}>${linked ? "Đã kết nối" : "Nối hai Echo"}</button>` : ""}</article>`;
         }).join("")}</div>
+        ${this.renderStoryInterludeSection()}
+        ${this.renderStoryTestimonySection()}
         <section class="har-section" id="story-timeline"><h3>Timeline & nghi vấn</h3><p>${story.decisions.length ? story.decisions.slice(-10).reverse().map((decision) => `<span class="har-event-line"><b>${escapeHtml(decision.title)}</b> · ${escapeHtml(decision.outcome)} <small>${new Date(decision.createdAt).toLocaleString("vi-VN")}</small></span>`).join("") : "Các phần chưa biết được che lại cho tới khi bạn thật sự tạo ra lựa chọn."}</p></section>
         <section class="har-section"><h3>Dialogue History</h3><p>${story.dialogueHistory.length ? story.dialogueHistory.slice(-8).reverse().map((entry) => `<span class="har-event-line"><b>${escapeHtml(entry.speaker)}</b> · ${escapeHtml(entry.text)}</span>`).join("") : "Chưa có đoạn hội thoại cốt truyện được ghi."}</p></section>
         <section class="har-section" id="story-endings"><h3>Năm kết thúc không tốt/xấu tuyệt đối</h3><p>Điều kiện dựa trên dữ liệu thật trong save. Astral Rebirth là kết thúc bí mật và không mở chỉ bằng việc hoàn thành tuyến chính.</p></section>
@@ -9892,14 +10314,15 @@
         <ul class="har-list">${CHARACTER_ORDER.map((id) => {
           const profile = CHARACTERS[id];
           const story = COMPANION_STORIES[id];
-          const record = this.state.companions?.[id] || { unlocked: id === "lyra", bond: 0, trust: 0, fear: 0, loyalty: 0, memoryIntegrity: 10, storyStage: 0 };
+          const record = this.state.companions?.[id] || { unlocked: id === "lyra", bond: 0, trust: 0, fear: 0, loyalty: 0, memoryIntegrity: 10, storyStage: 0, beliefs: defaultCompanionBeliefs(id) };
+          const beliefs = normalizeCompanionBeliefs(record.beliefs, id);
           const secretZone = { lyra: "station", cael: "aurora", nyx: "void", sol: "crimson" }[id];
           const secret = this.state.story.truthShards[secretZone]?.discovered
             ? { lyra: "Lyra từng giao nộp bạn cho The Archivist theo một lời hứa bị xóa.", cael: "Cael nhớ các dòng thời gian đã mất nhưng mỗi lần nhớ lại sẽ quên hiện tại.", nyx: "Năng lượng của Nyx có quan hệ trực tiếp với Aion và Nexus Abyss.", sol: "Sol đã hy sinh một thành phố theo lệnh mang chữ ký Character DNA của bạn." }[id]
             : "Bí mật chưa được xác minh · hãy tìm Truth Shard liên quan.";
           const cooldown = record.lastActivityAt && Date.now() - new Date(record.lastActivityAt).getTime() < 60000;
           return `<li class="har-list-item ${id === this.state.roster.activeId ? "is-active" : ""} ${record.departed ? "is-departed" : ""}" style="--item-accent:${profile.accent}">
-            <div><strong>${escapeHtml(profile.name)} · ${record.departed ? "Đã rời đội" : `Bond ${record.bond}/10`}</strong><span>${escapeHtml(story.title)} · ${escapeHtml(story.summary)}</span><small>Trust ${record.trust} · Fear ${record.fear} · Loyalty ${record.loyalty} · Memory ${record.memoryIntegrity}/10</small><small>${escapeHtml(secret)}</small><small>${record.unlocked ? `Ký ức ${record.storyStage}/5 · Hỗ trợ: ${escapeHtml(story.support)}` : "Chưa mở khóa · quan hệ bắt đầu khi nhân vật tham gia đội"}</small></div>
+            <div><strong>${escapeHtml(profile.name)} · ${record.departed ? "Đã rời đội" : `Bond ${record.bond}/10`}</strong><span>${escapeHtml(story.title)} · ${escapeHtml(story.summary)}</span><small>Trust ${record.trust} · Fear ${record.fear} · Loyalty ${record.loyalty} · Memory ${record.memoryIntegrity}/10</small><small>Niềm tin · Tự do ${beliefs.freeWill} · Trật tự ${beliefs.coreOrder} · Nguy cơ ${beliefs.playerIsThreat} · Tin Aion ${beliefs.aionMayBeRight}</small><small>${escapeHtml(secret)}</small><small>${record.unlocked ? `Ký ức ${record.storyStage}/5 · Hỗ trợ: ${escapeHtml(story.support)}` : "Chưa mở khóa · quan hệ bắt đầu khi nhân vật tham gia đội"}</small></div>
             <div class="har-list-item__actions"><button class="har-chip ${record.unlocked && !record.departed ? "is-active" : ""}" type="button" data-panel-action="bond-companion" data-companion="${id}" ${cooldown || record.departed ? "disabled" : ""}>${record.departed ? "Đang vắng mặt" : cooldown ? "Đang suy ngẫm" : "Đối thoại"}</button></div>
           </li>`;
         }).join("")}</ul>
@@ -10537,6 +10960,7 @@
       this.recordWorldEvent({ type: "echo-memory", title: `Echo mở khóa · ${echo.title}`, detail: `${source}: ${echo.summary}`, zoneId: echo.zoneId });
       this.recordStoryDialogue(echo.witness, echo.summary, echo.zoneId);
       this.queueStoryRecap(`Echo Memory · ${echo.title}`, echo.summary);
+      this.refreshStoryInterludes();
       return true;
     }
 
@@ -10549,7 +10973,72 @@
       if (!this.state.exploration.codex.includes(`truth:${zoneId}`)) this.state.exploration.codex.push(`truth:${zoneId}`);
       this.recordWorldEvent({ type: "truth-shard", title: `Truth Shard · ${shard.title}`, detail: shard.revelation, zoneId });
       this.queueStoryRecap(`Truth Shard · ${shard.title}`, shard.revelation);
+      this.refreshStoryInterludes();
       return true;
+    }
+
+    applyStoryMetrics(choice = {}) {
+      const before = normalizeStoryMetrics(this.state.story.metrics, STORY_METRIC_DEFAULTS);
+      const delta = choice.metrics && typeof choice.metrics === "object" ? choice.metrics : {};
+      this.state.story.metrics = Object.fromEntries(STORY_METRIC_KEYS.map((key) => [
+        key,
+        clamp(before[key] + Number(delta[key] || 0), 0, 100)
+      ]));
+      return { before, after: { ...this.state.story.metrics } };
+    }
+
+    applyCompanionBeliefs(choice = {}) {
+      const allDelta = choice.beliefsAll && typeof choice.beliefsAll === "object" ? choice.beliefsAll : {};
+      const targeted = choice.beliefs && typeof choice.beliefs === "object" ? choice.beliefs : {};
+      CHARACTER_ORDER.forEach((id) => {
+        const companion = this.state.companions[id] ||= { unlocked: false, bond: 0, trust: 0, fear: 0, loyalty: 0, memoryIntegrity: 10, beliefs: defaultCompanionBeliefs(id), storyStage: 0 };
+        const current = normalizeCompanionBeliefs(companion.beliefs, id);
+        const delta = { ...allDelta, ...(targeted[id] || {}) };
+        companion.beliefs = Object.fromEntries(STORY_BELIEF_KEYS.map((key) => [
+          key,
+          clamp(current[key] + Number(delta[key] || 0), key === "playerIsThreat" ? 0 : -10, 10)
+        ]));
+      });
+      return this.state.companions;
+    }
+
+    refreshStoryInterludes({ silent = false } = {}) {
+      const unlocked = [];
+      STORY_INTERLUDES.forEach((interlude) => {
+        const record = this.state.story.interludes[interlude.id] ||= { unlocked: false, viewed: false, unlockedAt: "", viewedAt: "" };
+        if (record.unlocked || !interlude.unlock.every((condition) => storyConditionMet(this.state, condition))) return;
+        record.unlocked = true;
+        record.unlockedAt = nowIso();
+        unlocked.push(interlude);
+        if (!silent) {
+          this.recordStoryDialogue("HH Core", interlude.revelation, interlude.unlock[0]?.zoneId || this.currentZone?.id || "central");
+          this.queueStoryRecap(interlude.title, interlude.revelation);
+          this.toast(`${interlude.title} đã mở trong Story Constellation.`, "success");
+        }
+      });
+      return unlocked;
+    }
+
+    markStoryInterludeViewed(interludeId) {
+      const interlude = STORY_INTERLUDES.find((item) => item.id === interludeId);
+      const record = this.state.story.interludes?.[interludeId];
+      if (!interlude || !record?.unlocked) return this.toast("Interlude này chưa đủ điều kiện mở.", "error");
+      record.viewed = true;
+      record.viewedAt = nowIso();
+      this.recordStoryDialogue("Story Archive", interlude.revelation, interlude.unlock[0]?.zoneId || "central");
+      this.saveProgress(`Đã xem ${interlude.title}`);
+      this.renderCurrentPanel();
+    }
+
+    storyInterludeStatus(interlude) {
+      const conditions = storyUnlockStatus(this.state, interlude.unlock);
+      const record = this.state.story.interludes?.[interlude.id] || {};
+      return { eligible: record.unlocked === true || conditions.every((item) => item.met), viewed: record.viewed === true, conditions };
+    }
+
+    storyTestimonyStatus(testimony) {
+      const conditions = storyUnlockStatus(this.state, testimony.unlock);
+      return { eligible: conditions.every((item) => item.met), conditions };
     }
 
     storyObjective(zoneId) {
@@ -10661,6 +11150,8 @@
       record.status = "completed";
       record.choice = choice.id;
       record.completedAt = nowIso();
+      const metricChange = this.applyStoryMetrics(choice);
+      this.applyCompanionBeliefs(choice);
       const zoneState = this.state.world.zones[zoneId];
       zoneState.discovered = true;
       zoneState.restored = true;
@@ -10687,7 +11178,7 @@
       this.state.story.endingFlags.dangerousPowerUses = clamp(Number(this.state.story.endingFlags.dangerousPowerUses || 0) + Number(choice.dangerous || 0), 0, 99);
       this.state.story.aionEvidence = clamp(Number(this.state.story.aionEvidence || 0) + 1, 0, 8);
       this.collectTruthShard(zoneId);
-      const decision = { id: uid("story-choice"), zoneId, choice: choice.id, title: choice.label, outcome: choice.outcome, permanent: true, createdAt: nowIso() };
+      const decision = { id: uid("story-choice"), zoneId, choice: choice.id, title: choice.label, outcome: choice.outcome, metrics: metricChange.after, permanent: true, createdAt: nowIso() };
       this.state.story.decisions = [...this.state.story.decisions, decision].slice(-60);
       this.state.story.longTermConsequences = [...this.state.story.longTermConsequences, { id: uid("consequence"), zoneId, title: choice.label, detail: choice.outcome, visibleAtChapter: STORY_ZONE_ORDER[STORY_ZONE_ORDER.indexOf(zoneId) + 2] || "epilogue", createdAt: nowIso() }].slice(-40);
       this.state.world.choiceHistory = [...(this.state.world.choiceHistory || []), { id: decision.id, option: choice.label, outcome: choice.outcome, createdAt: decision.createdAt }].slice(-40);
@@ -10710,6 +11201,7 @@
       }
       this.pendingStoryChoice = null;
       this.revealLongTermConsequences(this.state.story.chapter);
+      this.refreshStoryInterludes();
       this.refreshWorldStateVisuals();
       this.grantXp(240 + index * 40);
       this.spawnNova(this.state.player.x, this.state.player.y + 1, this.state.player.z, TRUTH_SHARDS[zoneId].color);
@@ -10739,6 +11231,7 @@
       }
       this.recordWorldEvent({ type: "echo-link", title: `Memory Constellation · ${TRUTH_SHARDS[zoneId].title}`, detail: `Đã nối “${echoes[0].title}” với “${echoes[1].title}”.`, zoneId });
       this.toast("Hai Echo đã được nối. Một nghi vấn mới xuất hiện trong Codex.", "success");
+      this.refreshStoryInterludes();
       this.saveProgress("Nối Echo Memory");
       this.renderCurrentPanel();
     }
@@ -10819,6 +11312,7 @@
       await this.saveProgress("Checkpoint trước New Game+");
       const retainedEchoes = clone(this.state.story.echoes);
       const retainedLinks = clone(this.state.story.constellationLinks);
+      const retainedInterludes = clone(this.state.story.interludes || {});
       const retainedGenesisPurpose = this.state.story.endingFlags.genesisPurpose === true;
       const retainedCodex = [...(this.state.exploration.codex || [])];
       const nextCycle = Number(this.state.story.newGamePlus || 0) + 1;
@@ -10829,8 +11323,16 @@
       this.state.story.chapter = "identity";
       this.state.story.echoes = retainedEchoes;
       this.state.story.constellationLinks = retainedLinks;
+      this.state.story.interludes = { ...defaultStoryInterludeState(), ...retainedInterludes };
+      this.state.story.metrics = { ...STORY_METRIC_DEFAULTS, causalityPressure: clamp(STORY_METRIC_DEFAULTS.causalityPressure + nextCycle * 10, 0, 100) };
       this.state.story.endingFlags.genesisPurpose = retainedGenesisPurpose;
-      this.state.story.hiddenSignals = { echoRetentionDetected: true, aionRecognizesCycle: nextCycle };
+      this.state.story.hiddenSignals = {
+        echoRetentionDetected: true,
+        aionRecognizesCycle: nextCycle,
+        aionAwarenessLevel: clamp(nextCycle, 1, 99),
+        voiceAuthorizationRecovered: true,
+        playerAuthorizedErasure: true
+      };
       this.state.checkpoints = Object.fromEntries(ZONES.map((zone) => [zone.id, zone.id === "central"]));
       this.state.world = defaultWorldState();
       const explorationDefaults = defaultState().exploration;
@@ -10850,6 +11352,7 @@
         ultimate: 0
       });
       this.queueStoryRecap(`New Game+ ${nextCycle}`, "Echo Memory còn nguyên nhưng Aion nhận ra vòng lặp. Một số tín hiệu và hội thoại sẽ thay đổi.");
+      this.recordStoryDialogue("Aion", `Vòng ${nextCycle} không bắt đầu từ số không. Tôi nhớ cách bạn đã cố xóa chính mình, và lần này tôi đã giữ lại một phần giọng nói của bạn.`, "central");
       this.recordWorldEvent({ type: "new-game-plus", title: `New Game+ ${nextCycle}`, detail: "Character DNA và Echo Memory được giữ; Truth Shard và hậu quả thế giới đã tái phân nhánh.", zoneId: "central" });
       this.currentZone = ZONES.find((zone) => zone.id === "central") || ZONES[0];
       this.enemies.forEach((enemy) => {
@@ -10965,7 +11468,7 @@
 
     bondCompanion(id) {
       if (!CHARACTERS[id]) return;
-      const record = this.state.companions[id] || (this.state.companions[id] = { unlocked: id === "lyra", bond: 0, trust: 0, fear: 0, loyalty: 0, memoryIntegrity: 10, storyStage: 0, lastActivityAt: "" });
+      const record = this.state.companions[id] || (this.state.companions[id] = { unlocked: id === "lyra", bond: 0, trust: 0, fear: 0, loyalty: 0, memoryIntegrity: 10, beliefs: defaultCompanionBeliefs(id), storyStage: 0, lastActivityAt: "" });
       if (record.departed) return this.toast("Đồng đội này đang rời đội; cần giải quyết hậu quả cốt truyện trước.", "error");
       if (record.lastActivityAt && Date.now() - new Date(record.lastActivityAt).getTime() < 60000) return this.toast("Đồng đội cần một phút để hồi phục sau cuộc trò chuyện.", "error");
       record.unlocked = true;
@@ -11112,6 +11615,7 @@
         this.pendingStoryChoice = null;
         this.renderCurrentPanel();
       }
+      else if (action === "story-view-interlude") this.markStoryInterludeViewed(data.interlude);
       else if (action === "story-teleport") {
         const zone = ZONES.find((item) => item.id === data.zone);
         if (zone && this.state.checkpoints[zone.id]) {
@@ -11173,6 +11677,13 @@
       else if (action === "appearance-reset") this.resetAppearance();
       else if (action === "appearance-save") this.saveAppearancePreset(bodyValue(this.root, "[data-appearance-name]"));
       else if (action === "appearance-load-preset") this.loadAppearancePreset(data.presetId);
+      else if (action === "appearance-finish") {
+        this.state.appearance.creatorVersion = CHARACTER_VISUAL_VERSION;
+        this.state.appearance.lastSavedAt = nowIso();
+        await this.saveProgress("Hoàn tất chỉnh sửa ngoại hình");
+        this.closePanel();
+        this.toast("Đã lưu ngoại hình. Chào mừng trở lại H-Central!", "success");
+      }
       else if (action === "manual-save") await this.saveProgress("Checkpoint thủ công");
       else if (action === "sync-cloud") await this.syncCloud(true);
       else if (action === "restore-save") await this.restoreLocalVersion(Number(data.version));
@@ -11972,6 +12483,9 @@
           links: this.state.story?.constellationLinks?.length || 0,
           decisions: this.state.story?.decisions?.length || 0,
           aionEvidence: this.state.story?.aionEvidence || 0,
+          metrics: normalizeStoryMetrics(this.state.story?.metrics, STORY_METRIC_DEFAULTS),
+          interludes: Object.values(this.state.story?.interludes || {}).filter((record) => record.unlocked).length,
+          voiceAuthorization: Boolean(this.state.story?.hiddenSignals?.voiceAuthorizationRecovered),
           ending: this.state.story?.endingFlags?.selected || "",
           newGamePlus: this.state.story?.newGamePlus || 0
         },
@@ -11981,6 +12495,7 @@
           fear: record.fear,
           loyalty: record.loyalty,
           memoryIntegrity: record.memoryIntegrity,
+          beliefs: normalizeCompanionBeliefs(record.beliefs, id),
           storyStage: record.storyStage,
           unlocked: record.unlocked,
           departed: record.departed

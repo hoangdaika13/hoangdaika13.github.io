@@ -53,6 +53,37 @@ test("Hero framing and arm IK use actual shoulders, elbows, wrists and fingers",
   assert.doesNotMatch(source, /relaxedArm\s*=\s*[^;]*1\.4/);
 });
 
+test("Hero arm proportions stay anatomical and idle fingers remain relaxed", () => {
+  const proportions = source.slice(
+    source.indexOf("    applyRiggedBodyProportions(mesh, recipe) {"),
+    source.indexOf("    createBuiltInRiggedCharacter(profile, scale = 1) {")
+  );
+  const armIk = source.slice(
+    source.indexOf("    applyHeroArmIK(runtime, time, motion = \"idle\", dt = 0.016) {"),
+    source.indexOf("    applyProceduralRigMotion(runtime, time, motion = \"idle\", dt = 0.016) {")
+  );
+
+  assert.match(proportions, /const armLength\s*=\s*clamp\([^;]+,\s*0\.94,\s*1\.06\)/);
+  assert.match(proportions, /const forearmLength\s*=\s*clamp\([^;]+,\s*0\.95,\s*1\.05\)/);
+  assert.match(proportions, /const armMass\s*=\s*clamp\([^;]+,\s*1\.01,\s*1\.16\)/);
+  assert.match(proportions, /const forearmMass\s*=\s*clamp\([^;]+,\s*1,\s*1\.13\)/);
+  assert.match(proportions, /const fingerLengthScale\s*=\s*clamp\([^;]+,\s*0\.915,\s*0\.995\)/);
+  assert.match(proportions, /setSegmentScale\(leftArm/);
+  assert.match(proportions, /setSegmentScale\(rightArm/);
+  assert.match(proportions, /setPalmScale\(leftHand/);
+  assert.match(proportions, /setPalmScale\(rightHand/);
+  assert.match(proportions, /armCalibration\s*=\s*\{/);
+  assert.doesNotMatch(proportions, /setScale\(leftArm,\s*armMass,\s*armLength/);
+  assert.doesNotMatch(proportions, /setScale\(rightArm,\s*armMass,\s*armLength/);
+
+  assert.match(armIk, /const relaxedCurl\s*=\s*\[[^\]]+\]/);
+  assert.match(armIk, /const actionCurl\s*=\s*\[[^\]]+\]/);
+  assert.match(armIk, /const curl\s*=\s*combat\s*\?\s*actionCurl\s*:\s*relaxedCurl/);
+  assert.match(armIk, /hhHeroFingerBase/);
+  assert.match(armIk, /two-bone|analytic-two-bone|elbowPole/i);
+  assert.doesNotMatch(armIk, /relaxedCurl\s*=\s*\[[^\]]*(?:0\.2|0\.3|0\.4|1\.4)/);
+});
+
 test("route and offline cache request the Hero-only bundle", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");

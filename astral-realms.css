@@ -2023,6 +2023,56 @@ button.har-chip {
 .har-creator__note {
   margin-bottom: 0;
 }
+
+.har-creator__finish {
+  position: sticky;
+  z-index: 6;
+  bottom: -14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(185px, auto);
+  align-items: center;
+  gap: 11px;
+  margin: 4px -2px -14px;
+  padding: 11px;
+  border: 1px solid rgba(117, 239, 255, .35);
+  border-radius: 15px 15px 10px 10px;
+  background:
+    radial-gradient(circle at 88% 20%, rgba(255, 105, 207, .2), transparent 34%),
+    linear-gradient(125deg, rgba(7, 24, 42, .98), rgba(22, 10, 42, .98));
+  box-shadow: 0 -14px 32px rgba(2, 5, 15, .72), 0 0 24px rgba(93, 229, 255, .1);
+  backdrop-filter: blur(18px);
+}
+
+.har-creator__finish > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.har-creator__finish > div small {
+  color: var(--panel-accent, var(--har-cyan));
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .12em;
+}
+
+.har-creator__finish > div strong { font-size: 11px; }
+.har-creator__finish > div span { color: #95aac8; font-size: 8px; }
+
+.har-creator__finish > button {
+  min-height: 48px;
+  padding: 7px 13px;
+  border: 0;
+  color: #06121c;
+  background: linear-gradient(112deg, #79f1ff, #c698ff 55%, #ff8fcf);
+  box-shadow: 0 9px 28px rgba(92, 221, 255, .18);
+}
+
+.har-creator__finish > button > span,
+.har-creator__finish > button > small { display: block; }
+.har-creator__finish > button > span { font-size: 10px; }
+.har-creator__finish > button > small { margin-top: 2px; font-size: 7px; opacity: .72; }
+
 .har-shell.is-swimming .har-action-dock::after, .har-shell.is-climbing .har-action-dock::after { position: absolute; left: 50%; bottom: -22px; transform: translateX(-50%); padding: 4px 8px; border: 1px solid rgba(111, 231, 255, .32); border-radius: 8px; background: rgba(2, 8, 22, .8); color: #9befff; font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
 .har-shell.is-swimming .har-action-dock::after { content: "SWIMMING · STAMINA"; }
 .har-shell.is-climbing .har-action-dock::after { content: "CLIMBING · HOLD SPACE"; }
@@ -2043,6 +2093,8 @@ button.har-chip {
   .har-creator__sliders { grid-template-columns: 1fr; }
   .har-creator__options { align-items: start; }
   .har-creator__hero { flex-direction: column; }
+  .har-creator__finish { grid-template-columns: 1fr; }
+  .har-creator__finish > button { width: 100%; }
 }
 
 /* Astral Realms Visual V6 · photoreal human and environment pipeline */
@@ -2665,7 +2717,7 @@ button.har-chip {
   .har-character-v9-hero::before { animation: none; }
 }
 
-/* Astral Realms Character V12 · Digital Human Core */
+/* Astral Realms Character V13 · Digital Human Core */
 .har-genesis[hidden] { display: none !important; }
 
 .har-genesis {
@@ -3170,7 +3222,7 @@ button.har-chip {
   .har-genesis__scan i { animation: none !important; }
 }
 
-/* Digital Human Core V12 */
+/* Digital Human Core V13 */
 .har-genesis-capabilities,
 .har-digital-human-stack {
   display: grid;
@@ -3494,7 +3546,7 @@ button.har-chip {
 }
 .har-genesis-models article { cursor: default; }
 
-/* Character V12 · Genesis journey, truthful Hero gate and Motion DNA */
+/* Character V13 · Genesis journey, truthful Hero gate and Motion DNA */
 .har-genesis [hidden] { display: none !important; }
 
 .har-genesis__guide ol {
@@ -3692,17 +3744,24 @@ button.har-chip {
 
 .har-genesis-navigation {
   position: sticky;
-  bottom: -22px;
-  z-index: 7;
+  top: 92px;
+  z-index: 9;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 8px;
-  margin: 14px -18px -22px;
-  padding: 10px 18px 14px;
-  border-top: 1px solid rgba(124, 224, 255, .14);
-  background: rgba(4, 8, 21, .92);
+  margin: 12px 0 14px;
+  padding: 8px;
+  border: 1px solid rgba(124, 224, 255, .2);
+  border-radius: 13px;
+  background: rgba(4, 8, 21, .94);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .24), 0 0 24px rgba(96, 224, 255, .05);
   backdrop-filter: blur(16px);
 }
+.har-genesis-navigation > button { min-height: 44px; }
+.har-genesis-navigation > button > span,
+.har-genesis-navigation > button > small { display: block; }
+.har-genesis-navigation > button > span { font-size: 10px; }
+.har-genesis-navigation > button > small { margin-top: 2px; font-size: 7px; opacity: .72; }
 .har-genesis-navigation > .is-primary,
 .har-genesis-navigation .har-genesis-confirm {
   color: #06121d;
@@ -3710,7 +3769,7 @@ button.har-chip {
   background: linear-gradient(112deg, #79f1ff, #c698ff 55%, #ff8fcf);
   box-shadow: 0 10px 30px rgba(89, 220, 255, .14);
 }
-.har-genesis-navigation .har-genesis-confirm { min-height: 48px; margin: 0; }
+.har-genesis-navigation .har-genesis-confirm { min-height: 52px; margin: 0; }
 
 .har-evolution-preview {
   display: grid;
@@ -3737,13 +3796,13 @@ button.har-chip {
   .har-motion-dna__head { align-items: stretch; flex-direction: column; }
   .har-compare-lab { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .har-compare-lab > div { grid-column: 1 / -1; }
-  .har-genesis-navigation { bottom: 0; }
+  .har-genesis-navigation { top: 58px; }
 }
 
 @media (max-width: 450px) {
   .har-hero-gate__checks,
   .har-motion-dna__ranges { grid-template-columns: 1fr; }
-  .har-genesis-navigation { grid-template-columns: 1fr; }
+  .har-genesis-navigation { position: sticky; top: 58px; grid-template-columns: 1fr; }
   .har-genesis-navigation > button { width: 100%; }
 }
 
