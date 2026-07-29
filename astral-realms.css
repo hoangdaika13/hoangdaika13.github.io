@@ -2812,6 +2812,182 @@ button.har-chip {
 }
 
 .har-genesis__viewport { position: relative; min-width: 0; pointer-events: none; }
+
+/* A renderer-independent character frame. It is visible while WebGL/WebGPU
+   is starting (or when a device cannot decode the bundled GLB), then fades
+   behind the real 3D model. The silhouette is intentionally lightweight so
+   low-end devices still get a clear human preview instead of a black canvas. */
+.har-genesis-fallback-character {
+  position: absolute;
+  inset: 11% 10% 8%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: .92;
+  transition: opacity .45s ease, transform .45s ease, filter .45s ease;
+}
+
+.har-shell[data-character-preview="3d"] .har-genesis-fallback-character {
+  opacity: 0;
+  transform: scale(.96);
+  filter: blur(4px);
+}
+
+.har-genesis-fallback-character__frame,
+.har-genesis-fallback-character__orbit {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.har-genesis-fallback-character__frame {
+  width: min(42vh, 76%);
+  aspect-ratio: .78;
+  border: 1px solid rgba(121, 238, 255, .2);
+  border-radius: 46% 46% 38% 38%;
+  box-shadow:
+    inset 0 0 38px rgba(94, 213, 255, .08),
+    0 0 38px rgba(255, 97, 206, .12);
+  transform: perspective(560px) rotateY(-12deg);
+}
+
+.har-genesis-fallback-character__orbit {
+  width: min(44vh, 78%);
+  aspect-ratio: 1;
+  border: 1px solid rgba(122, 230, 255, .28);
+  transform: rotateX(66deg) rotateZ(-12deg);
+  animation: har-genesis-fallback-orbit 10s linear infinite;
+}
+
+.har-genesis-fallback-character__orbit--b {
+  width: min(34vh, 60%);
+  border-color: rgba(255, 104, 203, .28);
+  transform: rotateX(66deg) rotateZ(42deg);
+  animation-duration: 14s;
+  animation-direction: reverse;
+}
+
+.har-genesis-fallback-character__figure {
+  position: relative;
+  width: min(24vh, 42%);
+  height: min(48vh, 82%);
+  min-width: 118px;
+  min-height: 260px;
+  filter: drop-shadow(0 0 20px rgba(103, 232, 255, .2));
+  transform: translateY(2%);
+  animation: har-genesis-fallback-float 5.8s ease-in-out infinite;
+}
+
+.har-genesis-fallback-character__figure i {
+  position: absolute;
+  display: block;
+  font-style: normal;
+}
+
+.har-genesis-fallback-character__aura {
+  inset: 4% 10% 2%;
+  border-radius: 50% 50% 44% 44%;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, .7), rgba(125, 239, 255, .25) 12%, transparent 30%),
+    linear-gradient(180deg, rgba(98, 244, 255, .22), rgba(255, 86, 202, .12) 52%, transparent 88%);
+  filter: blur(13px);
+  animation: har-genesis-fallback-breathe 3.8s ease-in-out infinite;
+}
+
+.har-genesis-fallback-character__head {
+  top: 7%;
+  left: 31%;
+  width: 38%;
+  aspect-ratio: .86;
+  border: 1px solid rgba(255, 248, 223, .74);
+  border-radius: 48% 48% 44% 44%;
+  background:
+    radial-gradient(circle at 35% 25%, #fff 0 5%, #ffd9bb 18%, #ca8e92 56%, #56345a 100%);
+  box-shadow: 0 0 20px rgba(255, 191, 175, .42), inset -12px -13px 18px rgba(15, 14, 35, .35);
+}
+
+.har-genesis-fallback-character__head::before,
+.har-genesis-fallback-character__head::after {
+  content: "";
+  position: absolute;
+  top: 52%;
+  width: 6px;
+  height: 4px;
+  border-radius: 50%;
+  background: #61efff;
+  box-shadow: 0 0 8px #61efff;
+}
+
+.har-genesis-fallback-character__head::before { left: 23%; }
+.har-genesis-fallback-character__head::after { right: 23%; }
+
+.har-genesis-fallback-character__neck {
+  top: 27%;
+  left: 43%;
+  width: 14%;
+  height: 12%;
+  border-radius: 40%;
+  background: linear-gradient(90deg, #a86f78, #edc2aa 48%, #774d68);
+}
+
+.har-genesis-fallback-character__torso {
+  top: 31%;
+  left: 23%;
+  width: 54%;
+  height: 36%;
+  border-radius: 42% 42% 28% 28%;
+  background:
+    linear-gradient(90deg, rgba(111, 242, 255, .92), rgba(105, 100, 220, .82) 47%, rgba(255, 97, 201, .84)),
+    #1c2a54;
+  box-shadow: inset -14px -18px 28px rgba(8, 9, 28, .45), 0 0 18px rgba(104, 224, 255, .3);
+}
+
+.har-genesis-fallback-character__arm {
+  top: 35%;
+  width: 15%;
+  height: 34%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #a77a84, #e1b39e 48%, #5d4d73);
+  box-shadow: 0 0 10px rgba(121, 226, 255, .15);
+  transform-origin: 50% 8%;
+}
+
+.har-genesis-fallback-character__arm--left { left: 9%; transform: rotate(7deg); }
+.har-genesis-fallback-character__arm--right { right: 9%; transform: rotate(-7deg); }
+
+.har-genesis-fallback-character__leg {
+  top: 64%;
+  width: 19%;
+  height: 32%;
+  border-radius: 35%;
+  background: linear-gradient(180deg, #20264b, #425a92 52%, #0d112a);
+  box-shadow: inset -7px -10px 15px rgba(3, 5, 17, .5);
+}
+
+.har-genesis-fallback-character__leg--left { left: 28%; transform: rotate(2deg); }
+.har-genesis-fallback-character__leg--right { right: 28%; transform: rotate(-2deg); }
+
+.har-genesis-fallback-character__visor {
+  top: 23%;
+  left: 35%;
+  width: 30%;
+  height: 3%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #fff, #75f2ff, transparent);
+  box-shadow: 0 0 12px #75f2ff;
+}
+
+.har-genesis-fallback-character > small {
+  position: absolute;
+  bottom: 2%;
+  color: rgba(151, 231, 255, .78);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-align: center;
+}
+
 .har-genesis__scan { position: absolute; inset: 11% 12% 9%; display: grid; place-items: center; pointer-events: none; }
 .har-genesis__scan i {
   position: absolute;
@@ -3056,6 +3232,20 @@ button.har-chip {
   to { transform: rotateX(72deg) rotateZ(360deg); }
 }
 
+@keyframes har-genesis-fallback-orbit {
+  to { transform: rotateX(66deg) rotateZ(360deg); }
+}
+
+@keyframes har-genesis-fallback-float {
+  0%, 100% { transform: translateY(2%) rotateY(-3deg); }
+  50% { transform: translateY(-2%) rotateY(3deg); }
+}
+
+@keyframes har-genesis-fallback-breathe {
+  0%, 100% { opacity: .55; transform: scale(.96); }
+  50% { opacity: .95; transform: scale(1.04); }
+}
+
 @media (max-width: 1050px) {
   .har-genesis__layout { grid-template-columns: minmax(0, 1fr) minmax(350px, 44vw); }
   .har-genesis__guide { display: none; }
@@ -3091,7 +3281,9 @@ button.har-chip {
 
 @media (prefers-reduced-motion: reduce) {
   .har-genesis::after,
-  .har-genesis__scan i { animation: none !important; }
+  .har-genesis__scan i,
+  .har-genesis-fallback-character,
+  .har-genesis-fallback-character * { animation: none !important; }
 }
 
 /* Digital Human Core V11 */

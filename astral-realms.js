@@ -1197,8 +1197,8 @@
               <div><small>ASTRAL GENESIS · CHARACTER V${CHARACTER_VISUAL_VERSION}</small><strong>Tạo Nhà du hành của bạn</strong><span>Mesh 3D rigged · PBR · không dùng ảnh làm nhân vật</span></div>
               <div class="har-genesis__status"><i></i><span data-genesis-status>Đang dựng Human Rig...</span></div>
             </header>
-            <div class="har-genesis__layout">
-              <aside class="har-genesis__guide">
+              <div class="har-genesis__layout">
+                <aside class="har-genesis__guide">
                 <small>BƯỚC ĐẦU TIÊN</small>
                 <h2>Định hình một con người trong thế giới Astral.</h2>
                 <p>Chọn nền cơ thể, chỉnh tỷ lệ khuôn mặt và vóc dáng, kiểm tra chuyển động rồi mới bước vào H-Central.</p>
@@ -1208,8 +1208,25 @@
                   <li><span>03</span>Da, mắt & phong cách</li>
                   <li><span>04</span>Chuyển động & xác nhận</li>
                 </ol>
-              </aside>
-              <div class="har-genesis__viewport" aria-label="Xem trước nhân vật 3D">
+                </aside>
+                <div class="har-genesis__viewport" aria-label="Xem trước nhân vật 3D">
+                <div class="har-genesis-fallback-character" data-genesis-fallback-character aria-hidden="true">
+                  <div class="har-genesis-fallback-character__frame"></div>
+                  <div class="har-genesis-fallback-character__orbit har-genesis-fallback-character__orbit--a"></div>
+                  <div class="har-genesis-fallback-character__orbit har-genesis-fallback-character__orbit--b"></div>
+                  <div class="har-genesis-fallback-character__figure">
+                    <i class="har-genesis-fallback-character__aura"></i>
+                    <i class="har-genesis-fallback-character__head"></i>
+                    <i class="har-genesis-fallback-character__neck"></i>
+                    <i class="har-genesis-fallback-character__torso"></i>
+                    <i class="har-genesis-fallback-character__arm har-genesis-fallback-character__arm--left"></i>
+                    <i class="har-genesis-fallback-character__arm har-genesis-fallback-character__arm--right"></i>
+                    <i class="har-genesis-fallback-character__leg har-genesis-fallback-character__leg--left"></i>
+                    <i class="har-genesis-fallback-character__leg har-genesis-fallback-character__leg--right"></i>
+                    <i class="har-genesis-fallback-character__visor"></i>
+                  </div>
+                  <small>GPU SAFE HUMAN PREVIEW · 3D FALLBACK</small>
+                </div>
                 <div class="har-genesis__scan"><i></i><i></i><i></i></div>
                 <div class="har-genesis__camera-note"><strong data-genesis-model-name>ASTERIA HUMAN</strong><span>Giữ và kéo trên nhân vật để xoay camera</span></div>
                 <div class="har-genesis__view-actions">
@@ -1310,6 +1327,7 @@
       const recovery = this.root.querySelector("[data-har-loading-recovery]");
       const loadingText = this.root.querySelector("[data-har-loading-text]");
       if (recovery) recovery.hidden = true;
+      this.root.dataset.characterPreview = "fallback";
       loadingText?.classList.remove("har-unsupported");
       continueButton.disabled = true;
       newButton.disabled = true;
@@ -1359,6 +1377,7 @@
         this.createWorld();
         this.setLoading(76, "Đang dựng nhân vật rigged PBR, sinh vật và Nexus Warden...");
         this.createActors();
+        this.root.dataset.characterPreview = "3d";
         this.setLoading(84, "Đang khôi phục nhiệm vụ và kho đồ...");
         this.applyStateToWorld();
         this.initRuntime();
@@ -1806,6 +1825,7 @@
       this.photorealAssets = { panorama: null };
       this.disposeBuiltInCharacterAssets();
       this.photorealStatus = "pending";
+      if (this.root) this.root.dataset.characterPreview = "fallback";
     }
 
     enterRendererRecovery(reason = "Renderer bị gián đoạn.") {
@@ -4107,7 +4127,13 @@
         object.material = Array.isArray(object.material) ? materials : materials[0];
       });
       wrapper.add(asset);
-      const crowdProxy = this.createCharacterMesh({ body: profile.body, accent: profile.accent, scale: 0.94 });
+      // When a bundled GLB has a missing texture or cannot be decoded, keep a
+      // full articulated procedural character instead of collapsing to the
+      // tiny crowd proxy. This is the GPU-safe view that guarantees a visible
+      // human on weak devices while the original asset remains recoverable.
+      const crowdProxy = assetNeedsVisualRecovery
+        ? this.createAnimeCharacterMesh(profile, 0.94)
+        : this.createCharacterMesh({ body: profile.body, accent: profile.accent, scale: 0.94 });
       crowdProxy.name = `HHHuman3DProxy:${profile.id}`;
       crowdProxy.visible = assetNeedsVisualRecovery;
       crowdProxy.userData.isCharacterLodProxy = true;

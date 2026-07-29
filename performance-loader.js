@@ -40,7 +40,7 @@
        * so weather, device metrics and cards never flash as raw document flow.
        */
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=3", "home-galaxy-mission.css?v=4", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=3", "home-galaxy-mission.css?v=5", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
@@ -50,7 +50,7 @@
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=3", "home-galaxy-mission.css?v=4", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=3", "home-galaxy-mission.css?v=5", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
@@ -164,8 +164,8 @@
       scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
     },
     game: {
-      styles: ["game-runtime.css?v=1", "astral-realms.css?v=15", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
-      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=15", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
+      styles: ["game-runtime.css?v=1", "astral-realms.css?v=16", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=16", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
     },
     // Compatibility asset aliases for clients upgrading from Entertainment v4:
     // "game-center.css?v=4" "game-center.js?v=4"

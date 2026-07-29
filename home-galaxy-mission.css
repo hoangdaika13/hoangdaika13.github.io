@@ -85,8 +85,8 @@
     radial-gradient(ellipse at var(--hgm-pointer-x, 68%) var(--hgm-pointer-y, 28%), var(--hgm-nebula-a), transparent 23%),
     radial-gradient(ellipse at 24% 65%, var(--hgm-nebula-b), transparent 30%),
     radial-gradient(ellipse at 70% 85%, var(--hgm-nebula-c), transparent 28%);
-  filter: blur(34px) saturate(130%);
-  animation: hgmNebula 17s ease-in-out infinite alternate;
+  filter: blur(30px) saturate(168%);
+  animation: hgmNebula 11s ease-in-out infinite alternate, hgmNebulaHue 19s linear infinite;
 }
 
 .hgm-aurora {
@@ -122,6 +122,26 @@
   border-radius: 24px;
   background: linear-gradient(145deg, rgba(13, 20, 43, .91), rgba(4, 8, 20, .78));
   box-shadow: inset 0 1px rgba(255, 255, 255, .05), 0 24px 80px rgba(0, 0, 0, .3);
+  background-size: 220% 220%;
+  animation: hgmPanelColorShift 16s ease-in-out infinite;
+}
+
+.hgm-live::after {
+  content: "";
+  position: absolute;
+  inset: -45%;
+  z-index: 0;
+  pointer-events: none;
+  background: conic-gradient(from 210deg, transparent 0 18%, rgba(98, 244, 255, .13) 27%, transparent 38%, rgba(255, 84, 200, .12) 56%, transparent 68%, rgba(200, 255, 101, .1) 83%, transparent 94%);
+  filter: blur(28px);
+  opacity: .72;
+  mix-blend-mode: screen;
+  animation: hgmGalaxySheen 18s linear infinite;
+}
+
+.hgm-live > * {
+  position: relative;
+  z-index: 1;
 }
 
 .hgm-live::before,
@@ -239,10 +259,16 @@
   background:
     radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--widget) 17%, transparent), transparent 31%),
     rgba(5, 10, 23, .82);
+  background-size: 180% 180%;
   box-shadow: inset 0 1px rgba(255, 255, 255, .035);
   cursor: grab;
   transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease;
+  animation: hgmCardGlow 8s ease-in-out infinite;
 }
+
+.hgm-live-card:nth-child(2n) { animation-delay: -2.4s; }
+.hgm-live-card:nth-child(3n) { animation-delay: -4.8s; }
+.hgm-live-card:nth-child(5n) { animation-delay: -6.1s; }
 
 .hgm-live-card.is-large {
   grid-column: span 2;
@@ -351,6 +377,8 @@
   stroke-width: 1.8;
   filter: drop-shadow(0 0 5px var(--widget));
   vector-effect: non-scaling-stroke;
+  stroke-dasharray: 9 8;
+  animation: hgmSparkline 2.6s linear infinite;
 }
 
 .hgm-live-detail {
@@ -433,7 +461,7 @@
 
 .hgm-activity:hover .hgm-activity-track,
 .hgm-activity:focus-within .hgm-activity-track {
-  animation-play-state: paused;
+  animation-play-state: running;
 }
 
 .hgm-activity-track > button,
@@ -605,6 +633,29 @@
   transform-style: preserve-3d;
 }
 
+.hgm-solar::before,
+.hgm-solar::after {
+  content: "";
+  position: absolute;
+  inset: 8% 4%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hgm-solar::before {
+  background: conic-gradient(from 0deg, transparent 0 14%, rgba(98, 244, 255, .14) 21%, transparent 31%, rgba(255, 84, 200, .13) 46%, transparent 57%, rgba(200, 255, 101, .11) 71%, transparent 84%, rgba(156, 124, 255, .14) 94%, transparent);
+  filter: blur(22px);
+  mix-blend-mode: screen;
+  animation: hgmSolarField 22s linear infinite;
+}
+
+.hgm-solar::after {
+  border: 1px solid rgba(113, 230, 255, .11);
+  box-shadow: 0 0 40px rgba(255, 85, 203, .09), inset 0 0 40px rgba(108, 234, 255, .08);
+  transform: rotateX(66deg);
+  animation: hgmSolarPulse 5.5s ease-in-out infinite;
+}
+
 .hgm-orbit {
   position: absolute;
   top: 50%;
@@ -614,12 +665,13 @@
   transform: translate(-50%, -50%) rotateX(65deg);
   box-shadow: inset 0 0 20px rgba(104, 215, 255, .03), 0 0 14px rgba(104, 215, 255, .03);
   pointer-events: none;
+  animation: hgmOrbitDrift 34s linear infinite;
 }
 
-.hgm-orbit--1 { width: 225px; height: 225px; border-color: rgba(255, 89, 197, .27); }
-.hgm-orbit--2 { width: 355px; height: 355px; border-color: rgba(95, 244, 255, .25); }
-.hgm-orbit--3 { width: 485px; height: 485px; border-color: rgba(187, 255, 90, .19); }
-.hgm-orbit--4 { width: 620px; height: 620px; border-color: rgba(153, 119, 255, .24); }
+.hgm-orbit--1 { width: 225px; height: 225px; border-color: rgba(255, 89, 197, .27); animation-duration: 22s; }
+.hgm-orbit--2 { width: 355px; height: 355px; border-color: rgba(95, 244, 255, .25); animation-duration: 32s; animation-direction: reverse; }
+.hgm-orbit--3 { width: 485px; height: 485px; border-color: rgba(187, 255, 90, .19); animation-duration: 43s; }
+.hgm-orbit--4 { width: 620px; height: 620px; border-color: rgba(153, 119, 255, .24); animation-duration: 58s; animation-direction: reverse; }
 
 .hgm-sun {
   position: absolute;
@@ -848,7 +900,7 @@
 
 .hgm-shell.is-focus .hgm-orbit,
 .hgm-shell.is-focus .hgm-planet-sphere {
-  animation-play-state: paused;
+  animation-play-state: running;
 }
 
 .hgm-shell.has-ai-energy .hgm-energy {
@@ -1617,6 +1669,48 @@
 
 @keyframes hgmNebula {
   to { transform: translate3d(3%, -2%, 0) scale(1.08) rotate(2deg); }
+}
+
+@keyframes hgmNebulaHue {
+  50% { filter: blur(30px) saturate(190%) hue-rotate(42deg); }
+}
+
+@keyframes hgmGalaxySheen {
+  to { transform: rotate(360deg) scale(1.08); }
+}
+
+@keyframes hgmPanelColorShift {
+  0%, 100% { background-position: 0% 45%; filter: hue-rotate(0deg); }
+  50% { background-position: 100% 55%; filter: hue-rotate(18deg); }
+}
+
+@keyframes hgmCardGlow {
+  0%, 100% {
+    background-position: 0% 42%;
+    box-shadow: inset 0 1px rgba(255, 255, 255, .035), 0 0 0 rgba(98, 244, 255, 0);
+  }
+  50% {
+    background-position: 100% 58%;
+    box-shadow: inset 0 1px rgba(255, 255, 255, .07), 0 0 24px color-mix(in srgb, var(--widget) 13%, transparent);
+  }
+}
+
+@keyframes hgmSparkline {
+  to { stroke-dashoffset: -34; }
+}
+
+@keyframes hgmOrbitDrift {
+  from { transform: translate(-50%, -50%) rotateX(65deg) rotateZ(0deg); }
+  to { transform: translate(-50%, -50%) rotateX(65deg) rotateZ(360deg); }
+}
+
+@keyframes hgmSolarField {
+  to { transform: rotate(360deg) scale(1.04); }
+}
+
+@keyframes hgmSolarPulse {
+  0%, 100% { opacity: .42; transform: rotateX(66deg) scale(.98); }
+  50% { opacity: .9; transform: rotateX(66deg) scale(1.04); }
 }
 
 @keyframes hgmBorder {
