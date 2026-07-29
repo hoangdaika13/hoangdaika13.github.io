@@ -1,19 +1,21 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "hh.video-batch-factory.v1";
+  const STORAGE_KEY = "hh.video-batch-factory.v2";
+  const LEGACY_STORAGE_KEY = "hh.video-batch-factory.v1";
   const DB_NAME = "hh-video-editor-media";
   const DB_STORE = "assets";
   const MAX_ROWS = 250;
   const MAX_LIBRARY_FILES = 500;
+  const MAX_DURATION = 43_200;
   const MAX_INPUT_SIZE = 2 * 1024 * 1024 * 1024;
   const PRESETS = Object.freeze([
-    { id: "youtube", name: "YouTube Landscape", width: 1920, height: 1080, duration: 8, fps: 30, accent: "#6be8ff", background: "#071020", layout: "left", motion: "cinematic" },
-    { id: "short", name: "Short 9:16", width: 1080, height: 1920, duration: 7, fps: 30, accent: "#ff65c8", background: "#130923", layout: "center", motion: "pulse" },
-    { id: "square", name: "Social Square", width: 1080, height: 1080, duration: 6, fps: 30, accent: "#9d7cff", background: "#090d1c", layout: "center", motion: "orbit" },
-    { id: "quote", name: "Cosmic Quote", width: 1920, height: 1080, duration: 10, fps: 30, accent: "#ffd56a", background: "#110b20", layout: "center", motion: "drift" },
-    { id: "promo", name: "Product Promo", width: 1920, height: 1080, duration: 8, fps: 30, accent: "#56e6b1", background: "#061612", layout: "left", motion: "cinematic" },
-    { id: "news", name: "News & Lower Third", width: 1920, height: 1080, duration: 12, fps: 30, accent: "#ff765f", background: "#150a0a", layout: "left", motion: "slide" }
+    { id: "youtube", name: "YouTube Full HD", width: 1920, height: 1080, duration: 3600, fps: 30, accent: "#6be8ff", background: "#071020", layout: "left", motion: "cinematic" },
+    { id: "short", name: "Short Full HD 9:16", width: 1080, height: 1920, duration: 3600, fps: 30, accent: "#ff65c8", background: "#130923", layout: "center", motion: "pulse" },
+    { id: "square", name: "Social Square", width: 1080, height: 1080, duration: 3600, fps: 30, accent: "#9d7cff", background: "#090d1c", layout: "center", motion: "orbit" },
+    { id: "quote", name: "YouTube 2K", width: 2560, height: 1440, duration: 3600, fps: 30, accent: "#ffd56a", background: "#110b20", layout: "center", motion: "drift" },
+    { id: "promo", name: "YouTube 4K", width: 3840, height: 2160, duration: 3600, fps: 30, accent: "#56e6b1", background: "#061612", layout: "left", motion: "cinematic" },
+    { id: "news", name: "Vertical 4K", width: 2160, height: 3840, duration: 3600, fps: 30, accent: "#ff765f", background: "#150a0a", layout: "left", motion: "slide" }
   ]);
   const COLOR_PRESETS = Object.freeze([
     { id: "auto", name: "Tự gợi ý theo ảnh", filter: "none", accent: "#6be8ff" },
@@ -32,11 +34,13 @@
   const DEFAULT_STATE = Object.freeze({
     presetId: "youtube",
     template: {
-      ...PRESETS[0], titleSize: 88, subtitleSize: 34, ctaSize: 28, overlay: 58,
-      logo: "H", watermark: "HH PLATFORM", format: "mp4", bitrate: 8_000_000,
+      ...PRESETS[0], format: "mp4", bitrate: 8_000_000,
       colorPreset: "auto", colorIntensity: 100, imageMotion: "kenburns",
       effectOpacity: 90, effectMode: "random", musicMode: "shuffle",
-      musicVolume: 70, musicFade: .5, renderEngine: "auto", renderProfile: "balanced"
+      musicVolume: 70, musicFade: .5, musicPitch: 0,
+      bassGain: 0, midGain: 0, trebleGain: 0,
+      bassFrequency: 120, midFrequency: 1000, trebleFrequency: 8000,
+      renderEngine: "auto", renderProfile: "balanced"
     },
     rows: [],
     jobs: [],
@@ -78,7 +82,7 @@
     }
     return String(user?.id || user?._id || "guest").replace(/[^a-z0-9_-]/gi, "").slice(0, 80) || "guest";
   };
-  const privateKey = () => `${STORAGE_KEY}:${ownerId()}`;
+  const privateKey = (base = STORAGE_KEY) => `${base}:${ownerId()}`;
 
   state = loadState();
 
@@ -87,22 +91,16 @@
     return {
       id: String(source.id || "custom").slice(0, 40),
       name: String(source.name || "Sườn tùy chỉnh").slice(0, 100),
-      width: clamp(source.width, 320, 3840) || 1920,
-      height: clamp(source.height, 320, 3840) || 1080,
-      duration: clamp(source.duration, 1, 60) || 8,
+      width: source.width === undefined ? 1920 : clamp(source.width, 320, 3840),
+      height: source.height === undefined ? 1080 : clamp(source.height, 320, 3840),
+      duration: source.duration === undefined ? 3600 : clamp(source.duration, 1, MAX_DURATION),
       fps: [24, 25, 30, 50, 60].includes(Number(source.fps)) ? Number(source.fps) : 30,
       accent: /^#[\da-f]{6}$/i.test(source.accent) ? source.accent : "#6be8ff",
       background: /^#[\da-f]{6}$/i.test(source.background) ? source.background : "#071020",
       layout: ["left", "center"].includes(source.layout) ? source.layout : "left",
       motion: ["cinematic", "pulse", "orbit", "drift", "slide", "none"].includes(source.motion) ? source.motion : "cinematic",
-      titleSize: clamp(source.titleSize, 30, 180) || 88,
-      subtitleSize: clamp(source.subtitleSize, 18, 90) || 34,
-      ctaSize: clamp(source.ctaSize, 14, 70) || 28,
-      overlay: source.overlay === undefined ? 58 : clamp(source.overlay, 0, 90),
-      logo: String(source.logo || "H").slice(0, 4),
-      watermark: String(source.watermark || "HH PLATFORM").slice(0, 60),
-      format: source.format === "webm" ? "webm" : "mp4",
-      bitrate: clamp(source.bitrate, 1_000_000, 30_000_000) || 8_000_000
+      format: source.format === "mov" ? "mov" : "mp4",
+      bitrate: source.bitrate === undefined ? 8_000_000 : clamp(source.bitrate, 1_000_000, 80_000_000)
       ,
       colorPreset: COLOR_PRESETS.some((item) => item.id === source.colorPreset) ? source.colorPreset : "auto",
       colorIntensity: source.colorIntensity === undefined ? 100 : clamp(source.colorIntensity, 0, 100),
@@ -112,6 +110,13 @@
       musicMode: ["random", "shuffle", "none"].includes(source.musicMode) ? source.musicMode : "shuffle",
       musicVolume: source.musicVolume === undefined ? 70 : clamp(source.musicVolume, 0, 100),
       musicFade: source.musicFade === undefined ? .5 : clamp(source.musicFade, 0, 5),
+      musicPitch: source.musicPitch === undefined ? 0 : clamp(source.musicPitch, -12, 12),
+      bassGain: source.bassGain === undefined ? 0 : clamp(source.bassGain, -12, 12),
+      midGain: source.midGain === undefined ? 0 : clamp(source.midGain, -12, 12),
+      trebleGain: source.trebleGain === undefined ? 0 : clamp(source.trebleGain, -12, 12),
+      bassFrequency: source.bassFrequency === undefined ? 120 : clamp(source.bassFrequency, 40, 500),
+      midFrequency: source.midFrequency === undefined ? 1000 : clamp(source.midFrequency, 250, 5000),
+      trebleFrequency: source.trebleFrequency === undefined ? 8000 : clamp(source.trebleFrequency, 2000, 16000),
       renderEngine: ["auto", "gpu", "compatibility"].includes(source.renderEngine) ? source.renderEngine : "auto",
       renderProfile: ["fast", "balanced", "high", "cinematic"].includes(source.renderProfile) ? source.renderProfile : "balanced"
     };
@@ -130,7 +135,7 @@
       sourceName: String(source.sourceName || "").slice(0, 240),
       colorPreset: COLOR_PRESETS.some((item) => item.id === source.colorPreset) ? source.colorPreset : "",
       suggestedColor: COLOR_PRESETS.some((item) => item.id === source.suggestedColor) ? source.suggestedColor : "natural",
-      duration: source.duration ? clamp(source.duration, 1, 60) : 0
+      duration: source.duration ? clamp(source.duration, 1, MAX_DURATION) : 0
     };
   }
 
@@ -168,7 +173,12 @@
   }
 
   function loadState() {
-    try { return normalizeState(JSON.parse(localStorage.getItem(privateKey()) || "null")); }
+    try {
+      const current = localStorage.getItem(privateKey());
+      const legacy = current ? null : localStorage.getItem(privateKey(LEGACY_STORAGE_KEY));
+      if (legacy) localStorage.setItem(privateKey(), legacy);
+      return normalizeState(JSON.parse(current || legacy || "null"));
+    }
     catch { return normalizeState(null); }
   }
 
@@ -244,12 +254,22 @@
   function capabilities() {
     const capture = Boolean(window.HTMLCanvasElement?.prototype?.captureStream);
     const recorderReady = Boolean(window.MediaRecorder && capture);
-    const mp4Mime = window.HHVideoExport?.resolveRecorderMime?.('video/mp4;codecs="avc1.424028,mp4a.40.2"')
-      || (window.MediaRecorder?.isTypeSupported?.("video/mp4") ? "video/mp4" : "");
-    const webmMime = window.HHVideoExport?.resolveRecorderMime?.("video/webm;codecs=vp9,opus")
-      || (window.MediaRecorder?.isTypeSupported?.("video/webm;codecs=vp9,opus") ? "video/webm;codecs=vp9,opus" : "video/webm");
+    const supported = (candidates) => candidates.find((mime) => (
+      !window.MediaRecorder?.isTypeSupported || window.MediaRecorder.isTypeSupported(mime)
+    )) || "";
+    const helperValue = window.HHVideoExport?.resolveRecorderMime?.('video/mp4;codecs="avc1.424028,mp4a.40.2"');
+    const helperMp4 = typeof helperValue === "string" ? helperValue : helperValue?.mime || "";
+    const mp4Mime = helperMp4.startsWith("video/mp4") ? helperMp4 : supported([
+      'video/mp4;codecs="avc1.424028,mp4a.40.2"',
+      'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+      "video/mp4"
+    ]);
+    const movMime = supported([
+      'video/quicktime;codecs="avc1.424028,mp4a.40.2"',
+      "video/quicktime"
+    ]);
     return {
-      capture, recorderReady, mp4Mime, webmMime,
+      capture, recorderReady, mp4Mime, movMime,
       indexedDb: Boolean(window.indexedDB),
       audio: Boolean(window.AudioContext || window.webkitAudioContext),
       folderInput: "webkitdirectory" in document.createElement("input"),
@@ -315,11 +335,11 @@
       <div class="bvf-preset-grid">${PRESETS.map((preset) => `<button type="button" data-bvf-preset="${preset.id}" class="${state.presetId === preset.id ? "is-active" : ""}"><i style="--preset:${preset.accent}"></i><strong>${esc(preset.name)}</strong><small>${preset.width}×${preset.height}</small></button>`).join("")}</div>
       <div class="bvf-fields">
         <label>Tên sườn<input data-bvf-template="name" value="${esc(template.name)}" maxlength="100"></label>
-        <label>Độ phân giải<select data-bvf-resolution><option value="1920x1080" ${template.width === 1920 && template.height === 1080 ? "selected" : ""}>1920×1080</option><option value="1280x720" ${template.width === 1280 ? "selected" : ""}>1280×720</option><option value="1080x1920" ${template.height === 1920 ? "selected" : ""}>1080×1920</option><option value="1080x1080" ${template.width === 1080 && template.height === 1080 ? "selected" : ""}>1080×1080</option></select></label>
-        <label>Thời lượng mỗi video<input type="number" min="1" max="60" step="1" data-bvf-template="duration" value="${template.duration}"></label>
+        <label>Độ phân giải<select data-bvf-resolution><option value="1920x1080" ${template.width === 1920 && template.height === 1080 ? "selected" : ""}>Full HD · 1920×1080</option><option value="2560x1440" ${template.width === 2560 && template.height === 1440 ? "selected" : ""}>2K · 2560×1440</option><option value="3840x2160" ${template.width === 3840 && template.height === 2160 ? "selected" : ""}>4K · 3840×2160</option><option value="1280x720" ${template.width === 1280 && template.height === 720 ? "selected" : ""}>HD · 1280×720</option><option value="1080x1920" ${template.width === 1080 && template.height === 1920 ? "selected" : ""}>Full HD dọc · 1080×1920</option><option value="1440x2560" ${template.width === 1440 && template.height === 2560 ? "selected" : ""}>2K dọc · 1440×2560</option><option value="2160x3840" ${template.width === 2160 && template.height === 3840 ? "selected" : ""}>4K dọc · 2160×3840</option><option value="1080x1080" ${template.width === 1080 && template.height === 1080 ? "selected" : ""}>Vuông · 1080×1080</option></select></label>
+        <label>Thời lượng mặc định (phút)<input type="number" min="1" max="720" step="1" data-bvf-duration-minutes value="${Math.round(template.duration / 60)}"></label>
         <label>FPS<select data-bvf-template="fps">${[24,25,30,50,60].map((fps) => `<option ${template.fps === fps ? "selected" : ""}>${fps}</option>`).join("")}</select></label>
-        <label>Định dạng<select data-bvf-template="format"><option value="mp4" ${template.format === "mp4" ? "selected" : ""}>MP4 H.264</option><option value="webm" ${template.format === "webm" ? "selected" : ""}>WebM VP9</option></select></label>
-        <label>Bitrate<select data-bvf-template="bitrate">${[[4_000_000,"4 Mbps"],[8_000_000,"8 Mbps"],[12_000_000,"12 Mbps"],[20_000_000,"20 Mbps"]].map(([value,label]) => `<option value="${value}" ${template.bitrate === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>
+        <label>Định dạng<select data-bvf-template="format"><option value="mp4" ${template.format === "mp4" ? "selected" : ""}>MP4 H.264 · YouTube</option><option value="mov" ${template.format === "mov" ? "selected" : ""}>MOV H.264 · nếu trình duyệt hỗ trợ</option></select></label>
+        <label>Bitrate<select data-bvf-template="bitrate">${[[8_000_000,"8 Mbps"],[12_000_000,"12 Mbps"],[20_000_000,"20 Mbps"],[35_000_000,"35 Mbps · 2K"],[60_000_000,"60 Mbps · 4K"],[80_000_000,"80 Mbps · 4K cao"]].map(([value,label]) => `<option value="${value}" ${template.bitrate === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>
         <label>Hồ sơ render<select data-bvf-render-profile>${[["fast","Nhanh"],["balanced","Cân bằng"],["high","Chất lượng cao"],["cinematic","Điện ảnh"]].map(([value,label]) => `<option value="${value}" ${template.renderProfile === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>
         <label>Engine<select data-bvf-template="renderEngine"><option value="auto" ${template.renderEngine === "auto" ? "selected" : ""}>Tự động · ưu tiên GPU</option><option value="gpu" ${template.renderEngine === "gpu" ? "selected" : ""}>GPU hiệu năng cao</option><option value="compatibility" ${template.renderEngine === "compatibility" ? "selected" : ""}>Tương thích</option></select></label>
         <label>Màu nền<input type="color" data-bvf-template="background" value="${template.background}"></label>
@@ -333,9 +353,13 @@
         <label>Chọn nhạc<select data-bvf-template="musicMode"><option value="random" ${template.musicMode === "random" ? "selected" : ""}>Ngẫu nhiên</option><option value="shuffle" ${template.musicMode === "shuffle" ? "selected" : ""}>Trộn không lặp</option><option value="none" ${template.musicMode === "none" ? "selected" : ""}>Tắt</option></select></label>
         <label>Âm lượng nhạc ${template.musicVolume}%<input type="range" min="0" max="100" data-bvf-template="musicVolume" value="${template.musicVolume}"></label>
         <label>Fade nhạc<input type="number" min="0" max="5" step=".1" data-bvf-template="musicFade" value="${template.musicFade}"></label>
-        <label>Bố cục<select data-bvf-template="layout"><option value="left" ${template.layout === "left" ? "selected" : ""}>Căn trái</option><option value="center" ${template.layout === "center" ? "selected" : ""}>Căn giữa</option></select></label>
-        <label>Logo<input data-bvf-template="logo" value="${esc(template.logo)}" maxlength="4"></label>
-        <label>Watermark<input data-bvf-template="watermark" value="${esc(template.watermark)}" maxlength="60"></label>
+        <label>Độ cao nhạc ${template.musicPitch > 0 ? "+" : ""}${template.musicPitch} bán âm<input type="range" min="-12" max="12" step="1" data-bvf-template="musicPitch" value="${template.musicPitch}"></label>
+        <label>Bass ${template.bassGain > 0 ? "+" : ""}${template.bassGain} dB<input type="range" min="-12" max="12" step="1" data-bvf-template="bassGain" value="${template.bassGain}"></label>
+        <label>Tần số Bass ${template.bassFrequency} Hz<input type="range" min="40" max="500" step="10" data-bvf-template="bassFrequency" value="${template.bassFrequency}"></label>
+        <label>Mid ${template.midGain > 0 ? "+" : ""}${template.midGain} dB<input type="range" min="-12" max="12" step="1" data-bvf-template="midGain" value="${template.midGain}"></label>
+        <label>Tần số Mid ${template.midFrequency} Hz<input type="range" min="250" max="5000" step="50" data-bvf-template="midFrequency" value="${template.midFrequency}"></label>
+        <label>Treble ${template.trebleGain > 0 ? "+" : ""}${template.trebleGain} dB<input type="range" min="-12" max="12" step="1" data-bvf-template="trebleGain" value="${template.trebleGain}"></label>
+        <label>Tần số Treble ${template.trebleFrequency} Hz<input type="range" min="2000" max="16000" step="250" data-bvf-template="trebleFrequency" value="${template.trebleFrequency}"></label>
       </div>
       <div class="bvf-action-row"><button data-bvf-action="export-template">Xuất sườn JSON</button><label class="bvf-file">Nhập sườn JSON<input type="file" accept=".json,application/json" data-bvf-template-file></label><button data-bvf-action="preview">Cập nhật preview</button></div>
       <div class="bvf-output-options">
@@ -344,7 +368,7 @@
         <button type="button" data-bvf-action="select-output-folder">Chọn thư mục lưu</button>
         <span data-bvf-output-folder>${esc(state.outputDirectoryName || "Chưa chọn · lưu Media Pool/tải xuống")}</span>
       </div>
-      <p class="bvf-honesty">Chế độ GPU yêu cầu adapter <code>high-performance</code>, dùng WebGL2 cho scale, color grade và Screen effect. Chrome tự chọn GPU/codec phần cứng; website không thể ép NVENC hoặc tự nhận là NVIDIA khi trình duyệt không cung cấp tên thiết bị.</p>
+      <p class="bvf-honesty">Đầu ra chỉ gồm hình/video, nhạc và hiệu ứng đã chọn — không chèn chữ, logo hay watermark. GPU dùng WebGL2 cho scale, color grade và Screen effect; trình duyệt tự quyết định encoder phần cứng. Với video dài, hãy chọn thư mục lưu để ghi từng phần trực tiếp và tránh giữ toàn bộ file trong RAM.</p>
     </section>`;
   }
 
@@ -361,17 +385,14 @@
         <button data-bvf-action="add-row">+ Thêm dòng</button>
       </div>
       <div class="bvf-folder-summary"><span>${sourceAssets().length} ảnh/video</span><span>${musicAssets().length} bản nhạc</span><span>${effectAssets().length} hiệu ứng Screen</span></div>
-      <div class="bvf-table-wrap"><table><thead><tr><th>#</th><th>Tiêu đề</th><th>Dòng phụ</th><th>CTA</th><th>Media</th><th>Giây</th><th>Màu</th><th></th></tr></thead><tbody>${state.rows.length ? state.rows.map((row, index) => `<tr data-bvf-row="${esc(row.id)}">
+      <div class="bvf-table-wrap"><table><thead><tr><th>#</th><th>Media</th><th>Thời lượng (phút)</th><th>Màu</th><th></th></tr></thead><tbody>${state.rows.length ? state.rows.map((row, index) => `<tr data-bvf-row="${esc(row.id)}">
         <td>${index + 1}</td>
-        <td><input data-bvf-row-field="title" value="${esc(row.title)}" maxlength="180"></td>
-        <td><input data-bvf-row-field="subtitle" value="${esc(row.subtitle)}" maxlength="300"></td>
-        <td><input data-bvf-row-field="cta" value="${esc(row.cta)}" maxlength="120"></td>
         <td><select data-bvf-row-field="sourceId">${inputOptions(row.sourceId)}</select></td>
-        <td><input type="number" min="1" max="60" placeholder="${state.template.duration}" data-bvf-row-field="duration" value="${row.duration || ""}"></td>
+        <td><input type="number" min="1" max="720" placeholder="${Math.round(state.template.duration / 60)}" data-bvf-row-duration-minutes value="${row.duration ? Math.round(row.duration / 60) : ""}"></td>
         <td><select data-bvf-row-field="colorPreset"><option value="">Theo sườn</option>${colorOptions(row.colorPreset)}</select></td>
         <td><button data-bvf-remove-row="${esc(row.id)}" aria-label="Xóa dòng">×</button></td>
-      </tr>`).join("") : `<tr><td colspan="8"><p>Chưa có dữ liệu. Chọn folder ảnh để tự tạo một video cho mỗi ảnh.</p></td></tr>`}</tbody></table></div>
-      <p class="bvf-honesty">CSV dùng các cột: <code>title, subtitle, cta, accent, sourceName</code>. Tool ghép dữ liệu vào sườn; không tự tạo nội dung mẫu hoặc dùng asset ngoài Media Pool.</p>
+      </tr>`).join("") : `<tr><td colspan="5"><p>Chưa có dữ liệu. Chọn folder ảnh để tự tạo một video cho mỗi ảnh.</p></td></tr>`}</tbody></table></div>
+      <p class="bvf-honesty">Tên file nguồn chỉ dùng để đặt tên file xuất, không được vẽ lên khung hình. Mỗi ảnh tạo một video độc lập với thời lượng, màu và nhạc đã chọn.</p>
     </section>`;
   }
 
@@ -395,30 +416,13 @@
     if (!root) return;
     const caps = capabilities();
     root.innerHTML = `<section class="bvf-shell">
-      <header class="bvf-hero"><div class="bvf-core"><b>H</b><i></i></div><div><small>TOOL · BATCH VIDEO FACTORY</small><h2>Mỗi ảnh thành một video hoàn chỉnh</h2><p>Chọn folder ảnh, trộn nhạc và hiệu ứng ngẫu nhiên, color grade rồi kết xuất hàng loạt ngay trên thiết bị.</p></div><aside><span class="is-${caps.recorderReady ? "ready" : "unsupported"}">${caps.recorderReady ? "Renderer sẵn sàng" : "Thiết bị không hỗ trợ render"}</span><small>${esc(caps.gpu.label)} · ${caps.mp4Mime ? "MP4 H.264" : "WebM fallback"}</small></aside></header>
+      <header class="bvf-hero"><div class="bvf-core"><b>H</b><i></i></div><div><small>TOOL · BATCH VIDEO FACTORY</small><h2>Video sạch, sẵn sàng tải lên YouTube</h2><p>Mỗi ảnh thành một video MP4/MOV không chữ, không logo, không watermark; mặc định 60 phút và hỗ trợ Full HD, 2K, 4K.</p></div><aside><span class="is-${caps.recorderReady && caps.mp4Mime ? "ready" : "unsupported"}">${caps.recorderReady && caps.mp4Mime ? "MP4 sẵn sàng" : "Thiếu encoder MP4"}</span><small>${esc(caps.gpu.label)} · ${caps.movMime ? "MP4 + MOV" : "MP4"}</small></aside></header>
       <section class="bvf-live"><article><span>ẢNH/VIDEO</span><strong>${sourceAssets().length}</strong></article><article><span>NHẠC</span><strong>${musicAssets().length}</strong></article><article><span>SCREEN FX</span><strong>${effectAssets().length}</strong></article><article><span>THỜI LƯỢNG ƯỚC TÍNH</span><strong>${Math.ceil(state.rows.reduce((sum,row) => sum + (row.duration || state.template.duration), 0) / 60)} phút</strong></article><article><span>THƯ MỤC LƯU</span><strong>${esc(state.outputDirectoryName || "Media Pool")}</strong></article></section>
-      <div class="bvf-layout"><main>${templateMarkup()}${dataMarkup()}</main><aside><section class="bvf-panel bvf-preview"><header><div><small>LIVE PREVIEW</small><h3>Khung đầu ra</h3></div><span>Canvas thật</span></header><canvas data-bvf-canvas width="${state.template.width}" height="${state.template.height}"></canvas><p>Preview dùng dòng đầu tiên. Hiệu ứng render giữ cùng sườn, màu và safe zone.</p></section>${queueMarkup()}</aside></div>
+      <div class="bvf-layout"><main>${templateMarkup()}${dataMarkup()}</main><aside><section class="bvf-panel bvf-preview"><header><div><small>LIVE PREVIEW</small><h3>Khung đầu ra sạch</h3></div><span>Không logo/chữ</span></header><canvas data-bvf-canvas width="${state.template.width}" height="${state.template.height}"></canvas><p>Preview chỉ gồm media, chuyển động, color grade và Screen effect đã chọn.</p></section>${queueMarkup()}</aside></div>
       <footer><span data-bvf-status role="status" aria-live="polite">Sẵn sàng · file nguồn và kết quả nằm trong Media Pool của thiết bị này.</span><span>Render trình duyệt chạy theo thời lượng thật; tab cần được giữ hoạt động.</span></footer>
     </section>`;
     drawPreview();
     renderPreflight();
-  }
-
-  function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines, align) {
-    const words = String(text || "").split(/\s+/).filter(Boolean);
-    const lines = [];
-    let line = "";
-    words.forEach((word) => {
-      const next = line ? `${line} ${word}` : word;
-      if (ctx.measureText(next).width > maxWidth && line) { lines.push(line); line = word; }
-      else line = next;
-    });
-    if (line) lines.push(line);
-    lines.slice(0, maxLines).forEach((value, index) => {
-      const clipped = index === maxLines - 1 && lines.length > maxLines ? `${value.slice(0, -1)}…` : value;
-      ctx.textAlign = align;
-      ctx.fillText(clipped, x, y + index * lineHeight);
-    });
   }
 
   function drawCover(ctx, media, width, height, scale = 1) {
@@ -586,7 +590,6 @@
     const height = canvas.height;
     const accent = row?.accent || template.accent;
     const motion = template.motion;
-    const ease = 1 - Math.pow(1 - Math.min(1, progress * 2.4), 3);
     const drift = motion === "drift" || motion === "cinematic" ? 1 + progress * .035 : 1;
     ctx.clearRect(0, 0, width, height);
     const gradient = ctx.createLinearGradient(0, 0, width, height);
@@ -598,7 +601,7 @@
     if (media) {
       const movement = precomposited ? { scale: 1, x: 0, y: 0 } : imageMotion(progress);
       ctx.save();
-      ctx.globalAlpha = .86;
+      ctx.globalAlpha = 1;
       ctx.filter = precomposited ? "none" : colorFilter(row);
       ctx.translate(width * movement.x, height * movement.y);
       drawCover(ctx, media, width, height, movement.scale * (precomposited ? 1 : drift));
@@ -610,74 +613,6 @@
       ctx.globalAlpha = state.template.effectOpacity / 100;
       drawCover(ctx, effect, width, height, 1.01);
       ctx.restore();
-    }
-    const overlay = ctx.createLinearGradient(template.layout === "left" ? 0 : width / 2, 0, width, 0);
-    overlay.addColorStop(0, `rgba(2,5,14,${template.overlay / 100})`);
-    overlay.addColorStop(1, `rgba(2,5,14,${Math.max(.2, template.overlay / 260)})`);
-    ctx.fillStyle = overlay;
-    ctx.fillRect(0, 0, width, height);
-    for (let index = 0; index < 70; index += 1) {
-      const x = (index * 193 + progress * width * (index % 3 + 1) * .08) % width;
-      const y = (index * 97 + Math.sin(index * 3.2) * 120 + height) % height;
-      ctx.globalAlpha = .18 + (index % 5) * .08;
-      ctx.fillStyle = index % 4 ? "#ffffff" : accent;
-      ctx.beginPath();
-      ctx.arc(x, y, 1 + index % 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    const pad = width * .075;
-    const center = template.layout === "center";
-    const textX = center ? width / 2 : pad;
-    const maxText = center ? width * .78 : width * .64;
-    const entrance = motion === "slide" || motion === "cinematic" ? (1 - ease) * -width * .08 : 0;
-    ctx.save();
-    ctx.translate(entrance, 0);
-    ctx.fillStyle = accent;
-    ctx.shadowColor = accent;
-    ctx.shadowBlur = 28;
-    ctx.fillRect(center ? width * .25 : pad, height * .245, center ? width * .5 : width * .12, Math.max(5, height * .007));
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `900 ${template.titleSize / 1920 * width}px "Segoe UI",sans-serif`;
-    ctx.textBaseline = "top";
-    wrapText(ctx, row?.title || "VIDEO TITLE", textX, height * .29, maxText, template.titleSize / 1920 * width * 1.08, 3, center ? "center" : "left");
-    ctx.fillStyle = "#c9d7eb";
-    ctx.font = `650 ${template.subtitleSize / 1920 * width}px "Segoe UI",sans-serif`;
-    wrapText(ctx, row?.subtitle || "Dòng phụ từ dữ liệu hàng loạt", textX, height * .61, maxText, template.subtitleSize / 1920 * width * 1.25, 3, center ? "center" : "left");
-    if (row?.cta) {
-      const ctaY = height * .76;
-      ctx.font = `800 ${template.ctaSize / 1920 * width}px "Segoe UI",sans-serif`;
-      const ctaWidth = Math.min(maxText, ctx.measureText(row.cta).width + width * .045);
-      const ctaX = center ? width / 2 - ctaWidth / 2 : pad;
-      ctx.fillStyle = accent;
-      ctx.fillRect(ctaX, ctaY, ctaWidth, height * .072);
-      ctx.fillStyle = "#07101d";
-      ctx.textAlign = center ? "center" : "left";
-      ctx.textBaseline = "middle";
-      ctx.fillText(row.cta, center ? width / 2 : ctaX + width * .02, ctaY + height * .036);
-    }
-    ctx.restore();
-    const logoRadius = width * .033;
-    ctx.beginPath();
-    ctx.arc(width - pad, pad, logoRadius, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
-    ctx.fillStyle = "#07101d";
-    ctx.font = `950 ${logoRadius}px "Segoe UI",sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(template.logo, width - pad, pad);
-    ctx.fillStyle = "#ffffffa8";
-    ctx.font = `750 ${Math.max(14, width * .012)}px "Segoe UI",sans-serif`;
-    ctx.textAlign = "right";
-    ctx.fillText(template.watermark, width - pad, height - pad * .55);
-    if (motion === "pulse" || motion === "orbit") {
-      ctx.strokeStyle = `${accent}99`;
-      ctx.lineWidth = Math.max(2, width * .002);
-      ctx.beginPath();
-      ctx.arc(width - pad, pad, logoRadius * (1.35 + Math.sin(progress * Math.PI * 4) * .08), 0, Math.PI * 2);
-      ctx.stroke();
     }
   }
 
@@ -726,7 +661,7 @@
     if (!canvas) return;
     canvas.width = state.template.width;
     canvas.height = state.template.height;
-    const row = state.rows[0] || normalizeRow({ title: "MỘT SƯỜN · NHIỀU VIDEO", subtitle: "CSV, media, transition và render queue", cta: "BẮT ĐẦU" });
+    const row = state.rows[0] || normalizeRow({ title: "preview" });
     drawFrame(canvas, row, .25);
     if (row.sourceId) {
       Promise.all([
@@ -744,17 +679,17 @@
   function preflight() {
     const caps = capabilities();
     const template = state.template;
-    const requestedMp4 = template.format === "mp4";
-    const actualMime = requestedMp4 ? caps.mp4Mime || caps.webmMime : caps.webmMime;
+    const requestedMov = template.format === "mov";
+    const actualMime = requestedMov ? caps.movMime : caps.mp4Mime;
     const checks = [
       { label: "Canvas captureStream", pass: caps.capture, detail: caps.capture ? "Sẵn sàng" : "Thiết bị không hỗ trợ" },
       { label: "MediaRecorder", pass: caps.recorderReady, detail: caps.recorderReady ? "Sẵn sàng" : "Thiết bị không hỗ trợ" },
-      { label: requestedMp4 ? "MP4 H.264" : "WebM VP9", pass: Boolean(actualMime), detail: requestedMp4 && !caps.mp4Mime ? "Sẽ dùng WebM fallback" : actualMime || "Không có codec" },
+      { label: requestedMov ? "MOV H.264" : "MP4 H.264", pass: Boolean(actualMime), detail: actualMime || (requestedMov ? "Trình duyệt không có encoder MOV · hãy chọn MP4" : "Trình duyệt không có encoder MP4") },
       { label: "Dữ liệu đầu vào", pass: state.rows.length > 0, detail: `${state.rows.length} biến thể` },
       { label: "Media liên kết", pass: state.rows.every((row) => !row.sourceId || assets.some((asset) => asset.id === row.sourceId)), detail: "Asset thiếu sẽ chặn job tương ứng" },
       { label: "Nhạc nền", pass: state.template.musicMode === "none" || !musicAssets().length || caps.audio, detail: musicAssets().length ? `${musicAssets().length} bài · ${state.template.musicMode}` : "Không có nhạc · video sẽ không có nhạc nền" },
       { label: "GPU", pass: state.template.renderEngine !== "gpu" || caps.gpu.state === "ready", detail: caps.gpu.label },
-      { label: "Thư mục đầu ra", pass: true, detail: outputDirectoryHandle ? state.outputDirectoryName : "Media Pool hoặc tải xuống" },
+      { label: "Thư mục đầu ra", pass: true, detail: outputDirectoryHandle ? `${state.outputDirectoryName} · ghi trực tiếp từng phần` : template.duration > 600 ? "Nên chọn thư mục cho video dài để tránh đầy RAM" : "Media Pool hoặc tải xuống" },
       { label: "Media Pool", pass: caps.indexedDb || !state.saveToMediaPool, detail: caps.indexedDb ? "Lưu file thật" : "Không hỗ trợ" }
     ];
     return { checks, ready: checks.every((item) => item.pass), mime: actualMime };
@@ -780,20 +715,30 @@
     if (detail) detail.textContent = job.error || job.outputName || job.status;
   }
 
-  async function storeOutput(job, blob, mime) {
-    const extension = /^video\/mp4/i.test(mime) ? "mp4" : "webm";
+  function outputNameForJob(job, mime) {
+    const extension = /^video\/quicktime/i.test(mime) ? "mov" : /^video\/mp4/i.test(mime) ? "mp4" : "";
+    if (!extension) throw new Error("Encoder không trả về MP4/MOV hợp lệ. File không được lưu với đuôi giả.");
     const safeName = job.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "batch-video";
-    const outputName = `${safeName}-${job.id.slice(-5)}.${extension}`;
-    const file = new File([blob], outputName, { type: mime });
+    return `${safeName}-${job.id.slice(-5)}.${extension}`;
+  }
+
+  async function openOutputSink(outputName) {
+    if (!outputDirectoryHandle) return null;
+    const permission = await outputDirectoryHandle.queryPermission?.({ mode: "readwrite" });
+    const granted = permission === "granted" || await outputDirectoryHandle.requestPermission?.({ mode: "readwrite" }) === "granted";
+    if (!granted) throw new Error("Trình duyệt chưa cho phép ghi vào thư mục đã chọn.");
+    const fileHandle = await outputDirectoryHandle.getFileHandle(outputName, { create: true });
+    return { fileHandle, writable: await fileHandle.createWritable() };
+  }
+
+  async function storeOutput(job, blob, mime, options = {}) {
+    const outputName = options.outputName || outputNameForJob(job, mime);
+    const file = options.file instanceof File ? options.file : new File([blob], outputName, { type: mime });
     const assetId = uid("batch-output");
-    if (outputDirectoryHandle) {
-      const permission = await outputDirectoryHandle.queryPermission?.({ mode: "readwrite" });
-      const granted = permission === "granted" || await outputDirectoryHandle.requestPermission?.({ mode: "readwrite" }) === "granted";
-      if (!granted) throw new Error("Trình duyệt chưa cho phép ghi vào thư mục đã chọn.");
-      const fileHandle = await outputDirectoryHandle.getFileHandle(outputName, { create: true });
-      const writable = await fileHandle.createWritable();
-      await writable.write(file);
-      await writable.close();
+    if (outputDirectoryHandle && !options.directWritten) {
+      const sink = await openOutputSink(outputName);
+      await sink.writable.write(file);
+      await sink.writable.close();
     }
     if (state.saveToMediaPool) {
       await dbPut({
@@ -826,8 +771,12 @@
     if (!row) throw new Error("Dòng dữ liệu của job không còn tồn tại.");
     if (row.sourceId && !assets.some((asset) => asset.id === row.sourceId)) throw new Error("Asset nguồn bị thiếu hoặc đã bị xóa.");
     const caps = capabilities();
-    const mime = state.template.format === "mp4" ? caps.mp4Mime || caps.webmMime : caps.webmMime;
-    if (!caps.recorderReady || !mime) throw new Error("Thiết bị không có bộ render video tương thích.");
+    const mime = state.template.format === "mov" ? caps.movMime : caps.mp4Mime;
+    if (!caps.recorderReady || !mime) {
+      throw new Error(state.template.format === "mov"
+        ? "Trình duyệt này không có encoder MOV. Hãy chọn MP4 H.264."
+        : "Trình duyệt này không có encoder MP4 H.264 tương thích.");
+    }
     const jobDuration = row.duration || state.template.duration;
     const canvas = document.createElement("canvas");
     canvas.width = state.template.width;
@@ -855,16 +804,39 @@
         }
         if (music?.type === "audio") {
           const musicSource = audioContext.createMediaElementSource(music.element);
+          const bass = audioContext.createBiquadFilter();
+          bass.type = "lowshelf";
+          bass.frequency.value = state.template.bassFrequency;
+          bass.gain.value = state.template.bassGain;
+          const mid = audioContext.createBiquadFilter();
+          mid.type = "peaking";
+          mid.frequency.value = state.template.midFrequency;
+          mid.Q.value = 1;
+          mid.gain.value = state.template.midGain;
+          const treble = audioContext.createBiquadFilter();
+          treble.type = "highshelf";
+          treble.frequency.value = state.template.trebleFrequency;
+          treble.gain.value = state.template.trebleGain;
           musicGain = audioContext.createGain();
           musicGain.gain.value = state.template.musicVolume / 100;
-          musicSource.connect(musicGain).connect(destination);
+          musicSource.connect(bass).connect(mid).connect(treble).connect(musicGain).connect(destination);
         }
         destination.stream.getAudioTracks().forEach((track) => stream.addTrack(track));
       } catch {}
     }
+    const outputName = outputNameForJob(job, mime);
+    const outputSink = await openOutputSink(outputName);
     const chunks = [];
+    let writeChain = Promise.resolve();
+    let directBytes = 0;
     recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: state.template.bitrate });
-    recorder.ondataavailable = (event) => { if (event.data?.size) chunks.push(event.data); };
+    recorder.ondataavailable = (event) => {
+      if (!event.data?.size) return;
+      if (outputSink) {
+        directBytes += event.data.size;
+        writeChain = writeChain.then(() => outputSink.writable.write(event.data));
+      } else chunks.push(event.data);
+    };
     const stopped = new Promise((resolve, reject) => {
       recorder.onstop = resolve;
       recorder.onerror = (event) => reject(event.error || new Error("MediaRecorder gặp lỗi."));
@@ -884,6 +856,8 @@
     }
     if (music?.type === "audio") {
       music.element.currentTime = 0;
+      music.element.preservesPitch = false;
+      music.element.playbackRate = Math.pow(2, state.template.musicPitch / 12);
       await music.element.play().catch(() => {});
       if (audioContext && musicGain && state.template.musicFade > 0) {
         const fade = Math.min(state.template.musicFade, jobDuration / 2);
@@ -892,6 +866,7 @@
         musicGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + jobDuration);
       }
     }
+    let lastProgressUpdate = 0;
     await new Promise((resolve) => {
       const frame = (now) => {
         const elapsed = (now - startedAt) / 1000;
@@ -903,7 +878,10 @@
           composed ? null : effect?.element || null,
           Boolean(composed)
         );
-        updateJob(job, { progress: progress * 100 });
+        if (now - lastProgressUpdate >= 500 || progress >= 1) {
+          updateJob(job, { progress: progress * 100 });
+          lastProgressUpdate = now;
+        }
         if (progress >= 1 || cancelRequested) return resolve();
         frameId = requestAnimationFrame(frame);
       };
@@ -914,6 +892,7 @@
     if (music?.type === "audio") music.element.pause();
     if (recorder.state !== "inactive") recorder.stop();
     await stopped;
+    await writeChain;
     stream.getTracks().forEach((track) => track.stop());
     if (audioContext) await audioContext.close().catch(() => {});
     if (media?.url) URL.revokeObjectURL(media.url);
@@ -921,10 +900,23 @@
     if (music?.url) URL.revokeObjectURL(music.url);
     gpuCompositor?.destroy();
     recorder = null;
-    if (cancelRequested) throw Object.assign(new Error("Đã hủy theo yêu cầu."), { cancelled: true });
-    const blob = new Blob(chunks, { type: mime.split(";")[0] });
-    if (!blob.size) throw new Error("File kết quả rỗng.");
-    const output = await storeOutput(job, blob, blob.type);
+    if (cancelRequested) {
+      if (outputSink) await outputSink.writable.abort().catch(() => {});
+      throw Object.assign(new Error("Đã hủy theo yêu cầu."), { cancelled: true });
+    }
+    let blob;
+    let directFile = null;
+    if (outputSink) {
+      await outputSink.writable.close();
+      directFile = await outputSink.fileHandle.getFile();
+      blob = directFile;
+    } else blob = new Blob(chunks, { type: mime.split(";")[0] });
+    if (!(blob.size || directBytes)) throw new Error("File kết quả rỗng.");
+    const output = await storeOutput(job, blob, mime.split(";")[0], {
+      outputName,
+      file: directFile,
+      directWritten: Boolean(outputSink)
+    });
     updateJob(job, {
       status: "completed",
       progress: 100,
@@ -1195,9 +1187,20 @@
 
   function handleInput(event) {
     const target = event.target;
+    if (target.matches("[data-bvf-duration-minutes]")) {
+      state.template.duration = clamp(Number(target.value) * 60, 60, MAX_DURATION);
+      state.presetId = "custom";
+      saveState();
+      renderPreflight();
+      return;
+    }
     if (target.matches("[data-bvf-template]")) {
       const key = target.dataset.bvfTemplate;
-      const numeric = ["duration", "fps", "bitrate", "colorIntensity", "effectOpacity", "musicVolume", "musicFade"].includes(key);
+      const numeric = [
+        "duration", "fps", "bitrate", "colorIntensity", "effectOpacity", "musicVolume", "musicFade",
+        "musicPitch", "bassGain", "midGain", "trebleGain",
+        "bassFrequency", "midFrequency", "trebleFrequency"
+      ].includes(key);
       state.template[key] = numeric ? Number(target.value) : target.value;
       state.template = normalizeTemplate(state.template);
       state.presetId = "custom";
@@ -1213,10 +1216,10 @@
     }
     if (target.matches("[data-bvf-render-profile]")) {
       const profiles = {
-        fast: { fps: 24, bitrate: 4_000_000 },
-        balanced: { fps: 30, bitrate: 8_000_000 },
-        high: { fps: 30, bitrate: 12_000_000 },
-        cinematic: { fps: 60, bitrate: 20_000_000 }
+        fast: { fps: 24, bitrate: 8_000_000 },
+        balanced: { fps: 30, bitrate: 12_000_000 },
+        high: { fps: 30, bitrate: 35_000_000 },
+        cinematic: { fps: 60, bitrate: 60_000_000 }
       };
       const profile = profiles[target.value] || profiles.balanced;
       state.template = normalizeTemplate({ ...state.template, ...profile, renderProfile: target.value });
@@ -1229,11 +1232,19 @@
       return;
     }
     const rowElement = target.closest("[data-bvf-row]");
+    if (rowElement && target.matches("[data-bvf-row-duration-minutes]")) {
+      const row = state.rows.find((item) => item.id === rowElement.dataset.bvfRow);
+      if (!row) return;
+      row.duration = target.value ? clamp(Number(target.value) * 60, 60, MAX_DURATION) : 0;
+      saveState();
+      renderPreflight();
+      return;
+    }
     if (rowElement && target.matches("[data-bvf-row-field]")) {
       const row = state.rows.find((item) => item.id === rowElement.dataset.bvfRow);
       if (!row) return;
       row[target.dataset.bvfRowField] = target.value;
-      if (target.dataset.bvfRowField === "duration") row.duration = target.value ? clamp(target.value, 1, 60) : 0;
+      if (target.dataset.bvfRowField === "duration") row.duration = target.value ? clamp(target.value, 1, MAX_DURATION) : 0;
       if (target.dataset.bvfRowField === "sourceId") row.sourceName = assets.find((item) => item.id === target.value)?.name || "";
       saveState();
       if (state.rows[0]?.id === row.id) drawPreview();
