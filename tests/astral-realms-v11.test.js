@@ -8,8 +8,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const source = read("astral-realms.js");
 const css = read("astral-realms.css");
 
-test("Digital Human V11 defines 52-channel facial performance and complete visemes", () => {
-  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*11/);
+test("Digital Human V13 defines 52-channel facial performance and complete visemes", () => {
+  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*13/);
   assert.match(source, /MEDIAPIPE_FACE_CHANNELS/);
   assert.match(source, /CHARACTER_VISEMES/);
   for (const viseme of ["A", "E", "I", "O", "U", "MBP", "FV", "L", "WQ"]) {
@@ -129,4 +129,42 @@ test("Character Genesis uses a clear aerial studio instead of rendering inside t
   assert.match(source, /createGenesisStudio/);
   assert.match(source, /renderGenesisFrame/);
   assert.doesNotMatch(source, /this\.root\.dataset\.characterPreview = "3d";\s*this\.setLoading/);
+});
+
+test("V13 resolves native VALID morphs and keeps facial motion organically asymmetric", () => {
+  assert.match(source, /FACIAL_MORPH_ALIASES/);
+  assert.match(source, /normalizeMorphTargetName/);
+  assert.match(source, /supportedFacialChannels/);
+  assert.match(source, /LeyeClose_h/);
+  assert.match(source, /RsmileOpen_h/);
+  assert.match(source, /blinkEyeDelay/);
+  assert.match(source, /saccadeTargetX/);
+  assert.match(source, /mouthDimpleLeft/);
+});
+
+test("V13 loads offline-baked VALID motion and never retargets a foreign rig at runtime", () => {
+  assert.match(source, /rest-space-quaternion/);
+  assert.match(source, /relaxedArmOffsets/);
+  assert.match(source, /leftShoulder/);
+  assert.match(source, /shoulderBreath/);
+  assert.match(source, /offlineBakedAnimations/);
+  assert.match(source, /loadMotionLibrary/);
+  assert.match(source, /offline-baked-v13/);
+  assert.doesNotMatch(source, /retargetCharacterClip/);
+  assert.doesNotMatch(source, /buildRetargetedCharacterAnimations/);
+});
+
+test("V13 face camera uses the head bone instead of full-body arm span", () => {
+  assert.match(source, /headPosition/);
+  assert.match(source, /visibleHeight = size\.y \* profile\.visible/);
+  assert.match(source, /Face framing must not use the full-body width/);
+  assert.doesNotMatch(source, /Math\.max\(size\.y \* 0\.38, size\.x \* 1\.3\)/);
+});
+
+test("V13 keeps authored body atlases neutral under warm studio light", () => {
+  assert.match(source, /body-composite/);
+  assert.match(source, /eye-moisture/);
+  assert.match(source, /materialRole: role/);
+  assert.match(source, /studio\.fill \|\| studio\.key/);
+  assert.match(source, /0xffddca/);
 });

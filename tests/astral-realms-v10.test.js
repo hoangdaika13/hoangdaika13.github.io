@@ -84,19 +84,19 @@ test("the visible environment is mesh terrain and the panorama is IBL only", () 
   assert.match(source, /Địa hình mesh 3D và panorama chỉ dùng làm IBL/);
 });
 
-test("Character V11 supersedes V10 with updated route, offline cache and responsive UI", () => {
+test("Character V13 supersedes V12 with updated route, offline cache and responsive UI", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const index = read("index.html");
   const css = read("astral-realms.css");
-  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*11/);
-  for (const asset of ["astral-realms.css?v=19", "astral-realms.js?v=19"]) {
+  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*13/);
+  for (const asset of ["astral-realms.css?v=27", "astral-realms.js?v=27"]) {
     assert.ok(loader.includes(asset));
     assert.ok(worker.includes(asset));
   }
-  assert.match(worker, /hh-identity-portal-v301/);
+  assert.match(worker, /hh-identity-portal-v309/);
   assert.match(index, /performance-loader\.js\?v=77/);
-  assert.match(css, /Astral Realms Character V11/);
+  assert.match(css, /Astral Realms Character V13/);
   assert.match(css, /\.har-genesis/);
   assert.match(css, /max-width: 720px/);
   assert.match(css, /prefers-reduced-motion: reduce/);

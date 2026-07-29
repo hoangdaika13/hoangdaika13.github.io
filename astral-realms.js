@@ -42,7 +42,7 @@
     }
   });
   const CHARACTER_ORDER = Object.freeze(Object.keys(CHARACTERS));
-  const CHARACTER_VISUAL_VERSION = 11;
+  const CHARACTER_VISUAL_VERSION = 13;
   const CHARACTER_MODEL_TIERS = Object.freeze({
     hero: { label: "Web Hero LOD0", triangles: "Face 18–28K · body 25–40K", texture: "2K", face: 52, distance: 13, updateHz: 60 },
     near: { label: "Gameplay LOD1", triangles: "Face 8–14K · body 10–18K", texture: "1K", face: 52, distance: 34, updateHz: 30 },
@@ -73,6 +73,8 @@
     rightEye: ["RightEye", "eye.R", "mixamorigRightEye", "eye_r"],
     leftHand: ["LeftHand", "hand.L", "mixamorigLeftHand", "hand_l"],
     rightHand: ["RightHand", "hand.R", "mixamorigRightHand", "hand_r"],
+    leftShoulder: ["LeftShoulder", "shoulder.L", "mixamorigLeftShoulder", "clavicle_l"],
+    rightShoulder: ["RightShoulder", "shoulder.R", "mixamorigRightShoulder", "clavicle_r"],
     leftUpperArm: ["LeftArm", "upper_arm.L", "mixamorigLeftArm", "upperarm_l"],
     rightUpperArm: ["RightArm", "upper_arm.R", "mixamorigRightArm", "upperarm_r"],
     leftForeArm: ["LeftForeArm", "forearm.L", "mixamorigLeftForeArm", "lowerarm_l"],
@@ -82,29 +84,31 @@
     leftLeg: ["LeftLeg", "shin.L", "mixamorigLeftLeg", "calf_l"],
     rightLeg: ["RightLeg", "shin.R", "mixamorigRightLeg", "calf_r"],
     leftFoot: ["LeftFoot", "foot.L", "mixamorigLeftFoot", "foot_l"],
-    rightFoot: ["RightFoot", "foot.R", "mixamorigRightFoot", "foot_r"]
+    rightFoot: ["RightFoot", "foot.R", "mixamorigRightFoot", "foot_r"],
+    leftToe: ["LeftToeBase", "toe.L", "mixamorigLeftToeBase", "ball_l"],
+    rightToe: ["RightToeBase", "toe.R", "mixamorigRightToeBase", "ball_r"]
   });
   const CHARACTER_MOTION_LIBRARY = Object.freeze({
-    idle: ["idle", "breathing", "stand"],
-    walk: ["walk", "walking"],
-    run: ["run", "jog", "running"],
-    sprint: ["sprint", "fast_run"],
+    idle: ["idle_relaxed", "idle", "breathing", "stand"],
+    walk: ["walk_f", "walk", "walking"],
+    run: ["run_f", "run", "jog", "running"],
+    sprint: ["sprint_f", "sprint", "fast_run"],
     strafe: ["strafe", "sidestep"],
-    jump: ["jump", "takeoff"],
-    fall: ["fall", "air"],
-    land: ["land", "landing"],
+    jump: ["jump_start", "jump", "takeoff"],
+    fall: ["fall_loop", "jump_loop", "fall", "air"],
+    land: ["land_soft", "land", "landing"],
     glide: ["glide", "fly"],
     swim: ["swim"],
     climb: ["climb", "ladder"],
-    dodge: ["dodge", "roll", "evade"],
+    dodge: ["dodge_f", "dodge", "roll", "evade"],
     attack1: ["attack_1", "attack1", "slash"],
     attack2: ["attack_2", "attack2", "combo"],
     attack3: ["attack_3", "attack3", "heavy"],
     skill: ["skill", "cast"],
     ultimate: ["ultimate", "special"],
-    hit: ["hit", "damage", "impact"],
-    defeated: ["death", "defeated", "knockdown"],
-    talk: ["talk", "conversation", "gesture"]
+    hit: ["hit_f", "hit", "damage", "impact"],
+    defeated: ["knockdown_f", "death", "defeated", "knockdown"],
+    talk: ["idle_talk", "talk", "conversation", "gesture"]
   });
   const MEDIAPIPE_FACE_CHANNELS = Object.freeze([
     "_neutral", "browDownLeft", "browDownRight", "browInnerUp", "browOuterUpLeft", "browOuterUpRight",
@@ -117,13 +121,67 @@
     "mouthSmileLeft", "mouthSmileRight", "mouthStretchLeft", "mouthStretchRight", "mouthUpperUpLeft",
     "mouthUpperUpRight", "noseSneerLeft", "noseSneerRight"
   ]);
+  // VALID/MakeHuman-style exports do not always use ARKit names. Keep the
+  // public 52-channel driver stable, then resolve it to each model's native
+  // morph vocabulary at runtime. This makes blinking, emotion and visemes
+  // work without rewriting or duplicating the source GLB.
+  const FACIAL_MORPH_ALIASES = Object.freeze({
+    browDownLeft: ["LbrowDown_h", "LLbrowDown_h"],
+    browDownRight: ["RbrowDown_h", "RRbrowDown_h"],
+    browInnerUp: ["LbrowUp_h", "RbrowUp_h"],
+    browOuterUpLeft: ["LLbrowUp_h"],
+    browOuterUpRight: ["RRbrowUp_h"],
+    cheekPuff: ["Chew_h"],
+    cheekSquintLeft: ["Lsquint_h"],
+    cheekSquintRight: ["Rsquint_h"],
+    eyeBlinkLeft: ["LeyeClose_h"],
+    eyeBlinkRight: ["ReyeClose_h"],
+    eyeSquintLeft: ["Lsquint_h", "LlowLid_h"],
+    eyeSquintRight: ["Rsquint_h", "RlowLid_h"],
+    eyeWideLeft: ["LeyeOpen_h"],
+    eyeWideRight: ["ReyeOpen_h"],
+    jawForward: ["JawFront_h"],
+    jawLeft: ["Ljaw_h"],
+    jawOpen: ["MouthOpen_h", "Shout_h", "Chew_h"],
+    jawRight: ["Rjaw_h"],
+    mouthClose: ["MPB_Up_h", "MPB_Down_h", "JawCompress_h"],
+    mouthDimpleLeft: ["LlipCorner_h"],
+    mouthDimpleRight: ["RlipCorner_h"],
+    mouthFrownLeft: ["LmouthSad_h", "Lsad_h"],
+    mouthFrownRight: ["RmouthSad_h", "Rsad_h"],
+    mouthFunnel: ["Lblow_h", "Rblow_h", "AO_a_h", "UH_OO_h"],
+    mouthLeft: ["LlipSide_h"],
+    mouthLowerDownLeft: ["LlipDown_h"],
+    mouthLowerDownRight: ["RlipDown_h"],
+    mouthPressLeft: ["MPB_Down_h", "JawCompress_h"],
+    mouthPressRight: ["MPB_Up_h", "JawCompress_h"],
+    mouthPucker: ["Kiss_h", "UW_U_h"],
+    mouthRight: ["RlipSide_h"],
+    mouthRollLower: ["MPB_Down_h"],
+    mouthRollUpper: ["MPB_Up_h"],
+    mouthShrugLower: ["Chin_h"],
+    mouthShrugUpper: ["Glotis_h"],
+    mouthSmileLeft: ["LsmileClose_h", "LsmileOpen_h"],
+    mouthSmileRight: ["RsmileClose_h", "RsmileOpen_h"],
+    mouthStretchLeft: ["LlipSide_h", "Ax_E_h", "TD_I_h"],
+    mouthStretchRight: ["RlipSide_h", "Ax_E_h", "TD_I_h"],
+    mouthUpperUpLeft: ["LlipUp_h"],
+    mouthUpperUpRight: ["RlipUp_h"],
+    noseSneerLeft: ["Ldisgust_h", "Lnostril_h"],
+    noseSneerRight: ["Rdisgust_h", "Rnostril_h"]
+  });
+  const FACIAL_COMPOUND_ALIASES = Object.freeze({
+    browInnerUp: ["LbrowUp_h", "RbrowUp_h"],
+    mouthClose: ["MPB_Up_h", "MPB_Down_h"],
+    mouthFunnel: ["Lblow_h", "Rblow_h"]
+  });
   const CHARACTER_VISEMES = Object.freeze({
     neutral: {},
     A: { jawOpen: 0.72, mouthFunnel: 0.08, mouthStretchLeft: 0.18, mouthStretchRight: 0.18 },
     E: { jawOpen: 0.34, mouthStretchLeft: 0.62, mouthStretchRight: 0.62, mouthSmileLeft: 0.22, mouthSmileRight: 0.22 },
     I: { jawOpen: 0.24, mouthStretchLeft: 0.78, mouthStretchRight: 0.78 },
-    O: { jawOpen: 0.55, mouthFunnel: 0.84, mouthPucker: 0.42 },
-    U: { jawOpen: 0.3, mouthFunnel: 0.68, mouthPucker: 0.74 },
+    O: { jawOpen: 0.46, mouthFunnel: 1, mouthPucker: 0.72 },
+    U: { jawOpen: 0.24, mouthFunnel: 0.82, mouthPucker: 0.9 },
     MBP: { mouthClose: 0.92, mouthPressLeft: 0.74, mouthPressRight: 0.74 },
     FV: { mouthLowerDownLeft: 0.22, mouthLowerDownRight: 0.22, mouthPressLeft: 0.44, mouthPressRight: 0.44 },
     L: { jawOpen: 0.38, mouthUpperUpLeft: 0.18, mouthUpperUpRight: 0.18 },
@@ -147,7 +205,7 @@
     { id: "rokoko", name: "Rokoko Vision", role: "Motion capture xuất GLB", state: "Nhập clip cục bộ" },
     { id: "mediapipe", name: "MediaPipe Face", role: "52 blendshape trên thiết bị", state: "Opt-in camera" },
     { id: "environment", name: "HH Volumetric World", role: "Địa hình mesh 3D và panorama chỉ dùng làm IBL", state: "Không dùng ảnh làm phông nền" },
-    { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V11" }
+    { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V13" }
   ]);
   const APPEARANCE_VERSION = 6;
   const APPEARANCE_GROUPS = Object.freeze([
@@ -188,12 +246,12 @@
     lighting: ["daylight", "night", "neon", "cinematic"]
   });
   const GENESIS_STUDIOS = Object.freeze({
-    central: { label: "H-Central", short: "HC", background: 0x06121f, floor: 0x163a4d, key: 0xa9f8ff, rim: 0xff68cb, accent: 0x6feeff },
-    aurora: { label: "Aurora Lake", short: "AU", background: 0x061c25, floor: 0x0f5260, key: 0xc8fff4, rim: 0x79a8ff, accent: 0x65f1c7 },
-    crimson: { label: "Crimson Forge", short: "CF", background: 0x1a0809, floor: 0x4c1714, key: 0xffd0a2, rim: 0xff4f72, accent: 0xff805f },
-    void: { label: "Void Garden", short: "VG", background: 0x10071d, floor: 0x291447, key: 0xe2c9ff, rim: 0x8f69ff, accent: 0xae78ff },
-    deep: { label: "Deep Space", short: "DS", background: 0x02050f, floor: 0x111c38, key: 0xb4d9ff, rim: 0xf46dff, accent: 0x79a8ff },
-    neutral: { label: "Neutral Studio", short: "NS", background: 0x9aa5b2, floor: 0xc8d0d7, key: 0xffffff, rim: 0xb9d8ff, accent: 0xeef7ff }
+    central: { label: "H-Central", short: "HC", background: 0x06121f, floor: 0x163a4d, key: 0xfff4e8, fill: 0xffddca, rim: 0x9acbff, accent: 0x6feeff },
+    aurora: { label: "Aurora Lake", short: "AU", background: 0x061c25, floor: 0x0f5260, key: 0xe8fff8, fill: 0xcce8ff, rim: 0x79a8ff, accent: 0x65f1c7 },
+    crimson: { label: "Crimson Forge", short: "CF", background: 0x1a0809, floor: 0x4c1714, key: 0xffe0bf, fill: 0xffc8a7, rim: 0xff4f72, accent: 0xff805f },
+    void: { label: "Void Garden", short: "VG", background: 0x10071d, floor: 0x291447, key: 0xf2e7ff, fill: 0xd8c9ff, rim: 0x8f69ff, accent: 0xae78ff },
+    deep: { label: "Deep Space", short: "DS", background: 0x02050f, floor: 0x111c38, key: 0xe7f2ff, fill: 0xc6d9ff, rim: 0xf46dff, accent: 0x79a8ff },
+    neutral: { label: "Neutral Studio", short: "NS", background: 0x9aa5b2, floor: 0xc8d0d7, key: 0xffffff, fill: 0xfff4eb, rim: 0xb9d8ff, accent: 0xeef7ff }
   });
   const APPEARANCE_PRESETS = Object.freeze({
     balanced: { label: "Cân bằng", bodyPreset: "balanced", morphs: {} },
@@ -219,6 +277,8 @@
   // blocks the game; the loader falls back to the bundled GLB, then procedural.
   const CHARACTER_PIPELINE_SOURCES = Object.freeze(["auto", "metahuman", "character-creator", "mpfb", "valid-avatar", "bundled", "procedural"]);
   const CHARACTER_PIPELINE_MANIFEST_URL = "./assets/astral-realms/characters/manifest.json";
+  const CHARACTER_MOTION_MANIFEST_URL = "./assets/astral-realms/animations/motion-library-v13.json";
+  const CHARACTER_MOTION_LIBRARY_URL = "./assets/astral-realms/animations/hh-human-motion-v13.glb";
   const LICENSED_ENVIRONMENT_ASSETS = Object.freeze({
     boulder: "./assets/astral-realms/environment/boulder_01.glb",
     grass: "./assets/astral-realms/environment/grass_medium_01.glb",
@@ -327,6 +387,32 @@
       .replace(/[._\-\s]/g, "")
       .replace(/mixamorig/gi, "")
       .toLowerCase();
+  }
+
+  function normalizeMorphTargetName(value) {
+    return String(value || "")
+      .replace(/^.*(?:h_expressions\.|expressions\.|blendshapes\.)/i, "")
+      .replace(/^ARKit[_:.\-]?/i, "")
+      .replace(/^AR[_:.\-]?/i, "")
+      .replace(/_h$/i, "")
+      .replace(/[^a-z0-9]/gi, "")
+      .toLowerCase();
+  }
+
+  function facialMorphAliases(channel) {
+    const native = FACIAL_MORPH_ALIASES[channel] || [];
+    return [channel, `ARKit_${channel}`, `AR_${channel}`, channel.replace(/left$/i, "_L").replace(/right$/i, "_R"), ...native];
+  }
+
+  function supportedFacialChannels(dictionary = {}) {
+    const available = new Set();
+    Object.keys(dictionary).forEach((name) => {
+      available.add(String(name).toLowerCase());
+      available.add(normalizeMorphTargetName(name));
+    });
+    return MEDIAPIPE_FACE_CHANNELS.filter((channel) => channel !== "_neutral" && facialMorphAliases(channel).some((alias) => (
+      available.has(String(alias).toLowerCase()) || available.has(normalizeMorphTargetName(alias))
+    )));
   }
 
   function validateCharacterAsset(report = {}) {
@@ -1011,12 +1097,15 @@
       this.builtInCharacterSources = new Map();
       this.characterPipelineManifest = [];
       this.characterPipelineStatus = "not-configured";
+      this.motionLibraryManifest = null;
+      this.motionLibraryAnimations = [];
+      this.motionLibraryStatus = "pending";
       this.licensedEnvironmentAssets = new Map();
       this.licensedEnvironmentStatus = "pending";
       this.builtInCharacterStatus = "pending";
       this.characterDetailTextures = null;
       this.lastCharacterQa = null;
-      this.motionState = { gaitPhase: 0, foot: "", yawVelocity: 0 };
+      this.motionState = { gaitPhase: 0, foot: "", yawVelocity: 0, acceleration: 0 };
       this.facePilot = { status: "off", stream: null, video: null, landmarker: null, frame: 0, blendshapes: {}, error: "", lastDetectionAt: 0, lastResultAt: 0 };
       this.facePreview = { expression: "neutral", viseme: "neutral", until: 0 };
       this.genesisLighting = "cinematic";
@@ -1528,6 +1617,7 @@
       };
       const faceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
       const boneCount = runtime?.bones ? Object.values(runtime.bones).filter(Boolean).length : 0;
+      const bakedMotionCount = this.motionLibraryManifest?.clips?.length || 0;
       const visibility = this.genesisVisibility?.report;
       const catalogModels = [...new Map(this.characterPipelineManifest
         .filter((entry) => entry.provider === "valid-avatar")
@@ -1541,9 +1631,9 @@
           <p>Chỉnh trực tiếp mesh có xương, vật liệu da nhiều lớp, biểu cảm, viseme và LOD trong khung hình thật của game.</p>
         </div>
         <div class="har-genesis-capabilities" aria-label="Năng lực Digital Human">
-          <div><small>FACE DRIVER</small><strong>${faceChannels} native / 52 fallback</strong><span>${boneCount} bone nhận diện · không tạo số giả</span></div>
+          <div><small>FACE DRIVER</small><strong>52 driven · ${faceChannels} native</strong><span>${boneCount} bone nhận diện · morph + bone fallback</span></div>
           <div><small>SURFACE</small><strong>5 lớp</strong><span>pore · roughness · SSS · flush · wetness</span></div>
-          <div><small>MOTION</small><strong>8 hướng</strong><span>crossfade · inertial response · IK-ready</span></div>
+          <div><small>MOTION V13</small><strong>${bakedMotionCount} baked clip</strong><span>blend space · phase sync · raycast foot IK</span></div>
           <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "near")}</strong><span data-genesis-lod-status>${visibility?.ready ? "Đã xác nhận trong camera" : "Đang giữ fallback an toàn"}</span></div>
         </div>
         <div class="har-genesis-fit ${fit.level}" aria-live="polite">
@@ -1719,15 +1809,22 @@
       this.genesisCamera.position.set(0, 1.55, 5.2);
       this.genesisCameraTarget = new THREE.Vector3(0, 1.48, 0);
 
-      const ambient = new THREE.HemisphereLight(0xc8edff, 0x11101b, 0.92);
+      const ambient = new THREE.HemisphereLight(0xeaf2ff, 0x24212a, 0.78);
       ambient.name = "GenesisStudioAmbient";
-      const key = new THREE.DirectionalLight(0xffffff, 2.05);
+      const key = new THREE.DirectionalLight(0xffffff, 2.28);
       key.name = "GenesisStudioKey";
       key.position.set(3.8, 5.4, 4.7);
-      const fill = new THREE.DirectionalLight(0x79cfff, 0.88);
+      key.castShadow = this.state.settings.quality !== "low";
+      if (key.shadow?.mapSize) {
+        const shadowSize = this.state.settings.quality === "cinematic" ? 1024 : 512;
+        key.shadow.mapSize.set(shadowSize, shadowSize);
+        key.shadow.bias = -0.00018;
+        key.shadow.normalBias = 0.018;
+      }
+      const fill = new THREE.DirectionalLight(0x9fd8ff, 0.46);
       fill.name = "GenesisStudioFill";
       fill.position.set(-4.2, 2.7, 2.2);
-      const rim = new THREE.PointLight(0xff68cb, 1.65, 16, 1.5);
+      const rim = new THREE.PointLight(0xb4d8ff, 0.94, 16, 1.5);
       rim.name = "GenesisStudioRim";
       rim.position.set(0.5, 3.3, -3.2);
       this.genesisScene.add(ambient, key, fill, rim);
@@ -1937,7 +2034,9 @@
       if (this.genesisLights) {
         this.genesisLights.key.color.setHex(studio.key);
         this.genesisLights.rim.color.setHex(studio.rim);
-        this.genesisLights.fill.color.setHex(studio.accent);
+        // Keep skin readable and neutral. The world's saturated accent stays
+        // in the rim/background instead of tinting the whole face cyan.
+        this.genesisLights.fill.color.setHex(studio.fill || studio.key);
       }
       this.genesisStudioId = safeId;
       if (save) {
@@ -1951,18 +2050,57 @@
       });
     }
 
+    genesisBoundsRoot(object) {
+      // Weapons, procedural safety proxies and head-bone accessories can use a
+      // different unit scale from the source GLB. Camera/visibility QA must be
+      // based on the authored human mesh, otherwise one attachment can make a
+      // normal 2.9 m character look tens of metres wide and block crossfade.
+      return object?.userData?.gltfAsset || object;
+    }
+
+    getGenesisBoundsBox(object) {
+      const THREE = this.THREE;
+      const stored = object?.userData?.genesisAuthoredBounds;
+      if (THREE && Array.isArray(stored?.min) && Array.isArray(stored?.max)) {
+        object.updateMatrixWorld?.(true);
+        return new THREE.Box3(
+          new THREE.Vector3().fromArray(stored.min),
+          new THREE.Vector3().fromArray(stored.max)
+        ).applyMatrix4(object.matrixWorld);
+      }
+      const boundsRoot = this.genesisBoundsRoot(object);
+      boundsRoot?.updateMatrixWorld?.(true);
+      return new THREE.Box3().setFromObject(boundsRoot);
+    }
+
     fitGenesisCamera(object = this.genesisActualModel || this.genesisFallbackModel, focus = this.appearanceFocus || "body") {
       if (!object || !this.genesisCamera || !this.THREE) return false;
       object.updateMatrixWorld(true);
-      const box = new this.THREE.Box3().setFromObject(object);
+      const box = this.getGenesisBoundsBox(object);
       const size = box.getSize(new this.THREE.Vector3());
       const center = box.getCenter(new this.THREE.Vector3());
       if (![size.x, size.y, size.z, center.x, center.y, center.z].every(Number.isFinite) || size.y < 0.2) return false;
-      const targetY = focus === "head" ? box.max.y - size.y * 0.14 : center.y;
+      const profile = {
+        head: { target: 0.855, visible: 0.3, padding: 0.72, min: 1.25, max: 3.2 },
+        upper: { target: 0.7, visible: 0.52, padding: 0.78, min: 1.75, max: 5.2 },
+        lower: { target: 0.3, visible: 0.5, padding: 0.8, min: 1.8, max: 5.2 },
+        body: { target: 0.5, visible: 1, padding: 0.82, min: 2.5, max: 9.2 }
+      }[focus] || { target: 0.5, visible: 1, padding: 0.82, min: 2.5, max: 9.2 };
+      let targetY = box.min.y + size.y * profile.target;
+      if (focus === "head") {
+        const runtime = object.userData?.characterRuntime;
+        const head = runtime?.bones?.head;
+        if (head?.getWorldPosition) {
+          const headPosition = head.getWorldPosition(new this.THREE.Vector3());
+          if (Number.isFinite(headPosition.y)) targetY = clamp(headPosition.y + size.y * 0.035, box.min.y + size.y * 0.78, box.max.y - size.y * 0.06);
+        }
+      }
       this.genesisCameraTarget.set(center.x, targetY, center.z);
-      const visibleHeight = focus === "head" ? Math.max(size.y * 0.38, size.x * 1.3) : size.y;
+      // Face framing must not use the full-body width: a T/A pose would make
+      // the camera zoom out precisely when the user asks for a close-up.
+      const visibleHeight = size.y * profile.visible;
       const fov = this.THREE.MathUtils.degToRad(this.genesisCamera.fov);
-      this.cameraDistance = clamp((visibleHeight * 0.82) / Math.tan(fov / 2), 2.7, 9.2);
+      this.cameraDistance = clamp((visibleHeight * profile.padding) / Math.tan(fov / 2), profile.min, profile.max);
       this.updateGenesisCamera();
       return true;
     }
@@ -1971,7 +2109,8 @@
       if (!this.genesisCamera || !this.genesisCameraTarget) return;
       const yaw = this.cameraYaw || 0;
       const pitch = clamp(this.cameraPitch - 0.28, -0.02, 0.8);
-      const distance = Math.max(2.5, this.cameraDistance || 5.2);
+      const minimumDistance = this.appearanceFocus === "head" ? 1.25 : this.appearanceFocus === "upper" ? 1.75 : this.appearanceFocus === "lower" ? 1.8 : 2.5;
+      const distance = Math.max(minimumDistance, this.cameraDistance || 5.2);
       this.genesisCamera.position.set(
         this.genesisCameraTarget.x + Math.sin(yaw) * distance,
         this.genesisCameraTarget.y + pitch * distance,
@@ -1985,15 +2124,24 @@
       const THREE = this.THREE;
       if (!object || !THREE || !this.genesisCamera) return { ready: false, reason: "missing-model", triangles: 0 };
       object.updateMatrixWorld(true);
+      const boundsRoot = this.genesisBoundsRoot(object);
+      boundsRoot?.updateMatrixWorld?.(true);
       this.genesisCamera.updateMatrixWorld(true);
       this.genesisCamera.updateProjectionMatrix();
-      const box = new THREE.Box3().setFromObject(object);
+      const box = this.getGenesisBoundsBox(object);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
+      const dynamicBox = new THREE.Box3().setFromObject(boundsRoot, true);
+      const dynamicSize = dynamicBox.getSize(new THREE.Vector3());
+      const deformationRatio = Math.max(
+        dynamicSize.x / Math.max(0.01, size.x),
+        dynamicSize.y / Math.max(0.01, size.y),
+        dynamicSize.z / Math.max(0.01, size.z)
+      );
       const finiteBounds = [box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z].every(Number.isFinite);
       let triangles = 0;
       let visibleMaterials = 0;
-      object.traverse?.((node) => {
+      boundsRoot?.traverse?.((node) => {
         if ((!node.isMesh && !node.isSkinnedMesh) || node.visible === false || !node.geometry) return;
         const indexCount = Number(node.geometry.index?.count || 0);
         const vertexCount = Number(node.geometry.attributes?.position?.count || 0);
@@ -2028,6 +2176,8 @@
         visibleMaterials,
         projectedRatio,
         size: { x: size.x, y: size.y, z: size.z },
+        dynamicSize: { x: dynamicSize.x, y: dynamicSize.y, z: dynamicSize.z },
+        deformationRatio,
         reason: ready
           ? "ready"
           : !finiteBounds
@@ -2044,6 +2194,29 @@
                       ? "too-large"
                       : "too-small"
       };
+    }
+
+    quarantineUnsafeCharacterMotion(runtime, reason = "dynamic-bounds") {
+      if (!runtime || runtime.motionQuarantined) return false;
+      runtime.motionQuarantined = reason;
+      runtime.quarantinedClipCount = runtime.clips?.size || 0;
+      try {
+        runtime.mixer?.stopAllAction?.();
+        runtime.mixer?.uncacheRoot?.(runtime.animationRoot || runtime.mesh);
+      } catch {}
+      runtime.currentAction = null;
+      runtime.blendActions?.clear?.();
+      runtime.blendWeights?.clear?.();
+      runtime.clips?.clear?.();
+      runtime.mixer = null;
+      runtime.rigRest?.forEach?.((rest, bone) => {
+        bone.position.copy(rest.position);
+        bone.quaternion.copy(rest.quaternion);
+      });
+      runtime.mesh?.updateMatrixWorld?.(true);
+      runtime.state = "";
+      runtime.motionSource = "rest-space-procedural-safety";
+      return true;
     }
 
     renderGenesisFrame(time, dt) {
@@ -2078,6 +2251,20 @@
       const report = this.getGenesisVisibilityReport(this.genesisActualModel);
       report.renderedTriangles = renderedTriangles;
       report.ready = report.ready && renderedTriangles > 0;
+      const genesisRuntime = this.genesisActualModel?.userData?.characterRuntime;
+      if (report.deformationRatio > 2.2 && genesisRuntime?.mixer) {
+        this.quarantineUnsafeCharacterMotion(genesisRuntime, `bounds-ratio-${report.deformationRatio.toFixed(2)}`);
+        report.ready = false;
+        report.reason = "motion-quarantined";
+        this.genesisVisibility.startedAt = time;
+      }
+      const genesisVariants = this.genesisActualModel?.userData?.lodVariants || {};
+      this.root.dataset.characterVisualMode = this.genesisActualModel?.userData?.visualMode || "missing";
+      this.root.dataset.characterHeroVisible = String((genesisVariants.hero || []).some((object) => object.visible));
+      this.root.dataset.characterProxyVisible = String((genesisVariants.crowd || []).some((object) => object.visible));
+      this.root.dataset.characterFallbackVisible = String(Boolean(this.genesisFallbackModel?.visible));
+      this.root.dataset.characterDeformation = Number.isFinite(report.deformationRatio) ? report.deformationRatio.toFixed(2) : "invalid";
+      this.root.dataset.characterMotionSafety = genesisRuntime?.motionQuarantined ? "procedural-safety" : "baked";
       this.root.dataset.characterProjection = Number.isFinite(report.projectedRatio)
         ? report.projectedRatio.toFixed(3)
         : "invalid";
@@ -2623,6 +2810,69 @@
       this.root.dataset.characterPipeline = this.characterPipelineStatus;
     }
 
+    async loadMotionLibrary() {
+      if (this.motionLibraryAnimations.length) return;
+      if (!this.GLTFLoaderClass) {
+        this.motionLibraryStatus = "unsupported";
+        this.root.dataset.motionLibrary = this.motionLibraryStatus;
+        return;
+      }
+      this.motionLibraryStatus = "loading";
+      this.root.dataset.motionLibrary = this.motionLibraryStatus;
+      try {
+        const response = await fetch(CHARACTER_MOTION_MANIFEST_URL, { cache: "no-store" });
+        if (!response.ok) throw new Error(`Motion manifest HTTP ${response.status}`);
+        const manifest = await response.json();
+        const declaredClips = Array.isArray(manifest?.clips) ? manifest.clips : [];
+        if (Number(manifest?.version) !== CHARACTER_VISUAL_VERSION || !declaredClips.length) {
+          throw new Error("Motion manifest không đúng Visual V13 hoặc chưa có clip thật");
+        }
+        const allowed = new Set(declaredClips.map((item) => String(item?.name || "").toLowerCase()).filter(Boolean));
+        const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
+        const loader = new this.GLTFLoaderClass(manager);
+        if (this.MeshoptDecoder) loader.setMeshoptDecoder(this.MeshoptDecoder);
+        const gltf = await Promise.race([
+          loader.loadAsync(CHARACTER_MOTION_LIBRARY_URL),
+          new Promise((_, reject) => root.setTimeout(() => reject(new Error("Motion library timeout")), 12000))
+        ]);
+        const animations = (gltf.animations || []).filter((clip) => allowed.has(String(clip?.name || "").toLowerCase()));
+        if (!animations.length) throw new Error("Motion GLB không có clip khớp manifest");
+        const loadedNames = new Set(animations.map((clip) => String(clip?.name || "").toLowerCase()));
+        const unresolved = [...allowed].filter((name) => !loadedNames.has(name));
+        const declaredMissing = Array.isArray(manifest.missing) ? manifest.missing.map((value) => String(value)) : [];
+        this.motionLibraryManifest = {
+          version: CHARACTER_VISUAL_VERSION,
+          status: manifest.status === "ready" && !unresolved.length ? "ready" : "partial",
+          rig: String(manifest.rig || ""),
+          fps: clamp(Number(manifest.fps || 30), 12, 60),
+          inPlace: manifest.inPlace === true,
+          asset: String(manifest.asset || ""),
+          optimized: String(manifest.optimized || ""),
+          clips: declaredClips.map((item) => ({
+            name: String(item?.name || "").toLowerCase(),
+            source: String(item?.source || ""),
+            sourceAsset: String(item?.sourceAsset || ""),
+            category: String(item?.category || ""),
+            loop: item?.loop !== false,
+            speed: clamp(Number(item?.speed || 0), 0, 1),
+            direction: clamp(Number(item?.direction || 0), -180, 180),
+            mappedBones: Math.max(0, Number(item?.mappedBones || 0))
+          })).filter((item) => item.name && loadedNames.has(item.name)),
+          missing: [...new Set([...declaredMissing, ...unresolved])].slice(0, 160),
+          footMarkers: manifest.footMarkers && typeof manifest.footMarkers === "object" ? manifest.footMarkers : {},
+          provenance: Array.isArray(manifest.provenance) ? manifest.provenance.slice(0, 12) : []
+        };
+        this.motionLibraryAnimations = animations;
+        this.motionLibraryStatus = this.motionLibraryManifest.status;
+      } catch (error) {
+        this.motionLibraryManifest = null;
+        this.motionLibraryAnimations = [];
+        this.motionLibraryStatus = "failed";
+        this.characterAssetStatus.set("motion-v13", `Motion V13 lỗi: ${String(error?.message || error).slice(0, 120)}`);
+      }
+      this.root.dataset.motionLibrary = this.motionLibraryStatus;
+    }
+
     resolveCharacterAssetCandidates(modelId, requestedProvider = "auto") {
       const preferred = CHARACTER_PIPELINE_SOURCES.includes(requestedProvider) ? requestedProvider : "auto";
       if (preferred === "procedural") return [];
@@ -2709,7 +2959,7 @@
         this.root.dataset.builtInCharacter = "fallback";
         return;
       }
-      await this.loadCharacterPipelineManifest();
+      await Promise.all([this.loadCharacterPipelineManifest(), this.loadMotionLibrary()]);
       this.builtInCharacterStatus = "loading";
       let assetLoadError = false;
       const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
@@ -2982,6 +3232,7 @@
       ground.receiveShadow = true;
       ground.name = "AstralGround";
       this.world.add(ground);
+      this.terrainGround = ground;
 
       this.createToonGradient();
       this.createAtmosphere();
@@ -4531,9 +4782,12 @@
           const identity = `${object.name || ""} ${material.name || ""}`.toLowerCase();
           let role = material.userData.materialRole || "";
           if (!role) {
-            if (/hair|brow|lash|beard|groom/.test(identity)) role = "hair";
+            if (/gland|tear|wetline/.test(identity)) role = "eye-moisture";
+            else if (/teeth|tooth|gum|tongue/.test(identity)) role = "teeth";
+            else if (/hair|brow|lash|beard|groom/.test(identity)) role = "hair";
             else if (/eye|iris|cornea|sclera|tear/.test(identity)) role = "eyes";
             else if (/skin|dermis|face|head|body_nude/.test(identity)) role = "skin";
+            else if (/dds|body|character|human/.test(identity)) role = "body-composite";
             else role = "outfit";
             material.userData.materialRole = role;
           }
@@ -4563,12 +4817,26 @@
             if ("roughness" in material) material.roughness = recipe.hair.includes("long") ? 0.34 : 0.28;
             if ("anisotropy" in material) material.anisotropy = this.state.settings.microDetail ? 0.78 : 0;
             if ("alphaHash" in material && role === "hair-card") material.alphaHash = true;
-          } else if (role === "eyes") {
-            material.color?.set(recipe.eyeColor);
-            if ("roughness" in material) material.roughness = 0.08;
+          } else if (role === "eyes" || role === "eye-moisture") {
+            if (material.color) {
+              material.color.set(material.userData.hhOriginalColor || "#ffffff");
+              if (role === "eyes") material.color.lerp(new this.THREE.Color(recipe.eyeColor), 0.12);
+            }
+            if ("roughness" in material) material.roughness = role === "eye-moisture" ? 0.035 : 0.09;
             if ("clearcoat" in material) material.clearcoat = 0.78 + (recipe.morphs.eyeReflection || 0.5) * 0.22;
             if ("ior" in material) material.ior = 1.376;
-            if ("transmission" in material) material.transmission = 0.04;
+            if ("transmission" in material) material.transmission = role === "eye-moisture" ? 0.08 : 0.025;
+          } else if (role === "teeth") {
+            material.color?.set(0xfff8eb);
+            if ("roughness" in material) material.roughness = 0.32;
+            if ("clearcoat" in material) material.clearcoat = 0.22;
+          } else if (role === "body-composite") {
+            // VALID packs skin, hair and clothing into one authored atlas. A
+            // global tint would color the sclera and clothes too, so preserve
+            // the photographed base color and only tune its physical response.
+            material.color?.set(material.userData.hhOriginalColor || "#ffffff");
+            if ("roughness" in material) material.roughness = clamp(0.42 + recipe.surface.roughness * 0.16 - recipe.surface.wetness * 0.12, 0.26, 0.66);
+            material.envMapIntensity = 0.58;
           } else if (role === "outfit") {
             const color = materialIndex % 2 ? outfitPalette[1] : outfitPalette[0];
             if (material.color && mesh.userData.visualMode !== "builtin-rigged") material.color.set(color);
@@ -4880,14 +5148,87 @@
       mesh.userData.visualHeight = 1 + delta("height") * 0.12;
     }
 
+    primarySkinnedMesh(root) {
+      let primary = null;
+      let score = -1;
+      root?.traverse?.((object) => {
+        if (!object.isSkinnedMesh || !object.skeleton?.bones?.length) return;
+        const vertices = Number(object.geometry?.attributes?.position?.count || 0);
+        const nextScore = vertices + object.skeleton.bones.length * 100;
+        if (nextScore <= score) return;
+        primary = object;
+        score = nextScore;
+      });
+      return primary;
+    }
+
+    classifyRiggedMaterialRole(object, material) {
+      const identity = `${object?.name || ""} ${material?.name || ""}`.toLowerCase();
+      if (/gland|tear|wetline/.test(identity)) return "eye-moisture";
+      if (/teeth|tooth|gum|tongue/.test(identity)) return "teeth";
+      if (/eye|iris|cornea|sclera/.test(identity)) return "eyes";
+      if (/hair|brow|lash|beard|groom/.test(identity)) return "hair";
+      if (/skin|dermis|face|head|body_nude/.test(identity)) return "skin";
+      if (/dds|body|character|human/.test(identity)) return "body-composite";
+      if (/visor|glass/.test(identity)) return "eyes";
+      return "outfit";
+    }
+
+    cloneRiggedMaterial(object, sourceMaterial, profile) {
+      const THREE = this.THREE;
+      const role = this.classifyRiggedMaterialRole(object, sourceMaterial);
+      const material = sourceMaterial.clone();
+      material.userData = {
+        ...(material.userData || {}),
+        materialRole: role,
+        baseRoughness: material.roughness,
+        baseClearcoat: material.clearcoat || 0,
+        baseEmissiveIntensity: material.emissiveIntensity || 0,
+        hhOriginalColor: material.color ? `#${material.color.getHexString()}` : "#ffffff"
+      };
+      material.side = /hair-card/.test(role) ? THREE.DoubleSide : THREE.FrontSide;
+      material.transparent = false;
+      material.opacity = 1;
+      material.depthWrite = true;
+      material.depthTest = true;
+      material.envMapIntensity = role === "body-composite" || role === "skin" ? 0.58 : 0.82;
+      if (role === "eyes" || role === "eye-moisture") {
+        material.color?.set(0xffffff);
+        material.roughness = role === "eye-moisture" ? 0.035 : 0.09;
+        material.metalness = 0;
+        material.envMapIntensity = 1.05;
+        if ("clearcoat" in material) material.clearcoat = 1;
+        if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.035;
+        if ("ior" in material) material.ior = 1.376;
+        if ("specularIntensity" in material) material.specularIntensity = 0.92;
+      } else if (role === "teeth") {
+        material.color?.set(0xfff8eb);
+        material.roughness = 0.32;
+        material.metalness = 0;
+        if ("clearcoat" in material) material.clearcoat = 0.22;
+      } else if (role === "hair") {
+        material.roughness = 0.3;
+        if ("anisotropy" in material) material.anisotropy = 0.7;
+      } else if (/visor|glass/.test(`${object?.name || ""} ${sourceMaterial?.name || ""}`.toLowerCase())) {
+        material.color?.set(profile.eyes);
+        material.emissive?.set(profile.accent);
+        material.emissiveIntensity = Math.max(0.12, material.emissiveIntensity || 0);
+      }
+      material.needsUpdate = true;
+      return material;
+    }
+
     createBuiltInRiggedCharacter(profile, scale = 1) {
       const recipe = normalizeAppearanceRecipe(this.state.appearance?.recipes?.[profile.id], profile.id);
       const fallbackModelId = defaultAppearanceRecipe(profile.id).baseModel;
       const modelId = this.builtInCharacterAssets.has(recipe.baseModel) ? recipe.baseModel : fallbackModelId;
       const source = this.builtInCharacterAssets.get(modelId);
       if (!source?.scene || !this.cloneSkinnedCharacter) return null;
-      const assetNeedsVisualRecovery = Number(source.userData?.hhTextureFallbacks || 0) > 0
-        || Number(source.userData?.hhRenderableMeshes || 0) < 1;
+      const assetHasTextureFallback = Number(source.userData?.hhTextureFallbacks || 0) > 0;
+      // Missing textures already receive safe PBR colors in the sanitizer and
+      // must not replace a valid human silhouette with the primitive proxy.
+      // The proxy is reserved for genuinely missing/unrenderable geometry.
+      const assetNeedsVisualRecovery = Number(source.userData?.hhRenderableMeshes || 0) < 1;
       const THREE = this.THREE;
       const wrapper = new THREE.Group();
       wrapper.name = `HHHumanRig:${profile.id}`;
@@ -4915,6 +5256,11 @@
       const fitted = new THREE.Box3().setFromObject(asset);
       const center = fitted.getCenter(new THREE.Vector3());
       asset.position.set(-center.x, -fitted.min.y, -center.z);
+      const normalizedFitted = fitted.clone().translate(asset.position);
+      const genesisAuthoredBounds = {
+        min: normalizedFitted.min.toArray(),
+        max: normalizedFitted.max.toArray()
+      };
       const heroMeshes = [];
       asset.traverse((object) => {
         if (!object.isMesh && !object.isSkinnedMesh) return;
@@ -4924,26 +5270,16 @@
         object.userData ||= {};
         object.userData.sharedAsset = true;
         const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
-        const materials = sourceMaterials.filter(Boolean).map((sourceMaterial) => {
-          const material = sourceMaterial.clone();
-          const materialName = `${object.name} ${material.name}`.toLowerCase();
-          material.userData = {
-            ...(material.userData || {}),
-            materialRole: materialName.includes("visor") ? "eyes" : "outfit",
-            baseRoughness: material.roughness,
-            baseClearcoat: material.clearcoat || 0,
-            baseEmissiveIntensity: material.emissiveIntensity || 0
-          };
-          material.envMapIntensity = Math.max(material.envMapIntensity || 0, 0.82);
-          if (materialName.includes("visor")) {
-            material.color?.set(profile.eyes);
-            material.emissive?.set(profile.accent);
-            material.emissiveIntensity = Math.max(0.18, material.emissiveIntensity || 0);
-          }
-          return material;
-        });
+        const materials = sourceMaterials.filter(Boolean).map((sourceMaterial) => this.cloneRiggedMaterial(object, sourceMaterial, profile));
         object.material = Array.isArray(object.material) ? materials : materials[0];
       });
+      const animationRoot = this.primarySkinnedMesh(asset);
+      // VALID and Mixamo use different rest transforms/bone rolls. V13 never
+      // retargets in the browser: Blender bakes clips onto this exact VALID rig
+      // first, and runtime only consumes the verified animation-only GLB.
+      const offlineBakedAnimations = sourceInfo.provider === "valid-avatar"
+        ? this.motionLibraryAnimations
+        : [];
       wrapper.add(asset);
       // When a bundled GLB has a missing texture or cannot be decoded, keep a
       // full articulated procedural character instead of collapsing to the
@@ -5061,7 +5397,7 @@
       const activeHeroMeshes = assetNeedsVisualRecovery ? [crowdProxy] : [...heroMeshes, ...heroDetails];
       wrapper.userData = {
         characterId: profile.id,
-        visualMode,
+        visualMode: assetHasTextureFallback && !assetNeedsVisualRecovery ? "builtin-rigged-texture-recovery" : visualMode,
         sourceProvider: assetNeedsVisualRecovery
           ? "HH Articulated PBR Recovery"
           : sourceInfo.label || (modelId === "human-adult-a01" ? "HH Asteria Human Rig" : "HH Vanguard Human Rig"),
@@ -5072,10 +5408,12 @@
         appearanceCapability: "skeleton-proportions",
         gameplayCollider: { radius: 0.48, height: 2.95 },
         gltfAsset: asset,
+        animationRoot,
         builtInModelId: modelId,
         builtInAnimations: sourceInfo.provider === "valid-avatar"
-          ? (source.animations || [])
+          ? (offlineBakedAnimations.length ? offlineBakedAnimations : source.animations || [])
           : (source.animations?.length ? source.animations : this.builtInCharacterAssets.get("human-adult-b01")?.animations || []),
+        motionSource: offlineBakedAnimations.length ? "offline-baked-v13" : source.animations?.length ? "native" : "rest-space-procedural",
         parts: {
           weaponAnchor,
           hair: assetNeedsVisualRecovery ? null : riggedHair,
@@ -5091,6 +5429,9 @@
       };
       this.applyRiggedBodyProportions(wrapper, recipe);
       this.applyAppearanceToMesh(wrapper, recipe, profile.id);
+      // Keep the normalized source bounds captured before the mixer, helper
+      // attachments and precise skinned bounds can inflate the camera box.
+      wrapper.userData.genesisAuthoredBounds = genesisAuthoredBounds;
       wrapper.userData.appearance = compactAppearanceRecipe(recipe, profile.id);
       wrapper.userData.appearanceFingerprint = appearanceFingerprint(recipe, profile.id);
       this.characterAssetStatus.set(profile.id, wrapper.userData.sourceProvider);
@@ -5203,6 +5544,7 @@
       const textures = new Set();
       const materials = new Set();
       const matchedBones = new Set();
+      const faceChannels = new Set();
       animations.forEach((clip) => {
         clip?.tracks?.forEach((track) => {
           if (!this.characterTrackTargetsRoot(track) || !track.times?.length || !track.values?.length) return;
@@ -5243,14 +5585,7 @@
         if (/hair|groom|brow|lash/.test(identity)) report.hairCardMeshes += 1;
         const morphNames = Object.keys(object.morphTargetDictionary || {});
         report.morphTargets += morphNames.length;
-        report.faceMorphTargets += morphNames.filter((name) => {
-          const normalized = String(name)
-            .replace(/^ARKit_/i, "")
-            .replace(/^AR_/i, "")
-            .replace(/_L$/i, "Left")
-            .replace(/_R$/i, "Right");
-          return MEDIAPIPE_FACE_CHANNELS.some((channel) => channel.toLowerCase() === normalized.toLowerCase());
-        }).length;
+        supportedFacialChannels(object.morphTargetDictionary || {}).forEach((channel) => faceChannels.add(channel));
         const objectMaterials = Array.isArray(object.material) ? object.material : [object.material];
         objectMaterials.filter(Boolean).forEach((material) => {
           materials.add(material);
@@ -5265,6 +5600,7 @@
       });
       report.materials = materials.size;
       report.textures = textures.size;
+      report.faceMorphTargets = faceChannels.size;
       report.skeletonCoverage = matchedBones.size / Object.keys(HH_HUMANOID_SKELETON).length;
       report.digitalHumanTier = report.headVertices >= 18000 && report.faceMorphTargets >= 52
         ? "web-hero"
@@ -5296,8 +5632,30 @@
         qaReport: this.buildCharacterQaReport(mesh, animations),
         savedMorphWeights: new Map(),
         gaitPhase: 0,
+        idlePhase: 0,
         motionSpeed: 0,
         motionDirection: 0,
+        previousMotionSpeed: 0,
+        acceleration: 0,
+        yawVelocity: 0,
+        blendActions: new Map(),
+        blendWeights: new Map(),
+        blendSpaceActive: false,
+        visualRoot: mesh.userData?.gltfAsset || null,
+        visualRootBasePosition: mesh.userData?.gltfAsset?.position?.clone?.() || null,
+        footPlants: {
+          left: { planted: false, point: null, normal: null, weight: 0 },
+          right: { planted: false, point: null, normal: null, weight: 0 }
+        },
+        layers: {
+          locomotion: 0,
+          upperBody: 0,
+          gaze: 1,
+          face: 1,
+          breathing: 1,
+          hit: 0,
+          secondary: 1
+        },
         secondaryBones: [],
         lastLodUpdateAt: 0,
         lastFacialUpdateAt: 0
@@ -5307,6 +5665,7 @@
         slot,
         aliases.map(normalizeBoneName)
       ]));
+      const nativeFaceChannels = new Set();
       mesh.traverse?.((object) => {
         if (object.isBone) {
           const boneName = normalizeBoneName(object.name);
@@ -5326,11 +5685,14 @@
         if (object.isMesh || object.isSkinnedMesh) {
           const count = object.geometry?.index?.count || object.geometry?.attributes?.position?.count || 0;
           runtime.triangles += object.geometry?.index ? Math.floor(count / 3) : Math.floor(count / 3);
-          runtime.facialChannels += Object.keys(object.morphTargetDictionary || {}).length;
+          supportedFacialChannels(object.morphTargetDictionary || {}).forEach((channel) => nativeFaceChannels.add(channel));
           if (object.morphTargetDictionary && object.morphTargetInfluences) {
-            runtime.morphLookup.set(object, Object.fromEntries(
-              Object.entries(object.morphTargetDictionary).map(([name, index]) => [String(name).toLowerCase(), index])
-            ));
+            const lookup = Object.create(null);
+            Object.entries(object.morphTargetDictionary).forEach(([name, index]) => {
+              lookup[String(name).toLowerCase()] = index;
+              lookup[normalizeMorphTargetName(name)] ??= index;
+            });
+            runtime.morphLookup.set(object, lookup);
           }
           const lodMatch = String(object.name || "").match(/^lod([0-3])(?:\b|_)/i);
           if (lodMatch) {
@@ -5340,10 +5702,13 @@
           }
         }
       });
+      runtime.facialChannels = nativeFaceChannels.size;
       if (normalizedAnimations.length) {
-        runtime.mixer = new this.THREE.AnimationMixer(mesh);
+        runtime.animationRoot = mesh.userData?.animationRoot || mesh;
+        runtime.mixer = new this.THREE.AnimationMixer(runtime.animationRoot);
         normalizedAnimations.forEach((clip) => runtime.clips.set(String(clip.name || "").toLowerCase(), clip));
       }
+      this.captureNaturalRigPose(runtime);
       mesh.userData.characterRuntime = runtime;
       mesh.userData.lodVariants = runtime.lodVariants;
       this.characterRuntimes.set(runtimeKey, runtime);
@@ -5371,13 +5736,14 @@
     }
 
     playCharacterClip(runtime, state) {
-      if (!runtime?.mixer || (runtime.state === state && runtime.currentAction)) return;
+      if (!runtime?.mixer) return false;
+      if (runtime.state === state && runtime.currentAction) return true;
       const clip = this.findCharacterClip(runtime, state);
       runtime.previousState = runtime.state;
       runtime.state = state;
-      if (!clip) return;
+      if (!clip) return false;
       const next = runtime.mixer.clipAction(clip);
-      if (runtime.currentAction === next) return;
+      if (runtime.currentAction === next) return true;
       const oneShot = ["jump", "land", "dodge", "attack1", "attack2", "attack3", "skill", "ultimate", "hit", "defeated"].includes(state);
       const actionWindowSeconds = this.characterAction?.name === state
         ? Math.max(0.08, this.characterAction.duration / 1000)
@@ -5408,6 +5774,7 @@
       else next.fadeIn(Math.min(0.16, transitionSeconds));
       next.play();
       runtime.currentAction = next;
+      runtime.blendSpaceActive = false;
       runtime.actionTimeScale = fittedTimeScale;
       runtime.transition = {
         from: runtime.previousState,
@@ -5416,6 +5783,265 @@
         duration: transitionSeconds,
         mode: "inertial-crossfade"
       };
+      return true;
+    }
+
+    motionBlendPoints(runtime) {
+      const declared = this.motionLibraryManifest?.clips || [];
+      const fallback = [
+        { name: "idle_relaxed", speed: 0, direction: 0, category: "idle" },
+        { name: "walk_f", speed: 0.34, direction: 0, category: "locomotion" },
+        { name: "run_f", speed: 0.72, direction: 0, category: "locomotion" },
+        { name: "sprint_f", speed: 1, direction: 0, category: "locomotion" }
+      ];
+      const source = declared.some((item) => Number(item.speed) > 0) ? declared : fallback;
+      return source.map((item) => ({
+        name: String(item.name || "").toLowerCase(),
+        speed: clamp(Number(item.speed || 0), 0, 1),
+        direction: clamp(Number(item.direction || 0), -180, 180),
+        category: String(item.category || "")
+      })).filter((item) => runtime?.clips?.has(item.name) && (item.category === "idle" || item.category === "locomotion"));
+    }
+
+    updateLocomotionBlendSpace(runtime, speed, directionRadians, dt) {
+      if (!runtime?.mixer || runtime.lodSuspended) return false;
+      const points = this.motionBlendPoints(runtime);
+      if (points.length < 2) return false;
+      const direction = this.THREE.MathUtils.radToDeg(directionRadians || 0);
+      const angularDistance = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
+      const ranked = points.map((point) => {
+        const speedDistance = (speed - point.speed) / 0.38;
+        const angleDistance = speed < 0.08 || point.speed < 0.08 ? 0 : angularDistance(direction, point.direction) / 82;
+        const distance = speedDistance * speedDistance + angleDistance * angleDistance;
+        return { ...point, rawWeight: Math.exp(-distance * 2.15) };
+      }).sort((a, b) => b.rawWeight - a.rawWeight).slice(0, 4);
+      const total = ranked.reduce((sum, item) => sum + item.rawWeight, 0) || 1;
+      const targets = new Map(ranked.map((item) => [item.name, item.rawWeight / total]));
+      if (!runtime.blendSpaceActive && runtime.currentAction && ![...runtime.blendActions.values()].includes(runtime.currentAction)) {
+        runtime.currentAction.fadeOut(0.16);
+      }
+      runtime.blendSpaceActive = true;
+      runtime.idlePhase = Number(runtime.idlePhase || 0) + Math.max(0.001, dt);
+      points.forEach((point) => {
+        const clip = runtime.clips.get(point.name);
+        if (!clip) return;
+        let action = runtime.blendActions.get(point.name);
+        if (!action) {
+          action = runtime.mixer.clipAction(clip);
+          action.enabled = true;
+          action.setLoop(this.THREE.LoopRepeat, Infinity);
+          action.setEffectiveWeight(0);
+          action.setEffectiveTimeScale(0);
+          action.play();
+          runtime.blendActions.set(point.name, action);
+          runtime.blendWeights.set(point.name, 0);
+        }
+        const current = Number(runtime.blendWeights.get(point.name) || 0);
+        const target = Number(targets.get(point.name) || 0);
+        const next = current + (target - current) * (1 - Math.exp(-Math.max(0.001, dt) * 14));
+        runtime.blendWeights.set(point.name, next);
+        action.enabled = next > 0.0005;
+        action.setEffectiveWeight(next);
+        if (action.enabled && Number.isFinite(clip.duration) && clip.duration > 0) {
+          const normalizedPhase = ((runtime.gaitPhase || 0) % (Math.PI * 2)) / (Math.PI * 2);
+          action.time = point.speed < 0.08
+            ? runtime.idlePhase % clip.duration
+            : normalizedPhase * clip.duration;
+        }
+      });
+      const dominant = ranked[0];
+      runtime.currentAction = runtime.blendActions.get(dominant.name) || runtime.currentAction;
+      runtime.state = speed < 0.08 ? "idle" : speed < 0.52 ? "walk" : speed < 0.9 ? "run" : "sprint";
+      runtime.blendSpace = {
+        speed,
+        direction,
+        points: ranked.map((item) => ({ name: item.name, weight: Number((item.rawWeight / total).toFixed(3)) })),
+        phase: ((runtime.gaitPhase || 0) % (Math.PI * 2)) / (Math.PI * 2),
+        mode: "phase-synchronized-rbf"
+      };
+      return true;
+    }
+
+    fadeLocomotionBlend(runtime, dt) {
+      runtime?.blendActions?.forEach((action, name) => {
+        const current = Number(runtime.blendWeights.get(name) || 0);
+        const next = current * Math.exp(-Math.max(0.001, dt) * 18);
+        runtime.blendWeights.set(name, next);
+        action.setEffectiveWeight(next);
+        action.enabled = next > 0.0005;
+      });
+      if (runtime) runtime.blendSpaceActive = false;
+    }
+
+    beginMotionWarp(target, kind, startedAt = performance.now()) {
+      const runtime = this.playerMesh?.userData?.characterRuntime;
+      if (!runtime?.visualRoot || !runtime.visualRootBasePosition || !target?.position) return false;
+      const duration = kind === "ultimate" ? 920 : kind === "skill" ? 680 : 430;
+      runtime.motionWarp ||= {};
+      runtime.motionWarp.action = {
+        target,
+        targetId: String(target.userData?.id || target.userData?.type || "target"),
+        kind,
+        startedAt,
+        duration,
+        contactPhase: kind === "ultimate" ? 0.42 : kind === "skill" ? 0.36 : 0.33,
+        desiredDistance: kind === "ultimate" ? 3.4 : kind === "skill" ? 2.5 : 1.85,
+        maxVisualOffset: kind === "ultimate" ? 0.48 : kind === "skill" ? 0.38 : 0.3
+      };
+      return true;
+    }
+
+    applyMotionWarping(runtime, time, dt) {
+      if (!runtime?.visualRoot || !runtime.visualRootBasePosition) return;
+      runtime.motionWarp ||= {};
+      const rootObject = runtime.visualRoot;
+      const base = runtime.visualRootBasePosition;
+      const action = runtime.motionWarp.action;
+      const recoverToBase = () => {
+        rootObject.position.lerp(base, 1 - Math.exp(-Math.max(0.001, dt) * 18));
+      };
+      if (!action?.target?.position || action.target.visible === false || action.target.userData?.defeated) {
+        recoverToBase();
+        if (action) delete runtime.motionWarp.action;
+        return;
+      }
+      const phase = clamp((time - action.startedAt) / Math.max(1, action.duration), 0, 1);
+      if (phase >= 1) {
+        recoverToBase();
+        if (rootObject.position.distanceToSquared(base) < 0.000004) delete runtime.motionWarp.action;
+        return;
+      }
+      const actorWorld = runtime.mesh.getWorldPosition(new this.THREE.Vector3());
+      const targetWorld = action.target.getWorldPosition
+        ? action.target.getWorldPosition(new this.THREE.Vector3())
+        : action.target.position.clone();
+      targetWorld.y = actorWorld.y;
+      const direction = targetWorld.sub(actorWorld);
+      const distance = direction.length();
+      if (distance < 0.0001) {
+        recoverToBase();
+        return;
+      }
+      const contact = clamp(action.contactPhase, 0.12, 0.72);
+      const rise = clamp(phase / contact, 0, 1);
+      const fall = 1 - clamp((phase - contact) / Math.max(0.001, 1 - contact), 0, 1);
+      const envelope = (rise * rise * (3 - 2 * rise)) * (fall * fall * (3 - 2 * fall));
+      const distanceCorrection = clamp(distance - action.desiredDistance, 0, action.maxVisualOffset) * envelope;
+      const worldOffset = direction.normalize().multiplyScalar(distanceCorrection);
+      const inverseMeshWorld = runtime.mesh.getWorldQuaternion(new this.THREE.Quaternion()).invert();
+      const localOffset = worldOffset.applyQuaternion(inverseMeshWorld);
+      const meshScale = runtime.mesh.getWorldScale(new this.THREE.Vector3());
+      localOffset.set(
+        localOffset.x / Math.max(0.0001, Math.abs(meshScale.x)),
+        localOffset.y / Math.max(0.0001, Math.abs(meshScale.y)),
+        localOffset.z / Math.max(0.0001, Math.abs(meshScale.z))
+      );
+      const desired = base.clone().add(localOffset);
+      rootObject.position.lerp(desired, 1 - Math.exp(-Math.max(0.001, dt) * 22));
+      runtime.motionWarp.phase = phase;
+      runtime.motionWarp.contact = contact;
+      runtime.motionWarp.visualOffset = Number(distanceCorrection.toFixed(4));
+      runtime.motionWarp.hitboxMode = "unchanged-server-authoritative";
+    }
+
+    applyAdditiveAnimationLayers(runtime, time, motion, dt) {
+      if (!runtime || runtime.lodSuspended) return;
+      const THREE = this.THREE;
+      const bones = runtime.bones || {};
+      const axis = {
+        x: new THREE.Vector3(1, 0, 0),
+        y: new THREE.Vector3(0, 1, 0),
+        z: new THREE.Vector3(0, 0, 1)
+      };
+      const add = (bone, rotations, weight = 1) => {
+        if (!bone || weight <= 0) return;
+        const delta = rotations.reduce((quaternion, [name, amount]) => quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(axis[name], amount)), new THREE.Quaternion());
+        const weighted = new THREE.Quaternion().slerp(delta, clamp(weight, 0, 1));
+        bone.quaternion.multiply(weighted).normalize();
+      };
+      const locomotion = ["walk", "run", "sprint", "strafe"].includes(motion);
+      const breathing = Math.sin(time * 0.00118) * (motion === "idle" ? 0.012 : 0.004);
+      const accelerationLean = clamp(Number(runtime.acceleration || 0) * -0.018, -0.09, 0.09);
+      const turnLean = clamp(Number(runtime.yawVelocity || 0) * -0.022, -0.08, 0.08);
+      add(bones.spine, [["x", accelerationLean + breathing * 0.24], ["z", turnLean]], 1);
+      add(bones.chest, [["x", breathing], ["y", locomotion ? Math.sin(runtime.gaitPhase || 0) * 0.018 : 0], ["z", -turnLean * 0.42]], 1);
+      add(bones.head, [["x", -accelerationLean * 0.32], ["z", -turnLean * 0.2]], 1);
+
+      const actionPhase = clamp((time - Number(this.characterAction?.startedAt || time)) / Math.max(1, Number(this.characterAction?.duration || 1)), 0, 1);
+      const anticipation = Math.sin(clamp(actionPhase / 0.34, 0, 1) * Math.PI * 0.5);
+      const recovery = 1 - clamp((actionPhase - 0.58) / 0.42, 0, 1);
+      const actionWeight = anticipation * recovery * clamp(Number(this.characterAction?.strength || 0), 0, 1.5);
+      if (/^attack/.test(motion) || motion === "skill" || motion === "ultimate") {
+        const authoredWeight = this.findCharacterClip(runtime, motion) ? 0.14 : 1;
+        const side = motion === "attack2" ? -1 : 1;
+        add(bones.chest, [["y", side * 0.16 * actionWeight], ["x", -0.08 * actionWeight]], authoredWeight);
+        add(bones.rightShoulder, [["x", -0.5 * actionWeight], ["z", -0.16 * actionWeight]], authoredWeight);
+        add(bones.rightUpperArm, [["x", -0.72 * actionWeight], ["y", side * 0.24 * actionWeight]], authoredWeight);
+        add(bones.rightForeArm, [["x", -0.34 * actionWeight]], authoredWeight);
+        add(bones.leftUpperArm, [["x", -0.18 * actionWeight]], authoredWeight);
+        runtime.layers.upperBody = actionWeight;
+      } else {
+        runtime.layers.upperBody = 0;
+      }
+      if (motion === "hit") {
+        const hit = Math.sin(actionPhase * Math.PI) * clamp(Number(this.characterAction?.strength || 1), 0, 1.4);
+        add(bones.spine, [["x", 0.22 * hit], ["z", -0.12 * hit]], 1);
+        add(bones.head, [["x", -0.12 * hit], ["y", 0.1 * hit]], 1);
+        runtime.layers.hit = hit;
+      } else {
+        runtime.layers.hit = 0;
+      }
+      runtime.layers.locomotion = locomotion ? 1 : 0;
+      runtime.layers.breathing = motion === "idle" ? 1 : 0.35;
+      runtime.layerMode = "additive-post-mixer";
+      runtime.layerUpdatedAt = time;
+    }
+
+    captureNaturalRigPose(runtime) {
+      if (!runtime?.mesh || !Object.keys(runtime.bones || {}).length) return;
+      const THREE = this.THREE;
+      runtime.mesh.updateMatrixWorld(true);
+      const meshWorldQuaternion = runtime.mesh.getWorldQuaternion(new THREE.Quaternion());
+      const inverseMeshWorldQuaternion = meshWorldQuaternion.clone().invert();
+      const inverseMeshMatrix = runtime.mesh.matrixWorld.clone().invert();
+      runtime.rigRest = new Map();
+      [...new Set(Object.values(runtime.bones).filter(Boolean))].forEach((bone) => {
+        const parentWorld = bone.parent?.getWorldQuaternion?.(new THREE.Quaternion()) || meshWorldQuaternion;
+        runtime.rigRest.set(bone, {
+          quaternion: bone.quaternion.clone(),
+          position: bone.position.clone(),
+          parentCharacterQuaternion: inverseMeshWorldQuaternion.clone().multiply(parentWorld)
+        });
+      });
+      const relaxedArmOffset = (upperArm, foreArm) => {
+        if (!upperArm || !foreArm) return new THREE.Quaternion();
+        const start = upperArm.getWorldPosition(new THREE.Vector3()).applyMatrix4(inverseMeshMatrix);
+        const end = foreArm.getWorldPosition(new THREE.Vector3()).applyMatrix4(inverseMeshMatrix);
+        const direction = end.sub(start).normalize();
+        if (!Number.isFinite(direction.x + direction.y + direction.z)) return new THREE.Quaternion();
+        // Keep the authored side and depth while lowering a T-pose into a
+        // relaxed A-pose. Models already authored with lowered arms receive
+        // only a tiny correction instead of being folded into the torso.
+        const downness = direction.dot(new THREE.Vector3(0, -1, 0));
+        if (downness > 0.72) return new THREE.Quaternion();
+        const side = Math.abs(direction.x) > 0.08 ? Math.sign(direction.x) : 1;
+        const desired = new THREE.Vector3(side * 0.22, -0.97, clamp(direction.z, -0.08, 0.08)).normalize();
+        return new THREE.Quaternion().setFromUnitVectors(direction, desired);
+      };
+      runtime.relaxedArmOffsets = {
+        left: relaxedArmOffset(runtime.bones.leftUpperArm, runtime.bones.leftForeArm),
+        right: relaxedArmOffset(runtime.bones.rightUpperArm, runtime.bones.rightForeArm)
+      };
+      runtime.rigSolver = "rest-space-quaternion";
+    }
+
+    applyCharacterSpaceBoneRotation(runtime, bone, characterOffset, blend) {
+      const rest = runtime?.rigRest?.get(bone);
+      if (!bone || !rest || !characterOffset) return;
+      const parent = rest.parentCharacterQuaternion;
+      const localDelta = parent.clone().invert().multiply(characterOffset).multiply(parent);
+      const target = localDelta.multiply(rest.quaternion.clone()).normalize();
+      bone.quaternion.slerp(target, blend).normalize();
     }
 
     applyProceduralRigMotion(runtime, time, motion = "idle", dt = 0.016) {
@@ -5423,44 +6049,90 @@
       const bones = runtime.bones || {};
       const required = [bones.leftUpperArm, bones.rightUpperArm, bones.leftUpLeg, bones.rightUpLeg].filter(Boolean);
       if (required.length < 4) return false;
-      const capture = (bone) => {
-        if (!bone) return null;
-        bone.userData ||= {};
-        bone.userData.hhRigMotionBase ||= {
-          x: bone.rotation.x,
-          y: bone.rotation.y,
-          z: bone.rotation.z
-        };
-        return bone.userData.hhRigMotionBase;
+      if (!runtime.rigRest?.size) this.captureNaturalRigPose(runtime);
+      const THREE = this.THREE;
+      const blend = 1 - Math.exp(-Math.max(0.001, dt) * (motion === "idle" ? 5.5 : 11.5));
+      const axis = {
+        x: new THREE.Vector3(1, 0, 0),
+        y: new THREE.Vector3(0, 1, 0),
+        z: new THREE.Vector3(0, 0, 1)
       };
-      const blend = 1 - Math.exp(-Math.max(0.001, dt) * 9);
-      const setRotation = (bone, offset = {}) => {
-        const base = capture(bone);
-        if (!bone || !base) return;
-        ["x", "y", "z"].forEach((axis) => {
-          const target = base[axis] + Number(offset[axis] || 0);
-          bone.rotation[axis] += (target - bone.rotation[axis]) * blend;
-        });
-      };
+      const turn = (name, amount) => new THREE.Quaternion().setFromAxisAngle(axis[name], amount);
+      const combine = (...rotations) => rotations.filter(Boolean).reduce((result, rotation) => result.multiply(rotation), new THREE.Quaternion());
+      const pose = (bone, ...rotations) => this.applyCharacterSpaceBoneRotation(runtime, bone, combine(...rotations), blend);
       const locomotion = ["walk", "run", "sprint", "strafe", "climb", "swim"].includes(motion);
       const cadence = motion === "sprint" ? 10.8 : motion === "run" || motion === "strafe" ? 8.2 : motion === "walk" ? 5.1 : 1.15;
       const gait = Math.sin(time * 0.001 * cadence);
-      const stride = locomotion ? gait * (motion === "sprint" ? 0.62 : motion === "walk" ? 0.3 : 0.46) : 0;
-      const breathing = Math.sin(time * 0.00125) * 0.022;
-      const relaxedArm = motion === "glide" ? 0.22 : motion === "swim" ? 0.48 : 1.4;
-      setRotation(bones.leftUpperArm, { x: -stride * 0.72 + breathing, z: -relaxedArm });
-      setRotation(bones.rightUpperArm, { x: stride * 0.72 - breathing, z: relaxedArm });
-      setRotation(bones.leftForeArm, { x: motion === "idle" ? -0.08 : -0.16, z: -0.08 });
-      setRotation(bones.rightForeArm, { x: motion === "idle" ? -0.08 : -0.16, z: 0.08 });
-      setRotation(bones.leftUpLeg, { x: stride });
-      setRotation(bones.rightUpLeg, { x: -stride });
-      setRotation(bones.leftLeg, { x: locomotion ? Math.max(0, -stride) * 0.48 : 0 });
-      setRotation(bones.rightLeg, { x: locomotion ? Math.max(0, stride) * 0.48 : 0 });
-      setRotation(bones.spine, { x: motion === "sprint" ? -0.09 : breathing * 0.22, z: motion === "strafe" ? gait * 0.06 : 0 });
-      setRotation(bones.chest, { x: breathing * 0.35 });
-      setRotation(bones.head, { y: Math.sin(time * 0.00055) * 0.045, x: Math.sin(time * 0.0008) * 0.012 });
+      let stride = locomotion ? gait * (motion === "sprint" ? 0.74 : motion === "walk" ? 0.34 : 0.52) : 0;
+      let leftArmSwing = -stride * 0.72;
+      let rightArmSwing = stride * 0.72;
+      let leftLegSwing = stride;
+      let rightLegSwing = -stride;
+      let leftKnee = locomotion ? Math.max(0, -gait) * (motion === "sprint" ? 0.82 : 0.56) : 0.035;
+      let rightKnee = locomotion ? Math.max(0, gait) * (motion === "sprint" ? 0.82 : 0.56) : 0.035;
+      let torsoPitch = motion === "sprint" ? -0.12 : motion === "run" ? -0.055 : 0;
+      let torsoRoll = motion === "strafe" ? gait * 0.065 : locomotion ? gait * 0.018 : Math.sin(time * 0.00072) * 0.009;
+      let torsoYaw = locomotion ? gait * (motion === "walk" ? 0.055 : 0.038) : Math.sin(time * 0.00047) * 0.006;
+      let armRelaxLeft = runtime.relaxedArmOffsets?.left;
+      let armRelaxRight = runtime.relaxedArmOffsets?.right;
+      if (motion === "jump") {
+        leftLegSwing = -0.34; rightLegSwing = 0.18; leftKnee = 0.46; rightKnee = 0.24;
+        leftArmSwing = -0.56; rightArmSwing = -0.56; torsoPitch = -0.08;
+      } else if (motion === "fall") {
+        leftLegSwing = 0.16; rightLegSwing = -0.16; leftKnee = 0.24; rightKnee = 0.24;
+        leftArmSwing = 0.16; rightArmSwing = -0.16; torsoPitch = 0.1;
+      } else if (motion === "glide") {
+        armRelaxLeft = null; armRelaxRight = null;
+        leftArmSwing = 0.05; rightArmSwing = -0.05; leftLegSwing = 0.14; rightLegSwing = -0.14;
+        torsoPitch = 0.12;
+      } else if (motion === "climb") {
+        leftArmSwing = gait * 0.82 - 0.52; rightArmSwing = -gait * 0.82 - 0.52;
+        leftLegSwing = -gait * 0.42; rightLegSwing = gait * 0.42; leftKnee = Math.max(0, gait) * 0.72; rightKnee = Math.max(0, -gait) * 0.72;
+      } else if (motion === "swim") {
+        armRelaxLeft = null; armRelaxRight = null;
+        leftArmSwing = gait * 1.05; rightArmSwing = -gait * 1.05; leftLegSwing = gait * 0.3; rightLegSwing = -gait * 0.3;
+        torsoPitch = 0.34;
+      } else if (/^attack/.test(motion) || motion === "skill") {
+        leftArmSwing = motion === "attack2" ? 0.42 : -0.28;
+        rightArmSwing = motion === "attack3" ? -1.22 : -0.86;
+        leftLegSwing = -0.12; rightLegSwing = 0.18; leftKnee = 0.18; rightKnee = 0.08;
+        torsoPitch = -0.1; torsoRoll = motion === "attack2" ? -0.18 : 0.16;
+      } else if (motion === "ultimate") {
+        leftArmSwing = -1.08; rightArmSwing = -1.08; leftLegSwing = -0.08; rightLegSwing = 0.08; torsoPitch = -0.14;
+      } else if (motion === "hit") {
+        leftArmSwing = 0.34; rightArmSwing = 0.22; leftKnee = 0.14; rightKnee = 0.14; torsoPitch = 0.24; torsoRoll = -0.12;
+      } else if (motion === "defeated") {
+        leftArmSwing = 0.72; rightArmSwing = 0.58; leftLegSwing = -0.36; rightLegSwing = 0.3; torsoPitch = 1.15; torsoRoll = 0.22;
+      }
+      const breathing = Math.sin(time * 0.00125) * (motion === "idle" ? 0.025 : 0.009);
+      const shoulderBreath = motion === "idle" ? breathing * 0.36 : 0;
+      const shoulderCounter = locomotion ? gait * 0.026 : Math.sin(time * 0.00063) * 0.006;
+      pose(bones.leftShoulder, turn("x", shoulderBreath), turn("z", shoulderCounter));
+      pose(bones.rightShoulder, turn("x", shoulderBreath), turn("z", -shoulderCounter));
+      pose(bones.leftUpperArm, turn("x", leftArmSwing + breathing), armRelaxLeft);
+      pose(bones.rightUpperArm, turn("x", rightArmSwing - breathing), armRelaxRight);
+      pose(bones.leftForeArm, turn("x", 0.09 + Math.max(0, -leftArmSwing) * 0.18), turn("z", -0.025));
+      pose(bones.rightForeArm, turn("x", 0.09 + Math.max(0, -rightArmSwing) * 0.18), turn("z", 0.025));
+      pose(bones.leftUpLeg, turn("x", leftLegSwing));
+      pose(bones.rightUpLeg, turn("x", rightLegSwing));
+      pose(bones.leftLeg, turn("x", leftKnee));
+      pose(bones.rightLeg, turn("x", rightKnee));
+      pose(bones.leftFoot, turn("x", locomotion ? -leftLegSwing * 0.22 - leftKnee * 0.16 : 0));
+      pose(bones.rightFoot, turn("x", locomotion ? -rightLegSwing * 0.22 - rightKnee * 0.16 : 0));
+      pose(bones.hips, turn("y", -torsoYaw * 0.58), turn("z", locomotion ? -gait * 0.028 : 0));
+      pose(bones.spine, turn("x", torsoPitch + breathing * 0.22), turn("y", torsoYaw), turn("z", torsoRoll));
+      pose(bones.chest, turn("x", breathing * 0.42), turn("y", torsoYaw * 0.32), turn("z", -torsoRoll * 0.42));
+      const facePerformance = runtime.mesh.userData?.facePerformance;
+      const gazeFollowX = Number(facePerformance?.saccadeX || 0) * 0.72;
+      const gazeFollowY = Number(facePerformance?.saccadeY || 0) * 0.48;
+      pose(bones.neck, turn("y", Math.sin(time * 0.00053) * 0.018 + gazeFollowX * 0.22));
+      pose(
+        bones.head,
+        turn("y", Math.sin(time * 0.00055) * 0.045 + gazeFollowX),
+        turn("x", Math.sin(time * 0.0008) * 0.012 - torsoPitch * 0.14 - gazeFollowY)
+      );
       runtime.state = motion;
-      runtime.proceduralRig = true;
+      runtime.proceduralRig = "rest-space-quaternion";
       return true;
     }
 
@@ -5503,17 +6175,30 @@
         let morphLookup = runtime?.morphLookup?.get(object) || object.userData?.hhMorphLookup;
         if (!morphLookup) {
           morphLookup = Object.create(null);
-          Object.entries(dictionary).forEach(([name, index]) => { morphLookup[String(name).toLowerCase()] = index; });
+          Object.entries(dictionary).forEach(([name, index]) => {
+            morphLookup[String(name).toLowerCase()] = index;
+            morphLookup[normalizeMorphTargetName(name)] ??= index;
+          });
           object.userData ||= {};
           object.userData.hhMorphLookup = morphLookup;
           runtime?.morphLookup?.set(object, morphLookup);
         }
         Object.entries(values).forEach(([name, raw]) => {
-          const aliases = [name, `ARKit_${name}`, `AR_${name}`, name.replace(/left$/i, "_L").replace(/right$/i, "_R")];
-          const index = aliases.map((alias) => morphLookup[alias.toLowerCase()]).find(Number.isInteger);
-          if (!Number.isInteger(index) || index >= influences.length) return;
-          influences[index] += (clamp(raw, 0, 1) - influences[index]) * 0.42;
-          applied += 1;
+          const aliases = facialMorphAliases(name);
+          const standardIndex = [name, `ARKit_${name}`, `AR_${name}`, name.replace(/left$/i, "_L").replace(/right$/i, "_R")]
+            .map((alias) => morphLookup[String(alias).toLowerCase()] ?? morphLookup[normalizeMorphTargetName(alias)])
+            .find(Number.isInteger);
+          const compound = FACIAL_COMPOUND_ALIASES[name] || [];
+          const indices = Number.isInteger(standardIndex)
+            ? [standardIndex]
+            : compound.length
+              ? compound.map((alias) => morphLookup[String(alias).toLowerCase()] ?? morphLookup[normalizeMorphTargetName(alias)]).filter(Number.isInteger)
+              : aliases.map((alias) => morphLookup[String(alias).toLowerCase()] ?? morphLookup[normalizeMorphTargetName(alias)]).filter(Number.isInteger).slice(0, 1);
+          [...new Set(indices)].forEach((index) => {
+            if (index >= influences.length) return;
+            influences[index] += (clamp(raw, 0, 1) - influences[index]) * 0.42;
+            applied += 1;
+          });
         });
       });
       return applied;
@@ -5521,19 +6206,14 @@
 
     resetCharacterFace(mesh, { morphs = true } = {}) {
       if (!mesh) return;
-      const faceChannels = new Set(MEDIAPIPE_FACE_CHANNELS.map((channel) => channel.toLowerCase()));
+      const faceChannels = new Set(MEDIAPIPE_FACE_CHANNELS.flatMap((channel) => facialMorphAliases(channel)).map(normalizeMorphTargetName));
       if (morphs) {
         mesh.traverse?.((object) => {
           const dictionary = object.morphTargetDictionary;
           const influences = object.morphTargetInfluences;
           if (!dictionary || !influences) return;
           Object.entries(dictionary).forEach(([name, index]) => {
-            const normalized = String(name)
-              .replace(/^ARKit_/i, "")
-              .replace(/^AR_/i, "")
-              .replace(/_L$/i, "Left")
-              .replace(/_R$/i, "Right")
-              .toLowerCase();
+            const normalized = normalizeMorphTargetName(name);
             if (faceChannels.has(normalized) && Number.isInteger(index) && index < influences.length) influences[index] = 0;
           });
         });
@@ -5605,57 +6285,117 @@
         blinkStartedAt: 0,
         nextSaccadeAt: time + 500,
         saccadeX: 0,
-        saccadeY: 0
+        saccadeY: 0,
+        saccadeTargetX: 0,
+        saccadeTargetY: 0,
+        blinkEyeDelay: (Math.random() - 0.5) * 14
       };
       const pilotFresh = this.facePilot.status === "running" && time - this.facePilot.lastResultAt < 320;
       const pilot = pilotFresh ? this.facePilot.blendshapes : null;
       const previewFresh = this.facePreview?.values && time < this.facePreview.until;
       const talkVisemeNames = ["A", "E", "O", "MBP", "I", "U", "L"];
+      const talkIndex = Math.floor(time / 145);
+      const talkPhase = (time % 145) / 145;
+      const coarticulationRaw = clamp((talkPhase - 0.58) / 0.42, 0, 1);
+      const coarticulation = coarticulationRaw * coarticulationRaw * (3 - 2 * coarticulationRaw);
+      const mixChannels = (from = {}, to = {}, amount = 0) => Object.fromEntries(
+        [...new Set([...Object.keys(from), ...Object.keys(to)])].map((channel) => [
+          channel,
+          (Number(from[channel] || 0) * (1 - amount)) + (Number(to[channel] || 0) * amount)
+        ])
+      );
       const talkViseme = motion === "talk"
-        ? CHARACTER_VISEMES[talkVisemeNames[Math.floor(time / 145) % talkVisemeNames.length]]
+        ? mixChannels(
+          CHARACTER_VISEMES[talkVisemeNames[talkIndex % talkVisemeNames.length]],
+          CHARACTER_VISEMES[talkVisemeNames[(talkIndex + 1) % talkVisemeNames.length]],
+          coarticulation
+        )
         : null;
-      const drivenFace = pilot || (previewFresh ? this.facePreview.values : null) || talkViseme;
+      const externalDrivenFace = pilot || (previewFresh ? this.facePreview.values : null);
+      const drivenFace = externalDrivenFace || talkViseme;
       const lowHealth = 1 - clamp(this.state.player.health / Math.max(1, this.state.player.maxHealth), 0, 1);
-      if (!drivenFace && time >= faceState.nextBlinkAt && !faceState.blinkStartedAt) {
+      if (!externalDrivenFace && time >= faceState.nextBlinkAt && !faceState.blinkStartedAt) {
         faceState.blinkStartedAt = time;
         faceState.nextBlinkAt = time + 1900 + Math.random() * 4200;
       }
       const blinkElapsed = faceState.blinkStartedAt ? time - faceState.blinkStartedAt : -1;
-      const blink = drivenFace
-        ? Math.max(drivenFace.eyeBlinkLeft || 0, drivenFace.eyeBlinkRight || 0)
-        : blinkElapsed >= 0 && blinkElapsed < 180
-          ? Math.sin((blinkElapsed / 180) * Math.PI)
-          : 0;
+      const blinkCurve = (elapsed, delay = 0) => {
+        const local = elapsed - delay;
+        return local >= 0 && local < 180 ? Math.sin((local / 180) * Math.PI) : 0;
+      };
+      const blinkLeft = externalDrivenFace ? externalDrivenFace.eyeBlinkLeft || 0 : blinkCurve(blinkElapsed, 0);
+      const blinkRight = externalDrivenFace ? externalDrivenFace.eyeBlinkRight || 0 : blinkCurve(blinkElapsed, faceState.blinkEyeDelay || 0);
       if (blinkElapsed >= 180) faceState.blinkStartedAt = 0;
       const smile = drivenFace
         ? ((drivenFace.mouthSmileLeft || 0) + (drivenFace.mouthSmileRight || 0)) * 0.5
-        : motion === "idle" ? 0.08 : 0;
+        : motion === "idle" ? 0.018 : 0;
       const pain = motion === "hit" || motion === "defeated" ? 0.9 : lowHealth * 0.28;
       const jawOpen = drivenFace?.jawOpen || (["skill", "ultimate"].includes(motion) ? 0.26 : 0);
+      if (time >= faceState.nextSaccadeAt) {
+        faceState.nextSaccadeAt = time + 420 + Math.random() * 1900;
+        faceState.saccadeTargetX = (Math.random() - 0.5) * 0.01;
+        faceState.saccadeTargetY = (Math.random() - 0.5) * 0.006;
+        if (!externalDrivenFace && !faceState.blinkStartedAt && Math.random() < 0.28) faceState.blinkStartedAt = time;
+      }
+      if (motion === "talk" && faceState.lastTalkIndex !== talkIndex) {
+        if (talkIndex % talkVisemeNames.length === 0 && !faceState.blinkStartedAt) faceState.blinkStartedAt = time;
+        faceState.lastTalkIndex = talkIndex;
+      }
+      // Eyes jump quickly but not instantaneously; the small head follow keeps
+      // them alive without the robotic random-teleport look.
+      faceState.saccadeX += (faceState.saccadeTargetX - faceState.saccadeX) * 0.24;
+      faceState.saccadeY += (faceState.saccadeTargetY - faceState.saccadeY) * 0.2;
+      const gazeX = clamp(Math.abs(faceState.saccadeX) * 28, 0, 0.48);
+      const gazeY = clamp(Math.abs(faceState.saccadeY) * 34, 0, 0.4);
+      const passiveGaze = externalDrivenFace ? {} : {
+        eyeLookOutLeft: faceState.saccadeX < 0 ? gazeX : 0,
+        eyeLookInRight: faceState.saccadeX < 0 ? gazeX : 0,
+        eyeLookInLeft: faceState.saccadeX > 0 ? gazeX : 0,
+        eyeLookOutRight: faceState.saccadeX > 0 ? gazeX : 0,
+        eyeLookUpLeft: faceState.saccadeY > 0 ? gazeY : 0,
+        eyeLookUpRight: faceState.saccadeY > 0 ? gazeY : 0,
+        eyeLookDownLeft: faceState.saccadeY < 0 ? gazeY : 0,
+        eyeLookDownRight: faceState.saccadeY < 0 ? gazeY : 0
+      };
       const neutralFace = Object.fromEntries(MEDIAPIPE_FACE_CHANNELS.map((channel) => [channel, 0]));
+      const passiveExpression = {
+        eyeBlinkLeft: blinkLeft,
+        eyeBlinkRight: blinkRight,
+        mouthSmileLeft: smile + 0.006,
+        mouthSmileRight: smile,
+        cheekSquintLeft: smile * 0.34,
+        cheekSquintRight: smile * 0.32,
+        mouthDimpleLeft: motion === "idle" ? 0.012 : 0,
+        mouthDimpleRight: motion === "idle" ? 0.008 : 0,
+        mouthPressLeft: motion === "idle" ? 0.015 : 0,
+        mouthPressRight: motion === "idle" ? 0.013 : 0,
+        jawOpen,
+        browDownLeft: pain,
+        browDownRight: pain,
+        browInnerUp: motion === "idle" ? 0.025 + Math.sin(time * 0.00046) * 0.018 : 0
+      };
       const faceValues = {
         ...neutralFace,
-        ...(drivenFace || {
-          eyeBlinkLeft: blink,
-          eyeBlinkRight: blink,
-          mouthSmileLeft: smile,
-          mouthSmileRight: smile,
-          jawOpen,
-          browDownLeft: pain,
-          browDownRight: pain
-        })
+        ...passiveGaze,
+        ...passiveExpression,
+        ...(drivenFace || {})
       };
+      const wrinkleTension = clamp(Math.max(
+        faceValues.browDownLeft || 0,
+        faceValues.browDownRight || 0,
+        faceValues.noseSneerLeft || 0,
+        faceValues.noseSneerRight || 0,
+        (faceValues.mouthSmileLeft || 0) * 0.55,
+        (faceValues.mouthSmileRight || 0) * 0.55
+      ), 0, 1);
+      faceState.wrinkleTension = Number(faceState.wrinkleTension || 0)
+        + (wrinkleTension - Number(faceState.wrinkleTension || 0)) * 0.28;
       this.applyFaceBlendshapes(mesh, faceValues);
       this.applyBoneFacialFallback(mesh, faceValues);
       if (!parts?.eyes || !parts?.mouth) return;
-      if (time >= faceState.nextSaccadeAt) {
-        faceState.nextSaccadeAt = time + 420 + Math.random() * 1900;
-        faceState.saccadeX = (Math.random() - 0.5) * 0.018;
-        faceState.saccadeY = (Math.random() - 0.5) * 0.012;
-      }
       parts.eyes.forEach((eye, index) => {
         const pilotBlink = index === 0 ? faceValues.eyeBlinkLeft : faceValues.eyeBlinkRight;
-        const value = drivenFace ? pilotBlink || 0 : blink;
+        const value = externalDrivenFace ? pilotBlink || 0 : index === 0 ? blinkLeft : blinkRight;
         const lid = parts.eyelids?.[index];
         if (lid && this.state.settings.eyePerformance) {
           lid.scale.y += ((0.01 + value * 0.92) - lid.scale.y) * 0.58;
@@ -5723,6 +6463,9 @@
           material.userData.baseRoughness ??= material.roughness;
           material.userData.baseClearcoat ??= material.clearcoat || 0;
           material.userData.baseEmissiveIntensity ??= material.emissiveIntensity || 0;
+          if (material.normalScale && !material.userData.baseNormalScale) {
+            material.userData.baseNormalScale = { x: material.normalScale.x, y: material.normalScale.y };
+          }
           material.roughness = clamp(material.userData.baseRoughness - wet * 0.34 + snow * 0.2, 0.08, 1);
           if ("clearcoat" in material) {
             material.clearcoat = Math.max(material.userData.baseClearcoat, material.userData.materialRole === "skin" ? sweat * 0.42 : wet * 0.58);
@@ -5733,6 +6476,12 @@
           if (material.color && material.userData.baseColor) {
             material.color.set(material.userData.baseColor);
             if (material.userData.materialRole === "skin") {
+              const tension = clamp(Number(mesh.userData?.facePerformance?.wrinkleTension || 0), 0, 1);
+              const baseNormal = material.userData.baseNormalScale;
+              if (baseNormal && material.normalScale) {
+                material.normalScale.set(baseNormal.x * (1 + tension * 0.42), baseNormal.y * (1 + tension * 0.42));
+                material.userData.wrinkleTension = tension;
+              }
               material.color.lerp(new this.THREE.Color(0xb7464e), clamp(blood * 0.1 + exertion * 0.035, 0, 0.12));
               if (material.emissive) {
                 material.emissive.set(0x7a1f26);
@@ -5869,21 +6618,129 @@
       });
     }
 
-    applyFootContactIK(runtime, phase, strength = 1) {
-      if (!runtime || runtime.lodSuspended || !this.state.settings.naturalMotion) return;
-      const leftFoot = runtime.bones?.leftFoot;
-      const rightFoot = runtime.bones?.rightFoot;
-      [[leftFoot, phase], [rightFoot, -phase]].forEach(([foot, wave]) => {
-        if (!foot) return;
-        foot.userData ||= {};
-        foot.userData.hhFootBase ??= { x: foot.rotation.x, z: foot.rotation.z };
-        const base = foot.userData.hhFootBase;
-        const plant = clamp(1 - Math.max(0, wave) * 1.8, 0, 1);
-        foot.rotation.x += ((base.x - wave * 0.055 * strength) - foot.rotation.x) * (0.12 + plant * 0.12);
-        foot.rotation.z += (base.z - foot.rotation.z) * 0.18;
+    footMarkersForMotion(motion = "walk") {
+      const markers = this.motionLibraryManifest?.footMarkers || {};
+      const family = motion === "sprint" ? "sprint" : motion === "run" || motion === "strafe" ? "run" : "walk";
+      return markers[family] || {
+        leftFootDown: 0.08,
+        leftFootUp: 0.48,
+        rightFootDown: 0.55,
+        rightFootUp: 0.94
+      };
+    }
+
+    raycastFootGround(foot) {
+      if (!foot || !this.THREE || !this.world) return null;
+      const targets = [this.terrainGround, ...this.climbables.map((entry) => entry.object)].filter((object) => object?.visible !== false);
+      if (!targets.length) return null;
+      this.footRaycaster ||= new this.THREE.Raycaster();
+      const footWorld = foot.getWorldPosition(new this.THREE.Vector3());
+      const origin = footWorld.clone().add(new this.THREE.Vector3(0, 0.85, 0));
+      this.footRaycaster.set(origin, new this.THREE.Vector3(0, -1, 0));
+      this.footRaycaster.near = 0;
+      this.footRaycaster.far = 2.2;
+      const hit = this.footRaycaster.intersectObjects(targets, true)[0];
+      if (!hit) return null;
+      const normal = hit.face?.normal?.clone?.() || new this.THREE.Vector3(0, 1, 0);
+      if (hit.object?.matrixWorld) normal.transformDirection(hit.object.matrixWorld).normalize();
+      return { point: hit.point.clone(), normal, footWorld };
+    }
+
+    solveTwoBoneFootPlant(runtime, side, target, weight) {
+      const bones = runtime?.bones || {};
+      const upper = bones[side === "left" ? "leftUpLeg" : "rightUpLeg"];
+      const lower = bones[side === "left" ? "leftLeg" : "rightLeg"];
+      const foot = bones[side === "left" ? "leftFoot" : "rightFoot"];
+      if (!upper || !lower || !foot || !target || weight < 0.01) return false;
+      const THREE = this.THREE;
+      const limitedTarget = target.clone();
+      const currentFoot = foot.getWorldPosition(new THREE.Vector3());
+      const displacement = limitedTarget.clone().sub(currentFoot);
+      if (displacement.length() > 0.26) limitedTarget.copy(currentFoot).add(displacement.setLength(0.26));
+      [lower, upper, lower].forEach((joint) => {
+        runtime.mesh.updateMatrixWorld(true);
+        const jointWorld = joint.getWorldPosition(new THREE.Vector3());
+        const effectorWorld = foot.getWorldPosition(new THREE.Vector3());
+        const from = effectorWorld.sub(jointWorld);
+        const to = limitedTarget.clone().sub(jointWorld);
+        if (from.lengthSq() < 0.000001 || to.lengthSq() < 0.000001) return;
+        from.normalize();
+        to.normalize();
+        const deltaWorld = new THREE.Quaternion().setFromUnitVectors(from, to);
+        const angle = 2 * Math.acos(clamp(deltaWorld.w, -1, 1));
+        const limited = new THREE.Quaternion().slerp(deltaWorld, angle > 0.16 ? 0.16 / angle : 1);
+        const currentWorld = joint.getWorldQuaternion(new THREE.Quaternion());
+        const desiredWorld = limited.multiply(currentWorld);
+        const parentWorld = joint.parent?.getWorldQuaternion?.(new THREE.Quaternion()) || new THREE.Quaternion();
+        const desiredLocal = parentWorld.invert().multiply(desiredWorld).normalize();
+        joint.quaternion.slerp(desiredLocal, clamp(weight * 0.72, 0, 1)).normalize();
       });
+      return true;
+    }
+
+    offsetBoneWorld(bone, worldOffset, weight) {
+      if (!bone?.parent || !worldOffset || weight <= 0) return;
+      const THREE = this.THREE;
+      const parentQuaternion = bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+      const parentScale = bone.parent.getWorldScale(new THREE.Vector3());
+      const local = worldOffset.clone().applyQuaternion(parentQuaternion);
+      local.set(
+        local.x / Math.max(0.0001, Math.abs(parentScale.x)),
+        local.y / Math.max(0.0001, Math.abs(parentScale.y)),
+        local.z / Math.max(0.0001, Math.abs(parentScale.z))
+      );
+      bone.position.lerp(bone.position.clone().add(local), clamp(weight, 0, 1));
+    }
+
+    applyFootContactIK(runtime, normalizedPhase, motion = "walk", strength = 1, dt = 0.016) {
+      if (!runtime || runtime.lodSuspended || !this.state.settings.naturalMotion) return;
+      const markers = this.footMarkersForMotion(motion);
+      const phase = ((Number(normalizedPhase || 0) % 1) + 1) % 1;
+      const isBetween = (value, start, end) => start <= end ? value >= start && value <= end : value >= start || value <= end;
+      const results = [];
+      const pelvisOffsets = [];
+      [
+        ["left", runtime.bones?.leftFoot, runtime.bones?.leftToe, markers.leftFootDown, markers.leftFootUp],
+        ["right", runtime.bones?.rightFoot, runtime.bones?.rightToe, markers.rightFootDown, markers.rightFootUp]
+      ].forEach(([side, foot, toe, down, up]) => {
+        if (!foot) return;
+        const ray = this.raycastFootGround(foot);
+        const planted = strength > 0.1 && isBetween(phase, Number(down), Number(up));
+        const state = runtime.footPlants[side];
+        const targetWeight = planted && ray ? strength : 0;
+        state.weight += (targetWeight - state.weight) * (1 - Math.exp(-Math.max(0.001, dt) * (planted ? 22 : 14)));
+        if (planted && ray && !state.planted) {
+          state.point = ray.point.clone();
+          state.normal = ray.normal.clone();
+        }
+        state.planted = planted && Boolean(ray);
+        if (state.planted && ray) {
+          state.point.y = ray.point.y;
+          state.normal.lerp(ray.normal, 0.24).normalize();
+          const verticalError = clamp(state.point.y - ray.footWorld.y, -0.18, 0.18);
+          pelvisOffsets.push(verticalError);
+          this.solveTwoBoneFootPlant(runtime, side, state.point, state.weight);
+          runtime.mesh.updateMatrixWorld(true);
+          const alignmentWorld = new this.THREE.Quaternion().setFromUnitVectors(new this.THREE.Vector3(0, 1, 0), state.normal);
+          const footWorld = foot.getWorldQuaternion(new this.THREE.Quaternion());
+          const desiredWorld = alignmentWorld.multiply(footWorld).normalize();
+          const parentWorld = foot.parent?.getWorldQuaternion?.(new this.THREE.Quaternion()) || new this.THREE.Quaternion();
+          const desiredLocal = parentWorld.invert().multiply(desiredWorld).normalize();
+          foot.quaternion.slerp(desiredLocal, clamp(state.weight * 0.34, 0, 0.34)).normalize();
+        }
+        if (toe) {
+          const toePhase = clamp((phase - Number(up) + 0.12) / 0.18, 0, 1);
+          toe.rotation.x += Math.sin(toePhase * Math.PI) * 0.12 * (1 - state.weight) * strength;
+        }
+        results.push(`${side}:${state.planted ? "locked" : ray ? "tracking" : "no-ground"}`);
+      });
+      if (pelvisOffsets.length && runtime.bones?.hips) {
+        const lowest = Math.min(...pelvisOffsets);
+        this.offsetBoneWorld(runtime.bones.hips, new this.THREE.Vector3(0, lowest * 0.42, 0), 0.55);
+      }
       runtime.ikState = {
-        foot: "raycast-ready",
+        foot: results.join(" · ") || "unavailable",
+        solver: "raycast+phase-lock+ccd",
         hand: runtime.bones?.rightHand ? "weapon-socket" : "unavailable",
         lookAt: runtime.bones?.head ? "active" : "unavailable",
         updatedAt: performance.now()
@@ -5987,9 +6844,13 @@
       asset.updateMatrixWorld(true);
       const fitted = new this.THREE.Box3().setFromObject(asset);
       const center = fitted.getCenter(new this.THREE.Vector3());
-      asset.position.x -= center.x;
-      asset.position.z -= center.z;
-      asset.position.y -= fitted.min.y;
+      const fitOffset = new this.THREE.Vector3(-center.x, -fitted.min.y, -center.z);
+      asset.position.add(fitOffset);
+      const normalizedFitted = fitted.clone().translate(fitOffset);
+      const genesisAuthoredBounds = {
+        min: normalizedFitted.min.toArray(),
+        max: normalizedFitted.max.toArray()
+      };
       const importedMeshes = [];
       asset.traverse((object) => {
         if (!object.isMesh && !object.isSkinnedMesh) return;
@@ -6055,6 +6916,7 @@
         impostor: explicitLods.impostor.length ? explicitLods.impostor : [proxy3d],
         heroDetails: []
       };
+      wrapper.userData.genesisAuthoredBounds = genesisAuthoredBounds;
       this.world.add(wrapper);
       this.world.remove(oldMesh);
       const weaponAnchor = new this.THREE.Group();
@@ -6431,7 +7293,7 @@
           this.appearanceGroup = genesisGroup.dataset.genesisGroup;
           const group = APPEARANCE_GROUPS.find((item) => item.id === this.appearanceGroup);
           this.appearanceFocus = group?.focus || "body";
-          this.cameraDistance = this.appearanceFocus === "head" ? 5.1 : 7.8;
+          this.fitGenesisCamera(this.genesisActualModel || this.genesisFallbackModel, this.appearanceFocus);
           this.refreshGenesisCreator();
           return;
         }
@@ -6849,32 +7711,6 @@
       const runtime = mesh.userData.characterRuntime || this.characterRuntimes.get(this.state.roster.activeId);
       this.updateCharacterLod(mesh, 0);
       const lowDetailTier = ["crowd", "impostor"].includes(mesh.userData?.modelTier);
-      if (runtime) {
-        const targetSpeed = moving ? clamp(input?.magnitude || 1, 0, 1) * (sprinting ? 1.35 : 1) : 0;
-        runtime.motionSpeed += (targetSpeed - runtime.motionSpeed) * (1 - Math.exp(-dt * 12));
-        runtime.motionDirection += (Math.atan2(input?.x || 0, input?.z || 1) - runtime.motionDirection) * (1 - Math.exp(-dt * 10));
-        runtime.motionWarp = {
-          speed: runtime.motionSpeed,
-          direction: runtime.motionDirection,
-          target: this.lockedTargetId || "",
-          mode: this.lockedTargetId ? "combat-facing" : "locomotion-facing"
-        };
-      }
-      if (runtime?.mixer && !runtime.lodSuspended) {
-        this.playCharacterClip(runtime, targetAnimation);
-        const locomotion = ["walk", "run", "sprint", "strafe", "swim", "climb"].includes(targetAnimation);
-        runtime.mixer.timeScale = !locomotion
-          ? 1
-          : targetAnimation === "sprint"
-            ? 1.22
-            : targetAnimation === "walk"
-              ? clamp(0.58 + (input?.magnitude || 0) * 0.48, 0.58, 0.92)
-              : clamp(0.82 + (input?.magnitude || 0) * 0.28, 0.82, 1.1);
-        runtime.mixer.update(dt);
-      } else if (runtime && !runtime.lodSuspended) {
-        this.applyProceduralRigMotion(runtime, time, targetAnimation, dt);
-      }
-
       const cadence = targetAnimation === "sprint"
         ? 11.2
         : targetAnimation === "run" || targetAnimation === "strafe"
@@ -6885,9 +7721,41 @@
               ? 4.6
               : 1.15;
       if (runtime) {
-        runtime.gaitPhase = (runtime.gaitPhase + dt * cadence * Math.max(0.42, input?.magnitude || 0.42)) % (Math.PI * 2);
+        const targetSpeed = moving ? clamp((input?.magnitude || 1) * (sprinting ? 1.18 : 1), 0, 1) : 0;
+        const previousSpeed = Number(runtime.motionSpeed || 0);
+        runtime.motionSpeed += (targetSpeed - runtime.motionSpeed) * (1 - Math.exp(-dt * 12));
+        const targetDirection = Math.atan2(input?.x || 0, input?.z || 1);
+        const directionDelta = Math.atan2(Math.sin(targetDirection - runtime.motionDirection), Math.cos(targetDirection - runtime.motionDirection));
+        runtime.motionDirection += directionDelta * (1 - Math.exp(-dt * 10));
+        runtime.acceleration += (((runtime.motionSpeed - previousSpeed) / Math.max(0.001, dt)) - runtime.acceleration) * (1 - Math.exp(-dt * 8));
+        runtime.yawVelocity += ((directionDelta / Math.max(0.001, dt)) - runtime.yawVelocity) * (1 - Math.exp(-dt * 9));
+        runtime.gaitPhase = (runtime.gaitPhase + dt * cadence * Math.max(0.18, runtime.motionSpeed)) % (Math.PI * 2);
+        runtime.motionWarp ||= {};
+        Object.assign(runtime.motionWarp, {
+          speed: runtime.motionSpeed,
+          direction: runtime.motionDirection,
+          acceleration: runtime.acceleration,
+          yawVelocity: runtime.yawVelocity,
+          target: this.lockedTargetId || "",
+          mode: this.lockedTargetId ? "combat-facing" : "locomotion-facing"
+        });
       }
+      if (runtime?.mixer && !runtime.lodSuspended) {
+        const blendable = ["idle", "walk", "run", "sprint", "strafe"].includes(targetAnimation);
+        const blended = blendable && this.updateLocomotionBlendSpace(runtime, runtime.motionSpeed, runtime.motionDirection, dt);
+        if (!blended) {
+          this.fadeLocomotionBlend(runtime, dt);
+          this.playCharacterClip(runtime, targetAnimation);
+        }
+        runtime.mixer.timeScale = 1;
+        runtime.mixer.update(dt);
+      } else if (runtime && !runtime.lodSuspended) {
+        this.applyProceduralRigMotion(runtime, time, targetAnimation, dt);
+      }
+      if (runtime && !runtime.lodSuspended) this.applyAdditiveAnimationLayers(runtime, time, targetAnimation, dt);
+      if (runtime && !runtime.lodSuspended) this.applyMotionWarping(runtime, time, dt);
       const gaitPhase = runtime?.gaitPhase ?? time * 0.002;
+      const normalizedGaitPhase = ((gaitPhase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2);
       const phase = Math.sin(gaitPhase);
       const previousPhase = this.motionState.gaitPhase;
       this.motionState.gaitPhase = phase;
@@ -7009,7 +7877,7 @@
         }
         this.applyCorrectiveMorphs(mesh);
       }
-      this.applyFootContactIK(runtime, phase, moving && this.isGrounded ? 1 : 0.25);
+      this.applyFootContactIK(runtime, normalizedGaitPhase, targetAnimation, moving && this.isGrounded ? 1 : 0.12, dt);
       this.updateSecondaryCharacterMotion(runtime, time, {
         moving,
         sprinting,
@@ -7760,6 +8628,7 @@
         kind === "ultimate" ? 920 : kind === "skill" ? 680 : 430,
         kind === "ultimate" ? 1.5 : 1
       );
+      this.beginMotionWarp(target, kind, now);
       this.swingAnimation(kind);
       this.spawnPulse(this.state.player.x, this.state.player.y + 1.2, this.state.player.z, ELEMENTS[element].color, kind === "ultimate" ? 1.2 : 0.42, kind === "ultimate" ? 8 : 3.2);
       this.spawnElementBurst(
@@ -7770,7 +8639,7 @@
         kind === "ultimate" ? 2.2 : kind === "skill" ? 1.35 : 0.72
       );
       this.sound(kind);
-      this.cameraShake = Math.max(this.cameraShake, kind === "ultimate" ? 0.95 : kind === "skill" ? 0.42 : 0.18);
+      this.cameraShake = Math.max(this.cameraShake, kind === "ultimate" ? 0.22 : kind === "skill" ? 0.12 : 0.04);
       if (kind === "ultimate") this.cinematicTarget = { object: target || this.playerMesh, until: now + 780, phase: 0 };
       if (kind === "skill" && characterId === "nyx" && target) {
         const distance = Math.hypot(target.position.x - this.state.player.x, target.position.z - this.state.player.z) || 1;
@@ -7782,11 +8651,17 @@
         this.state.player.health = clamp(this.state.player.health + 34, 0, this.state.player.maxHealth);
       }
 
-      if (this.authoritative) {
-        this.emitInput({ action: kind, targetId: target?.userData?.id || "", power: 1 });
-      } else if (target) {
-        this.damageTarget(target, damageBase, element, kind);
-      }
+      const contactDelay = kind === "ultimate" ? 360 : kind === "skill" ? 235 : 145;
+      root.setTimeout(() => {
+        if (this.destroyed || !this.running) return;
+        if (this.authoritative) {
+          this.emitInput({ action: kind, targetId: target?.userData?.id || "", power: 1 });
+          return;
+        }
+        if (!target || target.visible === false || target.userData?.defeated) return;
+        const distanceAtContact = Math.hypot(target.position.x - this.state.player.x, target.position.z - this.state.player.z);
+        if (distanceAtContact <= range + 1.2) this.damageTarget(target, damageBase, element, kind);
+      }, contactDelay);
     }
 
     swingAnimation(kind) {
@@ -7802,6 +8677,8 @@
       if (target.userData.type === "training") {
         this.recordTrainingDamage(baseDamage);
         this.spawnHitEffect(target.position, ELEMENTS[element].color);
+        this.hitStopUntil = performance.now() + (kind === "ultimate" ? 95 : kind === "skill" ? 62 : 38);
+        this.cameraShake = Math.max(this.cameraShake, kind === "ultimate" ? 1 : kind === "skill" ? 0.48 : 0.25);
         return;
       }
       const data = target.userData;
@@ -8628,6 +9505,8 @@
           : "proxy 3D thích ứng";
       const saved = this.state.appearance.savedPresets || [];
       const nativeFaceChannels = Math.min(52, Number(runtime?.facialChannels || 0));
+      const bakedMotionCount = this.motionLibraryManifest?.clips?.length || 0;
+      const missingMotionCount = this.motionLibraryManifest?.missing?.length || 0;
       const dna = encodeCharacterDNA(recipe, id);
       const modelOptions = [...new Map([
         ...APPEARANCE_ASSETS.baseModels.map((modelId) => [modelId, { modelId, label: modelId }]),
@@ -8642,7 +9521,7 @@
             <span class="har-chip ${trulyRigged ? "is-active" : ""}">${trulyRigged ? "RIGGED GLB" : gltfActive ? "GLB FALLBACK" : "PBR FALLBACK"}</span>
           </div>
           <div class="har-character-runtime-grid">
-            <div><small>Motion</small><strong>${escapeHtml(runtime?.state || this.activeAnimation || "idle")}</strong><span>${runtime?.clips?.size || 0} clip GLB</span></div>
+            <div><small>Motion</small><strong>${escapeHtml(runtime?.state || this.activeAnimation || "idle")}</strong><span>${runtime?.clips?.size || 0} clip GLB · ${escapeHtml(this.motionLibraryStatus)}</span></div>
             <div><small>Skeleton</small><strong>${runtime ? Object.keys(runtime.bones || {}).length : 0}/${Object.keys(HH_HUMANOID_SKELETON).length}</strong><span>HH slots nhận diện</span></div>
             <div><small>Face</small><strong>52 driver</strong><span>${nativeFaceChannels}/52 native morph · ${runtime?.faceFallback?.driver || "procedural fallback"}</span></div>
             <div><small>LOD</small><strong>${escapeHtml(mesh?.userData?.modelTier || "hero")}</strong><span>${escapeHtml(lodCapability)}</span></div>
@@ -8651,7 +9530,7 @@
             <div><small>HEAD TARGET</small><strong>18–28K</strong><span>GLB nhập vào được đo thực tế; Human Rig tích hợp không giả nhận đủ chuẩn head mesh.</span></div>
             <div><small>SKIN STACK</small><strong>5 lớp</strong><span>micro-normal · roughness · SSS approximation · flush · wetness</span></div>
             <div><small>EYE SYSTEM</small><strong>3 lớp</strong><span>iris · cornea · tear response khi model có mesh tách</span></div>
-            <div><small>ANIMATION</small><strong>8 hướng</strong><span>inertial crossfade · foot contact · secondary bones</span></div>
+            <div><small>ANIMATION V13</small><strong>${bakedMotionCount} baked</strong><span>${missingMotionCount} clip chờ asset · blend space · foot lock</span></div>
           </div>
           <div class="har-section har-character-import">
             <div><h3>Nhập GLB nén có kiểm định</h3><p>Hỗ trợ Draco, Meshopt và KTX2. File được giải mã, đo giới hạn GPU và kiểm tra cục bộ trước khi thay nhân vật; không tải lên máy chủ HH.</p><small>Decoder: ${this.characterDecodersReady ? "Draco · Meshopt · KTX2 sẵn sàng" : "GLB cơ bản"} · tối đa ${Math.round(CHARACTER_IMPORT_LIMITS.triangles / 1000)}K triangles</small></div>

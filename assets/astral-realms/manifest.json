@@ -1,8 +1,8 @@
 {
-  "version": 3,
-  "createdAt": "2026-07-28",
+  "version": 4,
+  "createdAt": "2026-07-29",
   "generator": "OpenAI built-in ImageGen",
-  "rights": "Original visual assets generated for HH Astral Realms plus Three.js example GLB assets distributed under the MIT license in vendor/THREE-LICENSE.txt.",
+  "rights": "Original HH visual assets, Three.js example GLB assets under MIT, and a CC0 animation-only derivative from Quaternius Universal Animation Library Standard.",
   "assets": [
     {
       "file": "astral-realms-panorama-v1.webp",
@@ -29,6 +29,18 @@
       "source": "Three.js examples/models/gltf/Soldier.glb",
       "license": "MIT · vendor/THREE-LICENSE.txt",
       "sha256": "DFB230FC1F942F259DD00281A1186953AD602FC5D69067CE63E24B2AA439736B"
+    },
+    {
+      "file": "animations/hh-human-motion-v13.glb",
+      "role": "Animation-only library baked offline onto HH_VALID_HUMANOID_V1 and compressed with Meshopt",
+      "source": "HH Vanguard bundled clips plus Quaternius Universal Animation Library Standard",
+      "license": "MIT repository asset + CC0-1.0 · tools/astral-animation-pipeline/THIRD_PARTY_NOTICES.md",
+      "sha256": "6386647DED241D64132B9A780DACCC7CF8161B04FA6C553A796BC53239C406AB"
+    },
+    {
+      "file": "animations/motion-library-v13.json",
+      "role": "Truthful baked-clip manifest, foot-contact markers and missing-clip inventory",
+      "sha256": "62FD3E2302C6E5D1EFF4E4E8EB7DAB27ACECFB011C6153461B397779BC06B1C8"
     }
   ]
 }
