@@ -53,7 +53,7 @@ test("Character V13 assets are cache-busted across route and worker", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const index = read("index.html");
-  assert.match(loader, /astral-realms\.js\?v=3[1-9]/);
-  assert.match(worker, /astral-realms\.js\?v=3[1-9]/);
-  assert.match(index, /performance-loader\.js\?v=9[1-9]/);
+  assert.match(loader, /astral-realms\.js\?v=40/);
+  assert.match(worker, /astral-realms\.js\?v=40/);
+  assert.match(index, /performance-loader\.js\?v=101/);
 });

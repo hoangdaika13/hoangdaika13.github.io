@@ -42,7 +42,8 @@ test("licensed environment models remain integrated independently of Hero qualit
     assert.ok(bytes.length > 100_000, `${file} should contain a real CC0 environment model`);
     assert.equal(bytes.subarray(0, 4).toString("ascii"), "glTF");
   }
-  assert.match(source, /scene\.environment\s*=\s*this\.photorealAssets\.panorama/);
+  assert.match(source, /scene\.environment\s*=\s*this\.photorealAssets\.ibl\?\.texture\s*\|\|\s*this\.photorealAssets\.panorama/);
+  assert.match(source, /new THREE\.PMREMGenerator\(this\.renderer\)/);
   assert.doesNotMatch(source, /scene\.background\s*=\s*this\.photorealAssets\.panorama/);
 });
 
@@ -87,7 +88,10 @@ test("Hero arm proportions stay anatomical and idle fingers remain relaxed", () 
 test("route and offline cache request the Hero-only bundle", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  assert.match(loader, /astral-realms\.js\?v=3[1-9]/);
+  for (const asset of ["astral-realms.css?v=40", "astral-realms.js?v=40"]) {
+    assert.ok(loader.includes(asset), `route loader missing ${asset}`);
+    assert.ok(worker.includes(asset), `offline cache missing ${asset}`);
+  }
   assert.match(worker, /valid-asian-f-1-casual\.glb/);
   assert.doesNotMatch(worker, /hh-human-asteria|hh-human-vanguard/);
 });

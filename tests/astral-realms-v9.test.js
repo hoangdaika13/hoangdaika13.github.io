@@ -20,7 +20,7 @@ test("Character V13 Hero Prime is the only release selected by the game route an
   const worker = read("sw.js");
 
   assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*13/);
-  for (const asset of ["astral-realms.css?v=36", "astral-realms.js?v=36"]) {
+  for (const asset of ["astral-realms.css?v=40", "astral-realms.js?v=40"]) {
     assert.ok(loader.includes(asset), `route loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }

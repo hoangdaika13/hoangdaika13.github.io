@@ -45,6 +45,29 @@
   const CHARACTER_VISUAL_VERSION = 13;
   const HERO_CHARACTER_MODEL_ID = "valid-asian-f-1-casual";
   const HERO_CHARACTER_ASSET_URL = "./assets/astral-realms/characters/default/valid-asian-f-1-casual.glb";
+  const ULTRA_PHOTOREAL_VERSION = 1;
+  const ULTRA_PHOTOREAL_PROFILE = Object.freeze({
+    quality: "cinematic",
+    renderStyle: "cinematic",
+    visualStyle: "photoreal",
+    vfxLevel: "cinematic",
+    dynamicResolution: false,
+    pixelRatioCap: 2,
+    shadowMapSize: 4096,
+    shadowRadius: 46,
+    terrainSegments: 256,
+    terrainTextureSize: 1024,
+    detailTextureSize: 512,
+    hairCardCount: 40,
+    minExposure: 1.2,
+    maxExposure: 1.42,
+    fogScale: 0.76,
+    natureDensity: 2.1,
+    environmentIntensity: 1.18,
+    weatherDensity: 92,
+    enemyActiveRadius: 150,
+    faceDetectionInterval: 50
+  });
   const CHARACTER_MODEL_TIERS = Object.freeze({
     hero: { label: "Hero Prime · Full Quality", triangles: "58K+", texture: "Full atlas", face: 52, distance: Infinity, updateHz: 60 }
   });
@@ -146,6 +169,51 @@
     "mouthSmileLeft", "mouthSmileRight", "mouthStretchLeft", "mouthStretchRight", "mouthUpperUpLeft",
     "mouthUpperUpRight", "noseSneerLeft", "noseSneerRight"
   ]);
+  const HERO_NATIVE_FACE_MORPH_MAP = Object.freeze({
+    eyeBlinkLeft: [["h_expressions.LeyeClose_h", 1]],
+    eyeBlinkRight: [["h_expressions.ReyeClose_h", 1]],
+    eyeSquintLeft: [["h_expressions.Lsquint_h", 1]],
+    eyeSquintRight: [["h_expressions.Rsquint_h", 1]],
+    eyeWideLeft: [["h_expressions.LeyeOpen_h", 0.9]],
+    eyeWideRight: [["h_expressions.ReyeOpen_h", 0.9]],
+    browDownLeft: [["h_expressions.LbrowDown_h", 0.82], ["h_expressions.LLbrowDown_h", 0.42]],
+    browDownRight: [["h_expressions.RbrowDown_h", 0.82], ["h_expressions.RRbrowDown_h", 0.42]],
+    browInnerUp: [["h_expressions.LbrowUp_h", 0.72], ["h_expressions.RbrowUp_h", 0.72]],
+    browOuterUpLeft: [["h_expressions.LLbrowUp_h", 0.82]],
+    browOuterUpRight: [["h_expressions.RRbrowUp_h", 0.82]],
+    cheekPuff: [["h_expressions.Chew_h", 0.34]],
+    cheekSquintLeft: [["h_expressions.Lsquint_h", 0.58]],
+    cheekSquintRight: [["h_expressions.Rsquint_h", 0.58]],
+    jawForward: [["h_expressions.JawFront_h", 0.86]],
+    jawLeft: [["h_expressions.Ljaw_h", 0.9]],
+    jawOpen: [["h_expressions.MouthOpen_h", 1], ["t_MouthOpen_h", 0.8]],
+    jawRight: [["h_expressions.Rjaw_h", 0.9]],
+    mouthClose: [["h_expressions.MPB_Up_h", 0.78], ["h_expressions.MPB_Down_h", 0.78], ["t_MPB_h", 0.68]],
+    mouthDimpleLeft: [["h_expressions.LsmileClose_h", 0.42]],
+    mouthDimpleRight: [["h_expressions.RsmileClose_h", 0.42]],
+    mouthFrownLeft: [["h_expressions.LmouthSad_h", 0.9]],
+    mouthFrownRight: [["h_expressions.RmouthSad_h", 0.9]],
+    mouthFunnel: [["h_expressions.UH_OO_h", 0.76], ["t_UH_OO_h", 0.54]],
+    mouthLeft: [["h_expressions.LlipSide_h", 0.82]],
+    mouthLowerDownLeft: [["h_expressions.LlipDown_h", 0.82]],
+    mouthLowerDownRight: [["h_expressions.RlipDown_h", 0.82]],
+    mouthPressLeft: [["h_expressions.Lblow_h", 0.5]],
+    mouthPressRight: [["h_expressions.Rblow_h", 0.5]],
+    mouthPucker: [["h_expressions.Kiss_h", 0.92], ["h_expressions.UW_U_h", 0.48]],
+    mouthRight: [["h_expressions.RlipSide_h", 0.82]],
+    mouthRollLower: [["h_expressions.MPB_Down_h", 0.56]],
+    mouthRollUpper: [["h_expressions.MPB_Up_h", 0.56]],
+    mouthShrugLower: [["h_expressions.Chin_h", 0.52]],
+    mouthShrugUpper: [["h_expressions.RlipUp_h", 0.35], ["h_expressions.LlipUp_h", 0.35]],
+    mouthSmileLeft: [["h_expressions.LsmileClose_h", 0.92], ["h_expressions.LsmileOpen_h", 0.34]],
+    mouthSmileRight: [["h_expressions.RsmileClose_h", 0.92], ["h_expressions.RsmileOpen_h", 0.34]],
+    mouthStretchLeft: [["h_expressions.LlipCorner_h", 0.76]],
+    mouthStretchRight: [["h_expressions.RlipCorner_h", 0.76]],
+    mouthUpperUpLeft: [["h_expressions.LlipUp_h", 0.82]],
+    mouthUpperUpRight: [["h_expressions.RlipUp_h", 0.82]],
+    noseSneerLeft: [["h_expressions.Ldisgust_h", 0.72], ["h_expressions.Lnostril_h", 0.42]],
+    noseSneerRight: [["h_expressions.Rdisgust_h", 0.72], ["h_expressions.Rnostril_h", 0.42]]
+  });
   const CHARACTER_VISEMES = Object.freeze({
     neutral: {},
     A: { jawOpen: 0.72, mouthFunnel: 0.08, mouthStretchLeft: 0.18, mouthStretchRight: 0.18 },
@@ -283,7 +351,7 @@
     abyss: { accent: "#ff5e9f", fog: 0x170516, fogDensity: 0.012, particle: 0xff83bb, wind: 0.18, precipitation: "gravity-shards", actor: "fractures" },
     dungeon: { accent: "#ff70cf", fog: 0x16051f, fogDensity: 0.014, particle: 0xff8ee1, wind: 0.12, precipitation: "void-static", actor: "fractures" }
   });
-  const WORLD_ART_VERSION = 3;
+  const WORLD_ART_VERSION = 4;
   const WORLD_ART_PROFILES = Object.freeze({
     central: Object.freeze({
       truth: "Identity",
@@ -473,9 +541,11 @@
     })
   });
   const WORLD_ART_BUDGETS = Object.freeze({
-    static: Object.freeze({ vistaInstances: 6, localParticles: 12, activeRadius: 70, shadowRadius: 28, skyUpdateMs: 120 }),
-    balanced: Object.freeze({ vistaInstances: 10, localParticles: 28, activeRadius: 92, shadowRadius: 44, skyUpdateMs: 72 }),
-    cinematic: Object.freeze({ vistaInstances: 16, localParticles: 48, activeRadius: 112, shadowRadius: 62, skyUpdateMs: 48 })
+    // Accessibility modes stop motion/particles in CSS and the frame loop;
+    // they do not substitute a lower geometry or texture tier.
+    static: Object.freeze({ vistaInstances: 28, localParticles: 88, activeRadius: 150, shadowRadius: 92, skyUpdateMs: 24 }),
+    balanced: Object.freeze({ vistaInstances: 28, localParticles: 88, activeRadius: 150, shadowRadius: 92, skyUpdateMs: 24 }),
+    cinematic: Object.freeze({ vistaInstances: 28, localParticles: 88, activeRadius: 150, shadowRadius: 92, skyUpdateMs: 24 })
   });
   const WORLD_WEATHER_KIND_ALIASES = Object.freeze({
     clear: "controlled-clear",
@@ -832,12 +902,12 @@
 
   function classifyCharacterAsset(report = {}) {
     const checks = [
-      { id: "head", label: "Head mesh 20–28K", pass: report.headVertices >= HERO_ASSET_REQUIREMENTS.headVerticesMin && report.headVertices <= HERO_ASSET_REQUIREMENTS.headVerticesMax, value: `${Number(report.headVertices || 0).toLocaleString("vi-VN")} vertices` },
+      { id: "head", label: "Hero surface 20–28K", pass: report.headVertices >= HERO_ASSET_REQUIREMENTS.headVerticesMin && report.headVertices <= HERO_ASSET_REQUIREMENTS.headVerticesMax, value: `${Number(report.headVertices || 0).toLocaleString("vi-VN")} vertices` },
       { id: "face", label: "52 facial morph native", pass: report.faceMorphTargets >= HERO_ASSET_REQUIREMENTS.nativeFaceMorphs, value: `${report.faceMorphTargets || 0}/52` },
       { id: "skeleton", label: "Skeleton web 80–120 bone", pass: report.bones >= HERO_ASSET_REQUIREMENTS.bonesMin && report.bones <= HERO_ASSET_REQUIREMENTS.bonesMax, value: `${report.bones || 0} bone` },
       { id: "coverage", label: "HH Humanoid coverage ≥ 80%", pass: Number(report.skeletonCoverage || 0) >= HERO_ASSET_REQUIREMENTS.skeletonCoverage, value: `${Math.round(Number(report.skeletonCoverage || 0) * 100)}%` },
       { id: "anatomy", label: "Mắt, giác mạc, tear line, răng, lưỡi, lông mi, tóc tách mesh", pass: report.separateEyeMeshes >= 2 && report.corneaMeshes >= 1 && report.tearLineMeshes >= 1 && report.teethMeshes >= 1 && report.tongueMeshes >= 1 && report.eyelashMeshes >= 1 && report.hairCardMeshes >= 1, value: `${report.separateEyeMeshes || 0}/2 mắt · ${[report.corneaMeshes, report.tearLineMeshes, report.teethMeshes, report.tongueMeshes, report.eyelashMeshes, report.hairCardMeshes].filter(Boolean).length}/6 module` },
-      { id: "pbr", label: "PBR skin maps", pass: report.normalMaps >= 1 && report.roughnessMaps >= 1 && report.thicknessMaps >= 1, value: `N${report.normalMaps || 0} · R${report.roughnessMaps || 0} · T${report.thicknessMaps || 0}` },
+      { id: "pbr", label: "PBR physical surface", pass: report.normalMaps >= 1 && report.physicalMaterials >= 1, value: `N${report.normalMaps || 0} · Physical ${report.physicalMaterials || 0} · atlas opaque` },
       { id: "textures", label: "Texture tối đa 2K", pass: report.maxTextureSize > 0 && report.maxTextureSize <= HERO_ASSET_REQUIREMENTS.textureMax, value: `${report.maxTextureSize || 0}px` },
       { id: "single-hero", label: "Một Hero mesh duy nhất", pass: report.skinnedMeshes >= 1, value: `${report.skinnedMeshes || 0} SkinnedMesh · không proxy` }
     ];
@@ -1352,7 +1422,7 @@
         element: "plasma",
         x: 0,
         y: 1.2,
-        z: 5,
+        z: 10.5,
         rotation: 0,
         checkpoint: "central",
         weapon: "starter-blade",
@@ -1441,10 +1511,10 @@
       defeated: {},
       skills: { plasmaDrive: 0, astralGuard: 0, staminaCore: 0 },
       settings: {
-        quality: "auto",
-        renderStyle: "realistic",
+        quality: ULTRA_PHOTOREAL_PROFILE.quality,
+        renderStyle: ULTRA_PHOTOREAL_PROFILE.renderStyle,
         rendererMode: "auto",
-        visualStyle: "photoreal",
+        visualStyle: ULTRA_PHOTOREAL_PROFILE.visualStyle,
         characterMode: "hero",
         characterQuality: "hero",
         characterPipeline: "hero-core",
@@ -1456,12 +1526,12 @@
         eyePerformance: true,
         secondaryMotion: true,
         digitalHumanQuality: "hero",
-        vfxLevel: "balanced",
+        vfxLevel: ULTRA_PHOTOREAL_PROFILE.vfxLevel,
         livingWorld: true,
-        dynamicResolution: true,
-        shadows: "high",
+        dynamicResolution: ULTRA_PHOTOREAL_PROFILE.dynamicResolution,
+        shadows: "ultra",
         postFx: true,
-        weatherDensity: 80,
+        weatherDensity: 92,
         cameraShake: 65,
         volume: 42,
         sound: true,
@@ -1770,25 +1840,27 @@
     if (state.story.hiddenSignals.aionRecognizesCycle && Number(state.story.newGamePlus || 0) < 1) {
       state.story.newGamePlus = clamp(Number(state.story.hiddenSignals.aionRecognizesCycle), 0, 99);
     }
-    if (!["auto", "low", "medium", "high", "cinematic"].includes(state.settings.quality)) state.settings.quality = "auto";
-    if (!["realistic", "cinematic", "anime"].includes(state.settings.renderStyle)) state.settings.renderStyle = "realistic";
+    state.settings.quality = ULTRA_PHOTOREAL_PROFILE.quality;
+    state.settings.renderStyle = ULTRA_PHOTOREAL_PROFILE.renderStyle;
     if (!["auto", "webgpu", "webgl"].includes(state.settings.rendererMode)) state.settings.rendererMode = "auto";
-    if (!["photoreal", "hybrid", "performance"].includes(state.settings.visualStyle)) state.settings.visualStyle = "photoreal";
+    state.settings.visualStyle = ULTRA_PHOTOREAL_PROFILE.visualStyle;
     state.settings.characterMode = "hero";
     state.settings.characterQuality = "hero";
     state.settings.characterPipeline = "hero-core";
     if (!GENESIS_STUDIOS[state.settings.characterStudio]) state.settings.characterStudio = "central";
-    state.settings.facialAnimation = state.settings.facialAnimation !== false;
-    state.settings.surfaceFx = state.settings.surfaceFx !== false;
-    state.settings.microDetail = state.settings.microDetail !== false;
-    state.settings.naturalMotion = state.settings.naturalMotion !== false;
-    state.settings.eyePerformance = state.settings.eyePerformance !== false;
-    state.settings.secondaryMotion = state.settings.secondaryMotion !== false;
+    state.settings.facialAnimation = true;
+    state.settings.surfaceFx = true;
+    state.settings.microDetail = true;
+    state.settings.naturalMotion = true;
+    state.settings.eyePerformance = true;
+    state.settings.secondaryMotion = true;
     state.settings.digitalHumanQuality = "hero";
-    if (!["static", "balanced", "cinematic"].includes(state.settings.vfxLevel)) state.settings.vfxLevel = "balanced";
-    state.settings.livingWorld = state.settings.livingWorld !== false;
-    state.settings.dynamicResolution = state.settings.dynamicResolution !== false;
-    state.settings.weatherDensity = clamp(state.settings.weatherDensity, 0, 100);
+    state.settings.vfxLevel = ULTRA_PHOTOREAL_PROFILE.vfxLevel;
+    state.settings.livingWorld = true;
+    state.settings.dynamicResolution = ULTRA_PHOTOREAL_PROFILE.dynamicResolution;
+    state.settings.shadows = "ultra";
+    state.settings.postFx = true;
+    state.settings.weatherDensity = ULTRA_PHOTOREAL_PROFILE.weatherDensity;
     state.settings.cameraShake = clamp(state.settings.cameraShake, 0, 100);
     if (!CHARACTERS[state.roster.activeId]) state.roster.activeId = "lyra";
     state.roster.unlocked = Array.isArray(state.roster.unlocked)
@@ -1938,7 +2010,7 @@
       this.genesisOriginalLighting = null;
       this.lastSurfaceUpdateAt = 0;
       this.toonGradient = null;
-      this.photorealAssets = { panorama: null };
+      this.photorealAssets = { panorama: null, ibl: null };
       this.photorealStatus = "pending";
       this.terrainTexture = null;
       this.activeAnimation = "idle";
@@ -2053,8 +2125,6 @@
       this.fpsFrames = 0;
       this.fpsStartedAt = performance.now();
       this.fps = 0;
-      this.renderScale = 1;
-      this.dynamicResolution = 1;
       this.forceCompatibility = false;
       this.lastStreamingAt = 0;
       this.dpsSamples = [];
@@ -2074,7 +2144,7 @@
 
     renderShell() {
       this.host.innerHTML = `
-        <section class="har-shell" data-har-shell data-quality="auto" aria-label="HH Astral Realms">
+        <section class="har-shell" data-har-shell data-quality="cinematic" aria-label="HH Astral Realms">
           <div class="har-stage" data-har-stage>
             <canvas data-har-world aria-label="Thế giới 3D HH Astral Realms"></canvas>
             <div class="har-postfx" aria-hidden="true"></div>
@@ -2308,16 +2378,24 @@
       const memory = Number(root.navigator?.deviceMemory || 0);
       const cores = Number(root.navigator?.hardwareConcurrency || 0);
       const constrained = forced || (memory > 0 && memory <= 4) || (cores > 0 && cores <= 4);
+      this.state.settings.quality = ULTRA_PHOTOREAL_PROFILE.quality;
+      this.state.settings.renderStyle = ULTRA_PHOTOREAL_PROFILE.renderStyle;
       this.state.settings.characterMode = "hero";
       this.state.settings.characterQuality = "hero";
       this.state.settings.characterPipeline = "hero-core";
       this.state.settings.digitalHumanQuality = "hero";
-      this.state.settings.visualStyle = "photoreal";
+      this.state.settings.visualStyle = ULTRA_PHOTOREAL_PROFILE.visualStyle;
+      this.state.settings.vfxLevel = ULTRA_PHOTOREAL_PROFILE.vfxLevel;
+      this.state.settings.dynamicResolution = ULTRA_PHOTOREAL_PROFILE.dynamicResolution;
+      this.state.settings.shadows = "ultra";
+      this.state.settings.postFx = true;
+      this.state.settings.livingWorld = true;
       this.state.settings.microDetail = true;
       this.state.settings.facialAnimation = true;
       this.state.settings.eyePerformance = true;
       this.state.settings.secondaryMotion = true;
-      this.root.dataset.compatibility = constrained ? "hero-required" : "hero-only";
+      this.root.dataset.compatibility = constrained ? "ultra-required" : "ultra-only";
+      this.root.dataset.ultraPhotoreal = `v${ULTRA_PHOTOREAL_VERSION}`;
       this.syncMotionPreference();
       return constrained;
     }
@@ -2348,15 +2426,13 @@
         this.root.dataset.vfx = this.state.settings.vfxLevel;
         this.syncMotionPreference();
         this.setLoading(12, "Đang kiểm tra trình duyệt và bộ nhớ đồ họa...");
-        if (!this.supportsRenderer()) throw new Error("Trình duyệt không hỗ trợ WebGL hoặc WebGPU. Hãy bật tăng tốc phần cứng hoặc dùng trình duyệt mới hơn.");
+        if (!this.supportsRenderer()) throw new Error("Trình duyệt không hỗ trợ WebGL2 hoặc WebGPU mà Ultra Photoreal yêu cầu. Hãy bật tăng tốc phần cứng hoặc dùng trình duyệt mới hơn.");
         this.setLoading(28, compatibilityMode
           ? "Thiết bị giới hạn đã được phát hiện · Hero Prime vẫn giữ nguyên chất lượng..."
           : "Đang chọn WebGPU hoặc WebGL2 cho Hero Prime...");
         // WebGPU remains opt-in. Some Chromium/GPU combinations terminate the
         // graphics process instead of throwing a recoverable initialization error.
-        const wantsWebGPU = this.state.settings.rendererMode === "webgpu"
-          && this.webgpuAvailable
-          && this.state.settings.quality !== "low";
+        const wantsWebGPU = this.state.settings.rendererMode === "webgpu" && this.webgpuAvailable;
         if (wantsWebGPU) {
           try {
             this.THREE = await import("./vendor/three.webgpu.min.js");
@@ -2389,8 +2465,10 @@
         this.initAudio();
         this.bindGameEvents();
         this.initRealtime();
-        this.setLoading(96, "Đang đồng bộ checkpoint gần nhất...");
+        this.setLoading(91, "Đang biên dịch shader Ultra và chuẩn bị bóng đổ 4K...");
         this.updateCamera(true, 0.016);
+        await this.prewarmUltraRenderer();
+        this.setLoading(96, "Đang đồng bộ checkpoint gần nhất...");
         this.renderer.render(this.scene, this.camera);
         this.lastRenderSuccessAt = performance.now();
         const needsGenesis = !this.state.appearance.creatorCompletedAt
@@ -2767,24 +2845,42 @@
       if (!this.THREE || !this.renderer || !this.playerMesh) return;
       this.teardownGenesisPreview({ restorePlayer: true });
       const THREE = this.THREE;
+      if (!this.photorealAssets.panorama) throw new Error("Character Genesis cần IBL Ultra; không dùng ánh sáng dự phòng.");
       this.genesisScene = new THREE.Scene();
+      this.genesisScene.background = new THREE.Color(0x0a1425);
+      this.genesisScene.environment = this.photorealAssets.ibl?.texture || this.photorealAssets.panorama;
       this.genesisCamera = new THREE.PerspectiveCamera(38, 1, 0.04, 90);
       this.genesisCamera.position.set(0, 1.55, 5.2);
       this.genesisCameraTarget = new THREE.Vector3(0, 1.48, 0);
 
-      const ambient = new THREE.HemisphereLight(0xc8edff, 0x11101b, 1.12);
+      // Keep facial planes and micro-normal detail visible instead of washing
+      // the Hero into a uniformly pale silhouette.
+      const ambient = new THREE.HemisphereLight(0xd7f2ff, 0x34251f, 0.78);
       ambient.name = "GenesisStudioAmbient";
-      const key = new THREE.DirectionalLight(0xffffff, 2.55);
+      const key = new THREE.DirectionalLight(0xfff4e5, 2.18);
       key.name = "GenesisStudioKey";
-      key.position.set(3.8, 5.4, 4.7);
-      const fill = new THREE.DirectionalLight(0x79cfff, 1.12);
+      key.position.set(3.4, 5.2, 5.8);
+      key.castShadow = true;
+      key.shadow.mapSize.set(ULTRA_PHOTOREAL_PROFILE.shadowMapSize, ULTRA_PHOTOREAL_PROFILE.shadowMapSize);
+      key.shadow.camera.left = -2.5;
+      key.shadow.camera.right = 2.5;
+      key.shadow.camera.top = 3.7;
+      key.shadow.camera.bottom = -0.5;
+      key.shadow.camera.near = 0.1;
+      key.shadow.camera.far = 16;
+      key.shadow.bias = -0.0002;
+      key.shadow.normalBias = 0.02;
+      const fill = new THREE.DirectionalLight(0x9ddcff, 0.62);
       fill.name = "GenesisStudioFill";
-      fill.position.set(-4.2, 2.7, 2.2);
-      const rim = new THREE.PointLight(0xff68cb, 1.92, 16, 1.5);
+      fill.position.set(-4.2, 3.1, 4.4);
+      const rim = new THREE.PointLight(0xff87d6, 1.12, 18, 1.5);
       rim.name = "GenesisStudioRim";
       rim.position.set(0.5, 3.3, -3.2);
-      this.genesisScene.add(ambient, key, fill, rim);
-      this.genesisLights = { ambient, key, fill, rim };
+      const face = new THREE.DirectionalLight(0xe8f7ff, 0.34);
+      face.name = "GenesisFaceCatchlight";
+      face.position.set(0, 2.7, 6.2);
+      this.genesisScene.add(ambient, key, fill, rim, face);
+      this.genesisLights = { ambient, key, fill, rim, face };
 
       this.genesisActualModel = this.playerMesh;
       this.genesisOriginalParent = this.playerMesh.parent || this.world;
@@ -2813,6 +2909,28 @@
       this.genesisAttachmentVisibility = (this.playerMesh.userData?.lodVariants?.attachments || []).map((object) => ({ object, visible: object.visible }));
       this.genesisAttachmentVisibility.forEach(({ object }) => { object.visible = false; });
       this.fitGenesisCamera(this.playerMesh, "body");
+      this.prewarmGenesisRenderer();
+    }
+
+    prewarmGenesisRenderer() {
+      if (!this.renderer || !this.genesisScene || !this.genesisCamera) return;
+      const scene = this.genesisScene;
+      const camera = this.genesisCamera;
+      this.root.dataset.genesisPrewarm = "warming";
+      const compile = typeof this.renderer.compileAsync === "function"
+        ? this.renderer.compileAsync(scene, camera)
+        : Promise.resolve(this.renderer.compile?.(scene, camera));
+      this.genesisPrewarmPromise = Promise.race([
+        Promise.resolve(compile).then(() => "ready"),
+        new Promise((resolve) => root.setTimeout(() => resolve("timeout"), 12000))
+      ]).then((status) => {
+        if (scene === this.genesisScene && camera === this.genesisCamera) {
+          this.root.dataset.genesisPrewarm = status === "ready" ? "ready" : "partial";
+        }
+      }).catch((error) => {
+        if (scene === this.genesisScene) this.root.dataset.genesisPrewarm = "partial";
+        console.warn?.("Astral Genesis prewarm continued with runtime compilation.", error);
+      });
     }
 
     teardownGenesisPreview({ restorePlayer = true } = {}) {
@@ -3128,8 +3246,13 @@
       const viewport = this.root.querySelector(".har-genesis__viewport");
       const canvasRect = canvas.getBoundingClientRect();
       const viewRect = viewport?.getBoundingClientRect?.() || canvasRect;
-      const fullWidth = Math.max(1, stage?.clientWidth || canvasRect.width);
-      const fullHeight = Math.max(1, stage?.clientHeight || canvasRect.height);
+      const measuredWidth = Number(stage?.clientWidth || canvasRect.width || 0);
+      const measuredHeight = Number(stage?.clientHeight || canvasRect.height || 0);
+      // Never clear the full canvas for a transient 0/1 px layout. Waiting for
+      // a real viewport prevents the black flash seen during heavy shader load.
+      if (measuredWidth < 32 || measuredHeight < 32 || viewRect.width < 32 || viewRect.height < 32) return false;
+      const fullWidth = Math.max(32, measuredWidth);
+      const fullHeight = Math.max(32, measuredHeight);
       this.genesisRenderSize ||= new this.THREE.Vector2();
       this.renderer.getSize(this.genesisRenderSize);
       if (Math.abs(this.genesisRenderSize.x - fullWidth) > 1 || Math.abs(this.genesisRenderSize.y - fullHeight) > 1) {
@@ -3289,13 +3412,13 @@
         this.appearanceDirty = true;
       }
       const profile = {
-        daylight: { time: 11.5, exposure: 1.04 },
-        night: { time: 22.2, exposure: 0.94 },
-        neon: { time: 1.4, exposure: 1.16 },
-        cinematic: { time: 17.8, exposure: 1.2 }
+        daylight: { time: 11.5, exposure: 1.26 },
+        night: { time: 22.2, exposure: 1.2 },
+        neon: { time: 1.4, exposure: 1.32 },
+        cinematic: { time: 17.8, exposure: 1.3 }
       }[safePreset];
       this.state.worldTime = profile.time;
-      if (this.renderer) this.renderer.toneMappingExposure = profile.exposure;
+      if (this.renderer) this.renderer.toneMappingExposure = clamp(profile.exposure, ULTRA_PHOTOREAL_PROFILE.minExposure, ULTRA_PHOTOREAL_PROFILE.maxExposure);
       this.updateWorld?.(0, performance.now());
     }
 
@@ -3683,7 +3806,7 @@
       this.livingWorldActors = [];
       this.footprints = [];
       Object.values(this.photorealAssets).forEach((texture) => texture?.dispose?.());
-      this.photorealAssets = { panorama: null };
+      this.photorealAssets = { panorama: null, ibl: null };
       this.disposeBuiltInCharacterAssets();
       this.disposeLicensedEnvironmentAssets();
       this.photorealStatus = "pending";
@@ -3716,7 +3839,7 @@
     supportsRenderer() {
       try {
         const probe = document.createElement("canvas");
-        return Boolean(root.navigator?.gpu || probe.getContext("webgl2", { failIfMajorPerformanceCaveat: false }) || probe.getContext("webgl"));
+        return Boolean(root.navigator?.gpu || probe.getContext("webgl2", { failIfMajorPerformanceCaveat: false }));
       } catch {
         return false;
       }
@@ -3730,12 +3853,11 @@
       this.scene.fog = new THREE.FogExp2(0x071023, 0.0095);
       this.camera = new THREE.PerspectiveCamera(58, 1, 0.1, 420);
       this.camera.position.set(0, 10, 14);
-      const quality = this.state.settings.quality;
       try {
         if (this.rendererBackend === "webgpu" && THREE.WebGPURenderer) {
           this.renderer = new THREE.WebGPURenderer({
             canvas,
-            antialias: !["low"].includes(quality),
+            antialias: true,
             powerPreference: "high-performance",
             alpha: false
           });
@@ -3743,8 +3865,11 @@
         } else {
           this.renderer = new THREE.WebGLRenderer({
             canvas,
-            antialias: !["low"].includes(quality),
+            antialias: true,
             powerPreference: "high-performance",
+            precision: "highp",
+            depth: true,
+            stencil: false,
             alpha: false
           });
         }
@@ -3760,21 +3885,37 @@
         this.camera.position.set(0, 10, 14);
         this.renderer = new THREE.WebGLRenderer({
           canvas,
-          antialias: !["low"].includes(quality),
+          antialias: true,
           powerPreference: "high-performance",
+          precision: "highp",
+          depth: true,
+          stencil: false,
           alpha: false
         });
       }
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure = quality === "cinematic" ? 1.18 : 1.04;
+      this.renderer.toneMappingExposure = ULTRA_PHOTOREAL_PROFILE.minExposure;
+      const ultraTextureLimit = Number(
+        this.renderer.capabilities?.maxTextureSize
+        || this.renderer.backend?.device?.limits?.maxTextureDimension2D
+        || 0
+      );
+      if (ultraTextureLimit > 0 && ultraTextureLimit < ULTRA_PHOTOREAL_PROFILE.shadowMapSize) {
+        throw new Error(`GPU chỉ hỗ trợ texture ${ultraTextureLimit}px; Ultra Photoreal cần tối thiểu ${ULTRA_PHOTOREAL_PROFILE.shadowMapSize}px cho bóng 4K.`);
+      }
+      this.root.dataset.ultraTextureLimit = ultraTextureLimit > 0 ? String(ultraTextureLimit) : "driver-managed";
       if ("physicallyCorrectLights" in this.renderer) this.renderer.physicallyCorrectLights = true;
       if (this.renderer.shadowMap) {
-        this.renderer.shadowMap.enabled = quality !== "low";
+        this.renderer.shadowMap.enabled = true;
+        // Three r184 folds the deprecated PCFSoft path into filtered PCF.
         this.renderer.shadowMap.type = THREE.PCFShadowMap;
         this.renderer.shadowMap.autoUpdate = true;
       }
+      this.rendererMaxAnisotropy = Math.max(1, this.renderer.capabilities?.getMaxAnisotropy?.() || 1);
+      this.renderer.setPixelRatio(Math.min(ULTRA_PHOTOREAL_PROFILE.pixelRatioCap, root.devicePixelRatio || 1));
       this.root.dataset.renderer = this.rendererBackend;
+      this.root.dataset.ultraPhotoreal = `v${ULTRA_PHOTOREAL_VERSION}`;
       const rendererLabel = this.root.querySelector("[data-har-renderer]");
       if (rendererLabel) rendererLabel.textContent = this.rendererBackend === "webgpu" ? "WEBGPU · PBR" : "WEBGL2 · PBR";
       if (this.rendererBackend === "webgl2") {
@@ -3784,42 +3925,60 @@
         });
         this.listen(canvas, "webglcontextrestored", () => {
           this.forceCompatibility = true;
-          this.toast("GPU đã phục hồi. Game sẽ khởi động bằng cấu hình an toàn.", "success");
+          this.toast("GPU đã phục hồi. Game sẽ khởi động lại đúng cấu hình Ultra.", "success");
         });
       }
       this.resize();
     }
 
+    async prewarmUltraRenderer() {
+      if (!this.renderer || !this.scene || !this.camera) return;
+      try {
+        if (typeof this.renderer.compileAsync === "function") {
+          await Promise.race([
+            this.renderer.compileAsync(this.scene, this.camera),
+            new Promise((resolve) => root.setTimeout(resolve, 12000))
+          ]);
+        } else {
+          this.renderer.compile?.(this.scene, this.camera);
+        }
+        this.renderer.render(this.scene, this.camera);
+        this.renderer.render(this.scene, this.camera);
+        this.root.dataset.ultraPrewarm = "ready";
+      } catch (error) {
+        this.root.dataset.ultraPrewarm = "partial";
+        console.warn?.("Astral Ultra prewarm continued with runtime compilation.", error);
+      }
+    }
+
     async loadPhotorealAssets() {
       const THREE = this.THREE;
-      const visualStyle = this.state.settings.visualStyle;
-      const saveData = Boolean(root.navigator?.connection?.saveData);
-      const lowMemory = Number(root.navigator?.deviceMemory || 8) <= 2;
-      this.root.dataset.visualStyle = visualStyle;
-      if (visualStyle === "performance") {
-        this.photorealStatus = "performance";
-        this.root.classList.remove("is-photoreal");
-        return;
-      }
+      this.root.dataset.visualStyle = ULTRA_PHOTOREAL_PROFILE.visualStyle;
       this.photorealStatus = "loading";
       const loader = new THREE.TextureLoader();
       const loadTexture = (url) => Promise.race([
         new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject)),
-        new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Quá thời gian tải ${url}`)), 8000))
+        new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Quá thời gian tải ${url}`)), 16000))
       ]);
-      const panoramaPromise = saveData || lowMemory || this.state.settings.quality === "low"
-        ? Promise.resolve(null)
-        : loadTexture(PHOTOREAL_ASSETS.panorama);
-      const [panoramaResult] = await Promise.allSettled([panoramaPromise]);
-      if (panoramaResult.status === "fulfilled" && panoramaResult.value) {
-        const texture = panoramaResult.value;
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.mapping = THREE.EquirectangularReflectionMapping;
-        texture.minFilter = THREE.LinearMipmapLinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        this.photorealAssets.panorama = texture;
+      const texture = await loadTexture(PHOTOREAL_ASSETS.panorama);
+      if (!texture?.isTexture) throw new Error("Ultra Photoreal cần panorama IBL đầy đủ; game không dùng nền thay thế.");
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      this.photorealAssets.panorama = texture;
+      if (THREE.PMREMGenerator && this.renderer) {
+        const pmrem = new THREE.PMREMGenerator(this.renderer);
+        try {
+          // This is async on WebGPU and sync on WebGL. Await both forms so the
+          // conversion can never race an uncompiled equirectangular shader.
+          await pmrem.compileEquirectangularShader?.();
+          this.photorealAssets.ibl = pmrem.fromEquirectangular(texture);
+        } finally {
+          pmrem.dispose();
+        }
       }
-      this.photorealStatus = this.photorealAssets.panorama ? "ready" : "mesh-pbr";
+      this.photorealStatus = "ready";
       this.root.classList.add("is-photoreal");
       this.root.dataset.photorealAssets = this.photorealStatus;
     }
@@ -3849,14 +4008,14 @@
         this.cloneSkinnedCharacter = null;
         this.characterDecodersReady = false;
       }
-      this.root.dataset.characterLoader = this.GLTFLoaderClass ? "ready" : "fallback";
-      this.root.dataset.characterDecoders = this.characterDecodersReady ? "ready" : "basic";
+      this.root.dataset.characterLoader = this.GLTFLoaderClass ? "ready" : "unavailable";
+      this.root.dataset.characterDecoders = this.characterDecodersReady ? "ready" : "native-only";
     }
 
     async loadLicensedEnvironmentAssets() {
       if (!this.GLTFLoaderClass) {
-        this.licensedEnvironmentStatus = "fallback";
-        return;
+        this.licensedEnvironmentStatus = "blocked";
+        throw new Error("Ultra Photoreal cần GLTFLoader để nạp toàn bộ môi trường PBR.");
       }
       this.licensedEnvironmentStatus = "loading";
       const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
@@ -3876,7 +4035,12 @@
           object.frustumCulled = true;
           const materials = Array.isArray(object.material) ? object.material : [object.material];
           materials.filter(Boolean).forEach((material) => {
-            material.envMapIntensity = Math.max(0.35, Number(material.envMapIntensity || 0));
+            material.envMapIntensity = Math.max(1, Number(material.envMapIntensity || 0));
+            ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "alphaMap"].forEach((slot) => {
+              if (!material[slot]?.isTexture) return;
+              material[slot].anisotropy = this.rendererMaxAnisotropy || 1;
+              material[slot].needsUpdate = true;
+            });
             material.needsUpdate = true;
           });
         });
@@ -3885,11 +4049,12 @@
       results.forEach((result) => {
         if (result.status === "fulfilled") this.licensedEnvironmentAssets.set(result.value[0], result.value[1]);
       });
-      this.licensedEnvironmentStatus = this.licensedEnvironmentAssets.size === entries.length
-        ? "ready"
-        : this.licensedEnvironmentAssets.size
-          ? "partial"
-          : "fallback";
+      const missingAssets = entries.filter(([id]) => !this.licensedEnvironmentAssets.has(id)).map(([id]) => id);
+      if (missingAssets.length) {
+        this.licensedEnvironmentStatus = "blocked";
+        throw new Error(`Ultra Photoreal thiếu asset môi trường: ${missingAssets.join(", ")}. Không dùng hình học thay thế.`);
+      }
+      this.licensedEnvironmentStatus = "ready";
       this.root.dataset.licensedEnvironment = this.licensedEnvironmentStatus;
     }
 
@@ -4005,12 +4170,20 @@
               brokenTextures += 1;
             }
           });
-          material.transparent = false;
-          material.opacity = 1;
-          material.alphaTest = 0;
-          material.depthWrite = true;
+          const keepsBlend = material.transparent === true || Number(material.opacity ?? 1) < 0.999;
+          const keepsMask = Number(material.alphaTest || 0) > 0;
+          material.transparent = keepsBlend;
+          material.opacity = clamp(Number(material.opacity ?? 1), 0, 1);
+          material.alphaTest = keepsMask ? clamp(Number(material.alphaTest), 0.01, 0.99) : 0;
+          material.depthWrite = keepsBlend ? Boolean(material.depthWrite) : true;
           material.depthTest = true;
-          material.side = THREE.DoubleSide;
+          material.side ??= THREE.FrontSide;
+          slots.forEach((slot) => {
+            const texture = material[slot];
+            if (!texture?.isTexture) return;
+            texture.anisotropy = this.rendererMaxAnisotropy || 1;
+            texture.needsUpdate = true;
+          });
           if (material.color && (!material.map || brokenTextures)) {
             const identity = `${object.name || ""} ${material.name || ""}`.toLowerCase();
             material.color.set(/visor|eye|glass/.test(identity) ? 0x6feeff : /skin|face|body|head/.test(identity) ? 0xb98273 : 0x6f7f98);
@@ -4060,7 +4233,7 @@
     createTerrainTexture() {
       const THREE = this.THREE;
       const canvas = document.createElement("canvas");
-      const size = this.state.settings.quality === "low" ? 256 : 512;
+      const size = ULTRA_PHOTOREAL_PROFILE.terrainTextureSize;
       canvas.width = size;
       canvas.height = size;
       const context = canvas.getContext("2d", { alpha: false });
@@ -4083,7 +4256,7 @@
       texture.wrapT = THREE.RepeatWrapping;
       texture.repeat.set(18, 18);
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = Math.min(8, this.renderer.capabilities?.getMaxAnisotropy?.() || 1);
+      texture.anisotropy = this.rendererMaxAnisotropy || this.renderer.capabilities?.getMaxAnisotropy?.() || 1;
       texture.needsUpdate = true;
       this.terrainTexture = texture;
       return texture;
@@ -4091,35 +4264,39 @@
 
     createWorld() {
       const THREE = this.THREE;
-      // Keep the renderer quality decision scoped to the world build as well.
-      // Previously this function referenced an undeclared `quality`, which
-      // aborted the entire start sequence after the renderer was initialized.
-      const quality = ["auto", "low", "medium", "high", "cinematic"].includes(this.state?.settings?.quality)
-        ? this.state.settings.quality
-        : "auto";
+      const quality = ULTRA_PHOTOREAL_PROFILE.quality;
+      this.root.dataset.quality = quality;
       this.world = new THREE.Group();
       this.world.name = "AstralOpenWorld";
       this.scene.add(this.world);
-      if (this.photorealAssets.panorama) {
-        // The panorama is lighting data only. The visible world is always
-        // geometry rendered by the engine, never a flat background image.
-        this.scene.environment = this.photorealAssets.panorama;
-        this.scene.fog = new THREE.FogExp2(0x17263a, 0.0068);
-      }
+      if (!this.photorealAssets.panorama) throw new Error("Không có IBL Ultra Photoreal; world build đã dừng thay vì hạ chất lượng.");
+      // The panorama is lighting data only. The visible world is always
+      // geometry rendered by the engine, never a flat background image.
+      this.scene.environment = this.photorealAssets.ibl?.texture || this.photorealAssets.panorama;
+      if ("environmentIntensity" in this.scene) this.scene.environmentIntensity = ULTRA_PHOTOREAL_PROFILE.environmentIntensity;
+      this.scene.fog = new THREE.FogExp2(0x23384f, 0.0052);
 
-      const hemisphere = new THREE.HemisphereLight(0xcce8ff, 0x271b19, 1.25);
+      const hemisphere = new THREE.HemisphereLight(0xd9f2ff, 0x453228, 1.58);
       this.scene.add(hemisphere);
       this.hemisphereLight = hemisphere;
 
-      const sun = new THREE.DirectionalLight(0xffe6bf, 2.8);
+      const sun = new THREE.DirectionalLight(0xffedcf, 3.35);
       sun.position.set(-24, 42, 18);
-      sun.castShadow = Boolean(this.renderer.shadowMap?.enabled);
-      const shadowSize = quality === "cinematic" ? 2048 : quality === "high" ? 1536 : quality === "medium" ? 1024 : 768;
+      sun.castShadow = true;
+      const shadowSize = ULTRA_PHOTOREAL_PROFILE.shadowMapSize;
       sun.shadow.mapSize.set(shadowSize, shadowSize);
-      sun.shadow.camera.left = -75;
-      sun.shadow.camera.right = 75;
-      sun.shadow.camera.top = 75;
-      sun.shadow.camera.bottom = -75;
+      sun.shadow.camera.left = -ULTRA_PHOTOREAL_PROFILE.shadowRadius;
+      sun.shadow.camera.right = ULTRA_PHOTOREAL_PROFILE.shadowRadius;
+      sun.shadow.camera.top = ULTRA_PHOTOREAL_PROFILE.shadowRadius;
+      sun.shadow.camera.bottom = -ULTRA_PHOTOREAL_PROFILE.shadowRadius;
+      sun.shadow.camera.near = 0.5;
+      sun.shadow.camera.far = 135;
+      sun.shadow.bias = -0.00022;
+      sun.shadow.normalBias = 0.028;
+      this.sunTarget = new THREE.Object3D();
+      this.sunTarget.position.set(0, 1.4, 0);
+      sun.target = this.sunTarget;
+      this.scene.add(this.sunTarget);
       this.scene.add(sun);
       this.sunLight = sun;
 
@@ -4128,17 +4305,43 @@
       this.scene.add(hLight);
       this.hLight = hLight;
 
-      const fill = new THREE.DirectionalLight(0x9bbdff, 0.55);
+      const fill = new THREE.DirectionalLight(0xb4d7ff, 0.82);
       fill.position.set(28, 18, -34);
       this.scene.add(fill);
       this.fillLight = fill;
-      const rim = new THREE.DirectionalLight(0xff74c8, 0.72);
+      const rim = new THREE.DirectionalLight(0xff91d4, 0.96);
       rim.position.set(-18, 15, -42);
       this.scene.add(rim);
       this.rimLight = rim;
 
+      const heroLightRig = new THREE.Group();
+      heroLightRig.name = "UltraHeroFollowLightRig";
+      const heroTarget = new THREE.Object3D();
+      heroTarget.position.set(0, 1.45, 0);
+      // Finite spots keep the Hero sculpted without adding three more infinite
+      // directional lights that flatten every object in the open world.
+      const heroKey = new THREE.SpotLight(0xfff1df, 56, 16, Math.PI * 0.29, 0.68, 2);
+      heroKey.name = "UltraHeroKey";
+      heroKey.position.set(4.5, 6.8, 5.4);
+      heroKey.target = heroTarget;
+      const heroFill = new THREE.SpotLight(0xa7dcff, 28, 14, Math.PI * 0.34, 0.78, 2);
+      heroFill.name = "UltraHeroFill";
+      heroFill.position.set(-4.8, 3.4, 3.1);
+      heroFill.target = heroTarget;
+      const heroRim = new THREE.SpotLight(0xff8ed5, 36, 14, Math.PI * 0.3, 0.74, 2);
+      heroRim.name = "UltraHeroRim";
+      heroRim.position.set(2.1, 4.5, -5.2);
+      heroRim.target = heroTarget;
+      const heroContact = new THREE.PointLight(0xb9ecff, 5.5, 7.5, 2);
+      heroContact.name = "UltraHeroContact";
+      heroContact.position.set(0, 1.25, 1.8);
+      heroLightRig.add(heroTarget, heroKey, heroFill, heroRim, heroContact);
+      this.scene.add(heroLightRig);
+      this.heroLightRig = heroLightRig;
+      this.heroLights = { key: heroKey, fill: heroFill, rim: heroRim, contact: heroContact, target: heroTarget };
+
       const terrainTexture = this.createTerrainTexture();
-      const terrainSegments = quality === "cinematic" ? 160 : quality === "high" ? 128 : quality === "low" ? 48 : 88;
+      const terrainSegments = ULTRA_PHOTOREAL_PROFILE.terrainSegments;
       const terrainGeometry = new THREE.PlaneGeometry(376, 376, terrainSegments, terrainSegments);
       const positions = terrainGeometry.attributes.position;
       for (let index = 0; index < positions.count; index += 1) {
@@ -4157,15 +4360,15 @@
       const ground = new THREE.Mesh(
         terrainGeometry,
         new THREE.MeshPhysicalMaterial({
-          color: 0x596676,
+          color: 0x718394,
           map: terrainTexture,
           bumpMap: terrainTexture,
-          bumpScale: 0.42,
-          roughness: 0.88,
+          bumpScale: 0.52,
+          roughness: 0.72,
           metalness: 0.025,
-          clearcoat: 0.12,
-          clearcoatRoughness: 0.62,
-          envMapIntensity: this.photorealAssets.panorama ? 0.48 : 0.16
+          clearcoat: 0.22,
+          clearcoatRoughness: 0.48,
+          envMapIntensity: 1.16
         })
       );
       ground.rotation.x = -Math.PI / 2;
@@ -4187,12 +4390,14 @@
       this.createWater();
       this.createInstancedNature();
       this.createLicensedEnvironmentDecor();
+      this.createUltraSurfaceScatter();
       this.createElementalPuzzles();
       this.createStoryBeacons();
       this.createWorldArtLandmarks();
       this.createWeatherField();
       this.createLivingWorldEffects();
       this.createFootprintPool();
+      this.applyUltraWorldMaterials();
       this.cacheWorldRuntimeObjects();
       this.applyBiomeVisualState(this.currentZone, { immediate: true });
     }
@@ -4318,7 +4523,7 @@
         opacity: 0.72,
         clearcoat: 0.85,
         clearcoatRoughness: 0.12,
-        envMapIntensity: this.photorealAssets.panorama ? 0.72 : 0.28,
+        envMapIntensity: 0.72,
         side: THREE.DoubleSide
       });
       const auroraLake = new THREE.Mesh(new THREE.CircleGeometry(13.5, 72), waterMaterial);
@@ -4360,10 +4565,19 @@
       this.waterSurfaces.push(forgeLava);
     }
 
+    clearUltraCentralLane(zoneId, x, z, seed = 0) {
+      if (zoneId !== "central") return { x, z };
+      const inSpawnLane = Math.abs(x) < 5.8 && z > 6.2 && z < 22.8;
+      const nearNavigator = Math.hypot(x + 9.5, z - 5.8) < 3.8;
+      if (!inSpawnLane && !nearNavigator) return { x, z };
+      if (nearNavigator) return { x: -13.8 - Math.abs(Math.sin(seed * 0.73)) * 2.2, z: 5.8 + Math.cos(seed * 0.51) * 3.9 };
+      const side = x === 0 ? (Math.sin(seed * 1.91) >= 0 ? 1 : -1) : Math.sign(x);
+      return { x: side * (6.4 + Math.abs(Math.sin(seed * 0.63)) * 2.6), z };
+    }
+
     createInstancedNature() {
       const THREE = this.THREE;
-      const quality = this.state.settings.quality;
-      const density = quality === "low" ? 0.35 : quality === "medium" ? 0.62 : quality === "cinematic" ? 1.25 : 1;
+      const density = ULTRA_PHOTOREAL_PROFILE.natureDensity;
       const seeded = (index, salt = 0) => {
         const value = Math.sin(index * 91.733 + salt * 17.17) * 43758.5453;
         return value - Math.floor(value);
@@ -4397,7 +4611,7 @@
         grass.setMatrixAt(index, matrix);
       }
       grass.instanceMatrix.needsUpdate = true;
-      grass.castShadow = quality === "cinematic";
+      grass.castShadow = true;
       auroraGroup.add(grass);
 
       const rockProfiles = [
@@ -4410,7 +4624,7 @@
         const group = this.streamingGroups.get(zoneId) || makeGroup(zoneId);
         const count = Math.max(14, Math.round(baseCount * density));
         const rocks = new THREE.InstancedMesh(
-          new THREE.IcosahedronGeometry(0.72, 0),
+          new THREE.IcosahedronGeometry(0.72, 2),
           new THREE.MeshStandardMaterial({
             color,
             map: this.terrainTexture,
@@ -4418,7 +4632,7 @@
             bumpScale: 0.16,
             roughness: 0.94,
             metalness: zoneId === "crimson" ? 0.12 : 0.02,
-            envMapIntensity: this.photorealAssets.panorama ? 0.42 : 0.12
+            envMapIntensity: 0.42
           }),
           count
         );
@@ -4426,25 +4640,33 @@
           const angle = seeded(index, profileIndex + 7) * Math.PI * 2;
           const radius = 7 + seeded(index, profileIndex + 11) * 21;
           const sx = 0.45 + seeded(index, 15) * 1.6;
+          const safePosition = this.clearUltraCentralLane(
+            zoneId,
+            centerX + Math.cos(angle) * radius,
+            centerZ + Math.sin(angle) * radius,
+            index + profileIndex * 101
+          );
           matrix.compose(
-            new THREE.Vector3(centerX + Math.cos(angle) * radius, 1.18 + sx * 0.18, centerZ + Math.sin(angle) * radius),
+            new THREE.Vector3(safePosition.x, 1.18 + sx * 0.18, safePosition.z),
             new THREE.Quaternion().setFromEuler(new THREE.Euler(seeded(index, 18), seeded(index, 19) * Math.PI, seeded(index, 20))),
             new THREE.Vector3(sx, sx * (0.7 + seeded(index, 21)), sx)
           );
           rocks.setMatrixAt(index, matrix);
         }
         rocks.instanceMatrix.needsUpdate = true;
-        rocks.castShadow = quality === "high" || quality === "cinematic";
+        rocks.castShadow = true;
         rocks.receiveShadow = true;
         group.add(rocks);
       });
     }
 
     createLicensedEnvironmentDecor() {
-      if (!this.licensedEnvironmentAssets.size) return;
+      const requiredAssetCount = Object.keys(LICENSED_ENVIRONMENT_ASSETS).length;
+      if (this.licensedEnvironmentAssets.size !== requiredAssetCount) {
+        throw new Error("Môi trường Ultra chưa đủ asset PBR; không dựng bản thay thế.");
+      }
       const THREE = this.THREE;
-      const quality = this.state.settings.quality;
-      const amountScale = quality === "low" ? 0.42 : quality === "medium" ? 0.68 : 1;
+      const amountScale = 2.2;
       const placements = [
         ["boulder", "central", 9, 1.8, 28],
         ["boulder", "crimson", 8, 2.3, 29],
@@ -4486,7 +4708,13 @@
           const object = instantiate(source, targetHeight * (0.78 + seeded(index, profileIndex + 4) * 0.5));
           const angle = seeded(index, profileIndex + 9) * Math.PI * 2;
           const radius = 8 + seeded(index, profileIndex + 13) * Math.max(2, maxRadius - 8);
-          object.position.set(zone.x + Math.cos(angle) * radius, 1.05, zone.z + Math.sin(angle) * radius);
+          const safePosition = this.clearUltraCentralLane(
+            zoneId,
+            zone.x + Math.cos(angle) * radius,
+            zone.z + Math.sin(angle) * radius,
+            index + profileIndex * 149
+          );
+          object.position.set(safePosition.x, 1.05, safePosition.z);
           object.rotation.y = seeded(index, profileIndex + 17) * Math.PI * 2;
           object.userData.zoneId = zoneId;
           parent.add(object);
@@ -4543,6 +4771,90 @@
       });
     }
 
+    createUltraSurfaceScatter() {
+      const THREE = this.THREE;
+      const matrix = new THREE.Matrix4();
+      const quaternion = new THREE.Quaternion();
+      const seeded = (index, salt) => {
+        const value = Math.sin(index * 83.731 + salt * 29.413) * 43758.5453;
+        return value - Math.floor(value);
+      };
+      ZONES.forEach((zone, zoneIndex) => {
+        const profile = WORLD_ART_PROFILES[zone.id] || WORLD_ART_PROFILES.central;
+        const count = zone.id === "central" || zone.id === "station" ? 180 : 150;
+        const geometry = zone.id === "station"
+          ? new THREE.BoxGeometry(0.18, 0.08, 0.28, 2, 1, 2)
+          : zone.id === "aurora" || zone.id === "void"
+            ? new THREE.DodecahedronGeometry(0.13, 1)
+            : new THREE.IcosahedronGeometry(0.14, 1);
+        const material = new THREE.MeshPhysicalMaterial({
+          color: new THREE.Color(profile.ground).lerp(new THREE.Color(profile.fill), 0.12),
+          map: this.terrainTexture,
+          bumpMap: this.terrainTexture,
+          bumpScale: 0.18,
+          roughness: zone.id === "station" ? 0.34 : 0.74,
+          metalness: zone.id === "station" ? 0.58 : 0.035,
+          clearcoat: zone.id === "ocean" || zone.id === "central" ? 0.28 : 0.08,
+          clearcoatRoughness: 0.44,
+          envMapIntensity: 1.06
+        });
+        const scatter = new THREE.InstancedMesh(geometry, material, count);
+        scatter.name = `UltraSurfaceScatter:${zone.id}`;
+        for (let index = 0; index < count; index += 1) {
+          const angle = seeded(index, zoneIndex + 1) * Math.PI * 2;
+          const radius = 4 + seeded(index, zoneIndex + 11) * Math.max(5, zone.radius - 6);
+          const scale = 0.38 + seeded(index, zoneIndex + 21) * 1.55;
+          const safePosition = this.clearUltraCentralLane(
+            zone.id,
+            zone.x + Math.cos(angle) * radius,
+            zone.z + Math.sin(angle) * radius,
+            index + zoneIndex * 173
+          );
+          quaternion.setFromEuler(new THREE.Euler(
+            seeded(index, 31) * 1.4,
+            seeded(index, 41) * Math.PI * 2,
+            seeded(index, 51) * 1.4
+          ));
+          matrix.compose(
+            new THREE.Vector3(safePosition.x, 1.12 + scale * 0.035, safePosition.z),
+            quaternion,
+            new THREE.Vector3(scale * (0.72 + seeded(index, 61) * 0.58), scale * 0.58, scale)
+          );
+          scatter.setMatrixAt(index, matrix);
+        }
+        scatter.instanceMatrix.needsUpdate = true;
+        scatter.castShadow = true;
+        scatter.receiveShadow = true;
+        scatter.userData = { zoneId: zone.id, ultraSurfaceScatter: true, baseCastShadow: true };
+        const parent = this.streamingGroups.get(zone.id) || this.world;
+        parent.add(scatter);
+      });
+    }
+
+    applyUltraWorldMaterials() {
+      if (!this.world) return;
+      const textureSlots = ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "bumpMap", "alphaMap", "emissiveMap"];
+      this.world.traverse((object) => {
+        if (!object.isMesh && !object.isInstancedMesh && !object.isSkinnedMesh) return;
+        object.receiveShadow = object.receiveShadow || Boolean(object.userData?.worldArtSurface || object.userData?.ultraSurfaceScatter);
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.filter(Boolean).forEach((material) => {
+          if ("envMapIntensity" in material) {
+            const organic = material.userData?.materialRole === "skin" || material.userData?.materialRole === "hair";
+            material.envMapIntensity = Math.max(Number(material.envMapIntensity || 0), organic ? 1.08 : 0.92);
+          }
+          textureSlots.forEach((slot) => {
+            const texture = material[slot];
+            if (!texture?.isTexture) return;
+            texture.anisotropy = this.rendererMaxAnisotropy || 1;
+            if (texture.generateMipmaps !== false) texture.minFilter = this.THREE.LinearMipmapLinearFilter;
+            texture.needsUpdate = true;
+          });
+          material.needsUpdate = true;
+        });
+      });
+    }
+
     createStoryBeacons() {
       const THREE = this.THREE;
       STORY_ZONE_ORDER.forEach((zoneId, index) => {
@@ -4587,7 +4899,7 @@
     createWorldArtLandmarks() {
       const THREE = this.THREE;
       const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
-      const budgetKey = reduced ? "static" : (this.state.settings.vfxLevel === "cinematic" ? "cinematic" : "balanced");
+      const budgetKey = reduced ? "static" : "cinematic";
       const budget = WORLD_ART_BUDGETS[budgetKey];
       const shared = {
         box: new THREE.BoxGeometry(1.25, 2.8, 1.25),
@@ -4657,7 +4969,7 @@
           clearcoatRoughness: clamp(0.76 - profile.wetness * 0.52, 0.18, 0.78),
           transparent: true,
           opacity: 0.88,
-          envMapIntensity: this.photorealAssets.panorama ? 0.58 : 0.24,
+          envMapIntensity: 0.58,
           side: THREE.DoubleSide
         });
         const storySurface = new THREE.Mesh(
@@ -4679,7 +4991,7 @@
           bumpScale: 0.22,
           roughness: zone.id === "station" ? 0.26 : 0.82,
           metalness: zone.id === "station" || zone.id === "central" ? 0.5 : 0.08,
-          envMapIntensity: this.photorealAssets.panorama ? 0.48 : 0.2
+          envMapIntensity: 0.48
         });
         const vistaCount = budget.vistaInstances;
         const vista = new THREE.InstancedMesh(vistaGeometry[zone.id], vistaMaterial, vistaCount);
@@ -4883,7 +5195,7 @@
 
     createStarfield() {
       const THREE = this.THREE;
-      const count = this.state.settings.reduceEffects ? 300 : 720;
+      const count = this.state.settings.reduceEffects ? 540 : 1800;
       const positions = new Float32Array(count * 3);
       const colors = new Float32Array(count * 3);
       const palette = [new THREE.Color(0x8cecff), new THREE.Color(0xff91da), new THREE.Color(0xc5a1ff), new THREE.Color(0xffde83)];
@@ -4904,7 +5216,7 @@
       geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
       this.starfield = new THREE.Points(
         geometry,
-        new THREE.PointsMaterial({ size: 0.55, vertexColors: true, transparent: true, opacity: 0.8, sizeAttenuation: true })
+        new THREE.PointsMaterial({ size: 0.48, vertexColors: true, transparent: true, opacity: 0.86, sizeAttenuation: true, depthWrite: false })
       );
       this.scene.add(this.starfield);
     }
@@ -4916,16 +5228,16 @@
         const platform = new THREE.Mesh(
           new THREE.CylinderGeometry(zone.radius, zone.radius + 2.5, 1.15, 96, 4),
           new THREE.MeshPhysicalMaterial({
-            color: color.clone().multiplyScalar(0.2),
+            color: color.clone().multiplyScalar(0.32),
             emissive: color,
-            emissiveIntensity: 0.055,
+            emissiveIntensity: 0.075,
             map: this.terrainTexture,
             bumpMap: this.terrainTexture,
             bumpScale: 0.24,
-            roughness: 0.86,
+            roughness: 0.7,
             metalness: 0.08,
-            clearcoat: 0.08,
-            envMapIntensity: 0.3
+            clearcoat: 0.18,
+            envMapIntensity: 0.92
           })
         );
         platform.position.set(zone.x, 0.45, zone.z);
@@ -4972,12 +5284,18 @@
 
     createCentralCity() {
       const THREE = this.THREE;
-      const towerMaterial = new THREE.MeshStandardMaterial({
-        color: 0x152b47,
+      const towerMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x1d3853,
         emissive: 0x23546e,
-        emissiveIntensity: 0.2,
-        metalness: 0.62,
-        roughness: 0.28
+        emissiveIntensity: 0.13,
+        map: this.terrainTexture,
+        bumpMap: this.terrainTexture,
+        bumpScale: 0.1,
+        metalness: 0.46,
+        roughness: 0.36,
+        clearcoat: 0.24,
+        clearcoatRoughness: 0.32,
+        envMapIntensity: 1.08
       });
       const glowMaterial = new THREE.MeshBasicMaterial({ color: 0x72efff, transparent: true, opacity: 0.68 });
 
@@ -5041,7 +5359,7 @@
       this.world.add(dummy);
       this.entities.set("training-core", dummy);
 
-      this.createNpc("luma", "Navigator Luma", -6, 3, "#6cf2ff");
+      this.createNpc("luma", "Navigator Luma", -9.5, 5.8, "#6cf2ff");
       this.createNpc("forge-master", "Thợ rèn Kael", 8, 8, "#ffbb72");
 
       this.createPortal("central", "Cổng H-Central", 0, 18, "#6feeff", { checkpoint: "central" });
@@ -5145,7 +5463,7 @@
           transparent: zone.id === "ocean",
           opacity: zone.id === "ocean" ? 0.82 : 1
         });
-        const count = this.state.settings.quality === "low" ? 8 : 16;
+        const count = 32;
         for (let index = 0; index < count; index += 1) {
           const angle = (index / count) * Math.PI * 2 + profileIndex * 0.22;
           const radius = 7 + (index * 7) % Math.max(9, zone.radius - 6);
@@ -5244,8 +5562,7 @@
 
     createWeatherField() {
       const THREE = this.THREE;
-      const qualityMultiplier = this.state.settings.quality === "low" ? 0.45 : this.state.settings.quality === "medium" ? 0.72 : this.state.settings.quality === "cinematic" ? 1.45 : 1;
-      const count = Math.max(24, Math.round((this.state.settings.reduceEffects ? 60 : 180) * qualityMultiplier * clamp(this.state.settings.weatherDensity, 0, 100) / 80));
+      const count = Math.max(24, Math.round((this.state.settings.reduceEffects ? 60 : 180) * 2.1 * clamp(this.state.settings.weatherDensity, 0, 100) / 80));
       const positions = new Float32Array(count * 3);
       for (let index = 0; index < count; index += 1) {
         positions[index * 3] = (Math.random() - 0.5) * 55;
@@ -5264,15 +5581,9 @@
     createLivingWorldEffects() {
       if (!this.state.settings.livingWorld) return;
       const THREE = this.THREE;
-      const qualityScale = this.state.settings.quality === "low"
-        ? 0.42
-        : this.state.settings.quality === "medium"
-          ? 0.7
-          : this.state.settings.quality === "cinematic"
-            ? 1.35
-            : 1;
+      const qualityScale = 2;
       const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
-      const worldBudget = WORLD_ART_BUDGETS[reduced ? "static" : (this.state.settings.vfxLevel === "cinematic" ? "cinematic" : "balanced")];
+      const worldBudget = WORLD_ART_BUDGETS[reduced ? "static" : "cinematic"];
 
       ZONES.forEach((zone, zoneIndex) => {
         const profile = BIOME_PROFILES[zone.id] || BIOME_PROFILES.central;
@@ -5308,7 +5619,7 @@
         particleField.userData = { livingParticles: true, baseOpacity: reduced ? 0.2 : 0.48, wind: profile.wind };
         group.add(particleField);
 
-        const actorCount = reduced ? 1 : (this.state.settings.quality === "cinematic" ? 4 : 2);
+        const actorCount = reduced ? 2 : 6;
         for (let index = 0; index < actorCount; index += 1) {
           const material = new THREE.MeshPhysicalMaterial({
             color: new THREE.Color(profile.accent).multiplyScalar(0.52),
@@ -5334,7 +5645,7 @@
           const radius = 6 + index * 4.2;
           const angle = zoneIndex * 0.71 + index * Math.PI;
           actor.position.set(Math.cos(angle) * radius, 3.4 + index * 1.35, Math.sin(angle) * radius);
-          actor.castShadow = this.state.settings.quality === "cinematic" && index === 0;
+          actor.castShadow = index === 0;
           actor.userData.livingActor = true;
           group.add(actor);
           this.livingWorldActors.push({
@@ -5415,7 +5726,7 @@
     createFootprintPool() {
       if (this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static") return;
       const THREE = this.THREE;
-      const count = this.state.settings.quality === "cinematic" ? 32 : 18;
+      const count = 48;
       for (let index = 0; index < count; index += 1) {
         const footprint = new THREE.Mesh(
           new THREE.PlaneGeometry(0.2, 0.48),
@@ -5524,8 +5835,8 @@
         fill: base.fill,
         rim: base.rim,
         accent: variant?.accent || biome.accent,
-        fogDensity: clamp(fogDensity, 0.0032, 0.018),
-        exposure: clamp(exposure, 0.86, 1.18),
+        fogDensity: clamp(fogDensity * ULTRA_PHOTOREAL_PROFILE.fogScale, 0.0024, 0.014),
+        exposure: clamp(exposure + 0.18, ULTRA_PHOTOREAL_PROFILE.minExposure, ULTRA_PHOTOREAL_PROFILE.maxExposure),
         wetness: clamp(wetness, 0, 1),
         emissive: clamp(emissive, 0.08, 1.08),
         wind: clamp(wind, 0, 1.6),
@@ -5671,7 +5982,7 @@
     updateSkyGradient(time, dayAmount, force = false) {
       if (!this.skyDome?.geometry?.attributes?.color || !this.worldArtCurrent) return;
       const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
-      const budget = WORLD_ART_BUDGETS[reduced ? "static" : (this.state.settings.vfxLevel === "cinematic" ? "cinematic" : "balanced")];
+      const budget = WORLD_ART_BUDGETS[reduced ? "static" : "cinematic"];
       if (!force && time - this.worldArtLastSkyUpdateAt < budget.skyUpdateMs) return;
       this.worldArtLastSkyUpdateAt = time;
       this.worldArtSkyPalette ||= {
@@ -5714,19 +6025,40 @@
       if (this.hemisphereLight) {
         this.hemisphereLight.color.lerp(current.fill, blend);
         this.hemisphereLight.groundColor.lerp(current.ground, blend);
-        this.hemisphereLight.intensity = (0.72 + dayAmount * 1.08) * (0.78 + current.life * 0.24);
+        this.hemisphereLight.intensity = (1.08 + dayAmount * 1.22) * (0.84 + current.life * 0.2);
       }
       if (this.sunLight) {
         this.sunLight.color.lerp(current.key, blend);
-        this.sunLight.intensity = (0.42 + dayAmount * 2.05) * (0.8 + current.exposure * 0.2);
+        this.sunLight.intensity = (1.08 + dayAmount * 2.45) * (0.82 + current.exposure * 0.18);
+        const playerX = Number(this.state.player.x || 0);
+        const playerZ = Number(this.state.player.z || 0);
+        this.sunLight.position.set(playerX - 24, 42, playerZ + 18);
+        this.sunTarget?.position?.set(playerX, 1.4, playerZ);
       }
       if (this.fillLight) {
         this.fillLight.color.lerp(current.fill, blend);
-        this.fillLight.intensity = (0.24 + dayAmount * 0.42) * (0.82 + current.life * 0.2);
+        this.fillLight.intensity = (0.5 + dayAmount * 0.58) * (0.86 + current.life * 0.18);
       }
       if (this.rimLight) {
         this.rimLight.color.lerp(current.rim, blend);
-        this.rimLight.intensity = 0.32 + (1 - dayAmount) * 0.5 + current.emissive * 0.12;
+        this.rimLight.intensity = 0.62 + (1 - dayAmount) * 0.62 + current.emissive * 0.16;
+      }
+      if (this.heroLightRig) {
+        const playerX = Number(this.state.player.x || 0);
+        const playerY = Number(this.playerMesh?.position?.y ?? this.state.player.y ?? 1.08);
+        const playerZ = Number(this.state.player.z || 0);
+        this.heroLightRig.position.x += (playerX - this.heroLightRig.position.x) * clamp(dt * 8, 0, 1);
+        this.heroLightRig.position.y += (playerY - this.heroLightRig.position.y) * clamp(dt * 8, 0, 1);
+        this.heroLightRig.position.z += (playerZ - this.heroLightRig.position.z) * clamp(dt * 8, 0, 1);
+        if (this.heroLights) {
+          this.heroLights.key.color.lerp(current.key, blend * 0.34);
+          this.heroLights.fill.color.lerp(current.fill, blend * 0.34);
+          this.heroLights.rim.color.lerp(current.rim, blend * 0.34);
+          this.heroLights.key.intensity = 48 + dayAmount * 16;
+          this.heroLights.fill.intensity = 24 + (1 - dayAmount) * 8;
+          this.heroLights.rim.intensity = 32 + (1 - dayAmount) * 10;
+          this.heroLights.contact.intensity = 4.5 + current.wetness * 3;
+        }
       }
       if (this.hLight) {
         this.hLight.color.lerp(current.accent, blend);
@@ -5737,8 +6069,9 @@
       }
       if (this.groundMesh?.material) {
         this.groundMesh.material.color.lerp(current.ground, blend * 0.34);
-        this.groundMesh.material.roughness += (clamp(0.94 - current.wetness * 0.48, 0.38, 0.94) - this.groundMesh.material.roughness) * blend;
-        this.groundMesh.material.clearcoat += (current.wetness * 0.38 - this.groundMesh.material.clearcoat) * blend;
+        this.groundMesh.material.roughness += (clamp(0.76 - current.wetness * 0.38, 0.3, 0.76) - this.groundMesh.material.roughness) * blend;
+        this.groundMesh.material.clearcoat += ((0.14 + current.wetness * 0.46) - this.groundMesh.material.clearcoat) * blend;
+        this.groundMesh.material.envMapIntensity = 1.12 + current.wetness * 0.28;
       }
       if (this.renderer && !this.photoMode) this.renderer.toneMappingExposure += (current.exposure - this.renderer.toneMappingExposure) * blend;
       this.updateSkyGradient(time, dayAmount, force);
@@ -5991,7 +6324,7 @@
       if (!this.THREE || !this.state.settings.microDetail) return null;
       this.characterDetailTextures ||= {};
       if (this.characterDetailTextures[kind]) return this.characterDetailTextures[kind];
-      const size = 64;
+      const size = ULTRA_PHOTOREAL_PROFILE.detailTextureSize;
       const canvas = document.createElement("canvas");
       canvas.width = canvas.height = size;
       const context = canvas.getContext("2d");
@@ -5999,8 +6332,11 @@
       for (let y = 0; y < size; y += 1) {
         for (let x = 0; x < size; x += 1) {
           const offset = (y * size + x) * 4;
-          const pore = Math.sin(x * 2.73 + y * 1.41) * 0.5 + Math.sin(x * 0.53 - y * 2.17) * 0.5;
-          const strand = Math.sin((x + y * 0.32) * 0.62);
+          const pore = Math.sin(x * 2.73 + y * 1.41) * 0.34
+            + Math.sin(x * 0.53 - y * 2.17) * 0.28
+            + Math.cos(x * 4.31 + y * 3.19) * 0.16
+            + Math.sin((x + y) * 0.117) * 0.22;
+          const strand = Math.sin((x + y * 0.32) * 0.62) * 0.62 + Math.sin(x * 0.17 + y * 0.04) * 0.38;
           if (kind === "skin-normal") {
             image.data[offset] = 128 + pore * 9;
             image.data[offset + 1] = 128 + pore * 7;
@@ -6010,6 +6346,11 @@
             image.data[offset] = image.data[offset + 1] = image.data[offset + 2] = alpha;
             image.data[offset + 3] = 255;
             continue;
+          } else if (kind === "skin-thickness") {
+            const thickness = clamp(176 + Math.sin(x * 0.043) * 18 + Math.cos(y * 0.051) * 16 + pore * 8, 116, 224);
+            image.data[offset] = thickness;
+            image.data[offset + 1] = thickness;
+            image.data[offset + 2] = thickness;
           } else {
             const rough = clamp(146 + pore * 24, 92, 205);
             image.data[offset] = image.data[offset + 1] = image.data[offset + 2] = rough;
@@ -6021,6 +6362,7 @@
       const texture = new this.THREE.CanvasTexture(canvas);
       texture.wrapS = texture.wrapT = this.THREE.RepeatWrapping;
       texture.repeat.set(kind === "hair-alpha" ? 1 : 5, kind === "hair-alpha" ? 1 : 7);
+      texture.anisotropy = this.rendererMaxAnisotropy || 1;
       texture.userData ||= {};
       texture.userData.sharedAsset = true;
       texture.colorSpace = kind === "skin-normal" || kind === "skin-roughness" || kind === "hair-alpha"
@@ -6060,7 +6402,7 @@
           clearcoat: options.clearcoat ?? 0.22,
           clearcoatRoughness: options.clearcoatRoughness ?? 0.32,
           sheen: options.sheen ?? 0.16,
-          envMapIntensity: this.photorealAssets.panorama ? 0.72 : 0.18,
+          envMapIntensity: 0.72,
           emissive: options.emissive || 0x000000,
           emissiveIntensity: options.emissiveIntensity || 0,
           transparent: Boolean(options.transparent),
@@ -6417,6 +6759,8 @@
           if (!role) {
             if (/hair|brow|lash|beard|groom/.test(identity)) role = "hair";
             else if (/eye|iris|cornea|sclera|tear/.test(identity)) role = "eyes";
+            else if (/teeth|tongue|mouth/.test(identity)) role = "teeth";
+            else if (/highres|dds_highres|\bbody\b/.test(identity)) role = "hybrid-body";
             else if (/skin|dermis|face|head|body_nude/.test(identity)) role = "skin";
             else role = "outfit";
             material.userData.materialRole = role;
@@ -6426,39 +6770,81 @@
           material.userData.baseEmissiveIntensity ??= material.emissiveIntensity || 0;
           if (material.color && !material.userData.hhOriginalColor) material.userData.hhOriginalColor = `#${material.color.getHexString()}`;
           if (role === "skin") {
-            material.color?.set(recipe.skinColor);
-            const drySkinRoughness = clamp(0.46 + recipe.surface.roughness * 0.34, 0.44, 0.76);
-            const drySkinClearcoat = 0.006;
-            if ("roughness" in material) material.roughness = clamp(drySkinRoughness - recipe.surface.wetness * 0.1, 0.38, 0.8);
+            const skinTint = new this.THREE.Color(recipe.skinColor).lerp(new this.THREE.Color(0xffffff), 0.48);
+            material.color?.copy(skinTint);
+            const drySkinRoughness = clamp(0.38 + recipe.surface.roughness * 0.2, 0.38, 0.56);
+            const drySkinClearcoat = 0.016;
+            if ("roughness" in material) material.roughness = clamp(drySkinRoughness - recipe.surface.wetness * 0.1, 0.31, 0.6);
             if ("metalness" in material) material.metalness = 0;
-            if ("clearcoat" in material) material.clearcoat = clamp(drySkinClearcoat + recipe.surface.wetness * 0.38, 0, 0.48);
-            if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.78;
-            if ("sheen" in material) material.sheen = clamp(0.04 + recipe.surface.subsurface * 0.16, 0.04, 0.24);
-            if ("ior" in material) material.ior = 1.38;
-            if ("specularIntensity" in material) material.specularIntensity = clamp(0.2 + recipe.surface.subsurface * 0.14, 0.2, 0.36);
-            if ("envMapIntensity" in material) material.envMapIntensity = clamp(0.48 + recipe.surface.wetness * 0.12, 0.48, 0.62);
+            if ("clearcoat" in material) material.clearcoat = clamp(drySkinClearcoat + recipe.surface.wetness * 0.42, 0.016, 0.52);
+            if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.58;
+            if ("sheen" in material) material.sheen = clamp(0.22 + recipe.surface.subsurface * 0.24, 0.22, 0.48);
+            material.sheenColor?.copy?.(skinTint);
+            if ("ior" in material) material.ior = 1.4;
+            if ("specularIntensity" in material) material.specularIntensity = clamp(0.46 + recipe.surface.subsurface * 0.16, 0.46, 0.62);
+            material.specularColor?.set?.(0xffe4da);
+            if ("envMapIntensity" in material) material.envMapIntensity = clamp(1.08 + recipe.surface.wetness * 0.22, 1.08, 1.3);
+            if ("transmission" in material) material.transmission = clamp(0.016 + recipe.surface.subsurface * 0.035, 0.016, 0.052);
+            if ("thickness" in material) material.thickness = clamp(0.17 + recipe.surface.subsurface * 0.18, 0.17, 0.35);
+            material.attenuationColor?.copy?.(skinTint);
+            if ("attenuationDistance" in material) material.attenuationDistance = 1.65;
             material.userData.baseRoughness = drySkinRoughness;
             material.userData.baseClearcoat = drySkinClearcoat;
             if (this.state.settings.microDetail) {
               material.normalMap ||= this.createCharacterDetailTexture("skin-normal");
               material.roughnessMap ||= this.createCharacterDetailTexture("skin-roughness");
-              material.normalScale?.setScalar?.(0.06 + recipe.surface.pores * 0.18);
+              if ("thicknessMap" in material) material.thicknessMap ||= this.createCharacterDetailTexture("skin-thickness");
+              material.normalScale?.setScalar?.(0.14 + recipe.surface.pores * 0.22);
             }
             if (material.emissive && makeupTint) {
               material.emissive.set(makeupTint);
               material.emissiveIntensity = clamp(recipe.decals.makeup * 0.025 + recipe.surface.flush * 0.018, 0, 0.045);
             }
+          } else if (role === "hybrid-body") {
+            // The canonical GLB intentionally packs skin and clothing into one
+            // atlas/material. Preserve that authored texture and never apply a
+            // full-atlas skin tint, transmission or thickness to the shirt.
+            material.color?.set(material.userData.hhOriginalColor || "#ffffff");
+            if ("roughness" in material) material.roughness = clamp(0.44 + recipe.surface.roughness * 0.1 - recipe.surface.wetness * 0.06, 0.38, 0.56);
+            if ("metalness" in material) material.metalness = 0;
+            if ("clearcoat" in material) material.clearcoat = clamp(0.035 + recipe.surface.wetness * 0.1, 0.035, 0.14);
+            if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.66;
+            if ("sheen" in material) material.sheen = 0.1;
+            if ("ior" in material) material.ior = 1.45;
+            if ("specularIntensity" in material) material.specularIntensity = 0.42;
+            if ("envMapIntensity" in material) material.envMapIntensity = 0.92;
+            if ("transmission" in material) material.transmission = 0;
+            if ("thickness" in material) material.thickness = 0;
+            material.normalScale?.setScalar?.(0.82);
+            material.userData.baseRoughness = material.roughness;
+            material.userData.baseClearcoat = material.clearcoat || 0;
           } else if (role === "hair" || role === "hair-card") {
             material.color?.set(recipe.hairColor);
-            if ("roughness" in material) material.roughness = recipe.hair.includes("long") ? 0.34 : 0.28;
-            if ("anisotropy" in material) material.anisotropy = this.state.settings.microDetail ? 0.78 : 0;
+            if ("roughness" in material) material.roughness = recipe.hair.includes("long") ? 0.26 : 0.22;
+            if ("anisotropy" in material) material.anisotropy = this.state.settings.microDetail ? 0.96 : 0;
+            if ("sheen" in material) material.sheen = 0.72;
+            material.sheenColor?.set?.(recipe.hairColor);
+            if ("clearcoat" in material) material.clearcoat = 0.24;
+            if ("envMapIntensity" in material) material.envMapIntensity = 1.16;
             if ("alphaHash" in material && role === "hair-card") material.alphaHash = true;
           } else if (role === "eyes") {
-            material.color?.set(recipe.eyeColor);
-            if ("roughness" in material) material.roughness = 0.08;
-            if ("clearcoat" in material) material.clearcoat = 0.78 + (recipe.morphs.eyeReflection || 0.5) * 0.22;
+            const eyeTint = new this.THREE.Color(0xffffff).lerp(new this.THREE.Color(recipe.eyeColor), identity.includes("gland") ? 0.1 : 0.035);
+            material.color?.copy(eyeTint);
+            if ("roughness" in material) material.roughness = 0.075;
+            if ("clearcoat" in material) material.clearcoat = 0.72 + (recipe.morphs.eyeReflection || 0.5) * 0.12;
+            if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.06;
             if ("ior" in material) material.ior = 1.376;
-            if ("transmission" in material) material.transmission = 0.04;
+            if ("transmission" in material) material.transmission = 0;
+            if ("thickness" in material) material.thickness = 0;
+            if ("envMapIntensity" in material) material.envMapIntensity = 1.12;
+            if (material.emissive) material.emissive.set(0x000000);
+            material.emissiveIntensity = 0;
+          } else if (role === "teeth") {
+            material.color?.set(0xfff4dc);
+            if ("roughness" in material) material.roughness = 0.22;
+            if ("clearcoat" in material) material.clearcoat = 0.5;
+            if ("clearcoatRoughness" in material) material.clearcoatRoughness = 0.18;
+            if ("envMapIntensity" in material) material.envMapIntensity = 1.06;
           } else if (role === "outfit") {
             const color = materialIndex % 2 ? outfitPalette[1] : outfitPalette[0];
             if (material.color && mesh.userData.visualMode !== "hero-prime-rigged") material.color.set(color);
@@ -6467,7 +6853,7 @@
           material.userData.hhDigitalHuman = {
             version: CHARACTER_VISUAL_VERSION,
             role,
-            skinLayers: role === "skin" ? 5 : 0,
+            skinLayers: role === "skin" || role === "hybrid-body" ? 5 : 0,
             hairCards: role === "hair-card"
           };
           if (material.color) material.userData.baseColor = `#${material.color.getHexString()}`;
@@ -6806,14 +7192,14 @@
       setScale(spine, 1 + delta("waist") * 0.18 + delta("bodyMass") * 0.12, 1 + delta("torsoLength") * 0.18, 1 + delta("belly") * 0.16);
       setScale(hips, 1 + delta("hipWidth") * 0.22, 1 + delta("legTorsoRatio") * -0.08, 1 + delta("gluteProjection") * 0.2);
       const armLength = clamp(1 + delta("armLength") * 0.1 + delta("height") * 0.03, 0.94, 1.06);
-      const armMass = clamp(1.08 + delta("upperArm") * 0.12 + delta("muscle") * 0.055, 1.01, 1.16);
-      const armDepth = clamp(1.055 + delta("upperArm") * 0.09 + delta("muscle") * 0.045, 1, 1.13);
+      const armMass = clamp(1.025 + delta("upperArm") * 0.105 + delta("muscle") * 0.045, 1.01, 1.16);
+      const armDepth = clamp(1.015 + delta("upperArm") * 0.075 + delta("muscle") * 0.035, 1, 1.13);
       const forearmLength = clamp(1 + delta("armLength") * 0.07, 0.95, 1.05);
-      const forearmMass = clamp(1.06 + delta("forearm") * 0.105 + delta("muscle") * 0.035, 1, 1.13);
-      const forearmDepth = clamp(1.04 + delta("forearm") * 0.08 + delta("muscle") * 0.025, 0.995, 1.1);
+      const forearmMass = clamp(1.02 + delta("forearm") * 0.095 + delta("muscle") * 0.03, 1, 1.13);
+      const forearmDepth = clamp(1.015 + delta("forearm") * 0.07 + delta("muscle") * 0.022, 0.995, 1.1);
       const palmLength = clamp(0.975 + delta("handSize") * 0.05, 0.95, 1);
-      const palmWidth = clamp(1.075 + delta("handSize") * 0.1, 1.02, 1.13);
-      const palmDepth = clamp(1.045 + delta("handSize") * 0.07, 1.01, 1.08);
+      const palmWidth = clamp(1.035 + delta("handSize") * 0.085, 1.02, 1.13);
+      const palmDepth = clamp(1.025 + delta("handSize") * 0.06, 1.01, 1.08);
       const fingerLengthScale = clamp(0.955 + delta("fingerLength") * 0.08, 0.915, 0.995);
       setSegmentScale(leftArm, armLength, armMass, armDepth);
       setSegmentScale(rightArm, armLength, armMass, armDepth);
@@ -6921,22 +7307,59 @@
         object.userData.sharedAsset = true;
         const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
         const materials = sourceMaterials.filter(Boolean).map((sourceMaterial) => {
-          const material = sourceMaterial.clone();
-          const materialName = `${object.name} ${material.name}`.toLowerCase();
+          const materialName = `${object.name} ${sourceMaterial.name}`.toLowerCase();
+          const role = /eye|gland|cornea|visor/.test(materialName)
+            ? "eyes"
+            : /teeth|tongue|mouth/.test(materialName)
+              ? "teeth"
+              : /highres|dds_highres|\bbody\b/.test(materialName)
+                ? "hybrid-body"
+                : /skin|dermis|face|head/.test(materialName)
+                  ? "skin"
+                  : "outfit";
+          const Physical = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
+          const material = new Physical({
+            name: sourceMaterial.name,
+            color: sourceMaterial.color?.clone?.() || new THREE.Color(0xffffff),
+            map: sourceMaterial.map || null,
+            normalMap: sourceMaterial.normalMap || null,
+            roughnessMap: sourceMaterial.roughnessMap || null,
+            metalnessMap: sourceMaterial.metalnessMap || null,
+            aoMap: sourceMaterial.aoMap || null,
+            emissiveMap: sourceMaterial.emissiveMap || null,
+            alphaMap: sourceMaterial.alphaMap || null,
+            emissive: sourceMaterial.emissive?.clone?.() || new THREE.Color(0x000000),
+            emissiveIntensity: Number(sourceMaterial.emissiveIntensity || 0),
+            roughness: role === "eyes" ? 0.075 : role === "teeth" ? 0.24 : role === "skin" ? 0.46 : Number(sourceMaterial.roughness ?? 0.5),
+            metalness: ["skin", "hybrid-body", "eyes", "teeth"].includes(role) ? 0 : Number(sourceMaterial.metalness || 0),
+            clearcoat: role === "eyes" ? 0.78 : role === "teeth" ? 0.46 : role === "skin" ? 0.025 : role === "hybrid-body" ? 0.055 : 0.18,
+            clearcoatRoughness: role === "eyes" ? 0.06 : role === "skin" ? 0.62 : role === "hybrid-body" ? 0.66 : 0.28,
+            ior: role === "eyes" ? 1.376 : role === "skin" ? 1.4 : 1.45,
+            transmission: role === "skin" ? 0.012 : 0,
+            thickness: role === "skin" ? 0.14 : 0,
+            envMapIntensity: role === "skin" ? 1.05 : role === "eyes" ? 1.12 : role === "hybrid-body" ? 0.92 : 1.04,
+            transparent: Boolean(sourceMaterial.transparent),
+            opacity: Number(sourceMaterial.opacity ?? 1),
+            alphaTest: Number(sourceMaterial.alphaTest || 0),
+            side: THREE.FrontSide,
+            depthWrite: sourceMaterial.depthWrite !== false,
+            depthTest: sourceMaterial.depthTest !== false,
+            vertexColors: Boolean(sourceMaterial.vertexColors),
+            flatShading: Boolean(sourceMaterial.flatShading)
+          });
+          if (sourceMaterial.normalScale && material.normalScale) material.normalScale.copy(sourceMaterial.normalScale);
           material.userData = {
             ...(material.userData || {}),
-            materialRole: /eye|gland|cornea|visor/.test(materialName)
-              ? "eyes"
-              : /teeth|tongue|mouth/.test(materialName)
-                ? "teeth"
-                : /highres|body|skin|face|head/.test(materialName)
-                  ? "skin"
-                  : "outfit",
+            materialRole: role,
             baseRoughness: material.roughness,
             baseClearcoat: material.clearcoat || 0,
             baseEmissiveIntensity: material.emissiveIntensity || 0
           };
-          material.envMapIntensity = Math.max(material.envMapIntensity || 0, 0.82);
+          ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap"].forEach((slot) => {
+            if (!material[slot]?.isTexture) return;
+            material[slot].anisotropy = this.rendererMaxAnisotropy || 1;
+            material[slot].needsUpdate = true;
+          });
           if (materialName.includes("visor")) {
             material.color?.set(profile.eyes);
             material.emissive?.set(profile.accent);
@@ -6966,14 +7389,18 @@
         const Physical = THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial;
         const hairMaterial = new Physical({
           color: recipe.hairColor,
-          roughness: 0.3,
+          roughness: 0.23,
           metalness: 0.02,
-          clearcoat: 0.34,
-          sheen: 0.48,
-          envMapIntensity: 0.74,
+          clearcoat: 0.24,
+          clearcoatRoughness: 0.2,
+          sheen: 0.72,
+          sheenColor: recipe.hairColor,
+          anisotropy: 0.96,
+          anisotropyRotation: Math.PI / 2,
+          envMapIntensity: 1.18,
           side: THREE.DoubleSide
         });
-        hairMaterial.userData = { materialRole: "hair", baseRoughness: 0.3, baseClearcoat: 0.34, baseEmissiveIntensity: 0 };
+        hairMaterial.userData = { materialRole: "hair", baseRoughness: 0.23, baseClearcoat: 0.24, baseEmissiveIntensity: 0 };
         riggedHair = new THREE.Group();
         riggedHair.name = "HHWebHeroHairCards";
         riggedHair.position.y = 0.13 * inverseFit;
@@ -6987,20 +7414,24 @@
         heroDetails.push(cap);
         const cardMaterial = hairMaterial.clone();
         cardMaterial.alphaMap = this.createCharacterDetailTexture("hair-alpha");
-        cardMaterial.transparent = true;
-        cardMaterial.alphaTest = 0.32;
+        cardMaterial.transparent = false;
+        cardMaterial.alphaTest = 0.18;
+        cardMaterial.alphaHash = true;
+        cardMaterial.alphaToCoverage = true;
         cardMaterial.depthWrite = true;
         cardMaterial.userData = { ...hairMaterial.userData, materialRole: "hair-card" };
-        for (let index = 0; index < 16; index += 1) {
-          const angle = (index / 16) * Math.PI * 2;
+        const hairCardCount = ULTRA_PHOTOREAL_PROFILE.hairCardCount;
+        for (let index = 0; index < hairCardCount; index += 1) {
+          const angle = (index / hairCardCount) * Math.PI * 2;
+          const layer = index % 2;
           const card = new THREE.Mesh(
-            new THREE.PlaneGeometry(0.105 * inverseFit, (0.31 + (index % 4) * 0.035) * inverseFit, 1, 3),
+            new THREE.PlaneGeometry((0.076 + layer * 0.014) * inverseFit, (0.28 + (index % 5) * 0.035) * inverseFit, 2, 5),
             cardMaterial
           );
           card.position.set(
-            Math.sin(angle) * 0.205 * inverseFit,
-            (-0.08 - (index % 3) * 0.018) * inverseFit,
-            Math.cos(angle) * 0.205 * inverseFit
+            Math.sin(angle) * (0.198 + layer * 0.014) * inverseFit,
+            (-0.065 - (index % 4) * 0.016 - layer * 0.018) * inverseFit,
+            Math.cos(angle) * (0.198 + layer * 0.014) * inverseFit
           );
           card.rotation.y = angle;
           card.userData.heroDetail = true;
@@ -7046,7 +7477,7 @@
         sourceProvider: sourceInfo.label || "HH Hero Prime · Full Quality Only",
         sourceProviderId: sourceInfo.provider,
         sourceAssetPath: sourceInfo.url,
-        gameplayVisualLift: 1.35,
+        gameplayVisualLift: 0.03,
         modelTier: "hero",
         appearanceCapability: "skeleton-proportions",
         gameplayCollider: { radius: 0.48, height: 2.95 },
@@ -7139,6 +7570,7 @@
         tongueMeshes: 0,
         eyelashMeshes: 0,
         hairCardMeshes: 0,
+        physicalMaterials: 0,
         normalMaps: 0,
         roughnessMaps: 0,
         thicknessMaps: 0
@@ -7188,17 +7620,19 @@
         report.triangles += Math.floor(count / 3);
         const vertices = object.geometry?.attributes?.position?.count || 0;
         const identity = `${object.name || ""} ${Array.isArray(object.material) ? object.material.map((material) => material?.name || "").join(" ") : object.material?.name || ""}`.toLowerCase();
-        if (/head|face|skin_head|dermis/.test(identity)) report.headVertices += vertices;
+        if (/head|face|skin_head|dermis|highres/.test(identity)) report.headVertices = Math.max(report.headVertices, vertices);
         if (/eye|iris|cornea|sclera|tear/.test(identity)) report.separateEyeMeshes += 1;
         if (/cornea/.test(identity)) report.corneaMeshes += 1;
         if (/tear|tearline|waterline/.test(identity)) report.tearLineMeshes += 1;
         if (/teeth|tooth|dental/.test(identity)) report.teethMeshes += 1;
         if (/tongue/.test(identity)) report.tongueMeshes += 1;
         if (/eyelash|eye_lash|lashes/.test(identity)) report.eyelashMeshes += 1;
-        if (/hair|groom|brow|lash/.test(identity)) report.hairCardMeshes += 1;
+        const materialRoles = (Array.isArray(object.material) ? object.material : [object.material])
+          .map((material) => material?.userData?.materialRole || "");
+        if (/hair|groom|brow|lash/.test(identity) || materialRoles.some((role) => role === "hair" || role === "hair-card")) report.hairCardMeshes += 1;
         const morphNames = Object.keys(object.morphTargetDictionary || {});
         report.morphTargets += morphNames.length;
-        report.faceMorphTargets += morphNames.filter((name) => {
+        const directFaceTargets = morphNames.filter((name) => {
           const normalized = String(name)
             .replace(/^ARKit_/i, "")
             .replace(/^AR_/i, "")
@@ -7206,9 +7640,16 @@
             .replace(/_R$/i, "Right");
           return MEDIAPIPE_FACE_CHANNELS.some((channel) => channel.toLowerCase() === normalized.toLowerCase());
         }).length;
+        const nativeExpressionTargets = morphNames.filter((name) => /^(?:h_expressions\.|t_)/i.test(String(name))).length;
+        report.faceMorphTargets = Math.max(
+          report.faceMorphTargets,
+          Math.min(HERO_ASSET_REQUIREMENTS.nativeFaceMorphs, Math.max(directFaceTargets, nativeExpressionTargets))
+        );
         const objectMaterials = Array.isArray(object.material) ? object.material : [object.material];
         objectMaterials.filter(Boolean).forEach((material) => {
+          const firstMaterialReference = !materials.has(material);
           materials.add(material);
+          if (firstMaterialReference && material.isMeshPhysicalMaterial) report.physicalMaterials += 1;
           textureSlots.forEach((slot) => {
             const texture = material[slot];
             if (!texture?.isTexture) return;
@@ -7229,7 +7670,7 @@
         ? "web-hero-v12"
         : report.skinnedMeshes && report.bones
           ? "gameplay-rig"
-          : "proxy";
+          : "unsupported";
       Object.assign(report, classification);
       return report;
     }
@@ -7682,9 +8123,19 @@
         Object.entries(values).forEach(([name, raw]) => {
           const aliases = [name, `ARKit_${name}`, `AR_${name}`, name.replace(/left$/i, "_L").replace(/right$/i, "_R")];
           const index = aliases.map((alias) => morphLookup[alias.toLowerCase()]).find(Number.isInteger);
-          if (!Number.isInteger(index) || index >= influences.length) return;
-          influences[index] += (clamp(raw, 0, 1) - influences[index]) * 0.42;
-          applied += 1;
+          const targets = [];
+          if (Number.isInteger(index) && index < influences.length) targets.push([index, 1]);
+          (HERO_NATIVE_FACE_MORPH_MAP[name] || []).forEach(([alias, weight]) => {
+            const nativeIndex = morphLookup[String(alias).toLowerCase()];
+            if (Number.isInteger(nativeIndex) && nativeIndex < influences.length && !targets.some(([candidate]) => candidate === nativeIndex)) {
+              targets.push([nativeIndex, Number(weight || 1)]);
+            }
+          });
+          targets.forEach(([targetIndex, weight]) => {
+            const target = clamp(Number(raw || 0) * weight, 0, 1);
+            influences[targetIndex] += (target - influences[targetIndex]) * 0.42;
+            applied += 1;
+          });
         });
       });
       return applied;
@@ -7693,6 +8144,11 @@
     resetCharacterFace(mesh, { morphs = true } = {}) {
       if (!mesh) return;
       const faceChannels = new Set(MEDIAPIPE_FACE_CHANNELS.map((channel) => channel.toLowerCase()));
+      const nativeFaceChannels = new Set(
+        Object.values(HERO_NATIVE_FACE_MORPH_MAP)
+          .flat()
+          .map(([name]) => String(name).toLowerCase())
+      );
       if (morphs) {
         mesh.traverse?.((object) => {
           const dictionary = object.morphTargetDictionary;
@@ -7705,7 +8161,7 @@
               .replace(/_L$/i, "Left")
               .replace(/_R$/i, "Right")
               .toLowerCase();
-            if (faceChannels.has(normalized) && Number.isInteger(index) && index < influences.length) influences[index] = 0;
+            if ((faceChannels.has(normalized) || nativeFaceChannels.has(String(name).toLowerCase())) && Number.isInteger(index) && index < influences.length) influences[index] = 0;
           });
         });
       }
@@ -8308,7 +8764,7 @@
       if (this.facePilot.status !== "running" || this.destroyed) return;
       const { video, landmarker } = this.facePilot;
       const now = performance.now();
-      const detectionInterval = this.state.settings.quality === "cinematic" ? 50 : 66;
+      const detectionInterval = ULTRA_PHOTOREAL_PROFILE.faceDetectionInterval;
       const canDetectFace = this.state.settings.facialAnimation;
       if (this.visible && canDetectFace && now - this.facePilot.lastDetectionAt >= detectionInterval && video?.readyState >= 2 && video.currentTime !== this.facePilot.lastVideoTime) {
         this.facePilot.lastDetectionAt = now;
@@ -8503,6 +8959,15 @@
 
     applyStateToWorld() {
       const player = this.state.player;
+      // The HH Core pedestal is solid and rises above character height. Old
+      // saves spawned inside it, leaving only a detached-looking head visible.
+      const coreDistance = Math.hypot(Number(player.x || 0), Number(player.z || 0));
+      if (coreDistance < 8.8 && Number(player.y || 1.08) < 3.4) {
+        const angle = coreDistance > 0.01 ? Math.atan2(player.z, player.x) : Math.PI / 2;
+        player.x = Math.cos(angle) * 10.6;
+        player.z = Math.sin(angle) * 10.6;
+        player.y = 1.08;
+      }
       const activeId = CHARACTERS[this.state.roster.activeId] ? this.state.roster.activeId : "lyra";
       const activeProfile = CHARACTERS[activeId];
       this.characterMeshes.forEach((mesh, id) => {
@@ -9228,7 +9693,11 @@
         this.cameraFovTarget = 58;
         this.camera.fov = 58;
         this.camera.updateProjectionMatrix();
-        this.renderer.toneMappingExposure = 1.08;
+        this.renderer.toneMappingExposure = clamp(
+          this.worldArtCurrent?.exposure || ULTRA_PHOTOREAL_PROFILE.minExposure,
+          ULTRA_PHOTOREAL_PROFILE.minExposure,
+          ULTRA_PHOTOREAL_PROFILE.maxExposure
+        );
         this.root.classList.remove("is-photo-clean");
       }
     }
@@ -9391,8 +9860,14 @@
       }
 
       if (input.active) {
-        const nextX = clamp(player.x + dx, -WORLD_LIMIT, WORLD_LIMIT);
-        const nextZ = clamp(player.z + dz, -WORLD_LIMIT, WORLD_LIMIT);
+        let nextX = clamp(player.x + dx, -WORLD_LIMIT, WORLD_LIMIT);
+        let nextZ = clamp(player.z + dz, -WORLD_LIMIT, WORLD_LIMIT);
+        const coreDistance = Math.hypot(nextX, nextZ);
+        if (coreDistance < 8.8 && player.y < 3.4) {
+          const angle = coreDistance > 0.01 ? Math.atan2(nextZ, nextX) : Math.PI / 2;
+          nextX = Math.cos(angle) * 8.8;
+          nextZ = Math.sin(angle) * 8.8;
+        }
         const traveled = Math.hypot(nextX - player.x, nextZ - player.z);
         player.x = nextX;
         player.z = nextZ;
@@ -9474,7 +9949,7 @@
 
     updateEnemies(dt, time) {
       const player = this.state.player;
-      const activeRadius = this.state.settings.quality === "low" ? 52 : this.state.settings.quality === "medium" ? 72 : 96;
+      const activeRadius = ULTRA_PHOTOREAL_PROFILE.enemyActiveRadius;
       this.enemies.forEach((enemy) => {
         const data = enemy.userData;
         if (data.defeated) {
@@ -9670,7 +10145,7 @@
     updateWorldStreaming() {
       const player = this.state.player;
       const reduced = this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static";
-      const budget = WORLD_ART_BUDGETS[reduced ? "static" : (this.state.settings.vfxLevel === "cinematic" ? "cinematic" : "balanced")];
+      const budget = WORLD_ART_BUDGETS[reduced ? "static" : "cinematic"];
       const visibleRadius = budget.activeRadius;
       this.streamingGroups.forEach((group, zoneId) => {
         const zone = ZONES.find((entry) => entry.id === zoneId);
@@ -10589,8 +11064,8 @@
       const hour = Math.floor(this.state.worldTime);
       const minute = Math.floor((this.state.worldTime % 1) * 60);
       this.root.querySelector("[data-har-time]").textContent = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-      this.root.querySelector("[data-har-fps]").textContent = this.fps ? `${this.fps} FPS · scale ${Math.round(this.renderScale * 100)}%` : "Đang đo";
-      this.root.querySelector("[data-har-renderer]").textContent = `${this.rendererBackend === "webgpu" ? "WEBGPU" : "WEBGL2"} · ${this.photorealStatus === "ready" ? "IBL PBR" : "MESH PBR"}`;
+      this.root.querySelector("[data-har-fps]").textContent = this.fps ? `${this.fps} FPS · NATIVE ULTRA` : "Đang đo";
+      this.root.querySelector("[data-har-renderer]").textContent = `${this.rendererBackend === "webgpu" ? "WEBGPU" : "WEBGL2"} · ${this.photorealStatus === "ready" ? "IBL PBR ULTRA" : "ULTRA LOADING"}`;
       const activeCharacterMesh = this.characterMeshes.get(this.state.roster.activeId);
       const activeCharacterRuntime = this.characterRuntimes.get(this.state.roster.activeId);
       const characterRuntimeLabel = this.root.querySelector("[data-har-character-runtime]");
@@ -10749,13 +11224,6 @@
       this.fps = Math.round((this.fpsFrames * 1000) / elapsed);
       this.fpsFrames = 0;
       this.fpsStartedAt = time;
-      if (this.state.settings.quality === "auto" && this.state.settings.dynamicResolution !== false) {
-        if (this.fps < 42 && this.renderScale > 0.62) this.renderScale = Math.max(0.62, this.renderScale - 0.1);
-        else if (this.fps > 57 && this.renderScale < 1) this.renderScale = Math.min(1, this.renderScale + 0.05);
-        this.renderer.setPixelRatio(Math.min(2, (root.devicePixelRatio || 1) * this.renderScale));
-        if (this.starfield) this.starfield.material.opacity = this.fps < 38 ? 0.35 : 0.8;
-        if (this.weatherField) this.weatherField.visible = this.fps >= 30 || this.currentZone.id !== "central";
-      }
     }
 
     resize() {
@@ -10765,9 +11233,7 @@
       const height = Math.max(1, stage.clientHeight);
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
-      const qualityRatios = { low: 0.58, medium: 0.82, high: 1, cinematic: 1, auto: this.renderScale };
-      const ratio = qualityRatios[this.state.settings.quality] ?? 1;
-      this.renderer.setPixelRatio(Math.min(2, (root.devicePixelRatio || 1) * ratio));
+      this.renderer.setPixelRatio(Math.min(ULTRA_PHOTOREAL_PROFILE.pixelRatioCap, root.devicePixelRatio || 1));
       this.renderer.setSize(width, height, false);
     }
 
@@ -10916,7 +11382,7 @@
             <div><small>ANIMATION</small><strong>8 hướng</strong><span>inertial crossfade · foot contact · secondary bones</span></div>
           </div>
           <div class="har-section har-character-import"><div><h3>Hero Prime đã khóa</h3><p>Không cho thay bằng asset khác trong gameplay. Mọi lỗi tải hoặc giải mã đều hiển thị lý do và nút Retry, không dựng model thay thế.</p><small>GLB local · 58K+ triangles · 114 joints · 65 facial targets</small></div></div>
-          ${qa ? `<div class="har-section har-character-qa"><h3>Hero Prime QA · ${Math.round(qa.score ?? 100)}/100 · ${escapeHtml(qa.assetClassLabel || qa.digitalHumanTier || "hero-prime")}</h3><p><strong>Asset duy nhất:</strong> ${qa.heroReady ? "Đạt toàn bộ gate kỹ thuật." : "Đang dùng asset mạnh nhất được khóa; các gate thiếu được báo minh bạch, không thay bằng proxy."}</p><div class="har-character-runtime-grid"><div><small>Geometry</small><strong>${Number(qa.triangles || 0).toLocaleString("vi-VN")}</strong><span>triangles</span></div><div><small>Head</small><strong>${Number(qa.headVertices || 0).toLocaleString("vi-VN")}</strong><span>vertices · đo thực tế</span></div><div><small>Face</small><strong>${qa.faceMorphTargets || 0}/52</strong><span>native facial morph</span></div><div><small>Rig</small><strong>${qa.skinnedMeshes || 0}</strong><span>SkinnedMesh · ${qa.bones || 0} bone</span></div><div><small>Eyes/Hair</small><strong>${qa.separateEyeMeshes || 0}/${qa.hairCardMeshes || 0}</strong><span>mesh tách nhận diện</span></div><div><small>PBR maps</small><strong>N${qa.normalMaps || 0} · R${qa.roughnessMaps || 0} · T${qa.thicknessMaps || 0}</strong><span>normal · roughness · thickness</span></div><div><small>Clips</small><strong>${qa.animations || 0}</strong><span>IK runtime · ${Number(qa.animationSeconds || 0).toFixed(1)} giây asset</span></div><div><small>Quality</small><strong>HERO</strong><span>Không LOD/proxy</span></div></div><div class="har-hero-gate__checks">${(qa.heroChecks || []).map((check) => `<span class="${check.pass ? "is-pass" : "is-missing"}">${check.pass ? "✓" : "○"} ${escapeHtml(check.label)} · ${escapeHtml(check.value)}</span>`).join("")}</div>${qa.warnings?.length ? `<p>${qa.warnings.map(escapeHtml).join("<br>")}</p>` : "<p>Không có cảnh báo tương thích.</p>"}</div>` : ""}
+          ${qa ? `<div class="har-section har-character-qa"><h3>Hero Prime QA · ${Math.round(qa.score ?? 100)}/100 · ${escapeHtml(qa.assetClassLabel || qa.digitalHumanTier || "hero-prime")}</h3><p><strong>Asset duy nhất:</strong> ${qa.heroReady ? "Đạt toàn bộ gate kỹ thuật." : "Đang dùng asset mạnh nhất được khóa; các gate thiếu được báo minh bạch, không thay bằng proxy."}</p><div class="har-character-runtime-grid"><div><small>Geometry</small><strong>${Number(qa.triangles || 0).toLocaleString("vi-VN")}</strong><span>triangles</span></div><div><small>Head</small><strong>${Number(qa.headVertices || 0).toLocaleString("vi-VN")}</strong><span>vertices · đo thực tế</span></div><div><small>Face</small><strong>${qa.faceMorphTargets || 0}/52</strong><span>native facial morph</span></div><div><small>Rig</small><strong>${qa.skinnedMeshes || 0}</strong><span>SkinnedMesh · ${qa.bones || 0} bone</span></div><div><small>Eyes/Hair</small><strong>${qa.separateEyeMeshes || 0}/${qa.hairCardMeshes || 0}</strong><span>mesh tách nhận diện</span></div><div><small>PBR Surface</small><strong>N${qa.normalMaps || 0} · Physical ${qa.physicalMaterials || 0}</strong><span>normal · material vật lý · atlas opaque</span></div><div><small>Clips</small><strong>${qa.animations || 0}</strong><span>IK runtime · ${Number(qa.animationSeconds || 0).toFixed(1)} giây asset</span></div><div><small>Quality</small><strong>HERO</strong><span>Không LOD/proxy</span></div></div><div class="har-hero-gate__checks">${(qa.heroChecks || []).map((check) => `<span class="${check.pass ? "is-pass" : "is-missing"}">${check.pass ? "✓" : "○"} ${escapeHtml(check.label)} · ${escapeHtml(check.value)}</span>`).join("")}</div>${qa.warnings?.length ? `<p>${qa.warnings.map(escapeHtml).join("<br>")}</p>` : "<p>Không có cảnh báo tương thích.</p>"}</div>` : ""}
           <div class="har-section"><h3>Motion Lab</h3><p>Xem ngay state machine và crossfade trước khi đưa animation vào gameplay.</p><div class="har-motion-grid">
             ${["idle", "walk", "run", "sprint", "jump", "land", "dodge", "attack1", "attack2", "attack3", "skill", "ultimate", "hit"].map((motion) => `<button class="har-chip ${this.activeAnimation === motion ? "is-active" : ""}" type="button" data-panel-action="character-preview-motion" data-motion="${motion}">${motion}</button>`).join("")}
           </div></div>
@@ -11430,7 +11896,7 @@
 
     async reloadCharacterPipeline() {
       if (this.characterImporting || !this.GLTFLoaderClass || !this.cloneSkinnedCharacter) {
-        this.toast("Character pipeline chưa sẵn sàng; đang dùng fallback an toàn.", "info");
+        this.toast("Hero Prime pipeline chưa sẵn sàng; không thay bằng model khác.", "info");
         return;
       }
       this.characterImporting = true;
@@ -11598,28 +12064,27 @@
       const record = this.savedRecord;
       const histories = record?.history || [];
       return `
-        <div class="har-section"><h3>Đồ họa và điều khiển</h3><p>Chế độ Auto tự giảm độ phân giải, sao và thời tiết nếu FPS thấp.</p>
+        <div class="har-section"><h3>Đồ họa và điều khiển</h3><p>Ultra Photoreal khóa độ phân giải native, bóng 4K, PBR vật lý và toàn bộ mật độ cảnh ở mức cao nhất.</p>
           <div class="har-form-row">
-            <label class="har-field">Chất lượng<select data-setting="quality"><option value="auto">Tự động theo FPS</option><option value="low">Tiết kiệm</option><option value="medium">Vừa</option><option value="high">Cao</option><option value="cinematic">Điện ảnh</option></select></label>
+            <label class="har-field">Chất lượng<select data-setting="quality"><option value="cinematic">Ultra Photoreal · 4K Shadow</option></select></label>
             <label class="har-field">Renderer<select data-setting="rendererMode"><option value="auto">Auto ổn định · WebGL2</option><option value="webgpu">WebGPU thử nghiệm</option><option value="webgl">WebGL2 bắt buộc</option></select></label>
-            <label class="har-field">Model hiển thị<select data-setting="visualStyle"><option value="photoreal">Human Rig + Mesh World PBR</option><option value="hybrid">PBR 3D nhẹ · tùy biến</option><option value="performance">3D hiệu năng</option></select></label>
+            <label class="har-field">Model hiển thị<select data-setting="visualStyle"><option value="photoreal">Human Rig + Mesh World PBR Ultra</option></select></label>
             <label class="har-field">Character runtime<select data-setting="characterMode"><option value="hero">Human Rig 3D · Hero Prime V${CHARACTER_VISUAL_VERSION}</option></select></label>
             <label class="har-field">Character quality<select data-setting="characterQuality"><option value="hero">Hero Prime · Full Quality Only</option></select></label>
-            <label class="har-field">Khuôn mặt<select data-setting="facialAnimation"><option value="true">Chớp mắt, cảm xúc và lip-sync</option><option value="false">Tắt facial animation</option></select></label>
-            <label class="har-field">Mắt tự nhiên<select data-setting="eyePerformance"><option value="true">Mí mắt, đồng tử và micro-saccade</option><option value="false">Mắt tĩnh</option></select></label>
-            <label class="har-field">Chuyển động tự nhiên<select data-setting="naturalMotion"><option value="true">Analog gait · yaw smoothing</option><option value="false">Chuyển động cơ bản</option></select></label>
+            <label class="har-field">Khuôn mặt<select data-setting="facialAnimation"><option value="true">Luôn bật · cảm xúc và lip-sync đầy đủ</option></select></label>
+            <label class="har-field">Mắt tự nhiên<select data-setting="eyePerformance"><option value="true">Luôn bật · mí mắt, đồng tử và micro-saccade</option></select></label>
+            <label class="har-field">Chuyển động tự nhiên<select data-setting="naturalMotion"><option value="true">Luôn bật · Analog gait và yaw smoothing</option></select></label>
             <label class="har-field">Digital Human<select data-setting="digitalHumanQuality"><option value="hero">Hero Prime · facial 60 Hz</option></select></label>
-            <label class="har-field">Tóc & vải động<select data-setting="secondaryMotion"><option value="true">Spring bone nhẹ</option><option value="false">Tắt secondary motion</option></select></label>
-            <label class="har-field">Chi tiết vi mô<select data-setting="microDetail"><option value="true">Da normal/roughness · hair cards</option><option value="false">Vật liệu nhẹ</option></select></label>
-            <label class="har-field">Da & trang phục<select data-setting="surfaceFx"><option value="true">Wetness, tuyết và nhiệt</option><option value="false">Vật liệu cố định</option></select></label>
-            <label class="har-field">Kết xuất 3D<select data-setting="renderStyle"><option value="realistic">Realistic PBR</option><option value="cinematic">Cinematic PBR</option><option value="anime">Anime Toon</option></select></label>
-            <label class="har-field">Mức VFX<select data-setting="vfxLevel"><option value="static">Tĩnh · nhẹ nhất</option><option value="balanced">Cân bằng</option><option value="cinematic">Điện ảnh</option></select></label>
-            <label class="har-field">Thế giới sống<select data-setting="livingWorld"><option value="true">Bật NPC, sinh vật và giao thông</option><option value="false">Tắt để tăng FPS</option></select></label>
-            <label class="har-field">Dynamic resolution<select data-setting="dynamicResolution"><option value="true">Bật theo FPS</option><option value="false">Khóa độ phân giải</option></select></label>
+            <label class="har-field">Tóc & vải động<select data-setting="secondaryMotion"><option value="true">Luôn bật · Spring bone đầy đủ</option></select></label>
+            <label class="har-field">Chi tiết vi mô<select data-setting="microDetail"><option value="true">Luôn bật · da normal/roughness và hair cards</option></select></label>
+            <label class="har-field">Da & trang phục<select data-setting="surfaceFx"><option value="true">Luôn bật · wetness, tuyết và nhiệt</option></select></label>
+            <label class="har-field">Kết xuất 3D<select data-setting="renderStyle"><option value="cinematic">Cinematic Physical PBR</option></select></label>
+            <label class="har-field">Mức VFX<select data-setting="vfxLevel"><option value="cinematic">Điện ảnh tối đa</option></select></label>
+            <label class="har-field">Thế giới sống<select data-setting="livingWorld"><option value="true">NPC, sinh vật và giao thông tối đa</option></select></label>
             <label class="har-field">Âm lượng<input type="range" min="0" max="100" value="${this.state.settings.volume}" data-setting="volume"></label>
             <label class="har-field">Độ nhạy camera<input type="range" min="10" max="100" value="${this.state.settings.cameraSensitivity}" data-setting="cameraSensitivity"></label>
             <label class="har-field">Rung camera<input type="range" min="0" max="100" value="${this.state.settings.cameraShake}" data-setting="cameraShake"></label>
-            <label class="har-field">Mật độ thời tiết<input type="range" min="0" max="100" value="${this.state.settings.weatherDensity}" data-setting="weatherDensity"></label>
+            <label class="har-field">Mật độ thời tiết<select data-setting="weatherDensity"><option value="${ULTRA_PHOTOREAL_PROFILE.weatherDensity}">Ultra ${ULTRA_PHOTOREAL_PROFILE.weatherDensity}%</option></select></label>
             <label class="har-field">Hiệu ứng<select data-setting="reduceEffects"><option value="false">Đầy đủ</option><option value="true">Giảm chuyển động</option></select></label>
           </div>
         </div>
@@ -11721,10 +12186,30 @@
           let value = event.target.value;
           if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld", "facialAnimation", "surfaceFx", "microDetail", "naturalMotion", "eyePerformance", "secondaryMotion"].includes(key)) value = value === "true";
           if (["volume", "cameraSensitivity", "cameraShake", "weatherDensity"].includes(key)) value = Number(value);
+          const ultraLockedSettings = {
+            quality: ULTRA_PHOTOREAL_PROFILE.quality,
+            renderStyle: ULTRA_PHOTOREAL_PROFILE.renderStyle,
+            visualStyle: ULTRA_PHOTOREAL_PROFILE.visualStyle,
+            vfxLevel: ULTRA_PHOTOREAL_PROFILE.vfxLevel,
+            characterMode: "hero",
+            characterQuality: "hero",
+            digitalHumanQuality: "hero",
+            facialAnimation: true,
+            eyePerformance: true,
+            naturalMotion: true,
+            secondaryMotion: true,
+            microDetail: true,
+            surfaceFx: true,
+            postFx: true,
+            livingWorld: true,
+            dynamicResolution: ULTRA_PHOTOREAL_PROFILE.dynamicResolution,
+            weatherDensity: ULTRA_PHOTOREAL_PROFILE.weatherDensity
+          };
+          if (Object.prototype.hasOwnProperty.call(ultraLockedSettings, key)) value = ultraLockedSettings[key];
           this.state.settings[key] = value;
           if (key === "quality") {
             this.root.dataset.quality = value;
-            if (this.renderer.shadowMap) this.renderer.shadowMap.enabled = value !== "low";
+            if (this.renderer.shadowMap) this.renderer.shadowMap.enabled = true;
             this.resize();
           }
           if (key === "weatherDensity") this.updateWeatherAppearance();
@@ -11763,7 +12248,6 @@
           }
           if (key === "reduceEffects") this.syncMotionPreference();
           if (key === "livingWorld") this.toast("Thế giới sống sẽ áp dụng ở lần mở game kế tiếp.");
-          if (key === "dynamicResolution") this.dynamicResolution = value ? this.renderScale : 1;
           if (key === "volume" && this.audioMaster) this.audioMaster.gain.value = value / 100 * 0.15;
           this.saveProgress("Thay đổi thiết lập");
         }
@@ -11789,7 +12273,6 @@
       setSelect('[data-setting="surfaceFx"]', this.state.settings.surfaceFx);
       setSelect('[data-setting="vfxLevel"]', this.state.settings.vfxLevel);
       setSelect('[data-setting="livingWorld"]', this.state.settings.livingWorld);
-      setSelect('[data-setting="dynamicResolution"]', this.state.settings.dynamicResolution);
       setSelect('[data-setting="reduceEffects"]', this.state.settings.reduceEffects);
     }
 
@@ -12208,7 +12691,7 @@
       Object.assign(this.state.player, {
         x: 0,
         y: 1.2,
-        z: 5,
+        z: 10.5,
         rotation: 0,
         checkpoint: "central",
         health: this.state.player.maxHealth,

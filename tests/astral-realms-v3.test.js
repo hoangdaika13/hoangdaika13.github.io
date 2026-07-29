@@ -6,9 +6,12 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Astral Realms defaults to a physical material character pass", () => {
+test("Astral Realms defaults to the locked Ultra Photoreal material pass", () => {
   const source = read("astral-realms.js");
-  assert.match(source, /renderStyle:\s*"realistic"/);
+  assert.match(source, /const ULTRA_PHOTOREAL_PROFILE\s*=\s*Object\.freeze\(\{/);
+  assert.match(source, /renderStyle:\s*"cinematic"/);
+  assert.match(source, /renderStyle:\s*ULTRA_PHOTOREAL_PROFILE\.renderStyle/);
+  assert.match(source, /visualStyle:\s*ULTRA_PHOTOREAL_PROFILE\.visualStyle/);
   assert.match(source, /APPEARANCE_GROUPS/);
   assert.match(source, /APPEARANCE_CONTROL_MAP/);
   assert.match(source, /defaultAppearanceRecipe/);
@@ -21,12 +24,14 @@ test("Astral Realms defaults to a physical material character pass", () => {
   assert.match(source, /Realistic PBR/);
 });
 
-test("cinematic lighting and adaptive shadows remain bounded by quality", () => {
+test("Ultra lighting uses soft 4K shadows and a player-following three-point rig", () => {
   const source = read("astral-realms.js");
   assert.match(source, /toneMapping\s*=\s*THREE\.ACESFilmicToneMapping/);
-  assert.match(source, /shadowSize\s*=\s*quality\s*===\s*"cinematic"\s*\?\s*2048/);
-  assert.match(source, /fillLight/);
-  assert.match(source, /rimLight/);
+  assert.match(source, /shadowMapSize:\s*4096/);
+  assert.match(source, /shadowMap\.type\s*=\s*THREE\.PCFShadowMap/);
+  assert.match(source, /const shadowSize\s*=\s*ULTRA_PHOTOREAL_PROFILE\.shadowMapSize/);
+  assert.match(source, /this\.heroLights\s*=\s*\{\s*key:\s*heroKey,\s*fill:\s*heroFill,\s*rim:\s*heroRim/);
+  assert.match(source, /this\.heroLightRig\.position\.[xz]\s*\+=/);
 });
 
 test("small realtime shards reconnect and interpolate remote players", () => {
@@ -52,7 +57,7 @@ test("small realtime shards reconnect and interpolate remote players", () => {
 test("the release loader and service worker request the latest Astral Realms bundle", () => {
   for (const file of ["performance-loader.js", "sw.js"]) {
     const source = read(file);
-      assert.match(source, /astral-realms\.css\?v=22/);
-      assert.match(source, /astral-realms\.js\?v=22/);
+      assert.match(source, /astral-realms\.css\?v=40/);
+      assert.match(source, /astral-realms\.js\?v=40/);
   }
 });

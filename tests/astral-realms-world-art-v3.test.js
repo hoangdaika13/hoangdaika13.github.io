@@ -28,8 +28,8 @@ function zoneBlock(section, zone, nextZone) {
   return section.slice(start, end);
 }
 
-test("World Art V3 defines exactly eight story profiles with unique motifs and landmarks", () => {
-  assert.match(source, /const WORLD_ART_VERSION\s*=\s*3/);
+test("World Art V4 defines exactly eight story profiles with unique motifs and landmarks", () => {
+  assert.match(source, /const WORLD_ART_VERSION\s*=\s*4/);
   const profiles = between(source, "const WORLD_ART_PROFILES", "const STORY_ENVIRONMENT_VARIANTS");
   const profileZones = [...profiles.matchAll(/^    ([a-z]+): Object\.freeze\(\{$/gm)].map((match) => match[1]);
   assert.deepEqual(profileZones, zones);
@@ -129,7 +129,7 @@ test("per-frame world work uses cached lists and world-space streaming positions
   assert.doesNotMatch(streaming, /\.traverse\(/, "streaming must consume the cached shadow list");
 });
 
-test("World Art V3 pauses hidden-tab rendering and honors reduced motion", () => {
+test("World Art V4 pauses hidden-tab rendering and honors reduced motion", () => {
   const visibility = between(source, "this.listen(document, \"visibilitychange\"", "this.listen(root, \"online\"");
   const frame = between(source, "    frame(time)", "    updatePlayer(");
   const world = between(source, "    updateWorld(dt, time)", "    updateWorldStreaming()");
@@ -141,15 +141,15 @@ test("World Art V3 pauses hidden-tab rendering and honors reduced motion", () =>
   assert.match(world, /const worldMotion = this\.state\.settings\.reduceEffects \|\| this\.state\.settings\.vfxLevel === "static" \? 0 : 1/);
 });
 
-test("World Art V3 production bundles use release 36/97 and offline cache 315", () => {
+test("World Art V4 production bundles use release 40/101 and offline cache 319", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const index = read("index.html");
-  for (const asset of ["astral-realms.css?v=36", "astral-realms.js?v=36"]) {
+  for (const asset of ["astral-realms.css?v=40", "astral-realms.js?v=40"]) {
     assert.ok(loader.includes(asset), `${asset} missing from route loader`);
     assert.ok(worker.includes(asset), `${asset} missing from offline cache`);
   }
-  assert.match(index, /<script src="performance-loader\.js\?v=97"/);
-  assert.match(worker, /\.\/performance-loader\.js\?v=97/);
-  assert.match(worker, /const CACHE = "hh-identity-portal-v315"/);
+  assert.match(index, /<script src="performance-loader\.js\?v=101"/);
+  assert.match(worker, /\.\/performance-loader\.js\?v=101/);
+  assert.match(worker, /const CACHE = "hh-identity-portal-v319"/);
 });

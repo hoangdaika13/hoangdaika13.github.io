@@ -6,11 +6,11 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Astral Realms V5 declares quality inside world creation and exposes recovery controls", () => {
+test("Astral Realms V5 world creation consumes the locked Ultra profile and exposes recovery controls", () => {
   const source = read("astral-realms.js");
   const createWorld = source.slice(source.indexOf("createWorld() {"), source.indexOf("createToonGradient() {"));
-  assert.match(createWorld, /const quality\s*=/);
-  assert.match(createWorld, /shadowSize\s*=\s*quality/);
+  assert.match(createWorld, /const quality\s*=\s*ULTRA_PHOTOREAL_PROFILE\.quality/);
+  assert.match(createWorld, /shadowSize\s*=\s*ULTRA_PHOTOREAL_PROFILE\.shadowMapSize/);
   assert.match(source, /data-har-retry/);
   assert.match(source, /data-har-safe-mode/);
   assert.match(source, /applyCompatibilityProfile/);

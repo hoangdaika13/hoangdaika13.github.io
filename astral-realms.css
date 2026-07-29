@@ -4152,3 +4152,276 @@ button.har-chip {
   .har-story-ending-orbit::before { animation: none !important; transition: none !important; }
   .har-story-decision button:hover { transform: none; }
 }
+
+/* Astral Realms Ultra Photoreal V4 · clear world, vivid PBR and readable Genesis */
+.har-shell {
+  --har-v4-brightness: 1.035;
+  --har-v4-saturation: 1.065;
+  --har-v4-contrast: 1.035;
+  --har-v4-glass: rgba(7, 15, 31, .82);
+  --har-v4-copy: #b9c9df;
+}
+
+.har-shell[data-biome="aurora"],
+.har-shell[data-biome="ocean"] {
+  --har-v4-brightness: 1.045;
+  --har-v4-saturation: 1.085;
+}
+
+.har-shell[data-biome="crimson"] {
+  --har-v4-brightness: 1.035;
+  --har-v4-saturation: 1.075;
+  --har-v4-contrast: 1.035;
+}
+
+.har-shell[data-biome="void"],
+.har-shell[data-biome="abyss"] {
+  --har-v4-brightness: 1.05;
+  --har-v4-saturation: 1.08;
+  --har-v4-contrast: 1.03;
+}
+
+.har-shell[data-story-environment="forge"],
+.har-shell[data-story-environment="destroy"] {
+  --har-v4-brightness: 1.035;
+  --har-v4-saturation: 1.095;
+  --har-v4-contrast: 1.035;
+}
+
+.har-shell[data-story-environment="sever"],
+.har-shell[data-story-environment="detain"] {
+  --har-v4-brightness: 1.05;
+  --har-v4-saturation: 1.025;
+  --har-v4-contrast: 1.03;
+}
+
+.har-shell:is([data-world-art="v3"], [data-world-art="v4"], [data-visual-style="photoreal"], .is-photoreal) .har-stage canvas[data-har-world] {
+  filter:
+    brightness(var(--har-v4-brightness))
+    saturate(var(--har-v4-saturation))
+    contrast(var(--har-v4-contrast));
+  transition: filter .28s ease;
+}
+
+/* Genesis uses calibrated studio lights; avoid post-filtering skin into white. */
+.har-shell.is-genesis .har-stage canvas[data-har-world] {
+  filter: brightness(1.01) saturate(1.025) contrast(1.035);
+}
+
+/* Keep depth at the frame edge without crushing the character or terrain. */
+.har-shell:is([data-world-art="v3"], [data-world-art="v4"]) .har-stage::before,
+.har-shell[data-visual-style="photoreal"] .har-stage::before {
+  background:
+    radial-gradient(ellipse at 50% 47%, transparent 52%, rgba(2, 5, 14, .045) 76%, rgba(1, 3, 10, .2) 100%),
+    linear-gradient(180deg, rgba(124, 194, 255, .035), transparent 25% 78%, rgba(5, 10, 24, .14));
+}
+
+.har-shell:is([data-world-art="v3"], [data-world-art="v4"]) .har-stage::after,
+.har-shell[data-visual-style="photoreal"] .har-stage::after {
+  opacity: .025;
+}
+
+.har-shell:is([data-world-art="v3"], [data-world-art="v4"]) .har-postfx,
+.har-shell[data-visual-style="photoreal"] .har-postfx {
+  opacity: .32;
+  background:
+    radial-gradient(circle at 26% 18%, rgba(92, 225, 255, .075), transparent 31%),
+    radial-gradient(circle at 82% 22%, rgba(255, 105, 202, .055), transparent 30%),
+    linear-gradient(180deg, rgba(255, 232, 198, .018), transparent 40% 76%, rgba(49, 103, 164, .025));
+  filter: none;
+  mix-blend-mode: screen;
+}
+
+.har-shell:is([data-world-art="v3"], [data-world-art="v4"]) .har-biome-fx {
+  opacity: .24;
+}
+
+.har-shell:is([data-world-art="v3"], [data-world-art="v4"])[data-weather-consequence="active"] .har-biome-fx {
+  opacity: .32;
+}
+
+.har-shell:is([data-world-art="v3"], [data-world-art="v4"])[data-vfx="cinematic"] .har-biome-fx {
+  opacity: .38;
+}
+
+.har-shell:is([data-world-art="v3"], [data-world-art="v4"]) .har-biome-fx::after {
+  opacity: .18;
+  background:
+    radial-gradient(circle at 50% 46%, transparent 58%, color-mix(in srgb, var(--har-biome-accent) 6%, transparent) 82%, rgba(2, 5, 13, .16) 100%);
+}
+
+.har-stage::before,
+.har-stage::after,
+.har-postfx,
+.har-biome-fx,
+.har-biome-fx::before,
+.har-biome-fx::after,
+.har-biome-fx i,
+.har-cinematic-bars {
+  pointer-events: none !important;
+}
+
+/* Bright glass keeps the HUD readable over snow, neon, fire and deep space. */
+.har-shell .har-brand,
+.har-shell .har-live-orbit,
+.har-shell .har-top-actions,
+.har-shell .har-player-card,
+.har-shell .har-quest-card,
+.har-shell .har-element-ring,
+.har-shell .har-minimap-wrap,
+.har-shell .har-context-prompt {
+  border-color: rgba(151, 222, 255, .3);
+  background: linear-gradient(145deg, var(--har-v4-glass), rgba(12, 12, 35, .78));
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .22), inset 0 1px rgba(255, 255, 255, .075);
+  backdrop-filter: blur(15px) saturate(1.18);
+}
+
+.har-shell .har-system-dock {
+  border-color: rgba(138, 224, 255, .27);
+  background: rgba(6, 14, 30, .78);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .2), inset 0 1px rgba(255, 255, 255, .06);
+}
+
+.har-shell .har-action {
+  border-color: rgba(165, 221, 255, .38);
+  background: linear-gradient(145deg, rgba(27, 43, 74, .94), rgba(8, 15, 34, .92));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .22), inset 0 1px rgba(255, 255, 255, .09);
+}
+
+.har-shell .har-brand strong,
+.har-shell .har-player-meta strong,
+.har-shell .har-quest-card strong {
+  color: #f8fcff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+}
+
+.har-shell .har-brand strong { font-size: 13px; }
+.har-shell .har-brand span { color: #aebed5; font-size: 10px; }
+.har-shell .har-signal small { color: #9aacc6; font-size: 9px; }
+.har-shell .har-signal strong { font-size: 11px; }
+.har-shell .har-player-meta span { color: #aebed5; font-size: 10px; }
+.har-shell .har-quest-card small { font-size: 9px; }
+.har-shell .har-quest-card strong { font-size: 12px; }
+.har-shell .har-quest-card span { color: #b0bfd4; font-size: 10px; }
+.har-shell .har-context-prompt { color: #f2fdff; font-size: 11px; }
+.har-shell .har-minimap-label { color: #d6faff; font-size: 9px; }
+
+/* Character Genesis: preserve the clear model viewport and lift editor copy. */
+.har-shell .har-genesis {
+  background:
+    radial-gradient(circle at 50% 44%, rgba(106, 235, 255, .085), transparent 33%),
+    linear-gradient(90deg, rgba(3, 9, 21, .88) 0 24%, rgba(4, 9, 20, .045) 39% 63%, rgba(6, 10, 24, .89) 79% 100%);
+}
+
+.har-shell .har-genesis::before { opacity: .24; }
+.har-shell .har-genesis::after { opacity: .82; }
+
+.har-shell .har-genesis__header {
+  border-color: rgba(151, 228, 255, .26);
+  background: rgba(6, 13, 28, .86);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, .18);
+}
+
+.har-shell .har-genesis__guide {
+  border-color: rgba(154, 225, 255, .24);
+  background: linear-gradient(145deg, rgba(13, 27, 49, .9), rgba(19, 14, 43, .84));
+  box-shadow: 0 20px 58px rgba(0, 0, 0, .22), inset 0 1px rgba(255, 255, 255, .055);
+}
+
+.har-shell .har-genesis__editor {
+  border-color: rgba(151, 225, 255, .23);
+  background: linear-gradient(180deg, rgba(9, 19, 39, .94), rgba(15, 11, 35, .95));
+}
+
+.har-shell .har-genesis-stepper,
+.har-shell .har-genesis-navigation {
+  border-color: rgba(143, 226, 255, .27);
+  background: rgba(6, 14, 31, .95);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .2), 0 0 22px rgba(95, 224, 255, .055);
+}
+
+.har-shell .har-genesis__camera-note,
+.har-shell .har-genesis-studios {
+  border-color: rgba(151, 230, 255, .25);
+  background: rgba(6, 15, 32, .8);
+}
+
+.har-shell .har-genesis__header span,
+.har-shell .har-genesis__guide p,
+.har-shell .har-genesis-editor__intro p,
+.har-shell .har-genesis-block__title span,
+.har-shell .har-genesis-models article span,
+.har-shell .har-genesis-models button span,
+.har-shell .har-genesis-colors small,
+.har-shell .har-genesis-capabilities span,
+.har-shell .har-digital-human-stack span,
+.har-shell .har-genesis-detail-grid label span,
+.har-shell .har-genesis-fit span:not(.har-genesis-fit__orb),
+.har-shell .har-motion-dna span,
+.har-shell .har-version-summary span {
+  color: var(--har-v4-copy);
+}
+
+.har-shell .har-genesis__guide li { color: #aebdd2; font-size: 12px; }
+.har-shell .har-genesis-editor__intro p,
+.har-shell .har-genesis-block__title span { font-size: 11px; }
+.har-shell .har-genesis-models article span,
+.har-shell .har-genesis-models button span,
+.har-shell .har-genesis-sliders label > span,
+.har-shell .har-genesis-motion > span { font-size: 10px; }
+.har-shell .har-genesis-tabs button,
+.har-shell .har-genesis-studios button,
+.har-shell .har-genesis-assets label,
+.har-shell .har-genesis-dna label,
+.har-shell .har-genesis-detail-grid label span { font-size: 9px; }
+.har-shell .har-genesis-capabilities span,
+.har-shell .har-digital-human-stack span,
+.har-shell .har-motion-dna span,
+.har-shell .har-version-summary span { font-size: 9px; }
+.har-shell .har-genesis-stepper button span { color: #aebdd2; font-size: 8px; }
+.har-shell .har-genesis-navigation > button > span { font-size: 11px; }
+.har-shell .har-genesis-navigation > button > small { font-size: 8px; opacity: .82; }
+
+.har-shell .har-genesis-navigation > .is-primary,
+.har-shell .har-genesis-navigation .har-genesis-confirm,
+.har-shell .har-genesis-confirm {
+  background: linear-gradient(112deg, #8ff5ff, #c8a9ff 54%, #ff9bd6);
+  box-shadow: 0 10px 28px rgba(89, 220, 255, .16), inset 0 1px rgba(255, 255, 255, .34);
+}
+
+.har-shell .har-start {
+  background:
+    linear-gradient(90deg, rgba(2, 7, 15, .66) 0%, rgba(2, 7, 15, .2) 46%, rgba(2, 7, 15, .48) 100%),
+    linear-gradient(0deg, rgba(1, 4, 10, .5), transparent 58%),
+    url("./assets/astral-realms/astral-realms-panorama-v1.webp") center / cover no-repeat,
+    #030711;
+}
+
+@media (max-width: 760px) {
+  .har-shell:is([data-world-art="v3"], [data-world-art="v4"]) .har-postfx { opacity: .24; }
+  .har-shell:is([data-world-art="v3"], [data-world-art="v4"]) .har-biome-fx { opacity: .2; }
+  .har-shell .har-genesis {
+    background:
+      radial-gradient(circle at 50% 22%, rgba(104, 232, 255, .08), transparent 34%),
+      linear-gradient(180deg, rgba(4, 10, 23, .42), rgba(7, 13, 29, .94) 45%);
+  }
+}
+
+.har-shell:is([data-vfx="static"], [data-reduce-effects="true"], .is-reduced-motion) .har-postfx {
+  opacity: .14;
+  filter: none;
+}
+
+.har-shell:is([data-vfx="static"], [data-reduce-effects="true"], .is-reduced-motion) .har-biome-fx {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .har-shell .har-stage canvas[data-har-world],
+  .har-shell .har-postfx,
+  .har-shell .har-biome-fx,
+  .har-shell .har-genesis::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
