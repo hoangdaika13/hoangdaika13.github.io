@@ -379,6 +379,21 @@
     if (tags) tags.textContent = `${draft.tags.length}/480`;
   }
 
+  function updateUploadReadiness() {
+    const metadata = host?.querySelector(".yap-readiness article:nth-child(3)");
+    const metadataIcon = metadata?.querySelector("i");
+    const metadataStatus = metadata?.querySelector("small");
+    const hasTitle = Boolean(draft.title.trim());
+    if (metadata) metadata.classList.toggle("is-ok", hasTitle);
+    if (metadataIcon) metadataIcon.textContent = hasTitle ? "✓" : "3";
+    if (metadataStatus) metadataStatus.textContent = hasTitle ? "Hợp lệ" : "Thiếu tiêu đề";
+
+    const uploadButton = host?.querySelector('[data-yap-action="upload"]');
+    const stage = activeUpload?.stage || "ready";
+    const busy = ["preparing", "uploading", "thumbnail", "finalizing"].includes(stage);
+    if (uploadButton) uploadButton.disabled = !(status.connected && videoFile && hasTitle && !busy);
+  }
+
   function updateProgress(stage, progress, detail = "") {
     activeUpload = { ...(activeUpload || {}), stage, progress: Math.max(0, Math.min(100, Number(progress) || 0)), detail };
     const labels = { preparing: "Đang tạo phiên upload", uploading: "Đang tải video", paused: "Đã tạm dừng", thumbnail: "Đang tải thumbnail", finalizing: "Đang hoàn tất", done: "Upload hoàn tất", error: "Upload thất bại" };
@@ -512,6 +527,17 @@
     };
   }
 
+  async function finalizeUpload(videoId) {
+    await uploadThumbnail(videoId);
+    updateProgress("finalizing", 100, "Đang thêm playlist và xác minh video…");
+    const completed = await api("upload/complete", "POST", { uploadId: activeUpload.uploadId, videoId, playlistId: draft.playlistId });
+    activeUpload = { ...activeUpload, stage: "done", progress: 100, detail: `Hoàn tất: ${completed.url}`, videoId };
+    await deleteUploadRecord().catch(() => {});
+    render();
+    notify("Video đã được gửi lên YouTube thành công.");
+    await refreshStatus();
+  }
+
   async function startUpload() {
     if (!status.connected || !videoFile) return notify("Hãy kết nối kênh và chọn video.", "error");
     if (!draft.title.trim()) return notify("Tiêu đề video đang trống.", "error");
@@ -548,14 +574,7 @@
       const result = activeUpload.completedUploadData || await uploadBinary(activeUpload.uploadUrl, videoFile, activeUpload.offset || 0, activeUpload.chunkSize);
       const videoId = result.id;
       if (!videoId) throw new Error("YouTube không trả về video ID.");
-      await uploadThumbnail(videoId);
-      updateProgress("finalizing", 100, "Đang thêm playlist và xác minh video…");
-      const completed = await api("upload/complete", "POST", { uploadId: activeUpload.uploadId, videoId, playlistId: draft.playlistId });
-      activeUpload = { ...activeUpload, stage: "done", progress: 100, detail: `Hoàn tất: ${completed.url}`, videoId };
-      await deleteUploadRecord().catch(() => {});
-      render();
-      notify("Video đã được gửi lên YouTube thành công.");
-      await refreshStatus();
+      await finalizeUpload(videoId);
     } catch (error) {
       if (error.paused) {
         if (cancelled) {
@@ -570,6 +589,22 @@
         persistCheckpoint(true);
         render();
         return;
+      }
+
+      const uploadReachedYouTube = activeUpload?.uploadId
+        && videoFile
+        && Number(activeUpload.bytesUploaded || 0) >= Number(videoFile.size || 0);
+      if (uploadReachedYouTube) {
+        try {
+          updateProgress("finalizing", 100, "Đang đối chiếu video đã nhận trong YouTube Studio…");
+          const reconciled = await api("upload/reconcile", "POST", { uploadId: activeUpload.uploadId });
+          if (reconciled.videoId) {
+            await finalizeUpload(reconciled.videoId);
+            return;
+          }
+        } catch (reconcileError) {
+          error.message = reconcileError?.message || error.message;
+        }
       }
       activeUpload = { ...activeUpload, stage: "error", detail: error.message };
       persistCheckpoint(true);
@@ -682,6 +717,7 @@
     draft[key] = target.type === "checkbox" ? target.checked : target.value;
     saveDraft();
     updateCounters();
+    updateUploadReadiness();
   }
 
   function handleChange(event) {

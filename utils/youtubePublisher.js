@@ -1672,6 +1672,39 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    if (route === "upload/reconcile" && req.method === "POST") {
+      const uploadId = clean(body.uploadId, 80);
+      if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
+      const record = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id, status: { $in: ["uploading", "error"] } });
+      if (!record) throw fail("Không tìm thấy phiên upload cần đối chiếu.", 404, "YOUTUBE_UPLOAD_NOT_FOUND");
+      if (Number(record.bytesUploaded || 0) < Number(record.totalBytes || record.fileSize || 0)) {
+        throw fail("YouTube chưa nhận đủ dữ liệu video.", 409, "YOUTUBE_UPLOAD_INCOMPLETE");
+      }
+
+      const connection = await connectionFor(db, user, record.channelId);
+      requireYoutubePermission(connection, "upload");
+      const accessToken = await refreshAccessToken(connection, connections);
+      const candidates = await recentVideos(accessToken);
+      const createdAt = new Date(record.createdAt || 0).getTime();
+      const expectedTitle = clean(record.title, 160);
+      const match = candidates
+        .filter((video) => video.title === expectedTitle)
+        .filter((video) => !createdAt || new Date(video.publishedAt || 0).getTime() >= createdAt - 10 * 60 * 1000)
+        .sort((left, right) => new Date(right.publishedAt || 0) - new Date(left.publishedAt || 0))[0];
+      if (!match?.id) throw fail("Video đã tải xong nhưng YouTube vẫn đang lập chỉ mục. Hãy thử lại sau ít phút.", 409, "YOUTUBE_VIDEO_PENDING");
+
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: record.channelId,
+        action: "upload:reconcile",
+        targetId: match.id,
+        status: "completed",
+        quotaCost: 4,
+        detail: record.title
+      });
+      return res.status(200).json({ ok: true, confirmed: true, videoId: match.id, url: `https://youtu.be/${match.id}` });
+    }
+
     if (route === "upload/progress" && req.method === "POST") {
       const uploadId = clean(body.uploadId, 80);
       if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");

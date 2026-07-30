@@ -29,6 +29,7 @@ test("Publisher supports real files, metadata, scheduling and resumable upload",
     "indexedDB.open",
     "upload/progress",
     "upload/resume",
+    "upload/reconcile",
     "upload/cancel",
     "RETRYABLE_UPLOAD_STATUS",
     "Retry-After",
@@ -38,6 +39,7 @@ test("Publisher supports real files, metadata, scheduling and resumable upload",
     "upload/complete"
   ]) assert.match(source, new RegExp(feature.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /dataTransfer\?\.files/);
+  assert.match(source, /updateUploadReadiness\(\)/);
   assert.match(source, /Đang xác thực và khôi phục phiên upload từ backend/);
   assert.doesNotMatch(source, /GOOGLE_CLIENT_SECRET\s*=/);
 });
@@ -61,6 +63,8 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   assert.match(source, /uploadSession:\s*encryptToken\(session\.uploadUrl,\s*connection\)/);
   assert.match(source, /decryptToken\(record\.uploadSession,\s*connection\)/);
   assert.match(source, /route === "upload\/resume"/);
+  assert.match(source, /route === "upload\/reconcile"/);
+  assert.match(source, /upload:reconcile/);
   assert.match(source, /status\.publishAt/);
   assert.match(source, /paidProductPlacementDetails/);
   assert.match(source, /playlistItems\?part=snippet/);
