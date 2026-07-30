@@ -1,6 +1,6 @@
 {
-  "version": 4,
-  "createdAt": "2026-07-29",
+  "version": 5,
+  "createdAt": "2026-07-30",
   "generator": "OpenAI built-in ImageGen",
   "rights": "Original HH visual assets, Three.js example GLB assets under MIT, and a CC0 animation-only derivative from Quaternius Universal Animation Library Standard.",
   "assets": [
@@ -9,6 +9,20 @@
       "role": "Photorealistic distant environment panorama",
       "promptSummary": "Original realistic alien open world with H-Central, Aurora Vale, Crimson Forge and Void Garden.",
       "sha256": "B590837463BC8A0C5A9581DD399109491BF848B2767EB8AF2027C361ECAABC0C"
+    },
+    {
+      "file": "environment/astral-cinematic-panorama-v1.png",
+      "role": "Original equirectangular-style scenic texture mapped onto the realtime 3D sky dome",
+      "promptSummary": "Original cosmic natural world with mountains, forest, water, volumetric clouds, aurora and floating islands; no third-party image source.",
+      "sha256": "93787296303B68A30B4358AC271ED515535EB6BCC584D26E25986D7CFF20B54F"
+    },
+    {
+      "file": "kenney/",
+      "role": "549 local CC0 GLB environment modules for nature, roads, suburban buildings and modular architecture",
+      "source": "Kenney Nature Kit, City Kit Roads, City Kit Suburban and Modular Buildings",
+      "license": "Creative Commons CC0 · SOURCE-License.txt retained inside every pack",
+      "downloadedModels": 549,
+      "runtimePolicy": "Curated nearby modules are loaded by zone; the complete library remains local and is never preloaded at once."
     },
     {
       "file": "astral-crew-atlas-v2.webp",

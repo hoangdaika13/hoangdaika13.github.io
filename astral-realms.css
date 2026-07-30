@@ -2056,11 +2056,36 @@ button.har-chip {
 }
 
 .har-shell[data-visual-style="photoreal"] .har-postfx {
-  opacity: .42;
+  opacity: .34;
   background:
-    radial-gradient(ellipse at 50% 46%, transparent 48%, rgba(1, 4, 10, .36) 100%),
-    linear-gradient(180deg, rgba(255, 220, 176, .025), transparent 36%, rgba(44, 92, 145, .055));
+    radial-gradient(ellipse at 50% 46%, transparent 56%, rgba(1, 3, 8, .24) 100%),
+    linear-gradient(180deg, rgba(255, 236, 212, .018), transparent 38%, rgba(27, 42, 61, .035));
   mix-blend-mode: normal;
+}
+
+.har-shell[data-visual-style="photoreal"] .har-stage canvas {
+  filter: saturate(.92) contrast(1.035) brightness(.99);
+}
+
+.har-shell[data-visual-style="photoreal"] .har-postfx::after {
+  position: absolute;
+  inset: -4%;
+  content: "";
+  opacity: .025;
+  pointer-events: none;
+  background-image:
+    repeating-radial-gradient(circle at 17% 31%, rgba(255,255,255,.65) 0 1px, transparent 1px 4px),
+    repeating-radial-gradient(circle at 73% 61%, rgba(0,0,0,.7) 0 1px, transparent 1px 5px);
+  background-size: 9px 11px, 13px 15px;
+  mix-blend-mode: soft-light;
+  will-change: transform;
+  animation: har-camera-grain 1.2s steps(2, end) infinite;
+}
+
+@keyframes har-camera-grain {
+  0% { transform: translate3d(-.35%, .2%, 0); }
+  50% { transform: translate3d(.25%, -.3%, 0); }
+  100% { transform: translate3d(.1%, .25%, 0); }
 }
 
 .har-start {
@@ -3663,4 +3688,226 @@ button.har-chip {
   .har-performance-row { align-items: flex-start; }
   .har-genesis-performance span,
   .har-performance-row > span { flex: 0 0 100%; }
+}
+
+/* Astral Cinematic Archive: eight realtime 3D story chapters. */
+.har-cinema-button {
+  position: relative;
+  color: #dffcff;
+  background: linear-gradient(135deg, rgba(41, 208, 255, .18), rgba(208, 102, 255, .2));
+  box-shadow: inset 0 0 18px rgba(93, 230, 255, .12), 0 0 20px rgba(119, 87, 255, .12);
+}
+
+.har-cinema-button b {
+  position: absolute;
+  right: -4px;
+  top: -5px;
+  min-width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.72);
+  border-radius: 999px;
+  color: #06101c;
+  background: #7ff3ff;
+  font-size: 8px;
+  line-height: 1;
+}
+
+.har-shell.is-story-cinematic .har-topbar,
+.har-shell.is-story-cinematic .har-system-dock,
+.har-shell.is-story-cinematic .har-team,
+.har-shell.is-story-cinematic .har-dps,
+.har-shell.is-story-cinematic .har-minimap-wrap,
+.har-shell.is-story-cinematic .har-boss,
+.har-shell.is-story-cinematic .har-hud,
+.har-shell.is-story-cinematic .har-action-dock,
+.har-shell.is-story-cinematic .har-element-ring,
+.har-shell.is-story-cinematic .har-context-prompt,
+.har-shell.is-story-cinematic .har-touch {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.har-story-cinema {
+  --cinema-accent: #6feeff;
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  overflow: hidden;
+  pointer-events: none;
+  color: #f4f8ff;
+  font-family: inherit;
+  background:
+    linear-gradient(90deg, rgba(2, 5, 16, .9) 0%, rgba(2, 5, 16, .48) 34%, transparent 62%),
+    linear-gradient(0deg, rgba(1, 3, 11, .98) 0%, transparent 33%);
+}
+
+.har-story-cinema[hidden] { display: none !important; }
+
+.har-story-cinema__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 72% 38%, transparent 12%, rgba(3, 5, 15, .08) 42%, rgba(1, 2, 8, .76) 110%),
+    linear-gradient(105deg, color-mix(in srgb, var(--cinema-accent) 18%, transparent), transparent 34%);
+}
+
+.har-story-cinema__header,
+.har-story-cinema__copy,
+.har-story-cinema__transport,
+.har-story-cinema__chapters,
+.har-story-cinema__hint {
+  pointer-events: auto;
+}
+
+.har-story-cinema__header {
+  position: absolute;
+  top: clamp(28px, 7vh, 74px);
+  left: clamp(24px, 5vw, 78px);
+  right: clamp(24px, 5vw, 78px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.har-story-cinema__header small,
+.har-story-cinema__header strong { display: block; }
+.har-story-cinema__header small { color: var(--cinema-accent); font-size: 9px; font-weight: 900; letter-spacing: .18em; }
+.har-story-cinema__header strong { margin-top: 5px; color: #eef5ff; font-size: 13px; letter-spacing: .04em; }
+.har-story-cinema__header button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(4, 8, 22, .6);
+  font: inherit;
+  font-size: 24px;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+}
+
+.har-story-cinema__copy {
+  position: absolute;
+  left: clamp(24px, 5vw, 78px);
+  top: 23%;
+  width: min(520px, 43vw);
+  text-shadow: 0 3px 18px rgba(0,0,0,.8);
+}
+
+.har-story-cinema__chapter { display: flex; align-items: center; gap: 11px; }
+.har-story-cinema__chapter span { color: var(--cinema-accent); font-size: 32px; font-weight: 950; line-height: 1; }
+.har-story-cinema__chapter i { width: 42px; height: 1px; background: var(--cinema-accent); box-shadow: 0 0 10px var(--cinema-accent); }
+.har-story-cinema__chapter small { color: #c9d7e9; font-size: 9px; font-weight: 900; letter-spacing: .18em; }
+.har-story-cinema__copy h2 { margin: 15px 0 10px; max-width: 680px; color: #fff; font-size: clamp(32px, 4.7vw, 72px); line-height: .98; letter-spacing: -.045em; }
+.har-story-cinema__copy > p { max-width: 500px; margin: 0; color: #c7d2e1; font-size: clamp(12px, 1.15vw, 16px); line-height: 1.65; }
+.har-story-cinema__objective { margin-top: 20px; padding-left: 13px; border-left: 2px solid var(--cinema-accent); }
+.har-story-cinema__objective small,
+.har-story-cinema__objective strong { display: block; }
+.har-story-cinema__objective small { color: #8e9db2; font-size: 8px; font-weight: 900; letter-spacing: .17em; }
+.har-story-cinema__objective strong { margin-top: 5px; color: #fff; font-size: 13px; }
+
+.har-story-cinema__transport {
+  position: absolute;
+  left: clamp(24px, 5vw, 78px);
+  right: clamp(24px, 5vw, 78px);
+  bottom: clamp(128px, 19vh, 190px);
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  align-items: center;
+  gap: 28px;
+}
+
+.har-story-cinema__time { display: grid; grid-template-columns: 38px minmax(120px, 1fr) 38px; align-items: center; gap: 10px; color: #d5e0ef; font-size: 9px; font-variant-numeric: tabular-nums; }
+.har-story-cinema__time > div { height: 3px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.2); }
+.har-story-cinema__time i { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #fff, var(--cinema-accent)); box-shadow: 0 0 13px var(--cinema-accent); }
+.har-story-cinema__actions { display: flex; gap: 8px; }
+.har-story-cinema__actions button {
+  min-height: 36px;
+  padding: 8px 13px;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 9px;
+  color: #e7effa;
+  background: rgba(4, 9, 24, .72);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+}
+.har-story-cinema__actions button.is-primary { color: #06101b; border-color: transparent; background: var(--cinema-accent); box-shadow: 0 0 22px color-mix(in srgb, var(--cinema-accent) 45%, transparent); }
+
+.har-story-cinema__chapters {
+  position: absolute;
+  left: clamp(24px, 5vw, 78px);
+  right: clamp(24px, 5vw, 78px);
+  bottom: clamp(35px, 5vh, 62px);
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.har-story-cinema__chapters button {
+  position: relative;
+  min-width: 0;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  color: #8f9eb2;
+  text-align: left;
+  background: rgba(4, 8, 21, .68);
+  font: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+}
+.har-story-cinema__chapters button > span { color: var(--cinema-color); font-size: 16px; font-weight: 950; }
+.har-story-cinema__chapters strong,
+.har-story-cinema__chapters small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.har-story-cinema__chapters strong { color: #dce5f1; font-size: 8px; }
+.har-story-cinema__chapters small { margin-top: 4px; color: #7e8ca0; font-size: 7px; text-transform: uppercase; }
+.har-story-cinema__chapters button > i { position: absolute; left: 0; right: 100%; bottom: 0; height: 2px; background: var(--cinema-color); box-shadow: 0 0 10px var(--cinema-color); transition: right .24s ease; }
+.har-story-cinema__chapters button:hover,
+.har-story-cinema__chapters button.is-active { color: #fff; border-color: color-mix(in srgb, var(--cinema-color) 70%, white 10%); background: color-mix(in srgb, var(--cinema-color) 15%, rgba(4, 8, 21, .82)); transform: translateY(-2px); }
+.har-story-cinema__chapters button.is-active > i { right: 0; }
+.har-story-cinema__hint { position: absolute; right: clamp(24px, 5vw, 78px); bottom: 16px; color: #6f7d91; font-size: 7px; letter-spacing: .06em; }
+
+.har-story-cinema button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+@media (max-width: 980px) {
+  .har-story-cinema__copy { top: 20%; width: min(560px, calc(100% - 48px)); }
+  .har-story-cinema__copy > p { max-width: 62vw; }
+  .har-story-cinema__transport { bottom: 166px; grid-template-columns: 1fr; gap: 10px; }
+  .har-story-cinema__actions { justify-content: flex-end; }
+  .har-story-cinema__chapters { grid-template-columns: repeat(8, minmax(120px, 1fr)); overflow-x: auto; padding-bottom: 5px; }
+}
+
+@media (max-width: 620px) {
+  .har-story-cinema__header { top: 28px; }
+  .har-story-cinema__header small { font-size: 7px; }
+  .har-story-cinema__copy { top: 19%; }
+  .har-story-cinema__copy h2 { font-size: clamp(30px, 11vw, 50px); }
+  .har-story-cinema__copy > p { max-width: 88vw; display: -webkit-box; overflow: hidden; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  .har-story-cinema__transport { bottom: 154px; }
+  .har-story-cinema__actions button { flex: 1; padding-inline: 7px; }
+  .har-story-cinema__chapters { grid-template-columns: repeat(8, minmax(118px, 1fr)); }
+  .har-story-cinema__chapters button { min-height: 46px; }
+  .har-story-cinema__hint { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .har-story-cinema *,
+  .har-story-cinema *::before,
+  .har-story-cinema *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+  .har-story-cinema__chapters button:hover,
+  .har-story-cinema__chapters button.is-active { transform: none; }
 }

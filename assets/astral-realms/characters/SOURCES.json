@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-30",
+  "policy": "Only redistributable local GLB assets with a recorded license and immutable checksum may be selected by the Astral character pipeline.",
+  "sources": [
+    {
+      "file": "default/valid-asian-f-1-casual.glb",
+      "sourceUrl": "https://github.com/c-frame/valid-avatars-glb/tree/c539a28",
+      "author": "c-frame contributors",
+      "license": "MIT",
+      "attribution": "Retain the upstream MIT license and copyright notice.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "30F9ED4545F59686AB70BFAB644724BFA6C64F226C48A8A5C063617A71147051",
+      "webVariant": "default/valid-asian-f-1-casual.glb"
+    },
+    {
+      "file": "default/valid-asian-m-1-casual.glb",
+      "sourceUrl": "https://github.com/c-frame/valid-avatars-glb/tree/c539a28",
+      "author": "c-frame contributors",
+      "license": "MIT",
+      "attribution": "Retain the upstream MIT license and copyright notice.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "92E8F1289382042EA8977A113682B9E8F86604E0EC696D63DE634581059EE1A2",
+      "webVariant": "default/valid-asian-m-1-casual.glb"
+    },
+    {
+      "file": "default/valid-black-f-1-casual.glb",
+      "sourceUrl": "https://github.com/c-frame/valid-avatars-glb/tree/c539a28",
+      "author": "c-frame contributors",
+      "license": "MIT",
+      "attribution": "Retain the upstream MIT license and copyright notice.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "853584957EAFAD7B65406C8A3B407C212AE26BBBC2D547BB168203E0736797AA",
+      "webVariant": "default/valid-black-f-1-casual.glb"
+    },
+    {
+      "file": "default/valid-white-m-1-casual.glb",
+      "sourceUrl": "https://github.com/c-frame/valid-avatars-glb/tree/c539a28",
+      "author": "c-frame contributors",
+      "license": "MIT",
+      "attribution": "Retain the upstream MIT license and copyright notice.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "ECE0275F5583F5021A71F3DF57B3B5E2F142FDD56130A05E91B19085D5E8DC7F",
+      "webVariant": "default/valid-white-m-1-casual.glb"
+    },
+    {
+      "file": "../hh-human-asteria-v1.glb",
+      "sourceUrl": "https://github.com/mrdoob/three.js/tree/master/examples/models/gltf",
+      "author": "Three.js example contributors",
+      "license": "MIT",
+      "attribution": "Retain vendor/THREE-LICENSE.txt.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "7A87E15A99CCBC5E5877BE66E1E4ECAE0A581ADCAFA0CCE1A5569F49909E968E",
+      "webVariant": "../hh-human-asteria-v1.glb"
+    },
+    {
+      "file": "../hh-human-vanguard-v1.glb",
+      "sourceUrl": "https://github.com/mrdoob/three.js/tree/master/examples/models/gltf",
+      "author": "Three.js example contributors",
+      "license": "MIT",
+      "attribution": "Retain vendor/THREE-LICENSE.txt.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "DFB230FC1F942F259DD00281A1186953AD602FC5D69067CE63E24B2AA439736B",
+      "webVariant": "../hh-human-vanguard-v1.glb"
+    }
+  ]
+}

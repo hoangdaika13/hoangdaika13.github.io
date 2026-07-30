@@ -61,6 +61,16 @@
     nodes: 2500,
     materials: 120
   });
+  const CINEMATIC_CAMERA = Object.freeze({
+    sensorWidthMm: 36,
+    sensorHeightMm: 24,
+    focalLengthMm: 40,
+    verticalFovDeg: (2 * Math.atan(24 / (2 * 40)) * 180) / Math.PI,
+    aperture: 4.8,
+    shutterAngle: 180,
+    shutterSpeed: "1/48",
+    iso: 640
+  });
   const HH_HUMANOID_SKELETON = Object.freeze({
     root: ["Root", "Armature", "rootbone"],
     hips: ["Hips", "mixamorigHips", "pelvis", "spine_root"],
@@ -261,7 +271,8 @@
     agile: { label: "Nhanh nhẹn", bodyPreset: "agile", morphs: { height: 0.54, shoulderWidth: 0.48, armLength: 0.58, legLength: 0.66, waist: 0.43, bodyMass: 0.38, muscle: 0.54, tone: 0.66 } }
   });
   const PHOTOREAL_ASSETS = Object.freeze({
-    panorama: "./assets/astral-realms/astral-realms-panorama-v1.webp"
+    panorama: "./assets/astral-realms/astral-realms-panorama-v1.webp",
+    scenicPanorama: "./assets/astral-realms/environment/astral-cinematic-panorama-v1.png"
   });
   const BUILTIN_CHARACTER_ASSETS = Object.freeze({
     "human-adult-a01": "./assets/astral-realms/hh-human-asteria-v1.glb",
@@ -285,7 +296,15 @@
     mossRocks: "./assets/astral-realms/environment/rock_moss_set_01.glb",
     shrub: "./assets/astral-realms/environment/shrub_01.glb",
     deadTree: "./assets/astral-realms/environment/dead_tree_trunk_02.glb",
-    fern: "./assets/astral-realms/environment/fern_02.glb"
+    fern: "./assets/astral-realms/environment/fern_02.glb",
+    kenneyOak: "./assets/astral-realms/kenney/nature/tree_oak.glb",
+    kenneyPalm: "./assets/astral-realms/kenney/nature/tree_palmDetailedTall.glb",
+    kenneyBush: "./assets/astral-realms/kenney/nature/plant_bushDetailed.glb",
+    kenneyPath: "./assets/astral-realms/kenney/nature/path_stone.glb",
+    kenneyRoad: "./assets/astral-realms/kenney/roads/road-straight.glb",
+    kenneyHouse: "./assets/astral-realms/kenney/suburban/building-type-a.glb",
+    kenneyTower: "./assets/astral-realms/kenney/buildings/building-sample-tower-c.glb",
+    kenneyBridge: "./assets/astral-realms/kenney/roads/road-bridge.glb"
   });
   const CHARACTER_ATLAS_INDEX = Object.freeze({ lyra: 0, cael: 1, nyx: 2, sol: 3 });
   const ELEMENT_REACTIONS = Object.freeze({
@@ -302,6 +321,16 @@
     { id: "ocean", name: "Ocean Moon", x: 122, z: -42, radius: 30, color: "#4de1ff", weather: "Mưa sao biển", description: "Mặt trăng đại dương với các rạn tinh thể phát sáng." },
     { id: "station", name: "Astral Station", x: -118, z: 90, radius: 27, color: "#ffd36b", weather: "Cực quang nhân tạo", description: "Trạm trung chuyển, chợ và hub xã hội ngoài quỹ đạo." },
     { id: "abyss", name: "Nexus Abyss", x: 124, z: 94, radius: 31, color: "#ff5e9f", weather: "Nhật thực Nexus", description: "Vực cuối nơi không gian, trọng lực và ánh sáng cùng biến dạng." }
+  ]);
+  const ASTRAL_CINEMATICS = Object.freeze([
+    { id: "central", chapter: 1, title: "Tín hiệu thức tỉnh", kicker: "H-CENTRAL · KHỞI NGUYÊN", description: "Nhà du hành vừa được định hình bước qua quảng trường lõi, trong lúc một tín hiệu mang chính chữ ký sinh học của họ xuất hiện trên mạng Astral.", objective: "Theo Luma tới tháp lõi", duration: 32000, camera: "opening-six-shot", motion: "opening" },
+    { id: "aurora", chapter: 2, title: "Hồ gương Aurora", kicker: "AURORA VALE · BĂNG TINH", description: "Mặt hồ phản chiếu một tương lai chưa xảy ra. Mỗi bước chân làm bừng sáng tinh thể và đánh thức những sinh vật ngủ dưới cực quang.", objective: "Ổn định ba trụ Băng tinh", duration: 9600, camera: "water-sweep", motion: "walk" },
+    { id: "crimson", chapter: 3, title: "Trái tim lò rèn", kicker: "CRIMSON FORGE · PLASMA", description: "Tro nóng phủ kín giáp phục khi lò rèn cổ khởi động trở lại. Một nhịp đập plasma đang gọi tên người mang lõi H.", objective: "Mở đường qua vành đai dung nham", duration: 9400, camera: "forge-rise", motion: "idle" },
+    { id: "void", chapter: 4, title: "Khu vườn không bóng", kicker: "VOID GARDEN · HƯ KHÔNG", description: "Cây khổng lồ mở mắt giữa các đảo nổi. Trọng lực đổi chiều và bóng của Nhà du hành bắt đầu chuyển động trước cơ thể.", objective: "Đóng khe nứt đầu tiên", duration: 10200, camera: "gravity-roll", motion: "talk" },
+    { id: "sky", chapter: 5, title: "Tàn tích trên tầng mây", kicker: "SKY RUINS · LƯỢNG TỬ", description: "Astral Wing mở ra trên vực mây. Những con đường chỉ tồn tại vài giây buộc Nhà du hành phải tin vào phân thân của chính mình.", objective: "Bắt nhịp đường gió lượng tử", duration: 9300, camera: "sky-dive", motion: "glide" },
+    { id: "ocean", chapter: 6, title: "Mặt trăng đại dương", kicker: "OCEAN MOON · NHẬT QUANG", description: "Mưa sao chạm mặt biển và biến thành sinh vật phát sáng. Dưới rạn san hô là một thành phố đang phát tín hiệu cầu cứu.", objective: "Lặn xuống đài quan sát cổ", duration: 9900, camera: "ocean-glide", motion: "walk" },
+    { id: "station", chapter: 7, title: "Quỹ đạo bị phong tỏa", kicker: "ASTRAL STATION · LIÊN MINH", description: "Tàu con ngừng hoạt động, chợ quỹ đạo đóng cửa và toàn bộ camera an ninh đồng loạt quay về phía Nhà du hành.", objective: "Khôi phục cầu nối Horizon H", duration: 9500, camera: "station-track", motion: "idle" },
+    { id: "abyss", chapter: 8, title: "Điểm tận cùng Nexus", kicker: "NEXUS ABYSS · NHẬT THỰC", description: "Tám lõi cộng hưởng trong bóng tối. Đây là nơi mọi lựa chọn, đồng đội và hình hài đã tạo sẽ xuất hiện trong trận chiến cuối.", objective: "Bước vào tâm nhật thực", duration: 10800, camera: "abyss-spiral", motion: "attack1" }
   ]);
   const BIOME_PROFILES = Object.freeze({
     central: { accent: "#6feeff", fog: 0x102a3f, fogDensity: 0.0056, particle: 0x73eaff, wind: 0.35, precipitation: "neon-rain", actor: "traffic" },
@@ -1112,7 +1141,7 @@
       this.genesisOriginalLighting = null;
       this.lastSurfaceUpdateAt = 0;
       this.toonGradient = null;
-      this.photorealAssets = { panorama: null };
+      this.photorealAssets = { panorama: null, scenicPanorama: null };
       this.photorealStatus = "pending";
       this.terrainTexture = null;
       this.activeAnimation = "idle";
@@ -1137,6 +1166,10 @@
       this.streamingGroups = new Map();
       this.puzzleNodes = new Map();
       this.cloudLayers = [];
+      this.dynamicFoliage = [];
+      this.dynamicPebbleFields = [];
+      this.dynamicNatureScratch = null;
+      this.sunCorona = null;
       this.waterSurfaces = [];
       this.climbables = [];
       this.keys = new Set();
@@ -1157,6 +1190,18 @@
       this.genesisOriginalParent = null;
       this.genesisOriginalTransform = null;
       this.genesisVisibility = null;
+      this.gameplayVisibility = {
+        consecutiveFrames: 0,
+        visibleFrames: 0,
+        failureFrames: 0,
+        unsafePoseFrames: 0,
+        validated: false,
+        groundingCalibrated: false,
+        startedAt: 0,
+        lastCheckedAt: 0,
+        report: null
+      };
+      this.characterDiagnostics = null;
       this.runtimeStarted = false;
       this.destroyed = false;
       this.started = false;
@@ -1180,11 +1225,24 @@
       this.isSwimming = false;
       this.isClimbing = false;
       this.cameraYaw = 0;
-      this.cameraPitch = 0.58;
-      this.cameraDistance = 12;
+      this.cameraPitch = 0.14;
+      this.cameraDistance = 10.8;
       this.cameraShake = 0;
-      this.cameraFovTarget = 58;
+      this.cameraFovTarget = CINEMATIC_CAMERA.verticalFovDeg;
+      this.cameraFocusDistance = 8;
       this.cinematicTarget = null;
+      this.cinematicSequence = {
+        active: false,
+        chapterId: "central",
+        startedAt: 0,
+        elapsedBeforePause: 0,
+        playing: false,
+        completed: false,
+        source: "",
+        restoreMenuPaused: false,
+        restorePaused: false,
+        restoreZone: null
+      };
       this.photoMode = false;
       this.photoSettings = { fov: 48, exposure: 1.08, time: 8.2, weather: "auto", hideUi: true };
       this.draggingCamera = false;
@@ -1251,6 +1309,7 @@
               <div class="har-signal" data-tone="amber"><small>World state</small><strong data-har-world-state>Ổn định</strong></div>
             </div>
             <div class="har-top-actions">
+              <button class="har-icon-button har-cinema-button" type="button" data-har-cinematics aria-label="Mở 8 cinematic 3D">▶<b>8</b></button>
               <button class="har-icon-button" type="button" data-har-panel="map" aria-label="Mở bản đồ">◇</button>
               <button class="har-icon-button" type="button" data-har-photo aria-label="Mở Photo Mode">◉</button>
               <button class="har-icon-button" type="button" data-har-panel="party" aria-label="Mở tổ đội">◎</button>
@@ -1355,6 +1414,32 @@
             <h2 data-har-dialogue-name>Luma</h2>
             <p data-har-dialogue-text></p>
             <div class="har-dialogue__choices" data-har-dialogue-choices></div>
+          </section>
+
+          <section class="har-story-cinema" data-har-cinematic-player hidden aria-label="Astral Cinematic Archive" aria-modal="true" role="dialog">
+            <div class="har-story-cinema__vignette" aria-hidden="true"></div>
+            <header class="har-story-cinema__header">
+              <div><small>ASTRAL CINEMATIC ARCHIVE · REALTIME 3D</small><strong>Hành trình của <span data-cinematic-player-name>Nhà du hành</span></strong></div>
+              <button type="button" data-cinematic-action="close" aria-label="Đóng cinematic">×</button>
+            </header>
+            <div class="har-story-cinema__copy">
+              <div class="har-story-cinema__chapter"><span data-cinematic-number>01</span><i></i><small data-cinematic-kicker>H-CENTRAL · KHỞI NGUYÊN</small></div>
+              <h2 data-cinematic-title>Tín hiệu thức tỉnh</h2>
+              <p data-cinematic-description></p>
+              <div class="har-story-cinema__objective"><small>NHIỆM VỤ TIẾP THEO</small><strong data-cinematic-objective></strong></div>
+            </div>
+            <div class="har-story-cinema__transport">
+              <div class="har-story-cinema__time"><span data-cinematic-current>00:00</span><div><i data-cinematic-progress></i></div><span data-cinematic-duration>00:10</span></div>
+              <div class="har-story-cinema__actions">
+                <button type="button" data-cinematic-action="replay">↺ Phát lại</button>
+                <button class="is-primary" type="button" data-cinematic-action="toggle">Ⅱ Tạm dừng</button>
+                <button type="button" data-cinematic-action="enter">Vào khu vực →</button>
+              </div>
+            </div>
+            <nav class="har-story-cinema__chapters" aria-label="Tám cinematic khu vực">
+              ${ASTRAL_CINEMATICS.map((cinematic) => `<button type="button" data-cinematic-chapter="${cinematic.id}" style="--cinema-color:${ZONES.find((zone) => zone.id === cinematic.id)?.color || "#6feeff"}"><span>${String(cinematic.chapter).padStart(2, "0")}</span><div><strong>${cinematic.title}</strong><small>${ZONES.find((zone) => zone.id === cinematic.id)?.name || cinematic.id}</small></div><i></i></button>`).join("")}
+            </nav>
+            <div class="har-story-cinema__hint">Cinematic dùng chính nhân vật 3D đã tạo · Esc để đóng · không phải video giả lập</div>
           </section>
 
           <div class="har-toast" data-har-toast role="status" aria-live="polite"></div>
@@ -1553,6 +1638,7 @@
         this.createActors();
         this.setLoading(84, "Đang khôi phục nhiệm vụ và kho đồ...");
         this.applyStateToWorld();
+        this.resetGameplayCharacterVisibility("initial-scene");
         this.initRuntime();
         this.initAudio();
         this.bindGameEvents();
@@ -1566,7 +1652,11 @@
         this.running = true;
         this.paused = needsGenesis;
         this.menuPaused = needsGenesis;
-        this.root.querySelector("[data-har-start]").hidden = true;
+        this.pendingStartReveal = !needsGenesis;
+        this.startRevealStartedAt = performance.now();
+        this.startRevealFrames = 0;
+        if (needsGenesis) this.root.querySelector("[data-har-start]").hidden = true;
+        else this.setLoading(99, "Đang làm nóng shader và xác nhận khung hình 3D...");
         this.autosaveTimer = root.setInterval(() => this.saveProgress("Autosave"), AUTOSAVE_MS);
         this.lastFrameAt = performance.now();
         this.frameHandle = requestAnimationFrame((time) => this.frame(time));
@@ -1598,6 +1688,233 @@
       }
       this.toast(message, "success");
       this.syncCloud(false);
+    }
+
+    cinematicById(id = "central") {
+      return ASTRAL_CINEMATICS.find((entry) => entry.id === id) || ASTRAL_CINEMATICS[0];
+    }
+
+    cinematicTime(milliseconds = 0) {
+      const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
+      return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    }
+
+    openCinematicGallery(chapterId = "central", { source = "manual", autoplay = true } = {}) {
+      if (!this.running || this.genesisActive || !this.playerMesh) return false;
+      const overlay = this.root.querySelector("[data-har-cinematic-player]");
+      if (!overlay) return false;
+      const wasActive = this.cinematicSequence.active;
+      if (!wasActive) {
+        this.cinematicSequence.restoreMenuPaused = this.menuPaused;
+        this.cinematicSequence.restorePaused = this.paused;
+        this.cinematicSequence.restoreZone = this.currentZone;
+      }
+      this.cinematicSequence.active = true;
+      this.cinematicSequence.source = source;
+      this.menuPaused = true;
+      this.paused = false;
+      this.keys.clear();
+      overlay.hidden = false;
+      this.root.classList.add("is-story-cinematic", "is-cinematic");
+      const playerName = overlay.querySelector("[data-cinematic-player-name]");
+      if (playerName) playerName.textContent = this.state.player.name || "Nhà du hành";
+      this.playCinematicChapter(chapterId, { autoplay });
+      return true;
+    }
+
+    playCinematicChapter(chapterId = "central", { autoplay = true } = {}) {
+      const cinematic = this.cinematicById(chapterId);
+      const zone = ZONES.find((entry) => entry.id === cinematic.id) || ZONES[0];
+      const now = performance.now();
+      Object.assign(this.cinematicSequence, {
+        chapterId: cinematic.id,
+        startedAt: now,
+        elapsedBeforePause: 0,
+        playing: autoplay,
+        completed: false,
+        progress: 0
+      });
+      this.streamingGroups.forEach((group, zoneId) => { group.visible = zoneId === zone.id || zoneId === "central"; });
+      this.zoneFxGroups.forEach((group, zoneId) => { group.visible = zoneId === zone.id; });
+      this.applyBiomeVisualState(zone);
+      const lift = Number(this.playerMesh.userData?.gameplayGroundOffset ?? this.playerMesh.userData?.gameplayVisualLift ?? 0);
+      const direction = cinematic.chapter % 2 ? 1 : -1;
+      this.playerMesh.position.set(zone.x - direction * 2.4, 1.05 + lift, zone.z + direction * 1.6);
+      this.playerMesh.rotation.y = direction > 0 ? -0.5 : 0.5;
+      this.playerMesh.visible = true;
+      if (cinematic.camera === "opening-six-shot" && this.camera) {
+        this.camera.position.copy(this.playerMesh.position).add(new this.THREE.Vector3(-9.2, 6.1, 11.8));
+        this.camera.up.set(0, 1, 0);
+        this.camera.lookAt(this.playerMesh.position.clone().add(new this.THREE.Vector3(0, 1.8, 0)));
+      }
+      if (this.playerShadow) {
+        this.playerShadow.visible = true;
+        this.playerShadow.position.set(this.playerMesh.position.x, 1.08, this.playerMesh.position.z);
+      }
+      this.setCharacterAction("idle", 100, 0);
+      const overlay = this.root.querySelector("[data-har-cinematic-player]");
+      if (overlay) {
+        overlay.style.setProperty("--cinema-accent", zone.color);
+        const assign = (selector, value) => { const node = overlay.querySelector(selector); if (node) node.textContent = value; };
+        assign("[data-cinematic-number]", String(cinematic.chapter).padStart(2, "0"));
+        assign("[data-cinematic-kicker]", cinematic.kicker);
+        assign("[data-cinematic-title]", cinematic.title);
+        assign("[data-cinematic-description]", cinematic.description);
+        assign("[data-cinematic-objective]", cinematic.objective);
+        assign("[data-cinematic-current]", "00:00");
+        assign("[data-cinematic-duration]", this.cinematicTime(cinematic.duration));
+        overlay.querySelectorAll("[data-cinematic-chapter]").forEach((button) => {
+          const active = button.dataset.cinematicChapter === cinematic.id;
+          button.classList.toggle("is-active", active);
+          button.setAttribute("aria-pressed", String(active));
+        });
+        const toggle = overlay.querySelector('[data-cinematic-action="toggle"]');
+        if (toggle) toggle.textContent = autoplay ? "Ⅱ Tạm dừng" : "▶ Tiếp tục";
+        const progress = overlay.querySelector("[data-cinematic-progress]");
+        if (progress) progress.style.width = "0%";
+      }
+      this.root.dataset.cinematicChapter = cinematic.id;
+      this.root.dataset.cinematicState = autoplay ? "playing" : "paused";
+      return cinematic;
+    }
+
+    toggleCinematicPlayback() {
+      if (!this.cinematicSequence.active) return;
+      const cinematic = this.cinematicById(this.cinematicSequence.chapterId);
+      const now = performance.now();
+      if (now - Number(this.lastCinematicToggleAt || 0) < 160) return;
+      this.lastCinematicToggleAt = now;
+      if (this.cinematicSequence.completed) return this.playCinematicChapter(cinematic.id, { autoplay: true });
+      if (this.cinematicSequence.playing) {
+        this.cinematicSequence.elapsedBeforePause += now - this.cinematicSequence.startedAt;
+        this.cinematicSequence.playing = false;
+      } else {
+        this.cinematicSequence.startedAt = now;
+        this.cinematicSequence.playing = true;
+      }
+      const toggle = this.root.querySelector('[data-cinematic-action="toggle"]');
+      if (toggle) toggle.textContent = this.cinematicSequence.playing ? "Ⅱ Tạm dừng" : "▶ Tiếp tục";
+      this.root.dataset.cinematicState = this.cinematicSequence.playing ? "playing" : "paused";
+    }
+
+    closeCinematicGallery({ enterZone = false } = {}) {
+      const overlay = this.root.querySelector("[data-har-cinematic-player]");
+      if (!this.cinematicSequence.active && overlay?.hidden !== false) return;
+      const cinematic = this.cinematicById(this.cinematicSequence.chapterId);
+      const zone = ZONES.find((entry) => entry.id === cinematic.id) || ZONES[0];
+      if (enterZone) {
+        this.state.player.x = zone.x;
+        this.state.player.z = zone.z + Math.min(5, zone.radius * 0.2);
+        this.state.player.y = 1.05;
+        if (this.state.world?.zones?.[zone.id]) this.state.world.zones[zone.id].discovered = true;
+        this.currentZone = zone;
+      } else if (this.cinematicSequence.restoreZone) {
+        this.currentZone = this.cinematicSequence.restoreZone;
+      }
+      // Release the modal first. Scene restoration is best-effort and must
+      // never trap the player behind the cinematic overlay.
+      this.menuPaused = this.cinematicSequence.restoreMenuPaused;
+      this.paused = this.cinematicSequence.restorePaused;
+      this.cinematicSequence.active = false;
+      this.cinematicSequence.playing = false;
+      this.cinematicSequence.completed = false;
+      if (overlay) overlay.hidden = true;
+      this.root.classList.remove("is-story-cinematic", "is-cinematic");
+      delete this.root.dataset.cinematicChapter;
+      this.root.dataset.cinematicState = "closed";
+      try {
+        this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
+        this.playerMesh.rotation.y = this.state.player.rotation;
+        if (this.playerShadow) this.playerShadow.position.set(this.state.player.x, 1.08, this.state.player.z);
+        this.applyBiomeVisualState(this.currentZone);
+        this.updateWorldStreaming();
+        this.camera.up.set(0, 1, 0);
+        this.updateCamera(true, 0.016);
+      } catch (error) {
+        console.warn("Astral cinematic scene restore recovered:", error?.message || error);
+      }
+      if (enterZone) {
+        this.toast(`Đã tới ${zone.name} · cinematic ${String(cinematic.chapter).padStart(2, "0")}`, "success");
+        this.saveProgress(`Cinematic ${cinematic.chapter} · ${zone.name}`);
+      }
+    }
+
+    updateStoryCinematic(dt, time) {
+      const sequence = this.cinematicSequence;
+      if (!sequence.active || !this.playerMesh) return;
+      const cinematic = this.cinematicById(sequence.chapterId);
+      const zone = ZONES.find((entry) => entry.id === cinematic.id) || ZONES[0];
+      // Some embedded browsers expose a requestAnimationFrame timestamp with a
+      // different time origin. Keep playback on performance.now() end-to-end so
+      // a cinematic cannot jump straight to 100% after tab restore.
+      const playbackNow = performance.now();
+      const elapsed = sequence.elapsedBeforePause + (sequence.playing ? Math.max(0, playbackNow - sequence.startedAt) : 0);
+      const progress = clamp(elapsed / cinematic.duration, 0, 1);
+      sequence.progress = progress;
+      if (progress >= 1 && sequence.playing) {
+        sequence.playing = false;
+        sequence.completed = true;
+        sequence.elapsedBeforePause = cinematic.duration;
+        this.root.dataset.cinematicState = "completed";
+        const toggle = this.root.querySelector('[data-cinematic-action="toggle"]');
+        if (toggle) toggle.textContent = "↺ Phát lại";
+      }
+      const direction = cinematic.chapter % 2 ? 1 : -1;
+      const lift = Number(this.playerMesh.userData?.gameplayGroundOffset ?? this.playerMesh.userData?.gameplayVisualLift ?? 0);
+      const opening = cinematic.camera === "opening-six-shot";
+      const travel = opening
+        ? clamp((progress - 0.48) / 0.28, 0, 1)
+        : progress < 0.7 ? progress / 0.7 : 1;
+      const easedTravel = travel * travel * (3 - 2 * travel);
+      const startX = opening ? -1.65 : direction * -2.4;
+      const startZ = opening ? 3.4 : direction * 1.6;
+      const travelX = opening ? 2.45 : direction * 3.2;
+      const travelZ = opening ? -2.8 : direction * -2.1;
+      this.playerMesh.position.set(
+        zone.x + startX + easedTravel * travelX,
+        1.05 + lift + (cinematic.id === "sky" ? Math.sin(progress * Math.PI) * 1.35 : cinematic.id === "void" ? Math.sin(progress * Math.PI * 2) * 0.24 : 0),
+        zone.z + startZ + easedTravel * travelZ
+      );
+      const pathYaw = Math.atan2(travelX, travelZ);
+      const cameraYaw = Math.atan2(
+        this.camera.position.x - this.playerMesh.position.x,
+        this.camera.position.z - this.playerMesh.position.z
+      );
+      const turnToCamera = clamp((progress - 0.54) / 0.24, 0, 1);
+      const yawDelta = Math.atan2(Math.sin(cameraYaw - pathYaw), Math.cos(cameraYaw - pathYaw));
+      this.playerMesh.rotation.y = pathYaw + yawDelta * (turnToCamera * turnToCamera * (3 - 2 * turnToCamera));
+      if (this.playerShadow) this.playerShadow.position.set(this.playerMesh.position.x, 1.08, this.playerMesh.position.z);
+      const runtime = this.playerMesh.userData?.characterRuntime || this.characterRuntimes.get(this.state.roster.activeId);
+      const motion = opening
+        ? progress < 0.48 ? "idle" : progress < 0.76 ? "walk" : progress < 0.9 ? "talk" : "idle"
+        : progress < 0.68
+          ? cinematic.motion === "glide" ? "glide" : cinematic.motion === "talk" ? "walk" : cinematic.motion || "walk"
+          : cinematic.motion === "attack1" ? "attack1" : cinematic.motion === "talk" ? "talk" : "idle";
+      if (runtime?.mixer) {
+        this.playCharacterClip(runtime, motion);
+        if (sequence.playing) runtime.mixer.update(dt);
+      } else if (runtime && sequence.playing) {
+        this.applyProceduralRigMotion(runtime, time, motion, dt);
+      }
+      this.applyNaturalHandPose(runtime, motion, dt);
+      this.applyProceduralFacialPerformance(this.playerMesh, time, progress > 0.72 ? "talk" : motion);
+      this.updateSecondaryCharacterMotion(runtime, time, { moving: motion === "walk", sprinting: false, direction: 0 });
+      const overlay = this.root.querySelector("[data-har-cinematic-player]");
+      if (overlay) {
+        const current = overlay.querySelector("[data-cinematic-current]");
+        const bar = overlay.querySelector("[data-cinematic-progress]");
+        if (current) current.textContent = this.cinematicTime(Math.min(elapsed, cinematic.duration));
+        if (bar) bar.style.width = `${(progress * 100).toFixed(2)}%`;
+      }
+      this.root.style.setProperty("--cinematic-progress", progress.toFixed(4));
+      if (opening) {
+        const shotNumber = progress < 0.16 ? 1 : progress < 0.34 ? 2 : progress < 0.5 ? 3 : progress < 0.7 ? 4 : progress < 0.86 ? 5 : 6;
+        sequence.shot = shotNumber;
+        this.root.dataset.cinematicShot = String(shotNumber);
+      } else {
+        sequence.shot = 1;
+        this.root.dataset.cinematicShot = "1";
+      }
     }
 
     renderGenesisCreator() {
@@ -2196,27 +2513,295 @@
       };
     }
 
+    resetGameplayCharacterVisibility(reason = "model-created") {
+      this.gameplayVisibility = {
+        consecutiveFrames: 0,
+        visibleFrames: 0,
+        failureFrames: 0,
+        unsafePoseFrames: 0,
+        validated: false,
+        groundingCalibrated: false,
+        startedAt: performance.now(),
+        lastCheckedAt: 0,
+        reason,
+        report: null
+      };
+      if (this.root) {
+        this.root.dataset.characterPreview = "validating";
+        this.root.dataset.characterValidation = reason;
+      }
+      if (this.playerMesh) {
+        this.playerMesh.visible = true;
+        this.updateCharacterLod(this.playerMesh, 0);
+      }
+    }
+
+    getGameplayCharacterReport(object = this.playerMesh) {
+      const THREE = this.THREE;
+      const runtime = object?.userData?.characterRuntime || this.characterRuntimes.get(this.state.roster.activeId);
+      if (!object || !THREE || !this.camera || !this.renderer) {
+        return { modelReady: false, reason: "missing-runtime", triangles: 0, bones: 0, morphTargets: 0 };
+      }
+      object.updateMatrixWorld(true);
+      this.camera.updateMatrixWorld(true);
+      this.camera.updateProjectionMatrix();
+      const boundsRoot = this.genesisBoundsRoot(object);
+      const box = this.getGenesisBoundsBox(object);
+      const dynamicBox = new THREE.Box3().setFromObject(boundsRoot, true);
+      const finiteBounds = [box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z].every(Number.isFinite);
+      const size = box.getSize(new THREE.Vector3());
+      const dynamicSize = dynamicBox.getSize(new THREE.Vector3());
+      const deformationRatio = Math.max(
+        dynamicSize.x / Math.max(0.01, size.x),
+        dynamicSize.y / Math.max(0.01, size.y),
+        dynamicSize.z / Math.max(0.01, size.z)
+      );
+      let uprightDot = 1;
+      if (runtime?.bones?.head && runtime?.bones?.hips) {
+        const headPosition = runtime.bones.head.getWorldPosition(new THREE.Vector3());
+        const hipsPosition = runtime.bones.hips.getWorldPosition(new THREE.Vector3());
+        const bodyAxis = headPosition.sub(hipsPosition);
+        uprightDot = bodyAxis.lengthSq() > 0.000001 ? bodyAxis.normalize().dot(new THREE.Vector3(0, 1, 0)) : -1;
+      }
+      const armDownness = {};
+      [["left", runtime?.bones?.leftUpperArm, runtime?.bones?.leftForeArm], ["right", runtime?.bones?.rightUpperArm, runtime?.bones?.rightForeArm]]
+        .forEach(([side, upperArm, foreArm]) => {
+          if (!upperArm || !foreArm) return;
+          const shoulder = upperArm.getWorldPosition(new THREE.Vector3());
+          const elbow = foreArm.getWorldPosition(new THREE.Vector3());
+          const direction = elbow.sub(shoulder);
+          armDownness[side] = direction.lengthSq() > 0.000001
+            ? direction.normalize().dot(new THREE.Vector3(0, -1, 0))
+            : -1;
+        });
+      const idlePose = ["", "idle", "talk"].includes(String(runtime?.state || this.activeAnimation || "idle"));
+      const relaxedIdleArms = !idlePose || Object.values(armDownness).every((value) => Number.isFinite(value) && value >= 0.38);
+      const poseStable = Number.isFinite(uprightDot) && uprightDot >= 0.42 && deformationRatio <= 2.25 && relaxedIdleArms;
+      const frustumMatrix = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+      const inFrustum = finiteBounds && new THREE.Frustum().setFromProjectionMatrix(frustumMatrix).intersectsBox(box);
+      const corners = [
+        [box.min.x, box.min.y, box.min.z], [box.min.x, box.min.y, box.max.z],
+        [box.min.x, box.max.y, box.min.z], [box.min.x, box.max.y, box.max.z],
+        [box.max.x, box.min.y, box.min.z], [box.max.x, box.min.y, box.max.z],
+        [box.max.x, box.max.y, box.min.z], [box.max.x, box.max.y, box.max.z]
+      ];
+      let minimumY = Infinity;
+      let maximumY = -Infinity;
+      let projectedCenterX = 0;
+      corners.forEach(([x, y, z]) => {
+        const point = new THREE.Vector3(x, y, z).project(this.camera);
+        minimumY = Math.min(minimumY, point.y);
+        maximumY = Math.max(maximumY, point.y);
+        projectedCenterX += point.x / corners.length;
+      });
+      const canvasHeight = Math.max(1, this.renderer.domElement?.clientHeight || this.renderer.domElement?.height || 1);
+      const projectedHeight = Math.abs(maximumY - minimumY) * 0.5 * canvasHeight;
+      let visibleMaterials = 0;
+      boundsRoot?.traverse?.((node) => {
+        if ((!node.isMesh && !node.isSkinnedMesh) || node.visible === false) return;
+        (Array.isArray(node.material) ? node.material : [node.material]).filter(Boolean).forEach((material) => {
+          const opacity = Number.isFinite(material.opacity) ? material.opacity : 1;
+          if (material.visible !== false && opacity > 0.04 && material.depthTest !== false) visibleMaterials += 1;
+        });
+      });
+      const dynamicBottom = Number.isFinite(dynamicBox.min.y) ? dynamicBox.min.y : box.min.y;
+      const expectedGround = Number(this.state.player.y || 0);
+      const footHeights = [runtime?.bones?.leftFoot, runtime?.bones?.rightFoot]
+        .filter(Boolean)
+        .map((foot) => foot.getWorldPosition(new THREE.Vector3()).y)
+        .filter(Number.isFinite);
+      const expectedFootHeight = Number(runtime?.expectedFootHeight || 0.09);
+      const boneGroundError = footHeights.length
+        ? Math.min(...footHeights) - (expectedGround + expectedFootHeight)
+        : null;
+      const feetGroundError = dynamicBottom - expectedGround;
+      const triangles = Number(runtime?.triangles || runtime?.qaReport?.triangles || 0);
+      const bones = Object.values(runtime?.bones || {}).filter(Boolean).length;
+      const morphTargets = Number(runtime?.facialChannels || runtime?.qaReport?.faceMorphTargets || 0);
+      const renderedTriangles = Number(this.renderer.info?.render?.triangles || 0);
+      const notBuried = finiteBounds && box.max.y > expectedGround + 0.35 && feetGroundError > -0.18;
+      const adequateProjection = projectedHeight >= Math.max(48, canvasHeight * 0.12)
+        && projectedHeight <= canvasHeight * 1.22
+        && Math.abs(projectedCenterX) < 1.15;
+      const modelReady = finiteBounds
+        && size.y >= 0.35
+        && triangles > 0
+        && renderedTriangles > 0
+        && visibleMaterials > 0
+        && inFrustum
+        && adequateProjection
+        && notBuried
+        && poseStable;
+      return {
+        modelReady,
+        reason: modelReady
+          ? "ready"
+          : !finiteBounds
+            ? "invalid-bounds"
+            : triangles <= 0
+              ? "no-triangles"
+              : visibleMaterials <= 0
+                ? "invisible-material"
+                : !inFrustum
+                  ? "outside-camera"
+                  : !notBuried
+                    ? "below-terrain"
+                    : !poseStable
+                      ? "unsafe-pose"
+                    : "insufficient-screen-coverage",
+        finiteBounds,
+        inFrustum,
+        notBuried,
+        visibleMaterials,
+        renderedTriangles,
+        triangles,
+        bones,
+        morphTargets,
+        boundingBox: {
+          min: box.min.toArray().map((value) => Number(value.toFixed(4))),
+          max: box.max.toArray().map((value) => Number(value.toFixed(4)))
+        },
+        dynamicSize: dynamicSize.toArray().map((value) => Number(value.toFixed(4))),
+        deformationRatio: Number(deformationRatio.toFixed(4)),
+        uprightDot: Number(uprightDot.toFixed(4)),
+        armDownness: Object.fromEntries(Object.entries(armDownness).map(([side, value]) => [side, Number(value.toFixed(4))])),
+        relaxedIdleArms,
+        poseStable,
+        projectedHeight: Number(projectedHeight.toFixed(2)),
+        feetGroundError: Number(feetGroundError.toFixed(4)),
+        boneGroundError: Number.isFinite(boneGroundError) ? Number(boneGroundError.toFixed(4)) : null,
+        wristDeviation: Number((runtime?.wristDeviation || 0).toFixed(4)),
+        activeLOD: object.userData?.modelTier || "near"
+      };
+    }
+
+    validateGameplayCharacterFrame(time = performance.now()) {
+      this.gameplayVisibility ||= {
+        consecutiveFrames: 0,
+        visibleFrames: 0,
+        failureFrames: 0,
+        unsafePoseFrames: 0,
+        validated: false,
+        groundingCalibrated: false,
+        startedAt: time,
+        lastCheckedAt: 0,
+        report: null
+      };
+      const visibility = this.gameplayVisibility;
+      if (visibility.validated && time - visibility.lastCheckedAt < 1000) return visibility.report;
+      visibility.lastCheckedAt = time;
+      let report = this.getGameplayCharacterReport(this.playerMesh);
+      const activeRuntime = this.playerMesh?.userData?.characterRuntime || this.characterRuntimes.get(this.state.roster.activeId);
+      visibility.unsafePoseFrames = report.poseStable ? 0 : visibility.unsafePoseFrames + 1;
+      const poseGraceElapsed = time - visibility.startedAt;
+      if (!report.poseStable && activeRuntime && poseGraceElapsed >= 900 && visibility.unsafePoseFrames >= 6) {
+        this.quarantineUnsafeCharacterMotion(activeRuntime, `gameplay-pose-${report.uprightDot}`);
+        this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
+        this.playerMesh.updateMatrixWorld(true);
+        report = this.getGameplayCharacterReport(this.playerMesh);
+        visibility.unsafePoseFrames = report.poseStable ? 0 : visibility.unsafePoseFrames;
+      }
+      if (!visibility.validated && !visibility.groundingCalibrated && Number.isFinite(report.feetGroundError)) {
+        const error = Number(report.feetGroundError);
+        if (Math.abs(error) > 0.055 && Math.abs(error) <= 1.2 && !this.cinematicSequence.active) {
+          const currentOffset = Number(this.playerMesh?.userData?.gameplayGroundOffset || 0);
+          this.playerMesh.userData.gameplayGroundOffset = currentOffset + clamp(-error, -0.85, 0.85);
+          this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
+          this.playerMesh.updateMatrixWorld(true);
+          report = this.getGameplayCharacterReport(this.playerMesh);
+        }
+        visibility.groundingCalibrated = true;
+      }
+      visibility.report = report;
+      visibility.consecutiveFrames = report.modelReady ? visibility.consecutiveFrames + 1 : 0;
+      visibility.failureFrames = report.modelReady ? 0 : visibility.failureFrames + 1;
+      if (report.modelReady) visibility.visibleFrames += 1;
+      if (visibility.validated && visibility.failureFrames >= 2) visibility.validated = false;
+      if (!visibility.validated && visibility.consecutiveFrames >= 2) visibility.validated = true;
+      this.characterDiagnostics = {
+        ...report,
+        previewValidated: visibility.validated,
+        visibleFrames: visibility.visibleFrames,
+        renderer: this.rendererBackend,
+        fps: this.fps,
+        environmentAssets: {
+          status: this.licensedEnvironmentStatus,
+          loaded: this.licensedEnvironmentAssets.size,
+          photoreal: this.photorealStatus
+        },
+        cinematicChapter: this.cinematicSequence.active ? this.cinematicSequence.chapterId : ""
+      };
+      if (this.root) {
+        this.root.dataset.characterPreview = visibility.validated ? "3d" : "validating";
+        this.root.dataset.characterValidation = report.reason;
+        this.root.dataset.characterProjectedHeight = String(report.projectedHeight || 0);
+        this.root.dataset.characterFeetError = String(report.feetGroundError ?? "invalid");
+        this.root.dataset.characterGroundOffset = String(Number(this.playerMesh?.userData?.gameplayGroundOffset || 0).toFixed(4));
+        this.root.dataset.characterUpright = String(report.uprightDot ?? "invalid");
+        this.root.dataset.characterArmDownness = `${report.armDownness?.left ?? "invalid"},${report.armDownness?.right ?? "invalid"}`;
+        this.root.dataset.characterDeformation = String(report.deformationRatio ?? "invalid");
+        this.root.dataset.characterVisibleFrames = String(visibility.visibleFrames);
+      }
+      if (!report.modelReady && time - visibility.startedAt > 1200) {
+        this.playerMesh.visible = true;
+        this.updateCharacterLod(this.playerMesh, 0);
+      }
+      return report;
+    }
+
+    alignCharacterRigUpright(runtime) {
+      const THREE = this.THREE;
+      const visualRoot = runtime?.visualRoot || runtime?.mesh?.userData?.gltfAsset;
+      const head = runtime?.bones?.head;
+      const hips = runtime?.bones?.hips;
+      if (!THREE || !visualRoot || !head || !hips) return false;
+      runtime.mesh.updateMatrixWorld(true);
+      const headWorld = head.getWorldPosition(new THREE.Vector3());
+      const hipsWorld = hips.getWorldPosition(new THREE.Vector3());
+      const bodyAxis = headWorld.sub(hipsWorld);
+      if (bodyAxis.lengthSq() < 0.000001) return false;
+      bodyAxis.normalize();
+      const upright = new THREE.Vector3(0, 1, 0);
+      if (bodyAxis.dot(upright) >= 0.72) return true;
+      const deltaWorld = new THREE.Quaternion().setFromUnitVectors(bodyAxis, upright);
+      const currentWorld = visualRoot.getWorldQuaternion(new THREE.Quaternion());
+      const desiredWorld = deltaWorld.multiply(currentWorld).normalize();
+      const parentWorld = visualRoot.parent?.getWorldQuaternion?.(new THREE.Quaternion()) || new THREE.Quaternion();
+      visualRoot.quaternion.copy(parentWorld.invert().multiply(desiredWorld).normalize());
+      runtime.mesh.updateMatrixWorld(true);
+      runtime.uprightRecovery = "hips-head-to-world-y";
+      // Parent-space quaternions change when the imported Z-up rig is aligned.
+      // Capture them again so relaxed arms, wrists and procedural locomotion
+      // operate in the corrected human coordinate system.
+      this.captureNaturalRigPose(runtime);
+      return true;
+    }
+
     quarantineUnsafeCharacterMotion(runtime, reason = "dynamic-bounds") {
-      if (!runtime || runtime.motionQuarantined) return false;
-      runtime.motionQuarantined = reason;
-      runtime.quarantinedClipCount = runtime.clips?.size || 0;
-      try {
-        runtime.mixer?.stopAllAction?.();
-        runtime.mixer?.uncacheRoot?.(runtime.animationRoot || runtime.mesh);
-      } catch {}
-      runtime.currentAction = null;
-      runtime.blendActions?.clear?.();
-      runtime.blendWeights?.clear?.();
-      runtime.clips?.clear?.();
-      runtime.mixer = null;
+      if (!runtime) return false;
+      const firstQuarantine = !runtime.motionQuarantined;
+      runtime.motionQuarantined = runtime.motionQuarantined || reason;
+      runtime.quarantinedClipCount ||= runtime.clips?.size || 0;
+      if (firstQuarantine) {
+        try {
+          runtime.mixer?.stopAllAction?.();
+          runtime.mixer?.uncacheRoot?.(runtime.animationRoot || runtime.mesh);
+        } catch {}
+        runtime.currentAction = null;
+        runtime.blendActions?.clear?.();
+        runtime.blendWeights?.clear?.();
+        runtime.clips?.clear?.();
+        runtime.mixer = null;
+      }
       runtime.rigRest?.forEach?.((rest, bone) => {
         bone.position.copy(rest.position);
         bone.quaternion.copy(rest.quaternion);
       });
+      this.alignCharacterRigUpright(runtime);
       runtime.mesh?.updateMatrixWorld?.(true);
       runtime.state = "";
       runtime.motionSource = "rest-space-procedural-safety";
-      return true;
+      return firstQuarantine;
     }
 
     renderGenesisFrame(time, dt) {
@@ -2510,11 +3095,16 @@
       this.genesisActive = false;
       this.genesisCompleting = false;
       this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
-      this.cameraPitch = 0.42;
-      this.cameraDistance = 6.5;
+      this.cameraPitch = 0.14;
+      this.cameraDistance = 10.8;
       this.updateCamera(true, 0.016);
       this.updateUi(true);
       this.beginRuntimeSession(`${this.state.player.name} đã sẵn sàng · bước vào H-Central.`);
+      root.setTimeout(() => {
+        if (!this.destroyed && this.running && !this.genesisActive) {
+          this.openCinematicGallery("central", { source: "genesis-complete", autoplay: true });
+        }
+      }, 180);
     }
 
     resetGraphicsAfterFailure() {
@@ -2540,8 +3130,12 @@
       this.zoneFxGroups.clear();
       this.livingWorldActors = [];
       this.footprints = [];
+      this.dynamicFoliage = [];
+      this.dynamicPebbleFields = [];
+      this.dynamicNatureScratch = null;
+      this.sunCorona = null;
       Object.values(this.photorealAssets).forEach((texture) => texture?.dispose?.());
-      this.photorealAssets = { panorama: null };
+      this.photorealAssets = { panorama: null, scenicPanorama: null };
       this.disposeBuiltInCharacterAssets();
       this.disposeLicensedEnvironmentAssets();
       this.photorealStatus = "pending";
@@ -2586,7 +3180,7 @@
       this.scene = new THREE.Scene();
       this.scene.background = new THREE.Color(0x050816);
       this.scene.fog = new THREE.FogExp2(0x071023, 0.0095);
-      this.camera = new THREE.PerspectiveCamera(58, 1, 0.1, 420);
+      this.camera = new THREE.PerspectiveCamera(CINEMATIC_CAMERA.verticalFovDeg, 1, 0.1, 420);
       this.camera.position.set(0, 10, 14);
       const quality = this.state.settings.quality;
       try {
@@ -2614,7 +3208,7 @@
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x050816);
         this.scene.fog = new THREE.FogExp2(0x071023, 0.0095);
-        this.camera = new THREE.PerspectiveCamera(58, 1, 0.1, 420);
+        this.camera = new THREE.PerspectiveCamera(CINEMATIC_CAMERA.verticalFovDeg, 1, 0.1, 420);
         this.camera.position.set(0, 10, 14);
         this.renderer = new THREE.WebGLRenderer({
           canvas,
@@ -2625,8 +3219,11 @@
       }
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure = quality === "cinematic" ? 1.18 : 1.04;
+      this.renderer.toneMappingExposure = quality === "cinematic" ? 1.08 : 0.98;
       if ("physicallyCorrectLights" in this.renderer) this.renderer.physicallyCorrectLights = true;
+      this.root.dataset.cameraSensor = `${CINEMATIC_CAMERA.sensorWidthMm}x${CINEMATIC_CAMERA.sensorHeightMm}mm`;
+      this.root.dataset.cameraLens = `${CINEMATIC_CAMERA.focalLengthMm}mm`;
+      this.root.dataset.cameraExposure = `f${CINEMATIC_CAMERA.aperture} · ${CINEMATIC_CAMERA.shutterSpeed} · ISO ${CINEMATIC_CAMERA.iso}`;
       if (this.renderer.shadowMap) {
         this.renderer.shadowMap.enabled = quality !== "low";
         this.renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -2635,7 +3232,10 @@
       this.root.dataset.renderer = this.rendererBackend;
       const rendererLabel = this.root.querySelector("[data-har-renderer]");
       if (rendererLabel) rendererLabel.textContent = this.rendererBackend === "webgpu" ? "WEBGPU · PBR" : "WEBGL2 · PBR";
-      this.clock = new THREE.Clock();
+      // Frame timing is derived from requestAnimationFrame timestamps in frame().
+      // Do not construct the deprecated THREE.Clock here: it was unused and
+      // emitted a warning on every remount in current Three.js releases.
+      this.clock = null;
       if (this.rendererBackend === "webgl2") {
         this.listen(canvas, "webglcontextlost", (event) => {
           event.preventDefault();
@@ -2669,7 +3269,8 @@
       const panoramaPromise = saveData || lowMemory || this.state.settings.quality === "low"
         ? Promise.resolve(null)
         : loadTexture(PHOTOREAL_ASSETS.panorama);
-      const [panoramaResult] = await Promise.allSettled([panoramaPromise]);
+      const scenicPromise = loadTexture(PHOTOREAL_ASSETS.scenicPanorama);
+      const [panoramaResult, scenicResult] = await Promise.allSettled([panoramaPromise, scenicPromise]);
       if (panoramaResult.status === "fulfilled" && panoramaResult.value) {
         const texture = panoramaResult.value;
         texture.colorSpace = THREE.SRGBColorSpace;
@@ -2678,7 +3279,21 @@
         texture.magFilter = THREE.LinearFilter;
         this.photorealAssets.panorama = texture;
       }
-      this.photorealStatus = this.photorealAssets.panorama ? "ready" : "mesh-pbr";
+      if (scenicResult.status === "fulfilled" && scenicResult.value) {
+        const texture = scenicResult.value;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = Math.min(4, this.renderer.capabilities?.getMaxAnisotropy?.() || 1);
+        this.photorealAssets.scenicPanorama = texture;
+      }
+      this.photorealStatus = this.photorealAssets.scenicPanorama
+        ? "scenic-3d-ready"
+        : this.photorealAssets.panorama
+          ? "ready"
+          : "mesh-pbr";
       this.root.classList.add("is-photoreal");
       this.root.dataset.photorealAssets = this.photorealStatus;
     }
@@ -2730,12 +3345,16 @@
         ]);
         gltf.scene?.traverse?.((object) => {
           if (!object.isMesh) return;
-          object.castShadow = true;
+          object.castShadow = false;
           object.receiveShadow = true;
           object.frustumCulled = true;
           const materials = Array.isArray(object.material) ? object.material : [object.material];
           materials.filter(Boolean).forEach((material) => {
-            material.envMapIntensity = Math.max(0.35, Number(material.envMapIntensity || 0));
+            material.envMapIntensity = Math.max(0.72, Number(material.envMapIntensity || 0));
+            if (["boulder", "mossRocks"].includes(id) && material.color) {
+              material.color.set(material.map ? 0xffffff : id === "mossRocks" ? 0x75806f : 0x8a8378);
+              material.roughness = clamp(Number(material.roughness ?? 0.86), 0.64, 0.92);
+            }
             material.needsUpdate = true;
           });
         });
@@ -3119,34 +3738,61 @@
 
     createTerrainTexture() {
       const THREE = this.THREE;
-      const canvas = document.createElement("canvas");
+      const albedoCanvas = document.createElement("canvas");
+      const heightCanvas = document.createElement("canvas");
+      const roughnessCanvas = document.createElement("canvas");
       const size = this.state.settings.quality === "low" ? 256 : 512;
-      canvas.width = size;
-      canvas.height = size;
-      const context = canvas.getContext("2d", { alpha: false });
-      const image = context.createImageData(size, size);
+      [albedoCanvas, heightCanvas, roughnessCanvas].forEach((canvas) => {
+        canvas.width = size;
+        canvas.height = size;
+      });
+      const albedoContext = albedoCanvas.getContext("2d", { alpha: false });
+      const heightContext = heightCanvas.getContext("2d", { alpha: false });
+      const roughnessContext = roughnessCanvas.getContext("2d", { alpha: false });
+      const albedoImage = albedoContext.createImageData(size, size);
+      const heightImage = heightContext.createImageData(size, size);
+      const roughnessImage = roughnessContext.createImageData(size, size);
       for (let y = 0; y < size; y += 1) {
         for (let x = 0; x < size; x += 1) {
           const index = (y * size + x) * 4;
           const broad = Math.sin(x * 0.057) * 12 + Math.cos(y * 0.049) * 10 + Math.sin((x + y) * 0.018) * 16;
           const grain = ((x * 17 + y * 31 + (x * y) % 67) % 29) - 14;
-          const value = clamp(72 + broad + grain, 28, 126);
-          image.data[index] = value * 0.82;
-          image.data[index + 1] = value * 0.9;
-          image.data[index + 2] = value;
-          image.data[index + 3] = 255;
+          const heightValue = clamp(112 + broad * 1.3 + grain * 0.72, 38, 218);
+          const mineral = clamp((Math.sin(x * 0.021 - y * 0.017) + 1) * 0.5, 0, 1);
+          albedoImage.data[index] = clamp(62 + broad * 0.36 + grain * 0.22 + mineral * 10, 34, 116);
+          albedoImage.data[index + 1] = clamp(69 + broad * 0.4 + grain * 0.18 + mineral * 12, 38, 126);
+          albedoImage.data[index + 2] = clamp(66 + broad * 0.28 + grain * 0.16 + mineral * 7, 36, 118);
+          albedoImage.data[index + 3] = 255;
+          heightImage.data[index] = heightValue;
+          heightImage.data[index + 1] = heightValue;
+          heightImage.data[index + 2] = heightValue;
+          heightImage.data[index + 3] = 255;
+          const roughnessValue = clamp(222 - broad * 0.32 + Math.abs(grain) * 0.7, 178, 246);
+          roughnessImage.data[index] = roughnessValue;
+          roughnessImage.data[index + 1] = roughnessValue;
+          roughnessImage.data[index + 2] = roughnessValue;
+          roughnessImage.data[index + 3] = 255;
         }
       }
-      context.putImageData(image, 0, 0);
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(18, 18);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = Math.min(8, this.renderer.capabilities?.getMaxAnisotropy?.() || 1);
-      texture.needsUpdate = true;
-      this.terrainTexture = texture;
-      return texture;
+      albedoContext.putImageData(albedoImage, 0, 0);
+      heightContext.putImageData(heightImage, 0, 0);
+      roughnessContext.putImageData(roughnessImage, 0, 0);
+      const makeTexture = (canvas, colorSpace) => {
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(18, 18);
+        texture.colorSpace = colorSpace;
+        texture.anisotropy = Math.min(8, this.renderer.capabilities?.getMaxAnisotropy?.() || 1);
+        texture.needsUpdate = true;
+        return texture;
+      };
+      const albedo = makeTexture(albedoCanvas, THREE.SRGBColorSpace);
+      const height = makeTexture(heightCanvas, THREE.NoColorSpace);
+      const roughness = makeTexture(roughnessCanvas, THREE.NoColorSpace);
+      this.terrainTexture = albedo;
+      this.terrainSurfaceTextures = { albedo, height, roughness };
+      return albedo;
     }
 
     createWorld() {
@@ -3167,11 +3813,11 @@
         this.scene.fog = new THREE.FogExp2(0x17263a, 0.0068);
       }
 
-      const hemisphere = new THREE.HemisphereLight(0xcce8ff, 0x271b19, 1.25);
+      const hemisphere = new THREE.HemisphereLight(0xdce8f5, 0x171a1f, 0.46);
       this.scene.add(hemisphere);
       this.hemisphereLight = hemisphere;
 
-      const sun = new THREE.DirectionalLight(0xffe6bf, 2.8);
+      const sun = new THREE.DirectionalLight(0xfff4e7, 3.15);
       sun.position.set(-24, 42, 18);
       sun.castShadow = Boolean(this.renderer.shadowMap?.enabled);
       const shadowSize = quality === "cinematic" ? 2048 : quality === "high" ? 1536 : quality === "medium" ? 1024 : 768;
@@ -3180,19 +3826,22 @@
       sun.shadow.camera.right = 75;
       sun.shadow.camera.top = 75;
       sun.shadow.camera.bottom = -75;
+      sun.shadow.bias = -0.00016;
+      sun.shadow.normalBias = 0.024;
+      sun.shadow.radius = quality === "cinematic" ? 2.2 : 1.35;
       this.scene.add(sun);
       this.sunLight = sun;
 
-      const hLight = new THREE.PointLight(0x69efff, 45, 60, 1.8);
+      const hLight = new THREE.PointLight(0xa9d9ff, 3.2, 42, 2);
       hLight.position.set(0, 10, 0);
       this.scene.add(hLight);
       this.hLight = hLight;
 
-      const fill = new THREE.DirectionalLight(0x9bbdff, 0.55);
+      const fill = new THREE.DirectionalLight(0xbfd1e8, 0.18);
       fill.position.set(28, 18, -34);
       this.scene.add(fill);
       this.fillLight = fill;
-      const rim = new THREE.DirectionalLight(0xff74c8, 0.72);
+      const rim = new THREE.DirectionalLight(0xe5edff, 0.26);
       rim.position.set(-18, 15, -42);
       this.scene.add(rim);
       this.rimLight = rim;
@@ -3211,17 +3860,19 @@
           + Math.cos(Math.hypot(x + 32, z - 18) * 0.087) * 0.35;
         const centralFlatten = clamp((radius - 30) / 28, 0, 1);
         const edgeRise = clamp((radius - 126) / 48, 0, 1) * 2.8;
-        positions.setZ(index, -0.22 + macro * centralFlatten + edgeRise);
+        const centralRise = (1 - centralFlatten) * 0.9;
+        positions.setZ(index, -0.22 + centralRise + macro * centralFlatten + edgeRise);
       }
       terrainGeometry.computeVertexNormals();
       const ground = new THREE.Mesh(
         terrainGeometry,
         new THREE.MeshPhysicalMaterial({
-          color: 0x596676,
+          color: 0xc0c6bd,
           map: terrainTexture,
-          bumpMap: terrainTexture,
-          bumpScale: 0.42,
-          roughness: 0.88,
+          bumpMap: this.terrainSurfaceTextures.height,
+          bumpScale: 0.34,
+          roughnessMap: this.terrainSurfaceTextures.roughness,
+          roughness: 0.92,
           metalness: 0.025,
           clearcoat: 0.12,
           clearcoatRoughness: 0.62,
@@ -3250,6 +3901,7 @@
       this.createElementalPuzzles();
       this.createWeatherField();
       this.createLivingWorldEffects();
+      this.createDynamicNatureSystem();
       this.createFootprintPool();
       this.applyBiomeVisualState(this.currentZone);
     }
@@ -3293,7 +3945,9 @@
       this.skyDome = new THREE.Mesh(
         skyGeometry,
         new THREE.MeshBasicMaterial({
-          vertexColors: true,
+          vertexColors: !this.photorealAssets.scenicPanorama,
+          map: this.photorealAssets.scenicPanorama || null,
+          color: this.photorealAssets.scenicPanorama ? 0xffffff : 0xffffff,
           side: THREE.BackSide,
           fog: false,
           depthWrite: false,
@@ -3301,6 +3955,7 @@
           opacity: 1
         })
       );
+      this.skyDome.name = this.photorealAssets.scenicPanorama ? "AstralScenicPanoramaDome" : "AstralProceduralSkyDome";
       this.scene.add(this.skyDome);
 
       this.sunDisc = new THREE.Mesh(
@@ -3308,20 +3963,31 @@
         new THREE.MeshBasicMaterial({ color: 0xffdf8b, fog: false })
       );
       this.scene.add(this.sunDisc);
+      this.sunCorona = new THREE.Mesh(
+        new THREE.SphereGeometry(8.8, 24, 16),
+        new THREE.MeshBasicMaterial({
+          color: 0xffc766,
+          transparent: true,
+          opacity: 0.16,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          fog: false
+        })
+      );
+      this.scene.add(this.sunCorona);
       this.moonDisc = new THREE.Mesh(
         new THREE.SphereGeometry(3.2, 24, 16),
         new THREE.MeshBasicMaterial({ color: 0x9fc8ff, transparent: true, opacity: 0.8, fog: false })
       );
       this.scene.add(this.moonDisc);
 
-      const cloudMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0xbec8dc,
-        emissive: 0x293550,
-        emissiveIntensity: 0.08,
-        roughness: 0.94,
-        metalness: 0,
+      const cloudMaterial = new THREE.MeshStandardMaterial({
+        color: 0xe8f1ff,
+        emissive: 0x8294b8,
+        emissiveIntensity: 0.04,
+        roughness: 1,
         transparent: true,
-        opacity: 0.16,
+        opacity: 0.095,
         depthWrite: false
       });
       const cloudCount = this.state.settings.reduceEffects ? 7 : 16;
@@ -3330,16 +3996,18 @@
         const puffs = 3 + (index % 3);
         for (let part = 0; part < puffs; part += 1) {
           const puff = new THREE.Mesh(
-            new THREE.SphereGeometry(2.6 + (part % 2) * 1.4, 12, 8),
+            new THREE.SphereGeometry(1.55 + (part % 2) * 0.72, 14, 9),
             cloudMaterial
           );
-          puff.position.set(part * 3.2 - puffs * 1.2, Math.sin(part) * 0.8, Math.cos(part) * 1.2);
-          puff.scale.y = 0.42;
+          puff.position.set(part * 1.8 - puffs * 0.72, Math.sin(part) * 0.42, Math.cos(part) * 0.66);
+          puff.scale.y = 0.36;
+          puff.userData.cloudPhase = index * 0.73 + part * 1.31;
+          puff.userData.cloudBaseScale = puff.scale.clone();
           cloud.add(puff);
         }
         const angle = (index / cloudCount) * Math.PI * 2;
         const radius = 55 + (index % 4) * 18;
-        cloud.position.set(Math.cos(angle) * radius, 22 + (index % 5) * 4.2, Math.sin(angle) * radius);
+        cloud.position.set(Math.cos(angle) * radius, 30 + (index % 5) * 4.8, Math.sin(angle) * radius);
         cloud.userData = { atmosphere: "cloud", drift: 0.25 + (index % 4) * 0.08 };
         this.scene.add(cloud);
         this.cloudLayers.push(cloud);
@@ -3363,18 +4031,37 @@
 
     createWater() {
       const THREE = this.THREE;
+      const quality = this.state.settings.quality;
+      const waveTexture = this.terrainSurfaceTextures?.height?.clone?.() || null;
+      if (waveTexture) {
+        waveTexture.wrapS = THREE.RepeatWrapping;
+        waveTexture.wrapT = THREE.RepeatWrapping;
+        waveTexture.repeat.set(7, 11);
+        waveTexture.colorSpace = THREE.NoColorSpace;
+        waveTexture.needsUpdate = true;
+      }
       const waterMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0x3fdacb,
-        emissive: 0x0c6d75,
-        emissiveIntensity: 0.2,
-        roughness: 0.18,
-        metalness: 0.06,
+        color: 0x245b64,
+        emissive: 0x061316,
+        emissiveIntensity: 0.018,
+        roughness: 0.11,
+        metalness: 0,
         transparent: true,
-        opacity: 0.72,
-        clearcoat: 0.85,
-        clearcoatRoughness: 0.12,
+        opacity: quality === "low" ? 0.76 : 0.66,
+        clearcoat: 1,
+        clearcoatRoughness: 0.075,
+        envMapIntensity: this.photorealAssets.panorama ? 1.15 : 0.48,
+        bumpMap: waveTexture,
+        bumpScale: 0.055,
         side: THREE.DoubleSide
       });
+      if (quality === "high" || quality === "cinematic") {
+        waterMaterial.transmission = quality === "cinematic" ? 0.2 : 0.11;
+        waterMaterial.thickness = 0.7;
+        waterMaterial.attenuationColor = new THREE.Color(0x1f6a72);
+        waterMaterial.attenuationDistance = 8;
+      }
+      waterMaterial.ior = 1.333;
       const auroraLake = new THREE.Mesh(new THREE.CircleGeometry(13.5, 72), waterMaterial);
       auroraLake.rotation.x = -Math.PI / 2;
       auroraLake.position.set(-51, 1.12, 20);
@@ -3442,24 +4129,30 @@
       }
       grass.instanceMatrix.needsUpdate = true;
       grass.castShadow = quality === "cinematic";
+      grass.userData.dynamicFoliage = true;
+      grass.userData.windPhase = 0.4;
+      grass.userData.windStrength = 0.018;
+      grass.userData.baseRotation = grass.rotation.clone();
+      this.dynamicFoliage.push(grass);
       auroraGroup.add(grass);
 
       const rockProfiles = [
-        ["central", 0, 0, 54, 0x33546d],
-        ["aurora", -51, 20, 46, 0x267764],
-        ["crimson", 52, 24, 48, 0x6d3128],
-        ["void", 2, -62, 52, 0x4f2c76]
+        ["central", 0, 0, 16, 0xb4b7b4],
+        ["aurora", -51, 20, 30, 0x9aa99f],
+        ["crimson", 52, 24, 30, 0xa18478],
+        ["void", 2, -62, 32, 0x8f879b]
       ];
       rockProfiles.forEach(([zoneId, centerX, centerZ, baseCount, color], profileIndex) => {
         const group = this.streamingGroups.get(zoneId) || makeGroup(zoneId);
         const count = Math.max(14, Math.round(baseCount * density));
         const rocks = new THREE.InstancedMesh(
-          new THREE.IcosahedronGeometry(0.72, 0),
+          new THREE.IcosahedronGeometry(0.72, 2),
           new THREE.MeshStandardMaterial({
             color,
-            map: this.terrainTexture,
-            bumpMap: this.terrainTexture,
-            bumpScale: 0.16,
+            map: this.terrainSurfaceTextures?.albedo || this.terrainTexture,
+            bumpMap: this.terrainSurfaceTextures?.height || null,
+            bumpScale: 0.12,
+            roughnessMap: this.terrainSurfaceTextures?.roughness || null,
             roughness: 0.94,
             metalness: zoneId === "crimson" ? 0.12 : 0.02,
             envMapIntensity: this.photorealAssets.panorama ? 0.42 : 0.12
@@ -3468,12 +4161,16 @@
         );
         for (let index = 0; index < count; index += 1) {
           const angle = seeded(index, profileIndex + 7) * Math.PI * 2;
-          const radius = 7 + seeded(index, profileIndex + 11) * 21;
-          const sx = 0.45 + seeded(index, 15) * 1.6;
+          const minimumRadius = zoneId === "central" ? 16 : 9;
+          const radius = minimumRadius + seeded(index, profileIndex + 11) * (28 - minimumRadius);
+          const sx = zoneId === "central"
+            ? 0.28 + seeded(index, 15) * 0.62
+            : 0.38 + seeded(index, 15) * 0.9;
+          const sy = sx * (0.62 + seeded(index, 21) * 0.28);
           matrix.compose(
-            new THREE.Vector3(centerX + Math.cos(angle) * radius, 1.18 + sx * 0.18, centerZ + Math.sin(angle) * radius),
+            new THREE.Vector3(centerX + Math.cos(angle) * radius, 1.01 + sy * 0.43, centerZ + Math.sin(angle) * radius),
             new THREE.Quaternion().setFromEuler(new THREE.Euler(seeded(index, 18), seeded(index, 19) * Math.PI, seeded(index, 20))),
-            new THREE.Vector3(sx, sx * (0.7 + seeded(index, 21)), sx)
+            new THREE.Vector3(sx, sy, sx * (0.82 + seeded(index, 22) * 0.28))
           );
           rocks.setMatrixAt(index, matrix);
         }
@@ -3488,7 +4185,15 @@
       if (!this.licensedEnvironmentAssets.size) return;
       const THREE = this.THREE;
       const quality = this.state.settings.quality;
-      const amountScale = quality === "low" ? 0.42 : quality === "medium" ? 0.68 : 1;
+      const amountScale = quality === "low"
+        ? 0.32
+        : quality === "medium"
+          ? 0.48
+          : quality === "cinematic"
+            ? 0.9
+            : quality === "high"
+              ? 0.68
+              : 0.52;
       const placements = [
         ["boulder", "central", 9, 1.8, 28],
         ["boulder", "crimson", 8, 2.3, 29],
@@ -3500,24 +4205,39 @@
         ["deadTree", "crimson", 4, 4.6, 28],
         ["fern", "aurora", 18, 1.1, 29],
         ["fern", "void", 12, 1.25, 28],
-        ["grass", "aurora", 22, 0.9, 30]
+        ["grass", "aurora", 22, 0.9, 30],
+        ["kenneyOak", "aurora", 14, 6.4, 30],
+        ["kenneyOak", "central", 8, 5.8, 29],
+        ["kenneyPalm", "ocean", 14, 6.8, 29],
+        ["kenneyBush", "aurora", 18, 1.45, 30],
+        ["kenneyPath", "aurora", 12, 3.2, 24],
+        ["kenneyRoad", "central", 10, 5.4, 25],
+        ["kenneyHouse", "central", 6, 6.6, 30],
+        ["kenneyTower", "station", 5, 11.5, 25],
+        ["kenneyBridge", "central", 2, 9.5, 24]
       ];
       const seeded = (index, salt) => {
         const value = Math.sin(index * 71.137 + salt * 19.71) * 43758.5453;
         return value - Math.floor(value);
       };
-      const instantiate = (source, targetHeight) => {
+      const instantiate = (source, targetHeight, assetId) => {
         const wrapper = new THREE.Group();
         const object = source.scene.clone(true);
         object.updateMatrixWorld(true);
         const bounds = new THREE.Box3().setFromObject(object);
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
-        const fit = targetHeight / Math.max(0.001, size.y);
+        const flatAsset = ["kenneyPath", "kenneyRoad", "kenneyBridge"].includes(assetId);
+        const sourceMeasure = flatAsset ? Math.max(size.x, size.z) : size.y;
+        const fit = targetHeight / Math.max(0.001, sourceMeasure);
         object.scale.setScalar(fit);
         object.position.set(-center.x * fit, -bounds.min.y * fit, -center.z * fit);
         wrapper.add(object);
-        wrapper.userData = { licensedAsset: true, provider: "Poly Haven", lodPriority: "environment-near" };
+        wrapper.userData = {
+          licensedAsset: true,
+          provider: assetId.startsWith("kenney") ? "Kenney CC0" : "Poly Haven CC0",
+          lodPriority: "environment-near"
+        };
         return wrapper;
       };
       placements.forEach(([assetId, zoneId, requestedCount, targetHeight, maxRadius], profileIndex) => {
@@ -3527,13 +4247,39 @@
         const parent = this.streamingGroups.get(zoneId) || this.world;
         const count = Math.max(2, Math.round(requestedCount * amountScale));
         for (let index = 0; index < count; index += 1) {
-          const object = instantiate(source, targetHeight * (0.78 + seeded(index, profileIndex + 4) * 0.5));
+          const object = instantiate(source, targetHeight * (0.78 + seeded(index, profileIndex + 4) * 0.5), assetId);
           const angle = seeded(index, profileIndex + 9) * Math.PI * 2;
-          const radius = 8 + seeded(index, profileIndex + 13) * Math.max(2, maxRadius - 8);
+          const architecture = ["kenneyHouse", "kenneyTower"].includes(assetId);
+          const tallFoliage = ["deadTree", "kenneyOak", "kenneyPalm"].includes(assetId);
+          const flatAsset = ["kenneyPath", "kenneyRoad", "kenneyBridge"].includes(assetId);
+          // The gameplay camera trails roughly 11 units behind the actor. Keep
+          // tall authored assets beyond that corridor so trunks/canopies cannot
+          // sit between the camera and the character at a zone checkpoint.
+          const minimumRadius = architecture
+            ? Math.max(20, zone.radius * 0.72)
+            : tallFoliage
+              ? Math.max(22, zone.radius * 0.68)
+              : flatAsset
+                ? 10
+                : 12;
+          const radius = minimumRadius + seeded(index, profileIndex + 13) * Math.max(2, maxRadius - minimumRadius);
           object.position.set(zone.x + Math.cos(angle) * radius, 1.05, zone.z + Math.sin(angle) * radius);
           object.rotation.y = seeded(index, profileIndex + 17) * Math.PI * 2;
           object.userData.zoneId = zoneId;
+          object.userData.cameraSafeRadius = minimumRadius;
+          object.traverse?.((node) => {
+            if (!node.isMesh) return;
+            node.castShadow = quality === "cinematic" && index < 2;
+            node.receiveShadow = true;
+          });
           parent.add(object);
+          if (["shrub", "deadTree", "fern", "grass", "kenneyOak", "kenneyPalm", "kenneyBush"].includes(assetId)) {
+            object.userData.dynamicFoliage = true;
+            object.userData.windPhase = seeded(index, profileIndex + 23) * Math.PI * 2;
+            object.userData.windStrength = assetId === "deadTree" ? 0.012 : assetId === "grass" ? 0.034 : 0.022;
+            object.userData.baseRotation = object.rotation.clone();
+            this.dynamicFoliage.push(object);
+          }
         }
       });
     }
@@ -3583,7 +4329,7 @@
 
     createStarfield() {
       const THREE = this.THREE;
-      const count = this.state.settings.reduceEffects ? 300 : 720;
+      const count = this.state.settings.reduceEffects ? 420 : 980;
       const positions = new Float32Array(count * 3);
       const colors = new Float32Array(count * 3);
       const palette = [new THREE.Color(0x8cecff), new THREE.Color(0xff91da), new THREE.Color(0xc5a1ff), new THREE.Color(0xffde83)];
@@ -3604,31 +4350,41 @@
       geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
       this.starfield = new THREE.Points(
         geometry,
-        new THREE.PointsMaterial({ size: 0.55, vertexColors: true, transparent: true, opacity: 0.8, sizeAttenuation: true })
+        new THREE.PointsMaterial({ size: 0.17, vertexColors: true, transparent: true, opacity: 0.62, sizeAttenuation: true, depthWrite: false })
       );
       this.scene.add(this.starfield);
     }
 
     createZonePlatforms() {
       const THREE = this.THREE;
+      const surfaceColors = {
+        central: 0x59616a,
+        aurora: 0x405b4c,
+        crimson: 0x4a3027,
+        void: 0x2d2933,
+        sky: 0x68727a,
+        ocean: 0x526970,
+        station: 0x55575c,
+        abyss: 0x29262c
+      };
       ZONES.forEach((zone) => {
         const color = new THREE.Color(zone.color);
         const platform = new THREE.Mesh(
-          new THREE.CylinderGeometry(zone.radius, zone.radius + 2.5, 1.15, 96, 4),
+          new THREE.CylinderGeometry(zone.radius, zone.radius + 0.38, 0.18, 96, 1),
           new THREE.MeshPhysicalMaterial({
-            color: color.clone().multiplyScalar(0.2),
-            emissive: color,
-            emissiveIntensity: 0.055,
+            color: surfaceColors[zone.id] || 0x555b61,
+            emissive: color.clone().multiplyScalar(0.12),
+            emissiveIntensity: 0.012,
             map: this.terrainTexture,
             bumpMap: this.terrainTexture,
             bumpScale: 0.24,
-            roughness: 0.86,
-            metalness: 0.08,
-            clearcoat: 0.08,
+            roughness: 0.93,
+            metalness: zone.id === "station" ? 0.16 : 0.025,
+            clearcoat: 0.025,
             envMapIntensity: 0.3
           })
         );
-        platform.position.set(zone.x, 0.45, zone.z);
+        platform.position.set(zone.x, 0.94, zone.z);
         platform.receiveShadow = true;
         platform.userData.zoneId = zone.id;
         this.world.add(platform);
@@ -3653,25 +4409,26 @@
         const dz = z2 - z1;
         const length = Math.hypot(dx, dz);
         const path = new THREE.Mesh(
-          new THREE.PlaneGeometry(4.2, length),
+          new THREE.PlaneGeometry(2.65, length),
           new THREE.MeshStandardMaterial({
-            color: new THREE.Color(color).multiplyScalar(0.14),
+            color: new THREE.Color(color).lerp(new THREE.Color(0x26303a), 0.82),
             emissive: new THREE.Color(color),
-            emissiveIntensity: 0.05,
-            transparent: true,
-            opacity: 0.68,
-            roughness: 0.8
+            emissiveIntensity: 0.012,
+            transparent: false,
+            roughness: 0.92,
+            metalness: 0.02
           })
         );
         path.rotation.x = -Math.PI / 2;
         path.rotation.z = Math.atan2(dz, dx) - Math.PI / 2;
-        path.position.set((x1 + x2) / 2, 1.05, (z1 + z2) / 2);
+        path.position.set((x1 + x2) / 2, 1.035, (z1 + z2) / 2);
         this.world.add(path);
       });
     }
 
     createCentralCity() {
       const THREE = this.THREE;
+      const hasAuthoredCity = this.licensedEnvironmentAssets.has("kenneyTower") && this.licensedEnvironmentAssets.has("kenneyHouse");
       const towerMaterial = new THREE.MeshStandardMaterial({
         color: 0x152b47,
         emissive: 0x23546e,
@@ -3679,30 +4436,33 @@
         metalness: 0.62,
         roughness: 0.28
       });
-      const glowMaterial = new THREE.MeshBasicMaterial({ color: 0x72efff, transparent: true, opacity: 0.68 });
+      const glowMaterial = new THREE.MeshBasicMaterial({ color: 0xd7e9f2, transparent: true, opacity: 0.22 });
 
-      const coreBase = new THREE.Mesh(new THREE.CylinderGeometry(7.4, 9, 2.4, 48), towerMaterial);
-      coreBase.position.set(0, 2.1, 0);
+      const coreBase = new THREE.Mesh(new THREE.CylinderGeometry(1.75, 2.2, 0.34, 64), towerMaterial);
+      coreBase.position.set(0, 1.19, 0);
       coreBase.castShadow = true;
       coreBase.receiveShadow = true;
       this.world.add(coreBase);
 
       const core = new THREE.Mesh(
-        new THREE.SphereGeometry(3.2, 32, 24),
-        new THREE.MeshStandardMaterial({
-          color: 0xffc463,
-          emissive: 0xff5fae,
-          emissiveIntensity: 1.2,
-          roughness: 0.18,
-          metalness: 0.2
+        new THREE.SphereGeometry(1.28, 48, 32),
+        new THREE.MeshPhysicalMaterial({
+          color: 0xe9d8b4,
+          emissive: 0xffd08c,
+          emissiveIntensity: 0.42,
+          roughness: 0.24,
+          metalness: 0.34,
+          clearcoat: 0.35,
+          clearcoatRoughness: 0.18,
+          envMapIntensity: 0.72
         })
       );
-      core.position.set(0, 8.7, 0);
-      core.userData.floatBase = 8.7;
+      core.position.set(0, 6.9, 0);
+      core.userData.floatBase = 6.9;
       this.world.add(core);
       this.centralCore = core;
 
-      const hLabel = this.addWorldLabel("H", 0, 9.3, 0, "#ffffff", 2.5);
+      const hLabel = this.addWorldLabel("H", 0, 7.25, 0, "#ffffff", 1.35);
       hLabel.userData.followCore = true;
 
       [10, 14].forEach((radius, index) => {
@@ -3713,7 +4473,7 @@
         this.world.add(ring);
       });
 
-      for (let index = 0; index < 9; index += 1) {
+      for (let index = 0; index < (hasAuthoredCity ? 0 : 9); index += 1) {
         const angle = (index / 9) * Math.PI * 2;
         const radius = index % 2 ? 20 : 24;
         const height = 4.5 + (index % 3) * 2.4;
@@ -3749,17 +4509,21 @@
 
     createAuroraVale() {
       const THREE = this.THREE;
-      const material = new THREE.MeshStandardMaterial({
-        color: 0x0d594f,
-        emissive: 0x2ac8a5,
-        emissiveIntensity: 0.16,
-        roughness: 0.82
+      const material = new THREE.MeshPhysicalMaterial({
+        color: 0x6aa59b,
+        emissive: 0x133f38,
+        emissiveIntensity: 0.08,
+        roughness: 0.34,
+        metalness: 0.04,
+        clearcoat: 0.58,
+        clearcoatRoughness: 0.2,
+        envMapIntensity: 0.86
       });
-      for (let index = 0; index < 34; index += 1) {
-        const angle = (index / 34) * Math.PI * 2 + (index % 4) * 0.14;
-        const radius = 8 + (index * 7) % 24;
-        const height = 1.4 + (index % 6) * 0.72;
-        const crystal = new THREE.Mesh(new THREE.ConeGeometry(0.45 + (index % 3) * 0.12, height, 5), material);
+      for (let index = 0; index < 14; index += 1) {
+        const angle = (index / 14) * Math.PI * 2 + (index % 4) * 0.14;
+        const radius = 15 + (index * 7) % 17;
+        const height = 1.2 + (index % 5) * 0.56;
+        const crystal = new THREE.Mesh(new THREE.ConeGeometry(0.38 + (index % 3) * 0.1, height, 7), material);
         crystal.position.set(-51 + Math.cos(angle) * radius, 1.05 + height / 2, 20 + Math.sin(angle) * radius);
         crystal.rotation.y = angle;
         this.world.add(crystal);
@@ -3799,18 +4563,25 @@
     createVoidGarden() {
       const THREE = this.THREE;
       const trunk = new THREE.MeshStandardMaterial({ color: 0x24143e, emissive: 0x7a39cc, emissiveIntensity: 0.12, roughness: 0.7 });
-      const crown = new THREE.MeshStandardMaterial({ color: 0x4d247d, emissive: 0xbb62ff, emissiveIntensity: 0.2, transparent: true, opacity: 0.86 });
-      for (let index = 0; index < 28; index += 1) {
-        const angle = (index / 28) * Math.PI * 2 + (index % 5) * 0.16;
+      const crown = new THREE.MeshStandardMaterial({ color: 0x25212d, emissive: 0x68417d, emissiveIntensity: 0.045, roughness: 0.92, transparent: false });
+      const hasAuthoredVoidFoliage = this.licensedEnvironmentAssets.has("deadTree") && this.licensedEnvironmentAssets.has("shrub");
+      const treeCount = hasAuthoredVoidFoliage ? 8 : 22;
+      for (let index = 0; index < treeCount; index += 1) {
+        const angle = (index / treeCount) * Math.PI * 2 + (index % 5) * 0.16;
         const radius = 9 + (index * 9) % 26;
         const height = 3 + (index % 4) * 1.1;
         const tree = new THREE.Group();
-        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, height, 7), trunk);
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.42, height, 14), trunk);
         stem.position.y = height / 2;
-        const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4 + (index % 3) * 0.3, 1), crown);
+        const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.82 + (index % 3) * 0.16, 2), crown);
         leaves.position.y = height + 0.6;
         tree.add(stem, leaves);
         tree.position.set(2 + Math.cos(angle) * radius, 1.05, -62 + Math.sin(angle) * radius);
+        tree.userData.dynamicFoliage = true;
+        tree.userData.windPhase = index * 0.67;
+        tree.userData.windStrength = 0.02 + (index % 4) * 0.004;
+        tree.userData.baseRotation = tree.rotation.clone();
+        this.dynamicFoliage.push(tree);
         this.world.add(tree);
         this.climbables.push({ object: tree, radius: 0.9, top: 1.05 + height + 1.2 });
       }
@@ -3957,7 +4728,7 @@
       geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
       this.weatherField = new THREE.Points(
         geometry,
-        new THREE.PointsMaterial({ size: 0.26, color: 0x79f7ff, transparent: true, opacity: 0.48 })
+        new THREE.PointsMaterial({ size: 0.085, color: 0xbfd9e8, transparent: true, opacity: 0.32, depthWrite: false })
       );
       this.scene.add(this.weatherField);
     }
@@ -4024,14 +4795,20 @@
               ? new THREE.TetrahedronGeometry(0.78, 0)
               : profile.actor === "forge-drones"
                 ? new THREE.DodecahedronGeometry(0.58, 0)
-                : new THREE.ConeGeometry(0.72, 1.45, 5);
+                : profile.actor === "wisps"
+                  // Aurora wisps used to be large five-sided cones. In front of
+                  // the player those read as untextured pyramids and could cover
+                  // the character. A smooth, small luminous volume keeps the
+                  // living-world motion without exposing primitive silhouettes.
+                  ? new THREE.SphereGeometry(0.38, 24, 16)
+                  : new THREE.CapsuleGeometry(0.26, 0.72, 8, 16);
           const actor = new THREE.Mesh(geometry, material);
           actor.scale.set(
             profile.actor === "void-mantas" || profile.actor === "sky-rays" ? 1.8 : 1,
-            profile.actor === "lumen-fish" ? 0.58 : 1,
+            profile.actor === "lumen-fish" ? 0.58 : profile.actor === "wisps" ? 0.72 : 1,
             profile.actor === "void-mantas" || profile.actor === "sky-rays" ? 0.34 : 1
           );
-          const radius = 6 + index * 4.2;
+          const radius = profile.actor === "wisps" ? 14 + index * 4.8 : 6 + index * 4.2;
           const angle = zoneIndex * 0.71 + index * Math.PI;
           actor.position.set(Math.cos(angle) * radius, 3.4 + index * 1.35, Math.sin(angle) * radius);
           actor.castShadow = this.state.settings.quality === "cinematic" && index === 0;
@@ -4112,6 +4889,66 @@
       });
     }
 
+    createDynamicNatureSystem() {
+      if (!this.state.settings.livingWorld) return;
+      const THREE = this.THREE;
+      this.dynamicNatureScratch = {
+        matrix: new THREE.Matrix4(),
+        position: new THREE.Vector3(),
+        quaternion: new THREE.Quaternion(),
+        scale: new THREE.Vector3(),
+        euler: new THREE.Euler()
+      };
+      const countPerZone = this.state.settings.reduceEffects
+        ? 5
+        : this.state.settings.quality === "cinematic"
+          ? 18
+          : this.state.settings.quality === "high"
+            ? 12
+            : 8;
+      const geometry = new THREE.IcosahedronGeometry(0.28, 0);
+      const matrix = new THREE.Matrix4();
+      const quaternion = new THREE.Quaternion();
+      const scale = new THREE.Vector3();
+      ZONES.forEach((zone, zoneIndex) => {
+        const group = this.zoneFxGroups.get(zone.id);
+        if (!group) return;
+        const material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(zone.color).multiplyScalar(zone.id === "aurora" ? 0.42 : 0.28),
+          roughness: 0.9,
+          metalness: ["crimson", "station"].includes(zone.id) ? 0.28 : 0.04,
+          envMapIntensity: this.photorealAssets.panorama ? 0.38 : 0.12
+        });
+        const mesh = new THREE.InstancedMesh(geometry, material, countPerZone);
+        mesh.name = `DynamicPebbles:${zone.id}`;
+        mesh.castShadow = ["high", "cinematic"].includes(this.state.settings.quality);
+        mesh.receiveShadow = true;
+        const bases = [];
+        for (let index = 0; index < countPerZone; index += 1) {
+          const seed = Math.abs(Math.sin((zoneIndex + 1) * 71.17 + (index + 1) * 19.91));
+          const angle = (index / countPerZone) * Math.PI * 2 + seed * 1.7;
+          const radius = 7 + ((index * 7 + zoneIndex * 5) % Math.max(9, Math.round(zone.radius - 5)));
+          const size = 0.18 + seed * 0.52;
+          const base = {
+            x: Math.cos(angle) * radius,
+            y: 1.11 + size * 0.08,
+            z: Math.sin(angle) * radius,
+            size,
+            phase: zoneIndex * 0.91 + index * 0.73,
+            lift: ["sky", "void", "abyss"].includes(zone.id) ? 0.18 + seed * 0.32 : 0.012
+          };
+          bases.push(base);
+          quaternion.setFromEuler(new THREE.Euler(seed * 0.7, angle, seed * 0.4));
+          scale.setScalar(size);
+          matrix.compose(new THREE.Vector3(base.x, base.y, base.z), quaternion, scale);
+          mesh.setMatrixAt(index, matrix);
+        }
+        mesh.instanceMatrix.needsUpdate = true;
+        group.add(mesh);
+        this.dynamicPebbleFields.push({ mesh, bases, zoneId: zone.id });
+      });
+    }
+
     createFootprintPool() {
       if (this.state.settings.reduceEffects || this.state.settings.vfxLevel === "static") return;
       const THREE = this.THREE;
@@ -4186,6 +5023,38 @@
           }
         });
       });
+      const activeWind = BIOME_PROFILES[this.currentZone?.id]?.wind || 0.35;
+      const gust = Math.sin(time * 0.0011) * 0.55 + Math.sin(time * 0.0027) * 0.2;
+      this.dynamicFoliage.forEach((object, index) => {
+        if (!object?.rotation || object.visible === false) return;
+        const base = object.userData.baseRotation || object.rotation;
+        const phase = object.userData.windPhase || index * 0.47;
+        const strength = (object.userData.windStrength || 0.018) * activeWind;
+        object.rotation.z = base.z + Math.sin(time * 0.0018 + phase) * strength + gust * strength * 0.55;
+        object.rotation.x = base.x + Math.cos(time * 0.00125 + phase) * strength * 0.38;
+      });
+      if (this.dynamicPebbleFields.length) {
+        const { matrix, position, quaternion, scale, euler } = this.dynamicNatureScratch;
+        this.dynamicPebbleFields.forEach((field) => {
+          if (!field.mesh.visible) return;
+          const localProfile = BIOME_PROFILES[field.zoneId] || BIOME_PROFILES.central;
+          field.bases.forEach((base, index) => {
+            const pulse = Math.sin(time * 0.0015 + base.phase);
+            const roll = time * 0.00008 * localProfile.wind + base.phase;
+            position.set(
+              base.x + Math.sin(time * 0.0005 + base.phase) * base.lift * 0.28,
+              base.y + Math.max(0, pulse) * base.lift,
+              base.z + Math.cos(time * 0.00043 + base.phase) * base.lift * 0.22
+            );
+            euler.set(pulse * 0.08, roll, Math.cos(time * 0.0012 + base.phase) * 0.06);
+            quaternion.setFromEuler(euler);
+            scale.setScalar(base.size);
+            matrix.compose(position, quaternion, scale);
+            field.mesh.setMatrixAt(index, matrix);
+          });
+          field.mesh.instanceMatrix.needsUpdate = true;
+        });
+      }
       let npcIndex = 0;
       this.npcs.forEach((npc) => {
         const schedule = npc.userData.schedule;
@@ -4671,6 +5540,10 @@
       const coat = new THREE.Mesh(new THREE.ConeGeometry(0.68, 0.92, 8, 1, true), accentMaterial);
       coat.position.y = 1.05;
       coat.rotation.y = Math.PI / 8;
+      // Fantasy geometry is retained for the explicit anime renderer only.
+      // In cinematic/realistic modes this open cone hid the torso and made the
+      // safety human look like a mannequin inside a pyramid.
+      coat.visible = !realistic;
       group.add(coat);
 
       const cape = new THREE.Mesh(
@@ -4679,6 +5552,7 @@
       );
       cape.position.set(0, 1.5, 0.34);
       cape.rotation.x = 0.12;
+      cape.visible = !realistic;
       group.add(cape);
 
       const wingMaterial = new THREE.MeshBasicMaterial({
@@ -4702,6 +5576,7 @@
       const halo = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.035, 8, 40), accentMaterial);
       halo.position.y = 2.98;
       halo.rotation.x = Math.PI / 2;
+      halo.visible = !realistic;
       group.add(halo);
 
       const weaponAnchor = new THREE.Group();
@@ -5276,11 +6151,20 @@
       const animationRoot = this.primarySkinnedMesh(asset);
       // VALID and Mixamo use different rest transforms/bone rolls. V13 never
       // retargets in the browser: Blender bakes clips onto this exact VALID rig
-      // first, and runtime only consumes the verified animation-only GLB.
-      const offlineBakedAnimations = sourceInfo.provider === "valid-avatar"
+      // first. A partial library is still useful to inspect/build, but it must
+      // not drive the visible human until its complete manifest is marked ready;
+      // otherwise one mislabeled idle clip can leave the actor bent or T-posed.
+      const verifiedOfflineMotion = this.motionLibraryManifest?.rig === "HH_VALID_HUMANOID_V1"
+        && this.motionLibraryManifest?.status === "ready";
+      const offlineBakedAnimations = sourceInfo.provider === "valid-avatar" && verifiedOfflineMotion
         ? this.motionLibraryAnimations
         : [];
       wrapper.add(asset);
+      asset.updateMatrixWorld(true);
+      const restPoseGroundedBounds = new THREE.Box3().setFromObject(asset, true);
+      const measuredGroundOffset = Number.isFinite(restPoseGroundedBounds.min.y)
+        ? clamp(-restPoseGroundedBounds.min.y, 0, 1.2)
+        : 0;
       // When a bundled GLB has a missing texture or cannot be decoded, keep a
       // full articulated procedural character instead of collapsing to the
       // tiny crowd proxy. This is the GPU-safe view that guarantees a visible
@@ -5403,7 +6287,11 @@
           : sourceInfo.label || (modelId === "human-adult-a01" ? "HH Asteria Human Rig" : "HH Vanguard Human Rig"),
         sourceProviderId: sourceInfo.provider,
         sourceAssetPath: sourceInfo.url,
-        gameplayVisualLift: sourceInfo.provider === "valid-avatar" ? 1.35 : 0,
+        // The source mesh is already normalized so its lowest authored point is
+        // y=0. A legacy +1.35 lift made VALID feet float and pushed the camera
+        // above the actor; keep one explicit grounding offset instead.
+        gameplayVisualLift: 0,
+        gameplayGroundOffset: measuredGroundOffset,
         modelTier: initialTier,
         appearanceCapability: "skeleton-proportions",
         gameplayCollider: { radius: 0.48, height: 2.95 },
@@ -5413,7 +6301,18 @@
         builtInAnimations: sourceInfo.provider === "valid-avatar"
           ? (offlineBakedAnimations.length ? offlineBakedAnimations : source.animations || [])
           : (source.animations?.length ? source.animations : this.builtInCharacterAssets.get("human-adult-b01")?.animations || []),
-        motionSource: offlineBakedAnimations.length ? "offline-baked-v13" : source.animations?.length ? "native" : "rest-space-procedural",
+        motionSource: offlineBakedAnimations.length
+          ? "offline-baked-v13"
+          : sourceInfo.provider === "valid-avatar"
+            ? "verified-rest-space-procedural"
+            : source.animations?.length
+              ? "native"
+              : "rest-space-procedural",
+        motionProfile: offlineBakedAnimations.length
+          ? "verified-baked"
+          : sourceInfo.provider === "valid-avatar"
+            ? "valid-rest-solver"
+            : "standard",
         parts: {
           weaponAnchor,
           hair: assetNeedsVisualRecovery ? null : riggedHair,
@@ -5618,6 +6517,7 @@
         profile,
         role,
         source: mesh.userData.sourceProvider || "HH Web Hero",
+        motionProfile: mesh.userData.motionProfile || "standard",
         tier: role === "hero" ? "hero" : "near",
         state: "idle",
         previousState: "",
@@ -5656,6 +6556,9 @@
           hit: 0,
           secondary: 1
         },
+        handPoseBones: [],
+        handPoseState: "pending",
+        allBones: [],
         secondaryBones: [],
         lastLodUpdateAt: 0,
         lastFacialUpdateAt: 0
@@ -5668,6 +6571,7 @@
       const nativeFaceChannels = new Set();
       mesh.traverse?.((object) => {
         if (object.isBone) {
+          runtime.allBones.push(object);
           const boneName = normalizeBoneName(object.name);
           Object.entries(HH_HUMANOID_SKELETON).forEach(([slot, aliases]) => {
             if (!runtime.bones[slot] && normalizedAliases[slot].includes(boneName)) runtime.bones[slot] = object;
@@ -5680,6 +6584,29 @@
               z: object.rotation.z
             };
             runtime.secondaryBones.push(object);
+          }
+          const isFinger = /(?:thumb|index|middle|ring|pinky|little|finger)/.test(boneName);
+          const isWrist = normalizedAliases.leftHand.includes(boneName) || normalizedAliases.rightHand.includes(boneName);
+          if (isFinger || isWrist) {
+            const rawName = String(object.name || "").toLowerCase();
+            const digit = /thumb/.test(rawName)
+              ? "thumb"
+              : /index/.test(rawName)
+                ? "index"
+                : /middle/.test(rawName)
+                  ? "middle"
+                  : /ring/.test(rawName)
+                    ? "ring"
+                    : /pinky|little/.test(rawName)
+                      ? "pinky"
+                      : "finger";
+            runtime.handPoseBones.push({
+              bone: object,
+              kind: isWrist ? "wrist" : "finger",
+              side: /left|(?:^|[._-])l(?:$|[._-])/.test(rawName) ? "left" : "right",
+              digit,
+              segment: /(?:3|distal|tip)/.test(rawName) ? 3 : /(?:2|intermediate)/.test(rawName) ? 2 : 1
+            });
           }
         }
         if (object.isMesh || object.isSkinnedMesh) {
@@ -5709,6 +6636,18 @@
         normalizedAnimations.forEach((clip) => runtime.clips.set(String(clip.name || "").toLowerCase(), clip));
       }
       this.captureNaturalRigPose(runtime);
+      const restFeet = [runtime.bones.leftFoot, runtime.bones.rightFoot].filter(Boolean);
+      runtime.expectedFootHeight = 0.09;
+      if (restFeet.length) {
+        mesh.updateMatrixWorld(true);
+        const restFootY = Math.min(...restFeet.map((foot) => foot.getWorldPosition(new this.THREE.Vector3()).y));
+        if (Number.isFinite(restFootY)) {
+          runtime.restFootY = restFootY;
+          const boneGroundOffset = clamp(runtime.expectedFootHeight - restFootY, 0, 1.4);
+          mesh.userData.gameplayGroundOffset = Math.max(Number(mesh.userData.gameplayGroundOffset || 0), boneGroundOffset);
+          mesh.userData.groundingSource = "rest-foot-bones";
+        }
+      }
       mesh.userData.characterRuntime = runtime;
       mesh.userData.lodVariants = runtime.lodVariants;
       this.characterRuntimes.set(runtimeKey, runtime);
@@ -5966,6 +6905,11 @@
       add(bones.spine, [["x", accelerationLean + breathing * 0.24], ["z", turnLean]], 1);
       add(bones.chest, [["x", breathing], ["y", locomotion ? Math.sin(runtime.gaitPhase || 0) * 0.018 : 0], ["z", -turnLean * 0.42]], 1);
       add(bones.head, [["x", -accelerationLean * 0.32], ["z", -turnLean * 0.2]], 1);
+      if ((motion === "idle" || motion === "talk") && runtime.relaxedArmOffsets) {
+        const postureBlend = (1 - Math.exp(-Math.max(0.001, dt) * 5.5)) * 0.18;
+        this.applyCharacterSpaceBoneRotation(runtime, bones.leftUpperArm, runtime.relaxedArmOffsets.left, postureBlend);
+        this.applyCharacterSpaceBoneRotation(runtime, bones.rightUpperArm, runtime.relaxedArmOffsets.right, postureBlend);
+      }
 
       const actionPhase = clamp((time - Number(this.characterAction?.startedAt || time)) / Math.max(1, Number(this.characterAction?.duration || 1)), 0, 1);
       const anticipation = Math.sin(clamp(actionPhase / 0.34, 0, 1) * Math.PI * 0.5);
@@ -6005,7 +6949,11 @@
       const inverseMeshWorldQuaternion = meshWorldQuaternion.clone().invert();
       const inverseMeshMatrix = runtime.mesh.matrixWorld.clone().invert();
       runtime.rigRest = new Map();
-      [...new Set(Object.values(runtime.bones).filter(Boolean))].forEach((bone) => {
+      [...new Set([
+        ...(runtime.allBones || []).filter(Boolean),
+        ...Object.values(runtime.bones).filter(Boolean),
+        ...(runtime.handPoseBones || []).map((entry) => entry.bone).filter(Boolean)
+      ])].forEach((bone) => {
         const parentWorld = bone.parent?.getWorldQuaternion?.(new THREE.Quaternion()) || meshWorldQuaternion;
         runtime.rigRest.set(bone, {
           quaternion: bone.quaternion.clone(),
@@ -6035,6 +6983,46 @@
       runtime.rigSolver = "rest-space-quaternion";
     }
 
+    applyNaturalHandPose(runtime, motion = "idle", dt = 0.016) {
+      if (!runtime?.handPoseBones?.length) return false;
+      if (!runtime.rigRest?.size) this.captureNaturalRigPose(runtime);
+      const combat = /^(?:attack|skill|ultimate|parry|dodge|hit)/.test(String(motion || ""));
+      const quarantined = Boolean(runtime.motionQuarantined);
+      const wristLimit = quarantined ? 0.16 : combat ? 0.72 : 0.2;
+      const fingerLimit = quarantined ? 0.14 : combat ? 0.62 : 0.28;
+      const response = 1 - Math.exp(-Math.max(0.001, dt) * (quarantined ? 24 : 18));
+      let corrected = 0;
+      runtime.handPoseBones.forEach(({ bone, kind }) => {
+        const rest = runtime.rigRest?.get(bone);
+        if (!bone?.quaternion || !rest?.quaternion) return;
+        const values = [bone.quaternion.x, bone.quaternion.y, bone.quaternion.z, bone.quaternion.w];
+        if (!values.every(Number.isFinite) || bone.quaternion.lengthSq() < 0.000001) {
+          bone.quaternion.copy(rest.quaternion);
+          corrected += 1;
+          return;
+        }
+        bone.quaternion.normalize();
+        const angle = rest.quaternion.angleTo(bone.quaternion);
+        const limit = kind === "wrist" ? wristLimit : fingerLimit;
+        if (!Number.isFinite(angle) || angle <= limit) return;
+        const safe = rest.quaternion.clone()
+          .slerp(bone.quaternion, clamp(limit / Math.max(angle, 0.0001), 0, 1))
+          .normalize();
+        bone.quaternion.slerp(safe, response).normalize();
+        corrected += 1;
+      });
+      runtime.handPoseState = corrected ? "rest-clamped" : "natural";
+      runtime.handPoseCorrections = corrected;
+      runtime.wristDeviation = runtime.handPoseBones
+        .filter((entry) => entry.kind === "wrist")
+        .reduce((maximum, entry) => {
+          const rest = runtime.rigRest?.get(entry.bone);
+          const angle = rest?.quaternion?.angleTo?.(entry.bone.quaternion);
+          return Number.isFinite(angle) ? Math.max(maximum, angle) : maximum;
+        }, 0);
+      return corrected > 0;
+    }
+
     applyCharacterSpaceBoneRotation(runtime, bone, characterOffset, blend) {
       const rest = runtime?.rigRest?.get(bone);
       if (!bone || !rest || !characterOffset) return;
@@ -6042,6 +7030,95 @@
       const localDelta = parent.clone().invert().multiply(characterOffset).multiply(parent);
       const target = localDelta.multiply(rest.quaternion.clone()).normalize();
       bone.quaternion.slerp(target, blend).normalize();
+    }
+
+    aimCharacterBoneSegment(runtime, bone, child, characterDirection, weight = 1) {
+      const THREE = this.THREE;
+      if (!runtime?.mesh || !bone || !child || !characterDirection || weight <= 0) return false;
+      runtime.validSolverScratch ||= {
+        start: new THREE.Vector3(),
+        end: new THREE.Vector3(),
+        currentDirection: new THREE.Vector3(),
+        desiredWorld: new THREE.Vector3(),
+        characterWorld: new THREE.Quaternion(),
+        deltaWorld: new THREE.Quaternion(),
+        boneWorld: new THREE.Quaternion(),
+        parentWorld: new THREE.Quaternion(),
+        targetWorld: new THREE.Quaternion(),
+        targetLocal: new THREE.Quaternion(),
+        directions: Array.from({ length: 8 }, () => new THREE.Vector3())
+      };
+      const scratch = runtime.validSolverScratch;
+      runtime.mesh.updateMatrixWorld(true);
+      bone.getWorldPosition(scratch.start);
+      child.getWorldPosition(scratch.end);
+      const currentDirection = scratch.currentDirection.subVectors(scratch.end, scratch.start);
+      if (currentDirection.lengthSq() < 0.000001) return false;
+      currentDirection.normalize();
+      runtime.mesh.getWorldQuaternion(scratch.characterWorld);
+      scratch.desiredWorld.copy(characterDirection).normalize().applyQuaternion(scratch.characterWorld);
+      scratch.deltaWorld.setFromUnitVectors(currentDirection, scratch.desiredWorld);
+      bone.getWorldQuaternion(scratch.boneWorld);
+      scratch.targetWorld.copy(scratch.deltaWorld).multiply(scratch.boneWorld).normalize();
+      if (bone.parent?.getWorldQuaternion) bone.parent.getWorldQuaternion(scratch.parentWorld);
+      else scratch.parentWorld.copy(scratch.characterWorld);
+      scratch.targetLocal.copy(scratch.parentWorld).invert().multiply(scratch.targetWorld).normalize();
+      bone.quaternion.slerp(scratch.targetLocal, clamp(weight, 0, 1)).normalize();
+      runtime.mesh.updateMatrixWorld(true);
+      return true;
+    }
+
+    applyVerifiedRestPoseMotion(runtime, time, motion = "idle") {
+      if (!runtime?.rigRest?.size || runtime.lodSuspended) return false;
+      const THREE = this.THREE;
+      runtime.rigRest.forEach((rest, bone) => {
+        bone.position.copy(rest.position);
+        bone.quaternion.copy(rest.quaternion);
+      });
+      runtime.mesh.updateMatrixWorld(true);
+      const bones = runtime.bones || {};
+      runtime.validSolverScratch ||= {
+        start: new THREE.Vector3(), end: new THREE.Vector3(), currentDirection: new THREE.Vector3(), desiredWorld: new THREE.Vector3(),
+        characterWorld: new THREE.Quaternion(), deltaWorld: new THREE.Quaternion(), boneWorld: new THREE.Quaternion(),
+        parentWorld: new THREE.Quaternion(), targetWorld: new THREE.Quaternion(), targetLocal: new THREE.Quaternion(),
+        directions: Array.from({ length: 8 }, () => new THREE.Vector3())
+      };
+      const directions = runtime.validSolverScratch.directions;
+      const locomotion = ["walk", "run", "sprint", "strafe"].includes(motion);
+      const cadence = motion === "sprint" ? 10.2 : motion === "run" || motion === "strafe" ? 7.8 : 4.9;
+      const gait = locomotion ? Math.sin(time * 0.001 * cadence) : 0;
+      const stride = locomotion ? gait * (motion === "sprint" ? 0.5 : motion === "run" ? 0.36 : 0.22) : 0;
+      const armSwing = locomotion ? -stride * 0.72 : 0;
+      const leftUpperArm = directions[0].set(0.18, -0.975, 0.035 + armSwing).normalize();
+      const rightUpperArm = directions[1].set(-0.18, -0.975, 0.035 - armSwing).normalize();
+      const leftForeArm = directions[2].set(0.07, -0.992, 0.08 + armSwing * 0.24).normalize();
+      const rightForeArm = directions[3].set(-0.07, -0.992, 0.08 - armSwing * 0.24).normalize();
+      this.aimCharacterBoneSegment(runtime, bones.leftUpperArm, bones.leftForeArm, leftUpperArm, 1);
+      this.aimCharacterBoneSegment(runtime, bones.rightUpperArm, bones.rightForeArm, rightUpperArm, 1);
+      this.aimCharacterBoneSegment(runtime, bones.leftForeArm, bones.leftHand, leftForeArm, 0.92);
+      this.aimCharacterBoneSegment(runtime, bones.rightForeArm, bones.rightHand, rightForeArm, 0.92);
+
+      if (locomotion) {
+        const leftThigh = directions[4].set(0.015, -Math.cos(stride), Math.sin(stride)).normalize();
+        const rightThigh = directions[5].set(-0.015, -Math.cos(stride), -Math.sin(stride)).normalize();
+        const leftKnee = Math.max(0, -gait) * (motion === "sprint" ? 0.42 : 0.28);
+        const rightKnee = Math.max(0, gait) * (motion === "sprint" ? 0.42 : 0.28);
+        this.aimCharacterBoneSegment(runtime, bones.leftUpLeg, bones.leftLeg, leftThigh, 0.9);
+        this.aimCharacterBoneSegment(runtime, bones.rightUpLeg, bones.rightLeg, rightThigh, 0.9);
+        this.aimCharacterBoneSegment(runtime, bones.leftLeg, bones.leftFoot, directions[6].set(0, -Math.cos(leftKnee), -Math.sin(leftKnee)), 0.82);
+        this.aimCharacterBoneSegment(runtime, bones.rightLeg, bones.rightFoot, directions[7].set(0, -Math.cos(rightKnee), -Math.sin(rightKnee)), 0.82);
+      }
+
+      const chestRest = runtime.rigRest.get(bones.chest);
+      if (chestRest && bones.chest && motion === "idle") {
+        const breath = Math.sin(time * 0.00118) * 0.0014;
+        bones.chest.position.copy(chestRest.position).multiplyScalar(1 + breath);
+      }
+      runtime.mesh.updateMatrixWorld(true);
+      runtime.state = motion;
+      runtime.motionSource = "verified-rest-space-procedural";
+      runtime.proceduralRig = "valid-world-direction-solver";
+      return true;
     }
 
     applyProceduralRigMotion(runtime, time, motion = "idle", dt = 0.016) {
@@ -6944,6 +8021,7 @@
       if (this.state.roster.activeId === characterId) {
         this.playerMesh = wrapper;
         this.playerWeapon = weapon;
+        this.resetGameplayCharacterVisibility("imported-glb");
       }
       if (oldRuntime && oldRuntime !== runtime) this.disposeCharacterObject(oldMesh, oldRuntime);
       this.updateUi(true);
@@ -7150,21 +8228,35 @@
     createEnemy(id, type, x, z) {
       const THREE = this.THREE;
       const profile = ENEMY_ARCHETYPES[type];
-      const scale = profile.boss ? 2.25 : type === "forge-hound" ? 1.15 : 1;
+      const scale = profile.boss ? 1.35 : type === "forge-hound" ? 1.15 : 1;
       const group = new THREE.Group();
-      const material = new THREE.MeshToonMaterial({
-        color: new THREE.Color(profile.color).multiplyScalar(0.55),
-        emissive: new THREE.Color(profile.color),
-        emissiveIntensity: profile.boss ? 0.7 : 0.35,
-        gradientMap: this.toonGradient
-      });
-      const body = new THREE.Mesh(new THREE.IcosahedronGeometry(0.88 * scale, 1), material);
-      body.position.y = 1.6 * scale;
+      const material = this.state.settings.renderStyle === "anime"
+        ? new THREE.MeshToonMaterial({
+          color: new THREE.Color(profile.color).multiplyScalar(0.42),
+          emissive: new THREE.Color(profile.color),
+          emissiveIntensity: profile.boss ? 0.34 : 0.22,
+          gradientMap: this.toonGradient
+        })
+        : new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({
+          color: new THREE.Color(profile.color).multiplyScalar(profile.boss ? 0.12 : 0.3),
+          emissive: new THREE.Color(profile.color),
+          emissiveIntensity: profile.boss ? 0.1 : 0.08,
+          roughness: profile.boss ? 0.48 : 0.62,
+          metalness: profile.boss ? 0.56 : 0.2,
+          clearcoat: profile.boss ? 0.28 : 0.08,
+          clearcoatRoughness: 0.44,
+          envMapIntensity: this.photorealAssets.panorama ? 0.62 : 0.2
+        });
+      const bodyGeometry = profile.boss
+        ? new THREE.CapsuleGeometry(0.62 * scale, 1.08 * scale, 10, 20)
+        : new THREE.IcosahedronGeometry(0.76 * scale, 2);
+      const body = new THREE.Mesh(bodyGeometry, material);
+      body.position.y = 1.48 * scale;
       body.castShadow = true;
       group.add(body);
       const eye = new THREE.Mesh(
         new THREE.SphereGeometry(0.19 * scale, 12, 8),
-        new THREE.MeshBasicMaterial({ color: 0xffffff })
+        new THREE.MeshStandardMaterial({ color: 0xe8f0f4, emissive: profile.color, emissiveIntensity: profile.boss ? 0.32 : 0.12, roughness: 0.18 })
       );
       eye.position.set(0, 1.68 * scale, 0.78 * scale);
       eye.userData.weakPoint = Boolean(profile.boss);
@@ -7172,7 +8264,7 @@
       group.add(eye);
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(1.18 * scale, 0.055 * scale, 8, 36),
-        new THREE.MeshBasicMaterial({ color: profile.color, transparent: true, opacity: 0.65 })
+        new THREE.MeshBasicMaterial({ color: profile.color, transparent: true, opacity: profile.boss ? 0.2 : 0.42, depthWrite: false })
       );
       ring.position.y = 1.6 * scale;
       ring.rotation.x = Math.PI / 2;
@@ -7215,7 +8307,7 @@
 
     positionCharacterInWorld(mesh, x, y, z) {
       if (!mesh?.position) return;
-      const lift = Number(mesh.userData?.gameplayVisualLift || 0);
+      const lift = Number(mesh.userData?.gameplayGroundOffset ?? mesh.userData?.gameplayVisualLift ?? 0);
       mesh.position.set(x, y + lift, z);
     }
 
@@ -7287,7 +8379,35 @@
     }
 
     bindShellEvents() {
+      const cinematicToggle = this.root.querySelector('[data-cinematic-action="toggle"]');
+      this.listen(cinematicToggle, "click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.toggleCinematicPlayback();
+      });
       this.listen(this.root, "click", (event) => {
+        if (event.target.closest("[data-har-cinematics]")) {
+          this.openCinematicGallery(this.currentZone?.id || "central", { source: "archive", autoplay: true });
+          return;
+        }
+        const cinematicChapter = event.target.closest("[data-cinematic-chapter]")?.dataset.cinematicChapter;
+        if (cinematicChapter) {
+          this.playCinematicChapter(cinematicChapter, { autoplay: true });
+          return;
+        }
+        const cinematicAction = event.target.closest("[data-cinematic-action]")?.dataset.cinematicAction;
+        if (cinematicAction) {
+          if (cinematicAction === "close") this.closeCinematicGallery();
+          else if (cinematicAction === "replay") this.playCinematicChapter(this.cinematicSequence.chapterId, { autoplay: true });
+          else if (cinematicAction === "toggle") this.toggleCinematicPlayback();
+          else if (cinematicAction === "enter") this.closeCinematicGallery({ enterZone: true });
+          return;
+        }
+        const panelActionButton = event.target.closest("[data-panel-action]");
+        if (panelActionButton && !panelActionButton.disabled) {
+          this.handlePanelAction(panelActionButton.dataset.panelAction, panelActionButton.dataset);
+          return;
+        }
         const genesisGroup = event.target.closest("[data-genesis-group]");
         if (genesisGroup) {
           this.appearanceGroup = genesisGroup.dataset.genesisGroup;
@@ -7509,6 +8629,12 @@
           this.refreshGenesisCreator();
         }
       });
+      this.root.querySelectorAll('[data-cinematic-action="close"], [data-cinematic-action="enter"]').forEach((button) => {
+        this.listen(button, "click", (event) => {
+          event.stopPropagation();
+          this.closeCinematicGallery({ enterZone: button.dataset.cinematicAction === "enter" });
+        });
+      });
     }
 
     bindGameEvents() {
@@ -7517,6 +8643,13 @@
         if (!this.running || this.destroyed) return;
         if (this.genesisActive) return;
         if (/^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName || "")) return;
+        if (this.cinematicSequence.active) {
+          if (event.code === "Escape") {
+            event.preventDefault();
+            this.closeCinematicGallery();
+          }
+          return;
+        }
         const handled = [
           "KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
           "Space", "KeyF", "KeyE", "KeyR", "KeyQ", "KeyG", "KeyT", "Tab", "Escape",
@@ -7537,7 +8670,8 @@
         };
         if (actions[event.code]) this.performAction(actions[event.code]);
         if (event.code === "Escape") {
-          if (!this.root.querySelector("[data-har-dialogue]").hidden) this.closeDialogue();
+          if (this.cinematicSequence.active) this.closeCinematicGallery();
+          else if (!this.root.querySelector("[data-har-dialogue]").hidden) this.closeDialogue();
           else if (this.currentPanel) this.closePanel();
           else this.togglePause();
         }
@@ -7586,7 +8720,9 @@
         if (!this.draggingCamera || !this.pointerStart) return;
         const sensitivity = clamp(this.state.settings.cameraSensitivity, 10, 100) / 100;
         this.cameraYaw -= (event.clientX - this.pointerStart.x) * 0.006 * sensitivity;
-        this.cameraPitch = clamp(this.cameraPitch + (event.clientY - this.pointerStart.y) * 0.0035 * sensitivity, 0.18, 1.05);
+        const minimumPitch = this.genesisActive ? -0.02 : 0.08;
+        const maximumPitch = this.genesisActive ? 0.78 : 0.62;
+        this.cameraPitch = clamp(this.cameraPitch + (event.clientY - this.pointerStart.y) * 0.0035 * sensitivity, minimumPitch, maximumPitch);
         this.pointerStart = { x: event.clientX, y: event.clientY };
       });
       const stopCameraDrag = (event) => {
@@ -7683,6 +8819,7 @@
       });
       this.playerMesh = this.characterMeshes.get(characterId);
       this.playerWeapon = this.playerMesh.userData.weapon;
+      this.resetGameplayCharacterVisibility("character-switch");
       this.characterSwitchAt = now;
       this.combo = 0;
       this.setCharacterAction("idle", 80, 0);
@@ -7740,7 +8877,10 @@
           mode: this.lockedTargetId ? "combat-facing" : "locomotion-facing"
         });
       }
-      if (runtime?.mixer && !runtime.lodSuspended) {
+      const useVerifiedRestSolver = runtime?.motionProfile === "valid-rest-solver";
+      if (useVerifiedRestSolver && !runtime.lodSuspended) {
+        this.applyVerifiedRestPoseMotion(runtime, time, targetAnimation);
+      } else if (runtime?.mixer && !runtime.lodSuspended) {
         const blendable = ["idle", "walk", "run", "sprint", "strafe"].includes(targetAnimation);
         const blended = blendable && this.updateLocomotionBlendSpace(runtime, runtime.motionSpeed, runtime.motionDirection, dt);
         if (!blended) {
@@ -7752,8 +8892,9 @@
       } else if (runtime && !runtime.lodSuspended) {
         this.applyProceduralRigMotion(runtime, time, targetAnimation, dt);
       }
-      if (runtime && !runtime.lodSuspended) this.applyAdditiveAnimationLayers(runtime, time, targetAnimation, dt);
-      if (runtime && !runtime.lodSuspended) this.applyMotionWarping(runtime, time, dt);
+      if (runtime && !runtime.lodSuspended && !useVerifiedRestSolver) this.applyAdditiveAnimationLayers(runtime, time, targetAnimation, dt);
+      if (runtime && !runtime.lodSuspended && !useVerifiedRestSolver) this.applyMotionWarping(runtime, time, dt);
+      if (runtime && !runtime.lodSuspended) this.applyNaturalHandPose(runtime, targetAnimation, dt);
       const gaitPhase = runtime?.gaitPhase ?? time * 0.002;
       const normalizedGaitPhase = ((gaitPhase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2);
       const phase = Math.sin(gaitPhase);
@@ -7907,10 +9048,10 @@
         this.root.querySelector('[data-photo-setting="exposure"]').value = String(this.photoSettings.exposure);
         this.toast("Photo Mode · kéo chuột để chọn góc máy.");
       } else {
-        this.cameraFovTarget = 58;
-        this.camera.fov = 58;
+        this.cameraFovTarget = CINEMATIC_CAMERA.verticalFovDeg;
+        this.camera.fov = CINEMATIC_CAMERA.verticalFovDeg;
         this.camera.updateProjectionMatrix();
-        this.renderer.toneMappingExposure = 1.08;
+        this.renderer.toneMappingExposure = this.state.settings.quality === "cinematic" ? 1.08 : 0.98;
         this.root.classList.remove("is-photo-clean");
       }
     }
@@ -7968,8 +9109,21 @@
             });
             this.renderGenesisFrame(time, dt);
           } else {
+            if (this.cinematicSequence.active) this.updateStoryCinematic(dt, time);
             this.updateCamera(false, dt);
             this.renderer.render(this.scene, this.camera);
+            const characterReport = this.validateGameplayCharacterFrame(time);
+            if (this.pendingStartReveal) {
+              if (characterReport?.modelReady) this.startRevealFrames += 1;
+              const revealElapsed = performance.now() - Number(this.startRevealStartedAt || 0);
+              const rendererWarm = this.startRevealFrames >= 4 || (this.startRevealFrames >= 2 && revealElapsed >= 4200);
+              if (this.gameplayVisibility?.validated && rendererWarm && revealElapsed >= 900) {
+                this.pendingStartReveal = false;
+                const start = this.root.querySelector("[data-har-start]");
+                if (start) start.hidden = true;
+                this.setLoading(100, "Cảnh 3D đã sẵn sàng.");
+              }
+            }
           }
           this.lastRenderSuccessAt = time;
           this.trackFps(time);
@@ -8011,7 +9165,7 @@
       const rightX = Math.abs(pad.axes[2] || 0) > 0.15 ? pad.axes[2] : 0;
       const rightY = Math.abs(pad.axes[3] || 0) > 0.15 ? pad.axes[3] : 0;
       this.cameraYaw -= rightX * 0.045;
-      this.cameraPitch = clamp(this.cameraPitch + rightY * 0.025, 0.18, 1.05);
+      this.cameraPitch = clamp(this.cameraPitch + rightY * 0.025, 0.08, 0.62);
     }
 
     movementInput() {
@@ -8265,6 +9419,13 @@
       const dayAmount = (Math.sin(((this.state.worldTime - 6) / 24) * Math.PI * 2) + 1) / 2;
       const celestialAngle = (this.state.worldTime / 24) * Math.PI * 2 - Math.PI / 2;
       if (this.sunDisc) this.sunDisc.position.set(Math.cos(celestialAngle) * 150, Math.sin(celestialAngle) * 115, -90);
+      if (this.sunCorona && this.sunDisc) {
+        this.sunCorona.position.copy(this.sunDisc.position);
+        const coronaPulse = 1 + Math.sin(time * 0.0014) * 0.055;
+        this.sunCorona.scale.setScalar(coronaPulse);
+        this.sunCorona.rotation.y += dt * 0.025;
+        this.sunCorona.material.opacity = 0.08 + dayAmount * 0.16;
+      }
       if (this.moonDisc) this.moonDisc.position.set(Math.cos(celestialAngle + Math.PI) * 150, Math.sin(celestialAngle + Math.PI) * 110, -82);
       if (this.sunLight) this.sunLight.position.set(
         Math.cos(celestialAngle) * 58,
@@ -8281,11 +9442,11 @@
       const biomeFog = new this.THREE.Color(biomeProfile.fog).lerp(dayColor, 0.24 + dayAmount * 0.16);
       this.scene.fog.color.lerp(biomeFog, clamp(dt * 2.6, 0, 1));
       this.scene.fog.density += (biomeProfile.fogDensity - this.scene.fog.density) * clamp(dt * 1.8, 0, 1);
-      this.hemisphereLight.intensity = 0.85 + dayAmount * 1.2;
-      this.sunLight.intensity = 0.45 + dayAmount * 2.15;
-      this.hLight.intensity = 35 + (1 - dayAmount) * 25;
-      if (this.fillLight) this.fillLight.intensity = 0.28 + dayAmount * 0.45;
-      if (this.rimLight) this.rimLight.intensity = 0.38 + (1 - dayAmount) * 0.52;
+      this.hemisphereLight.intensity = 0.24 + dayAmount * 0.34;
+      this.sunLight.intensity = 0.32 + dayAmount * 2.85;
+      this.hLight.intensity = 1.6 + (1 - dayAmount) * 2.4;
+      if (this.fillLight) this.fillLight.intensity = 0.08 + dayAmount * 0.16;
+      if (this.rimLight) this.rimLight.intensity = 0.16 + (1 - dayAmount) * 0.18;
       if (this.skyDome) {
         this.skyDome.material.color.set(dayAmount > 0.4 ? 0x8fa9d8 : 0x524084);
         this.skyDome.material.color.multiplyScalar(0.42 + dayAmount * 0.58);
@@ -8298,13 +9459,26 @@
         cloud.rotation.y += dt * 0.006;
         cloud.position.x += dt * cloud.userData.drift;
         if (cloud.position.x > 115) cloud.position.x = -115;
+        cloud.children.forEach((puff, puffIndex) => {
+          const baseScale = puff.userData?.cloudBaseScale;
+          if (!baseScale) return;
+          const phase = puff.userData.cloudPhase || puffIndex;
+          const breathe = 1 + Math.sin(time * 0.00065 + phase) * 0.09;
+          puff.scale.set(baseScale.x * breathe, baseScale.y * (1 + Math.cos(time * 0.00052 + phase) * 0.12), baseScale.z * breathe);
+          puff.rotation.y += dt * (0.006 + puffIndex * 0.0015);
+          puff.position.y += Math.sin(time * 0.0007 + phase) * dt * 0.04;
+        });
       });
       this.waterSurfaces.forEach((water, index) => {
         water.position.y = water.userData.baseY + Math.sin(time * 0.0017 + index) * 0.035;
         water.rotation.z += dt * (water.userData.lava ? 0.035 : -0.012);
+        if (!water.userData.lava && water.material.bumpMap) {
+          water.material.bumpMap.offset.x = (time * 0.000012) % 1;
+          water.material.bumpMap.offset.y = (time * -0.000008) % 1;
+        }
         water.material.emissiveIntensity = water.userData.lava
           ? 1.15 + Math.sin(time * 0.003) * 0.25
-          : 0.16 + Math.sin(time * 0.0015) * 0.06;
+          : 0.018 + Math.sin(time * 0.0015) * 0.008;
       });
       this.puzzleNodes.forEach((puzzle) => {
         const core = puzzle.userData.core;
@@ -8319,6 +9493,7 @@
       if (this.weatherField) {
         this.weatherField.position.set(this.state.player.x, 0, this.state.player.z);
         const positions = this.weatherField.geometry.attributes.position.array;
+        const weatherWind = (BIOME_PROFILES[this.currentZone.id]?.wind || 0.35) * (this.currentZone.id === "sky" ? 3.2 : 1.15);
         for (let index = 1; index < positions.length; index += 3) {
           const fallSpeed = this.currentZone.id === "crimson"
             ? 1.1
@@ -8328,6 +9503,11 @@
                 ? 0.65
                 : 3.2;
           positions[index] -= dt * fallSpeed;
+          positions[index - 1] += dt * weatherWind * (0.42 + (index % 7) * 0.035);
+          positions[index + 1] += dt * Math.sin(time * 0.001 + index) * weatherWind * 0.08;
+          if (positions[index - 1] > 27.5) positions[index - 1] = -27.5;
+          if (positions[index + 1] > 27.5) positions[index + 1] = -27.5;
+          if (positions[index + 1] < -27.5) positions[index + 1] = 27.5;
           if (positions[index] < 1) positions[index] = 18 + Math.random() * 8;
         }
         this.weatherField.geometry.attributes.position.needsUpdate = true;
@@ -8389,7 +9569,7 @@
       this.weatherField.material.opacity = override === "clear"
         ? 0.04
         : (mode === "central" ? 0.16 : mode === "aurora" && override === "storm" ? 0.82 : 0.58) * density;
-      this.weatherField.material.size = mode === "crimson" || mode === "abyss" ? 0.34 : mode === "aurora" || mode === "ocean" ? 0.24 : 0.18;
+      this.weatherField.material.size = mode === "crimson" || mode === "abyss" ? 0.12 : mode === "aurora" || mode === "ocean" ? 0.095 : 0.07;
     }
 
     updateEffects(dt) {
@@ -8432,15 +9612,15 @@
         : player;
       const visualLift = this.genesisActive || this.currentPanel === "creator"
         ? 0
-        : Number(this.playerMesh.userData?.gameplayVisualLift || 0);
+        : Number(this.playerMesh.userData?.gameplayGroundOffset ?? this.playerMesh.userData?.gameplayVisualLift ?? 0);
       const originY = cameraOrigin.y + visualLift;
       const horizontal = Math.cos(this.cameraPitch) * this.cameraDistance;
       let desired = new this.THREE.Vector3(
         cameraOrigin.x + Math.sin(this.cameraYaw) * horizontal,
-        originY + 2.2 + Math.sin(this.cameraPitch) * this.cameraDistance,
+        originY + 1.68 + Math.sin(this.cameraPitch) * this.cameraDistance,
         cameraOrigin.z + Math.cos(this.cameraYaw) * horizontal
       );
-      const focus = new this.THREE.Vector3(cameraOrigin.x, originY + 1.35, cameraOrigin.z);
+      const focus = new this.THREE.Vector3(cameraOrigin.x, originY + 1.52, cameraOrigin.z);
       if (this.currentPanel === "creator" || this.genesisActive) {
         const focusOffset = this.genesisActive
           ? ({ head: 2.35, upper: 1.78, body: 1.46, lower: 0.76 }[this.appearanceFocus] ?? 1.46)
@@ -8457,6 +9637,17 @@
         );
       }
       desired = this.updateCinematicCamera(desired, focus, dt);
+      if (!this.state.settings.reduceEffects && !this.cinematicSequence.active && !this.cinematicTarget && !this.genesisActive && this.currentPanel !== "creator") {
+        const cameraTime = performance.now() * 0.001;
+        const floatX = Math.sin(cameraTime * 0.37) * 0.0048 + Math.sin(cameraTime * 0.91) * 0.0014;
+        const floatY = Math.cos(cameraTime * 0.31) * 0.0032;
+        const floatZ = Math.sin(cameraTime * 0.43 + 1.7) * 0.0038;
+        desired.x += floatX;
+        desired.y += floatY;
+        desired.z += floatZ;
+        focus.x += Math.sin(cameraTime * 0.29) * 0.0012;
+        focus.y += Math.cos(cameraTime * 0.23) * 0.001;
+      }
       if (!this.photoMode && !this.genesisActive && this.currentPanel !== "creator") {
         const colliderObjects = this.climbables.map((entry) => entry.object).filter(Boolean);
         if (colliderObjects.length) {
@@ -8470,8 +9661,8 @@
           if (hit && hit.distance < distance) desired = focus.clone().add(direction.multiplyScalar(Math.max(2.2, hit.distance - 0.55)));
         }
       }
-      if (this.cameraShake > 0.001 && !this.state.settings.reduceEffects) {
-        const intensity = this.cameraShake * clamp(this.state.settings.cameraShake, 0, 100) / 100;
+      if (this.cameraShake > 0.001 && !this.state.settings.reduceEffects && !this.cinematicSequence.active) {
+        const intensity = this.cameraShake * clamp(this.state.settings.cameraShake, 0, 100) / 100 * 0.08;
         desired.x += (Math.random() - 0.5) * intensity;
         desired.y += (Math.random() - 0.5) * intensity * 0.55;
         desired.z += (Math.random() - 0.5) * intensity;
@@ -8479,21 +9670,30 @@
       }
       if (immediate) this.camera.position.copy(desired);
       else this.camera.position.lerp(desired, 1 - Math.pow(0.001, dt));
-      const locked = this.lockedTargetId ? this.enemies.get(this.lockedTargetId) : null;
+      const locked = !this.cinematicSequence.active && this.lockedTargetId ? this.enemies.get(this.lockedTargetId) : null;
       if (locked?.visible && !locked.userData.defeated && !this.photoMode) {
         const targetFocus = locked.position.clone();
         targetFocus.y += 1.2;
         focus.lerp(targetFocus, 0.38);
       }
+      const focusTargetDistance = this.camera.position.distanceTo(focus);
+      this.cameraFocusDistance += (focusTargetDistance - this.cameraFocusDistance) * (1 - Math.exp(-Math.max(dt, 0.001) * 4.2));
       this.camera.lookAt(focus);
       if (!this.photoMode) {
-        this.cameraFovTarget = this.activeAnimation === "sprint" ? 64 : this.lockedTargetId ? 60 : 58;
+        this.cameraFovTarget = this.cinematicSequence.active
+          ? CINEMATIC_CAMERA.verticalFovDeg - 1.6 + Math.sin((this.cinematicSequence.progress || 0) * Math.PI) * 2.2
+          : this.activeAnimation === "sprint"
+            ? CINEMATIC_CAMERA.verticalFovDeg + 2.4
+            : this.lockedTargetId
+              ? CINEMATIC_CAMERA.verticalFovDeg + 1.2
+              : CINEMATIC_CAMERA.verticalFovDeg;
         this.camera.fov += (this.cameraFovTarget - this.camera.fov) * (1 - Math.pow(0.015, dt));
         this.camera.updateProjectionMatrix();
       }
     }
 
     updateCinematicCamera(desired, focus, dt) {
+      if (this.cinematicSequence.active) return this.updateStoryCinematicCamera(desired, focus, dt);
       const cinematic = this.cinematicTarget;
       if (!cinematic || performance.now() >= cinematic.until || !cinematic.object) {
         this.cinematicTarget = null;
@@ -8509,6 +9709,102 @@
       const cinematicPosition = targetPosition.clone().add(new this.THREE.Vector3(6.5 * side, 4.2 + progress * 1.5, 7.2));
       focus.lerp(targetPosition.clone().add(new this.THREE.Vector3(0, 1.4, 0)), 0.65);
       return desired.lerp(cinematicPosition, clamp(dt * 7.5, 0, 0.82));
+    }
+
+    updateStoryCinematicCamera(desired, focus, dt) {
+      const sequence = this.cinematicSequence;
+      if (!sequence.active || !this.playerMesh) return desired;
+      const cinematic = this.cinematicById(sequence.chapterId);
+      const progress = clamp(sequence.progress || 0, 0, 1);
+      const actor = this.playerMesh.position.clone();
+      const phase = progress * Math.PI * 2;
+      const reveal = progress * progress * (3 - 2 * progress);
+      const shot = new this.THREE.Vector3();
+      let focusHeight = 1.42;
+      let openingShot = false;
+      switch (cinematic.camera) {
+        case "opening-six-shot": {
+          openingShot = true;
+          const range = (start, end) => {
+            const value = clamp((progress - start) / Math.max(0.0001, end - start), 0, 1);
+            return value * value * (3 - 2 * value);
+          };
+          if (progress < 0.16) {
+            const local = range(0, 0.16);
+            shot.set(-9.2 + local * 2.8, 6.1 - local * 1.25, 11.8 - local * 2.2);
+            focusHeight = 1.8;
+          } else if (progress < 0.34) {
+            const local = range(0.16, 0.34);
+            shot.set(2.25 - local * 0.55, 0.72 + local * 1.55, 4.15 - local * 0.62);
+            focusHeight = 0.42 + local * 1.05;
+          } else if (progress < 0.5) {
+            const local = range(0.34, 0.5);
+            shot.set(1.22 - local * 0.18, 2.05 + local * 0.18, 2.55 - local * 0.24);
+            focusHeight = 1.92;
+          } else if (progress < 0.7) {
+            const local = range(0.5, 0.7);
+            shot.set(-4.8 + local * 2.3, 2.25 + local * 0.35, 6.4 - local * 1.55);
+            focusHeight = 1.48;
+          } else if (progress < 0.86) {
+            const local = range(0.7, 0.86);
+            const angle = -0.58 + local * 0.62;
+            shot.set(Math.sin(angle) * 4.3, 2.45 + Math.sin(local * Math.PI) * 0.22, Math.cos(angle) * 4.3);
+            focusHeight = 1.78;
+          } else {
+            const local = range(0.86, 1);
+            shot.set(Math.sin(this.cameraYaw) * (4.8 + local * 5.6), 2.35 + local * 0.72, Math.cos(this.cameraYaw) * (4.8 + local * 5.6));
+            focusHeight = 1.52;
+          }
+          break;
+        }
+        case "water-sweep":
+          shot.set(-6.8 + reveal * 8.5, 2.15 + Math.sin(progress * Math.PI) * 0.75, 6.2 - reveal * 1.7);
+          break;
+        case "forge-rise":
+          shot.set(5.4 - reveal * 1.2, 1.65 + reveal * 4.1, 6.1 - reveal * 0.9);
+          break;
+        case "gravity-roll":
+          shot.set(Math.sin(phase * 0.72) * 6.3, 3.4 + Math.cos(phase) * 0.65, Math.cos(phase * 0.72) * 6.3);
+          break;
+        case "sky-dive":
+          shot.set(-4.5 + reveal * 2.6, 7.2 - reveal * 3.8, 7.4 - reveal * 1.9);
+          break;
+        case "ocean-glide":
+          shot.set(-7.2 + reveal * 10.4, 2.5 + Math.sin(phase * 0.5) * 0.5, 6.8);
+          break;
+        case "station-track":
+          shot.set(5.8 - reveal * 2.2, 2.8, 7.8 - reveal * 2.4);
+          break;
+        case "abyss-spiral":
+          shot.set(Math.sin(phase * 0.82) * (7.5 - reveal * 2), 2.8 + reveal * 2.2, Math.cos(phase * 0.82) * (7.5 - reveal * 2));
+          break;
+        default:
+          shot.set(Math.sin(-0.8 + phase * 0.32) * (7.2 - reveal * 1.1), 3.2 + Math.sin(progress * Math.PI) * 0.55, Math.cos(-0.8 + phase * 0.32) * (7.2 - reveal * 1.1));
+          break;
+      }
+      // Story shots are character-first: retain the regional environment as
+      // parallax, but keep the authored human large enough to read eyes, hands
+      // and silhouette on both desktop and low-resolution displays.
+      if (!openingShot) {
+        shot.multiplyScalar(0.38);
+        shot.y += 0.48;
+      }
+      const cinematicPosition = actor.clone().add(shot);
+      const targetFocus = actor.clone().add(new this.THREE.Vector3(0, openingShot ? focusHeight : 1.35 + Math.sin(progress * Math.PI) * 0.12, 0));
+      // Frame the hero on the right third so the story copy never hides the
+      // model. Looking slightly to the actor's left produces that composition
+      // without moving or scaling the gameplay character.
+      const forward = targetFocus.clone().sub(cinematicPosition).normalize();
+      const cameraRight = forward.clone().cross(new this.THREE.Vector3(0, 1, 0)).normalize();
+      const canvasAspect = Math.max(0.5, (this.renderer?.domElement?.clientWidth || 16) / Math.max(1, this.renderer?.domElement?.clientHeight || 9));
+      const framingOffset = canvasAspect < 1.05 ? 0.08 : canvasAspect < 1.4 ? 0.28 : 0.52;
+      targetFocus.addScaledVector(cameraRight, -framingOffset);
+      focus.lerp(targetFocus, clamp(dt * 15, 0.35, 1));
+      const upTarget = cinematic.camera === "gravity-roll"
+        ? new this.THREE.Vector3(Math.sin(phase) * 0.075, 1, Math.cos(phase) * 0.035).normalize()
+        : new this.THREE.Vector3(0, 1, 0);
+      this.camera.up.lerp(upTarget, 1 - Math.exp(-Math.max(dt, 0.001) * 4.5)).normalize();
+      return desired.lerp(cinematicPosition, clamp(dt * 7.8, 0.08, 0.86));
     }
 
     jumpOrGlide() {
@@ -9351,18 +10647,19 @@
       context.stroke();
     }
 
-    trackFps(time) {
+    trackFps() {
+      const now = performance.now();
       this.fpsFrames += 1;
-      const elapsed = time - this.fpsStartedAt;
+      const elapsed = now - this.fpsStartedAt;
       if (elapsed < 1000) return;
       this.fps = Math.round((this.fpsFrames * 1000) / elapsed);
       this.fpsFrames = 0;
-      this.fpsStartedAt = time;
+      this.fpsStartedAt = now;
       if (this.state.settings.quality === "auto" && this.state.settings.dynamicResolution !== false) {
         if (this.fps < 42 && this.renderScale > 0.62) this.renderScale = Math.max(0.62, this.renderScale - 0.1);
         else if (this.fps > 57 && this.renderScale < 1) this.renderScale = Math.min(1, this.renderScale + 0.05);
         this.renderer.setPixelRatio(Math.min(2, (root.devicePixelRatio || 1) * this.renderScale));
-        if (this.starfield) this.starfield.material.opacity = this.fps < 38 ? 0.35 : 0.8;
+        if (this.starfield) this.starfield.material.opacity = this.fps < 38 ? 0.3 : 0.62;
         if (this.weatherField) this.weatherField.visible = this.fps >= 30 || this.currentZone.id !== "central";
       }
     }
@@ -10125,6 +11422,7 @@
         }
         const button = event.target.closest("[data-panel-action]");
         if (!button || button.disabled) return;
+        event.stopPropagation();
         this.handlePanelAction(button.dataset.panelAction, button.dataset);
       };
       body.oninput = (event) => {
@@ -10566,9 +11864,14 @@
       const next = typeof force === "boolean" ? force : !this.paused;
       this.paused = next;
       if (next) {
-        this.runtime?.pause?.({ gameId: GAME_ID, reason: "user" });
+        // Astral owns a richer pause panel with settings, inventory and save
+        // controls. Showing the generic Game Runtime pause overlay as well
+        // stacks two modal layers and blocks every control in this panel.
+        this.saveProgress("Tạm dừng");
         this.openPanel("paused");
       } else {
+        // Resume is harmless when the shared runtime never left "running", and
+        // is still required after a hidden-tab suspension.
         this.runtime?.resume?.({ gameId: GAME_ID });
         this.closePanel();
         this.lastFrameAt = performance.now();
@@ -11281,6 +12584,31 @@
           failures: this.runtimeFailureCount,
           lastFrameAt: this.lastRenderSuccessAt
         },
+        diagnostics: {
+          modelReady: Boolean(this.characterDiagnostics?.modelReady),
+          previewValidated: Boolean(this.characterDiagnostics?.previewValidated),
+          visibleFrames: Number(this.characterDiagnostics?.visibleFrames || 0),
+          triangles: Number(this.characterDiagnostics?.triangles || activeCharacterRuntime?.triangles || 0),
+          bones: Number(this.characterDiagnostics?.bones || Object.values(activeCharacterRuntime?.bones || {}).filter(Boolean).length),
+          morphTargets: Number(this.characterDiagnostics?.morphTargets || activeCharacterRuntime?.facialChannels || 0),
+          boundingBox: this.characterDiagnostics?.boundingBox || null,
+          projectedHeight: Number(this.characterDiagnostics?.projectedHeight || 0),
+          feetGroundError: Number(this.characterDiagnostics?.feetGroundError || 0),
+          wristDeviation: Number(this.characterDiagnostics?.wristDeviation || activeCharacterRuntime?.wristDeviation || 0),
+          armDownness: this.characterDiagnostics?.armDownness || null,
+          relaxedIdleArms: this.characterDiagnostics?.relaxedIdleArms !== false,
+          motionSource: activeCharacterRuntime?.motionSource || activeCharacterMesh?.userData?.motionSource || "not-started",
+          motionQuarantined: activeCharacterRuntime?.motionQuarantined || "",
+          renderer: this.rendererBackend,
+          fps: this.fps,
+          activeLOD: activeCharacterMesh?.userData?.modelTier || "not-started",
+          environmentAssets: {
+            status: this.licensedEnvironmentStatus,
+            loaded: this.licensedEnvironmentAssets.size,
+            photoreal: this.photorealStatus
+          },
+          cinematicChapter: this.cinematicSequence.active ? this.cinematicSequence.chapterId : ""
+        },
         authoritative: this.authoritative,
         roomCode: this.state.party.roomCode,
         saveVersion: this.savedRecord?.version || 0,
@@ -11334,6 +12662,9 @@
       Object.values(this.characterDetailTextures || {}).forEach((texture) => texture?.dispose?.());
       this.toonGradient?.dispose?.();
       this.terrainTexture?.dispose?.();
+      Object.values(this.terrainSurfaceTextures || {}).forEach((texture) => {
+        if (texture && texture !== this.terrainTexture) texture.dispose?.();
+      });
       this.renderer?.dispose?.();
       try { await this.audio?.close?.(); } catch {}
       this.host?.replaceChildren();

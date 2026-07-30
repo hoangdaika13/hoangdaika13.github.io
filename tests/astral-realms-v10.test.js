@@ -90,12 +90,12 @@ test("Character V13 supersedes V12 with updated route, offline cache and respons
   const index = read("index.html");
   const css = read("astral-realms.css");
   assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*13/);
-  for (const asset of ["astral-realms.css?v=27", "astral-realms.js?v=27"]) {
+  for (const asset of ["astral-realms.css?v=59", "astral-realms.js?v=59"]) {
     assert.ok(loader.includes(asset));
     assert.ok(worker.includes(asset));
   }
-  assert.match(worker, /hh-identity-portal-v309/);
-  assert.match(index, /performance-loader\.js\?v=77/);
+  assert.match(worker, /hh-identity-portal-v341/);
+  assert.match(index, /performance-loader\.js\?v=109/);
   assert.match(css, /Astral Realms Character V13/);
   assert.match(css, /\.har-genesis/);
   assert.match(css, /max-width: 720px/);

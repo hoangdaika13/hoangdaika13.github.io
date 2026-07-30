@@ -1,5 +1,6 @@
 {
-  "version": 2,
+  "version": 3,
+  "sourceManifest": "./assets/astral-realms/characters/SOURCES.json",
   "pipeline": "metahuman-or-character-creator-to-blender-glb",
   "sources": [
     {

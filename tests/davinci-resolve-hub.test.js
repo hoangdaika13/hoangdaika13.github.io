@@ -27,7 +27,7 @@ test("HH Video Studio is a first-class routed browser workspace", () => {
   assert.match(loader, /video-editor-studio\.js\?v=5/);
   assert.match(loader, /video-editor-resolve\.js\?v=10/);
   assert.match(loader, /davinci-resolve-hub\.js\?v=5/);
-  assert.match(html, /performance-loader\.js\?v=76/);
+  assert.match(html, /performance-loader\.js\?v=109/);
 });
 
 test("the workspace is independent from the desktop app and reports browser capability truthfully", () => {
