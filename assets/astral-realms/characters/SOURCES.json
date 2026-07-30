@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "updatedAt": "2026-07-30",
+  "version": 3,
+  "updatedAt": "2026-07-31",
   "policy": "Only redistributable local GLB assets with a recorded license and immutable checksum may be selected by the Astral character pipeline.",
   "sources": [
     {
@@ -84,6 +84,87 @@
       "sha256": "F8D042FC0C12F7881DF84FE098C520131D9F11E549F493F3F140378580F24C69",
       "webVariant": "sketchfab-cc-by/game-character-girl.glb",
       "preparation": "Mixamo prefix and exporter suffix cleanup; 136-bone facial rig and three authored actions retained."
+    },
+    {
+      "file": "sketchfab-cc-by/alina-ip.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/alina-ip-realistic-asian-woman-animated-600d4d4aa71c4181b2567a3605ce8c57",
+      "author": "Jungle Jim",
+      "license": "CC-BY-4.0",
+      "attribution": "Alina Ip, realistic Asian woman (Animated) by Jungle Jim, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-31",
+      "sha256": "99E7A8722592DD40B8A7F6EFC6832B8D47C7839BB512CABD4A25464A47968248",
+      "webVariant": "sketchfab-cc-by/alina-ip.glb",
+      "preparation": "Sketchfab GLB 1K optimized to Meshopt geometry and WebP textures; rig, 148 morph targets and native animation retained."
+    },
+    {
+      "file": "sketchfab-cc-by/animated-female-fighter.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/animated-female-fighter-3d-model-rigged-game-f346fbd5280c40348c269f167c797220",
+      "author": "Marya1th",
+      "license": "CC-BY-4.0",
+      "attribution": "Animated Female Fighter 3D Model – Rigged & Game by Marya1th, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-31",
+      "sha256": "4B1B1D4A61AE4BA5D8D01433AFCC7E7E7C128DDC231070E1D1BE3D8B83AEDAFC",
+      "webVariant": "sketchfab-cc-by/animated-female-fighter.glb"
+    },
+    {
+      "file": "sketchfab-cc-by/animated-female-teacher.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/animated-female-teacher-for-narration-2b24fd414b9a4fbb9ffb5ffdd4e6a4e5",
+      "author": "LasquetiSpice",
+      "license": "CC-BY-4.0",
+      "attribution": "Animated Female Teacher for Narration by LasquetiSpice, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-31",
+      "sha256": "F1A2304CA6BAD09AA359ED17A9A5403247AA048A7035092B2BF88BE2E72A7B04",
+      "webVariant": "sketchfab-cc-by/animated-female-teacher.glb"
+    },
+    {
+      "file": "sketchfab-cc-by/claudia-rigged.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/claudia-rigged-002-3d-rigged-business-women-c659bd0accab47c6bbe390cf822a2b92",
+      "author": "Renderpeople",
+      "license": "CC-BY-4.0",
+      "attribution": "Claudia Rigged 002 by Renderpeople, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-31",
+      "sha256": "4567AAAF7338B98FF2E057ECB1269C9EE2147AE298F7133A2170EBA7714FABF0",
+      "webVariant": "sketchfab-cc-by/claudia-rigged.glb"
+    },
+    {
+      "file": "sketchfab-cc-by/carla-rigged.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/carla-rigged-001-rigged-3d-business-women-acf520f450d14dd799f98a6fede3edf5",
+      "author": "Renderpeople",
+      "license": "CC-BY-4.0",
+      "attribution": "Carla Rigged 001 by Renderpeople, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-31",
+      "sha256": "703C65FE8AC02134D6AD189F7C78BE12780F24B23C72808D9FEFE4FEE8F03EC7",
+      "webVariant": "sketchfab-cc-by/carla-rigged.glb"
+    },
+    {
+      "file": "sketchfab-cc-by/mia-rigged.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/mia-rigged-33d906720b004702bccc664c26e9342f",
+      "author": "seyederfan111",
+      "license": "CC-BY-4.0",
+      "attribution": "Mia (Rigged) by seyederfan111, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-31",
+      "sha256": "9153C2E685AD4274D27F6137D3F7A5FAC09AC4FFE05A4E32F1E7E91269E9DB5B",
+      "webVariant": "sketchfab-cc-by/mia-rigged.glb"
+    },
+    {
+      "file": "sketchfab-cc-by/elizabeth.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/elizabeth-female-3-d-character-9ac58e6a4f304c77ad915567b4ec5599",
+      "author": "Mesh Artech",
+      "license": "CC-BY-4.0",
+      "attribution": "Elizabeth Female 3D Character by Mesh Artech, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-31",
+      "sha256": "FC72B03FD7FA7B9F1B18F1097F656220E88EFF09B581E588A3B33F0A6DE20FD1",
+      "webVariant": "sketchfab-cc-by/elizabeth.glb"
+    },
+    {
+      "file": "sketchfab-cc-by/space-themed-character.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/space-themed-game-character-605f7c27623e44e58d08b3d138513de1",
+      "author": "Cleer",
+      "license": "CC-BY-4.0",
+      "attribution": "Space themed game character by Cleer, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-31",
+      "sha256": "CCECEF9332B9F2B8CB3901C1FA7A9DE0085006E7C6CCBFF7367CDA97C0DBA4C5",
+      "webVariant": "sketchfab-cc-by/space-themed-character.glb"
     },
     {
       "file": "default/valid-aian-f-1-casual.glb",

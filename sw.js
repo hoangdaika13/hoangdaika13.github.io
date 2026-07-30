@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v357";
+const CACHE = "hh-identity-portal-v358";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -237,6 +237,14 @@ const RUNTIME_ASSETS = [
   "./assets/astral-realms/characters/default/valid-mena-f-1-casual.glb",
   "./assets/astral-realms/characters/sketchfab-cc-by/miss-galaxy.glb?v=2",
   "./assets/astral-realms/characters/sketchfab-cc-by/game-character-girl.glb",
+  "./assets/astral-realms/characters/sketchfab-cc-by/alina-ip.glb",
+  "./assets/astral-realms/characters/sketchfab-cc-by/animated-female-fighter.glb",
+  "./assets/astral-realms/characters/sketchfab-cc-by/animated-female-teacher.glb",
+  "./assets/astral-realms/characters/sketchfab-cc-by/claudia-rigged.glb",
+  "./assets/astral-realms/characters/sketchfab-cc-by/carla-rigged.glb",
+  "./assets/astral-realms/characters/sketchfab-cc-by/mia-rigged.glb",
+  "./assets/astral-realms/characters/sketchfab-cc-by/elizabeth.glb",
+  "./assets/astral-realms/characters/sketchfab-cc-by/space-themed-character.glb",
   "./assets/astral-realms/kenney/nature/tree_oak.glb",
   "./assets/astral-realms/kenney/nature/tree_palmDetailedTall.glb",
   "./assets/astral-realms/kenney/nature/plant_bushDetailed.glb",
@@ -358,7 +366,7 @@ const RUNTIME_ASSETS = [
   "./feature-engines.js?v=2",
   "./game-platform-adapters.js?v=1",
   "./game-runtime.js?v=1",
-  "./astral-realms.js?v=71",
+  "./astral-realms.js?v=72",
   "./space-explorer.js?v=4",
   "./game-center.js?v=5",
   "./astra-universe-expansion.js?v=4",

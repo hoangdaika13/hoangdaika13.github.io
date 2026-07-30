@@ -52,6 +52,6 @@ test("the release loader and service worker request the latest Astral Realms bun
   for (const file of ["performance-loader.js", "sw.js"]) {
     const source = read(file);
       assert.match(source, /astral-realms\.css\?v=71/);
-      assert.match(source, /astral-realms\.js\?v=71/);
+      assert.match(source, /astral-realms\.js\?v=72/);
   }
 });

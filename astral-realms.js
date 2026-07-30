@@ -59,7 +59,7 @@
   });
   const CHARACTER_IMPORT_LIMITS = Object.freeze({
     fileBytes: 32 * 1024 * 1024,
-    triangles: 120000,
+    triangles: 160000,
     bones: 160,
     morphTargets: 180,
     textureSize: 4096,
@@ -80,31 +80,31 @@
     iso: 640
   });
   const HH_HUMANOID_SKELETON = Object.freeze({
-    root: ["Root", "Armature", "rootbone"],
-    hips: ["Hips", "mixamorigHips", "pelvis", "spine_root"],
-    spine: ["Spine", "mixamorigSpine", "spine_01"],
-    chest: ["Chest", "mixamorigSpine2", "upperChest", "spine_03"],
-    neck: ["Neck", "mixamorigNeck", "neck_01"],
-    head: ["Head", "mixamorigHead", "head_01"],
-    jaw: ["Jaw", "mixamorigJaw", "jaw_01"],
-    leftEye: ["LeftEye", "eye.L", "mixamorigLeftEye", "eye_l"],
-    rightEye: ["RightEye", "eye.R", "mixamorigRightEye", "eye_r"],
-    leftHand: ["LeftHand", "hand.L", "mixamorigLeftHand", "hand_l"],
-    rightHand: ["RightHand", "hand.R", "mixamorigRightHand", "hand_r"],
-    leftShoulder: ["LeftShoulder", "shoulder.L", "mixamorigLeftShoulder", "clavicle_l"],
-    rightShoulder: ["RightShoulder", "shoulder.R", "mixamorigRightShoulder", "clavicle_r"],
-    leftUpperArm: ["LeftArm", "upper_arm.L", "mixamorigLeftArm", "upperarm_l"],
-    rightUpperArm: ["RightArm", "upper_arm.R", "mixamorigRightArm", "upperarm_r"],
-    leftForeArm: ["LeftForeArm", "forearm.L", "mixamorigLeftForeArm", "lowerarm_l"],
-    rightForeArm: ["RightForeArm", "forearm.R", "mixamorigRightForeArm", "lowerarm_r"],
-    leftUpLeg: ["LeftUpLeg", "thigh.L", "mixamorigLeftUpLeg", "thigh_l"],
-    rightUpLeg: ["RightUpLeg", "thigh.R", "mixamorigRightUpLeg", "thigh_r"],
-    leftLeg: ["LeftLeg", "shin.L", "mixamorigLeftLeg", "calf_l"],
-    rightLeg: ["RightLeg", "shin.R", "mixamorigRightLeg", "calf_r"],
-    leftFoot: ["LeftFoot", "foot.L", "mixamorigLeftFoot", "foot_l"],
-    rightFoot: ["RightFoot", "foot.R", "mixamorigRightFoot", "foot_r"],
-    leftToe: ["LeftToeBase", "toe.L", "mixamorigLeftToeBase", "ball_l"],
-    rightToe: ["RightToeBase", "toe.R", "mixamorigRightToeBase", "ball_r"]
+    root: ["Root", "Armature", "rootbone", "RootNode", "_rootJoint", "CC_Base_BoneRoot"],
+    hips: ["Hips", "Hip", "mixamorigHips", "pelvis", "spine_root", "CC_Base_Hip"],
+    spine: ["Spine", "mixamorigSpine", "spine_01", "CC_Base_Spine01", "CC_Base_Waist"],
+    chest: ["Chest", "mixamorigSpine2", "upperChest", "spine_03", "CC_Base_Spine02"],
+    neck: ["Neck", "Kneck", "mixamorigNeck", "neck_01", "CC_Base_NeckTwist01", "CC_Base_NeckTwist02"],
+    head: ["Head", "mixamorigHead", "head_01", "CC_Base_Head"],
+    jaw: ["Jaw", "mixamorigJaw", "jaw_01", "CC_Base_JawRoot"],
+    leftEye: ["LeftEye", "eye.L", "mixamorigLeftEye", "eye_l", "CC_Base_L_Eye"],
+    rightEye: ["RightEye", "eye.R", "mixamorigRightEye", "eye_r", "CC_Base_R_Eye"],
+    leftHand: ["LeftHand", "hand.L", "mixamorigLeftHand", "hand_l", "CC_Base_L_Hand"],
+    rightHand: ["RightHand", "hand.R", "mixamorigRightHand", "hand_r", "CC_Base_R_Hand"],
+    leftShoulder: ["LeftShoulder", "shoulder.L", "mixamorigLeftShoulder", "clavicle_l", "CC_Base_L_Clavicle"],
+    rightShoulder: ["RightShoulder", "shoulder.R", "mixamorigRightShoulder", "clavicle_r", "CC_Base_R_Clavicle"],
+    leftUpperArm: ["LeftArm", "arm.L", "upper_arm.L", "mixamorigLeftArm", "upperarm_l", "CC_Base_L_Upperarm"],
+    rightUpperArm: ["RightArm", "arm.R", "upper_arm.R", "mixamorigRightArm", "upperarm_r", "CC_Base_R_Upperarm"],
+    leftForeArm: ["LeftForeArm", "forearm.L", "mixamorigLeftForeArm", "lowerarm_l", "CC_Base_L_Forearm"],
+    rightForeArm: ["RightForeArm", "forearm.R", "mixamorigRightForeArm", "lowerarm_r", "CC_Base_R_Forearm"],
+    leftUpLeg: ["LeftUpLeg", "upperleg.L", "thigh.L", "mixamorigLeftUpLeg", "thigh_l", "CC_Base_L_Thigh"],
+    rightUpLeg: ["RightUpLeg", "upperleg.R", "thigh.R", "mixamorigRightUpLeg", "thigh_r", "CC_Base_R_Thigh"],
+    leftLeg: ["LeftLeg", "lowerleg.L", "shin.L", "mixamorigLeftLeg", "calf_l", "CC_Base_L_Calf"],
+    rightLeg: ["RightLeg", "lowerleg.R", "shin.R", "mixamorigRightLeg", "calf_r", "CC_Base_R_Calf"],
+    leftFoot: ["LeftFoot", "foot.L", "mixamorigLeftFoot", "foot_l", "CC_Base_L_Foot"],
+    rightFoot: ["RightFoot", "foot.R", "mixamorigRightFoot", "foot_r", "CC_Base_R_Foot"],
+    leftToe: ["LeftToeBase", "toe.L", "mixamorigLeftToeBase", "ball_l", "CC_Base_L_ToeBase"],
+    rightToe: ["RightToeBase", "toe.R", "mixamorigRightToeBase", "ball_r", "CC_Base_R_ToeBase"]
   });
   const CHARACTER_MOTION_LIBRARY = Object.freeze({
     idle: ["idle_relaxed", "idle", "breathing", "stand"],
@@ -236,7 +236,7 @@
     { id: "environment", name: "HH Volumetric World", role: "Địa hình mesh 3D và panorama chỉ dùng làm IBL", state: "Không dùng ảnh làm phông nền" },
     { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V13" }
   ]);
-  const APPEARANCE_VERSION = 11;
+  const APPEARANCE_VERSION = 12;
   const APPEARANCE_GROUPS = Object.freeze([
     { id: "face", label: "Khuôn mặt", focus: "head", controls: [["headLength", "Chiều dài đầu"], ["foreheadHeight", "Chiều cao trán"], ["cheekboneWidth", "Gò má"], ["cheekFullness", "Độ đầy má"], ["jawWidth", "Độ rộng hàm"], ["jawAngle", "Góc hàm"], ["chinLength", "Chiều dài cằm"], ["faceFullness", "Độ đầy khuôn mặt"]] },
     { id: "eyes", label: "Mắt", focus: "head", controls: [["eyeSize", "Kích thước mắt"], ["eyeSpacing", "Khoảng cách mắt"], ["eyeDepth", "Độ sâu mắt"], ["upperLid", "Mí trên"], ["lowerLid", "Mí dưới"], ["eyeAngle", "Góc mắt"], ["irisSize", "Kích thước tròng"], ["pupilSize", "Kích thước đồng tử"], ["eyeReflection", "Phản chiếu mắt"], ["eyeLeft", "Mắt trái"], ["eyeRight", "Mắt phải"]] },
@@ -258,12 +258,24 @@
   ));
   const APPEARANCE_ASSETS = Object.freeze({
     baseModels: [
+      "sketchfab-alina-ip",
+      "sketchfab-animated-female-fighter",
+      "sketchfab-animated-female-teacher",
+      "sketchfab-claudia-rigged",
+      "sketchfab-carla-rigged",
+      "sketchfab-mia-rigged",
+      "sketchfab-elizabeth",
+      "sketchfab-space-themed-character",
       "sketchfab-game-character-girl",
       "sketchfab-miss-galaxy",
       "valid-asian-f-1-casual",
       "valid-asian-m-1-casual",
       "valid-black-f-1-casual",
       "valid-white-m-1-casual",
+      "valid-white-f-2-casual",
+      "valid-hispanic-f-1-milit",
+      "valid-aian-f-1-casual",
+      "valid-mena-f-1-casual",
       "human-adult-a01",
       "human-adult-b01"
     ],
@@ -602,10 +614,10 @@
   function defaultAppearanceRecipe(characterId = "lyra") {
     const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
     const realisticBase = {
-      lyra: "sketchfab-game-character-girl",
-      cael: "sketchfab-game-character-girl",
+      lyra: "sketchfab-alina-ip",
+      cael: "sketchfab-animated-female-fighter",
       nyx: "sketchfab-game-character-girl",
-      sol: "sketchfab-game-character-girl"
+      sol: "sketchfab-miss-galaxy"
     }[characterId] || "valid-asian-f-1-casual";
     return {
       appearanceVersion: APPEARANCE_VERSION,
@@ -646,7 +658,7 @@
     const requestedModel = String(recipe.baseModel || "").slice(0, 80);
     const isCatalogModel = /^(?:valid|sketchfab)-[a-z0-9-]{3,72}$/.test(requestedModel);
     const isLegacyRecipe = Number(recipe.appearanceVersion || 0) < APPEARANCE_VERSION;
-    const legacyMainModel = ["human-adult-a01", "human-adult-b01"].includes(requestedModel)
+    const legacyMainModel = ["human-adult-a01", "human-adult-b01", "sketchfab-game-character-girl"].includes(requestedModel)
       || (characterId === "lyra" && ["valid-asian-f-1-casual", "sketchfab-miss-galaxy"].includes(requestedModel))
       || (characterId === "cael" && ["valid-asian-m-1-casual", "valid-white-f-2-casual"].includes(requestedModel))
       || (characterId === "nyx" && ["valid-black-f-1-casual", "sketchfab-miss-galaxy"].includes(requestedModel))
@@ -2461,6 +2473,14 @@
       const runtime = this.characterRuntimes.get(id);
       const fit = this.buildAppearanceFitReport(recipe, mesh);
       const modelLabels = {
+        "sketchfab-alina-ip": ["Alina Ip", "Jungle Jim · 102 joint · animated · CC BY 4.0 · Web GLB 1K"],
+        "sketchfab-animated-female-fighter": ["Astral Fighter", "Marya1th · 66 joint · combat animation · CC BY 4.0"],
+        "sketchfab-animated-female-teacher": ["Narrator Hero", "LasquetiSpice · 68 joint · narration animation · CC BY 4.0"],
+        "sketchfab-claudia-rigged": ["Claudia", "Renderpeople · 89 joint · realistic business outfit · CC BY 4.0"],
+        "sketchfab-carla-rigged": ["Carla", "Renderpeople · 89 joint · realistic business outfit · CC BY 4.0"],
+        "sketchfab-mia-rigged": ["Mia", "seyederfan111 · 22 joint · rigged · CC BY 4.0"],
+        "sketchfab-elizabeth": ["Elizabeth", "Mesh Artech · full-body PBR · CC BY 4.0 · studio model"],
+        "sketchfab-space-themed-character": ["Space Hero", "Cleer · sci-fi PBR · CC BY 4.0 · studio model"],
         "sketchfab-game-character-girl": ["Game Character Girl", "gbarzu · 136 bone · CC BY 4.0 · GLB đã tải local"],
         "sketchfab-miss-galaxy": ["Miss Galaxy", "Loves_Art · 75 bone · CC BY 4.0 · GLB đã tải local"],
         "valid-asian-f-1-casual": ["Asteria Real Human", "VALID rig · full-body · facial morph · local GLB"],
@@ -2614,6 +2634,14 @@
       const name = this.root.querySelector("[data-genesis-model-name]");
       if (name) {
         name.textContent = ({
+          "sketchfab-alina-ip": "ALINA IP",
+          "sketchfab-animated-female-fighter": "ASTRAL FIGHTER",
+          "sketchfab-animated-female-teacher": "NARRATOR HERO",
+          "sketchfab-claudia-rigged": "CLAUDIA",
+          "sketchfab-carla-rigged": "CARLA",
+          "sketchfab-mia-rigged": "MIA",
+          "sketchfab-elizabeth": "ELIZABETH",
+          "sketchfab-space-themed-character": "SPACE HERO",
           "sketchfab-game-character-girl": "GAME CHARACTER GIRL",
           "sketchfab-miss-galaxy": "MISS GALAXY",
           "valid-asian-f-1-casual": "ASTERIA REAL HUMAN",
@@ -7371,6 +7399,7 @@
       const materials = new Set();
       const matchedBones = new Set();
       const faceChannels = new Set();
+      const morphChannels = new Set();
       animations.forEach((clip) => {
         clip?.tracks?.forEach((track) => {
           if (!this.characterTrackTargetsRoot(track) || !track.times?.length || !track.values?.length) return;
@@ -7410,7 +7439,7 @@
         if (/eye|iris|cornea|sclera|tear/.test(identity)) report.separateEyeMeshes += 1;
         if (/hair|groom|brow|lash/.test(identity)) report.hairCardMeshes += 1;
         const morphNames = Object.keys(object.morphTargetDictionary || {});
-        report.morphTargets += morphNames.length;
+        morphNames.forEach((name) => morphChannels.add(normalizeMorphTargetName(name) || String(name)));
         supportedFacialChannels(object.morphTargetDictionary || {}).forEach((channel) => faceChannels.add(channel));
         const objectMaterials = Array.isArray(object.material) ? object.material : [object.material];
         objectMaterials.filter(Boolean).forEach((material) => {
@@ -7426,6 +7455,7 @@
       });
       report.materials = materials.size;
       report.textures = textures.size;
+      report.morphTargets = morphChannels.size;
       report.faceMorphTargets = faceChannels.size;
       report.skeletonCoverage = matchedBones.size / Object.keys(HH_HUMANOID_SKELETON).length;
       report.digitalHumanTier = report.headVertices >= 18000 && report.faceMorphTargets >= 52

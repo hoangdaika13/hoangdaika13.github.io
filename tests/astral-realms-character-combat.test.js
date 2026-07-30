@@ -10,17 +10,18 @@ const worker = fs.readFileSync(path.join(root, "sw.js"), "utf8");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "assets", "astral-realms", "characters", "manifest.json"), "utf8"));
 const provenance = JSON.parse(fs.readFileSync(path.join(root, "assets", "astral-realms", "characters", "SOURCES.json"), "utf8"));
 
-test("all four protagonists default to the downloaded local hero GLBs", () => {
+test("all four protagonists default to distinct downloaded local hero GLBs", () => {
   for (const model of [
     "valid-asian-f-1-casual",
     "valid-white-f-2-casual",
     "valid-black-f-1-casual",
     "valid-hispanic-f-1-milit"
   ]) assert.ok(source.includes(model), `missing main-character model ${model}`);
-  assert.match(source, /lyra: "sketchfab-game-character-girl"/);
-  assert.match(source, /cael: "sketchfab-game-character-girl"/);
+  assert.match(source, /lyra: "sketchfab-alina-ip"/);
+  assert.match(source, /cael: "sketchfab-animated-female-fighter"/);
   assert.match(source, /nyx: "sketchfab-game-character-girl"/);
-  assert.match(source, /sol: "sketchfab-game-character-girl"/);
+  assert.match(source, /sol: "sketchfab-miss-galaxy"/);
+  assert.match(source, /const APPEARANCE_VERSION = 12/);
   assert.equal(source.includes("Nữ kiếm sĩ trưởng thành"), true);
   assert.equal(source.includes("Nữ xạ thủ Băng tinh"), true);
   assert.equal(source.includes("Nữ võ sĩ Hư không"), true);
@@ -40,16 +41,18 @@ test("new local character binaries are provenance-locked and cached offline", ()
   }
 });
 
-test("two Sketchfab heroines are locally integrated while remaining candidates stay gated", () => {
-  assert.equal(manifest.externalCandidates.length, 4);
+test("ten Sketchfab heroines are locally integrated while unavailable candidates stay gated", () => {
+  assert.equal(manifest.externalCandidates.length, 12);
   const miss = manifest.externalCandidates.find((candidate) => candidate.id === "sketchfab-miss-galaxy");
   assert.equal(miss.status, "integrated-local-safe-motion");
   const gameGirl = manifest.externalCandidates.find((candidate) => candidate.id === "sketchfab-game-character-girl");
   assert.equal(gameGirl.status, "integrated-local-safe-motion");
   assert.equal(gameGirl.author, "gbarzu");
+  const integrated = manifest.externalCandidates.filter((candidate) => candidate.status.startsWith("integrated-local"));
+  assert.equal(integrated.length, 10);
   for (const candidate of manifest.externalCandidates) {
     assert.equal(candidate.license, "CC-BY-4.0");
-    if (!["sketchfab-miss-galaxy", "sketchfab-game-character-girl"].includes(candidate.id)) assert.equal(candidate.status, "awaiting-authenticated-download");
+    if (![...integrated].includes(candidate)) assert.equal(candidate.status, "awaiting-authenticated-download");
     assert.match(candidate.page, /^https:\/\/sketchfab\.com\/3d-models\//);
     assert.ok(["sword", "gun", "unarmed"].includes(candidate.weaponClass));
   }
@@ -66,6 +69,22 @@ test("the local selectable character catalog contains at least ten real GLB mode
     assert.ok(fs.existsSync(file), `missing local model ${entry.modelId}`);
     assert.equal(fs.readFileSync(file).subarray(0, 4).toString("ascii"), "glTF");
     assert.ok(worker.includes(path.basename(file)), `${entry.modelId} must work offline`);
+  }
+});
+
+test("all ten downloaded Sketchfab characters are checksum locked with recorded attribution", () => {
+  const sketchfab = manifest.sources.filter((entry) => entry.provider === "sketchfab-cc-by");
+  assert.equal(sketchfab.length, 10);
+  for (const entry of sketchfab) {
+    const relative = entry.url.replace(/^\.\/assets\/astral-realms\/characters\//, "").replace(/\?.*$/, "");
+    const record = provenance.sources.find((item) => item.file === relative);
+    assert.ok(record, `missing provenance for ${entry.modelId}`);
+    assert.equal(record.license, "CC-BY-4.0");
+    const bytes = fs.readFileSync(path.join(root, "assets", "astral-realms", "characters", relative));
+    const checksum = crypto.createHash("sha256").update(bytes).digest("hex").toUpperCase();
+    assert.equal(checksum, entry.sha256);
+    assert.equal(checksum, record.sha256);
+    assert.match(record.sourceUrl, /^https:\/\/sketchfab\.com\/3d-models\//);
   }
 });
 
@@ -134,6 +153,16 @@ test("right-hand sockets calibrate every downloaded hero weapon", () => {
   assert.match(source, /unarmed: \{ position: \[0, -0\.018, 0\]/);
   assert.match(source, /syncActiveCharacterDataset\(mesh = this\.playerMesh\)/);
   assert.match(source, /\(lodVariants\.attachments \|\| \[\]\)\.forEach\(\(object\) => \{ object\.visible = tier !== "impostor"; \}\)/);
+});
+
+test("downloaded CC4, Mixamo, Renderpeople and Mia rigs map to the HH humanoid", () => {
+  for (const alias of [
+    "CC_Base_BoneRoot", "CC_Base_Hip", "CC_Base_Spine01", "CC_Base_Spine02", "CC_Base_Head",
+    "CC_Base_L_Clavicle", "CC_Base_R_Clavicle", "CC_Base_L_Hand", "CC_Base_R_Hand",
+    "upperleg.L", "lowerleg.L", "arm.L", "Kneck"
+  ]) assert.ok(source.includes(alias), `missing humanoid alias ${alias}`);
+  assert.match(source, /morphChannels\.add\(normalizeMorphTargetName\(name\)/);
+  assert.match(source, /triangles: 160000/);
 });
 
 test("sword gun and unarmed loadouts drive real combat profiles and motion routing", () => {
