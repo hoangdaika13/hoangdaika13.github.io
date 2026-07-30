@@ -16,6 +16,34 @@ test("backend exposes a safe readiness report without returning credentials", ()
   assert.doesNotMatch(source, /process\.env\.(?:MONGODB_URI|JWT_SECRET|PAYOS_API_KEY|GEMINI_API_KEYS)\s*[,}]/);
 });
 
+test("health stays available when the development database is not configured", async () => {
+  const previousMongoUri = process.env.MONGODB_URI;
+  const previousFetch = global.fetch;
+  delete process.env.MONGODB_URI;
+  global.fetch = async () => { throw new Error("offline"); };
+  try {
+    const handler = require(path.join(root, "api/platform/summary.js"));
+    const response = { statusCode: 0, body: null, headers: {} };
+    const res = {
+      setHeader(name, value) { response.headers[name] = value; },
+      status(code) { response.statusCode = code; return this; },
+      json(body) { response.body = body; return this; }
+    };
+    await handler({ method: "GET", query: { view: "health" }, headers: {} }, res);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body?.ok, true);
+    assert.deepEqual(response.body?.health?.database, {
+      configured: false,
+      connected: false,
+      database: "hoangdaika13_site"
+    });
+  } finally {
+    if (previousMongoUri === undefined) delete process.env.MONGODB_URI;
+    else process.env.MONGODB_URI = previousMongoUri;
+    global.fetch = previousFetch;
+  }
+});
+
 test("realtime health degrades honestly and async route failures are contained", () => {
   const server = read("realtime-server/src/server.js");
   assert.match(server, /const asyncRoute/);

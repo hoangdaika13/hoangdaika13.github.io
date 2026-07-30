@@ -1,4 +1,4 @@
-const { clean, currentUser, enforceRateLimit, isAdminUser, withApi } = require("../../utils/platform");
+const { clean, currentUser, database, enforceRateLimit, isAdminUser, setCors, withApi } = require("../../utils/platform");
 const privacyConsentHandler = require("../../utils/privacy-consent-api");
 const { quotaStatus, requireRoles } = require("../../services/apiGateway");
 
@@ -93,6 +93,24 @@ async function realtimeReadiness() {
   }
 }
 
+async function databaseReadiness() {
+  if (!String(process.env.MONGODB_URI || "").trim()) return false;
+  let timeout;
+  try {
+    await Promise.race([
+      database(),
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error("database-timeout")), 3500);
+      })
+    ]);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
   const has = (...names) => names.every((name) => Boolean(String(process.env[name] || "").trim()));
   const gemini = Boolean(String(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "").trim());
@@ -155,6 +173,14 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
 
 module.exports = async function handler(req, res) {
   if (req.query.privacyRoute === "consent") return privacyConsentHandler(req, res);
+  if (req.method === "GET" && req.query.view === "health") {
+    setCors(req, res);
+    const [databaseConnected, realtime] = await Promise.all([
+      databaseReadiness(),
+      realtimeReadiness()
+    ]);
+    return res.status(200).json({ ok: true, health: readinessSnapshot({ databaseConnected, realtime }) });
+  }
   return withApi(req, res, async ({ db }) => {
     if (req.method === "POST") {
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
@@ -204,10 +230,6 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, acceptedEvents: events.length, online, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, checkedAt: now, adapter: { confirmed: true, mode: "backend", provider: "mongodb", aggregateOnly: true }, policy: { restrictedFeatures: user && Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [], disabledFeatures }, privacy: { interactionMetadataStored: analyticsConsent, presenceDetailStored: analyticsConsent, rawKeystrokesStored: false, formValuesStored: false, promptBodiesStored: false, passwordsStored: false, tokensStored: false, privateMessagesStored: false, errorMessagesStored: false, stackTracesStored: false, retentionDays: 30 } });
     }
     if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
-    if (req.query.view === "health") {
-      const realtime = await realtimeReadiness();
-      return res.status(200).json({ ok: true, health: readinessSnapshot({ databaseConnected: Boolean(db), realtime }) });
-    }
     if (req.query.view === "gateway-quotas") {
       const quotas = await quotaStatus(db);
       return res.status(200).json({ ok: true, confirmed: true, quotas, checkedAt: new Date(), privacy: { aggregateOnly: true, identitiesReturned: false, queriesStored: false, secretsReturned: false } });

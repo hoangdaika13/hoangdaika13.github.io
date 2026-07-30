@@ -39,8 +39,8 @@
       "destination": "/api/social?service=games"
     },
     {
-      "source": "/api/youtube/:action*",
-      "destination": "/api/search/youtube-publisher?youtubeAction=:action*"
+      "source": "^/api/youtube/(.+)$",
+      "destination": "/api/search/youtube-publisher?youtubeAction=$1"
     },
     {
       "source": "/api/community-admin",
