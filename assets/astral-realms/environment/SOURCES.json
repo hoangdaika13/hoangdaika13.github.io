@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-30",
+  "policy": "Only redistributable assets with a recorded source, license and immutable SHA-256 checksum may enter the cinematic environment pipeline.",
+  "runtimePolicy": {
+    "desktop": "1K HDR image-based lighting plus 1K photogrammetry terrain and streamed scan models.",
+    "lowMemory": "Procedural terrain and LDR environment fallback; the character remains 3D.",
+    "colorManagement": "Albedo is sRGB. HDR, normal, roughness, height and AO remain linear/non-color data."
+  },
+  "sources": [
+    {
+      "id": "boulder_01",
+      "provider": "Poly Haven",
+      "sourceUrl": "https://polyhaven.com/a/boulder_01",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "technique": "photogrammetry",
+      "derivative": "Meshopt geometry, quantized attributes and embedded WebP PBR maps",
+      "files": [
+        { "file": "boulder_01.glb", "bytes": 1344924, "sha256": "7E16F4A8FC62FC440CAF90DCDC6099CC59BD1099E3797501702B48A26AD5E707" }
+      ]
+    },
+    {
+      "id": "dead_tree_trunk_02",
+      "provider": "Poly Haven",
+      "sourceUrl": "https://polyhaven.com/a/dead_tree_trunk_02",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "technique": "photogrammetry",
+      "derivative": "Meshopt geometry, quantized attributes and embedded WebP PBR maps",
+      "files": [
+        { "file": "dead_tree_trunk_02.glb", "bytes": 1139548, "sha256": "E7A34A237A5C8D98E3F1FE608D8FEC00A39CAC95315835F95249204956A7E018" }
+      ]
+    },
+    {
+      "id": "pine_forest_ground_cover",
+      "provider": "Poly Haven",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "technique": "photogrammetry",
+      "files": [
+        { "file": "fern_02.glb", "sourceUrl": "https://polyhaven.com/a/fern_02", "bytes": 181032, "sha256": "8BC5A643CA970D0A042247A88F99D6DAF74A2411DB7B5ADF8057462F9A394E05" },
+        { "file": "grass_medium_01.glb", "sourceUrl": "https://polyhaven.com/a/grass_medium_01", "bytes": 687744, "sha256": "BDDE66BAD9ADAFCA3F8D91C7CA3A9B14271DC10D49142E5082A70B5F00215B53" },
+        { "file": "rock_moss_set_01.glb", "sourceUrl": "https://polyhaven.com/a/rock_moss_set_01", "bytes": 728768, "sha256": "C8BD326053CB3D1F4C01232C315501E603C29AFEEE807BF60D8655343BD6A2C3" },
+        { "file": "shrub_01.glb", "sourceUrl": "https://polyhaven.com/a/shrub_01", "bytes": 1314400, "sha256": "6F4E21CF2C51DC53CD423D892C590699DB6D3D8819023E3C197FB17E97BC676E" }
+      ]
+    },
+    {
+      "id": "pine_roots",
+      "provider": "Poly Haven",
+      "sourceUrl": "https://polyhaven.com/a/pine_roots",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "technique": "photogrammetry",
+      "derivative": "Official 1K glTF simplified to a 35% web LOD, embedded WebP PBR maps and Meshopt compression",
+      "runtimePolicy": "One or two hero ground-cover patches are streamed only for auto/high/cinematic profiles.",
+      "files": [
+        { "file": "pine_roots_web.glb", "bytes": 1737148, "sha256": "AE06CEAA9E39F2412AB5C9BEE82DB38BB54E035EC4DC289E344C22BC19F3DBEF" }
+      ]
+    },
+    {
+      "id": "modular_fort_01",
+      "provider": "Poly Haven",
+      "sourceUrl": "https://polyhaven.com/a/modular_fort_01",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "technique": "physically authored architecture with scanned PBR surface detail",
+      "derivative": "Official 1K glTF simplified to a 72% web LOD, embedded WebP PBR maps and Meshopt compression",
+      "runtimePolicy": "A single Sky Ruins hero structure is streamed only for auto/high/cinematic profiles.",
+      "files": [
+        { "file": "modular_fort_01_web.glb", "bytes": 2448096, "sha256": "7076F2B59C7AB747A3F425000502064B890108CE50A7326C8C54B2F52838AB30" }
+      ]
+    },
+    {
+      "id": "bell_park_dawn",
+      "provider": "Poly Haven",
+      "sourceUrl": "https://polyhaven.com/a/bell_park_dawn",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "technique": "bracketed 360-degree HDR photography",
+      "files": [
+        { "file": "hdr/bell_park_dawn_1k.hdr", "bytes": 1643660, "sha256": "DAF8BD9B7A8F69DAE8306B36142428D565265E962A3A46FBA290DB4F75B8C1A7" }
+      ]
+    },
+    {
+      "id": "Ground037",
+      "provider": "ambientCG",
+      "sourceUrl": "https://ambientcg.com/view?id=Ground037",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://ambientcg.com/license",
+      "technique": "surface photogrammetry",
+      "derivative": "Official 1K JPG maps converted to web-delivery WebP without changing the captured material",
+      "files": [
+        { "file": "surfaces/ground037-color.webp", "role": "albedo-srgb", "bytes": 559998, "sha256": "7EC1B400238B10D9C650DF18A1387F68BF42DE783B900D16D49885A4EAC8DB91" },
+        { "file": "surfaces/ground037-normal-gl.webp", "role": "normal-linear", "bytes": 651424, "sha256": "4C791934F99FE3DE729633C1E0C714A3E91DD13869FEDCD46BF388948E6C61E0" },
+        { "file": "surfaces/ground037-roughness.webp", "role": "roughness-linear", "bytes": 308484, "sha256": "EFC5A42C955554274F4D7E83B754942A7D969E2392E1E28E41EBA700160DB79F" },
+        { "file": "surfaces/ground037-height.webp", "role": "height-linear", "bytes": 120788, "sha256": "408C19A7FAD127C7CE233C0D5F43D6E029430763400C2D9467E10358C3CAEBA0" },
+        { "file": "surfaces/ground037-ao.webp", "role": "ambient-occlusion-linear", "bytes": 185496, "sha256": "9053E7288D8D40410E2BC64B51277E0C66973EDDA02BF084219D571DF2F2FE7F" }
+      ]
+    }
+  ]
+}

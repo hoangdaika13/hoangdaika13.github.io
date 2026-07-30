@@ -2,12 +2,14 @@
   "use strict";
 
   const STORAGE_KEY = "hh.youtube-creator-galaxy.v2";
+  const FLEET_STORAGE_KEY = "hh.youtube-channel-fleet.v1";
   const VIDEO_PROJECT_KEY = "hh.video-editor.project.v1";
   const MEDIA_DB = "hh-video-editor-media";
   const MEDIA_STORE = "assets";
   const MODULES = Object.freeze([
     { id: "command", icon: "H", label: "Command Center", color: "#69ebff", note: "Kênh, video và tín hiệu thật" },
     { id: "connect", icon: "CN", label: "Channel Connect", color: "#5fa8ff", note: "OAuth và quyền truy cập" },
+    { id: "fleet", icon: "FL", label: "Channel Fleet", color: "#6ee7c7", note: "Nhiều tài khoản và bulk upload" },
     { id: "director", icon: "AD", label: "Auto Director", color: "#ff66c8", note: "Timeline và bản dựng" },
     { id: "upload", icon: "UP", label: "Upload & Scheduler", color: "#9b7cff", note: "Resumable upload" },
     { id: "thumbnail", icon: "TH", label: "Thumbnail Galaxy", color: "#ff8f66", note: "Canvas 1280 × 720" },
@@ -49,6 +51,11 @@
   let comparisonData = null;
   let commentDrafts = [];
   let captionTracks = [];
+  let fleetState = loadFleetState();
+  let fleetOverview = null;
+  let fleetJobs = [];
+  let fleetPreflight = null;
+  let fleetUploadFile = null;
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -131,6 +138,28 @@
     try { sessionStorage.setItem(privateStorageKey(), JSON.stringify(state)); } catch {}
   }
 
+  function loadFleetState() {
+    try {
+      const value = JSON.parse(sessionStorage.getItem(privateStorageKey(FLEET_STORAGE_KEY)) || "null");
+      return {
+        selectedChannelIds: Array.isArray(value?.selectedChannelIds) ? value.selectedChannelIds.map(String).slice(0, 5) : [],
+        title: String(value?.title || "").slice(0, 100),
+        description: String(value?.description || "").slice(0, 5000),
+        tags: String(value?.tags || "").slice(0, 500),
+        privacyStatus: ["private", "unlisted"].includes(value?.privacyStatus) ? value.privacyStatus : "private",
+        rightsConfirmed: Boolean(value?.rightsConfirmed),
+        idempotencyKey: String(value?.idempotencyKey || "").slice(0, 160),
+        results: Array.isArray(value?.results) ? value.results.slice(0, 20) : []
+      };
+    } catch {
+      return { selectedChannelIds: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, idempotencyKey: "", results: [] };
+    }
+  }
+
+  function saveFleetState() {
+    try { sessionStorage.setItem(privateStorageKey(FLEET_STORAGE_KEY), JSON.stringify(fleetState)); } catch {}
+  }
+
   function readVideoProject() {
     try {
       const identityId = currentIdentityId();
@@ -184,7 +213,14 @@
         state = loadState();
       }
       if (all && channelStatus.connected) {
-        dashboard = await api("dashboard");
+        const [dashboardResult, overviewResult, jobsResult] = await Promise.all([
+          api("dashboard"),
+          api("channels/overview"),
+          api("bulk/jobs").catch(() => ({ jobs: [] }))
+        ]);
+        dashboard = dashboardResult;
+        fleetOverview = overviewResult;
+        fleetJobs = jobsResult.jobs || [];
         if (dashboard.project) {
           state.publishProject = dashboard.project;
           saveState();
@@ -198,7 +234,11 @@
           comparisonData = comparison?.comparison || null;
         }
       }
-      else if (!channelStatus.connected) dashboard = null;
+      else if (!channelStatus.connected) {
+        dashboard = null;
+        fleetOverview = null;
+        fleetJobs = [];
+      }
     } catch (error) {
       errorMessage = error.message;
       if (error.status === 401) channelStatus = { configured: false, connected: false, authRequired: true, permissions: {} };
@@ -332,31 +372,89 @@
   function connectView() {
     const permissions = channelStatus.permissions || {};
     const channels = Array.isArray(channelStatus.channels) ? channelStatus.channels : [];
+    const verification = channelStatus.verificationReadiness || {};
     const rows = [
-      ["Đọc dữ liệu kênh", permissions.read],
-      ["Upload video", permissions.upload],
-      ["Metadata, bình luận và livestream", permissions.manage],
-      ["YouTube Analytics", permissions.analytics]
+      ["Nhận diện kênh đã chọn", permissions.read, "openid · email · profile"],
+      ["Upload video", permissions.upload, "youtube.upload"],
+      ["Metadata, bình luận và livestream", permissions.manage, "youtube.force-ssl"],
+      ["YouTube Analytics", permissions.analytics, "yt-analytics.readonly"]
     ];
     return `<section class="ycg-panel ycg-connect">
       <header><div><small>GOOGLE OAUTH 2.0</small><h3>YouTube Channel Connect</h3></div><span class="ycg-state is-${connectionTone()[0]}"><i></i>${esc(connectionTone()[1])}</span></header>
       <div class="ycg-account-vault">
-        <div><strong>Kho kênh riêng của tài khoản HH hiện tại</strong><small>Mỗi người chỉ nhận dữ liệu, lịch sử và token của chính họ từ máy chủ.</small></div>
-        ${channels.length ? `<label><span>Kênh đang quản lý</span><select data-ycg-channel-select>${channels.map((item) => `<option value="${esc(item.id)}" ${item.id === channelStatus.channel?.id ? "selected" : ""}>${esc(item.title)}</option>`).join("")}</select></label>` : ""}
-        <button type="button" data-ycg-action="${channelStatus.authRequired ? "signin" : "connect"}">+ Thêm tài khoản/kênh</button>
+        <div><strong>Kho kênh riêng của tài khoản HH hiện tại</strong><small>Dữ liệu khóa theo userId + channelId. Người dùng khác không thể liệt kê, chọn hay dùng token của bạn.</small></div>
+        ${channels.length ? `<label><span>Kênh đang quản lý</span><select data-ycg-channel-select>${channels.map((item) => `<option value="${esc(item.id)}" ${item.id === channelStatus.channel?.id ? "selected" : ""}>${esc(item.title)} · ${esc(item.account?.hint || "Google")}</option>`).join("")}</select></label>` : ""}
+        <button type="button" data-ycg-action="${channelStatus.authRequired ? "signin" : "connect-creator"}">+ Thêm tài khoản/kênh</button>
       </div>
       <div class="ycg-connect-layout">
         <div class="ycg-channel-card">
           ${channelStatus.channel?.thumbnail ? `<img src="${esc(channelStatus.channel.thumbnail)}" alt="Ảnh kênh">` : "<span>YT</span>"}
           <h4>${esc(channelStatus.channel?.title || "Chưa chọn kênh")}</h4>
-          <p>${channelStatus.channel ? `Channel ID · ${esc(channelStatus.channel.id)}` : "Google sẽ hiển thị màn hình chọn tài khoản và Brand Account chính thức."}</p>
-          <div>${channelStatus.connected ? `<button data-ycg-action="refresh-channel">Làm mới kênh</button><button data-ycg-action="disconnect">Ngắt kết nối</button>` : `<button class="is-primary" data-ycg-action="${channelStatus.authRequired ? "signin" : "connect"}">${channelStatus.authRequired ? "Đăng nhập HH Platform" : "Chọn tài khoản Google"}</button>`}</div>
+          <p>${channelStatus.channel ? `Channel ID · ${esc(channelStatus.channel.id)} · ${esc(channelStatus.channel.account?.hint || "Google")}` : "Google sẽ hiển thị màn hình chọn tài khoản và Brand Account chính thức."}</p>
+          <div>${channelStatus.connected ? `<button data-ycg-action="refresh-channel">Làm mới kênh</button><button data-ycg-action="disconnect">Ngắt kết nối</button>` : `<button class="is-primary" data-ycg-action="${channelStatus.authRequired ? "signin" : "connect-creator"}">${channelStatus.authRequired ? "Đăng nhập HH Platform" : "Chọn tài khoản Google"}</button>`}</div>
         </div>
-        <div class="ycg-permissions"><h4>Quyền đã xác minh</h4>${rows.map(([label, ready]) => `<p class="${ready ? "is-ready" : ""}"><i>${ready ? "✓" : "!"}</i><span><strong>${label}</strong><small>${ready ? "Sẵn sàng" : channelStatus.connected ? "Kết nối lại để cấp quyền" : "Chưa kết nối"}</small></span></p>`).join("")}
+        <div class="ycg-permissions"><h4>Quyền đã cấp · least privilege</h4>${rows.map(([label, ready, scope]) => `<p class="${ready ? "is-ready" : ""}"><i>${ready ? "✓" : "!"}</i><span><strong>${label}</strong><small>${esc(scope)} · ${ready ? "Sẵn sàng" : channelStatus.connected ? "Kết nối lại để cấp quyền" : "Chưa kết nối"}</small></span></p>`).join("")}
           <aside>Access token và refresh token không xuất hiện trong trình duyệt. Backend mã hóa AES‑256‑GCM và ràng buộc token với đúng tài khoản HH cùng Channel ID trước khi lưu.</aside>
         </div>
       </div>
+      <div class="ycg-oauth-presets">
+        <header><div><small>GRANULAR AUTHORIZATION</small><h4>Chọn đúng quyền cho tài khoản mới</h4></div><span>Không bắt buộc cấp toàn bộ</span></header>
+        <button data-ycg-action="connect-upload"><strong>Chỉ Upload</strong><small>youtube.upload</small></button>
+        <button data-ycg-action="connect-manage"><strong>Quản lý kênh</strong><small>youtube.force-ssl</small></button>
+        <button data-ycg-action="connect-analytics"><strong>Chỉ Analytics</strong><small>yt-analytics.readonly</small></button>
+        <button class="is-primary" data-ycg-action="connect-creator"><strong>Creator đầy đủ</strong><small>Ba scope đã khai báo</small></button>
+      </div>
+      <div class="ycg-verification-readiness">
+        <header><div><small>GOOGLE VERIFICATION READINESS</small><h4>Checklist video demo và chính sách</h4></div><span>Trạng thái nội bộ, không phải phê duyệt của Google</span></header>
+        <p class="is-ready"><i>✓</i><span><strong>Scope chính xác</strong><small>${(verification.exactSubmittedScopes || []).map((scope) => esc(scope.split("/").pop())).join(" · ") || "Tải từ backend"}</small></span></p>
+        <p><i>1</i><span><strong>Consent Screen</strong><small>Video phải bấm “Show all services” và hiển thị scope rõ ràng.</small></span></p>
+        <p><i>2</i><span><strong>Source Account Impact</strong><small>Quay kết quả upload/sửa metadata xuất hiện trên YouTube Studio của đúng kênh.</small></span></p>
+        <p class="is-ready"><i>✓</i><span><strong>Data-sharing disclosure</strong><small><a href="${esc(verification.privacyPolicyUrl || "./privacy.html#google-api-data")}" target="_blank" rel="noopener">Mở Privacy Policy ↗</a></small></span></p>
+      </div>
     </section>`;
+  }
+
+  function fleetView() {
+    if (!channelStatus.connected) return emptyState(
+      "Kết nối kênh trước khi tạo Channel Fleet",
+      "Mỗi tài khoản HH có một kho Google/YouTube riêng và không thể xem kênh của người khác.",
+      channelStatus.authRequired ? "signin" : "connect-creator",
+      channelStatus.authRequired ? "Đăng nhập" : "Kết nối tài khoản"
+    );
+    const channels = fleetOverview?.channels || channelStatus.channels || [];
+    const accounts = fleetOverview?.accounts || [];
+    const limit = Number(fleetOverview?.limits?.maxChannelsPerBulkJob || channelStatus.bulk?.maxChannelsPerJob || 5);
+    const selected = new Set(fleetState.selectedChannelIds);
+    const preflightRows = fleetPreflight?.channels || [];
+    return `<div class="ycg-fleet-grid">
+      <section class="ycg-panel ycg-fleet-vault">
+        <header><div><small>OWNER-ISOLATED CHANNEL VAULT</small><h3>Channel Fleet · ${channels.length} kênh / ${accounts.length || 1} tài khoản Google</h3></div><span>Tối đa ${limit} kênh mỗi job</span></header>
+        <div class="ycg-fleet-accounts">${accounts.map((account) => `<article><strong>${esc(account.hint)}</strong><small>${account.channels.length} kênh · mã nội bộ ${esc(account.key)}</small></article>`).join("") || `<article><strong>${esc(channelStatus.channel?.account?.hint || "Tài khoản Google")}</strong><small>Dữ liệu chỉ hiện với chủ sở hữu HH</small></article>`}</div>
+        <div class="ycg-fleet-channels">${channels.map((channel) => `<label class="${selected.has(channel.id) ? "is-selected" : ""}">
+          <input type="checkbox" data-ycg-fleet-channel value="${esc(channel.id)}" ${selected.has(channel.id) ? "checked" : ""} ${!channel.active && !channel.updatedAt ? "disabled" : ""}>
+          ${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "<i>YT</i>"}
+          <span><strong>${esc(channel.title)}</strong><small>${esc(channel.account?.hint || "Google")} · ${channel.permissionPreset === "creator" ? "Full Creator" : esc(channel.permissionPreset || "legacy")}</small></span>
+          <b>${preflightRows.find((item) => item.channel?.id === channel.id)?.ready ? "✓ Ready" : selected.has(channel.id) && fleetPreflight ? "Cần quyền" : "Chọn"}</b>
+        </label>`).join("")}</div>
+        <div class="ycg-action-row"><button data-ycg-action="fleet-select-all">Chọn tối đa ${limit}</button><button data-ycg-action="fleet-clear">Đặt lại</button><button data-ycg-action="connect-creator">+ Thêm tài khoản/kênh</button></div>
+      </section>
+      <section class="ycg-panel ycg-fleet-upload">
+        <header><div><small>SAFE MULTI-CHANNEL DELIVERY</small><h3>Upload một file tới nhiều kênh</h3></div><span>Private/Unlisted trước · duyệt Public sau</span></header>
+        <form data-ycg-fleet-form>
+          <label class="ycg-fleet-file"><span>Video MP4 / MOV / WebM</span><input type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska" data-ycg-fleet-file required><small>${fleetUploadFile ? `${esc(fleetUploadFile.name)} · ${bytes(fleetUploadFile.size)}` : "File chỉ được đọc trên thiết bị và tải thẳng tới phiên resumable của YouTube."}</small></label>
+          <label>Tiêu đề<input name="title" maxlength="100" value="${esc(fleetState.title)}" required></label>
+          <label>Mô tả<textarea name="description" maxlength="5000">${esc(fleetState.description)}</textarea></label>
+          <div class="ycg-inline-fields"><label>Tags<input name="tags" maxlength="500" value="${esc(fleetState.tags)}"></label><label>Quyền riêng tư<select name="privacyStatus"><option value="private" ${fleetState.privacyStatus === "private" ? "selected" : ""}>Private</option><option value="unlisted" ${fleetState.privacyStatus === "unlisted" ? "selected" : ""}>Unlisted</option></select></label></div>
+          <label class="ycg-fleet-confirm"><input type="checkbox" name="rightsConfirmed" ${fleetState.rightsConfirmed ? "checked" : ""} required><span>Tôi có quyền dùng nội dung và đã kiểm tra từng kênh đích.</span></label>
+          <div class="ycg-fleet-preflight">${fleetPreflight ? `<strong class="${fleetPreflight.ready ? "is-ready" : ""}">${fleetPreflight.ready ? "✓ Tất cả kênh sẵn sàng" : "! Có kênh thiếu quyền"}</strong><small>Ước tính ${fmt(fleetPreflight.estimatedQuota)} quota unit · Google Console là nguồn quyết định</small>` : "Chạy preflight để kiểm tra quyền upload và refresh token của từng kênh."}</div>
+          <div class="ycg-action-row"><button type="button" data-ycg-action="fleet-preflight">Kiểm tra ${selected.size} kênh</button><button class="is-primary" type="submit" ${busy.startsWith("bulk/") ? "disabled" : ""}>${busy.startsWith("bulk/") ? "Đang tạo phiên…" : "Tạo job và upload"}</button></div>
+        </form>
+      </section>
+      <section class="ycg-panel ycg-fleet-jobs">
+        <header><div><small>REAL JOB HISTORY</small><h3>Tiến trình theo từng kênh</h3></div><button data-ycg-action="fleet-refresh">Làm mới</button></header>
+        <div>${fleetState.results.map((item) => `<article><strong>${esc(item.channelTitle || item.channelId)}</strong><span>${esc(item.status)}${Number.isFinite(item.progress) ? ` · ${item.progress.toFixed(1)}%` : ""}</span><small>${esc(item.error || item.videoId || "")}</small></article>`).join("")}${fleetJobs.map((job) => `<article><strong>Job ${esc(job.id)}</strong><span>${esc(job.status)}</span><small>${job.channelIds.length} kênh · ${dateTime(job.createdAt)}</small></article>`).join("") || (!fleetState.results.length ? "<p>Chưa có job bulk nào. Hệ thống không tạo tiến trình mẫu.</p>" : "")}</div>
+      </section>
+    </div>`;
   }
 
   function directorView() {
@@ -666,6 +764,7 @@
     const views = {
       command: commandView,
       connect: connectView,
+      fleet: fleetView,
       director: directorView,
       upload: uploadView,
       thumbnail: thumbnailView,
@@ -978,16 +1077,169 @@
     return { project, gates, ready: gates.every((item) => item.pass) };
   }
 
-  async function connectChannel() {
+  async function connectChannel(permissionPreset = "creator") {
     if (channelStatus.authRequired) return location.hash = "#/login";
     busy = "connect";
     render();
     try {
-      const data = await api("oauth/start", "POST", { returnTo: location.origin, returnHash: "#/davinci-resolve/youtube" });
+      const data = await api("oauth/start", "POST", { returnTo: location.origin, returnHash: "#/davinci-resolve/youtube", permissionPreset });
       location.assign(data.authorizeUrl);
     } catch (error) {
       busy = "";
       errorMessage = error.message;
+      render();
+    }
+  }
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function updateFleetResult(channelId, patch) {
+    const existing = fleetState.results.find((item) => item.channelId === channelId);
+    if (existing) Object.assign(existing, patch);
+    else fleetState.results.unshift({ channelId, ...patch });
+    fleetState.results = fleetState.results.slice(0, 20);
+    saveFleetState();
+  }
+
+  function putFleetChunk(session, file, start, end) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", session.uploadUrl);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.setRequestHeader("Content-Range", `bytes ${start}-${end - 1}/${file.size}`);
+      xhr.onload = () => {
+        if (xhr.status === 308) {
+          const range = xhr.getResponseHeader("Range") || "";
+          const match = range.match(/bytes=0-(\d+)/i);
+          resolve({ complete: false, offset: match ? Number(match[1]) + 1 : end });
+          return;
+        }
+        if ([200, 201].includes(xhr.status)) {
+          let data = {};
+          try { data = JSON.parse(xhr.responseText || "{}"); } catch {}
+          resolve({ complete: true, offset: file.size, data });
+          return;
+        }
+        const error = new Error(`YouTube upload HTTP ${xhr.status || 0}`);
+        error.status = xhr.status || 0;
+        reject(error);
+      };
+      xhr.onerror = () => reject(Object.assign(new Error("Mất kết nối khi gửi video tới YouTube."), { status: 0 }));
+      xhr.onabort = () => reject(Object.assign(new Error("Phiên bulk upload đã bị hủy."), { status: 499 }));
+      xhr.send(file.slice(start, end, file.type || "application/octet-stream"));
+    });
+  }
+
+  async function uploadFleetSession(session, file) {
+    const retryable = new Set([0, 408, 429, 500, 502, 503, 504]);
+    const chunkSize = Math.max(256 * 1024, Number(session.chunkSize || 8 * 1024 * 1024));
+    let offset = 0;
+    let finalData = null;
+    updateFleetResult(session.channelId, { channelTitle: session.channelTitle, uploadId: session.uploadId, status: "uploading", progress: 0, error: "" });
+    while (offset < file.size) {
+      const end = Math.min(file.size, offset + chunkSize);
+      let response = null;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        try {
+          response = await putFleetChunk(session, file, offset, end);
+          break;
+        } catch (error) {
+          if (!retryable.has(Number(error.status || 0)) || attempt === 4) throw error;
+          await wait(Math.min(8000, 500 * (2 ** attempt)));
+        }
+      }
+      offset = Math.max(offset, Number(response?.offset || end));
+      const progress = Math.min(100, offset / file.size * 100);
+      updateFleetResult(session.channelId, { status: response?.complete ? "verifying" : "uploading", progress });
+      render();
+      await api("upload/progress", "POST", {
+        uploadId: session.uploadId,
+        bytesUploaded: offset,
+        totalBytes: file.size,
+        speedBps: 0,
+        etaSeconds: 0
+      }).catch(() => {});
+      if (response?.complete) {
+        finalData = response.data;
+        break;
+      }
+    }
+    if (!finalData?.id) throw new Error("YouTube không trả về Video ID cho kênh này.");
+    const completed = await api("upload/complete", "POST", { uploadId: session.uploadId, videoId: finalData.id });
+    updateFleetResult(session.channelId, { status: "processing", progress: 100, videoId: completed.videoId, url: completed.url });
+    render();
+    return completed;
+  }
+
+  async function runFleetPreflight() {
+    if (!fleetState.selectedChannelIds.length) throw new Error("Hãy chọn ít nhất một kênh.");
+    busy = "bulk/preflight";
+    errorMessage = "";
+    render();
+    try {
+      fleetPreflight = await api("bulk/preflight", "POST", { action: "upload", channelIds: fleetState.selectedChannelIds });
+      status(fleetPreflight.ready ? "Tất cả kênh đã sẵn sàng cho upload." : "Có kênh thiếu scope upload hoặc refresh token.", fleetPreflight.ready ? "success" : "error");
+      return fleetPreflight;
+    } finally {
+      busy = "";
+      render();
+    }
+  }
+
+  async function startFleetUpload(form) {
+    if (!fleetUploadFile) throw new Error("Hãy chọn file video.");
+    const data = Object.fromEntries(new FormData(form));
+    fleetState = {
+      ...fleetState,
+      title: String(data.title || "").trim(),
+      description: String(data.description || ""),
+      tags: String(data.tags || ""),
+      privacyStatus: ["private", "unlisted"].includes(data.privacyStatus) ? data.privacyStatus : "private",
+      rightsConfirmed: data.rightsConfirmed === "on",
+      idempotencyKey: fleetState.idempotencyKey || uid("bulk-upload") + uid("job")
+    };
+    saveFleetState();
+    if (!fleetState.title) throw new Error("Tiêu đề video đang trống.");
+    if (!fleetState.rightsConfirmed) throw new Error("Cần xác nhận quyền sử dụng nội dung.");
+    const preflight = await runFleetPreflight();
+    if (!preflight.ready) throw new Error("Chưa thể tạo job vì có kênh thiếu quyền.");
+    if (!confirm(`Tạo ${fleetState.selectedChannelIds.length} upload ${fleetState.privacyStatus.toUpperCase()} thật trên YouTube?`)) return;
+    busy = "bulk/upload/sessions";
+    render();
+    try {
+      const result = await api("bulk/upload/sessions", "POST", {
+        channelIds: fleetState.selectedChannelIds,
+        idempotencyKey: fleetState.idempotencyKey,
+        approved: true,
+        rightsConfirmed: true,
+        title: fleetState.title,
+        description: fleetState.description,
+        tags: fleetState.tags.split(",").map((item) => item.trim()).filter(Boolean),
+        privacyStatus: fleetState.privacyStatus,
+        fileName: fleetUploadFile.name,
+        fileSize: fleetUploadFile.size,
+        mimeType: fleetUploadFile.type || "application/octet-stream",
+        madeForKids: false,
+        containsSyntheticMedia: false,
+        notifySubscribers: false
+      });
+      (result.failures || []).forEach((item) => updateFleetResult(item.channelId, { channelTitle: item.channelTitle, status: "failed", error: item.error }));
+      for (const session of result.sessions || []) {
+        try { await uploadFleetSession(session, fleetUploadFile); }
+        catch (error) {
+          updateFleetResult(session.channelId, { channelTitle: session.channelTitle, status: "failed", error: error.message });
+          await api("upload/error", "POST", { uploadId: session.uploadId, error: error.message }).catch(() => {});
+          render();
+        }
+      }
+      fleetState.idempotencyKey = "";
+      saveFleetState();
+      const jobsResult = await api("bulk/jobs").catch(() => ({ jobs: [] }));
+      fleetJobs = jobsResult.jobs || [];
+      render();
+      status("Bulk upload đã gửi xong; YouTube đang xử lý từng video thật.", "success");
+    } finally {
+      busy = "";
       render();
     }
   }
@@ -1029,11 +1281,20 @@
         render();
       }).catch(() => {});
     }
+    if (channelStatus.connected && moduleId === "fleet" && !fleetOverview) {
+      Promise.all([api("channels/overview"), api("bulk/jobs").catch(() => ({ jobs: [] }))]).then(([overview, jobs]) => {
+        if (state.active !== "fleet") return;
+        fleetOverview = overview;
+        fleetJobs = jobs.jobs || [];
+        render();
+      }).catch(() => {});
+    }
   }
 
   async function handleAction(action) {
     if (action === "refresh") return refresh();
     if (action === "connect") return connectChannel();
+    if (["connect-upload", "connect-manage", "connect-analytics", "connect-creator"].includes(action)) return connectChannel(action.replace("connect-", ""));
     if (action === "signin") return location.hash = "#/login";
     if (action === "dismiss-error") { errorMessage = ""; return render(); }
     if (action === "open-upload") return switchModule("upload");
@@ -1043,6 +1304,30 @@
     if (action === "new-short") return switchModule("shorts");
     if (action === "open-auto") return location.hash = "#/davinci-resolve/auto";
     if (action === "sync-project") return syncUniversalProject();
+    if (action === "fleet-select-all") {
+      const channels = fleetOverview?.channels || channelStatus.channels || [];
+      const limit = Number(fleetOverview?.limits?.maxChannelsPerBulkJob || channelStatus.bulk?.maxChannelsPerJob || 5);
+      fleetState.selectedChannelIds = channels.slice(0, limit).map((channel) => channel.id);
+      fleetPreflight = null;
+      saveFleetState();
+      return render();
+    }
+    if (action === "fleet-clear") {
+      fleetState.selectedChannelIds = [];
+      fleetState.results = [];
+      fleetState.idempotencyKey = "";
+      fleetPreflight = null;
+      saveFleetState();
+      return render();
+    }
+    if (action === "fleet-preflight") return runFleetPreflight();
+    if (action === "fleet-refresh") {
+      const [overview, jobs] = await Promise.all([api("channels/overview"), api("bulk/jobs")]);
+      fleetOverview = overview;
+      fleetJobs = jobs.jobs || [];
+      render();
+      return status("Đã làm mới Channel Fleet từ backend.", "success");
+    }
     if (action === "preview-automation") {
       const preview = automationReadiness();
       state.automation.lastPreviewAt = new Date().toISOString();
@@ -1312,6 +1597,27 @@
 
   async function handleChange(event) {
     const target = event.target;
+    if (target.matches("[data-ycg-fleet-channel]")) {
+      const ids = new Set(fleetState.selectedChannelIds);
+      if (target.checked) ids.add(target.value);
+      else ids.delete(target.value);
+      const limit = Number(fleetOverview?.limits?.maxChannelsPerBulkJob || channelStatus.bulk?.maxChannelsPerJob || 5);
+      fleetState.selectedChannelIds = [...ids].slice(0, limit);
+      if (ids.size > limit) target.checked = false;
+      fleetPreflight = null;
+      saveFleetState();
+      render();
+      return;
+    }
+    if (target.matches("[data-ycg-fleet-file]")) {
+      const file = target.files?.[0] || null;
+      if (file && !file.type.startsWith("video/") && file.type !== "application/octet-stream") throw new Error("Chỉ chấp nhận file video.");
+      fleetUploadFile = file;
+      fleetState.idempotencyKey = "";
+      saveFleetState();
+      render();
+      return;
+    }
     if (target.matches("[data-ycg-channel-select]")) {
       const result = await apiAction("channel/select", { channelId: target.value }, "Đã chuyển sang kênh YouTube đã chọn.");
       if (result) await refresh();
@@ -1354,6 +1660,11 @@
   }
 
   async function handleSubmit(event) {
+    const fleet = event.target.closest("[data-ycg-fleet-form]");
+    if (fleet) {
+      event.preventDefault();
+      return startFleetUpload(fleet);
+    }
     const reply = event.target.closest("[data-ycg-reply-form]");
     if (reply) {
       event.preventDefault();
@@ -1441,6 +1752,11 @@
       publisherMounted = false;
       storageChannelId = "unassigned";
       state = loadState();
+      fleetState = loadFleetState();
+      fleetOverview = null;
+      fleetJobs = [];
+      fleetPreflight = null;
+      fleetUploadFile = null;
       channelStatus = { configured: false, connected: false, permissions: {} };
       dashboard = null;
       errorMessage = "";
@@ -1460,6 +1776,8 @@
     thumbnailVideoUrl = "";
     thumbnailVideo = null;
     thumbnailImage = null;
+    fleetUploadFile = null;
+    fleetPreflight = null;
     root = null;
   }
 

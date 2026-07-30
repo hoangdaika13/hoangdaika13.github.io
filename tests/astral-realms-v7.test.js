@@ -56,7 +56,7 @@ test("V7 visual effects remain responsive and motion-safe", () => {
 test("the route loader and offline cache keep the latest Astral Realms bundle", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const token of ["astral-realms.css?v=59", "astral-realms.js?v=59"]) {
+  for (const token of ["astral-realms.css?v=60", "astral-realms.js?v=60"]) {
     assert.ok(loader.includes(token), `loader missing ${token}`);
     assert.ok(worker.includes(token), `worker missing ${token}`);
   }

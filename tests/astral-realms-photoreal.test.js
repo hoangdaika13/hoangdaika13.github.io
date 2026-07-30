@@ -53,7 +53,7 @@ test("licensed realistic avatar catalog and environment models are integrated", 
     assert.ok(bytes.length > 1_500_000, `${file} should contain a full realistic avatar`);
     assert.equal(bytes.subarray(0, 4).toString("ascii"), "glTF");
   }
-  for (const file of ["boulder_01.glb", "grass_medium_01.glb", "rock_moss_set_01.glb", "shrub_01.glb", "dead_tree_trunk_02.glb", "fern_02.glb"]) {
+  for (const file of ["boulder_01.glb", "grass_medium_01.glb", "rock_moss_set_01.glb", "shrub_01.glb", "dead_tree_trunk_02.glb", "fern_02.glb", "pine_roots_web.glb", "modular_fort_01_web.glb"]) {
     const bytes = fs.readFileSync(path.join(root, "assets", "astral-realms", "environment", file));
     assert.ok(bytes.length > 100_000, `${file} should contain a real CC0 environment model`);
     assert.equal(bytes.subarray(0, 4).toString("ascii"), "glTF");
@@ -78,7 +78,7 @@ test("visual V10 exposes adaptive 3D modes and UI portraits", () => {
 test("runtime and offline cache request the V3 bundle", () => {
   const loader = read("performance-loader.js");
   const serviceWorker = read("sw.js");
-  for (const token of ["astral-realms.css?v=59", "astral-realms.js?v=59"]) {
+  for (const token of ["astral-realms.css?v=60", "astral-realms.js?v=60"]) {
     assert.match(loader, new RegExp(token.replace(/[.?]/g, "\\$&")));
     assert.match(serviceWorker, new RegExp(token.replace(/[.?]/g, "\\$&")));
   }

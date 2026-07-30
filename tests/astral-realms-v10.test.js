@@ -75,8 +75,9 @@ test("characters never downgrade to a flat image in the 3D world", () => {
 
 test("the visible environment is mesh terrain and the panorama is IBL only", () => {
   const world = between("    createWorld()", "    createToonGradient()");
-  assert.match(world, /scene\.environment\s*=\s*this\.photorealAssets\.panorama/);
-  assert.doesNotMatch(world, /scene\.background\s*=\s*this\.photorealAssets\.panorama/);
+  assert.match(world, /const environmentMap = this\.photorealAssets\.hdrEnvironment \|\| this\.photorealAssets\.panorama/);
+  assert.match(world, /scene\.environment\s*=\s*environmentMap/);
+  assert.doesNotMatch(world, /scene\.background\s*=\s*(environmentMap|this\.photorealAssets\.(hdrEnvironment|panorama))/);
   assert.match(world, /new THREE\.PlaneGeometry\(376,\s*376/);
   assert.match(world, /positions\.setZ/);
   assert.match(world, /terrainGeometry\.computeVertexNormals\(\)/);
@@ -90,12 +91,12 @@ test("Character V13 supersedes V12 with updated route, offline cache and respons
   const index = read("index.html");
   const css = read("astral-realms.css");
   assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*13/);
-  for (const asset of ["astral-realms.css?v=59", "astral-realms.js?v=59"]) {
+  for (const asset of ["astral-realms.css?v=60", "astral-realms.js?v=60"]) {
     assert.ok(loader.includes(asset));
     assert.ok(worker.includes(asset));
   }
-  assert.match(worker, /hh-identity-portal-v341/);
-  assert.match(index, /performance-loader\.js\?v=109/);
+  assert.match(worker, /hh-identity-portal-v342/);
+  assert.match(index, /performance-loader\.js\?v=110/);
   assert.match(css, /Astral Realms Character V13/);
   assert.match(css, /\.har-genesis/);
   assert.match(css, /max-width: 720px/);

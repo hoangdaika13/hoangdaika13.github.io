@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -92,4 +93,63 @@ test("Kenney textured packs retain and offline-cache their shared colormaps", ()
     assert.ok(fs.statSync(file).size > 1_000, `${pack} colormap must contain real image data`);
     assert.ok(worker.includes(relative), `${pack} colormap must be available offline`);
   }
+});
+
+test("CC0 photogrammetry source manifest locks every downloaded asset by checksum", () => {
+  const environmentRoot = path.join(root, "assets", "astral-realms", "environment");
+  const manifest = JSON.parse(fs.readFileSync(path.join(environmentRoot, "SOURCES.json"), "utf8"));
+  assert.equal(manifest.version, 1);
+  assert.match(manifest.policy, /recorded source, license and immutable SHA-256 checksum/);
+  assert.ok(manifest.sources.length >= 7, "expected the complete scan, surface and HDR source catalog");
+  for (const entry of manifest.sources) {
+    assert.equal(entry.license, "CC0-1.0", `${entry.id} must remain CC0`);
+    assert.match(entry.sourceUrl || entry.files[0]?.sourceUrl || "", /^https:\/\//, `${entry.id} needs a source URL`);
+    for (const asset of entry.files) {
+      const file = path.join(environmentRoot, ...asset.file.split("/"));
+      const bytes = fs.readFileSync(file);
+      assert.equal(bytes.length, asset.bytes, `${asset.file} byte size changed`);
+      assert.equal(crypto.createHash("sha256").update(bytes).digest("hex").toUpperCase(), asset.sha256, `${asset.file} checksum changed`);
+    }
+  }
+});
+
+test("HDR and photogrammetry PBR maps are real files with explicit color-space handling", () => {
+  const environmentRoot = path.join(root, "assets", "astral-realms", "environment");
+  const hdr = fs.readFileSync(path.join(environmentRoot, "hdr", "bell_park_dawn_1k.hdr"));
+  assert.ok(hdr.length > 1_000_000);
+  assert.match(hdr.subarray(0, 80).toString("ascii"), /#\?RADIANCE|#\?RGBE/);
+  for (const name of ["color", "normal-gl", "roughness", "height", "ao"]) {
+    const bytes = fs.readFileSync(path.join(environmentRoot, "surfaces", `ground037-${name}.webp`));
+    assert.equal(bytes.subarray(0, 4).toString("ascii"), "RIFF");
+    assert.equal(bytes.subarray(8, 12).toString("ascii"), "WEBP");
+  }
+  assert.match(source, /role === "albedo" \? THREE\.SRGBColorSpace : THREE\.NoColorSpace/);
+  assert.match(source, /hdr-photogrammetry-ready/);
+  assert.match(source, /normalMap: this\.terrainSurfaceTextures\.normal/);
+  assert.match(source, /roughnessMap: this\.terrainSurfaceTextures\.roughness/);
+  assert.match(source, /aoMap: this\.terrainSurfaceTextures\.ao/);
+  assert.match(source, /bumpMap: this\.terrainSurfaceTextures\.height/);
+  assert.match(source, /disposePhotorealAssets\(\)/);
+});
+
+test("hero photogrammetry LODs are web-compressed, adaptive and available offline", () => {
+  for (const file of ["pine_roots_web.glb", "modular_fort_01_web.glb"]) {
+    const bytes = fs.readFileSync(path.join(root, "assets", "astral-realms", "environment", file));
+    assert.ok(bytes.length > 1_000_000 && bytes.length < 3_000_000, `${file} should be a bounded web LOD`);
+    assert.equal(bytes.subarray(0, 4).toString("ascii"), "glTF");
+    assert.ok(worker.includes(file), `${file} must be available offline`);
+    assert.ok(source.includes(file), `${file} must be used by the world loader`);
+  }
+  assert.match(source, /CINEMATIC_ENVIRONMENT_ASSET_IDS/);
+  assert.match(source, /allowCinematicScans/);
+  assert.match(source, /data\.cinematicScans|dataset\.cinematicScans/);
+});
+
+test("HDRLoader matches the vendored Three runtime and is cached", () => {
+  const hdrLoader = fs.readFileSync(path.join(root, "vendor", "addons", "loaders", "HDRLoader.js"), "utf8");
+  assert.match(hdrLoader, /from '\.\.\/\.\.\/three\.module\.min\.js'/);
+  assert.match(hdrLoader, /class HDRLoader extends DataTextureLoader/);
+  assert.match(source, /import\("\.\/vendor\/addons\/loaders\/HDRLoader\.js"\)/);
+  assert.doesNotMatch(source, /quality === "low" \|\| this\.rendererBackend !== "webgl2"/);
+  assert.match(worker, /vendor\/addons\/loaders\/HDRLoader\.js/);
 });

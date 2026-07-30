@@ -99,13 +99,13 @@
       styles: [
         "video-editor-studio.css?v=4", "video-editor-resolve.css?v=8",
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1",
-        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=3"
+        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=4"
       ],
       scripts: [
         "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=10", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1",
-        "youtube-publisher.js?v=5", "youtube-creator-galaxy.js?v=4"
+        "youtube-publisher.js?v=5", "youtube-creator-galaxy.js?v=5"
       ]
     },
     graphic: {
@@ -164,8 +164,8 @@
       scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
     },
     game: {
-      styles: ["game-runtime.css?v=1", "astral-realms.css?v=59", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
-      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=59", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
+      styles: ["game-runtime.css?v=1", "astral-realms.css?v=60", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=60", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
     },
     // Compatibility asset aliases for clients upgrading from Entertainment v4:
     // "game-center.css?v=4" "game-center.js?v=4"

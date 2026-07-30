@@ -272,7 +272,15 @@
   });
   const PHOTOREAL_ASSETS = Object.freeze({
     panorama: "./assets/astral-realms/astral-realms-panorama-v1.webp",
-    scenicPanorama: "./assets/astral-realms/environment/astral-cinematic-panorama-v1.png"
+    scenicPanorama: "./assets/astral-realms/environment/astral-cinematic-panorama-v1.png",
+    hdrEnvironment: "./assets/astral-realms/environment/hdr/bell_park_dawn_1k.hdr",
+    terrain: Object.freeze({
+      albedo: "./assets/astral-realms/environment/surfaces/ground037-color.webp",
+      normal: "./assets/astral-realms/environment/surfaces/ground037-normal-gl.webp",
+      roughness: "./assets/astral-realms/environment/surfaces/ground037-roughness.webp",
+      height: "./assets/astral-realms/environment/surfaces/ground037-height.webp",
+      ao: "./assets/astral-realms/environment/surfaces/ground037-ao.webp"
+    })
   });
   const BUILTIN_CHARACTER_ASSETS = Object.freeze({
     "human-adult-a01": "./assets/astral-realms/hh-human-asteria-v1.glb",
@@ -297,6 +305,8 @@
     shrub: "./assets/astral-realms/environment/shrub_01.glb",
     deadTree: "./assets/astral-realms/environment/dead_tree_trunk_02.glb",
     fern: "./assets/astral-realms/environment/fern_02.glb",
+    pineRoots: "./assets/astral-realms/environment/pine_roots_web.glb",
+    modularFort: "./assets/astral-realms/environment/modular_fort_01_web.glb",
     kenneyOak: "./assets/astral-realms/kenney/nature/tree_oak.glb",
     kenneyPalm: "./assets/astral-realms/kenney/nature/tree_palmDetailedTall.glb",
     kenneyBush: "./assets/astral-realms/kenney/nature/plant_bushDetailed.glb",
@@ -306,6 +316,7 @@
     kenneyTower: "./assets/astral-realms/kenney/buildings/building-sample-tower-c.glb",
     kenneyBridge: "./assets/astral-realms/kenney/roads/road-bridge.glb"
   });
+  const CINEMATIC_ENVIRONMENT_ASSET_IDS = Object.freeze(new Set(["pineRoots", "modularFort"]));
   const CHARACTER_ATLAS_INDEX = Object.freeze({ lyra: 0, cael: 1, nyx: 2, sol: 3 });
   const ELEMENT_REACTIONS = Object.freeze({
     "cryo+plasma": { name: "Sốc nhiệt", multiplier: 1.55, color: "#ff9bd6" },
@@ -1141,7 +1152,7 @@
       this.genesisOriginalLighting = null;
       this.lastSurfaceUpdateAt = 0;
       this.toonGradient = null;
-      this.photorealAssets = { panorama: null, scenicPanorama: null };
+      this.photorealAssets = { panorama: null, scenicPanorama: null, hdrEnvironment: null, terrain: null };
       this.photorealStatus = "pending";
       this.terrainTexture = null;
       this.activeAnimation = "idle";
@@ -3134,8 +3145,7 @@
       this.dynamicPebbleFields = [];
       this.dynamicNatureScratch = null;
       this.sunCorona = null;
-      Object.values(this.photorealAssets).forEach((texture) => texture?.dispose?.());
-      this.photorealAssets = { panorama: null, scenicPanorama: null };
+      this.disposePhotorealAssets();
       this.disposeBuiltInCharacterAssets();
       this.disposeLicensedEnvironmentAssets();
       this.photorealStatus = "pending";
@@ -3262,15 +3272,78 @@
       }
       this.photorealStatus = "loading";
       const loader = new THREE.TextureLoader();
-      const loadTexture = (url) => Promise.race([
-        new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject)),
-        new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Quá thời gian tải ${url}`)), 8000))
-      ]);
+      const loadTexture = (url) => new Promise((resolve, reject) => {
+        let settled = false;
+        const timeout = root.setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          reject(new Error(`Quá thời gian tải ${url}`));
+        }, 8000);
+        loader.load(url, (texture) => {
+          if (settled) {
+            texture?.dispose?.();
+            return;
+          }
+          settled = true;
+          root.clearTimeout(timeout);
+          resolve(texture);
+        }, undefined, (error) => {
+          if (settled) return;
+          settled = true;
+          root.clearTimeout(timeout);
+          reject(error);
+        });
+      });
+      const configureSurfaceTexture = (texture, role) => {
+        if (!texture) return null;
+        texture.colorSpace = role === "albedo" ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(14, 14);
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = Math.min(8, this.renderer.capabilities?.getMaxAnisotropy?.() || 1);
+        texture.needsUpdate = true;
+        return texture;
+      };
       const panoramaPromise = saveData || lowMemory || this.state.settings.quality === "low"
         ? Promise.resolve(null)
         : loadTexture(PHOTOREAL_ASSETS.panorama);
       const scenicPromise = loadTexture(PHOTOREAL_ASSETS.scenicPanorama);
-      const [panoramaResult, scenicResult] = await Promise.allSettled([panoramaPromise, scenicPromise]);
+      const terrainPromise = saveData || lowMemory || this.state.settings.quality === "low"
+        ? Promise.resolve(null)
+        : Promise.all(Object.entries(PHOTOREAL_ASSETS.terrain).map(async ([role, url]) => [role, await loadTexture(url)]));
+      const hdrPromise = saveData || lowMemory || this.state.settings.quality === "low"
+        ? Promise.resolve(null)
+        : import("./vendor/addons/loaders/HDRLoader.js")
+          .then(({ HDRLoader }) => new Promise((resolve, reject) => {
+            let settled = false;
+            const timeout = root.setTimeout(() => {
+              if (settled) return;
+              settled = true;
+              reject(new Error("HDR environment timeout"));
+            }, 10000);
+            new HDRLoader().load(PHOTOREAL_ASSETS.hdrEnvironment, (texture) => {
+              if (settled) {
+                texture?.dispose?.();
+                return;
+              }
+              settled = true;
+              root.clearTimeout(timeout);
+              resolve(texture);
+            }, undefined, (error) => {
+              if (settled) return;
+              settled = true;
+              root.clearTimeout(timeout);
+              reject(error);
+            });
+          }));
+      const [panoramaResult, scenicResult, terrainResult, hdrResult] = await Promise.allSettled([
+        panoramaPromise,
+        scenicPromise,
+        terrainPromise,
+        hdrPromise
+      ]);
       if (panoramaResult.status === "fulfilled" && panoramaResult.value) {
         const texture = panoramaResult.value;
         texture.colorSpace = THREE.SRGBColorSpace;
@@ -3289,11 +3362,26 @@
         texture.anisotropy = Math.min(4, this.renderer.capabilities?.getMaxAnisotropy?.() || 1);
         this.photorealAssets.scenicPanorama = texture;
       }
-      this.photorealStatus = this.photorealAssets.scenicPanorama
-        ? "scenic-3d-ready"
-        : this.photorealAssets.panorama
-          ? "ready"
-          : "mesh-pbr";
+      if (terrainResult.status === "fulfilled" && terrainResult.value) {
+        this.photorealAssets.terrain = Object.fromEntries(
+          terrainResult.value.map(([role, texture]) => [role, configureSurfaceTexture(texture, role)])
+        );
+      }
+      if (hdrResult.status === "fulfilled" && hdrResult.value) {
+        const texture = hdrResult.value;
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.needsUpdate = true;
+        this.photorealAssets.hdrEnvironment = texture;
+      }
+      this.photorealStatus = this.photorealAssets.hdrEnvironment && this.photorealAssets.terrain
+        ? "hdr-photogrammetry-ready"
+        : this.photorealAssets.scenicPanorama
+          ? "scenic-3d-ready"
+          : this.photorealAssets.panorama
+            ? "ready"
+            : "mesh-pbr";
       this.root.classList.add("is-photoreal");
       this.root.dataset.photorealAssets = this.photorealStatus;
     }
@@ -3337,7 +3425,12 @@
       if (manager) manager.hhPreferTextureLoader = true;
       const loader = new this.GLTFLoaderClass(manager);
       if (this.MeshoptDecoder) loader.setMeshoptDecoder(this.MeshoptDecoder);
-      const entries = Object.entries(LICENSED_ENVIRONMENT_ASSETS);
+      const quality = this.state.settings.quality;
+      const saveData = Boolean(root.navigator?.connection?.saveData);
+      const lowMemory = Number(root.navigator?.deviceMemory || 8) <= 2;
+      const allowCinematicScans = !saveData && !lowMemory && ["auto", "high", "cinematic"].includes(quality);
+      const entries = Object.entries(LICENSED_ENVIRONMENT_ASSETS)
+        .filter(([id]) => allowCinematicScans || !CINEMATIC_ENVIRONMENT_ASSET_IDS.has(id));
       const results = await Promise.allSettled(entries.map(async ([id, url]) => {
         const gltf = await Promise.race([
           loader.loadAsync(url),
@@ -3369,6 +3462,7 @@
           ? "partial"
           : "fallback";
       this.root.dataset.licensedEnvironment = this.licensedEnvironmentStatus;
+      this.root.dataset.cinematicScans = allowCinematicScans ? "enabled" : "adaptive-fallback";
     }
 
     async loadCharacterPipelineManifest() {
@@ -3736,8 +3830,40 @@
       this.licensedEnvironmentStatus = "pending";
     }
 
+    disposePhotorealAssets() {
+      const textures = new Set();
+      const collect = (value) => {
+        if (!value) return;
+        if (value.isTexture || typeof value.dispose === "function" && value.image) {
+          textures.add(value);
+          return;
+        }
+        if (typeof value === "object") Object.values(value).forEach(collect);
+      };
+      collect(this.photorealAssets);
+      collect(this.terrainSurfaceTextures);
+      if (this.terrainTexture) textures.add(this.terrainTexture);
+      textures.forEach((texture) => texture.dispose?.());
+      this.photorealAssets = { panorama: null, scenicPanorama: null, hdrEnvironment: null, terrain: null };
+      this.terrainSurfaceTextures = null;
+      this.terrainTexture = null;
+    }
+
     createTerrainTexture() {
       const THREE = this.THREE;
+      const scannedTerrain = this.photorealAssets.terrain;
+      if (scannedTerrain?.albedo && scannedTerrain?.normal && scannedTerrain?.roughness && scannedTerrain?.height) {
+        this.terrainTexture = scannedTerrain.albedo;
+        this.terrainSurfaceTextures = {
+          albedo: scannedTerrain.albedo,
+          normal: scannedTerrain.normal,
+          roughness: scannedTerrain.roughness,
+          height: scannedTerrain.height,
+          ao: scannedTerrain.ao || null,
+          source: "ambientcg-ground037-cc0"
+        };
+        return scannedTerrain.albedo;
+      }
       const albedoCanvas = document.createElement("canvas");
       const heightCanvas = document.createElement("canvas");
       const roughnessCanvas = document.createElement("canvas");
@@ -3791,7 +3917,7 @@
       const height = makeTexture(heightCanvas, THREE.NoColorSpace);
       const roughness = makeTexture(roughnessCanvas, THREE.NoColorSpace);
       this.terrainTexture = albedo;
-      this.terrainSurfaceTextures = { albedo, height, roughness };
+      this.terrainSurfaceTextures = { albedo, height, roughness, normal: null, ao: null, source: "procedural-fallback" };
       return albedo;
     }
 
@@ -3806,10 +3932,12 @@
       this.world = new THREE.Group();
       this.world.name = "AstralOpenWorld";
       this.scene.add(this.world);
-      if (this.photorealAssets.panorama) {
+      const environmentMap = this.photorealAssets.hdrEnvironment || this.photorealAssets.panorama;
+      if (environmentMap) {
         // The panorama is lighting data only. The visible world is always
         // geometry rendered by the engine, never a flat background image.
-        this.scene.environment = this.photorealAssets.panorama;
+        this.scene.environment = environmentMap;
+        if ("environmentIntensity" in this.scene) this.scene.environmentIntensity = this.photorealAssets.hdrEnvironment ? 0.92 : 0.68;
         this.scene.fog = new THREE.FogExp2(0x17263a, 0.0068);
       }
 
@@ -3849,6 +3977,9 @@
       const terrainTexture = this.createTerrainTexture();
       const terrainSegments = quality === "cinematic" ? 160 : quality === "high" ? 128 : quality === "low" ? 48 : 88;
       const terrainGeometry = new THREE.PlaneGeometry(376, 376, terrainSegments, terrainSegments);
+      if (terrainGeometry.attributes.uv && !terrainGeometry.attributes.uv1) {
+        terrainGeometry.setAttribute("uv1", terrainGeometry.attributes.uv.clone());
+      }
       const positions = terrainGeometry.attributes.position;
       for (let index = 0; index < positions.count; index += 1) {
         const x = positions.getX(index);
@@ -3864,19 +3995,24 @@
         positions.setZ(index, -0.22 + centralRise + macro * centralFlatten + edgeRise);
       }
       terrainGeometry.computeVertexNormals();
+      const scannedTerrain = this.terrainSurfaceTextures?.source === "ambientcg-ground037-cc0";
       const ground = new THREE.Mesh(
         terrainGeometry,
         new THREE.MeshPhysicalMaterial({
-          color: 0xc0c6bd,
+          color: scannedTerrain ? 0xffffff : 0xc0c6bd,
           map: terrainTexture,
           bumpMap: this.terrainSurfaceTextures.height,
-          bumpScale: 0.34,
+          bumpScale: scannedTerrain ? 0.2 : 0.34,
+          normalMap: this.terrainSurfaceTextures.normal,
+          normalScale: new THREE.Vector2(scannedTerrain ? 0.62 : 0, scannedTerrain ? 0.62 : 0),
           roughnessMap: this.terrainSurfaceTextures.roughness,
+          aoMap: this.terrainSurfaceTextures.ao,
+          aoMapIntensity: scannedTerrain ? 0.72 : 0,
           roughness: 0.92,
           metalness: 0.025,
           clearcoat: 0.12,
           clearcoatRoughness: 0.62,
-          envMapIntensity: this.photorealAssets.panorama ? 0.48 : 0.16
+          envMapIntensity: this.photorealAssets.hdrEnvironment || this.photorealAssets.panorama ? 0.62 : 0.16
         })
       );
       ground.rotation.x = -Math.PI / 2;
@@ -4050,7 +4186,7 @@
         opacity: quality === "low" ? 0.76 : 0.66,
         clearcoat: 1,
         clearcoatRoughness: 0.075,
-        envMapIntensity: this.photorealAssets.panorama ? 1.15 : 0.48,
+        envMapIntensity: this.photorealAssets.hdrEnvironment || this.photorealAssets.panorama ? 1.15 : 0.48,
         bumpMap: waveTexture,
         bumpScale: 0.055,
         side: THREE.DoubleSide
@@ -4155,7 +4291,7 @@
             roughnessMap: this.terrainSurfaceTextures?.roughness || null,
             roughness: 0.94,
             metalness: zoneId === "crimson" ? 0.12 : 0.02,
-            envMapIntensity: this.photorealAssets.panorama ? 0.42 : 0.12
+            envMapIntensity: this.photorealAssets.hdrEnvironment || this.photorealAssets.panorama ? 0.56 : 0.12
           }),
           count
         );
@@ -4206,6 +4342,9 @@
         ["fern", "aurora", 18, 1.1, 29],
         ["fern", "void", 12, 1.25, 28],
         ["grass", "aurora", 22, 0.9, 30],
+        ["pineRoots", "aurora", 2, 6.2, 25],
+        ["pineRoots", "void", 1, 5.4, 24],
+        ["modularFort", "sky", 1, 5.8, 24],
         ["kenneyOak", "aurora", 14, 6.4, 30],
         ["kenneyOak", "central", 8, 5.8, 29],
         ["kenneyPalm", "ocean", 14, 6.8, 29],
@@ -4227,7 +4366,7 @@
         const bounds = new THREE.Box3().setFromObject(object);
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
-        const flatAsset = ["kenneyPath", "kenneyRoad", "kenneyBridge"].includes(assetId);
+        const flatAsset = ["kenneyPath", "kenneyRoad", "kenneyBridge", "pineRoots"].includes(assetId);
         const sourceMeasure = flatAsset ? Math.max(size.x, size.z) : size.y;
         const fit = targetHeight / Math.max(0.001, sourceMeasure);
         object.scale.setScalar(fit);
@@ -4245,13 +4384,14 @@
         const zone = ZONES.find((entry) => entry.id === zoneId);
         if (!source?.scene || !zone) return;
         const parent = this.streamingGroups.get(zoneId) || this.world;
-        const count = Math.max(2, Math.round(requestedCount * amountScale));
+        const heroAsset = CINEMATIC_ENVIRONMENT_ASSET_IDS.has(assetId);
+        const count = Math.max(heroAsset ? 1 : 2, Math.round(requestedCount * amountScale));
         for (let index = 0; index < count; index += 1) {
           const object = instantiate(source, targetHeight * (0.78 + seeded(index, profileIndex + 4) * 0.5), assetId);
           const angle = seeded(index, profileIndex + 9) * Math.PI * 2;
-          const architecture = ["kenneyHouse", "kenneyTower"].includes(assetId);
+          const architecture = ["kenneyHouse", "kenneyTower", "modularFort"].includes(assetId);
           const tallFoliage = ["deadTree", "kenneyOak", "kenneyPalm"].includes(assetId);
-          const flatAsset = ["kenneyPath", "kenneyRoad", "kenneyBridge"].includes(assetId);
+          const flatAsset = ["kenneyPath", "kenneyRoad", "kenneyBridge", "pineRoots"].includes(assetId);
           // The gameplay camera trails roughly 11 units behind the actor. Keep
           // tall authored assets beyond that corridor so trunks/canopies cannot
           // sit between the camera and the character at a zone checkpoint.
@@ -4917,7 +5057,7 @@
           color: new THREE.Color(zone.color).multiplyScalar(zone.id === "aurora" ? 0.42 : 0.28),
           roughness: 0.9,
           metalness: ["crimson", "station"].includes(zone.id) ? 0.28 : 0.04,
-          envMapIntensity: this.photorealAssets.panorama ? 0.38 : 0.12
+          envMapIntensity: this.photorealAssets.hdrEnvironment || this.photorealAssets.panorama ? 0.48 : 0.12
         });
         const mesh = new THREE.InstancedMesh(geometry, material, countPerZone);
         mesh.name = `DynamicPebbles:${zone.id}`;
@@ -5296,7 +5436,7 @@
           clearcoat: options.clearcoat ?? 0.22,
           clearcoatRoughness: options.clearcoatRoughness ?? 0.32,
           sheen: options.sheen ?? 0.16,
-          envMapIntensity: this.photorealAssets.panorama ? 0.72 : 0.18,
+          envMapIntensity: this.photorealAssets.hdrEnvironment || this.photorealAssets.panorama ? 0.82 : 0.18,
           emissive: options.emissive || 0x000000,
           emissiveIntensity: options.emissiveIntensity || 0,
           transparent: Boolean(options.transparent),
@@ -7936,7 +8076,7 @@
         object.receiveShadow = true;
         const materials = Array.isArray(object.material) ? object.material : [object.material];
         materials.filter(Boolean).forEach((material) => {
-          material.envMapIntensity = Math.max(material.envMapIntensity || 0, this.photorealAssets.panorama ? 0.72 : 0.18);
+          material.envMapIntensity = Math.max(material.envMapIntensity || 0, this.photorealAssets.hdrEnvironment || this.photorealAssets.panorama ? 0.82 : 0.18);
           material.userData ||= {};
           material.userData.baseRoughness = material.roughness;
           material.userData.baseClearcoat = material.clearcoat || 0;
@@ -8245,7 +8385,7 @@
           metalness: profile.boss ? 0.56 : 0.2,
           clearcoat: profile.boss ? 0.28 : 0.08,
           clearcoatRoughness: 0.44,
-          envMapIntensity: this.photorealAssets.panorama ? 0.62 : 0.2
+          envMapIntensity: this.photorealAssets.hdrEnvironment || this.photorealAssets.panorama ? 0.76 : 0.2
         });
       const bodyGeometry = profile.boss
         ? new THREE.CapsuleGeometry(0.62 * scale, 1.08 * scale, 10, 20)
@@ -10507,7 +10647,12 @@
       const minute = Math.floor((this.state.worldTime % 1) * 60);
       this.root.querySelector("[data-har-time]").textContent = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
       this.root.querySelector("[data-har-fps]").textContent = this.fps ? `${this.fps} FPS · scale ${Math.round(this.renderScale * 100)}%` : "Đang đo";
-      this.root.querySelector("[data-har-renderer]").textContent = `${this.rendererBackend === "webgpu" ? "WEBGPU" : "WEBGL2"} · ${this.photorealStatus === "ready" ? "IBL PBR" : "MESH PBR"}`;
+      const rendererMaterialLabel = this.photorealStatus === "hdr-photogrammetry-ready"
+        ? "HDR · SCAN PBR"
+        : ["ready", "scenic-3d-ready"].includes(this.photorealStatus)
+          ? "IBL PBR"
+          : "MESH PBR";
+      this.root.querySelector("[data-har-renderer]").textContent = `${this.rendererBackend === "webgpu" ? "WEBGPU" : "WEBGL2"} · ${rendererMaterialLabel}`;
       const activeCharacterMesh = this.characterMeshes.get(this.state.roster.activeId);
       const activeCharacterRuntime = this.characterRuntimes.get(this.state.roster.activeId);
       const characterRuntimeLabel = this.root.querySelector("[data-har-character-runtime]");
@@ -12656,15 +12801,11 @@
       });
       this.runtime?.destroy?.({ gameId: GAME_ID });
       if (this.scene) this.disposeCharacterObject(this.scene);
-      Object.values(this.photorealAssets).forEach((texture) => texture?.dispose?.());
+      this.disposePhotorealAssets();
       this.disposeBuiltInCharacterAssets();
       this.disposeLicensedEnvironmentAssets();
       Object.values(this.characterDetailTextures || {}).forEach((texture) => texture?.dispose?.());
       this.toonGradient?.dispose?.();
-      this.terrainTexture?.dispose?.();
-      Object.values(this.terrainSurfaceTextures || {}).forEach((texture) => {
-        if (texture && texture !== this.terrainTexture) texture.dispose?.();
-      });
       this.renderer?.dispose?.();
       try { await this.audio?.close?.(); } catch {}
       this.host?.replaceChildren();

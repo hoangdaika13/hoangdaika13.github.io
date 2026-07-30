@@ -15,14 +15,20 @@ const YOUTUBE_ORIGIN = "https://www.googleapis.com";
 const OAUTH_ORIGIN = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke";
-const SCOPES = [
-  "openid",
-  "email",
-  "profile",
-  "https://www.googleapis.com/auth/youtube.upload",
-  "https://www.googleapis.com/auth/youtube.force-ssl",
-  "https://www.googleapis.com/auth/yt-analytics.readonly"
-];
+const USERINFO_ENDPOINT = "https://openidconnect.googleapis.com/v1/userinfo";
+const IDENTITY_SCOPES = Object.freeze(["openid", "email", "profile"]);
+const YOUTUBE_SCOPE = Object.freeze({
+  upload: "https://www.googleapis.com/auth/youtube.upload",
+  manage: "https://www.googleapis.com/auth/youtube.force-ssl",
+  analytics: "https://www.googleapis.com/auth/yt-analytics.readonly"
+});
+const PERMISSION_SCOPE_PRESETS = Object.freeze({
+  upload: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.upload]),
+  manage: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.manage]),
+  analytics: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.analytics]),
+  creator: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.upload, YOUTUBE_SCOPE.manage, YOUTUBE_SCOPE.analytics])
+});
+const BULK_CHANNEL_LIMIT = 5;
 const VIDEO_MIME = new Set(["video/mp4", "video/webm", "video/quicktime", "video/x-matroska", "application/octet-stream"]);
 const IMAGE_MIME = new Set(["image/jpeg", "image/png"]);
 const DEFAULT_QUOTA_COSTS = Object.freeze({
@@ -96,6 +102,39 @@ function quotaCosts() {
 
 function quotaCost(action) {
   return Math.max(0, Number(quotaCosts()[action] || 0));
+}
+
+function permissionPreset(value) {
+  const id = ["upload", "manage", "analytics", "creator"].includes(value) ? value : "creator";
+  return { id, scopes: [...PERMISSION_SCOPE_PRESETS[id]] };
+}
+
+function grantedScopes(connection) {
+  return new Set(String(connection?.scopes || "").split(/\s+/).filter(Boolean));
+}
+
+function hasYoutubePermission(connection, permission) {
+  const scope = YOUTUBE_SCOPE[permission];
+  return Boolean(scope && grantedScopes(connection).has(scope));
+}
+
+function requireYoutubePermission(connection, permission) {
+  if (!hasYoutubePermission(connection, permission)) {
+    throw fail(`Kênh chưa cấp quyền YouTube ${permission}. Hãy kết nối lại với quyền phù hợp.`, 403, "YOUTUBE_SCOPE_REQUIRED");
+  }
+}
+
+function maskedEmail(value) {
+  const email = clean(value, 254).toLowerCase();
+  const [name, domain] = email.split("@");
+  if (!name || !domain) return "Tài khoản Google";
+  return `${name.slice(0, 1)}${name.length > 1 ? "***" : ""}@${domain}`;
+}
+
+function googleAccountKey(subject) {
+  const secret = String(process.env.YOUTUBE_TOKEN_ENCRYPTION_KEY || process.env.JWT_SECRET || "");
+  if (!subject || secret.length < 32) return "";
+  return crypto.createHmac("sha256", secret).update(String(subject)).digest("hex");
 }
 
 async function writeAudit(db, entry) {
@@ -237,6 +276,17 @@ async function googleJson(url, options = {}) {
   return data;
 }
 
+async function googleIdentity(accessToken) {
+  const profile = await googleJson(USERINFO_ENDPOINT, { headers: youtubeHeaders(accessToken) });
+  const key = googleAccountKey(profile.sub);
+  if (!key) throw fail("Không xác minh được tài khoản Google đã cấp quyền.", 401, "GOOGLE_IDENTITY_INVALID");
+  return {
+    googleAccountKey: key,
+    googleAccountHint: maskedEmail(profile.email),
+    googleEmailVerified: profile.email_verified !== false
+  };
+}
+
 async function revokeRawGoogleToken(token) {
   if (!token) return false;
   try {
@@ -316,14 +366,38 @@ async function connectionFor(db, user, channelId = "") {
   return connection;
 }
 
+async function ownedConnectionsForIds(db, user, channelIds, options = {}) {
+  const max = Math.max(1, Math.min(BULK_CHANNEL_LIMIT, Number(options.max || BULK_CHANNEL_LIMIT)));
+  const ids = [...new Set((Array.isArray(channelIds) ? channelIds : []).map((id) => clean(id, 120)).filter(Boolean))];
+  if (!ids.length) throw fail("Hãy chọn ít nhất một kênh YouTube.", 400, "YOUTUBE_CHANNEL_SELECTION_REQUIRED");
+  if (ids.length > max) throw fail(`Mỗi lần xử lý tối đa ${max} kênh để bảo vệ quota và chống đăng nhầm.`, 400, "YOUTUBE_BULK_LIMIT");
+  const rows = await db.collection("youtubeConnections").find({ userId: user._id, channelId: { $in: ids } }).toArray();
+  if (rows.length !== ids.length) throw fail("Danh sách có kênh không thuộc tài khoản HH hiện tại.", 403, "YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH");
+  const byId = new Map(rows.map((row) => [String(row.channelId), row]));
+  return ids.map((id) => byId.get(id));
+}
+
+function publicOwnedChannel(connection) {
+  const channel = publicChannel(connection);
+  if (!channel) return null;
+  return {
+    ...channel,
+    account: {
+      key: clean(connection.googleAccountKey, 64).slice(0, 16),
+      hint: clean(connection.googleAccountHint || "Tài khoản Google", 254)
+    },
+    permissionPreset: clean(connection.permissionPreset || "legacy", 30)
+  };
+}
+
 function publicConnection(connection, allConnections = []) {
   const scopes = new Set(String(connection?.scopes || "").split(/\s+/).filter(Boolean));
   return {
     connected: Boolean(connection),
     visibility: "private",
     accountIsolated: true,
-    channel: publicChannel(connection),
-    channels: allConnections.map(publicChannel),
+    channel: publicOwnedChannel(connection),
+    channels: allConnections.map(publicOwnedChannel),
     connectedAt: connection?.connectedAt || null,
     updatedAt: connection?.updatedAt || null,
     expiresAt: connection?.expiresAt ? new Date(Number(connection.expiresAt)) : null,
@@ -331,9 +405,15 @@ function publicConnection(connection, allConnections = []) {
     scopeNames: [...scopes].map((scope) => scope.split("/").pop()).filter(Boolean),
     permissions: {
       read: Boolean(connection),
-      upload: scopes.has("https://www.googleapis.com/auth/youtube.upload"),
-      manage: scopes.has("https://www.googleapis.com/auth/youtube.force-ssl"),
-      analytics: scopes.has("https://www.googleapis.com/auth/yt-analytics.readonly")
+      upload: scopes.has(YOUTUBE_SCOPE.upload),
+      manage: scopes.has(YOUTUBE_SCOPE.manage),
+      analytics: scopes.has(YOUTUBE_SCOPE.analytics)
+    },
+    oauth: {
+      granular: true,
+      preset: clean(connection?.permissionPreset || "legacy", 30),
+      exactGrantedScopes: [...scopes].filter((scope) => scope.startsWith("https://www.googleapis.com/auth/")),
+      availablePresets: Object.fromEntries(Object.entries(PERMISSION_SCOPE_PRESETS).map(([id, values]) => [id, values.filter((scope) => scope.startsWith("https://www.googleapis.com/auth/"))]))
     }
   };
 }
@@ -670,6 +750,7 @@ module.exports = async function handler(req, res) {
     const audits = db.collection("youtubeAudits");
     const projects = db.collection("youtubePublishProjects");
     const commentDrafts = db.collection("youtubeCommentDrafts");
+    const bulkJobs = db.collection("youtubeBulkJobs");
     await Promise.all([
       ensureIndex(connections, { userId: 1, channelId: 1 }, { unique: true, sparse: true }),
       ensureIndex(connections, { userId: 1, active: 1, updatedAt: -1 }),
@@ -677,6 +758,8 @@ module.exports = async function handler(req, res) {
       ensureIndex(audits, { userId: 1, channelId: 1, createdAt: -1 }),
       ensureIndex(projects, { userId: 1, channelId: 1 }, { unique: true }),
       ensureIndex(commentDrafts, { userId: 1, channelId: 1, createdAt: -1 }),
+      ensureIndex(bulkJobs, { userId: 1, idempotencyKey: 1 }, { unique: true }),
+      ensureIndex(bulkJobs, { userId: 1, createdAt: -1 }),
       ensureIndex(states, { expiresAt: 1 }, { expireAfterSeconds: 0 })
     ]);
 
@@ -712,7 +795,10 @@ module.exports = async function handler(req, res) {
         const tokens = await tokenResponse.json().catch(() => ({}));
         grantedTokenForCleanup = tokens.refresh_token || tokens.access_token || "";
         if (!tokenResponse.ok || !tokens.access_token) throw fail(tokens.error_description || "Google từ chối kết nối YouTube.", 401);
-        const bundle = await channelBundle(tokens.access_token);
+        const [bundle, identity] = await Promise.all([
+          channelBundle(tokens.access_token),
+          googleIdentity(tokens.access_token)
+        ]);
         const previous = await connections.findOne({ userId: state.userId, channelId: bundle.channel.channelId });
         const ownerContext = { userId: state.userId, channelId: bundle.channel.channelId };
         const refreshToken = tokens.refresh_token || (previous?.refreshToken ? decryptToken(previous.refreshToken, previous) : "");
@@ -725,7 +811,9 @@ module.exports = async function handler(req, res) {
           accessToken: encryptToken(tokens.access_token, ownerContext),
           refreshToken: encryptToken(refreshToken, ownerContext),
           expiresAt: Date.now() + Number(tokens.expires_in || 3600) * 1000,
-          scopes: clean(tokens.scope, 1200),
+          scopes: clean(tokens.scope || (state.requestedScopes || []).join(" "), 1200),
+          permissionPreset: clean(state.permissionPreset || "creator", 30),
+          ...identity,
           ...bundle.channel,
           playlists: bundle.playlists,
           connectedAt: previous?.connectedAt || now,
@@ -749,16 +837,19 @@ module.exports = async function handler(req, res) {
 
     const user = await currentUser(req);
     if (!user) throw fail("Đăng nhập HH Platform để dùng YouTube Publisher.", 401, "AUTH_REQUIRED");
-    const routeLimit = route === "upload/session" ? 12 : route === "upload/progress" ? 360 : 80;
+    const routeLimit = ["upload/session", "bulk/upload/sessions"].includes(route) ? 12 : route === "upload/progress" ? 360 : 80;
     await enforceRateLimit(db, `youtube:${route}:${user._id}`, routeLimit, 15 * 60 * 1000);
 
     if (route === "oauth/start" && req.method === "POST") {
       if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) throw fail("Google OAuth chưa được cấu hình trên Vercel.", 503, "GOOGLE_OAUTH_NOT_CONFIGURED");
       const rawState = crypto.randomBytes(36).toString("base64url");
       const stateHash = crypto.createHash("sha256").update(rawState).digest("hex");
+      const requested = permissionPreset(clean(body.permissionPreset, 30));
       await states.insertOne({
         stateHash,
         userId: user._id,
+        permissionPreset: requested.id,
+        requestedScopes: requested.scopes,
         returnTo: safeFrontend(body.returnTo),
         returnHash: safeReturnHash(body.returnHash),
         createdAt: new Date(),
@@ -769,13 +860,18 @@ module.exports = async function handler(req, res) {
         client_id: process.env.GOOGLE_CLIENT_ID,
         redirect_uri: callbackUrl(req),
         response_type: "code",
-        scope: SCOPES.join(" "),
+        scope: requested.scopes.join(" "),
         access_type: "offline",
         include_granted_scopes: "true",
         prompt: "consent select_account",
         state: rawState
       });
-      return res.status(200).json({ authorizeUrl: authUrl.toString(), callbackUrl: callbackUrl(req) });
+      return res.status(200).json({
+        authorizeUrl: authUrl.toString(),
+        callbackUrl: callbackUrl(req),
+        permissionPreset: requested.id,
+        requestedScopes: requested.scopes.filter((scope) => scope.startsWith("https://www.googleapis.com/auth/"))
+      });
     }
 
     if (route === "status" && req.method === "GET") {
@@ -788,6 +884,19 @@ module.exports = async function handler(req, res) {
         configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
         callbackUrl: callbackUrl(req),
         ...publicConnection(connection, allConnections),
+        bulk: {
+          enabled: true,
+          maxChannelsPerJob: BULK_CHANNEL_LIMIT,
+          defaultPrivacy: "private",
+          publicRequiresManualReview: true
+        },
+        verificationReadiness: {
+          scopeModel: "granular-least-privilege",
+          sourceAccountImpactRequired: true,
+          consentScreenMustShowAllServices: true,
+          privacyPolicyUrl: `${safeFrontend(process.env.PUBLIC_SITE_URL)}/privacy.html#google-api-data`,
+          exactSubmittedScopes: [YOUTUBE_SCOPE.upload, YOUTUBE_SCOPE.manage, YOUTUBE_SCOPE.analytics]
+        },
         playlists: connection?.playlists || [],
         history: history.map((item) => ({
           id: String(item._id),
@@ -806,6 +915,181 @@ module.exports = async function handler(req, res) {
           completedAt: item.completedAt || null,
           error: item.error || ""
         }))
+      });
+    }
+
+    if (route === "channels/overview" && req.method === "GET") {
+      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
+      const grouped = new Map();
+      allConnections.forEach((connection) => {
+        const accountKey = clean(connection.googleAccountKey || "legacy", 64).slice(0, 16) || "legacy";
+        if (!grouped.has(accountKey)) grouped.set(accountKey, {
+          key: accountKey,
+          hint: clean(connection.googleAccountHint || "Tài khoản Google đã kết nối", 254),
+          channels: []
+        });
+        grouped.get(accountKey).channels.push(publicOwnedChannel(connection));
+      });
+      return res.status(200).json({
+        ok: true,
+        confirmed: true,
+        visibility: "owner-only",
+        ownerIsolated: true,
+        accounts: [...grouped.values()],
+        channels: allConnections.map(publicOwnedChannel),
+        limits: { maxChannelsPerBulkJob: BULK_CHANNEL_LIMIT },
+        syncedAt: new Date()
+      });
+    }
+
+    if (route === "bulk/preflight" && req.method === "POST") {
+      const action = ["upload", "manage", "analytics"].includes(body.action) ? body.action : "upload";
+      const selectedConnections = await ownedConnectionsForIds(db, user, body.channelIds);
+      const rows = selectedConnections.map((connection) => {
+        const permissionReady = hasYoutubePermission(connection, action === "manage" ? "manage" : action);
+        return {
+          channel: publicOwnedChannel(connection),
+          permissionReady,
+          refreshTokenReady: Boolean(connection.refreshToken),
+          ready: permissionReady && Boolean(connection.refreshToken),
+          reasons: [
+            ...(!permissionReady ? [`missing-${action}-scope`] : []),
+            ...(!connection.refreshToken ? ["missing-refresh-token"] : [])
+          ]
+        };
+      });
+      const estimatedAction = action === "upload" ? "upload:create" : action === "manage" ? "videos:update" : "analytics:read";
+      return res.status(200).json({
+        ok: true,
+        confirmed: true,
+        action,
+        ready: rows.every((item) => item.ready),
+        channels: rows,
+        estimatedQuota: quotaCost(estimatedAction) * rows.length,
+        quotaSource: "HH configurable quota ledger; Google Cloud Console remains authoritative",
+        approvalRequired: true,
+        publicPublishingAllowed: false
+      });
+    }
+
+    if (route === "bulk/jobs" && req.method === "GET") {
+      const jobs = await bulkJobs.find({ userId: user._id }).sort({ createdAt: -1 }).limit(30).toArray();
+      return res.status(200).json({
+        ok: true,
+        confirmed: true,
+        jobs: jobs.map((job) => ({
+          id: String(job._id),
+          action: clean(job.action, 40),
+          status: clean(job.status, 40),
+          channelIds: Array.isArray(job.channelIds) ? job.channelIds.map((id) => clean(id, 120)) : [],
+          results: Array.isArray(job.results) ? job.results.map((item) => ({
+            channelId: clean(item.channelId, 120),
+            uploadId: clean(item.uploadId, 80),
+            status: clean(item.status, 40),
+            error: clean(item.error, 180)
+          })) : [],
+          createdAt: job.createdAt || null,
+          updatedAt: job.updatedAt || null
+        }))
+      });
+    }
+
+    if (route === "bulk/upload/sessions" && req.method === "POST") {
+      if (body.approved !== true || body.rightsConfirmed !== true) {
+        throw fail("Bulk upload cần xác nhận phê duyệt và quyền sử dụng nội dung.", 409, "YOUTUBE_BULK_APPROVAL_REQUIRED");
+      }
+      const privacyStatus = ["private", "unlisted"].includes(body.privacyStatus) ? body.privacyStatus : "private";
+      if (body.privacyStatus === "public") throw fail("Bulk upload không tự chuyển Public. Hãy duyệt từng kênh sau khi YouTube xử lý xong.", 409, "YOUTUBE_BULK_PUBLIC_BLOCKED");
+      const idempotencyKey = clean(body.idempotencyKey, 160);
+      if (!/^[a-zA-Z0-9_-]{16,160}$/.test(idempotencyKey)) throw fail("Idempotency key không hợp lệ.", 400, "YOUTUBE_IDEMPOTENCY_INVALID");
+      const selectedConnections = await ownedConnectionsForIds(db, user, body.channelIds);
+      selectedConnections.forEach((connection) => requireYoutubePermission(connection, "upload"));
+      const existing = await bulkJobs.findOne({ userId: user._id, idempotencyKey });
+      if (existing) {
+        const records = await uploads.find({ userId: user._id, bulkJobId: existing._id }).toArray();
+        const sessions = [];
+        for (const record of records) {
+          const connection = selectedConnections.find((item) => String(item.channelId) === String(record.channelId));
+          if (!connection || !record.uploadSession || record.status !== "uploading") continue;
+          sessions.push({
+            channelId: record.channelId,
+            channelTitle: connection.channelTitle,
+            uploadId: String(record._id),
+            uploadUrl: decryptToken(record.uploadSession, connection),
+            chunkSize: 8 * 1024 * 1024
+          });
+        }
+        return res.status(200).json({ ok: true, confirmed: true, reused: true, bulkJobId: String(existing._id), status: existing.status, sessions });
+      }
+      const now = new Date();
+      const job = {
+        userId: user._id,
+        idempotencyKey,
+        action: "upload",
+        status: "creating-sessions",
+        channelIds: selectedConnections.map((connection) => connection.channelId),
+        privacyStatus,
+        results: [],
+        createdAt: now,
+        updatedAt: now
+      };
+      const jobInsert = await bulkJobs.insertOne(job);
+      const results = await Promise.all(selectedConnections.map(async (connection) => {
+        try {
+          const accessToken = await refreshAccessToken(connection, connections);
+          const session = await initiateResumable(accessToken, { ...body, privacyStatus, publishAt: "", notifySubscribers: false });
+          const record = {
+            userId: user._id,
+            channelId: connection.channelId,
+            bulkJobId: jobInsert.insertedId,
+            title: session.resource.snippet.title,
+            fileName: clean(body.fileName, 240),
+            fileSize: Number(body.fileSize),
+            mimeType: clean(body.mimeType, 100),
+            privacyStatus,
+            publishAt: null,
+            playlistId: "",
+            status: "uploading",
+            uploadSession: encryptToken(session.uploadUrl, connection),
+            bytesUploaded: 0,
+            totalBytes: Number(body.fileSize),
+            speedBps: 0,
+            etaSeconds: 0,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          const inserted = await uploads.insertOne(record);
+          await writeAudit(db, {
+            userId: user._id,
+            channelId: connection.channelId,
+            action: "upload:create",
+            targetId: String(inserted.insertedId),
+            status: "started",
+            detail: `Bulk ${idempotencyKey}`
+          });
+          return {
+            channelId: connection.channelId,
+            channelTitle: connection.channelTitle,
+            uploadId: String(inserted.insertedId),
+            uploadUrl: session.uploadUrl,
+            chunkSize: 8 * 1024 * 1024,
+            status: "uploading"
+          };
+        } catch (error) {
+          return { channelId: connection.channelId, channelTitle: connection.channelTitle, status: "failed", error: clean(error.message, 180) };
+        }
+      }));
+      const storedResults = results.map(({ uploadUrl, channelTitle, chunkSize, ...item }) => item);
+      const jobStatus = results.some((item) => item.status === "uploading") ? "sessions-ready" : "failed";
+      await bulkJobs.updateOne({ _id: jobInsert.insertedId, userId: user._id }, { $set: { status: jobStatus, results: storedResults, updatedAt: new Date() } });
+      return res.status(201).json({
+        ok: true,
+        confirmed: true,
+        bulkJobId: String(jobInsert.insertedId),
+        status: jobStatus,
+        privacyStatus,
+        sessions: results.filter((item) => item.status === "uploading"),
+        failures: results.filter((item) => item.status === "failed")
       });
     }
 
@@ -957,12 +1241,14 @@ module.exports = async function handler(req, res) {
 
     if (route === "videos" && req.method === "GET") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       return res.status(200).json({ ok: true, confirmed: true, videos: await recentVideos(accessToken), syncedAt: new Date() });
     }
 
     if (route === "analytics" && req.method === "GET") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "analytics");
       const accessToken = await refreshAccessToken(connection, connections);
       const videoId = clean(req.query.videoId, 40);
       const analytics = await channelAnalytics(accessToken, {
@@ -975,6 +1261,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "analytics/retention" && req.method === "GET") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "analytics");
       const accessToken = await refreshAccessToken(connection, connections);
       const videoId = clean(req.query.videoId, 40);
       const retention = await retentionAnalytics(accessToken, videoId, {
@@ -993,6 +1280,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "analytics/comparison" && req.method === "GET") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "analytics");
       const accessToken = await refreshAccessToken(connection, connections);
       const comparison = await videoComparisonAnalytics(accessToken, {
         startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.startDate || "")) ? req.query.startDate : undefined,
@@ -1003,6 +1291,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "comments" && req.method === "GET") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       const comments = await recentComments(accessToken, connection.channelId);
       return res.status(200).json({ ok: true, confirmed: true, comments, syncedAt: new Date() });
@@ -1056,6 +1345,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "comments/drafts/send" && req.method === "POST") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const draftId = clean(body.draftId, 80);
       if (!ObjectId.isValid(draftId) || body.approved !== true) {
         throw fail("Bản nháp chưa được người dùng duyệt.", 400, "YOUTUBE_COMMENT_APPROVAL_REQUIRED");
@@ -1084,6 +1374,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "comments/reply" && req.method === "POST") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       const parentId = clean(body.parentId, 120);
       const textOriginal = clean(body.text, 10000);
@@ -1099,6 +1390,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "comments/moderate" && req.method === "POST") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       const id = clean(body.id, 120);
       const moderationStatus = ["published", "heldForReview", "rejected"].includes(body.moderationStatus)
@@ -1117,6 +1409,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "videos/update" && req.method === "POST") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       const videoId = clean(body.videoId, 40);
       if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
@@ -1141,6 +1434,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "captions" && req.method === "GET") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       const videoId = clean(req.query.videoId, 40);
       if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
@@ -1159,6 +1453,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "captions/upload" && req.method === "POST") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       const videoId = clean(body.videoId, 40);
       const language = clean(body.language || "vi", 24);
@@ -1191,12 +1486,14 @@ module.exports = async function handler(req, res) {
 
     if (route === "live" && req.method === "GET") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       return res.status(200).json({ ok: true, confirmed: true, broadcasts: await broadcasts(accessToken), syncedAt: new Date() });
     }
 
     if (route === "live/create" && req.method === "POST") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       const title = clean(body.title, 100);
       const scheduledStartTime = new Date(body.scheduledStartTime);
@@ -1256,6 +1553,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "live/transition" && req.method === "POST") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       const id = clean(body.id, 120);
       const broadcastStatus = ["testing", "live", "complete"].includes(body.broadcastStatus) ? body.broadcastStatus : "";
@@ -1318,6 +1616,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "upload/session" && req.method === "POST") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "upload");
       const accessToken = await refreshAccessToken(connection, connections);
       const session = await initiateResumable(accessToken, body);
       const record = {
@@ -1374,9 +1673,11 @@ module.exports = async function handler(req, res) {
     }
 
     if (route === "upload/progress" && req.method === "POST") {
-      const connection = await connectionFor(db, user);
       const uploadId = clean(body.uploadId, 80);
       if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
+      const uploadRecord = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id });
+      if (!uploadRecord) throw fail("Không tìm thấy phiên upload của tài khoản hiện tại.", 404, "YOUTUBE_UPLOAD_NOT_FOUND");
+      const connection = await connectionFor(db, user, uploadRecord.channelId);
       const totalBytes = Math.max(0, Number(body.totalBytes || 0));
       const bytesUploaded = Math.max(0, Math.min(totalBytes || Number.MAX_SAFE_INTEGER, Number(body.bytesUploaded || 0)));
       const speedBps = Math.max(0, Number(body.speedBps || 0));
@@ -1390,9 +1691,11 @@ module.exports = async function handler(req, res) {
     }
 
     if (route === "upload/cancel" && req.method === "POST") {
-      const connection = await connectionFor(db, user);
       const uploadId = clean(body.uploadId, 80);
       if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
+      const uploadRecord = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id });
+      if (!uploadRecord) throw fail("Không tìm thấy phiên upload của tài khoản hiện tại.", 404, "YOUTUBE_UPLOAD_NOT_FOUND");
+      const connection = await connectionFor(db, user, uploadRecord.channelId);
       const cancelledAt = new Date();
       const result = await uploads.updateOne(
         { _id: new ObjectId(uploadId), userId: user._id, channelId: connection.channelId, status: { $in: ["uploading", "processing", "error"] } },
@@ -1411,6 +1714,7 @@ module.exports = async function handler(req, res) {
 
     if (route === "thumbnail/session" && req.method === "POST") {
       const connection = await connectionFor(db, user);
+      requireYoutubePermission(connection, "upload");
       const accessToken = await refreshAccessToken(connection, connections);
       const uploadUrl = await initiateThumbnail(accessToken, clean(body.videoId, 30), body);
       await writeAudit(db, {
@@ -1430,6 +1734,7 @@ module.exports = async function handler(req, res) {
       const record = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id });
       if (!record) throw fail("Không tìm thấy phiên upload.", 404);
       const connection = await connectionFor(db, user, record.channelId);
+      requireYoutubePermission(connection, "upload");
       const accessToken = await refreshAccessToken(connection, connections);
       const video = await googleJson(`${YOUTUBE_ORIGIN}/youtube/v3/videos?part=snippet,status,processingDetails&id=${encodeURIComponent(videoId)}`, { headers: { Authorization: `Bearer ${accessToken}` } });
       if (!video.items?.[0]) throw fail("YouTube chưa trả về video vừa upload.", 409, "YOUTUBE_VIDEO_PENDING");
@@ -1460,6 +1765,22 @@ module.exports = async function handler(req, res) {
           updatedAt: completedAt
         }, $unset: { uploadSession: "" } }
       );
+      if (record.bulkJobId) {
+        const bulkRecords = await uploads.find({ userId: user._id, bulkJobId: record.bulkJobId }).toArray();
+        const results = bulkRecords.map((item) => ({
+          channelId: item.channelId,
+          uploadId: String(item._id),
+          status: String(item._id) === String(record._id) ? (processingStatus === "terminated" ? "failed" : "uploaded") : item.status,
+          videoId: String(item._id) === String(record._id) ? videoId : clean(item.videoId, 30),
+          error: clean(item.error, 180)
+        }));
+        const pending = results.some((item) => ["uploading", "sessions-ready"].includes(item.status));
+        const failed = results.filter((item) => ["error", "failed"].includes(item.status)).length;
+        await bulkJobs.updateOne(
+          { _id: record.bulkJobId, userId: user._id },
+          { $set: { status: pending ? "uploading" : failed === results.length ? "failed" : failed ? "partial" : "uploaded", results, updatedAt: completedAt } }
+        );
+      }
       await db.collection("events").insertOne({
         type: "music-ai:youtube-upload",
         userId: user._id,
@@ -1488,6 +1809,14 @@ module.exports = async function handler(req, res) {
             { _id: record._id, userId: user._id, channelId: record.channelId },
             { $set: { status: "error", error: clean(body.error, 400), updatedAt: new Date() } }
           );
+          if (record.bulkJobId) {
+            const bulkRecords = await uploads.find({ userId: user._id, bulkJobId: record.bulkJobId }).toArray();
+            const failedCount = bulkRecords.filter((item) => item.status === "error" || String(item._id) === String(record._id)).length;
+            await bulkJobs.updateOne(
+              { _id: record.bulkJobId, userId: user._id },
+              { $set: { status: failedCount === bulkRecords.length ? "failed" : "partial", updatedAt: new Date() } }
+            );
+          }
           await writeAudit(db, {
             userId: user._id,
             channelId: record.channelId,

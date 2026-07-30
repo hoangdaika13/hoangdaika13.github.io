@@ -53,7 +53,7 @@ test("YouTube connection supports Google account selection and multiple channels
   const client = read("youtube-publisher.js");
   assert.match(server, /prompt: "consent select_account"/);
   assert.match(server, /route === "channel\/select"/);
-  assert.match(server, /channels: allConnections\.map\(publicChannel\)/);
+  assert.match(server, /channels: allConnections\.map\(publicOwnedChannel\)/);
   assert.match(server, /channelId: 1/);
   assert.match(client, /data-yap-channel-select/);
   assert.match(client, /Thêm tài khoản\/kênh/);

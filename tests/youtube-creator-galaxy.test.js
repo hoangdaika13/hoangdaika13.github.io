@@ -33,7 +33,7 @@ function loadApi() {
   return window.HHYouTubeCreatorGalaxy;
 }
 
-test("Tool exposes one YouTube Creator Galaxy route with thirteen real workspaces", () => {
+test("Tool exposes one YouTube Creator Galaxy route with fourteen real workspaces", () => {
   const shell = read("script.js");
   const client = read("youtube-creator-galaxy.js");
   assert.match(shell, /id: "youtube"[\s\S]{0,220}\/davinci-resolve\/youtube/);
@@ -52,7 +52,7 @@ test("Tool exposes one YouTube Creator Galaxy route with thirteen real workspace
 
 test("Creator utilities normalize drafts, parse captions and calculate an explained local score", () => {
   const api = loadApi();
-  assert.equal(api.modules.length, 13);
+  assert.equal(api.modules.length, 14);
   const normalized = api.normalizeState({ seo: { title: "Test" }, calendar: "invalid" });
   assert.equal(normalized.seo.title, "Test");
   assert.equal(normalized.calendar.length, 0);
@@ -87,7 +87,11 @@ test("YouTube backend keeps tokens server-side and implements data, analytics, c
     'route === "videos/update"',
     'route === "captions/upload"',
     'route === "live/create"',
-    'route === "live/transition"'
+    'route === "live/transition"',
+    'route === "channels/overview"',
+    'route === "bulk/preflight"',
+    'route === "bulk/jobs"',
+    'route === "bulk/upload/sessions"'
   ]) assert.match(server, new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(server, /yt-analytics\.readonly/);
   assert.match(security, /AES|aes-256-gcm/i);
@@ -117,28 +121,67 @@ test("Creator OS uses verified project gates, retention data, audit ledger and e
   ]) assert.match(server, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
+test("Granular OAuth scopes are enforced before Google operations", () => {
+  const server = read("utils/youtubePublisher.js");
+  for (const [route, permission] of [
+    ["videos", "manage"],
+    ["analytics", "analytics"],
+    ["analytics/retention", "analytics"],
+    ["comments", "manage"],
+    ["videos/update", "manage"],
+    ["captions/upload", "manage"],
+    ["live/create", "manage"],
+    ["upload/session", "upload"],
+    ["thumbnail/session", "upload"]
+  ]) {
+    const pattern = new RegExp(`route === "${route.replace("/", "\\/")}"[\\s\\S]{0,180}requireYoutubePermission\\(connection, "${permission}"\\)`);
+    assert.match(server, pattern);
+  }
+});
+
 test("Creator Galaxy supports private multi-channel accounts without shared browser drafts", () => {
   const client = read("youtube-creator-galaxy.js");
+  const server = read("utils/youtubePublisher.js");
   assert.match(client, /data-ycg-channel-select/);
   assert.match(client, /channel\/select/);
   assert.match(client, /sessionStorage\.getItem\(privateStorageKey\(\)\)/);
   assert.match(client, /sessionStorage\.setItem\(privateStorageKey\(\)/);
   assert.match(client, /ownerId: currentIdentityId\(\)/);
   assert.match(client, /hh:auth-change/);
+  assert.match(client, /GOOGLE VERIFICATION READINESS/);
+  assert.match(server, /PERMISSION_SCOPE_PRESETS/);
+  assert.match(server, /ownerIsolated: true/);
+  assert.match(server, /YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH/);
+  assert.match(server, /YOUTUBE_BULK_PUBLIC_BLOCKED/);
+  assert.match(server, /userId: user\._id, idempotencyKey/);
   assert.doesNotMatch(client, /localStorage\.setItem\(STORAGE_KEY/);
+});
+
+test("Privacy Policy discloses Google data processing, sharing and revocation", () => {
+  const privacy = read("privacy.html");
+  for (const disclosure of [
+    "google-api-data",
+    "Google API Services",
+    "MongoDB Atlas",
+    "Vercel",
+    "Google/YouTube",
+    "Limited Use",
+    "thu hồi",
+    "revoke"
+  ]) assert.match(privacy, new RegExp(disclosure, "i"));
 });
 
 test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=3", "youtube-creator-galaxy.js?v=4"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=4", "youtube-creator-galaxy.js?v=5"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v341/);
+  assert.match(worker, /hh-identity-portal-v342/);
 });
 
 test("Creator Galaxy keeps mobile layouts, focus visibility and reduced motion", () => {

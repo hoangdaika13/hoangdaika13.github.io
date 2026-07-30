@@ -1,8 +1,9 @@
 {
-  "version": 5,
+  "version": 6,
   "createdAt": "2026-07-30",
   "generator": "OpenAI built-in ImageGen",
-  "rights": "Original HH visual assets, Three.js example GLB assets under MIT, and a CC0 animation-only derivative from Quaternius Universal Animation Library Standard.",
+  "rights": "Original HH visual assets, Poly Haven and ambientCG CC0 photogrammetry/HDR assets, Three.js example GLB assets under MIT, and a CC0 animation-only derivative from Quaternius Universal Animation Library Standard.",
+  "environmentSourceManifest": "environment/SOURCES.json",
   "assets": [
     {
       "file": "astral-realms-panorama-v1.webp",
@@ -15,6 +16,36 @@
       "role": "Original equirectangular-style scenic texture mapped onto the realtime 3D sky dome",
       "promptSummary": "Original cosmic natural world with mountains, forest, water, volumetric clouds, aurora and floating islands; no third-party image source.",
       "sha256": "93787296303B68A30B4358AC271ED515535EB6BCC584D26E25986D7CFF20B54F"
+    },
+    {
+      "file": "environment/hdr/bell_park_dawn_1k.hdr",
+      "role": "Linear HDR image-based lighting for physical reflections and highlight range",
+      "source": "Poly Haven · Bell Park Dawn",
+      "license": "CC0-1.0",
+      "sha256": "DAF8BD9B7A8F69DAE8306B36142428D565265E962A3A46FBA290DB4F75B8C1A7"
+    },
+    {
+      "file": "environment/surfaces/",
+      "role": "Ground037 photogrammetry albedo, OpenGL normal, roughness, height and AO maps",
+      "source": "ambientCG · Ground037 1K",
+      "license": "CC0-1.0",
+      "runtimePolicy": "Albedo is decoded as sRGB; every data map stays in NoColorSpace. Procedural maps remain the low-memory fallback."
+    },
+    {
+      "file": "environment/pine_roots_web.glb",
+      "role": "Near-camera photogrammetry root and forest-floor hero asset",
+      "source": "Poly Haven · Pine Roots",
+      "license": "CC0-1.0",
+      "sha256": "AE06CEAA9E39F2412AB5C9BEE82DB38BB54E035EC4DC289E344C22BC19F3DBEF",
+      "runtimePolicy": "35% web LOD with Meshopt and embedded WebP PBR textures; high-detail profiles only."
+    },
+    {
+      "file": "environment/modular_fort_01_web.glb",
+      "role": "Sky Ruins hero architecture with physically authored geometry and scanned PBR detail",
+      "source": "Poly Haven · Modular Fort 01",
+      "license": "CC0-1.0",
+      "sha256": "7076F2B59C7AB747A3F425000502064B890108CE50A7326C8C54B2F52838AB30",
+      "runtimePolicy": "72% web LOD with Meshopt and embedded WebP PBR textures; one streamed instance on high-detail profiles."
     },
     {
       "file": "kenney/",

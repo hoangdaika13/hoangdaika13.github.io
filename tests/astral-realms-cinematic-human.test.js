@@ -55,7 +55,7 @@ test("near-camera low-poly slabs and black rock field are bounded", () => {
   assert.match(source, /\["central", 0, 0, 16, 0xb4b7b4\]/);
   assert.match(source, /new THREE\.IcosahedronGeometry\(0\.72, 2\)/);
   assert.match(source, /const minimumRadius = zoneId === "central" \? 16 : 9/);
-  assert.match(source, /const flatAsset = \["kenneyPath", "kenneyRoad", "kenneyBridge"\]\.includes\(assetId\)/);
+  assert.match(source, /const flatAsset = \["kenneyPath", "kenneyRoad", "kenneyBridge", "pineRoots"\]\.includes\(assetId\)/);
   assert.match(source, /const sourceMeasure = flatAsset \? Math\.max\(size\.x, size\.z\) : size\.y/);
   assert.match(source, /const tallFoliage = \["deadTree", "kenneyOak", "kenneyPalm"\]\.includes\(assetId\)/);
   assert.match(source, /\? Math\.max\(22, zone\.radius \* 0\.68\)/);
@@ -67,7 +67,7 @@ test("near-camera low-poly slabs and black rock field are bounded", () => {
   assert.match(source, /profile\.actor === "wisps"[\s\S]*new THREE\.SphereGeometry\(0\.38, 24, 16\)/);
   assert.doesNotMatch(source, /profile\.actor === "wisps"[\s\S]{0,180}new THREE\.ConeGeometry/);
   assert.match(source, /profile\.actor === "wisps" \? 14 \+ index \* 4\.8/);
-  assert.match(source, /terrainSurfaceTextures = \{ albedo, height, roughness \}/);
+  assert.match(source, /terrainSurfaceTextures = \{ albedo, height, roughness, normal: null, ao: null, source: "procedural-fallback" \}/);
   assert.match(source, /makeTexture\(heightCanvas, THREE\.NoColorSpace\)/);
   assert.match(source, /roughnessMap: this\.terrainSurfaceTextures\.roughness/);
   assert.match(source, /waterMaterial\.ior = 1\.333/);
