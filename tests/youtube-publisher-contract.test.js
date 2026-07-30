@@ -70,7 +70,13 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   assert.match(source, /playlistItems\?part=snippet/);
   assert.doesNotMatch(source, /refreshToken:\s*decrypt/);
   assert.match(searchGateway, /youtubePublisherHandler/);
-  assert.match(deployment, /\/api\/youtube\/:action\*/);
+  const youtubeRewrite = JSON.parse(deployment).rewrites.find((rewrite) =>
+    rewrite.destination.includes("youtube-publisher")
+  );
+  assert.deepEqual(youtubeRewrite, {
+    source: "^/api/youtube/(.+)$",
+    destination: "/api/search/youtube-publisher?youtubeAction=$1"
+  });
   assert.match(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/nhhoang13all\.xyz\/api\/youtube\/oauth\/callback/);
   assert.doesNotMatch(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/hoangdaika13githubio\.vercel\.app/);
 });
