@@ -105,7 +105,7 @@
         "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=10", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1",
-        "youtube-publisher.js?v=5", "youtube-creator-galaxy.js?v=5"
+        "youtube-publisher.js?v=6", "youtube-creator-galaxy.js?v=5"
       ]
     },
     graphic: {
@@ -133,7 +133,7 @@
         "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "youtube-publisher.css?v=4"
       ],
       scripts: [
-        "creative-os-core.js?v=4", "youtube-publisher.js?v=5", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
+        "creative-os-core.js?v=4", "youtube-publisher.js?v=6", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
         "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=2",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",
