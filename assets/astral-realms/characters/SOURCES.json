@@ -70,9 +70,9 @@
       "license": "CC-BY-4.0",
       "attribution": "Miss Galaxy by Loves_Art, licensed under CC BY 4.0.",
       "downloadedAt": "2026-07-30",
-      "sha256": "DD0020CAD09A310B31F100D1086337E233E3CBBFA19A7DAC6037A8B5063572DD",
+      "sha256": "A9D71D77BEA9971736C6FC293671ACA71E79DB215735D521BFAB938D140A5EA4",
       "webVariant": "sketchfab-cc-by/miss-galaxy.glb",
-      "preparation": "Bone suffix cleanup, native walk normalization and Blender glTF round-trip; geometry and 2K texture retained."
+      "preparation": "Original Sketchfab web GLB retained to preserve skin bind matrices; exporter numeric bone suffixes are normalized by the runtime."
     },
     {
       "file": "sketchfab-cc-by/game-character-girl.glb",

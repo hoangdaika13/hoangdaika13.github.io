@@ -10,16 +10,17 @@ const worker = fs.readFileSync(path.join(root, "sw.js"), "utf8");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "assets", "astral-realms", "characters", "manifest.json"), "utf8"));
 const provenance = JSON.parse(fs.readFileSync(path.join(root, "assets", "astral-realms", "characters", "SOURCES.json"), "utf8"));
 
-test("all four protagonists use local female digital-human fallbacks", () => {
+test("all four protagonists default to the downloaded local hero GLBs", () => {
   for (const model of [
     "valid-asian-f-1-casual",
     "valid-white-f-2-casual",
     "valid-black-f-1-casual",
     "valid-hispanic-f-1-milit"
   ]) assert.ok(source.includes(model), `missing main-character model ${model}`);
-  assert.match(source, /lyra: "sketchfab-miss-galaxy"/);
+  assert.match(source, /lyra: "sketchfab-game-character-girl"/);
   assert.match(source, /cael: "sketchfab-game-character-girl"/);
-  assert.match(source, /sol: "valid-hispanic-f-1-milit"/);
+  assert.match(source, /nyx: "sketchfab-game-character-girl"/);
+  assert.match(source, /sol: "sketchfab-game-character-girl"/);
   assert.equal(source.includes("Nữ kiếm sĩ trưởng thành"), true);
   assert.equal(source.includes("Nữ xạ thủ Băng tinh"), true);
   assert.equal(source.includes("Nữ võ sĩ Hư không"), true);
@@ -61,7 +62,7 @@ test("the local selectable character catalog contains at least ten real GLB mode
   assert.equal(new Set(manifest.sources.map((entry) => entry.modelId)).size, manifest.sources.length);
   for (const entry of manifest.sources) {
     assert.match(entry.url, /^\.\/assets\/astral-realms\/characters\//);
-    const file = path.join(root, entry.url.replace(/^\.\//, ""));
+    const file = path.join(root, entry.url.replace(/^\.\//, "").replace(/\?.*$/, ""));
     assert.ok(fs.existsSync(file), `missing local model ${entry.modelId}`);
     assert.equal(fs.readFileSync(file).subarray(0, 4).toString("ascii"), "glTF");
     assert.ok(worker.includes(path.basename(file)), `${entry.modelId} must work offline`);
@@ -76,7 +77,7 @@ test("Miss Galaxy is provenance locked, cached and protected from rejected retar
   assert.equal(local.author, "Loves_Art");
   assert.equal(local.bones, 75);
   assert.equal(local.bakedClips, 0);
-  assert.match(local.motionStatus, /procedural-humanoid-safe/);
+  assert.match(local.motionStatus, /original-web-glb/);
 
   const relative = "sketchfab-cc-by/miss-galaxy.glb";
   const record = provenance.sources.find((entry) => entry.file === relative);
@@ -103,6 +104,36 @@ test("Game Character Girl keeps its 136-bone facial rig and attribution", () => 
   const bytes = fs.readFileSync(path.join(root, "assets", "astral-realms", "characters", record.file));
   assert.equal(crypto.createHash("sha256").update(bytes).digest("hex").toUpperCase(), local.sha256);
   assert.equal(record.sha256, local.sha256);
+});
+
+test("downloaded hero GLBs are built in, selectable and fitted from humanoid landmarks", () => {
+  assert.match(source, /"sketchfab-game-character-girl": "\.\/assets\/astral-realms\/characters\/sketchfab-cc-by\/game-character-girl\.glb"/);
+  assert.match(source, /"sketchfab-miss-galaxy": "\.\/assets\/astral-realms\/characters\/sketchfab-cc-by\/miss-galaxy\.glb\?v=2"/);
+  assert.match(source, /\["sketchfab-cc-by", "valid-avatar"\]\.includes\(entry\.provider\)/);
+  assert.match(source, /Game Character Girl", "gbarzu · 136 bone · CC BY 4\.0 · GLB đã tải local/);
+  assert.match(source, /Miss Galaxy", "Loves_Art · 75 bone · CC BY 4\.0 · GLB đã tải local/);
+  assert.match(source, /fitHumanoidAsset\(asset, 2\.12\)/);
+  assert.match(source, /source: "skeleton-landmarks"/);
+  assert.match(source, /getHumanoidPoseBounds\(object, box\)/);
+  assert.match(source, /modelId === "sketchfab-miss-galaxy"/);
+  assert.match(source, /"sketchfab-static-safe"/);
+  assert.match(source, /applyStaticSafeRigMotion\(runtime, time, motion = "idle"\)/);
+  assert.match(source, /model-specific-rest-pose-safety/);
+  assert.match(source, /\.replace\(\/\[\._-\]\\d\+\$\/g, ""\)/);
+});
+
+test("right-hand sockets calibrate every downloaded hero weapon", () => {
+  assert.match(source, /configureWeaponSocket\(mesh, weapon, weaponClass = "sword"\)/);
+  assert.match(source, /source: "right-hand-calibrated"/);
+  assert.match(source, /weapon\.scale\.setScalar\(preset\.worldScale \/ inheritedScale\)/);
+  assert.match(source, /anchor\.parent\?\.getWorldScale/);
+  assert.match(source, /parentWorldQuaternion\.invert\(\)\.multiply\(desiredWorldQuaternion\)/);
+  assert.match(source, /socket\.calibrated = true/);
+  assert.match(source, /sword: \{ position: \[0, -0\.055, 0\.018\]/);
+  assert.match(source, /gun: \{ position: \[0, -0\.035, 0\.028\]/);
+  assert.match(source, /unarmed: \{ position: \[0, -0\.018, 0\]/);
+  assert.match(source, /syncActiveCharacterDataset\(mesh = this\.playerMesh\)/);
+  assert.match(source, /\(lodVariants\.attachments \|\| \[\]\)\.forEach\(\(object\) => \{ object\.visible = tier !== "impostor"; \}\)/);
 });
 
 test("sword gun and unarmed loadouts drive real combat profiles and motion routing", () => {

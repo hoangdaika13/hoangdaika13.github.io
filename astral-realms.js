@@ -236,7 +236,7 @@
     { id: "environment", name: "HH Volumetric World", role: "Địa hình mesh 3D và panorama chỉ dùng làm IBL", state: "Không dùng ảnh làm phông nền" },
     { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V13" }
   ]);
-  const APPEARANCE_VERSION = 9;
+  const APPEARANCE_VERSION = 11;
   const APPEARANCE_GROUPS = Object.freeze([
     { id: "face", label: "Khuôn mặt", focus: "head", controls: [["headLength", "Chiều dài đầu"], ["foreheadHeight", "Chiều cao trán"], ["cheekboneWidth", "Gò má"], ["cheekFullness", "Độ đầy má"], ["jawWidth", "Độ rộng hàm"], ["jawAngle", "Góc hàm"], ["chinLength", "Chiều dài cằm"], ["faceFullness", "Độ đầy khuôn mặt"]] },
     { id: "eyes", label: "Mắt", focus: "head", controls: [["eyeSize", "Kích thước mắt"], ["eyeSpacing", "Khoảng cách mắt"], ["eyeDepth", "Độ sâu mắt"], ["upperLid", "Mí trên"], ["lowerLid", "Mí dưới"], ["eyeAngle", "Góc mắt"], ["irisSize", "Kích thước tròng"], ["pupilSize", "Kích thước đồng tử"], ["eyeReflection", "Phản chiếu mắt"], ["eyeLeft", "Mắt trái"], ["eyeRight", "Mắt phải"]] },
@@ -258,6 +258,8 @@
   ));
   const APPEARANCE_ASSETS = Object.freeze({
     baseModels: [
+      "sketchfab-game-character-girl",
+      "sketchfab-miss-galaxy",
       "valid-asian-f-1-casual",
       "valid-asian-m-1-casual",
       "valid-black-f-1-casual",
@@ -304,12 +306,16 @@
   const BUILTIN_CHARACTER_ASSETS = Object.freeze({
     "human-adult-a01": "./assets/astral-realms/hh-human-asteria-v1.glb",
     "human-adult-b01": "./assets/astral-realms/hh-human-vanguard-v1.glb",
-    "valid-asian-f-1-casual": "./assets/astral-realms/hh-human-asteria-v1.glb",
-    "valid-asian-m-1-casual": "./assets/astral-realms/hh-human-vanguard-v1.glb",
-    "valid-black-f-1-casual": "./assets/astral-realms/hh-human-asteria-v1.glb",
-    "valid-white-m-1-casual": "./assets/astral-realms/hh-human-vanguard-v1.glb",
+    "sketchfab-game-character-girl": "./assets/astral-realms/characters/sketchfab-cc-by/game-character-girl.glb",
+    "sketchfab-miss-galaxy": "./assets/astral-realms/characters/sketchfab-cc-by/miss-galaxy.glb?v=2",
+    "valid-asian-f-1-casual": "./assets/astral-realms/characters/default/valid-asian-f-1-casual.glb",
+    "valid-asian-m-1-casual": "./assets/astral-realms/characters/default/valid-asian-m-1-casual.glb",
+    "valid-black-f-1-casual": "./assets/astral-realms/characters/default/valid-black-f-1-casual.glb",
+    "valid-white-m-1-casual": "./assets/astral-realms/characters/default/valid-white-m-1-casual.glb",
     "valid-white-f-2-casual": "./assets/astral-realms/characters/default/valid-white-f-2-casual.glb",
-    "valid-hispanic-f-1-milit": "./assets/astral-realms/characters/default/valid-hispanic-f-1-milit.glb"
+    "valid-hispanic-f-1-milit": "./assets/astral-realms/characters/default/valid-hispanic-f-1-milit.glb",
+    "valid-aian-f-1-casual": "./assets/astral-realms/characters/default/valid-aian-f-1-casual.glb",
+    "valid-mena-f-1-casual": "./assets/astral-realms/characters/default/valid-mena-f-1-casual.glb"
   });
   // Optional web-ready exports from the recommended pipeline:
   // MetaHuman/Character Creator/MPFB -> Blender retopology -> optimized GLB.
@@ -500,6 +506,7 @@
   function normalizeBoneName(value) {
     return String(value || "")
       .replace(/^.*[:|]/, "")
+      .replace(/[._-]\d+$/g, "")
       .replace(/[._\-\s]/g, "")
       .replace(/mixamorig/gi, "")
       .toLowerCase();
@@ -595,10 +602,10 @@
   function defaultAppearanceRecipe(characterId = "lyra") {
     const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
     const realisticBase = {
-      lyra: "sketchfab-miss-galaxy",
+      lyra: "sketchfab-game-character-girl",
       cael: "sketchfab-game-character-girl",
-      nyx: "valid-black-f-1-casual",
-      sol: "valid-hispanic-f-1-milit"
+      nyx: "sketchfab-game-character-girl",
+      sol: "sketchfab-game-character-girl"
     }[characterId] || "valid-asian-f-1-casual";
     return {
       appearanceVersion: APPEARANCE_VERSION,
@@ -640,9 +647,10 @@
     const isCatalogModel = /^(?:valid|sketchfab)-[a-z0-9-]{3,72}$/.test(requestedModel);
     const isLegacyRecipe = Number(recipe.appearanceVersion || 0) < APPEARANCE_VERSION;
     const legacyMainModel = ["human-adult-a01", "human-adult-b01"].includes(requestedModel)
-      || (characterId === "lyra" && requestedModel === "valid-asian-f-1-casual")
+      || (characterId === "lyra" && ["valid-asian-f-1-casual", "sketchfab-miss-galaxy"].includes(requestedModel))
       || (characterId === "cael" && ["valid-asian-m-1-casual", "valid-white-f-2-casual"].includes(requestedModel))
-      || (characterId === "sol" && requestedModel === "valid-white-m-1-casual");
+      || (characterId === "nyx" && ["valid-black-f-1-casual", "sketchfab-miss-galaxy"].includes(requestedModel))
+      || (characterId === "sol" && ["valid-white-m-1-casual", "valid-hispanic-f-1-milit"].includes(requestedModel));
     const normalizedBaseModel = isLegacyRecipe && legacyMainModel
       ? base.baseModel
       : APPEARANCE_ASSETS.baseModels.includes(requestedModel) || isCatalogModel
@@ -2416,7 +2424,9 @@
         : progress < 0.68
           ? cinematic.motion === "glide" ? "glide" : cinematic.motion === "talk" ? "walk" : cinematic.motion || "walk"
           : cinematic.motion === "attack1" ? "attack1" : cinematic.motion === "talk" ? "talk" : "idle";
-      if (runtime?.mixer) {
+      if (runtime?.motionProfile === "sketchfab-static-safe") {
+        this.applyStaticSafeRigMotion(runtime, time, motion);
+      } else if (runtime?.mixer) {
         this.playCharacterClip(runtime, motion);
         if (sequence.playing) runtime.mixer.update(dt);
       } else if (runtime && sequence.playing) {
@@ -2451,6 +2461,8 @@
       const runtime = this.characterRuntimes.get(id);
       const fit = this.buildAppearanceFitReport(recipe, mesh);
       const modelLabels = {
+        "sketchfab-game-character-girl": ["Game Character Girl", "gbarzu · 136 bone · CC BY 4.0 · GLB đã tải local"],
+        "sketchfab-miss-galaxy": ["Miss Galaxy", "Loves_Art · 75 bone · CC BY 4.0 · GLB đã tải local"],
         "valid-asian-f-1-casual": ["Asteria Real Human", "VALID rig · full-body · facial morph · local GLB"],
         "valid-asian-m-1-casual": ["Cael Real Human", "VALID rig · full-body · facial morph · local GLB"],
         "valid-black-f-1-casual": ["Nyx Real Human", "VALID rig · full-body · facial morph · local GLB"],
@@ -2463,7 +2475,7 @@
       const bakedMotionCount = this.motionLibraryManifest?.clips?.length || 0;
       const visibility = this.genesisVisibility?.report;
       const catalogModels = [...new Map(this.characterPipelineManifest
-        .filter((entry) => entry.provider === "valid-avatar")
+        .filter((entry) => ["sketchfab-cc-by", "valid-avatar"].includes(entry.provider))
         .map((entry) => [entry.modelId, entry])).values()];
       const dna = encodeCharacterDNA(recipe, id);
       const option = (value, label, selected) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
@@ -2602,6 +2614,8 @@
       const name = this.root.querySelector("[data-genesis-model-name]");
       if (name) {
         name.textContent = ({
+          "sketchfab-game-character-girl": "GAME CHARACTER GIRL",
+          "sketchfab-miss-galaxy": "MISS GALAXY",
           "valid-asian-f-1-casual": "ASTERIA REAL HUMAN",
           "valid-asian-m-1-casual": "CAEL REAL HUMAN",
           "valid-black-f-1-casual": "NYX REAL HUMAN",
@@ -2916,6 +2930,40 @@
       return new THREE.Box3().setFromObject(boundsRoot);
     }
 
+    getHumanoidPoseBounds(object, fallbackBox) {
+      const THREE = this.THREE;
+      if (!THREE || !object || !fallbackBox) return fallbackBox;
+      const runtime = object.userData?.characterRuntime;
+      const bones = runtime?.bones || {};
+      const landmarkBones = [
+        bones.head, bones.neck, bones.hips,
+        bones.leftShoulder, bones.rightShoulder,
+        bones.leftHand, bones.rightHand,
+        bones.leftUpLeg, bones.rightUpLeg,
+        bones.leftFoot, bones.rightFoot
+      ].filter(Boolean);
+      if (landmarkBones.length < 5 || !bones.head || !bones.hips || (!bones.leftFoot && !bones.rightFoot)) return fallbackBox.clone();
+      const poseBox = new THREE.Box3().makeEmpty();
+      const point = new THREE.Vector3();
+      landmarkBones.forEach((bone) => {
+        bone.getWorldPosition(point);
+        if ([point.x, point.y, point.z].every(Number.isFinite)) poseBox.expandByPoint(point);
+      });
+      if (poseBox.isEmpty()) return fallbackBox.clone();
+      const fallbackSize = fallbackBox.getSize(new THREE.Vector3());
+      const poseSize = poseBox.getSize(new THREE.Vector3());
+      const humanHeight = Math.max(0.35, poseSize.y, fallbackSize.y * 0.78);
+      // Bone landmarks are stable even when a GLB accessor contains animation
+      // extrema. Add anatomical padding for skull, hands, shoes and body depth
+      // instead of letting those extrema expand the preview to tens of metres.
+      poseBox.expandByVector(new THREE.Vector3(
+        Math.max(humanHeight * 0.055, fallbackSize.x * 0.035),
+        humanHeight * 0.105,
+        Math.max(humanHeight * 0.085, fallbackSize.z * 0.06)
+      ));
+      return poseBox;
+    }
+
     fitGenesisCamera(object = this.genesisActualModel || this.genesisFallbackModel, focus = this.appearanceFocus || "body") {
       if (!object || !this.genesisCamera || !this.THREE) return false;
       object.updateMatrixWorld(true);
@@ -2974,7 +3022,7 @@
       const box = this.getGenesisBoundsBox(object);
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
-      const dynamicBox = new THREE.Box3().setFromObject(boundsRoot, true);
+      const dynamicBox = this.getHumanoidPoseBounds(object, box);
       const dynamicSize = dynamicBox.getSize(new THREE.Vector3());
       const deformationRatio = Math.max(
         dynamicSize.x / Math.max(0.01, size.x),
@@ -3073,7 +3121,7 @@
       this.camera.updateProjectionMatrix();
       const boundsRoot = this.genesisBoundsRoot(object);
       const box = this.getGenesisBoundsBox(object);
-      const dynamicBox = new THREE.Box3().setFromObject(boundsRoot, true);
+      const dynamicBox = this.getHumanoidPoseBounds(object, box);
       const finiteBounds = [box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z].every(Number.isFinite);
       const size = box.getSize(new THREE.Vector3());
       const dynamicSize = dynamicBox.getSize(new THREE.Vector3());
@@ -3130,7 +3178,6 @@
           if (material.visible !== false && opacity > 0.04 && material.depthTest !== false) visibleMaterials += 1;
         });
       });
-      const dynamicBottom = Number.isFinite(dynamicBox.min.y) ? dynamicBox.min.y : box.min.y;
       const expectedGround = Number(this.state.player.y || 0);
       const footHeights = [runtime?.bones?.leftFoot, runtime?.bones?.rightFoot]
         .filter(Boolean)
@@ -3140,7 +3187,10 @@
       const boneGroundError = footHeights.length
         ? Math.min(...footHeights) - (expectedGround + expectedFootHeight)
         : null;
-      const feetGroundError = dynamicBottom - expectedGround;
+      // Skeleton joint origins are not the skinned shoe sole on every GLB
+      // (Mixamo exporters can place the ankle far above it). Grounding uses the
+      // normalized authored body box; foot bones remain a separate IK metric.
+      const feetGroundError = box.min.y - expectedGround;
       const triangles = Number(runtime?.triangles || runtime?.qaReport?.triangles || 0);
       const bones = Object.values(runtime?.bones || {}).filter(Boolean).length;
       const morphTargets = Number(runtime?.facialChannels || runtime?.qaReport?.faceMorphTargets || 0);
@@ -3382,6 +3432,9 @@
       this.root.dataset.characterBounds = report.size
         ? `${report.size.x.toFixed(2)}x${report.size.y.toFixed(2)}x${report.size.z.toFixed(2)}`
         : "missing";
+      this.root.dataset.characterDynamicBounds = report.dynamicSize
+        ? `${report.dynamicSize.x.toFixed(2)}x${report.dynamicSize.y.toFixed(2)}x${report.dynamicSize.z.toFixed(2)}`
+        : "missing";
       this.genesisVisibility ||= { consecutiveFrames: 0, validated: false, crossfadeStartedAt: 0, startedAt: time, report: null };
       this.genesisVisibility.report = report;
       this.genesisVisibility.consecutiveFrames = report.ready ? this.genesisVisibility.consecutiveFrames + 1 : 0;
@@ -3577,6 +3630,7 @@
       next.visible = true;
       const weapon = this.createPlayerWeapon(profile);
       next.userData.parts.weaponAnchor.add(weapon);
+      this.configureWeaponSocket(next, weapon, this.equippedWeaponClass(id));
       next.userData.lodVariants.attachments = [weapon];
       next.userData.weapon = weapon;
       (oldMesh.parent || this.world).add(next);
@@ -3588,6 +3642,7 @@
       this.playerWeapon = weapon;
       this.registerCharacterRuntime(next, profile, id, "hero", next.userData.builtInAnimations || []);
       this.applyAppearanceToMesh(next, this.activeAppearanceRecipe(), id);
+      this.syncActiveCharacterDataset(next);
       this.setGenesisMotion(this.genesisMotion || "idle");
       if (this.genesisActive && this.genesisScene) {
         this.genesisActualModel = next;
@@ -6851,6 +6906,101 @@
       return material;
     }
 
+    findHumanoidBones(rootObject) {
+      const normalizedAliases = Object.fromEntries(Object.entries(HH_HUMANOID_SKELETON).map(([slot, aliases]) => [
+        slot,
+        aliases.map(normalizeBoneName)
+      ]));
+      const bones = {};
+      rootObject?.traverse?.((object) => {
+        if (!object.isBone) return;
+        const name = normalizeBoneName(object.name);
+        Object.entries(normalizedAliases).forEach(([slot, aliases]) => {
+          if (!bones[slot] && aliases.includes(name)) bones[slot] = object;
+        });
+      });
+      return bones;
+    }
+
+    fitHumanoidAsset(asset, targetHeight = 2.12) {
+      const THREE = this.THREE;
+      asset.position.set(0, 0, 0);
+      asset.scale.set(1, 1, 1);
+      asset.updateMatrixWorld(true);
+      const meshBox = new THREE.Box3().setFromObject(asset, true);
+      const meshSize = meshBox.getSize(new THREE.Vector3());
+      const bones = this.findHumanoidBones(asset);
+      const getPoint = (bone) => bone?.getWorldPosition?.(new THREE.Vector3()) || null;
+      const head = getPoint(bones.head);
+      const hips = getPoint(bones.hips);
+      const feet = [getPoint(bones.leftFoot), getPoint(bones.rightFoot)]
+        .filter((point) => point && [point.x, point.y, point.z].every(Number.isFinite));
+      const skeletonReady = head && hips && feet.length
+        && [head.x, head.y, head.z, hips.x, hips.y, hips.z].every(Number.isFinite);
+      if (skeletonReady) {
+        const lowestFootY = Math.min(...feet.map((point) => point.y));
+        const skeletonHeight = head.y - lowestFootY;
+        const skeletonToMeshRatio = skeletonHeight / Math.max(0.001, meshSize.y);
+        if (Number.isFinite(skeletonHeight) && skeletonHeight > 0.25 && skeletonToMeshRatio >= 0.55 && skeletonToMeshRatio <= 1.08) {
+          // A Mixamo head joint sits below the top of the skull. Target a
+          // 1.86 m foot-to-head-joint span, yielding a natural 2.12 m hero
+          // including skull/hair instead of the old 2.92 m game giant.
+          const fitScale = clamp((targetHeight * 0.878) / skeletonHeight, 0.05, 20);
+          asset.scale.setScalar(fitScale);
+          asset.updateMatrixWorld(true);
+          const fittedHead = getPoint(bones.head);
+          const fittedHips = getPoint(bones.hips);
+          const fittedFeet = [getPoint(bones.leftFoot), getPoint(bones.rightFoot)].filter(Boolean);
+          const fittedFootY = Math.min(...fittedFeet.map((point) => point.y));
+          const centerX = (fittedHead.x + fittedHips.x + fittedFeet.reduce((sum, point) => sum + point.x, 0) / fittedFeet.length) / 3;
+          const centerZ = (fittedHead.z + fittedHips.z + fittedFeet.reduce((sum, point) => sum + point.z, 0) / fittedFeet.length) / 3;
+          asset.position.set(-centerX, 0.08 - fittedFootY, -centerZ);
+          asset.updateMatrixWorld(true);
+          const lateralBones = [bones.leftShoulder, bones.rightShoulder, bones.leftHand, bones.rightHand]
+            .map(getPoint)
+            .filter(Boolean);
+          const lateralWidth = lateralBones.length
+            ? Math.max(...lateralBones.map((point) => point.x)) - Math.min(...lateralBones.map((point) => point.x))
+            : targetHeight * 0.42;
+          const lateralDepth = lateralBones.length
+            ? Math.max(...lateralBones.map((point) => point.z)) - Math.min(...lateralBones.map((point) => point.z))
+            : targetHeight * 0.24;
+          const width = clamp(lateralWidth + targetHeight * 0.1, targetHeight * 0.38, targetHeight * 0.72);
+          const depth = clamp(lateralDepth + targetHeight * 0.16, targetHeight * 0.3, targetHeight * 0.58);
+          return {
+            fitScale,
+            source: "skeleton-landmarks",
+            skeletonHeight,
+            bounds: {
+              min: [-width * 0.5, 0, -depth * 0.5],
+              max: [width * 0.5, targetHeight, depth * 0.5]
+            }
+          };
+        }
+      }
+      // Some authored rigs keep pose bones under an armature with a 0.01/0.1
+      // unit transform while the skinned mesh is already measured in metres.
+      // In that case bone height is not a valid scale ruler; use only the
+      // vertical mesh extent, while authored preview width/depth stay clamped.
+      const fitScale = targetHeight / Math.max(0.001, meshSize.y);
+      asset.scale.setScalar(fitScale);
+      asset.updateMatrixWorld(true);
+      const fitted = new THREE.Box3().setFromObject(asset, true);
+      const center = fitted.getCenter(new THREE.Vector3());
+      asset.position.set(-center.x, -fitted.min.y, -center.z);
+      const width = clamp(meshSize.x * fitScale, targetHeight * 0.38, targetHeight * 0.72);
+      const depth = clamp(meshSize.z * fitScale, targetHeight * 0.3, targetHeight * 0.58);
+      return {
+        fitScale,
+        source: "mesh-fallback",
+        skeletonHeight: 0,
+        bounds: {
+          min: [-width * 0.5, 0, -depth * 0.5],
+          max: [width * 0.5, targetHeight, depth * 0.5]
+        }
+      };
+    }
+
     createBuiltInRiggedCharacter(profile, scale = 1) {
       const recipe = normalizeAppearanceRecipe(this.state.appearance?.recipes?.[profile.id], profile.id);
       const fallbackModelId = {
@@ -6884,21 +7034,12 @@
         object.computeBoundingBox?.();
         object.computeBoundingSphere?.();
       });
-      const box = new THREE.Box3().setFromObject(asset);
-      const size = box.getSize(new THREE.Vector3());
-      const fitScale = 2.92 / Math.max(0.001, size.y);
-      asset.scale.setScalar(fitScale);
+      const humanoidFit = this.fitHumanoidAsset(asset, 2.12);
+      const fitScale = humanoidFit.fitScale;
       asset.userData ||= {};
       asset.userData.hhBaseScale = { x: fitScale, y: fitScale, z: fitScale };
-      asset.updateMatrixWorld(true);
-      const fitted = new THREE.Box3().setFromObject(asset);
-      const center = fitted.getCenter(new THREE.Vector3());
-      asset.position.set(-center.x, -fitted.min.y, -center.z);
-      const normalizedFitted = fitted.clone().translate(asset.position);
-      const genesisAuthoredBounds = {
-        min: normalizedFitted.min.toArray(),
-        max: normalizedFitted.max.toArray()
-      };
+      asset.userData.hhHumanoidFit = humanoidFit.source;
+      const genesisAuthoredBounds = humanoidFit.bounds;
       const heroMeshes = [];
       asset.traverse((object) => {
         if (!object.isMesh && !object.isSkinnedMesh) return;
@@ -6951,6 +7092,12 @@
       const weaponAnchor = new THREE.Group();
       weaponAnchor.name = "HHWeaponSocket";
       (assetNeedsVisualRecovery ? crowdProxy.userData?.parts?.weaponAnchor : rightHand || wrapper)?.add(weaponAnchor);
+      weaponAnchor.userData.hhWeaponSocket = {
+        modelId,
+        fitScale,
+        attachedToHand: Boolean(rightHand && !assetNeedsVisualRecovery),
+        calibrated: false
+      };
       const heroDetails = [];
       let riggedHair = null;
       let riggedAccessory = null;
@@ -7066,6 +7213,8 @@
         gltfAsset: asset,
         animationRoot,
         builtInModelId: modelId,
+        humanoidFitSource: humanoidFit.source,
+        characterFitScale: fitScale,
         builtInAnimations: sourceInfo.provider === "valid-avatar"
           ? (offlineBakedAnimations.length ? offlineBakedAnimations : source.animations || [])
           : sourceInfo.provider === "sketchfab-cc-by" && !modelSpecificBakedMotion
@@ -7086,6 +7235,8 @@
           ? "verified-baked"
           : modelSpecificBakedMotion
             ? "verified-baked"
+          : modelId === "sketchfab-miss-galaxy"
+            ? "sketchfab-static-safe"
           : sourceInfo.provider === "valid-avatar"
             ? "valid-rest-solver"
             : "standard",
@@ -7897,6 +8048,25 @@
       return true;
     }
 
+    applyStaticSafeRigMotion(runtime, time, motion = "idle") {
+      if (!runtime?.rigRest?.size || runtime.lodSuspended) return false;
+      runtime.rigRest.forEach((rest, bone) => {
+        bone.position.copy(rest.position);
+        bone.quaternion.copy(rest.quaternion);
+      });
+      const visualRoot = runtime.visualRoot;
+      if (visualRoot && runtime.visualRootBasePosition) {
+        visualRoot.position.copy(runtime.visualRootBasePosition);
+        const moving = ["walk", "run", "sprint", "strafe", "dodge"].includes(motion);
+        visualRoot.position.y += Math.sin(time * (moving ? 0.009 : 0.00125)) * (moving ? 0.014 : 0.0035);
+      }
+      runtime.mesh.updateMatrixWorld(true);
+      runtime.state = motion;
+      runtime.motionSource = "model-specific-rest-pose-safety";
+      runtime.proceduralRig = "disabled-incompatible-bone-rolls";
+      return true;
+    }
+
     applyProceduralRigMotion(runtime, time, motion = "idle", dt = 0.016) {
       if (!runtime || runtime.mixer || runtime.lodSuspended) return false;
       const bones = runtime.bones || {};
@@ -8448,6 +8618,9 @@
       target.forEach((object) => { object.visible = true; });
       (lodVariants.heroDetails || []).forEach((object) => { object.visible = tier === "hero"; });
       (lodVariants.attachments || []).forEach((object) => { object.visible = tier !== "impostor"; });
+      if (mesh === this.playerMesh && this.root) {
+        this.root.dataset.characterWeaponVisible = String((lodVariants.attachments || []).some((object) => object.visible));
+      }
       mesh.userData.modelTier = tier;
       mesh.traverse?.((object) => {
         if (!object.isMesh && !object.isSkinnedMesh) return;
@@ -8814,9 +8987,15 @@
         if (!rightHand && object.isBone && rightHandAliases.includes(normalizeBoneName(object.name))) rightHand = object;
       });
       (rightHand || wrapper).add(weaponAnchor);
+      weaponAnchor.userData.hhWeaponSocket = {
+        modelId: "custom-import",
+        fitScale: scale,
+        attachedToHand: Boolean(rightHand),
+        calibrated: false
+      };
       const weapon = this.createPlayerWeapon(profile);
-      weapon.scale.setScalar(rightHand ? 0.62 / Math.max(scale, 0.001) : 1);
       weaponAnchor.add(weapon);
+      this.configureWeaponSocket(wrapper, weapon, this.equippedWeaponClass(characterId));
       wrapper.userData.lodVariants.attachments = [weapon];
       wrapper.userData.parts = { weaponAnchor };
       wrapper.userData.weapon = weapon;
@@ -8952,6 +9131,69 @@
       return ITEMS[weaponId]?.weaponClass || "sword";
     }
 
+    syncActiveCharacterDataset(mesh = this.playerMesh) {
+      if (!mesh || !this.root) return;
+      this.root.dataset.characterModel = mesh.userData?.builtInModelId || mesh.userData?.sourceProviderId || "custom-glb";
+      this.root.dataset.characterSource = mesh.userData?.sourceProviderId || "bundled";
+      this.root.dataset.characterFitScale = Number(mesh.userData?.characterFitScale || 1).toFixed(4);
+      this.root.dataset.characterFitSource = mesh.userData?.humanoidFitSource || "unknown";
+      const weapon = mesh.userData?.weapon;
+      if (weapon) {
+        this.root.dataset.characterWeapon = weapon.userData?.weaponClass || this.equippedWeaponClass(mesh.userData?.characterId);
+        this.root.dataset.characterWeaponVisible = String(Boolean(weapon.visible));
+        this.root.dataset.characterWeaponSocket = mesh.userData?.weaponAttachment?.source || "fallback";
+      }
+    }
+
+    configureWeaponSocket(mesh, weapon, weaponClass = "sword") {
+      const anchor = mesh?.userData?.parts?.weaponAnchor;
+      const socket = anchor?.userData?.hhWeaponSocket;
+      if (!anchor || !weapon) return false;
+      weapon.visible = mesh.userData?.modelTier !== "impostor";
+      if (!socket?.attachedToHand) return false;
+      const fitScale = clamp(Math.abs(Number(socket.fitScale || 1)), 0.05, 20);
+      mesh.updateMatrixWorld?.(true);
+      const inherited = anchor.parent?.getWorldScale?.(new this.THREE.Vector3()) || new this.THREE.Vector3(fitScale, fitScale, fitScale);
+      const inheritedScale = clamp(Math.max(Math.abs(inherited.x), Math.abs(inherited.y), Math.abs(inherited.z)), 0.05, 200);
+      const socketPresets = {
+        sword: { position: [0, -0.055, 0.018], rotation: [0, 0, Math.PI], worldScale: 0.78 },
+        gun: { position: [0, -0.035, 0.028], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.72 },
+        unarmed: { position: [0, -0.018, 0], rotation: [0, 0, 0], worldScale: 0.82 }
+      };
+      const preset = socketPresets[weaponClass] || socketPresets.sword;
+      const parentWorldQuaternion = anchor.parent.getWorldQuaternion(new this.THREE.Quaternion());
+      const characterWorldQuaternion = mesh.getWorldQuaternion(new this.THREE.Quaternion());
+      const desiredCharacterQuaternion = new this.THREE.Quaternion().setFromEuler(new this.THREE.Euler(...preset.rotation));
+      const desiredWorldQuaternion = characterWorldQuaternion.multiply(desiredCharacterQuaternion);
+      anchor.position.set(0, 0, 0);
+      anchor.quaternion.copy(parentWorldQuaternion.invert().multiply(desiredWorldQuaternion).normalize());
+      anchor.scale.set(1, 1, 1);
+      weapon.scale.setScalar(preset.worldScale / inheritedScale);
+      weapon.userData ||= {};
+      weapon.userData.socketCalibration = {
+        modelId: socket.modelId || mesh.userData?.builtInModelId || "custom",
+        weaponClass,
+        worldScale: preset.worldScale,
+        fitScale,
+        inheritedScale,
+        source: "right-hand-calibrated"
+      };
+      weapon.traverse?.((object) => {
+        if (!object.isMesh) return;
+        object.frustumCulled = false;
+        object.renderOrder = Math.max(3, Number(object.renderOrder || 0));
+      });
+      socket.calibrated = true;
+      socket.weaponClass = weaponClass;
+      mesh.userData.weaponAttachment = weapon.userData.socketCalibration;
+      if (mesh.userData?.characterId === this.state.roster.activeId && this.root) {
+        this.root.dataset.characterWeapon = weaponClass;
+        this.root.dataset.characterWeaponVisible = String(weapon.visible);
+        this.root.dataset.characterWeaponSocket = "right-hand-calibrated";
+      }
+      return true;
+    }
+
     createPlayerWeapon(profile, weaponClass = this.equippedWeaponClass(profile.id)) {
       const THREE = this.THREE;
       const weapon = new THREE.Group();
@@ -9033,6 +9275,7 @@
       }
       const weapon = this.createPlayerWeapon(profile, this.equippedWeaponClass(characterId));
       anchor.add(weapon);
+      this.configureWeaponSocket(mesh, weapon, this.equippedWeaponClass(characterId));
       mesh.userData.weapon = weapon;
       mesh.userData.lodVariants.attachments = [weapon];
       weapon.visible = mesh.userData.modelTier !== "impostor";
@@ -9045,6 +9288,7 @@
         const mesh = this.createPhotorealCharacterModel(profile, 1);
         const weapon = this.createPlayerWeapon(profile);
         mesh.userData.parts.weaponAnchor.add(weapon);
+        this.configureWeaponSocket(mesh, weapon, this.equippedWeaponClass(id));
         mesh.userData.lodVariants.attachments = [weapon];
         weapon.visible = mesh.userData.modelTier !== "impostor";
         mesh.userData.weapon = weapon;
@@ -9055,6 +9299,7 @@
       });
       this.playerMesh = this.characterMeshes.get(this.state.roster.activeId) || this.characterMeshes.get("lyra");
       this.playerWeapon = this.playerMesh.userData.weapon;
+      this.syncActiveCharacterDataset(this.playerMesh);
       const activeProfile = CHARACTERS[this.state.roster.activeId] || CHARACTERS.lyra;
       if (!this.state.appearance.creatorCompletedAt) this.state.player.name = activeProfile.name;
       this.state.player.element = activeProfile.element;
@@ -9250,7 +9495,7 @@
         event.stopPropagation();
         this.toggleCinematicPlayback();
       });
-      this.listen(this.root, "click", (event) => {
+      this.listen(this.root, "click", async (event) => {
         if (event.target.closest("[data-har-cinematics]")) {
           this.openCinematicGallery(this.currentStoryChapter().id, { source: "archive", autoplay: true });
           return;
@@ -9291,10 +9536,20 @@
         if (genesisBase) {
           const value = genesisBase.dataset.genesisBase;
           if (BUILTIN_CHARACTER_ASSETS[value] && value !== this.activeAppearanceRecipe().baseModel) {
-            this.updateAppearanceDraft("baseModel", value);
-            this.commitAppearanceDraft();
-            this.rebuildActiveBuiltInCharacter();
-            this.refreshGenesisCreator();
+            genesisBase.disabled = true;
+            this.root.dataset.characterCatalogLoading = "true";
+            try {
+              this.updateAppearanceDraft("baseModel", value);
+              this.commitAppearanceDraft();
+              await this.loadCharacterAssetsFromPipeline();
+              if (!this.builtInCharacterAssets.has(value)) throw new Error("GLB local chưa tải được");
+              this.rebuildActiveBuiltInCharacter();
+              this.refreshGenesisCreator();
+            } catch (error) {
+              this.toast(`Không thể đổi model: ${String(error?.message || error).slice(0, 100)}`, "error");
+            } finally {
+              this.root.dataset.characterCatalogLoading = "false";
+            }
           }
           return;
         }
@@ -9475,7 +9730,7 @@
         const genesisCatalog = event.target.closest("[data-genesis-catalog]");
         if (genesisCatalog) {
           const modelId = String(genesisCatalog.value || "");
-          if (/^valid-[a-z0-9-]{3,72}$/.test(modelId) && modelId !== this.activeAppearanceRecipe().baseModel) {
+          if (/^(?:valid|sketchfab)-[a-z0-9-]{3,72}$/.test(modelId) && modelId !== this.activeAppearanceRecipe().baseModel) {
             genesisCatalog.disabled = true;
             this.root.dataset.characterCatalogLoading = "true";
             const status = this.root.querySelector("[data-genesis-status]");
@@ -9487,7 +9742,8 @@
               this.rebuildActiveBuiltInCharacter();
               this.refreshGenesisCreator();
               const source = this.builtInCharacterSources.get(modelId);
-              this.toast(source?.provider === "valid-avatar" ? "Đã tải model người thật vào preview 3D." : "Model mạng chưa sẵn sàng; đang giữ GLB local an toàn.", source?.provider === "valid-avatar" ? "success" : "error");
+              const loadedLocalModel = ["valid-avatar", "sketchfab-cc-by", "bundled"].includes(source?.provider);
+              this.toast(loadedLocalModel ? "Đã tải model GLB local vào preview 3D." : "Model chưa sẵn sàng; đang giữ nhân vật 3D an toàn.", loadedLocalModel ? "success" : "error");
             } finally {
               this.root.dataset.characterCatalogLoading = "false";
             }
@@ -9690,6 +9946,7 @@
       this.playerMesh = this.characterMeshes.get(characterId);
       this.refreshEquippedWeapon(characterId);
       this.playerWeapon = this.playerMesh.userData.weapon;
+      this.syncActiveCharacterDataset(this.playerMesh);
       this.resetGameplayCharacterVisibility("character-switch");
       this.characterSwitchAt = now;
       this.combo = 0;
@@ -9749,7 +10006,10 @@
         });
       }
       const useVerifiedRestSolver = runtime?.motionProfile === "valid-rest-solver";
-      if (useVerifiedRestSolver && !runtime.lodSuspended) {
+      const useStaticSafeSolver = runtime?.motionProfile === "sketchfab-static-safe";
+      if (useStaticSafeSolver && !runtime.lodSuspended) {
+        this.applyStaticSafeRigMotion(runtime, time, targetAnimation);
+      } else if (useVerifiedRestSolver && !runtime.lodSuspended) {
         this.applyVerifiedRestPoseMotion(runtime, time, targetAnimation);
       } else if (runtime?.mixer && !runtime.lodSuspended) {
         const blendable = ["idle", "walk", "run", "sprint", "strafe"].includes(targetAnimation);
@@ -9763,9 +10023,9 @@
       } else if (runtime && !runtime.lodSuspended) {
         this.applyProceduralRigMotion(runtime, time, targetAnimation, dt);
       }
-      if (runtime && !runtime.lodSuspended && !useVerifiedRestSolver) this.applyAdditiveAnimationLayers(runtime, time, targetAnimation, dt);
-      if (runtime && !runtime.lodSuspended && !useVerifiedRestSolver) this.applyMotionWarping(runtime, time, dt);
-      if (runtime && !runtime.lodSuspended) this.applyNaturalHandPose(runtime, targetAnimation, dt);
+      if (runtime && !runtime.lodSuspended && !useVerifiedRestSolver && !useStaticSafeSolver) this.applyAdditiveAnimationLayers(runtime, time, targetAnimation, dt);
+      if (runtime && !runtime.lodSuspended && !useVerifiedRestSolver && !useStaticSafeSolver) this.applyMotionWarping(runtime, time, dt);
+      if (runtime && !runtime.lodSuspended && !useStaticSafeSolver) this.applyNaturalHandPose(runtime, targetAnimation, dt);
       const gaitPhase = runtime?.gaitPhase ?? time * 0.002;
       const normalizedGaitPhase = ((gaitPhase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2);
       const phase = Math.sin(gaitPhase);
@@ -9972,7 +10232,9 @@
           }
           if (this.genesisActive) {
             const runtime = this.characterRuntimes.get(this.state.roster.activeId);
-            if (runtime?.mixer) {
+            if (runtime?.motionProfile === "sketchfab-static-safe") {
+              this.applyStaticSafeRigMotion(runtime, time, this.genesisMotion || "idle");
+            } else if (runtime?.mixer) {
               this.playCharacterClip(runtime, this.genesisMotion || "idle");
               runtime.mixer.update(dt);
             } else if (runtime) {
@@ -12238,6 +12500,7 @@
         if (!metadata.remote) {
           const weapon = this.createPlayerWeapon(profile);
           next.userData.parts.weaponAnchor.add(weapon);
+          this.configureWeaponSocket(next, weapon, this.equippedWeaponClass(profile.id));
           next.userData.lodVariants.attachments = [weapon];
           weapon.visible = next.userData.modelTier !== "impostor";
           next.userData.weapon = weapon;
@@ -13626,7 +13889,7 @@
           decodersReady: this.characterDecodersReady,
           source: activeCharacterRuntime?.source || activeCharacterMesh?.userData?.sourceProvider || "not-started",
           sourceProviderId: activeCharacterMesh?.userData?.sourceProviderId || "fallback",
-          catalogModels: this.characterPipelineManifest.filter((entry) => entry.provider === "valid-avatar").length,
+          catalogModels: this.characterPipelineManifest.filter((entry) => ["sketchfab-cc-by", "valid-avatar"].includes(entry.provider)).length,
           visualMode: activeCharacterMesh?.userData?.visualMode || "not-started",
           tier: activeCharacterMesh?.userData?.modelTier || "not-started",
           motion: activeCharacterRuntime?.state || this.activeAnimation,
@@ -13642,7 +13905,12 @@
           },
           genesisStudio: this.genesisStudioId,
           genesisPreview: this.genesisVisibility?.report || null,
-          genesisValidated: Boolean(this.genesisVisibility?.validated)
+          genesisValidated: Boolean(this.genesisVisibility?.validated),
+          weapon: {
+            class: activeCharacterMesh?.userData?.weapon?.userData?.weaponClass || this.equippedWeaponClass(this.state.roster.activeId),
+            visible: Boolean(activeCharacterMesh?.userData?.weapon?.visible),
+            socket: activeCharacterMesh?.userData?.weaponAttachment || null
+          }
         },
         livingWorld: {
           enabled: this.state.settings.livingWorld,
