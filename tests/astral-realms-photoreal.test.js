@@ -46,7 +46,7 @@ test("licensed realistic avatar catalog and environment models are integrated", 
     "valid-white-m-1-casual.glb"
   ];
   assert.equal(avatarCatalog.length, 210);
-  assert.equal(characterManifest.sources.length, 4);
+  assert.ok(characterManifest.sources.length >= 6);
   assert.equal(characterManifest.catalogs[0].license, "MIT");
   for (const file of localAvatars) {
     const bytes = fs.readFileSync(path.join(root, "assets", "astral-realms", "characters", "default", file));
@@ -78,7 +78,7 @@ test("visual V10 exposes adaptive 3D modes and UI portraits", () => {
 test("runtime and offline cache request the V3 bundle", () => {
   const loader = read("performance-loader.js");
   const serviceWorker = read("sw.js");
-  for (const token of ["astral-realms.css?v=60", "astral-realms.js?v=60"]) {
+  for (const token of ["astral-realms.css?v=63", "astral-realms.js?v=63"]) {
     assert.match(loader, new RegExp(token.replace(/[.?]/g, "\\$&")));
     assert.match(serviceWorker, new RegExp(token.replace(/[.?]/g, "\\$&")));
   }

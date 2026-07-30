@@ -6,5 +6,7 @@ node_modules/
 artifacts-communication-*.png
 online-communication-debug.png
 tmp/
+assets/astral-realms/characters/sketchfab-cc-by/miss-galaxy-motion*
+assets/astral-realms/characters/sketchfab-cc-by/qa-renders/
 .env*
 !.env.example

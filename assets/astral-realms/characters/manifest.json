@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 7,
   "sourceManifest": "./assets/astral-realms/characters/SOURCES.json",
   "pipeline": "metahuman-or-character-creator-to-blender-glb",
   "sources": [
@@ -38,6 +38,141 @@
       "label": "VALID Human · White M Casual",
       "quality": "rigged-human-local",
       "license": "MIT"
+    },
+    {
+      "id": "valid-white-f-2-casual-local",
+      "provider": "valid-avatar",
+      "modelId": "valid-white-f-2-casual",
+      "url": "./assets/astral-realms/characters/default/valid-white-f-2-casual.glb",
+      "label": "VALID Human · White F2 Casual",
+      "quality": "rigged-human-local",
+      "license": "MIT",
+      "gender": "F"
+    },
+    {
+      "id": "valid-hispanic-f-1-milit-local",
+      "provider": "valid-avatar",
+      "modelId": "valid-hispanic-f-1-milit",
+      "url": "./assets/astral-realms/characters/default/valid-hispanic-f-1-milit.glb",
+      "label": "VALID Human · Hispanic F1 Military",
+      "quality": "rigged-human-local",
+      "license": "MIT",
+      "gender": "F"
+    },
+    {
+      "id": "sketchfab-miss-galaxy-local",
+      "provider": "sketchfab-cc-by",
+      "modelId": "sketchfab-miss-galaxy",
+      "url": "./assets/astral-realms/characters/sketchfab-cc-by/miss-galaxy.glb",
+      "label": "Miss Galaxy · Loves_Art",
+      "quality": "rigged-hero-local",
+      "license": "CC-BY-4.0",
+      "author": "Loves_Art",
+      "page": "https://sketchfab.com/3d-models/miss-galaxy-32ca79bf7c4043dcbc36d28b22436303",
+      "attribution": "Miss Galaxy by Loves_Art, licensed under CC BY 4.0",
+      "sha256": "DD0020CAD09A310B31F100D1086337E233E3CBBFA19A7DAC6037A8B5063572DD",
+      "gender": "F",
+      "triangles": 49868,
+      "bones": 75,
+      "nativeMorphTargets": 0,
+      "bakedClips": 0,
+      "nativeAnimations": 1,
+      "motionStatus": "procedural-humanoid-safe; offline-retarget-candidate-rejected-by-visual-qa"
+    },
+    {
+      "id": "sketchfab-game-character-girl-local",
+      "provider": "sketchfab-cc-by",
+      "modelId": "sketchfab-game-character-girl",
+      "url": "./assets/astral-realms/characters/sketchfab-cc-by/game-character-girl.glb",
+      "label": "Game Character Girl · gbarzu",
+      "quality": "rigged-hero-local",
+      "license": "CC-BY-4.0",
+      "author": "gbarzu",
+      "page": "https://sketchfab.com/3d-models/game-character-girl-rigged-textured-animated-e304748a4d704299bb1c37bb6f8cf40e",
+      "attribution": "Game Character Girl by gbarzu, licensed under CC BY 4.0",
+      "sha256": "F8D042FC0C12F7881DF84FE098C520131D9F11E549F493F3F140378580F24C69",
+      "gender": "F",
+      "triangles": 23380,
+      "bones": 136,
+      "nativeMorphTargets": 0,
+      "nativeAnimations": 3,
+      "motionStatus": "procedural-humanoid-safe; native-idle-clips-retained-in-asset-but-not-driven-during-gameplay"
+    },
+    {
+      "id": "valid-aian-f-1-casual-local",
+      "provider": "valid-avatar",
+      "modelId": "valid-aian-f-1-casual",
+      "url": "./assets/astral-realms/characters/default/valid-aian-f-1-casual.glb",
+      "label": "VALID Human · AIAN F Casual",
+      "quality": "rigged-human-local",
+      "license": "MIT",
+      "gender": "F",
+      "triangles": 68200,
+      "bones": 99,
+      "nativeMorphTargets": 96
+    },
+    {
+      "id": "valid-mena-f-1-casual-local",
+      "provider": "valid-avatar",
+      "modelId": "valid-mena-f-1-casual",
+      "url": "./assets/astral-realms/characters/default/valid-mena-f-1-casual.glb",
+      "label": "VALID Human · MENA F Casual",
+      "quality": "rigged-human-local",
+      "license": "MIT",
+      "gender": "F",
+      "triangles": 58804,
+      "bones": 114,
+      "nativeMorphTargets": 96
+    }
+  ],
+  "externalCandidates": [
+    {
+      "id": "sketchfab-miss-galaxy",
+      "characterId": "lyra",
+      "label": "Miss Galaxy",
+      "author": "Loves_Art",
+      "page": "https://sketchfab.com/3d-models/miss-galaxy-32ca79bf7c4043dcbc36d28b22436303",
+      "license": "CC-BY-4.0",
+      "status": "integrated-local-safe-motion",
+      "weaponClass": "sword",
+      "triangles": 49800,
+      "animations": 1
+    },
+    {
+      "id": "sketchfab-game-character-girl",
+      "characterId": "cael",
+      "label": "Game character, Girl · rigged, textured, animated",
+      "author": "gbarzu",
+      "page": "https://sketchfab.com/3d-models/game-character-girl-rigged-textured-animated-e304748a4d704299bb1c37bb6f8cf40e",
+      "license": "CC-BY-4.0",
+      "status": "integrated-local-safe-motion",
+      "weaponClass": "gun",
+      "triangles": 23380,
+      "animations": 3
+    },
+    {
+      "id": "sketchfab-bunny-girl",
+      "characterId": "nyx",
+      "label": "Bunny Girl",
+      "author": "Sketchfab creator",
+      "page": "https://sketchfab.com/3d-models/bunny-girl-bec5b21e18bf415bb024afbef6e329ef",
+      "license": "CC-BY-4.0",
+      "status": "awaiting-authenticated-download",
+      "weaponClass": "unarmed",
+      "triangles": 61000,
+      "animations": 3
+    },
+    {
+      "id": "sketchfab-draconic-sorceress",
+      "characterId": "sol",
+      "label": "Draconic Sorceress Character Rig",
+      "author": "Sketchfab creator",
+      "page": "https://sketchfab.com/3d-models/draconic-sorceress-character-rig-5b9b6ce9036448b59abaf0d2def71441",
+      "license": "CC-BY-4.0",
+      "status": "awaiting-authenticated-download",
+      "weaponClass": "sword",
+      "triangles": 98000,
+      "animations": 2
     }
   ],
   "catalogs": [

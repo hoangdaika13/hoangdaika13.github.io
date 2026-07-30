@@ -20,7 +20,7 @@ test("Character V13 is the only release selected by the game route and offline c
   const worker = read("sw.js");
 
   assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*13/);
-  for (const asset of ["astral-realms.css?v=60", "astral-realms.js?v=60"]) {
+  for (const asset of ["astral-realms.css?v=63", "astral-realms.js?v=63"]) {
     assert.ok(loader.includes(asset), `route loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }
@@ -390,7 +390,7 @@ test("lock-on updates character yaw even when movement input is idle", () => {
 });
 
 test("remote players apply distance LOD before spending mixer or limb-animation work", () => {
-  const worldBody = between("    updateWorld(dt, time) {", "    updateWorldStreaming() {");
+  const worldBody = between("    updateWorld(dt, time) {", "    indexWorldRuntimeObjects() {");
   const distanceAt = worldBody.indexOf("const playerDistance");
   const lodAt = worldBody.indexOf("this.updateCharacterLod(remote, playerDistance)");
   const mixerAt = worldBody.indexOf("runtime?.mixer && !runtime.lodSuspended");

@@ -491,6 +491,34 @@
   box-shadow: 0 0 22px rgba(86, 231, 255, .22), inset 0 1px rgba(255, 255, 255, .1);
 }
 
+.har-action[data-label]::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 9px);
+  min-width: max-content;
+  max-width: 190px;
+  padding: 6px 9px;
+  border: 1px solid rgba(111, 238, 255, .32);
+  border-radius: 8px;
+  color: #effcff;
+  background: rgba(3, 9, 24, .94);
+  box-shadow: 0 9px 26px rgba(0, 0, 0, .34);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.25;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 5px);
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+.har-action[data-label]:hover::after,
+.har-action[data-label]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .har-action strong {
   font-size: 15px;
 }
@@ -3840,6 +3868,7 @@ button.har-chip {
   backdrop-filter: blur(12px);
 }
 .har-story-cinema__actions button.is-primary { color: #06101b; border-color: transparent; background: var(--cinema-accent); box-shadow: 0 0 22px color-mix(in srgb, var(--cinema-accent) 45%, transparent); }
+.har-story-cinema__actions button:disabled { color: #6f7b8d; border-color: rgba(255,255,255,.1); background: rgba(8, 12, 22, .72); box-shadow: none; cursor: not-allowed; }
 
 .har-story-cinema__chapters {
   position: absolute;
@@ -3879,6 +3908,12 @@ button.har-chip {
 .har-story-cinema__chapters button:hover,
 .har-story-cinema__chapters button.is-active { color: #fff; border-color: color-mix(in srgb, var(--cinema-color) 70%, white 10%); background: color-mix(in srgb, var(--cinema-color) 15%, rgba(4, 8, 21, .82)); transform: translateY(-2px); }
 .har-story-cinema__chapters button.is-active > i { right: 0; }
+.har-story-cinema__chapters button.is-complete:not(.is-active) { border-color: color-mix(in srgb, var(--cinema-color) 38%, rgba(255,255,255,.1)); }
+.har-story-cinema__chapters button.is-complete:not(.is-active)::after { content: "✓"; position: absolute; top: 5px; right: 6px; color: var(--cinema-color); font-size: 9px; font-weight: 950; }
+.har-story-cinema__chapters button.is-locked,
+.har-story-cinema__chapters button:disabled { filter: grayscale(.72); opacity: .46; cursor: not-allowed; transform: none; }
+.har-story-cinema__chapters button.is-locked > span::after { content: "⌁"; margin-left: 3px; color: #8a94a4; font-size: 8px; }
+.har-shell[data-cinematic-state="preparing"] .har-story-cinema__time > div { opacity: .48; }
 .har-story-cinema__hint { position: absolute; right: clamp(24px, 5vw, 78px); bottom: 16px; color: #6f7d91; font-size: 7px; letter-spacing: .06em; }
 
 .har-story-cinema button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }

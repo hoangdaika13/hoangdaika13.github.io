@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "updatedAt": "2026-07-30",
   "policy": "Only redistributable local GLB assets with a recorded license and immutable checksum may be selected by the Astral character pipeline.",
   "sources": [
@@ -42,6 +42,68 @@
       "downloadedAt": "2026-07-30",
       "sha256": "ECE0275F5583F5021A71F3DF57B3B5E2F142FDD56130A05E91B19085D5E8DC7F",
       "webVariant": "default/valid-white-m-1-casual.glb"
+    },
+    {
+      "file": "default/valid-white-f-2-casual.glb",
+      "sourceUrl": "https://cdn.jsdelivr.net/gh/c-frame/valid-avatars-glb@c539a28/avatars/White/White_F_2_Casual.glb",
+      "author": "c-frame contributors",
+      "license": "MIT",
+      "attribution": "Retain the upstream MIT license and copyright notice.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "C305BD514686060865E287E82A159AF5CA14AAFA58BA70580E881832643EEB36",
+      "webVariant": "default/valid-white-f-2-casual.glb"
+    },
+    {
+      "file": "default/valid-hispanic-f-1-milit.glb",
+      "sourceUrl": "https://cdn.jsdelivr.net/gh/c-frame/valid-avatars-glb@c539a28/avatars/Hispanic/Hispanic_F_1_Milit.glb",
+      "author": "c-frame contributors",
+      "license": "MIT",
+      "attribution": "Retain the upstream MIT license and copyright notice.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "AB47F4433CC57706BC45949FFD7C79CBBDD0ECACA85D3DA3AF27B293E00582A6",
+      "webVariant": "default/valid-hispanic-f-1-milit.glb"
+    },
+    {
+      "file": "sketchfab-cc-by/miss-galaxy.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/miss-galaxy-32ca79bf7c4043dcbc36d28b22436303",
+      "author": "Loves_Art",
+      "license": "CC-BY-4.0",
+      "attribution": "Miss Galaxy by Loves_Art, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "DD0020CAD09A310B31F100D1086337E233E3CBBFA19A7DAC6037A8B5063572DD",
+      "webVariant": "sketchfab-cc-by/miss-galaxy.glb",
+      "preparation": "Bone suffix cleanup, native walk normalization and Blender glTF round-trip; geometry and 2K texture retained."
+    },
+    {
+      "file": "sketchfab-cc-by/game-character-girl.glb",
+      "sourceUrl": "https://sketchfab.com/3d-models/game-character-girl-rigged-textured-animated-e304748a4d704299bb1c37bb6f8cf40e",
+      "author": "gbarzu",
+      "license": "CC-BY-4.0",
+      "attribution": "Game Character Girl by gbarzu, licensed under CC BY 4.0.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "F8D042FC0C12F7881DF84FE098C520131D9F11E549F493F3F140378580F24C69",
+      "webVariant": "sketchfab-cc-by/game-character-girl.glb",
+      "preparation": "Mixamo prefix and exporter suffix cleanup; 136-bone facial rig and three authored actions retained."
+    },
+    {
+      "file": "default/valid-aian-f-1-casual.glb",
+      "sourceUrl": "https://cdn.jsdelivr.net/gh/c-frame/valid-avatars-glb@c539a28/avatars/AIAN/AIAN_F_1_Casual.glb",
+      "author": "c-frame contributors",
+      "license": "MIT",
+      "attribution": "Retain the upstream MIT license and copyright notice.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "42F5DB5BA8279DA08A6BEE32848578A7ED9A9C7CB9FCDA7197736581C0DB1E36",
+      "webVariant": "default/valid-aian-f-1-casual.glb"
+    },
+    {
+      "file": "default/valid-mena-f-1-casual.glb",
+      "sourceUrl": "https://cdn.jsdelivr.net/gh/c-frame/valid-avatars-glb@c539a28/avatars/MENA/MENA_F_1_Casual.glb",
+      "author": "c-frame contributors",
+      "license": "MIT",
+      "attribution": "Retain the upstream MIT license and copyright notice.",
+      "downloadedAt": "2026-07-30",
+      "sha256": "79F0E9B58A32ECAF8CDB7F54D1F2D8DECD65B7C25F04B0ED3DA46FC40D5FCDCE",
+      "webVariant": "default/valid-mena-f-1-casual.glb"
     },
     {
       "file": "../hh-human-asteria-v1.glb",

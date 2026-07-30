@@ -1,0 +1,258 @@
+{
+  "source": "C:\\Users\\Admin\\Documents\\HTML\\site-home-auth-fix\\assets\\astral-realms\\characters\\sketchfab-cc-by\\game-character-girl.glb",
+  "bytes": 14668240,
+  "meshes": 20,
+  "vertices": 18811,
+  "triangles": 23380,
+  "armatures": [
+    {
+      "name": "HHCharacterArmature",
+      "bones": 136,
+      "boneNames": [
+        "Root",
+        "mixamorig:Hips",
+        "mixamorig:LeftUpLeg",
+        "mixamorig:LeftLeg",
+        "mixamorig:LeftFoot",
+        "mixamorig:LeftToeBase",
+        "mixamorig:LeftToe_End",
+        "mixamorig:RightUpLeg",
+        "mixamorig:RightLeg",
+        "mixamorig:RightFoot",
+        "mixamorig:RightToeBase",
+        "mixamorig:RightToe_End",
+        "mixamorig:Spine",
+        "mixamorig:Spine1",
+        "mixamorig:Spine1_L.001",
+        "mixamorig:Spine1_R.001",
+        "mixamorig:Spine2",
+        "mixamorig:LeftShoulder",
+        "mixamorig:LeftArm",
+        "mixamorig:LeftForeArm",
+        "mixamorig:LeftHand",
+        "mixamorig:LeftHandIndex1",
+        "mixamorig:LeftHandIndex2",
+        "mixamorig:LeftHandIndex3",
+        "mixamorig:LeftHandIndex4",
+        "mixamorig:LeftHandMiddle1",
+        "mixamorig:LeftHandMiddle2",
+        "mixamorig:LeftHandMiddle3",
+        "mixamorig:LeftHandMiddle4",
+        "mixamorig:LeftHandPinky1",
+        "mixamorig:LeftHandPinky2",
+        "mixamorig:LeftHandPinky3",
+        "mixamorig:LeftHandPinky4",
+        "mixamorig:LeftHandRing1",
+        "mixamorig:LeftHandRing2",
+        "mixamorig:LeftHandRing3",
+        "mixamorig:LeftHandRing4",
+        "mixamorig:LeftHandThumb1",
+        "mixamorig:LeftHandThumb2",
+        "mixamorig:LeftHandThumb3",
+        "mixamorig:LeftHandThumb4",
+        "mixamorig:Neck",
+        "mixamorig:Head",
+        "mixamorig:Head.001",
+        "mixamorig:Head.001_L.001",
+        "mixamorig:Head.001_L.002",
+        "mixamorig:Head.001_L.003",
+        "mixamorig:Head.001_L.004",
+        "mixamorig:Head.001_L.005",
+        "mixamorig:Head.001_L.006",
+        "mixamorig:Head.001_L.007",
+        "mixamorig:Head.001_L.008",
+        "mixamorig:Head.001_L.009",
+        "mixamorig:Head.001_L.010",
+        "mixamorig:Head.001_L.011",
+        "mixamorig:Head.001_L.012",
+        "mixamorig:Head.001_L.013",
+        "mixamorig:Head.001_L.014",
+        "mixamorig:Head.001_L.015",
+        "mixamorig:Head.001_L.016",
+        "mixamorig:Head.001_L.017",
+        "mixamorig:Head.001_L.018",
+        "mixamorig:Head.001_L.019",
+        "mixamorig:Head.001_L.020",
+        "mixamorig:Head.001_R.001",
+        "mixamorig:Head.001_R.002",
+        "mixamorig:Head.001_R.003",
+        "mixamorig:Head.001_R.004",
+        "mixamorig:Head.001_R.005",
+        "mixamorig:Head.001_R.006",
+        "mixamorig:Head.001_R.007",
+        "mixamorig:Head.001_R.008",
+        "mixamorig:Head.001_R.009",
+        "mixamorig:Head.001_R.010",
+        "mixamorig:Head.001_R.011",
+        "mixamorig:Head.001_R.012",
+        "mixamorig:Head.001_R.013",
+        "mixamorig:Head.001_R.014",
+        "mixamorig:Head.001_R.015",
+        "mixamorig:Head.001_R.016",
+        "mixamorig:Head.001_R.017",
+        "mixamorig:Head.001_R.018",
+        "mixamorig:Head.001_R.019",
+        "mixamorig:Head.001_R.020",
+        "mixamorig:Head.003",
+        "mixamorig:Head.004",
+        "mixamorig:Head.001_L.022",
+        "mixamorig:Head.001_R.022",
+        "mixamorig:Head.013",
+        "mixamorig:Head.005",
+        "mixamorig:Head.005_L.001",
+        "mixamorig:Head.005_L.002",
+        "mixamorig:Head.005_R.001",
+        "mixamorig:Head.005_R.002",
+        "mixamorig:Head.006",
+        "mixamorig:Head.007",
+        "mixamorig:Head.001_L.021",
+        "mixamorig:Head.001_R.021",
+        "mixamorig:Head.012",
+        "mixamorig:Head.009",
+        "mixamorig:Head.010",
+        "mixamorig:Head.010_L.001",
+        "mixamorig:Head.010_L.002",
+        "mixamorig:Head.010_R.001",
+        "mixamorig:Head.010_R.002",
+        "mixamorig:HeadTop_End",
+        "mixamorig:Neck.002",
+        "mixamorig:Neck.003",
+        "mixamorig:RightShoulder",
+        "mixamorig:RightArm",
+        "mixamorig:RightForeArm",
+        "mixamorig:RightHand",
+        "mixamorig:RightHandIndex1",
+        "mixamorig:RightHandIndex2",
+        "mixamorig:RightHandIndex3",
+        "mixamorig:RightHandIndex4",
+        "mixamorig:RightHandMiddle1",
+        "mixamorig:RightHandMiddle2",
+        "mixamorig:RightHandMiddle3",
+        "mixamorig:RightHandMiddle4",
+        "mixamorig:RightHandPinky1",
+        "mixamorig:RightHandPinky2",
+        "mixamorig:RightHandPinky3",
+        "mixamorig:RightHandPinky4",
+        "mixamorig:RightHandRing1",
+        "mixamorig:RightHandRing2",
+        "mixamorig:RightHandRing3",
+        "mixamorig:RightHandRing4",
+        "mixamorig:RightHandThumb1",
+        "mixamorig:RightHandThumb2",
+        "mixamorig:RightHandThumb3",
+        "mixamorig:RightHandThumb4",
+        "mixamorig:Spine_L.001",
+        "mixamorig:Spine_L.002",
+        "mixamorig:Spine_R.001",
+        "mixamorig:Spine_R.002"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "face_performance",
+      "frameStart": 0.0,
+      "frameEnd": 512.0,
+      "slots": 1
+    },
+    {
+      "name": "idle_alert",
+      "frameStart": 0.64000004529953,
+      "frameEnd": 203.52001953125,
+      "slots": 1
+    },
+    {
+      "name": "idle_relaxed",
+      "frameStart": 0.64000004529953,
+      "frameEnd": 220.79998779296875,
+      "slots": 1
+    }
+  ],
+  "shapeKeys": [],
+  "materials": [
+    "Boots",
+    "Eyebrows",
+    "Eyes",
+    "GadgetsnMetal",
+    "HeadHair",
+    "MainSuit",
+    "TeethnTognue"
+  ],
+  "images": [
+    {
+      "name": "Image_0",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_1",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_10",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_11",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_12",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_2",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_3",
+      "width": 1024,
+      "height": 512
+    },
+    {
+      "name": "Image_4",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_5",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_6",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_7",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_8",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Image_9",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "name": "Viewer Node",
+      "width": 256,
+      "height": 256
+    }
+  ],
+  "dimensions": [
+    1.9021157026290894,
+    1.9999998807907104,
+    2.7319897413253784
+  ]
+}

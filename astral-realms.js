@@ -2,7 +2,9 @@
   "use strict";
 
   const GAME_ID = "astral-realms";
-  const SCHEMA_VERSION = 6;
+  const SCHEMA_VERSION = 8;
+  const STORY_CANON_VERSION = 2;
+  const RENDER_SCALE_STEPS = Object.freeze([1, 0.85, 0.7, 0.6]);
   const DB_NAME = "hh-astral-realms";
   const DB_VERSION = 1;
   const STORE_NAME = "saves";
@@ -21,27 +23,33 @@
   });
   const CHARACTERS = Object.freeze({
     lyra: {
-      id: "lyra", name: "Lyra H", role: "Astral Vanguard", element: "plasma", short: "LH",
+      id: "lyra", name: "Nax Veyra", role: "Astral Vanguard", element: "plasma", short: "NX",
       body: "#43dfff", accent: "#ff69cc", hair: "#dffbff", eyes: "#63efff",
-      attackScale: 1, speedScale: 1, description: "Kiếm sĩ cân bằng, tạo nhịp Plasma liên hoàn."
+      attackScale: 1, speedScale: 1, description: "Nữ kiếm sĩ trưởng thành cân bằng, tạo nhịp Plasma liên hoàn."
     },
     cael: {
       id: "cael", name: "Cael Aurora", role: "Cryo Ranger", element: "cryo", short: "CA",
       body: "#5d86ff", accent: "#8ff7ff", hair: "#e5ecff", eyes: "#8aeaff",
-      attackScale: 0.92, speedScale: 1.12, description: "Xạ thủ Băng tinh nhanh, kiểm soát mục tiêu từ xa."
+      attackScale: 0.92, speedScale: 1.12, description: "Nữ xạ thủ Băng tinh nhanh, kiểm soát mục tiêu từ xa."
     },
     nyx: {
       id: "nyx", name: "Nyx Veyra", role: "Void Dancer", element: "void", short: "NV",
       body: "#6d43b8", accent: "#d66cff", hair: "#27174b", eyes: "#ff7de4",
-      attackScale: 1.08, speedScale: 1.06, description: "Vũ công Hư không gây sát thương bùng nổ và dịch chuyển."
+      attackScale: 1.08, speedScale: 1.06, description: "Nữ võ sĩ Hư không linh hoạt, phản đòn và dịch chuyển."
     },
     sol: {
       id: "sol", name: "Sol Riven", role: "Solar Guardian", element: "solar", short: "SR",
       body: "#d47433", accent: "#ffd96a", hair: "#fff2c4", eyes: "#ffbd58",
-      attackScale: 1.18, speedScale: 0.94, description: "Hộ vệ Nhật quang có đòn nặng và khả năng hồi phục."
+      attackScale: 1.18, speedScale: 0.94, description: "Nữ hộ vệ Nhật quang có đòn kiếm nặng và khả năng hồi phục."
     }
   });
   const CHARACTER_ORDER = Object.freeze(Object.keys(CHARACTERS));
+  const DEFAULT_CHARACTER_WEAPONS = Object.freeze({
+    lyra: "starter-blade",
+    cael: "pulse-rifle",
+    nyx: "void-gauntlets",
+    sol: "starter-blade"
+  });
   const CHARACTER_VISUAL_VERSION = 13;
   const CHARACTER_MODEL_TIERS = Object.freeze({
     hero: { label: "Web Hero LOD0", triangles: "Face 18–28K · body 25–40K", texture: "2K", face: 52, distance: 13, updateHz: 60 },
@@ -114,6 +122,17 @@
     attack1: ["attack_1", "attack1", "slash"],
     attack2: ["attack_2", "attack2", "combo"],
     attack3: ["attack_3", "attack3", "heavy"],
+    swordSkill: ["sword_skill", "skill", "attack_3", "heavy"],
+    swordUltimate: ["sword_ultimate", "ultimate", "special"],
+    rifleShot: ["rifle_shot", "shoot", "fire", "attack_1"],
+    rifleBurst: ["rifle_burst", "shoot_burst", "attack_2"],
+    rifleSkill: ["rifle_skill", "aim_fire", "skill"],
+    rifleUltimate: ["rifle_ultimate", "ultimate", "special"],
+    punch1: ["punch_1", "punch", "attack_1"],
+    punch2: ["punch_2", "jab", "attack_2"],
+    kick1: ["kick_1", "kick", "attack_3"],
+    martialSkill: ["martial_skill", "counter", "skill"],
+    martialUltimate: ["martial_ultimate", "ultimate", "special"],
     skill: ["skill", "cast"],
     ultimate: ["ultimate", "special"],
     hit: ["hit_f", "hit", "damage", "impact"],
@@ -217,7 +236,7 @@
     { id: "environment", name: "HH Volumetric World", role: "Địa hình mesh 3D và panorama chỉ dùng làm IBL", state: "Không dùng ảnh làm phông nền" },
     { id: "three", name: "Three.js GLTF", role: "GLB rigged, mixer, morph, viseme và 3D LOD", state: "Runtime V13" }
   ]);
-  const APPEARANCE_VERSION = 6;
+  const APPEARANCE_VERSION = 9;
   const APPEARANCE_GROUPS = Object.freeze([
     { id: "face", label: "Khuôn mặt", focus: "head", controls: [["headLength", "Chiều dài đầu"], ["foreheadHeight", "Chiều cao trán"], ["cheekboneWidth", "Gò má"], ["cheekFullness", "Độ đầy má"], ["jawWidth", "Độ rộng hàm"], ["jawAngle", "Góc hàm"], ["chinLength", "Chiều dài cằm"], ["faceFullness", "Độ đầy khuôn mặt"]] },
     { id: "eyes", label: "Mắt", focus: "head", controls: [["eyeSize", "Kích thước mắt"], ["eyeSpacing", "Khoảng cách mắt"], ["eyeDepth", "Độ sâu mắt"], ["upperLid", "Mí trên"], ["lowerLid", "Mí dưới"], ["eyeAngle", "Góc mắt"], ["irisSize", "Kích thước tròng"], ["pupilSize", "Kích thước đồng tử"], ["eyeReflection", "Phản chiếu mắt"], ["eyeLeft", "Mắt trái"], ["eyeRight", "Mắt phải"]] },
@@ -288,13 +307,15 @@
     "valid-asian-f-1-casual": "./assets/astral-realms/hh-human-asteria-v1.glb",
     "valid-asian-m-1-casual": "./assets/astral-realms/hh-human-vanguard-v1.glb",
     "valid-black-f-1-casual": "./assets/astral-realms/hh-human-asteria-v1.glb",
-    "valid-white-m-1-casual": "./assets/astral-realms/hh-human-vanguard-v1.glb"
+    "valid-white-m-1-casual": "./assets/astral-realms/hh-human-vanguard-v1.glb",
+    "valid-white-f-2-casual": "./assets/astral-realms/characters/default/valid-white-f-2-casual.glb",
+    "valid-hispanic-f-1-milit": "./assets/astral-realms/characters/default/valid-hispanic-f-1-milit.glb"
   });
   // Optional web-ready exports from the recommended pipeline:
   // MetaHuman/Character Creator/MPFB -> Blender retopology -> optimized GLB.
   // The manifest is deliberately optional so a missing premium asset never
   // blocks the game; the loader falls back to the bundled GLB, then procedural.
-  const CHARACTER_PIPELINE_SOURCES = Object.freeze(["auto", "metahuman", "character-creator", "mpfb", "valid-avatar", "bundled", "procedural"]);
+  const CHARACTER_PIPELINE_SOURCES = Object.freeze(["auto", "metahuman", "character-creator", "mpfb", "sketchfab-cc-by", "valid-avatar", "bundled", "procedural"]);
   const CHARACTER_PIPELINE_MANIFEST_URL = "./assets/astral-realms/characters/manifest.json";
   const CHARACTER_MOTION_MANIFEST_URL = "./assets/astral-realms/animations/motion-library-v13.json";
   const CHARACTER_MOTION_LIBRARY_URL = "./assets/astral-realms/animations/hh-human-motion-v13.glb";
@@ -314,7 +335,14 @@
     kenneyRoad: "./assets/astral-realms/kenney/roads/road-straight.glb",
     kenneyHouse: "./assets/astral-realms/kenney/suburban/building-type-a.glb",
     kenneyTower: "./assets/astral-realms/kenney/buildings/building-sample-tower-c.glb",
-    kenneyBridge: "./assets/astral-realms/kenney/roads/road-bridge.glb"
+    kenneyBridge: "./assets/astral-realms/kenney/roads/road-bridge.glb",
+    free3dTreeA: "./assets/astral-realms/environment/free3d-cc0/free3d-tree-a.glb",
+    free3dTreeB: "./assets/astral-realms/environment/free3d-cc0/free3d-tree-b.glb",
+    free3dTreeC: "./assets/astral-realms/environment/free3d-cc0/free3d-tree-c.glb",
+    free3dBush: "./assets/astral-realms/environment/free3d-cc0/free3d-bush.glb",
+    free3dFlower: "./assets/astral-realms/environment/free3d-cc0/free3d-flower.glb",
+    free3dMushroom: "./assets/astral-realms/environment/free3d-cc0/free3d-mushroom.glb",
+    free3dStone: "./assets/astral-realms/environment/free3d-cc0/free3d-stone.glb"
   });
   const CINEMATIC_ENVIRONMENT_ASSET_IDS = Object.freeze(new Set(["pineRoots", "modularFort"]));
   const CHARACTER_ATLAS_INDEX = Object.freeze({ lyra: 0, cael: 1, nyx: 2, sol: 3 });
@@ -334,14 +362,14 @@
     { id: "abyss", name: "Nexus Abyss", x: 124, z: 94, radius: 31, color: "#ff5e9f", weather: "Nhật thực Nexus", description: "Vực cuối nơi không gian, trọng lực và ánh sáng cùng biến dạng." }
   ]);
   const ASTRAL_CINEMATICS = Object.freeze([
-    { id: "central", chapter: 1, title: "Tín hiệu thức tỉnh", kicker: "H-CENTRAL · KHỞI NGUYÊN", description: "Nhà du hành vừa được định hình bước qua quảng trường lõi, trong lúc một tín hiệu mang chính chữ ký sinh học của họ xuất hiện trên mạng Astral.", objective: "Theo Luma tới tháp lõi", duration: 32000, camera: "opening-six-shot", motion: "opening" },
-    { id: "aurora", chapter: 2, title: "Hồ gương Aurora", kicker: "AURORA VALE · BĂNG TINH", description: "Mặt hồ phản chiếu một tương lai chưa xảy ra. Mỗi bước chân làm bừng sáng tinh thể và đánh thức những sinh vật ngủ dưới cực quang.", objective: "Ổn định ba trụ Băng tinh", duration: 9600, camera: "water-sweep", motion: "walk" },
-    { id: "crimson", chapter: 3, title: "Trái tim lò rèn", kicker: "CRIMSON FORGE · PLASMA", description: "Tro nóng phủ kín giáp phục khi lò rèn cổ khởi động trở lại. Một nhịp đập plasma đang gọi tên người mang lõi H.", objective: "Mở đường qua vành đai dung nham", duration: 9400, camera: "forge-rise", motion: "idle" },
-    { id: "void", chapter: 4, title: "Khu vườn không bóng", kicker: "VOID GARDEN · HƯ KHÔNG", description: "Cây khổng lồ mở mắt giữa các đảo nổi. Trọng lực đổi chiều và bóng của Nhà du hành bắt đầu chuyển động trước cơ thể.", objective: "Đóng khe nứt đầu tiên", duration: 10200, camera: "gravity-roll", motion: "talk" },
-    { id: "sky", chapter: 5, title: "Tàn tích trên tầng mây", kicker: "SKY RUINS · LƯỢNG TỬ", description: "Astral Wing mở ra trên vực mây. Những con đường chỉ tồn tại vài giây buộc Nhà du hành phải tin vào phân thân của chính mình.", objective: "Bắt nhịp đường gió lượng tử", duration: 9300, camera: "sky-dive", motion: "glide" },
-    { id: "ocean", chapter: 6, title: "Mặt trăng đại dương", kicker: "OCEAN MOON · NHẬT QUANG", description: "Mưa sao chạm mặt biển và biến thành sinh vật phát sáng. Dưới rạn san hô là một thành phố đang phát tín hiệu cầu cứu.", objective: "Lặn xuống đài quan sát cổ", duration: 9900, camera: "ocean-glide", motion: "walk" },
-    { id: "station", chapter: 7, title: "Quỹ đạo bị phong tỏa", kicker: "ASTRAL STATION · LIÊN MINH", description: "Tàu con ngừng hoạt động, chợ quỹ đạo đóng cửa và toàn bộ camera an ninh đồng loạt quay về phía Nhà du hành.", objective: "Khôi phục cầu nối Horizon H", duration: 9500, camera: "station-track", motion: "idle" },
-    { id: "abyss", chapter: 8, title: "Điểm tận cùng Nexus", kicker: "NEXUS ABYSS · NHẬT THỰC", description: "Tám lõi cộng hưởng trong bóng tối. Đây là nơi mọi lựa chọn, đồng đội và hình hài đã tạo sẽ xuất hiện trong trận chiến cuối.", objective: "Bước vào tâm nhật thực", duration: 10800, camera: "abyss-spiral", motion: "attack1" }
+    { id: "central", chapter: 1, title: "Tín hiệu thức tỉnh", kicker: "NEXUS ECHO · H-CENTRAL", description: "Nax Veyra được tái tạo tại H-Central. Ngay khi ý thức ổn định, Nax nhận một tín hiệu cầu cứu mang chính chữ ký của mình, được gửi ngược về từ 72 giờ trong tương lai.", objective: "Cùng Luma xác minh tín hiệu tương lai", duration: 32000, camera: "opening-six-shot", motion: "opening", requiredEvent: "quest:awakening" },
+    { id: "aurora", chapter: 2, title: "Hồ gương Aurora", kicker: "NEXUS ECHO · AURORA VALE", description: "Ký ức được lưu trong hồ gương tái hiện khoảnh khắc mạng Astral sụp đổ. Tín hiệu của Nax là thật, và chỉ còn 72 giờ để ngăn thảm họa.", objective: "Khôi phục ký ức trong lõi Aurora", duration: 11800, camera: "water-sweep", motion: "walk", requiredEvent: "restored:aurora" },
+    { id: "crimson", chapter: 3, title: "Trái tim lò rèn", kicker: "NEXUS ECHO · CRIMSON FORGE", description: "Từ lõi Plasma còn hoạt động, Cael rèn Temporal Key — công cụ duy nhất có thể giải mã lớp thời gian đang khóa tín hiệu của Nax.", objective: "Cùng Cael hoàn thiện Temporal Key", duration: 11600, camera: "forge-rise", motion: "idle", requiredEvent: "restored:crimson" },
+    { id: "void", chapter: 4, title: "Khu vườn không bóng", kicker: "NEXUS ECHO · VOID GARDEN", description: "Temporal Key mở kho lưu trữ cấm. Nyx phát hiện Nexus không phải sinh vật ngoài hành tinh, mà là hệ thống phòng vệ Astral đã nhận sai toàn bộ sự sống là mối đe dọa.", objective: "Giải mã giao thức phòng vệ Nexus", duration: 12400, camera: "gravity-roll", motion: "talk", requiredEvent: "restored:void" },
+    { id: "sky", chapter: 5, title: "Tàn tích tầng mây", kicker: "NEXUS ECHO · SKY RUINS", description: "Giữa các tàn tích tầng mây, đội tìm lại bản đồ điều hướng dẫn tới con tàu mất tích của Nax nguyên bản — nguồn duy nhất còn giữ ký ức chưa bị Nexus sửa đổi.", objective: "Khôi phục bản đồ tới con tàu nguyên bản", duration: 11800, camera: "sky-dive", motion: "glide", requiredEvent: "restored:sky" },
+    { id: "ocean", chapter: 6, title: "Mặt trăng đại dương", kicker: "NEXUS ECHO · OCEAN MOON", description: "Nhật ký con tàu xác nhận Nax nguyên bản đã chết khi cứu H-Central. Nax hiện tại là một bản tái tạo, nhưng ký ức mới và ý thức đang sống thuộc về chính mình.", objective: "Đưa nhật ký gốc trở lại mạng Astral", duration: 12800, camera: "ocean-glide", motion: "walk", requiredEvent: "restored:ocean" },
+    { id: "station", chapter: 7, title: "Quỹ đạo phong tỏa", kicker: "NEXUS ECHO · ASTRAL STATION", description: "Astral Station phong tỏa quỹ đạo và ra lệnh xóa Nax để reset hệ thống. Luma thú nhận cô đã che giấu cái chết của Nax nguyên bản nhằm giữ hy vọng cứu thành phố.", objective: "Thoát lệnh xóa và mở đường tới Nexus", duration: 12600, camera: "station-track", motion: "talk", requiredEvent: "restored:station" },
+    { id: "abyss", chapter: 8, title: "Điểm tận cùng Nexus", kicker: "NEXUS ECHO · NEXUS ABYSS", description: "Nax hợp nhất tám lõi, sửa giao thức phòng vệ và cứu mạng Astral mà không xóa ký ức hay bản ngã. Tín hiệu 72 giờ khép lại đúng lúc một Echo mới xuất hiện ngoài rìa thiên hà.", objective: "Sửa mạng Astral và giữ lại bản ngã", duration: 14800, camera: "abyss-spiral", motion: "attack1", requiredEvent: "restored:abyss" }
   ]);
   const BIOME_PROFILES = Object.freeze({
     central: { accent: "#6feeff", fog: 0x102a3f, fogDensity: 0.0056, particle: 0x73eaff, wind: 0.35, precipitation: "neon-rain", actor: "traffic" },
@@ -363,7 +391,7 @@
     { id: "free-travelers", name: "Free Travelers", short: "FRT", color: "#ffd36b", description: "Đội tàu độc lập đưa người và hàng qua các vùng nguy hiểm.", perk: "Giảm chi phí chế tạo và mở nhiệm vụ vận chuyển." }
   ]);
   const COMPANION_STORIES = Object.freeze({
-    lyra: { title: "Tín hiệu của Lyra", summary: "Tìm lại bản ghi đầu tiên của lõi H.", support: "Có thể ổn định Plasma trong puzzle." },
+    lyra: { title: "Nexus Echo của Nax", summary: "Khôi phục chuỗi ký ức dẫn tới tín hiệu 72 giờ.", support: "Có thể ổn định Plasma trong puzzle." },
     cael: { title: "Bản đồ băng vỡ", summary: "Khôi phục ba mảnh bản đồ tại Aurora Vale.", support: "Tạo cầu Băng tinh trong khu vực nước." },
     nyx: { title: "Vết nứt không tên", summary: "Đóng các khe nứt Hư không trước khi chúng lan rộng.", support: "Mở cổng ngắn tới điểm scan bí mật." },
     sol: { title: "Lời thề Nhật quang", summary: "Hộ tống lõi năng lượng qua Crimson Forge.", support: "Kích hoạt lò rèn và tăng tốc chế tạo." }
@@ -386,12 +414,55 @@
     abyss: { core: "sealed", restored: false, occupation: "void-cult", weather: "eclipse", resources: 100, lastBossAt: "" }
   });
   const ITEMS = Object.freeze({
-    "starter-blade": { id: "starter-blade", name: "Đoản kiếm H", type: "weapon", rarity: "Khởi đầu", description: "Vũ khí tiêu chuẩn của Nhà du hành H.", attack: 8 },
+    "starter-blade": { id: "starter-blade", name: "Đoản kiếm H", type: "weapon", weaponClass: "sword", rarity: "Khởi đầu", description: "Vũ khí tiêu chuẩn của Nhà du hành H.", attack: 8 },
+    "pulse-rifle": { id: "pulse-rifle", name: "Súng trường Pulse", type: "weapon", weaponClass: "gun", rarity: "Khởi đầu", description: "Vũ khí tầm xa với đạn năng lượng và nhịp bắn ổn định.", attack: 7 },
+    "void-gauntlets": { id: "void-gauntlets", name: "Găng chiến Veyra", type: "weapon", weaponClass: "unarmed", rarity: "Khởi đầu", description: "Găng cận chiến khuếch đại đấm, đá và phản đòn.", attack: 10 },
     "aurora-shard": { id: "aurora-shard", name: "Mảnh Aurora", type: "material", rarity: "Phổ thông", description: "Tinh thể lạnh thu được tại Aurora Vale." },
     "plasma-core": { id: "plasma-core", name: "Lõi Plasma", type: "material", rarity: "Hiếm", description: "Lõi năng lượng còn nóng của sinh vật Crimson." },
     "void-fiber": { id: "void-fiber", name: "Sợi Hư Không", type: "material", rarity: "Hiếm", description: "Vật chất bất ổn từ Void Garden." },
     "healing-tonic": { id: "healing-tonic", name: "Tinh dược hồi phục", type: "consumable", rarity: "Phổ thông", description: "Hồi 35 HP khi sử dụng.", heal: 35 },
-    "astral-edge": { id: "astral-edge", name: "Astral Edge", type: "weapon", rarity: "Sử thi", description: "Lưỡi kiếm cộng hưởng với sáu nguyên tố.", attack: 22 }
+    "astral-edge": { id: "astral-edge", name: "Astral Edge", type: "weapon", weaponClass: "sword", rarity: "Sử thi", description: "Lưỡi kiếm cộng hưởng với sáu nguyên tố.", attack: 22 }
+  });
+  const WEAPON_COMBAT_PROFILES = Object.freeze({
+    sword: {
+      label: "Kiếm",
+      icon: "⚔",
+      attacks: ["attack1", "attack2", "attack3"],
+      skillMotion: "swordSkill",
+      ultimateMotion: "swordUltimate",
+      attackName: "Astral Slash",
+      skillName: "Temporal Cleave",
+      ultimateName: "Nexus Sever",
+      range: { attack: 4.2, skill: 8, ultimate: 12 },
+      cooldown: { attack: 320, skill: 2600, ultimate: 9500 },
+      damage: { attack: 1, skill: 1, ultimate: 1 }
+    },
+    gun: {
+      label: "Súng",
+      icon: "⌁",
+      attacks: ["rifleShot", "rifleShot", "rifleBurst"],
+      skillMotion: "rifleSkill",
+      ultimateMotion: "rifleUltimate",
+      attackName: "Pulse Shot",
+      skillName: "Tracking Burst",
+      ultimateName: "Orbital Barrage",
+      range: { attack: 24, skill: 30, ultimate: 38 },
+      cooldown: { attack: 190, skill: 3200, ultimate: 11000 },
+      damage: { attack: 0.78, skill: 1.12, ultimate: 1.08 }
+    },
+    unarmed: {
+      label: "Tay không",
+      icon: "✦",
+      attacks: ["punch1", "punch2", "kick1"],
+      skillMotion: "martialSkill",
+      ultimateMotion: "martialUltimate",
+      attackName: "Veyra Combo",
+      skillName: "Counter Drive",
+      ultimateName: "Eight-Core Impact",
+      range: { attack: 3.25, skill: 5.4, ultimate: 9 },
+      cooldown: { attack: 245, skill: 2100, ultimate: 9000 },
+      damage: { attack: 1.16, skill: 0.94, ultimate: 1.18 }
+    }
   });
   const RECIPES = Object.freeze([
     { id: "healing-tonic", name: "Tinh dược hồi phục", result: "healing-tonic", amount: 1, requires: { "aurora-shard": 2 } },
@@ -419,6 +490,11 @@
   function clamp(value, min, max) {
     const number = Number(value);
     return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : min;
+  }
+
+  function smoothstepRange(value, start, end) {
+    const progress = clamp((value - start) / Math.max(0.0001, end - start), 0, 1);
+    return progress * progress * (3 - 2 * progress);
   }
 
   function normalizeBoneName(value) {
@@ -519,10 +595,10 @@
   function defaultAppearanceRecipe(characterId = "lyra") {
     const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
     const realisticBase = {
-      lyra: "valid-asian-f-1-casual",
-      cael: "valid-asian-m-1-casual",
+      lyra: "sketchfab-miss-galaxy",
+      cael: "sketchfab-game-character-girl",
       nyx: "valid-black-f-1-casual",
-      sol: "valid-white-m-1-casual"
+      sol: "valid-hispanic-f-1-milit"
     }[characterId] || "valid-asian-f-1-casual";
     return {
       appearanceVersion: APPEARANCE_VERSION,
@@ -561,9 +637,13 @@
     ]));
     const validHex = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value).toLowerCase() : fallback;
     const requestedModel = String(recipe.baseModel || "").slice(0, 80);
-    const isCatalogModel = /^valid-[a-z0-9-]{3,72}$/.test(requestedModel);
+    const isCatalogModel = /^(?:valid|sketchfab)-[a-z0-9-]{3,72}$/.test(requestedModel);
     const isLegacyRecipe = Number(recipe.appearanceVersion || 0) < APPEARANCE_VERSION;
-    const normalizedBaseModel = isLegacyRecipe && ["human-adult-a01", "human-adult-b01"].includes(requestedModel)
+    const legacyMainModel = ["human-adult-a01", "human-adult-b01"].includes(requestedModel)
+      || (characterId === "lyra" && requestedModel === "valid-asian-f-1-casual")
+      || (characterId === "cael" && ["valid-asian-m-1-casual", "valid-white-f-2-casual"].includes(requestedModel))
+      || (characterId === "sol" && requestedModel === "valid-white-m-1-casual");
+    const normalizedBaseModel = isLegacyRecipe && legacyMainModel
       ? base.baseModel
       : APPEARANCE_ASSETS.baseModels.includes(requestedModel) || isCatalogModel
         ? requestedModel
@@ -684,8 +764,55 @@
       factions: Object.fromEntries(FACTIONS.map((faction) => [faction.id, { reputation: 0, rank: "Neutral", supportedEvents: 0, updatedAt: nowIso() }])),
       eventLog: [],
       activeEvent: null,
-      choiceHistory: [],
       lastSyncAt: nowIso()
+    };
+  }
+
+  function defaultStoryState() {
+    return {
+      canonVersion: STORY_CANON_VERSION,
+      chapter: 1,
+      step: "cinematic",
+      completedEvents: []
+    };
+  }
+
+  function normalizeStoryState(input) {
+    const raw = input?.story && typeof input.story === "object" ? input.story : null;
+    const events = new Set(Array.isArray(raw?.completedEvents)
+      ? raw.completedEvents.slice(-80).map((eventId) => String(eventId || "").slice(0, 80)).filter(Boolean)
+      : []);
+    let chapter = clamp(raw?.chapter ?? 1, 1, ASTRAL_CINEMATICS.length);
+    let step = ["cinematic", "mission", "complete"].includes(raw?.step) ? raw.step : "cinematic";
+
+    if (!raw) {
+      const awakeningComplete = input?.quests?.awakening?.status === "completed";
+      if (awakeningComplete) {
+        events.add("cinematic:central");
+        events.add("quest:awakening");
+        events.add("chapter:1:complete");
+        chapter = 2;
+      }
+      for (let index = 1; index < ASTRAL_CINEMATICS.length; index += 1) {
+        const cinematic = ASTRAL_CINEMATICS[index];
+        if (chapter !== cinematic.chapter || input?.world?.zones?.[cinematic.id]?.restored !== true) break;
+        events.add(`cinematic:${cinematic.id}`);
+        events.add(`restored:${cinematic.id}`);
+        events.add(`chapter:${cinematic.chapter}:complete`);
+        if (cinematic.chapter < ASTRAL_CINEMATICS.length) chapter = cinematic.chapter + 1;
+        else step = "complete";
+      }
+    }
+
+    for (let completedChapter = 1; completedChapter < chapter; completedChapter += 1) {
+      events.add(`chapter:${completedChapter}:complete`);
+    }
+    if (step === "complete" && chapter !== ASTRAL_CINEMATICS.length) step = "cinematic";
+    return {
+      canonVersion: STORY_CANON_VERSION,
+      chapter,
+      step,
+      completedEvents: [...events].slice(-80)
     };
   }
 
@@ -699,7 +826,7 @@
       worldTime: 8.2,
       player: {
         id: uid("traveler"),
-        name: "Lyra H",
+        name: "Nax Veyra",
         level: 1,
         xp: 0,
         health: 100,
@@ -734,18 +861,13 @@
         creatorVersion: 0
       },
       inventory: {
-        "starter-blade": { quantity: 1, favorite: true, locked: true, acquiredAt: nowIso() }
+        "starter-blade": { quantity: 1, favorite: true, locked: true, acquiredAt: nowIso() },
+        "pulse-rifle": { quantity: 1, favorite: false, locked: true, acquiredAt: nowIso() },
+        "void-gauntlets": { quantity: 1, favorite: false, locked: true, acquiredAt: nowIso() }
       },
       quests: defaultQuestState(),
-      world: {
-        version: 1,
-        zones: Object.fromEntries(Object.entries(WORLD_ZONE_DEFAULTS).map(([id, value]) => [id, { ...value, discovered: id === "central", updatedAt: nowIso() }])),
-        factions: Object.fromEntries(FACTIONS.map((faction) => [faction.id, { reputation: 0, rank: "Neutral", supportedEvents: 0, updatedAt: nowIso() }])),
-        eventLog: [],
-        activeEvent: null,
-        choiceHistory: [],
-        lastSyncAt: nowIso()
-      },
+      story: defaultStoryState(),
+      world: defaultWorldState(),
       companions: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, {
         unlocked: id === "lyra",
         bond: id === "lyra" ? 1 : 0,
@@ -763,7 +885,7 @@
       },
       loadouts: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, {
         role: id === "sol" ? "support" : id === "nyx" ? "control" : "damage",
-        weapon: "starter-blade",
+        weapon: DEFAULT_CHARACTER_WEAPONS[id] || "starter-blade",
         core: "none",
         relics: [],
         updatedAt: nowIso()
@@ -835,6 +957,9 @@
   function normalizeState(input) {
     const base = defaultState();
     if (!input || typeof input !== "object") return base;
+    const safeWorldInput = input.world && typeof input.world === "object"
+      ? Object.fromEntries(Object.entries(input.world).filter(([key]) => key !== "choiceHistory"))
+      : {};
     const state = {
       ...base,
       ...input,
@@ -862,11 +987,12 @@
         creatorCompletedAt: String(input.appearance?.creatorCompletedAt || "").slice(0, 40),
         creatorVersion: clamp(input.appearance?.creatorVersion ?? 0, 0, CHARACTER_VISUAL_VERSION)
       },
-      inventory: input.inventory && typeof input.inventory === "object" ? input.inventory : base.inventory,
+      inventory: input.inventory && typeof input.inventory === "object" ? { ...base.inventory, ...input.inventory } : base.inventory,
       quests: { ...base.quests, ...(input.quests || {}) },
+      story: normalizeStoryState(input),
       world: {
         ...base.world,
-        ...(input.world || {}),
+        ...safeWorldInput,
         zones: Object.fromEntries(Object.entries(WORLD_ZONE_DEFAULTS).map(([id, fallback]) => [id, {
           ...fallback,
           ...(input.world?.zones?.[id] || {}),
@@ -902,12 +1028,6 @@
           target: clamp(input.world.activeEvent.target ?? 3, 1, 99),
           expiresAt: String(input.world.activeEvent.expiresAt || "").slice(0, 40)
         } : null,
-        choiceHistory: Array.isArray(input.world?.choiceHistory) ? input.world.choiceHistory.slice(-40).map((choice) => ({
-          id: String(choice?.id || uid("choice")).slice(0, 80),
-          option: String(choice?.option || "").slice(0, 80),
-          outcome: String(choice?.outcome || "").slice(0, 240),
-          createdAt: String(choice?.createdAt || nowIso()).slice(0, 40)
-        })) : [],
         lastSyncAt: String(input.world?.lastSyncAt || nowIso()).slice(0, 40)
       },
       companions: Object.fromEntries(CHARACTER_ORDER.map((id) => {
@@ -932,9 +1052,12 @@
       },
       loadouts: Object.fromEntries(CHARACTER_ORDER.map((id) => {
         const loadout = input.loadouts?.[id] || {};
+        const migrateDefaultWeapon = Number(input.schemaVersion || 0) < 8
+          && ["cael", "nyx"].includes(id)
+          && (!loadout.weapon || loadout.weapon === "starter-blade");
         return [id, {
           role: ["damage", "support", "control", "exploration"].includes(loadout.role) ? loadout.role : base.loadouts[id].role,
-          weapon: ITEMS[loadout.weapon] ? loadout.weapon : base.loadouts[id].weapon,
+          weapon: migrateDefaultWeapon ? base.loadouts[id].weapon : ITEMS[loadout.weapon] ? loadout.weapon : base.loadouts[id].weapon,
           core: ITEMS[loadout.core] ? loadout.core : "none",
           relics: Array.isArray(loadout.relics) ? loadout.relics.slice(0, 4).filter((item) => ITEMS[item]) : [],
           updatedAt: String(loadout.updatedAt || nowIso()).slice(0, 40)
@@ -1003,6 +1126,8 @@
     state.settings.weatherDensity = clamp(state.settings.weatherDensity, 0, 100);
     state.settings.cameraShake = clamp(state.settings.cameraShake, 0, 100);
     if (!CHARACTERS[state.roster.activeId]) state.roster.activeId = "lyra";
+    const activeLoadoutWeapon = state.loadouts?.[state.roster.activeId]?.weapon;
+    if (ITEMS[activeLoadoutWeapon] && state.inventory?.[activeLoadoutWeapon]?.quantity > 0) state.player.weapon = activeLoadoutWeapon;
     state.roster.unlocked = Array.isArray(state.roster.unlocked)
       ? state.roster.unlocked.filter((id) => CHARACTERS[id]).slice(0, CHARACTER_ORDER.length)
       : [...CHARACTER_ORDER];
@@ -1136,6 +1261,7 @@
       this.builtInCharacterAssets = new Map();
       this.builtInCharacterSources = new Map();
       this.characterPipelineManifest = [];
+      this.characterExternalCandidates = [];
       this.characterPipelineStatus = "not-configured";
       this.motionLibraryManifest = null;
       this.motionLibraryAnimations = [];
@@ -1183,6 +1309,7 @@
       this.sunCorona = null;
       this.waterSurfaces = [];
       this.climbables = [];
+      this.climbableObjects = [];
       this.keys = new Set();
       this.gamepads = [];
       this.touchMove = { x: 0, z: 0 };
@@ -1218,6 +1345,7 @@
       this.started = false;
       this.visible = document.visibilityState !== "hidden";
       this.lastFrameAt = performance.now();
+      this.lastProcessedFrameAt = 0;
       this.lastUiAt = 0;
       this.lastMinimapAt = 0;
       this.lastSaveAt = 0;
@@ -1242,6 +1370,12 @@
       this.cameraFovTarget = CINEMATIC_CAMERA.verticalFovDeg;
       this.cameraFocusDistance = 8;
       this.cinematicTarget = null;
+      this.cinematicScene = null;
+      this.cinematicSetGroup = null;
+      this.cinematicSetCache = new Map();
+      this.cinematicActorRestore = null;
+      this.cinematicShadowRestore = null;
+      this.cinematicScratch = null;
       this.cinematicSequence = {
         active: false,
         chapterId: "central",
@@ -1250,6 +1384,10 @@
         playing: false,
         completed: false,
         source: "",
+        waitingForSubject: false,
+        pendingAutoplay: false,
+        validSubjectFrames: 0,
+        subjectReport: null,
         restoreMenuPaused: false,
         restorePaused: false,
         restoreZone: null
@@ -1274,10 +1412,22 @@
       this.fpsFrames = 0;
       this.fpsStartedAt = performance.now();
       this.fps = 0;
+      this.fpsEma = 60;
+      this.lowFpsWindows = 0;
+      this.highFpsWindows = 0;
+      this.lastQualityTransitionAt = 0;
+      this.renderScaleTier = 0;
       this.renderScale = 1;
       this.dynamicResolution = 1;
       this.forceCompatibility = false;
       this.lastStreamingAt = 0;
+      this.lastStreamingCell = "";
+      this.shadowCastersByZone = new Map();
+      this.activeShadowCasters = new Set();
+      this.worldSpinners = [];
+      this.lastEnvironmentDetailAt = 0;
+      this.lastWeatherCpuAt = 0;
+      this.frameScratch = null;
       this.dpsSamples = [];
       this.trainingActive = false;
       this.trainingSession = false;
@@ -1371,7 +1521,7 @@
               <div class="har-player-row">
                 <div class="har-avatar" data-level="1">LH</div>
                 <div class="har-player-meta">
-                  <strong data-har-player-name>Lyra H</strong>
+                  <strong data-har-player-name>Nax Veyra</strong>
                   <span data-har-player-meta>Nhà du hành · Plasma</span>
                   <div class="har-meter"><i data-har-health></i></div>
                   <div class="har-meter har-meter--stamina"><i data-har-stamina></i></div>
@@ -1448,7 +1598,7 @@
               </div>
             </div>
             <nav class="har-story-cinema__chapters" aria-label="Tám cinematic khu vực">
-              ${ASTRAL_CINEMATICS.map((cinematic) => `<button type="button" data-cinematic-chapter="${cinematic.id}" style="--cinema-color:${ZONES.find((zone) => zone.id === cinematic.id)?.color || "#6feeff"}"><span>${String(cinematic.chapter).padStart(2, "0")}</span><div><strong>${cinematic.title}</strong><small>${ZONES.find((zone) => zone.id === cinematic.id)?.name || cinematic.id}</small></div><i></i></button>`).join("")}
+              ${ASTRAL_CINEMATICS.map((cinematic) => `<button type="button" data-cinematic-chapter="${cinematic.id}" data-cinematic-index="${cinematic.chapter}" ${cinematic.chapter > 1 ? "disabled aria-disabled=\"true\"" : "aria-disabled=\"false\""} style="--cinema-color:${ZONES.find((zone) => zone.id === cinematic.id)?.color || "#6feeff"}"><span>${String(cinematic.chapter).padStart(2, "0")}</span><div><strong>${cinematic.title}</strong><small>${cinematic.chapter > 1 ? "Đã khóa" : `Hiện tại · ${ZONES.find((zone) => zone.id === cinematic.id)?.name || cinematic.id}`}</small></div><i></i></button>`).join("")}
             </nav>
             <div class="har-story-cinema__hint">Cinematic dùng chính nhân vật 3D đã tạo · Esc để đóng · không phải video giả lập</div>
           </section>
@@ -1553,6 +1703,7 @@
           : "Chưa có hành trình · bản mới sẽ được lưu bằng IndexedDB.";
         continueButton.textContent = "Bắt đầu hành trình";
       }
+      this.updateCinematicChapterRail(this.currentStoryChapter().id);
       this.bindShellEvents();
       return this;
     }
@@ -1647,6 +1798,7 @@
         this.createWorld();
         this.setLoading(76, "Đang dựng nhân vật rigged PBR, sinh vật và Nexus Warden...");
         this.createActors();
+        this.indexWorldRuntimeObjects();
         this.setLoading(84, "Đang khôi phục nhiệm vụ và kho đồ...");
         this.applyStateToWorld();
         this.resetGameplayCharacterVisibility("initial-scene");
@@ -1710,10 +1862,353 @@
       return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
     }
 
-    openCinematicGallery(chapterId = "central", { source = "manual", autoplay = true } = {}) {
+    currentStoryChapter() {
+      const chapter = clamp(this.state.story?.chapter ?? 1, 1, ASTRAL_CINEMATICS.length);
+      return ASTRAL_CINEMATICS[chapter - 1] || ASTRAL_CINEMATICS[0];
+    }
+
+    isStoryChapterUnlocked(chapterId) {
+      const cinematic = this.cinematicById(chapterId);
+      return cinematic.chapter <= (this.state.story?.chapter || 1);
+    }
+
+    recordStoryEvent(eventId) {
+      const normalized = String(eventId || "").slice(0, 80);
+      if (!normalized) return false;
+      this.state.story ||= defaultStoryState();
+      this.state.story.completedEvents ||= [];
+      if (this.state.story.completedEvents.includes(normalized)) return false;
+      this.state.story.completedEvents = [...this.state.story.completedEvents, normalized].slice(-80);
+      return true;
+    }
+
+    completeStoryChapter(chapterNumber, { save = true } = {}) {
+      const current = this.currentStoryChapter();
+      if (current.chapter !== chapterNumber || this.state.story.step === "complete") return false;
+      this.recordStoryEvent(`chapter:${chapterNumber}:complete`);
+      if (chapterNumber >= ASTRAL_CINEMATICS.length) {
+        this.state.story.step = "complete";
+        this.recordStoryEvent("nexus:repaired");
+        this.toast("Nexus Echo hoàn tất · mạng Astral đã được sửa và bản ngã của Nax được bảo toàn.", "success");
+      } else {
+        this.state.story.chapter = chapterNumber + 1;
+        this.state.story.step = "cinematic";
+        const next = this.currentStoryChapter();
+        this.toast(`Đã mở Chương ${next.chapter}: ${next.title}`, "success");
+      }
+      this.updateCinematicChapterRail();
+      if (save) this.saveProgress(`Nexus Echo · hoàn tất chương ${chapterNumber}`);
+      return true;
+    }
+
+    evaluateStoryProgress({ save = true } = {}) {
+      const current = this.currentStoryChapter();
+      const events = this.state.story?.completedEvents || [];
+      const cinematicComplete = events.includes(`cinematic:${current.id}`);
+      const objectiveComplete = events.includes(current.requiredEvent)
+        || (current.requiredEvent === "quest:awakening" && this.state.quests.awakening?.status === "completed")
+        || (current.requiredEvent.startsWith("restored:") && this.state.world?.zones?.[current.id]?.restored === true);
+      if (!cinematicComplete) {
+        this.state.story.step = "cinematic";
+        return false;
+      }
+      if (!objectiveComplete) {
+        this.state.story.step = "mission";
+        this.updateCinematicChapterRail();
+        return false;
+      }
+      this.recordStoryEvent(current.requiredEvent);
+      return this.completeStoryChapter(current.chapter, { save });
+    }
+
+    updateCinematicChapterRail(activeId = this.cinematicSequence.chapterId) {
+      const overlay = this.root?.querySelector("[data-har-cinematic-player]");
+      if (!overlay) return;
+      const storyChapter = this.state.story?.chapter || 1;
+      overlay.querySelectorAll("[data-cinematic-chapter]").forEach((button) => {
+        const cinematic = this.cinematicById(button.dataset.cinematicChapter);
+        const zone = ZONES.find((entry) => entry.id === cinematic.id);
+        const locked = cinematic.chapter > storyChapter;
+        const complete = (this.state.story?.completedEvents || []).includes(`chapter:${cinematic.chapter}:complete`);
+        const active = cinematic.id === activeId;
+        button.disabled = locked;
+        button.classList.toggle("is-locked", locked);
+        button.classList.toggle("is-complete", complete);
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-disabled", String(locked));
+        button.setAttribute("aria-pressed", String(active));
+        button.title = locked
+          ? `Hoàn thành Chương ${cinematic.chapter - 1} để mở khóa`
+          : complete
+            ? `Xem lại ${cinematic.title} · không thay đổi save`
+            : `Chương hiện tại · ${cinematic.title}`;
+        const status = button.querySelector("small");
+        if (status) status.textContent = locked ? "Đã khóa" : complete ? `Xem lại · ${zone?.name || cinematic.id}` : `Hiện tại · ${zone?.name || cinematic.id}`;
+      });
+      const selected = this.cinematicById(activeId);
+      const enter = overlay.querySelector('[data-cinematic-action="enter"]');
+      if (enter) {
+        const canEnter = selected.chapter === storyChapter && this.state.story?.step !== "complete";
+        enter.disabled = !canEnter;
+        enter.textContent = canEnter ? "Vào nhiệm vụ chính →" : selected.chapter < storyChapter ? "Chương đã hoàn thành" : "Nexus Echo hoàn tất";
+      }
+    }
+
+    createCinematicScene() {
+      if (this.cinematicScene) return this.cinematicScene;
+      const THREE = this.THREE;
+      const scene = new THREE.Scene();
+      scene.name = "NexusEchoCinematicScene";
+      scene.background = new THREE.Color(0x070b12);
+      scene.environment = this.scene?.environment || null;
+      scene.fog = new THREE.FogExp2(0x101927, 0.008);
+
+      const hemisphere = new THREE.HemisphereLight(0xeaf3ff, 0x161820, 0.48);
+      hemisphere.name = "CinematicFill";
+      const key = new THREE.DirectionalLight(0xfff3e3, 3.4);
+      key.name = "CinematicKey";
+      key.castShadow = Boolean(this.renderer?.shadowMap?.enabled);
+      key.shadow.mapSize.set(this.state.settings.quality === "cinematic" ? 2048 : 1024, this.state.settings.quality === "cinematic" ? 2048 : 1024);
+      key.shadow.bias = -0.00012;
+      key.shadow.normalBias = 0.025;
+      const rim = new THREE.DirectionalLight(0x9fcfff, 1.25);
+      rim.name = "CinematicRim";
+      const practical = new THREE.PointLight(0x72dfff, 1.6, 26, 2);
+      practical.name = "CinematicPractical";
+      scene.add(hemisphere, key, key.target, rim, rim.target, practical);
+      scene.userData.lightRig = { hemisphere, key, rim, practical };
+      this.cinematicScene = scene;
+      this.cinematicScratch = {
+        box: new THREE.Box3(),
+        size: new THREE.Vector3(),
+        center: new THREE.Vector3(),
+        top: new THREE.Vector3(),
+        bottom: new THREE.Vector3(),
+        matrix: new THREE.Matrix4(),
+        frustum: new THREE.Frustum(),
+        shot: new THREE.Vector3(),
+        actor: new THREE.Vector3(),
+        targetFocus: new THREE.Vector3(),
+        cinematicPosition: new THREE.Vector3(),
+        forward: new THREE.Vector3(),
+        cameraRight: new THREE.Vector3(),
+        upTarget: new THREE.Vector3(),
+        worldUp: new THREE.Vector3(0, 1, 0)
+      };
+      return scene;
+    }
+
+    buildCinematicFilmSet(zone) {
+      const THREE = this.THREE;
+      const profile = BIOME_PROFILES[zone.id] || BIOME_PROFILES.central;
+      const group = new THREE.Group();
+      group.name = `NexusEchoFilmSet:${zone.id}`;
+      group.userData.zoneId = zone.id;
+
+      const accent = new THREE.Color(profile.accent);
+      const floor = new THREE.Mesh(
+        new THREE.CircleGeometry(Math.min(24, zone.radius * 0.78), 96),
+        new THREE.MeshPhysicalMaterial({
+          color: accent.clone().lerp(new THREE.Color(0x30343a), 0.82),
+          map: this.terrainTexture,
+          bumpMap: this.terrainSurfaceTextures?.height || null,
+          bumpScale: 0.16,
+          normalMap: this.terrainSurfaceTextures?.normal || null,
+          roughnessMap: this.terrainSurfaceTextures?.roughness || null,
+          aoMap: this.terrainSurfaceTextures?.ao || null,
+          roughness: 0.88,
+          metalness: zone.id === "station" ? 0.22 : 0.035,
+          clearcoat: zone.id === "ocean" ? 0.28 : 0.06,
+          envMapIntensity: 0.64
+        })
+      );
+      floor.name = `CinematicFloor:${zone.id}`;
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(zone.x, 1.01, zone.z);
+      floor.receiveShadow = true;
+      floor.userData.cinematicOwned = true;
+      group.add(floor);
+
+      const streamSource = this.streamingGroups.get(zone.id);
+      if (streamSource) {
+        const clone = new THREE.Group();
+        clone.name = `CinematicDecor:${zone.id}`;
+        clone.visible = true;
+        streamSource.children.forEach((child) => {
+          if (child.userData?.licensedAsset !== true || child.userData?.lodPriority === "environment-far") return;
+          clone.add(child.clone(true));
+        });
+        clone.traverse((object) => {
+          object.userData ||= {};
+          object.userData.cinematicDecoration = true;
+          if (object.isMesh) object.castShadow = Boolean(object.castShadow && this.state.settings.quality !== "low");
+        });
+        if (clone.children.length) group.add(clone);
+      }
+
+      let directDecorCount = 0;
+      for (const object of this.world?.children || []) {
+        if (directDecorCount >= 48 || object === this.playerMesh || object === this.playerShadow || object === this.terrainGround) continue;
+        if (object.name?.startsWith("Stream:") || object.name?.startsWith("LivingBiome:") || object.name?.startsWith("DynamicPebbles:")) continue;
+        if (object.isSprite || object.isPoints || object.userData?.type || object.userData?.boss || object.userData?.livingParticles || object.userData?.characterRuntime) continue;
+        if (object.userData?.licensedAsset !== true) continue;
+        const distance = Math.hypot(object.position.x - zone.x, object.position.z - zone.z);
+        if (distance > zone.radius + 4) continue;
+        const clone = object.clone(true);
+        clone.userData = { ...(clone.userData || {}), cinematicDecoration: true };
+        clone.traverse((child) => {
+          child.userData ||= {};
+          child.userData.cinematicDecoration = true;
+        });
+        group.add(clone);
+        directDecorCount += 1;
+      }
+      return group;
+    }
+
+    releaseCinematicFilmSet(group) {
+      if (!group) return;
+      group.parent?.remove(group);
+      group.traverse((object) => {
+        if (!object.userData?.cinematicOwned) return;
+        object.geometry?.dispose?.();
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.filter(Boolean).forEach((material) => material.dispose?.());
+      });
+    }
+
+    prepareCinematicFilmSets(zone) {
+      const scene = this.createCinematicScene();
+      const currentIndex = ASTRAL_CINEMATICS.findIndex((entry) => entry.id === zone.id);
+      const retain = new Set([zone.id, ASTRAL_CINEMATICS[currentIndex + 1]?.id].filter(Boolean));
+      this.cinematicSetCache.forEach((group, id) => {
+        if (retain.has(id)) return;
+        this.releaseCinematicFilmSet(group);
+        this.cinematicSetCache.delete(id);
+      });
+      retain.forEach((id) => {
+        if (this.cinematicSetCache.has(id)) return;
+        const nextZone = ZONES.find((entry) => entry.id === id);
+        if (nextZone) this.cinematicSetCache.set(id, this.buildCinematicFilmSet(nextZone));
+      });
+      if (this.cinematicSetGroup) this.cinematicSetGroup.parent?.remove(this.cinematicSetGroup);
+      this.cinematicSetGroup = this.cinematicSetCache.get(zone.id) || null;
+      if (this.cinematicSetGroup) {
+        this.cinematicSetGroup.visible = true;
+        scene.add(this.cinematicSetGroup);
+      }
+      const profile = BIOME_PROFILES[zone.id] || BIOME_PROFILES.central;
+      scene.background.set(profile.fog).multiplyScalar(0.42);
+      scene.fog.color.set(profile.fog);
+      scene.fog.density = Math.min(0.012, profile.fogDensity * 0.72);
+      const { key, rim, practical } = scene.userData.lightRig;
+      key.position.set(zone.x - 9, 14, zone.z + 10);
+      key.target.position.set(zone.x, 2, zone.z);
+      rim.color.set(profile.accent);
+      rim.position.set(zone.x + 8, 9, zone.z - 11);
+      rim.target.position.set(zone.x, 2, zone.z);
+      practical.color.set(profile.accent);
+      practical.position.set(zone.x - 4, 4.5, zone.z + 1);
+    }
+
+    enterCinematicScene(zone) {
+      const scene = this.createCinematicScene();
+      if (!this.cinematicActorRestore) {
+        this.cinematicActorRestore = {
+          parent: this.playerMesh.parent || this.world,
+          position: this.playerMesh.position.clone(),
+          quaternion: this.playerMesh.quaternion.clone(),
+          scale: this.playerMesh.scale.clone()
+        };
+        this.playerMesh.parent?.remove(this.playerMesh);
+        scene.add(this.playerMesh);
+      }
+      if (this.playerShadow && !this.cinematicShadowRestore) {
+        this.cinematicShadowRestore = {
+          parent: this.playerShadow.parent || this.world,
+          position: this.playerShadow.position.clone(),
+          quaternion: this.playerShadow.quaternion.clone(),
+          scale: this.playerShadow.scale.clone()
+        };
+        this.playerShadow.parent?.remove(this.playerShadow);
+        scene.add(this.playerShadow);
+      }
+      this.prepareCinematicFilmSets(zone);
+      return true;
+    }
+
+    restoreGameplaySceneFromCinematic() {
+      const restoreObject = (object, restore) => {
+        if (!object || !restore) return;
+        object.parent?.remove(object);
+        restore.parent?.add(object);
+        object.position.copy(restore.position);
+        object.quaternion.copy(restore.quaternion);
+        object.scale.copy(restore.scale);
+      };
+      restoreObject(this.playerMesh, this.cinematicActorRestore);
+      restoreObject(this.playerShadow, this.cinematicShadowRestore);
+      this.cinematicActorRestore = null;
+      this.cinematicShadowRestore = null;
+      this.cinematicSetCache.forEach((group) => this.releaseCinematicFilmSet(group));
+      this.cinematicSetCache.clear();
+      this.cinematicSetGroup = null;
+      this.cinematicScene = null;
+      this.cinematicScratch = null;
+    }
+
+    validateCinematicSubject() {
+      const THREE = this.THREE;
+      const scratch = this.cinematicScratch;
+      if (!scratch || !this.playerMesh || !this.camera) return { ready: false, reason: "missing-subject" };
+      let triangles = 0;
+      let opaqueMeshes = 0;
+      this.playerMesh.traverse((object) => {
+        if (!object.visible || !object.isMesh || !object.geometry?.attributes?.position) return;
+        const positionCount = object.geometry.attributes.position.count || 0;
+        triangles += object.geometry.index ? object.geometry.index.count / 3 : positionCount / 3;
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        if (materials.some((material) => material?.visible !== false && Number(material?.opacity ?? 1) > 0.08)) opaqueMeshes += 1;
+      });
+      scratch.box.setFromObject(this.playerMesh, true);
+      scratch.box.getSize(scratch.size);
+      scratch.box.getCenter(scratch.center);
+      this.camera.updateMatrixWorld(true);
+      scratch.matrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+      scratch.frustum.setFromProjectionMatrix(scratch.matrix);
+      scratch.top.copy(scratch.center).setY(scratch.box.max.y).project(this.camera);
+      scratch.bottom.copy(scratch.center).setY(scratch.box.min.y).project(this.camera);
+      const screenHeight = this.renderer?.domElement?.clientHeight || 1;
+      const projectedPixels = Math.abs(scratch.top.y - scratch.bottom.y) * 0.5 * screenHeight;
+      const finiteBounds = [scratch.size.x, scratch.size.y, scratch.size.z].every(Number.isFinite) && scratch.size.y > 0.5;
+      const ready = finiteBounds
+        && triangles >= 500
+        && opaqueMeshes > 0
+        && scratch.frustum.intersectsBox(scratch.box)
+        && projectedPixels >= Math.max(110, screenHeight * 0.22);
+      return { ready, finiteBounds, triangles: Math.round(triangles), opaqueMeshes, projectedPixels: Math.round(projectedPixels) };
+    }
+
+    confirmCinematicSubjectFrame(renderedAt) {
+      const sequence = this.cinematicSequence;
+      if (!sequence.active || !sequence.waitingForSubject || renderedAt <= sequence.startedAt) return;
+      const report = this.validateCinematicSubject();
+      sequence.subjectReport = report;
+      sequence.validSubjectFrames = report.ready ? sequence.validSubjectFrames + 1 : 0;
+      if (sequence.validSubjectFrames < 2) return;
+      sequence.waitingForSubject = false;
+      sequence.playing = sequence.pendingAutoplay;
+      sequence.startedAt = performance.now();
+      this.root.dataset.cinematicState = sequence.playing ? "playing" : "paused";
+      const toggle = this.root.querySelector('[data-cinematic-action="toggle"]');
+      if (toggle) toggle.textContent = sequence.playing ? "Ⅱ Tạm dừng" : "▶ Tiếp tục";
+    }
+
+    openCinematicGallery(chapterId = this.currentStoryChapter().id, { source = "manual", autoplay = true } = {}) {
       if (!this.running || this.genesisActive || !this.playerMesh) return false;
       const overlay = this.root.querySelector("[data-har-cinematic-player]");
       if (!overlay) return false;
+      if (!this.isStoryChapterUnlocked(chapterId)) chapterId = this.currentStoryChapter().id;
       const wasActive = this.cinematicSequence.active;
       if (!wasActive) {
         this.cinematicSequence.restoreMenuPaused = this.menuPaused;
@@ -1735,28 +2230,40 @@
 
     playCinematicChapter(chapterId = "central", { autoplay = true } = {}) {
       const cinematic = this.cinematicById(chapterId);
+      if (!this.isStoryChapterUnlocked(cinematic.id)) {
+        this.toast(`Chương ${cinematic.chapter} đang khóa · hãy hoàn thành nhiệm vụ chính trước.`, "error");
+        this.updateCinematicChapterRail();
+        return null;
+      }
       const zone = ZONES.find((entry) => entry.id === cinematic.id) || ZONES[0];
       const now = performance.now();
+      this.enterCinematicScene(zone);
       Object.assign(this.cinematicSequence, {
         chapterId: cinematic.id,
         startedAt: now,
         elapsedBeforePause: 0,
-        playing: autoplay,
+        playing: false,
         completed: false,
-        progress: 0
+        progress: 0,
+        waitingForSubject: true,
+        pendingAutoplay: autoplay,
+        validSubjectFrames: 0,
+        subjectReport: null,
+        replayOnly: cinematic.chapter < (this.state.story?.chapter || 1)
       });
-      this.streamingGroups.forEach((group, zoneId) => { group.visible = zoneId === zone.id || zoneId === "central"; });
-      this.zoneFxGroups.forEach((group, zoneId) => { group.visible = zoneId === zone.id; });
-      this.applyBiomeVisualState(zone);
       const lift = Number(this.playerMesh.userData?.gameplayGroundOffset ?? this.playerMesh.userData?.gameplayVisualLift ?? 0);
       const direction = cinematic.chapter % 2 ? 1 : -1;
       this.playerMesh.position.set(zone.x - direction * 2.4, 1.05 + lift, zone.z + direction * 1.6);
       this.playerMesh.rotation.y = direction > 0 ? -0.5 : 0.5;
       this.playerMesh.visible = true;
       if (cinematic.camera === "opening-six-shot" && this.camera) {
-        this.camera.position.copy(this.playerMesh.position).add(new this.THREE.Vector3(-9.2, 6.1, 11.8));
+        const initialOffset = this.cinematicScratch?.shot || new this.THREE.Vector3();
+        initialOffset.set(-9.2, 6.1, 11.8);
+        this.camera.position.copy(this.playerMesh.position).add(initialOffset);
         this.camera.up.set(0, 1, 0);
-        this.camera.lookAt(this.playerMesh.position.clone().add(new this.THREE.Vector3(0, 1.8, 0)));
+        const initialFocus = this.cinematicScratch?.targetFocus || new this.THREE.Vector3();
+        initialFocus.copy(this.playerMesh.position).setY(this.playerMesh.position.y + 1.8);
+        this.camera.lookAt(initialFocus);
       }
       if (this.playerShadow) {
         this.playerShadow.visible = true;
@@ -1774,18 +2281,14 @@
         assign("[data-cinematic-objective]", cinematic.objective);
         assign("[data-cinematic-current]", "00:00");
         assign("[data-cinematic-duration]", this.cinematicTime(cinematic.duration));
-        overlay.querySelectorAll("[data-cinematic-chapter]").forEach((button) => {
-          const active = button.dataset.cinematicChapter === cinematic.id;
-          button.classList.toggle("is-active", active);
-          button.setAttribute("aria-pressed", String(active));
-        });
+        this.updateCinematicChapterRail(cinematic.id);
         const toggle = overlay.querySelector('[data-cinematic-action="toggle"]');
-        if (toggle) toggle.textContent = autoplay ? "Ⅱ Tạm dừng" : "▶ Tiếp tục";
+        if (toggle) toggle.textContent = "Đang căn khung hình…";
         const progress = overlay.querySelector("[data-cinematic-progress]");
         if (progress) progress.style.width = "0%";
       }
       this.root.dataset.cinematicChapter = cinematic.id;
-      this.root.dataset.cinematicState = autoplay ? "playing" : "paused";
+      this.root.dataset.cinematicState = "preparing";
       return cinematic;
     }
 
@@ -1795,6 +2298,7 @@
       const now = performance.now();
       if (now - Number(this.lastCinematicToggleAt || 0) < 160) return;
       this.lastCinematicToggleAt = now;
+      if (this.cinematicSequence.waitingForSubject) return;
       if (this.cinematicSequence.completed) return this.playCinematicChapter(cinematic.id, { autoplay: true });
       if (this.cinematicSequence.playing) {
         this.cinematicSequence.elapsedBeforePause += now - this.cinematicSequence.startedAt;
@@ -1813,6 +2317,10 @@
       if (!this.cinematicSequence.active && overlay?.hidden !== false) return;
       const cinematic = this.cinematicById(this.cinematicSequence.chapterId);
       const zone = ZONES.find((entry) => entry.id === cinematic.id) || ZONES[0];
+      if (enterZone && cinematic.chapter !== (this.state.story?.chapter || 1)) {
+        this.toast("Chương cũ chỉ dùng để xem lại và không thay đổi tiến trình.", "error");
+        return;
+      }
       if (enterZone) {
         this.state.player.x = zone.x;
         this.state.player.z = zone.z + Math.min(5, zone.radius * 0.2);
@@ -1829,11 +2337,13 @@
       this.cinematicSequence.active = false;
       this.cinematicSequence.playing = false;
       this.cinematicSequence.completed = false;
+      this.cinematicSequence.waitingForSubject = false;
       if (overlay) overlay.hidden = true;
       this.root.classList.remove("is-story-cinematic", "is-cinematic");
       delete this.root.dataset.cinematicChapter;
       this.root.dataset.cinematicState = "closed";
       try {
+        this.restoreGameplaySceneFromCinematic();
         this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
         this.playerMesh.rotation.y = this.state.player.rotation;
         if (this.playerShadow) this.playerShadow.position.set(this.state.player.x, 1.08, this.state.player.z);
@@ -1845,8 +2355,9 @@
         console.warn("Astral cinematic scene restore recovered:", error?.message || error);
       }
       if (enterZone) {
-        this.toast(`Đã tới ${zone.name} · cinematic ${String(cinematic.chapter).padStart(2, "0")}`, "success");
-        this.saveProgress(`Cinematic ${cinematic.chapter} · ${zone.name}`);
+        this.state.story.step = "mission";
+        this.toast(`Đã tới ${zone.name} · nhiệm vụ chính Chương ${String(cinematic.chapter).padStart(2, "0")}`, "success");
+        this.saveProgress(`Nexus Echo ${cinematic.chapter} · ${zone.name}`);
       }
     }
 
@@ -1866,9 +2377,13 @@
         sequence.playing = false;
         sequence.completed = true;
         sequence.elapsedBeforePause = cinematic.duration;
+        const recorded = this.recordStoryEvent(`cinematic:${cinematic.id}`);
+        const advanced = this.evaluateStoryProgress({ save: true });
+        if (recorded && !advanced) this.saveProgress(`Nexus Echo · cinematic chương ${cinematic.chapter}`);
         this.root.dataset.cinematicState = "completed";
         const toggle = this.root.querySelector('[data-cinematic-action="toggle"]');
         if (toggle) toggle.textContent = "↺ Phát lại";
+        this.updateCinematicChapterRail(cinematic.id);
       }
       const direction = cinematic.chapter % 2 ? 1 : -1;
       const lift = Number(this.playerMesh.userData?.gameplayGroundOffset ?? this.playerMesh.userData?.gameplayVisualLift ?? 0);
@@ -3121,6 +3636,7 @@
     resetGraphicsAfterFailure() {
       this.teardownGenesisPreview({ restorePlayer: false });
       this.restoreGenesisLighting();
+      if (this.cinematicActorRestore) this.restoreGameplaySceneFromCinematic();
       if (this.frameHandle) cancelAnimationFrame(this.frameHandle);
       this.frameHandle = 0;
       try { this.renderer?.dispose?.(); } catch {}
@@ -3139,6 +3655,10 @@
       this.portals.clear();
       this.streamingGroups.clear();
       this.zoneFxGroups.clear();
+      this.shadowCastersByZone.clear();
+      this.activeShadowCasters.clear();
+      this.worldSpinners = [];
+      this.climbableObjects = [];
       this.livingWorldActors = [];
       this.footprints = [];
       this.dynamicFoliage = [];
@@ -3230,6 +3750,16 @@
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = quality === "cinematic" ? 1.08 : 0.98;
+      this.frameScratch = {
+        dayColor: new THREE.Color(),
+        biomeFog: new THREE.Color(),
+        cameraDesired: new THREE.Vector3(),
+        cameraFocus: new THREE.Vector3(),
+        cameraDirection: new THREE.Vector3(),
+        cameraTargetFocus: new THREE.Vector3(),
+        cameraTargetPosition: new THREE.Vector3(),
+        cameraCinematicPosition: new THREE.Vector3()
+      };
       if ("physicallyCorrectLights" in this.renderer) this.renderer.physicallyCorrectLights = true;
       this.root.dataset.cameraSensor = `${CINEMATIC_CAMERA.sensorWidthMm}x${CINEMATIC_CAMERA.sensorHeightMm}mm`;
       this.root.dataset.cameraLens = `${CINEMATIC_CAMERA.focalLengthMm}mm`;
@@ -3467,21 +3997,41 @@
 
     async loadCharacterPipelineManifest() {
       this.characterPipelineManifest = [];
+      this.characterExternalCandidates = [];
       this.characterPipelineStatus = "not-configured";
       try {
         const response = await fetch(CHARACTER_PIPELINE_MANIFEST_URL, { cache: "no-store" });
         if (!response.ok) return;
         const payload = await response.json();
         const entries = Array.isArray(payload?.sources) ? payload.sources : [];
+        this.characterExternalCandidates = (Array.isArray(payload?.externalCandidates) ? payload.externalCandidates : [])
+          .map((entry) => ({
+            id: String(entry?.id || "").slice(0, 80),
+            characterId: CHARACTERS[entry?.characterId] ? entry.characterId : "",
+            label: String(entry?.label || "Sketchfab character").slice(0, 100),
+            author: String(entry?.author || "").slice(0, 80),
+            page: /^https:\/\/sketchfab\.com\//.test(String(entry?.page || "")) ? String(entry.page).slice(0, 300) : "",
+            license: String(entry?.license || "").slice(0, 40),
+            status: String(entry?.status || "awaiting-download").slice(0, 40),
+            weaponClass: WEAPON_COMBAT_PROFILES[entry?.weaponClass] ? entry.weaponClass : "sword"
+          }))
+          .filter((entry) => entry.id && entry.characterId && entry.page && entry.license === "CC-BY-4.0");
         const normalizedEntries = entries.map((entry) => ({
           id: String(entry?.id || "").slice(0, 80),
           provider: CHARACTER_PIPELINE_SOURCES.includes(entry?.provider) ? entry.provider : "",
           modelId: String(entry?.modelId || "").slice(0, 60),
           url: String(entry?.url || "").slice(0, 240),
+          motionUrl: String(entry?.motionUrl || "").slice(0, 240),
+          motionManifestUrl: String(entry?.motionManifestUrl || "").slice(0, 240),
           label: String(entry?.label || entry?.provider || "Web GLB").slice(0, 100),
           quality: String(entry?.quality || "web").slice(0, 32),
           image: String(entry?.image || "").slice(0, 240),
           license: String(entry?.license || "").slice(0, 40),
+          author: String(entry?.author || "").slice(0, 80),
+          page: /^https:\/\/sketchfab\.com\//.test(String(entry?.page || "")) ? String(entry.page).slice(0, 300) : "",
+          attribution: String(entry?.attribution || "").slice(0, 180),
+          sha256: String(entry?.sha256 || "").slice(0, 80),
+          motionSha256: String(entry?.motionSha256 || "").slice(0, 80),
           ethnicity: String(entry?.ethnicity || "").slice(0, 40),
           gender: String(entry?.gender || "").slice(0, 8),
           outfit: String(entry?.outfit || "").slice(0, 40)
@@ -3590,17 +4140,19 @@
       const preferred = CHARACTER_PIPELINE_SOURCES.includes(requestedProvider) ? requestedProvider : "auto";
       if (preferred === "procedural") return [];
       const order = preferred === "auto"
-        ? ["metahuman", "character-creator", "mpfb", "valid-avatar", "bundled"]
+        ? ["metahuman", "character-creator", "mpfb", "sketchfab-cc-by", "valid-avatar", "bundled"]
         : [preferred, "bundled"];
       const optional = this.characterPipelineManifest
         .filter((entry) => entry.modelId === modelId && order.includes(entry.provider))
         .sort((a, b) => order.indexOf(a.provider) - order.indexOf(b.provider));
       const fallbackUrl = BUILTIN_CHARACTER_ASSETS[modelId]
-        || (/^valid-.*-f-/.test(modelId)
-          ? BUILTIN_CHARACTER_ASSETS["human-adult-a01"]
-          : /^valid-/.test(modelId)
-            ? BUILTIN_CHARACTER_ASSETS["human-adult-b01"]
-            : "");
+        || (modelId === "sketchfab-miss-galaxy"
+          ? BUILTIN_CHARACTER_ASSETS["valid-asian-f-1-casual"]
+          : /^valid-.*-f-/.test(modelId)
+            ? BUILTIN_CHARACTER_ASSETS["human-adult-a01"]
+            : /^valid-/.test(modelId)
+              ? BUILTIN_CHARACTER_ASSETS["human-adult-b01"]
+              : "");
       const bundled = fallbackUrl
         ? [{ id: `bundled-${modelId}`, provider: "bundled", modelId, url: fallbackUrl, label: "HH bundled GLB fallback", quality: "fallback-web" }]
         : [];
@@ -3707,6 +4259,34 @@
             gltf.userData.hhSourceProvider = candidate.provider;
             gltf.userData.hhSourceLabel = candidate.label;
             gltf.userData.hhAssetPath = candidate.url;
+            gltf.userData.hhAuthor = candidate.author || "";
+            gltf.userData.hhLicense = candidate.license || "";
+            gltf.userData.hhSourcePage = candidate.page || "";
+            gltf.userData.hhAttribution = candidate.attribution || "";
+            gltf.userData.hhMotionSource = "native";
+            if (candidate.motionUrl && candidate.motionManifestUrl) {
+              try {
+                const motionManifestResponse = await fetch(candidate.motionManifestUrl, { cache: "no-store" });
+                if (!motionManifestResponse.ok) throw new Error(`Motion manifest HTTP ${motionManifestResponse.status}`);
+                const motionManifest = await motionManifestResponse.json();
+                if (motionManifest?.status !== "ready" || motionManifest?.qaStatus !== "approved") {
+                  throw new Error("Motion library has not passed visual QA");
+                }
+                const motionGltf = await Promise.race([
+                  loader.loadAsync(candidate.motionUrl),
+                  new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Motion timeout ${candidate.motionUrl}`)), 15000))
+                ]);
+                const mergedAnimations = new Map();
+                [...(gltf.animations || []), ...(motionGltf.animations || [])].forEach((clip) => {
+                  const key = String(clip?.name || "").toLowerCase();
+                  if (key) mergedAnimations.set(key, clip);
+                });
+                gltf.animations = [...mergedAnimations.values()];
+                if (motionGltf.animations?.length) gltf.userData.hhMotionSource = "offline-baked-model-specific";
+              } catch (motionError) {
+                gltf.userData.hhMotionError = String(motionError?.message || motionError).slice(0, 160);
+              }
+            }
             await new Promise((resolve) => root.setTimeout(resolve, 320));
             this.sanitizeBuiltInCharacterAsset(gltf);
             gltf.scene.traverse?.((object) => {
@@ -3739,7 +4319,12 @@
         this.builtInCharacterSources.set(id, {
           provider: gltf.userData?.hhSourceProvider || "bundled",
           label: gltf.userData?.hhSourceLabel || "HH bundled GLB",
-          url: gltf.userData?.hhAssetPath || BUILTIN_CHARACTER_ASSETS[id]
+          url: gltf.userData?.hhAssetPath || BUILTIN_CHARACTER_ASSETS[id],
+          author: gltf.userData?.hhAuthor || "",
+          license: gltf.userData?.hhLicense || "",
+          page: gltf.userData?.hhSourcePage || "",
+          attribution: gltf.userData?.hhAttribution || "",
+          motionSource: gltf.userData?.hhMotionSource || "native"
         });
       });
       this.builtInCharacterStatus = this.builtInCharacterAssets.size === entries.length
@@ -4353,7 +4938,14 @@
         ["kenneyRoad", "central", 10, 5.4, 25],
         ["kenneyHouse", "central", 6, 6.6, 30],
         ["kenneyTower", "station", 5, 11.5, 25],
-        ["kenneyBridge", "central", 2, 9.5, 24]
+        ["kenneyBridge", "central", 2, 9.5, 24],
+        ["free3dTreeA", "aurora", 12, 5.8, 30],
+        ["free3dTreeB", "central", 7, 6.4, 29],
+        ["free3dTreeC", "ocean", 10, 5.2, 29],
+        ["free3dBush", "aurora", 16, 1.35, 30],
+        ["free3dFlower", "aurora", 22, 0.62, 28],
+        ["free3dMushroom", "void", 14, 0.42, 27],
+        ["free3dStone", "central", 18, 0.58, 30]
       ];
       const seeded = (index, salt) => {
         const value = Math.sin(index * 71.137 + salt * 19.71) * 43758.5453;
@@ -4374,8 +4966,12 @@
         wrapper.add(object);
         wrapper.userData = {
           licensedAsset: true,
-          provider: assetId.startsWith("kenney") ? "Kenney CC0" : "Poly Haven CC0",
-          lodPriority: "environment-near"
+          provider: assetId.startsWith("kenney")
+            ? "Kenney CC0"
+            : assetId.startsWith("free3d")
+              ? "Free3D author-declared CC0"
+              : "Poly Haven CC0",
+          lodPriority: assetId.startsWith("free3d") ? "environment-far" : "environment-near"
         };
         return wrapper;
       };
@@ -4390,7 +4986,7 @@
           const object = instantiate(source, targetHeight * (0.78 + seeded(index, profileIndex + 4) * 0.5), assetId);
           const angle = seeded(index, profileIndex + 9) * Math.PI * 2;
           const architecture = ["kenneyHouse", "kenneyTower", "modularFort"].includes(assetId);
-          const tallFoliage = ["deadTree", "kenneyOak", "kenneyPalm"].includes(assetId);
+          const tallFoliage = ["deadTree", "kenneyOak", "kenneyPalm", "free3dTreeA", "free3dTreeB", "free3dTreeC"].includes(assetId);
           const flatAsset = ["kenneyPath", "kenneyRoad", "kenneyBridge", "pineRoots"].includes(assetId);
           // The gameplay camera trails roughly 11 units behind the actor. Keep
           // tall authored assets beyond that corridor so trunks/canopies cannot
@@ -4413,10 +5009,18 @@
             node.receiveShadow = true;
           });
           parent.add(object);
-          if (["shrub", "deadTree", "fern", "grass", "kenneyOak", "kenneyPalm", "kenneyBush"].includes(assetId)) {
+          if (["shrub", "deadTree", "fern", "grass", "kenneyOak", "kenneyPalm", "kenneyBush", "free3dTreeA", "free3dTreeB", "free3dTreeC", "free3dBush", "free3dFlower", "free3dMushroom"].includes(assetId)) {
             object.userData.dynamicFoliage = true;
             object.userData.windPhase = seeded(index, profileIndex + 23) * Math.PI * 2;
-            object.userData.windStrength = assetId === "deadTree" ? 0.012 : assetId === "grass" ? 0.034 : 0.022;
+            object.userData.windStrength = assetId === "deadTree"
+              ? 0.012
+              : assetId === "grass" || assetId === "free3dFlower"
+                ? 0.034
+                : assetId === "free3dMushroom"
+                  ? 0.008
+                  : assetId.startsWith("free3dTree")
+                    ? 0.016
+                    : 0.022;
             object.userData.baseRotation = object.rotation.clone();
             this.dynamicFoliage.push(object);
           }
@@ -4642,7 +5246,7 @@
       this.entities.set("training-core", dummy);
 
       this.createNpc("luma", "Navigator Luma", -6, 3, "#6cf2ff");
-      this.createNpc("forge-master", "Thợ rèn Kael", 8, 8, "#ffbb72");
+      this.createNpc("forge-master", "Cael · Thợ rèn Temporal", 8, 8, "#ffbb72");
 
       this.createPortal("central", "Cổng H-Central", 0, 18, "#6feeff", { checkpoint: "central" });
     }
@@ -4866,10 +5470,22 @@
       }
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      this.weatherField = new THREE.Points(
-        geometry,
-        new THREE.PointsMaterial({ size: 0.085, color: 0xbfd9e8, transparent: true, opacity: 0.32, depthWrite: false })
-      );
+      const material = new THREE.PointsMaterial({ size: 0.085, color: 0xbfd9e8, transparent: true, opacity: 0.32, depthWrite: false });
+      material.onBeforeCompile = (shader) => {
+        shader.uniforms.hhWeatherTime = { value: 0 };
+        shader.uniforms.hhWeatherWind = { value: 0.4 };
+        shader.uniforms.hhWeatherFall = { value: 3.2 };
+        shader.vertexShader = shader.vertexShader
+          .replace("#include <common>", "#include <common>\nuniform float hhWeatherTime;\nuniform float hhWeatherWind;\nuniform float hhWeatherFall;")
+          .replace("#include <begin_vertex>", `#include <begin_vertex>
+            transformed.y = 1.0 + mod((position.y - 1.0) - hhWeatherTime * hhWeatherFall, 27.0);
+            transformed.x += sin(hhWeatherTime * 0.72 + position.z * 0.31) * hhWeatherWind;
+            transformed.z += cos(hhWeatherTime * 0.54 + position.x * 0.27) * hhWeatherWind * 0.42;`);
+        material.userData.gpuShader = shader;
+      };
+      material.customProgramCacheKey = () => "hh-weather-gpu-v1";
+      this.weatherField = new THREE.Points(geometry, material);
+      this.weatherField.userData.gpuDriven = true;
       this.scene.add(this.weatherField);
     }
 
@@ -5141,6 +5757,7 @@
 
     updateLivingWorld(dt, time) {
       this.livingWorldActors.forEach((actor) => {
+        if (actor.mesh?.parent?.visible === false) return;
         actor.angle += dt * actor.speed;
         actor.mesh.position.x = Math.cos(actor.angle) * actor.radius;
         actor.mesh.position.z = Math.sin(actor.angle) * actor.radius;
@@ -5149,6 +5766,7 @@
         actor.mesh.rotation.z += dt * 0.18;
       });
       this.zoneFxGroups.forEach((group) => {
+        if (!group.visible) return;
         group.children.forEach((object) => {
           if (object.userData?.livingParticles) {
             object.rotation.y += dt * 0.012 * object.userData.wind;
@@ -5166,7 +5784,7 @@
       const activeWind = BIOME_PROFILES[this.currentZone?.id]?.wind || 0.35;
       const gust = Math.sin(time * 0.0011) * 0.55 + Math.sin(time * 0.0027) * 0.2;
       this.dynamicFoliage.forEach((object, index) => {
-        if (!object?.rotation || object.visible === false) return;
+        if (!object?.rotation || object.visible === false || object.parent?.visible === false) return;
         const base = object.userData.baseRotation || object.rotation;
         const phase = object.userData.windPhase || index * 0.47;
         const strength = (object.userData.windStrength || 0.018) * activeWind;
@@ -5176,7 +5794,7 @@
       if (this.dynamicPebbleFields.length) {
         const { matrix, position, quaternion, scale, euler } = this.dynamicNatureScratch;
         this.dynamicPebbleFields.forEach((field) => {
-          if (!field.mesh.visible) return;
+          if (!field.mesh.visible || field.mesh.parent?.visible === false) return;
           const localProfile = BIOME_PROFILES[field.zoneId] || BIOME_PROFILES.central;
           field.bases.forEach((base, index) => {
             const pulse = Math.sin(time * 0.0015 + base.phase);
@@ -6235,7 +6853,12 @@
 
     createBuiltInRiggedCharacter(profile, scale = 1) {
       const recipe = normalizeAppearanceRecipe(this.state.appearance?.recipes?.[profile.id], profile.id);
-      const fallbackModelId = defaultAppearanceRecipe(profile.id).baseModel;
+      const fallbackModelId = {
+        lyra: "valid-asian-f-1-casual",
+        cael: "valid-white-f-2-casual",
+        nyx: "valid-black-f-1-casual",
+        sol: "valid-hispanic-f-1-milit"
+      }[profile.id] || "human-adult-b01";
       const modelId = this.builtInCharacterAssets.has(recipe.baseModel) ? recipe.baseModel : fallbackModelId;
       const source = this.builtInCharacterAssets.get(modelId);
       if (!source?.scene || !this.cloneSkinnedCharacter) return null;
@@ -6299,6 +6922,7 @@
       const offlineBakedAnimations = sourceInfo.provider === "valid-avatar" && verifiedOfflineMotion
         ? this.motionLibraryAnimations
         : [];
+      const modelSpecificBakedMotion = source.userData?.hhMotionSource === "offline-baked-model-specific";
       wrapper.add(asset);
       asset.updateMatrixWorld(true);
       const restPoseGroundedBounds = new THREE.Box3().setFromObject(asset, true);
@@ -6427,6 +7051,10 @@
           : sourceInfo.label || (modelId === "human-adult-a01" ? "HH Asteria Human Rig" : "HH Vanguard Human Rig"),
         sourceProviderId: sourceInfo.provider,
         sourceAssetPath: sourceInfo.url,
+        sourceAuthor: sourceInfo.author || "",
+        sourceLicense: sourceInfo.license || "",
+        sourcePage: sourceInfo.page || "",
+        sourceAttribution: sourceInfo.attribution || "",
         // The source mesh is already normalized so its lowest authored point is
         // y=0. A legacy +1.35 lift made VALID feet float and pushed the camera
         // above the actor; keep one explicit grounding offset instead.
@@ -6440,16 +7068,24 @@
         builtInModelId: modelId,
         builtInAnimations: sourceInfo.provider === "valid-avatar"
           ? (offlineBakedAnimations.length ? offlineBakedAnimations : source.animations || [])
+          : sourceInfo.provider === "sketchfab-cc-by" && !modelSpecificBakedMotion
+            ? []
           : (source.animations?.length ? source.animations : this.builtInCharacterAssets.get("human-adult-b01")?.animations || []),
-        motionSource: offlineBakedAnimations.length
+        motionSource: modelSpecificBakedMotion
+          ? "offline-baked-model-specific"
+          : offlineBakedAnimations.length
           ? "offline-baked-v13"
           : sourceInfo.provider === "valid-avatar"
             ? "verified-rest-space-procedural"
+            : sourceInfo.provider === "sketchfab-cc-by"
+              ? "procedural-humanoid-safe"
             : source.animations?.length
               ? "native"
               : "rest-space-procedural",
         motionProfile: offlineBakedAnimations.length
           ? "verified-baked"
+          : modelSpecificBakedMotion
+            ? "verified-baked"
           : sourceInfo.provider === "valid-avatar"
             ? "valid-rest-solver"
             : "standard",
@@ -7292,6 +7928,15 @@
       let torsoYaw = locomotion ? gait * (motion === "walk" ? 0.055 : 0.038) : Math.sin(time * 0.00047) * 0.006;
       let armRelaxLeft = runtime.relaxedArmOffsets?.left;
       let armRelaxRight = runtime.relaxedArmOffsets?.right;
+      let leftForeArmBend = 0.09;
+      let rightForeArmBend = 0.09;
+      let leftArmYaw = 0;
+      let rightArmYaw = 0;
+      let leftArmRoll = 0;
+      let rightArmRoll = 0;
+      const swordCombat = /^(?:attack\d|sword)/.test(motion);
+      const rifleCombat = /^rifle/.test(motion);
+      const martialCombat = /^(?:punch|kick|martial)/.test(motion);
       if (motion === "jump") {
         leftLegSwing = -0.34; rightLegSwing = 0.18; leftKnee = 0.46; rightKnee = 0.24;
         leftArmSwing = -0.56; rightArmSwing = -0.56; torsoPitch = -0.08;
@@ -7309,9 +7954,34 @@
         armRelaxLeft = null; armRelaxRight = null;
         leftArmSwing = gait * 1.05; rightArmSwing = -gait * 1.05; leftLegSwing = gait * 0.3; rightLegSwing = -gait * 0.3;
         torsoPitch = 0.34;
-      } else if (/^attack/.test(motion) || motion === "skill") {
+      } else if (rifleCombat) {
+        armRelaxLeft = null; armRelaxRight = null;
+        leftArmSwing = -1.02; rightArmSwing = -1.08;
+        leftForeArmBend = 1.06; rightForeArmBend = 0.72;
+        leftArmYaw = 0.22; rightArmYaw = -0.12;
+        leftArmRoll = -0.12; rightArmRoll = 0.08;
+        leftLegSwing = -0.08; rightLegSwing = 0.12; leftKnee = 0.14; rightKnee = 0.08;
+        torsoPitch = -0.055;
+        torsoYaw = motion === "rifleBurst" || motion === "rifleUltimate" ? Math.sin(time * 0.036) * 0.035 : -0.018;
+      } else if (martialCombat) {
+        armRelaxLeft = null; armRelaxRight = null;
+        leftForeArmBend = 0.82; rightForeArmBend = 0.88;
+        leftLegSwing = -0.12; rightLegSwing = 0.18; leftKnee = 0.22; rightKnee = 0.1;
+        torsoPitch = -0.08;
+        if (motion === "punch1") {
+          leftArmSwing = -0.42; rightArmSwing = -1.34; rightArmYaw = -0.16; torsoYaw = -0.18;
+        } else if (motion === "punch2") {
+          leftArmSwing = -1.3; rightArmSwing = -0.46; leftArmYaw = 0.16; torsoYaw = 0.18;
+        } else if (motion === "kick1") {
+          leftArmSwing = -0.68; rightArmSwing = -0.64; rightLegSwing = -0.92; rightKnee = 0.18; torsoRoll = -0.16;
+        } else {
+          leftArmSwing = -1.08; rightArmSwing = -1.12; leftArmYaw = 0.2; rightArmYaw = -0.2;
+          torsoPitch = -0.16; torsoRoll = motion === "martialUltimate" ? Math.sin(time * 0.018) * 0.12 : 0.08;
+        }
+      } else if (swordCombat || motion === "skill") {
         leftArmSwing = motion === "attack2" ? 0.42 : -0.28;
-        rightArmSwing = motion === "attack3" ? -1.22 : -0.86;
+        rightArmSwing = motion === "attack3" || motion === "swordUltimate" ? -1.22 : -0.86;
+        leftForeArmBend = 0.32; rightForeArmBend = motion === "swordSkill" ? 0.52 : 0.36;
         leftLegSwing = -0.12; rightLegSwing = 0.18; leftKnee = 0.18; rightKnee = 0.08;
         torsoPitch = -0.1; torsoRoll = motion === "attack2" ? -0.18 : 0.16;
       } else if (motion === "ultimate") {
@@ -7326,10 +7996,10 @@
       const shoulderCounter = locomotion ? gait * 0.026 : Math.sin(time * 0.00063) * 0.006;
       pose(bones.leftShoulder, turn("x", shoulderBreath), turn("z", shoulderCounter));
       pose(bones.rightShoulder, turn("x", shoulderBreath), turn("z", -shoulderCounter));
-      pose(bones.leftUpperArm, turn("x", leftArmSwing + breathing), armRelaxLeft);
-      pose(bones.rightUpperArm, turn("x", rightArmSwing - breathing), armRelaxRight);
-      pose(bones.leftForeArm, turn("x", 0.09 + Math.max(0, -leftArmSwing) * 0.18), turn("z", -0.025));
-      pose(bones.rightForeArm, turn("x", 0.09 + Math.max(0, -rightArmSwing) * 0.18), turn("z", 0.025));
+      pose(bones.leftUpperArm, turn("x", leftArmSwing + breathing), turn("y", leftArmYaw), turn("z", leftArmRoll), armRelaxLeft);
+      pose(bones.rightUpperArm, turn("x", rightArmSwing - breathing), turn("y", rightArmYaw), turn("z", rightArmRoll), armRelaxRight);
+      pose(bones.leftForeArm, turn("x", leftForeArmBend + Math.max(0, -leftArmSwing) * 0.18), turn("z", -0.025));
+      pose(bones.rightForeArm, turn("x", rightForeArmBend + Math.max(0, -rightArmSwing) * 0.18), turn("z", 0.025));
       pose(bones.leftUpLeg, turn("x", leftLegSwing));
       pose(bones.rightUpLeg, turn("x", rightLegSwing));
       pose(bones.leftLeg, turn("x", leftKnee));
@@ -8277,9 +8947,16 @@
       this.facePilot = { status: "off", stream: null, video: null, landmarker: null, frame: 0, blendshapes: {}, error: "", lastDetectionAt: 0, lastResultAt: 0 };
     }
 
-    createPlayerWeapon(profile) {
+    equippedWeaponClass(characterId = this.state.roster.activeId) {
+      const weaponId = this.state.loadouts?.[characterId]?.weapon || (characterId === this.state.roster.activeId ? this.state.player.weapon : "starter-blade");
+      return ITEMS[weaponId]?.weaponClass || "sword";
+    }
+
+    createPlayerWeapon(profile, weaponClass = this.equippedWeaponClass(profile.id)) {
       const THREE = this.THREE;
       const weapon = new THREE.Group();
+      weapon.name = `Weapon:${weaponClass}`;
+      weapon.userData.weaponClass = weaponClass;
       const weaponSurface = this.state.settings.renderStyle === "anime"
         ? new THREE.MeshToonMaterial({
           color: 0xf2fbff,
@@ -8295,15 +8972,41 @@
           metalness: 0.82,
           clearcoat: 0.7
         });
+      const guardMaterial = this.state.settings.renderStyle === "anime"
+        ? new THREE.MeshToonMaterial({ color: profile.accent, emissive: profile.accent, emissiveIntensity: 0.55, gradientMap: this.toonGradient })
+        : new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({ color: profile.accent, emissive: profile.accent, emissiveIntensity: 0.34, roughness: 0.22, metalness: 0.72, clearcoat: 0.58 });
+
+      if (weaponClass === "gun") {
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.22, 0.86), weaponSurface);
+        receiver.position.set(0, 0.03, -0.35);
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.82, 12), guardMaterial);
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.05, -0.95);
+        const grip = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.42, 0.2), guardMaterial);
+        grip.position.set(0, -0.25, -0.18);
+        grip.rotation.x = -0.22;
+        const sight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.24), guardMaterial);
+        sight.position.set(0, 0.18, -0.4);
+        weapon.add(receiver, barrel, grip, sight);
+        weapon.rotation.set(-0.12, 0, 0.02);
+        return weapon;
+      }
+
+      if (weaponClass === "unarmed") {
+        const gauntlet = new THREE.Mesh(new THREE.DodecahedronGeometry(0.19, 1), weaponSurface);
+        gauntlet.scale.set(0.76, 1.18, 0.92);
+        const knuckles = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 0.17), guardMaterial);
+        knuckles.position.set(0, -0.08, -0.16);
+        weapon.add(gauntlet, knuckles);
+        return weapon;
+      }
+
       const blade = new THREE.Mesh(
         new THREE.BoxGeometry(0.09, profile.id === "sol" ? 1.75 : 1.52, 0.18),
         weaponSurface
       );
       blade.position.y = 0.45;
       weapon.add(blade);
-      const guardMaterial = this.state.settings.renderStyle === "anime"
-        ? new THREE.MeshToonMaterial({ color: profile.accent, emissive: profile.accent, emissiveIntensity: 0.55, gradientMap: this.toonGradient })
-        : new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({ color: profile.accent, emissive: profile.accent, emissiveIntensity: 0.34, roughness: 0.22, metalness: 0.72, clearcoat: 0.58 });
       const guard = new THREE.Mesh(
         new THREE.BoxGeometry(0.58, 0.09, 0.14),
         guardMaterial
@@ -8312,6 +9015,28 @@
       weapon.add(guard);
       weapon.rotation.z = -0.28;
       return weapon;
+    }
+
+    refreshEquippedWeapon(characterId = this.state.roster.activeId) {
+      const mesh = this.characterMeshes.get(characterId);
+      const profile = CHARACTERS[characterId];
+      const anchor = mesh?.userData?.parts?.weaponAnchor;
+      if (!mesh || !profile || !anchor) return;
+      const oldWeapon = mesh.userData.weapon;
+      if (oldWeapon) {
+        anchor.remove(oldWeapon);
+        oldWeapon.traverse((object) => {
+          object.geometry?.dispose?.();
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.filter(Boolean).forEach((material) => material.dispose?.());
+        });
+      }
+      const weapon = this.createPlayerWeapon(profile, this.equippedWeaponClass(characterId));
+      anchor.add(weapon);
+      mesh.userData.weapon = weapon;
+      mesh.userData.lodVariants.attachments = [weapon];
+      weapon.visible = mesh.userData.modelTier !== "impostor";
+      if (characterId === this.state.roster.activeId) this.playerWeapon = weapon;
     }
 
     createActors() {
@@ -8527,11 +9252,16 @@
       });
       this.listen(this.root, "click", (event) => {
         if (event.target.closest("[data-har-cinematics]")) {
-          this.openCinematicGallery(this.currentZone?.id || "central", { source: "archive", autoplay: true });
+          this.openCinematicGallery(this.currentStoryChapter().id, { source: "archive", autoplay: true });
           return;
         }
-        const cinematicChapter = event.target.closest("[data-cinematic-chapter]")?.dataset.cinematicChapter;
+        const cinematicButton = event.target.closest("[data-cinematic-chapter]");
+        const cinematicChapter = cinematicButton?.dataset.cinematicChapter;
         if (cinematicChapter) {
+          if (cinematicButton.disabled || !this.isStoryChapterUnlocked(cinematicChapter)) {
+            this.toast("Chương này chưa được mở trong tuyến Nexus Echo.", "error");
+            return;
+          }
           this.playCinematicChapter(cinematicChapter, { autoplay: true });
           return;
         }
@@ -8958,6 +9688,7 @@
         mesh.rotation.y = this.state.player.rotation;
       });
       this.playerMesh = this.characterMeshes.get(characterId);
+      this.refreshEquippedWeapon(characterId);
       this.playerWeapon = this.playerMesh.userData.weapon;
       this.resetGameplayCharacterVisibility("character-switch");
       this.characterSwitchAt = now;
@@ -9217,6 +9948,12 @@
 
     frame(time) {
       if (this.destroyed) return;
+      const stableFrameInterval = this.forceCompatibility || this.state.settings.quality === "low" ? 1000 / 30 : 0;
+      if (stableFrameInterval && this.lastProcessedFrameAt && time - this.lastProcessedFrameAt < stableFrameInterval - 1) {
+        this.frameHandle = requestAnimationFrame((next) => this.frame(next));
+        return;
+      }
+      this.lastProcessedFrameAt = time;
       try {
         const dt = Math.min(0.05, Math.max(0.001, (time - this.lastFrameAt) / 1000));
         this.lastFrameAt = time;
@@ -9251,7 +9988,9 @@
           } else {
             if (this.cinematicSequence.active) this.updateStoryCinematic(dt, time);
             this.updateCamera(false, dt);
-            this.renderer.render(this.scene, this.camera);
+            const renderScene = this.cinematicSequence.active && this.cinematicScene ? this.cinematicScene : this.scene;
+            this.renderer.render(renderScene, this.camera);
+            if (this.cinematicSequence.active) this.confirmCinematicSubjectFrame(time);
             const characterReport = this.validateGameplayCharacterFrame(time);
             if (this.pendingStartReveal) {
               if (characterReport?.modelReady) this.startRevealFrames += 1;
@@ -9271,7 +10010,7 @@
             this.lastUiAt = time;
             this.updateUi(false);
           }
-          if (time - this.lastMinimapAt > 180) {
+          if (!this.cinematicSequence.active && time - this.lastMinimapAt > 180) {
             this.lastMinimapAt = time;
             this.renderMinimap();
           }
@@ -9514,8 +10253,8 @@
         this.centralCore.position.y = this.centralCore.userData.floatBase + Math.sin(time * 0.0015) * 0.32;
         this.centralCore.rotation.y += dt * 0.28;
       }
-      this.world.traverse((object) => {
-        if (object.userData?.spin) object.rotation.z += dt * object.userData.spin;
+      this.worldSpinners.forEach((object) => {
+        if (object.parent?.visible !== false) object.rotation.z += dt * object.userData.spin;
       });
       this.remotePlayers.forEach((remote) => {
         const target = remote.userData.targetPosition;
@@ -9572,14 +10311,14 @@
         Math.max(8, Math.sin(celestialAngle) * 68),
         Math.sin(celestialAngle * 0.7) * 38
       );
-      const dayColor = new this.THREE.Color().setRGB(
+      const dayColor = this.frameScratch.dayColor.setRGB(
         0.018 + dayAmount * 0.035,
         0.026 + dayAmount * 0.04,
         0.07 + dayAmount * 0.08
       );
       if (this.scene.background?.isColor) this.scene.background.copy(dayColor);
       const biomeProfile = BIOME_PROFILES[this.currentZone.id] || BIOME_PROFILES.central;
-      const biomeFog = new this.THREE.Color(biomeProfile.fog).lerp(dayColor, 0.24 + dayAmount * 0.16);
+      const biomeFog = this.frameScratch.biomeFog.set(biomeProfile.fog).lerp(dayColor, 0.24 + dayAmount * 0.16);
       this.scene.fog.color.lerp(biomeFog, clamp(dt * 2.6, 0, 1));
       this.scene.fog.density += (biomeProfile.fogDensity - this.scene.fog.density) * clamp(dt * 1.8, 0, 1);
       this.hemisphereLight.intensity = 0.24 + dayAmount * 0.34;
@@ -9595,36 +10334,44 @@
         this.auroraVeil.rotation.z += dt * 0.018;
         this.auroraVeil.material.opacity = (1 - dayAmount) * 0.18 + (this.currentZone.id === "aurora" ? 0.09 : 0.02);
       }
-      this.cloudLayers.forEach((cloud) => {
-        cloud.rotation.y += dt * 0.006;
-        cloud.position.x += dt * cloud.userData.drift;
-        if (cloud.position.x > 115) cloud.position.x = -115;
-        cloud.children.forEach((puff, puffIndex) => {
-          const baseScale = puff.userData?.cloudBaseScale;
-          if (!baseScale) return;
-          const phase = puff.userData.cloudPhase || puffIndex;
-          const breathe = 1 + Math.sin(time * 0.00065 + phase) * 0.09;
-          puff.scale.set(baseScale.x * breathe, baseScale.y * (1 + Math.cos(time * 0.00052 + phase) * 0.12), baseScale.z * breathe);
-          puff.rotation.y += dt * (0.006 + puffIndex * 0.0015);
-          puff.position.y += Math.sin(time * 0.0007 + phase) * dt * 0.04;
+      const environmentInterval = this.state.settings.quality === "low" ? 100 : this.state.settings.quality === "medium" ? 50 : 32;
+      const updateEnvironmentDetail = time - this.lastEnvironmentDetailAt >= environmentInterval;
+      if (updateEnvironmentDetail) {
+        const environmentDt = Math.min(0.12, Math.max(dt, (time - this.lastEnvironmentDetailAt) / 1000 || dt));
+        this.lastEnvironmentDetailAt = time;
+        this.cloudLayers.forEach((cloud) => {
+          cloud.rotation.y += environmentDt * 0.006;
+          cloud.position.x += environmentDt * cloud.userData.drift;
+          if (cloud.position.x > 115) cloud.position.x = -115;
+          cloud.children.forEach((puff, puffIndex) => {
+            const baseScale = puff.userData?.cloudBaseScale;
+            if (!baseScale) return;
+            const phase = puff.userData.cloudPhase || puffIndex;
+            const breathe = 1 + Math.sin(time * 0.00065 + phase) * 0.09;
+            puff.scale.set(baseScale.x * breathe, baseScale.y * (1 + Math.cos(time * 0.00052 + phase) * 0.12), baseScale.z * breathe);
+            puff.rotation.y += environmentDt * (0.006 + puffIndex * 0.0015);
+            puff.position.y += Math.sin(time * 0.0007 + phase) * environmentDt * 0.04;
+          });
         });
-      });
-      this.waterSurfaces.forEach((water, index) => {
-        water.position.y = water.userData.baseY + Math.sin(time * 0.0017 + index) * 0.035;
-        water.rotation.z += dt * (water.userData.lava ? 0.035 : -0.012);
-        if (!water.userData.lava && water.material.bumpMap) {
-          water.material.bumpMap.offset.x = (time * 0.000012) % 1;
-          water.material.bumpMap.offset.y = (time * -0.000008) % 1;
-        }
-        water.material.emissiveIntensity = water.userData.lava
-          ? 1.15 + Math.sin(time * 0.003) * 0.25
-          : 0.018 + Math.sin(time * 0.0015) * 0.008;
-      });
-      this.puzzleNodes.forEach((puzzle) => {
-        const core = puzzle.userData.core;
-        core.rotation.y += dt * (puzzle.userData.solved ? 1.5 : 0.45);
-        core.position.y = 1.8 + Math.sin(time * 0.002 + puzzle.position.x) * 0.18;
-      });
+        this.waterSurfaces.forEach((water, index) => {
+          if (water.parent?.visible === false) return;
+          water.position.y = water.userData.baseY + Math.sin(time * 0.0017 + index) * 0.035;
+          water.rotation.z += environmentDt * (water.userData.lava ? 0.035 : -0.012);
+          if (!water.userData.lava && water.material.bumpMap) {
+            water.material.bumpMap.offset.x = (time * 0.000012) % 1;
+            water.material.bumpMap.offset.y = (time * -0.000008) % 1;
+          }
+          water.material.emissiveIntensity = water.userData.lava
+            ? 1.15 + Math.sin(time * 0.003) * 0.25
+            : 0.018 + Math.sin(time * 0.0015) * 0.008;
+        });
+        this.puzzleNodes.forEach((puzzle) => {
+          if (puzzle.parent?.visible === false) return;
+          const core = puzzle.userData.core;
+          core.rotation.y += environmentDt * (puzzle.userData.solved ? 1.5 : 0.45);
+          core.position.y = 1.8 + Math.sin(time * 0.002 + puzzle.position.x) * 0.18;
+        });
+      }
       if (time - this.lastStreamingAt > 550) {
         this.lastStreamingAt = time;
         this.updateWorldStreaming();
@@ -9632,19 +10379,29 @@
 
       if (this.weatherField) {
         this.weatherField.position.set(this.state.player.x, 0, this.state.player.z);
-        const positions = this.weatherField.geometry.attributes.position.array;
         const weatherWind = (BIOME_PROFILES[this.currentZone.id]?.wind || 0.35) * (this.currentZone.id === "sky" ? 3.2 : 1.15);
+        const fallSpeed = this.currentZone.id === "crimson"
+          ? 1.1
+          : this.currentZone.id === "sky"
+            ? 6.2
+            : this.currentZone.id === "abyss"
+              ? 0.65
+              : 3.2;
+        const gpuShader = this.weatherField.material.userData?.gpuShader;
+        if (gpuShader) {
+          gpuShader.uniforms.hhWeatherTime.value = time * 0.001;
+          gpuShader.uniforms.hhWeatherWind.value = weatherWind;
+          gpuShader.uniforms.hhWeatherFall.value = fallSpeed;
+          return;
+        }
+        if (time - this.lastWeatherCpuAt < (this.state.settings.quality === "low" ? 66 : 33)) return;
+        const weatherDt = Math.min(0.08, Math.max(dt, (time - this.lastWeatherCpuAt) / 1000 || dt));
+        this.lastWeatherCpuAt = time;
+        const positions = this.weatherField.geometry.attributes.position.array;
         for (let index = 1; index < positions.length; index += 3) {
-          const fallSpeed = this.currentZone.id === "crimson"
-            ? 1.1
-            : this.currentZone.id === "sky"
-              ? 6.2
-              : this.currentZone.id === "abyss"
-                ? 0.65
-                : 3.2;
-          positions[index] -= dt * fallSpeed;
-          positions[index - 1] += dt * weatherWind * (0.42 + (index % 7) * 0.035);
-          positions[index + 1] += dt * Math.sin(time * 0.001 + index) * weatherWind * 0.08;
+          positions[index] -= weatherDt * fallSpeed;
+          positions[index - 1] += weatherDt * weatherWind * (0.42 + (index % 7) * 0.035);
+          positions[index + 1] += weatherDt * Math.sin(time * 0.001 + index) * weatherWind * 0.08;
           if (positions[index - 1] > 27.5) positions[index - 1] = -27.5;
           if (positions[index + 1] > 27.5) positions[index + 1] = -27.5;
           if (positions[index + 1] < -27.5) positions[index + 1] = 27.5;
@@ -9654,9 +10411,33 @@
       }
     }
 
-    updateWorldStreaming() {
+    indexWorldRuntimeObjects() {
+      if (!this.world || !this.THREE) return;
+      const worldPosition = new this.THREE.Vector3();
+      this.shadowCastersByZone.clear();
+      this.worldSpinners = [];
+      ZONES.forEach((zone) => this.shadowCastersByZone.set(zone.id, []));
+      this.world.traverse((object) => {
+        if (object.userData?.spin) this.worldSpinners.push(object);
+        if (!object.isMesh || object === this.playerMesh || object.userData?.boss) return;
+        object.userData.baseCastShadow = Boolean(object.castShadow);
+        if (!object.userData.baseCastShadow) return;
+        object.getWorldPosition(worldPosition);
+        const explicitZone = object.userData?.zoneId;
+        const zone = ZONES.find((entry) => entry.id === explicitZone)
+          || ZONES.reduce((nearest, entry) => Math.hypot(worldPosition.x - entry.x, worldPosition.z - entry.z) < Math.hypot(worldPosition.x - nearest.x, worldPosition.z - nearest.z) ? entry : nearest, ZONES[0]);
+        this.shadowCastersByZone.get(zone.id)?.push({ object, x: worldPosition.x, z: worldPosition.z });
+      });
+      this.climbableObjects = this.climbables.map((entry) => entry.object).filter(Boolean);
+      this.lastStreamingCell = "";
+    }
+
+    updateWorldStreaming({ force = false } = {}) {
       const player = this.state.player;
       const quality = this.state.settings.quality;
+      const streamingCell = `${Math.floor(player.x / 12)}:${Math.floor(player.z / 12)}:${quality}:${this.currentZone?.id || "central"}`;
+      if (!force && streamingCell === this.lastStreamingCell) return;
+      this.lastStreamingCell = streamingCell;
       const visibleRadius = quality === "low" ? 46 : quality === "medium" ? 63 : 86;
       this.streamingGroups.forEach((group, zoneId) => {
         const zone = ZONES.find((entry) => entry.id === zoneId);
@@ -9671,12 +10452,21 @@
         group.visible = distance <= visibleRadius * 1.08 || zoneId === this.currentZone.id;
       });
       const shadowRadius = quality === "cinematic" ? 58 : quality === "high" ? 42 : 24;
-      this.world.traverse((object) => {
-        if (!object.isMesh || object === this.playerMesh || object.userData?.boss) return;
-        if (object.userData.baseCastShadow === undefined) object.userData.baseCastShadow = Boolean(object.castShadow);
-        const distance = Math.hypot(player.x - object.position.x, player.z - object.position.z);
-        object.castShadow = Boolean(object.userData.baseCastShadow && this.renderer.shadowMap?.enabled && distance < shadowRadius);
+      const nextShadowCasters = new Set();
+      this.shadowCastersByZone.forEach((records, zoneId) => {
+        const zone = ZONES.find((entry) => entry.id === zoneId);
+        if (!zone || Math.hypot(player.x - zone.x, player.z - zone.z) > shadowRadius + zone.radius) return;
+        records.forEach((record) => {
+          if (Math.hypot(player.x - record.x, player.z - record.z) <= shadowRadius) nextShadowCasters.add(record.object);
+        });
       });
+      this.activeShadowCasters.forEach((object) => {
+        if (!nextShadowCasters.has(object)) object.castShadow = false;
+      });
+      nextShadowCasters.forEach((object) => {
+        object.castShadow = Boolean(object.userData.baseCastShadow && this.renderer.shadowMap?.enabled);
+      });
+      this.activeShadowCasters = nextShadowCasters;
     }
 
     updateWeatherAppearance() {
@@ -9755,12 +10545,12 @@
         : Number(this.playerMesh.userData?.gameplayGroundOffset ?? this.playerMesh.userData?.gameplayVisualLift ?? 0);
       const originY = cameraOrigin.y + visualLift;
       const horizontal = Math.cos(this.cameraPitch) * this.cameraDistance;
-      let desired = new this.THREE.Vector3(
+      let desired = this.frameScratch.cameraDesired.set(
         cameraOrigin.x + Math.sin(this.cameraYaw) * horizontal,
         originY + 1.68 + Math.sin(this.cameraPitch) * this.cameraDistance,
         cameraOrigin.z + Math.cos(this.cameraYaw) * horizontal
       );
-      const focus = new this.THREE.Vector3(cameraOrigin.x, originY + 1.52, cameraOrigin.z);
+      const focus = this.frameScratch.cameraFocus.set(cameraOrigin.x, originY + 1.52, cameraOrigin.z);
       if (this.currentPanel === "creator" || this.genesisActive) {
         const focusOffset = this.genesisActive
           ? ({ head: 2.35, upper: 1.78, body: 1.46, lower: 0.76 }[this.appearanceFocus] ?? 1.46)
@@ -9788,17 +10578,17 @@
         focus.x += Math.sin(cameraTime * 0.29) * 0.0012;
         focus.y += Math.cos(cameraTime * 0.23) * 0.001;
       }
-      if (!this.photoMode && !this.genesisActive && this.currentPanel !== "creator") {
-        const colliderObjects = this.climbables.map((entry) => entry.object).filter(Boolean);
+      if (!this.photoMode && !this.genesisActive && !this.cinematicSequence.active && this.currentPanel !== "creator") {
+        const colliderObjects = this.climbableObjects;
         if (colliderObjects.length) {
           this.cameraRaycaster ||= new this.THREE.Raycaster();
-          const direction = desired.clone().sub(focus);
+          const direction = this.frameScratch.cameraDirection.copy(desired).sub(focus);
           const distance = direction.length();
           direction.normalize();
           this.cameraRaycaster.set(focus, direction);
           this.cameraRaycaster.far = distance;
           const hit = this.cameraRaycaster.intersectObjects(colliderObjects, true)[0];
-          if (hit && hit.distance < distance) desired = focus.clone().add(direction.multiplyScalar(Math.max(2.2, hit.distance - 0.55)));
+          if (hit && hit.distance < distance) desired.copy(focus).add(direction.multiplyScalar(Math.max(2.2, hit.distance - 0.55)));
         }
       }
       if (this.cameraShake > 0.001 && !this.state.settings.reduceEffects && !this.cinematicSequence.active) {
@@ -9812,7 +10602,7 @@
       else this.camera.position.lerp(desired, 1 - Math.pow(0.001, dt));
       const locked = !this.cinematicSequence.active && this.lockedTargetId ? this.enemies.get(this.lockedTargetId) : null;
       if (locked?.visible && !locked.userData.defeated && !this.photoMode) {
-        const targetFocus = locked.position.clone();
+        const targetFocus = this.frameScratch.cameraTargetFocus.copy(locked.position);
         targetFocus.y += 1.2;
         focus.lerp(targetFocus, 0.38);
       }
@@ -9842,56 +10632,55 @@
       }
       this.root.classList.add("is-cinematic");
       const targetPosition = cinematic.object.getWorldPosition
-        ? cinematic.object.getWorldPosition(new this.THREE.Vector3())
-        : cinematic.object.position.clone();
+        ? cinematic.object.getWorldPosition(this.frameScratch.cameraTargetPosition)
+        : this.frameScratch.cameraTargetPosition.copy(cinematic.object.position);
       const progress = clamp((cinematic.until - performance.now()) / 1250, 0, 1);
       const side = cinematic.phase === 3 ? -1 : 1;
-      const cinematicPosition = targetPosition.clone().add(new this.THREE.Vector3(6.5 * side, 4.2 + progress * 1.5, 7.2));
-      focus.lerp(targetPosition.clone().add(new this.THREE.Vector3(0, 1.4, 0)), 0.65);
+      const cinematicPosition = this.frameScratch.cameraCinematicPosition.copy(targetPosition).add(this.frameScratch.cameraDirection.set(6.5 * side, 4.2 + progress * 1.5, 7.2));
+      this.frameScratch.cameraTargetFocus.copy(targetPosition).y += 1.4;
+      focus.lerp(this.frameScratch.cameraTargetFocus, 0.65);
       return desired.lerp(cinematicPosition, clamp(dt * 7.5, 0, 0.82));
     }
 
     updateStoryCinematicCamera(desired, focus, dt) {
       const sequence = this.cinematicSequence;
       if (!sequence.active || !this.playerMesh) return desired;
+      const scratch = this.cinematicScratch;
+      if (!scratch) return desired;
       const cinematic = this.cinematicById(sequence.chapterId);
       const progress = clamp(sequence.progress || 0, 0, 1);
-      const actor = this.playerMesh.position.clone();
+      const actor = scratch.actor.copy(this.playerMesh.position);
       const phase = progress * Math.PI * 2;
       const reveal = progress * progress * (3 - 2 * progress);
-      const shot = new this.THREE.Vector3();
+      const shot = scratch.shot.set(0, 0, 0);
       let focusHeight = 1.42;
       let openingShot = false;
       switch (cinematic.camera) {
         case "opening-six-shot": {
           openingShot = true;
-          const range = (start, end) => {
-            const value = clamp((progress - start) / Math.max(0.0001, end - start), 0, 1);
-            return value * value * (3 - 2 * value);
-          };
           if (progress < 0.16) {
-            const local = range(0, 0.16);
+            const local = smoothstepRange(progress, 0, 0.16);
             shot.set(-9.2 + local * 2.8, 6.1 - local * 1.25, 11.8 - local * 2.2);
             focusHeight = 1.8;
           } else if (progress < 0.34) {
-            const local = range(0.16, 0.34);
+            const local = smoothstepRange(progress, 0.16, 0.34);
             shot.set(2.25 - local * 0.55, 0.72 + local * 1.55, 4.15 - local * 0.62);
             focusHeight = 0.42 + local * 1.05;
           } else if (progress < 0.5) {
-            const local = range(0.34, 0.5);
+            const local = smoothstepRange(progress, 0.34, 0.5);
             shot.set(1.22 - local * 0.18, 2.05 + local * 0.18, 2.55 - local * 0.24);
             focusHeight = 1.92;
           } else if (progress < 0.7) {
-            const local = range(0.5, 0.7);
+            const local = smoothstepRange(progress, 0.5, 0.7);
             shot.set(-4.8 + local * 2.3, 2.25 + local * 0.35, 6.4 - local * 1.55);
             focusHeight = 1.48;
           } else if (progress < 0.86) {
-            const local = range(0.7, 0.86);
+            const local = smoothstepRange(progress, 0.7, 0.86);
             const angle = -0.58 + local * 0.62;
             shot.set(Math.sin(angle) * 4.3, 2.45 + Math.sin(local * Math.PI) * 0.22, Math.cos(angle) * 4.3);
             focusHeight = 1.78;
           } else {
-            const local = range(0.86, 1);
+            const local = smoothstepRange(progress, 0.86, 1);
             shot.set(Math.sin(this.cameraYaw) * (4.8 + local * 5.6), 2.35 + local * 0.72, Math.cos(this.cameraYaw) * (4.8 + local * 5.6));
             focusHeight = 1.52;
           }
@@ -9929,20 +10718,20 @@
         shot.multiplyScalar(0.38);
         shot.y += 0.48;
       }
-      const cinematicPosition = actor.clone().add(shot);
-      const targetFocus = actor.clone().add(new this.THREE.Vector3(0, openingShot ? focusHeight : 1.35 + Math.sin(progress * Math.PI) * 0.12, 0));
+      const cinematicPosition = scratch.cinematicPosition.copy(actor).add(shot);
+      const targetFocus = scratch.targetFocus.copy(actor);
+      targetFocus.y += openingShot ? focusHeight : 1.35 + Math.sin(progress * Math.PI) * 0.12;
       // Frame the hero on the right third so the story copy never hides the
       // model. Looking slightly to the actor's left produces that composition
       // without moving or scaling the gameplay character.
-      const forward = targetFocus.clone().sub(cinematicPosition).normalize();
-      const cameraRight = forward.clone().cross(new this.THREE.Vector3(0, 1, 0)).normalize();
+      const forward = scratch.forward.copy(targetFocus).sub(cinematicPosition).normalize();
+      const cameraRight = scratch.cameraRight.copy(forward).cross(scratch.worldUp).normalize();
       const canvasAspect = Math.max(0.5, (this.renderer?.domElement?.clientWidth || 16) / Math.max(1, this.renderer?.domElement?.clientHeight || 9));
       const framingOffset = canvasAspect < 1.05 ? 0.08 : canvasAspect < 1.4 ? 0.28 : 0.52;
       targetFocus.addScaledVector(cameraRight, -framingOffset);
       focus.lerp(targetFocus, clamp(dt * 15, 0.35, 1));
-      const upTarget = cinematic.camera === "gravity-roll"
-        ? new this.THREE.Vector3(Math.sin(phase) * 0.075, 1, Math.cos(phase) * 0.035).normalize()
-        : new this.THREE.Vector3(0, 1, 0);
+      const upTarget = scratch.upTarget.set(0, 1, 0);
+      if (cinematic.camera === "gravity-roll") upTarget.set(Math.sin(phase) * 0.075, 1, Math.cos(phase) * 0.035).normalize();
       this.camera.up.lerp(upTarget, 1 - Math.exp(-Math.max(dt, 0.001) * 4.5)).normalize();
       return desired.lerp(cinematicPosition, clamp(dt * 7.8, 0.08, 0.86));
     }
@@ -10031,7 +10820,9 @@
     attack(kind = "attack") {
       if (!this.running || this.paused || this.menuPaused || this.photoMode || this.state.player.health <= 0) return;
       const now = performance.now();
-      const cooldowns = { attack: 320, skill: 2600, ultimate: 9500 };
+      const weaponClass = this.equippedWeaponClass();
+      const combatProfile = WEAPON_COMBAT_PROFILES[weaponClass] || WEAPON_COMBAT_PROFILES.sword;
+      const cooldowns = combatProfile.cooldown;
       const last = kind === "attack" ? this.lastAttackAt : kind === "skill" ? this.lastSkillAt : this.lastUltimateAt;
       if (now - last < cooldowns[kind]) return;
       if (kind === "ultimate" && this.state.player.ultimate < 100) {
@@ -10050,22 +10841,28 @@
         this.state.player.ultimate = 0;
       }
 
-      const range = kind === "attack" ? 4.1 : kind === "skill" ? 8 : 12;
+      const range = combatProfile.range[kind];
       const target = this.findTarget(range);
       const element = this.state.player.element;
       const characterId = this.state.roster.activeId;
-      const damageBase = kind === "attack"
+      const rawDamage = kind === "attack"
         ? 22 + this.combo * 7
         : kind === "skill"
           ? 68 + Number(this.state.skills.plasmaDrive || 0) * 9
           : 155;
+      const damageBase = Math.round(rawDamage * combatProfile.damage[kind]);
+      const motion = kind === "attack"
+        ? combatProfile.attacks[Math.max(0, (this.combo || 1) - 1)]
+        : kind === "skill"
+          ? combatProfile.skillMotion
+          : combatProfile.ultimateMotion;
       this.setCharacterAction(
-        kind === "attack" ? `attack${this.combo || 1}` : kind,
+        motion,
         kind === "ultimate" ? 920 : kind === "skill" ? 680 : 430,
         kind === "ultimate" ? 1.5 : 1
       );
-      this.beginMotionWarp(target, kind, now);
-      this.swingAnimation(kind);
+      if (weaponClass !== "gun") this.beginMotionWarp(target, kind, now);
+      this.swingAnimation(kind, weaponClass);
       this.spawnPulse(this.state.player.x, this.state.player.y + 1.2, this.state.player.z, ELEMENTS[element].color, kind === "ultimate" ? 1.2 : 0.42, kind === "ultimate" ? 8 : 3.2);
       this.spawnElementBurst(
         this.state.player.x,
@@ -10086,22 +10883,52 @@
       if (kind === "ultimate" && characterId === "sol") {
         this.state.player.health = clamp(this.state.player.health + 34, 0, this.state.player.maxHealth);
       }
+      if (kind === "skill" && weaponClass === "unarmed") {
+        this.invulnerableUntil = Math.max(this.invulnerableUntil, now + 480);
+        this.state.player.stamina = clamp(this.state.player.stamina + 14, 0, this.state.player.maxStamina);
+      }
 
-      const contactDelay = kind === "ultimate" ? 360 : kind === "skill" ? 235 : 145;
+      const contactDelay = weaponClass === "gun" ? (kind === "attack" ? 80 : 180) : kind === "ultimate" ? 360 : kind === "skill" ? 235 : 145;
       root.setTimeout(() => {
         if (this.destroyed || !this.running) return;
         if (this.authoritative) {
-          this.emitInput({ action: kind, targetId: target?.userData?.id || "", power: 1 });
+          this.emitInput({ action: kind, weaponClass, targetId: target?.userData?.id || "", power: 1 });
           return;
         }
         if (!target || target.visible === false || target.userData?.defeated) return;
-        const distanceAtContact = Math.hypot(target.position.x - this.state.player.x, target.position.z - this.state.player.z);
-        if (distanceAtContact <= range + 1.2) this.damageTarget(target, damageBase, element, kind);
+        const targets = [target];
+        if (kind !== "attack") {
+          const limit = kind === "ultimate" ? 8 : weaponClass === "gun" ? 3 : weaponClass === "sword" ? 4 : 2;
+          this.enemies.forEach((enemy) => {
+            if (targets.length >= limit || targets.includes(enemy) || !enemy.visible || enemy.userData.defeated) return;
+            const distance = Math.hypot(enemy.position.x - this.state.player.x, enemy.position.z - this.state.player.z);
+            if (distance <= range) targets.push(enemy);
+          });
+        }
+        targets.forEach((combatTarget, index) => {
+          const distanceAtContact = Math.hypot(combatTarget.position.x - this.state.player.x, combatTarget.position.z - this.state.player.z);
+          if (distanceAtContact <= range + 1.2) this.damageTarget(combatTarget, Math.round(damageBase * (index ? 0.72 : 1)), element, kind);
+        });
       }, contactDelay);
     }
 
-    swingAnimation(kind) {
+    swingAnimation(kind, weaponClass = this.equippedWeaponClass()) {
       if (!this.playerWeapon) return;
+      if (weaponClass === "gun") {
+        this.playerWeapon.position.z = 0.11;
+        this.playerWeapon.rotation.x = 0.08;
+        root.setTimeout(() => {
+          if (!this.playerWeapon) return;
+          this.playerWeapon.position.z = 0;
+          this.playerWeapon.rotation.x = -0.12;
+        }, kind === "ultimate" ? 260 : 95);
+        return;
+      }
+      if (weaponClass === "unarmed") {
+        this.playerWeapon.scale.setScalar(kind === "ultimate" ? 1.42 : 1.18);
+        root.setTimeout(() => this.playerWeapon?.scale.setScalar(1), kind === "ultimate" ? 300 : 140);
+        return;
+      }
       const base = kind === "ultimate" ? 1.6 : kind === "skill" ? 1.15 : 0.75;
       this.playerWeapon.rotation.x = -base;
       root.setTimeout(() => {
@@ -10411,6 +11238,11 @@
       const checkpoint = data.checkpoint;
       if (!checkpoint) return;
       const zone = ZONES.find((item) => item.id === checkpoint);
+      if (!this.isStoryChapterUnlocked(checkpoint)) {
+        const required = this.cinematicById(checkpoint).chapter - 1;
+        this.toast(`Cổng cốt truyện đang khóa · hãy hoàn thành Chương ${required}.`, "error");
+        return;
+      }
       if (!this.state.activatedGates.includes(checkpoint) && checkpoint !== "central") {
         this.state.activatedGates.push(checkpoint);
         this.state.checkpoints[checkpoint] = true;
@@ -10435,33 +11267,38 @@
         name.textContent = "Navigator Luma";
         role.textContent = "H-Central Navigation Corps";
         const active = this.state.quests.awakening?.status === "active";
+        const story = this.currentStoryChapter();
         text.textContent = active
-          ? "Lõi H đã nhận diện cộng hưởng của bạn. Aurora Vale đang phát tín hiệu cầu cứu; hãy giúp tôi tái lập mạng cổng trước khi Hư Không lan tới thành phố."
-          : "Các cổng đang phản hồi theo tiến trình của bạn. Nếu bị lạc, hãy mở Bản đồ và quay lại checkpoint đã kích hoạt.";
+          ? "Nax, tín hiệu này mang chữ ký sinh học của chính bạn và được gửi từ 72 giờ trong tương lai. Chúng ta phải xác minh nó trước khi mạng Astral sụp đổ."
+          : `Tuyến Nexus Echo đang ở Chương ${story.chapter}: ${story.title}. Mọi dữ kiện phải được kiểm chứng theo đúng thứ tự; không có nhánh thay đổi kết quả.`;
         choices.innerHTML = `
-          ${active ? '<button class="har-primary-button" type="button" data-dialogue-action="accept">Tôi sẽ tới Aurora Vale</button>' : ""}
-          <button class="har-secondary-button" type="button" data-dialogue-action="map">Mở bản đồ</button>
-          <button class="har-secondary-button" type="button" data-dialogue-action="close">Rời đi</button>`;
+          <button class="har-primary-button" type="button" data-dialogue-action="continue">Tiếp tục</button>
+          <button class="har-secondary-button" type="button" data-dialogue-action="ask">Hỏi thêm</button>
+          <button class="har-secondary-button" type="button" data-dialogue-action="close">Rời hội thoại</button>`;
       } else {
-        name.textContent = "Thợ rèn Kael";
+        name.textContent = "Cael Aurora";
         role.textContent = "Astral Forge";
-        text.textContent = "Tôi có thể ghép Mảnh Aurora, Lõi Plasma và Sợi Hư Không thành trang bị thật. Nguyên liệu thiếu sẽ được ghi rõ, không có vật phẩm mẫu.";
+        text.textContent = "Tôi có thể mở bàn rèn phụ trợ. Việc chế tạo và danh tiếng phe chỉ ảnh hưởng trang bị, giá cửa hàng và hội thoại phụ; chúng không thay đổi Nexus Echo.";
         choices.innerHTML = `
-          <button class="har-primary-button" type="button" data-dialogue-action="craft">Mở chế tạo</button>
-          <button class="har-secondary-button" type="button" data-dialogue-action="close">Để sau</button>`;
+          <button class="har-primary-button" type="button" data-dialogue-action="continue">Tiếp tục</button>
+          <button class="har-secondary-button" type="button" data-dialogue-action="ask">Hỏi thêm</button>
+          <button class="har-secondary-button" type="button" data-dialogue-action="close">Rời hội thoại</button>`;
       }
       choices.onclick = (event) => {
         const action = event.target.closest("[data-dialogue-action]")?.dataset.dialogueAction;
         if (!action) return;
-        if (action === "accept") {
-          this.progressQuest("talk", 1, { npc: "luma" });
-          this.closeDialogue();
-        } else if (action === "map") {
-          this.closeDialogue();
-          this.openPanel("map");
-        } else if (action === "craft") {
-          this.closeDialogue();
-          this.openPanel("craft");
+        if (action === "continue") {
+          if (npcId === "luma") {
+            this.progressQuest("talk", 1, { npc: "luma" });
+            this.closeDialogue();
+          } else {
+            this.closeDialogue();
+            this.openPanel("craft");
+          }
+        } else if (action === "ask") {
+          text.textContent = npcId === "luma"
+            ? "Bản ghi Aurora sẽ chứng minh tín hiệu là thật. Sau đó Cael phải rèn Temporal Key, Nyx giải mã Nexus và đội mới có thể tìm con tàu của Nax nguyên bản."
+            : "Temporal Key của cốt truyện chỉ được hoàn thiện trong nhiệm vụ chính. Bàn rèn này chỉ tạo vật phẩm gameplay và không thể mở, bỏ qua hay đổi kết thúc chương.";
         } else if (action === "close") this.closeDialogue();
       };
     }
@@ -10499,6 +11336,8 @@
       this.spawnNova(this.state.player.x, this.state.player.y + 1, this.state.player.z, "#78efff");
       this.toast(`Hoàn thành: ${quest.title}`, "success");
       this.dispatchReward({ xp: quest.reward?.xp || 0, questId: quest.id });
+      this.recordStoryEvent(`quest:${quest.id}`);
+      this.evaluateStoryProgress({ save: false });
       this.saveProgress(`Hoàn thành ${quest.title}`);
     }
 
@@ -10587,7 +11426,11 @@
       const record = this.state.inventory[itemId];
       if (!item || !record?.quantity || item.type !== "weapon") return;
       this.state.player.weapon = itemId;
-      this.toast(`Đã trang bị ${item.name}.`, "success");
+      if (this.state.loadouts?.[this.state.roster.activeId]) this.state.loadouts[this.state.roster.activeId].weapon = itemId;
+      this.refreshEquippedWeapon();
+      const combat = WEAPON_COMBAT_PROFILES[item.weaponClass || "sword"];
+      this.toast(`Đã trang bị ${item.name} · mở bộ kỹ năng ${combat.label}.`, "success");
+      this.updateUi(true);
       this.saveProgress("Đổi trang bị");
       this.renderCurrentPanel();
     }
@@ -10641,6 +11484,33 @@
       if (avatar) avatar.style.setProperty("--portrait-x", `${(CHARACTER_ATLAS_INDEX[this.state.roster.activeId] || 0) * 33.333333}%`);
       this.root.querySelector("[data-har-player-name]").textContent = player.name;
       this.root.querySelector("[data-har-player-meta]").textContent = `Nhà du hành · ${ELEMENTS[player.element].label} · ${Math.round(player.health)}/${player.maxHealth} HP`;
+      const weaponClass = this.equippedWeaponClass();
+      const combatProfile = WEAPON_COMBAT_PROFILES[weaponClass] || WEAPON_COMBAT_PROFILES.sword;
+      const combatLabels = {
+        attack: combatProfile.attackName,
+        skill: combatProfile.skillName,
+        ultimate: combatProfile.ultimateName
+      };
+      const combatIcons = { attack: combatProfile.icon, skill: "✦", ultimate: "✺" };
+      Object.entries(combatLabels).forEach(([action, label]) => {
+        const button = this.root.querySelector(`[data-har-action="${action}"]`);
+        if (!button) return;
+        button.dataset.label = label;
+        button.dataset.weaponClass = weaponClass;
+        button.title = `${combatProfile.label} · ${label}`;
+        button.setAttribute("aria-label", `${combatProfile.label}: ${label}`);
+        const icon = button.querySelector("strong");
+        if (icon) icon.textContent = combatIcons[action];
+      });
+      const actionDock = this.root.querySelector(".har-action-dock");
+      if (actionDock) actionDock.dataset.weaponClass = weaponClass;
+      this.root.querySelectorAll("[data-touch-action]").forEach((button) => {
+        const action = button.dataset.touchAction;
+        if (!combatLabels[action]) return;
+        button.textContent = combatIcons[action];
+        button.title = combatLabels[action];
+        button.setAttribute("aria-label", combatLabels[action]);
+      });
       this.root.querySelector("[data-har-zone]").textContent = this.currentZone.name;
       this.root.querySelector("[data-har-weather]").textContent = this.currentZone.weather;
       const hour = Math.floor(this.state.worldTime);
@@ -10674,11 +11544,17 @@
             ? "DISCOVERED"
             : "UNSCANNED";
       this.root.querySelector("[data-har-minimap-label]").textContent = this.currentZone.name;
-      const activeQuest = this.activeQuest();
-      this.root.querySelector("[data-har-quest-title]").textContent = activeQuest?.title || "Hành trình hiện tại đã hoàn tất";
-      this.root.querySelector("[data-har-quest-progress]").textContent = activeQuest
-        ? `${activeQuest.description} · ${this.state.quests[activeQuest.id].progress}/${activeQuest.target}`
-        : "Khám phá thế giới và chuẩn bị cho nội dung tiếp theo.";
+      const storyChapter = this.currentStoryChapter();
+      const storyComplete = this.state.story?.step === "complete";
+      const storyStepLabels = {
+        cinematic: "Xem cinematic để mở nhiệm vụ chính",
+        mission: storyChapter.objective,
+        complete: "Nexus đã được sửa · Echo mới đang chờ"
+      };
+      this.root.querySelector("[data-har-quest-title]").textContent = storyComplete
+        ? "Nexus Echo · Hoàn tất"
+        : `Chương ${storyChapter.chapter} · ${storyChapter.title}`;
+      this.root.querySelector("[data-har-quest-progress]").textContent = storyStepLabels[this.state.story?.step] || storyChapter.objective;
 
       const boss = [...this.enemies.values()].find((enemy) => enemy.userData.boss && enemy.visible && !enemy.userData.defeated);
       const bossDistance = boss ? Math.hypot(player.x - boss.position.x, player.z - boss.position.z) : Infinity;
@@ -10699,10 +11575,12 @@
 
     updateCooldowns() {
       const now = performance.now();
+      const weaponClass = this.equippedWeaponClass();
+      const combatProfile = WEAPON_COMBAT_PROFILES[weaponClass] || WEAPON_COMBAT_PROFILES.sword;
       const values = {
-        attack: Math.max(0, 320 - (now - this.lastAttackAt)),
-        skill: Math.max(0, 2600 - (now - this.lastSkillAt)),
-        ultimate: this.state.player.ultimate >= 100 ? 0 : Math.max(0, 9500 - (now - this.lastUltimateAt)),
+        attack: Math.max(0, combatProfile.cooldown.attack - (now - this.lastAttackAt)),
+        skill: Math.max(0, combatProfile.cooldown.skill - (now - this.lastSkillAt)),
+        ultimate: this.state.player.ultimate >= 100 ? 0 : Math.max(0, combatProfile.cooldown.ultimate - (now - this.lastUltimateAt)),
         dodge: Math.max(0, 900 - (now - this.lastDodgeAt))
       };
       Object.entries(values).forEach(([id, remaining]) => {
@@ -10792,20 +11670,57 @@
       context.stroke();
     }
 
+    applyAdaptiveQualityTier(tier) {
+      const normalizedTier = clamp(tier, 0, RENDER_SCALE_STEPS.length - 1);
+      this.renderScaleTier = normalizedTier;
+      this.renderScale = RENDER_SCALE_STEPS[normalizedTier];
+      this.root.dataset.adaptiveTier = String(normalizedTier);
+      this.renderer.setPixelRatio(Math.min(2, (root.devicePixelRatio || 1) * this.renderScale));
+      if (this.starfield) this.starfield.material.opacity = [0.62, 0.5, 0.38, 0.28][normalizedTier];
+      if (this.weatherField) this.weatherField.visible = normalizedTier < 3 || this.currentZone.id !== "central";
+      this.zoneFxGroups.forEach((group) => {
+        group.children.forEach((object) => {
+          if (!object.userData?.livingParticles) return;
+          object.material.opacity = object.userData.baseOpacity * [1, 0.78, 0.54, 0.34][normalizedTier];
+        });
+      });
+      this.lastStreamingCell = "";
+      this.updateWorldStreaming({ force: true });
+    }
+
     trackFps() {
       const now = performance.now();
       this.fpsFrames += 1;
       const elapsed = now - this.fpsStartedAt;
       if (elapsed < 1000) return;
-      this.fps = Math.round((this.fpsFrames * 1000) / elapsed);
+      const sampledFps = (this.fpsFrames * 1000) / elapsed;
+      this.fps = Math.round(sampledFps);
+      this.fpsEma = this.fpsEma > 0 ? this.fpsEma * 0.82 + sampledFps * 0.18 : sampledFps;
       this.fpsFrames = 0;
       this.fpsStartedAt = now;
       if (this.state.settings.quality === "auto" && this.state.settings.dynamicResolution !== false) {
-        if (this.fps < 42 && this.renderScale > 0.62) this.renderScale = Math.max(0.62, this.renderScale - 0.1);
-        else if (this.fps > 57 && this.renderScale < 1) this.renderScale = Math.min(1, this.renderScale + 0.05);
-        this.renderer.setPixelRatio(Math.min(2, (root.devicePixelRatio || 1) * this.renderScale));
-        if (this.starfield) this.starfield.material.opacity = this.fps < 38 ? 0.3 : 0.62;
-        if (this.weatherField) this.weatherField.visible = this.fps >= 30 || this.currentZone.id !== "central";
+        const lowThreshold = this.forceCompatibility ? 27 : 43;
+        const highThreshold = this.forceCompatibility ? 32 : 56;
+        if (this.fpsEma < lowThreshold) {
+          this.lowFpsWindows += 1;
+          this.highFpsWindows = 0;
+        } else if (this.fpsEma > highThreshold) {
+          this.highFpsWindows += 1;
+          this.lowFpsWindows = 0;
+        } else {
+          this.lowFpsWindows = 0;
+          this.highFpsWindows = 0;
+        }
+        const cooldownElapsed = now - this.lastQualityTransitionAt >= 10000;
+        if (cooldownElapsed && this.lowFpsWindows >= 3 && this.renderScaleTier < RENDER_SCALE_STEPS.length - 1) {
+          this.applyAdaptiveQualityTier(this.renderScaleTier + 1);
+          this.lowFpsWindows = 0;
+          this.lastQualityTransitionAt = now;
+        } else if (cooldownElapsed && this.highFpsWindows >= 10 && this.renderScaleTier > 0) {
+          this.applyAdaptiveQualityTier(this.renderScaleTier - 1);
+          this.highFpsWindows = 0;
+          this.lastQualityTransitionAt = now;
+        }
       }
     }
 
@@ -10901,14 +11816,22 @@
           const active = id === activeId;
           const runtime = this.characterRuntimes.get(id);
           const asset = this.characterAssetStatus.get(id) || "Web Hero PBR";
+          const weaponId = this.state.loadouts?.[id]?.weapon || DEFAULT_CHARACTER_WEAPONS[id] || "starter-blade";
+          const weapon = ITEMS[weaponId] || ITEMS["starter-blade"];
+          const combat = WEAPON_COMBAT_PROFILES[weapon.weaponClass || "sword"] || WEAPON_COMBAT_PROFILES.sword;
           return `<li class="har-character-card ${active ? "is-active" : ""}" style="--character-color:${profile.accent};--portrait-x:${index * 33.333333}%">
             <div class="har-character-card__avatar"><i aria-hidden="true"></i><strong>${profile.short}</strong><span>${ELEMENTS[profile.element].short}</span></div>
-            <div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.role)}</span><small>${escapeHtml(profile.description)}</small><small>Lv.${member.level || 1} · ${Math.round(member.health || 100)}/${member.maxHealth || 100} HP · ${ELEMENTS[profile.element].label}</small><small>${escapeHtml(asset)} · ${runtime?.state || "idle"}</small></div>
+            <div><strong>${escapeHtml(profile.name)}</strong><span>${escapeHtml(profile.role)}</span><small>${escapeHtml(profile.description)}</small><small>Lv.${member.level || 1} · ${Math.round(member.health || 100)}/${member.maxHealth || 100} HP · ${ELEMENTS[profile.element].label}</small><small>${escapeHtml(weapon.name)} · ${escapeHtml(combat.attackName)} / ${escapeHtml(combat.skillName)} / ${escapeHtml(combat.ultimateName)}</small><small>${escapeHtml(asset)} · ${runtime?.state || "idle"}</small></div>
             <button class="har-chip ${active ? "is-active" : ""}" type="button" data-panel-action="switch-character" data-character="${id}">${active ? "Đang dùng" : `Đổi [${index + 1}]`}</button>
           </li>`;
         }).join("")}</ul>
+        ${this.characterExternalCandidates.length ? `<div class="har-section"><h3>Sketchfab CC BY · nữ chính được tuyển chọn</h3><p>Miss Galaxy và Game Character Girl đã được kiểm tra license, chuẩn hóa lần lượt 75/136 xương và dùng humanoid solver theo rest pose để tránh vặn tay/chân. Animation retarget không vượt visual QA sẽ không được tải trong gameplay. Các model còn lại chỉ được kích hoạt sau cùng quy trình kiểm định.</p><ul class="har-list">${this.characterExternalCandidates.map((candidate) => {
+          const profile = CHARACTERS[candidate.characterId];
+          const combat = WEAPON_COMBAT_PROFILES[candidate.weaponClass] || WEAPON_COMBAT_PROFILES.sword;
+          return `<li class="har-list-item"><div><strong>${escapeHtml(candidate.label)} → ${escapeHtml(profile.name)}</strong><span>${escapeHtml(candidate.author)} · ${escapeHtml(candidate.license)}</span><small>${escapeHtml(combat.label)} · ${escapeHtml(combat.skillName)} · ${candidate.status === "integrated-local-safe-motion" ? "Đã tích hợp GLB local · animation humanoid an toàn" : candidate.status === "awaiting-authenticated-download" ? "Chờ đăng nhập Sketchfab" : escapeHtml(candidate.status)}</small></div><a class="har-chip" href="${escapeHtml(candidate.page)}" target="_blank" rel="noopener noreferrer">Mở nguồn</a></li>`;
+        }).join("")}</ul></div>` : ""}
         <div class="har-section"><h3>Character Pipeline</h3><div class="har-character-pipeline">${CHARACTER_PIPELINE.map((item) => `<div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.role)}</span><small>${escapeHtml(item.id === "three" ? `Runtime V${CHARACTER_VISUAL_VERSION}` : item.state)}</small></div>`).join("")}</div></div>
-        <div class="har-section"><h3>Nguồn hình học nhân vật</h3><p>Thư viện VALID cung cấp ${this.characterPipelineManifest.filter((entry) => entry.provider === "valid-avatar").length} người 3D có rig và morph theo giấy phép MIT; chỉ model đang dùng mới được tải. GLB HH và procedural human luôn giữ vai trò fallback, nên máy yếu hoặc mạng chậm vẫn không có khung hình trống.</p>
+        <div class="har-section"><h3>Nguồn hình học nhân vật</h3><p>Catalog có ${this.characterPipelineManifest.filter((entry) => entry.url.startsWith("./assets/astral-realms/characters/")).length} GLB local có license và provenance, cùng thư viện VALID mở rộng. Chỉ model đang dùng mới được tải từ pipeline; GLB HH và procedural human luôn giữ vai trò fallback, nên máy yếu hoặc mạng chậm vẫn không có khung hình trống.</p>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Creator</button></div>
         </div>`;
     }
@@ -10953,7 +11876,7 @@
       const modelOptions = [...new Map([
         ...APPEARANCE_ASSETS.baseModels.map((modelId) => [modelId, { modelId, label: modelId }]),
         ...this.characterPipelineManifest
-          .filter((entry) => entry.provider === "valid-avatar")
+          .filter((entry) => ["valid-avatar", "sketchfab-cc-by"].includes(entry.provider))
           .map((entry) => [entry.modelId, { modelId: entry.modelId, label: entry.label }])
       ]).values()];
       return `
@@ -11171,10 +12094,11 @@
         </div>
         <ul class="har-list">
           ${ZONES.map((zone) => {
-            const unlocked = Boolean(this.state.checkpoints[zone.id]);
+            const storyUnlocked = this.isStoryChapterUnlocked(zone.id);
+            const unlocked = Boolean(this.state.checkpoints[zone.id]) && storyUnlocked;
             const current = this.currentZone.id === zone.id;
             return `<li class="har-list-item ${current ? "is-active" : ""}">
-              <div><strong style="color:${zone.color}">${escapeHtml(zone.name)}</strong><span>${escapeHtml(zone.description)}</span><small>${escapeHtml(zone.weather)} · ${unlocked ? "Cổng đã kích hoạt" : "Chưa khám phá cổng"}</small></div>
+              <div><strong style="color:${zone.color}">${escapeHtml(zone.name)}</strong><span>${escapeHtml(zone.description)}</span><small>${escapeHtml(zone.weather)} · ${!storyUnlocked ? `Khóa bởi Chương ${this.cinematicById(zone.id).chapter - 1}` : unlocked ? "Cổng đã kích hoạt" : "Chưa khám phá cổng"}</small></div>
               <div class="har-list-item__actions"><button class="har-chip ${unlocked ? "is-active" : ""}" type="button" data-panel-action="teleport" data-zone="${zone.id}" ${unlocked ? "" : "disabled"}>${current ? "Hiện tại" : "Dịch chuyển"}</button></div>
             </li>`;
           }).join("")}
@@ -11793,6 +12717,8 @@
       this.emitInput({ worldAction: { type: "resolve" } });
       this.state.stats.worldEventsCompleted = Number(this.state.stats.worldEventsCompleted || 0) + 1;
       this.state.world.activeEvent = null;
+      this.recordStoryEvent(`restored:${event.zoneId}`);
+      this.evaluateStoryProgress({ save: false });
       this.recordWorldEvent({ type: "resolved", title: `Đã phục hồi ${ZONES.find((zone) => zone.id === event.zoneId)?.name || "khu vực"}`, detail: `+100 REP cho ${FACTIONS.find((item) => item.id === event.factionId)?.name || "phe hỗ trợ"}.`, zoneId: event.zoneId, factionId: event.factionId });
       this.grantXp(180);
       this.spawnNova(this.state.player.x, this.state.player.y + 1, this.state.player.z, "#65f1c7");
@@ -11905,7 +12831,8 @@
     async handlePanelAction(action, data) {
       if (action === "teleport") {
         const zone = ZONES.find((item) => item.id === data.zone);
-        if (zone && this.state.checkpoints[zone.id]) this.teleport(zone.x, zone.z + 5, zone.name);
+        if (zone && !this.isStoryChapterUnlocked(zone.id)) this.toast("Khu vực cốt truyện này chưa được mở.", "error");
+        else if (zone && this.state.checkpoints[zone.id]) this.teleport(zone.x, zone.z + 5, zone.name);
       } else if (action === "favorite") {
         const record = this.state.inventory[data.item];
         if (record) record.favorite = !record.favorite;
@@ -12800,6 +13727,7 @@
         try { dispose(); } catch {}
       });
       this.runtime?.destroy?.({ gameId: GAME_ID });
+      if (this.cinematicActorRestore) this.restoreGameplaySceneFromCinematic();
       if (this.scene) this.disposeCharacterObject(this.scene);
       this.disposePhotorealAssets();
       this.disposeBuiltInCharacterAssets();

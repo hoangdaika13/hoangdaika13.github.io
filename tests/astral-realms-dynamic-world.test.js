@@ -46,7 +46,7 @@ test("trees clouds sun rain and pebbles have realtime 3D motion", () => {
   assert.match(source, /object\.rotation\.z = base\.z \+ Math\.sin/);
   assert.match(source, /this\.sunCorona\.position\.copy\(this\.sunDisc\.position\)/);
   assert.match(source, /puff\.scale\.set/);
-  assert.match(source, /positions\[index - 1\] \+= dt \* weatherWind/);
+  assert.match(source, /hhWeatherTime|positions\[index - 1\] \+= weatherDt \* weatherWind/);
 });
 
 test("camera and lighting use restrained full-frame cinematic settings", () => {

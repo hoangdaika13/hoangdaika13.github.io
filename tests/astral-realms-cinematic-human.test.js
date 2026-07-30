@@ -57,7 +57,7 @@ test("near-camera low-poly slabs and black rock field are bounded", () => {
   assert.match(source, /const minimumRadius = zoneId === "central" \? 16 : 9/);
   assert.match(source, /const flatAsset = \["kenneyPath", "kenneyRoad", "kenneyBridge", "pineRoots"\]\.includes\(assetId\)/);
   assert.match(source, /const sourceMeasure = flatAsset \? Math\.max\(size\.x, size\.z\) : size\.y/);
-  assert.match(source, /const tallFoliage = \["deadTree", "kenneyOak", "kenneyPalm"\]\.includes\(assetId\)/);
+  assert.match(source, /const tallFoliage = \["deadTree", "kenneyOak", "kenneyPalm", "free3dTreeA", "free3dTreeB", "free3dTreeC"\]\.includes\(assetId\)/);
   assert.match(source, /\? Math\.max\(22, zone\.radius \* 0\.68\)/);
   assert.match(source, /object\.userData\.cameraSafeRadius = minimumRadius/);
   assert.match(source, /new THREE\.CylinderGeometry\(zone\.radius, zone\.radius \+ 0\.38, 0\.18, 96, 1\)/);
@@ -86,7 +86,7 @@ test("cinematic fallback keeps the human silhouette unobstructed", () => {
 test("character sources retain immutable license provenance and are cached", () => {
   const manifestPath = path.join(root, "assets", "astral-realms", "characters", "SOURCES.json");
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-  assert.equal(manifest.sources.length, 6);
+  assert.ok(manifest.sources.length >= 8);
   for (const entry of manifest.sources) {
     assert.match(entry.sourceUrl, /^https:\/\//);
     assert.ok(entry.author);

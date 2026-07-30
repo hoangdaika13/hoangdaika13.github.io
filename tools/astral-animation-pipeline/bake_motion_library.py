@@ -206,9 +206,6 @@ def bake_action(scene, source, target, source_action, target_name, fps):
 
     set_action(source, source_action)
     clear_pose(target)
-    source_basis = rig_basis_rotation(source_by_name)
-    target_basis = rig_basis_rotation(target_by_name)
-    rig_alignment = target_basis @ source_basis.inverted()
     baked = bpy.data.actions.new(name=target_name)
     set_action(target, baked)
     scene.render.fps = fps
@@ -218,17 +215,13 @@ def bake_action(scene, source, target, source_action, target_name, fps):
     for frame in range(start, end + 1):
         scene.frame_set(frame)
         for source_bone, target_bone in mapped:
-            source_rest_rotation = source_bone.bone.matrix_local.to_quaternion()
-            target_rest_rotation = target_bone.bone.matrix_local.to_quaternion()
-            source_pose_rotation = source_bone.matrix.to_quaternion()
-            delta_rotation = source_pose_rotation @ source_rest_rotation.inverted()
-            aligned_delta = rig_alignment @ delta_rotation @ rig_alignment.inverted()
-            desired_rotation = aligned_delta @ target_rest_rotation
-            current = target_bone.matrix.copy()
-            desired = desired_rotation.to_matrix().to_4x4()
-            desired.translation = current.translation
-            target_bone.matrix = desired
             target_bone.rotation_mode = "QUATERNION"
+            # Animation channels imported from glTF already live in each bone's
+            # local rest space (`matrix_basis`). Copying that rest-relative
+            # quaternion preserves the target skeleton's own bone roll and body
+            # proportions. Reconstructing armature-space matrices here twists
+            # Mixamo targets when the source armature uses another global basis.
+            target_bone.rotation_quaternion = source_bone.matrix_basis.to_quaternion()
             target_bone.keyframe_insert("rotation_quaternion", frame=frame, group=target_bone.name)
 
         # Intentionally do not key PoseBone.location. VALID source avatars use
@@ -291,6 +284,16 @@ def main():
         if obj != target:
             bpy.data.objects.remove(obj, do_unlink=True)
 
+    # The target GLB may include a native preview clip. It is not part of the
+    # retarget source set and would otherwise be exported beside the baked clip
+    # with a Blender-generated `.001` suffix. Start the animation-only artifact
+    # from a clean target rig so every exported action has one planned name.
+    if target.animation_data:
+        target.animation_data.action = None
+        target.animation_data_clear()
+    for action in list(bpy.data.actions):
+        bpy.data.actions.remove(action)
+
     baked_clips = []
     missing = []
     for source_path in args.source:
@@ -329,7 +332,12 @@ def main():
             missing.append(item["id"])
     manifest = {
         "version": 13,
-        "status": "ready" if not missing else "partial",
+        # Retarget math can only create a candidate. A human visual pass must
+        # inspect upright posture, wrists, shoulders and foot contact before a
+        # manifest is promoted to `ready` for runtime use.
+        "status": "candidate",
+        "qaStatus": "pending-visual-qa",
+        "coverage": "complete" if not missing else "partial",
         "rig": plan.get("rig"),
         "fps": args.fps,
         "inPlace": True,

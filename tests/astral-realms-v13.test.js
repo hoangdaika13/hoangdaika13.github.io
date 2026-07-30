@@ -87,7 +87,7 @@ test("the Blender baker performs semantic retarget and in-place bake only offlin
   const baker = read("tools/astral-animation-pipeline/bake_motion_library.py");
   const build = read("tools/astral-animation-pipeline/build-motion-library.ps1");
   const installer = read("tools/astral-animation-pipeline/install-free-motion-pack.ps1");
-  for (const token of ["canonical_bone", "bake_action", "rig_basis_rotation", "rig_alignment", '\"export_animation_mode\": \"ACTIONS\"', "mappedBones", "sourceAsset"]) {
+  for (const token of ["canonical_bone", "bake_action", "rig_basis_rotation", "matrix_basis", "pending-visual-qa", '\"export_animation_mode\": \"ACTIONS\"', "mappedBones", "sourceAsset"]) {
     assert.ok(baker.includes(token), `baker missing ${token}`);
   }
   assert.doesNotMatch(baker, /https?:\/\/|requests\.|urlopen|Invoke-WebRequest/);
@@ -113,7 +113,7 @@ test("V13 layers inertia, raycast foot locking and visual-only contact warping s
     "beginMotionWarp", "applyMotionWarping", "contactPhase",
     "unchanged-server-authoritative"
   ]) assert.ok(source.includes(token), `natural motion runtime missing ${token}`);
-  assert.match(source, /const contactDelay = kind === "ultimate"/);
+  assert.match(source, /const contactDelay = weaponClass === "gun"/);
   assert.match(source, /this\.cameraShake = Math\.max\(this\.cameraShake, kind === "ultimate"/);
 });
 
