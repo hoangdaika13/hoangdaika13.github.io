@@ -30,7 +30,11 @@
   --hgm-nebula-b: rgba(255, 55, 191, .22);
   --hgm-nebula-c: rgba(139, 94, 255, .23);
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: inherit;
+  overflow: clip;
   padding: 18px;
   font-family: Inter, "Segoe UI", system-ui, sans-serif;
 }
@@ -2066,4 +2070,336 @@
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
+}
+
+/* Home Galaxy V3 · living universe and full-page visual unification */
+.hgm-shell[data-theme="aurora"] {
+  --hgm-cyan: #65f7ff;
+  --hgm-pink: #76ffd1;
+  --hgm-violet: #7298ff;
+  --hgm-lime: #b8ff72;
+  --hgm-amber: #ffd66f;
+  --hgm-nebula-a: rgba(45, 244, 255, .31);
+  --hgm-nebula-b: rgba(64, 255, 177, .24);
+  --hgm-nebula-c: rgba(83, 119, 255, .25);
+}
+
+.hgm-shell[data-theme="magenta"] {
+  --hgm-cyan: #ab7cff;
+  --hgm-pink: #ff4bd1;
+  --hgm-violet: #7c4dff;
+  --hgm-lime: #ff9eea;
+  --hgm-amber: #ffad6b;
+  --hgm-nebula-a: rgba(178, 65, 255, .32);
+  --hgm-nebula-b: rgba(255, 44, 190, .3);
+  --hgm-nebula-c: rgba(74, 113, 255, .21);
+}
+
+.hgm-shell[data-theme="emerald"] {
+  --hgm-cyan: #61ffd3;
+  --hgm-pink: #8dff9c;
+  --hgm-violet: #3ccfc7;
+  --hgm-lime: #d5ff65;
+  --hgm-amber: #ffe070;
+  --hgm-nebula-a: rgba(38, 255, 191, .29);
+  --hgm-nebula-b: rgba(128, 255, 88, .23);
+  --hgm-nebula-c: rgba(34, 177, 176, .21);
+}
+
+.hgm-shell[data-theme="quantum"] {
+  --hgm-cyan: #5ef7ff;
+  --hgm-pink: #6d91ff;
+  --hgm-violet: #4e5cff;
+  --hgm-lime: #8de9ff;
+  --hgm-amber: #bca6ff;
+  --hgm-nebula-a: rgba(30, 210, 255, .28);
+  --hgm-nebula-b: rgba(55, 88, 255, .28);
+  --hgm-nebula-c: rgba(110, 67, 255, .22);
+}
+
+.hgm-shell[data-theme="golden"] {
+  --hgm-cyan: #ffe08a;
+  --hgm-pink: #ff8c4f;
+  --hgm-violet: #e9834b;
+  --hgm-lime: #fff39a;
+  --hgm-amber: #ffd558;
+  --hgm-nebula-a: rgba(255, 199, 64, .31);
+  --hgm-nebula-b: rgba(255, 112, 47, .25);
+  --hgm-nebula-c: rgba(255, 75, 135, .18);
+}
+
+.hgm-shell[data-theme="crimson"] {
+  --hgm-cyan: #ff9b79;
+  --hgm-pink: #ff4f93;
+  --hgm-violet: #c8497f;
+  --hgm-lime: #ffc66b;
+  --hgm-amber: #ff7754;
+  --hgm-nebula-a: rgba(255, 69, 49, .31);
+  --hgm-nebula-b: rgba(255, 38, 117, .27);
+  --hgm-nebula-c: rgba(141, 38, 111, .22);
+}
+
+.hgm-shell[data-theme="ice"] {
+  --hgm-cyan: #e2fdff;
+  --hgm-pink: #9bd6ff;
+  --hgm-violet: #7d9dff;
+  --hgm-lime: #c7fff7;
+  --hgm-amber: #dfe8ff;
+  --hgm-nebula-a: rgba(186, 250, 255, .25);
+  --hgm-nebula-b: rgba(100, 181, 255, .23);
+  --hgm-nebula-c: rgba(105, 119, 255, .2);
+}
+
+.hgm-shell[data-theme="blackhole"] {
+  --hgm-cyan: #9f8cff;
+  --hgm-pink: #d24fff;
+  --hgm-violet: #5c4da8;
+  --hgm-lime: #7f9cff;
+  --hgm-amber: #bd7dff;
+  --hgm-nebula-a: rgba(86, 58, 164, .22);
+  --hgm-nebula-b: rgba(171, 45, 215, .18);
+  --hgm-nebula-c: rgba(31, 41, 92, .32);
+  background-color: #010207;
+}
+
+.hgc[data-hgc-period="morning"] .hgm-shell[data-theme="time"] {
+  --hgm-cyan: #70f5ff; --hgm-pink: #ffd16b; --hgm-violet: #778cff; --hgm-lime: #caff78;
+  --hgm-nebula-a: rgba(57, 225, 255, .28); --hgm-nebula-b: rgba(255, 205, 89, .22); --hgm-nebula-c: rgba(118, 137, 255, .18);
+}
+
+.hgc[data-hgc-period="noon"] .hgm-shell[data-theme="time"] {
+  --hgm-cyan: #83fbff; --hgm-pink: #ff9d62; --hgm-violet: #8b73ff; --hgm-lime: #edff7b;
+  --hgm-nebula-a: rgba(56, 238, 255, .27); --hgm-nebula-b: rgba(255, 139, 73, .24); --hgm-nebula-c: rgba(123, 92, 255, .2);
+}
+
+.hgc[data-hgc-period="afternoon"] .hgm-shell[data-theme="time"] {
+  --hgm-cyan: #ffb368; --hgm-pink: #ff5da9; --hgm-violet: #a257ff; --hgm-lime: #ffe66b;
+  --hgm-nebula-a: rgba(255, 133, 57, .3); --hgm-nebula-b: rgba(255, 52, 147, .27); --hgm-nebula-c: rgba(139, 72, 255, .22);
+}
+
+.hgc[data-hgc-period="evening"] .hgm-shell[data-theme="time"],
+.hgc[data-hgc-period="night"] .hgm-shell[data-theme="time"] {
+  --hgm-cyan: #5ceaff; --hgm-pink: #f04dff; --hgm-violet: #694dff; --hgm-lime: #83ffc9;
+  --hgm-nebula-a: rgba(26, 187, 255, .24); --hgm-nebula-b: rgba(219, 50, 255, .25); --hgm-nebula-c: rgba(72, 57, 201, .26);
+}
+
+.hgm-living-sky {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: calc(.42 + var(--hgm-nebula-strength, .68) * .46);
+}
+
+.hgm-prism-band {
+  position: absolute;
+  width: 68%;
+  height: 28%;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent 4%, color-mix(in srgb, var(--hgm-cyan) 42%, transparent), color-mix(in srgb, var(--hgm-pink) 36%, transparent), transparent 95%);
+  filter: blur(34px) saturate(170%);
+  mix-blend-mode: screen;
+  opacity: .32;
+  animation: hgmPrismFlow 13s ease-in-out infinite alternate;
+}
+
+.hgm-prism-band--one { top: 12%; left: -20%; transform: rotate(-14deg); }
+.hgm-prism-band--two { right: -18%; bottom: 13%; transform: rotate(18deg); animation-delay: -6s; animation-direction: alternate-reverse; }
+
+.hgm-pulsar {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 9px 2px var(--hgm-cyan), 0 0 42px 10px color-mix(in srgb, var(--hgm-pink) 45%, transparent);
+  animation: hgmPulsar 3.8s ease-in-out infinite;
+}
+
+.hgm-pulsar::before,
+.hgm-pulsar::after {
+  content: "";
+  position: absolute;
+  inset: -15px;
+  border: 1px solid color-mix(in srgb, var(--hgm-cyan) 48%, transparent);
+  border-radius: 50%;
+  animation: hgmPulsarRing 3.8s ease-out infinite;
+}
+
+.hgm-pulsar::after { animation-delay: -1.9s; }
+.hgm-pulsar--one { top: 17%; left: 12%; }
+.hgm-pulsar--two { top: 41%; right: 8%; animation-delay: -1.4s; }
+.hgm-pulsar--three { bottom: 14%; left: 31%; animation-delay: -2.6s; }
+
+.hgm-constellations {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  opacity: .26;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--hgm-cyan) 48%, transparent));
+}
+
+.hgm-constellations path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--hgm-cyan) 58%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 8 13;
+  vector-effect: non-scaling-stroke;
+  animation: hgmConstellation 22s linear infinite;
+}
+
+.hgm-constellations path:nth-child(2) { stroke: color-mix(in srgb, var(--hgm-pink) 48%, transparent); animation-direction: reverse; }
+.hgm-constellations circle { fill: #fff; stroke: var(--hgm-violet); stroke-width: 1; animation: hgmStarBreath 4s ease-in-out infinite; }
+
+.hgm-space-dust i {
+  position: absolute;
+  left: var(--dust-x);
+  top: var(--dust-y);
+  width: calc(2px + (var(--dust-index) % 3) * 1px);
+  height: calc(2px + (var(--dust-index) % 3) * 1px);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--hgm-cyan) 72%, #fff);
+  box-shadow: 0 0 9px currentColor;
+  opacity: .48;
+  animation: hgmDustFloat calc(8s + (var(--dust-index) % 7) * 1s) calc(var(--dust-index) * -.63s) ease-in-out infinite alternate;
+}
+
+.hgm-space-dust {
+  position: absolute;
+  inset: 0;
+}
+
+.hgm-shell > *,
+.hgm-live,
+.hgm-activity,
+.hgm-hero,
+.hgo-command,
+.hgo-map,
+.hgo-timeline {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.hgm-flares {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 50%;
+  width: 190px;
+  height: 190px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.hgm-flares i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 74px;
+  height: 3px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--hgm-amber) 78%, #fff), transparent);
+  box-shadow: 0 0 11px var(--hgm-pink);
+  opacity: .14;
+  transform: rotate(var(--flare)) translateX(80px) scaleX(.35);
+  transform-origin: left center;
+  animation: hgmSolarFlare 5.2s var(--flare-delay) ease-in-out infinite;
+}
+
+.hgm-shell[data-energy="active"] .hgm-flares i { opacity: .42; animation-duration: 2.8s; }
+.hgm-shell[data-energy="alert"] .hgm-flares i { --hgm-pink: #ff3d6e; --hgm-amber: #ff7a3d; opacity: .7; animation-duration: 1.7s; }
+.hgm-shell[data-energy="alert"] .hgm-sun { box-shadow: 0 0 78px rgba(255, 64, 95, .52), inset 0 0 42px rgba(255, 255, 255, .32); }
+.hgm-shell[data-energy="active"] .hgm-hero { box-shadow: inset 0 1px rgba(255,255,255,.08), 0 24px 74px color-mix(in srgb, var(--hgm-violet) 16%, transparent); }
+
+.hgm-shell[data-motion="off"] .hgm-living-sky,
+.hgm-shell[data-motion="off"] .hgm-flares,
+.hgm-shell[data-motion="static"] .hgm-living-sky,
+.hgm-shell[data-motion="static"] .hgm-flares { display: none; }
+
+.hgm-shell[data-motion="off"] *,
+.hgm-shell[data-motion="static"] * { animation-play-state: paused !important; }
+.hgm-shell[data-motion="minimal"] .hgm-living-sky { opacity: .22; }
+.hgm-shell[data-motion="minimal"] .hgm-prism-band,
+.hgm-shell[data-motion="minimal"] .hgm-space-dust { display: none; }
+.hgm-shell[data-motion="minimal"] :is(.hgm-orbit,.hgm-planet,.hgm-nebula) { animation-duration: 48s !important; }
+.hgm-shell[data-motion="vivid"] .hgm-living-sky { opacity: .82; }
+.hgm-shell[data-motion="vivid"] .hgm-prism-band { filter: blur(27px) saturate(190%); }
+.hgm-shell[data-motion="cinematic"] .hgm-living-sky,
+.hgm-shell[data-motion="hyper"] .hgm-living-sky { opacity: 1; }
+.hgm-shell[data-motion="cinematic"] .hgm-prism-band,
+.hgm-shell[data-motion="hyper"] .hgm-prism-band { opacity: .54; filter: blur(24px) saturate(220%); }
+.hgm-shell[data-motion="hyper"] .hgm-space-dust i { animation-duration: 3.7s; }
+.hgm-shell[data-motion="hyper"] .hgm-flares i { animation-duration: 1.9s; }
+.hgm-shell[data-quality="low"] :is(.hgm-prism-band,.hgm-constellations,.hgm-space-dust,.hgm-flares) { display: none; }
+
+.dashboard-home.hgc-active {
+  --home-cosmic-a: #58f3ff;
+  --home-cosmic-b: #ff59d6;
+  --home-cosmic-c: #a986ff;
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 5% 18%, color-mix(in srgb, var(--home-cosmic-a) 10%, transparent), transparent 24%),
+    radial-gradient(circle at 93% 44%, color-mix(in srgb, var(--home-cosmic-b) 10%, transparent), transparent 25%),
+    radial-gradient(circle at 42% 92%, color-mix(in srgb, var(--home-cosmic-c) 9%, transparent), transparent 27%);
+}
+
+.dashboard-home.hgc-active[data-home-theme="aurora"] { --home-cosmic-a:#58f3ff; --home-cosmic-b:#69ffb7; --home-cosmic-c:#7298ff; }
+.dashboard-home.hgc-active[data-home-theme="magenta"] { --home-cosmic-a:#ab7cff; --home-cosmic-b:#ff4bd1; --home-cosmic-c:#7c4dff; }
+.dashboard-home.hgc-active[data-home-theme="emerald"] { --home-cosmic-a:#61ffd3; --home-cosmic-b:#b8ff72; --home-cosmic-c:#3ccfc7; }
+.dashboard-home.hgc-active[data-home-theme="quantum"] { --home-cosmic-a:#5ef7ff; --home-cosmic-b:#6d91ff; --home-cosmic-c:#4e5cff; }
+.dashboard-home.hgc-active[data-home-theme="golden"] { --home-cosmic-a:#ffe08a; --home-cosmic-b:#ff8c4f; --home-cosmic-c:#ff5c9a; }
+.dashboard-home.hgc-active[data-home-theme="crimson"] { --home-cosmic-a:#ff9b79; --home-cosmic-b:#ff4f93; --home-cosmic-c:#c8497f; }
+.dashboard-home.hgc-active[data-home-theme="ice"] { --home-cosmic-a:#e2fdff; --home-cosmic-b:#9bd6ff; --home-cosmic-c:#7d9dff; }
+.dashboard-home.hgc-active[data-home-theme="blackhole"] { --home-cosmic-a:#9f8cff; --home-cosmic-b:#d24fff; --home-cosmic-c:#303c75; }
+
+.dashboard-home.hgc-active :is(.dashboard-glass,.dashboard-panel,.dashboard-quick-actions > button,.dashboard-category-ribbon > button) {
+  border-color: color-mix(in srgb, var(--home-cosmic-a) 22%, rgba(255,255,255,.08));
+  box-shadow: inset 0 1px rgba(255,255,255,.06), 0 18px 48px rgba(0,0,0,.22);
+  transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease, filter .25s ease;
+}
+
+.dashboard-home.hgc-active :is(.dashboard-panel,.dashboard-quick-actions > button,.dashboard-category-ribbon > button):hover {
+  border-color: color-mix(in srgb, var(--home-cosmic-b) 52%, transparent);
+  box-shadow: inset 0 1px rgba(255,255,255,.09), 0 18px 52px color-mix(in srgb, var(--home-cosmic-c) 15%, transparent);
+  transform: translateY(-3px);
+  filter: saturate(1.12);
+}
+
+.dashboard-home.hgc-active :is(.dashboard-panel,.dashboard-sticky,.dashboard-quick-actions,.dashboard-category-ribbon,.dashboard-intelligence-grid) {
+  animation: hgmSectionReveal .6s cubic-bezier(.2,.75,.2,1) both;
+}
+
+.dashboard-home.hgc-active .dashboard-sticky { animation-delay: .06s; }
+.dashboard-home.hgc-active .dashboard-quick-actions { animation-delay: .12s; }
+.dashboard-home.hgc-active .dashboard-category-ribbon { animation-delay: .18s; }
+.dashboard-home.hgc-active .dashboard-grid { animation-delay: .24s; }
+
+@keyframes hgmPrismFlow {
+  to { opacity: .58; transform: translate3d(16%, 9%, 0) rotate(8deg) scale(1.12); filter: blur(26px) saturate(205%) hue-rotate(32deg); }
+}
+
+@keyframes hgmPulsar { 50% { opacity: .42; transform: scale(.7); filter: hue-rotate(55deg); } }
+@keyframes hgmPulsarRing { from { opacity: .65; transform: scale(.35); } to { opacity: 0; transform: scale(2.1); } }
+@keyframes hgmConstellation { to { stroke-dashoffset: -210; } }
+@keyframes hgmStarBreath { 50% { opacity: .28; transform: scale(.65); transform-origin: center; } }
+@keyframes hgmDustFloat { to { opacity: .15; transform: translate3d(18px,-32px,0) scale(.65); } }
+@keyframes hgmSolarFlare { 50% { opacity: .72; transform: rotate(var(--flare)) translateX(84px) scaleX(1); filter: hue-rotate(32deg); } }
+@keyframes hgmSectionReveal { from { opacity: 0; transform: translateY(18px) scale(.985); } }
+
+@media (max-width: 700px) {
+  .hgm-constellations { opacity: .16; }
+  .hgm-prism-band { width: 96%; }
+  .hgm-flares { transform: translate(-50%, -50%) scale(.72); }
+  .dashboard-home.hgc-active :is(.dashboard-panel,.dashboard-quick-actions > button,.dashboard-category-ribbon > button):hover { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hgm-living-sky,
+  .hgm-flares { display: none !important; }
+  .dashboard-home.hgc-active :is(.dashboard-panel,.dashboard-sticky,.dashboard-quick-actions,.dashboard-category-ribbon,.dashboard-intelligence-grid) { animation: none !important; }
 }

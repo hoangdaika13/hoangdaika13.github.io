@@ -279,18 +279,23 @@ async function upsertOAuthUser(db, profile, provider) {
     if (["deleted", "suspended", "locked", "banned"].includes(String(existing.status || "").toLowerCase())) {
       throw new Error("Tài khoản này hiện không được phép đăng nhập.");
     }
-    await users.updateOne({ _id: existing._id }, { $set: fields });
-    return users.findOne({ _id: existing._id });
+    const updated = await users.findOneAndUpdate(
+      { _id: existing._id },
+      { $set: fields },
+      { returnDocument: "after" }
+    );
+    return updated || { ...existing, ...fields };
   }
   delete fields[`oauth.${provider}.id`];
   delete fields["verifiedProviders.google"];
-  const result = await users.insertOne({
+  const created = {
     ...fields, status: "active", provider, providerId,
     oauth: { [provider]: { id: providerId } }, tokenVersion: 0,
     ...(provider === "google" ? { verifiedProviders: { google: now } } : {}),
     consent: false, createdAt: now
-  });
-  return users.findOne({ _id: result.insertedId });
+  };
+  const result = await users.insertOne(created);
+  return { ...created, _id: result.insertedId };
 }
 
 async function oauthCallback(req, res, db, provider, code, state) {
@@ -320,7 +325,9 @@ async function oauthCallback(req, res, db, provider, code, state) {
       userId: user._id, provider, createdAt: now,
       expiresAt: new Date(now.getTime() + 2 * 60 * 1000), consumedAt: null
     });
-    await db.collection("events").insertOne({ type: `auth:${provider}`, userId: user._id, createdAt: new Date() });
+    await settleOptionalTasks([
+      db.collection("events").insertOne({ type: `auth:${provider}`, userId: user._id, createdAt: new Date() })
+    ], 250);
     return res.redirect(`${frontend}/?authCode=${encodeURIComponent(exchangeCode)}#/home`);
   } catch (error) { return redirectError(res, frontend, error.message); }
 }
@@ -492,7 +499,10 @@ module.exports = async function handler(req, res) {
       if (!user) return res.status(400).json({ error: "Không tìm thấy tài khoản Google đã xác minh." });
       const session = await createSession(db, user, req, { type: challenge.provider || "google", remember: true });
       setSessionCookie(res, session.token, session.ttlSeconds);
-      await Promise.all([notifyNewDevice(db, user, req, session), recordLoginEvent(db, user, req, `${challenge.provider || "google"}-login`)]);
+      await settleOptionalTasks([
+        notifyNewDevice(db, user, req, session),
+        recordLoginEvent(db, user, req, `${challenge.provider || "google"}-login`)
+      ], 350);
       return res.status(200).json(authResponse(user, session));
     }
 
@@ -670,6 +680,12 @@ module.exports = async function handler(req, res) {
     if (route === "me" && req.method === "GET") {
       const auth = await authenticate(req, db);
       if (!auth) return res.status(200).json({ user: null, loginHistory: [] });
+      if (String(req.query.compact || "") === "1") {
+        return res.status(200).json({
+          user: authPublicUser(auth.user),
+          session: auth.session ? publicSession(auth.session, tokenHash(auth.token)) : null
+        });
+      }
       await db.collection("users").updateOne({ _id: auth.user._id }, { $set: { lastSeenAt: new Date() } });
       const loginHistory = await db.collection("loginEvents").find({ userId: auth.user._id }).sort({ createdAt: -1 }).limit(12).project({ userAgent: 0 }).toArray();
       return res.status(200).json({ user: authPublicUser(auth.user), loginHistory, session: auth.session ? publicSession(auth.session, tokenHash(auth.token)) : null });

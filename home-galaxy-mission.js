@@ -7,7 +7,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createHomeGalaxyMission(global) {
   "use strict";
 
-  const VERSION = "2.0.0";
+  const VERSION = "3.0.0";
   const PREF_KEY = "hh.home.galaxy.preferences.v2";
   const LEGACY_PREF_KEY = "hh.home.galaxy.preferences.v1";
   const ACTIVITY_KEY = "hh.home.galaxy.activity.v2";
@@ -64,6 +64,22 @@
     { id: "health", icon: "↻", label: "Kiểm tra Health" },
     { id: "search", icon: "⌕", label: "Tìm toàn hệ thống" },
     { id: "focus", icon: "◎", label: "Tập trung 25 phút" }
+  ]);
+
+  const THEMES = Object.freeze([
+    ["neon", "Neon Nebula"],
+    ["purple", "Purple Galaxy"],
+    ["solar", "Solar Fire"],
+    ["deep", "Deep Space"],
+    ["aurora", "Aurora Cyan"],
+    ["magenta", "Magenta Supernova"],
+    ["emerald", "Emerald Cosmos"],
+    ["quantum", "Blue Quantum"],
+    ["golden", "Golden Eclipse"],
+    ["crimson", "Crimson Mars"],
+    ["ice", "Ice Universe"],
+    ["blackhole", "Black Hole"],
+    ["time", "Theo thời gian"]
   ]);
 
   const DEFAULT_PREFS = Object.freeze({
@@ -965,7 +981,7 @@
       <button class="hgm-settings-backdrop" type="button" data-hgm-settings-close aria-label="Đóng cá nhân hóa"></button>
       <section class="hgm-settings-panel" role="dialog" aria-modal="true" aria-labelledby="hgmSettingsTitle">
         <header><div><small>GALAXY CONTROL V2</small><h3 id="hgmSettingsTitle">Cá nhân hóa sâu</h3><p data-hgm-sync-label>${isSignedIn() ? "Tài khoản · sẵn sàng đồng bộ" : "Khách · chỉ lưu trên thiết bị"}</p></div><button type="button" data-hgm-settings-close aria-label="Đóng">×</button></header>
-        <div class="hgm-setting-section"><span>Tinh vân</span><div class="hgm-choice">${[["neon", "Neon"], ["purple", "Purple"], ["solar", "Solar Fire"], ["deep", "Deep Space"]].map(([id, label]) => `<button type="button" data-hgm-theme="${id}" aria-pressed="${instance.prefs.theme === id}">${label}</button>`).join("")}</div></div>
+        <div class="hgm-setting-section"><span>Tinh vân</span><div class="hgm-choice">${THEMES.map(([id, label]) => `<button type="button" data-hgm-theme="${id}" aria-pressed="${instance.prefs.theme === id}">${escapeHtml(label)}</button>`).join("")}</div></div>
         <div class="hgm-setting-section"><span>Chuyển động</span><div class="hgm-choice">${[["static", "Tĩnh"], ["balanced", "Cân bằng"], ["cinematic", "Điện ảnh"]].map(([id, label]) => `<button type="button" data-hgm-motion="${id}" aria-pressed="${instance.prefs.motion === id}">${label}</button>`).join("")}</div></div>
         <label class="hgm-range"><span>Mật độ sao <b>${instance.prefs.stars}%</b></span><input type="range" min="20" max="100" step="10" value="${instance.prefs.stars}" data-hgm-stars></label>
         <label class="hgm-switch"><input type="checkbox" data-hgm-sound ${instance.prefs.sound ? "checked" : ""}><i></i><span><b>Âm thanh không gian</b><small>Mặc định tắt; chỉ phát sau tương tác</small></span></label>
@@ -981,9 +997,15 @@
 
   function markup(instance) {
     const currentPeriod = period();
-    return `<div class="hgm-shell" data-hgm-shell>
+    return `<div class="hgm-shell" data-hgm-shell data-energy="calm">
       <canvas class="hgm-cosmos" data-hgm-canvas aria-hidden="true"></canvas>
       <div class="hgm-nebula" aria-hidden="true"></div>
+      <div class="hgm-living-sky" aria-hidden="true">
+        <i class="hgm-prism-band hgm-prism-band--one"></i><i class="hgm-prism-band hgm-prism-band--two"></i>
+        <i class="hgm-pulsar hgm-pulsar--one"></i><i class="hgm-pulsar hgm-pulsar--two"></i><i class="hgm-pulsar hgm-pulsar--three"></i>
+        <svg class="hgm-constellations" viewBox="0 0 1200 760" preserveAspectRatio="none"><path d="M54 142 188 84 304 174 438 112 554 218 702 132 846 232 1002 126 1150 210"/><path d="M80 606 216 514 348 618 498 496 648 584 792 486 934 598 1120 500"/><g><circle cx="54" cy="142" r="3"/><circle cx="188" cy="84" r="4"/><circle cx="304" cy="174" r="3"/><circle cx="438" cy="112" r="4"/><circle cx="554" cy="218" r="3"/><circle cx="702" cy="132" r="4"/><circle cx="846" cy="232" r="3"/><circle cx="1002" cy="126" r="4"/><circle cx="1150" cy="210" r="3"/><circle cx="80" cy="606" r="3"/><circle cx="216" cy="514" r="4"/><circle cx="348" cy="618" r="3"/><circle cx="498" cy="496" r="4"/><circle cx="648" cy="584" r="3"/><circle cx="792" cy="486" r="4"/><circle cx="934" cy="598" r="3"/><circle cx="1120" cy="500" r="4"/></g></svg>
+        <div class="hgm-space-dust">${Array.from({ length: 18 }, (_, index) => `<i style="--dust-index:${index};--dust-x:${(index * 37 + 11) % 97}%;--dust-y:${(index * 61 + 7) % 93}%"></i>`).join("")}</div>
+      </div>
       <div class="hgm-aurora" data-hgm-aurora aria-hidden="true"></div>
       <section class="hgm-live" aria-labelledby="hgmLiveTitle">
         <header><div><span><i></i> LIVE ORBIT · REAL DATA</span><h2 id="hgmLiveTitle">Trung tâm tín hiệu trực tiếp</h2><p>Chỉ số từ trình duyệt, backend và dữ liệu bạn thật sự đã tạo.</p></div><div><b data-hgm-online>ONLINE</b><button type="button" data-hgm-settings-open>⚙ Cá nhân hóa</button></div></header>
@@ -1004,6 +1026,7 @@
         <div class="hgm-solar" data-hgm-solar>
           <div class="hgm-orbit hgm-orbit--1"></div><div class="hgm-orbit hgm-orbit--2"></div><div class="hgm-orbit hgm-orbit--3"></div><div class="hgm-orbit hgm-orbit--4"></div>
           <div class="hgm-energy" data-hgm-energy aria-hidden="true"></div>
+          <div class="hgm-flares" aria-hidden="true">${Array.from({ length: 8 }, (_, index) => `<i style="--flare:${index * 45}deg;--flare-delay:${index * -.37}s"></i>`).join("")}</div>
           <div class="hgm-sun"><span>H</span><i></i><b></b><em></em></div>
           <div class="hgm-planets" data-hgm-planets></div>
           ${dockMarkup(instance)}
@@ -1023,6 +1046,11 @@
     if (!shell) return;
     instance.root.dataset.hgcTheme = instance.prefs.theme;
     instance.root.dataset.hgcMotion = instance.prefs.motion;
+    const home = instance.root.closest('[data-shell-view="home"]');
+    if (home) {
+      home.dataset.homeTheme = instance.prefs.theme;
+      home.dataset.homeMotion = instance.prefs.motion;
+    }
     shell.dataset.theme = instance.prefs.theme;
     shell.dataset.motion = instance.prefs.motion;
     shell.dataset.effectWormhole = String(instance.prefs.effectWormhole);
@@ -1088,6 +1116,10 @@
     const focusHost = instance.shell.querySelector("[data-hgm-focus-host]");
     if (focusHost) focusHost.innerHTML = focusMarkup(instance);
     const unread = instance.activities.filter((item) => !item.read).length;
+    const alertCount = Object.values(instance.planetData || {}).filter((item) => item?.alert).length;
+    const processingCount = Object.values(instance.planetData || {}).filter((item) => item?.processing).length;
+    instance.shell.dataset.energy = alertCount ? "alert" : processingCount || unread > 3 ? "active" : "calm";
+    instance.root.dataset.hgcEnergy = instance.shell.dataset.energy;
     const summary = instance.shell.querySelector("[data-hgm-summary]");
     if (summary) summary.textContent = unread ? `${unread} tín hiệu mới · chất lượng ${instance.quality}` : `Không có tín hiệu mới · chất lượng ${instance.quality}`;
   }
@@ -1929,6 +1961,11 @@
     instance.battery?.removeEventListener?.("levelchange", instance.batteryHandler);
     instance.battery?.removeEventListener?.("chargingchange", instance.batteryHandler);
     instance.audio?.close?.();
+    const home = root.closest?.('[data-shell-view="home"]');
+    if (home) {
+      delete home.dataset.homeTheme;
+      delete home.dataset.homeMotion;
+    }
     root.classList.remove("hgm-active");
     root.innerHTML = "";
     instances.delete(root);

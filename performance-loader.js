@@ -35,26 +35,19 @@
     },
     home: {
       /*
-       * The dashboard shell contains real widgets, not a usable unstyled
-       * fallback. Load its visual system and controllers with the /home route
-       * so weather, device metrics and cards never flash as raw document flow.
+       * The usable dashboard shell and its first-paint styles already live in
+       * index.html/app-shell.css. Richer controllers mount after first paint.
        */
-      styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=3", "home-galaxy-mission.css?v=5", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
-        "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
-      ],
-      scripts: [
-        "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=7", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=5", "home-daily-command.js?v=6",
-        "home-command-search.js?v=3", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
-      ]
+      styles: [],
+      scripts: []
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=3", "home-galaxy-mission.css?v=5", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=3", "home-galaxy-mission.css?v=6", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=7", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=5", "home-daily-command.js?v=6",
+        "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=8", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=5", "home-daily-command.js?v=6",
         "home-command-search.js?v=3", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
       ]
     },
@@ -200,6 +193,7 @@
   const loaded = new Set();
   const pending = new Map();
   const assetPromises = new Map();
+  const preloadedScripts = new Set();
   let homeEnhancementsScheduled = false;
 
   function normalizeRoute(route) {
@@ -209,7 +203,7 @@
 
   function groupsForRoute(route) {
     const value = normalizeRoute(route);
-    if (value === "/home") return ["home"];
+    if (value === "/home") return [];
     if (value.startsWith("/dev-tools")) return ["dev"];
     if (value.startsWith("/davinci-resolve")) return ["davinci"];
     if (value.startsWith("/media-design")) return ["media"];
@@ -264,11 +258,26 @@
     return promise;
   }
 
+  function preloadScripts(urls = []) {
+    urls.forEach((url) => {
+      if (!url || preloadedScripts.has(url) || assetPromises.has(`script:${url}`)) return;
+      preloadedScripts.add(url);
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "script";
+      link.href = url;
+      link.fetchPriority = "low";
+      link.dataset.hhRuntimeAsset = "script-preload";
+      document.head.append(link);
+    });
+  }
+
   function ensureGroup(name) {
     if (loaded.has(name)) return Promise.resolve(name);
     if (pending.has(name)) return pending.get(name);
     const group = groups[name];
     if (!group) return Promise.resolve(name);
+    if (name === "home-enhancements") preloadScripts(group.scripts);
     const stylePromise = Promise.all((group.styles || []).map(loadStyle));
     const scriptPromise = (group.scripts || []).reduce(
       (chain, url) => chain
@@ -303,11 +312,11 @@
         homeEnhancementsScheduled = false;
       });
     };
-    /*
-     * Compatibility hook for older callers. The /home route now loads these
-     * assets immediately; ensureGroup de-duplicates every style and script.
-     */
-    global.addEventListener("hh:home-enhancements-request", start, { once: true });
+    const afterFirstPaint = () => {
+      if ("requestIdleCallback" in global) global.requestIdleCallback(start, { timeout: 1600 });
+      else global.setTimeout(start, 450);
+    };
+    global.requestAnimationFrame(() => global.requestAnimationFrame(afterFirstPaint));
   }
 
   function ensureForRoute(route) {
@@ -392,6 +401,16 @@
 
   document.addEventListener("visibilitychange", () => {
     document.documentElement.classList.toggle("hh-page-hidden", document.hidden);
+    if (!document.hidden && document.body?.classList.contains("auth-unlocked") && normalizeRoute() === "/home") {
+      scheduleHomeEnhancements();
+    }
+  });
+
+  global.addEventListener("hh:auth-change", (event) => {
+    if (event.detail?.user && normalizeRoute() === "/home") scheduleHomeEnhancements();
+  });
+  global.addEventListener("hh:route-rendered", (event) => {
+    if (event.detail?.route === "/home") scheduleHomeEnhancements();
   });
 
   global.HHAssetLoader = Object.freeze({ ensureForRoute, ensureGroup, isRouteReady, groupsForRoute, loadedGroups: () => [...loaded] });

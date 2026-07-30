@@ -63,8 +63,8 @@ test("Media and Design exposes a connected professional production flow", () => 
   assert.match(page, /data-mdp-flow-route/);
   assert.doesNotMatch(page, /id:\s*"video-editor"|name:\s*"Video Editor"/);
   assert.match(page, /availableNames\.has\(saved\.active\)/);
-  const mediaBundle = loader.match(/media:\s*\{[\s\S]*?\n\s*\},\n\s*davinci:/)?.[0] || "";
-  const davinciBundle = loader.match(/davinci:\s*\{[\s\S]*?\n\s*\},\n\s*graphic:/)?.[0] || "";
+  const mediaBundle = loader.match(/media:\s*\{[\s\S]*?\r?\n\s*\},\r?\n\s*davinci:/)?.[0] || "";
+  const davinciBundle = loader.match(/davinci:\s*\{[\s\S]*?\r?\n\s*\},\r?\n\s*graphic:/)?.[0] || "";
   assert.doesNotMatch(mediaBundle, /video-editor-(?:studio|resolve)\.(?:css|js)/);
   assert.match(davinciBundle, /video-editor-studio\.js\?v=5/);
   assert.match(davinciBundle, /video-editor-resolve\.js\?v=10/);
