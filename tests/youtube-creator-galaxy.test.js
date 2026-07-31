@@ -160,6 +160,22 @@ test("OAuth callback feedback survives the first automatic refresh", () => {
   assert.match(client, /refresh\(true, hasOauthResult\);/);
 });
 
+test("Studio control deck exposes owner-isolated channels, scoped rights and bulk navigation", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const server = read("utils/youtubePublisher.js");
+  for (const feature of [
+    "Creator Studio Control Deck",
+    "Multi-channel studio overview",
+    "data-ycg-channel-select",
+    "open-fleet",
+    "Bulk Studio",
+    "channel.permissions",
+    "Jobs running"
+  ]) assert.match(client, new RegExp(feature.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")));
+  assert.match(server, /permissions:\s*\{[\s\S]{0,220}upload:[\s\S]{0,120}manage:[\s\S]{0,120}analytics:/);
+  assert.match(server, /ownerIsolated: true/);
+});
+
 test("Creator Galaxy supports private multi-channel accounts without shared browser drafts", () => {
   const client = read("youtube-creator-galaxy.js");
   const server = read("utils/youtubePublisher.js");
@@ -196,7 +212,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=4", "youtube-creator-galaxy.js?v=8"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=5", "youtube-creator-galaxy.js?v=9"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);

@@ -380,13 +380,19 @@ async function ownedConnectionsForIds(db, user, channelIds, options = {}) {
 function publicOwnedChannel(connection) {
   const channel = publicChannel(connection);
   if (!channel) return null;
+  const scopes = new Set(String(connection?.scopes || "").split(/\s+/).filter(Boolean));
   return {
     ...channel,
     account: {
       key: clean(connection.googleAccountKey, 64).slice(0, 16),
       hint: clean(connection.googleAccountHint || "Tài khoản Google", 254)
     },
-    permissionPreset: clean(connection.permissionPreset || "legacy", 30)
+    permissionPreset: clean(connection.permissionPreset || "legacy", 30),
+    permissions: {
+      upload: scopes.has(YOUTUBE_SCOPE.upload),
+      manage: scopes.has(YOUTUBE_SCOPE.manage),
+      analytics: scopes.has(YOUTUBE_SCOPE.analytics)
+    }
   };
 }
 

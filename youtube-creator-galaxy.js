@@ -257,6 +257,53 @@
     return ["ready", "Đã kết nối YouTube"];
   }
 
+  function connectedChannels() {
+    return (Array.isArray(channelStatus.channels) ? channelStatus.channels : [])
+      .filter(Boolean)
+      .slice(0, 24);
+  }
+
+  function channelSwitcherMarkup(label = "Channel") {
+    const channels = connectedChannels();
+    if (!channels.length) {
+      return `<button type="button" class="is-primary" data-ycg-action="connect-creator">+ Add YouTube channel</button>`;
+    }
+    return `<label class="ycg-channel-switcher"><span>${esc(label)}</span><select data-ycg-channel-select aria-label="${esc(label)}">${channels.map((item) => `<option value="${esc(item.id)}" ${item.id === channelStatus.channel?.id ? "selected" : ""}>${esc(item.title)} Â· ${esc(item.account?.hint || "Google")}</option>`).join("")}</select></label>`;
+  }
+
+  function studioControlBar() {
+    const channels = connectedChannels();
+    const jobs = Array.isArray(fleetJobs) ? fleetJobs : [];
+    const selected = new Set(fleetState.selectedChannelIds || []);
+    const processingJobs = jobs.filter((job) => ["queued", "uploading", "processing", "running"].includes(job.status)).length;
+    return `<section class="ycg-studio-bar" aria-label="YouTube Studio control bar">
+      <div class="ycg-studio-bar__brand"><span class="ycg-studio-bar__orb">YT</span><div><strong>Creator Studio Control Deck</strong><small>${channels.length ? `${channels.length} channels Â· ${selected.size} selected for bulk` : "Connect a channel to start"}</small></div></div>
+      <div class="ycg-studio-bar__stats"><span><b>${fmt(channels.length)}</b> Channels</span><span><b>${fmt(processingJobs)}</b> Jobs running</span><span><b>${fmt(fleetJobs.length)}</b> Jobs logged</span></div>
+      <div class="ycg-studio-bar__actions">${channelSwitcherMarkup("Manage channel")}<button type="button" data-ycg-action="open-command">Overview</button><button type="button" data-ycg-action="open-fleet">Bulk Studio</button></div>
+    </section>`;
+  }
+
+  function studioOverviewMarkup() {
+    const channels = fleetOverview?.channels || connectedChannels();
+    const jobs = Array.isArray(fleetJobs) ? fleetJobs : [];
+    const activeJobs = jobs.filter((job) => ["queued", "uploading", "processing", "running"].includes(job.status)).length;
+    if (!channels.length) return "";
+    return `<section class="ycg-panel ycg-studio-overview" aria-label="Multi-channel studio overview">
+      <header><div><small>STUDIO CONTROL DECK</small><h3>Quáº£n lÃ½ ${fmt(channels.length)} kÃªnh trong má»™t nÆ¡i</h3></div><div class="ycg-studio-overview__actions"><span>${fmt(activeJobs)} bulk job Ä‘ang cháº¡y</span><button type="button" data-ycg-action="open-fleet">Mở Bulk Studio</button></div></header>
+      <div class="ycg-channel-grid">${channels.map((channel) => {
+        const active = channel.id === channelStatus.channel?.id;
+        const permissions = channel.permissions || {};
+        const uploadReady = Boolean(permissions.upload);
+        return `<article class="ycg-channel-tile ${active ? "is-active" : ""}">
+          <div class="ycg-channel-tile__top">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "<span>YT</span>"}<i class="${uploadReady ? "is-ready" : "is-warning"}"></i></div>
+          <strong>${esc(channel.title || "YouTube channel")}</strong><small>${esc(channel.account?.hint || "Google account")} Â· ${active ? "Äang quáº£n lÃ½" : "ÄÃ£ káº¿t ná»‘i"}</small>
+          <div class="ycg-channel-tile__rights"><em class="${permissions.upload ? "is-ready" : ""}">Upload</em><em class="${permissions.manage ? "is-ready" : ""}">Manage</em><em class="${permissions.analytics ? "is-ready" : ""}">Analytics</em></div>
+        </article>`;
+      }).join("")}</div>
+      <p class="ycg-studio-note">Sá»‘ liá»‡u video, bÃ¬nh luáº­n vÃ  Analytics Ä‘Æ°á»£c táº£i theo kÃªnh Ä‘ang chá»n; khÃ´ng gÃ¶p sá»‘ liá»‡u giáº£ giÃ¡m quyá»n riÃªng tÆ°.</p>
+    </section>`;
+  }
+
   function orbitMarkup() {
     const analytics = dashboard?.analytics?.totals || {};
     const uploads = dashboard?.uploads || [];
@@ -334,7 +381,7 @@
       ["Duyệt đăng", Boolean(project?.approvals?.publish)],
       ["Upload", Boolean(project?.videoId)]
     ];
-    return `<div class="ycg-command-grid">
+    return `${studioOverviewMarkup()}<div class="ycg-command-grid">
       <section class="ycg-panel ycg-command-core">
         <header><div><small>CHANNEL CORE</small><h3>${esc(channelStatus.channel?.title)}</h3></div><span>${fmt(channelStatus.channel?.subscribers)} người đăng ký</span></header>
         <div class="ycg-metric-grid">
@@ -788,6 +835,7 @@
     publisherMounted = false;
     root.innerHTML = `<section class="ycg-shell" data-ycg-active="${esc(state.active)}">
       ${shellHeader()}
+      ${studioControlBar()}
       ${orbitMarkup()}
       <div class="ycg-layout">
         ${navigationMarkup()}
@@ -1301,6 +1349,8 @@
     if (action === "signin") return location.hash = "#/login";
     if (action === "dismiss-error") { errorMessage = ""; return render(); }
     if (action === "open-upload") return switchModule("upload");
+    if (action === "open-command") return switchModule("command");
+    if (action === "open-fleet") return switchModule("fleet");
     if (action === "open-calendar") return switchModule("calendar");
     if (action === "open-live") return switchModule("live");
     if (action === "new-video" || action === "open-editor") return location.hash = "#/davinci-resolve/davinci";
