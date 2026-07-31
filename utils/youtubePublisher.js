@@ -1155,9 +1155,15 @@ module.exports = async function handler(req, res) {
       const connection = await connectionFor(db, user);
       const accessToken = await refreshAccessToken(connection, connections);
       const warnings = [];
+      const analyticsPermission = hasYoutubePermission(connection, "analytics");
+      if (!analyticsPermission) warnings.push({
+        source: "analytics",
+        code: "YOUTUBE_SCOPE_REQUIRED",
+        message: "Kênh chưa cấp quyền yt-analytics.readonly; các chức năng YouTube Data API vẫn hoạt động."
+      });
       const [videos, analytics, comments, live, quotas, pendingUploads, auditRows, creatorProject, quotaLedger] = await Promise.all([
         settledResult(() => recentVideos(accessToken), [], warnings, "videos"),
-        settledResult(() => channelAnalytics(accessToken), null, warnings, "analytics"),
+        analyticsPermission ? settledResult(() => channelAnalytics(accessToken), null, warnings, "analytics") : Promise.resolve(null),
         settledResult(() => recentComments(accessToken, connection.channelId), [], warnings, "comments"),
         settledResult(() => broadcasts(accessToken), [], warnings, "live"),
         settledResult(async () => (await quotaStatus(db)).find((item) => item.provider === "youtube") || null, null, warnings, "quota"),

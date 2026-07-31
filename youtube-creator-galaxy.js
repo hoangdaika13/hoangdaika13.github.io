@@ -230,7 +230,7 @@
           const drafts = await api("comments/drafts").catch(() => ({ drafts: [] }));
           commentDrafts = drafts.drafts || [];
         }
-        if (state.active === "analytics" && !comparisonData) {
+        if (state.active === "analytics" && channelStatus.permissions?.analytics && !comparisonData) {
           const comparison = await api("analytics/comparison").catch(() => null);
           comparisonData = comparison?.comparison || null;
         }
@@ -627,7 +627,8 @@
 
   function analyticsView() {
     if (!channelStatus.connected) return emptyState("Analytics chưa hoạt động", "Kết nối kênh và cấp quyền yt-analytics.readonly để tải số liệu thật.", "connect", "Kết nối kênh");
-    if (!dashboard?.analytics) return emptyState("YouTube chưa trả dữ liệu Analytics", "Kết nối lại nếu scope Analytics còn thiếu; không có biểu đồ mẫu được hiển thị.", "refresh", "Thử lại");
+    if (!channelStatus.permissions?.analytics) return `<div class="ycg-empty"><span aria-hidden="true">AN</span><strong>Thiếu quyền YouTube Analytics</strong><p>Kênh vẫn dùng được Upload, Metadata, Community và Live với hai quyền đã duyệt. Analytics cần cấp riêng quyền yt-analytics.readonly; nếu scope này chưa nằm trong hồ sơ Google đã phê duyệt, chủ dự án cần gửi xác minh bổ sung.</p><div class="ycg-action-row"><button class="is-primary" type="button" data-ycg-action="connect-analytics">Cấp quyền Analytics</button><button type="button" data-ycg-module="command">Mở Command Center</button></div></div>`;
+    if (!dashboard?.analytics) return emptyState("Analytics chưa có dữ liệu", "Quyền Analytics đã được cấp nhưng YouTube chưa trả dữ liệu cho khoảng ngày hiện tại. Hãy đồng bộ lại; hệ thống không tạo biểu đồ mẫu.", "refresh", "Đồng bộ lại");
     const analytics = dashboard.analytics;
     const rows = analytics.rows || [];
     const maxViews = Math.max(1, ...rows.map((row) => Number(row.views || 0)));
@@ -1275,7 +1276,7 @@
         render();
       }).catch(() => {});
     }
-    if (channelStatus.connected && moduleId === "analytics" && !comparisonData) {
+    if (channelStatus.connected && channelStatus.permissions?.analytics && moduleId === "analytics" && !comparisonData) {
       api("analytics/comparison").then((result) => {
         if (state.active !== "analytics") return;
         comparisonData = result.comparison || null;

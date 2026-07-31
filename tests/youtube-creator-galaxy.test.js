@@ -139,6 +139,18 @@ test("Granular OAuth scopes are enforced before Google operations", () => {
   }
 });
 
+test("Missing Analytics scope offers incremental OAuth without blocking approved tools", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const server = read("utils/youtubePublisher.js");
+  assert.match(client, /Thiếu quyền YouTube Analytics/);
+  assert.match(client, /data-ycg-action="connect-analytics"/);
+  assert.match(client, /data-ycg-module="command"/);
+  assert.match(client, /channelStatus\.permissions\?\.analytics && !comparisonData/);
+  assert.match(server, /const analyticsPermission = hasYoutubePermission\(connection, "analytics"\)/);
+  assert.match(server, /analyticsPermission \? settledResult/);
+  assert.match(server, /Kênh chưa cấp quyền yt-analytics\.readonly; các chức năng YouTube Data API vẫn hoạt động\./);
+});
+
 test("Creator Galaxy supports private multi-channel accounts without shared browser drafts", () => {
   const client = read("youtube-creator-galaxy.js");
   const server = read("utils/youtubePublisher.js");
@@ -175,7 +187,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=4", "youtube-creator-galaxy.js?v=6"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=4", "youtube-creator-galaxy.js?v=7"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
