@@ -64,7 +64,7 @@ test("Batch Video Factory is a real routed Tool workspace", () => {
   assert.match(script, /HHVideoBatchFactory\?\.unmount/);
   assert.match(loader, /video-batch-factory\.css\?v=4/);
   assert.match(loader, /video-batch-factory\.js\?v=3/);
-  assert.match(worker, /hh-identity-portal-v358/);
+  assert.match(worker, /hh-identity-portal-v359/);
   assert.match(worker, /video-batch-factory\.js\?v=3/);
   assert.match(worker, /video-batch-factory\.css\?v=4/);
 

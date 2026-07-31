@@ -1,5 +1,6 @@
 const { clean, currentUser, database, enforceRateLimit, isAdminUser, setCors, withApi } = require("../../utils/platform");
 const privacyConsentHandler = require("../../utils/privacy-consent-api");
+const youtubePublisherHandler = require("../../utils/youtubePublisher");
 const { quotaStatus, requireRoles } = require("../../services/apiGateway");
 
 const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
@@ -172,6 +173,7 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
 }
 
 module.exports = async function handler(req, res) {
+  if (String(req.query.youtubePublisher || "") === "1") return youtubePublisherHandler(req, res);
   if (req.query.privacyRoute === "consent") return privacyConsentHandler(req, res);
   if (req.method === "GET" && req.query.view === "health") {
     setCors(req, res);

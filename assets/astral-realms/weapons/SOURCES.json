@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-31T02:20:00.000Z",
+  "sources": [
+    {
+      "name": "Quaternius Modular Weapons Pack",
+      "url": "https://quaternius.com/packs/medievalweapons.html",
+      "license": "CC0-1.0"
+    },
+    {
+      "name": "Quaternius Sci-Fi Modular Gun Pack",
+      "url": "https://quaternius.com/packs/scifimodularguns.html",
+      "license": "CC0-1.0"
+    },
+    {
+      "name": "Quaternius Fantasy Props MegaKit Standard",
+      "url": "https://quaternius.itch.io/fantasy-props-megakit",
+      "license": "CC0-1.0"
+    },
+    {
+      "name": "Kenney Blaster Kit 2.1",
+      "url": "https://kenney.nl/assets/blaster-kit",
+      "license": "CC0-1.0"
+    }
+  ],
+  "assetCountBySource": {
+    "Quaternius Modular Weapons Pack": 24,
+    "Quaternius Sci-Fi Modular Gun Pack": 20,
+    "Quaternius Fantasy Props MegaKit Standard": 10,
+    "Kenney Blaster Kit 2.1": 18
+  },
+  "licenses": [
+    "licenses/Quaternius-CC0.txt",
+    "licenses/Kenney-Blaster-Kit-CC0.txt"
+  ]
+}

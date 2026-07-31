@@ -26,7 +26,7 @@ const PERMISSION_SCOPE_PRESETS = Object.freeze({
   upload: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.upload]),
   manage: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.manage]),
   analytics: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.analytics]),
-  creator: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.upload, YOUTUBE_SCOPE.manage, YOUTUBE_SCOPE.analytics])
+  creator: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.upload, YOUTUBE_SCOPE.manage])
 });
 const BULK_CHANNEL_LIMIT = 5;
 const VIDEO_MIME = new Set(["video/mp4", "video/webm", "video/quicktime", "video/x-matroska", "application/octet-stream"]);
@@ -895,7 +895,8 @@ module.exports = async function handler(req, res) {
           sourceAccountImpactRequired: true,
           consentScreenMustShowAllServices: true,
           privacyPolicyUrl: `${safeFrontend(process.env.PUBLIC_SITE_URL)}/privacy.html#google-api-data`,
-          exactSubmittedScopes: [YOUTUBE_SCOPE.upload, YOUTUBE_SCOPE.manage, YOUTUBE_SCOPE.analytics]
+          exactSubmittedScopes: [YOUTUBE_SCOPE.upload, YOUTUBE_SCOPE.manage],
+          analyticsScopeRequiresSeparateApproval: true
         },
         playlists: connection?.playlists || [],
         history: history.map((item) => ({

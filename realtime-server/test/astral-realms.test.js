@@ -116,7 +116,9 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
 
   const target = snapshot.enemies.find((enemy) => enemy.id === "aurora-wisp-1");
   assert.ok(target);
-  assert.equal(target.health, 80);
+  assert.equal(target.health, 86, "client power must not amplify server-owned damage");
+  assert.ok(snapshot.enemies.length >= 68, "the authoritative shard must include the 50-model hunt population");
+  assert.equal(snapshot.combat.policy, "opt-in-server-authoritative");
   const boss = snapshot.enemies.find((enemy) => enemy.id === "nexus-warden");
   assert.equal(boss.bossPhase, 1);
   assert.equal(boss.maxShield, 320);

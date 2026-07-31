@@ -46,7 +46,8 @@
   let checkpointTimer = 0;
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
-  const apiBase = () => String(options.apiBase || window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
+  const apiBase = () => String(options.apiBase || window.HH_API_ORIGIN || location.origin).replace(/\/$/, "");
+  const apiUrl = (path) => `${apiBase()}/api/search/youtube-publisher?youtubeAction=${encodeURIComponent(path)}`;
   const authHeaders = () => {
     const token = window.HHAuthSession?.token?.() || "";
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
@@ -207,7 +208,7 @@
   }
 
   async function api(path, method = "GET", body) {
-    const response = await fetch(`${apiBase()}/api/youtube/${path}`, {
+    const response = await fetch(apiUrl(path), {
       method,
       headers: authHeaders(),
       ...(body ? { body: JSON.stringify(body) } : {}),

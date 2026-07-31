@@ -48,6 +48,7 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   const source = read("utils/youtubePublisher.js");
   const security = read("utils/youtubeSecurity.js");
   const searchGateway = read("api/search/[provider].js");
+  const platformGateway = read("api/platform/summary.js");
   const deployment = read("vercel.json");
   const envExample = read(".env.example");
   assert.match(source, /youtube\.upload/);
@@ -70,13 +71,18 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   assert.match(source, /playlistItems\?part=snippet/);
   assert.doesNotMatch(source, /refreshToken:\s*decrypt/);
   assert.match(searchGateway, /youtubePublisherHandler/);
+  assert.match(platformGateway, /youtubePublisherHandler/);
+  assert.match(platformGateway, /req\.query\.youtubePublisher/);
   const youtubeRewrite = JSON.parse(deployment).rewrites.find((rewrite) =>
-    rewrite.destination.includes("youtube-publisher")
+    rewrite.source === "/api/youtube/:youtubeAction*"
   );
   assert.deepEqual(youtubeRewrite, {
-    source: "^/api/youtube/(.+)$",
-    destination: "/api/search/youtube-publisher?youtubeAction=$1"
+    source: "/api/youtube/:youtubeAction*",
+    destination: "/api/platform/summary?youtubePublisher=1&youtubeAction=:youtubeAction"
   });
+  assert.match(read("youtube-creator-galaxy.js"), /window\.HH_API_ORIGIN \|\| location\.origin/);
+  assert.doesNotMatch(read("youtube-creator-galaxy.js"), /HH_REALTIME_URL \|\| location\.origin/);
+  assert.match(read("youtube-creator-galaxy.js"), /api\/search\/youtube-publisher\?youtubeAction=/);
   assert.match(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/nhhoang13all\.xyz\/api\/youtube\/oauth\/callback/);
   assert.doesNotMatch(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/hoangdaika13githubio\.vercel\.app/);
 });
@@ -95,7 +101,7 @@ test("Publisher draft and channel switching are private to the current HH accoun
 test("Versioned publisher assets are loaded and cached", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["youtube-publisher.css?v=4", "youtube-publisher.js?v=6"]) {
+  for (const asset of ["youtube-publisher.css?v=4", "youtube-publisher.js?v=7"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

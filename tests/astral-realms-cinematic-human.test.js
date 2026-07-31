@@ -61,9 +61,9 @@ test("near-camera low-poly slabs and black rock field are bounded", () => {
   assert.match(source, /\? Math\.max\(22, zone\.radius \* 0\.68\)/);
   assert.match(source, /object\.userData\.cameraSafeRadius = minimumRadius/);
   assert.match(source, /new THREE\.CylinderGeometry\(zone\.radius, zone\.radius \+ 0\.38, 0\.18, 96, 1\)/);
-  assert.match(source, /const scale = profile\.boss \? 1\.35/);
+  assert.match(source, /const scale = boss \? 1\.35/);
   assert.match(source, /new THREE\.CapsuleGeometry\(0\.62 \* scale, 1\.08 \* scale, 10, 20\)/);
-  assert.match(source, /emissiveIntensity: profile\.boss \? 0\.1 : 0\.08/);
+  assert.match(source, /emissiveIntensity: boss \? 0\.1 : 0\.08/);
   assert.match(source, /profile\.actor === "wisps"[\s\S]*new THREE\.SphereGeometry\(0\.38, 24, 16\)/);
   assert.doesNotMatch(source, /profile\.actor === "wisps"[\s\S]{0,180}new THREE\.ConeGeometry/);
   assert.match(source, /profile\.actor === "wisps" \? 14 \+ index \* 4\.8/);

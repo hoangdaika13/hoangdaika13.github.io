@@ -143,7 +143,9 @@ test("downloaded hero GLBs are built in, selectable and fitted from humanoid lan
 
 test("right-hand sockets calibrate every downloaded hero weapon", () => {
   assert.match(source, /configureWeaponSocket\(mesh, weapon, weaponClass = "sword"\)/);
-  assert.match(source, /source: "right-hand-calibrated"/);
+  for (const calibration of ["right-hand-calibrated", "left-hand-calibrated", "two-hand-calibrated"]) {
+    assert.ok(source.includes(calibration), `missing ${calibration}`);
+  }
   assert.match(source, /weapon\.scale\.setScalar\(preset\.worldScale \/ inheritedScale\)/);
   assert.match(source, /anchor\.parent\?\.getWorldScale/);
   assert.match(source, /parentWorldQuaternion\.invert\(\)\.multiply\(desiredWorldQuaternion\)/);

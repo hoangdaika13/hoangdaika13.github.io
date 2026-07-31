@@ -60,7 +60,8 @@
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
   })[char]);
-  const apiBase = () => String(window.HH_REALTIME_URL || location.origin).replace(/\/$/, "");
+  const apiBase = () => String(window.HH_API_ORIGIN || location.origin).replace(/\/$/, "");
+  const apiUrl = (path) => `${apiBase()}/api/search/youtube-publisher?youtubeAction=${encodeURIComponent(path)}`;
   const authHeaders = () => {
     const token = window.HHAuthSession?.token?.() || "";
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
@@ -174,7 +175,7 @@
   }
 
   async function api(path, method = "GET", body) {
-    const response = await fetch(`${apiBase()}/api/youtube/${path}`, {
+    const response = await fetch(apiUrl(path), {
       method,
       headers: authHeaders(),
       ...(body ? { body: JSON.stringify(body) } : {}),
@@ -402,7 +403,7 @@
         <button data-ycg-action="connect-upload"><strong>Chỉ Upload</strong><small>youtube.upload</small></button>
         <button data-ycg-action="connect-manage"><strong>Quản lý kênh</strong><small>youtube.force-ssl</small></button>
         <button data-ycg-action="connect-analytics"><strong>Chỉ Analytics</strong><small>yt-analytics.readonly</small></button>
-        <button class="is-primary" data-ycg-action="connect-creator"><strong>Creator đầy đủ</strong><small>Ba scope đã khai báo</small></button>
+        <button class="is-primary" data-ycg-action="connect-creator"><strong>Creator đã duyệt</strong><small>youtube.upload + youtube.force-ssl</small></button>
       </div>
       <div class="ycg-verification-readiness">
         <header><div><small>GOOGLE VERIFICATION READINESS</small><h4>Checklist video demo và chính sách</h4></div><span>Trạng thái nội bộ, không phải phê duyệt của Google</span></header>

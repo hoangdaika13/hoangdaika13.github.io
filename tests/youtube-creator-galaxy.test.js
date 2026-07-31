@@ -175,7 +175,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=4", "youtube-creator-galaxy.js?v=5"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=4", "youtube-creator-galaxy.js?v=6"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);

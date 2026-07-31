@@ -98,7 +98,7 @@
         "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=10", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1",
-        "youtube-publisher.js?v=6", "youtube-creator-galaxy.js?v=5"
+        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=6"
       ]
     },
     graphic: {
@@ -126,7 +126,7 @@
         "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "youtube-publisher.css?v=4"
       ],
       scripts: [
-        "creative-os-core.js?v=4", "youtube-publisher.js?v=6", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
+        "creative-os-core.js?v=4", "youtube-publisher.js?v=7", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
         "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=2",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",
@@ -158,7 +158,7 @@
     },
     game: {
       styles: ["game-runtime.css?v=1", "astral-realms.css?v=71", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
-      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=72", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=73", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
     },
     // Compatibility asset aliases for clients upgrading from Entertainment v4:
     // "game-center.css?v=4" "game-center.js?v=4"

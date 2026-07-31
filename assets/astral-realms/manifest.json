@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 8,
   "createdAt": "2026-07-30",
   "generator": "OpenAI built-in ImageGen",
   "rights": "Original HH visual assets, Poly Haven and ambientCG CC0 photogrammetry/HDR assets, Three.js example GLB assets under MIT, and a CC0 animation-only derivative from Quaternius Universal Animation Library Standard.",
@@ -86,6 +86,22 @@
       "file": "animations/motion-library-v13.json",
       "role": "Truthful baked-clip manifest, foot-contact markers and missing-clip inventory",
       "sha256": "62FD3E2302C6E5D1EFF4E4E8EB7DAB27ACECFB011C6153461B397779BC06B1C8"
+    },
+    {
+      "file": "weapons/manifest.json",
+      "role": "72 usable CC0 weapon models with three web LODs, checksums and stable Grip/Muzzle/Blade sockets",
+      "source": "Quaternius Modular Weapons, Sci-Fi Modular Guns, Fantasy Props Standard and Kenney Blaster Kit 2.1",
+      "license": "CC0-1.0 · weapons/LICENSES.md",
+      "downloadedModels": 72,
+      "runtimePolicy": "Only the equipped weapon LOD is fetched; procedural geometry remains visible until the GLB is decoded and validated."
+    },
+    {
+      "file": "monsters/manifest.json",
+      "role": "50 animated CC0 hunt monsters with 506 baked animation clips",
+      "source": "Quaternius Ultimate Monsters",
+      "license": "CC0-1.0 · monsters/LICENSES.md",
+      "downloadedModels": 50,
+      "runtimePolicy": "Only monsters inside the active streamed hunt radius are fetched; the next wave may be preloaded one model at a time."
     }
   ]
 }

@@ -113,7 +113,8 @@ test("V13 layers inertia, raycast foot locking and visual-only contact warping s
     "beginMotionWarp", "applyMotionWarping", "contactPhase",
     "unchanged-server-authoritative"
   ]) assert.ok(source.includes(token), `natural motion runtime missing ${token}`);
-  assert.match(source, /const contactDelay = weaponClass === "gun"/);
+  assert.match(source, /const contactDelay = Math\.max\(Number\(combatProfile\.contact\?\.\[kind\]/);
+  assert.match(source, /targetInsideWeaponHitbox\(combatTarget, combatProfile, range\)/);
   assert.match(source, /this\.cameraShake = Math\.max\(this\.cameraShake, kind === "ultimate"/);
 });
 

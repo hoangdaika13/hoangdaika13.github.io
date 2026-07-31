@@ -28,3 +28,17 @@ the official Poly Haven 1K glTF packages to optimized GLB files:
 - `fern_02`
 
 Source: https://polyhaven.com — License: https://polyhaven.com/license
+
+## Astral weapon library
+
+The 72 weapon assets and their three web LODs are derived from CC0 packs by
+Quaternius and Kenney. Exact per-pack provenance, source URLs and retained
+license texts are listed in `weapons/LICENSES.md`, `weapons/SOURCES.json` and
+`weapons/manifest.json`.
+
+## Astral monster hunt library
+
+The 50 animated monster GLBs come from Quaternius Ultimate Monsters under
+CC0 1.0. Exact checksums, animation counts and the retained license text are
+listed in `monsters/manifest.json`, `monsters/LICENSES.md` and
+`monsters/licenses/Quaternius-Ultimate-Monsters-CC0.txt`.

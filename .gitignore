@@ -9,5 +9,6 @@ tmp/
 .tmp-photogrammetry/
 assets/astral-realms/characters/sketchfab-cc-by/miss-galaxy-motion*
 assets/astral-realms/characters/sketchfab-cc-by/qa-renders/
+assets/astral-realms/weapons/models/*.uncompressed.glb
 .env*
 !.env.example

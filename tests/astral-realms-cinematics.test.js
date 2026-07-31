@@ -16,7 +16,7 @@ function between(startToken, endToken) {
 }
 
 test("Astral archive defines eight distinct realtime 3D story chapters", () => {
-  const archive = between("  const ASTRAL_CINEMATICS", "  const BIOME_PROFILES");
+  const archive = between("  const ASTRAL_CINEMATICS", "  const HUNT_CHAPTERS");
   const ids = [...archive.matchAll(/\{ id: "([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(ids, ["central", "aurora", "crimson", "void", "sky", "ocean", "station", "abyss"]);
   assert.equal((source.match(/data-cinematic-chapter=/g) || []).length, 1, "chapter buttons must be generated from the archive");

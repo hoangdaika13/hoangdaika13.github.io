@@ -2,7 +2,7 @@
   "use strict";
 
   const GAME_ID = "astral-realms";
-  const SCHEMA_VERSION = 8;
+  const SCHEMA_VERSION = 10;
   const STORY_CANON_VERSION = 2;
   const RENDER_SCALE_STEPS = Object.freeze([1, 0.85, 0.7, 0.6]);
   const DB_NAME = "hh-astral-realms";
@@ -45,11 +45,13 @@
   });
   const CHARACTER_ORDER = Object.freeze(Object.keys(CHARACTERS));
   const DEFAULT_CHARACTER_WEAPONS = Object.freeze({
-    lyra: "starter-blade",
-    cael: "pulse-rifle",
-    nyx: "void-gauntlets",
-    sol: "starter-blade"
+    lyra: "mw-sword-golden",
+    cael: "qg-ar-4",
+    nyx: "mw-dagger-2",
+    sol: "mw-sword-big"
   });
+  const WEAPON_MANIFEST_URL = "./assets/astral-realms/weapons/manifest.json?v=1";
+  const MONSTER_MANIFEST_URL = "./assets/astral-realms/monsters/manifest.json?v=1";
   const CHARACTER_VISUAL_VERSION = 13;
   const CHARACTER_MODEL_TIERS = Object.freeze({
     hero: { label: "Web Hero LOD0", triangles: "Face 18–28K · body 25–40K", texture: "2K", face: 52, distance: 13, updateHz: 60 },
@@ -389,6 +391,24 @@
     { id: "station", chapter: 7, title: "Quỹ đạo phong tỏa", kicker: "NEXUS ECHO · ASTRAL STATION", description: "Astral Station phong tỏa quỹ đạo và ra lệnh xóa Nax để reset hệ thống. Luma thú nhận cô đã che giấu cái chết của Nax nguyên bản nhằm giữ hy vọng cứu thành phố.", objective: "Thoát lệnh xóa và mở đường tới Nexus", duration: 12600, camera: "station-track", motion: "talk", requiredEvent: "restored:station" },
     { id: "abyss", chapter: 8, title: "Điểm tận cùng Nexus", kicker: "NEXUS ECHO · NEXUS ABYSS", description: "Nax hợp nhất tám lõi, sửa giao thức phòng vệ và cứu mạng Astral mà không xóa ký ức hay bản ngã. Tín hiệu 72 giờ khép lại đúng lúc một Echo mới xuất hiện ngoài rìa thiên hà.", objective: "Sửa mạng Astral và giữ lại bản ngã", duration: 14800, camera: "abyss-spiral", motion: "attack1", requiredEvent: "restored:abyss" }
   ]);
+  const HUNT_CHAPTERS = Object.freeze([
+    { chapter: 1, zoneId: "central", title: "Giấy phép Thợ săn H-Central", storyBeat: "Nax phải chứng minh bản tái tạo có thể bảo vệ người sống bằng cách vượt qua đàn quái thử nghiệm thoát khỏi khu cách ly.", huntQuota: 3, eliteQuota: 0, bossQuota: 0, scoreTarget: 300 },
+    { chapter: 2, zoneId: "aurora", title: "Bầy đột biến Hồ Gương", storyBeat: "Dấu vết ký ức 72 giờ bị một bầy sinh vật Cryo nuốt giữ; hạ thủ lĩnh Yeti mới mở được bản ghi sụp đổ Astral.", huntQuota: 5, eliteQuota: 1, bossQuota: 1, scoreTarget: 900 },
+    { chapter: 3, zoneId: "crimson", title: "Cuộc săn Lõi Plasma", storyBeat: "Cael chỉ có thể rèn Temporal Key sau khi đội săn thu hồi đủ lõi từ thú giáp hóa và đánh bại thủ lĩnh Crimson.", huntQuota: 6, eliteQuota: 1, bossQuota: 1, scoreTarget: 1250 },
+    { chapter: 4, zoneId: "void", title: "Kẻ săn trong Khu vườn Không Bóng", storyBeat: "Những thú săn Void là tiến trình phòng vệ Nexus bị lỗi; hạ Warden để đọc được mệnh lệnh gốc của hệ thống.", huntQuota: 7, eliteQuota: 2, bossQuota: 1, scoreTarget: 1700 },
+    { chapter: 5, zoneId: "sky", title: "Đại săn Tầng Mây", storyBeat: "Đàn quái bay giữ các mảnh bản đồ con tàu Nax; chiến thắng Rồng Lượng Tử mới ghép được tuyến đường hoàn chỉnh.", huntQuota: 8, eliteQuota: 2, bossQuota: 1, scoreTarget: 2200 },
+    { chapter: 6, zoneId: "ocean", title: "Leviathan của Mặt trăng Đại dương", storyBeat: "Nhật ký gốc nằm trong tổ sinh vật biển sâu; cuộc săn xác nhận Nax nguyên bản đã hy sinh để cứu H-Central.", huntQuota: 8, eliteQuota: 2, bossQuota: 1, scoreTarget: 2700 },
+    { chapter: 7, zoneId: "station", title: "Phong tỏa và Quái Cơ Giới", storyBeat: "Astral Station thả sinh vật nhân tạo truy xóa Nax; đội săn phải phá vòng phong tỏa mà không làm hại thường dân.", huntQuota: 9, eliteQuota: 2, bossQuota: 1, scoreTarget: 3300 },
+    { chapter: 8, zoneId: "abyss", title: "Grand Hunt · Điểm tận cùng Nexus", storyBeat: "Nax săn các Herald cuối cùng, hợp nhất tám lõi và sửa mạng Astral mà vẫn giữ ký ức cùng bản ngã độc lập.", huntQuota: 10, eliteQuota: 3, bossQuota: 1, scoreTarget: 4200 }
+  ]);
+  const HUNTER_RANKS = Object.freeze([
+    { id: "novice", label: "Tân binh", score: 0 },
+    { id: "bronze", label: "Thợ săn Đồng", score: 1000 },
+    { id: "silver", label: "Thợ săn Bạc", score: 3000 },
+    { id: "gold", label: "Thợ săn Vàng", score: 7000 },
+    { id: "astral", label: "Astral Hunter", score: 14000 },
+    { id: "nexus", label: "Nexus Vanguard", score: 26000 }
+  ]);
   const BIOME_PROFILES = Object.freeze({
     central: { accent: "#6feeff", fog: 0x102a3f, fogDensity: 0.0056, particle: 0x73eaff, wind: 0.35, precipitation: "neon-rain", actor: "traffic" },
     aurora: { accent: "#65f1c7", fog: 0x173e45, fogDensity: 0.0082, particle: 0xc5fff4, wind: 0.62, precipitation: "snow", actor: "wisps" },
@@ -431,20 +451,107 @@
     station: { core: "corrupted", restored: false, occupation: "astral-researchers", weather: "artificial-aurora", resources: 100, lastBossAt: "" },
     abyss: { core: "sealed", restored: false, occupation: "void-cult", weather: "eclipse", resources: 100, lastBossAt: "" }
   });
+  const ASTRAL_WEAPON_LIBRARY = Object.freeze([
+    ["mw-arrow", "Astral Arrow", "bow"],
+    ["mw-axe", "Crimson Axe", "hammer"],
+    ["mw-axe-double", "Twinhead Breaker", "hammer"],
+    ["mw-axe-small", "Vanguard Hatchet", "hammer"],
+    ["mw-bow-evil", "Void Recurve", "bow"],
+    ["mw-bow-golden", "Solar Arc", "bow"],
+    ["mw-bow-wooden", "Aurora Longbow", "bow"],
+    ["mw-bow-wooden-2", "Nexus Hunter Bow", "bow"],
+    ["mw-claymore", "Plasma Claymore", "greatsword"],
+    ["mw-dagger", "Void Fang", "dualBlade"],
+    ["mw-dagger-2", "Nyx Twin Fang", "dualBlade"],
+    ["mw-hammer-double", "Solar Maul", "hammer"],
+    ["mw-hammer-small", "Forge Hammer", "hammer"],
+    ["mw-scythe", "Nexus Reaper", "scythe"],
+    ["mw-shield-celtic-golden", "Solar Aegis", "shield"],
+    ["mw-shield-heater", "H-Central Guard", "shield"],
+    ["mw-shield-heater-2", "Crimson Bulwark", "shield"],
+    ["mw-shield-round", "Aurora Ward", "shield"],
+    ["mw-shield-round-2", "Void Ward", "shield"],
+    ["mw-spear", "Sky Ruins Spear", "spear"],
+    ["mw-sword", "Astral Edge Mk II", "sword"],
+    ["mw-sword-2", "Temporal Saber", "sword"],
+    ["mw-sword-big", "Solar Greatblade", "greatsword"],
+    ["mw-sword-golden", "Lyra Golden Edge", "sword"],
+    ["qg-ar-1", "Pulse Rifle AR-1", "rifle"],
+    ["qg-ar-2", "Pulse Rifle AR-2", "rifle"],
+    ["qg-ar-3", "Pulse Rifle AR-3", "rifle"],
+    ["qg-ar-4", "Pulse Rifle AR-4", "rifle"],
+    ["qg-ar-5", "Pulse Rifle AR-5", "rifle"],
+    ["qg-ar-6", "Pulse Rifle AR-6", "rifle"],
+    ["qg-crossbow-1", "Quantum Crossbow 1", "bow"],
+    ["qg-crossbow-2", "Quantum Crossbow 2", "bow"],
+    ["qg-grenade-1", "Nexus Heavy Grenade 1", "heavy"],
+    ["qg-grenade-2", "Nexus Heavy Grenade 2", "heavy"],
+    ["qg-grenade-3", "Nexus Heavy Grenade 3", "heavy"],
+    ["qg-grenade-4", "Nexus Heavy Grenade 4", "heavy"],
+    ["qg-pistol-1", "Cael Sidearm P-1", "pistol"],
+    ["qg-pistol-2", "Cael Sidearm P-2", "pistol"],
+    ["qg-pistol-3", "Cael Sidearm P-3", "pistol"],
+    ["qg-smg-1", "Veyra SMG 1", "pistol"],
+    ["qg-smg-2", "Veyra SMG 2", "pistol"],
+    ["qg-sniper-1", "Cryo Sniper 1", "sniper"],
+    ["qg-sniper-2", "Cryo Sniper 2", "sniper"],
+    ["qg-sniper-3", "Cryo Sniper 3", "sniper"],
+    ["kb-blaster-a", "Kenney Blaster A", "pistol"],
+    ["kb-blaster-b", "Kenney Blaster B", "pistol"],
+    ["kb-blaster-c", "Kenney Blaster C", "pistol"],
+    ["kb-blaster-d", "Kenney Blaster D", "pistol"],
+    ["kb-blaster-e", "Kenney Blaster E", "shotgun"],
+    ["kb-blaster-f", "Kenney Blaster F", "shotgun"],
+    ["kb-blaster-g", "Kenney Blaster G", "shotgun"],
+    ["kb-blaster-h", "Kenney Blaster H", "rifle"],
+    ["kb-blaster-i", "Kenney Blaster I", "rifle"],
+    ["kb-blaster-j", "Kenney Blaster J", "rifle"],
+    ["kb-blaster-k", "Kenney Blaster K", "rifle"],
+    ["kb-blaster-l", "Kenney Blaster L", "rifle"],
+    ["kb-blaster-m", "Kenney Blaster M", "sniper"],
+    ["kb-blaster-n", "Kenney Blaster N", "sniper"],
+    ["kb-blaster-o", "Kenney Blaster O", "sniper"],
+    ["kb-blaster-p", "Kenney Blaster P", "heavy"],
+    ["kb-blaster-q", "Kenney Blaster Q", "heavy"],
+    ["kb-blaster-r", "Kenney Blaster R", "heavy"],
+    ["fp-axe-bronze", "Bronze Rift Axe", "hammer"],
+    ["fp-pickaxe-bronze", "Crimson Pick Spear", "spear"],
+    ["fp-shield-wooden", "Woodland Guardian", "shield"],
+    ["fp-sword-bronze", "Bronze Astral Sword", "sword"],
+    ["fp-book-5", "Codex Catalyst", "staff"],
+    ["fp-book-stand", "Oracle Catalyst", "staff"],
+    ["fp-candlestick-stand", "Solar Scepter", "staff"],
+    ["fp-torch-metal", "Ember Staff", "staff"],
+    ["fp-potion-4", "Alchemist Catalyst", "staff"],
+    ["fp-chalice", "Aurora Chalice", "staff"]
+  ].map(([id, name, weaponClass]) => Object.freeze({
+    id,
+    name,
+    type: "weapon",
+    weaponClass,
+    modelId: id,
+    rarity: "CC0 Armory",
+    description: `Vũ khí ${weaponClass} 3D thật, tải lười từ Astral Armory.`,
+    attack: ({ greatsword: 19, sniper: 18, heavy: 18, hammer: 17, scythe: 17, shotgun: 16, spear: 15, rifle: 14, sword: 14, bow: 14, staff: 13, dualBlade: 12, pistol: 11, shield: 10 })[weaponClass] || 12
+  })));
+  const ASTRAL_WEAPON_ITEMS = Object.freeze(Object.fromEntries(ASTRAL_WEAPON_LIBRARY.map((item) => [item.id, item])));
   const ITEMS = Object.freeze({
-    "starter-blade": { id: "starter-blade", name: "Đoản kiếm H", type: "weapon", weaponClass: "sword", rarity: "Khởi đầu", description: "Vũ khí tiêu chuẩn của Nhà du hành H.", attack: 8 },
-    "pulse-rifle": { id: "pulse-rifle", name: "Súng trường Pulse", type: "weapon", weaponClass: "gun", rarity: "Khởi đầu", description: "Vũ khí tầm xa với đạn năng lượng và nhịp bắn ổn định.", attack: 7 },
+    "starter-blade": { id: "starter-blade", name: "Đoản kiếm H", type: "weapon", weaponClass: "sword", modelId: "mw-sword", rarity: "Khởi đầu", description: "Vũ khí tiêu chuẩn của Nhà du hành H.", attack: 8 },
+    "pulse-rifle": { id: "pulse-rifle", name: "Súng trường Pulse", type: "weapon", weaponClass: "gun", modelId: "qg-ar-1", rarity: "Khởi đầu", description: "Vũ khí tầm xa với đạn năng lượng và nhịp bắn ổn định.", attack: 7 },
     "void-gauntlets": { id: "void-gauntlets", name: "Găng chiến Veyra", type: "weapon", weaponClass: "unarmed", rarity: "Khởi đầu", description: "Găng cận chiến khuếch đại đấm, đá và phản đòn.", attack: 10 },
     "aurora-shard": { id: "aurora-shard", name: "Mảnh Aurora", type: "material", rarity: "Phổ thông", description: "Tinh thể lạnh thu được tại Aurora Vale." },
     "plasma-core": { id: "plasma-core", name: "Lõi Plasma", type: "material", rarity: "Hiếm", description: "Lõi năng lượng còn nóng của sinh vật Crimson." },
     "void-fiber": { id: "void-fiber", name: "Sợi Hư Không", type: "material", rarity: "Hiếm", description: "Vật chất bất ổn từ Void Garden." },
     "healing-tonic": { id: "healing-tonic", name: "Tinh dược hồi phục", type: "consumable", rarity: "Phổ thông", description: "Hồi 35 HP khi sử dụng.", heal: 35 },
-    "astral-edge": { id: "astral-edge", name: "Astral Edge", type: "weapon", weaponClass: "sword", rarity: "Sử thi", description: "Lưỡi kiếm cộng hưởng với sáu nguyên tố.", attack: 22 }
+    "astral-edge": { id: "astral-edge", name: "Astral Edge", type: "weapon", weaponClass: "sword", modelId: "mw-sword-golden", rarity: "Sử thi", description: "Lưỡi kiếm cộng hưởng với sáu nguyên tố.", attack: 22 },
+    ...ASTRAL_WEAPON_ITEMS
   });
   const WEAPON_COMBAT_PROFILES = Object.freeze({
     sword: {
       label: "Kiếm",
       icon: "⚔",
+      mode: "melee",
+      socket: "right",
       attacks: ["attack1", "attack2", "attack3"],
       skillMotion: "swordSkill",
       ultimateMotion: "swordUltimate",
@@ -453,11 +560,17 @@
       ultimateName: "Nexus Sever",
       range: { attack: 4.2, skill: 8, ultimate: 12 },
       cooldown: { attack: 320, skill: 2600, ultimate: 9500 },
-      damage: { attack: 1, skill: 1, ultimate: 1 }
+      damage: { attack: 1, skill: 1, ultimate: 1 },
+      contact: { attack: 145, skill: 235, ultimate: 360 },
+      hitbox: { radius: 1.1, arc: 135 },
+      aoe: { attack: 1, skill: 4, ultimate: 8 },
+      trail: true
     },
     gun: {
       label: "Súng",
       icon: "⌁",
+      mode: "ranged",
+      socket: "twoHand",
       attacks: ["rifleShot", "rifleShot", "rifleBurst"],
       skillMotion: "rifleSkill",
       ultimateMotion: "rifleUltimate",
@@ -466,11 +579,18 @@
       ultimateName: "Orbital Barrage",
       range: { attack: 24, skill: 30, ultimate: 38 },
       cooldown: { attack: 190, skill: 3200, ultimate: 11000 },
-      damage: { attack: 0.78, skill: 1.12, ultimate: 1.08 }
+      damage: { attack: 0.78, skill: 1.12, ultimate: 1.08 },
+      contact: { attack: 80, skill: 180, ultimate: 260 },
+      hitbox: { radius: 0.45, arc: 18 },
+      aoe: { attack: 1, skill: 3, ultimate: 8 },
+      recoil: 0.1,
+      projectileSpeed: 44
     },
     unarmed: {
       label: "Tay không",
       icon: "✦",
+      mode: "melee",
+      socket: "dual",
       attacks: ["punch1", "punch2", "kick1"],
       skillMotion: "martialSkill",
       ultimateMotion: "martialUltimate",
@@ -479,9 +599,117 @@
       ultimateName: "Eight-Core Impact",
       range: { attack: 3.25, skill: 5.4, ultimate: 9 },
       cooldown: { attack: 245, skill: 2100, ultimate: 9000 },
-      damage: { attack: 1.16, skill: 0.94, ultimate: 1.18 }
+      damage: { attack: 1.16, skill: 0.94, ultimate: 1.18 },
+      contact: { attack: 120, skill: 205, ultimate: 330 },
+      hitbox: { radius: 0.85, arc: 110 },
+      aoe: { attack: 1, skill: 2, ultimate: 6 }
+    },
+    greatsword: {
+      label: "Đại kiếm", icon: "⚔", mode: "melee", socket: "twoHand",
+      attacks: ["greatsword1", "greatsword2", "greatsword3"], skillMotion: "greatswordBreak", ultimateMotion: "greatswordUltimate",
+      attackName: "Titan Cleave", skillName: "Armor Break", ultimateName: "Solar Cataclysm",
+      range: { attack: 5.2, skill: 8.8, ultimate: 13.5 }, cooldown: { attack: 570, skill: 3400, ultimate: 11800 },
+      damage: { attack: 1.34, skill: 1.42, ultimate: 1.48 }, contact: { attack: 270, skill: 350, ultimate: 470 },
+      hitbox: { radius: 1.45, arc: 155 }, aoe: { attack: 2, skill: 5, ultimate: 10 }, trail: true
+    },
+    dualBlade: {
+      label: "Song kiếm", icon: "✕", mode: "melee", socket: "dual",
+      attacks: ["dualSlash1", "dualSlash2", "dualSlash3"], skillMotion: "dualBackstep", ultimateMotion: "dualUltimate",
+      attackName: "Twin Fang", skillName: "Void Backstep", ultimateName: "Phantom Hundred Cuts",
+      range: { attack: 3.8, skill: 6.4, ultimate: 10.5 }, cooldown: { attack: 175, skill: 1850, ultimate: 8800 },
+      damage: { attack: 0.82, skill: 1.08, ultimate: 1.26 }, contact: { attack: 105, skill: 170, ultimate: 300 },
+      hitbox: { radius: 0.9, arc: 125 }, aoe: { attack: 2, skill: 4, ultimate: 9 }, trail: true
+    },
+    spear: {
+      label: "Giáo", icon: "↟", mode: "melee", socket: "twoHand",
+      attacks: ["spearThrust1", "spearThrust2", "spearSweep"], skillMotion: "spearVault", ultimateMotion: "spearUltimate",
+      attackName: "Sky Thrust", skillName: "Orbit Sweep", ultimateName: "Falling Star Lance",
+      range: { attack: 6.2, skill: 9.5, ultimate: 14 }, cooldown: { attack: 350, skill: 2750, ultimate: 10100 },
+      damage: { attack: 1.08, skill: 1.2, ultimate: 1.3 }, contact: { attack: 165, skill: 260, ultimate: 385 },
+      hitbox: { radius: 0.7, arc: 85 }, aoe: { attack: 1, skill: 6, ultimate: 9 }, trail: true
+    },
+    hammer: {
+      label: "Búa/Rìu", icon: "◆", mode: "melee", socket: "twoHand",
+      attacks: ["hammer1", "hammer2", "hammerSlam"], skillMotion: "hammerQuake", ultimateMotion: "hammerUltimate",
+      attackName: "Forge Impact", skillName: "Shield Breaker", ultimateName: "Crimson Quake",
+      range: { attack: 4.7, skill: 8.6, ultimate: 13 }, cooldown: { attack: 520, skill: 3300, ultimate: 11200 },
+      damage: { attack: 1.28, skill: 1.38, ultimate: 1.44 }, contact: { attack: 255, skill: 345, ultimate: 455 },
+      hitbox: { radius: 1.5, arc: 145 }, aoe: { attack: 2, skill: 6, ultimate: 10 }, trail: true
+    },
+    shield: {
+      label: "Kiếm/Khiên", icon: "⬡", mode: "guard", socket: "left",
+      attacks: ["shieldSlash", "shieldBash", "shieldCounter"], skillMotion: "shieldBlock", ultimateMotion: "shieldUltimate",
+      attackName: "Aegis Slash", skillName: "Perfect Guard", ultimateName: "Guardian Dome",
+      range: { attack: 3.9, skill: 5.5, ultimate: 10 }, cooldown: { attack: 340, skill: 2200, ultimate: 9800 },
+      damage: { attack: 0.94, skill: 1.18, ultimate: 1.16 }, contact: { attack: 150, skill: 215, ultimate: 365 },
+      hitbox: { radius: 1.05, arc: 150 }, aoe: { attack: 1, skill: 3, ultimate: 8 }
+    },
+    scythe: {
+      label: "Lưỡi hái", icon: "☾", mode: "melee", socket: "twoHand",
+      attacks: ["scythe1", "scythe2", "scytheHook"], skillMotion: "scythePull", ultimateMotion: "scytheUltimate",
+      attackName: "Void Reap", skillName: "Gravity Hook", ultimateName: "Abyss Harvest",
+      range: { attack: 5.5, skill: 10.5, ultimate: 14.5 }, cooldown: { attack: 410, skill: 2900, ultimate: 10800 },
+      damage: { attack: 1.14, skill: 1.24, ultimate: 1.4 }, contact: { attack: 195, skill: 285, ultimate: 420 },
+      hitbox: { radius: 1.35, arc: 175 }, aoe: { attack: 3, skill: 6, ultimate: 10 }, trail: true
+    },
+    bow: {
+      label: "Cung", icon: "➶", mode: "ranged", socket: "twoHand",
+      attacks: ["bowShot", "bowShot", "bowShot"], skillMotion: "bowCharge", ultimateMotion: "bowUltimate",
+      attackName: "Astral Arrow", skillName: "Charged Piercer", ultimateName: "Aurora Rain",
+      range: { attack: 32, skill: 40, ultimate: 46 }, cooldown: { attack: 460, skill: 3100, ultimate: 10600 },
+      damage: { attack: 1.02, skill: 1.38, ultimate: 1.18 }, contact: { attack: 145, skill: 320, ultimate: 390 },
+      hitbox: { radius: 0.4, arc: 14 }, aoe: { attack: 1, skill: 3, ultimate: 10 }, recoil: 0.03, projectileSpeed: 32
+    },
+    staff: {
+      label: "Trượng", icon: "✧", mode: "magic", socket: "right",
+      attacks: ["staffBolt", "staffBolt", "staffWave"], skillMotion: "staffSupport", ultimateMotion: "staffUltimate",
+      attackName: "Element Bolt", skillName: "Astral Support", ultimateName: "Nexus Convergence",
+      range: { attack: 26, skill: 32, ultimate: 40 }, cooldown: { attack: 390, skill: 2800, ultimate: 10400 },
+      damage: { attack: 0.94, skill: 1.12, ultimate: 1.3 }, contact: { attack: 130, skill: 240, ultimate: 370 },
+      hitbox: { radius: 0.55, arc: 28 }, aoe: { attack: 1, skill: 5, ultimate: 10 }, recoil: 0.02, projectileSpeed: 25
+    },
+    pistol: {
+      label: "Pistol/SMG", icon: "⌁", mode: "ranged", socket: "right",
+      attacks: ["pistolShot", "pistolShot", "pistolBurst"], skillMotion: "pistolReload", ultimateMotion: "pistolUltimate",
+      attackName: "Quick Shot", skillName: "Tactical Reload", ultimateName: "Veyra Bullet Time",
+      range: { attack: 22, skill: 28, ultimate: 34 }, cooldown: { attack: 145, skill: 2300, ultimate: 9300 },
+      damage: { attack: 0.66, skill: 1.08, ultimate: 1.14 }, contact: { attack: 65, skill: 155, ultimate: 240 },
+      hitbox: { radius: 0.4, arc: 16 }, aoe: { attack: 1, skill: 4, ultimate: 8 }, recoil: 0.075, projectileSpeed: 48
+    },
+    rifle: {
+      label: "Rifle", icon: "⌁", mode: "ranged", socket: "twoHand",
+      attacks: ["rifleShot", "rifleShot", "rifleBurst"], skillMotion: "rifleReload", ultimateMotion: "rifleUltimate",
+      attackName: "Pulse Burst", skillName: "Overcharge Magazine", ultimateName: "Orbital Barrage",
+      range: { attack: 30, skill: 36, ultimate: 42 }, cooldown: { attack: 185, skill: 3000, ultimate: 10600 },
+      damage: { attack: 0.8, skill: 1.16, ultimate: 1.16 }, contact: { attack: 75, skill: 175, ultimate: 260 },
+      hitbox: { radius: 0.4, arc: 14 }, aoe: { attack: 1, skill: 4, ultimate: 9 }, recoil: 0.1, projectileSpeed: 52
+    },
+    shotgun: {
+      label: "Shotgun", icon: "⌁", mode: "ranged", socket: "twoHand",
+      attacks: ["shotgunFire", "shotgunFire", "shotgunFire"], skillMotion: "shotgunReload", ultimateMotion: "shotgunUltimate",
+      attackName: "Scatter Pulse", skillName: "Breach Load", ultimateName: "Nova Buckshot",
+      range: { attack: 11, skill: 15, ultimate: 22 }, cooldown: { attack: 640, skill: 3400, ultimate: 10900 },
+      damage: { attack: 1.42, skill: 1.5, ultimate: 1.34 }, contact: { attack: 70, skill: 190, ultimate: 275 },
+      hitbox: { radius: 1.2, arc: 38 }, aoe: { attack: 3, skill: 5, ultimate: 10 }, recoil: 0.23, projectileSpeed: 38
+    },
+    sniper: {
+      label: "Sniper", icon: "⌖", mode: "ranged", socket: "twoHand",
+      attacks: ["sniperAim", "sniperShot", "sniperBolt"], skillMotion: "sniperCharge", ultimateMotion: "sniperUltimate",
+      attackName: "Cryo Precision", skillName: "Charged Scope", ultimateName: "Zero Horizon",
+      range: { attack: 52, skill: 60, ultimate: 70 }, cooldown: { attack: 920, skill: 3900, ultimate: 12400 },
+      damage: { attack: 1.62, skill: 1.72, ultimate: 1.58 }, contact: { attack: 95, skill: 310, ultimate: 420 },
+      hitbox: { radius: 0.32, arc: 7 }, aoe: { attack: 1, skill: 2, ultimate: 6 }, recoil: 0.2, projectileSpeed: 70
+    },
+    heavy: {
+      label: "Heavy Cannon", icon: "◉", mode: "ranged", socket: "twoHand",
+      attacks: ["heavyFire", "heavyFire", "heavyVent"], skillMotion: "heavyVent", ultimateMotion: "heavyUltimate",
+      attackName: "Plasma Shell", skillName: "Overheat Vent", ultimateName: "Nexus Siege",
+      range: { attack: 34, skill: 40, ultimate: 48 }, cooldown: { attack: 780, skill: 4300, ultimate: 13200 },
+      damage: { attack: 1.48, skill: 1.24, ultimate: 1.62 }, contact: { attack: 120, skill: 260, ultimate: 430 },
+      hitbox: { radius: 1.6, arc: 26 }, aoe: { attack: 4, skill: 6, ultimate: 12 }, recoil: 0.28, projectileSpeed: 30
     }
   });
+  const RANGED_WEAPON_CLASSES = Object.freeze(new Set(["gun", "bow", "staff", "pistol", "rifle", "shotgun", "sniper", "heavy"]));
   const RECIPES = Object.freeze([
     { id: "healing-tonic", name: "Tinh dược hồi phục", result: "healing-tonic", amount: 1, requires: { "aurora-shard": 2 } },
     { id: "astral-edge", name: "Astral Edge", result: "astral-edge", amount: 1, requires: { "aurora-shard": 3, "plasma-core": 2, "void-fiber": 1 } }
@@ -777,6 +1005,46 @@
     return "Neutral";
   }
 
+  function hunterRankForScore(value) {
+    const score = Math.max(0, Number(value) || 0);
+    return [...HUNTER_RANKS].reverse().find((rank) => score >= rank.score) || HUNTER_RANKS[0];
+  }
+
+  function defaultHunterState() {
+    return {
+      score: 0,
+      rank: HUNTER_RANKS[0].id,
+      killStreak: 0,
+      bestKillStreak: 0,
+      eliteKills: 0,
+      bossKills: 0,
+      codex: [],
+      killsByMonster: {},
+      bossTrophies: [],
+      weaponMastery: {},
+      processedEvents: [],
+      chapters: Object.fromEntries(HUNT_CHAPTERS.map((chapter) => [chapter.zoneId, {
+        kills: 0,
+        elites: 0,
+        bosses: 0,
+        score: 0,
+        wave: 1,
+        completedAt: ""
+      }])),
+      pk: {
+        enabled: false,
+        safeZone: true,
+        kills: 0,
+        assists: 0,
+        deaths: 0,
+        rating: 1000,
+        protectionUntil: 0,
+        duelTargetId: "",
+        audit: []
+      }
+    };
+  }
+
   function defaultWorldState() {
     return {
       version: 1,
@@ -860,7 +1128,7 @@
         z: 5,
         rotation: 0,
         checkpoint: "central",
-        weapon: "starter-blade",
+        weapon: DEFAULT_CHARACTER_WEAPONS.lyra,
         skillPoints: 0
       },
       roster: {
@@ -883,10 +1151,17 @@
       inventory: {
         "starter-blade": { quantity: 1, favorite: true, locked: true, acquiredAt: nowIso() },
         "pulse-rifle": { quantity: 1, favorite: false, locked: true, acquiredAt: nowIso() },
-        "void-gauntlets": { quantity: 1, favorite: false, locked: true, acquiredAt: nowIso() }
+        "void-gauntlets": { quantity: 1, favorite: false, locked: true, acquiredAt: nowIso() },
+        ...Object.fromEntries(ASTRAL_WEAPON_LIBRARY.map((item) => [item.id, {
+          quantity: 1,
+          favorite: DEFAULT_CHARACTER_WEAPONS.lyra === item.id,
+          locked: DEFAULT_CHARACTER_WEAPONS.lyra === item.id,
+          acquiredAt: nowIso()
+        }]))
       },
       quests: defaultQuestState(),
       story: defaultStoryState(),
+      hunter: defaultHunterState(),
       world: defaultWorldState(),
       companions: Object.fromEntries(CHARACTER_ORDER.map((id) => [id, {
         unlocked: id === "lyra",
@@ -970,7 +1245,7 @@
         expeditions: 0
       },
       cloud: { status: "local", version: 0, updatedAt: "", error: "" },
-      party: { roomCode: "", status: "local", ready: false, capacity: 4, members: [], integrity: "local-simulation" }
+      party: { roomCode: "", status: "local", ready: false, capacity: 4, members: [], combatants: [], integrity: "local-simulation" }
     };
   }
 
@@ -1010,6 +1285,53 @@
       inventory: input.inventory && typeof input.inventory === "object" ? { ...base.inventory, ...input.inventory } : base.inventory,
       quests: { ...base.quests, ...(input.quests || {}) },
       story: normalizeStoryState(input),
+      hunter: {
+        ...base.hunter,
+        ...(input.hunter || {}),
+        score: clamp(input.hunter?.score ?? 0, 0, 999999999),
+        killStreak: clamp(input.hunter?.killStreak ?? 0, 0, 999999),
+        bestKillStreak: clamp(input.hunter?.bestKillStreak ?? 0, 0, 999999),
+        eliteKills: clamp(input.hunter?.eliteKills ?? 0, 0, 999999),
+        bossKills: clamp(input.hunter?.bossKills ?? 0, 0, 999999),
+        codex: Array.isArray(input.hunter?.codex) ? [...new Set(input.hunter.codex.map((id) => String(id || "").slice(0, 100)).filter(Boolean))].slice(-100) : [],
+        killsByMonster: input.hunter?.killsByMonster && typeof input.hunter.killsByMonster === "object"
+          ? Object.fromEntries(Object.entries(input.hunter.killsByMonster).slice(-100).map(([id, count]) => [String(id).slice(0, 100), clamp(count, 0, 999999)]))
+          : {},
+        bossTrophies: Array.isArray(input.hunter?.bossTrophies) ? [...new Set(input.hunter.bossTrophies.map((id) => String(id || "").slice(0, 100)).filter(Boolean))].slice(-40) : [],
+        weaponMastery: input.hunter?.weaponMastery && typeof input.hunter.weaponMastery === "object"
+          ? Object.fromEntries(Object.entries(input.hunter.weaponMastery).slice(-80).map(([id, value]) => [String(id).slice(0, 100), clamp(value, 0, 9999999)]))
+          : {},
+        processedEvents: Array.isArray(input.hunter?.processedEvents) ? [...new Set(input.hunter.processedEvents.map((id) => String(id || "").slice(0, 120)).filter(Boolean))].slice(-120) : [],
+        chapters: Object.fromEntries(HUNT_CHAPTERS.map((chapter) => {
+          const record = input.hunter?.chapters?.[chapter.zoneId] || {};
+          return [chapter.zoneId, {
+            kills: clamp(record.kills ?? 0, 0, 999999),
+            elites: clamp(record.elites ?? 0, 0, 999999),
+            bosses: clamp(record.bosses ?? 0, 0, 999999),
+            score: clamp(record.score ?? 0, 0, 99999999),
+            wave: clamp(record.wave ?? 1, 1, 4),
+            completedAt: String(record.completedAt || "").slice(0, 40)
+          }];
+        })),
+        pk: {
+          ...base.hunter.pk,
+          ...(input.hunter?.pk || {}),
+          enabled: input.hunter?.pk?.enabled === true,
+          safeZone: input.hunter?.pk?.safeZone !== false,
+          kills: clamp(input.hunter?.pk?.kills ?? 0, 0, 999999),
+          assists: clamp(input.hunter?.pk?.assists ?? 0, 0, 999999),
+          deaths: clamp(input.hunter?.pk?.deaths ?? 0, 0, 999999),
+          rating: clamp(input.hunter?.pk?.rating ?? 1000, 0, 999999),
+          protectionUntil: clamp(input.hunter?.pk?.protectionUntil ?? 0, 0, Number.MAX_SAFE_INTEGER),
+          duelTargetId: String(input.hunter?.pk?.duelTargetId || "").slice(0, 100),
+          audit: Array.isArray(input.hunter?.pk?.audit) ? input.hunter.pk.audit.slice(-40).map((entry) => ({
+            id: String(entry?.id || "").slice(0, 120),
+            type: String(entry?.type || "combat").slice(0, 32),
+            detail: String(entry?.detail || "").slice(0, 200),
+            at: String(entry?.at || nowIso()).slice(0, 40)
+          })) : []
+        }
+      },
       world: {
         ...base.world,
         ...safeWorldInput,
@@ -1072,9 +1394,9 @@
       },
       loadouts: Object.fromEntries(CHARACTER_ORDER.map((id) => {
         const loadout = input.loadouts?.[id] || {};
-        const migrateDefaultWeapon = Number(input.schemaVersion || 0) < 8
-          && ["cael", "nyx"].includes(id)
-          && (!loadout.weapon || loadout.weapon === "starter-blade");
+        const legacyDefaultWeapon = { lyra: "starter-blade", cael: "pulse-rifle", nyx: "void-gauntlets", sol: "starter-blade" }[id];
+        const migrateDefaultWeapon = Number(input.schemaVersion || 0) < 9
+          && (!loadout.weapon || loadout.weapon === legacyDefaultWeapon);
         return [id, {
           role: ["damage", "support", "control", "exploration"].includes(loadout.role) ? loadout.role : base.loadouts[id].role,
           weapon: migrateDefaultWeapon ? base.loadouts[id].weapon : ITEMS[loadout.weapon] ? loadout.weapon : base.loadouts[id].weapon,
@@ -1113,10 +1435,12 @@
         ...base.party,
         ...(input.party || {}),
         ready: input.party?.ready === true,
-        capacity: [4, 8].includes(Number(input.party?.capacity)) ? Number(input.party.capacity) : 4
+        capacity: [4, 8].includes(Number(input.party?.capacity)) ? Number(input.party.capacity) : 4,
+        combatants: []
       }
     };
     state.schemaVersion = SCHEMA_VERSION;
+    state.hunter.rank = hunterRankForScore(state.hunter.score).id;
     state.player.health = clamp(state.player.health, 0, state.player.maxHealth || 100);
     state.player.stamina = clamp(state.player.stamina, 0, state.player.maxStamina || 100);
     state.player.level = clamp(state.player.level, 1, PLAYER_LEVEL_CAP);
@@ -1280,6 +1604,18 @@
       this.characterDecodersReady = false;
       this.builtInCharacterAssets = new Map();
       this.builtInCharacterSources = new Map();
+      this.weaponManifest = new Map();
+      this.weaponAssetCache = new Map();
+      this.weaponAssetPromises = new Map();
+      this.weaponLibraryStatus = "pending";
+      this.weaponLoadSequence = 0;
+      this.weaponFxPool = [];
+      this.monsterManifest = new Map();
+      this.monsterAssetCache = new Map();
+      this.monsterAssetPromises = new Map();
+      this.monsterLibraryStatus = "pending";
+      this.monsterPreloads = new Set();
+      this.hunterPopulationCreated = false;
       this.characterPipelineManifest = [];
       this.characterExternalCandidates = [];
       this.characterPipelineStatus = "not-configured";
@@ -1811,6 +2147,10 @@
         await this.loadPhotorealAssets();
         this.setLoading(62, "Đang khởi tạo GLB, skeleton, morph và animation mixer...");
         await this.loadCharacterModules();
+        this.setLoading(64, "Đang xác minh 72 vũ khí CC0 và socket chiến đấu...");
+        await this.loadWeaponManifest();
+        this.setLoading(65, "Đang lập chỉ mục 50 quái vật rigged và 506 animation...");
+        await this.loadMonsterManifest();
         this.setLoading(66, "Đang nạp cây, đá và thảm thực vật CC0...");
         await this.loadLicensedEnvironmentAssets();
         this.setLoading(69, "Đang nạp hai Human Rig 3D và chuyển động toàn thân...");
@@ -1925,9 +2265,8 @@
       const current = this.currentStoryChapter();
       const events = this.state.story?.completedEvents || [];
       const cinematicComplete = events.includes(`cinematic:${current.id}`);
-      const objectiveComplete = events.includes(current.requiredEvent)
-        || (current.requiredEvent === "quest:awakening" && this.state.quests.awakening?.status === "completed")
-        || (current.requiredEvent.startsWith("restored:") && this.state.world?.zones?.[current.id]?.restored === true);
+      const huntChapter = HUNT_CHAPTERS[current.chapter - 1] || HUNT_CHAPTERS[0];
+      const objectiveComplete = this.isHuntChapterComplete(huntChapter);
       if (!cinematicComplete) {
         this.state.story.step = "cinematic";
         return false;
@@ -1937,6 +2276,7 @@
         this.updateCinematicChapterRail();
         return false;
       }
+      this.recordStoryEvent(`hunt:${huntChapter.zoneId}`);
       this.recordStoryEvent(current.requiredEvent);
       return this.completeStoryChapter(current.chapter, { save });
     }
@@ -4026,6 +4366,378 @@
       }
       this.root.dataset.characterLoader = this.GLTFLoaderClass ? "ready" : "fallback";
       this.root.dataset.characterDecoders = this.characterDecodersReady ? "ready" : "basic";
+    }
+
+    async loadWeaponManifest() {
+      this.weaponLibraryStatus = "loading";
+      try {
+        const response = await fetch(WEAPON_MANIFEST_URL, { credentials: "same-origin" });
+        if (!response.ok) throw new Error(`Weapon manifest HTTP ${response.status}`);
+        const manifest = await response.json();
+        if (!Array.isArray(manifest?.weapons) || manifest.weapons.length < 65) {
+          throw new Error("Weapon manifest không đủ thư viện đã kiểm duyệt.");
+        }
+        if (manifest.weapons.some((entry) => entry.runtimePolicy !== "lazy-equipped-only")) {
+          throw new Error("Weapon runtime policy không an toàn cho bộ nhớ web.");
+        }
+        const baseUrl = new URL("./assets/astral-realms/weapons/", root.location?.href || "http://localhost/");
+        this.weaponManifest = new Map(manifest.weapons.map((entry) => [entry.id, {
+          ...entry,
+          resolvedLods: Object.fromEntries(Object.entries(entry.lods || {}).map(([lod, url]) => [lod, new URL(url, baseUrl).href]))
+        }]));
+        this.weaponLibraryStatus = "ready";
+        this.root.dataset.weaponLibrary = `ready-${this.weaponManifest.size}`;
+      } catch (error) {
+        this.weaponLibraryStatus = "fallback";
+        this.root.dataset.weaponLibrary = "fallback";
+        console.warn("Astral weapon manifest fallback:", error);
+      }
+    }
+
+    equippedWeaponId(characterId = this.state.roster.activeId) {
+      return this.state.loadouts?.[characterId]?.weapon
+        || (characterId === this.state.roster.activeId ? this.state.player.weapon : DEFAULT_CHARACTER_WEAPONS[characterId])
+        || "starter-blade";
+    }
+
+    weaponManifestEntry(weaponId = this.equippedWeaponId()) {
+      const item = ITEMS[weaponId];
+      return this.weaponManifest.get(item?.modelId || weaponId) || null;
+    }
+
+    selectWeaponLodUrl(entry) {
+      const saveData = Boolean(root.navigator?.connection?.saveData);
+      const memory = Number(root.navigator?.deviceMemory || 8);
+      const quality = this.state.settings.quality;
+      const lod = saveData || memory <= 2 || quality === "low"
+        ? "lod2"
+        : quality === "high" || quality === "cinematic"
+          ? "lod0"
+          : "lod1";
+      return entry?.resolvedLods?.[lod] || entry?.resolvedLods?.lod1 || entry?.resolvedLods?.lod0 || "";
+    }
+
+    async loadWeaponAssetSource(assetId) {
+      if (!assetId || !this.GLTFLoaderClass) return null;
+      if (this.weaponAssetCache.has(assetId)) return this.weaponAssetCache.get(assetId);
+      if (this.weaponAssetPromises.has(assetId)) return this.weaponAssetPromises.get(assetId);
+      const entry = this.weaponManifest.get(assetId);
+      const url = this.selectWeaponLodUrl(entry);
+      if (!entry || !url) return null;
+      const promise = (async () => {
+        const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
+        if (manager) manager.hhPreferTextureLoader = true;
+        const loader = new this.GLTFLoaderClass(manager);
+        if (this.MeshoptDecoder) loader.setMeshoptDecoder(this.MeshoptDecoder);
+        const gltf = await Promise.race([
+          loader.loadAsync(url),
+          new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Weapon timeout: ${assetId}`)), 12000))
+        ]);
+        const source = gltf.scene;
+        if (!source) throw new Error(`Weapon GLB không có scene: ${assetId}`);
+        const socketNames = ["Grip_R", "Grip_L", "Muzzle", "BladeRoot", "BladeTip"];
+        if (!socketNames.every((name) => source.getObjectByName(name))) {
+          throw new Error(`Weapon socket thiếu: ${assetId}`);
+        }
+        source.updateMatrixWorld(true);
+        const bounds = new this.THREE.Box3().setFromObject(source, true);
+        let triangles = 0;
+        source.traverse((object) => {
+          if (!object.isMesh) return;
+          const geometry = object.geometry;
+          triangles += geometry?.index ? geometry.index.count / 3 : Number(geometry?.attributes?.position?.count || 0) / 3;
+        });
+        if (bounds.isEmpty() || triangles < 1) throw new Error(`Weapon mesh rỗng: ${assetId}`);
+        const record = { entry, scene: source, triangles: Math.round(triangles), url };
+        this.weaponAssetCache.set(assetId, record);
+        return record;
+      })().finally(() => this.weaponAssetPromises.delete(assetId));
+      this.weaponAssetPromises.set(assetId, promise);
+      return promise;
+    }
+
+    cloneWeaponAsset(source) {
+      const clone = source.clone(true);
+      clone.traverse((object) => {
+        if (!object.isMesh) return;
+        object.geometry = object.geometry?.clone?.() || object.geometry;
+        object.material = Array.isArray(object.material)
+          ? object.material.map((material) => material?.clone?.() || material)
+          : object.material?.clone?.() || object.material;
+        object.castShadow = true;
+        object.receiveShadow = false;
+        object.frustumCulled = true;
+      });
+      return clone;
+    }
+
+    async hydratePlayerWeapon(weapon) {
+      const assetId = weapon?.userData?.assetId;
+      if (!assetId || !weapon?.parent) return false;
+      const requestId = ++this.weaponLoadSequence;
+      weapon.userData.loadRequestId = requestId;
+      try {
+        const source = await this.loadWeaponAssetSource(assetId);
+        if (!source || weapon.userData.loadRequestId !== requestId || !weapon.parent) return false;
+        const visual = this.cloneWeaponAsset(source.scene);
+        visual.name = `WeaponVisual:${assetId}`;
+        visual.userData.weaponAssetInstance = true;
+        weapon.add(visual);
+        visual.updateMatrixWorld(true);
+        const bounds = new this.THREE.Box3().setFromObject(visual, true);
+        if (bounds.isEmpty() || !Number.isFinite(bounds.min.x + bounds.max.x)) {
+          weapon.remove(visual);
+          this.disposeWeaponObject(visual);
+          throw new Error(`Weapon bounds không hợp lệ: ${assetId}`);
+        }
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        if (weapon.userData.loadRequestId !== requestId || !weapon.parent) {
+          weapon.remove(visual);
+          this.disposeWeaponObject(visual);
+          return false;
+        }
+        const fallback = weapon.userData.fallbackVisual;
+        if (fallback) {
+          weapon.remove(fallback);
+          this.disposeWeaponObject(fallback);
+        }
+        weapon.userData.fallbackVisual = null;
+        weapon.userData.assetVisual = visual;
+        weapon.userData.assetReady = true;
+        weapon.userData.triangles = source.triangles;
+        weapon.userData.manifestEntry = source.entry;
+        this.applyWeaponElementMaterial(weapon, this.state.player.element);
+        this.syncActiveCharacterDataset(this.playerMesh);
+        return true;
+      } catch (error) {
+        weapon.userData.assetError = error?.message || String(error);
+        weapon.userData.assetReady = false;
+        return false;
+      }
+    }
+
+    disposeWeaponObject(object) {
+      object?.traverse?.((node) => {
+        node.geometry?.dispose?.();
+        const materials = Array.isArray(node.material) ? node.material : [node.material];
+        materials.filter(Boolean).forEach((material) => material.dispose?.());
+      });
+    }
+
+    applyWeaponElementMaterial(weapon, element = this.state.player.element) {
+      const color = ELEMENTS[element]?.color || "#ffffff";
+      weapon?.traverse?.((object) => {
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.filter(Boolean).forEach((material) => {
+          if (!material.userData?.hhElementOriginal) {
+            material.userData ||= {};
+            material.userData.hhElementOriginal = material.emissive?.getHex?.() ?? null;
+          }
+          material.emissive?.set?.(color);
+          if ("emissiveIntensity" in material) material.emissiveIntensity = Math.min(0.24, Number(material.emissiveIntensity || 0) + 0.08);
+          material.needsUpdate = true;
+        });
+      });
+    }
+
+    async loadMonsterManifest() {
+      this.monsterLibraryStatus = "loading";
+      try {
+        const response = await fetch(MONSTER_MANIFEST_URL, { credentials: "same-origin" });
+        if (!response.ok) throw new Error(`Monster manifest HTTP ${response.status}`);
+        const manifest = await response.json();
+        if (!Array.isArray(manifest?.monsters) || manifest.monsters.length < 50) throw new Error("Monster manifest chưa đầy đủ.");
+        const baseUrl = new URL("./assets/astral-realms/monsters/", root.location?.href || "http://localhost/");
+        this.monsterManifest = new Map(manifest.monsters.map((entry) => [entry.id, { ...entry, resolvedUrl: new URL(entry.url, baseUrl).href }]));
+        this.monsterLibraryStatus = "ready";
+        this.root.dataset.monsterLibrary = `ready-${this.monsterManifest.size}`;
+      } catch (error) {
+        this.monsterLibraryStatus = "fallback";
+        this.root.dataset.monsterLibrary = "fallback";
+        console.warn("Astral monster manifest fallback:", error);
+      }
+    }
+
+    monsterIdForEnemy(type, instanceId = type) {
+      const zoneByType = {
+        "aurora-wisp": "aurora",
+        "forge-hound": "crimson",
+        "void-stalker": "void",
+        "sky-sentinel": "sky",
+        "ocean-siren": "ocean",
+        "station-drone": "station",
+        "abyss-herald": "abyss",
+        "nexus-warden": "sky"
+      };
+      const profile = ENEMY_ARCHETYPES[type];
+      const zone = zoneByType[type] || "void";
+      const candidates = [...this.monsterManifest.values()].filter((entry) => entry.zone === zone && (!profile?.boss || entry.boss));
+      const pool = candidates.length ? candidates : [...this.monsterManifest.values()].filter((entry) => !profile?.boss || entry.boss);
+      if (!pool.length) return "";
+      const hash = [...String(instanceId)].reduce((value, character) => ((value * 31) + character.charCodeAt(0)) >>> 0, 7);
+      return pool[hash % pool.length].id;
+    }
+
+    async loadMonsterAssetSource(monsterId) {
+      if (!monsterId || !this.GLTFLoaderClass) return null;
+      if (this.monsterAssetCache.has(monsterId)) return this.monsterAssetCache.get(monsterId);
+      if (this.monsterAssetPromises.has(monsterId)) return this.monsterAssetPromises.get(monsterId);
+      const entry = this.monsterManifest.get(monsterId);
+      if (!entry?.resolvedUrl) return null;
+      const promise = (async () => {
+        const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
+        if (manager) manager.hhPreferTextureLoader = true;
+        const loader = new this.GLTFLoaderClass(manager);
+        if (this.MeshoptDecoder) loader.setMeshoptDecoder(this.MeshoptDecoder);
+        const gltf = await Promise.race([
+          loader.loadAsync(entry.resolvedUrl),
+          new Promise((_, reject) => root.setTimeout(() => reject(new Error(`Monster timeout: ${monsterId}`)), 14000))
+        ]);
+        if (!gltf.scene) throw new Error(`Monster GLB không có scene: ${monsterId}`);
+        const record = { entry, scene: gltf.scene, animations: gltf.animations || [] };
+        this.monsterAssetCache.set(monsterId, record);
+        return record;
+      })().finally(() => this.monsterAssetPromises.delete(monsterId));
+      this.monsterAssetPromises.set(monsterId, promise);
+      return promise;
+    }
+
+    async hydrateEnemyMonster(enemy, monsterId) {
+      if (!enemy || !monsterId) return false;
+      try {
+        const source = await this.loadMonsterAssetSource(monsterId);
+        if (!source || enemy.userData.monsterId !== monsterId || !enemy.parent) return false;
+        const visual = this.cloneSkinnedCharacter ? this.cloneSkinnedCharacter(source.scene) : source.scene.clone(true);
+        visual.name = `MonsterVisual:${monsterId}`;
+        visual.traverse((object) => {
+          if (!object.isMesh) return;
+          object.castShadow = true;
+          object.receiveShadow = false;
+          object.frustumCulled = true;
+          if (Array.isArray(object.material)) object.material = object.material.map((material) => material?.clone?.() || material);
+          else if (object.material?.clone) object.material = object.material.clone();
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.filter(Boolean).forEach((material) => {
+            material.roughness = Math.max(0.32, Number(material.roughness ?? 0.7));
+            material.metalness = Math.min(0.3, Number(material.metalness || 0));
+            material.envMapIntensity = 0.72;
+          });
+        });
+        enemy.add(visual);
+        visual.updateMatrixWorld(true);
+        const bounds = new this.THREE.Box3().setFromObject(visual, true);
+        const size = bounds.getSize(new this.THREE.Vector3());
+        if (bounds.isEmpty() || !Number.isFinite(size.y) || size.y <= 0.001) throw new Error(`Monster bounds không hợp lệ: ${monsterId}`);
+        const targetHeight = enemy.userData.boss ? 4.2 : source.entry.category === "big" ? 2.7 : source.entry.category === "flying" ? 2.1 : 1.45;
+        const fit = clamp(targetHeight / size.y, 0.08, 8);
+        visual.scale.setScalar(fit);
+        visual.position.y = -bounds.min.y * fit;
+        visual.updateMatrixWorld(true);
+        const mixer = new this.THREE.AnimationMixer(visual);
+        const actions = new Map(source.animations.map((clip) => [clip.name, mixer.clipAction(clip)]));
+        enemy.userData.monsterVisual = visual;
+        enemy.userData.monsterEntry = source.entry;
+        enemy.userData.monsterMixer = mixer;
+        enemy.userData.monsterActions = actions;
+        enemy.userData.monsterReady = true;
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        if (!enemy.parent || enemy.userData.monsterId !== monsterId) return false;
+        enemy.userData.body.visible = false;
+        enemy.userData.ring.material.opacity *= 0.55;
+        this.playMonsterAnimation(enemy, "idle", 0);
+        return true;
+      } catch (error) {
+        enemy.userData.monsterError = error?.message || String(error);
+        enemy.userData.monsterReady = false;
+        return false;
+      }
+    }
+
+    playMonsterAnimation(enemy, state, fade = 0.16) {
+      const actions = enemy?.userData?.monsterActions;
+      if (!actions?.size || enemy.userData.monsterAnimationState === state) return;
+      const aliases = {
+        idle: ["idle", "stand"],
+        move: ["run", "walk", "fly", "swim"],
+        attack: ["attack", "bite", "punch", "shoot"],
+        hit: ["hit", "damage", "hurt"],
+        death: ["death", "die", "defeat"]
+      }[state] || [state];
+      const match = [...actions.entries()].find(([name]) => aliases.some((alias) => name.toLowerCase().includes(alias)));
+      if (!match) return;
+      const next = match[1];
+      next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).play();
+      const active = enemy.userData.monsterActiveAction;
+      if (active && active !== next) active.crossFadeTo(next, fade, true);
+      enemy.userData.monsterActiveAction = next;
+      enemy.userData.monsterAnimationState = state;
+    }
+
+    monsterArchetypeForZone(zoneId) {
+      return ({
+        central: "aurora-wisp",
+        aurora: "aurora-wisp",
+        crimson: "forge-hound",
+        void: "void-stalker",
+        sky: "sky-sentinel",
+        ocean: "ocean-siren",
+        station: "station-drone",
+        abyss: "abyss-herald"
+      })[zoneId] || "void-stalker";
+    }
+
+    monsterSpawnForEntry(entry, index, count) {
+      const zone = ZONES.find((item) => item.id === entry.zone) || ZONES[1];
+      const safeCount = Math.max(1, count);
+      const angle = (index / safeCount) * Math.PI * 2 + ((entry.id.length % 7) * 0.11);
+      const radius = Math.min(zone.radius - 6, 10 + (index % 3) * 5.2);
+      return {
+        x: zone.x + Math.cos(angle) * radius,
+        z: zone.z + Math.sin(angle) * radius
+      };
+    }
+
+    createMonsterHuntPopulation() {
+      if (this.hunterPopulationCreated || !this.monsterManifest.size) return;
+      this.hunterPopulationCreated = true;
+      const entriesByZone = new Map();
+      this.monsterManifest.forEach((entry) => {
+        if (!entriesByZone.has(entry.zone)) entriesByZone.set(entry.zone, []);
+        entriesByZone.get(entry.zone).push(entry);
+      });
+      entriesByZone.forEach((entries, zoneId) => {
+        entries.sort((left, right) => left.id.localeCompare(right.id));
+        entries.forEach((entry, index) => {
+          const spawn = this.monsterSpawnForEntry(entry, index, entries.length);
+          this.createEnemy(`hunt-${entry.id}`, this.monsterArchetypeForZone(zoneId), spawn.x, spawn.z, {
+            monsterId: entry.id,
+            zoneId,
+            category: entry.category,
+            elite: entry.archetype === "elite",
+            boss: entry.boss === true,
+            displayName: entry.name
+          });
+        });
+      });
+      const trialMonsters = [...this.monsterManifest.values()].filter((entry) => !entry.boss).slice(0, 3);
+      trialMonsters.forEach((entry, index) => this.createEnemy(
+        `hunter-trial-${index + 1}`,
+        "aurora-wisp",
+        12 + index * 5,
+        -13 - (index % 2) * 5,
+        { monsterId: entry.id, zoneId: "central", category: entry.category, displayName: `Mục tiêu chứng nhận ${index + 1}` }
+      ));
+    }
+
+    preloadNextHuntMonster(zoneId = this.currentZone?.id) {
+      const chapter = HUNT_CHAPTERS.find((entry) => entry.zoneId === zoneId);
+      const progress = this.state.hunter?.chapters?.[zoneId];
+      if (!chapter || !progress) return;
+      const pool = [...this.monsterManifest.values()].filter((entry) => entry.zone === zoneId);
+      const entry = pool[Math.min(pool.length - 1, Math.max(0, progress.wave * 2))];
+      if (!entry || this.monsterPreloads.has(entry.id) || this.monsterAssetCache.has(entry.id)) return;
+      this.monsterPreloads.add(entry.id);
+      this.loadMonsterAssetSource(entry.id).catch(() => null).finally(() => this.monsterPreloads.delete(entry.id));
     }
 
     async loadLicensedEnvironmentAssets() {
@@ -6423,10 +7135,14 @@
       const weaponAnchor = new THREE.Group();
       weaponAnchor.position.set(0.58, 1.45, 0);
       group.add(weaponAnchor);
+      const leftWeaponAnchor = new THREE.Group();
+      leftWeaponAnchor.name = "HHWeaponSocketLeft";
+      leftWeaponAnchor.position.set(-0.58, 1.45, 0);
+      group.add(leftWeaponAnchor);
 
       group.userData.parts = {
         leftLeg, rightLeg, leftArm, rightArm, torso, head, hair, cape, halo, eyes, eyelids,
-        faceShadow, weaponAnchor, leftWing, rightWing, neck, nose, mouth, leftEar, rightEar,
+        faceShadow, weaponAnchor, leftWeaponAnchor, leftWing, rightWing, neck, nose, mouth, leftEar, rightEar,
         leftBrow, rightBrow, leftHand, rightHand, leftFoot, rightFoot, coat, beard, accessory
       };
       group.userData.characterId = profile.id;
@@ -7110,11 +7826,14 @@
       crowdProxy.userData.isCharacterLodProxy = true;
       wrapper.add(crowdProxy);
       const rightHandAliases = HH_HUMANOID_SKELETON.rightHand.map(normalizeBoneName);
+      const leftHandAliases = HH_HUMANOID_SKELETON.leftHand.map(normalizeBoneName);
       const headAliases = HH_HUMANOID_SKELETON.head.map(normalizeBoneName);
       let rightHand = null;
+      let leftHand = null;
       let headBone = null;
       asset.traverse((object) => {
         if (!rightHand && object.isBone && rightHandAliases.includes(normalizeBoneName(object.name))) rightHand = object;
+        if (!leftHand && object.isBone && leftHandAliases.includes(normalizeBoneName(object.name))) leftHand = object;
         if (!headBone && object.isBone && headAliases.includes(normalizeBoneName(object.name))) headBone = object;
       });
       const weaponAnchor = new THREE.Group();
@@ -7125,6 +7844,16 @@
         fitScale,
         attachedToHand: Boolean(rightHand && !assetNeedsVisualRecovery),
         calibrated: false
+      };
+      const leftWeaponAnchor = new THREE.Group();
+      leftWeaponAnchor.name = "HHWeaponSocketLeft";
+      (assetNeedsVisualRecovery ? crowdProxy.userData?.parts?.leftWeaponAnchor : leftHand || wrapper)?.add(leftWeaponAnchor);
+      leftWeaponAnchor.userData.hhWeaponSocket = {
+        modelId,
+        fitScale,
+        attachedToHand: Boolean(leftHand && !assetNeedsVisualRecovery),
+        calibrated: false,
+        hand: "left"
       };
       const heroDetails = [];
       let riggedHair = null;
@@ -7270,6 +7999,7 @@
             : "standard",
         parts: {
           weaponAnchor,
+          leftWeaponAnchor,
           hair: assetNeedsVisualRecovery ? null : riggedHair,
           accessory: assetNeedsVisualRecovery ? null : riggedAccessory
         },
@@ -9012,9 +9742,12 @@
       const weaponAnchor = new this.THREE.Group();
       weaponAnchor.name = "HHWeaponSocket";
       const rightHandAliases = HH_HUMANOID_SKELETON.rightHand.map(normalizeBoneName);
+      const leftHandAliases = HH_HUMANOID_SKELETON.leftHand.map(normalizeBoneName);
       let rightHand = null;
+      let leftHand = null;
       asset.traverse((object) => {
         if (!rightHand && object.isBone && rightHandAliases.includes(normalizeBoneName(object.name))) rightHand = object;
+        if (!leftHand && object.isBone && leftHandAliases.includes(normalizeBoneName(object.name))) leftHand = object;
       });
       (rightHand || wrapper).add(weaponAnchor);
       weaponAnchor.userData.hhWeaponSocket = {
@@ -9023,11 +9756,21 @@
         attachedToHand: Boolean(rightHand),
         calibrated: false
       };
+      const leftWeaponAnchor = new this.THREE.Group();
+      leftWeaponAnchor.name = "HHWeaponSocketLeft";
+      (leftHand || wrapper).add(leftWeaponAnchor);
+      leftWeaponAnchor.userData.hhWeaponSocket = {
+        modelId: "custom-import",
+        fitScale: scale,
+        attachedToHand: Boolean(leftHand),
+        calibrated: false,
+        hand: "left"
+      };
       const weapon = this.createPlayerWeapon(profile);
       weaponAnchor.add(weapon);
       this.configureWeaponSocket(wrapper, weapon, this.equippedWeaponClass(characterId));
       wrapper.userData.lodVariants.attachments = [weapon];
-      wrapper.userData.parts = { weaponAnchor };
+      wrapper.userData.parts = { weaponAnchor, leftWeaponAnchor };
       wrapper.userData.weapon = weapon;
       this.characterMeshes.set(characterId, wrapper);
       const runtime = this.registerCharacterRuntime(wrapper, profile, characterId, "hero", gltf.animations || []);
@@ -9172,13 +9915,20 @@
         this.root.dataset.characterWeapon = weapon.userData?.weaponClass || this.equippedWeaponClass(mesh.userData?.characterId);
         this.root.dataset.characterWeaponVisible = String(Boolean(weapon.visible));
         this.root.dataset.characterWeaponSocket = mesh.userData?.weaponAttachment?.source || "fallback";
+        this.root.dataset.characterWeaponAsset = weapon.userData?.assetReady ? weapon.userData.assetId : weapon.userData?.assetError ? "fallback-error" : "fallback-loading";
+        this.root.dataset.characterWeaponTriangles = String(Number(weapon.userData?.triangles || 0));
       }
     }
 
     configureWeaponSocket(mesh, weapon, weaponClass = "sword") {
-      const anchor = mesh?.userData?.parts?.weaponAnchor;
-      const socket = anchor?.userData?.hhWeaponSocket;
+      const combatProfile = WEAPON_COMBAT_PROFILES[weaponClass] || WEAPON_COMBAT_PROFILES.sword;
+      const hand = combatProfile.socket === "left" ? "left" : "right";
+      const anchor = hand === "left"
+        ? mesh?.userData?.parts?.leftWeaponAnchor || mesh?.userData?.parts?.weaponAnchor
+        : mesh?.userData?.parts?.weaponAnchor;
+      const socket = anchor?.userData?.hhWeaponSocket || { fitScale: 1, attachedToHand: Boolean(anchor), modelId: "procedural-human" };
       if (!anchor || !weapon) return false;
+      if (weapon.parent !== anchor) anchor.add(weapon);
       weapon.visible = mesh.userData?.modelTier !== "impostor";
       if (!socket?.attachedToHand) return false;
       const fitScale = clamp(Math.abs(Number(socket.fitScale || 1)), 0.05, 20);
@@ -9188,7 +9938,20 @@
       const socketPresets = {
         sword: { position: [0, -0.055, 0.018], rotation: [0, 0, Math.PI], worldScale: 0.78 },
         gun: { position: [0, -0.035, 0.028], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.72 },
-        unarmed: { position: [0, -0.018, 0], rotation: [0, 0, 0], worldScale: 0.82 }
+        unarmed: { position: [0, -0.018, 0], rotation: [0, 0, 0], worldScale: 0.82 },
+        greatsword: { position: [0, -0.065, 0.02], rotation: [0, 0, Math.PI], worldScale: 0.92 },
+        dualBlade: { position: [0, -0.045, 0.015], rotation: [0, 0, Math.PI], worldScale: 0.68 },
+        spear: { position: [0, -0.08, 0.025], rotation: [0, 0, Math.PI], worldScale: 0.95 },
+        hammer: { position: [0, -0.07, 0.02], rotation: [0, 0, Math.PI], worldScale: 0.88 },
+        shield: { position: [0.02, -0.02, -0.04], rotation: [0, Math.PI / 2, Math.PI / 2], worldScale: 0.76 },
+        scythe: { position: [0, -0.08, 0.02], rotation: [0, 0, Math.PI], worldScale: 0.92 },
+        bow: { position: [0.015, -0.04, 0.025], rotation: [0, 0, Math.PI], worldScale: 0.83 },
+        staff: { position: [0, -0.055, 0.018], rotation: [0, 0, Math.PI], worldScale: 0.82 },
+        pistol: { position: [0, -0.025, 0.02], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.58 },
+        rifle: { position: [0, -0.035, 0.028], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.74 },
+        shotgun: { position: [0, -0.04, 0.032], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.78 },
+        sniper: { position: [0, -0.045, 0.032], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.8 },
+        heavy: { position: [0, -0.055, 0.035], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.86 }
       };
       const preset = socketPresets[weaponClass] || socketPresets.sword;
       const parentWorldQuaternion = anchor.parent.getWorldQuaternion(new this.THREE.Quaternion());
@@ -9198,6 +9961,7 @@
       anchor.position.set(0, 0, 0);
       anchor.quaternion.copy(parentWorldQuaternion.invert().multiply(desiredWorldQuaternion).normalize());
       anchor.scale.set(1, 1, 1);
+      weapon.position.set(...preset.position);
       weapon.scale.setScalar(preset.worldScale / inheritedScale);
       weapon.userData ||= {};
       weapon.userData.socketCalibration = {
@@ -9206,7 +9970,12 @@
         worldScale: preset.worldScale,
         fitScale,
         inheritedScale,
-        source: "right-hand-calibrated"
+        hand,
+        source: combatProfile.socket === "twoHand"
+          ? "two-hand-calibrated"
+          : hand === "right"
+            ? "right-hand-calibrated"
+            : "left-hand-calibrated"
       };
       weapon.traverse?.((object) => {
         if (!object.isMesh) return;
@@ -9215,11 +9984,21 @@
       });
       socket.calibrated = true;
       socket.weaponClass = weaponClass;
+      weapon.userData.restTransform = {
+        position: weapon.position.clone(),
+        quaternion: weapon.quaternion.clone(),
+        scale: weapon.scale.clone()
+      };
+      mesh.userData.weaponIk = combatProfile.socket === "twoHand"
+        ? { enabled: true, dominant: "right", support: "left", targetNode: "Grip_L" }
+        : combatProfile.socket === "dual"
+          ? { enabled: true, dominant: "right", support: "left", mirror: true }
+          : { enabled: false, dominant: hand };
       mesh.userData.weaponAttachment = weapon.userData.socketCalibration;
       if (mesh.userData?.characterId === this.state.roster.activeId && this.root) {
         this.root.dataset.characterWeapon = weaponClass;
         this.root.dataset.characterWeaponVisible = String(weapon.visible);
-        this.root.dataset.characterWeaponSocket = "right-hand-calibrated";
+        this.root.dataset.characterWeaponSocket = weapon.userData.socketCalibration.source;
       }
       return true;
     }
@@ -9227,8 +10006,18 @@
     createPlayerWeapon(profile, weaponClass = this.equippedWeaponClass(profile.id)) {
       const THREE = this.THREE;
       const weapon = new THREE.Group();
+      const weaponId = this.equippedWeaponId(profile.id);
+      const item = ITEMS[weaponId] || ITEMS["starter-blade"];
       weapon.name = `Weapon:${weaponClass}`;
       weapon.userData.weaponClass = weaponClass;
+      weapon.userData.weaponId = weaponId;
+      weapon.userData.assetId = item.modelId || "";
+      weapon.userData.assetReady = false;
+      const fallback = new THREE.Group();
+      fallback.name = `WeaponFallback:${weaponClass}`;
+      fallback.userData.proceduralFallback = true;
+      weapon.userData.fallbackVisual = fallback;
+      weapon.add(fallback);
       const weaponSurface = this.state.settings.renderStyle === "anime"
         ? new THREE.MeshToonMaterial({
           color: 0xf2fbff,
@@ -9248,44 +10037,67 @@
         ? new THREE.MeshToonMaterial({ color: profile.accent, emissive: profile.accent, emissiveIntensity: 0.55, gradientMap: this.toonGradient })
         : new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({ color: profile.accent, emissive: profile.accent, emissiveIntensity: 0.34, roughness: 0.22, metalness: 0.72, clearcoat: 0.58 });
 
-      if (weaponClass === "gun") {
-        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.22, 0.86), weaponSurface);
+      if (RANGED_WEAPON_CLASSES.has(weaponClass) && !["bow", "staff"].includes(weaponClass)) {
+        const length = weaponClass === "pistol" ? 0.54 : weaponClass === "heavy" ? 1.18 : weaponClass === "sniper" ? 1.08 : 0.86;
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.22, length), weaponSurface);
         receiver.position.set(0, 0.03, -0.35);
-        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.82, 12), guardMaterial);
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, length * 0.94, 12), guardMaterial);
         barrel.rotation.x = Math.PI / 2;
-        barrel.position.set(0, 0.05, -0.95);
+        barrel.position.set(0, 0.05, -0.54 - length * 0.48);
         const grip = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.42, 0.2), guardMaterial);
         grip.position.set(0, -0.25, -0.18);
         grip.rotation.x = -0.22;
         const sight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.24), guardMaterial);
         sight.position.set(0, 0.18, -0.4);
-        weapon.add(receiver, barrel, grip, sight);
+        fallback.add(receiver, barrel, grip, sight);
+        const muzzle = new THREE.Group();
+        muzzle.name = "Muzzle";
+        muzzle.position.set(0, 0.05, -0.55 - length);
+        fallback.add(muzzle);
         weapon.rotation.set(-0.12, 0, 0.02);
-        return weapon;
-      }
-
-      if (weaponClass === "unarmed") {
+      } else if (weaponClass === "unarmed") {
         const gauntlet = new THREE.Mesh(new THREE.DodecahedronGeometry(0.19, 1), weaponSurface);
         gauntlet.scale.set(0.76, 1.18, 0.92);
         const knuckles = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.09, 0.17), guardMaterial);
         knuckles.position.set(0, -0.08, -0.16);
-        weapon.add(gauntlet, knuckles);
-        return weapon;
+        fallback.add(gauntlet, knuckles);
+      } else if (weaponClass === "bow") {
+        const arc = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.035, 8, 32, Math.PI * 1.35), weaponSurface);
+        arc.rotation.z = Math.PI * 0.33;
+        const string = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 1.12, 6), guardMaterial);
+        fallback.add(arc, string);
+        const muzzle = new THREE.Group();
+        muzzle.name = "Muzzle";
+        muzzle.position.set(0, 0, -0.45);
+        fallback.add(muzzle);
+      } else if (weaponClass === "staff") {
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 1.55, 12), weaponSurface);
+        shaft.position.y = 0.42;
+        const focus = new THREE.Mesh(new THREE.IcosahedronGeometry(0.19, 1), guardMaterial);
+        focus.position.y = 1.24;
+        fallback.add(shaft, focus);
+        const muzzle = new THREE.Group();
+        muzzle.name = "Muzzle";
+        muzzle.position.y = 1.36;
+        fallback.add(muzzle);
+      } else {
+        const length = weaponClass === "greatsword" ? 1.92 : weaponClass === "spear" || weaponClass === "scythe" ? 2.1 : weaponClass === "hammer" ? 1.52 : 1.42;
+        const width = weaponClass === "greatsword" ? 0.19 : weaponClass === "hammer" ? 0.14 : 0.09;
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(width, length, weaponClass === "greatsword" ? 0.24 : 0.18), weaponSurface);
+        blade.position.y = length * 0.34;
+        const guard = new THREE.Mesh(new THREE.BoxGeometry(weaponClass === "hammer" ? 0.78 : 0.58, weaponClass === "hammer" ? 0.28 : 0.09, 0.14), guardMaterial);
+        guard.position.y = -0.31;
+        fallback.add(blade, guard);
+        const bladeRoot = new THREE.Group();
+        bladeRoot.name = "BladeRoot";
+        bladeRoot.position.y = 0.08;
+        const bladeTip = new THREE.Group();
+        bladeTip.name = "BladeTip";
+        bladeTip.position.y = length;
+        fallback.add(bladeRoot, bladeTip);
+        weapon.rotation.z = -0.28;
       }
-
-      const blade = new THREE.Mesh(
-        new THREE.BoxGeometry(0.09, profile.id === "sol" ? 1.75 : 1.52, 0.18),
-        weaponSurface
-      );
-      blade.position.y = 0.45;
-      weapon.add(blade);
-      const guard = new THREE.Mesh(
-        new THREE.BoxGeometry(0.58, 0.09, 0.14),
-        guardMaterial
-      );
-      guard.position.y = -0.31;
-      weapon.add(guard);
-      weapon.rotation.z = -0.28;
+      if (weapon.userData.assetId) root.setTimeout(() => this.hydratePlayerWeapon(weapon), 0);
       return weapon;
     }
 
@@ -9296,12 +10108,8 @@
       if (!mesh || !profile || !anchor) return;
       const oldWeapon = mesh.userData.weapon;
       if (oldWeapon) {
-        anchor.remove(oldWeapon);
-        oldWeapon.traverse((object) => {
-          object.geometry?.dispose?.();
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.filter(Boolean).forEach((material) => material.dispose?.());
-        });
+        oldWeapon.parent?.remove(oldWeapon);
+        this.disposeWeaponObject(oldWeapon);
       }
       const weapon = this.createPlayerWeapon(profile, this.equippedWeaponClass(characterId));
       anchor.add(weapon);
@@ -9363,31 +10171,40 @@
         ["dungeon-stalker-1", "void-stalker", 71, -67],
         ["dungeon-stalker-2", "void-stalker", 81, -64]
       ].forEach(([id, type, x, z]) => this.createEnemy(id, type, x, z));
+      this.createMonsterHuntPopulation();
     }
 
-    createEnemy(id, type, x, z) {
+    createEnemy(id, type, x, z, options = {}) {
       const THREE = this.THREE;
-      const profile = ENEMY_ARCHETYPES[type];
-      const scale = profile.boss ? 1.35 : type === "forge-hound" ? 1.15 : 1;
+      const profile = ENEMY_ARCHETYPES[type] || ENEMY_ARCHETYPES["void-stalker"];
+      const boss = options.boss === true || profile.boss === true;
+      const elite = options.elite === true || options.category === "big";
+      const chapter = HUNT_CHAPTERS.find((entry) => entry.zoneId === options.zoneId);
+      const chapterScale = 1 + Math.max(0, Number(chapter?.chapter || 1) - 1) * 0.12;
+      const classScale = boss ? 3.2 : elite ? 1.65 : options.category === "flying" ? 1.18 : 1;
+      const maxHealth = Math.round(profile.health * chapterScale * classScale);
+      const attack = Math.round(profile.attack * (1 + (chapterScale - 1) * 0.7) * (boss ? 1.38 : elite ? 1.16 : 1));
+      const xp = Math.round(profile.xp * chapterScale * (boss ? 4 : elite ? 1.8 : 1));
+      const scale = boss ? 1.35 : type === "forge-hound" ? 1.15 : 1;
       const group = new THREE.Group();
       const material = this.state.settings.renderStyle === "anime"
         ? new THREE.MeshToonMaterial({
           color: new THREE.Color(profile.color).multiplyScalar(0.42),
           emissive: new THREE.Color(profile.color),
-          emissiveIntensity: profile.boss ? 0.34 : 0.22,
+          emissiveIntensity: boss ? 0.34 : 0.22,
           gradientMap: this.toonGradient
         })
         : new (THREE.MeshPhysicalMaterial || THREE.MeshStandardMaterial)({
-          color: new THREE.Color(profile.color).multiplyScalar(profile.boss ? 0.12 : 0.3),
+          color: new THREE.Color(profile.color).multiplyScalar(boss ? 0.12 : 0.3),
           emissive: new THREE.Color(profile.color),
-          emissiveIntensity: profile.boss ? 0.1 : 0.08,
-          roughness: profile.boss ? 0.48 : 0.62,
-          metalness: profile.boss ? 0.56 : 0.2,
-          clearcoat: profile.boss ? 0.28 : 0.08,
+          emissiveIntensity: boss ? 0.1 : 0.08,
+          roughness: boss ? 0.48 : 0.62,
+          metalness: boss ? 0.56 : 0.2,
+          clearcoat: boss ? 0.28 : 0.08,
           clearcoatRoughness: 0.44,
           envMapIntensity: this.photorealAssets.hdrEnvironment || this.photorealAssets.panorama ? 0.76 : 0.2
         });
-      const bodyGeometry = profile.boss
+      const bodyGeometry = boss
         ? new THREE.CapsuleGeometry(0.62 * scale, 1.08 * scale, 10, 20)
         : new THREE.IcosahedronGeometry(0.76 * scale, 2);
       const body = new THREE.Mesh(bodyGeometry, material);
@@ -9396,39 +10213,46 @@
       group.add(body);
       const eye = new THREE.Mesh(
         new THREE.SphereGeometry(0.19 * scale, 12, 8),
-        new THREE.MeshStandardMaterial({ color: 0xe8f0f4, emissive: profile.color, emissiveIntensity: profile.boss ? 0.32 : 0.12, roughness: 0.18 })
+        new THREE.MeshStandardMaterial({ color: 0xe8f0f4, emissive: profile.color, emissiveIntensity: boss ? 0.32 : 0.12, roughness: 0.18 })
       );
       eye.position.set(0, 1.68 * scale, 0.78 * scale);
-      eye.userData.weakPoint = Boolean(profile.boss);
-      if (profile.boss) eye.visible = false;
+      eye.userData.weakPoint = boss;
+      if (boss) eye.visible = false;
       group.add(eye);
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(1.18 * scale, 0.055 * scale, 8, 36),
-        new THREE.MeshBasicMaterial({ color: profile.color, transparent: true, opacity: profile.boss ? 0.2 : 0.42, depthWrite: false })
+        new THREE.MeshBasicMaterial({ color: profile.color, transparent: true, opacity: boss ? 0.2 : 0.42, depthWrite: false })
       );
       ring.position.y = 1.6 * scale;
       ring.rotation.x = Math.PI / 2;
       group.add(ring);
-      group.position.set(x, 1.05, z);
+      const floatBase = options.category === "flying" ? 3.1 : 1.05;
+      group.position.set(x, floatBase, z);
       group.userData = {
         type: "enemy",
         id,
         archetype: type,
-        name: profile.name,
-        health: profile.health,
-        maxHealth: profile.health,
-        attack: profile.attack,
-        baseAttack: profile.attack,
+        name: options.displayName || profile.name,
+        health: maxHealth,
+        maxHealth,
+        attack,
+        baseAttack: attack,
         speed: profile.speed,
         baseSpeed: profile.speed,
         element: profile.element,
-        xp: profile.xp,
+        xp,
         drop: profile.drop,
-        boss: Boolean(profile.boss),
+        boss,
+        elite,
+        zoneId: options.zoneId || this.zoneAt(x, z).id,
+        monsterId: options.monsterId || this.monsterIdForEnemy(type, id),
+        monsterCategory: options.category || "legacy",
+        monsterReady: false,
+        monsterHydrating: false,
         bossPhase: 1,
         weakPoint: eye,
-        shield: profile.boss ? 320 : 0,
-        maxShield: profile.boss ? 320 : 0,
+        shield: boss ? Math.round(maxHealth * 0.28) : 0,
+        maxShield: boss ? Math.round(maxHealth * 0.28) : 0,
         homeX: x,
         homeZ: z,
         lastAttackAt: 0,
@@ -9436,7 +10260,7 @@
         status: {},
         defeated: false,
         respawnAt: 0,
-        floatBase: 1.05,
+        floatBase,
         body,
         ring
       };
@@ -10472,13 +11296,19 @@
       const activeRadius = this.state.settings.quality === "low" ? 52 : this.state.settings.quality === "medium" ? 72 : 96;
       this.enemies.forEach((enemy) => {
         const data = enemy.userData;
+        if (data.monsterMixer && enemy.visible) data.monsterMixer.update(dt);
         if (data.defeated) {
+          this.playMonsterAnimation(enemy, "death", 0.08);
+          if (data.deathHideAt && time >= data.deathHideAt) enemy.visible = false;
           if (data.respawnAt && Date.now() >= data.respawnAt && !(data.boss && this.state.quests.warden?.status === "completed")) {
             data.health = data.maxHealth;
             data.defeated = false;
             data.respawnAt = 0;
+            data.deathHideAt = 0;
             enemy.position.set(data.homeX, data.floatBase, data.homeZ);
             enemy.visible = true;
+            data.body.visible = !data.monsterReady;
+            this.playMonsterAnimation(enemy, "idle", 0.12);
             delete this.state.defeated[data.id];
           }
           return;
@@ -10490,25 +11320,33 @@
           return;
         }
         enemy.visible = true;
-        enemy.position.y = data.floatBase + Math.sin(time * 0.002 + data.homeX) * 0.2;
+        if (data.monsterId && !data.monsterReady && !data.monsterHydrating) {
+          data.monsterHydrating = true;
+          this.hydrateEnemyMonster(enemy, data.monsterId).finally(() => { data.monsterHydrating = false; });
+        }
+        const bob = data.monsterCategory === "flying" ? 0.34 : 0.08;
+        enemy.position.y = data.floatBase + Math.sin(time * 0.002 + data.homeX) * bob;
         data.ring.rotation.z += dt * (data.boss ? 0.9 : 1.5);
         const distance = streamDistance;
         if (data.boss) this.updateBossPhase(enemy, distance, time);
         if (distance < (data.boss ? 25 : 14) && player.health > 0) {
           enemy.lookAt(player.x, enemy.position.y, player.z);
           if (distance > 2.1) {
+            this.playMonsterAnimation(enemy, "move");
             enemy.position.x += ((player.x - enemy.position.x) / distance) * data.speed * dt;
             enemy.position.z += ((player.z - enemy.position.z) / distance) * data.speed * dt;
           } else if (time - data.lastAttackAt > (data.boss ? 1250 : 900)) {
             data.lastAttackAt = time;
+            this.playMonsterAnimation(enemy, "attack", 0.1);
             this.damagePlayer(data.attack, data.name);
           }
         } else {
           const homeDistance = Math.hypot(data.homeX - enemy.position.x, data.homeZ - enemy.position.z);
           if (homeDistance > 0.3) {
+            this.playMonsterAnimation(enemy, "move");
             enemy.position.x += ((data.homeX - enemy.position.x) / homeDistance) * dt * 1.2;
             enemy.position.z += ((data.homeZ - enemy.position.z) / homeDistance) * dt * 1.2;
-          }
+          } else this.playMonsterAnimation(enemy, "idle");
         }
       });
     }
@@ -10566,7 +11404,14 @@
         this.updateCharacterLod(remote, playerDistance);
         const runtime = remote.userData.characterRuntime || this.characterRuntimes.get(`remote:${remote.userData.id}`);
         if (runtime?.mixer && !runtime.lodSuspended) {
-          this.playCharacterClip(runtime, moving ? "run" : "idle");
+          const remoteMotion = remote.userData.health <= 0
+            ? "knockdown_f"
+            : remote.userData.action === "hit"
+              ? "hit_f"
+              : ["attack", "skill", "ultimate"].includes(remote.userData.action)
+                ? remote.userData.action
+                : moving ? "run" : "idle";
+          this.playCharacterClip(runtime, remoteMotion);
           runtime.mixer.timeScale = moving ? 0.94 : 1;
           runtime.mixer.update(dt);
         }
@@ -10797,9 +11642,20 @@
     updateEffects(dt) {
       this.effects = this.effects.filter((effect) => {
         effect.life -= dt;
-        effect.mesh.scale.multiplyScalar(1 + dt * effect.grow);
-        effect.mesh.material.opacity = clamp(effect.life / effect.maxLife, 0, 1) * effect.opacity;
-        effect.mesh.rotation.y += dt * 3;
+        if (effect.projectile) {
+          effect.travel = Math.min(effect.distance, effect.travel + dt * effect.speed);
+          effect.mesh.position.lerpVectors(effect.start, effect.end, effect.distance ? effect.travel / effect.distance : 1);
+        }
+        if (effect.velocity) {
+          effect.mesh.position.addScaledVector(effect.velocity, dt);
+          effect.velocity.y -= Number(effect.gravity || 0) * dt;
+        }
+        effect.mesh.scale.multiplyScalar(1 + dt * Number(effect.grow || 0));
+        const materials = Array.isArray(effect.mesh.material) ? effect.mesh.material : [effect.mesh.material];
+        materials.filter(Boolean).forEach((material) => {
+          if ("opacity" in material) material.opacity = clamp(effect.life / effect.maxLife, 0, 1) * effect.opacity;
+        });
+        effect.mesh.rotation.y += dt * Number(effect.spin || 3);
         if (effect.life <= 0) {
           effect.mesh.parent?.remove(effect.mesh);
           effect.mesh.geometry?.dispose?.();
@@ -11085,11 +11941,24 @@
       }
     }
 
+    isPkSafePosition(x = this.state.player.x, z = this.state.player.z) {
+      const zone = this.zoneAt(x, z);
+      if (zone.id === "central") return true;
+      return ZONES.some((entry) => entry.id !== "central" && Math.hypot(x - entry.x, z - entry.z) <= 6.5);
+    }
+
+    canTargetRemote(remote) {
+      if (!this.authoritative || !this.state.hunter.pk.enabled || !remote?.userData?.pk?.enabled) return false;
+      if (remote.userData.health <= 0 || this.isPkSafePosition() || this.isPkSafePosition(remote.position.x, remote.position.z)) return false;
+      return Date.now() >= Number(this.state.hunter.pk.protectionUntil || 0)
+        && Date.now() >= Number(remote.userData.pk.protectionUntil || 0);
+    }
+
     findTarget(range = 4.2) {
-      const locked = this.lockedTargetId ? this.enemies.get(this.lockedTargetId) : null;
+      const locked = this.lockedTargetId ? (this.enemies.get(this.lockedTargetId) || this.remotePlayers.get(this.lockedTargetId)) : null;
       if (locked?.visible && !locked.userData.defeated) {
         const distance = Math.hypot(locked.position.x - this.state.player.x, locked.position.z - this.state.player.z);
-        if (distance <= range) return locked;
+        if (distance <= range && (locked.userData.type !== "remote-player" || this.canTargetRemote(locked))) return locked;
       }
       let winner = null;
       let best = range;
@@ -11101,12 +11970,112 @@
           winner = enemy;
         }
       });
+      this.remotePlayers.forEach((remote) => {
+        if (!remote.visible || !this.canTargetRemote(remote)) return;
+        const distance = Math.hypot(remote.position.x - this.state.player.x, remote.position.z - this.state.player.z);
+        if (distance < best) {
+          best = distance;
+          winner = remote;
+        }
+      });
       const training = this.entities.get("training-core");
       if (training) {
         const distance = Math.hypot(training.position.x - this.state.player.x, training.position.z - this.state.player.z);
         if (distance < best) winner = training;
       }
       return winner;
+    }
+
+    weaponSocketWorldPosition(socketName, fallbackHeight = 1.2) {
+      const position = new this.THREE.Vector3(this.state.player.x, this.state.player.y + fallbackHeight, this.state.player.z);
+      const socket = this.playerWeapon?.getObjectByName?.(socketName);
+      if (socket) socket.getWorldPosition(position);
+      return position;
+    }
+
+    spawnWeaponProjectile(target, combatProfile, kind, element) {
+      if (!this.THREE || this.state.settings.reduceEffects || !["ranged", "magic"].includes(combatProfile.mode)) return;
+      const THREE = this.THREE;
+      const start = this.weaponSocketWorldPosition("Muzzle", 1.35);
+      const end = target
+        ? target.position.clone().add(new THREE.Vector3(0, Number(target.userData?.boss ? 1.7 : 1.05), 0))
+        : start.clone().add(new THREE.Vector3(Math.sin(this.state.player.rotation) * 18, 0, Math.cos(this.state.player.rotation) * 18));
+      const distance = Math.max(0.01, start.distanceTo(end));
+      const speed = Number(combatProfile.projectileSpeed || 36) * (kind === "ultimate" ? 1.35 : 1);
+      const color = ELEMENTS[element]?.color || "#ffffff";
+      const geometry = combatProfile === WEAPON_COMBAT_PROFILES.bow
+        ? new THREE.ConeGeometry(0.055, 0.72, 8)
+        : new THREE.SphereGeometry(kind === "ultimate" ? 0.22 : 0.105, 10, 8);
+      const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.copy(start);
+      if (geometry.type === "ConeGeometry") {
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize());
+      }
+      this.scene.add(mesh);
+      const life = distance / speed + 0.12;
+      this.effects.push({ mesh, life, maxLife: life, grow: 0, opacity: 0.95, spin: 0, projectile: true, start, end, distance, travel: 0, speed });
+      this.spawnMuzzleFlashAndShell(start, combatProfile, color);
+    }
+
+    spawnMuzzleFlashAndShell(origin, combatProfile, color) {
+      const THREE = this.THREE;
+      const flash = new THREE.Mesh(
+        new THREE.OctahedronGeometry(combatProfile.mode === "magic" ? 0.18 : 0.11, 0),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.92, depthWrite: false, blending: THREE.AdditiveBlending })
+      );
+      flash.position.copy(origin);
+      this.scene.add(flash);
+      this.effects.push({ mesh: flash, life: 0.1, maxLife: 0.1, grow: 7, opacity: 0.92, spin: 0 });
+      if (combatProfile.mode !== "ranged" || combatProfile === WEAPON_COMBAT_PROFILES.bow) return;
+      const shell = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.018, 0.07, 6),
+        new THREE.MeshStandardMaterial({ color: 0xcaa85d, roughness: 0.34, metalness: 0.72, transparent: true })
+      );
+      shell.position.copy(origin);
+      this.scene.add(shell);
+      this.effects.push({
+        mesh: shell,
+        life: 0.72,
+        maxLife: 0.72,
+        grow: 0,
+        opacity: 0.9,
+        spin: 15,
+        velocity: new THREE.Vector3(0.8 + Math.random() * 0.45, 0.8, (Math.random() - 0.5) * 0.5),
+        gravity: 3.8
+      });
+    }
+
+    spawnBladeTrail(combatProfile, kind, color) {
+      if (!this.THREE || !combatProfile.trail || this.state.settings.reduceEffects) return;
+      const THREE = this.THREE;
+      const bladeRoot = this.weaponSocketWorldPosition("BladeRoot", 1.15);
+      const bladeTip = this.weaponSocketWorldPosition("BladeTip", 2.1);
+      const direction = bladeTip.clone().sub(bladeRoot);
+      const length = Math.max(0.2, direction.length());
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(kind === "ultimate" ? 0.48 : 0.22, length),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: kind === "ultimate" ? 0.82 : 0.58, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })
+      );
+      mesh.position.copy(bladeRoot).lerp(bladeTip, 0.5);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+      this.scene.add(mesh);
+      const life = kind === "ultimate" ? 0.34 : 0.18;
+      this.effects.push({ mesh, life, maxLife: life, grow: 0.7, opacity: kind === "ultimate" ? 0.82 : 0.58, spin: 0 });
+    }
+
+    targetInsideWeaponHitbox(target, combatProfile, range) {
+      if (!target) return false;
+      const dx = target.position.x - this.state.player.x;
+      const dz = target.position.z - this.state.player.z;
+      const distance = Math.hypot(dx, dz);
+      if (distance > range + Number(combatProfile.hitbox?.radius || 0.5)) return false;
+      if (["ranged", "magic"].includes(combatProfile.mode)) return true;
+      const facingX = Math.sin(this.state.player.rotation || 0);
+      const facingZ = Math.cos(this.state.player.rotation || 0);
+      const dot = distance > 0.001 ? (dx * facingX + dz * facingZ) / distance : 1;
+      const arc = Number(combatProfile.hitbox?.arc || 120) * Math.PI / 180;
+      return dot >= Math.cos(arc * 0.5) || target === this.lockedTarget;
     }
 
     attack(kind = "attack") {
@@ -11153,8 +12122,10 @@
         kind === "ultimate" ? 920 : kind === "skill" ? 680 : 430,
         kind === "ultimate" ? 1.5 : 1
       );
-      if (weaponClass !== "gun") this.beginMotionWarp(target, kind, now);
+      if (!["ranged", "magic"].includes(combatProfile.mode)) this.beginMotionWarp(target, kind, now);
       this.swingAnimation(kind, weaponClass);
+      if (["ranged", "magic"].includes(combatProfile.mode)) this.spawnWeaponProjectile(target, combatProfile, kind, element);
+      else this.spawnBladeTrail(combatProfile, kind, ELEMENTS[element].color);
       this.spawnPulse(this.state.player.x, this.state.player.y + 1.2, this.state.player.z, ELEMENTS[element].color, kind === "ultimate" ? 1.2 : 0.42, kind === "ultimate" ? 8 : 3.2);
       this.spawnElementBurst(
         this.state.player.x,
@@ -11179,8 +12150,19 @@
         this.invulnerableUntil = Math.max(this.invulnerableUntil, now + 480);
         this.state.player.stamina = clamp(this.state.player.stamina + 14, 0, this.state.player.maxStamina);
       }
+      if (kind === "skill" && weaponClass === "shield") {
+        this.invulnerableUntil = Math.max(this.invulnerableUntil, now + 1100);
+        this.state.player.stamina = clamp(this.state.player.stamina + 20, 0, this.state.player.maxStamina);
+      }
+      if (kind === "skill" && weaponClass === "scythe" && target) {
+        target.position.x += (this.state.player.x - target.position.x) * 0.34;
+        target.position.z += (this.state.player.z - target.position.z) * 0.34;
+      }
 
-      const contactDelay = weaponClass === "gun" ? (kind === "attack" ? 80 : 180) : kind === "ultimate" ? 360 : kind === "skill" ? 235 : 145;
+      const travelDelay = target && ["ranged", "magic"].includes(combatProfile.mode)
+        ? Math.min(680, Math.hypot(target.position.x - this.state.player.x, target.position.z - this.state.player.z) / Math.max(1, Number(combatProfile.projectileSpeed || 40)) * 1000)
+        : 0;
+      const contactDelay = Math.max(Number(combatProfile.contact?.[kind] || 145), travelDelay);
       root.setTimeout(() => {
         if (this.destroyed || !this.running) return;
         if (this.authoritative) {
@@ -11190,7 +12172,7 @@
         if (!target || target.visible === false || target.userData?.defeated) return;
         const targets = [target];
         if (kind !== "attack") {
-          const limit = kind === "ultimate" ? 8 : weaponClass === "gun" ? 3 : weaponClass === "sword" ? 4 : 2;
+          const limit = Number(combatProfile.aoe?.[kind] || (kind === "ultimate" ? 8 : 2));
           this.enemies.forEach((enemy) => {
             if (targets.length >= limit || targets.includes(enemy) || !enemy.visible || enemy.userData.defeated) return;
             const distance = Math.hypot(enemy.position.x - this.state.player.x, enemy.position.z - this.state.player.z);
@@ -11199,32 +12181,42 @@
         }
         targets.forEach((combatTarget, index) => {
           const distanceAtContact = Math.hypot(combatTarget.position.x - this.state.player.x, combatTarget.position.z - this.state.player.z);
-          if (distanceAtContact <= range + 1.2) this.damageTarget(combatTarget, Math.round(damageBase * (index ? 0.72 : 1)), element, kind);
+          if (distanceAtContact <= range + 1.2 && this.targetInsideWeaponHitbox(combatTarget, combatProfile, range)) {
+            this.damageTarget(combatTarget, Math.round(damageBase * (index ? 0.72 : 1)), element, kind);
+          }
         });
       }, contactDelay);
     }
 
     swingAnimation(kind, weaponClass = this.equippedWeaponClass()) {
       if (!this.playerWeapon) return;
-      if (weaponClass === "gun") {
-        this.playerWeapon.position.z = 0.11;
-        this.playerWeapon.rotation.x = 0.08;
+      const combatProfile = WEAPON_COMBAT_PROFILES[weaponClass] || WEAPON_COMBAT_PROFILES.sword;
+      const rest = this.playerWeapon.userData?.restTransform;
+      const restore = () => {
+        if (!this.playerWeapon || !rest) return;
+        this.playerWeapon.position.copy(rest.position);
+        this.playerWeapon.quaternion.copy(rest.quaternion);
+        this.playerWeapon.scale.copy(rest.scale);
+      };
+      if (["ranged", "magic"].includes(combatProfile.mode)) {
+        const recoil = Number(combatProfile.recoil || 0.05) * (kind === "ultimate" ? 1.8 : kind === "skill" ? 1.3 : 1);
+        this.playerWeapon.position.z += recoil;
+        this.playerWeapon.rotation.x += recoil * 0.72;
         root.setTimeout(() => {
-          if (!this.playerWeapon) return;
-          this.playerWeapon.position.z = 0;
-          this.playerWeapon.rotation.x = -0.12;
+          restore();
         }, kind === "ultimate" ? 260 : 95);
         return;
       }
       if (weaponClass === "unarmed") {
-        this.playerWeapon.scale.setScalar(kind === "ultimate" ? 1.42 : 1.18);
-        root.setTimeout(() => this.playerWeapon?.scale.setScalar(1), kind === "ultimate" ? 300 : 140);
+        this.playerWeapon.scale.multiplyScalar(kind === "ultimate" ? 1.42 : 1.18);
+        root.setTimeout(restore, kind === "ultimate" ? 300 : 140);
         return;
       }
-      const base = kind === "ultimate" ? 1.6 : kind === "skill" ? 1.15 : 0.75;
-      this.playerWeapon.rotation.x = -base;
+      const classWeight = ({ greatsword: 1.2, hammer: 1.15, scythe: 1.08, dualBlade: 0.72, spear: 0.9, shield: 0.65 })[weaponClass] || 1;
+      const base = (kind === "ultimate" ? 1.6 : kind === "skill" ? 1.15 : 0.75) * classWeight;
+      this.playerWeapon.rotateX(-base);
       root.setTimeout(() => {
-        if (this.playerWeapon) this.playerWeapon.rotation.x = 0;
+        restore();
       }, kind === "ultimate" ? 340 : 160);
     }
 
@@ -11272,6 +12264,7 @@
       }
       data.status[element] = now;
       data.health = Math.max(0, data.health - damage);
+      this.playMonsterAnimation(target, data.health > 0 ? "hit" : "death", 0.08);
       const dealt = damage + absorbed;
       this.hitStopUntil = performance.now() + (kind === "ultimate" ? 95 : kind === "skill" ? 62 : 38);
       this.cameraShake = Math.max(this.cameraShake, kind === "ultimate" ? 1 : kind === "skill" ? 0.48 : 0.25);
@@ -11296,13 +12289,77 @@
       element.classList.add("is-active");
     }
 
-    defeatEnemy(enemy) {
+    currentHuntChapter() {
+      return HUNT_CHAPTERS[Math.max(0, (this.state.story?.chapter || 1) - 1)] || HUNT_CHAPTERS[0];
+    }
+
+    huntChapterProgress(zoneId = this.currentHuntChapter().zoneId) {
+      return this.state.hunter?.chapters?.[zoneId] || { kills: 0, elites: 0, bosses: 0, score: 0, wave: 1, completedAt: "" };
+    }
+
+    isHuntChapterComplete(chapter = this.currentHuntChapter()) {
+      const progress = this.huntChapterProgress(chapter.zoneId);
+      return progress.kills >= chapter.huntQuota
+        && progress.elites >= chapter.eliteQuota
+        && progress.bosses >= chapter.bossQuota
+        && progress.score >= chapter.scoreTarget;
+    }
+
+    huntProgressLabel(chapter = this.currentHuntChapter()) {
+      const progress = this.huntChapterProgress(chapter.zoneId);
+      const boss = chapter.bossQuota ? ` · Boss ${Math.min(progress.bosses, chapter.bossQuota)}/${chapter.bossQuota}` : "";
+      return `Săn ${Math.min(progress.kills, chapter.huntQuota)}/${chapter.huntQuota} · Elite ${Math.min(progress.elites, chapter.eliteQuota)}/${chapter.eliteQuota}${boss} · ${Math.min(progress.score, chapter.scoreTarget)}/${chapter.scoreTarget} điểm`;
+    }
+
+    recordHuntKill(data, eventId = "") {
+      const hunter = this.state.hunter;
+      const normalizedEvent = String(eventId || `local:${data.id}:${Date.now()}`).slice(0, 120);
+      if (hunter.processedEvents.includes(normalizedEvent)) return 0;
+      hunter.processedEvents = [...hunter.processedEvents, normalizedEvent].slice(-120);
+      const zoneId = data.zoneId || this.zoneAt(data.homeX, data.homeZ).id;
+      const monsterId = data.monsterId || data.archetype || data.id;
+      const chapter = HUNT_CHAPTERS.find((entry) => entry.zoneId === zoneId) || HUNT_CHAPTERS[0];
+      const gained = Math.round((data.boss ? 620 : data.elite ? 240 : 100) + chapter.chapter * (data.boss ? 85 : data.elite ? 32 : 18));
+      hunter.score = clamp(Number(hunter.score || 0) + gained, 0, 999999999);
+      hunter.rank = hunterRankForScore(hunter.score).id;
+      hunter.killStreak = clamp(Number(hunter.killStreak || 0) + 1, 0, 999999);
+      hunter.bestKillStreak = Math.max(Number(hunter.bestKillStreak || 0), hunter.killStreak);
+      hunter.eliteKills += data.elite ? 1 : 0;
+      hunter.bossKills += data.boss ? 1 : 0;
+      hunter.killsByMonster[monsterId] = clamp(Number(hunter.killsByMonster[monsterId] || 0) + 1, 0, 999999);
+      if (!hunter.codex.includes(monsterId)) hunter.codex = [...hunter.codex, monsterId].slice(-100);
+      if (data.boss && !hunter.bossTrophies.includes(monsterId)) hunter.bossTrophies = [...hunter.bossTrophies, monsterId].slice(-40);
+      const weaponId = this.state.player.weapon || "unarmed";
+      hunter.weaponMastery[weaponId] = clamp(Number(hunter.weaponMastery[weaponId] || 0) + gained, 0, 9999999);
+
+      const currentChapter = this.currentHuntChapter();
+      if (currentChapter.zoneId === zoneId && this.state.story?.step !== "complete") {
+        const progress = hunter.chapters[zoneId];
+        progress.kills += 1;
+        progress.elites += data.elite ? 1 : 0;
+        progress.bosses += data.boss ? 1 : 0;
+        progress.score += gained;
+        progress.wave = clamp(1 + Math.floor((progress.kills / Math.max(1, currentChapter.huntQuota)) * 3), 1, 4);
+        if (this.isHuntChapterComplete(currentChapter) && !progress.completedAt) {
+          progress.completedAt = nowIso();
+          this.recordStoryEvent(`hunt:${zoneId}`);
+          this.toast(`Hoàn tất ${currentChapter.title} · chương kế tiếp đã sẵn sàng.`, "success");
+          this.evaluateStoryProgress({ save: false });
+        } else this.preloadNextHuntMonster(zoneId);
+      }
+      return gained;
+    }
+
+    defeatEnemy(enemy, { reward = true, eventId = "" } = {}) {
       const data = enemy.userData;
+      if (data.defeated && (!eventId || this.state.hunter.processedEvents.includes(eventId))) return;
       data.defeated = true;
       data.health = 0;
       data.respawnAt = Date.now() + (data.boss ? 120000 : 25000);
-      enemy.visible = false;
+      data.deathHideAt = performance.now() + 920;
+      this.playMonsterAnimation(enemy, "death", 0.08);
       this.state.defeated[data.id] = { defeated: true, respawnAt: data.respawnAt, at: nowIso() };
+      if (!reward) return;
       this.state.stats.enemiesDefeated += 1;
       if (data.boss) this.state.stats.bossDefeated += 1;
       const event = this.state.world?.activeEvent;
@@ -11310,10 +12367,12 @@
         event.progress = clamp(Number(event.progress || 0) + 1, 0, Number(event.target || 3));
         this.recordWorldEvent({ type: "event-progress", title: `${event.title} · ${event.progress}/${event.target}`, detail: `Đã hạ ${data.name}.`, zoneId: event.zoneId, factionId: event.factionId });
       }
+      const huntScore = this.recordHuntKill(data, eventId);
       this.grantXp(data.xp);
       if (data.drop && (!data.boss || this.state.quests.warden?.status !== "completed")) this.addItem(data.drop, 1, `${data.name} rơi vật phẩm`);
       this.progressQuest(data.boss ? "boss" : "defeat", 1, { enemy: data.archetype });
-      this.spawnNova(enemy.position.x, enemy.position.y + 1, enemy.position.z, ENEMY_ARCHETYPES[data.archetype].color);
+      this.spawnNova(enemy.position.x, enemy.position.y + 1, enemy.position.z, ENEMY_ARCHETYPES[data.archetype]?.color || "#ff70ce");
+      if (huntScore) this.toast(`+${huntScore} điểm săn · ${hunterRankForScore(this.state.hunter.score).label}`, "success");
       this.toast(`Đã đánh bại ${data.name} · +${data.xp} XP`, "success");
       this.saveProgress("Chiến thắng");
     }
@@ -11331,6 +12390,7 @@
 
     playerDefeated(source) {
       this.state.stats.deaths += 1;
+      this.state.hunter.killStreak = 0;
       this.setCharacterAction("defeated", 1600, 1);
       this.paused = true;
       this.runtime?.gameover?.({ gameId: GAME_ID, outcome: "defeated", source });
@@ -11720,7 +12780,8 @@
       this.state.player.weapon = itemId;
       if (this.state.loadouts?.[this.state.roster.activeId]) this.state.loadouts[this.state.roster.activeId].weapon = itemId;
       this.refreshEquippedWeapon();
-      const combat = WEAPON_COMBAT_PROFILES[item.weaponClass || "sword"];
+      const combat = WEAPON_COMBAT_PROFILES[item.weaponClass || "sword"] || WEAPON_COMBAT_PROFILES.sword;
+      this.setCharacterAction(`equip_${item.weaponClass || "sword"}`, 480, 0.9);
       this.toast(`Đã trang bị ${item.name} · mở bộ kỹ năng ${combat.label}.`, "success");
       this.updateUi(true);
       this.saveProgress("Đổi trang bị");
@@ -11746,11 +12807,7 @@
       if (!ELEMENTS[elementId]) return;
       this.state.player.element = elementId;
       this.root.querySelectorAll("[data-element]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.element === elementId)));
-      this.playerWeapon?.traverse?.((object) => {
-        if (!object.material) return;
-        object.material.emissive?.set?.(ELEMENTS[elementId].color);
-        object.material.color?.set?.(ELEMENTS[elementId].color);
-      });
+      this.applyWeaponElementMaterial(this.playerWeapon, elementId);
       if (notify) this.toast(`Lõi ${ELEMENTS[elementId].label} đã đồng bộ.`);
       this.updateUi(true);
     }
@@ -11776,6 +12833,8 @@
       if (avatar) avatar.style.setProperty("--portrait-x", `${(CHARACTER_ATLAS_INDEX[this.state.roster.activeId] || 0) * 33.333333}%`);
       this.root.querySelector("[data-har-player-name]").textContent = player.name;
       this.root.querySelector("[data-har-player-meta]").textContent = `Nhà du hành · ${ELEMENTS[player.element].label} · ${Math.round(player.health)}/${player.maxHealth} HP`;
+      const hunterRank = hunterRankForScore(this.state.hunter.score);
+      this.root.querySelector("[data-har-player-meta]").textContent = `${hunterRank.label} · ${this.state.hunter.score.toLocaleString("vi-VN")} điểm · ${Math.round(player.health)}/${player.maxHealth} HP`;
       const weaponClass = this.equippedWeaponClass();
       const combatProfile = WEAPON_COMBAT_PROFILES[weaponClass] || WEAPON_COMBAT_PROFILES.sword;
       const combatLabels = {
@@ -11837,10 +12896,11 @@
             : "UNSCANNED";
       this.root.querySelector("[data-har-minimap-label]").textContent = this.currentZone.name;
       const storyChapter = this.currentStoryChapter();
+      const huntChapter = this.currentHuntChapter();
       const storyComplete = this.state.story?.step === "complete";
       const storyStepLabels = {
         cinematic: "Xem cinematic để mở nhiệm vụ chính",
-        mission: storyChapter.objective,
+        mission: this.huntProgressLabel(huntChapter),
         complete: "Nexus đã được sửa · Echo mới đang chờ"
       };
       this.root.querySelector("[data-har-quest-title]").textContent = storyComplete
@@ -11848,6 +12908,7 @@
         : `Chương ${storyChapter.chapter} · ${storyChapter.title}`;
       this.root.querySelector("[data-har-quest-progress]").textContent = storyStepLabels[this.state.story?.step] || storyChapter.objective;
 
+      if (!storyComplete) this.root.querySelector("[data-har-quest-title]").textContent = `Chương ${storyChapter.chapter} · ${huntChapter.title}`;
       const boss = [...this.enemies.values()].find((enemy) => enemy.userData.boss && enemy.visible && !enemy.userData.defeated);
       const bossDistance = boss ? Math.hypot(player.x - boss.position.x, player.z - boss.position.z) : Infinity;
       const bossBar = this.root.querySelector("[data-har-boss]");
@@ -12402,7 +13463,16 @@
     }
 
     renderQuestPanel() {
-      return `<ul class="har-list">${QUESTS.map((quest, index) => {
+      const huntChapter = this.currentHuntChapter();
+      const huntProgress = this.huntChapterProgress(huntChapter.zoneId);
+      const rank = hunterRankForScore(this.state.hunter.score);
+      return `<div class="har-section har-system-hero" style="--system-accent:${ZONES.find((zone) => zone.id === huntChapter.zoneId)?.color || "#ff70ce"}">
+        <small>MONSTER HUNT · CHƯƠNG ${huntChapter.chapter} · WAVE ${huntProgress.wave}/4</small>
+        <h3>${escapeHtml(huntChapter.title)}</h3>
+        <p>${escapeHtml(huntChapter.storyBeat)}</p>
+        <div class="har-stat-grid"><div><small>Hạng</small><strong>${escapeHtml(rank.label)}</strong></div><div><small>Điểm săn</small><strong>${this.state.hunter.score.toLocaleString("vi-VN")}</strong></div><div><small>Chuỗi hạ gục</small><strong>${this.state.hunter.killStreak}</strong></div><div><small>Codex</small><strong>${this.state.hunter.codex.length}/50</strong></div></div>
+        <p>${escapeHtml(this.huntProgressLabel(huntChapter))}</p>
+      </div><ul class="har-list">${QUESTS.map((quest, index) => {
         const status = this.state.quests[quest.id];
         const labels = { locked: "Chưa mở", active: "Đang theo dõi", completed: "Hoàn thành" };
         return `<li class="har-list-item ${status.status === "active" ? "is-active" : ""}">
@@ -12491,8 +13561,16 @@
     renderPartyPanel() {
       const connected = Boolean(this.socket?.connected);
       const members = this.state.party.members || [];
+      const combatants = this.state.party.combatants || [];
       const roomCode = this.state.party.roomCode || "";
       const capacity = clamp(this.room?.maxPlayers || this.state.party.capacity || 4, 2, COOP_PLAYER_LIMIT);
+      const pk = this.state.hunter.pk;
+      const pkLocked = !connected || !roomCode;
+      const pkStatus = pk.safeZone
+        ? "Safe Zone · không thể gây hoặc nhận sát thương PK"
+        : pk.enabled
+          ? "PK đã bật · server kiểm tra khoảng cách, hồi chiêu và sát thương"
+          : "PK đang tắt · quái vật vẫn có thể gây sát thương";
       const statusCopy = !navigator.onLine
         ? "Thiết bị đang ngoại tuyến. Game tiếp tục chạy bằng mô phỏng local."
         : this.state.party.status === "reconnecting"
@@ -12504,6 +13582,15 @@
             : "Máy chủ sẵn sàng. Tạo phòng co-op 4 người hoặc world event 8 người.";
       return `
         <div class="har-section"><h3>${roomCode ? `Phòng ${escapeHtml(roomCode)}` : "Co-op thử nghiệm"}</h3><p>${escapeHtml(statusCopy)}</p></div>
+        <div class="har-section" style="--item-accent:${pk.enabled ? "#ff6d78" : "#65f1c7"}">
+          <small>PLAYER KILL · OPT-IN · SERVER AUTHORITATIVE</small>
+          <h3>${pk.enabled ? "PK đang hoạt động" : "PK an toàn"}</h3>
+          <p>${escapeHtml(pkStatus)}. Hạ gục chỉ chuyển tối đa một phần điểm săn; không xóa vũ khí, vật phẩm hoặc save.</p>
+          <div class="har-stat-grid"><div><small>PK Kill</small><strong>${pk.kills}</strong></div><div><small>Assist</small><strong>${pk.assists}</strong></div><div><small>Death</small><strong>${pk.deaths}</strong></div><div><small>Rating</small><strong>${pk.rating}</strong></div></div>
+          <div class="har-inline-actions"><button class="${pk.enabled ? "har-secondary-button" : "har-primary-button"}" type="button" data-panel-action="toggle-pk" ${pkLocked ? "disabled" : ""}>${pk.enabled ? "Tắt PK" : "Bật PK"}</button></div>
+          ${pk.pendingInvite?.fromId ? `<div class="har-inline-actions"><strong>${escapeHtml(pk.pendingInvite.fromName)} mời đấu</strong><button class="har-primary-button" type="button" data-panel-action="accept-duel" data-player-id="${escapeHtml(pk.pendingInvite.fromId)}">Chấp nhận</button><button class="har-secondary-button" type="button" data-panel-action="decline-duel" data-player-id="${escapeHtml(pk.pendingInvite.fromId)}">Từ chối</button></div>` : ""}
+        </div>
+        ${combatants.length > 1 ? `<ul class="har-list">${combatants.filter((player) => player.socketId !== this.socket?.id).map((player) => `<li class="har-list-item"><div><strong>${escapeHtml(player.name)}</strong><span>${player.pk?.enabled ? "PK ON" : "PK OFF"} · ${player.pk?.safeZone ? "Safe Zone" : `Rating ${player.pk?.rating || 1000}`}</span></div><button class="har-chip" type="button" data-panel-action="invite-duel" data-player-id="${escapeHtml(player.socketId)}" ${player.pk?.safeZone ? "disabled" : ""}>Mời đấu</button></li>`).join("")}</ul>` : ""}
         ${roomCode ? `
           <ul class="har-list">${members.length ? members.map((member) => `<li class="har-list-item"><div><strong>${escapeHtml(member.user?.name || member.name || "Nhà du hành")}</strong><span>${escapeHtml(member.role || "player")} · ${member.ready ? "Sẵn sàng" : "Trong phòng"}</span></div><span class="har-chip ${member.ready ? "is-active" : ""}">${member.ready ? "Ready" : "Online"}</span></li>`).join("") : '<li class="har-list-item"><div><strong>Bạn đang ở trong phòng</strong><span>Đang chờ dữ liệu presence từ máy chủ.</span></div></li>'}</ul>
           <div class="har-form-row"><label class="har-field" style="grid-column:1/-1">Chat tổ đội<input type="text" maxlength="240" data-party-chat placeholder="Nhập tin nhắn thật cho thành viên phòng"></label></div>
@@ -13199,6 +14286,10 @@
       else if (action === "leave-party") await this.leaveParty();
       else if (action === "send-chat") await this.sendPartyChat(bodyValue(this.root, "[data-party-chat]"));
       else if (action === "toggle-ready") await this.togglePartyReady();
+      else if (action === "toggle-pk") await this.togglePk();
+      else if (action === "invite-duel") await this.sendPkAction("invite", data.playerId);
+      else if (action === "accept-duel") await this.sendPkAction("accept", data.playerId);
+      else if (action === "decline-duel") await this.sendPkAction("decline", data.playerId);
       else if (action === "resume") this.togglePause(false);
       else if (action === "open-inventory") this.openPanel("inventory");
       else if (action === "open-settings") this.openPanel("settings");
@@ -13515,6 +14606,16 @@
           if (payload.socketId === this.socket?.id) this.state.party.ready = payload.ready === true;
           if (this.currentPanel === "party") this.renderCurrentPanel();
         },
+        pkEvent: (payload = {}) => {
+          if (payload.type === "invite") {
+            this.state.hunter.pk.pendingInvite = { fromId: String(payload.fromId || ""), fromName: String(payload.fromName || "Thợ săn") };
+            this.toast(`${this.state.hunter.pk.pendingInvite.fromName} mời bạn PK.`, "info");
+          } else if (["accepted", "declined", "ended", "kill"].includes(payload.type)) {
+            if (payload.type !== "kill") this.state.hunter.pk.pendingInvite = null;
+            this.toast(String(payload.message || "Trạng thái PK đã thay đổi."), payload.type === "declined" ? "error" : "success");
+          }
+          if (this.currentPanel === "party") this.renderCurrentPanel();
+        },
         snapshot: (payload) => this.applyAuthoritativeSnapshot(payload)
       };
       socket.on?.("connect", this.socketHandlers.connect);
@@ -13524,6 +14625,7 @@
       socket.on?.("game:presence", this.socketHandlers.presence);
       socket.on?.("game:chat", this.socketHandlers.chat);
       socket.on?.("game:ready", this.socketHandlers.ready);
+      socket.on?.("astral-realms:pk-event", this.socketHandlers.pkEvent);
       socket.on?.("astral-realms:snapshot", this.socketHandlers.snapshot);
       this.updateConnectionUi();
     }
@@ -13537,6 +14639,7 @@
       this.socket.off?.("game:presence", this.socketHandlers.presence);
       this.socket.off?.("game:chat", this.socketHandlers.chat);
       this.socket.off?.("game:ready", this.socketHandlers.ready);
+      this.socket.off?.("astral-realms:pk-event", this.socketHandlers.pkEvent);
       this.socket.off?.("astral-realms:snapshot", this.socketHandlers.snapshot);
       this.socketBound = false;
       this.socketHandlers = null;
@@ -13671,7 +14774,7 @@
         if (this.socket?.connected && this.state.party.roomCode) await this.emitAck("game:room:leave", { code: this.state.party.roomCode });
       } catch {}
       const capacity = this.state.party.capacity === 8 ? 8 : 4;
-      this.state.party = { roomCode: "", status: this.socket?.connected ? "ready" : "local", ready: false, capacity, members: [], integrity: "local-simulation" };
+      this.state.party = { roomCode: "", status: this.socket?.connected ? "ready" : "local", ready: false, capacity, members: [], combatants: [], integrity: "local-simulation" };
       this.authoritative = false;
       this.room = null;
       [...this.remotePlayers.entries()].forEach(([id, mesh]) => this.disposeRemotePlayer(id, mesh));
@@ -13700,6 +14803,23 @@
       } catch (error) {
         this.toast(error.message || "Không cập nhật được trạng thái sẵn sàng.", "error");
       }
+    }
+
+    async sendPkAction(action, targetId = "") {
+      if (!this.socket?.connected || !this.state.party.roomCode) return this.toast("Cần vào một shard realtime trước khi dùng PK.", "error");
+      try {
+        const response = await this.emitAck("astral-realms:pk", { action, targetId, ...(action === "toggle" ? { enabled: !this.state.hunter.pk.enabled } : {}) });
+        if (response.pk) this.state.hunter.pk = { ...this.state.hunter.pk, ...response.pk };
+        if (["accept", "decline"].includes(action)) this.state.hunter.pk.pendingInvite = null;
+        this.toast(response.message || "Đã cập nhật trạng thái PK.", "success");
+        this.renderCurrentPanel();
+      } catch (error) {
+        this.toast(error.message || "Không cập nhật được PK.", "error");
+      }
+    }
+
+    async togglePk() {
+      await this.sendPkAction("toggle", "");
     }
 
     emitInput(extra = {}) {
@@ -13760,13 +14880,30 @@
         this.refreshWorldStateVisuals();
       }
       const self = (payload.players || []).find((player) => player.socketId === this.socket?.id);
+      this.state.party.combatants = Array.isArray(payload.players) ? payload.players : [];
       if (self) {
+        const wasAlive = this.state.player.health > 0;
         const error = Math.hypot(self.x - this.state.player.x, self.z - this.state.player.z);
         const blend = error > 3 ? 1 : 0.22;
         this.state.player.x += (self.x - this.state.player.x) * blend;
         this.state.player.z += (self.z - this.state.player.z) * blend;
         this.state.player.health = self.health;
         this.state.player.stamina = self.stamina;
+        if (wasAlive && self.health <= 0) {
+          this.state.hunter.killStreak = 0;
+          this.setCharacterAction("defeated", 1600, 1);
+          this.toast("Bạn đã bị hạ trong PK · server sẽ hồi sinh tại H-Central.", "error");
+        } else if (!wasAlive && self.health > 0) {
+          this.setCharacterAction("idle", 180, 0);
+          this.toast("Đã hồi sinh · bảo hộ PK 8 giây.", "success");
+        }
+        if (self.pk) {
+          this.state.hunter.pk = {
+            ...this.state.hunter.pk,
+            ...self.pk,
+            safeZone: self.pk.safeZone === true
+          };
+        }
         if (CHARACTERS[self.characterId] && self.characterId !== this.state.roster.activeId) this.switchCharacter(self.characterId);
         if (ELEMENTS[self.element] && self.element !== this.state.player.element) this.setElement(self.element, false);
       }
@@ -13782,7 +14919,7 @@
         }
         if (!mesh) {
           mesh = this.createPhotorealCharacterModel(profile, 0.92);
-          mesh.userData = { ...mesh.userData, type: "remote-player", id: player.socketId, name: player.name, characterId: profile.id };
+          mesh.userData = { ...mesh.userData, type: "remote-player", id: player.socketId, name: player.name, characterId: profile.id, health: player.health, maxHealth: player.maxHealth, pk: player.pk || {} };
           mesh.userData.targetPosition = new this.THREE.Vector3(player.x, 1.08, player.z);
           mesh.userData.targetRotation = player.rotation;
           this.world.add(mesh);
@@ -13797,6 +14934,10 @@
         }
         mesh.userData.targetPosition.set(player.x, 1.08, player.z);
         mesh.userData.targetRotation = player.rotation;
+        mesh.userData.health = player.health;
+        mesh.userData.maxHealth = player.maxHealth;
+        mesh.userData.pk = player.pk || {};
+        mesh.userData.action = player.action || "idle";
       });
       this.remotePlayers.forEach((mesh, id) => {
         if (!activeRemoteIds.has(id)) {
@@ -13810,16 +14951,22 @@
         enemy.position.x += (serverEnemy.x - enemy.position.x) * 0.4;
         enemy.position.z += (serverEnemy.z - enemy.position.z) * 0.4;
         enemy.userData.health = serverEnemy.health;
+        enemy.userData.maxHealth = serverEnemy.maxHealth || enemy.userData.maxHealth;
         if (serverEnemy.boss) {
           enemy.userData.bossPhase = serverEnemy.bossPhase || enemy.userData.bossPhase;
           enemy.userData.shield = serverEnemy.shield ?? enemy.userData.shield;
           if (enemy.userData.weakPoint) enemy.userData.weakPoint.visible = Boolean(serverEnemy.weakPointOpen);
         }
-        if (serverEnemy.defeated && wasAlive) this.defeatEnemy(enemy);
+        if (serverEnemy.defeated && wasAlive) this.defeatEnemy(enemy, {
+          reward: serverEnemy.defeatedBy === this.socket?.id,
+          eventId: serverEnemy.defeatEventId || `server:${serverEnemy.id}:${serverEnemy.respawnAt}`
+        });
         else if (!serverEnemy.defeated && enemy.userData.defeated) {
           enemy.userData.defeated = false;
           enemy.userData.health = serverEnemy.health;
+          enemy.userData.deathHideAt = 0;
           enemy.visible = true;
+          this.playMonsterAnimation(enemy, "idle", 0.12);
         }
       });
       this.updateConnectionUi();
@@ -14004,6 +15151,20 @@
           level: this.state.ship?.level || 1,
           modules: { ...(this.state.ship?.modules || {}) }
         },
+        hunter: {
+          score: this.state.hunter?.score || 0,
+          rank: hunterRankForScore(this.state.hunter?.score).label,
+          killStreak: this.state.hunter?.killStreak || 0,
+          codex: this.state.hunter?.codex?.length || 0,
+          chapter: this.currentHuntChapter()?.chapter || 1,
+          progress: this.huntProgressLabel(),
+          pk: { ...(this.state.hunter?.pk || {}), pendingInvite: undefined }
+        },
+        assetLibraries: {
+          weapons: this.weaponManifest.size,
+          monsters: this.monsterManifest.size,
+          monsterAnimations: [...this.monsterManifest.values()].reduce((sum, entry) => sum + Number(entry.animationCount || 0), 0)
+        },
         companions: Object.fromEntries(Object.entries(this.state.companions || {}).map(([id, record]) => [id, { bond: record.bond, storyStage: record.storyStage, unlocked: record.unlocked }]))
       };
     }
@@ -14027,6 +15188,11 @@
       this.runtime?.destroy?.({ gameId: GAME_ID });
       if (this.cinematicActorRestore) this.restoreGameplaySceneFromCinematic();
       if (this.scene) this.disposeCharacterObject(this.scene);
+      this.enemies.forEach((enemy) => enemy.userData?.monsterMixer?.stopAllAction?.());
+      this.monsterAssetCache.clear();
+      this.monsterAssetPromises.clear();
+      this.weaponAssetCache.clear();
+      this.weaponAssetPromises.clear();
       this.disposePhotorealAssets();
       this.disposeBuiltInCharacterAssets();
       this.disposeLicensedEnvironmentAssets();
