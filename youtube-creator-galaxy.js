@@ -195,16 +195,17 @@
     const params = new URLSearchParams(location.search);
     const connected = params.get("youtubeConnected");
     const oauthError = params.get("youtubeError");
-    if (!connected && !oauthError) return;
+    if (!connected && !oauthError) return false;
     params.delete("youtubeConnected");
     params.delete("youtubeError");
     history.replaceState({}, "", `${location.pathname}${params.toString() ? `?${params}` : ""}${location.hash}`);
     errorMessage = oauthError || "";
+    return true;
   }
 
-  async function refresh(all = true) {
+  async function refresh(all = true, preserveError = false) {
     busy = "refresh";
-    errorMessage = "";
+    if (!preserveError) errorMessage = "";
     render();
     try {
       channelStatus = await api("status");
@@ -1724,7 +1725,7 @@
     root = host;
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     state = loadState();
-    handleOauthResult();
+    const hasOauthResult = handleOauthResult();
     controller = new AbortController();
     const options = { signal: controller.signal };
     root.addEventListener("click", handleClick, options);
@@ -1766,7 +1767,7 @@
       refresh(false);
     }, options);
     render();
-    refresh();
+    refresh(true, hasOauthResult);
   }
 
   function cleanup() {
