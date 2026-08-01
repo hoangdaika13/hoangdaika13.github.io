@@ -392,7 +392,12 @@ function publicOwnedChannel(connection) {
       upload: scopes.has(YOUTUBE_SCOPE.upload),
       manage: scopes.has(YOUTUBE_SCOPE.manage),
       analytics: scopes.has(YOUTUBE_SCOPE.analytics)
-    }
+    },
+    playlists: (Array.isArray(connection?.playlists) ? connection.playlists : []).slice(0, 50).map((playlist) => ({
+      id: clean(playlist?.id, 120),
+      title: clean(playlist?.title, 180),
+      privacy: clean(playlist?.privacy, 30)
+    })).filter((playlist) => playlist.id)
   };
 }
 
@@ -993,12 +998,67 @@ module.exports = async function handler(req, res) {
             channelId: clean(item.channelId, 120),
             uploadId: clean(item.uploadId, 80),
             status: clean(item.status, 40),
+            videoId: clean(item.videoId, 30),
             error: clean(item.error, 180)
           })) : [],
           createdAt: job.createdAt || null,
           updatedAt: job.updatedAt || null
         }))
       });
+    }
+
+    if (route === "bulk/publish/approve" && req.method === "POST") {
+      if (body.approved !== true) throw fail("Cần xác nhận trước khi thay đổi lịch hoặc quyền hiển thị.", 409, "YOUTUBE_PUBLISH_APPROVAL_REQUIRED");
+      const uploadId = clean(body.uploadId, 80);
+      if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
+      const record = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id });
+      if (!record?.videoId) throw fail("Video chưa tải xong hoặc chưa có Video ID.", 409, "YOUTUBE_VIDEO_PENDING");
+      const connection = await connectionFor(db, user, record.channelId);
+      requireYoutubePermission(connection, "manage");
+      const accessToken = await refreshAccessToken(connection, connections);
+      const desiredPublishAt = record.desiredPublishAt ? new Date(record.desiredPublishAt) : null;
+      if (desiredPublishAt && (!Number.isFinite(desiredPublishAt.getTime()) || desiredPublishAt.getTime() <= Date.now() + 60_000)) {
+        throw fail("Lịch đăng không còn hợp lệ; hãy đặt lại thời gian trong tương lai.", 409, "YOUTUBE_SCHEDULE_INVALID");
+      }
+      const desiredPrivacyStatus = record.desiredPrivacyStatus === "unlisted" ? "unlisted" : "private";
+      const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "status,processingDetails", id: record.videoId });
+      const video = current.items?.[0];
+      if (!video) throw fail("Không tìm thấy video trên đúng kênh sở hữu.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
+      if (video.processingDetails?.processingStatus !== "succeeded") throw fail("YouTube chưa xử lý xong video; chưa thể áp lịch hoặc quyền hiển thị.", 409, "YOUTUBE_PROCESSING_PENDING");
+      const nextStatus = {
+        privacyStatus: desiredPublishAt ? "private" : desiredPrivacyStatus,
+        license: video.status?.license === "creativeCommon" ? "creativeCommon" : "youtube",
+        embeddable: video.status?.embeddable !== false,
+        publicStatsViewable: video.status?.publicStatsViewable !== false,
+        selfDeclaredMadeForKids: Boolean(video.status?.selfDeclaredMadeForKids),
+        containsSyntheticMedia: Boolean(video.status?.containsSyntheticMedia)
+      };
+      if (desiredPublishAt) nextStatus.publishAt = desiredPublishAt.toISOString();
+      else delete nextStatus.publishAt;
+      await youtubeJson(accessToken, "/youtube/v3/videos", { part: "status" }, {
+        method: "PUT",
+        body: JSON.stringify({ id: record.videoId, status: nextStatus })
+      });
+      const approvedAt = new Date();
+      await uploads.updateOne(
+        { _id: record._id, userId: user._id, channelId: record.channelId },
+        { $set: { status: desiredPublishAt ? "scheduled" : desiredPrivacyStatus, privacyStatus: desiredPrivacyStatus, publishAt: desiredPublishAt, approvedAt, updatedAt: approvedAt } }
+      );
+      if (record.bulkJobId) {
+        await bulkJobs.updateOne(
+          { _id: record.bulkJobId, userId: user._id, "results.uploadId": uploadId },
+          { $set: { "results.$.status": desiredPublishAt ? "scheduled" : desiredPrivacyStatus, "results.$.videoId": record.videoId, updatedAt: approvedAt } }
+        );
+      }
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: record.channelId,
+        action: "upload:approve-publish",
+        targetId: record.videoId,
+        status: "completed",
+        detail: desiredPublishAt ? desiredPublishAt.toISOString() : desiredPrivacyStatus
+      });
+      return res.status(200).json({ ok: true, confirmed: true, videoId: record.videoId, status: desiredPublishAt ? "scheduled" : desiredPrivacyStatus, publishAt: desiredPublishAt });
     }
 
     if (route === "bulk/upload/sessions" && req.method === "POST") {
@@ -1011,19 +1071,44 @@ module.exports = async function handler(req, res) {
       if (!/^[a-zA-Z0-9_-]{16,160}$/.test(idempotencyKey)) throw fail("Idempotency key không hợp lệ.", 400, "YOUTUBE_IDEMPOTENCY_INVALID");
       const selectedConnections = await ownedConnectionsForIds(db, user, body.channelIds);
       selectedConnections.forEach((connection) => requireYoutubePermission(connection, "upload"));
+      const selectedChannelIds = new Set(selectedConnections.map((connection) => String(connection.channelId)));
+      const submittedChannels = (Array.isArray(body.channels) ? body.channels : []).slice(0, BULK_CHANNEL_LIMIT);
+      if (submittedChannels.some((item) => !selectedChannelIds.has(clean(item?.channelId, 120)))) {
+        throw fail("Metadata chứa kênh không thuộc danh sách đã chọn.", 403, "YOUTUBE_CHANNEL_NOT_OWNED");
+      }
+      const channelPayloads = new Map(submittedChannels.map((item) => {
+        const channelId = clean(item?.channelId, 120);
+        const desiredPublishAtValue = clean(item?.desiredPublishAt, 40);
+        const desiredPublishAtDate = desiredPublishAtValue ? new Date(desiredPublishAtValue) : null;
+        if (desiredPublishAtValue && (!Number.isFinite(desiredPublishAtDate.getTime()) || desiredPublishAtDate.getTime() <= Date.now() + 60_000)) {
+          throw fail("Lịch đăng của một kênh không hợp lệ hoặc đã ở trong quá khứ.", 400, "YOUTUBE_SCHEDULE_INVALID");
+        }
+        return [channelId, {
+          title: clean(item?.title || body.title, 100),
+          description: clean(item?.description ?? body.description, 5000),
+          tags: normalizedTags(item?.tags ?? body.tags),
+          categoryId: /^\d{1,3}$/.test(String(item?.categoryId || "")) ? String(item.categoryId) : clean(body.categoryId || "22", 8),
+          defaultLanguage: clean(item?.defaultLanguage || body.defaultLanguage || "vi", 12),
+          playlistId: clean(item?.playlistId, 120),
+          desiredPublishAt: desiredPublishAtDate,
+          desiredPrivacyStatus: desiredPublishAtDate ? "schedule" : item?.desiredPrivacyStatus === "unlisted" ? "unlisted" : "private",
+          privacyStatus: ["private", "unlisted"].includes(item?.privacyStatus) ? item.privacyStatus : privacyStatus
+        }];
+      }).filter(([channelId]) => channelId));
       const existing = await bulkJobs.findOne({ userId: user._id, idempotencyKey });
       if (existing) {
         const records = await uploads.find({ userId: user._id, bulkJobId: existing._id }).toArray();
         const sessions = [];
         for (const record of records) {
           const connection = selectedConnections.find((item) => String(item.channelId) === String(record.channelId));
-          if (!connection || !record.uploadSession || record.status !== "uploading") continue;
+          if (!connection || !record.uploadSession || !["uploading", "error"].includes(record.status)) continue;
           sessions.push({
             channelId: record.channelId,
             channelTitle: connection.channelTitle,
             uploadId: String(record._id),
             uploadUrl: decryptToken(record.uploadSession, connection),
-            chunkSize: 8 * 1024 * 1024
+            chunkSize: 8 * 1024 * 1024,
+            bytesUploaded: Number(record.bytesUploaded || 0)
           });
         }
         return res.status(200).json({ ok: true, confirmed: true, reused: true, bulkJobId: String(existing._id), status: existing.status, sessions });
@@ -1044,7 +1129,19 @@ module.exports = async function handler(req, res) {
       const results = await Promise.all(selectedConnections.map(async (connection) => {
         try {
           const accessToken = await refreshAccessToken(connection, connections);
-          const session = await initiateResumable(accessToken, { ...body, privacyStatus, publishAt: "", notifySubscribers: false });
+          const channelPayload = channelPayloads.get(String(connection.channelId)) || {
+            title: clean(body.title, 100),
+            description: clean(body.description, 5000),
+            tags: normalizedTags(body.tags),
+            categoryId: clean(body.categoryId || "22", 8),
+            defaultLanguage: clean(body.defaultLanguage || "vi", 12),
+            playlistId: "",
+            desiredPublishAt: null,
+            desiredPrivacyStatus: privacyStatus,
+            privacyStatus
+          };
+          if (!channelPayload.title) throw fail("Tiêu đề của kênh đang trống.", 400, "YOUTUBE_CHANNEL_TITLE_REQUIRED");
+          const session = await initiateResumable(accessToken, { ...body, ...channelPayload, privacyStatus: channelPayload.privacyStatus, publishAt: "", notifySubscribers: false });
           const record = {
             userId: user._id,
             channelId: connection.channelId,
@@ -1053,9 +1150,11 @@ module.exports = async function handler(req, res) {
             fileName: clean(body.fileName, 240),
             fileSize: Number(body.fileSize),
             mimeType: clean(body.mimeType, 100),
-            privacyStatus,
+            privacyStatus: channelPayload.privacyStatus,
             publishAt: null,
-            playlistId: "",
+            desiredPublishAt: channelPayload.desiredPublishAt,
+            desiredPrivacyStatus: channelPayload.desiredPrivacyStatus,
+            playlistId: channelPayload.playlistId,
             status: "uploading",
             uploadSession: encryptToken(session.uploadUrl, connection),
             bytesUploaded: 0,
@@ -1759,7 +1858,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (route === "thumbnail/session" && req.method === "POST") {
-      const connection = await connectionFor(db, user);
+      const connection = await connectionFor(db, user, clean(body.channelId, 120));
       requireYoutubePermission(connection, "upload");
       const accessToken = await refreshAccessToken(connection, connections);
       const uploadUrl = await initiateThumbnail(accessToken, clean(body.videoId, 30), body);
