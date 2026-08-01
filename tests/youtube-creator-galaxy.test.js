@@ -247,12 +247,12 @@ test("Multi-channel Studio manages one hundred private channels and ten-video ta
   assert.match(css, /\.ycg-shell\[data-ycg-active="fleet"\]/);
 });
 
-test("Multi-channel Studio presents one simple cosmic three-step workflow", () => {
+test("Multi-channel Studio presents one simple cosmic workspace", () => {
   const client = read("youtube-creator-galaxy.js");
   const css = read("youtube-creator-galaxy.css");
-  for (const label of ["Tổng quan", "Đăng video", "Tiến trình"]) assert.match(client, new RegExp(label));
-  assert.match(client, /aria-label="Quy trình quản lý kênh"/);
-  assert.match(client, /Chọn kênh, đăng video và theo dõi tiến trình/);
+  for (const label of ["Tổng quan", "Đăng video", "Lịch đăng", "Bình luận", "Phân tích", "Tiến trình"]) assert.match(client, new RegExp(label));
+  assert.match(client, /aria-label="Công cụ quản lý kênh"/);
+  assert.match(client, /Đăng video, xếp lịch, phản hồi và phân tích mà không rời Studio/);
   assert.match(client, /<th>Trạng thái<\/th><th>Đồng bộ<\/th>/);
   assert.doesNotMatch(client, /<th>Nội dung<\/th><th>Tác vụ<\/th><th>Phản hồi<\/th>/);
   assert.match(client, /ycg-channel-library"><header><div>[\s\S]{0,240}<\/div><\/header>/);
@@ -260,6 +260,16 @@ test("Multi-channel Studio presents one simple cosmic three-step workflow", () =
   assert.match(css, /\.ycg-shell\[data-ycg-active="fleet"\] \.ycg-map\{display:none\}/);
   assert.match(css, /radial-gradient\(circle at 10% 2%,#1f75a84a/);
   assert.match(css, /\.ycg-studio-metrics\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/);
+});
+
+test("Studio embeds essential calendar, comments and analytics without returning to the legacy map", () => {
+  const client = read("youtube-creator-galaxy.js");
+  assert.match(client, /FLEET_STUDIO_TABS = Object\.freeze\(\["overview", "content", "calendar", "comments", "analytics", "queue"\]\)/);
+  assert.match(client, /fleetState\.studioTab === "calendar" \? calendarView\(true\)/);
+  assert.match(client, /fleetState\.studioTab === "comments" \? commentsView\(\)/);
+  assert.match(client, /fleetState\.studioTab === "analytics" \? analyticsView\(\)/);
+  assert.match(client, /state\.active = "fleet";[\s\S]{0,180}saveFleetState\(\)/);
+  assert.match(client, /function hydrateFleetStudioTab\(tab\)/);
 });
 
 test("Creator Galaxy supports private multi-channel accounts without shared browser drafts", () => {
@@ -298,7 +308,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=8", "youtube-creator-galaxy.js?v=12"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=9", "youtube-creator-galaxy.js?v=13"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);

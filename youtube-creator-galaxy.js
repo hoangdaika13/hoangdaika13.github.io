@@ -6,6 +6,8 @@
   const VIDEO_PROJECT_KEY = "hh.video-editor.project.v1";
   const MEDIA_DB = "hh-video-editor-media";
   const MEDIA_STORE = "assets";
+  const FLEET_STUDIO_TABS = Object.freeze(["overview", "content", "calendar", "comments", "analytics", "queue"]);
+  const STUDIO_MODULE_TABS = Object.freeze({ command: "overview", upload: "content", thumbnail: "content", seo: "content", preflight: "content", calendar: "calendar", comments: "comments", analytics: "analytics" });
   const MODULES = Object.freeze([
     { id: "command", icon: "H", label: "Command Center", color: "#69ebff", note: "Kênh, video và tín hiệu thật" },
     { id: "connect", icon: "CN", label: "Channel Connect", color: "#5fa8ff", note: "OAuth và quyền truy cập" },
@@ -23,7 +25,7 @@
     { id: "preflight", icon: "PF", label: "Publish Preflight", color: "#ffb15f", note: "Quyền, codec và chất lượng" }
   ]);
   const DEFAULT_STATE = Object.freeze({
-    active: "command",
+    active: "fleet",
     thumbnail: { title: "TIÊU ĐỀ VIDEO", subtitle: "HH CREATOR GALAXY", variant: "A", accent: "#ff5fbf", variants: [] },
     seo: { videoId: "", title: "", description: "", tags: "", keyword: "", versions: [] },
     shorts: { source: "", duration: 45, hook: "", caption: true, progress: true, safeZone: true, plans: [] },
@@ -193,7 +195,7 @@
       }]));
       return {
         selectedChannelIds: Array.isArray(value?.selectedChannelIds) ? value.selectedChannelIds.map(String).slice(0, 100) : [],
-        studioTab: ["overview", "content", "queue"].includes(value?.studioTab) ? value.studioTab : "overview",
+        studioTab: FLEET_STUDIO_TABS.includes(value?.studioTab) ? value.studioTab : "overview",
         channelSearch: String(value?.channelSearch || "").slice(0, 100),
         channelFilter: ["all", "ready", "warning", "uploading", "error"].includes(value?.channelFilter) ? value.channelFilter : "all",
         activeFileFingerprint: String(value?.activeFileFingerprint || "").slice(0, 260),
@@ -371,11 +373,11 @@
           state.publishProject = dashboard.project;
           saveState();
         }
-        if (state.active === "comments") {
+        if (state.active === "comments" || (state.active === "fleet" && fleetState.studioTab === "comments")) {
           const drafts = await api("comments/drafts").catch(() => ({ drafts: [] }));
           commentDrafts = drafts.drafts || [];
         }
-        if (state.active === "analytics" && channelStatus.permissions?.analytics && !comparisonData) {
+        if ((state.active === "analytics" || (state.active === "fleet" && fleetState.studioTab === "analytics")) && channelStatus.permissions?.analytics && !comparisonData) {
           const comparison = await api("analytics/comparison").catch(() => null);
           comparisonData = comparison?.comparison || null;
         }
@@ -801,10 +803,15 @@
     const summary = fleetObservatory?.summary || {};
     const observatoryMap = new Map((fleetObservatory?.channels || []).map((row) => [row.channel?.id, row]));
     const estimatedTasks = fleetUploadFiles.length * selectedChannels.length;
+    const runningTasks = fleetState.results.filter((item) => ["queued", "uploading", "verifying", "thumbnail", "processing"].includes(item.status)).length;
+    const unansweredComments = (dashboard?.comments || []).filter((item) => Number(item.replyCount || 0) === 0).length;
     const tabs = [
-      ["overview", "Tổng quan", channels.length],
-      ["content", "Đăng video", fleetUploadFiles.length],
-      ["queue", "Tiến trình", fleetState.results.filter((item) => ["queued", "uploading", "verifying", "thumbnail", "processing"].includes(item.status)).length]
+      ["overview", "Tổng quan", channels.length, "⌂"],
+      ["content", "Đăng video", fleetUploadFiles.length, "+"],
+      ["calendar", "Lịch đăng", state.calendar.length, "□"],
+      ["comments", "Bình luận", unansweredComments, "◌"],
+      ["analytics", "Phân tích", dashboard?.analytics?.rows?.length || 0, "↗"],
+      ["queue", "Tiến trình", runningTasks, "◷"]
     ];
     const channelTable = `<div class="ycg-studio-channel-table"><table><thead><tr><th></th><th>Kênh</th><th>Người đăng ký</th><th>Lượt xem</th><th>Trạng thái</th><th>Đồng bộ</th></tr></thead><tbody>${filteredChannels.map((channel) => {
       const row = observatoryMap.get(channel.id);
@@ -829,7 +836,13 @@
     }).join("") || `<tr><td colspan="6">Chọn kênh trong tab Tổng quan.</td></tr>`}</tbody></table></div></section>` : "";
     const content = `<form data-ycg-fleet-form class="ycg-studio-content"><div class="ycg-content-columns">${videoQueue}${metadataEditor}</div>${overrides}<section class="ycg-panel ycg-studio-launch"><div><strong>${fleetUploadFiles.length} video × ${selectedChannels.length} kênh = ${estimatedTasks} tác vụ</strong><small>Giới hạn ${limits.maxTasksPerBatch} tác vụ/batch. Mặc định upload Private và không đăng Public hàng loạt.</small></div><label><input type="checkbox" name="rightsConfirmed" ${fleetState.rightsConfirmed ? "checked" : ""}> Tôi có quyền sử dụng toàn bộ video, nhạc và thumbnail.</label><div class="ycg-action-row"><button type="button" data-ycg-action="fleet-preflight">Kiểm tra trước</button><button type="submit" class="is-primary" ${busy.startsWith("bulk/") ? "disabled" : ""}>${busy.startsWith("bulk/") ? "Đang chạy…" : "Tạo hàng đợi upload"}</button></div></section></form>`;
     const queue = `<section class="ycg-panel ycg-task-center"><header><div><h3>Hàng đợi tác vụ</h3><small>Tiến trình byte thật, retry riêng và không upload lại tác vụ đã thành công</small></div><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></header><div class="ycg-task-summary"><span>${fleetState.results.length} tổng</span><span>${fleetState.results.filter((item) => item.status === "uploading").length} đang upload</span><span>${fleetState.results.filter((item) => item.status === "processing").length} YouTube xử lý</span><span>${fleetState.results.filter((item) => item.status === "failed").length} lỗi</span></div><div class="ycg-task-table"><table><thead><tr><th>Video</th><th>Kênh</th><th>Trạng thái</th><th>Tiến trình</th><th>Tốc độ / ETA</th><th>Hành động</th></tr></thead><tbody>${fleetState.results.map((item) => `<tr><td><strong>${esc(item.fileName || "Video")}</strong><small>${esc(item.videoId || "")}</small></td><td>${esc(item.channelTitle || item.channelId)}</td><td><span class="ycg-table-status ${item.status === "failed" ? "is-error" : ["uploading", "processing", "verifying", "thumbnail"].includes(item.status) ? "is-running" : "is-ready"}">${esc(item.status)}</span>${item.error ? `<small>${esc(item.error)}</small>` : ""}</td><td><progress max="100" value="${Number(item.progress || 0)}"></progress><small>${Number(item.progress || 0).toFixed(1)}%</small></td><td>${item.speedBps ? `${bytes(item.speedBps)}/s · ${Math.ceil(item.etaSeconds || 0)}s` : "—"}</td><td>${item.status === "failed" && item.uploadId ? `<button type="button" data-ycg-fleet-retry="${esc(item.taskKey || item.channelId)}">Thử lại</button>` : item.status === "uploaded" && item.uploadId ? `<button type="button" data-ycg-fleet-approve="${esc(item.taskKey || item.channelId)}">Duyệt</button>` : item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">Mở video</a>` : ""}</td></tr>`).join("") || `<tr><td colspan="6">Chưa có tác vụ. Chọn video và kênh trong tab Nội dung & Upload.</td></tr>`}</tbody></table></div></section>`;
-    return `<div class="ycg-multistudio"><section class="ycg-studio-simple-head"><div><small>YOUTUBE MULTI-CHANNEL STUDIO</small><h2>Quản lý nhiều kênh trong một nơi</h2><p>Chọn kênh, đăng video và theo dõi tiến trình. Dữ liệu chỉ thuộc tài khoản của bạn.</p></div><div><strong>${selectedChannels.length}</strong><span>kênh đang chọn</span><button type="button" data-ycg-action="connect-creator">+ Thêm kênh</button></div></section><nav class="ycg-studio-tabs" aria-label="Quy trình quản lý kênh">${tabs.map(([id, label, count], index) => `<button type="button" data-ycg-fleet-tab="${id}" class="${fleetState.studioTab === id ? "is-active" : ""}"><i>${index + 1}</i><span>${label}</span><b>${count}</b></button>`).join("")}</nav>${fleetState.studioTab === "content" ? content : fleetState.studioTab === "queue" ? queue : overview}</div>`;
+    const studioView = fleetState.studioTab === "content" ? content
+      : fleetState.studioTab === "calendar" ? calendarView(true)
+        : fleetState.studioTab === "comments" ? commentsView()
+          : fleetState.studioTab === "analytics" ? analyticsView()
+            : fleetState.studioTab === "queue" ? queue
+              : overview;
+    return `<div class="ycg-multistudio"><section class="ycg-studio-simple-head"><div><small>YOUTUBE MULTI-CHANNEL STUDIO</small><h2>Quản lý nhiều kênh trong một nơi</h2><p>Đăng video, xếp lịch, phản hồi và phân tích mà không rời Studio.</p></div><div><strong>${selectedChannels.length}</strong><span>kênh đang chọn</span><button type="button" data-ycg-action="connect-creator">+ Thêm kênh</button></div></section><nav class="ycg-studio-tabs" aria-label="Công cụ quản lý kênh">${tabs.map(([id, label, count, icon]) => `<button type="button" data-ycg-fleet-tab="${id}" class="${fleetState.studioTab === id ? "is-active" : ""}"><i>${icon}</i><span>${label}</span><b>${count}</b></button>`).join("")}</nav><div class="ycg-studio-embedded">${studioView}</div></div>`;
   }
 
   function directorView() {
@@ -1086,7 +1099,7 @@
     </div>`;
   }
 
-  function calendarView() {
+  function calendarView(compact = false) {
     const sorted = state.calendar.slice().sort((a, b) => new Date(a.at) - new Date(b.at));
     const automation = automationReadiness();
     return `<div class="ycg-calendar-grid">
@@ -1095,12 +1108,12 @@
         <p class="ycg-honesty">Calendar chỉ tạo kế hoạch. Video chỉ được đăng khi Upload Center hoàn tất, toàn bộ gate đạt và người dùng xác nhận.</p>
       </section>
       <section class="ycg-panel"><header><div><small>${sorted.length} MISSION</small><h3>Lịch nội dung</h3></div></header><div class="ycg-calendar-list">${sorted.length ? sorted.map((item) => `<article><time>${dateTime(item.at)}</time><i style="--event:${MODULES[(item.type || "").length % MODULES.length].color}"></i><div><strong>${esc(item.title)}</strong><small>${esc(item.type)} · ${esc(item.stage)}</small></div><button data-ycg-calendar-remove="${item.id}">×</button></article>`).join("") : "<p>Chưa có deadline. Không tạo sự kiện mẫu.</p>"}</div></section>
-      <section class="ycg-panel ycg-automation-panel"><header><div><small>COSMIC AUTOMATION</small><h3>Workflow có approval gate</h3></div><span>${automation.ready ? "Sẵn sàng" : "Đang chặn an toàn"}</span></header>
+      ${compact ? "" : `<section class="ycg-panel ycg-automation-panel"><header><div><small>COSMIC AUTOMATION</small><h3>Workflow có approval gate</h3></div><span>${automation.ready ? "Sẵn sàng" : "Đang chặn an toàn"}</span></header>
         <div class="ycg-automation-flow">${automation.gates.map((gate, index) => `<article class="${gate.pass ? "is-ready" : ""}"><i>${gate.pass ? "✓" : index + 1}</i><span><strong>${esc(gate.label)}</strong><small>${gate.pass ? "Đạt từ dữ liệu thật" : "Chưa đạt"}</small></span></article>`).join("")}</div>
         <div class="ycg-toggle-grid"><label><input type="checkbox" data-ycg-automation="enabled" ${state.automation.enabled ? "checked" : ""}><span>Bật automation cho project này</span></label><label><input type="checkbox" data-ycg-automation="approvalGate" ${state.automation.approvalGate ? "checked" : ""}><span>Luôn yêu cầu duyệt trước Public</span></label></div>
         <div class="ycg-action-row"><button data-ycg-action="preview-automation">Xem trước hành động</button><button class="is-primary" data-ycg-action="sync-project">Lưu workflow</button></div>
         <p>Idempotency key: <code>${esc(state.automation.idempotencyKey || "được tạo khi lưu")}</code>. Automation không xóa video, trả lời hàng loạt hoặc tự chuyển Public.</p>
-      </section>
+      </section>`}
     </div>`;
   }
 
@@ -1993,9 +2006,36 @@
     }
   }
 
+  function hydrateFleetStudioTab(tab) {
+    if (channelStatus.connected && tab === "comments") {
+      api("comments/drafts").then((result) => {
+        if (state.active !== "fleet" || fleetState.studioTab !== "comments") return;
+        commentDrafts = result.drafts || [];
+        render();
+      }).catch(() => {});
+    }
+    if (channelStatus.connected && channelStatus.permissions?.analytics && tab === "analytics" && !comparisonData) {
+      api("analytics/comparison").then((result) => {
+        if (state.active !== "fleet" || fleetState.studioTab !== "analytics") return;
+        comparisonData = result.comparison || null;
+        render();
+      }).catch(() => {});
+    }
+  }
+
   function switchModule(moduleId) {
     if (!MODULES.some((item) => item.id === moduleId)) return;
     if (publisherMounted) window.HHYouTubePublisher?.unmount?.();
+    const studioTab = STUDIO_MODULE_TABS[moduleId];
+    if (studioTab) {
+      state.active = "fleet";
+      fleetState.studioTab = studioTab;
+      saveState();
+      saveFleetState();
+      render();
+      hydrateFleetStudioTab(studioTab);
+      return;
+    }
     state.active = moduleId;
     saveState();
     render();
@@ -2307,6 +2347,7 @@
       fleetState.studioTab = fleetTab.dataset.ycgFleetTab;
       saveFleetState();
       render();
+      hydrateFleetStudioTab(fleetState.studioTab);
       return;
     }
     const fleetVideo = event.target.closest("[data-ycg-fleet-video]");
@@ -2805,6 +2846,11 @@
     root = host;
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     state = loadState();
+    fleetState = loadFleetState();
+    if (STUDIO_MODULE_TABS[state.active]) fleetState.studioTab = STUDIO_MODULE_TABS[state.active];
+    state.active = "fleet";
+    saveState();
+    saveFleetState();
     const hasOauthResult = handleOauthResult();
     controller = new AbortController();
     const options = { signal: controller.signal };
@@ -2846,6 +2892,10 @@
       storageChannelId = "unassigned";
       state = loadState();
       fleetState = loadFleetState();
+      if (STUDIO_MODULE_TABS[state.active]) fleetState.studioTab = STUDIO_MODULE_TABS[state.active];
+      state.active = "fleet";
+      saveState();
+      saveFleetState();
       fleetOverview = null;
       fleetJobs = [];
       fleetObservatory = null;
