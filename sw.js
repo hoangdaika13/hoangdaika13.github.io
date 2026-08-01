@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v367";
+const CACHE = "hh-identity-portal-v368";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -10,7 +10,7 @@ const RUNTIME_ASSETS = [
   "./",
   "./index.html",
   "./app-shell.css?v=54",
-  "./app-theme-system.css?v=4",
+  "./app-theme-system.css?v=6",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=3",
   "./home-galaxy-mission.css?v=6",
@@ -201,7 +201,7 @@ const RUNTIME_ASSETS = [
   "./platform-p0.js?v=1",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./app-theme-system.js?v=4",
+  "./app-theme-system.js?v=5",
   "./system-platform.css?v=1",
   "./system-platform.js?v=3",
   "./sidebar-navigation-pro.css?v=9",
@@ -396,7 +396,7 @@ const CORE = [
   "./",
   "./index.html",
   "./app-shell.css?v=54",
-  "./app-theme-system.css?v=4",
+  "./app-theme-system.css?v=6",
   "./sidebar-navigation-pro.css?v=9",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=5",
@@ -408,7 +408,7 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./app-theme-system.js?v=4",
+  "./app-theme-system.js?v=5",
   "./performance-loader.js?v=117",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=6",

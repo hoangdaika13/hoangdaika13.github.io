@@ -9,23 +9,25 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("global theme runtime is loaded on every route and cached offline", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-theme-system.css?v=4", "app-theme-system.js?v=4"]) {
+  for (const asset of ["app-theme-system.css?v=6", "app-theme-system.js?v=5"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v367/);
+  assert.match(worker, /hh-identity-portal-v368/);
 });
 
-test("all ten themes define complete semantic shell palettes", () => {
+test("all colorful and basic themes define complete semantic shell palettes", () => {
   const css = read("app-theme-system.css");
-  for (const theme of ["dark", "light", "cyberpunk", "ocean", "aurora", "emerald", "purple", "sunset", "neon", "glass"]) {
+  for (const theme of ["basic-light", "basic-dark", "slate", "warm", "dark", "light", "cyberpunk", "ocean", "aurora", "emerald", "purple", "sunset", "neon", "glass"]) {
     assert.match(css, new RegExp(`body\\[data-app-theme="${theme}"\\]\\{[^}]*--app-bg:[^;}]+;[^}]*--sidebar-bg:[^;}]+;[^}]*--header-bg:[^;}]+;[^}]*--surface-1:[^;}]+;[^}]*--text-primary:[^;}]+;[^}]*--accent:[^;}]+;`));
   }
   assert.match(css, /body\[data-app-theme\] \.app-sidebar/);
   assert.match(css, /body\[data-app-theme\] \.app-header/);
   assert.match(css, /\.app-theme-panel/);
   assert.match(css, /\.app-shortcuts-dialog/);
+  assert.match(css, /\.app-theme-section/);
+  assert.match(css, /\.app-theme-colorful/);
 });
 
 test("theme, language, density, motion and shortcuts controls are functional", () => {
@@ -42,6 +44,8 @@ test("theme, language, density, motion and shortcuts controls are functional", (
     assert.match(runtime, new RegExp(`data-app-preference=\\"${preference}\\"`));
   }
   assert.match(runtime, /hh:theme-change/);
+  assert.match(runtime, /basic-light/);
+  assert.match(runtime, /basic-dark/);
   assert.match(shell, /data-app-preference=language/);
   assert.match(shell, /data-app-preference=density/);
   assert.match(shell, /data-app-preference=reducedMotion/);

@@ -4,6 +4,10 @@
   const STORAGE_KEY = "hh.command-center.theme.v1";
   const PREFERENCES_KEY = "hh.app-theme.preferences.v1";
   const THEMES = Object.freeze({
+    "basic-light": { label: "Basic Light", note: "SaaS sáng phổ biến", color: "#f8fafc", group: "basic" },
+    "basic-dark": { label: "Basic Dark", note: "Tối tối giản", color: "#20242b", group: "basic" },
+    slate: { label: "Slate", note: "Xám xanh chuyên nghiệp", color: "#64748b", group: "basic" },
+    warm: { label: "Warm Neutral", note: "Trắng kem nhẹ mắt", color: "#e7e0d5", group: "basic" },
     dark: { label: "Dark", note: "Tối trung tính", color: "#70819b" },
     light: { label: "Light", note: "Sáng dễ đọc", color: "#f4f7fb" },
     cyberpunk: { label: "Cyberpunk", note: "Cyan và hồng", color: "#00f6ff" },
@@ -16,6 +20,7 @@
     glass: { label: "Glass", note: "Kính trong mờ", color: "#9edcff" }
   });
   const themeIds = Object.keys(THEMES);
+  const themeButtons = (ids) => ids.map((id) => `<button type="button" data-app-theme-value="${id}" style="--theme-swatch:${THEMES[id].color}"><i></i><span><strong>${THEMES[id].label}</strong><small>${THEMES[id].note}</small></span><b>✓</b></button>`).join("");
 
   const read = (key, fallback) => {
     try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
@@ -39,8 +44,9 @@
     document.documentElement.dataset.appTheme = value;
     document.body.dataset.appTheme = value;
     document.body.dataset.dashboardTheme = value;
-    document.documentElement.style.colorScheme = value === "light" ? "light" : "dark";
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", value === "light" ? "#edf3fb" : "#070b14");
+    const isLight = ["light", "basic-light", "warm"].includes(value);
+    document.documentElement.style.colorScheme = isLight ? "light" : "dark";
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", isLight ? "#f6f7f9" : "#070b14");
     if (options.persist !== false) write(STORAGE_KEY, value);
     updateThemeControls(value);
     window.dispatchEvent(new CustomEvent("hh:theme-change", { detail: { theme: value } }));
@@ -88,7 +94,9 @@
     panel.className = "app-theme-panel";
     panel.setAttribute("aria-hidden", "true");
     panel.setAttribute("aria-label", "Giao diện toàn hệ thống");
-    panel.innerHTML = `<header><div><strong>Appearance Studio</strong><small>Màu sắc, chữ và mật độ cho toàn hệ thống</small></div><button type="button" data-app-theme-close aria-label="Đóng">×</button></header><div class="app-theme-panel__grid">${themeIds.map((id) => `<button type="button" data-app-theme-value="${id}" style="--theme-swatch:${THEMES[id].color}"><i></i><span><strong>${THEMES[id].label}</strong><small>${THEMES[id].note}</small></span><b>✓</b></button>`).join("")}</div><details class="app-theme-advanced"><summary>Tùy chỉnh nâng cao <span>Font · cỡ chữ · hiệu ứng</span></summary><div><label>Font chữ<select data-app-preference="font"><option value="modern">Modern · Be Vietnam</option><option value="clean">Clean · Segoe UI</option><option value="rounded">Rounded · Trebuchet</option><option value="mono">Mono · Consolas</option></select></label><label>Cỡ chữ<select data-app-preference="fontScale"><option value="small">Nhỏ</option><option value="medium">Tiêu chuẩn</option><option value="large">Lớn</option><option value="xlarge">Rất lớn</option></select></label><label>Bo góc<select data-app-preference="radius"><option value="sharp">Vuông</option><option value="soft">Mềm</option><option value="round">Tròn</option></select></label><label>Mật độ<select data-app-preference="density"><option value="comfortable">Thoải mái</option><option value="compact">Gọn</option></select></label><label>Tương phản<select data-app-preference="contrast"><option value="standard">Tiêu chuẩn</option><option value="high">Cao</option></select></label><label>Hiệu ứng<select data-app-preference="effects"><option value="full">Đầy đủ</option><option value="calm">Nhẹ</option><option value="off">Tắt</option></select></label><label class="is-check"><input type="checkbox" data-app-preference="reducedMotion"><span>Giảm chuyển động</span></label></div></details><footer>Mọi lựa chọn được lưu riêng trên thiết bị này.</footer>`;
+    const basicThemes = themeIds.filter((id) => THEMES[id].group === "basic");
+    const colorfulThemes = themeIds.filter((id) => THEMES[id].group !== "basic");
+    panel.innerHTML = `<header><div><strong>Appearance Studio</strong><small>Màu sắc, chữ và mật độ cho toàn hệ thống</small></div><button type="button" data-app-theme-close aria-label="Đóng">×</button></header><section class="app-theme-section"><h3>Cơ bản <span>Ít màu · ít hiệu ứng</span></h3><div class="app-theme-panel__grid">${themeButtons(basicThemes)}</div></section><details class="app-theme-colorful"><summary>Giao diện màu sắc <span>${colorfulThemes.length} lựa chọn</span></summary><div class="app-theme-panel__grid">${themeButtons(colorfulThemes)}</div></details><details class="app-theme-advanced"><summary>Tùy chỉnh nâng cao <span>Font · cỡ chữ · hiệu ứng</span></summary><div><label>Font chữ<select data-app-preference="font"><option value="modern">Modern · Be Vietnam</option><option value="clean">Clean · Segoe UI</option><option value="rounded">Rounded · Trebuchet</option><option value="mono">Mono · Consolas</option></select></label><label>Cỡ chữ<select data-app-preference="fontScale"><option value="small">Nhỏ</option><option value="medium">Tiêu chuẩn</option><option value="large">Lớn</option><option value="xlarge">Rất lớn</option></select></label><label>Bo góc<select data-app-preference="radius"><option value="sharp">Vuông</option><option value="soft">Mềm</option><option value="round">Tròn</option></select></label><label>Mật độ<select data-app-preference="density"><option value="comfortable">Thoải mái</option><option value="compact">Gọn</option></select></label><label>Tương phản<select data-app-preference="contrast"><option value="standard">Tiêu chuẩn</option><option value="high">Cao</option></select></label><label>Hiệu ứng<select data-app-preference="effects"><option value="full">Đầy đủ</option><option value="calm">Nhẹ</option><option value="off">Tắt</option></select></label><label class="is-check"><input type="checkbox" data-app-preference="reducedMotion"><span>Giảm chuyển động</span></label></div></details><footer>Mọi lựa chọn được lưu riêng trên thiết bị này.</footer>`;
     document.body.append(panel);
     return panel;
   }
