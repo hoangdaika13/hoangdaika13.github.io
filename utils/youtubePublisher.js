@@ -28,7 +28,10 @@ const PERMISSION_SCOPE_PRESETS = Object.freeze({
   analytics: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.analytics]),
   creator: Object.freeze([...IDENTITY_SCOPES, YOUTUBE_SCOPE.upload, YOUTUBE_SCOPE.manage])
 });
-const BULK_CHANNEL_LIMIT = 5;
+const CHANNEL_VAULT_LIMIT = 100;
+const BULK_CHANNEL_LIMIT = 20;
+const BULK_TASK_LIMIT = 100;
+const VIDEO_QUEUE_LIMIT = 10;
 const VIDEO_MIME = new Set(["video/mp4", "video/webm", "video/quicktime", "video/x-matroska", "application/octet-stream"]);
 const IMAGE_MIME = new Set(["image/jpeg", "image/png"]);
 const DEFAULT_QUOTA_COSTS = Object.freeze({
@@ -367,7 +370,7 @@ async function connectionFor(db, user, channelId = "") {
 }
 
 async function ownedConnectionsForIds(db, user, channelIds, options = {}) {
-  const max = Math.max(1, Math.min(BULK_CHANNEL_LIMIT, Number(options.max || BULK_CHANNEL_LIMIT)));
+  const max = Math.max(1, Math.min(CHANNEL_VAULT_LIMIT, Number(options.max || BULK_CHANNEL_LIMIT)));
   const ids = [...new Set((Array.isArray(channelIds) ? channelIds : []).map((id) => clean(id, 120)).filter(Boolean))];
   if (!ids.length) throw fail("Hãy chọn ít nhất một kênh YouTube.", 400, "YOUTUBE_CHANNEL_SELECTION_REQUIRED");
   if (ids.length > max) throw fail(`Mỗi lần xử lý tối đa ${max} kênh để bảo vệ quota và chống đăng nhầm.`, 400, "YOUTUBE_BULK_LIMIT");
@@ -397,7 +400,17 @@ function publicOwnedChannel(connection) {
       id: clean(playlist?.id, 120),
       title: clean(playlist?.title, 180),
       privacy: clean(playlist?.privacy, 30)
-    })).filter((playlist) => playlist.id)
+    })).filter((playlist) => playlist.id),
+    statistics: {
+      subscribers: Number(connection?.subscribers || 0),
+      videos: Number(connection?.videoCount || 0),
+      views: Number(connection?.views || 0)
+    },
+    token: {
+      expiresAt: connection?.expiresAt ? new Date(Number(connection.expiresAt)) : null,
+      healthy: Boolean(connection?.refreshToken)
+    },
+    lastApiAt: connection?.lastApiAt || null
   };
 }
 
@@ -657,7 +670,8 @@ async function channelBundle(accessToken) {
       channelTitle: clean(channel.snippet?.title, 160),
       channelThumbnail: clean(channel.snippet?.thumbnails?.medium?.url || channel.snippet?.thumbnails?.default?.url, 800),
       subscribers: Number(channel.statistics?.subscriberCount || 0),
-      videoCount: Number(channel.statistics?.videoCount || 0)
+      videoCount: Number(channel.statistics?.videoCount || 0),
+      views: Number(channel.statistics?.viewCount || 0)
     },
     playlists: (playlists.items || []).map((item) => ({ id: item.id, title: clean(item.snippet?.title, 180), privacy: clean(item.status?.privacyStatus, 30) }))
   };
@@ -811,6 +825,10 @@ module.exports = async function handler(req, res) {
           googleIdentity(tokens.access_token)
         ]);
         const previous = await connections.findOne({ userId: state.userId, channelId: bundle.channel.channelId });
+        if (!previous) {
+          const channelCount = await connections.countDocuments({ userId: state.userId }, { limit: CHANNEL_VAULT_LIMIT + 1 });
+          if (channelCount >= CHANNEL_VAULT_LIMIT) throw fail(`Kho kênh đã đạt giới hạn ${CHANNEL_VAULT_LIMIT}. Hãy ngắt một kênh cũ trước khi thêm kênh mới.`, 409, "YOUTUBE_CHANNEL_VAULT_LIMIT");
+        }
         const ownerContext = { userId: state.userId, channelId: bundle.channel.channelId };
         const refreshToken = tokens.refresh_token || (previous?.refreshToken ? decryptToken(previous.refreshToken, previous) : "");
         if (!refreshToken) throw fail("Google chưa cấp quyền truy cập ngoại tuyến. Hãy kết nối lại và chấp thuận quyền.", 401);
@@ -886,7 +904,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (route === "status" && req.method === "GET") {
-      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
+      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).limit(CHANNEL_VAULT_LIMIT).toArray();
       const connection = allConnections.find((item) => item.active) || allConnections[0] || null;
       const history = connection
         ? await uploads.find({ userId: user._id, channelId: connection.channelId }).sort({ createdAt: -1 }).limit(20).toArray()
@@ -898,6 +916,9 @@ module.exports = async function handler(req, res) {
         bulk: {
           enabled: true,
           maxChannelsPerJob: BULK_CHANNEL_LIMIT,
+          maxChannelsInVault: CHANNEL_VAULT_LIMIT,
+          maxVideosPerQueue: VIDEO_QUEUE_LIMIT,
+          maxTasksPerBatch: BULK_TASK_LIMIT,
           defaultPrivacy: "private",
           publicRequiresManualReview: true
         },
@@ -931,7 +952,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (route === "channels/overview" && req.method === "GET") {
-      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).toArray();
+      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).limit(CHANNEL_VAULT_LIMIT).toArray();
       const grouped = new Map();
       allConnections.forEach((connection) => {
         const accountKey = clean(connection.googleAccountKey || "legacy", 64).slice(0, 16) || "legacy";
@@ -949,14 +970,108 @@ module.exports = async function handler(req, res) {
         ownerIsolated: true,
         accounts: [...grouped.values()],
         channels: allConnections.map(publicOwnedChannel),
-        limits: { maxChannelsPerBulkJob: BULK_CHANNEL_LIMIT },
+        limits: {
+          maxChannelsPerBulkJob: BULK_CHANNEL_LIMIT,
+          maxChannelsInVault: CHANNEL_VAULT_LIMIT,
+          maxVideosPerQueue: VIDEO_QUEUE_LIMIT,
+          maxTasksPerBatch: BULK_TASK_LIMIT
+        },
+        syncedAt: new Date()
+      });
+    }
+
+    if (route === "channels/refresh-bulk" && req.method === "POST") {
+      const selectedConnections = await ownedConnectionsForIds(db, user, body.channelIds);
+      const results = await Promise.all(selectedConnections.map(async (connection) => {
+        try {
+          const accessToken = await refreshAccessToken(connection, connections);
+          const bundle = await channelBundle(accessToken);
+          if (String(bundle.channel.channelId) !== String(connection.channelId)) throw fail("Google trả về kênh không khớp kết nối sở hữu.", 409, "YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH");
+          const updatedAt = new Date();
+          await connections.updateOne(ownedConnectionFilter(connection), { $set: { ...bundle.channel, playlists: bundle.playlists, lastApiAt: updatedAt, updatedAt } });
+          return { channelId: connection.channelId, ok: true, syncedAt: updatedAt };
+        } catch (error) {
+          return { channelId: connection.channelId, ok: false, error: clean(error.message, 180) };
+        }
+      }));
+      await writeAudit(db, {
+        userId: user._id,
+        channelId: selectedConnections[0]?.channelId || "fleet",
+        action: "channels:refresh-bulk",
+        status: results.some((item) => !item.ok) ? "partial" : "completed",
+        detail: `${results.filter((item) => item.ok).length}/${results.length}`
+      });
+      return res.status(200).json({ ok: true, confirmed: true, results, syncedAt: new Date() });
+    }
+
+    if (route === "channels/observatory" && req.method === "GET") {
+      const allConnections = await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).limit(CHANNEL_VAULT_LIMIT).toArray();
+      const [recentUploads, pendingDrafts] = await Promise.all([
+        uploads.find({ userId: user._id }).sort({ createdAt: -1 }).limit(2000).toArray(),
+        commentDrafts.find({ userId: user._id, status: "draft" }).sort({ createdAt: -1 }).limit(2000).toArray()
+      ]);
+      const uploadsByChannel = new Map();
+      recentUploads.forEach((upload) => {
+        const id = String(upload.channelId || "");
+        if (!uploadsByChannel.has(id)) uploadsByChannel.set(id, []);
+        uploadsByChannel.get(id).push(upload);
+      });
+      const draftsByChannel = new Map();
+      pendingDrafts.forEach((draft) => {
+        const id = String(draft.channelId || "");
+        draftsByChannel.set(id, (draftsByChannel.get(id) || 0) + 1);
+      });
+      const rows = allConnections.map((connection) => {
+        const channelUploads = uploadsByChannel.get(String(connection.channelId)) || [];
+        const latest = channelUploads[0] || null;
+        return {
+          channel: publicOwnedChannel(connection),
+          uploads: {
+            pending: channelUploads.filter((item) => ["uploading", "processing"].includes(item.status)).length,
+            failed: channelUploads.filter((item) => ["error", "failed"].includes(item.status)).length,
+            completed: channelUploads.filter((item) => ["uploaded", "scheduled", "private", "unlisted", "completed"].includes(item.status)).length,
+            latest: latest ? {
+              id: String(latest._id),
+              videoId: clean(latest.videoId, 30),
+              title: clean(latest.title || latest.fileName, 160),
+              status: clean(latest.status, 40),
+              progress: Number(latest.totalBytes || latest.fileSize || 0) > 0
+                ? Math.min(100, Number(latest.bytesUploaded || 0) / Number(latest.totalBytes || latest.fileSize) * 100)
+                : 0,
+              updatedAt: latest.updatedAt || latest.createdAt || null
+            } : null
+          },
+          unansweredDrafts: Number(draftsByChannel.get(String(connection.channelId)) || 0),
+          syncedAt: connection.updatedAt || connection.connectedAt || null
+        };
+      });
+      return res.status(200).json({
+        ok: true,
+        confirmed: true,
+        ownerIsolated: true,
+        summary: {
+          channels: rows.length,
+          uploadReady: rows.filter((row) => row.channel?.permissions?.upload && row.channel?.token?.healthy).length,
+          pendingUploads: rows.reduce((sum, row) => sum + row.uploads.pending, 0),
+          failedUploads: rows.reduce((sum, row) => sum + row.uploads.failed, 0),
+          unansweredDrafts: rows.reduce((sum, row) => sum + row.unansweredDrafts, 0),
+          subscribers: rows.reduce((sum, row) => sum + Number(row.channel?.statistics?.subscribers || 0), 0),
+          views: rows.reduce((sum, row) => sum + Number(row.channel?.statistics?.views || 0), 0)
+        },
+        channels: rows,
+        limits: {
+          maxChannelsInVault: CHANNEL_VAULT_LIMIT,
+          maxChannelsPerBulkJob: BULK_CHANNEL_LIMIT,
+          maxVideosPerQueue: VIDEO_QUEUE_LIMIT,
+          maxTasksPerBatch: BULK_TASK_LIMIT
+        },
         syncedAt: new Date()
       });
     }
 
     if (route === "bulk/preflight" && req.method === "POST") {
       const action = ["upload", "manage", "analytics"].includes(body.action) ? body.action : "upload";
-      const selectedConnections = await ownedConnectionsForIds(db, user, body.channelIds);
+      const selectedConnections = await ownedConnectionsForIds(db, user, body.channelIds, { max: CHANNEL_VAULT_LIMIT });
       const rows = selectedConnections.map((connection) => {
         const permissionReady = hasYoutubePermission(connection, action === "manage" ? "manage" : action);
         return {

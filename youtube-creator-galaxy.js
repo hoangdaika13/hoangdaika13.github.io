@@ -72,6 +72,8 @@
   let fleetJobs = [];
   let fleetPreflight = null;
   let fleetUploadFile = null;
+  let fleetUploadFiles = [];
+  let fleetObservatory = null;
   let fleetThumbnailVariants = new Map();
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({
@@ -160,7 +162,7 @@
     try {
       const value = JSON.parse(sessionStorage.getItem(privateStorageKey(FLEET_STORAGE_KEY)) || "null");
       const rawPresets = value?.channelPresets && typeof value.channelPresets === "object" ? value.channelPresets : {};
-      const channelPresets = Object.fromEntries(Object.entries(rawPresets).slice(0, 24).map(([channelId, preset]) => [String(channelId).slice(0, 120), {
+      const channelPresets = Object.fromEntries(Object.entries(rawPresets).slice(0, 100).map(([channelId, preset]) => [String(channelId).slice(0, 120), {
         ...DEFAULT_CHANNEL_PRESET,
         titleOverride: String(preset?.titleOverride || "").slice(0, 100),
         titlePrefix: String(preset?.titlePrefix || "").slice(0, 40),
@@ -177,8 +179,25 @@
         privacyStatus: ["private", "unlisted", "schedule"].includes(preset?.privacyStatus) ? preset.privacyStatus : "private",
         locked: Boolean(preset?.locked)
       }]));
+      const rawVideoDrafts = value?.videoDrafts && typeof value.videoDrafts === "object" ? value.videoDrafts : {};
+      const videoDrafts = Object.fromEntries(Object.entries(rawVideoDrafts).slice(0, 10).map(([fingerprint, draft]) => [String(fingerprint).slice(0, 260), {
+        title: String(draft?.title || "").slice(0, 100),
+        description: String(draft?.description || "").slice(0, 5000),
+        tags: String(draft?.tags || "").slice(0, 500),
+        idempotencyKey: String(draft?.idempotencyKey || "").slice(0, 160),
+        thumbnailTitle: String(draft?.thumbnailTitle || "").slice(0, 80),
+        thumbnailSubtitle: String(draft?.thumbnailSubtitle || "").slice(0, 80),
+        thumbnailAccent: /^#[0-9a-f]{6}$/i.test(draft?.thumbnailAccent) ? draft.thumbnailAccent : "#ff3158",
+        thumbnailReady: Boolean(draft?.thumbnailReady),
+        channelTitles: Object.fromEntries(Object.entries(draft?.channelTitles || {}).slice(0, 100).map(([channelId, title]) => [String(channelId).slice(0, 120), String(title || "").slice(0, 100)]))
+      }]));
       return {
-        selectedChannelIds: Array.isArray(value?.selectedChannelIds) ? value.selectedChannelIds.map(String).slice(0, 5) : [],
+        selectedChannelIds: Array.isArray(value?.selectedChannelIds) ? value.selectedChannelIds.map(String).slice(0, 100) : [],
+        studioTab: ["overview", "content", "queue"].includes(value?.studioTab) ? value.studioTab : "overview",
+        channelSearch: String(value?.channelSearch || "").slice(0, 100),
+        channelFilter: ["all", "ready", "warning", "uploading", "error"].includes(value?.channelFilter) ? value.channelFilter : "all",
+        activeFileFingerprint: String(value?.activeFileFingerprint || "").slice(0, 260),
+        videoDrafts,
         title: String(value?.title || "").slice(0, 100),
         description: String(value?.description || "").slice(0, 5000),
         tags: String(value?.tags || "").slice(0, 500),
@@ -197,10 +216,10 @@
         replaceWith: String(value?.replaceWith || "").slice(0, 80),
         fileFingerprint: String(value?.fileFingerprint || "").slice(0, 260),
         idempotencyKey: String(value?.idempotencyKey || "").slice(0, 160),
-        results: Array.isArray(value?.results) ? value.results.slice(0, 50) : []
+        results: Array.isArray(value?.results) ? value.results.slice(0, 250) : []
       };
     } catch {
-      return { selectedChannelIds: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
+      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
     }
   }
 
@@ -208,14 +227,79 @@
     try { sessionStorage.setItem(privateStorageKey(FLEET_STORAGE_KEY), JSON.stringify(fleetState)); } catch {}
   }
 
+  function fleetFileFingerprint(file) {
+    return file ? `${file.name}:${file.size}:${file.lastModified || 0}`.slice(0, 260) : "";
+  }
+
+  function fleetFileByFingerprint(fingerprint = fleetState.activeFileFingerprint) {
+    return fleetUploadFiles.find((file) => fleetFileFingerprint(file) === fingerprint) || null;
+  }
+
+  function fleetDraft(fingerprint = fleetState.activeFileFingerprint, file = fleetFileByFingerprint(fingerprint)) {
+    if (!fingerprint) return null;
+    if (!fleetState.videoDrafts[fingerprint]) {
+      const title = String(file?.name || "Video mới").replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim().slice(0, 100);
+      fleetState.videoDrafts[fingerprint] = {
+        title,
+        description: "",
+        tags: "",
+        idempotencyKey: "",
+        thumbnailTitle: title.slice(0, 80),
+        thumbnailSubtitle: "",
+        thumbnailAccent: "#ff3158",
+        thumbnailReady: false,
+        channelTitles: {}
+      };
+    }
+    return fleetState.videoDrafts[fingerprint];
+  }
+
+  function syncActiveFleetDraftToLegacy() {
+    const draft = fleetDraft();
+    if (!draft) return;
+    fleetState.title = draft.title;
+    fleetState.description = draft.description;
+    fleetState.tags = draft.tags;
+    fleetState.thumbnailTitle = draft.thumbnailTitle;
+    fleetState.thumbnailSubtitle = draft.thumbnailSubtitle;
+    fleetState.thumbnailAccent = draft.thumbnailAccent;
+    fleetState.fileFingerprint = fleetState.activeFileFingerprint;
+    fleetUploadFile = fleetFileByFingerprint();
+  }
+
+  function filteredFleetChannels(channels, observatoryRows = fleetObservatory?.channels || []) {
+    const query = String(fleetState.channelSearch || "").trim().toLocaleLowerCase("vi");
+    const observatoryMap = new Map(observatoryRows.map((row) => [row.channel?.id, row]));
+    return channels.filter((channel) => {
+      const row = observatoryMap.get(channel.id);
+      const searchable = `${channel.title} ${channel.id} ${channel.account?.hint || ""}`.toLocaleLowerCase("vi");
+      if (query && !searchable.includes(query)) return false;
+      if (fleetState.channelFilter === "ready") return Boolean(channel.permissions?.upload && channel.token?.healthy);
+      if (fleetState.channelFilter === "warning") return !channel.permissions?.upload || !channel.token?.healthy;
+      if (fleetState.channelFilter === "uploading") return Number(row?.uploads?.pending || 0) > 0;
+      if (fleetState.channelFilter === "error") return Number(row?.uploads?.failed || 0) > 0;
+      return true;
+    });
+  }
+
+  function fleetSelectionCapacity() {
+    const maxChannels = Number(fleetOverview?.limits?.maxChannelsInVault || fleetObservatory?.limits?.maxChannelsInVault || channelStatus.bulk?.maxChannelsInVault || 100);
+    const maxTasks = Number(fleetOverview?.limits?.maxTasksPerBatch || fleetObservatory?.limits?.maxTasksPerBatch || channelStatus.bulk?.maxTasksPerBatch || 100);
+    return Math.min(maxChannels, Math.max(1, Math.floor(maxTasks / Math.max(1, fleetUploadFiles.length))));
+  }
+
   function invalidateFleetPublish({ clearResults = false } = {}) {
     fleetState.idempotencyKey = "";
+    Object.values(fleetState.videoDrafts || {}).forEach((draft) => { draft.idempotencyKey = ""; });
     fleetPreflight = null;
     if (clearResults) fleetState.results = [];
   }
 
   function invalidateFleetThumbnails() {
-    fleetThumbnailVariants.clear();
+    const prefix = `${fleetState.activeFileFingerprint}:`;
+    [...fleetThumbnailVariants.keys()].filter((key) => key.startsWith(prefix)).forEach((key) => fleetThumbnailVariants.delete(key));
+    const draft = fleetDraft();
+    if (draft) draft.thumbnailReady = false;
     fleetPreflight = null;
   }
 
@@ -273,14 +357,16 @@
         state = loadState();
       }
       if (all && channelStatus.connected) {
-        const [dashboardResult, overviewResult, jobsResult] = await Promise.all([
+        const [dashboardResult, overviewResult, jobsResult, observatoryResult] = await Promise.all([
           api("dashboard"),
           api("channels/overview"),
-          api("bulk/jobs").catch(() => ({ jobs: [] }))
+          api("bulk/jobs").catch(() => ({ jobs: [] })),
+          api("channels/observatory").catch(() => null)
         ]);
         dashboard = dashboardResult;
         fleetOverview = overviewResult;
         fleetJobs = jobsResult.jobs || [];
+        fleetObservatory = observatoryResult;
         if (dashboard.project) {
           state.publishProject = dashboard.project;
           saveState();
@@ -298,6 +384,7 @@
         dashboard = null;
         fleetOverview = null;
         fleetJobs = [];
+        fleetObservatory = null;
       }
     } catch (error) {
       errorMessage = error.message;
@@ -527,9 +614,10 @@
     return fleetState.channelPresets[id];
   }
 
-  function effectiveChannelTitle(channelId) {
+  function effectiveChannelTitle(channelId, draft = fleetDraft()) {
     const preset = channelPreset(channelId);
-    return (preset.titleOverride || `${preset.titlePrefix}${fleetState.title}${preset.titleSuffix}`).trim().slice(0, 100);
+    const baseTitle = draft?.title || fleetState.title;
+    return (draft?.channelTitles?.[channelId] || `${preset.titlePrefix}${baseTitle}${preset.titleSuffix}`).trim().slice(0, 100);
   }
 
   function channelPublishReadiness(channel) {
@@ -537,7 +625,7 @@
     const title = effectiveChannelTitle(channel.id);
     const scheduleReady = preset.privacyStatus !== "schedule"
       || (preset.publishAt && new Date(preset.publishAt).getTime() > Date.now() + 60_000);
-    const fileReady = Boolean(fleetUploadFile && fleetUploadFile.size > 0 && /^(video\/|application\/octet-stream)/.test(fleetUploadFile.type || "application/octet-stream"));
+    const fileReady = fleetUploadFiles.length > 0 && fleetUploadFiles.every((file) => file.size > 0 && (/^(video\/|application\/octet-stream)/.test(file.type || "application/octet-stream") || /\.(mp4|mov|webm|mkv)$/i.test(file.name)));
     const checks = [
       ["scope", Boolean(channel.permissions?.upload)],
       ["title", Boolean(title)],
@@ -591,7 +679,7 @@
     </div>`;
   }
 
-  function fleetView() {
+  function legacyQuickFleetView() {
     if (!channelStatus.connected) return emptyState(
       "Kết nối kênh để mở Quick Publish Studio",
       "Mỗi tài khoản HH có kho Google/YouTube riêng. Kênh và token của người khác không bao giờ xuất hiện tại đây.",
@@ -693,6 +781,55 @@
         </section>
       </form>
     </div>`;
+  }
+
+  function fleetView() {
+    if (!channelStatus.connected) return emptyState(
+      "Kết nối kênh để mở Studio đa kênh",
+      "Bạn có thể thêm tối đa 100 kênh. Kênh, token và tác vụ luôn được khóa theo tài khoản HH hiện tại.",
+      channelStatus.authRequired ? "signin" : "connect-creator",
+      channelStatus.authRequired ? "Đăng nhập" : "Thêm kênh YouTube"
+    );
+    const channels = (fleetOverview?.channels || channelStatus.channels || []).filter(Boolean);
+    const filteredChannels = filteredFleetChannels(channels);
+    const selected = new Set(fleetState.selectedChannelIds);
+    const selectedChannels = channels.filter((channel) => selected.has(channel.id));
+    const limits = { maxChannelsPerBulkJob: 20, maxChannelsInVault: 100, maxVideosPerQueue: 10, maxTasksPerBatch: 100, ...(fleetOverview?.limits || fleetObservatory?.limits || {}) };
+    const selectionCapacity = Math.min(limits.maxChannelsInVault, Math.max(1, Math.floor(limits.maxTasksPerBatch / Math.max(1, fleetUploadFiles.length))));
+    const activeFile = fleetFileByFingerprint();
+    const activeDraft = fleetDraft();
+    const summary = fleetObservatory?.summary || {};
+    const observatoryMap = new Map((fleetObservatory?.channels || []).map((row) => [row.channel?.id, row]));
+    const estimatedTasks = fleetUploadFiles.length * selectedChannels.length;
+    const tabs = [
+      ["overview", "Tổng quan kênh", channels.length],
+      ["content", "Nội dung & Upload", fleetUploadFiles.length],
+      ["queue", "Tác vụ đang chạy", fleetState.results.filter((item) => ["queued", "uploading", "verifying", "thumbnail", "processing"].includes(item.status)).length]
+    ];
+    const channelTable = `<div class="ycg-studio-channel-table"><table><thead><tr><th></th><th>Kênh</th><th>Người đăng ký</th><th>Lượt xem</th><th>Nội dung</th><th>Tác vụ</th><th>Phản hồi</th><th>Đồng bộ</th></tr></thead><tbody>${filteredChannels.map((channel) => {
+      const row = observatoryMap.get(channel.id);
+      const ready = channel.permissions?.upload && channel.token?.healthy;
+      return `<tr class="${selected.has(channel.id) ? "is-selected" : ""}"><td><input type="checkbox" data-ycg-fleet-channel value="${esc(channel.id)}" ${selected.has(channel.id) ? "checked" : ""}></td><td><button type="button" class="ycg-channel-name" data-ycg-studio-channel="${esc(channel.id)}">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "<i>YT</i>"}<span><strong>${esc(channel.title)}</strong><small>${esc(channel.account?.hint || channel.id)}</small></span></button></td><td><strong>${fmt(channel.statistics?.subscribers)}</strong></td><td><strong>${fmt(channel.statistics?.views)}</strong></td><td>${fmt(channel.statistics?.videos)}</td><td><span class="ycg-table-status ${row?.uploads?.failed ? "is-error" : row?.uploads?.pending ? "is-running" : ready ? "is-ready" : "is-warning"}">${row?.uploads?.failed ? `${row.uploads.failed} lỗi` : row?.uploads?.pending ? `${row.uploads.pending} đang chạy` : ready ? "Sẵn sàng" : "Thiếu quyền"}</span></td><td>${fmt(row?.unansweredDrafts)}</td><td><small>${dateTime(row?.syncedAt || channel.updatedAt)}</small></td></tr>`;
+    }).join("") || `<tr><td colspan="8">Không có kênh phù hợp bộ lọc.</td></tr>`}</tbody></table></div>`;
+    const overview = `<section class="ycg-studio-overview-simple">
+      <div class="ycg-studio-metrics"><article><span>Tổng kênh</span><strong>${fmt(summary.channels ?? channels.length)}</strong><small>Tối đa ${limits.maxChannelsInVault}</small></article><article><span>Sẵn sàng upload</span><strong>${fmt(summary.uploadReady)}</strong><small>Có token và scope</small></article><article><span>Người đăng ký</span><strong>${fmt(summary.subscribers)}</strong><small>Tổng dữ liệu đã đồng bộ</small></article><article><span>Lượt xem kênh</span><strong>${fmt(summary.views)}</strong><small>Không dùng số mẫu</small></article><article><span>Đang xử lý</span><strong>${fmt(summary.pendingUploads)}</strong><small>Upload + YouTube processing</small></article><article><span>Cần chú ý</span><strong>${fmt(Number(summary.failedUploads || 0) + Number(summary.unansweredDrafts || 0))}</strong><small>Lỗi và phản hồi nháp</small></article></div>
+      <section class="ycg-panel ycg-channel-library"><header><div><h3>Danh sách kênh</h3><small>${filteredChannels.length}/${channels.length} kênh · có thể chọn tới ${limits.maxChannelsInVault}; hệ thống tự chia nhóm ${limits.maxChannelsPerBulkJob} kênh để chạy ổn định</small></div><button type="button" class="is-primary" data-ycg-action="connect-creator">+ Thêm kênh</button></header><div class="ycg-channel-toolbar"><input data-ycg-channel-search value="${esc(fleetState.channelSearch)}" placeholder="Tìm tên kênh, Channel ID hoặc tài khoản Google"><select data-ycg-channel-filter><option value="all" ${fleetState.channelFilter === "all" ? "selected" : ""}>Tất cả trạng thái</option><option value="ready" ${fleetState.channelFilter === "ready" ? "selected" : ""}>Sẵn sàng upload</option><option value="warning" ${fleetState.channelFilter === "warning" ? "selected" : ""}>Thiếu quyền/token</option><option value="uploading" ${fleetState.channelFilter === "uploading" ? "selected" : ""}>Đang xử lý</option><option value="error" ${fleetState.channelFilter === "error" ? "selected" : ""}>Có lỗi</option></select><button type="button" data-ycg-action="fleet-select-visible">Chọn kênh đang lọc</button><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></div>${channelTable}</section>
+    </section>`;
+    const videoQueue = `<section class="ycg-panel ycg-video-queue"><header><div><h3>Video đã chọn</h3><small>Tối đa ${limits.maxVideosPerQueue} video · file chỉ ở trên thiết bị</small></div><button type="button" data-ycg-action="fleet-clear-videos">Xóa hàng đợi</button></header><label class="ycg-studio-drop" data-ycg-fleet-drop><input type="file" multiple accept="video/mp4,video/quicktime,video/webm,video/x-matroska" data-ycg-fleet-file><strong>Kéo tối đa 10 video vào đây</strong><span>MP4, MOV, WebM, MKV · không tải lên cho đến khi bạn xác nhận</span></label><div class="ycg-video-file-list">${fleetUploadFiles.map((file, index) => {
+      const fingerprint = fleetFileFingerprint(file);
+      const draft = fleetDraft(fingerprint, file);
+      const taskCount = fleetState.results.filter((item) => item.fingerprint === fingerprint).length;
+      return `<article class="${fingerprint === fleetState.activeFileFingerprint ? "is-active" : ""}"><button type="button" data-ycg-fleet-video="${esc(fingerprint)}"><i>${index + 1}</i><span><strong>${esc(draft.title || file.name)}</strong><small>${esc(file.name)} · ${bytes(file.size)} · ${taskCount} tác vụ</small></span></button><button type="button" data-ycg-remove-fleet-video="${esc(fingerprint)}" aria-label="Xóa ${esc(file.name)}">×</button></article>`;
+    }).join("") || `<p>Chưa có video. Bạn có thể thả nhiều file một lần.</p>`}</div></section>`;
+    const metadataEditor = activeFile && activeDraft ? `<section class="ycg-panel ycg-studio-editor"><header><div><h3>Chi tiết video</h3><small>${esc(activeFile.name)} · chỉnh một lần, preset tự áp theo kênh</small></div><span>${activeDraft.thumbnailReady ? "Thumbnail A/B/C đã tạo" : "Dùng thumbnail YouTube nếu chưa tạo"}</span></header><video data-ycg-fleet-preview controls muted playsinline preload="metadata" src="${esc(thumbnailVideoUrl)}"></video><label>Tiêu đề<input name="title" maxlength="100" value="${esc(activeDraft.title)}"></label><label>Mô tả<textarea name="description" maxlength="5000" rows="5">${esc(activeDraft.description)}</textarea></label><div class="ycg-inline-fields"><label>Tags<input name="tags" maxlength="500" value="${esc(activeDraft.tags)}"></label><label>Upload song song<select name="concurrency"><option value="1" ${fleetState.concurrency === 1 ? "selected" : ""}>1</option><option value="2" ${fleetState.concurrency === 2 ? "selected" : ""}>2</option><option value="3" ${fleetState.concurrency === 3 ? "selected" : ""}>3</option></select></label></div><div class="ycg-quick-toggles"><label><input type="checkbox" name="uploadPrivateFirst" ${fleetState.uploadPrivateFirst ? "checked" : ""}> Private trước</label><label><input type="checkbox" name="containsSyntheticMedia" ${fleetState.containsSyntheticMedia ? "checked" : ""}> Nội dung AI</label><label><input type="checkbox" name="madeForKids" ${fleetState.madeForKids ? "checked" : ""}> Dành cho trẻ em</label></div><details class="ycg-simple-thumbnail"><summary>Chỉnh thumbnail cho video này</summary><canvas width="1280" height="720" data-ycg-fleet-thumbnail></canvas><div class="ycg-thumb-mini-row">${["A", "B", "C"].map((variant) => `<button type="button" data-ycg-fleet-variant="${variant}" class="${fleetState.thumbnailVariant === variant ? "is-active" : ""}"><canvas width="320" height="180" data-ycg-fleet-thumbnail-mini="${variant}"></canvas><span><b>${variant}</b></span></button>`).join("")}</div><div class="ycg-inline-fields"><label>Chữ chính<input data-ycg-fleet-thumb="title" value="${esc(activeDraft.thumbnailTitle)}"></label><label>Chữ phụ<input data-ycg-fleet-thumb="subtitle" value="${esc(activeDraft.thumbnailSubtitle)}"></label><label>Màu<input type="color" data-ycg-fleet-thumb="accent" value="${esc(activeDraft.thumbnailAccent)}"></label></div><div class="ycg-action-row"><button type="button" data-ycg-action="fleet-capture-frame">Lấy frame</button><button type="button" data-ycg-action="fleet-generate-variants">Tạo A/B/C</button></div></details></section>` : `<section class="ycg-panel ycg-studio-editor ycg-empty-editor"><strong>Chọn một video để chỉnh metadata</strong></section>`;
+    const overrides = activeDraft ? `<section class="ycg-panel ycg-channel-overrides"><header><div><h3>Thiết lập theo kênh</h3><small>${selectedChannels.length} kênh đích · tiêu đề, playlist, lịch và thumbnail riêng</small></div><button type="button" data-ycg-action="fleet-copy-metadata">Dùng tiêu đề gốc</button></header><div class="ycg-metadata-table-wrap"><table class="ycg-metadata-table"><thead><tr><th>Kênh</th><th>Tiêu đề</th><th>Thumbnail</th><th>Playlist</th><th>Quyền hiển thị</th><th>Lịch đăng</th></tr></thead><tbody>${selectedChannels.map((channel) => {
+      const preset = channelPreset(channel.id);
+      const playlists = channel.playlists || [];
+      return `<tr><td><div class="ycg-table-channel">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "<i>YT</i>"}<span><strong>${esc(channel.title)}</strong><small>${esc(channel.account?.hint || "Google")}</small></span></div></td><td><input data-ycg-channel-title data-channel-id="${esc(channel.id)}" maxlength="100" value="${esc(effectiveChannelTitle(channel.id, activeDraft))}"></td><td><select data-ycg-channel-preset="thumbnailVariant" data-channel-id="${esc(channel.id)}">${["A", "B", "C"].map((variant) => `<option ${preset.thumbnailVariant === variant ? "selected" : ""}>${variant}</option>`).join("")}</select></td><td><select data-ycg-channel-preset="playlistId" data-channel-id="${esc(channel.id)}"><option value="">Không playlist</option>${playlists.map((item) => `<option value="${esc(item.id)}" ${preset.playlistId === item.id ? "selected" : ""}>${esc(item.title)}</option>`).join("")}</select></td><td><select data-ycg-channel-preset="privacyStatus" data-channel-id="${esc(channel.id)}"><option value="private" ${preset.privacyStatus === "private" ? "selected" : ""}>Private</option><option value="unlisted" ${preset.privacyStatus === "unlisted" ? "selected" : ""}>Unlisted</option><option value="schedule" ${preset.privacyStatus === "schedule" ? "selected" : ""}>Lên lịch</option></select></td><td><input type="datetime-local" data-ycg-channel-preset="publishAt" data-channel-id="${esc(channel.id)}" value="${esc(preset.publishAt)}"></td></tr>`;
+    }).join("") || `<tr><td colspan="6">Chọn kênh trong tab Tổng quan.</td></tr>`}</tbody></table></div></section>` : "";
+    const content = `<form data-ycg-fleet-form class="ycg-studio-content"><div class="ycg-content-columns">${videoQueue}${metadataEditor}</div>${overrides}<section class="ycg-panel ycg-studio-launch"><div><strong>${fleetUploadFiles.length} video × ${selectedChannels.length} kênh = ${estimatedTasks} tác vụ</strong><small>Giới hạn ${limits.maxTasksPerBatch} tác vụ/batch. Mặc định upload Private và không đăng Public hàng loạt.</small></div><label><input type="checkbox" name="rightsConfirmed" ${fleetState.rightsConfirmed ? "checked" : ""}> Tôi có quyền sử dụng toàn bộ video, nhạc và thumbnail.</label><div class="ycg-action-row"><button type="button" data-ycg-action="fleet-preflight">Kiểm tra trước</button><button type="submit" class="is-primary" ${busy.startsWith("bulk/") ? "disabled" : ""}>${busy.startsWith("bulk/") ? "Đang chạy…" : "Tạo hàng đợi upload"}</button></div></section></form>`;
+    const queue = `<section class="ycg-panel ycg-task-center"><header><div><h3>Hàng đợi tác vụ</h3><small>Tiến trình byte thật, retry riêng và không upload lại tác vụ đã thành công</small></div><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></header><div class="ycg-task-summary"><span>${fleetState.results.length} tổng</span><span>${fleetState.results.filter((item) => item.status === "uploading").length} đang upload</span><span>${fleetState.results.filter((item) => item.status === "processing").length} YouTube xử lý</span><span>${fleetState.results.filter((item) => item.status === "failed").length} lỗi</span></div><div class="ycg-task-table"><table><thead><tr><th>Video</th><th>Kênh</th><th>Trạng thái</th><th>Tiến trình</th><th>Tốc độ / ETA</th><th>Hành động</th></tr></thead><tbody>${fleetState.results.map((item) => `<tr><td><strong>${esc(item.fileName || "Video")}</strong><small>${esc(item.videoId || "")}</small></td><td>${esc(item.channelTitle || item.channelId)}</td><td><span class="ycg-table-status ${item.status === "failed" ? "is-error" : ["uploading", "processing", "verifying", "thumbnail"].includes(item.status) ? "is-running" : "is-ready"}">${esc(item.status)}</span>${item.error ? `<small>${esc(item.error)}</small>` : ""}</td><td><progress max="100" value="${Number(item.progress || 0)}"></progress><small>${Number(item.progress || 0).toFixed(1)}%</small></td><td>${item.speedBps ? `${bytes(item.speedBps)}/s · ${Math.ceil(item.etaSeconds || 0)}s` : "—"}</td><td>${item.status === "failed" && item.uploadId ? `<button type="button" data-ycg-fleet-retry="${esc(item.taskKey || item.channelId)}">Thử lại</button>` : item.status === "uploaded" && item.uploadId ? `<button type="button" data-ycg-fleet-approve="${esc(item.taskKey || item.channelId)}">Duyệt</button>` : item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">Mở video</a>` : ""}</td></tr>`).join("") || `<tr><td colspan="6">Chưa có tác vụ. Chọn video và kênh trong tab Nội dung & Upload.</td></tr>`}</tbody></table></div></section>`;
+    return `<div class="ycg-multistudio"><section class="ycg-studio-simple-head"><div><small>YOUTUBE MULTI-CHANNEL STUDIO</small><h2>Quản lý ${channels.length} kênh trong một nơi</h2><p>Giao diện đơn giản, dữ liệu thật và mọi tác vụ đều gắn đúng kênh sở hữu.</p></div><div><strong>${selectedChannels.length}</strong><span>kênh đang chọn</span><button type="button" data-ycg-action="connect-creator">+ Thêm kênh</button></div></section><nav class="ycg-studio-tabs">${tabs.map(([id, label, count]) => `<button type="button" data-ycg-fleet-tab="${id}" class="${fleetState.studioTab === id ? "is-active" : ""}"><span>${label}</span><b>${count}</b></button>`).join("")}</nav>${fleetState.studioTab === "content" ? content : fleetState.studioTab === "queue" ? queue : overview}</div>`;
   }
 
   function directorView() {
@@ -1433,10 +1570,11 @@
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   function updateFleetResult(channelId, patch) {
-    const existing = fleetState.results.find((item) => item.channelId === channelId);
+    const taskKey = patch.taskKey || channelId;
+    const existing = fleetState.results.find((item) => (item.taskKey || item.channelId) === taskKey);
     if (existing) Object.assign(existing, patch);
-    else fleetState.results.unshift({ channelId, ...patch });
-    fleetState.results = fleetState.results.slice(0, 20);
+    else fleetState.results.unshift({ channelId, taskKey, ...patch });
+    fleetState.results = fleetState.results.slice(0, 250);
     saveFleetState();
   }
 
@@ -1476,7 +1614,8 @@
     let finalData = null;
     const startedAt = Date.now();
     const initialOffset = offset;
-    updateFleetResult(session.channelId, { channelTitle: session.channelTitle, uploadId: session.uploadId, status: "uploading", progress: 0, error: "" });
+    const taskPatch = { taskKey: session.taskKey || session.channelId, fingerprint: session.fingerprint || "", fileName: session.fileName || file.name };
+    updateFleetResult(session.channelId, { ...taskPatch, channelTitle: session.channelTitle, uploadId: session.uploadId, status: "uploading", progress: 0, error: "" });
     while (offset < file.size) {
       const end = Math.min(file.size, offset + chunkSize);
       let response = null;
@@ -1494,7 +1633,7 @@
       const elapsedSeconds = Math.max(.25, (Date.now() - startedAt) / 1000);
       const speedBps = Math.max(0, (offset - initialOffset) / elapsedSeconds);
       const etaSeconds = speedBps > 0 ? Math.max(0, (file.size - offset) / speedBps) : 0;
-      updateFleetResult(session.channelId, { status: response?.complete ? "verifying" : "uploading", progress, speedBps, etaSeconds });
+      updateFleetResult(session.channelId, { ...taskPatch, status: response?.complete ? "verifying" : "uploading", progress, speedBps, etaSeconds });
       render();
       await api("upload/progress", "POST", {
         uploadId: session.uploadId,
@@ -1511,9 +1650,9 @@
     if (!finalData?.id) throw new Error("YouTube không trả về Video ID cho kênh này.");
     const preset = channelPreset(session.channelId);
     const completed = await api("upload/complete", "POST", { uploadId: session.uploadId, videoId: finalData.id, playlistId: preset.playlistId || "" });
-    const thumbnail = fleetThumbnailVariants.get(preset.thumbnailVariant) || await fleetThumbnailBlob(preset.thumbnailVariant);
+    const thumbnail = fleetThumbnailVariants.get(`${session.fingerprint}:${preset.thumbnailVariant}`) || null;
     if (thumbnail && thumbnail.size <= 2 * 1024 * 1024) {
-      updateFleetResult(session.channelId, { status: "thumbnail", progress: 100 });
+      updateFleetResult(session.channelId, { ...taskPatch, status: "thumbnail", progress: 100 });
       const thumbnailSession = await api("thumbnail/session", "POST", {
         channelId: session.channelId,
         videoId: finalData.id,
@@ -1522,7 +1661,7 @@
       });
       await putFleetChunk({ uploadUrl: thumbnailSession.uploadUrl }, thumbnail, 0, thumbnail.size);
     }
-    updateFleetResult(session.channelId, { status: completed.processingStatus === "succeeded" ? "uploaded" : "processing", progress: 100, videoId: completed.videoId, url: completed.url });
+    updateFleetResult(session.channelId, { ...taskPatch, status: completed.processingStatus === "succeeded" ? "uploaded" : "processing", progress: 100, videoId: completed.videoId, url: completed.url });
     render();
     return completed;
   }
@@ -1539,9 +1678,13 @@
   }
 
   async function generateFleetThumbnailVariants() {
+    if (!fleetState.activeFileFingerprint) throw new Error("Hãy chọn video trước khi tạo thumbnail.");
     const variants = ["A", "B", "C"];
     const blobs = await Promise.all(variants.map((variant) => fleetThumbnailBlob(variant)));
-    variants.forEach((variant, index) => fleetThumbnailVariants.set(variant, blobs[index]));
+    variants.forEach((variant, index) => fleetThumbnailVariants.set(`${fleetState.activeFileFingerprint}:${variant}`, blobs[index]));
+    const draft = fleetDraft();
+    if (draft) draft.thumbnailReady = true;
+    saveFleetState();
     return blobs;
   }
 
@@ -1555,24 +1698,26 @@
     return status(`Đã lấy frame tại ${Number(source.currentTime || 0).toFixed(1)} giây.`, "success");
   }
 
-  async function retryFleetChannel(channelId) {
-    if (!fleetUploadFile) throw new Error("Hãy chọn lại đúng file video để tiếp tục phiên upload.");
-    const result = fleetState.results.find((item) => item.channelId === channelId);
+  async function retryFleetChannel(taskKey) {
+    const result = fleetState.results.find((item) => (item.taskKey || item.channelId) === taskKey);
     if (!result?.uploadId) throw new Error("Kênh này không còn phiên upload để tiếp tục.");
-    const fingerprint = `${fleetUploadFile.name}:${fleetUploadFile.size}:${fleetUploadFile.lastModified || 0}`;
-    if (fleetState.fileFingerprint && fleetState.fileFingerprint !== fingerprint) throw new Error("File đã chọn không khớp với phiên upload cũ.");
+    const file = fleetFileByFingerprint(result.fingerprint);
+    if (!file) throw new Error("Hãy chọn lại đúng file video để tiếp tục phiên upload.");
     const resumed = await api("upload/resume", "POST", { uploadId: result.uploadId });
+    const channelId = result.channelId;
     const channel = (fleetOverview?.channels || channelStatus.channels || []).find((item) => item.id === channelId);
-    await uploadFleetSession({ ...resumed, channelId, channelTitle: channel?.title || result.channelTitle }, fleetUploadFile);
+    await uploadFleetSession({ ...resumed, channelId, channelTitle: channel?.title || result.channelTitle, taskKey, fingerprint: result.fingerprint, fileName: file.name }, file);
     return status(`Đã tiếp tục upload cho ${channel?.title || channelId}.`, "success");
   }
 
   function mergeFleetJobResults(jobs) {
     (jobs || []).forEach((job) => (job.results || []).forEach((item) => {
-      const existing = fleetState.results.find((result) => result.channelId === item.channelId);
+      const existing = fleetState.results.find((result) => result.uploadId && result.uploadId === item.uploadId)
+        || fleetState.results.find((result) => result.channelId === item.channelId && !result.uploadId);
       if (!existing && !item.uploadId) return;
       if (existing?.uploadId && item.uploadId && existing.uploadId !== item.uploadId) return;
       updateFleetResult(item.channelId, {
+        taskKey: existing?.taskKey || item.channelId,
         uploadId: item.uploadId || existing?.uploadId,
         status: item.status === "error" ? "failed" : item.status,
         videoId: item.videoId || existing?.videoId,
@@ -1581,14 +1726,15 @@
     }));
   }
 
-  async function approveFleetPublish(channelId) {
-    const result = fleetState.results.find((item) => item.channelId === channelId);
+  async function approveFleetPublish(taskKey) {
+    const result = fleetState.results.find((item) => (item.taskKey || item.channelId) === taskKey);
     if (!result?.uploadId || !result?.videoId) throw new Error("Kênh này chưa có video đã xử lý để duyệt.");
+    const channelId = result.channelId;
     const preset = channelPreset(channelId);
     const target = preset.privacyStatus === "schedule" ? `lên lịch ${dateTime(preset.publishAt)}` : preset.privacyStatus === "unlisted" ? "chuyển Unlisted" : "giữ Private";
     if (!confirm(`Duyệt video ${result.videoId} và ${target} trên đúng kênh này?`)) return;
     const approved = await api("bulk/publish/approve", "POST", { uploadId: result.uploadId, approved: true });
-    updateFleetResult(channelId, { status: approved.status || "approved", error: "" });
+    updateFleetResult(channelId, { taskKey, status: approved.status || "approved", error: "" });
     render();
     return status(`YouTube đã xác nhận: ${target}.`, "success");
   }
@@ -1611,6 +1757,7 @@
       });
       fleetPreflight = {
         ...server,
+        estimatedQuota: Number(server.estimatedQuota || 0) * Math.max(1, fleetUploadFiles.length),
         channels: rows,
         ready: rows.length > 0 && rows.every((row) => row.ready),
         eligibleChannelIds: rows.filter((row) => row.ready).map((row) => row.channel.id)
@@ -1626,7 +1773,7 @@
     }
   }
 
-  async function startFleetUpload(form) {
+  async function legacyStartFleetUpload(form) {
     if (!fleetUploadFile) throw new Error("Hãy chọn file video.");
     const data = Object.fromEntries(new FormData(form));
     const fingerprint = `${fleetUploadFile.name}:${fleetUploadFile.size}:${fleetUploadFile.lastModified || 0}`;
@@ -1709,6 +1856,126 @@
     }
   }
 
+  async function uploadQueuedFleetFile(file, draft, eligibleChannelIds) {
+    const fingerprint = fleetFileFingerprint(file);
+    const completedTaskKeys = new Set(fleetState.results.filter((item) => item.videoId && ["processing", "uploaded", "scheduled", "private", "unlisted", "completed"].includes(item.status)).map((item) => item.taskKey));
+    const remainingChannelIds = eligibleChannelIds.filter((channelId) => !completedTaskKeys.has(`${fingerprint}::${channelId}`));
+    if (!remainingChannelIds.length) return { skipped: true };
+    const channels = (fleetOverview?.channels || channelStatus.channels || []).filter((channel) => remainingChannelIds.includes(channel.id));
+    const channelPayloads = channels.map((channel) => {
+      const preset = channelPreset(channel.id);
+      return {
+        channelId: channel.id,
+        title: effectiveChannelTitle(channel.id, draft),
+        description: `${draft.description}${preset.descriptionTemplate ? `\n\n${preset.descriptionTemplate}` : ""}`.trim(),
+        tags: [...new Set(`${draft.tags},${preset.tags}`.split(",").map((item) => item.trim()).filter(Boolean))].slice(0, 30),
+        categoryId: preset.categoryId,
+        defaultLanguage: preset.defaultLanguage,
+        playlistId: preset.playlistId,
+        desiredPublishAt: preset.privacyStatus === "schedule" && preset.publishAt ? new Date(preset.publishAt).toISOString() : "",
+        desiredPrivacyStatus: preset.privacyStatus === "unlisted" ? "unlisted" : preset.privacyStatus === "schedule" ? "schedule" : "private",
+        privacyStatus: fleetState.uploadPrivateFirst ? "private" : preset.privacyStatus === "unlisted" ? "unlisted" : "private"
+      };
+    });
+    const idempotencyBase = draft.idempotencyKey || `${uid("bulk-video")}-${Math.random().toString(36).slice(2, 10)}`;
+    draft.idempotencyKey = idempotencyBase;
+    remainingChannelIds.forEach((channelId) => {
+      const channel = channels.find((item) => item.id === channelId);
+      updateFleetResult(channelId, { taskKey: `${fingerprint}::${channelId}`, fingerprint, fileName: file.name, channelTitle: channel?.title || channelId, status: "queued", progress: 0, error: "" });
+    });
+    const connectionDownlink = Number(navigator.connection?.downlink || 0);
+    const concurrency = connectionDownlink > 0 && connectionDownlink < 3 ? 1 : fleetState.concurrency;
+    const chunkSize = Number(fleetOverview?.limits?.maxChannelsPerBulkJob || channelStatus.bulk?.maxChannelsPerJob || 20);
+    const results = [];
+    let hasSessionFailure = false;
+    const remainingSet = new Set(remainingChannelIds);
+    for (let offset = 0; offset < eligibleChannelIds.length; offset += chunkSize) {
+      const chunkIndex = Math.floor(offset / chunkSize);
+      const chunkChannelIds = eligibleChannelIds.slice(offset, offset + chunkSize).filter((channelId) => remainingSet.has(channelId));
+      if (!chunkChannelIds.length) continue;
+      const result = await api("bulk/upload/sessions", "POST", {
+        channelIds: chunkChannelIds,
+        channels: channelPayloads.filter((item) => chunkChannelIds.includes(item.channelId)),
+        idempotencyKey: `${idempotencyBase.slice(0, 150)}-c${chunkIndex}`,
+        approved: true,
+        rightsConfirmed: true,
+        title: draft.title,
+        description: draft.description,
+        tags: draft.tags.split(",").map((item) => item.trim()).filter(Boolean),
+        privacyStatus: fleetState.uploadPrivateFirst ? "private" : fleetState.privacyStatus,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type || "application/octet-stream",
+        madeForKids: fleetState.madeForKids,
+        containsSyntheticMedia: fleetState.containsSyntheticMedia,
+        notifySubscribers: false
+      });
+      results.push(result);
+      if ((result.failures || []).length) hasSessionFailure = true;
+      (result.failures || []).forEach((item) => updateFleetResult(item.channelId, { taskKey: `${fingerprint}::${item.channelId}`, fingerprint, fileName: file.name, channelTitle: item.channelTitle, status: "failed", error: item.error }));
+      await runConcurrent(result.sessions || [], concurrency, async (session) => {
+        const taskKey = `${fingerprint}::${session.channelId}`;
+        try { await uploadFleetSession({ ...session, taskKey, fingerprint, fileName: file.name }, file); }
+        catch (error) {
+          updateFleetResult(session.channelId, { taskKey, fingerprint, fileName: file.name, channelTitle: session.channelTitle, uploadId: session.uploadId, status: "failed", error: error.message });
+          await api("upload/error", "POST", { uploadId: session.uploadId, error: error.message }).catch(() => {});
+          render();
+        }
+      });
+    }
+    if (hasSessionFailure && draft.idempotencyKey === idempotencyBase) draft.idempotencyKey = "";
+    return results;
+  }
+
+  async function startFleetUpload(form) {
+    if (!fleetUploadFiles.length) throw new Error("Hãy kéo ít nhất một video vào hàng đợi.");
+    if (!fleetState.selectedChannelIds.length) throw new Error("Hãy chọn ít nhất một kênh đích.");
+    const data = Object.fromEntries(new FormData(form));
+    fleetState.rightsConfirmed = data.rightsConfirmed === "on";
+    fleetState.containsSyntheticMedia = data.containsSyntheticMedia === "on";
+    fleetState.madeForKids = data.madeForKids === "on";
+    fleetState.uploadPrivateFirst = data.uploadPrivateFirst === "on";
+    fleetState.concurrency = Math.min(3, Math.max(1, Number(data.concurrency || fleetState.concurrency || 2)));
+    if (!fleetState.rightsConfirmed) throw new Error("Cần xác nhận quyền sử dụng toàn bộ nội dung trong batch.");
+    const maxTasks = Number(fleetOverview?.limits?.maxTasksPerBatch || fleetObservatory?.limits?.maxTasksPerBatch || 100);
+    const requestedTasks = fleetUploadFiles.length * fleetState.selectedChannelIds.length;
+    if (requestedTasks > maxTasks) throw new Error(`Batch này tạo ${requestedTasks} tác vụ, vượt giới hạn an toàn ${maxTasks}. Hãy giảm số video hoặc kênh.`);
+    const missingTitle = fleetUploadFiles.find((file) => !fleetDraft(fleetFileFingerprint(file), file)?.title?.trim());
+    if (missingTitle) throw new Error(`${missingTitle.name} chưa có tiêu đề.`);
+    const preflight = await runFleetPreflight();
+    const eligibleChannelIds = preflight.eligibleChannelIds || [];
+    if (!eligibleChannelIds.length) throw new Error("Không có kênh nào vượt qua kiểm tra quyền và token.");
+    const actualTasks = fleetUploadFiles.length * eligibleChannelIds.length;
+    if (!confirm(`Tạo ${actualTasks} tác vụ từ ${fleetUploadFiles.length} video × ${eligibleChannelIds.length} kênh? Video sẽ upload PRIVATE trước và không tự Public.`)) return;
+    const channelMap = new Map((fleetOverview?.channels || channelStatus.channels || []).map((channel) => [channel.id, channel]));
+    fleetUploadFiles.forEach((file) => {
+      const fingerprint = fleetFileFingerprint(file);
+      eligibleChannelIds.forEach((channelId) => {
+        const taskKey = `${fingerprint}::${channelId}`;
+        const existing = fleetState.results.find((item) => item.taskKey === taskKey);
+        if (!existing || existing.status === "failed") updateFleetResult(channelId, { taskKey, fingerprint, fileName: file.name, channelTitle: channelMap.get(channelId)?.title || channelId, status: "queued", progress: existing?.progress || 0, error: "" });
+      });
+    });
+    busy = "bulk/batch";
+    errorMessage = "";
+    fleetState.studioTab = "queue";
+    saveFleetState();
+    render();
+    try {
+      await runConcurrent(fleetUploadFiles, 1, async (file) => uploadQueuedFleetFile(file, fleetDraft(fleetFileFingerprint(file), file), eligibleChannelIds));
+      const [jobsResult, observatoryResult] = await Promise.all([api("bulk/jobs").catch(() => ({ jobs: [] })), api("channels/observatory").catch(() => null)]);
+      fleetJobs = jobsResult.jobs || [];
+      fleetObservatory = observatoryResult;
+      mergeFleetJobResults(fleetJobs);
+      saveFleetState();
+      render();
+      status("Batch đã gửi xong. Theo dõi từng video và từng kênh trong Hàng đợi tác vụ.", "success");
+    } finally {
+      busy = "";
+      render();
+    }
+  }
+
   async function apiAction(path, body, success, method = "POST") {
     busy = path;
     errorMessage = "";
@@ -1747,10 +2014,11 @@
       }).catch(() => {});
     }
     if (channelStatus.connected && moduleId === "fleet" && !fleetOverview) {
-      Promise.all([api("channels/overview"), api("bulk/jobs").catch(() => ({ jobs: [] }))]).then(([overview, jobs]) => {
+      Promise.all([api("channels/overview"), api("bulk/jobs").catch(() => ({ jobs: [] })), api("channels/observatory").catch(() => null)]).then(([overview, jobs, observatory]) => {
         if (state.active !== "fleet") return;
         fleetOverview = overview;
         fleetJobs = jobs.jobs || [];
+        fleetObservatory = observatory;
         render();
       }).catch(() => {});
     }
@@ -1773,9 +2041,17 @@
     if (action === "sync-project") return syncUniversalProject();
     if (action === "fleet-select-all") {
       const channels = fleetOverview?.channels || channelStatus.channels || [];
-      const limit = Number(fleetOverview?.limits?.maxChannelsPerBulkJob || channelStatus.bulk?.maxChannelsPerJob || 5);
+      const limit = fleetSelectionCapacity();
       fleetState.selectedChannelIds = channels.slice(0, limit).map((channel) => channel.id);
-      fleetPreflight = null;
+      invalidateFleetPublish();
+      saveFleetState();
+      return render();
+    }
+    if (action === "fleet-select-visible") {
+      const channels = fleetOverview?.channels || channelStatus.channels || [];
+      const limit = fleetSelectionCapacity();
+      fleetState.selectedChannelIds = filteredFleetChannels(channels).slice(0, limit).map((channel) => channel.id);
+      invalidateFleetPublish();
       saveFleetState();
       return render();
     }
@@ -1788,6 +2064,18 @@
       return render();
     }
     if (action === "fleet-preflight") return runFleetPreflight();
+    if (action === "fleet-clear-videos") {
+      fleetUploadFiles = [];
+      fleetUploadFile = null;
+      fleetState.activeFileFingerprint = "";
+      if (thumbnailVideoUrl) URL.revokeObjectURL(thumbnailVideoUrl);
+      thumbnailVideoUrl = "";
+      thumbnailVideo = null;
+      thumbnailImage = null;
+      fleetPreflight = null;
+      saveFleetState();
+      return render();
+    }
     if (action === "fleet-capture-frame") return captureFleetFrame();
     if (action === "fleet-apply-brand") {
       const selectedId = fleetState.selectedChannelIds[0];
@@ -1802,6 +2090,7 @@
     }
     if (action === "fleet-generate-variants") {
       await generateFleetThumbnailVariants();
+      render();
       return status("Đã tạo ba file thumbnail A/B/C, không chứa đường safe zone.", "success");
     }
     if (action === "fleet-copy-thumbnail") {
@@ -1811,10 +2100,8 @@
       return status(`Đã gán thumbnail ${fleetState.thumbnailVariant} cho ${fleetState.selectedChannelIds.length} kênh.`, "success");
     }
     if (action === "fleet-copy-metadata") {
-      fleetState.selectedChannelIds.forEach((channelId) => {
-        const preset = channelPreset(channelId);
-        if (!preset.locked) preset.titleOverride = fleetState.title;
-      });
+      const draft = fleetDraft();
+      if (draft) fleetState.selectedChannelIds.forEach((channelId) => { delete draft.channelTitles[channelId]; });
       invalidateFleetPublish();
       saveFleetState();
       render();
@@ -1836,12 +2123,17 @@
       return status(`Đã thay nội dung trên ${changed} kênh.`, "success");
     }
     if (action === "fleet-refresh") {
-      const [overview, jobs] = await Promise.all([api("channels/overview"), api("bulk/jobs")]);
+      const selectedIds = fleetState.selectedChannelIds.slice(0, 100);
+      for (let offset = 0; offset < selectedIds.length; offset += 20) {
+        await api("channels/refresh-bulk", "POST", { channelIds: selectedIds.slice(offset, offset + 20) });
+      }
+      const [overview, jobs, observatory] = await Promise.all([api("channels/overview"), api("bulk/jobs"), api("channels/observatory")]);
       fleetOverview = overview;
       fleetJobs = jobs.jobs || [];
+      fleetObservatory = observatory;
       mergeFleetJobResults(fleetJobs);
       render();
-      return status("Đã làm mới Channel Fleet từ backend.", "success");
+      return status(selectedIds.length ? `Đã đồng bộ dữ liệu thật của ${selectedIds.length} kênh đã chọn.` : "Đã nạp lại Observatory từ backend.", "success");
     }
     if (action === "preview-automation") {
       const preview = automationReadiness();
@@ -2010,6 +2302,30 @@
       catch (error) { errorMessage = error.message; render(); }
       return;
     }
+    const fleetTab = event.target.closest("[data-ycg-fleet-tab]");
+    if (fleetTab) {
+      fleetState.studioTab = fleetTab.dataset.ycgFleetTab;
+      saveFleetState();
+      render();
+      return;
+    }
+    const fleetVideo = event.target.closest("[data-ycg-fleet-video]");
+    if (fleetVideo) {
+      try { await activateFleetVideo(fleetVideo.dataset.ycgFleetVideo, true); }
+      catch (error) { errorMessage = error.message; render(); }
+      return;
+    }
+    const removeFleetVideoButton = event.target.closest("[data-ycg-remove-fleet-video]");
+    if (removeFleetVideoButton) {
+      await removeFleetVideo(removeFleetVideoButton.dataset.ycgRemoveFleetVideo);
+      return;
+    }
+    const studioChannel = event.target.closest("[data-ycg-studio-channel]");
+    if (studioChannel) {
+      const result = await apiAction("channel/select", { channelId: studioChannel.dataset.ycgStudioChannel }, "Đã mở kênh trong Studio.");
+      if (result) { await refresh(); switchModule("command"); }
+      return;
+    }
     const fleetVariant = event.target.closest("[data-ycg-fleet-variant]");
     if (fleetVariant) {
       fleetState.thumbnailVariant = fleetVariant.dataset.ycgFleetVariant;
@@ -2104,9 +2420,15 @@
     const target = event.target;
     if (target.matches("[data-ycg-fleet-thumb]")) {
       const key = target.dataset.ycgFleetThumb;
+      const draft = fleetDraft();
       if (key === "title") fleetState.thumbnailTitle = target.value.slice(0, 80);
       if (key === "subtitle") fleetState.thumbnailSubtitle = target.value.slice(0, 80);
       if (key === "accent") fleetState.thumbnailAccent = target.value;
+      if (draft) {
+        if (key === "title") draft.thumbnailTitle = fleetState.thumbnailTitle;
+        if (key === "subtitle") draft.thumbnailSubtitle = fleetState.thumbnailSubtitle;
+        if (key === "accent") draft.thumbnailAccent = fleetState.thumbnailAccent;
+      }
       invalidateFleetThumbnails();
       saveFleetState();
       drawFleetThumbnail();
@@ -2117,10 +2439,39 @@
       saveFleetState();
       return;
     }
+    if (target.matches("[data-ycg-channel-search]")) {
+      fleetState.channelSearch = target.value.slice(0, 100);
+      const query = fleetState.channelSearch.trim().toLocaleLowerCase("vi");
+      root?.querySelectorAll(".ycg-studio-channel-table tbody tr").forEach((row) => {
+        row.hidden = Boolean(query && !row.textContent.toLocaleLowerCase("vi").includes(query));
+      });
+      saveFleetState();
+      return;
+    }
+    if (target.matches("[data-ycg-channel-title]")) {
+      const draft = fleetDraft();
+      if (draft) {
+        draft.channelTitles[target.dataset.channelId] = target.value.slice(0, 100);
+        draft.idempotencyKey = "";
+        fleetPreflight = null;
+        saveFleetState();
+      }
+      return;
+    }
     if (target.form?.matches("[data-ycg-fleet-form]") && ["title", "description", "tags"].includes(target.name)) {
       const next = target.name === "title" ? target.value.slice(0, 100) : target.name === "description" ? target.value.slice(0, 5000) : target.value.slice(0, 500);
+      const draft = fleetDraft();
+      const previous = draft?.[target.name] || "";
       if (fleetState[target.name] !== next) invalidateFleetPublish();
       fleetState[target.name] = next;
+      if (draft) {
+        draft[target.name] = next;
+        draft.idempotencyKey = "";
+        if (target.name === "title" && (!draft.thumbnailTitle || draft.thumbnailTitle === previous)) {
+          draft.thumbnailTitle = next.slice(0, 80);
+          fleetState.thumbnailTitle = draft.thumbnailTitle;
+        }
+      }
       if (target.name === "title" && !fleetState.thumbnailTitle) drawFleetThumbnail();
       saveFleetState();
       return;
@@ -2160,36 +2511,75 @@
     }
   }
 
-  async function loadFleetVideoFile(file) {
-    if (file && !file.type.startsWith("video/") && file.type !== "application/octet-stream") throw new Error("Chỉ chấp nhận file video.");
-    const fingerprint = file ? `${file.name}:${file.size}:${file.lastModified || 0}` : "";
-    const changed = fingerprint !== fleetState.fileFingerprint;
-    fleetUploadFile = file;
-    if (changed) invalidateFleetPublish({ clearResults: true });
-    fleetState.fileFingerprint = fingerprint;
+  async function activateFleetVideo(fingerprint, shouldRender = true) {
+    const file = fleetFileByFingerprint(fingerprint);
+    if (!file) throw new Error("Không tìm thấy file video trong hàng đợi hiện tại.");
+    fleetState.activeFileFingerprint = fingerprint;
+    fleetDraft(fingerprint, file);
+    syncActiveFleetDraftToLegacy();
     if (thumbnailVideoUrl) URL.revokeObjectURL(thumbnailVideoUrl);
-    thumbnailVideoUrl = file ? URL.createObjectURL(file) : "";
-    thumbnailVideo = file ? document.createElement("video") : null;
+    thumbnailVideoUrl = URL.createObjectURL(file);
+    thumbnailVideo = document.createElement("video");
     thumbnailImage = null;
-    invalidateFleetThumbnails();
-    if (thumbnailVideo) {
-      thumbnailVideo.preload = "metadata";
-      thumbnailVideo.muted = true;
-      thumbnailVideo.playsInline = true;
-      thumbnailVideo.src = thumbnailVideoUrl;
-      await new Promise((resolve, reject) => {
-        const done = () => { cleanupListeners(); resolve(); };
-        const failed = () => { cleanupListeners(); reject(new Error("Không đọc được metadata của video.")); };
-        const cleanupListeners = () => { thumbnailVideo?.removeEventListener("loadeddata", done); thumbnailVideo?.removeEventListener("error", failed); };
-        thumbnailVideo.addEventListener("loadeddata", done, { once: true });
-        thumbnailVideo.addEventListener("error", failed, { once: true });
-        thumbnailVideo.load();
-      });
-      thumbnailImage = thumbnailVideo;
+    thumbnailVideo.preload = "metadata";
+    thumbnailVideo.muted = true;
+    thumbnailVideo.playsInline = true;
+    thumbnailVideo.src = thumbnailVideoUrl;
+    await new Promise((resolve, reject) => {
+      const done = () => { cleanupListeners(); resolve(); };
+      const failed = () => { cleanupListeners(); reject(new Error("Không đọc được metadata của video.")); };
+      const cleanupListeners = () => { thumbnailVideo?.removeEventListener("loadeddata", done); thumbnailVideo?.removeEventListener("error", failed); };
+      thumbnailVideo.addEventListener("loadeddata", done, { once: true });
+      thumbnailVideo.addEventListener("error", failed, { once: true });
+      thumbnailVideo.load();
+    });
+    thumbnailImage = thumbnailVideo;
+    saveFleetState();
+    if (shouldRender) render();
+    drawFleetThumbnail();
+  }
+
+  async function loadFleetVideoFiles(files) {
+    const incoming = [...(files || [])].filter(Boolean);
+    if (!incoming.length) return;
+    const invalid = incoming.find((file) => !file.type.startsWith("video/") && file.type !== "application/octet-stream" && !/\.(mp4|mov|webm|mkv)$/i.test(file.name));
+    if (invalid) throw new Error(`${invalid.name} không phải file video được hỗ trợ.`);
+    const merged = new Map(fleetUploadFiles.map((file) => [fleetFileFingerprint(file), file]));
+    incoming.forEach((file) => merged.set(fleetFileFingerprint(file), file));
+    if (merged.size > 10) throw new Error("Mỗi hàng đợi nhận tối đa 10 video. Hãy chia thành batch tiếp theo.");
+    fleetUploadFiles = [...merged.values()];
+    const previousSelectedCount = fleetState.selectedChannelIds.length;
+    const capacity = fleetSelectionCapacity();
+    if (previousSelectedCount > capacity) {
+      fleetState.selectedChannelIds = fleetState.selectedChannelIds.slice(0, capacity);
+      invalidateFleetPublish();
+    }
+    fleetUploadFiles.forEach((file) => {
+      const fingerprint = fleetFileFingerprint(file);
+      const draft = fleetDraft(fingerprint, file);
+      draft.thumbnailReady = ["A", "B", "C"].every((variant) => fleetThumbnailVariants.has(`${fingerprint}:${variant}`));
+    });
+    const nextFingerprint = fleetState.activeFileFingerprint && merged.has(fleetState.activeFileFingerprint)
+      ? fleetState.activeFileFingerprint
+      : fleetFileFingerprint(incoming[0]);
+    await activateFleetVideo(nextFingerprint, true);
+    status(`Đã thêm ${incoming.length} video; hàng đợi có ${fleetUploadFiles.length}/10.${previousSelectedCount > capacity ? ` Đã giữ ${capacity} kênh để không vượt 100 tác vụ.` : ""}`, "success");
+  }
+
+  async function removeFleetVideo(fingerprint) {
+    fleetUploadFiles = fleetUploadFiles.filter((file) => fleetFileFingerprint(file) !== fingerprint);
+    if (fleetState.activeFileFingerprint === fingerprint) {
+      const next = fleetUploadFiles[0];
+      if (next) return activateFleetVideo(fleetFileFingerprint(next), true);
+      fleetState.activeFileFingerprint = "";
+      fleetUploadFile = null;
+      if (thumbnailVideoUrl) URL.revokeObjectURL(thumbnailVideoUrl);
+      thumbnailVideoUrl = "";
+      thumbnailVideo = null;
+      thumbnailImage = null;
     }
     saveFleetState();
     render();
-    drawFleetThumbnail();
   }
 
   async function handleChange(event) {
@@ -2198,21 +2588,29 @@
       const ids = new Set(fleetState.selectedChannelIds);
       if (target.checked) ids.add(target.value);
       else ids.delete(target.value);
-      const limit = Number(fleetOverview?.limits?.maxChannelsPerBulkJob || channelStatus.bulk?.maxChannelsPerJob || 5);
+      const limit = fleetSelectionCapacity();
       fleetState.selectedChannelIds = [...ids].slice(0, limit);
       if (ids.size > limit) target.checked = false;
-      fleetPreflight = null;
+      invalidateFleetPublish();
       saveFleetState();
       render();
       return;
     }
     if (target.matches("[data-ycg-fleet-file]")) {
-      return loadFleetVideoFile(target.files?.[0] || null);
+      return loadFleetVideoFiles(target.files || []);
+    }
+    if (target.matches("[data-ycg-channel-filter]")) {
+      fleetState.channelFilter = target.value;
+      saveFleetState();
+      render();
+      return;
     }
     if (target.matches("[data-ycg-channel-preset]")) {
       const preset = channelPreset(target.dataset.channelId);
       if (!preset.locked || target.dataset.ycgChannelPreset === "thumbnailVariant") {
         preset[target.dataset.ycgChannelPreset] = target.value;
+        const draft = fleetDraft();
+        if (draft) draft.idempotencyKey = "";
         invalidateFleetPublish();
         saveFleetState();
         render();
@@ -2330,10 +2728,12 @@
     const editing = event.target?.matches?.("input,textarea,select,[contenteditable='true']");
     if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "u") {
       event.preventDefault();
+      if (fleetState.studioTab !== "content") { fleetState.studioTab = "content"; saveFleetState(); render(); }
       return root?.querySelector("[data-ycg-fleet-form]")?.requestSubmit();
     }
     if (event.ctrlKey && event.key.toLowerCase() === "u") {
       event.preventDefault();
+      if (fleetState.studioTab !== "content") { fleetState.studioTab = "content"; saveFleetState(); render(); }
       return root?.querySelector("[data-ycg-fleet-file]")?.click();
     }
     if (event.ctrlKey && event.key === "Enter") {
@@ -2347,7 +2747,10 @@
     if (editing) return;
     if (event.key.toLowerCase() === "t") {
       event.preventDefault();
-      return root?.querySelector("[data-ycg-thumbnail-fastlane]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      fleetState.studioTab = "content";
+      saveFleetState();
+      render();
+      return root?.querySelector(".ycg-simple-thumbnail")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     if (event.key.toLowerCase() === "f") {
       event.preventDefault();
@@ -2394,7 +2797,7 @@
     if (!drop) return;
     event.preventDefault();
     drop.classList.remove("is-dragging");
-    await loadFleetVideoFile(event.dataTransfer?.files?.[0] || null);
+    await loadFleetVideoFiles(event.dataTransfer?.files || []);
   }
 
   function mount(host) {
@@ -2445,8 +2848,10 @@
       fleetState = loadFleetState();
       fleetOverview = null;
       fleetJobs = [];
+      fleetObservatory = null;
       fleetPreflight = null;
       fleetUploadFile = null;
+      fleetUploadFiles = [];
       channelStatus = { configured: false, connected: false, permissions: {} };
       dashboard = null;
       errorMessage = "";
@@ -2467,6 +2872,8 @@
     thumbnailVideo = null;
     thumbnailImage = null;
     fleetUploadFile = null;
+    fleetUploadFiles = [];
+    fleetObservatory = null;
     fleetPreflight = null;
     root = null;
   }

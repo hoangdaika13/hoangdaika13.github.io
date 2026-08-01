@@ -214,6 +214,39 @@ test("New YouTube Studio text is valid UTF-8 Vietnamese without known mojibake",
   assert.doesNotMatch(client, /Quáº|Ä|ChÆ°a|LÃªn|â€¦/);
 });
 
+test("Multi-channel Studio manages one hundred private channels and ten-video task queues", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const server = read("utils/youtubePublisher.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const capability of [
+    "YOUTUBE MULTI-CHANNEL STUDIO",
+    "Quản lý ${channels.length} kênh trong một nơi",
+    "Kéo tối đa 10 video vào đây",
+    "multiple accept=",
+    "fleetUploadFiles.length * selectedChannels.length",
+    "maxTasksPerBatch",
+    "uploadQueuedFleetFile",
+    "taskKey: `${fingerprint}::${channelId}`",
+    "channels/observatory",
+    "fleetSelectionCapacity"
+  ]) assert.match(client, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(client, /runConcurrent\(fleetUploadFiles, 1/);
+  assert.match(client, /for \(let offset = 0; offset < eligibleChannelIds\.length; offset \+= chunkSize\)/);
+  assert.match(server, /const CHANNEL_VAULT_LIMIT = 100/);
+  assert.match(server, /const VIDEO_QUEUE_LIMIT = 10/);
+  assert.match(server, /const BULK_TASK_LIMIT = 100/);
+  assert.match(server, /route === "channels\/observatory"/);
+  assert.match(server, /route === "channels\/refresh-bulk"/);
+  assert.match(server, /ownedConnectionsForIds\(db, user, body\.channelIds\)/);
+  assert.match(server, /String\(bundle\.channel\.channelId\) !== String\(connection\.channelId\)/);
+  assert.match(server, /uploads\.find\(\{ userId: user\._id \}\)/);
+  assert.match(server, /commentDrafts\.find\(\{ userId: user\._id, status: "draft" \}\)/);
+  assert.match(server, /YOUTUBE_CHANNEL_VAULT_LIMIT/);
+  assert.match(css, /\.ycg-studio-channel-table/);
+  assert.match(css, /\.ycg-task-table/);
+  assert.match(css, /\.ycg-shell\[data-ycg-active="fleet"\]/);
+});
+
 test("Creator Galaxy supports private multi-channel accounts without shared browser drafts", () => {
   const client = read("youtube-creator-galaxy.js");
   const server = read("utils/youtubePublisher.js");
@@ -250,7 +283,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=6", "youtube-creator-galaxy.js?v=10"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=7", "youtube-creator-galaxy.js?v=11"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
