@@ -30,7 +30,7 @@ test("home experience assets are loaded and cached", () => {
 });
 
 test("home enhancements load after the existing Command Center runtime", () => {
-  const base = loader.indexOf("command-center-pro.js?v=5");
+  const base = loader.indexOf("command-center-pro.js?v=6");
   assert.ok(base >= 0);
   for (const file of assets.filter((asset) => asset.includes(".js?v="))) {
     assert.ok(loader.indexOf(file) > base, `${file} must enhance the initialized runtime`);

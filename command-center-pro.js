@@ -752,6 +752,10 @@
   }
 
   function installThemeUi() {
+    if (window.HHAppTheme) {
+      window.HHAppTheme.apply(read(KEYS.theme, "aurora"), { persist: false });
+      return;
+    }
     let panel = document.querySelector(".cc-theme-panel");
     if (!panel) {
       panel = document.createElement("div");
@@ -763,6 +767,7 @@
   }
 
   function applyTheme(theme) {
+    if (window.HHAppTheme) return window.HHAppTheme.apply(theme);
     const value = themes.includes(theme) ? theme : "aurora";
     document.body.dataset.dashboardTheme = value;
     write(KEYS.theme, value);
@@ -770,6 +775,10 @@
   }
 
   function cycleTheme() {
+    if (window.HHAppTheme) {
+      window.HHAppTheme.cycle();
+      return toast("Đã đổi giao diện", document.body.dataset.dashboardTheme, "◐");
+    }
     const current = document.body.dataset.dashboardTheme || "aurora";
     applyTheme(themes[(themes.indexOf(current) + 1) % themes.length]);
     toast("Đã đổi giao diện", document.body.dataset.dashboardTheme, "◐");

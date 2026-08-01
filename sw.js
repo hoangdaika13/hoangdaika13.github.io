@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v366";
+const CACHE = "hh-identity-portal-v367";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -10,6 +10,7 @@ const RUNTIME_ASSETS = [
   "./",
   "./index.html",
   "./app-shell.css?v=54",
+  "./app-theme-system.css?v=4",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=3",
   "./home-galaxy-mission.css?v=6",
@@ -52,7 +53,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=155",
+  "./script.js?v=156",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -122,7 +123,7 @@ const RUNTIME_ASSETS = [
   "./home-galaxy-mission.js?v=8",
   "./home-galaxy-operations.js?v=4",
   "./home-galaxy-control-deck.js?v=2",
-  "./command-center-pro.js?v=5",
+  "./command-center-pro.js?v=6",
   "./home-daily-command.js?v=6",
   "./home-command-search.js?v=3",
   "./home-widget-project-pulse.js?v=2",
@@ -200,6 +201,7 @@ const RUNTIME_ASSETS = [
   "./platform-p0.js?v=1",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
+  "./app-theme-system.js?v=4",
   "./system-platform.css?v=1",
   "./system-platform.js?v=3",
   "./sidebar-navigation-pro.css?v=9",
@@ -394,6 +396,7 @@ const CORE = [
   "./",
   "./index.html",
   "./app-shell.css?v=54",
+  "./app-theme-system.css?v=4",
   "./sidebar-navigation-pro.css?v=9",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=5",
@@ -405,10 +408,11 @@ const CORE = [
   "./config.js?v=8",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
+  "./app-theme-system.js?v=4",
   "./performance-loader.js?v=117",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=155"
+  "./script.js?v=156"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
