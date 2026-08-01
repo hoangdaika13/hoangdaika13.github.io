@@ -220,7 +220,7 @@ test("Multi-channel Studio manages one hundred private channels and ten-video ta
   const css = read("youtube-creator-galaxy.css");
   for (const capability of [
     "YOUTUBE MULTI-CHANNEL STUDIO",
-    "Quản lý ${channels.length} kênh trong một nơi",
+    "Quản lý nhiều kênh trong một nơi",
     "Kéo tối đa 10 video vào đây",
     "multiple accept=",
     "fleetUploadFiles.length * selectedChannels.length",
@@ -245,6 +245,21 @@ test("Multi-channel Studio manages one hundred private channels and ten-video ta
   assert.match(css, /\.ycg-studio-channel-table/);
   assert.match(css, /\.ycg-task-table/);
   assert.match(css, /\.ycg-shell\[data-ycg-active="fleet"\]/);
+});
+
+test("Multi-channel Studio presents one simple cosmic three-step workflow", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const label of ["Tổng quan", "Đăng video", "Tiến trình"]) assert.match(client, new RegExp(label));
+  assert.match(client, /aria-label="Quy trình quản lý kênh"/);
+  assert.match(client, /Chọn kênh, đăng video và theo dõi tiến trình/);
+  assert.match(client, /<th>Trạng thái<\/th><th>Đồng bộ<\/th>/);
+  assert.doesNotMatch(client, /<th>Nội dung<\/th><th>Tác vụ<\/th><th>Phản hồi<\/th>/);
+  assert.match(client, /ycg-channel-library"><header><div>[\s\S]{0,240}<\/div><\/header>/);
+  assert.doesNotMatch(client, /ycg-channel-library"><header>[\s\S]{0,400}connect-creator/);
+  assert.match(css, /\.ycg-shell\[data-ycg-active="fleet"\] \.ycg-map\{display:none\}/);
+  assert.match(css, /radial-gradient\(circle at 10% 2%,#1f75a84a/);
+  assert.match(css, /\.ycg-studio-metrics\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/);
 });
 
 test("Creator Galaxy supports private multi-channel accounts without shared browser drafts", () => {
@@ -283,7 +298,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=7", "youtube-creator-galaxy.js?v=11"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=8", "youtube-creator-galaxy.js?v=12"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
