@@ -14,12 +14,26 @@ const mission = require(path.join(root, "home-galaxy-mission.js"));
 
 test("Galaxy Mission Control V3 is versioned on home and offline shell", () => {
   assert.equal(mission.VERSION, "3.0.0");
-  assert.match(loader, /home-galaxy-mission\.css\?v=6/);
-  assert.match(loader, /home-galaxy-mission\.js\?v=8/);
-  assert.match(worker, /home-galaxy-mission\.css\?v=6/);
-  assert.match(worker, /home-galaxy-mission\.js\?v=8/);
+  assert.match(loader, /home-galaxy-mission\.css\?v=7/);
+  assert.match(loader, /home-galaxy-mission\.js\?v=9/);
+  assert.match(worker, /home-galaxy-mission\.css\?v=7/);
+  assert.match(worker, /home-galaxy-mission\.js\?v=9/);
   assert.match(source, /hh\.home\.galaxy\.preferences\.v2/);
   assert.match(source, /newlyIntroduced/);
+});
+
+test("Home exposes a private one-click YouTube Quick Publish launcher", () => {
+  for (const contract of [
+    "YOUTUBE QUICK PUBLISH",
+    "Chọn kênh &amp; đăng video",
+    'data-hgm-youtube-launch="content"',
+    'data-hgm-youtube-launch="overview"',
+    "hh.youtube.creator.intent.v1",
+    "/davinci-resolve/youtube",
+    "ownerId: currentUserId()"
+  ]) assert.ok(source.includes(contract), `missing Quick Publish contract ${contract}`);
+  assert.doesNotMatch(source, /YOUTUBE_LAUNCH_INTENT_KEY[\s\S]{0,500}(channelId|accessToken|refreshToken)/);
+  assert.match(styles, /\.hgm-youtube-quick/);
 });
 
 test("exactly eight real feature planets read their existing module stores", () => {

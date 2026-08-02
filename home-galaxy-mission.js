@@ -27,6 +27,8 @@
   const RECENT_KEY = "hh.app-shell.recent";
   const WEATHER_KEY = "hh.dashboard.weather.v2";
   const ORCHESTRATOR_KEY = "hh.platform.orchestrator.v2";
+  const YOUTUBE_LAUNCH_INTENT_KEY = "hh.youtube.creator.intent.v1";
+  const YOUTUBE_CREATOR_ROUTE = "/davinci-resolve/youtube";
   const MAX_ACTIVITY = 80;
   const MAX_WIDGETS = 10;
   const instances = new WeakMap();
@@ -285,6 +287,12 @@
     return Boolean(token || user.email || (user.id && user.guest !== true && user.role !== "guest"));
   }
 
+  function currentUserId() {
+    const runtimeUser = global.HHAuthz?.currentUser?.();
+    const user = runtimeUser && typeof runtimeUser === "object" ? runtimeUser : currentUser();
+    return String(user?.id || user?._id || "guest").replace(/[^a-z0-9_-]/gi, "").slice(0, 80) || "guest";
+  }
+
   function apiHeaders() {
     const token = global.HHAuthSession?.token?.() || "";
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
@@ -293,6 +301,18 @@
   function navigate(route) {
     if (!/^\/[a-z0-9/_-]+$/i.test(String(route || ""))) return;
     global.location.hash = `#${route}`;
+  }
+
+  function launchYouTubeStudio(tab = "content") {
+    const safeTab = tab === "overview" ? "overview" : "content";
+    try {
+      global.sessionStorage?.setItem?.(YOUTUBE_LAUNCH_INTENT_KEY, JSON.stringify({
+        tab: safeTab,
+        ownerId: currentUserId(),
+        at: Date.now()
+      }));
+    } catch {}
+    navigate(YOUTUBE_CREATOR_ROUTE);
   }
 
   function emitEvent(name, payload = {}) {
@@ -1011,6 +1031,19 @@
         <header><div><span><i></i> LIVE ORBIT · REAL DATA</span><h2 id="hgmLiveTitle">Trung tâm tín hiệu trực tiếp</h2><p>Chỉ số từ trình duyệt, backend và dữ liệu bạn thật sự đã tạo.</p></div><div><b data-hgm-online>ONLINE</b><button type="button" data-hgm-settings-open>⚙ Cá nhân hóa</button></div></header>
         <div class="hgm-live-deck" data-hgm-live-deck></div>
       </section>
+      <section class="hgm-youtube-quick" aria-labelledby="hgmYoutubeQuickTitle">
+        <div class="hgm-youtube-quick__mark" aria-hidden="true"><span>▶</span><i></i></div>
+        <div class="hgm-youtube-quick__copy">
+          <small>YOUTUBE QUICK PUBLISH</small>
+          <h3 id="hgmYoutubeQuickTitle">Chọn kênh và tải video ngay</h3>
+          <p>Mở thẳng Studio riêng của tài khoản này. Danh sách kênh và dữ liệu OAuth không hiển thị tại Trang chủ.</p>
+        </div>
+        <div class="hgm-youtube-quick__security"><span>◇</span><div><b>Riêng tư theo tài khoản</b><small>Chỉ bạn thấy các kênh đã kết nối</small></div></div>
+        <div class="hgm-youtube-quick__actions">
+          <button type="button" data-hgm-youtube-launch="overview">Quản lý kênh</button>
+          <button type="button" class="is-primary" data-hgm-youtube-launch="content">Chọn kênh &amp; đăng video <span>→</span></button>
+        </div>
+      </section>
       <section class="hgm-activity" aria-label="Galaxy Activity Stream">
         <header><span>GALAXY ACTIVITY</span><b>EVENT BUS</b><button type="button" data-hgm-read-all>Đánh dấu đã đọc</button></header>
         <div class="hgm-activity-window"><div class="hgm-activity-track" data-hgm-activity></div></div>
@@ -1633,6 +1666,11 @@
       saveActivity(instance.activities);
       renderActivity(instance);
       renderPlanets(instance);
+      return;
+    }
+    const youtubeLaunch = target.closest("[data-hgm-youtube-launch]");
+    if (youtubeLaunch) {
+      launchYouTubeStudio(youtubeLaunch.dataset.hgmYoutubeLaunch);
       return;
     }
     const action = target.closest("[data-hgm-action]");

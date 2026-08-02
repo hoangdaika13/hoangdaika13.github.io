@@ -3,6 +3,8 @@
 
   const STORAGE_KEY = "hh.youtube-creator-galaxy.v2";
   const FLEET_STORAGE_KEY = "hh.youtube-channel-fleet.v1";
+  const CREATOR_LAUNCH_INTENT_KEY = "hh.youtube.creator.intent.v1";
+  const CREATOR_LAUNCH_INTENT_TTL_MS = 5 * 60 * 1000;
   const VIDEO_PROJECT_KEY = "hh.video-editor.project.v1";
   const MEDIA_DB = "hh-video-editor-media";
   const MEDIA_STORE = "assets";
@@ -114,6 +116,25 @@
   function currentIdentityId() {
     const user = currentIdentity();
     return String(user?.id || user?._id || "guest").replace(/[^a-z0-9_-]/gi, "").slice(0, 80) || "guest";
+  }
+
+  function validLaunchIntentTab(value, ownerId = currentIdentityId(), now = Date.now()) {
+    const issuedAt = Number(value?.at || 0);
+    const age = Number(now) - issuedAt;
+    if (!FLEET_STUDIO_TABS.includes(value?.tab)) return "";
+    if (String(value?.ownerId || "") !== String(ownerId || "")) return "";
+    if (!Number.isFinite(age) || age < -30_000 || age > CREATOR_LAUNCH_INTENT_TTL_MS) return "";
+    return value.tab;
+  }
+
+  function consumeLaunchIntent(now = Date.now()) {
+    let value = null;
+    try {
+      const raw = sessionStorage.getItem(CREATOR_LAUNCH_INTENT_KEY);
+      sessionStorage.removeItem(CREATOR_LAUNCH_INTENT_KEY);
+      value = raw ? JSON.parse(raw) : null;
+    } catch { return ""; }
+    return validLaunchIntentTab(value, currentIdentityId(), now);
   }
 
   function privateStorageKey(base = STORAGE_KEY) {
@@ -2847,7 +2868,9 @@
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     state = loadState();
     fleetState = loadFleetState();
-    if (STUDIO_MODULE_TABS[state.active]) fleetState.studioTab = STUDIO_MODULE_TABS[state.active];
+    const launchTab = consumeLaunchIntent();
+    if (launchTab) fleetState.studioTab = launchTab;
+    else if (STUDIO_MODULE_TABS[state.active]) fleetState.studioTab = STUDIO_MODULE_TABS[state.active];
     state.active = "fleet";
     saveState();
     saveFleetState();
@@ -2933,6 +2956,7 @@
     cleanup,
     modules: MODULES,
     normalizeState,
+    validLaunchIntentTab,
     parseCaptions,
     seoScore: (value) => {
       const previous = state;

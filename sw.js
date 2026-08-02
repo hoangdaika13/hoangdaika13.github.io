@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v368";
+const CACHE = "hh-identity-portal-v369";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -13,7 +13,7 @@ const RUNTIME_ASSETS = [
   "./app-theme-system.css?v=6",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=3",
-  "./home-galaxy-mission.css?v=6",
+  "./home-galaxy-mission.css?v=7",
   "./home-galaxy-operations.css?v=1",
   "./home-galaxy-control-deck.css?v=2",
   "./command-center-pro.css?v=4",
@@ -91,7 +91,7 @@ const RUNTIME_ASSETS = [
   "./music-ai-apps.css?v=2",
   "./youtube-publisher.css?v=4",
   "./youtube-publisher.js?v=7",
-  "./youtube-creator-galaxy.js?v=13",
+  "./youtube-creator-galaxy.js?v=14",
   "./music-production-suite.css?v=3",
   "./music-daw-workspace.css?v=1",
   "./music-composer-lyrics.css?v=1",
@@ -120,7 +120,7 @@ const RUNTIME_ASSETS = [
   "./music-ai-studio.js?v=9",
   "./dashboard-aurora.js?v=5",
   "./home-galaxy-command.js?v=3",
-  "./home-galaxy-mission.js?v=8",
+  "./home-galaxy-mission.js?v=9",
   "./home-galaxy-operations.js?v=4",
   "./home-galaxy-control-deck.js?v=2",
   "./command-center-pro.js?v=6",

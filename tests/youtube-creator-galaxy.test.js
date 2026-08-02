@@ -272,6 +272,19 @@ test("Studio embeds essential calendar, comments and analytics without returning
   assert.match(client, /function hydrateFleetStudioTab\(tab\)/);
 });
 
+test("Home launch intent opens Quick Publish once and rejects another owner or stale state", () => {
+  const api = loadApi();
+  const now = Date.now();
+  assert.equal(api.validLaunchIntentTab({ tab: "content", ownerId: "owner-a", at: now }, "owner-a", now), "content");
+  assert.equal(api.validLaunchIntentTab({ tab: "content", ownerId: "owner-a", at: now }, "owner-b", now), "");
+  assert.equal(api.validLaunchIntentTab({ tab: "content", ownerId: "owner-a", at: now - 300001 }, "owner-a", now), "");
+  assert.equal(api.validLaunchIntentTab({ tab: "not-a-tab", ownerId: "owner-a", at: now }, "owner-a", now), "");
+  const client = read("youtube-creator-galaxy.js");
+  assert.match(client, /sessionStorage\.removeItem\(CREATOR_LAUNCH_INTENT_KEY\)/);
+  assert.match(client, /const launchTab = consumeLaunchIntent\(\)/);
+  assert.match(client, /if \(launchTab\) fleetState\.studioTab = launchTab/);
+});
+
 test("Creator Galaxy supports private multi-channel accounts without shared browser drafts", () => {
   const client = read("youtube-creator-galaxy.js");
   const server = read("utils/youtubePublisher.js");
@@ -308,7 +321,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=9", "youtube-creator-galaxy.js?v=13"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=9", "youtube-creator-galaxy.js?v=14"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
