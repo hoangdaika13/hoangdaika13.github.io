@@ -143,3 +143,142 @@
   .hhj-dictionary-filters > select,
   .hhj-dictionary-filters > button { flex: 1 1 180px; }
 }
+
+/* Guided learning flow v2 */
+.hhj-sidebar > section button { min-height: 32px; padding: 0 8px; color: var(--muted); font-size: 11px; }
+.hhj-today-hero { min-height: 290px; }
+.hhj-quick-tools,.hhj-learning-labs,.hhj-mistake-book,.hhj-related-words { display:grid; gap:14px; padding:20px; border:1px solid var(--line); border-radius:13px; background:var(--panel); }
+.hhj-quick-tools h2,.hhj-learning-labs h2,.hhj-mistake-book h2,.hhj-related-words h2 { margin:2px 0; }
+.hhj-quick-tools small,.hhj-learning-labs small,.hhj-mistake-book small { color:var(--muted); }
+.hhj-quick-tools > div,.hhj-learning-labs > div { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+.hhj-quick-tools button,.hhj-learning-labs button { display:grid; grid-template-columns:42px 1fr; align-items:center; gap:10px; min-height:78px; height:auto; padding:12px; text-align:left; }
+.hhj-quick-tools button > b,.hhj-learning-labs button > b { display:grid; width:42px; height:42px; place-items:center; border-radius:10px; background:#d7373f10; color:var(--red); font-family:"Noto Serif JP",serif; font-size:21px; }
+.hhj-quick-tools button > span,.hhj-learning-labs button > span { display:grid; }
+
+.hhj-onboarding { display:grid; gap:24px; max-width:980px; margin:20px auto; padding:clamp(20px,4vw,48px); border:1px solid var(--line); border-radius:20px; background:var(--panel); box-shadow:0 22px 70px #00000012; }
+.hhj-onboarding > header { display:flex; gap:20px; align-items:center; }
+.hhj-onboarding > header > span { display:grid; flex:0 0 76px; height:76px; place-items:center; border-radius:19px; background:var(--red); color:#fff; font-family:serif; font-size:42px; }
+.hhj-onboarding h1 { margin:3px 0; font-size:clamp(28px,4vw,46px); }
+.hhj-onboarding p { margin:0; color:var(--muted); }
+.hhj-onboarding form { display:grid; gap:22px; }
+.hhj-onboarding fieldset { display:grid; gap:12px; margin:0; padding:18px; border:1px solid var(--line); border-radius:12px; }
+.hhj-onboarding legend { padding:0 8px; font-size:16px; font-weight:800; }
+.hhj-choice-grid,.hhj-goal-options { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.hhj-choice-grid label,.hhj-goal-options label { cursor:pointer; }
+.hhj-choice-grid input,.hhj-goal-options input { position:absolute; opacity:0; }
+.hhj-choice-grid label > span,.hhj-goal-options label > span { display:grid; gap:3px; min-height:76px; padding:13px; border:1px solid var(--line); border-radius:9px; background:var(--soft); }
+.hhj-choice-grid label:has(input:checked) > span,.hhj-goal-options label:has(input:checked) > span { border-color:var(--red); box-shadow:inset 0 0 0 1px var(--red); background:#d7373f08; }
+.hhj-choice-grid small,.hhj-goal-options small { color:var(--muted); }
+.hhj-onboarding select { min-height:44px; padding:0 12px; border:1px solid var(--line); border-radius:8px; background:var(--soft); color:var(--ink); }
+.hhj-placement { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; }
+.hhj-placement > p { grid-column:1/-1; font-size:12px; }
+.hhj-placement label { display:grid; gap:5px; }
+.hhj-placement label span { color:var(--red); font-family:serif; font-size:20px; font-weight:800; }
+.hhj-placement input { min-width:0; height:40px; padding:0 9px; border:1px solid var(--line); border-radius:7px; background:var(--panel); color:var(--ink); }
+.hhj-onboarding form > .primary { justify-self:end; min-height:48px; padding:0 22px; }
+
+.hhj-course-map { display:grid; gap:12px; position:relative; }
+.hhj-course-map article { display:grid; grid-template-columns:54px minmax(0,1fr) auto; align-items:center; gap:16px; padding:18px; border:1px solid var(--line); border-radius:12px; background:var(--panel); }
+.hhj-course-map article > span { display:grid; width:48px; height:48px; place-items:center; border-radius:50%; background:#d7373f12; color:var(--red); font-size:20px; font-weight:900; }
+.hhj-course-map article h2,.hhj-course-map article p { margin:0; }
+.hhj-course-map article p { color:var(--muted); }
+.hhj-course-map article.done { border-color:#16885b55; }
+.hhj-course-map article.done > span { background:#16885b14; color:var(--green); }
+.hhj-course-map article.locked { opacity:.6; }
+
+.hhj-lesson { max-width:980px; }
+.hhj-lesson-head { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px; }
+.hhj-lesson-head h1,.hhj-lesson-head h2,.hhj-lesson-head p { margin:2px 0; }
+.hhj-lesson-head > strong { color:var(--red); font-size:22px; }
+.hhj-lesson-preview { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.hhj-lesson-preview button { display:grid; grid-template-columns:28px 1fr auto; align-items:center; gap:8px; min-height:66px; height:auto; text-align:left; }
+.hhj-lesson-preview button > b { color:var(--red); }
+.hhj-lesson-preview button > span { display:grid; }
+.hhj-lesson-preview button small { color:var(--muted); }
+.hhj-lesson-preview button i { font-style:normal; }
+.hhj-lesson-cta { justify-self:end; min-height:48px!important; }
+.hhj-lesson-progress { height:9px; overflow:hidden; border-radius:8px; background:var(--soft); }
+.hhj-lesson-progress span { display:block; width:var(--p); height:100%; background:linear-gradient(90deg,var(--red),var(--red2)); transition:width .2s ease; }
+.hhj-lesson-question { display:grid; gap:18px; max-width:760px; width:100%; margin:20px auto; padding:clamp(22px,5vw,52px); border:1px solid var(--line); border-radius:18px; background:var(--panel); text-align:center; }
+.hhj-lesson-question > small { color:var(--red); font-weight:900; letter-spacing:.1em; }
+.hhj-lesson-question h1 { margin:0; font-size:clamp(28px,4vw,46px); }
+.hhj-lesson-question > div { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.hhj-lesson-question > div label { cursor:pointer; }
+.hhj-lesson-question > div input { position:absolute; opacity:0; }
+.hhj-lesson-question > div span { display:grid; min-height:56px; place-items:center; padding:10px; border:1px solid var(--line); border-radius:9px; background:var(--soft); font-weight:800; }
+.hhj-lesson-question > div label:has(input:checked) span { border-color:var(--red); background:#d7373f0b; }
+.hhj-lesson-question > label { display:grid; gap:7px; color:var(--muted); text-align:left; }
+.hhj-lesson-question > label input { min-height:52px; padding:0 14px; border:1px solid var(--line); border-radius:9px; background:var(--soft); color:var(--ink); font-size:20px; text-align:center; }
+.hhj-lesson-question output { min-height:24px; font-weight:800; }
+.hhj-lesson-question output[data-tone=success] { color:var(--green); }
+.hhj-lesson-question output[data-tone=error] { color:#c9353f; }
+.hhj-audio-orb { justify-self:center; width:92px; height:92px!important; border-radius:50%!important; background:#d7373f10!important; color:var(--red)!important; font-size:18px!important; }
+.hhj-lesson-summary { display:grid; max-width:680px; margin:40px auto; padding:48px; place-items:center; border:1px solid var(--line); border-radius:20px; background:var(--panel); text-align:center; }
+.hhj-lesson-summary > span { color:var(--red); font-size:22px; font-weight:800; }
+.hhj-lesson-summary h1 { margin:12px 0; }
+.hhj-lesson-summary > strong { color:var(--red); font-size:74px; line-height:1; }
+.hhj-lesson-summary p { color:var(--muted); }
+.hhj-lesson-summary > div { display:flex; gap:8px; }
+
+.hhj-detail-back { display:flex; align-items:center; justify-content:space-between; }
+.hhj-detail-back span { color:var(--muted); }
+.hhj-word-hero { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr); gap:16px; }
+.hhj-word-hero > div,.hhj-word-hero > aside,.hhj-word-detail-grid > section { padding:24px; border:1px solid var(--line); border-radius:14px; background:var(--panel); }
+.hhj-word-hero h1 { margin:0; font-family:"Noto Serif JP",serif; font-size:clamp(64px,9vw,112px); line-height:1.1; }
+.hhj-word-hero p { color:var(--muted); font-size:18px; }
+.hhj-word-hero > div > div { display:flex; gap:8px; }
+.hhj-word-hero aside { display:grid; align-content:center; gap:8px; }
+.hhj-word-hero aside > span,.hhj-word-detail-grid small { color:var(--red); font-size:10px; font-weight:900; letter-spacing:.08em; }
+.hhj-word-hero aside > strong { font-size:26px; }
+.hhj-word-hero aside > small { color:var(--muted); }
+.hhj-word-detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.hhj-word-detail-grid h2 { font-family:"Noto Serif JP",serif; line-height:1.7; }
+.hhj-word-detail-grid p { color:var(--muted); }
+.hhj-word-detail-grid dl { display:grid; grid-template-columns:100px 1fr; gap:7px; }
+.hhj-word-detail-grid dt { color:var(--muted); }
+.hhj-word-detail-grid dd { margin:0; font-weight:800; }
+.hhj-character-chips { display:flex; gap:7px; }
+.hhj-character-chips button { min-width:56px; height:56px; font-family:serif; font-size:28px; }
+.hhj-related-words > div { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.hhj-related-words button { display:grid; height:auto; min-height:70px; text-align:left; }
+.hhj-related-words button span { color:var(--muted); font-size:11px; }
+
+.hhj-reader-actions,.hhj-jlpt-tabs { display:flex; gap:7px; }
+.hhj-japanese-text button { display:inline; min-height:0; height:auto; padding:0 2px; border:0; border-bottom:1px dashed var(--red); border-radius:0; background:transparent; color:inherit; font-family:inherit; font-size:inherit; font-weight:inherit; line-height:inherit; }
+.hhj-reader-tip { color:var(--muted); font-size:11px; }
+.hhj-shadowing { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:9px; padding:16px; border:1px solid var(--line); border-radius:10px; background:var(--soft); }
+.hhj-shadowing h3,.hhj-shadowing p { margin:2px 0; }
+.hhj-shadowing p { color:var(--muted); font-size:11px; }
+.hhj-shadowing output { grid-column:1/-1; color:var(--red); }
+.hhj-jlpt-tabs button.active { border-color:var(--red); background:var(--red); color:#fff; }
+.hhj-jlpt-test legend span { white-space:pre-line; }
+.hhj-srs-status { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.hhj-srs-status article { display:grid; gap:3px; padding:15px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+.hhj-srs-status span { color:var(--muted); }
+.hhj-srs-status strong { font-size:26px; }
+.hhj-mistake-book > header { display:flex; justify-content:space-between; align-items:center; }
+.hhj-mistake-book > header > strong { color:var(--red); }
+.hhj-mistake-book article { display:grid; grid-template-columns:80px 1fr auto; gap:12px; align-items:center; padding:12px 0; border-top:1px solid var(--line); }
+.hhj-mistake-book article > b { color:var(--red); }
+.hhj-mistake-book article > div { display:grid; }
+.hhj-mistake-book article span,.hhj-mistake-book article small { color:var(--muted); }
+.hhj-saved-list { padding:16px; border:1px solid var(--line); border-radius:11px; background:var(--panel); }
+.hhj-saved-list > summary { cursor:pointer; font-weight:800; }
+.hhj-saved-list .hhj-notebook-list { margin-top:14px; }
+.hhj-subtitle-miner { display:grid; gap:14px; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel); }
+.hhj-subtitle-miner h2,.hhj-subtitle-miner p { margin:2px 0; }
+.hhj-subtitle-miner p { color:var(--muted); }
+.hhj-subtitle-miner form { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+.hhj-subtitle-miner textarea { min-height:110px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--soft); color:var(--ink); resize:vertical; }
+.hhj-subtitle-miner output { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+.hhj-subtitle-miner output:empty { display:none; }
+.hhj-subtitle-miner output > button { display:grid; height:auto; min-height:62px; text-align:left; }
+.hhj-subtitle-miner output > button span { color:var(--muted); font-size:11px; }
+.hhj-subtitle-miner output > footer { grid-column:1/-1; display:flex; justify-content:flex-end; }
+
+@media(max-width:980px){.hhj-quick-tools>div,.hhj-learning-labs>div{grid-template-columns:1fr 1fr}.hhj-choice-grid,.hhj-goal-options{grid-template-columns:1fr 1fr}.hhj-placement{grid-template-columns:1fr 1fr}.hhj-word-detail-grid{grid-template-columns:1fr 1fr}.hhj-lesson-preview{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.hhj-onboarding{padding:18px}.hhj-onboarding>header{align-items:flex-start}.hhj-onboarding>header>span{flex-basis:52px;height:52px;font-size:28px}.hhj-choice-grid,.hhj-goal-options,.hhj-placement,.hhj-quick-tools>div,.hhj-learning-labs>div,.hhj-lesson-preview,.hhj-word-detail-grid,.hhj-related-words>div,.hhj-srs-status,.hhj-subtitle-miner output{grid-template-columns:1fr}.hhj-course-map article{grid-template-columns:44px 1fr}.hhj-course-map article>button{grid-column:2}.hhj-lesson-head{grid-template-columns:auto 1fr}.hhj-lesson-head>strong{grid-column:2;text-align:right}.hhj-lesson-question{padding:20px}.hhj-lesson-question>div{grid-template-columns:1fr}.hhj-lesson-summary{padding:26px}.hhj-word-hero{grid-template-columns:1fr}.hhj-word-hero h1{font-size:66px}.hhj-shadowing{grid-template-columns:1fr}.hhj-shadowing output{grid-column:auto}.hhj-reader-actions{width:100%;flex-direction:column}.hhj-jlpt-tabs{overflow:auto}.hhj-mistake-book article{grid-template-columns:1fr}.hhj-lesson-summary>div{width:100%;flex-direction:column}.hhj-subtitle-miner form{grid-template-columns:1fr}}
+
+/* Isolate readable typography from the platform's decorative page headings. */
+.hhj-app h1,.hhj-app h2,.hhj-app h3,.hhj-app h4,.hhj-app legend,.hhj-app strong{color:var(--ink)!important}
+.hhj-app .primary,.hhj-app .primary strong{color:#fff!important}

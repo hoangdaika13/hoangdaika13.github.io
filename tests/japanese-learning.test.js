@@ -13,10 +13,12 @@ require(path.join(root, "japanese-learning.js"));
 test("HH Japanese exposes a complete local-first learning workspace", () => {
   const api = globalThis.HHJapanese;
   assert.ok(api);
-  assert.equal(api.views.length, 10);
-  for (const view of ["dictionary", "kanji", "grammar", "reader", "jlpt", "notebook", "conversation", "tools", "progress"]) {
+  assert.equal(api.views.length, 6);
+  for (const view of ["dashboard", "learn", "dictionary", "notebook", "jlpt", "progress"]) {
     assert.ok(api.views.some((item) => item.id === view), `missing ${view}`);
   }
+  assert.equal(api.courseUnits.length, 15);
+  assert.equal(api.lessonWords(api.courseUnits[0]).length, 15);
   assert.equal(api.words.length, 10000);
   assert.ok(api.topics.length >= 15);
   assert.ok(api.kanji.length >= 15);
@@ -42,7 +44,17 @@ test("Japanese dictionary, Kana conversion and conjugation perform real local wo
   assert.ok(api.scoreDictation("日本語を勉強します。", "日本語を勉強する") < 100);
   const plan = api.dailyPlan({ level: "N5", saved: {}, reviews: {}, customWords: [], completedReadings: {}, testHistory: [] });
   assert.equal(plan.length, 3);
-  assert.deepEqual(plan.map((item) => item.view), ["dictionary", "reader", "jlpt"]);
+  assert.deepEqual(plan.map((item) => item.view), ["learn", "notebook", "reader"]);
+});
+
+test("guided Japanese learning includes SRS states and a deduplicated mistake notebook", () => {
+  const api = globalThis.HHJapanese;
+  const state = { saved: {}, reviews: {}, mistakes: [], dailyActivity: {}, customWords: [] };
+  assert.equal(api.srsStatus(state, "w1"), "new");
+  api.recordMistake(state, { type: "lesson", id: "w1", prompt: "日本", answer: "sai", correct: "Nhật Bản" });
+  api.recordMistake(state, { type: "lesson", id: "w1", prompt: "日本", answer: "sai lần 2", correct: "Nhật Bản" });
+  assert.equal(state.mistakes.length, 1);
+  assert.equal(state.mistakes[0].count, 2);
 });
 
 test("HH Japanese is reachable, lazy-loaded, cached and responsive", () => {
@@ -54,7 +66,7 @@ test("HH Japanese is reachable, lazy-loaded, cached and responsive", () => {
   assert.match(script, /id: "japanese", label: "HH Japanese"/);
   assert.match(script, /route === "\/japanese" \|\| route\.startsWith\("\/japanese\/"\)/);
   assert.match(script, /window\.HHJapanese\?\.mount/);
-  for (const asset of ["japanese-learning.css?v=3", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-learning.js?v=5"]) {
+  for (const asset of ["japanese-learning.css?v=7", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-learning.js?v=7"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);
@@ -71,7 +83,7 @@ test("Japanese learning labels unsupported browser features honestly", () => {
     "Trình duyệt này chưa hỗ trợ nhận dạng giọng nói",
     "Trình duyệt chưa hỗ trợ TextDetector OCR",
     "không tự tuyên bố nhận dạng chính xác",
-    "không phải đề thi chính thức",
+    "không phải đề thi JLPT chính thức",
     "không tạo kết quả giả"
   ]) assert.match(source, new RegExp(statement));
   assert.match(source, /hh\.japanese\.state\.v1/);
@@ -83,6 +95,11 @@ test("Japanese learning labels unsupported browser features honestly", () => {
   assert.match(source, /customWords/);
   assert.match(source, /data-hhj-vocabulary-topic/);
   assert.match(source, /data-hhj-save-topic/);
+  assert.match(source, /data-hhj-onboarding/);
+  assert.match(source, /data-hhj-lesson-answer/);
+  assert.match(source, /data-hhj-shadowing/);
+  assert.match(source, /data-hhj-resolve-mistake/);
+  assert.match(source, /data-hhj-subtitle-miner/);
 });
 
 test("Japanese thematic vocabulary pack is structured and searchable", () => {
