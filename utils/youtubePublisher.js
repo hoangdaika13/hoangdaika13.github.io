@@ -43,6 +43,7 @@ const DEFAULT_QUOTA_COSTS = Object.freeze({
   "comments:reply": 50,
   "comments:moderate": 50,
   "videos:update": 50,
+  "videos:delete": 50,
   "captions:list": 50,
   "captions:upload": 400,
   "live:list": 1,
@@ -51,6 +52,8 @@ const DEFAULT_QUOTA_COSTS = Object.freeze({
   "upload:create": 100,
   "thumbnail:upload": 50
 });
+const AI_DISCLOSURES = new Set(["yes", "no", "unreviewed"]);
+const RECENT_AUTH_WINDOW_MS = 15 * 60 * 1000;
 
 function fail(message, statusCode = 400, code = "YOUTUBE_PUBLISHER_ERROR") {
   return Object.assign(new Error(message), { statusCode, code });
@@ -105,6 +108,40 @@ function quotaCosts() {
 
 function quotaCost(action) {
   return Math.max(0, Number(quotaCosts()[action] || 0));
+}
+
+function aiDisclosureOf(value, fallback = "unreviewed") {
+  const normalized = clean(value, 24).toLowerCase();
+  return AI_DISCLOSURES.has(normalized) ? normalized : fallback;
+}
+
+function authTokenFromRequest(req) {
+  const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  if (bearer) return bearer;
+  const cookies = String(req.headers.cookie || "").split(";");
+  for (const cookie of cookies) {
+    const separator = cookie.indexOf("=");
+    if (separator < 0 || cookie.slice(0, separator).trim() !== "hh_session") continue;
+    try { return decodeURIComponent(cookie.slice(separator + 1).trim()); }
+    catch { return cookie.slice(separator + 1).trim(); }
+  }
+  return "";
+}
+
+async function requireRecentAuthentication(db, req, user) {
+  const token = authTokenFromRequest(req);
+  const tokenHash = token ? crypto.createHash("sha256").update(token).digest("hex") : "";
+  const session = tokenHash ? await db.collection("authSessions").findOne({
+    userId: user._id,
+    tokenHash,
+    revokedAt: null,
+    expiresAt: { $gt: new Date() }
+  }, { projection: { createdAt: 1, type: 1 } }) : null;
+  const authenticatedAt = session?.createdAt ? new Date(session.createdAt) : null;
+  if (!authenticatedAt || !Number.isFinite(authenticatedAt.getTime()) || Date.now() - authenticatedAt.getTime() > RECENT_AUTH_WINDOW_MS) {
+    throw fail("Phiên đăng nhập đã cũ. Hãy xác thực lại bằng Passkey hoặc đăng nhập lại trước khi xóa video.", 401, "AUTH_RECENT_REQUIRED");
+  }
+  return { authenticatedAt, method: clean(session.type || "session", 40) };
 }
 
 function permissionPreset(value) {
@@ -489,6 +526,7 @@ function isoDay(value) {
 function normalizedVideo(item) {
   const partsTotal = Number(item?.processingDetails?.processingProgress?.partsTotal || 0);
   const partsProcessed = Number(item?.processingDetails?.processingProgress?.partsProcessed || 0);
+  const youtubeSyntheticFlag = item?.status?.containsSyntheticMedia === true;
   return {
     id: clean(item?.id, 40),
     title: clean(item?.snippet?.title, 160),
@@ -496,6 +534,7 @@ function normalizedVideo(item) {
     tags: Array.isArray(item?.snippet?.tags) ? item.snippet.tags.map((tag) => clean(tag, 120)).slice(0, 60) : [],
     categoryId: clean(item?.snippet?.categoryId, 8),
     defaultLanguage: clean(item?.snippet?.defaultLanguage, 24),
+    defaultAudioLanguage: clean(item?.snippet?.defaultAudioLanguage, 24),
     publishedAt: item?.snippet?.publishedAt || null,
     scheduledAt: item?.status?.publishAt || null,
     privacyStatus: clean(item?.status?.privacyStatus, 24),
@@ -505,10 +544,40 @@ function normalizedVideo(item) {
     failureReason: clean(item?.status?.failureReason, 80),
     rejectionReason: clean(item?.status?.rejectionReason, 80),
     madeForKids: Boolean(item?.status?.selfDeclaredMadeForKids || item?.status?.madeForKids),
-    containsSyntheticMedia: Boolean(item?.status?.containsSyntheticMedia),
+    containsSyntheticMedia: youtubeSyntheticFlag,
+    aiDisclosure: youtubeSyntheticFlag ? "yes" : "unreviewed",
+    aiDisclosureSource: youtubeSyntheticFlag ? "youtube-status" : "unknown",
     embeddable: item?.status?.embeddable !== false,
+    license: item?.status?.license === "creativeCommon" ? "creativeCommon" : "youtube",
+    publicStatsViewable: item?.status?.publicStatsViewable !== false,
     duration: clean(item?.contentDetails?.duration, 40),
     definition: clean(item?.contentDetails?.definition, 20),
+    captionAvailable: String(item?.contentDetails?.caption || "false") === "true",
+    hasCustomThumbnail: Boolean(item?.contentDetails?.hasCustomThumbnail),
+    licensedContent: Boolean(item?.contentDetails?.licensedContent),
+    ageRestricted: item?.contentDetails?.contentRating?.ytRating === "ytAgeRestricted",
+    projection: clean(item?.contentDetails?.projection, 20),
+    paidProductPlacement: Boolean(item?.paidProductPlacementDetails?.hasPaidProductPlacement),
+    recordingDate: item?.recordingDetails?.recordingDate || null,
+    fileDetails: item?.fileDetails ? {
+      fileName: clean(item.fileDetails.fileName, 240),
+      fileSize: Number(item.fileDetails.fileSize || 0),
+      container: clean(item.fileDetails.container, 40),
+      videoCodec: clean(item.fileDetails.videoStreams?.[0]?.codec, 80),
+      audioCodec: clean(item.fileDetails.audioStreams?.[0]?.codec, 80),
+      width: Number(item.fileDetails.videoStreams?.[0]?.widthPixels || 0),
+      height: Number(item.fileDetails.videoStreams?.[0]?.heightPixels || 0),
+      frameRate: Number(item.fileDetails.videoStreams?.[0]?.frameRateFps || 0)
+    } : null,
+    suggestions: {
+      errors: (item?.suggestions?.processingErrors || []).map((value) => clean(value, 120)).slice(0, 20),
+      warnings: (item?.suggestions?.processingWarnings || []).map((value) => clean(value, 120)).slice(0, 20),
+      hints: (item?.suggestions?.processingHints || []).map((value) => clean(value, 120)).slice(0, 20)
+    },
+    checks: {
+      copyright: { available: false, status: "unavailable", detail: "YouTube Data API không cung cấp kết quả Studio Copyright Checks." },
+      adSuitability: { available: false, status: "unavailable", detail: "Chỉ hiển thị khi YouTube cung cấp nguồn dữ liệu được phép." }
+    },
     thumbnail: clean(item?.snippet?.thumbnails?.medium?.url || item?.snippet?.thumbnails?.default?.url, 800),
     views: Number(item?.statistics?.viewCount || 0),
     likes: Number(item?.statistics?.likeCount || 0),
@@ -564,6 +633,20 @@ async function recentComments(accessToken, channelId) {
     textFormat: "plainText"
   });
   return (data.items || []).map(normalizedComment);
+}
+
+async function recentVideoComments(accessToken, videoId) {
+  const data = await youtubeJson(accessToken, "/youtube/v3/commentThreads", {
+    part: "snippet,replies",
+    videoId,
+    order: "time",
+    maxResults: 50,
+    textFormat: "plainText"
+  });
+  return (data.items || []).map((item) => ({
+    ...normalizedComment(item),
+    replies: (item.replies?.comments || []).map(normalizedComment).slice(0, 20)
+  }));
 }
 
 function normalizedBroadcast(item) {
@@ -706,14 +789,15 @@ function uploadMetadata(body) {
   if (publishAt && (!Number.isFinite(publishAt.getTime()) || publishAt.getTime() < Date.now() + 60_000)) {
     throw fail("Lịch phát phải ở tương lai ít nhất một phút.", 400, "YOUTUBE_SCHEDULE_INVALID");
   }
+  const aiDisclosure = aiDisclosureOf(body.aiDisclosure, body.containsSyntheticMedia === true ? "yes" : body.containsSyntheticMedia === false ? "no" : "unreviewed");
   const status = {
     privacyStatus: publishAt ? "private" : privacyStatus,
     selfDeclaredMadeForKids: Boolean(body.madeForKids),
-    containsSyntheticMedia: Boolean(body.containsSyntheticMedia),
     license: body.license === "creativeCommon" ? "creativeCommon" : "youtube",
     embeddable: body.embeddable !== false,
     publicStatsViewable: body.publicStatsViewable !== false
   };
+  if (aiDisclosure !== "unreviewed") status.containsSyntheticMedia = aiDisclosure === "yes";
   if (publishAt) status.publishAt = publishAt.toISOString();
   const resource = {
     snippet: {
@@ -789,6 +873,9 @@ module.exports = async function handler(req, res) {
     const projects = db.collection("youtubePublishProjects");
     const commentDrafts = db.collection("youtubeCommentDrafts");
     const bulkJobs = db.collection("youtubeBulkJobs");
+    const videoDeclarations = db.collection("youtubeVideoDeclarations");
+    const destructiveActions = db.collection("youtubeDestructiveActions");
+    const videoTombstones = db.collection("youtubeVideoTombstones");
     await Promise.all([
       ensureIndex(connections, { userId: 1, channelId: 1 }, { unique: true, sparse: true }),
       ensureIndex(connections, { userId: 1, active: 1, updatedAt: -1 }),
@@ -799,6 +886,9 @@ module.exports = async function handler(req, res) {
       ensureIndex(commentDrafts, { userId: 1, channelId: 1, createdAt: -1 }),
       ensureIndex(bulkJobs, { userId: 1, idempotencyKey: 1 }, { unique: true }),
       ensureIndex(bulkJobs, { userId: 1, createdAt: -1 }),
+      ensureIndex(videoDeclarations, { userId: 1, channelId: 1, videoId: 1 }, { unique: true }),
+      ensureIndex(destructiveActions, { userId: 1, idempotencyKey: 1 }, { unique: true }),
+      ensureIndex(videoTombstones, { userId: 1, channelId: 1, videoId: 1, deletedAt: -1 }),
       ensureIndex(states, { expiresAt: 1 }, { expireAfterSeconds: 0 })
     ]);
 
@@ -880,7 +970,7 @@ module.exports = async function handler(req, res) {
 
     const user = await currentUser(req);
     if (!user) throw fail("Đăng nhập HH Platform để dùng YouTube Publisher.", 401, "AUTH_REQUIRED");
-    const routeLimit = route === "bulk/upload/sessions" ? 240 : route === "upload/session" ? 24 : route === "upload/progress" ? 1200 : 160;
+    const routeLimit = route === "videos/delete" ? 12 : route === "bulk/upload/sessions" ? 240 : route === "upload/session" ? 24 : route === "upload/progress" ? 1200 : 160;
     await enforceRateLimit(db, `youtube:${route}:${user._id}`, routeLimit, 15 * 60 * 1000);
 
     if (route === "oauth/start" && req.method === "POST") {
@@ -1086,6 +1176,9 @@ module.exports = async function handler(req, res) {
     if (route === "bulk/preflight" && req.method === "POST") {
       const action = ["upload", "manage", "analytics"].includes(body.action) ? body.action : "upload";
       const selectedConnections = await ownedConnectionsForIds(db, user, body.channelIds, { max: CHANNEL_VAULT_LIMIT });
+      const submittedTasks = (Array.isArray(body.tasks) ? body.tasks : []).slice(0, 1000);
+      const unreviewedAiTasks = submittedTasks.filter((item) => aiDisclosureOf(item?.aiDisclosure) === "unreviewed");
+      const aiPublishBlockedTasks = unreviewedAiTasks.filter((item) => ["public", "schedule"].includes(clean(item?.desiredPrivacyStatus, 24)));
       const rows = selectedConnections.map((connection) => {
         const permissionReady = hasYoutubePermission(connection, action === "manage" ? "manage" : action);
         return {
@@ -1109,7 +1202,13 @@ module.exports = async function handler(req, res) {
         estimatedQuota: quotaCost(estimatedAction) * rows.length,
         quotaSource: "HH configurable quota ledger; Google Cloud Console remains authoritative",
         approvalRequired: true,
-        publicPublishingAllowed: false
+        publicPublishingAllowed: false,
+        aiReview: {
+          reviewed: submittedTasks.length - unreviewedAiTasks.length,
+          unreviewed: unreviewedAiTasks.length,
+          publishBlocked: aiPublishBlockedTasks.length,
+          privateUploadAllowed: true
+        }
       });
     }
 
@@ -1154,6 +1253,10 @@ module.exports = async function handler(req, res) {
       if (desiredPublishAt && (!Number.isFinite(desiredPublishAt.getTime()) || desiredPublishAt.getTime() <= Date.now() + 60_000)) {
         throw fail("Lịch đăng không còn hợp lệ; hãy đặt lại thời gian trong tương lai.", 409, "YOUTUBE_SCHEDULE_INVALID");
       }
+      const aiDisclosure = aiDisclosureOf(record.aiDisclosure);
+      if (desiredPublishAt && aiDisclosure === "unreviewed") {
+        throw fail("Video chưa được khai báo nội dung AI. Hãy chọn Có hoặc Không trước khi lên lịch.", 409, "YOUTUBE_AI_DISCLOSURE_REQUIRED");
+      }
       const desiredPrivacyStatus = record.desiredPrivacyStatus === "unlisted" ? "unlisted" : "private";
       const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "status,processingDetails", id: record.videoId });
       const video = current.items?.[0];
@@ -1164,9 +1267,9 @@ module.exports = async function handler(req, res) {
         license: video.status?.license === "creativeCommon" ? "creativeCommon" : "youtube",
         embeddable: video.status?.embeddable !== false,
         publicStatsViewable: video.status?.publicStatsViewable !== false,
-        selfDeclaredMadeForKids: Boolean(video.status?.selfDeclaredMadeForKids),
-        containsSyntheticMedia: Boolean(video.status?.containsSyntheticMedia)
+        selfDeclaredMadeForKids: Boolean(video.status?.selfDeclaredMadeForKids)
       };
+      if (aiDisclosure !== "unreviewed") nextStatus.containsSyntheticMedia = aiDisclosure === "yes";
       if (desiredPublishAt) nextStatus.publishAt = desiredPublishAt.toISOString();
       else delete nextStatus.publishAt;
       await youtubeJson(accessToken, "/youtube/v3/videos", { part: "status" }, {
@@ -1229,6 +1332,7 @@ module.exports = async function handler(req, res) {
           desiredPublishAt: desiredPublishAtDate,
           desiredPrivacyStatus: desiredPublishAtDate ? "schedule" : item?.desiredPrivacyStatus === "unlisted" ? "unlisted" : "private",
           privacyStatus: ["private", "unlisted"].includes(item?.privacyStatus) ? item.privacyStatus : privacyStatus,
+          aiDisclosure: aiDisclosureOf(item?.aiDisclosure ?? body.aiDisclosure),
           taskKey: clean(item?.taskKey || `${clean(item?.videoFingerprint || body.videoFingerprint, 260)}::${channelId}`, 390),
           videoFingerprint: clean(item?.videoFingerprint || body.videoFingerprint, 260),
           metadataVersion: clean(item?.metadataVersion || body.metadataVersion, 80),
@@ -1284,6 +1388,7 @@ module.exports = async function handler(req, res) {
             desiredPublishAt: null,
             desiredPrivacyStatus: privacyStatus,
             privacyStatus,
+            aiDisclosure: aiDisclosureOf(body.aiDisclosure),
             taskKey: clean(`${clean(body.videoFingerprint, 260)}::${connection.channelId}`, 390),
             videoFingerprint: clean(body.videoFingerprint, 260),
             metadataVersion: clean(body.metadataVersion, 80),
@@ -1316,6 +1421,9 @@ module.exports = async function handler(req, res) {
             videoFingerprint: channelPayload.videoFingerprint,
             metadataVersion: channelPayload.metadataVersion,
             checksum: channelPayload.checksum,
+            aiDisclosure: channelPayload.aiDisclosure,
+            aiDeclaredAt: channelPayload.aiDisclosure === "unreviewed" ? null : new Date(),
+            aiDeclaredBy: channelPayload.aiDisclosure === "unreviewed" ? "" : String(user._id),
             idempotencyKey,
             status: "uploading",
             uploadSession: encryptToken(session.uploadUrl, connection),
@@ -1532,11 +1640,15 @@ module.exports = async function handler(req, res) {
         ? [await connectionFor(db, user, requestedChannelId)]
         : await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).limit(CHANNEL_VAULT_LIMIT).toArray();
       const channelIds = owned.map((connection) => connection.channelId);
-      const uploadRows = await uploads.find({ userId: user._id, ...(requestedChannelId ? { channelId: requestedChannelId } : { channelId: { $in: channelIds } }) })
+      const uploadRows = await uploads.find({ userId: user._id, deletedAt: { $exists: false }, ...(requestedChannelId ? { channelId: requestedChannelId } : { channelId: { $in: channelIds } }) })
         .sort({ updatedAt: -1 }).limit(1000).toArray();
+      const declarationRows = channelIds.length ? await videoDeclarations.find({ userId: user._id, channelId: { $in: channelIds } }).limit(2000).toArray() : [];
+      const declarationMap = new Map(declarationRows.map((item) => [`${item.channelId}::${item.videoId}`, item]));
       const channelMap = new Map(owned.map((connection) => [String(connection.channelId), connection]));
       const items = uploadRows.map((item) => {
         const connection = channelMap.get(String(item.channelId));
+        const declaration = declarationMap.get(`${item.channelId}::${item.videoId}`);
+        const aiDisclosure = aiDisclosureOf(declaration?.aiDisclosure || item.aiDisclosure);
         return {
           id: String(item._id),
           uploadId: String(item._id),
@@ -1562,6 +1674,10 @@ module.exports = async function handler(req, res) {
           thumbnail: clean(item.thumbnail, 800),
           failureReason: clean(item.failureReason, 80),
           rejectionReason: clean(item.rejectionReason, 80),
+          containsSyntheticMedia: aiDisclosure === "yes",
+          aiDisclosure,
+          aiDisclosureSource: aiDisclosure === "unreviewed" ? "unknown" : "user-declared",
+          aiDeclaredAt: declaration?.declaredAt || item.aiDeclaredAt || null,
           bytesUploaded: Number(item.bytesUploaded || 0),
           totalBytes: Number(item.totalBytes || item.fileSize || 0),
           speedBps: Number(item.speedBps || 0),
@@ -1580,6 +1696,8 @@ module.exports = async function handler(req, res) {
           const liveVideos = await recentVideos(accessToken);
           liveVideos.forEach((video) => {
             const existing = items.find((item) => item.channelId === String(liveConnection.channelId) && item.videoId === video.id);
+            const declaration = declarationMap.get(`${liveConnection.channelId}::${video.id}`);
+            const aiDisclosure = declaration ? aiDisclosureOf(declaration.aiDisclosure) : video.aiDisclosure;
             const merged = {
               ...video,
               id: existing?.id || `${liveConnection.channelId}:${video.id}`,
@@ -1588,6 +1706,10 @@ module.exports = async function handler(req, res) {
               channelTitle: clean(liveConnection.channelTitle, 160),
               status: video.processingStatus === "terminated" ? "error" : video.processingStatus && video.processingStatus !== "succeeded" ? "processing" : video.scheduledAt ? "scheduled" : video.privacyStatus === "public" ? "published" : "uploaded",
               metrics: { views: video.views, likes: video.likes, comments: video.comments },
+              containsSyntheticMedia: aiDisclosure === "yes",
+              aiDisclosure,
+              aiDisclosureSource: declaration && aiDisclosure !== "unreviewed" ? "user-declared" : video.aiDisclosureSource,
+              aiDeclaredAt: declaration?.declaredAt || null,
               updatedAt: existing?.updatedAt || video.publishedAt
             };
             if (existing) Object.assign(existing, merged); else items.push(merged);
@@ -1636,15 +1758,44 @@ module.exports = async function handler(req, res) {
       const videoId = clean(body.videoId, 40);
       if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
       const accessToken = await refreshAccessToken(connection, connections);
-      const [data, captions, auditRows] = await Promise.all([
-        youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet,status,statistics,processingDetails,contentDetails", id: videoId }),
+      const [data, captions, auditRows, declaration, uploadRecord] = await Promise.all([
+        youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet,status,statistics,processingDetails,contentDetails,paidProductPlacementDetails,recordingDetails,fileDetails,suggestions", id: videoId }),
         youtubeJson(accessToken, "/youtube/v3/captions", { part: "id,snippet", videoId }).catch(() => ({ items: [] })),
-        audits.find({ userId: user._id, channelId: connection.channelId, targetId: videoId }).sort({ createdAt: -1 }).limit(30).toArray()
+        audits.find({ userId: user._id, channelId: connection.channelId, targetId: videoId }).sort({ createdAt: -1 }).limit(30).toArray(),
+        videoDeclarations.findOne({ userId: user._id, channelId: connection.channelId, videoId }),
+        uploads.findOne({ userId: user._id, channelId: connection.channelId, videoId }, { sort: { updatedAt: -1 }, projection: { aiDisclosure: 1, aiDeclaredAt: 1 } })
       ]);
       const video = data.items?.[0];
       if (!video) throw fail("Không tìm thấy video trên đúng kênh sở hữu.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
       await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "videos:details", targetId: videoId, status: "completed" });
-      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, video: { ...normalizedVideo(video), channelId: String(connection.channelId), channelTitle: connection.channelTitle }, captions: (captions.items || []).map((item) => ({ id: clean(item.id, 120), name: clean(item.snippet?.name, 160), language: clean(item.snippet?.language, 24), status: clean(item.snippet?.status, 40) })), audit: auditRows.map(publicAudit) });
+      const normalized = normalizedVideo(video);
+      const aiDisclosure = declaration || uploadRecord ? aiDisclosureOf(declaration?.aiDisclosure || uploadRecord?.aiDisclosure) : normalized.aiDisclosure;
+      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, video: { ...normalized, channelId: String(connection.channelId), channelTitle: connection.channelTitle, containsSyntheticMedia: aiDisclosure === "yes", aiDisclosure, aiDisclosureSource: aiDisclosure !== "unreviewed" && (declaration || uploadRecord) ? "user-declared" : normalized.aiDisclosureSource, aiDeclaredAt: declaration?.declaredAt || uploadRecord?.aiDeclaredAt || null }, captions: (captions.items || []).map((item) => ({ id: clean(item.id, 120), name: clean(item.snippet?.name, 160), language: clean(item.snippet?.language, 24), status: clean(item.snippet?.status, 40) })), audit: auditRows.map(publicAudit) });
+    }
+
+    if (route === "video/analytics" && req.method === "POST") {
+      const connection = await connectionFor(db, user, clean(body.channelId, 120));
+      requireYoutubePermission(connection, "analytics");
+      const videoId = clean(body.videoId, 40);
+      if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
+      const accessToken = await refreshAccessToken(connection, connections);
+      const owned = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet", id: videoId });
+      if (String(owned.items?.[0]?.snippet?.channelId || "") !== String(connection.channelId)) throw fail("Video không thuộc kênh đã chọn.", 403, "YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH");
+      const analytics = await channelAnalytics(accessToken, { videoId });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "analytics:video", targetId: videoId, status: "completed", quotaCost: quotaCost("analytics:read") });
+      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, videoId, analytics, syncedAt: new Date() });
+    }
+
+    if (route === "video/comments" && req.method === "POST") {
+      const connection = await connectionFor(db, user, clean(body.channelId, 120));
+      requireYoutubePermission(connection, "manage");
+      const videoId = clean(body.videoId, 40);
+      if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
+      const accessToken = await refreshAccessToken(connection, connections);
+      const owned = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet", id: videoId });
+      if (String(owned.items?.[0]?.snippet?.channelId || "") !== String(connection.channelId)) throw fail("Video không thuộc kênh đã chọn.", 403, "YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH");
+      const comments = await recentVideoComments(accessToken, videoId);
+      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, videoId, comments, syncedAt: new Date() });
     }
 
     if (route === "analytics" && req.method === "GET") {
@@ -1817,6 +1968,12 @@ module.exports = async function handler(req, res) {
       const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet,status,statistics,processingDetails,contentDetails", id: videoId });
       const video = current.items?.[0];
       if (!video) throw fail("Không tìm thấy video trên đúng kênh sở hữu.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
+      if (String(video.snippet?.channelId || "") !== String(connection.channelId)) throw fail("Video không thuộc kênh đã chọn.", 403, "YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH");
+      const existingDeclaration = await videoDeclarations.findOne({ userId: user._id, channelId: connection.channelId, videoId });
+      const explicitAiDisclosure = body.aiDisclosure !== undefined
+        ? aiDisclosureOf(body.aiDisclosure)
+        : body.containsSyntheticMedia !== undefined ? (body.containsSyntheticMedia === true ? "yes" : "no") : null;
+      const aiDisclosure = explicitAiDisclosure || aiDisclosureOf(existingDeclaration?.aiDisclosure, video.status?.containsSyntheticMedia === true ? "yes" : "unreviewed");
       const snippet = {
         ...video.snippet,
         title: clean(body.title || video.snippet.title, 100),
@@ -1827,32 +1984,96 @@ module.exports = async function handler(req, res) {
       };
       const requestedPrivacy = ["private", "unlisted", "public", "schedule"].includes(body.privacyStatus) ? body.privacyStatus : "";
       const publishAt = body.publishAt ? new Date(body.publishAt) : null;
+      const recordingDate = body.recordingDate === undefined ? null : body.recordingDate ? new Date(body.recordingDate) : "clear";
+      if (recordingDate && recordingDate !== "clear" && !Number.isFinite(recordingDate.getTime())) throw fail("Ngày quay video không hợp lệ.", 400, "YOUTUBE_RECORDING_DATE_INVALID");
       if (["public", "schedule"].includes(requestedPrivacy) && body.approved !== true) throw fail("Cần người dùng duyệt trước khi Public hoặc lên lịch.", 409, "YOUTUBE_PUBLISH_APPROVAL_REQUIRED");
+      if (["public", "schedule"].includes(requestedPrivacy) && aiDisclosure === "unreviewed") throw fail("Hãy khai báo Có hoặc Không cho nội dung AI trước khi Public hoặc lên lịch.", 409, "YOUTUBE_AI_DISCLOSURE_REQUIRED");
       if (requestedPrivacy === "schedule" && (!publishAt || !Number.isFinite(publishAt.getTime()) || publishAt.getTime() <= Date.now() + 60_000)) throw fail("Lịch đăng phải ở tương lai.", 400, "YOUTUBE_SCHEDULE_INVALID");
-      const nextStatus = requestedPrivacy ? {
-        privacyStatus: requestedPrivacy === "schedule" ? "private" : requestedPrivacy,
-        license: video.status?.license === "creativeCommon" ? "creativeCommon" : "youtube",
-        embeddable: video.status?.embeddable !== false,
-        publicStatsViewable: video.status?.publicStatsViewable !== false,
+      const shouldUpdateStatus = Boolean(requestedPrivacy || explicitAiDisclosure !== null || body.madeForKids !== undefined);
+      const nextStatus = shouldUpdateStatus ? {
+        privacyStatus: requestedPrivacy === "schedule" ? "private" : requestedPrivacy || video.status?.privacyStatus || "private",
+        license: body.license === "creativeCommon" ? "creativeCommon" : body.license === "youtube" ? "youtube" : video.status?.license === "creativeCommon" ? "creativeCommon" : "youtube",
+        embeddable: body.embeddable === undefined ? video.status?.embeddable !== false : Boolean(body.embeddable),
+        publicStatsViewable: body.publicStatsViewable === undefined ? video.status?.publicStatsViewable !== false : Boolean(body.publicStatsViewable),
         selfDeclaredMadeForKids: body.madeForKids === undefined ? Boolean(video.status?.selfDeclaredMadeForKids) : Boolean(body.madeForKids),
-        containsSyntheticMedia: body.containsSyntheticMedia === undefined ? Boolean(video.status?.containsSyntheticMedia) : Boolean(body.containsSyntheticMedia),
         ...(requestedPrivacy === "schedule" ? { publishAt: publishAt.toISOString() } : {})
       } : null;
-      const parts = nextStatus ? "snippet,status" : "snippet";
+      if (nextStatus) nextStatus.containsSyntheticMedia = aiDisclosure === "unreviewed" ? Boolean(video.status?.containsSyntheticMedia) : aiDisclosure === "yes";
+      const recordingDetails = recordingDate === null ? null : recordingDate === "clear" ? {} : { recordingDate: recordingDate.toISOString() };
+      const parts = ["snippet", ...(nextStatus ? ["status"] : []), ...(recordingDetails ? ["recordingDetails"] : [])].join(",");
       const updated = await youtubeJson(accessToken, "/youtube/v3/videos", { part: parts }, {
         method: "PUT",
-        body: JSON.stringify({ id: videoId, snippet, ...(nextStatus ? { status: nextStatus } : {}) })
+        body: JSON.stringify({ id: videoId, snippet, ...(nextStatus ? { status: nextStatus } : {}), ...(recordingDetails ? { recordingDetails } : {}) })
       });
       const playlistId = clean(body.playlistId, 120);
       if (playlistId) await youtubeJson(accessToken, "/youtube/v3/playlistItems", { part: "snippet" }, { method: "POST", body: JSON.stringify({ snippet: { playlistId, resourceId: { kind: "youtube#video", videoId } } }) });
       await db.collection("events").insertOne({ type: "youtube:metadata-updated", userId: user._id, videoId, createdAt: new Date() });
-      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: requestedPrivacy === "schedule" ? "videos:schedule" : "videos:update", targetId: videoId, status: "completed", detail: clean(body.metadataVersion, 80) });
-      const normalized = normalizedVideo({ ...video, ...(updated.items?.[0] || {}), snippet, ...(nextStatus ? { status: nextStatus } : {}) });
-      const uploadSet = { title: snippet.title, metadataVersion: clean(body.metadataVersion, 80), updatedAt: new Date() };
+      if (explicitAiDisclosure !== null) {
+        await videoDeclarations.updateOne(
+          { userId: user._id, channelId: connection.channelId, videoId },
+          { $set: { userId: user._id, channelId: connection.channelId, videoId, aiDisclosure, declaredBy: String(user._id), declaredAt: new Date(), source: "user" } },
+          { upsert: true }
+        );
+      }
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: explicitAiDisclosure !== null ? "videos:ai-disclosure" : requestedPrivacy === "schedule" ? "videos:schedule" : "videos:update", targetId: videoId, status: "completed", detail: explicitAiDisclosure !== null ? `AI=${aiDisclosure}; ${clean(body.metadataVersion, 80)}` : clean(body.metadataVersion, 80) });
+      const normalized = normalizedVideo({ ...video, ...(updated.items?.[0] || {}), snippet, ...(nextStatus ? { status: nextStatus } : {}), ...(recordingDetails ? { recordingDetails } : {}) });
+      Object.assign(normalized, { containsSyntheticMedia: aiDisclosure === "yes", aiDisclosure, aiDisclosureSource: aiDisclosure === "unreviewed" ? "unknown" : "user-declared" });
+      const uploadSet = { title: snippet.title, metadataVersion: clean(body.metadataVersion, 80), aiDisclosure, aiDeclaredAt: explicitAiDisclosure !== null ? new Date() : undefined, aiDeclaredBy: explicitAiDisclosure !== null ? String(user._id) : undefined, updatedAt: new Date() };
+      Object.keys(uploadSet).forEach((key) => uploadSet[key] === undefined && delete uploadSet[key]);
       if (nextStatus) Object.assign(uploadSet, { privacyStatus: nextStatus.privacyStatus, publishAt: nextStatus.publishAt ? new Date(nextStatus.publishAt) : null, status: nextStatus.publishAt ? "scheduled" : nextStatus.privacyStatus || "uploaded" });
       await uploads.updateMany({ userId: user._id, channelId: connection.channelId, videoId }, { $set: uploadSet });
       const auditRows = await audits.find({ userId: user._id, channelId: connection.channelId, targetId: videoId }).sort({ createdAt: -1 }).limit(30).toArray();
       return res.status(200).json({ ok: true, confirmed: true, video: { ...normalized, channelId: String(connection.channelId), channelTitle: connection.channelTitle }, audit: auditRows.map(publicAudit) });
+    }
+
+    if (route === "videos/delete" && req.method === "POST") {
+      const connection = await connectionFor(db, user, clean(body.channelId, 120));
+      requireYoutubePermission(connection, "manage");
+      const videoId = clean(body.videoId, 40);
+      const idempotencyKey = clean(body.idempotencyKey, 160);
+      if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
+      if (body.approved !== true) throw fail("Cần xác nhận rõ ràng trước khi xóa video.", 409, "YOUTUBE_DELETE_APPROVAL_REQUIRED");
+      if (!/^[a-zA-Z0-9_-]{16,160}$/.test(idempotencyKey)) throw fail("Idempotency key xóa không hợp lệ.", 400, "YOUTUBE_IDEMPOTENCY_INVALID");
+      const recentAuth = await requireRecentAuthentication(db, req, user);
+      const previousAction = await destructiveActions.findOne({ userId: user._id, idempotencyKey });
+      if (previousAction?.status === "completed" && String(previousAction.channelId) === String(connection.channelId) && String(previousAction.videoId) === videoId) {
+        return res.status(200).json({ ok: true, confirmed: true, reused: true, deleted: true, recoverable: false, providerStatus: 204, videoId, deletedAt: previousAction.completedAt || null });
+      }
+      if (previousAction) throw fail("Yêu cầu xóa này đã được sử dụng. Hãy mở lại xác nhận để tạo yêu cầu mới.", 409, "YOUTUBE_DELETE_IDEMPOTENCY_USED");
+      const accessToken = await refreshAccessToken(connection, connections);
+      const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet,status", id: videoId });
+      const video = current.items?.[0];
+      if (!video) throw fail("Không tìm thấy video trên đúng kênh sở hữu.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
+      if (String(video.snippet?.channelId || "") !== String(connection.channelId)) throw fail("Video không thuộc kênh đã chọn.", 403, "YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH");
+      const confirmation = clean(body.confirmation, 160);
+      if (confirmation !== "DELETE" && confirmation !== clean(video.snippet?.title, 160)) {
+        throw fail("Hãy nhập DELETE hoặc chính xác tiêu đề video để xác nhận.", 400, "YOUTUBE_DELETE_CONFIRMATION_INVALID");
+      }
+      const startedAt = new Date();
+      try {
+        await destructiveActions.insertOne({ userId: user._id, channelId: connection.channelId, videoId, idempotencyKey, action: "videos:delete", status: "started", authenticatedAt: recentAuth.authenticatedAt, authMethod: recentAuth.method, startedAt });
+      } catch (error) {
+        if (Number(error?.code) === 11000) throw fail("Yêu cầu xóa đang được xử lý hoặc đã hoàn thành.", 409, "YOUTUBE_DELETE_IN_PROGRESS");
+        throw error;
+      }
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "videos:delete", targetId: videoId, status: "started", quotaCost: 0, detail: "Đã xác nhận; chuẩn bị gọi YouTube" }).catch(() => {});
+      try {
+        await youtubeJson(accessToken, "/youtube/v3/videos", { id: videoId }, { method: "DELETE" });
+      } catch (error) {
+        const failedAt = new Date();
+        await destructiveActions.updateOne({ userId: user._id, idempotencyKey, status: "started" }, { $set: { status: "failed", errorCode: clean(error.code, 80), failedAt } });
+        await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "videos:delete", targetId: videoId, status: "failed", quotaCost: quotaCost("videos:delete"), detail: clean(error.message, 300) });
+        throw error;
+      }
+      const deletedAt = new Date();
+      const localRecords = await Promise.allSettled([
+        destructiveActions.updateOne({ userId: user._id, idempotencyKey, status: "started" }, { $set: { status: "completed", providerStatus: 204, completedAt: deletedAt } }),
+        videoTombstones.insertOne({ userId: user._id, channelId: connection.channelId, videoId, title: clean(video.snippet?.title, 160), thumbnail: clean(video.snippet?.thumbnails?.medium?.url || video.snippet?.thumbnails?.default?.url, 800), privacyStatus: clean(video.status?.privacyStatus, 24), idempotencyKey, providerStatus: 204, recoverable: false, deletedAt }),
+        uploads.updateMany({ userId: user._id, channelId: connection.channelId, videoId }, { $set: { status: "deleted", deletedAt, updatedAt: deletedAt }, $unset: { uploadSession: "" } }),
+        db.collection("events").insertOne({ type: "youtube:video-deleted", userId: user._id, channelId: connection.channelId, videoId, createdAt: deletedAt }),
+        writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "videos:delete", targetId: videoId, status: "completed", quotaCost: quotaCost("videos:delete"), detail: "YouTube HTTP 204; không thể khôi phục" })
+      ]);
+      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, deleted: true, recoverable: false, providerStatus: 204, videoId, deletedAt, tombstoneRecorded: localRecords[1]?.status === "fulfilled" });
     }
 
     if (route === "content/schedule/bulk" && req.method === "POST") {
@@ -1869,11 +2090,18 @@ module.exports = async function handler(req, res) {
           const publishAt = new Date(item.publishAt);
           if (!Number.isFinite(publishAt.getTime()) || publishAt.getTime() <= Date.now() + 60_000) throw fail("Lịch đăng phải ở tương lai.", 400, "YOUTUBE_SCHEDULE_INVALID");
           const accessToken = await refreshAccessToken(connection, connections);
-          const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "status", id: videoId });
+          const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet,status", id: videoId });
           const video = current.items?.[0];
           if (!video) throw fail("Không tìm thấy video trên kênh sở hữu.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
+          if (String(video.snippet?.channelId || "") !== String(connection.channelId)) throw fail("Video không thuộc kênh đã chọn.", 403, "YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH");
           if (video.status?.privacyStatus !== "private") throw fail("Chỉ video Private và chưa từng xuất bản mới được xếp lịch.", 409, "YOUTUBE_SCHEDULE_PRIVATE_REQUIRED");
-          const status = { privacyStatus: "private", license: video.status?.license === "creativeCommon" ? "creativeCommon" : "youtube", embeddable: video.status?.embeddable !== false, publicStatsViewable: video.status?.publicStatsViewable !== false, selfDeclaredMadeForKids: Boolean(video.status?.selfDeclaredMadeForKids), containsSyntheticMedia: Boolean(video.status?.containsSyntheticMedia), publishAt: publishAt.toISOString() };
+          const [declaration, uploadRecord] = await Promise.all([
+            videoDeclarations.findOne({ userId: user._id, channelId: connection.channelId, videoId }),
+            uploads.findOne({ userId: user._id, channelId: connection.channelId, videoId }, { sort: { updatedAt: -1 }, projection: { aiDisclosure: 1 } })
+          ]);
+          const aiDisclosure = aiDisclosureOf(declaration?.aiDisclosure || uploadRecord?.aiDisclosure);
+          if (aiDisclosure === "unreviewed") throw fail("Video chưa khai báo nội dung AI; chưa thể lên lịch.", 409, "YOUTUBE_AI_DISCLOSURE_REQUIRED");
+          const status = { privacyStatus: "private", license: video.status?.license === "creativeCommon" ? "creativeCommon" : "youtube", embeddable: video.status?.embeddable !== false, publicStatsViewable: video.status?.publicStatsViewable !== false, selfDeclaredMadeForKids: Boolean(video.status?.selfDeclaredMadeForKids), containsSyntheticMedia: aiDisclosure === "yes", publishAt: publishAt.toISOString() };
           await youtubeJson(accessToken, "/youtube/v3/videos", { part: "status" }, { method: "PUT", body: JSON.stringify({ id: videoId, status }) });
           await uploads.updateMany({ userId: user._id, channelId: connection.channelId, videoId }, { $set: { status: "scheduled", privacyStatus: "private", publishAt, updatedAt: new Date() } });
           await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "videos:schedule", targetId: videoId, status: "completed", detail: `${publishAt.toISOString()} · ${clean(body.timezone, 80)}` });
@@ -2072,6 +2300,7 @@ module.exports = async function handler(req, res) {
       requireYoutubePermission(connection, "upload");
       const accessToken = await refreshAccessToken(connection, connections);
       const session = await initiateResumable(accessToken, body);
+      const aiDisclosure = aiDisclosureOf(body.aiDisclosure);
       const record = {
         userId: user._id,
         channelId: connection.channelId,
@@ -2082,6 +2311,9 @@ module.exports = async function handler(req, res) {
         privacyStatus: session.resource.status.privacyStatus,
         publishAt: session.resource.status.publishAt || null,
         playlistId: clean(body.playlistId, 120),
+        aiDisclosure,
+        aiDeclaredAt: aiDisclosure === "unreviewed" ? null : new Date(),
+        aiDeclaredBy: aiDisclosure === "unreviewed" ? "" : String(user._id),
         status: "uploading",
         uploadSession: encryptToken(session.uploadUrl, connection),
         bytesUploaded: 0,

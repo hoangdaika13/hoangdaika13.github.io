@@ -85,6 +85,7 @@ test("YouTube backend keeps tokens server-side and implements data, analytics, c
     'route === "comments/reply"',
     'route === "comments/moderate"',
     'route === "videos/update"',
+    'route === "videos/delete"',
     'route === "captions/upload"',
     'route === "live/create"',
     'route === "live/transition"',
@@ -129,6 +130,7 @@ test("Granular OAuth scopes are enforced before Google operations", () => {
     ["analytics/retention", "analytics"],
     ["comments", "manage"],
     ["videos/update", "manage"],
+    ["videos/delete", "manage"],
     ["captions/upload", "manage"],
     ["live/create", "manage"],
     ["upload/session", "upload"],
@@ -289,6 +291,60 @@ test("Batch Matrix, continuous queue, Content Manager and bulk calendar are real
   assert.match(css, /\.ycg-calendar-month/);
 });
 
+test("Content Manager supports tri-state AI disclosure and guarded permanent deletion", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const server = read("utils/youtubePublisher.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const capability of [
+    "AI_DISCLOSURE_OPTIONS",
+    "data-ycg-matrix-ai",
+    "data-ycg-content-ai-filter",
+    "data-ycg-content-ai-bulk",
+    "data-ycg-content-delete",
+    "data-ycg-content-delete-current",
+    "data-ycg-delete-form",
+    "reauthenticateForDelete",
+    "AUTH_RECENT_REQUIRED",
+    "YouTube đã trả HTTP 204"
+  ]) assert.match(client, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  for (const capability of [
+    'route === "videos/delete"',
+    "youtubeVideoDeclarations",
+    "youtubeDestructiveActions",
+    "youtubeVideoTombstones",
+    "requireRecentAuthentication",
+    "YOUTUBE_DELETE_CONFIRMATION_INVALID",
+    "YOUTUBE_AI_DISCLOSURE_REQUIRED",
+    "providerStatus: 204",
+    "recoverable: false"
+  ]) assert.match(server, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(server, /String\(video\.snippet\?\.channelId \|\| ""\) !== String\(connection\.channelId\)/);
+  assert.match(server, /userId: user\._id, channelId: connection\.channelId, videoId/);
+  assert.match(css, /\.ycg-delete-dialog/);
+  assert.match(css, /\.ycg-ai-badge/);
+});
+
+test("Video details use a dedicated Studio workspace with honest owner-isolated data", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const server = read("utils/youtubePublisher.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const capability of [
+    "videoWorkspaceRoute",
+    "videoStudioWorkspaceMarkup",
+    "data-ycg-video-back",
+    "data-ycg-video-section",
+    "video-save-private",
+    "video-load-analytics",
+    "video-load-comments",
+    "beforeunload",
+    "Không có qua Data API"
+  ]) assert.match(client, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  for (const route of ['route === "video/analytics"', 'route === "video/comments"']) assert.match(server, new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(server, /YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH/);
+  assert.match(css, /\.ycg-video-workspace-grid\{display:grid;grid-template-columns:190px/);
+  assert.match(css, /\.ycg-shell\.is-video-workspace/);
+});
+
 test("Multi-channel Studio presents one simple cosmic workspace", () => {
   const client = read("youtube-creator-galaxy.js");
   const css = read("youtube-creator-galaxy.css");
@@ -363,7 +419,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=10", "youtube-creator-galaxy.js?v=15"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=12", "youtube-creator-galaxy.js?v=17"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
