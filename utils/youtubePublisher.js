@@ -487,15 +487,28 @@ function isoDay(value) {
 }
 
 function normalizedVideo(item) {
+  const partsTotal = Number(item?.processingDetails?.processingProgress?.partsTotal || 0);
+  const partsProcessed = Number(item?.processingDetails?.processingProgress?.partsProcessed || 0);
   return {
     id: clean(item?.id, 40),
     title: clean(item?.snippet?.title, 160),
-    description: clean(item?.snippet?.description, 1000),
+    description: clean(item?.snippet?.description, 5000),
+    tags: Array.isArray(item?.snippet?.tags) ? item.snippet.tags.map((tag) => clean(tag, 120)).slice(0, 60) : [],
+    categoryId: clean(item?.snippet?.categoryId, 8),
+    defaultLanguage: clean(item?.snippet?.defaultLanguage, 24),
     publishedAt: item?.snippet?.publishedAt || null,
     scheduledAt: item?.status?.publishAt || null,
     privacyStatus: clean(item?.status?.privacyStatus, 24),
     uploadStatus: clean(item?.status?.uploadStatus, 30),
     processingStatus: clean(item?.processingDetails?.processingStatus, 30),
+    processingProgress: partsTotal ? `${partsProcessed}/${partsTotal} phần` : clean(item?.processingDetails?.processingProgress?.timeLeftMs ? `Còn khoảng ${Math.ceil(Number(item.processingDetails.processingProgress.timeLeftMs) / 1000)} giây` : "", 80),
+    failureReason: clean(item?.status?.failureReason, 80),
+    rejectionReason: clean(item?.status?.rejectionReason, 80),
+    madeForKids: Boolean(item?.status?.selfDeclaredMadeForKids || item?.status?.madeForKids),
+    containsSyntheticMedia: Boolean(item?.status?.containsSyntheticMedia),
+    embeddable: item?.status?.embeddable !== false,
+    duration: clean(item?.contentDetails?.duration, 40),
+    definition: clean(item?.contentDetails?.definition, 20),
     thumbnail: clean(item?.snippet?.thumbnails?.medium?.url || item?.snippet?.thumbnails?.default?.url, 800),
     views: Number(item?.statistics?.viewCount || 0),
     likes: Number(item?.statistics?.likeCount || 0),
@@ -513,12 +526,12 @@ async function recentVideos(accessToken) {
   const playlist = await youtubeJson(accessToken, "/youtube/v3/playlistItems", {
     part: "contentDetails",
     playlistId: uploadsId,
-    maxResults: 12
+    maxResults: 50
   });
   const ids = (playlist.items || []).map((item) => item.contentDetails?.videoId).filter(Boolean);
   if (!ids.length) return [];
   const videos = await youtubeJson(accessToken, "/youtube/v3/videos", {
-    part: "snippet,status,statistics,processingDetails",
+    part: "snippet,status,statistics,processingDetails,contentDetails",
     id: ids.join(",")
   });
   return (videos.items || []).map(normalizedVideo);
@@ -780,6 +793,7 @@ module.exports = async function handler(req, res) {
       ensureIndex(connections, { userId: 1, channelId: 1 }, { unique: true, sparse: true }),
       ensureIndex(connections, { userId: 1, active: 1, updatedAt: -1 }),
       ensureIndex(uploads, { userId: 1, channelId: 1, createdAt: -1 }),
+      ensureIndex(uploads, { userId: 1, channelId: 1, taskKey: 1, metadataVersion: 1 }),
       ensureIndex(audits, { userId: 1, channelId: 1, createdAt: -1 }),
       ensureIndex(projects, { userId: 1, channelId: 1 }, { unique: true }),
       ensureIndex(commentDrafts, { userId: 1, channelId: 1, createdAt: -1 }),
@@ -866,7 +880,7 @@ module.exports = async function handler(req, res) {
 
     const user = await currentUser(req);
     if (!user) throw fail("Đăng nhập HH Platform để dùng YouTube Publisher.", 401, "AUTH_REQUIRED");
-    const routeLimit = ["upload/session", "bulk/upload/sessions"].includes(route) ? 12 : route === "upload/progress" ? 360 : 80;
+    const routeLimit = route === "bulk/upload/sessions" ? 240 : route === "upload/session" ? 24 : route === "upload/progress" ? 1200 : 160;
     await enforceRateLimit(db, `youtube:${route}:${user._id}`, routeLimit, 15 * 60 * 1000);
 
     if (route === "oauth/start" && req.method === "POST") {
@@ -1100,7 +1114,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (route === "bulk/jobs" && req.method === "GET") {
-      const jobs = await bulkJobs.find({ userId: user._id }).sort({ createdAt: -1 }).limit(30).toArray();
+      const jobs = await bulkJobs.find({ userId: user._id }).sort({ createdAt: -1 }).limit(120).toArray();
       return res.status(200).json({
         ok: true,
         confirmed: true,
@@ -1114,6 +1128,11 @@ module.exports = async function handler(req, res) {
             uploadId: clean(item.uploadId, 80),
             status: clean(item.status, 40),
             videoId: clean(item.videoId, 30),
+            taskKey: clean(item.taskKey, 390),
+            videoFingerprint: clean(item.videoFingerprint, 260),
+            fileName: clean(item.fileName, 240),
+            checksum: clean(item.checksum, 80),
+            metadataVersion: clean(item.metadataVersion, 80),
             error: clean(item.error, 180)
           })) : [],
           createdAt: job.createdAt || null,
@@ -1182,6 +1201,8 @@ module.exports = async function handler(req, res) {
       }
       const privacyStatus = ["private", "unlisted"].includes(body.privacyStatus) ? body.privacyStatus : "private";
       if (body.privacyStatus === "public") throw fail("Bulk upload không tự chuyển Public. Hãy duyệt từng kênh sau khi YouTube xử lý xong.", 409, "YOUTUBE_BULK_PUBLIC_BLOCKED");
+      const queueVideoCount = Math.max(1, Number(body.queueVideoCount || 1));
+      if (queueVideoCount > VIDEO_QUEUE_LIMIT) throw fail(`Mỗi kênh chỉ nhận tối đa ${VIDEO_QUEUE_LIMIT} video trong một đợt.`, 400, "YOUTUBE_VIDEO_QUEUE_LIMIT");
       const idempotencyKey = clean(body.idempotencyKey, 160);
       if (!/^[a-zA-Z0-9_-]{16,160}$/.test(idempotencyKey)) throw fail("Idempotency key không hợp lệ.", 400, "YOUTUBE_IDEMPOTENCY_INVALID");
       const selectedConnections = await ownedConnectionsForIds(db, user, body.channelIds);
@@ -1207,7 +1228,11 @@ module.exports = async function handler(req, res) {
           playlistId: clean(item?.playlistId, 120),
           desiredPublishAt: desiredPublishAtDate,
           desiredPrivacyStatus: desiredPublishAtDate ? "schedule" : item?.desiredPrivacyStatus === "unlisted" ? "unlisted" : "private",
-          privacyStatus: ["private", "unlisted"].includes(item?.privacyStatus) ? item.privacyStatus : privacyStatus
+          privacyStatus: ["private", "unlisted"].includes(item?.privacyStatus) ? item.privacyStatus : privacyStatus,
+          taskKey: clean(item?.taskKey || `${clean(item?.videoFingerprint || body.videoFingerprint, 260)}::${channelId}`, 390),
+          videoFingerprint: clean(item?.videoFingerprint || body.videoFingerprint, 260),
+          metadataVersion: clean(item?.metadataVersion || body.metadataVersion, 80),
+          checksum: clean(item?.checksum || body.checksum, 80)
         }];
       }).filter(([channelId]) => channelId));
       const existing = await bulkJobs.findOne({ userId: user._id, idempotencyKey });
@@ -1223,7 +1248,12 @@ module.exports = async function handler(req, res) {
             uploadId: String(record._id),
             uploadUrl: decryptToken(record.uploadSession, connection),
             chunkSize: 8 * 1024 * 1024,
-            bytesUploaded: Number(record.bytesUploaded || 0)
+            bytesUploaded: Number(record.bytesUploaded || 0),
+            taskKey: clean(record.taskKey, 390),
+            videoFingerprint: clean(record.videoFingerprint, 260),
+            fileName: clean(record.fileName, 240),
+            checksum: clean(record.checksum, 80),
+            metadataVersion: clean(record.metadataVersion, 80)
           });
         }
         return res.status(200).json({ ok: true, confirmed: true, reused: true, bulkJobId: String(existing._id), status: existing.status, sessions });
@@ -1253,9 +1283,21 @@ module.exports = async function handler(req, res) {
             playlistId: "",
             desiredPublishAt: null,
             desiredPrivacyStatus: privacyStatus,
-            privacyStatus
+            privacyStatus,
+            taskKey: clean(`${clean(body.videoFingerprint, 260)}::${connection.channelId}`, 390),
+            videoFingerprint: clean(body.videoFingerprint, 260),
+            metadataVersion: clean(body.metadataVersion, 80),
+            checksum: clean(body.checksum, 80)
           };
           if (!channelPayload.title) throw fail("Tiêu đề của kênh đang trống.", 400, "YOUTUBE_CHANNEL_TITLE_REQUIRED");
+          const duplicate = channelPayload.taskKey && channelPayload.metadataVersion ? await uploads.findOne({
+            userId: user._id,
+            channelId: connection.channelId,
+            taskKey: channelPayload.taskKey,
+            metadataVersion: channelPayload.metadataVersion,
+            status: { $in: ["processing", "uploaded", "scheduled", "private", "unlisted", "published", "completed"] }
+          }) : null;
+          if (duplicate) return { channelId: connection.channelId, channelTitle: connection.channelTitle, uploadId: String(duplicate._id), videoId: clean(duplicate.videoId, 40), taskKey: channelPayload.taskKey, videoFingerprint: channelPayload.videoFingerprint, fileName: clean(duplicate.fileName, 240), checksum: channelPayload.checksum, metadataVersion: channelPayload.metadataVersion, status: clean(duplicate.status, 40), reused: true };
           const session = await initiateResumable(accessToken, { ...body, ...channelPayload, privacyStatus: channelPayload.privacyStatus, publishAt: "", notifySubscribers: false });
           const record = {
             userId: user._id,
@@ -1270,6 +1312,11 @@ module.exports = async function handler(req, res) {
             desiredPublishAt: channelPayload.desiredPublishAt,
             desiredPrivacyStatus: channelPayload.desiredPrivacyStatus,
             playlistId: channelPayload.playlistId,
+            taskKey: channelPayload.taskKey,
+            videoFingerprint: channelPayload.videoFingerprint,
+            metadataVersion: channelPayload.metadataVersion,
+            checksum: channelPayload.checksum,
+            idempotencyKey,
             status: "uploading",
             uploadSession: encryptToken(session.uploadUrl, connection),
             bytesUploaded: 0,
@@ -1294,6 +1341,11 @@ module.exports = async function handler(req, res) {
             uploadId: String(inserted.insertedId),
             uploadUrl: session.uploadUrl,
             chunkSize: 8 * 1024 * 1024,
+            taskKey: channelPayload.taskKey,
+            videoFingerprint: channelPayload.videoFingerprint,
+            fileName: record.fileName,
+            checksum: channelPayload.checksum,
+            metadataVersion: channelPayload.metadataVersion,
             status: "uploading"
           };
         } catch (error) {
@@ -1310,7 +1362,8 @@ module.exports = async function handler(req, res) {
         status: jobStatus,
         privacyStatus,
         sessions: results.filter((item) => item.status === "uploading"),
-        failures: results.filter((item) => item.status === "failed")
+        failures: results.filter((item) => item.status === "failed"),
+        reused: results.filter((item) => item.reused)
       });
     }
 
@@ -1471,6 +1524,127 @@ module.exports = async function handler(req, res) {
       requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       return res.status(200).json({ ok: true, confirmed: true, videos: await recentVideos(accessToken), syncedAt: new Date() });
+    }
+
+    if (route === "content/library" && req.method === "POST") {
+      const requestedChannelId = clean(body.channelId, 120);
+      const owned = requestedChannelId
+        ? [await connectionFor(db, user, requestedChannelId)]
+        : await connections.find({ userId: user._id }).sort({ active: -1, updatedAt: -1 }).limit(CHANNEL_VAULT_LIMIT).toArray();
+      const channelIds = owned.map((connection) => connection.channelId);
+      const uploadRows = await uploads.find({ userId: user._id, ...(requestedChannelId ? { channelId: requestedChannelId } : { channelId: { $in: channelIds } }) })
+        .sort({ updatedAt: -1 }).limit(1000).toArray();
+      const channelMap = new Map(owned.map((connection) => [String(connection.channelId), connection]));
+      const items = uploadRows.map((item) => {
+        const connection = channelMap.get(String(item.channelId));
+        return {
+          id: String(item._id),
+          uploadId: String(item._id),
+          channelId: clean(item.channelId, 120),
+          channelTitle: clean(connection?.channelTitle, 160),
+          channelThumbnail: clean(connection?.channelThumbnail, 800),
+          videoId: clean(item.videoId, 40),
+          title: clean(item.title || item.fileName, 160),
+          fileName: clean(item.fileName, 240),
+          fileSize: Number(item.fileSize || item.totalBytes || 0),
+          checksum: clean(item.checksum, 80),
+          videoFingerprint: clean(item.videoFingerprint, 260),
+          metadataVersion: clean(item.metadataVersion, 80),
+          taskKey: clean(item.taskKey, 390),
+          status: clean(item.status, 40),
+          privacyStatus: clean(item.privacyStatus || "private", 24),
+          scheduledAt: item.publishAt || item.desiredPublishAt || null,
+          publishAt: item.publishAt || null,
+          processingStatus: clean(item.processingStatus, 40),
+          processingProgress: clean(item.processingProgress, 80),
+          definition: clean(item.definition, 20),
+          uploadStatus: clean(item.uploadStatus, 40),
+          thumbnail: clean(item.thumbnail, 800),
+          failureReason: clean(item.failureReason, 80),
+          rejectionReason: clean(item.rejectionReason, 80),
+          bytesUploaded: Number(item.bytesUploaded || 0),
+          totalBytes: Number(item.totalBytes || item.fileSize || 0),
+          speedBps: Number(item.speedBps || 0),
+          etaSeconds: Number(item.etaSeconds || 0),
+          progress: Number(item.totalBytes || item.fileSize || 0) > 0 ? Math.min(100, Number(item.bytesUploaded || 0) / Number(item.totalBytes || item.fileSize) * 100) : 0,
+          error: clean(item.error, 400),
+          metrics: { views: Number(item.views || 0), likes: Number(item.likes || 0), comments: Number(item.comments || 0) },
+          createdAt: item.createdAt || null,
+          updatedAt: item.updatedAt || null
+        };
+      });
+      const liveConnection = requestedChannelId ? owned[0] : owned.find((connection) => connection.active) || owned[0];
+      if (liveConnection && hasYoutubePermission(liveConnection, "manage")) {
+        try {
+          const accessToken = await refreshAccessToken(liveConnection, connections);
+          const liveVideos = await recentVideos(accessToken);
+          liveVideos.forEach((video) => {
+            const existing = items.find((item) => item.channelId === String(liveConnection.channelId) && item.videoId === video.id);
+            const merged = {
+              ...video,
+              id: existing?.id || `${liveConnection.channelId}:${video.id}`,
+              uploadId: existing?.uploadId || "",
+              channelId: String(liveConnection.channelId),
+              channelTitle: clean(liveConnection.channelTitle, 160),
+              status: video.processingStatus === "terminated" ? "error" : video.processingStatus && video.processingStatus !== "succeeded" ? "processing" : video.scheduledAt ? "scheduled" : video.privacyStatus === "public" ? "published" : "uploaded",
+              metrics: { views: video.views, likes: video.likes, comments: video.comments },
+              updatedAt: existing?.updatedAt || video.publishedAt
+            };
+            if (existing) Object.assign(existing, merged); else items.push(merged);
+          });
+        } catch {}
+      }
+      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, items: items.sort((left, right) => new Date(right.updatedAt || right.publishedAt || 0) - new Date(left.updatedAt || left.publishedAt || 0)), syncedAt: new Date() });
+    }
+
+    if (route === "content/processing/refresh" && req.method === "POST") {
+      const requestedChannelId = clean(body.channelId, 120);
+      if (requestedChannelId) await connectionFor(db, user, requestedChannelId);
+      const records = await uploads.find({ userId: user._id, ...(requestedChannelId ? { channelId: requestedChannelId } : {}), videoId: { $type: "string", $ne: "" }, status: { $in: ["processing", "uploaded", "scheduled", "private", "unlisted"] } }).sort({ updatedAt: -1 }).limit(500).toArray();
+      const byChannel = new Map();
+      records.forEach((record) => {
+        const key = String(record.channelId);
+        if (!byChannel.has(key)) byChannel.set(key, []);
+        byChannel.get(key).push(record);
+      });
+      let refreshed = 0;
+      const failures = [];
+      for (const [channelId, channelRecords] of byChannel) {
+        try {
+          const connection = await connectionFor(db, user, channelId);
+          requireYoutubePermission(connection, "manage");
+          const accessToken = await refreshAccessToken(connection, connections);
+          for (let offset = 0; offset < channelRecords.length; offset += 50) {
+            const chunk = channelRecords.slice(offset, offset + 50);
+            const data = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet,status,statistics,processingDetails,contentDetails", id: chunk.map((record) => record.videoId).join(",") });
+            for (const video of data.items || []) {
+              const normalized = normalizedVideo(video);
+              const status = normalized.processingStatus === "terminated" ? "error" : normalized.processingStatus && normalized.processingStatus !== "succeeded" ? "processing" : normalized.scheduledAt ? "scheduled" : normalized.privacyStatus === "public" ? "published" : normalized.privacyStatus || "uploaded";
+              await uploads.updateMany({ userId: user._id, channelId: connection.channelId, videoId: normalized.id }, { $set: { status, processingStatus: normalized.processingStatus, processingProgress: normalized.processingProgress, definition: normalized.definition, uploadStatus: normalized.uploadStatus, privacyStatus: normalized.privacyStatus, publishAt: normalized.scheduledAt ? new Date(normalized.scheduledAt) : null, failureReason: normalized.failureReason, rejectionReason: normalized.rejectionReason, views: normalized.views, likes: normalized.likes, comments: normalized.comments, thumbnail: normalized.thumbnail, updatedAt: new Date() } });
+              refreshed += 1;
+            }
+          }
+        } catch (error) { failures.push({ channelId, error: clean(error.message, 180) }); }
+      }
+      await writeAudit(db, { userId: user._id, channelId: requestedChannelId || "fleet", action: "content:processing-refresh", status: failures.length ? "partial" : "completed", detail: `${refreshed} video` });
+      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, refreshed, failures, syncedAt: new Date() });
+    }
+
+    if (route === "video/details" && req.method === "POST") {
+      const connection = await connectionFor(db, user, clean(body.channelId, 120));
+      requireYoutubePermission(connection, "manage");
+      const videoId = clean(body.videoId, 40);
+      if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
+      const accessToken = await refreshAccessToken(connection, connections);
+      const [data, captions, auditRows] = await Promise.all([
+        youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet,status,statistics,processingDetails,contentDetails", id: videoId }),
+        youtubeJson(accessToken, "/youtube/v3/captions", { part: "id,snippet", videoId }).catch(() => ({ items: [] })),
+        audits.find({ userId: user._id, channelId: connection.channelId, targetId: videoId }).sort({ createdAt: -1 }).limit(30).toArray()
+      ]);
+      const video = data.items?.[0];
+      if (!video) throw fail("Không tìm thấy video trên đúng kênh sở hữu.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "videos:details", targetId: videoId, status: "completed" });
+      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, video: { ...normalizedVideo(video), channelId: String(connection.channelId), channelTitle: connection.channelTitle }, captions: (captions.items || []).map((item) => ({ id: clean(item.id, 120), name: clean(item.snippet?.name, 160), language: clean(item.snippet?.language, 24), status: clean(item.snippet?.status, 40) })), audit: auditRows.map(publicAudit) });
     }
 
     if (route === "analytics" && req.method === "GET") {
@@ -1635,28 +1809,80 @@ module.exports = async function handler(req, res) {
     }
 
     if (route === "videos/update" && req.method === "POST") {
-      const connection = await connectionFor(db, user);
+      const connection = await connectionFor(db, user, clean(body.channelId, 120));
       requireYoutubePermission(connection, "manage");
       const accessToken = await refreshAccessToken(connection, connections);
       const videoId = clean(body.videoId, 40);
       if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
-      const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet", id: videoId });
+      const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet,status,statistics,processingDetails,contentDetails", id: videoId });
       const video = current.items?.[0];
-      if (!video) throw fail("Không tìm thấy video trên kênh đang kết nối.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
+      if (!video) throw fail("Không tìm thấy video trên đúng kênh sở hữu.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
       const snippet = {
         ...video.snippet,
         title: clean(body.title || video.snippet.title, 100),
         description: clean(body.description ?? video.snippet.description, 5000),
         tags: body.tags === undefined ? video.snippet.tags : normalizedTags(body.tags),
-        categoryId: /^\d{1,3}$/.test(String(body.categoryId || "")) ? String(body.categoryId) : video.snippet.categoryId
+        categoryId: /^\d{1,3}$/.test(String(body.categoryId || "")) ? String(body.categoryId) : video.snippet.categoryId,
+        defaultLanguage: clean(body.defaultLanguage || video.snippet.defaultLanguage, 24) || undefined
       };
-      const updated = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "snippet" }, {
+      const requestedPrivacy = ["private", "unlisted", "public", "schedule"].includes(body.privacyStatus) ? body.privacyStatus : "";
+      const publishAt = body.publishAt ? new Date(body.publishAt) : null;
+      if (["public", "schedule"].includes(requestedPrivacy) && body.approved !== true) throw fail("Cần người dùng duyệt trước khi Public hoặc lên lịch.", 409, "YOUTUBE_PUBLISH_APPROVAL_REQUIRED");
+      if (requestedPrivacy === "schedule" && (!publishAt || !Number.isFinite(publishAt.getTime()) || publishAt.getTime() <= Date.now() + 60_000)) throw fail("Lịch đăng phải ở tương lai.", 400, "YOUTUBE_SCHEDULE_INVALID");
+      const nextStatus = requestedPrivacy ? {
+        privacyStatus: requestedPrivacy === "schedule" ? "private" : requestedPrivacy,
+        license: video.status?.license === "creativeCommon" ? "creativeCommon" : "youtube",
+        embeddable: video.status?.embeddable !== false,
+        publicStatsViewable: video.status?.publicStatsViewable !== false,
+        selfDeclaredMadeForKids: body.madeForKids === undefined ? Boolean(video.status?.selfDeclaredMadeForKids) : Boolean(body.madeForKids),
+        containsSyntheticMedia: body.containsSyntheticMedia === undefined ? Boolean(video.status?.containsSyntheticMedia) : Boolean(body.containsSyntheticMedia),
+        ...(requestedPrivacy === "schedule" ? { publishAt: publishAt.toISOString() } : {})
+      } : null;
+      const parts = nextStatus ? "snippet,status" : "snippet";
+      const updated = await youtubeJson(accessToken, "/youtube/v3/videos", { part: parts }, {
         method: "PUT",
-        body: JSON.stringify({ id: videoId, snippet })
+        body: JSON.stringify({ id: videoId, snippet, ...(nextStatus ? { status: nextStatus } : {}) })
       });
+      const playlistId = clean(body.playlistId, 120);
+      if (playlistId) await youtubeJson(accessToken, "/youtube/v3/playlistItems", { part: "snippet" }, { method: "POST", body: JSON.stringify({ snippet: { playlistId, resourceId: { kind: "youtube#video", videoId } } }) });
       await db.collection("events").insertOne({ type: "youtube:metadata-updated", userId: user._id, videoId, createdAt: new Date() });
-      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "videos:update", targetId: videoId, status: "completed" });
-      return res.status(200).json({ ok: true, confirmed: true, video: normalizedVideo(updated.items?.[0] || { id: videoId, snippet }) });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: requestedPrivacy === "schedule" ? "videos:schedule" : "videos:update", targetId: videoId, status: "completed", detail: clean(body.metadataVersion, 80) });
+      const normalized = normalizedVideo({ ...video, ...(updated.items?.[0] || {}), snippet, ...(nextStatus ? { status: nextStatus } : {}) });
+      const uploadSet = { title: snippet.title, metadataVersion: clean(body.metadataVersion, 80), updatedAt: new Date() };
+      if (nextStatus) Object.assign(uploadSet, { privacyStatus: nextStatus.privacyStatus, publishAt: nextStatus.publishAt ? new Date(nextStatus.publishAt) : null, status: nextStatus.publishAt ? "scheduled" : nextStatus.privacyStatus || "uploaded" });
+      await uploads.updateMany({ userId: user._id, channelId: connection.channelId, videoId }, { $set: uploadSet });
+      const auditRows = await audits.find({ userId: user._id, channelId: connection.channelId, targetId: videoId }).sort({ createdAt: -1 }).limit(30).toArray();
+      return res.status(200).json({ ok: true, confirmed: true, video: { ...normalized, channelId: String(connection.channelId), channelTitle: connection.channelTitle }, audit: auditRows.map(publicAudit) });
+    }
+
+    if (route === "content/schedule/bulk" && req.method === "POST") {
+      if (body.approved !== true) throw fail("Cần xác nhận trước khi gửi lịch hàng loạt.", 409, "YOUTUBE_PUBLISH_APPROVAL_REQUIRED");
+      const submitted = (Array.isArray(body.items) ? body.items : []).slice(0, 20);
+      if (!submitted.length) throw fail("Danh sách lịch đang trống.", 400, "YOUTUBE_SCHEDULE_EMPTY");
+      const results = await Promise.all(submitted.map(async (item) => {
+        const channelId = clean(item?.channelId, 120);
+        const videoId = clean(item?.videoId, 40);
+        try {
+          const connection = await connectionFor(db, user, channelId);
+          requireYoutubePermission(connection, "manage");
+          if (!/^[\w-]{6,20}$/.test(videoId)) throw fail("Video ID không hợp lệ.", 400, "YOUTUBE_VIDEO_INVALID");
+          const publishAt = new Date(item.publishAt);
+          if (!Number.isFinite(publishAt.getTime()) || publishAt.getTime() <= Date.now() + 60_000) throw fail("Lịch đăng phải ở tương lai.", 400, "YOUTUBE_SCHEDULE_INVALID");
+          const accessToken = await refreshAccessToken(connection, connections);
+          const current = await youtubeJson(accessToken, "/youtube/v3/videos", { part: "status", id: videoId });
+          const video = current.items?.[0];
+          if (!video) throw fail("Không tìm thấy video trên kênh sở hữu.", 404, "YOUTUBE_VIDEO_NOT_FOUND");
+          if (video.status?.privacyStatus !== "private") throw fail("Chỉ video Private và chưa từng xuất bản mới được xếp lịch.", 409, "YOUTUBE_SCHEDULE_PRIVATE_REQUIRED");
+          const status = { privacyStatus: "private", license: video.status?.license === "creativeCommon" ? "creativeCommon" : "youtube", embeddable: video.status?.embeddable !== false, publicStatsViewable: video.status?.publicStatsViewable !== false, selfDeclaredMadeForKids: Boolean(video.status?.selfDeclaredMadeForKids), containsSyntheticMedia: Boolean(video.status?.containsSyntheticMedia), publishAt: publishAt.toISOString() };
+          await youtubeJson(accessToken, "/youtube/v3/videos", { part: "status" }, { method: "PUT", body: JSON.stringify({ id: videoId, status }) });
+          await uploads.updateMany({ userId: user._id, channelId: connection.channelId, videoId }, { $set: { status: "scheduled", privacyStatus: "private", publishAt, updatedAt: new Date() } });
+          await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "videos:schedule", targetId: videoId, status: "completed", detail: `${publishAt.toISOString()} · ${clean(body.timezone, 80)}` });
+          return { ok: true, channelId, videoId, publishAt };
+        } catch (error) {
+          return { ok: false, channelId, videoId, error: clean(error.message, 180), code: clean(error.code, 80) };
+        }
+      }));
+      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, results, succeeded: results.filter((item) => item.ok).length, failed: results.filter((item) => !item.ok).length });
     }
 
     if (route === "captions" && req.method === "GET") {
@@ -1880,22 +2106,47 @@ module.exports = async function handler(req, res) {
     if (route === "upload/resume" && req.method === "POST") {
       const uploadId = clean(body.uploadId, 80);
       if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
-      const record = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id, status: { $in: ["uploading", "error"] } });
+      const record = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id, status: { $in: ["uploading", "error", "paused"] } });
       if (!record?.uploadSession) throw fail("Phiên upload không còn khả dụng. Hãy tạo phiên mới.", 404, "YOUTUBE_UPLOAD_SESSION_EXPIRED");
       const connection = await connectionFor(db, user, record.channelId);
       const uploadUrl = decryptToken(record.uploadSession, connection);
+      let bytesUploaded = Number(record.bytesUploaded || 0);
+      let completedVideoId = "";
+      try {
+        const accessToken = await refreshAccessToken(connection, connections);
+        const probe = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Length": "0",
+            "Content-Range": `bytes */${Number(record.totalBytes || record.fileSize || 0)}`
+          },
+          signal: AbortSignal.timeout(18000)
+        });
+        if (probe.status === 308) {
+          const match = String(probe.headers.get("range") || "").match(/bytes=0-(\d+)/i);
+          if (match) bytesUploaded = Number(match[1]) + 1;
+        } else if ([200, 201].includes(probe.status)) {
+          const payload = await probe.json().catch(() => ({}));
+          completedVideoId = clean(payload.id, 40);
+          if (completedVideoId) bytesUploaded = Number(record.totalBytes || record.fileSize || bytesUploaded);
+        }
+      } catch {}
       await uploads.updateOne(
         { _id: record._id, userId: user._id, channelId: record.channelId },
-        { $set: { status: "uploading", error: "", updatedAt: new Date() } }
+        { $set: { status: completedVideoId ? "processing" : "uploading", bytesUploaded, ...(completedVideoId ? { videoId: completedVideoId } : {}), error: "", updatedAt: new Date() } }
       );
+      if (record.bulkJobId) await bulkJobs.updateOne({ _id: record.bulkJobId, userId: user._id, "results.uploadId": uploadId }, { $set: { "results.$.status": completedVideoId ? "processing" : "uploading", status: completedVideoId ? "processing" : "uploading", updatedAt: new Date() } });
       return res.status(200).json({
         ok: true,
         confirmed: true,
         uploadId,
         uploadUrl,
         chunkSize: 8 * 1024 * 1024,
-        bytesUploaded: Number(record.bytesUploaded || 0),
-        totalBytes: Number(record.totalBytes || record.fileSize || 0)
+        bytesUploaded,
+        totalBytes: Number(record.totalBytes || record.fileSize || 0),
+        complete: Boolean(completedVideoId),
+        videoId: completedVideoId
       });
     }
 
@@ -1932,6 +2183,20 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, confirmed: true, videoId: match.id, url: `https://youtu.be/${match.id}` });
     }
 
+    if (route === "upload/pause" && req.method === "POST") {
+      const uploadId = clean(body.uploadId, 80);
+      if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
+      const record = await uploads.findOne({ _id: new ObjectId(uploadId), userId: user._id });
+      if (!record) throw fail("Không tìm thấy phiên upload của tài khoản hiện tại.", 404, "YOUTUBE_UPLOAD_NOT_FOUND");
+      const connection = await connectionFor(db, user, record.channelId);
+      const pausedAt = new Date();
+      const result = await uploads.updateOne({ _id: record._id, userId: user._id, channelId: connection.channelId, status: { $in: ["uploading", "error"] } }, { $set: { status: "paused", pausedAt, updatedAt: pausedAt } });
+      if (!result.matchedCount && record.status !== "paused") throw fail("Phiên upload không ở trạng thái có thể tạm dừng.", 409, "YOUTUBE_UPLOAD_NOT_PAUSABLE");
+      if (record.bulkJobId) await bulkJobs.updateOne({ _id: record.bulkJobId, userId: user._id, "results.uploadId": uploadId }, { $set: { "results.$.status": "paused", status: "paused", updatedAt: pausedAt } });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "upload:pause", targetId: uploadId, status: "completed" });
+      return res.status(200).json({ ok: true, confirmed: true, pausedAt });
+    }
+
     if (route === "upload/progress" && req.method === "POST") {
       const uploadId = clean(body.uploadId, 80);
       if (!ObjectId.isValid(uploadId)) throw fail("Phiên upload không hợp lệ.", 400, "YOUTUBE_UPLOAD_INVALID");
@@ -1958,10 +2223,11 @@ module.exports = async function handler(req, res) {
       const connection = await connectionFor(db, user, uploadRecord.channelId);
       const cancelledAt = new Date();
       const result = await uploads.updateOne(
-        { _id: new ObjectId(uploadId), userId: user._id, channelId: connection.channelId, status: { $in: ["uploading", "processing", "error"] } },
+        { _id: new ObjectId(uploadId), userId: user._id, channelId: connection.channelId, status: { $in: ["uploading", "processing", "error", "paused"] } },
         { $set: { status: "cancelled", cancelledAt, updatedAt: cancelledAt }, $unset: { uploadSession: "" } }
       );
       if (!result.matchedCount) throw fail("Không tìm thấy phiên upload của kênh hiện tại.", 404, "YOUTUBE_UPLOAD_NOT_FOUND");
+      if (uploadRecord.bulkJobId) await bulkJobs.updateOne({ _id: uploadRecord.bulkJobId, userId: user._id, "results.uploadId": uploadId }, { $set: { "results.$.status": "cancelled", status: "partial", updatedAt: cancelledAt } });
       await writeAudit(db, {
         userId: user._id,
         channelId: connection.channelId,
@@ -2032,6 +2298,11 @@ module.exports = async function handler(req, res) {
           uploadId: String(item._id),
           status: String(item._id) === String(record._id) ? (processingStatus === "terminated" ? "failed" : "uploaded") : item.status,
           videoId: String(item._id) === String(record._id) ? videoId : clean(item.videoId, 30),
+          taskKey: clean(item.taskKey, 390),
+          videoFingerprint: clean(item.videoFingerprint, 260),
+          fileName: clean(item.fileName, 240),
+          checksum: clean(item.checksum, 80),
+          metadataVersion: clean(item.metadataVersion, 80),
           error: clean(item.error, 180)
         }));
         const pending = results.some((item) => ["uploading", "sessions-ready"].includes(item.status));

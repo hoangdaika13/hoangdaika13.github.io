@@ -49,6 +49,7 @@
     playlistId: "",
     brandColor: "#ff3158",
     publishTime: "20:00",
+    timezone: "Asia/Bangkok",
     publishAt: "",
     thumbnailVariant: "A",
     privacyStatus: "private",
@@ -79,6 +80,13 @@
   let fleetUploadFiles = [];
   let fleetObservatory = null;
   let fleetThumbnailVariants = new Map();
+  let contentLibrary = [];
+  let contentDrawer = null;
+  let calendarDragItem = null;
+  let queuePaused = false;
+  let queueRunToken = 0;
+  const activeUploadRequests = new Map();
+  const pausedTaskKeys = new Set();
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -197,6 +205,7 @@
         playlistId: String(preset?.playlistId || "").slice(0, 120),
         brandColor: /^#[0-9a-f]{6}$/i.test(preset?.brandColor) ? preset.brandColor : DEFAULT_CHANNEL_PRESET.brandColor,
         publishTime: /^\d{2}:\d{2}$/.test(preset?.publishTime) ? preset.publishTime : "20:00",
+        timezone: String(preset?.timezone || "Asia/Bangkok").slice(0, 80),
         publishAt: String(preset?.publishAt || "").slice(0, 32),
         thumbnailVariant: ["A", "B", "C"].includes(preset?.thumbnailVariant) ? preset.thumbnailVariant : "A",
         privacyStatus: ["private", "unlisted", "schedule"].includes(preset?.privacyStatus) ? preset.privacyStatus : "private",
@@ -212,7 +221,19 @@
         thumbnailSubtitle: String(draft?.thumbnailSubtitle || "").slice(0, 80),
         thumbnailAccent: /^#[0-9a-f]{6}$/i.test(draft?.thumbnailAccent) ? draft.thumbnailAccent : "#ff3158",
         thumbnailReady: Boolean(draft?.thumbnailReady),
+        checksum: String(draft?.checksum || "").slice(0, 80),
         channelTitles: Object.fromEntries(Object.entries(draft?.channelTitles || {}).slice(0, 100).map(([channelId, title]) => [String(channelId).slice(0, 120), String(title || "").slice(0, 100)]))
+      }]));
+      const taskMatrix = Object.fromEntries(Object.entries(value?.taskMatrix || {}).slice(0, 1000).map(([taskKey, item]) => [String(taskKey).slice(0, 390), {
+        enabled: item?.enabled !== false,
+        mode: ["inherit", "private", "unlisted", "schedule"].includes(item?.mode) ? item.mode : "inherit",
+        publishAt: String(item?.publishAt || "").slice(0, 32)
+      }]));
+      const scheduleDrafts = Object.fromEntries(Object.entries(value?.scheduleDrafts || {}).slice(0, 500).map(([taskKey, item]) => [String(taskKey).slice(0, 240), {
+        channelId: String(item?.channelId || "").slice(0, 120),
+        videoId: String(item?.videoId || "").slice(0, 40),
+        publishAt: String(item?.publishAt || "").slice(0, 32),
+        previousPublishAt: String(item?.previousPublishAt || "").slice(0, 32)
       }]));
       return {
         selectedChannelIds: Array.isArray(value?.selectedChannelIds) ? value.selectedChannelIds.map(String).slice(0, 100) : [],
@@ -221,6 +242,17 @@
         channelFilter: ["all", "ready", "warning", "uploading", "error"].includes(value?.channelFilter) ? value.channelFilter : "all",
         activeFileFingerprint: String(value?.activeFileFingerprint || "").slice(0, 260),
         videoDrafts,
+        taskMatrix,
+        contentMode: ["upload", "manager"].includes(value?.contentMode) ? value.contentMode : "upload",
+        contentFilter: ["all", "uploading", "processing", "draft", "scheduled", "published", "error"].includes(value?.contentFilter) ? value.contentFilter : "all",
+        contentChannel: String(value?.contentChannel || "all").slice(0, 120),
+        selectedContentIds: Array.isArray(value?.selectedContentIds) ? value.selectedContentIds.map(String).slice(0, 500) : [],
+        calendarMode: ["month", "timeline", "unscheduled"].includes(value?.calendarMode) ? value.calendarMode : "month",
+        calendarTimezone: String(value?.calendarTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Bangkok").slice(0, 80),
+        calendarChannelFilter: String(value?.calendarChannelFilter || "all").slice(0, 120),
+        calendarTypeFilter: ["all", "Video", "Short", "Livestream"].includes(value?.calendarTypeFilter) ? value.calendarTypeFilter : "all",
+        scheduleDrafts,
+        scheduleHistory: Array.isArray(value?.scheduleHistory) ? value.scheduleHistory.slice(-20) : [],
         title: String(value?.title || "").slice(0, 100),
         description: String(value?.description || "").slice(0, 5000),
         tags: String(value?.tags || "").slice(0, 500),
@@ -239,10 +271,10 @@
         replaceWith: String(value?.replaceWith || "").slice(0, 80),
         fileFingerprint: String(value?.fileFingerprint || "").slice(0, 260),
         idempotencyKey: String(value?.idempotencyKey || "").slice(0, 160),
-        results: Array.isArray(value?.results) ? value.results.slice(0, 250) : []
+        results: Array.isArray(value?.results) ? value.results.slice(0, 1200) : []
       };
     } catch {
-      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
+      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, taskMatrix: {}, contentMode: "upload", contentFilter: "all", contentChannel: "all", selectedContentIds: [], calendarMode: "month", calendarTimezone: "Asia/Bangkok", calendarChannelFilter: "all", calendarTypeFilter: "all", scheduleDrafts: {}, scheduleHistory: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
     }
   }
 
@@ -252,6 +284,20 @@
 
   function fleetFileFingerprint(file) {
     return file ? `${file.name}:${file.size}:${file.lastModified || 0}`.slice(0, 260) : "";
+  }
+
+  async function sampledFileChecksum(file) {
+    if (!file || !window.crypto?.subtle) return "";
+    const sampleSize = 64 * 1024;
+    const head = await file.slice(0, Math.min(sampleSize, file.size)).arrayBuffer();
+    const tail = file.size > sampleSize ? await file.slice(Math.max(0, file.size - sampleSize), file.size).arrayBuffer() : new ArrayBuffer(0);
+    const metadata = new TextEncoder().encode(`${file.name}\n${file.size}\n${file.lastModified || 0}\n`);
+    const joined = new Uint8Array(metadata.byteLength + head.byteLength + tail.byteLength);
+    joined.set(metadata, 0);
+    joined.set(new Uint8Array(head), metadata.byteLength);
+    joined.set(new Uint8Array(tail), metadata.byteLength + head.byteLength);
+    const digest = await window.crypto.subtle.digest("SHA-256", joined);
+    return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
   }
 
   function fleetFileByFingerprint(fingerprint = fleetState.activeFileFingerprint) {
@@ -271,6 +317,7 @@
         thumbnailSubtitle: "",
         thumbnailAccent: "#ff3158",
         thumbnailReady: false,
+        checksum: "",
         channelTitles: {}
       };
     }
@@ -307,8 +354,46 @@
 
   function fleetSelectionCapacity() {
     const maxChannels = Number(fleetOverview?.limits?.maxChannelsInVault || fleetObservatory?.limits?.maxChannelsInVault || channelStatus.bulk?.maxChannelsInVault || 100);
-    const maxTasks = Number(fleetOverview?.limits?.maxTasksPerBatch || fleetObservatory?.limits?.maxTasksPerBatch || channelStatus.bulk?.maxTasksPerBatch || 100);
-    return Math.min(maxChannels, Math.max(1, Math.floor(maxTasks / Math.max(1, fleetUploadFiles.length))));
+    return Math.min(100, Math.max(1, maxChannels));
+  }
+
+  function matrixTaskKey(fingerprint, channelId) {
+    return `${String(fingerprint || "").slice(0, 260)}::${String(channelId || "").slice(0, 120)}`;
+  }
+
+  function matrixTask(fingerprint, channelId, create = false) {
+    const key = matrixTaskKey(fingerprint, channelId);
+    if (!fleetState.taskMatrix[key] && create) fleetState.taskMatrix[key] = { enabled: true, mode: "inherit", publishAt: "" };
+    return fleetState.taskMatrix[key] || { enabled: true, mode: "inherit", publishAt: "" };
+  }
+
+  function taskDelivery(fingerprint, channelId) {
+    const cell = matrixTask(fingerprint, channelId);
+    const preset = channelPreset(channelId);
+    const mode = cell.mode === "inherit" ? preset.privacyStatus : cell.mode;
+    const publishAt = mode === "schedule" ? (cell.publishAt || preset.publishAt || "") : "";
+    return {
+      enabled: cell.enabled !== false,
+      privacyStatus: mode === "unlisted" ? "unlisted" : mode === "schedule" ? "schedule" : "private",
+      publishAt
+    };
+  }
+
+  function selectedMatrixTasks(channelIds = fleetState.selectedChannelIds) {
+    return fleetUploadFiles.flatMap((file) => {
+      const fingerprint = fleetFileFingerprint(file);
+      return channelIds.filter((channelId) => taskDelivery(fingerprint, channelId).enabled).map((channelId) => ({
+        taskKey: matrixTaskKey(fingerprint, channelId), fingerprint, channelId, file
+      }));
+    });
+  }
+
+  function metadataVersionFor(draft, channelId, delivery) {
+    const preset = channelPreset(channelId);
+    const source = JSON.stringify({ title: effectiveChannelTitle(channelId, draft), description: draft?.description || "", tags: draft?.tags || "", preset, delivery });
+    let hash = 2166136261;
+    for (let index = 0; index < source.length; index += 1) hash = Math.imul(hash ^ source.charCodeAt(index), 16777619);
+    return `m${(hash >>> 0).toString(36)}`;
   }
 
   function invalidateFleetPublish({ clearResults = false } = {}) {
@@ -806,6 +891,134 @@
     </div>`;
   }
 
+  function batchMatrixMarkup(selectedChannels, limits) {
+    const completed = new Set(fleetState.results.filter((item) => item.videoId && ["processing", "uploaded", "scheduled", "private", "unlisted", "published", "completed"].includes(item.status)).map((item) => item.taskKey));
+    const enabledCount = selectedMatrixTasks(selectedChannels.map((channel) => channel.id)).filter((task) => !completed.has(task.taskKey)).length;
+    const batches = Math.max(0, Math.ceil(enabledCount / Math.max(1, Number(limits.maxTasksPerBatch || 100))));
+    return `<section class="ycg-panel ycg-batch-matrix">
+      <header><div><small>BATCH UPLOAD MATRIX</small><h3>Ma trận video × kênh</h3><p>Bật hoặc tắt từng tác vụ. Lịch riêng trong ô sẽ ưu tiên hơn preset của kênh.</p></div><div><strong>${enabledCount}</strong><span>tác vụ còn lại · ${batches} batch</span></div></header>
+      <div class="ycg-matrix-toolbar"><button type="button" data-ycg-action="matrix-enable-all">Bật tất cả</button><button type="button" data-ycg-action="matrix-disable-all">Tắt tất cả</button><button type="button" data-ycg-action="matrix-copy-first-channel">Copy lịch kênh đầu sang các kênh</button><span>Tự chia ${limits.maxTasksPerBatch} tác vụ/batch</span></div>
+      <div class="ycg-batch-matrix__scroll"><table><thead><tr><th>Video</th>${selectedChannels.map((channel) => `<th title="${esc(channel.title)}">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "YT"}<span>${esc(channel.title)}</span></th>`).join("")}<th>Tiến trình</th></tr></thead><tbody>${fleetUploadFiles.map((file, videoIndex) => {
+        const fingerprint = fleetFileFingerprint(file);
+        const draft = fleetDraft(fingerprint, file);
+        const tasks = selectedChannels.map((channel) => {
+          const config = matrixTask(fingerprint, channel.id);
+          const delivery = taskDelivery(fingerprint, channel.id);
+          const taskKey = matrixTaskKey(fingerprint, channel.id);
+          const result = fleetState.results.find((item) => item.taskKey === taskKey);
+          const value = config.enabled === false ? "off" : config.mode || "inherit";
+          return `<td class="${config.enabled === false ? "is-disabled" : result ? `is-${esc(result.status)}` : ""}"><select data-ycg-matrix-mode data-fingerprint="${esc(fingerprint)}" data-channel-id="${esc(channel.id)}" aria-label="${esc(draft.title)} tới ${esc(channel.title)}"><option value="off" ${value === "off" ? "selected" : ""}>Không đăng</option><option value="inherit" ${value === "inherit" ? "selected" : ""}>Theo kênh</option><option value="private" ${value === "private" ? "selected" : ""}>Private</option><option value="unlisted" ${value === "unlisted" ? "selected" : ""}>Unlisted</option><option value="schedule" ${value === "schedule" ? "selected" : ""}>Lên lịch</option></select>${value === "schedule" ? `<input type="datetime-local" data-ycg-matrix-time data-fingerprint="${esc(fingerprint)}" data-channel-id="${esc(channel.id)}" value="${esc(config.publishAt || delivery.publishAt)}">` : ""}<small>${result ? `${esc(result.status)} · ${Number(result.progress || 0).toFixed(0)}%` : delivery.publishAt ? dateTime(delivery.publishAt) : "Chưa chạy"}</small></td>`;
+        }).join("");
+        const done = selectedChannels.filter((channel) => completed.has(matrixTaskKey(fingerprint, channel.id))).length;
+        return `<tr><th><button type="button" data-ycg-fleet-video="${esc(fingerprint)}"><i>${videoIndex + 1}</i><span><strong>${esc(draft.title || file.name)}</strong><small>${bytes(file.size)}</small></span></button></th>${tasks}<td><strong>${done}/${selectedChannels.length}</strong><small>${done ? "Đã hoàn thành" : "Chờ upload"}</small></td></tr>`;
+      }).join("") || `<tr><td colspan="${selectedChannels.length + 2}">Kéo video vào hàng đợi để tạo ma trận.</td></tr>`}</tbody></table></div>
+    </section>`;
+  }
+
+  function contentStage(item) {
+    const status = String(item?.status || "").toLowerCase();
+    if (["error", "failed", "rejected", "terminated"].includes(status) || item?.failureReason || item?.rejectionReason) return "error";
+    if (["uploading", "queued", "verifying", "thumbnail"].includes(status)) return "uploading";
+    if (["processing", "processing-sd", "processing-hd", "processing-4k"].includes(status) || ["processing", "pending"].includes(item?.processingStatus)) return "processing";
+    if (item?.scheduledAt || item?.publishAt || status === "scheduled") return "scheduled";
+    if (item?.videoId && (item?.privacyStatus === "public" || status === "published")) return "published";
+    if (item?.videoId) return item?.privacyStatus === "private" ? "draft" : "published";
+    return "draft";
+  }
+
+  function mergedContentItems() {
+    const remoteKeys = new Set(contentLibrary.map((item) => item.uploadId || `${item.channelId}::${item.videoId}`));
+    const local = fleetState.results.filter((item) => item.uploadId && !remoteKeys.has(item.uploadId)).map((item) => ({
+      ...item,
+      id: item.uploadId,
+      title: item.fileName || "Video",
+      thumbnail: "",
+      privacyStatus: "private",
+      processingStatus: item.status === "processing" ? "processing" : "",
+      metrics: { views: 0, likes: 0, comments: 0 }
+    }));
+    return [...local, ...contentLibrary];
+  }
+
+  function contentDrawerMarkup(channels) {
+    if (!contentDrawer) return "";
+    if (contentDrawer.loading) return `<aside class="ycg-video-drawer is-open"><button type="button" class="ycg-video-drawer__backdrop" data-ycg-content-close aria-label="Đóng"></button><section><div class="ycg-loading"><i></i><strong>Đang tải chi tiết thật từ YouTube…</strong></div></section></aside>`;
+    const item = contentDrawer.item || {};
+    const videoId = item.videoId || "";
+    const channel = channels.find((entry) => entry.id === item.channelId) || {};
+    const canEmbed = videoId && item.privacyStatus !== "private";
+    const tags = Array.isArray(item.tags) ? item.tags.join(", ") : item.tags || "";
+    const playlists = channel.playlists || [];
+    return `<aside class="ycg-video-drawer is-open"><button type="button" class="ycg-video-drawer__backdrop" data-ycg-content-close aria-label="Đóng"></button><section><header><div><small>VIDEO DETAIL</small><h3>${esc(item.title || "Chi tiết video")}</h3><span>${esc(channel.title || item.channelTitle || item.channelId || "Kênh")}</span></div><button type="button" data-ycg-content-close aria-label="Đóng">×</button></header><div class="ycg-video-drawer__media">${canEmbed ? `<iframe src="https://www.youtube-nocookie.com/embed/${esc(videoId)}" title="${esc(item.title || "YouTube video")}" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : item.thumbnail ? `<img src="${esc(item.thumbnail)}" alt="">` : `<div><strong>YT</strong><span>${videoId ? "Video Private · mở Studio để xem" : "Video chưa tải xong"}</span></div>`}</div>
+      <form data-ycg-video-detail-form data-channel-id="${esc(item.channelId)}" data-video-id="${esc(videoId)}">
+        <label>Tiêu đề<input name="title" maxlength="100" value="${esc(item.title || "")}" required></label>
+        <label>Mô tả<textarea name="description" maxlength="5000" rows="7">${esc(item.description || "")}</textarea></label>
+        <label>Tags<input name="tags" maxlength="500" value="${esc(tags)}"></label>
+        <div class="ycg-inline-fields"><label>Playlist<select name="playlistId"><option value="">Không thay đổi</option>${playlists.map((playlist) => `<option value="${esc(playlist.id)}">${esc(playlist.title)}</option>`).join("")}</select></label><label>Category<input name="categoryId" value="${esc(item.categoryId || "22")}" maxlength="3"></label><label>Ngôn ngữ<input name="defaultLanguage" value="${esc(item.defaultLanguage || "vi")}" maxlength="12"></label></div>
+        <div class="ycg-inline-fields"><label>Quyền hiển thị<select name="privacyStatus"><option value="private" ${item.privacyStatus === "private" ? "selected" : ""}>Private</option><option value="unlisted" ${item.privacyStatus === "unlisted" ? "selected" : ""}>Unlisted</option><option value="public" ${item.privacyStatus === "public" ? "selected" : ""}>Public · cần xác nhận</option><option value="schedule" ${item.scheduledAt ? "selected" : ""}>Lên lịch</option></select></label><label>Thời gian đăng<input type="datetime-local" name="publishAt" value="${esc(String(item.scheduledAt || "").slice(0,16))}"></label></div>
+        <div class="ycg-quick-toggles"><label><input type="checkbox" name="madeForKids" ${item.madeForKids ? "checked" : ""}> Dành cho trẻ em</label><label><input type="checkbox" name="containsSyntheticMedia" ${item.containsSyntheticMedia ? "checked" : ""}> Synthetic media</label></div>
+        <label class="ycg-detail-thumbnail">Thay thumbnail JPEG/PNG ≤ 2 MB<input type="file" accept="image/jpeg,image/png" data-ycg-detail-thumbnail data-channel-id="${esc(item.channelId)}" data-video-id="${esc(videoId)}"></label>
+        <div class="ycg-detail-captions"><span>Caption</span><strong>${contentDrawer.captions?.length || 0} track</strong><small>${(contentDrawer.captions || []).map((track) => `${track.language} · ${track.status || "ready"}`).join(" · ") || "Chưa có caption track"}</small><button type="button" data-ycg-detail-captions="${esc(videoId)}">Mở Captions Studio</button></div>
+        <div class="ycg-processing-ledger"><h4>Processing details</h4><p><span>Upload</span><b>${esc(item.uploadStatus || item.status || "không rõ")}</b></p><p><span>Xử lý</span><b>${esc(item.processingStatus || "chưa trả về")}</b></p><p><span>SD / HD / 4K</span><b>${esc(item.processingProgress || "YouTube đang quyết định")}</b></p>${item.failureReason || item.rejectionReason ? `<p class="is-error"><span>Lỗi</span><b>${esc(item.failureReason || item.rejectionReason)}</b></p>` : ""}</div>
+        <div class="ycg-video-drawer__actions"><button type="button" data-ycg-content-close>Đóng</button>${videoId ? `<a href="https://www.youtube.com/watch?v=${esc(videoId)}" target="_blank" rel="noopener">Mở YouTube</a><a href="https://studio.youtube.com/video/${esc(videoId)}/edit" target="_blank" rel="noopener">Mở YouTube Studio</a>` : ""}<button class="is-primary" ${videoId ? "" : "disabled"}>Lưu thay đổi</button></div>
+      </form><section class="ycg-detail-audit"><h4>Nhật ký gần nhất</h4>${(contentDrawer.audit || []).map((entry) => `<p><time>${dateTime(entry.createdAt)}</time><span>${esc(entry.action)}</span><b>${esc(entry.status)}</b></p>`).join("") || `<p>Chưa có audit log cho video này.</p>`}</section></section></aside>`;
+  }
+
+  function contentManagerMarkup(channels) {
+    const channelFilter = fleetState.contentChannel;
+    const stageFilter = fleetState.contentFilter;
+    const items = mergedContentItems().filter((item) => (channelFilter === "all" || item.channelId === channelFilter) && (stageFilter === "all" || contentStage(item) === stageFilter));
+    const selected = new Set(fleetState.selectedContentIds);
+    const filters = [["all", "Tất cả"], ["uploading", "Tải lên"], ["processing", "Đang xử lý"], ["draft", "Bản nháp"], ["scheduled", "Đã lên lịch"], ["published", "Đã xuất bản"], ["error", "Có lỗi"]];
+    return `<section class="ycg-content-manager"><div class="ycg-content-manager__toolbar"><div class="ycg-content-status-tabs">${filters.map(([id, label]) => `<button type="button" data-ycg-content-filter="${id}" class="${stageFilter === id ? "is-active" : ""}">${label}<b>${mergedContentItems().filter((item) => id === "all" || contentStage(item) === id).length}</b></button>`).join("")}</div><div><select data-ycg-content-channel><option value="all">Tất cả kênh</option>${channels.map((channel) => `<option value="${esc(channel.id)}" ${channelFilter === channel.id ? "selected" : ""}>${esc(channel.title)}</option>`).join("")}</select><button type="button" data-ycg-action="content-refresh">Làm mới</button></div></div>
+      <section class="ycg-panel ycg-content-table"><header><div><h3>Nội dung trên các kênh</h3><small>Bấm vào hàng để phát, sửa metadata, thumbnail và lịch mà không rời trang.</small></div><div><button type="button" data-ycg-action="content-copy-metadata" ${selected.size ? "" : "disabled"}>Copy metadata</button><button type="button" data-ycg-action="content-open-calendar" ${selected.size ? "" : "disabled"}>Xếp lịch (${selected.size})</button></div></header><div><table><thead><tr><th></th><th>Video</th><th>Kênh</th><th>Trạng thái</th><th>Xử lý</th><th>Quyền</th><th>Ngày</th><th>Chỉ số</th><th></th></tr></thead><tbody>${items.map((item) => {
+        const key = item.uploadId || `${item.channelId}::${item.videoId}`;
+        const stage = contentStage(item);
+        const metrics = item.metrics || item;
+        const progress = Number(item.progress ?? (item.totalBytes ? Number(item.bytesUploaded || 0) / Number(item.totalBytes) * 100 : 0));
+        return `<tr class="is-${stage}" data-ycg-content-row="${esc(key)}"><td><input type="checkbox" data-ycg-content-select value="${esc(key)}" ${selected.has(key) ? "checked" : ""}></td><td><button type="button" class="ycg-content-video" data-ycg-content-open="${esc(key)}">${item.thumbnail ? `<img src="${esc(item.thumbnail)}" alt="">` : `<span>YT</span>`}<div><strong>${esc(item.title || item.fileName || "Video")}</strong><small>${esc(item.videoId || item.fileName || "Chưa có Video ID")}</small></div></button></td><td><strong>${esc(item.channelTitle || channels.find((channel) => channel.id === item.channelId)?.title || item.channelId || "Kênh")}</strong></td><td><span class="ycg-table-status ${stage === "error" ? "is-error" : ["uploading", "processing"].includes(stage) ? "is-running" : "is-ready"}">${esc(stage)}</span>${stage === "uploading" ? `<progress max="100" value="${progress}"></progress>` : ""}</td><td><small>${esc(item.processingStatus || item.uploadStatus || "—")}</small>${item.failureReason || item.rejectionReason || item.error ? `<em>${esc(item.failureReason || item.rejectionReason || item.error)}</em>` : ""}</td><td>${esc(item.privacyStatus || "private")}</td><td><small>${dateTime(item.scheduledAt || item.publishAt || item.publishedAt || item.updatedAt)}</small></td><td><small>${fmt(metrics.views)} view<br>${fmt(metrics.comments)} bình luận · ${fmt(metrics.likes)} thích</small></td><td><button type="button" data-ycg-content-open="${esc(key)}">Chỉnh sửa</button>${item.videoId ? `<a href="https://www.youtube.com/watch?v=${esc(item.videoId)}" target="_blank" rel="noopener">Mở ↗</a>` : ""}</td></tr>`;
+      }).join("") || `<tr><td colspan="9">Chưa có video phù hợp. Hãy tải video hoặc chọn một kênh khác.</td></tr>`}</tbody></table></div></section>${contentDrawerMarkup(channels)}</section>`;
+  }
+
+  async function loadContentLibrary() {
+    if (!channelStatus.connected) return;
+    const channelId = fleetState.contentChannel === "all" ? "" : fleetState.contentChannel;
+    const result = await api("content/library", "POST", { channelId });
+    contentLibrary = Array.isArray(result.items) ? result.items : [];
+  }
+
+  function contentItemByKey(key) {
+    return mergedContentItems().find((item) => (item.uploadId || `${item.channelId}::${item.videoId}`) === key) || null;
+  }
+
+  async function openContentDrawer(key) {
+    const item = contentItemByKey(key);
+    if (!item) throw new Error("Không tìm thấy video trong Content Manager.");
+    contentDrawer = { loading: true, item, audit: [] };
+    render();
+    if (!item.videoId) {
+      contentDrawer = { loading: false, item, audit: [] };
+      return render();
+    }
+    const result = await api("video/details", "POST", { channelId: item.channelId, videoId: item.videoId });
+    contentDrawer = { loading: false, item: { ...item, ...(result.video || {}) }, audit: result.audit || [], captions: result.captions || [] };
+    render();
+  }
+
+  async function copySelectedContentMetadata() {
+    const selected = new Set(fleetState.selectedContentIds);
+    const items = mergedContentItems().filter((item) => selected.has(item.uploadId || `${item.channelId}::${item.videoId}`) && item.videoId);
+    if (items.length < 2) throw new Error("Chọn ít nhất hai video có Video ID để copy metadata.");
+    const source = items[0];
+    if (!confirm(`Copy tiêu đề, mô tả và tag từ “${source.title}” sang ${items.length - 1} video? YouTube tính quota cho từng lần cập nhật.`)) return;
+    for (const item of items.slice(1)) {
+      await api("videos/update", "POST", { channelId: item.channelId, videoId: item.videoId, title: source.title, description: source.description || "", tags: source.tags || [], approved: true, metadataVersion: `copy-${Date.now().toString(36)}` });
+    }
+    await loadContentLibrary();
+    render();
+    status(`Đã copy metadata thật sang ${items.length - 1} video.`, "success");
+  }
+
   function fleetView() {
     if (!channelStatus.connected) return emptyState(
       "Kết nối kênh để mở Studio đa kênh",
@@ -818,12 +1031,12 @@
     const selected = new Set(fleetState.selectedChannelIds);
     const selectedChannels = channels.filter((channel) => selected.has(channel.id));
     const limits = { maxChannelsPerBulkJob: 20, maxChannelsInVault: 100, maxVideosPerQueue: 10, maxTasksPerBatch: 100, ...(fleetOverview?.limits || fleetObservatory?.limits || {}) };
-    const selectionCapacity = Math.min(limits.maxChannelsInVault, Math.max(1, Math.floor(limits.maxTasksPerBatch / Math.max(1, fleetUploadFiles.length))));
+    const selectionCapacity = Math.min(100, limits.maxChannelsInVault);
     const activeFile = fleetFileByFingerprint();
     const activeDraft = fleetDraft();
     const summary = fleetObservatory?.summary || {};
     const observatoryMap = new Map((fleetObservatory?.channels || []).map((row) => [row.channel?.id, row]));
-    const estimatedTasks = fleetUploadFiles.length * selectedChannels.length;
+    const estimatedTasks = selectedMatrixTasks(selectedChannels.map((channel) => channel.id)).length;
     const runningTasks = fleetState.results.filter((item) => ["queued", "uploading", "verifying", "thumbnail", "processing"].includes(item.status)).length;
     const unansweredComments = (dashboard?.comments || []).filter((item) => Number(item.replyCount || 0) === 0).length;
     const tabs = [
@@ -854,9 +1067,10 @@
       const preset = channelPreset(channel.id);
       const playlists = channel.playlists || [];
       return `<tr><td><div class="ycg-table-channel">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "<i>YT</i>"}<span><strong>${esc(channel.title)}</strong><small>${esc(channel.account?.hint || "Google")}</small></span></div></td><td><input data-ycg-channel-title data-channel-id="${esc(channel.id)}" maxlength="100" value="${esc(effectiveChannelTitle(channel.id, activeDraft))}"></td><td><select data-ycg-channel-preset="thumbnailVariant" data-channel-id="${esc(channel.id)}">${["A", "B", "C"].map((variant) => `<option ${preset.thumbnailVariant === variant ? "selected" : ""}>${variant}</option>`).join("")}</select></td><td><select data-ycg-channel-preset="playlistId" data-channel-id="${esc(channel.id)}"><option value="">Không playlist</option>${playlists.map((item) => `<option value="${esc(item.id)}" ${preset.playlistId === item.id ? "selected" : ""}>${esc(item.title)}</option>`).join("")}</select></td><td><select data-ycg-channel-preset="privacyStatus" data-channel-id="${esc(channel.id)}"><option value="private" ${preset.privacyStatus === "private" ? "selected" : ""}>Private</option><option value="unlisted" ${preset.privacyStatus === "unlisted" ? "selected" : ""}>Unlisted</option><option value="schedule" ${preset.privacyStatus === "schedule" ? "selected" : ""}>Lên lịch</option></select></td><td><input type="datetime-local" data-ycg-channel-preset="publishAt" data-channel-id="${esc(channel.id)}" value="${esc(preset.publishAt)}"></td></tr>`;
-    }).join("") || `<tr><td colspan="6">Chọn kênh trong tab Tổng quan.</td></tr>`}</tbody></table></div></section>` : "";
-    const content = `<form data-ycg-fleet-form class="ycg-studio-content"><div class="ycg-content-columns">${videoQueue}${metadataEditor}</div>${overrides}<section class="ycg-panel ycg-studio-launch"><div><strong>${fleetUploadFiles.length} video × ${selectedChannels.length} kênh = ${estimatedTasks} tác vụ</strong><small>Giới hạn ${limits.maxTasksPerBatch} tác vụ/batch. Mặc định upload Private và không đăng Public hàng loạt.</small></div><label><input type="checkbox" name="rightsConfirmed" ${fleetState.rightsConfirmed ? "checked" : ""}> Tôi có quyền sử dụng toàn bộ video, nhạc và thumbnail.</label><div class="ycg-action-row"><button type="button" data-ycg-action="fleet-preflight">Kiểm tra trước</button><button type="submit" class="is-primary" ${busy.startsWith("bulk/") ? "disabled" : ""}>${busy.startsWith("bulk/") ? "Đang chạy…" : "Tạo hàng đợi upload"}</button></div></section></form>`;
-    const queue = `<section class="ycg-panel ycg-task-center"><header><div><h3>Hàng đợi tác vụ</h3><small>Tiến trình byte thật, retry riêng và không upload lại tác vụ đã thành công</small></div><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></header><div class="ycg-task-summary"><span>${fleetState.results.length} tổng</span><span>${fleetState.results.filter((item) => item.status === "uploading").length} đang upload</span><span>${fleetState.results.filter((item) => item.status === "processing").length} YouTube xử lý</span><span>${fleetState.results.filter((item) => item.status === "failed").length} lỗi</span></div><div class="ycg-task-table"><table><thead><tr><th>Video</th><th>Kênh</th><th>Trạng thái</th><th>Tiến trình</th><th>Tốc độ / ETA</th><th>Hành động</th></tr></thead><tbody>${fleetState.results.map((item) => `<tr><td><strong>${esc(item.fileName || "Video")}</strong><small>${esc(item.videoId || "")}</small></td><td>${esc(item.channelTitle || item.channelId)}</td><td><span class="ycg-table-status ${item.status === "failed" ? "is-error" : ["uploading", "processing", "verifying", "thumbnail"].includes(item.status) ? "is-running" : "is-ready"}">${esc(item.status)}</span>${item.error ? `<small>${esc(item.error)}</small>` : ""}</td><td><progress max="100" value="${Number(item.progress || 0)}"></progress><small>${Number(item.progress || 0).toFixed(1)}%</small></td><td>${item.speedBps ? `${bytes(item.speedBps)}/s · ${Math.ceil(item.etaSeconds || 0)}s` : "—"}</td><td>${item.status === "failed" && item.uploadId ? `<button type="button" data-ycg-fleet-retry="${esc(item.taskKey || item.channelId)}">Thử lại</button>` : item.status === "uploaded" && item.uploadId ? `<button type="button" data-ycg-fleet-approve="${esc(item.taskKey || item.channelId)}">Duyệt</button>` : item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">Mở video</a>` : ""}</td></tr>`).join("") || `<tr><td colspan="6">Chưa có tác vụ. Chọn video và kênh trong tab Nội dung & Upload.</td></tr>`}</tbody></table></div></section>`;
+    }).join("") || `<tr><td colspan="6">Chọn kênh trong tab Tổng quan.</td></tr>`}</tbody></table></div><div class="ycg-channel-schedule-presets">${selectedChannels.map((channel) => { const preset = channelPreset(channel.id); return `<label><strong>${esc(channel.title)}</strong><span>Giờ mặc định<input type="time" data-ycg-channel-preset="publishTime" data-channel-id="${esc(channel.id)}" value="${esc(preset.publishTime)}"></span><span>Múi giờ<select data-ycg-channel-preset="timezone" data-channel-id="${esc(channel.id)}">${[preset.timezone, "Asia/Bangkok", "Asia/Ho_Chi_Minh", "UTC", "America/New_York"].filter((value, index, all) => all.indexOf(value) === index).map((zone) => `<option ${preset.timezone === zone ? "selected" : ""}>${esc(zone)}</option>`).join("")}</select></span></label>`; }).join("")}</div></section>` : "";
+    const contentUpload = `<form data-ycg-fleet-form class="ycg-studio-content"><div class="ycg-content-columns">${videoQueue}${metadataEditor}</div>${batchMatrixMarkup(selectedChannels, limits)}${overrides}<section class="ycg-panel ycg-studio-launch"><div><strong>${estimatedTasks} tác vụ đã bật từ ${fleetUploadFiles.length} video × ${selectedChannels.length} kênh</strong><small>Tự tách thành ${Math.max(0, Math.ceil(estimatedTasks / limits.maxTasksPerBatch))} batch, tối đa ${limits.maxTasksPerBatch} tác vụ/batch. Video luôn upload Private trước.</small></div><label><input type="checkbox" name="rightsConfirmed" ${fleetState.rightsConfirmed ? "checked" : ""}> Tôi có quyền sử dụng toàn bộ video, nhạc và thumbnail.</label><div class="ycg-action-row"><button type="button" data-ycg-action="fleet-preflight">Kiểm tra trước</button><button type="submit" class="is-primary" ${busy.startsWith("bulk/") ? "disabled" : ""}>${busy.startsWith("bulk/") ? "Đang chạy…" : "Tạo hàng đợi liên tục"}</button></div></section></form>`;
+    const content = `<div class="ycg-content-mode"><button type="button" data-ycg-content-mode="upload" class="${fleetState.contentMode === "upload" ? "is-active" : ""}">＋ Batch Upload Matrix</button><button type="button" data-ycg-content-mode="manager" class="${fleetState.contentMode === "manager" ? "is-active" : ""}">▤ Content Manager</button><span>${fleetState.contentMode === "upload" ? "Tối đa 10 video/kênh · round-robin queue" : "Xem và chỉnh trực tiếp video thật"}</span></div>${fleetState.contentMode === "manager" ? contentManagerMarkup(channels) : contentUpload}`;
+    const queue = `<section class="ycg-panel ycg-task-center"><header><div><h3>Continuous Channel Queue</h3><small>Round-robin · mỗi kênh một video tại một thời điểm · không upload lại tác vụ thành công</small></div><div><button type="button" data-ycg-action="queue-${queuePaused ? "resume" : "pause"}-all">${queuePaused ? "Tiếp tục tất cả" : "Tạm dừng tất cả"}</button><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></div></header><div class="ycg-task-summary"><span>${fleetState.results.length} tổng</span><span>${fleetState.results.filter((item) => item.status === "uploading").length} đang upload</span><span>${fleetState.results.filter((item) => item.status === "processing").length} YouTube xử lý</span><span>${fleetState.results.filter((item) => item.status === "paused").length} tạm dừng</span><span>${fleetState.results.filter((item) => item.status === "failed").length} lỗi</span></div><div class="ycg-task-table"><table><thead><tr><th>Video</th><th>Kênh</th><th>Batch</th><th>Trạng thái</th><th>Tiến trình</th><th>Tốc độ / ETA</th><th>Hành động</th></tr></thead><tbody>${fleetState.results.map((item) => `<tr><td><strong>${esc(item.fileName || "Video")}</strong><small>${esc(item.videoId || item.checksum || "")}</small></td><td>${esc(item.channelTitle || item.channelId)}</td><td>${item.batchIndex ? `${item.batchIndex}/${item.batchTotal || item.batchIndex}` : "—"}</td><td><span class="ycg-table-status ${item.status === "failed" ? "is-error" : ["uploading", "processing", "verifying", "thumbnail", "paused"].includes(item.status) ? "is-running" : "is-ready"}">${esc(item.status)}</span>${item.error ? `<small>${esc(item.error)}</small>` : ""}</td><td><progress max="100" value="${Number(item.progress || 0)}"></progress><small>${Number(item.progress || 0).toFixed(1)}%</small></td><td>${item.speedBps ? `${bytes(item.speedBps)}/s · ${Math.ceil(item.etaSeconds || 0)}s` : "—"}</td><td>${item.status === "uploading" ? `<button type="button" data-ycg-task-pause="${esc(item.taskKey)}">Tạm dừng</button>` : ["paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" data-ycg-fleet-retry="${esc(item.taskKey)}">Tiếp tục</button>` : item.status === "uploaded" && item.uploadId ? `<button type="button" data-ycg-fleet-approve="${esc(item.taskKey)}">Duyệt</button>` : ""}${["queued", "uploading", "paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" class="is-danger" data-ycg-task-cancel="${esc(item.taskKey)}">Hủy</button>` : ""}${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">Mở video</a>` : ""}</td></tr>`).join("") || `<tr><td colspan="7">Chưa có tác vụ. Chọn video và kênh trong tab Đăng video.</td></tr>`}</tbody></table></div></section>`;
     const studioView = fleetState.studioTab === "content" ? content
       : fleetState.studioTab === "calendar" ? calendarView(true)
         : fleetState.studioTab === "comments" ? commentsView()
@@ -1120,7 +1334,82 @@
     </div>`;
   }
 
+  function calendarScheduleKey(channelId, videoId) {
+    return `${String(channelId || "").slice(0, 120)}::${String(videoId || "").slice(0, 40)}`;
+  }
+
+  function calendarContentItems() {
+    const channelFilter = fleetState.calendarChannelFilter;
+    const typeFilter = fleetState.calendarTypeFilter;
+    return mergedContentItems().filter((item) => item.videoId)
+      .map((item) => {
+        const key = calendarScheduleKey(item.channelId, item.videoId);
+        const draft = fleetState.scheduleDrafts[key];
+        return { ...item, scheduleKey: key, scheduledAt: draft?.publishAt || item.scheduledAt || item.publishAt || "", scheduleChanged: Boolean(draft) };
+      })
+      .filter((item) => channelFilter === "all" || item.channelId === channelFilter)
+      .filter((item) => typeFilter === "all" || String(item.type || "Video") === typeFilter);
+  }
+
+  function scheduleConflicts(items) {
+    const slots = new Map();
+    items.forEach((item) => {
+      if (!item.scheduledAt) return;
+      const key = `${item.channelId}::${new Date(item.scheduledAt).toISOString().slice(0, 16)}`;
+      slots.set(key, (slots.get(key) || 0) + 1);
+    });
+    return new Set([...slots].filter(([, count]) => count > 1).map(([key]) => key));
+  }
+
+  function zonedLocalToIso(day, time, timeZone) {
+    const [year, month, date] = String(day).split("-").map(Number);
+    const [hour, minute] = String(time || "20:00").split(":").map(Number);
+    let instant = Date.UTC(year, month - 1, date, hour, minute, 0);
+    try {
+      const formatter = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+      for (let iteration = 0; iteration < 2; iteration += 1) {
+        const parts = Object.fromEntries(formatter.formatToParts(new Date(instant)).filter((part) => part.type !== "literal").map((part) => [part.type, Number(part.value)]));
+        const represented = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, 0);
+        instant += Date.UTC(year, month - 1, date, hour, minute, 0) - represented;
+      }
+    } catch {}
+    return new Date(instant).toISOString();
+  }
+
+  function fleetCalendarView(channels) {
+    const items = calendarContentItems();
+    const conflicts = scheduleConflicts(items);
+    const selected = new Set(fleetState.selectedContentIds);
+    const pendingCount = Object.keys(fleetState.scheduleDrafts).length;
+    const mode = fleetState.calendarMode;
+    const scheduled = items.filter((item) => item.scheduledAt).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+    const unscheduled = items.filter((item) => !item.scheduledAt);
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const gridStart = new Date(monthStart);
+    gridStart.setDate(1 - ((monthStart.getDay() + 6) % 7));
+    const days = Array.from({ length: 42 }, (_, index) => { const day = new Date(gridStart); day.setDate(gridStart.getDate() + index); return day; });
+    const month = `<div class="ycg-calendar-month"><div class="ycg-calendar-weekdays">${["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((day) => `<span>${day}</span>`).join("")}</div><div class="ycg-calendar-days">${days.map((day) => {
+      const isoDay = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+      const dayItems = scheduled.filter((item) => String(item.scheduledAt).slice(0, 10) === isoDay);
+      return `<section data-ycg-calendar-day="${isoDay}" class="${day.getMonth() === now.getMonth() ? "" : "is-outside"} ${isoDay === now.toISOString().slice(0,10) ? "is-today" : ""}"><header><b>${day.getDate()}</b><small>${dayItems.length || ""}</small></header>${dayItems.slice(0, 5).map((item) => {
+        const conflictKey = `${item.channelId}::${new Date(item.scheduledAt).toISOString().slice(0,16)}`;
+        return `<button type="button" draggable="true" data-ycg-calendar-video="${esc(item.scheduleKey)}" data-ycg-content-open="${esc(item.uploadId || `${item.channelId}::${item.videoId}`)}" class="${item.scheduleChanged ? "is-draft" : ""} ${conflicts.has(conflictKey) ? "is-conflict" : ""}" style="--channel:${esc(channels.find((channel) => channel.id === item.channelId)?.color || channelPreset(item.channelId).brandColor)}"><time>${new Date(item.scheduledAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</time><span>${esc(item.title)}</span></button>`;
+      }).join("")}${dayItems.length > 5 ? `<small>+${dayItems.length - 5} video</small>` : ""}</section>`;
+    }).join("")}</div></div>`;
+    const timeline = `<div class="ycg-calendar-timeline">${channels.filter((channel) => fleetState.calendarChannelFilter === "all" || channel.id === fleetState.calendarChannelFilter).map((channel) => {
+      const rows = scheduled.filter((item) => item.channelId === channel.id);
+      return `<section><header>${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "YT"}<div><strong>${esc(channel.title)}</strong><small>${esc(channelPreset(channel.id).publishTime)} · ${esc(channelPreset(channel.id).timezone || fleetState.calendarTimezone)}</small></div></header><div>${rows.map((item) => `<button type="button" draggable="true" data-ycg-calendar-video="${esc(item.scheduleKey)}" data-ycg-content-open="${esc(item.uploadId || `${item.channelId}::${item.videoId}`)}"><time>${dateTime(item.scheduledAt)}</time><span>${esc(item.title)}</span><b>${item.scheduleChanged ? "Chờ xác nhận" : esc(item.privacyStatus || "private")}</b></button>`).join("") || `<p>Chưa có video lên lịch.</p>`}</div></section>`;
+    }).join("")}</div>`;
+    const board = `<div class="ycg-unscheduled-board"><header><strong>${unscheduled.length} video chưa xếp lịch</strong><span>Chọn nhiều video rồi dùng Giãn lịch hoặc kéo vào lịch tháng.</span></header>${unscheduled.map((item) => {
+      const key = item.uploadId || `${item.channelId}::${item.videoId}`;
+      return `<article draggable="true" data-ycg-calendar-video="${esc(item.scheduleKey)}"><input type="checkbox" data-ycg-content-select value="${esc(key)}" ${selected.has(key) ? "checked" : ""}>${item.thumbnail ? `<img src="${esc(item.thumbnail)}" alt="">` : `<span>YT</span>`}<div><strong>${esc(item.title)}</strong><small>${esc(item.channelTitle || channels.find((channel) => channel.id === item.channelId)?.title || item.channelId)}</small></div><button type="button" data-ycg-content-open="${esc(key)}">Chỉnh</button></article>`;
+    }).join("") || `<p>Tất cả video trong bộ lọc đã có lịch.</p>`}</div>`;
+    return `<section class="ycg-calendar-studio"><header class="ycg-calendar-studio__head"><div><small>BULK CONTENT CALENDAR</small><h3>Lịch đăng nhiều kênh</h3><p>Mọi thay đổi là bản nháp cho đến khi bấm Xác nhận lịch.</p></div><div><strong>${pendingCount}</strong><span>thay đổi chờ duyệt</span></div></header><div class="ycg-calendar-toolbar"><nav>${[["month", "Lịch tháng"], ["timeline", "Timeline theo kênh"], ["unscheduled", "Chưa xếp lịch"]].map(([id, label]) => `<button type="button" data-ycg-calendar-mode="${id}" class="${mode === id ? "is-active" : ""}">${label}</button>`).join("")}</nav><select data-ycg-calendar-channel><option value="all">Tất cả kênh</option>${channels.map((channel) => `<option value="${esc(channel.id)}" ${fleetState.calendarChannelFilter === channel.id ? "selected" : ""}>${esc(channel.title)}</option>`).join("")}</select><select data-ycg-calendar-type><option value="all">Video, Short và Live</option>${["Video", "Short", "Livestream"].map((type) => `<option ${fleetState.calendarTypeFilter === type ? "selected" : ""}>${type}</option>`).join("")}</select><select data-ycg-calendar-timezone><option>${esc(fleetState.calendarTimezone)}</option><option>Asia/Bangkok</option><option>Asia/Ho_Chi_Minh</option><option>UTC</option><option>America/New_York</option></select></div><div class="ycg-calendar-bulk"><label>Bắt đầu<input type="datetime-local" data-ycg-calendar-start></label><label>Giãn lịch<select data-ycg-calendar-spacing><option value="30">30 phút</option><option value="60" selected>1 giờ</option><option value="1440">1 ngày</option></select></label><button type="button" data-ycg-action="calendar-distribute" ${selected.size ? "" : "disabled"}>Giãn lịch ${selected.size} video</button><button type="button" data-ycg-action="calendar-undo" ${fleetState.scheduleHistory.length ? "" : "disabled"}>Hoàn tác</button><button type="button" class="is-primary" data-ycg-action="calendar-confirm" ${pendingCount ? "" : "disabled"}>Xác nhận lịch (${pendingCount})</button></div>${conflicts.size ? `<div class="ycg-calendar-warning">! Có ${conflicts.size} khung giờ bị trùng trên cùng kênh. Hãy đổi giờ trước khi xác nhận.</div>` : ""}${mode === "timeline" ? timeline : mode === "unscheduled" ? board : month}${contentDrawerMarkup(channels)}</section>`;
+  }
+
   function calendarView(compact = false) {
+    if (compact) return fleetCalendarView((fleetOverview?.channels || channelStatus.channels || []).filter(Boolean));
     const sorted = state.calendar.slice().sort((a, b) => new Date(a.at) - new Date(b.at));
     const automation = automationReadiness();
     return `<div class="ycg-calendar-grid">
@@ -1608,17 +1897,20 @@
     const existing = fleetState.results.find((item) => (item.taskKey || item.channelId) === taskKey);
     if (existing) Object.assign(existing, patch);
     else fleetState.results.unshift({ channelId, taskKey, ...patch });
-    fleetState.results = fleetState.results.slice(0, 250);
+    fleetState.results = fleetState.results.slice(0, 1200);
     saveFleetState();
   }
 
   function putFleetChunk(session, file, start, end) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
+      const taskKey = session.taskKey || session.uploadId || session.channelId;
+      activeUploadRequests.set(taskKey, xhr);
       xhr.open("PUT", session.uploadUrl);
       xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
       xhr.setRequestHeader("Content-Range", `bytes ${start}-${end - 1}/${file.size}`);
       xhr.onload = () => {
+        activeUploadRequests.delete(taskKey);
         if (xhr.status === 308) {
           const range = xhr.getResponseHeader("Range") || "";
           const match = range.match(/bytes=0-(\d+)/i);
@@ -1635,8 +1927,8 @@
         error.status = xhr.status || 0;
         reject(error);
       };
-      xhr.onerror = () => reject(Object.assign(new Error("Mất kết nối khi gửi video tới YouTube."), { status: 0 }));
-      xhr.onabort = () => reject(Object.assign(new Error("Phiên bulk upload đã bị hủy."), { status: 499 }));
+      xhr.onerror = () => { activeUploadRequests.delete(taskKey); reject(Object.assign(new Error("Mất kết nối khi gửi video tới YouTube."), { status: 0 })); };
+      xhr.onabort = () => { activeUploadRequests.delete(taskKey); reject(Object.assign(new Error(pausedTaskKeys.has(taskKey) || queuePaused ? "Upload đã tạm dừng." : "Phiên bulk upload đã bị hủy."), { status: 499, paused: pausedTaskKeys.has(taskKey) || queuePaused })); };
       xhr.send(file.slice(start, end, file.type || "application/octet-stream"));
     });
   }
@@ -1648,9 +1940,11 @@
     let finalData = null;
     const startedAt = Date.now();
     const initialOffset = offset;
+    let lastProgressSyncAt = 0;
     const taskPatch = { taskKey: session.taskKey || session.channelId, fingerprint: session.fingerprint || "", fileName: session.fileName || file.name };
-    updateFleetResult(session.channelId, { ...taskPatch, channelTitle: session.channelTitle, uploadId: session.uploadId, status: "uploading", progress: 0, error: "" });
+    updateFleetResult(session.channelId, { ...taskPatch, channelTitle: session.channelTitle, uploadId: session.uploadId, status: "uploading", progress: Math.min(100, offset / Math.max(1, file.size) * 100), error: "" });
     while (offset < file.size) {
+      if (queuePaused || pausedTaskKeys.has(taskPatch.taskKey)) throw Object.assign(new Error("Upload đã tạm dừng."), { status: 499, paused: true });
       const end = Math.min(file.size, offset + chunkSize);
       let response = null;
       for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -1658,6 +1952,7 @@
           response = await putFleetChunk(session, file, offset, end);
           break;
         } catch (error) {
+          if (error.paused || Number(error.status) === 499) throw error;
           if (!retryable.has(Number(error.status || 0)) || attempt === 4) throw error;
           await wait(Math.min(8000, 500 * (2 ** attempt)));
         }
@@ -1669,13 +1964,16 @@
       const etaSeconds = speedBps > 0 ? Math.max(0, (file.size - offset) / speedBps) : 0;
       updateFleetResult(session.channelId, { ...taskPatch, status: response?.complete ? "verifying" : "uploading", progress, speedBps, etaSeconds });
       render();
-      await api("upload/progress", "POST", {
-        uploadId: session.uploadId,
-        bytesUploaded: offset,
-        totalBytes: file.size,
-        speedBps,
-        etaSeconds
-      }).catch(() => {});
+      if (response?.complete || Date.now() - lastProgressSyncAt >= 2000) {
+        lastProgressSyncAt = Date.now();
+        await api("upload/progress", "POST", {
+          uploadId: session.uploadId,
+          bytesUploaded: offset,
+          totalBytes: file.size,
+          speedBps,
+          etaSeconds
+        }).catch(() => {});
+      }
       if (response?.complete) {
         finalData = response.data;
         break;
@@ -1715,6 +2013,8 @@
     if (!fleetState.activeFileFingerprint) throw new Error("Hãy chọn video trước khi tạo thumbnail.");
     const variants = ["A", "B", "C"];
     const blobs = await Promise.all(variants.map((variant) => fleetThumbnailBlob(variant)));
+    const oversized = blobs.findIndex((blob) => blob.size > 2 * 1024 * 1024 || !["image/jpeg", "image/png"].includes(blob.type));
+    if (oversized >= 0) throw new Error(`Thumbnail ${variants[oversized]} vượt 2 MB hoặc sai định dạng JPEG/PNG.`);
     variants.forEach((variant, index) => fleetThumbnailVariants.set(`${fleetState.activeFileFingerprint}:${variant}`, blobs[index]));
     const draft = fleetDraft();
     if (draft) draft.thumbnailReady = true;
@@ -1735,26 +2035,69 @@
   async function retryFleetChannel(taskKey) {
     const result = fleetState.results.find((item) => (item.taskKey || item.channelId) === taskKey);
     if (!result?.uploadId) throw new Error("Kênh này không còn phiên upload để tiếp tục.");
-    const file = fleetFileByFingerprint(result.fingerprint);
-    if (!file) throw new Error("Hãy chọn lại đúng file video để tiếp tục phiên upload.");
     const resumed = await api("upload/resume", "POST", { uploadId: result.uploadId });
+    pausedTaskKeys.delete(taskKey);
     const channelId = result.channelId;
     const channel = (fleetOverview?.channels || channelStatus.channels || []).find((item) => item.id === channelId);
+    if (resumed.complete && resumed.videoId) {
+      const completed = await api("upload/complete", "POST", { uploadId: result.uploadId, videoId: resumed.videoId, playlistId: channelPreset(channelId).playlistId || "" });
+      updateFleetResult(channelId, { taskKey, status: completed.processingStatus === "succeeded" ? "uploaded" : "processing", progress: 100, videoId: completed.videoId, url: completed.url, error: "" });
+      render();
+      return status(`YouTube đã xác nhận video hoàn tất cho ${channel?.title || channelId}.`, "success");
+    }
+    const file = fleetFileByFingerprint(result.fingerprint);
+    if (!file) throw new Error("Hãy chọn lại đúng file video để tiếp tục từ byte YouTube đã xác nhận.");
     await uploadFleetSession({ ...resumed, channelId, channelTitle: channel?.title || result.channelTitle, taskKey, fingerprint: result.fingerprint, fileName: file.name }, file);
     return status(`Đã tiếp tục upload cho ${channel?.title || channelId}.`, "success");
   }
 
+  async function pauseFleetTask(taskKey) {
+    pausedTaskKeys.add(taskKey);
+    activeUploadRequests.get(taskKey)?.abort?.();
+    const result = fleetState.results.find((item) => item.taskKey === taskKey);
+    if (result) {
+      updateFleetResult(result.channelId, { taskKey, status: "paused", speedBps: 0, etaSeconds: 0, error: "" });
+      if (result.uploadId) await api("upload/pause", "POST", { uploadId: result.uploadId }).catch(() => {});
+    }
+    render();
+  }
+
+  async function cancelFleetTask(taskKey) {
+    const result = fleetState.results.find((item) => item.taskKey === taskKey);
+    if (!result?.uploadId) throw new Error("Tác vụ chưa có phiên upload để hủy.");
+    pausedTaskKeys.delete(taskKey);
+    activeUploadRequests.get(taskKey)?.abort?.();
+    await api("upload/cancel", "POST", { uploadId: result.uploadId });
+    updateFleetResult(result.channelId, { taskKey, status: "cancelled", speedBps: 0, etaSeconds: 0, error: "" });
+    render();
+  }
+
+  async function resumeAllPausedTasks() {
+    queuePaused = false;
+    const paused = fleetState.results.filter((item) => item.status === "paused" && item.uploadId && item.taskKey);
+    await runConcurrent(paused, Math.min(3, Math.max(1, fleetState.concurrency)), async (item) => {
+      try { await retryFleetChannel(item.taskKey); }
+      catch (error) { updateFleetResult(item.channelId, { taskKey: item.taskKey, status: "failed", error: error.message }); }
+    });
+    render();
+  }
+
   function mergeFleetJobResults(jobs) {
     (jobs || []).forEach((job) => (job.results || []).forEach((item) => {
-      const existing = fleetState.results.find((result) => result.uploadId && result.uploadId === item.uploadId)
+      const existing = fleetState.results.find((result) => item.taskKey && result.taskKey === item.taskKey)
+        || fleetState.results.find((result) => result.uploadId && result.uploadId === item.uploadId)
         || fleetState.results.find((result) => result.channelId === item.channelId && !result.uploadId);
       if (!existing && !item.uploadId) return;
       if (existing?.uploadId && item.uploadId && existing.uploadId !== item.uploadId) return;
       updateFleetResult(item.channelId, {
-        taskKey: existing?.taskKey || item.channelId,
+        taskKey: item.taskKey || existing?.taskKey || item.channelId,
         uploadId: item.uploadId || existing?.uploadId,
         status: item.status === "error" ? "failed" : item.status,
         videoId: item.videoId || existing?.videoId,
+        fingerprint: item.videoFingerprint || existing?.fingerprint || "",
+        fileName: item.fileName || existing?.fileName || "",
+        checksum: item.checksum || existing?.checksum || "",
+        metadataVersion: item.metadataVersion || existing?.metadataVersion || "",
         error: item.error || ""
       });
     }));
@@ -1890,7 +2233,7 @@
     }
   }
 
-  async function uploadQueuedFleetFile(file, draft, eligibleChannelIds) {
+  async function uploadQueuedFleetFile(file, draft, eligibleChannelIds, batchMeta = {}) {
     const fingerprint = fleetFileFingerprint(file);
     const completedTaskKeys = new Set(fleetState.results.filter((item) => item.videoId && ["processing", "uploaded", "scheduled", "private", "unlisted", "completed"].includes(item.status)).map((item) => item.taskKey));
     const remainingChannelIds = eligibleChannelIds.filter((channelId) => !completedTaskKeys.has(`${fingerprint}::${channelId}`));
@@ -1898,6 +2241,7 @@
     const channels = (fleetOverview?.channels || channelStatus.channels || []).filter((channel) => remainingChannelIds.includes(channel.id));
     const channelPayloads = channels.map((channel) => {
       const preset = channelPreset(channel.id);
+      const delivery = taskDelivery(fingerprint, channel.id);
       return {
         channelId: channel.id,
         title: effectiveChannelTitle(channel.id, draft),
@@ -1906,16 +2250,20 @@
         categoryId: preset.categoryId,
         defaultLanguage: preset.defaultLanguage,
         playlistId: preset.playlistId,
-        desiredPublishAt: preset.privacyStatus === "schedule" && preset.publishAt ? new Date(preset.publishAt).toISOString() : "",
-        desiredPrivacyStatus: preset.privacyStatus === "unlisted" ? "unlisted" : preset.privacyStatus === "schedule" ? "schedule" : "private",
-        privacyStatus: fleetState.uploadPrivateFirst ? "private" : preset.privacyStatus === "unlisted" ? "unlisted" : "private"
+        desiredPublishAt: delivery.privacyStatus === "schedule" && delivery.publishAt ? new Date(delivery.publishAt).toISOString() : "",
+        desiredPrivacyStatus: delivery.privacyStatus,
+        privacyStatus: fleetState.uploadPrivateFirst ? "private" : delivery.privacyStatus === "unlisted" ? "unlisted" : "private",
+        taskKey: matrixTaskKey(fingerprint, channel.id),
+        videoFingerprint: fingerprint,
+        metadataVersion: metadataVersionFor(draft, channel.id, delivery),
+        checksum: draft.checksum || ""
       };
     });
     const idempotencyBase = draft.idempotencyKey || `${uid("bulk-video")}-${Math.random().toString(36).slice(2, 10)}`;
     draft.idempotencyKey = idempotencyBase;
     remainingChannelIds.forEach((channelId) => {
       const channel = channels.find((item) => item.id === channelId);
-      updateFleetResult(channelId, { taskKey: `${fingerprint}::${channelId}`, fingerprint, fileName: file.name, channelTitle: channel?.title || channelId, status: "queued", progress: 0, error: "" });
+      updateFleetResult(channelId, { taskKey: `${fingerprint}::${channelId}`, fingerprint, checksum: draft.checksum || "", fileName: file.name, channelTitle: channel?.title || channelId, status: "queued", progress: 0, batchIndex: batchMeta.batchIndex || 1, batchTotal: batchMeta.batchTotal || 1, error: "" });
     });
     const connectionDownlink = Number(navigator.connection?.downlink || 0);
     const concurrency = connectionDownlink > 0 && connectionDownlink < 3 ? 1 : fleetState.concurrency;
@@ -1930,7 +2278,7 @@
       const result = await api("bulk/upload/sessions", "POST", {
         channelIds: chunkChannelIds,
         channels: channelPayloads.filter((item) => chunkChannelIds.includes(item.channelId)),
-        idempotencyKey: `${idempotencyBase.slice(0, 150)}-c${chunkIndex}`,
+        idempotencyKey: `${idempotencyBase.slice(0, 140)}-b${batchMeta.batchIndex || 1}-c${chunkIndex}`,
         approved: true,
         rightsConfirmed: true,
         title: draft.title,
@@ -1942,17 +2290,23 @@
         mimeType: file.type || "application/octet-stream",
         madeForKids: fleetState.madeForKids,
         containsSyntheticMedia: fleetState.containsSyntheticMedia,
+        videoFingerprint: fingerprint,
+        metadataVersion: metadataVersionFor(draft, chunkChannelIds[0], taskDelivery(fingerprint, chunkChannelIds[0])),
+        checksum: draft.checksum || "",
+        queueVideoCount: fleetUploadFiles.length,
         notifySubscribers: false
       });
       results.push(result);
       if ((result.failures || []).length) hasSessionFailure = true;
       (result.failures || []).forEach((item) => updateFleetResult(item.channelId, { taskKey: `${fingerprint}::${item.channelId}`, fingerprint, fileName: file.name, channelTitle: item.channelTitle, status: "failed", error: item.error }));
+      (result.reused || []).forEach((item) => updateFleetResult(item.channelId, { taskKey: `${fingerprint}::${item.channelId}`, fingerprint, fileName: file.name, channelTitle: item.channelTitle, uploadId: item.uploadId, videoId: item.videoId, status: item.status || "uploaded", progress: 100, error: "" }));
       await runConcurrent(result.sessions || [], concurrency, async (session) => {
         const taskKey = `${fingerprint}::${session.channelId}`;
         try { await uploadFleetSession({ ...session, taskKey, fingerprint, fileName: file.name }, file); }
         catch (error) {
-          updateFleetResult(session.channelId, { taskKey, fingerprint, fileName: file.name, channelTitle: session.channelTitle, uploadId: session.uploadId, status: "failed", error: error.message });
-          await api("upload/error", "POST", { uploadId: session.uploadId, error: error.message }).catch(() => {});
+          const paused = error.paused || pausedTaskKeys.has(taskKey) || queuePaused;
+          updateFleetResult(session.channelId, { taskKey, fingerprint, fileName: file.name, channelTitle: session.channelTitle, uploadId: session.uploadId, status: paused ? "paused" : "failed", error: paused ? "" : error.message });
+          if (!paused) await api("upload/error", "POST", { uploadId: session.uploadId, error: error.message }).catch(() => {});
           render();
         }
       });
@@ -1972,23 +2326,25 @@
     fleetState.concurrency = Math.min(3, Math.max(1, Number(data.concurrency || fleetState.concurrency || 2)));
     if (!fleetState.rightsConfirmed) throw new Error("Cần xác nhận quyền sử dụng toàn bộ nội dung trong batch.");
     const maxTasks = Number(fleetOverview?.limits?.maxTasksPerBatch || fleetObservatory?.limits?.maxTasksPerBatch || 100);
-    const requestedTasks = fleetUploadFiles.length * fleetState.selectedChannelIds.length;
-    if (requestedTasks > maxTasks) throw new Error(`Batch này tạo ${requestedTasks} tác vụ, vượt giới hạn an toàn ${maxTasks}. Hãy giảm số video hoặc kênh.`);
+    const requestedTasks = selectedMatrixTasks().length;
+    if (!requestedTasks) throw new Error("Ma trận chưa bật tác vụ video × kênh nào.");
     const missingTitle = fleetUploadFiles.find((file) => !fleetDraft(fleetFileFingerprint(file), file)?.title?.trim());
     if (missingTitle) throw new Error(`${missingTitle.name} chưa có tiêu đề.`);
     const preflight = await runFleetPreflight();
     const eligibleChannelIds = preflight.eligibleChannelIds || [];
     if (!eligibleChannelIds.length) throw new Error("Không có kênh nào vượt qua kiểm tra quyền và token.");
-    const actualTasks = fleetUploadFiles.length * eligibleChannelIds.length;
-    if (!confirm(`Tạo ${actualTasks} tác vụ từ ${fleetUploadFiles.length} video × ${eligibleChannelIds.length} kênh? Video sẽ upload PRIVATE trước và không tự Public.`)) return;
+    const pendingTasks = selectedMatrixTasks(eligibleChannelIds).filter((task) => {
+      const existing = fleetState.results.find((item) => item.taskKey === task.taskKey);
+      return !(existing?.videoId && ["processing", "uploaded", "scheduled", "private", "unlisted", "published", "completed"].includes(existing.status));
+    });
+    const actualTasks = pendingTasks.length;
+    const taskBatches = Array.from({ length: Math.ceil(actualTasks / maxTasks) }, (_, index) => pendingTasks.slice(index * maxTasks, (index + 1) * maxTasks));
+    if (!actualTasks) throw new Error("Mọi tác vụ đã hoàn thành; hệ thống không tạo video trùng.");
+    if (!confirm(`Tạo ${actualTasks} tác vụ và tự chia thành ${taskBatches.length} batch? Mỗi kênh nhận tối đa ${fleetUploadFiles.length}/10 video và tất cả upload PRIVATE trước.`)) return;
     const channelMap = new Map((fleetOverview?.channels || channelStatus.channels || []).map((channel) => [channel.id, channel]));
-    fleetUploadFiles.forEach((file) => {
-      const fingerprint = fleetFileFingerprint(file);
-      eligibleChannelIds.forEach((channelId) => {
-        const taskKey = `${fingerprint}::${channelId}`;
-        const existing = fleetState.results.find((item) => item.taskKey === taskKey);
-        if (!existing || existing.status === "failed") updateFleetResult(channelId, { taskKey, fingerprint, fileName: file.name, channelTitle: channelMap.get(channelId)?.title || channelId, status: "queued", progress: existing?.progress || 0, error: "" });
-      });
+    pendingTasks.forEach((task, index) => {
+      const existing = fleetState.results.find((item) => item.taskKey === task.taskKey);
+      updateFleetResult(task.channelId, { taskKey: task.taskKey, fingerprint: task.fingerprint, checksum: fleetDraft(task.fingerprint, task.file)?.checksum || "", fileName: task.file.name, channelTitle: channelMap.get(task.channelId)?.title || task.channelId, status: "queued", progress: existing?.progress || 0, batchIndex: Math.floor(index / maxTasks) + 1, batchTotal: taskBatches.length, error: "" });
     });
     busy = "bulk/batch";
     errorMessage = "";
@@ -1996,7 +2352,23 @@
     saveFleetState();
     render();
     try {
-      await runConcurrent(fleetUploadFiles, 1, async (file) => uploadQueuedFleetFile(file, fleetDraft(fleetFileFingerprint(file), file), eligibleChannelIds));
+      const runToken = ++queueRunToken;
+      for (let batchIndex = 0; batchIndex < taskBatches.length; batchIndex += 1) {
+        if (runToken !== queueRunToken) break;
+        const batch = taskBatches[batchIndex];
+        const byFingerprint = new Map();
+        batch.forEach((task) => {
+          if (!byFingerprint.has(task.fingerprint)) byFingerprint.set(task.fingerprint, []);
+          byFingerprint.get(task.fingerprint).push(task.channelId);
+        });
+        for (const [fingerprint, channelIds] of byFingerprint) {
+          if (runToken !== queueRunToken) break;
+          while (queuePaused) await wait(250);
+          const file = fleetFileByFingerprint(fingerprint);
+          if (!file) continue;
+          await uploadQueuedFleetFile(file, fleetDraft(fingerprint, file), channelIds, { batchIndex: batchIndex + 1, batchTotal: taskBatches.length });
+        }
+      }
       const [jobsResult, observatoryResult] = await Promise.all([api("bulk/jobs").catch(() => ({ jobs: [] })), api("channels/observatory").catch(() => null)]);
       fleetJobs = jobsResult.jobs || [];
       fleetObservatory = observatoryResult;
@@ -2028,6 +2400,12 @@
   }
 
   function hydrateFleetStudioTab(tab) {
+    if (channelStatus.connected && ((tab === "content" && fleetState.contentMode === "manager") || tab === "calendar")) {
+      loadContentLibrary().then(() => {
+        if (state.active !== "fleet" || fleetState.studioTab !== tab) return;
+        render();
+      }).catch(() => {});
+    }
     if (channelStatus.connected && tab === "comments") {
       api("comments/drafts").then((result) => {
         if (state.active !== "fleet" || fleetState.studioTab !== "comments") return;
@@ -2116,6 +2494,99 @@
       saveFleetState();
       return render();
     }
+    if (action === "matrix-enable-all" || action === "matrix-disable-all") {
+      const enabled = action === "matrix-enable-all";
+      fleetUploadFiles.forEach((file) => fleetState.selectedChannelIds.forEach((channelId) => {
+        const cell = matrixTask(fleetFileFingerprint(file), channelId, true);
+        cell.enabled = enabled;
+      }));
+      invalidateFleetPublish();
+      saveFleetState();
+      render();
+      return status(enabled ? "Đã bật toàn bộ tác vụ trong ma trận." : "Đã tắt toàn bộ tác vụ trong ma trận.", "success");
+    }
+    if (action === "matrix-copy-first-channel") {
+      const [sourceId, ...targetIds] = fleetState.selectedChannelIds;
+      if (!sourceId || !targetIds.length) throw new Error("Chọn ít nhất hai kênh để copy lịch và metadata.");
+      const sourcePreset = { ...channelPreset(sourceId) };
+      targetIds.forEach((channelId) => {
+        fleetState.channelPresets[channelId] = { ...channelPreset(channelId), ...sourcePreset, locked: false };
+        fleetUploadFiles.forEach((file) => {
+          const fingerprint = fleetFileFingerprint(file);
+          const sourceCell = matrixTask(fingerprint, sourceId);
+          fleetState.taskMatrix[matrixTaskKey(fingerprint, channelId)] = { ...sourceCell };
+        });
+      });
+      invalidateFleetPublish();
+      saveFleetState();
+      render();
+      return status(`Đã copy thiết lập kênh đầu sang ${targetIds.length} kênh.`, "success");
+    }
+    if (action === "content-refresh") {
+      await api("content/processing/refresh", "POST", { channelId: fleetState.contentChannel === "all" ? "" : fleetState.contentChannel });
+      await loadContentLibrary();
+      render();
+      return status(`Đã đồng bộ ${contentLibrary.length} video và upload record thật.`, "success");
+    }
+    if (action === "content-copy-metadata") return copySelectedContentMetadata();
+    if (action === "content-open-calendar") {
+      fleetState.studioTab = "calendar";
+      fleetState.calendarMode = "unscheduled";
+      saveFleetState();
+      render();
+      return;
+    }
+    if (action === "calendar-distribute") {
+      const startInput = root?.querySelector("[data-ycg-calendar-start]")?.value;
+      const start = startInput ? new Date(startInput) : new Date(Date.now() + 60 * 60 * 1000);
+      const spacing = Math.max(30, Number(root?.querySelector("[data-ycg-calendar-spacing]")?.value || 60));
+      if (!Number.isFinite(start.getTime()) || start.getTime() <= Date.now() + 60_000) throw new Error("Thời gian bắt đầu phải ở tương lai.");
+      const selected = new Set(fleetState.selectedContentIds);
+      const items = mergedContentItems().filter((item) => item.videoId && selected.has(item.uploadId || `${item.channelId}::${item.videoId}`));
+      if (!items.length) throw new Error("Chọn ít nhất một video có Video ID.");
+      fleetState.scheduleHistory.push(JSON.parse(JSON.stringify(fleetState.scheduleDrafts)));
+      fleetState.scheduleHistory = fleetState.scheduleHistory.slice(-20);
+      items.forEach((item, index) => {
+        const key = calendarScheduleKey(item.channelId, item.videoId);
+        const publishAt = new Date(start.getTime() + index * spacing * 60_000).toISOString();
+        fleetState.scheduleDrafts[key] = { channelId: item.channelId, videoId: item.videoId, publishAt, previousPublishAt: item.scheduledAt || item.publishAt || "" };
+      });
+      saveFleetState();
+      render();
+      return status(`Đã giãn lịch ${items.length} video, cách nhau ${spacing} phút. Chưa gửi YouTube.`, "success");
+    }
+    if (action === "calendar-undo") {
+      const previous = fleetState.scheduleHistory.pop();
+      if (previous) fleetState.scheduleDrafts = previous;
+      saveFleetState();
+      render();
+      return status("Đã hoàn tác thay đổi lịch gần nhất.", "success");
+    }
+    if (action === "calendar-confirm") {
+      const items = Object.values(fleetState.scheduleDrafts);
+      if (!items.length) throw new Error("Không có thay đổi lịch cần xác nhận.");
+      const conflicts = scheduleConflicts(calendarContentItems());
+      if (conflicts.size) throw new Error("Hãy xử lý các khung giờ trùng trước khi xác nhận.");
+      if (!confirm(`Gửi ${items.length} thay đổi lịch thật tới YouTube? Video phải đang Private và chưa từng xuất bản.`)) return;
+      const results = [];
+      for (let offset = 0; offset < items.length; offset += 20) {
+        const result = await api("content/schedule/bulk", "POST", { approved: true, timezone: fleetState.calendarTimezone, items: items.slice(offset, offset + 20) });
+        results.push(...(result.results || []));
+      }
+      const failedKeys = new Set(results.filter((item) => !item.ok).map((item) => calendarScheduleKey(item.channelId, item.videoId)));
+      Object.keys(fleetState.scheduleDrafts).forEach((key) => { if (!failedKeys.has(key)) delete fleetState.scheduleDrafts[key]; });
+      saveFleetState();
+      await loadContentLibrary();
+      render();
+      return status(`YouTube đã xác nhận ${results.filter((item) => item.ok).length}/${results.length} lịch đăng.`, failedKeys.size ? "error" : "success");
+    }
+    if (action === "queue-pause-all") {
+      queuePaused = true;
+      await Promise.all(fleetState.results.filter((item) => item.status === "uploading").map((item) => pauseFleetTask(item.taskKey)));
+      render();
+      return status("Đã tạm dừng hàng đợi tại byte gần nhất YouTube xác nhận.", "success");
+    }
+    if (action === "queue-resume-all") return resumeAllPausedTasks();
     if (action === "fleet-clear") {
       fleetState.selectedChannelIds = [];
       fleetState.results = [];
@@ -2129,6 +2600,7 @@
       fleetUploadFiles = [];
       fleetUploadFile = null;
       fleetState.activeFileFingerprint = "";
+      fleetState.taskMatrix = {};
       if (thumbnailVideoUrl) URL.revokeObjectURL(thumbnailVideoUrl);
       thumbnailVideoUrl = "";
       thumbnailVideo = null;
@@ -2369,6 +2841,45 @@
       saveFleetState();
       render();
       hydrateFleetStudioTab(fleetState.studioTab);
+      return;
+    }
+    const contentMode = event.target.closest("[data-ycg-content-mode]");
+    if (contentMode) {
+      fleetState.contentMode = contentMode.dataset.ycgContentMode;
+      saveFleetState();
+      render();
+      if (fleetState.contentMode === "manager") {
+        try { await loadContentLibrary(); render(); }
+        catch (error) { errorMessage = error.message; render(); }
+      }
+      return;
+    }
+    const contentFilter = event.target.closest("[data-ycg-content-filter]");
+    if (contentFilter) { fleetState.contentFilter = contentFilter.dataset.ycgContentFilter; saveFleetState(); render(); return; }
+    const calendarMode = event.target.closest("[data-ycg-calendar-mode]");
+    if (calendarMode) { fleetState.calendarMode = calendarMode.dataset.ycgCalendarMode; saveFleetState(); render(); return; }
+    const contentOpen = event.target.closest("[data-ycg-content-open]");
+    if (contentOpen) {
+      try { await openContentDrawer(contentOpen.dataset.ycgContentOpen); }
+      catch (error) { errorMessage = error.message; contentDrawer = null; render(); }
+      return;
+    }
+    if (event.target.closest("[data-ycg-content-close]")) { contentDrawer = null; render(); return; }
+    const taskPause = event.target.closest("[data-ycg-task-pause]");
+    if (taskPause) { await pauseFleetTask(taskPause.dataset.ycgTaskPause); return; }
+    const taskCancel = event.target.closest("[data-ycg-task-cancel]");
+    if (taskCancel) {
+      if (!confirm("Hủy phiên upload này? Tác vụ sẽ không tự chạy lại.")) return;
+      try { await cancelFleetTask(taskCancel.dataset.ycgTaskCancel); }
+      catch (error) { errorMessage = error.message; render(); }
+      return;
+    }
+    const detailCaptions = event.target.closest("[data-ycg-detail-captions]");
+    if (detailCaptions) {
+      state.captions.videoId = detailCaptions.dataset.ycgDetailCaptions;
+      contentDrawer = null;
+      saveState();
+      switchModule("captions");
       return;
     }
     const fleetVideo = event.target.closest("[data-ycg-fleet-video]");
@@ -2620,6 +3131,12 @@
       const fingerprint = fleetFileFingerprint(file);
       const draft = fleetDraft(fingerprint, file);
       draft.thumbnailReady = ["A", "B", "C"].every((variant) => fleetThumbnailVariants.has(`${fingerprint}:${variant}`));
+      if (!draft.checksum) sampledFileChecksum(file).then((checksum) => {
+        if (!checksum) return;
+        const current = fleetDraft(fingerprint, file);
+        if (current) current.checksum = checksum;
+        saveFleetState();
+      }).catch(() => {});
     });
     const nextFingerprint = fleetState.activeFileFingerprint && merged.has(fleetState.activeFileFingerprint)
       ? fleetState.activeFileFingerprint
@@ -2630,6 +3147,7 @@
 
   async function removeFleetVideo(fingerprint) {
     fleetUploadFiles = fleetUploadFiles.filter((file) => fleetFileFingerprint(file) !== fingerprint);
+    Object.keys(fleetState.taskMatrix).filter((key) => key.startsWith(`${fingerprint}::`)).forEach((key) => delete fleetState.taskMatrix[key]);
     if (fleetState.activeFileFingerprint === fingerprint) {
       const next = fleetUploadFiles[0];
       if (next) return activateFleetVideo(fleetFileFingerprint(next), true);
@@ -2646,6 +3164,51 @@
 
   async function handleChange(event) {
     const target = event.target;
+    if (target.matches("[data-ycg-matrix-mode]")) {
+      const cell = matrixTask(target.dataset.fingerprint, target.dataset.channelId, true);
+      cell.enabled = target.value !== "off";
+      cell.mode = target.value === "off" ? "inherit" : target.value;
+      if (cell.mode !== "schedule") cell.publishAt = "";
+      invalidateFleetPublish();
+      saveFleetState();
+      render();
+      return;
+    }
+    if (target.matches("[data-ycg-matrix-time]")) {
+      const cell = matrixTask(target.dataset.fingerprint, target.dataset.channelId, true);
+      cell.enabled = true;
+      cell.mode = "schedule";
+      cell.publishAt = target.value;
+      invalidateFleetPublish();
+      saveFleetState();
+      return;
+    }
+    if (target.matches("[data-ycg-content-select]")) {
+      const selected = new Set(fleetState.selectedContentIds);
+      if (target.checked) selected.add(target.value); else selected.delete(target.value);
+      fleetState.selectedContentIds = [...selected].slice(0, 500);
+      saveFleetState();
+      render();
+      return;
+    }
+    if (target.matches("[data-ycg-content-channel]")) {
+      fleetState.contentChannel = target.value;
+      saveFleetState();
+      try { await loadContentLibrary(); } catch (error) { errorMessage = error.message; }
+      render();
+      return;
+    }
+    if (target.matches("[data-ycg-calendar-channel]")) { fleetState.calendarChannelFilter = target.value; saveFleetState(); render(); return; }
+    if (target.matches("[data-ycg-calendar-type]")) { fleetState.calendarTypeFilter = target.value; saveFleetState(); render(); return; }
+    if (target.matches("[data-ycg-calendar-timezone]")) { fleetState.calendarTimezone = target.value.slice(0, 80); saveFleetState(); render(); return; }
+    if (target.matches("[data-ycg-detail-thumbnail]")) {
+      const file = target.files?.[0];
+      if (!file || !["image/jpeg", "image/png"].includes(file.type) || file.size > 2 * 1024 * 1024) throw new Error("Thumbnail phải là JPEG/PNG và không vượt 2 MB.");
+      const session = await api("thumbnail/session", "POST", { channelId: target.dataset.channelId, videoId: target.dataset.videoId, fileSize: file.size, mimeType: file.type });
+      await putFleetChunk({ uploadUrl: session.uploadUrl, taskKey: `thumbnail::${target.dataset.videoId}` }, file, 0, file.size);
+      status("YouTube đã nhận thumbnail mới.", "success");
+      return;
+    }
     if (target.matches("[data-ycg-fleet-channel]")) {
       const ids = new Set(fleetState.selectedChannelIds);
       if (target.checked) ids.add(target.value);
@@ -2728,6 +3291,36 @@
   }
 
   async function handleSubmit(event) {
+    const videoDetail = event.target.closest("[data-ycg-video-detail-form]");
+    if (videoDetail) {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(videoDetail));
+      const privacyStatus = data.privacyStatus || "private";
+      const publishAt = data.publishAt ? new Date(data.publishAt) : null;
+      if (privacyStatus === "schedule" && (!publishAt || !Number.isFinite(publishAt.getTime()) || publishAt.getTime() <= Date.now() + 60_000)) throw new Error("Lịch đăng phải ở tương lai.");
+      if (["public", "schedule"].includes(privacyStatus) && !confirm(privacyStatus === "public" ? "Chuyển video thành Public ngay bây giờ?" : `Xác nhận lịch đăng ${dateTime(publishAt)}?`)) return;
+      const result = await api("videos/update", "POST", {
+        channelId: videoDetail.dataset.channelId,
+        videoId: videoDetail.dataset.videoId,
+        title: data.title,
+        description: data.description,
+        tags: String(data.tags || "").split(",").map((item) => item.trim()).filter(Boolean),
+        categoryId: data.categoryId,
+        defaultLanguage: data.defaultLanguage,
+        playlistId: data.playlistId,
+        privacyStatus,
+        publishAt: privacyStatus === "schedule" ? publishAt.toISOString() : "",
+        madeForKids: data.madeForKids === "on",
+        containsSyntheticMedia: data.containsSyntheticMedia === "on",
+        approved: true,
+        metadataVersion: `drawer-${Date.now().toString(36)}`
+      });
+      const key = contentDrawer?.item?.uploadId || `${videoDetail.dataset.channelId}::${videoDetail.dataset.videoId}`;
+      contentLibrary = contentLibrary.map((item) => (item.uploadId || `${item.channelId}::${item.videoId}`) === key ? { ...item, ...(result.video || {}) } : item);
+      contentDrawer = { ...(contentDrawer || {}), loading: false, item: { ...(contentDrawer?.item || {}), ...(result.video || {}) }, audit: result.audit || contentDrawer?.audit || [] };
+      render();
+      return status("YouTube đã xác nhận thay đổi video.", "success");
+    }
     const fleet = event.target.closest("[data-ycg-fleet-form]");
     if (fleet) {
       event.preventDefault();
@@ -2844,17 +3437,44 @@
   }
 
   function handleDragOver(event) {
-    const drop = event.target.closest?.("[data-ycg-fleet-drop]");
+    const drop = event.target.closest?.("[data-ycg-fleet-drop],[data-ycg-calendar-day]");
     if (!drop) return;
     event.preventDefault();
     drop.classList.add("is-dragging");
   }
 
   function handleDragLeave(event) {
-    event.target.closest?.("[data-ycg-fleet-drop]")?.classList.remove("is-dragging");
+    event.target.closest?.("[data-ycg-fleet-drop],[data-ycg-calendar-day]")?.classList.remove("is-dragging");
+  }
+
+  function handleDragStart(event) {
+    const item = event.target.closest?.("[data-ycg-calendar-video]");
+    if (!item) return;
+    calendarDragItem = item.dataset.ycgCalendarVideo;
+    event.dataTransfer?.setData?.("text/plain", calendarDragItem);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
   }
 
   async function handleDrop(event) {
+    const calendarDay = event.target.closest?.("[data-ycg-calendar-day]");
+    if (calendarDay) {
+      event.preventDefault();
+      calendarDay.classList.remove("is-dragging");
+      const key = calendarDragItem || event.dataTransfer?.getData?.("text/plain");
+      const item = calendarContentItems().find((entry) => entry.scheduleKey === key);
+      if (!item) return;
+      const preset = channelPreset(item.channelId);
+      const time = /^\d{2}:\d{2}$/.test(preset.publishTime) ? preset.publishTime : "20:00";
+      let publishAt = new Date(zonedLocalToIso(calendarDay.dataset.ycgCalendarDay, time, preset.timezone || fleetState.calendarTimezone));
+      if (publishAt.getTime() <= Date.now() + 60_000) publishAt = new Date(publishAt.getTime() + 24 * 60 * 60 * 1000);
+      fleetState.scheduleHistory.push(JSON.parse(JSON.stringify(fleetState.scheduleDrafts)));
+      fleetState.scheduleHistory = fleetState.scheduleHistory.slice(-20);
+      fleetState.scheduleDrafts[key] = { channelId: item.channelId, videoId: item.videoId, publishAt: publishAt.toISOString(), previousPublishAt: item.scheduledAt || "" };
+      calendarDragItem = null;
+      saveFleetState();
+      render();
+      return status(`Đã chuyển “${item.title}” sang ${dateTime(publishAt)}. Chưa gửi YouTube.`, "success");
+    }
     const drop = event.target.closest?.("[data-ycg-fleet-drop]");
     if (!drop) return;
     event.preventDefault();
@@ -2891,6 +3511,7 @@
       render();
     }), options);
     root.addEventListener("dragover", handleDragOver, options);
+    root.addEventListener("dragstart", handleDragStart, options);
     root.addEventListener("dragleave", handleDragLeave, options);
     root.addEventListener("drop", (event) => handleDrop(event).catch((error) => {
       errorMessage = error.message;

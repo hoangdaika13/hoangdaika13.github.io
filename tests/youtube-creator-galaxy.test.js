@@ -223,14 +223,15 @@ test("Multi-channel Studio manages one hundred private channels and ten-video ta
     "Quản lý nhiều kênh trong một nơi",
     "Kéo tối đa 10 video vào đây",
     "multiple accept=",
-    "fleetUploadFiles.length * selectedChannels.length",
+    "selectedMatrixTasks",
     "maxTasksPerBatch",
     "uploadQueuedFleetFile",
-    "taskKey: `${fingerprint}::${channelId}`",
+    "matrixTaskKey",
     "channels/observatory",
     "fleetSelectionCapacity"
   ]) assert.match(client, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  assert.match(client, /runConcurrent\(fleetUploadFiles, 1/);
+  assert.match(client, /Math\.ceil\(actualTasks \/ maxTasks\)/);
+  assert.match(client, /for \(let batchIndex = 0; batchIndex < taskBatches\.length/);
   assert.match(client, /for \(let offset = 0; offset < eligibleChannelIds\.length; offset \+= chunkSize\)/);
   assert.match(server, /const CHANNEL_VAULT_LIMIT = 100/);
   assert.match(server, /const VIDEO_QUEUE_LIMIT = 10/);
@@ -245,6 +246,47 @@ test("Multi-channel Studio manages one hundred private channels and ten-video ta
   assert.match(css, /\.ycg-studio-channel-table/);
   assert.match(css, /\.ycg-task-table/);
   assert.match(css, /\.ycg-shell\[data-ycg-active="fleet"\]/);
+});
+
+test("Batch Matrix, continuous queue, Content Manager and bulk calendar are real owner-isolated workflows", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const server = read("utils/youtubePublisher.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const capability of [
+    "BATCH UPLOAD MATRIX",
+    "Ma trận video × kênh",
+    "Continuous Channel Queue",
+    "data-ycg-matrix-mode",
+    "queue-pause-all",
+    "pauseFleetTask",
+    "cancelFleetTask",
+    "sampledFileChecksum",
+    "Content Manager",
+    "data-ycg-content-open",
+    "VIDEO DETAIL",
+    "content/processing/refresh",
+    "Lịch tháng",
+    "Timeline theo kênh",
+    "Chưa xếp lịch",
+    "calendar-distribute",
+    "calendar-confirm",
+    "zonedLocalToIso"
+  ]) assert.match(client, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  for (const route of ["content/library", "content/processing/refresh", "video/details", "content/schedule/bulk"]) assert.match(server, new RegExp(`route === "${route.replace("/", "\\/")}"`));
+  assert.match(server, /route === "upload\/pause"/);
+  assert.match(server, /"Content-Range": `bytes \*\/\$\{Number\(record\.totalBytes/);
+  assert.match(server, /queueVideoCount > VIDEO_QUEUE_LIMIT/);
+  assert.match(server, /taskKey: channelPayload\.taskKey/);
+  assert.match(server, /videoFingerprint: channelPayload\.videoFingerprint/);
+  assert.match(server, /metadataVersion: channelPayload\.metadataVersion/);
+  assert.match(server, /checksum: channelPayload\.checksum/);
+  assert.match(server, /uploads\.find\(\{ userId: user\._id/);
+  assert.match(server, /connectionFor\(db, user, clean\(body\.channelId, 120\)\)/);
+  assert.match(server, /YOUTUBE_PUBLISH_APPROVAL_REQUIRED/);
+  assert.match(css, /\.ycg-batch-matrix/);
+  assert.match(css, /\.ycg-content-table/);
+  assert.match(css, /\.ycg-video-drawer/);
+  assert.match(css, /\.ycg-calendar-month/);
 });
 
 test("Multi-channel Studio presents one simple cosmic workspace", () => {
@@ -321,7 +363,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=9", "youtube-creator-galaxy.js?v=14"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=10", "youtube-creator-galaxy.js?v=15"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
