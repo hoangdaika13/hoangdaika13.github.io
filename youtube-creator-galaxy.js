@@ -89,6 +89,7 @@
   let contentLibrary = [];
   let contentDrawer = null;
   let deleteDialog = null;
+  let aiBulkDialog = false;
   let calendarDragItem = null;
   let queuePaused = false;
   let queueRunToken = 0;
@@ -1142,23 +1143,27 @@
     return `<aside class="ycg-delete-dialog is-open" role="dialog" aria-modal="true" aria-labelledby="ycg-delete-title"><button type="button" class="ycg-video-drawer__backdrop" data-ycg-delete-close aria-label="Đóng xác nhận xóa"></button><form data-ycg-delete-form data-channel-id="${esc(item.channelId)}" data-video-id="${esc(item.videoId)}" data-key="${esc(deleteDialog.key)}"><header><div><small>VÙNG NGUY HIỂM</small><h3 id="ycg-delete-title">Xóa video vĩnh viễn?</h3></div><button type="button" data-ycg-delete-close aria-label="Đóng">×</button></header><div class="ycg-delete-summary">${item.thumbnail ? `<img src="${esc(item.thumbnail)}" alt="">` : `<span>YT</span>`}<div><strong>${esc(item.title || "Video")}</strong><small>${esc(channel.title || item.channelTitle || item.channelId)} · Video ID: ${esc(item.videoId)}</small></div></div><p class="ycg-delete-warning">YouTube không cung cấp khôi phục sau khi xóa. HH chỉ giữ tombstone và audit log, không giữ bản video có thể phục hồi.</p><fieldset><legend>Lựa chọn an toàn hơn</legend><button type="button" data-ycg-delete-safer="private">Chuyển Private</button><button type="button" data-ycg-delete-safer="unlisted">Chuyển Unlisted</button>${item.scheduledAt || item.publishAt ? `<button type="button" data-ycg-delete-safer="cancel-schedule">Hủy lịch đăng</button>` : ""}</fieldset><label>Nhập <b>DELETE</b> hoặc chính xác tiêu đề video<input name="confirmation" autocomplete="off" required placeholder="DELETE"></label><label class="ycg-delete-ack"><input type="checkbox" name="permanentAck" required> Tôi hiểu video sẽ bị xóa vĩnh viễn và không thể khôi phục.</label><div class="ycg-video-drawer__actions"><button type="button" data-ycg-delete-close>Quay lại</button><button class="ycg-delete-confirm">Xóa vĩnh viễn</button></div><small class="ycg-delete-auth-note">Nếu phiên đăng nhập quá 15 phút, hệ thống sẽ yêu cầu xác thực lại bằng Passkey trước khi gửi lệnh.</small></form></aside>`;
   }
 
+  function aiBulkDialogMarkup(selectedCount) {
+    if (!aiBulkDialog) return "";
+    return `<aside class="ycg-ai-bulk-dialog is-open" role="dialog" aria-modal="true" aria-labelledby="ycg-ai-bulk-title"><button type="button" class="ycg-video-drawer__backdrop" data-ycg-ai-bulk-close aria-label="Đóng khai báo AI"></button><form data-ycg-ai-bulk-form><header><div><small>THIẾT LẬP HÀNG LOẠT</small><h3 id="ycg-ai-bulk-title">Sử dụng AI</h3></div><button type="button" data-ycg-ai-bulk-close aria-label="Đóng">×</button></header><p>Bạn có sử dụng AI để tạo hoặc chỉnh sửa nội dung theo bất kỳ cách nào sau đây không?</p><ul><li>Có hình ảnh người thật có vẻ như nói hoặc làm điều gì đó, nhưng trên thực tế là họ không làm như vậy.</li><li>Chỉnh sửa cảnh quay của một sự kiện hoặc một địa điểm có thật.</li><li>Tạo ra một cảnh trông giống thật mà không thực sự xảy ra.</li></ul><fieldset><legend>Áp dụng cho ${selectedCount} video đã chọn</legend><label><input type="radio" name="aiDisclosure" value="yes" required><span><strong>Có</strong><small>Khai báo video có nội dung được tạo hoặc chỉnh sửa đáng kể bằng AI và trông như thật.</small></span></label><label><input type="radio" name="aiDisclosure" value="no" required><span><strong>Không</strong><small>Video không thuộc các trường hợp cần khai báo ở trên.</small></span></label></fieldset><div class="ycg-ai-bulk-dialog__actions"><button type="button" data-ycg-ai-bulk-close>Hủy</button><button type="submit" class="is-primary">Áp dụng cho ${selectedCount} video</button></div><small class="ycg-api-note">Mỗi video được cập nhật riêng trên đúng kênh sở hữu. Hệ thống không tự suy đoán hoặc tự đánh dấu AI.</small></form></aside>`;
+  }
+
   function contentManagerMarkup(channels) {
     if (contentDrawer) return videoStudioWorkspaceMarkup(channels);
     const channelFilter = fleetState.contentChannel;
     const stageFilter = fleetState.contentFilter;
-    const aiFilter = fleetState.contentAiFilter || "all";
-    const items = mergedContentItems().filter((item) => (channelFilter === "all" || item.channelId === channelFilter) && (stageFilter === "all" || contentStage(item) === stageFilter) && (aiFilter === "all" || normalizeAiDisclosure(item.aiDisclosure) === aiFilter));
+    const items = mergedContentItems().filter((item) => (channelFilter === "all" || item.channelId === channelFilter) && (stageFilter === "all" || contentStage(item) === stageFilter));
     const selected = new Set(fleetState.selectedContentIds);
+    const selectedVideoCount = mergedContentItems().filter((item) => item.videoId && selected.has(item.uploadId || `${item.channelId}::${item.videoId}`)).length;
     const filters = [["all", "Tất cả"], ["uploading", "Tải lên"], ["processing", "Đang xử lý"], ["draft", "Bản nháp"], ["scheduled", "Đã lên lịch"], ["published", "Đã xuất bản"], ["error", "Có lỗi"]];
-    return `<section class="ycg-content-manager"><div class="ycg-content-manager__toolbar"><div class="ycg-content-status-tabs">${filters.map(([id, label]) => `<button type="button" data-ycg-content-filter="${id}" class="${stageFilter === id ? "is-active" : ""}">${label}<b>${mergedContentItems().filter((item) => id === "all" || contentStage(item) === id).length}</b></button>`).join("")}</div><div><select data-ycg-content-channel><option value="all">Tất cả kênh</option>${channels.map((channel) => `<option value="${esc(channel.id)}" ${channelFilter === channel.id ? "selected" : ""}>${esc(channel.title)}</option>`).join("")}</select><select data-ycg-content-ai-filter aria-label="Lọc khai báo AI"><option value="all" ${aiFilter === "all" ? "selected" : ""}>Tất cả khai báo AI</option><option value="yes" ${aiFilter === "yes" ? "selected" : ""}>Có AI</option><option value="no" ${aiFilter === "no" ? "selected" : ""}>Không AI</option><option value="unreviewed" ${aiFilter === "unreviewed" ? "selected" : ""}>Chưa kiểm tra</option></select><button type="button" data-ycg-action="content-refresh">Làm mới</button></div></div>
-      <section class="ycg-panel ycg-content-table"><header><div><h3>Nội dung trên các kênh</h3><small>Bấm vào hàng để phát, sửa metadata, thumbnail, khai báo AI và lịch mà không rời trang.</small></div><div><button type="button" data-ycg-action="content-copy-metadata" ${selected.size ? "" : "disabled"}>Copy metadata</button><label class="ycg-bulk-ai">AI<select data-ycg-content-ai-bulk><option value="unreviewed">Chưa kiểm tra</option><option value="yes">Có</option><option value="no">Không</option></select></label><button type="button" data-ycg-action="content-apply-ai" ${selected.size ? "" : "disabled"}>Áp dụng (${selected.size})</button><button type="button" data-ycg-action="content-open-calendar" ${selected.size ? "" : "disabled"}>Xếp lịch (${selected.size})</button></div></header><div><table><thead><tr><th></th><th>Video</th><th>Kênh</th><th>Trạng thái</th><th>Xử lý</th><th>AI</th><th>Quyền</th><th>Ngày</th><th>Chỉ số</th><th></th></tr></thead><tbody>${items.map((item) => {
+    return `<section class="ycg-content-manager"><div class="ycg-content-manager__toolbar"><div class="ycg-content-status-tabs">${filters.map(([id, label]) => `<button type="button" data-ycg-content-filter="${id}" class="${stageFilter === id ? "is-active" : ""}">${label}<b>${mergedContentItems().filter((item) => id === "all" || contentStage(item) === id).length}</b></button>`).join("")}</div><div><select data-ycg-content-channel><option value="all">Tất cả kênh</option>${channels.map((channel) => `<option value="${esc(channel.id)}" ${channelFilter === channel.id ? "selected" : ""}>${esc(channel.title)}</option>`).join("")}</select><button type="button" data-ycg-action="content-refresh">Làm mới</button></div></div>
+      <section class="ycg-panel ycg-content-table"><header><div><h3>Nội dung trên các kênh</h3><small>Chọn nhiều video để khai báo sử dụng AI, copy metadata hoặc xếp lịch hàng loạt.</small></div><div><button type="button" data-ycg-action="content-copy-metadata" ${selected.size ? "" : "disabled"}>Copy metadata</button><button type="button" data-ycg-action="content-open-ai-disclosure" ${selectedVideoCount ? "" : "disabled"}>Khai báo sử dụng AI (${selectedVideoCount})</button><button type="button" data-ycg-action="content-open-calendar" ${selected.size ? "" : "disabled"}>Xếp lịch (${selected.size})</button></div></header><div><table><thead><tr><th></th><th>Video</th><th>Kênh</th><th>Trạng thái</th><th>Xử lý</th><th>Quyền</th><th>Ngày</th><th>Chỉ số</th><th></th></tr></thead><tbody>${items.map((item) => {
         const key = item.uploadId || `${item.channelId}::${item.videoId}`;
         const stage = contentStage(item);
         const metrics = item.metrics || item;
         const progress = Number(item.progress ?? (item.totalBytes ? Number(item.bytesUploaded || 0) / Number(item.totalBytes) * 100 : 0));
-        const disclosure = normalizeAiDisclosure(item.aiDisclosure);
-        return `<tr class="is-${stage}" data-ycg-content-row="${esc(key)}"><td><input type="checkbox" data-ycg-content-select value="${esc(key)}" ${selected.has(key) ? "checked" : ""}></td><td><button type="button" class="ycg-content-video" data-ycg-content-open="${esc(key)}">${item.thumbnail ? `<img src="${esc(item.thumbnail)}" alt="">` : `<span>YT</span>`}<div><strong>${esc(item.title || item.fileName || "Video")}</strong><small>${esc(item.videoId || item.fileName || "Chưa có Video ID")}</small></div></button></td><td><strong>${esc(item.channelTitle || channels.find((channel) => channel.id === item.channelId)?.title || item.channelId || "Kênh")}</strong></td><td><span class="ycg-table-status ${stage === "error" ? "is-error" : ["uploading", "processing"].includes(stage) ? "is-running" : "is-ready"}">${esc(stage)}</span>${stage === "uploading" ? `<progress max="100" value="${progress}"></progress>` : ""}</td><td><small>${esc(item.processingStatus || item.uploadStatus || "—")}</small>${item.failureReason || item.rejectionReason || item.error ? `<em>${esc(item.failureReason || item.rejectionReason || item.error)}</em>` : ""}</td><td><span class="ycg-ai-badge is-${disclosure}" title="${esc(item.aiDisclosureSource || "unknown")}">${esc(aiDisclosureLabel(disclosure))}</span></td><td>${esc(item.privacyStatus || "private")}</td><td><small>${dateTime(item.scheduledAt || item.publishAt || item.publishedAt || item.updatedAt)}</small></td><td><small>${fmt(metrics.views)} view<br>${fmt(metrics.comments)} bình luận · ${fmt(metrics.likes)} thích</small></td><td><details class="ycg-row-menu"><summary aria-label="Tác vụ video">⋮</summary><div><button type="button" data-ycg-content-open="${esc(key)}">Chỉnh sửa</button>${item.videoId ? `<a href="https://www.youtube.com/watch?v=${esc(item.videoId)}" target="_blank" rel="noopener">Mở YouTube ↗</a><button type="button" class="is-danger" data-ycg-content-delete="${esc(key)}">Xóa vĩnh viễn…</button>` : ""}</div></details></td></tr>`;
-      }).join("") || `<tr><td colspan="10">Chưa có video phù hợp. Hãy tải video hoặc chọn một kênh khác.</td></tr>`}</tbody></table></div></section>${deleteDialogMarkup(channels)}</section>`;
+        return `<tr class="is-${stage}" data-ycg-content-row="${esc(key)}"><td><input type="checkbox" data-ycg-content-select value="${esc(key)}" ${selected.has(key) ? "checked" : ""}></td><td><button type="button" class="ycg-content-video" data-ycg-content-open="${esc(key)}">${item.thumbnail ? `<img src="${esc(item.thumbnail)}" alt="">` : `<span>YT</span>`}<div><strong>${esc(item.title || item.fileName || "Video")}</strong><small>${esc(item.videoId || item.fileName || "Chưa có Video ID")}</small></div></button></td><td><strong>${esc(item.channelTitle || channels.find((channel) => channel.id === item.channelId)?.title || item.channelId || "Kênh")}</strong></td><td><span class="ycg-table-status ${stage === "error" ? "is-error" : ["uploading", "processing"].includes(stage) ? "is-running" : "is-ready"}">${esc(stage)}</span>${stage === "uploading" ? `<progress max="100" value="${progress}"></progress>` : ""}</td><td><small>${esc(item.processingStatus || item.uploadStatus || "—")}</small>${item.failureReason || item.rejectionReason || item.error ? `<em>${esc(item.failureReason || item.rejectionReason || item.error)}</em>` : ""}</td><td>${esc(item.privacyStatus || "private")}</td><td><small>${dateTime(item.scheduledAt || item.publishAt || item.publishedAt || item.updatedAt)}</small></td><td><small>${fmt(metrics.views)} view<br>${fmt(metrics.comments)} bình luận · ${fmt(metrics.likes)} thích</small></td><td><details class="ycg-row-menu"><summary aria-label="Tác vụ video">⋮</summary><div><button type="button" data-ycg-content-open="${esc(key)}">Chỉnh sửa</button>${item.videoId ? `<a href="https://www.youtube.com/watch?v=${esc(item.videoId)}" target="_blank" rel="noopener">Mở YouTube ↗</a><button type="button" class="is-danger" data-ycg-content-delete="${esc(key)}">Xóa vĩnh viễn…</button>` : ""}</div></details></td></tr>`;
+      }).join("") || `<tr><td colspan="9">Chưa có video phù hợp. Hãy tải video hoặc chọn một kênh khác.</td></tr>`}</tbody></table></div></section>${deleteDialogMarkup(channels)}${aiBulkDialogMarkup(selectedVideoCount)}</section>`;
   }
 
   async function loadContentLibrary() {
@@ -1273,13 +1278,14 @@
     status("YouTube đã trả HTTP 204. Video đã bị xóa vĩnh viễn và không thể khôi phục.", "success");
   }
 
-  async function applySelectedContentAiDisclosure() {
+  async function applySelectedContentAiDisclosure(disclosureValue) {
     const selected = new Set(fleetState.selectedContentIds);
-    const items = mergedContentItems().filter((item) => item.videoId && selected.has(item.uploadId || `${item.channelId}::${item.videoId}`)).slice(0, 20);
+    const items = mergedContentItems().filter((item) => item.videoId && selected.has(item.uploadId || `${item.channelId}::${item.videoId}`)).slice(0, 100);
     if (!items.length) throw new Error("Chọn ít nhất một video có Video ID.");
-    const disclosure = normalizeAiDisclosure(root?.querySelector("[data-ycg-content-ai-bulk]")?.value);
-    if (!confirm(`Áp dụng “${aiDisclosureLabel(disclosure)}” cho ${items.length} video? YouTube tính quota cho từng cập nhật.`)) return;
+    const disclosure = normalizeAiDisclosure(disclosureValue);
+    if (!AI_DISCLOSURE_OPTIONS.includes(disclosure) || disclosure === "unreviewed") throw new Error("Hãy chọn Có hoặc Không cho khai báo sử dụng AI.");
     for (const item of items) await api("videos/update", "POST", { channelId: item.channelId, videoId: item.videoId, aiDisclosure: disclosure, approved: true, metadataVersion: `bulk-ai-${Date.now().toString(36)}` });
+    aiBulkDialog = false;
     await loadContentLibrary();
     render();
     status(`Đã cập nhật khai báo AI cho ${items.length} video.`, "success");
@@ -2891,7 +2897,13 @@
       return status(`Đã đồng bộ ${contentLibrary.length} video và upload record thật.`, "success");
     }
     if (action === "content-copy-metadata") return copySelectedContentMetadata();
-    if (action === "content-apply-ai") return applySelectedContentAiDisclosure();
+    if (action === "content-open-ai-disclosure") {
+      const selected = new Set(fleetState.selectedContentIds);
+      if (!mergedContentItems().some((item) => item.videoId && selected.has(item.uploadId || `${item.channelId}::${item.videoId}`))) throw new Error("Chọn ít nhất một video đã có Video ID trước khi khai báo sử dụng AI.");
+      aiBulkDialog = true;
+      render();
+      return;
+    }
     if (action === "content-open-calendar") {
       fleetState.studioTab = "calendar";
       fleetState.calendarMode = "unscheduled";
@@ -2964,6 +2976,7 @@
       contentLibrary = [];
       contentDrawer = null;
       deleteDialog = null;
+      aiBulkDialog = false;
       fleetUploadFile = null;
       fleetState.activeFileFingerprint = "";
       fleetState.taskMatrix = {};
@@ -3294,6 +3307,7 @@
       return;
     }
     if (event.target.closest("[data-ycg-delete-close]")) { deleteDialog = null; render(); return; }
+    if (event.target.closest("[data-ycg-ai-bulk-close]")) { aiBulkDialog = false; render(); return; }
     const saferDelete = event.target.closest("[data-ycg-delete-safer]");
     if (saferDelete) {
       try { await applySaferDeleteAlternative(saferDelete.dataset.ycgDeleteSafer); }
@@ -3671,12 +3685,6 @@
       render();
       return;
     }
-    if (target.matches("[data-ycg-content-ai-filter]")) {
-      fleetState.contentAiFilter = ["all", "yes", "no", "unreviewed"].includes(target.value) ? target.value : "all";
-      saveFleetState();
-      render();
-      return;
-    }
     if (target.matches("[data-ycg-calendar-channel]")) { fleetState.calendarChannelFilter = target.value; saveFleetState(); render(); return; }
     if (target.matches("[data-ycg-calendar-type]")) { fleetState.calendarTypeFilter = target.value; saveFleetState(); render(); return; }
     if (target.matches("[data-ycg-calendar-timezone]")) { fleetState.calendarTimezone = target.value.slice(0, 80); saveFleetState(); render(); return; }
@@ -3780,6 +3788,13 @@
   }
 
   async function handleSubmit(event) {
+    const aiBulkForm = event.target.closest("[data-ycg-ai-bulk-form]");
+    if (aiBulkForm) {
+      event.preventDefault();
+      const disclosure = new FormData(aiBulkForm).get("aiDisclosure");
+      await applySelectedContentAiDisclosure(disclosure);
+      return;
+    }
     const deleteForm = event.target.closest("[data-ycg-delete-form]");
     if (deleteForm) {
       event.preventDefault();
@@ -4099,6 +4114,7 @@
     contentLibrary = [];
     contentDrawer = null;
     deleteDialog = null;
+    aiBulkDialog = false;
     fleetObservatory = null;
     fleetPreflight = null;
     root = null;

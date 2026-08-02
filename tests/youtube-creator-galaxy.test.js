@@ -291,15 +291,17 @@ test("Batch Matrix, continuous queue, Content Manager and bulk calendar are real
   assert.match(css, /\.ycg-calendar-month/);
 });
 
-test("Content Manager supports tri-state AI disclosure and guarded permanent deletion", () => {
+test("Content Manager supports bulk YouTube-style AI disclosure and guarded permanent deletion", () => {
   const client = read("youtube-creator-galaxy.js");
   const server = read("utils/youtubePublisher.js");
   const css = read("youtube-creator-galaxy.css");
   for (const capability of [
     "AI_DISCLOSURE_OPTIONS",
     "data-ycg-matrix-ai",
-    "data-ycg-content-ai-filter",
-    "data-ycg-content-ai-bulk",
+    "data-ycg-action=\"content-open-ai-disclosure\"",
+    "data-ycg-ai-bulk-form",
+    "Sử dụng AI",
+    "Tạo ra một cảnh trông giống thật mà không thực sự xảy ra",
     "data-ycg-content-delete",
     "data-ycg-content-delete-current",
     "data-ycg-delete-form",
@@ -321,7 +323,10 @@ test("Content Manager supports tri-state AI disclosure and guarded permanent del
   assert.match(server, /String\(video\.snippet\?\.channelId \|\| ""\) !== String\(connection\.channelId\)/);
   assert.match(server, /userId: user\._id, channelId: connection\.channelId, videoId/);
   assert.match(css, /\.ycg-delete-dialog/);
+  assert.match(css, /\.ycg-ai-bulk-dialog/);
   assert.match(css, /\.ycg-ai-badge/);
+  assert.doesNotMatch(client, /data-ycg-content-ai-filter/);
+  assert.doesNotMatch(client, /<th>AI<\/th>/);
 });
 
 test("Video details use a dedicated Studio workspace with honest owner-isolated data", () => {
@@ -419,7 +424,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=12", "youtube-creator-galaxy.js?v=17"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=13", "youtube-creator-galaxy.js?v=18"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
