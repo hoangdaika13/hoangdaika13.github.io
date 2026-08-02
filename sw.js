@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v373";
+const CACHE = "hh-identity-portal-v375";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -53,7 +53,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=156",
+  "./script.js?v=157",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -125,7 +125,7 @@ const RUNTIME_ASSETS = [
   "./home-galaxy-control-deck.js?v=2",
   "./command-center-pro.js?v=6",
   "./home-daily-command.js?v=6",
-  "./home-command-search.js?v=3",
+  "./home-command-search.js?v=4",
   "./home-widget-project-pulse.js?v=2",
   "./home-health-focus.js?v=2",
   "./extension-suite.css?v=1",
@@ -296,6 +296,7 @@ const RUNTIME_ASSETS = [
   "./english-galaxy.css?v=1",
   "./english-learning-galaxy.css?v=1",
   "./english-voice-coach.css?v=4",
+  "./japanese-learning.css?v=2",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
   "./community-platform-v2.css?v=10",
@@ -389,6 +390,7 @@ const RUNTIME_ASSETS = [
   "./english-galaxy.js?v=1",
   "./english-learning-galaxy.js?v=1",
   "./english-learning.js?v=17",
+  "./japanese-learning.js?v=2",
   "./config.js?v=8",
   "./data/ai-super-platform-modules.json"
 ];
@@ -409,10 +411,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=117",
+  "./performance-loader.js?v=119",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=6",
-  "./script.js?v=156"
+  "./script.js?v=157"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

@@ -40,6 +40,7 @@
     ["Messenger Pro", "/communication/messenger", "Giao tiếp", "chat dm group room"],
     ["Learning Home", "/learn/home", "Học tập", "learning lesson review mastery"],
     ["HH English", "/english", "Học tập", "english a0 c2 vocabulary speaking"],
+    ["HH Japanese", "/japanese", "Học tập", "tiếng nhật từ điển kanji ngữ pháp jlpt n5 n1 flashcard srs"],
     ["Analytics", "/analytics", "Phân tích", "traffic insight report"],
     ["Security Center", "/analytics/security-center", "Hệ thống", "security session device audit"],
     ["Cài đặt", "/settings", "Hệ thống", "settings profile theme privacy"],

@@ -48,7 +48,7 @@
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-command.js?v=3", "home-galaxy-mission.js?v=9", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=3", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2"
       ]
     },
     platform: {
@@ -176,6 +176,10 @@
       styles: ["english-learning.css?v=12", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=1"],
       scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=1", "english-learning-galaxy.js?v=1", "english-learning.js?v=17"]
     },
+    japanese: {
+      styles: ["japanese-learning.css?v=2"],
+      scripts: ["japanese-learning.js?v=2"]
+    },
     analytics: {
       styles: ["insights-pro.css?v=3"],
       scripts: ["insights-pro.js?v=7"]
@@ -212,6 +216,7 @@
     if (value.startsWith("/entertainment")) return ["game"];
     if (value.startsWith("/learn")) return ["learning"];
     if (value.startsWith("/english")) return ["english"];
+    if (value.startsWith("/japanese")) return ["japanese"];
     if (value.startsWith("/support")) return ["support"];
     if (value === "/communication/google-youtube") return ["search"];
     if (value.startsWith("/communication")) return ["communication"];
