@@ -8,8 +8,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const source = read("astral-realms.js");
 const css = read("astral-realms.css");
 
-test("Digital Human V13 defines 52-channel facial performance and complete visemes", () => {
-  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*13/);
+test("Digital Human V14 defines 52-channel facial performance and complete visemes", () => {
+  assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*14/);
   assert.match(source, /MEDIAPIPE_FACE_CHANNELS/);
   assert.match(source, /CHARACTER_VISEMES/);
   for (const viseme of ["A", "E", "I", "O", "U", "MBP", "FV", "L", "WQ"]) {

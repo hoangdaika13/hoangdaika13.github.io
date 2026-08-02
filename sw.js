@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v389";
+const CACHE = "hh-identity-portal-v392";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -206,7 +206,7 @@ const RUNTIME_ASSETS = [
   "./system-platform.js?v=3",
   "./sidebar-navigation-pro.css?v=9",
   "./game-runtime.css?v=1",
-  "./astral-realms.css?v=71",
+  "./astral-realms.css?v=73",
   "./assets/astral-realms/astral-realms-panorama-v1.webp",
   "./assets/astral-realms/environment/astral-cinematic-panorama-v1.png",
   "./assets/astral-realms/environment/SOURCES.json",
@@ -371,7 +371,7 @@ const RUNTIME_ASSETS = [
   "./feature-engines.js?v=2",
   "./game-platform-adapters.js?v=1",
   "./game-runtime.js?v=1",
-  "./astral-realms.js?v=81",
+  "./astral-realms.js?v=84",
   "./space-explorer.js?v=4",
   "./game-center.js?v=5",
   "./astra-universe-expansion.js?v=4",
@@ -413,7 +413,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=133",
+  "./performance-loader.js?v=136",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=157"

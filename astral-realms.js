@@ -2,7 +2,7 @@
   "use strict";
 
   const GAME_ID = "astral-realms";
-  const SCHEMA_VERSION = 10;
+  const SCHEMA_VERSION = 11;
   const STORY_CANON_VERSION = 2;
   const RENDER_SCALE_STEPS = Object.freeze([1, 0.85, 0.7, 0.6]);
   const DB_NAME = "hh-astral-realms";
@@ -52,7 +52,8 @@
   });
   const WEAPON_MANIFEST_URL = "./assets/astral-realms/weapons/manifest.json?v=1";
   const MONSTER_MANIFEST_URL = "./assets/astral-realms/monsters/manifest.json?v=1";
-  const CHARACTER_VISUAL_VERSION = 13;
+  const CHARACTER_VISUAL_VERSION = 14;
+  const CHARACTER_MOTION_ASSET_VERSION = 13;
   const CHARACTER_MODEL_TIERS = Object.freeze({
     hero: { label: "Web Hero LOD0", triangles: "Face 18–28K · body 25–40K", texture: "2K", face: 52, distance: 13, updateHz: 60 },
     near: { label: "Gameplay LOD1", triangles: "Face 8–14K · body 10–18K", texture: "1K", face: 52, distance: 34, updateHz: 30 },
@@ -710,6 +711,58 @@
     }
   });
   const RANGED_WEAPON_CLASSES = Object.freeze(new Set(["gun", "bow", "staff", "pistol", "rifle", "shotgun", "sniper", "heavy"]));
+  const CHARACTER_CAMERA_PROFILES = Object.freeze({
+    close: { label: "Kiếm nhanh", distance: 8.4, aimDistance: 6.1, shoulder: 0.46, focusLift: 1.5, damping: 13.5, aimDamping: 19, fovOffset: 0.2 },
+    medium: { label: "Cân bằng", distance: 10.2, aimDistance: 6.2, shoulder: 0.42, focusLift: 1.52, damping: 10.5, aimDamping: 18, fovOffset: 0 },
+    heavy: { label: "Đại kiếm", distance: 11.8, aimDistance: 7.4, shoulder: 0.5, focusLift: 1.58, damping: 8.2, aimDamping: 14, fovOffset: 1.6 },
+    shoulder: { label: "Xạ thủ", distance: 10.8, aimDistance: 5.4, shoulder: 0.92, focusLift: 1.62, damping: 12, aimDamping: 21, fovOffset: -1.1 },
+    archer: { label: "Cung thủ", distance: 11.2, aimDistance: 6.5, shoulder: 0.72, focusLift: 1.58, damping: 10, aimDamping: 16, fovOffset: -0.6 },
+    caster: { label: "Pháp sư AoE", distance: 12.4, aimDistance: 8.2, shoulder: 0.38, focusLift: 1.82, damping: 8.5, aimDamping: 13, fovOffset: 1.2 }
+  });
+  const CHARACTER_MOVEMENT_PROFILES = Object.freeze({
+    agile: { label: "Nhanh nhẹn", speed: 1.12, acceleration: 14, turn: 15, inertializationMs: 140 },
+    balanced: { label: "Cân bằng", speed: 1, acceleration: 11, turn: 12, inertializationMs: 170 },
+    tactical: { label: "Chiến thuật", speed: 0.98, acceleration: 10, turn: 11, inertializationMs: 175 },
+    guardian: { label: "Hộ vệ", speed: 0.92, acceleration: 8, turn: 9, inertializationMs: 200 },
+    arcane: { label: "Huyền thuật", speed: 1.02, acceleration: 9.5, turn: 10.5, inertializationMs: 185 }
+  });
+  const BODY_IK_PROFILES = Object.freeze({
+    "alina-v1": { hipDrop: 0.09, footLift: 0.035, handReach: 1, toeRoll: 0.16 },
+    "fighter-v2": { hipDrop: 0.075, footLift: 0.03, handReach: 1.04, toeRoll: 0.19 },
+    "galaxy-v1": { hipDrop: 0.085, footLift: 0.032, handReach: 0.98, toeRoll: 0.17 },
+    "valid-f-v2": { hipDrop: 0.08, footLift: 0.03, handReach: 1, toeRoll: 0.18 },
+    "valid-m-v2": { hipDrop: 0.095, footLift: 0.028, handReach: 1.05, toeRoll: 0.15 },
+    "hh-vanguard-v2": { hipDrop: 0.09, footLift: 0.034, handReach: 1.02, toeRoll: 0.17 }
+  });
+  const WEAPON_MOVESETS = Object.freeze(Object.fromEntries(Object.entries(WEAPON_COMBAT_PROFILES).map(([weaponClass, combat]) => [weaponClass, Object.freeze({
+    weaponClass,
+    animationSet: `${weaponClass}-humanoid-v2`,
+    handIkProfile: combat.socket === "twoHand" ? "two-hand-lock" : combat.socket === "dual" ? "dual-hand" : "one-hand",
+    cameraProfile: RANGED_WEAPON_CLASSES.has(weaponClass) ? (weaponClass === "bow" ? "archer" : weaponClass === "staff" ? "caster" : "shoulder") : (["greatsword", "hammer", "shield"].includes(weaponClass) ? "heavy" : "close"),
+    skillBar: [combat.attackName, combat.skillName, combat.ultimateName],
+    hitbox: combat.hitbox,
+    vfxProfile: `${weaponClass}-astral-v2`,
+    sfxProfile: `${weaponClass}-impact-v2`,
+    equipMotion: `equip_${weaponClass}`,
+    holsterMotion: `holster_${weaponClass}`
+  })])));
+  const CHARACTER_SELECT_PROFILES = Object.freeze([
+    { selectionId: "nax-alina", baseCharacterId: "lyra", name: "Nax · Alina", modelId: "sketchfab-game-character-girl", defaultWeapon: "mw-sword-golden", animationSet: "sword-female-v2", movementProfile: "agile", cameraProfile: "close", bodyIkProfile: "alina-v1", role: "Astral Vanguard", element: "plasma", difficulty: 2, stats: { speed: 92, damage: 84, survival: 68 }, unlockedSkills: ["slash", "cleave", "sever"] },
+    { selectionId: "nax-galaxy", baseCharacterId: "lyra", name: "Nax · Miss Galaxy", modelId: "sketchfab-miss-galaxy", defaultWeapon: "mw-claymore", animationSet: "greatsword-female-v2", movementProfile: "balanced", cameraProfile: "heavy", bodyIkProfile: "galaxy-v1", role: "Plasma Breaker", element: "plasma", difficulty: 3, stats: { speed: 76, damage: 94, survival: 78 }, unlockedSkills: ["titan-cleave", "armor-break", "solar-cataclysm"] },
+    { selectionId: "cael-aurora", baseCharacterId: "cael", name: "Cael · Aurora", modelId: "valid-white-f-2-casual", defaultWeapon: "qg-ar-4", animationSet: "rifle-female-v2", movementProfile: "tactical", cameraProfile: "shoulder", bodyIkProfile: "valid-f-v2", role: "Cryo Ranger", element: "cryo", difficulty: 2, stats: { speed: 86, damage: 82, survival: 64 }, unlockedSkills: ["pulse-burst", "overcharge", "orbital-barrage"] },
+    { selectionId: "cael-scout", baseCharacterId: "cael", name: "Cael · Sky Scout", modelId: "valid-asian-m-1-casual", defaultWeapon: "qg-sniper-1", animationSet: "sniper-humanoid-v2", movementProfile: "tactical", cameraProfile: "shoulder", bodyIkProfile: "valid-m-v2", role: "Cryo Marksman", element: "cryo", difficulty: 4, stats: { speed: 72, damage: 98, survival: 58 }, unlockedSkills: ["precision", "charged-scope", "zero-horizon"] },
+    { selectionId: "nyx-shadow", baseCharacterId: "nyx", name: "Nyx · Shadow", modelId: "valid-black-f-1-casual", defaultWeapon: "mw-dagger-2", animationSet: "dualblade-female-v2", movementProfile: "agile", cameraProfile: "close", bodyIkProfile: "valid-f-v2", role: "Void Dancer", element: "void", difficulty: 4, stats: { speed: 98, damage: 80, survival: 56 }, unlockedSkills: ["twin-fang", "backstep", "phantom-cuts"] },
+    { selectionId: "nyx-mena", baseCharacterId: "nyx", name: "Nyx · Nexus Reaper", modelId: "valid-mena-f-1-casual", defaultWeapon: "mw-scythe", animationSet: "scythe-female-v2", movementProfile: "arcane", cameraProfile: "medium", bodyIkProfile: "valid-f-v2", role: "Void Reaper", element: "void", difficulty: 4, stats: { speed: 82, damage: 90, survival: 66 }, unlockedSkills: ["void-reap", "gravity-hook", "abyss-harvest"] },
+    { selectionId: "sol-guardian", baseCharacterId: "sol", name: "Sol · Guardian", modelId: "valid-hispanic-f-1-milit", defaultWeapon: "mw-sword-big", animationSet: "greatsword-female-v2", movementProfile: "guardian", cameraProfile: "heavy", bodyIkProfile: "valid-f-v2", role: "Solar Guardian", element: "solar", difficulty: 2, stats: { speed: 66, damage: 88, survival: 96 }, unlockedSkills: ["guard-break", "solar-wall", "cataclysm"] },
+    { selectionId: "sol-aegis", baseCharacterId: "sol", name: "Sol · Aegis", modelId: "valid-white-m-1-casual", defaultWeapon: "mw-shield-celtic-golden", animationSet: "shield-humanoid-v2", movementProfile: "guardian", cameraProfile: "heavy", bodyIkProfile: "valid-m-v2", role: "Solar Aegis", element: "solar", difficulty: 1, stats: { speed: 60, damage: 72, survival: 100 }, unlockedSkills: ["aegis-slash", "perfect-guard", "guardian-dome"] },
+    { selectionId: "lyra-asteria", baseCharacterId: "lyra", name: "Asteria Human", modelId: "human-adult-a01", defaultWeapon: "mw-spear", animationSet: "spear-humanoid-v2", movementProfile: "balanced", cameraProfile: "medium", bodyIkProfile: "hh-vanguard-v2", role: "Quantum Lancer", element: "quantum", difficulty: 3, stats: { speed: 84, damage: 86, survival: 72 }, unlockedSkills: ["sky-thrust", "orbit-sweep", "falling-star"] },
+    { selectionId: "cael-vanguard", baseCharacterId: "cael", name: "Vanguard Human", modelId: "human-adult-b01", defaultWeapon: "kb-blaster-e", animationSet: "shotgun-humanoid-v2", movementProfile: "tactical", cameraProfile: "shoulder", bodyIkProfile: "hh-vanguard-v2", role: "Breach Vanguard", element: "cryo", difficulty: 3, stats: { speed: 74, damage: 92, survival: 82 }, unlockedSkills: ["scatter-pulse", "breach-load", "nova-buckshot"] },
+    { selectionId: "nyx-aian", baseCharacterId: "nyx", name: "Nyx · Aian", modelId: "valid-aian-f-1-casual", defaultWeapon: "void-gauntlets", animationSet: "martial-female-v2", movementProfile: "agile", cameraProfile: "close", bodyIkProfile: "valid-f-v2", role: "Void Martial Artist", element: "void", difficulty: 5, stats: { speed: 96, damage: 78, survival: 62 }, unlockedSkills: ["veyra-combo", "counter-drive", "eight-core-impact"] },
+    { selectionId: "sol-asian", baseCharacterId: "sol", name: "Sol · Astral Sage", modelId: "valid-asian-f-1-casual", defaultWeapon: "qg-crossbow-1", animationSet: "bow-female-v2", movementProfile: "arcane", cameraProfile: "archer", bodyIkProfile: "valid-f-v2", role: "Astral Archer", element: "solar", difficulty: 3, stats: { speed: 80, damage: 86, survival: 70 }, unlockedSkills: ["astral-arrow", "charged-piercer", "aurora-rain"] }
+  ]);
+  const CHARACTER_SELECT_PROFILE_MAP = Object.freeze(Object.fromEntries(CHARACTER_SELECT_PROFILES.map((profile) => [profile.selectionId, profile])));
+  const CHARACTER_SELECT_MOTIONS = Object.freeze(["idle", "walk", "run", "attack1", "skill", "ultimate"]);
+  const PERFORMANCE_SCHEDULER_PROFILE = Object.freeze({ physicsHz: 60, compatibilityPhysicsHz: 30, heroAnimationHz: 60, nearNpcHz: 30, farNpcHz: 12, facialHz: 24, secondaryMotionHz: 20, ui: "dirty-only" });
   const RECIPES = Object.freeze([
     { id: "healing-tonic", name: "Tinh dược hồi phục", result: "healing-tonic", amount: 1, requires: { "aurora-shard": 2 } },
     { id: "astral-edge", name: "Astral Edge", result: "astral-edge", amount: 1, requires: { "aurora-shard": 3, "plasma-core": 2, "void-fiber": 1 } }
@@ -1065,6 +1118,30 @@
     };
   }
 
+  function defaultCharacterSelectionState(ownerId = "") {
+    const confirmed = CHARACTER_SELECT_PROFILES[0];
+    return {
+      ownerId: String(ownerId || "").slice(0, 100),
+      saveSlot: "slot1",
+      confirmedSelectionId: confirmed.selectionId,
+      compareIds: [],
+      team: [...CHARACTER_ORDER],
+      activeSlot: 0,
+      confirmedAt: "",
+      profiles: Object.fromEntries(CHARACTER_ORDER.map((characterId) => {
+        const profile = CHARACTER_SELECT_PROFILES.find((entry) => entry.baseCharacterId === characterId) || confirmed;
+        return [characterId, {
+          selectionId: profile.selectionId,
+          modelId: profile.modelId,
+          weaponId: profile.defaultWeapon,
+          outfit: "central-jacket-02",
+          hairColor: "",
+          eyeColor: ""
+        }];
+      }))
+    };
+  }
+
   function normalizeStoryState(input) {
     const raw = input?.story && typeof input.story === "object" ? input.story : null;
     const events = new Set(Array.isArray(raw?.completedEvents)
@@ -1105,6 +1182,7 @@
   }
 
   function defaultState() {
+    const playerId = uid("traveler");
     return {
       schemaVersion: SCHEMA_VERSION,
       saveVersion: 1,
@@ -1113,7 +1191,7 @@
       playTime: 0,
       worldTime: 8.2,
       player: {
-        id: uid("traveler"),
+        id: playerId,
         name: "Nax Veyra",
         level: 1,
         xp: 0,
@@ -1148,6 +1226,7 @@
         creatorCompletedAt: "",
         creatorVersion: 0
       },
+      characterSelection: defaultCharacterSelectionState(playerId),
       inventory: {
         "starter-blade": { quantity: 1, favorite: true, locked: true, acquiredAt: nowIso() },
         "pulse-rifle": { quantity: 1, favorite: false, locked: true, acquiredAt: nowIso() },
@@ -1233,8 +1312,11 @@
         shoulderCamera: true,
         invertCameraY: false,
         cameraAutoFollow: true,
+        aimAssist: true,
+        cameraShoulder: "right",
         cameraDistance: 10.8,
         genesisWeaponPreview: true,
+        characterLab: false,
         reduceEffects: root.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true
       },
       stats: {
@@ -1288,6 +1370,42 @@
         creatorCompletedAt: String(input.appearance?.creatorCompletedAt || "").slice(0, 40),
         creatorVersion: clamp(input.appearance?.creatorVersion ?? 0, 0, CHARACTER_VISUAL_VERSION)
       },
+      characterSelection: (() => {
+        const fallback = defaultCharacterSelectionState(input.player?.id || base.player.id);
+        const raw = input.characterSelection && typeof input.characterSelection === "object" ? input.characterSelection : {};
+        const confirmedSelectionId = CHARACTER_SELECT_PROFILE_MAP[raw.confirmedSelectionId]
+          ? raw.confirmedSelectionId
+          : fallback.confirmedSelectionId;
+        const compareIds = Array.isArray(raw.compareIds)
+          ? [...new Set(raw.compareIds.filter((id) => CHARACTER_SELECT_PROFILE_MAP[id]))].slice(0, 3)
+          : [];
+        const team = Array.isArray(raw.team)
+          ? [...new Set(raw.team.filter((id) => CHARACTER_ORDER.includes(id))), ...CHARACTER_ORDER].slice(0, 4)
+          : [...CHARACTER_ORDER];
+        return {
+          ownerId: String(raw.ownerId || input.player?.id || base.player.id).slice(0, 100),
+          saveSlot: /^slot\d{1,2}$/.test(String(raw.saveSlot || "")) ? String(raw.saveSlot) : "slot1",
+          confirmedSelectionId,
+          compareIds,
+          team,
+          activeSlot: clamp(raw.activeSlot ?? Math.max(0, team.indexOf(input.roster?.activeId)), 0, 3),
+          confirmedAt: String(raw.confirmedAt || "").slice(0, 40),
+          profiles: Object.fromEntries(CHARACTER_ORDER.map((characterId) => {
+            const record = raw.profiles?.[characterId] || fallback.profiles[characterId];
+            const selected = CHARACTER_SELECT_PROFILE_MAP[record?.selectionId]?.baseCharacterId === characterId
+              ? CHARACTER_SELECT_PROFILE_MAP[record.selectionId]
+              : CHARACTER_SELECT_PROFILES.find((entry) => entry.baseCharacterId === characterId);
+            return [characterId, {
+              selectionId: selected?.selectionId || fallback.profiles[characterId].selectionId,
+              modelId: BUILTIN_CHARACTER_ASSETS[record?.modelId] ? record.modelId : (selected?.modelId || fallback.profiles[characterId].modelId),
+              weaponId: ITEMS[record?.weaponId]?.type === "weapon" ? record.weaponId : (selected?.defaultWeapon || fallback.profiles[characterId].weaponId),
+              outfit: APPEARANCE_ASSETS.outfits.includes(record?.outfit) ? record.outfit : "central-jacket-02",
+              hairColor: /^#[0-9a-f]{6}$/i.test(String(record?.hairColor || "")) ? record.hairColor : "",
+              eyeColor: /^#[0-9a-f]{6}$/i.test(String(record?.eyeColor || "")) ? record.eyeColor : ""
+            }];
+          }))
+        };
+      })(),
       inventory: input.inventory && typeof input.inventory === "object" ? { ...base.inventory, ...input.inventory } : base.inventory,
       quests: { ...base.quests, ...(input.quests || {}) },
       story: normalizeStoryState(input),
@@ -1480,8 +1598,21 @@
     state.settings.shoulderCamera = state.settings.shoulderCamera !== false;
     state.settings.invertCameraY = state.settings.invertCameraY === true;
     state.settings.cameraAutoFollow = state.settings.cameraAutoFollow !== false;
+    state.settings.aimAssist = state.settings.aimAssist !== false;
+    if (!["left", "right"].includes(state.settings.cameraShoulder)) state.settings.cameraShoulder = "right";
     state.settings.cameraDistance = clamp(Number(state.settings.cameraDistance || 10.8), 5.2, 18);
     state.settings.genesisWeaponPreview = state.settings.genesisWeaponPreview !== false;
+    state.settings.characterLab = state.settings.characterLab === true;
+    CHARACTER_ORDER.forEach((characterId) => {
+      const selection = state.characterSelection.profiles[characterId];
+      const recipe = state.appearance.recipes[characterId];
+      if (!selection || !recipe) return;
+      if (BUILTIN_CHARACTER_ASSETS[selection.modelId]) recipe.baseModel = selection.modelId;
+      if (selection.outfit) recipe.outfit = [selection.outfit];
+      if (selection.hairColor) recipe.hairColor = selection.hairColor;
+      if (selection.eyeColor) recipe.eyeColor = selection.eyeColor;
+      if (ITEMS[selection.weaponId]?.type === "weapon") state.loadouts[characterId].weapon = selection.weaponId;
+    });
     if (!CHARACTERS[state.roster.activeId]) state.roster.activeId = "lyra";
     const activeLoadoutWeapon = state.loadouts?.[state.roster.activeId]?.weapon;
     if (ITEMS[activeLoadoutWeapon] && state.inventory?.[activeLoadoutWeapon]?.quantity > 0) state.player.weapon = activeLoadoutWeapon;
@@ -1623,6 +1754,9 @@
       this.weaponLibraryStatus = "pending";
       this.weaponLoadSequence = 0;
       this.weaponFxPool = [];
+      this.projectilePool = [];
+      this.hitEffectPool = [];
+      this.damageNumberPool = [];
       this.weaponVisibility = { weapon: null, consecutiveFrames: 0, visibleFrames: 0, failureFrames: 0, validated: false, report: null };
       this.weaponCalibrationCache = new Map();
       this.weaponVisibilityScratch = null;
@@ -1705,6 +1839,9 @@
       this.genesisOriginalParent = null;
       this.genesisOriginalTransform = null;
       this.genesisVisibility = null;
+      this.characterSelectDraft = null;
+      this.characterPreload = { selectionId: "", status: "idle", modelId: "", warmedAt: 0, error: "" };
+      this.characterSwap = { active: false, selectionId: "", phase: "idle", validatedFrames: 0, duration: 320, startedAt: 0 };
       this.gameplayVisibility = {
         consecutiveFrames: 0,
         visibleFrames: 0,
@@ -1724,6 +1861,8 @@
       this.lastFrameAt = performance.now();
       this.lastProcessedFrameAt = 0;
       this.lastUiAt = 0;
+      this.uiDirty = true;
+      this.lastUiHeartbeatAt = 0;
       this.lastMinimapAt = 0;
       this.lastSaveAt = 0;
       this.lastNetworkAt = 0;
@@ -1805,6 +1944,11 @@
       this.renderScaleTier = 0;
       this.renderScale = 1;
       this.dynamicResolution = 1;
+      this.performanceScheduler = {
+        profile: PERFORMANCE_SCHEDULER_PROFILE,
+        last: { physics: 0, nearNpc: 0, farNpc: 0, facial: 0, secondary: 0 },
+        ticks: { physics: 0, heroAnimation: 0, nearNpc: 0, farNpc: 0, facial: 0, secondary: 0 }
+      };
       this.forceCompatibility = false;
       this.lastStreamingAt = 0;
       this.lastStreamingCell = "";
@@ -1995,6 +2139,7 @@
             <header class="har-genesis__header">
               <div><small>ASTRAL GENESIS · CHARACTER V${CHARACTER_VISUAL_VERSION}</small><strong>Tạo Nhà du hành của bạn</strong><span>Mesh 3D rigged · PBR · không dùng ảnh làm nhân vật</span></div>
               <div class="har-genesis__status"><i></i><span data-genesis-status>Đang dựng Human Rig...</span></div>
+              <button class="har-genesis__close" type="button" data-genesis-action="cancel" aria-label="Đóng Character Select">×</button>
             </header>
               <div class="har-genesis__layout">
                 <aside class="har-genesis__guide">
@@ -2388,6 +2533,24 @@
       return scene;
     }
 
+    cloneCinematicDecoration(source) {
+      if (!source?.clone) return null;
+      const records = [];
+      const safeUserData = (input) => Object.fromEntries(Object.entries(input || {}).filter(([, value]) => {
+        if (value == null || ["string", "number", "boolean"].includes(typeof value)) return true;
+        return Array.isArray(value) && value.every((item) => item == null || ["string", "number", "boolean"].includes(typeof item));
+      }));
+      source.traverse?.((object) => {
+        records.push([object, object.userData]);
+        object.userData = safeUserData(object.userData);
+      });
+      try {
+        return source.clone(true);
+      } finally {
+        records.forEach(([object, userData]) => { object.userData = userData; });
+      }
+    }
+
     buildCinematicFilmSet(zone) {
       const THREE = this.THREE;
       const profile = BIOME_PROFILES[zone.id] || BIOME_PROFILES.central;
@@ -2426,7 +2589,8 @@
         clone.visible = true;
         streamSource.children.forEach((child) => {
           if (child.userData?.licensedAsset !== true || child.userData?.lodPriority === "environment-far") return;
-          clone.add(child.clone(true));
+          const decoration = this.cloneCinematicDecoration(child);
+          if (decoration) clone.add(decoration);
         });
         clone.traverse((object) => {
           object.userData ||= {};
@@ -2444,7 +2608,8 @@
         if (object.userData?.licensedAsset !== true) continue;
         const distance = Math.hypot(object.position.x - zone.x, object.position.z - zone.z);
         if (distance > zone.radius + 4) continue;
-        const clone = object.clone(true);
+        const clone = this.cloneCinematicDecoration(object);
+        if (!clone) continue;
         clone.userData = { ...(clone.userData || {}), cinematicDecoration: true };
         clone.traverse((child) => {
           child.userData ||= {};
@@ -2835,9 +3000,123 @@
       }
     }
 
+    ensureCharacterSelectDraft() {
+      if (this.characterSelectDraft) return this.characterSelectDraft;
+      const activeId = this.state.roster.activeId;
+      const stored = this.state.characterSelection?.profiles?.[activeId];
+      const selected = CHARACTER_SELECT_PROFILE_MAP[stored?.selectionId]
+        || CHARACTER_SELECT_PROFILES.find((profile) => profile.baseCharacterId === activeId)
+        || CHARACTER_SELECT_PROFILES[0];
+      const recipe = normalizeAppearanceRecipe(clone(this.state.appearance?.recipes?.[activeId]), activeId);
+      recipe.baseModel = BUILTIN_CHARACTER_ASSETS[stored?.modelId] ? stored.modelId : selected.modelId;
+      if (stored?.outfit) recipe.outfit = [stored.outfit];
+      if (stored?.hairColor) recipe.hairColor = stored.hairColor;
+      if (stored?.eyeColor) recipe.eyeColor = stored.eyeColor;
+      this.characterSelectDraft = {
+        selectionId: selected.selectionId,
+        baseCharacterId: selected.baseCharacterId,
+        weaponId: ITEMS[stored?.weaponId]?.type === "weapon" ? stored.weaponId : selected.defaultWeapon,
+        compareIds: [...(this.state.characterSelection?.compareIds || [])].slice(0, 3),
+        ownerId: this.state.characterSelection?.ownerId || this.state.player.id,
+        saveSlot: this.state.characterSelection?.saveSlot || "slot1",
+        name: this.state.player.name,
+        recipe,
+        dirty: false
+      };
+      return this.characterSelectDraft;
+    }
+
+    activeCharacterSelectProfile() {
+      const draft = this.ensureCharacterSelectDraft();
+      return CHARACTER_SELECT_PROFILE_MAP[draft.selectionId] || CHARACTER_SELECT_PROFILES[0];
+    }
+
+    async preloadCharacterSelection(selectionId) {
+      const profile = CHARACTER_SELECT_PROFILE_MAP[selectionId];
+      if (!profile) return false;
+      this.characterPreload = { selectionId, modelId: profile.modelId, status: "loading", warmedAt: 0, error: "" };
+      try {
+        if (!this.builtInCharacterAssets.has(profile.modelId)) await this.loadCharacterAssetsFromPipeline?.([profile.modelId]);
+        if (!this.builtInCharacterAssets.has(profile.modelId)) throw new Error("Model GLB chưa sẵn sàng");
+        this.characterPreload.status = "decoded";
+        const scene = this.builtInCharacterAssets.get(profile.modelId)?.scene;
+        if (scene && this.renderer?.compileAsync) await this.renderer.compileAsync(scene, this.genesisCamera || this.camera);
+        else if (scene && this.renderer?.compile) this.renderer.compile(scene, this.genesisCamera || this.camera, this.genesisScene || this.scene);
+        this.characterPreload.status = "shader-warm";
+        this.characterPreload.warmedAt = performance.now();
+        return true;
+      } catch (error) {
+        this.characterPreload.status = "fallback";
+        this.characterPreload.error = error?.message || String(error);
+        return false;
+      }
+    }
+
+    async selectCharacterProfile(selectionId) {
+      const profile = CHARACTER_SELECT_PROFILE_MAP[selectionId];
+      if (!profile) return;
+      const draft = this.ensureCharacterSelectDraft();
+      draft.selectionId = profile.selectionId;
+      draft.baseCharacterId = profile.baseCharacterId;
+      draft.weaponId = profile.defaultWeapon;
+      draft.recipe = normalizeAppearanceRecipe(clone(this.state.appearance?.recipes?.[profile.baseCharacterId]), profile.baseCharacterId);
+      draft.recipe.baseModel = profile.modelId;
+      draft.dirty = true;
+      this.uiDirty = true;
+      this.refreshGenesisCreator();
+      const warmed = await this.preloadCharacterSelection(selectionId);
+      if (this.destroyed || this.characterSelectDraft?.selectionId !== selectionId) return;
+      await this.rebuildActiveBuiltInCharacter({ recipe: draft.recipe, selectionId, transitionMs: 320 });
+      this.refreshGenesisCreator();
+      this.toast(warmed ? `${profile.name} đã sẵn sàng trong Character Hub.` : `${profile.name} đang dùng fallback an toàn.`, warmed ? "success" : "error");
+    }
+
+    toggleCharacterComparison(selectionId) {
+      if (!CHARACTER_SELECT_PROFILE_MAP[selectionId]) return;
+      const draft = this.ensureCharacterSelectDraft();
+      if (draft.compareIds.includes(selectionId)) draft.compareIds = draft.compareIds.filter((id) => id !== selectionId);
+      else if (draft.compareIds.length < 3) draft.compareIds.push(selectionId);
+      else return this.toast("Chỉ có thể so sánh tối đa ba nhân vật.", "error");
+      draft.dirty = true;
+      this.refreshGenesisCreator();
+    }
+
+    applyConfirmedCharacterSelection() {
+      const draft = this.ensureCharacterSelectDraft();
+      const profile = CHARACTER_SELECT_PROFILE_MAP[draft.selectionId] || CHARACTER_SELECT_PROFILES[0];
+      const characterId = profile.baseCharacterId;
+      const recipe = normalizeAppearanceRecipe(clone(draft.recipe), characterId);
+      recipe.baseModel = profile.modelId;
+      recipe.updatedAt = nowIso();
+      this.state.appearance.recipes[characterId] = recipe;
+      this.state.loadouts[characterId] ||= { role: "damage", weapon: profile.defaultWeapon, core: "none", relics: [], updatedAt: nowIso() };
+      this.state.loadouts[characterId].weapon = ITEMS[draft.weaponId]?.type === "weapon" ? draft.weaponId : profile.defaultWeapon;
+      this.state.loadouts[characterId].updatedAt = nowIso();
+      this.state.characterSelection ||= defaultCharacterSelectionState(this.state.player.id);
+      this.state.characterSelection.ownerId = this.state.player.id;
+      this.state.characterSelection.saveSlot = draft.saveSlot;
+      this.state.characterSelection.confirmedSelectionId = profile.selectionId;
+      this.state.characterSelection.compareIds = [...draft.compareIds].slice(0, 3);
+      this.state.characterSelection.confirmedAt = nowIso();
+      this.state.characterSelection.profiles[characterId] = {
+        selectionId: profile.selectionId,
+        modelId: profile.modelId,
+        weaponId: this.state.loadouts[characterId].weapon,
+        outfit: recipe.outfit[0],
+        hairColor: recipe.hairColor,
+        eyeColor: recipe.eyeColor
+      };
+      const team = this.state.characterSelection.team || [...CHARACTER_ORDER];
+      this.state.characterSelection.activeSlot = Math.max(0, team.indexOf(characterId));
+      draft.dirty = false;
+      return { profile, characterId, recipe };
+    }
+
     renderGenesisCreator() {
       const id = this.state.roster.activeId;
       const recipe = this.activeAppearanceRecipe();
+      const selectDraft = this.ensureCharacterSelectDraft();
+      const selectedProfile = this.activeCharacterSelectProfile();
       const group = APPEARANCE_GROUPS.find((item) => item.id === this.appearanceGroup) || APPEARANCE_GROUPS[0];
       const mesh = this.characterMeshes.get(id);
       const runtime = this.characterRuntimes.get(id);
@@ -2870,6 +3149,29 @@
       const dna = encodeCharacterDNA(recipe, id);
       const option = (value, label, selected) => `<option value="${value}" ${selected === value ? "selected" : ""}>${label}</option>`;
       return `
+        <section class="har-character-select-hub" aria-label="Chọn nhân vật">
+          <div class="har-character-select-hub__heading"><div><small>CHARACTER SELECT HUB · ${CHARACTER_SELECT_PROFILES.length} HỒ SƠ 3D</small><h2>Chọn nhân vật trước khi vào game</h2><p>Thay đổi bên dưới chỉ là bản nháp. Save ${escapeHtml(selectDraft.saveSlot)} chỉ cập nhật sau khi bạn xác nhận.</p></div><span class="har-chip">OWNER-SCOPED</span></div>
+          <div class="har-character-select-grid">
+            ${CHARACTER_SELECT_PROFILES.map((profile) => {
+              const active = profile.selectionId === selectDraft.selectionId;
+              const compared = selectDraft.compareIds.includes(profile.selectionId);
+              const element = ELEMENTS[profile.element] || ELEMENTS.plasma;
+              return `<article class="har-character-select-card ${active ? "is-active" : ""}" style="--character-select-accent:${element.color}">
+                <button type="button" class="har-character-select-card__pick" data-genesis-profile="${profile.selectionId}" aria-pressed="${active}"><span>${profile.name.split(" · ").map(escapeHtml).join("<small> · ")}${profile.name.includes(" · ") ? "</small>" : ""}</span><b>${escapeHtml(profile.role)}</b><i>${escapeHtml(element.label)} · Độ khó ${"◆".repeat(profile.difficulty)}${"◇".repeat(5 - profile.difficulty)}</i></button>
+                <div class="har-character-select-card__stats"><span>SPD <b style="--value:${profile.stats.speed}%"></b>${profile.stats.speed}</span><span>DMG <b style="--value:${profile.stats.damage}%"></b>${profile.stats.damage}</span><span>SUR <b style="--value:${profile.stats.survival}%"></b>${profile.stats.survival}</span></div>
+                <button type="button" class="har-character-select-card__compare ${compared ? "is-active" : ""}" data-genesis-compare="${profile.selectionId}" aria-pressed="${compared}">${compared ? "✓ Đang so sánh" : "+ So sánh"}</button>
+              </article>`;
+            }).join("")}
+          </div>
+          <div class="har-character-compare-tray ${selectDraft.compareIds.length ? "is-open" : ""}">
+            <strong>So sánh ${selectDraft.compareIds.length}/3</strong>
+            ${selectDraft.compareIds.map((selectionId) => {
+              const profile = CHARACTER_SELECT_PROFILE_MAP[selectionId];
+              return `<div><span>${escapeHtml(profile.name)}</span><small>Tốc ${profile.stats.speed} · Công ${profile.stats.damage} · Sinh tồn ${profile.stats.survival}</small><button type="button" data-genesis-compare="${selectionId}" aria-label="Bỏ so sánh">×</button></div>`;
+            }).join("") || "<span>Chọn tối đa ba hồ sơ để so sánh chỉ số.</span>"}
+          </div>
+          <div class="har-character-profile-summary"><div><small>HỒ SƠ ĐANG THỬ</small><strong>${escapeHtml(selectedProfile.name)}</strong><span>${escapeHtml(selectedProfile.role)} · ${escapeHtml(CHARACTER_MOVEMENT_PROFILES[selectedProfile.movementProfile]?.label || selectedProfile.movementProfile)} · ${escapeHtml(CHARACTER_CAMERA_PROFILES[selectedProfile.cameraProfile]?.label || selectedProfile.cameraProfile)}</span></div><div><small>KỸ NĂNG</small><strong>${selectedProfile.unlockedSkills.map(escapeHtml).join(" · ")}</strong><span>${escapeHtml(selectedProfile.animationSet)} · IK ${escapeHtml(selectedProfile.bodyIkProfile)}</span></div></div>
+        </section>
         <div class="har-genesis-editor__intro">
           <small>DIGITAL HUMAN CORE V${CHARACTER_VISUAL_VERSION} · ${escapeHtml(modelLabels[recipe.baseModel]?.[0] || "HUMAN RIG")}</small>
           <h2>Tạo con người 3D của bạn</h2>
@@ -2890,7 +3192,7 @@
           ${fit.warnings.length ? `<ul>${fit.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>` : ""}
         </div>
         <label class="har-genesis-name">Tên Nhà du hành
-          <input type="text" maxlength="40" value="${escapeHtml(this.state.player.name || "")}" data-genesis-name autocomplete="off">
+          <input type="text" maxlength="40" value="${escapeHtml(selectDraft.name || this.state.player.name || "")}" data-genesis-name autocomplete="off">
         </label>
         <div class="har-genesis-block">
           <div class="har-genesis-block__title"><strong>Nền cơ thể 3D</strong><span>${runtime?.bones ? Object.keys(runtime.bones).length : 0} bone nhận diện</span></div>
@@ -2916,6 +3218,9 @@
           <span><strong>Digital Skin</strong><small>micro-normal · roughness zones · skin response</small></span>
         </div>
         <div class="har-genesis-assets">
+          <label>Vũ khí mặc định<select data-genesis-weapon>
+            ${Object.values(ITEMS).filter((item) => item.type === "weapon" && this.state.inventory?.[item.id]?.quantity > 0).map((item) => option(item.id, `${item.name} · ${WEAPON_COMBAT_PROFILES[item.weaponClass]?.label || item.weaponClass}`, selectDraft.weaponId)).join("")}
+          </select></label>
           <label>Tóc<select data-genesis-setting="hair">
             ${option("astral-layered-07", "Astral Layered", recipe.hair)}
             ${option("aurora-short-02", "Aurora Short", recipe.hair)}
@@ -2979,7 +3284,7 @@
         </div>
         <div class="har-genesis-motion">
           <span>Kiểm tra chuyển động</span>
-          ${["idle", "walk", "run", "strafe", "jump", "dodge", "attack1", "talk"].map((motion) => `<button type="button" class="${this.genesisMotion === motion ? "is-active" : ""}" data-genesis-motion="${motion}">${motion}</button>`).join("")}
+          ${CHARACTER_SELECT_MOTIONS.map((motion) => `<button type="button" class="${this.genesisMotion === motion ? "is-active" : ""}" data-genesis-motion="${motion}">${({ idle: "Idle", walk: "Walk", run: "Run", attack1: "Attack", skill: "Skill", ultimate: "Ultimate" })[motion]}</button>`).join("")}
         </div>
         <div class="har-genesis-tools">
           <button type="button" class="${this.state.settings.genesisWeaponPreview ? "is-active" : ""}" data-genesis-action="toggle-weapon">${this.state.settings.genesisWeaponPreview ? "Ẩn vũ khí" : "Xem với trang bị"}</button>
@@ -3029,7 +3334,13 @@
       }
     }
 
-    openGenesisCreator() {
+    openGenesisCreator({ force = false } = {}) {
+      if (!force && this.state.appearance?.creatorCompletedAt && this.currentZone?.id !== "central") {
+        this.toast("Chỉ có thể đổi nhân vật tại H-Central.", "error");
+        return false;
+      }
+      this.characterSelectDraft = null;
+      this.ensureCharacterSelectDraft();
       this.genesisActive = true;
       this.genesisMotion = "idle";
       this.genesisTurntable = false;
@@ -3056,6 +3367,7 @@
       this.setupGenesisPreview();
       this.setGenesisMotion("idle");
       this.refreshGenesisCreator();
+      return true;
     }
 
     setupGenesisPreview() {
@@ -3577,8 +3889,8 @@
       boundsRoot?.traverse?.((node) => {
         if ((!node.isMesh && !node.isSkinnedMesh) || node.visible === false) return;
         (Array.isArray(node.material) ? node.material : [node.material]).filter(Boolean).forEach((material) => {
-          const opacity = Number.isFinite(material.opacity) ? material.opacity : 1;
-          if (material.visible !== false && opacity > 0.04 && material.depthTest !== false) visibleMaterials += 1;
+          const baseOpacity = material.userData?.hhGenesisOpacity?.opacity ?? (Number.isFinite(material.opacity) ? material.opacity : 1);
+          if (material.visible !== false && baseOpacity > 0.04 && material.depthTest !== false) visibleMaterials += 1;
         });
       });
       const expectedGround = Number(this.state.player.y || 0);
@@ -4008,11 +4320,13 @@
         const payload = decodeCharacterDNA(value);
         const id = this.state.roster.activeId;
         const before = clone(this.activeAppearanceRecipe());
-        this.state.appearance.recipes[id] = normalizeAppearanceRecipe(payload.recipe, id);
-        this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
-        if (before.baseModel !== this.state.appearance.recipes[id].baseModel) this.rebuildActiveBuiltInCharacter();
+        const loaded = normalizeAppearanceRecipe(payload.recipe, this.characterSelectDraft?.baseCharacterId || id);
+        if (this.genesisActive && this.characterSelectDraft) this.characterSelectDraft.recipe = loaded;
+        else this.state.appearance.recipes[id] = loaded;
+        this.applyAppearanceToMesh(this.characterMeshes.get(id), loaded, id);
+        if (before.baseModel !== loaded.baseModel) this.rebuildActiveBuiltInCharacter({ recipe: loaded });
         this.recordAppearanceChange(before);
-        this.setCharacterFacePreview(this.state.appearance.recipes[id].expression, this.state.appearance.recipes[id].viseme);
+        this.setCharacterFacePreview(loaded.expression, loaded.viseme);
         this.refreshGenesisCreator();
         this.renderCurrentPanel();
         this.toast("Đã nạp Character DNA và kiểm tra giới hạn hình thể.", "success");
@@ -4021,53 +4335,139 @@
       }
     }
 
-    rebuildActiveBuiltInCharacter() {
+    async rebuildActiveBuiltInCharacter({ recipe = null, selectionId = "", transitionMs = 320 } = {}) {
       const id = this.state.roster.activeId;
       const profile = CHARACTERS[id] || CHARACTERS.lyra;
       const oldMesh = this.characterMeshes.get(id);
-      if (!oldMesh) return;
+      if (!oldMesh || this.characterSwap.active) return false;
+      const sequence = Number(this.characterSwapSequence || 0) + 1;
+      this.characterSwapSequence = sequence;
       const oldRuntime = oldMesh.userData?.characterRuntime || this.characterRuntimes.get(id);
-      const next = this.createPhotorealCharacterModel(profile, 1);
+      const pendingRecipe = normalizeAppearanceRecipe(recipe || this.activeAppearanceRecipe(), this.characterSelectDraft?.baseCharacterId || id);
+      const duration = clamp(Number(transitionMs || 320), 250, 400);
+      this.characterSwap = { active: true, selectionId, phase: "preload", validatedFrames: 0, duration, startedAt: performance.now() };
+      const next = this.createPhotorealCharacterModel(profile, 1, pendingRecipe);
       next.position.copy(oldMesh.position);
       next.rotation.copy(oldMesh.rotation);
+      next.scale.copy(oldMesh.scale);
       next.visible = true;
       const weapon = this.createPlayerWeapon(profile);
       next.userData.parts.weaponAnchor.add(weapon);
       this.configureWeaponSocket(next, weapon, this.equippedWeaponClass(id));
       next.userData.lodVariants.attachments = [weapon];
       next.userData.weapon = weapon;
-      (oldMesh.parent || this.world).add(next);
-      oldMesh.parent?.remove(oldMesh);
-      this.disposeCharacterObject(oldMesh, oldRuntime);
-      this.characterRuntimes.delete(id);
+      const parent = oldMesh.parent || (this.genesisActive ? this.genesisScene : this.world);
+      parent.add(next);
+      this.setGenesisModelOpacity(next, 0.015);
+      const nextRuntime = this.registerCharacterRuntime(next, profile, id, "hero", next.userData.builtInAnimations || []);
+      nextRuntime.characterProfile = CHARACTER_SELECT_PROFILE_MAP[selectionId] || this.activeCharacterSelectProfile();
+      nextRuntime.animationSet = nextRuntime.characterProfile?.animationSet || "humanoid-v2";
+      nextRuntime.movementProfile = nextRuntime.characterProfile?.movementProfile || "balanced";
+      nextRuntime.cameraProfile = nextRuntime.characterProfile?.cameraProfile || "medium";
+      nextRuntime.bodyIkProfile = nextRuntime.characterProfile?.bodyIkProfile || "valid-f-v2";
+      next.userData.characterSelectionId = nextRuntime.characterProfile?.selectionId || selectionId;
+      next.userData.characterSwapReadyFrames = 0;
       this.characterMeshes.set(id, next);
       this.playerMesh = next;
       this.playerWeapon = weapon;
+      if (this.genesisActive && this.genesisScene) this.genesisActualModel = next;
       this.resetWeaponVisibilityValidation(weapon, "character-rebuild");
-      this.registerCharacterRuntime(next, profile, id, "hero", next.userData.builtInAnimations || []);
-      this.applyAppearanceToMesh(next, this.activeAppearanceRecipe(), id);
+      this.applyAppearanceToMesh(next, pendingRecipe, id);
       this.syncActiveCharacterDataset(next);
       this.setGenesisMotion(this.genesisMotion || "idle");
-      if (this.genesisActive && this.genesisScene) {
-        this.genesisActualModel = next;
-        this.setGenesisModelOpacity(next, 0.015);
-        this.genesisVisibility = { consecutiveFrames: 0, validated: false, crossfadeStartedAt: 0, startedAt: performance.now(), report: null };
-        this.fitGenesisCamera(next, this.appearanceFocus || "body");
-      } else {
-        this.updateCamera(true, 0.016);
+      try {
+        this.characterSwap.phase = "shader-warm";
+        if (this.renderer?.compileAsync) await this.renderer.compileAsync(this.genesisScene || this.scene, this.genesisCamera || this.camera);
+        else this.renderer?.compile?.(this.genesisScene || this.scene, this.genesisCamera || this.camera);
+        this.characterSwap.phase = "validating-two-frames";
+        for (let frame = 0; frame < 45 && this.characterSwap.validatedFrames < 2; frame += 1) {
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+          if (this.destroyed || sequence !== this.characterSwapSequence) throw new Error("character-swap-cancelled");
+          next.updateMatrixWorld(true);
+          const report = this.genesisActive ? this.getGenesisVisibilityReport(next) : this.getGameplayCharacterReport(next);
+          const ready = this.genesisActive ? report.ready : report.modelReady;
+          this.characterSwap.validatedFrames = ready ? this.characterSwap.validatedFrames + 1 : 0;
+          next.userData.characterSwapReadyFrames = this.characterSwap.validatedFrames;
+        }
+        if (this.characterSwap.validatedFrames < 2) throw new Error("Model mới chưa vượt kiểm tra hiển thị 2 frame");
+        this.characterSwap.phase = "crossfade";
+        const startedAt = performance.now();
+        while (performance.now() - startedAt < duration) {
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+          const progress = clamp((performance.now() - startedAt) / duration, 0, 1);
+          this.setGenesisModelOpacity(next, progress);
+          this.setGenesisModelOpacity(oldMesh, 1 - progress);
+        }
+        this.restoreGenesisModelOpacity(next);
+        oldMesh.parent?.remove(oldMesh);
+        this.disposeCharacterObject(oldMesh, oldRuntime);
+        this.playerMesh = next;
+        this.playerWeapon = weapon;
+        this.characterSwap.phase = "complete";
+        this.characterSwap.active = false;
+        if (this.genesisActive && this.genesisScene) {
+          this.genesisActualModel = next;
+          this.genesisVisibility = { consecutiveFrames: 2, validated: true, crossfadeStartedAt: performance.now() - 400, startedAt: performance.now(), report: this.getGenesisVisibilityReport(next) };
+          this.fitGenesisCamera(next, this.appearanceFocus || "body");
+        } else this.updateCamera(true, 0.016);
+        return true;
+      } catch (error) {
+        next.parent?.remove(next);
+        this.disposeCharacterObject(next, nextRuntime);
+        this.characterRuntimes.set(id, oldRuntime);
+        this.characterMeshes.set(id, oldMesh);
+        this.playerMesh = oldMesh;
+        this.playerWeapon = oldMesh.userData?.weapon || this.playerWeapon;
+        this.restoreGenesisModelOpacity(oldMesh);
+        if (this.genesisActive) this.genesisActualModel = oldMesh;
+        this.characterSwap = { active: false, selectionId, phase: "fallback", validatedFrames: 0, duration, startedAt: performance.now(), error: error?.message || String(error) };
+        return false;
       }
+    }
+
+    rebuildInactiveCharacterSlot(characterId) {
+      if (!CHARACTERS[characterId] || characterId === this.state.roster.activeId) return false;
+      const oldMesh = this.characterMeshes.get(characterId);
+      if (!oldMesh) return false;
+      const profile = CHARACTERS[characterId];
+      const oldRuntime = oldMesh.userData?.characterRuntime || this.characterRuntimes.get(characterId);
+      const recipe = normalizeAppearanceRecipe(this.state.appearance?.recipes?.[characterId], characterId);
+      const next = this.createPhotorealCharacterModel(profile, 1, recipe);
+      next.position.copy(oldMesh.position);
+      next.rotation.copy(oldMesh.rotation);
+      const weapon = this.createPlayerWeapon(profile, this.equippedWeaponClass(characterId));
+      next.userData.parts.weaponAnchor.add(weapon);
+      this.configureWeaponSocket(next, weapon, this.equippedWeaponClass(characterId));
+      next.userData.lodVariants.attachments = [weapon];
+      next.userData.weapon = weapon;
+      next.visible = true;
+      (oldMesh.parent || this.world).add(next);
+      oldMesh.parent?.remove(oldMesh);
+      this.disposeCharacterObject(oldMesh, oldRuntime);
+      this.characterMeshes.set(characterId, next);
+      const runtime = this.registerCharacterRuntime(next, profile, characterId, "near", next.userData.builtInAnimations || []);
+      const selection = this.characterRuntimeProfile(characterId);
+      runtime.characterProfile = selection;
+      runtime.animationSet = selection.animationSet;
+      runtime.movementProfile = selection.movementProfile;
+      runtime.cameraProfile = selection.cameraProfile;
+      runtime.bodyIkProfile = selection.bodyIkProfile;
+      this.updateCharacterLod(next, 24);
+      return true;
     }
 
     async completeGenesisCreator() {
       if (this.genesisCompleting) return;
       this.genesisCompleting = true;
-      const input = this.root.querySelector("[data-genesis-name]");
-      const cleanName = String(input?.value || this.state.player.name || "")
+      const draft = this.ensureCharacterSelectDraft();
+      const confirmed = this.applyConfirmedCharacterSelection();
+      const previousCharacterId = this.state.roster.activeId;
+      const cleanName = String(draft.name || this.state.player.name || "")
         .replace(/[<>{}[\]\\]/g, "")
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, 40);
-      this.state.player.name = cleanName.length >= 2 ? cleanName : (CHARACTERS[this.state.roster.activeId]?.name || "Nhà du hành H");
+      this.state.player.name = cleanName.length >= 2 ? cleanName : (CHARACTERS[confirmed.characterId]?.name || "Nhà du hành H");
       this.state.appearance.creatorCompletedAt = nowIso();
       this.state.appearance.creatorVersion = CHARACTER_VISUAL_VERSION;
       this.state.appearance.lastSavedAt = nowIso();
@@ -4078,6 +4478,14 @@
       if (section) section.hidden = true;
       this.root.classList.remove("is-genesis");
       this.genesisActive = false;
+      if (confirmed.characterId !== this.state.roster.activeId) await this.switchCharacter(confirmed.characterId, { force: true, silent: true });
+      this.state.player.name = cleanName.length >= 2 ? cleanName : (CHARACTERS[confirmed.characterId]?.name || "Nhà du hành H");
+      await this.rebuildActiveBuiltInCharacter({ recipe: confirmed.recipe, selectionId: confirmed.profile.selectionId, transitionMs: 320 });
+      if (previousCharacterId !== confirmed.characterId) this.rebuildInactiveCharacterSlot(previousCharacterId);
+      this.state.player.weapon = this.state.loadouts[confirmed.characterId].weapon;
+      this.refreshEquippedWeapon(confirmed.characterId);
+      this.characterSelectDraft = null;
+      await this.saveProgress("Xác nhận nhân vật · Character Select V2");
       this.genesisCompleting = false;
       this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
       this.cameraPitch = 0.14;
@@ -4092,6 +4500,27 @@
           this.openCinematicGallery("central", { source: "genesis-complete", autoplay: true });
         }
       }, 180);
+    }
+
+    async cancelGenesisCreator() {
+      if (!this.state.appearance?.creatorCompletedAt) {
+        this.toast("Hãy xác nhận nhân vật đầu tiên trước khi vào game.", "error");
+        return;
+      }
+      const characterId = this.state.roster.activeId;
+      const confirmedRecipe = normalizeAppearanceRecipe(this.state.appearance?.recipes?.[characterId], characterId);
+      this.teardownGenesisPreview({ restorePlayer: true });
+      this.restoreGenesisLighting();
+      this.genesisActive = false;
+      this.paused = false;
+      this.menuPaused = false;
+      this.root.classList.remove("is-genesis");
+      const section = this.root.querySelector("[data-har-genesis]");
+      if (section) section.hidden = true;
+      this.characterSelectDraft = null;
+      await this.rebuildActiveBuiltInCharacter({ recipe: confirmedRecipe, selectionId: this.state.characterSelection?.confirmedSelectionId || "", transitionMs: 250 });
+      this.updateCamera(true, 0.016);
+      this.toast("Đã bỏ bản nháp; save nhân vật không thay đổi.", "success");
     }
 
     resetGraphicsAfterFailure() {
@@ -4448,7 +4877,8 @@
     }
 
     equippedWeaponId(characterId = this.state.roster.activeId) {
-      return this.state.loadouts?.[characterId]?.weapon
+      return (this.genesisActive && characterId === this.state.roster.activeId ? this.characterSelectDraft?.weaponId : "")
+        || this.state.loadouts?.[characterId]?.weapon
         || (characterId === this.state.roster.activeId ? this.state.player.weapon : DEFAULT_CHARACTER_WEAPONS[characterId])
         || "starter-blade";
     }
@@ -5084,7 +5514,7 @@
         if (!response.ok) throw new Error(`Motion manifest HTTP ${response.status}`);
         const manifest = await response.json();
         const declaredClips = Array.isArray(manifest?.clips) ? manifest.clips : [];
-        if (Number(manifest?.version) !== CHARACTER_VISUAL_VERSION || !declaredClips.length) {
+        if (Number(manifest?.version) !== CHARACTER_MOTION_ASSET_VERSION || !declaredClips.length) {
           throw new Error("Motion manifest không đúng Visual V13 hoặc chưa có clip thật");
         }
         const allowed = new Set(declaredClips.map((item) => String(item?.name || "").toLowerCase()).filter(Boolean));
@@ -5101,7 +5531,7 @@
         const unresolved = [...allowed].filter((name) => !loadedNames.has(name));
         const declaredMissing = Array.isArray(manifest.missing) ? manifest.missing.map((value) => String(value)) : [];
         this.motionLibraryManifest = {
-          version: CHARACTER_VISUAL_VERSION,
+          version: CHARACTER_MOTION_ASSET_VERSION,
           status: manifest.status === "ready" && !unresolved.length ? "ready" : "partial",
           rig: String(manifest.rig || ""),
           fps: clamp(Number(manifest.fps || 30), 12, 60),
@@ -5215,7 +5645,7 @@
       this.root.dataset.builtInCharacter = this.builtInCharacterStatus;
     }
 
-    async loadCharacterAssetsFromPipeline() {
+    async loadCharacterAssetsFromPipeline(extraModelIds = []) {
       if (!this.GLTFLoaderClass || !this.cloneSkinnedCharacter) {
         this.builtInCharacterStatus = "fallback";
         this.root.dataset.builtInCharacter = "fallback";
@@ -5234,7 +5664,8 @@
       const recipeModels = Object.values(this.state.appearance?.recipes || {})
         .map((recipe) => String(recipe?.baseModel || ""))
         .filter(Boolean);
-      const entries = [...new Set(["human-adult-b01", ...recipeModels])];
+      const requestedModels = Array.isArray(extraModelIds) ? extraModelIds.filter((id) => BUILTIN_CHARACTER_ASSETS[id]) : [];
+      const entries = [...new Set(["human-adult-b01", ...recipeModels, ...requestedModels])];
       const results = await Promise.allSettled(entries.map(async (id) => {
         const recipes = Object.values(this.state.appearance?.recipes || {}).filter((recipe) => recipe?.baseModel === id);
         const requestedProvider = recipes.find((recipe) => recipe.sourceProvider && recipe.sourceProvider !== "auto")?.sourceProvider
@@ -8124,8 +8555,8 @@
       };
     }
 
-    createBuiltInRiggedCharacter(profile, scale = 1) {
-      const recipe = normalizeAppearanceRecipe(this.state.appearance?.recipes?.[profile.id], profile.id);
+    createBuiltInRiggedCharacter(profile, scale = 1, recipeOverride = null) {
+      const recipe = normalizeAppearanceRecipe(recipeOverride || this.state.appearance?.recipes?.[profile.id], profile.id);
       const fallbackModelId = {
         lyra: "valid-asian-f-1-casual",
         cael: "valid-white-f-2-casual",
@@ -8401,8 +8832,8 @@
       return wrapper;
     }
 
-    createPhotorealCharacterModel(profile, scale = 1) {
-      const rigged = this.createBuiltInRiggedCharacter(profile, scale);
+    createPhotorealCharacterModel(profile, scale = 1, recipeOverride = null) {
+      const rigged = this.createBuiltInRiggedCharacter(profile, scale, recipeOverride);
       if (rigged) return rigged;
       const group = this.createAnimeCharacterMesh(profile, scale);
       const wantsRigged = this.state.settings.characterMode !== "portrait";
@@ -8436,6 +8867,7 @@
         impostor: [impostor],
         heroDetails
       };
+      if (recipeOverride) this.applyAppearanceToMesh(group, normalizeAppearanceRecipe(recipeOverride, profile.id), profile.id);
       return group;
     }
 
@@ -9894,6 +10326,7 @@
     applyFootContactIK(runtime, normalizedPhase, motion = "walk", strength = 1, dt = 0.016) {
       if (!runtime || runtime.lodSuspended || !this.state.settings.naturalMotion) return;
       const markers = this.footMarkersForMotion(motion);
+      const calibration = runtime.bodyIkCalibration || BODY_IK_PROFILES[runtime.bodyIkProfile] || BODY_IK_PROFILES["valid-f-v2"];
       const phase = ((Number(normalizedPhase || 0) % 1) + 1) % 1;
       const isBetween = (value, start, end) => start <= end ? value >= start && value <= end : value >= start || value <= end;
       const results = [];
@@ -9929,13 +10362,14 @@
         }
         if (toe) {
           const toePhase = clamp((phase - Number(up) + 0.12) / 0.18, 0, 1);
-          toe.rotation.x += Math.sin(toePhase * Math.PI) * 0.12 * (1 - state.weight) * strength;
+          toe.rotation.x += Math.sin(toePhase * Math.PI) * calibration.toeRoll * (1 - state.weight) * strength;
         }
         results.push(`${side}:${state.planted ? "locked" : ray ? "tracking" : "no-ground"}`);
       });
       if (pelvisOffsets.length && runtime.bones?.hips) {
         const lowest = Math.min(...pelvisOffsets);
-        this.offsetBoneWorld(runtime.bones.hips, new this.THREE.Vector3(0, lowest * 0.42, 0), 0.55);
+        const hipWeight = clamp(calibration.hipDrop / 0.16, 0.25, 0.72);
+        this.offsetBoneWorld(runtime.bones.hips, new this.THREE.Vector3(0, lowest * hipWeight, 0), 0.55);
       }
       runtime.ikState = {
         foot: results.join(" · ") || "unavailable",
@@ -10280,7 +10714,9 @@
     }
 
     equippedWeaponClass(characterId = this.state.roster.activeId) {
-      const weaponId = this.state.loadouts?.[characterId]?.weapon || (characterId === this.state.roster.activeId ? this.state.player.weapon : "starter-blade");
+      const weaponId = this.genesisActive && characterId === this.state.roster.activeId && this.characterSelectDraft?.weaponId
+        ? this.characterSelectDraft.weaponId
+        : this.state.loadouts?.[characterId]?.weapon || (characterId === this.state.roster.activeId ? this.state.player.weapon : "starter-blade");
       return ITEMS[weaponId]?.weaponClass || "sword";
     }
 
@@ -10754,6 +11190,7 @@
 
     applyStateToWorld() {
       const player = this.state.player;
+      this.cameraShoulderSide = this.state.settings.cameraShoulder === "left" ? -1 : 1;
       const activeId = CHARACTERS[this.state.roster.activeId] ? this.state.roster.activeId : "lyra";
       const activeProfile = CHARACTERS[activeId];
       this.characterMeshes.forEach((mesh, id) => {
@@ -10854,6 +11291,16 @@
           this.handlePanelAction(panelActionButton.dataset.panelAction, panelActionButton.dataset);
           return;
         }
+        const genesisProfile = event.target.closest("[data-genesis-profile]");
+        if (genesisProfile) {
+          await this.selectCharacterProfile(genesisProfile.dataset.genesisProfile);
+          return;
+        }
+        const genesisCompare = event.target.closest("[data-genesis-compare]");
+        if (genesisCompare) {
+          this.toggleCharacterComparison(genesisCompare.dataset.genesisCompare);
+          return;
+        }
         const genesisGroup = event.target.closest("[data-genesis-group]");
         if (genesisGroup) {
           this.appearanceGroup = genesisGroup.dataset.genesisGroup;
@@ -10872,7 +11319,7 @@
             try {
               this.updateAppearanceDraft("baseModel", value);
               this.commitAppearanceDraft();
-              await this.loadCharacterAssetsFromPipeline();
+              await this.loadCharacterAssetsFromPipeline([value]);
               if (!this.builtInCharacterAssets.has(value)) throw new Error("GLB local chưa tải được");
               this.rebuildActiveBuiltInCharacter();
               this.refreshGenesisCreator();
@@ -10975,6 +11422,8 @@
             this.refreshGenesisCreator();
           } else if (genesisAction === "confirm") {
             this.completeGenesisCreator();
+          } else if (genesisAction === "cancel") {
+            this.cancelGenesisCreator();
           }
           return;
         }
@@ -11041,7 +11490,9 @@
           return;
         }
         if (event.target.matches("[data-genesis-name]")) {
-          this.state.player.name = String(event.target.value || "").slice(0, 40);
+          const draft = this.ensureCharacterSelectDraft();
+          draft.name = String(event.target.value || "").slice(0, 40);
+          draft.dirty = true;
           return;
         }
         const key = event.target?.dataset?.photoSetting;
@@ -11062,6 +11513,18 @@
         }
       });
       this.listen(this.root, "change", async (event) => {
+        if (event.target.matches("[data-genesis-weapon]")) {
+          const draft = this.ensureCharacterSelectDraft();
+          const weaponId = String(event.target.value || "");
+          if (ITEMS[weaponId]?.type === "weapon") {
+            draft.weaponId = weaponId;
+            draft.dirty = true;
+            this.refreshEquippedWeapon(this.state.roster.activeId);
+            this.setGenesisMotion("idle");
+            this.refreshGenesisCreator();
+          }
+          return;
+        }
         const genesisCatalog = event.target.closest("[data-genesis-catalog]");
         if (genesisCatalog) {
           const modelId = String(genesisCatalog.value || "");
@@ -11073,7 +11536,7 @@
             try {
               this.updateAppearanceDraft("baseModel", modelId);
               this.commitAppearanceDraft();
-              await this.loadCharacterAssetsFromPipeline();
+              await this.loadCharacterAssetsFromPipeline([modelId]);
               this.rebuildActiveBuiltInCharacter();
               this.refreshGenesisCreator();
               const source = this.builtInCharacterSources.get(modelId);
@@ -11142,11 +11605,15 @@
         if (event.code === "KeyO") this.togglePhotoMode();
         if (event.code === "KeyV") {
           this.cameraShoulderSide *= -1;
+          this.state.settings.cameraShoulder = this.cameraShoulderSide > 0 ? "right" : "left";
           this.cameraInputAt = performance.now();
           this.root.dataset.cameraShoulder = this.cameraShoulderSide > 0 ? "right" : "left";
           this.toast(`Camera qua vai ${this.cameraShoulderSide > 0 ? "phải" : "trái"}.`, "success");
         }
-        if (/^Digit[1-4]$/.test(event.code)) this.switchCharacter(CHARACTER_ORDER[Number(event.code.slice(-1)) - 1]);
+        if (/^Digit[1-4]$/.test(event.code)) {
+          const team = this.state.characterSelection?.team || CHARACTER_ORDER;
+          this.switchCharacter(team[Number(event.code.slice(-1)) - 1]);
+        }
       });
       this.listen(root, "keyup", (event) => this.keys.delete(event.code));
       this.listen(root, "blur", () => this.keys.clear());
@@ -11292,14 +11759,55 @@
       else if (action === "lock") this.toggleTargetLock();
     }
 
-    switchCharacter(characterId) {
+    characterRuntimeProfile(characterId = this.state.roster.activeId) {
+      const selectionId = this.state.characterSelection?.profiles?.[characterId]?.selectionId;
+      return CHARACTER_SELECT_PROFILE_MAP[selectionId]
+        || CHARACTER_SELECT_PROFILES.find((profile) => profile.baseCharacterId === characterId)
+        || CHARACTER_SELECT_PROFILES[0];
+    }
+
+    activeMoveset(characterId = this.state.roster.activeId) {
+      return WEAPON_MOVESETS[this.equippedWeaponClass(characterId)] || WEAPON_MOVESETS.sword;
+    }
+
+    async switchCharacter(characterId, { force = false, silent = false } = {}) {
       const profile = CHARACTERS[characterId];
-      if (!profile || !this.state.roster.unlocked.includes(characterId)) return;
-      if (!this.running || this.photoMode || this.state.player.health <= 0) return;
+      if (!profile || !this.state.roster.unlocked.includes(characterId)) return false;
+      if (!force && (!this.running || this.photoMode || this.state.player.health <= 0)) return false;
       const now = performance.now();
-      if (now - this.characterSwitchAt < 650 || characterId === this.state.roster.activeId) return;
+      if (!force && (now - this.characterSwitchAt < 650 || characterId === this.state.roster.activeId)) return false;
+      if (characterId === this.state.roster.activeId) return true;
 
       const previousId = this.state.roster.activeId;
+      const previousMesh = this.characterMeshes.get(previousId);
+      const nextMesh = this.characterMeshes.get(characterId);
+      if (!previousMesh || !nextMesh) return false;
+      const transitionMs = 300;
+      const swapToken = Number(this.characterSwitchSequence || 0) + 1;
+      this.characterSwitchSequence = swapToken;
+      this.characterPreload = { selectionId: this.characterRuntimeProfile(characterId).selectionId, modelId: nextMesh.userData?.builtInModelId || "", status: "shader-warm", warmedAt: 0, error: "" };
+      try {
+        if (this.renderer?.compileAsync) await this.renderer.compileAsync(this.scene, this.camera);
+        else this.renderer?.compile?.(this.scene, this.camera);
+      } catch {}
+      this.characterPreload.warmedAt = performance.now();
+      this.setGenesisModelOpacity(nextMesh, 0.015);
+      nextMesh.visible = true;
+      this.positionCharacterInWorld(nextMesh, this.state.player.x, this.state.player.y, this.state.player.z);
+      nextMesh.rotation.y = this.state.player.rotation;
+      let readyFrames = 0;
+      for (let frame = 0; frame < 30 && readyFrames < 2; frame += 1) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        if (swapToken !== this.characterSwitchSequence || this.destroyed) return false;
+        const report = this.getGameplayCharacterReport(nextMesh);
+        readyFrames = report.modelReady ? readyFrames + 1 : 0;
+      }
+      if (readyFrames < 2) {
+        nextMesh.visible = false;
+        this.restoreGenesisModelOpacity(nextMesh);
+        this.toast("Model nhân vật mới chưa vượt kiểm tra 2 frame; đã giữ nhân vật hiện tại.", "error");
+        return false;
+      }
       const previousMember = this.state.roster.members[previousId];
       if (previousMember) {
         previousMember.health = this.state.player.health;
@@ -11318,8 +11826,17 @@
       const loadout = this.state.loadouts?.[characterId];
       if (loadout?.weapon && this.state.inventory[loadout.weapon]?.quantity > 0) this.state.player.weapon = loadout.weapon;
 
+      const fadeStartedAt = performance.now();
+      while (performance.now() - fadeStartedAt < transitionMs) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const progress = clamp((performance.now() - fadeStartedAt) / transitionMs, 0, 1);
+        this.setGenesisModelOpacity(nextMesh, progress);
+        this.setGenesisModelOpacity(previousMesh, 1 - progress);
+      }
+      this.restoreGenesisModelOpacity(nextMesh);
+      this.restoreGenesisModelOpacity(previousMesh);
       this.characterMeshes.forEach((mesh, id) => {
-        mesh.visible = id === characterId;
+        mesh.visible = id === characterId || (this.state.characterSelection?.team || []).includes(id);
         this.positionCharacterInWorld(mesh, this.state.player.x, this.state.player.y, this.state.player.z);
         mesh.rotation.y = this.state.player.rotation;
       });
@@ -11329,17 +11846,30 @@
       this.syncActiveCharacterDataset(this.playerMesh);
       this.resetGameplayCharacterVisibility("character-switch");
       this.characterSwitchAt = now;
-      this.combo = 0;
       this.setCharacterAction("idle", 80, 0);
+      const team = this.state.characterSelection?.team || CHARACTER_ORDER;
+      this.state.characterSelection.activeSlot = Math.max(0, team.indexOf(characterId));
+      const runtimeProfile = this.characterRuntimeProfile(characterId);
+      const runtime = this.characterRuntimes.get(characterId);
+      if (runtime) {
+        runtime.characterProfile = runtimeProfile;
+        runtime.animationSet = runtimeProfile.animationSet;
+        runtime.movementProfile = runtimeProfile.movementProfile;
+        runtime.cameraProfile = this.activeMoveset(characterId).cameraProfile || runtimeProfile.cameraProfile;
+        runtime.bodyIkProfile = runtimeProfile.bodyIkProfile;
+      }
       this.setElement(profile.element, false);
       this.root.querySelectorAll("[data-character]").forEach((button) => {
         button.classList.toggle("is-active", button.dataset.character === characterId);
       });
-      this.spawnNova(this.state.player.x, this.state.player.y + 1.2, this.state.player.z, profile.accent);
-      this.cameraShake = Math.max(this.cameraShake, 0.2);
-      this.sound("collect");
-      this.toast(`${profile.name} · ${profile.role}`, "success");
+      if (!silent) {
+        this.spawnNova(this.state.player.x, this.state.player.y + 1.2, this.state.player.z, profile.accent);
+        this.cameraShake = Math.max(this.cameraShake, 0.2);
+        this.sound("collect");
+        this.toast(`${profile.name} · ${profile.role}`, "success");
+      }
       this.updateUi(true);
+      return true;
     }
 
     updateCharacterAnimation(dt, time, input, sprinting) {
@@ -11362,8 +11892,12 @@
         this.activeAnimation = targetAnimation;
         this.animationBlend = 0;
       }
-      this.animationBlend = clamp(this.animationBlend + dt * 8, 0, 1);
       const runtime = mesh.userData.characterRuntime || this.characterRuntimes.get(this.state.roster.activeId);
+      const selectedProfile = this.characterRuntimeProfile(this.state.roster.activeId);
+      const movementProfile = CHARACTER_MOVEMENT_PROFILES[selectedProfile.movementProfile] || CHARACTER_MOVEMENT_PROFILES.balanced;
+      const bodyIkProfile = BODY_IK_PROFILES[selectedProfile.bodyIkProfile] || BODY_IK_PROFILES["valid-f-v2"];
+      const moveset = this.activeMoveset(this.state.roster.activeId);
+      this.animationBlend = clamp(this.animationBlend + dt * (1000 / movementProfile.inertializationMs), 0, 1);
       this.updateCharacterLod(mesh, 0);
       const lowDetailTier = ["crowd", "impostor"].includes(mesh.userData?.modelTier);
       const cadence = targetAnimation === "sprint"
@@ -11376,6 +11910,23 @@
               ? 4.6
               : 1.15;
       if (runtime) {
+        runtime.animationGraphV2 ||= {
+          layers: ["locomotion", "start-stop-turn", "upper-body-weapon", "aim-offset", "hand-ik", "foot-ik", "head-eye-look", "hit-reaction", "hair-cloth"],
+          fixedStep: this.fixedAnimationStep,
+          turnInPlace: [45, 90, 180],
+          directionalStarts: 8,
+          phaseSync: true,
+          motionWarping: true
+        };
+        runtime.animationSet = selectedProfile.animationSet;
+        runtime.movementProfile = selectedProfile.movementProfile;
+        runtime.cameraProfile = moveset.cameraProfile || selectedProfile.cameraProfile;
+        runtime.bodyIkProfile = selectedProfile.bodyIkProfile;
+        runtime.bodyIkCalibration = bodyIkProfile;
+        runtime.moveset = moveset;
+        this.root.dataset.animationGraph = "v2-fixed-60hz";
+        this.root.dataset.animationLayers = runtime.animationGraphV2.layers.join(",");
+        this.performanceScheduler.ticks.heroAnimation += fixedSteps;
         const targetSpeed = moving ? clamp((input?.magnitude || 1) * (sprinting ? 1.18 : 1), 0, 1) : 0;
         const previousSpeed = Number(runtime.motionSpeed || 0);
         runtime.motionSpeed += (targetSpeed - runtime.motionSpeed) * (1 - Math.exp(-dt * 12));
@@ -11661,8 +12212,10 @@
           }
           this.lastRenderSuccessAt = time;
           this.trackFps(time);
-          if (time - this.lastUiAt > 120) {
+          const uiHeartbeatDue = time - this.lastUiHeartbeatAt > 1000;
+          if ((this.uiDirty || uiHeartbeatDue) && time - this.lastUiAt > 120) {
             this.lastUiAt = time;
+            if (uiHeartbeatDue) this.lastUiHeartbeatAt = time;
             this.updateUi(false);
           }
           if (!this.cinematicSequence.active && time - this.lastMinimapAt > 180) {
@@ -11734,10 +12287,65 @@
       };
     }
 
+    updateCompanionSquad(dt, time) {
+      const team = (this.state.characterSelection?.team || CHARACTER_ORDER).slice(0, 4);
+      const activeId = this.state.roster.activeId;
+      const rotation = this.state.player.rotation;
+      const sin = Math.sin(rotation);
+      const cos = Math.cos(rotation);
+      let reserveIndex = 0;
+      this.characterMeshes.forEach((mesh, characterId) => {
+        if (characterId === activeId) return;
+        const teamIndex = team.indexOf(characterId);
+        if (teamIndex < 0) {
+          mesh.visible = false;
+          return;
+        }
+        reserveIndex += 1;
+        const side = reserveIndex % 2 ? -1 : 1;
+        const row = Math.ceil(reserveIndex / 2);
+        const localX = side * (1.75 + row * 0.45);
+        const localZ = 2.1 + row * 1.25;
+        const targetX = this.state.player.x + localX * cos + localZ * sin;
+        const targetZ = this.state.player.z - localX * sin + localZ * cos;
+        const distance = Math.hypot(targetX - mesh.position.x, targetZ - mesh.position.z);
+        const near = distance < 18;
+        const rate = near ? PERFORMANCE_SCHEDULER_PROFILE.nearNpcHz : PERFORMANCE_SCHEDULER_PROFILE.farNpcHz;
+        const runtime = this.characterRuntimes.get(characterId);
+        if (!runtime) {
+          mesh.visible = false;
+          return;
+        }
+        runtime.companionLastUpdateAt ||= 0;
+        if (time - runtime.companionLastUpdateAt < 1000 / rate) return;
+        const stepDt = Math.min(0.1, Math.max(dt, (time - runtime.companionLastUpdateAt) / 1000 || dt));
+        runtime.companionLastUpdateAt = time;
+        this.performanceScheduler.ticks[near ? "nearNpc" : "farNpc"] += 1;
+        mesh.visible = true;
+        const follow = 1 - Math.exp(-stepDt * (distance > 7 ? 9 : 5));
+        mesh.position.x += (targetX - mesh.position.x) * follow;
+        mesh.position.z += (targetZ - mesh.position.z) * follow;
+        mesh.position.y += (this.state.player.y + Number(mesh.userData?.gameplayGroundOffset || 0) - mesh.position.y) * follow;
+        const wantedYaw = distance > 0.25 ? Math.atan2(targetX - mesh.position.x, targetZ - mesh.position.z) : rotation;
+        const yawDelta = Math.atan2(Math.sin(wantedYaw - mesh.rotation.y), Math.cos(wantedYaw - mesh.rotation.y));
+        mesh.rotation.y += yawDelta * (1 - Math.exp(-stepDt * 9));
+        this.updateCharacterLod(mesh, near ? 24 : 58);
+        const motion = distance > 6 ? "run" : distance > 0.45 ? "walk" : "idle";
+        if (runtime?.mixer) {
+          this.playCharacterClip(runtime, motion);
+          runtime.mixer.update(stepDt);
+        } else if (runtime) this.applyProceduralRigMotion(runtime, time, motion, stepDt);
+        runtime.aiState = distance > 7 ? "catch-up" : this.lockedTargetId ? "support-spacing" : "formation";
+      });
+    }
+
     updatePlayer(dt, time) {
+      this.uiDirty = true;
       const input = this.movementInput();
       const player = this.state.player;
       const character = CHARACTERS[this.state.roster.activeId] || CHARACTERS.lyra;
+      const runtimeProfile = this.characterRuntimeProfile(this.state.roster.activeId);
+      const movementProfile = CHARACTER_MOVEMENT_PROFILES[runtimeProfile.movementProfile] || CHARACTER_MOVEMENT_PROFILES.balanced;
       const sprinting = (this.keys.has("ShiftLeft") || this.keys.has("ShiftRight")) && input.active && player.stamina > 0;
       const staminaBonus = Number(this.state.skills.staminaCore || 0) * 10;
       player.maxStamina = 100 + staminaBonus;
@@ -11753,7 +12361,7 @@
         && player.stamina > 0
         && !this.isSwimming
       );
-      const speed = (this.isSwimming ? 3.25 : sprinting ? 8.2 : 5.35) * character.speedScale;
+      const speed = (this.isSwimming ? 3.25 : sprinting ? 8.2 : 5.35) * character.speedScale * movementProfile.speed;
       const forwardX = -Math.sin(this.cameraYaw);
       const forwardZ = -Math.cos(this.cameraYaw);
       const rightX = Math.cos(this.cameraYaw);
@@ -11785,7 +12393,7 @@
           ? Math.atan2(lockedEnemy.position.x - player.x, lockedEnemy.position.z - player.z)
           : Math.atan2(dx, dz);
         const yawDelta = Math.atan2(Math.sin(targetRotation - player.rotation), Math.cos(targetRotation - player.rotation));
-        player.rotation += yawDelta * (this.state.settings.naturalMotion ? 1 - Math.exp(-dt * 13) : 1);
+        player.rotation += yawDelta * (this.state.settings.naturalMotion ? 1 - Math.exp(-dt * movementProfile.turn) : 1);
         this.playerMesh.rotation.y = player.rotation;
       }
       if (input.active && !hasActiveLock && this.state.settings.cameraAutoFollow && performance.now() - this.cameraInputAt > 900) {
@@ -11825,11 +12433,7 @@
       }
 
       this.positionCharacterInWorld(this.playerMesh, player.x, player.y, player.z);
-      this.characterMeshes.forEach((mesh, id) => {
-        if (id === this.state.roster.activeId) return;
-        this.positionCharacterInWorld(mesh, player.x, player.y, player.z);
-        mesh.rotation.y = player.rotation;
-      });
+      this.updateCompanionSquad(dt, time);
       this.updateCharacterAnimation(dt, time, input, sprinting);
       this.root.classList.toggle("is-swimming", this.isSwimming);
       this.root.classList.toggle("is-climbing", this.isClimbing);
@@ -12202,6 +12806,37 @@
       this.weatherField.material.size = mode === "crimson" || mode === "abyss" ? 0.12 : mode === "aurora" || mode === "ocean" ? 0.095 : 0.07;
     }
 
+    acquireProjectileMesh(shape = "orb", color = "#ffffff") {
+      const THREE = this.THREE;
+      const index = this.projectilePool.findIndex((entry) => entry.userData?.poolShape === shape);
+      const mesh = index >= 0 ? this.projectilePool.splice(index, 1)[0] : new THREE.Mesh(
+        shape === "arrow" ? new THREE.ConeGeometry(0.055, 0.72, 8) : new THREE.SphereGeometry(0.105, 10, 8),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending })
+      );
+      mesh.userData.poolShape = shape;
+      mesh.visible = true;
+      mesh.scale.setScalar(1);
+      mesh.rotation.set(0, 0, 0);
+      mesh.material.color.set(color);
+      mesh.material.opacity = 0.95;
+      return mesh;
+    }
+
+    releasePooledEffect(effect) {
+      const mesh = effect?.mesh;
+      if (!mesh || !effect.poolType) return false;
+      mesh.parent?.remove(mesh);
+      mesh.visible = false;
+      mesh.material.opacity = 0;
+      const pool = effect.poolType === "projectile" ? this.projectilePool : effect.poolType === "hit" ? this.hitEffectPool : this.damageNumberPool;
+      if (pool.length < 32) pool.push(mesh);
+      else {
+        mesh.geometry?.dispose?.();
+        mesh.material?.dispose?.();
+      }
+      return true;
+    }
+
     updateEffects(dt) {
       this.effects = this.effects.filter((effect) => {
         effect.life -= dt;
@@ -12220,9 +12855,11 @@
         });
         effect.mesh.rotation.y += dt * Number(effect.spin || 3);
         if (effect.life <= 0) {
-          effect.mesh.parent?.remove(effect.mesh);
-          effect.mesh.geometry?.dispose?.();
-          effect.mesh.material?.dispose?.();
+          if (!this.releasePooledEffect(effect)) {
+            effect.mesh.parent?.remove(effect.mesh);
+            effect.mesh.geometry?.dispose?.();
+            effect.mesh.material?.dispose?.();
+          }
           return false;
         }
         return true;
@@ -12331,22 +12968,28 @@
       const originY = cameraOrigin.y + visualLift;
       if (!Number.isFinite(this.cameraYawTarget)) this.cameraYawTarget = this.cameraYaw;
       if (!Number.isFinite(this.cameraPitchTarget)) this.cameraPitchTarget = this.cameraPitch;
-      const cameraBlend = immediate ? 1 : 1 - Math.exp(-Math.max(0.001, dt) * (this.aimMode ? 18 : 11));
+      const selectedProfile = this.characterRuntimeProfile(this.state.roster.activeId);
+      const moveset = this.activeMoveset(this.state.roster.activeId);
+      const cameraProfile = CHARACTER_CAMERA_PROFILES[moveset.cameraProfile || selectedProfile.cameraProfile] || CHARACTER_CAMERA_PROFILES.medium;
+      const bossTarget = this.lockedTargetId ? this.enemies.get(this.lockedTargetId) : null;
+      const bossDistanceBoost = bossTarget?.userData?.boss ? clamp(Math.hypot(bossTarget.position.x - player.x, bossTarget.position.z - player.z) * 0.12, 0, 3.2) : 0;
+      const cameraBlend = immediate ? 1 : 1 - Math.exp(-Math.max(0.001, dt) * (this.aimMode ? cameraProfile.aimDamping : cameraProfile.damping));
       const yawDelta = Math.atan2(Math.sin(this.cameraYawTarget - this.cameraYaw), Math.cos(this.cameraYawTarget - this.cameraYaw));
       this.cameraYaw += yawDelta * cameraBlend;
       this.cameraPitch += (this.cameraPitchTarget - this.cameraPitch) * cameraBlend;
       const shoulderEnabled = this.state.settings.shoulderCamera && !this.genesisActive && this.currentPanel !== "creator";
-      const activeDistance = this.aimMode && shoulderEnabled ? Math.min(this.cameraDistance, 6.2) : this.cameraDistance;
+      const preferredDistance = cameraProfile.distance + (this.cameraDistance - 10.8) * 0.72 + bossDistanceBoost;
+      const activeDistance = this.aimMode && shoulderEnabled ? cameraProfile.aimDistance : clamp(preferredDistance, 5.2, 18);
       const horizontal = Math.cos(this.cameraPitch) * activeDistance;
       let desired = this.frameScratch.cameraDesired.set(
         cameraOrigin.x + Math.sin(this.cameraYaw) * horizontal,
-        originY + 1.68 + Math.sin(this.cameraPitch) * activeDistance,
+        originY + 1.68 + Math.sin(this.cameraPitch) * activeDistance + (cameraProfile.focusLift - 1.52),
         cameraOrigin.z + Math.cos(this.cameraYaw) * horizontal
       );
-      const focus = this.frameScratch.cameraFocus.set(cameraOrigin.x, originY + 1.52, cameraOrigin.z);
+      const focus = this.frameScratch.cameraFocus.set(cameraOrigin.x, originY + 1.52 + (cameraProfile.focusLift - 1.52), cameraOrigin.z);
       if (shoulderEnabled) {
         const right = this.frameScratch.cameraRight.set(Math.cos(this.cameraYaw), 0, -Math.sin(this.cameraYaw)).normalize();
-        const shoulder = (this.aimMode ? 0.9 : 0.42) * this.cameraShoulderSide;
+        const shoulder = (this.aimMode ? cameraProfile.shoulder : Math.min(0.5, cameraProfile.shoulder * 0.55)) * this.cameraShoulderSide;
         desired.addScaledVector(right, shoulder);
         focus.addScaledVector(right, shoulder * (this.aimMode ? 0.58 : 0.32));
         focus.y += this.aimMode ? 0.16 : 0;
@@ -12408,10 +13051,10 @@
         this.cameraFovTarget = this.cinematicSequence.active
           ? CINEMATIC_CAMERA.verticalFovDeg - 1.6 + Math.sin((this.cinematicSequence.progress || 0) * Math.PI) * 2.2
           : this.activeAnimation === "sprint"
-            ? CINEMATIC_CAMERA.verticalFovDeg + 2.4
+            ? CINEMATIC_CAMERA.verticalFovDeg + 2.4 + cameraProfile.fovOffset
             : this.lockedTargetId
-              ? CINEMATIC_CAMERA.verticalFovDeg + 1.2
-              : CINEMATIC_CAMERA.verticalFovDeg;
+              ? CINEMATIC_CAMERA.verticalFovDeg + 1.2 + cameraProfile.fovOffset
+              : CINEMATIC_CAMERA.verticalFovDeg + cameraProfile.fovOffset;
         this.camera.fov += (this.cameraFovTarget - this.camera.fov) * (1 - Math.pow(0.015, dt));
         this.camera.updateProjectionMatrix();
       }
@@ -12650,18 +13293,16 @@
       const distance = Math.max(0.01, start.distanceTo(end));
       const speed = Number(combatProfile.projectileSpeed || 36) * (kind === "ultimate" ? 1.35 : 1);
       const color = ELEMENTS[element]?.color || "#ffffff";
-      const geometry = combatProfile === WEAPON_COMBAT_PROFILES.bow
-        ? new THREE.ConeGeometry(0.055, 0.72, 8)
-        : new THREE.SphereGeometry(kind === "ultimate" ? 0.22 : 0.105, 10, 8);
-      const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending });
-      const mesh = new THREE.Mesh(geometry, material);
+      const projectileShape = combatProfile === WEAPON_COMBAT_PROFILES.bow ? "arrow" : "orb";
+      const mesh = this.acquireProjectileMesh(projectileShape, color);
+      if (kind === "ultimate" && projectileShape === "orb") mesh.scale.setScalar(2.1);
       mesh.position.copy(start);
-      if (geometry.type === "ConeGeometry") {
+      if (projectileShape === "arrow") {
         mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize());
       }
       this.scene.add(mesh);
       const life = distance / speed + 0.12;
-      this.effects.push({ mesh, life, maxLife: life, grow: 0, opacity: 0.95, spin: 0, projectile: true, start, end, distance, travel: 0, speed });
+      this.effects.push({ mesh, life, maxLife: life, grow: 0, opacity: 0.95, spin: 0, projectile: true, poolType: "projectile", start, end, distance, travel: 0, speed });
       this.spawnMuzzleFlashAndShell(start, combatProfile, color);
     }
 
@@ -13571,6 +14212,7 @@
       this.updateCooldowns();
       this.updateConnectionUi();
       if (force && this.currentPanel) this.renderCurrentPanel();
+      this.uiDirty = false;
     }
 
     updateCooldowns() {
@@ -13720,12 +14362,13 @@
           this.lowFpsWindows = 0;
           this.highFpsWindows = 0;
         }
-        const cooldownElapsed = now - this.lastQualityTransitionAt >= 10000;
-        if (cooldownElapsed && this.lowFpsWindows >= 3 && this.renderScaleTier < RENDER_SCALE_STEPS.length - 1) {
+        const downgradeCooldownElapsed = now - this.lastQualityTransitionAt >= 10000;
+        const upgradeCooldownElapsed = now - this.lastQualityTransitionAt >= 15000;
+        if (downgradeCooldownElapsed && this.lowFpsWindows >= 3 && this.renderScaleTier < RENDER_SCALE_STEPS.length - 1) {
           this.applyAdaptiveQualityTier(this.renderScaleTier + 1);
           this.lowFpsWindows = 0;
           this.lastQualityTransitionAt = now;
-        } else if (cooldownElapsed && this.highFpsWindows >= 10 && this.renderScaleTier > 0) {
+        } else if (upgradeCooldownElapsed && this.highFpsWindows >= 10 && this.renderScaleTier > 0) {
           this.applyAdaptiveQualityTier(this.renderScaleTier - 1);
           this.highFpsWindows = 0;
           this.lastQualityTransitionAt = now;
@@ -13817,8 +14460,10 @@
 
     renderCharactersPanel() {
       const activeId = this.state.roster.activeId;
+      const team = this.state.characterSelection?.team || CHARACTER_ORDER;
       return `
         <div class="har-section har-character-v9-hero"><small>DIGITAL HUMAN CORE · VISUAL V${CHARACTER_VISUAL_VERSION}</small><h3>Character V${CHARACTER_VISUAL_VERSION} · gương mặt, da, mắt, tóc và chuyển động thế hệ mới</h3><p>Nhân vật mặc định vẫn là SkinnedMesh PBR toàn thân. Runtime V${CHARACTER_VISUAL_VERSION} bổ sung driver 52 kênh, viseme, vật liệu da năm lớp, secondary motion và LOD thích ứng; số morph native luôn được báo theo dữ liệu thật của GLB.</p></div>
+        <div class="har-section"><h3>Đội bốn người · đổi tức thì bằng phím 1–4</h3><div class="har-inline-actions">${team.map((characterId, slot) => { const selected = this.characterRuntimeProfile(characterId); return `<button class="har-chip ${characterId === activeId ? "is-active" : ""}" type="button" data-panel-action="switch-character" data-character="${characterId}">${slot + 1} · ${escapeHtml(selected.name)}</button>`; }).join("")}</div><p>Ba nhân vật dự bị chạy cadence thấp, tự giữ đội hình và không reset mục tiêu/combo khi chuyển.</p></div>
         <ul class="har-character-list">${CHARACTER_ORDER.map((id, index) => {
           const profile = CHARACTERS[id];
           const member = this.state.roster.members[id] || {};
@@ -13841,12 +14486,16 @@
         }).join("")}</ul></div>` : ""}
         <div class="har-section"><h3>Character Pipeline</h3><div class="har-character-pipeline">${CHARACTER_PIPELINE.map((item) => `<div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.role)}</span><small>${escapeHtml(item.id === "three" ? `Runtime V${CHARACTER_VISUAL_VERSION}` : item.state)}</small></div>`).join("")}</div></div>
         <div class="har-section"><h3>Nguồn hình học nhân vật</h3><p>Catalog có ${this.characterPipelineManifest.filter((entry) => entry.url.startsWith("./assets/astral-realms/characters/")).length} GLB local có license và provenance, cùng thư viện VALID mở rộng. Chỉ model đang dùng mới được tải từ pipeline; GLB HH và procedural human luôn giữ vai trò fallback, nên máy yếu hoặc mạng chậm vẫn không có khung hình trống.</p>
-          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Creator</button></div>
+          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Select Hub · ${CHARACTER_SELECT_PROFILES.length} nhân vật</button><span class="har-chip">Chỉ tại H-Central</span></div>
         </div>`;
     }
 
     activeAppearanceRecipe() {
       const id = this.state.roster.activeId;
+      if (this.genesisActive && this.characterSelectDraft?.recipe) {
+        this.characterSelectDraft.recipe = normalizeAppearanceRecipe(this.characterSelectDraft.recipe, this.characterSelectDraft.baseCharacterId || id);
+        return this.characterSelectDraft.recipe;
+      }
       this.state.appearance ||= { recipes: {}, savedPresets: [], lastSavedAt: "" };
       this.state.appearance.recipes[id] ||= defaultAppearanceRecipe(id);
       this.state.appearance.recipes[id] = normalizeAppearanceRecipe(this.state.appearance.recipes[id], id);
@@ -14334,6 +14983,10 @@
       this.appearanceHistory = this.appearanceHistory.slice(-30);
       this.appearanceFuture = [];
       this.appearanceDirty = true;
+      if (this.genesisActive && this.characterSelectDraft) {
+        this.characterSelectDraft.dirty = true;
+        return;
+      }
       this.state.appearance.lastSavedAt = nowIso();
       this.saveProgress("Cập nhật ngoại hình");
     }
@@ -14406,9 +15059,11 @@
     resetAppearance() {
       const before = clone(this.activeAppearanceRecipe());
       const id = this.state.roster.activeId;
-      this.state.appearance.recipes[id] = defaultAppearanceRecipe(id);
-      this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
-      if (before.baseModel !== this.state.appearance.recipes[id].baseModel) this.rebuildActiveBuiltInCharacter();
+      const reset = defaultAppearanceRecipe(this.characterSelectDraft?.baseCharacterId || id);
+      if (this.genesisActive && this.characterSelectDraft) this.characterSelectDraft.recipe = reset;
+      else this.state.appearance.recipes[id] = reset;
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), reset, id);
+      if (before.baseModel !== reset.baseModel) this.rebuildActiveBuiltInCharacter({ recipe: reset });
       this.recordAppearanceChange(before);
       this.renderCurrentPanel();
     }
@@ -14418,11 +15073,14 @@
       const previous = this.appearanceHistory.pop();
       if (!previous) return;
       this.appearanceFuture.push(clone(this.activeAppearanceRecipe()));
-      this.state.appearance.recipes[id] = normalizeAppearanceRecipe(previous, id);
-      this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
-      if (this.appearanceFuture.at(-1)?.baseModel !== this.state.appearance.recipes[id].baseModel) this.rebuildActiveBuiltInCharacter();
+      const restored = normalizeAppearanceRecipe(previous, this.characterSelectDraft?.baseCharacterId || id);
+      if (this.genesisActive && this.characterSelectDraft) this.characterSelectDraft.recipe = restored;
+      else this.state.appearance.recipes[id] = restored;
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), restored, id);
+      if (this.appearanceFuture.at(-1)?.baseModel !== restored.baseModel) this.rebuildActiveBuiltInCharacter({ recipe: restored });
       this.appearanceDirty = true;
-      this.saveProgress("Hoàn tác ngoại hình");
+      if (this.genesisActive && this.characterSelectDraft) this.characterSelectDraft.dirty = true;
+      else this.saveProgress("Hoàn tác ngoại hình");
       this.renderCurrentPanel();
     }
 
@@ -14431,11 +15089,14 @@
       const next = this.appearanceFuture.pop();
       if (!next) return;
       this.appearanceHistory.push(clone(this.activeAppearanceRecipe()));
-      this.state.appearance.recipes[id] = normalizeAppearanceRecipe(next, id);
-      this.applyAppearanceToMesh(this.characterMeshes.get(id), this.state.appearance.recipes[id], id);
-      if (this.appearanceHistory.at(-1)?.baseModel !== this.state.appearance.recipes[id].baseModel) this.rebuildActiveBuiltInCharacter();
+      const restored = normalizeAppearanceRecipe(next, this.characterSelectDraft?.baseCharacterId || id);
+      if (this.genesisActive && this.characterSelectDraft) this.characterSelectDraft.recipe = restored;
+      else this.state.appearance.recipes[id] = restored;
+      this.applyAppearanceToMesh(this.characterMeshes.get(id), restored, id);
+      if (this.appearanceHistory.at(-1)?.baseModel !== restored.baseModel) this.rebuildActiveBuiltInCharacter({ recipe: restored });
       this.appearanceDirty = true;
-      this.saveProgress("Làm lại ngoại hình");
+      if (this.genesisActive && this.characterSelectDraft) this.characterSelectDraft.dirty = true;
+      else this.saveProgress("Làm lại ngoại hình");
       this.renderCurrentPanel();
     }
 
@@ -14468,6 +15129,64 @@
       this.renderCurrentPanel();
     }
 
+    characterLabSnapshot() {
+      const mesh = this.playerMesh;
+      const runtime = this.characterRuntimes.get(this.state.roster.activeId);
+      let largestTexture = { name: "Không có", pixels: 0, size: "0×0" };
+      mesh?.traverse?.((object) => {
+        (Array.isArray(object.material) ? object.material : [object.material]).filter(Boolean).forEach((material) => {
+          Object.entries(material).forEach(([key, value]) => {
+            const width = Number(value?.image?.width || value?.source?.data?.width || 0);
+            const height = Number(value?.image?.height || value?.source?.data?.height || 0);
+            if (width * height > largestTexture.pixels) largestTexture = { name: `${object.name || "mesh"}.${key}`, pixels: width * height, size: `${width}×${height}` };
+          });
+        });
+      });
+      let nearestCollider = { name: "Không có", distance: Infinity };
+      this.environmentColliders.forEach((object) => {
+        const position = object?.position;
+        if (!position || !this.camera?.position) return;
+        const distance = Math.hypot(position.x - this.camera.position.x, position.y - this.camera.position.y, position.z - this.camera.position.z);
+        if (distance < nearestCollider.distance) nearestCollider = { name: object.name || object.userData?.assetId || "Collider", distance };
+      });
+      const memory = this.renderer?.info?.memory || {};
+      const estimatedGpuMb = ((Number(memory.geometries || 0) * 0.18) + (Number(memory.textures || 0) * 1.35)).toFixed(1);
+      return {
+        source: runtime?.source || mesh?.userData?.sourceProvider || "fallback",
+        fallbackReason: runtime?.motionQuarantined || this.characterSwap?.error || this.characterPreload?.error || "Không có",
+        fps: this.fps,
+        frameTime: this.fps > 0 ? (1000 / this.fps).toFixed(1) : "—",
+        estimatedGpuMb,
+        weapon: this.root.dataset.characterWeaponAsset || "đang tải",
+        weaponSocket: this.root.dataset.characterWeaponSocket || "fallback",
+        weaponPixels: Number(this.weaponVisibility?.report?.projectedPixels || 0).toFixed(1),
+        footIk: runtime?.ikState?.foot || runtime?.footLock?.contact || "đang dò mặt đất",
+        handIk: runtime?.ikState?.hand || "không khóa",
+        bones: Object.values(runtime?.bones || {}).filter(Boolean).length,
+        animation: runtime?.state || this.activeAnimation || "idle",
+        layers: runtime?.animationGraphV2?.layers || [],
+        lod: mesh?.userData?.modelTier || "unknown",
+        largestTexture,
+        nearestCollider: Number.isFinite(nearestCollider.distance) ? `${nearestCollider.name} · ${nearestCollider.distance.toFixed(1)} m` : "Không có",
+        preload: `${this.characterPreload.status} · ${this.characterPreload.modelId || "none"}`,
+        scheduler: PERFORMANCE_SCHEDULER_PROFILE
+      };
+    }
+
+    renderCharacterLab() {
+      const lab = this.characterLabSnapshot();
+      return `<div class="har-section har-character-lab"><div class="har-character-lab__heading"><div><small>DEBUG CHARACTER LAB · DỮ LIỆU RUNTIME THẬT</small><h3>Character / Weapon / Animation QA</h3></div><span class="har-chip is-active">LIVE</span></div><div class="har-character-runtime-grid">
+        <div><small>Model</small><strong>${escapeHtml(lab.source)}</strong><span>Fallback: ${escapeHtml(lab.fallbackReason)}</span></div>
+        <div><small>Frame</small><strong>${lab.fps} FPS · ${lab.frameTime} ms</strong><span>GPU memory ước tính ${lab.estimatedGpuMb} MB</span></div>
+        <div><small>Weapon</small><strong>${escapeHtml(lab.weapon)}</strong><span>${escapeHtml(lab.weaponSocket)} · ${lab.weaponPixels}px chiếu</span></div>
+        <div><small>IK</small><strong>${escapeHtml(String(lab.footIk))}</strong><span>${escapeHtml(String(lab.handIk))}</span></div>
+        <div><small>Skeleton</small><strong>${lab.bones} bone · ${escapeHtml(lab.animation)}</strong><span>${lab.layers.length} layer Animation Graph V2</span></div>
+        <div><small>LOD / Texture</small><strong>${escapeHtml(lab.lod)} · ${escapeHtml(lab.largestTexture.size)}</strong><span>${escapeHtml(lab.largestTexture.name)}</span></div>
+        <div><small>Camera collider</small><strong>${escapeHtml(lab.nearestCollider)}</strong><span>Sphere bundle 5 tia</span></div>
+        <div><small>Preload</small><strong>${escapeHtml(lab.preload)}</strong><span>Swap ${escapeHtml(this.characterSwap.phase)} · ${this.characterSwap.validatedFrames || 0}/2 frame</span></div>
+      </div><p>Scheduler: hero ${lab.scheduler.heroAnimationHz} Hz · NPC gần ${lab.scheduler.nearNpcHz} Hz · NPC xa ${lab.scheduler.farNpcHz} Hz · mặt ${lab.scheduler.facialHz} Hz · tóc/vải ${lab.scheduler.secondaryMotionHz} Hz · UI ${lab.scheduler.ui}.</p></div>`;
+    }
+
     renderSettingsPanel() {
       const record = this.savedRecord;
       const histories = record?.history || [];
@@ -14495,6 +15214,8 @@
             <label class="har-field">Free-look theo chuột<select data-setting="freeLookCamera"><option value="true">Click canvas · Pointer Lock</option><option value="false">Giữ chuột phải để xoay</option></select></label>
             <label class="har-field">Camera lệch vai<select data-setting="shoulderCamera"><option value="true">Bật · nhấn V để đổi vai</option><option value="false">Camera giữa nhân vật</option></select></label>
             <label class="har-field">Tự theo hướng chạy<select data-setting="cameraAutoFollow"><option value="true">Bật sau 0,9 giây</option><option value="false">Chỉ theo chuột</option></select></label>
+            <label class="har-field">Aim assist<select data-setting="aimAssist"><option value="true">Bật hỗ trợ ngắm</option><option value="false">Tắt hoàn toàn</option></select></label>
+            <label class="har-field">Character Lab<select data-setting="characterLab"><option value="false">Ẩn công cụ QA</option><option value="true">Hiện dữ liệu runtime thật</option></select></label>
             <label class="har-field">Đảo trục dọc<select data-setting="invertCameraY"><option value="false">Bình thường</option><option value="true">Đảo trục Y</option></select></label>
             <label class="har-field">Khoảng cách camera<input type="range" min="5.2" max="18" step="0.2" value="${this.state.settings.cameraDistance}" data-setting="cameraDistance"></label>
             <label class="har-field">Rung camera<input type="range" min="0" max="100" value="${this.state.settings.cameraShake}" data-setting="cameraShake"></label>
@@ -14503,6 +15224,7 @@
           </div>
         </div>
         <div class="har-section"><h3>Điều khiển</h3><p>Click cảnh để bật Free-look · di chuột xoay camera · Esc trả chuột · chuột phải ngắm vai · WASD di chuyển · Shift chạy · Space nhảy · F đánh · Q né · E kỹ năng · R tuyệt kỹ · Tab khóa mục tiêu.</p><p>Camera: ${escapeHtml(this.root.dataset.cameraControl || "drag-fallback")} · va chạm ${escapeHtml(this.root.dataset.cameraCollision || "clear")} · vũ khí ${escapeHtml(this.root.dataset.characterWeaponAsset || "đang tải")}.</p></div>
+        ${this.state.settings.characterLab ? this.renderCharacterLab() : ""}
         <div class="har-section"><h3>Lưu tiến trình</h3><p>${record ? `Local v${record.version} · ${new Date(record.updatedAt).toLocaleString("vi-VN")} · ${this.state.cloud.status}` : "Chưa có bản lưu."}</p>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="manual-save">Lưu checkpoint</button><button class="har-secondary-button" type="button" data-panel-action="sync-cloud">Đồng bộ tài khoản</button></div>
         </div>
@@ -14603,7 +15325,7 @@
         } else if (event.target.matches("[data-setting]")) {
           const key = event.target.dataset.setting;
           let value = event.target.value;
-          if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld", "facialAnimation", "surfaceFx", "microDetail", "naturalMotion", "eyePerformance", "secondaryMotion", "freeLookCamera", "shoulderCamera", "cameraAutoFollow", "invertCameraY", "genesisWeaponPreview"].includes(key)) value = value === "true";
+          if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld", "facialAnimation", "surfaceFx", "microDetail", "naturalMotion", "eyePerformance", "secondaryMotion", "freeLookCamera", "shoulderCamera", "cameraAutoFollow", "aimAssist", "characterLab", "invertCameraY", "genesisWeaponPreview"].includes(key)) value = value === "true";
           if (["volume", "cameraSensitivity", "cameraShake", "weatherDensity", "cameraDistance"].includes(key)) value = Number(value);
           this.state.settings[key] = value;
           if (key === "cameraDistance") this.cameraDistance = clamp(value, 5.2, 18);
@@ -14675,6 +15397,8 @@
       setSelect('[data-setting="freeLookCamera"]', this.state.settings.freeLookCamera);
       setSelect('[data-setting="shoulderCamera"]', this.state.settings.shoulderCamera);
       setSelect('[data-setting="cameraAutoFollow"]', this.state.settings.cameraAutoFollow);
+      setSelect('[data-setting="aimAssist"]', this.state.settings.aimAssist);
+      setSelect('[data-setting="characterLab"]', this.state.settings.characterLab);
       setSelect('[data-setting="invertCameraY"]', this.state.settings.invertCameraY);
       setSelect('[data-setting="reduceEffects"]', this.state.settings.reduceEffects);
     }
@@ -14907,7 +15631,10 @@
       else if (action === "craft") this.craft(data.recipe);
       else if (action === "upgrade-skill") this.upgradeSkill(data.skill);
       else if (action === "switch-character") this.switchCharacter(data.character);
-      else if (action === "open-character-creator") this.openPanel("creator");
+      else if (action === "open-character-creator") {
+        this.closePanel();
+        this.openGenesisCreator();
+      }
       else if (action === "character-preview-motion") {
         const motion = CHARACTER_MOTION_LIBRARY[data.motion] ? data.motion : "idle";
         this.setCharacterAction(motion, ["ultimate", "skill"].includes(motion) ? 1100 : 720, 1);
@@ -15755,7 +16482,25 @@
             class: activeCharacterMesh?.userData?.weapon?.userData?.weaponClass || this.equippedWeaponClass(this.state.roster.activeId),
             visible: Boolean(activeCharacterMesh?.userData?.weapon?.visible),
             socket: activeCharacterMesh?.userData?.weaponAttachment || null
-          }
+          },
+          selection: {
+            confirmedSelectionId: this.state.characterSelection?.confirmedSelectionId || "",
+            pendingSelectionId: this.characterSelectDraft?.selectionId || "",
+            compareCount: this.characterSelectDraft?.compareIds?.length || this.state.characterSelection?.compareIds?.length || 0,
+            ownerScoped: this.state.characterSelection?.ownerId === this.state.player.id,
+            saveSlot: this.state.characterSelection?.saveSlot || "slot1",
+            team: [...(this.state.characterSelection?.team || CHARACTER_ORDER)],
+            activeSlot: this.state.characterSelection?.activeSlot || 0,
+            preload: { ...this.characterPreload },
+            swap: { ...this.characterSwap }
+          },
+          animationGraph: activeCharacterRuntime?.animationGraphV2 || null,
+          moveset: activeCharacterRuntime?.moveset || this.activeMoveset(),
+          scheduler: {
+            profile: this.performanceScheduler.profile,
+            ticks: { ...this.performanceScheduler.ticks }
+          },
+          lab: this.state.settings.characterLab ? this.characterLabSnapshot() : null
         },
         livingWorld: {
           enabled: this.state.settings.livingWorld,
@@ -15863,6 +16608,13 @@
       this.monsterAssetPromises.clear();
       this.weaponAssetCache.clear();
       this.weaponAssetPromises.clear();
+      [...this.projectilePool, ...this.hitEffectPool, ...this.damageNumberPool].forEach((mesh) => {
+        mesh.geometry?.dispose?.();
+        mesh.material?.dispose?.();
+      });
+      this.projectilePool.length = 0;
+      this.hitEffectPool.length = 0;
+      this.damageNumberPool.length = 0;
       this.disposePhotorealAssets();
       this.disposeBuiltInCharacterAssets();
       this.disposeLicensedEnvironmentAssets();
