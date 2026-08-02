@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v375";
+const CACHE = "hh-identity-portal-v377";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
@@ -296,7 +296,7 @@ const RUNTIME_ASSETS = [
   "./english-galaxy.css?v=1",
   "./english-learning-galaxy.css?v=1",
   "./english-voice-coach.css?v=4",
-  "./japanese-learning.css?v=2",
+  "./japanese-learning.css?v=3",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
   "./community-platform-v2.css?v=10",
@@ -390,7 +390,8 @@ const RUNTIME_ASSETS = [
   "./english-galaxy.js?v=1",
   "./english-learning-galaxy.js?v=1",
   "./english-learning.js?v=17",
-  "./japanese-learning.js?v=2",
+  "./japanese-vocabulary-packs.js?v=1",
+  "./japanese-learning.js?v=4",
   "./config.js?v=8",
   "./data/ai-super-platform-modules.json"
 ];
@@ -411,7 +412,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=119",
+  "./performance-loader.js?v=121",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=157"

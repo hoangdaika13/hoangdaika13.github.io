@@ -177,8 +177,8 @@
       scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=1", "english-learning-galaxy.js?v=1", "english-learning.js?v=17"]
     },
     japanese: {
-      styles: ["japanese-learning.css?v=2"],
-      scripts: ["japanese-learning.js?v=2"]
+      styles: ["japanese-learning.css?v=3"],
+      scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-learning.js?v=4"]
     },
     analytics: {
       styles: ["insights-pro.css?v=3"],
