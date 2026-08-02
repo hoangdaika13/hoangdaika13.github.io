@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 require(path.join(root, "japanese-vocabulary-packs.js"));
+require(path.join(root, "japanese-vocabulary-10k.js"));
 require(path.join(root, "japanese-learning.js"));
 
 test("HH Japanese exposes a complete local-first learning workspace", () => {
@@ -16,7 +17,7 @@ test("HH Japanese exposes a complete local-first learning workspace", () => {
   for (const view of ["dictionary", "kanji", "grammar", "reader", "jlpt", "notebook", "conversation", "tools", "progress"]) {
     assert.ok(api.views.some((item) => item.id === view), `missing ${view}`);
   }
-  assert.ok(api.words.length >= 340);
+  assert.equal(api.words.length, 10000);
   assert.ok(api.topics.length >= 15);
   assert.ok(api.kanji.length >= 15);
   assert.ok(api.grammar.length >= 15);
@@ -53,7 +54,7 @@ test("HH Japanese is reachable, lazy-loaded, cached and responsive", () => {
   assert.match(script, /id: "japanese", label: "HH Japanese"/);
   assert.match(script, /route === "\/japanese" \|\| route\.startsWith\("\/japanese\/"\)/);
   assert.match(script, /window\.HHJapanese\?\.mount/);
-  for (const asset of ["japanese-learning.css?v=3", "japanese-vocabulary-packs.js?v=1", "japanese-learning.js?v=4"]) {
+  for (const asset of ["japanese-learning.css?v=3", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-learning.js?v=5"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);
@@ -95,4 +96,16 @@ test("Japanese thematic vocabulary pack is structured and searchable", () => {
   for (const item of pack.words) {
     assert.ok(item.word && item.kana && item.meaning && item.pos && item.level && item.topic);
   }
+});
+
+test("JMdict compact pack brings the offline vocabulary total to exactly ten thousand", () => {
+  const pack = globalThis.HHJapaneseVocabulary10K;
+  const api = globalThis.HHJapanese;
+  assert.equal(pack.words.length, 9640);
+  assert.equal(pack.language, "eng");
+  assert.equal(pack.dictVersion, "3.6.2");
+  assert.equal(api.words.length, 10000);
+  assert.ok(api.topics.includes("JMdict 10K"));
+  assert.ok(api.words.some((item) => item.source === "JMdict 3.6.2" && item.meaningLanguage === "en"));
+  assert.equal(new Set(api.words.map((item) => `${item.word}\u0000${item.kana}`)).size, 10000);
 });

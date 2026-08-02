@@ -178,7 +178,7 @@
     },
     japanese: {
       styles: ["japanese-learning.css?v=3"],
-      scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-learning.js?v=4"]
+      scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-learning.js?v=5"]
     },
     analytics: {
       styles: ["insights-pro.css?v=3"],
