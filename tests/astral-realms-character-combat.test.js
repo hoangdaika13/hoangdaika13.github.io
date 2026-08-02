@@ -150,7 +150,7 @@ test("right-hand sockets calibrate every downloaded hero weapon", () => {
   assert.match(source, /anchor\.parent\?\.getWorldScale/);
   assert.match(source, /parentWorldQuaternion\.invert\(\)\.multiply\(desiredWorldQuaternion\)/);
   assert.match(source, /socket\.calibrated = true/);
-  assert.match(source, /sword: \{ position: \[0, -0\.055, 0\.018\]/);
+  assert.match(source, /sword: \{ position: \[-0\.12, -0\.055, 0\.08\]/);
   assert.match(source, /gun: \{ position: \[0, -0\.035, 0\.028\]/);
   assert.match(source, /unarmed: \{ position: \[0, -0\.018, 0\]/);
   assert.match(source, /syncActiveCharacterDataset\(mesh = this\.playerMesh\)/);

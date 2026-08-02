@@ -80,7 +80,7 @@ test("Character Lab exposes runtime metrics, motion preview and adaptive materia
 test("GLTF dependencies and the V13 bundle are available offline", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const token of ["astral-realms.css?v=71", "astral-realms.js?v=73"]) {
+  for (const token of ["astral-realms.css?v=71", "astral-realms.js?v=81"]) {
     assert.ok(loader.includes(token), `route loader missing ${token}`);
     assert.ok(worker.includes(token), `service worker missing ${token}`);
   }

@@ -1229,6 +1229,12 @@
         volume: 42,
         sound: true,
         cameraSensitivity: 55,
+        freeLookCamera: true,
+        shoulderCamera: true,
+        invertCameraY: false,
+        cameraAutoFollow: true,
+        cameraDistance: 10.8,
+        genesisWeaponPreview: true,
         reduceEffects: root.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true
       },
       stats: {
@@ -1469,6 +1475,13 @@
     state.settings.dynamicResolution = state.settings.dynamicResolution !== false;
     state.settings.weatherDensity = clamp(state.settings.weatherDensity, 0, 100);
     state.settings.cameraShake = clamp(state.settings.cameraShake, 0, 100);
+    state.settings.cameraSensitivity = clamp(state.settings.cameraSensitivity, 10, 100);
+    state.settings.freeLookCamera = state.settings.freeLookCamera !== false;
+    state.settings.shoulderCamera = state.settings.shoulderCamera !== false;
+    state.settings.invertCameraY = state.settings.invertCameraY === true;
+    state.settings.cameraAutoFollow = state.settings.cameraAutoFollow !== false;
+    state.settings.cameraDistance = clamp(Number(state.settings.cameraDistance || 10.8), 5.2, 18);
+    state.settings.genesisWeaponPreview = state.settings.genesisWeaponPreview !== false;
     if (!CHARACTERS[state.roster.activeId]) state.roster.activeId = "lyra";
     const activeLoadoutWeapon = state.loadouts?.[state.roster.activeId]?.weapon;
     if (ITEMS[activeLoadoutWeapon] && state.inventory?.[activeLoadoutWeapon]?.quantity > 0) state.player.weapon = activeLoadoutWeapon;
@@ -1610,6 +1623,9 @@
       this.weaponLibraryStatus = "pending";
       this.weaponLoadSequence = 0;
       this.weaponFxPool = [];
+      this.weaponVisibility = { weapon: null, consecutiveFrames: 0, visibleFrames: 0, failureFrames: 0, validated: false, report: null };
+      this.weaponCalibrationCache = new Map();
+      this.weaponVisibilityScratch = null;
       this.monsterManifest = new Map();
       this.monsterAssetCache = new Map();
       this.monsterAssetPromises = new Map();
@@ -1662,6 +1678,11 @@
       this.dynamicFoliage = [];
       this.dynamicPebbleFields = [];
       this.dynamicNatureScratch = null;
+      this.foliageWindUniform = { value: 0 };
+      this.foliageFrame = 0;
+      this.environmentColliders = [];
+      this.environmentPlacementIndex = new Map();
+      this.environmentQaReport = { grounded: 0, foundations: 0, rejected: 0, overlaps: 0, colliders: 0 };
       this.sunCorona = null;
       this.waterSurfaces = [];
       this.climbables = [];
@@ -1721,7 +1742,14 @@
       this.isClimbing = false;
       this.cameraYaw = 0;
       this.cameraPitch = 0.14;
+      this.cameraYawTarget = 0;
+      this.cameraPitchTarget = 0.14;
       this.cameraDistance = 10.8;
+      this.cameraInputAt = 0;
+      this.pointerLocked = false;
+      this.aimMode = false;
+      this.cameraShoulderSide = 1;
+      this.cameraOccluders = new Map();
       this.cameraShake = 0;
       this.cameraFovTarget = CINEMATIC_CAMERA.verticalFovDeg;
       this.cameraFocusDistance = 8;
@@ -1752,6 +1780,8 @@
       this.photoSettings = { fov: 48, exposure: 1.08, time: 8.2, weather: "auto", hideUi: true };
       this.draggingCamera = false;
       this.pointerStart = null;
+      this.animationAccumulator = 0;
+      this.fixedAnimationStep = 1 / 60;
       this.lockedTargetId = "";
       this.nearby = null;
       this.currentZone = ZONES[0];
@@ -2952,6 +2982,7 @@
           ${["idle", "walk", "run", "strafe", "jump", "dodge", "attack1", "talk"].map((motion) => `<button type="button" class="${this.genesisMotion === motion ? "is-active" : ""}" data-genesis-motion="${motion}">${motion}</button>`).join("")}
         </div>
         <div class="har-genesis-tools">
+          <button type="button" class="${this.state.settings.genesisWeaponPreview ? "is-active" : ""}" data-genesis-action="toggle-weapon">${this.state.settings.genesisWeaponPreview ? "Ẩn vũ khí" : "Xem với trang bị"}</button>
           <button type="button" data-genesis-action="undo" ${this.appearanceHistory.length ? "" : "disabled"}>↶ Hoàn tác</button>
           <button type="button" data-genesis-action="redo" ${this.appearanceFuture.length ? "" : "disabled"}>↷ Làm lại</button>
           <button type="button" data-genesis-action="random">Ngẫu nhiên</button>
@@ -3015,6 +3046,8 @@
       this.appearanceFocus = "body";
       this.cameraYaw = 0;
       this.cameraPitch = 0.28;
+      this.cameraYawTarget = this.cameraYaw;
+      this.cameraPitchTarget = this.cameraPitch;
       this.cameraDistance = 7.8;
       this.root.classList.add("is-genesis");
       const section = this.root.querySelector("[data-har-genesis]");
@@ -3075,6 +3108,7 @@
       this.playerMesh.rotation.set(0, 0, 0);
       this.playerMesh.scale.set(1, 1, 1);
       this.playerMesh.visible = true;
+      if (this.playerMesh.userData?.weapon) this.playerMesh.userData.weapon.visible = this.state.settings.genesisWeaponPreview !== false;
       this.setGenesisModelOpacity(this.playerMesh, 0.015);
       this.setGenesisModelOpacity(this.genesisFallbackModel, 1);
 
@@ -3094,6 +3128,7 @@
     teardownGenesisPreview({ restorePlayer = true } = {}) {
       if (!this.genesisScene && !this.genesisActualModel && !this.genesisFallbackModel) return;
       if (this.genesisActualModel) {
+        if (this.genesisActualModel.userData?.weapon) this.genesisActualModel.userData.weapon.visible = this.genesisActualModel.userData?.modelTier !== "impostor";
         this.restoreGenesisModelOpacity(this.genesisActualModel);
         this.genesisScene?.remove?.(this.genesisActualModel);
         if (restorePlayer && this.genesisOriginalParent) {
@@ -4008,6 +4043,7 @@
       this.characterMeshes.set(id, next);
       this.playerMesh = next;
       this.playerWeapon = weapon;
+      this.resetWeaponVisibilityValidation(weapon, "character-rebuild");
       this.registerCharacterRuntime(next, profile, id, "hero", next.userData.builtInAnimations || []);
       this.applyAppearanceToMesh(next, this.activeAppearanceRecipe(), id);
       this.syncActiveCharacterDataset(next);
@@ -4045,7 +4081,9 @@
       this.genesisCompleting = false;
       this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
       this.cameraPitch = 0.14;
-      this.cameraDistance = 10.8;
+      this.cameraPitchTarget = this.cameraPitch;
+      this.cameraYawTarget = this.cameraYaw;
+      this.cameraDistance = clamp(Number(this.state.settings.cameraDistance || 10.8), 5.2, 18);
       this.updateCamera(true, 0.016);
       this.updateUi(true);
       this.beginRuntimeSession(`${this.state.player.name} đã sẵn sàng · bước vào H-Central.`);
@@ -4178,10 +4216,25 @@
         biomeFog: new THREE.Color(),
         cameraDesired: new THREE.Vector3(),
         cameraFocus: new THREE.Vector3(),
+        cameraSmoothedFocus: new THREE.Vector3(),
         cameraDirection: new THREE.Vector3(),
+        cameraRight: new THREE.Vector3(),
+        cameraProbeOrigin: new THREE.Vector3(),
+        cameraProbeTarget: new THREE.Vector3(),
         cameraTargetFocus: new THREE.Vector3(),
         cameraTargetPosition: new THREE.Vector3(),
         cameraCinematicPosition: new THREE.Vector3()
+      };
+      this.weaponVisibilityScratch = {
+        box: new THREE.Box3(),
+        sphere: new THREE.Sphere(),
+        center: new THREE.Vector3(),
+        size: new THREE.Vector3(),
+        top: new THREE.Vector3(),
+        bottom: new THREE.Vector3(),
+        matrix: new THREE.Matrix4(),
+        frustum: new THREE.Frustum(),
+        hand: new THREE.Vector3()
       };
       if ("physicallyCorrectLights" in this.renderer) this.renderer.physicallyCorrectLights = true;
       this.root.dataset.cameraSensor = `${CINEMATIC_CAMERA.sensorWidthMm}x${CINEMATIC_CAMERA.sensorHeightMm}mm`;
@@ -4436,11 +4489,20 @@
         const source = gltf.scene;
         if (!source) throw new Error(`Weapon GLB không có scene: ${assetId}`);
         const socketNames = ["Grip_R", "Grip_L", "Muzzle", "BladeRoot", "BladeTip"];
-        if (!socketNames.every((name) => source.getObjectByName(name))) {
-          throw new Error(`Weapon socket thiếu: ${assetId}`);
-        }
         source.updateMatrixWorld(true);
         const bounds = new this.THREE.Box3().setFromObject(source, true);
+        const center = bounds.getCenter(new this.THREE.Vector3());
+        const missingSockets = socketNames.filter((name) => !source.getObjectByName(name));
+        missingSockets.forEach((name) => {
+          const socket = new this.THREE.Group();
+          socket.name = name;
+          if (name === "Grip_R") socket.position.set(center.x, bounds.min.y + (bounds.max.y - bounds.min.y) * 0.2, center.z);
+          else if (name === "Grip_L") socket.position.set(center.x, bounds.min.y + (bounds.max.y - bounds.min.y) * 0.42, center.z);
+          else if (name === "Muzzle" || name === "BladeTip") socket.position.set(center.x, bounds.max.y, bounds.min.z);
+          else socket.position.set(center.x, bounds.min.y, center.z);
+          socket.userData.hhDerivedSocket = true;
+          source.add(socket);
+        });
         let triangles = 0;
         source.traverse((object) => {
           if (!object.isMesh) return;
@@ -4448,7 +4510,7 @@
           triangles += geometry?.index ? geometry.index.count / 3 : Number(geometry?.attributes?.position?.count || 0) / 3;
         });
         if (bounds.isEmpty() || triangles < 1) throw new Error(`Weapon mesh rỗng: ${assetId}`);
-        const record = { entry, scene: source, triangles: Math.round(triangles), url };
+        const record = { entry, scene: source, triangles: Math.round(triangles), url, missingSockets };
         this.weaponAssetCache.set(assetId, record);
         return record;
       })().finally(() => this.weaponAssetPromises.delete(assetId));
@@ -4464,6 +4526,12 @@
         object.material = Array.isArray(object.material)
           ? object.material.map((material) => material?.clone?.() || material)
           : object.material?.clone?.() || object.material;
+        object.visible = true;
+        (Array.isArray(object.material) ? object.material : [object.material]).filter(Boolean).forEach((material) => {
+          material.visible = true;
+          if (!Number.isFinite(Number(material.opacity)) || Number(material.opacity) <= 0.08) material.opacity = 1;
+          material.needsUpdate = true;
+        });
         object.castShadow = true;
         object.receiveShadow = false;
         object.frustumCulled = true;
@@ -4484,36 +4552,170 @@
         visual.userData.weaponAssetInstance = true;
         weapon.add(visual);
         visual.updateMatrixWorld(true);
-        const bounds = new this.THREE.Box3().setFromObject(visual, true);
+        let bounds = new this.THREE.Box3().setFromObject(visual, true);
         if (bounds.isEmpty() || !Number.isFinite(bounds.min.x + bounds.max.x)) {
           weapon.remove(visual);
           this.disposeWeaponObject(visual);
           throw new Error(`Weapon bounds không hợp lệ: ${assetId}`);
         }
-        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const fallback = weapon.userData.fallbackVisual;
+        if (fallback) {
+          fallback.updateMatrixWorld(true);
+          const fallbackBounds = new this.THREE.Box3().setFromObject(fallback, true);
+          const sourceSize = bounds.getSize(new this.THREE.Vector3());
+          const fallbackSize = fallbackBounds.getSize(new this.THREE.Vector3());
+          if (sourceSize.z > sourceSize.y * 1.5 && fallbackSize.y > fallbackSize.z * 1.5) {
+            visual.rotation.x += Math.PI / 2;
+            visual.userData.hhAxisNormalized = "-z-to-y";
+            visual.updateMatrixWorld(true);
+            bounds = new this.THREE.Box3().setFromObject(visual, true);
+            bounds.getSize(sourceSize);
+          }
+          const sourceExtent = Math.max(sourceSize.x, sourceSize.y, sourceSize.z);
+          const targetExtent = Math.max(fallbackSize.x, fallbackSize.y, fallbackSize.z);
+          if (sourceExtent > 0.0001 && targetExtent > 0.0001) {
+            const normalizationScale = clamp(targetExtent / sourceExtent, 0.08, 25);
+            visual.scale.multiplyScalar(normalizationScale);
+            visual.userData.hhWeaponNormalizationScale = normalizationScale;
+            visual.updateMatrixWorld(true);
+          }
+          const visualGrip = visual.getObjectByName("Grip_R");
+          const fallbackGrip = fallback.getObjectByName("Grip_R");
+          if (visualGrip && fallbackGrip) {
+            const visualGripWorld = visualGrip.getWorldPosition(new this.THREE.Vector3());
+            const fallbackGripWorld = fallbackGrip.getWorldPosition(new this.THREE.Vector3());
+            const visualGripLocal = weapon.worldToLocal(visualGripWorld.clone());
+            const fallbackGripLocal = weapon.worldToLocal(fallbackGripWorld.clone());
+            visual.position.add(fallbackGripLocal.sub(visualGripLocal));
+            visual.userData.hhGripAligned = true;
+            visual.updateMatrixWorld(true);
+          }
+          bounds = new this.THREE.Box3().setFromObject(visual, true);
+        }
         if (weapon.userData.loadRequestId !== requestId || !weapon.parent) {
           weapon.remove(visual);
           this.disposeWeaponObject(visual);
           return false;
         }
-        const fallback = weapon.userData.fallbackVisual;
-        if (fallback) {
-          weapon.remove(fallback);
-          this.disposeWeaponObject(fallback);
-        }
-        weapon.userData.fallbackVisual = null;
         weapon.userData.assetVisual = visual;
-        weapon.userData.assetReady = true;
+        weapon.userData.assetReady = false;
+        weapon.userData.assetPendingValidation = true;
         weapon.userData.triangles = source.triangles;
         weapon.userData.manifestEntry = source.entry;
+        this.resetWeaponVisibilityValidation(weapon, "asset-loaded");
         this.applyWeaponElementMaterial(weapon, this.state.player.element);
         this.syncActiveCharacterDataset(this.playerMesh);
         return true;
       } catch (error) {
         weapon.userData.assetError = error?.message || String(error);
         weapon.userData.assetReady = false;
+        weapon.userData.assetPendingValidation = false;
+        if (weapon.userData.fallbackVisual) weapon.userData.fallbackVisual.visible = true;
+        this.root.dataset.characterWeaponAsset = "fallback-error";
+        this.root.dataset.characterWeaponError = String(weapon.userData.assetError).replace(/[^a-z0-9._:/ -]/gi, "").slice(0, 120) || "unknown";
+        console.warn(`Astral weapon ${assetId} dùng fallback an toàn:`, error);
         return false;
       }
+    }
+
+    resetWeaponVisibilityValidation(weapon = this.playerWeapon, reason = "reset") {
+      this.weaponVisibility = { weapon, consecutiveFrames: 0, visibleFrames: 0, failureFrames: 0, validated: false, reason, report: null };
+      if (weapon?.userData?.fallbackVisual) weapon.userData.fallbackVisual.visible = true;
+      if (this.root) {
+        this.root.dataset.characterWeaponAsset = weapon?.userData?.assetId ? "validating" : "procedural-fallback";
+        this.root.dataset.characterWeaponVisible = String(Boolean(weapon?.visible));
+      }
+    }
+
+    validateWeaponFrame(time = performance.now()) {
+      const weapon = this.playerWeapon;
+      const visual = weapon?.userData?.assetVisual;
+      const scratch = this.weaponVisibilityScratch;
+      const activeCamera = this.genesisActive && this.genesisCamera ? this.genesisCamera : this.camera;
+      if (!weapon || weapon.visible === false || !scratch || !activeCamera || !this.renderer) return null;
+      if (!visual || !weapon.userData?.assetPendingValidation) {
+        if (weapon.userData?.fallbackVisual) {
+          weapon.userData.fallbackVisual.visible = true;
+          this.root.dataset.characterWeaponVisible = "true";
+          this.root.dataset.characterWeaponAsset = weapon.userData.fallbackVisual.userData?.readabilityGuide && weapon.userData?.assetReady
+            ? "glb-validated-2-frames"
+            : weapon.userData?.assetError
+              ? "fallback-error"
+              : weapon.userData?.assetId
+                ? "fallback-loading"
+                : "procedural-fallback";
+        }
+        return this.weaponVisibility?.report || null;
+      }
+      if (this.weaponVisibility.weapon !== weapon) this.resetWeaponVisibilityValidation(weapon, "weapon-changed");
+      visual.updateMatrixWorld(true);
+      scratch.box.setFromObject(visual, true);
+      scratch.box.getCenter(scratch.center);
+      scratch.box.getSize(scratch.size);
+      scratch.box.getBoundingSphere(scratch.sphere);
+      activeCamera.updateMatrixWorld(true);
+      scratch.matrix.multiplyMatrices(activeCamera.projectionMatrix, activeCamera.matrixWorldInverse);
+      scratch.frustum.setFromProjectionMatrix(scratch.matrix);
+      const cameraDistance = Math.max(0.01, activeCamera.position.distanceTo(scratch.sphere.center));
+      const angularDiameter = 2 * Math.atan(Math.max(0.001, scratch.sphere.radius) / cameraDistance);
+      const projectedPixels = (angularDiameter / this.THREE.MathUtils.degToRad(activeCamera.fov)) * Math.max(1, this.renderer.domElement.clientHeight || 1);
+      let visibleMaterial = false;
+      visual.traverse((object) => {
+        if (!object.isMesh || object.visible === false) return;
+        visibleMaterial ||= (Array.isArray(object.material) ? object.material : [object.material]).filter(Boolean).some((material) => material.visible !== false && Number(material.opacity ?? 1) > 0.08);
+      });
+      const anchor = weapon.parent;
+      if (anchor?.getWorldPosition) anchor.getWorldPosition(scratch.hand);
+      else scratch.hand.copy(scratch.center);
+      const handDistance = scratch.center.distanceTo(scratch.hand);
+      const validBounds = !scratch.box.isEmpty() && Number.isFinite(scratch.size.x + scratch.size.y + scratch.size.z) && scratch.size.length() > 0.04;
+      const inFrustum = validBounds && scratch.frustum.intersectsBox(scratch.box);
+      const usableScale = projectedPixels >= (weapon.userData.weaponClass === "unarmed" ? 2 : 6) && projectedPixels < Math.max(900, this.renderer.domElement.clientHeight * 1.8);
+      const attached = handDistance <= Math.max(4.5, scratch.size.length() * 3.2);
+      const rendered = validBounds && inFrustum && usableScale && visibleMaterial && attached && Number(weapon.userData.triangles || 0) > 0;
+      this.weaponVisibility.visibleFrames += rendered ? 1 : 0;
+      this.weaponVisibility.consecutiveFrames = rendered ? this.weaponVisibility.consecutiveFrames + 1 : 0;
+      this.weaponVisibility.failureFrames += rendered ? 0 : 1;
+      this.weaponVisibility.report = { rendered, validBounds, inFrustum, visibleMaterial, attached, projectedPixels: Math.round(projectedPixels), handDistance: Number(handDistance.toFixed(3)), triangles: Number(weapon.userData.triangles || 0), checkedAt: time };
+      if (this.weaponVisibility.consecutiveFrames >= 2) {
+        const fallback = weapon.userData.fallbackVisual;
+        if (fallback) {
+          let retainedGuide = false;
+          fallback.traverse((node) => {
+            if (!node.isMesh) return;
+            const isGuide = node.name === "WeaponFallbackVisibleEdge";
+            node.visible = isGuide;
+            retainedGuide ||= isGuide;
+          });
+          fallback.userData.readabilityGuide = retainedGuide;
+          if (!retainedGuide) {
+            weapon.remove(fallback);
+            this.disposeWeaponObject(fallback);
+          }
+        }
+        weapon.userData.fallbackVisual = fallback?.userData?.readabilityGuide ? fallback : null;
+        weapon.userData.assetReady = true;
+        weapon.userData.assetPendingValidation = false;
+        this.weaponVisibility.validated = true;
+        this.root.dataset.characterWeaponAsset = "glb-validated-2-frames";
+        this.root.dataset.characterWeaponVisible = "true";
+      } else if (this.weaponVisibility.failureFrames > 120) {
+        visual.visible = false;
+        weapon.userData.assetError = "visibility-validation-failed";
+        weapon.userData.assetPendingValidation = false;
+        if (weapon.userData.fallbackVisual) weapon.userData.fallbackVisual.visible = true;
+        this.root.dataset.characterWeaponAsset = "fallback-validation-error";
+        this.root.dataset.characterWeaponError = `visibility:${[
+          this.weaponVisibility.report?.validBounds ? "bounds-ok" : "bounds-fail",
+          this.weaponVisibility.report?.inFrustum ? "frustum-ok" : "frustum-fail",
+          this.weaponVisibility.report?.visibleMaterial ? "material-ok" : "material-fail",
+          this.weaponVisibility.report?.attached ? "socket-ok" : "socket-fail",
+          `${Number(this.weaponVisibility.report?.projectedPixels || 0)}px`
+        ].join(",")}`;
+      } else {
+        this.root.dataset.characterWeaponAsset = `validating-${this.weaponVisibility.consecutiveFrames}-of-2`;
+      }
+      return this.weaponVisibility.report;
     }
 
     disposeWeaponObject(object) {
@@ -5301,6 +5503,114 @@
       return albedo;
     }
 
+    terrainHeightAt(x, z) {
+      const radius = Math.hypot(x, z);
+      const macro = Math.sin(x * 0.047) * 0.58
+        + Math.cos(z * 0.054) * 0.46
+        + Math.sin((x + z) * 0.025) * 0.72
+        + Math.cos(Math.hypot(x + 32, z - 18) * 0.087) * 0.35;
+      const centralFlatten = clamp((radius - 30) / 28, 0, 1);
+      const edgeRise = clamp((radius - 126) / 48, 0, 1) * 2.8;
+      const centralRise = (1 - centralFlatten) * 0.9;
+      return -0.22 + centralRise + macro * centralFlatten + edgeRise;
+    }
+
+    terrainNormalAt(x, z, target = new this.THREE.Vector3()) {
+      const step = 0.34;
+      const left = this.terrainHeightAt(x - step, z);
+      const right = this.terrainHeightAt(x + step, z);
+      const back = this.terrainHeightAt(x, z - step);
+      const front = this.terrainHeightAt(x, z + step);
+      return target.set(left - right, step * 2, back - front).normalize();
+    }
+
+    enableGpuFoliageWind(object, strength = 0.018) {
+      if (!object || !this.THREE) return false;
+      let enabled = false;
+      object.traverse?.((node) => {
+        if (!node.isMesh) return;
+        (Array.isArray(node.material) ? node.material : [node.material]).filter(Boolean).forEach((material) => {
+          material.userData ||= {};
+          if (material.userData.hhGpuWind) {
+            enabled = true;
+            return;
+          }
+          const previousCompile = material.onBeforeCompile;
+          material.onBeforeCompile = (shader, renderer) => {
+            previousCompile?.(shader, renderer);
+            shader.uniforms.hhWindTime = this.foliageWindUniform;
+            shader.uniforms.hhWindStrength = { value: strength };
+            shader.vertexShader = `uniform float hhWindTime;\nuniform float hhWindStrength;\n${shader.vertexShader}`;
+            shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>", `#include <begin_vertex>\nfloat hhWindWeight = clamp(position.y * 0.22 + 0.35, 0.0, 1.0);\nfloat hhWindPhase = modelMatrix[3].x * 0.071 + modelMatrix[3].z * 0.053;\ntransformed.x += sin(hhWindTime * 1.8 + hhWindPhase + position.y * 0.9) * hhWindStrength * hhWindWeight;\ntransformed.z += cos(hhWindTime * 1.31 + hhWindPhase) * hhWindStrength * 0.45 * hhWindWeight;`);
+          };
+          const previousKey = material.customProgramCacheKey?.bind(material);
+          material.customProgramCacheKey = () => `${previousKey?.() || ""}|hh-gpu-wind-v1`;
+          material.userData.hhGpuWind = true;
+          material.needsUpdate = true;
+          enabled = true;
+        });
+      });
+      object.userData.gpuFoliageWind = enabled;
+      return enabled;
+    }
+
+    registerEnvironmentCollider(object, zoneId, kind = "environment") {
+      if (!object || !this.THREE || !object.parent) return null;
+      object.updateMatrixWorld(true);
+      const box = new this.THREE.Box3().setFromObject(object, true);
+      if (box.isEmpty()) return null;
+      const size = box.getSize(new this.THREE.Vector3());
+      const center = box.getCenter(new this.THREE.Vector3());
+      if (!Number.isFinite(size.x + size.y + size.z) || Math.max(size.x, size.y, size.z) > 80) return null;
+      const geometry = new this.THREE.BoxGeometry(Math.max(0.3, size.x), Math.max(0.35, size.y), Math.max(0.3, size.z));
+      const material = new this.THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
+      const collider = new this.THREE.Mesh(geometry, material);
+      collider.name = `EnvironmentCollider:${zoneId}:${kind}`;
+      // `center` is in world space while streamed zone groups may have their own
+      // transform. Convert it before attaching the lightweight collider so it
+      // remains aligned when a zone is streamed or repositioned.
+      collider.position.copy(object.parent.worldToLocal(center.clone()));
+      collider.userData.hhCameraCollider = true;
+      collider.userData.environmentSource = object;
+      collider.userData.zoneId = zoneId;
+      collider.userData.kind = kind;
+      collider.castShadow = false;
+      collider.receiveShadow = false;
+      object.parent.add(collider);
+      object.userData.environmentCollider = collider;
+      this.environmentColliders.push(collider);
+      this.environmentQaReport.colliders += 1;
+      return collider;
+    }
+
+    clearEnvironmentColliders() {
+      this.environmentColliders.forEach((collider) => {
+        collider?.parent?.remove?.(collider);
+        collider?.geometry?.dispose?.();
+        const materials = Array.isArray(collider?.material) ? collider.material : [collider?.material];
+        materials.filter(Boolean).forEach((material) => material.dispose?.());
+      });
+      this.environmentColliders.length = 0;
+    }
+
+    runEnvironmentPlacementQa() {
+      const report = { grounded: 0, foundations: 0, rejected: Number(this.environmentQaReport.rejected || 0), overlaps: Number(this.environmentQaReport.overlaps || 0), colliders: this.environmentColliders.filter((object) => object?.parent).length, floating: 0 };
+      this.world?.traverse?.((object) => {
+        if (!object.userData?.licensedAsset || !object.userData?.groundQa) return;
+        const qa = object.userData.groundQa;
+        if (Math.abs(Number(qa.error || 0)) <= 0.08) report.grounded += 1;
+        else report.floating += 1;
+        if (qa.foundation) report.foundations += 1;
+      });
+      this.environmentQaReport = report;
+      if (this.root) {
+        this.root.dataset.environmentQa = report.floating ? `warning-${report.floating}` : "grounded";
+        this.root.dataset.environmentColliders = String(report.colliders);
+        this.root.dataset.environmentPlacement = `grounded-${report.grounded}-foundation-${report.foundations}-rejected-${report.rejected}`;
+      }
+      return report;
+    }
+
     createWorld() {
       const THREE = this.THREE;
       // Keep the renderer quality decision scoped to the world build as well.
@@ -5364,15 +5674,7 @@
       for (let index = 0; index < positions.count; index += 1) {
         const x = positions.getX(index);
         const z = positions.getY(index);
-        const radius = Math.hypot(x, z);
-        const macro = Math.sin(x * 0.047) * 0.58
-          + Math.cos(z * 0.054) * 0.46
-          + Math.sin((x + z) * 0.025) * 0.72
-          + Math.cos(Math.hypot(x + 32, z - 18) * 0.087) * 0.35;
-        const centralFlatten = clamp((radius - 30) / 28, 0, 1);
-        const edgeRise = clamp((radius - 126) / 48, 0, 1) * 2.8;
-        const centralRise = (1 - centralFlatten) * 0.9;
-        positions.setZ(index, -0.22 + centralRise + macro * centralFlatten + edgeRise);
+        positions.setZ(index, this.terrainHeightAt(x, z));
       }
       terrainGeometry.computeVertexNormals();
       const scannedTerrain = this.terrainSurfaceTextures?.source === "ambientcg-ground037-cc0";
@@ -5649,6 +5951,7 @@
       grass.userData.windPhase = 0.4;
       grass.userData.windStrength = 0.018;
       grass.userData.baseRotation = grass.rotation.clone();
+      this.enableGpuFoliageWind(grass, grass.userData.windStrength);
       this.dynamicFoliage.push(grass);
       auroraGroup.add(grass);
 
@@ -5701,6 +6004,9 @@
       if (!this.licensedEnvironmentAssets.size) return;
       const THREE = this.THREE;
       const quality = this.state.settings.quality;
+      this.clearEnvironmentColliders();
+      this.environmentPlacementIndex.clear();
+      this.environmentQaReport = { grounded: 0, foundations: 0, rejected: 0, overlaps: 0, colliders: 0 };
       const amountScale = quality === "low"
         ? 0.32
         : quality === "medium"
@@ -5777,12 +6083,15 @@
         const parent = this.streamingGroups.get(zoneId) || this.world;
         const heroAsset = CINEMATIC_ENVIRONMENT_ASSET_IDS.has(assetId);
         const count = Math.max(heroAsset ? 1 : 2, Math.round(requestedCount * amountScale));
+        const accepted = this.environmentPlacementIndex.get(zoneId) || [];
+        this.environmentPlacementIndex.set(zoneId, accepted);
         for (let index = 0; index < count; index += 1) {
           const object = instantiate(source, targetHeight * (0.78 + seeded(index, profileIndex + 4) * 0.5), assetId);
-          const angle = seeded(index, profileIndex + 9) * Math.PI * 2;
+          let angle = seeded(index, profileIndex + 9) * Math.PI * 2;
           const architecture = ["kenneyHouse", "kenneyTower", "modularFort"].includes(assetId);
           const tallFoliage = ["deadTree", "kenneyOak", "kenneyPalm", "free3dTreeA", "free3dTreeB", "free3dTreeC"].includes(assetId);
           const flatAsset = ["kenneyPath", "kenneyRoad", "kenneyBridge", "pineRoots"].includes(assetId);
+          const solidProp = ["boulder", "mossRocks", "pineRoots", "kenneyBridge", "free3dStone"].includes(assetId);
           // The gameplay camera trails roughly 11 units behind the actor. Keep
           // tall authored assets beyond that corridor so trunks/canopies cannot
           // sit between the camera and the character at a zone checkpoint.
@@ -5790,12 +6099,66 @@
             ? Math.max(20, zone.radius * 0.72)
             : tallFoliage
               ? Math.max(22, zone.radius * 0.68)
+              : solidProp
+                ? Math.max(16, zone.radius * 0.48)
               : flatAsset
                 ? 10
                 : 12;
-          const radius = minimumRadius + seeded(index, profileIndex + 13) * Math.max(2, maxRadius - minimumRadius);
-          object.position.set(zone.x + Math.cos(angle) * radius, 1.05, zone.z + Math.sin(angle) * radius);
-          object.rotation.y = seeded(index, profileIndex + 17) * Math.PI * 2;
+          let radius = minimumRadius + seeded(index, profileIndex + 13) * Math.max(2, maxRadius - minimumRadius);
+          const spacing = architecture ? Math.max(4.8, targetHeight * 0.82) : tallFoliage ? 2.4 : flatAsset ? 1.2 : 0.72;
+          let x = 0;
+          let z = 0;
+          let overlap = true;
+          for (let attempt = 0; attempt < 8; attempt += 1) {
+            x = zone.x + Math.cos(angle) * radius;
+            z = zone.z + Math.sin(angle) * radius;
+            overlap = accepted.some((entry) => Math.hypot(entry.x - x, entry.z - z) < entry.spacing + spacing);
+            if (!overlap) break;
+            this.environmentQaReport.overlaps += 1;
+            angle += 0.71 + seeded(index + attempt, profileIndex + 31) * 0.83;
+            radius = clamp(radius + (attempt % 2 ? -1 : 1) * (1.1 + attempt * 0.38), minimumRadius, maxRadius);
+          }
+          if (overlap) {
+            this.environmentQaReport.rejected += 1;
+            continue;
+          }
+          accepted.push({ x, z, spacing, assetId, collidable: architecture || tallFoliage || solidProp });
+          const footprint = architecture ? Math.min(5.2, Math.max(1.6, targetHeight * 0.38)) : 0.42;
+          const samplePoints = architecture
+            ? [[0, 0], [footprint, footprint], [-footprint, footprint], [footprint, -footprint], [-footprint, -footprint], [footprint, 0], [-footprint, 0], [0, footprint], [0, -footprint]]
+            : [[0, 0]];
+          const heights = samplePoints.map(([offsetX, offsetZ]) => this.terrainHeightAt(x + offsetX, z + offsetZ));
+          const centerHeight = heights[0];
+          const minHeight = Math.min(...heights);
+          const maxHeight = Math.max(...heights);
+          const relief = maxHeight - minHeight;
+          const groundHeight = architecture ? heights.reduce((sum, value) => sum + value, 0) / heights.length : centerHeight;
+          object.position.set(x, groundHeight, z);
+          if (architecture) object.rotation.y = Math.atan2(zone.x - x, zone.z - z);
+          else object.rotation.y = seeded(index, profileIndex + 17) * Math.PI * 2;
+          const groundConforming = !architecture && !tallFoliage && !flatAsset;
+          if (groundConforming) {
+            const normal = this.terrainNormalAt(x, z, new THREE.Vector3());
+            const align = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+            const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), object.rotation.y);
+            object.quaternion.copy(align.multiply(yaw));
+          }
+          let foundation = null;
+          if (architecture && relief > 0.38) {
+            const foundationHeight = Math.min(2.4, relief + 0.34);
+            foundation = new THREE.Mesh(
+              new THREE.BoxGeometry(footprint * 1.72, foundationHeight, footprint * 1.72),
+              new THREE.MeshStandardMaterial({ color: 0x4d5560, roughness: 0.92, metalness: 0.04 })
+            );
+            foundation.name = `TerrainFoundation:${assetId}`;
+            foundation.position.y = -foundationHeight * 0.5 + 0.04;
+            foundation.castShadow = quality === "cinematic";
+            foundation.receiveShadow = true;
+            object.add(foundation);
+            this.environmentQaReport.foundations += 1;
+          }
+          object.userData.groundQa = { expectedY: centerHeight, actualY: groundHeight, error: foundation ? 0 : groundHeight - centerHeight, relief, foundation: Boolean(foundation), footprintSamples: heights.length };
+          this.environmentQaReport.grounded += 1;
           object.userData.zoneId = zoneId;
           object.userData.cameraSafeRadius = minimumRadius;
           object.traverse?.((node) => {
@@ -5804,6 +6167,9 @@
             node.receiveShadow = true;
           });
           parent.add(object);
+          if (architecture || tallFoliage || solidProp) {
+            this.registerEnvironmentCollider(object, zoneId, architecture ? "architecture" : tallFoliage ? "trunk" : "solid-prop");
+          }
           if (["shrub", "deadTree", "fern", "grass", "kenneyOak", "kenneyPalm", "kenneyBush", "free3dTreeA", "free3dTreeB", "free3dTreeC", "free3dBush", "free3dFlower", "free3dMushroom"].includes(assetId)) {
             object.userData.dynamicFoliage = true;
             object.userData.windPhase = seeded(index, profileIndex + 23) * Math.PI * 2;
@@ -5817,10 +6183,12 @@
                     ? 0.016
                     : 0.022;
             object.userData.baseRotation = object.rotation.clone();
+            this.enableGpuFoliageWind(object, object.userData.windStrength);
             this.dynamicFoliage.push(object);
           }
         }
       });
+      this.runEnvironmentPlacementQa();
     }
 
     createElementalPuzzles() {
@@ -6115,14 +6483,19 @@
         const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.82 + (index % 3) * 0.16, 2), crown);
         leaves.position.y = height + 0.6;
         tree.add(stem, leaves);
-        tree.position.set(2 + Math.cos(angle) * radius, 1.05, -62 + Math.sin(angle) * radius);
+        const treeX = 2 + Math.cos(angle) * radius;
+        const treeZ = -62 + Math.sin(angle) * radius;
+        const treeGround = this.terrainHeightAt(treeX, treeZ);
+        tree.position.set(treeX, treeGround, treeZ);
         tree.userData.dynamicFoliage = true;
         tree.userData.windPhase = index * 0.67;
         tree.userData.windStrength = 0.02 + (index % 4) * 0.004;
         tree.userData.baseRotation = tree.rotation.clone();
+        tree.userData.groundQa = { expectedY: treeGround, actualY: treeGround, error: 0, relief: 0, foundation: false, footprintSamples: 1 };
+        this.enableGpuFoliageWind(tree, tree.userData.windStrength);
         this.dynamicFoliage.push(tree);
         this.world.add(tree);
-        this.climbables.push({ object: tree, radius: 0.9, top: 1.05 + height + 1.2 });
+        this.climbables.push({ object: tree, radius: 0.9, top: treeGround + height + 1.2 });
       }
       this.createPortal("void", "Cổng Void", 2, -45, "#ac7aff", { checkpoint: "void" });
       this.createPortal("dungeon-entry", "Bí cảnh Hư Không", -12, -69, "#ff67ca", { dungeon: "nexus-depths" });
@@ -6578,14 +6951,20 @@
       });
       const activeWind = BIOME_PROFILES[this.currentZone?.id]?.wind || 0.35;
       const gust = Math.sin(time * 0.0011) * 0.55 + Math.sin(time * 0.0027) * 0.2;
-      this.dynamicFoliage.forEach((object, index) => {
-        if (!object?.rotation || object.visible === false || object.parent?.visible === false) return;
-        const base = object.userData.baseRotation || object.rotation;
-        const phase = object.userData.windPhase || index * 0.47;
-        const strength = (object.userData.windStrength || 0.018) * activeWind;
-        object.rotation.z = base.z + Math.sin(time * 0.0018 + phase) * strength + gust * strength * 0.55;
-        object.rotation.x = base.x + Math.cos(time * 0.00125 + phase) * strength * 0.38;
-      });
+      this.foliageWindUniform.value = time * 0.001 * activeWind;
+      this.foliageFrame = (this.foliageFrame + 1) % 6;
+      const foliageCadence = this.state.settings.quality === "low" ? 3 : this.state.settings.quality === "medium" ? 2 : 1;
+      if (this.foliageFrame % foliageCadence === 0) {
+        this.dynamicFoliage.forEach((object, index) => {
+          if (!object?.rotation || object.visible === false || object.parent?.visible === false || object.userData?.gpuFoliageWind) return;
+          if (this.playerMesh && object.position?.distanceToSquared?.(this.playerMesh.position) > 95 * 95) return;
+          const base = object.userData.baseRotation || object.rotation;
+          const phase = object.userData.windPhase || index * 0.47;
+          const strength = (object.userData.windStrength || 0.018) * activeWind;
+          object.rotation.z = base.z + Math.sin(time * 0.0018 + phase) * strength + gust * strength * 0.55;
+          object.rotation.x = base.x + Math.cos(time * 0.00125 + phase) * strength * 0.38;
+        });
+      }
       if (this.dynamicPebbleFields.length) {
         const { matrix, position, quaternion, scale, euler } = this.dynamicNatureScratch;
         this.dynamicPebbleFields.forEach((field) => {
@@ -9783,6 +10162,7 @@
       if (this.state.roster.activeId === characterId) {
         this.playerMesh = wrapper;
         this.playerWeapon = weapon;
+        this.resetWeaponVisibilityValidation(weapon, "imported-character");
         this.resetGameplayCharacterVisibility("imported-glb");
       }
       if (oldRuntime && oldRuntime !== runtime) this.disposeCharacterObject(oldMesh, oldRuntime);
@@ -9936,24 +10316,31 @@
       const inherited = anchor.parent?.getWorldScale?.(new this.THREE.Vector3()) || new this.THREE.Vector3(fitScale, fitScale, fitScale);
       const inheritedScale = clamp(Math.max(Math.abs(inherited.x), Math.abs(inherited.y), Math.abs(inherited.z)), 0.05, 200);
       const socketPresets = {
-        sword: { position: [0, -0.055, 0.018], rotation: [0, 0, Math.PI], worldScale: 0.78 },
+        sword: { position: [-0.12, -0.055, 0.08], rotation: [0, 0, Math.PI], worldScale: 0.86 },
         gun: { position: [0, -0.035, 0.028], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.72 },
         unarmed: { position: [0, -0.018, 0], rotation: [0, 0, 0], worldScale: 0.82 },
-        greatsword: { position: [0, -0.065, 0.02], rotation: [0, 0, Math.PI], worldScale: 0.92 },
-        dualBlade: { position: [0, -0.045, 0.015], rotation: [0, 0, Math.PI], worldScale: 0.68 },
-        spear: { position: [0, -0.08, 0.025], rotation: [0, 0, Math.PI], worldScale: 0.95 },
-        hammer: { position: [0, -0.07, 0.02], rotation: [0, 0, Math.PI], worldScale: 0.88 },
+        greatsword: { position: [-0.14, -0.065, 0.09], rotation: [0, 0, Math.PI], worldScale: 0.96 },
+        dualBlade: { position: [-0.1, -0.045, 0.07], rotation: [0, 0, Math.PI], worldScale: 0.74 },
+        spear: { position: [-0.12, -0.08, 0.08], rotation: [0, 0, Math.PI], worldScale: 0.98 },
+        hammer: { position: [-0.13, -0.07, 0.08], rotation: [0, 0, Math.PI], worldScale: 0.92 },
         shield: { position: [0.02, -0.02, -0.04], rotation: [0, Math.PI / 2, Math.PI / 2], worldScale: 0.76 },
-        scythe: { position: [0, -0.08, 0.02], rotation: [0, 0, Math.PI], worldScale: 0.92 },
-        bow: { position: [0.015, -0.04, 0.025], rotation: [0, 0, Math.PI], worldScale: 0.83 },
-        staff: { position: [0, -0.055, 0.018], rotation: [0, 0, Math.PI], worldScale: 0.82 },
+        scythe: { position: [-0.12, -0.08, 0.08], rotation: [0, 0, Math.PI], worldScale: 0.96 },
+        bow: { position: [-0.1, -0.04, 0.08], rotation: [0, 0, Math.PI], worldScale: 0.88 },
+        staff: { position: [-0.11, -0.055, 0.08], rotation: [0, 0, Math.PI], worldScale: 0.88 },
         pistol: { position: [0, -0.025, 0.02], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.58 },
         rifle: { position: [0, -0.035, 0.028], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.74 },
         shotgun: { position: [0, -0.04, 0.032], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.78 },
         sniper: { position: [0, -0.045, 0.032], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.8 },
         heavy: { position: [0, -0.055, 0.035], rotation: [-Math.PI / 2, 0, Math.PI], worldScale: 0.86 }
       };
-      const preset = socketPresets[weaponClass] || socketPresets.sword;
+      const basePreset = socketPresets[weaponClass] || socketPresets.sword;
+      const calibrationKey = `${socket.modelId || mesh.userData?.builtInModelId || "custom"}:${weapon.userData?.assetId || weapon.userData?.weaponId || weaponClass}:${hand}`;
+      const preset = this.weaponCalibrationCache.get(calibrationKey) || {
+        position: [...basePreset.position],
+        rotation: [...basePreset.rotation],
+        worldScale: basePreset.worldScale
+      };
+      this.weaponCalibrationCache.set(calibrationKey, preset);
       const parentWorldQuaternion = anchor.parent.getWorldQuaternion(new this.THREE.Quaternion());
       const characterWorldQuaternion = mesh.getWorldQuaternion(new this.THREE.Quaternion());
       const desiredCharacterQuaternion = new this.THREE.Quaternion().setFromEuler(new this.THREE.Euler(...preset.rotation));
@@ -9971,6 +10358,7 @@
         fitScale,
         inheritedScale,
         hand,
+        calibrationKey,
         source: combatProfile.socket === "twoHand"
           ? "two-hand-calibrated"
           : hand === "right"
@@ -10000,6 +10388,72 @@
         this.root.dataset.characterWeaponVisible = String(weapon.visible);
         this.root.dataset.characterWeaponSocket = weapon.userData.socketCalibration.source;
       }
+      return true;
+    }
+
+    solveTwoBoneHandGrip(runtime, side, target, targetQuaternion, weight) {
+      const bones = runtime?.bones || {};
+      const upper = bones[side === "left" ? "leftUpperArm" : "rightUpperArm"];
+      const lower = bones[side === "left" ? "leftForeArm" : "rightForeArm"];
+      const hand = bones[side === "left" ? "leftHand" : "rightHand"];
+      if (!upper || !lower || !hand || !target || weight < 0.01) return false;
+      const THREE = this.THREE;
+      const currentHand = hand.getWorldPosition(new THREE.Vector3());
+      const limitedTarget = target.clone();
+      const displacement = limitedTarget.clone().sub(currentHand);
+      if (displacement.length() > 0.72) limitedTarget.copy(currentHand).add(displacement.setLength(0.72));
+      [lower, upper, lower].forEach((joint) => {
+        runtime.mesh.updateMatrixWorld(true);
+        const jointWorld = joint.getWorldPosition(new THREE.Vector3());
+        const effectorWorld = hand.getWorldPosition(new THREE.Vector3());
+        const from = effectorWorld.sub(jointWorld);
+        const to = limitedTarget.clone().sub(jointWorld);
+        if (from.lengthSq() < 0.000001 || to.lengthSq() < 0.000001) return;
+        from.normalize();
+        to.normalize();
+        const deltaWorld = new THREE.Quaternion().setFromUnitVectors(from, to);
+        const angle = 2 * Math.acos(clamp(deltaWorld.w, -1, 1));
+        const limited = new THREE.Quaternion().slerp(deltaWorld, angle > 0.2 ? 0.2 / angle : 1);
+        const currentWorld = joint.getWorldQuaternion(new THREE.Quaternion());
+        const desiredWorld = limited.multiply(currentWorld);
+        const parentWorld = joint.parent?.getWorldQuaternion?.(new THREE.Quaternion()) || new THREE.Quaternion();
+        joint.quaternion.slerp(parentWorld.invert().multiply(desiredWorld).normalize(), clamp(weight * 0.68, 0, 0.82)).normalize();
+      });
+      if (targetQuaternion && hand.parent?.getWorldQuaternion) {
+        const parentWorld = hand.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+        const desiredLocal = parentWorld.multiply(targetQuaternion).normalize();
+        hand.quaternion.slerp(desiredLocal, clamp(weight * 0.46, 0, 0.58)).normalize();
+      }
+      runtime.mesh.updateMatrixWorld(true);
+      return true;
+    }
+
+    applyWeaponUpperBodyIk(runtime, dt = 0.016) {
+      const weapon = this.playerWeapon;
+      const ik = runtime?.mesh?.userData?.weaponIk;
+      if (!runtime || !weapon || runtime.lodSuspended) return false;
+      const THREE = this.THREE;
+      const ranged = RANGED_WEAPON_CLASSES.has(this.equippedWeaponClass());
+      const targetWeight = ik?.enabled ? 1 : this.aimMode && ranged ? 0.72 : 0;
+      runtime.weaponIkWeight = Number(runtime.weaponIkWeight || 0) + (targetWeight - Number(runtime.weaponIkWeight || 0)) * (1 - Math.exp(-Math.max(0.001, dt) * 14));
+      const weight = runtime.weaponIkWeight;
+      if (weight < 0.01) return false;
+      const grip = weapon.getObjectByName?.(ik?.targetNode || "Grip_L");
+      if (ik?.enabled && grip) {
+        const target = grip.getWorldPosition(new THREE.Vector3());
+        const quaternion = grip.getWorldQuaternion(new THREE.Quaternion());
+        this.solveTwoBoneHandGrip(runtime, ik.support || "left", target, quaternion, weight);
+      }
+      const yawOffset = clamp(Math.atan2(Math.sin(this.cameraYaw - this.state.player.rotation - Math.PI), Math.cos(this.cameraYaw - this.state.player.rotation - Math.PI)), -0.48, 0.48);
+      const pitchOffset = clamp(this.cameraPitch - 0.14, -0.22, 0.34);
+      [runtime.bones?.spine, runtime.bones?.chest, runtime.bones?.head].forEach((bone, index) => {
+        if (!bone) return;
+        const scale = [0.2, 0.34, 0.18][index] * weight;
+        const offset = new THREE.Quaternion().setFromEuler(new THREE.Euler(-pitchOffset * scale, -yawOffset * scale, 0));
+        bone.quaternion.slerp(bone.quaternion.clone().multiply(offset).normalize(), clamp(weight * 0.32, 0, 0.32));
+      });
+      runtime.ikState ||= {};
+      runtime.ikState.hand = ik?.enabled ? "Grip_L locked" : "aim-offset";
       return true;
     }
 
@@ -10085,9 +10539,20 @@
         const width = weaponClass === "greatsword" ? 0.19 : weaponClass === "hammer" ? 0.14 : 0.09;
         const blade = new THREE.Mesh(new THREE.BoxGeometry(width, length, weaponClass === "greatsword" ? 0.24 : 0.18), weaponSurface);
         blade.position.y = length * 0.34;
+        const edgeMaterial = guardMaterial.clone();
+        edgeMaterial.depthTest = false;
+        edgeMaterial.depthWrite = false;
+        if ("emissiveIntensity" in edgeMaterial) edgeMaterial.emissiveIntensity = Math.max(1.1, Number(edgeMaterial.emissiveIntensity || 0));
+        const bladeEdge = new THREE.Mesh(
+          new THREE.BoxGeometry(Math.max(0.018, width * 0.22), length * 0.94, weaponClass === "greatsword" ? 0.255 : 0.195),
+          edgeMaterial
+        );
+        bladeEdge.name = "WeaponFallbackVisibleEdge";
+        bladeEdge.position.set(-width * 0.48, length * 0.34, 0.008);
+        bladeEdge.renderOrder = 25;
         const guard = new THREE.Mesh(new THREE.BoxGeometry(weaponClass === "hammer" ? 0.78 : 0.58, weaponClass === "hammer" ? 0.28 : 0.09, 0.14), guardMaterial);
         guard.position.y = -0.31;
-        fallback.add(blade, guard);
+        fallback.add(blade, bladeEdge, guard);
         const bladeRoot = new THREE.Group();
         bladeRoot.name = "BladeRoot";
         bladeRoot.position.y = 0.08;
@@ -10097,6 +10562,14 @@
         fallback.add(bladeRoot, bladeTip);
         weapon.rotation.z = -0.28;
       }
+      const gripRight = new THREE.Group();
+      gripRight.name = "Grip_R";
+      const gripLeft = new THREE.Group();
+      gripLeft.name = "Grip_L";
+      if (RANGED_WEAPON_CLASSES.has(weaponClass)) gripLeft.position.set(0, 0.04, -0.48);
+      else if (["spear", "staff", "scythe", "greatsword", "hammer"].includes(weaponClass)) gripLeft.position.set(0, 0.42, 0);
+      else gripLeft.position.set(0, 0.2, 0);
+      fallback.add(gripRight, gripLeft);
       if (weapon.userData.assetId) root.setTimeout(() => this.hydratePlayerWeapon(weapon), 0);
       return weapon;
     }
@@ -10117,7 +10590,10 @@
       mesh.userData.weapon = weapon;
       mesh.userData.lodVariants.attachments = [weapon];
       weapon.visible = mesh.userData.modelTier !== "impostor";
-      if (characterId === this.state.roster.activeId) this.playerWeapon = weapon;
+      if (characterId === this.state.roster.activeId) {
+        this.playerWeapon = weapon;
+        this.resetWeaponVisibilityValidation(weapon, "loadout-refresh");
+      }
     }
 
     createActors() {
@@ -10137,6 +10613,7 @@
       });
       this.playerMesh = this.characterMeshes.get(this.state.roster.activeId) || this.characterMeshes.get("lyra");
       this.playerWeapon = this.playerMesh.userData.weapon;
+      this.resetWeaponVisibilityValidation(this.playerWeapon, "actors-created");
       this.syncActiveCharacterDataset(this.playerMesh);
       const activeProfile = CHARACTERS[this.state.roster.activeId] || CHARACTERS.lyra;
       if (!this.state.appearance.creatorCompletedAt) this.state.player.name = activeProfile.name;
@@ -10458,10 +10935,14 @@
         }
         const genesisAction = event.target.closest("[data-genesis-action]")?.dataset.genesisAction;
         if (genesisAction) {
-          if (genesisAction === "rotate-left") this.cameraYaw -= 0.34;
-          else if (genesisAction === "rotate-right") this.cameraYaw += 0.34;
+          if (genesisAction === "rotate-left") this.cameraYaw = this.cameraYawTarget = this.cameraYaw - 0.34;
+          else if (genesisAction === "rotate-right") this.cameraYaw = this.cameraYawTarget = this.cameraYaw + 0.34;
           else if (genesisAction === "toggle-turntable") {
             this.genesisTurntable = !this.genesisTurntable;
+            this.refreshGenesisCreator();
+          } else if (genesisAction === "toggle-weapon") {
+            this.state.settings.genesisWeaponPreview = !this.state.settings.genesisWeaponPreview;
+            if (this.genesisActualModel?.userData?.weapon) this.genesisActualModel.userData.weapon.visible = this.state.settings.genesisWeaponPreview;
             this.refreshGenesisCreator();
           } else if (genesisAction === "auto-fit") {
             this.autoFitCharacter();
@@ -10633,7 +11114,7 @@
         const handled = [
           "KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
           "Space", "KeyF", "KeyE", "KeyR", "KeyQ", "KeyG", "KeyT", "Tab", "Escape",
-          "KeyI", "KeyM", "KeyJ", "KeyK", "KeyP", "KeyC", "KeyO", "Digit1", "Digit2", "Digit3", "Digit4"
+          "KeyI", "KeyM", "KeyJ", "KeyK", "KeyP", "KeyC", "KeyO", "KeyV", "Digit1", "Digit2", "Digit3", "Digit4"
         ];
         if (handled.includes(event.code)) event.preventDefault();
         if (event.repeat && !["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) return;
@@ -10659,6 +11140,12 @@
         if (panels[event.code]) this.openPanel(panels[event.code]);
         if (event.code === "KeyC") this.openPanel("characters");
         if (event.code === "KeyO") this.togglePhotoMode();
+        if (event.code === "KeyV") {
+          this.cameraShoulderSide *= -1;
+          this.cameraInputAt = performance.now();
+          this.root.dataset.cameraShoulder = this.cameraShoulderSide > 0 ? "right" : "left";
+          this.toast(`Camera qua vai ${this.cameraShoulderSide > 0 ? "phải" : "trái"}.`, "success");
+        }
         if (/^Digit[1-4]$/.test(event.code)) this.switchCharacter(CHARACTER_ORDER[Number(event.code.slice(-1)) - 1]);
       });
       this.listen(root, "keyup", (event) => this.keys.delete(event.code));
@@ -10687,7 +11174,33 @@
       });
 
       this.listen(canvas, "contextmenu", (event) => event.preventDefault());
+      const applyCameraDelta = (deltaX, deltaY) => {
+        const sensitivity = clamp(this.state.settings.cameraSensitivity, 10, 100) / 100;
+        const invert = this.state.settings.invertCameraY ? -1 : 1;
+        this.cameraYawTarget -= deltaX * 0.0028 * sensitivity;
+        const minimumPitch = this.genesisActive ? -0.02 : 0.04;
+        const maximumPitch = this.genesisActive ? 0.78 : 0.68;
+        this.cameraPitchTarget = clamp(this.cameraPitchTarget + deltaY * 0.0022 * sensitivity * invert, minimumPitch, maximumPitch);
+        this.cameraInputAt = performance.now();
+        if (this.genesisActive) {
+          this.cameraYaw = this.cameraYawTarget;
+          this.cameraPitch = this.cameraPitchTarget;
+        }
+      };
       this.listen(canvas, "pointerdown", (event) => {
+        if (!this.genesisActive && event.button === 2) this.aimMode = true;
+        const wantsPointerLock = !this.genesisActive
+          && event.pointerType === "mouse"
+          && this.state.settings.freeLookCamera
+          && document.pointerLockElement !== canvas;
+        if (wantsPointerLock && event.button === 0) {
+          const pointerLockRequest = canvas.requestPointerLock?.();
+          pointerLockRequest?.catch?.(() => {
+            this.pointerLocked = false;
+            this.root.dataset.cameraControl = "drag-fallback";
+          });
+          return;
+        }
         if (this.genesisActive || event.button === 2 || event.pointerType === "touch") {
           this.draggingCamera = true;
           this.pointerStart = { x: event.clientX, y: event.clientY };
@@ -10697,24 +11210,37 @@
         }
       });
       this.listen(canvas, "pointermove", (event) => {
+        if (this.pointerLocked && !this.genesisActive && this.state.settings.freeLookCamera) {
+          applyCameraDelta(Number(event.movementX || 0), Number(event.movementY || 0));
+          return;
+        }
         if (!this.draggingCamera || !this.pointerStart) return;
-        const sensitivity = clamp(this.state.settings.cameraSensitivity, 10, 100) / 100;
-        this.cameraYaw -= (event.clientX - this.pointerStart.x) * 0.006 * sensitivity;
-        const minimumPitch = this.genesisActive ? -0.02 : 0.08;
-        const maximumPitch = this.genesisActive ? 0.78 : 0.62;
-        this.cameraPitch = clamp(this.cameraPitch + (event.clientY - this.pointerStart.y) * 0.0035 * sensitivity, minimumPitch, maximumPitch);
+        applyCameraDelta(event.clientX - this.pointerStart.x, event.clientY - this.pointerStart.y);
         this.pointerStart = { x: event.clientX, y: event.clientY };
       });
       const stopCameraDrag = (event) => {
+        if (event.button === 2) this.aimMode = false;
         this.draggingCamera = false;
         this.pointerStart = null;
         try { canvas.releasePointerCapture?.(event.pointerId); } catch {}
       };
       this.listen(canvas, "pointerup", stopCameraDrag);
       this.listen(canvas, "pointercancel", stopCameraDrag);
+      this.listen(document, "pointerlockchange", () => {
+        this.pointerLocked = document.pointerLockElement === canvas;
+        this.root.classList.toggle("is-pointer-locked", this.pointerLocked);
+        this.root.dataset.cameraControl = this.pointerLocked ? "free-look" : "drag-fallback";
+        if (!this.pointerLocked) this.aimMode = false;
+      });
+      this.listen(document, "pointerlockerror", () => {
+        this.pointerLocked = false;
+        this.root.dataset.cameraControl = "drag-fallback";
+        this.toast("Pointer Lock không khả dụng · vẫn có thể giữ chuột phải để xoay camera.");
+      });
       this.listen(canvas, "wheel", (event) => {
         event.preventDefault();
         this.cameraDistance = clamp(this.cameraDistance + Math.sign(event.deltaY) * 1.25, this.genesisActive ? 2.6 : 6.5, this.genesisActive ? 12 : 20);
+        if (!this.genesisActive) this.state.settings.cameraDistance = this.cameraDistance;
       }, { passive: false });
 
       this.bindTouchJoystick();
@@ -10819,6 +11345,16 @@
     updateCharacterAnimation(dt, time, input, sprinting) {
       const mesh = this.playerMesh;
       if (!mesh) return;
+      this.animationAccumulator = Math.min(0.1, Number(this.animationAccumulator || 0) + Math.max(0, dt));
+      let fixedDt = 0;
+      let fixedSteps = 0;
+      while (this.animationAccumulator >= this.fixedAnimationStep && fixedSteps < 4) {
+        this.animationAccumulator -= this.fixedAnimationStep;
+        fixedDt += this.fixedAnimationStep;
+        fixedSteps += 1;
+      }
+      if (!fixedSteps) return;
+      dt = fixedDt;
       const parts = mesh.userData?.parts;
       const moving = Boolean(input?.active);
       const targetAnimation = this.resolveCharacterMotion(input, sprinting, time);
@@ -10880,6 +11416,7 @@
       if (runtime && !runtime.lodSuspended && !useVerifiedRestSolver && !useStaticSafeSolver) this.applyAdditiveAnimationLayers(runtime, time, targetAnimation, dt);
       if (runtime && !runtime.lodSuspended && !useVerifiedRestSolver && !useStaticSafeSolver) this.applyMotionWarping(runtime, time, dt);
       if (runtime && !runtime.lodSuspended && !useStaticSafeSolver) this.applyNaturalHandPose(runtime, targetAnimation, dt);
+      if (runtime && !runtime.lodSuspended) this.applyWeaponUpperBodyIk(runtime, dt);
       const gaitPhase = runtime?.gaitPhase ?? time * 0.002;
       const normalizedGaitPhase = ((gaitPhase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2);
       const phase = Math.sin(gaitPhase);
@@ -11101,11 +11638,13 @@
               direction: this.genesisMotion === "strafe" ? 0.8 : 0
             });
             this.renderGenesisFrame(time, dt);
+            this.validateWeaponFrame(time);
           } else {
             if (this.cinematicSequence.active) this.updateStoryCinematic(dt, time);
             this.updateCamera(false, dt);
             const renderScene = this.cinematicSequence.active && this.cinematicScene ? this.cinematicScene : this.scene;
             this.renderer.render(renderScene, this.camera);
+            if (!this.cinematicSequence.active) this.validateWeaponFrame(time);
             if (this.cinematicSequence.active) this.confirmCinematicSubjectFrame(time);
             const characterReport = this.validateGameplayCharacterFrame(time);
             if (this.pendingStartReveal) {
@@ -11159,8 +11698,10 @@
       this.gamepads[pad.index] = current;
       const rightX = Math.abs(pad.axes[2] || 0) > 0.15 ? pad.axes[2] : 0;
       const rightY = Math.abs(pad.axes[3] || 0) > 0.15 ? pad.axes[3] : 0;
-      this.cameraYaw -= rightX * 0.045;
-      this.cameraPitch = clamp(this.cameraPitch + rightY * 0.025, 0.08, 0.62);
+      this.cameraYawTarget -= rightX * 0.045;
+      const invert = this.state.settings.invertCameraY ? -1 : 1;
+      this.cameraPitchTarget = clamp(this.cameraPitchTarget + rightY * 0.025 * invert, 0.04, 0.68);
+      if (Math.abs(rightX) + Math.abs(rightY) > 0.01) this.cameraInputAt = performance.now();
     }
 
     movementInput() {
@@ -11176,6 +11717,21 @@
         z /= length;
       }
       return { x, z, magnitude, active: length > 0.03 };
+    }
+
+    resolveEnvironmentMovement(nextX, nextZ, currentX, currentZ) {
+      const zone = this.zoneAt(nextX, nextZ);
+      const entries = this.environmentPlacementIndex.get(zone?.id) || [];
+      const blocking = entries.find((entry) => entry.collidable && Math.hypot(nextX - entry.x, nextZ - entry.z) < Math.max(0.8, entry.spacing * 0.46));
+      if (!blocking) return { x: nextX, z: nextZ, blocked: false };
+      const slideXBlocked = Math.hypot(nextX - blocking.x, currentZ - blocking.z) < Math.max(0.8, blocking.spacing * 0.46);
+      const slideZBlocked = Math.hypot(currentX - blocking.x, nextZ - blocking.z) < Math.max(0.8, blocking.spacing * 0.46);
+      return {
+        x: slideXBlocked ? currentX : nextX,
+        z: slideZBlocked ? currentZ : nextZ,
+        blocked: true,
+        assetId: blocking.assetId
+      };
     }
 
     updatePlayer(dt, time) {
@@ -11213,9 +11769,11 @@
       if (input.active) {
         const nextX = clamp(player.x + dx, -WORLD_LIMIT, WORLD_LIMIT);
         const nextZ = clamp(player.z + dz, -WORLD_LIMIT, WORLD_LIMIT);
-        const traveled = Math.hypot(nextX - player.x, nextZ - player.z);
-        player.x = nextX;
-        player.z = nextZ;
+        const resolved = this.resolveEnvironmentMovement(nextX, nextZ, player.x, player.z);
+        const traveled = Math.hypot(resolved.x - player.x, resolved.z - player.z);
+        player.x = resolved.x;
+        player.z = resolved.z;
+        this.root.dataset.environmentCollision = resolved.blocked ? `blocked-${resolved.assetId}` : "clear";
         this.state.stats.distance += traveled;
         const legs = this.playerMesh.userData?.parts;
         this.playerMesh.userData.hasProceduralLegs = Boolean(legs?.leftLeg && legs?.rightLeg);
@@ -11229,6 +11787,11 @@
         const yawDelta = Math.atan2(Math.sin(targetRotation - player.rotation), Math.cos(targetRotation - player.rotation));
         player.rotation += yawDelta * (this.state.settings.naturalMotion ? 1 - Math.exp(-dt * 13) : 1);
         this.playerMesh.rotation.y = player.rotation;
+      }
+      if (input.active && !hasActiveLock && this.state.settings.cameraAutoFollow && performance.now() - this.cameraInputAt > 900) {
+        const followYaw = player.rotation + Math.PI;
+        const followDelta = Math.atan2(Math.sin(followYaw - this.cameraYawTarget), Math.cos(followYaw - this.cameraYawTarget));
+        this.cameraYawTarget += followDelta * (1 - Math.exp(-Math.max(0.001, dt) * 2.6));
       }
 
       if (this.isClimbing) {
@@ -11682,6 +12245,80 @@
       return nearest;
     }
 
+    restoreCameraOccluders() {
+      this.cameraOccluders.forEach((records) => records.forEach(({ material, opacity, transparent, depthWrite }) => {
+        material.opacity = opacity;
+        material.transparent = transparent;
+        material.depthWrite = depthWrite;
+        material.needsUpdate = true;
+      }));
+      this.cameraOccluders.clear();
+    }
+
+    fadeCameraOccluder(object) {
+      if (!object) return;
+      if (!object.isMesh) {
+        object.traverse?.((node) => {
+          if (node.isMesh && !node.userData?.hhCameraCollider) this.fadeCameraOccluder(node);
+        });
+        return;
+      }
+      if (object.userData?.hhCameraCollider) return;
+      if (!object.userData?.hhCameraFadeMaterial) {
+        object.userData ||= {};
+        object.material = Array.isArray(object.material)
+          ? object.material.map((material) => material?.clone?.() || material)
+          : object.material?.clone?.() || object.material;
+        object.userData.hhCameraFadeMaterial = true;
+      }
+      const records = [];
+      (Array.isArray(object.material) ? object.material : [object.material]).filter(Boolean).forEach((material) => {
+        records.push({ material, opacity: material.opacity, transparent: material.transparent, depthWrite: material.depthWrite });
+        material.transparent = true;
+        material.opacity = Math.min(Number(material.opacity ?? 1), 0.22);
+        material.depthWrite = false;
+        material.needsUpdate = true;
+      });
+      if (records.length) this.cameraOccluders.set(object, records);
+    }
+
+    resolveCameraSphereCollision(focus, desired) {
+      const colliders = [...this.environmentColliders, ...this.climbableObjects].filter((object) => object?.parent && object.visible !== false);
+      this.restoreCameraOccluders();
+      if (!colliders.length || !this.THREE) return desired;
+      this.cameraRaycaster ||= new this.THREE.Raycaster();
+      const scratch = this.frameScratch;
+      const baseDirection = scratch.cameraDirection.copy(desired).sub(focus);
+      const wantedDistance = baseDirection.length();
+      if (wantedDistance < 0.1) return desired;
+      baseDirection.normalize();
+      const right = scratch.cameraRight.set(Math.cos(this.cameraYaw), 0, -Math.sin(this.cameraYaw)).normalize();
+      const probes = [[0, 0], [0.22, 0], [-0.22, 0], [0, 0.2], [0, -0.16]];
+      let safeDistance = wantedDistance;
+      let centerHit = null;
+      probes.forEach(([side, lift], index) => {
+        const origin = scratch.cameraProbeOrigin.copy(focus).addScaledVector(right, side);
+        origin.y += lift;
+        const target = scratch.cameraProbeTarget.copy(desired).addScaledVector(right, side);
+        target.y += lift;
+        const direction = target.sub(origin);
+        const distance = direction.length();
+        if (distance < 0.1) return;
+        direction.normalize();
+        this.cameraRaycaster.set(origin, direction);
+        this.cameraRaycaster.near = 0;
+        this.cameraRaycaster.far = distance;
+        const hit = this.cameraRaycaster.intersectObjects(colliders, true)[0];
+        if (!hit) return;
+        safeDistance = Math.min(safeDistance, Math.max(2.15, hit.distance - 0.48));
+        if (index === 0) centerHit = hit;
+      });
+      if (centerHit?.object) this.fadeCameraOccluder(centerHit.object.userData?.environmentSource || centerHit.object);
+      if (safeDistance < wantedDistance) desired.copy(focus).add(baseDirection.multiplyScalar(safeDistance));
+      this.root.dataset.cameraCollision = safeDistance < wantedDistance ? "sphere-bundle-hit" : "clear";
+      return desired;
+    }
+
     updateCamera(immediate = false, dt = 0.016) {
       if (!this.camera || !this.playerMesh) return;
       const player = this.state.player;
@@ -11692,13 +12329,28 @@
         ? 0
         : Number(this.playerMesh.userData?.gameplayGroundOffset ?? this.playerMesh.userData?.gameplayVisualLift ?? 0);
       const originY = cameraOrigin.y + visualLift;
-      const horizontal = Math.cos(this.cameraPitch) * this.cameraDistance;
+      if (!Number.isFinite(this.cameraYawTarget)) this.cameraYawTarget = this.cameraYaw;
+      if (!Number.isFinite(this.cameraPitchTarget)) this.cameraPitchTarget = this.cameraPitch;
+      const cameraBlend = immediate ? 1 : 1 - Math.exp(-Math.max(0.001, dt) * (this.aimMode ? 18 : 11));
+      const yawDelta = Math.atan2(Math.sin(this.cameraYawTarget - this.cameraYaw), Math.cos(this.cameraYawTarget - this.cameraYaw));
+      this.cameraYaw += yawDelta * cameraBlend;
+      this.cameraPitch += (this.cameraPitchTarget - this.cameraPitch) * cameraBlend;
+      const shoulderEnabled = this.state.settings.shoulderCamera && !this.genesisActive && this.currentPanel !== "creator";
+      const activeDistance = this.aimMode && shoulderEnabled ? Math.min(this.cameraDistance, 6.2) : this.cameraDistance;
+      const horizontal = Math.cos(this.cameraPitch) * activeDistance;
       let desired = this.frameScratch.cameraDesired.set(
         cameraOrigin.x + Math.sin(this.cameraYaw) * horizontal,
-        originY + 1.68 + Math.sin(this.cameraPitch) * this.cameraDistance,
+        originY + 1.68 + Math.sin(this.cameraPitch) * activeDistance,
         cameraOrigin.z + Math.cos(this.cameraYaw) * horizontal
       );
       const focus = this.frameScratch.cameraFocus.set(cameraOrigin.x, originY + 1.52, cameraOrigin.z);
+      if (shoulderEnabled) {
+        const right = this.frameScratch.cameraRight.set(Math.cos(this.cameraYaw), 0, -Math.sin(this.cameraYaw)).normalize();
+        const shoulder = (this.aimMode ? 0.9 : 0.42) * this.cameraShoulderSide;
+        desired.addScaledVector(right, shoulder);
+        focus.addScaledVector(right, shoulder * (this.aimMode ? 0.58 : 0.32));
+        focus.y += this.aimMode ? 0.16 : 0;
+      }
       if (this.currentPanel === "creator" || this.genesisActive) {
         const focusOffset = this.genesisActive
           ? ({ head: 2.35, upper: 1.78, body: 1.46, lower: 0.76 }[this.appearanceFocus] ?? 1.46)
@@ -11726,19 +12378,7 @@
         focus.x += Math.sin(cameraTime * 0.29) * 0.0012;
         focus.y += Math.cos(cameraTime * 0.23) * 0.001;
       }
-      if (!this.photoMode && !this.genesisActive && !this.cinematicSequence.active && this.currentPanel !== "creator") {
-        const colliderObjects = this.climbableObjects;
-        if (colliderObjects.length) {
-          this.cameraRaycaster ||= new this.THREE.Raycaster();
-          const direction = this.frameScratch.cameraDirection.copy(desired).sub(focus);
-          const distance = direction.length();
-          direction.normalize();
-          this.cameraRaycaster.set(focus, direction);
-          this.cameraRaycaster.far = distance;
-          const hit = this.cameraRaycaster.intersectObjects(colliderObjects, true)[0];
-          if (hit && hit.distance < distance) desired.copy(focus).add(direction.multiplyScalar(Math.max(2.2, hit.distance - 0.55)));
-        }
-      }
+      if (!this.photoMode && !this.genesisActive && !this.cinematicSequence.active && this.currentPanel !== "creator") desired = this.resolveCameraSphereCollision(focus, desired);
       if (this.cameraShake > 0.001 && !this.state.settings.reduceEffects && !this.cinematicSequence.active) {
         const intensity = this.cameraShake * clamp(this.state.settings.cameraShake, 0, 100) / 100 * 0.08;
         desired.x += (Math.random() - 0.5) * intensity;
@@ -11746,17 +12386,24 @@
         desired.z += (Math.random() - 0.5) * intensity;
         this.cameraShake = Math.max(0, this.cameraShake - dt * 2.8);
       }
+      if (!this.cameraFocusReady || immediate) {
+        this.frameScratch.cameraSmoothedFocus.copy(focus);
+        this.cameraFocusReady = true;
+      } else {
+        this.frameScratch.cameraSmoothedFocus.lerp(focus, 1 - Math.exp(-Math.max(0.001, dt) * 13));
+      }
+      const smoothedFocus = this.frameScratch.cameraSmoothedFocus;
       if (immediate) this.camera.position.copy(desired);
-      else this.camera.position.lerp(desired, 1 - Math.pow(0.001, dt));
+      else this.camera.position.lerp(desired, 1 - Math.exp(-Math.max(0.001, dt) * (this.aimMode ? 18 : 9.5)));
       const locked = !this.cinematicSequence.active && this.lockedTargetId ? this.enemies.get(this.lockedTargetId) : null;
       if (locked?.visible && !locked.userData.defeated && !this.photoMode) {
         const targetFocus = this.frameScratch.cameraTargetFocus.copy(locked.position);
         targetFocus.y += 1.2;
-        focus.lerp(targetFocus, 0.38);
+        smoothedFocus.lerp(targetFocus, 0.38);
       }
-      const focusTargetDistance = this.camera.position.distanceTo(focus);
+      const focusTargetDistance = this.camera.position.distanceTo(smoothedFocus);
       this.cameraFocusDistance += (focusTargetDistance - this.cameraFocusDistance) * (1 - Math.exp(-Math.max(dt, 0.001) * 4.2));
-      this.camera.lookAt(focus);
+      this.camera.lookAt(smoothedFocus);
       if (!this.photoMode) {
         this.cameraFovTarget = this.cinematicSequence.active
           ? CINEMATIC_CAMERA.verticalFovDeg - 1.6 + Math.sin((this.cinematicSequence.progress || 0) * Math.PI) * 2.2
@@ -13028,6 +13675,9 @@
       this.renderScaleTier = normalizedTier;
       this.renderScale = RENDER_SCALE_STEPS[normalizedTier];
       this.root.dataset.adaptiveTier = String(normalizedTier);
+      const degradationOrder = ["volumetric", "reflection", "far-shadow", "far-foliage", "particle", "cloth-hair"];
+      const disabledSystems = degradationOrder.slice(0, Math.min(degradationOrder.length, normalizedTier * 2));
+      this.root.dataset.adaptiveDisabled = disabledSystems.join(",") || "none";
       this.renderer.setPixelRatio(Math.min(2, (root.devicePixelRatio || 1) * this.renderScale));
       if (this.starfield) this.starfield.material.opacity = [0.62, 0.5, 0.38, 0.28][normalizedTier];
       if (this.weatherField) this.weatherField.visible = normalizedTier < 3 || this.currentZone.id !== "central";
@@ -13037,6 +13687,12 @@
           object.material.opacity = object.userData.baseOpacity * [1, 0.78, 0.54, 0.34][normalizedTier];
         });
       });
+      this.waterSurfaces.forEach((surface) => {
+        if (surface.material && "envMapIntensity" in surface.material) surface.material.envMapIntensity = [0.72, 0.52, 0.34, 0.2][normalizedTier];
+      });
+      if (this.sunLight) this.sunLight.castShadow = normalizedTier < 3 && this.state.settings.shadows !== "off";
+      if (this.playerMesh) this.playerMesh.visible = true;
+      if (this.playerWeapon) this.playerWeapon.visible = true;
       this.lastStreamingCell = "";
       this.updateWorldStreaming({ force: true });
     }
@@ -13649,6 +14305,7 @@
       });
       this.playerMesh = this.characterMeshes.get(this.state.roster.activeId) || this.characterMeshes.get("lyra");
       this.playerWeapon = this.playerMesh?.userData.weapon || null;
+      this.resetWeaponVisibilityValidation(this.playerWeapon, "material-refresh");
       this.toast(`Đã áp dụng phong cách ${this.state.settings.renderStyle === "anime" ? "Anime Toon" : this.state.settings.renderStyle === "cinematic" ? "Cinematic PBR" : "Realistic PBR"}.`, "success");
     }
 
@@ -13835,12 +14492,17 @@
             <label class="har-field">Dynamic resolution<select data-setting="dynamicResolution"><option value="true">Bật theo FPS</option><option value="false">Khóa độ phân giải</option></select></label>
             <label class="har-field">Âm lượng<input type="range" min="0" max="100" value="${this.state.settings.volume}" data-setting="volume"></label>
             <label class="har-field">Độ nhạy camera<input type="range" min="10" max="100" value="${this.state.settings.cameraSensitivity}" data-setting="cameraSensitivity"></label>
+            <label class="har-field">Free-look theo chuột<select data-setting="freeLookCamera"><option value="true">Click canvas · Pointer Lock</option><option value="false">Giữ chuột phải để xoay</option></select></label>
+            <label class="har-field">Camera lệch vai<select data-setting="shoulderCamera"><option value="true">Bật · nhấn V để đổi vai</option><option value="false">Camera giữa nhân vật</option></select></label>
+            <label class="har-field">Tự theo hướng chạy<select data-setting="cameraAutoFollow"><option value="true">Bật sau 0,9 giây</option><option value="false">Chỉ theo chuột</option></select></label>
+            <label class="har-field">Đảo trục dọc<select data-setting="invertCameraY"><option value="false">Bình thường</option><option value="true">Đảo trục Y</option></select></label>
+            <label class="har-field">Khoảng cách camera<input type="range" min="5.2" max="18" step="0.2" value="${this.state.settings.cameraDistance}" data-setting="cameraDistance"></label>
             <label class="har-field">Rung camera<input type="range" min="0" max="100" value="${this.state.settings.cameraShake}" data-setting="cameraShake"></label>
             <label class="har-field">Mật độ thời tiết<input type="range" min="0" max="100" value="${this.state.settings.weatherDensity}" data-setting="weatherDensity"></label>
             <label class="har-field">Hiệu ứng<select data-setting="reduceEffects"><option value="false">Đầy đủ</option><option value="true">Giảm chuyển động</option></select></label>
           </div>
         </div>
-        <div class="har-section"><h3>Điều khiển</h3><p>WASD di chuyển · Shift chạy · Space nhảy/lượn · F đánh · Q né · E kỹ năng · R tuyệt kỹ · G/T tương tác · Tab khóa mục tiêu · chuột phải xoay camera.</p></div>
+        <div class="har-section"><h3>Điều khiển</h3><p>Click cảnh để bật Free-look · di chuột xoay camera · Esc trả chuột · chuột phải ngắm vai · WASD di chuyển · Shift chạy · Space nhảy · F đánh · Q né · E kỹ năng · R tuyệt kỹ · Tab khóa mục tiêu.</p><p>Camera: ${escapeHtml(this.root.dataset.cameraControl || "drag-fallback")} · va chạm ${escapeHtml(this.root.dataset.cameraCollision || "clear")} · vũ khí ${escapeHtml(this.root.dataset.characterWeaponAsset || "đang tải")}.</p></div>
         <div class="har-section"><h3>Lưu tiến trình</h3><p>${record ? `Local v${record.version} · ${new Date(record.updatedAt).toLocaleString("vi-VN")} · ${this.state.cloud.status}` : "Chưa có bản lưu."}</p>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="manual-save">Lưu checkpoint</button><button class="har-secondary-button" type="button" data-panel-action="sync-cloud">Đồng bộ tài khoản</button></div>
         </div>
@@ -13941,9 +14603,11 @@
         } else if (event.target.matches("[data-setting]")) {
           const key = event.target.dataset.setting;
           let value = event.target.value;
-          if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld", "facialAnimation", "surfaceFx", "microDetail", "naturalMotion", "eyePerformance", "secondaryMotion"].includes(key)) value = value === "true";
-          if (["volume", "cameraSensitivity", "cameraShake", "weatherDensity"].includes(key)) value = Number(value);
+          if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld", "facialAnimation", "surfaceFx", "microDetail", "naturalMotion", "eyePerformance", "secondaryMotion", "freeLookCamera", "shoulderCamera", "cameraAutoFollow", "invertCameraY", "genesisWeaponPreview"].includes(key)) value = value === "true";
+          if (["volume", "cameraSensitivity", "cameraShake", "weatherDensity", "cameraDistance"].includes(key)) value = Number(value);
           this.state.settings[key] = value;
+          if (key === "cameraDistance") this.cameraDistance = clamp(value, 5.2, 18);
+          if (key === "freeLookCamera" && value === false && document.pointerLockElement === this.renderer?.domElement) document.exitPointerLock?.();
           if (key === "quality") {
             this.root.dataset.quality = value;
             if (this.renderer.shadowMap) this.renderer.shadowMap.enabled = value !== "low";
@@ -14008,6 +14672,10 @@
       setSelect('[data-setting="vfxLevel"]', this.state.settings.vfxLevel);
       setSelect('[data-setting="livingWorld"]', this.state.settings.livingWorld);
       setSelect('[data-setting="dynamicResolution"]', this.state.settings.dynamicResolution);
+      setSelect('[data-setting="freeLookCamera"]', this.state.settings.freeLookCamera);
+      setSelect('[data-setting="shoulderCamera"]', this.state.settings.shoulderCamera);
+      setSelect('[data-setting="cameraAutoFollow"]', this.state.settings.cameraAutoFollow);
+      setSelect('[data-setting="invertCameraY"]', this.state.settings.invertCameraY);
       setSelect('[data-setting="reduceEffects"]', this.state.settings.reduceEffects);
     }
 
@@ -15180,6 +15848,8 @@
       clearInterval(this.autosaveTimer);
       clearTimeout(this.toastTimer);
       this.stopFacePilot();
+      this.restoreCameraOccluders();
+      this.clearEnvironmentColliders();
       this.characterRuntimes.forEach((runtime) => runtime.mixer?.stopAllAction?.());
       this.unbindSocket();
       this.cleanup.splice(0).forEach((dispose) => {

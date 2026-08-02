@@ -37,7 +37,7 @@ test("grounding and camera no longer lift VALID humans or frame gameplay top-dow
   assert.match(source, /this\.cameraPitch = 0\.14/);
   assert.match(source, /originY \+ 1\.68 \+ Math\.sin\(this\.cameraPitch\)/);
   assert.match(source, /originY \+ 1\.52/);
-  assert.match(source, /0\.08, 0\.62/);
+  assert.match(source, /0\.04, 0\.68/);
 });
 
 test("opening is a six-shot 32-second realtime sequence using the created actor", () => {
