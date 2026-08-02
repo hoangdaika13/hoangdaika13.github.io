@@ -8,6 +8,7 @@ const YOUTUBE_SEARCH_ENDPOINT = "https://www.googleapis.com/youtube/v3/search";
 const YOUTUBE_VIDEOS_ENDPOINT = "https://www.googleapis.com/youtube/v3/videos";
 const YOUTUBE_CHANNELS_ENDPOINT = "https://www.googleapis.com/youtube/v3/channels";
 const YOUTUBE_PLAYLIST_ITEMS_ENDPOINT = "https://www.googleapis.com/youtube/v3/playlistItems";
+const JISHO_ENDPOINT = "https://jisho.org/api/v1/search/words";
 
 async function readJson(url, options = {}) {
   const controller = new AbortController();
@@ -43,6 +44,42 @@ async function readJson(url, options = {}) {
   }
 }
 
+function boundedJapaneseList(value, limit = 12, itemLimit = 180) {
+  return (Array.isArray(value) ? value : []).map((item) => clean(item, itemLimit)).filter(Boolean).slice(0, limit);
+}
+
+function normalizeJapaneseEntry(entry, index) {
+  const japanese = Array.isArray(entry?.japanese) ? entry.japanese : [];
+  const primary = japanese.find((item) => item?.word) || japanese[0] || {};
+  const senses = (Array.isArray(entry?.senses) ? entry.senses : []).slice(0, 5);
+  const word = clean(primary.word || entry?.slug || primary.reading, 80);
+  const reading = clean(primary.reading, 80);
+  if (!word && !reading) return null;
+  return {
+    id: `jisho-${index + 1}`,
+    word: word || reading,
+    reading,
+    definitions: boundedJapaneseList(senses.flatMap((sense) => sense?.english_definitions || []), 12, 120),
+    partsOfSpeech: boundedJapaneseList(senses.flatMap((sense) => sense?.parts_of_speech || []), 8, 120),
+    jlpt: boundedJapaneseList(entry?.jlpt, 5, 20).map((item) => item.replace(/^jlpt-/i, "").toUpperCase()),
+    common: entry?.is_common === true,
+    source: "JMdict via Jisho"
+  };
+}
+
+async function japaneseSearch(query) {
+  const params = new URLSearchParams({ keyword: query });
+  const data = await readJson(`${JISHO_ENDPOINT}?${params}`);
+  return {
+    ok: true,
+    provider: "japanese",
+    query,
+    items: (Array.isArray(data?.data) ? data.data : []).slice(0, 12).map(normalizeJapaneseEntry).filter(Boolean),
+    source: "JMdict via Jisho",
+    note: "Nghĩa trực tuyến hiện do nguồn cung cấp bằng tiếng Anh."
+  };
+}
+
 function vertexSearchConfig() {
   const projectId = String(process.env.VERTEX_SEARCH_PROJECT_ID || "").trim();
   const appId = String(process.env.VERTEX_SEARCH_APP_ID || "").trim();
@@ -67,6 +104,7 @@ function configuredServices() {
     googleProvider: vertex.configured ? "vertex-ai-search" : programmableSearch ? "programmable-search" : freeCse ? "programmable-search-element" : "none",
     googleFreeCse: freeCse,
     youtube: Boolean(String(process.env.YOUTUBE_API_KEY || "").trim()),
+    japanese: true,
     gemini: geminiPool || Boolean(String(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "").trim()),
     geminiKeySource: process.env.GEMINI_API_KEY
       ? "gemini"
@@ -79,6 +117,7 @@ function configuredServices() {
 }
 
 function serverProviderConfigured(provider) {
+  if (provider === "japanese") return true;
   if (provider === "youtube") return Boolean(String(process.env.YOUTUBE_API_KEY || "").trim());
   const vertex = vertexSearchConfig();
   return vertex.configured || Boolean(String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim());
@@ -419,8 +458,8 @@ module.exports = async function handler(req, res) {
     const provider = clean(req.query.provider, 30).toLowerCase();
     const action = clean(req.query.action || "search", 40).toLowerCase();
     const query = clean(req.query.q, 180);
-    if (!new Set(["google", "youtube"]).has(provider)) return res.status(404).json({ error: "Dịch vụ tìm kiếm không tồn tại." });
-    if (provider === "google" && action !== "search") return res.status(400).json({ error: "Google Search chỉ hỗ trợ action=search." });
+    if (!new Set(["google", "youtube", "japanese"]).has(provider)) return res.status(404).json({ error: "Dịch vụ tìm kiếm không tồn tại." });
+    if ((provider === "google" || provider === "japanese") && action !== "search") return res.status(400).json({ error: `${provider === "japanese" ? "Japanese Dictionary" : "Google Search"} chỉ hỗ trợ action=search.` });
     if (action === "search" && !query) return res.status(400).json({ error: "Hãy nhập nội dung cần tìm." });
     if (!serverProviderConfigured(provider)) {
       return res.status(503).json({
@@ -428,6 +467,12 @@ module.exports = async function handler(req, res) {
         code: "SEARCH_NOT_CONFIGURED", provider,
         required: provider === "google" ? ["GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID"] : ["YOUTUBE_API_KEY"]
       });
+    }
+
+    if (provider === "japanese") {
+      const result = await japaneseSearch(query);
+      res.setHeader("Cache-Control", "public, max-age=60, s-maxage=3600, stale-while-revalidate=86400");
+      return res.status(200).json(result);
     }
 
     gateway = await beginGateway(req, res, { provider, action });
@@ -453,3 +498,5 @@ module.exports = async function handler(req, res) {
     });
   }
 };
+
+module.exports.__test = Object.freeze({ normalizeJapaneseEntry, japaneseSearch });

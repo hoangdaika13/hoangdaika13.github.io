@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const handler = require("../api/japanese/dictionary");
+const handler = require("../api/search/[provider]");
 
 function responseRecorder() {
   return {
@@ -16,7 +16,7 @@ function responseRecorder() {
 }
 
 test("Japanese dictionary proxy exposes only bounded learning fields", () => {
-  const entry = handler.__test.normalizeEntry({
+  const entry = handler.__test.normalizeJapaneseEntry({
     slug: "学ぶ",
     is_common: true,
     jlpt: ["jlpt-n3"],
@@ -45,14 +45,14 @@ test("Japanese dictionary endpoint validates query and maps provider response", 
   });
   try {
     const res = responseRecorder();
-    await handler({ method: "GET", headers: {}, query: { q: "日本語" } }, res);
+    await handler({ method: "GET", headers: {}, query: { provider: "japanese", q: "日本語" } }, res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.ok, true);
     assert.equal(res.body.items[0].word, "日本語");
     assert.match(res.headers["Cache-Control"], /s-maxage=3600/);
 
     const invalid = responseRecorder();
-    await handler({ method: "GET", headers: {}, query: { q: "" } }, invalid);
+    await handler({ method: "GET", headers: {}, query: { provider: "japanese", q: "" } }, invalid);
     assert.equal(invalid.statusCode, 400);
   } finally {
     global.fetch = previousFetch;

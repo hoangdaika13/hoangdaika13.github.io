@@ -347,7 +347,7 @@
   async function lookupDictionaryOnline(query) {
     const status=instance.host.querySelector("[data-hhj-online-status]"); const grid=instance.host.querySelector("[data-hhj-online-words]");
     if(!status||!grid)return; status.textContent="Đang tra kho JMdict…";grid.innerHTML="";
-    const response=await fetch(`/api/japanese/dictionary?q=${encodeURIComponent(String(query||"").slice(0,80))}`,{headers:{Accept:"application/json"}});
+    const response=await fetch(`/api/search/japanese?q=${encodeURIComponent(String(query||"").slice(0,80))}`,{headers:{Accept:"application/json"}});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||`Dictionary API HTTP ${response.status}`);
     instance.onlineResults=Array.isArray(data.items)?data.items.slice(0,12):[];

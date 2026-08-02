@@ -74,7 +74,7 @@ test("Japanese learning labels unsupported browser features honestly", () => {
   assert.match(source, /hh\.japanese\.state\.v1/);
   assert.match(source, /KanjiAPI\.dev/);
   assert.match(source, /JMdict\/KANJIDIC/);
-  assert.match(source, /\/api\/japanese\/dictionary/);
+  assert.match(source, /\/api\/search\/japanese/);
   assert.match(source, /data-hhj-dictation/);
   assert.match(source, /data-hhj-daily-goal/);
   assert.match(source, /customWords/);
