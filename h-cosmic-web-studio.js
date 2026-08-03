@@ -63,6 +63,7 @@
   let lastEventId = 0;
   let bridgeState = "offline";
   let activeSection = "source";
+  let activeMode = "web";
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -236,16 +237,18 @@
     return `<section class="hc-studio" data-hc-studio>
       <header class="hc-command">
         <div class="hc-brand"><span>H</span><div><small>H COSMIC STUDIO · 2026.08.03-r26</small><h2>DaVinci Batch Production</h2><p>Mission Control trên web cho batch ảnh → video, timeline, effects, RapidGrade, queue, resume và FFprobe.</p></div></div>
-        <div class="hc-top-actions"><button type="button" data-hc-connect>Kết nối Resolve</button><a class="hc-download" href="${ZIP_URL}" download>Tải Portable ZIP · 70.6 MB</a></div>
+        <div class="hc-top-actions"><div class="hc-mode-switch"><button type="button" data-hc-mode="web" class="is-active">Chạy thật trên Web</button><button type="button" data-hc-mode="resolve">DaVinci Bridge</button></div><button type="button" data-hc-connect>Kết nối Resolve</button><a class="hc-download" href="${ZIP_URL}" download>Tải Portable ZIP · 70.6 MB</a></div>
       </header>
-      <section class="hc-bridge" data-hc-bridge data-state="offline">
+      <section class="hc-web-runtime" data-hc-web-only><div><i></i><span>WEB ENGINE</span><strong>Canvas + MediaRecorder + Web Audio</strong></div><div><span>NGUỒN</span><strong>Ảnh · nhạc · overlay thật</strong></div><div><span>ĐẦU RA</span><strong>MP4 nếu trình duyệt hỗ trợ · WebM tương thích</strong></div><div><span>DỮ LIỆU</span><strong>Local-first · IndexedDB</strong></div></section>
+      <section class="hc-bridge" data-hc-bridge data-hc-resolve-only data-state="offline" hidden>
         <div><i></i><span>WEBSITE BRIDGE</span><strong data-hc-bridge-label>Đang tìm bridge trên máy…</strong></div>
         <div><span>RESOLVE</span><strong data-hc-resolve>Chưa kết nối</strong></div>
         <div><span>TÁC VỤ</span><strong data-hc-task>Sẵn sàng</strong></div>
         <div><span>TIẾN TRÌNH</span><strong data-hc-progress-text>0%</strong></div>
         <progress data-hc-progress max="100" value="0"></progress>
       </section>
-      <div class="hc-workspace">
+      <section class="hc-browser-workspace" data-hc-web-engine><header><div><small>H COSMIC WEB ENGINE</small><h3>Sản xuất batch trực tiếp trong trình duyệt</h3><p>Chọn folder ảnh, nhạc và hiệu ứng; tạo hàng đợi rồi render từng video thật. Không cần Python, Resolve hoặc bridge.</p></div><span>Giữ tab hoạt động trong lúc render</span></header><div data-hc-browser-engine></div></section>
+      <div class="hc-workspace" data-hc-resolve-only hidden>
         <nav class="hc-nav">${[
           ["source", "01", "Nguồn"], ["timeline", "02", "Timeline"], ["effects", "03", "Hiệu ứng"],
           ["grade", "04", "Color & Audio"], ["render", "05", "Render"], ["enterprise", "06", "Enterprise"], ["blueprint", "07", "Blueprint"]
@@ -270,6 +273,27 @@
     activeSection = SECTION_IDS.includes(id) ? id : "source";
     root?.querySelectorAll("[data-hc-nav]").forEach((node) => node.classList.toggle("is-active", node.dataset.hcNav === activeSection));
     root?.querySelectorAll("[data-hc-section]").forEach((node) => { node.hidden = node.dataset.hcSection !== activeSection; });
+  }
+  async function setMode(mode) {
+    activeMode = mode === "resolve" ? "resolve" : "web";
+    if (!root) return;
+    root.querySelectorAll("[data-hc-mode]").forEach((button) => button.classList.toggle("is-active", button.dataset.hcMode === activeMode));
+    root.querySelectorAll("[data-hc-resolve-only]").forEach((node) => { node.hidden = activeMode !== "resolve"; });
+    root.querySelectorAll("[data-hc-web-only], [data-hc-web-engine]").forEach((node) => { node.hidden = activeMode !== "web"; });
+    const browserHost = root.querySelector("[data-hc-browser-engine]");
+    if (activeMode === "web") {
+      stopPolling();
+      accessKey = "";
+      if (browserHost && window.HHVideoBatchFactory?.mount) {
+        await window.HHVideoBatchFactory.mount(browserHost);
+      } else if (browserHost) {
+        browserHost.innerHTML = '<div class="hc-engine-error"><strong>Web Engine chưa tải được.</strong><p>Hãy làm mới trang và thử lại.</p></div>';
+      }
+      return;
+    }
+    window.HHVideoBatchFactory?.unmount?.();
+    if (browserHost) browserHost.innerHTML = "";
+    await claimBridge(false);
   }
   function updateEstimate() {
     if (!root) return;
@@ -428,6 +452,7 @@
     const options = { signal: controller.signal };
     root.addEventListener("click", (event) => {
       const nav = event.target.closest("[data-hc-nav]"); if (nav) return setSection(nav.dataset.hcNav);
+      const mode = event.target.closest("[data-hc-mode]"); if (mode) return setMode(mode.dataset.hcMode);
       if (event.target.closest("[data-hc-connect]")) return claimBridge(true);
       const run = event.target.closest("[data-hc-run]"); if (run) return runAction(run.dataset.hcRun);
       if (event.target.closest("[data-hc-save]")) { writeStoredConfig(formConfig()); currentStatus("Đã lưu cấu hình trên trình duyệt", "Dữ liệu được tách riêng theo tài khoản đăng nhập.", "success"); return; }
@@ -450,10 +475,11 @@
     bind();
     applyConfig(readStoredConfig());
     setSection(activeSection);
-    await claimBridge(false);
+    await setMode("web");
   }
   function unmount() {
     stopPolling();
+    window.HHVideoBatchFactory?.unmount?.();
     controller?.abort(); controller = null;
     if (root) root.innerHTML = "";
     root = null; accessKey = ""; lastEventId = 0; bridgeState = "offline";

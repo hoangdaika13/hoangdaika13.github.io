@@ -13,10 +13,10 @@ test("H Cosmic Studio r26 is routed as a first-class Tool workspace", () => {
   const worker = read("sw.js");
   assert.match(shell, /id:\s*"cosmic"[\s\S]*route:\s*"\/davinci-resolve\/cosmic"/);
   assert.match(shell, /HHCosmicWebStudio\?\.mount/);
-  assert.match(loader, /h-cosmic-web-studio\.css\?v=1/);
-  assert.match(loader, /h-cosmic-web-studio\.js\?v=1/);
-  assert.match(worker, /h-cosmic-web-studio\.css\?v=1/);
-  assert.match(worker, /h-cosmic-web-studio\.js\?v=1/);
+  assert.match(loader, /h-cosmic-web-studio\.css\?v=2/);
+  assert.match(loader, /h-cosmic-web-studio\.js\?v=2/);
+  assert.match(worker, /h-cosmic-web-studio\.css\?v=2/);
+  assert.match(worker, /h-cosmic-web-studio\.js\?v=2/);
 });
 
 test("web Mission Control covers the complete local bridge workflow", () => {
@@ -32,6 +32,20 @@ test("web Mission Control covers the complete local bridge workflow", () => {
   ]) assert.match(source, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(css, /@media\(max-width:760px\)/);
   assert.match(css, /prefers-reduced-motion/);
+});
+
+test("H Cosmic defaults to a real browser-native batch engine", () => {
+  const source = read("h-cosmic-web-studio.js");
+  const batch = read("video-batch-factory.js");
+  assert.match(source, /activeMode\s*=\s*"web"/);
+  assert.match(source, /HHVideoBatchFactory\?\.mount/);
+  assert.match(source, /Canvas \+ MediaRecorder \+ Web Audio/);
+  assert.match(source, /Không cần Python, Resolve hoặc bridge/);
+  for (const marker of [
+    "data-bvf-image-folder", "data-bvf-music-folder", "data-bvf-effect-folder",
+    "captureStream", "MediaRecorder", "AudioContext", "showDirectoryPicker",
+    "createWritable", "render-all", "download-all", "indexedDB.open"
+  ]) assert.match(batch, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
 test("the exact portable r26 package is downloadable without entering the startup cache", () => {

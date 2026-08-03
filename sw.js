@@ -1,7 +1,7 @@
-const CACHE = "hh-identity-portal-v408";
+const CACHE = "hh-identity-portal-v409";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
-// Compatibility from v395-v407: script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407
+// Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
 // Graphic Design Universal compatibility aliases: graphic-design-universal.css?v=1 graphic-design-universal.js?v=1
 // Entertainment v4 compatibility aliases: ./game-center.css?v=4 ./game-center.js?v=4
@@ -49,7 +49,7 @@ const RUNTIME_ASSETS = [
   "./comic-motion-studio.css?v=6",
   "./video-editor-resolve.css?v=8",
   "./davinci-resolve-hub.css?v=4",
-  "./h-cosmic-web-studio.css?v=1",
+  "./h-cosmic-web-studio.css?v=2",
   "./video-editor-auto.css?v=1",
   "./youtube-creator-galaxy.css?v=13",
   "./photo-editor-pro.css?v=4",
@@ -365,7 +365,7 @@ const RUNTIME_ASSETS = [
   "./video-batch-factory.js?v=3",
   "./video-editor-resolve.js?v=10",
   "./davinci-resolve-hub.js?v=5",
-  "./h-cosmic-web-studio.js?v=1",
+  "./h-cosmic-web-studio.js?v=2",
   "./video-editor-auto.js?v=1",
   "./photo-editor-pro.js?v=3",
   "./universal-media-project.js?v=1",
@@ -428,7 +428,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=148",
+  "./performance-loader.js?v=149",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=163"
