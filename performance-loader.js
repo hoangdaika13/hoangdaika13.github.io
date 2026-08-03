@@ -101,6 +101,10 @@
         "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=18"
       ]
     },
+    "youtube-tools": {
+      styles: ["youtube-toolbox.css?v=1"],
+      scripts: ["youtube-toolbox.js?v=1"]
+    },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],
       scripts: [
@@ -209,6 +213,7 @@
     const value = normalizeRoute(route);
     if (value === "/home") return [];
     if (value.startsWith("/dev-tools")) return ["dev"];
+    if (value.startsWith("/youtube-tools")) return ["youtube-tools"];
     if (value.startsWith("/davinci-resolve")) return ["davinci"];
     if (value.startsWith("/media-design")) return ["media"];
     if (value.startsWith("/graphic-design")) return ["graphic"];
