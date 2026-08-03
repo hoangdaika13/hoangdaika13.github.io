@@ -22,6 +22,7 @@
 
   let root = null;
   let controller = null;
+  let apiBase = "";
   let state = null;
   let assets = new Map();
   let objectUrls = new Map();
@@ -230,7 +231,7 @@
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }
   async function api(payload) {
-    const response = await fetch("/api/media/comic-source", { method: "POST", credentials: "include", headers: authHeaders(), body: JSON.stringify(payload) });
+    const response = await fetch(`${apiBase}/api/media/comic-source`, { method: "POST", credentials: "include", headers: authHeaders(), body: JSON.stringify(payload) });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       throw new Error(data.error || `Máy chủ trả về HTTP ${response.status}.`);
@@ -782,18 +783,18 @@
     }
   }
 
-  async function mount(host) {
-    unmount(); root = host; state = loadState(); controller = new AbortController(); const options = { signal: controller.signal };
-    root.addEventListener("click", (event) => handleClick(event).catch((error) => status(error.message, "error")), options);
-    root.addEventListener("input", updateInput, options);
-    root.addEventListener("change", (event) => handleFiles(event.target).catch((error) => status(error.message, "error")), options);
-    root.addEventListener("submit", (event) => handleSubmit(event).catch((error) => status(error.message, "error")), options);
-    root.addEventListener("dragstart", handleDrag, options); root.addEventListener("dragover", handleDrag, options); root.addEventListener("drop", handleDrag, options);
+  async function mount(host, mountOptions = {}) {
+    unmount(); root = host; apiBase = String(mountOptions.apiBase || window.HH_CONFIG?.API_BASE || "").replace(/\/$/, ""); state = loadState(); controller = new AbortController(); const listenerOptions = { signal: controller.signal };
+    root.addEventListener("click", (event) => handleClick(event).catch((error) => status(error.message, "error")), listenerOptions);
+    root.addEventListener("input", updateInput, listenerOptions);
+    root.addEventListener("change", (event) => handleFiles(event.target).catch((error) => status(error.message, "error")), listenerOptions);
+    root.addEventListener("submit", (event) => handleSubmit(event).catch((error) => status(error.message, "error")), listenerOptions);
+    root.addEventListener("dragstart", handleDrag, listenerOptions); root.addEventListener("dragover", handleDrag, listenerOptions); root.addEventListener("drop", handleDrag, listenerOptions);
     root.addEventListener("input", (event) => {
       if (!event.target.matches("[data-cms-scrubber]")) return;
       previewOffset = Number(event.target.value); const position = sceneAtTime(previewOffset); if (position) { state.currentSceneId = position.scene.id; drawScene(root.querySelector("[data-cms-canvas]").getContext("2d"), position.scene, position.localTime); }
-    }, options);
-    window.addEventListener("hh:auth-change", async () => { state = loadState(); await refreshAssets(); render(); }, options);
+    }, listenerOptions);
+    window.addEventListener("hh:auth-change", async () => { state = loadState(); await refreshAssets(); render(); }, listenerOptions);
     await refreshAssets(); render();
   }
   function unmount() {

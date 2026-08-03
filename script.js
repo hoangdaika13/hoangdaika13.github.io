@@ -6182,7 +6182,7 @@ function initAppShell() {
       updatePageHeader("Comic Motion Studio", "Biến ảnh truyện được cấp phép thành video kể chuyện có camera, voice, nhạc, phụ đề và timeline.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/davinci-resolve">Video Studio</button><button class="app-primary-action" type="button" data-command-open>Tìm công cụ</button>`;
       workspace.innerHTML = '<div data-comic-motion-host></div>';
-      if (window.HHComicMotionStudio?.mount) window.HHComicMotionStudio.mount(workspace.firstElementChild);
+      if (window.HHComicMotionStudio?.mount) window.HHComicMotionStudio.mount(workspace.firstElementChild, { apiBase: REALTIME_URL });
       else mountSimpleView("Comic Motion Studio", "Đang tải editor truyện thành video...", "");
       remember("comic-motion-studio");
     } else if (route === "/davinci-resolve" || route.startsWith("/davinci-resolve/")) {

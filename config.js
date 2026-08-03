@@ -1,7 +1,8 @@
 const HH_LOCAL_HOST = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 const HH_GITHUB_HOST = location.hostname === "github.io" || location.hostname.endsWith(".github.io");
+const HH_STATIC_CUSTOM_HOST = /^(www\.)?nhhoang13all\.xyz$/i.test(location.hostname);
 // Vercel is the production host; GitHub Pages keeps a compatibility fallback for old bookmarks.
-window.HH_REALTIME_URL = HH_LOCAL_HOST || !HH_GITHUB_HOST
+window.HH_REALTIME_URL = HH_LOCAL_HOST || !(HH_GITHUB_HOST || HH_STATIC_CUSTOM_HOST)
   ? location.origin
   : "https://hoangdaika13githubio.vercel.app";
 window.HH_VOTE_API_URL = `${window.HH_REALTIME_URL}/api/votes`;
