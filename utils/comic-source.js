@@ -1,6 +1,6 @@
 const dns = require("dns").promises;
 const net = require("net");
-const { createHmac, timingSafeEqual } = require("crypto");
+const { createHash, createHmac, timingSafeEqual } = require("crypto");
 const {
   clean,
   enforceRateLimit
@@ -200,6 +200,14 @@ function extractPageTitle(html) {
   return clean(String(match?.[1] || "").replace(/<[^>]+>/g, " ").replace(/&amp;/gi, "&").replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/\s+/g, " "), 240);
 }
 
+function stableFingerprint(value) {
+  return createHash("sha256").update(String(value || "")).digest("hex");
+}
+
+function sequenceFingerprint(images) {
+  return stableFingerprint((Array.isArray(images) ? images : []).map((image) => image.url).join("\n"));
+}
+
 function chapterNumber(value) {
   const match = String(value || "").match(/(?:chap(?:ter)?|chuong|chương)[^0-9]{0,8}(\d+(?:\.\d+)?)/i);
   return match ? Number(match[1]) : Number.POSITIVE_INFINITY;
@@ -230,7 +238,7 @@ function extractChapterLinks(html, seriesUrl) {
 }
 
 function signChapter(userId, seriesUrl, chapterUrl) {
-  const payload = Buffer.from(JSON.stringify({ kind: "chapter", userId, seriesUrl, chapterUrl, exp: Date.now() + 30 * 60 * 1000 })).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({ kind: "chapter", userId, seriesUrl, chapterUrl, exp: Date.now() + 6 * 60 * 60 * 1000 })).toString("base64url");
   const signature = createHmac("sha256", signingSecret()).update(payload).digest("base64url");
   return `${payload}.${signature}`;
 }
@@ -294,6 +302,13 @@ async function elevenLabsTts(body) {
   const voiceId = clean(body.voiceId || process.env.ELEVENLABS_VOICE_ID, 120);
   if (!text) fail("Câu thoại đang trống.");
   if (!/^[a-zA-Z0-9_-]{8,120}$/.test(voiceId)) fail("Hãy chọn một giọng ElevenLabs hợp lệ.");
+  const emotion = clean(body.emotion || "neutral", 30);
+  const emotionSettings = {
+    neutral: { stability: 0.58, similarity: 0.76, style: 0.18 }, warm: { stability: 0.5, similarity: 0.78, style: 0.32 },
+    sad: { stability: 0.68, similarity: 0.74, style: 0.28 }, angry: { stability: 0.32, similarity: 0.72, style: 0.62 },
+    excited: { stability: 0.3, similarity: 0.76, style: 0.58 }, whisper: { stability: 0.7, similarity: 0.72, style: 0.2 }
+  };
+  const expressive = emotionSettings[emotion] || emotionSettings.neutral;
   const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=mp3_44100_128`, {
     method: "POST",
     headers: { "xi-api-key": apiKey, "Content-Type": "application/json", Accept: "application/json" },
@@ -301,8 +316,10 @@ async function elevenLabsTts(body) {
       text,
       model_id: clean(process.env.ELEVEN_TTS_MODEL || "eleven_multilingual_v2", 80),
       voice_settings: {
-        stability: Math.max(0, Math.min(1, Number(body.stability ?? 0.55))),
-        similarity_boost: Math.max(0, Math.min(1, Number(body.similarity ?? 0.75)))
+        stability: Math.max(0, Math.min(1, Number(body.stability ?? expressive.stability))),
+        similarity_boost: Math.max(0, Math.min(1, Number(body.similarity ?? expressive.similarity))),
+        style: expressive.style,
+        use_speaker_boost: true
       }
     })
   });
@@ -322,7 +339,7 @@ async function handleComicSource(req, res, { db, body, user }) {
     const action = clean(body.action, 40);
 
     if (action === "inspect-series") {
-      await enforceRateLimit(db, `comic-series-inspect:${userId}`, 10, 15 * 60 * 1000);
+      await enforceRateLimit(db, `comic-series-inspect:${userId}`, 120, 60 * 60 * 1000);
       if (body.rightsAttested !== true) {
         return res.status(400).json({ error: "Hãy xác nhận bạn sở hữu hoặc được phép tải nội dung từ nguồn này." });
       }
@@ -359,8 +376,8 @@ async function handleComicSource(req, res, { db, body, user }) {
       if (!images.length) return res.status(422).json({ error: "Không tìm thấy ảnh trong chương này." });
       return res.status(200).json({
         source: { url: fetched.url, domain: chapter.hostname, title: extractPageTitle(html), inspectedAt: new Date().toISOString() },
-        policy: { exactPageOnly: true, recursiveCrawl: false, antiBotBypass: false, maxImages: MAX_IMAGES, candidateImages: candidates.length, selectedImages: images.length, sequenceDetection: "dominant-alt-directory-host" },
-        images: images.map((image, index) => ({ index, alt: image.alt, width: image.width, height: image.height, token: signAsset(userId, fetched.url, image.url) }))
+        policy: { exactPageOnly: true, recursiveCrawl: false, antiBotBypass: false, maxImages: MAX_IMAGES, candidateImages: candidates.length, selectedImages: images.length, sequenceDetection: "dominant-alt-directory-host", sequenceFingerprint: sequenceFingerprint(images) },
+        images: images.map((image, index) => ({ index, alt: image.alt, width: image.width, height: image.height, fingerprint: stableFingerprint(image.url), token: signAsset(userId, fetched.url, image.url) }))
       });
     }
 
@@ -381,12 +398,13 @@ async function handleComicSource(req, res, { db, body, user }) {
       );
       return res.status(200).json({
         source: { url: fetched.url, domain: page.hostname, title: extractPageTitle(html), inspectedAt: now.toISOString() },
-        policy: { exactPageOnly: true, recursiveCrawl: false, antiBotBypass: false, maxImages: MAX_IMAGES, candidateImages: candidates.length, selectedImages: images.length, sequenceDetection: "dominant-alt-directory-host" },
+        policy: { exactPageOnly: true, recursiveCrawl: false, antiBotBypass: false, maxImages: MAX_IMAGES, candidateImages: candidates.length, selectedImages: images.length, sequenceDetection: "dominant-alt-directory-host", sequenceFingerprint: sequenceFingerprint(images) },
         images: images.map((image, index) => ({
           index,
           alt: image.alt,
           width: image.width,
           height: image.height,
+          fingerprint: stableFingerprint(image.url),
           token: signAsset(userId, fetched.url, image.url)
         }))
       });
@@ -425,6 +443,8 @@ module.exports = {
     extractChapterLinks,
     selectChapterImages,
     extractPageTitle,
+    stableFingerprint,
+    sequenceFingerprint,
     attrOf,
     bestSrc,
     verifyAsset

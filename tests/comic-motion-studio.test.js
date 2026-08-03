@@ -84,6 +84,13 @@ test("Comic source extracts only same-site chapter links from a full-series page
   assert.ok(chapters.every((chapter) => chapter.url.startsWith("https://reader.example.com/")));
 });
 
+test("Comic source fingerprints remain stable for resume and changed-page detection", () => {
+  const { stableFingerprint, sequenceFingerprint } = require("../utils/comic-source.js").__test;
+  const images = [{ url: "https://cdn.example.com/1.jpg" }, { url: "https://cdn.example.com/2.jpg" }];
+  assert.equal(stableFingerprint(images[0].url), stableFingerprint(images[0].url));
+  assert.notEqual(sequenceFingerprint(images), sequenceFingerprint([...images].reverse()));
+});
+
 test("Comic Motion Studio is registered in route, sidebar, search, lazy loader and offline cache", () => {
   const script = read("script.js");
   const loader = read("performance-loader.js");
@@ -118,6 +125,11 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
     /sourceMode/, /fetchAuthorizedImages/, /downloadSourceArchive/, /source-manifest\.json/, /Math\.min\(3, images\.length\)/,
     /mountEpoch/, /sourceController/, /signal = controller\?\.signal/, /epoch !== mountEpoch/
   ]) assert.match(source, contract);
+  for (const contract of [
+    /SERIES_LIBRARY_KEY/, /TASK_CENTER_KEY/, /QUALITY_PRESETS/, /CAMERA_PRESETS/, /sourceInspection/, /blobChecksum/, /showDirectoryPicker/, /writeSeriesProject/, /buildStoryboard/, /FaceDetector/, /waveformForBlob/, /renderQueue/, /data-cms-command-dialog/, /data-cms-source-minimize/, /data-cms-series-select-new/
+  ]) assert.match(source, contract);
+  assert.ok(fs.statSync(path.join(root, "vendor/tessdata/jpn.traineddata.gz")).size > 100000);
+  assert.ok(fs.statSync(path.join(root, "vendor/tessdata/chi_sim.traineddata.gz")).size > 100000);
   assert.match(source, /Tải website/);
   assert.match(source, /Tải ảnh từ website được cấp phép/);
 
