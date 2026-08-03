@@ -22,6 +22,7 @@ const {
   runOpenAIResponse
 } = require("../../../utils/openai-provider");
 const { createHmac } = require("node:crypto");
+const { handleComicSource } = require("../../../utils/comic-source");
 
 const downloadHosts = [
   "youtube.com", "youtu.be", "tiktok.com", "facebook.com", "fb.watch",
@@ -1308,6 +1309,9 @@ module.exports = async function handler(req, res) {
     const moduleId = clean(req.query.moduleId, 120);
     const collection = db.collection("moduleActions");
     const user = await currentUser(req);
+    if (moduleId === "comic-motion" || req.query.comicSource === "1") {
+      return handleComicSource(req, res, { db, body, user });
+    }
     if (req.method === "GET") {
       const anonymousId = clean(req.query.anonymousId, 160);
       const ownerQuery = user?._id

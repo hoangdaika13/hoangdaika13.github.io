@@ -7,6 +7,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/media/comic-source",
+      "destination": "/api/modules/comic-motion/actions?comicSource=1"
+    },
+    {
       "source": "/api/health",
       "destination": "/api/platform/summary?view=health"
     },

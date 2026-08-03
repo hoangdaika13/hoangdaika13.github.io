@@ -33,7 +33,7 @@ test("Comic Motion Studio exposes normalized project, scene and honest render ca
 });
 
 test("Comic source parser excludes chrome, ads and duplicates while preserving chapter images", () => {
-  const helpers = require("../api/media/comic-source.js").__test;
+  const helpers = require("../utils/comic-source.js").__test;
   const html = `
     <header><img src="https://cdn.example.com/logo.png" width="800" height="800"></header>
     <main>
@@ -50,7 +50,7 @@ test("Comic source parser excludes chrome, ads and duplicates while preserving c
 });
 
 test("Comic source SSRF checks identify private and reserved addresses", () => {
-  const { isPrivateIp } = require("../api/media/comic-source.js").__test;
+  const { isPrivateIp } = require("../utils/comic-source.js").__test;
   for (const address of ["127.0.0.1", "10.2.3.4", "172.20.2.2", "192.168.1.1", "169.254.2.1", "::1", "fd00::1", "::ffff:127.0.0.1"]) {
     assert.equal(isPrivateIp(address), true, address);
   }
@@ -64,7 +64,9 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
   const worker = read("sw.js");
   const source = read("comic-motion-studio.js");
   const css = read("comic-motion-studio.css");
-  const backend = read("api/media/comic-source.js");
+  const backend = read("utils/comic-source.js");
+  const actions = read("api/modules/[moduleId]/actions.js");
+  const vercel = JSON.parse(read("vercel.json"));
 
   assert.match(script, /route:\s*"\/comic-motion-studio"/);
   assert.match(script, /HHComicMotionStudio\?\.mount/);
@@ -91,6 +93,11 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
     /recursiveCrawl:\s*false/, /antiBotBypass:\s*false/, /comicSourceRights/, /timingSafeEqual/,
     /text-to-speech/, /with-timestamps/
   ]) assert.match(backend, contract);
+
+  assert.match(actions, /handleComicSource/);
+  assert.ok(vercel.rewrites.some((rewrite) => rewrite.source === "/api/media/comic-source"
+    && rewrite.destination.includes("/api/modules/comic-motion/actions")));
+  assert.equal(fs.existsSync(path.join(root, "api/media/comic-source.js")), false);
 
   assert.match(css, /@media\(max-width:850px\)/);
   assert.match(css, /prefers-reduced-motion/);

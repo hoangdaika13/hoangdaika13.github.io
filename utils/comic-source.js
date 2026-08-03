@@ -3,10 +3,8 @@ const net = require("net");
 const { createHmac, timingSafeEqual } = require("crypto");
 const {
   clean,
-  currentUser,
-  enforceRateLimit,
-  withApi
-} = require("../../utils/platform");
+  enforceRateLimit
+} = require("./platform");
 
 const MAX_HTML_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
@@ -241,9 +239,7 @@ async function elevenLabsTts(body) {
   };
 }
 
-module.exports = async function handler(req, res) {
-  return withApi(req, res, async ({ db, body }) => {
-    const user = await currentUser(req);
+async function handleComicSource(req, res, { db, body, user }) {
     if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để dùng nguồn website và TTS." });
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
     const userId = String(user._id);
@@ -306,13 +302,15 @@ module.exports = async function handler(req, res) {
     }
 
     return res.status(400).json({ error: "Action không hợp lệ." });
-  });
-};
+}
 
-module.exports.__test = Object.freeze({
-  isPrivateIp,
-  extractImageUrls,
-  attrOf,
-  bestSrc,
-  verifyAsset
-});
+module.exports = {
+  handleComicSource,
+  __test: Object.freeze({
+    isPrivateIp,
+    extractImageUrls,
+    attrOf,
+    bestSrc,
+    verifyAsset
+  })
+};
