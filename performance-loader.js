@@ -101,6 +101,10 @@
         "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=18"
       ]
     },
+    "comic-motion": {
+      styles: ["comic-motion-studio.css?v=2"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "comic-motion-studio.js?v=2"]
+    },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],
       scripts: [
@@ -210,6 +214,7 @@
     if (value === "/home") return [];
     if (value.startsWith("/dev-tools")) return ["dev"];
     if (value.startsWith("/davinci-resolve")) return ["davinci"];
+    if (value.startsWith("/comic-motion-studio")) return ["comic-motion"];
     if (value.startsWith("/media-design")) return ["media"];
     if (value.startsWith("/graphic-design")) return ["graphic"];
     if (value.startsWith("/music-ai")) return ["music"];
