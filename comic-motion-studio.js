@@ -256,6 +256,7 @@
         <label>URL trang HTTPS<input type="url" name="url" required placeholder="https://website-cua-ban.vn/truyen/chuong-01"></label>
         <div class="cms-form-grid"><label>Tác giả/chủ sở hữu<input name="author" required></label><label>Loại giấy phép<input name="license" required placeholder="Sở hữu / hợp đồng / CC BY..."></label></div>
         <label>Bằng chứng hoặc mã quyền sử dụng<input name="permissionReference" required placeholder="Hợp đồng, email, ID giấy phép hoặc URL tài liệu"></label>
+        <label>Sau khi kiểm tra nguồn<select name="sourceMode"><option value="import">Nhập toàn bộ ảnh vào project</option><option value="download">Tải toàn bộ ảnh về máy dạng ZIP</option><option value="both">Nhập vào project + tải ZIP</option></select></label>
         <label class="cms-check"><input type="checkbox" name="rightsAttested" required><span>Tôi có quyền sử dụng và tạo video từ nội dung này.</span></label>
         <label class="cms-check"><input type="checkbox" name="siteAuthorization" required><span>Tôi được phép truy cập/tải ảnh từ chính website này; đây không chỉ là quyền với tác phẩm.</span></label>
         <footer><button type="button" data-cms-close-source>Hủy</button><button class="cms-primary" type="submit" value="default">Kiểm tra nguồn</button></footer>
@@ -487,6 +488,64 @@
     }
     state.revision += 1; saveState(); await refreshAssets(); render(); status(`Đã mở ${state.scenes.length} cảnh từ project .hhcomic.`, "success");
   }
+
+  async function fetchAuthorizedImages(result) {
+    const images = Array.isArray(result?.images) ? result.images : [];
+    const downloaded = new Array(images.length);
+    let cursor = 0;
+    let completed = 0;
+    const worker = async () => {
+      while (cursor < images.length) {
+        const position = cursor;
+        cursor += 1;
+        const image = images[position];
+        let lastError = null;
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          try {
+            const assetResponse = await api({ action: "fetch-image", token: image.token });
+            const blob = await assetResponse.blob();
+            const extension = blob.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
+            downloaded[position] = { name: `page-${String(position + 1).padStart(4, "0")}.${extension}`, blob, alt: image.alt || "" };
+            completed += 1;
+            status(`Đang tải ảnh được cấp phép ${completed}/${images.length}…`);
+            lastError = null;
+            break;
+          } catch (error) {
+            lastError = error;
+            if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (2 ** attempt)));
+          }
+        }
+        if (lastError) throw lastError;
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(3, images.length) }, worker));
+    return downloaded.filter(Boolean);
+  }
+
+  async function downloadSourceArchive(entries, result) {
+    if (!window.JSZip) throw new Error("Bộ đóng gói ZIP chưa tải xong. Hãy làm mới trang.");
+    const zip = new window.JSZip();
+    const folder = zip.folder("images");
+    entries.forEach((entry) => folder.file(entry.name, entry.blob));
+    zip.file("source-manifest.json", JSON.stringify({
+      schemaVersion: 1,
+      downloadedAt: new Date().toISOString(),
+      source: result.source,
+      policy: result.policy,
+      rights: {
+        attested: true,
+        author: result.source?.author || "",
+        license: result.source?.license || "",
+        permissionReference: result.source?.permissionReference || ""
+      },
+      images: entries.map((entry, index) => ({ index: index + 1, file: `images/${entry.name}`, mimeType: entry.blob.type, bytes: entry.blob.size, alt: entry.alt }))
+    }, null, 2));
+    status(`Đang đóng gói ${entries.length} ảnh thành ZIP…`);
+    const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } }, (meta) => status(`Đang đóng gói ZIP · ${Math.round(meta.percent)}%…`));
+    const archiveName = safeFilename(result.source?.title || new URL(result.source?.url || location.href).pathname.split("/").filter(Boolean).pop() || "comic-chapter");
+    downloadBlob(blob, `${archiveName}-images.zip`);
+  }
+
   async function importWebsite(form) {
     const data = new FormData(form);
     status("Đang kiểm tra quyền và tải danh sách ảnh của đúng một trang…");
@@ -495,14 +554,14 @@
       rightsAttested: data.get("rightsAttested") === "on", siteAuthorization: data.get("siteAuthorization") === "on"
     });
     const result = await response.json();
-    const imported = [];
-    for (const image of result.images) {
-      status(`Đang nhập ảnh được cấp phép ${image.index + 1}/${result.images.length}…`);
-      const assetResponse = await api({ action: "fetch-image", token: image.token });
-      const blob = await assetResponse.blob();
-      imported.push({ name: `web-${String(image.index + 1).padStart(4, "0")}.${blob.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg"}`, blob });
+    const sourceMode = String(data.get("sourceMode") || "import");
+    const imported = await fetchAuthorizedImages(result);
+    if (["download", "both"].includes(sourceMode)) await downloadSourceArchive(imported, result);
+    if (["import", "both"].includes(sourceMode)) {
+      await importImageBlobs(imported, { ...result.source, sourceType: "authorized-url", attestedAt: result.source.inspectedAt });
+    } else {
+      status(`Đã tải ${imported.length} ảnh đúng thứ tự về máy kèm manifest quyền sử dụng.`, "success");
     }
-    await importImageBlobs(imported, { ...result.source, sourceType: "authorized-url", attestedAt: result.source.inspectedAt });
   }
 
   async function detectPanels(scene) {

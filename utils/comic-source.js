@@ -148,7 +148,7 @@ function extractImageUrls(html, pageUrl) {
     resolved.hash = "";
     const href = resolved.href;
     const descriptor = `${href} ${attrOf(match[0], "alt")} ${attrOf(match[0], "class")} ${attrOf(match[0], "id")}`;
-    if (/\b(avatar|emoji|icon|logo|banner|advert|advertisement|tracking|pixel|comment|user-photo)\b/i.test(descriptor)) continue;
+    if (/\b(avatar|emoji|icon|logo|banner|advert|advertisement|tracking|pixel|comment|user-photo|meme|sticker|adblock)\b/i.test(descriptor)) continue;
     const declaredWidth = Number(attrOf(match[0], "width")) || 0;
     const declaredHeight = Number(attrOf(match[0], "height")) || 0;
     if ((declaredWidth && declaredWidth < 240) || (declaredHeight && declaredHeight < 240)) continue;
@@ -163,6 +163,39 @@ function extractImageUrls(html, pageUrl) {
     if (output.length >= MAX_IMAGES) break;
   }
   return output;
+}
+
+function selectChapterImages(images) {
+  const source = Array.isArray(images) ? images : [];
+  if (source.length < 3) return source;
+  const largestGroup = (keyOf) => {
+    const groups = new Map();
+    for (const image of source) {
+      const key = keyOf(image);
+      if (!key) continue;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(image);
+    }
+    return [...groups.values()].sort((a, b) => b.length - a.length)[0] || [];
+  };
+  const repeatedAlt = largestGroup((image) => clean(image.alt, 120).trim().toLowerCase());
+  if (repeatedAlt.length >= 3 && repeatedAlt.length >= source.length * 0.35) return repeatedAlt;
+  const dominantDirectory = largestGroup((image) => {
+    try {
+      const url = new URL(image.url);
+      return `${url.origin}${url.pathname.replace(/\/[^/]*$/, "/")}`;
+    } catch { return ""; }
+  });
+  if (dominantDirectory.length >= 3 && dominantDirectory.length >= source.length * 0.5) return dominantDirectory;
+  const dominantHost = largestGroup((image) => {
+    try { return new URL(image.url).hostname; } catch { return ""; }
+  });
+  return dominantHost.length >= 3 && dominantHost.length >= source.length * 0.6 ? dominantHost : source;
+}
+
+function extractPageTitle(html) {
+  const match = String(html || "").match(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/i);
+  return clean(String(match?.[1] || "").replace(/<[^>]+>/g, " ").replace(/&amp;/gi, "&").replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/\s+/g, " "), 240);
 }
 
 function signingSecret() {
@@ -258,7 +291,9 @@ async function handleComicSource(req, res, { db, body, user }) {
       }
       const page = await assertPublicHttpsUrl(body.url);
       const fetched = await fetchSafe(page.href, { type: "html" });
-      const images = extractImageUrls(fetched.body.toString("utf8"), fetched.url);
+      const html = fetched.body.toString("utf8");
+      const candidates = extractImageUrls(html, fetched.url);
+      const images = selectChapterImages(candidates);
       if (!images.length) return res.status(422).json({ error: "Không tìm thấy ảnh tĩnh trong trang này. Trang tải ảnh bằng JavaScript có thể cần adapter riêng." });
       const now = new Date();
       await db.collection("comicSourceRights").updateOne(
@@ -267,8 +302,8 @@ async function handleComicSource(req, res, { db, body, user }) {
         { upsert: true }
       );
       return res.status(200).json({
-        source: { url: fetched.url, domain: page.hostname, author, license, permissionReference, inspectedAt: now.toISOString() },
-        policy: { exactPageOnly: true, recursiveCrawl: false, antiBotBypass: false, maxImages: MAX_IMAGES },
+        source: { url: fetched.url, domain: page.hostname, title: extractPageTitle(html), author, license, permissionReference, inspectedAt: now.toISOString() },
+        policy: { exactPageOnly: true, recursiveCrawl: false, antiBotBypass: false, maxImages: MAX_IMAGES, candidateImages: candidates.length, selectedImages: images.length, sequenceDetection: "dominant-alt-directory-host" },
         images: images.map((image, index) => ({
           index,
           alt: image.alt,
@@ -309,6 +344,8 @@ module.exports = {
   __test: Object.freeze({
     isPrivateIp,
     extractImageUrls,
+    selectChapterImages,
+    extractPageTitle,
     attrOf,
     bestSrc,
     verifyAsset

@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v400";
+const CACHE = "hh-identity-portal-v401";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v395-v397: script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397
@@ -46,7 +46,7 @@ const RUNTIME_ASSETS = [
   "./media-design-publish.css?v=1",
   "./video-editor-studio.css?v=4",
   "./video-batch-factory.css?v=4",
-  "./comic-motion-studio.css?v=2",
+  "./comic-motion-studio.css?v=3",
   "./video-editor-resolve.css?v=8",
   "./davinci-resolve-hub.css?v=4",
   "./video-editor-auto.css?v=1",
@@ -94,7 +94,7 @@ const RUNTIME_ASSETS = [
   "./youtube-publisher.css?v=4",
   "./youtube-publisher.js?v=7",
   "./youtube-creator-galaxy.js?v=18",
-  "./comic-motion-studio.js?v=3",
+  "./comic-motion-studio.js?v=4",
   "./vendor/jszip.min.js?v=3.10.1",
   "./vendor/tesseract.min.js?v=6.0.1",
   "./vendor/tesseract-worker.min.js?v=6.0.1",

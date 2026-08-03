@@ -58,6 +58,19 @@ test("Comic source SSRF checks identify private and reserved addresses", () => {
   assert.equal(isPrivateIp("2606:4700:4700::1111"), false);
 });
 
+test("Comic source keeps the dominant chapter sequence and excludes surrounding page art", () => {
+  const { selectChapterImages, extractPageTitle } = require("../utils/comic-source.js").__test;
+  const candidates = [
+    { url: "https://reader.example.com/banner.webp", alt: "" },
+    ...Array.from({ length: 8 }, (_, index) => ({ url: `https://media.example.com/chapter-113/${index + 1}.jpg`, alt: "raw" })),
+    { url: "https://reader.example.com/memes/reaction.jpg", alt: "Meme 34" }
+  ];
+  const selected = selectChapterImages(candidates);
+  assert.equal(selected.length, 8);
+  assert.ok(selected.every((image) => image.alt === "raw"));
+  assert.match(extractPageTitle("<title>Truyện mẫu – Chap 113</title>"), /Chap 113/);
+});
+
 test("Comic Motion Studio is registered in route, sidebar, search, lazy loader and offline cache", () => {
   const script = read("script.js");
   const loader = read("performance-loader.js");
@@ -72,11 +85,11 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
   assert.match(script, /HHComicMotionStudio\?\.mount/);
   assert.match(script, /HHComicMotionStudio\?\.unmount/);
   assert.match(script, /Comic Motion Studio/);
-  assert.match(loader, /comic-motion-studio\.css\?v=2/);
-  assert.match(loader, /comic-motion-studio\.js\?v=3/);
+  assert.match(loader, /comic-motion-studio\.css\?v=3/);
+  assert.match(loader, /comic-motion-studio\.js\?v=4/);
   assert.match(loader, /vendor\/jszip\.min\.js/);
   assert.match(loader, /vendor\/tesseract\.min\.js/);
-  assert.match(worker, /hh-identity-portal-v400/);
+  assert.match(worker, /hh-identity-portal-v401/);
   assert.match(worker, /pdf\.worker\.min\.mjs/);
   assert.match(worker, /vie\.traineddata\.gz/);
 
@@ -85,12 +98,14 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
     /pdfjs\.getDocument/, /Tesseract\.createWorker/, /detectPanels/, /speechSynthesis/,
     /generateVoice/, /captureStream/, /MediaRecorder/, /mp4Mime/, /webmMime/,
     /prepareAudio/, /subtitles\.srt/, /subtitles\.vtt/, /\.hhcomic/, /undoStack/, /autosave/
+    , /sourceMode/, /fetchAuthorizedImages/, /downloadSourceArchive/, /source-manifest\.json/, /Math\.min\(3, images\.length\)/
   ]) assert.match(source, contract);
 
   for (const contract of [
     /assertPublicHttpsUrl/, /dns\.lookup/, /isPrivateIp/, /redirect:\s*"manual"/, /MAX_REDIRECTS/,
     /MAX_IMAGE_BYTES/, /rightsAttested/, /siteAuthorization/, /permissionReference/, /exactPageOnly:\s*true/,
-    /recursiveCrawl:\s*false/, /antiBotBypass:\s*false/, /comicSourceRights/, /timingSafeEqual/,
+    /recursiveCrawl:\s*false/, /antiBotBypass:\s*false/, /comicSourceRights/, /timingSafeEqual/, /selectChapterImages/,
+    /sequenceDetection:\s*"dominant-alt-directory-host"/,
     /text-to-speech/, /with-timestamps/
   ]) assert.match(backend, contract);
 
