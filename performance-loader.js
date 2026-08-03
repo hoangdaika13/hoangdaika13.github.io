@@ -102,8 +102,9 @@
       ]
     },
     "comic-motion": {
-      styles: ["comic-motion-studio.css?v=3"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "comic-motion-studio.js?v=6"]
+      // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.js?v=6
+      styles: ["comic-motion-studio.css?v=4"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "comic-motion-studio.js?v=7"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],

@@ -71,6 +71,19 @@ test("Comic source keeps the dominant chapter sequence and excludes surrounding 
   assert.match(extractPageTitle("<title>Truyện mẫu – Chap 113</title>"), /Chap 113/);
 });
 
+test("Comic source extracts only same-site chapter links from a full-series page", () => {
+  const { extractChapterLinks } = require("../utils/comic-source.js").__test;
+  const html = `<h2>Danh sách chap</h2>
+    <a href="/truyen/demo-chap-113/">Chương 113</a>
+    <a href="https://reader.example.com/truyen/demo-chap-112/">Chương 112</a>
+    <a href="https://other.example.com/demo-chap-111/">Chương 111</a>
+    <a href="/truyen/bo-khac/">Truyện liên quan</a>
+    <a href="/comment/demo-chap-110/">Bình luận chap 110</a>`;
+  const chapters = extractChapterLinks(html, "https://reader.example.com/truyen/demo/");
+  assert.deepEqual(chapters.map((chapter) => chapter.number), [113, 112]);
+  assert.ok(chapters.every((chapter) => chapter.url.startsWith("https://reader.example.com/")));
+});
+
 test("Comic Motion Studio is registered in route, sidebar, search, lazy loader and offline cache", () => {
   const script = read("script.js");
   const loader = read("performance-loader.js");

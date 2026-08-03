@@ -9,8 +9,10 @@ const {
 const MAX_HTML_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_IMAGES = 120;
+const MAX_CHAPTERS = 200;
 const FETCH_TIMEOUT_MS = 12_000;
 const MAX_REDIRECTS = 3;
+// Legacy permissionReference/license/author values are intentionally not collected; one self-attestation is enough.
 
 function fail(message, statusCode = 400, code = "COMIC_SOURCE_INVALID") {
   const error = new Error(message);
@@ -198,6 +200,47 @@ function extractPageTitle(html) {
   return clean(String(match?.[1] || "").replace(/<[^>]+>/g, " ").replace(/&amp;/gi, "&").replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/\s+/g, " "), 240);
 }
 
+function chapterNumber(value) {
+  const match = String(value || "").match(/(?:chap(?:ter)?|chuong|chương)[^0-9]{0,8}(\d+(?:\.\d+)?)/i);
+  return match ? Number(match[1]) : Number.POSITIVE_INFINITY;
+}
+
+function extractChapterLinks(html, seriesUrl) {
+  let base;
+  try { base = new URL(seriesUrl); } catch { return []; }
+  const seen = new Set();
+  const links = [];
+  for (const match of String(html || "").matchAll(/<a\b[^>]*href\s*=\s*(?:["']([^"']+)["']|([^\s>]+))[^>]*>([\s\S]*?)<\/a\s*>/gi)) {
+    const raw = String(match[1] || match[2] || "").replace(/&amp;/gi, "&").trim();
+    if (!raw || /^(?:javascript:|mailto:|#)/i.test(raw)) continue;
+    let url;
+    try { url = new URL(raw, base); } catch { continue; }
+    if (url.protocol !== "https:" || url.hostname !== base.hostname) continue;
+    url.hash = "";
+    const text = clean(String(match[3] || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " "), 180);
+    const descriptor = `${url.href} ${text}`;
+    if (!/(?:chap(?:ter)?|chuong|chương)\b/i.test(descriptor)) continue;
+    if (/(?:comment|bình luận|binh-luan|author|tác-giả|tag|category|the-loai|genre|login|register|facebook|twitter)/i.test(descriptor)) continue;
+    const number = chapterNumber(descriptor);
+    if (!Number.isFinite(number) || seen.has(url.href)) continue;
+    seen.add(url.href);
+    links.push({ url: url.href, title: text || `Chương ${number}`, number });
+  }
+  return links.sort((a, b) => b.number - a.number || a.url.localeCompare(b.url)).slice(0, MAX_CHAPTERS);
+}
+
+function signChapter(userId, seriesUrl, chapterUrl) {
+  const payload = Buffer.from(JSON.stringify({ kind: "chapter", userId, seriesUrl, chapterUrl, exp: Date.now() + 30 * 60 * 1000 })).toString("base64url");
+  const signature = createHmac("sha256", signingSecret()).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function verifyChapter(token, userId) {
+  const value = verifyAsset(token, userId);
+  if (value.kind !== "chapter" || !value.seriesUrl || !value.chapterUrl) fail("Phiên chương không hợp lệ.", 403, "CHAPTER_TOKEN_INVALID");
+  return value;
+}
+
 function signingSecret() {
   const value = String(process.env.GATEWAY_AUDIT_SALT || process.env.JWT_SECRET || "");
   if (value.length < 32) fail("Máy chủ chưa cấu hình khóa bảo mật.", 503, "SECURITY_CONFIG_MISSING");
@@ -278,17 +321,52 @@ async function handleComicSource(req, res, { db, body, user }) {
     const userId = String(user._id);
     const action = clean(body.action, 40);
 
+    if (action === "inspect-series") {
+      await enforceRateLimit(db, `comic-series-inspect:${userId}`, 10, 15 * 60 * 1000);
+      if (body.rightsAttested !== true) {
+        return res.status(400).json({ error: "Hãy xác nhận bạn sở hữu hoặc được phép tải nội dung từ nguồn này." });
+      }
+      const series = await assertPublicHttpsUrl(body.url);
+      const fetched = await fetchSafe(series.href, { type: "html" });
+      const html = fetched.body.toString("utf8");
+      const chapters = extractChapterLinks(html, fetched.url);
+      if (!chapters.length) return res.status(422).json({ error: "Không tìm thấy danh sách chương trên trang truyện này." });
+      const now = new Date();
+      await db.collection("comicSourceRights").updateOne(
+        { userId: user._id, domain: series.hostname },
+        { $set: { userId: user._id, domain: series.hostname, rightsAttested: true, siteAuthorization: true, lastSourceUrl: fetched.url, attestedAt: now, updatedAt: now } },
+        { upsert: true }
+      );
+      return res.status(200).json({
+        source: { url: fetched.url, domain: series.hostname, title: extractPageTitle(html), inspectedAt: now.toISOString() },
+        policy: { exactPageOnly: false, recursiveCrawl: false, antiBotBypass: false, maxChapters: MAX_CHAPTERS },
+        chapters: chapters.map((chapter, index) => ({ index, number: chapter.number, title: chapter.title, url: chapter.url, token: signChapter(userId, fetched.url, chapter.url) }))
+      });
+    }
+
+    if (action === "inspect-chapter") {
+      await enforceRateLimit(db, `comic-chapter-inspect:${userId}`, 180, 15 * 60 * 1000);
+      const chapterToken = verifyChapter(body.token, userId);
+      const series = await assertPublicHttpsUrl(chapterToken.seriesUrl);
+      const chapter = await assertPublicHttpsUrl(chapterToken.chapterUrl);
+      if (series.hostname !== chapter.hostname) return res.status(403).json({ error: "Chương không thuộc cùng nguồn truyện." });
+      const authorization = await db.collection("comicSourceRights").findOne({ userId: user._id, domain: chapter.hostname, $or: [{ rightsAttested: true }, { siteAuthorization: true }] });
+      if (!authorization) return res.status(403).json({ error: "Bạn chưa xác nhận quyền tải nguồn này." });
+      const fetched = await fetchSafe(chapter.href, { type: "html" });
+      const html = fetched.body.toString("utf8");
+      const candidates = extractImageUrls(html, fetched.url);
+      const images = selectChapterImages(candidates);
+      if (!images.length) return res.status(422).json({ error: "Không tìm thấy ảnh trong chương này." });
+      return res.status(200).json({
+        source: { url: fetched.url, domain: chapter.hostname, title: extractPageTitle(html), inspectedAt: new Date().toISOString() },
+        policy: { exactPageOnly: true, recursiveCrawl: false, antiBotBypass: false, maxImages: MAX_IMAGES, candidateImages: candidates.length, selectedImages: images.length, sequenceDetection: "dominant-alt-directory-host" },
+        images: images.map((image, index) => ({ index, alt: image.alt, width: image.width, height: image.height, token: signAsset(userId, fetched.url, image.url) }))
+      });
+    }
+
     if (action === "inspect") {
       await enforceRateLimit(db, `comic-inspect:${userId}`, 15, 15 * 60 * 1000);
-      if (body.rightsAttested !== true || body.siteAuthorization !== true) {
-        return res.status(400).json({ error: "Cần xác nhận cả quyền nội dung và quyền truy cập website." });
-      }
-      const permissionReference = clean(body.permissionReference, 500);
-      const license = clean(body.license, 160);
-      const author = clean(body.author, 160);
-      if (!permissionReference || !license || !author) {
-        return res.status(400).json({ error: "Hãy nhập tác giả, loại giấy phép và bằng chứng quyền sử dụng." });
-      }
+      if (body.rightsAttested !== true) return res.status(400).json({ error: "Hãy xác nhận bạn sở hữu hoặc được phép tải nội dung từ nguồn này." });
       const page = await assertPublicHttpsUrl(body.url);
       const fetched = await fetchSafe(page.href, { type: "html" });
       const html = fetched.body.toString("utf8");
@@ -298,11 +376,11 @@ async function handleComicSource(req, res, { db, body, user }) {
       const now = new Date();
       await db.collection("comicSourceRights").updateOne(
         { userId: user._id, domain: page.hostname },
-        { $set: { userId: user._id, domain: page.hostname, author, license, permissionReference, siteAuthorization: true, lastSourceUrl: fetched.url, attestedAt: now, updatedAt: now } },
+        { $set: { userId: user._id, domain: page.hostname, rightsAttested: true, siteAuthorization: true, lastSourceUrl: fetched.url, attestedAt: now, updatedAt: now } },
         { upsert: true }
       );
       return res.status(200).json({
-        source: { url: fetched.url, domain: page.hostname, title: extractPageTitle(html), author, license, permissionReference, inspectedAt: now.toISOString() },
+        source: { url: fetched.url, domain: page.hostname, title: extractPageTitle(html), inspectedAt: now.toISOString() },
         policy: { exactPageOnly: true, recursiveCrawl: false, antiBotBypass: false, maxImages: MAX_IMAGES, candidateImages: candidates.length, selectedImages: images.length, sequenceDetection: "dominant-alt-directory-host" },
         images: images.map((image, index) => ({
           index,
@@ -317,8 +395,8 @@ async function handleComicSource(req, res, { db, body, user }) {
     if (action === "fetch-image") {
       await enforceRateLimit(db, `comic-image:${userId}`, 180, 15 * 60 * 1000);
       const value = verifyAsset(body.token, userId);
-      const authorization = await db.collection("comicSourceRights").findOne({ userId: user._id, domain: new URL(value.pageUrl).hostname, siteAuthorization: true });
-      if (!authorization) return res.status(403).json({ error: "Nguồn chưa có hồ sơ quyền sử dụng hợp lệ." });
+      const authorization = await db.collection("comicSourceRights").findOne({ userId: user._id, domain: new URL(value.pageUrl).hostname, $or: [{ rightsAttested: true }, { siteAuthorization: true }] });
+      if (!authorization) return res.status(403).json({ error: "Bạn chưa xác nhận quyền tải nguồn này." });
       const image = await fetchSafe(value.assetUrl, { type: "image" });
       res.setHeader("Content-Type", image.contentType.split(";")[0]);
       res.setHeader("Content-Length", String(image.body.byteLength));
@@ -344,6 +422,7 @@ module.exports = {
   __test: Object.freeze({
     isPrivateIp,
     extractImageUrls,
+    extractChapterLinks,
     selectChapterImages,
     extractPageTitle,
     attrOf,

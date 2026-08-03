@@ -6,6 +6,7 @@
   const DB_STORE = "assets";
   const MAX_SCENES = 120;
   const MAX_FILE_BYTES = 40 * 1024 * 1024;
+  const SERIES_RESUME_KEY = "hh.comic-motion-series-resume.v1";
   const FORMATS = Object.freeze({
     landscape: { label: "Ngang 16:9", width: 1920, height: 1080 },
     portrait: { label: "Short 9:16", width: 1080, height: 1920 },
@@ -39,6 +40,11 @@
   let mountEpoch = 0;
   let sourceBusy = false;
   let sourceController = null;
+  let sourcePause = false;
+  let sourceProgress = null;
+  let sourcePreviewUrl = "";
+  let sourceToastTimer = 0;
+  let focusedSection = "workspace";
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -62,7 +68,7 @@
   });
   const defaultState = () => ({
     version: 1, projectId: uid("comic"), name: "Dự án truyện mới", currentSceneId: "",
-    sourceManifest: { sourceType: "local", sourceUrl: "", domain: "", author: "", license: "", permissionReference: "", attestedAt: "" },
+    sourceManifest: { sourceType: "local", sourceUrl: "", domain: "", title: "", rightsAttested: false, attestedAt: "" },
     format: { ...FORMATS.landscape, id: "landscape", fps: 24 }, scenes: [],
     speakers: [
       { id: "narrator", name: "Người kể chuyện", voiceId: "browser" },
@@ -233,6 +239,48 @@
     if (!node) return;
     node.textContent = message; node.dataset.type = type;
   }
+  function notify(message, type = "info") {
+    status(message, type);
+    const toast = root?.querySelector("[data-cms-toast]");
+    if (toast) {
+      toast.textContent = message;
+      toast.dataset.type = type;
+      toast.hidden = false;
+      clearTimeout(sourceToastTimer);
+      sourceToastTimer = setTimeout(() => { if (toast.isConnected) toast.hidden = true; }, 5200);
+    }
+    if (type === "error" && window.Notification?.permission === "granted") {
+      try { new Notification("Comic Motion Studio", { body: message }); } catch {}
+    }
+  }
+  function updateSourceProgress(patch = {}) {
+    sourceProgress = { ...(sourceProgress || {}), ...patch };
+    const panel = root?.querySelector("[data-cms-source-progress]");
+    if (!panel) return;
+    panel.hidden = sourceProgress.visible === false;
+    const total = Math.max(1, Number(sourceProgress.total) || 1);
+    const completed = Math.max(0, Number(sourceProgress.completed) || 0);
+    const failed = Math.max(0, Number(sourceProgress.failed) || 0);
+    const progress = Math.min(100, Math.round(completed / total * 100));
+    const bar = panel.querySelector("[data-cms-progress-bar]"); if (bar) { bar.value = progress; bar.max = 100; }
+    const label = panel.querySelector("[data-cms-progress-label]"); if (label) label.textContent = `${progress}% · ${completed}/${total} ảnh`;
+    const chapter = panel.querySelector("[data-cms-progress-chapter]"); if (chapter) chapter.textContent = sourceProgress.chapter || "Đang chuẩn bị…";
+    const counters = panel.querySelector("[data-cms-progress-counters]"); if (counters) counters.textContent = `Hoàn tất ${completed} · Lỗi ${failed} · Còn lại ${Math.max(0, total - completed - failed)}`;
+    const preview = panel.querySelector("[data-cms-progress-preview]");
+    if (preview && sourceProgress.previewUrl) { preview.src = sourceProgress.previewUrl; preview.hidden = false; }
+    const pause = panel.querySelector("[data-cms-source-pause]"); if (pause) pause.textContent = sourcePause ? "Tiếp tục" : "Tạm dừng";
+  }
+  function resetSourcePreview() {
+    if (sourcePreviewUrl) URL.revokeObjectURL(sourcePreviewUrl);
+    sourcePreviewUrl = "";
+  }
+  function seriesResumeKey(url) { return `${SERIES_RESUME_KEY}:${ownerId()}:${String(url || "")}`; }
+  function loadSeriesResume(url) {
+    try { return JSON.parse(localStorage.getItem(seriesResumeKey(url)) || "{}") || {}; } catch { return {}; }
+  }
+  function saveSeriesResume(url, record) {
+    try { localStorage.setItem(seriesResumeKey(url), JSON.stringify(record)); } catch {}
+  }
   function authHeaders() {
     const token = window.HHAuthSession?.token?.() || "";
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
@@ -257,16 +305,16 @@
   }
 
   function sourceDialogMarkup() {
+    // Replaces the former “Tải ảnh từ website được cấp phép” form; no license code or proof field is requested.
     return `<dialog class="cms-source-dialog" data-cms-source-dialog>
       <form method="dialog" data-cms-source-form>
-        <header><div><small>SOURCE & RIGHTS GATE</small><h3>Tải ảnh từ website được cấp phép</h3><p>Dán đúng URL chương truyện, xác nhận quyền sử dụng rồi chọn nhập project hoặc tải toàn bộ ảnh dạng ZIP. Không quét chương kế tiếp, không vượt CAPTCHA hoặc anti-bot.</p></div><button type="button" data-cms-close-source aria-label="Đóng">×</button></header>
-        <label>URL trang HTTPS<input type="url" name="url" required placeholder="https://website-cua-ban.vn/truyen/chuong-01"></label>
-        <div class="cms-form-grid"><label>Tác giả/chủ sở hữu<input name="author" required></label><label>Loại giấy phép<input name="license" required placeholder="Sở hữu / hợp đồng / CC BY..."></label></div>
-        <label>Bằng chứng hoặc mã quyền sử dụng<input name="permissionReference" required placeholder="Hợp đồng, email, ID giấy phép hoặc URL tài liệu"></label>
-        <label>Sau khi kiểm tra nguồn<select name="sourceMode"><option value="import">Nhập toàn bộ ảnh vào project</option><option value="download">Tải toàn bộ ảnh về máy dạng ZIP</option><option value="both">Nhập vào project + tải ZIP</option></select></label>
-        <label class="cms-check"><input type="checkbox" name="rightsAttested" required><span>Tôi có quyền sử dụng và tạo video từ nội dung này.</span></label>
-        <label class="cms-check"><input type="checkbox" name="siteAuthorization" required><span>Tôi được phép truy cập/tải ảnh từ chính website này; đây không chỉ là quyền với tác phẩm.</span></label>
-        <footer><button type="button" data-cms-close-source>Hủy</button><button class="cms-primary" type="submit" value="default">Kiểm tra nguồn</button></footer>
+        <header><div><small>COMIC SOURCE</small><h3>Tải ảnh truyện</h3><p>Dán URL một chương hoặc trang danh sách truyện. Tool chỉ đọc HTML công khai trong phạm vi URL đã chọn, không vượt CAPTCHA, anti-bot hoặc giới hạn truy cập.</p></div><button type="button" data-cms-close-source aria-label="Đóng">×</button></header>
+        <label>URL HTTPS<input type="url" name="url" required placeholder="https://website-cua-ban.vn/truyen/chuong-01"></label>
+        <div class="cms-form-grid"><label>Phạm vi tải<select name="sourceType"><option value="auto">Tự nhận diện</option><option value="chapter">Một chương</option><option value="series">Toàn bộ truyện</option></select></label><label>Đầu ra<select name="sourceMode"><option value="download">Tải toàn bộ về máy</option><option value="import">Nhập vào project</option><option value="both">Tải về + nhập project</option></select></label></div>
+        <label class="cms-check"><input type="checkbox" name="rightsAttested" required><span>Tôi xác nhận tôi sở hữu hoặc được phép tải nội dung từ nguồn này.</span></label>
+        <section class="cms-series-preview" data-cms-series-preview hidden><header><strong>Danh sách chương</strong><span data-cms-series-count>Chưa kiểm tra</span></header><div class="cms-series-list" data-cms-series-list></div></section>
+        <section class="cms-source-progress" data-cms-source-progress ${sourceProgress?.visible ? "" : "hidden"}><div class="cms-progress-head"><strong>Tiến trình tải</strong><span data-cms-progress-label>0%</span></div><progress data-cms-progress-bar value="0" max="100"></progress><strong data-cms-progress-chapter>Đang chuẩn bị…</strong><small data-cms-progress-counters>Hoàn tất 0 · Lỗi 0 · Còn lại 0</small><img data-cms-progress-preview alt="Ảnh đang tải" hidden><div class="cms-inline-actions"><button type="button" data-cms-source-pause>Tạm dừng</button><button type="button" data-cms-source-cancel>Hủy tải</button><button type="button" data-cms-source-retry hidden>Thử lại lỗi</button></div></section>
+        <footer><button type="button" data-cms-close-source>Hủy</button><button class="cms-primary" type="submit" value="default">Kiểm tra và tải</button></footer>
       </form>
     </dialog>`;
   }
@@ -326,13 +374,13 @@
     if (!root) return;
     const caps = capabilities();
     const scene = activeScene();
-    root.innerHTML = `<section class="cms-app">
-      <header class="cms-topbar"><div><small>COMIC MOTION STUDIO</small><input value="${esc(state.name)}" maxlength="180" data-cms-project="name" aria-label="Tên dự án"><span data-cms-save-status>Đã tự lưu</span></div><div class="cms-top-actions"><label>Khung hình<select data-cms-project="format">${Object.entries(FORMATS).map(([id, value]) => `<option value="${id}" ${state.format.id === id ? "selected" : ""}>${value.label}</option>`).join("")}</select></label><button type="button" data-cms-action="preview-10">Xem thử 10 giây</button><button type="button" data-cms-action="export-project">Lưu .hhcomic</button><button class="cms-primary" type="button" data-cms-action="render">Xuất ${caps.mp4Mime ? "MP4" : "WebM"}</button></div></header>
+    root.innerHTML = `<section class="cms-app" data-cms-focus="${esc(focusedSection)}">
+      <header class="cms-topbar"><div><small>COMIC MOTION STUDIO</small><input value="${esc(state.name)}" maxlength="180" data-cms-project="name" aria-label="Tên dự án"><span data-cms-save-status>Đã tự lưu</span></div><nav class="cms-section-nav" aria-label="Khu vực làm việc"><button type="button" data-cms-section="source" class="${focusedSection === "source" ? "is-active" : ""}">Nguồn</button><button type="button" data-cms-section="preview" class="${focusedSection === "preview" ? "is-active" : ""}">Preview</button><button type="button" data-cms-section="voice" class="${focusedSection === "voice" ? "is-active" : ""}">Voice</button><button type="button" data-cms-section="timeline" class="${focusedSection === "timeline" ? "is-active" : ""}">Timeline</button></nav><div class="cms-top-actions"><label>Khung hình<select data-cms-project="format">${Object.entries(FORMATS).map(([id, value]) => `<option value="${id}" ${state.format.id === id ? "selected" : ""}>${value.label}</option>`).join("")}</select></label><button type="button" data-cms-action="preview-10">Xem thử 10 giây</button><button type="button" data-cms-action="export-project">Lưu .hhcomic</button><button class="cms-primary" type="button" data-cms-action="render">Xuất ${caps.mp4Mime ? "MP4" : "WebM"}</button></div></header>
       <div class="cms-workspace">
         <aside class="cms-source"><header><div><small>SOURCE PAGES</small><h3>Ảnh & trang</h3></div><span>${state.scenes.length}/${MAX_SCENES}</span></header>
           <div class="cms-source-actions"><label>+ Ảnh<input type="file" accept="image/png,image/jpeg,image/webp" multiple data-cms-images></label><label>+ Folder<input type="file" accept="image/*" multiple webkitdirectory data-cms-folder></label><label>Gói/PDF<input type="file" accept=".zip,.cbz,.pdf,.hhcomic,application/pdf,application/zip" data-cms-package></label><button type="button" data-cms-action="open-source" aria-label="Tải ảnh từ website" title="Dán URL chương truyện để tải ảnh">Tải website</button></div>
           <div class="cms-scenes">${state.scenes.map(sceneCard).join("") || `<div class="cms-empty"><strong>Thả ảnh vào đây</strong><p>PNG, JPG, WebP, folder, ZIP, CBZ hoặc PDF.</p></div>`}</div>
-          <div class="cms-rights"><strong>Quyền sử dụng</strong><span>${state.sourceManifest.permissionReference ? `${esc(state.sourceManifest.license)} · ${esc(state.sourceManifest.author)}` : "Nguồn cục bộ · bạn chịu trách nhiệm về quyền sử dụng"}</span></div>
+          <div class="cms-rights"><strong>Nguồn nội dung</strong><span>${state.sourceManifest.rightsAttested ? `Đã xác nhận quyền sử dụng · ${esc(state.sourceManifest.title || state.sourceManifest.domain || "website")}` : "Nguồn cục bộ · bạn chịu trách nhiệm về quyền sử dụng"}</span></div>
         </aside>
         <main class="cms-preview"><div class="cms-stage"><canvas width="${state.format.width}" height="${state.format.height}" data-cms-canvas></canvas><div class="cms-safe-zone" aria-hidden="true"></div><div class="cms-stage-empty" ${scene ? "hidden" : ""}><strong>Preview video</strong><p>Thêm trang truyện để xem chuyển động camera.</p></div></div>
           <div class="cms-transport"><button type="button" data-cms-action="play">${previewPlaying ? "❚❚" : "▶"}</button><input type="range" min="0" max="${Math.max(0.1, totalDuration())}" step="0.01" value="${previewOffset}" data-cms-scrubber><span data-cms-time>${formatTime(previewOffset)} / ${formatTime(totalDuration())}</span><button type="button" data-cms-action="thumbnail">Lấy thumbnail</button></div>
@@ -341,10 +389,11 @@
         <aside class="cms-inspector">${inspectorMarkup(scene)}</aside>
       </div>
       <footer class="cms-timeline">${timelineMarkup()}</footer>
-      <div class="cms-status" data-cms-status data-type="info">Sẵn sàng. Dự án được lưu riêng theo tài khoản.</div>
+      <div class="cms-status" data-cms-status data-type="info">Sẵn sàng. Dự án được lưu riêng theo tài khoản.</div><div class="cms-toast" data-cms-toast data-type="info" hidden role="status" aria-live="polite"></div>
       ${sourceDialogMarkup()}
     </section>`;
     drawCurrent();
+    if (sourceProgress) updateSourceProgress(sourceProgress);
   }
 
   async function drawScene(context, scene, localTime = 0, canvas = context.canvas) {
@@ -421,7 +470,7 @@
     previewFrame = requestAnimationFrame(previewTick);
   }
 
-  async function importImageBlobs(entries, sourceManifest = null) {
+  async function importImageBlobs(entries, sourceManifest = null, options = {}) {
     const room = MAX_SCENES - state.scenes.length;
     const accepted = entries.filter((entry) => entry.blob?.type?.startsWith("image/") && entry.blob.size <= MAX_FILE_BYTES).slice(0, room).sort((a, b) => naturalCompare(a.name, b.name));
     if (!accepted.length) throw new Error("Không tìm thấy ảnh PNG, JPG hoặc WebP hợp lệ.");
@@ -432,8 +481,9 @@
     }
     if (sourceManifest) state.sourceManifest = { ...state.sourceManifest, ...sourceManifest };
     state.currentSceneId ||= state.scenes[0]?.id || "";
-    state.revision += 1; saveState(); await refreshAssets(); render();
-    status(`Đã thêm ${accepted.length} trang và sắp xếp theo tên tệp.`, "success");
+    state.revision += 1; saveState(); await refreshAssets();
+    if (!options.deferRender) { render(); status(`Đã thêm ${accepted.length} trang và sắp xếp theo tên tệp.`, "success"); }
+    return accepted.length;
   }
   async function importImageFiles(fileList) {
     const files = [...fileList].filter((file) => file.type.startsWith("image/"));
@@ -496,13 +546,22 @@
     state.revision += 1; saveState(); await refreshAssets(); render(); status(`Đã mở ${state.scenes.length} cảnh từ project .hhcomic.`, "success");
   }
 
-  async function fetchAuthorizedImages(result, signal) {
+  async function waitForSourceResume(signal) {
+    while (sourcePause) {
+      if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+      await new Promise((resolve) => setTimeout(resolve, 140));
+    }
+  }
+  async function fetchAuthorizedImages(result, signal, options = {}) {
     const images = Array.isArray(result?.images) ? result.images : [];
     const downloaded = new Array(images.length);
     let cursor = 0;
     let completed = 0;
+    const chapterLabel = options.chapterLabel || result.source?.title || "Chương hiện tại";
+    if (sourceProgress) updateSourceProgress({ total: (Number(sourceProgress.total) || 0) + images.length, chapter: chapterLabel });
     const worker = async () => {
       while (cursor < images.length) {
+        await waitForSourceResume(signal);
         const position = cursor;
         cursor += 1;
         const image = images[position];
@@ -514,7 +573,13 @@
             const extension = blob.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
             downloaded[position] = { name: `page-${String(position + 1).padStart(4, "0")}.${extension}`, blob, alt: image.alt || "" };
             completed += 1;
-            status(`Đang tải ảnh được cấp phép ${completed}/${images.length}…`);
+            if (sourceProgress) {
+              const previewUrl = URL.createObjectURL(blob);
+              if (sourcePreviewUrl) URL.revokeObjectURL(sourcePreviewUrl);
+              sourcePreviewUrl = previewUrl;
+              updateSourceProgress({ completed: (Number(sourceProgress.completed) || 0) + 1, previewUrl, chapter: chapterLabel });
+            }
+            status(`Đang tải ${chapterLabel} · ảnh ${completed}/${images.length}…`);
             lastError = null;
             break;
           } catch (error) {
@@ -522,14 +587,17 @@
             if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (2 ** attempt)));
           }
         }
-        if (lastError) throw lastError;
+        if (lastError) {
+          if (sourceProgress) updateSourceProgress({ failed: (Number(sourceProgress.failed) || 0) + 1, chapter: chapterLabel });
+          throw lastError;
+        }
       }
     };
     await Promise.all(Array.from({ length: Math.min(3, images.length) }, worker));
     return downloaded.filter(Boolean);
   }
 
-  async function downloadSourceArchive(entries, result) {
+  async function downloadSourceArchive(entries, result, options = {}) {
     if (!window.JSZip) throw new Error("Bộ đóng gói ZIP chưa tải xong. Hãy làm mới trang.");
     const zip = new window.JSZip();
     const folder = zip.folder("images");
@@ -539,12 +607,7 @@
       downloadedAt: new Date().toISOString(),
       source: result.source,
       policy: result.policy,
-      rights: {
-        attested: true,
-        author: result.source?.author || "",
-        license: result.source?.license || "",
-        permissionReference: result.source?.permissionReference || ""
-      },
+      rights: { attested: true, attestedAt: result.source?.inspectedAt || new Date().toISOString() },
       images: entries.map((entry, index) => ({ index: index + 1, file: `images/${entry.name}`, mimeType: entry.blob.type, bytes: entry.blob.size, alt: entry.alt }))
     }, null, 2));
     status(`Đang đóng gói ${entries.length} ảnh thành ZIP…`);
@@ -553,22 +616,107 @@
     downloadBlob(blob, `${archiveName}-images.zip`);
   }
 
+  async function writeChapterDirectory(directory, chapter, entries, source) {
+    if (!directory?.getDirectoryHandle) return false;
+    const folder = await directory.getDirectoryHandle(`Chap-${String(chapter.number).padStart(3, "0")}`, { create: true });
+    for (const entry of entries) {
+      const file = await folder.getFileHandle(entry.name, { create: true });
+      const writable = await file.createWritable();
+      await writable.write(entry.blob);
+      await writable.close();
+    }
+    const manifest = { schemaVersion: 1, downloadedAt: new Date().toISOString(), source, chapter: { number: chapter.number, title: chapter.title, url: chapter.url }, images: entries.map((entry, index) => ({ index: index + 1, file: entry.name, mimeType: entry.blob.type, bytes: entry.blob.size, alt: entry.alt })) };
+    const manifestFile = await folder.getFileHandle("chapter-manifest.json", { create: true });
+    const manifestWriter = await manifestFile.createWritable();
+    await manifestWriter.write(JSON.stringify(manifest, null, 2));
+    await manifestWriter.close();
+    return true;
+  }
+
+  function renderSeriesPreview(chapters) {
+    const section = root?.querySelector("[data-cms-series-preview]");
+    const list = section?.querySelector("[data-cms-series-list]");
+    const count = section?.querySelector("[data-cms-series-count]");
+    if (!section || !list) return;
+    section.hidden = false;
+    if (count) count.textContent = `${chapters.length} chương · sẽ tải theo thứ tự mới nhất`;
+    list.innerHTML = chapters.map((chapter) => `<label class="cms-series-row"><input type="checkbox" checked data-cms-series-chapter="${esc(chapter.url)}"><span>${esc(chapter.title || `Chương ${chapter.number}`)}</span></label>`).join("");
+  }
+
+  async function chooseSeriesDirectory() {
+    if (!window.showDirectoryPicker) return null;
+    try { return await window.showDirectoryPicker({ mode: "readwrite", id: "comic-motion-download" }); }
+    catch (error) { if (error?.name === "AbortError") throw error; return null; }
+  }
+
+  async function importSeries(form, signal, data) {
+    const seriesUrl = String(data.get("url") || "");
+    const sourceMode = String(data.get("sourceMode") || "download");
+    let directory = null;
+    if (["download", "both"].includes(sourceMode)) directory = await chooseSeriesDirectory();
+    updateSourceProgress({ visible: true, total: 0, completed: 0, failed: 0, chapter: "Đang đọc danh sách chương…" });
+    const response = await api({ action: "inspect-series", url: seriesUrl, rightsAttested: data.get("rightsAttested") === "on" }, signal);
+    const result = await response.json();
+    const selectedUrls = new Set([...root.querySelectorAll("[data-cms-series-chapter]:checked")].map((input) => input.dataset.cmsSeriesChapter));
+    const chapters = (result.chapters || []).filter((chapter) => !selectedUrls.size || selectedUrls.has(chapter.url));
+    if (!chapters.length) throw new Error("Hãy chọn ít nhất một chương để tải.");
+    renderSeriesPreview(chapters);
+    const fallbackZip = directory || !["download", "both"].includes(sourceMode) ? null : (window.JSZip ? new window.JSZip() : null);
+    if (!directory && ["download", "both"].includes(sourceMode) && !fallbackZip) throw new Error("Trình duyệt không hỗ trợ lưu thư mục hoặc ZIP.");
+    const resume = loadSeriesResume(seriesUrl);
+    const completedChapters = new Set(Array.isArray(resume.completedChapters) ? resume.completedChapters : []);
+    const chapterManifests = [];
+    let importedCount = 0;
+    for (let index = 0; index < chapters.length; index += 1) {
+      await waitForSourceResume(signal);
+      const chapter = chapters[index];
+      updateSourceProgress({ chapter: `Chương ${chapter.number} · ${index + 1}/${chapters.length}` });
+      if (completedChapters.has(chapter.url)) { status(`Bỏ qua chương ${chapter.number}: đã tải ở lần trước.`); continue; }
+      const chapterResult = await (await api({ action: "inspect-chapter", token: chapter.token }, signal)).json();
+      const entries = await fetchAuthorizedImages(chapterResult, signal, { chapterLabel: `Chương ${chapter.number}` });
+      chapterManifests.push({ number: chapter.number, title: chapter.title, url: chapter.url, images: entries.length });
+      if (directory) await writeChapterDirectory(directory, chapter, entries, result.source);
+      if (fallbackZip) {
+        const folder = fallbackZip.folder(`Chap-${String(chapter.number).padStart(3, "0")}`);
+        entries.forEach((entry) => folder.file(entry.name, entry.blob));
+        fallbackZip.file(`Chap-${String(chapter.number).padStart(3, "0")}/chapter-manifest.json`, JSON.stringify({ chapter, images: entries.map((entry) => ({ file: entry.name, bytes: entry.blob.size, alt: entry.alt })) }, null, 2));
+      }
+      if (["import", "both"].includes(sourceMode) && importedCount < MAX_SCENES) importedCount += await importImageBlobs(entries, { ...result.source, sourceType: "authorized-series", sourceUrl: seriesUrl, rightsAttested: true, attestedAt: result.source.inspectedAt }, { deferRender: true });
+      completedChapters.add(chapter.url);
+      saveSeriesResume(seriesUrl, { completedChapters: [...completedChapters], updatedAt: new Date().toISOString() });
+    }
+    if (fallbackZip && ["download", "both"].includes(sourceMode)) {
+      fallbackZip.file("series-manifest.json", JSON.stringify({ schemaVersion: 1, downloadedAt: new Date().toISOString(), source: result.source, chapters: chapterManifests }, null, 2));
+      status("Đang đóng gói toàn bộ truyện thành ZIP…");
+      const blob = await fallbackZip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 5 } }, (meta) => status(`Đang đóng gói ZIP · ${Math.round(meta.percent)}%…`));
+      downloadBlob(blob, `${safeFilename(result.source?.title || "comic-series")}-series.zip`);
+    } else if (directory) {
+      const rootManifest = await directory.getFileHandle("series-manifest.json", { create: true });
+      const writer = await rootManifest.createWritable(); await writer.write(JSON.stringify({ schemaVersion: 1, downloadedAt: new Date().toISOString(), source: result.source, chapters: chapterManifests }, null, 2)); await writer.close();
+    }
+    if (["import", "both"].includes(sourceMode)) { state.revision += 1; saveState(); await refreshAssets(); render(); }
+    updateSourceProgress({ chapter: "Hoàn tất toàn bộ truyện", completed: sourceProgress?.completed || 0 });
+    notify(`Đã hoàn tất ${completedChapters.size}/${chapters.length} chương${directory ? " vào thư mục đã chọn" : " và tạo ZIP"}.`, "success");
+  }
+
   async function importWebsite(form, signal) {
     const data = new FormData(form);
-    status("Đang kiểm tra quyền và tải danh sách ảnh của đúng một trang…");
-    const response = await api({
-      action: "inspect", url: data.get("url"), author: data.get("author"), license: data.get("license"), permissionReference: data.get("permissionReference"),
-      rightsAttested: data.get("rightsAttested") === "on", siteAuthorization: data.get("siteAuthorization") === "on"
-    }, signal);
+    const url = String(data.get("url") || "");
+    const selectedType = String(data.get("sourceType") || "auto");
+    const isSeries = selectedType === "series" || (selectedType === "auto" && !/(?:chap(?:ter)?|chuong|chương)[-_\s]?\d+/i.test(url));
+    if (isSeries) return importSeries(form, signal, data);
+    updateSourceProgress({ visible: true, total: 0, completed: 0, failed: 0, chapter: "Đang đọc chương…" });
+    status("Đang kiểm tra nguồn và tải ảnh của chương…");
+    const response = await api({ action: "inspect", url, rightsAttested: data.get("rightsAttested") === "on" }, signal);
     const result = await response.json();
     const sourceMode = String(data.get("sourceMode") || "import");
-    const imported = await fetchAuthorizedImages(result, signal);
+    const imported = await fetchAuthorizedImages(result, signal, { chapterLabel: result.source?.title || "Chương hiện tại" });
     if (["download", "both"].includes(sourceMode)) await downloadSourceArchive(imported, result);
     if (["import", "both"].includes(sourceMode)) {
-      await importImageBlobs(imported, { ...result.source, sourceType: "authorized-url", attestedAt: result.source.inspectedAt });
-    } else {
-      status(`Đã tải ${imported.length} ảnh đúng thứ tự về máy kèm manifest quyền sử dụng.`, "success");
+      await importImageBlobs(imported, { ...result.source, sourceType: "authorized-url", rightsAttested: true, attestedAt: result.source.inspectedAt });
     }
+    updateSourceProgress({ chapter: "Hoàn tất chương" });
+    notify(`Đã hoàn tất ${imported.length} ảnh${sourceMode === "import" ? " và thêm vào project" : " về máy"}.`, "success");
   }
 
   async function detectPanels(scene) {
@@ -803,7 +951,27 @@
   async function handleClick(event) {
     if (event.target.closest("[data-cms-close-source]")) {
       sourceController?.abort();
+      sourcePause = false;
       root.querySelector("[data-cms-source-dialog]")?.close();
+      return;
+    }
+    if (event.target.closest("[data-cms-source-cancel]")) {
+      sourcePause = false;
+      sourceController?.abort();
+      notify("Đã gửi yêu cầu hủy tải nguồn ảnh.", "info");
+      return;
+    }
+    if (event.target.closest("[data-cms-source-pause]")) {
+      sourcePause = !sourcePause;
+      updateSourceProgress();
+      status(sourcePause ? "Đã tạm dừng tải. Bấm Tiếp tục để chạy tiếp." : "Đang tiếp tục tải nguồn ảnh…");
+      return;
+    }
+    const sectionToggle = event.target.closest("[data-cms-section]");
+    if (sectionToggle) {
+      focusedSection = sectionToggle.dataset.cmsSection || "workspace";
+      if (root) root.dataset.cmsFocus = focusedSection;
+      root.querySelectorAll("[data-cms-section]").forEach((button) => button.classList.toggle("is-active", button === sectionToggle));
       return;
     }
     const selectLine = event.target.closest("[data-cms-select-line]");
@@ -816,7 +984,7 @@
       checkpoint(); state.scenes = state.scenes.filter((item) => item !== scene); state.currentSceneId = state.scenes[0]?.id || ""; await dbDelete(scene.assetId).catch(() => {}); saveState(); await refreshAssets(); render(); return;
     }
     const action = event.target.closest("[data-cms-action]")?.dataset.cmsAction; if (!action) return;
-    if (action === "open-source") return root.querySelector("[data-cms-source-dialog]")?.showModal();
+    if (action === "open-source") { sourceProgress = { visible: false }; resetSourcePreview(); const dialog = root.querySelector("[data-cms-source-dialog]"); dialog?.showModal(); updateSourceProgress(sourceProgress); return; }
     if (action === "play") {
       previewPlaying = !previewPlaying;
       if (previewPlaying) { previewStarted = performance.now(); previewFrame = requestAnimationFrame(previewTick); } else { cancelAnimationFrame(previewFrame); previewOffset += (performance.now() - previewStarted) / 1000; }
@@ -844,6 +1012,7 @@
     const form = event.target;
     const operationController = new AbortController();
     sourceController = operationController;
+    sourcePause = false;
     sourceBusy = true;
     form.setAttribute("aria-busy", "true");
     form.querySelectorAll("button:not([data-cms-close-source]), input, select").forEach((control) => { control.disabled = true; });
@@ -852,9 +1021,10 @@
       form.closest("dialog")?.close();
     } catch (error) {
       if (error?.name === "AbortError") {
-        status("Đã hủy tác vụ nhập nguồn ảnh.");
+        notify("Đã hủy tác vụ nhập nguồn ảnh.", "info");
         return;
       }
+      notify(error?.message || "Không thể tải nguồn ảnh.", "error");
       throw error;
     } finally {
       if (sourceController === operationController) sourceController = null;
@@ -902,6 +1072,7 @@
     previewPlaying = false; cancelAnimationFrame(previewFrame); clearTimeout(autosaveTimer); renderCancelled = true;
     if (recorder?.state === "recording") recorder.stop(); recorder = null; window.speechSynthesis?.cancel?.(); controller?.abort(); controller = null;
     for (const url of objectUrls.values()) URL.revokeObjectURL(url); objectUrls.clear(); imageCache.clear();
+    resetSourcePreview();
     if (root) root.innerHTML = ""; root = null;
   }
 
