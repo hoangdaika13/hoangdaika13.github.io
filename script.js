@@ -5388,6 +5388,7 @@ function initAppShell() {
     { id: "portfolio-observatory", icon: "PO", title: "Portfolio Observatory", route: "/work/portfolio-observatory", color: "#ffd76a", description: "Sức khỏe, deadline, velocity, workload và snapshot." }
   ];
   const davinciResolvePages = [
+    { id: "cosmic", icon: "HC", title: "H Cosmic Studio", route: "/davinci-resolve/cosmic", description: "Điều khiển batch production r26 trên web: preflight, timeline V1/V2, effect, RapidGrade, render queue, checkpoint, FFprobe và tải Portable ZIP." },
     { id: "davinci", icon: "DV", title: "DaVinci Resolve", route: "/davinci-resolve/davinci", description: "HH Video Studio chạy trực tiếp trên web: Media Pool, timeline, màu, audio, title và xuất MP4/WebM." },
     { id: "auto", icon: "AD", title: "Auto Video Director", route: "/davinci-resolve/auto", description: "Quét media thật, đo sáng–màu–waveform và tạo timeline tự động trước khi bạn xác nhận." },
     { id: "batch", icon: "BV", title: "Batch Video Factory", route: "/davinci-resolve/batch", description: "Dùng một sườn để trộn CSV, ảnh và video rồi render hàng loạt MP4/WebM với hàng đợi thật." },
@@ -6205,8 +6206,10 @@ function initAppShell() {
       window.HHDavinciResolveHub?.unmount?.();
       window.HHVideoBatchFactory?.unmount?.();
       window.HHYouTubeCreatorGalaxy?.cleanup?.();
+      window.HHCosmicWebStudio?.unmount?.();
       if (resolveView === "youtube") window.HHYouTubeCreatorGalaxy?.mount(resolveHost, { view: resolveView });
       else if (resolveView === "batch") window.HHVideoBatchFactory?.mount(resolveHost);
+      else if (resolveView === "cosmic") window.HHCosmicWebStudio?.mount(resolveHost);
       else window.HHDavinciResolveHub?.mount(resolveHost, { view: resolveView });
       remember(`davinci-resolve-${resolveView}`);
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {
