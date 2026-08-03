@@ -36,6 +36,9 @@
   let autosaveTimer = 0;
   let undoStack = [];
   let redoStack = [];
+  let mountEpoch = 0;
+  let sourceBusy = false;
+  let sourceController = null;
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -161,11 +164,15 @@
   const dbPut = (record) => dbRequest("readwrite", (store) => store.put(record));
   const dbDelete = (id) => dbRequest("readwrite", (store) => store.delete(id));
   const dbAll = () => dbRequest("readonly", (store) => store.getAll());
-  async function refreshAssets() {
+  async function refreshAssets(expectedEpoch = mountEpoch) {
+    const expectedOwner = ownerId();
+    const expectedProject = state?.projectId;
     const rows = await dbAll().catch(() => []);
-    assets = new Map(rows.filter((row) => row.ownerId === ownerId() && row.projectId === state.projectId).map((row) => [row.id, row]));
+    if (expectedEpoch !== mountEpoch || !root) return false;
+    assets = new Map(rows.filter((row) => row.ownerId === expectedOwner && row.projectId === expectedProject).map((row) => [row.id, row]));
     for (const url of objectUrls.values()) URL.revokeObjectURL(url);
     objectUrls.clear(); imageCache.clear();
+    return true;
   }
   async function storeBlob(blob, name, kind = "image") {
     const id = uid("cms-asset");
@@ -230,8 +237,8 @@
     const token = window.HHAuthSession?.token?.() || "";
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }
-  async function api(payload) {
-    const response = await fetch(`${apiBase}/api/media/comic-source`, { method: "POST", credentials: "include", headers: authHeaders(), body: JSON.stringify(payload) });
+  async function api(payload, signal = controller?.signal) {
+    const response = await fetch(`${apiBase}/api/media/comic-source`, { method: "POST", credentials: "include", headers: authHeaders(), body: JSON.stringify(payload), signal });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       throw new Error(data.error || `Máy chủ trả về HTTP ${response.status}.`);
@@ -489,7 +496,7 @@
     state.revision += 1; saveState(); await refreshAssets(); render(); status(`Đã mở ${state.scenes.length} cảnh từ project .hhcomic.`, "success");
   }
 
-  async function fetchAuthorizedImages(result) {
+  async function fetchAuthorizedImages(result, signal) {
     const images = Array.isArray(result?.images) ? result.images : [];
     const downloaded = new Array(images.length);
     let cursor = 0;
@@ -502,7 +509,7 @@
         let lastError = null;
         for (let attempt = 0; attempt < 3; attempt += 1) {
           try {
-            const assetResponse = await api({ action: "fetch-image", token: image.token });
+            const assetResponse = await api({ action: "fetch-image", token: image.token }, signal);
             const blob = await assetResponse.blob();
             const extension = blob.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
             downloaded[position] = { name: `page-${String(position + 1).padStart(4, "0")}.${extension}`, blob, alt: image.alt || "" };
@@ -546,16 +553,16 @@
     downloadBlob(blob, `${archiveName}-images.zip`);
   }
 
-  async function importWebsite(form) {
+  async function importWebsite(form, signal) {
     const data = new FormData(form);
     status("Đang kiểm tra quyền và tải danh sách ảnh của đúng một trang…");
     const response = await api({
       action: "inspect", url: data.get("url"), author: data.get("author"), license: data.get("license"), permissionReference: data.get("permissionReference"),
       rightsAttested: data.get("rightsAttested") === "on", siteAuthorization: data.get("siteAuthorization") === "on"
-    });
+    }, signal);
     const result = await response.json();
     const sourceMode = String(data.get("sourceMode") || "import");
-    const imported = await fetchAuthorizedImages(result);
+    const imported = await fetchAuthorizedImages(result, signal);
     if (["download", "both"].includes(sourceMode)) await downloadSourceArchive(imported, result);
     if (["import", "both"].includes(sourceMode)) {
       await importImageBlobs(imported, { ...result.source, sourceType: "authorized-url", attestedAt: result.source.inspectedAt });
@@ -794,7 +801,11 @@
     }
   }
   async function handleClick(event) {
-    if (event.target.closest("[data-cms-close-source]")) { root.querySelector("[data-cms-source-dialog]")?.close(); return; }
+    if (event.target.closest("[data-cms-close-source]")) {
+      sourceController?.abort();
+      root.querySelector("[data-cms-source-dialog]")?.close();
+      return;
+    }
     const selectLine = event.target.closest("[data-cms-select-line]");
     if (selectLine) { const scene = activeScene(); if (scene) { scene.currentDialogueId = selectLine.dataset.cmsSelectLine; saveState(); render(); } return; }
     const select = event.target.closest("[data-cms-select-scene]");
@@ -828,7 +839,31 @@
   }
   async function handleSubmit(event) {
     if (!event.target.matches("[data-cms-source-form]")) return;
-    event.preventDefault(); await importWebsite(event.target); event.target.closest("dialog")?.close();
+    event.preventDefault();
+    if (sourceBusy) return status("Nguồn ảnh đang được xử lý. Hãy chờ tác vụ hiện tại hoàn tất.");
+    const form = event.target;
+    const operationController = new AbortController();
+    sourceController = operationController;
+    sourceBusy = true;
+    form.setAttribute("aria-busy", "true");
+    form.querySelectorAll("button:not([data-cms-close-source]), input, select").forEach((control) => { control.disabled = true; });
+    try {
+      await importWebsite(form, operationController.signal);
+      form.closest("dialog")?.close();
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        status("Đã hủy tác vụ nhập nguồn ảnh.");
+        return;
+      }
+      throw error;
+    } finally {
+      if (sourceController === operationController) sourceController = null;
+      sourceBusy = false;
+      if (form.isConnected) {
+        form.removeAttribute("aria-busy");
+        form.querySelectorAll("button, input, select").forEach((control) => { control.disabled = false; });
+      }
+    }
   }
   function handleDrag(event) {
     const card = event.target.closest("[data-cms-scene]"); if (!card) return;
@@ -843,7 +878,9 @@
   }
 
   async function mount(host, mountOptions = {}) {
-    unmount(); root = host; apiBase = String(mountOptions.apiBase || window.HH_CONFIG?.API_BASE || "").replace(/\/$/, ""); state = loadState(); controller = new AbortController(); const listenerOptions = { signal: controller.signal };
+    unmount();
+    const epoch = ++mountEpoch;
+    root = host; apiBase = String(mountOptions.apiBase || window.HH_CONFIG?.API_BASE || "").replace(/\/$/, ""); state = loadState(); controller = new AbortController(); const listenerOptions = { signal: controller.signal };
     root.addEventListener("click", (event) => handleClick(event).catch((error) => status(error.message, "error")), listenerOptions);
     root.addEventListener("input", updateInput, listenerOptions);
     root.addEventListener("change", (event) => handleFiles(event.target).catch((error) => status(error.message, "error")), listenerOptions);
@@ -853,10 +890,15 @@
       if (!event.target.matches("[data-cms-scrubber]")) return;
       previewOffset = Number(event.target.value); const position = sceneAtTime(previewOffset); if (position) { state.currentSceneId = position.scene.id; drawScene(root.querySelector("[data-cms-canvas]").getContext("2d"), position.scene, position.localTime); }
     }, listenerOptions);
-    window.addEventListener("hh:auth-change", async () => { state = loadState(); await refreshAssets(); render(); }, listenerOptions);
-    await refreshAssets(); render();
+    window.addEventListener("hh:auth-change", async () => { state = loadState(); if (await refreshAssets(epoch)) render(); }, listenerOptions);
+    if (!await refreshAssets(epoch) || epoch !== mountEpoch || root !== host || controller?.signal.aborted) return false;
+    render();
+    return true;
   }
   function unmount() {
+    mountEpoch += 1;
+    sourceBusy = false;
+    sourceController?.abort(); sourceController = null;
     previewPlaying = false; cancelAnimationFrame(previewFrame); clearTimeout(autosaveTimer); renderCancelled = true;
     if (recorder?.state === "recording") recorder.stop(); recorder = null; window.speechSynthesis?.cancel?.(); controller?.abort(); controller = null;
     for (const url of objectUrls.values()) URL.revokeObjectURL(url); objectUrls.clear(); imageCache.clear();

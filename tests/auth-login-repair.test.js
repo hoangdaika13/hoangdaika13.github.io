@@ -107,7 +107,7 @@ test("production authentication never redirects to the paused legacy Vercel doma
   assert.doesNotMatch(config, /hoangdaika13githubio\.vercel\.app/);
   assert.match(html, /config\.js\?v=10/);
   assert.match(worker, /config\.js\?v=10/);
-  assert.match(worker, /hh-identity-portal-v401/);
+  assert.match(worker, /hh-identity-portal-v402/);
 });
 
 test("public provider and anonymous session checks work without opening MongoDB", async () => {

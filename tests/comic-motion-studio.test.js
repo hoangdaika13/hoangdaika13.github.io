@@ -86,10 +86,14 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
   assert.match(script, /HHComicMotionStudio\?\.unmount/);
   assert.match(script, /Comic Motion Studio/);
   assert.match(loader, /comic-motion-studio\.css\?v=3/);
-  assert.match(loader, /comic-motion-studio\.js\?v=4/);
+  assert.match(loader, /comic-motion-studio\.js\?v=5/);
   assert.match(loader, /vendor\/jszip\.min\.js/);
   assert.match(loader, /vendor\/tesseract\.min\.js/);
-  assert.match(worker, /hh-identity-portal-v401/);
+  assert.match(loader, /STYLE_TIMEOUT_MS\s*=\s*15000/);
+  assert.match(loader, /SCRIPT_TIMEOUT_MS\s*=\s*20000/);
+  assert.match(loader, /assetPromises\.delete\(key\)/);
+  assert.match(loader, /retryForRoute/);
+  assert.match(worker, /hh-identity-portal-v402/);
   assert.match(worker, /pdf\.worker\.min\.mjs/);
   assert.match(worker, /vie\.traineddata\.gz/);
 
@@ -97,8 +101,9 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
     /hh\.comic-motion-studio\.v1/, /hh-comic-motion-media/, /webkitdirectory/, /JSZip\.loadAsync/,
     /pdfjs\.getDocument/, /Tesseract\.createWorker/, /detectPanels/, /speechSynthesis/,
     /generateVoice/, /captureStream/, /MediaRecorder/, /mp4Mime/, /webmMime/,
-    /prepareAudio/, /subtitles\.srt/, /subtitles\.vtt/, /\.hhcomic/, /undoStack/, /autosave/
-    , /sourceMode/, /fetchAuthorizedImages/, /downloadSourceArchive/, /source-manifest\.json/, /Math\.min\(3, images\.length\)/
+    /prepareAudio/, /subtitles\.srt/, /subtitles\.vtt/, /\.hhcomic/, /undoStack/, /autosave/,
+    /sourceMode/, /fetchAuthorizedImages/, /downloadSourceArchive/, /source-manifest\.json/, /Math\.min\(3, images\.length\)/,
+    /mountEpoch/, /sourceController/, /signal = controller\?\.signal/, /epoch !== mountEpoch/
   ]) assert.match(source, contract);
 
   for (const contract of [
@@ -110,6 +115,9 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
   ]) assert.match(backend, contract);
 
   assert.match(actions, /handleComicSource/);
+  assert.match(script, /routeAssetRetries/);
+  assert.match(script, /Promise\.resolve\(window\.HHComicMotionStudio\.mount/);
+  assert.doesNotMatch(script, /event\.detail\?\.route[^\n]+comic-motion-studio[^\n]+renderRouteSafely/);
   assert.ok(vercel.rewrites.some((rewrite) => rewrite.source === "/api/media/comic-source"
     && rewrite.destination.includes("/api/modules/comic-motion/actions")));
   assert.equal(fs.existsSync(path.join(root, "api/media/comic-source.js")), false);

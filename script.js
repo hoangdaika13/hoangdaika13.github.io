@@ -6182,7 +6182,12 @@ function initAppShell() {
       updatePageHeader("Comic Motion Studio", "Biến ảnh truyện được cấp phép thành video kể chuyện có camera, voice, nhạc, phụ đề và timeline.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/davinci-resolve">Video Studio</button><button class="app-primary-action" type="button" data-command-open>Tìm công cụ</button>`;
       workspace.innerHTML = '<div data-comic-motion-host></div>';
-      if (window.HHComicMotionStudio?.mount) window.HHComicMotionStudio.mount(workspace.firstElementChild, { apiBase: REALTIME_URL });
+      if (window.HHComicMotionStudio?.mount) {
+        const comicHost = workspace.firstElementChild;
+        Promise.resolve(window.HHComicMotionStudio.mount(comicHost, { apiBase: REALTIME_URL })).catch((error) => {
+          if (routeFromHash() === route && comicHost.isConnected) renderRouteFailure(error);
+        });
+      }
       else mountSimpleView("Comic Motion Studio", "Đang tải editor truyện thành video...", "");
       remember("comic-motion-studio");
     } else if (route === "/davinci-resolve" || route.startsWith("/davinci-resolve/")) {
@@ -6370,6 +6375,7 @@ function initAppShell() {
     finishCosmicRouteLoader({ error: true, message: issue.message });
   };
   let pendingAssetRoute = "";
+  const routeAssetRetries = new Map();
   const renderRouteLoading = (route) => {
     activeRoute = route;
     showCosmicRouteLoader(route);
@@ -6388,11 +6394,21 @@ function initAppShell() {
         loader.ensureForRoute(requestedRoute).then(() => {
           if (routeFromHash() !== requestedRoute) return;
           pendingAssetRoute = "";
+          routeAssetRetries.delete(requestedRoute);
           renderRouteWithTransition();
         }).catch((error) => {
           if (routeFromHash() !== requestedRoute) return;
           pendingAssetRoute = "";
-          renderRouteFailure(error);
+          const attempts = routeAssetRetries.get(requestedRoute) || 0;
+          if (attempts < 1) {
+            routeAssetRetries.set(requestedRoute, attempts + 1);
+            window.setTimeout(() => {
+              if (routeFromHash() === requestedRoute) renderRouteSafely();
+            }, 250);
+          } else {
+            routeAssetRetries.delete(requestedRoute);
+            renderRouteFailure(error);
+          }
         });
       }
       return true;
@@ -6567,8 +6583,11 @@ function initAppShell() {
     }
     if (event.target.closest("[data-shell-retry-route]")) {
       beginRouteFeedback(routeFromHash());
-      renderRouteSafely();
-      requestAnimationFrame(endRouteFeedback);
+      pendingAssetRoute = "";
+      routeAssetRetries.delete(routeFromHash());
+      const retry = window.HHAssetLoader?.retryForRoute?.(routeFromHash());
+      if (retry) retry.then(() => renderRouteWithTransition()).catch(renderRouteFailure);
+      else renderRouteSafely();
       return;
     }
     const musicSectionToggle = event.target.closest("[data-music-section]");
@@ -6711,7 +6730,6 @@ function initAppShell() {
     if (event.detail?.route && String(event.detail.route).split("?")[0] === cosmicLoaderRoute) {
       setCosmicLoaderPhase(2, 82, "Đang khởi tạo module và khôi phục trạng thái...");
     }
-    if (String(event.detail?.route || "").split("?")[0] === "/comic-motion-studio") renderRouteSafely();
   });
   window.addEventListener("hh:route-rendered", (event) => {
     if (event.detail?.route && String(event.detail.route).split("?")[0] === cosmicLoaderRoute) {

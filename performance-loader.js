@@ -103,7 +103,7 @@
     },
     "comic-motion": {
       styles: ["comic-motion-studio.css?v=3"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "comic-motion-studio.js?v=4"]
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "comic-motion-studio.js?v=5"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],
@@ -203,6 +203,8 @@
   const assetPromises = new Map();
   const preloadedScripts = new Set();
   let homeEnhancementsScheduled = false;
+  const STYLE_TIMEOUT_MS = 15000;
+  const SCRIPT_TIMEOUT_MS = 20000;
 
   function normalizeRoute(route) {
     const value = String(route || global.location.hash.replace(/^#/, "") || "/home");
@@ -238,11 +240,23 @@
     if (assetPromises.has(key)) return assetPromises.get(key);
     const promise = new Promise((resolve, reject) => {
       const link = document.createElement("link");
+      let settled = false;
+      const finish = (error = null) => {
+        if (settled) return;
+        settled = true;
+        global.clearTimeout(timer);
+        if (error) {
+          link.remove();
+          assetPromises.delete(key);
+          reject(error);
+        } else resolve(url);
+      };
       link.rel = "stylesheet";
       link.href = url;
       link.dataset.hhRuntimeAsset = "style";
-      link.onload = () => resolve(url);
-      link.onerror = () => reject(new Error(`Khong tai duoc giao dien ${url}`));
+      link.onload = () => finish();
+      link.onerror = () => finish(new Error(`Không tải được giao diện ${url}.`));
+      const timer = global.setTimeout(() => finish(new Error(`Giao diện ${url} tải quá thời gian cho phép.`)), STYLE_TIMEOUT_MS);
       document.head.append(link);
     });
     assetPromises.set(key, promise);
@@ -254,14 +268,26 @@
     if (assetPromises.has(key)) return assetPromises.get(key);
     const promise = new Promise((resolve, reject) => {
       const script = document.createElement("script");
+      let settled = false;
+      const finish = (error = null) => {
+        if (settled) return;
+        settled = true;
+        global.clearTimeout(timer);
+        if (error) {
+          script.remove();
+          assetPromises.delete(key);
+          reject(error);
+        } else resolve(url);
+      };
       script.src = url;
       script.async = false;
       script.dataset.hhRuntimeAsset = "script";
       script.onload = () => {
         script.dataset.loaded = "true";
-        resolve(url);
+        finish();
       };
-      script.onerror = () => reject(new Error(`Khong tai duoc chuc nang ${url}`));
+      script.onerror = () => finish(new Error(`Không tải được chức năng ${url}.`));
+      const timer = global.setTimeout(() => finish(new Error(`Chức năng ${url} tải quá thời gian cho phép.`)), SCRIPT_TIMEOUT_MS);
       document.head.append(script);
     });
     assetPromises.set(key, promise);
@@ -304,6 +330,8 @@
       return name;
     }).catch((error) => {
       pending.delete(name);
+      loaded.delete(name);
+      global.dispatchEvent(new CustomEvent("hh:asset-group-error", { detail: { group: name, message: String(error?.message || error) } }));
       throw error;
     });
     pending.set(name, promise);
@@ -347,6 +375,15 @@
 
   function isRouteReady(route) {
     return groupsForRoute(route).every((name) => loaded.has(name));
+  }
+
+  function retryForRoute(route) {
+    const value = normalizeRoute(route);
+    groupsForRoute(value).forEach((name) => {
+      loaded.delete(name);
+      pending.delete(name);
+    });
+    return ensureForRoute(value);
   }
 
   function loadFontWhenIdle() {
@@ -423,7 +460,7 @@
     if (event.detail?.route === "/home") scheduleHomeEnhancements();
   });
 
-  global.HHAssetLoader = Object.freeze({ ensureForRoute, ensureGroup, isRouteReady, groupsForRoute, loadedGroups: () => [...loaded] });
+  global.HHAssetLoader = Object.freeze({ ensureForRoute, retryForRoute, ensureGroup, isRouteReady, groupsForRoute, loadedGroups: () => [...loaded] });
   loadFontWhenIdle();
   loadAuthEffectsWhenNeeded();
   registerServiceWorkerWhenIdle();
