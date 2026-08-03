@@ -102,8 +102,8 @@
       ]
     },
     "youtube-tools": {
-      styles: ["youtube-toolbox.css?v=1"],
-      scripts: ["youtube-toolbox.js?v=1"]
+      styles: ["youtube-toolbox.css?v=2"],
+      scripts: ["youtube-toolbox.js?v=2"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],

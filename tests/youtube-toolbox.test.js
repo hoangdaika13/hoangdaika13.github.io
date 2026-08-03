@@ -31,10 +31,10 @@ test("YouTube Utility Lab is a standalone lazy route", () => {
   assert.match(shell, /HHYouTubeToolbox\?\.mount/);
   assert.match(shell, /YouTube Utility Lab/);
   assert.match(loader, /"youtube-tools":\s*\{/);
-  assert.match(loader, /youtube-toolbox\.css\?v=1/);
-  assert.match(loader, /youtube-toolbox\.js\?v=1/);
-  assert.match(worker, /youtube-toolbox\.css\?v=1/);
-  assert.match(worker, /youtube-toolbox\.js\?v=1/);
+  assert.match(loader, /youtube-toolbox\.css\?v=2/);
+  assert.match(loader, /youtube-toolbox\.js\?v=2/);
+  assert.match(worker, /youtube-toolbox\.css\?v=2/);
+  assert.match(worker, /youtube-toolbox\.js\?v=2/);
 });
 
 test("toolbox remains independent from channel management and OAuth", () => {
@@ -67,6 +67,28 @@ test("chapter builder validates ordering and normalizes timestamps", () => {
   assert.equal(valid.output, "00:00 Mở đầu\n00:30 Nội dung\n01:45 Tổng kết");
   const invalid = toolbox.parseChapters("00:30 Mở đầu\n00:20 Đi ngược\nabc");
   assert.ok(invalid.errors.length >= 3);
+});
+
+test("title comparison keeps variants local and selects readable candidates", () => {
+  const { toolbox } = loadToolbox();
+  const variants = toolbox.analyzeTitleVariants("Piano thư giãn cho buổi tối\nPiano thư giãn cho buổi tối\nMột tiêu đề dài hơn để kiểm tra khả năng đọc trên màn hình điện thoại", "piano");
+  assert.equal(variants.length, 3);
+  assert.equal(variants[1].duplicate, true);
+  assert.equal(variants[0].keywordMatch, true);
+  assert.equal(variants[0].valid, true);
+  assert.equal(variants[2].readable, true);
+});
+
+test("caption lab parses SRT, detects overlap and exports SRT/VTT", () => {
+  const { toolbox } = loadToolbox();
+  const input = "1\n00:00:00,000 --> 00:00:02,000\nXin chào\n\n2\n00:00:02,500 --> 00:00:04,000\nBắt đầu thôi";
+  const parsed = toolbox.parseCaptions(input, 1.5);
+  assert.equal(parsed.errors.length, 0);
+  assert.equal(parsed.cues[0].start, 1.5);
+  assert.match(parsed.srt, /00:00:01,500 --> 00:00:03,500/);
+  assert.match(parsed.vtt, /^WEBVTT/);
+  const overlap = toolbox.parseCaptions("1\n00:00:00,000 --> 00:00:03,000\nA\n\n2\n00:00:02,000 --> 00:00:04,000\nB");
+  assert.ok(overlap.errors.some((error) => /chồng/.test(error)));
 });
 
 test("link builder extracts supported YouTube URL forms", () => {
