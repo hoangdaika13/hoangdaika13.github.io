@@ -91,7 +91,7 @@ test("Character V14 supersedes V13 with updated route, offline cache and respons
   const index = read("index.html");
   const css = read("astral-realms.css");
   assert.match(source, /CHARACTER_VISUAL_VERSION\s*=\s*14/);
-  for (const asset of ["astral-realms.css?v=73", "astral-realms.js?v=84"]) {
+  for (const asset of ["astral-realms.css?v=76", "astral-realms.js?v=88"]) {
     assert.ok(loader.includes(asset));
     assert.ok(worker.includes(asset));
   }

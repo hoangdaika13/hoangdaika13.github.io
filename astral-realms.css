@@ -1639,6 +1639,329 @@ button.har-chip {
   .har-system-hero::after { animation: none; }
 }
 
+/* Astral Realms P0 · save-aware start hub and lightweight live character preview */
+.har-start {
+  overflow: auto;
+  place-items: center;
+  background:
+    linear-gradient(90deg, rgba(2, 7, 15, .94) 0%, rgba(2, 7, 15, .67) 48%, rgba(2, 7, 15, .42) 100%),
+    radial-gradient(circle at 78% 30%, color-mix(in srgb, var(--har-start-zone-color, #6feeff) 22%, transparent), transparent 30%),
+    linear-gradient(0deg, rgba(1, 4, 10, .9), transparent 62%),
+    url("./assets/astral-realms/astral-realms-panorama-v1.webp") var(--har-start-panorama-x, 50%) center / cover no-repeat,
+    #030711;
+}
+
+.har-start-layout {
+  position: relative;
+  z-index: 2;
+  width: min(1120px, 100%);
+  min-height: min(680px, calc(100dvh - 60px));
+  display: grid;
+  grid-template-columns: minmax(0, 690px) minmax(310px, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.har-start-layout::before {
+  content: "";
+  position: absolute;
+  inset: 9% 5% -4% 42%;
+  z-index: -1;
+  border: 1px solid color-mix(in srgb, var(--har-start-zone-color, #6feeff) 28%, transparent);
+  border-radius: 50%;
+  filter: blur(.2px);
+  transform: rotate(-12deg);
+  animation: har-orbit-spin 34s linear infinite;
+  pointer-events: none;
+}
+
+.har-start-card {
+  width: auto;
+  padding: clamp(24px, 4vw, 42px);
+  text-align: left;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--har-start-zone-color, #6feeff) 12%, transparent), transparent 38%),
+    linear-gradient(145deg, rgba(5, 12, 24, .94), rgba(13, 10, 27, .88));
+}
+
+.har-start-heading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.har-start-heading .har-start-sun {
+  flex: 0 0 auto;
+  width: 66px;
+  height: 66px;
+  margin: 0;
+  font-size: 30px;
+}
+
+.har-start-heading small,
+.har-start-character__meta small,
+.har-start-save__copy small {
+  display: block;
+  color: var(--har-cyan);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.har-start-card h1 {
+  margin: 7px 0 0;
+  font-size: clamp(38px, 5vw, 62px);
+  text-shadow: 0 7px 24px rgba(0, 0, 0, .38);
+}
+
+.har-start-card > p {
+  max-width: 620px;
+  margin: 18px 0 0;
+  color: #b8c6da;
+  font-size: 12px;
+}
+
+.har-start-features {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 18px 0 12px;
+}
+
+.har-start-feature {
+  min-width: 0;
+  padding: 11px 12px;
+  text-align: left;
+  background: rgba(255, 255, 255, .035);
+}
+
+.har-start-feature > small,
+.har-start-feature > span {
+  display: block;
+  overflow: hidden;
+  color: #8192ac;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.har-start-feature strong {
+  overflow: hidden;
+  margin: 3px 0 2px;
+  color: #effcff;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.har-start-save {
+  display: grid;
+  grid-template-columns: 126px minmax(0, 1fr);
+  gap: 13px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--har-start-zone-color, #6feeff) 30%, rgba(255, 255, 255, .08));
+  border-radius: 15px;
+  background: rgba(0, 0, 0, .2);
+}
+
+.har-start-save__thumb {
+  position: relative;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 10px;
+  background:
+    linear-gradient(0deg, rgba(2, 6, 15, .88), transparent 70%),
+    url("./assets/astral-realms/astral-realms-panorama-v1.webp") var(--har-start-panorama-x, 50%) center / cover;
+}
+
+.har-start-save__thumb i {
+  position: absolute;
+  right: 2px;
+  bottom: 0;
+  width: 48px;
+  height: 62px;
+  background: url("./assets/astral-realms/astral-crew-atlas-v2.webp") var(--portrait-x, 0%) center / 400% 100% no-repeat;
+  filter: drop-shadow(0 4px 7px rgba(0, 0, 0, .56));
+}
+
+.har-start-save__thumb span {
+  position: absolute;
+  left: 7px;
+  bottom: 6px;
+  max-width: 76px;
+  overflow: hidden;
+  color: #fff;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.har-start-save__copy strong,
+.har-start-save__copy span,
+.har-start-save__copy em {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.har-start-save__copy strong { margin-top: 5px; color: #f1f8ff; font-size: 12px; }
+.har-start-save__copy span { margin-top: 4px; color: #8fa0ba; font-size: 8px; }
+.har-start-save__copy em { margin-top: 6px; color: color-mix(in srgb, var(--har-start-zone-color, #6feeff) 80%, white); font-size: 8px; font-style: normal; font-weight: 800; }
+
+.har-start-actions { justify-content: flex-start; }
+
+.har-start-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.har-start-tools button {
+  padding: 7px 9px;
+  border: 1px solid rgba(154, 205, 255, .2);
+  border-radius: 9px;
+  color: #b9c9dd;
+  background: rgba(255, 255, 255, .035);
+  font: inherit;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.har-start-tools button:hover,
+.har-start-tools button:focus-visible { color: #fff; border-color: var(--har-cyan); background: rgba(90, 225, 255, .1); }
+
+.har-start-benchmark {
+  display: grid;
+  gap: 3px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(109, 238, 255, .2);
+  border-radius: 10px;
+  background: rgba(5, 15, 28, .7);
+}
+
+.har-start-benchmark[hidden] { display: none !important; }
+.har-start-benchmark strong { color: #dffbff; font-size: 9px; }
+.har-start-benchmark span { color: #8294af; font-size: 8px; line-height: 1.45; }
+.har-start-benchmark[data-tone="low"] { border-color: rgba(255, 190, 104, .32); }
+
+.har-start-character {
+  position: relative;
+  min-height: 620px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--har-start-zone-color, #6feeff) 38%, rgba(255, 255, 255, .08));
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--har-start-zone-color, #6feeff) 15%, transparent), transparent 37%),
+    linear-gradient(170deg, rgba(12, 22, 42, .48), rgba(3, 7, 18, .78));
+  box-shadow: 0 35px 100px rgba(0, 0, 0, .45), inset 0 1px rgba(255, 255, 255, .08);
+  backdrop-filter: blur(10px);
+}
+
+.har-start-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.har-start-character__scan {
+  position: absolute;
+  inset: 8% 8% 17%;
+  border: 1px solid color-mix(in srgb, var(--har-start-zone-color, #6feeff) 24%, transparent);
+  border-radius: 50% 50% 35% 35%;
+  box-shadow: inset 0 0 50px color-mix(in srgb, var(--har-start-zone-color, #6feeff) 8%, transparent);
+  pointer-events: none;
+}
+
+.har-start-character__scan::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 30%;
+  height: 1px;
+  background: color-mix(in srgb, var(--har-start-zone-color, #6feeff) 65%, transparent);
+  box-shadow: 0 0 14px var(--har-start-zone-color, #6feeff);
+  animation: har-start-scan 4.8s ease-in-out infinite;
+}
+
+@keyframes har-start-scan {
+  0%, 100% { opacity: .15; transform: translateY(-90px); }
+  50% { opacity: .7; transform: translateY(210px); }
+}
+
+.har-start-character__status {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(122, 238, 255, .2);
+  border-radius: 99px;
+  color: #b9cbe0;
+  background: rgba(3, 9, 20, .66);
+  font-size: 7px;
+}
+
+.har-start-character__status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #75f0bb;
+  box-shadow: 0 0 9px #75f0bb;
+}
+
+.har-start-character__meta {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, .11);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(4, 10, 24, .9), rgba(12, 13, 31, .76));
+  backdrop-filter: blur(12px);
+}
+
+.har-start-character__meta strong,
+.har-start-character__meta span,
+.har-start-character__meta em { display: block; }
+.har-start-character__meta strong { margin-top: 6px; color: #fff; font-size: 20px; }
+.har-start-character__meta span { margin-top: 3px; color: #a9bad0; font-size: 9px; }
+.har-start-character__meta em { margin-top: 7px; color: color-mix(in srgb, var(--har-start-zone-color, #6feeff) 80%, white); font-size: 9px; font-style: normal; }
+
+.har-shell.is-start-settings .har-start { opacity: .18; filter: blur(3px); pointer-events: none; }
+.har-shell.is-start-settings .har-panel { z-index: 95; }
+
+@media (max-width: 900px) {
+  .har-start-layout { grid-template-columns: 1fr; }
+  .har-start-character { min-height: 360px; }
+  .har-start-card { order: 2; }
+  .har-start-character { order: 1; }
+}
+
+@media (max-width: 620px) {
+  .har-start { padding: 9px; }
+  .har-start-layout { min-height: auto; }
+  .har-start-character { min-height: 280px; border-radius: 20px; }
+  .har-start-character__meta { bottom: 10px; left: 10px; right: 10px; padding: 10px; }
+  .har-start-character__meta strong { font-size: 16px; }
+  .har-start-heading { align-items: flex-start; gap: 12px; }
+  .har-start-heading .har-start-sun { width: 52px; height: 52px; font-size: 23px; }
+  .har-start-card h1 { font-size: clamp(32px, 11vw, 48px); }
+  .har-start-save { grid-template-columns: 92px minmax(0, 1fr); }
+  .har-start-save__thumb { height: 66px; }
+}
+
 /* Character Select Hub V14 */
 .har-character-select-hub {
   display: grid;
@@ -4101,4 +4424,46 @@ button.har-chip {
   .har-story-cinema *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
   .har-story-cinema__chapters button:hover,
   .har-story-cinema__chapters button.is-active { transform: none; }
+}
+
+/* Keep the save-biome treatment authoritative over older visual-version layers. */
+.har-start[data-save-zone] {
+  background:
+    linear-gradient(90deg, rgba(2, 7, 15, .94) 0%, rgba(2, 7, 15, .67) 48%, rgba(2, 7, 15, .42) 100%),
+    radial-gradient(circle at 78% 30%, color-mix(in srgb, var(--har-start-zone-color, #6feeff) 22%, transparent), transparent 30%),
+    linear-gradient(0deg, rgba(1, 4, 10, .9), transparent 62%),
+    url("./assets/astral-realms/astral-realms-panorama-v1.webp") var(--har-start-panorama-x, 50%) center / cover no-repeat,
+    #030711;
+}
+
+.har-start .har-start-card {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--har-start-zone-color, #6feeff) 12%, transparent), transparent 38%),
+    linear-gradient(145deg, rgba(5, 12, 24, .94), rgba(13, 10, 27, .88));
+}
+
+.har-shell { container: astral-shell / inline-size; }
+
+@container astral-shell (max-width: 520px) {
+  .har-start { overflow-x: hidden; }
+  .har-start::before,
+  .har-start::after,
+  .har-start-layout::before { display: none; }
+  .har-start-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .har-start-card { padding: 14px 10px; }
+  .har-start-heading { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 8px; }
+  .har-start-heading .har-start-sun { width: 38px; height: 38px; font-size: 17px; }
+  .har-start-heading small { font-size: 6px; letter-spacing: .08em; }
+  .har-start-card h1 { max-width: 100%; font-size: clamp(22px, 18cqw, 32px); overflow-wrap: anywhere; }
+  .har-start-card > p { margin-top: 10px; font-size: 9px; }
+  .har-start-features { grid-template-columns: minmax(0, 1fr); }
+  .har-start-save { grid-template-columns: minmax(0, 1fr); }
+  .har-start-save__thumb { width: 100%; }
+  .har-start-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .har-start-actions button { width: 100%; min-width: 0; white-space: normal; }
+  .har-start-tools { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .har-start-character { min-height: 230px; }
+  .har-start-character__status { left: 8px; right: 8px; overflow: hidden; }
+  .har-start-character__status span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .har-start-character__meta { left: 8px; right: 8px; bottom: 8px; }
 }

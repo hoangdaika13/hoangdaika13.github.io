@@ -1731,6 +1731,14 @@
       this.renderer = null;
       this.rendererBackend = "webgl2";
       this.webgpuAvailable = Boolean(root.navigator?.gpu);
+      this.startPreviewRenderer = null;
+      this.startPreviewScene = null;
+      this.startPreviewCamera = null;
+      this.startPreviewModel = null;
+      this.startPreviewRuntime = null;
+      this.startPreviewFrame = 0;
+      this.startPreviewResize = null;
+      this.pendingStartAction = "";
       this.clock = null;
       this.playerMesh = null;
       this.playerShadow = null;
@@ -2188,52 +2196,323 @@
           </section>
 
           <section class="har-start" data-har-start>
-            <div class="har-start-card">
-              <div class="har-start-sun" aria-hidden="true">H</div>
-              <small>H Galaxy · Original Action RPG</small>
-              <h1>Astral Realms</h1>
-              <p>Khám phá tám khu vực được tải theo vị trí, phát triển nhân vật tới cấp 80 và chiến đấu cùng tối đa tám Nhà du hành trong shard realtime miễn phí.</p>
-              <div class="har-start-features">
-                <div class="har-start-feature"><strong>08</strong>Khu vực streaming</div>
-                <div class="har-start-feature"><strong>06</strong>Nhiệm vụ thật</div>
-                <div class="har-start-feature"><strong>80</strong>Cấp nhân vật tối đa</div>
-                <div class="har-start-feature"><strong>1–8</strong>Co-op realtime</div>
-              </div>
-              <div class="har-start-actions">
-                <button class="har-primary-button" type="button" data-har-continue>Tạo nhân vật & bắt đầu</button>
-                <button class="har-secondary-button" type="button" data-har-new>Tạo hành trình mới</button>
-              </div>
-              <div class="har-loading" data-har-loading hidden>
-                <div class="har-loading__track"><i data-har-loading-bar></i></div>
-                <span data-har-loading-text>Đang chuẩn bị cổng không gian...</span>
-                <div class="har-loading__recovery" data-har-loading-recovery hidden>
-                  <button class="har-secondary-button" type="button" data-har-retry>Thử lại</button>
-                  <button class="har-secondary-button" type="button" data-har-safe-mode>Chạy cấu hình nhẹ</button>
+            <div class="har-start-layout">
+              <div class="har-start-card">
+                <div class="har-start-heading">
+                  <div class="har-start-sun" aria-hidden="true">H</div>
+                  <div><small>H Galaxy · Original Monster-Hunting RPG</small><h1>Astral Realms</h1></div>
                 </div>
+                <p>Săn quái vật Nexus, phá bộ phận để thu vật liệu, rèn trang bị và mở khóa tám chương tuyến tính của Nexus Echo.</p>
+                <div class="har-start-features" aria-label="Dữ liệu tiến trình thật">
+                  <div class="har-start-feature"><small>Nhân vật</small><strong data-har-start-character>Nax Veyra</strong><span>Cấp <b data-har-start-level>1</b></span></div>
+                  <div class="har-start-feature"><small>Khu vực</small><strong data-har-start-zone>H-Central</strong><span data-har-start-chapter>Chương 1</span></div>
+                  <div class="har-start-feature"><small>Thời gian chơi</small><strong data-har-start-playtime>00:00</strong><span>Tiến trình trên thiết bị</span></div>
+                  <div class="har-start-feature"><small>Trang bị</small><strong data-har-start-power>100</strong><span>Sức mạnh hiện tại</span></div>
+                </div>
+                <article class="har-start-save" data-har-start-save>
+                  <div class="har-start-save__thumb" data-har-start-thumbnail><i data-har-start-portrait></i><span data-har-start-zone-short>H-CENTRAL</span></div>
+                  <div class="har-start-save__copy">
+                    <small>SAVE GẦN NHẤT</small>
+                    <strong data-har-start-checkpoint>Checkpoint · H-Central</strong>
+                    <span data-har-start-saved-at>Chưa có hành trình</span>
+                    <em data-har-start-hunt>Hunt Rank E · 0 điểm</em>
+                  </div>
+                </article>
+                <div class="har-start-actions">
+                  <button class="har-primary-button" type="button" data-har-continue>Tạo nhân vật & bắt đầu</button>
+                  <button class="har-secondary-button" type="button" data-har-new>Tạo hành trình mới</button>
+                </div>
+                <div class="har-start-tools" aria-label="Công cụ trước khi chơi">
+                  <button type="button" data-har-start-character-select>Chọn nhân vật</button>
+                  <button type="button" data-har-start-settings>Cài đặt</button>
+                  <button type="button" data-har-start-benchmark>Kiểm tra hiệu năng</button>
+                </div>
+                <div class="har-start-benchmark" data-har-start-benchmark-result hidden aria-live="polite"></div>
+                <div class="har-loading" data-har-loading hidden>
+                  <div class="har-loading__track"><i data-har-loading-bar></i></div>
+                  <span data-har-loading-text>Đang chuẩn bị cổng không gian...</span>
+                  <div class="har-loading__recovery" data-har-loading-recovery hidden>
+                    <button class="har-secondary-button" type="button" data-har-retry>Thử lại</button>
+                    <button class="har-secondary-button" type="button" data-har-safe-mode>Chạy cấu hình nhẹ</button>
+                  </div>
+                </div>
+                <div class="har-status-note" data-har-save-note>Đang kiểm tra tiến trình trên thiết bị...</div>
               </div>
-              <div class="har-status-note" data-har-save-note>Đang kiểm tra tiến trình trên thiết bị...</div>
+              <aside class="har-start-character" aria-label="Xem trước nhân vật 3D đang dùng">
+                <canvas class="har-start-preview" data-har-start-preview aria-label="Nhân vật 3D và vũ khí hiện tại"></canvas>
+                <div class="har-start-character__scan" aria-hidden="true"></div>
+                <div class="har-start-character__status"><i></i><span data-har-start-preview-status>Đang dựng preview 3D nhẹ...</span></div>
+                <div class="har-start-character__meta">
+                  <small>NHÂN VẬT ĐANG DÙNG · IDLE LIVE</small>
+                  <strong data-har-start-preview-name>Nax Veyra</strong>
+                  <span data-har-start-preview-role>Astral Vanguard</span>
+                  <em data-har-start-preview-weapon>Lyra Golden Edge · Kiếm</em>
+                </div>
+              </aside>
             </div>
           </section>
         </section>`;
       this.root = this.host.firstElementChild;
     }
 
+    formatStartPlayTime(totalSeconds = 0) {
+      const seconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    }
+
+    equipmentPowerForStart(state = this.state) {
+      const characterId = CHARACTERS[state?.roster?.activeId] ? state.roster.activeId : "lyra";
+      const member = state?.roster?.members?.[characterId] || {};
+      const level = Math.max(1, Number(member.level || state?.player?.level || 1));
+      const weaponId = state?.loadouts?.[characterId]?.weapon || state?.player?.weapon || DEFAULT_CHARACTER_WEAPONS[characterId];
+      const attack = Math.max(0, Number(ITEMS[weaponId]?.attack || 0));
+      const mastery = Math.max(0, Number(state?.hunter?.weaponMastery?.[weaponId] || 0));
+      const relicCount = Array.isArray(state?.loadouts?.[characterId]?.relics) ? state.loadouts[characterId].relics.length : 0;
+      return Math.round(80 + level * 18 + attack * 12 + Math.sqrt(mastery) * 3 + relicCount * 24);
+    }
+
+    renderStartScreen() {
+      if (!this.root) return;
+      const characterId = CHARACTERS[this.state?.roster?.activeId] ? this.state.roster.activeId : "lyra";
+      const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
+      const member = this.state.roster?.members?.[characterId] || {};
+      const checkpointId = ZONES.some((zone) => zone.id === this.state.player?.checkpoint) ? this.state.player.checkpoint : "central";
+      const zone = ZONES.find((entry) => entry.id === checkpointId) || ZONES[0];
+      const weaponId = this.state.loadouts?.[characterId]?.weapon || this.state.player?.weapon || DEFAULT_CHARACTER_WEAPONS[characterId];
+      const weapon = ITEMS[weaponId] || ITEMS["starter-blade"];
+      const combat = WEAPON_COMBAT_PROFILES[weapon.weaponClass] || WEAPON_COMBAT_PROFILES.sword;
+      const level = Math.max(1, Number(member.level || this.state.player?.level || 1));
+      const chapter = Math.max(1, Number(this.state.story?.chapter || 1));
+      const hunterRank = hunterRankForScore(this.state.hunter?.score || 0);
+      const date = new Date(this.savedRecord?.updatedAt || "");
+      const hasSave = Boolean(this.savedRecord?.data);
+      const setText = (selector, value) => {
+        const element = this.root.querySelector(selector);
+        if (element) element.textContent = String(value);
+      };
+      setText("[data-har-start-character]", profile.name);
+      setText("[data-har-start-level]", level);
+      setText("[data-har-start-zone]", zone.name);
+      setText("[data-har-start-zone-short]", zone.name.toUpperCase());
+      setText("[data-har-start-chapter]", `Chương ${chapter} · Nexus Echo`);
+      setText("[data-har-start-playtime]", this.formatStartPlayTime(this.state.playTime));
+      setText("[data-har-start-power]", this.equipmentPowerForStart(this.state).toLocaleString("vi-VN"));
+      setText("[data-har-start-checkpoint]", `Checkpoint · ${zone.name}`);
+      setText("[data-har-start-saved-at]", hasSave && !Number.isNaN(date.getTime()) ? `Lưu ${date.toLocaleString("vi-VN")}` : "Chưa có hành trình · bắt đầu tại H-Central");
+      setText("[data-har-start-hunt]", `${hunterRank.label} · ${Number(this.state.hunter?.score || 0).toLocaleString("vi-VN")} điểm săn`);
+      setText("[data-har-start-preview-name]", profile.name);
+      setText("[data-har-start-preview-role]", `${profile.role} · ${ELEMENTS[profile.element]?.label || profile.element}`);
+      setText("[data-har-start-preview-weapon]", `${weapon.name} · ${combat.label}`);
+      const portrait = this.root.querySelector("[data-har-start-portrait]");
+      if (portrait) portrait.style.setProperty("--portrait-x", `${(CHARACTER_ATLAS_INDEX[characterId] || 0) * 33.333333}%`);
+      const start = this.root.querySelector("[data-har-start]");
+      if (start) {
+        start.dataset.saveZone = zone.id;
+        start.style.setProperty("--har-start-zone-color", zone.color);
+        start.style.setProperty("--har-start-panorama-x", `${clamp(50 + zone.x * 0.18, 24, 76)}%`);
+      }
+      const note = this.root.querySelector("[data-har-save-note]");
+      const continueButton = this.root.querySelector("[data-har-continue]");
+      if (note) note.textContent = hasSave
+        ? `Tiến trình local v${this.savedRecord.version} · ${Number.isNaN(date.getTime()) ? "đã lưu trên thiết bị" : date.toLocaleString("vi-VN")}`
+        : this.store.fallback
+          ? "IndexedDB không khả dụng · đang dùng bộ nhớ cục bộ dự phòng."
+          : "Chưa có hành trình · bản mới sẽ được lưu bằng IndexedDB.";
+      if (continueButton) continueButton.textContent = hasSave ? "Tiếp tục hành trình" : "Bắt đầu hành trình";
+    }
+
+    async prepareStartPreview() {
+      const canvas = this.root?.querySelector("[data-har-start-preview]");
+      if (!canvas || this.destroyed || this.started || this.startPreviewRenderer) return false;
+      const status = this.root.querySelector("[data-har-start-preview-status]");
+      try {
+        const THREE = this.THREE || await import("./vendor/three.module.min.js");
+        if (this.destroyed || this.started || !canvas.isConnected) return false;
+        this.THREE = THREE;
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
+        renderer.setPixelRatio(Math.min(1.5, root.devicePixelRatio || 1));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.04;
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 30);
+        camera.position.set(0, 1.65, 6.15);
+        camera.lookAt(0, 1.48, 0);
+        scene.add(new THREE.HemisphereLight(0xdaf5ff, 0x131329, 1.55));
+        const key = new THREE.DirectionalLight(0xffffff, 2.25);
+        key.position.set(3.5, 5.5, 4.5);
+        const rim = new THREE.PointLight(0xa879ff, 2.6, 14, 2);
+        rim.position.set(-2.4, 2.7, -2.2);
+        scene.add(key, rim);
+        const characterId = CHARACTERS[this.state.roster?.activeId] ? this.state.roster.activeId : "lyra";
+        const profile = CHARACTERS[characterId] || CHARACTERS.lyra;
+        const model = this.createAnimeCharacterMesh(profile, 1.04);
+        model.userData.startPreviewYaw = Math.PI;
+        const weaponClass = this.equippedWeaponClass(characterId);
+        const weapon = this.createPlayerWeapon(profile, weaponClass, { hydrate: false });
+        model.userData.parts?.weaponAnchor?.add(weapon);
+        weapon.scale.setScalar(1.08);
+        scene.add(model);
+        const pedestal = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.35, 1.72, 0.12, 48),
+          new THREE.MeshPhysicalMaterial({ color: 0x10182b, emissive: profile.accent, emissiveIntensity: 0.18, roughness: 0.28, metalness: 0.62 })
+        );
+        pedestal.position.y = -0.1;
+        scene.add(pedestal);
+        this.startPreviewRenderer = renderer;
+        this.startPreviewScene = scene;
+        this.startPreviewCamera = camera;
+        this.startPreviewModel = model;
+        const resize = () => {
+          const width = Math.max(1, Math.round(canvas.clientWidth || 360));
+          const height = Math.max(1, Math.round(canvas.clientHeight || 560));
+          if (canvas.width !== Math.round(width * renderer.getPixelRatio()) || canvas.height !== Math.round(height * renderer.getPixelRatio())) renderer.setSize(width, height, false);
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+        };
+        this.startPreviewResize = resize;
+        resize();
+        if (status) status.textContent = `${renderer.capabilities.isWebGL2 ? "WebGL2" : "WebGL"} · Idle + look-at · vũ khí đã equip`;
+        void this.upgradeStartPreviewToAuthored(profile, characterId);
+        const frame = (time) => {
+          if (!this.startPreviewRenderer || this.destroyed || this.started) return;
+          const seconds = time * 0.001;
+          resize();
+          const activeModel = this.startPreviewModel;
+          if (!activeModel) return;
+          if (this.startPreviewRuntime) this.applyVerifiedRestPoseMotion(this.startPreviewRuntime, time, "idle");
+          activeModel.rotation.y = Number(activeModel.userData.startPreviewYaw || 0) + Math.sin(seconds * 0.42) * 0.12;
+          activeModel.position.y = Math.sin(seconds * 1.25) * 0.012;
+          const parts = activeModel.userData.parts || {};
+          if (parts.head) parts.head.rotation.y = Math.sin(seconds * 0.7) * 0.055;
+          if (parts.leftArm) parts.leftArm.rotation.z = 0.05 + Math.sin(seconds * 1.1) * 0.018;
+          if (parts.rightArm) parts.rightArm.rotation.z = -0.05 - Math.sin(seconds * 1.1) * 0.018;
+          renderer.render(scene, camera);
+          this.startPreviewFrame = requestAnimationFrame(frame);
+        };
+        this.startPreviewFrame = requestAnimationFrame(frame);
+        return true;
+      } catch (error) {
+        if (status) status.textContent = "Preview 3D nhẹ không khả dụng · gameplay vẫn có fallback an toàn";
+        this.root.dataset.startPreviewError = String(error?.message || error).slice(0, 120);
+        return false;
+      }
+    }
+
+    async upgradeStartPreviewToAuthored(profile, characterId) {
+      if (this.destroyed || this.started || root.navigator?.connection?.saveData || Number(root.navigator?.deviceMemory || 8) <= 2) return false;
+      const status = this.root?.querySelector("[data-har-start-preview-status]");
+      const modelId = ({
+        lyra: "valid-asian-f-1-casual",
+        cael: "valid-white-f-2-casual",
+        nyx: "valid-black-f-1-casual",
+        sol: "valid-hispanic-f-1-milit"
+      })[characterId] || "human-adult-b01";
+      const url = BUILTIN_CHARACTER_ASSETS[modelId];
+      if (!url) return false;
+      try {
+        if (status) status.textContent = "Đang thay preview an toàn bằng Human GLB local...";
+        if (!this.GLTFLoaderClass || !this.cloneSkinnedCharacter) await this.loadCharacterModules();
+        if (!this.GLTFLoaderClass || !this.cloneSkinnedCharacter || this.started || this.destroyed) return false;
+        const manager = this.THREE?.LoadingManager ? new this.THREE.LoadingManager() : undefined;
+        if (manager) manager.hhPreferTextureLoader = true;
+        const loader = new this.GLTFLoaderClass(manager);
+        if (this.MeshoptDecoder) loader.setMeshoptDecoder(this.MeshoptDecoder);
+        const gltf = await Promise.race([
+          loader.loadAsync(url),
+          new Promise((_, reject) => root.setTimeout(() => reject(new Error("Start Human GLB timeout")), 9000))
+        ]);
+        if (this.started || this.destroyed || !this.startPreviewScene) return false;
+        this.sanitizeBuiltInCharacterAsset(gltf);
+        gltf.userData ||= {};
+        gltf.userData.hhSourceProvider = "valid-avatar";
+        gltf.userData.hhSourceLabel = "HH Human GLB local · start LOD";
+        gltf.userData.hhAssetPath = url;
+        this.builtInCharacterAssets.set(modelId, gltf);
+        this.builtInCharacterSources.set(modelId, { provider: "valid-avatar", label: "HH Human GLB local · start LOD", url });
+        const recipe = { ...normalizeAppearanceRecipe(this.state.appearance?.recipes?.[characterId], characterId), baseModel: modelId };
+        const authored = this.createBuiltInRiggedCharacter(profile, 1.04, recipe);
+        if (!authored) throw new Error("Human GLB không tạo được renderable scene");
+        const weaponClass = this.equippedWeaponClass(characterId);
+        const weapon = this.createPlayerWeapon(profile, weaponClass, { hydrate: false });
+        authored.userData.parts?.weaponAnchor?.add(weapon);
+        this.configureWeaponSocket(authored, weapon, weaponClass);
+        authored.userData.weapon = weapon;
+        authored.userData.lodVariants.attachments = [weapon];
+        authored.userData.startPreviewYaw = 0;
+        const bones = this.findHumanoidBones(authored);
+        const allBones = [];
+        authored.traverse?.((object) => { if (object.isBone) allBones.push(object); });
+        const previewRuntime = { mesh: authored, bones, allBones, handPoseBones: [], lodSuspended: false, rigRest: new Map() };
+        this.captureNaturalRigPose(previewRuntime);
+        this.applyVerifiedRestPoseMotion(previewRuntime, performance.now(), "idle");
+        const oldModel = this.startPreviewModel;
+        this.startPreviewScene.add(authored);
+        this.startPreviewModel = authored;
+        this.startPreviewRuntime = previewRuntime;
+        if (oldModel) {
+          oldModel.parent?.remove(oldModel);
+          this.disposeCharacterObject(oldModel);
+        }
+        // This start-only clone owns its geometry. The gameplay pipeline will
+        // reload the active hero after the lightweight renderer is disposed.
+        this.builtInCharacterAssets.delete(modelId);
+        this.builtInCharacterSources.delete(modelId);
+        if (status) status.textContent = "Human GLB local · Idle live · vũ khí đã hiệu chỉnh";
+        this.root.dataset.startPreview = "authored-human-glb";
+        return true;
+      } catch (error) {
+        if (status && !this.started) status.textContent = "3D PBR fallback · Human GLB sẽ tải đầy đủ khi vào game";
+        this.root.dataset.startPreviewFallback = String(error?.message || error).slice(0, 120);
+        return false;
+      }
+    }
+
+    disposeStartPreview() {
+      cancelAnimationFrame(this.startPreviewFrame);
+      this.startPreviewFrame = 0;
+      this.startPreviewScene?.traverse?.((object) => {
+        object.geometry?.dispose?.();
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.filter(Boolean).forEach((material) => material.dispose?.());
+      });
+      try { this.startPreviewRenderer?.dispose?.(); } catch {}
+      this.startPreviewRenderer = null;
+      this.startPreviewScene = null;
+      this.startPreviewCamera = null;
+      this.startPreviewModel = null;
+      this.startPreviewRuntime = null;
+      this.startPreviewResize = null;
+    }
+
+    runStartPerformanceCheck() {
+      const result = this.root?.querySelector("[data-har-start-benchmark-result]");
+      if (!result) return;
+      const memory = Number(root.navigator?.deviceMemory || 0);
+      const cores = Number(root.navigator?.hardwareConcurrency || 0);
+      let webgl2 = false;
+      try { webgl2 = Boolean(document.createElement("canvas").getContext("webgl2")); } catch {}
+      const score = (webgl2 ? 3 : 0) + (cores >= 8 ? 3 : cores >= 4 ? 2 : 1) + (memory >= 8 ? 3 : memory >= 4 ? 2 : memory > 0 ? 1 : 2);
+      const recommendation = score >= 8 ? { quality: "Cao", fps: 60, tone: "high" } : score >= 5 ? { quality: "Cân bằng", fps: 60, tone: "balanced" } : { quality: "Tiết kiệm", fps: 30, tone: "low" };
+      result.hidden = false;
+      result.dataset.tone = recommendation.tone;
+      result.innerHTML = `<strong>Khuyến nghị: ${recommendation.quality} · mục tiêu ${recommendation.fps} FPS</strong><span>${webgl2 ? "WebGL2 sẵn sàng" : "WebGL cơ bản"} · ${cores || "?"} luồng CPU · ${memory ? `${memory} GB bộ nhớ thiết bị` : "trình duyệt không cung cấp dung lượng RAM"}. FPS thật sẽ được đo sau khi vào game.</span>`;
+    }
+
     async init() {
       await this.store.open();
       this.savedRecord = await this.store.load("slot1");
-      const note = this.root.querySelector("[data-har-save-note]");
-      const continueButton = this.root.querySelector("[data-har-continue]");
       if (this.savedRecord?.data) {
         this.state = normalizeState(this.savedRecord.data);
-        const date = new Date(this.savedRecord.updatedAt);
-        note.textContent = `Có tiến trình v${this.savedRecord.version} · ${Number.isNaN(date.getTime()) ? "đã lưu trên thiết bị" : date.toLocaleString("vi-VN")}`;
-        continueButton.textContent = "Tiếp tục hành trình";
-      } else {
-        note.textContent = this.store.fallback
-          ? "IndexedDB không khả dụng · sẽ dùng bộ nhớ cục bộ dự phòng."
-          : "Chưa có hành trình · bản mới sẽ được lưu bằng IndexedDB.";
-        continueButton.textContent = "Bắt đầu hành trình";
       }
+      try {
+        const preferences = JSON.parse(root.localStorage?.getItem("hh.astral-realms.settings.v1") || "null");
+        if (preferences && typeof preferences === "object") this.state = normalizeState({ ...this.state, settings: { ...this.state.settings, ...preferences } });
+      } catch {}
+      this.renderStartScreen();
+      void this.prepareStartPreview();
       this.updateCinematicChapterRail(this.currentStoryChapter().id);
       this.bindShellEvents();
       return this;
@@ -2272,6 +2551,8 @@
     async startGame({ fresh = false } = {}) {
       if (this.started || this.destroyed) return;
       this.started = true;
+      this.disposeStartPreview();
+      this.root.classList.remove("is-start-settings");
       const continueButton = this.root.querySelector("[data-har-continue]");
       const newButton = this.root.querySelector("[data-har-new]");
       const recovery = this.root.querySelector("[data-har-loading-recovery]");
@@ -2283,8 +2564,10 @@
       newButton.disabled = true;
       try {
         if (fresh) {
+          const preferredSettings = { ...this.state.settings };
           await this.store.clear("slot1");
           this.state = defaultState();
+          this.state.settings = { ...this.state.settings, ...preferredSettings };
           this.savedRecord = null;
         } else if (this.savedRecord?.data) {
           this.state = normalizeState(this.savedRecord.data);
@@ -2345,7 +2628,9 @@
         this.updateCamera(true, 0.016);
         this.renderer.render(this.scene, this.camera);
         this.lastRenderSuccessAt = performance.now();
-        const needsGenesis = !this.state.appearance.creatorCompletedAt
+        const requestedCharacterSelect = this.pendingStartAction === "character-select";
+        const needsGenesis = requestedCharacterSelect
+          || !this.state.appearance.creatorCompletedAt
           || Number(this.state.appearance.creatorVersion || 0) < CHARACTER_VISUAL_VERSION;
         this.running = true;
         this.paused = needsGenesis;
@@ -2359,8 +2644,12 @@
         this.lastFrameAt = performance.now();
         this.frameHandle = requestAnimationFrame((time) => this.frame(time));
         this.updateUi(true);
-        if (needsGenesis) this.openGenesisCreator();
+        if (needsGenesis) {
+          if (requestedCharacterSelect) this.openGenesisCreator({ force: true });
+          else this.openGenesisCreator();
+        }
         else this.beginRuntimeSession(this.savedRecord?.data ? "Đã khôi phục checkpoint gần nhất." : "Hành trình mới bắt đầu tại H-Central.");
+        this.pendingStartAction = "";
       } catch (error) {
         this.resetGraphicsAfterFailure();
         this.started = false;
@@ -2370,6 +2659,8 @@
         this.setLoading(0, message);
         this.root.querySelector("[data-har-loading-text]")?.classList.add("har-unsupported");
         if (recovery) recovery.hidden = false;
+        this.renderStartScreen();
+        void this.prepareStartPreview();
       }
     }
 
@@ -4520,6 +4811,7 @@
       this.characterSelectDraft = null;
       await this.rebuildActiveBuiltInCharacter({ recipe: confirmedRecipe, selectionId: this.state.characterSelection?.confirmedSelectionId || "", transitionMs: 250 });
       this.updateCamera(true, 0.016);
+      if (!this.runtimeStarted) this.beginRuntimeSession("Đã giữ nguyên nhân vật từ bản lưu.");
       this.toast("Đã bỏ bản nháp; save nhân vật không thay đổi.", "success");
     }
 
@@ -10893,7 +11185,7 @@
       return true;
     }
 
-    createPlayerWeapon(profile, weaponClass = this.equippedWeaponClass(profile.id)) {
+    createPlayerWeapon(profile, weaponClass = this.equippedWeaponClass(profile.id), { hydrate = true } = {}) {
       const THREE = this.THREE;
       const weapon = new THREE.Group();
       const weaponId = this.equippedWeaponId(profile.id);
@@ -11006,7 +11298,7 @@
       else if (["spear", "staff", "scythe", "greatsword", "hammer"].includes(weaponClass)) gripLeft.position.set(0, 0.42, 0);
       else gripLeft.position.set(0, 0.2, 0);
       fallback.add(gripRight, gripLeft);
-      if (weapon.userData.assetId) root.setTimeout(() => this.hydratePlayerWeapon(weapon), 0);
+      if (hydrate && weapon.userData.assetId) root.setTimeout(() => this.hydratePlayerWeapon(weapon), 0);
       return weapon;
     }
 
@@ -11431,6 +11723,19 @@
         if (continueButton) return this.startGame({ fresh: false });
         const newButton = event.target.closest("[data-har-new]");
         if (newButton) return this.startGame({ fresh: true });
+        if (event.target.closest("[data-har-start-character-select]")) {
+          this.pendingStartAction = "character-select";
+          return this.startGame({ fresh: false });
+        }
+        if (event.target.closest("[data-har-start-settings]")) {
+          this.openPanel("settings");
+          this.root.classList.add("is-start-settings");
+          return;
+        }
+        if (event.target.closest("[data-har-start-benchmark]")) {
+          this.runStartPerformanceCheck();
+          return;
+        }
         if (event.target.closest("[data-har-retry]")) return this.startGame({ fresh: false });
         if (event.target.closest("[data-har-safe-mode]")) {
           this.forceCompatibility = true;
@@ -14402,6 +14707,7 @@
     closePanel() {
       this.currentPanel = "";
       this.menuPaused = false;
+      this.root.classList.remove("is-start-settings");
       const panel = this.root.querySelector("[data-har-panel-root]");
       panel.classList.remove("is-open");
       panel.setAttribute("aria-hidden", "true");
@@ -15328,6 +15634,7 @@
           if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld", "facialAnimation", "surfaceFx", "microDetail", "naturalMotion", "eyePerformance", "secondaryMotion", "freeLookCamera", "shoulderCamera", "cameraAutoFollow", "aimAssist", "characterLab", "invertCameraY", "genesisWeaponPreview"].includes(key)) value = value === "true";
           if (["volume", "cameraSensitivity", "cameraShake", "weatherDensity", "cameraDistance"].includes(key)) value = Number(value);
           this.state.settings[key] = value;
+          try { root.localStorage?.setItem("hh.astral-realms.settings.v1", JSON.stringify(this.state.settings)); } catch {}
           if (key === "cameraDistance") this.cameraDistance = clamp(value, 5.2, 18);
           if (key === "freeLookCamera" && value === false && document.pointerLockElement === this.renderer?.domElement) document.exitPointerLock?.();
           if (key === "quality") {
@@ -16584,6 +16891,7 @@
 
     async destroy() {
       if (this.destroyed) return;
+      this.disposeStartPreview();
       this.teardownGenesisPreview({ restorePlayer: true });
       this.restoreGenesisLighting();
       if (this.started) await this.saveProgress("Rời game");
