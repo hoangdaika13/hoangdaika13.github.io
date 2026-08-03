@@ -21,6 +21,20 @@ function fail(message, statusCode = 400, code = "COMIC_SOURCE_INVALID") {
   throw error;
 }
 
+// Normalize URLs pasted from chat, notes, or markdown before parsing.
+function normalizeSourceUrl(input) {
+  let value = String(input ?? "").replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
+  for (let pass = 0; pass < 2; pass += 1) {
+    const wrapped = value.match(/^<\s*([\s\S]*?)\s*>$/) || value.match(/^[`"']\s*([\s\S]*?)\s*[`"']$/);
+    if (!wrapped) break;
+    value = wrapped[1].trim();
+  }
+  value = value.replace(/[\r\n\t]/g, "").replace(/\s+/g, "");
+  if (/^www\./i.test(value)) value = `https://${value}`;
+  else if (value && !/^[a-z][a-z0-9+.-]*:/i.test(value)) value = `https://${value}`;
+  return value;
+}
+
 function isPrivateIp(address) {
   const value = String(address || "").trim().toLowerCase();
   if (!value) return true;
@@ -39,7 +53,8 @@ function isPrivateIp(address) {
 
 async function assertPublicHttpsUrl(input) {
   let parsed;
-  try { parsed = new URL(String(input || "")); }
+  const normalized = normalizeSourceUrl(input);
+  try { parsed = new URL(normalized); }
   catch { fail("URL không hợp lệ."); }
   if (parsed.protocol !== "https:") fail("Nguồn website phải sử dụng HTTPS.", 400, "HTTPS_REQUIRED");
   if (parsed.username || parsed.password) fail("URL không được chứa thông tin đăng nhập.");
@@ -438,6 +453,8 @@ async function handleComicSource(req, res, { db, body, user }) {
 module.exports = {
   handleComicSource,
   __test: Object.freeze({
+    normalizeSourceUrl,
+    assertPublicHttpsUrl,
     isPrivateIp,
     extractImageUrls,
     extractChapterLinks,

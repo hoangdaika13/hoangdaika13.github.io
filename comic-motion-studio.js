@@ -77,6 +77,18 @@
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
   })[char]);
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
+  function normalizeSourceUrl(input) {
+    let value = String(input ?? "").replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
+    for (let pass = 0; pass < 2; pass += 1) {
+      const wrapped = value.match(/^<\s*([\s\S]*?)\s*>$/) || value.match(/^[`"']\s*([\s\S]*?)\s*[`"']$/);
+      if (!wrapped) break;
+      value = wrapped[1].trim();
+    }
+    value = value.replace(/[\r\n\t]/g, "").replace(/\s+/g, "");
+    if (/^www\./i.test(value)) value = `https://${value}`;
+    else if (value && !/^[a-z][a-z0-9+.-]*:/i.test(value)) value = `https://${value}`;
+    return value;
+  }
   const uid = (prefix) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
   const naturalCompare = (a, b) => String(a).localeCompare(String(b), "vi", { numeric: true, sensitivity: "base" });
   const ownerId = () => {
@@ -398,6 +410,12 @@
     const response = await fetch(`${apiBase}/api/media/comic-source`, { method: "POST", credentials: "include", headers: authHeaders(), body: JSON.stringify(payload), signal });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
+      if (data.error || data.code) {
+        const error = new Error(String(data.error || `Máy chủ trả về HTTP ${response.status}.`));
+        error.code = String(data.code || "SOURCE_REQUEST_FAILED");
+        error.statusCode = response.status;
+        throw error;
+      }
       throw new Error(data.error || `Máy chủ trả về HTTP ${response.status}.`);
     }
     return response;
@@ -418,7 +436,7 @@
     return `<dialog class="cms-source-dialog" data-cms-source-dialog>
       <form method="dialog" data-cms-source-form>
         <header><div><small>COMIC SOURCE</small><h3>Tải ảnh truyện</h3><p>Dán URL một chương hoặc trang danh sách truyện. Tool chỉ đọc HTML công khai trong phạm vi URL đã chọn, không vượt CAPTCHA, anti-bot hoặc giới hạn truy cập.</p></div><button type="button" data-cms-close-source aria-label="Đóng">×</button></header>
-        <label>URL HTTPS<input type="url" name="url" required placeholder="https://website-cua-ban.vn/truyen/chuong-01"></label>
+        <label>URL HTTPS<input type="text" inputmode="url" name="url" required autocomplete="url" spellcheck="false" placeholder="https://website-cua-ban.vn/truyen/chuong-01"></label>
         <div class="cms-form-grid"><label>Phạm vi tải<select name="sourceType"><option value="auto">Tự nhận diện</option><option value="chapter">Một chương</option><option value="series">Toàn bộ truyện</option></select></label><label>Đầu ra<select name="sourceMode"><option value="download">Tải toàn bộ về máy</option><option value="import">Nhập vào project</option><option value="both">Tải về + nhập project</option></select></label></div>
         <p class="cms-source-ack">Khi bấm <strong>Kiểm tra và tải</strong>, bạn xác nhận mình sở hữu hoặc được phép tải nội dung từ URL đã nhập. Xác nhận được ghi nhận tự động, không cần giấy phép hoặc mã bằng chứng.</p>
         <section class="cms-series-preview" data-cms-series-preview hidden><header><strong>Danh sách chương</strong><span data-cms-series-count>Chưa kiểm tra</span></header><div class="cms-series-toolbar"><button type="button" data-cms-series-select-all>Chọn tất cả</button><button type="button" data-cms-series-select-new>Chỉ chương mới</button><label>Từ<input type="number" min="0" data-cms-series-from></label><label>Đến<input type="number" min="0" data-cms-series-to></label><span data-cms-series-selected>0 đã chọn</span></div><div class="cms-series-list" data-cms-series-list></div></section>
@@ -844,10 +862,12 @@
     return (sourceInspection?.chapters || []).filter((chapter) => selected.has(chapter.url));
   }
   async function inspectSeriesSource(form, signal, data) {
+    const normalizedUrl = normalizeSourceUrl(data.get("url"));
+    if (!normalizedUrl) throw new Error("Hãy nhập URL website cần tải.");
     updateSourceProgress({ visible: false, chapter: "Đang đọc danh sách chương…" });
-    const response = await api({ action: "inspect-series", url: data.get("url"), rightsAttested: true }, signal);
+    const response = await api({ action: "inspect-series", url: normalizedUrl, rightsAttested: true }, signal);
     sourceInspection = await response.json();
-    sourceInspection.requestedUrl = String(data.get("url") || "");
+    sourceInspection.requestedUrl = normalizedUrl;
     upsertSourceLibrary(sourceInspection.source, sourceInspection.chapters || []);
     renderSeriesPreview(sourceInspection.chapters || []);
     const submit = form.querySelector("button[type=submit]"); if (submit) submit.textContent = "Bắt đầu tải";
@@ -879,7 +899,7 @@
   }
 
   async function importSeries(form, signal, data) {
-    const seriesUrl = String(data.get("url") || "");
+    const seriesUrl = normalizeSourceUrl(data.get("url"));
     const sourceMode = String(data.get("sourceMode") || "download");
     if (!sourceInspection || sourceInspection.requestedUrl !== seriesUrl) return inspectSeriesSource(form, signal, data);
     let directory = null;
@@ -957,7 +977,8 @@
 
   async function importWebsite(form, signal) {
     const data = new FormData(form);
-    const url = String(data.get("url") || "");
+    const url = normalizeSourceUrl(data.get("url"));
+    if (!url) throw new Error("Hãy nhập URL website cần tải.");
     const selectedType = String(data.get("sourceType") || "auto");
     const isSeries = selectedType === "series" || (selectedType === "auto" && !/(?:chap(?:ter)?|chuong|chương)[-_\s]?\d+/i.test(url));
     if (isSeries) return importSeries(form, signal, data);
@@ -1501,6 +1522,6 @@
     if (root) root.innerHTML = ""; root = null;
   }
 
-  window.HHComicMotionStudio = Object.freeze({ mount, unmount, normalizeState, normalizeScene, capabilities, extractSubtitles: subtitleText, formats: FORMATS });
+  window.HHComicMotionStudio = Object.freeze({ mount, unmount, normalizeState, normalizeScene, normalizeSourceUrl, capabilities, extractSubtitles: subtitleText, formats: FORMATS });
   window.dispatchEvent(new CustomEvent("hh:comic-motion-ready"));
 })();

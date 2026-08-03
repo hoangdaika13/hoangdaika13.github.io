@@ -6,6 +6,16 @@ const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const comicSource = require(path.join(root, "utils/comic-source"));
+
+test("comic source URLs are normalized before validation", () => {
+  const normalize = comicSource.__test.normalizeSourceUrl;
+  assert.equal(normalize("  <https://example.com/chapter-1>  "), "https://example.com/chapter-1");
+  assert.equal(normalize("`https://example.com/chapter-1`"), "https://example.com/chapter-1");
+  assert.equal(normalize("https://example.com/\nchapter-1"), "https://example.com/chapter-1");
+  assert.equal(normalize("www.example.com/chapter-1"), "https://www.example.com/chapter-1");
+  assert.equal(normalize("javascript:alert(1)"), "javascript:alert(1)");
+});
 
 function loadFrontend() {
   const window = { dispatchEvent() {}, addEventListener() {} };
@@ -23,6 +33,7 @@ function loadFrontend() {
 test("Comic Motion Studio exposes normalized project, scene and honest render capabilities", () => {
   const api = loadFrontend();
   assert.ok(api);
+  assert.equal(api.normalizeSourceUrl(" <https://example.com/chapter-1> "), "https://example.com/chapter-1");
   assert.deepEqual(Object.keys(api.formats), ["landscape", "portrait", "square"]);
   const state = api.normalizeState({ format: { id: "portrait", fps: 30 }, scenes: [{ duration: 999, camera: { mode: "bad" } }] });
   assert.equal(state.format.width, 1080);
