@@ -311,7 +311,7 @@
         <header><div><small>COMIC SOURCE</small><h3>Tải ảnh truyện</h3><p>Dán URL một chương hoặc trang danh sách truyện. Tool chỉ đọc HTML công khai trong phạm vi URL đã chọn, không vượt CAPTCHA, anti-bot hoặc giới hạn truy cập.</p></div><button type="button" data-cms-close-source aria-label="Đóng">×</button></header>
         <label>URL HTTPS<input type="url" name="url" required placeholder="https://website-cua-ban.vn/truyen/chuong-01"></label>
         <div class="cms-form-grid"><label>Phạm vi tải<select name="sourceType"><option value="auto">Tự nhận diện</option><option value="chapter">Một chương</option><option value="series">Toàn bộ truyện</option></select></label><label>Đầu ra<select name="sourceMode"><option value="download">Tải toàn bộ về máy</option><option value="import">Nhập vào project</option><option value="both">Tải về + nhập project</option></select></label></div>
-        <label class="cms-check"><input type="checkbox" name="rightsAttested" required><span>Tôi xác nhận tôi sở hữu hoặc được phép tải nội dung từ nguồn này.</span></label>
+        <p class="cms-source-ack">Khi bấm <strong>Kiểm tra và tải</strong>, bạn xác nhận mình sở hữu hoặc được phép tải nội dung từ URL đã nhập. Xác nhận được ghi nhận tự động, không cần giấy phép hoặc mã bằng chứng.</p>
         <section class="cms-series-preview" data-cms-series-preview hidden><header><strong>Danh sách chương</strong><span data-cms-series-count>Chưa kiểm tra</span></header><div class="cms-series-list" data-cms-series-list></div></section>
         <section class="cms-source-progress" data-cms-source-progress ${sourceProgress?.visible ? "" : "hidden"}><div class="cms-progress-head"><strong>Tiến trình tải</strong><span data-cms-progress-label>0%</span></div><progress data-cms-progress-bar value="0" max="100"></progress><strong data-cms-progress-chapter>Đang chuẩn bị…</strong><small data-cms-progress-counters>Hoàn tất 0 · Lỗi 0 · Còn lại 0</small><img data-cms-progress-preview alt="Ảnh đang tải" hidden><div class="cms-inline-actions"><button type="button" data-cms-source-pause>Tạm dừng</button><button type="button" data-cms-source-cancel>Hủy tải</button><button type="button" data-cms-source-retry hidden>Thử lại lỗi</button></div></section>
         <footer><button type="button" data-cms-close-source>Hủy</button><button class="cms-primary" type="submit" value="default">Kiểm tra và tải</button></footer>
@@ -655,7 +655,7 @@
     let directory = null;
     if (["download", "both"].includes(sourceMode)) directory = await chooseSeriesDirectory();
     updateSourceProgress({ visible: true, total: 0, completed: 0, failed: 0, chapter: "Đang đọc danh sách chương…" });
-    const response = await api({ action: "inspect-series", url: seriesUrl, rightsAttested: data.get("rightsAttested") === "on" }, signal);
+    const response = await api({ action: "inspect-series", url: seriesUrl, rightsAttested: true }, signal);
     const result = await response.json();
     const selectedUrls = new Set([...root.querySelectorAll("[data-cms-series-chapter]:checked")].map((input) => input.dataset.cmsSeriesChapter));
     const chapters = (result.chapters || []).filter((chapter) => !selectedUrls.size || selectedUrls.has(chapter.url));
@@ -707,7 +707,7 @@
     if (isSeries) return importSeries(form, signal, data);
     updateSourceProgress({ visible: true, total: 0, completed: 0, failed: 0, chapter: "Đang đọc chương…" });
     status("Đang kiểm tra nguồn và tải ảnh của chương…");
-    const response = await api({ action: "inspect", url, rightsAttested: data.get("rightsAttested") === "on" }, signal);
+    const response = await api({ action: "inspect", url, rightsAttested: true }, signal);
     const result = await response.json();
     const sourceMode = String(data.get("sourceMode") || "import");
     const imported = await fetchAuthorizedImages(result, signal, { chapterLabel: result.source?.title || "Chương hiện tại" });

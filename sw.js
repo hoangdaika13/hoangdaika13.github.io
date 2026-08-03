@@ -1,7 +1,7 @@
-const CACHE = "hh-identity-portal-v404";
+const CACHE = "hh-identity-portal-v405";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
-// Compatibility from v395-v403: script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403
+// Compatibility from v395-v404: script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
 // Graphic Design Universal compatibility aliases: graphic-design-universal.css?v=1 graphic-design-universal.js?v=1
 // Entertainment v4 compatibility aliases: ./game-center.css?v=4 ./game-center.js?v=4
@@ -46,7 +46,7 @@ const RUNTIME_ASSETS = [
   "./media-design-publish.css?v=1",
   "./video-editor-studio.css?v=4",
   "./video-batch-factory.css?v=4",
-  "./comic-motion-studio.css?v=4",
+  "./comic-motion-studio.css?v=5",
   "./video-editor-resolve.css?v=8",
   "./davinci-resolve-hub.css?v=4",
   "./video-editor-auto.css?v=1",
@@ -94,7 +94,7 @@ const RUNTIME_ASSETS = [
   "./youtube-publisher.css?v=4",
   "./youtube-publisher.js?v=7",
   "./youtube-creator-galaxy.js?v=18",
-  "./comic-motion-studio.js?v=7",
+  "./comic-motion-studio.js?v=8",
   "./vendor/jszip.min.js?v=3.10.1",
   "./vendor/tesseract.min.js?v=6.0.1",
   "./vendor/tesseract-worker.min.js?v=6.0.1",
@@ -424,7 +424,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=144",
+  "./performance-loader.js?v=145",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=162"
