@@ -3298,6 +3298,47 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
     render();
   });
 
+  const creativeLegacyModuleIds = new Set(["ai-center", "creator-studio", "media-center", "ai-automation"]);
+  const platformRoot = byId("platform");
+  window.HHCreativeLegacyTools = {
+    supports(view) {
+      return view === "ai-script" || creativeLegacyModuleIds.has(view);
+    },
+    mount(host, options = {}) {
+      const view = String(options.view || "");
+      if (view === "ai-script") {
+        host.innerHTML = '<div class="creative-ai-script-host tool-neon-page" data-ai-script-host><div class="creative-ai-script-loading"><i></i><strong>Đang mở Kịch bản AI Studio...</strong></div></div>';
+        const scriptHost = host.firstElementChild;
+        window.HHCreativeSuite?.mountScriptStudio?.(scriptHost);
+        return { unmount() { scriptHost?.remove?.(); } };
+      }
+      if (!host || !platformRoot || !creativeLegacyModuleIds.has(view)) throw new Error("Công cụ sáng tạo chưa sẵn sàng.");
+      if (!grid.querySelector(`[data-module-id="${view}"]`)) render();
+      platformRoot.hidden = false;
+      platformRoot.classList.add("app-workspace__platform", "creative-os-embedded-platform");
+      platformRoot.dataset.cosEmbeddedPlatform = view;
+      grid.querySelectorAll("[data-module-id]").forEach((card) => {
+        const active = card.dataset.moduleId === view;
+        card.hidden = !active;
+        card.toggleAttribute("data-shell-active", active);
+      });
+      host.replaceChildren(platformRoot);
+      if (view === "ai-center") loadAICenterStatus();
+      if (view === "media-center") hydrateMediaLibrary();
+      window.HHExtensionSuite?.mount?.(grid, [modules.find((item) => item.id === view)].filter(Boolean));
+      return {
+        unmount() {
+          platformRoot.classList.remove("creative-os-embedded-platform");
+          delete platformRoot.dataset.cosEmbeddedPlatform;
+        }
+      };
+    },
+    unmount() {
+      platformRoot?.classList.remove("creative-os-embedded-platform");
+      if (platformRoot) delete platformRoot.dataset.cosEmbeddedPlatform;
+    }
+  };
+
   updateCounters();
   render();
 }
@@ -5270,7 +5311,7 @@ function initAppShell() {
     { id: "providers", icon: "PR", title: "Provider Router", group: "Xuất bản", description: "Quota, chi phí, độ trễ và cooldown" },
     { id: "marketplace", icon: "MK", title: "Creative Marketplace", group: "Mở rộng", description: "Template, workflow và asset pack" }
   ];
-  const creativeOSViews = new Set(["overview", "project", "brief", "moodboard", "storyboard", "world-bible", "workflow", "ai-director", "prompt-studio", "repurpose", "brand", "audio-dubbing", "prototype", "review", "collaboration", "publishing", "analytics", "rights", "providers", "marketplace"]);
+  const creativeOSViews = new Set(creativeStudioItems.map((item) => item.id));
   const isCreativeOSRoute = (route) => {
     if (route === "/create") return true;
     const routeParts = String(route || "").split("/").filter(Boolean);
@@ -6022,7 +6063,7 @@ function initAppShell() {
     const parts = route.split("?")[0].split("/").filter(Boolean);
     const possibleId = parts.at(-1);
     const module = moduleById(possibleId);
-    document.body.classList.toggle("app-single-module", Boolean(module));
+    document.body.classList.toggle("app-single-module", !isCreativeOSRoute(route) && Boolean(module));
     if (route === "/home") {
       updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
       workspace.replaceChildren(dashboardHome);
@@ -6170,7 +6211,16 @@ function initAppShell() {
             ...meta
           });
         },
-        onNavigate: (target) => { location.hash = `#${target}`; }
+        onNavigate: (target) => { location.hash = `#${target}`; },
+        onViewChange: (nextView) => {
+          const nextPage = creativeStudioItems.find((item) => item.id === nextView) || creativeStudioItems[0];
+          const nextRoute = nextView === "overview" ? "/create" : `/create/${nextView}`;
+          history.replaceState(null, "", `#${nextRoute}`);
+          updatePageHeader(nextPage.title, nextPage.description, nextRoute);
+          renderNavigation();
+          remember(nextView);
+          document.title = `${nextPage.title} | HH Platform`;
+        }
       });
       else mountSimpleView("Creative OS", "Đang tải hệ điều hành sáng tạo...", "");
       remember(creativeView);

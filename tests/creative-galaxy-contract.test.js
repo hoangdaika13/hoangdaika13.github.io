@@ -96,8 +96,9 @@ test("Creative project event bus and AI Center bridge share the existing project
   const ai = read("ai-center-advanced.js");
   const script = read("script.js");
   assert.match(core, /hh:creative-project-change/);
-  assert.match(shell, /data-cos-galaxy/);
-  assert.match(shell, /HHCreativeGalaxy\.mount/);
+  assert.match(shell, /data-cos-group/);
+  assert.match(shell, /data-cos-search/);
+  assert.doesNotMatch(shell, /data-cos-galaxy/);
   assert.match(ai, /bridgeRunToCreative/);
   assert.match(ai, /data-aica-save-project="brief"/);
   assert.match(ai, /data-aica-save-project="media"/);
@@ -110,7 +111,7 @@ test("Creative Galaxy assets are versioned and precached", () => {
   const html = read("index.html");
   for (const asset of [
     "creative-galaxy.css?v=3", "creative-galaxy.js?v=4", "creative-star-map.css?v=2",
-    "creative-star-map.js?v=2", "creative-os-core.js?v=4", "creative-os.js?v=6", "ai-center-advanced.js?v=2"
+    "creative-star-map.js?v=2", "creative-os-core.js?v=4", "creative-os.js?v=9", "ai-center-advanced.js?v=2"
   ]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(`${loader}\n${worker}`, pattern);

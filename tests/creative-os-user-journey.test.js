@@ -9,8 +9,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const exists = (file) => fs.existsSync(path.join(root, file));
 
 const ROUTES = Object.freeze([
-  "overview", "project", "brief", "moodboard", "storyboard", "world-bible",
-  "workflow", "ai-director", "prompt-studio", "repurpose", "brand",
+  "overview", "project", "ai-center", "ai-script", "brief", "moodboard", "storyboard", "world-bible",
+  "creator-studio", "media-center", "workflow", "ai-director", "prompt-studio", "ai-automation", "repurpose", "brand",
   "audio-dubbing", "prototype", "review", "collaboration", "publishing",
   "analytics", "rights", "providers", "marketplace"
 ]);
@@ -100,7 +100,7 @@ function createFakeDocument() {
 
 const settle = () => new Promise((resolve) => setImmediate(() => setImmediate(resolve)));
 
-test("all 20 Creative OS routes are reachable and mapped to lazy workspace engines", () => {
+test("all 25 Creative OS routes are reachable and mapped to one workspace shell", () => {
   const shell = read("creative-os.js");
   const router = read("script.js");
   const worker = read("sw.js");
@@ -114,6 +114,7 @@ test("all 20 Creative OS routes are reachable and mapped to lazy workspace engin
     assert.match(shell, new RegExp(api), `shell does not map ${api}`);
     assert.match(worker, new RegExp(js.replace(".", "\\.")), `${js} is not cached`);
   }
+  assert.match(shell, /HHCreativeLegacyTools/);
 });
 
 test("create, update, snapshot, export, and import preserve one Universal Project id", () => {
@@ -190,6 +191,13 @@ test("mounting all routes reuses one store and unmount removes root listeners", 
       unmount() {}
     };
   }
+  context.HHCreativeLegacyTools = {
+    mount(_host, options) {
+      mounts.push({ view: options.view, projectId: options.store.getState().activeProjectId, store: options.store });
+      return { unmount() {} };
+    },
+    unmount() {}
+  };
   vm.runInNewContext(read("creative-os.js"), context, { filename: "creative-os.js" });
   const host = new FakeNode("div");
   for (const route of ROUTES) {
