@@ -76,7 +76,7 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
   assert.match(loader, /comic-motion-studio\.js\?v=3/);
   assert.match(loader, /vendor\/jszip\.min\.js/);
   assert.match(loader, /vendor\/tesseract\.min\.js/);
-  assert.match(worker, /hh-identity-portal-v399/);
+  assert.match(worker, /hh-identity-portal-v400/);
   assert.match(worker, /pdf\.worker\.min\.mjs/);
   assert.match(worker, /vie\.traineddata\.gz/);
 

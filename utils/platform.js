@@ -85,7 +85,7 @@ function allowedOrigins() {
     "https://nhhoang13all.xyz",
     "https://www.nhhoang13all.xyz",
     "https://hoangdaika13.github.io",
-    "https://hoangdaika13githubio.vercel.app",
+    "https://hoangdaika13-github-io.vercel.app",
     ...String(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "").split(",").map((v) => v.trim())
   ].filter(Boolean))];
 }

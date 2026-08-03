@@ -6,8 +6,8 @@ HH Neon Platform chỉ dùng Google OAuth và tài khoản email. Client Secret 
 
 - Website: `https://nhhoang13all.xyz`
 - Website www: `https://www.nhhoang13all.xyz`
-- Backend: `https://hoangdaika13githubio.vercel.app`
-- Google callback: `https://hoangdaika13githubio.vercel.app/api/auth/google/callback`
+- Backend: `https://nhhoang13all.xyz`
+- Google callback: `https://www.nhhoang13all.xyz/api/auth/google/callback`
 - Privacy: `https://nhhoang13all.xyz/privacy.html`
 - Terms: `https://nhhoang13all.xyz/terms.html`
 
@@ -20,9 +20,9 @@ HH Neon Platform chỉ dùng Google OAuth và tài khoản email. Client Secret 
 5. Authorized JavaScript origins:
    - `https://nhhoang13all.xyz`
    - `https://www.nhhoang13all.xyz`
-   - `https://hoangdaika13githubio.vercel.app`
+   - `https://hoangdaika13-github-io.vercel.app`
 6. Authorized redirect URI phải khớp chính xác:
-   - `https://hoangdaika13githubio.vercel.app/api/auth/google/callback`
+   - `https://www.nhhoang13all.xyz/api/auth/google/callback`
 7. Lưu Client ID và Client Secret vào Vercel.
 
 ## Vercel
@@ -32,12 +32,12 @@ Trong project backend, đặt các biến cho Production:
 ```text
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
-GOOGLE_CALLBACK_URL=https://hoangdaika13githubio.vercel.app/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://www.nhhoang13all.xyz/api/auth/google/callback
 FRONTEND_URL=https://nhhoang13all.xyz
-ALLOWED_ORIGINS=https://nhhoang13all.xyz,https://www.nhhoang13all.xyz,https://hoangdaika13githubio.vercel.app
+ALLOWED_ORIGINS=https://nhhoang13all.xyz,https://www.nhhoang13all.xyz,https://hoangdaika13-github-io.vercel.app
 ```
 
-Sau khi redeploy, kiểm tra `https://hoangdaika13githubio.vercel.app/api/auth/providers`. Kết quả phải có `"google": true` và callback Google đúng URL phía trên.
+Sau khi redeploy, kiểm tra `https://nhhoang13all.xyz/api/auth/providers`. Kết quả phải có `"google": true` và callback Google đúng URL phía trên.
 
 ## Bảo mật
 

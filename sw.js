@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v399";
+const CACHE = "hh-identity-portal-v400";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v395-v397: script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397
@@ -404,7 +404,7 @@ const RUNTIME_ASSETS = [
   "./japanese-vocabulary-packs.js?v=1",
   "./japanese-vocabulary-10k.js?v=1",
   "./japanese-learning.js?v=7",
-  "./config.js?v=9",
+  "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];
 const CORE = [
@@ -420,7 +420,7 @@ const CORE = [
   "./privacy-consent-center.css?v=3",
   "./motion-comfort.css?v=1",
   "./assets/hh-neon-logo-v2.png?v=3",
-  "./config.js?v=9",
+  "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",

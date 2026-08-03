@@ -14,7 +14,7 @@ services:
       - key: FRONTEND_URL
         value: https://nhhoang13all.xyz
       - key: ALLOWED_ORIGINS
-        value: https://nhhoang13all.xyz,https://www.nhhoang13all.xyz,https://hoangdaika13githubio.vercel.app
+        value: https://nhhoang13all.xyz,https://www.nhhoang13all.xyz,https://hoangdaika13-github-io.vercel.app
       - key: JWT_SECRET
         sync: false
       - key: ADMIN_EMAILS

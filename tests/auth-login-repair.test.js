@@ -99,6 +99,17 @@ test("Google callback prioritizes session exchange and paints home progressively
   assert.doesNotMatch(html, /accounts\.google\.com\/gsi\/client/);
 });
 
+test("production authentication never redirects to the paused legacy Vercel domain", () => {
+  const config = read("config.js");
+  const html = read("index.html");
+  const worker = read("sw.js");
+  assert.match(config, /HH_GITHUB_HOST[\s\S]*?https:\/\/hoangdaika13-github-io\.vercel\.app[\s\S]*?: location\.origin/);
+  assert.doesNotMatch(config, /hoangdaika13githubio\.vercel\.app/);
+  assert.match(html, /config\.js\?v=10/);
+  assert.match(worker, /config\.js\?v=10/);
+  assert.match(worker, /hh-identity-portal-v400/);
+});
+
 test("public provider and anonymous session checks work without opening MongoDB", async () => {
   const handler = require("../api/auth/[...action].js");
   const previousMongo = process.env.MONGODB_URI;
