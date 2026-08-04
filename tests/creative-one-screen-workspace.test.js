@@ -26,7 +26,16 @@ test("Creative workspace uses a fixed two-column shell with only internal overfl
   assert.match(css, /\.creative-os\s*\{[^}]*height:\s*100%[^}]*overflow:\s*hidden/s);
   assert.match(css, /\.creative-os__body\s*\{[^}]*grid-template-columns:\s*260px minmax\(0, 1fr\)/s);
   assert.match(css, /\.creative-os__workspace\s*\{[^}]*overflow:\s*auto/s);
+  assert.match(css, /\.creative-os__workspace > :where\([\s\S]*width:\s*100% !important[\s\S]*max-width:\s*none !important/s);
   assert.match(css, /@media \(max-width: 560px\)/);
+});
+
+test("every Creative route temporarily collapses the duplicate global sidebar", () => {
+  const source = read("creative-os.js");
+  assert.match(source, /sidebarWasCollapsed/);
+  assert.match(source, /classList\?\.add\?\.\("app-sidebar-collapsed"\)/);
+  assert.match(source, /sidebarWasCollapsed === false[\s\S]*classList\?\.remove\?\.\("app-sidebar-collapsed"\)/);
+  assert.match(source, /\[data-shell-toggle\]/);
 });
 
 test("five established tools are embedded through the existing functional adapter", () => {

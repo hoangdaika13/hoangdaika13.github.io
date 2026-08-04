@@ -72,6 +72,7 @@
   let mountToken = 0;
   let pageMain = null;
   let pageWorkspace = null;
+  let sidebarWasCollapsed = null;
 
   const escapeHTML = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const normalizeView = (view) => VIEWS.some((item) => item.id === view) ? view : "overview";
@@ -407,10 +408,13 @@
     try { rootAbort?.abort(); } catch {}
     pageMain?.classList.remove("app-main--creative-fixed");
     pageWorkspace?.classList.remove("app-workspace--creative-fixed");
+    if (sidebarWasCollapsed === false) document.body?.classList?.remove?.("app-sidebar-collapsed");
+    document.querySelectorAll?.("[data-shell-toggle]")?.forEach((button) => button.setAttribute("aria-expanded", String(!document.body?.classList?.contains?.("app-sidebar-collapsed"))));
     unsubscribe = null;
     rootAbort = null;
     pageMain = null;
     pageWorkspace = null;
+    sidebarWasCollapsed = null;
     if (activeRoot) activeRoot.replaceChildren();
     activeRoot = null;
   }
@@ -431,6 +435,9 @@
     activeOptions = options;
     pageMain = root.closest?.(".app-main") || null;
     pageWorkspace = root.parentElement || null;
+    if (sidebarWasCollapsed === null) sidebarWasCollapsed = Boolean(document.body?.classList?.contains?.("app-sidebar-collapsed"));
+    document.body?.classList?.add?.("app-sidebar-collapsed");
+    document.querySelectorAll?.("[data-shell-toggle]")?.forEach((button) => button.setAttribute("aria-expanded", "false"));
     pageMain?.classList.add("app-main--creative-fixed");
     pageWorkspace?.classList.add("app-workspace--creative-fixed");
     root.innerHTML = shellMarkup(view);

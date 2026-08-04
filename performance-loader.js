@@ -117,9 +117,9 @@
       ]
     },
     creative: {
-      styles: ["creative-suite.css?v=6", "creative-os.css?v=3", "creative-galaxy.css?v=3", "creative-star-map.css?v=2", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
+      styles: ["creative-suite.css?v=6", "creative-os.css?v=4", "creative-galaxy.css?v=3", "creative-star-map.css?v=2", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
       scripts: [
-        "creative-os-core.js?v=4", "creative-galaxy.js?v=4", "creative-star-map.js?v=3", "creative-os.js?v=9", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
+        "creative-os-core.js?v=4", "creative-galaxy.js?v=4", "creative-star-map.js?v=3", "creative-os.js?v=10", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
       ]
     },
     music: {

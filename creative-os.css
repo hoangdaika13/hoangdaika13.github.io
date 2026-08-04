@@ -527,6 +527,34 @@ body.app-creative-route .app-context-bar {
   min-width: 0;
 }
 
+.creative-os__workspace > :where(
+  .hh-creative-os,
+  [data-creative-preproduction],
+  .hhcaw,
+  .cpl-app,
+  [data-hh-creative-collaboration],
+  [data-creative-publishing],
+  .cmp-marketplace,
+  .creative-os-embedded-platform,
+  .creative-ai-script-host
+) {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+}
+
+.creative-os__workspace :where(
+  .hh-creative-os,
+  .hhcp,
+  .hhcaw,
+  .cpl-app,
+  .cp-shell,
+  .cmp-shell
+) {
+  max-width: none;
+}
+
 .creative-os__loader,
 .creative-os__error {
   display: grid;
