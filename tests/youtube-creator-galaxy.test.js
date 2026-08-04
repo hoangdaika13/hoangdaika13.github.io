@@ -261,6 +261,17 @@ test("Upload workspace exposes a fast multi-channel target picker", () => {
   assert.match(css, /grid-auto-flow:column/);
 });
 
+test("Upload workspace keeps one obvious sticky YouTube upload action", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const capability of ["uploadReady", "uploadActionLabel", "ycg-upload-action-dock", "ycg-upload-now", "Tải video lên YouTube", "Cài đặt nâng cao", "ycg-upload-advanced"]) assert.match(client, new RegExp(capability));
+  assert.doesNotMatch(client, /Tạo hàng đợi liên tục/);
+  assert.match(client, /<details class="ycg-upload-advanced"/);
+  assert.match(css, /\.ycg-upload-action-dock\{position:sticky/);
+  assert.match(css, /\.ycg-upload-action-dock \.ycg-upload-now/);
+  assert.match(css, /\.ycg-upload-advanced/);
+});
+
 test("Batch Matrix, continuous queue, Content Manager and bulk calendar are real owner-isolated workflows", () => {
   const client = read("youtube-creator-galaxy.js");
   const server = read("utils/youtubePublisher.js");
@@ -490,7 +501,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=18", "youtube-creator-galaxy.js?v=22"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=19", "youtube-creator-galaxy.js?v=23"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
