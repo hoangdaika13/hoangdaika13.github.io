@@ -424,6 +424,10 @@ test("Studio provides owner-isolated real channel customization and upload defau
   assert.match(server, /action: "channel:settings-update"[\s\S]{0,180}quotaCost: 50/);
   assert.match(server, /YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH/);
   assert.match(css, /\.ycg-channel-settings-grid/);
+  assert.match(css, /Channel Settings · synchronized cosmic Studio palette/);
+  assert.match(css, /linear-gradient\(145deg,#07111e,#0a0f1c 58%,#100d20\)/);
+  assert.match(css, /\.ycg-channel-settings-grid>nav button\.is-active/);
+  assert.match(css, /\.ycg-channel-settings \.ycg-readonly-setting/);
 });
 
 test("Home launch intent opens Quick Publish once and rejects another owner or stale state", () => {
@@ -475,7 +479,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=16", "youtube-creator-galaxy.js?v=21"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=17", "youtube-creator-galaxy.js?v=21"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
