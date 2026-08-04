@@ -68,9 +68,8 @@ test("Sidebar markup is a real star map with truthful empty state", () => {
   const markup = starMap.markup({ items: ITEMS, route: "/create/workflow" });
   assert.match(markup, /data-creative-star-map/);
   assert.match(markup, /data-csm-mode="map"/);
-  assert.match(markup, />Star Map</);
-  assert.match(markup, />Focus</);
-  assert.match(markup, />Compact</);
+  assert.doesNotMatch(markup, /csm-sun-header/);
+  assert.doesNotMatch(markup, /data-csm-set-mode/);
   assert.equal((markup.match(/data-csm-cluster-section=/g) || []).length, 6);
   assert.equal((markup.match(/data-csm-wormhole-route=/g) || []).length, 25);
   assert.match(markup, /Chưa có hoạt động/);
@@ -123,7 +122,7 @@ test("Creative Star Map release assets are versioned and cached", () => {
   const worker = read("sw.js");
   const html = read("index.html");
   for (const asset of [
-    "creative-star-map.css?v=2", "creative-star-map.js?v=2",
+    "creative-star-map.css?v=2", "creative-star-map.js?v=3",
     "creative-galaxy.css?v=3", "creative-galaxy.js?v=4", "creative-os.js?v=9"
   ]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));

@@ -21,6 +21,8 @@ test("Creative workspace keeps all 25 tools in one accordion navigator", () => {
 test("Creative workspace uses a fixed two-column shell with only internal overflow", () => {
   const css = read("creative-os.css");
   assert.match(css, /\.app-main\.app-main--creative-fixed\s*\{[^}]*overflow:\s*hidden/s);
+  assert.match(css, /body\.app-creative-route \.app-breadcrumb,[\s\S]*body\.app-creative-route \.app-context-bar\s*\{[^}]*display:\s*none !important/s);
+  assert.match(css, /\.app-main--creative-fixed \.app-workspace\.app-workspace--creative-fixed\s*\{[^}]*height:\s*100%/s);
   assert.match(css, /\.creative-os\s*\{[^}]*height:\s*100%[^}]*overflow:\s*hidden/s);
   assert.match(css, /\.creative-os__body\s*\{[^}]*grid-template-columns:\s*260px minmax\(0, 1fr\)/s);
   assert.match(css, /\.creative-os__workspace\s*\{[^}]*overflow:\s*auto/s);

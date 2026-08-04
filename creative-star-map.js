@@ -146,10 +146,6 @@
     const profile = homeProfile();
     const data = creativeSnapshot();
     return `<div class="app-sidebar__studio creative-star-map" data-studio-kind="create" data-creative-star-map data-csm-mode="${prefs.mode}" data-csm-motion="${profile.motion}" data-csm-theme="${profile.theme}" data-csm-comet="${profile.effectComet}" data-csm-nova="${profile.effectNova}" data-csm-wormhole="${profile.effectWormhole}" style="${profileStyle(profile)}">
-      <header class="csm-sun-header">
-        <button class="csm-sun" type="button" data-app-route="/create" aria-label="Mở Creative Galaxy"><i>H</i><span><small>CREATIVE SUN</small><b>${data.project ? esc(data.project.name) : "Chưa có dự án"}</b></span><em></em></button>
-        <nav aria-label="Chế độ Creative Star Map">${[["map", "Star Map"], ["focus", "Focus"], ["compact", "Compact"]].map(([id, label]) => `<button type="button" data-csm-set-mode="${id}" aria-pressed="${prefs.mode === id}" title="${label}">${id === "map" ? "◎" : id === "focus" ? "◉" : "≡"}<span>${label}</span></button>`).join("")}</nav>
-      </header>
       <label class="csm-search"><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm hành tinh..." autocomplete="off"></label>
       <div class="csm-space" data-media-sidebar-list>
         <i class="csm-nebula" aria-hidden="true"></i><i class="csm-stars" aria-hidden="true"></i>
