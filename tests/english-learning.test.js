@@ -1,6 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
+const fs = require("node:fs");
+const path = require("node:path");
+const { defaultState: galaxyDefaultState, listeningLibrary, progressForListening, unlockedSentenceIndex, completeListeningSentence } = require("../english-learning-galaxy.js");
 
 test("CEFR curriculum contains seven levels and sixty-nine complete lessons", () => {
   assert.deepEqual(courseLevels.map((level) => level.id), ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
@@ -202,4 +205,34 @@ test("smart plan guides a new learner and prioritizes due review", () => {
   assert.equal(checklist.length, 5);
   assert.equal(checklist[0].done, true);
   assert.equal(checklist[1].done, false);
+});
+
+test("one-page listening unlocks sentences only after the current sentence is completed", () => {
+  const state = {
+    ...galaxyDefaultState(),
+    settings: { voiceRate: 1 },
+    galaxy: galaxyDefaultState().galaxy
+  };
+  const lesson = listeningLibrary[0];
+  let progress = progressForListening(state, lesson.id);
+  assert.equal(unlockedSentenceIndex(progress, lesson.sentences.length), 0);
+  progress = completeListeningSentence(state, lesson, 0, 100);
+  assert.deepEqual(progress.completedSentences, [0]);
+  assert.equal(progress.activeSentence, 1);
+  assert.equal(unlockedSentenceIndex(progress, lesson.sentences.length), 1);
+  progress = completeListeningSentence(state, lesson, 1, 85);
+  assert.deepEqual(progress.completedSentences, [0, 1]);
+  assert.equal(unlockedSentenceIndex(progress, lesson.sentences.length), 2);
+  progress = completeListeningSentence(state, lesson, 2, 100);
+  assert.ok(progress.completedAt);
+});
+
+test("HH English exposes the complete no-page-scroll learning workspace contract", () => {
+  const client = fs.readFileSync(path.join(__dirname, "..", "english-learning-galaxy.js"), "utf8");
+  const shell = fs.readFileSync(path.join(__dirname, "..", "english-learning.js"), "utf8");
+  const css = fs.readFileSync(path.join(__dirname, "..", "english-learning-galaxy.css"), "utf8");
+  for (const capability of ["hheg-onepage", "hheg-onepage-grid", "hheg-onepage-dock", "hheg-sentence-steps", "data-hheg-sentence-check", "Basic", "Advanced", "Nghe hiểu", "Chính tả", "Shadowing", "Phát âm", "Quiz"]) assert.match(client, new RegExp(capability));
+  for (const navigation of ["Hôm nay", "Học", "Tra cứu", "Ôn tập", "CEFR", "Tiến độ", "data-hhe-nav-toggle"]) assert.match(shell, new RegExp(navigation));
+  assert.match(css, /grid-template-rows:60px minmax\(0,1fr\) 56px/);
+  assert.match(css, /overflow:hidden/);
 });

@@ -284,7 +284,7 @@
     onboarding: { completed: false, dismissed: false, rewarded: false, completedAt: "" },
     learnerProfile: { confidence: "", focusSkill: "speaking", needsPlacement: false },
     careerProfile: { roleStage: "student", skillFocus: "speaking", intensity: "foundation" },
-    settings: { voiceRate: 0.85, voicePitch: 1, voiceProfile: "us-female", voiceURI: "", audioPlaybackConsent: false, microphoneConsent: false, interfaceLanguage: "vi", reducedMotion: false, beginnerMode: true, theme: "night", learnerType: "student", goal: "Giao tiếp hằng ngày" },
+    settings: { voiceRate: 0.85, voicePitch: 1, voiceProfile: "us-female", voiceURI: "", audioPlaybackConsent: false, microphoneConsent: false, interfaceLanguage: "vi", reducedMotion: false, beginnerMode: true, navCollapsed: false, theme: "night", learnerType: "student", goal: "Giao tiếp hằng ngày" },
     speakingScenario: "workplace", speakingAttempts: [], speakingRoleplays: [],
     ...(root.HHEnglishLearningGalaxy?.defaultState?.() || {})
   });
@@ -703,12 +703,13 @@
   const shell = (state, content) => {
     const levelId = selectedLevelId(state); const level = levelById(levelId); const done = completedCount(state, levelId); const total = levelLessonIds(levelId).length;
     const next = nextLessonFor(state, levelId);
-    const navButton = ([id, icon, label]) => `<button type="button" class="${state.activeView === id ? "active" : ""}" data-hhe-view="${id}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><i>${icon}</i><span>${label}</span></button>`;
-    const focusedNav = ["dashboard", "listening", "reading", "progress"].map((id) => navItems.find(([view]) => view === id));
+    const navCollapsed = Boolean(state.settings.navCollapsed);
+    const learningViews = new Set(["learn", "lesson", "listening", "reading", "listen-read", "speaking", "practice"]);
+    const compactNavButton = (id, icon, label) => `<button type="button" class="${state.activeView === id ? "active" : ""}" data-hhe-view="${id}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><i>${icon}</i><span>${label}</span></button>`;
     const currentLabel = state.activeView === "lesson" ? "Bài học đang mở" : (navItems.find(([id]) => id === state.activeView)?.[2] || "Hôm nay");
-    return `<section class="hhe-app" data-hhe-app data-view="${state.activeView}" data-theme="${state.settings.theme}">
-    <header class="hhe-topbar"><div class="hhe-brand"><span>HH</span><div><small>HỌC TIẾNG ANH MIỄN PHÍ</small><strong>HH English</strong></div></div><div class="hhe-top-stats"><span><i>◆</i><b>${state.streak.current}</b> ngày học</span><span><i>◷</i><b>${state.dailyGoal}</b> phút/ngày</span></div><button type="button" class="hhe-top-voice" data-hhe-view="speaking" aria-label="Mở phòng giọng đọc"><b>${escapeHtml(voiceProfileById(state.settings.voiceProfile).flag)}</b> ${escapeHtml(voiceProfileById(state.settings.voiceProfile).gender === "female" ? "Nữ" : "Nam")}</button><button type="button" class="hhe-top-explore" data-hhe-navigator-open aria-label="Mở bản đồ học tập">⌕ Khám phá</button><button type="button" data-hhe-onboarding-open aria-label="Mở hướng dẫn bắt đầu" title="Hướng dẫn cho người mới">?</button><button type="button" data-hhe-theme aria-label="Đổi màu giao diện">${state.settings.theme === "day" ? "☀ Sáng" : "◐ Tối"}</button></header>
-    <div class="hhe-layout"><aside class="hhe-nav hhe-nav--focused" aria-label="Điều hướng HH English"><p class="hhe-nav-label">HỌC TỪNG BƯỚC</p>${focusedNav.slice(0,2).map(navButton).join("")}<button type="button" class="hhe-nav-continue ${state.activeView === "lesson" ? "active" : ""}" data-hhe-open-lesson="${next.id}" aria-label="Học tiếp ${escapeHtml(next.title)}"><i>▶</i><span><b>Học tiếp</b><small>${escapeHtml(next.title)}</small></span></button>${focusedNav.slice(2).map(navButton).join("")}<button type="button" class="hhe-nav-discover" data-hhe-navigator-open><i>＋</i><span>Khám phá khu học</span><b>${navItems.length - 4}</b></button><section><small>Bạn đang học</small><strong>${levelId}</strong><span>${done}/${total} bài · ${escapeHtml(level.name)}</span><button type="button" data-hhe-view="learn">Đổi trình độ</button></section></aside><main class="hhe-main"><div class="hhe-view-stage">${content}</div><nav class="hhe-route-dock" aria-label="Bước học tiếp theo"><button type="button" data-hhe-view="dashboard">← Hôm nay</button><div><small>MÀN HÌNH HIỆN TẠI</small><strong>${escapeHtml(currentLabel)}</strong></div><span><i></i> Đã tự lưu</span><button class="primary" type="button" data-hhe-open-lesson="${next.id}">${state.activeView === "lesson" ? "Tiếp tục bài" : "Học bài tiếp theo"} →</button></nav></main></div>
+    return `<section class="hhe-app ${navCollapsed ? "is-nav-collapsed" : ""}" data-hhe-app data-view="${state.activeView}" data-theme="${state.settings.theme}">
+    <header class="hhe-topbar"><div class="hhe-brand"><span>HH</span><div><small>HỌC TIẾNG ANH MIỄN PHÍ</small><strong>HH English</strong></div></div><div class="hhe-top-stats"><button type="button" data-hhe-view="learn"><i>CEFR</i><b>${levelId}</b> ${escapeHtml(level.name)}</button><span><i>◆</i><b>${state.streak.current}</b> ngày</span><span><i>◷</i><b>${state.dailyGoal}</b> phút</span></div><div class="hhe-top-actions"><button type="button" data-hheg-action="mode-${state.galaxy?.workspaceMode === "advanced" ? "basic" : "advanced"}">${state.galaxy?.workspaceMode === "advanced" ? "Advanced" : "Basic"}</button><button type="button" data-hhe-view="settings" aria-label="Cài đặt HH English">⚙ Cài đặt</button></div></header>
+    <div class="hhe-layout"><aside class="hhe-nav hhe-nav--focused" aria-label="Điều hướng HH English"><header><strong>HỌC TỪNG BƯỚC</strong><button type="button" data-hhe-nav-toggle aria-label="${navCollapsed ? "Mở rộng" : "Thu gọn"} menu">${navCollapsed ? "›" : "‹"}</button></header>${compactNavButton("dashboard", "⌂", "Hôm nay")}<details class="hhe-nav-learning" ${learningViews.has(state.activeView) ? "open" : ""}><summary class="${learningViews.has(state.activeView) ? "active" : ""}"><i>▶</i><span>Học</span><b>⌄</b></summary><div>${compactNavButton("listening", "◖", "Luyện nghe")}${compactNavButton("reading", "Aa", "Đọc hiểu")}${compactNavButton("listen-read", "∞", "Nghe & đọc")}<button type="button" data-hhe-open-lesson="${next.id}" title="${escapeHtml(next.title)}"><i>→</i><span>Học tiếp</span></button></div></details>${compactNavButton("galaxy", "⌕", "Tra cứu")}${compactNavButton("vocabulary", "◇", "Ôn tập")}${compactNavButton("learn", "A0", "CEFR")}${compactNavButton("progress", "↗", "Tiến độ")}<section><small>Bạn đang học</small><strong>${levelId}</strong><span>${done}/${total} bài</span></section></aside><main class="hhe-main"><div class="hhe-view-stage">${content}</div><nav class="hhe-route-dock" aria-label="Bước học tiếp theo"><button type="button" data-hhe-view="dashboard">← Hôm nay</button><div><small>MÀN HÌNH HIỆN TẠI</small><strong>${escapeHtml(currentLabel)}</strong></div><span><i></i> Đã tự lưu</span><button class="primary" type="button" data-hhe-open-lesson="${next.id}">${state.activeView === "lesson" ? "Tiếp tục bài" : "Học bài tiếp theo"} →</button></nav></main></div>
     <div class="hhe-toast" data-hhe-toast role="status" aria-live="polite"></div>
     ${navigatorMarkup(state)}
     ${shouldShowOnboarding(state) ? onboardingMarkup(state) : ""}
@@ -1121,9 +1122,17 @@
   const handleKeydown = (event) => {
     if (event.key === "Escape" && navigatorOpen) { event.preventDefault(); navigatorOpen = false; render(); return; }
     if (event.key === "Escape" && host?.querySelector("[data-hhe-onboarding]")) { event.preventDefault(); closeOnboarding(); return; }
-    if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
     const target = event.target;
-    if (target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName || "")) return;
+    const isTyping = target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName || "");
+    if (!isTyping && readState().activeView === "listening") {
+      const toolKeys = { "1": "listen", "2": "dictation", "3": "shadow", "4": "pronunciation", "5": "quiz" };
+      if (event.code === "Space") { event.preventDefault(); host?.querySelector('[data-hheg-action="play"]')?.click(); return; }
+      if (event.key === "ArrowLeft") { event.preventDefault(); host?.querySelector('[data-hheg-action="sentence-prev"]')?.click(); return; }
+      if (event.key === "ArrowRight") { event.preventDefault(); host?.querySelector('[data-hheg-action="sentence-next"]')?.click(); return; }
+      if (toolKeys[event.key]) { event.preventDefault(); host?.querySelector(`[data-hheg-tool="${toolKeys[event.key]}"]`)?.click(); return; }
+    }
+    if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isTyping) return;
     const search = host?.querySelector("[data-hhe-search], [data-hhe-career-search]");
     if (!search) return;
     event.preventDefault(); search.focus();
@@ -1163,6 +1172,12 @@
   };
 
   const handleClick = async (event) => {
+    if (event.target.closest("[data-hhe-nav-toggle]")) {
+      const state = readState();
+      state.settings.navCollapsed = !state.settings.navCollapsed;
+      writeState(state); render();
+      return;
+    }
     event.stopPropagation();
     if (event.target.matches("[data-hhe-navigator-backdrop]")) { navigatorOpen = false; render(); return; }
     if (event.target.closest("[data-hhe-navigator-open]")) { navigatorOpen = true; render(); root.requestAnimationFrame?.(() => host?.querySelector("[data-hhe-navigator-search]")?.focus()); return; }
