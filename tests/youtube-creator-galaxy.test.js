@@ -402,12 +402,28 @@ test("Multi-channel Studio presents one simple cosmic workspace", () => {
 
 test("Studio embeds essential calendar, comments and analytics without returning to the legacy map", () => {
   const client = read("youtube-creator-galaxy.js");
-  assert.match(client, /FLEET_STUDIO_TABS = Object\.freeze\(\["overview", "content", "calendar", "comments", "analytics", "queue"\]\)/);
+  assert.match(client, /FLEET_STUDIO_TABS = Object\.freeze\(\["overview", "content", "calendar", "comments", "analytics", "queue", "settings"\]\)/);
   assert.match(client, /fleetState\.studioTab === "calendar" \? calendarView\(true\)/);
   assert.match(client, /fleetState\.studioTab === "comments" \? commentsView\(\)/);
   assert.match(client, /fleetState\.studioTab === "analytics" \? analyticsView\(\)/);
   assert.match(client, /state\.active = "fleet";[\s\S]{0,180}saveFleetState\(\)/);
   assert.match(client, /function hydrateFleetStudioTab\(tab\)/);
+});
+
+test("Studio provides owner-isolated real channel customization and upload defaults", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const server = read("utils/youtubePublisher.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const capability of ["channelSettingsMarkup", "data-ycg-settings-section", "data-ycg-settings-channel", "data-ycg-channel-profile-form", "data-ycg-upload-defaults-form", "data-ycg-channel-api-settings-form", "data-ycg-channel-moderation-form", "Hồ sơ", "Chế độ mặc định cho video", "Kiểm duyệt cộng đồng"]) assert.match(client, new RegExp(capability));
+  assert.match(client, /fleetState\.studioTab === "settings" \? channelSettingsMarkup\(channels\)/);
+  assert.match(client, /api\("channel\/settings", "POST"/);
+  assert.match(server, /route === "channel\/settings"/);
+  assert.match(server, /requireYoutubePermission\(connection, "manage"\)/);
+  assert.match(server, /part: "snippet,brandingSettings,status"/);
+  assert.match(server, /method: "PUT"/);
+  assert.match(server, /action: "channel:settings-update"[\s\S]{0,180}quotaCost: 50/);
+  assert.match(server, /YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH/);
+  assert.match(css, /\.ycg-channel-settings-grid/);
 });
 
 test("Home launch intent opens Quick Publish once and rejects another owner or stale state", () => {
@@ -459,7 +475,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=15", "youtube-creator-galaxy.js?v=20"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=16", "youtube-creator-galaxy.js?v=21"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);

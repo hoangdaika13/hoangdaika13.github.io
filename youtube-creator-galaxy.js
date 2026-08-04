@@ -8,7 +8,7 @@
   const VIDEO_PROJECT_KEY = "hh.video-editor.project.v1";
   const MEDIA_DB = "hh-video-editor-media";
   const MEDIA_STORE = "assets";
-  const FLEET_STUDIO_TABS = Object.freeze(["overview", "content", "calendar", "comments", "analytics", "queue"]);
+  const FLEET_STUDIO_TABS = Object.freeze(["overview", "content", "calendar", "comments", "analytics", "queue", "settings"]);
   const AI_DISCLOSURE_OPTIONS = Object.freeze(["yes", "no", "unreviewed"]);
   const VIDEO_EDITOR_SECTIONS = Object.freeze([
     ["details", "Chi tiết", "▤"], ["analytics", "Analytics", "↗"], ["editor", "Editor", "✂"], ["comments", "Bình luận", "◌"], ["subtitles", "Phụ đề", "CC"], ["restrictions", "Bản quyền", "©"], ["clips", "Clips", "▶"], ["monetization", "Kiếm tiền", "$"], ["audit", "Nhật ký", "⌁"]
@@ -59,6 +59,10 @@
     publishAt: "",
     thumbnailVariant: "A",
     privacyStatus: "private",
+    madeForKids: false,
+    license: "youtube",
+    embeddable: true,
+    notifySubscribers: true,
     locked: false
   });
 
@@ -88,6 +92,7 @@
   let fleetThumbnailVariants = new Map();
   let contentLibrary = [];
   let contentDrawer = null;
+  let channelSettings = null;
   let deleteDialog = null;
   let aiBulkDialog = false;
   let calendarDragItem = null;
@@ -307,6 +312,10 @@
         publishAt: String(preset?.publishAt || "").slice(0, 32),
         thumbnailVariant: ["A", "B", "C"].includes(preset?.thumbnailVariant) ? preset.thumbnailVariant : "A",
         privacyStatus: ["private", "unlisted", "schedule"].includes(preset?.privacyStatus) ? preset.privacyStatus : "private",
+        madeForKids: Boolean(preset?.madeForKids),
+        license: preset?.license === "creativeCommon" ? "creativeCommon" : "youtube",
+        embeddable: preset?.embeddable !== false,
+        notifySubscribers: preset?.notifySubscribers !== false,
         locked: Boolean(preset?.locked)
       }]));
       const rawVideoDrafts = value?.videoDrafts && typeof value.videoDrafts === "object" ? value.videoDrafts : {};
@@ -350,6 +359,8 @@
         contentSort: ["az", "za"].includes(value?.contentSort) ? value.contentSort : "az",
         contentScrollTop: Math.max(0, Number(value?.contentScrollTop || 0)),
         contentChannel: String(value?.contentChannel || "all").slice(0, 120),
+        settingsChannel: String(value?.settingsChannel || "").slice(0, 120),
+        settingsSection: ["profile", "upload", "channel", "permissions", "moderation", "agreements"].includes(value?.settingsSection) ? value.settingsSection : "profile",
         selectedContentIds: Array.isArray(value?.selectedContentIds) ? value.selectedContentIds.map(String).slice(0, 500) : [],
         calendarMode: ["month", "timeline", "unscheduled"].includes(value?.calendarMode) ? value.calendarMode : "month",
         calendarTimezone: String(value?.calendarTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Bangkok").slice(0, 80),
@@ -379,7 +390,7 @@
         results: Array.isArray(value?.results) ? value.results.slice(0, 1200) : []
       };
     } catch {
-      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, taskMatrix: {}, contentMode: "upload", contentFilter: "all", contentAiFilter: "all", contentSortBy: "title", contentSort: "az", contentScrollTop: 0, contentChannel: "all", selectedContentIds: [], calendarMode: "month", calendarTimezone: "Asia/Bangkok", calendarChannelFilter: "all", calendarTypeFilter: "all", scheduleDrafts: {}, scheduleHistory: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, aiDisclosure: "unreviewed", madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
+      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, taskMatrix: {}, contentMode: "upload", contentFilter: "all", contentAiFilter: "all", contentSortBy: "title", contentSort: "az", contentScrollTop: 0, contentChannel: "all", settingsChannel: "", settingsSection: "profile", selectedContentIds: [], calendarMode: "month", calendarTimezone: "Asia/Bangkok", calendarChannelFilter: "all", calendarTypeFilter: "all", scheduleDrafts: {}, scheduleHistory: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, aiDisclosure: "unreviewed", madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
     }
   }
 
@@ -1150,6 +1161,29 @@
     return `<aside class="ycg-ai-bulk-dialog is-open" role="dialog" aria-modal="true" aria-labelledby="ycg-ai-bulk-title"><button type="button" class="ycg-video-drawer__backdrop" data-ycg-ai-bulk-close aria-label="Đóng khai báo AI"></button><form data-ycg-ai-bulk-form><header><div><small>THIẾT LẬP HÀNG LOẠT</small><h3 id="ycg-ai-bulk-title">Sử dụng AI</h3></div><button type="button" data-ycg-ai-bulk-close aria-label="Đóng">×</button></header><p>Bạn có sử dụng AI để tạo hoặc chỉnh sửa nội dung theo bất kỳ cách nào sau đây không?</p><ul><li>Có hình ảnh người thật có vẻ như nói hoặc làm điều gì đó, nhưng trên thực tế là họ không làm như vậy.</li><li>Chỉnh sửa cảnh quay của một sự kiện hoặc một địa điểm có thật.</li><li>Tạo ra một cảnh trông giống thật mà không thực sự xảy ra.</li></ul><fieldset><legend>Áp dụng cho ${selectedCount} video đã chọn</legend><label><input type="radio" name="aiDisclosure" value="yes" required><span><strong>Có</strong><small>Khai báo video có nội dung được tạo hoặc chỉnh sửa đáng kể bằng AI và trông như thật.</small></span></label><label><input type="radio" name="aiDisclosure" value="no" required><span><strong>Không</strong><small>Video không thuộc các trường hợp cần khai báo ở trên.</small></span></label></fieldset><div class="ycg-ai-bulk-dialog__actions"><button type="button" data-ycg-ai-bulk-close>Hủy</button><button type="submit" class="is-primary">Áp dụng cho ${selectedCount} video</button></div><small class="ycg-api-note">Mỗi video được cập nhật riêng trên đúng kênh sở hữu. Hệ thống không tự suy đoán hoặc tự đánh dấu AI.</small></form></aside>`;
   }
 
+  function channelSettingsMarkup(channels) {
+    if (!channels.length) return emptyState("Chưa có kênh để cài đặt", "Hãy kết nối kênh YouTube trước. Mọi thiết lập luôn được khóa theo tài khoản HH đang đăng nhập.", "connect-creator", "Thêm kênh YouTube");
+    const selectedId = channels.some((channel) => channel.id === fleetState.settingsChannel)
+      ? fleetState.settingsChannel
+      : channels.find((channel) => fleetState.selectedChannelIds.includes(channel.id))?.id || channels[0].id;
+    const channel = channels.find((item) => item.id === selectedId) || channels[0];
+    const remote = channelSettings?.channelId === channel.id ? channelSettings.profile : null;
+    const profile = remote || { title: channel.title, thumbnail: channel.thumbnail, ...(channel.profile || {}) };
+    const preset = channelPreset(channel.id);
+    const section = fleetState.settingsSection || "profile";
+    const studioBase = `https://studio.youtube.com/channel/${encodeURIComponent(channel.id)}`;
+    const settingsNav = [["profile", "Hồ sơ"], ["upload", "Chế độ mặc định cho video"], ["channel", "Kênh"], ["permissions", "Quyền"], ["moderation", "Kiểm duyệt cộng đồng"], ["agreements", "Thỏa thuận"]];
+    const studioLink = (path, label = "Mở YouTube Studio ↗") => `<a href="${studioBase}${path}" target="_blank" rel="noopener">${label}</a>`;
+    let content = "";
+    if (section === "profile") content = `<form class="ycg-channel-settings-form" data-ycg-channel-profile-form data-channel-id="${esc(channel.id)}"><header><div><small>TÙY CHỈNH KÊNH</small><h3>Hồ sơ</h3><p>Thông tin cập nhật qua YouTube Data API; ảnh, tên và handle mở đúng YouTube Studio.</p></div><div>${studioLink("/editing/details", "Xem kênh trong Studio ↗")}<button class="is-primary">Lưu mô tả</button></div></header><section class="ycg-branding-row"><div class="ycg-banner-preview" style="${profile.bannerUrl ? `background-image:url('${esc(profile.bannerUrl)}')` : ""}"><span>Ảnh biểu ngữ · 2560 × 1440 · tối đa 6 MB</span></div><div><strong>Ảnh biểu ngữ</strong><small>YouTube không cung cấp API công khai để tải banner từ ứng dụng bên thứ ba.</small>${studioLink("/editing/images", "Thay đổi trong Studio ↗")}</div></section><section class="ycg-branding-row"><div class="ycg-avatar-preview">${profile.thumbnail ? `<img src="${esc(profile.thumbnail)}" alt="Ảnh hồ sơ kênh">` : "YT"}</div><div><strong>Ảnh hồ sơ</strong><small>Hiển thị cùng kênh và bình luận. Thay ảnh an toàn trong Studio.</small>${studioLink("/editing/images", "Thay đổi trong Studio ↗")}</div></section><label>Tên kênh<input readonly value="${esc(profile.title || channel.title)}"><small>Data API không cho ứng dụng đổi tên kênh. ${studioLink("/editing/details", "Đổi tên trong Studio ↗")}</small></label><label>Handle<input readonly value="${esc(profile.customUrl ? `@${String(profile.customUrl).replace(/^@/, "")}` : "Chưa đồng bộ")}"><small>Handle chỉ chỉnh trong YouTube Studio và có giới hạn đổi tên của YouTube.</small></label><label>Mô tả kênh <span>${String(profile.description || "").length}/1000</span><textarea name="description" maxlength="1000" rows="8">${esc(profile.description || "")}</textarea></label><div class="ycg-readonly-setting"><span><strong>Liên kết, email liên hệ và đại từ nhân xưng</strong><small>Quản lý trực tiếp trong trang Hồ sơ của YouTube Studio.</small></span>${studioLink("/editing/details", "Quản lý ↗")}</div></form>`;
+    else if (section === "upload") content = `<form class="ycg-channel-settings-form" data-ycg-upload-defaults-form data-channel-id="${esc(channel.id)}"><header><div><small>MẶC ĐỊNH CHO HH UPLOAD</small><h3>Chế độ mặc định cho video</h3><p>Tự áp dụng cho mọi video tải từ HH; có thể sửa riêng trước khi gửi YouTube.</p></div><button class="is-primary">Lưu mặc định</button></header><div class="ycg-settings-tabs"><span class="is-active">Thông tin cơ bản</span><span>Cài đặt nâng cao</span></div><label>Tiền tố tiêu đề<input name="titlePrefix" maxlength="40" value="${esc(preset.titlePrefix)}"></label><label>Hậu tố tiêu đề<input name="titleSuffix" maxlength="40" value="${esc(preset.titleSuffix)}"></label><label>Mô tả mặc định<textarea name="descriptionTemplate" maxlength="3000" rows="6">${esc(preset.descriptionTemplate)}</textarea></label><label>Tag mặc định<input name="tags" maxlength="480" value="${esc(preset.tags)}"></label><div class="ycg-editor-grid"><label>Chế độ hiển thị<select name="privacyStatus"><option value="private" ${preset.privacyStatus === "private" ? "selected" : ""}>Private</option><option value="unlisted" ${preset.privacyStatus === "unlisted" ? "selected" : ""}>Unlisted</option><option value="schedule" ${preset.privacyStatus === "schedule" ? "selected" : ""}>Lên lịch</option></select></label><label>Danh mục<select name="categoryId">${Object.entries(VIDEO_CATEGORIES).map(([id,label])=>`<option value="${id}" ${preset.categoryId===id?"selected":""}>${esc(label)}</option>`).join("")}</select></label><label>Ngôn ngữ<select name="defaultLanguage">${Object.entries(VIDEO_LANGUAGES).map(([id,label])=>`<option value="${id}" ${preset.defaultLanguage===id?"selected":""}>${esc(label)}</option>`).join("")}</select></label><label>Playlist<select name="playlistId"><option value="">Không playlist</option>${(channel.playlists||[]).map((item)=>`<option value="${esc(item.id)}" ${preset.playlistId===item.id?"selected":""}>${esc(item.title)}</option>`).join("")}</select></label><label>Giấy phép<select name="license"><option value="youtube" ${preset.license==="youtube"?"selected":""}>Standard YouTube License</option><option value="creativeCommon" ${preset.license==="creativeCommon"?"selected":""}>Creative Commons</option></select></label><label>Giờ đăng mặc định<input type="time" name="publishTime" value="${esc(preset.publishTime)}"></label></div><label class="ycg-setting-row"><span><strong>Dành cho trẻ em</strong><small>Áp làm mặc định cho video mới.</small></span><input type="checkbox" name="madeForKids" ${preset.madeForKids?"checked":""}></label><label class="ycg-setting-row"><span><strong>Cho phép nhúng</strong><small>Cho phép website khác nhúng video.</small></span><input type="checkbox" name="embeddable" ${preset.embeddable?"checked":""}></label><label class="ycg-setting-row"><span><strong>Thông báo người đăng ký</strong><small>Có thể tắt khi tải nhiều video liên tục.</small></span><input type="checkbox" name="notifySubscribers" ${preset.notifySubscribers?"checked":""}></label></form>`;
+    else if (section === "channel") content = `<form class="ycg-channel-settings-form" data-ycg-channel-api-settings-form data-channel-id="${esc(channel.id)}"><header><div><small>YOUTUBE DATA API</small><h3>Cài đặt kênh</h3><p>Quốc gia, từ khóa, ngôn ngữ và trailer được lưu thật vào brandingSettings của đúng kênh.</p></div><button class="is-primary">Lưu lên YouTube</button></header><div class="ycg-editor-grid"><label>Quốc gia<input name="country" maxlength="2" placeholder="VN" value="${esc(profile.country || "")}"></label><label>Ngôn ngữ mặc định<select name="defaultLanguage"><option value="">Không đặt</option>${Object.entries(VIDEO_LANGUAGES).map(([id,label])=>`<option value="${id}" ${profile.defaultLanguage===id?"selected":""}>${esc(label)}</option>`).join("")}</select></label></div><label>Từ khóa kênh<input name="keywords" maxlength="500" value="${esc(profile.keywords || "")}"></label><label>Video giới thiệu cho người chưa đăng ký<input name="trailerVideoId" maxlength="40" placeholder="Video ID" value="${esc(profile.trailerVideoId || "")}"></label><div class="ycg-readonly-setting"><span><strong>Đối tượng người xem và tính năng nâng cao</strong><small>${profile.madeForKids?"Kênh hiện được khai báo dành cho trẻ em.":"Kênh hiện không được khai báo dành cho trẻ em."} Thay đổi đối tượng trong Studio.</small></span>${studioLink("/settings/channel", "Mở cài đặt ↗")}</div></form>`;
+    else if (section === "permissions") content = `<section class="ycg-channel-settings-form"><header><div><small>OWNER-ISOLATED OAUTH</small><h3>Quyền của ${esc(channel.title)}</h3><p>Token chỉ tồn tại mã hóa ở backend và không hiển thị trên trình duyệt.</p></div>${channel.permissions?.manage?"":`<button type="button" class="is-primary" data-ycg-action="connect-creator">Cấp lại quyền</button>`}</header><div class="ycg-permission-grid">${[["Đọc kênh",true,"openid · email · profile"],["Upload video",channel.permissions?.upload,"youtube.upload"],["Quản lý metadata",channel.permissions?.manage,"youtube.force-ssl"],["Analytics",channel.permissions?.analytics,"yt-analytics.readonly"]].map(([label,ready,scope])=>`<article class="${ready?"is-ready":"is-warning"}"><i>${ready?"✓":"!"}</i><div><strong>${label}</strong><small>${scope}</small></div><b>${ready?"Đã cấp":"Thiếu quyền"}</b></article>`).join("")}</div><div class="ycg-readonly-setting"><span><strong>Quyền truy cập của người khác vào kênh</strong><small>Vai trò Owner, Manager, Editor và Viewer phải quản lý trong YouTube Studio.</small></span>${studioLink("/settings/permissions", "Quản lý quyền ↗")}</div></section>`;
+    else if (section === "moderation") content = `<form class="ycg-channel-settings-form" data-ycg-channel-moderation-form data-channel-id="${esc(channel.id)}"><header><div><small>COMMUNITY</small><h3>Kiểm duyệt cộng đồng</h3><p>Thiết lập API khả dụng và lối tắt tới bộ lọc nâng cao của Studio.</p></div><button class="is-primary">Lưu lên YouTube</button></header><label class="ycg-setting-row"><span><strong>Giữ bình luận để kiểm duyệt</strong><small>Ánh xạ tới brandingSettings.channel.moderateComments.</small></span><input type="checkbox" name="moderateComments" ${profile.moderateComments?"checked":""}></label>${[["Người kiểm duyệt","/settings/community"],["Người dùng bị ẩn","/settings/community"],["Từ bị chặn","/settings/community"],["Bình luận có liên kết","/settings/community"]].map(([label,path])=>`<div class="ycg-readonly-setting"><span><strong>${label}</strong><small>YouTube chưa cung cấp trường cập nhật công khai qua Data API.</small></span>${studioLink(path,"Mở Studio ↗")}</div>`).join("")}<button type="button" data-ycg-fleet-tab="comments">Mở Trung tâm bình luận HH</button></form>`;
+    else content = `<section class="ycg-channel-settings-form"><header><div><small>POLICY & AGREEMENTS</small><h3>Thỏa thuận và trạng thái</h3><p>HH không tạo trạng thái kiếm tiền, bản quyền hoặc thỏa thuận giả.</p></div></header><div class="ycg-permission-grid"><article class="is-ready"><i>✓</i><div><strong>YouTube Terms of Service</strong><small>Áp dụng khi sử dụng YouTube API Services.</small></div><a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">Xem ↗</a></article><article><i>i</i><div><strong>Kiếm tiền và AdSense</strong><small>Chỉ YouTube Studio cung cấp trạng thái đủ điều kiện chính thức.</small></div>${studioLink("/monetization","Kiểm tra ↗")}</article><article><i>©</i><div><strong>Bản quyền</strong><small>Claim và strike không được suy đoán từ Data API.</small></div>${studioLink("/copyright","Mở bản quyền ↗")}</article></div></section>`;
+    return `<section class="ycg-channel-settings"><header class="ycg-channel-settings-head"><div>${channel.thumbnail?`<img src="${esc(channel.thumbnail)}" alt="">`:`<span>YT</span>`}<label>Đang cài đặt<select data-ycg-settings-channel>${channels.map((item)=>`<option value="${esc(item.id)}" ${item.id===channel.id?"selected":""}>${esc(item.title)}</option>`).join("")}</select></label></div><small>${channel.permissions?.manage?"Có quyền quản lý YouTube":"Chỉ xem · cần scope manage"}</small></header><div class="ycg-channel-settings-grid"><nav aria-label="Mục cài đặt kênh">${settingsNav.map(([id,label])=>`<button type="button" data-ycg-settings-section="${id}" class="${section===id?"is-active":""}">${esc(label)}<i>›</i></button>`).join("")}</nav><main>${content}</main></div></section>`;
+  }
+
   function contentManagerMarkup(channels) {
     if (contentDrawer) return videoStudioWorkspaceMarkup(channels);
     const channelFilter = fleetState.contentChannel;
@@ -1383,7 +1417,8 @@
       ["calendar", "Lịch đăng", state.calendar.length, "□"],
       ["comments", "Bình luận", unansweredComments, "◌"],
       ["analytics", "Phân tích", dashboard?.analytics?.rows?.length || 0, "↗"],
-      ["queue", "Tiến trình", runningTasks, "◷"]
+      ["queue", "Tiến trình", runningTasks, "◷"],
+      ["settings", "Cài đặt", channels.length, "⚙"]
     ];
     const channelTable = `<div class="ycg-studio-channel-table"><table><thead><tr><th></th><th>Kênh</th><th>Người đăng ký</th><th>Lượt xem</th><th>Trạng thái</th><th>Đồng bộ</th></tr></thead><tbody>${filteredChannels.map((channel) => {
       const row = observatoryMap.get(channel.id);
@@ -1414,7 +1449,8 @@
         : fleetState.studioTab === "comments" ? commentsView()
           : fleetState.studioTab === "analytics" ? analyticsView()
             : fleetState.studioTab === "queue" ? queue
-              : overview;
+              : fleetState.studioTab === "settings" ? channelSettingsMarkup(channels)
+                : overview;
     return `<div class="ycg-multistudio"><section class="ycg-studio-simple-head"><div><small>YOUTUBE MULTI-CHANNEL STUDIO</small><h2>Quản lý nhiều kênh trong một nơi</h2><p>Đăng video, xếp lịch, phản hồi và phân tích mà không rời Studio.</p></div><div><strong>${selectedChannels.length}</strong><span>kênh đang chọn</span><button type="button" data-ycg-action="connect-creator">+ Thêm kênh</button></div></section><nav class="ycg-studio-tabs" aria-label="Công cụ quản lý kênh">${tabs.map(([id, label, count, icon]) => `<button type="button" data-ycg-fleet-tab="${id}" class="${fleetState.studioTab === id ? "is-active" : ""}"><i>${icon}</i><span>${label}</span><b>${count}</b></button>`).join("")}</nav><div class="ycg-studio-embedded">${studioView}</div></div>`;
   }
 
@@ -2602,7 +2638,11 @@
         videoFingerprint: fingerprint,
         metadataVersion: metadataVersionFor(draft, channel.id, delivery),
         checksum: draft.checksum || "",
-        aiDisclosure: delivery.aiDisclosure
+        aiDisclosure: delivery.aiDisclosure,
+        madeForKids: preset.madeForKids,
+        license: preset.license,
+        embeddable: preset.embeddable,
+        notifySubscribers: preset.notifySubscribers
       };
     });
     const idempotencyBase = draft.idempotencyKey || `${uid("bulk-video")}-${Math.random().toString(36).slice(2, 10)}`;
@@ -2746,6 +2786,16 @@
     }
   }
 
+  async function loadChannelSettings(channelId = fleetState.settingsChannel) {
+    const channels = connectedChannels();
+    const id = channels.some((channel) => channel.id === channelId) ? channelId : channels[0]?.id;
+    if (!id) return;
+    fleetState.settingsChannel = id;
+    const result = await api("channel/settings", "POST", { operation: "read", channelId: id });
+    channelSettings = { channelId: id, profile: result.profile || {} };
+    saveFleetState();
+  }
+
   function hydrateFleetStudioTab(tab) {
     if (channelStatus.connected && ((tab === "content" && fleetState.contentMode === "manager") || tab === "calendar")) {
       loadContentLibrary().then(() => {
@@ -2766,6 +2816,12 @@
         comparisonData = result.comparison || null;
         render();
       }).catch(() => {});
+    }
+    if (channelStatus.connected && tab === "settings") {
+      loadChannelSettings().then(() => {
+        if (state.active !== "fleet" || fleetState.studioTab !== "settings") return;
+        render();
+      }).catch((error) => { errorMessage = error.message; render(); });
     }
   }
 
@@ -3286,6 +3342,13 @@
       hydrateFleetStudioTab(fleetState.studioTab);
       return;
     }
+    const settingsSection = event.target.closest("[data-ycg-settings-section]");
+    if (settingsSection) {
+      fleetState.settingsSection = settingsSection.dataset.ycgSettingsSection;
+      saveFleetState();
+      render();
+      return;
+    }
     const contentMode = event.target.closest("[data-ycg-content-mode]");
     if (contentMode) {
       fleetState.contentMode = contentMode.dataset.ycgContentMode;
@@ -3722,6 +3785,15 @@
 
   async function handleChange(event) {
     const target = event.target;
+    if (target.matches("[data-ycg-settings-channel]")) {
+      fleetState.settingsChannel = target.value;
+      channelSettings = null;
+      saveFleetState();
+      render();
+      await loadChannelSettings(target.value);
+      render();
+      return;
+    }
     if (syncVideoDraftFromDom(target)) return;
     if (target.matches("[data-ycg-matrix-mode]")) {
       const cell = matrixTask(target.dataset.fingerprint, target.dataset.channelId, true);
@@ -3913,6 +3985,55 @@
       event.preventDefault();
       try { await deleteVideoPermanently(deleteForm); }
       catch (error) { errorMessage = error.name === "NotAllowedError" ? "Bạn đã hủy xác thực Passkey; video chưa bị xóa." : error.message; render(); }
+      return;
+    }
+    const uploadDefaultsForm = event.target.closest("[data-ycg-upload-defaults-form]");
+    if (uploadDefaultsForm) {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(uploadDefaultsForm));
+      const preset = channelPreset(uploadDefaultsForm.dataset.channelId);
+      Object.assign(preset, {
+        titlePrefix: String(data.titlePrefix || "").slice(0, 40),
+        titleSuffix: String(data.titleSuffix || "").slice(0, 40),
+        descriptionTemplate: String(data.descriptionTemplate || "").slice(0, 3000),
+        tags: String(data.tags || "").slice(0, 480),
+        categoryId: String(data.categoryId || "22").slice(0, 8),
+        defaultLanguage: String(data.defaultLanguage || "vi").slice(0, 12),
+        playlistId: String(data.playlistId || "").slice(0, 120),
+        privacyStatus: ["private", "unlisted", "schedule"].includes(data.privacyStatus) ? data.privacyStatus : "private",
+        publishTime: /^\d{2}:\d{2}$/.test(data.publishTime) ? data.publishTime : "20:00",
+        license: data.license === "creativeCommon" ? "creativeCommon" : "youtube",
+        madeForKids: data.madeForKids === "on",
+        embeddable: data.embeddable === "on",
+        notifySubscribers: data.notifySubscribers === "on"
+      });
+      invalidateFleetPublish(false);
+      saveFleetState();
+      render();
+      status("Đã lưu chế độ mặc định cho các video tải từ HH vào kênh này.", "success");
+      return;
+    }
+    const channelApiForm = event.target.closest("[data-ycg-channel-profile-form],[data-ycg-channel-api-settings-form],[data-ycg-channel-moderation-form]");
+    if (channelApiForm) {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(channelApiForm));
+      const id = channelApiForm.dataset.channelId;
+      const channel = connectedChannels().find((item) => item.id === id) || {};
+      const existing = channelSettings?.channelId === id ? channelSettings.profile || {} : channel.profile || {};
+      const payload = {
+        channelId: id,
+        description: channelApiForm.matches("[data-ycg-channel-profile-form]") ? String(data.description || "").slice(0, 1000) : existing.description || "",
+        keywords: channelApiForm.matches("[data-ycg-channel-api-settings-form]") ? String(data.keywords || "").slice(0, 500) : existing.keywords || "",
+        country: channelApiForm.matches("[data-ycg-channel-api-settings-form]") ? String(data.country || "").slice(0, 2) : existing.country || "",
+        defaultLanguage: channelApiForm.matches("[data-ycg-channel-api-settings-form]") ? String(data.defaultLanguage || "").slice(0, 12) : existing.defaultLanguage || "",
+        trailerVideoId: channelApiForm.matches("[data-ycg-channel-api-settings-form]") ? String(data.trailerVideoId || "").slice(0, 40) : existing.trailerVideoId || "",
+        moderateComments: channelApiForm.matches("[data-ycg-channel-moderation-form]") ? data.moderateComments === "on" : Boolean(existing.moderateComments)
+      };
+      const result = await api("channel/settings", "POST", payload);
+      channelSettings = { channelId: id, profile: result.profile || { ...existing, ...payload } };
+      errorMessage = "";
+      render();
+      status("YouTube đã xác nhận cập nhật cài đặt của đúng kênh.", "success");
       return;
     }
     const videoDetail = event.target.closest("[data-ycg-video-detail-form]");

@@ -443,6 +443,17 @@ function publicOwnedChannel(connection) {
       videos: Number(connection?.videoCount || 0),
       views: Number(connection?.views || 0)
     },
+    profile: {
+      description: clean(connection?.channelDescription, 1000),
+      customUrl: clean(connection?.channelCustomUrl, 160),
+      bannerUrl: clean(connection?.channelBannerUrl, 1200),
+      country: clean(connection?.channelCountry, 2),
+      defaultLanguage: clean(connection?.channelDefaultLanguage, 12),
+      keywords: clean(connection?.channelKeywords, 500),
+      trailerVideoId: clean(connection?.channelTrailerVideoId, 40),
+      moderateComments: Boolean(connection?.channelModerateComments),
+      madeForKids: Boolean(connection?.channelMadeForKids)
+    },
     token: {
       expiresAt: connection?.expiresAt ? new Date(Number(connection.expiresAt)) : null,
       healthy: Boolean(connection?.refreshToken)
@@ -755,7 +766,7 @@ async function settledResult(work, fallback, warnings, label) {
 async function channelBundle(accessToken) {
   const headers = { Authorization: `Bearer ${accessToken}` };
   const [channels, playlists] = await Promise.all([
-    googleJson(`${YOUTUBE_ORIGIN}/youtube/v3/channels?part=snippet,statistics&mine=true`, { headers }),
+    googleJson(`${YOUTUBE_ORIGIN}/youtube/v3/channels?part=snippet,statistics,brandingSettings,status&mine=true`, { headers }),
     googleJson(`${YOUTUBE_ORIGIN}/youtube/v3/playlists?part=snippet,status&mine=true&maxResults=50`, { headers })
   ]);
   const channel = channels.items?.[0];
@@ -765,6 +776,15 @@ async function channelBundle(accessToken) {
       channelId: channel.id,
       channelTitle: clean(channel.snippet?.title, 160),
       channelThumbnail: clean(channel.snippet?.thumbnails?.medium?.url || channel.snippet?.thumbnails?.default?.url, 800),
+      channelDescription: clean(channel.snippet?.description || channel.brandingSettings?.channel?.description, 1000),
+      channelCustomUrl: clean(channel.snippet?.customUrl, 160),
+      channelBannerUrl: clean(channel.brandingSettings?.image?.bannerExternalUrl, 1200),
+      channelCountry: clean(channel.brandingSettings?.channel?.country || channel.snippet?.country, 2),
+      channelDefaultLanguage: clean(channel.brandingSettings?.channel?.defaultLanguage || channel.snippet?.defaultLanguage, 12),
+      channelKeywords: clean(channel.brandingSettings?.channel?.keywords, 500),
+      channelTrailerVideoId: clean(channel.brandingSettings?.channel?.unsubscribedTrailer, 40),
+      channelModerateComments: Boolean(channel.brandingSettings?.channel?.moderateComments),
+      channelMadeForKids: Boolean(channel.status?.madeForKids || channel.status?.selfDeclaredMadeForKids),
       subscribers: Number(channel.statistics?.subscriberCount || 0),
       videoCount: Number(channel.statistics?.videoCount || 0),
       views: Number(channel.statistics?.viewCount || 0)
@@ -778,6 +798,23 @@ function normalizedTags(value) {
   const unique = [...new Set(tags.map((item) => clean(item, 60)).filter(Boolean))].slice(0, 30);
   while (unique.join(",").length > 480) unique.pop();
   return unique;
+}
+
+function publicChannelSettings(channel) {
+  return {
+    id: clean(channel?.id, 120),
+    title: clean(channel?.snippet?.title || channel?.brandingSettings?.channel?.title, 160),
+    description: clean(channel?.snippet?.description || channel?.brandingSettings?.channel?.description, 1000),
+    customUrl: clean(channel?.snippet?.customUrl, 160),
+    thumbnail: clean(channel?.snippet?.thumbnails?.medium?.url || channel?.snippet?.thumbnails?.default?.url, 800),
+    bannerUrl: clean(channel?.brandingSettings?.image?.bannerExternalUrl, 1200),
+    country: clean(channel?.brandingSettings?.channel?.country || channel?.snippet?.country, 2),
+    defaultLanguage: clean(channel?.brandingSettings?.channel?.defaultLanguage || channel?.snippet?.defaultLanguage, 12),
+    keywords: clean(channel?.brandingSettings?.channel?.keywords, 500),
+    trailerVideoId: clean(channel?.brandingSettings?.channel?.unsubscribedTrailer, 40),
+    moderateComments: Boolean(channel?.brandingSettings?.channel?.moderateComments),
+    madeForKids: Boolean(channel?.status?.madeForKids || channel?.status?.selfDeclaredMadeForKids)
+  };
 }
 
 function uploadMetadata(body) {
@@ -1106,6 +1143,47 @@ module.exports = async function handler(req, res) {
         detail: `${results.filter((item) => item.ok).length}/${results.length}`
       });
       return res.status(200).json({ ok: true, confirmed: true, results, syncedAt: new Date() });
+    }
+
+    if (route === "channel/settings" && ["GET", "POST"].includes(req.method)) {
+      const connection = await connectionFor(db, user, clean(body.channelId || req.query?.channelId, 120));
+      requireYoutubePermission(connection, "manage");
+      const accessToken = await refreshAccessToken(connection, connections);
+      const currentResult = await youtubeJson(accessToken, "/youtube/v3/channels", { part: "snippet,brandingSettings,status", id: connection.channelId });
+      const current = currentResult.items?.[0];
+      if (!current || String(current.id) !== String(connection.channelId)) throw fail("YouTube không trả về đúng kênh thuộc tài khoản này.", 409, "YOUTUBE_CHANNEL_OWNERSHIP_MISMATCH");
+      if (req.method === "GET" || body.operation === "read") return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, profile: publicChannelSettings(current) });
+
+      const previous = current.brandingSettings?.channel || {};
+      const countryInput = clean(body.country, 2).toUpperCase();
+      const brandingChannel = {
+        title: clean(current.snippet?.title || previous.title, 100),
+        description: clean(body.description, 1000),
+        keywords: clean(body.keywords, 500),
+        defaultLanguage: clean(body.defaultLanguage, 12),
+        unsubscribedTrailer: clean(body.trailerVideoId, 40),
+        moderateComments: body.moderateComments === true,
+        ...(countryInput ? { country: countryInput } : {})
+      };
+      const updated = await youtubeJson(accessToken, "/youtube/v3/channels", { part: "brandingSettings" }, {
+        method: "PUT",
+        body: JSON.stringify({ id: connection.channelId, brandingSettings: { channel: brandingChannel } })
+      });
+      const updatedChannel = { ...current, ...updated, snippet: current.snippet, brandingSettings: { ...current.brandingSettings, ...(updated?.brandingSettings || {}), channel: updated?.brandingSettings?.channel || brandingChannel } };
+      const profile = publicChannelSettings(updatedChannel);
+      const updatedAt = new Date();
+      await connections.updateOne(ownedConnectionFilter(connection), { $set: {
+        channelDescription: profile.description,
+        channelCountry: profile.country,
+        channelDefaultLanguage: profile.defaultLanguage,
+        channelKeywords: profile.keywords,
+        channelTrailerVideoId: profile.trailerVideoId,
+        channelModerateComments: profile.moderateComments,
+        lastApiAt: updatedAt,
+        updatedAt
+      } });
+      await writeAudit(db, { userId: user._id, channelId: connection.channelId, action: "channel:settings-update", targetId: connection.channelId, status: "completed", quotaCost: 50, detail: "brandingSettings.channel" });
+      return res.status(200).json({ ok: true, confirmed: true, ownerIsolated: true, profile, updatedAt });
     }
 
     if (route === "channels/observatory" && req.method === "GET") {
