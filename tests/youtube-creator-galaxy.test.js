@@ -361,15 +361,28 @@ test("video workspace returns to the exact Content Manager state from both back 
   assert.match(client, /document\.addEventListener\("click", handleShellBack, \{ signal: controller\.signal, capture: true \}\)/);
 });
 
-test("Content Manager sorts A to Z or Z to A and filters each channel directly", () => {
+test("Content Manager sorts every Studio column with arrows and filters each channel directly", () => {
   const client = read("youtube-creator-galaxy.js");
   const css = read("youtube-creator-galaxy.css");
-  for (const capability of ["contentSort", "data-ycg-content-sort", "A → Z", "Z → A", "data-ycg-content-channel-button", "Lọc nội dung theo từng kênh"]) {
+  for (const capability of ["contentSortBy", "contentSort", "data-ycg-content-sort-column", "↑", "↓", "↕", "data-ycg-content-channel-button", "Lọc nội dung theo từng kênh"]) {
     assert.match(client, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
+  for (const column of ["title", "channel", "status", "processing", "privacy", "date", "metrics"]) assert.match(client, new RegExp(`sortableHeader\\("${column}"`));
   assert.match(client, /localeCompare\([\s\S]*sensitivity: "base", numeric: true/);
   assert.match(css, /\.ycg-content-channel-rail/);
-  assert.match(css, /\[data-ycg-content-sort\]/);
+  assert.match(css, /\[data-ycg-content-sort-column\]/);
+  assert.doesNotMatch(client, /data-ycg-content-sort=/);
+  assert.doesNotMatch(client, />Z → A<|>A → Z</);
+});
+
+test("Content Manager edits visibility inline with YouTube safeguards", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const capability of ["data-ycg-content-privacy", "data-content-key", "quick-privacy-", "Video chưa có Video ID", "nội dung AI trước khi chuyển video thành Public", "Chuyển “${item.title || item.fileName || \"video\"}” thành Public", "videos/update", "updateContentItemByKey"]) {
+    assert.match(client, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.match(client, /privacyStatus,\s*publishAt: "",\s*aiDisclosure:[\s\S]*approved: true/);
+  assert.match(css, /\.ycg-quick-privacy/);
 });
 
 test("Multi-channel Studio presents one simple cosmic workspace", () => {
@@ -446,7 +459,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=14", "youtube-creator-galaxy.js?v=19"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=15", "youtube-creator-galaxy.js?v=20"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);

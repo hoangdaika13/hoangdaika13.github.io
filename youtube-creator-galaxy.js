@@ -346,6 +346,7 @@
         contentMode: ["upload", "manager"].includes(value?.contentMode) ? value.contentMode : "upload",
         contentFilter: ["all", "uploading", "processing", "draft", "scheduled", "published", "error"].includes(value?.contentFilter) ? value.contentFilter : "all",
         contentAiFilter: ["all", "yes", "no", "unreviewed"].includes(value?.contentAiFilter) ? value.contentAiFilter : "all",
+        contentSortBy: ["title", "channel", "status", "processing", "privacy", "date", "metrics"].includes(value?.contentSortBy) ? value.contentSortBy : "title",
         contentSort: ["az", "za"].includes(value?.contentSort) ? value.contentSort : "az",
         contentScrollTop: Math.max(0, Number(value?.contentScrollTop || 0)),
         contentChannel: String(value?.contentChannel || "all").slice(0, 120),
@@ -378,7 +379,7 @@
         results: Array.isArray(value?.results) ? value.results.slice(0, 1200) : []
       };
     } catch {
-      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, taskMatrix: {}, contentMode: "upload", contentFilter: "all", contentAiFilter: "all", contentSort: "az", contentScrollTop: 0, contentChannel: "all", selectedContentIds: [], calendarMode: "month", calendarTimezone: "Asia/Bangkok", calendarChannelFilter: "all", calendarTypeFilter: "all", scheduleDrafts: {}, scheduleHistory: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, aiDisclosure: "unreviewed", madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
+      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, taskMatrix: {}, contentMode: "upload", contentFilter: "all", contentAiFilter: "all", contentSortBy: "title", contentSort: "az", contentScrollTop: 0, contentChannel: "all", selectedContentIds: [], calendarMode: "month", calendarTimezone: "Asia/Bangkok", calendarChannelFilter: "all", calendarTypeFilter: "all", scheduleDrafts: {}, scheduleHistory: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, aiDisclosure: "unreviewed", madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
     }
   }
 
@@ -1153,26 +1154,50 @@
     if (contentDrawer) return videoStudioWorkspaceMarkup(channels);
     const channelFilter = fleetState.contentChannel;
     const stageFilter = fleetState.contentFilter;
+    const contentSortBy = ["title", "channel", "status", "processing", "privacy", "date", "metrics"].includes(fleetState.contentSortBy) ? fleetState.contentSortBy : "title";
     const contentSort = fleetState.contentSort === "za" ? "za" : "az";
     const sortedChannels = channels.slice().sort((left, right) => String(left.title || "").localeCompare(String(right.title || ""), "vi", { sensitivity: "base" }));
     const allItems = mergedContentItems();
+    const channelTitle = (item) => item.channelTitle || channels.find((channel) => channel.id === item.channelId)?.title || item.channelId || "Kênh";
+    const sortValue = (item, column) => {
+      const metrics = item.metrics || item;
+      if (column === "channel") return channelTitle(item);
+      if (column === "status") return contentStage(item);
+      if (column === "processing") return item.processingStatus || item.uploadStatus || "";
+      if (column === "privacy") return item.privacyStatus || "private";
+      if (column === "date") return new Date(item.scheduledAt || item.publishAt || item.publishedAt || item.updatedAt || 0).getTime() || 0;
+      if (column === "metrics") return Number(metrics.views || 0);
+      return item.title || item.fileName || "";
+    };
     const items = allItems
       .filter((item) => (channelFilter === "all" || item.channelId === channelFilter) && (stageFilter === "all" || contentStage(item) === stageFilter))
       .sort((left, right) => {
-        const comparison = String(left.title || left.fileName || "").localeCompare(String(right.title || right.fileName || ""), "vi", { sensitivity: "base", numeric: true });
-        return contentSort === "za" ? -comparison : comparison;
+        const leftValue = sortValue(left, contentSortBy);
+        const rightValue = sortValue(right, contentSortBy);
+        const comparison = typeof leftValue === "number" && typeof rightValue === "number"
+          ? leftValue - rightValue
+          : String(leftValue).localeCompare(String(rightValue), "vi", { sensitivity: "base", numeric: true });
+        const directed = contentSort === "za" ? -comparison : comparison;
+        return directed || String(left.title || left.fileName || "").localeCompare(String(right.title || right.fileName || ""), "vi", { sensitivity: "base", numeric: true });
       });
     const selected = new Set(fleetState.selectedContentIds);
     const selectedVideoCount = allItems.filter((item) => item.videoId && selected.has(item.uploadId || `${item.channelId}::${item.videoId}`)).length;
     const filters = [["all", "Tất cả"], ["uploading", "Tải lên"], ["processing", "Đang xử lý"], ["draft", "Bản nháp"], ["scheduled", "Đã lên lịch"], ["published", "Đã xuất bản"], ["error", "Có lỗi"]];
-    return `<section class="ycg-content-manager"><div class="ycg-content-manager__toolbar"><div class="ycg-content-status-tabs">${filters.map(([id, label]) => `<button type="button" data-ycg-content-filter="${id}" class="${stageFilter === id ? "is-active" : ""}">${label}<b>${allItems.filter((item) => id === "all" || contentStage(item) === id).length}</b></button>`).join("")}</div><div><select data-ycg-content-channel aria-label="Chọn riêng một kênh"><option value="all">Tất cả kênh</option>${sortedChannels.map((channel) => `<option value="${esc(channel.id)}" ${channelFilter === channel.id ? "selected" : ""}>${esc(channel.title)}</option>`).join("")}</select><button type="button" data-ycg-content-sort="${contentSort === "az" ? "za" : "az"}" aria-label="Đổi thứ tự tên video">${contentSort === "az" ? "A → Z" : "Z → A"}</button><button type="button" data-ycg-action="content-refresh">Làm mới</button></div></div>
+    const sortableHeader = (column, label) => {
+      const active = contentSortBy === column;
+      const arrow = active ? (contentSort === "az" ? "↑" : "↓") : "↕";
+      const ariaSort = active ? (contentSort === "az" ? "ascending" : "descending") : "none";
+      return `<th aria-sort="${ariaSort}"><button type="button" data-ycg-content-sort-column="${column}" class="${active ? "is-active" : ""}" aria-label="Sắp xếp ${esc(label)} ${active && contentSort === "az" ? "giảm dần" : "tăng dần"}"><span>${esc(label)}</span><i aria-hidden="true">${arrow}</i></button></th>`;
+    };
+    return `<section class="ycg-content-manager"><div class="ycg-content-manager__toolbar"><div class="ycg-content-status-tabs">${filters.map(([id, label]) => `<button type="button" data-ycg-content-filter="${id}" class="${stageFilter === id ? "is-active" : ""}">${label}<b>${allItems.filter((item) => id === "all" || contentStage(item) === id).length}</b></button>`).join("")}</div><div><select data-ycg-content-channel aria-label="Chọn riêng một kênh"><option value="all">Tất cả kênh</option>${sortedChannels.map((channel) => `<option value="${esc(channel.id)}" ${channelFilter === channel.id ? "selected" : ""}>${esc(channel.title)}</option>`).join("")}</select><button type="button" data-ycg-action="content-refresh">Làm mới</button></div></div>
       <nav class="ycg-content-channel-rail" aria-label="Lọc nội dung theo từng kênh"><button type="button" data-ycg-content-channel-button="all" class="${channelFilter === "all" ? "is-active" : ""}"><span>YT</span><strong>Tất cả kênh</strong><b>${allItems.length}</b></button>${sortedChannels.map((channel) => { const count = allItems.filter((item) => item.channelId === channel.id).length; return `<button type="button" data-ycg-content-channel-button="${esc(channel.id)}" class="${channelFilter === channel.id ? "is-active" : ""}">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : `<span>${esc(String(channel.title || "YT").slice(0, 2).toUpperCase())}</span>`}<strong>${esc(channel.title)}</strong><b>${count}</b></button>`; }).join("")}</nav>
-      <section class="ycg-panel ycg-content-table"><header><div><h3>Nội dung trên các kênh</h3><small>Chọn nhiều video để khai báo sử dụng AI, copy metadata hoặc xếp lịch hàng loạt.</small></div><div><button type="button" data-ycg-action="content-copy-metadata" ${selected.size ? "" : "disabled"}>Copy metadata</button><button type="button" data-ycg-action="content-open-ai-disclosure" ${selectedVideoCount ? "" : "disabled"}>Khai báo sử dụng AI (${selectedVideoCount})</button><button type="button" data-ycg-action="content-open-calendar" ${selected.size ? "" : "disabled"}>Xếp lịch (${selected.size})</button></div></header><div><table><thead><tr><th></th><th>Video</th><th>Kênh</th><th>Trạng thái</th><th>Xử lý</th><th>Quyền</th><th>Ngày</th><th>Chỉ số</th><th></th></tr></thead><tbody>${items.map((item) => {
+      <section class="ycg-panel ycg-content-table"><header><div><h3>Nội dung trên các kênh</h3><small>Bấm tiêu đề cột để sắp xếp. Chỉnh quyền hiển thị trực tiếp trên từng video.</small></div><div><button type="button" data-ycg-action="content-copy-metadata" ${selected.size ? "" : "disabled"}>Copy metadata</button><button type="button" data-ycg-action="content-open-ai-disclosure" ${selectedVideoCount ? "" : "disabled"}>Khai báo sử dụng AI (${selectedVideoCount})</button><button type="button" data-ycg-action="content-open-calendar" ${selected.size ? "" : "disabled"}>Xếp lịch (${selected.size})</button></div></header><div><table><thead><tr><th></th>${sortableHeader("title", "Video")}${sortableHeader("channel", "Kênh")}${sortableHeader("status", "Trạng thái")}${sortableHeader("processing", "Xử lý")}${sortableHeader("privacy", "Quyền")}${sortableHeader("date", "Ngày")}${sortableHeader("metrics", "Chỉ số")}<th></th></tr></thead><tbody>${items.map((item) => {
         const key = item.uploadId || `${item.channelId}::${item.videoId}`;
         const stage = contentStage(item);
         const metrics = item.metrics || item;
         const progress = Number(item.progress ?? (item.totalBytes ? Number(item.bytesUploaded || 0) / Number(item.totalBytes) * 100 : 0));
-        return `<tr class="is-${stage}" data-ycg-content-row="${esc(key)}"><td><input type="checkbox" data-ycg-content-select value="${esc(key)}" ${selected.has(key) ? "checked" : ""}></td><td><button type="button" class="ycg-content-video" data-ycg-content-open="${esc(key)}">${item.thumbnail ? `<img src="${esc(item.thumbnail)}" alt="">` : `<span>YT</span>`}<div><strong>${esc(item.title || item.fileName || "Video")}</strong><small>${esc(item.videoId || item.fileName || "Chưa có Video ID")}</small></div></button></td><td><strong>${esc(item.channelTitle || channels.find((channel) => channel.id === item.channelId)?.title || item.channelId || "Kênh")}</strong></td><td><span class="ycg-table-status ${stage === "error" ? "is-error" : ["uploading", "processing"].includes(stage) ? "is-running" : "is-ready"}">${esc(stage)}</span>${stage === "uploading" ? `<progress max="100" value="${progress}"></progress>` : ""}</td><td><small>${esc(item.processingStatus || item.uploadStatus || "—")}</small>${item.failureReason || item.rejectionReason || item.error ? `<em>${esc(item.failureReason || item.rejectionReason || item.error)}</em>` : ""}</td><td>${esc(item.privacyStatus || "private")}</td><td><small>${dateTime(item.scheduledAt || item.publishAt || item.publishedAt || item.updatedAt)}</small></td><td><small>${fmt(metrics.views)} view<br>${fmt(metrics.comments)} bình luận · ${fmt(metrics.likes)} thích</small></td><td><details class="ycg-row-menu"><summary aria-label="Tác vụ video">⋮</summary><div><button type="button" data-ycg-content-open="${esc(key)}">Chỉnh sửa</button>${item.videoId ? `<a href="https://www.youtube.com/watch?v=${esc(item.videoId)}" target="_blank" rel="noopener">Mở YouTube ↗</a><button type="button" class="is-danger" data-ycg-content-delete="${esc(key)}">Xóa vĩnh viễn…</button>` : ""}</div></details></td></tr>`;
+        const privacyStatus = ["private", "unlisted", "public"].includes(item.privacyStatus) ? item.privacyStatus : "private";
+        return `<tr class="is-${stage}" data-ycg-content-row="${esc(key)}"><td><input type="checkbox" data-ycg-content-select value="${esc(key)}" ${selected.has(key) ? "checked" : ""}></td><td><button type="button" class="ycg-content-video" data-ycg-content-open="${esc(key)}">${item.thumbnail ? `<img src="${esc(item.thumbnail)}" alt="">` : `<span>YT</span>`}<div><strong>${esc(item.title || item.fileName || "Video")}</strong><small>${esc(item.videoId || item.fileName || "Chưa có Video ID")}</small></div></button></td><td><strong>${esc(channelTitle(item))}</strong></td><td><span class="ycg-table-status ${stage === "error" ? "is-error" : ["uploading", "processing"].includes(stage) ? "is-running" : "is-ready"}">${esc(stage)}</span>${stage === "uploading" ? `<progress max="100" value="${progress}"></progress>` : ""}</td><td><small>${esc(item.processingStatus || item.uploadStatus || "—")}</small>${item.failureReason || item.rejectionReason || item.error ? `<em>${esc(item.failureReason || item.rejectionReason || item.error)}</em>` : ""}</td><td><select class="ycg-quick-privacy is-${privacyStatus}" data-ycg-content-privacy data-content-key="${esc(key)}" data-previous="${privacyStatus}" aria-label="Quyền hiển thị của ${esc(item.title || item.fileName || "video")}" ${item.videoId ? "" : "disabled title=\"Chưa có Video ID\""}><option value="private" ${privacyStatus === "private" ? "selected" : ""}>Private</option><option value="unlisted" ${privacyStatus === "unlisted" ? "selected" : ""}>Unlisted</option><option value="public" ${privacyStatus === "public" ? "selected" : ""}>Public</option></select></td><td><small>${dateTime(item.scheduledAt || item.publishAt || item.publishedAt || item.updatedAt)}</small></td><td><small>${fmt(metrics.views)} view<br>${fmt(metrics.comments)} bình luận · ${fmt(metrics.likes)} thích</small></td><td><details class="ycg-row-menu"><summary aria-label="Tác vụ video">⋮</summary><div><button type="button" data-ycg-content-open="${esc(key)}">Chỉnh sửa</button>${item.videoId ? `<a href="https://www.youtube.com/watch?v=${esc(item.videoId)}" target="_blank" rel="noopener">Mở YouTube ↗</a><button type="button" class="is-danger" data-ycg-content-delete="${esc(key)}">Xóa vĩnh viễn…</button>` : ""}</div></details></td></tr>`;
       }).join("") || `<tr><td colspan="9">Chưa có video phù hợp. Hãy tải video hoặc chọn một kênh khác.</td></tr>`}</tbody></table></div></section>${deleteDialogMarkup(channels)}${aiBulkDialogMarkup(selectedVideoCount)}</section>`;
   }
 
@@ -1185,6 +1210,13 @@
 
   function contentItemByKey(key) {
     return mergedContentItems().find((item) => (item.uploadId || `${item.channelId}::${item.videoId}`) === key) || null;
+  }
+
+  function updateContentItemByKey(key, patch) {
+    const matches = (item) => (item.uploadId || `${item.channelId}::${item.videoId}`) === key;
+    contentLibrary = contentLibrary.map((item) => matches(item) ? { ...item, ...patch } : item);
+    fleetState.results = fleetState.results.map((item) => matches(item) ? { ...item, ...patch } : item);
+    saveFleetState();
   }
 
   async function openContentDrawer(key) {
@@ -3313,8 +3345,19 @@
     }
     const contentFilter = event.target.closest("[data-ycg-content-filter]");
     if (contentFilter) { fleetState.contentFilter = contentFilter.dataset.ycgContentFilter; saveFleetState(); render(); return; }
-    const contentSort = event.target.closest("[data-ycg-content-sort]");
-    if (contentSort) { fleetState.contentSort = contentSort.dataset.ycgContentSort === "za" ? "za" : "az"; saveFleetState(); render(); return; }
+    const contentSortColumn = event.target.closest("[data-ycg-content-sort-column]");
+    if (contentSortColumn) {
+      const column = contentSortColumn.dataset.ycgContentSortColumn;
+      if (!["title", "channel", "status", "processing", "privacy", "date", "metrics"].includes(column)) return;
+      if (fleetState.contentSortBy === column) fleetState.contentSort = fleetState.contentSort === "az" ? "za" : "az";
+      else {
+        fleetState.contentSortBy = column;
+        fleetState.contentSort = ["date", "metrics"].includes(column) ? "za" : "az";
+      }
+      saveFleetState();
+      render();
+      return;
+    }
     const contentChannelButton = event.target.closest("[data-ycg-content-channel-button]");
     if (contentChannelButton) {
       fleetState.contentChannel = contentChannelButton.dataset.ycgContentChannelButton || "all";
@@ -3720,6 +3763,39 @@
       saveFleetState();
       try { await loadContentLibrary(); } catch (error) { errorMessage = error.message; }
       render();
+      return;
+    }
+    if (target.matches("[data-ycg-content-privacy]")) {
+      const key = target.dataset.contentKey;
+      const previous = target.dataset.previous || "private";
+      const privacyStatus = ["private", "unlisted", "public"].includes(target.value) ? target.value : previous;
+      const item = contentItemByKey(key);
+      if (!item?.videoId) {
+        target.value = previous;
+        throw new Error("Video chưa có Video ID nên chưa thể cập nhật quyền hiển thị trên YouTube.");
+      }
+      if (privacyStatus === "public" && normalizeAiDisclosure(item.aiDisclosure) === "unreviewed") {
+        target.value = previous;
+        throw new Error("Hãy khai báo Có hoặc Không cho nội dung AI trước khi chuyển video thành Public.");
+      }
+      if (privacyStatus === "public" && !confirm(`Chuyển “${item.title || item.fileName || "video"}” thành Public ngay trên YouTube?`)) {
+        target.value = previous;
+        return;
+      }
+      target.disabled = true;
+      const result = await api("videos/update", "POST", {
+        channelId: item.channelId,
+        videoId: item.videoId,
+        privacyStatus,
+        publishAt: "",
+        aiDisclosure: normalizeAiDisclosure(item.aiDisclosure),
+        approved: true,
+        metadataVersion: `quick-privacy-${Date.now().toString(36)}`
+      });
+      updateContentItemByKey(key, { ...(result.video || {}), privacyStatus, scheduledAt: null, publishAt: null });
+      errorMessage = "";
+      render();
+      status(`Đã chuyển “${item.title || item.fileName || "video"}” sang ${privacyStatus} trên YouTube.`, "success");
       return;
     }
     if (target.matches("[data-ycg-calendar-channel]")) { fleetState.calendarChannelFilter = target.value; saveFleetState(); render(); return; }
