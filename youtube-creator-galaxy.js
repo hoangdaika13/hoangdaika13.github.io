@@ -349,6 +349,8 @@
         studioTab: FLEET_STUDIO_TABS.includes(value?.studioTab) ? value.studioTab : "overview",
         channelSearch: String(value?.channelSearch || "").slice(0, 100),
         channelFilter: ["all", "ready", "warning", "uploading", "error"].includes(value?.channelFilter) ? value.channelFilter : "all",
+        uploadChannelSearch: String(value?.uploadChannelSearch || "").slice(0, 100),
+        uploadAccountFilter: String(value?.uploadAccountFilter || "all").slice(0, 80),
         activeFileFingerprint: String(value?.activeFileFingerprint || "").slice(0, 260),
         videoDrafts,
         taskMatrix,
@@ -390,7 +392,7 @@
         results: Array.isArray(value?.results) ? value.results.slice(0, 1200) : []
       };
     } catch {
-      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, taskMatrix: {}, contentMode: "upload", contentFilter: "all", contentAiFilter: "all", contentSortBy: "title", contentSort: "az", contentScrollTop: 0, contentChannel: "all", settingsChannel: "", settingsSection: "profile", selectedContentIds: [], calendarMode: "month", calendarTimezone: "Asia/Bangkok", calendarChannelFilter: "all", calendarTypeFilter: "all", scheduleDrafts: {}, scheduleHistory: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, aiDisclosure: "unreviewed", madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
+      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", uploadChannelSearch: "", uploadAccountFilter: "all", activeFileFingerprint: "", videoDrafts: {}, taskMatrix: {}, contentMode: "upload", contentFilter: "all", contentAiFilter: "all", contentSortBy: "title", contentSort: "az", contentScrollTop: 0, contentChannel: "all", settingsChannel: "", settingsSection: "profile", selectedContentIds: [], calendarMode: "month", calendarTimezone: "Asia/Bangkok", calendarChannelFilter: "all", calendarTypeFilter: "all", scheduleDrafts: {}, scheduleHistory: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, aiDisclosure: "unreviewed", madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
     }
   }
 
@@ -468,6 +470,19 @@
       if (fleetState.channelFilter === "uploading") return Number(row?.uploads?.pending || 0) > 0;
       if (fleetState.channelFilter === "error") return Number(row?.uploads?.failed || 0) > 0;
       return true;
+    });
+  }
+
+  function uploadChannelAccountKey(channel) {
+    return String(channel?.account?.key || channel?.account?.hint || "google").slice(0, 80);
+  }
+
+  function filteredUploadChannels(channels) {
+    const query = String(fleetState.uploadChannelSearch || "").trim().toLocaleLowerCase("vi");
+    const account = String(fleetState.uploadAccountFilter || "all");
+    return channels.filter((channel) => {
+      const searchable = `${channel.title || ""} ${channel.id || ""} ${channel.account?.hint || ""}`.toLocaleLowerCase("vi");
+      return (!query || searchable.includes(query)) && (account === "all" || uploadChannelAccountKey(channel) === account);
     });
   }
 
@@ -1429,6 +1444,9 @@
       <div class="ycg-studio-metrics"><article><span>Sẵn sàng upload</span><strong>${fmt(summary.uploadReady)}</strong><small>Có token và quyền upload</small></article><article><span>Người đăng ký</span><strong>${fmt(summary.subscribers)}</strong><small>Tổng dữ liệu đã đồng bộ</small></article><article><span>Đang xử lý</span><strong>${fmt(summary.pendingUploads)}</strong><small>Upload và YouTube xử lý</small></article><article><span>Cần chú ý</span><strong>${fmt(Number(summary.failedUploads || 0) + Number(summary.unansweredDrafts || 0))}</strong><small>Lỗi và phản hồi nháp</small></article></div>
       <section class="ycg-panel ycg-channel-library"><header><div><h3>Danh sách kênh</h3><small>${filteredChannels.length}/${channels.length} kênh · chọn kênh rồi mở tab Đăng video</small></div></header><div class="ycg-channel-toolbar"><input data-ycg-channel-search value="${esc(fleetState.channelSearch)}" placeholder="Tìm tên kênh, Channel ID hoặc tài khoản Google"><select data-ycg-channel-filter><option value="all" ${fleetState.channelFilter === "all" ? "selected" : ""}>Tất cả trạng thái</option><option value="ready" ${fleetState.channelFilter === "ready" ? "selected" : ""}>Sẵn sàng upload</option><option value="warning" ${fleetState.channelFilter === "warning" ? "selected" : ""}>Thiếu quyền/token</option><option value="uploading" ${fleetState.channelFilter === "uploading" ? "selected" : ""}>Đang xử lý</option><option value="error" ${fleetState.channelFilter === "error" ? "selected" : ""}>Có lỗi</option></select><button type="button" data-ycg-action="fleet-select-visible">Chọn kênh đang lọc</button><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></div>${channelTable}</section>
     </section>`;
+    const uploadAccounts = [...new Map(channels.map((channel) => [uploadChannelAccountKey(channel), channel.account?.hint || "Tài khoản Google"])).entries()];
+    const uploadVisibleIds = new Set(filteredUploadChannels(channels).map((channel) => channel.id));
+    const channelPicker = `<section class="ycg-upload-channel-picker" aria-label="Chọn kênh đăng video"><header><div><small>KÊNH ĐÍCH</small><h3>Chọn kênh đăng video</h3><p>Chọn ngay tại đây trước khi chỉnh video. Mỗi kênh nhận tối đa 10 video trong đợt hiện tại.</p></div><strong><b>${selectedChannels.length}</b><span>/${selectionCapacity} kênh đã chọn</span></strong></header><div class="ycg-upload-channel-toolbar"><label><span>⌕</span><input data-ycg-upload-channel-search value="${esc(fleetState.uploadChannelSearch)}" placeholder="Tìm tên kênh hoặc tài khoản Google" aria-label="Tìm kênh đăng video"></label><select data-ycg-upload-account-filter aria-label="Lọc tài khoản Google"><option value="all">Tất cả tài khoản Google</option>${uploadAccounts.map(([key,hint])=>`<option value="${esc(key)}" ${fleetState.uploadAccountFilter===key?"selected":""}>${esc(hint)}</option>`).join("")}</select><button type="button" data-ycg-action="upload-select-visible-channels">Chọn đang lọc</button><button type="button" data-ycg-action="upload-select-ready-channels">Chỉ kênh sẵn sàng</button><button type="button" data-ycg-action="upload-clear-channels" ${selectedChannels.length?"":"disabled"}>Bỏ chọn</button></div><div class="ycg-upload-channel-rail">${channels.map((channel)=>{const ready=Boolean(channel.permissions?.upload&&channel.token?.healthy);const checked=selected.has(channel.id);return `<label data-ycg-upload-channel-card data-search="${esc(`${channel.title} ${channel.id} ${channel.account?.hint||""}`.toLocaleLowerCase("vi"))}" data-account="${esc(uploadChannelAccountKey(channel))}" class="${checked?"is-selected":""} ${ready?"is-ready":"is-warning"}" ${uploadVisibleIds.has(channel.id)?"":"hidden"}><input type="checkbox" data-ycg-fleet-channel value="${esc(channel.id)}" ${checked?"checked":""}><span>${channel.thumbnail?`<img src="${esc(channel.thumbnail)}" alt="">`:`<i>${esc(String(channel.title||"YT").slice(0,2).toUpperCase())}</i>`}<em>${checked?"✓":""}</em></span><div><strong>${esc(channel.title)}</strong><small>${esc(channel.account?.hint||"Google")} · ${ready?"Sẵn sàng upload":"Thiếu quyền hoặc token"}</small></div></label>`;}).join("")}</div>${selectedChannels.length?`<footer><span>Video sẽ được tạo tác vụ cho:</span>${selectedChannels.slice(0,8).map((channel)=>`<b>${esc(channel.title)}</b>`).join("")}${selectedChannels.length>8?`<b>+${selectedChannels.length-8} kênh</b>`:""}</footer>`:`<div class="ycg-upload-channel-empty"><strong>Chưa chọn kênh đích</strong><span>Hãy chọn ít nhất một kênh trước khi Preflight & Upload.</span></div>`}</section>`;
     const videoQueue = `<section class="ycg-panel ycg-video-queue"><header><div><h3>Video đã chọn</h3><small>Tối đa ${limits.maxVideosPerQueue} video · file chỉ ở trên thiết bị</small></div><button type="button" data-ycg-action="fleet-clear-videos">Xóa hàng đợi</button></header><label class="ycg-studio-drop" data-ycg-fleet-drop><input type="file" multiple accept="video/mp4,video/quicktime,video/webm,video/x-matroska" data-ycg-fleet-file><strong>Kéo tối đa 10 video vào đây</strong><span>MP4, MOV, WebM, MKV · không tải lên cho đến khi bạn xác nhận</span></label><div class="ycg-video-file-list">${fleetUploadFiles.map((file, index) => {
       const fingerprint = fleetFileFingerprint(file);
       const draft = fleetDraft(fingerprint, file);
@@ -1441,7 +1459,7 @@
       const playlists = channel.playlists || [];
       return `<tr><td><div class="ycg-table-channel">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "<i>YT</i>"}<span><strong>${esc(channel.title)}</strong><small>${esc(channel.account?.hint || "Google")}</small></span></div></td><td><input data-ycg-channel-title data-channel-id="${esc(channel.id)}" maxlength="100" value="${esc(effectiveChannelTitle(channel.id, activeDraft))}"></td><td><select data-ycg-channel-preset="thumbnailVariant" data-channel-id="${esc(channel.id)}">${["A", "B", "C"].map((variant) => `<option ${preset.thumbnailVariant === variant ? "selected" : ""}>${variant}</option>`).join("")}</select></td><td><select data-ycg-channel-preset="playlistId" data-channel-id="${esc(channel.id)}"><option value="">Không playlist</option>${playlists.map((item) => `<option value="${esc(item.id)}" ${preset.playlistId === item.id ? "selected" : ""}>${esc(item.title)}</option>`).join("")}</select></td><td><select data-ycg-channel-preset="privacyStatus" data-channel-id="${esc(channel.id)}"><option value="private" ${preset.privacyStatus === "private" ? "selected" : ""}>Private</option><option value="unlisted" ${preset.privacyStatus === "unlisted" ? "selected" : ""}>Unlisted</option><option value="schedule" ${preset.privacyStatus === "schedule" ? "selected" : ""}>Lên lịch</option></select></td><td><input type="datetime-local" data-ycg-channel-preset="publishAt" data-channel-id="${esc(channel.id)}" value="${esc(preset.publishAt)}"></td></tr>`;
     }).join("") || `<tr><td colspan="6">Chọn kênh trong tab Tổng quan.</td></tr>`}</tbody></table></div><div class="ycg-channel-schedule-presets">${selectedChannels.map((channel) => { const preset = channelPreset(channel.id); return `<label><strong>${esc(channel.title)}</strong><span>Giờ mặc định<input type="time" data-ycg-channel-preset="publishTime" data-channel-id="${esc(channel.id)}" value="${esc(preset.publishTime)}"></span><span>Múi giờ<select data-ycg-channel-preset="timezone" data-channel-id="${esc(channel.id)}">${[preset.timezone, "Asia/Bangkok", "Asia/Ho_Chi_Minh", "UTC", "America/New_York"].filter((value, index, all) => all.indexOf(value) === index).map((zone) => `<option ${preset.timezone === zone ? "selected" : ""}>${esc(zone)}</option>`).join("")}</select></span></label>`; }).join("")}</div></section>` : "";
-    const contentUpload = `<form data-ycg-fleet-form class="ycg-studio-content"><div class="ycg-content-columns">${videoQueue}${metadataEditor}</div>${batchMatrixMarkup(selectedChannels, limits)}${overrides}<section class="ycg-panel ycg-studio-launch"><div><strong>${estimatedTasks} tác vụ đã bật từ ${fleetUploadFiles.length} video × ${selectedChannels.length} kênh</strong><small>Tự tách thành ${Math.max(0, Math.ceil(estimatedTasks / limits.maxTasksPerBatch))} batch, tối đa ${limits.maxTasksPerBatch} tác vụ/batch. Video luôn upload Private trước.</small></div><label><input type="checkbox" name="rightsConfirmed" ${fleetState.rightsConfirmed ? "checked" : ""}> Tôi có quyền sử dụng toàn bộ video, nhạc và thumbnail.</label><div class="ycg-action-row"><button type="button" data-ycg-action="fleet-preflight">Kiểm tra trước</button><button type="submit" class="is-primary" ${busy.startsWith("bulk/") ? "disabled" : ""}>${busy.startsWith("bulk/") ? "Đang chạy…" : "Tạo hàng đợi liên tục"}</button></div></section></form>`;
+    const contentUpload = `<form data-ycg-fleet-form class="ycg-studio-content">${channelPicker}<div class="ycg-content-columns">${videoQueue}${metadataEditor}</div>${batchMatrixMarkup(selectedChannels, limits)}${overrides}<section class="ycg-panel ycg-studio-launch"><div><strong>${estimatedTasks} tác vụ đã bật từ ${fleetUploadFiles.length} video × ${selectedChannels.length} kênh</strong><small>Tự tách thành ${Math.max(0, Math.ceil(estimatedTasks / limits.maxTasksPerBatch))} batch, tối đa ${limits.maxTasksPerBatch} tác vụ/batch. Video luôn upload Private trước.</small></div><label><input type="checkbox" name="rightsConfirmed" ${fleetState.rightsConfirmed ? "checked" : ""}> Tôi có quyền sử dụng toàn bộ video, nhạc và thumbnail.</label><div class="ycg-action-row"><button type="button" data-ycg-action="fleet-preflight">Kiểm tra trước</button><button type="submit" class="is-primary" ${busy.startsWith("bulk/") ? "disabled" : ""}>${busy.startsWith("bulk/") ? "Đang chạy…" : "Tạo hàng đợi liên tục"}</button></div></section></form>`;
     const content = `<div class="ycg-content-mode"><button type="button" data-ycg-content-mode="upload" class="${fleetState.contentMode === "upload" ? "is-active" : ""}">＋ Batch Upload Matrix</button><button type="button" data-ycg-content-mode="manager" class="${fleetState.contentMode === "manager" ? "is-active" : ""}">▤ Content Manager</button><span>${fleetState.contentMode === "upload" ? "Tối đa 10 video/kênh · round-robin queue" : "Xem và chỉnh trực tiếp video thật"}</span></div>${fleetState.contentMode === "manager" ? contentManagerMarkup(channels) : contentUpload}`;
     const queue = `<section class="ycg-panel ycg-task-center"><header><div><h3>Continuous Channel Queue</h3><small>Round-robin · mỗi kênh một video tại một thời điểm · không upload lại tác vụ thành công</small></div><div><button type="button" data-ycg-action="queue-${queuePaused ? "resume" : "pause"}-all">${queuePaused ? "Tiếp tục tất cả" : "Tạm dừng tất cả"}</button><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></div></header><div class="ycg-task-summary"><span>${fleetState.results.length} tổng</span><span>${fleetState.results.filter((item) => item.status === "uploading").length} đang upload</span><span>${fleetState.results.filter((item) => item.status === "processing").length} YouTube xử lý</span><span>${fleetState.results.filter((item) => item.status === "paused").length} tạm dừng</span><span>${fleetState.results.filter((item) => item.status === "failed").length} lỗi</span></div><div class="ycg-task-table"><table><thead><tr><th>Video</th><th>Kênh</th><th>Batch</th><th>Trạng thái</th><th>Tiến trình</th><th>Tốc độ / ETA</th><th>Hành động</th></tr></thead><tbody>${fleetState.results.map((item) => `<tr><td><strong>${esc(item.fileName || "Video")}</strong><small>${esc(item.videoId || item.checksum || "")}</small></td><td>${esc(item.channelTitle || item.channelId)}</td><td>${item.batchIndex ? `${item.batchIndex}/${item.batchTotal || item.batchIndex}` : "—"}</td><td><span class="ycg-table-status ${item.status === "failed" ? "is-error" : ["uploading", "processing", "verifying", "thumbnail", "paused"].includes(item.status) ? "is-running" : "is-ready"}">${esc(item.status)}</span>${item.error ? `<small>${esc(item.error)}</small>` : ""}</td><td><progress max="100" value="${Number(item.progress || 0)}"></progress><small>${Number(item.progress || 0).toFixed(1)}%</small></td><td>${item.speedBps ? `${bytes(item.speedBps)}/s · ${Math.ceil(item.etaSeconds || 0)}s` : "—"}</td><td>${item.status === "uploading" ? `<button type="button" data-ycg-task-pause="${esc(item.taskKey)}">Tạm dừng</button>` : ["paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" data-ycg-fleet-retry="${esc(item.taskKey)}">Tiếp tục</button>` : item.status === "uploaded" && item.uploadId ? `<button type="button" data-ycg-fleet-approve="${esc(item.taskKey)}">Duyệt</button>` : ""}${["queued", "uploading", "paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" class="is-danger" data-ycg-task-cancel="${esc(item.taskKey)}">Hủy</button>` : ""}${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">Mở video</a>` : ""}</td></tr>`).join("") || `<tr><td colspan="7">Chưa có tác vụ. Chọn video và kênh trong tab Đăng video.</td></tr>`}</tbody></table></div></section>`;
     const studioView = fleetState.studioTab === "content" ? content
@@ -2968,6 +2986,20 @@
       saveFleetState();
       return render();
     }
+    if (["upload-select-visible-channels", "upload-select-ready-channels", "upload-clear-channels"].includes(action)) {
+      const channels = fleetOverview?.channels || channelStatus.channels || [];
+      const limit = fleetSelectionCapacity();
+      const next = action === "upload-clear-channels"
+        ? []
+        : action === "upload-select-ready-channels"
+          ? channels.filter((channel) => channel.permissions?.upload && channel.token?.healthy).slice(0, limit)
+          : filteredUploadChannels(channels).slice(0, limit);
+      fleetState.selectedChannelIds = next.map((channel) => channel.id);
+      invalidateFleetPublish();
+      saveFleetState();
+      render();
+      return status(action === "upload-clear-channels" ? "Đã bỏ chọn toàn bộ kênh đích." : `Đã chọn ${next.length} kênh để đăng video.`, "success");
+    }
     if (action === "matrix-enable-all" || action === "matrix-disable-all") {
       const enabled = action === "matrix-enable-all";
       fleetUploadFiles.forEach((file) => fleetState.selectedChannelIds.forEach((channelId) => {
@@ -3642,6 +3674,16 @@
       saveFleetState();
       return;
     }
+    if (target.matches("[data-ycg-upload-channel-search]")) {
+      fleetState.uploadChannelSearch = target.value.slice(0, 100);
+      const query = fleetState.uploadChannelSearch.trim().toLocaleLowerCase("vi");
+      const account = fleetState.uploadAccountFilter || "all";
+      root?.querySelectorAll("[data-ycg-upload-channel-card]").forEach((card) => {
+        card.hidden = Boolean((query && !String(card.dataset.search || "").includes(query)) || (account !== "all" && card.dataset.account !== account));
+      });
+      saveFleetState();
+      return;
+    }
     if (target.matches("[data-ycg-channel-title]")) {
       const draft = fleetDraft();
       if (draft) {
@@ -3898,6 +3940,12 @@
     }
     if (target.matches("[data-ycg-channel-filter]")) {
       fleetState.channelFilter = target.value;
+      saveFleetState();
+      render();
+      return;
+    }
+    if (target.matches("[data-ycg-upload-account-filter]")) {
+      fleetState.uploadAccountFilter = target.value.slice(0, 80);
       saveFleetState();
       render();
       return;

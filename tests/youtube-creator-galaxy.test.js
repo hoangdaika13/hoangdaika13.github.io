@@ -250,6 +250,17 @@ test("Multi-channel Studio manages one hundred private channels and ten-video ta
   assert.match(css, /\.ycg-shell\[data-ycg-active="fleet"\]/);
 });
 
+test("Upload workspace exposes a fast multi-channel target picker", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const capability of ["uploadChannelSearch", "uploadAccountFilter", "filteredUploadChannels", "Chọn kênh đăng video", "data-ycg-upload-channel-search", "data-ycg-upload-account-filter", "data-ycg-upload-channel-card", "upload-select-visible-channels", "upload-select-ready-channels", "upload-clear-channels"]) assert.match(client, new RegExp(capability));
+  assert.match(client, /const contentUpload = `[\s\S]{0,180}\$\{channelPicker\}/);
+  assert.match(client, /data-ycg-fleet-channel value=/);
+  assert.match(css, /\.ycg-upload-channel-picker/);
+  assert.match(css, /\.ycg-upload-channel-rail/);
+  assert.match(css, /grid-auto-flow:column/);
+});
+
 test("Batch Matrix, continuous queue, Content Manager and bulk calendar are real owner-isolated workflows", () => {
   const client = read("youtube-creator-galaxy.js");
   const server = read("utils/youtubePublisher.js");
@@ -479,7 +490,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=17", "youtube-creator-galaxy.js?v=21"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=18", "youtube-creator-galaxy.js?v=22"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
