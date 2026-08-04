@@ -6,36 +6,33 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Creative workspace keeps all 25 tools in one accordion navigator", () => {
+test("Creative workspace keeps all 25 routes while using only the global sidebar navigator", () => {
   const source = read("creative-os.js");
   const ids = [...source.matchAll(/\{ id: "([^"]+)", group:/g)].map((match) => match[1]);
   assert.equal(ids.length, 25);
   assert.equal(new Set(ids).size, 25);
-  for (const contract of ["data-cos-group", "data-cos-search", "data-cos-view", "data-cos-workspace", "data-cos-tool-count"]) {
-    assert.match(source, new RegExp(contract));
-  }
+  assert.match(source, /data-cos-workspace/);
+  assert.doesNotMatch(source, /creative-os__navigator|data-cos-navigator|data-cos-search|data-cos-tool-count/);
   assert.doesNotMatch(source, /creative-os__legacy/);
   assert.doesNotMatch(source, /data-cos-galaxy/);
 });
 
-test("Creative workspace uses a fixed two-column shell with only internal overflow", () => {
+test("Creative workspace uses a fixed full-width single-column stage with only internal overflow", () => {
   const css = read("creative-os.css");
   assert.match(css, /\.app-main\.app-main--creative-fixed\s*\{[^}]*overflow:\s*hidden/s);
   assert.match(css, /body\.app-creative-route \.app-breadcrumb,[\s\S]*body\.app-creative-route \.app-context-bar\s*\{[^}]*display:\s*none !important/s);
   assert.match(css, /\.app-main--creative-fixed \.app-workspace\.app-workspace--creative-fixed\s*\{[^}]*height:\s*100%/s);
   assert.match(css, /\.creative-os\s*\{[^}]*height:\s*100%[^}]*overflow:\s*hidden/s);
-  assert.match(css, /\.creative-os__body\s*\{[^}]*grid-template-columns:\s*260px minmax\(0, 1fr\)/s);
+  assert.match(css, /\.creative-os__body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s);
   assert.match(css, /\.creative-os__workspace\s*\{[^}]*overflow:\s*auto/s);
   assert.match(css, /\.creative-os__workspace > :where\([\s\S]*width:\s*100% !important[\s\S]*max-width:\s*none !important/s);
   assert.match(css, /@media \(max-width: 560px\)/);
 });
 
-test("every Creative route temporarily collapses the duplicate global sidebar", () => {
+test("Creative routes preserve the global sidebar because the duplicate inner navigator is removed", () => {
   const source = read("creative-os.js");
-  assert.match(source, /sidebarWasCollapsed/);
-  assert.match(source, /classList\?\.add\?\.\("app-sidebar-collapsed"\)/);
-  assert.match(source, /sidebarWasCollapsed === false[\s\S]*classList\?\.remove\?\.\("app-sidebar-collapsed"\)/);
-  assert.match(source, /\[data-shell-toggle\]/);
+  assert.doesNotMatch(source, /sidebarWasCollapsed|app-sidebar-collapsed|data-shell-toggle/);
+  assert.doesNotMatch(source, /creative-os__navigator|data-cos-nav-toggle/);
 });
 
 test("five established tools are embedded through the existing functional adapter", () => {

@@ -187,7 +187,7 @@ body.app-creative-route .app-context-bar {
 
 .creative-os__body {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -678,12 +678,12 @@ body.app-creative-route .app-context-bar {
   .creative-os__topbar { grid-template-columns: minmax(170px, .7fr) minmax(260px, 1fr) auto; }
   .creative-os__summary > span:nth-child(3) { display: none; }
   .creative-os__summary { grid-template-columns: repeat(3, minmax(64px, 1fr)); }
-  .creative-os__body { grid-template-columns: 225px minmax(0, 1fr); }
+  .creative-os__body { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 820px) {
   .app-main--creative-fixed .app-workspace.app-workspace--creative-fixed { height: 100%; padding: 10px 12px; }
-  .creative-os__topbar { grid-template-columns: auto minmax(0, 1fr) auto; gap: 9px; }
+  .creative-os__topbar { grid-template-columns: minmax(0, 1fr) auto; gap: 9px; }
   .creative-os__nav-toggle {
     display: grid;
     place-items: center;

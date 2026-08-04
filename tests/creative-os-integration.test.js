@@ -28,5 +28,5 @@ test("Creative OS shell is mobile and reduced-motion ready", () => {
   assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /overflow:\s*hidden/);
-  assert.match(css, /grid-template-columns:\s*260px minmax\(0, 1fr\)/);
+  assert.match(css, /\.creative-os__body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s);
 });

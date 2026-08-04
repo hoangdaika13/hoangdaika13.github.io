@@ -72,13 +72,10 @@
   let mountToken = 0;
   let pageMain = null;
   let pageWorkspace = null;
-  let sidebarWasCollapsed = null;
 
   const escapeHTML = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const normalizeView = (view) => VIEWS.some((item) => item.id === view) ? view : "overview";
   const viewMeta = (view) => VIEWS.find((item) => item.id === normalizeView(view)) || VIEWS[0];
-  const groupNames = () => [...new Set(VIEWS.map((item) => item.group))];
-  const searchable = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   function loadScript(source) {
     if (loads.has(source)) return loads.get(source);
@@ -179,16 +176,10 @@
     Object.entries(values).forEach(([selector, value]) => activeRoot.querySelectorAll(selector).forEach((node) => { node.textContent = value; }));
   }
 
-  function toolButton(item, current) {
-    const active = item.id === current.id;
-    return `<button type="button" class="creative-os__tool ${active ? "is-active" : ""}" data-cos-view="${escapeHTML(item.id)}" data-cos-search-text="${escapeHTML(`${item.title} ${item.description}`)}" ${active ? 'aria-current="page"' : ""}><i>${escapeHTML(item.icon)}</i><span><b>${escapeHTML(item.title)}</b><small>${escapeHTML(item.description)}</small></span><em>›</em></button>`;
-  }
-
   function shellMarkup(view) {
     const current = viewMeta(view);
     return `<section class="creative-os" data-creative-os data-view="${escapeHTML(current.id)}">
       <header class="creative-os__topbar">
-        <button class="creative-os__nav-toggle" type="button" data-cos-nav-toggle aria-label="Mở danh sách 25 công cụ" aria-expanded="false"><span></span><span></span><span></span></button>
         <div class="creative-os__brand"><i>HH</i><span><small>CREATIVE WORKSPACE</small><strong data-cos-active-project>Đang tải dự án...</strong></span></div>
         <div class="creative-os__summary" aria-label="Dữ liệu dự án thật">
           <span><small>Tiến độ</small><b data-cos-progress>0%</b></span>
@@ -199,18 +190,6 @@
         <div class="creative-os__top-actions"><button type="button" data-cos-new-project>+ Dự án</button><button type="button" data-cos-command title="Tìm lệnh toàn hệ thống">Ctrl K</button></div>
       </header>
       <div class="creative-os__body">
-        <aside class="creative-os__navigator" data-cos-navigator aria-label="25 chức năng sáng tạo">
-          <div class="creative-os__navigator-head"><div><strong>Chức năng</strong><span data-cos-tool-count>25/25</span></div><label><span>⌕</span><input type="search" data-cos-search placeholder="Tìm trong 25 công cụ..." autocomplete="off"></label></div>
-          <nav class="creative-os__groups">${groupNames().map((group, index) => {
-            const items = VIEWS.filter((item) => item.group === group);
-            const open = group === current.group;
-            return `<section class="creative-os__group ${open ? "is-open" : ""}" data-cos-group-section="${escapeHTML(group)}">
-              <button class="creative-os__group-button" type="button" data-cos-group="${escapeHTML(group)}" aria-expanded="${open}"><span>${String(index + 1).padStart(2, "0")}</span><b>${escapeHTML(group)}</b><small>${items.length}</small><i>⌄</i></button>
-              <div class="creative-os__group-tools" data-cos-group-tools ${open ? "" : "hidden"}>${items.map((item) => toolButton(item, current)).join("")}</div>
-            </section>`;
-          }).join("")}</nav>
-          <footer><span><i></i>25 công cụ đã kết nối</span><button type="button" data-cos-export-project>Xuất project</button></footer>
-        </aside>
         <section class="creative-os__stage">
           <header class="creative-os__stage-head"><div><small data-cos-group-label>${escapeHTML(current.group)}</small><h2 data-cos-title>${escapeHTML(current.title)}</h2><p data-cos-description>${escapeHTML(current.description)}</p></div><div><span><i></i>Đang làm việc</span><button type="button" data-cos-export-project>Xuất project</button></div></header>
           <main class="creative-os__workspace" data-cos-workspace aria-live="polite"><section class="creative-os__loader" role="status"><i></i><strong>Đang mở ${escapeHTML(current.title)}...</strong><span>Chỉ tải engine đang sử dụng để giữ giao diện mượt.</span></section></main>
@@ -282,61 +261,17 @@
     }
   }
 
-  function setOpenGroup(group) {
-    activeRoot?.querySelectorAll("[data-cos-group-section]").forEach((section) => {
-      const open = section.dataset.cosGroupSection === group;
-      section.classList.toggle("is-open", open);
-      const button = section.querySelector("[data-cos-group]");
-      const tools = section.querySelector("[data-cos-group-tools]");
-      button?.setAttribute("aria-expanded", String(open));
-      if (tools) tools.hidden = !open;
-    });
-  }
-
   function syncActiveView(view) {
     const current = viewMeta(view);
     if (!activeRoot) return;
     const shell = activeRoot.querySelector("[data-creative-os]") || activeRoot;
     shell.dataset.view = current.id;
-    activeRoot.querySelectorAll("[data-cos-view]").forEach((button) => {
-      const active = button.dataset.cosView === current.id;
-      button.classList.toggle("is-active", active);
-      button.toggleAttribute("aria-current", active);
-    });
     const text = {
       "[data-cos-group-label]": current.group,
       "[data-cos-title]": current.title,
       "[data-cos-description]": current.description
     };
     Object.entries(text).forEach(([selector, value]) => { const node = activeRoot.querySelector(selector); if (node) node.textContent = value; });
-    setOpenGroup(current.group);
-    shell.classList?.remove?.("is-nav-open");
-    activeRoot.querySelector("[data-cos-nav-toggle]")?.setAttribute("aria-expanded", "false");
-  }
-
-  function applySearch(query) {
-    if (!activeRoot) return;
-    const needle = searchable(query);
-    let visible = 0;
-    activeRoot.querySelectorAll("[data-cos-group-section]").forEach((section) => {
-      let groupMatches = 0;
-      section.querySelectorAll("[data-cos-view]").forEach((button) => {
-        const match = !needle || searchable(button.dataset.cosSearchText).includes(needle);
-        button.hidden = !match;
-        if (match) groupMatches += 1;
-      });
-      visible += groupMatches;
-      section.hidden = groupMatches === 0;
-      if (needle && groupMatches) {
-        section.classList.add("is-open");
-        section.querySelector("[data-cos-group]")?.setAttribute("aria-expanded", "true");
-        const tools = section.querySelector("[data-cos-group-tools]");
-        if (tools) tools.hidden = false;
-      }
-    });
-    const count = activeRoot.querySelector("[data-cos-tool-count]");
-    if (count) count.textContent = `${visible}/${VIEWS.length}`;
-    if (!needle) setOpenGroup(viewMeta(activeView).group);
   }
 
   function activateView(nextView, options = activeOptions, userInitiated = false) {
@@ -366,20 +301,6 @@
     rootAbort = new AbortController();
     const signal = rootAbort.signal;
     root.addEventListener("click", (event) => {
-      const viewButton = event.target.closest("[data-cos-view]");
-      if (viewButton) { activateView(viewButton.dataset.cosView, options, true); return; }
-      const groupButton = event.target.closest("[data-cos-group]");
-      if (groupButton) {
-        const expanded = groupButton.getAttribute("aria-expanded") === "true";
-        setOpenGroup(expanded ? "" : groupButton.dataset.cosGroup);
-        return;
-      }
-      if (event.target.closest("[data-cos-nav-toggle]")) {
-        const shell = root.querySelector("[data-creative-os]") || root;
-        const open = shell.classList.toggle("is-nav-open");
-        root.querySelector("[data-cos-nav-toggle]")?.setAttribute("aria-expanded", String(open));
-        return;
-      }
       if (event.target.closest("[data-cos-command]")) { document.dispatchEvent(new CustomEvent("hh:command-open")); document.querySelector("[data-command-open]")?.click(); return; }
       if (event.target.closest("[data-cos-new-project]")) {
         const project = activeStore?.createProject?.({ name: `Dự án sáng tạo ${new Date().toLocaleDateString("vi-VN")}` });
@@ -388,16 +309,6 @@
       }
       if (event.target.closest("[data-cos-export-project]")) { exportProject(); return; }
       if (event.target.closest("[data-cos-retry]")) activateView(activeView, options, false);
-    }, { signal });
-    root.addEventListener("input", (event) => {
-      if (event.target.matches("[data-cos-search]")) applySearch(event.target.value);
-    }, { signal });
-    root.addEventListener("keydown", (event) => {
-      const shell = root.querySelector("[data-creative-os]") || root;
-      if (event.key === "Escape" && shell.classList.contains("is-nav-open")) {
-        shell.classList.remove("is-nav-open");
-        root.querySelector("[data-cos-nav-toggle]")?.setAttribute("aria-expanded", "false");
-      }
     }, { signal });
   }
 
@@ -408,13 +319,10 @@
     try { rootAbort?.abort(); } catch {}
     pageMain?.classList.remove("app-main--creative-fixed");
     pageWorkspace?.classList.remove("app-workspace--creative-fixed");
-    if (sidebarWasCollapsed === false) document.body?.classList?.remove?.("app-sidebar-collapsed");
-    document.querySelectorAll?.("[data-shell-toggle]")?.forEach((button) => button.setAttribute("aria-expanded", String(!document.body?.classList?.contains?.("app-sidebar-collapsed"))));
     unsubscribe = null;
     rootAbort = null;
     pageMain = null;
     pageWorkspace = null;
-    sidebarWasCollapsed = null;
     if (activeRoot) activeRoot.replaceChildren();
     activeRoot = null;
   }
@@ -435,9 +343,6 @@
     activeOptions = options;
     pageMain = root.closest?.(".app-main") || null;
     pageWorkspace = root.parentElement || null;
-    if (sidebarWasCollapsed === null) sidebarWasCollapsed = Boolean(document.body?.classList?.contains?.("app-sidebar-collapsed"));
-    document.body?.classList?.add?.("app-sidebar-collapsed");
-    document.querySelectorAll?.("[data-shell-toggle]")?.forEach((button) => button.setAttribute("aria-expanded", "false"));
     pageMain?.classList.add("app-main--creative-fixed");
     pageWorkspace?.classList.add("app-workspace--creative-fixed");
     root.innerHTML = shellMarkup(view);

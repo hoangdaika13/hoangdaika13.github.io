@@ -9,6 +9,7 @@ const MIN_AMOUNT = 1000;
 const MAX_AMOUNT = 1000000000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const RECEIPT_LEASE_MS = 2 * 60 * 1000;
+const RECEIPT_RETRY_DELAYS_MS = Object.freeze([60 * 1000, 5 * 60 * 1000, 15 * 60 * 1000, 60 * 60 * 1000, 6 * 60 * 60 * 1000]);
 const SUPPORT_VISIBILITIES = new Set(["public", "alias", "anonymous"]);
 const MISSION_STATUSES = new Set(["active", "completed", "paused"]);
 const CONTRIBUTION_TYPES = new Set(["asset", "translation", "bug", "code", "tester", "feedback"]);
@@ -248,7 +249,7 @@ function receiptView(item, includeError = false) {
     recipient: receipt.recipientMasked || maskEmail(item?.email),
     sentAt: receipt.sentAt || null,
     receiptId: item?.reference ? `HH-RCP-${item.reference}` : "",
-    ...(includeError ? { attempts: Number(receipt.attempts || 0), lastError: clean(receipt.lastError, 240) } : {})
+    ...(includeError ? { attempts: Number(receipt.attempts || 0), lastError: clean(receipt.lastError, 240), nextRetryAt: receipt.nextRetryAt || null } : {})
   };
 }
 
@@ -262,14 +263,74 @@ function receiptEmail(donation) {
   const amount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(donation.amount) || 0);
   const paidAt = new Date(donation.verifiedAt || Date.now()).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "long", timeStyle: "short" });
   const receiptId = `HH-RCP-${donation.reference}`;
-  const subject = `Cảm ơn bạn đã ủng hộ Nhhoang · ${donation.reference}`;
-  const text = `Xin chào ${name},\n\nNhhoang chân thành cảm ơn bạn đã ủng hộ HH Platform.\n\nSố tiền: ${amount}\nMã giao dịch: ${donation.reference}\nMã xác nhận: ${receiptId}\nXác nhận lúc: ${paidAt}\n\nSự ủng hộ của bạn giúp duy trì máy chủ, dịch vụ AI và các công cụ miễn phí cho cộng đồng.\n\nXem dự án: ${siteUrl}/#/support\n\nĐây là thư xác nhận ủng hộ, không phải hóa đơn tài chính.`;
-  const html = `<!doctype html><html lang="vi"><body style="margin:0;background:#080c12;color:#eef4f8;font-family:Inter,Segoe UI,Arial,sans-serif"><div style="display:none;max-height:0;overflow:hidden">Nhhoang đã xác nhận khoản ủng hộ ${htmlEscape(amount)} của bạn.</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#080c12;padding:28px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;border:1px solid #293849;border-radius:18px;overflow:hidden;background:#111923"><tr><td style="padding:28px;background:linear-gradient(135deg,#25122c,#112a31)"><div style="font-size:12px;letter-spacing:2px;color:#69e8e4;font-weight:800">HH PLATFORM · DONATION CONFIRMED</div><h1 style="margin:12px 0 6px;font-size:30px;line-height:1.15;color:#fff">Cảm ơn ${htmlEscape(name)}!</h1><p style="margin:0;color:#b8c7d2;line-height:1.6">Khoản ủng hộ của bạn đã được máy chủ xác minh thành công.</p></td></tr><tr><td style="padding:26px"><div style="padding:20px;border:1px solid #314354;border-radius:14px;background:#0b121a"><div style="font-size:12px;color:#8fa1af">SỐ TIỀN ỦNG HỘ</div><div style="margin-top:6px;font-size:32px;font-weight:900;color:#f6dd68">${htmlEscape(amount)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:18px;color:#c5d0d8;font-size:14px"><tr><td style="padding:7px 0;color:#8193a2">Mã giao dịch</td><td align="right" style="font-weight:700">${htmlEscape(donation.reference)}</td></tr><tr><td style="padding:7px 0;color:#8193a2">Mã xác nhận</td><td align="right" style="font-weight:700">${htmlEscape(receiptId)}</td></tr><tr><td style="padding:7px 0;color:#8193a2">Thời gian</td><td align="right">${htmlEscape(paidAt)}</td></tr></table></div><p style="margin:22px 0;color:#b7c4ce;line-height:1.7">Sự ủng hộ của bạn giúp Nhhoang duy trì máy chủ, dịch vụ AI và tiếp tục phát triển các công cụ miễn phí cho cộng đồng.</p><p style="margin:24px 0"><a href="${htmlEscape(siteUrl)}/#/support" style="display:inline-block;padding:13px 20px;border-radius:10px;background:linear-gradient(135deg,#f2d85f,#5de0dd);color:#071014;text-decoration:none;font-weight:900">Xem trang tri ân</a></p><p style="margin:0;color:#718391;font-size:12px;line-height:1.6">Email được gửi tự động sau khi giao dịch được xác minh. Đây là thư xác nhận ủng hộ, không phải hóa đơn tài chính.</p></td></tr></table></td></tr></table></body></html>`;
+  const mission = MISSION_DEFINITIONS.find((item) => item.id === missionIdOf(donation.missionId));
+  const missionLabel = mission?.label || "Quỹ phát triển HH Platform";
+  const subject = `💫 Cảm ơn ${name} đã đồng hành cùng HH Platform · ${donation.reference}`;
+  const text = `Xin chào ${name},\n\nNhhoang trân trọng cảm ơn bạn đã đồng hành cùng HH Platform. Khoản ủng hộ của bạn đã được payOS và máy chủ HH xác minh thành công.\n\nSố tiền: ${amount}\nHạng mục: ${missionLabel}\nMã giao dịch: ${donation.reference}\nMã xác nhận: ${receiptId}\nXác nhận lúc: ${paidAt}\n\nSự đồng hành của bạn giúp duy trì hạ tầng, dịch vụ AI và tiếp tục phát triển các công cụ miễn phí cho cộng đồng.\n\nTrang tri ân: ${siteUrl}/#/support\n\nTrân trọng,\nNhhoang · HH Platform\n\nĐây là thư xác nhận ủng hộ, không phải hóa đơn tài chính.`;
+  const html = `<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
+<body style="margin:0;padding:0;background-color:#07070d;color:#f6f1ff;font-family:Inter,'Segoe UI',Arial,sans-serif;-webkit-text-size-adjust:100%">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">Khoản ủng hộ ${htmlEscape(amount)} của bạn đã được xác minh. Nhhoang trân trọng cảm ơn bạn.</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#07070d;background-image:linear-gradient(145deg,#07070d 0%,#171028 48%,#081b22 100%)">
+    <tr><td align="center" style="padding:38px 14px">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:680px;background-color:#11131d;border:1px solid #59456e;border-radius:26px;overflow:hidden;box-shadow:0 22px 70px rgba(0,0,0,.55)">
+        <tr><td style="height:5px;font-size:0;line-height:0;background-color:#f2d06b;background-image:linear-gradient(90deg,#f6d878,#ff79c6,#8f7dff,#66e8e1)">&nbsp;</td></tr>
+        <tr><td style="padding:34px 38px 30px;background-color:#1b1730;background-image:linear-gradient(135deg,#2b1839 0%,#171a35 52%,#0d3135 100%)">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
+            <td width="82" valign="middle"><table role="presentation" width="72" height="72" cellspacing="0" cellpadding="0" border="0" style="width:72px;height:72px;border-radius:50%;background-color:#f1ce70;background-image:linear-gradient(135deg,#fff0a8,#ef8fc7 58%,#78e8df);border:2px solid #fff1b8"><tr><td align="center" valign="middle" style="font-size:35px;line-height:72px;font-weight:950;color:#160f25">H</td></tr></table></td>
+            <td valign="middle" style="padding-left:14px"><div style="font-size:11px;line-height:1.4;letter-spacing:2.7px;font-weight:800;color:#7ff2e6">HH PLATFORM · PATRON LETTER</div><div style="margin-top:6px;font-size:15px;line-height:1.5;color:#ddd4ee">Một lời cảm ơn dành riêng cho người đồng hành</div></td>
+          </tr></table>
+          <h1 style="margin:28px 0 10px;font-size:38px;line-height:1.14;letter-spacing:-.7px;color:#ffffff">Trân trọng cảm ơn<br><span style="color:#f7d77b">${htmlEscape(name)}</span></h1>
+          <p style="margin:0;max-width:530px;font-size:16px;line-height:1.75;color:#d2cbe1">Khoản ủng hộ của bạn đã được xác minh thành công. Bạn vừa tiếp thêm một nguồn năng lượng quý giá cho hành trình phát triển HH Platform.</p>
+        </td></tr>
+        <tr><td style="padding:30px 38px;background-color:#11131d">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#0b0e17;border:1px solid #3a3650;border-radius:18px">
+            <tr><td align="center" style="padding:25px 20px 8px;font-size:11px;line-height:1.4;letter-spacing:2.4px;font-weight:800;color:#9b91b2">KHOẢN ỦNG HỘ ĐÃ XÁC NHẬN</td></tr>
+            <tr><td align="center" style="padding:0 20px 20px;font-size:39px;line-height:1.2;font-weight:950;color:#f5d878">${htmlEscape(amount)}</td></tr>
+            <tr><td style="padding:0 22px 22px">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-size:14px;line-height:1.55;color:#ddd8e8">
+                <tr><td style="padding:9px 0;border-top:1px solid #272638;color:#918ba0">Hạng mục đồng hành</td><td align="right" style="padding:9px 0;border-top:1px solid #272638;font-weight:750;color:#79e8df">${htmlEscape(missionLabel)}</td></tr>
+                <tr><td style="padding:9px 0;border-top:1px solid #272638;color:#918ba0">Mã giao dịch</td><td align="right" style="padding:9px 0;border-top:1px solid #272638;font-weight:750">${htmlEscape(donation.reference)}</td></tr>
+                <tr><td style="padding:9px 0;border-top:1px solid #272638;color:#918ba0">Mã thư xác nhận</td><td align="right" style="padding:9px 0;border-top:1px solid #272638;font-weight:750">${htmlEscape(receiptId)}</td></tr>
+                <tr><td style="padding:9px 0;border-top:1px solid #272638;color:#918ba0">Thời gian xác minh</td><td align="right" style="padding:9px 0;border-top:1px solid #272638">${htmlEscape(paidAt)}</td></tr>
+              </table>
+            </td></tr>
+          </table>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px"><tr>
+            <td width="49%" valign="top" style="padding:18px;background-color:#171323;border:1px solid #3d2d50;border-radius:14px"><div style="font-size:22px">✦</div><div style="margin-top:8px;font-size:13px;font-weight:800;color:#f3b9dc">GIÁ TRỊ BẠN TRAO</div><p style="margin:7px 0 0;font-size:13px;line-height:1.65;color:#aaa2b8">Duy trì máy chủ, dịch vụ AI và các trải nghiệm miễn phí cho cộng đồng.</p></td>
+            <td width="2%" style="font-size:0">&nbsp;</td>
+            <td width="49%" valign="top" style="padding:18px;background-color:#0e2022;border:1px solid #245052;border-radius:14px"><div style="font-size:22px">◇</div><div style="margin-top:8px;font-size:13px;font-weight:800;color:#80eee5">DẤU ẤN ĐỒNG HÀNH</div><p style="margin:7px 0 0;font-size:13px;line-height:1.65;color:#a8b9ba">Khoản ủng hộ đã trở thành một ngôi sao trong chòm sao Supporter HH.</p></td>
+          </tr></table>
+          <p style="margin:25px 0 0;font-size:15px;line-height:1.75;color:#c8c1d3">Nhhoang biết rằng mỗi sự ủng hộ đều đến từ niềm tin. Tôi sẽ tiếp tục biến niềm tin đó thành những sản phẩm chỉn chu, hữu ích và minh bạch hơn mỗi ngày.</p>
+          <p style="margin:25px 0 10px;text-align:center"><a href="${htmlEscape(siteUrl)}/#/support" style="display:inline-block;padding:14px 27px;border-radius:999px;background-color:#f2d06b;background-image:linear-gradient(110deg,#f6d878,#ec9dcc 52%,#72e8df);color:#17101f;text-decoration:none;font-size:14px;font-weight:900;box-shadow:0 8px 26px rgba(233,154,204,.25)">Khám phá trang tri ân&nbsp; →</a></p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:28px;border-top:1px solid #2b2938"><tr><td style="padding-top:21px"><div style="font-size:14px;color:#938ba1">Trân trọng,</div><div style="margin-top:4px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-style:italic;color:#f7d77b">Nhhoang</div><div style="margin-top:3px;font-size:11px;letter-spacing:1.8px;color:#736c80">FOUNDER · HH PLATFORM</div></td></tr></table>
+        </td></tr>
+        <tr><td align="center" style="padding:20px 28px;background-color:#090b12;font-size:11px;line-height:1.65;color:#6f6b79">Email giao dịch tự động, chỉ gửi sau khi khoản ủng hộ được máy chủ xác minh.<br>Đây là thư xác nhận ủng hộ, không phải hóa đơn tài chính. · <a href="${htmlEscape(siteUrl)}/#/support" style="color:#8edfd9;text-decoration:none">nhhoang13all.xyz</a></td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
   return { subject, text, html };
+}
+
+function receiptRetryDelay(attempts = 0) {
+  const index = Math.max(0, Math.min(RECEIPT_RETRY_DELAYS_MS.length - 1, Number(attempts || 0) - 1));
+  return RECEIPT_RETRY_DELAYS_MS[index];
+}
+
+function receiptRetryDeferred(donation, trigger) {
+  if (trigger === "owner_retry") return false;
+  const receipt = donation?.receipt || {};
+  if (receipt.status !== "failed" || !receipt.lastAttemptAt) return false;
+  const nextRetryAt = receipt.nextRetryAt ? new Date(receipt.nextRetryAt) : new Date(new Date(receipt.lastAttemptAt).getTime() + receiptRetryDelay(receipt.attempts));
+  return Number.isFinite(nextRetryAt.getTime()) && nextRetryAt > new Date();
 }
 
 async function sendDonationThankYou(db, donations, donation, trigger = "payment_verified") {
   if (!donation || donation.status !== "verified") return { status: "waiting_payment" };
+  if (donation.receipt?.sentAt) return receiptView(donation);
+  if (receiptRetryDeferred(donation, trigger)) return receiptView(donation, true);
   const recipient = validEmail(donation.email);
   if (!recipient) {
     await donations.updateOne({ _id: donation._id, "receipt.sentAt": { $exists: false } }, { $set: { "receipt.status": "missing_email", "receipt.lastError": "Email người ủng hộ không hợp lệ.", "receipt.updatedAt": new Date() } });
@@ -304,7 +365,7 @@ async function sendDonationThankYou(db, donations, donation, trigger = "payment_
         "receipt.trigger": clean(trigger, 60)
       },
       $inc: { "receipt.attempts": 1 },
-      $unset: { "receipt.lastError": "" }
+      $unset: { "receipt.lastError": "", "receipt.nextRetryAt": "" }
     },
     { returnDocument: "after", includeResultMetadata: false }
   );
@@ -329,9 +390,10 @@ async function sendDonationThankYou(db, donations, donation, trigger = "payment_
     return { status: "sent", recipient: maskEmail(recipient), sentAt, receiptId: `HH-RCP-${claimed.reference}` };
   } catch (error) {
     const failedAt = new Date();
+    const nextRetryAt = new Date(failedAt.getTime() + receiptRetryDelay(claimed.receipt?.attempts));
     await donations.updateOne(
       { _id: claimed._id, "receipt.leaseId": leaseId },
-      { $set: { "receipt.status": "failed", "receipt.lastError": clean(error?.message || "Không thể gửi email.", 240), "receipt.updatedAt": failedAt }, $unset: { "receipt.leaseId": "", "receipt.leaseUntil": "" } }
+      { $set: { "receipt.status": "failed", "receipt.lastError": clean(error?.message || "Không thể gửi email.", 240), "receipt.nextRetryAt": nextRetryAt, "receipt.updatedAt": failedAt }, $unset: { "receipt.leaseId": "", "receipt.leaseUntil": "" } }
     );
     return { status: "failed", recipient: maskEmail(recipient) };
   }
@@ -543,9 +605,12 @@ module.exports = async function handler(req, res) {
         { $set: { status: "verified", verifiedAt: now, updatedAt: now, paymentMethod: "payos_vietqr", payosPaymentLinkId: clean(payment.paymentLinkId, 100), payosTransactionReference: providerReference, payosTransactionTime: clean(payment.transactionDateTime, 80) }, $push: { history: { status: "verified", source: "payos_webhook", providerReference, at: now } } }
       );
       if (!verificationUpdate.modifiedCount) {
-        const current = await donations.findOne({ _id: donation._id }, { projection: { status: 1, payosTransactionReference: 1, receipt: 1, email: 1, reference: 1 } });
+        const current = await donations.findOne({ _id: donation._id });
         if (clean(current?.payosTransactionReference, 120) !== providerReference) return res.status(409).json({ error: "Webhook trùng orderCode nhưng khác mã giao dịch provider." });
-        return res.status(200).json({ success: true, duplicate: true, status: current.status, receipt: { status: receiptView(current).status } });
+        const recoveredReceipt = current?.status === "verified" && !current.receipt?.sentAt
+          ? await sendDonationThankYou(db, donations, current, "payos_webhook_retry")
+          : receiptView(current);
+        return res.status(200).json({ success: true, duplicate: true, status: current.status, receipt: { status: recoveredReceipt.status } });
       }
       await db.collection("events").updateOne(
         { type: "donation:payos_verified", providerReference },
@@ -566,6 +631,10 @@ module.exports = async function handler(req, res) {
         let item = await donations.findOne({ _id: lookupId, reference: lookupReference });
         if (!item) return res.status(404).json({ error: "Không tìm thấy giao dịch." });
         item = await reconcilePayOSStatus(db, donations, item);
+        if (item?.status === "verified" && !item.receipt?.sentAt) {
+          await sendDonationThankYou(db, donations, item, "status_poll_recovery");
+          item = await donations.findOne({ _id: lookupId, reference: lookupReference });
+        }
         return res.status(200).json({ donation: { id: String(item._id), reference: item.reference, amount: item.amount, status: item.status, paymentMethod: item.paymentMethod, missionId: missionIdOf(item.missionId), visibility: visibilityOf(item.visibility, item.anonymous), donorAlias: clean(item.donorAlias, 60), verifiedAt: item.verifiedAt || null, refundedAt: item.refundedAt || null, refund: item.refund ? { status: clean(item.refund.status, 40), providerReference: clean(item.refund.providerReference, 160) } : null, receipt: receiptView(item) } });
       }
       if (String(req.query.history || "") === "1") {

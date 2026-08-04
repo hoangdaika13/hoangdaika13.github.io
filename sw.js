@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v415";
+const CACHE = "hh-identity-portal-v416";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
@@ -326,12 +326,12 @@ const RUNTIME_ASSETS = [
   "./insights-pro.js?v=7",
   "./privacy-consent-center.js?v=2",
   "./creative-suite.js?v=7",
-  "./creative-os.css?v=4",
+  "./creative-os.css?v=5",
   "./creative-galaxy.css?v=3",
   "./creative-galaxy.js?v=4",
   "./creative-star-map.css?v=2",
   "./creative-star-map.js?v=3",
-  "./creative-os.js?v=10",
+  "./creative-os.js?v=11",
   "./creative-os-core.js?v=4",
   "./creative-command-center.css?v=2",
   "./creative-command-center.js?v=2",
@@ -428,7 +428,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=157",
+  "./performance-loader.js?v=158",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=165"

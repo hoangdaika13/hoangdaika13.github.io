@@ -28,6 +28,28 @@ test("receipt delivery is idempotent, leased and private", () => {
   assert.doesNotMatch(api, /RESEND_API_KEY[^\n]*(json|send|status)/i);
 });
 
+test("thank-you email is luxurious, Gmail-safe and includes verified receipt details", () => {
+  const api = read("api/donations.js");
+  assert.match(api, /<meta charset="utf-8">/);
+  assert.match(api, /name="viewport" content="width=device-width,initial-scale=1"/);
+  assert.match(api, /HH PLATFORM · PATRON LETTER/);
+  assert.match(api, /background-color:#f2d06b;background-image:linear-gradient/);
+  assert.match(api, /Hạng mục đồng hành/);
+  assert.match(api, /Mã thư xác nhận/);
+  assert.match(api, /Trân trọng,[\s\S]*Nhhoang[\s\S]*FOUNDER · HH PLATFORM/);
+  assert.match(api, /const missionLabel = mission\?\.label/);
+});
+
+test("failed receipt delivery recovers automatically without duplicate email bursts", () => {
+  const api = read("api/donations.js");
+  assert.match(api, /RECEIPT_RETRY_DELAYS_MS/);
+  assert.match(api, /receiptRetryDeferred/);
+  assert.match(api, /"receipt\.nextRetryAt": nextRetryAt/);
+  assert.match(api, /sendDonationThankYou\(db, donations, current, "payos_webhook_retry"\)/);
+  assert.match(api, /sendDonationThankYou\(db, donations, item, "status_poll_recovery"\)/);
+  assert.match(api, /if \(donation\.receipt\?\.sentAt\) return receiptView\(donation\)/);
+});
+
 test("support UI requires email and exposes an embedded payOS journey", () => {
   const client = read("support-platform.js");
   const styles = read("support-platform.css");
