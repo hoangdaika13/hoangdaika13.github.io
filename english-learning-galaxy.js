@@ -398,33 +398,53 @@
   const dashboardView = (state, context) => {
     const prefs = themePrefs();
     const tones = themeTones[prefs.theme] || themeTones.neon;
-    const planets = [
-      { id: "listening", view: "listening", code: "LI", title: "Listening Galaxy", detail: "Nghe, dictation, shadowing", tone: "cyan" },
-      { id: "reading", view: "reading", code: "RE", title: "Reading Galaxy", detail: "Đọc hiểu và sổ từ", tone: "magenta" },
-      { id: "speaking", view: "speaking", code: "SP", title: "Speaking Galaxy", detail: "Phát âm và hội thoại", tone: "coral" },
-      { id: "vocabulary", view: "vocabulary", code: "VO", title: "Vocabulary Planet", detail: "Ôn cách quãng", tone: "green" },
-      { id: "writing", view: "writing", code: "WR", title: "Writing Station", detail: "Viết và lưu phiên bản", tone: "purple" },
-      { id: "career", view: "career", code: "CE", title: "Career English", detail: "Tiếng Anh chuyên ngành", tone: "gold" },
-      { id: "roadmap", view: "learn", code: "A2", title: "CEFR Roadmap", detail: "Lộ trình A0 đến C2", tone: "blue" },
-      { id: "progress", view: "progress", code: "PX", title: "Progress Observatory", detail: "Tiến độ thật", tone: "ice" }
-    ];
-    const activity = (state.galaxy.activity || []).slice(0, 5);
-    return `<section class="hheg-shell" data-hheg-theme="${esc(prefs.theme || "neon")}" style="--hheg-theme-a:${tones[0]};--hheg-theme-b:${tones[1]};--hheg-glow:${clamp(prefs.glow || 70, 20, 100) / 100}">
-      ${orbitMarkup(state, context)}
-      <section class="hheg-hero">
-        <div class="hheg-nebula" aria-hidden="true"></div>
-        <header><div><small>HH ENGLISH · ENGLISH LEARNING GALAXY</small><h2>Học tiếng Anh như khám phá một vũ trụ sống.</h2><p>Tám hành tinh dùng chung dữ liệu học thật. Không có hoạt động sẽ không tạo số liệu mẫu.</p></div><button type="button" data-hhe-view="listen-read">Mở Listen & Read Together →</button></header>
-        <div class="hheg-system">
-          <div class="hheg-sun"><span>H</span><strong>ENGLISH</strong><small>${context.selectedLevelId(state)} · ${state.xp || 0} XP</small><i></i><i></i><i></i></div>
-          ${planets.map((planet) => planetMarkup(state, context, planet)).join("")}
-          <span class="hheg-orbit-line one"></span><span class="hheg-orbit-line two"></span><span class="hheg-orbit-line three"></span>
-        </div>
-      </section>
-      <section class="hheg-command-grid">${coachMarkup(state)}
-        <section class="hheg-activity"><header><div><small>GALAXY ACTIVITY</small><h3>Hoạt động gần đây</h3></div><button type="button" data-hhe-view="progress">Mở quan sát →</button></header>
-          ${activity.length ? activity.map((item) => `<button type="button" data-hhe-view="${esc(item.view || "dashboard")}"><i data-type="${esc(item.type)}"></i><span><strong>${esc(item.title)}</strong><small>${new Date(item.createdAt).toLocaleString("vi-VN")}</small></span><b>→</b></button>`).join("") : '<div class="hheg-empty"><span>✦</span><strong>Chưa có hoạt động</strong><p>Phát một bài nghe, mở bài đọc hoặc lưu từ để dòng hoạt động bắt đầu.</p></div>'}
-        </section>
-      </section>
+    const level = context.selectedLevelId(state);
+    const listening = listeningById(state.galaxy.selectedListeningId || levelListening(level).id);
+    const reading = readingById(state.galaxy.selectedReadingId || levelReading(level).id);
+    const listeningProgress = progressForListening(state, listening.id);
+    const readingProgress = progressForReading(state, reading.id);
+    const listeningDone = completedSentenceIndexes(listeningProgress, listening.sentences.length).length;
+    const readingDone = completedParagraphIndexes(readingProgress, reading.paragraphs.length).length;
+    const listeningPercent = Math.round(listeningDone / Math.max(1, listening.sentences.length) * 100);
+    const readingPercent = Math.max(Math.round(Number(readingProgress.percent) || 0), Math.round(readingDone / Math.max(1, reading.paragraphs.length) * 100));
+    const dueWords = Object.values(state.savedWords || {}).filter((item) => !state.reviewQueue?.[item.word]?.dueAt || new Date(state.reviewQueue[item.word].dueAt) <= new Date()).length;
+    const savedWords = Object.keys(state.savedWords || {}).length;
+    const minutes = Number(state.minutesByDay?.[context.todayKey()] || 0);
+    const dailyGoal = Math.max(1, Number(state.dailyGoal) || 15);
+    const goalPercent = Math.min(100, Math.round(minutes / dailyGoal * 100));
+    const completedLessons = context.completedCount(state, level);
+    const activity = (state.galaxy.activity || []).slice(0, 3);
+    const hour = new Date().getHours();
+    const greeting = hour < 11 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
+    const continueReading = readingProgress.openedAt && (!listeningProgress.lastPlayedAt || new Date(readingProgress.openedAt) > new Date(listeningProgress.lastPlayedAt));
+    const continueView = continueReading ? "reading" : "listening";
+    const continueTitle = continueReading ? reading.title : listening.title;
+    return `<section class="hheg-shell hheg-home" data-hheg-theme="${esc(prefs.theme || "neon")}" style="--hheg-theme-a:${tones[0]};--hheg-theme-b:${tones[1]};--hheg-glow:${clamp(prefs.glow || 70, 20, 100) / 100}">
+      <header class="hheg-home-hero">
+        <div><small>HH ENGLISH · HÔM NAY</small><h2>${greeting}, sẵn sàng học tiếp chứ?</h2><p>Một nơi để tiếp tục bài đang dở, ôn đúng từ đến hạn và xem tiến độ thật của bạn.</p></div>
+        <div class="hheg-home-hero-stats" aria-label="Tóm tắt học tập"><span><b>${esc(level)}</b> CEFR</span><span><b>${Number(state.xp) || 0}</b> XP</span><span><b>${Number(state.streak?.current) || 0}</b> ngày liên tiếp</span></div>
+        <button class="primary" type="button" data-hhe-view="${continueView}"><span>Tiếp tục học</span><strong>${esc(continueTitle)}</strong><b>→</b></button>
+      </header>
+      <div class="hheg-home-grid">
+        <main>
+          <section class="hheg-home-panel hheg-home-tasks"><header><div><small>VIỆC NÊN LÀM</small><h3>Kế hoạch ngắn cho hôm nay</h3></div><button type="button" data-hhe-view="plan">Xem kế hoạch</button></header>
+            <div class="hheg-home-task-list">
+              <button type="button" data-hhe-view="listening"><i data-tone="cyan">▶</i><span><strong>${esc(listening.title)}</strong><small>Nghe · câu ${Math.min(listeningDone + 1, listening.sentences.length)}/${listening.sentences.length}</small></span><em>${listeningPercent}%</em><b style="--p:${listeningPercent}%"></b></button>
+              <button type="button" data-hhe-view="reading"><i data-tone="magenta">Aa</i><span><strong>${esc(reading.title)}</strong><small>Đọc · đoạn ${Math.min(readingDone + 1, reading.paragraphs.length)}/${reading.paragraphs.length}</small></span><em>${readingPercent}%</em><b style="--p:${readingPercent}%"></b></button>
+              <button type="button" data-hhe-view="vocabulary"><i data-tone="green">◇</i><span><strong>${dueWords ? `Ôn ${dueWords} từ đến hạn` : "Ôn từ vựng"}</strong><small>${savedWords ? `${savedWords} từ đã lưu trong sổ từ` : "Lưu từ trong bài học để bắt đầu SRS"}</small></span><em>${dueWords ? "Ôn ngay" : "Mở sổ"}</em></button>
+              <button type="button" data-hhe-view="learn"><i data-tone="gold">${esc(level)}</i><span><strong>Lộ trình CEFR ${esc(level)}</strong><small>${completedLessons} bài đã hoàn thành ở trình độ này</small></span><em>Mở bài</em></button>
+            </div>
+          </section>
+          <section class="hheg-home-panel hheg-home-activity"><header><div><small>HOẠT ĐỘNG GẦN ĐÂY</small><h3>Dữ liệu học thật</h3></div><button type="button" data-hhe-view="progress">Xem tiến độ</button></header>
+            <div>${activity.length ? activity.map((item) => `<button type="button" data-hhe-view="${esc(item.view || "dashboard")}"><i></i><span><strong>${esc(item.title)}</strong><small>${new Date(item.createdAt).toLocaleString("vi-VN")}</small></span><b>→</b></button>`).join("") : '<p class="hheg-home-empty">Chưa có hoạt động. Hãy bắt đầu một bài nghe, bài đọc hoặc lưu từ đầu tiên.</p>'}</div>
+          </section>
+        </main>
+        <aside>
+          <section class="hheg-home-panel hheg-home-progress"><header><div><small>MỤC TIÊU HÔM NAY</small><h3>${minutes}/${dailyGoal} phút</h3></div><strong>${goalPercent}%</strong></header><div class="hheg-home-meter"><i style="--p:${goalPercent}%"></i></div><p>${goalPercent >= 100 ? "Bạn đã hoàn thành mục tiêu hôm nay." : `Còn ${Math.max(0, dailyGoal - minutes)} phút để hoàn thành mục tiêu.`}</p><button class="primary" type="button" data-hhe-view="${continueView}">Học tiếp ngay →</button></section>
+          <section class="hheg-home-panel hheg-home-tools"><header><div><small>CÔNG CỤ NHANH</small><h3>Mở đúng nơi cần dùng</h3></div></header><div><button type="button" data-hhe-view="speaking"><i>●</i><span>Phát âm</span></button><button type="button" data-hhe-view="listen-read"><i>◫</i><span>Nghe & đọc</span></button><button type="button" data-hhe-view="career"><i>▦</i><span>Chuyên ngành</span></button><button type="button" data-hhe-view="settings"><i>⚙</i><span>Cài đặt</span></button></div></section>
+          <p class="hheg-home-saved"><i></i> Tự lưu trên thiết bị · ${esc(formatSaved(state.galaxy.lastSavedAt))}</p>
+        </aside>
+      </div>
     </section>`;
   };
 
@@ -1087,7 +1107,7 @@
       const exists = state.galaxy.offlineListening.includes(item.id);
       state.galaxy.offlineListening = exists ? state.galaxy.offlineListening.filter((id) => id !== item.id) : [...state.galaxy.offlineListening, item.id];
       stateWrite(instance, state, { render: true });
-      if (!exists && root.caches) root.caches.open("hh-english-offline-v1").then((cache) => cache.addAll(["./english-learning-galaxy.js?v=1", "./english-learning-galaxy.css?v=1"])).catch(() => {});
+      if (!exists && root.caches) root.caches.open("hh-english-offline-v1").then((cache) => cache.addAll(["./english-learning-galaxy.js?v=4", "./english-learning-galaxy.css?v=6"])).catch(() => {});
       instance.runtime.toast(exists ? "Đã bỏ đánh dấu ngoại tuyến." : "Đã lưu nội dung. Âm thanh sẽ dùng giọng cục bộ của thiết bị.");
     } else if (action === "shadow") {
       state.galaxy.shadowingTarget = rows[instance.player.sentenceIndex || 0]?.en || rows[0].en;

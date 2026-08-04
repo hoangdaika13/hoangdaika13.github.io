@@ -248,3 +248,18 @@ test("one-page reading keeps later paragraphs locked and exposes every tool with
   const client = fs.readFileSync(path.join(__dirname, "..", "english-learning-galaxy.js"), "utf8");
   for (const capability of ["hheg-reading-onepage", "hheg-reading-stage", "data-hheg-paragraph-step", "data-hheg-reading-tool", "complete-paragraph", "Đọc", "Tra từ", "Ghi chú", "Hiển thị"]) assert.match(client, new RegExp(capability));
 });
+
+test("HH English dashboard is compact while lesson workspaces keep their bounded layout", () => {
+  const client = fs.readFileSync(path.join(__dirname, "..", "english-learning-galaxy.js"), "utf8");
+  const shell = fs.readFileSync(path.join(__dirname, "..", "english-learning.js"), "utf8");
+  const baseCss = fs.readFileSync(path.join(__dirname, "..", "english-learning.css"), "utf8");
+  const dashboardStart = client.indexOf("const dashboardView");
+  const dashboardEnd = client.indexOf("const libraryCards", dashboardStart);
+  const dashboard = client.slice(dashboardStart, dashboardEnd);
+  for (const capability of ["hheg-home", "hheg-home-hero", "hheg-home-task-list", "hheg-home-progress", "hheg-home-tools"]) assert.match(dashboard, new RegExp(capability));
+  assert.doesNotMatch(dashboard, /hheg-system|hheg-planet|orbitMarkup/);
+  assert.match(baseCss, /\.app-english-route \.app-workspace\{height:auto/);
+  assert.match(baseCss, /\.hhe-app:is\(\[data-view="listening"\],\[data-view="reading"\]\)\{height:calc\(100dvh - 106px\)/);
+  assert.match(shell, /const scrollContainers = \[/);
+  assert.doesNotMatch(shell.slice(shell.indexOf("const focusCurrentView"), shell.indexOf("const render", shell.indexOf("const focusCurrentView"))), /scrollIntoView/);
+});

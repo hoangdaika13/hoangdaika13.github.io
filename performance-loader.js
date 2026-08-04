@@ -178,8 +178,8 @@
       ]
     },
     english: {
-      styles: ["english-learning.css?v=14", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=3"],
-      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=1", "english-learning-galaxy.js?v=3", "english-learning.js?v=18"]
+      styles: ["english-learning.css?v=16", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6"],
+      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=1", "english-learning-galaxy.js?v=4", "english-learning.js?v=19"]
     },
     japanese: {
       styles: ["japanese-learning.css?v=7"],

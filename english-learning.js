@@ -1021,8 +1021,18 @@
   };
 
   const focusCurrentView = () => root.requestAnimationFrame?.(() => {
+    const scrollContainers = [
+      host?.closest?.(".app-main"),
+      host?.closest?.(".app-workspace"),
+      host?.querySelector?.(".hhe-view-stage"),
+      root.document?.scrollingElement
+    ].filter((node, index, list) => node && list.indexOf(node) === index);
+    scrollContainers.forEach((node) => {
+      node.scrollTop = 0;
+      node.scrollLeft = 0;
+    });
+    root.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
     const heading = host?.querySelector(".hhe-main h2, .hhe-main h3");
-    heading?.scrollIntoView?.({ behavior: "auto", block: "start" });
     heading?.setAttribute?.("tabindex", "-1");
     heading?.focus?.({ preventScroll: true });
   });
