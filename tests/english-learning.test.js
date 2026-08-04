@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
 const fs = require("node:fs");
 const path = require("node:path");
-const { defaultState: galaxyDefaultState, listeningLibrary, progressForListening, unlockedSentenceIndex, completeListeningSentence } = require("../english-learning-galaxy.js");
+const { defaultState: galaxyDefaultState, listeningLibrary, readingLibrary, progressForListening, progressForReading, unlockedSentenceIndex, completeListeningSentence, completedParagraphIndexes, unlockedParagraphIndex } = require("../english-learning-galaxy.js");
 
 test("CEFR curriculum contains seven levels and sixty-nine complete lessons", () => {
   assert.deepEqual(courseLevels.map((level) => level.id), ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
@@ -235,4 +235,16 @@ test("HH English exposes the complete no-page-scroll learning workspace contract
   for (const navigation of ["Hôm nay", "Học", "Tra cứu", "Ôn tập", "CEFR", "Tiến độ", "data-hhe-nav-toggle"]) assert.match(shell, new RegExp(navigation));
   assert.match(css, /grid-template-rows:60px minmax\(0,1fr\) 56px/);
   assert.match(css, /overflow:hidden/);
+});
+
+test("one-page reading keeps later paragraphs locked and exposes every tool without stacking", () => {
+  const state = { ...galaxyDefaultState(), galaxy: galaxyDefaultState().galaxy };
+  const article = readingLibrary[0];
+  const progress = progressForReading(state, article.id);
+  assert.equal(unlockedParagraphIndex(progress, article.paragraphs.length), 0);
+  progress.completedParagraphs = [0];
+  assert.deepEqual(completedParagraphIndexes(progress, article.paragraphs.length), [0]);
+  assert.equal(unlockedParagraphIndex(progress, article.paragraphs.length), 1);
+  const client = fs.readFileSync(path.join(__dirname, "..", "english-learning-galaxy.js"), "utf8");
+  for (const capability of ["hheg-reading-onepage", "hheg-reading-stage", "data-hheg-paragraph-step", "data-hheg-reading-tool", "complete-paragraph", "Đọc", "Tra từ", "Ghi chú", "Hiển thị"]) assert.match(client, new RegExp(capability));
 });
