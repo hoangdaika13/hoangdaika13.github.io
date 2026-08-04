@@ -281,6 +281,7 @@
     version: APP_VERSION, activeView: "dashboard", activeLesson: lessonIds[0], completed: {}, attempts: {}, savedWords: {}, reviewQueue: {}, xp: 0,
     streak: { current: 0, longest: 0, lastDate: "" }, dailyGoal: 15, studyDays: [1, 2, 3, 4, 5], minutesByDay: {}, placement: null, placementRewarded: false, selectedLevel: "A0", selectedCareer: careerTracks[0]?.id || "", careerSurvey: null, careerSurveyRewarded: false, favoriteCareers: [], writingDraft: "", writingDrafts: {}, writingHistory: [], practice: { listening: 0, reading: 0, grammar: 0 }, practiceByLevel: {},
     galaxyTopic: "all", galaxyLevel: "all", galaxyPackStatus: {}, galaxyMode: "flashcards", galaxyCursor: 0, galaxySession: { correct: 0, attempts: 0, startedAt: "" }, wordMastery: {}, mistakeNotebook: [], modeStats: {},
+    vocabularyStudio: { activeTab: "explorer", selectedTerm: "", filters: { level: "all", topic: "all", pos: "all", source: "all", mastery: "all", dialect: "us", query: "" }, lesson: null, notes: {}, personalDictionary: [], lastCoverage: null },
     onboarding: { completed: false, dismissed: false, rewarded: false, completedAt: "" },
     learnerProfile: { confidence: "", focusSkill: "speaking", needsPlacement: false },
     careerProfile: { roleStage: "student", skillFocus: "speaking", intensity: "foundation" },
@@ -305,7 +306,14 @@
       onboarding: { ...fallback.onboarding, ...(stored.onboarding || {}) },
       learnerProfile: { ...fallback.learnerProfile, ...(stored.learnerProfile || {}) },
       careerProfile: { ...fallback.careerProfile, ...(stored.careerProfile || {}) },
-      settings: { ...fallback.settings, ...(stored.settings || {}) }
+      settings: { ...fallback.settings, ...(stored.settings || {}) },
+      vocabularyStudio: {
+        ...fallback.vocabularyStudio,
+        ...(stored.vocabularyStudio || {}),
+        filters: { ...fallback.vocabularyStudio.filters, ...(stored.vocabularyStudio?.filters || {}) },
+        notes: { ...(stored.vocabularyStudio?.notes || {}) },
+        personalDictionary: Array.isArray(stored.vocabularyStudio?.personalDictionary) ? stored.vocabularyStudio.personalDictionary.slice(0, 1000) : []
+      }
     };
     return root.HHEnglishLearningGalaxy?.mergeState?.(merged, stored, fallback) || merged;
   };
@@ -1048,7 +1056,7 @@
       escapeHtml, normalize, todayKey
     });
     if (typeof learningGalaxyContent === "string") content = learningGalaxyContent;
-    else if (state.activeView === "galaxy") content = galaxyView(state);
+    else if (state.activeView === "galaxy") content = root.HHEnglishVocabulary?.renderShell?.(state) || galaxyView(state);
     else if (state.activeView === "lab") content = labView(state);
     else if (state.activeView === "plan") content = smartPlanView(state);
     else if (state.activeView === "learn") content = learnView(state);
@@ -1075,6 +1083,7 @@
       voiceProfileById, compareTranscript, escapeHtml, selectedLevelId, todayKey,
       scheduleReview, updateStreak
     });
+    root.HHEnglishVocabulary?.mount?.({ host, state, readState, writeState, render, toast, speak, selectedLevelId, scheduleReview });
     updateFocusClock();
     if (shouldFocus) focusCurrentView();
   };
@@ -1623,7 +1632,7 @@
     render();
   };
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
-  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishLearningGalaxy?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
+  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishLearningGalaxy?.unmount?.(host); root.HHEnglishVocabulary?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
   root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, galaxyData };
   if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, galaxyData };

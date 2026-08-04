@@ -13,3 +13,5 @@ assets/astral-realms/characters/sketchfab-cc-by/qa-renders/
 assets/astral-realms/weapons/models/*.uncompressed.glb
 .env*
 !.env.example
+__pycache__/
+*.pyc

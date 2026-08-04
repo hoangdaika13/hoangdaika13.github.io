@@ -8,8 +8,9 @@
     B2: "#ff72c9", C1: "#ffe27a", C2: "#f4f7ff"
   };
   const targets = Object.freeze({
-    general: 5000, collocations: 3000, idioms: 1500, career: 4000,
-    confusables: 500, sentences: 5000
+    unique: 30000, general: 5000, core: 5000, cefr: 12000, academic: 3000,
+    career: 15000, phrasalVerbs: 2000, idioms: 2000, collocations: 15000,
+    confusables: 1000, sentences: 5000
   });
   const learningModes = Object.freeze([
     { id: "flashcards", icon: "◈", title: "Flashcard hai chiều", detail: "Anh ↔ Việt, lật thẻ và tự đánh giá" },
@@ -27,7 +28,10 @@
     { id: "speed-review", icon: "⚡", title: "Speed Review 60s", detail: "Ôn nhanh các từ sắp đến hạn" },
     { id: "mistakes", icon: "⚠", title: "Mistake Notebook", detail: "Chỉ ôn những lỗi gần đây" },
     { id: "word-family", icon: "✣", title: "Word Family", detail: "Mở rộng noun, verb, adjective, adverb" },
-    { id: "picture-vocabulary", icon: "✧", title: "Picture Vocabulary", detail: "Học bằng hình dung và tình huống" }
+    { id: "picture-vocabulary", icon: "✧", title: "Picture Vocabulary", detail: "Học bằng hình dung và tình huống" },
+    { id: "phrasal-verbs", icon: "↗", title: "Phrasal Verb Builder", detail: "Chọn cụm động từ đúng theo ngữ cảnh" },
+    { id: "idioms", icon: "❝", title: "Idiom Studio", detail: "Hiểu thành ngữ và sắc thái sử dụng" },
+    { id: "minimal-pairs", icon: "◉", title: "Minimal Pairs", detail: "Nghe và phân biệt các cặp âm gần nhau" }
   ]);
   const topicSystems = Object.freeze([
     { id: "daily", icon: "☼", title: "Everyday Orbit", vi: "Đời sống hằng ngày", color: "#8ff7d1", tags: ["daily", "life", "family"] },
@@ -72,6 +76,31 @@
     ["historic", "historical", "historic quan trọng trong lịch sử; historical thuộc lịch sử"],
     ["principal", "principle", "principal là chính/hiệu trưởng; principle là nguyên tắc"],
     ["stationary", "stationery", "stationary là đứng yên; stationery là văn phòng phẩm"]
+  ]);
+  const phrasalVerbSeeds = Object.freeze([
+    ["bring up", "đề cập", "She brought up an important question."], ["call off", "hủy bỏ", "They called off the meeting."],
+    ["carry on", "tiếp tục", "Please carry on with your work."], ["come across", "tình cờ gặp", "I came across an old photo."],
+    ["figure out", "tìm ra; hiểu ra", "We need to figure out the cause."], ["find out", "phát hiện", "I found out the answer."],
+    ["get along", "hòa hợp", "The new teammates get along well."], ["give up", "từ bỏ", "Do not give up after one mistake."],
+    ["look after", "chăm sóc", "She looks after her younger brother."], ["look into", "điều tra; xem xét", "The team will look into the issue."],
+    ["pick up", "nhặt; đón; học được", "I picked up useful phrases from the podcast."], ["put off", "trì hoãn", "Do not put off the decision."],
+    ["run into", "tình cờ gặp; gặp vấn đề", "We ran into a technical problem."], ["set up", "thiết lập", "They set up a new account."],
+    ["take over", "tiếp quản", "A new manager will take over the project."], ["turn down", "từ chối; giảm", "He turned down the offer."],
+    ["work out", "giải quyết; tập luyện", "We worked out a practical solution."], ["check in", "làm thủ tục", "Passengers can check in online."],
+    ["log in", "đăng nhập", "Log in with your account."], ["back up", "sao lưu", "Back up the project before editing it."]
+  ]);
+  const idiomSeeds = Object.freeze([
+    ["a piece of cake", "việc rất dễ", "The first exercise was a piece of cake."], ["break the ice", "phá tan sự ngượng ngùng", "A short game helped break the ice."],
+    ["call it a day", "kết thúc công việc hôm nay", "We have finished the draft, so let's call it a day."], ["get the ball rolling", "khởi động công việc", "The agenda will get the ball rolling."],
+    ["hit the nail on the head", "nói đúng trọng tâm", "Your explanation hit the nail on the head."], ["in the same boat", "cùng hoàn cảnh", "New learners are all in the same boat."],
+    ["learn the ropes", "học cách làm việc", "It took a week to learn the ropes."], ["on the same page", "cùng hiểu và đồng thuận", "Let's confirm that everyone is on the same page."],
+    ["pull someone's leg", "trêu ai đó", "I was only pulling your leg."], ["under the weather", "cảm thấy không khỏe", "I am feeling under the weather today."],
+    ["up in the air", "chưa được quyết định", "The launch date is still up in the air."], ["the bigger picture", "bức tranh toàn cảnh", "The report helps us see the bigger picture."]
+  ]);
+  const minimalPairSeeds = Object.freeze([
+    ["ship", "sheep", "con tàu / con cừu"], ["live", "leave", "sống / rời đi"], ["full", "fool", "đầy / người ngốc"],
+    ["bed", "bad", "giường / tệ"], ["hat", "hot", "mũ / nóng"], ["fan", "van", "quạt / xe tải nhỏ"],
+    ["rice", "lice", "gạo / chấy"], ["thin", "tin", "mỏng / hộp thiếc"], ["sink", "think", "bồn rửa / suy nghĩ"], ["west", "vest", "phía tây / áo ghi-lê"]
   ]);
   const fallbackCurriculum = () => {
     try { return root.HHEnglishCurriculum || require("./english-curriculum.js"); } catch { return { levels: [] }; }
@@ -156,6 +185,20 @@
     if (mode === "mini-story") return { mode, modeTitle: modeConfig.title, word, type: "story", prompt: `Đọc mini story và tìm từ khóa “${word.term}”.`, answer: word.term, sentence: `Today I wanted to make progress. ${sentence} This small step helped me continue.` };
     if (mode === "word-family") return { mode, modeTitle: modeConfig.title, word, type: "text", prompt: `Viết một từ cùng họ với “${word.term}”.`, answer: wordFamily(word.term)[1] || word.term, sentence, family: wordFamily(word.term) };
     if (mode === "picture-vocabulary") return { mode, modeTitle: modeConfig.title, word, type: "text", prompt: `Hãy hình dung cảnh: ${word.example || word.meaning}. Từ tiếng Anh là gì?`, answer: word.term, sentence };
+    if (mode === "phrasal-verbs") {
+      const row = phrasalVerbSeeds[Math.abs(Number(cursor) || 0) % phrasalVerbSeeds.length];
+      const alternatives = phrasalVerbSeeds.filter((item) => item[0] !== row[0]).slice((Number(cursor) || 0) % 5, (Number(cursor) || 0) % 5 + 3).map((item) => item[0]);
+      return { mode, modeTitle: modeConfig.title, word: { term: row[0], meaning: row[1], example: row[2], level: "B1", topic: "daily" }, type: "choice", prompt: `Cụm động từ nào có nghĩa “${row[1]}”?`, answer: row[0], options: [row[0], ...alternatives], sentence: row[2] };
+    }
+    if (mode === "idioms") {
+      const row = idiomSeeds[Math.abs(Number(cursor) || 0) % idiomSeeds.length];
+      const alternatives = idiomSeeds.filter((item) => item[0] !== row[0]).slice((Number(cursor) || 0) % 4, (Number(cursor) || 0) % 4 + 2).map((item) => item[1]);
+      return { mode, modeTitle: modeConfig.title, word: { term: row[0], meaning: row[1], example: row[2], level: "B1", topic: "daily" }, type: "choice", prompt: `“${row[0]}” được dùng với nghĩa nào?`, answer: row[1], options: [row[1], ...alternatives], sentence: row[2] };
+    }
+    if (mode === "minimal-pairs") {
+      const row = minimalPairSeeds[Math.abs(Number(cursor) || 0) % minimalPairSeeds.length];
+      return { mode, modeTitle: modeConfig.title, word: { term: row[0], meaning: row[2], example: row[0], level: "A1", topic: "daily" }, type: "choice", prompt: `Nghe từ mẫu rồi chọn chính xác: “${row[0]}” hay “${row[1]}”?`, answer: row[0], options: [row[0], row[1]], sentence: row[0] };
+    }
     if (mode === "speed-review" || mode === "mistakes") return { mode, modeTitle: modeConfig.title, word, type: "choice", prompt: `Chọn nghĩa đúng của “${word.term}”.`, answer: word.meaning, options, sentence };
     if (mode === "collocation") return { mode, modeTitle: modeConfig.title, word, type: "choice", prompt: `Cụm nào dùng tự nhiên với “${word.term}”?`, answer: phraseSeeds.find((item) => item[0].includes(word.term))?.[0] || `${word.term} in context`, options: [phraseSeeds.find((item) => item[0].includes(word.term))?.[0] || `${word.term} in context`, "blue context", "quick planet"], sentence };
     if (mode === "confusables") {
@@ -171,9 +214,12 @@
     targets,
     packs: packs.map(({ id, level, title, color, count, target }) => ({ id, level, title, color, count, target })),
     phrases: phraseSeeds.length,
-    confusables: confusablePairs.length
+    confusables: confusablePairs.length,
+    phrasalVerbs: phrasalVerbSeeds.length,
+    idioms: idiomSeeds.length,
+    minimalPairs: minimalPairSeeds.length
   });
-  const api = { levels, levelColors, targets, learningModes, topicSystems, phraseSeeds, confusablePairs, catalog, packs, seedWords, buildChallenge, stats, wordFamily, fold };
+  const api = { levels, levelColors, targets, learningModes, topicSystems, phraseSeeds, confusablePairs, phrasalVerbSeeds, idiomSeeds, minimalPairSeeds, catalog, packs, seedWords, buildChallenge, stats, wordFamily, fold };
   root.HHEnglishGalaxy = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
