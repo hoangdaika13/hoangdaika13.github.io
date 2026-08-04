@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v426";
+const CACHE = "hh-identity-portal-v429";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
@@ -306,10 +306,11 @@ const RUNTIME_ASSETS = [
   "./learning-lesson-player.css?v=2",
   "./learning-coach-labs.css?v=3",
   "./learning-classroom.css?v=3",
-  "./english-learning.css?v=16",
+  "./english-learning.css?v=17",
   "./english-galaxy.css?v=1",
   "./english-learning-galaxy.css?v=6",
   "./english-vocabulary.css?v=1",
+  "./english-for-everyone.css?v=1",
   "./english-voice-coach.css?v=4",
   "./japanese-learning.css?v=7",
   "./community-social-pro.css?v=3",
@@ -407,8 +408,9 @@ const RUNTIME_ASSETS = [
   "./english-learning-galaxy.js?v=4",
   "./english-vocabulary.js?v=1",
   "./english-vocabulary-worker.js?v=1",
+  "./english-for-everyone.js?v=2",
   "./assets/english-vocabulary/manifest.json",
-  "./english-learning.js?v=20",
+  "./english-learning.js?v=22",
   "./japanese-vocabulary-packs.js?v=1",
   "./japanese-vocabulary-10k.js?v=1",
   "./japanese-learning.js?v=7",
@@ -432,7 +434,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=170",
+  "./performance-loader.js?v=173",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=6",
   "./script.js?v=165"

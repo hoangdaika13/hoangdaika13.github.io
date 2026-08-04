@@ -77,7 +77,7 @@ test("one-page vocabulary studio exposes explorer, lesson, labs, privacy and laz
   const css = fs.readFileSync(path.join(root, "english-vocabulary.css"), "utf8");
   const loader = fs.readFileSync(path.join(root, "performance-loader.js"), "utf8");
   const serviceWorker = fs.readFileSync(path.join(root, "sw.js"), "utf8");
-  for (const token of ["Vocabulary Explorer", "Học 15 từ", "Word Family Map", "Confusing Words Lab", "Phrasal Verb Builder", "Collocation Trainer", "Minimal Pairs", "Mistake Notebook", "Cloze Story", "Personal Dictionary", "READING COVERAGE", "indexedDB", "checksum", "Web Worker"]) assert.match(`${source}\n${css}`, new RegExp(token, "i"));
+  for (const token of ["Vocabulary Explorer", "lessonSize", "Word Family Map", "Confusing Words Lab", "Phrasal Verb Builder", "Collocation Trainer", "Minimal Pairs", "Mistake Notebook", "Cloze Story", "Personal Dictionary", "READING COVERAGE", "indexedDB", "checksum", "Web Worker"]) assert.match(`${source}\n${css}`, new RegExp(token, "i"));
   for (const asset of ["english-vocabulary.css?v=1", "english-vocabulary.js?v=1", "english-vocabulary-worker.js?v=1", "assets/english-vocabulary/manifest.json"]) {
     assert.match(loader + serviceWorker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }

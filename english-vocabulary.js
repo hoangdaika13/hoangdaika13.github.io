@@ -54,6 +54,8 @@
     collocations: Array.isArray(item.collocations) ? item.collocations.map((value) => boundedString(value, 120)).filter(Boolean).slice(0, 12) : [],
     synonyms: Array.isArray(item.synonyms) ? item.synonyms.map((value) => boundedString(value, 80)).filter(Boolean).slice(0, 12) : [],
     antonyms: Array.isArray(item.antonyms) ? item.antonyms.map((value) => boundedString(value, 80)).filter(Boolean).slice(0, 12) : [],
+    ageBands: Array.isArray(item.ageBands) ? item.ageBands.map((value) => boundedString(value, 20)).filter(Boolean).slice(0, 6) : [],
+    contentRating: boundedString(item.contentRating, 20) || "everyone", reviewStatus: boundedString(item.reviewStatus, 20) || (item.meaning ? "reviewed" : "unreviewed"),
     reviewed: Boolean(item.meaning), verification: item.meaning ? "reviewed" : "term-index"
   });
   const normalizeStudio = (state = {}) => {
@@ -80,7 +82,8 @@
     return mistakes / attempts;
   };
   const buildLesson = (words = [], state = {}, requested = 15) => {
-    const count = mistakeRate(state) > .45 ? Math.min(10, requested) : Math.min(15, requested);
+    const adaptiveCount = Number(root.HHEnglishForEveryone?.lessonPolicy?.(state)?.wordCount);
+    const count = adaptiveCount > 0 ? Math.min(requested, adaptiveCount) : mistakeRate(state) > .45 ? Math.min(10, requested) : Math.min(15, requested);
     const dueTerms = new Set(Object.values(state.savedWords || {}).filter((item) => isDue(state, item.word || item.term)).map((item) => normalizeTerm(item.word || item.term)));
     const mistakes = new Set((state.mistakeNotebook || []).map((item) => normalizeTerm(item.word || item.term)).filter(Boolean));
     const pool = uniqueBy(words.map(reviewedEntry).filter((item) => item.term && item.meaning), (item) => normalizeTerm(item.term));
@@ -184,9 +187,10 @@
     const studio = normalizeStudio(state);
     const reviewed = reviewedCatalog().filter((item) => item.reviewed).length;
     const saved = Object.keys(state.savedWords || {}).length;
+    const lessonSize = Number(root.HHEnglishForEveryone?.lessonPolicy?.(state)?.wordCount) || 15;
     return `<section class="hhev-studio" data-hhev-studio>
-      <header class="hhev-head"><div><small>HH ENGLISH · VOCABULARY OS</small><h2>Vocabulary Explorer</h2><p>30.000 mục từ thật · nghĩa Việt và CEFR chỉ hiện khi đã được kiểm duyệt.</p></div><div><span><b>30K</b> term index</span><span><b>${reviewed}</b> đã kiểm duyệt</span><span><b>${saved}</b> đã lưu</span></div><button class="primary" type="button" data-hhev-start-lesson>Học 15 từ →</button></header>
-      <nav class="hhev-tabs" aria-label="Khu từ vựng">${[["explorer", "⌕", "Tra cứu"], ["lesson", "▶", "Bài 15 từ"], ["labs", "✦", "Luyện sâu"], ["personal", "◇", "Từ của tôi"]].map(([id, icon, label]) => `<button type="button" class="${studio.activeTab === id ? "active" : ""}" data-hhev-tab="${id}"><i>${icon}</i>${label}</button>`).join("")}</nav>
+      <header class="hhev-head"><div><small>HH ENGLISH · VOCABULARY OS</small><h2>Vocabulary Explorer</h2><p>30.000 mục từ thật · nghĩa Việt và CEFR chỉ hiện khi đã được kiểm duyệt.</p></div><div><span><b>30K</b> term index</span><span><b>${reviewed}</b> đã kiểm duyệt</span><span><b>${saved}</b> đã lưu</span></div><button class="primary" type="button" data-hhev-start-lesson>Học ${lessonSize} từ →</button></header>
+      <nav class="hhev-tabs" aria-label="Khu từ vựng">${[["explorer", "⌕", "Tra cứu"], ["lesson", "▶", `Bài ${lessonSize} từ`], ["labs", "✦", "Luyện sâu"], ["personal", "◇", "Từ của tôi"]].map(([id, icon, label]) => `<button type="button" class="${studio.activeTab === id ? "active" : ""}" data-hhev-tab="${id}"><i>${icon}</i>${label}</button>`).join("")}</nav>
       <div class="hhev-body" data-hhev-body><div class="hhev-loading"><i></i><strong>Đang chuẩn bị kho từ...</strong><span>Chỉ nạp pack khi bạn cần.</span></div></div>
     </section>`;
   };
@@ -194,7 +198,9 @@
   const options = (rows, selected) => rows.map(([value, label]) => `<option value="${esc(value)}" ${selected === value ? "selected" : ""}>${esc(label)}</option>`).join("");
   const filterReviewed = (instance, state, filters) => {
     const query = normalizeTerm(filters.query);
-    return reviewedCatalog().filter((item) => {
+    const ageMode = state.universalProfile?.ageMode || "adult";
+    const catalog = root.HHEnglishForEveryone?.contentForAge?.(reviewedCatalog(), ageMode) || reviewedCatalog();
+    return catalog.filter((item) => {
       const haystack = normalizeTerm(`${item.term} ${item.meaning} ${item.example} ${item.collocations.join(" ")}`);
       if (query && !haystack.includes(query)) return false;
       if (filters.level !== "all" && item.level !== filters.level) return false;
@@ -226,7 +232,8 @@
   const lessonChoices = (word, lesson) => uniqueBy([word.meaning, ...lesson.words.filter((item) => item.term !== word.term).map((item) => item.meaning)], normalizeTerm).slice(0, 4);
   const renderLesson = (instance, state) => {
     const studio = normalizeStudio(state); const lesson = studio.lesson;
-    if (!lesson?.words?.length) return `<section class="hhev-lesson-empty"><span>15</span><h3>Bài từ vựng ngắn, học tuần tự</h3><p>HH ưu tiên từ đến hạn, từ đã sai và từ đúng trình độ. Khi tỷ lệ quên cao, bài tự giảm xuống 10 từ.</p><button class="primary" type="button" data-hhev-start-lesson>Bắt đầu bài mới</button></section>`;
+    const lessonSize = Number(root.HHEnglishForEveryone?.lessonPolicy?.(state)?.wordCount) || 15;
+    if (!lesson?.words?.length) return `<section class="hhev-lesson-empty"><span>${lessonSize}</span><h3>Bài từ vựng ngắn, học tuần tự</h3><p>HH ưu tiên từ đến hạn, từ đã sai và điều chỉnh số lượng theo chế độ tuổi cùng tỷ lệ quên thật.</p><button class="primary" type="button" data-hhev-start-lesson>Bắt đầu bài mới</button></section>`;
     if (lesson.completedAt) return `<section class="hhev-lesson-complete"><span>✓</span><h3>Đã hoàn thành ${lesson.words.length} từ</h3><p>${lesson.errors} lỗi đã được đưa vào dữ liệu ôn tập. Bạn có thể học lại hoặc mở Mistake Notebook.</p><div><button type="button" data-hhev-open-mode="mistakes">Ôn từ sai</button><button class="primary" type="button" data-hhev-start-lesson>Bài mới →</button></div></section>`;
     const current = Math.min(lesson.words.length - 1, Number(lesson.current) || 0); const step = Math.min(lessonSteps.length - 1, Number(lesson.step) || 0); const word = lesson.words[current]; const stepId = lessonSteps[step][0];
     let task = "";
@@ -311,7 +318,8 @@
   };
   const paintDetail = async (instance, result) => {
     const state = instance.runtime.readState(); const studio = normalizeStudio(state); const map = reviewedMap();
-    const item = map.get(normalizeTerm(result.term)) || await loadTermIndexEntry(instance, result.index, result.term);
+    const rawItem = map.get(normalizeTerm(result.term)) || await loadTermIndexEntry(instance, result.index, result.term);
+    const item = root.HHEnglishForEveryone?.metadataForEntry?.(rawItem) || rawItem;
     studio.selectedTerm = item.term; instance.runtime.writeState(state);
     const detail = instance.host.querySelector("[data-hhev-detail]"); if (!detail) return;
     const saved = Boolean(state.savedWords?.[item.term]); const note = studio.notes[item.term] || "";
@@ -322,7 +330,7 @@
       <section><small>COLLOCATION</small>${item.collocations.length ? `<div class="hhev-chips">${item.collocations.map((value) => `<span>${esc(value)}</span>`).join("")}</div>` : '<p class="hhev-honest">Chưa có cụm từ đã kiểm duyệt.</p>'}</section>
       <section><small>WORD FAMILY · SYNONYM · ANTONYM</small>${item.family.length || item.synonyms.length || item.antonyms.length ? `<div class="hhev-chips">${[...item.family, ...item.synonyms, ...item.antonyms].map((value) => `<span>${esc(value)}</span>`).join("")}</div>` : '<p class="hhev-honest">Chưa có dữ liệu đã kiểm duyệt.</p>'}</section>
       <label class="hhev-note"><span>Ghi chú cá nhân</span><textarea data-hhev-note="${esc(item.term)}" placeholder="Cách nhớ hoặc ví dụ của bạn...">${esc(note)}</textarea></label>
-      <footer><button type="button" data-hhev-speak="${esc(item.term)}">♪ Nghe</button><button class="primary" type="button" data-hhev-save="${esc(item.term)}" data-index="${Number(result.index ?? -1)}">${saved ? "★ Đã lưu" : "☆ Lưu vào SRS"}</button></footer><p class="hhev-source">Nguồn: ${item.reviewed ? esc(item.source) : "ESDB/SCOWL · spelling index"}</p>`;
+      <footer><button type="button" data-hhev-speak="${esc(item.term)}">♪ Nghe</button><button class="primary" type="button" data-hhev-save="${esc(item.term)}" data-index="${Number(result.index ?? -1)}">${saved ? "★ Đã lưu" : "☆ Lưu vào SRS"}</button></footer><p class="hhev-source">Nguồn: ${item.reviewed ? esc(item.source) : "ESDB/SCOWL · spelling index"}${item.ageBands?.length ? ` · Phù hợp: ${esc(item.ageBands.join(", "))}` : ""}</p>`;
   };
 
   const writeAndRefresh = (instance, state) => { instance.runtime.writeState(state); renderActive(instance); };
