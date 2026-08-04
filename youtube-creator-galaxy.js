@@ -346,6 +346,7 @@
         contentMode: ["upload", "manager"].includes(value?.contentMode) ? value.contentMode : "upload",
         contentFilter: ["all", "uploading", "processing", "draft", "scheduled", "published", "error"].includes(value?.contentFilter) ? value.contentFilter : "all",
         contentAiFilter: ["all", "yes", "no", "unreviewed"].includes(value?.contentAiFilter) ? value.contentAiFilter : "all",
+        contentSort: ["az", "za"].includes(value?.contentSort) ? value.contentSort : "az",
         contentScrollTop: Math.max(0, Number(value?.contentScrollTop || 0)),
         contentChannel: String(value?.contentChannel || "all").slice(0, 120),
         selectedContentIds: Array.isArray(value?.selectedContentIds) ? value.selectedContentIds.map(String).slice(0, 500) : [],
@@ -377,7 +378,7 @@
         results: Array.isArray(value?.results) ? value.results.slice(0, 1200) : []
       };
     } catch {
-      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, taskMatrix: {}, contentMode: "upload", contentFilter: "all", contentAiFilter: "all", contentScrollTop: 0, contentChannel: "all", selectedContentIds: [], calendarMode: "month", calendarTimezone: "Asia/Bangkok", calendarChannelFilter: "all", calendarTypeFilter: "all", scheduleDrafts: {}, scheduleHistory: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, aiDisclosure: "unreviewed", madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
+      return { selectedChannelIds: [], studioTab: "overview", channelSearch: "", channelFilter: "all", activeFileFingerprint: "", videoDrafts: {}, taskMatrix: {}, contentMode: "upload", contentFilter: "all", contentAiFilter: "all", contentSort: "az", contentScrollTop: 0, contentChannel: "all", selectedContentIds: [], calendarMode: "month", calendarTimezone: "Asia/Bangkok", calendarChannelFilter: "all", calendarTypeFilter: "all", scheduleDrafts: {}, scheduleHistory: [], title: "", description: "", tags: "", privacyStatus: "private", rightsConfirmed: false, containsSyntheticMedia: false, aiDisclosure: "unreviewed", madeForKids: false, uploadPrivateFirst: true, concurrency: 2, thumbnailVariant: "A", thumbnailTitle: "", thumbnailSubtitle: "", thumbnailAccent: "#ff3158", channelPresets: {}, replaceFind: "", replaceWith: "", fileFingerprint: "", idempotencyKey: "", results: [] };
     }
   }
 
@@ -1152,11 +1153,20 @@
     if (contentDrawer) return videoStudioWorkspaceMarkup(channels);
     const channelFilter = fleetState.contentChannel;
     const stageFilter = fleetState.contentFilter;
-    const items = mergedContentItems().filter((item) => (channelFilter === "all" || item.channelId === channelFilter) && (stageFilter === "all" || contentStage(item) === stageFilter));
+    const contentSort = fleetState.contentSort === "za" ? "za" : "az";
+    const sortedChannels = channels.slice().sort((left, right) => String(left.title || "").localeCompare(String(right.title || ""), "vi", { sensitivity: "base" }));
+    const allItems = mergedContentItems();
+    const items = allItems
+      .filter((item) => (channelFilter === "all" || item.channelId === channelFilter) && (stageFilter === "all" || contentStage(item) === stageFilter))
+      .sort((left, right) => {
+        const comparison = String(left.title || left.fileName || "").localeCompare(String(right.title || right.fileName || ""), "vi", { sensitivity: "base", numeric: true });
+        return contentSort === "za" ? -comparison : comparison;
+      });
     const selected = new Set(fleetState.selectedContentIds);
-    const selectedVideoCount = mergedContentItems().filter((item) => item.videoId && selected.has(item.uploadId || `${item.channelId}::${item.videoId}`)).length;
+    const selectedVideoCount = allItems.filter((item) => item.videoId && selected.has(item.uploadId || `${item.channelId}::${item.videoId}`)).length;
     const filters = [["all", "Tất cả"], ["uploading", "Tải lên"], ["processing", "Đang xử lý"], ["draft", "Bản nháp"], ["scheduled", "Đã lên lịch"], ["published", "Đã xuất bản"], ["error", "Có lỗi"]];
-    return `<section class="ycg-content-manager"><div class="ycg-content-manager__toolbar"><div class="ycg-content-status-tabs">${filters.map(([id, label]) => `<button type="button" data-ycg-content-filter="${id}" class="${stageFilter === id ? "is-active" : ""}">${label}<b>${mergedContentItems().filter((item) => id === "all" || contentStage(item) === id).length}</b></button>`).join("")}</div><div><select data-ycg-content-channel><option value="all">Tất cả kênh</option>${channels.map((channel) => `<option value="${esc(channel.id)}" ${channelFilter === channel.id ? "selected" : ""}>${esc(channel.title)}</option>`).join("")}</select><button type="button" data-ycg-action="content-refresh">Làm mới</button></div></div>
+    return `<section class="ycg-content-manager"><div class="ycg-content-manager__toolbar"><div class="ycg-content-status-tabs">${filters.map(([id, label]) => `<button type="button" data-ycg-content-filter="${id}" class="${stageFilter === id ? "is-active" : ""}">${label}<b>${allItems.filter((item) => id === "all" || contentStage(item) === id).length}</b></button>`).join("")}</div><div><select data-ycg-content-channel aria-label="Chọn riêng một kênh"><option value="all">Tất cả kênh</option>${sortedChannels.map((channel) => `<option value="${esc(channel.id)}" ${channelFilter === channel.id ? "selected" : ""}>${esc(channel.title)}</option>`).join("")}</select><button type="button" data-ycg-content-sort="${contentSort === "az" ? "za" : "az"}" aria-label="Đổi thứ tự tên video">${contentSort === "az" ? "A → Z" : "Z → A"}</button><button type="button" data-ycg-action="content-refresh">Làm mới</button></div></div>
+      <nav class="ycg-content-channel-rail" aria-label="Lọc nội dung theo từng kênh"><button type="button" data-ycg-content-channel-button="all" class="${channelFilter === "all" ? "is-active" : ""}"><span>YT</span><strong>Tất cả kênh</strong><b>${allItems.length}</b></button>${sortedChannels.map((channel) => { const count = allItems.filter((item) => item.channelId === channel.id).length; return `<button type="button" data-ycg-content-channel-button="${esc(channel.id)}" class="${channelFilter === channel.id ? "is-active" : ""}">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : `<span>${esc(String(channel.title || "YT").slice(0, 2).toUpperCase())}</span>`}<strong>${esc(channel.title)}</strong><b>${count}</b></button>`; }).join("")}</nav>
       <section class="ycg-panel ycg-content-table"><header><div><h3>Nội dung trên các kênh</h3><small>Chọn nhiều video để khai báo sử dụng AI, copy metadata hoặc xếp lịch hàng loạt.</small></div><div><button type="button" data-ycg-action="content-copy-metadata" ${selected.size ? "" : "disabled"}>Copy metadata</button><button type="button" data-ycg-action="content-open-ai-disclosure" ${selectedVideoCount ? "" : "disabled"}>Khai báo sử dụng AI (${selectedVideoCount})</button><button type="button" data-ycg-action="content-open-calendar" ${selected.size ? "" : "disabled"}>Xếp lịch (${selected.size})</button></div></header><div><table><thead><tr><th></th><th>Video</th><th>Kênh</th><th>Trạng thái</th><th>Xử lý</th><th>Quyền</th><th>Ngày</th><th>Chỉ số</th><th></th></tr></thead><tbody>${items.map((item) => {
         const key = item.uploadId || `${item.channelId}::${item.videoId}`;
         const stage = contentStage(item);
@@ -1180,16 +1190,38 @@
   async function openContentDrawer(key) {
     const item = contentItemByKey(key);
     if (!item) throw new Error("Không tìm thấy video trong Content Manager.");
+    fleetState.contentScrollTop = Number(root?.querySelector(".ycg-content-table > div")?.scrollTop || 0);
+    fleetState.studioTab = "content";
+    fleetState.contentMode = "manager";
+    saveFleetState();
     if (!item.videoId) {
       const draft = editorDraftFromVideo(item);
       contentDrawer = { loading: false, item, audit: [], captions: [], draft, originalDraft: { ...draft }, activeSection: "details", dirty: false };
       return render();
     }
-    fleetState.contentScrollTop = Number(root?.querySelector(".ycg-content-table > div")?.scrollTop || 0);
+    location.hash = videoWorkspaceRoute(item.channelId, item.videoId);
+  }
+
+  function returnToContentManager() {
+    if (contentDrawer?.dirty && !confirm("Bạn có thay đổi chưa lưu. Rời trang và bỏ các thay đổi này?")) return false;
+    contentDrawer = null;
+    deleteDialog = null;
+    errorMessage = "";
     fleetState.studioTab = "content";
     fleetState.contentMode = "manager";
     saveFleetState();
-    location.hash = videoWorkspaceRoute(item.channelId, item.videoId);
+    const target = "#/davinci-resolve/youtube";
+    if (location.hash === target) render();
+    else location.replace(target);
+    return true;
+  }
+
+  function handleShellBack(event) {
+    if (!event.target.closest?.("[data-shell-back]")) return;
+    if (!contentDrawer && !videoRouteTarget()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    returnToContentManager();
   }
 
   async function copySelectedContentMetadata() {
@@ -3234,10 +3266,7 @@
       return;
     }
     if (event.target.closest("[data-ycg-video-back]")) {
-      if (contentDrawer?.dirty && !confirm("Bạn có thay đổi chưa lưu. Rời trang và bỏ các thay đổi này?")) return;
-      contentDrawer = null;
-      location.hash = "#/davinci-resolve/youtube";
-      return;
+      return returnToContentManager();
     }
     const videoSection = event.target.closest("[data-ycg-video-section]");
     if (videoSection && contentDrawer) {
@@ -3284,6 +3313,17 @@
     }
     const contentFilter = event.target.closest("[data-ycg-content-filter]");
     if (contentFilter) { fleetState.contentFilter = contentFilter.dataset.ycgContentFilter; saveFleetState(); render(); return; }
+    const contentSort = event.target.closest("[data-ycg-content-sort]");
+    if (contentSort) { fleetState.contentSort = contentSort.dataset.ycgContentSort === "za" ? "za" : "az"; saveFleetState(); render(); return; }
+    const contentChannelButton = event.target.closest("[data-ycg-content-channel-button]");
+    if (contentChannelButton) {
+      fleetState.contentChannel = contentChannelButton.dataset.ycgContentChannelButton || "all";
+      saveFleetState();
+      try { await loadContentLibrary(); }
+      catch (error) { errorMessage = error.message; }
+      render();
+      return;
+    }
     const calendarMode = event.target.closest("[data-ycg-calendar-mode]");
     if (calendarMode) { fleetState.calendarMode = calendarMode.dataset.ycgCalendarMode; saveFleetState(); render(); return; }
     const contentOpen = event.target.closest("[data-ycg-content-open]");
@@ -3315,10 +3355,7 @@
       return;
     }
     if (event.target.closest("[data-ycg-content-close]")) {
-      if (contentDrawer?.dirty && !confirm("Bạn có thay đổi chưa lưu. Rời trang và bỏ các thay đổi này?")) return;
-      contentDrawer = null;
-      if (videoRouteTarget()) location.hash = "#/davinci-resolve/youtube"; else render();
-      return;
+      return returnToContentManager();
     }
     const taskPause = event.target.closest("[data-ycg-task-pause]");
     if (taskPause) { await pauseFleetTask(taskPause.dataset.ycgTaskPause); return; }
@@ -4034,6 +4071,7 @@
     controller = new AbortController();
     const options = { signal: controller.signal };
     root.addEventListener("click", handleClick, options);
+    document.addEventListener("click", handleShellBack, { signal: controller.signal, capture: true });
     root.addEventListener("input", (event) => {
       handleInput(event);
       if (event.target.matches("[data-ycg-comment-search]")) filterComments();

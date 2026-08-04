@@ -350,6 +350,28 @@ test("Video details use a dedicated Studio workspace with honest owner-isolated 
   assert.match(css, /\.ycg-shell\.is-video-workspace/);
 });
 
+test("video workspace returns to the exact Content Manager state from both back buttons", () => {
+  const client = read("youtube-creator-galaxy.js");
+  assert.match(client, /function returnToContentManager\(\)/);
+  assert.match(client, /function handleShellBack\(event\)/);
+  assert.match(client, /\[data-shell-back\]/);
+  assert.match(client, /event\.stopImmediatePropagation\(\)/);
+  assert.match(client, /location\.replace\(target\)/);
+  assert.match(client, /contentScrollTop[\s\S]*contentDrawer = \{ loading: false/);
+  assert.match(client, /document\.addEventListener\("click", handleShellBack, \{ signal: controller\.signal, capture: true \}\)/);
+});
+
+test("Content Manager sorts A to Z or Z to A and filters each channel directly", () => {
+  const client = read("youtube-creator-galaxy.js");
+  const css = read("youtube-creator-galaxy.css");
+  for (const capability of ["contentSort", "data-ycg-content-sort", "A → Z", "Z → A", "data-ycg-content-channel-button", "Lọc nội dung theo từng kênh"]) {
+    assert.match(client, new RegExp(capability.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.match(client, /localeCompare\([\s\S]*sensitivity: "base", numeric: true/);
+  assert.match(css, /\.ycg-content-channel-rail/);
+  assert.match(css, /\[data-ycg-content-sort\]/);
+});
+
 test("Multi-channel Studio presents one simple cosmic workspace", () => {
   const client = read("youtube-creator-galaxy.js");
   const css = read("youtube-creator-galaxy.css");
@@ -424,7 +446,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=13", "youtube-creator-galaxy.js?v=18"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=14", "youtube-creator-galaxy.js?v=19"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);
