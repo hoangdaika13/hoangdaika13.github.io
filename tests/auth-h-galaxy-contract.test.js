@@ -6,18 +6,18 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("interactive H galaxy exposes exactly fourteen unique product planets", () => {
+test("interactive H galaxy exposes exactly fifteen unique product planets", () => {
   const html = read("index.html");
   const planets = [...html.matchAll(/data-hh-planet="(\d+)"/g)].map((match) => match[1]);
   const keys = [...html.matchAll(/data-hh-galaxy-key="([^"]+)"/g)].map((match) => match[1]);
 
-  assert.equal(planets.length, 14);
-  assert.equal(new Set(planets).size, 14);
-  assert.equal(keys.length, 14);
-  assert.equal(new Set(keys).size, 14);
+  assert.equal(planets.length, 15);
+  assert.equal(new Set(planets).size, 15);
+  assert.equal(keys.length, 15);
+  assert.equal(new Set(keys).size, 15);
   assert.match(html, /id="hhGalaxyInspector" role="tabpanel"/);
   assert.match(html, /auth-h-galaxy\.css\?v=5/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=3/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=4/);
   assert.match(html, /data-hh-galaxy-detail/);
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);
 });
@@ -25,9 +25,9 @@ test("interactive H galaxy exposes exactly fourteen unique product planets", () 
 test("galaxy interactions support hover, touch, focus and keyboard navigation", () => {
   const script = read("auth-h-galaxy.js");
 
-  assert.equal([...script.matchAll(/^\s{4}[a-z]+:\s*\{/gm)].length, 14);
-  assert.equal([...script.matchAll(/^\s{6}accent:\s*"#[0-9a-f]{6}"/gmi)].length, 14);
-  assert.equal([...script.matchAll(/^\s{6}detail:\s*"/gm)].length, 14);
+  assert.equal([...script.matchAll(/^\s{4}[a-z]+:\s*\{/gm)].length, 15);
+  assert.equal([...script.matchAll(/^\s{6}accent:\s*"#[0-9a-f]{6}"/gmi)].length, 15);
+  assert.equal([...script.matchAll(/^\s{6}detail:\s*"/gm)].length, 15);
   assert.match(script, /pointerover/);
   assert.match(script, /pointerout/);
   assert.match(script, /focusin/);

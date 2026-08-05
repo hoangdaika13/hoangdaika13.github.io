@@ -19,6 +19,7 @@ const expectedRoutes = [
   "/analytics",
   "/learn",
   "/english",
+  "/japanese",
   "/system",
   "/support"
 ];

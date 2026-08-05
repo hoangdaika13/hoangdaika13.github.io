@@ -355,6 +355,11 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   animation-delay: calc(var(--orbit-delay) - var(--orbit-half-speed));
 }
 
+.hh-galaxy-planet:nth-of-type(3) {
+  offset-distance: 75%;
+  animation-delay: calc(var(--orbit-delay) - (var(--orbit-half-speed) * 1.5));
+}
+
 .hh-galaxy-planet > span {
   position: relative;
   z-index: 2;
@@ -981,5 +986,9 @@ html[data-motion-level="soft"] .hh-galaxy-planet:nth-of-type(2) {
 
   .hh-galaxy-orbit .hh-galaxy-planet:nth-of-type(2) {
     offset-distance: calc(var(--static-start) + 50%);
+  }
+
+  .hh-galaxy-orbit .hh-galaxy-planet:nth-of-type(3) {
+    offset-distance: calc(var(--static-start) + 75%);
   }
 }

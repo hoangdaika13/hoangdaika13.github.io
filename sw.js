@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v432";
+const CACHE = "hh-identity-portal-v433";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
@@ -166,7 +166,7 @@ const RUNTIME_ASSETS = [
   "./auth-platform.js?v=13",
   "./auth-experience.js?v=8",
   "./auth-neon-gateway.js?v=6",
-  "./auth-h-galaxy.js?v=3",
+  "./auth-h-galaxy.js?v=4",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -312,8 +312,8 @@ const RUNTIME_ASSETS = [
   "./english-vocabulary.css?v=1",
   "./english-for-everyone.css?v=1",
   "./english-voice-coach.css?v=4",
-  "./japanese-learning.css?v=7",
-  "./japanese-os-v3.css?v=3",
+  "./japanese-learning.css?v=8",
+  "./japanese-os-v3.css?v=4",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
   "./community-platform-v2.css?v=10",
@@ -415,8 +415,8 @@ const RUNTIME_ASSETS = [
   "./japanese-vocabulary-packs.js?v=1",
   "./japanese-vocabulary-10k.js?v=1",
   "./japanese-vietnamese-pack.js?v=1",
-  "./japanese-learning.js?v=7",
-  "./japanese-os-v3.js?v=1",
+  "./japanese-learning.js?v=8",
+  "./japanese-os-v3.js?v=2",
   "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];

@@ -79,14 +79,20 @@
       capabilities: ["A0-C2", "Luyện nói", "Từ vựng"]
     },
     {
+      id: "japanese", short: "日", label: "HH Japanese", eyebrow: "Japanese OS V3", route: "/japanese",
+      color: "#ff6b8a", orbit: 3, angle: 220,
+      description: "Học tiếng Nhật theo Can-do với Vietnamese Core, JLPT/JF, Kanji Graph, Smart Reader và hội thoại.",
+      capabilities: ["N5-N1", "Kanji Graph", "SRS Nhật-Việt"]
+    },
+    {
       id: "system", short: "SY", label: "Hệ thống", eyebrow: "Cài đặt và quyền riêng tư", route: "/system",
-      color: "#68dda8", orbit: 3, angle: 240,
+      color: "#68dda8", orbit: 3, angle: 260,
       description: "Quản lý cài đặt, giao diện, phiên đăng nhập, dữ liệu, quyền riêng tư và tính năng nền tảng.",
       capabilities: ["Cài đặt", "Bảo mật", "Quyền riêng tư"]
     },
     {
       id: "support", short: "UH", label: "Ủng hộ", eyebrow: "Đồng hành cùng HH", route: "/support",
-      color: "#ff6fae", orbit: 3, angle: 300,
+      color: "#ff6fae", orbit: 3, angle: 320,
       description: "Ủng hộ nhà phát triển, theo dõi mục tiêu và cùng duy trì những công cụ miễn phí của HH.",
       capabilities: ["VietQR", "Mục tiêu", "Tri ân"]
     }

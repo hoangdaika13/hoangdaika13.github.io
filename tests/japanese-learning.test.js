@@ -66,7 +66,7 @@ test("HH Japanese is reachable, lazy-loaded, cached and responsive", () => {
   assert.match(script, /id: "japanese", label: "HH Japanese"/);
   assert.match(script, /route === "\/japanese" \|\| route\.startsWith\("\/japanese\/"\)/);
   assert.match(script, /window\.HHJapanese\?\.mount/);
-  for (const asset of ["japanese-learning.css?v=7", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-learning.js?v=7"]) {
+  for (const asset of ["japanese-learning.css?v=8", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-learning.js?v=8"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);

@@ -166,6 +166,18 @@
       detail: "Kết hợp bài học theo cấp độ, luyện giọng nói và ngữ cảnh nghề nghiệp để tạo kế hoạch học phù hợp.",
       features: ["CEFR Courses", "Voice Coach", "Career English", "Placement", "Vocabulary"]
     },
+    japanese: {
+      icon: "日",
+      title: "HH Japanese",
+      kicker: "JAPANESE OS V3",
+      count: "N5 → N1 · JF",
+      route: "#/japanese",
+      accent: "#ff6b8a",
+      accent2: "#9d6bff",
+      description: "Học tiếng Nhật theo Can-do với Vietnamese Core, JLPT/JF, Kanji Graph, Smart Reader và hội thoại.",
+      detail: "Tra cứu Nhật–Việt, học offline, luyện mora và shadowing, mô phỏng JLPT, theo dõi SRS và tiến độ giao tiếp trong một lộ trình.",
+      features: ["Vietnamese Core", "Kanji Graph", "Smart Reader", "JLPT Simulator", "Life in Japan"]
+    },
     support: {
       icon: "♥",
       title: "Ủng hộ HH",

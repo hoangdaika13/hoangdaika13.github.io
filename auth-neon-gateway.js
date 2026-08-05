@@ -277,7 +277,7 @@
 
   if (gate.querySelector("[data-hh-galaxy]") && !window.HHHGalaxy) {
     const galaxyRuntime = document.createElement("script");
-    galaxyRuntime.src = "auth-h-galaxy.js?v=3";
+    galaxyRuntime.src = "auth-h-galaxy.js?v=4";
     galaxyRuntime.defer = true;
     galaxyRuntime.dataset.hhGalaxyRuntime = "true";
     document.head.append(galaxyRuntime);

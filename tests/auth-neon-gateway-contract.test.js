@@ -11,23 +11,23 @@ test("HH Neon Gateway assets are wired into the application shell", () => {
   const worker = read("sw.js");
   assert.match(html, /auth-neon-gateway\.css\?v=5/);
   assert.match(html, /auth-h-galaxy\.css\?v=5/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=3/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=4/);
   assert.match(html, /auth-neon-gateway\.js\?v=6/);
   assert.match(worker, /auth-neon-gateway\.css\?v=5/);
   assert.match(worker, /auth-h-galaxy\.css\?v=5/);
-  assert.match(worker, /auth-h-galaxy\.js\?v=3/);
+  assert.match(worker, /auth-h-galaxy\.js\?v=4/);
   assert.match(worker, /auth-neon-gateway\.js\?v=6/);
   assert.match(html, /auth-creative-universe\.css\?v=5/);
   assert.match(read("performance-loader.js"), /scripts:\s*\["auth-creative-universe\.js\?v=5"\]/);
   assert.match(html, /data-auth-motion-toggle/);
   assert.match(html, /class="auth-gateway-scene"/);
   assert.doesNotMatch(html, /class="auth-solar-system"/);
-  assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 14);
+  assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 15);
 });
 
 test("login galaxy replaces the old showcase and keeps Google-only auth", () => {
   const html = read("index.html");
-  for (const id of ["home", "creative", "music", "media", "graphic", "dev", "work", "communication", "entertainment", "analytics", "learning", "english", "system", "support"]) {
+  for (const id of ["home", "creative", "music", "media", "graphic", "dev", "work", "communication", "entertainment", "analytics", "learning", "english", "japanese", "system", "support"]) {
     assert.match(html, new RegExp(`data-hh-galaxy-key="${id}"`));
   }
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);

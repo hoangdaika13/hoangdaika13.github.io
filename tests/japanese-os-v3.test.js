@@ -60,7 +60,7 @@ test("V3 assets are lazy loaded, offline cached and responsive", () => {
   const worker = read("sw.js");
   const index = read("index.html");
   const css = read("japanese-os-v3.css");
-  for (const asset of ["japanese-vietnamese-pack.js?v=1", "japanese-os-v3.css?v=3", "japanese-os-v3.js?v=1"]) {
+  for (const asset of ["japanese-vietnamese-pack.js?v=1", "japanese-os-v3.css?v=4", "japanese-os-v3.js?v=2"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);
