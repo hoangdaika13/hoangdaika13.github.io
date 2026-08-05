@@ -183,7 +183,7 @@
     },
     japanese: {
       styles: ["japanese-learning.css?v=7", "japanese-os-v3.css?v=3"],
-      scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-learning.js?v=7", "japanese-os-v3.js?v=1"]
+      scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=7", "japanese-os-v3.js?v=1"]
     },
     analytics: {
       styles: ["insights-pro.css?v=3"],

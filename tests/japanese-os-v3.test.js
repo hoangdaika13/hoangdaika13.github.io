@@ -8,6 +8,7 @@ const read = file => fs.readFileSync(path.join(root, file), "utf8");
 
 require(path.join(root, "japanese-vocabulary-packs.js"));
 require(path.join(root, "japanese-vocabulary-10k.js"));
+require(path.join(root, "japanese-vietnamese-pack.js"));
 require(path.join(root, "japanese-learning.js"));
 require(path.join(root, "japanese-os-v3.js"));
 
@@ -20,6 +21,15 @@ test("HH Japanese OS V3 exposes the complete Can-do learning system", () => {
   assert.ok(os.contrasts.length >= 7);
   assert.ok(os.mora.length >= 6);
   assert.equal(os.life.length, 10);
+});
+
+test("the Vietnamese source pack expands usable vocabulary without relabelling JMdict", () => {
+  const pack = globalThis.HHJapaneseVietnamesePack;
+  assert.ok(pack.words.length >= 2000);
+  assert.equal(pack.license, "CC BY-SA 4.0 / GFDL");
+  assert.ok(pack.words.every(row => row.meaningLanguage === "vi" && row.reviewStatus === "source-derived"));
+  assert.ok(pack.words.some(row => row.word === "道" && row.meaning.includes("đường")));
+  assert.equal(globalThis.HHJapaneseOSV3.quality(pack.words[0]).jlpt, false);
 });
 
 test("data quality never invents Vietnamese, JLPT or pitch metadata", () => {
@@ -50,7 +60,7 @@ test("V3 assets are lazy loaded, offline cached and responsive", () => {
   const worker = read("sw.js");
   const index = read("index.html");
   const css = read("japanese-os-v3.css");
-  for (const asset of ["japanese-os-v3.css?v=3", "japanese-os-v3.js?v=1"]) {
+  for (const asset of ["japanese-vietnamese-pack.js?v=1", "japanese-os-v3.css?v=3", "japanese-os-v3.js?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);
