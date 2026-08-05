@@ -182,8 +182,8 @@
       scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=2", "english-learning-galaxy.js?v=4", "english-for-everyone.js?v=2", "english-vocabulary.js?v=1", "english-learning.js?v=22"]
     },
     japanese: {
-      styles: ["japanese-learning.css?v=7"],
-      scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-learning.js?v=7"]
+      styles: ["japanese-learning.css?v=7", "japanese-os-v3.css?v=3"],
+      scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-learning.js?v=7", "japanese-os-v3.js?v=1"]
     },
     analytics: {
       styles: ["insights-pro.css?v=3"],
