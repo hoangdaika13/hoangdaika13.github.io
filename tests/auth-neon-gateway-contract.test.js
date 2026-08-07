@@ -12,13 +12,13 @@ test("HH Neon Gateway assets are wired into the application shell", () => {
   assert.match(html, /auth-neon-gateway\.css\?v=5/);
   assert.match(html, /auth-h-galaxy\.css\?v=7/);
   assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=5/);
-  assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=7/);
-  assert.match(html, /auth-neon-gateway\.js\?v=13/);
+  assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=8/);
+  assert.match(html, /auth-neon-gateway\.js\?v=14/);
   assert.match(worker, /auth-neon-gateway\.css\?v=5/);
   assert.match(worker, /auth-h-galaxy\.css\?v=7/);
   assert.match(worker, /auth-h-galaxy\.js\?v=5/);
-  assert.match(worker, /auth-living-galaxy-3d\.js\?v=7/);
-  assert.match(worker, /auth-neon-gateway\.js\?v=13/);
+  assert.match(worker, /auth-living-galaxy-3d\.js\?v=8/);
+  assert.match(worker, /auth-neon-gateway\.js\?v=14/);
   assert.match(html, /auth-creative-universe\.css\?v=5/);
   assert.match(read("performance-loader.js"), /scripts:\s*\["auth-creative-universe\.js\?v=5"\]/);
   assert.match(html, /data-auth-motion-toggle/);

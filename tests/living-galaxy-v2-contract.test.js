@@ -13,7 +13,7 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   const css = read("auth-living-galaxy-3d.css");
 
   assert.match(html, /auth-living-galaxy-3d\.css\?v=6/);
-  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=7/);
+  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=8/);
   assert.match(gateway, /high:\s*"Điện ảnh"/);
   assert.match(gateway, /soft:\s*"Cân bằng"/);
   assert.match(gateway, /off:\s*"Tĩnh"/);
@@ -42,8 +42,10 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   for (const color of ["#62e8ff", "#b36dff", "#ff65c8", "#ffd86b"]) assert.match(runtime, new RegExp(color, "i"));
   assert.match(runtime, /mode\(\) === "cinematic" \? 3 : 2/);
   assert.match(runtime, /nextShowerAt/);
-  assert.match(runtime, /speedTarget = \.03/);
-  assert.match(runtime, /selectionHoldUntil/);
+  assert.match(runtime, /orbitAngle = \(planet\.orbitAngle \+ delta \* planet\.speed \* warpBoost\) % ORBIT_TAU/);
+  assert.match(runtime, /particle\.angle = \(particle\.angle \+ delta \* particle\.speed \* warpBoost\) % ORBIT_TAU/);
+  assert.match(runtime, /currentMode === "static" \? "0\.00" : "1\.00"/);
+  assert.doesNotMatch(runtime, /speedFactor|speedTarget|selectionHoldUntil|pointerInGalaxy|onGalaxyHover|onGalaxyLeave/);
   assert.match(runtime, /warpBoostUntil/);
   assert.match(runtime, /errorPulseUntil/);
   assert.match(runtime, /hh:galaxy-notification/);

@@ -6,6 +6,7 @@
   if (!gate || !galaxy) return;
 
   const THREE_URL = "./vendor/three.module.min.js";
+  const ORBIT_TAU = Math.PI * 2;
   const planetButtons = [...galaxy.querySelectorAll("[data-hh-galaxy-key]")];
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const mobile = matchMedia("(max-width: 760px)");
@@ -463,7 +464,7 @@
       sceneState = {
         THREE, canvas, renderer, scene, camera, root, sun, glow, hMark, starFar, starNear, nebula, planets, status, meteorLayer,
         meteorGlowTexture, meteorTailTexture, meteors: [], meteorSerial: 0, nextMeteorAt: 2.8, nextShowerAt: 24 + Math.random() * 10, showerQueue: [],
-        speedFactor: 1, speedTarget: 1, selectionHoldUntil: 0, pointerInGalaxy: false, warpBoostUntil: 0, errorPulseUntil: 0,
+        warpBoostUntil: 0, errorPulseUntil: 0,
         projectionVector: new THREE.Vector3(), last: performance.now(), elapsed: 0, frameBudget: 0
       };
       galaxy.classList.add("is-webgl-ready");
@@ -504,9 +505,7 @@
     const nowTime = performance.now();
     const warpBoost = nowTime < state.warpBoostUntil ? 6.4 : 1;
     const errorPulse = nowTime < state.errorPulseUntil ? Math.sin(nowTime * .035) * .018 : 0;
-    if (nowTime >= state.selectionHoldUntil && state.speedTarget === 0) state.speedTarget = state.pointerInGalaxy ? .08 : 1;
-    state.speedFactor += (state.speedTarget - state.speedFactor) * Math.min(1, delta * 4.5);
-    galaxy.dataset.orbitSpeed = state.speedFactor.toFixed(2);
+    galaxy.dataset.orbitSpeed = currentMode === "static" ? "0.00" : "1.00";
     const targetX = finePointer.matches ? pointer.x * 22 : 0;
     const targetY = finePointer.matches ? pointer.y * 14 : 0;
     state.camera.position.x += (targetX - state.camera.position.x) * Math.min(1, delta * 2.8);
@@ -525,7 +524,7 @@
     const detailLimit = currentMode === "cinematic" ? 8 : 5;
     galaxy.dataset.orbitDetailCount = String(detailLimit);
     state.planets.forEach((planet, index) => {
-      if (currentMode !== "static") planet.orbitAngle += delta * planet.speed * state.speedFactor * warpBoost;
+      if (currentMode !== "static") planet.orbitAngle = (planet.orbitAngle + delta * planet.speed * warpBoost) % ORBIT_TAU;
       const angle = planet.orbitAngle;
       orbitPosition(state.THREE, planet, angle, planet.position);
       planet.group.position.copy(planet.position);
@@ -556,7 +555,7 @@
         const energyActive = selected ? particle.index === 0 : (index < detailLimit && (currentMode === "cinematic" || particle.index === 0));
         particle.sprite.visible = energyActive;
         if (!energyActive) return;
-        if (currentMode !== "static") particle.angle += delta * particle.speed * state.speedFactor * warpBoost;
+        if (currentMode !== "static") particle.angle = (particle.angle + delta * particle.speed * warpBoost) % ORBIT_TAU;
         orbitPosition(state.THREE, planet, particle.angle, particle.position);
         particle.sprite.position.copy(particle.position);
         particle.sprite.material.opacity = selected ? 1 : .56 + Math.sin(elapsed * 2.2 + particle.angle) * .18;
@@ -587,10 +586,6 @@
   const onPointerMove = (event) => {
     if (!finePointer.matches || mode() === "static") return;
     const width = Math.max(1, innerWidth * .585);
-    if (sceneState) {
-      sceneState.pointerInGalaxy = event.clientX <= width;
-      if (performance.now() >= sceneState.selectionHoldUntil) sceneState.speedTarget = sceneState.pointerInGalaxy ? .08 : 1;
-    }
     pointer = { x: Math.max(-1, Math.min(1, event.clientX / width * 2 - 1)), y: Math.max(-1, Math.min(1, event.clientY / innerHeight * 2 - 1)) };
     galaxy.style.setProperty("--galaxy-parallax-x", `${pointer.x * 22}px`);
     galaxy.style.setProperty("--galaxy-parallax-y", `${pointer.y * 16}px`);
@@ -606,28 +601,8 @@
     return spawnMeteor({ layer: notification ? "near" : "mid", color: planet.accent, target: planet.position, targetButton: planet.button, notification });
   };
 
-  const onGalaxyHover = (event) => {
-    if (!event.target.closest?.("[data-hh-galaxy-key]")) return;
-    if (sceneState) {
-      sceneState.pointerInGalaxy = true;
-      sceneState.speedFactor = .03;
-      sceneState.speedTarget = .03;
-    }
-  };
-
-  const onGalaxyLeave = (event) => {
-    if (event.relatedTarget?.closest?.("[data-hh-galaxy-key]")) return;
-    if (sceneState && performance.now() < sceneState.selectionHoldUntil) return;
-    if (sceneState) sceneState.speedTarget = sceneState.pointerInGalaxy ? .08 : 1;
-  };
-
   const onGalaxySelection = (event) => {
     if (!event.detail?.pinned || !event.detail?.key) return;
-    if (sceneState) {
-      sceneState.speedFactor = 0;
-      sceneState.speedTarget = 0;
-      sceneState.selectionHoldUntil = performance.now() + 950;
-    }
     meteorToPlanet(event.detail.key);
   };
 
@@ -651,8 +626,6 @@
     resizeObserver?.disconnect();
     authStateObserver?.disconnect();
     gate.removeEventListener("pointermove", onPointerMove);
-    galaxy.removeEventListener("pointerover", onGalaxyHover);
-    galaxy.removeEventListener("pointerout", onGalaxyLeave);
     galaxy.removeEventListener("hh:galaxy-category-change", onGalaxySelection);
     removeEventListener("storage", onStorageNotification);
     removeEventListener("hh:galaxy-notification", onGalaxyNotification);
@@ -671,8 +644,6 @@
   };
 
   gate.addEventListener("pointermove", onPointerMove, { passive: true });
-  galaxy.addEventListener("pointerover", onGalaxyHover, { passive: true });
-  galaxy.addEventListener("pointerout", onGalaxyLeave, { passive: true });
   galaxy.addEventListener("hh:galaxy-category-change", onGalaxySelection);
   gate.addEventListener("hh:auth-motion-change", (event) => {
     if (sceneState?.status) sceneState.status.querySelector("span").textContent = `${event.detail?.level === "high" ? "3D CINEMATIC" : event.detail?.level === "soft" ? "3D BALANCED" : "3D STATIC"} · DỮ LIỆU THẬT`;
@@ -685,7 +656,6 @@
     if (!event.detail?.user) return;
     if (sceneState) {
       sceneState.warpBoostUntil = performance.now() + 520;
-      sceneState.speedTarget = 1;
       resume();
     }
     showWarp();

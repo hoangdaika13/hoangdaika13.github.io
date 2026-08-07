@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v445";
+const CACHE = "hh-identity-portal-v446";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
@@ -166,9 +166,9 @@ const RUNTIME_ASSETS = [
   "./assets/hh-neon-logo-v2.png?v=3",
   "./auth-platform.js?v=13",
   "./auth-experience.js?v=8",
-  "./auth-neon-gateway.js?v=13",
+  "./auth-neon-gateway.js?v=14",
   "./auth-h-galaxy.js?v=5",
-  "./auth-living-galaxy-3d.js?v=7",
+  "./auth-living-galaxy-3d.js?v=8",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -441,7 +441,7 @@ const CORE = [
   "./app-theme-system.js?v=5",
   "./performance-loader.js?v=180",
   "./auth-platform.js?v=13",
-  "./auth-neon-gateway.js?v=13",
+  "./auth-neon-gateway.js?v=14",
   "./script.js?v=165"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
