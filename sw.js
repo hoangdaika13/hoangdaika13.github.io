@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v449";
+const CACHE = "hh-identity-portal-v453";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
@@ -51,12 +51,12 @@ const RUNTIME_ASSETS = [
   "./davinci-resolve-hub.css?v=4",
   "./h-cosmic-web-studio.css?v=2",
   "./video-editor-auto.css?v=1",
-  "./youtube-creator-galaxy.css?v=19",
+  "./youtube-creator-galaxy.css?v=20",
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=167",
+  "./script.js?v=168",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -94,7 +94,7 @@ const RUNTIME_ASSETS = [
   "./music-ai-apps.css?v=2",
   "./youtube-publisher.css?v=4",
   "./youtube-publisher.js?v=7",
-  "./youtube-creator-galaxy.js?v=23",
+  "./youtube-creator-galaxy.js?v=24",
   "./comic-motion-studio.js?v=10",
   "./vendor/jszip.min.js?v=3.10.1",
   "./vendor/tesseract.min.js?v=6.0.1",
@@ -316,7 +316,7 @@ const RUNTIME_ASSETS = [
   "./english-voice-coach.css?v=4",
   "./japanese-learning.css?v=8",
   "./japanese-os-v3.css?v=4",
-  "./japanese-os-v4.css?v=1",
+  "./japanese-os-v4.css?v=2",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
   "./community-platform-v2.css?v=10",
@@ -419,10 +419,12 @@ const RUNTIME_ASSETS = [
   "./japanese-vocabulary-10k.js?v=1",
   "./japanese-vietnamese-pack.js?v=1",
   "./japanese-vocabulary-v4.js?v=2",
+  "./japanese-sentence-bank-v5.js?v=1",
+  "./japanese-kanjivg-v5.js?v=1",
   "./japanese-search-worker.js?v=1",
   "./japanese-learning.js?v=8",
   "./japanese-os-v3.js?v=2",
-  "./japanese-os-v4.js?v=2",
+  "./japanese-os-v4.js?v=5",
   "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];
@@ -443,10 +445,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=183",
+  "./performance-loader.js?v=187",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=14",
-  "./script.js?v=167"
+  "./script.js?v=168"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

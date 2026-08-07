@@ -1435,14 +1435,14 @@
       ["queue", "Tiến trình", runningTasks, "◷"],
       ["settings", "Cài đặt", channels.length, "⚙"]
     ];
-    const channelTable = `<div class="ycg-studio-channel-table"><table><thead><tr><th></th><th>Kênh</th><th>Người đăng ký</th><th>Lượt xem</th><th>Trạng thái</th><th>Đồng bộ</th></tr></thead><tbody>${filteredChannels.map((channel) => {
+    const channelTable = `<div class="ycg-studio-channel-table"><table><thead><tr><th></th><th>Kênh</th><th>Người đăng ký</th><th>Lượt xem</th><th>Trạng thái</th><th>Đồng bộ</th><th>Quản lý</th></tr></thead><tbody>${filteredChannels.map((channel) => {
       const row = observatoryMap.get(channel.id);
       const ready = channel.permissions?.upload && channel.token?.healthy;
-      return `<tr class="${selected.has(channel.id) ? "is-selected" : ""}"><td><input type="checkbox" data-ycg-fleet-channel value="${esc(channel.id)}" ${selected.has(channel.id) ? "checked" : ""}></td><td><button type="button" class="ycg-channel-name" data-ycg-studio-channel="${esc(channel.id)}">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "<i>YT</i>"}<span><strong>${esc(channel.title)}</strong><small>${esc(channel.account?.hint || channel.id)}</small></span></button></td><td><strong>${fmt(channel.statistics?.subscribers)}</strong></td><td><strong>${fmt(channel.statistics?.views)}</strong></td><td><span class="ycg-table-status ${row?.uploads?.failed ? "is-error" : row?.uploads?.pending ? "is-running" : ready ? "is-ready" : "is-warning"}">${row?.uploads?.failed ? `${row.uploads.failed} lỗi` : row?.uploads?.pending ? `${row.uploads.pending} đang chạy` : ready ? "Sẵn sàng" : "Thiếu quyền"}</span></td><td><small>${dateTime(row?.syncedAt || channel.updatedAt)}</small></td></tr>`;
-    }).join("") || `<tr><td colspan="6">Không có kênh phù hợp bộ lọc.</td></tr>`}</tbody></table></div>`;
+      return `<tr class="${selected.has(channel.id) ? "is-selected" : ""}"><td><input type="checkbox" data-ycg-fleet-channel value="${esc(channel.id)}" ${selected.has(channel.id) ? "checked" : ""}></td><td><button type="button" class="ycg-channel-name" data-ycg-studio-channel="${esc(channel.id)}">${channel.thumbnail ? `<img src="${esc(channel.thumbnail)}" alt="">` : "<i>YT</i>"}<span><strong>${esc(channel.title)}</strong><small>${esc(channel.account?.hint || channel.id)}</small></span></button></td><td><strong>${fmt(channel.statistics?.subscribers)}</strong></td><td><strong>${fmt(channel.statistics?.views)}</strong></td><td><span class="ycg-table-status ${row?.uploads?.failed ? "is-error" : row?.uploads?.pending ? "is-running" : ready ? "is-ready" : "is-warning"}">${row?.uploads?.failed ? `${row.uploads.failed} lỗi` : row?.uploads?.pending ? `${row.uploads.pending} đang chạy` : ready ? "Sẵn sàng" : "Thiếu quyền"}</span></td><td><small>${dateTime(row?.syncedAt || channel.updatedAt)}</small></td><td><button type="button" class="ycg-remove-channel" data-ycg-remove-channel="${esc(channel.id)}" aria-label="Xóa kết nối ${esc(channel.title)}">Xóa</button></td></tr>`;
+    }).join("") || `<tr><td colspan="7">Không có kênh phù hợp bộ lọc.</td></tr>`}</tbody></table></div>`;
     const overview = `<section class="ycg-studio-overview-simple">
       <div class="ycg-studio-metrics"><article><span>Sẵn sàng upload</span><strong>${fmt(summary.uploadReady)}</strong><small>Có token và quyền upload</small></article><article><span>Người đăng ký</span><strong>${fmt(summary.subscribers)}</strong><small>Tổng dữ liệu đã đồng bộ</small></article><article><span>Đang xử lý</span><strong>${fmt(summary.pendingUploads)}</strong><small>Upload và YouTube xử lý</small></article><article><span>Cần chú ý</span><strong>${fmt(Number(summary.failedUploads || 0) + Number(summary.unansweredDrafts || 0))}</strong><small>Lỗi và phản hồi nháp</small></article></div>
-      <section class="ycg-panel ycg-channel-library"><header><div><h3>Danh sách kênh</h3><small>${filteredChannels.length}/${channels.length} kênh · chọn kênh rồi mở tab Đăng video</small></div></header><div class="ycg-channel-toolbar"><input data-ycg-channel-search value="${esc(fleetState.channelSearch)}" placeholder="Tìm tên kênh, Channel ID hoặc tài khoản Google"><select data-ycg-channel-filter><option value="all" ${fleetState.channelFilter === "all" ? "selected" : ""}>Tất cả trạng thái</option><option value="ready" ${fleetState.channelFilter === "ready" ? "selected" : ""}>Sẵn sàng upload</option><option value="warning" ${fleetState.channelFilter === "warning" ? "selected" : ""}>Thiếu quyền/token</option><option value="uploading" ${fleetState.channelFilter === "uploading" ? "selected" : ""}>Đang xử lý</option><option value="error" ${fleetState.channelFilter === "error" ? "selected" : ""}>Có lỗi</option></select><button type="button" data-ycg-action="fleet-select-visible">Chọn kênh đang lọc</button><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></div>${channelTable}</section>
+      <section class="ycg-panel ycg-channel-library"><header><div><h3>Danh sách kênh</h3><small>${filteredChannels.length}/${channels.length} kênh · chọn kênh rồi mở tab Đăng video</small></div></header><div class="ycg-channel-toolbar"><input data-ycg-channel-search value="${esc(fleetState.channelSearch)}" placeholder="Tìm tên kênh, Channel ID hoặc tài khoản Google"><select data-ycg-channel-filter><option value="all" ${fleetState.channelFilter === "all" ? "selected" : ""}>Tất cả trạng thái</option><option value="ready" ${fleetState.channelFilter === "ready" ? "selected" : ""}>Sẵn sàng upload</option><option value="warning" ${fleetState.channelFilter === "warning" ? "selected" : ""}>Thiếu quyền/token</option><option value="uploading" ${fleetState.channelFilter === "uploading" ? "selected" : ""}>Đang xử lý</option><option value="error" ${fleetState.channelFilter === "error" ? "selected" : ""}>Có lỗi</option></select><button type="button" data-ycg-action="fleet-select-visible">Chọn kênh đang lọc</button><button type="button" data-ycg-action="fleet-refresh">Làm mới</button><button type="button" class="ycg-danger-action" data-ycg-action="fleet-remove-selected" ${selectedChannels.length ? "" : "disabled"}>Xóa kênh đã chọn (${selectedChannels.length})</button></div>${channelTable}</section>
     </section>`;
     const uploadAccounts = [...new Map(channels.map((channel) => [uploadChannelAccountKey(channel), channel.account?.hint || "Tài khoản Google"])).entries()];
     const uploadVisibleIds = new Set(filteredUploadChannels(channels).map((channel) => channel.id));
@@ -2808,6 +2808,54 @@
     }
   }
 
+  function clearRemovedChannelState(channelIds) {
+    const removed = new Set(channelIds.map(String));
+    fleetState.selectedChannelIds = fleetState.selectedChannelIds.filter((id) => !removed.has(id));
+    fleetState.selectedContentIds = fleetState.selectedContentIds.filter((key) => ![...removed].some((id) => key.startsWith(`${id}::`)));
+    if (removed.has(fleetState.settingsChannel)) fleetState.settingsChannel = "";
+    if (removed.has(fleetState.contentChannel)) fleetState.contentChannel = "all";
+    if (removed.has(fleetState.calendarChannelFilter)) fleetState.calendarChannelFilter = "all";
+    removed.forEach((channelId) => {
+      delete fleetState.channelPresets[channelId];
+      Object.keys(fleetState.taskMatrix).filter((key) => key.endsWith(`::${channelId}`)).forEach((key) => delete fleetState.taskMatrix[key]);
+      Object.keys(fleetState.scheduleDrafts).filter((key) => key.startsWith(`${channelId}::`)).forEach((key) => delete fleetState.scheduleDrafts[key]);
+    });
+    invalidateFleetPublish();
+    saveFleetState();
+  }
+
+  async function removeChannels(channelIds) {
+    const channels = (fleetOverview?.channels || channelStatus.channels || []).filter(Boolean);
+    const targets = [...new Set(channelIds.map(String))].map((id) => channels.find((channel) => channel.id === id)).filter(Boolean);
+    if (!targets.length) throw new Error("Hãy chọn ít nhất một kênh cần xóa khỏi HH Studio.");
+    const names = targets.slice(0, 4).map((channel) => channel.title).join(", ");
+    const more = targets.length > 4 ? ` và ${targets.length - 4} kênh khác` : "";
+    if (!confirm(`Xóa ${targets.length} kết nối kênh khỏi HH Studio?\n\n${names}${more}\n\nToken của các kết nối này sẽ bị thu hồi. Kênh và video trên YouTube không bị xóa.`)) return;
+    busy = "channels/remove";
+    errorMessage = "";
+    render();
+    const removed = [];
+    const failed = [];
+    for (const channel of targets) {
+      try {
+        await api("channel/select", "POST", { channelId: channel.id });
+        await api("disconnect", "POST", { channelId: channel.id, approved: true });
+        removed.push(channel.id);
+      } catch (error) {
+        failed.push(`${channel.title}: ${error.message}`);
+      }
+    }
+    clearRemovedChannelState(removed);
+    busy = "";
+    await refresh(true, true);
+    if (failed.length) {
+      errorMessage = `Đã xóa ${removed.length}/${targets.length} kết nối. ${failed.join(" · ")}`;
+      render();
+      return;
+    }
+    status(`Đã xóa ${removed.length} kết nối khỏi HH Studio. Kênh và video trên YouTube vẫn nguyên vẹn.`, "success");
+  }
+
   async function loadChannelSettings(channelId = fleetState.settingsChannel) {
     const channels = connectedChannels();
     const id = channels.some((channel) => channel.id === channelId) ? channelId : channels[0]?.id;
@@ -2990,6 +3038,7 @@
       saveFleetState();
       return render();
     }
+    if (action === "fleet-remove-selected") return removeChannels(fleetState.selectedChannelIds);
     if (["upload-select-visible-channels", "upload-select-ready-channels", "upload-clear-channels"].includes(action)) {
       const channels = fleetOverview?.channels || channelStatus.channels || [];
       const limit = fleetSelectionCapacity();
@@ -3367,6 +3416,12 @@
     const actionButton = event.target.closest("[data-ycg-action]");
     if (actionButton) {
       try { await handleAction(actionButton.dataset.ycgAction); }
+      catch (error) { errorMessage = error.message; render(); }
+      return;
+    }
+    const removeChannelButton = event.target.closest("[data-ycg-remove-channel]");
+    if (removeChannelButton) {
+      try { await removeChannels([removeChannelButton.dataset.ycgRemoveChannel]); }
       catch (error) { errorMessage = error.message; render(); }
       return;
     }

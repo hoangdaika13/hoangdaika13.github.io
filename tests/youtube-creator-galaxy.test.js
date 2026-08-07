@@ -248,6 +248,10 @@ test("Multi-channel Studio manages one hundred private channels and ten-video ta
   assert.match(css, /\.ycg-studio-channel-table/);
   assert.match(css, /\.ycg-task-table/);
   assert.match(css, /\.ycg-shell\[data-ycg-active="fleet"\]/);
+  for (const capability of ["removeChannels", "clearRemovedChannelState", "fleet-remove-selected", "data-ycg-remove-channel", "Xóa kênh đã chọn"]) assert.match(client, new RegExp(capability));
+  assert.match(client, /api\("channel\/select", "POST", \{ channelId: channel\.id \}\)/);
+  assert.match(client, /api\("disconnect", "POST", \{ channelId: channel\.id, approved: true \}\)/);
+  assert.match(client, /Kênh và video trên YouTube không bị xóa/);
 });
 
 test("Upload workspace exposes a fast multi-channel target picker", () => {
@@ -501,7 +505,7 @@ test("Creator Galaxy assets are lazy-loaded, cached and versioned", () => {
   const index = read("index.html");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["youtube-creator-galaxy.css?v=19", "youtube-creator-galaxy.js?v=23"]) {
+  for (const asset of ["youtube-creator-galaxy.css?v=20", "youtube-creator-galaxy.js?v=24"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(loader, pattern);

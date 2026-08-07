@@ -1,4 +1,4 @@
-# HH Japanese OS V4 — Open data notice
+# HH Japanese OS V5 — Open data notice
 
 Generated data is kept separate from editorially reviewed HH Japanese content.
 Every entry exposes its source, version, review status, and whether JLPT or pitch
@@ -15,7 +15,7 @@ metadata has actually been verified.
 - Source archive checksum: `96429204BD46C0279894524AE0688A8933D836F1C875F41713C379CFAFADF7DF`
 - HH pack checksum: `B2ECCB2500DE6255357FE27CCE474ECAA607D87F9991776A16FC7416F02CE33D`
 
-The V4 general pack contains 30,000 additional source-derived entries. English
+The V5 dictionary contains 30,000 additional source-derived entries. English
 glosses are shown as reference data and are not presented as reviewed Vietnamese
 translations. No JLPT level or pitch accent is inferred from JMdict.
 
@@ -30,17 +30,28 @@ translations. No JLPT level or pitch accent is inferred from JMdict.
 - Source: https://github.com/KanjiVG/kanjivg
 - License: CC BY-SA 3.0
 
-KanjiVG is an approved source for future stroke-order packs. V4 currently keeps
-the drawing pad honest and does not claim automatic stroke recognition when a
-stroke file is unavailable.
+HH Japanese V5 includes 2,135 common Kanji with real SVG stroke paths. The pack
+checksum is `10EB3A3B340BEC50B1F1CF7D868148AA23D7E4B7A3EE38F01CACCD67B03F5C3F`.
+Attribution and ShareAlike conditions remain attached to offline exports. Stroke
+validation is approximate start-point and direction guidance, not handwriting AI.
 
 ## Tatoeba and audio
 
-Tatoeba sentences/audio may only be imported when the individual record carries
-a reusable license and attribution metadata. Records without an audio license are
-not redistributed. Mozilla Common Voice is not re-hosted because current dataset
-terms prohibit redistribution. Word and sentence playback therefore uses the
-device's Japanese `speechSynthesis` voice on demand.
+HH Japanese V5 contains 30,000 source-filtered sentence pairs from Tatoeba. Every
+record keeps the Japanese sentence author/license and translation author/license.
+6,064 records have Vietnamese translations; the remainder use English. The pack
+checksum is `78DA0B12ADC30DE7534B611416B4CB331FC92A89A4D3B5B807A8449148D27367`.
+Text uses CC BY 2.0 FR or CC0 according to each record. Audio is not redistributed
+unless its contributor-specific license is independently verified. Device Japanese
+`speechSynthesis` remains the on-demand fallback.
+
+## Editorial review status
+
+`source-filtered`, `automatic`, `checked` and `reviewed` are separate states. A
+machine-generated or source-derived Vietnamese gloss is never presented as
+editorially reviewed. Review Console proposals stay local and pending until an
+editor explicitly approves them; exports preserve this state and the source pack
+checksums.
 
 ## JF / JLPT
 
