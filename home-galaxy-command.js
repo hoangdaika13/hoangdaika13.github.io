@@ -12,18 +12,25 @@
     motion: "balanced",
     stars: 62,
     sound: false,
-    planets: ["creative", "work", "media", "dev", "communication", "learning", "analytics", "system"],
+    planets: ["home", "system", "creative", "music", "media", "graphic", "dev", "work", "communication", "entertainment", "analytics", "learning", "english", "japanese", "support"],
     widgets: ["weather", "performance", "memory", "network", "health", "sync"]
   });
   const PLANETS = Object.freeze([
-    { id: "creative", icon: "✦", label: "AI & Sáng tạo", route: "/create", color: "#ff59d6", description: "AI Center, nội dung, chiến dịch và quy trình sáng tạo." },
-    { id: "work", icon: "□", label: "Công việc", route: "/work", color: "#baff62", description: "Task, dự án, tiến độ và phiên tập trung đang hoạt động." },
-    { id: "media", icon: "◈", label: "Media & Design", route: "/media", color: "#a986ff", description: "Ảnh, video, thiết kế và các dự án xuất bản đa phương tiện." },
-    { id: "dev", icon: "⌘", label: "DEV", route: "/dev", color: "#58f3ff", description: "Công cụ lập trình, API, Git, dữ liệu và bảo mật." },
+    { id: "home", icon: "⌂", label: "Trang chủ", route: "/home", color: "#ffd76b", description: "Dải ngân hà hôm nay và tín hiệu quan trọng." },
+    { id: "system", icon: "⚙", label: "Hệ thống", route: "/system", color: "#55f1ff", description: "Giao diện, quyền riêng tư, PWA và trạng thái hệ thống." },
+    { id: "creative", icon: "✦", label: "Sáng tạo", route: "/create", color: "#ff59d6", description: "AI Center, nội dung, chiến dịch và quy trình sáng tạo." },
+    { id: "music", icon: "♫", label: "Làm nhạc AI", route: "/music-ai", color: "#ffab63", description: "Sáng tác, phối khí, mix, master và xuất bản." },
+    { id: "media", icon: "◈", label: "Media & Design", route: "/media-design", color: "#b8ff72", description: "Ảnh, video và dự án xuất bản đa phương tiện." },
+    { id: "graphic", icon: "✺", label: "Thiết kế đồ họa", route: "/graphic-design", color: "#bf93ff", description: "Vector, typography, mockup và motion design." },
+    { id: "dev", icon: "⌘", label: "DEV", route: "/dev-tools", color: "#58f3ff", description: "Công cụ lập trình, API, Git, dữ liệu và bảo mật." },
+    { id: "work", icon: "□", label: "Công việc", route: "/work", color: "#ff6fcf", description: "Task, dự án, tiến độ và phiên tập trung." },
     { id: "communication", icon: "◌", label: "Giao tiếp", route: "/communication", color: "#67efbd", description: "Messenger, cộng đồng, thông báo và phòng trực tiếp." },
-    { id: "learning", icon: "◫", label: "Học tập", route: "/learn", color: "#ffbd5a", description: "Lộ trình học, bài ôn, lớp học và HH English." },
-    { id: "analytics", icon: "↗", label: "Phân tích", route: "/analytics", color: "#ff7f9d", description: "Website Health, hiệu suất, Web Vitals và báo cáo." },
-    { id: "system", icon: "⚙", label: "Hệ thống", route: "/settings", color: "#7ea8ff", description: "Giao diện, quyền riêng tư, PWA và trạng thái hệ thống." }
+    { id: "entertainment", icon: "◉", label: "Giải trí", route: "/entertainment", color: "#ffd26d", description: "Game Center, Arcade và ASTRA Space." },
+    { id: "analytics", icon: "↗", label: "Phân tích", route: "/analytics", color: "#72cbff", description: "Website Health, hiệu suất, Web Vitals và báo cáo." },
+    { id: "learning", icon: "◫", label: "Học tập", route: "/learn", color: "#f899ff", description: "Lộ trình, bài ôn, lớp học và kho kiến thức." },
+    { id: "english", icon: "E", label: "HH English", route: "/english", color: "#dfff7b", description: "CEFR, luyện nghe, phát âm và vốn từ." },
+    { id: "japanese", icon: "日", label: "HH Japanese", route: "/japanese", color: "#ff896b", description: "JLPT/JF, Kanji, từ vựng và giao tiếp." },
+    { id: "support", icon: "♥", label: "Ủng hộ HH", route: "/support", color: "#ff76b8", description: "Ủng hộ, phản hồi, roadmap và hỗ trợ." }
   ]);
   const WIDGETS = Object.freeze([
     { id: "weather", icon: "◒", label: "Thời tiết & AQI", target: ".dashboard-weather" },
@@ -155,11 +162,11 @@
         <div class="hgc-hero-copy">
           <span class="hgc-kicker"><i></i> HH GALAXY COMMAND</span>
           <h2 id="hgcHeroTitle"><span data-hgc-greeting>${nowPeriod.greeting}</span>, <b data-hgc-user>${escapeHtml(userName())}</b></h2>
-          <p>Một mặt trời chỉ huy, tám hành tinh chức năng và mọi tín hiệu quan trọng trong cùng một vũ trụ.</p>
+          <p>Một lõi H chỉ huy, 15 hành tinh chức năng và mọi tín hiệu quan trọng trong cùng một vũ trụ.</p>
           <div class="hgc-hero-actions"><button type="button" class="is-primary" data-hgc-route="/create/ai-center">✦ Bắt đầu với AI</button><button type="button" data-command-open>⌕ Tìm mọi thứ</button><button type="button" data-hgc-settings-open>Điều chỉnh vũ trụ</button></div>
           <div class="hgc-hero-status"><span><i></i><b data-hgc-hero-status>Hệ thống đang đồng bộ</b></span><time data-hgc-clock>--:--:--</time></div>
         </div>
-        <div class="hgc-solar" data-hgc-solar aria-label="Tám hành tinh chức năng">
+        <div class="hgc-solar" data-hgc-solar aria-label="Mười lăm hành tinh chức năng">
           <div class="hgc-orbit hgc-orbit--1"></div><div class="hgc-orbit hgc-orbit--2"></div><div class="hgc-orbit hgc-orbit--3"></div><div class="hgc-orbit hgc-orbit--4"></div>
           <div class="hgc-energy-lines" aria-hidden="true"></div>
           <div class="hgc-sun" aria-label="Mặt trời chỉ huy H"><span>H</span><i></i><b></b><em></em></div>
@@ -168,6 +175,22 @@
           <p>Rê chuột để dừng quỹ đạo · nhấn hành tinh để mở workspace</p>
         </div>
       </section>
+      <section class="hgc-today" aria-labelledby="hgcTodayTitle">
+        <header><div><small>DẢI NGÂN HÀ HÔM NAY</small><h3 id="hgcTodayTitle">Việc quan trọng đang ở đúng quỹ đạo</h3></div><time data-hgc-today-date></time></header>
+        <div class="hgc-today-track">
+          <button type="button" data-hgc-today="continue" data-hgc-route="/home"><span>◷</span><small>TIẾP TỤC</small><strong data-hgc-today-title="continue">Chưa có phiên gần đây</strong><em data-hgc-today-meta="continue">Mở một công cụ để lưu hành trình</em></button>
+          <button type="button" data-hgc-today="tasks" data-hgc-route="/work"><span>□</span><small>CÔNG VIỆC</small><strong data-hgc-today-title="tasks">0 việc cần làm</strong><em data-hgc-today-meta="tasks">Không có deadline bị tạo giả</em></button>
+          <button type="button" data-hgc-today="learning" data-hgc-route="/learn/review"><span>◫</span><small>ÔN TẬP</small><strong data-hgc-today-title="learning">0 bài đến hạn</strong><em data-hgc-today-meta="learning">Lấy từ tiến độ học trên thiết bị</em></button>
+          <button type="button" data-hgc-today="notifications" data-hgc-route="/communication/notifications"><span>◇</span><small>THÔNG BÁO</small><strong data-hgc-today-title="notifications">0 thông báo mới</strong><em data-hgc-today-meta="notifications">Chỉ đếm thông báo chưa đọc</em></button>
+        </div>
+      </section>
+      <section class="hgc-constellation" aria-labelledby="hgcConstellationTitle">
+        <div class="hgc-constellation-copy"><small>CONSTELLATION PROFILE</small><h3 id="hgcConstellationTitle">Chòm sao tiến độ của bạn</h3><p>Bốn điểm sáng được tính từ hoạt động đã lưu thật trên thiết bị, không dùng xếp hạng giả.</p></div>
+        <div class="hgc-constellation-map" aria-label="Tiến độ Sáng tạo, Học tập, Công việc và Giải trí">
+          <svg viewBox="0 0 420 170" role="img" aria-label="Bản đồ chòm sao tiến độ"><path d="M52 110 L158 38 L266 105 L368 48"/><path class="is-soft" d="M52 110 L266 105 M158 38 L368 48"/><g data-hgc-star="creative" transform="translate(52 110)"><circle r="8"/><text x="0" y="32">Sáng tạo</text><text class="value" x="0" y="-18">0%</text></g><g data-hgc-star="learning" transform="translate(158 38)"><circle r="8"/><text x="0" y="32">Học tập</text><text class="value" x="0" y="-18">0%</text></g><g data-hgc-star="work" transform="translate(266 105)"><circle r="8"/><text x="0" y="32">Công việc</text><text class="value" x="0" y="-18">0%</text></g><g data-hgc-star="entertainment" transform="translate(368 48)"><circle r="8"/><text x="0" y="32">Giải trí</text><text class="value" x="0" y="-18">0%</text></g></svg>
+        </div>
+      </section>
+      <nav class="hgc-dock" aria-label="Dock tàu không gian"><span class="hgc-dock-ship" aria-hidden="true">◢</span><button type="button" data-hgc-route="/home" aria-label="Trang chủ"><i>⌂</i><b>Trang chủ</b></button><button type="button" data-command-open aria-label="Tìm kiếm"><i>⌕</i><b>Tìm kiếm</b></button><button type="button" class="is-create" data-hgc-route="/create" aria-label="Tạo mới"><i>＋</i><b>Tạo mới</b></button><button type="button" data-hgc-route="/communication/notifications" aria-label="Thông báo"><i>◇</i><b>Thông báo</b><em data-hgc-dock-notifications hidden>0</em></button><button type="button" data-hgc-route="/settings/user-dashboard" aria-label="Hồ sơ"><i>○</i><b>Hồ sơ</b></button></nav>
       ${preferenceMarkup()}
       <div class="hgc-burst" data-hgc-burst aria-hidden="true"></div>
       <div class="hgc-notification-comet" data-hgc-notification-comet aria-hidden="true"><i></i><span>Thông báo mới</span></div>
@@ -284,6 +307,53 @@
     setText("[data-hgc-hero-status]", navigator.onLine ? `Website ${snapshot.health.value} · ${snapshot.network.value}` : "Đang chờ kết nối mạng");
     updatePlanetSignals();
     updateActivity(snapshot);
+    updateLivingPanels();
+  }
+
+  function updateLivingPanels() {
+    const todos = readJson(TODO_KEY, []);
+    const projects = readJson(PROJECT_KEY, {});
+    const communication = readJson(COMMUNICATION_KEY, {});
+    const learning = readJson(LEARNING_KEY, {});
+    const recent = readJson(RECENT_KEY, []);
+    const projectTasks = Array.isArray(projects.tasks) ? projects.tasks : [];
+    const allTasks = [...(Array.isArray(todos) ? todos : []), ...projectTasks];
+    const pending = allTasks.filter((item) => item && !item.completed && item.status !== "done" && item.column !== "done");
+    const completed = allTasks.filter((item) => item && (item.completed || item.status === "done" || item.column === "done")).length;
+    const reviews = Array.isArray(learning.reviews) ? learning.reviews.filter((item) => item && !item.completed) : [];
+    const unread = Array.isArray(communication.notifications) ? communication.notifications.filter((item) => item && !item.read) : [];
+    const recentItems = Array.isArray(recent) ? recent : [];
+    const latest = recentItems[0];
+    const latestText = typeof latest === "string" ? latest : latest?.title || latest?.label || latest?.route || "";
+    const latestRoute = typeof latest === "object" && /^\/[a-z0-9/_-]+$/i.test(latest?.route || "") ? latest.route : "/home";
+    setText('[data-hgc-today-title="continue"]', latestText ? String(latestText).slice(0, 62) : "Chưa có phiên gần đây");
+    setText('[data-hgc-today-meta="continue"]', latestText ? "Tiếp tục đúng nơi bạn đã dừng" : "Mở một công cụ để lưu hành trình");
+    const continueButton = root?.querySelector('[data-hgc-today="continue"]');
+    if (continueButton) continueButton.dataset.hgcRoute = latestRoute;
+    setText('[data-hgc-today-title="tasks"]', `${pending.length} việc cần làm`);
+    setText('[data-hgc-today-meta="tasks"]', pending[0]?.title ? String(pending[0].title).slice(0, 70) : "Hôm nay chưa có công việc tồn đọng");
+    setText('[data-hgc-today-title="learning"]', `${reviews.length} bài đến hạn`);
+    setText('[data-hgc-today-meta="learning"]', reviews[0]?.title ? String(reviews[0].title).slice(0, 70) : "Không có bài ôn đang chờ");
+    setText('[data-hgc-today-title="notifications"]', `${unread.length} thông báo mới`);
+    setText('[data-hgc-today-meta="notifications"]', unread[0]?.title ? String(unread[0].title).slice(0, 70) : "Hộp thư đã được xử lý");
+    setText("[data-hgc-today-date]", new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date()));
+    const dockBadge = root?.querySelector("[data-hgc-dock-notifications]");
+    if (dockBadge) { dockBadge.textContent = String(Math.min(99, unread.length)); dockBadge.hidden = unread.length === 0; }
+
+    const text = JSON.stringify(recentItems).toLowerCase();
+    const categoryScore = (terms) => Math.min(100, terms.reduce((sum, term) => sum + (text.split(term).length - 1) * 12, 0));
+    const scores = {
+      creative: categoryScore(["create", "creative", "ai", "media", "graphic"]),
+      learning: Math.min(100, reviews.length * 8 + Object.keys(learning.progress || {}).length * 10),
+      work: allTasks.length ? Math.round(completed / allTasks.length * 100) : 0,
+      entertainment: categoryScore(["game", "astra", "entertainment", "arcade"])
+    };
+    Object.entries(scores).forEach(([name, score]) => {
+      const star = root?.querySelector(`[data-hgc-star="${name}"]`);
+      const value = star?.querySelector(".value");
+      if (value) value.textContent = `${score}%`;
+      star?.style.setProperty("--star-strength", String(.72 + score / 180));
+    });
   }
 
   function countStoredSignals() {
@@ -300,14 +370,21 @@
     const reviewItems = Array.isArray(learning?.reviews) ? learning.reviews.filter((item) => item && !item.completed).length : 0;
     const pending = [...(Array.isArray(todos) ? todos : []), ...projectTasks].filter((item) => item && !item.completed && item.status !== "done" && item.column !== "done").length;
     return {
+      home: recent.length,
+      system: prefs.widgets.length,
       creative: (recentText.match(/ai|creative|creator/g) || []).length,
+      music: (recentText.match(/music|composer|lyrics/g) || []).length,
       work: pending,
       media: mediaCount + (recentText.match(/media|design|photo|video/g) || []).length,
+      graphic: (recentText.match(/graphic|vector|mockup/g) || []).length,
       dev: (recentText.match(/dev|api|git|code/g) || []).length,
       communication: unread,
+      entertainment: (recentText.match(/game|astra|arcade/g) || []).length,
       learning: reviewItems,
+      english: (recentText.match(/english|cefr/g) || []).length,
+      japanese: (recentText.match(/japanese|jlpt/g) || []).length,
+      support: (recentText.match(/support|donat/g) || []).length,
       analytics: document.querySelectorAll(".hhhf-health-overview strong").length ? 1 : 0,
-      system: prefs.widgets.length
     };
   }
 
@@ -520,6 +597,11 @@
   function observeHome() {
     observer?.disconnect();
     observer = new MutationObserver((mutations) => {
+      const host = mountedHome?.querySelector("#homeGalaxyCommandRoot");
+      if (host?.firstElementChild !== root || !root?.querySelector(".hgc-hero")) {
+        setTimeout(() => mount(mountedHome, true), 90);
+        return;
+      }
       if (mutations.some((mutation) => mutation.target.closest?.("[data-hgc-root]"))) return;
       scheduleUpdate();
       const hasNew = mutations.some((mutation) => [...mutation.addedNodes].some((node) => node.nodeType === 1 && (node.matches?.(".app-notice--new") || node.querySelector?.(".app-notice--new"))));
@@ -557,6 +639,9 @@
   addEventListener("hh:auth-change", scheduleMount);
   addEventListener("hh:workspace-open", scheduleMount);
   addEventListener("hh:assets-ready", (event) => { if (event.detail?.route === "/home") scheduleMount(); });
+  addEventListener("hh:asset-group-ready", (event) => {
+    if (event.detail?.group === "home-enhancements") setTimeout(() => mount(undefined, true), 140);
+  });
   addEventListener("hashchange", () => { if (location.hash.includes("/home")) scheduleMount(); });
   addEventListener("storage", (event) => {
     if (event.key === PREF_KEY) { prefs = readPrefs(); applyPrefs(); }

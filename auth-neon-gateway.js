@@ -9,9 +9,9 @@
   const MOTION_KEY = "hh.auth.motion.v1";
   const motionLevels = ["high", "soft", "off"];
   const motionLabels = {
-    high: "Hiệu ứng: Cao",
-    soft: "Hiệu ứng: Êm",
-    off: "Hiệu ứng: Tắt"
+    high: "Điện ảnh",
+    soft: "Cân bằng",
+    off: "Tĩnh"
   };
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const finePointer = matchMedia("(pointer: fine) and (min-width: 921px)");
@@ -277,9 +277,17 @@
 
   if (gate.querySelector("[data-hh-galaxy]") && !window.HHHGalaxy) {
     const galaxyRuntime = document.createElement("script");
-    galaxyRuntime.src = "auth-h-galaxy.js?v=4";
+    galaxyRuntime.src = "auth-h-galaxy.js?v=5";
     galaxyRuntime.defer = true;
     galaxyRuntime.dataset.hhGalaxyRuntime = "true";
+    galaxyRuntime.addEventListener("load", () => {
+      if (window.HHLivingGalaxy3D) return window.HHLivingGalaxy3D.mount?.();
+      const livingRuntime = document.createElement("script");
+      livingRuntime.src = "auth-living-galaxy-3d.js?v=3";
+      livingRuntime.defer = true;
+      livingRuntime.dataset.hhLivingGalaxyRuntime = "true";
+      document.head.append(livingRuntime);
+    }, { once: true });
     document.head.append(galaxyRuntime);
   }
 

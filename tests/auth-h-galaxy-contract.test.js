@@ -16,8 +16,8 @@ test("interactive H galaxy exposes exactly fifteen unique product planets", () =
   assert.equal(keys.length, 15);
   assert.equal(new Set(keys).size, 15);
   assert.match(html, /id="hhGalaxyInspector" role="tabpanel"/);
-  assert.match(html, /auth-h-galaxy\.css\?v=5/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=4/);
+  assert.match(html, /auth-h-galaxy\.css\?v=7/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=5/);
   assert.match(html, /data-hh-galaxy-detail/);
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);
 });

@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v433";
+const CACHE = "hh-identity-portal-v441";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
@@ -13,7 +13,7 @@ const RUNTIME_ASSETS = [
   "./app-shell.css?v=54",
   "./app-theme-system.css?v=6",
   "./dashboard-aurora.css?v=4",
-  "./home-galaxy-command.css?v=3",
+  "./home-galaxy-command.css?v=6",
   "./home-galaxy-mission.css?v=7",
   "./home-galaxy-operations.css?v=1",
   "./home-galaxy-control-deck.css?v=2",
@@ -133,7 +133,7 @@ const RUNTIME_ASSETS = [
   "./music-ai-apps.js?v=3",
   "./music-ai-studio.js?v=9",
   "./dashboard-aurora.js?v=5",
-  "./home-galaxy-command.js?v=3",
+  "./home-galaxy-command.js?v=5",
   "./home-galaxy-mission.js?v=9",
   "./home-galaxy-operations.js?v=4",
   "./home-galaxy-control-deck.js?v=2",
@@ -145,7 +145,8 @@ const RUNTIME_ASSETS = [
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=5",
-  "./auth-h-galaxy.css?v=5",
+  "./auth-h-galaxy.css?v=7",
+  "./auth-living-galaxy-3d.css?v=5",
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
   "./auth-identity-constellation.css?v=1",
@@ -165,8 +166,9 @@ const RUNTIME_ASSETS = [
   "./assets/hh-neon-logo-v2.png?v=3",
   "./auth-platform.js?v=13",
   "./auth-experience.js?v=8",
-  "./auth-neon-gateway.js?v=6",
-  "./auth-h-galaxy.js?v=4",
+  "./auth-neon-gateway.js?v=9",
+  "./auth-h-galaxy.js?v=5",
+  "./auth-living-galaxy-3d.js?v=3",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -437,9 +439,9 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=175",
+  "./performance-loader.js?v=180",
   "./auth-platform.js?v=13",
-  "./auth-neon-gateway.js?v=6",
+  "./auth-neon-gateway.js?v=9",
   "./script.js?v=165"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
