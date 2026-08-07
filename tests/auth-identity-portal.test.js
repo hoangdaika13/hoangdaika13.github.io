@@ -39,6 +39,14 @@ test("identity constellation uses local non-sensitive identity state", () => {
   assert.doesNotMatch(source, /input\[type=["']password["']\].*value/s);
 });
 
+test("primary login stays compact without passkey or cross-device shortcuts", () => {
+  const html = read("index.html");
+  assert.doesNotMatch(html, /data-passkey-login/);
+  assert.doesNotMatch(html, /data-device-login/);
+  assert.match(html, /data-oauth-provider="google"/);
+  assert.match(html, /id="gateLoginForm"/);
+});
+
 test("emotional logo exposes real states and opt-in spatial audio", () => {
   const source = read("auth-emotional-logo.js");
   for (const state of ["idle", "focus", "caps-lock", "offline", "authenticating", "success", "error"]) {

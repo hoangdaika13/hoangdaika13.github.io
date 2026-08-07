@@ -78,16 +78,16 @@ test("auth gate exposes login/register tabs and a persistent three-step signup f
   assertConcept(ui, "lĩnh vực quan tâm", [/data-(?:signup|register)-interest/i, /name=["']interests?(?:\[\])?["']/i]);
 });
 
-test("login offers remember, recovery, passkey, other-device, guest and privacy actions", () => {
+test("compact login keeps essential remember, recovery, guest and privacy actions", () => {
   const contracts = {
     "ghi nhớ đăng nhập": [/name=["']remember["']/i, /data-auth-(?:action=["']remember|remember)/i],
     "quên mật khẩu": [/data-auth-(?:action=["']forgot|forgot)/i, /id=["'][^"']*forgot/i],
-    "Passkey": [/data-auth-(?:action=["']passkey|passkey)/i, /id=["'][^"']*passkey/i],
-    "đăng nhập bằng thiết bị khác": [/data-auth-(?:action=["'](?:device|qr)|(?:device|qr))/i, /id=["'][^"']*(?:device|qr)/i],
     "tiếp tục với tư cách khách": [/data-auth-(?:action=["']guest|guest)/i, /id=["'][^"']*guest/i],
     "trung tâm quyền riêng tư": [/data-auth-(?:action=["']privacy|privacy)/i, /href=["'][^"']*privacy/i]
   };
   for (const [label, patterns] of Object.entries(contracts)) assertConcept(ui, label, patterns);
+  assert.doesNotMatch(html, /data-passkey-login/);
+  assert.doesNotMatch(html, /data-device-login/);
 });
 
 test("forms support password managers, inline errors and Caps Lock feedback", () => {
