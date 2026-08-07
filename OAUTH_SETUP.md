@@ -4,12 +4,12 @@ HH Neon Platform chỉ dùng Google OAuth và tài khoản email. Client Secret 
 
 ## URL chính thức
 
-- Website: `https://nhhoang13all.xyz`
-- Website www: `https://www.nhhoang13all.xyz`
-- Backend: `https://nhhoang13all.xyz`
-- Google callback: `https://www.nhhoang13all.xyz/api/auth/google/callback`
-- Privacy: `https://nhhoang13all.xyz/privacy.html`
-- Terms: `https://nhhoang13all.xyz/terms.html`
+- Website: `https://hoang8.com`
+- Website www: `https://www.hoang8.com`
+- Backend: `https://hoang8.com`
+- Google callback: `https://hoang8.com/api/auth/google/callback`
+- Privacy: `https://hoang8.com/privacy.html`
+- Terms: `https://hoang8.com/terms.html`
 
 ## Google Cloud
 
@@ -18,11 +18,11 @@ HH Neon Platform chỉ dùng Google OAuth và tài khoản email. Client Secret 
 3. Trong **Audience**, chọn **External**. Nếu ứng dụng còn ở Testing, thêm Gmail cần đăng nhập vào Test users.
 4. Trong **Clients**, mở OAuth client loại **Web application**.
 5. Authorized JavaScript origins:
-   - `https://nhhoang13all.xyz`
-   - `https://www.nhhoang13all.xyz`
+   - `https://hoang8.com`
+   - `https://www.hoang8.com`
    - `https://hoangdaika13-github-io.vercel.app`
 6. Authorized redirect URI phải khớp chính xác:
-   - `https://www.nhhoang13all.xyz/api/auth/google/callback`
+   - `https://hoang8.com/api/auth/google/callback`
 7. Lưu Client ID và Client Secret vào Vercel.
 
 ## Vercel
@@ -32,12 +32,12 @@ Trong project backend, đặt các biến cho Production:
 ```text
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
-GOOGLE_CALLBACK_URL=https://www.nhhoang13all.xyz/api/auth/google/callback
-FRONTEND_URL=https://nhhoang13all.xyz
-ALLOWED_ORIGINS=https://nhhoang13all.xyz,https://www.nhhoang13all.xyz,https://hoangdaika13-github-io.vercel.app
+GOOGLE_CALLBACK_URL=https://hoang8.com/api/auth/google/callback
+FRONTEND_URL=https://hoang8.com
+ALLOWED_ORIGINS=https://hoang8.com,https://www.hoang8.com,https://hoangdaika13-github-io.vercel.app
 ```
 
-Sau khi redeploy, kiểm tra `https://nhhoang13all.xyz/api/auth/providers`. Kết quả phải có `"google": true` và callback Google đúng URL phía trên.
+Sau khi redeploy, kiểm tra `https://hoang8.com/api/auth/providers`. Kết quả phải có `"google": true` và callback Google đúng URL phía trên.
 
 ## Bảo mật
 

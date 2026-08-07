@@ -31,8 +31,8 @@ function requestCookie(req, name) {
 
 function trustedOrigins() {
   return new Set([
-    "https://nhhoang13all.xyz",
-    "https://www.nhhoang13all.xyz",
+    "https://hoang8.com",
+    "https://www.hoang8.com",
     "https://hoangdaika13.github.io",
     "https://hoangdaika13-github-io.vercel.app",
     ...String(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "").split(",").map(value => value.trim())

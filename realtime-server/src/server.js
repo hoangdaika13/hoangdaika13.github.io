@@ -66,8 +66,8 @@ const ASTRA_WORLD = { width: 12000, height: 8000 };
 const ASTRA_SHIPS = new Set(["asteria", "nomad", "aurora", "titan", "lumen", "odyssey"]);
 
 const allowedOrigins = [...new Set([
-  "https://nhhoang13all.xyz",
-  "https://www.nhhoang13all.xyz",
+  "https://hoang8.com",
+  "https://www.hoang8.com",
   FRONTEND_URL,
   ...(process.env.ALLOWED_ORIGINS || "").split(",").map((item) => item.trim()),
   "http://127.0.0.1:4173",

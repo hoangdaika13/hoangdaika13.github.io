@@ -11,7 +11,7 @@ The publisher uploads video bytes directly from the visitor's device to YouTube 
    - `https://www.googleapis.com/auth/youtube.force-ssl`
 4. Open the Web OAuth client and add this exact authorized redirect URI:
 
-   `https://nhhoang13all.xyz/api/youtube/oauth/callback`
+   `https://hoang8.com/api/youtube/oauth/callback`
 
 5. Add the site domains and required developer contact information to the OAuth consent screen.
 6. Move the app to production when it is ready for users. Google may require OAuth verification for public access to YouTube scopes.
@@ -23,13 +23,13 @@ Add these variables to Production, Preview, and Development, then redeploy:
 ```text
 GOOGLE_CLIENT_ID=<web OAuth client id>
 GOOGLE_CLIENT_SECRET=<web OAuth client secret>
-YOUTUBE_CALLBACK_URL=https://nhhoang13all.xyz/api/youtube/oauth/callback
+YOUTUBE_CALLBACK_URL=https://hoang8.com/api/youtube/oauth/callback
 YOUTUBE_TOKEN_ENCRYPTION_KEY=<at least 32 random characters>
 MONGODB_URI=<MongoDB Atlas connection string>
 MONGODB_DB=hoangdaika13_site
 JWT_SECRET=<existing HH authentication secret>
-PUBLIC_SITE_URL=https://nhhoang13all.xyz
-FRONTEND_URL=https://nhhoang13all.xyz
+PUBLIC_SITE_URL=https://hoang8.com
+FRONTEND_URL=https://hoang8.com
 ```
 
 Generate the encryption secret locally with PowerShell:

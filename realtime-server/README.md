@@ -20,7 +20,7 @@ Quan trong:
 
 - `MONGODB_URI`: connection string MongoDB Atlas.
 - `JWT_SECRET`: chuoi random dai.
-- `FRONTEND_URL`: `https://nhhoang13all.xyz`.
+- `FRONTEND_URL`: `https://hoang8.com`.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: tao trong Google Cloud Console.
 - `STUN_URLS`: danh sach STUN, mac dinh dung Google STUN.
 - `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL`: TURN production de cuoc goi hoat dong qua NAT/firewall.

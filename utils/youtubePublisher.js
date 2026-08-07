@@ -78,8 +78,8 @@ function callbackUrl(req) {
 
 function allowedFrontends() {
   return new Set([
-    "https://nhhoang13all.xyz",
-    "https://www.nhhoang13all.xyz",
+    "https://hoang8.com",
+    "https://www.hoang8.com",
     "https://hoangdaika13.github.io",
     process.env.FRONTEND_URL || "",
     process.env.PUBLIC_SITE_URL || "",
@@ -88,7 +88,7 @@ function allowedFrontends() {
 }
 
 function safeFrontend(value) {
-  const fallback = process.env.PUBLIC_SITE_URL || process.env.FRONTEND_URL || "https://nhhoang13all.xyz";
+  const fallback = process.env.PUBLIC_SITE_URL || process.env.FRONTEND_URL || "https://hoang8.com";
   try {
     const url = new URL(String(value || fallback));
     return allowedFrontends().has(url.origin) ? url.origin : fallback;

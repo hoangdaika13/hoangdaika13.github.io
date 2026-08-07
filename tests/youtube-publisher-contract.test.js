@@ -83,7 +83,7 @@ test("YouTube API keeps OAuth credentials and tokens on the server", () => {
   assert.match(read("youtube-creator-galaxy.js"), /window\.HH_API_ORIGIN \|\| location\.origin/);
   assert.doesNotMatch(read("youtube-creator-galaxy.js"), /HH_REALTIME_URL \|\| location\.origin/);
   assert.match(read("youtube-creator-galaxy.js"), /api\/search\/youtube-publisher\?youtubeAction=/);
-  assert.match(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/nhhoang13all\.xyz\/api\/youtube\/oauth\/callback/);
+  assert.match(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/hoang8\.com\/api\/youtube\/oauth\/callback/);
   assert.doesNotMatch(envExample, /YOUTUBE_CALLBACK_URL=https:\/\/hoangdaika13githubio\.vercel\.app/);
 });
 

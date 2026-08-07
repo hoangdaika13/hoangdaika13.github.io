@@ -177,7 +177,7 @@
       { id: uid("todo"), title: "Xem tiến độ các dự án", priority: "medium", category: "Dự án", deadline: "", repeat: "weekly", completed: false, createdAt: Date.now() }
     ]);
     if (!read(KEYS.bookmarks, null)) write(KEYS.bookmarks, [
-      { id: uid("bookmark"), title: "Nhhoang · HH Neon Platform", url: "https://nhhoang13all.xyz/", category: "Cá nhân", favorite: true },
+      { id: uid("bookmark"), title: "Nhhoang · HH Neon Platform", url: "https://hoang8.com/", category: "Cá nhân", favorite: true },
       { id: uid("bookmark"), title: "GitHub", url: "https://github.com/hoangdaika13", category: "Developer", favorite: true }
     ]);
     if (!read(KEYS.events, null)) write(KEYS.events, []);

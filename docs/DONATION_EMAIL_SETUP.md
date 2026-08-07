@@ -6,13 +6,13 @@ The donation flow uses the existing `api/donations.js` Vercel Function, so it do
 
 1. In payOS, configure the payment webhook as:
 
-   `https://nhhoang13all.xyz/api/donations?provider=payos`
+   `https://hoang8.com/api/donations?provider=payos`
 
-2. Verify `nhhoang13all.xyz` in Resend and create a sending-only API key.
+2. Verify `hoang8.com` in Resend and create a sending-only API key.
 3. Add these Production environment variables in Vercel:
 
    - `RESEND_API_KEY`
-   - `DONATION_FROM_EMAIL=Nhhoang <donate@nhhoang13all.xyz>`
+   - `DONATION_FROM_EMAIL=Nhhoang <donate@hoang8.com>`
    - `DONATION_REPLY_TO` (optional)
    - the existing `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, and `PAYOS_CHECKSUM_KEY`
 

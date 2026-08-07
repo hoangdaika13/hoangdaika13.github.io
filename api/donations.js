@@ -100,7 +100,7 @@ function safeImpactLink(value) {
   if (!url) return "";
   try {
     const parsed = new URL(url);
-    const site = new URL(String(process.env.PUBLIC_SITE_URL || "https://nhhoang13all.xyz"));
+    const site = new URL(String(process.env.PUBLIC_SITE_URL || "https://hoang8.com"));
     return parsed.hostname === site.hostname || parsed.hostname === "github.com" ? parsed.href : "";
   } catch {
     return "";
@@ -258,7 +258,7 @@ function htmlEscape(value) {
 }
 
 function receiptEmail(donation) {
-  const siteUrl = String(process.env.PUBLIC_SITE_URL || "https://nhhoang13all.xyz").replace(/\/$/, "");
+  const siteUrl = String(process.env.PUBLIC_SITE_URL || "https://hoang8.com").replace(/\/$/, "");
   const name = clean(donation.donorName || "bạn", 100);
   const amount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(donation.amount) || 0);
   const paidAt = new Date(donation.verifiedAt || Date.now()).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", dateStyle: "long", timeStyle: "short" });
@@ -306,7 +306,7 @@ function receiptEmail(donation) {
           <p style="margin:25px 0 10px;text-align:center"><a href="${htmlEscape(siteUrl)}/#/support" style="display:inline-block;padding:14px 27px;border-radius:999px;background-color:#f2d06b;background-image:linear-gradient(110deg,#f6d878,#ec9dcc 52%,#72e8df);color:#17101f;text-decoration:none;font-size:14px;font-weight:900;box-shadow:0 8px 26px rgba(233,154,204,.25)">Khám phá trang tri ân&nbsp; →</a></p>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:28px;border-top:1px solid #2b2938"><tr><td style="padding-top:21px"><div style="font-size:14px;color:#938ba1">Trân trọng,</div><div style="margin-top:4px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-style:italic;color:#f7d77b">Nhhoang</div><div style="margin-top:3px;font-size:11px;letter-spacing:1.8px;color:#736c80">FOUNDER · HH PLATFORM</div></td></tr></table>
         </td></tr>
-        <tr><td align="center" style="padding:20px 28px;background-color:#090b12;font-size:11px;line-height:1.65;color:#6f6b79">Email giao dịch tự động, chỉ gửi sau khi khoản ủng hộ được máy chủ xác minh.<br>Đây là thư xác nhận ủng hộ, không phải hóa đơn tài chính. · <a href="${htmlEscape(siteUrl)}/#/support" style="color:#8edfd9;text-decoration:none">nhhoang13all.xyz</a></td></tr>
+        <tr><td align="center" style="padding:20px 28px;background-color:#090b12;font-size:11px;line-height:1.65;color:#6f6b79">Email giao dịch tự động, chỉ gửi sau khi khoản ủng hộ được máy chủ xác minh.<br>Đây là thư xác nhận ủng hộ, không phải hóa đơn tài chính. · <a href="${htmlEscape(siteUrl)}/#/support" style="color:#8edfd9;text-decoration:none">hoang8.com</a></td></tr>
       </table>
     </td></tr>
   </table>
@@ -770,7 +770,7 @@ module.exports = async function handler(req, res) {
       };
       const result = await donations.insertOne(doc);
       await db.collection("events").insertOne({ type: "donation:intent", userId: user?._id || null, recordId: result.insertedId, missionId, visibility, createdAt: new Date() });
-      const siteUrl = String(process.env.PUBLIC_SITE_URL || "https://nhhoang13all.xyz").replace(/\/$/, "");
+      const siteUrl = String(process.env.PUBLIC_SITE_URL || "https://hoang8.com").replace(/\/$/, "");
       try {
         const payment = await payOS().paymentRequests.create({
           orderCode: payosOrderCode,

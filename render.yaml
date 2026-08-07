@@ -12,9 +12,9 @@ services:
       - key: NODE_VERSION
         value: 22.16.0
       - key: FRONTEND_URL
-        value: https://nhhoang13all.xyz
+        value: https://hoang8.com
       - key: ALLOWED_ORIGINS
-        value: https://nhhoang13all.xyz,https://www.nhhoang13all.xyz,https://hoangdaika13-github-io.vercel.app
+        value: https://hoang8.com,https://www.hoang8.com,https://hoangdaika13-github-io.vercel.app
       - key: JWT_SECRET
         sync: false
       - key: ADMIN_EMAILS

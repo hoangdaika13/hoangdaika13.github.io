@@ -82,14 +82,14 @@ test("custom domain branding and Google-only OAuth stay in sync", () => {
   const manifest = read("manifest.webmanifest");
 
   assert.equal(fs.existsSync(path.join(root, "CNAME")), true);
-  assert.equal(read("CNAME").trim(), "nhhoang13all.xyz");
+  assert.equal(read("CNAME").trim(), "hoang8.com");
   assert.match(html, /<title>Nhhoang \| HH Neon Platform<\/title>/);
-  assert.match(html, /rel="canonical" href="https:\/\/nhhoang13all\.xyz\/"/);
+  assert.match(html, /rel="canonical" href="https:\/\/hoang8\.com\/"/);
   assert.match(html, /data-oauth-provider="google"/);
   assert.doesNotMatch(html, /data-oauth-provider="facebook"|id="facebookLogin"/);
-  assert.match(api, /https:\/\/nhhoang13all\.xyz/);
+  assert.match(api, /https:\/\/hoang8\.com/);
   assert.doesNotMatch(api, /FACEBOOK_APP_ID|graph\.facebook\.com|facebookVersion/);
-  assert.match(platform, /https:\/\/nhhoang13all\.xyz/);
+  assert.match(platform, /https:\/\/hoang8\.com/);
   assert.match(manifest, /Nhhoang · HH Neon Platform/);
   assert.match(manifest, /assets\/hh-neon-logo-v2\.png\?v=2/);
 });

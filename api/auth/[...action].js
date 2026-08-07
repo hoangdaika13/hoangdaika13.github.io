@@ -76,8 +76,8 @@ function allowedFrontendOrigins() {
   const configured = String(process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "")
     .split(",").map((value) => value.trim()).filter(Boolean);
   return new Set([
-    "https://nhhoang13all.xyz",
-    "https://www.nhhoang13all.xyz",
+    "https://hoang8.com",
+    "https://www.hoang8.com",
     "https://hoangdaika13.github.io",
     process.env.FRONTEND_URL || "",
     ...configured
@@ -85,7 +85,7 @@ function allowedFrontendOrigins() {
 }
 
 function frontendOrigin(value) {
-  const fallback = "https://nhhoang13all.xyz";
+  const fallback = "https://hoang8.com";
   try {
     const origin = new URL(String(value || "")).origin;
     return allowedFrontendOrigins().has(origin) ? origin : fallback;

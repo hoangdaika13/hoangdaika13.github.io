@@ -122,8 +122,8 @@ test("public provider and anonymous session checks work without opening MongoDB"
       query: { action },
       url,
       headers: {
-        host: "nhhoang13all.xyz",
-        origin: "https://nhhoang13all.xyz",
+        host: "hoang8.com",
+        origin: "https://hoang8.com",
         "x-forwarded-proto": "https"
       }
     };
@@ -165,18 +165,18 @@ test("Google OAuth starts without MongoDB and redirects with a state cookie", as
   delete process.env.MONGODB_URI;
   process.env.GOOGLE_CLIENT_ID = "test-client.apps.googleusercontent.com";
   process.env.GOOGLE_CLIENT_SECRET = "test-secret";
-  process.env.GOOGLE_CALLBACK_URL = "https://nhhoang13all.xyz/api/auth/google/callback";
-  process.env.FRONTEND_URL = "https://nhhoang13all.xyz";
+  process.env.GOOGLE_CALLBACK_URL = "https://hoang8.com/api/auth/google/callback";
+  process.env.FRONTEND_URL = "https://hoang8.com";
   process.env.JWT_SECRET = "test-only-jwt-secret-with-more-than-thirty-two-characters";
 
   const result = { statusCode: 0, location: "", headers: {} };
   const req = {
     method: "GET",
-    query: { action: ["google"], returnTo: "https://nhhoang13all.xyz" },
-    url: "/api/auth/google?returnTo=https%3A%2F%2Fnhhoang13all.xyz",
+    query: { action: ["google"], returnTo: "https://hoang8.com" },
+    url: "/api/auth/google?returnTo=https%3A%2F%2Fhoang8.com",
     headers: {
-      host: "nhhoang13all.xyz",
-      origin: "https://nhhoang13all.xyz",
+      host: "hoang8.com",
+      origin: "https://hoang8.com",
       "x-forwarded-proto": "https"
     }
   };
@@ -193,7 +193,7 @@ test("Google OAuth starts without MongoDB and redirects with a state cookie", as
     await handler(req, res);
     assert.equal(result.statusCode, 302);
     assert.match(result.location, /^https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?/);
-    assert.match(result.location, /redirect_uri=https%3A%2F%2Fnhhoang13all\.xyz%2Fapi%2Fauth%2Fgoogle%2Fcallback/);
+    assert.match(result.location, /redirect_uri=https%3A%2F%2Fhoang8\.com%2Fapi%2Fauth%2Fgoogle%2Fcallback/);
     assert.match(String(result.headers["Set-Cookie"]), /hh_oauth_google=/);
     assert.match(String(result.headers["Set-Cookie"]), /HttpOnly/);
   } finally {

@@ -159,7 +159,7 @@
         </div>
       </header>
       <section class="hh-admin-root-crown" aria-label="Root Authority status">
-        <span><i></i><small>PRODUCTION</small><strong>nhhoang13all.xyz</strong></span>
+        <span><i></i><small>PRODUCTION</small><strong>hoang8.com</strong></span>
         <span><i></i><small>AUTHORITY</small><strong>${esc(access?.tier === "root" ? "Root Super Admin" : access?.tier === "super" ? "Super Admin" : "Delegated Admin")}</strong></span>
         <span class="${privilege.active ? "active" : "standing"}"><i></i><small>PRIVILEGE SESSION</small><strong>${privilege.active ? `Nâng cao · còn ${privilegeMinutes} phút` : "Quyền thường trực"}</strong></span>
         <span><i></i><small>APPROVAL POLICY</small><strong>2 Super Admin</strong></span>

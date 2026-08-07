@@ -675,7 +675,7 @@ module.exports = async function handler(req, res) {
         infrastructure: {
           services: runtimeServices(),
           databaseCollections: databaseCollections.length,
-          productionDomain: clean(process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || "nhhoang13all.xyz", 300),
+          productionDomain: clean(process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || "hoang8.com", 300),
           environment: clean(process.env.VERCEL_ENV || "production", 40)
         },
         privacy: { secretsReturned: false, tokensReturned: false, privateDataReturned: false }
