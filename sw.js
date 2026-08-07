@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v446";
+const CACHE = "hh-identity-portal-v447";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
@@ -56,7 +56,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=165",
+  "./script.js?v=166",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -370,7 +370,7 @@ const RUNTIME_ASSETS = [
   "./video-batch-factory.js?v=3",
   "./video-editor-resolve.js?v=10",
   "./davinci-resolve-hub.js?v=5",
-  "./h-cosmic-web-studio.js?v=2",
+  "./h-cosmic-web-studio.js?v=3",
   "./video-editor-auto.js?v=1",
   "./photo-editor-pro.js?v=3",
   "./universal-media-project.js?v=1",
@@ -439,10 +439,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=180",
+  "./performance-loader.js?v=181",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=14",
-  "./script.js?v=165"
+  "./script.js?v=166"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

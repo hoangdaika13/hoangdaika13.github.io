@@ -3,8 +3,9 @@
 
   const BRIDGE = "http://127.0.0.1:8765";
   const AUTO_CONNECT = "h-cosmic-auto-v2";
-  const ZIP_URL = "/downloads/H-Cosmic-Studio-Portable-2026.08.03-r26.zip";
-  const STORAGE_PREFIX = "hh.h-cosmic-web.r26";
+  const ZIP_URL = "/downloads/H-Cosmic-Studio-Portable-2026.08.07-r38.zip";
+  const STORAGE_PREFIX = "hh.h-cosmic-web.r38";
+  const LEGACY_STORAGE_PREFIX = "hh.h-cosmic-web.r26";
   const SECTION_IDS = ["source", "timeline", "effects", "grade", "render", "enterprise", "blueprint"];
   const NUMBER_FIELDS = new Set([
     "width", "height", "fps", "still_seconds", "video_minutes", "stage1_clip_minutes", "zoom",
@@ -73,14 +74,20 @@
     if (!user) try { user = JSON.parse(localStorage.getItem("hh-auth-user") || "null"); } catch { user = null; }
     return String(user?.id || user?._id || "guest").replace(/[^a-z0-9_-]/gi, "").slice(0, 80) || "guest";
   };
-  const storageKey = () => `${STORAGE_PREFIX}:${currentOwner()}`;
+  const storageKey = (prefix = STORAGE_PREFIX) => `${prefix}:${currentOwner()}`;
   const label = (text, field) => `<label><span>${text}</span>${field}</label>`;
   const input = (name, placeholder = "", type = "text", attrs = "") => `<input name="${name}" type="${type}" placeholder="${esc(placeholder)}" ${attrs}>`;
   const check = (name, text) => `<label class="hc-check"><input name="${name}" type="checkbox"><span>${text}</span></label>`;
   const select = (name, options) => `<select name="${name}">${options.map(([value, text]) => `<option value="${esc(value)}">${esc(text)}</option>`).join("")}</select>`;
 
   function readStoredConfig() {
-    try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(storageKey()) || "{}") }; }
+    try {
+      const current = localStorage.getItem(storageKey());
+      const legacy = localStorage.getItem(storageKey(LEGACY_STORAGE_PREFIX));
+      const stored = current || legacy || "{}";
+      if (!current && legacy) localStorage.setItem(storageKey(), legacy);
+      return { ...DEFAULT_CONFIG, ...JSON.parse(stored) };
+    }
     catch { return { ...DEFAULT_CONFIG }; }
   }
   function writeStoredConfig(config) {
@@ -236,8 +243,8 @@
   function markup() {
     return `<section class="hc-studio" data-hc-studio>
       <header class="hc-command">
-        <div class="hc-brand"><span>H</span><div><small>H COSMIC STUDIO · 2026.08.03-r26</small><h2>DaVinci Batch Production</h2><p>Mission Control trên web cho batch ảnh → video, timeline, effects, RapidGrade, queue, resume và FFprobe.</p></div></div>
-        <div class="hc-top-actions"><div class="hc-mode-switch"><button type="button" data-hc-mode="web" class="is-active">Chạy thật trên Web</button><button type="button" data-hc-mode="resolve">DaVinci Bridge</button></div><button type="button" data-hc-connect>Kết nối Resolve</button><a class="hc-download" href="${ZIP_URL}" download>Tải Portable ZIP · 70.6 MB</a></div>
+        <div class="hc-brand"><span>H</span><div><small>H COSMIC STUDIO · 2026.08.07-r38</small><h2>DaVinci Batch Production</h2><p>Mission Control trên web cho batch ảnh → video, timeline, effects, RapidGrade, queue, resume và FFprobe.</p></div></div>
+        <div class="hc-top-actions"><div class="hc-mode-switch"><button type="button" data-hc-mode="web" class="is-active">Chạy thật trên Web</button><button type="button" data-hc-mode="resolve">DaVinci Bridge</button></div><button type="button" data-hc-connect>Kết nối Resolve</button><a class="hc-download" href="${ZIP_URL}" download>Tải Portable ZIP · 67.7 MB</a></div>
       </header>
       <section class="hc-web-runtime" data-hc-web-only><div><i></i><span>WEB ENGINE</span><strong>Canvas + MediaRecorder + Web Audio</strong></div><div><span>NGUỒN</span><strong>Ảnh · nhạc · overlay thật</strong></div><div><span>ĐẦU RA</span><strong>MP4 nếu trình duyệt hỗ trợ · WebM tương thích</strong></div><div><span>DỮ LIỆU</span><strong>Local-first · IndexedDB</strong></div></section>
       <section class="hc-bridge" data-hc-bridge data-hc-resolve-only data-state="offline" hidden>
@@ -262,8 +269,8 @@
           <dl><div><dt>Video dự kiến</dt><dd data-hc-estimate-jobs>267</dd></div><div><dt>Thời lượng output</dt><dd data-hc-estimate-hours>267 giờ</dd></div><div><dt>Dung lượng ước tính</dt><dd data-hc-estimate-size>1.20 TB</dd></div><div><dt>Bridge</dt><dd data-hc-monitor-bridge>Offline</dd></div></dl>
           <section class="hc-current"><small>TRẠNG THÁI</small><strong data-hc-current>Sẵn sàng cấu hình</strong><p data-hc-current-detail>PRECHECK trước khi sửa project.</p></section>
           <section class="hc-result" data-hc-result hidden></section>
-          <a class="hc-download hc-download--wide" href="${ZIP_URL}" download>Tải trọn bộ H Cosmic Studio r26</a>
-          <small class="hc-checksum">SHA-256 · 9C8BE004…DDA11F3</small>
+          <a class="hc-download hc-download--wide" href="${ZIP_URL}" download>Tải trọn bộ H Cosmic Studio r38</a>
+          <small class="hc-checksum">SHA-256 · 62611352…8872141F</small>
         </aside>
       </div>
     </section>`;
@@ -347,7 +354,7 @@
       accessKey = String(claim.access_key || "");
       if (!accessKey) throw new Error("Bridge không trả mã phiên.");
       const health = await bridgeRequest("/api/health", { method: "GET" });
-      setBridgeState("online", "Bridge r26 đã ghép nối tự động", Boolean(health.resolve_connected));
+      setBridgeState("online", "Bridge r38 đã ghép nối tự động", Boolean(health.resolve_connected));
       if (announce) currentStatus("Đã kết nối bridge", health.resolve_connected ? "DaVinci Resolve đã sẵn sàng." : "Hãy mở Resolve và project cần sản xuất.", health.resolve_connected ? "success" : "warning");
       startPolling();
       return true;
@@ -363,7 +370,7 @@
     try {
       const data = await bridgeRequest(`/api/status?after=${lastEventId}`, { method: "GET" });
       lastEventId = Number(data.last_event_id) || lastEventId;
-      setBridgeState("online", "Bridge r26 đang hoạt động", Boolean(data.resolve_connected));
+      setBridgeState("online", "Bridge r38 đang hoạt động", Boolean(data.resolve_connected));
       const progress = Math.max(0, Math.min(100, Math.round((Number(data.progress) || 0) * 100)));
       const bar = root.querySelector("[data-hc-progress]"); if (bar) bar.value = progress;
       const progressText = root.querySelector("[data-hc-progress-text]"); if (progressText) progressText.textContent = `${progress}%`;
@@ -412,7 +419,7 @@
     writeStoredConfig(config);
     if (!await ensureBridge()) throw new Error("Website Bridge chưa hoạt động.");
     await bridgeRequest("/api/config", { method: "POST", body: JSON.stringify({ config }) });
-    appendLog("Đã lưu cấu hình r26 vào bridge.", "config");
+    appendLog("Đã lưu cấu hình r38 vào bridge.", "config");
     return config;
   }
   async function runAction(action) {
@@ -438,8 +445,8 @@
   function exportConfig() {
     const config = formConfig();
     writeStoredConfig(config);
-    const blob = new Blob([JSON.stringify({ schema: "h-cosmic-studio-r26", exportedAt: new Date().toISOString(), config }, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "h-cosmic-studio-r26-config.json"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const blob = new Blob([JSON.stringify({ schema: "h-cosmic-studio-r38", exportedAt: new Date().toISOString(), config }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "h-cosmic-studio-r38-config.json"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   async function importConfig(file) {
     const payload = JSON.parse(await file.text());

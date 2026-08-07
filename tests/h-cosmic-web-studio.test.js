@@ -7,16 +7,16 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("H Cosmic Studio r26 is routed as a first-class Tool workspace", () => {
+test("H Cosmic Studio r38 is routed as a first-class Tool workspace", () => {
   const shell = read("script.js");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   assert.match(shell, /id:\s*"cosmic"[\s\S]*route:\s*"\/davinci-resolve\/cosmic"/);
   assert.match(shell, /HHCosmicWebStudio\?\.mount/);
   assert.match(loader, /h-cosmic-web-studio\.css\?v=2/);
-  assert.match(loader, /h-cosmic-web-studio\.js\?v=2/);
+  assert.match(loader, /h-cosmic-web-studio\.js\?v=3/);
   assert.match(worker, /h-cosmic-web-studio\.css\?v=2/);
-  assert.match(worker, /h-cosmic-web-studio\.js\?v=2/);
+  assert.match(worker, /h-cosmic-web-studio\.js\?v=3/);
 });
 
 test("web Mission Control covers the complete local bridge workflow", () => {
@@ -48,13 +48,15 @@ test("H Cosmic defaults to a real browser-native batch engine", () => {
   ]) assert.match(batch, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
-test("the exact portable r26 package is downloadable without entering the startup cache", () => {
-  const filename = "downloads/H-Cosmic-Studio-Portable-2026.08.03-r26.zip";
+test("the exact portable r38 package is downloadable under a password-safe public name", () => {
+  const filename = "downloads/H-Cosmic-Studio-Portable-2026.08.07-r38.zip";
   const zip = fs.readFileSync(path.join(root, filename));
   const source = read("h-cosmic-web-studio.js");
   const worker = read("sw.js");
-  assert.equal(zip.byteLength, 74022736);
-  assert.equal(crypto.createHash("sha256").update(zip).digest("hex").toUpperCase(), "9C8BE004C7D62231615EFF55CEAF549EB7FFAF26C609C84A844F99001DDA11F3");
-  assert.match(source, /H-Cosmic-Studio-Portable-2026\.08\.03-r26\.zip/);
-  assert.doesNotMatch(worker, /H-Cosmic-Studio-Portable-2026\.08\.03-r26\.zip/);
+  assert.equal(zip.byteLength, 70969212);
+  assert.equal(crypto.createHash("sha256").update(zip).digest("hex").toUpperCase(), "626113527057009F0EEB7FF5CF96419B8E8406EFE68576A29E56BAA08872141F");
+  assert.match(source, /H-Cosmic-Studio-Portable-2026\.08\.07-r38\.zip/);
+  assert.doesNotMatch(source, /password[-_]/i);
+  assert.doesNotMatch(worker, /H-Cosmic-Studio-Portable-2026\.08\.07-r38\.zip/);
+  assert.equal(fs.readdirSync(path.join(root, "downloads")).some((name) => /H-Cosmic-Studio.*password/i.test(name)), false);
 });
