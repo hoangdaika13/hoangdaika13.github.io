@@ -19,8 +19,8 @@ function loadConfig({ hostname, origin, port = "", protocol = "https:", search =
 }
 
 test("custom domain keeps REST requests same-origin", () => {
-  const config = loadConfig({ hostname: "www.nhhoang13all.xyz", origin: "https://www.nhhoang13all.xyz" });
-  assert.equal(config.HH_API_BASE, "https://www.nhhoang13all.xyz");
+  const config = loadConfig({ hostname: "www.hoang8.com", origin: "https://www.hoang8.com" });
+  assert.equal(config.HH_API_BASE, "https://www.hoang8.com");
   assert.equal(config.HH_REALTIME_URL, config.HH_API_BASE);
 });
 
