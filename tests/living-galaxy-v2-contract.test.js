@@ -12,8 +12,8 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   const runtime = read("auth-living-galaxy-3d.js");
   const css = read("auth-living-galaxy-3d.css");
 
-  assert.match(html, /auth-living-galaxy-3d\.css\?v=5/);
-  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=3/);
+  assert.match(html, /auth-living-galaxy-3d\.css\?v=6/);
+  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=7/);
   assert.match(gateway, /high:\s*"Điện ảnh"/);
   assert.match(gateway, /soft:\s*"Cân bằng"/);
   assert.match(gateway, /off:\s*"Tĩnh"/);
@@ -30,6 +30,26 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   assert.match(runtime, /saveData/);
   assert.match(runtime, /visibilitychange/);
   assert.match(runtime, /hh-living-warp/);
+  assert.match(runtime, /createOrbitMaterial/);
+  assert.match(runtime, /new THREE\.ShaderMaterial/);
+  assert.match(runtime, /vFront/);
+  assert.match(runtime, /const tilt = new THREE\.Euler/);
+  assert.match(runtime, /planet\.energy\.forEach/);
+  assert.match(runtime, /detailLimit = currentMode === "cinematic" \? 8 : 5/);
+  assert.match(runtime, /orbitMaterial\.uniforms\.uOpacity/);
+  assert.match(runtime, /spawnMeteor/);
+  for (const layer of ["far", "mid", "near"]) assert.match(runtime, new RegExp(`${layer}: \\{ z:`));
+  for (const color of ["#62e8ff", "#b36dff", "#ff65c8", "#ffd86b"]) assert.match(runtime, new RegExp(color, "i"));
+  assert.match(runtime, /mode\(\) === "cinematic" \? 3 : 2/);
+  assert.match(runtime, /nextShowerAt/);
+  assert.match(runtime, /speedTarget = \.03/);
+  assert.match(runtime, /selectionHoldUntil/);
+  assert.match(runtime, /warpBoostUntil/);
+  assert.match(runtime, /errorPulseUntil/);
+  assert.match(runtime, /hh:galaxy-notification/);
+  assert.match(runtime, /hh-living-meteor-layer/);
+  assert.match(runtime, /spawnDomMeteor/);
+  assert.match(css, /hh-living-meteor-flight/);
   assert.match(css, /@media \(max-width: 760px\)/);
   assert.match(css, /scroll-snap-type:\s*x mandatory/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);

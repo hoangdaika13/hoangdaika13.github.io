@@ -1,6 +1,7 @@
 /* HH Living Galaxy 3D — WebGL enhancement with a complete CSS/mobile fallback. */
 .hh-living-galaxy-canvas,
 .hh-living-galaxy-depth,
+.hh-living-meteor-layer,
 .hh-living-galaxy-core,
 .hh-living-galaxy-status,
 .hh-living-warp {
@@ -17,6 +18,63 @@
   opacity: 0;
   filter: saturate(1.08) contrast(1.04);
   transition: opacity .6s ease, filter .35s ease;
+}
+
+.hh-living-meteor-layer {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 4;
+  width: 58.5vw;
+  overflow: hidden;
+  contain: strict;
+}
+
+.hh-living-meteor {
+  --meteor-color: #62e8ff;
+  --meteor-start-x: -140px;
+  --meteor-start-y: 120px;
+  --meteor-end-x: 700px;
+  --meteor-end-y: 420px;
+  --meteor-angle: 22deg;
+  --meteor-duration: 2.35s;
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 132px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,transparent,color-mix(in srgb,var(--meteor-color) 42%,transparent) 48%,var(--meteor-color) 88%,#fff);
+  box-shadow: 0 0 7px var(--meteor-color), 0 0 18px color-mix(in srgb,var(--meteor-color) 68%,transparent);
+  opacity: 0;
+  filter: blur(.15px) saturate(1.3);
+  transform-origin: right center;
+  animation: hh-living-meteor-flight var(--meteor-duration) cubic-bezier(.18,.52,.24,1) forwards;
+  will-change: transform,opacity;
+}
+
+.hh-living-meteor::after {
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 9px #fff,0 0 21px var(--meteor-color),0 0 38px var(--meteor-color);
+  content: "";
+  transform: translateY(-50%);
+}
+
+.hh-living-meteor.is-far { width: 82px; height: 1px; opacity: .34; filter: blur(.45px); }
+.hh-living-meteor.is-mid { width: 132px; height: 2px; }
+.hh-living-meteor.is-near { width: 186px; height: 4px; filter: blur(.1px); }
+
+@keyframes hh-living-meteor-flight {
+  0% { opacity: 0; transform: translate3d(var(--meteor-start-x),var(--meteor-start-y),0) rotate(var(--meteor-angle)) scaleX(.35); }
+  13% { opacity: .94; }
+  78% { opacity: .9; }
+  100% { opacity: 0; transform: translate3d(var(--meteor-end-x),var(--meteor-end-y),0) rotate(var(--meteor-angle)) scaleX(1); }
 }
 
 .hh-h-galaxy.is-webgl-ready .hh-living-galaxy-canvas { opacity: 1; }
@@ -235,7 +293,8 @@
 
 @media (max-width: 1100px) {
   .hh-living-galaxy-canvas,
-  .hh-living-galaxy-hitlayer { width: 100vw; opacity: .42; }
+  .hh-living-galaxy-hitlayer,
+  .hh-living-meteor-layer { width: 100vw; opacity: .42; }
   .hh-living-galaxy-depth { inset: 0; opacity: .54; }
   .hh-living-galaxy-core { left: 50vw; opacity: .46; }
   .hh-living-galaxy-status { display: none; }
@@ -269,6 +328,7 @@
   }
   .hh-living-galaxy-canvas,
   .hh-living-galaxy-depth,
+  .hh-living-meteor-layer,
   .hh-living-galaxy-core,
   .hh-galaxy-cloud,
   .hh-galaxy-comet,
@@ -325,6 +385,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .hh-living-galaxy-canvas { display: none; }
+  .hh-living-meteor-layer { display: none; }
   .hh-living-galaxy-core { animation: none; }
   .hh-living-warp { display: none; }
   .hh-living-galaxy-depth::before,
