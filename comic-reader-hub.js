@@ -26,10 +26,15 @@
     activeChapterId: "",
     readerMode: "scroll",
     readerPage: 0,
+    readerWidth: "fit",
+    readerTheme: "dark",
     query: "",
     genre: "Tất cả",
     sort: "updated",
+    catalogFilter: "all",
+    genreExpanded: false,
     follows: new Set(),
+    blockedPages: new Set(),
     progress: {},
     importing: false,
     remoteGenres: [],
@@ -174,8 +179,38 @@
     const item = data?.item;
     if (!item?.chapter_path || !Array.isArray(item.chapter_image)) throw new Error("Chapter chưa có danh sách ảnh");
     const base = String(data.domain_cdn || "").replace(/\/$/, "");
-    chapter.pages = [...item.chapter_image].sort((a, b) => Number(a.image_page) - Number(b.image_page)).map((image) => `${base}/${String(item.chapter_path).replace(/^\/+|\/+$/g, "")}/${String(image.image_file).replace(/^\/+/, "")}`);
+    const pages = [...item.chapter_image].sort((a, b) => Number(a.image_page) - Number(b.image_page)).map((image) => `${base}/${String(item.chapter_path).replace(/^\/+|\/+$/g, "")}/${String(image.image_file).replace(/^\/+/, "")}`);
+    const cleaned = await cleanRemotePages(pages);
+    chapter.pages = cleaned.pages.filter((url) => !state.blockedPages.has(url));
+    chapter.filteredPages = cleaned.filtered + (cleaned.pages.length - chapter.pages.length);
     return chapter;
+  }
+
+  function imageRatio(url) {
+    return new Promise((resolve) => {
+      const image = new Image();
+      const done = (value) => { clearTimeout(timer); image.onload = null; image.onerror = null; resolve(value); };
+      const timer = setTimeout(() => done(null), 7000);
+      image.onload = () => done(image.naturalWidth ? image.naturalHeight / image.naturalWidth : null);
+      image.onerror = () => done(null);
+      image.referrerPolicy = "no-referrer";
+      image.src = url;
+    });
+  }
+
+  async function cleanRemotePages(pages) {
+    if (!Array.isArray(pages) || pages.length < 5) return { pages: pages || [], filtered: 0 };
+    const leadingCount = Math.min(7, pages.length);
+    const trailingStart = Math.max(leadingCount, pages.length - 4);
+    const indexes = [...Array.from({ length: leadingCount }, (_, index) => index), ...Array.from({ length: pages.length - trailingStart }, (_, index) => trailingStart + index)];
+    const ratios = new Map(await Promise.all(indexes.map(async (index) => [index, await imageRatio(pages[index])])));
+    const storyIsLongForm = [...ratios.entries()].some(([index, ratio]) => index >= 3 && index < leadingCount && Number(ratio) >= 2.05);
+    if (!storyIsLongForm) return { pages, filtered: 0 };
+    let start = 0;
+    while (start < Math.min(4, pages.length - 1) && Number(ratios.get(start)) > 0 && Number(ratios.get(start)) < 1.72) start += 1;
+    let end = pages.length;
+    while (end > start + 1 && end > pages.length - 4 && Number(ratios.get(end - 1)) > 0 && Number(ratios.get(end - 1)) < 1.72) end -= 1;
+    return { pages: pages.slice(start, end), filtered: start + pages.length - end };
   }
 
   function svgUrl(svg) {
@@ -190,58 +225,20 @@
       <rect width="600" height="850" fill="url(#g)"/><circle cx="450" cy="230" r="240" fill="url(#r)"/><path d="M0 650 Q140 500 300 650 T600 610 V850 H0Z" fill="#071019" opacity=".78"/><path d="M105 665 Q190 385 300 235 Q390 380 502 665" fill="none" stroke="${glow}" stroke-width="8" opacity=".52"/><circle cx="300" cy="315" r="72" fill="#fff" opacity=".15"/><text x="50" y="720" fill="white" font-family="Arial,sans-serif" font-size="48" font-weight="800">${safe}</text><text x="52" y="766" fill="${glow}" font-family="Arial,sans-serif" font-size="18" letter-spacing="5">HH ORIGINALS</text></svg>`);
   }
 
-  function makePage(series, chapter, page, index) {
-    const [base, glow, accent] = PALETTES[index % PALETTES.length];
-    const safeTitle = escapeHtml(series);
-    const caption = ["Tín hiệu từ chân trời vừa thức giấc.", "Không ai biết cánh cổng dẫn về đâu.", "Một lựa chọn nhỏ có thể đổi cả thiên hà.", "Hành trình thật sự bắt đầu từ đây."][page % 4];
-    return svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1400">
-      <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${base}"/><stop offset="1" stop-color="#050b13"/></linearGradient><radialGradient id="orb"><stop stop-color="${glow}"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></radialGradient></defs>
-      <rect width="900" height="1400" fill="#eef2f5"/><rect x="28" y="28" width="844" height="460" rx="14" fill="url(#bg)"/><circle cx="650" cy="180" r="190" fill="url(#orb)" opacity=".8"/><path d="M28 440 Q230 270 440 430 T872 360 V488 H28Z" fill="#06111b" opacity=".9"/>
-      <rect x="28" y="516" width="402" height="520" rx="14" fill="${accent}"/><path d="M90 940 Q170 620 300 590 Q360 770 405 1010" fill="#08121b" opacity=".76"/><circle cx="245" cy="690" r="72" fill="${glow}" opacity=".55"/>
-      <rect x="458" y="516" width="414" height="250" rx="14" fill="#0b1926"/><path d="M490 700 L610 560 L720 690 L845 545" fill="none" stroke="${glow}" stroke-width="14" opacity=".8"/>
-      <rect x="458" y="794" width="414" height="242" rx="14" fill="${base}"/><circle cx="675" cy="910" r="90" fill="url(#orb)"/>
-      <rect x="28" y="1064" width="844" height="308" rx="14" fill="#0a121b"/><text x="70" y="1150" fill="white" font-family="Arial,sans-serif" font-size="29" font-weight="700">${safeTitle} · Chương ${chapter}</text><text x="70" y="1210" fill="#cde7ef" font-family="Arial,sans-serif" font-size="24">${escapeHtml(caption)}</text><text x="70" y="1310" fill="${glow}" font-family="Arial,sans-serif" font-size="18" letter-spacing="3">TRANG ${page + 1}</text>
-    </svg>`);
-  }
-
-  function demoCatalog() {
-    const names = [
-      ["Biên Niên Sử Nexus", "Hành động", "Nax Veyra thức tỉnh giữa H-Central và nhận được tín hiệu của chính mình từ tương lai."],
-      ["Mùa Hạ Trong Dải Ngân Hà", "Lãng mạn", "Hai người lạc nhau giữa những hành tinh, chỉ còn một bản nhạc dẫn đường."],
-      ["Thợ Săn Sao Rơi", "Phiêu lưu", "Đội săn trẻ tuổi truy tìm lõi sao trước khi bóng tối nuốt chửng thành phố."],
-      ["Tiệm Trà Cuối Vũ Trụ", "Đời thường", "Một tiệm trà nhỏ phục vụ những vị khách đến từ các dòng thời gian khác nhau."],
-      ["Mật Mã Hành Tinh Số 8", "Bí ẩn", "Mỗi đêm, một ký tự mới xuất hiện trên bầu trời và xóa đi một ký ức."],
-      ["Học Viện Pháp Sư Neon", "Fantasy", "Lớp học đặc biệt nơi phép thuật được viết bằng ánh sáng và âm nhạc."],
-      ["Robot Nhà Tôi Biết Yêu", "Hài hước", "Một robot bảo mẫu vô tình học được cảm xúc từ các bộ phim truyền hình."],
-      ["Thành Phố Không Có Bình Minh", "Webtoon", "Những người canh gác đi tìm mặt trời bị đánh cắp khỏi đường chân trời."]
-    ];
-    return names.map(([title, genre, description], index) => {
-      const id = `hh-${index + 1}`;
-      const chapters = Array.from({ length: 4 + index % 3 }, (_, chapterIndex) => {
-        const number = chapterIndex + 1;
-        return {
-          id: `${id}-c${number}`,
-          number,
-          title: number === 1 ? "Khởi đầu" : number === 2 ? "Tín hiệu" : number === 3 ? "Giao điểm" : `Chương ${number}`,
-          updatedAt: Date.now() - (chapterIndex + index) * 7200000,
-          pages: Array.from({ length: 7 }, (_, page) => makePage(title, number, page, index))
-        };
-      });
-      return { id, title, altTitles: [], author: "HH Originals", cover: makeCover(title, index), genres: [genre, index % 2 ? "Fantasy" : "Sci-fi"], status: index % 3 === 0 ? "Đã hoàn thành" : "Đang cập nhật", description, rating: 4.6 + (index % 4) * 0.1, views: 12000 + index * 8360, updatedAt: Date.now() - index * 5400000, chapters, sourceType: "original", rights: "HH Originals demo" };
-    });
-  }
-
   function loadLocalState() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
       state.follows = new Set(saved.follows || []);
       state.progress = saved.progress || {};
       state.readerMode = saved.readerMode === "page" ? "page" : "scroll";
+      state.readerWidth = ["compact", "fit", "wide"].includes(saved.readerWidth) ? saved.readerWidth : "fit";
+      state.readerTheme = ["dark", "black", "paper"].includes(saved.readerTheme) ? saved.readerTheme : "dark";
+      state.blockedPages = new Set(Array.isArray(saved.blockedPages) ? saved.blockedPages.slice(-500) : []);
     } catch {}
   }
 
   function saveLocalState() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ follows: [...state.follows], progress: state.progress, readerMode: state.readerMode })); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ follows: [...state.follows], progress: state.progress, readerMode: state.readerMode, readerWidth: state.readerWidth, readerTheme: state.readerTheme, blockedPages: [...state.blockedPages].slice(-500) })); } catch {}
   }
 
   function openDatabase() {
@@ -306,11 +303,21 @@
   function activeSeries() { return state.catalog.find((series) => series.id === state.activeSeriesId) || null; }
   function activeChapter() { return activeSeries()?.chapters?.find((chapter) => chapter.id === state.activeChapterId) || null; }
   function availableGenres() { return ["Tất cả", ...new Set([...GENRES.slice(1), ...state.remoteGenres])]; }
+  function sidebarGenres() {
+    const genres = availableGenres();
+    if (state.genreExpanded || genres.length <= 15) return genres;
+    const visible = genres.slice(0, 15);
+    if (!visible.includes(state.genre)) visible.push(state.genre);
+    return visible;
+  }
 
   function visibleCatalog() {
     const query = state.query.trim().toLocaleLowerCase();
     let result = state.catalog.filter((series) => state.genre === "Tất cả" || series.genres?.includes(state.genre));
     if (query) result = result.filter((series) => `${series.title} ${series.author} ${(series.altTitles || []).join(" ")} ${(series.genres || []).join(" ")}`.toLocaleLowerCase().includes(query));
+    if (state.catalogFilter === "completed") result = result.filter((series) => series.status === "Đã hoàn thành");
+    else if (state.catalogFilter === "ongoing") result = result.filter((series) => series.status !== "Đã hoàn thành");
+    else if (state.catalogFilter === "followed") result = result.filter((series) => state.follows.has(series.id));
     result.sort((a, b) => state.sort === "az" ? naturalCompare(a.title, b.title) : state.sort === "rating" ? b.rating - a.rating : b.updatedAt - a.updatedAt);
     return result;
   }
@@ -334,9 +341,10 @@
   function seriesCard(series) {
     const latest = series.chapters?.at(-1);
     const progress = state.progress[series.id];
+    const followed = state.follows.has(series.id);
     return `<article class="cr-series-card" data-series="${escapeHtml(series.id)}">
-      <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.status === "Đã hoàn thành" ? "FULL" : series.sourceType === "otruyen" ? "API" : "NEW"}</span>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
-      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml((series.genres || []).slice(0, 2).join(" · "))}</p><div><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(latest?.id || "")}">Ch. ${latest?.number || 1}</button><small>${timeAgo(latest?.updatedAt || series.updatedAt)}</small></div></div>
+      <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.status === "Đã hoàn thành" ? "FULL" : series.sourceType === "otruyen" ? "API" : "NEW"}</span><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
+      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml((series.genres || []).slice(0, 2).join(" · "))}</p><div><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(latest?.id || "")}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || 1}`}</button><small>${timeAgo(latest?.updatedAt || series.updatedAt)}</small></div></div>
     </article>`;
   }
 
@@ -349,6 +357,7 @@
         <div class="cr-hero-copy"><span>HH COMICS · ORIGINAL & LICENSED</span><h1>${escapeHtml(hero?.title || "Thư viện truyện của bạn")}</h1><p>${escapeHtml(hero?.description || "Nhập catalog hoặc CBZ để bắt đầu đọc.")}</p><div>${hero ? `<button type="button" class="is-primary" data-read="${escapeHtml(hero.id)}" data-chapter="${escapeHtml(state.progress[hero.id]?.chapterId || hero.chapters?.[0]?.id || "")}">▶ Đọc ngay</button><button type="button" data-series="${escapeHtml(hero.id)}">Xem chi tiết</button>` : ""}</div></div>
         <div class="cr-hero-cover">${hero ? `<img src="${escapeHtml(hero.cover)}" alt="" referrerpolicy="no-referrer">` : ""}</div>
       </section>
+      <nav class="cr-discovery-tabs" aria-label="Lọc kho truyện"><button type="button" data-catalog-filter="all"${state.catalogFilter === "all" ? ' class="is-active"' : ""}>Tất cả</button><button type="button" data-catalog-filter="ongoing"${state.catalogFilter === "ongoing" ? ' class="is-active"' : ""}>Đang cập nhật</button><button type="button" data-catalog-filter="completed"${state.catalogFilter === "completed" ? ' class="is-active"' : ""}>Hoàn thành</button><button type="button" data-catalog-filter="followed"${state.catalogFilter === "followed" ? ' class="is-active"' : ""}>Đang theo dõi · ${state.follows.size}</button><span>${state.remote.loading ? "Đang đồng bộ dữ liệu…" : "Dữ liệu trực tiếp từ API"}</span></nav>
       <div class="cr-home-grid">
         <section class="cr-catalog-section"><header><div><strong>${state.query || state.genre !== "Tất cả" ? "Kết quả tìm kiếm" : "Mới cập nhật"}</strong><small>${visible.length.toLocaleString("vi-VN")} đang hiển thị${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} truyện từ OTruyen API` : ""}</small></div><select data-sort><option value="updated">Mới cập nhật</option><option value="rating">Điểm cao</option><option value="az">Tên A–Z</option></select></header>
           <div class="cr-series-grid">${visible.length ? visible.map(seriesCard).join("") : `<div class="cr-empty"><span>⌕</span><strong>Không tìm thấy truyện</strong><small>Thử từ khóa hoặc thể loại khác.</small></div>`}</div>
@@ -392,17 +401,20 @@
     const chapterIndex = chapters.findIndex((entry) => entry.id === chapter.id);
     const pages = chapter.pages || [];
     state.readerPage = clamp(state.readerPage, 0, Math.max(0, pages.length - 1));
-    return `<div class="cr-reader is-${state.readerMode}" data-reader>
-      <header class="cr-reader-bar"><button type="button" data-series="${escapeHtml(series.id)}">←</button><div><strong>${escapeHtml(series.title)}</strong><small>Chương ${chapter.number} · ${escapeHtml(chapter.title || "")}</small></div><select data-reader-chapter>${chapters.map((entry) => `<option value="${escapeHtml(entry.id)}"${entry.id === chapter.id ? " selected" : ""}>Chương ${entry.number}</option>`).join("")}</select><div class="cr-reader-modes"><button type="button" data-reader-mode="scroll"${state.readerMode === "scroll" ? ' class="is-active"' : ""}>Cuộn dọc</button><button type="button" data-reader-mode="page"${state.readerMode === "page" ? ' class="is-active"' : ""}>Từng trang</button></div><button type="button" data-action="reader-fullscreen">⛶</button></header>
+    return `<div class="cr-reader is-${state.readerMode} width-${state.readerWidth} theme-${state.readerTheme}" data-reader>
+      <header class="cr-reader-bar"><button type="button" class="cr-reader-back" data-series="${escapeHtml(series.id)}" aria-label="Trở về trang truyện">←</button><div><strong>${escapeHtml(series.title)}</strong><small>Chương ${chapter.number} · <span data-reader-page-label>Trang ${state.readerPage + 1}/${pages.length}</span>${chapter.filteredPages ? ` · Clean Reader đã ẩn ${chapter.filteredPages} trang` : ""}</small></div><button type="button" class="cr-reader-chapter-button" data-action="reader-chapters" aria-expanded="false">☰ Chương</button><select data-reader-chapter aria-label="Chọn chương">${chapters.map((entry) => `<option value="${escapeHtml(entry.id)}"${entry.id === chapter.id ? " selected" : ""}>Chương ${entry.number}</option>`).join("")}</select><div class="cr-reader-modes"><button type="button" data-reader-mode="scroll"${state.readerMode === "scroll" ? ' class="is-active"' : ""}>Cuộn dọc</button><button type="button" data-reader-mode="page"${state.readerMode === "page" ? ' class="is-active"' : ""}>Từng trang</button></div><button type="button" data-action="reader-settings" aria-label="Cài đặt trình đọc" aria-expanded="false">⚙</button><button type="button" data-action="reader-fullscreen" aria-label="Toàn màn hình">⛶</button></header>
+      <aside class="cr-reader-settings" hidden><header><strong>Cài đặt đọc</strong><small>Được lưu trên thiết bị này</small></header><label>Độ rộng trang<div>${[["compact","Gọn"],["fit","Vừa màn hình"],["wide","Rộng"]].map(([value,label]) => `<button type="button" data-reader-width="${value}"${state.readerWidth === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><label>Nền đọc<div>${[["dark","Tối"],["black","Đen"],["paper","Giấy"]].map(([value,label]) => `<button type="button" data-reader-theme="${value}"${state.readerTheme === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><button type="button" class="cr-clean-page" data-action="reader-hide-page">Ẩn vĩnh viễn trang quảng cáo đang xem</button><p>Clean Reader tự loại trang quảng bá ngắn ở đầu/cuối chapter. Phím tắt: ← → đổi trang/chương · M đổi chế độ · F toàn màn hình · Esc trở về.</p></aside>
+      <aside class="cr-reader-chapters" hidden><header><strong>${chapters.length} chương</strong><button type="button" data-action="reader-chapters">×</button></header><div>${[...chapters].reverse().map((entry) => `<button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(entry.id)}"${entry.id === chapter.id ? ' class="is-active"' : ""}><span>Chương ${entry.number}</span><small>${escapeHtml(entry.title || "")}</small></button>`).join("")}</div></aside>
       <main class="cr-reader-pages" data-reader-pages>${state.readerMode === "scroll" ? pages.map((page, index) => `<figure data-page="${index}"><img src="${escapeHtml(page)}" alt="Trang ${index + 1}" loading="${index < 3 ? "eager" : "lazy"}" referrerpolicy="no-referrer"><figcaption>${index + 1} / ${pages.length}</figcaption></figure>`).join("") : `<figure data-page="${state.readerPage}"><img src="${escapeHtml(pages[state.readerPage] || "")}" alt="Trang ${state.readerPage + 1}" referrerpolicy="no-referrer"><figcaption>${state.readerPage + 1} / ${pages.length}</figcaption></figure>`}</main>
+      <button type="button" class="cr-reader-top" data-action="reader-top" aria-label="Lên đầu chương">↑</button>
       <footer><button type="button" data-reader-nav="prev"${state.readerMode === "page" && state.readerPage > 0 ? "" : chapterIndex > 0 ? "" : " disabled"}>← ${state.readerMode === "page" && state.readerPage > 0 ? "Trang trước" : "Chương trước"}</button><div><span data-reader-progress>${Math.round((state.readerPage + 1) / Math.max(1, pages.length) * 100)}%</span><i style="--p:${Math.round((state.readerPage + 1) / Math.max(1, pages.length) * 100)}%"></i></div><button type="button" data-reader-nav="next"${state.readerMode === "page" && state.readerPage < pages.length - 1 ? "" : chapterIndex < chapters.length - 1 ? "" : " disabled"}>${state.readerMode === "page" && state.readerPage < pages.length - 1 ? "Trang sau" : "Chương sau"} →</button></footer>
     </div>`;
   }
 
   function shellHtml(content) {
-    return `<section class="cr-app">
+    return `<section class="cr-app${state.view === "reader" ? " is-reader-focus" : ""}">
       <header class="cr-topbar"><button type="button" class="cr-logo" data-nav="home"><span>CR</span><div><strong>HH Comics</strong><small>Đọc truyện online</small></div></button><label class="cr-search"><span>⌕</span><input type="search" value="${escapeHtml(state.query)}" placeholder="Tìm tên truyện, tác giả, thể loại…" data-search></label><nav><button type="button" data-nav="history">◷ Lịch sử</button><button type="button" data-nav="follows">♡ Theo dõi <i>${state.follows.size}</i></button><button type="button" class="is-primary" data-nav="sources">＋ Thêm truyện</button></nav><input hidden type="file" accept=".cbz,.zip,application/zip" multiple data-cbz-input><input hidden type="file" accept=".json,application/json" data-json-input></header>
-      <div class="cr-layout"><aside class="cr-sidebar"><strong>Khám phá</strong><button type="button" data-nav="home" class="${state.view === "home" ? "is-active" : ""}">⌂ Trang chủ</button><button type="button" data-nav="follows" class="${state.view === "follows" ? "is-active" : ""}">♡ Theo dõi</button><button type="button" data-nav="history" class="${state.view === "history" ? "is-active" : ""}">◷ Lịch sử</button><strong>Thể loại</strong>${availableGenres().map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}" class="${state.genre === genre && state.view === "home" ? "is-active" : ""}">${escapeHtml(genre)}</button>`).join("")}<footer><button type="button" data-nav="sources">＋ Quản lý nguồn</button><small>${state.catalog.length.toLocaleString("vi-VN")} đang tải${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} từ API` : ""}</small></footer></aside><main class="cr-content">${content}</main></div>
+      <div class="cr-layout"><aside class="cr-sidebar"><strong>Khám phá</strong><button type="button" data-nav="home" class="${state.view === "home" ? "is-active" : ""}">⌂ Trang chủ</button><button type="button" data-nav="follows" class="${state.view === "follows" ? "is-active" : ""}">♡ Theo dõi</button><button type="button" data-nav="history" class="${state.view === "history" ? "is-active" : ""}">◷ Lịch sử</button><strong>Thể loại</strong>${sidebarGenres().map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}" class="${state.genre === genre && state.view === "home" ? "is-active" : ""}">${escapeHtml(genre)}</button>`).join("")}${availableGenres().length > 15 ? `<button type="button" class="cr-genre-more" data-action="genre-more">${state.genreExpanded ? "Thu gọn thể loại ↑" : `Xem thêm ${availableGenres().length - 15} thể loại ↓`}</button>` : ""}<footer><button type="button" data-nav="sources">＋ Quản lý nguồn</button><small>${state.catalog.length.toLocaleString("vi-VN")} đang tải${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} từ API` : ""}</small></footer></aside><main class="cr-content">${content}</main></div>
       <div class="cr-toast-tray" data-cr-toast></div><div class="cr-importing" data-importing hidden><i></i><strong>Đang nhập truyện…</strong><span>Không đóng trang cho đến khi hoàn tất.</span></div>
     </section>`;
   }
@@ -560,6 +572,7 @@
     state.progress[series.id] = { chapterId: chapter.id, page: state.readerPage, percent: Math.round((state.readerPage + 1) / Math.max(1, chapter.pages.length) * 100), updatedAt: Date.now() };
     saveLocalState();
     const label = root?.querySelector("[data-reader-progress]"); if (label) label.textContent = `${state.progress[series.id].percent}%`;
+    const pageLabel = root?.querySelector("[data-reader-page-label]"); if (pageLabel) pageLabel.textContent = `Trang ${state.readerPage + 1}/${chapter.pages.length}`;
   }
 
   function readerNavigate(direction) {
@@ -595,18 +608,40 @@
     const series = event.target.closest("[data-series]");
     const genre = event.target.closest("[data-genre]");
     const follow = event.target.closest("[data-follow]");
+    const catalogFilter = event.target.closest("[data-catalog-filter]");
     const mode = event.target.closest("[data-reader-mode]");
+    const readerWidth = event.target.closest("[data-reader-width]");
+    const readerTheme = event.target.closest("[data-reader-theme]");
     const readerNav = event.target.closest("[data-reader-nav]");
     if (read) { event.stopPropagation(); return openReader(read.dataset.read, read.dataset.chapter); }
+    if (follow) { event.stopPropagation(); const id = follow.dataset.follow; state.follows.has(id) ? state.follows.delete(id) : state.follows.add(id); saveLocalState(); return render(); }
     if (series) return openSeries(series.dataset.series);
+    if (catalogFilter) { state.catalogFilter = catalogFilter.dataset.catalogFilter; state.view = "home"; return render(); }
     if (genre) {
       state.genre = genre.dataset.genre; state.query = ""; state.view = "home"; render();
       loadRemoteCatalog({ page: 1, reset: true });
       return;
     }
-    if (follow) { const id = follow.dataset.follow; state.follows.has(id) ? state.follows.delete(id) : state.follows.add(id); saveLocalState(); return render(); }
     if (nav) { state.view = nav.dataset.nav; if (state.view === "home") { state.query = ""; state.genre = "Tất cả"; } return render(); }
     if (mode) { state.readerMode = mode.dataset.readerMode; saveLocalState(); return render(); }
+    if (readerWidth) {
+      state.readerWidth = readerWidth.dataset.readerWidth;
+      saveLocalState();
+      const reader = root.querySelector("[data-reader]");
+      reader?.classList.remove("width-compact", "width-fit", "width-wide");
+      reader?.classList.add(`width-${state.readerWidth}`);
+      root.querySelectorAll("[data-reader-width]").forEach((button) => button.classList.toggle("is-active", button === readerWidth));
+      return;
+    }
+    if (readerTheme) {
+      state.readerTheme = readerTheme.dataset.readerTheme;
+      saveLocalState();
+      const reader = root.querySelector("[data-reader]");
+      reader?.classList.remove("theme-dark", "theme-black", "theme-paper");
+      reader?.classList.add(`theme-${state.readerTheme}`);
+      root.querySelectorAll("[data-reader-theme]").forEach((button) => button.classList.toggle("is-active", button === readerTheme));
+      return;
+    }
     if (readerNav) return readerNavigate(readerNav.dataset.readerNav === "prev" ? -1 : 1);
     if (!action) return;
     if (action.dataset.action === "import-cbz") root.querySelector("[data-cbz-input]").click();
@@ -615,6 +650,32 @@
     else if (action.dataset.action === "import-feed") importFeed();
     else if (action.dataset.action === "remote-more") loadRemoteCatalog({ page: state.remote.page + 1 });
     else if (action.dataset.action === "remote-refresh") loadRemoteCatalog({ page: 1, reset: true });
+    else if (action.dataset.action === "genre-more") { state.genreExpanded = !state.genreExpanded; render(); }
+    else if (action.dataset.action === "reader-settings") {
+      const panel = root.querySelector(".cr-reader-settings");
+      const button = root.querySelector('[data-action="reader-settings"]');
+      if (panel) panel.hidden = !panel.hidden;
+      if (button && panel) button.setAttribute("aria-expanded", String(!panel.hidden));
+    }
+    else if (action.dataset.action === "reader-chapters") {
+      const panel = root.querySelector(".cr-reader-chapters");
+      const button = root.querySelector('.cr-reader-bar [data-action="reader-chapters"]');
+      if (panel) panel.hidden = !panel.hidden;
+      if (button && panel) button.setAttribute("aria-expanded", String(!panel.hidden));
+    }
+    else if (action.dataset.action === "reader-top") root.querySelector("[data-reader-pages]")?.scrollTo({ top: 0, behavior: "smooth" });
+    else if (action.dataset.action === "reader-hide-page") {
+      const chapter = activeChapter();
+      const url = chapter?.pages?.[state.readerPage];
+      if (!url || chapter.pages.length <= 1) return notify("Không thể ẩn trang cuối cùng của chapter.", "error");
+      state.blockedPages.add(url);
+      chapter.pages.splice(state.readerPage, 1);
+      chapter.filteredPages = Number(chapter.filteredPages || 0) + 1;
+      state.readerPage = clamp(state.readerPage, 0, chapter.pages.length - 1);
+      saveLocalState();
+      render();
+      notify("Đã ẩn trang quảng cáo khỏi trình đọc.", "success");
+    }
     else if (action.dataset.action === "reader-fullscreen") root.querySelector("[data-reader]")?.requestFullscreen?.();
   }
 
@@ -640,7 +701,7 @@
     unmount();
     host = target;
     loadLocalState();
-    state.catalog = demoCatalog();
+    state.catalog = [];
     state.remote = { loading: false, page: 0, total: 0, hasMore: true, context: "latest", error: "" };
     state.remoteGenres = [];
     state.remoteGenreSlugs = new Map();
@@ -649,9 +710,11 @@
     host.addEventListener("input", handleInput);
     host.addEventListener("change", handleInput);
     keyHandler = (event) => {
-      if (!root?.isConnected || event.target.matches("input,textarea,select,[contenteditable]")) return;
+      if (!root?.isConnected || event.target instanceof Element && event.target.matches("input,textarea,select,[contenteditable]")) return;
       if (state.view === "reader" && event.key === "ArrowLeft") readerNavigate(-1);
       else if (state.view === "reader" && event.key === "ArrowRight") readerNavigate(1);
+      else if (state.view === "reader" && event.key.toLocaleLowerCase() === "m") { state.readerMode = state.readerMode === "scroll" ? "page" : "scroll"; saveLocalState(); render(); }
+      else if (state.view === "reader" && event.key.toLocaleLowerCase() === "f") root.querySelector("[data-reader]")?.requestFullscreen?.();
       else if (event.key === "Escape" && state.view === "reader") openSeries(state.activeSeriesId);
     };
     global.addEventListener("keydown", keyHandler);

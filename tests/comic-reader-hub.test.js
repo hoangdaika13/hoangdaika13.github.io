@@ -14,9 +14,9 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=2[\s\S]*?comic-reader-hub\.js\?v=2/);
-  assert.match(worker, /comic-reader-hub\.css\?v=2/);
-  assert.match(worker, /comic-reader-hub\.js\?v=2/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=3[\s\S]*?comic-reader-hub\.js\?v=3/);
+  assert.match(worker, /comic-reader-hub\.css\?v=3/);
+  assert.match(worker, /comic-reader-hub\.js\?v=3/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -78,4 +78,28 @@ test("reader uses one-screen internal scrolling and responsive mobile layout", (
   assert.match(css, /\.cr-content[\s\S]*?overflow-y:auto/);
   assert.match(css, /@media\(max-width:680px\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+});
+
+test("professional reader focuses content and persists display controls", () => {
+  const client = read("comic-reader-hub.js");
+  const css = read("comic-reader-hub.css");
+
+  assert.match(client, /readerWidth/);
+  assert.match(client, /readerTheme/);
+  assert.match(client, /cr-reader-chapters/);
+  assert.match(client, /data-catalog-filter/);
+  assert.match(css, /\.cr-app\.is-reader-focus/);
+  assert.match(css, /\.cr-reader-settings/);
+  assert.match(css, /\.cr-reader-chapters/);
+});
+
+test("catalog has no generated demo comics and Clean Reader filters promotional pages", () => {
+  const client = read("comic-reader-hub.js");
+
+  assert.match(client, /state\.catalog = \[\]/);
+  assert.doesNotMatch(client, /function demoCatalog|HH Originals demo|Biên Niên Sử Nexus/);
+  assert.match(client, /cleanRemotePages/);
+  assert.match(client, /filteredPages/);
+  assert.match(client, /reader-hide-page/);
+  assert.match(client, /blockedPages/);
 });
