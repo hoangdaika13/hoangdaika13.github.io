@@ -4,8 +4,8 @@
   const STORAGE_KEY = "hh.facebook-page-command-center.v1";
   const TABS = [
     ["dashboard", "Tổng quan"], ["pages", "Pages"], ["composer", "Soạn bài"],
-    ["calendar", "Lịch"], ["comments", "Bình luận"], ["insights", "Insights"],
-    ["setups", "Tạo hàng loạt"], ["settings", "Thiết lập"]
+    ["campaigns", "Chiến dịch"], ["calendar", "Lịch"], ["comments", "Bình luận"], ["insights", "Insights"],
+    ["automation", "Tự động hóa"], ["setups", "Tạo hàng loạt"], ["settings", "Thiết lập"]
   ];
   let host = null;
   let state = loadState();
@@ -24,14 +24,15 @@
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   };
   function loadState() {
-    try { return { tab: "dashboard", activePageId: "", selectedPageIds: [], search: "", postId: "", ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") }; }
-    catch { return { tab: "dashboard", activePageId: "", selectedPageIds: [], search: "", postId: "" }; }
+    try { return { tab: "dashboard", activePageId: "", selectedPageIds: [], search: "", postId: "", campaignEditId: "", overrideMode: false, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") }; }
+    catch { return { tab: "dashboard", activePageId: "", selectedPageIds: [], search: "", postId: "", campaignEditId: "", overrideMode: false }; }
   }
   function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   function formatNumber(value) { return Number(value || 0).toLocaleString("vi-VN"); }
   function formatDate(value) { const date = new Date(value); return Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(date) : "—"; }
   function activePage() { return statusData?.pages?.find((page) => page.id === state.activePageId) || statusData?.pages?.[0] || null; }
   function selectedIds() { return [...new Set(state.selectedPageIds.filter((id) => statusData?.pages?.some((page) => page.id === id)))]; }
+  function editingCampaign() { return statusData?.campaigns?.find((item) => item.id === state.campaignEditId) || null; }
 
   async function api(path, method = "GET", body = null, query = {}) {
     const url = new URL(`${apiBase()}/api/facebook/${path}`);
@@ -162,6 +163,53 @@
       </form>`;
   }
 
+  function pagesViewV2() {
+    const pages = statusData?.pages || [];
+    const groups = statusData?.groups || [];
+    return `${heading("Quản lý Page Fleet", "Tạo nhóm Page theo thương hiệu, thị trường hoặc đội phụ trách; chọn cả nhóm chỉ bằng một lần bấm.", `<button class="fpc-btn fpc-btn--primary" type="button" data-fpc-connect>Thêm Page</button>`)}
+      <div class="fpc-grid"><article class="fpc-card fpc-card--wide"><h3>Danh sách Page</h3><div class="fpc-table-wrap"><table class="fpc-table"><thead><tr><th>Page</th><th>Danh mục</th><th>Quyền Meta</th><th>Kết nối</th><th>Thao tác</th></tr></thead><tbody>${pages.map((page) => `<tr><td><div class="fpc-list-item">${page.picture ? `<img class="fpc-avatar" src="${esc(page.picture)}" alt="">` : ""}<div><strong>${esc(page.name)}</strong><span>${esc(page.id)}</span></div></div></td><td>${esc(page.category || "—")}</td><td>${page.tasks.slice(0, 3).map((task) => `<span class="fpc-badge">${esc(task)}</span>`).join(" ") || "Theo token"}</td><td>${formatDate(page.connectedAt)}</td><td><button class="fpc-btn" type="button" data-fpc-page-open="${esc(page.id)}">Chọn</button> <button class="fpc-btn fpc-btn--danger" type="button" data-fpc-disconnect="${esc(page.id)}">Ngắt</button></td></tr>`).join("") || `<tr><td colspan="5">Chưa kết nối Page.</td></tr>`}</tbody></table></div></article>
+      <article class="fpc-card"><h3>Nhóm Page</h3><form data-fpc-group-form><div class="fpc-field"><span>Tên nhóm</span><input name="name" required placeholder="Ví dụ: Thương hiệu miền Nam"></div><div class="fpc-field"><span>Màu nhận diện</span><input name="color" type="color" value="#6e9dff"></div><div class="fpc-field"><span>Page trong nhóm</span><div class="fpc-check-grid">${pages.map((page) => `<label class="fpc-check"><input type="checkbox" name="pageId" value="${esc(page.id)}">${esc(page.name)}</label>`).join("")}</div></div><div class="fpc-actions"><button class="fpc-btn fpc-btn--primary" type="submit">Tạo nhóm</button></div></form></article></div>
+      <div class="fpc-list" style="margin-top:11px">${groups.map((group) => `<div class="fpc-list-item"><i class="fpc-task-dot" style="background:${esc(group.color)}"></i><div><strong>${esc(group.name)}</strong><span>${group.pageIds.length} Page</span></div><button class="fpc-btn" type="button" data-fpc-select-group="${esc(group.id)}">Chọn nhóm</button><button class="fpc-btn fpc-btn--danger" type="button" data-fpc-delete-group="${esc(group.id)}">Xóa</button></div>`).join("") || `<div class="fpc-empty"><p>Chưa có nhóm Page.</p></div>`}</div>`;
+  }
+
+  function composerViewV2() {
+    const pages = statusData?.pages || [];
+    const campaign = editingCampaign();
+    const targetIds = campaign?.pageIds?.length ? campaign.pageIds : selectedIds();
+    const overrideMap = new Map((campaign?.overrides || []).map((item) => [item.pageId, item]));
+    return `${heading(campaign ? `Sửa · ${esc(campaign.name)}` : "Composer đa Page", "Tạo nội dung chung hoặc ghi đè riêng cho từng Page, sau đó lưu nháp, gửi duyệt hoặc đăng trực tiếp.", campaign ? `<button class="fpc-btn" type="button" data-fpc-new-campaign>Chiến dịch mới</button>` : "")}
+      <form class="fpc-card fpc-card--full" data-fpc-compose-form><input type="hidden" name="id" value="${esc(campaign?.id || "")}">
+        <div class="fpc-form-grid"><label class="fpc-field"><span>Tên chiến dịch</span><input name="name" value="${esc(campaign?.name || "")}" placeholder="Chiến dịch tháng này"></label><label class="fpc-field"><span>Mục tiêu</span><select name="objective"><option value="engagement">Tương tác</option><option value="reach" ${campaign?.objective === "reach" ? "selected" : ""}>Tiếp cận</option><option value="traffic" ${campaign?.objective === "traffic" ? "selected" : ""}>Lưu lượng</option><option value="community" ${campaign?.objective === "community" ? "selected" : ""}>Cộng đồng</option></select></label>
+          <label class="fpc-field fpc-field--full"><span>Page nhận bài (${targetIds.length} đã chọn)</span><div class="fpc-check-grid">${pages.map((page) => `<label class="fpc-check"><input type="checkbox" name="pageId" value="${esc(page.id)}" ${targetIds.includes(page.id) ? "checked" : ""}>${esc(page.name)}</label>`).join("")}</div></label>
+          <label class="fpc-field fpc-field--full"><span>Nội dung chung</span><textarea name="message" maxlength="63206" placeholder="Viết nội dung thật sẽ đăng lên Facebook…" required>${esc(campaign?.message || "")}</textarea></label>
+          <label class="fpc-field"><span>Loại nội dung</span><select name="mediaType"><option value="text">Văn bản / liên kết</option><option value="photo" ${campaign?.mediaType === "photo" ? "selected" : ""}>Ảnh từ URL</option><option value="video" ${campaign?.mediaType === "video" ? "selected" : ""}>Video từ URL</option></select></label><label class="fpc-field"><span>Tags nội bộ</span><input name="tags" value="${esc((campaign?.tags || []).join(", "))}" placeholder="sale, tháng 8"></label>
+          <label class="fpc-field"><span>Link đính kèm</span><input name="link" type="url" value="${esc(campaign?.link || "")}" placeholder="https://…"></label><label class="fpc-field"><span>URL ảnh hoặc video</span><input name="mediaUrl" type="url" value="${esc(campaign?.mediaUrl || "")}" placeholder="https://…"></label>
+          <label class="fpc-field"><span>Lịch đăng</span><input name="scheduledAt" type="datetime-local" value="${esc(campaign?.scheduledAt ? campaign.scheduledAt.slice(0, 16) : "")}"></label><div class="fpc-field"><span>Nội dung riêng</span><button class="fpc-btn" type="button" data-fpc-override-mode>${state.overrideMode ? "Ẩn ghi đè từng Page" : "Chỉnh riêng từng Page"}</button></div>
+        </div>
+        ${state.overrideMode ? `<div class="fpc-card" style="margin-top:11px"><h3>Ghi đè từng Page</h3><div class="fpc-list">${pages.filter((page) => targetIds.includes(page.id)).map((page) => { const value = overrideMap.get(page.id) || {}; return `<div class="fpc-list-item"><div><strong>${esc(page.name)}</strong><div class="fpc-form-grid" style="margin-top:7px"><label class="fpc-field fpc-field--full"><span>Nội dung riêng (để trống = dùng nội dung chung)</span><textarea name="overrideMessage:${esc(page.id)}">${esc(value.message || "")}</textarea></label><label class="fpc-field"><span>Link riêng</span><input name="overrideLink:${esc(page.id)}" type="url" value="${esc(value.link || "")}"></label><label class="fpc-field"><span>Media URL riêng</span><input name="overrideMedia:${esc(page.id)}" type="url" value="${esc(value.mediaUrl || "")}"></label></div></div></div>`; }).join("") || `<div class="fpc-empty"><p>Chọn Page trước khi tạo nội dung riêng.</p></div>`}</div></div>` : ""}
+        <div class="fpc-notice" style="margin-top:10px">Luồng an toàn: Nháp → Chờ duyệt → Đã duyệt → Xuất bản. Đăng trực tiếp vẫn có sẵn cho nội dung không cần quy trình duyệt.</div>
+        <div class="fpc-actions"><button class="fpc-btn" type="submit" data-fpc-campaign-action="draft">Lưu nháp</button><button class="fpc-btn" type="submit" data-fpc-campaign-action="review">Gửi duyệt</button><button class="fpc-btn fpc-btn--primary" type="submit" data-fpc-campaign-action="publish" ${pages.length ? "" : "disabled"}>Đăng / lên lịch ngay</button><button class="fpc-btn" type="reset">Xóa nội dung</button></div>
+      </form>`;
+  }
+
+  function campaignsView() {
+    const campaigns = statusData?.campaigns || [];
+    const count = (status) => campaigns.filter((item) => item.status === status).length;
+    return `${heading("Campaign & Approval Center", "Quản lý chiến dịch từ nháp đến xuất bản, giữ lịch sử duyệt và kết quả từng Page.", `<button class="fpc-btn fpc-btn--primary" type="button" data-fpc-new-campaign>Tạo chiến dịch</button>`)}
+      <div class="fpc-grid"><article class="fpc-card fpc-metric"><small>Nháp</small><strong>${count("draft")}</strong><small>Đang biên tập</small></article><article class="fpc-card fpc-metric"><small>Chờ duyệt</small><strong>${count("review")}</strong><small>Cần quyết định</small></article><article class="fpc-card fpc-metric"><small>Đã duyệt</small><strong>${count("approved")}</strong><small>Sẵn sàng xuất bản</small></article>
+      <article class="fpc-card fpc-card--full"><div class="fpc-table-wrap"><table class="fpc-table"><thead><tr><th>Chiến dịch</th><th>Page</th><th>Trạng thái</th><th>Lịch</th><th>Cập nhật</th><th>Thao tác</th></tr></thead><tbody>${campaigns.map((item) => `<tr><td><strong>${esc(item.name)}</strong><br><small>${esc(item.objective || "—")}</small></td><td>${item.pageIds.length}</td><td><span class="fpc-badge">${esc(item.status)}</span></td><td>${item.scheduledAt ? formatDate(item.scheduledAt) : "Đăng ngay"}</td><td>${formatDate(item.updatedAt)}</td><td><button class="fpc-btn" type="button" data-fpc-edit-campaign="${esc(item.id)}">Mở</button> ${item.status === "review" ? `<button class="fpc-btn" type="button" data-fpc-stage-campaign="${esc(item.id)}" data-status="approved">Duyệt</button><button class="fpc-btn" type="button" data-fpc-stage-campaign="${esc(item.id)}" data-status="draft">Trả về</button>` : ""} ${item.status === "approved" ? `<button class="fpc-btn fpc-btn--primary" type="button" data-fpc-publish-campaign="${esc(item.id)}">Xuất bản</button>` : ""} ${["draft", "review", "approved", "failed", "partial"].includes(item.status) ? `<button class="fpc-btn fpc-btn--danger" type="button" data-fpc-delete-campaign="${esc(item.id)}">Xóa</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="6">Chưa có chiến dịch.</td></tr>`}</tbody></table></div></article></div>`;
+  }
+
+  function automationView() {
+    const rules = statusData?.rules || [];
+    const events = statusData?.automationEvents || [];
+    const pages = statusData?.pages || [];
+    return `${heading("Automation & Webhook Center", "Nhận sự kiện Meta theo thời gian thực, lọc từ khóa và tạo cảnh báo/nhãn. Không tự trả lời khách hàng khi chưa có phê duyệt.")}
+      <div class="fpc-grid"><form class="fpc-card fpc-card--wide" data-fpc-automation-form><h3>Tạo quy tắc</h3><div class="fpc-form-grid"><label class="fpc-field"><span>Tên quy tắc</span><input name="name" required placeholder="Cảnh báo khách cần hỗ trợ"></label><label class="fpc-field"><span>Từ khóa</span><input name="keyword" required placeholder="hoàn tiền"></label><label class="fpc-field"><span>Hành động</span><select name="action"><option value="notify">Thông báo</option><option value="flag">Đánh dấu cần xử lý</option><option value="label">Gắn nhãn</option></select></label><label class="fpc-field"><span>Nhãn</span><input name="label" placeholder="Ưu tiên cao"></label><label class="fpc-field fpc-field--full"><span>Áp dụng cho Page (để trống = tất cả)</span><div class="fpc-check-grid">${pages.map((page) => `<label class="fpc-check"><input type="checkbox" name="pageId" value="${esc(page.id)}">${esc(page.name)}</label>`).join("")}</div></label></div><div class="fpc-actions"><button class="fpc-btn fpc-btn--primary" type="submit">Lưu automation</button></div></form>
+      <article class="fpc-card"><h3>Webhook</h3><div class="fpc-status ${statusData?.webhook?.configured ? "is-on" : ""}">${statusData?.webhook?.configured ? "Đã sẵn sàng" : "Chưa cấu hình verify token"}</div><p style="color:#8093ab;font-size:10px;line-height:1.5">Callback: ${esc(statusData?.webhook?.callbackUrl || "https://hoang8.com/api/facebook/webhook")}</p><div class="fpc-notice">Chữ ký X-Hub-Signature-256 được kiểm tra bằng App Secret trước khi nhận sự kiện.</div><div class="fpc-list" style="margin-top:8px">${pages.map((page) => `<div class="fpc-list-item"><div><strong>${esc(page.name)}</strong><span>${page.webhookSubscribed ? `Đã đăng ký · ${(page.webhookFields || []).join(", ")}` : "Chưa đăng ký sự kiện"}</span></div><button class="fpc-btn" type="button" ${page.webhookSubscribed ? `data-fpc-unsubscribe-webhook="${esc(page.id)}"` : `data-fpc-subscribe-webhook="${esc(page.id)}"`}>${page.webhookSubscribed ? "Ngắt" : "Đăng ký"}</button></div>`).join("") || `<div class="fpc-empty"><p>Kết nối Page để đăng ký webhook.</p></div>`}</div></article></div>
+      <div class="fpc-grid" style="margin-top:11px"><article class="fpc-card fpc-card--wide"><h3>Quy tắc đang hoạt động</h3><div class="fpc-list">${rules.map((rule) => `<div class="fpc-list-item"><i class="fpc-task-dot ${rule.enabled ? "" : "is-error"}"></i><div><strong>${esc(rule.name)}</strong><span>“${esc(rule.keyword)}” → ${esc(rule.action)} ${rule.label ? `· ${esc(rule.label)}` : ""}</span></div><button class="fpc-btn fpc-btn--danger" type="button" data-fpc-delete-rule="${esc(rule.id)}">Xóa</button></div>`).join("") || `<div class="fpc-empty"><p>Chưa có automation.</p></div>`}</div></article><article class="fpc-card"><h3>Sự kiện khớp gần đây</h3><div class="fpc-list">${events.slice(0, 15).map((item) => `<div class="fpc-list-item"><i class="fpc-task-dot"></i><div><strong>${esc(item.label || item.action)}</strong><span>${esc(item.field)} · Page ${esc(item.pageId)}</span><small>${formatDate(item.createdAt)}</small></div></div>`).join("") || `<div class="fpc-empty"><p>Chưa có sự kiện webhook.</p></div>`}</div></article></div>`;
+  }
+
   function calendarView() {
     const posts = dashboard?.posts || [];
     const scheduled = posts.filter((post) => post.is_published === false);
@@ -209,7 +257,7 @@
 
   function workspace() {
     if (busy === "refresh" && !statusData) return `<main class="fpc-workspace"><div class="fpc-empty"><div class="fpc-loader" style="margin:auto"></div><p>Đang mở Facebook Command Center…</p></div></main>`;
-    const views = { dashboard: dashboardView, pages: pagesView, composer: composerView, calendar: calendarView, comments: commentsView, insights: insightsView, setups: setupsView, settings: settingsView };
+    const views = { dashboard: dashboardView, pages: pagesViewV2, composer: composerViewV2, campaigns: campaignsView, calendar: calendarView, comments: commentsView, insights: insightsView, automation: automationView, setups: setupsView, settings: settingsView };
     return `<main class="fpc-workspace">${(views[state.tab] || dashboardView)()}</main>`;
   }
 
@@ -247,6 +295,26 @@
     if (event.target.closest("[data-fpc-refresh]")) return refresh();
     if (event.target.closest("[data-fpc-select-all]")) { state.selectedPageIds = (statusData?.pages || []).map((page) => page.id); saveState(); render(); return; }
     if (event.target.closest("[data-fpc-select-none]")) { state.selectedPageIds = []; saveState(); render(); return; }
+    if (event.target.closest("[data-fpc-override-mode]")) { state.overrideMode = !state.overrideMode; saveState(); render(); return; }
+    if (event.target.closest("[data-fpc-new-campaign]")) { state.campaignEditId = ""; state.tab = "composer"; saveState(); render(); return; }
+    const selectGroupId = event.target.closest("[data-fpc-select-group]")?.dataset.fpcSelectGroup;
+    if (selectGroupId) { const group = statusData?.groups?.find((item) => item.id === selectGroupId); state.selectedPageIds = group?.pageIds || []; saveState(); render(); notify(`Đã chọn ${state.selectedPageIds.length} Page trong nhóm.`); return; }
+    const deleteGroupId = event.target.closest("[data-fpc-delete-group]")?.dataset.fpcDeleteGroup;
+    if (deleteGroupId && confirm("Xóa nhóm Page này? Các Page thật không bị ảnh hưởng.")) { try { await api("groups/delete", "DELETE", { id: deleteGroupId }); await refresh(false); notify("Đã xóa nhóm Page."); } catch (error) { notify(error.message, "error"); } return; }
+    const editCampaignId = event.target.closest("[data-fpc-edit-campaign]")?.dataset.fpcEditCampaign;
+    if (editCampaignId) { const item = statusData?.campaigns?.find((campaign) => campaign.id === editCampaignId); state.campaignEditId = editCampaignId; state.selectedPageIds = item?.pageIds || []; state.tab = "composer"; saveState(); render(); return; }
+    const stageButton = event.target.closest("[data-fpc-stage-campaign]");
+    if (stageButton) { try { await api("campaigns/stage", "POST", { id: stageButton.dataset.fpcStageCampaign, status: stageButton.dataset.status }); await refresh(false); notify(stageButton.dataset.status === "approved" ? "Đã duyệt chiến dịch." : "Đã trả chiến dịch về bản nháp."); } catch (error) { notify(error.message, "error"); } return; }
+    const publishCampaignId = event.target.closest("[data-fpc-publish-campaign]")?.dataset.fpcPublishCampaign;
+    if (publishCampaignId) { try { busy = "publish"; render(); const result = await api("publish", "POST", { campaignId: publishCampaignId }); await refresh(false); notify(result.job?.failed ? `Xuất bản một phần ${result.job.completed}/${result.job.total} Page.` : "Đã xuất bản chiến dịch.", result.job?.failed ? "error" : "success"); } catch (error) { busy = ""; render(); notify(error.message, "error"); } return; }
+    const deleteCampaignId = event.target.closest("[data-fpc-delete-campaign]")?.dataset.fpcDeleteCampaign;
+    if (deleteCampaignId && confirm("Xóa chiến dịch chưa xuất bản này?")) { try { await api("campaigns/delete", "DELETE", { id: deleteCampaignId }); await refresh(false); notify("Đã xóa chiến dịch."); } catch (error) { notify(error.message, "error"); } return; }
+    const deleteRuleId = event.target.closest("[data-fpc-delete-rule]")?.dataset.fpcDeleteRule;
+    if (deleteRuleId && confirm("Xóa automation này?")) { try { await api("automations/delete", "DELETE", { id: deleteRuleId }); await refresh(false); notify("Đã xóa automation."); } catch (error) { notify(error.message, "error"); } return; }
+    const subscribePageId = event.target.closest("[data-fpc-subscribe-webhook]")?.dataset.fpcSubscribeWebhook;
+    if (subscribePageId) { try { await api("webhooks/subscribe", "POST", { pageId: subscribePageId, fields: ["feed", "mentions"] }); await refresh(false); notify("Đã đăng ký webhook cho Page."); } catch (error) { notify(error.message, "error"); } return; }
+    const unsubscribePageId = event.target.closest("[data-fpc-unsubscribe-webhook]")?.dataset.fpcUnsubscribeWebhook;
+    if (unsubscribePageId && confirm("Ngừng nhận webhook cho Page này?")) { try { await api("webhooks/unsubscribe", "DELETE", { pageId: unsubscribePageId }); await refresh(false); notify("Đã ngắt webhook của Page."); } catch (error) { notify(error.message, "error"); } return; }
     const open = event.target.closest("[data-fpc-page-open]")?.dataset.fpcPageOpen;
     if (open) { state.activePageId = open; if (!state.selectedPageIds.includes(open)) state.selectedPageIds.push(open); saveState(); await api("page/select", "POST", { pageId: open }).catch(() => {}); await loadPageDashboard(); return; }
     const disconnect = event.target.closest("[data-fpc-disconnect]")?.dataset.fpcDisconnect;
@@ -278,6 +346,42 @@
     if (reply) { event.preventDefault(); const message = new FormData(reply).get("message"); try { await api("comments/reply", "POST", { pageId: state.activePageId, commentId: reply.dataset.fpcReplyForm, message }); reply.reset(); notify("Đã trả lời bình luận qua Meta."); } catch (error) { notify(error.message, "error"); } }
   }
 
+  async function onSubmitV2(event) {
+    const compose = event.target.closest("[data-fpc-compose-form]");
+    if (compose) {
+      event.preventDefault();
+      const data = new FormData(compose);
+      const pageIds = data.getAll("pageId");
+      const overrides = pageIds.map((pageId) => ({ pageId, message: data.get(`overrideMessage:${pageId}`) || "", link: data.get(`overrideLink:${pageId}`) || "", mediaUrl: data.get(`overrideMedia:${pageId}`) || "" })).filter((item) => item.message || item.link || item.mediaUrl);
+      const action = event.submitter?.dataset.fpcCampaignAction || "publish";
+      const payload = { id: data.get("id") || "", name: data.get("name") || "", objective: data.get("objective") || "", tags: data.get("tags") || "", pageIds, message: data.get("message"), mediaType: data.get("mediaType"), mediaUrl: data.get("mediaUrl"), link: data.get("link"), scheduledAt: data.get("scheduledAt") ? new Date(data.get("scheduledAt")).toISOString() : "", overrides };
+      try {
+        busy = action; render();
+        if (action === "publish") {
+          const result = await api("publish", "POST", payload);
+          await refresh();
+          notify(result.job?.failed ? `Hoàn tất một phần: ${result.job.completed}/${result.job.total} Page.` : "Đã gửi nội dung tới Meta.", result.job?.failed ? "error" : "success");
+        } else {
+          const result = await api("campaigns/save", payload.id ? "PATCH" : "POST", { ...payload, status: action });
+          state.campaignEditId = result.campaign?.id || "";
+          state.tab = "campaigns";
+          saveState();
+          await refresh(false);
+          notify(action === "review" ? "Đã gửi chiến dịch chờ duyệt." : "Đã lưu bản nháp.");
+        }
+      } catch (error) { busy = ""; render(); notify(error.message, "error"); }
+      return;
+    }
+    const group = event.target.closest("[data-fpc-group-form]");
+    if (group) { event.preventDefault(); const data = new FormData(group); try { await api("groups/save", "POST", { name: data.get("name"), color: data.get("color"), pageIds: data.getAll("pageId") }); await refresh(false); notify("Đã tạo nhóm Page."); } catch (error) { notify(error.message, "error"); } return; }
+    const automation = event.target.closest("[data-fpc-automation-form]");
+    if (automation) { event.preventDefault(); const data = new FormData(automation); try { await api("automations/save", "POST", { name: data.get("name"), keyword: data.get("keyword"), action: data.get("action"), label: data.get("label"), pageIds: data.getAll("pageId"), enabled: true }); await refresh(false); notify("Đã bật automation."); } catch (error) { notify(error.message, "error"); } return; }
+    const setup = event.target.closest("[data-fpc-setup-form]");
+    if (setup) { event.preventDefault(); const payload = Object.fromEntries(new FormData(setup)); try { await api(payload.id ? "setups/update" : "setups", payload.id ? "PATCH" : "POST", payload); setupEdit = null; await refresh(false); notify("Đã lưu Page Setup."); } catch (error) { notify(error.message, "error"); } return; }
+    const reply = event.target.closest("[data-fpc-reply-form]");
+    if (reply) { event.preventDefault(); const message = new FormData(reply).get("message"); try { await api("comments/reply", "POST", { pageId: state.activePageId, commentId: reply.dataset.fpcReplyForm, message }); reply.reset(); notify("Đã trả lời bình luận qua Meta."); } catch (error) { notify(error.message, "error"); } }
+  }
+
   async function onChange(event) {
     if (event.target.matches("[data-fpc-page-check]")) { const id = event.target.value; state.selectedPageIds = event.target.checked ? [...new Set([...state.selectedPageIds, id])] : state.selectedPageIds.filter((item) => item !== id); saveState(); return; }
     if (event.target.matches("[data-fpc-comment-post]")) { state.postId = event.target.value; saveState(); return; }
@@ -296,14 +400,14 @@
     if (host && host !== target) unmount();
     host = target;
     host.addEventListener("click", onClick);
-    host.addEventListener("submit", onSubmit);
+    host.addEventListener("submit", onSubmitV2);
     host.addEventListener("change", onChange);
     host.addEventListener("input", onInput);
     handleOauthResult();
     render();
     refresh();
   }
-  function unmount() { if (!host) return; host.removeEventListener("click", onClick); host.removeEventListener("submit", onSubmit); host.removeEventListener("change", onChange); host.removeEventListener("input", onInput); host.innerHTML = ""; host = null; }
+  function unmount() { if (!host) return; host.removeEventListener("click", onClick); host.removeEventListener("submit", onSubmitV2); host.removeEventListener("change", onChange); host.removeEventListener("input", onInput); host.innerHTML = ""; host = null; }
 
   global.HHFacebookPageCommandCenter = Object.freeze({ mount, unmount });
   global.dispatchEvent(new CustomEvent("hh:facebook-page-command-center-ready"));

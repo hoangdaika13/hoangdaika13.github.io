@@ -47,6 +47,10 @@
       "destination": "/api/platform/summary?youtubePublisher=1&youtubeAction=:youtubeAction"
     },
     {
+      "source": "/api/facebook/webhook",
+      "destination": "/api/platform/summary?facebookWebhook=1"
+    },
+    {
       "source": "/api/facebook/:facebookAction*",
       "destination": "/api/platform/summary?facebookPageManager=1&facebookAction=:facebookAction"
     },

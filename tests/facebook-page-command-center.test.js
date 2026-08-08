@@ -13,7 +13,7 @@ test("Facebook Page Command Center is reachable from Tool and lazy-loaded", () =
   assert.match(shell, /HHFacebookPageCommandCenter\?\.mount/);
   assert.match(shell, /hh:facebook-page-command-center-ready/);
   assert.match(loader, /facebook-page-command-center\.css\?v=1/);
-  assert.match(loader, /facebook-page-command-center\.js\?v=1/);
+  assert.match(loader, /facebook-page-command-center\.js\?v=2/);
 });
 
 test("Meta backend is routed, owner-isolated and stores encrypted Page tokens", () => {
@@ -64,4 +64,43 @@ test("Text on Image keeps export controls visible and includes gentle fonts", ()
   assert.match(css, /\.its-exportbar\{position:relative;z-index:8/);
   assert.match(css, /overflow-x:auto;overflow-y:hidden/);
   assert.match(css, /@media\(max-height:760px\)/);
+});
+
+test("campaign workflow, Page groups and per-Page overrides are real backend capabilities", () => {
+  const apiSource = read("utils/facebookPageManager.js");
+  const client = read("facebook-page-command-center.js");
+  const api = require(path.join(root, "utils/facebookPageManager.js"));
+  const draft = api.__test.campaignDoc({ name: "August", pageIds: ["1", "2"], message: "Hello", status: "review", overrides: [{ pageId: "2", message: "Hello Page 2" }] }, "owner");
+  assert.equal(draft.status, "review");
+  assert.equal(draft.overrides.length, 1);
+  assert.match(apiSource, /FACEBOOK_CAMPAIGN_NOT_APPROVED/);
+  assert.match(apiSource, /campaigns\/stage/);
+  assert.match(apiSource, /groups\/save/);
+  assert.match(apiSource, /automations\/save/);
+  assert.match(client, /Campaign & Approval Center/);
+  assert.match(client, /Chỉnh riêng từng Page/);
+  assert.match(client, /Automation & Webhook Center/);
+});
+
+test("Meta webhook verifies raw-body signatures before storing bounded events", () => {
+  const webhook = require(path.join(root, "utils/metaWebhook.js"));
+  const crypto = require("node:crypto");
+  const previous = process.env.META_APP_SECRET;
+  process.env.META_APP_SECRET = "test-secret-for-signature-contract";
+  try {
+    const body = Buffer.from(JSON.stringify({ object: "page", entry: [] }));
+    const signature = `sha256=${crypto.createHmac("sha256", process.env.META_APP_SECRET).update(body).digest("hex")}`;
+    assert.equal(webhook.__test.validSignature(body, signature), true);
+    assert.equal(webhook.__test.validSignature(body, "sha256=bad"), false);
+    assert.equal(webhook.config.api.bodyParser, false);
+    assert.equal(webhook.__test.MAX_BODY, 1024 * 1024);
+  } finally {
+    if (previous === undefined) delete process.env.META_APP_SECRET;
+    else process.env.META_APP_SECRET = previous;
+  }
+  const source = read("utils/metaWebhook.js");
+  assert.match(source, /x-hub-signature-256/);
+  assert.match(source, /timingSafeEqual/);
+  assert.match(source, /expireAfterSeconds/);
+  assert.doesNotMatch(source, /access_token|pageAccessToken/);
 });

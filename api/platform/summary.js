@@ -2,11 +2,39 @@ const { clean, currentUser, database, enforceRateLimit, isAdminUser, setCors, wi
 const privacyConsentHandler = require("../../utils/privacy-consent-api");
 const youtubePublisherHandler = require("../../utils/youtubePublisher");
 const facebookPageManagerHandler = require("../../utils/facebookPageManager");
+const metaWebhookHandler = require("../../utils/metaWebhook");
 const { quotaStatus, requireRoles } = require("../../services/apiGateway");
 
 const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
 const TELEMETRY_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 const TELEMETRY_TYPES = new Set(["page_view", "action", "error", "performance", "session_start", "session_end", "diagnostic", "export", "refresh", "form_start", "form_submit", "form_validation", "control_change", "experiment_exposure", "experiment_conversion", "conversion"]);
+
+const MAX_JSON_BODY = 64 * 1024;
+
+function hydrateJsonBody(req) {
+  if (req.body !== undefined || !["POST", "PUT", "PATCH", "DELETE"].includes(String(req.method || "").toUpperCase())) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > MAX_JSON_BODY) {
+        reject(Object.assign(new Error("Request body too large"), { statusCode: 413 }));
+        req.destroy();
+      } else chunks.push(chunk);
+    });
+    req.on("end", () => {
+      try {
+        const raw = Buffer.concat(chunks).toString("utf8");
+        req.body = raw ? JSON.parse(raw) : {};
+        resolve();
+      } catch {
+        reject(Object.assign(new Error("Invalid JSON body"), { statusCode: 400 }));
+      }
+    });
+    req.on("error", reject);
+  });
+}
 
 function safeRoute(value) {
   const input = clean(value || "/", 300).split("?")[0];
@@ -174,6 +202,12 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
 }
 
 module.exports = async function handler(req, res) {
+  if (String(req.query.facebookWebhook || "") === "1") return metaWebhookHandler(req, res);
+  try {
+    await hydrateJsonBody(req);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ error: error.statusCode === 413 ? "Request body too large." : "Invalid JSON body." });
+  }
   if (String(req.query.youtubePublisher || "") === "1") return youtubePublisherHandler(req, res);
   if (String(req.query.facebookPageManager || "") === "1") return facebookPageManagerHandler(req, res);
   if (req.query.privacyRoute === "consent") return privacyConsentHandler(req, res);
@@ -330,5 +364,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, counts, audience: { registeredUsers: counts.users || 0, onlineVisitors, onlineRegistered, activeWindowSeconds: ACTIVE_WINDOW_MS / 1000, activeVisitors }, recentEvents, checkedAt: new Date() });
   });
 };
+
+module.exports.config = { api: { bodyParser: false } };
 
 module.exports.__test = Object.freeze({ safeTelemetryEvent, safeTelemetryMeta, safeRoute, TELEMETRY_TYPES });

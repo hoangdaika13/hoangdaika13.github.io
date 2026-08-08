@@ -55,6 +55,9 @@ function publicPage(connection) {
     category: String(connection.category || "").slice(0, 160),
     picture: String(connection.picture || "").slice(0, 1200),
     tasks: Array.isArray(connection.tasks) ? connection.tasks.map(String).slice(0, 30) : [],
+    webhookSubscribed: Boolean(connection.webhookSubscribed),
+    webhookFields: Array.isArray(connection.webhookFields) ? connection.webhookFields.map(String).slice(0, 12) : [],
+    webhookSubscribedAt: connection.webhookSubscribedAt || null,
     active: Boolean(connection.active),
     connectedAt: connection.connectedAt || null,
     updatedAt: connection.updatedAt || null
