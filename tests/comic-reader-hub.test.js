@@ -14,9 +14,9 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=1[\s\S]*?comic-reader-hub\.js\?v=1/);
-  assert.match(worker, /comic-reader-hub\.css\?v=1/);
-  assert.match(worker, /comic-reader-hub\.js\?v=1/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=2[\s\S]*?comic-reader-hub\.js\?v=2/);
+  assert.match(worker, /comic-reader-hub\.css\?v=2/);
+  assert.match(worker, /comic-reader-hub\.js\?v=2/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -55,6 +55,19 @@ test("licensed import accepts CBZ, JSON and HTTPS feeds without crawler logic", 
   assert.match(client, /indexedDB\.open/);
   assert.match(client, /không tự vượt CAPTCHA, anti-bot/);
   assert.doesNotMatch(client, /nettruyen\.gg|puppeteer|playwright|cloudflare bypass/i);
+});
+
+test("OTruyen provider streams its paginated catalog and chapter images on demand", () => {
+  const client = read("comic-reader-hub.js");
+
+  assert.match(client, /https:\/\/otruyenapi\.com\/v1\/api/);
+  assert.match(client, /danh-sach\/truyen-moi\?page=/);
+  assert.match(client, /tim-kiem\?keyword=/);
+  assert.match(client, /the-loai\/\$\{encodeURIComponent\(genreSlug\)\}/);
+  assert.match(client, /ensureRemoteSeriesDetails/);
+  assert.match(client, /ensureRemoteChapterPages/);
+  assert.match(client, /data\.domain_cdn/);
+  assert.match(client, /referrerpolicy="no-referrer"/);
 });
 
 test("reader uses one-screen internal scrolling and responsive mobile layout", () => {
