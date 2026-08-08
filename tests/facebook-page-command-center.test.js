@@ -12,8 +12,8 @@ test("Facebook Page Command Center is reachable from Tool and lazy-loaded", () =
   assert.match(shell, /id:\s*"facebook"[\s\S]{0,240}route:\s*"\/davinci-resolve\/facebook"/);
   assert.match(shell, /HHFacebookPageCommandCenter\?\.mount/);
   assert.match(shell, /hh:facebook-page-command-center-ready/);
-  assert.match(loader, /facebook-page-command-center\.css\?v=3/);
-  assert.match(loader, /facebook-page-command-center\.js\?v=3/);
+  assert.match(loader, /facebook-page-command-center\.css\?v=4/);
+  assert.match(loader, /facebook-page-command-center\.js\?v=4/);
 });
 
 test("Meta backend is routed, owner-isolated and stores encrypted Page tokens", () => {

@@ -24,11 +24,27 @@
     const token = global.HHAuthSession?.token?.() || "";
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   };
-  function loadState() {
-    try { return { tab: "dashboard", activePageId: "", selectedPageIds: [], search: "", postId: "", campaignEditId: "", templateId: "", templateVariant: "main", overrideMode: false, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") }; }
-    catch { return { tab: "dashboard", activePageId: "", selectedPageIds: [], search: "", postId: "", campaignEditId: "", templateId: "", templateVariant: "main", overrideMode: false }; }
+  function currentIdentityId() {
+    const runtimeUser = global.HHAuthz?.currentUser?.();
+    let user = runtimeUser;
+    if (!user) {
+      try { user = JSON.parse(localStorage.getItem("hh-auth-user") || "null"); }
+      catch { user = null; }
+    }
+    return String(user?.id || user?._id || "guest").replace(/[^a-z0-9_-]/gi, "").slice(0, 80) || "guest";
   }
-  function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  function defaultState() {
+    return { ownerId: currentIdentityId(), tab: "dashboard", activePageId: "", selectedPageIds: [], search: "", postId: "", campaignEditId: "", templateId: "", templateVariant: "main", overrideMode: false };
+  }
+  function privateStorageKey() { return `${STORAGE_KEY}:${currentIdentityId()}`; }
+  function loadState() {
+    const base = defaultState();
+    try {
+      const saved = JSON.parse(localStorage.getItem(privateStorageKey()) || "null");
+      return saved?.ownerId === base.ownerId ? { ...base, ...saved, ownerId: base.ownerId } : base;
+    } catch { return base; }
+  }
+  function saveState() { try { localStorage.setItem(privateStorageKey(), JSON.stringify({ ...state, ownerId: currentIdentityId() })); } catch {} }
   function formatNumber(value) { return Number(value || 0).toLocaleString("vi-VN"); }
   function formatDate(value) { const date = new Date(value); return Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(date) : "—"; }
   function activePage() { return statusData?.pages?.find((page) => page.id === state.activePageId) || statusData?.pages?.[0] || null; }
@@ -93,11 +109,24 @@
     finally { busy = ""; if (shouldRender) render(); if (failure) notify(failure.message, "error"); }
   }
 
+  function connectionReady() { return statusData?.configured === true; }
+
+  function securityCenter() {
+    const security = statusData?.security || {};
+    const items = [
+      [security.ownerIsolation === true, "Cô lập tài khoản", "Mọi Page, chiến dịch và tác vụ đều lọc theo ownerId ở máy chủ"],
+      [security.tokenVault === "AES-256-GCM v2", "Token Vault", security.tokenVault === "AES-256-GCM v2" ? "AES-256-GCM v2 · khóa riêng theo HH account + Page" : "Thiếu khóa mã hóa token Meta"],
+      [security.oauthState === "single-use", "OAuth một lần", "State ngẫu nhiên, hết hạn 10 phút và không thể phát lại"],
+      [security.tokenDelivery === "server-only", "Không lộ token", "App Secret và Page token không được gửi xuống trình duyệt"]
+    ];
+    return `<section class="fpc-security-center"><header><div><small>ACCOUNT SECURITY</small><h3>Mỗi tài khoản HH là một kho Facebook riêng</h3></div><span class="${items.every(([ready]) => ready) ? "is-ready" : ""}">${items.every(([ready]) => ready) ? "Đã bảo vệ" : "Cần cấu hình"}</span></header><div>${items.map(([ready, title, detail]) => `<article class="${ready ? "is-ready" : ""}"><i>${ready ? "✓" : "!"}</i><span><strong>${title}</strong><small>${detail}</small></span></article>`).join("")}</div></section>`;
+  }
+
   function topbar() {
     return `<header class="fpc-topbar">
       <div class="fpc-brand"><span class="fpc-brand__mark">f</span><div><strong>Facebook Page Command Center</strong><small>Quản lý đa Page qua Meta Graph API</small></div></div>
       <nav class="fpc-tabs" aria-label="Khu vực Facebook">${TABS.map(([id, label]) => `<button type="button" class="${state.tab === id ? "is-active" : ""}" data-fpc-tab="${id}">${label}</button>`).join("")}</nav>
-      <div class="fpc-topbar__actions"><span class="fpc-status ${statusData?.configured ? "is-on" : ""}">${statusData?.configured ? "Meta sẵn sàng" : "Chưa cấu hình Meta"}</span><button class="fpc-btn" type="button" data-fpc-refresh>${busy ? "Đang tải…" : "Làm mới"}</button><button class="fpc-btn fpc-btn--primary" type="button" data-fpc-connect>Kết nối Page</button></div>
+      <div class="fpc-topbar__actions"><span class="fpc-status ${connectionReady() ? "is-on" : ""}">${connectionReady() ? "Meta sẵn sàng" : "Chưa cấu hình Meta"}</span><button class="fpc-btn" type="button" data-fpc-refresh>${busy ? "Đang tải…" : "Làm mới"}</button><button class="fpc-btn fpc-btn--primary" type="button" data-fpc-connect ${connectionReady() ? "" : "disabled"}>Kết nối Page</button></div>
     </header>`;
   }
 
@@ -125,7 +154,7 @@
   }
 
   function heading(title, description, action = "") { return `<div class="fpc-heading"><div><h2>${title}</h2><p>${description}</p></div>${action}</div>`; }
-  function emptyConnection() { return `${heading("Kết nối Facebook Pages", "Đăng nhập Meta và cấp đúng quyền cho các Page bạn sở hữu hoặc quản trị.")}<div class="fpc-empty"><strong>Chưa có Facebook Page được kết nối</strong><p>Token chỉ được lưu mã hóa trên máy chủ, tách biệt theo tài khoản HH. App Secret không bao giờ xuất hiện trong trình duyệt.</p><button class="fpc-btn fpc-btn--primary" type="button" data-fpc-connect>Kết nối Meta</button></div>`; }
+  function emptyConnection() { return `${heading("Kết nối Facebook Pages", "Đăng nhập Meta và cấp đúng quyền cho các Page bạn sở hữu hoặc quản trị.")}${securityCenter()}<div class="fpc-empty"><strong>Chưa có Facebook Page được kết nối</strong><p>Token chỉ được lưu mã hóa trên máy chủ, tách biệt theo tài khoản HH. App Secret không bao giờ xuất hiện trong trình duyệt.</p><button class="fpc-btn fpc-btn--primary" type="button" data-fpc-connect ${connectionReady() ? "" : "disabled"}>${connectionReady() ? "Kết nối Meta" : "Hoàn tất cấu hình bảo mật trước"}</button></div>`; }
 
   function dashboardView() {
     if (!activePage()) return emptyConnection();
@@ -134,7 +163,7 @@
     if (busy === "dashboard" && !dashboard) return `<div class="fpc-empty"><div class="fpc-loader" style="margin:auto"></div><p>Đang đồng bộ Page…</p></div>`;
     const reactions = posts.reduce((sum, post) => sum + Number(post.reactions?.summary?.total_count || 0), 0);
     const commentCount = posts.reduce((sum, post) => sum + Number(post.comments?.summary?.total_count || 0), 0);
-    return `${heading(esc(page.name || "Facebook Page"), "Dữ liệu được lấy trực tiếp từ Meta Graph API; không dùng số liệu mẫu.", `<button class="fpc-btn fpc-btn--primary" type="button" data-fpc-tab="composer">Soạn bài mới</button>`)}
+    return `${heading(esc(page.name || "Facebook Page"), "Dữ liệu được lấy trực tiếp từ Meta Graph API; không dùng số liệu mẫu.", `<button class="fpc-btn fpc-btn--primary" type="button" data-fpc-tab="composer">Soạn bài mới</button>`)}${securityCenter()}
       <div class="fpc-grid">
         <article class="fpc-card fpc-metric"><small>Người theo dõi</small><strong>${formatNumber(page.followers_count || page.fan_count)}</strong><small>${esc(page.category || "Facebook Page")}</small></article>
         <article class="fpc-card fpc-metric"><small>Bài gần nhất</small><strong>${formatNumber(posts.length)}</strong><small>Đã đồng bộ tối đa 25 bài</small></article>
@@ -146,7 +175,7 @@
 
   function pagesView() {
     const pages = statusData?.pages || [];
-    return `${heading("Quản lý Page Fleet", "Chọn Page làm việc, đăng đa Page và ngắt kết nối khỏi HH mà không xóa Page trên Facebook.", `<button class="fpc-btn fpc-btn--primary" type="button" data-fpc-connect>Thêm Page</button>`)}
+    return `${heading("Quản lý Page Fleet", "Chọn Page làm việc, đăng đa Page và ngắt kết nối khỏi HH mà không xóa Page trên Facebook.", `<button class="fpc-btn fpc-btn--primary" type="button" data-fpc-connect ${connectionReady() ? "" : "disabled"}>Thêm Page</button>`)}
       <div class="fpc-table-wrap"><table class="fpc-table"><thead><tr><th>Page</th><th>Danh mục</th><th>Quyền Meta</th><th>Kết nối</th><th>Thao tác</th></tr></thead><tbody>${pages.map((page) => `<tr><td><div class="fpc-list-item">${page.picture ? `<img class="fpc-avatar" src="${esc(page.picture)}" alt="">` : ""}<div><strong>${esc(page.name)}</strong><span>${esc(page.id)}</span></div></div></td><td>${esc(page.category || "—")}</td><td>${page.tasks.slice(0, 3).map((task) => `<span class="fpc-badge">${esc(task)}</span>`).join(" ") || "Theo token"}</td><td>${formatDate(page.connectedAt)}</td><td><button class="fpc-btn" type="button" data-fpc-page-open="${esc(page.id)}">Chọn</button> <button class="fpc-btn fpc-btn--danger" type="button" data-fpc-disconnect="${esc(page.id)}">Ngắt</button></td></tr>`).join("") || `<tr><td colspan="5">${emptyConnection()}</td></tr>`}</tbody></table></div>`;
   }
 
@@ -168,7 +197,7 @@
   function pagesViewV2() {
     const pages = statusData?.pages || [];
     const groups = statusData?.groups || [];
-    return `${heading("Quản lý Page Fleet", "Tạo nhóm Page theo thương hiệu, thị trường hoặc đội phụ trách; chọn cả nhóm chỉ bằng một lần bấm.", `<button class="fpc-btn fpc-btn--primary" type="button" data-fpc-connect>Thêm Page</button>`)}
+    return `${heading("Quản lý Page Fleet", "Tạo nhóm Page theo thương hiệu, thị trường hoặc đội phụ trách; chọn cả nhóm chỉ bằng một lần bấm.", `<button class="fpc-btn fpc-btn--primary" type="button" data-fpc-connect ${connectionReady() ? "" : "disabled"}>Thêm Page</button>`)}
       <div class="fpc-grid"><article class="fpc-card fpc-card--wide"><h3>Danh sách Page</h3><div class="fpc-table-wrap"><table class="fpc-table"><thead><tr><th>Page</th><th>Danh mục</th><th>Quyền Meta</th><th>Kết nối</th><th>Thao tác</th></tr></thead><tbody>${pages.map((page) => `<tr><td><div class="fpc-list-item">${page.picture ? `<img class="fpc-avatar" src="${esc(page.picture)}" alt="">` : ""}<div><strong>${esc(page.name)}</strong><span>${esc(page.id)}</span></div></div></td><td>${esc(page.category || "—")}</td><td>${page.tasks.slice(0, 3).map((task) => `<span class="fpc-badge">${esc(task)}</span>`).join(" ") || "Theo token"}</td><td>${formatDate(page.connectedAt)}</td><td><button class="fpc-btn" type="button" data-fpc-page-open="${esc(page.id)}">Chọn</button> <button class="fpc-btn fpc-btn--danger" type="button" data-fpc-disconnect="${esc(page.id)}">Ngắt</button></td></tr>`).join("") || `<tr><td colspan="5">Chưa kết nối Page.</td></tr>`}</tbody></table></div></article>
       <article class="fpc-card"><h3>Nhóm Page</h3><form data-fpc-group-form><div class="fpc-field"><span>Tên nhóm</span><input name="name" required placeholder="Ví dụ: Thương hiệu miền Nam"></div><div class="fpc-field"><span>Màu nhận diện</span><input name="color" type="color" value="#6e9dff"></div><div class="fpc-field"><span>Page trong nhóm</span><div class="fpc-check-grid">${pages.map((page) => `<label class="fpc-check"><input type="checkbox" name="pageId" value="${esc(page.id)}">${esc(page.name)}</label>`).join("")}</div></div><div class="fpc-actions"><button class="fpc-btn fpc-btn--primary" type="submit">Tạo nhóm</button></div></form></article></div>
       <div class="fpc-list" style="margin-top:11px">${groups.map((group) => `<div class="fpc-list-item"><i class="fpc-task-dot" style="background:${esc(group.color)}"></i><div><strong>${esc(group.name)}</strong><span>${group.pageIds.length} Page</span></div><button class="fpc-btn" type="button" data-fpc-select-group="${esc(group.id)}">Chọn nhóm</button><button class="fpc-btn fpc-btn--danger" type="button" data-fpc-delete-group="${esc(group.id)}">Xóa</button></div>`).join("") || `<div class="fpc-empty"><p>Chưa có nhóm Page.</p></div>`}</div>`;
@@ -265,10 +294,12 @@
   }
 
   function settingsView() {
-    return `${heading("Thiết lập Meta App", "Các giá trị bí mật chỉ cấu hình trong Vercel Environment Variables, tuyệt đối không nhập vào trình duyệt.")}
-      <div class="fpc-grid"><article class="fpc-card fpc-card--wide"><h3>Trạng thái kết nối</h3><div class="fpc-list"><div class="fpc-list-item"><div><strong>OAuth backend</strong><span>${statusData?.configured ? "Đã cấu hình" : "Thiếu META_APP_ID hoặc META_APP_SECRET"}</span></div></div><div class="fpc-list-item"><div><strong>Callback URL</strong><span>${esc(statusData?.callbackUrl || "https://hoang8.com/api/facebook/oauth/callback")}</span></div><button class="fpc-btn" type="button" data-fpc-copy="${esc(statusData?.callbackUrl || "https://hoang8.com/api/facebook/oauth/callback")}">Sao chép</button></div><div class="fpc-list-item"><div><strong>Graph API</strong><span>${esc(statusData?.graphVersion || "")}</span></div></div></div></article>
+    const config = statusData?.configuration || {};
+    const configRows = [["Meta App ID", config.appId], ["Meta App Secret", config.appSecret], ["Token Encryption Key", config.tokenEncryption], ["Callback HTTPS", config.callback], ["Webhook Verify Token", config.webhookVerifyToken]];
+    return `${heading("Thiết lập Meta App", "Các giá trị bí mật chỉ cấu hình trong Vercel Environment Variables, tuyệt đối không nhập vào trình duyệt.")}${securityCenter()}
+      <div class="fpc-grid"><article class="fpc-card fpc-card--wide"><h3>Trạng thái kết nối</h3><div class="fpc-list">${configRows.map(([label, ready]) => `<div class="fpc-list-item"><i class="fpc-task-dot ${ready ? "" : "is-error"}"></i><div><strong>${label}</strong><span>${ready ? "Đã cấu hình phía máy chủ" : "Đang thiếu trên Vercel"}</span></div></div>`).join("")}<div class="fpc-list-item"><div><strong>Callback URL</strong><span>${esc(statusData?.callbackUrl || "https://hoang8.com/api/facebook/oauth/callback")}</span></div><button class="fpc-btn" type="button" data-fpc-copy="${esc(statusData?.callbackUrl || "https://hoang8.com/api/facebook/oauth/callback")}">Sao chép</button></div><div class="fpc-list-item"><div><strong>Graph API</strong><span>${esc(statusData?.graphVersion || "")}</span></div></div></div></article>
       <article class="fpc-card"><h3>Quyền yêu cầu</h3><div class="fpc-list">${(statusData?.permissions || []).map((permission) => `<div class="fpc-list-item"><div><strong>${esc(permission)}</strong></div></div>`).join("")}</div></article>
-      <article class="fpc-card fpc-card--full"><h3>Cấu hình Vercel</h3><div class="fpc-notice">META_APP_ID · META_APP_SECRET · META_CALLBACK_URL · META_TOKEN_ENCRYPTION_KEY · META_GRAPH_VERSION. Sau đó thêm callback URL vào Meta App, khai báo domain hoang8.com và gửi App Review cho các quyền quản lý Page mở rộng.</div></article></div>`;
+      <article class="fpc-card fpc-card--full"><h3>Cấu hình Vercel</h3><div class="fpc-notice">META_APP_ID · META_APP_SECRET · META_CALLBACK_URL · META_TOKEN_ENCRYPTION_KEY · META_TOKEN_ENCRYPTION_KEY_PREVIOUS · META_WEBHOOK_VERIFY_TOKEN · META_GRAPH_VERSION. Dùng khóa mã hóa riêng tối thiểu 32 ký tự; khóa cũ chỉ đặt trong biến PREVIOUS trong thời gian xoay khóa.</div></article></div>`;
   }
 
   function workspace() {
@@ -424,6 +455,8 @@
     if (!target) return;
     if (host && host !== target) unmount();
     host = target;
+    state = loadState();
+    statusData = null; dashboard = null; comments = []; insights = []; plannerRecommendation = null;
     host.addEventListener("click", onClick);
     host.addEventListener("submit", onSubmitV2);
     host.addEventListener("change", onChange);
@@ -432,7 +465,7 @@
     render();
     refresh();
   }
-  function unmount() { if (!host) return; host.removeEventListener("click", onClick); host.removeEventListener("submit", onSubmitV2); host.removeEventListener("change", onChange); host.removeEventListener("input", onInput); host.innerHTML = ""; host = null; }
+  function unmount() { if (!host) return; host.removeEventListener("click", onClick); host.removeEventListener("submit", onSubmitV2); host.removeEventListener("change", onChange); host.removeEventListener("input", onInput); host.innerHTML = ""; host = null; statusData = null; dashboard = null; comments = []; insights = []; plannerRecommendation = null; }
 
   global.HHFacebookPageCommandCenter = Object.freeze({ mount, unmount });
   global.dispatchEvent(new CustomEvent("hh:facebook-page-command-center-ready"));

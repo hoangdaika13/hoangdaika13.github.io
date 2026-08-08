@@ -1,7 +1,7 @@
 const crypto = require("node:crypto");
 const { ObjectId } = require("mongodb");
 const { clean, currentUser, enforceRateLimit, withApi } = require("./platform");
-const { decryptToken, encryptToken, publicPage } = require("./facebookSecurity");
+const { decryptToken, encryptToken, isBoundToken, ownedConnectionFilter, publicPage } = require("./facebookSecurity");
 
 const GRAPH_VERSION = clean(process.env.META_GRAPH_VERSION || "v23.0", 20);
 const GRAPH_ORIGIN = `https://graph.facebook.com/${GRAPH_VERSION}`;
@@ -71,6 +71,9 @@ function hmacIdentity(value) {
 
 async function graph(path, accessToken, options = {}) {
   const url = new URL(path.startsWith("http") ? path : `${GRAPH_ORIGIN}/${String(path).replace(/^\//, "")}`);
+  if (url.protocol !== "https:" || url.hostname.toLowerCase() !== "graph.facebook.com") {
+    throw fail("Meta Graph URL không nằm trong allowlist.", 400, "META_GRAPH_ORIGIN_REJECTED");
+  }
   for (const [key, value] of Object.entries(options.params || {})) {
     if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
   }
@@ -89,11 +92,44 @@ async function graph(path, accessToken, options = {}) {
   return data;
 }
 
+async function oauthAccessToken(params = {}) {
+  const response = await fetch(`${GRAPH_ORIGIN}/oauth/access_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", "Cache-Control": "no-store" },
+    body: new URLSearchParams(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")),
+    signal: AbortSignal.timeout(20000)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.access_token) throw fail(data?.error?.message || "Meta không cấp access token.", 401, "META_TOKEN_EXCHANGE_FAILED");
+  return data;
+}
+
+function encryptionConfigured() {
+  return String(process.env.META_TOKEN_ENCRYPTION_KEY || "").trim().length >= 32;
+}
+
 async function pageConnection(db, userId, pageId) {
   const id = clean(pageId, 100);
   const record = await db.collection("facebookPageConnections").findOne({ userId, pageId: id });
   if (!record) throw fail("Page không thuộc tài khoản HH hiện tại hoặc chưa được kết nối.", 404, "FACEBOOK_PAGE_NOT_CONNECTED");
   return record;
+}
+
+async function pageAccessToken(connections, record) {
+  const token = decryptToken(record.accessToken, record);
+  if (!isBoundToken(record.accessToken)) {
+    await connections.updateOne(ownedConnectionFilter(record), { $set: {
+      accessToken: encryptToken(token, record), tokenVersion: "v2", tokenMigratedAt: new Date(), updatedAt: new Date()
+    } });
+  }
+  return token;
+}
+
+function requirePageTask(record, accepted, label) {
+  const tasks = new Set((Array.isArray(record?.tasks) ? record.tasks : []).map((item) => String(item).toUpperCase()));
+  if (tasks.size && !accepted.some((item) => tasks.has(item))) {
+    throw fail(`Page chưa cấp quyền ${label}. Hãy kết nối lại trong Meta.`, 403, "FACEBOOK_PAGE_TASK_REQUIRED");
+  }
 }
 
 function setupDoc(input, userId, previous = {}) {
@@ -182,6 +218,17 @@ function publicGroup(item) {
 
 function publicRule(item) {
   return item ? { id: String(item._id), name: item.name || "Automation", enabled: item.enabled !== false, pageIds: item.pageIds || [], keyword: item.keyword || "", action: item.action || "notify", label: item.label || "", createdAt: item.createdAt || null, updatedAt: item.updatedAt || null } : null;
+}
+
+function publicJob(item) {
+  return item ? {
+    id: String(item._id || ""), kind: item.kind || "publish", status: item.status || "unknown",
+    total: Math.max(0, Number(item.total || 0)), completed: Math.max(0, Number(item.completed || 0)), failed: Math.max(0, Number(item.failed || 0)),
+    results: (Array.isArray(item.results) ? item.results : []).slice(0, MAX_BATCH_PUBLISH).map((result) => ({
+      pageId: clean(result.pageId, 100), ok: result.ok === true, postId: clean(result.postId, 160), error: clean(result.error, 240)
+    })),
+    createdAt: item.createdAt || null, updatedAt: item.updatedAt || null
+  } : null;
 }
 
 function contentTemplateDoc(input, userId, previous = {}) {
@@ -280,11 +327,11 @@ module.exports = async function facebookPageManager(req, res) {
     if (route === "oauth/callback" && req.method === "GET") {
       const rawState = clean(req.query.state, 220);
       const stateHash = crypto.createHash("sha256").update(rawState).digest("hex");
-      const state = await oauthStates.findOne({ stateHash, expiresAt: { $gt: new Date() } });
+      const consumedState = rawState ? await oauthStates.findOneAndDelete({ stateHash, expiresAt: { $gt: new Date() } }) : null;
+      const state = consumedState?.value || consumedState;
       const frontend = safeFrontend(state?.returnTo);
       const returnHash = safeReturnHash(state?.returnHash);
       if (!state) return res.redirect(`${frontend}/?facebookError=${encodeURIComponent("Phiên kết nối Facebook đã hết hạn.")}${returnHash}`);
-      await oauthStates.deleteOne({ _id: state._id });
       const callbackUser = await currentUser(req);
       if (!callbackUser || String(callbackUser._id) !== String(state.userId)) {
         return res.redirect(`${frontend}/?facebookError=${encodeURIComponent("Tài khoản HH không khớp với người bắt đầu kết nối.")}${returnHash}`);
@@ -293,27 +340,27 @@ module.exports = async function facebookPageManager(req, res) {
         return res.redirect(`${frontend}/?facebookError=${encodeURIComponent(clean(req.query.error_description || "Meta đã hủy cấp quyền.", 180))}${returnHash}`);
       }
       try {
-        const tokenUrl = new URL(`${GRAPH_ORIGIN}/oauth/access_token`);
-        tokenUrl.search = new URLSearchParams({
+        if (!encryptionConfigured()) throw fail("Kho token Meta chưa có khóa mã hóa riêng.", 503, "META_ENCRYPTION_MISSING");
+        const shortToken = await oauthAccessToken({
           client_id: process.env.META_APP_ID || "",
           client_secret: process.env.META_APP_SECRET || "",
           redirect_uri: callbackUrl(req),
           code: clean(req.query.code, 2000)
         });
-        const tokenResponse = await fetch(tokenUrl, { signal: AbortSignal.timeout(20000) });
-        const shortToken = await tokenResponse.json().catch(() => ({}));
-        if (!tokenResponse.ok || !shortToken.access_token) throw fail(shortToken.error?.message || "Meta không cấp access token.", 401);
         let userToken = shortToken.access_token;
         try {
-          const longToken = await graph("oauth/access_token", userToken, { params: {
+          const longToken = await oauthAccessToken({
             grant_type: "fb_exchange_token",
             client_id: process.env.META_APP_ID,
             client_secret: process.env.META_APP_SECRET,
             fb_exchange_token: userToken
-          } });
+          });
           userToken = longToken.access_token || userToken;
         } catch {}
         const identity = await graph("me", userToken, { params: { fields: "id,name" } });
+        const permissionResult = await graph("me/permissions", userToken).catch(() => ({ data: [] }));
+        const grantedPermissions = (permissionResult.data || []).filter((item) => item.status === "granted").map((item) => clean(item.permission, 100)).filter(Boolean);
+        const declinedPermissions = (permissionResult.data || []).filter((item) => item.status === "declined").map((item) => clean(item.permission, 100)).filter(Boolean);
         let next = `${GRAPH_ORIGIN}/me/accounts?fields=id,name,access_token,category,category_list,tasks,picture.type(square)&limit=100`;
         let pages = [];
         for (let page = 0; next && page < 3 && pages.length < MAX_PAGES; page += 1) {
@@ -335,7 +382,11 @@ module.exports = async function facebookPageManager(req, res) {
             category: clean(page.category, 160),
             picture: clean(page.picture?.data?.url, 1200),
             tasks: Array.isArray(page.tasks) ? page.tasks.map((task) => clean(task, 80)).filter(Boolean).slice(0, 30) : [],
+            grantedPermissions,
+            declinedPermissions,
             accessToken: encryptToken(page.access_token, owner),
+            tokenVersion: "v2",
+            tokenUpdatedAt: now,
             metaIdentityHash: hmacIdentity(identity.id),
             active: index === 0,
             connectedAt: previous?.connectedAt || now,
@@ -355,6 +406,7 @@ module.exports = async function facebookPageManager(req, res) {
 
     if (route === "oauth/start" && req.method === "POST") {
       if (!process.env.META_APP_ID || !process.env.META_APP_SECRET) throw fail("Meta OAuth chưa được cấu hình trên Vercel.", 503, "META_OAUTH_NOT_CONFIGURED");
+      if (!encryptionConfigured()) throw fail("Thiếu META_TOKEN_ENCRYPTION_KEY riêng tối thiểu 32 ký tự.", 503, "META_ENCRYPTION_MISSING");
       const rawState = crypto.randomBytes(36).toString("base64url");
       await oauthStates.insertOne({
         stateHash: crypto.createHash("sha256").update(rawState).digest("hex"), userId: user._id,
@@ -385,15 +437,24 @@ module.exports = async function facebookPageManager(req, res) {
         templates.find({ userId: user._id }).sort({ favorite: -1, updatedAt: -1 }).limit(MAX_CONTENT_TEMPLATES).toArray()
       ]);
       return res.status(200).json({
-        configured: Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET),
+        configured: Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET && encryptionConfigured()),
         callbackUrl: callbackUrl(req), graphVersion: GRAPH_VERSION, permissions: PERMISSIONS,
         pages: allPages.map(publicPage), setups: setupRows.map(publicSetup),
         campaigns: campaignRows.map(publicCampaign), groups: groupRows.map(publicGroup), rules: ruleRows.map(publicRule),
         templates: templateRows.map(publicContentTemplate),
         automationEvents: automationEvents.map((item) => ({ id: String(item._id), ruleId: String(item.ruleId || ""), pageId: item.pageId || "", field: item.field || "", action: item.action || "notify", label: item.label || "", status: item.status || "matched", createdAt: item.createdAt || null })),
-        jobs: recentJobs.map((item) => ({ id: String(item._id), kind: item.kind, status: item.status, total: item.total, completed: item.completed, failed: item.failed, createdAt: item.createdAt })),
+        jobs: recentJobs.map(publicJob),
         audits: audits.map((item) => ({ id: String(item._id), action: item.action, pageId: item.pageId || "", status: item.status, detail: item.detail || "", createdAt: item.createdAt })),
         capabilities: { automaticPageCreation: false, batchSetup: true, pageManagement: true, publish: true, schedule: true, comments: true, insights: true, campaigns: true, approvalWorkflow: true, approvalNotes: true, pageGroups: true, perPageOverrides: true, webhook: true, automationRules: true, contentLibrary: true, abVariants: true, smartPlanner: true },
+        configuration: {
+          appId: Boolean(process.env.META_APP_ID), appSecret: Boolean(process.env.META_APP_SECRET),
+          tokenEncryption: encryptionConfigured(), callback: Boolean(callbackUrl(req)),
+          webhookVerifyToken: Boolean(process.env.META_WEBHOOK_VERIFY_TOKEN)
+        },
+        security: {
+          ownerIsolation: true, tokenVault: encryptionConfigured() ? "AES-256-GCM v2" : "missing",
+          tokenDelivery: "server-only", oauthState: "single-use", localDraftIsolation: "owner-scoped"
+        },
         webhook: { callbackUrl: `${safeFrontend()}/api/facebook/webhook`, configured: Boolean(process.env.META_WEBHOOK_VERIFY_TOKEN && process.env.META_APP_SECRET) },
         policy: { pageCreation: "Meta không cung cấp Pages API để tạo Facebook Page mới. Batch Setup chuẩn bị dữ liệu và mở luồng tạo chính thức." }
       });
@@ -408,7 +469,8 @@ module.exports = async function facebookPageManager(req, res) {
 
     if (route === "page/dashboard" && req.method === "GET") {
       const record = await pageConnection(db, user._id, req.query.pageId);
-      const token = decryptToken(record.accessToken, record);
+      requirePageTask(record, ["ANALYZE", "CREATE_CONTENT", "MODERATE"], "đọc Page");
+      const token = await pageAccessToken(connections, record);
       const [page, posts] = await Promise.all([
         graph(record.pageId, token, { params: { fields: "id,name,about,description,category,fan_count,followers_count,picture.type(large),cover,link,verification_status" } }),
         graph(`${record.pageId}/feed`, token, { params: { fields: "id,message,created_time,updated_time,permalink_url,is_published,full_picture,shares,comments.limit(0).summary(true),reactions.limit(0).summary(true)", limit: 25 } })
@@ -418,7 +480,8 @@ module.exports = async function facebookPageManager(req, res) {
 
     if (route === "planner/recommendations" && req.method === "GET") {
       const record = await pageConnection(db, user._id, req.query.pageId);
-      const token = decryptToken(record.accessToken, record);
+      requirePageTask(record, ["ANALYZE", "CREATE_CONTENT"], "đọc nội dung");
+      const token = await pageAccessToken(connections, record);
       const posts = await graph(`${record.pageId}/feed`, token, { params: { fields: "id,created_time,is_published,shares,comments.limit(0).summary(true),reactions.limit(0).summary(true)", limit: 100 } });
       const recommendation = recommendPostingSlots(posts.data || [], req.query.timezoneOffset ?? 7);
       await writeAudit(db, user._id, "planner:analyze", { pageId: record.pageId, detail: `${recommendation.sampleSize} posts` });
@@ -447,7 +510,8 @@ module.exports = async function facebookPageManager(req, res) {
       for (const pageId of targetIds) {
         try {
           const record = await pageConnection(db, user._id, pageId);
-          const token = decryptToken(record.accessToken, record);
+          requirePageTask(record, ["CREATE_CONTENT"], "đăng nội dung");
+          const token = await pageAccessToken(connections, record);
           const override = overrideMap.get(pageId) || {};
           const pageMessage = clean(override.message, 63206) || message;
           const pageLink = clean(override.link, 1200) || link;
@@ -471,19 +535,21 @@ module.exports = async function facebookPageManager(req, res) {
       await jobs.updateOne({ _id: inserted.insertedId, userId: user._id }, { $set: job });
       if (campaign) await campaigns.updateOne({ _id: campaign._id, userId: user._id }, { $set: { status: job.status === "completed" ? "published" : job.status, publishedAt: job.completed ? new Date() : null, lastJobId: inserted.insertedId, updatedAt: new Date() } });
       await writeAudit(db, user._id, scheduledAt ? "posts:schedule" : "posts:publish", { status: job.status, detail: `${job.completed}/${job.total}` });
-      return res.status(job.failed ? 207 : 201).json({ ok: job.failed === 0, job: { id: String(inserted.insertedId), ...job } });
+      return res.status(job.failed ? 207 : 201).json({ ok: job.failed === 0, job: publicJob({ ...job, _id: inserted.insertedId }) });
     }
 
     if (route === "comments" && req.method === "GET") {
       const record = await pageConnection(db, user._id, req.query.pageId);
-      const token = decryptToken(record.accessToken, record);
+      requirePageTask(record, ["MODERATE", "CREATE_CONTENT"], "đọc bình luận");
+      const token = await pageAccessToken(connections, record);
       const data = await graph(`${clean(req.query.postId, 180)}/comments`, token, { params: { fields: "id,message,created_time,from,can_hide,can_remove,is_hidden,like_count", limit: 100 } });
       return res.status(200).json({ comments: data.data || [] });
     }
 
     if (route === "comments/reply" && req.method === "POST") {
       const record = await pageConnection(db, user._id, body.pageId);
-      const token = decryptToken(record.accessToken, record);
+      requirePageTask(record, ["MODERATE"], "quản lý bình luận");
+      const token = await pageAccessToken(connections, record);
       const message = clean(body.message, 8000);
       if (!message) throw fail("Nội dung trả lời đang trống.");
       const result = await graph(`${clean(body.commentId, 180)}/comments`, token, { method: "POST", body: { message } });
@@ -493,7 +559,8 @@ module.exports = async function facebookPageManager(req, res) {
 
     if (route === "comments/hide" && req.method === "POST") {
       const record = await pageConnection(db, user._id, body.pageId);
-      const token = decryptToken(record.accessToken, record);
+      requirePageTask(record, ["MODERATE"], "quản lý bình luận");
+      const token = await pageAccessToken(connections, record);
       await graph(clean(body.commentId, 180), token, { method: "POST", body: { is_hidden: body.hidden !== false ? "true" : "false" } });
       await writeAudit(db, user._id, body.hidden !== false ? "comment:hide" : "comment:unhide", { pageId: record.pageId });
       return res.status(200).json({ ok: true });
@@ -502,7 +569,8 @@ module.exports = async function facebookPageManager(req, res) {
     if (route === "webhooks/subscribe" && req.method === "POST") {
       if (!process.env.META_WEBHOOK_VERIFY_TOKEN) throw fail("Máy chủ chưa cấu hình META_WEBHOOK_VERIFY_TOKEN.", 503, "META_WEBHOOK_NOT_CONFIGURED");
       const record = await pageConnection(db, user._id, body.pageId);
-      const token = decryptToken(record.accessToken, record);
+      requirePageTask(record, ["MANAGE"], "quản lý metadata");
+      const token = await pageAccessToken(connections, record);
       const allowed = new Set(["feed", "mentions", "ratings"]);
       const fields = (Array.isArray(body.fields) ? body.fields : ["feed", "mentions"]).map((item) => clean(item, 40)).filter((item) => allowed.has(item));
       await graph(`${record.pageId}/subscribed_apps`, token, { method: "POST", body: { subscribed_fields: [...new Set(fields)].join(",") || "feed" } });
@@ -513,7 +581,8 @@ module.exports = async function facebookPageManager(req, res) {
 
     if (route === "webhooks/unsubscribe" && req.method === "DELETE") {
       const record = await pageConnection(db, user._id, body.pageId);
-      const token = decryptToken(record.accessToken, record);
+      requirePageTask(record, ["MANAGE"], "quản lý metadata");
+      const token = await pageAccessToken(connections, record);
       await graph(`${record.pageId}/subscribed_apps`, token, { method: "DELETE" });
       await connections.updateOne({ _id: record._id, userId: user._id }, { $set: { webhookSubscribed: false, webhookFields: [], updatedAt: new Date() } });
       await writeAudit(db, user._id, "webhook:unsubscribe", { pageId: record.pageId });
@@ -522,7 +591,8 @@ module.exports = async function facebookPageManager(req, res) {
 
     if (route === "insights" && req.method === "GET") {
       const record = await pageConnection(db, user._id, req.query.pageId);
-      const token = decryptToken(record.accessToken, record);
+      requirePageTask(record, ["ANALYZE"], "xem Insights");
+      const token = await pageAccessToken(connections, record);
       const allowed = new Set(["page_impressions_unique", "page_post_engagements", "page_follows", "page_video_views"]);
       const requested = clean(req.query.metrics, 500).split(",").filter((item) => allowed.has(item));
       const data = await graph(`${record.pageId}/insights`, token, { params: { metric: (requested.length ? requested : [...allowed]).join(","), period: "day", since: Math.floor(Date.now() / 1000) - 28 * 86400, until: Math.floor(Date.now() / 1000) } });
@@ -613,6 +683,8 @@ module.exports = async function facebookPageManager(req, res) {
       const previous = id ? await rules.findOne({ _id: id, userId: user._id }) : null;
       if (id && !previous) throw fail("Không tìm thấy automation.", 404);
       const pageIds = [...new Set((Array.isArray(body.pageIds) ? body.pageIds : []).map((item) => clean(item, 100)).filter(Boolean))].slice(0, MAX_PAGES);
+      const owned = pageIds.length ? await connections.countDocuments({ userId: user._id, pageId: { $in: pageIds } }) : 0;
+      if (owned !== pageIds.length) throw fail("Automation chứa Page không thuộc tài khoản HH hiện tại.", 403, "FACEBOOK_PAGE_OWNERSHIP_REQUIRED");
       const now = new Date();
       const doc = { userId: user._id, name: clean(body.name, 120), enabled: body.enabled !== false, pageIds, keyword: clean(body.keyword, 120).toLocaleLowerCase("vi"), action: ["notify", "flag", "label"].includes(body.action) ? body.action : "notify", label: clean(body.label, 80), updatedAt: now, createdAt: previous?.createdAt || now };
       if (!doc.name || !doc.keyword) throw fail("Automation cần tên và từ khóa.");
@@ -710,4 +782,4 @@ module.exports = async function facebookPageManager(req, res) {
   });
 };
 
-module.exports.__test = Object.freeze({ PERMISSIONS, GRAPH_VERSION, MAX_BATCH_PUBLISH, MAX_SETUP_IMPORT, MAX_CONTENT_TEMPLATES, safeReturnHash, setupDoc, publicSetup, campaignDoc, publicCampaign, publicGroup, publicRule, contentTemplateDoc, publicContentTemplate, recommendPostingSlots });
+module.exports.__test = Object.freeze({ PERMISSIONS, GRAPH_VERSION, MAX_BATCH_PUBLISH, MAX_SETUP_IMPORT, MAX_CONTENT_TEMPLATES, safeReturnHash, setupDoc, publicSetup, campaignDoc, publicCampaign, publicGroup, publicRule, publicJob, contentTemplateDoc, publicContentTemplate, recommendPostingSlots, requirePageTask });
