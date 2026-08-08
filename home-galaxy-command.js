@@ -50,6 +50,9 @@
   let meteorTimer = 0;
   let audioContext = null;
   let updateQueued = false;
+  let pointerFrame = 0;
+  let pointerSample = null;
+  let pointerBounds = null;
 
   const byId = (id) => document.getElementById(id);
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
@@ -146,7 +149,18 @@
   function markup() {
     const nowPeriod = period();
     return `<section class="hgc" data-hgc-root data-hgc-theme="${prefs.theme}" data-hgc-motion="${prefs.motion}" data-hgc-period="${nowPeriod.id}">
-      <div class="hgc-space" aria-hidden="true"><div class="hgc-stars hgc-stars--far" data-hgc-stars-layer="far"></div><div class="hgc-stars hgc-stars--near" data-hgc-stars-layer="near"></div><div class="hgc-nebula"></div><div class="hgc-meteors" data-hgc-meteors></div></div>
+      <div class="hgc-space" aria-hidden="true">
+        <div class="hgc-prism-fog"></div>
+        <div class="hgc-aurora-ribbons"><i></i><i></i><i></i></div>
+        <div class="hgc-light-rays"><i></i><i></i><i></i></div>
+        <div class="hgc-stars hgc-stars--far" data-hgc-stars-layer="far"></div>
+        <div class="hgc-cosmic-dust" data-hgc-cosmic-dust></div>
+        <div class="hgc-stars hgc-stars--near" data-hgc-stars-layer="near"></div>
+        <div class="hgc-nebula"></div>
+        <div class="hgc-lens-flare"><i></i><b></b><em></em></div>
+        <div class="hgc-cursor-light"></div>
+        <div class="hgc-meteors" data-hgc-meteors></div>
+      </div>
       <section class="hgc-live" aria-labelledby="hgcLiveTitle">
         <header class="hgc-live-head">
           <div><span><i></i> LIVE ORBIT</span><h2 id="hgcLiveTitle">Tín hiệu đang chuyển động quanh bạn</h2><p>Dữ liệu thật từ thời tiết, tab trình duyệt, mạng và Website Health.</p></div>
@@ -168,8 +182,12 @@
         </div>
         <div class="hgc-solar" data-hgc-solar aria-label="Mười lăm hành tinh chức năng">
           <div class="hgc-orbit hgc-orbit--1"></div><div class="hgc-orbit hgc-orbit--2"></div><div class="hgc-orbit hgc-orbit--3"></div><div class="hgc-orbit hgc-orbit--4"></div>
+          <div class="hgc-orbit-particles" aria-hidden="true">${Array.from({ length: 12 }, (_, index) => `<i style="--orbit-particle:${index};--orbit-start:${index * 30}deg;--orbit-delay:${-(index * .7)}s;--orbit-tone:${PLANETS[index % PLANETS.length].color}"></i>`).join("")}</div>
           <div class="hgc-energy-lines" aria-hidden="true"></div>
+          <div class="hgc-scanner-ring" aria-hidden="true"><i></i></div>
+          <div class="hgc-focus-beam" aria-hidden="true"><i></i></div>
           <div class="hgc-sun" aria-label="Mặt trời chỉ huy H"><span>H</span><i></i><b></b><em></em></div>
+          <div class="hgc-plasma-arcs" aria-hidden="true"><i></i><b></b><em></em></div>
           <div class="hgc-sun-particles" data-hgc-sun-particles aria-hidden="true"></div>
           <div class="hgc-planets">${PLANETS.map(planetMarkup).join("")}</div>
           <p>Rê chuột để dừng quỹ đạo · nhấn hành tinh để mở workspace</p>
@@ -212,12 +230,34 @@
     });
     const particles = root.querySelector("[data-hgc-sun-particles]");
     if (particles) particles.innerHTML = Array.from({ length: Math.max(10, Math.round(prefs.stars / 4)) }, (_, index) => `<i style="--particle-angle:${index * 37}deg;--particle-distance:${92 + index % 5 * 17}px;--particle-delay:${-(index % 9) * .7}s"></i>`).join("");
+    const dust = root.querySelector("[data-hgc-cosmic-dust]");
+    if (dust) {
+      const qualityCount = root.dataset.hgcQuality === "ultra" ? 36 : root.dataset.hgcQuality === "low" ? 10 : 22;
+      const count = Math.max(8, Math.round(qualityCount * prefs.stars / 100));
+      dust.innerHTML = Array.from({ length: count }, (_, index) => {
+        const x = (index * 61 + 7) % 100;
+        const y = (index * 43 + 19) % 100;
+        const depth = 1 + index % 3;
+        return `<i style="--dust-x:${x}%;--dust-y:${y}%;--dust-depth:${depth};--dust-delay:${-(index % 11) * .83}s"></i>`;
+      }).join("");
+    }
+  }
+
+  function detectQuality() {
+    const memory = Number(navigator.deviceMemory || 4);
+    const cores = Number(navigator.hardwareConcurrency || 4);
+    const constrained = navigator.connection?.saveData === true || memory <= 2 || cores <= 2;
+    const compact = matchMedia("(max-width: 700px), (pointer: coarse)").matches;
+    if (constrained || prefs.motion === "static") return "low";
+    if (!compact && prefs.motion === "cinematic" && memory >= 8 && cores >= 8) return "ultra";
+    return "balanced";
   }
 
   function applyPrefs() {
     if (!root) return;
     root.dataset.hgcTheme = prefs.theme;
     root.dataset.hgcMotion = prefs.motion;
+    root.dataset.hgcQuality = detectQuality();
     root.querySelectorAll("[data-hgc-theme]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.hgcTheme === prefs.theme)));
     root.querySelectorAll("[data-hgc-motion]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.hgcMotion === prefs.motion)));
     root.querySelectorAll("[data-hgc-widget]").forEach((node) => { node.hidden = !prefs.widgets.includes(node.dataset.hgcWidget); });
@@ -429,13 +469,25 @@
     if (!root || prefs.motion === "static" || document.hidden) return;
     const layer = root.querySelector("[data-hgc-meteors]");
     if (!layer) return;
+    const activeLimit = root.dataset.hgcQuality === "ultra" ? 3 : root.dataset.hgcQuality === "low" ? 1 : 2;
+    if (layer.childElementCount >= activeLimit) return;
     const meteor = document.createElement("i");
-    meteor.className = kind === "notification" ? "is-notification" : "";
+    const depths = root.dataset.hgcQuality === "low" ? ["far"] : ["far", "middle", "near"];
+    const tones = ["cyan", "violet", "pink", "gold"];
+    const depth = depths[Math.floor(Math.random() * depths.length)];
+    const tone = kind === "notification" ? "pink" : tones[Math.floor(Math.random() * tones.length)];
+    meteor.className = `is-${depth} is-${tone}${kind === "notification" ? " is-notification" : ""}`;
     meteor.style.setProperty("--meteor-y", `${8 + Math.random() * 72}%`);
     meteor.style.setProperty("--meteor-delay", `${Math.random() * .4}s`);
     meteor.style.setProperty("--meteor-scale", `${.7 + Math.random() * .85}`);
+    meteor.style.setProperty("--meteor-drift", `${180 + Math.random() * 260}px`);
     layer.append(meteor);
     setTimeout(() => meteor.remove(), 2600);
+  }
+
+  function meteorShower() {
+    if (!root || prefs.motion !== "cinematic" || root.dataset.hgcQuality !== "ultra" || document.hidden) return;
+    [0, 260, 540].forEach((delay) => setTimeout(() => createMeteor("shower"), delay));
   }
 
   function scheduleMeteors() {
@@ -444,7 +496,8 @@
     const next = prefs.motion === "cinematic" ? 1500 + Math.random() * 2300 : 4200 + Math.random() * 5200;
     meteorTimer = setTimeout(() => {
       createMeteor();
-      if (prefs.motion === "cinematic" && Math.random() > .56) setTimeout(createMeteor, 420);
+      if (prefs.motion === "cinematic" && Math.random() > .56) setTimeout(() => createMeteor(), 420);
+      if (Math.random() > .82) meteorShower();
       scheduleMeteors();
     }, next);
   }
@@ -564,13 +617,41 @@
 
   function onPointerMove(event) {
     if (!root || prefs.motion === "static" || matchMedia("(pointer: coarse)").matches) return;
-    const rect = root.getBoundingClientRect();
-    const x = clamp((event.clientX - rect.left) / rect.width, 0, 1);
-    const y = clamp((event.clientY - rect.top) / Math.min(rect.height, innerHeight), 0, 1);
-    root.style.setProperty("--hgc-pointer-x", `${x * 100}%`);
-    root.style.setProperty("--hgc-pointer-y", `${y * 100}%`);
-    root.style.setProperty("--hgc-parallax-x", `${(x - .5) * 18}px`);
-    root.style.setProperty("--hgc-parallax-y", `${(y - .5) * 14}px`);
+    pointerSample = { x: event.clientX, y: event.clientY };
+    if (pointerFrame) return;
+    pointerFrame = requestAnimationFrame(() => {
+      pointerFrame = 0;
+      if (!root || !pointerSample) return;
+      pointerBounds ||= root.getBoundingClientRect();
+      const x = clamp((pointerSample.x - pointerBounds.left) / pointerBounds.width, 0, 1);
+      const y = clamp((pointerSample.y - pointerBounds.top) / Math.min(pointerBounds.height, innerHeight), 0, 1);
+      root.style.setProperty("--hgc-pointer-x", `${x * 100}%`);
+      root.style.setProperty("--hgc-pointer-y", `${y * 100}%`);
+      root.style.setProperty("--hgc-parallax-x", `${(x - .5) * 18}px`);
+      root.style.setProperty("--hgc-parallax-y", `${(y - .5) * 14}px`);
+    });
+  }
+
+  function targetPlanet(planet) {
+    const solar = root?.querySelector("[data-hgc-solar]");
+    if (!solar || !planet) return;
+    const solarRect = solar.getBoundingClientRect();
+    const planetRect = planet.getBoundingClientRect();
+    const targetX = planetRect.left - solarRect.left + planetRect.width / 2;
+    const targetY = planetRect.top - solarRect.top + planetRect.height / 2;
+    const centerX = solarRect.width / 2;
+    const centerY = solarRect.height / 2;
+    const distance = Math.hypot(targetX - centerX, targetY - centerY);
+    const angle = Math.atan2(targetY - centerY, targetX - centerX) * 180 / Math.PI;
+    solar.style.setProperty("--hgc-beam-length", `${distance}px`);
+    solar.style.setProperty("--hgc-beam-angle", `${angle}deg`);
+    solar.style.setProperty("--hgc-beam-color", planet.style.getPropertyValue("--planet-color") || "var(--hgc-cyan)");
+    solar.classList.add("is-targeting");
+  }
+
+  function clearPlanetTarget(event) {
+    if (event?.relatedTarget?.closest?.("[data-hgc-planet]")) return;
+    root?.querySelector("[data-hgc-solar]")?.classList.remove("is-targeting");
   }
 
   function bind() {
@@ -578,6 +659,12 @@
     root.addEventListener("change", onChange);
     root.addEventListener("input", onChange);
     root.addEventListener("pointermove", onPointerMove, { passive: true });
+    root.addEventListener("pointerenter", () => { pointerBounds = root?.getBoundingClientRect() || null; }, { passive: true });
+    root.addEventListener("pointerleave", () => { pointerBounds = null; }, { passive: true });
+    root.addEventListener("pointerover", (event) => targetPlanet(event.target.closest("[data-hgc-planet]")), { passive: true });
+    root.addEventListener("pointerout", clearPlanetTarget, { passive: true });
+    root.addEventListener("focusin", (event) => targetPlanet(event.target.closest("[data-hgc-planet]")));
+    root.addEventListener("focusout", clearPlanetTarget);
     root.addEventListener("keydown", (event) => {
       if (event.key === "Escape") openSettings(false);
     });
@@ -592,6 +679,14 @@
     });
     addEventListener("online", () => { updateLive(); notificationComet("Kết nối đã trở lại"); });
     addEventListener("offline", () => { updateLive(); notificationComet("Trình duyệt đang offline"); });
+    addEventListener("resize", () => {
+      pointerBounds = null;
+      if (root) root.dataset.hgcQuality = detectQuality();
+    }, { passive: true });
+    document.addEventListener("visibilitychange", () => {
+      clearTimeout(meteorTimer);
+      if (!document.hidden) scheduleMeteors();
+    });
   }
 
   function observeHome() {
@@ -622,6 +717,7 @@
     home.classList.add("hgc-active");
     host.innerHTML = markup();
     root = host.querySelector("[data-hgc-root]");
+    pointerBounds = null;
     bind();
     applyPrefs();
     updateLive();
@@ -649,7 +745,7 @@
   });
 
   window.HHHomeGalaxyCommand = Object.freeze({
-    version: 1,
+    version: 2,
     mount,
     refresh: updateLive,
     preferences: () => ({ ...prefs, planets: [...prefs.planets], widgets: [...prefs.widgets] })
