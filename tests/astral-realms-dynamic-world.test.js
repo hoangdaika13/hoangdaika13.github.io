@@ -23,14 +23,14 @@ test("the project contains the complete four-pack CC0 environment library", () =
 });
 
 test("original scenic panorama is mapped onto 3D geometry and available offline", () => {
-  const file = path.join(root, "assets", "astral-realms", "environment", "astral-cinematic-panorama-v1.png");
+  const file = path.join(root, "assets", "astral-realms", "environment", "astral-cinematic-panorama-v2.png");
   const bytes = fs.readFileSync(file);
   assert.ok(bytes.length > 1_000_000, "scenic panorama must be a real high-detail raster");
   assert.equal(bytes.subarray(1, 4).toString("ascii"), "PNG");
-  assert.match(source, /scenicPanorama: "\.\/assets\/astral-realms\/environment\/astral-cinematic-panorama-v1\.png"/);
+  assert.match(source, /scenicPanorama: "\.\/assets\/astral-realms\/environment\/astral-cinematic-panorama-v2\.png"/);
   assert.match(source, /map: this\.photorealAssets\.scenicPanorama \|\| null/);
   assert.doesNotMatch(source, /scene\.background\s*=\s*this\.photorealAssets\.scenicPanorama/);
-  assert.match(worker, /environment\/astral-cinematic-panorama-v1\.png/);
+  assert.match(worker, /environment\/astral-cinematic-panorama-v2\.png/);
 });
 
 test("trees clouds sun rain and pebbles have realtime 3D motion", () => {

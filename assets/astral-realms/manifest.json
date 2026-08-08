@@ -1,6 +1,6 @@
 {
-  "version": 8,
-  "createdAt": "2026-07-30",
+  "version": 9,
+  "createdAt": "2026-08-08",
   "generator": "OpenAI built-in ImageGen",
   "rights": "Original HH visual assets, Poly Haven and ambientCG CC0 photogrammetry/HDR assets, Three.js example GLB assets under MIT, and a CC0 animation-only derivative from Quaternius Universal Animation Library Standard.",
   "environmentSourceManifest": "environment/SOURCES.json",
@@ -16,6 +16,13 @@
       "role": "Original equirectangular-style scenic texture mapped onto the realtime 3D sky dome",
       "promptSummary": "Original cosmic natural world with mountains, forest, water, volumetric clouds, aurora and floating islands; no third-party image source.",
       "sha256": "93787296303B68A30B4358AC271ED515535EB6BCC584D26E25986D7CFF20B54F"
+    },
+    {
+      "file": "environment/astral-cinematic-panorama-v2.png",
+      "role": "Ultra-wide cinematic equirectangular sky-dome panorama for the film-quality profile",
+      "generator": "OpenAI built-in ImageGen",
+      "promptSummary": "Photoreal alien mountain valley at blue hour with a distant ringed planet, storm clouds, aurora, luminous citadel, volumetric god rays and controlled HDR film lighting; no characters, UI, text, logo or watermark.",
+      "sha256": "A326B887A6BD13F1ED1BD2F4A504C83928DF9CFBF11F8501BC9FF24E79A6A5AA"
     },
     {
       "file": "environment/hdr/bell_park_dawn_1k.hdr",

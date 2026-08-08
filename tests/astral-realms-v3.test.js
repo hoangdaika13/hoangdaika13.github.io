@@ -6,9 +6,9 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Astral Realms defaults to a physical material character pass", () => {
+test("Astral Realms defaults to a cinematic physical material character pass", () => {
   const source = read("astral-realms.js");
-  assert.match(source, /renderStyle:\s*"realistic"/);
+  assert.match(source, /renderStyle:\s*"cinematic"/);
   assert.match(source, /APPEARANCE_GROUPS/);
   assert.match(source, /APPEARANCE_CONTROL_MAP/);
   assert.match(source, /defaultAppearanceRecipe/);
@@ -23,7 +23,7 @@ test("Astral Realms defaults to a physical material character pass", () => {
 test("cinematic lighting and adaptive shadows remain bounded by quality", () => {
   const source = read("astral-realms.js");
   assert.match(source, /toneMapping\s*=\s*THREE\.ACESFilmicToneMapping/);
-  assert.match(source, /shadowSize\s*=\s*quality\s*===\s*"cinematic"\s*\?\s*2048/);
+  assert.match(source, /shadowSize\s*=\s*quality\s*===\s*"cinematic"\s*\?\s*4096/);
   assert.match(source, /fillLight/);
   assert.match(source, /rimLight/);
 });
@@ -51,7 +51,7 @@ test("small realtime shards reconnect and interpolate remote players", () => {
 test("the release loader and service worker request the latest Astral Realms bundle", () => {
   for (const file of ["performance-loader.js", "sw.js"]) {
     const source = read(file);
-      assert.match(source, /astral-realms\.css\?v=76/);
-      assert.match(source, /astral-realms\.js\?v=88/);
+      assert.match(source, /astral-realms\.css\?v=77/);
+      assert.match(source, /astral-realms\.js\?v=94/);
   }
 });

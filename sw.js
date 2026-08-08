@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v453";
+const CACHE = "hh-identity-portal-v459";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
@@ -222,9 +222,9 @@ const RUNTIME_ASSETS = [
   "./system-platform.js?v=3",
   "./sidebar-navigation-pro.css?v=9",
   "./game-runtime.css?v=1",
-  "./astral-realms.css?v=76",
+  "./astral-realms.css?v=77",
   "./assets/astral-realms/astral-realms-panorama-v1.webp",
-  "./assets/astral-realms/environment/astral-cinematic-panorama-v1.png",
+  "./assets/astral-realms/environment/astral-cinematic-panorama-v2.png",
   "./assets/astral-realms/environment/SOURCES.json",
   "./assets/astral-realms/environment/hdr/bell_park_dawn_1k.hdr",
   "./assets/astral-realms/environment/surfaces/ground037-color.webp",
@@ -392,7 +392,7 @@ const RUNTIME_ASSETS = [
   "./feature-engines.js?v=2",
   "./game-platform-adapters.js?v=1",
   "./game-runtime.js?v=1",
-  "./astral-realms.js?v=88",
+  "./astral-realms.js?v=94",
   "./space-explorer.js?v=4",
   "./game-center.js?v=5",
   "./astra-universe-expansion.js?v=4",

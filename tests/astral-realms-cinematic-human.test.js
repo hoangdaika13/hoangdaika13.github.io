@@ -71,7 +71,7 @@ test("near-camera low-poly slabs and black rock field are bounded", () => {
   assert.match(source, /makeTexture\(heightCanvas, THREE\.NoColorSpace\)/);
   assert.match(source, /roughnessMap: this\.terrainSurfaceTextures\.roughness/);
   assert.match(source, /waterMaterial\.ior = 1\.333/);
-  assert.match(source, /waterMaterial\.transmission = quality === "cinematic" \? 0\.2 : 0\.11/);
+  assert.match(source, /waterMaterial\.transmission = quality === "cinematic" \? 0\.34 : 0\.11/);
   assert.match(source, /water\.material\.bumpMap\.offset\.x = \(time \* 0\.000012\) % 1/);
   assert.doesNotMatch(source, /color: 0x3fdacb/);
 });
