@@ -14,9 +14,9 @@ const health = read("api/platform/summary.js");
 
 test("Living Desktop Galaxy V4 assets and one-screen hosts are wired", () => {
   assert.match(loader, /home-live-widgets\.css\?v=4/);
-  assert.match(loader, /home-live-widgets\.js\?v=4/);
+  assert.match(loader, /home-live-widgets\.js\?v=5/);
   assert.match(worker, /home-live-widgets\.css\?v=4/);
-  assert.match(worker, /home-live-widgets\.js\?v=4/);
+  assert.match(worker, /home-live-widgets\.js\?v=5/);
   assert.match(galaxy, /data-hlw-host/);
   assert.match(galaxy, /data-hlw-event-bar/);
   assert.match(galaxy, /LIVING DESKTOP GALAXY V4/);
@@ -51,6 +51,7 @@ test("Widget Rack is account-scoped, reorderable and limited to six", () => {
   assert.match(source, /data-hlw-size/);
   assert.match(source, /data-hlw-collapse/);
   assert.match(source, /data-hlw-lock/);
+  assert.match(source, /hh\.home\.live-widgets\.v4-intro/);
   for (const theme of ["classic", "aero", "neon", "crt", "minimal", "cyber"]) assert.match(source, new RegExp(`"${theme}"`));
 });
 

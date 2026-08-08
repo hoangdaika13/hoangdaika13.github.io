@@ -48,7 +48,7 @@
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=9", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=8", "home-live-widgets.js?v=4"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=8", "home-live-widgets.js?v=5"
       ]
     },
     platform: {

@@ -2,6 +2,7 @@
   "use strict";
 
   const BASE_KEY = "hh.home.live-widgets.v1";
+  const INTRO_KEY = "hh.home.live-widgets.v4-intro";
   const WEATHER_KEY = "hh.dashboard.weather.v2";
   const WEATHER_LOCATION_KEY = "hh.dashboard.weather-location.v1";
   const TODO_KEY = "hh.command-center.todos.v2";
@@ -750,7 +751,13 @@
     if (host && host !== nextHost) unmount();
     root = galaxyRoot; host = nextHost; loadPrefs();
     host.innerHTML = shellMarkup();
-    bind(); renderDeck(); renderEvents(); updateTopbar(); updatePlanetSignals();
+    bind();
+    const introKey = `${INTRO_KEY}:${ownerId()}`;
+    if (!localStorage.getItem(introKey)) {
+      root.querySelector('[data-hgc-info-tab="overview"]')?.click();
+      try { localStorage.setItem(introKey, new Date().toISOString()); } catch {}
+    }
+    renderDeck(); renderEvents(); updateTopbar(); updatePlanetSignals();
     addEvent("Living Desktop Galaxy V4 đã sẵn sàng", "success");
     live.weather = readJson(WEATHER_KEY, null);
     refreshWeather(); refreshSystem(); probeNetwork(); startScheduler();
