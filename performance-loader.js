@@ -108,7 +108,7 @@
     },
     "comic-reader": {
       styles: ["comic-reader-hub.css?v=10"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-reader-hub.js?v=10"]
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-open-source-catalog.js?v=1", "comic-reader-hub.js?v=11"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],

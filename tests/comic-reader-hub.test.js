@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
@@ -14,9 +15,10 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=10[\s\S]*?comic-reader-hub\.js\?v=10/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=10[\s\S]*?comic-open-source-catalog\.js\?v=1[\s\S]*?comic-reader-hub\.js\?v=11/);
   assert.match(worker, /comic-reader-hub\.css\?v=10/);
-  assert.match(worker, /comic-reader-hub\.js\?v=10/);
+  assert.match(worker, /comic-open-source-catalog\.js\?v=1/);
+  assert.match(worker, /comic-reader-hub\.js\?v=11/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -125,4 +127,25 @@ test("reader v2 restores sessions, supports page bookmarks and resilient navigat
   assert.match(css, /\.cr-bookmark-list/);
   assert.match(css, /\.cr-tap-zone/);
   assert.match(css, /\.cr-image-retry/);
+});
+
+test("GitHub Open Library adds only explicitly licensed story pages", () => {
+  const source = read("comic-open-source-catalog.js");
+  const client = read("comic-reader-hub.js");
+  const sandbox = { window: {} };
+  vm.runInNewContext(source, sandbox);
+  const catalog = sandbox.window.HHOpenComicCatalog;
+  const sources = sandbox.window.HHOpenComicSources;
+
+  assert.equal(catalog.length, 4);
+  assert.equal(sources.length, 4);
+  assert.equal(catalog.reduce((total, series) => total + series.chapters.length, 0), 7);
+  assert.equal(catalog.reduce((total, series) => total + series.chapters.reduce((count, chapter) => count + chapter.pages.length, 0), 0), 452);
+  assert.deepEqual([...new Set(catalog.map((series) => series.license))].sort(), ["CC BY 4.0", "CC BY-SA 4.0", "CC0 1.0", "Unlicense"]);
+  assert.ok(catalog.every((series) => series.sourceType === "github-open" && /^https:\/\/github\.com\//.test(series.sourceUrl)));
+  assert.ok(catalog.every((series) => series.chapters.every((chapter) => chapter.pages.every((page) => /^https:\/\/raw\.githubusercontent\.com\//.test(page)))));
+  assert.doesNotMatch(source, /art_etc_by_others|_collectables|_cameos|_bonus/);
+  assert.match(client, /HHOpenComicCatalog/);
+  assert.match(client, /comicOpen/);
+  assert.match(client, /GitHub Open Library/);
 });

@@ -334,9 +334,15 @@
     state.recentSeries = [...state.recentSeries.filter((entry) => entry.id !== snapshot.id), snapshot].slice(-20);
   }
   function syncDeepLink(series, chapter, page = null) {
-    if (!global.history?.replaceState || !global.location || series?.sourceType !== "otruyen") return;
+    if (!global.history?.replaceState || !global.location || !series) return;
     const url = new URL(global.location.href);
-    url.searchParams.set("comicSeries", series.remoteSlug);
+    if (series.sourceType === "otruyen") {
+      url.searchParams.set("comicSeries", series.remoteSlug);
+      url.searchParams.delete("comicOpen");
+    } else if (series.sourceType === "github-open") {
+      url.searchParams.set("comicOpen", series.id);
+      url.searchParams.delete("comicSeries");
+    } else return;
     if (chapter) url.searchParams.set("comicChapter", String(chapter.number)); else url.searchParams.delete("comicChapter");
     if (chapter && page !== null) url.searchParams.set("comicPage", String(Math.max(0, Number(page) || 0) + 1)); else url.searchParams.delete("comicPage");
     global.history.replaceState(global.history.state, "", `${url.pathname}${url.search}${url.hash}`);
@@ -344,7 +350,7 @@
   function clearDeepLink() {
     if (!global.history?.replaceState || !global.location) return;
     const url = new URL(global.location.href);
-    url.searchParams.delete("comicSeries"); url.searchParams.delete("comicChapter"); url.searchParams.delete("comicPage");
+    url.searchParams.delete("comicSeries"); url.searchParams.delete("comicOpen"); url.searchParams.delete("comicChapter"); url.searchParams.delete("comicPage");
     global.history.replaceState(global.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }
   function availableGenres() { return ["Tất cả", ...new Set([...GENRES.slice(1), ...state.remoteGenres])]; }
@@ -389,7 +395,7 @@
     const resumeChapterId = progress?.chapterId || latest?.id || "";
     const followed = state.follows.has(series.id);
     return `<article class="cr-series-card" data-series="${escapeHtml(series.id)}">
-      <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.status === "Đã hoàn thành" ? "FULL" : series.sourceType === "otruyen" ? "API" : "NEW"}</span><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
+      <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.sourceType === "github-open" ? "OPEN" : series.status === "Đã hoàn thành" ? "FULL" : series.sourceType === "otruyen" ? "API" : "NEW"}</span><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
       <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml((series.genres || []).slice(0, 2).join(" · "))}</p><div><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(resumeChapterId)}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || 1}`}</button><small>${timeAgo(latest?.updatedAt || series.updatedAt)}</small></div></div>
     </article>`;
   }
@@ -427,7 +433,7 @@
     const progress = state.progress[series.id];
     return `<div class="cr-detail">
       <button type="button" class="cr-back" data-nav="home">← Trở lại kho truyện</button>
-      <section class="cr-detail-hero"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" referrerpolicy="no-referrer"><div><span>${escapeHtml(series.sourceType === "original" ? "HH ORIGINALS" : series.sourceType === "otruyen" ? "OTRUYEN API · LIVE" : "THƯ VIỆN ĐÃ NHẬP")}</span><h1>${escapeHtml(series.title)}</h1><p class="cr-detail-author">Tác giả: <strong>${escapeHtml(series.author || "Đang cập nhật")}</strong></p><div class="cr-tags">${(series.genres || []).map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}">${escapeHtml(genre)}</button>`).join("")}</div><p>${escapeHtml(series.description || "Chưa có mô tả.")}</p><div class="cr-detail-actions"><button type="button" class="is-primary" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(progress?.chapterId || series.chapters?.[0]?.id || "")}"${series.chapters?.length ? "" : " disabled"}>▶ ${progress ? "Đọc tiếp" : "Đọc từ đầu"}</button><button type="button" data-follow="${escapeHtml(series.id)}">${followed ? "✓ Đang theo dõi" : "♡ Theo dõi"}</button></div><dl><div><dt>Trạng thái</dt><dd>${escapeHtml(series.status || "Đang cập nhật")}</dd></div><div><dt>Đánh giá</dt><dd>★ ${Number(series.rating || 4.5).toFixed(1)}</dd></div><div><dt>Nguồn</dt><dd>${escapeHtml(series.sourceLabel || series.rights || "HH Comics")}</dd></div><div><dt>Số chương</dt><dd>${series.chaptersLoaded === false ? "Đang tải…" : series.chapters?.length || 0}</dd></div></dl></div></section>
+      <section class="cr-detail-hero"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" referrerpolicy="no-referrer"><div><span>${escapeHtml(series.sourceType === "original" ? "HH ORIGINALS" : series.sourceType === "otruyen" ? "OTRUYEN API · LIVE" : series.sourceType === "github-open" ? `GITHUB OPEN · ${series.license || "OPEN"}` : "THƯ VIỆN ĐÃ NHẬP")}</span><h1>${escapeHtml(series.title)}</h1><p class="cr-detail-author">Tác giả: <strong>${escapeHtml(series.author || "Đang cập nhật")}</strong></p><div class="cr-tags">${(series.genres || []).map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}">${escapeHtml(genre)}</button>`).join("")}</div><p>${escapeHtml(series.description || "Chưa có mô tả.")}</p><div class="cr-detail-actions"><button type="button" class="is-primary" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(progress?.chapterId || series.chapters?.[0]?.id || "")}"${series.chapters?.length ? "" : " disabled"}>▶ ${progress ? "Đọc tiếp" : "Đọc từ đầu"}</button><button type="button" data-follow="${escapeHtml(series.id)}">${followed ? "✓ Đang theo dõi" : "♡ Theo dõi"}</button></div><dl><div><dt>Trạng thái</dt><dd>${escapeHtml(series.status || "Đang cập nhật")}</dd></div><div><dt>Đánh giá</dt><dd>★ ${Number(series.rating || 4.5).toFixed(1)}</dd></div><div><dt>Nguồn</dt><dd>${escapeHtml(series.sourceLabel || series.rights || "HH Comics")}</dd></div><div><dt>Số chương</dt><dd>${series.chaptersLoaded === false ? "Đang tải…" : series.chapters?.length || 0}</dd></div></dl></div></section>
       <section class="cr-chapters"><header><div><strong>Danh sách chương</strong><small>${series.chapters?.length || 0} chương · lưu tiến độ tự động</small></div><input type="search" placeholder="Tìm chương…" data-chapter-search></header><div data-chapter-list>${[...(series.chapters || [])].reverse().map((chapter) => `<button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(chapter.id)}"><span><strong>Chương ${chapter.number}</strong><small>${escapeHtml(chapter.title || "")}</small></span><i>${timeAgo(chapter.updatedAt)}</i><b>${progress?.chapterId === chapter.id ? "Đang đọc" : "Đọc →"}</b></button>`).join("")}</div></section>
     </div>`;
   }
@@ -444,7 +450,10 @@
   }
 
   function sourceView() {
+    const openSources = Array.isArray(global.HHOpenComicSources) ? global.HHOpenComicSources : [];
+    const openPages = openSources.reduce((total, entry) => total + Number(entry.pages || 0), 0);
     return `<div class="cr-source-view"><header><span>＋</span><div><h1>Thêm kho truyện của bạn</h1><p>Nhập nội dung do bạn sở hữu hoặc nguồn/API có quyền phân phối.</p></div></header><div class="cr-source-grid">
+      <button type="button" data-genre="Nguồn mở"><b>GitHub Open Library · ${openSources.length} bộ</b><span>${openPages.toLocaleString("vi-VN")} trang có license rõ ràng; fan-art và file phụ đã được loại khỏi catalog.</span><i>Xem kho nguồn mở →</i></button>
       <button type="button" data-action="import-cbz"><b>CBZ / ZIP</b><span>Mỗi file thành một bộ truyện; ảnh được lưu offline trong IndexedDB.</span><i>Chọn file →</i></button>
       <button type="button" data-action="import-json"><b>Catalog JSON</b><span>Nhập series, chương, ảnh và metadata theo manifest.</span><i>Chọn JSON →</i></button>
       <button type="button" data-action="sample-json"><b>Tải JSON mẫu</b><span>Schema sẵn để kết nối website hoặc CMS thuộc quyền của bạn.</span><i>Tải mẫu →</i></button>
@@ -692,10 +701,18 @@
   async function restoreDeepLink() {
     if (!global.location) return;
     const params = new URL(global.location.href).searchParams;
-    const slug = String(params.get("comicSeries") || "").trim();
-    if (!slug || !/^[a-z0-9-]{1,160}$/i.test(slug)) return;
+    const openId = String(params.get("comicOpen") || "").trim();
     const chapterNumber = params.get("comicChapter");
     const page = Math.max(0, Number(params.get("comicPage") || 1) - 1);
+    if (openId) {
+      const openCatalogSeries = state.catalog.find((entry) => entry.sourceType === "github-open" && entry.id === openId);
+      if (!openCatalogSeries) return notify("Nguồn truyện mở này không còn trong catalog.", "error");
+      const openChapter = openCatalogSeries.chapters.find((entry) => String(entry.number) === String(chapterNumber)) || openCatalogSeries.chapters[0];
+      if (chapterNumber && openChapter) await openReader(openCatalogSeries.id, openChapter.id, page); else await openSeries(openCatalogSeries.id);
+      return;
+    }
+    const slug = String(params.get("comicSeries") || "").trim();
+    if (!slug || !/^[a-z0-9-]{1,160}$/i.test(slug)) return;
     let series = state.catalog.find((entry) => entry.remoteSlug === slug);
     if (!series) {
       series = { id: `otruyen:${slug}`, title: "Đang tải truyện…", altTitles: [], author: "Đang cập nhật", cover: makeCover("HH Comics", 0), genres: [], status: "Đang cập nhật", description: "", rating: 4.5, views: 0, updatedAt: Date.now(), chapters: [], sourceType: "otruyen", sourceLabel: "OTruyen API", remoteSlug: slug, chaptersLoaded: false };
@@ -878,6 +895,7 @@
     host = target;
     loadLocalState();
     state.catalog = [];
+    mergeCatalog(Array.isArray(global.HHOpenComicCatalog) ? global.HHOpenComicCatalog : []);
     mergeCatalog(state.recentSeries.map((series) => ({ ...series, chapters: (series.chapters || []).map((chapter) => ({ ...chapter, pages: [] })), chaptersLoaded: false })));
     state.remote = { loading: false, page: 0, total: 0, hasMore: true, context: "latest", error: "" };
     state.remoteGenres = [];
