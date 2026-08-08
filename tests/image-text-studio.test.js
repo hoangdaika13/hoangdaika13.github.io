@@ -12,8 +12,8 @@ test("Text on Image Studio is routed from the main Tool group", () => {
 
   assert.match(app, /id: "image-text"[\s\S]*?route: "\/davinci-resolve\/image-text"/);
   assert.match(app, /resolveView === "image-text"[\s\S]*?HHImageTextStudio\?\.mount/);
-  assert.match(loader, /image-text-studio\.css\?v=4/);
-  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=4/);
+  assert.match(loader, /image-text-studio\.css\?v=5/);
+  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=5/);
 });
 
 test("studio supports per-image AI text, optional color correction and secure providers", () => {
@@ -27,6 +27,8 @@ test("studio supports per-image AI text, optional color correction and secure pr
   assert.match(client, /outputBaseName/);
   assert.match(client, /requestAnimationFrame/);
   assert.match(client, /Tải toàn bộ ZIP/);
+  assert.match(client, /toggle-export-more/);
+  assert.match(client, /data-folder-dialog/);
   assert.doesNotMatch(client, /\b(?:alert|confirm|prompt)\s*\(/);
   assert.match(backend, /"image-text"/);
   assert.match(backend, /image-text-batch/);
