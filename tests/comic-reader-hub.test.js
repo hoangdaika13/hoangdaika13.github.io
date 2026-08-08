@@ -14,9 +14,9 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=3[\s\S]*?comic-reader-hub\.js\?v=3/);
-  assert.match(worker, /comic-reader-hub\.css\?v=3/);
-  assert.match(worker, /comic-reader-hub\.js\?v=3/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=4[\s\S]*?comic-reader-hub\.js\?v=4/);
+  assert.match(worker, /comic-reader-hub\.css\?v=4/);
+  assert.match(worker, /comic-reader-hub\.js\?v=4/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -41,6 +41,7 @@ test("reader supports vertical pages, page mode, navigation and progress", () =>
   assert.match(client, /IntersectionObserver/);
   assert.match(client, /loading="\$\{index < 3 \? "eager" : "lazy"\}"/);
   assert.match(client, /readerNavigate/);
+  assert.match(client, /\[data-chapter-list\] \[data-read\]/);
   assert.match(css, /\.cr-reader-pages/);
   assert.match(css, /max-width:100%/);
 });

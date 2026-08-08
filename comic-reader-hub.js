@@ -599,6 +599,11 @@
     const jsonInput = root.querySelector("[data-json-input]");
     cbzInput.addEventListener("change", () => { importCbz(cbzInput.files); cbzInput.value = ""; });
     jsonInput.addEventListener("change", () => { if (jsonInput.files[0]) importJsonFile(jsonInput.files[0]); jsonInput.value = ""; });
+    root.querySelectorAll("[data-chapter-list] [data-read]").forEach((button) => button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openReader(button.dataset.read, button.dataset.chapter);
+    }));
   }
 
   function handleClick(event) {
