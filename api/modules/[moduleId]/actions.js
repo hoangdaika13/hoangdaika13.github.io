@@ -23,6 +23,7 @@ const {
 } = require("../../../utils/openai-provider");
 const { createHmac } = require("node:crypto");
 const { handleComicSource } = require("../../../utils/comic-source");
+const { handleMangaDexSource } = require("../../../utils/mangadex-source");
 
 const downloadHosts = [
   "youtube.com", "youtu.be", "tiktok.com", "facebook.com", "fb.watch",
@@ -1309,6 +1310,9 @@ module.exports = async function handler(req, res) {
     const moduleId = clean(req.query.moduleId, 120);
     const collection = db.collection("moduleActions");
     const user = await currentUser(req);
+    if (moduleId === "comic-reader" && req.query.provider === "mangadex") {
+      return handleMangaDexSource(req, res, { db });
+    }
     if (moduleId === "comic-motion" || req.query.comicSource === "1") {
       return handleComicSource(req, res, { db, body, user });
     }

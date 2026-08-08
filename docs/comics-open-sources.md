@@ -12,3 +12,9 @@ Catalog snapshot: 2026-08-08. Images are streamed from `raw.githubusercontent.co
 Total: 4 series, 7 chapters and 452 story pages.
 
 The manifest intentionally excludes third-party fan-art directories and files marked as collectables, cameos or bonus artwork. Repository source, license URL, attribution and content rating remain attached to every series record in `comic-open-source-catalog.js`.
+
+## TruyenDex / MangaDex provider
+
+The [zennomi/truyendex](https://github.com/zennomi/truyendex) repository is used as an architectural reference only. It does not contain a redistributable comic archive and does not declare a repository license; its README states that comic metadata and pages come from MangaDex and are not stored by TruyenDex.
+
+HH Comics therefore uses a newly written same-origin MangaDex adapter. It requests Vietnamese chapters with `safe` or `suggestive` ratings, keeps scanlation-group attribution, asks MangaDex@Home for port-443 data-saver pages only when a chapter is opened, and never stores the image binaries on HH servers.

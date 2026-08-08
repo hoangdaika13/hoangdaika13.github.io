@@ -7,6 +7,7 @@
   const STORE = "series";
   const OTRUYEN_API = "https://otruyenapi.com/v1/api";
   const OTRUYEN_CDN = "https://img.otruyenapi.com";
+  const MANGADEX_PROXY_PATH = "/api/modules/comic-reader/actions";
   const GENRES = ["Tất cả", "Hành động", "Phiêu lưu", "Fantasy", "Đời thường", "Bí ẩn", "Hài hước", "Lãng mạn", "Sci-fi", "Webtoon"];
   const PALETTES = [
     ["#172d52", "#6ee7ff", "#a970ff"], ["#3d1838", "#ff7fb8", "#ffbd6c"], ["#143a35", "#65e8ad", "#76b9ff"],
@@ -43,7 +44,8 @@
     importing: false,
     remoteGenres: [],
     remoteGenreSlugs: new Map(),
-    remote: { loading: false, page: 0, total: 0, hasMore: true, context: "latest", error: "" }
+    remote: { loading: false, page: 0, total: 0, hasMore: true, context: "latest", error: "" },
+    mangadex: { loading: false, offset: 0, limit: 12, total: 0, hasMore: true, context: "latest", error: "" }
   };
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -193,6 +195,118 @@
     return chapter;
   }
 
+  function mangaDexStatus(value) {
+    if (value === "completed") return "Đã hoàn thành";
+    if (value === "hiatus" || value === "cancelled") return "Tạm dừng";
+    return "Đang cập nhật";
+  }
+
+  function mapMangaDexSeries(entry, index = 0) {
+    const remoteId = String(entry?.id || "");
+    return {
+      id: `mangadex:${remoteId}`,
+      title: String(entry?.title || "Truyện chưa đặt tên"),
+      altTitles: Array.isArray(entry?.altTitles) ? entry.altTitles.filter(Boolean) : [],
+      author: String(entry?.author || "Đang cập nhật"),
+      cover: String(entry?.cover || makeCover(entry?.title || "MangaDex", index)),
+      genres: ["MangaDex", ...(Array.isArray(entry?.tags) ? entry.tags : [])].filter(Boolean),
+      status: mangaDexStatus(entry?.status),
+      description: String(entry?.description || "Dữ liệu truyện được phát trực tiếp từ MangaDex."),
+      rating: 4.5,
+      views: 0,
+      updatedAt: Date.parse(entry?.updatedAt) || Date.now(),
+      chapters: [],
+      sourceType: "mangadex",
+      sourceLabel: "MangaDex API · LIVE",
+      sourceUrl: String(entry?.sourceUrl || (remoteId ? `https://mangadex.org/title/${remoteId}` : "")),
+      remoteId,
+      contentRating: String(entry?.contentRating || "safe"),
+      chaptersLoaded: false,
+      rights: "Phát trực tiếp từ MangaDex · ghi nguồn nhóm dịch theo từng chương"
+    };
+  }
+
+  async function fetchMangaDex(action, parameters = {}) {
+    const base = String(global.HH_API_ORIGIN || global.location?.origin || "").replace(/\/$/, "");
+    const url = new URL(`${base}${MANGADEX_PROXY_PATH}`);
+    url.searchParams.set("provider", "mangadex");
+    url.searchParams.set("action", action);
+    Object.entries(parameters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
+    });
+    const response = await fetch(url, { method: "GET", credentials: "include", headers: { Accept: "application/json" } });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.ok !== true) throw new Error(payload?.error || `MangaDex gateway phản hồi HTTP ${response.status}`);
+    return payload;
+  }
+
+  async function loadMangaDexCatalog({ offset = 0, reset = false } = {}) {
+    if (state.mangadex.loading) return;
+    state.mangadex.loading = true;
+    state.mangadex.error = "";
+    if (root?.isConnected) render();
+    try {
+      const payload = await fetchMangaDex("catalog", { offset, limit: state.mangadex.limit, q: state.query.trim() });
+      const mapped = (payload.items || []).map(mapMangaDexSeries);
+      if (reset) {
+        const incomingIds = new Set(mapped.map((series) => series.id));
+        state.catalog = state.catalog.filter((series) => series.sourceType !== "mangadex" || state.follows.has(series.id) || state.progress[series.id] || incomingIds.has(series.id));
+      }
+      mergeCatalog(mapped);
+      state.mangadex.offset = Number(payload.offset || offset);
+      state.mangadex.limit = Number(payload.limit || state.mangadex.limit);
+      state.mangadex.total = Number(payload.total || mapped.length);
+      state.mangadex.hasMore = state.mangadex.offset + state.mangadex.limit < state.mangadex.total;
+      state.mangadex.context = state.query.trim().length >= 2 ? "search" : "latest";
+    } catch (error) {
+      state.mangadex.error = error.message || "Không thể kết nối MangaDex";
+    } finally {
+      state.mangadex.loading = false;
+      if (root?.isConnected) render();
+    }
+  }
+
+  async function ensureMangaDexSeriesDetails(series) {
+    if (!series || series.sourceType !== "mangadex" || series.chaptersLoaded) return series;
+    const payload = await fetchMangaDex("series", { id: series.remoteId });
+    const detail = payload.series || {};
+    const chapters = (payload.chapters || []).map((entry) => ({
+      id: `mangadex:chapter:${entry.id}`,
+      remoteChapterId: String(entry.id || ""),
+      number: String(entry.number || "Oneshot"),
+      title: [String(entry.title || "").trim(), entry.group ? `Nhóm dịch: ${entry.group}` : ""].filter(Boolean).join(" · "),
+      group: String(entry.group || "Nhóm dịch chưa xác định"),
+      sourceUrl: String(entry.sourceUrl || ""),
+      updatedAt: Date.parse(entry.publishAt || entry.updatedAt) || Date.now(),
+      pages: []
+    })).sort((a, b) => naturalCompare(String(a.number), String(b.number)) || a.updatedAt - b.updatedAt);
+    Object.assign(series, {
+      title: String(detail.title || series.title),
+      altTitles: Array.isArray(detail.altTitles) ? detail.altTitles.filter(Boolean) : series.altTitles,
+      author: String(detail.author || series.author),
+      cover: String(detail.cover || series.cover),
+      genres: ["MangaDex", ...(Array.isArray(detail.tags) ? detail.tags : [])].filter(Boolean),
+      status: mangaDexStatus(detail.status),
+      description: String(detail.description || series.description),
+      updatedAt: Date.parse(detail.updatedAt) || series.updatedAt,
+      sourceUrl: String(detail.sourceUrl || series.sourceUrl),
+      contentRating: String(detail.contentRating || series.contentRating),
+      chapters,
+      chapterTotal: Number(payload.chapterTotal || chapters.length),
+      chaptersLoaded: true
+    });
+    return series;
+  }
+
+  async function ensureMangaDexChapterPages(chapter) {
+    if (!chapter || chapter.pages?.length || !chapter.remoteChapterId) return chapter;
+    const payload = await fetchMangaDex("pages", { id: chapter.remoteChapterId });
+    chapter.pages = (Array.isArray(payload.pages) ? payload.pages : []).filter((url) => /^https:\/\//i.test(url) && !state.blockedPages.has(url));
+    chapter.pageQuality = String(payload.quality || "data-saver");
+    if (!chapter.pages.length) throw new Error("Chapter MangaDex chưa có ảnh đọc.");
+    return chapter;
+  }
+
   function imageRatio(url) {
     return new Promise((resolve) => {
       const image = new Image();
@@ -248,7 +362,7 @@
       state.readerTheme = ["dark", "black", "paper"].includes(saved.readerTheme) ? saved.readerTheme : "dark";
       state.blockedPages = new Set(Array.isArray(saved.blockedPages) ? saved.blockedPages.slice(-500) : []);
       state.bookmarks = Array.isArray(saved.bookmarks) ? saved.bookmarks.filter((entry) => entry?.seriesId && entry?.chapterId && Number.isFinite(Number(entry.page))).slice(-200) : [];
-      state.recentSeries = Array.isArray(saved.recentSeries) ? saved.recentSeries.filter((entry) => entry?.id && entry?.title && entry?.sourceType === "otruyen" && entry?.remoteSlug).slice(-20) : [];
+      state.recentSeries = Array.isArray(saved.recentSeries) ? saved.recentSeries.filter((entry) => entry?.id && entry?.title && (entry?.sourceType === "otruyen" && entry?.remoteSlug || entry?.sourceType === "mangadex" && entry?.remoteId)).slice(-30) : [];
     } catch {}
   }
 
@@ -323,15 +437,16 @@
     return Boolean(chapter && state.bookmarks.some((entry) => bookmarkKey(entry.seriesId, entry.chapterId, entry.page) === bookmarkKey(state.activeSeriesId, chapter.id, state.readerPage)));
   }
   function rememberSeries(series, chapter) {
-    if (!series || series.sourceType !== "otruyen") return;
+    if (!series || !["otruyen", "mangadex"].includes(series.sourceType)) return;
+    const isMangaDex = series.sourceType === "mangadex";
     const snapshot = {
       id: series.id, title: series.title, altTitles: series.altTitles || [], author: series.author || "Đang cập nhật", cover: series.cover,
       genres: series.genres || [], status: series.status || "Đang cập nhật", description: series.description || "", rating: Number(series.rating || 4.5),
-      views: Number(series.views || 0), updatedAt: Number(series.updatedAt || Date.now()), sourceType: "otruyen", sourceLabel: series.sourceLabel || "OTruyen API",
-      remoteSlug: series.remoteSlug, chaptersLoaded: false,
-      chapters: chapter ? [{ id: chapter.id, number: chapter.number, title: chapter.title || "", updatedAt: chapter.updatedAt || Date.now(), pages: [], apiUrl: chapter.apiUrl || "" }] : []
+      views: Number(series.views || 0), updatedAt: Number(series.updatedAt || Date.now()), sourceType: series.sourceType, sourceLabel: series.sourceLabel || (isMangaDex ? "MangaDex API · LIVE" : "OTruyen API"),
+      remoteSlug: series.remoteSlug || "", remoteId: series.remoteId || "", sourceUrl: series.sourceUrl || "", contentRating: series.contentRating || "", chaptersLoaded: false,
+      chapters: chapter ? [{ id: chapter.id, number: chapter.number, title: chapter.title || "", group: chapter.group || "", sourceUrl: chapter.sourceUrl || "", updatedAt: chapter.updatedAt || Date.now(), pages: [], apiUrl: chapter.apiUrl || "", remoteChapterId: chapter.remoteChapterId || "" }] : []
     };
-    state.recentSeries = [...state.recentSeries.filter((entry) => entry.id !== snapshot.id), snapshot].slice(-20);
+    state.recentSeries = [...state.recentSeries.filter((entry) => entry.id !== snapshot.id), snapshot].slice(-30);
   }
   function syncDeepLink(series, chapter, page = null) {
     if (!global.history?.replaceState || !global.location || !series) return;
@@ -339,21 +454,27 @@
     if (series.sourceType === "otruyen") {
       url.searchParams.set("comicSeries", series.remoteSlug);
       url.searchParams.delete("comicOpen");
+      url.searchParams.delete("comicMangaDex");
     } else if (series.sourceType === "github-open") {
       url.searchParams.set("comicOpen", series.id);
       url.searchParams.delete("comicSeries");
+      url.searchParams.delete("comicMangaDex");
+    } else if (series.sourceType === "mangadex") {
+      url.searchParams.set("comicMangaDex", series.remoteId);
+      url.searchParams.delete("comicSeries");
+      url.searchParams.delete("comicOpen");
     } else return;
-    if (chapter) url.searchParams.set("comicChapter", String(chapter.number)); else url.searchParams.delete("comicChapter");
+    if (chapter) url.searchParams.set("comicChapter", String(series.sourceType === "mangadex" ? chapter.remoteChapterId || chapter.id : chapter.number)); else url.searchParams.delete("comicChapter");
     if (chapter && page !== null) url.searchParams.set("comicPage", String(Math.max(0, Number(page) || 0) + 1)); else url.searchParams.delete("comicPage");
     global.history.replaceState(global.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }
   function clearDeepLink() {
     if (!global.history?.replaceState || !global.location) return;
     const url = new URL(global.location.href);
-    url.searchParams.delete("comicSeries"); url.searchParams.delete("comicOpen"); url.searchParams.delete("comicChapter"); url.searchParams.delete("comicPage");
+    url.searchParams.delete("comicSeries"); url.searchParams.delete("comicOpen"); url.searchParams.delete("comicMangaDex"); url.searchParams.delete("comicChapter"); url.searchParams.delete("comicPage");
     global.history.replaceState(global.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }
-  function availableGenres() { return ["Tất cả", ...new Set([...GENRES.slice(1), ...state.remoteGenres])]; }
+  function availableGenres() { return ["Tất cả", ...new Set([...GENRES.slice(1), ...state.remoteGenres, ...state.catalog.flatMap((series) => Array.isArray(series.genres) ? series.genres : [])])]; }
   function sidebarGenres() {
     const genres = availableGenres();
     if (state.genreExpanded || genres.length <= 15) return genres;
@@ -395,7 +516,7 @@
     const resumeChapterId = progress?.chapterId || latest?.id || "";
     const followed = state.follows.has(series.id);
     return `<article class="cr-series-card" data-series="${escapeHtml(series.id)}">
-      <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.sourceType === "github-open" ? "OPEN" : series.status === "Đã hoàn thành" ? "FULL" : series.sourceType === "otruyen" ? "API" : "NEW"}</span><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
+      <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.sourceType === "github-open" ? "OPEN" : series.sourceType === "mangadex" ? "MDX" : series.status === "Đã hoàn thành" ? "FULL" : series.sourceType === "otruyen" ? "API" : "NEW"}</span><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
       <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml((series.genres || []).slice(0, 2).join(" · "))}</p><div><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(resumeChapterId)}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || 1}`}</button><small>${timeAgo(latest?.updatedAt || series.updatedAt)}</small></div></div>
     </article>`;
   }
@@ -416,11 +537,11 @@
         <div class="cr-hero-cover">${hero ? `<img src="${escapeHtml(hero.cover)}" alt="" referrerpolicy="no-referrer">` : ""}</div>
       </section>
       ${continueShelf()}
-      <nav class="cr-discovery-tabs" aria-label="Lọc kho truyện"><button type="button" data-catalog-filter="all"${state.catalogFilter === "all" ? ' class="is-active"' : ""}>Tất cả</button><button type="button" data-catalog-filter="ongoing"${state.catalogFilter === "ongoing" ? ' class="is-active"' : ""}>Đang cập nhật</button><button type="button" data-catalog-filter="completed"${state.catalogFilter === "completed" ? ' class="is-active"' : ""}>Hoàn thành</button><button type="button" data-catalog-filter="followed"${state.catalogFilter === "followed" ? ' class="is-active"' : ""}>Đang theo dõi · ${state.follows.size}</button><span>${state.remote.loading ? "Đang đồng bộ dữ liệu…" : "Dữ liệu trực tiếp từ API"}</span></nav>
+      <nav class="cr-discovery-tabs" aria-label="Lọc kho truyện"><button type="button" data-catalog-filter="all"${state.catalogFilter === "all" ? ' class="is-active"' : ""}>Tất cả</button><button type="button" data-catalog-filter="ongoing"${state.catalogFilter === "ongoing" ? ' class="is-active"' : ""}>Đang cập nhật</button><button type="button" data-catalog-filter="completed"${state.catalogFilter === "completed" ? ' class="is-active"' : ""}>Hoàn thành</button><button type="button" data-catalog-filter="followed"${state.catalogFilter === "followed" ? ' class="is-active"' : ""}>Đang theo dõi · ${state.follows.size}</button><span>${state.remote.loading || state.mangadex.loading ? "Đang đồng bộ dữ liệu…" : "OTruyen · MangaDex · GitHub Open"}</span></nav>
       <div class="cr-home-grid">
-        <section class="cr-catalog-section"><header><div><strong>${state.query || state.genre !== "Tất cả" ? "Kết quả tìm kiếm" : "Mới cập nhật"}</strong><small>${visible.length.toLocaleString("vi-VN")} đang hiển thị${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} truyện từ OTruyen API` : ""}</small></div><select data-sort><option value="updated">Mới cập nhật</option><option value="rating">Điểm cao</option><option value="az">Tên A–Z</option></select></header>
+        <section class="cr-catalog-section"><header><div><strong>${state.query || state.genre !== "Tất cả" ? "Kết quả tìm kiếm" : "Mới cập nhật"}</strong><small>${visible.length.toLocaleString("vi-VN")} đang hiển thị${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} OTruyen` : ""}${state.mangadex.total ? ` · ${state.mangadex.total.toLocaleString("vi-VN")} MangaDex tiếng Việt` : ""}</small></div><select data-sort><option value="updated">Mới cập nhật</option><option value="rating">Điểm cao</option><option value="az">Tên A–Z</option></select></header>
           <div class="cr-series-grid">${visible.length ? visible.map(seriesCard).join("") : `<div class="cr-empty"><span>⌕</span><strong>Không tìm thấy truyện</strong><small>Thử từ khóa hoặc thể loại khác.</small></div>`}</div>
-          <footer class="cr-load-more"><button type="button" data-action="remote-more"${state.remote.loading || !state.remote.hasMore ? " disabled" : ""}>${state.remote.loading ? "Đang tải OTruyen…" : state.remote.hasMore ? `Tải thêm · Trang ${state.remote.page + 1}` : "Đã tải hết kết quả"}</button>${state.remote.error ? `<span>${escapeHtml(state.remote.error)}</span>` : `<span>Dữ liệu trực tiếp · không sao chép ảnh lên máy chủ HH</span>`}</footer>
+          <footer class="cr-load-more"><button type="button" data-action="remote-more"${state.remote.loading || state.mangadex.loading || !state.remote.hasMore && !state.mangadex.hasMore ? " disabled" : ""}>${state.remote.loading || state.mangadex.loading ? "Đang tải các nguồn…" : state.remote.hasMore || state.mangadex.hasMore ? "Tải thêm từ OTruyen + MangaDex" : "Đã tải hết kết quả"}</button>${state.remote.error || state.mangadex.error ? `<span>${escapeHtml([state.remote.error, state.mangadex.error].filter(Boolean).join(" · "))}</span>` : `<span>Phát trực tiếp · không sao chép ảnh lên máy chủ HH</span>`}</footer>
         </section>
         <aside class="cr-ranking"><header><strong>Top thịnh hành</strong><span>Tuần</span></header>${rankings.map((series, index) => `<button type="button" data-series="${escapeHtml(series.id)}"><b>${String(index + 1).padStart(2, "0")}</b><img src="${escapeHtml(series.cover)}" alt=""><span><strong>${escapeHtml(series.title)}</strong><small>★ ${series.rating.toFixed(1)} · ${formatViews(series.views)} lượt</small></span></button>`).join("")}</aside>
       </div>
@@ -433,7 +554,7 @@
     const progress = state.progress[series.id];
     return `<div class="cr-detail">
       <button type="button" class="cr-back" data-nav="home">← Trở lại kho truyện</button>
-      <section class="cr-detail-hero"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" referrerpolicy="no-referrer"><div><span>${escapeHtml(series.sourceType === "original" ? "HH ORIGINALS" : series.sourceType === "otruyen" ? "OTRUYEN API · LIVE" : series.sourceType === "github-open" ? `GITHUB OPEN · ${series.license || "OPEN"}` : "THƯ VIỆN ĐÃ NHẬP")}</span><h1>${escapeHtml(series.title)}</h1><p class="cr-detail-author">Tác giả: <strong>${escapeHtml(series.author || "Đang cập nhật")}</strong></p><div class="cr-tags">${(series.genres || []).map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}">${escapeHtml(genre)}</button>`).join("")}</div><p>${escapeHtml(series.description || "Chưa có mô tả.")}</p><div class="cr-detail-actions"><button type="button" class="is-primary" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(progress?.chapterId || series.chapters?.[0]?.id || "")}"${series.chapters?.length ? "" : " disabled"}>▶ ${progress ? "Đọc tiếp" : "Đọc từ đầu"}</button><button type="button" data-follow="${escapeHtml(series.id)}">${followed ? "✓ Đang theo dõi" : "♡ Theo dõi"}</button></div><dl><div><dt>Trạng thái</dt><dd>${escapeHtml(series.status || "Đang cập nhật")}</dd></div><div><dt>Đánh giá</dt><dd>★ ${Number(series.rating || 4.5).toFixed(1)}</dd></div><div><dt>Nguồn</dt><dd>${escapeHtml(series.sourceLabel || series.rights || "HH Comics")}</dd></div><div><dt>Số chương</dt><dd>${series.chaptersLoaded === false ? "Đang tải…" : series.chapters?.length || 0}</dd></div></dl></div></section>
+      <section class="cr-detail-hero"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" referrerpolicy="no-referrer"><div><span>${escapeHtml(series.sourceType === "original" ? "HH ORIGINALS" : series.sourceType === "otruyen" ? "OTRUYEN API · LIVE" : series.sourceType === "mangadex" ? "MANGADEX API · LIVE" : series.sourceType === "github-open" ? `GITHUB OPEN · ${series.license || "OPEN"}` : "THƯ VIỆN ĐÃ NHẬP")}</span><h1>${escapeHtml(series.title)}</h1><p class="cr-detail-author">Tác giả: <strong>${escapeHtml(series.author || "Đang cập nhật")}</strong></p><div class="cr-tags">${(series.genres || []).map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}">${escapeHtml(genre)}</button>`).join("")}</div><p>${escapeHtml(series.description || "Chưa có mô tả.")}</p><div class="cr-detail-actions"><button type="button" class="is-primary" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(progress?.chapterId || series.chapters?.[0]?.id || "")}"${series.chapters?.length || series.chaptersLoaded === false ? "" : " disabled"}>▶ ${progress ? "Đọc tiếp" : "Đọc từ đầu"}</button><button type="button" data-follow="${escapeHtml(series.id)}">${followed ? "✓ Đang theo dõi" : "♡ Theo dõi"}</button></div><dl><div><dt>Trạng thái</dt><dd>${escapeHtml(series.status || "Đang cập nhật")}</dd></div><div><dt>Đánh giá</dt><dd>★ ${Number(series.rating || 4.5).toFixed(1)}</dd></div><div><dt>Nguồn</dt><dd>${escapeHtml(series.sourceLabel || series.rights || "HH Comics")}</dd></div><div><dt>Số chương</dt><dd>${series.chaptersLoaded === false ? "Đang tải…" : series.chapterTotal && series.chapterTotal > series.chapters.length ? `${series.chapters.length}/${series.chapterTotal} mới nhất` : series.chapters?.length || 0}</dd></div></dl></div></section>
       <section class="cr-chapters"><header><div><strong>Danh sách chương</strong><small>${series.chapters?.length || 0} chương · lưu tiến độ tự động</small></div><input type="search" placeholder="Tìm chương…" data-chapter-search></header><div data-chapter-list>${[...(series.chapters || [])].reverse().map((chapter) => `<button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(chapter.id)}"><span><strong>Chương ${chapter.number}</strong><small>${escapeHtml(chapter.title || "")}</small></span><i>${timeAgo(chapter.updatedAt)}</i><b>${progress?.chapterId === chapter.id ? "Đang đọc" : "Đọc →"}</b></button>`).join("")}</div></section>
     </div>`;
   }
@@ -454,6 +575,7 @@
     const openPages = openSources.reduce((total, entry) => total + Number(entry.pages || 0), 0);
     return `<div class="cr-source-view"><header><span>＋</span><div><h1>Thêm kho truyện của bạn</h1><p>Nhập nội dung do bạn sở hữu hoặc nguồn/API có quyền phân phối.</p></div></header><div class="cr-source-grid">
       <button type="button" data-genre="Nguồn mở"><b>GitHub Open Library · ${openSources.length} bộ</b><span>${openPages.toLocaleString("vi-VN")} trang có license rõ ràng; fan-art và file phụ đã được loại khỏi catalog.</span><i>Xem kho nguồn mở →</i></button>
+      <button type="button" data-action="mangadex-refresh"><b>MangaDex tiếng Việt · ${state.mangadex.total ? state.mangadex.total.toLocaleString("vi-VN") : "đang kết nối"} truyện</b><span>Nguồn được TruyenDex sử dụng: chỉ lấy nội dung safe/suggestive, ghi nhóm dịch và phát ảnh trực tiếp khi mở chương.</span><i>${state.mangadex.loading ? "Đang đồng bộ…" : "Đồng bộ MangaDex →"}</i></button>
       <button type="button" data-action="import-cbz"><b>CBZ / ZIP</b><span>Mỗi file thành một bộ truyện; ảnh được lưu offline trong IndexedDB.</span><i>Chọn file →</i></button>
       <button type="button" data-action="import-json"><b>Catalog JSON</b><span>Nhập series, chương, ảnh và metadata theo manifest.</span><i>Chọn JSON →</i></button>
       <button type="button" data-action="sample-json"><b>Tải JSON mẫu</b><span>Schema sẵn để kết nối website hoặc CMS thuộc quyền của bạn.</span><i>Tải mẫu →</i></button>
@@ -623,6 +745,17 @@
         if (root?.isConnected && state.activeSeriesId === id) render();
       }
     }
+    if (series?.sourceType === "mangadex" && !series.chaptersLoaded) {
+      state.mangadex.loading = true;
+      try {
+        await ensureMangaDexSeriesDetails(series);
+      } catch (error) {
+        notify(error.message || "Không thể tải chi tiết MangaDex.", "error");
+      } finally {
+        state.mangadex.loading = false;
+        if (root?.isConnected && state.activeSeriesId === id) render();
+      }
+    }
   }
 
   async function openReader(seriesId, chapterId, requestedPage = null) {
@@ -633,6 +766,12 @@
       catch (error) { state.remote.loading = false; return notify(error.message || "Không thể tải danh sách chương.", "error"); }
       state.remote.loading = false;
     }
+    if (series?.sourceType === "mangadex" && !series.chaptersLoaded) {
+      state.mangadex.loading = true;
+      try { await ensureMangaDexSeriesDetails(series); }
+      catch (error) { state.mangadex.loading = false; return notify(error.message || "Không thể tải danh sách chương MangaDex.", "error"); }
+      state.mangadex.loading = false;
+    }
     const chapter = series?.chapters?.find((entry) => entry.id === chapterId) || series?.chapters?.[0];
     if (!series || !chapter) return notify("Chương này chưa có ảnh.", "error");
     if (series.sourceType === "otruyen" && !chapter.pages?.length) {
@@ -641,6 +780,13 @@
       try { await ensureRemoteChapterPages(chapter); }
       catch (error) { return notify(error.message || "Không thể tải ảnh chapter.", "error"); }
       finally { state.remote.loading = false; setLoadingOverlay(false); }
+    }
+    if (series.sourceType === "mangadex" && !chapter.pages?.length) {
+      state.mangadex.loading = true;
+      setLoadingOverlay(true, `Đang chuẩn bị Chương ${chapter.number}…`, `Đang lấy ảnh data-saver và ghi nguồn ${chapter.group || "nhóm dịch"} từ MangaDex.`);
+      try { await ensureMangaDexChapterPages(chapter); }
+      catch (error) { return notify(error.message || "Không thể tải ảnh MangaDex.", "error"); }
+      finally { state.mangadex.loading = false; setLoadingOverlay(false); }
     }
     if (!chapter.pages?.length) return notify("Chapter này chưa có ảnh.", "error");
     state.activeSeriesId = series.id;
@@ -702,8 +848,25 @@
     if (!global.location) return;
     const params = new URL(global.location.href).searchParams;
     const openId = String(params.get("comicOpen") || "").trim();
+    const mangaDexId = String(params.get("comicMangaDex") || "").trim();
     const chapterNumber = params.get("comicChapter");
     const page = Math.max(0, Number(params.get("comicPage") || 1) - 1);
+    if (mangaDexId) {
+      if (!/^[0-9a-f-]{36}$/i.test(mangaDexId)) return notify("MangaDex series ID không hợp lệ.", "error");
+      let mangaDexSeries = state.catalog.find((entry) => entry.sourceType === "mangadex" && entry.remoteId === mangaDexId);
+      if (!mangaDexSeries) {
+        mangaDexSeries = mapMangaDexSeries({ id: mangaDexId, title: "Đang tải truyện MangaDex…", tags: ["MangaDex"], sourceUrl: `https://mangadex.org/title/${mangaDexId}` });
+        mergeCatalog([mangaDexSeries]);
+      }
+      setLoadingOverlay(true, "Đang mở MangaDex…", "Đang khôi phục đúng bản dịch, chapter và trang đã chia sẻ.");
+      try {
+        await ensureMangaDexSeriesDetails(mangaDexSeries);
+        const mangaDexChapter = mangaDexSeries.chapters.find((entry) => entry.remoteChapterId === String(chapterNumber) || entry.id === String(chapterNumber)) || mangaDexSeries.chapters[0];
+        if (chapterNumber && mangaDexChapter) await openReader(mangaDexSeries.id, mangaDexChapter.id, page); else await openSeries(mangaDexSeries.id);
+      } catch (error) { notify(error.message || "Không thể mở liên kết MangaDex.", "error"); }
+      finally { setLoadingOverlay(false); }
+      return;
+    }
     if (openId) {
       const openCatalogSeries = state.catalog.find((entry) => entry.sourceType === "github-open" && entry.id === openId);
       if (!openCatalogSeries) return notify("Nguồn truyện mở này không còn trong catalog.", "error");
@@ -821,8 +984,12 @@
     else if (action.dataset.action === "import-json") root.querySelector("[data-json-input]").click();
     else if (action.dataset.action === "sample-json") downloadSampleJson();
     else if (action.dataset.action === "import-feed") importFeed();
-    else if (action.dataset.action === "remote-more") loadRemoteCatalog({ page: state.remote.page + 1 });
-    else if (action.dataset.action === "remote-refresh") loadRemoteCatalog({ page: 1, reset: true });
+    else if (action.dataset.action === "remote-more") Promise.allSettled([
+      state.remote.hasMore ? loadRemoteCatalog({ page: state.remote.page + 1 }) : Promise.resolve(),
+      state.mangadex.hasMore ? loadMangaDexCatalog({ offset: state.mangadex.offset + state.mangadex.limit }) : Promise.resolve()
+    ]);
+    else if (action.dataset.action === "remote-refresh") Promise.allSettled([loadRemoteCatalog({ page: 1, reset: true }), loadMangaDexCatalog({ offset: 0, reset: true })]);
+    else if (action.dataset.action === "mangadex-refresh") loadMangaDexCatalog({ offset: 0, reset: true });
     else if (action.dataset.action === "genre-more") { state.genreExpanded = !state.genreExpanded; render(); }
     else if (action.dataset.action === "reader-settings") {
       const panel = root.querySelector(".cr-reader-settings");
@@ -871,6 +1038,7 @@
       handleInput.timer = setTimeout(() => {
         render();
         loadRemoteCatalog({ page: 1, reset: true });
+        loadMangaDexCatalog({ offset: 0, reset: true });
       }, state.query.trim().length >= 2 ? 420 : 180);
     }
     else if (event.target.matches("[data-sort]")) { state.sort = event.target.value; render(); }
@@ -898,6 +1066,7 @@
     mergeCatalog(Array.isArray(global.HHOpenComicCatalog) ? global.HHOpenComicCatalog : []);
     mergeCatalog(state.recentSeries.map((series) => ({ ...series, chapters: (series.chapters || []).map((chapter) => ({ ...chapter, pages: [] })), chaptersLoaded: false })));
     state.remote = { loading: false, page: 0, total: 0, hasMore: true, context: "latest", error: "" };
+    state.mangadex = { loading: false, offset: 0, limit: 12, total: 0, hasMore: true, context: "latest", error: "" };
     state.remoteGenres = [];
     state.remoteGenreSlugs = new Map();
     state.view = "home";
@@ -924,7 +1093,7 @@
     render();
     loadImportedSeries();
     loadRemoteGenres();
-    loadRemoteCatalog({ page: 1 }).finally(restoreDeepLink);
+    Promise.allSettled([loadRemoteCatalog({ page: 1 }), loadMangaDexCatalog({ offset: 0 })]).then(restoreDeepLink);
     global.dispatchEvent(new CustomEvent("hh:comic-reader-ready"));
   }
 
