@@ -62,6 +62,46 @@ async function upstream(path) {
   return payload.data;
 }
 
+function allowedChapterUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    const hostname = url.hostname.toLowerCase();
+    const allowedHost = hostname === "otruyenapi.com" || hostname.endsWith(".otruyencdn.com");
+    return url.protocol === "https:"
+      && allowedHost
+      && /^\/v1\/api\/chapter\/[a-z0-9-]+\/?$/i.test(url.pathname)
+      && !url.username
+      && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+async function chapterPages(query) {
+  const chapterUrl = clean(query.url, 900);
+  if (!allowedChapterUrl(chapterUrl)) fail("URL chapter OTruyen không hợp lệ hoặc không được phép.");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let response;
+  try {
+    response = await fetch(chapterUrl, {
+      method: "GET",
+      signal: controller.signal,
+      redirect: "error",
+      headers: { Accept: "application/json", "User-Agent": "hoang8.com-HH-Comics/1.0" }
+    });
+  } catch (error) {
+    fail(error?.name === "AbortError" ? "Máy chủ chapter phản hồi quá chậm." : "Không thể kết nối máy chủ chapter.", 502, "OTRUYEN_CHAPTER_UNAVAILABLE");
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!response.ok) fail(`Máy chủ chapter phản hồi HTTP ${response.status}.`, response.status === 429 ? 429 : 502, "OTRUYEN_CHAPTER_HTTP_ERROR");
+  const payload = await response.json().catch(() => null);
+  const data = payload?.data;
+  if (!data?.item?.chapter_path || !Array.isArray(data.item.chapter_image)) fail("Chapter chưa có danh sách ảnh hợp lệ.", 502, "OTRUYEN_CHAPTER_INVALID");
+  return { provider: "otruyen", backend: true, data };
+}
+
 function sortItems(items, sort) {
   const rows = Array.isArray(items) ? [...items] : [];
   if (sort === "az" || sort === "za") rows.sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "vi", { numeric: true, sensitivity: "base" }) * (sort === "za" ? -1 : 1));
@@ -101,9 +141,10 @@ async function handleOTruyenSource(req, res, { db }) {
   if (action === "catalog") result = await catalog(req.query);
   else if (action === "series") result = await series(req.query);
   else if (action === "genres") result = await genres();
+  else if (action === "pages") result = await chapterPages(req.query);
   else fail("Tác vụ OTruyen không được hỗ trợ.");
   res.setHeader("Cache-Control", action === "series" ? "public, s-maxage=300, stale-while-revalidate=600" : "public, s-maxage=180, stale-while-revalidate=300");
   return res.status(200).json({ ok: true, ...result });
 }
 
-module.exports = { handleOTruyenSource, catalogRequest, sortItems, SLUG };
+module.exports = { handleOTruyenSource, catalogRequest, sortItems, allowedChapterUrl, chapterPages, SLUG };

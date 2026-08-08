@@ -12,8 +12,25 @@ test("Text on Image Studio is routed from the main Tool group", () => {
 
   assert.match(app, /id: "image-text"[\s\S]*?route: "\/davinci-resolve\/image-text"/);
   assert.match(app, /resolveView === "image-text"[\s\S]*?HHImageTextStudio\?\.mount/);
-  assert.match(loader, /image-text-studio\.css\?v=3/);
-  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=3/);
+  assert.match(loader, /image-text-studio\.css\?v=4/);
+  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=4/);
+});
+
+test("studio supports per-image AI text, optional color correction and secure providers", () => {
+  const client = read("image-text-studio.js");
+  const backend = read("api/modules/[moduleId]/actions.js");
+  assert.match(client, /DEFAULT_IMAGE_STYLE/);
+  assert.match(client, /data-image-prop="brightness"/);
+  assert.match(client, /contactSheet/);
+  assert.match(client, /\/api\/modules\/image-text\/actions/);
+  assert.match(client, /item\.overrides\.title/);
+  assert.match(client, /outputBaseName/);
+  assert.match(client, /requestAnimationFrame/);
+  assert.match(client, /Tải toàn bộ ZIP/);
+  assert.doesNotMatch(client, /\b(?:alert|confirm|prompt)\s*\(/);
+  assert.match(backend, /"image-text"/);
+  assert.match(backend, /image-text-batch/);
+  assert.match(backend, /imageTextBatchSchema/);
 });
 
 test("studio supports large local batches and paged previews", () => {
@@ -54,4 +71,7 @@ test("studio remains a one-screen workspace with internal scrolling", () => {
   assert.match(css, /overflow:hidden/);
   assert.match(css, /\.its-thumb-grid[\s\S]*?overflow-y:auto/);
   assert.match(css, /\.its-inspector[\s\S]*?overflow-y:auto/);
+  assert.match(css, /grid-template-columns:minmax\(190px,270px\) minmax\(0,1fr\)/);
+  assert.match(css, /@container \(max-width:1100px\)/);
+  assert.match(css, /\.its-ai-panel/);
 });

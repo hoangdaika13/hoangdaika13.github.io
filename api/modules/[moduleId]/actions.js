@@ -32,7 +32,7 @@ const downloadHosts = [
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
-const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os"]);
+const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text"]);
 const allowedModels = new Set(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
 const contentPackSchema = {
   type: "object",
@@ -65,10 +65,34 @@ const designPlanSchema = {
   },
   required: ["summary", "layout", "palette", "typography", "components", "responsive", "accessibility", "nextActions"]
 };
+const imageTextBatchSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          index: { type: "integer", description: "Số thứ tự hiển thị trên contact sheet." },
+          filename: { type: "string", description: "Tên file gốc tương ứng." },
+          title: { type: "string", description: "Cụm chữ chính ngắn, tự nhiên, dùng được ngay trên thumbnail." },
+          subtitle: { type: "string", description: "Phụ đề ngắn bổ trợ, có thể để trống." },
+          outputName: { type: "string", description: "Tên file xuất không có phần mở rộng." },
+          textColor: { type: "string", description: "Màu chữ HEX dễ đọc trên ảnh, ví dụ #FFFFFF." }
+        },
+        required: ["index", "filename", "title", "subtitle", "outputName", "textColor"]
+      }
+    }
+  },
+  required: ["items"]
+};
 
 function schemaForAction(actionType) {
   if (actionType === "content-pack") return contentPackSchema;
   if (actionType === "design-plan") return designPlanSchema;
+  if (actionType === "image-text-batch") return imageTextBatchSchema;
   return null;
 }
 
@@ -889,6 +913,7 @@ async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
 }
 
 function systemInstruction(moduleId, actionType) {
+  if (moduleId === "image-text") return `Bạn là art director thumbnail. Phân tích đúng từng ô ảnh đã đánh số, tạo chữ ngắn tự nhiên theo yêu cầu, không nhầm thứ tự, không bịa người hoặc địa điểm và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   const common = "Bạn là HH Creative AI, trợ lý sản xuất nội dung cao cấp. Trả lời bằng tiếng Việt tự nhiên, có cấu trúc, không bịa dữ kiện, nêu rõ điểm chưa chắc chắn, tôn trọng bản quyền và luôn tạo đầu ra có thể dùng ngay.";
   const rules = {
     "ai-center": "Phân tích mục tiêu, trả lời trực tiếp, đưa ví dụ thực tế và kết thúc bằng checklist hành động.",
@@ -902,6 +927,10 @@ function systemInstruction(moduleId, actionType) {
 }
 
 function promptFor(moduleId, actionType, input, meta = {}) {
+  if (actionType === "image-text-batch") {
+    const context = typeof meta.context === "string" ? clean(meta.context, 12000) : "";
+    return `Quan sát contact sheet có các ô đánh số. Với mỗi ô, tạo title 2–5 từ đúng phong cách người dùng, subtitle ngắn, tên file an toàn và màu chữ HEX tương phản. Trả đủ đúng một item cho mỗi số; giữ nguyên index và filename.\n\nYÊU CẦU\n${input || "Tạo chữ ngắn phù hợp từng ảnh."}\n\nDANH SÁCH ẢNH\n${context}`;
+  }
   const context = typeof meta.context === "string" ? clean(meta.context, 12000) : "";
   const config = meta.config && typeof meta.config === "object" ? JSON.stringify(meta.config, null, 2).slice(0, 12000) : "";
   const actionNotes = {

@@ -185,9 +185,7 @@
 
   async function ensureRemoteChapterPages(chapter) {
     if (!chapter || chapter.pages?.length || !chapter.apiUrl) return chapter;
-    const response = await fetch(chapter.apiUrl, { method: "GET", mode: "cors", credentials: "omit", headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error(`Máy chủ chapter phản hồi HTTP ${response.status}`);
-    const payload = await response.json();
+    const payload = await fetchOTruyen("pages", { url: chapter.apiUrl });
     const data = payload?.data;
     const item = data?.item;
     if (!item?.chapter_path || !Array.isArray(item.chapter_image)) throw new Error("Chapter chưa có danh sách ảnh");

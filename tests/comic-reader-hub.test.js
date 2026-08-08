@@ -15,10 +15,10 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=11[\s\S]*?comic-open-source-catalog\.js\?v=2[\s\S]*?comic-reader-hub\.js\?v=13/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=11[\s\S]*?comic-open-source-catalog\.js\?v=2[\s\S]*?comic-reader-hub\.js\?v=14/);
   assert.match(worker, /comic-reader-hub\.css\?v=11/);
   assert.match(worker, /comic-open-source-catalog\.js\?v=2/);
-  assert.match(worker, /comic-reader-hub\.js\?v=13/);
+  assert.match(worker, /comic-reader-hub\.js\?v=14/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
