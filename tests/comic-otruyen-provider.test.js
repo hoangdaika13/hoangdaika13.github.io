@@ -37,6 +37,18 @@ test("OTruyen backend applies the requested visible-page order", () => {
   assert.deepEqual(sortItems(items, "updated").map((item) => item.name), ["A", "B"]);
 });
 
+test("smart comic order prioritizes active recent long series and sends under ten chapters last", () => {
+  const now = new Date().toISOString();
+  const items = [
+    { name: "Short", status: "ongoing", updatedAt: now, chaptersLatest: [{ chapter_name: "8" }] },
+    { name: "Long", status: "ongoing", updatedAt: now, chaptersLatest: [{ chapter_name: "320" }] },
+    { name: "Medium", status: "ongoing", updatedAt: now, chaptersLatest: [{ chapter_name: "45" }] }
+  ];
+  assert.deepEqual(sortItems(items, "smart").map((item) => item.name), ["Long", "Medium", "Short"]);
+  assert.deepEqual(sortItems(items, "chapters").map((item) => item.name), ["Long", "Medium", "Short"]);
+  assert.equal(catalogRequest({ sort: "smart" }).sort, "smart");
+});
+
 test("HH Comics routes OTruyen through the same-origin backend", () => {
   const client = read("comic-reader-hub.js");
   const api = read("api/modules/[moduleId]/actions.js");

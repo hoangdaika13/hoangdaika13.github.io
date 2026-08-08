@@ -63,6 +63,8 @@ function mapSeries(entity) {
     tags: (Array.isArray(attributes.tags) ? attributes.tags : []).map((tag) => firstText(tag?.attributes?.name)).filter(Boolean).slice(0, 30),
     updatedAt: clean(attributes.updatedAt, 80),
     latestUploadedChapter: clean(attributes.latestUploadedChapter, 80),
+    lastChapter: clean(attributes.lastChapter, 40),
+    chapterCountEstimate: Math.max(0, Number(String(attributes.lastChapter || "").replace(",", ".").match(/\d+(?:\.\d+)?/)?.[0] || 0)),
     sourceUrl: UUID.test(entity?.id) ? `https://mangadex.org/title/${entity.id}` : ""
   };
 }
@@ -106,10 +108,10 @@ async function mangaDexJson(path) {
 }
 
 function catalogPath(query) {
-  const limit = Math.min(24, Math.max(4, Number(query.limit) || 12));
+  const limit = Math.min(48, Math.max(4, Number(query.limit) || 24));
   const offset = Math.min(10_000, Math.max(0, Number(query.offset) || 0));
   const title = clean(query.q, 120);
-  const sort = ["updated", "popular", "az", "za"].includes(query.sort) ? query.sort : "updated";
+  const sort = ["smart", "chapters", "updated", "popular", "az", "za"].includes(query.sort) ? query.sort : "smart";
   const filter = ["all", "ongoing", "completed"].includes(query.filter) ? query.filter : "all";
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset), hasAvailableChapters: "true" });
   if (sort === "az" || sort === "za") params.set("order[title]", sort === "az" ? "asc" : "desc");
@@ -129,13 +131,16 @@ function catalogPath(query) {
 async function catalog(query) {
   const request = catalogPath(query);
   const payload = await mangaDexJson(request.path);
+  const items = (Array.isArray(payload.data) ? payload.data : []).filter((entry) => isAllowedRating(entry?.attributes?.contentRating)).map(mapSeries).filter((entry) => UUID.test(entry.id));
+  if (request.sort === "chapters") items.sort((a, b) => { const aShort = a.chapterCountEstimate > 0 && a.chapterCountEstimate < 10; const bShort = b.chapterCountEstimate > 0 && b.chapterCountEstimate < 10; return aShort !== bShort ? aShort ? 1 : -1 : b.chapterCountEstimate - a.chapterCountEstimate || Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0); });
+  else if (request.sort === "smart") items.sort((a, b) => { const aShort = a.chapterCountEstimate > 0 && a.chapterCountEstimate < 10; const bShort = b.chapterCountEstimate > 0 && b.chapterCountEstimate < 10; const aActive = a.status === "ongoing"; const bActive = b.status === "ongoing"; return aShort !== bShort ? aShort ? 1 : -1 : aActive !== bActive ? aActive ? -1 : 1 : b.chapterCountEstimate - a.chapterCountEstimate || Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0); });
   return {
     provider: "mangadex",
     sourceUrl: "https://mangadex.org/",
     total: Math.max(0, Number(payload.total) || 0),
     offset: Math.max(0, Number(payload.offset) || request.offset),
     limit: Math.max(1, Number(payload.limit) || request.limit),
-    items: (Array.isArray(payload.data) ? payload.data : []).filter((entry) => isAllowedRating(entry?.attributes?.contentRating)).map(mapSeries).filter((entry) => UUID.test(entry.id))
+    items
   };
 }
 

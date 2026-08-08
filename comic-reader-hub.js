@@ -8,6 +8,7 @@
   const OTRUYEN_CDN = "https://img.otruyenapi.com";
   const OTRUYEN_PROXY_PATH = "/api/modules/comic-reader/actions";
   const MANGADEX_PROXY_PATH = "/api/modules/comic-reader/actions";
+  const OTRUYEN_PAGES_PER_VIEW = 2;
   const GENRES = ["Tất cả", "Hành động", "Phiêu lưu", "Fantasy", "Đời thường", "Bí ẩn", "Hài hước", "Lãng mạn", "Sci-fi", "Webtoon"];
   const PALETTES = [
     ["#172d52", "#6ee7ff", "#a970ff"], ["#3d1838", "#ff7fb8", "#ffbd6c"], ["#143a35", "#65e8ad", "#76b9ff"],
@@ -33,7 +34,7 @@
     readerTheme: "dark",
     query: "",
     genre: "Tất cả",
-    sort: "updated",
+    sort: "smart",
     catalogPage: 1,
     catalogFilter: "all",
     genreExpanded: false,
@@ -45,8 +46,8 @@
     importing: false,
     remoteGenres: [],
     remoteGenreSlugs: new Map(),
-    remote: { loading: false, page: 0, perPage: 24, total: 0, hasMore: true, context: "latest", error: "" },
-    mangadex: { loading: false, offset: 0, limit: 24, total: 0, hasMore: true, context: "latest", error: "" }
+    remote: { loading: false, page: 0, perPage: 48, total: 0, hasMore: true, context: "latest", error: "" },
+    mangadex: { loading: false, offset: 0, limit: 48, total: 0, hasMore: true, context: "latest", error: "" }
   };
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -63,6 +64,30 @@
     return days < 30 ? `${days} ngày trước` : `${Math.floor(days / 30)} tháng trước`;
   };
   const stripHtml = (value) => String(value || "").replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
+  const chapterNumberValue = (value) => {
+    const match = String(value ?? "").replace(",", ".").match(/\d+(?:\.\d+)?/);
+    return match ? Math.max(0, Number(match[0]) || 0) : /oneshot|one-shot/i.test(String(value || "")) ? 1 : 0;
+  };
+  const seriesChapterCount = (series) => {
+    if (Number(series?.chapterTotal) > 0) return Number(series.chapterTotal);
+    if (Number(series?.chapterCountEstimate) > 0) return Number(series.chapterCountEstimate);
+    return Math.max(Number(series?.chapters?.length || 0), ...((series?.chapters || []).map((chapter) => chapterNumberValue(chapter.number))));
+  };
+  const activityTier = (series) => {
+    const ageDays = Math.max(0, (Date.now() - Number(series?.updatedAt || 0)) / 86400000);
+    return ageDays <= 2 ? 0 : ageDays <= 7 ? 1 : ageDays <= 30 ? 2 : ageDays <= 90 ? 3 : 4;
+  };
+  const smartCatalogCompare = (a, b) => {
+    const aChapters = seriesChapterCount(a); const bChapters = seriesChapterCount(b);
+    const aShort = aChapters > 0 && aChapters < 10; const bShort = bChapters > 0 && bChapters < 10;
+    if (aShort !== bShort) return aShort ? 1 : -1;
+    const aActive = a.status === "Đang cập nhật"; const bActive = b.status === "Đang cập nhật";
+    if (aActive !== bActive) return aActive ? -1 : 1;
+    const freshness = activityTier(a) - activityTier(b);
+    if (freshness) return freshness;
+    if (bChapters !== aChapters) return bChapters - aChapters;
+    return Number(b.updatedAt || 0) - Number(a.updatedAt || 0) || naturalCompare(a.title, b.title);
+  };
   const coverUrl = (thumb, domain = OTRUYEN_CDN) => {
     const value = String(thumb || "");
     if (/^https?:\/\//i.test(value)) return value;
@@ -70,8 +95,10 @@
   };
 
   function mapRemoteSeries(entry, domain = OTRUYEN_CDN) {
-    const latest = entry?.chaptersLatest?.[0];
+    const latestRows = Array.isArray(entry?.chaptersLatest) ? entry.chaptersLatest : [];
+    const latest = [...latestRows].sort((a, b) => chapterNumberValue(b?.chapter_name) - chapterNumberValue(a?.chapter_name))[0];
     const number = String(latest?.chapter_name || "1");
+    const chapterCountEstimate = Math.max(0, ...latestRows.map((chapter) => chapterNumberValue(chapter?.chapter_name)));
     return {
       id: `otruyen:${entry.slug}`,
       title: String(entry.name || "Truyện chưa đặt tên"),
@@ -85,6 +112,7 @@
       views: 0,
       updatedAt: Date.parse(entry.updatedAt) || Date.now(),
       chapters: latest ? [{ id: `otruyen:${entry.slug}:chapter:${number}`, number, title: String(latest.chapter_title || ""), updatedAt: Date.parse(entry.updatedAt) || Date.now(), pages: [], apiUrl: String(latest.chapter_api_data || "") }] : [],
+      chapterCountEstimate,
       sourceType: "otruyen",
       sourceLabel: "OTruyen · LIVE",
       remoteSlug: String(entry.slug || ""),
@@ -125,18 +153,20 @@
     if (root?.isConnected) render();
     try {
       const genreSlug = state.remoteGenreSlugs.get(state.genre) || "";
-      const payload = await fetchOTruyen("catalog", { page, q: state.query.trim(), genre: genreSlug, sort: state.sort, filter: state.catalogFilter });
-      const data = payload.data || {};
+      const upstreamFirstPage = (Math.max(1, Number(page) || 1) - 1) * OTRUYEN_PAGES_PER_VIEW + 1;
+      const payloads = await Promise.all(Array.from({ length: OTRUYEN_PAGES_PER_VIEW }, (_, index) => fetchOTruyen("catalog", { page: upstreamFirstPage + index, q: state.query.trim(), genre: genreSlug, sort: state.sort, filter: state.catalogFilter })));
+      const data = payloads[0]?.data || {};
       const domain = data.APP_DOMAIN_CDN_IMAGE || OTRUYEN_CDN;
-      const mapped = (data.items || []).map((item) => mapRemoteSeries(item, domain));
+      const unique = new Map(payloads.flatMap((payload) => payload?.data?.items || []).map((item) => [String(item.slug || ""), item]));
+      const mapped = [...unique.values()].map((item) => mapRemoteSeries(item, domain));
       if (reset) {
         const incomingIds = new Set(mapped.map((series) => series.id));
         state.catalog = state.catalog.filter((series) => series.sourceType !== "otruyen" || state.follows.has(series.id) || state.progress[series.id] || incomingIds.has(series.id));
       }
       mergeCatalog(mapped);
       const pagination = data.params?.pagination || {};
-      state.remote.page = Number(pagination.currentPage || page);
-      state.remote.perPage = Number(pagination.totalItemsPerPage || 24);
+      state.remote.page = Math.max(1, Number(page) || 1);
+      state.remote.perPage = Number(pagination.totalItemsPerPage || 24) * OTRUYEN_PAGES_PER_VIEW;
       state.remote.total = Number(pagination.totalItems || mapped.length);
       state.remote.hasMore = state.remote.page * state.remote.perPage < state.remote.total;
       state.remote.context = state.query.trim().length >= 2 ? "search" : state.genre !== "Tất cả" ? "genre" : "latest";
@@ -178,6 +208,8 @@
       description: stripHtml(item.content) || series.description,
       updatedAt: Date.parse(item.updatedAt) || series.updatedAt,
       chapters,
+      chapterTotal: chapters.length,
+      chapterCountEstimate: chapters.length,
       chaptersLoaded: true
     });
     return series;
@@ -217,6 +249,7 @@
       rating: 4.5,
       views: 0,
       updatedAt: Date.parse(entry?.updatedAt) || Date.now(),
+      chapterCountEstimate: Math.max(0, Number(entry?.chapterCountEstimate) || chapterNumberValue(entry?.lastChapter)),
       chapters: [],
       sourceType: "mangadex",
       sourceLabel: "MangaDex · LIVE",
@@ -302,6 +335,7 @@
       contentRating: String(detail.contentRating || series.contentRating),
       chapters,
       chapterTotal: Number(payload.chapterTotal || chapters.length),
+      chapterCountEstimate: Number(payload.chapterTotal || chapters.length),
       chaptersLoaded: true
     });
     return series;
@@ -452,6 +486,7 @@
       id: series.id, title: series.title, altTitles: series.altTitles || [], author: series.author || "Đang cập nhật", cover: series.cover,
       genres: series.genres || [], status: series.status || "Đang cập nhật", description: series.description || "", rating: Number(series.rating || 4.5),
       views: Number(series.views || 0), updatedAt: Number(series.updatedAt || Date.now()), sourceType: series.sourceType, sourceLabel: series.sourceLabel || (isMangaDex ? "MangaDex · LIVE" : "OTruyen · LIVE"),
+      chapterCountEstimate: seriesChapterCount(series), chapterTotal: Number(series.chapterTotal || 0),
       remoteSlug: series.remoteSlug || "", remoteId: series.remoteId || "", sourceUrl: series.sourceUrl || "", contentRating: series.contentRating || "", chaptersLoaded: false,
       chapters: chapter ? [{ id: chapter.id, number: chapter.number, title: chapter.title || "", group: chapter.group || "", sourceUrl: chapter.sourceUrl || "", updatedAt: chapter.updatedAt || Date.now(), pages: [], apiUrl: chapter.apiUrl || "", remoteChapterId: chapter.remoteChapterId || "" }] : []
     };
@@ -525,7 +560,18 @@
     if (state.catalogFilter === "completed") result = result.filter((series) => series.status === "Đã hoàn thành");
     else if (state.catalogFilter === "ongoing") result = result.filter((series) => series.status !== "Đã hoàn thành");
     else if (state.catalogFilter === "followed") result = result.filter((series) => state.follows.has(series.id));
-    result.sort((a, b) => state.sort === "az" ? naturalCompare(a.title, b.title) : state.sort === "za" ? naturalCompare(b.title, a.title) : state.sort === "popular" ? b.rating - a.rating : b.updatedAt - a.updatedAt);
+    result.sort((a, b) => {
+      if (state.sort === "az") return naturalCompare(a.title, b.title);
+      if (state.sort === "za") return naturalCompare(b.title, a.title);
+      if (state.sort === "popular") return b.rating - a.rating || smartCatalogCompare(a, b);
+      if (state.sort === "chapters") {
+        const aCount = seriesChapterCount(a); const bCount = seriesChapterCount(b);
+        const aShort = aCount > 0 && aCount < 10; const bShort = bCount > 0 && bCount < 10;
+        return aShort !== bShort ? aShort ? 1 : -1 : bCount - aCount || Number(b.updatedAt || 0) - Number(a.updatedAt || 0);
+      }
+      if (state.sort === "updated") return Number(b.updatedAt || 0) - Number(a.updatedAt || 0) || seriesChapterCount(b) - seriesChapterCount(a);
+      return smartCatalogCompare(a, b);
+    });
     return result;
   }
 
@@ -547,12 +593,13 @@
 
   function seriesCard(series) {
     const latest = series.chapters?.at(-1);
+    const chapterCount = seriesChapterCount(series);
     const progress = state.progress[series.id];
     const resumeChapterId = progress?.chapterId || latest?.id || "";
     const followed = state.follows.has(series.id);
     return `<article class="cr-series-card" data-series="${escapeHtml(series.id)}">
       <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.sourceType === "github-open" ? "OPEN" : series.sourceType === "mangadex" ? "MDX" : series.status === "Đã hoàn thành" ? "FULL" : "NEW"}</span><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
-      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml((series.genres || []).slice(0, 2).join(" · "))}</p><div><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(resumeChapterId)}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || 1}`}</button><small>${timeAgo(latest?.updatedAt || series.updatedAt)}</small></div></div>
+      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml((series.genres || []).slice(0, 2).join(" · "))}</p><div><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(resumeChapterId)}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || chapterCount || 1}`}</button><small>${chapterCount ? `${chapterCount.toLocaleString("vi-VN")} chap · ` : ""}${timeAgo(latest?.updatedAt || series.updatedAt)}</small></div></div>
     </article>`;
   }
 
@@ -572,14 +619,14 @@
       <label>Trang <input type="number" min="1" max="${pages}" value="${page}" data-catalog-page-input aria-label="Nhập số trang"> / ${pages.toLocaleString("vi-VN")}</label>
       <button type="button" data-catalog-page="${page + 1}"${page >= pages || busy ? " disabled" : ""} aria-label="Trang sau">›</button>
       <button type="button" data-catalog-page="${pages}"${page >= pages || busy ? " disabled" : ""} aria-label="Trang cuối">»</button>
-      <span>${busy ? "Backend đang tải trang…" : `${catalogTotal().toLocaleString("vi-VN")} truyện có thể duyệt · 24 OTruyen + 24 MangaDex mỗi trang`}</span>
+      <span>${busy ? "Backend đang tải trang…" : `${catalogTotal().toLocaleString("vi-VN")} truyện có thể duyệt · 48 OTruyen + 48 MangaDex mỗi trang`}</span>
     </footer>`;
   }
 
   function homeView() {
     const visible = visibleCatalog();
     const hero = visible[0] || state.catalog[0];
-    const rankings = [...state.catalog].sort((a, b) => b.views - a.views).slice(0, 7);
+    const rankings = [...state.catalog].sort((a, b) => seriesChapterCount(b) - seriesChapterCount(a) || smartCatalogCompare(a, b)).slice(0, 7);
     return `<div class="cr-home">
       <section class="cr-hero" style="--hero-cover:url('${escapeHtml(hero?.cover || "")}')">
         <div class="cr-hero-copy"><span>HH COMICS · ORIGINAL & LICENSED</span><h1>${escapeHtml(hero?.title || "Thư viện truyện của bạn")}</h1><p>${escapeHtml(hero?.description || "Nhập catalog hoặc CBZ để bắt đầu đọc.")}</p><div>${hero ? `<button type="button" class="is-primary" data-read="${escapeHtml(hero.id)}" data-chapter="${escapeHtml(state.progress[hero.id]?.chapterId || hero.chapters?.[0]?.id || "")}">▶ Đọc ngay</button><button type="button" data-series="${escapeHtml(hero.id)}">Xem chi tiết</button>` : ""}</div></div>
@@ -588,12 +635,12 @@
       ${continueShelf()}
       <nav class="cr-discovery-tabs" aria-label="Lọc kho truyện"><button type="button" data-catalog-filter="all"${state.catalogFilter === "all" ? ' class="is-active"' : ""}>Tất cả</button><button type="button" data-catalog-filter="ongoing"${state.catalogFilter === "ongoing" ? ' class="is-active"' : ""}>Đang cập nhật</button><button type="button" data-catalog-filter="completed"${state.catalogFilter === "completed" ? ' class="is-active"' : ""}>Hoàn thành</button><button type="button" data-catalog-filter="followed"${state.catalogFilter === "followed" ? ' class="is-active"' : ""}>Đang theo dõi · ${state.follows.size}</button><span>${state.remote.loading || state.mangadex.loading ? "Đang đồng bộ dữ liệu…" : "OTruyen · MangaDex · GitHub Open"}</span></nav>
       <div class="cr-home-grid">
-        <section class="cr-catalog-section"><header><div><strong>${state.query || state.genre !== "Tất cả" ? "Kết quả tìm kiếm" : state.sort === "az" ? "Tên truyện A–Z" : state.sort === "za" ? "Tên truyện Z–A" : state.sort === "popular" ? "Phổ biến" : "Mới cập nhật"}</strong><small>${visible.length.toLocaleString("vi-VN")} truyện ở trang ${state.catalogPage.toLocaleString("vi-VN")}${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} OTruyen` : ""}${state.mangadex.total ? ` · ${state.mangadex.total.toLocaleString("vi-VN")} MangaDex tiếng Việt` : ""}</small></div><select data-sort aria-label="Sắp xếp toàn bộ kho truyện"><option value="updated">Mới cập nhật</option><option value="popular">Phổ biến</option><option value="az">Tên A–Z</option><option value="za">Tên Z–A</option></select></header>
+        <section class="cr-catalog-section"><header><div><strong>${state.query || state.genre !== "Tất cả" ? "Kết quả tìm kiếm" : state.sort === "az" ? "Tên truyện A–Z" : state.sort === "za" ? "Tên truyện Z–A" : state.sort === "popular" ? "Phổ biến" : state.sort === "chapters" ? "Nhiều chap nhất" : state.sort === "updated" ? "Mới cập nhật" : "Cập nhật mạnh · nhiều chap"}</strong><small>${visible.length.toLocaleString("vi-VN")} truyện ở trang ${state.catalogPage.toLocaleString("vi-VN")}${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} OTruyen` : ""}${state.mangadex.total ? ` · ${state.mangadex.total.toLocaleString("vi-VN")} MangaDex tiếng Việt` : ""}</small></div><select data-sort aria-label="Sắp xếp toàn bộ kho truyện"><option value="smart">Ưu tiên cập nhật & nhiều chap</option><option value="chapters">Nhiều chap → ít chap</option><option value="updated">Mới cập nhật</option><option value="popular">Phổ biến</option><option value="az">Tên A–Z</option><option value="za">Tên Z–A</option></select></header>
           <div class="cr-series-grid">${visible.length ? visible.map(seriesCard).join("") : `<div class="cr-empty"><span>⌕</span><strong>Không tìm thấy truyện</strong><small>Thử từ khóa hoặc thể loại khác.</small></div>`}</div>
           ${catalogPagination()}
           ${state.remote.error || state.mangadex.error ? `<footer class="cr-load-more"><span>${escapeHtml([state.remote.error, state.mangadex.error].filter(Boolean).join(" · "))}</span></footer>` : ""}
         </section>
-        <aside class="cr-ranking"><header><strong>Top thịnh hành</strong><span>Tuần</span></header>${rankings.map((series, index) => `<button type="button" data-series="${escapeHtml(series.id)}"><b>${String(index + 1).padStart(2, "0")}</b><img src="${escapeHtml(series.cover)}" alt=""><span><strong>${escapeHtml(series.title)}</strong><small>★ ${series.rating.toFixed(1)} · ${formatViews(series.views)} lượt</small></span></button>`).join("")}</aside>
+        <aside class="cr-ranking"><header><strong>Top nhiều chap</strong><span>Đang cập nhật</span></header>${rankings.map((series, index) => `<button type="button" data-series="${escapeHtml(series.id)}"><b>${String(index + 1).padStart(2, "0")}</b><img src="${escapeHtml(series.cover)}" alt=""><span><strong>${escapeHtml(series.title)}</strong><small>${seriesChapterCount(series).toLocaleString("vi-VN")} chap · ${timeAgo(series.updatedAt)}</small></span></button>`).join("")}</aside>
       </div>
     </div>`;
   }
@@ -702,7 +749,7 @@
       const chapters = entry.chapters.slice(0, 5000).map((chapter, chapterIndex) => ({
         id: String(chapter.id || `${id}-c${chapterIndex + 1}`), number: Number(chapter.number ?? chapterIndex + 1), title: String(chapter.title || ""), updatedAt: Date.parse(chapter.updatedAt) || Date.now(), pages: (chapter.pages || []).filter((url) => typeof url === "string" && /^(https?:|blob:|data:)/.test(url)).slice(0, 1000)
       })).filter((chapter) => chapter.pages.length);
-      return { id, title: String(entry.title), altTitles: entry.altTitles || [], author: String(entry.author || "Đang cập nhật"), cover: String(entry.cover || chapters[0]?.pages[0] || makeCover(entry.title, index)), genres: Array.isArray(entry.genres) ? entry.genres.map(String) : [], status: String(entry.status || "Đang cập nhật"), description: String(entry.description || ""), rating: clamp(entry.rating || 4.5, 0, 5), views: Math.max(0, Number(entry.views || 0)), updatedAt: Date.parse(entry.updatedAt) || Date.now(), chapters, sourceType: "feed", rights: String(entry.rights || sourceLabel) };
+      return { id, title: String(entry.title), altTitles: entry.altTitles || [], author: String(entry.author || "Đang cập nhật"), cover: String(entry.cover || chapters[0]?.pages[0] || makeCover(entry.title, index)), genres: Array.isArray(entry.genres) ? entry.genres.map(String) : [], status: String(entry.status || "Đang cập nhật"), description: String(entry.description || ""), rating: clamp(entry.rating || 4.5, 0, 5), views: Math.max(0, Number(entry.views || 0)), updatedAt: Date.parse(entry.updatedAt) || Date.now(), chapters, chapterTotal: chapters.length, chapterCountEstimate: chapters.length, sourceType: "feed", rights: String(entry.rights || sourceLabel) };
     }).filter((series) => series.chapters.length);
   }
 
@@ -711,7 +758,7 @@
     seriesList.forEach((series) => {
       const existing = map.get(series.id);
       if (existing?.sourceType === "otruyen" && existing.chaptersLoaded && !series.chaptersLoaded) {
-        Object.assign(existing, { cover: series.cover || existing.cover, updatedAt: series.updatedAt || existing.updatedAt, status: series.status || existing.status });
+        Object.assign(existing, { cover: series.cover || existing.cover, updatedAt: series.updatedAt || existing.updatedAt, status: series.status || existing.status, chapterCountEstimate: series.chapterCountEstimate || existing.chapterCountEstimate || seriesChapterCount(existing) });
       } else map.set(series.id, series);
     });
     state.catalog = [...map.values()];

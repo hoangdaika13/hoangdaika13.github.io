@@ -9,7 +9,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("MangaDex catalog is Vietnamese-only and excludes adult ratings", () => {
   const request = catalogPath({ limit: 999, offset: -1, q: "Frieren" });
-  assert.equal(request.limit, 24);
+  assert.equal(request.limit, 48);
   assert.equal(request.offset, 0);
   assert.match(request.path, /availableTranslatedLanguage%5B%5D=vi/);
   assert.match(request.path, /contentRating%5B%5D=safe/);
@@ -23,6 +23,7 @@ test("MangaDex catalog is Vietnamese-only and excludes adult ratings", () => {
   assert.match(catalogPath({ sort: "az", filter: "completed" }).path, /order%5Btitle%5D=asc/);
   assert.match(catalogPath({ sort: "za", filter: "ongoing" }).path, /order%5Btitle%5D=desc/);
   assert.match(catalogPath({ sort: "popular" }).path, /order%5BfollowedCount%5D=desc/);
+  assert.match(catalogPath({ sort: "smart" }).path, /order%5BlatestUploadedChapter%5D=desc/);
   assert.match(catalogPath({ filter: "completed" }).path, /status%5B%5D=completed/);
 });
 
@@ -36,6 +37,7 @@ test("MangaDex series keeps title, author, cover and source attribution", () => 
       description: { vi: "Mô tả tiếng Việt" },
       status: "ongoing",
       contentRating: "safe",
+      lastChapter: "128",
       updatedAt: "2026-08-08T00:00:00Z",
       tags: [{ attributes: { name: { vi: "Phiêu lưu", en: "Adventure" } } }]
     },
@@ -47,6 +49,7 @@ test("MangaDex series keeps title, author, cover and source attribution", () => 
   assert.equal(mapped.title, "Pháp sư tiễn táng");
   assert.equal(mapped.author, "Kanehito Yamada");
   assert.equal(mapped.contentRating, "safe");
+  assert.equal(mapped.chapterCountEstimate, 128);
   assert.equal(mapped.tags[0], "Phiêu lưu");
   assert.equal(mapped.cover, `https://uploads.mangadex.org/covers/${id}/cover.jpg.512.jpg`);
   assert.equal(mapped.sourceUrl, `https://mangadex.org/title/${id}`);
