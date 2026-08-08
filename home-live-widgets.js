@@ -180,21 +180,22 @@
     finally { clearTimeout(timeout); }
   }
 
-  async function probeNetwork() {
+  async function probeNetwork(includeBackend = false) {
     if (document.hidden) return;
     const separator = location.pathname.includes("?") ? "&" : "?";
     const httpUrl = `${location.pathname || "/"}${separator}hlw_probe=${Date.now()}`;
-    const [http, api] = await Promise.all([
+    const [http, checkedApi] = await Promise.all([
       timedFetch(httpUrl, { method: "HEAD", accept: "text/html" }),
-      timedFetch(`/api/health?hlw_probe=${Date.now()}`, { json: true, timeout: 8500 })
+      includeBackend || !live.api ? timedFetch(`/api/health?hlw_probe=${Date.now()}`, { json: true, timeout: 8500 }) : Promise.resolve(null)
     ]);
+    const api = checkedApi || live.api;
     const previousState = live.networkStatus;
     live.http = http;
     live.api = api;
     sessionNetwork.checks += 1;
     if (http.ok) sessionNetwork.successes += 1;
     latencyHistory.push(http.ms);
-    apiHistory.push(api.ms);
+    if (checkedApi) apiHistory.push(api.ms);
     if (latencyHistory.length > 12) latencyHistory.shift();
     if (apiHistory.length > 12) apiHistory.shift();
     const status = latencyStatus(http.ms);
@@ -208,7 +209,7 @@
       connectWebSocket(healthPayload.realtime?.url);
     }
     if (previousState && previousState !== live.networkStatus) addEvent(`Kết nối chuyển sang ${live.networkStatus}`, status.tone === "good" ? "network" : "warning");
-    if (!api.ok) addEvent("Backend Health chưa phản hồi", "error", "/analytics");
+    if (checkedApi && !api.ok) addEvent("Backend Health chưa phản hồi", "error", "/analytics");
     refreshWidgetBodies(["network", "system", "jobs"]);
     updateTopbar();
     updatePlanetSignals();
@@ -675,7 +676,7 @@
     if (event.target.closest("[data-hlw-reset]")) { prefs = normalizePrefs({}); savePrefs(); page = 0; const picker = host.querySelector("[data-hlw-picker]"); picker.hidden = true; picker.innerHTML = ""; root.dataset.hlwTheme = prefs.theme; root.style.setProperty("--hlw-opacity", prefs.opacity / 100); return renderDeck(); }
     if (event.target.closest("[data-hlw-location]")) return requestLocation();
     if (event.target.closest("[data-hlw-weather-refresh]")) return refreshWeather(true);
-    if (event.target.closest("[data-hlw-network-refresh]")) return probeNetwork();
+    if (event.target.closest("[data-hlw-network-refresh]")) return probeNetwork(true);
     const clockStyle = event.target.closest("[data-hlw-clock-style]"); if (clockStyle) { prefs.clockStyle = clockStyle.dataset.hlwClockStyle; savePrefs(); refreshWidgetBodies(["clock"]); return renderPanel(); }
     const timerAction = event.target.closest("[data-hlw-timer-action]"); if (timerAction) return handleTimerAction(timerAction.dataset.hlwTimerAction);
     const stopwatchAction = event.target.closest("[data-hlw-stopwatch-action]");
@@ -714,7 +715,7 @@
       const route = event.target.closest("[data-hlw-route]");
       if (route) navigate(route.dataset.hlwRoute);
     };
-    listeners.push([window, "online", () => { addEvent("Kết nối mạng đã trở lại", "success"); probeNetwork(); }], [window, "offline", () => { live.networkStatus = "Mất kết nối"; addEvent("Trình duyệt đang offline", "error"); updateTopbar(); refreshWidgetBodies(["network"]); }], [document, "visibilitychange", onVisibility], [window, "storage", onStorage]);
+    listeners.push([window, "online", () => { addEvent("Kết nối mạng đã trở lại", "success"); probeNetwork(true); }], [window, "offline", () => { live.networkStatus = "Mất kết nối"; addEvent("Trình duyệt đang offline", "error"); updateTopbar(); refreshWidgetBodies(["network"]); }], [document, "visibilitychange", onVisibility], [window, "storage", onStorage]);
     if (eventBar) listeners.push([eventBar, "click", onEventBarClick]);
     listeners.forEach(([target, name, handler]) => target.addEventListener(name, handler));
   }
@@ -722,7 +723,7 @@
   function onStorage(event) { if (!event.key || event.key.startsWith("hh.")) { refreshJobs(); refreshWidgetBodies(); updatePlanetSignals(); } }
   function onVisibility() {
     if (document.hidden) { timers.forEach((id) => clearInterval(id)); timers.clear(); if (websocket) { websocket.close(); websocket = null; } return; }
-    startScheduler(); probeNetwork(); refreshWeather(); refreshSystem();
+    startScheduler(); probeNetwork(true); refreshWeather(); refreshSystem();
   }
 
   function startScheduler() {
@@ -732,7 +733,8 @@
     startFps();
     tabLagExpected = performance.now() + 1000;
     setTimer("clock", tick, 1000);
-    setTimer("network", probeNetwork, slow ? 16000 : 8000);
+    setTimer("network", () => probeNetwork(false), slow ? 16000 : 8000);
+    setTimer("backend", () => probeNetwork(true), slow ? 50000 : 25000);
     setTimer("system", refreshSystem, slow ? 60000 : 30000);
     setTimer("weather", refreshWeather, slow ? 30 * 60 * 1000 : 12 * 60 * 1000);
   }
@@ -760,7 +762,7 @@
     renderDeck(); renderEvents(); updateTopbar(); updatePlanetSignals();
     addEvent("Living Desktop Galaxy V4 đã sẵn sàng", "success");
     live.weather = readJson(WEATHER_KEY, null);
-    refreshWeather(); refreshSystem(); probeNetwork(); startScheduler();
+    refreshWeather(); refreshSystem(); probeNetwork(true); startScheduler();
     root.dataset.hlwMounted = "true";
     return true;
   }
@@ -771,5 +773,5 @@
   addEventListener("hh:asset-group-ready", (event) => { if (event.detail?.group === "home-enhancements") setTimeout(scheduleMount, 180); });
   addEventListener("hashchange", () => { if (/^#\/home(?:$|[/?])/.test(location.hash) || !location.hash) setTimeout(scheduleMount, 60); else stopTimers(); });
 
-  window.HHHomeLiveWidgets = Object.freeze({ version: 4, mount, refresh: () => { refreshWeather(); refreshSystem(); return probeNetwork(); }, snapshot: () => ({ ...live, latencyHistory: [...latencyHistory], apiHistory: [...apiHistory] }) });
+  window.HHHomeLiveWidgets = Object.freeze({ version: 4, mount, refresh: () => { refreshWeather(); refreshSystem(); return probeNetwork(true); }, snapshot: () => ({ ...live, latencyHistory: [...latencyHistory], apiHistory: [...apiHistory] }) });
 })();

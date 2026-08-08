@@ -14,9 +14,9 @@ const health = read("api/platform/summary.js");
 
 test("Living Desktop Galaxy V4 assets and one-screen hosts are wired", () => {
   assert.match(loader, /home-live-widgets\.css\?v=4/);
-  assert.match(loader, /home-live-widgets\.js\?v=5/);
+  assert.match(loader, /home-live-widgets\.js\?v=6/);
   assert.match(worker, /home-live-widgets\.css\?v=4/);
-  assert.match(worker, /home-live-widgets\.js\?v=5/);
+  assert.match(worker, /home-live-widgets\.js\?v=6/);
   assert.match(galaxy, /data-hlw-host/);
   assert.match(galaxy, /data-hlw-event-bar/);
   assert.match(galaxy, /LIVING DESKTOP GALAXY V4/);
@@ -70,6 +70,7 @@ test("adaptive scheduler pauses while hidden and planet signals use real state",
   assert.match(source, /visibilitychange/);
   assert.match(source, /connection\?\.saveData/);
   assert.match(source, /slow \? 16000 : 8000/);
+  assert.match(source, /slow \? 50000 : 25000/);
   assert.match(source, /slow \? 30 \* 60 \* 1000 : 12 \* 60 \* 1000/);
   for (const signal of ["deadline", "notice", "error", "learning", "running", "comic"]) assert.match(source, new RegExp(`hlw-signal-${signal}`));
   assert.match(styles, /prefers-reduced-motion:\s*reduce/);
