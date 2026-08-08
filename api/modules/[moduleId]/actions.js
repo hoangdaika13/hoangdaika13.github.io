@@ -78,11 +78,12 @@ const imageTextBatchSchema = {
           index: { type: "integer", description: "Số thứ tự hiển thị trên contact sheet." },
           filename: { type: "string", description: "Tên file gốc tương ứng." },
           title: { type: "string", description: "Cụm chữ chính ngắn, tự nhiên, dùng được ngay trên thumbnail." },
+          youtubeTitle: { type: "string", description: "Tiêu đề YouTube nguyên bản, tối đa 100 ký tự, phù hợp chủ đề và tín hiệu xu hướng được cung cấp." },
           subtitle: { type: "string", description: "Phụ đề ngắn bổ trợ, có thể để trống." },
           outputName: { type: "string", description: "Tên file xuất không có phần mở rộng." },
           textColor: { type: "string", description: "Màu chữ HEX dễ đọc trên ảnh, ví dụ #FFFFFF." }
         },
-        required: ["index", "filename", "title", "subtitle", "outputName", "textColor"]
+        required: ["index", "filename", "title", "youtubeTitle", "subtitle", "outputName", "textColor"]
       }
     }
   },
@@ -92,7 +93,7 @@ const imageTextBatchSchema = {
 function schemaForAction(actionType) {
   if (actionType === "content-pack") return contentPackSchema;
   if (actionType === "design-plan") return designPlanSchema;
-  if (actionType === "image-text-batch") return imageTextBatchSchema;
+  if (["image-text-batch", "image-text-youtube-batch"].includes(actionType)) return imageTextBatchSchema;
   return null;
 }
 
@@ -927,9 +928,9 @@ function systemInstruction(moduleId, actionType) {
 }
 
 function promptFor(moduleId, actionType, input, meta = {}) {
-  if (actionType === "image-text-batch") {
+  if (["image-text-batch", "image-text-youtube-batch"].includes(actionType)) {
     const context = typeof meta.context === "string" ? clean(meta.context, 12000) : "";
-    return `Quan sát contact sheet có các ô đánh số. Với mỗi ô, tạo title 2–5 từ đúng phong cách người dùng, subtitle ngắn, tên file an toàn và màu chữ HEX tương phản. Trả đủ đúng một item cho mỗi số; giữ nguyên index và filename.\n\nYÊU CẦU\n${input || "Tạo chữ ngắn phù hợp từng ảnh."}\n\nDANH SÁCH ẢNH\n${context}`;
+    return `Quan sát contact sheet có các ô đánh số và tín hiệu YouTube gần đây trong ngữ cảnh. Với mỗi ô, tạo: (1) youtubeTitle nguyên bản tối đa 100 ký tự, phù hợp chủ đề và khoảng tuần/tháng; (2) title 2–5 từ để viết trực tiếp lên thumbnail; (3) subtitle ngắn; (4) tên file an toàn; (5) màu chữ HEX tương phản. Học cấu trúc, ý định tìm kiếm và nhịp câu từ các tiêu đề tham khảo nhưng tuyệt đối không sao chép hoặc chỉ thay vài từ. Không hứa hẹn sai, không bịa số liệu, không lạm dụng clickbait. Mỗi youtubeTitle trong batch phải khác nhau và khớp nội dung ảnh. Trả đủ đúng một item cho mỗi số; giữ nguyên index và filename.\n\nYÊU CẦU\n${input || "Tạo title YouTube và chữ thumbnail phù hợp từng ảnh."}\n\nNGỮ CẢNH\n${context}`;
   }
   const context = typeof meta.context === "string" ? clean(meta.context, 12000) : "";
   const config = meta.config && typeof meta.config === "object" ? JSON.stringify(meta.config, null, 2).slice(0, 12000) : "";

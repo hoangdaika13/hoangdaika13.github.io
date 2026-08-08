@@ -140,9 +140,14 @@
     aiProvider: "auto",
     aiScope: "page",
     aiPrompt: "Mỗi ảnh một cụm 2–4 từ tiếng Anh, phong cách yên bình và tự nhiên",
+    youtubeTopic: "soft piano, slow living, peaceful countryside",
+    trendPeriod: "month",
+    trendRegion: "US",
+    titleLanguage: "en",
     aiSubtitle: false,
     aiRename: true,
-    aiColor: false
+    aiColor: false,
+    structuredNames: true
   });
 
   const state = {
@@ -162,7 +167,7 @@
     future: [],
     pendingProject: null,
     notices: [],
-    ai: { running: false, cancel: false, done: 0, total: 0 }
+    ai: { running: false, cancel: false, done: 0, total: 0, trendLabel: "", trendContext: "" }
   };
 
   const activeItem = () => state.items.find((item) => item.id === state.activeId) || null;
@@ -215,7 +220,7 @@
     return JSON.stringify({
       template: state.template,
       settings: state.settings,
-      overrides: state.items.map((item) => [item.name, item.overrides, item.focusX, item.focusY, item.outputBaseName || ""])
+      overrides: state.items.map((item) => [item.name, item.overrides, item.focusX, item.focusY, item.outputBaseName || "", item.youtubeTitle || ""])
     });
   }
 
@@ -232,6 +237,7 @@
         item.focusX = row[1] ?? 0.5;
         item.focusY = row[2] ?? 0.5;
         item.outputBaseName = row[3] || "";
+        item.youtubeTitle = row[4] || "";
       });
       renderAll({ keepPage: true });
     } catch {}
@@ -390,14 +396,22 @@
         <button type="button" data-action="edit-mode" data-mode="current"${settings.editMode === "current" ? ' class="is-active"' : ""}${item ? "" : " disabled"}>Ảnh này</button>
       </div>
       <section class="its-ai-panel">
-        <div class="its-ai-head"><div><b>✦ AI đặt chữ theo từng ảnh</b><small>OpenAI / Gemini qua backend bảo mật</small></div><span>${state.ai.running ? `${state.ai.done}/${state.ai.total}` : "Sẵn sàng"}</span></div>
+        <div class="its-ai-head"><div><b>✦ YouTube Trend Title AI</b><small>Title video + chữ thumbnail riêng từng ảnh</small></div><span>${state.ai.running ? `${state.ai.done}/${state.ai.total}` : (state.ai.trendLabel || "Sẵn sàng")}</span></div>
+        <label class="its-trend-topic"><span>Chủ đề / từ khóa kênh</span><input type="text" data-setting="youtubeTopic" value="${escapeHtml(settings.youtubeTopic)}" placeholder="soft piano, slow living…"></label>
+        <div class="its-trend-controls">
+          <label><span>Xu hướng</span><select data-setting="trendPeriod"><option value="week">7 ngày gần đây</option><option value="month">30 ngày gần đây</option></select></label>
+          <label><span>Thị trường</span><select data-setting="trendRegion"><option value="US">Quốc tế · US</option><option value="VN">Việt Nam</option><option value="GB">Anh</option><option value="JP">Nhật Bản</option><option value="KR">Hàn Quốc</option></select></label>
+          <label><span>Ngôn ngữ title</span><select data-setting="titleLanguage"><option value="en">English</option><option value="vi">Tiếng Việt</option><option value="ja">日本語</option><option value="ko">한국어</option></select></label>
+        </div>
         <textarea rows="2" data-setting="aiPrompt" placeholder="Ví dụ: chữ tiếng Anh 2–4 từ, phong cách đồng quê…">${escapeHtml(settings.aiPrompt)}</textarea>
         <div class="its-ai-row">
           <select data-setting="aiProvider"><option value="auto">AI tự chọn</option><option value="openai">OpenAI</option><option value="gemini">Gemini</option></select>
           <select data-setting="aiScope"><option value="current">Ảnh này</option><option value="selected">Ảnh đã chọn</option><option value="page">Trang hiện tại</option><option value="all">Toàn bộ ảnh</option></select>
-          <button type="button" class="is-primary" data-action="ai-generate" ${state.ai.running ? "disabled" : ""}>${state.ai.running ? "Đang tạo…" : "✦ Tự viết chữ"}</button>
+          <button type="button" class="is-primary" data-action="ai-generate" ${state.ai.running ? "disabled" : ""}>${state.ai.running ? "Đang tạo…" : "✦ Tạo title + chữ"}</button>
         </div>
-        <div class="its-ai-options"><label><input type="checkbox" data-setting="aiSubtitle"${settings.aiSubtitle ? " checked" : ""}> Phụ đề</label><label><input type="checkbox" data-setting="aiRename"${settings.aiRename ? " checked" : ""}> Đổi tên file</label><label><input type="checkbox" data-setting="aiColor"${settings.aiColor ? " checked" : ""}> Màu chữ AI</label>${state.ai.running ? '<button type="button" data-action="ai-cancel">Dừng</button>' : ""}</div>
+        <div class="its-ai-options"><label><input type="checkbox" data-setting="aiSubtitle"${settings.aiSubtitle ? " checked" : ""}> Phụ đề</label><label><input type="checkbox" data-setting="structuredNames"${settings.structuredNames ? " checked" : ""}> Tên file 3 phần</label><label><input type="checkbox" data-setting="aiColor"${settings.aiColor ? " checked" : ""}> Màu chữ AI</label>${state.ai.running ? '<button type="button" data-action="ai-cancel">Dừng</button>' : ""}</div>
+        <label class="its-youtube-title-field"><span>Title YouTube · ảnh đang xem</span><textarea rows="2" data-item-prop="youtubeTitle" placeholder="AI sẽ tạo title video tại đây…"${item ? "" : " disabled"}>${escapeHtml(item?.youtubeTitle || "")}</textarea></label>
+        ${item ? `<code class="its-output-name-preview" title="Tên file khi xuất ZIP">${escapeHtml(outputName(item))}</code>` : ""}
       </section>
       <div class="its-slot-tabs" role="tablist">
         ${[["title", "Tiêu đề"], ["subtitle", "Phụ đề"], ["footer", "Chân ảnh"]].map(([id, label]) => `<button type="button" role="tab" data-action="slot" data-slot="${id}"${state.activeSlot === id ? ' class="is-active" aria-selected="true"' : ""}>${label}</button>`).join("")}
@@ -443,8 +457,14 @@
     if (weight) weight.value = String(layer.weight);
     const aiProvider = inspector.querySelector('[data-setting="aiProvider"]');
     const aiScope = inspector.querySelector('[data-setting="aiScope"]');
+    const trendPeriod = inspector.querySelector('[data-setting="trendPeriod"]');
+    const trendRegion = inspector.querySelector('[data-setting="trendRegion"]');
+    const titleLanguage = inspector.querySelector('[data-setting="titleLanguage"]');
     if (aiProvider) aiProvider.value = settings.aiProvider;
     if (aiScope) aiScope.value = settings.aiScope;
+    if (trendPeriod) trendPeriod.value = settings.trendPeriod;
+    if (trendRegion) trendRegion.value = settings.trendRegion;
+    if (titleLanguage) titleLanguage.value = settings.titleLanguage;
   }
 
   function renderLibrary() {
@@ -459,7 +479,7 @@
         return `<article class="its-thumb${item.id === state.activeId ? " is-active" : ""}${item.overrides?.title?.text ? " has-custom-text" : ""}" data-image-id="${item.id}" title="${escapeHtml(item.name)}">
           <img src="${url}" alt="" loading="lazy" decoding="async">
           <label><input type="checkbox" data-select-id="${item.id}"${state.selectedIds.has(item.id) ? " checked" : ""}><span></span></label>
-          <div><strong>${escapeHtml(item.name.replace(/\.[^.]+$/, ""))}</strong><small>${item.width ? `${item.width}×${item.height}` : "Đang đọc…"}</small></div>
+          <div><strong>${escapeHtml(item.name.replace(/\.[^.]+$/, ""))}</strong><small>${escapeHtml(item.youtubeTitle || (item.width ? `${item.width}×${item.height}` : "Đang đọc…"))}</small></div>
         </article>`;
       }).join("");
     }
@@ -491,22 +511,41 @@
 
   async function loadImage(item) {
     if (!item) throw new Error("Chưa chọn ảnh");
-    if (imageCache.has(item.id)) return imageCache.get(item.id);
-    const promise = new Promise((resolve, reject) => {
-      const image = new Image();
-      image.decoding = "async";
-      image.onload = () => {
-        item.width = image.naturalWidth;
-        item.height = image.naturalHeight;
-        resolve(image);
-      };
-      image.onerror = () => reject(new Error(`Không đọc được ${item.name}`));
-      image.src = ensureObjectUrl(item);
-    });
+    if (imageCache.has(item.id)) {
+      const cached = imageCache.get(item.id);
+      imageCache.delete(item.id);
+      imageCache.set(item.id, cached);
+      return cached;
+    }
+    const promise = (async () => {
+      if (typeof global.createImageBitmap === "function") {
+        try {
+          const bitmap = await global.createImageBitmap(item.file, { imageOrientation: "from-image" });
+          item.width = bitmap.width;
+          item.height = bitmap.height;
+          return bitmap;
+        } catch {}
+      }
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.decoding = "async";
+        image.onload = () => {
+          item.width = image.naturalWidth;
+          item.height = image.naturalHeight;
+          resolve(image);
+        };
+        image.onerror = () => reject(new Error(`Không đọc được ${item.name}`));
+        image.src = ensureObjectUrl(item);
+      });
+    })();
     imageCache.set(item.id, promise);
-    if (imageCache.size > 4) {
+    if (imageCache.size > 12) {
       const oldest = imageCache.keys().next().value;
-      if (oldest !== item.id) imageCache.delete(oldest);
+      if (oldest !== item.id) {
+        const stale = imageCache.get(oldest);
+        imageCache.delete(oldest);
+        Promise.resolve(stale).then((image) => image?.close?.()).catch(() => {});
+      }
     }
     return promise;
   }
@@ -522,11 +561,14 @@
   }
 
   function drawCover(ctx, image, width, height, focusX = 0.5, focusY = 0.5) {
-    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+    const imageWidth = Number(image.naturalWidth || image.width);
+    const imageHeight = Number(image.naturalHeight || image.height);
+    if (!imageWidth || !imageHeight) throw new Error("Ảnh chưa giải mã xong");
+    const scale = Math.max(width / imageWidth, height / imageHeight);
     const sourceWidth = width / scale;
     const sourceHeight = height / scale;
-    const sx = clamp((image.naturalWidth - sourceWidth) * focusX, 0, Math.max(0, image.naturalWidth - sourceWidth));
-    const sy = clamp((image.naturalHeight - sourceHeight) * focusY, 0, Math.max(0, image.naturalHeight - sourceHeight));
+    const sx = clamp((imageWidth - sourceWidth) * focusX, 0, Math.max(0, imageWidth - sourceWidth));
+    const sy = clamp((imageHeight - sourceHeight) * focusY, 0, Math.max(0, imageHeight - sourceHeight));
     ctx.drawImage(image, sx, sy, sourceWidth, sourceHeight, 0, 0, width, height);
   }
 
@@ -731,6 +773,8 @@
         height: 0,
         focusX: 0.5,
         focusY: 0.5,
+        youtubeTitle: "",
+        outputBaseName: "",
         overrides: {}
       };
       state.items.push(item);
@@ -754,6 +798,7 @@
       if (!saved) return;
       item.overrides = saved.overrides || {};
       item.outputBaseName = saved.outputBaseName || "";
+      item.youtubeTitle = saved.youtubeTitle || "";
       item.focusX = saved.focusX ?? 0.5;
       item.focusY = saved.focusY ?? 0.5;
     });
@@ -803,6 +848,8 @@
       else if (property === "maxWidth" || property === "shadow" || property === "opacity") label.textContent = `${Math.round(Number(value) * 100)}%`;
     }
     if (element?.matches("textarea") && state.settings.editMode === "current") item.overrides[state.activeSlot] ||= {};
+    const outputPreview = root.querySelector(".its-output-name-preview");
+    if (outputPreview && item) outputPreview.textContent = outputName(item);
     schedulePreview();
     persistSettings();
   }
@@ -814,10 +861,19 @@
     persistSettings();
   }
 
+  function setItemProperty(property, rawValue) {
+    const item = activeItem();
+    if (!item || property !== "youtubeTitle") return;
+    item.youtubeTitle = String(rawValue || "").replace(/\s+/g, " ").trimStart().slice(0, 100);
+    const preview = root?.querySelector(".its-output-name-preview");
+    if (preview) preview.textContent = outputName(item);
+    persistSettings();
+  }
+
   function setSetting(property, rawValue) {
     let value = rawValue;
     if (["quality", "maxMB", "overlay", "zipChunk"].includes(property)) value = Number(rawValue);
-    if (["safeZone", "aiSubtitle", "aiRename", "aiColor"].includes(property)) value = Boolean(rawValue);
+    if (["safeZone", "aiSubtitle", "aiRename", "aiColor", "structuredNames"].includes(property)) value = Boolean(rawValue);
     state.settings[property] = value;
     const label = root.querySelector(`[data-value-setting="${property}"]`);
     if (label && property === "overlay") label.textContent = `${Math.round(Number(value) * 100)}%`;
@@ -849,7 +905,7 @@
       savedAt: new Date().toISOString(),
       template: state.template,
       settings: state.settings,
-      images: state.items.map((item) => ({ name: item.name, outputBaseName: item.outputBaseName || "", overrides: item.overrides, focusX: item.focusX, focusY: item.focusY }))
+      images: state.items.map((item) => ({ name: item.name, youtubeTitle: item.youtubeTitle || "", outputBaseName: item.outputBaseName || "", overrides: item.overrides, focusX: item.focusX, focusY: item.focusY }))
     };
   }
 
@@ -904,6 +960,12 @@
   }
 
   function outputName(item) {
+    if (state.settings.structuredNames && item?.youtubeTitle) {
+      const original = sanitizeName(String(item.name || "image").split(/[\\/]/).pop()).slice(0, 52);
+      const youtube = sanitizeName(item.youtubeTitle).slice(0, 100);
+      const imageText = sanitizeName(resolveText(layerFor(item, "title").text, item) || "thumbnail").slice(0, 52);
+      return `${original}_${youtube}_${imageText}.${outputExtension()}`;
+    }
     return `${sanitizeName(item.outputBaseName || item.name)}${sanitizeName(state.settings.suffix || "-thumbnail")}.${outputExtension()}`;
   }
 
@@ -1038,31 +1100,72 @@
     return /^#[0-9a-f]{6}$/i.test(String(value || ""));
   }
 
+  async function fetchYoutubeTrendContext() {
+    const topic = String(state.settings.youtubeTopic || "").trim();
+    if (!topic) return { label: "Không có từ khóa", context: "" };
+    const published = state.settings.trendPeriod === "week" ? "w1" : "m1";
+    const params = new URLSearchParams({
+      q: topic,
+      order: "viewCount",
+      published,
+      duration: "long",
+      definition: "high",
+      region: state.settings.trendRegion || "US",
+      language: state.settings.titleLanguage || "en",
+      safe: "moderate"
+    });
+    try {
+      const response = await fetch(`/api/search/youtube?${params}`, { credentials: "include", cache: "no-store", headers: { Accept: "application/json" } });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error || `YouTube Trends HTTP ${response.status}`);
+      const items = Array.isArray(payload.items) ? payload.items.slice(0, 12) : [];
+      if (!items.length) return { label: "Không có video mới", context: "" };
+      const periodLabel = published === "w1" ? "7 ngày" : "30 ngày";
+      return {
+        label: `${items.length} video · ${periodLabel}`,
+        context: [
+          `TÍN HIỆU YOUTUBE ${periodLabel.toUpperCase()} · ${topic}`,
+          "Chỉ học cấu trúc và ý định tìm kiếm; không sao chép nguyên văn:",
+          ...items.map((entry, index) => `${index + 1}. ${entry.title} | ${entry.channel} | ${Number(entry.views || 0).toLocaleString("en-US")} views | ${String(entry.publishedAt || "").slice(0, 10)}`)
+        ].join("\n")
+      };
+    } catch (error) {
+      notify(`${error.message || "Không tải được YouTube Trends"}. AI sẽ dùng tìm kiếm web dự phòng.`, "info");
+      return { label: "Web trend dự phòng", context: "" };
+    }
+  }
+
   async function runAiTextBatch() {
     const targets = aiTargetItems();
     if (!targets.length) return notify("Hãy thêm hoặc chọn ảnh trước khi dùng AI.", "error");
     if (state.ai.running) return;
     pushHistory();
-    state.ai = { running: true, cancel: false, done: 0, total: targets.length };
+    state.ai = { running: true, cancel: false, done: 0, total: targets.length, trendLabel: "Đang lấy xu hướng…", trendContext: "" };
     renderInspector();
-    notify(`AI bắt đầu phân tích ${targets.length.toLocaleString("vi-VN")} ảnh theo từng nhóm.`, "info");
+    notify(`Đang lấy title YouTube nổi bật trong ${state.settings.trendPeriod === "week" ? "7" : "30"} ngày gần đây.`, "info");
     try {
+      const trend = await fetchYoutubeTrendContext();
+      state.ai.trendLabel = trend.label;
+      state.ai.trendContext = trend.context;
+      renderInspector();
       for (let offset = 0; offset < targets.length; offset += 20) {
         if (state.ai.cancel) break;
         const chunk = targets.slice(offset, offset + 20);
         const attachment = await contactSheet(chunk);
-        const context = chunk.map((item, index) => `${index + 1}. ${item.name}`).join("\n");
+        const imageList = chunk.map((item, index) => `${index + 1}. ${item.name}`).join("\n");
+        const context = [state.ai.trendContext, `DANH SÁCH ẢNH\n${imageList}`].filter(Boolean).join("\n\n");
         const response = await fetch("/api/modules/image-text/actions", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({
-            actionType: "image-text-batch",
-            input: state.settings.aiPrompt,
+            actionType: "image-text-youtube-batch",
+            input: [`Chủ đề: ${state.settings.youtubeTopic}`, `Khoảng xu hướng: ${state.settings.trendPeriod === "week" ? "7 ngày" : "30 ngày"}`, `Ngôn ngữ title: ${state.settings.titleLanguage}`, `Phong cách chữ: ${state.settings.aiPrompt}`].join("\n"),
             meta: {
               provider: state.settings.aiProvider,
               requireProvider: true,
               allowProviderFallback: state.settings.aiProvider === "auto",
+              useGoogleSearch: !state.ai.trendContext && offset === 0,
               context,
               attachments: [{ mimeType: "image/jpeg", data: attachment }]
             }
@@ -1080,6 +1183,7 @@
           const item = chunk[index];
           if (!item) return;
           item.overrides.title = { ...(item.overrides.title || {}), text: String(row.title || "").trim() };
+          item.youtubeTitle = String(row.youtubeTitle || "").replace(/\s+/g, " ").trim().slice(0, 100);
           if (state.settings.aiSubtitle) item.overrides.subtitle = { ...(item.overrides.subtitle || {}), text: String(row.subtitle || "").trim() };
           if (state.settings.aiRename && row.outputName) item.outputBaseName = sanitizeName(row.outputName);
           if (state.settings.aiColor && validHex(row.textColor)) {
@@ -1092,7 +1196,7 @@
         renderLibrary();
         schedulePreview();
       }
-      notify(state.ai.cancel ? `Đã dừng sau ${state.ai.done}/${state.ai.total} ảnh.` : `AI đã viết chữ riêng cho ${state.ai.done.toLocaleString("vi-VN")} ảnh. Bạn vẫn có thể chỉnh từng ảnh.`, state.ai.cancel ? "info" : "success");
+      notify(state.ai.cancel ? `Đã dừng sau ${state.ai.done}/${state.ai.total} ảnh.` : `Đã tạo Title YouTube và chữ thumbnail riêng cho ${state.ai.done.toLocaleString("vi-VN")} ảnh.`, state.ai.cancel ? "info" : "success");
     } catch (error) {
       notify(error.message || "Không thể tạo chữ bằng AI.", "error");
     } finally {
@@ -1146,6 +1250,19 @@
     folderInput.addEventListener("change", () => { addFiles(folderInput.files); folderInput.value = ""; });
     fontInput.addEventListener("change", () => { addLocalFonts(fontInput.files); fontInput.value = ""; });
     projectInput.addEventListener("change", () => { if (projectInput.files[0]) importProject(projectInput.files[0]); projectInput.value = ""; });
+    root.addEventListener("error", (event) => {
+      const image = event.target;
+      if (!(image instanceof HTMLImageElement) || !image.closest(".its-thumb")) return;
+      const item = state.items.find((entry) => entry.id === image.closest("[data-image-id]")?.dataset.imageId);
+      if (!item || image.dataset.retried === "1") {
+        image.closest(".its-thumb")?.classList.add("is-image-error");
+        return;
+      }
+      image.dataset.retried = "1";
+      if (item.url) URL.revokeObjectURL(item.url);
+      item.url = "";
+      image.src = ensureObjectUrl(item);
+    }, true);
 
     const dropzone = root.querySelector("[data-dropzone]");
     ["dragenter", "dragover"].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); dropzone.classList.add("is-dragging"); }));
@@ -1155,7 +1272,7 @@
     dropzone.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") folderInput.click(); });
 
     root.addEventListener("focusin", (event) => {
-      if (event.target.matches("[data-layer-prop],[data-image-prop],[data-setting]")) beforeEditSnapshot = snapshotState();
+      if (event.target.matches("[data-layer-prop],[data-image-prop],[data-item-prop],[data-setting]")) beforeEditSnapshot = snapshotState();
     });
     root.addEventListener("change", (event) => {
       const target = event.target;
@@ -1167,6 +1284,10 @@
         if (beforeEditSnapshot) pushHistory(beforeEditSnapshot);
         beforeEditSnapshot = null;
         setImageStyleProperty(target.dataset.imageProp, target.type === "checkbox" ? target.checked : target.value);
+      } else if (target.matches("[data-item-prop]")) {
+        if (beforeEditSnapshot) pushHistory(beforeEditSnapshot);
+        beforeEditSnapshot = null;
+        setItemProperty(target.dataset.itemProp, target.value);
       } else if (target.matches("[data-setting]")) {
         if (beforeEditSnapshot) pushHistory(beforeEditSnapshot);
         beforeEditSnapshot = null;
@@ -1181,6 +1302,7 @@
       const target = event.target;
       if (target.matches("[data-layer-prop]")) setLayerProperty(target.dataset.layerProp, target.type === "checkbox" ? target.checked : target.value, target);
       else if (target.matches("[data-image-prop]")) setImageStyleProperty(target.dataset.imageProp, target.type === "checkbox" ? target.checked : target.value);
+      else if (target.matches("[data-item-prop]")) setItemProperty(target.dataset.itemProp, target.value);
       else if (target.matches("[data-setting]")) setSetting(target.dataset.setting, target.type === "checkbox" ? target.checked : target.value);
       else if (target.matches("[data-search]")) {
         state.query = target.value;
@@ -1281,6 +1403,7 @@
     state.activeId = "";
     state.history = [];
     state.future = [];
+    imageCache.forEach((promise) => Promise.resolve(promise).then((image) => image?.close?.()).catch(() => {}));
     imageCache.clear();
     hitBoxes.clear();
     renderToken += 1;

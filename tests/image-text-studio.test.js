@@ -12,8 +12,8 @@ test("Text on Image Studio is routed from the main Tool group", () => {
 
   assert.match(app, /id: "image-text"[\s\S]*?route: "\/davinci-resolve\/image-text"/);
   assert.match(app, /resolveView === "image-text"[\s\S]*?HHImageTextStudio\?\.mount/);
-  assert.match(loader, /image-text-studio\.css\?v=6/);
-  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=6/);
+  assert.match(loader, /image-text-studio\.css\?v=7/);
+  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=7/);
 });
 
 test("studio supports per-image AI text, optional color correction and secure providers", () => {
@@ -22,9 +22,17 @@ test("studio supports per-image AI text, optional color correction and secure pr
   assert.match(client, /DEFAULT_IMAGE_STYLE/);
   assert.match(client, /data-image-prop="brightness"/);
   assert.match(client, /contactSheet/);
+  assert.match(client, /createImageBitmap/);
+  assert.match(client, /dataset\.retried/);
   assert.match(client, /\/api\/modules\/image-text\/actions/);
+  assert.match(client, /\/api\/search\/youtube/);
+  assert.match(client, /published,\s*\n\s*duration/);
+  assert.match(client, /image-text-youtube-batch/);
   assert.match(client, /item\.overrides\.title/);
+  assert.match(client, /item\.youtubeTitle/);
   assert.match(client, /outputBaseName/);
+  assert.match(client, /structuredNames/);
+  assert.match(client, /original}_\$\{youtube}_\$\{imageText/);
   assert.match(client, /requestAnimationFrame/);
   assert.match(client, /Tải toàn bộ ZIP/);
   assert.match(client, /toggle-export-more/);
@@ -33,6 +41,7 @@ test("studio supports per-image AI text, optional color correction and secure pr
   assert.match(backend, /"image-text"/);
   assert.match(backend, /image-text-batch/);
   assert.match(backend, /imageTextBatchSchema/);
+  assert.match(backend, /youtubeTitle/);
 });
 
 test("studio supports large local batches and paged previews", () => {
