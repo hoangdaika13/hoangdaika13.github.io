@@ -129,7 +129,7 @@
     },
     music: {
       styles: [
-        "music-production-suite.css?v=3", "music-daw-workspace.css?v=1", "music-composer-lyrics.css?v=1",
+        "music-production-suite.css?v=5", "music-daw-workspace.css?v=1", "music-composer-lyrics.css?v=1",
         "music-audio-labs.css?v=1", "music-mix-master.css?v=1", "music-visual-studio.css?v=1",
         "music-publishing-rights.css?v=1", "music-intelligence-engine.css?v=1", "music-generative-arrangement.css?v=1",
         "music-adaptive-library.css?v=1", "music-mix-performance.css?v=1", "music-project-governance.css?v=1",
@@ -140,7 +140,7 @@
         "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=2",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",
-        "music-production-suite.js?v=4", "music-ai-apps.js?v=3", "music-ai-studio.js?v=9"
+        "music-production-suite.js?v=7", "music-ai-apps.js?v=3", "music-ai-studio.js?v=9"
       ]
     },
     communication: {

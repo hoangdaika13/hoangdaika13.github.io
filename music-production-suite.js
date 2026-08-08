@@ -83,6 +83,7 @@
   let dragSectionId = "";
   let routeTimer = 0;
   let queueTimer = 0;
+  let quickBriefBusy = false;
   let arrangementUndo = [];
   let arrangementRedo = [];
   const jobControllers = new Map();
@@ -163,6 +164,17 @@
       generationJobs: [],
       queuePaused: false,
       dailyBudget: 0,
+      experienceMode: "basic",
+      quickIdea: "",
+      quickBrief: "",
+      quickBriefProvider: "",
+      quickDuration: 60,
+      quickInstrumental: true,
+      sfxPreset: "ambience",
+      sfxPrompt: "soft cosmic ambience, spacious, seamless and unobtrusive",
+      sfxDuration: 8,
+      sfxInfluence: 0.45,
+      sfxLoop: true,
       lastWorkspace: "studio",
       arrangementSlot: "A",
       arrangementVersions: { A: [], B: [], C: [] },
@@ -626,7 +638,7 @@
     ensureCreativeStore();
     const theme = activeTheme();
     const planet = planetFor(view);
-    return `<section class="mps-shell mg-shell ${state.playing ? "is-playing" : ""} ${state.mixAnalysis?.clipping ? "is-clipping" : ""}" data-motion="${escapeText(state.motion)}" data-theme="${escapeText(theme.id)}" data-planet="${escapeText(planet?.identity || "galaxy")}" data-mps-view="${escapeText(view)}" style="--theme-a:${theme.a};--theme-b:${theme.b};--theme-c:${theme.c};--project-energy:${clamp(state.energy, 0, 100)};--mood-hue:${moodHue()}">
+    return `<section class="mps-shell mg-shell ${state.experienceMode === "basic" && view === "studio" ? "is-basic" : "is-advanced"} ${state.playing ? "is-playing" : ""} ${state.mixAnalysis?.clipping ? "is-clipping" : ""}" data-motion="${escapeText(state.motion)}" data-theme="${escapeText(theme.id)}" data-planet="${escapeText(planet?.identity || "galaxy")}" data-mps-view="${escapeText(view)}" style="--theme-a:${theme.a};--theme-b:${theme.b};--theme-c:${theme.c};--project-energy:${clamp(state.energy, 0, 100)};--mood-hue:${moodHue()}">
       <header class="mg-topbar">
         <button type="button" class="mg-brand" data-mg-route="studio"><span>HH</span><div><strong>Music Galaxy</strong><small>Universal AI Production System</small></div></button>
         <div class="mg-project-switcher">
@@ -700,6 +712,79 @@
     return items.slice(0, 5);
   }
 
+  function providerReadiness(id) {
+    if (id === "local") {
+      const supported = Boolean(globalScope.AudioContext || globalScope.webkitAudioContext);
+      return { ready: supported, label: supported ? "Sẵn sàng trên trình duyệt" : "Trình duyệt không hỗ trợ", detail: "Web Audio · file không rời thiết bị" };
+    }
+    if (id === "youtube") {
+      return { ready: false, label: "Kiểm tra khi kết nối kênh", detail: "OAuth được thực hiện trong Xuất bản" };
+    }
+    const provider = providerStatus.providers?.[id];
+    if (!provider) return { ready: false, label: "Đang kiểm tra máy chủ", detail: "Chưa nhận trạng thái" };
+    if (!provider.configured) return { ready: false, label: "Thiếu cấu hình máy chủ", detail: "Quản trị viên cần thêm khóa API trên Vercel" };
+    if (id !== "concept" && !providerStatus.canRunMedia) return { ready: false, label: "Cần đăng nhập tài khoản chủ", detail: "API media tính phí đã được bảo vệ" };
+    return { ready: true, label: "Sẵn sàng", detail: (provider.capabilities || []).slice(0, 3).join(" · ") || provider.model || "Đã kết nối" };
+  }
+
+  function quickSteps() {
+    const successful = (type) => state.generationJobs.some((item) => item.type === type && item.status === "success");
+    const visualReady = Boolean(state.promptImage || successful("music-image") || activeCreativeProject()?.assets?.some((item) => /image|video/i.test(`${item.type} ${item.kind}`)));
+    return [
+      { id: "idea", label: "Ý tưởng", route: "ideas-lyrics", done: Boolean(state.quickIdea || state.promptMusic) },
+      { id: "generate", label: "Tạo nhạc", route: "ideas-lyrics", done: successful("music-track") },
+      { id: "arrange", label: "Cấu trúc", route: "arrange-record", done: state.arrangement.length >= 3 },
+      { id: "mix", label: "Mix/Master", route: "mix-master-hub", done: Boolean(state.mixAnalysis) },
+      { id: "visual", label: "Visualizer", route: "visual-universe", done: visualReady },
+      { id: "release", label: "Xuất bản", route: "release-control", done: releaseReady() }
+    ];
+  }
+
+  function quickNextStep() {
+    return quickSteps().find((item) => !item.done) || quickSteps().at(-1);
+  }
+
+  function newestSuccessfulJob(type) {
+    return state.generationJobs.find((item) => item.type === type && item.status === "success");
+  }
+
+  function quickStudioMarkup() {
+    const steps = quickSteps();
+    const next = quickNextStep();
+    const track = newestSuccessfulJob("music-track");
+    const music = providerReadiness("music");
+    const concept = providerReadiness("concept");
+    const sound = providerReadiness("sound");
+    const presets = {
+      ambience: "soft cosmic ambience, spacious, seamless and unobtrusive",
+      foley: "cinematic footsteps on a futuristic metal floor, clean isolated foley",
+      transition: "smooth cinematic whoosh transition, short, polished and modern",
+      impact: "deep cinematic impact hit with a controlled sub bass tail"
+    };
+    return `<section class="mg-quick-studio">
+      <header class="mg-quick-head"><div><small>QUICK STUDIO · ENGINE THẬT</small><h1>Từ ý tưởng đến bản nhạc trong một màn hình</h1><p>Luồng gọn cho người mới; mọi workspace chuyên sâu vẫn giữ nguyên trong chế độ Advanced.</p></div><div class="mg-mode-switch" role="group" aria-label="Chế độ giao diện"><button type="button" data-mg-mode="basic" class="${state.experienceMode === "basic" ? "is-active" : ""}">Basic</button><button type="button" data-mg-mode="advanced" class="${state.experienceMode === "advanced" ? "is-active" : ""}">Advanced</button></div></header>
+      <nav class="mg-quick-steps" aria-label="Quy trình làm nhạc">${steps.map((item, index) => `<button type="button" data-mg-route="${item.route}" class="${item.done ? "is-done" : item.id === next.id ? "is-current" : ""}"><i>${item.done ? "✓" : index + 1}</i><span>${item.label}</span></button>`).join("")}</nav>
+      <div class="mg-quick-grid">
+        <section class="mg-quick-create"><div class="mg-quick-title"><span>01</span><div><strong>Mô tả bản nhạc bạn muốn</strong><small>Viết bằng tiếng Việt; Gemini có thể chuyển thành production brief.</small></div></div>
+          <label class="mg-field mg-field--wide"><span>Ý tưởng</span><textarea rows="4" data-mg-field="quickIdea" placeholder="Ví dụ: nhạc cinematic bí ẩn cho video khám phá vũ trụ, mở đầu nhẹ rồi cao trào ở cuối">${escapeText(state.quickIdea)}</textarea></label>
+          <div class="mg-quick-controls">${field("Thể loại", "genre", state.genre)}${field("Mood", "mood", state.mood)}<label class="mg-field"><span>Thời lượng</span><select data-mg-field="quickDuration">${[30, 60, 90, 120].map((value) => `<option value="${value}" ${Number(state.quickDuration) === value ? "selected" : ""}>${value} giây</option>`).join("")}</select></label><label class="mg-check"><input type="checkbox" data-mg-field="quickInstrumental" ${state.quickInstrumental ? "checked" : ""}><span>Không lời</span></label></div>
+          <div class="mg-quick-actions"><button type="button" data-mg-action="quick-brief" ${concept.ready && !quickBriefBusy ? "" : "disabled"}>${quickBriefBusy ? "Đang lập brief…" : "✦ Gemini lập brief"}</button><button type="button" class="is-primary" data-mg-action="quick-generate" ${music.ready ? "" : "disabled"}>▶ Tạo nhạc thật</button></div>
+          <p class="mg-truth-note ${music.ready ? "is-ready" : "is-blocked"}"><i></i><span><strong>${escapeText(music.label)}</strong><small>${escapeText(music.detail)}</small></span></p>
+          ${state.quickBrief ? `<details class="mg-brief-result" open><summary>Production brief · ${escapeText(state.quickBriefProvider || "Gemini")}</summary><pre>${escapeText(state.quickBrief)}</pre></details>` : ""}
+        </section>
+        <aside class="mg-quick-preview"><div class="mg-quick-title"><span>02</span><div><strong>Preview & bước tiếp theo</strong><small>Kết quả chỉ hiện khi provider trả file âm thanh thật.</small></div></div>
+          ${track?.outputUrl ? `<div class="mg-audio-result"><i>♪</i><strong>${escapeText(track.name)}</strong><small>${escapeText(track.provider)} · ${escapeText(track.model)} · ${Math.round((track.latencyMs || 0) / 100) / 10}s</small><audio src="${escapeText(track.outputUrl)}" controls preload="metadata"></audio><button type="button" data-mg-job-action="download" data-job-id="${escapeText(track.id)}">Tải MP3</button></div>` : `<div class="mg-preview-empty"><i>♫</i><strong>Chưa có track</strong><span>Tạo track đầu tiên hoặc tiếp tục công cụ còn thiếu.</span></div>`}
+          <button type="button" class="mg-next-action" data-mg-route="${next.route}"><span><small>TIẾP TỤC</small><strong>${escapeText(next.label)}</strong></span><b>→</b></button>
+        </aside>
+      </div>
+      <div class="mg-quick-bottom">
+        <section class="mg-sfx-quick"><header><div><small>SFX STUDIO</small><h2>Hiệu ứng âm thanh theo cảnh</h2></div><span class="${sound.ready ? "is-ready" : ""}">${escapeText(sound.label)}</span></header><div class="mg-sfx-presets">${Object.entries(presets).map(([id, prompt]) => `<button type="button" data-mg-sfx-preset="${id}" data-prompt="${escapeText(prompt)}" class="${state.sfxPreset === id ? "is-active" : ""}">${({ ambience: "Ambience", foley: "Foley", transition: "Transition", impact: "Impact" })[id]}</button>`).join("")}</div><label class="mg-field mg-field--wide"><span>Mô tả hiệu ứng</span><input data-mg-field="sfxPrompt" value="${escapeText(state.sfxPrompt)}"></label><div class="mg-sfx-controls"><label><span>Thời lượng ${escapeText(state.sfxDuration)}s</span><input type="range" min="0.5" max="30" step="0.5" data-mg-field="sfxDuration" value="${escapeText(state.sfxDuration)}"></label><label><span>Bám prompt ${Math.round(Number(state.sfxInfluence) * 100)}%</span><input type="range" min="0" max="1" step="0.05" data-mg-field="sfxInfluence" value="${escapeText(state.sfxInfluence)}"></label><label class="mg-check"><input type="checkbox" data-mg-field="sfxLoop" ${state.sfxLoop ? "checked" : ""}><span>Loop</span></label><button type="button" data-mg-action="queue-sfx" ${sound.ready ? "" : "disabled"}>Tạo SFX</button></div></section>
+        <section class="mg-readiness"><header><small>API READINESS</small><h2>Kết nối đang dùng</h2></header>${[["concept", "Gemini Brief"], ["music", "Eleven Music"], ["sound", "Eleven SFX"], ["local", "Web Audio"], ["youtube", "YouTube OAuth"]].map(([id, label]) => { const item = providerReadiness(id); return `<article class="${item.ready ? "is-ready" : ""}"><i></i><span><strong>${label}</strong><small>${escapeText(item.detail)}</small></span><b>${escapeText(item.label)}</b></article>`; }).join("")}<button type="button" data-mg-action="refresh-providers">Kiểm tra lại kết nối</button></section>
+      </div>
+      <section class="mg-quick-queue"><header><div><small>TASK CENTER</small><h2>Hàng đợi tạo nội dung</h2></div><button type="button" data-mg-action="toggle-queue">${state.queuePaused ? "Tiếp tục" : "Tạm dừng"}</button></header><div>${generationQueueMarkup()}</div></section>
+    </section>`;
+  }
+
   function providerCards() {
     const providers = Object.entries(providerStatus.providers || {});
     if (!providers.length) return `<p class="mg-empty">Đang đọc trạng thái API từ máy chủ…</p>`;
@@ -714,7 +799,7 @@
     if (!jobs.length) return `<div class="mg-empty">Chưa có generation. Mỗi job sẽ lưu model, seed, trạng thái và quyền sử dụng.</div>`;
     return jobs.map((job) => `<article class="mg-job is-${escapeText(job.status)}" data-job-id="${escapeText(job.id)}">
       <i>${job.type === "music-track" ? "♪" : job.type === "music-image" ? "▣" : "✦"}</i>
-      <span><strong>${escapeText(job.name || "AI generation")}</strong><small>${escapeText(job.provider || "Provider tự chọn")} · ${escapeText(job.model || "đang xác định")} · Seed ${escapeText(job.seed || "—")}</small></span>
+      <span><strong>${escapeText(job.name || "AI generation")}</strong><small>${escapeText(job.error || `${job.provider || "Provider tự chọn"} · ${job.model || "đang xác định"} · Seed ${job.seed || "—"}`)}</small></span>
       <em>${escapeText({ queued: "Đang chờ", running: "Đang chạy", success: "Hoàn tất", failed: "Thất bại", cancelled: "Đã hủy" }[job.status] || job.status)}</em>
       <div>${job.status === "running" ? `<button type="button" data-mg-job-action="cancel" data-job-id="${job.id}">Hủy</button>` : ""}${job.status === "queued" ? `<button type="button" data-mg-job-action="cancel" data-job-id="${job.id}">Bỏ</button>` : ""}${["failed", "cancelled"].includes(job.status) ? `<button type="button" data-mg-job-action="retry" data-job-id="${job.id}">Retry</button>` : ""}${job.status === "success" && job.outputUrl ? `<button type="button" data-mg-job-action="download" data-job-id="${job.id}">Tải</button>` : ""}<button type="button" data-mg-job-action="duplicate" data-job-id="${job.id}">Nhân bản</button></div>
     </article>`).join("");
@@ -749,7 +834,8 @@
     const assets = project?.assets || [];
     const runs = project?.analytics?.runs || [];
     return `<div class="mg-overview">
-      <section class="mg-hero">
+      ${quickStudioMarkup()}
+      ${state.experienceMode === "advanced" ? `<div class="mg-advanced-zone"><section class="mg-hero">
         <div class="mg-nebula" aria-hidden="true"><i></i><i></i><i></i>${waveMarkup(70)}</div>
         <div class="mg-hero-copy"><p><i></i> HH MUSIC COSMOS · ${providerStatus.canRunMedia ? "AI ONLINE" : "LOCAL-FIRST"}</p><h1>Music Galaxy</h1><h2>Một dự án. Sáu hành tinh. Toàn bộ hành trình âm nhạc.</h2><span>Song DNA, MIDI, lyrics, arrangement, stem, vocal, mix, visual và phát hành cùng dùng một Universal Project.</span><div><button type="button" data-mg-route="ideas-lyrics">Bắt đầu sáng tạo</button><button type="button" data-mg-action="generate-variations">Tạo Variation Galaxy</button></div></div>
         <div class="mg-orbit-system" aria-label="Dự án hiện tại nằm ở trung tâm Music Galaxy">
@@ -787,7 +873,7 @@
         ${toolCard("Master Targets", "YouTube · Spotify · TikTok · Podcast", "mix-master-hub", "MT")}
         ${toolCard("Visual Universe", "Cover · Lyric video · Particle visualizer", "visual-universe", "VU")}
         ${toolCard("Release Control", "Metadata · Split · Rights · Schedule", "release-control", "RC")}
-      </section>
+      </section></div>` : ""}
     </div>`;
   }
 
@@ -1158,6 +1244,54 @@
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...extra };
   }
 
+  function quickMusicPrompt() {
+    const idea = String(state.quickIdea || state.promptMusic || "").trim();
+    return [
+      idea,
+      `Genre: ${state.genre}`,
+      `Mood: ${state.mood}`,
+      `${state.bpm} BPM, key ${state.key}, ${state.timeSignature}`,
+      `Instruments: ${state.instruments}`,
+      `Structure: ${state.structure}`,
+      state.quickInstrumental ? "Instrumental, no vocals" : "Vocals allowed only when described",
+      "Original composition; do not imitate a named artist or copyrighted melody"
+    ].filter(Boolean).join(". ").slice(0, 4000);
+  }
+
+  async function generateQuickBrief() {
+    if (quickBriefBusy) return;
+    const idea = String(state.quickIdea || "").trim();
+    if (!idea) return toast("Hãy mô tả ý tưởng bản nhạc trước.", "error");
+    if (!providerReadiness("concept").ready) return toast("Gemini chưa sẵn sàng trên máy chủ.", "error");
+    quickBriefBusy = true;
+    renderView(activeView);
+    try {
+      const response = await fetch(`${location.origin}/api/modules/music-ai/actions`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          actionType: "music-plan",
+          input: JSON.stringify({ idea, genre: state.genre, mood: state.mood, bpm: state.bpm, key: state.key, instruments: state.instruments, durationSeconds: state.quickDuration, instrumental: state.quickInstrumental }),
+          meta: { provider: "gemini", requireProvider: true, creativity: state.creativity }
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Gemini HTTP ${response.status}`);
+      const output = String(data.action?.output || "").trim();
+      if (!output) throw new Error("Gemini không trả production brief.");
+      state.quickBrief = output.slice(0, 12000);
+      state.quickBriefProvider = `${data.action?.provider || "gemini"}${data.action?.model ? ` · ${data.action.model}` : ""}`;
+      state.promptMusic = quickMusicPrompt();
+      scheduleSync();
+      toast("Gemini đã lập production brief và chuẩn hóa prompt nhạc.");
+    } catch (error) {
+      toast(`Không thể lập brief: ${error.message || error}`, "error");
+    } finally {
+      quickBriefBusy = false;
+      renderView(activeView);
+    }
+  }
+
   function enqueueGeneration(type, options = {}) {
     const providerId = type === "music-image" ? "image" : type === "music-sfx" ? "sound" : "music";
     const provider = providerStatus.providers?.[providerId] || {};
@@ -1174,7 +1308,9 @@
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       meta: {
-        durationSeconds: clamp(options.durationSeconds || 60, 3, 120, 60),
+        durationSeconds: type === "music-sfx"
+          ? clamp(options.durationSeconds ?? state.sfxDuration, 0.5, 30, 8)
+          : clamp(options.durationSeconds || state.quickDuration || 60, 3, 120, 60),
         aspectRatio: state.aspectRatio === "9:16 Canvas" ? "9:16" : state.aspectRatio,
         instrumental: !/vocal|voice|giọng|lyrics/i.test(`${state.instruments} ${state.promptMusic}`),
         ...(options.meta || {})
@@ -1606,6 +1742,24 @@
     if (route) return routeTo(route);
     const jobButton = event.target.closest("[data-mg-job-action]");
     if (jobButton) return jobAction(jobButton.dataset.jobId, jobButton.dataset.mgJobAction);
+    const mode = event.target.closest("[data-mg-mode]")?.dataset.mgMode;
+    if (mode) {
+      state.experienceMode = mode === "advanced" ? "advanced" : "basic";
+      writeState({ experienceMode: state.experienceMode });
+      const shell = activeHost?.querySelector(".mg-shell");
+      shell?.classList.toggle("is-basic", state.experienceMode === "basic" && activeView === "studio");
+      shell?.classList.toggle("is-advanced", state.experienceMode === "advanced" || activeView !== "studio");
+      renderView(activeView);
+      return;
+    }
+    const sfxPreset = event.target.closest("[data-mg-sfx-preset]");
+    if (sfxPreset) {
+      state.sfxPreset = sfxPreset.dataset.mgSfxPreset;
+      state.sfxPrompt = sfxPreset.dataset.prompt || state.sfxPrompt;
+      scheduleSync();
+      renderView(activeView);
+      return;
+    }
     const arrangementSlot = event.target.closest("[data-mg-arrangement-slot]")?.dataset.mgArrangementSlot;
     if (arrangementSlot) {
       state.arrangementVersions = { ...state.arrangementVersions, [state.arrangementSlot]: state.arrangement };
@@ -1721,6 +1875,23 @@
       renderConflict();
     }
     if (action === "generate-variations") generateVariations();
+    if (action === "refresh-providers") {
+      refreshProviders();
+      toast("Đang kiểm tra lại kết nối máy chủ.");
+    }
+    if (action === "quick-brief") generateQuickBrief();
+    if (action === "quick-generate") {
+      if (!String(state.quickIdea || state.promptMusic || "").trim()) return toast("Hãy nhập ý tưởng bản nhạc trước.", "error");
+      if (!providerReadiness("music").ready) return toast(providerReadiness("music").label, "error");
+      state.promptMusic = quickMusicPrompt();
+      scheduleSync();
+      enqueueGeneration("music-track", { name: state.project || "AI music track", prompt: state.promptMusic, durationSeconds: Number(state.quickDuration), meta: { instrumental: Boolean(state.quickInstrumental) } });
+    }
+    if (action === "queue-sfx") {
+      if (!String(state.sfxPrompt || "").trim()) return toast("Hãy mô tả hiệu ứng âm thanh.", "error");
+      if (!providerReadiness("sound").ready) return toast(providerReadiness("sound").label, "error");
+      enqueueGeneration("music-sfx", { name: `SFX · ${state.sfxPreset}`, prompt: state.sfxPrompt, durationSeconds: Number(state.sfxDuration), meta: { promptInfluence: Number(state.sfxInfluence), loop: Boolean(state.sfxLoop) } });
+    }
     if (action === "toggle-queue") {
       state.queuePaused = !state.queuePaused;
       writeState({ queuePaused: state.queuePaused });
@@ -1796,6 +1967,22 @@
     }
     if (action === "snapshot") {
       if (syncToCreative(true, true)) toast("Đã tạo snapshot Universal Project.");
+    }
+    if (action === "open-video-editor") {
+      const project = activeCreativeProject();
+      const ratio = state.aspectRatio === "9:16" || state.aspectRatio === "9:16 Canvas" ? [1080, 1920] : state.aspectRatio === "1:1" ? [1080, 1080] : [1920, 1080];
+      const editor = safeJson("hh.video-editor.project.v1");
+      const linked = {
+        ...editor,
+        name: editor.name || `${state.project} · Visual`,
+        width: ratio[0],
+        height: ratio[1],
+        universalProjectId: project?.id || "",
+        universalProjectName: state.project,
+        musicGalaxyLink: { projectId: project?.id || "", palette: state.palette, mood: state.mood, bpm: state.bpm, source: "music-galaxy", linkedAt: new Date().toISOString() }
+      };
+      try { localStorage.setItem("hh.video-editor.project.v1", JSON.stringify(linked)); } catch {}
+      location.hash = "#/davinci-resolve";
     }
   }
 
@@ -1892,22 +2079,6 @@
       state.visualLayers = event.target.checked ? [...new Set([...state.visualLayers, layer])] : state.visualLayers.filter((item) => item !== layer);
       scheduleSync();
       renderView(activeView);
-    }
-    if (action === "open-video-editor") {
-      const project = activeCreativeProject();
-      const ratio = state.aspectRatio === "9:16" || state.aspectRatio === "9:16 Canvas" ? [1080, 1920] : state.aspectRatio === "1:1" ? [1080, 1080] : [1920, 1080];
-      const editor = safeJson("hh.video-editor.project.v1");
-      const linked = {
-        ...editor,
-        name: editor.name || `${state.project} · Visual`,
-        width: ratio[0],
-        height: ratio[1],
-        universalProjectId: project?.id || "",
-        universalProjectName: state.project,
-        musicGalaxyLink: { projectId: project?.id || "", palette: state.palette, mood: state.mood, bpm: state.bpm, source: "music-galaxy", linkedAt: new Date().toISOString() }
-      };
-      try { localStorage.setItem("hh.video-editor.project.v1", JSON.stringify(linked)); } catch {}
-      location.hash = "#/davinci-resolve";
     }
   }
 
