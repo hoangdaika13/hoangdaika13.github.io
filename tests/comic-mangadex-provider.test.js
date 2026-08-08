@@ -20,6 +20,10 @@ test("MangaDex catalog is Vietnamese-only and excludes adult ratings", () => {
   assert.equal(isAllowedRating("suggestive"), true);
   assert.equal(isAllowedRating("erotica"), false);
   assert.equal(isAllowedRating("pornographic"), false);
+  assert.match(catalogPath({ sort: "az", filter: "completed" }).path, /order%5Btitle%5D=asc/);
+  assert.match(catalogPath({ sort: "za", filter: "ongoing" }).path, /order%5Btitle%5D=desc/);
+  assert.match(catalogPath({ sort: "popular" }).path, /order%5BfollowedCount%5D=desc/);
+  assert.match(catalogPath({ filter: "completed" }).path, /status%5B%5D=completed/);
 });
 
 test("MangaDex series keeps title, author, cover and source attribution", () => {

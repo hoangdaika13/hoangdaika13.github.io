@@ -109,14 +109,21 @@ function catalogPath(query) {
   const limit = Math.min(24, Math.max(4, Number(query.limit) || 12));
   const offset = Math.min(10_000, Math.max(0, Number(query.offset) || 0));
   const title = clean(query.q, 120);
-  const params = new URLSearchParams({ limit: String(limit), offset: String(offset), "order[latestUploadedChapter]": "desc", hasAvailableChapters: "true" });
+  const sort = ["updated", "popular", "az", "za"].includes(query.sort) ? query.sort : "updated";
+  const filter = ["all", "ongoing", "completed"].includes(query.filter) ? query.filter : "all";
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset), hasAvailableChapters: "true" });
+  if (sort === "az" || sort === "za") params.set("order[title]", sort === "az" ? "asc" : "desc");
+  else if (sort === "popular") params.set("order[followedCount]", "desc");
+  else params.set("order[latestUploadedChapter]", "desc");
   params.append("availableTranslatedLanguage[]", "vi");
   params.append("includes[]", "cover_art");
   params.append("includes[]", "author");
   params.append("contentRating[]", "safe");
   params.append("contentRating[]", "suggestive");
+  if (filter === "completed") params.append("status[]", "completed");
+  else if (filter === "ongoing") params.append("status[]", "ongoing");
   if (title) params.set("title", title);
-  return { path: `/manga?${params}`, limit, offset };
+  return { path: `/manga?${params}`, limit, offset, sort, filter };
 }
 
 async function catalog(query) {

@@ -115,6 +115,7 @@
       "export202207202340066500.png"
   ];
 
+  /* Removed from the public HH catalog at the owner's request.
   const BITWAM_PROLOGUE = [
       "storyboards/0 - prologue/aa_a.png",
       "storyboards/0 - prologue/aa_b.png",
@@ -459,6 +460,8 @@
       "storyboards/1 - on agency/n - push your luck/en.png"
   ];
 
+  */
+
   const PEPPER_EPISODE_1 = [
       "Pepper & Carrot/Episode 1, Potion of Flight/00 - Pepper & Carrot by David Revoy.webp",
       "Pepper & Carrot/Episode 1, Potion of Flight/01 - Pepper & Carrot by David Revoy.webp",
@@ -525,56 +528,6 @@
       chapters: [
         chapter("github-open:gods-world:complete", 1, "Truyện hoàn chỉnh", "2023-12-06T00:00:00Z", "TheLemmaLlama/God-s-World", "main", GODS_WORLD_PAGES)
       ]
-    },
-    {
-      id: "github-open:bitwam",
-      title: "Back in This World as Myself",
-      altTitles: ["BITWAM"],
-      author: "TheLemmaLlama",
-      cover: raw("TheLemmaLlama/bitwam-Back-in-this-world-as-myself", "main", "0_titlecard.png"),
-      genres: ["Nguồn mở", "Đời thường", "Drama"],
-      status: "Đang cập nhật",
-      description: "Bản storyboard đọc được gồm 335 trang thuộc ba phần. Các ảnh collectables, cameo, bonus và fan-art bên ngoài đã bị loại.",
-      rating: 4.6,
-      views: 0,
-      updatedAt: Date.parse("2026-08-08T00:00:00Z"),
-      sourceType: "github-open",
-      sourceLabel: "GitHub mở · CC0 1.0",
-      sourceUrl: "https://github.com/TheLemmaLlama/bitwam-Back-in-this-world-as-myself",
-      license: "CC0 1.0",
-      licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
-      attribution: "Back in This World as Myself · TheLemmaLlama · CC0 1.0",
-      contentRating: "16+",
-      chaptersLoaded: true,
-      chapters: [
-        chapter("github-open:bitwam:prologue", 0, "Prologue", "2026-08-08T00:00:00Z", "TheLemmaLlama/bitwam-Back-in-this-world-as-myself", "main", BITWAM_PROLOGUE),
-        chapter("github-open:bitwam:alana", 1, "On Agency · Alana's Study", "2026-08-08T00:00:00Z", "TheLemmaLlama/bitwam-Back-in-this-world-as-myself", "main", BITWAM_ALANA),
-        chapter("github-open:bitwam:luck", 2, "On Agency · Push Your Luck", "2026-08-08T00:00:00Z", "TheLemmaLlama/bitwam-Back-in-this-world-as-myself", "main", BITWAM_LUCK)
-      ]
-    },
-    {
-      id: "github-open:tlatoani-tales",
-      title: "Tlatoāni Tales",
-      altTitles: ["Tlatoani Tales"],
-      author: "8007342",
-      cover: raw("8007342/tlatoani-tales", "main", "Tlatoāni Tales 01 __ demo.png"),
-      genres: ["Nguồn mở", "Giáo dục", "Công nghệ"],
-      status: "Đang cập nhật",
-      description: "Webcomic ba khung dạy quy trình xây dựng phần mềm với AI. Artwork được công bố theo CC BY-SA 4.0.",
-      rating: 4.5,
-      views: 0,
-      updatedAt: Date.parse("2026-08-08T00:00:00Z"),
-      sourceType: "github-open",
-      sourceLabel: "GitHub mở · CC BY-SA 4.0",
-      sourceUrl: "https://github.com/8007342/tlatoani-tales",
-      license: "CC BY-SA 4.0",
-      licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
-      attribution: "Tlatoāni Tales · 8007342 · CC BY-SA 4.0",
-      contentRating: "Mọi lứa tuổi",
-      chaptersLoaded: true,
-      chapters: [
-        chapter("github-open:tlatoani-tales:1", 1, "Volatile is Dangerous", "2026-08-08T00:00:00Z", "8007342/tlatoani-tales", "main", ["Tlatoāni Tales 01 __ demo.png"])
-      ]
     }
   ];
 
@@ -592,4 +545,3 @@
   global.HHOpenComicCatalog = Object.freeze(catalog);
   global.HHOpenComicSources = Object.freeze(sources);
 })(window);
-

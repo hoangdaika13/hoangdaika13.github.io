@@ -15,10 +15,10 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=10[\s\S]*?comic-open-source-catalog\.js\?v=1[\s\S]*?comic-reader-hub\.js\?v=12/);
-  assert.match(worker, /comic-reader-hub\.css\?v=10/);
-  assert.match(worker, /comic-open-source-catalog\.js\?v=1/);
-  assert.match(worker, /comic-reader-hub\.js\?v=12/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=11[\s\S]*?comic-open-source-catalog\.js\?v=2[\s\S]*?comic-reader-hub\.js\?v=13/);
+  assert.match(worker, /comic-reader-hub\.css\?v=11/);
+  assert.match(worker, /comic-open-source-catalog\.js\?v=2/);
+  assert.match(worker, /comic-reader-hub\.js\?v=13/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -63,14 +63,29 @@ test("licensed import accepts CBZ, JSON and HTTPS feeds without crawler logic", 
 test("OTruyen provider streams its paginated catalog and chapter images on demand", () => {
   const client = read("comic-reader-hub.js");
 
-  assert.match(client, /https:\/\/otruyenapi\.com\/v1\/api/);
-  assert.match(client, /danh-sach\/truyen-moi\?page=/);
-  assert.match(client, /tim-kiem\?keyword=/);
-  assert.match(client, /the-loai\/\$\{encodeURIComponent\(genreSlug\)\}/);
+  assert.match(client, /OTRUYEN_PROXY_PATH/);
+  assert.match(client, /function fetchOTruyen/);
+  assert.match(client, /provider", "otruyen"/);
+  assert.doesNotMatch(client, /https:\/\/otruyenapi\.com\/v1\/api/);
   assert.match(client, /ensureRemoteSeriesDetails/);
   assert.match(client, /ensureRemoteChapterPages/);
   assert.match(client, /data\.domain_cdn/);
   assert.match(client, /referrerpolicy="no-referrer"/);
+});
+
+test("catalog exposes the entire backend inventory through real pagination and sorting", () => {
+  const client = read("comic-reader-hub.js");
+  const css = read("comic-reader-hub.css");
+
+  assert.match(client, /function loadCatalogPage/);
+  assert.match(client, /function catalogPageCount/);
+  assert.match(client, /data-catalog-page=/);
+  assert.match(client, /data-catalog-page-input/);
+  assert.match(client, /Tên A–Z/);
+  assert.match(client, /Tên Z–A/);
+  assert.match(client, /24 OTruyen \+ 24 MangaDex mỗi trang/);
+  assert.doesNotMatch(client, /sourceType === "otruyen" \? "API"/);
+  assert.match(css, /\.cr-pagination/);
 });
 
 test("reader uses one-screen internal scrolling and responsive mobile layout", () => {
@@ -137,11 +152,12 @@ test("GitHub Open Library adds only explicitly licensed story pages", () => {
   const catalog = sandbox.window.HHOpenComicCatalog;
   const sources = sandbox.window.HHOpenComicSources;
 
-  assert.equal(catalog.length, 4);
-  assert.equal(sources.length, 4);
-  assert.equal(catalog.reduce((total, series) => total + series.chapters.length, 0), 7);
-  assert.equal(catalog.reduce((total, series) => total + series.chapters.reduce((count, chapter) => count + chapter.pages.length, 0), 0), 452);
-  assert.deepEqual([...new Set(catalog.map((series) => series.license))].sort(), ["CC BY 4.0", "CC BY-SA 4.0", "CC0 1.0", "Unlicense"]);
+  assert.equal(catalog.length, 2);
+  assert.equal(sources.length, 2);
+  assert.equal(catalog.reduce((total, series) => total + series.chapters.length, 0), 3);
+  assert.equal(catalog.reduce((total, series) => total + series.chapters.reduce((count, chapter) => count + chapter.pages.length, 0), 0), 116);
+  assert.deepEqual([...new Set(catalog.map((series) => series.license))].sort(), ["CC BY 4.0", "Unlicense"]);
+  assert.ok(!catalog.some((series) => ["Back in This World as Myself", "Tlatoāni Tales"].includes(series.title)));
   assert.ok(catalog.every((series) => series.sourceType === "github-open" && /^https:\/\/github\.com\//.test(series.sourceUrl)));
   assert.ok(catalog.every((series) => series.chapters.every((chapter) => chapter.pages.every((page) => /^https:\/\/raw\.githubusercontent\.com\//.test(page)))));
   assert.doesNotMatch(source, /art_etc_by_others|_collectables|_cameos|_bonus/);
