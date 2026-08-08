@@ -206,8 +206,14 @@
     const ratios = new Map(await Promise.all(indexes.map(async (index) => [index, await imageRatio(pages[index])])));
     const storyIsLongForm = [...ratios.entries()].some(([index, ratio]) => index >= 3 && index < leadingCount && Number(ratio) >= 2.05);
     if (!storyIsLongForm) return { pages, filtered: 0 };
+    const baselineRatios = [...ratios.entries()].filter(([index, ratio]) => index >= 2 && index < leadingCount && Number(ratio) >= 2.05).map(([, ratio]) => Number(ratio)).sort((a, b) => a - b);
+    const storyBaseline = baselineRatios[Math.floor(baselineRatios.length / 2)] || 3;
     let start = 0;
-    while (start < Math.min(4, pages.length - 1) && Number(ratios.get(start)) > 0 && Number(ratios.get(start)) < 1.72) start += 1;
+    while (start < Math.min(4, pages.length - 1)) {
+      const ratio = Number(ratios.get(start));
+      if (!(ratio > 0) || ratio >= 1.72 && ratio <= storyBaseline * 1.22) break;
+      start += 1;
+    }
     let end = pages.length;
     while (end > start + 1 && end > pages.length - 2 && Number(ratios.get(end - 1)) > 0 && Number(ratios.get(end - 1)) < 1.72) end -= 1;
     return { pages: pages.slice(start, end), filtered: start + pages.length - end };

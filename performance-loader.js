@@ -107,8 +107,8 @@
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "comic-motion-studio.js?v=10"]
     },
     "comic-reader": {
-      styles: ["comic-reader-hub.css?v=5"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-reader-hub.js?v=5"]
+      styles: ["comic-reader-hub.css?v=6"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-reader-hub.js?v=6"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],
