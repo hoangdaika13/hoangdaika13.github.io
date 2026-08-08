@@ -289,7 +289,7 @@
     state.mangadex.error = "";
     if (root?.isConnected) render();
     try {
-      const payload = await fetchMangaDex("catalog", { offset, limit: state.mangadex.limit, q: state.query.trim(), sort: state.sort, filter: state.catalogFilter });
+      const payload = await fetchMangaDex("catalog", { offset, limit: state.mangadex.limit, q: state.query.trim(), sort: state.sort, filter: state.catalogFilter, catalogVersion: 2 });
       const mapped = (payload.items || []).map(mapMangaDexSeries);
       if (reset) {
         const incomingIds = new Set(mapped.map((series) => series.id));
