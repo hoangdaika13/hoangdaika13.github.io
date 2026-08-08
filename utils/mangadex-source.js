@@ -132,8 +132,8 @@ async function catalog(query) {
   const request = catalogPath(query);
   const payload = await mangaDexJson(request.path);
   const items = (Array.isArray(payload.data) ? payload.data : []).filter((entry) => isAllowedRating(entry?.attributes?.contentRating)).map(mapSeries).filter((entry) => UUID.test(entry.id));
-  if (request.sort === "chapters") items.sort((a, b) => { const aShort = a.chapterCountEstimate > 0 && a.chapterCountEstimate < 10; const bShort = b.chapterCountEstimate > 0 && b.chapterCountEstimate < 10; return aShort !== bShort ? aShort ? 1 : -1 : b.chapterCountEstimate - a.chapterCountEstimate || Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0); });
-  else if (request.sort === "smart") items.sort((a, b) => { const aShort = a.chapterCountEstimate > 0 && a.chapterCountEstimate < 10; const bShort = b.chapterCountEstimate > 0 && b.chapterCountEstimate < 10; const aActive = a.status === "ongoing"; const bActive = b.status === "ongoing"; return aShort !== bShort ? aShort ? 1 : -1 : aActive !== bActive ? aActive ? -1 : 1 : b.chapterCountEstimate - a.chapterCountEstimate || Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0); });
+  if (request.sort === "chapters") items.sort((a, b) => { const band = (count) => count >= 10 ? 0 : count > 0 ? 1 : 2; return band(a.chapterCountEstimate) - band(b.chapterCountEstimate) || b.chapterCountEstimate - a.chapterCountEstimate || Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0); });
+  else if (request.sort === "smart") items.sort((a, b) => { const band = (count) => count >= 10 ? 0 : count > 0 ? 1 : 2; const aActive = a.status === "ongoing"; const bActive = b.status === "ongoing"; return band(a.chapterCountEstimate) - band(b.chapterCountEstimate) || (aActive !== bActive ? aActive ? -1 : 1 : b.chapterCountEstimate - a.chapterCountEstimate || Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0)); });
   return {
     provider: "mangadex",
     sourceUrl: "https://mangadex.org/",

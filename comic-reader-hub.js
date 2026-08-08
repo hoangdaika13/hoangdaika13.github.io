@@ -77,10 +77,11 @@
     const ageDays = Math.max(0, (Date.now() - Number(series?.updatedAt || 0)) / 86400000);
     return ageDays <= 2 ? 0 : ageDays <= 7 ? 1 : ageDays <= 30 ? 2 : ageDays <= 90 ? 3 : 4;
   };
+  const chapterBand = (count) => Number(count) >= 10 ? 0 : Number(count) > 0 ? 1 : 2;
   const smartCatalogCompare = (a, b) => {
     const aChapters = seriesChapterCount(a); const bChapters = seriesChapterCount(b);
-    const aShort = aChapters > 0 && aChapters < 10; const bShort = bChapters > 0 && bChapters < 10;
-    if (aShort !== bShort) return aShort ? 1 : -1;
+    const bandDifference = chapterBand(aChapters) - chapterBand(bChapters);
+    if (bandDifference) return bandDifference;
     const aActive = a.status === "Đang cập nhật"; const bActive = b.status === "Đang cập nhật";
     if (aActive !== bActive) return aActive ? -1 : 1;
     const freshness = activityTier(a) - activityTier(b);
@@ -566,8 +567,7 @@
       if (state.sort === "popular") return b.rating - a.rating || smartCatalogCompare(a, b);
       if (state.sort === "chapters") {
         const aCount = seriesChapterCount(a); const bCount = seriesChapterCount(b);
-        const aShort = aCount > 0 && aCount < 10; const bShort = bCount > 0 && bCount < 10;
-        return aShort !== bShort ? aShort ? 1 : -1 : bCount - aCount || Number(b.updatedAt || 0) - Number(a.updatedAt || 0);
+        return chapterBand(aCount) - chapterBand(bCount) || bCount - aCount || Number(b.updatedAt || 0) - Number(a.updatedAt || 0);
       }
       if (state.sort === "updated") return Number(b.updatedAt || 0) - Number(a.updatedAt || 0) || seriesChapterCount(b) - seriesChapterCount(a);
       return smartCatalogCompare(a, b);
@@ -599,7 +599,7 @@
     const followed = state.follows.has(series.id);
     return `<article class="cr-series-card" data-series="${escapeHtml(series.id)}">
       <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.sourceType === "github-open" ? "OPEN" : series.sourceType === "mangadex" ? "MDX" : series.status === "Đã hoàn thành" ? "FULL" : "NEW"}</span><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
-      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml((series.genres || []).slice(0, 2).join(" · "))}</p><div><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(resumeChapterId)}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || chapterCount || 1}`}</button><small>${chapterCount ? `${chapterCount.toLocaleString("vi-VN")} chap · ` : ""}${timeAgo(latest?.updatedAt || series.updatedAt)}</small></div></div>
+      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml((series.genres || []).slice(0, 2).join(" · "))}</p><div><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(resumeChapterId)}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || chapterCount || "?"}`}</button><small>${chapterCount ? `${chapterCount.toLocaleString("vi-VN")} chap · ` : "Chưa rõ số chap · "}${timeAgo(latest?.updatedAt || series.updatedAt)}</small></div></div>
     </article>`;
   }
 

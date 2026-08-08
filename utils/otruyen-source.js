@@ -107,8 +107,8 @@ function sortItems(items, sort) {
   const chapterEstimate = (item) => Math.max(0, ...(Array.isArray(item?.chaptersLatest) ? item.chaptersLatest : []).map((chapter) => Number(String(chapter?.chapter_name || "").replace(",", ".").match(/\d+(?:\.\d+)?/)?.[0] || 0)));
   const smartCompare = (a, b) => {
     const aCount = chapterEstimate(a); const bCount = chapterEstimate(b);
-    const aShort = aCount > 0 && aCount < 10; const bShort = bCount > 0 && bCount < 10;
-    if (aShort !== bShort) return aShort ? 1 : -1;
+    const band = (count) => count >= 10 ? 0 : count > 0 ? 1 : 2;
+    if (band(aCount) !== band(bCount)) return band(aCount) - band(bCount);
     const aActive = a?.status !== "completed" && a?.status !== "pending"; const bActive = b?.status !== "completed" && b?.status !== "pending";
     if (aActive !== bActive) return aActive ? -1 : 1;
     const ageTier = (item) => { const days = Math.max(0, (Date.now() - Date.parse(item?.updatedAt || 0)) / 86400000); return days <= 2 ? 0 : days <= 7 ? 1 : days <= 30 ? 2 : days <= 90 ? 3 : 4; };
@@ -116,7 +116,7 @@ function sortItems(items, sort) {
   };
   if (sort === "az" || sort === "za") rows.sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "vi", { numeric: true, sensitivity: "base" }) * (sort === "za" ? -1 : 1));
   else if (sort === "popular") rows.sort((a, b) => Number(b?.view || b?.views || 0) - Number(a?.view || a?.views || 0));
-  else if (sort === "chapters") rows.sort((a, b) => { const aCount = chapterEstimate(a); const bCount = chapterEstimate(b); const aShort = aCount > 0 && aCount < 10; const bShort = bCount > 0 && bCount < 10; return aShort !== bShort ? aShort ? 1 : -1 : bCount - aCount || Date.parse(b?.updatedAt || 0) - Date.parse(a?.updatedAt || 0); });
+  else if (sort === "chapters") rows.sort((a, b) => { const aCount = chapterEstimate(a); const bCount = chapterEstimate(b); const band = (count) => count >= 10 ? 0 : count > 0 ? 1 : 2; return band(aCount) - band(bCount) || bCount - aCount || Date.parse(b?.updatedAt || 0) - Date.parse(a?.updatedAt || 0); });
   else if (sort === "smart") rows.sort(smartCompare);
   else rows.sort((a, b) => Date.parse(b?.updatedAt || 0) - Date.parse(a?.updatedAt || 0));
   return rows;

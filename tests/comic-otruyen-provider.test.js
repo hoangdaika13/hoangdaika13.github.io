@@ -42,10 +42,11 @@ test("smart comic order prioritizes active recent long series and sends under te
   const items = [
     { name: "Short", status: "ongoing", updatedAt: now, chaptersLatest: [{ chapter_name: "8" }] },
     { name: "Long", status: "ongoing", updatedAt: now, chaptersLatest: [{ chapter_name: "320" }] },
-    { name: "Medium", status: "ongoing", updatedAt: now, chaptersLatest: [{ chapter_name: "45" }] }
+    { name: "Medium", status: "ongoing", updatedAt: now, chaptersLatest: [{ chapter_name: "45" }] },
+    { name: "Unknown", status: "ongoing", updatedAt: now, chaptersLatest: [] }
   ];
-  assert.deepEqual(sortItems(items, "smart").map((item) => item.name), ["Long", "Medium", "Short"]);
-  assert.deepEqual(sortItems(items, "chapters").map((item) => item.name), ["Long", "Medium", "Short"]);
+  assert.deepEqual(sortItems(items, "smart").map((item) => item.name), ["Long", "Medium", "Short", "Unknown"]);
+  assert.deepEqual(sortItems(items, "chapters").map((item) => item.name), ["Long", "Medium", "Short", "Unknown"]);
   assert.equal(catalogRequest({ sort: "smart" }).sort, "smart");
 });
 
