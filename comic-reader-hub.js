@@ -8,7 +8,7 @@
   const OTRUYEN_CDN = "https://img.otruyenapi.com";
   const OTRUYEN_PROXY_PATH = "/api/modules/comic-reader/actions";
   const MANGADEX_PROXY_PATH = "/api/modules/comic-reader/actions";
-  const OTRUYEN_PAGES_PER_VIEW = 2;
+  const OTRUYEN_PAGES_PER_VIEW = 3;
   const GENRES = ["Tất cả", "Hành động", "Phiêu lưu", "Fantasy", "Đời thường", "Bí ẩn", "Hài hước", "Lãng mạn", "Sci-fi", "Webtoon"];
   const PALETTES = [
     ["#172d52", "#6ee7ff", "#a970ff"], ["#3d1838", "#ff7fb8", "#ffbd6c"], ["#143a35", "#65e8ad", "#76b9ff"],
@@ -46,7 +46,7 @@
     importing: false,
     remoteGenres: [],
     remoteGenreSlugs: new Map(),
-    remote: { loading: false, page: 0, perPage: 48, total: 0, hasMore: true, context: "latest", error: "" },
+    remote: { loading: false, page: 0, perPage: 72, total: 0, hasMore: true, context: "latest", error: "" },
     mangadex: { loading: false, offset: 0, limit: 48, total: 0, hasMore: true, context: "latest", error: "" }
   };
 
@@ -619,7 +619,7 @@
       <label>Trang <input type="number" min="1" max="${pages}" value="${page}" data-catalog-page-input aria-label="Nhập số trang"> / ${pages.toLocaleString("vi-VN")}</label>
       <button type="button" data-catalog-page="${page + 1}"${page >= pages || busy ? " disabled" : ""} aria-label="Trang sau">›</button>
       <button type="button" data-catalog-page="${pages}"${page >= pages || busy ? " disabled" : ""} aria-label="Trang cuối">»</button>
-      <span>${busy ? "Backend đang tải trang…" : `${catalogTotal().toLocaleString("vi-VN")} truyện có thể duyệt · 48 OTruyen + 48 MangaDex mỗi trang`}</span>
+      <span>${busy ? "Backend đang tải trang…" : `${catalogTotal().toLocaleString("vi-VN")} truyện có thể duyệt · tối đa 72 OTruyen + 48 MangaDex mỗi trang`}</span>
     </footer>`;
   }
 

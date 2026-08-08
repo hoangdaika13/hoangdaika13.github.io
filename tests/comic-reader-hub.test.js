@@ -15,10 +15,10 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=11[\s\S]*?comic-open-source-catalog\.js\?v=2[\s\S]*?comic-reader-hub\.js\?v=17/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=11[\s\S]*?comic-open-source-catalog\.js\?v=2[\s\S]*?comic-reader-hub\.js\?v=18/);
   assert.match(worker, /comic-reader-hub\.css\?v=11/);
   assert.match(worker, /comic-open-source-catalog\.js\?v=2/);
-  assert.match(worker, /comic-reader-hub\.js\?v=17/);
+  assert.match(worker, /comic-reader-hub\.js\?v=18/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -83,13 +83,13 @@ test("catalog exposes the entire backend inventory through real pagination and s
   assert.match(client, /data-catalog-page-input/);
   assert.match(client, /Tên A–Z/);
   assert.match(client, /Tên Z–A/);
-  assert.match(client, /48 OTruyen \+ 48 MangaDex mỗi trang/);
+  assert.match(client, /tối đa 72 OTruyen \+ 48 MangaDex mỗi trang/);
   assert.match(client, /Ưu tiên cập nhật & nhiều chap/);
   assert.match(client, /Nhiều chap → ít chap/);
   assert.match(client, /smartCatalogCompare/);
   assert.match(client, /chapterBand/);
   assert.match(client, /Chưa rõ số chap/);
-  assert.match(client, /OTRUYEN_PAGES_PER_VIEW = 2/);
+  assert.match(client, /OTRUYEN_PAGES_PER_VIEW = 3/);
   assert.match(client, /catalogVersion: 2/);
   assert.doesNotMatch(client, /sourceType === "otruyen" \? "API"/);
   assert.match(css, /\.cr-pagination/);
