@@ -92,19 +92,23 @@
       styles: [
         "video-editor-studio.css?v=4", "video-editor-resolve.css?v=8",
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1", "h-cosmic-web-studio.css?v=2",
-        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=20"
+        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=20", "image-text-studio.css?v=3"
       ],
       scripts: [
         "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=10", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1", "h-cosmic-web-studio.js?v=3",
-        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=24"
+        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=24", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=3"
       ]
     },
     "comic-motion": {
       // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.css?v=4 comic-motion-studio.css?v=5 comic-motion-studio.js?v=6 comic-motion-studio.js?v=7 comic-motion-studio.js?v=8 comic-motion-studio.js?v=9
       styles: ["comic-motion-studio.css?v=6"],
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "comic-motion-studio.js?v=10"]
+    },
+    "comic-reader": {
+      styles: ["comic-reader-hub.css?v=1"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-reader-hub.js?v=1"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],
@@ -218,6 +222,7 @@
     if (value.startsWith("/dev-tools")) return ["dev"];
     if (value.startsWith("/davinci-resolve")) return ["davinci"];
     if (value.startsWith("/comic-motion-studio")) return ["comic-motion"];
+    if (value.startsWith("/comic-reader")) return ["comic-reader"];
     if (value.startsWith("/media-design")) return ["media"];
     if (value.startsWith("/graphic-design")) return ["graphic"];
     if (value.startsWith("/music-ai")) return ["music"];

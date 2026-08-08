@@ -5434,6 +5434,7 @@ function initAppShell() {
     { id: "davinci", icon: "DV", title: "DaVinci Resolve", route: "/davinci-resolve/davinci", description: "HH Video Studio chạy trực tiếp trên web: Media Pool, timeline, màu, audio, title và xuất MP4/WebM." },
     { id: "auto", icon: "AD", title: "Auto Video Director", route: "/davinci-resolve/auto", description: "Quét media thật, đo sáng–màu–waveform và tạo timeline tự động trước khi bạn xác nhận." },
     { id: "batch", icon: "BV", title: "Batch Video Factory", route: "/davinci-resolve/batch", description: "Dùng một sườn để trộn CSV, ảnh và video rồi render hàng loạt MP4/WebM với hàng đợi thật." },
+    { id: "image-text", icon: "TX", title: "Text on Image Studio", route: "/davinci-resolve/image-text", description: "Chèn chữ nhanh vào 1.000+ ảnh, preview theo trang, font quốc tế, preset tối giản và xuất batch thumbnail YouTube 16:9." },
     { id: "youtube", icon: "YT", title: "YouTube Creator Galaxy", route: "/davinci-resolve/youtube", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight." }
   ];
   const groups = [
@@ -5465,6 +5466,14 @@ function initAppShell() {
       icon: "CM",
       accent: "#ffb15d",
       route: "/comic-motion-studio",
+      items: []
+    },
+    {
+      id: "comic-reader",
+      label: "Đọc truyện",
+      icon: "CR",
+      accent: "#ff8f70",
+      route: "/comic-reader",
       items: []
     },
     { id: "media-design", label: "Media & Design", icon: "◈", accent: "#c87cff", route: "/media-design", items: [], studioItems: mediaStudioItems },
@@ -6005,7 +6014,9 @@ function initAppShell() {
     shell.style.setProperty("--route-accent", activeGroup?.accent || "#56eaff");
     shell.dataset.activeSection = activeGroup?.id || "home";
     document.body.classList.toggle("app-davinci-resolve-route", route === "/davinci-resolve" || route.startsWith("/davinci-resolve/"));
+    document.body.classList.toggle("app-image-text-route", route === "/davinci-resolve/image-text");
     document.body.classList.toggle("app-comic-motion-route", route === "/comic-motion-studio");
+    document.body.classList.toggle("app-comic-reader-route", route === "/comic-reader");
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
@@ -6027,8 +6038,10 @@ function initAppShell() {
       window.HHDavinciResolveHub?.unmount?.();
       window.HHVideoBatchFactory?.unmount?.();
       window.HHYouTubeCreatorGalaxy?.cleanup?.();
+      window.HHImageTextStudio?.unmount?.();
     }
     if (route !== "/comic-motion-studio") window.HHComicMotionStudio?.unmount?.();
+    if (route !== "/comic-reader") window.HHComicReaderHub?.unmount?.();
     if (route !== "/entertainment") window.HHGameCenter?.unmount?.();
     if (route !== "/entertainment/arcade") window.HHGameArcade?.unmount?.();
     if (route !== "/entertainment/astral-realms") window.HHAstralRealms?.unmount?.();
@@ -6242,6 +6255,13 @@ function initAppShell() {
       }
       else mountSimpleView("Comic Motion Studio", "Đang tải editor truyện thành video...", "");
       remember("comic-motion-studio");
+    } else if (route === "/comic-reader") {
+      updatePageHeader("HH Comics · Đọc truyện online", "Khám phá, theo dõi và đọc truyện trong catalog do bạn sở hữu hoặc nguồn/API được cấp phép.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/comic-motion-studio">Comic Motion</button><button class="app-primary-action" type="button" data-command-open>Tìm truyện</button>`;
+      workspace.innerHTML = '<div data-comic-reader-host></div>';
+      if (window.HHComicReaderHub?.mount) window.HHComicReaderHub.mount(workspace.firstElementChild);
+      else mountSimpleView("HH Comics", "Đang tải kho truyện online...", "");
+      remember("comic-reader");
     } else if (route === "/davinci-resolve" || route.startsWith("/davinci-resolve/")) {
       const resolveView = parts[1] || "davinci";
       const resolvePage = davinciResolvePages.find((item) => item.id === resolveView) || davinciResolvePages[0];
@@ -6258,9 +6278,11 @@ function initAppShell() {
       window.HHVideoBatchFactory?.unmount?.();
       window.HHYouTubeCreatorGalaxy?.cleanup?.();
       window.HHCosmicWebStudio?.unmount?.();
+      window.HHImageTextStudio?.unmount?.();
       if (resolveView === "youtube") window.HHYouTubeCreatorGalaxy?.mount(resolveHost, { view: resolveView });
       else if (resolveView === "batch") window.HHVideoBatchFactory?.mount(resolveHost);
       else if (resolveView === "cosmic") window.HHCosmicWebStudio?.mount(resolveHost);
+      else if (resolveView === "image-text") window.HHImageTextStudio?.mount(resolveHost);
       else window.HHDavinciResolveHub?.mount(resolveHost, { view: resolveView });
       remember(`davinci-resolve-${resolveView}`);
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {
@@ -6527,7 +6549,11 @@ function initAppShell() {
       route: item.route,
       key: `${item.title} ${item.section || ""} ${item.description} AI DAW music composer lyrics timeline stems vocal mix master visualizer youtube rights`
     }));
-    const comicMotion = [{ type: "Sản xuất video", title: "Comic Motion Studio", description: "Biến ảnh truyện được cấp phép từ ảnh, folder, ZIP, CBZ, PDF hoặc URL đã xác minh thành video có voice, camera, nhạc và phụ đề.", route: "/comic-motion-studio", key: "comic motion studio truyện tranh ảnh panel speech bubble voice tts timeline subtitle zip cbz pdf website bản quyền" }];
+    const comicMotion = [
+      { type: "Sản xuất hình ảnh", title: "Text on Image Studio", description: "Chèn chữ hàng loạt vào 1.000+ ảnh, font quốc tế, preview nhanh và xuất thumbnail YouTube 16:9.", route: "/davinci-resolve/image-text", key: "tool text on image studio chèn chữ ảnh hàng loạt batch thumbnail youtube font quốc tế preview folder zip 1280 720 1920 1080 4k" },
+      { type: "Đọc truyện", title: "HH Comics", description: "Kho truyện online một trang với tìm kiếm, thể loại, theo dõi, lịch sử, chi tiết truyện, reader cuộn dọc/từng trang và import CBZ/JSON/API.", route: "/comic-reader", key: "đọc truyện online hh comics manga manhwa manhua webtoon catalog chapter reader theo dõi lịch sử cbz zip json api licensed" },
+      { type: "Sản xuất video", title: "Comic Motion Studio", description: "Biến ảnh truyện được cấp phép từ ảnh, folder, ZIP, CBZ, PDF hoặc URL đã xác minh thành video có voice, camera, nhạc và phụ đề.", route: "/comic-motion-studio", key: "comic motion studio truyện tranh ảnh panel speech bubble voice tts timeline subtitle zip cbz pdf website bản quyền" }
+    ];
     modules.unshift(...comicMotion);
     return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...workGalaxy, ...musicAI, { type: "Học tập", title: "HH English", description: "English Learning Galaxy: kho từ vựng tải theo gói, 16 chế độ học, CEFR A0-C2, Mistake Notebook và 70 lộ trình chuyên ngành.", route: "/english", key: "hh english english galaxy galaxy vocabulary words collocations idioms phrasal verbs a0 a1 a2 b1 b2 c1 c2 cefr flashcard typed recall audio cloze matching sentence order dictation shadowing mini story role play speed review mistake notebook word family picture vocabulary speaking writing placement career business technology healthcare education tourism engineering" }, { type: "Học tập", title: "HH Japanese OS V5", description: "42.301 từ/cụm, 30.000 câu có nguồn, 800 nhiệm vụ, Active Vocabulary, Particle Lab, Smart Reader V3, Kanji Writing V2 và Review Console.", route: "/japanese", key: "hh japanese os v5 42301 30000 sentences 800 missions active vocabulary particle lab smart reader v3 kanji writing v2 shadowing review console jmdict tatoeba kanjivg conversation writing immersion teacher family collocation onomatopoeia keigo counter tiếng nhật vietnamese core can-do jf cefr dual progress grammar mora life in japan jlpt simulator little kids kids teens students adults senior từ điển nhật việt kanji hiragana katakana romaji ngữ pháp jlpt n5 n4 n3 n2 n1 flashcard srs đọc nghe nói hội thoại" }, { type: "Sản xuất video", title: "HH Video Studio", description: "Trình dựng video chạy trực tiếp trên web: Media Pool, timeline nhiều rãnh, màu, audio, phụ đề, phiên bản và xuất MP4/WebM thật.", route: "/davinci-resolve", key: "tool davinci resolve hh video studio web editor media pool timeline multi track trim ripple color audio subtitle srt vtt mp4 webm export queue indexeddb" }, { type: "YouTube", title: "YouTube Creator Galaxy", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight.", route: "/davinci-resolve/youtube", key: "tool youtube creator galaxy oauth multi account channel fleet analytics upload scheduler thumbnail seo shorts caption community comments live calendar copyright preflight" }, { type: "Game", title: "HH Game Center", description: "Tổng quan giải trí chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "HH Astral Realms", description: "Action RPG thế giới mở 3D: bốn khu vực, chiến đấu sáu nguyên tố, nhiệm vụ, kho đồ, chế tạo, boss và co-op 1–4 người.", route: "/entertainment/astral-realms", key: "astral realms action rpg open world 3d genshin inspired h galaxy aurora crimson void boss crafting elemental co-op" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "22 game hoàn chỉnh thuộc bốn nhóm Action, Strategy, Puzzle và Simulation, dùng chung tiến trình, nhiệm vụ, thành tích và điều khiển đa thiết bị.", route: "/entertainment/arcade", key: "arcade galaxy 22 game action strategy puzzle simulation neon drift defense colony cipher miner rhythm quiz sandbox chess survival farm fishing mecha planet pet dungeon card tycoon runner black hole nebula boss rush" }, { type: "Studio", title: "Media & Design", description: "35 công cụ trong Media Cosmos với Media Cloud, Review Studio, Motion Compositing, Universal Canvas, AI Task Center và Dev Handoff.", route: "/media-design", key: "media design media cosmos professional universal project media cloud private blob multipart review studio annotation version compare approval universal canvas infinite artboard motion compositing node graph ai task center provenance dev mode handoff storybook photo editor photoshop render queue rights consent c2pa" }, { type: "Developer", title: "Developer Galaxy", description: "8 hành tinh DEV, 13 workspace chuyên sâu và 34 công cụ cho project, code, API, data, Git, delivery, security và observability.", route: "/dev-tools", key: "developer galaxy dev project code api data git delivery security observability smart input recipe pipeline mock json regex database playground diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/learning-center", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
