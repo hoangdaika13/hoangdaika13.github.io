@@ -14,9 +14,9 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=4[\s\S]*?comic-reader-hub\.js\?v=4/);
-  assert.match(worker, /comic-reader-hub\.css\?v=4/);
-  assert.match(worker, /comic-reader-hub\.js\?v=4/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=5[\s\S]*?comic-reader-hub\.js\?v=5/);
+  assert.match(worker, /comic-reader-hub\.css\?v=5/);
+  assert.match(worker, /comic-reader-hub\.js\?v=5/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -103,4 +103,5 @@ test("catalog has no generated demo comics and Clean Reader filters promotional 
   assert.match(client, /filteredPages/);
   assert.match(client, /reader-hide-page/);
   assert.match(client, /blockedPages/);
+  assert.match(client, /Clean Reader đang loại trang quảng cáo/);
 });

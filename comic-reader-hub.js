@@ -200,8 +200,8 @@
 
   async function cleanRemotePages(pages) {
     if (!Array.isArray(pages) || pages.length < 5) return { pages: pages || [], filtered: 0 };
-    const leadingCount = Math.min(7, pages.length);
-    const trailingStart = Math.max(leadingCount, pages.length - 4);
+    const leadingCount = Math.min(5, pages.length);
+    const trailingStart = Math.max(leadingCount, pages.length - 2);
     const indexes = [...Array.from({ length: leadingCount }, (_, index) => index), ...Array.from({ length: pages.length - trailingStart }, (_, index) => trailingStart + index)];
     const ratios = new Map(await Promise.all(indexes.map(async (index) => [index, await imageRatio(pages[index])])));
     const storyIsLongForm = [...ratios.entries()].some(([index, ratio]) => index >= 3 && index < leadingCount && Number(ratio) >= 2.05);
@@ -209,7 +209,7 @@
     let start = 0;
     while (start < Math.min(4, pages.length - 1) && Number(ratios.get(start)) > 0 && Number(ratios.get(start)) < 1.72) start += 1;
     let end = pages.length;
-    while (end > start + 1 && end > pages.length - 4 && Number(ratios.get(end - 1)) > 0 && Number(ratios.get(end - 1)) < 1.72) end -= 1;
+    while (end > start + 1 && end > pages.length - 2 && Number(ratios.get(end - 1)) > 0 && Number(ratios.get(end - 1)) < 1.72) end -= 1;
     return { pages: pages.slice(start, end), filtered: start + pages.length - end };
   }
 
@@ -438,8 +438,17 @@
 
   function setImporting(active) {
     state.importing = active;
+    setLoadingOverlay(active, "Đang nhập truyện…", "Không đóng trang cho đến khi hoàn tất.");
+  }
+
+  function setLoadingOverlay(active, title = "Đang xử lý…", detail = "Vui lòng chờ trong giây lát.") {
     const overlay = root?.querySelector("[data-importing]");
-    if (overlay) overlay.hidden = !active;
+    if (!overlay) return;
+    const strong = overlay.querySelector("strong");
+    const span = overlay.querySelector("span");
+    if (strong) strong.textContent = title;
+    if (span) span.textContent = detail;
+    overlay.hidden = !active;
   }
 
   function normalizeCatalog(data, sourceLabel = "Catalog JSON") {
@@ -552,10 +561,10 @@
     if (!series || !chapter) return notify("Chương này chưa có ảnh.", "error");
     if (series.sourceType === "otruyen" && !chapter.pages?.length) {
       state.remote.loading = true;
-      if (root?.isConnected) notify(`Đang tải ảnh Chương ${chapter.number} từ OTruyen API…`);
+      setLoadingOverlay(true, `Đang chuẩn bị Chương ${chapter.number}…`, "Clean Reader đang loại trang quảng cáo trước khi hiển thị nội dung truyện.");
       try { await ensureRemoteChapterPages(chapter); }
-      catch (error) { state.remote.loading = false; return notify(error.message || "Không thể tải ảnh chapter.", "error"); }
-      state.remote.loading = false;
+      catch (error) { return notify(error.message || "Không thể tải ảnh chapter.", "error"); }
+      finally { state.remote.loading = false; setLoadingOverlay(false); }
     }
     if (!chapter.pages?.length) return notify("Chapter này chưa có ảnh.", "error");
     state.activeSeriesId = series.id;
