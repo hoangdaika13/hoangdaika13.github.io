@@ -92,13 +92,13 @@
       styles: [
         "video-editor-studio.css?v=4", "video-editor-resolve.css?v=8",
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1", "h-cosmic-web-studio.css?v=2",
-        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=20", "image-text-studio.css?v=7"
+        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=20", "image-text-studio.css?v=10"
       ],
       scripts: [
         "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=10", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1", "h-cosmic-web-studio.js?v=3",
-        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=24", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=7"
+        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=24", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=10"
       ]
     },
     "comic-motion": {

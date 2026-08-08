@@ -328,8 +328,16 @@
           <div class="its-library-tools">
             <label><span>⌕</span><input type="search" placeholder="Tìm tên ảnh..." data-search></label>
             <button type="button" data-action="sort" title="Đổi thứ tự">A→Z</button>
-            <button type="button" data-action="select-visible" title="Chọn/bỏ chọn trang này">✓</button>
           </div>
+          <section class="its-selection-box" aria-label="Chọn nhanh số lượng ảnh">
+            <div><strong data-selection-summary>Đã chọn 0 / 0</strong><button type="button" data-action="select-none">Bỏ chọn</button></div>
+            <div class="its-selection-presets">
+              ${[10, 25, 50, 100].map((count) => `<button type="button" data-action="select-count-preset" data-count="${count}">${count}</button>`).join("")}
+              <button type="button" data-action="select-page">Trang này</button>
+              <button type="button" data-action="select-all">Tất cả</button>
+            </div>
+            <div class="its-selection-custom"><label><span>Số ảnh</span><input type="number" min="1" step="1" value="50" data-select-count></label><button type="button" data-action="select-count">Chọn N ảnh đầu</button><button type="button" data-action="invert-selection">Đảo chọn</button></div>
+          </section>
           <div class="its-thumb-grid" data-thumb-grid></div>
           <div class="its-library-empty" data-library-empty>
             <span>▧</span><strong>Chưa có ảnh</strong><small>Chọn cả thư mục; tool chỉ preview từng trang để không giật.</small>
@@ -469,6 +477,7 @@
 
   function renderLibrary() {
     if (!root) return;
+    root.classList.toggle("has-images", state.items.length > 0);
     const { filtered, pages, items } = pagedItems();
     const grid = root.querySelector("[data-thumb-grid]");
     const empty = root.querySelector("[data-library-empty]");
@@ -488,6 +497,10 @@
     root.querySelector("[data-library-summary]").textContent = state.items.length ? `${filtered.length.toLocaleString("vi-VN")} / ${state.items.length.toLocaleString("vi-VN")} ảnh` : "Chưa có ảnh";
     root.querySelector("[data-stat-images]").textContent = state.items.length.toLocaleString("vi-VN");
     root.querySelector("[data-stat-selected]").textContent = state.selectedIds.size.toLocaleString("vi-VN");
+    const selectionSummary = root.querySelector("[data-selection-summary]");
+    const countInput = root.querySelector("[data-select-count]");
+    if (selectionSummary) selectionSummary.textContent = `Đã chọn ${state.selectedIds.size.toLocaleString("vi-VN")} / ${state.items.length.toLocaleString("vi-VN")}`;
+    if (countInput) countInput.max = String(Math.max(1, state.items.length));
     const sortButton = root.querySelector('[data-action="sort"]');
     if (sortButton) sortButton.textContent = state.sort === "asc" ? "A→Z" : "Z→A";
   }
@@ -515,36 +528,29 @@
       const cached = imageCache.get(item.id);
       imageCache.delete(item.id);
       imageCache.set(item.id, cached);
-      return cached;
+      return cached.promise;
     }
-    const promise = (async () => {
-      if (typeof global.createImageBitmap === "function") {
-        try {
-          const bitmap = await global.createImageBitmap(item.file, { imageOrientation: "from-image" });
-          item.width = bitmap.width;
-          item.height = bitmap.height;
-          return bitmap;
-        } catch {}
-      }
-      return new Promise((resolve, reject) => {
-        const image = new Image();
-        image.decoding = "async";
-        image.onload = () => {
-          item.width = image.naturalWidth;
-          item.height = image.naturalHeight;
-          resolve(image);
-        };
-        image.onerror = () => reject(new Error(`Không đọc được ${item.name}`));
-        image.src = ensureObjectUrl(item);
-      });
-    })();
-    imageCache.set(item.id, promise);
+    if (!item.renderUrl) item.renderUrl = URL.createObjectURL(item.file);
+    const promise = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = () => {
+        item.width = image.naturalWidth;
+        item.height = image.naturalHeight;
+        resolve(image);
+      };
+      image.onerror = () => reject(new Error(`Không đọc được ${item.name}`));
+      image.src = item.renderUrl;
+    });
+    imageCache.set(item.id, { promise, item });
     if (imageCache.size > 12) {
       const oldest = imageCache.keys().next().value;
       if (oldest !== item.id) {
         const stale = imageCache.get(oldest);
         imageCache.delete(oldest);
-        Promise.resolve(stale).then((image) => image?.close?.()).catch(() => {});
+        Promise.resolve(stale?.promise).then((image) => { if (image) image.src = ""; }).catch(() => {});
+        if (stale?.item?.renderUrl) URL.revokeObjectURL(stale.item.renderUrl);
+        if (stale?.item) stale.item.renderUrl = "";
       }
     }
     return promise;
@@ -769,6 +775,7 @@
         size: file.size,
         lastModified: file.lastModified,
         url: "",
+        renderUrl: "",
         width: 0,
         height: 0,
         focusX: 0.5,
@@ -812,6 +819,24 @@
     renderInspector();
     updateStageMeta();
     schedulePreview();
+  }
+
+  function selectFirstImages(count) {
+    const list = filteredItems();
+    const amount = clamp(Math.floor(Number(count) || 0), 0, list.length);
+    state.selectedIds.clear();
+    list.slice(0, amount).forEach((item) => state.selectedIds.add(item.id));
+    renderLibrary();
+    notify(`Đã chọn ${amount.toLocaleString("vi-VN")} ảnh đầu tiên.`, "success");
+  }
+
+  function setSelection(mode) {
+    const list = [...state.items];
+    if (mode === "none") state.selectedIds.clear();
+    else if (mode === "all") list.forEach((item) => state.selectedIds.add(item.id));
+    else if (mode === "page") { state.selectedIds.clear(); pagedItems().items.forEach((item) => state.selectedIds.add(item.id)); }
+    else if (mode === "invert") list.forEach((item) => state.selectedIds.has(item.id) ? state.selectedIds.delete(item.id) : state.selectedIds.add(item.id));
+    renderLibrary();
   }
 
   function navigateImage(direction) {
@@ -1326,12 +1351,12 @@
       else if (name === "sort") { state.sort = state.sort === "asc" ? "desc" : "asc"; renderLibrary(); }
       else if (name === "prev-page" || name === "next-page") { state.page += name === "prev-page" ? -1 : 1; renderLibrary(); }
       else if (name === "prev-image" || name === "next-image") navigateImage(name === "prev-image" ? -1 : 1);
-      else if (name === "select-visible") {
-        const visible = pagedItems().items;
-        const allSelected = visible.every((item) => state.selectedIds.has(item.id));
-        visible.forEach((item) => allSelected ? state.selectedIds.delete(item.id) : state.selectedIds.add(item.id));
-        renderLibrary();
-      }
+      else if (name === "select-count-preset") selectFirstImages(action.dataset.count);
+      else if (name === "select-count") selectFirstImages(root.querySelector("[data-select-count]")?.value);
+      else if (name === "select-page") setSelection("page");
+      else if (name === "select-all") setSelection("all");
+      else if (name === "select-none") setSelection("none");
+      else if (name === "invert-selection") setSelection("invert");
       else if (name === "preset") applyPreset(action.dataset.preset);
       else if (name === "slot") { state.activeSlot = action.dataset.slot; renderInspector(); }
       else if (name === "edit-mode") { state.settings.editMode = action.dataset.mode; renderInspector(); schedulePreview(); }
@@ -1397,13 +1422,16 @@
   function unmount() {
     if (keyHandler) global.removeEventListener("keydown", keyHandler);
     keyHandler = null;
-    state.items.forEach((item) => { if (item.url) URL.revokeObjectURL(item.url); });
+    state.items.forEach((item) => {
+      if (item.url) URL.revokeObjectURL(item.url);
+      if (item.renderUrl) URL.revokeObjectURL(item.renderUrl);
+    });
     state.items = [];
     state.selectedIds.clear();
     state.activeId = "";
     state.history = [];
     state.future = [];
-    imageCache.forEach((promise) => Promise.resolve(promise).then((image) => image?.close?.()).catch(() => {}));
+    imageCache.forEach((entry) => Promise.resolve(entry?.promise).then((image) => { if (image) image.src = ""; }).catch(() => {}));
     imageCache.clear();
     hitBoxes.clear();
     renderToken += 1;

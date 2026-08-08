@@ -12,8 +12,8 @@ test("Text on Image Studio is routed from the main Tool group", () => {
 
   assert.match(app, /id: "image-text"[\s\S]*?route: "\/davinci-resolve\/image-text"/);
   assert.match(app, /resolveView === "image-text"[\s\S]*?HHImageTextStudio\?\.mount/);
-  assert.match(loader, /image-text-studio\.css\?v=7/);
-  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=7/);
+  assert.match(loader, /image-text-studio\.css\?v=10/);
+  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=10/);
 });
 
 test("studio supports per-image AI text, optional color correction and secure providers", () => {
@@ -22,7 +22,9 @@ test("studio supports per-image AI text, optional color correction and secure pr
   assert.match(client, /DEFAULT_IMAGE_STYLE/);
   assert.match(client, /data-image-prop="brightness"/);
   assert.match(client, /contactSheet/);
-  assert.match(client, /createImageBitmap/);
+  assert.doesNotMatch(client, /createImageBitmap/);
+  assert.match(client, /renderUrl/);
+  assert.match(client, /new Image\(\)/);
   assert.match(client, /dataset\.retried/);
   assert.match(client, /\/api\/modules\/image-text\/actions/);
   assert.match(client, /\/api\/search\/youtube/);
@@ -32,6 +34,10 @@ test("studio supports per-image AI text, optional color correction and secure pr
   assert.match(client, /item\.youtubeTitle/);
   assert.match(client, /outputBaseName/);
   assert.match(client, /structuredNames/);
+  assert.match(client, /select-count-preset/);
+  assert.match(client, /selectFirstImages/);
+  assert.match(client, /invert-selection/);
+  assert.match(client, /classList\.toggle\("has-images"/);
   assert.match(client, /original}_\$\{youtube}_\$\{imageText/);
   assert.match(client, /requestAnimationFrame/);
   assert.match(client, /Tải toàn bộ ZIP/);
@@ -82,7 +88,11 @@ test("studio remains a one-screen workspace with internal scrolling", () => {
   assert.match(css, /overflow:hidden/);
   assert.match(css, /\.its-thumb-grid[\s\S]*?overflow-y:auto/);
   assert.match(css, /\.its-inspector[\s\S]*?overflow-y:auto/);
-  assert.match(css, /grid-template-columns:minmax\(190px,270px\) minmax\(0,1fr\)/);
+  assert.match(css, /grid-template-columns:minmax\(240px,300px\) minmax\(0,1fr\)/);
   assert.match(css, /@container \(max-width:1100px\)/);
   assert.match(css, /\.its-ai-panel/);
+  assert.match(css, /\.its-selection-box/);
+  assert.match(css, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css, /\.its-library\{[\s\S]*?grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(css, /\.its-library>\*\{min-width:0;max-width:100%\}/);
 });
