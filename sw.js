@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v502";
+const CACHE = "hh-identity-portal-v510";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=10 ./image-text-studio.js?v=10
@@ -15,7 +15,7 @@ const RUNTIME_ASSETS = [
   "./app-theme-system.css?v=6",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=9",
-  "./home-live-widgets.css?v=4",
+  "./home-live-widgets.css?v=11",
   "./home-galaxy-mission.css?v=7",
   "./home-galaxy-operations.css?v=1",
   "./home-galaxy-control-deck.css?v=2",

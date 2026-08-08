@@ -43,7 +43,7 @@
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=9", "home-live-widgets.css?v=4", "home-galaxy-mission.css?v=7", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=9", "home-live-widgets.css?v=11", "home-galaxy-mission.css?v=7", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
