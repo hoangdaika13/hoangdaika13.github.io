@@ -12,8 +12,8 @@ test("Facebook Page Command Center is reachable from Tool and lazy-loaded", () =
   assert.match(shell, /id:\s*"facebook"[\s\S]{0,240}route:\s*"\/davinci-resolve\/facebook"/);
   assert.match(shell, /HHFacebookPageCommandCenter\?\.mount/);
   assert.match(shell, /hh:facebook-page-command-center-ready/);
-  assert.match(loader, /facebook-page-command-center\.css\?v=1/);
-  assert.match(loader, /facebook-page-command-center\.js\?v=2/);
+  assert.match(loader, /facebook-page-command-center\.css\?v=3/);
+  assert.match(loader, /facebook-page-command-center\.js\?v=3/);
 });
 
 test("Meta backend is routed, owner-isolated and stores encrypted Page tokens", () => {
@@ -103,4 +103,29 @@ test("Meta webhook verifies raw-body signatures before storing bounded events", 
   assert.match(source, /timingSafeEqual/);
   assert.match(source, /expireAfterSeconds/);
   assert.doesNotMatch(source, /access_token|pageAccessToken/);
+});
+
+test("Content Library, approval notes and Smart Planner use owner-isolated real data", () => {
+  const apiSource = read("utils/facebookPageManager.js");
+  const client = read("facebook-page-command-center.js");
+  const css = read("facebook-page-command-center.css");
+  const api = require(path.join(root, "utils/facebookPageManager.js"));
+  const template = api.__test.contentTemplateDoc({ name: "Video launch", message: "Main", variantA: "A", variantB: "B", tags: "video, launch" }, "owner");
+  assert.equal(template.variantA, "A");
+  assert.deepEqual(template.tags, ["video", "launch"]);
+  const recommendation = api.__test.recommendPostingSlots([
+    { created_time: "2026-08-01T12:00:00Z", reactions: { summary: { total_count: 10 } }, comments: { summary: { total_count: 2 } }, shares: { count: 1 } },
+    { created_time: "2026-08-02T12:00:00Z", reactions: { summary: { total_count: 20 } }, comments: { summary: { total_count: 1 } }, shares: { count: 2 } },
+    { created_time: "2026-08-03T12:00:00Z", reactions: { summary: { total_count: 5 } }, comments: { summary: { total_count: 0 } }, shares: { count: 0 } }
+  ], 7);
+  assert.equal(recommendation.ready, true);
+  assert.equal(recommendation.sampleSize, 3);
+  assert.equal(api.__test.recommendPostingSlots([], 7).reason, "insufficient-data");
+  assert.match(apiSource, /facebookContentTemplates/);
+  assert.match(apiSource, /campaigns\/note/);
+  assert.match(apiSource, /planner\/recommendations/);
+  assert.match(client, /Content Library & A\/B Lab/);
+  assert.match(client, /Hộp duyệt/);
+  assert.match(client, /Smart Planner/);
+  assert.match(css, /\.fpc-slot-grid/);
 });

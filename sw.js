@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v484";
+const CACHE = "hh-identity-portal-v486";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=10 ./image-text-studio.js?v=10
@@ -55,7 +55,7 @@ const RUNTIME_ASSETS = [
   "./video-editor-auto.css?v=1",
   "./youtube-creator-galaxy.css?v=20",
   "./image-text-studio.css?v=11",
-  "./facebook-page-command-center.css?v=1",
+  "./facebook-page-command-center.css?v=3",
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
@@ -100,7 +100,7 @@ const RUNTIME_ASSETS = [
   "./youtube-publisher.js?v=7",
   "./youtube-creator-galaxy.js?v=24",
   "./image-text-studio.js?v=11",
-  "./facebook-page-command-center.js?v=2",
+  "./facebook-page-command-center.js?v=3",
   "./comic-motion-studio.js?v=10",
   "./comic-open-source-catalog.js?v=2",
   "./comic-reader-hub.js?v=14",
@@ -453,7 +453,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=218",
+  "./performance-loader.js?v=220",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=14",
   "./script.js?v=172"
