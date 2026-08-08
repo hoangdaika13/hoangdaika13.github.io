@@ -163,9 +163,9 @@
     const nowPeriod = period();
     const viewButtons = [["basic", "Basic"], ["advanced", "Advanced"], ["focus", "Focus"]]
       .map(([id, label]) => `<button type="button" data-hgc-view-option="${id}" aria-pressed="${prefs.view === id}">${label}</button>`).join("");
-    const infoTabs = [["overview", "Tổng quan"], ["work", "Công việc"], ["learning", "Học tập"], ["website", "Website"], ["notifications", "Thông báo"], ["progress", "Tiến độ"]]
+    const infoTabs = [["overview", "Widgets"], ["work", "Công việc"], ["learning", "Học tập"], ["website", "Website"], ["notifications", "Thông báo"], ["progress", "Tiến độ"]]
       .map(([id, label]) => `<button type="button" role="tab" data-hgc-info-tab="${id}" aria-selected="${activeInfoTab === id}">${label}</button>`).join("");
-    return `<section class="hgc hgc-v3" data-hgc-root data-hgc-theme="${prefs.theme}" data-hgc-motion="${prefs.motion}" data-hgc-view="${prefs.view}" data-hgc-info="${activeInfoTab}" data-hgc-today-page="0" data-hgc-mobile-pane="${mobilePane}" data-hgc-period="${nowPeriod.id}">
+    return `<section class="hgc hgc-v3 hgc-v4" data-hgc-root data-hgc-theme="${prefs.theme}" data-hgc-motion="${prefs.motion}" data-hgc-view="${prefs.view}" data-hgc-info="${activeInfoTab}" data-hgc-today-page="0" data-hgc-mobile-pane="${mobilePane}" data-hgc-period="${nowPeriod.id}">
       <div class="hgc-space" aria-hidden="true">
         <div class="hgc-prism-fog"></div>
         <div class="hgc-aurora-ribbons"><i></i><i></i><i></i></div>
@@ -179,14 +179,15 @@
         <div class="hgc-meteors" data-hgc-meteors></div>
       </div>
       <header class="hgc-commandbar">
-        <div class="hgc-commandbar-brand"><span>H</span><div><small>GALAXY COMMAND V3</small><strong><b data-hgc-greeting>${nowPeriod.greeting}</b>, <i data-hgc-user>${escapeHtml(userName())}</i></strong></div></div>
+        <div class="hgc-commandbar-brand"><span>H</span><div><small>LIVING DESKTOP GALAXY V4</small><strong><b data-hgc-greeting>${nowPeriod.greeting}</b>, <i data-hgc-user>${escapeHtml(userName())}</i></strong></div></div>
         <button type="button" class="hgc-command-search" data-command-open><span>⌕</span><b>Tìm nhanh</b><kbd>Ctrl K</kbd></button>
         <div class="hgc-status-strip" aria-label="Trạng thái trực tiếp">
-          <span><i>◒</i><b data-hgc-value="weather">Đang tải</b><small data-hgc-meta="weather">Thời tiết</small></span>
-          <span><i>✚</i><b data-hgc-online>ONLINE</b><small data-hgc-value="health">Website</small></span>
-          <span><i>□</i><b data-hgc-status-tasks>0</b><small>Việc đến hạn</small></span>
-          <span><i>◇</i><b data-hgc-status-notifications>0</b><small>Thông báo</small></span>
-          <span><i>◷</i><b data-hgc-clock>--:--</b><small data-hgc-today-date>Hôm nay</small></span>
+          <span><i>◷</i><b data-hlw-status="clock">--:--</b><small>Thời gian</small></span>
+          <span><i>◒</i><b data-hlw-status="weather">Đang tải</b><small>Thời tiết</small></span>
+          <span><i>↗</i><b data-hlw-status="http">Đang đo</b><small>HTTP latency</small></span>
+          <span><i>✚</i><b data-hlw-status="api">Đang đo</b><small>Backend API</small></span>
+          <span><i>⌁</i><b data-hlw-status="network">Online</b><small>Mạng</small></span>
+          <span><i>◇</i><b data-hlw-status="notifications">0</b><small>Thông báo</small></span>
         </div>
         <div class="hgc-command-controls"><div class="hgc-view-switch" aria-label="Chế độ hiển thị">${viewButtons}</div><button type="button" data-hgc-motion-cycle title="Đổi mức chuyển động">◉ <span data-hgc-motion-label>Chuyển động</span></button><button type="button" data-hgc-settings-open aria-label="Cá nhân hóa">⚙</button></div>
       </header>
@@ -224,7 +225,7 @@
           <header><div><small>TRUNG TÂM THÔNG TIN</small><h2 id="hgcInfoTitle">Tín hiệu hữu ích</h2></div><b data-hgc-hero-status>Đang đồng bộ</b></header>
           <div class="hgc-info-tabs" role="tablist" aria-label="Nhóm thông tin">${infoTabs}</div>
           <div class="hgc-info-panels">
-            <section data-hgc-info-panel="overview" role="tabpanel"><div class="hgc-overview-grid"><article><span>◒</span><small>Thời tiết</small><strong data-hgc-value="weather">Đang tải</strong><em data-hgc-meta="weather">AQI đang nối</em></article><article><span>↗</span><small>Mạng</small><strong data-hgc-value="network">Online</strong><em data-hgc-meta="network">Đang đo</em></article><article><span>✚</span><small>Website</small><strong data-hgc-value="health">Đang đo</strong><em data-hgc-meta="health">API Health</em></article><article><span>◷</span><small>Đồng bộ</small><strong data-hgc-value="sync">--:--</strong><em data-hgc-meta="sync">Phiên hiện tại</em></article></div><button type="button" data-hgc-info-tab-link="progress">Xem chòm sao tiến độ →</button></section>
+            <section data-hgc-info-panel="overview" role="tabpanel"><div data-hlw-host aria-label="Live Widget Rack"></div></section>
             <section data-hgc-info-panel="work" role="tabpanel" hidden><div class="hgc-info-summary"><strong data-hgc-work-count>0 việc</strong><span>Dữ liệu từ Project Center và Task</span></div><div class="hgc-info-list" data-hgc-info-list="work"></div><button type="button" data-hgc-route="/work">Mở trung tâm công việc →</button></section>
             <section data-hgc-info-panel="learning" role="tabpanel" hidden><div class="hgc-info-summary"><strong data-hgc-learning-count>0 bài ôn</strong><span>HH English và HH Japanese</span></div><div class="hgc-info-list" data-hgc-info-list="learning"></div><button type="button" data-hgc-route="/learn/review">Học nhanh 10 phút →</button></section>
             <section data-hgc-info-panel="website" role="tabpanel" hidden><div class="hgc-website-grid"><article><small>Hiệu năng</small><strong data-hgc-value="performance">Đang đo</strong><em data-hgc-meta="performance">FPS và độ trễ</em></article><article><small>Bộ nhớ</small><strong data-hgc-value="memory">Đang đọc</strong><em data-hgc-meta="memory">Heap tab</em></article><article><small>Mạng</small><strong data-hgc-value="network">Online</strong><em data-hgc-meta="network">Trình duyệt</em></article><article><small>Backend</small><strong data-hgc-value="health">Đang kiểm tra</strong><em data-hgc-meta="health">Website Health</em></article></div><button type="button" data-hgc-route="/analytics">Mở Website Health →</button></section>
@@ -234,7 +235,9 @@
         </aside>
       </main>
 
-      <nav class="hgc-dock" aria-label="Dock trang chủ"><button type="button" data-hgc-route="/home"><i>⌂</i><b>Trang chủ</b></button><button type="button" class="is-create" data-hgc-quick-toggle><i>＋</i><b>Tạo mới</b></button><button type="button" data-command-open><i>⌕</i><b>Tìm kiếm</b></button><button type="button" data-hgc-route="/recent"><i>◷</i><b>Gần đây</b></button><button type="button" data-hgc-info-open="notifications"><i>◇</i><b>Thông báo</b><em data-hgc-dock-notifications hidden>0</em></button></nav>
+      <section class="hlw-event-bar" data-hlw-event-bar aria-label="Sự kiện trực tiếp gần đây"></section>
+
+      <nav class="hgc-dock" aria-label="Dock trang chủ"><button type="button" data-hgc-route="/home"><i>⌂</i><b>Trang chủ</b></button><button type="button" class="is-create" data-hgc-quick-toggle><i>＋</i><b>Tạo mới</b></button><button type="button" data-hgc-info-open="overview"><i>✦</i><b>Widgets</b></button><button type="button" data-command-open><i>⌕</i><b>Tìm kiếm</b></button><button type="button" data-hgc-info-open="notifications"><i>◇</i><b>Thông báo</b><em data-hgc-dock-notifications hidden>0</em></button></nav>
 
       <aside class="hgc-quick-menu" data-hgc-quick-menu hidden><button type="button" data-hgc-quick-close aria-label="Đóng menu tạo mới"></button><section role="dialog" aria-modal="true" aria-labelledby="hgcQuickTitle"><header><div><small>QUICK ACTIONS</small><h2 id="hgcQuickTitle">Bạn muốn làm gì?</h2></div><button type="button" data-hgc-quick-close aria-label="Đóng">×</button></header><div><button type="button" data-hgc-route="/create/ai-center"><span>✦</span><b>Tạo nội dung AI</b><small>Ý tưởng, kịch bản và nội dung</small></button><button type="button" data-hgc-route="/davinci-resolve/youtube"><span>YT</span><b>Đăng video</b><small>Chọn kênh và upload</small></button><button type="button" data-hgc-route="/davinci-resolve/image-text"><span>TX</span><b>Chỉnh thumbnail</b><small>Chèn chữ và xuất hàng loạt</small></button><button type="button" data-hgc-route="/music-ai"><span>♫</span><b>Tạo nhạc</b><small>Music AI Studio</small></button><button type="button" data-hgc-route="/work"><span>□</span><b>Thêm công việc</b><small>Project và Task Center</small></button><button type="button" data-hgc-route="/learn/review"><span>◫</span><b>Học nhanh 10 phút</b><small>Bài ôn đang đến hạn</small></button><button type="button" data-hgc-quick-recent data-hgc-route="/home"><span>◉</span><b>Mở dự án gần nhất</b><small data-hgc-quick-recent-label>Chưa có phiên gần đây</small></button></div></section></aside>
       ${preferenceMarkup()}
@@ -923,6 +926,7 @@
     if (!force && mountedHome === home && root?.isConnected) {
       syncMainState(true);
       updateLive();
+      window.HHHomeLiveWidgets?.mount?.(root);
       return true;
     }
     clearInterval(refreshTimer);
@@ -935,6 +939,7 @@
     bind();
     applyPrefs();
     updateLive();
+    setTimeout(() => window.HHHomeLiveWidgets?.mount?.(root, true), 0);
     observeHome();
     refreshTimer = setInterval(() => { if (!document.hidden) updateLive(); }, 2000);
     return true;
@@ -963,7 +968,7 @@
   });
 
   window.HHHomeGalaxyCommand = Object.freeze({
-    version: 3,
+    version: 4,
     mount,
     refresh: updateLive,
     preferences: () => ({ ...prefs, pinned: [...prefs.pinned], planets: [...prefs.planets], widgets: [...prefs.widgets] })

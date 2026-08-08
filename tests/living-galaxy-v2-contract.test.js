@@ -85,6 +85,6 @@ test("home living galaxy exposes fifteen domains and uses real local progress", 
   assert.match(css, /\.hgc-constellation/);
   assert.match(css, /\.hgc-dock/);
   assert.match(css, /scroll-snap-type:\s*x mandatory/);
-  assert.match(loader, /home-galaxy-command\.css\?v=8/);
-  assert.match(loader, /home-galaxy-command\.js\?v=7/);
+  assert.match(loader, /home-galaxy-command\.css\?v=9/);
+  assert.match(loader, /home-galaxy-command\.js\?v=8/);
 });

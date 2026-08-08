@@ -144,6 +144,8 @@ async function databaseReadiness() {
 function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
   const has = (...names) => names.every((name) => Boolean(String(process.env[name] || "").trim()));
   const gemini = Boolean(String(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "").trim());
+  const openai = Boolean(String(process.env.OPENAI_API_KEY || "").trim());
+  const facebook = has("META_APP_ID", "META_APP_SECRET");
   const googleJsonApi = has("GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID");
   const googleFreeCse = Boolean(String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim());
   const vertexSearch = has("VERTEX_SEARCH_PROJECT_ID", "VERTEX_SEARCH_APP_ID", "VERTEX_SEARCH_API_KEY");
@@ -184,7 +186,8 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
           ? "Google Programmable Search Element miễn phí đang sẵn sàng; JSON API chỉ là đường tùy chọn."
           : "Chưa có đủ cấu hình."
     },
-    ai: { gemini: gemini, geminiKeySource: process.env.GEMINI_API_KEYS ? "gemini-pool" : process.env.GEMINI_API_KEY ? "gemini" : process.env.GOOGLE_AI_API_KEY ? "google-ai" : "none", elevenLabs: eleven },
+    ai: { gemini: gemini, openai, geminiKeySource: process.env.GEMINI_API_KEYS ? "gemini-pool" : process.env.GEMINI_API_KEY ? "gemini" : process.env.GOOGLE_AI_API_KEY ? "google-ai" : "none", elevenLabs: eleven },
+    integrations: { openai, gemini, youtube, facebook, resend: email },
     payments: { payos, donationReceiptEmail: email },
     storage: { metadata: true, smallTextPayload: true, objectStorage, provider: vercelBlob ? "vercel-blob-private" : s3Storage ? "s3-compatible" : "mongodb" },
     download: { engine: downloader },
