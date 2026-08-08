@@ -10,8 +10,11 @@
   const DEFAULT_PREFS = Object.freeze({
     theme: "neon",
     motion: "balanced",
+    view: "advanced",
+    infoTab: "overview",
     stars: 62,
     sound: false,
+    pinned: ["home", "creative", "work", "learning", "japanese"],
     planets: ["home", "system", "creative", "music", "media", "graphic", "dev", "work", "communication", "entertainment", "analytics", "learning", "english", "japanese", "support"],
     widgets: ["weather", "performance", "memory", "network", "health", "sync"]
   });
@@ -41,6 +44,7 @@
     { id: "sync", icon: "◷", label: "Đồng bộ gần nhất", target: ".dashboard-weather" }
   ]);
   const histories = Object.fromEntries(WIDGETS.map((item) => [item.id, []]));
+  const boundRoots = new WeakSet();
   let mountedHome = null;
   let root = null;
   let prefs = null;
@@ -53,6 +57,10 @@
   let pointerFrame = 0;
   let pointerSample = null;
   let pointerBounds = null;
+  let activePlanetId = "home";
+  let activeInfoTab = "overview";
+  let todayPage = 0;
+  let mobilePane = "galaxy";
 
   const byId = (id) => document.getElementById(id);
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
@@ -74,14 +82,20 @@
     return {
       theme: ["neon", "purple", "solar", "deep"].includes(saved.theme) ? saved.theme : DEFAULT_PREFS.theme,
       motion: ["static", "balanced", "cinematic"].includes(saved.motion) ? saved.motion : DEFAULT_PREFS.motion,
+      view: ["basic", "advanced", "focus"].includes(saved.view) ? saved.view : DEFAULT_PREFS.view,
+      infoTab: ["overview", "work", "learning", "website", "notifications", "progress"].includes(saved.infoTab) ? saved.infoTab : DEFAULT_PREFS.infoTab,
       stars: clamp(saved.stars ?? DEFAULT_PREFS.stars, 20, 100),
       sound: saved.sound === true,
+      pinned: Array.isArray(saved.pinned)
+        ? saved.pinned.filter((id) => PLANETS.some((planet) => planet.id === id)).slice(0, 5)
+        : [...DEFAULT_PREFS.pinned],
       planets: Array.isArray(saved.planets) ? saved.planets.filter((id) => PLANETS.some((planet) => planet.id === id)) : [...DEFAULT_PREFS.planets],
       widgets: Array.isArray(saved.widgets) ? saved.widgets.filter((id) => WIDGETS.some((widget) => widget.id === id)) : [...DEFAULT_PREFS.widgets]
     };
   }
 
   prefs = readPrefs();
+  activeInfoTab = prefs.infoTab;
 
   function userName() {
     const account = readJson("hh-auth-user", {});
@@ -109,11 +123,10 @@
   }
 
   function planetMarkup(planet, index) {
-    return `<button class="hgc-planet hgc-planet--${index + 1}" type="button" data-hgc-planet="${planet.id}" data-hgc-route="${planet.route}" style="--planet-color:${planet.color};--planet-index:${index}" aria-label="${escapeHtml(planet.label)}: ${escapeHtml(planet.description)}">
+    return `<button class="hgc-planet hgc-planet--${index + 1}" type="button" data-hgc-planet="${planet.id}" style="--planet-color:${planet.color};--planet-index:${index}" aria-pressed="${planet.id === activePlanetId}" aria-label="Chọn ${escapeHtml(planet.label)}: ${escapeHtml(planet.description)}">
       <span class="hgc-planet-sphere"><i>${planet.icon}</i><b></b><em></em></span>
       <strong>${escapeHtml(planet.label)}</strong>
       <small data-hgc-planet-count="${planet.id}">0 tín hiệu</small>
-      <span class="hgc-planet-tip"><b>${escapeHtml(planet.label)}</b><em>${escapeHtml(planet.description)}</em><i>Nhấn để mở →</i></span>
     </button>`;
   }
 
@@ -129,7 +142,7 @@
       ["balanced", "Cân bằng"],
       ["cinematic", "Điện ảnh"]
     ].map(([value, label]) => `<button type="button" data-hgc-motion="${value}" aria-pressed="${prefs.motion === value}">${label}</button>`).join("");
-    const planetOptions = PLANETS.map((planet) => `<label><input type="checkbox" data-hgc-planet-toggle="${planet.id}" ${prefs.planets.includes(planet.id) ? "checked" : ""}><span style="--setting-color:${planet.color}">${planet.icon}</span><b>${escapeHtml(planet.label)}</b></label>`).join("");
+    const planetOptions = PLANETS.map((planet) => `<label><input type="checkbox" data-hgc-planet-toggle="${planet.id}" ${prefs.pinned.includes(planet.id) ? "checked" : ""}><span style="--setting-color:${planet.color}">${planet.icon}</span><b>${escapeHtml(planet.label)}</b></label>`).join("");
     const widgetOptions = WIDGETS.map((widget) => `<label><input type="checkbox" data-hgc-widget-toggle="${widget.id}" ${prefs.widgets.includes(widget.id) ? "checked" : ""}><span>${widget.icon}</span><b>${escapeHtml(widget.label)}</b></label>`).join("");
     return `<aside class="hgc-settings" data-hgc-settings hidden aria-label="Cá nhân hóa vũ trụ">
       <button class="hgc-settings-backdrop" type="button" data-hgc-settings-close aria-label="Đóng cá nhân hóa"></button>
@@ -139,7 +152,7 @@
         <div class="hgc-setting-group"><span>Mức chuyển động</span><div class="hgc-choice-grid">${motionOptions}</div></div>
         <label class="hgc-range"><span>Mật độ sao <b data-hgc-star-value>${prefs.stars}%</b></span><input type="range" min="20" max="100" step="10" value="${prefs.stars}" data-hgc-stars></label>
         <label class="hgc-sound"><input type="checkbox" data-hgc-sound ${prefs.sound ? "checked" : ""}><span></span><b>Âm thanh không gian</b><small>Mặc định tắt · chỉ phát sau khi bạn tương tác</small></label>
-        <div class="hgc-setting-group"><span>Hành tinh được ghim</span><div class="hgc-check-grid">${planetOptions}</div></div>
+        <div class="hgc-setting-group"><span>Quỹ đạo ghim · tối đa 5 hành tinh</span><div class="hgc-check-grid">${planetOptions}</div></div>
         <div class="hgc-setting-group"><span>Widget realtime hiển thị</span><div class="hgc-check-grid">${widgetOptions}</div></div>
         <footer><button type="button" data-hgc-reset>Khôi phục mặc định</button><button type="button" class="is-primary" data-hgc-settings-close>Hoàn tất</button></footer>
       </section>
@@ -148,7 +161,11 @@
 
   function markup() {
     const nowPeriod = period();
-    return `<section class="hgc" data-hgc-root data-hgc-theme="${prefs.theme}" data-hgc-motion="${prefs.motion}" data-hgc-period="${nowPeriod.id}">
+    const viewButtons = [["basic", "Basic"], ["advanced", "Advanced"], ["focus", "Focus"]]
+      .map(([id, label]) => `<button type="button" data-hgc-view-option="${id}" aria-pressed="${prefs.view === id}">${label}</button>`).join("");
+    const infoTabs = [["overview", "Tổng quan"], ["work", "Công việc"], ["learning", "Học tập"], ["website", "Website"], ["notifications", "Thông báo"], ["progress", "Tiến độ"]]
+      .map(([id, label]) => `<button type="button" role="tab" data-hgc-info-tab="${id}" aria-selected="${activeInfoTab === id}">${label}</button>`).join("");
+    return `<section class="hgc hgc-v3" data-hgc-root data-hgc-theme="${prefs.theme}" data-hgc-motion="${prefs.motion}" data-hgc-view="${prefs.view}" data-hgc-info="${activeInfoTab}" data-hgc-today-page="0" data-hgc-mobile-pane="${mobilePane}" data-hgc-period="${nowPeriod.id}">
       <div class="hgc-space" aria-hidden="true">
         <div class="hgc-prism-fog"></div>
         <div class="hgc-aurora-ribbons"><i></i><i></i><i></i></div>
@@ -161,54 +178,65 @@
         <div class="hgc-cursor-light"></div>
         <div class="hgc-meteors" data-hgc-meteors></div>
       </div>
-      <section class="hgc-live" aria-labelledby="hgcLiveTitle">
-        <header class="hgc-live-head">
-          <div><span><i></i> LIVE ORBIT</span><h2 id="hgcLiveTitle">Tín hiệu đang chuyển động quanh bạn</h2><p>Dữ liệu thật từ thời tiết, tab trình duyệt, mạng và Website Health.</p></div>
-          <div><b data-hgc-online>ONLINE</b><button type="button" data-hgc-settings-open>⚙ Cá nhân hóa</button></div>
-        </header>
-        <div class="hgc-live-deck" data-hgc-live-deck>${WIDGETS.map(widgetMarkup).join("")}</div>
-      </section>
-      <section class="hgc-activity" aria-label="Galaxy Activity Stream">
-        <header><span>GALAXY ACTIVITY</span><b>REALTIME</b></header>
-        <div class="hgc-activity-window"><div class="hgc-activity-track" data-hgc-activity></div></div>
-      </section>
-      <section class="hgc-hero" aria-labelledby="hgcHeroTitle">
-        <div class="hgc-hero-copy">
-          <span class="hgc-kicker"><i></i> HH GALAXY COMMAND</span>
-          <h2 id="hgcHeroTitle"><span data-hgc-greeting>${nowPeriod.greeting}</span>, <b data-hgc-user>${escapeHtml(userName())}</b></h2>
-          <p>Một lõi H chỉ huy, 15 hành tinh chức năng và mọi tín hiệu quan trọng trong cùng một vũ trụ.</p>
-          <div class="hgc-hero-actions"><button type="button" class="is-primary" data-hgc-route="/create/ai-center">✦ Bắt đầu với AI</button><button type="button" data-command-open>⌕ Tìm mọi thứ</button><button type="button" data-hgc-settings-open>Điều chỉnh vũ trụ</button></div>
-          <div class="hgc-hero-status"><span><i></i><b data-hgc-hero-status>Hệ thống đang đồng bộ</b></span><time data-hgc-clock>--:--:--</time></div>
+      <header class="hgc-commandbar">
+        <div class="hgc-commandbar-brand"><span>H</span><div><small>GALAXY COMMAND V3</small><strong><b data-hgc-greeting>${nowPeriod.greeting}</b>, <i data-hgc-user>${escapeHtml(userName())}</i></strong></div></div>
+        <button type="button" class="hgc-command-search" data-command-open><span>⌕</span><b>Tìm nhanh</b><kbd>Ctrl K</kbd></button>
+        <div class="hgc-status-strip" aria-label="Trạng thái trực tiếp">
+          <span><i>◒</i><b data-hgc-value="weather">Đang tải</b><small data-hgc-meta="weather">Thời tiết</small></span>
+          <span><i>✚</i><b data-hgc-online>ONLINE</b><small data-hgc-value="health">Website</small></span>
+          <span><i>□</i><b data-hgc-status-tasks>0</b><small>Việc đến hạn</small></span>
+          <span><i>◇</i><b data-hgc-status-notifications>0</b><small>Thông báo</small></span>
+          <span><i>◷</i><b data-hgc-clock>--:--</b><small data-hgc-today-date>Hôm nay</small></span>
         </div>
-        <div class="hgc-solar" data-hgc-solar aria-label="Mười lăm hành tinh chức năng">
-          <div class="hgc-orbit hgc-orbit--1"></div><div class="hgc-orbit hgc-orbit--2"></div><div class="hgc-orbit hgc-orbit--3"></div><div class="hgc-orbit hgc-orbit--4"></div>
-          <div class="hgc-orbit-particles" aria-hidden="true">${Array.from({ length: 12 }, (_, index) => `<i style="--orbit-particle:${index};--orbit-start:${index * 30}deg;--orbit-delay:${-(index * .7)}s;--orbit-tone:${PLANETS[index % PLANETS.length].color}"></i>`).join("")}</div>
-          <div class="hgc-energy-lines" aria-hidden="true"></div>
-          <div class="hgc-scanner-ring" aria-hidden="true"><i></i></div>
-          <div class="hgc-focus-beam" aria-hidden="true"><i></i></div>
-          <div class="hgc-sun" aria-label="Mặt trời chỉ huy H"><span>H</span><i></i><b></b><em></em></div>
-          <div class="hgc-plasma-arcs" aria-hidden="true"><i></i><b></b><em></em></div>
-          <div class="hgc-sun-particles" data-hgc-sun-particles aria-hidden="true"></div>
-          <div class="hgc-planets">${PLANETS.map(planetMarkup).join("")}</div>
-          <p>Rê chuột để dừng quỹ đạo · nhấn hành tinh để mở workspace</p>
-        </div>
-      </section>
-      <section class="hgc-today" aria-labelledby="hgcTodayTitle">
-        <header><div><small>DẢI NGÂN HÀ HÔM NAY</small><h3 id="hgcTodayTitle">Việc quan trọng đang ở đúng quỹ đạo</h3></div><time data-hgc-today-date></time></header>
-        <div class="hgc-today-track">
-          <button type="button" data-hgc-today="continue" data-hgc-route="/home"><span>◷</span><small>TIẾP TỤC</small><strong data-hgc-today-title="continue">Chưa có phiên gần đây</strong><em data-hgc-today-meta="continue">Mở một công cụ để lưu hành trình</em></button>
-          <button type="button" data-hgc-today="tasks" data-hgc-route="/work"><span>□</span><small>CÔNG VIỆC</small><strong data-hgc-today-title="tasks">0 việc cần làm</strong><em data-hgc-today-meta="tasks">Không có deadline bị tạo giả</em></button>
-          <button type="button" data-hgc-today="learning" data-hgc-route="/learn/review"><span>◫</span><small>ÔN TẬP</small><strong data-hgc-today-title="learning">0 bài đến hạn</strong><em data-hgc-today-meta="learning">Lấy từ tiến độ học trên thiết bị</em></button>
-          <button type="button" data-hgc-today="notifications" data-hgc-route="/communication/notifications"><span>◇</span><small>THÔNG BÁO</small><strong data-hgc-today-title="notifications">0 thông báo mới</strong><em data-hgc-today-meta="notifications">Chỉ đếm thông báo chưa đọc</em></button>
-        </div>
-      </section>
-      <section class="hgc-constellation" aria-labelledby="hgcConstellationTitle">
-        <div class="hgc-constellation-copy"><small>CONSTELLATION PROFILE</small><h3 id="hgcConstellationTitle">Chòm sao tiến độ của bạn</h3><p>Bốn điểm sáng được tính từ hoạt động đã lưu thật trên thiết bị, không dùng xếp hạng giả.</p></div>
-        <div class="hgc-constellation-map" aria-label="Tiến độ Sáng tạo, Học tập, Công việc và Giải trí">
-          <svg viewBox="0 0 420 170" role="img" aria-label="Bản đồ chòm sao tiến độ"><path d="M52 110 L158 38 L266 105 L368 48"/><path class="is-soft" d="M52 110 L266 105 M158 38 L368 48"/><g data-hgc-star="creative" transform="translate(52 110)"><circle r="8"/><text x="0" y="32">Sáng tạo</text><text class="value" x="0" y="-18">0%</text></g><g data-hgc-star="learning" transform="translate(158 38)"><circle r="8"/><text x="0" y="32">Học tập</text><text class="value" x="0" y="-18">0%</text></g><g data-hgc-star="work" transform="translate(266 105)"><circle r="8"/><text x="0" y="32">Công việc</text><text class="value" x="0" y="-18">0%</text></g><g data-hgc-star="entertainment" transform="translate(368 48)"><circle r="8"/><text x="0" y="32">Giải trí</text><text class="value" x="0" y="-18">0%</text></g></svg>
-        </div>
-      </section>
-      <nav class="hgc-dock" aria-label="Dock tàu không gian"><span class="hgc-dock-ship" aria-hidden="true">◢</span><button type="button" data-hgc-route="/home" aria-label="Trang chủ"><i>⌂</i><b>Trang chủ</b></button><button type="button" data-command-open aria-label="Tìm kiếm"><i>⌕</i><b>Tìm kiếm</b></button><button type="button" class="is-create" data-hgc-route="/create" aria-label="Tạo mới"><i>＋</i><b>Tạo mới</b></button><button type="button" data-hgc-route="/communication/notifications" aria-label="Thông báo"><i>◇</i><b>Thông báo</b><em data-hgc-dock-notifications hidden>0</em></button><button type="button" data-hgc-route="/settings/user-dashboard" aria-label="Hồ sơ"><i>○</i><b>Hồ sơ</b></button></nav>
+        <div class="hgc-command-controls"><div class="hgc-view-switch" aria-label="Chế độ hiển thị">${viewButtons}</div><button type="button" data-hgc-motion-cycle title="Đổi mức chuyển động">◉ <span data-hgc-motion-label>Chuyển động</span></button><button type="button" data-hgc-settings-open aria-label="Cá nhân hóa">⚙</button></div>
+      </header>
+
+      <nav class="hgc-mobile-switcher" aria-label="Chuyển khu vực trang chủ"><button type="button" data-hgc-mobile-pane-option="today">Hôm nay</button><button type="button" data-hgc-mobile-pane-option="galaxy" aria-pressed="true">Thiên hà</button><button type="button" data-hgc-mobile-pane-option="info">Thông tin</button></nav>
+
+      <main class="hgc-one-screen">
+        <aside class="hgc-today-panel" aria-labelledby="hgcTodayTitle">
+          <header><div><small>HÔM NAY</small><h2 id="hgcTodayTitle">Ưu tiên của bạn</h2></div><div><button type="button" data-hgc-today-step="-1" aria-label="Trang trước">←</button><b data-hgc-today-indicator>1/2</b><button type="button" data-hgc-today-step="1" aria-label="Trang sau">→</button></div></header>
+          <div class="hgc-today-list">
+            <button type="button" class="is-priority" data-hgc-today-card data-page="0" data-hgc-today="tasks" data-hgc-route="/work"><span>□</span><small>VIỆC ƯU TIÊN</small><strong data-hgc-today-title="tasks">0 việc cần làm</strong><em data-hgc-today-meta="tasks">Chưa có việc tồn đọng</em></button>
+            <button type="button" data-hgc-today-card data-page="0" data-hgc-today="calendar" data-hgc-route="/work"><span>◷</span><small>LỊCH SẮP TỚI</small><strong data-hgc-today-title="calendar">Chưa có lịch gần</strong><em data-hgc-today-meta="calendar">Các mốc có ngày sẽ xuất hiện ở đây</em></button>
+            <button type="button" data-hgc-today-card data-page="0" data-hgc-today="learning" data-hgc-route="/learn/review"><span>◫</span><small>HỌC ĐẾN HẠN</small><strong data-hgc-today-title="learning">0 bài đến hạn</strong><em data-hgc-today-meta="learning">Không có bài ôn đang chờ</em></button>
+            <button type="button" data-hgc-today-card data-page="1" data-hgc-today="continue" data-hgc-route="/home"><span>◉</span><small>TIẾP TỤC LÀM</small><strong data-hgc-today-title="continue">Chưa có phiên gần đây</strong><em data-hgc-today-meta="continue">Mở một công cụ để lưu hành trình</em></button>
+            <button type="button" data-hgc-today-card data-page="1" data-hgc-today="notifications" data-hgc-route="/communication/notifications"><span>◇</span><small>THÔNG BÁO</small><strong data-hgc-today-title="notifications">0 thông báo mới</strong><em data-hgc-today-meta="notifications">Hộp thư đã được xử lý</em></button>
+          </div>
+          <footer><button type="button" class="hgc-continue-main" data-hgc-continue-main data-hgc-route="/home"><span>▶</span><b>Tiếp tục công việc</b><small data-hgc-continue-label>Mở phiên gần nhất</small></button></footer>
+        </aside>
+
+        <section class="hgc-galaxy-panel" aria-labelledby="hgcGalaxyTitle">
+          <header><div><small>THIÊN HÀ 15 MỤC</small><h2 id="hgcGalaxyTitle">Chọn hành tinh để bắt đầu</h2></div><div class="hgc-pinned-orbit" data-hgc-pinned-orbit aria-label="Năm hành tinh được ghim"></div></header>
+          <div class="hgc-solar" data-hgc-solar aria-label="Mười lăm hành tinh chức năng">
+            <div class="hgc-orbit hgc-orbit--1"></div><div class="hgc-orbit hgc-orbit--2"></div><div class="hgc-orbit hgc-orbit--3"></div><div class="hgc-orbit hgc-orbit--4"></div>
+            <div class="hgc-orbit-particles" aria-hidden="true">${Array.from({ length: 12 }, (_, index) => `<i style="--orbit-particle:${index};--orbit-start:${index * 30}deg;--orbit-delay:${-(index * .7)}s;--orbit-tone:${PLANETS[index % PLANETS.length].color}"></i>`).join("")}</div>
+            <div class="hgc-energy-lines" aria-hidden="true"></div><div class="hgc-scanner-ring" aria-hidden="true"><i></i></div><div class="hgc-focus-beam" aria-hidden="true"><i></i></div>
+            <div class="hgc-sun" aria-label="Mặt trời chỉ huy H"><span>H</span><i></i><b></b><em></em></div><div class="hgc-plasma-arcs" aria-hidden="true"><i></i><b></b><em></em></div>
+            <div class="hgc-sun-particles" data-hgc-sun-particles aria-hidden="true"></div><div class="hgc-planets">${PLANETS.map(planetMarkup).join("")}</div>
+          </div>
+          <div class="hgc-planet-inspector" data-hgc-planet-inspector style="--selected-color:${PLANETS[0].color}">
+            <button type="button" data-hgc-planet-step="-1" aria-label="Hành tinh trước">←</button><span data-hgc-selected-icon>${PLANETS[0].icon}</span><div><small>HÀNH TINH ĐANG CHỌN</small><strong data-hgc-selected-title>${escapeHtml(PLANETS[0].label)}</strong><p data-hgc-selected-description>${escapeHtml(PLANETS[0].description)}</p></div><b data-hgc-selected-signals>Sẵn sàng</b><button type="button" data-hgc-pin-planet aria-pressed="${prefs.pinned.includes(PLANETS[0].id)}">☆ Ghim</button><button type="button" class="is-primary" data-hgc-planet-open data-hgc-route="${PLANETS[0].route}">Mở ngay</button><button type="button" data-hgc-planet-step="1" aria-label="Hành tinh sau">→</button>
+          </div>
+        </section>
+
+        <aside class="hgc-info-center" aria-labelledby="hgcInfoTitle">
+          <header><div><small>TRUNG TÂM THÔNG TIN</small><h2 id="hgcInfoTitle">Tín hiệu hữu ích</h2></div><b data-hgc-hero-status>Đang đồng bộ</b></header>
+          <div class="hgc-info-tabs" role="tablist" aria-label="Nhóm thông tin">${infoTabs}</div>
+          <div class="hgc-info-panels">
+            <section data-hgc-info-panel="overview" role="tabpanel"><div class="hgc-overview-grid"><article><span>◒</span><small>Thời tiết</small><strong data-hgc-value="weather">Đang tải</strong><em data-hgc-meta="weather">AQI đang nối</em></article><article><span>↗</span><small>Mạng</small><strong data-hgc-value="network">Online</strong><em data-hgc-meta="network">Đang đo</em></article><article><span>✚</span><small>Website</small><strong data-hgc-value="health">Đang đo</strong><em data-hgc-meta="health">API Health</em></article><article><span>◷</span><small>Đồng bộ</small><strong data-hgc-value="sync">--:--</strong><em data-hgc-meta="sync">Phiên hiện tại</em></article></div><button type="button" data-hgc-info-tab-link="progress">Xem chòm sao tiến độ →</button></section>
+            <section data-hgc-info-panel="work" role="tabpanel" hidden><div class="hgc-info-summary"><strong data-hgc-work-count>0 việc</strong><span>Dữ liệu từ Project Center và Task</span></div><div class="hgc-info-list" data-hgc-info-list="work"></div><button type="button" data-hgc-route="/work">Mở trung tâm công việc →</button></section>
+            <section data-hgc-info-panel="learning" role="tabpanel" hidden><div class="hgc-info-summary"><strong data-hgc-learning-count>0 bài ôn</strong><span>HH English và HH Japanese</span></div><div class="hgc-info-list" data-hgc-info-list="learning"></div><button type="button" data-hgc-route="/learn/review">Học nhanh 10 phút →</button></section>
+            <section data-hgc-info-panel="website" role="tabpanel" hidden><div class="hgc-website-grid"><article><small>Hiệu năng</small><strong data-hgc-value="performance">Đang đo</strong><em data-hgc-meta="performance">FPS và độ trễ</em></article><article><small>Bộ nhớ</small><strong data-hgc-value="memory">Đang đọc</strong><em data-hgc-meta="memory">Heap tab</em></article><article><small>Mạng</small><strong data-hgc-value="network">Online</strong><em data-hgc-meta="network">Trình duyệt</em></article><article><small>Backend</small><strong data-hgc-value="health">Đang kiểm tra</strong><em data-hgc-meta="health">Website Health</em></article></div><button type="button" data-hgc-route="/analytics">Mở Website Health →</button></section>
+            <section data-hgc-info-panel="notifications" role="tabpanel" hidden><div class="hgc-info-summary"><strong data-hgc-notification-count>0 thông báo</strong><span>Chỉ hiển thị mục chưa đọc</span></div><div class="hgc-info-list" data-hgc-info-list="notifications"></div><button type="button" data-hgc-route="/communication/notifications">Mở tất cả thông báo →</button></section>
+            <section data-hgc-info-panel="progress" role="tabpanel" hidden><div class="hgc-constellation-map" aria-label="Tiến độ thực trên thiết bị"><svg viewBox="0 0 360 210" role="img" aria-label="Chòm sao tiến độ"><path d="M45 142 L132 42 L232 136 L322 54"/><path class="is-soft" d="M45 142 L232 136 M132 42 L322 54"/><g data-hgc-star="creative" transform="translate(45 142)"><circle r="8"/><text x="0" y="30">Sáng tạo</text><text class="value" x="0" y="-16">0%</text></g><g data-hgc-star="learning" transform="translate(132 42)"><circle r="8"/><text x="0" y="30">Học tập</text><text class="value" x="0" y="-16">0%</text></g><g data-hgc-star="work" transform="translate(232 136)"><circle r="8"/><text x="0" y="30">Công việc</text><text class="value" x="0" y="-16">0%</text></g><g data-hgc-star="entertainment" transform="translate(322 54)"><circle r="8"/><text x="0" y="30">Giải trí</text><text class="value" x="0" y="-16">0%</text></g></svg></div><p class="hgc-truth-note">Tính từ hoạt động đã lưu thật trên thiết bị, không dùng xếp hạng giả.</p></section>
+          </div>
+        </aside>
+      </main>
+
+      <nav class="hgc-dock" aria-label="Dock trang chủ"><button type="button" data-hgc-route="/home"><i>⌂</i><b>Trang chủ</b></button><button type="button" class="is-create" data-hgc-quick-toggle><i>＋</i><b>Tạo mới</b></button><button type="button" data-command-open><i>⌕</i><b>Tìm kiếm</b></button><button type="button" data-hgc-route="/recent"><i>◷</i><b>Gần đây</b></button><button type="button" data-hgc-info-open="notifications"><i>◇</i><b>Thông báo</b><em data-hgc-dock-notifications hidden>0</em></button></nav>
+
+      <aside class="hgc-quick-menu" data-hgc-quick-menu hidden><button type="button" data-hgc-quick-close aria-label="Đóng menu tạo mới"></button><section role="dialog" aria-modal="true" aria-labelledby="hgcQuickTitle"><header><div><small>QUICK ACTIONS</small><h2 id="hgcQuickTitle">Bạn muốn làm gì?</h2></div><button type="button" data-hgc-quick-close aria-label="Đóng">×</button></header><div><button type="button" data-hgc-route="/create/ai-center"><span>✦</span><b>Tạo nội dung AI</b><small>Ý tưởng, kịch bản và nội dung</small></button><button type="button" data-hgc-route="/davinci-resolve/youtube"><span>YT</span><b>Đăng video</b><small>Chọn kênh và upload</small></button><button type="button" data-hgc-route="/davinci-resolve/image-text"><span>TX</span><b>Chỉnh thumbnail</b><small>Chèn chữ và xuất hàng loạt</small></button><button type="button" data-hgc-route="/music-ai"><span>♫</span><b>Tạo nhạc</b><small>Music AI Studio</small></button><button type="button" data-hgc-route="/work"><span>□</span><b>Thêm công việc</b><small>Project và Task Center</small></button><button type="button" data-hgc-route="/learn/review"><span>◫</span><b>Học nhanh 10 phút</b><small>Bài ôn đang đến hạn</small></button><button type="button" data-hgc-quick-recent data-hgc-route="/home"><span>◉</span><b>Mở dự án gần nhất</b><small data-hgc-quick-recent-label>Chưa có phiên gần đây</small></button></div></section></aside>
       ${preferenceMarkup()}
       <div class="hgc-burst" data-hgc-burst aria-hidden="true"></div>
       <div class="hgc-notification-comet" data-hgc-notification-comet aria-hidden="true"><i></i><span>Thông báo mới</span></div>
@@ -253,30 +281,96 @@
     return "balanced";
   }
 
+  function renderPinnedOrbit() {
+    const host = root?.querySelector("[data-hgc-pinned-orbit]");
+    if (!host) return;
+    host.innerHTML = prefs.pinned.map((id) => {
+      const planet = PLANETS.find((item) => item.id === id);
+      return planet ? `<button type="button" data-hgc-select-planet="${planet.id}" style="--pin-color:${planet.color}" aria-label="Chọn hành tinh ghim ${escapeHtml(planet.label)}"><span>${planet.icon}</span><b>${escapeHtml(planet.label)}</b></button>` : "";
+    }).join("") || `<span class="hgc-pinned-empty">Ghim tối đa 5 hành tinh thường dùng</span>`;
+  }
+
+  function setInfoTab(id, persist = true) {
+    if (!root || !["overview", "work", "learning", "website", "notifications", "progress"].includes(id)) return;
+    activeInfoTab = id;
+    root.dataset.hgcInfo = id;
+    root.querySelectorAll("[data-hgc-info-tab]").forEach((button) => button.setAttribute("aria-selected", String(button.dataset.hgcInfoTab === id)));
+    root.querySelectorAll("[data-hgc-info-panel]").forEach((panel) => { panel.hidden = panel.dataset.hgcInfoPanel !== id; });
+    if (persist) {
+      prefs.infoTab = id;
+      writeJson(PREF_KEY, prefs);
+    }
+  }
+
+  function selectPlanet(id, focus = false) {
+    const planet = PLANETS.find((item) => item.id === id) || PLANETS[0];
+    if (!root || !planet) return;
+    activePlanetId = planet.id;
+    root.dataset.hgcSelectedPlanet = planet.id;
+    root.querySelectorAll("[data-hgc-planet]").forEach((button) => {
+      const selected = button.dataset.hgcPlanet === planet.id;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+      if (selected && focus) button.focus({ preventScroll: true });
+    });
+    const inspector = root.querySelector("[data-hgc-planet-inspector]");
+    inspector?.style.setProperty("--selected-color", planet.color);
+    setText("[data-hgc-selected-icon]", planet.icon);
+    setText("[data-hgc-selected-title]", planet.label);
+    setText("[data-hgc-selected-description]", planet.description);
+    const signal = root.querySelector(`[data-hgc-planet-count="${planet.id}"]`)?.textContent || "Sẵn sàng";
+    setText("[data-hgc-selected-signals]", signal);
+    const open = root.querySelector("[data-hgc-planet-open]");
+    if (open) open.dataset.hgcRoute = planet.route;
+    const pin = root.querySelector("[data-hgc-pin-planet]");
+    const pinned = prefs.pinned.includes(planet.id);
+    if (pin) { pin.setAttribute("aria-pressed", String(pinned)); pin.textContent = pinned ? "★ Đã ghim" : "☆ Ghim"; }
+    targetPlanet(root.querySelector(`[data-hgc-planet="${planet.id}"]`));
+  }
+
+  function stepPlanet(direction) {
+    const index = Math.max(0, PLANETS.findIndex((planet) => planet.id === activePlanetId));
+    selectPlanet(PLANETS[(index + direction + PLANETS.length) % PLANETS.length].id, true);
+  }
+
   function applyPrefs() {
     if (!root) return;
     root.dataset.hgcTheme = prefs.theme;
     root.dataset.hgcMotion = prefs.motion;
+    root.dataset.hgcView = prefs.view;
     root.dataset.hgcQuality = detectQuality();
     root.querySelectorAll("[data-hgc-theme]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.hgcTheme === prefs.theme)));
     root.querySelectorAll("[data-hgc-motion]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.hgcMotion === prefs.motion)));
+    root.querySelectorAll("[data-hgc-view-option]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.hgcViewOption === prefs.view)));
     root.querySelectorAll("[data-hgc-widget]").forEach((node) => { node.hidden = !prefs.widgets.includes(node.dataset.hgcWidget); });
+    const pinPositions = [[50, 27], [68, 41], [61, 65], [39, 65], [32, 41]];
     root.querySelectorAll("[data-hgc-planet]").forEach((node) => {
-      const active = prefs.planets.includes(node.dataset.hgcPlanet);
-      node.classList.toggle("is-pinned", active);
-      node.hidden = !active;
+      const pinIndex = prefs.pinned.indexOf(node.dataset.hgcPlanet);
+      node.classList.toggle("is-pinned", pinIndex >= 0);
+      node.hidden = false;
+      if (pinIndex >= 0) {
+        node.style.setProperty("--hgc-pin-left", `${pinPositions[pinIndex][0]}%`);
+        node.style.setProperty("--hgc-pin-top", `${pinPositions[pinIndex][1]}%`);
+      } else {
+        node.style.removeProperty("--hgc-pin-left");
+        node.style.removeProperty("--hgc-pin-top");
+      }
     });
+    root.querySelectorAll("[data-hgc-planet-toggle]").forEach((input) => { input.checked = prefs.pinned.includes(input.dataset.hgcPlanetToggle); });
+    setText("[data-hgc-motion-label]", ({ static: "Tĩnh", balanced: "Cân bằng", cinematic: "Điện ảnh" })[prefs.motion]);
     const starValue = root.querySelector("[data-hgc-star-value]");
     if (starValue) starValue.textContent = `${prefs.stars}%`;
+    renderPinnedOrbit();
+    setInfoTab(activeInfoTab, false);
+    selectPlanet(activePlanetId);
     renderStars();
     scheduleMeteors();
     writeJson(PREF_KEY, prefs);
   }
 
   function setText(selector, value) {
-    const node = root?.querySelector(selector);
     const text = String(value ?? "");
-    if (node && node.textContent !== text) node.textContent = text;
+    root?.querySelectorAll(selector).forEach((node) => { if (node.textContent !== text) node.textContent = text; });
   }
 
   function parseNumber(value) {
@@ -330,7 +424,10 @@
   }
 
   function updateLive() {
+    const connectedRoot = document.querySelector("[data-hgc-root]");
+    if (connectedRoot && connectedRoot !== root) { root = connectedRoot; pointerBounds = null; }
     if (!root) return;
+    bindInteractiveRoot(root);
     const snapshot = liveSnapshot();
     Object.entries(snapshot).forEach(([name, item]) => {
       setText(`[data-hgc-value="${name}"]`, item.value);
@@ -363,6 +460,19 @@
     const reviews = Array.isArray(learning.reviews) ? learning.reviews.filter((item) => item && !item.completed) : [];
     const unread = Array.isArray(communication.notifications) ? communication.notifications.filter((item) => item && !item.read) : [];
     const recentItems = Array.isArray(recent) ? recent : [];
+    const renderList = (name, items, emptyText) => {
+      const host = root?.querySelector(`[data-hgc-info-list="${name}"]`);
+      if (!host) return;
+      host.innerHTML = items.length ? items.slice(0, 3).map((item) => {
+        const title = String(item?.title || item?.label || item?.name || "Mục chưa đặt tên").slice(0, 80);
+        const rawDate = item?.dueAt || item?.dueDate || item?.deadline || item?.scheduledAt || item?.date;
+        const timestamp = rawDate ? Date.parse(rawDate) : NaN;
+        const meta = Number.isFinite(timestamp)
+          ? new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(timestamp))
+          : String(item?.status || item?.type || "Đang chờ").slice(0, 42);
+        return `<article><span>${name === "work" ? "□" : name === "learning" ? "◫" : "◇"}</span><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(meta)}</small></div></article>`;
+      }).join("") : `<p class="hgc-info-empty">${escapeHtml(emptyText)}</p>`;
+    };
     const latest = recentItems[0];
     const latestText = typeof latest === "string" ? latest : latest?.title || latest?.label || latest?.route || "";
     const latestRoute = typeof latest === "object" && /^\/[a-z0-9/_-]+$/i.test(latest?.route || "") ? latest.route : "/home";
@@ -370,13 +480,38 @@
     setText('[data-hgc-today-meta="continue"]', latestText ? "Tiếp tục đúng nơi bạn đã dừng" : "Mở một công cụ để lưu hành trình");
     const continueButton = root?.querySelector('[data-hgc-today="continue"]');
     if (continueButton) continueButton.dataset.hgcRoute = latestRoute;
+    root?.querySelectorAll("[data-hgc-continue-main], [data-hgc-quick-recent]").forEach((button) => { button.dataset.hgcRoute = latestRoute; });
+    setText("[data-hgc-continue-label]", latestText ? String(latestText).slice(0, 46) : "Mở phiên gần nhất");
+    setText("[data-hgc-quick-recent-label]", latestText ? String(latestText).slice(0, 52) : "Chưa có phiên gần đây");
     setText('[data-hgc-today-title="tasks"]', `${pending.length} việc cần làm`);
     setText('[data-hgc-today-meta="tasks"]', pending[0]?.title ? String(pending[0].title).slice(0, 70) : "Hôm nay chưa có công việc tồn đọng");
     setText('[data-hgc-today-title="learning"]', `${reviews.length} bài đến hạn`);
     setText('[data-hgc-today-meta="learning"]', reviews[0]?.title ? String(reviews[0].title).slice(0, 70) : "Không có bài ôn đang chờ");
     setText('[data-hgc-today-title="notifications"]', `${unread.length} thông báo mới`);
     setText('[data-hgc-today-meta="notifications"]', unread[0]?.title ? String(unread[0].title).slice(0, 70) : "Hộp thư đã được xử lý");
+    const scheduleSources = [
+      ...pending,
+      ...(Array.isArray(projects.milestones) ? projects.milestones : []),
+      ...(Array.isArray(projects.events) ? projects.events : []),
+      ...(Array.isArray(communication.calendar) ? communication.calendar : [])
+    ];
+    const nextSchedule = scheduleSources.map((item) => {
+      const raw = item?.dueAt || item?.dueDate || item?.deadline || item?.scheduledAt || item?.date || item?.startAt;
+      return { item, time: raw ? Date.parse(raw) : NaN };
+    }).filter((entry) => Number.isFinite(entry.time) && entry.time >= Date.now() - 3600000).sort((a, b) => a.time - b.time)[0];
+    setText('[data-hgc-today-title="calendar"]', nextSchedule?.item?.title ? String(nextSchedule.item.title).slice(0, 62) : "Chưa có lịch gần");
+    setText('[data-hgc-today-meta="calendar"]', nextSchedule ? new Intl.DateTimeFormat("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(nextSchedule.time)) : "Các mốc có ngày sẽ xuất hiện ở đây");
+    const calendarCard = root?.querySelector('[data-hgc-today="calendar"]');
+    if (calendarCard && /^\/[a-z0-9/_-]+$/i.test(nextSchedule?.item?.route || "")) calendarCard.dataset.hgcRoute = nextSchedule.item.route;
     setText("[data-hgc-today-date]", new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date()));
+    setText("[data-hgc-status-tasks]", pending.length);
+    setText("[data-hgc-status-notifications]", unread.length);
+    setText("[data-hgc-work-count]", `${pending.length} việc`);
+    setText("[data-hgc-learning-count]", `${reviews.length} bài ôn`);
+    setText("[data-hgc-notification-count]", `${unread.length} thông báo`);
+    renderList("work", pending, "Không có công việc tồn đọng.");
+    renderList("learning", reviews, "Không có bài ôn đang chờ.");
+    renderList("notifications", unread, "Không có thông báo chưa đọc.");
     const dockBadge = root?.querySelector("[data-hgc-dock-notifications]");
     if (dockBadge) { dockBadge.textContent = String(Math.min(99, unread.length)); dockBadge.hidden = unread.length === 0; }
 
@@ -394,6 +529,7 @@
       if (value) value.textContent = `${score}%`;
       star?.style.setProperty("--star-strength", String(.72 + score / 180));
     });
+    selectPlanet(activePlanetId);
   }
 
   function countStoredSignals() {
@@ -435,6 +571,7 @@
       setText(`[data-hgc-planet-count="${planet.id}"]`, count ? `${count} tín hiệu` : "Sẵn sàng");
       root?.querySelector(`[data-hgc-planet="${planet.id}"]`)?.classList.toggle("has-signal", count > 0);
     });
+    selectPlanet(activePlanetId);
   }
 
   function updateActivity(snapshot) {
@@ -571,23 +708,79 @@
     if (open) requestAnimationFrame(() => settings.querySelector("[data-hgc-settings-close]")?.focus());
   }
 
+  function openQuickMenu(open) {
+    const menu = root?.querySelector("[data-hgc-quick-menu]");
+    if (!menu) return;
+    menu.hidden = !open;
+    if (open) requestAnimationFrame(() => menu.querySelector("section button")?.focus());
+  }
+
+  function setTodayPage(page) {
+    todayPage = ((Number(page) % 2) + 2) % 2;
+    if (!root) return;
+    root.dataset.hgcTodayPage = String(todayPage);
+    setText("[data-hgc-today-indicator]", `${todayPage + 1}/2`);
+  }
+
+  function setMobilePane(pane) {
+    if (!root || !["today", "galaxy", "info"].includes(pane)) return;
+    mobilePane = pane;
+    root.dataset.hgcMobilePane = pane;
+    root.querySelectorAll("[data-hgc-mobile-pane-option]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.hgcMobilePaneOption === pane)));
+  }
+
   function onClick(event) {
     const settingsOpen = event.target.closest("[data-hgc-settings-open]");
     if (settingsOpen) return openSettings(true);
     if (event.target.closest("[data-hgc-settings-close]")) return openSettings(false);
-    const theme = event.target.closest("[data-hgc-theme]");
+    const theme = event.target.closest("button[data-hgc-theme]");
     if (theme) { prefs.theme = theme.dataset.hgcTheme; playTone(520); return applyPrefs(); }
-    const motion = event.target.closest("[data-hgc-motion]");
+    const motion = event.target.closest("button[data-hgc-motion]");
     if (motion) { prefs.motion = motion.dataset.hgcMotion; return applyPrefs(); }
+    const view = event.target.closest("[data-hgc-view-option]");
+    if (view) {
+      prefs.view = view.dataset.hgcViewOption;
+      if (prefs.view === "basic") { activeInfoTab = "overview"; prefs.infoTab = "overview"; }
+      if (prefs.view === "focus") mobilePane = "galaxy";
+      return applyPrefs();
+    }
+    if (event.target.closest("[data-hgc-motion-cycle]")) {
+      const modes = ["static", "balanced", "cinematic"];
+      prefs.motion = modes[(modes.indexOf(prefs.motion) + 1) % modes.length];
+      return applyPrefs();
+    }
+    const infoTab = event.target.closest("[data-hgc-info-tab], [data-hgc-info-tab-link]");
+    if (infoTab) return setInfoTab(infoTab.dataset.hgcInfoTab || infoTab.dataset.hgcInfoTabLink);
+    const infoOpen = event.target.closest("[data-hgc-info-open]");
+    if (infoOpen) { setMobilePane("info"); return setInfoTab(infoOpen.dataset.hgcInfoOpen); }
+    const mobile = event.target.closest("[data-hgc-mobile-pane-option]");
+    if (mobile) return setMobilePane(mobile.dataset.hgcMobilePaneOption);
+    const todayStep = event.target.closest("[data-hgc-today-step]");
+    if (todayStep) return setTodayPage(todayPage + Number(todayStep.dataset.hgcTodayStep || 0));
+    if (event.target.closest("[data-hgc-quick-toggle]")) return openQuickMenu(true);
+    if (event.target.closest("[data-hgc-quick-close]")) return openQuickMenu(false);
+    const planetStep = event.target.closest("[data-hgc-planet-step]");
+    if (planetStep) return stepPlanet(Number(planetStep.dataset.hgcPlanetStep || 0));
+    const pinnedPlanet = event.target.closest("[data-hgc-select-planet]");
+    if (pinnedPlanet) return selectPlanet(pinnedPlanet.dataset.hgcSelectPlanet, true);
+    const planet = event.target.closest("[data-hgc-planet]");
+    if (planet) return selectPlanet(planet.dataset.hgcPlanet);
+    if (event.target.closest("[data-hgc-pin-planet]")) {
+      const alreadyPinned = prefs.pinned.includes(activePlanetId);
+      prefs.pinned = alreadyPinned ? prefs.pinned.filter((id) => id !== activePlanetId) : [...prefs.pinned.filter((id) => id !== activePlanetId), activePlanetId].slice(-5);
+      notificationComet(alreadyPinned ? "Đã bỏ ghim hành tinh" : "Đã thêm vào quỹ đạo gần");
+      return applyPrefs();
+    }
     if (event.target.closest("[data-hgc-reset]")) {
-      prefs = { ...DEFAULT_PREFS, planets: [...DEFAULT_PREFS.planets], widgets: [...DEFAULT_PREFS.widgets] };
+      prefs = { ...DEFAULT_PREFS, pinned: [...DEFAULT_PREFS.pinned], planets: [...DEFAULT_PREFS.planets], widgets: [...DEFAULT_PREFS.widgets] };
+      activeInfoTab = prefs.infoTab;
+      activePlanetId = "home";
+      mobilePane = "galaxy";
       writeJson(PREF_KEY, prefs);
       return mount(mountedHome, true);
     }
     const route = event.target.closest("[data-hgc-route]");
-    if (route) return navigate(route.dataset.hgcRoute, route.closest("[data-hgc-planet]"));
-    const planet = event.target.closest("[data-hgc-planet]");
-    if (planet) return navigate(planet.dataset.hgcRoute, planet);
+    if (route) { openQuickMenu(false); return navigate(route.dataset.hgcRoute); }
     const target = event.target.closest("[data-hgc-target]");
     if (target) return scrollToTarget(target.dataset.hgcTarget);
   }
@@ -605,7 +798,7 @@
     }
     if (event.target.matches("[data-hgc-planet-toggle]")) {
       const id = event.target.dataset.hgcPlanetToggle;
-      prefs.planets = event.target.checked ? [...new Set([...prefs.planets, id])] : prefs.planets.filter((item) => item !== id);
+      prefs.pinned = event.target.checked ? [...prefs.pinned.filter((item) => item !== id), id].slice(-5) : prefs.pinned.filter((item) => item !== id);
       return applyPrefs();
     }
     if (event.target.matches("[data-hgc-widget-toggle]")) {
@@ -654,20 +847,31 @@
     root?.querySelector("[data-hgc-solar]")?.classList.remove("is-targeting");
   }
 
-  function bind() {
-    root.addEventListener("click", onClick);
-    root.addEventListener("change", onChange);
-    root.addEventListener("input", onChange);
-    root.addEventListener("pointermove", onPointerMove, { passive: true });
-    root.addEventListener("pointerenter", () => { pointerBounds = root?.getBoundingClientRect() || null; }, { passive: true });
-    root.addEventListener("pointerleave", () => { pointerBounds = null; }, { passive: true });
-    root.addEventListener("pointerover", (event) => targetPlanet(event.target.closest("[data-hgc-planet]")), { passive: true });
-    root.addEventListener("pointerout", clearPlanetTarget, { passive: true });
-    root.addEventListener("focusin", (event) => targetPlanet(event.target.closest("[data-hgc-planet]")));
-    root.addEventListener("focusout", clearPlanetTarget);
-    root.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") openSettings(false);
+  function bindInteractiveRoot(node) {
+    if (!node || boundRoots.has(node)) return;
+    boundRoots.add(node);
+    const adopt = () => { if (root !== node) { root = node; pointerBounds = null; } };
+    node.addEventListener("click", (event) => { adopt(); onClick(event); });
+    node.addEventListener("change", (event) => { adopt(); onChange(event); });
+    node.addEventListener("input", (event) => { adopt(); onChange(event); });
+    node.addEventListener("pointermove", (event) => { adopt(); onPointerMove(event); }, { passive: true });
+    node.addEventListener("pointerover", (event) => { adopt(); targetPlanet(event.target.closest("[data-hgc-planet]")); }, { passive: true });
+    node.addEventListener("pointerout", (event) => { adopt(); clearPlanetTarget(event); }, { passive: true });
+    node.addEventListener("focusin", (event) => { adopt(); targetPlanet(event.target.closest("[data-hgc-planet]")); });
+    node.addEventListener("focusout", (event) => { adopt(); clearPlanetTarget(event); });
+    node.addEventListener("keydown", (event) => {
+      adopt();
+      if (event.key === "Escape") { openSettings(false); openQuickMenu(false); }
+      if (!event.target.closest("input,textarea,select") && event.target.closest(".hgc-galaxy-panel") && ["ArrowLeft", "ArrowRight"].includes(event.key)) {
+        event.preventDefault();
+        stepPlanet(event.key === "ArrowRight" ? 1 : -1);
+      }
     });
+    node.dataset.hgcBound = "true";
+  }
+
+  function bind() {
+    bindInteractiveRoot(root);
     if (globalBound) return;
     globalBound = true;
     document.addEventListener("click", (event) => {
@@ -693,7 +897,7 @@
     observer?.disconnect();
     observer = new MutationObserver((mutations) => {
       const host = mountedHome?.querySelector("#homeGalaxyCommandRoot");
-      if (host?.firstElementChild !== root || !root?.querySelector(".hgc-hero")) {
+      if (host?.firstElementChild !== root || !root?.querySelector(".hgc-one-screen")) {
         setTimeout(() => mount(mountedHome, true), 90);
         return;
       }
@@ -705,16 +909,26 @@
     observer.observe(mountedHome, { subtree: true, childList: true, characterData: true });
   }
 
+  function syncMainState(active = !location.hash || /^#\/home(?:$|[/?])/.test(location.hash)) {
+    const main = mountedHome?.closest(".app-main") || document.querySelector(".app-main");
+    main?.classList.toggle("hgc-main-active", active);
+    document.body.classList.toggle("hgc-home-active", active);
+  }
+
   function mount(home = document.querySelector('[data-shell-view="home"]'), force = false) {
+    const routeActive = !location.hash || /^#\/home(?:$|[/?])/.test(location.hash);
+    if (!routeActive) { syncMainState(false); return false; }
     const host = home?.querySelector("#homeGalaxyCommandRoot");
     if (!host) return false;
     if (!force && mountedHome === home && root?.isConnected) {
+      syncMainState(true);
       updateLive();
       return true;
     }
     clearInterval(refreshTimer);
     mountedHome = home;
     home.classList.add("hgc-active");
+    syncMainState(true);
     host.innerHTML = markup();
     root = host.querySelector("[data-hgc-root]");
     pointerBounds = null;
@@ -738,16 +952,20 @@
   addEventListener("hh:asset-group-ready", (event) => {
     if (event.detail?.group === "home-enhancements") setTimeout(() => mount(undefined, true), 140);
   });
-  addEventListener("hashchange", () => { if (location.hash.includes("/home")) scheduleMount(); });
+  addEventListener("hashchange", () => {
+    const active = !location.hash || /^#\/home(?:$|[/?])/.test(location.hash);
+    syncMainState(active);
+    if (active) scheduleMount();
+  });
   addEventListener("storage", (event) => {
-    if (event.key === PREF_KEY) { prefs = readPrefs(); applyPrefs(); }
+    if (event.key === PREF_KEY) { prefs = readPrefs(); activeInfoTab = prefs.infoTab; applyPrefs(); }
     scheduleUpdate();
   });
 
   window.HHHomeGalaxyCommand = Object.freeze({
-    version: 2,
+    version: 3,
     mount,
     refresh: updateLive,
-    preferences: () => ({ ...prefs, planets: [...prefs.planets], widgets: [...prefs.widgets] })
+    preferences: () => ({ ...prefs, pinned: [...prefs.pinned], planets: [...prefs.planets], widgets: [...prefs.widgets] })
   });
 })();

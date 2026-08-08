@@ -13,15 +13,15 @@ const worker = read("sw.js");
 
 test("home route loads the versioned Galaxy Command assets and mount host", () => {
   assert.match(html, /id="homeGalaxyCommandRoot"/);
-  assert.match(loader, /home-galaxy-command\.css\?v=7/);
-  assert.match(loader, /home-galaxy-command\.js\?v=6/);
-  assert.match(worker, /home-galaxy-command\.css\?v=7/);
-  assert.match(worker, /home-galaxy-command\.js\?v=6/);
+  assert.match(loader, /home-galaxy-command\.css\?v=8/);
+  assert.match(loader, /home-galaxy-command\.js\?v=7/);
+  assert.match(worker, /home-galaxy-command\.css\?v=8/);
+  assert.match(worker, /home-galaxy-command\.js\?v=7/);
   assert.match(source, /hh:assets-ready/);
   assert.match(source, /\[data-shell-view="home"\]/);
 });
 
-test("LIVE ORBIT exposes six truthful browser and site signals", () => {
+test("one-screen status center exposes six truthful browser and site signals", () => {
   for (const id of ["weather", "performance", "memory", "network", "health", "sync"]) {
     assert.match(source, new RegExp(`id: "${id}"`), `missing live widget ${id}`);
   }
@@ -33,7 +33,7 @@ test("LIVE ORBIT exposes six truthful browser and site signals", () => {
     "navigator.connection",
     "navigator.onLine",
     "hhhf-health-overview",
-    "LIVE ORBIT"
+    "TRUNG TÂM THÔNG TIN"
   ]) assert.ok(source.includes(contract), `missing live contract: ${contract}`);
   assert.doesNotMatch(source, /CPU utilization|GPU utilization/);
   assert.match(source, /data-hgc-spark/);
@@ -53,21 +53,23 @@ test("command sun contains exactly fifteen routed feature planets", () => {
   assert.match(source, /location\.hash/);
 });
 
-test("activity, cosmic effects and real interactions are present", () => {
+test("one-screen cosmic effects and real interactions are present", () => {
   for (const contract of [
-    "GALAXY ACTIVITY",
+    "hgc-one-screen",
+    "hgc-today-panel",
+    "hgc-info-center",
     "createMeteor",
     "notificationComet",
     "burstAtPlanet",
     "pointermove",
     "MutationObserver",
-    "data-hgc-activity"
+    "data-hgc-info-tab"
   ]) assert.ok(source.includes(contract), `missing effect contract: ${contract}`);
   assert.match(styles, /hgc-nebula/);
   assert.match(styles, /hgc-meteor/);
   assert.match(styles, /hgc-notification-comet/);
   assert.match(styles, /hgc-burst/);
-  assert.match(styles, /hgc-activity-track/);
+  assert.match(styles, /hgc-one-screen/);
 });
 
 test("personalization is versioned, persistent and sound is opt-in", () => {
