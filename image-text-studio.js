@@ -361,7 +361,7 @@
         <div class="its-export-progress" data-export-progress hidden><div><i data-progress-bar></i></div><span data-progress-label>0 / 0</span><button type="button" data-action="cancel-export">Hủy</button></div>
         <div class="its-export-actions">
           <button type="button" data-action="export-current">Tải ảnh đang xem</button>
-          <details class="its-export-more"><summary data-action="toggle-export-more">Xuất nâng cao</summary><div><p>Ghi thẳng vào thư mục cần quyền của Chrome. ZIP không cần cấp quyền.</p><button type="button" data-action="export-folder">Ghi thẳng vào thư mục</button></div></details>
+          <div class="its-export-more"><button type="button" data-action="toggle-export-more" aria-expanded="false">Xuất nâng cao</button><div data-export-more-menu hidden><p>Ghi thẳng vào thư mục cần quyền của Chrome. ZIP không cần cấp quyền.</p><button type="button" data-action="export-folder">Ghi thẳng vào thư mục</button></div></div>
           <button type="button" class="is-primary" data-action="export-zip">Tải toàn bộ ZIP</button>
         </div>
       </footer>
@@ -1240,7 +1240,7 @@
         pushHistory(); state.template[state.activeSlot].text = "{filename}"; renderInspector(); schedulePreview();
       }
       else if (name === "export-current") exportCurrent();
-      else if (name === "toggle-export-more") { event.preventDefault(); const details = action.closest("details"); if (details) details.open = !details.open; }
+      else if (name === "toggle-export-more") { const menu = action.parentElement?.querySelector("[data-export-more-menu]"); if (menu) { menu.hidden = !menu.hidden; action.setAttribute("aria-expanded", String(!menu.hidden)); } }
       else if (name === "export-folder") showFolderPermissionDialog(true);
       else if (name === "folder-dialog-close") { showFolderPermissionDialog(false); exportZip(); }
       else if (name === "export-folder-confirm") { showFolderPermissionDialog(false); exportFolder(); }
