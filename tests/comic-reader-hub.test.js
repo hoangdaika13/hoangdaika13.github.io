@@ -14,9 +14,9 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=9[\s\S]*?comic-reader-hub\.js\?v=9/);
-  assert.match(worker, /comic-reader-hub\.css\?v=9/);
-  assert.match(worker, /comic-reader-hub\.js\?v=9/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=10[\s\S]*?comic-reader-hub\.js\?v=10/);
+  assert.match(worker, /comic-reader-hub\.css\?v=10/);
+  assert.match(worker, /comic-reader-hub\.js\?v=10/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -118,6 +118,8 @@ test("reader v2 restores sessions, supports page bookmarks and resilient navigat
   assert.match(client, /data-reader-page-slider/);
   assert.match(client, /data-action="reader-retry-image"/);
   assert.match(client, /preloadAdjacentPages/);
+  assert.match(client, /function restoreReaderPosition/);
+  assert.match(client, /target\.offsetTop - readerPages\.offsetTop/);
   assert.match(client, /version: "2\.0\.0"/);
   assert.match(css, /\.cr-continue-shelf/);
   assert.match(css, /\.cr-bookmark-list/);

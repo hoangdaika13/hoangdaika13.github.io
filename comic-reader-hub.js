@@ -494,7 +494,7 @@
     const sort = root.querySelector("[data-sort]");
     if (sort) sort.value = state.sort;
     bindInputs();
-    if (state.view === "reader") { setupReaderObserver(); preloadAdjacentPages(activeChapter(), state.readerPage); }
+    if (state.view === "reader") { restoreReaderPosition(); preloadAdjacentPages(activeChapter(), state.readerPage); }
   }
 
   function setImporting(active) {
@@ -717,6 +717,32 @@
       if (visible) updateProgress(Number(visible.target.dataset.page || 0));
     }, { root: root.querySelector("[data-reader-pages]"), threshold: [0.45, 0.72] });
     root.querySelectorAll("[data-page]").forEach((page) => readerObserver.observe(page));
+  }
+
+  function restoreReaderPosition() {
+    if (state.readerMode !== "scroll" || state.readerPage <= 0) return setupReaderObserver();
+    const readerPages = root?.querySelector("[data-reader-pages]");
+    const target = root?.querySelector(`[data-page="${state.readerPage}"]`);
+    if (!readerPages || !target) return setupReaderObserver();
+    const renderRoot = root;
+    const align = () => {
+      if (root !== renderRoot || !target.isConnected) return false;
+      readerPages.scrollTop = Math.max(0, target.offsetTop - readerPages.offsetTop);
+      return true;
+    };
+    align();
+    const precedingImages = [...readerPages.querySelectorAll("[data-page] [data-reader-image]")].slice(0, state.readerPage + 1);
+    const imagesReady = Promise.all(precedingImages.map((image) => image.complete ? Promise.resolve() : new Promise((resolve) => {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", resolve, { once: true });
+    })));
+    Promise.race([imagesReady, new Promise((resolve) => global.setTimeout(resolve, 3500))]).then(() => {
+      if (!align()) return;
+      global.requestAnimationFrame(() => {
+        if (!align()) return;
+        global.requestAnimationFrame(() => { if (root === renderRoot) setupReaderObserver(); });
+      });
+    });
   }
 
   function bindInputs() {
