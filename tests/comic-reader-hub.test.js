@@ -14,9 +14,9 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=6[\s\S]*?comic-reader-hub\.js\?v=6/);
-  assert.match(worker, /comic-reader-hub\.css\?v=6/);
-  assert.match(worker, /comic-reader-hub\.js\?v=6/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=9[\s\S]*?comic-reader-hub\.js\?v=9/);
+  assert.match(worker, /comic-reader-hub\.css\?v=9/);
+  assert.match(worker, /comic-reader-hub\.js\?v=9/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -105,4 +105,22 @@ test("catalog has no generated demo comics and Clean Reader filters promotional 
   assert.match(client, /blockedPages/);
   assert.match(client, /Clean Reader đang loại trang quảng cáo/);
   assert.match(client, /storyBaseline \* 1\.22/);
+});
+
+test("reader v2 restores sessions, supports page bookmarks and resilient navigation", () => {
+  const client = read("comic-reader-hub.js");
+  const css = read("comic-reader-hub.css");
+
+  assert.match(client, /function continueShelf/);
+  assert.match(client, /function bookmarkView/);
+  assert.match(client, /function restoreDeepLink/);
+  assert.match(client, /comicSeries/);
+  assert.match(client, /data-reader-page-slider/);
+  assert.match(client, /data-action="reader-retry-image"/);
+  assert.match(client, /preloadAdjacentPages/);
+  assert.match(client, /version: "2\.0\.0"/);
+  assert.match(css, /\.cr-continue-shelf/);
+  assert.match(css, /\.cr-bookmark-list/);
+  assert.match(css, /\.cr-tap-zone/);
+  assert.match(css, /\.cr-image-retry/);
 });
