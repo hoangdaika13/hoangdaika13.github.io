@@ -47,6 +47,10 @@
       "destination": "/api/platform/summary?youtubePublisher=1&youtubeAction=:youtubeAction"
     },
     {
+      "source": "/api/facebook/:facebookAction*",
+      "destination": "/api/platform/summary?facebookPageManager=1&facebookAction=:facebookAction"
+    },
+    {
       "source": "/api/community-admin",
       "destination": "/api/community?adminRoute=1"
     },

@@ -5435,7 +5435,8 @@ function initAppShell() {
     { id: "auto", icon: "AD", title: "Auto Video Director", route: "/davinci-resolve/auto", description: "Quét media thật, đo sáng–màu–waveform và tạo timeline tự động trước khi bạn xác nhận." },
     { id: "batch", icon: "BV", title: "Batch Video Factory", route: "/davinci-resolve/batch", description: "Dùng một sườn để trộn CSV, ảnh và video rồi render hàng loạt MP4/WebM với hàng đợi thật." },
     { id: "image-text", icon: "TX", title: "Text on Image Studio", route: "/davinci-resolve/image-text", description: "Chèn chữ nhanh vào 1.000+ ảnh, preview theo trang, font quốc tế, preset tối giản và xuất batch thumbnail YouTube 16:9." },
-    { id: "youtube", icon: "YT", title: "YouTube Creator Galaxy", route: "/davinci-resolve/youtube", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight." }
+    { id: "youtube", icon: "YT", title: "YouTube Creator Galaxy", route: "/davinci-resolve/youtube", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight." },
+    { id: "facebook", icon: "FB", title: "Facebook Page Command Center", route: "/davinci-resolve/facebook", description: "Kết nối và quản lý nhiều Facebook Page qua Meta Graph API: đăng/lên lịch, bình luận, insights và Batch Page Setup." }
   ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
@@ -6015,6 +6016,7 @@ function initAppShell() {
     shell.dataset.activeSection = activeGroup?.id || "home";
     document.body.classList.toggle("app-davinci-resolve-route", route === "/davinci-resolve" || route.startsWith("/davinci-resolve/"));
     document.body.classList.toggle("app-image-text-route", route === "/davinci-resolve/image-text");
+    document.body.classList.toggle("app-facebook-page-route", route === "/davinci-resolve/facebook");
     document.body.classList.toggle("app-comic-motion-route", route === "/comic-motion-studio");
     document.body.classList.toggle("app-comic-reader-route", route === "/comic-reader");
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
@@ -6039,6 +6041,7 @@ function initAppShell() {
       window.HHVideoBatchFactory?.unmount?.();
       window.HHYouTubeCreatorGalaxy?.cleanup?.();
       window.HHImageTextStudio?.unmount?.();
+      window.HHFacebookPageCommandCenter?.unmount?.();
     }
     if (route !== "/comic-motion-studio") window.HHComicMotionStudio?.unmount?.();
     if (route !== "/comic-reader") window.HHComicReaderHub?.unmount?.();
@@ -6279,10 +6282,12 @@ function initAppShell() {
       window.HHYouTubeCreatorGalaxy?.cleanup?.();
       window.HHCosmicWebStudio?.unmount?.();
       window.HHImageTextStudio?.unmount?.();
+      window.HHFacebookPageCommandCenter?.unmount?.();
       if (resolveView === "youtube") window.HHYouTubeCreatorGalaxy?.mount(resolveHost, { view: resolveView });
       else if (resolveView === "batch") window.HHVideoBatchFactory?.mount(resolveHost);
       else if (resolveView === "cosmic") window.HHCosmicWebStudio?.mount(resolveHost);
       else if (resolveView === "image-text") window.HHImageTextStudio?.mount(resolveHost);
+      else if (resolveView === "facebook") window.HHFacebookPageCommandCenter?.mount(resolveHost);
       else window.HHDavinciResolveHub?.mount(resolveHost, { view: resolveView });
       remember(`davinci-resolve-${resolveView}`);
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {
@@ -6551,6 +6556,7 @@ function initAppShell() {
     }));
     const comicMotion = [
       { type: "Sản xuất hình ảnh", title: "Text on Image Studio", description: "Chèn chữ hàng loạt vào 1.000+ ảnh, font quốc tế, preview nhanh và xuất thumbnail YouTube 16:9.", route: "/davinci-resolve/image-text", key: "tool text on image studio chèn chữ ảnh hàng loạt batch thumbnail youtube font quốc tế preview folder zip 1280 720 1920 1080 4k" },
+      { type: "Mạng xã hội", title: "Facebook Page Command Center", description: "Quản lý nhiều Facebook Page thật qua Meta Graph API, đăng/lên lịch, bình luận, insights và chuẩn bị Page hàng loạt.", route: "/davinci-resolve/facebook", key: "tool facebook meta page manager command center bulk page setup oauth graph api schedule post comments insights multi page" },
       { type: "Đọc truyện", title: "HH Comics", description: "Kho truyện online một trang với tìm kiếm, thể loại, theo dõi, lịch sử, chi tiết truyện, reader cuộn dọc/từng trang và import CBZ/JSON/API.", route: "/comic-reader", key: "đọc truyện online hh comics manga manhwa manhua webtoon catalog chapter reader theo dõi lịch sử cbz zip json api licensed" },
       { type: "Sản xuất video", title: "Comic Motion Studio", description: "Biến ảnh truyện được cấp phép từ ảnh, folder, ZIP, CBZ, PDF hoặc URL đã xác minh thành video có voice, camera, nhạc và phụ đề.", route: "/comic-motion-studio", key: "comic motion studio truyện tranh ảnh panel speech bubble voice tts timeline subtitle zip cbz pdf website bản quyền" }
     ];
@@ -6824,6 +6830,7 @@ function initAppShell() {
   window.addEventListener("hh:developer-tools-ready", renderRouteSafely);
   window.addEventListener("hh:youtube-creator-ready", renderRouteSafely);
   window.addEventListener("hh:comic-motion-ready", renderRouteSafely);
+  window.addEventListener("hh:facebook-page-command-center-ready", renderRouteSafely);
   window.addEventListener("hh:space-explorer-ready", renderRouteSafely);
   // Game modules are loaded before the shell mounts them. Their ready events
   // are intentionally informational; re-rendering the route here would mount

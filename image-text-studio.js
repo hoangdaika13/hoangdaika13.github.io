@@ -6,6 +6,7 @@
   const PAGE_SIZE = 60;
   const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/avif"]);
   const FONT_GROUPS = Object.freeze([
+    ["Nhẹ nhàng", ["EB Garamond", "Cormorant Infant", "Spectral", "Fraunces", "Prata", "Marcellus", "Italiana", "Forum", "Bellefair", "Poiret One", "Josefin Sans", "Quicksand", "Manrope"]],
     ["Thanh lịch", ["Playfair Display", "Cormorant Garamond", "DM Serif Display", "Bodoni Moda", "Libre Baskerville", "Lora", "Merriweather", "Cinzel"]],
     ["Hiện đại", ["Be Vietnam Pro", "Montserrat", "Poppins", "Raleway", "Oswald", "Bebas Neue", "Roboto Slab", "Inter"]],
     ["Viết tay", ["Great Vibes", "Dancing Script", "Pacifico", "Allura", "Parisienne", "Sacramento"]],

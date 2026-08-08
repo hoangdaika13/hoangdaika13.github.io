@@ -12,8 +12,8 @@ test("Text on Image Studio is routed from the main Tool group", () => {
 
   assert.match(app, /id: "image-text"[\s\S]*?route: "\/davinci-resolve\/image-text"/);
   assert.match(app, /resolveView === "image-text"[\s\S]*?HHImageTextStudio\?\.mount/);
-  assert.match(loader, /image-text-studio\.css\?v=10/);
-  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=10/);
+  assert.match(loader, /image-text-studio\.css\?v=11/);
+  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=11/);
 });
 
 test("studio supports per-image AI text, optional color correction and secure providers", () => {
@@ -82,9 +82,9 @@ test("studio remains a one-screen workspace with internal scrolling", () => {
   const css = read("image-text-studio.css");
 
   assert.match(css, /body\.app-image-text-route \.app-page-header/);
-  assert.match(css, /height:calc\(100dvh - 106px\)/);
+  assert.match(css, /height:calc\(100dvh - 122px\)/);
   assert.match(css, /width:100%;height:100%/);
-  assert.match(css, /grid-template-rows:58px minmax\(0,1fr\) 68px/);
+  assert.match(css, /grid-template-rows:54px minmax\(0,1fr\) 62px/);
   assert.match(css, /overflow:hidden/);
   assert.match(css, /\.its-thumb-grid[\s\S]*?overflow-y:auto/);
   assert.match(css, /\.its-inspector[\s\S]*?overflow-y:auto/);
