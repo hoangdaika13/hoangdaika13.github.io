@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v531";
+const CACHE = "hh-identity-portal-v533";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=10 ./image-text-studio.js?v=10
@@ -53,8 +53,9 @@ const RUNTIME_ASSETS = [
   "./video-batch-factory.css?v=4",
   "./comic-motion-studio.css?v=6",
   "./comic-reader-hub.css?v=11",
-  "./cinema-hub.css?v=3",
-  "./open-music-hub.css?v=3",
+  "./cinema-hub.css?v=4",
+  "./open-music-hub.css?v=4",
+  "./open-media-governance.css?v=1",
   "./video-editor-resolve.css?v=8",
   "./davinci-resolve-hub.css?v=4",
   "./h-cosmic-web-studio.css?v=2",
@@ -67,7 +68,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=177",
+  "./script.js?v=179",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -112,11 +113,13 @@ const RUNTIME_ASSETS = [
   "./comic-motion-studio.js?v=10",
   "./comic-open-source-catalog.js?v=2",
   "./comic-reader-hub.js?v=18",
-  "./utils/open-media-rights.js?v=2",
-  "./cinema-hub.js?v=2",
-  "./open-music-hub.js?v=2",
+  "./utils/open-media-rights.js?v=3",
+  "./cinema-hub.js?v=3",
+  "./open-music-hub.js?v=3",
+  "./open-media-governance.js?v=1",
   "./assets/open-media/curated-films-v1.json",
   "./assets/open-media/curated-music-v1.json",
+  "./assets/open-media/rights-registry-v2.json",
   "./vendor/jszip.min.js?v=3.10.1",
   "./vendor/tesseract.min.js?v=6.0.1",
   "./vendor/tesseract-worker.min.js?v=6.0.1",
@@ -470,10 +473,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=262",
+  "./performance-loader.js?v=263",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=16",
-  "./script.js?v=177"
+  "./script.js?v=179"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

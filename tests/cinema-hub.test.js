@@ -1,148 +1,161 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const manifest = JSON.parse(read("assets/open-media/curated-films-v1.json"));
-const cinema = require(path.join(root, "cinema-hub.js"));
 const rightsEngine = require(path.join(root, "utils", "open-media-rights.js"));
+const cinema = require(path.join(root, "cinema-hub.js"));
+const sha256 = (value) => `sha256:${crypto.createHash("sha256").update(value).digest("hex")}`;
 
-test("Cinema manifest publishes only verified open-license films", () => {
-  assert.equal(manifest.schemaVersion, 1);
-  assert.ok(manifest.items.length >= 6 && manifest.items.length <= 20);
+test("Cinema V2 publishes only governance-approved films", () => {
+  assert.equal(manifest.schemaVersion, 2);
+  assert.equal(manifest.policy.mode, "fail-closed");
+  assert.equal(manifest.items.length, 6);
   assert.equal(new Set(manifest.items.map((item) => item.id)).size, manifest.items.length);
-  const allowed = new Set(["PDM-1.0", "CC0-1.0", "CC-BY-2.5", "CC-BY-3.0", "CC-BY-4.0", "CC-BY-SA-3.0", "CC-BY-SA-4.0"]);
+
   manifest.items.forEach((item) => {
     assert.equal(item.kind, "film");
-    assert.ok(item.id && item.title && item.creator);
-    assert.ok(allowed.has(item.rights.licenseCode), `${item.id} has an unsafe license`);
-    assert.equal(item.rights.commercialAllowed, true);
-    assert.equal(item.rights.derivativesAllowed, true);
-    assert.match(item.rights.verifiedAt, /^2026-\d{2}-\d{2}$/);
-    assert.match(item.rights.licenseUrl, /^https:\/\//);
-    assert.match(item.source.landingUrl, /^https:\/\//);
-    assert.equal(item.playback.type, "video");
-    assert.match(item.playback.url, /^https:\/\//);
-    assert.equal(rightsEngine.validateItem(item).ok, true, `${item.id} must pass the shared publishing gate`);
+    assert.equal(item.rights.reviewStatus, "published");
+    assert.equal(item.rights.streamAllowed, true);
+    assert.equal(item.rights.rehostAllowed, false);
+    assert.equal(item.rights.downloadAllowed, false);
+    assert.equal(item.rights.shareAlike, false);
+    assert.ok(item.source.itemId && item.source.itemId !== item.id || item.source.provider === "Blender Open Movies");
+    const territory = item.rights.territories.includes("WORLDWIDE") ? "WORLDWIDE" : "VN";
+    const verdict = rightsEngine.validateGovernanceItem(item, { territory });
+    assert.equal(verdict.publiclyAvailable, true, `${item.id}: ${verdict.errors.join(", ")}`);
   });
 });
 
-test("Cinema catalog is curated from the approved cultural repositories", () => {
-  const providers = new Set(manifest.items.map((item) => item.source.provider));
-  assert.ok(providers.has("Blender Open Movies"));
-  assert.ok(providers.has("Library of Congress"));
-  assert.ok(providers.has("Wikimedia Commons"));
-  assert.ok(providers.has("Prelinger Archives / Internet Archive"));
-  const serialized = JSON.stringify(manifest).toLowerCase();
-  for (const blocked of ["netflix.com", "spotify.com", "tiktok.com", "torrent", "youtube.com"]) {
-    assert.doesNotMatch(serialized, new RegExp(blocked.replace(".", "\\.")));
-  }
+test("Cinema keeps every unresolved film in a no-playback quarantine", () => {
+  const expected = new Set(["great-train-robbery-1903", "duck-and-cover-1951", "about-bananas-1935", "the-general-1926"]);
+  assert.equal(manifest.quarantineItems.length, expected.size);
+  manifest.quarantineItems.forEach((item) => {
+    assert.ok(expected.delete(item.id), `unexpected quarantine item ${item.id}`);
+    assert.equal(item.reviewStatus, "quarantine");
+    assert.ok(item.source.itemId);
+    assert.ok(item.reasonCodes.length);
+    assert.equal(Object.hasOwn(item, "playback"), false);
+    assert.equal(Object.hasOwn(item, "playbackUrl"), false);
+  });
+  assert.equal(expected.size, 0);
+  assert.equal(cinema.normalizeQuarantine(manifest.quarantineItems).length, 4);
+  assert.equal(cinema.normalizeCatalog([...manifest.items, ...manifest.quarantineItems], { territory: "VN" }).length, 6);
 });
 
-test("Blender Open Movie records use their canonical published licenses", () => {
+test("Evidence hashes are reproducible records, upstream hashes are never invented", () => {
   const byId = new Map(manifest.items.map((item) => [item.id, item]));
-  assert.deepEqual(
-    {
-      code: byId.get("big-buck-bunny")?.rights.licenseCode,
-      url: byId.get("big-buck-bunny")?.rights.licenseUrl
-    },
-    {
-      code: "CC-BY-3.0",
-      url: "https://creativecommons.org/licenses/by/3.0/"
+  manifest.items.forEach((item) => {
+    const evidence = item.rights.evidence;
+    assert.equal(evidence.metadataChecksum, sha256(evidence.metadataRecord), `${item.id} metadata evidence mismatch`);
+    assert.equal(evidence.metadataChecksumScope, "embedded-evidence-record");
+    if (evidence.mediaChecksum == null) {
+      assert.equal(evidence.mediaChecksumStatus, "unavailable");
+      assert.equal(item.rights.rehostAllowed, false);
+      assert.equal(item.rights.downloadAllowed, false);
+      assert.ok(evidence.mediaChecksumReason.length > 20);
+    } else {
+      assert.match(evidence.mediaChecksum, /^sha1:[a-f0-9]{40}$/);
+      assert.equal(evidence.mediaChecksumStatus, "verified-upstream");
+      assert.equal(evidence.mediaChecksumSource, "Wikimedia Commons structured data");
     }
-  );
-  assert.match(byId.get("big-buck-bunny")?.playback.url || "", /Big_Buck_Bunny_4K\.webm\.480p\.vp9\.webm$/);
-  assert.doesNotMatch(byId.get("big-buck-bunny")?.playback.url || "", /Big_Buck_Bunny_alt/);
-  assert.deepEqual(
-    {
-      code: byId.get("elephants-dream")?.rights.licenseCode,
-      url: byId.get("elephants-dream")?.rights.licenseUrl
-    },
-    {
-      code: "CC-BY-2.5",
-      url: "https://creativecommons.org/licenses/by/2.5/"
+    if (item.rights.manualReview) {
+      assert.equal(item.rights.manualReview.evidenceChecksum, sha256(item.rights.manualReview.decisionRecord));
     }
-  );
-  assert.match(byId.get("elephants-dream")?.rights.attributionText || "", /Netherlands Media Art Institute/);
-  assert.match(byId.get("elephants-dream")?.rights.attributionText || "", /www\.elephantsdream\.org/);
+  });
+  assert.equal(byId.get("le-voyage-dans-la-lune").rights.evidence.mediaChecksum, "sha1:7c076c23184d475e31b94f5ee4443d73967653af");
+  assert.equal(byId.get("nosferatu-1922").rights.evidence.mediaChecksum, "sha1:4d78cee99f7e9b1576e4d72bd28af58875251e12");
+  assert.doesNotMatch(JSON.stringify(manifest), /sha(?:1|256):0{20,}/i);
 });
 
-test("Cinema module enforces rights validation instead of bypassing rejections", () => {
-  assert.equal(cinema.VERSION, "1.0.0");
-  assert.equal(cinema.MANIFEST_URL, "/assets/open-media/curated-films-v1.json");
-  assert.equal(cinema.normalizeCatalog(manifest.items).length, manifest.items.length);
-  assert.equal(cinema.fallbackLicenseAllowed({
-    ...manifest.items[0],
-    rights: { ...manifest.items[0].rights, licenseCode: "ARR", commercialAllowed: false }
-  }), false);
-  assert.equal(cinema.fallbackLicenseAllowed({
-    ...manifest.items[0],
-    rights: { ...manifest.items[0].rights, licenseUrl: "https://creativecommons.org/licenses/by-nc/3.0/" }
-  }), false);
-  assert.equal(cinema.fallbackLicenseAllowed({
-    ...manifest.items[0],
-    playback: { ...manifest.items[0].playback, type: "iframe" }
-  }), false);
+test("Risky restored or scored classics are not used", () => {
+  const byId = new Map(manifest.items.map((item) => [item.id, item]));
+  const moon = byId.get("le-voyage-dans-la-lune");
+  const nosferatu = byId.get("nosferatu-1922");
+  assert.match(moon.playback.url, /black_and_white/);
+  assert.equal(moon.rights.layers.soundtrack.status, "not-applicable");
+  assert.match(nosferatu.playback.url, /English_titles_1947/);
+  assert.equal(nosferatu.rights.layers.soundtrack.status, "not-applicable");
+  assert.doesNotMatch(nosferatu.playback.url, /restoration|2006/i);
+  assert.match(nosferatu.description, /không dùng bản phục chế 2006/i);
+});
+
+test("Cinema gates territory server-side and fails closed without geo evidence", () => {
+  assert.equal(cinema.VERSION, "2.0.0");
+  assert.equal(cinema.RIGHTS_STATUS_URL, "/api/open-media/rights");
+  assert.equal(cinema.normalizeCatalog(manifest.items).length, 4, "VN-only records must not be inferred from browser state");
+  assert.equal(cinema.normalizeCatalog(manifest.items, { territory: "VN" }).length, 6);
+  const suspended = cinema.applyEmergencySuspensions(manifest.items, {
+    items: [{ id: "sintel", available: false, reviewStatus: "suspended" }]
+  });
+  assert.equal(suspended.items.some((item) => item.id === "sintel"), false);
+  assert.deepEqual(suspended.suspendedIds, ["sintel"]);
   const source = read("cinema-hub.js");
-  assert.match(source, /HHOpenMediaRights\?\.validateItem/);
-  assert.match(source, /verdict === false/);
-  assert.match(source, /return false;/);
-  assert.doesNotMatch(source, /NASA-MEDIA-GUIDELINES/);
+  assert.match(source, /validateGovernanceItem/);
+  assert.match(source, /RIGHTS_STATUS_URL = "\/api\/open-media\/rights"/);
+  assert.match(source, /emergencyTerritory/);
+  assert.doesNotMatch(source, /navigator\.language.*territ/i);
 });
 
-test("Cinema has a real player with safe playback and recovery controls", () => {
+test("Fallback validation rejects incomplete, quarantined and download-enabled records", () => {
+  const safe = manifest.items[0];
+  assert.equal(cinema.fallbackLicenseAllowed(safe), true);
+  assert.equal(cinema.fallbackLicenseAllowed({ ...safe, rights: { ...safe.rights, reviewStatus: "quarantine" } }), false);
+  assert.equal(cinema.fallbackLicenseAllowed({ ...safe, rights: { ...safe.rights, licenseUrl: "https://creativecommons.org/licenses/by-nc/3.0/" } }), false);
+  assert.equal(cinema.fallbackLicenseAllowed({ ...safe, rights: { ...safe.rights, evidence: { ...safe.rights.evidence, metadataChecksum: null } } }), false);
+  assert.equal(cinema.fallbackLicenseAllowed({ ...safe, playback: { ...safe.playback, type: "iframe" } }), false);
+});
+
+test("Cinema player includes viewing controls and an always-accessible rights panel", () => {
   const source = read("cinema-hub.js");
   assert.match(source, /<video data-cinema-video controls playsinline preload="metadata"/);
   assert.doesNotMatch(source, /<video[^>]*\bautoplay\b/i);
   assert.match(source, /data-cinema-player-error/);
-  assert.match(source, /data-cinema-retry/);
-  assert.match(source, /Mở tại nguồn/);
   assert.match(source, /requestPictureInPicture/);
   assert.match(source, /requestFullscreen/);
-  assert.match(source, /pictureInPictureEnabled/);
-  assert.doesNotMatch(source, /<iframe data-cinema-iframe/);
-  assert.match(source, /clearPlayerListeners\(runtime\)/);
-  assert.match(source, /button, a, summary/);
-  for (const shortcut of ["arrowleft", "arrowright", 'key === "p"', 'key === "f"', 'key === "m"']) {
-    assert.match(source, new RegExp(shortcut));
+  assert.match(source, /data-cinema-speed/);
+  assert.match(source, /data-cinema-rights-card open/);
+  assert.match(source, /\/copyright/);
+  assert.match(source, /changesDescription/);
+  assert.match(source, /territories/);
+  assert.match(source, /sourceRevision/);
+  for (const shortcut of ["arrowleft", "arrowright", 'key === "p"', 'key === "f"', 'key === "["', 'key === "]"', 'key === "r"']) {
+    assert.match(source, new RegExp(shortcut.replace(/[\[\]]/g, "\\$&")));
   }
 });
 
-test("Cinema persists private favorites, history and continue-watching progress", () => {
+test("Cinema persists owner-isolated continue, favorites, watchlist and speed", () => {
+  const state = cinema.normalizeState({ favorites: ["a", "a"], watchlist: ["b", "b"], playbackRate: 1.5 });
+  assert.deepEqual(state.favorites, ["a"]);
+  assert.deepEqual(state.watchlist, ["b"]);
+  assert.equal(state.playbackRate, 1.5);
   const source = read("cinema-hub.js");
   assert.match(source, /hh\.cinema\.hub\.v1/);
   assert.match(source, /storageKey\(runtime\.ownerId\)/);
   assert.match(source, /options\.currentUser/);
-  assert.match(source, /encodeURIComponent\(normalized\)/);
-  assert.match(source, /favorites/);
-  assert.match(source, /history/);
-  assert.match(source, /progress/);
-  assert.match(source, /position/);
-  assert.match(source, /completed/);
   assert.match(source, /MAX_HISTORY = 50/);
+  assert.match(source, /data-cinema-view="watchlist"/);
 });
 
-test("Cinema exposes the SPA lifecycle and search focus contract", () => {
-  const source = read("cinema-hub.js");
-  assert.match(source, /globalScope\.HHCinemaHub = api/);
+test("Cinema exposes SPA lifecycle and compliance inspection", () => {
   assert.equal(typeof cinema.mount, "function");
   assert.equal(typeof cinema.unmount, "function");
   assert.equal(typeof cinema.inspect, "function");
   assert.equal(typeof cinema.focusSearch, "function");
-  assert.deepEqual(cinema.inspect(), { version: "1.0.0", mounted: false, route: "/cinema", catalogCount: 0 });
-  assert.match(source, /data-cinema-hub-host|data-cinema-hub/);
-  assert.match(source, /data-cinema-search/);
-  assert.match(source, /hh:cinema-focus-search/);
+  assert.deepEqual(cinema.inspect(), { version: "2.0.0", mounted: false, route: "/cinema", catalogCount: 0 });
 });
 
-test("Cinema layout is one-screen, mobile-safe and motion-aware", () => {
+test("Cinema layout remains one-screen, 375px-safe and accessible", () => {
   const css = read("cinema-hub.css");
   assert.match(css, /body\.app-cinema-route/);
   assert.match(css, /\.cinema-hub\s*\{[\s\S]*?overflow:\s*hidden/);
   assert.match(css, /\.cinema-workspace\s*\{[\s\S]*?min-height:\s*0/);
   assert.match(css, /\.cinema-card-list\s*\{[\s\S]*?overflow:\s*auto/);
+  assert.match(css, /overflow-wrap:\s*anywhere/);
   assert.match(css, /@media\s*\(max-width:\s*760px\)/);
   assert.match(css, /@media\s*\(max-width:\s*430px\)/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);

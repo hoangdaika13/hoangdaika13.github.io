@@ -10,6 +10,11 @@ const TOOL_GATEWAYS = Object.freeze({
 });
 const mediaCloud = require("../../services/mediaCloud");
 const aiVideoRemake = require("../../services/ai-video-remake");
+const OPEN_MEDIA_HANDLERS = Object.freeze({
+  rights: require("../../utils/open-media-server/rights"),
+  notices: require("../../utils/open-media-server/notices"),
+  restrictions: require("../../utils/open-media-server/restrictions")
+});
 
 const products = [
   { id: "hh-voice-lite", title: "HH Voice Studio Lite", price: 0, currency: "VND", type: "download" },
@@ -24,6 +29,14 @@ module.exports = async function handler(req, res) {
 
   if (resource === "media") return mediaCloud.handler(req, res);
   if (resource === "ai-video-remake") return aiVideoRemake(req, res);
+  if (resource === "open-media") {
+    const action = clean(req.query?.openMediaAction, 30).toLocaleLowerCase("en-US");
+    const openMediaHandler = OPEN_MEDIA_HANDLERS[action];
+    if (openMediaHandler) return openMediaHandler(req, res);
+    setCors(req, res);
+    if (req.method === "OPTIONS") return res.status(204).end();
+    return res.status(404).json({ error: "Open Media action not found" });
+  }
 
   if (resource === "products") {
     setCors(req, res);

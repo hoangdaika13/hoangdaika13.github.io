@@ -1,7 +1,7 @@
 (function initHHOpenMusicHub(global) {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "2.0.0";
   const MANIFEST_URL = "/assets/open-media/curated-music-v1.json";
   const STORAGE_PREFIX = "hh.open-music-hub.v1";
   const ALLOWED_LICENSE_URLS = Object.freeze({
@@ -16,17 +16,23 @@
   const ALLOWED_LICENSES = new Set(Object.keys(ALLOWED_LICENSE_URLS));
   const DEFAULT_PALETTE = Object.freeze(["#5ee7ff", "#755cff", "#ff6da8"]);
   const REPEAT_MODES = ["off", "all", "one"];
+  const CROSSFADE_VALUES = [0, 3, 5, 8];
+  const REQUIRED_MUSIC_LAYERS = ["composition", "performance", "masterRecording", "artwork"];
   const MAX_HISTORY = 60;
 
   let host = null;
   let root = null;
   let audio = null;
+  let standbyAudio = null;
   let abortController = null;
   let pendingSeek = 0;
   let lastProgressWrite = 0;
   let statusTimer = 0;
   let manifestRequest = 0;
   let mediaSessionBound = false;
+  let crossfadeTimer = 0;
+  let crossfadeInFlight = false;
+  let crossfadeSourceId = "";
   let ownerScope = "guest";
   let storageKey = `${STORAGE_PREFIX}:guest`;
   const trackErrors = new Set();
@@ -35,6 +41,8 @@
   const state = {
     tracks: [],
     rejected: [],
+    rightsRegistryOnline: false,
+    emergencyBlockCount: 0,
     manifest: null,
     loading: false,
     error: "",
@@ -42,6 +50,8 @@
     query: "",
     license: "all",
     genre: "all",
+    mood: "all",
+    creatorMode: false,
     currentTrackId: "",
     queue: [],
     queueIndex: -1,
@@ -50,14 +60,18 @@
     progress: {},
     shuffle: false,
     repeat: "off",
+    crossfadeSeconds: 5,
     volume: 0.82,
     muted: false,
-    queueOpen: false
+    queueOpen: false,
+    rightsOpen: false
   };
 
   function resetRuntimeState() {
     state.tracks = [];
     state.rejected = [];
+    state.rightsRegistryOnline = false;
+    state.emergencyBlockCount = 0;
     state.manifest = null;
     state.loading = false;
     state.error = "";
@@ -65,6 +79,8 @@
     state.query = "";
     state.license = "all";
     state.genre = "all";
+    state.mood = "all";
+    state.creatorMode = false;
     state.currentTrackId = "";
     state.queue = [];
     state.queueIndex = -1;
@@ -73,9 +89,11 @@
     state.progress = {};
     state.shuffle = false;
     state.repeat = "off";
+    state.crossfadeSeconds = 5;
     state.volume = 0.82;
     state.muted = false;
     state.queueOpen = false;
+    state.rightsOpen = false;
   }
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -137,12 +155,15 @@
       const value = JSON.parse(global.localStorage?.getItem(storageKey) || "{}");
       state.view = ["discover", "favorites", "history"].includes(value.view) ? value.view : "discover";
       state.currentTrackId = String(value.currentTrackId || "");
+      state.mood = String(value.mood || "all");
       state.queue = Array.isArray(value.queue) ? value.queue.map(String).slice(0, 200) : [];
       state.favorites = new Set(Array.isArray(value.favorites) ? value.favorites.map(String) : []);
       state.history = Array.isArray(value.history) ? value.history.filter((row) => row && row.id).slice(0, MAX_HISTORY) : [];
       state.progress = value.progress && typeof value.progress === "object" ? value.progress : {};
       state.shuffle = Boolean(value.shuffle);
       state.repeat = REPEAT_MODES.includes(value.repeat) ? value.repeat : "off";
+      state.crossfadeSeconds = CROSSFADE_VALUES.includes(Number(value.crossfadeSeconds)) ? Number(value.crossfadeSeconds) : 5;
+      state.creatorMode = Boolean(value.creatorMode);
       state.volume = clamp(value.volume ?? 0.82, 0, 1);
       state.muted = Boolean(value.muted);
     } catch {
@@ -156,12 +177,15 @@
         schema: 1,
         view: state.view,
         currentTrackId: state.currentTrackId,
+        mood: state.mood,
         queue: state.queue.slice(0, 200),
         favorites: [...state.favorites],
         history: state.history.slice(0, MAX_HISTORY),
         progress: state.progress,
         shuffle: state.shuffle,
         repeat: state.repeat,
+        crossfadeSeconds: state.crossfadeSeconds,
+        creatorMode: state.creatorMode,
         volume: state.volume,
         muted: state.muted,
         updatedAt: Date.now()
@@ -195,10 +219,21 @@
   function fallbackRightsValidation(item) {
     const rights = item?.rights || {};
     const code = String(rights.licenseCode || "");
+    const layers = rights.layers && typeof rights.layers === "object" ? rights.layers : {};
+    const evidence = rights.evidence && typeof rights.evidence === "object" ? rights.evidence : {};
+    const layerReady = REQUIRED_MUSIC_LAYERS.every((key) => {
+      const layer = layers[key];
+      return layer && (layer.status === "cleared" || (layer.status === "not-applicable" && String(layer.reason || "").trim()));
+    });
+    const metadataHashReady = /^sha256:[a-f0-9]{64}$/i.test(String(evidence.metadataChecksum || ""));
+    const mediaEvidenceReady = evidence.mediaChecksumStatus === "verified"
+      ? /^(?:sha1:[a-f0-9]{40}|sha256:[a-f0-9]{64})$/i.test(String(evidence.mediaChecksum || ""))
+      : evidence.mediaChecksumStatus === "unavailable" && evidence.mediaChecksum == null && rights.rehostAllowed === false && rights.downloadAllowed === false;
     return Boolean(
       String(item?.id || "").trim() &&
       String(item?.title || "").trim() &&
       String(item?.creator || "").trim() &&
+      String(item?.source?.itemId || "").trim() &&
       item?.kind === "track" &&
       item?.playback?.type === "audio" &&
       ALLOWED_LICENSES.has(code) &&
@@ -207,6 +242,13 @@
       isValidPastOrPresentDate(rights.verifiedAt) &&
       rights.commercialAllowed === true &&
       rights.derivativesAllowed === true &&
+      typeof rights.shareAlike === "boolean" &&
+      rights.reviewStatus === "published" &&
+      rights.rightsBasis === "cc-license" &&
+      rights.streamAllowed === true &&
+      typeof rights.syncAllowed === "boolean" &&
+      Array.isArray(rights.territories) && rights.territories.includes("WORLDWIDE") &&
+      layerReady && metadataHashReady && mediaEvidenceReady && String(evidence.sourceAuthority || "").trim() &&
       isStrictHttpsUrl(rights.licenseUrl) &&
       isStrictHttpsUrl(item?.source?.landingUrl) &&
       isStrictHttpsUrl(item?.playback?.url)
@@ -215,11 +257,13 @@
 
   function validateRights(item) {
     const rightsApi = global.HHOpenMediaRights;
-    if (!rightsApi?.validateItem) return fallbackRightsValidation(item);
+    if (!rightsApi?.validateGovernanceItem) return fallbackRightsValidation(item);
     try {
-      const result = rightsApi.validateItem(item);
+      const result = rightsApi.validateGovernanceItem(item, { territory: "WORLDWIDE" });
       if (typeof result === "boolean") return result;
       if (result && typeof result === "object") {
+        if ("publiclyAvailable" in result) return result.publiclyAvailable === true;
+        if ("publishable" in result) return result.publishable === true && item?.rights?.reviewStatus === "published";
         if ("valid" in result) return result.valid === true;
         if ("ok" in result) return result.ok === true;
         if ("allowed" in result) return result.allowed === true;
@@ -285,15 +329,28 @@
       colors,
       source: {
         provider: String(item.source.provider || "Nguồn mở"),
-        landingUrl: String(item.source.landingUrl)
+        landingUrl: String(item.source.landingUrl),
+        itemId: String(item.source.itemId || "")
       },
       rights: {
         licenseCode: String(item.rights.licenseCode),
         licenseUrl: String(item.rights.licenseUrl),
         attributionText: String(item.rights.attributionText || `${item.title} — ${item.creator}`),
         verifiedAt: String(item.rights.verifiedAt || ""),
-        commercialAllowed: true,
-        derivativesAllowed: true
+        reviewStatus: String(item.rights.reviewStatus || ""),
+        rightsBasis: String(item.rights.rightsBasis || ""),
+        jurisdiction: String(item.rights.jurisdiction || ""),
+        territories: Array.isArray(item.rights.territories) ? item.rights.territories.map(String) : [],
+        commercialAllowed: item.rights.commercialAllowed === true,
+        derivativesAllowed: item.rights.derivativesAllowed === true,
+        streamAllowed: item.rights.streamAllowed === true,
+        rehostAllowed: item.rights.rehostAllowed === true,
+        downloadAllowed: item.rights.downloadAllowed === true,
+        syncAllowed: item.rights.syncAllowed === true,
+        shareAlike: item.rights.shareAlike === true,
+        layers: Object.fromEntries(REQUIRED_MUSIC_LAYERS.map((key) => [key, { ...(item.rights.layers?.[key] || {}) }])),
+        evidence: { ...(item.rights.evidence || {}) },
+        flags: { ...(item.rights.flags || {}) }
       },
       playback: {
         type: "audio",
@@ -301,6 +358,15 @@
         fallbackUrl: isStrictHttpsUrl(item.playback.fallbackUrl) ? String(item.playback.fallbackUrl) : String(item.playback.url)
       }
     };
+  }
+
+  function isCreatorReady(track) {
+    const rights = track?.rights || {};
+    return rights.reviewStatus === "published" &&
+      rights.commercialAllowed === true &&
+      rights.derivativesAllowed === true &&
+      rights.syncAllowed === true &&
+      REQUIRED_MUSIC_LAYERS.every((key) => ["cleared", "not-applicable"].includes(rights.layers?.[key]?.status));
   }
 
   function trackById(id) {
@@ -313,6 +379,10 @@
 
   function genres() {
     return [...new Set(state.tracks.flatMap((track) => track.genres))].sort((a, b) => a.localeCompare(b, "vi"));
+  }
+
+  function moods() {
+    return [...new Set(state.tracks.flatMap((track) => track.moods))].sort((a, b) => a.localeCompare(b, "vi"));
   }
 
   function filteredTracks() {
@@ -330,6 +400,8 @@
       rows = rows.filter((track) => state.license === "CC-BY" ? /^CC-BY-\d/.test(track.rights.licenseCode) : track.rights.licenseCode === state.license);
     }
     if (state.genre !== "all") rows = rows.filter((track) => track.genres.includes(state.genre));
+    if (state.mood !== "all") rows = rows.filter((track) => track.moods.includes(state.mood));
+    if (state.creatorMode) rows = rows.filter(isCreatorReady);
     if (state.view !== "history") {
       rows.sort((a, b) => Number(b.featured) - Number(a.featured) || a.title.localeCompare(b.title, "vi"));
     }
@@ -410,7 +482,7 @@
   function renderHero(rows) {
     const node = root?.querySelector("[data-omh-hero]");
     if (!node) return;
-    const show = state.view === "discover" && !state.query && state.license === "all" && state.genre === "all" && rows.length;
+    const show = state.view === "discover" && !state.query && state.license === "all" && state.genre === "all" && state.mood === "all" && !state.creatorMode && rows.length;
     if (!show) {
       node.hidden = true;
       node.innerHTML = "";
@@ -458,6 +530,19 @@
     if (licenseSelect) licenseSelect.value = state.license;
     const search = root.querySelector("[data-omh-search]");
     if (search && search.value !== state.query) search.value = state.query;
+    const moodSelect = root.querySelector("[data-omh-mood]");
+    if (moodSelect) {
+      const moodOptions = [`<option value="all">Tất cả cảm xúc</option>`, ...moods().map((mood) => `<option value="${escapeHtml(mood)}">${escapeHtml(mood)}</option>`)].join("");
+      if (moodSelect.innerHTML !== moodOptions) moodSelect.innerHTML = moodOptions;
+      moodSelect.value = moods().includes(state.mood) ? state.mood : "all";
+    }
+    const creatorMode = root.querySelector('[data-action="creator-mode"]');
+    if (creatorMode) {
+      creatorMode.classList.toggle("is-active", state.creatorMode);
+      creatorMode.setAttribute("aria-pressed", String(state.creatorMode));
+    }
+    const crossfade = root.querySelector("[data-omh-crossfade]");
+    if (crossfade) crossfade.value = String(state.crossfadeSeconds);
   }
 
   function renderQueue() {
@@ -468,8 +553,151 @@
     if (count) count.textContent = String(rows.length);
     node.innerHTML = rows.length ? rows.map((track, index) => `<div class="omh-queue-item${index === state.queueIndex ? " is-active" : ""}">
       <button type="button" data-play="${escapeHtml(track.id)}" data-queue-index="${index}">${visualMarkup(track, true)}<span><b>${escapeHtml(track.title)}</b><small>${escapeHtml(track.creator)}</small></span><time>${formatTime(track.durationSeconds)}</time></button>
-      <button type="button" data-action="queue-remove" data-index="${index}" aria-label="Xóa khỏi hàng đợi">×</button>
+      <span class="omh-queue-actions"><button type="button" data-action="queue-up" data-index="${index}" aria-label="Đưa lên trước" ${index === 0 ? "disabled" : ""}>↑</button><button type="button" data-action="queue-down" data-index="${index}" aria-label="Đưa xuống sau" ${index === rows.length - 1 ? "disabled" : ""}>↓</button><button type="button" data-action="queue-remove" data-index="${index}" aria-label="Xóa khỏi hàng đợi">×</button></span>
     </div>`).join("") : `<p class="omh-queue-empty">Hàng đợi đang trống. Bấm <b>＋</b> trên một bản nhạc để thêm.</p>`;
+  }
+
+  const layerLabel = (key) => ({
+    composition: "Tác phẩm",
+    performance: "Biểu diễn",
+    masterRecording: "Bản ghi master",
+    artwork: "Ảnh bìa"
+  }[key] || key);
+
+  function rightsPanelMarkup(track) {
+    const rights = track.rights;
+    const evidence = rights.evidence || {};
+    const creatorReady = isCreatorReady(track);
+    const layerRows = REQUIRED_MUSIC_LAYERS.map((key) => {
+      const layer = rights.layers?.[key] || {};
+      const ready = ["cleared", "not-applicable"].includes(layer.status);
+      return `<li class="${ready ? "is-cleared" : "is-blocked"}"><span>${ready ? "✓" : "!"}</span><b>${escapeHtml(layerLabel(key))}</b><em>${escapeHtml(layer.status === "not-applicable" ? "Không áp dụng" : layer.status === "cleared" ? "Đã xác minh" : "Chưa đủ bằng chứng")}</em></li>`;
+    }).join("");
+    const checksumLabel = evidence.mediaChecksumStatus === "verified"
+      ? `${escapeHtml(evidence.mediaChecksumAlgorithm || "hash")} · ${escapeHtml(evidence.checksumScope || "media")}`
+      : "Nguồn không công bố checksum; không lưu lại hoặc cho tải file";
+    return `<section class="omh-rights-card${state.rightsOpen ? " is-open" : ""}">
+      <header><span>✓</span><div><b>${escapeHtml(licenseLabel(rights.licenseCode))}</b><small>Đã kiểm tra ${escapeHtml(rights.verifiedAt)} · ${escapeHtml(rights.reviewStatus)}</small></div></header>
+      <p>${escapeHtml(rights.attributionText)}</p>
+      <div class="omh-rights-summary"><span>${creatorReady ? "Creator Mode: đủ điều kiện" : "Chỉ nghe trực tuyến"}</span><span>${escapeHtml((rights.territories || []).join(", ") || "Chưa rõ lãnh thổ")}</span></div>
+      <div class="omh-rights-actions"><button type="button" data-action="rights-toggle" aria-expanded="${state.rightsOpen}">${state.rightsOpen ? "Thu gọn hồ sơ" : "Quyền & TASL"}</button><button type="button" data-action="license-pack">Xuất License Pack</button></div>
+      <div class="omh-rights-details" ${state.rightsOpen ? "" : "hidden"}>
+        <dl class="omh-tasl"><div><dt>T · Title</dt><dd>${escapeHtml(track.title)}</dd></div><div><dt>A · Author</dt><dd>${escapeHtml(track.creator)}</dd></div><div><dt>S · Source</dt><dd>${escapeHtml(track.source.provider)}</dd></div><div><dt>L · License</dt><dd>${escapeHtml(licenseLabel(rights.licenseCode))}</dd></div></dl>
+        <ul class="omh-rights-layers">${layerRows}</ul>
+        <p class="omh-evidence-note"><b>Bằng chứng:</b> ${checksumLabel}. Content ID vẫn có thể nhận nhầm; gói xuất không thay thế tư vấn pháp lý.</p>
+      </div>
+      <nav><a href="${escapeHtml(rights.licenseUrl)}" target="_blank" rel="noopener noreferrer">Giấy phép ↗</a><a href="${escapeHtml(track.source.landingUrl)}" target="_blank" rel="noopener noreferrer">Nguồn gốc ↗</a><a href="#/copyright">Bản quyền & khiếu nại</a></nav>
+    </section>`;
+  }
+
+  function safeFilename(value, fallback = "open-music") {
+    const cleaned = String(value || "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9._-]/g, "")
+      .replace(/-{2,}/g, "-")
+      .replace(/^[.\s-]+|[.\s-]+$/g, "")
+      .slice(0, 80);
+    return cleaned || fallback;
+  }
+
+  function createLicensePack(track) {
+    const rights = track.rights;
+    const evidence = rights.evidence || {};
+    const credits = [
+      "HH OPEN MUSIC — LICENSE PACK",
+      "",
+      `Title: ${track.title}`,
+      `Author: ${track.creator}`,
+      `Source: ${track.source.landingUrl}`,
+      `License: ${rights.licenseCode} — ${rights.licenseUrl}`,
+      `Attribution: ${rights.attributionText}`,
+      `Territories: ${(rights.territories || []).join(", ") || "not recorded"}`,
+      `Verified: ${rights.verifiedAt}`,
+      rights.shareAlike ? "ShareAlike: Có — bản phái sinh phải tuân thủ điều kiện chia sẻ tương tự của giấy phép." : "ShareAlike: Không.",
+      "",
+      "Lưu ý: Gói này ghi lại bằng chứng đang có tại thời điểm xuất. Nó không bảo đảm nền tảng Content ID sẽ không nhận nhầm và không thay thế tư vấn pháp lý."
+    ].join("\r\n");
+    const json = {
+      schemaVersion: 1,
+      generatedAt: new Date().toISOString(),
+      generatedBy: `HH Open Music ${VERSION}`,
+      item: {
+        id: track.id,
+        title: track.title,
+        creator: track.creator,
+        source: { ...track.source },
+        license: { code: rights.licenseCode, url: rights.licenseUrl, attributionText: rights.attributionText },
+        permissions: {
+          commercial: rights.commercialAllowed,
+          derivatives: rights.derivativesAllowed,
+          stream: rights.streamAllowed,
+          rehost: rights.rehostAllowed,
+          download: rights.downloadAllowed,
+          sync: rights.syncAllowed,
+          shareAlike: rights.shareAlike
+        },
+        governance: {
+          reviewStatus: rights.reviewStatus,
+          rightsBasis: rights.rightsBasis,
+          jurisdiction: rights.jurisdiction,
+          territories: [...rights.territories],
+          layers: Object.fromEntries(REQUIRED_MUSIC_LAYERS.map((key) => [key, { ...rights.layers[key] }]))
+        },
+        evidence: { ...evidence },
+        contentIdEvidence: {
+          sourceUrl: track.source.landingUrl,
+          licenseUrl: rights.licenseUrl,
+          verifiedAt: rights.verifiedAt,
+          metadataChecksum: evidence.metadataChecksum || null,
+          mediaChecksum: evidence.mediaChecksum || null,
+          mediaChecksumStatus: evidence.mediaChecksumStatus || "unavailable",
+          checksumScope: evidence.checksumScope || "remote-playback",
+          notice: "Human review required before submitting a Content ID dispute."
+        }
+      },
+      credits,
+      copyrightContact: `${global.location?.origin || ""}/#/copyright`
+    };
+    return { json, credits };
+  }
+
+  function downloadBlob(blob, filename) {
+    if (!global.document || !global.URL?.createObjectURL) return false;
+    const href = global.URL.createObjectURL(blob);
+    const link = global.document.createElement("a");
+    link.href = href;
+    link.download = filename;
+    link.hidden = true;
+    global.document.body.append(link);
+    link.click();
+    link.remove();
+    global.setTimeout(() => global.URL.revokeObjectURL(href), 1000);
+    return true;
+  }
+
+  async function exportLicensePack(track) {
+    if (!track) return;
+    const pack = createLicensePack(track);
+    const base = `${safeFilename(track.title)}-license-pack`;
+    try {
+      if (typeof global.JSZip === "function") {
+        const zip = new global.JSZip();
+        zip.file("LICENSES.json", JSON.stringify(pack.json, null, 2));
+        zip.file("CREDITS.txt", pack.credits);
+        const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+        downloadBlob(blob, `${base}.zip`);
+        status("Đã xuất ZIP gồm LICENSES.json và CREDITS.txt.", "success");
+        return;
+      }
+      downloadBlob(new Blob([JSON.stringify(pack.json, null, 2)], { type: "application/json;charset=utf-8" }), `${base}.json`);
+      global.setTimeout(() => downloadBlob(new Blob([pack.credits], { type: "text/plain;charset=utf-8" }), `${base}-CREDITS.txt`), 180);
+      status("Đã xuất LICENSES.json và CREDITS.txt.", "success");
+    } catch {
+      status("Không thể tạo License Pack trên trình duyệt này.", "error");
+    }
   }
 
   function renderNowPlaying() {
@@ -487,11 +715,7 @@
         <span>ĐANG CHỌN</span><h2>${escapeHtml(track.title)}</h2><p>${escapeHtml(track.creator)}</p>
         <div class="omh-now-tags">${[...track.moods, ...track.genres].slice(0, 4).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
       </section>
-      <section class="omh-rights-card">
-        <header><span>✓</span><div><b>${escapeHtml(licenseLabel(track.rights.licenseCode))}</b><small>Đã kiểm tra ${escapeHtml(track.rights.verifiedAt)}</small></div></header>
-        <p>${escapeHtml(track.rights.attributionText)}</p>
-        <div><a href="${escapeHtml(track.rights.licenseUrl)}" target="_blank" rel="noopener noreferrer">Xem giấy phép ↗</a><a href="${escapeHtml(track.source.landingUrl)}" target="_blank" rel="noopener noreferrer">Nguồn gốc ↗</a></div>
-      </section>
+      ${rightsPanelMarkup(track)}
       ${errored ? `<section class="omh-playback-error"><b>Không thể phát luồng âm thanh này.</b><p>Bạn có thể thử file gốc hoặc mở trang nguồn.</p><div><button type="button" data-action="retry-track">Thử file gốc</button><a href="${escapeHtml(track.source.landingUrl)}" target="_blank" rel="noopener noreferrer">Mở nguồn</a></div></section>` : ""}`;
     renderQueue();
   }
@@ -610,9 +834,96 @@
     } catch {}
   }
 
+  function cancelCrossfade() {
+    global.clearInterval(crossfadeTimer);
+    crossfadeTimer = 0;
+    crossfadeInFlight = false;
+    if (audio) audio.volume = state.volume;
+    if (standbyAudio) {
+      standbyAudio.pause();
+      standbyAudio.volume = state.volume;
+    }
+  }
+
+  function autoNextQueueIndex() {
+    if (!state.queue.length || state.repeat === "one") return -1;
+    if (state.shuffle && state.queue.length > 1) {
+      let index = state.queueIndex;
+      while (index === state.queueIndex) index = Math.floor(Math.random() * state.queue.length);
+      return index;
+    }
+    const index = state.queueIndex + 1;
+    if (index < state.queue.length) return index;
+    return state.repeat === "all" ? 0 : -1;
+  }
+
+  async function crossfadeTo(index, outgoing) {
+    if (crossfadeInFlight || !standbyAudio || !outgoing || outgoing !== audio) return;
+    const track = trackById(state.queue[index]);
+    if (!track) return;
+    crossfadeInFlight = true;
+    crossfadeSourceId = state.currentTrackId;
+    const incoming = standbyAudio;
+    incoming.pause();
+    incoming.src = track.playback.url;
+    incoming.currentTime = 0;
+    incoming.volume = 0;
+    incoming.muted = state.muted;
+    try {
+      const promise = incoming.play();
+      if (promise?.then) await promise;
+    } catch {
+      incoming.removeAttribute("src");
+      incoming.load();
+      incoming.volume = state.volume;
+      crossfadeInFlight = false;
+      return;
+    }
+
+    savePlaybackProgress(true);
+    audio = incoming;
+    standbyAudio = outgoing;
+    state.queueIndex = index;
+    state.currentTrackId = track.id;
+    updateHistory(track.id);
+    updateMediaSession(track);
+    persist();
+    renderAll();
+
+    const durationMs = Math.max(400, state.crossfadeSeconds * 1000);
+    const startedAt = Date.now();
+    global.clearInterval(crossfadeTimer);
+    crossfadeTimer = global.setInterval(() => {
+      const progress = clamp((Date.now() - startedAt) / durationMs, 0, 1);
+      incoming.volume = state.volume * progress;
+      outgoing.volume = state.volume * (1 - progress);
+      if (progress >= 1) {
+        global.clearInterval(crossfadeTimer);
+        crossfadeTimer = 0;
+        outgoing.pause();
+        outgoing.removeAttribute("src");
+        try { outgoing.load(); } catch {}
+        outgoing.volume = state.volume;
+        incoming.volume = state.volume;
+        crossfadeInFlight = false;
+      }
+    }, 50);
+  }
+
+  function maybeStartCrossfade(element) {
+    if (!state.crossfadeSeconds || crossfadeInFlight || element !== audio || element.paused || !Number.isFinite(element.duration)) return;
+    if (state.currentTrackId === crossfadeSourceId) return;
+    const remaining = element.duration - element.currentTime;
+    if (remaining <= 0 || remaining > state.crossfadeSeconds) return;
+    const nextIndex = autoNextQueueIndex();
+    if (nextIndex >= 0) crossfadeTo(nextIndex, element);
+  }
+
   function loadTrack(trackId, autoplay = true, options = {}) {
     const track = trackById(trackId);
     if (!track || !audio) return;
+    cancelCrossfade();
+    crossfadeSourceId = "";
     savePlaybackProgress(true);
     ensureQueue(track.id, options.sourceRows || filteredTracks());
     state.currentTrackId = track.id;
@@ -722,6 +1033,8 @@
     state.query = "";
     state.license = "all";
     state.genre = "all";
+    state.mood = "all";
+    state.creatorMode = false;
     if (state.view !== "discover") state.view = "discover";
     renderAll();
     focusSearch();
@@ -765,6 +1078,21 @@
         persist();
         renderQueue();
       }
+    } else if (action === "queue-up" || action === "queue-down") {
+      const index = Number(actionButton.dataset.index);
+      const targetIndex = action === "queue-up" ? index - 1 : index + 1;
+      if (index >= 0 && targetIndex >= 0 && index < state.queue.length && targetIndex < state.queue.length) {
+        [state.queue[index], state.queue[targetIndex]] = [state.queue[targetIndex], state.queue[index]];
+        state.queueIndex = state.queue.indexOf(state.currentTrackId);
+        persist();
+        renderQueue();
+      }
+    } else if (action === "queue-clear") {
+      state.queue = state.currentTrackId ? [state.currentTrackId] : [];
+      state.queueIndex = state.queue.length ? 0 : -1;
+      persist();
+      renderQueue();
+      status("Đã dọn hàng đợi.");
     } else if (action === "shuffle") {
       state.shuffle = !state.shuffle;
       persist();
@@ -778,6 +1106,7 @@
     } else if (action === "mute") {
       state.muted = !state.muted;
       audio.muted = state.muted;
+      if (standbyAudio) standbyAudio.muted = state.muted;
       persist();
       renderPlayer();
     } else if (action === "queue-toggle") {
@@ -786,6 +1115,17 @@
     } else if (action === "queue-close") {
       state.queueOpen = false;
       renderPlayer();
+    } else if (action === "creator-mode") {
+      state.creatorMode = !state.creatorMode;
+      persist();
+      renderFilters();
+      renderLibrary();
+      status(state.creatorMode ? "Creator Mode chỉ hiện bản nhạc đủ quyền thương mại, phái sinh, đồng bộ và bốn lớp quyền." : "Đã tắt Creator Mode.", state.creatorMode ? "success" : "info");
+    } else if (action === "rights-toggle") {
+      state.rightsOpen = !state.rightsOpen;
+      renderNowPlaying();
+    } else if (action === "license-pack") {
+      exportLicensePack(currentTrack());
     } else if (action === "clear-filters") clearFilters();
     else if (action === "retry-manifest") loadManifest();
     else if (action === "retry-track") retryTrackWithFallback();
@@ -819,6 +1159,8 @@
       state.muted = false;
       audio.volume = state.volume;
       audio.muted = false;
+      if (standbyAudio && !crossfadeInFlight) standbyAudio.volume = state.volume;
+      if (standbyAudio) standbyAudio.muted = false;
       persist();
       renderPlayer();
     }
@@ -831,6 +1173,14 @@
     } else if (event.target.matches("[data-omh-genre]")) {
       state.genre = event.target.value;
       renderLibrary();
+    } else if (event.target.matches("[data-omh-mood]")) {
+      state.mood = event.target.value;
+      renderLibrary();
+    } else if (event.target.matches("[data-omh-crossfade]")) {
+      const value = Number(event.target.value);
+      state.crossfadeSeconds = CROSSFADE_VALUES.includes(value) ? value : 0;
+      persist();
+      status(state.crossfadeSeconds ? `Crossfade ${state.crossfadeSeconds} giây đã bật.` : "Đã tắt crossfade.");
     }
   }
 
@@ -855,34 +1205,40 @@
     }
   }
 
-  function bindAudioEvents() {
-    if (!audio) return;
-    audio.volume = state.volume;
-    audio.muted = state.muted;
-    audio.addEventListener("loadedmetadata", () => {
-      if (pendingSeek > 0 && Number.isFinite(audio.duration) && pendingSeek < audio.duration - 3) audio.currentTime = pendingSeek;
+  function bindAudioEvents(mediaElement) {
+    if (!mediaElement) return;
+    mediaElement.volume = state.volume;
+    mediaElement.muted = state.muted;
+    mediaElement.addEventListener("loadedmetadata", () => {
+      if (mediaElement !== audio) return;
+      if (pendingSeek > 0 && Number.isFinite(mediaElement.duration) && pendingSeek < mediaElement.duration - 3) mediaElement.currentTime = pendingSeek;
       pendingSeek = 0;
       renderPlaybackClock();
       updateMediaPosition();
     }, { signal: abortController.signal });
-    audio.addEventListener("timeupdate", () => {
+    mediaElement.addEventListener("timeupdate", () => {
+      if (mediaElement !== audio) return;
       renderPlaybackClock();
       savePlaybackProgress(false);
       updateMediaPosition();
+      maybeStartCrossfade(mediaElement);
     }, { signal: abortController.signal });
-    audio.addEventListener("play", () => {
+    mediaElement.addEventListener("play", () => {
+      if (mediaElement !== audio) return;
       try { if (global.navigator?.mediaSession) global.navigator.mediaSession.playbackState = "playing"; } catch {}
       renderPlayer();
       renderLibrary();
     }, { signal: abortController.signal });
-    audio.addEventListener("pause", () => {
+    mediaElement.addEventListener("pause", () => {
+      if (mediaElement !== audio) return;
       savePlaybackProgress(true);
       try { if (global.navigator?.mediaSession) global.navigator.mediaSession.playbackState = "paused"; } catch {}
       renderPlayer();
       renderLibrary();
     }, { signal: abortController.signal });
-    audio.addEventListener("ended", () => nextTrack(true), { signal: abortController.signal });
-    audio.addEventListener("error", () => {
+    mediaElement.addEventListener("ended", () => { if (mediaElement === audio) nextTrack(true); }, { signal: abortController.signal });
+    mediaElement.addEventListener("error", () => {
+      if (mediaElement !== audio) return;
       const track = currentTrack();
       if (!track) return;
       trackErrors.add(track.id);
@@ -919,6 +1275,34 @@
     mediaSessionBound = false;
   }
 
+  async function loadRightsOverrides() {
+    try {
+      const response = await global.fetch("/api/open-media/rights", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+        signal: abortController.signal
+      });
+      if (!response.ok) throw new Error(`rights-registry-${response.status}`);
+      const payload = await response.json();
+      const rows = Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : Array.isArray(payload?.records) ? payload.records : [];
+      const records = new Map();
+      rows.forEach((row) => {
+        const id = String(row?.id || row?.itemId || "").trim();
+        if (id) records.set(id, row);
+      });
+      return { online: true, records };
+    } catch (error) {
+      if (error?.name === "AbortError") throw error;
+      return { online: false, records: new Map() };
+    }
+  }
+
+  function isEmergencyBlocked(item, record) {
+    if (!record) return false;
+    const statusValue = String(record.reviewStatus || record.status || "").trim().toLowerCase();
+    return record.available === false || record.publiclyAvailable === false || ["quarantine", "review", "suspended", "taken_down", "blocked"].includes(statusValue);
+  }
+
   async function loadManifest() {
     if (!root) return;
     const requestId = ++manifestRequest;
@@ -930,10 +1314,16 @@
       if (!response.ok) throw new Error(`Máy chủ phản hồi HTTP ${response.status}.`);
       const manifest = await response.json();
       if (!manifest || !Array.isArray(manifest.items)) throw new Error("Manifest không đúng định dạng.");
+      const registry = await loadRightsOverrides();
       const accepted = [];
       const rejected = [];
       const ids = new Set();
       manifest.items.forEach((item) => {
+        const emergencyRecord = registry.records.get(String(item?.id || ""));
+        if (isEmergencyBlocked(item, emergencyRecord)) {
+          rejected.push({ id: String(item?.id || "unknown"), reason: "emergency-suspension" });
+          return;
+        }
         const normalized = normalizeTrack(item);
         if (!normalized || ids.has(normalized.id)) rejected.push({ id: String(item?.id || "unknown"), reason: normalized ? "duplicate" : "rights" });
         else { ids.add(normalized.id); accepted.push(normalized); }
@@ -941,6 +1331,8 @@
       if (!accepted.length) throw new Error("Rights Guard không tìm thấy bản nhạc nào đủ điều kiện phát.");
       if (requestId !== manifestRequest || !root) return;
       state.manifest = manifest;
+      state.rightsRegistryOnline = registry.online;
+      state.emergencyBlockCount = rejected.filter((item) => item.reason === "emergency-suspension").length;
       state.tracks = accepted;
       state.rejected = rejected;
       state.queue = state.queue.filter((id) => ids.has(id));
@@ -970,7 +1362,9 @@
         <div class="omh-top-filters">
           <label><span class="sr-only">Giấy phép</span><select data-omh-license aria-label="Lọc theo giấy phép"><option value="all">Mọi giấy phép</option><option value="CC0-1.0">CC0</option><option value="PDM-1.0">Public Domain</option><option value="CC-BY">CC BY</option><option value="CC-BY-SA-4.0">CC BY-SA</option></select></label>
           <label><span class="sr-only">Thể loại</span><select data-omh-genre aria-label="Lọc theo thể loại"><option value="all">Tất cả thể loại</option></select></label>
+          <label><span class="sr-only">Cảm xúc</span><select data-omh-mood aria-label="Lọc theo cảm xúc"><option value="all">Tất cả cảm xúc</option></select></label>
         </div>
+        <button type="button" class="omh-creator-mode" data-action="creator-mode" aria-pressed="false" title="Chỉ hiện nhạc đủ quyền dùng trong video"><span>✦</span> Creator</button>
         <button type="button" class="omh-queue-toggle" data-action="queue-toggle" aria-label="Mở hàng đợi">☷ <span data-omh-queue-count>0</span></button>
       </header>
       <div class="omh-workspace">
@@ -983,7 +1377,7 @@
         <aside class="omh-now-panel">
           <header><div><small>NOW PLAYING</small><strong>Thông tin bản nhạc</strong></div><button type="button" data-action="queue-close" aria-label="Đóng hàng đợi">×</button></header>
           <div class="omh-now" data-omh-now></div>
-          <section class="omh-queue-section"><header><div><strong>Hàng đợi</strong><small>Phát liên tục, không tải trước audio</small></div><span data-omh-queue-count>0</span></header><div class="omh-queue" data-omh-queue></div></section>
+          <section class="omh-queue-section"><header><div><strong>Hàng đợi</strong><small>Phát liên tục, không tải trước audio</small></div><div><button type="button" data-action="queue-clear">Dọn</button><span data-omh-queue-count>0</span></div></header><div class="omh-queue" data-omh-queue></div></section>
         </aside>
       </div>
       <footer class="omh-player">
@@ -999,6 +1393,7 @@
           <div class="omh-timeline"><time data-omh-current-time>0:00</time><input type="range" data-omh-seek min="0" max="1" value="0" step="0.1" aria-label="Vị trí phát"><time data-omh-duration>0:00</time></div>
         </div>
         <div class="omh-player-actions">
+          <label class="omh-crossfade"><span>Crossfade</span><select data-omh-crossfade aria-label="Thời gian crossfade"><option value="0">Tắt</option><option value="3">3s</option><option value="5">5s</option><option value="8">8s</option></select></label>
           <button type="button" data-action="current-favorite" aria-label="Yêu thích">♥</button>
           <button type="button" data-action="mute" aria-label="Tắt âm thanh">🔊</button>
           <input type="range" data-omh-volume min="0" max="1" step="0.02" value="0.82" aria-label="Âm lượng">
@@ -1006,6 +1401,7 @@
         </div>
       </footer>
       <audio data-omh-audio preload="metadata"></audio>
+      <audio data-omh-audio-standby preload="metadata"></audio>
       <div class="omh-status" data-omh-status role="status" aria-live="polite"></div>
     </section>`;
   }
@@ -1023,11 +1419,13 @@
     host.replaceChildren(root);
     abortController = new global.AbortController();
     audio = root.querySelector("[data-omh-audio]");
+    standbyAudio = root.querySelector("[data-omh-audio-standby]");
     root.addEventListener("click", onClick, { signal: abortController.signal });
     root.addEventListener("input", onInput, { signal: abortController.signal });
     root.addEventListener("change", onChange, { signal: abortController.signal });
     root.addEventListener("keydown", onKeydown, { signal: abortController.signal });
-    bindAudioEvents();
+    bindAudioEvents(audio);
+    bindAudioEvents(standbyAudio);
     bindMediaSession();
     renderAll();
     loadManifest();
@@ -1043,12 +1441,19 @@
       audio.removeAttribute("src");
       try { audio.load(); } catch {}
     }
+    if (standbyAudio) {
+      standbyAudio.pause();
+      standbyAudio.removeAttribute("src");
+      try { standbyAudio.load(); } catch {}
+    }
+    cancelCrossfade();
     abortController?.abort();
     unbindMediaSession();
     if (host && root && root.parentNode === host) host.replaceChildren();
     host = null;
     root = null;
     audio = null;
+    standbyAudio = null;
     abortController = null;
     resetRuntimeState();
     ownerScope = "guest";
@@ -1081,11 +1486,18 @@
       playing: Boolean(audio && !audio.paused),
       shuffle: state.shuffle,
       repeat: state.repeat,
+      crossfadeSeconds: state.crossfadeSeconds,
+      crossfadeInFlight,
       muted: state.muted,
       view: state.view,
       query: state.query,
       license: state.license,
       genre: state.genre,
+      mood: state.mood,
+      creatorMode: state.creatorMode,
+      creatorReadyCount: state.tracks.filter(isCreatorReady).length,
+      rightsRegistryOnline: state.rightsRegistryOnline,
+      emergencyBlockCount: state.emergencyBlockCount,
       favoriteCount: state.favorites.size,
       historyCount: state.history.length
     });

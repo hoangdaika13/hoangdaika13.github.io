@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 2,
+  "registryId": "hh.open-media.rights.v2",
+  "updatedAt": "2026-08-10T00:00:00.000Z",
+  "publicContact": "nhhoang130803@gmail.com",
+  "legalNotice": "Đây là hồ sơ vận hành nhằm giảm rủi ro, không phải bảo đảm rằng sẽ không phát sinh khiếu nại và không thay thế tư vấn pháp lý.",
+  "catalogSnapshot": {
+    "films": 10,
+    "tracks": 20,
+    "total": 30,
+    "sourceManifests": [
+      "/assets/open-media/curated-films-v1.json",
+      "/assets/open-media/curated-music-v1.json"
+    ]
+  },
+  "policy": {
+    "defaultDecision": "deny-until-cleared",
+    "automaticAllowlist": [
+      "CC0-1.0",
+      "CC-BY-2.5",
+      "CC-BY-3.0",
+      "CC-BY-4.0",
+      "CC-BY-SA-3.0",
+      "CC-BY-SA-4.0"
+    ],
+    "manualReview": [
+      "PDM-1.0",
+      "NASA-MEDIA-GUIDELINES",
+      "us-government-work",
+      "custom-license",
+      "territorial-public-domain"
+    ],
+    "blockedMarkers": [
+      "NC",
+      "ND",
+      "Sampling",
+      "Educational use only",
+      "Unknown",
+      "All Rights Reserved"
+    ],
+    "requiredLayers": {
+      "film": ["master", "soundtrack", "poster", "subtitles", "privacyPublicity"],
+      "track": ["composition", "performance", "masterRecording", "artwork"]
+    },
+    "publicationStatuses": [
+      "discovered",
+      "quarantine",
+      "review",
+      "approved",
+      "published",
+      "suspended",
+      "taken_down",
+      "archived"
+    ],
+    "workflow": [
+      "discovered",
+      "quarantine",
+      "evidence-captured",
+      "automatic-validation",
+      "human-review",
+      "approved",
+      "published",
+      "periodic-revalidation"
+    ],
+    "revalidationDays": {
+      "automaticLicense": 30,
+      "manualOrTerritorial": 14,
+      "playbackHealth": 7
+    }
+  },
+  "sourceRules": [
+    {
+      "provider": "Blender Open Movies",
+      "mode": "per-title-official-page",
+      "risk": "medium",
+      "note": "Kiểm tra trang dự án chính thức, credit và giấy phép của từng phim."
+    },
+    {
+      "provider": "Wikimedia Commons",
+      "mode": "per-file-primary-rights-record",
+      "risk": "medium",
+      "note": "Không dùng giấy phép của category; phải lưu revision và metadata của từng file."
+    },
+    {
+      "provider": "Library of Congress",
+      "mode": "manual-territory-review",
+      "risk": "high",
+      "note": "Rights Advisory của từng item và lãnh thổ phải được quyết định thủ công."
+    },
+    {
+      "provider": "NASA",
+      "mode": "informational-manual-review",
+      "risk": "high",
+      "note": "Loại tài liệu bên thứ ba, không dùng logo như bảo trợ và kiểm tra quyền hình ảnh cá nhân."
+    },
+    {
+      "provider": "Internet Archive / Openverse",
+      "mode": "discovery-only",
+      "risk": "high",
+      "note": "Metadata tổng hợp không phải bằng chứng quyền độc lập."
+    },
+    {
+      "provider": "Jamendo",
+      "mode": "disabled-without-written-commercial-agreement",
+      "risk": "blocked",
+      "note": "Không bật trên website thương mại nếu chưa có thỏa thuận bằng văn bản."
+    }
+  ],
+  "quarantineItems": [
+    {
+      "id": "great-train-robbery-1903",
+      "kind": "film",
+      "title": "The Great Train Robbery",
+      "reviewStatus": "quarantine",
+      "rightsBasis": "public-domain-mark",
+      "jurisdiction": "US",
+      "territories": ["US"],
+      "reasonCode": "territorial-public-domain-unresolved",
+      "reason": "Tình trạng tại Hoa Kỳ chưa tự động chứng minh quyền phát hành trên toàn thế giới.",
+      "requiredLayers": {
+        "master": "manual-review",
+        "soundtrack": "not-applicable",
+        "poster": "manual-review",
+        "subtitles": "not-applicable",
+        "privacyPublicity": "manual-review"
+      },
+      "sourceUrl": "https://www.loc.gov/item/00694220/",
+      "action": "Đối chiếu Rights Advisory, bản master và quyết định lãnh thổ bởi người kiểm duyệt."
+    },
+    {
+      "id": "duck-and-cover-1951",
+      "kind": "film",
+      "title": "Duck and Cover",
+      "reviewStatus": "quarantine",
+      "rightsBasis": "public-domain-mark",
+      "jurisdiction": "US",
+      "territories": ["US"],
+      "reasonCode": "government-and-territory-review-required",
+      "reason": "Cần xác minh Rights Advisory, chủ thể tạo tác phẩm và phạm vi ngoài Hoa Kỳ.",
+      "requiredLayers": {
+        "master": "manual-review",
+        "soundtrack": "manual-review",
+        "poster": "manual-review",
+        "subtitles": "not-applicable",
+        "privacyPublicity": "manual-review"
+      },
+      "sourceUrl": "https://www.loc.gov/item/2022604365/",
+      "action": "Lưu Rights Advisory và hồ sơ quyết định lãnh thổ trước khi khôi phục."
+    },
+    {
+      "id": "about-bananas-1935",
+      "kind": "film",
+      "title": "About Bananas",
+      "reviewStatus": "quarantine",
+      "rightsBasis": "public-domain-mark",
+      "jurisdiction": "unknown",
+      "territories": [],
+      "reasonCode": "aggregator-metadata-not-independent-proof",
+      "reason": "Metadata Internet Archive không phải bảo đảm quyền; chưa có nguồn sơ cấp độc lập.",
+      "requiredLayers": {
+        "master": "manual-review",
+        "soundtrack": "manual-review",
+        "poster": "manual-review",
+        "subtitles": "not-applicable",
+        "privacyPublicity": "manual-review"
+      },
+      "sourceUrl": "https://archive.org/details/AboutBan1935",
+      "action": "Tìm hồ sơ nguồn sơ cấp, lịch sử công bố và quyền của bản master trước khi phát hành."
+    },
+    {
+      "id": "the-general-1926",
+      "kind": "film",
+      "title": "The General",
+      "reviewStatus": "quarantine",
+      "rightsBasis": "public-domain-mark",
+      "jurisdiction": "territorial",
+      "territories": [],
+      "reasonCode": "territorial-public-domain-without-geo-enforcement",
+      "reason": "Thông báo public domain của file thay đổi theo lãnh thổ trong khi website chưa có cơ chế khóa vùng đáng tin cậy.",
+      "requiredLayers": {
+        "master": "manual-review",
+        "soundtrack": "not-applicable",
+        "poster": "manual-review",
+        "subtitles": "not-applicable",
+        "privacyPublicity": "manual-review"
+      },
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_General_(1926).webm",
+      "action": "Chỉ khôi phục sau khi có kết luận quyền WORLDWIDE hoặc geo enforcement được kiểm thử."
+    }
+  ],
+  "complaints": {
+    "endpoint": "/api/open-media/notices",
+    "publicEmail": "nhhoang130803@gmail.com",
+    "acceptedTypes": ["copyright", "privacy-publicity", "trademark", "license-metadata", "other"],
+    "automaticRestoration": false,
+    "preserveEvidenceOnTakedown": true
+  }
+}

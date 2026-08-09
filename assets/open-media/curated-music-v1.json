@@ -1,7 +1,7 @@
 {
-  "manifestVersion": 1,
+  "manifestVersion": 2,
   "title": "HH Open Music — Curated Library",
-  "description": "Kho nhạc không lời được chọn thủ công từ Wikimedia Commons. Chỉ gồm Public Domain Mark, CC0, CC BY và CC BY-SA; không có NC hoặc ND.",
+  "description": "Kho nhạc mở được chọn thủ công. Chỉ bản ghi ở trạng thái published, đúng lãnh thổ và đủ hồ sơ quyền mới được phát; PDM luôn chờ duyệt thủ công.",
   "verifiedAt": "2026-08-10",
   "sourcePolicy": "License metadata was checked on each Wikimedia Commons file page. The source and license links remain part of every item.",
   "items": [
@@ -11,14 +11,26 @@
       "title": "Everyone Is So Alive",
       "creator": "Loyalty Freak Music",
       "album": "CC0 Energy",
-      "genres": ["Indie", "Rock"],
-      "moods": ["Năng lượng", "Tích cực"],
+      "genres": [
+        "Indie",
+        "Rock"
+      ],
+      "moods": [
+        "Năng lượng",
+        "Tích cực"
+      ],
       "durationSeconds": 255,
       "featured": true,
-      "colors": ["#ff6d8e", "#ffbd59", "#6cf5d7"],
+      "colors": [
+        "#ff6d8e",
+        "#ffbd59",
+        "#6cf5d7"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg",
+        "itemId": "File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC0-1.0",
@@ -26,7 +38,84 @@
         "attributionText": "Everyone Is So Alive — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Everyone Is So Alive — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Everyone Is So Alive — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Everyone Is So Alive — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg",
+            "creator": "Loyalty Freak Music",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Everyone Is So Alive — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/6/63/Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg/Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:a059c4c56ea5f7f3675cb4fcad882844baf6eb3e73571f38ddd67b29dbc059a5",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -40,14 +129,26 @@
       "title": "Go to the Picnic",
       "creator": "Loyalty Freak Music",
       "album": "CC0 Energy",
-      "genres": ["Indie", "Acoustic"],
-      "moods": ["Vui vẻ", "Ban ngày"],
+      "genres": [
+        "Indie",
+        "Acoustic"
+      ],
+      "moods": [
+        "Vui vẻ",
+        "Ban ngày"
+      ],
       "durationSeconds": 187,
       "featured": true,
-      "colors": ["#ffca5e", "#5fe3a1", "#50a9ff"],
+      "colors": [
+        "#ffca5e",
+        "#5fe3a1",
+        "#50a9ff"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg",
+        "itemId": "File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC0-1.0",
@@ -55,7 +156,84 @@
         "attributionText": "Go to the Picnic — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Go to the Picnic — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Go to the Picnic — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Go to the Picnic — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg",
+            "creator": "Loyalty Freak Music",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Go to the Picnic — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/0c/Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg/Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:75b61ccd4d1b0e604600ac4b08eaa5c0454a7796af7cfd24a1929128cbf7342e",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -69,14 +247,26 @@
       "title": "After Party",
       "creator": "Loyalty Freak Music",
       "album": "CC0 Energy",
-      "genres": ["Electronic", "Indie"],
-      "moods": ["Sôi động", "Đêm"],
+      "genres": [
+        "Electronic",
+        "Indie"
+      ],
+      "moods": [
+        "Sôi động",
+        "Đêm"
+      ],
       "durationSeconds": 177,
       "featured": false,
-      "colors": ["#bd67ff", "#ff5aa5", "#60dcff"],
+      "colors": [
+        "#bd67ff",
+        "#ff5aa5",
+        "#60dcff"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_03_-_After_Party.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_03_-_After_Party.ogg",
+        "itemId": "File:Loyalty_Freak_Music_-_03_-_After_Party.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC0-1.0",
@@ -84,7 +274,84 @@
         "attributionText": "After Party — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "After Party — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_03_-_After_Party.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "After Party — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_03_-_After_Party.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "After Party — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_03_-_After_Party.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Loyalty_Freak_Music_-_03_-_After_Party.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Loyalty_Freak_Music_-_03_-_After_Party.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_03_-_After_Party.ogg",
+            "creator": "Loyalty Freak Music",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "After Party — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/43/Loyalty_Freak_Music_-_03_-_After_Party.ogg/Loyalty_Freak_Music_-_03_-_After_Party.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:fdebcf154f0de4842375798751d2ab455445c8415760e7070b32055947edf621",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -98,14 +365,26 @@
       "title": "Ghost Surf Rock",
       "creator": "Loyalty Freak Music",
       "album": "CC0 Night Drive",
-      "genres": ["Surf Rock", "Rock"],
-      "moods": ["Bí ẩn", "Lái xe"],
+      "genres": [
+        "Surf Rock",
+        "Rock"
+      ],
+      "moods": [
+        "Bí ẩn",
+        "Lái xe"
+      ],
       "durationSeconds": 246.67,
       "featured": true,
-      "colors": ["#16d6c4", "#754bff", "#ff659b"],
+      "colors": [
+        "#16d6c4",
+        "#754bff",
+        "#ff659b"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg",
+        "itemId": "File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC0-1.0",
@@ -113,7 +392,84 @@
         "attributionText": "Ghost Surf Rock — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Ghost Surf Rock — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Ghost Surf Rock — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Ghost Surf Rock — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg",
+            "creator": "Loyalty Freak Music",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Ghost Surf Rock — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/1/12/Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg/Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:d26f6643e8bdcf6e8e3343193b14d50a301727230c53ac3be505c0fd85a0c06e",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -127,14 +483,26 @@
       "title": "Merfolk Music Box",
       "creator": "Komiku",
       "album": "CC0 Miniatures",
-      "genres": ["Music Box", "Game"],
-      "moods": ["Mơ màng", "Nhẹ nhàng"],
+      "genres": [
+        "Music Box",
+        "Game"
+      ],
+      "moods": [
+        "Mơ màng",
+        "Nhẹ nhàng"
+      ],
       "durationSeconds": 63.46,
       "featured": false,
-      "colors": ["#53d8ff", "#a58cff", "#f6b8ff"],
+      "colors": [
+        "#53d8ff",
+        "#a58cff",
+        "#f6b8ff"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Komiku_-_46_-_Merfolk_Music_Box.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Komiku_-_46_-_Merfolk_Music_Box.ogg",
+        "itemId": "File:Komiku_-_46_-_Merfolk_Music_Box.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC0-1.0",
@@ -142,7 +510,84 @@
         "attributionText": "Merfolk Music Box — Komiku, CC0 1.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Merfolk Music Box — Komiku, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Komiku_-_46_-_Merfolk_Music_Box.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Merfolk Music Box — Komiku, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Komiku_-_46_-_Merfolk_Music_Box.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Merfolk Music Box — Komiku, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Komiku_-_46_-_Merfolk_Music_Box.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Komiku_-_46_-_Merfolk_Music_Box.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Komiku_-_46_-_Merfolk_Music_Box.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Komiku_-_46_-_Merfolk_Music_Box.ogg",
+            "creator": "Komiku",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Merfolk Music Box — Komiku, CC0 1.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/6/69/Komiku_-_46_-_Merfolk_Music_Box.ogg/Komiku_-_46_-_Merfolk_Music_Box.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:90a0a9466b7cfd244b5108c8c92a72cbade56a7127a0fad5022907301c080ca4",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -156,14 +601,26 @@
       "title": "Kiravani",
       "creator": "L Ramakrishnan",
       "album": "Open Classical India",
-      "genres": ["Indian Classical", "Violin"],
-      "moods": ["Tập trung", "Sâu lắng"],
+      "genres": [
+        "Indian Classical",
+        "Violin"
+      ],
+      "moods": [
+        "Tập trung",
+        "Sâu lắng"
+      ],
       "durationSeconds": 812.36,
       "featured": false,
-      "colors": ["#ff965e", "#c84eff", "#ffc85b"],
+      "colors": [
+        "#ff965e",
+        "#c84eff",
+        "#ffc85b"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kiravani-L_Ramakrishnan.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kiravani-L_Ramakrishnan.ogg",
+        "itemId": "File:Kiravani-L_Ramakrishnan.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC0-1.0",
@@ -171,7 +628,84 @@
         "attributionText": "Kiravani — L Ramakrishnan, CC0 1.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Kiravani — L Ramakrishnan, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kiravani-L_Ramakrishnan.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Kiravani — L Ramakrishnan, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kiravani-L_Ramakrishnan.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Kiravani — L Ramakrishnan, CC0 1.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kiravani-L_Ramakrishnan.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Kiravani-L_Ramakrishnan.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Kiravani-L_Ramakrishnan.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kiravani-L_Ramakrishnan.ogg",
+            "creator": "L Ramakrishnan",
+            "licenseCode": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "attributionText": "Kiravani — L Ramakrishnan, CC0 1.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/d/d5/Kiravani-L_Ramakrishnan.ogg/Kiravani-L_Ramakrishnan.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:9493816bdc508d64332cf8233531d649c62fc90ed4aee6f043b24298e98f7a12",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -185,14 +719,26 @@
       "title": "Amberlight",
       "creator": "Scott Buckley",
       "album": "Cinematic Commons",
-      "genres": ["Cinematic", "Ambient"],
-      "moods": ["Điện ảnh", "Hy vọng"],
+      "genres": [
+        "Cinematic",
+        "Ambient"
+      ],
+      "moods": [
+        "Điện ảnh",
+        "Hy vọng"
+      ],
       "durationSeconds": 282.91,
       "featured": true,
-      "colors": ["#ffb452", "#f66d9b", "#7157ff"],
+      "colors": [
+        "#ffb452",
+        "#f66d9b",
+        "#7157ff"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Amberlight.oga"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Amberlight.oga",
+        "itemId": "File:Scott_Buckley_-_Amberlight.oga",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-4.0",
@@ -200,7 +746,84 @@
         "attributionText": "Amberlight — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Amberlight — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Amberlight.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Amberlight — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Amberlight.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Amberlight — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Amberlight.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Scott_Buckley_-_Amberlight.oga@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Scott_Buckley_-_Amberlight.oga",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Amberlight.oga",
+            "creator": "Scott Buckley",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Amberlight — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/b/bf/Scott_Buckley_-_Amberlight.oga/Scott_Buckley_-_Amberlight.oga.mp3"
+          },
+          "metadataChecksum": "sha256:0feded61760fe7a31263275df7ec1ffeb7351ae1c457e2ee50010b8234797030",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -214,14 +837,26 @@
       "title": "Born of the Sky",
       "creator": "Scott Buckley",
       "album": "Cinematic Commons",
-      "genres": ["Cinematic", "Orchestral"],
-      "moods": ["Hùng tráng", "Phiêu lưu"],
+      "genres": [
+        "Cinematic",
+        "Orchestral"
+      ],
+      "moods": [
+        "Hùng tráng",
+        "Phiêu lưu"
+      ],
       "durationSeconds": 187.5,
       "featured": true,
-      "colors": ["#4fb8ff", "#7157ff", "#f8d374"],
+      "colors": [
+        "#4fb8ff",
+        "#7157ff",
+        "#f8d374"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Born_Of_The_Sky.oga"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Born_Of_The_Sky.oga",
+        "itemId": "File:Scott_Buckley_-_Born_Of_The_Sky.oga",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-4.0",
@@ -229,7 +864,84 @@
         "attributionText": "Born of the Sky — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Born of the Sky — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Born_Of_The_Sky.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Born of the Sky — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Born_Of_The_Sky.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Born of the Sky — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Born_Of_The_Sky.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Scott_Buckley_-_Born_Of_The_Sky.oga@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Scott_Buckley_-_Born_Of_The_Sky.oga",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Born_Of_The_Sky.oga",
+            "creator": "Scott Buckley",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Born of the Sky — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/cd/Scott_Buckley_-_Born_Of_The_Sky.oga/Scott_Buckley_-_Born_Of_The_Sky.oga.mp3"
+          },
+          "metadataChecksum": "sha256:875cfa87d06ead96012b6f9749850d3ebfd7c7ea7c9c614012709939e9ad7c66",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -243,14 +955,26 @@
       "title": "Helios",
       "creator": "Scott Buckley",
       "album": "Cinematic Commons",
-      "genres": ["Cinematic", "Orchestral"],
-      "moods": ["Sử thi", "Không gian"],
+      "genres": [
+        "Cinematic",
+        "Orchestral"
+      ],
+      "moods": [
+        "Sử thi",
+        "Không gian"
+      ],
       "durationSeconds": 358.09,
       "featured": true,
-      "colors": ["#ffd65e", "#ff6f58", "#663dff"],
+      "colors": [
+        "#ffd65e",
+        "#ff6f58",
+        "#663dff"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Helios.oga"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Helios.oga",
+        "itemId": "File:Scott_Buckley_-_Helios.oga",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-4.0",
@@ -258,7 +982,84 @@
         "attributionText": "Helios — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Helios — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Helios.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Helios — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Helios.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Helios — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Helios.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Scott_Buckley_-_Helios.oga@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Scott_Buckley_-_Helios.oga",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Helios.oga",
+            "creator": "Scott Buckley",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Helios — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/30/Scott_Buckley_-_Helios.oga/Scott_Buckley_-_Helios.oga.mp3"
+          },
+          "metadataChecksum": "sha256:052f6a148561fd2fb71c533839891678ba048fef22b00bca83ba8c4287034744",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -272,14 +1073,26 @@
       "title": "Where Stars Fall",
       "creator": "Scott Buckley",
       "album": "Cinematic Commons",
-      "genres": ["Ambient", "Cinematic"],
-      "moods": ["Không gian", "Thư giãn"],
+      "genres": [
+        "Ambient",
+        "Cinematic"
+      ],
+      "moods": [
+        "Không gian",
+        "Thư giãn"
+      ],
       "durationSeconds": 270.68,
       "featured": true,
-      "colors": ["#4ee7f2", "#3764ff", "#c663ff"],
+      "colors": [
+        "#4ee7f2",
+        "#3764ff",
+        "#c663ff"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Where_Stars_Fall.oga"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Where_Stars_Fall.oga",
+        "itemId": "File:Scott_Buckley_-_Where_Stars_Fall.oga",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-4.0",
@@ -287,7 +1100,84 @@
         "attributionText": "Where Stars Fall — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Where Stars Fall — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Where_Stars_Fall.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Where Stars Fall — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Where_Stars_Fall.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Where Stars Fall — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Where_Stars_Fall.oga",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Scott_Buckley_-_Where_Stars_Fall.oga@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Scott_Buckley_-_Where_Stars_Fall.oga",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Where_Stars_Fall.oga",
+            "creator": "Scott Buckley",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Where Stars Fall — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/0d/Scott_Buckley_-_Where_Stars_Fall.oga/Scott_Buckley_-_Where_Stars_Fall.oga.mp3"
+          },
+          "metadataChecksum": "sha256:48481d97c43a9c0e93751b2eabdb22395a03a2d63f03b2ff7b312e8fef6128b1",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -301,14 +1191,26 @@
       "title": "Carefree",
       "creator": "Kevin MacLeod",
       "album": "Incompetech Commons",
-      "genres": ["Acoustic", "Comedy"],
-      "moods": ["Vui vẻ", "Nhẹ nhàng"],
+      "genres": [
+        "Acoustic",
+        "Comedy"
+      ],
+      "moods": [
+        "Vui vẻ",
+        "Nhẹ nhàng"
+      ],
       "durationSeconds": 205.14,
       "featured": true,
-      "colors": ["#ffcf62", "#77da80", "#45c6ee"],
+      "colors": [
+        "#ffcf62",
+        "#77da80",
+        "#45c6ee"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Carefree.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Carefree.ogg",
+        "itemId": "File:Kevin_MacLeod_-_Carefree.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-3.0",
@@ -316,7 +1218,84 @@
         "attributionText": "Carefree — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Carefree — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Carefree.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Carefree — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Carefree.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Carefree — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Carefree.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Kevin_MacLeod_-_Carefree.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Kevin_MacLeod_-_Carefree.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Carefree.ogg",
+            "creator": "Kevin MacLeod",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Carefree — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/5/58/Kevin_MacLeod_-_Carefree.ogg/Kevin_MacLeod_-_Carefree.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:ed0023a2bd1b22a54a5436e940944976196df586fcb29fce1cd86e98c11f0fcf",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -330,14 +1309,26 @@
       "title": "Tranquility",
       "creator": "Kevin MacLeod",
       "album": "Incompetech Commons",
-      "genres": ["Ambient", "Meditation"],
-      "moods": ["Thư giãn", "Tập trung"],
+      "genres": [
+        "Ambient",
+        "Meditation"
+      ],
+      "moods": [
+        "Thư giãn",
+        "Tập trung"
+      ],
       "durationSeconds": 987.06,
       "featured": false,
-      "colors": ["#52d7c7", "#4e83ff", "#9870ff"],
+      "colors": [
+        "#52d7c7",
+        "#4e83ff",
+        "#9870ff"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Tranquility.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Tranquility.ogg",
+        "itemId": "File:Kevin_MacLeod_-_Tranquility.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-3.0",
@@ -345,7 +1336,84 @@
         "attributionText": "Tranquility — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Tranquility — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Tranquility.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Tranquility — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Tranquility.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Tranquility — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Tranquility.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Kevin_MacLeod_-_Tranquility.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Kevin_MacLeod_-_Tranquility.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Tranquility.ogg",
+            "creator": "Kevin MacLeod",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Tranquility — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/3d/Kevin_MacLeod_-_Tranquility.ogg/Kevin_MacLeod_-_Tranquility.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:5aa41b781670a9d0801bb43a8a40411511a8b7fc34308b6a99f742321d6379fd",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -359,14 +1427,26 @@
       "title": "Windswept",
       "creator": "Kevin MacLeod",
       "album": "Incompetech Commons",
-      "genres": ["Cinematic", "Ambient"],
-      "moods": ["Sâu lắng", "Điện ảnh"],
+      "genres": [
+        "Cinematic",
+        "Ambient"
+      ],
+      "moods": [
+        "Sâu lắng",
+        "Điện ảnh"
+      ],
       "durationSeconds": 208.35,
       "featured": false,
-      "colors": ["#67d1ff", "#5b65ff", "#bd73e8"],
+      "colors": [
+        "#67d1ff",
+        "#5b65ff",
+        "#bd73e8"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Windswept.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Windswept.ogg",
+        "itemId": "File:Kevin_MacLeod_-_Windswept.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-3.0",
@@ -374,7 +1454,84 @@
         "attributionText": "Windswept — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Windswept — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Windswept.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Windswept — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Windswept.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Windswept — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Windswept.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Kevin_MacLeod_-_Windswept.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Kevin_MacLeod_-_Windswept.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Windswept.ogg",
+            "creator": "Kevin MacLeod",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Windswept — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/2/23/Kevin_MacLeod_-_Windswept.ogg/Kevin_MacLeod_-_Windswept.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:9d99a967c031a0e7d9d5177e852c3b84c6e5e3b172f3b949eaa8e342df669820",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -388,14 +1545,26 @@
       "title": "Song for a Sunlit Moth",
       "creator": "Axletree",
       "album": "Instrumental Commons",
-      "genres": ["Folk", "Acoustic"],
-      "moods": ["Mộc mạc", "Nhẹ nhàng"],
+      "genres": [
+        "Folk",
+        "Acoustic"
+      ],
+      "moods": [
+        "Mộc mạc",
+        "Nhẹ nhàng"
+      ],
       "durationSeconds": 209.29,
       "featured": false,
-      "colors": ["#e5bd70", "#5ecf9b", "#628fe8"],
+      "colors": [
+        "#e5bd70",
+        "#5ecf9b",
+        "#628fe8"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg",
+        "itemId": "File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-4.0",
@@ -403,7 +1572,84 @@
         "attributionText": "Song for a Sunlit Moth (Instrumental) — Axletree, CC BY 4.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Song for a Sunlit Moth (Instrumental) — Axletree, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Song for a Sunlit Moth (Instrumental) — Axletree, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Song for a Sunlit Moth (Instrumental) — Axletree, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg",
+            "creator": "Axletree",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Song for a Sunlit Moth (Instrumental) — Axletree, CC BY 4.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/41/Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg/Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:6450ce0e3ced0fa64319ab02ac4d21c9d1c7ba49424720a5f55e213d96b6d908",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -417,14 +1663,26 @@
       "title": "I Feel It (Instrumental)",
       "creator": "Sascha Ende",
       "album": "Filmmusic Commons",
-      "genres": ["Filmmusic", "Electronic"],
-      "moods": ["Cảm xúc", "Điện ảnh"],
+      "genres": [
+        "Filmmusic",
+        "Electronic"
+      ],
+      "moods": [
+        "Cảm xúc",
+        "Điện ảnh"
+      ],
       "durationSeconds": 330.58,
       "featured": true,
-      "colors": ["#fb628d", "#914fff", "#49c9ff"],
+      "colors": [
+        "#fb628d",
+        "#914fff",
+        "#49c9ff"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg",
+        "itemId": "File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-4.0",
@@ -432,7 +1690,84 @@
         "attributionText": "I Feel It (Instrumental) — Sascha Ende, CC BY 4.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "I Feel It (Instrumental) — Sascha Ende, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "I Feel It (Instrumental) — Sascha Ende, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "I Feel It (Instrumental) — Sascha Ende, CC BY 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg",
+            "creator": "Sascha Ende",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "I Feel It (Instrumental) — Sascha Ende, CC BY 4.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/5/55/Sascha_Ende_-_I_Feel_It_%28instrumental%29_%28cc-by%29_%28filmmusic%29.ogg/Sascha_Ende_-_I_Feel_It_%28instrumental%29_%28cc-by%29_%28filmmusic%29.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:3fb7e15c118128c5ddc6f03a8b9e9077de81f7f86e70556c676a37f7e9115105",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -446,14 +1781,26 @@
       "title": "Hyde — Untitled",
       "creator": "Warehouse Library Music",
       "album": "Warehouse Library",
-      "genres": ["Drum & Bass", "Rock"],
-      "moods": ["Năng lượng", "Lái xe"],
+      "genres": [
+        "Drum & Bass",
+        "Rock"
+      ],
+      "moods": [
+        "Năng lượng",
+        "Lái xe"
+      ],
       "durationSeconds": 209.68,
       "featured": true,
-      "colors": ["#ff4f73", "#704cff", "#35ddfa"],
+      "colors": [
+        "#ff4f73",
+        "#704cff",
+        "#35ddfa"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Hyde_%E2%80%93_Untitled_(Pendulum-inspired_D%26B_rock-pop_instrumental).opus"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Hyde_%E2%80%93_Untitled_(Pendulum-inspired_D%26B_rock-pop_instrumental).opus",
+        "itemId": "File:Hyde_–_Untitled_(Pendulum-inspired_D&B_rock-pop_instrumental).opus",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-SA-4.0",
@@ -461,7 +1808,84 @@
         "attributionText": "Hyde — Untitled — Warehouse Library Music, CC BY-SA 4.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": true,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Hyde — Untitled — Warehouse Library Music, CC BY-SA 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Hyde_%E2%80%93_Untitled_(Pendulum-inspired_D%26B_rock-pop_instrumental).opus",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Hyde — Untitled — Warehouse Library Music, CC BY-SA 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Hyde_%E2%80%93_Untitled_(Pendulum-inspired_D%26B_rock-pop_instrumental).opus",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Hyde — Untitled — Warehouse Library Music, CC BY-SA 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Hyde_%E2%80%93_Untitled_(Pendulum-inspired_D%26B_rock-pop_instrumental).opus",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Hyde_–_Untitled_(Pendulum-inspired_D&B_rock-pop_instrumental).opus@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Hyde_–_Untitled_(Pendulum-inspired_D&B_rock-pop_instrumental).opus",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hyde_%E2%80%93_Untitled_(Pendulum-inspired_D%26B_rock-pop_instrumental).opus",
+            "creator": "Warehouse Library Music",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Hyde — Untitled — Warehouse Library Music, CC BY-SA 4.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a2/Hyde_%E2%80%93_Untitled_%28Pendulum-inspired_D%26B_rock-pop_instrumental%29.opus/Hyde_%E2%80%93_Untitled_%28Pendulum-inspired_D%26B_rock-pop_instrumental%29.opus.mp3"
+          },
+          "metadataChecksum": "sha256:aeb1ca8931201b1cb87041b29aa5931b16ee820dfa6c6d96a73d96251af79345",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -475,14 +1899,26 @@
       "title": "Musik Pengiring Tari Radap Rahayu",
       "creator": "Ardzun",
       "album": "Traditional Commons",
-      "genres": ["Traditional", "World"],
-      "moods": ["Văn hóa", "Sống động"],
+      "genres": [
+        "Traditional",
+        "World"
+      ],
+      "moods": [
+        "Văn hóa",
+        "Sống động"
+      ],
       "durationSeconds": 520.18,
       "featured": false,
-      "colors": ["#ff9e48", "#e3497e", "#703ddf"],
+      "colors": [
+        "#ff9e48",
+        "#e3497e",
+        "#703ddf"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Musik_Pengiring_Tari_Radap_Rahayu.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Musik_Pengiring_Tari_Radap_Rahayu.ogg",
+        "itemId": "File:Musik_Pengiring_Tari_Radap_Rahayu.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "CC-BY-SA-4.0",
@@ -490,7 +1926,84 @@
         "attributionText": "Musik Pengiring Tari Radap Rahayu — Ardzun, CC BY-SA 4.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": true,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Musik Pengiring Tari Radap Rahayu — Ardzun, CC BY-SA 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Musik_Pengiring_Tari_Radap_Rahayu.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Musik Pengiring Tari Radap Rahayu — Ardzun, CC BY-SA 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Musik_Pengiring_Tari_Radap_Rahayu.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Musik Pengiring Tari Radap Rahayu — Ardzun, CC BY-SA 4.0, via Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Musik_Pengiring_Tari_Radap_Rahayu.ogg",
+            "scope": "source-file-license-declaration"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Musik_Pengiring_Tari_Radap_Rahayu.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Musik_Pengiring_Tari_Radap_Rahayu.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Musik_Pengiring_Tari_Radap_Rahayu.ogg",
+            "creator": "Ardzun",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Musik Pengiring Tari Radap Rahayu — Ardzun, CC BY-SA 4.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/cc/Musik_Pengiring_Tari_Radap_Rahayu.ogg/Musik_Pengiring_Tari_Radap_Rahayu.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:2199f4f4399cec8d0f48d4d27a885af53461cd988d1f05c2308c3613d017e380",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        }
       },
       "playback": {
         "type": "audio",
@@ -504,14 +2017,26 @@
       "title": "32 Variations in C Minor, WoO 80",
       "creator": "Ludwig van Beethoven",
       "album": "Public Domain Classical",
-      "genres": ["Classical", "Piano"],
-      "moods": ["Tập trung", "Cổ điển"],
+      "genres": [
+        "Classical",
+        "Piano"
+      ],
+      "moods": [
+        "Tập trung",
+        "Cổ điển"
+      ],
       "durationSeconds": 728.37,
       "featured": true,
-      "colors": ["#d8b674", "#835eaa", "#3f7895"],
+      "colors": [
+        "#d8b674",
+        "#835eaa",
+        "#3f7895"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Beethoven_-_32_Variations_in_C_Minor,_WoO_80.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Beethoven_-_32_Variations_in_C_Minor,_WoO_80.ogg",
+        "itemId": "File:Beethoven_-_32_Variations_in_C_Minor,_WoO_80.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "PDM-1.0",
@@ -519,7 +2044,73 @@
         "attributionText": "32 Variations in C Minor, WoO 80 — Ludwig van Beethoven, Public Domain Mark 1.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "review",
+        "rightsBasis": "public-domain-mark",
+        "jurisdiction": "MANUAL-TERRITORIAL-REVIEW",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": false,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": false,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "manual-review",
+            "reason": "Public Domain Mark requires a human territorial and rights-layer review."
+          },
+          "performance": {
+            "status": "manual-review",
+            "reason": "Public Domain Mark requires a human territorial and rights-layer review."
+          },
+          "masterRecording": {
+            "status": "manual-review",
+            "reason": "Public Domain Mark requires a human territorial and rights-layer review."
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Beethoven_-_32_Variations_in_C_Minor,_WoO_80.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Beethoven_-_32_Variations_in_C_Minor,_WoO_80.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Beethoven_-_32_Variations_in_C_Minor,_WoO_80.ogg",
+            "creator": "Ludwig van Beethoven",
+            "licenseCode": "PDM-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+            "attributionText": "32 Variations in C Minor, WoO 80 — Ludwig van Beethoven, Public Domain Mark 1.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/b/b2/Beethoven_-_32_Variations_in_C_Minor%2C_WoO_80.ogg/Beethoven_-_32_Variations_in_C_Minor%2C_WoO_80.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:2cfc7d4d4aec55c885422d58ab195bbadc1504789ef288de5c63b598f1a4af15",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        },
+        "manualReview": {
+          "decision": "pending",
+          "reason": "Territory and recording/performance rights require independent review."
+        }
       },
       "playback": {
         "type": "audio",
@@ -533,14 +2124,26 @@
       "title": "L'Orfeo — Toccata",
       "creator": "Claudio Monteverdi · performed by Trisdee na Patalung",
       "album": "Public Domain Classical",
-      "genres": ["Classical", "Baroque"],
-      "moods": ["Trang trọng", "Cổ điển"],
+      "genres": [
+        "Classical",
+        "Baroque"
+      ],
+      "moods": [
+        "Trang trọng",
+        "Cổ điển"
+      ],
       "durationSeconds": 90.04,
       "featured": false,
-      "colors": ["#e0b567", "#ac6259", "#714d82"],
+      "colors": [
+        "#e0b567",
+        "#ac6259",
+        "#714d82"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Orfeo_-_Toccata.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Orfeo_-_Toccata.ogg",
+        "itemId": "File:Orfeo_-_Toccata.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "PDM-1.0",
@@ -548,7 +2151,73 @@
         "attributionText": "L'Orfeo — Toccata — Claudio Monteverdi; performance credited to Trisdee na Patalung, Public Domain Mark 1.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "review",
+        "rightsBasis": "public-domain-mark",
+        "jurisdiction": "MANUAL-TERRITORIAL-REVIEW",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": false,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": false,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "manual-review",
+            "reason": "Public Domain Mark requires a human territorial and rights-layer review."
+          },
+          "performance": {
+            "status": "manual-review",
+            "reason": "Public Domain Mark requires a human territorial and rights-layer review."
+          },
+          "masterRecording": {
+            "status": "manual-review",
+            "reason": "Public Domain Mark requires a human territorial and rights-layer review."
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Orfeo_-_Toccata.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Orfeo_-_Toccata.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Orfeo_-_Toccata.ogg",
+            "creator": "Claudio Monteverdi · performed by Trisdee na Patalung",
+            "licenseCode": "PDM-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+            "attributionText": "L'Orfeo — Toccata — Claudio Monteverdi; performance credited to Trisdee na Patalung, Public Domain Mark 1.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/3d/Orfeo_-_Toccata.ogg/Orfeo_-_Toccata.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:fb32098a8399df9fccf97c9a66fa9846d35f2c50e80237d98c2a8d072b7f6ae8",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        },
+        "manualReview": {
+          "decision": "pending",
+          "reason": "Territory and recording/performance rights require independent review."
+        }
       },
       "playback": {
         "type": "audio",
@@ -562,14 +2231,26 @@
       "title": "Overture di ballo",
       "creator": "Arthur Sullivan · United States Marine Band",
       "album": "Public Domain Orchestra",
-      "genres": ["Classical", "Orchestral"],
-      "moods": ["Hùng tráng", "Cổ điển"],
+      "genres": [
+        "Classical",
+        "Orchestral"
+      ],
+      "moods": [
+        "Hùng tráng",
+        "Cổ điển"
+      ],
       "durationSeconds": 677.41,
       "featured": true,
-      "colors": ["#dfb851", "#d95a61", "#645dc1"],
+      "colors": [
+        "#dfb851",
+        "#d95a61",
+        "#645dc1"
+      ],
       "source": {
         "provider": "Wikimedia Commons",
-        "landingUrl": "https://commons.wikimedia.org/wiki/File:Overture_di_ballo.ogg"
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Overture_di_ballo.ogg",
+        "itemId": "File:Overture_di_ballo.ogg",
+        "primaryRightsRecord": true
       },
       "rights": {
         "licenseCode": "PDM-1.0",
@@ -577,7 +2258,73 @@
         "attributionText": "Overture di ballo — Arthur Sullivan; performed by the United States Marine Band, Public Domain Mark 1.0, via Wikimedia Commons.",
         "verifiedAt": "2026-08-10",
         "commercialAllowed": true,
-        "derivativesAllowed": true
+        "derivativesAllowed": true,
+        "reviewStatus": "review",
+        "rightsBasis": "public-domain-mark",
+        "jurisdiction": "MANUAL-TERRITORIAL-REVIEW",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": false,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": false,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "manual-review",
+            "reason": "Public Domain Mark requires a human territorial and rights-layer review."
+          },
+          "performance": {
+            "status": "manual-review",
+            "reason": "Public Domain Mark requires a human territorial and rights-layer review."
+          },
+          "masterRecording": {
+            "status": "manual-review",
+            "reason": "Public Domain Mark requires a human territorial and rights-layer review."
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH generates the visual cover locally; no upstream artwork is copied."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-10",
+          "sourceRevision": "File:Overture_di_ballo.ogg@checked-2026-08-10",
+          "sourceAuthority": "primary-rights-record",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "File:Overture_di_ballo.ogg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Overture_di_ballo.ogg",
+            "creator": "Arthur Sullivan · United States Marine Band",
+            "licenseCode": "PDM-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+            "attributionText": "Overture di ballo — Arthur Sullivan; performed by the United States Marine Band, Public Domain Mark 1.0, via Wikimedia Commons.",
+            "verifiedAt": "2026-08-10",
+            "playbackUrl": "https://upload.wikimedia.org/wikipedia/commons/transcoded/8/81/Overture_di_ballo.ogg/Overture_di_ballo.ogg.mp3"
+          },
+          "metadataChecksum": "sha256:3f0099bd114518146425850520e3ae71e843a6ef8895cc83d456722abc595cd6",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "unavailable",
+          "mediaChecksum": null,
+          "mediaChecksumAlgorithm": null,
+          "mediaChecksumSource": "upstream-does-not-publish-checksum",
+          "checksumScope": "remote-playback"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": false,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false
+        },
+        "manualReview": {
+          "decision": "pending",
+          "reason": "Territory and recording/performance rights require independent review."
+        }
       },
       "playback": {
         "type": "audio",
@@ -585,5 +2332,36 @@
         "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/8/81/Overture_di_ballo.ogg"
       }
     }
-  ]
+  ],
+  "catalogId": "hh.open-media.music.v2",
+  "governance": {
+    "defaultDeny": true,
+    "viewerTerritory": "WORLDWIDE",
+    "requiredLayers": [
+      "composition",
+      "performance",
+      "masterRecording",
+      "artwork"
+    ],
+    "automaticLicenseAllowlist": [
+      "CC0-1.0",
+      "CC-BY-2.5",
+      "CC-BY-3.0",
+      "CC-BY-4.0",
+      "CC-BY-SA-3.0",
+      "CC-BY-SA-4.0"
+    ],
+    "manualReviewLicenses": [
+      "PDM-1.0"
+    ],
+    "blockedMarkers": [
+      "NC",
+      "ND",
+      "Sampling",
+      "educational-use-only",
+      "unknown",
+      "all-rights-reserved"
+    ],
+    "notice": "Metadata tổng hợp không phải giấy phép. Mỗi mục phải giữ TASL, bằng chứng nguồn và quyết định từng lớp quyền."
+  }
 }

@@ -7,9 +7,11 @@
 })(typeof window !== "undefined" ? window : globalThis, function createCinemaHub(globalScope) {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "2.0.0";
   const MANIFEST_URL = "/assets/open-media/curated-films-v1.json";
+  const RIGHTS_STATUS_URL = "/api/open-media/rights";
   const STORAGE_SCHEMA = "hh.cinema.hub.v1";
+  const DEFAULT_TERRITORY = "WORLDWIDE";
   const LICENSE_URLS = Object.freeze({
     "PDM-1.0": "https://creativecommons.org/publicdomain/mark/1.0/",
     "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -20,42 +22,10 @@
     "CC-BY-SA-4.0": "https://creativecommons.org/licenses/by-sa/4.0/"
   });
   const ALLOWED_LICENSES = new Set(Object.keys(LICENSE_URLS));
-  const VIEW_MODES = new Set(["all", "continue", "favorites", "history"]);
+  const VIEW_MODES = new Set(["all", "continue", "watchlist", "favorites", "history"]);
   const SORT_MODES = new Set(["featured", "newest", "oldest", "az", "duration"]);
   const MAX_HISTORY = 50;
-
-  const FALLBACK_ITEMS = Object.freeze([
-    {
-      id: "sintel", kind: "film", title: "Sintel", originalTitle: "Sintel",
-      creator: "Blender Foundation", year: 2010, durationSeconds: 888,
-      genres: ["Hoạt hình", "Phiêu lưu", "Kỳ ảo"], languages: ["Tiếng Anh"],
-      description: "Một nữ chiến binh trẻ băng qua vùng đất khắc nghiệt để tìm lại người bạn rồng đã mất.",
-      poster: "https://archive.org/services/img/Sintel",
-      source: { provider: "Blender Open Movies", landingUrl: "https://studio.blender.org/films/sintel/", playbackMirror: "Internet Archive" },
-      rights: { licenseCode: "CC-BY-3.0", licenseUrl: "https://creativecommons.org/licenses/by/3.0/", attributionText: "© Blender Foundation | durian.blender.org — CC BY 3.0", verifiedAt: "2026-08-10", commercialAllowed: true, derivativesAllowed: true },
-      playback: { type: "video", url: "https://archive.org/download/Sintel/sintel-2048-stereo_512kb.mp4", mimeType: "video/mp4" }
-    },
-    {
-      id: "great-train-robbery-1903", kind: "film", title: "The Great Train Robbery", originalTitle: "The Great Train Robbery",
-      creator: "Edwin S. Porter / Edison Manufacturing Company", year: 1903, durationSeconds: 701,
-      genres: ["Kinh điển", "Viễn Tây", "Phim câm"], languages: ["Phim câm"],
-      description: "Tác phẩm điện ảnh thời kỳ đầu kể về một vụ cướp tàu và cuộc truy đuổi những tên cướp.",
-      poster: "https://tile.loc.gov/storage-services/service/mbrs/ntscrm/00000765/00000765.gif",
-      source: { provider: "Library of Congress", landingUrl: "https://www.loc.gov/item/00694220/" },
-      rights: { licenseCode: "PDM-1.0", licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/", attributionText: "Library of Congress, Motion Picture, Broadcasting and Recorded Sound Division", verifiedAt: "2026-08-10", commercialAllowed: true, derivativesAllowed: true },
-      playback: { type: "video", url: "https://tile.loc.gov/storage-services/service/mbrs/ntscrm/00000765/00000765.mp4", mimeType: "video/mp4" }
-    },
-    {
-      id: "le-voyage-dans-la-lune", kind: "film", title: "Chuyến du hành lên Mặt Trăng", originalTitle: "Le Voyage dans la Lune",
-      creator: "Georges Méliès", year: 1902, durationSeconds: 766,
-      genres: ["Kinh điển", "Khoa học viễn tưởng", "Phim câm"], languages: ["Phim câm"],
-      description: "Kiệt tác kỳ ảo tiên phong đưa một nhóm nhà thiên văn lên Mặt Trăng bằng một viên đạn khổng lồ.",
-      poster: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Le_Voyage_dans_la_Lune_%281902%29.webm/960px--Le_Voyage_dans_la_Lune_%281902%29.webm.jpg",
-      source: { provider: "Wikimedia Commons", landingUrl: "https://commons.wikimedia.org/wiki/File:Le_Voyage_dans_la_Lune_(1902).webm" },
-      rights: { licenseCode: "PDM-1.0", licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/", attributionText: "Le Voyage dans la Lune — Georges Méliès — Wikimedia Commons", verifiedAt: "2026-08-10", commercialAllowed: true, derivativesAllowed: true },
-      playback: { type: "video", url: "https://upload.wikimedia.org/wikipedia/commons/6/6d/Le_Voyage_dans_la_Lune_%281902%29.webm", mimeType: "video/webm" }
-    }
-  ]);
+  const FALLBACK_ITEMS = Object.freeze([]);
 
   let activeRuntime = null;
 
@@ -80,7 +50,13 @@
     const [year, month, day] = text.split("-").map(Number);
     const parsed = new Date(Date.UTC(year, month - 1, day));
     if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) return false;
-    return text <= new Date().toISOString().slice(0, 10);
+    let today = new Date().toISOString().slice(0, 10);
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Bangkok", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+      const part = (type) => parts.find((entry) => entry.type === type)?.value || "";
+      today = `${part("year")}-${part("month")}-${part("day")}`;
+    } catch (_error) { /* UTC fallback remains fail-closed. */ }
+    return text <= today;
   }
 
   function clone(value) {
@@ -131,6 +107,7 @@
   function normalizeState(input) {
     const raw = input && typeof input === "object" ? input : {};
     const favorites = [...new Set((Array.isArray(raw.favorites) ? raw.favorites : []).map(String))].slice(0, 500);
+    const watchlist = [...new Set((Array.isArray(raw.watchlist) ? raw.watchlist : []).map(String))].slice(0, 500);
     const history = (Array.isArray(raw.history) ? raw.history : []).filter((entry) => entry && entry.id).map((entry) => ({
       id: String(entry.id), viewedAt: String(entry.viewedAt || new Date(0).toISOString())
     })).slice(0, MAX_HISTORY);
@@ -147,8 +124,10 @@
     return {
       version: VERSION,
       favorites,
+      watchlist,
       history,
       progress,
+      playbackRate: clamp(raw.playbackRate, 0.5, 2, 1),
       selectedId: String(raw.selectedId || ""),
       view: VIEW_MODES.has(raw.view) ? raw.view : "all",
       source: String(raw.source || "all"),
@@ -169,27 +148,42 @@
   }
 
   function fallbackLicenseAllowed(item) {
+    const rights = item?.rights || {};
+    const evidence = rights.evidence || {};
+    const layers = rights.layers || {};
+    const requiredLayers = ["master", "soundtrack", "poster", "subtitles", "privacyPublicity"];
+    const territoryAllowed = Array.isArray(rights.territories) && (rights.territories.includes("WORLDWIDE") || rights.territories.includes(DEFAULT_TERRITORY));
+    const mediaEvidenceAllowed = /^(?:sha1:[a-f0-9]{40}|sha256:[a-f0-9]{64})$/i.test(String(evidence.mediaChecksum || "")) || (
+      evidence.mediaChecksum == null && evidence.mediaChecksumStatus === "unavailable" && rights.rehostAllowed === false && rights.downloadAllowed === false
+    );
+    const layersCleared = requiredLayers.every((key) => ["cleared", "not-applicable"].includes(layers[key]?.status));
+    const manualReviewAllowed = rights.rightsBasis !== "public-domain-mark" || (
+      rights.manualReview?.decision === "approved" && validVerificationDate(rights.manualReview?.reviewedAt) && /^sha256:[a-f0-9]{64}$/i.test(String(rights.manualReview?.evidenceChecksum || ""))
+    );
     return Boolean(
       item && item.kind === "film" && item.id && item.title &&
-      ALLOWED_LICENSES.has(item.rights?.licenseCode) &&
-      safeUrl(item.rights?.licenseUrl) === LICENSE_URLS[item.rights?.licenseCode] &&
-      validVerificationDate(item.rights?.verifiedAt) &&
-      item.rights?.commercialAllowed === true && item.rights?.derivativesAllowed === true &&
+      rights.reviewStatus === "published" &&
+      ALLOWED_LICENSES.has(rights.licenseCode) &&
+      safeUrl(rights.licenseUrl) === LICENSE_URLS[rights.licenseCode] &&
+      validVerificationDate(rights.verifiedAt) && territoryAllowed && layersCleared && manualReviewAllowed &&
+      rights.commercialAllowed === true && rights.derivativesAllowed === true && rights.streamAllowed === true &&
+      typeof rights.rehostAllowed === "boolean" && typeof rights.downloadAllowed === "boolean" &&
+      /^sha256:[a-f0-9]{64}$/i.test(String(evidence.metadataChecksum || "")) && mediaEvidenceAllowed &&
       safeUrl(item.source?.landingUrl) &&
       item.playback?.type === "video" && safeUrl(item.playback?.url)
     );
   }
 
-  function validateCatalogItem(item) {
-    const validator = globalScope.HHOpenMediaRights?.validateItem;
+  function validateCatalogItem(item, options = {}) {
+    const validator = globalScope.HHOpenMediaRights?.validateGovernanceItem;
     if (typeof validator === "function") {
       try {
-        const verdict = validator(item);
+        const verdict = validator(item, { territory: options.territory || DEFAULT_TERRITORY });
         if (verdict === false) return false;
         if (verdict === true) return true;
         if (verdict && typeof verdict === "object") {
-          if (verdict.ok === false || verdict.valid === false || verdict.allowed === false || verdict.publishable === false || verdict.publish === false || verdict.status === "rejected") return false;
-          if (verdict.ok === true || verdict.valid === true || verdict.allowed === true || verdict.publishable === true || verdict.publish === true || verdict.status === "published") return true;
+          if (verdict.publiclyAvailable === true) return true;
+          return false;
         }
         return false;
       } catch (_error) { return false; }
@@ -197,10 +191,10 @@
     return fallbackLicenseAllowed(item);
   }
 
-  function normalizeCatalog(items) {
+  function normalizeCatalog(items, options = {}) {
     const seen = new Set();
     return (Array.isArray(items) ? items : []).filter((item) => {
-      if (!validateCatalogItem(item) || seen.has(String(item.id))) return false;
+      if (!validateCatalogItem(item, options) || seen.has(String(item.id))) return false;
       seen.add(String(item.id));
       return true;
     }).map((item) => ({
@@ -214,20 +208,79 @@
     }));
   }
 
+  function normalizeQuarantine(items) {
+    const seen = new Set();
+    return (Array.isArray(items) ? items : []).filter((item) => {
+      const id = String(item?.id || "");
+      if (!id || seen.has(id) || item?.reviewStatus !== "quarantine" || item?.playback || item?.playbackUrl) return false;
+      seen.add(id);
+      return true;
+    }).map((item) => ({
+      id: String(item.id),
+      title: String(item.title || item.id),
+      reviewStatus: "quarantine",
+      reasonCodes: Array.isArray(item.reasonCodes) ? item.reasonCodes.map(String) : []
+    }));
+  }
+
+  function applyEmergencySuspensions(items, payload) {
+    const rows = Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : Array.isArray(payload?.records) ? payload.records : [];
+    const blockedStatuses = new Set(["quarantine", "suspended", "taken_down"]);
+    const blocked = new Set(rows.filter((row) => row && (
+      row.available === false || row.publiclyAvailable === false || blockedStatuses.has(String(row.reviewStatus || row.status || "").toLowerCase())
+    )).map((row) => String(row.id || "")).filter(Boolean));
+    return { items: items.filter((item) => !blocked.has(item.id)), suspendedIds: [...blocked] };
+  }
+
+  async function fetchEmergencyRights(fetcher, options, signal) {
+    try {
+      const response = await fetcher(options.rightsStatusUrl || RIGHTS_STATUS_URL, { signal, credentials: "same-origin", cache: "no-cache" });
+      if (!response?.ok) return null;
+      return await response.json();
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function emergencyTerritory(payload) {
+    const value = String(payload?.territory || payload?.requestTerritory || "").trim().toUpperCase();
+    return value === "WORLDWIDE" || /^[A-Z]{2}(?:-[A-Z0-9]{1,3})?$/.test(value) ? value : DEFAULT_TERRITORY;
+  }
+
   async function loadCatalog(options, signal) {
-    if (Array.isArray(options.catalog)) return { items: normalizeCatalog(options.catalog), source: "options", error: "" };
+    if (Array.isArray(options.catalog)) return {
+      items: normalizeCatalog(options.catalog, options),
+      quarantineItems: normalizeQuarantine(options.quarantineItems),
+      emergencySuspendedCount: 0,
+      territoriallyUnavailableCount: 0,
+      territory: options.territory || DEFAULT_TERRITORY,
+      source: "options",
+      error: ""
+    };
     const fetcher = options.fetch || globalScope.fetch;
-    if (typeof fetcher !== "function") return { items: normalizeCatalog(FALLBACK_ITEMS), source: "fallback", error: "Không thể tải danh mục trực tuyến; đang dùng bộ phim dự phòng đã kiểm duyệt." };
+    if (typeof fetcher !== "function") return { items: [], quarantineItems: [], source: "fail-closed", error: "Không thể tải hồ sơ quyền. Trình phát đã được khóa an toàn." };
     try {
       const response = await fetcher(options.manifestUrl || MANIFEST_URL, { signal, credentials: "same-origin", cache: "no-cache" });
       if (!response?.ok) throw new Error(`HTTP ${response?.status || 0}`);
       const payload = await response.json();
-      const items = normalizeCatalog(payload?.items);
-      if (!items.length) throw new Error("Danh mục không có nội dung vượt qua kiểm tra giấy phép");
-      return { items, source: "manifest", error: "" };
+      const emergencyPayload = await fetchEmergencyRights(fetcher, options, signal);
+      const territory = emergencyPayload ? emergencyTerritory(emergencyPayload) : DEFAULT_TERRITORY;
+      const locallyApproved = normalizeCatalog(payload?.items, { ...options, territory });
+      const quarantineItems = normalizeQuarantine(payload?.quarantineItems);
+      if (!locallyApproved.length) throw new Error("Danh mục không có nội dung vượt qua kiểm tra giấy phép");
+      const emergency = emergencyPayload ? applyEmergencySuspensions(locallyApproved, emergencyPayload) : { items: locallyApproved, suspendedIds: [] };
+      return {
+        items: emergency.items,
+        quarantineItems,
+        emergencySuspendedCount: emergency.suspendedIds.length,
+        territory,
+        territoriallyUnavailableCount: Math.max(0, (Array.isArray(payload?.items) ? payload.items.length : 0) - locallyApproved.length),
+        source: "manifest",
+        error: ""
+      };
     } catch (error) {
-      if (signal?.aborted) return { items: [], source: "aborted", error: "" };
-      return { items: normalizeCatalog(FALLBACK_ITEMS), source: "fallback", error: `Nguồn danh mục tạm gián đoạn (${error?.message || "không xác định"}). Đang dùng bộ phim dự phòng đã kiểm duyệt.` };
+      if (signal?.aborted) return { items: [], quarantineItems: [], source: "aborted", error: "" };
+      return { items: [], quarantineItems: [], emergencySuspendedCount: 0, source: "fail-closed", error: `Không xác minh được hồ sơ quyền (${error?.message || "không xác định"}). Trình phát đã được khóa an toàn.` };
     }
   }
 
@@ -252,6 +305,7 @@
     const historyIds = new Map(runtime.state.history.map((entry, index) => [entry.id, index]));
     let items = runtime.catalog.filter((item) => {
       if (runtime.state.view === "favorites" && !runtime.state.favorites.includes(item.id)) return false;
+      if (runtime.state.view === "watchlist" && !runtime.state.watchlist.includes(item.id)) return false;
       if (runtime.state.view === "continue" && !isContinuable(runtime, item)) return false;
       if (runtime.state.view === "history" && !historyIds.has(item.id)) return false;
       if (runtime.state.source !== "all" && item.source.provider !== runtime.state.source) return false;
@@ -292,12 +346,13 @@
       <header class="cinema-topbar">
         <div class="cinema-brand"><span class="cinema-brand__mark" aria-hidden="true">H</span><div><small>HH OPEN CINEMA</small><h2>Phim</h2></div><span class="cinema-safe-badge" title="Chỉ hiển thị nội dung qua bộ lọc giấy phép">✓ Bản quyền mở</span></div>
         <label class="cinema-search"><span aria-hidden="true">⌕</span><input type="search" data-cinema-search autocomplete="off" placeholder="Tìm phim, đạo diễn, thể loại…" aria-label="Tìm trong kho phim"></label>
-        <div class="cinema-topbar__stats"><strong data-cinema-total>0</strong><span>phim đã kiểm duyệt</span></div>
+        <div class="cinema-topbar__stats" aria-label="Trạng thái kiểm duyệt"><span><strong data-cinema-total>0</strong><small>đã duyệt</small></span><span class="cinema-topbar__quarantine"><strong data-cinema-quarantine>0</strong><small>cách ly</small></span></div>
       </header>
       <div class="cinema-toolbar" aria-label="Lọc danh mục phim">
         <div class="cinema-tabs" role="tablist" aria-label="Thư viện cá nhân">
           <button type="button" role="tab" data-cinema-view="all">Khám phá</button>
           <button type="button" role="tab" data-cinema-view="continue">Xem tiếp</button>
+          <button type="button" role="tab" data-cinema-view="watchlist">Xem sau</button>
           <button type="button" role="tab" data-cinema-view="favorites">Yêu thích</button>
           <button type="button" role="tab" data-cinema-view="history">Lịch sử</button>
         </div>
@@ -319,7 +374,7 @@
           <div class="cinema-card-list" data-cinema-list></div>
         </aside>
       </main>
-      <footer class="cinema-footer"><span><i aria-hidden="true"></i> Không quảng cáo chen vào player · Không tự phát âm thanh</span><span class="cinema-shortcuts"><kbd>Space</kbd> phát/dừng <kbd>←</kbd><kbd>→</kbd> ±10 giây <kbd>P</kbd> PiP <kbd>F</kbd> toàn màn hình</span></footer>
+      <footer class="cinema-footer"><span><i aria-hidden="true"></i> Fail-closed · Không rõ quyền là khóa phát <a href="#/copyright">Bản quyền & khiếu nại</a></span><span class="cinema-shortcuts"><kbd>Space</kbd> phát/dừng <kbd>←</kbd><kbd>→</kbd> ±10 giây <kbd>[</kbd><kbd>]</kbd> tốc độ <kbd>P</kbd> PiP <kbd>F</kbd> toàn màn hình</span></footer>
       <div class="cinema-toast" data-cinema-toast role="status" aria-live="polite" hidden></div>
     </section>`;
     runtime.root = runtime.host.querySelector("[data-cinema-hub]");
@@ -344,10 +399,12 @@
       button.tabIndex = active ? 0 : -1;
     });
     runtime.root.querySelector("[data-cinema-total]").textContent = String(runtime.catalog.length);
+    runtime.root.querySelector("[data-cinema-quarantine]").textContent = String(runtime.quarantineCount + runtime.emergencySuspendedCount);
   }
 
   function cardMarkup(runtime, item) {
     const favorite = runtime.state.favorites.includes(item.id);
+    const watchlisted = runtime.state.watchlist.includes(item.id);
     const progress = getProgress(runtime, item.id);
     const ratio = progressRatio(runtime, item);
     const selected = runtime.selectedId === item.id;
@@ -356,7 +413,10 @@
         <span class="cinema-card__poster"><img src="${escapeHtml(safeUrl(item.poster))}" alt="" loading="lazy" referrerpolicy="no-referrer"><i>${escapeHtml(licenseLabel(item.rights.licenseCode))}</i>${ratio > 0 ? `<b style="--progress:${Math.round(ratio * 100)}%"></b>` : ""}</span>
         <span class="cinema-card__copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(String(item.year))} · ${escapeHtml(formatDuration(item.durationSeconds))}</small><em>${escapeHtml(item.genres.slice(0, 2).join(" · "))}</em>${isContinuable(runtime, item) ? `<span>Tiếp tục từ ${escapeHtml(formatClock(progress.position))}</span>` : ""}</span>
       </button>
-      <button type="button" class="cinema-card__favorite ${favorite ? "is-active" : ""}" data-cinema-favorite="${escapeHtml(item.id)}" aria-label="${favorite ? "Bỏ khỏi" : "Thêm vào"} yêu thích" aria-pressed="${favorite}">${favorite ? "★" : "☆"}</button>
+      <span class="cinema-card__actions">
+        <button type="button" class="cinema-card__watchlist ${watchlisted ? "is-active" : ""}" data-cinema-watchlist="${escapeHtml(item.id)}" aria-label="${watchlisted ? "Bỏ khỏi" : "Thêm vào"} danh sách xem sau" aria-pressed="${watchlisted}">${watchlisted ? "✓" : "+"}</button>
+        <button type="button" class="cinema-card__favorite ${favorite ? "is-active" : ""}" data-cinema-favorite="${escapeHtml(item.id)}" aria-label="${favorite ? "Bỏ khỏi" : "Thêm vào"} yêu thích" aria-pressed="${favorite}">${favorite ? "★" : "☆"}</button>
+      </span>
     </article>`;
   }
 
@@ -382,12 +442,16 @@
   function nowMarkup(runtime, item) {
     if (!item) return "";
     const favorite = runtime.state.favorites.includes(item.id);
+    const watchlisted = runtime.state.watchlist.includes(item.id);
     const progress = getProgress(runtime, item.id);
     return `<div class="cinema-now__heading"><div><span class="cinema-license-pill" data-license="${escapeHtml(item.rights.licenseCode)}">${escapeHtml(licenseLabel(item.rights.licenseCode))}</span><span>${escapeHtml(String(item.year))}</span><span>${escapeHtml(formatDuration(item.durationSeconds))}</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.originalTitle && item.originalTitle !== item.title ? item.originalTitle : item.creator)}</p></div>
       <div class="cinema-now__actions">
         <button type="button" data-cinema-player-action="rewind" title="Lùi 10 giây">↶ 10</button>
+        <label class="cinema-speed"><span>Tốc độ</span><select data-cinema-speed aria-label="Tốc độ phát">${[0.75, 1, 1.25, 1.5, 2].map((rate) => `<option value="${rate}"${runtime.state.playbackRate === rate ? " selected" : ""}>${rate}×</option>`).join("")}</select></label>
         <button type="button" data-cinema-player-action="pip" title="Picture-in-Picture">▣ PiP</button>
         <button type="button" data-cinema-player-action="fullscreen" title="Toàn màn hình">⛶</button>
+        <button type="button" data-cinema-rights-focus title="Mở hồ sơ nguồn và giấy phép">§ Quyền</button>
+        <button type="button" class="${watchlisted ? "is-watchlisted" : ""}" data-cinema-watchlist="${escapeHtml(item.id)}" aria-pressed="${watchlisted}">${watchlisted ? "✓ Xem sau" : "+ Xem sau"}</button>
         <button type="button" class="${favorite ? "is-favorite" : ""}" data-cinema-favorite="${escapeHtml(item.id)}" aria-pressed="${favorite}">${favorite ? "★ Đã lưu" : "☆ Yêu thích"}</button>
         ${progress.completed ? `<span class="cinema-completed">✓ Đã xem xong</span>` : ""}
       </div>`;
@@ -395,15 +459,26 @@
 
   function rightsMarkup(item) {
     if (!item) return "";
+    const rights = item.rights || {};
+    const evidence = rights.evidence || {};
+    const permissionText = [rights.streamAllowed ? "Phát trực tuyến" : "Không phát", rights.rehostAllowed ? "Cho phép lưu máy chủ" : "Không lưu lại trên máy chủ", rights.downloadAllowed ? "Cho phép tải" : "Không cung cấp tải xuống"].join(" · ");
+    const checksumText = evidence.mediaChecksum ? `${evidence.mediaChecksumAlgorithm || "Hash"}: ${evidence.mediaChecksum}` : `Không có hash byte cho URL phát; rehost/download đã khóa (${evidence.mediaChecksumReason || "chưa được nguồn công bố"})`;
+    const layerNames = { master: "Master", soundtrack: "Nhạc/âm thanh", poster: "Ảnh đại diện", subtitles: "Phụ đề", privacyPublicity: "Hình ảnh cá nhân" };
+    const layerText = Object.entries(rights.layers || {}).map(([key, layer]) => `${layerNames[key] || key}: ${layer.status === "cleared" ? "đã duyệt" : layer.status === "not-applicable" ? "không áp dụng" : "chưa duyệt"}`).join(" · ");
     return `<div class="cinema-description"><p>${escapeHtml(item.description)}</p><div>${item.genres.map((genre) => `<span>${escapeHtml(genre)}</span>`).join("")}</div></div>
-      <details class="cinema-rights-card"><summary><span><i aria-hidden="true">✓</i><b>Nguồn & giấy phép đã xác minh</b></span><small>Kiểm tra ${escapeHtml(item.rights.verifiedAt)}</small></summary>
+      <details class="cinema-rights-card" data-cinema-rights-card open><summary><span><i aria-hidden="true">✓</i><b>Nguồn, phạm vi & giấy phép</b></span><small>Kiểm tra ${escapeHtml(rights.verifiedAt)}</small></summary>
         <div class="cinema-rights-card__body"><table class="cinema-rights-table"><tbody>
-          <tr><th>Nguồn</th><td>${escapeHtml(item.source.provider)}</td></tr>
+          <tr><th>Trạng thái</th><td><strong>${rights.reviewStatus === "published" ? "Đã duyệt để phát" : escapeHtml(rights.reviewStatus)}</strong></td></tr>
+          <tr><th>Nguồn</th><td>${escapeHtml(item.source.provider)}<br><a class="cinema-raw-link" href="${escapeHtml(safeUrl(item.source.landingUrl))}" target="_blank" rel="noopener noreferrer">${escapeHtml(safeUrl(item.source.landingUrl))}</a></td></tr>
           <tr><th>Tác giả</th><td>${escapeHtml(item.creator)}</td></tr>
-          <tr><th>Giấy phép</th><td><strong>${escapeHtml(licenseLabel(item.rights.licenseCode))}</strong></td></tr>
-          <tr><th>Cho phép</th><td>${item.rights.commercialAllowed ? "Phân phối và sử dụng thương mại" : "Chỉ phi thương mại"}${item.rights.derivativesAllowed ? " · Cho phép chỉnh sửa" : " · Không phái sinh"}</td></tr>
-          <tr><th>Ghi công</th><td>${escapeHtml(item.rights.attributionText)}</td></tr>
-        </tbody></table><div class="cinema-rights-links"><a href="${escapeHtml(safeUrl(item.source.landingUrl))}" target="_blank" rel="noopener noreferrer">Trang nguồn ↗</a><a href="${escapeHtml(safeUrl(item.rights.licenseUrl))}" target="_blank" rel="noopener noreferrer">Đọc giấy phép ↗</a></div></div>
+          <tr><th>Giấy phép</th><td><strong>${escapeHtml(licenseLabel(rights.licenseCode))}</strong><br><a class="cinema-raw-link" href="${escapeHtml(safeUrl(rights.licenseUrl))}" target="_blank" rel="noopener noreferrer">${escapeHtml(safeUrl(rights.licenseUrl))}</a></td></tr>
+          <tr><th>Phạm vi</th><td>${escapeHtml(rights.jurisdiction)} · ${escapeHtml((rights.territories || []).join(", "))}</td></tr>
+          <tr><th>Phân phối</th><td>${escapeHtml(permissionText)}</td></tr>
+          <tr><th>Thay đổi</th><td>${escapeHtml(rights.changesDescription || (rights.changesMade ? "Có thay đổi" : "Không thay đổi"))}</td></tr>
+          <tr><th>Các lớp quyền</th><td>${escapeHtml(layerText)}</td></tr>
+          <tr><th>Bằng chứng</th><td>Phiên bản nguồn: <span class="cinema-evidence">${escapeHtml(evidence.sourceRevision || "—")}</span><br>${escapeHtml(checksumText)}</td></tr>
+          <tr><th>Ghi công</th><td>${escapeHtml(rights.attributionText)}</td></tr>
+        </tbody></table><div class="cinema-rights-links"><a href="${escapeHtml(safeUrl(item.source.landingUrl))}" target="_blank" rel="noopener noreferrer">Trang nguồn ↗</a><a href="${escapeHtml(safeUrl(rights.licenseUrl))}" target="_blank" rel="noopener noreferrer">Giấy phép ↗</a><a href="#/copyright">Chính sách & khiếu nại</a></div></div>
       </details>`;
   }
 
@@ -422,6 +497,7 @@
       if (!entry.completed && entry.position >= 5 && entry.position < duration - 8) {
         try { video.currentTime = Math.min(entry.position, Math.max(0, duration - 3)); } catch (_error) { /* Metadata may not be seekable yet. */ }
       }
+      video.playbackRate = runtime.state.playbackRate;
       updateMediaSession(runtime, item);
     };
     const saveProgress = (completed = false) => {
@@ -526,6 +602,44 @@
     toast(runtime, added ? "Đã thêm vào phim yêu thích." : "Đã bỏ khỏi phim yêu thích.", "success");
   }
 
+  function toggleWatchlist(runtime, id) {
+    const set = new Set(runtime.state.watchlist);
+    const added = !set.has(id);
+    if (added) set.add(id); else set.delete(id);
+    runtime.state.watchlist = [...set];
+    writeState(runtime);
+    renderCatalog(runtime);
+    renderNow(runtime, selectedItem(runtime));
+    toast(runtime, added ? "Đã thêm vào danh sách xem sau." : "Đã bỏ khỏi danh sách xem sau.", "success");
+  }
+
+  function setPlaybackRate(runtime, value) {
+    const rates = [0.75, 1, 1.25, 1.5, 2];
+    const requested = Number(value);
+    const next = rates.reduce((best, rate) => Math.abs(rate - requested) < Math.abs(best - requested) ? rate : best, 1);
+    runtime.state.playbackRate = next;
+    if (runtime.video) runtime.video.playbackRate = next;
+    writeState(runtime);
+    const select = runtime.root.querySelector("[data-cinema-speed]");
+    if (select) select.value = String(next);
+    toast(runtime, `Tốc độ phát ${next}×.`, "success");
+  }
+
+  function stepPlaybackRate(runtime, direction) {
+    const rates = [0.75, 1, 1.25, 1.5, 2];
+    const current = Math.max(0, rates.indexOf(runtime.state.playbackRate));
+    setPlaybackRate(runtime, rates[Math.max(0, Math.min(rates.length - 1, current + direction))]);
+  }
+
+  function focusRights(runtime) {
+    const details = runtime.root.querySelector("[data-cinema-rights-card]");
+    if (!details) return false;
+    details.open = true;
+    details.querySelector("summary")?.focus?.({ preventScroll: true });
+    details.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    return true;
+  }
+
   async function playerAction(runtime, action) {
     const video = runtime.video;
     const stage = runtime.root.querySelector("[data-cinema-player]");
@@ -545,6 +659,8 @@
       catch (_error) { toast(runtime, "Nhấn nút Play trong trình phát để cấp quyền phát video.", "warning"); }
     } else if (action === "rewind") video.currentTime = Math.max(0, video.currentTime - 10);
     else if (action === "forward") video.currentTime = Math.min(video.duration || Infinity, video.currentTime + 10);
+    else if (action === "rate-down") stepPlaybackRate(runtime, -1);
+    else if (action === "rate-up") stepPlaybackRate(runtime, 1);
     else if (action === "mute") video.muted = !video.muted;
     else if (action === "pip") {
       if (!runtime.document.pictureInPictureEnabled || typeof video.requestPictureInPicture !== "function") {
@@ -626,6 +742,9 @@
       if (select) { selectFilm(runtime, select.dataset.cinemaSelect, { focusPlayer: false }); return; }
       const favorite = event.target.closest("[data-cinema-favorite]");
       if (favorite) { toggleFavorite(runtime, favorite.dataset.cinemaFavorite); return; }
+      const watchlist = event.target.closest("[data-cinema-watchlist]");
+      if (watchlist) { toggleWatchlist(runtime, watchlist.dataset.cinemaWatchlist); return; }
+      if (event.target.closest("[data-cinema-rights-focus]")) { focusRights(runtime); return; }
       const view = event.target.closest("[data-cinema-view]");
       if (view) {
         runtime.state.view = VIEW_MODES.has(view.dataset.cinemaView) ? view.dataset.cinemaView : "all";
@@ -646,6 +765,7 @@
       renderCatalog(runtime);
     });
     addListener(runtime, runtime.root, "change", (event) => {
+      if (event.target.matches("[data-cinema-speed]")) { setPlaybackRate(runtime, event.target.value); return; }
       const key = event.target.dataset.cinemaFilter;
       if (!key) return;
       if (key === "sort") runtime.state.sort = SORT_MODES.has(event.target.value) ? event.target.value : "featured";
@@ -663,6 +783,9 @@
       else if (key === "p") { event.preventDefault(); playerAction(runtime, "pip"); }
       else if (key === "f") { event.preventDefault(); playerAction(runtime, "fullscreen"); }
       else if (key === "m") { event.preventDefault(); playerAction(runtime, "mute"); }
+      else if (key === "[") { event.preventDefault(); playerAction(runtime, "rate-down"); }
+      else if (key === "]") { event.preventDefault(); playerAction(runtime, "rate-up"); }
+      else if (key === "r") { event.preventDefault(); focusRights(runtime); }
       else if (key === "/") { event.preventDefault(); focusSearch(); }
     });
     addListener(runtime, globalScope, "hh:cinema-focus-search", () => focusSearch());
@@ -700,6 +823,10 @@
       video: null,
       manifestSource: "loading",
       catalogError: "",
+      quarantineCount: 0,
+      emergencySuspendedCount: 0,
+      territoriallyUnavailableCount: 0,
+      territory: DEFAULT_TERRITORY,
       lastProgressWrite: 0,
       toastTimer: 0
     };
@@ -714,6 +841,10 @@
     runtime.catalog = loaded.items;
     runtime.manifestSource = loaded.source;
     runtime.catalogError = loaded.error;
+    runtime.quarantineCount = loaded.quarantineItems?.length || 0;
+    runtime.emergencySuspendedCount = loaded.emergencySuspendedCount || 0;
+    runtime.territoriallyUnavailableCount = loaded.territoriallyUnavailableCount || 0;
+    runtime.territory = loaded.territory || DEFAULT_TERRITORY;
     runtime.selectedId = runtime.catalog.some((item) => item.id === runtime.state.selectedId) ? runtime.state.selectedId : runtime.catalog[0]?.id || "";
     runtime.state.selectedId = runtime.selectedId;
     updateToolbar(runtime);
@@ -722,6 +853,7 @@
     bindEvents(runtime);
     writeState(runtime);
     if (loaded.error) toast(runtime, loaded.error, "warning");
+    else if (runtime.territoriallyUnavailableCount) toast(runtime, `${runtime.territoriallyUnavailableCount} phim giới hạn lãnh thổ đã được ẩn vì chưa xác minh vùng truy cập.`, "warning");
     return Object.freeze({ unmount, inspect, focusSearch });
   }
 
@@ -760,10 +892,16 @@
       manifestSource: runtime.manifestSource,
       catalogError: runtime.catalogError,
       catalogCount: runtime.catalog.length,
+      quarantineCount: runtime.quarantineCount,
+      emergencySuspendedCount: runtime.emergencySuspendedCount,
+      territoriallyUnavailableCount: runtime.territoriallyUnavailableCount,
+      territory: runtime.territory,
       selectedId: runtime.selectedId,
       query: runtime.query,
       filters: { view: runtime.state.view, source: runtime.state.source, license: runtime.state.license, genre: runtime.state.genre, sort: runtime.state.sort },
       favorites: [...runtime.state.favorites],
+      watchlist: [...runtime.state.watchlist],
+      playbackRate: runtime.state.playbackRate,
       historyCount: runtime.state.history.length,
       continueCount: runtime.catalog.filter((item) => isContinuable(runtime, item)).length,
       playback: runtime.video ? { type: "video", paused: runtime.video.paused, currentTime: Number(runtime.video.currentTime) || 0 } : { type: selectedItem(runtime)?.playback?.type || "none", paused: true, currentTime: 0 }
@@ -773,6 +911,7 @@
   return Object.freeze({
     VERSION,
     MANIFEST_URL,
+    RIGHTS_STATUS_URL,
     STORAGE_SCHEMA,
     ALLOWED_LICENSES,
     escapeHtml,
@@ -782,6 +921,8 @@
     fallbackLicenseAllowed,
     validateCatalogItem,
     normalizeCatalog,
+    normalizeQuarantine,
+    applyEmergencySuspensions,
     mount,
     unmount,
     inspect,

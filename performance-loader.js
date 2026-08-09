@@ -168,12 +168,16 @@
       scripts: ["search-watch-center.js?v=7"]
     },
     cinema: {
-      styles: ["cinema-hub.css?v=3"],
-      scripts: ["utils/open-media-rights.js?v=2", "cinema-hub.js?v=2"]
+      styles: ["cinema-hub.css?v=4"],
+      scripts: ["utils/open-media-rights.js?v=3", "cinema-hub.js?v=3"]
     },
     "open-music": {
-      styles: ["open-music-hub.css?v=3"],
-      scripts: ["utils/open-media-rights.js?v=2", "open-music-hub.js?v=2"]
+      styles: ["open-music-hub.css?v=4"],
+      scripts: ["utils/open-media-rights.js?v=3", "vendor/jszip.min.js?v=3.10.1", "open-music-hub.js?v=3"]
+    },
+    "open-media-governance": {
+      styles: ["open-media-governance.css?v=1"],
+      scripts: ["utils/open-media-rights.js?v=3", "open-media-governance.js?v=1"]
     },
     work: {
       styles: ["work-center.css?v=4", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
@@ -247,6 +251,7 @@
     if (value.startsWith("/music-ai")) return ["music"];
     if (value === "/cinema" || value.startsWith("/cinema/")) return ["cinema"];
     if (value === "/music" || value.startsWith("/music/")) return ["open-music"];
+    if (value === "/copyright" || value.startsWith("/copyright/")) return ["open-media-governance"];
     if (value.startsWith("/entertainment/cinematic-arcade")) return ["cinematic-game"];
     if (value.startsWith("/entertainment")) return ["game"];
     if (value.startsWith("/learn")) return ["learning"];
