@@ -51,7 +51,7 @@ Canonical render input fields:
 - Worker: `MEDIA_AI_WORKER_URL`, `MEDIA_AI_WORKER_TOKEN`, and explicit `MEDIA_AI_WORKER_MODES`.
 - Worker provider/model allowlists: `MEDIA_AI_WORKER_PROVIDERS`, `MEDIA_AI_WORKER_MODELS`, and `MEDIA_AI_WORKER_DEFAULT_MODEL` when more than one model is declared.
 - Worker parameter declarations: `MEDIA_AI_WORKER_DURATIONS`, `MEDIA_AI_WORKER_ASPECT_RATIOS`, `MEDIA_AI_WORKER_RESOLUTIONS`, and `MEDIA_AI_WORKER_MAX_VARIANTS`. Safe defaults are deliberately conservative.
-- Pricing: `VEO_FAST_USD_PER_SECOND`, `VEO_STANDARD_USD_PER_SECOND`, `MEDIA_AI_WORKER_USD_PER_SECOND`, and `AI_VIDEO_PRICING_VERSION` as applicable.
+- Pricing: `VEO_LITE_USD_PER_SECOND`, `VEO_FAST_USD_PER_SECOND`, `VEO_STANDARD_USD_PER_SECOND`, `MEDIA_AI_WORKER_USD_PER_SECOND`, and `AI_VIDEO_PRICING_VERSION` as applicable.
 - Paid access: owner only by default. Explicit alternatives are `AI_VIDEO_BILLING_USER_IDS`, or `AI_VIDEO_ALLOW_USERS=1` together with `AI_VIDEO_DAILY_USD_LIMIT` and server pricing.
 - Daily limits: `AI_VIDEO_DAILY_JOB_LIMIT`, `AI_VIDEO_DAILY_USD_LIMIT`, and owner equivalents `AI_VIDEO_ADMIN_DAILY_JOB_LIMIT`, `AI_VIDEO_ADMIN_DAILY_USD_LIMIT`.
 

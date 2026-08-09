@@ -412,9 +412,12 @@ function selectAdapter(capabilities, request) {
 }
 
 function pricingRate(env, adapter, model) {
+  const normalizedModel = text(model, 120).toLowerCase();
   const value = adapter === "media-ai-worker"
     ? env.MEDIA_AI_WORKER_USD_PER_SECOND
-    : (text(model, 120).toLowerCase().includes("fast") || text(model, 120).toLowerCase().includes("lite"))
+    : normalizedModel.includes("lite")
+      ? env.VEO_LITE_USD_PER_SECOND
+      : normalizedModel.includes("fast")
       ? env.VEO_FAST_USD_PER_SECOND
       : env.VEO_STANDARD_USD_PER_SECOND;
   if (String(value ?? "").trim() === "") return NaN;

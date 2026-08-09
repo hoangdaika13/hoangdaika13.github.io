@@ -207,6 +207,13 @@ test("cost estimate remains unknown until the server has a configured rate", () 
   });
   assert.equal(configured.amount, 0.8);
   assert.equal(configured.pricingConfigured, true);
+  const lite = core.estimateRequest(request, {
+    adapter: "veo",
+    model: "veo-3.1-lite-generate-preview",
+    env: { VEO_LITE_USD_PER_SECOND: "0.05" }
+  });
+  assert.equal(lite.amount, 0.4);
+  assert.equal(lite.pricingConfigured, true);
 });
 
 test("public job never exposes provider IDs, keys, owner IDs or raw output URLs", () => {
