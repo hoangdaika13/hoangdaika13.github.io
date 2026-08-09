@@ -102,6 +102,10 @@
         "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=24", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=11", "facebook-page-command-center.js?v=4"
       ]
     },
+    "ai-video-remake": {
+      styles: ["ai-video-remake-studio.css?v=3"],
+      scripts: ["ai-video-remake-studio.js?v=2"]
+    },
     "comic-motion": {
       // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.css?v=4 comic-motion-studio.css?v=5 comic-motion-studio.js?v=6 comic-motion-studio.js?v=7 comic-motion-studio.js?v=8 comic-motion-studio.js?v=9
       styles: ["comic-motion-studio.css?v=6"],
@@ -221,6 +225,7 @@
     const value = normalizeRoute(route);
     if (value === "/home") return [];
     if (value.startsWith("/dev-tools")) return ["dev"];
+    if (value === "/davinci-resolve/ai-video-remake") return ["davinci", "ai-video-remake"];
     if (value.startsWith("/davinci-resolve")) return ["davinci"];
     if (value.startsWith("/comic-motion-studio")) return ["comic-motion"];
     if (value.startsWith("/comic-reader")) return ["comic-reader"];

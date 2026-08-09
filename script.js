@@ -5433,6 +5433,7 @@ function initAppShell() {
     { id: "cosmic", icon: "HC", title: "H Cosmic Studio", route: "/davinci-resolve/cosmic", description: "Điều khiển batch production r38 trên web: preflight, timeline V1/V2, effect, RapidGrade, render queue, checkpoint, FFprobe và tải Portable ZIP." },
     { id: "davinci", icon: "DV", title: "DaVinci Resolve", route: "/davinci-resolve/davinci", description: "HH Video Studio chạy trực tiếp trên web: Media Pool, timeline, màu, audio, title và xuất MP4/WebM." },
     { id: "auto", icon: "AD", title: "Auto Video Director", route: "/davinci-resolve/auto", description: "Quét media thật, đo sáng–màu–waveform và tạo timeline tự động trước khi bạn xác nhận." },
+    { id: "ai-video-remake", icon: "AI", title: "AI Video Remake Studio", route: "/davinci-resolve/ai-video-remake", description: "Remix video gốc, thay nhân vật, tạo video từ yêu cầu và điều phối storyboard theo từng cảnh bằng AI." },
     { id: "batch", icon: "BV", title: "Batch Video Factory", route: "/davinci-resolve/batch", description: "Dùng một sườn để trộn CSV, ảnh và video rồi render hàng loạt MP4/WebM với hàng đợi thật." },
     { id: "image-text", icon: "TX", title: "Text on Image Studio", route: "/davinci-resolve/image-text", description: "Chèn chữ nhanh vào 1.000+ ảnh, preview theo trang, font quốc tế, preset tối giản và xuất batch thumbnail YouTube 16:9." },
     { id: "youtube", icon: "YT", title: "YouTube Creator Galaxy", route: "/davinci-resolve/youtube", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight." },
@@ -6015,6 +6016,7 @@ function initAppShell() {
     shell.style.setProperty("--route-accent", activeGroup?.accent || "#56eaff");
     shell.dataset.activeSection = activeGroup?.id || "home";
     document.body.classList.toggle("app-davinci-resolve-route", route === "/davinci-resolve" || route.startsWith("/davinci-resolve/"));
+    document.body.classList.toggle("app-ai-video-remake-route", route === "/davinci-resolve/ai-video-remake");
     document.body.classList.toggle("app-image-text-route", route === "/davinci-resolve/image-text");
     document.body.classList.toggle("app-facebook-page-route", route === "/davinci-resolve/facebook");
     document.body.classList.toggle("app-comic-motion-route", route === "/comic-motion-studio");
@@ -6043,6 +6045,7 @@ function initAppShell() {
       window.HHImageTextStudio?.unmount?.();
       window.HHFacebookPageCommandCenter?.unmount?.();
     }
+    if (route !== "/davinci-resolve/ai-video-remake") window.HHAIVideoRemakeStudio?.unmount?.();
     if (route !== "/comic-motion-studio") window.HHComicMotionStudio?.unmount?.();
     if (route !== "/comic-reader") window.HHComicReaderHub?.unmount?.();
     if (route !== "/entertainment") window.HHGameCenter?.unmount?.();
@@ -6283,11 +6286,19 @@ function initAppShell() {
       window.HHCosmicWebStudio?.unmount?.();
       window.HHImageTextStudio?.unmount?.();
       window.HHFacebookPageCommandCenter?.unmount?.();
+      window.HHAIVideoRemakeStudio?.unmount?.();
       if (resolveView === "youtube") window.HHYouTubeCreatorGalaxy?.mount(resolveHost, { view: resolveView });
       else if (resolveView === "batch") window.HHVideoBatchFactory?.mount(resolveHost);
       else if (resolveView === "cosmic") window.HHCosmicWebStudio?.mount(resolveHost);
       else if (resolveView === "image-text") window.HHImageTextStudio?.mount(resolveHost);
       else if (resolveView === "facebook") window.HHFacebookPageCommandCenter?.mount(resolveHost);
+      else if (resolveView === "ai-video-remake" && window.HHAIVideoRemakeStudio?.mount) {
+        window.HHAIVideoRemakeStudio.mount(resolveHost, {
+          currentUser: readCurrentAuthUser(),
+          navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
+        });
+      }
+      else if (resolveView === "ai-video-remake") mountSimpleView("AI Video Remake Studio", "Đang tải không gian tạo và remix video AI...", "");
       else window.HHDavinciResolveHub?.mount(resolveHost, { view: resolveView });
       remember(`davinci-resolve-${resolveView}`);
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {
@@ -6555,6 +6566,7 @@ function initAppShell() {
       key: `${item.title} ${item.section || ""} ${item.description} AI DAW music composer lyrics timeline stems vocal mix master visualizer youtube rights`
     }));
     const comicMotion = [
+      { type: "Sản xuất video AI", title: "AI Video Remake Studio", description: "Remix video gốc, thay nhân vật, tạo video theo yêu cầu và điều phối storyboard theo từng cảnh.", route: "/davinci-resolve/ai-video-remake", key: "tool ai video remake studio video remix thay nhân vật character replacement motion transfer tạo video prompt tiếng việt ai director storyboard veo gemini wan render queue" },
       { type: "Sản xuất hình ảnh", title: "Text on Image Studio", description: "Chèn chữ hàng loạt vào 1.000+ ảnh, font quốc tế, preview nhanh và xuất thumbnail YouTube 16:9.", route: "/davinci-resolve/image-text", key: "tool text on image studio chèn chữ ảnh hàng loạt batch thumbnail youtube font quốc tế preview folder zip 1280 720 1920 1080 4k" },
       { type: "Mạng xã hội", title: "Facebook Page Command Center", description: "Quản lý nhiều Facebook Page thật qua Meta Graph API, đăng/lên lịch, bình luận, insights và chuẩn bị Page hàng loạt.", route: "/davinci-resolve/facebook", key: "tool facebook meta page manager command center bulk page setup oauth graph api schedule post comments insights multi page" },
       { type: "Đọc truyện", title: "HH Comics", description: "Kho truyện online một trang với tìm kiếm, thể loại, theo dõi, lịch sử, chi tiết truyện, reader cuộn dọc/từng trang và import CBZ/JSON/API.", route: "/comic-reader", key: "đọc truyện online hh comics manga manhwa manhua webtoon catalog chapter reader theo dõi lịch sử cbz zip json api licensed" },

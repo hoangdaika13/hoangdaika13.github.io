@@ -9,6 +9,7 @@ const TOOL_GATEWAYS = Object.freeze({
   events: require("../../tool-api/events")
 });
 const mediaCloud = require("../../services/mediaCloud");
+const aiVideoRemake = require("../../services/ai-video-remake");
 
 const products = [
   { id: "hh-voice-lite", title: "HH Voice Studio Lite", price: 0, currency: "VND", type: "download" },
@@ -22,6 +23,7 @@ module.exports = async function handler(req, res) {
   const resource = clean(req.query?.resource, 30).toLocaleLowerCase("en-US");
 
   if (resource === "media") return mediaCloud.handler(req, res);
+  if (resource === "ai-video-remake") return aiVideoRemake(req, res);
 
   if (resource === "products") {
     setCors(req, res);

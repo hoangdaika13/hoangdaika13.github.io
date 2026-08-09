@@ -1,9 +1,10 @@
-const CACHE = "hh-identity-portal-v517";
+const CACHE = "hh-identity-portal-v520";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=10 ./image-text-studio.js?v=10
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
+// AI Video Remake upgrade compatibility: script.js?v=172 performance-loader.js?v=249 performance-loader.js?v=250 performance-loader.js?v=251 hh-identity-portal-v517 hh-identity-portal-v518 hh-identity-portal-v519 ai-video-remake-studio.css?v=1 ai-video-remake-studio.css?v=2 ai-video-remake-studio.js?v=1
 // Graphic Design Universal compatibility aliases: graphic-design-universal.css?v=1 graphic-design-universal.js?v=1
 // Entertainment v4 compatibility aliases: ./game-center.css?v=4 ./game-center.js?v=4
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
@@ -58,11 +59,12 @@ const RUNTIME_ASSETS = [
   "./youtube-creator-galaxy.css?v=20",
   "./image-text-studio.css?v=11",
   "./facebook-page-command-center.css?v=4",
+  "./ai-video-remake-studio.css?v=3",
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=172",
+  "./script.js?v=173",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -103,6 +105,7 @@ const RUNTIME_ASSETS = [
   "./youtube-creator-galaxy.js?v=24",
   "./image-text-studio.js?v=11",
   "./facebook-page-command-center.js?v=4",
+  "./ai-video-remake-studio.js?v=2",
   "./comic-motion-studio.js?v=10",
   "./comic-open-source-catalog.js?v=2",
   "./comic-reader-hub.js?v=18",
@@ -457,10 +460,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=249",
+  "./performance-loader.js?v=252",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=14",
-  "./script.js?v=172"
+  "./script.js?v=173"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

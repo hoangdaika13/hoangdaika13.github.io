@@ -31,6 +31,10 @@
       "destination": "/api/store/tool-gateway?gateway=ai"
     },
     {
+      "source": "/api/ai-video-remake",
+      "destination": "/api/store/ai-video-remake"
+    },
+    {
       "source": "/api/integrations",
       "destination": "/api/store/tool-gateway?gateway=integrations"
     },
