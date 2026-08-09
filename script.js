@@ -5552,6 +5552,7 @@ function initAppShell() {
         { id: "game-center", title: "Game Center", route: "/entertainment" },
         { id: "astral-realms", title: "HH Astral Realms", route: "/entertainment/astral-realms" },
         { id: "astra-hh", title: "ASTRA MMO RPG", route: "/entertainment/astra-hh" },
+        { id: "cinematic-arcade", title: "Cinematic 3D Arcade", route: "/entertainment/cinematic-arcade" },
         { id: "arcade", title: "Arcade Galaxy", route: "/entertainment/arcade" }
       ]
     },
@@ -6021,6 +6022,7 @@ function initAppShell() {
     document.body.classList.toggle("app-facebook-page-route", route === "/davinci-resolve/facebook");
     document.body.classList.toggle("app-comic-motion-route", route === "/comic-motion-studio");
     document.body.classList.toggle("app-comic-reader-route", route === "/comic-reader");
+    document.body.classList.toggle("app-cinematic-game-route", route === "/entertainment/cinematic-arcade" || route.startsWith("/entertainment/cinematic-arcade/"));
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
@@ -6049,7 +6051,8 @@ function initAppShell() {
     if (route !== "/comic-motion-studio") window.HHComicMotionStudio?.unmount?.();
     if (route !== "/comic-reader") window.HHComicReaderHub?.unmount?.();
     if (route !== "/entertainment") window.HHGameCenter?.unmount?.();
-    if (route !== "/entertainment/arcade") window.HHGameArcade?.unmount?.();
+    if (!(route === "/entertainment/arcade" || route.startsWith("/entertainment/arcade/"))) window.HHGameArcade?.unmount?.();
+    if (!route.startsWith("/entertainment/cinematic-arcade")) window.HHCinematicGameArcade?.unmount?.();
     if (route !== "/entertainment/astral-realms") window.HHAstralRealms?.unmount?.();
     if (route !== "/entertainment/astra-hh") {
       window.HHSpaceExplorer?.unmount?.();
@@ -6114,7 +6117,7 @@ function initAppShell() {
       else mountSimpleView("Ủng hộ nhà phát triển", "Không thể tải giao diện ủng hộ. Vui lòng làm mới trang.", "");
     } else if (route === "/entertainment") {
       updatePageHeader("HH Game Center", "Action RPG 3D, game MMO vũ trụ, arcade, nhiệm vụ, XP, huy hiệu và phòng chơi realtime.", route);
-      pageActions.innerHTML = `<button class="app-primary-action" type="button" data-app-route="/entertainment/astral-realms">Chơi Astral Realms</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button><button type="button" data-app-route="/entertainment/arcade">Arcade Galaxy</button>`;
+      pageActions.innerHTML = `<button class="app-primary-action" type="button" data-app-route="/entertainment/cinematic-arcade">Cinematic 3D Arcade</button><button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button><button type="button" data-app-route="/entertainment/arcade">Arcade 2D</button>`;
       workspace.innerHTML = '<div data-game-center-host></div>';
       if (window.HHGameCenter?.mount) window.HHGameCenter.mount(workspace.firstElementChild, {
         apiBase: REALTIME_URL,
@@ -6126,7 +6129,7 @@ function initAppShell() {
       else mountSimpleView("HH Game Center", "Đang tải trung tâm game...", "");
     } else if (route === "/entertainment/astral-realms") {
       updatePageHeader("HH Astral Realms", "Action RPG thế giới mở 3D trong H Galaxy: khám phá bốn khu vực, chiến đấu nguyên tố, nhiệm vụ, chế tạo và co-op 1–4 người.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA Universe</button><button type="button" data-app-route="/entertainment/arcade">Arcade Galaxy</button>`;
+      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/cinematic-arcade">Cinematic 3D</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA Universe</button><button type="button" data-app-route="/entertainment/arcade">Arcade 2D</button>`;
       workspace.innerHTML = '<div data-astral-realms-host></div>';
       if (window.HHAstralRealms?.mount) window.HHAstralRealms.mount(workspace.firstElementChild, {
         apiBase: REALTIME_URL,
@@ -6138,7 +6141,7 @@ function initAppShell() {
       else mountSimpleView("HH Astral Realms", "Đang khởi động cổng không gian 3D...", "");
     } else if (route === "/entertainment/astra-hh") {
       updatePageHeader("ASTRA HH: Tín Hiệu Vô Tận", "Lái tàu, quét ngoại hành tinh, khai thác tài nguyên và truy tìm nguồn phát HH-13.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/arcade">Arcade Galaxy</button>`;
+      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/cinematic-arcade">Cinematic 3D</button><button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/arcade">Arcade 2D</button>`;
       workspace.innerHTML = '<div data-astra-expansion-host></div><div data-space-explorer-host></div>';
       if (window.HHAstraExpansion?.mount) window.HHAstraExpansion.mount(workspace.querySelector("[data-astra-expansion-host]"), {
         apiBase: REALTIME_URL,
@@ -6148,15 +6151,27 @@ function initAppShell() {
       });
       if (window.HHSpaceExplorer?.mount) window.HHSpaceExplorer.mount(workspace.querySelector("[data-space-explorer-host]"), { apiBase: REALTIME_URL });
       else mountSimpleView("ASTRA HH", "Đang khởi động động cơ khám phá vũ trụ...", "");
-    } else if (route === "/entertainment/arcade") {
+    } else if (route === "/entertainment/cinematic-arcade" || route.startsWith("/entertainment/cinematic-arcade/")) {
+      const cinematicGameId = parts[2] || "neon-skyline-rush";
+      updatePageHeader("Cinematic 3D Arcade", "Sáu game 3D chơi thật với camera chase, shoulder, flight, lock-on, orbit và sport broadcast; tự cân bằng chất lượng theo thiết bị.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button><button type="button" data-app-route="/entertainment/arcade">Arcade 2D</button>`;
+      workspace.innerHTML = '<div data-cinematic-game-arcade-host></div>';
+      if (window.HHCinematicGameArcade?.mount) window.HHCinematicGameArcade.mount(workspace.firstElementChild, {
+        gameId: cinematicGameId,
+        currentUser: readCurrentAuthUser(),
+        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
+      });
+      else mountSimpleView("Cinematic 3D Arcade", "Đang dựng sân chơi WebGL 3D...", "");
+    } else if (route === "/entertainment/arcade" || route.startsWith("/entertainment/arcade/")) {
       updatePageHeader("Arcade Galaxy", "22 game phụ trong vũ trụ HH: nông trại, câu cá, mecha, xây hành tinh, thẻ bài, đua tàu, boss rush và sinh tồn co-op.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button>`;
+      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/cinematic-arcade">Cinematic 3D</button><button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button>`;
       workspace.innerHTML = '<div data-game-arcade-host></div>';
       if (window.HHGameArcade?.mount) window.HHGameArcade.mount(workspace.firstElementChild, {
         apiBase: REALTIME_URL,
         socketUrl: SOCKET_URL,
         currentUser: readCurrentAuthUser(),
-        socket: window.HHRealtimeSocket
+        socket: window.HHRealtimeSocket,
+        initialGameId: parts[2] || "neon-drift"
       });
       else mountSimpleView("Arcade Galaxy", "Đang tải khu game phụ...", "");
     } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHLearningSuite?.supports?.(parts[1]))) {

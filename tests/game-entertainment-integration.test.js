@@ -13,8 +13,8 @@ test("Game runtime, Game Center, ASTRA expansion and Arcade assets load offline"
   const assets = [
     "game-runtime.css?v=1",
     "game-runtime.js?v=1",
-    "game-center.css?v=4",
-    "game-center.js?v=4",
+    "game-center.css?v=5",
+    "game-center.js?v=6",
     "astra-universe-expansion.css?v=4",
     "astra-universe-expansion.js?v=4",
     "game-arcade.css?v=4",
@@ -30,7 +30,7 @@ test("the shared runtime loads before every game workspace", () => {
   const loader = read("performance-loader.js");
   const runtime = loader.indexOf('"game-runtime.js?v=1"');
   const explorer = loader.indexOf('"space-explorer.js?v=4"');
-  const center = loader.indexOf('"game-center.js?v=4"');
+  const center = loader.indexOf('"game-center.js?v=6"');
   const arcade = loader.indexOf('"game-arcade.js?v=4"');
   assert.ok(runtime >= 0, "shared runtime must be declared");
   assert.ok(runtime < explorer && runtime < center && runtime < arcade, "shared runtime must load first");
@@ -40,18 +40,32 @@ test("Entertainment routes mount dedicated game workspaces", () => {
   const shell = read("script.js");
   assert.match(shell, /route:\s*"\/entertainment\/astra-hh"/);
   assert.match(shell, /route:\s*"\/entertainment\/arcade"/);
+  assert.match(shell, /route:\s*"\/entertainment\/cinematic-arcade"/);
   assert.match(shell, /HHGameCenter\?\.mount/);
   assert.match(shell, /HHAstraExpansion\?\.mount/);
   assert.match(shell, /HHGameArcade\?\.mount/);
+  assert.match(shell, /HHCinematicGameArcade\?\.mount/);
   assert.match(shell, /HHGameCenter\?\.unmount/);
   assert.match(shell, /HHGameArcade\?\.unmount/);
+  assert.match(shell, /HHCinematicGameArcade\?\.unmount/);
 });
 
 test("All games publish rewards through one progression event", () => {
   const center = read("game-center.js");
   const arcade = read("game-arcade.js");
   const astra = read("astra-universe-expansion.js");
+  const cinematic = read("cinematic-game-arcade.js");
   assert.match(center, /hh:game-reward/);
   assert.match(arcade, /hh:game-reward/);
   assert.match(astra, /hh:game-reward/);
+  assert.match(cinematic, /hh:game-reward/);
+});
+
+test("Arcade deep links preserve the selected 2D game", () => {
+  const center = read("game-center.js");
+  const shell = read("script.js");
+  assert.doesNotMatch(center, /\/entertainment\/arcade\?game=/);
+  assert.match(center, /\/entertainment\/arcade\/neon-drift/);
+  assert.match(shell, /route\.startsWith\("\/entertainment\/arcade\/"\)/);
+  assert.match(shell, /initialGameId:\s*parts\[2\]\s*\|\|\s*"neon-drift"/);
 });

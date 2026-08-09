@@ -42,11 +42,11 @@ test("the service worker caches the route assets and shell versions stay aligned
 
   assert.match(worker, /\.\/ai-video-remake-studio\.css\?v=3/);
   assert.match(worker, /\.\/ai-video-remake-studio\.js\?v=2/);
-  assert.match(worker, /hh-identity-portal-v520/);
-  assert.match(html, /performance-loader\.js\?v=252/);
-  assert.match(worker, /\.\/performance-loader\.js\?v=252/);
-  assert.match(html, /script\.js\?v=173/);
-  assert.match(worker, /\.\/script\.js\?v=173/);
+  assert.match(worker, /hh-identity-portal-v526/);
+  assert.match(html, /performance-loader\.js\?v=258/);
+  assert.match(worker, /\.\/performance-loader\.js\?v=258/);
+  assert.match(html, /script\.js\?v=175/);
+  assert.match(worker, /\.\/script\.js\?v=175/);
 });
 
 test("the public AI Video URL reuses the Store gateway to stay inside Vercel Hobby limits", () => {

@@ -172,7 +172,11 @@
     },
     game: {
       styles: ["game-runtime.css?v=1", "astral-realms.css?v=77", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
-      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=94", "space-explorer.js?v=4", "game-center.js?v=5", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=94", "space-explorer.js?v=4", "game-center.js?v=6", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
+    },
+    "cinematic-game": {
+      styles: ["game-runtime.css?v=1", "cinematic-game-arcade.css?v=5"],
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "cinematic-game-arcade.js?v=2"]
     },
     // Compatibility asset aliases for clients upgrading from Entertainment v4:
     // "game-center.css?v=4" "game-center.js?v=4"
@@ -232,6 +236,7 @@
     if (value.startsWith("/media-design")) return ["media"];
     if (value.startsWith("/graphic-design")) return ["graphic"];
     if (value.startsWith("/music-ai")) return ["music"];
+    if (value.startsWith("/entertainment/cinematic-arcade")) return ["cinematic-game"];
     if (value.startsWith("/entertainment")) return ["game"];
     if (value.startsWith("/learn")) return ["learning"];
     if (value.startsWith("/english")) return ["english"];
