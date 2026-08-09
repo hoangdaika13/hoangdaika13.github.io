@@ -13,12 +13,12 @@ test("Game runtime, Game Center, ASTRA expansion and Arcade assets load offline"
   const assets = [
     "game-runtime.css?v=1",
     "game-runtime.js?v=1",
-    "game-center.css?v=5",
-    "game-center.js?v=6",
+    "game-center.css?v=6",
+    "game-center.js?v=7",
     "astra-universe-expansion.css?v=4",
     "astra-universe-expansion.js?v=4",
-    "game-arcade.css?v=4",
-    "game-arcade.js?v=4"
+    "game-arcade.css?v=5",
+    "game-arcade.js?v=5"
   ];
   assets.forEach((asset) => {
     assert.ok((html + loader).includes(asset), `${asset} must be declared by the route loader`);
@@ -30,8 +30,8 @@ test("the shared runtime loads before every game workspace", () => {
   const loader = read("performance-loader.js");
   const runtime = loader.indexOf('"game-runtime.js?v=1"');
   const explorer = loader.indexOf('"space-explorer.js?v=4"');
-  const center = loader.indexOf('"game-center.js?v=6"');
-  const arcade = loader.indexOf('"game-arcade.js?v=4"');
+  const center = loader.indexOf('"game-center.js?v=7"');
+  const arcade = loader.indexOf('"game-arcade.js?v=5"');
   assert.ok(runtime >= 0, "shared runtime must be declared");
   assert.ok(runtime < explorer && runtime < center && runtime < arcade, "shared runtime must load first");
 });

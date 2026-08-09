@@ -171,12 +171,12 @@
       scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
     },
     game: {
-      styles: ["game-runtime.css?v=1", "astral-realms.css?v=77", "space-explorer.css?v=4", "game-center.css?v=5", "astra-universe-expansion.css?v=4", "game-arcade.css?v=4"],
-      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=94", "space-explorer.js?v=4", "game-center.js?v=6", "astra-universe-expansion.js?v=4", "game-arcade.js?v=4"]
+      styles: ["game-runtime.css?v=1", "astral-realms.css?v=77", "space-explorer.css?v=4", "game-center.css?v=6", "astra-universe-expansion.css?v=4", "game-arcade.css?v=5"],
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "astral-realms.js?v=94", "space-explorer.js?v=4", "game-center.js?v=7", "astra-universe-expansion.js?v=4", "game-arcade.js?v=5"]
     },
     "cinematic-game": {
-      styles: ["game-runtime.css?v=1", "cinematic-game-arcade.css?v=5"],
-      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "cinematic-game-arcade.js?v=2"]
+      styles: ["game-runtime.css?v=1", "cinematic-game-arcade.css?v=6"],
+      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "cinematic-game-arcade.js?v=3"]
     },
     // Compatibility asset aliases for clients upgrading from Entertainment v4:
     // "game-center.css?v=4" "game-center.js?v=4"

@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v526";
+const CACHE = "hh-identity-portal-v527";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=10 ./image-text-studio.js?v=10
@@ -64,7 +64,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=175",
+  "./script.js?v=176",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -313,10 +313,10 @@ const RUNTIME_ASSETS = [
   "./assets/astral-realms/animations/hh-human-motion-v13.glb",
   "./assets/astral-realms/animations/motion-library-v13.json",
   "./space-explorer.css?v=4",
-  "./game-center.css?v=5",
+  "./game-center.css?v=6",
   "./astra-universe-expansion.css?v=4",
-  "./game-arcade.css?v=4",
-  "./cinematic-game-arcade.css?v=5",
+  "./game-arcade.css?v=5",
+  "./cinematic-game-arcade.css?v=6",
   "./learning-suite.css?v=3",
   "./learning-home.css?v=2",
   "./learning-paths.css?v=3",
@@ -410,10 +410,10 @@ const RUNTIME_ASSETS = [
   "./game-runtime.js?v=1",
   "./astral-realms.js?v=94",
   "./space-explorer.js?v=4",
-  "./game-center.js?v=6",
+  "./game-center.js?v=7",
   "./astra-universe-expansion.js?v=4",
-  "./game-arcade.js?v=4",
-  "./cinematic-game-arcade.js?v=2",
+  "./game-arcade.js?v=5",
+  "./cinematic-game-arcade.js?v=3",
   "./learning-platform-core.js?v=5",
   "./learning-home.js?v=2",
   "./learning-paths.js?v=3",
@@ -462,10 +462,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=258",
+  "./performance-loader.js?v=259",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=14",
-  "./script.js?v=175"
+  "./script.js?v=176"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

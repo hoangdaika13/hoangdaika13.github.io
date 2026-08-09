@@ -465,6 +465,75 @@
   gap: 12px;
 }
 
+.gc-library-toolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(170px, 0.42fr) minmax(160px, 0.38fr) auto;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px;
+  background: rgba(4, 9, 19, 0.52);
+}
+
+.gc-library-toolbar label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--gc-muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.gc-library-toolbar input,
+.gc-library-toolbar select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 12px;
+  color: var(--gc-text);
+  background: rgba(255,255,255,0.055);
+  font: inherit;
+}
+
+.gc-library-toolbar select option {
+  color: #f4f7ff;
+  background: #0b1220;
+}
+
+.gc-library-toolbar input:focus-visible,
+.gc-library-toolbar select:focus-visible {
+  outline: 3px solid rgba(97,244,255,0.42);
+  outline-offset: 2px;
+  border-color: rgba(97,244,255,0.55);
+}
+
+.gc-library-count {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.gc-library-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 5px;
+  min-height: 160px;
+  place-content: center;
+  border: 1px dashed rgba(97,244,255,0.3);
+  border-radius: 20px;
+  color: var(--gc-muted);
+  text-align: center;
+  background: rgba(97,244,255,0.035);
+}
+
+.gc-library-empty strong {
+  color: var(--gc-text);
+  font-size: 17px;
+}
+
 .gc-card {
   position: relative;
   overflow: hidden;
@@ -636,6 +705,16 @@
   }
 }
 
+@media (max-width: 900px) {
+  .gc-library-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gc-library-count {
+    justify-self: start;
+  }
+}
+
 @media (max-width: 720px) {
   .gc-shell {
     width: min(100% - 18px, 560px);
@@ -662,6 +741,15 @@
   .gc-badge-row,
   .gc-stat-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gc-library-toolbar {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  .gc-library-count {
+    width: 100%;
   }
 
   .gc-orbit {

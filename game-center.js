@@ -193,6 +193,41 @@
     }
   ];
 
+  const ARCADE_EXPANSION = [
+    ["asteroid-miner", "Asteroid Miner", "AM", "Khai thác và chế tạo module giữa vành đai thiên thạch.", "Khai thác", "clicker", "#ffe66f"],
+    ["rhythm-reactor", "Rhythm Reactor", "RR", "Giữ nhịp lò phản ứng và tạo chuỗi combo âm nhạc.", "Âm nhạc", "rhythm", "#ff63c9"],
+    ["quiz-arena", "Quiz Arena", "QA", "Đấu kiến thức nhanh qua các vòng câu hỏi tăng dần độ khó.", "Quiz", "quiz", "#8affdf"],
+    ["creative-sandbox", "Creative Sandbox", "CS", "Xây tàu, bản đồ và hành tinh trong sân chơi sáng tạo.", "Sáng tạo", "sandbox", "#79a7ff"],
+    ["space-chess", "Space Chess", "SX", "Cờ chiến thuật kỹ năng trong bàn đấu không gian.", "Chiến thuật", "board", "#ffc857"],
+    ["galaxy-farm", "Galaxy Farm", "GF", "Trồng cây tinh vân, chăm nông trại và thu hoạch sao.", "Mô phỏng", "farm", "#93ff75"],
+    ["space-fishing", "Space Fishing", "SF", "Câu cá lượng tử thư giãn trong vành đai sao.", "Thư giãn", "fishing", "#66d9ff"],
+    ["mecha-arena", "Mecha Arena", "MA", "Điều khiển robot chiến đấu trong đấu trường thiên hà.", "Chiến đấu", "arena", "#ff8b5d"],
+    ["planet-builder", "Planet Builder", "PB", "Ghép lõi, biển, rừng và thành phố để dựng hành tinh.", "Sáng tạo", "builder", "#b6ff6b"],
+    ["alien-pet", "Alien Pet", "AP", "Nuôi thú ngoài hành tinh và mở khóa các nhánh tiến hóa.", "Nuôi pet", "pet", "#ff9fe5"],
+    ["dungeon-stars", "Dungeon Stars", "DS", "Phiêu lưu rogue-lite qua những hầm ngục giữa các vì sao.", "Phiêu lưu", "dungeon", "#d7b3ff"],
+    ["cosmic-card-battle", "Cosmic Card Battle", "CB", "Xây bộ bài và đấu năng lượng vũ trụ theo lượt.", "Thẻ bài", "card", "#ffd36a"],
+    ["astro-tycoon", "Astro Tycoon", "AT", "Kinh doanh, mở rộng và tối ưu một trạm không gian.", "Tycoon", "tycoon", "#6fffc6"],
+    ["space-runner", "Space Runner", "SR", "Chạy vô tận qua đường hầm sao với tốc độ tăng dần.", "Đua", "runner", "#86b7ff"],
+    ["black-hole-escape", "Black Hole Escape", "BH", "Thoát khỏi lực hút hố đen trước khi năng lượng cạn.", "Sinh tồn", "escape", "#b58cff"],
+    ["nebula-puzzle", "Nebula Puzzle", "NP", "Ghép các cụm tinh vân cùng màu để tạo phản ứng dây chuyền.", "Giải đố", "match", "#ff7fda"],
+    ["boss-rush", "Boss Rush", "BR", "Đánh boss liên tục, né đạn và phản công đúng thời điểm.", "Boss", "boss", "#ff4f5e"]
+  ].map(([id, title, short, description, genre, mode, color], index) => ({
+    id,
+    title,
+    short,
+    route: `/entertainment/arcade/${id}`,
+    genre,
+    color,
+    status: "Arcade",
+    release: "ready",
+    realtimeEligible: false,
+    description,
+    tags: [genre, mode, "Arcade"],
+    reward: { xp: 64 + (index % 5) * 4, coins: 25 + (index % 5) * 2 }
+  }));
+
+  CATALOG.push(...ARCADE_EXPANSION);
+
   const FEATURED_EVENTS = [
     {
       id: "event-astra-raid",
@@ -261,6 +296,9 @@
   let sessionListener = null;
   let toastTimer = null;
   let renderQueued = false;
+  let libraryQuery = "";
+  let libraryFilter = "all";
+  let librarySort = "default";
 
   function initials(name) {
     return String(name || "HH")
@@ -1291,8 +1329,33 @@
     `).join("")}</div>`;
   }
 
-  function renderGames() {
-    return state.games.map((game) => `
+  function gameGroup(game) {
+    const route = String(game?.route || "");
+    if (route.startsWith("/entertainment/cinematic-arcade/")) return "cinematic";
+    if (route.startsWith("/entertainment/arcade/")) return "arcade";
+    return "flagship";
+  }
+
+  function selectLibraryGames(games, query = "", filter = "all", sort = "default") {
+    const source = Array.isArray(games) ? games : [];
+    const needle = cleanText(query, 100).toLocaleLowerCase("vi");
+    const selectedFilter = ["all", "flagship", "cinematic", "arcade"].includes(filter) ? filter : "all";
+    const selectedSort = ["default", "az", "za"].includes(sort) ? sort : "default";
+    const selected = source.filter((game) => {
+      if (selectedFilter !== "all" && gameGroup(game) !== selectedFilter) return false;
+      if (!needle) return true;
+      const searchText = [game.id, game.title, game.genre, game.description, ...(game.tags || [])].join(" ").toLocaleLowerCase("vi");
+      return searchText.includes(needle);
+    });
+    if (selectedSort === "az") selected.sort((a, b) => String(a.title).localeCompare(String(b.title), "vi", { sensitivity: "base" }));
+    if (selectedSort === "za") selected.sort((a, b) => String(b.title).localeCompare(String(a.title), "vi", { sensitivity: "base" }));
+    return selected;
+  }
+
+  function renderGames(games = state.games) {
+    const selected = Array.isArray(games) ? games : [];
+    if (!selected.length) return `<div class="gc-library-empty"><strong>Không tìm thấy game phù hợp</strong><span>Hãy đổi từ khóa hoặc bộ lọc để xem lại thư viện.</span></div>`;
+    return selected.map((game) => `
       <article class="gc-card" style="--game-color:${game.color}">
         <div class="gc-card-icon">${escapeHtml(game.short)}</div>
         <div class="gc-card-meta">
@@ -1308,6 +1371,41 @@
         </div>
       </article>
     `).join("");
+  }
+
+  function librarySelection() {
+    return selectLibraryGames(state.games, libraryQuery, libraryFilter, librarySort);
+  }
+
+  function renderLibraryControls() {
+    const selected = librarySelection();
+    return `
+      <div class="gc-library-toolbar" aria-label="Bộ điều khiển thư viện game">
+        <label class="gc-library-search">
+          <span>Tìm game</span>
+          <input type="search" data-gc-library-search value="${escapeHtml(libraryQuery)}" placeholder="Tên, thể loại, chế độ..." autocomplete="off">
+        </label>
+        <label>
+          <span>Nhóm game</span>
+          <select data-gc-library-filter>
+            <option value="all"${libraryFilter === "all" ? " selected" : ""}>Tất cả 30 game</option>
+            <option value="flagship"${libraryFilter === "flagship" ? " selected" : ""}>2 game lớn</option>
+            <option value="cinematic"${libraryFilter === "cinematic" ? " selected" : ""}>6 Cinematic 3D</option>
+            <option value="arcade"${libraryFilter === "arcade" ? " selected" : ""}>22 Arcade</option>
+          </select>
+        </label>
+        <label>
+          <span>Sắp xếp</span>
+          <select data-gc-library-sort>
+            <option value="default"${librarySort === "default" ? " selected" : ""}>Nổi bật trước</option>
+            <option value="az"${librarySort === "az" ? " selected" : ""}>Tên A–Z</option>
+            <option value="za"${librarySort === "za" ? " selected" : ""}>Tên Z–A</option>
+          </select>
+        </label>
+        <output class="gc-pill gc-library-count" data-gc-library-count aria-live="polite">${selected.length}/${state.games.length} game</output>
+      </div>
+      <div class="gc-card-grid gc-library-results" data-gc-library-results>${renderGames(selected)}</div>
+    `;
   }
 
   function renderMissions(list) {
@@ -1658,11 +1756,12 @@
                   <h2>Thư viện trò chơi</h2>
                 </div>
                 <div class="gc-actions" style="margin-top:0">
+                  <span class="gc-pill">${state.games.length} game · 2 lớn · 6 Cinematic · 22 Arcade</span>
                   <button class="gc-btn" type="button" data-gc-action="tab" data-tab="library">Xem hết</button>
                   <button class="gc-btn" type="button" data-gc-action="sync">Đồng bộ</button>
                 </div>
               </div>
-              <div class="gc-card-grid">${renderGames()}</div>
+              <div class="gc-card-grid">${renderGames(state.games.slice(0, 8))}</div>
             </main>
             <aside class="gc-side">
               <section class="gc-section gc-glass">
@@ -1778,14 +1877,15 @@
             <div class="gc-section-head">
               <div>
                 <span class="gc-kicker">Game Center · Library</span>
-                <h2>Kho game và bộ sưu tập</h2>
+                <h2>Kho đầy đủ ${state.games.length} game</h2>
+                <p class="gc-muted">2 game lớn · 6 game Cinematic 3D · 22 game Arcade chơi trực tiếp.</p>
               </div>
               <div class="gc-actions" style="margin-top:0">
                 <button class="gc-btn" type="button" data-gc-action="tab" data-tab="overview">Tổng quan</button>
                 <button class="gc-btn gc-btn-primary" type="button" data-gc-action="continue-last">Chơi tiếp</button>
               </div>
             </div>
-            <div class="gc-card-grid">${renderGames()}</div>
+            ${renderLibraryControls()}
             <div style="height:18px"></div>
             <div class="gc-grid">
               <div class="gc-section gc-glass">
@@ -2034,6 +2134,7 @@
               <span class="gc-pill">${state.player.coins} coin</span>
               <span class="gc-pill">${onlineCount} online</span>
               <span class="gc-pill">${badgeCount} badge</span>
+              <span class="gc-pill">${state.games.length} game</span>
             </div>
           </section>
 
@@ -2060,10 +2161,38 @@
   }
 
   function bindEvents() {
-    rootEl.querySelectorAll("[data-gc-action]").forEach((button) => {
+    bindActionButtons(rootEl);
+    rootEl.querySelector("[data-gc-party-form]")?.addEventListener("submit", onPartySubmit);
+    rootEl.querySelector("[data-gc-library-search]")?.addEventListener("input", (event) => {
+      libraryQuery = cleanText(event.currentTarget.value, 100);
+      refreshLibraryResults();
+    });
+    rootEl.querySelector("[data-gc-library-filter]")?.addEventListener("change", (event) => {
+      libraryFilter = event.currentTarget.value;
+      refreshLibraryResults();
+    });
+    rootEl.querySelector("[data-gc-library-sort]")?.addEventListener("change", (event) => {
+      librarySort = event.currentTarget.value;
+      refreshLibraryResults();
+    });
+  }
+
+  function bindActionButtons(scope) {
+    scope?.querySelectorAll("[data-gc-action]").forEach((button) => {
       button.addEventListener("click", onAction);
     });
-    rootEl.querySelector("[data-gc-party-form]")?.addEventListener("submit", onPartySubmit);
+  }
+
+  function refreshLibraryResults() {
+    if (!rootEl || state?.activeTab !== "library") return;
+    const selected = librarySelection();
+    const results = rootEl.querySelector("[data-gc-library-results]");
+    const count = rootEl.querySelector("[data-gc-library-count]");
+    if (results) {
+      results.innerHTML = renderGames(selected);
+      bindActionButtons(results);
+    }
+    if (count) count.textContent = `${selected.length}/${state.games.length} game`;
   }
 
   function onPartySubmit(event) {
@@ -2188,6 +2317,9 @@
   function mount(host, opts = {}) {
     if (!host) throw new Error("HHGameCenter.mount cần host element.");
     unmount();
+    libraryQuery = "";
+    libraryFilter = "all";
+    librarySort = "default";
     hostEl = host;
     settings = opts || {};
     state = normalizeState(loadLocal());
@@ -2302,6 +2434,8 @@
   window.HHGameCenter.__test = Object.freeze({
     isConfirmed,
     gameCapabilityBadges,
-    normalizeSaveSlots
+    normalizeSaveSlots,
+    selectLibraryGames,
+    catalog: CATALOG.map((game) => Object.freeze({ id: game.id, title: game.title, route: game.route }))
   });
 })();

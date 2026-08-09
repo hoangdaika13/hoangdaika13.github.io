@@ -6,7 +6,11 @@
   const LEGACY_STORE = "hh.arcade.galaxy.v2";
   const LEVEL_SCHEMA = "hh.creator.level.v1";
   const REPLAY_SCHEMA = "hh.game.replay.v1";
-  const INTEGRATION_VERSION = 3;
+  const INTEGRATION_VERSION = 4;
+  const WORLD_WIDTH = 960;
+  const WORLD_HEIGHT = 540;
+  const MAX_PARTICLES = 180;
+  const COMBO_WINDOW = 2.4;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const pick = (items) => items[Math.floor(Math.random() * items.length)];
   const rnd = (min, max) => min + Math.random() * (max - min);
@@ -38,9 +42,27 @@
 
   const RUNTIME_SCHEMA = "hh.arcade.runtime.v1";
   const DIFFICULTIES = {
-    easy: { id: "easy", label: "De", speed: 0.78, target: 0.72, lives: 5, reward: 0.8 },
-    normal: { id: "normal", label: "Thuong", speed: 1, target: 1, lives: 3, reward: 1 },
-    hard: { id: "hard", label: "Kho", speed: 1.26, target: 1.3, lives: 2, reward: 1.45 }
+    easy: { id: "easy", label: "Dễ", speed: 0.78, target: 0.72, lives: 5, reward: 0.8 },
+    normal: { id: "normal", label: "Thường", speed: 1, target: 1, lives: 3, reward: 1 },
+    hard: { id: "hard", label: "Khó", speed: 1.26, target: 1.3, lives: 2, reward: 1.45 }
+  };
+  const MODE_STATUS = {
+    runner: ["Tốc độ", "Cổng"], shooter: ["Hỏa lực", "Wave"], colony: ["Năng lượng", "Module"],
+    cipher: ["Chuỗi", "Bảo mật"], clicker: ["Mũi khoan", "Quặng"], rhythm: ["Nhịp", "Độ chính xác"],
+    quiz: ["Câu hỏi", "Đáp án đúng"], sandbox: ["Vật thể", "Checkpoint"], board: ["Lượt", "Ô kiểm soát"],
+    survival: ["Cứu hộ", "Oxy"], farm: ["Mùa vụ", "Thu hoạch"], fishing: ["Độ sâu", "Cá hiếm"],
+    arena: ["Giáp", "Wave"], builder: ["Sinh quyển", "Ổn định"], pet: ["Tình cảm", "Tiến hóa"],
+    dungeon: ["Phòng", "Máu"], card: ["Năng lượng", "Khiên"], tycoon: ["Lợi nhuận", "Công trình"],
+    escape: ["Khoảng cách", "Lực hút"], match: ["Cặp ghép", "Chuỗi"], boss: ["Boss HP", "Hỏa lực"]
+  };
+  const ACTION_INFO = {
+    solar: ["Tấm quang năng", "Tăng mạnh điện · 25 coin"], mine: ["Mỏ thiên thạch", "Tạo quặng · 35 coin"], farm: ["Bio Farm", "Tạo lương thực · 30 coin"], shield: ["Lá chắn", "Giữ ổn định · 50 coin"],
+    seed: ["Gieo hạt", "Khởi tạo mùa vụ · 18 coin"], water: ["Tưới", "Tăng 24% sinh trưởng · 12 coin"], harvest: ["Thu hoạch", "Mở khi cây đạt 70%"], lab: ["Gene Lab", "Tăng 42% sinh trưởng · 44 coin"],
+    cast: ["Thả câu", "Câu thường · 12 năng lượng"], scan: ["Quét đàn cá", "Tăng cơ hội cá hiếm · 6 NL"], bait: ["Mồi hiếm", "Cá hiếm +20% · 18 NL"], net: ["Lưới sao", "Bắt 3 cá · 24 NL"],
+    core: ["Lõi", "Mở rộng hành tinh · 20 coin"], ocean: ["Biển", "Tăng sinh quyển · 24 coin"], forest: ["Rừng", "Tạo lương thực · 24 coin"], city: ["Thành phố", "Tăng thu nhập · 42 coin"],
+    feed: ["Cho ăn", "Tăng tình cảm và tâm trạng"], play: ["Chơi", "Tăng mạnh tâm trạng"], train: ["Huấn luyện", "Tăng kỹ năng và điểm"], evolve: ["Tiến hóa", "Cần tối thiểu 100 tình cảm"],
+    slash: ["Kiếm plasma", "74% vượt phòng"], magic: ["Phép sao", "88% · tốn 18 mana"], loot: ["Mở rương", "Rủi ro cao, thưởng lớn"], heal: ["Hồi phục", "Tốn 24 mana · +1 mạng"],
+    shop: ["Cửa hàng", "Thu nhập ổn định · 35 coin"], hotel: ["Khách sạn", "Tăng trưởng cao · 75 coin"], dock: ["Bến tàu", "Hub thương mại · 95 coin"], ad: ["Quảng cáo", "Tăng traffic · 20 coin"]
   };
   const ENGINE_GROUPS = {
     action: new Set(["neon-drift", "galaxy-defense", "asteroid-miner", "rhythm-reactor", "mecha-arena", "space-runner", "black-hole-escape", "boss-rush"]),
@@ -49,35 +71,43 @@
     simulation: new Set(["creative-sandbox", "space-fishing", "alien-pet", "survival-orbit"])
   };
   const GAME_RULES = {
-    "neon-drift": { goal: 620, time: 85, objective: "Ne cong plasma va dat du diem truoc khi het gio.", tutorial: ["WASD hoac phim mui ten de lai.", "Nhat tinh the sang de tang combo.", "Va cham lam mat mang; het mang la thua."] },
-    "galaxy-defense": { goal: 720, time: 100, objective: "Bao ve cong thien ha va tieu diet cac wave.", tutorial: ["Di chuyen bang WASD hoac phim mui ten.", "Space, cham canvas hoac nut Hanh dong de ban.", "De qua nhieu ke dich vuot cong se lam mat mang."] },
-    "star-colony": { goal: 8, time: 120, objective: "Xay 8 module va giu nguon dien tren 0.", tutorial: ["Chon module de xay thuoc dia.", "Moi module tieu ton tai nguyen.", "Can bang dien, luong thuc va coin de chien thang."] },
-    "cipher-run": { goal: 7, time: 90, objective: "Giai chuoi ma tang dan den cap 7.", tutorial: ["Ghi nho chuoi ky tu hien tai.", "Nhan cac nut theo dung thu tu.", "Sai ma se mat mot mang va xoa luot nhap."] },
-    "asteroid-miner": { goal: 520, time: 75, objective: "Khai thac du quang hiem truoc khi het gio.", tutorial: ["Bam truc tiep len asteroid.", "Asteroid cung can nhieu lan khoan.", "Duy tri combo de nhan thuong cao hon."] },
-    "rhythm-reactor": { goal: 680, time: 90, objective: "Giu nhip reactor va dat du diem.", tutorial: ["Bam Space khi not di qua vach vang.", "Perfect beat tang combo.", "Bo lo hoac lech nhip lam mat mang."] },
-    "quiz-arena": { goal: 6, time: 100, objective: "Tra loi dung it nhat 6/8 cau.", tutorial: ["Doc cau hoi va chon mot dap an.", "Moi cau sai lam mat mot mang.", "Hoan thanh 8 cau de nhan ket qua."] },
-    "creative-sandbox": { goal: 1, time: 0, objective: "Tao level co spawn, coin va goal, sau do chay thu.", tutorial: ["Chon vat the roi bam len canvas.", "Luu level truoc khi chay thu.", "Thu thap coin va den goal de hoan tat."] },
-    "space-chess": { goal: 360, time: 120, objective: "Chiem cac o chien luoc va dat muc tieu diem.", tutorial: ["Chon quan co, sau do chon o dich.", "O trong la di chuyen, o co quan la chiem.", "Dat du diem truoc khi het gio."] },
-    "survival-orbit": { goal: 70, time: 70, objective: "Song sot tren tram quy dao den het thoi gian.", tutorial: ["Di chuyen de tranh manh vo.", "Tinh the sang hoi nang luong va cho diem.", "Giu it nhat mot mang cho den khi cuu ho toi."] },
-    "galaxy-farm": { goal: 8, time: 120, objective: "Trong va thu hoach 8 lo tinh van.", tutorial: ["Gieo hat va tuoi truoc khi thu hoach.", "Gene Lab tang hieu qua nhung ton nhieu tai nguyen.", "Thu hoach du 8 luot de thang."] },
-    "space-fishing": { goal: 430, time: 100, objective: "Cau du sinh vat sao va duy tri nang luong.", tutorial: ["Moi lan tha cau tieu hao nang luong.", "Cho thanh nang luong hoi phuc khi can.", "Ca hiem cho nhieu diem hon."] },
-    "mecha-arena": { goal: 760, time: 105, objective: "Ha mecha doi thu va bao toan giap.", tutorial: ["Di chuyen bang WASD hoac phim mui ten.", "Space de khai hoa.", "Ha nhieu mecha lien tiep de tang combo."] },
-    "planet-builder": { goal: 8, time: 120, objective: "Hoan thien hanh tinh voi 8 thanh phan.", tutorial: ["Them loi, bien, rung va thanh pho.", "Moi thanh phan tieu hao tai nguyen.", "Xay du 8 thanh phan de kich hoat hanh tinh."] },
-    "alien-pet": { goal: 125, time: 100, objective: "Tang tinh cam cho pet va tien hoa an toan.", tutorial: ["Cho an va choi de tang tinh cam.", "Huan luyen cho diem cao hon.", "Tien hoa khi tinh cam du cao."] },
-    "dungeon-stars": { goal: 6, time: 120, objective: "Vuot qua 6 phong dungeon va con it nhat mot mang.", tutorial: ["Chon danh, phep, hoi mau hoac mo ruong.", "Moi phong co the xuat hien bay.", "Vuot 6 phong de thang."] },
-    "cosmic-card-battle": { goal: 1, time: 120, objective: "Ha HP doi thu truoc khi ban het HP.", tutorial: ["Nova Strike gay sat thuong.", "Shield Bloom tang HP.", "Comet Draw tao luot tan cong can bang."] },
-    "astro-tycoon": { goal: 9, time: 130, objective: "Xay 9 cong trinh va giu tram sinh loi.", tutorial: ["Cua hang va quang cao re hon.", "Khach san va ben tau cho tang truong cao.", "Dau tu dung thoi diem de khong can tai nguyen."] },
-    "space-runner": { goal: 720, time: 90, objective: "Chay qua duong ham sao va dat du diem.", tutorial: ["Di chuyen bang WASD, phim mui ten hoac nut cam ung.", "Tranh vat can mau hong.", "Thu thap vat pham sang de tang combo."] },
-    "black-hole-escape": { goal: 560, time: 75, objective: "Thoat khoi ho den va giu nang luong tren 0.", tutorial: ["Lien tuc di chuyen sang phai de thoat luc hut.", "Ne manh vo va nhat tinh the.", "Het nang luong la thua."] },
-    "nebula-puzzle": { goal: 10, time: 120, objective: "Ghep 10 cap tinh van cung loai.", tutorial: ["Chon hai o co cung bieu tuong.", "Cap dung se bien thanh sao rong.", "Ghep du 10 cap de hoan tat ban do."] },
-    "boss-rush": { goal: 1, time: 120, objective: "Ha boss truoc khi het mang hoac thoi gian.", tutorial: ["Di chuyen lien tuc de ne.", "Space de ban va phan cong.", "Thanh mau boss nam phia tren canvas."] }
+    "neon-drift": { goal: 620, time: 85, objective: "Né cổng plasma và đạt đủ điểm trước khi hết giờ.", tutorial: ["Dùng WASD hoặc phím mũi tên để lái.", "Nhặt tinh thể sáng để tăng combo.", "Va chạm làm mất mạng; hết mạng là thua."] },
+    "galaxy-defense": { goal: 720, time: 100, objective: "Bảo vệ cổng thiên hà và tiêu diệt các đợt tấn công.", tutorial: ["Di chuyển bằng WASD hoặc phím mũi tên.", "Nhấn Space, chạm canvas hoặc nút Hành động để bắn.", "Để quá nhiều kẻ địch vượt cổng sẽ làm mất mạng."] },
+    "star-colony": { goal: 8, time: 120, objective: "Xây 8 module và giữ nguồn điện trên 0.", tutorial: ["Chọn module để xây thuộc địa.", "Mỗi module tiêu tốn tài nguyên.", "Cân bằng điện, lương thực và coin để chiến thắng."] },
+    "cipher-run": { goal: 7, time: 90, objective: "Giải chuỗi mã tăng dần đến cấp 7.", tutorial: ["Ghi nhớ chuỗi ký tự hiện tại.", "Nhấn các nút theo đúng thứ tự.", "Sai mã sẽ mất một mạng và xóa lượt nhập."] },
+    "asteroid-miner": { goal: 520, time: 75, objective: "Khai thác đủ quặng hiếm trước khi hết giờ.", tutorial: ["Bấm trực tiếp lên thiên thạch.", "Thiên thạch cứng cần nhiều lần khoan.", "Duy trì combo để nhận thưởng cao hơn."] },
+    "rhythm-reactor": { goal: 680, time: 90, objective: "Giữ nhịp lò phản ứng và đạt đủ điểm.", tutorial: ["Nhấn Space khi nốt đi qua vạch vàng.", "Perfect beat làm tăng combo.", "Bỏ lỡ hoặc lệch nhịp sẽ làm mất mạng."] },
+    "quiz-arena": { goal: 6, time: 100, objective: "Trả lời đúng ít nhất 6/8 câu.", tutorial: ["Đọc câu hỏi và chọn một đáp án.", "Mỗi câu sai làm mất một mạng.", "Hoàn thành 8 câu để nhận kết quả."] },
+    "creative-sandbox": { goal: 1, time: 0, objective: "Tạo màn có điểm xuất phát, coin và đích rồi chạy thử.", tutorial: ["Chọn vật thể rồi bấm lên canvas.", "Lưu màn trước khi chạy thử.", "Thu thập coin và đến đích để hoàn tất."] },
+    "space-chess": { goal: 360, time: 120, objective: "Chiếm các ô chiến lược và đạt mục tiêu điểm.", tutorial: ["Chọn quân cờ, sau đó chọn ô đích.", "Ô trống để di chuyển, ô có quân để chiếm.", "Đạt đủ điểm trước khi hết giờ."] },
+    "survival-orbit": { goal: 70, time: 70, objective: "Sống sót trên trạm quỹ đạo đến hết thời gian.", tutorial: ["Di chuyển để tránh mảnh vỡ.", "Tinh thể sáng hồi năng lượng và cho điểm.", "Giữ ít nhất một mạng cho đến khi cứu hộ tới."] },
+    "galaxy-farm": { goal: 8, time: 120, objective: "Trồng và thu hoạch 8 lô tinh vân.", tutorial: ["Gieo hạt và tưới trước khi thu hoạch.", "Gene Lab tăng hiệu quả nhưng tốn nhiều tài nguyên.", "Thu hoạch đủ 8 lượt để thắng."] },
+    "space-fishing": { goal: 430, time: 100, objective: "Câu đủ sinh vật sao và duy trì năng lượng.", tutorial: ["Mỗi lần thả câu tiêu hao năng lượng.", "Chờ thanh năng lượng hồi phục khi cần.", "Cá hiếm cho nhiều điểm hơn."] },
+    "mecha-arena": { goal: 760, time: 105, objective: "Hạ mecha đối thủ và bảo toàn giáp.", tutorial: ["Di chuyển bằng WASD hoặc phím mũi tên.", "Nhấn Space để khai hỏa.", "Hạ nhiều mecha liên tiếp để tăng combo."] },
+    "planet-builder": { goal: 8, time: 120, objective: "Hoàn thiện hành tinh với 8 thành phần.", tutorial: ["Thêm lõi, biển, rừng và thành phố.", "Mỗi thành phần tiêu hao tài nguyên.", "Xây đủ 8 thành phần để kích hoạt hành tinh."] },
+    "alien-pet": { goal: 125, time: 100, objective: "Tăng tình cảm cho pet và tiến hóa an toàn.", tutorial: ["Cho ăn và chơi để tăng tình cảm.", "Huấn luyện cho điểm cao hơn.", "Tiến hóa khi tình cảm đủ cao."] },
+    "dungeon-stars": { goal: 6, time: 120, objective: "Vượt qua 6 phòng dungeon và còn ít nhất một mạng.", tutorial: ["Chọn đánh, phép, hồi phục hoặc mở rương.", "Mỗi phòng có thể xuất hiện bẫy.", "Vượt 6 phòng để chiến thắng."] },
+    "cosmic-card-battle": { goal: 1, time: 120, objective: "Hạ HP đối thủ trước khi bạn hết HP.", tutorial: ["Nova Strike gây sát thương.", "Shield Bloom tạo khiên bảo vệ.", "Comet Draw hồi năng lượng và tấn công."] },
+    "astro-tycoon": { goal: 9, time: 130, objective: "Xây 9 công trình và giữ trạm sinh lời.", tutorial: ["Cửa hàng và quảng cáo có chi phí thấp.", "Khách sạn và bến tàu cho tăng trưởng cao.", "Đầu tư đúng thời điểm để không cạn tài nguyên."] },
+    "space-runner": { goal: 720, time: 90, objective: "Chạy qua đường hầm sao và đạt đủ điểm.", tutorial: ["Di chuyển bằng WASD, phím mũi tên hoặc nút cảm ứng.", "Tránh vật cản màu hồng.", "Thu thập vật phẩm sáng để tăng combo."] },
+    "black-hole-escape": { goal: 560, time: 75, objective: "Thoát khỏi hố đen và giữ năng lượng trên 0.", tutorial: ["Liên tục di chuyển sang phải để thoát lực hút.", "Né mảnh vỡ và nhặt tinh thể.", "Hết năng lượng là thua."] },
+    "nebula-puzzle": { goal: 10, time: 120, objective: "Ghép 10 cặp tinh vân cùng loại.", tutorial: ["Chọn hai ô có cùng biểu tượng.", "Cặp đúng sẽ biến thành sao rỗng.", "Ghép đủ 10 cặp để hoàn tất bản đồ."] },
+    "boss-rush": { goal: 1, time: 120, objective: "Hạ boss trước khi hết mạng hoặc thời gian.", tutorial: ["Di chuyển liên tục để né đạn.", "Nhấn Space để bắn và phản công.", "Thanh máu boss nằm phía trên canvas."] }
   };
 
   const questions = [
     { q: "Hành tinh đỏ là?", a: "Sao Hỏa", choices: ["Sao Hỏa", "Sao Kim", "Sao Thủy"] },
     { q: "CSS dùng để?", a: "Tạo giao diện", choices: ["Tạo giao diện", "Nấu ăn", "Sạc pin"] },
     { q: "BPM trong nhạc là?", a: "Nhịp mỗi phút", choices: ["Nhịp mỗi phút", "Độ sáng", "Dung lượng"] },
-    { q: "XP trong game thường dùng để?", a: "Tăng cấp", choices: ["Tăng cấp", "Xóa game", "Tắt màn hình"] }
+    { q: "XP trong game thường dùng để?", a: "Tăng cấp", choices: ["Tăng cấp", "Xóa game", "Tắt màn hình"] },
+    { q: "WebGL chủ yếu dùng để?", a: "Đồ họa tăng tốc", choices: ["Đồ họa tăng tốc", "Gửi email", "Nén âm thanh"] },
+    { q: "Quỹ đạo là đường chuyển động quanh?", a: "Một thiên thể", choices: ["Một thiên thể", "Bàn phím", "Tệp ZIP"] },
+    { q: "Checkpoint giúp người chơi?", a: "Tiếp tục tiến độ", choices: ["Tiếp tục tiến độ", "Tắt mạng", "Đổi màn hình"] },
+    { q: "FPS cao và ổn định thường giúp?", a: "Chuyển động mượt", choices: ["Chuyển động mượt", "Pin nặng hơn", "Ảnh nhỏ hơn"] },
+    { q: "Combo tăng khi nào?", a: "Thực hiện đúng liên tiếp", choices: ["Thực hiện đúng liên tiếp", "Luôn đứng yên", "Thoát game"] },
+    { q: "Năng lượng mặt trời là nguồn?", a: "Tái tạo", choices: ["Tái tạo", "Hóa thạch", "Không tồn tại"] },
+    { q: "Phím phổ biến để tạm dừng game?", a: "Escape", choices: ["Escape", "Caps Lock", "Print Screen"] },
+    { q: "Chế độ reduced motion dành cho?", a: "Giảm chuyển động", choices: ["Giảm chuyển động", "Tăng âm lượng", "Xóa dữ liệu"] }
   ];
 
   let hostNode = null;
@@ -104,6 +134,9 @@
   let tutorialVisible = false;
   let settingsVisible = false;
   let gamepadButtons = new Set();
+  let gamepadJustPressed = new Set();
+  let gamepadPhysicalButtons = new Set();
+  let gamepadMonitorRaf = 0;
   let networkOnline = typeof navigator === "undefined" ? true : navigator.onLine !== false;
   let fpsSamples = [];
   let fpsValue = 60;
@@ -114,6 +147,21 @@
   let runtimeBridge = null;
   const onlineHandler = () => handleNetworkChange(true);
   const offlineHandler = () => handleNetworkChange(false);
+  const fullscreenHandler = () => updateFullscreenLabel();
+  const visibilityHandler = () => {
+    if (document.visibilityState !== "hidden" || gameState.phase !== "playing") return;
+    paused = true;
+    gameState.phase = "paused";
+    gameState.message = "Đã tự tạm dừng vì tab không còn hiển thị.";
+    keys.clear();
+    gamepadButtons.clear();
+    gamepadJustPressed.clear();
+    saveCheckpoint(true);
+    cancelAnimationFrame(raf);
+    callRuntimeBridge("pause", { reason: "hidden" });
+    renderStatus();
+    renderOverlay();
+  };
 
   function engineFor(gameId = active) {
     if (ENGINE_GROUPS.action.has(gameId)) return "action";
@@ -143,6 +191,10 @@
       outcome: gameState.outcome || null,
       difficulty: difficultyFor().id,
       target: targetFor(),
+      progress: clamp((gameState.score || 0) / Math.max(1, gameState.target || targetFor()), 0, 1),
+      combo: gameState.combo || 1,
+      intensity: Number((gameState.intensity || 1).toFixed(2)),
+      effects: effectsEnabled() ? "full" : "reduced",
       fps: Math.round(fpsValue),
       quality: saveData.settings?.quality || "auto",
       online: networkOnline,
@@ -366,7 +418,7 @@
     if (!AudioCtor) return null;
     try {
       audioContext ||= new AudioCtor();
-      if (audioContext.state === "suspended") audioContext.resume();
+      if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
       return audioContext;
     } catch (_) {
       return null;
@@ -490,9 +542,100 @@
 
   function addScore(points, reason) {
     gameState.score = Math.max(0, Math.round((gameState.score || 0) + points));
-    gameState.combo = points > 0 ? clamp((gameState.combo || 1) + 1, 1, 12) : 1;
+    if (points > 0) {
+      gameState.combo = gameState.comboClock > 0 ? clamp((gameState.combo || 1) + 1, 1, 12) : 1;
+      gameState.comboClock = COMBO_WINDOW;
+    } else {
+      gameState.combo = 1;
+      gameState.comboClock = 0;
+    }
     gameState.message = reason || gameState.message;
+    const p = gameState.player || { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 };
+    gameFeel(points > 0 ? (points >= 60 ? "reward" : "hit") : "damage", p.x, p.y - 24, points ? `${points > 0 ? "+" : ""}${Math.round(points)}` : "");
     if (points > 0) playTone(points >= 60 ? "reward" : "action");
+  }
+
+  function effectsEnabled() {
+    const reducedByOs = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return !saveData.settings?.reducedEffects && !reducedByOs;
+  }
+
+  function gameFeel(kind = "hit", x = WORLD_WIDTH / 2, y = WORLD_HEIGHT / 2, label = "") {
+    if (!gameState.particles) return;
+    const colors = { hit: "#67f2ff", reward: "#ffe66f", damage: "#ff6f91", perfect: "#7cffb2" };
+    const color = colors[kind] || game().color;
+    const count = effectsEnabled() ? (kind === "reward" ? 18 : kind === "damage" ? 14 : 9) : 3;
+    for (let i = 0; i < count && gameState.particles.length < MAX_PARTICLES; i += 1) {
+      const angle = rnd(0, Math.PI * 2);
+      const speed = rnd(45, kind === "reward" ? 230 : 150);
+      gameState.particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: rnd(0.25, 0.72), maxLife: 0.72, size: rnd(2, 6), color });
+    }
+    if (label) gameState.floaters.push({ x, y, text: cleanText(label, 20), life: 0.78, color });
+    gameState.shake = Math.max(gameState.shake || 0, kind === "damage" ? 8 : kind === "reward" ? 4 : 2.2);
+    gameState.flash = Math.max(gameState.flash || 0, kind === "damage" ? 0.34 : 0.14);
+  }
+
+  function registerDamage(reason = "Va chạm", x = gameState.player?.x, y = gameState.player?.y) {
+    if ((gameState.hitCooldown || 0) > 0) return false;
+    gameState.lives = Math.max(0, (gameState.lives || 0) - 1);
+    gameState.hitCooldown = 0.72;
+    gameState.message = reason;
+    gameState.combo = 1;
+    gameState.comboClock = 0;
+    gameFeel("damage", x, y, "-1 mạng");
+    playTone("loss");
+    return true;
+  }
+
+  function updateGameFeel(dt) {
+    gameState.hitCooldown = Math.max(0, (gameState.hitCooldown || 0) - dt);
+    gameState.comboClock = Math.max(0, (gameState.comboClock || 0) - dt);
+    if (gameState.comboClock <= 0) gameState.combo = 1;
+    gameState.shake = Math.max(0, (gameState.shake || 0) - dt * 24);
+    gameState.flash = Math.max(0, (gameState.flash || 0) - dt * 1.9);
+    gameState.intensity = clamp(1 + gameState.timer / 75 + Math.max(0, gameState.combo - 1) * 0.025, 1, 2.35);
+    gameState.particles.forEach((item) => {
+      item.life -= dt;
+      item.x += item.vx * dt;
+      item.y += item.vy * dt;
+      item.vx *= 0.975;
+      item.vy = item.vy * 0.975 + 32 * dt;
+    });
+    gameState.particles = gameState.particles.filter((item) => item.life > 0).slice(-MAX_PARTICLES);
+    gameState.floaters.forEach((item) => { item.life -= dt; item.y -= 34 * dt; });
+    gameState.floaters = gameState.floaters.filter((item) => item.life > 0).slice(-24);
+    gameState.trails.forEach((item) => { item.life -= dt; });
+    gameState.trails = gameState.trails.filter((item) => item.life > 0).slice(-48);
+
+    const progress = clamp((gameState.score || 0) / Math.max(1, gameState.target || 1), 0, 1);
+    const step = Math.floor(progress * 4);
+    if (step > (gameState.checkpointStep || 0) && step < 4) {
+      gameState.checkpointStep = step;
+      saveCheckpoint(true);
+      gameFeel("perfect", gameState.player?.x || 480, gameState.player?.y || 270, `${step * 25}%`);
+      gameState.message = `Checkpoint ${step}/4 đã lưu.`;
+    }
+  }
+
+  function drawGameFeel() {
+    gameState.trails.forEach((item) => {
+      ctx.globalAlpha = clamp(item.life / 0.34, 0, 0.46);
+      drawCircle(item.x, item.y, item.r || 7, item.color || game().color, false);
+    });
+    gameState.particles.forEach((item) => {
+      ctx.globalAlpha = clamp(item.life / item.maxLife, 0, 1);
+      drawCircle(item.x, item.y, item.size, item.color, false);
+    });
+    ctx.globalAlpha = 1;
+    gameState.floaters.forEach((item) => {
+      ctx.globalAlpha = clamp(item.life / 0.78, 0, 1);
+      ctx.fillStyle = item.color;
+      ctx.font = "900 16px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(item.text, item.x, item.y);
+    });
+    ctx.globalAlpha = 1;
+    ctx.textAlign = "left";
   }
 
   function emitReward(xp, outcome = "win") {
@@ -578,7 +721,8 @@
     }
     const result = outcome || (/Thua|thua|hết|Hết|kết thúc/i.test(String(reason)) ? "loss" : "win");
     const id = active;
-    const xp = Math.max(10, Math.round((gameState.score || 0) / 9) + (gameState.level || 1) * 4) * difficultyFor().reward;
+    const baseXp = Math.max(10, Math.round((gameState.score || 0) / 9) + (gameState.level || 1) * 4) * difficultyFor().reward;
+    const xp = Math.max(2, Math.round(baseXp * (result === "win" ? 1 : result === "quit" ? 0.35 : 0.2)));
     running = false;
     paused = true;
     gameState.phase = "result";
@@ -605,6 +749,7 @@
     if (unlocked.length) gameState.message += ` Achievement: ${unlocked.length}`;
     emitReward(xp, result);
     playTone(result === "win" ? "win" : "loss");
+    gameFeel(result === "win" ? "reward" : result === "quit" ? "hit" : "damage", WORLD_WIDTH / 2, WORLD_HEIGHT / 2, result === "win" ? "MISSION COMPLETE" : result === "quit" ? "ĐÃ LƯU" : "ROUND OVER");
     callRuntimeBridge("complete", { outcome: result, score: gameState.score, xp });
     render();
   }
@@ -632,6 +777,16 @@
       objects: [],
       bullets: [],
       enemies: [],
+      enemyBullets: [],
+      particles: [],
+      trails: [],
+      floaters: [],
+      shake: 0,
+      flash: 0,
+      hitCooldown: 0,
+      comboClock: 0,
+      checkpointStep: 0,
+      intensity: 1,
       resources: { ore: 60, food: 40, power: 70, coins: 80, love: 45 },
       slots: [],
       selected: null,
@@ -660,17 +815,27 @@
     if (g.mode === "rhythm") {
       gameState.objects = [];
       gameState.modeData.hitLine = 430;
+      gameState.modeData.lanes = [170, 380, 590, 800];
+      gameState.modeData.hits = 0;
+      gameState.modeData.misses = 0;
     }
     if (g.mode === "match") {
-      gameState.slots = Array.from({ length: 25 }, () => pick(["✦", "◆", "●", "▲"]));
+      const symbols = ["✦", "◆", "●", "▲", "⬢", "☾", "✧", "◈", "◎", "◇"];
+      gameState.slots = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
+      gameState.modeData.matches = 0;
     }
     if (g.mode === "board") {
       gameState.slots = ["HH", "", "DR", "", "AI", "", "SB", "", "", "", "", "", "★", "", "", "", "", "SB", "", "", "AI", "", "DR", "", "HH"];
+      gameState.modeData.turn = 1;
+      gameState.modeData.captures = 0;
     }
     if (g.mode === "card") {
       gameState.modeData.hand = ["Nova Strike", "Shield Bloom", "Comet Draw"];
       gameState.modeData.enemyHp = 160;
       gameState.modeData.playerHp = 130;
+      gameState.modeData.energy = 3;
+      gameState.modeData.shield = 0;
+      gameState.modeData.turn = 1;
     }
     if (g.mode === "cipher") {
       gameState.modeData.sequence = Array.from({ length: 4 }, () => pick(["H", "A", "S", "T", "R", "13"]));
@@ -682,6 +847,17 @@
     }
     if (["colony", "farm", "builder", "pet", "dungeon", "tycoon", "fishing", "sandbox"].includes(g.mode)) {
       gameState.slots = [];
+    }
+    if (g.mode === "farm") {
+      gameState.modeData = { planted: 0, watered: 0, harvested: 0, season: 1 };
+      gameState.resources.coins = 180;
+    }
+    if (g.mode === "fishing") gameState.modeData = { depth: 1, caught: 0, rare: 0, scanned: false };
+    if (g.mode === "pet") gameState.modeData = { mood: 72, stage: 1, fed: 0, trained: 0 };
+    if (g.mode === "dungeon") gameState.modeData = { room: 1, mana: 100, shield: 0 };
+    if (["colony", "builder", "tycoon"].includes(g.mode)) {
+      gameState.modeData = { stability: 100, income: 0, streak: 0 };
+      gameState.resources.coins = g.mode === "tycoon" ? 220 : 180;
     }
     if (g.mode === "sandbox") gameState.slots = (activeLevel()?.objects || []).map((item) => ({ ...item }));
   }
@@ -700,6 +876,7 @@
 
   function start() {
     if (replay.active) return;
+    if (running && !paused) return;
     if (tutorialVisible) {
       renderStatus();
       return;
@@ -709,6 +886,7 @@
       sessionStartedAt = Date.now();
       replayFrames = [];
       captureReplayFrame(true);
+      if (game().mode === "cipher") gameState.modeData.revealUntil = Date.now() + 3200;
     }
     if (!running) last = performance.now();
     running = true;
@@ -744,7 +922,10 @@
       resetGame();
     }
     tutorialVisible = false;
-    if (!sessionStartedAt) sessionStartedAt = Date.now();
+    if (!sessionStartedAt) {
+      sessionStartedAt = Date.now();
+      if (game().mode === "cipher") gameState.modeData.revealUntil = Date.now() + 3200;
+    }
     running = true;
     paused = false;
     gameState.phase = "playing";
@@ -776,7 +957,6 @@
     const dt = clamp((time - last) / 1000, 0, 0.04);
     last = time;
     try {
-      pollGamepad();
       update(dt);
       saveCheckpoint();
       captureReplayFrame();
@@ -797,18 +977,70 @@
   }
 
   function pollGamepad() {
-    if (!navigator.getGamepads) return;
+    gamepadJustPressed.clear();
+    if (!navigator.getGamepads) {
+      gamepadButtons.clear();
+      return null;
+    }
     const pad = Array.from(navigator.getGamepads()).find(Boolean);
-    if (!pad) return;
+    if (!pad) {
+      gamepadButtons.clear();
+      return null;
+    }
     const nextKeys = new Set();
     if (Math.abs(pad.axes?.[0] || 0) > 0.35) nextKeys.add((pad.axes[0] > 0 ? "ArrowRight" : "ArrowLeft"));
     if (Math.abs(pad.axes?.[1] || 0) > 0.35) nextKeys.add((pad.axes[1] > 0 ? "ArrowDown" : "ArrowUp"));
     if (pad.buttons?.[0]?.pressed) nextKeys.add(" ");
-    ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].forEach((key) => {
-      if (nextKeys.has(key)) keys.add(key);
-      else if (gamepadButtons.has(key)) keys.delete(key);
+    nextKeys.forEach((key) => {
+      if (!gamepadButtons.has(key)) gamepadJustPressed.add(key);
     });
     gamepadButtons = nextKeys;
+    return pad;
+  }
+
+  function activateFromGamepad() {
+    if (settingsVisible) return;
+    if (tutorialVisible) {
+      tutorialVisible = false;
+      saveData.tutorials[active] = true;
+      persist();
+      render();
+    }
+    gamepadButtons.delete(" ");
+    gamepadJustPressed.delete(" ");
+    if (gameState.phase === "paused") resume();
+    else if (gameState.phase === "ready" || gameState.phase === "result") start();
+  }
+
+  function monitorGamepad() {
+    if (!root) return;
+    const pad = pollGamepad();
+    const pressed = new Set();
+    (pad?.buttons || []).forEach((button, index) => {
+      if (button?.pressed || button?.value > 0.55) pressed.add(index);
+    });
+    const rising = (index) => pressed.has(index) && !gamepadPhysicalButtons.has(index);
+    if (rising(9)) {
+      if (gameState.phase === "playing" || gameState.phase === "paused") pause();
+      else activateFromGamepad();
+    } else if (rising(0) && gameState.phase !== "playing") {
+      activateFromGamepad();
+    }
+    gamepadPhysicalButtons = pressed;
+    gamepadMonitorRaf = requestAnimationFrame(monitorGamepad);
+  }
+
+  function keyActive(...values) {
+    return values.some((value) => keys.has(value) || gamepadButtons.has(value));
+  }
+
+  function consumeActionPress() {
+    const keyboardPressed = keys.has(" ") || keys.has("Spacebar");
+    const gamepadPressed = gamepadJustPressed.has(" ");
+    keys.delete(" ");
+    keys.delete("Spacebar");
+    gamepadJustPressed.delete(" ");
+    return keyboardPressed || gamepadPressed;
   }
 
   function updatePerformance(dt) {
@@ -872,6 +1104,7 @@
 
   function update(dt) {
     gameState.timer += dt;
+    updateGameFeel(dt);
     const g = game();
     if (["runner", "escape", "survival"].includes(g.mode)) updateRunner(dt, g.mode);
     else if (["shooter", "arena", "boss"].includes(g.mode)) updateShooter(dt, g.mode);
@@ -879,7 +1112,13 @@
     else if (g.mode === "clicker") gameState.score += dt * 2;
     else if (g.mode === "sandbox") updateSandbox(dt);
     else if (["colony", "farm", "builder", "pet", "tycoon", "fishing"].includes(g.mode)) updateSim(dt, g.mode);
-    if (gameState.timer > 12 + gameState.level * 3) gameState.level += 1;
+    gameState.modeData.nextLevelAt ||= 14;
+    if (gameState.timer >= gameState.modeData.nextLevelAt) {
+      gameState.level += 1;
+      gameState.modeData.nextLevelAt += clamp(16 - gameState.level * 0.35, 8, 16);
+      gameFeel("reward", WORLD_WIDTH / 2, 92, `LEVEL ${gameState.level}`);
+      gameState.message = `Độ khó tăng · Level ${gameState.level}`;
+    }
     if (gameState.lives <= 0 || gameState.energy <= 0) {
       finishRound("Lượt chơi kết thúc", "loss");
       return;
@@ -905,26 +1144,34 @@
     else if (mode === "sandbox" && gameState.slots.some((item) => item.type === "goal") && gameState.score >= target) finishRound("Hoàn tất level Creator Sandbox", "win");
     else if (["colony", "farm", "builder", "tycoon"].includes(mode) && gameState.slots.length >= target) finishRound("Hoàn thành mục tiêu mô phỏng", "win");
     else if (mode === "fishing" && gameState.score >= target) finishRound("Hoàn thành chuyến câu", "win");
-    else if (["clicker", "runner", "escape", "survival", "rhythm", "shooter", "arena", "boss"].includes(mode) && gameState.score >= target) finishRound("Đạt mục tiêu game", "win");
+    else if (["clicker", "runner", "escape", "rhythm", "shooter", "arena"].includes(mode) && gameState.score >= target) finishRound("Đạt mục tiêu game", "win");
   }
 
   function updateRunner(dt, mode) {
     const p = gameState.player;
-    const speed = (mode === "escape" ? 250 : 310) * difficultyFor().speed;
+    gameState.modeData.dash = Math.max(0, (gameState.modeData.dash || 0) - dt);
+    gameState.modeData.dashCooldown = Math.max(0, (gameState.modeData.dashCooldown || 0) - dt);
+    if (consumeActionPress() && gameState.modeData.dashCooldown <= 0) {
+      gameState.modeData.dash = 0.42;
+      gameState.modeData.dashCooldown = 1.5;
+      gameFeel("perfect", p.x, p.y, "BOOST");
+    }
+    const boost = gameState.modeData.dash > 0 ? 1.78 : 1;
+    const speed = (mode === "escape" ? 250 : 310) * difficultyFor().speed * boost;
     movePlayer(dt, speed);
+    if (effectsEnabled() && Math.random() < dt * 32) gameState.trails.push({ x: p.x - 17, y: p.y + rnd(-5, 5), r: rnd(3, 8), life: 0.34, color: game().color });
     if (mode === "escape") {
-      p.x -= (60 + gameState.level * 12) * dt;
+      p.x -= (60 + gameState.level * 8) * dt;
       gameState.energy -= dt * 2.5;
+      if (p.x < 6) gameState.energy = 0;
     }
     gameState.objects.forEach((obj) => {
-      obj.x -= (120 + gameState.level * 22) * dt * obj.vx * 0.55;
+      obj.x -= (120 + gameState.level * 18) * dt * obj.vx * 0.55 * gameState.intensity;
       if (obj.x < -40) Object.assign(obj, hazard(0), { x: 940 + rnd(0, 180) });
       if (Math.hypot(obj.x - p.x, obj.y - p.y) < obj.r + p.r) {
         if (obj.type === "reward") addScore(38 * gameState.combo, "Nhặt tinh thể.");
-        else {
-          gameState.lives -= 1;
-          addScore(-20, "Va chạm.");
-        }
+        else if (gameState.modeData.dash > 0) addScore(24, "Xuyên cổng bằng boost.");
+        else if (registerDamage("Va chạm cổng plasma.", p.x, p.y)) gameState.score = Math.max(0, gameState.score - 20);
         Object.assign(obj, hazard(0), { x: 940 + rnd(0, 180) });
       }
     });
@@ -934,18 +1181,30 @@
   function updateShooter(dt, mode) {
     const p = gameState.player;
     movePlayer(dt, (mode === "arena" ? 240 : 210) * difficultyFor().speed);
-    if (keys.has(" ") || keys.has("Spacebar")) {
-      keys.delete(" ");
-      gameState.bullets.push({ x: p.x + 16, y: p.y, vx: 520, r: 4 });
+    gameState.modeData.fireCooldown = Math.max(0, (gameState.modeData.fireCooldown || 0) - dt);
+    if (keyActive(" ", "Spacebar") && gameState.modeData.fireCooldown <= 0) {
+      gameState.modeData.fireCooldown = mode === "arena" ? 0.13 : 0.18;
+      gameState.bullets.push({ x: p.x + 18, y: p.y, vx: mode === "boss" ? 650 : 560, r: mode === "arena" ? 5 : 4, life: 1.8 });
+      if (effectsEnabled()) gameState.trails.push({ x: p.x + 14, y: p.y, r: 5, life: 0.2, color: "#ffe66f" });
     }
-    gameState.bullets.forEach((bullet) => bullet.x += bullet.vx * dt);
+    gameState.bullets.forEach((bullet) => {
+      bullet.x += bullet.vx * dt;
+      bullet.life -= dt;
+      if (effectsEnabled() && Math.random() < dt * 24) gameState.trails.push({ x: bullet.x - 8, y: bullet.y, r: 2.4, life: 0.22, color: "#ffe66f" });
+    });
     gameState.enemies.forEach((mob) => {
-      mob.x -= (60 + gameState.level * 9) * dt * mob.vx;
+      mob.x -= (60 + gameState.level * 8) * dt * mob.vx * gameState.intensity;
       mob.y += Math.sin(gameState.timer * 3 + mob.x * 0.01) * dt * 40;
+      mob.shot = (mob.shot || rnd(0.6, 2.2)) - dt;
+      if (mob.shot <= 0 && mob.x < 900) {
+        mob.shot = rnd(1.1, 2.5) / difficultyFor().speed;
+        const angle = Math.atan2(p.y - mob.y, p.x - mob.x);
+        gameState.enemyBullets.push({ x: mob.x - mob.r, y: mob.y, vx: Math.cos(angle) * 190, vy: Math.sin(angle) * 190, r: 5, life: 5 });
+      }
       if (mob.x < -20) {
         mob.x = 940 + rnd(0, 140);
         mob.y = rnd(60, 430);
-        gameState.lives -= 1;
+        registerDamage("Một mục tiêu đã vượt tuyến phòng thủ.", 42, mob.y);
       }
       gameState.bullets.forEach((bullet) => {
         if (!bullet.dead && Math.hypot(bullet.x - mob.x, bullet.y - mob.y) < bullet.r + mob.r) {
@@ -956,42 +1215,57 @@
         }
       });
       if (Math.hypot(mob.x - p.x, mob.y - p.y) < mob.r + p.r) {
-        gameState.lives -= 1;
+        registerDamage("Va chạm mecha đối thủ.", p.x, p.y);
         mob.x = 930;
       }
     });
-    gameState.bullets = gameState.bullets.filter((bullet) => !bullet.dead && bullet.x < 980);
+    gameState.enemyBullets.forEach((bullet) => {
+      bullet.x += bullet.vx * dt;
+      bullet.y += bullet.vy * dt;
+      bullet.life -= dt;
+      if (Math.hypot(bullet.x - p.x, bullet.y - p.y) < bullet.r + p.r) {
+        bullet.dead = true;
+        registerDamage("Trúng đạn plasma.", p.x, p.y);
+      }
+    });
+    gameState.enemyBullets = gameState.enemyBullets.filter((bullet) => !bullet.dead && bullet.life > 0 && bullet.x > -30 && bullet.y > -30 && bullet.y < 570);
+    gameState.bullets = gameState.bullets.filter((bullet) => !bullet.dead && bullet.x < 980 && bullet.life > 0);
     gameState.enemies = gameState.enemies.filter((mob) => {
       if (mob.hp > 0) return true;
       addScore(mode === "boss" ? 45 : 32, "Hạ mục tiêu.");
       return false;
     });
-    while (gameState.enemies.length < (mode === "boss" ? 6 : 5 + gameState.level)) gameState.enemies.push(enemy(gameState.enemies.length));
+    while (gameState.enemies.length < (mode === "boss" ? 5 : Math.min(12, 4 + gameState.level))) gameState.enemies.push(enemy(gameState.enemies.length));
     if (mode === "boss" && gameState.bossHp <= 0) finishRound("Đã hạ boss");
   }
 
   function updateRhythm(dt) {
     gameState.spawn -= dt;
     if (gameState.spawn <= 0) {
-      gameState.spawn = rnd(0.45, 0.82);
-      gameState.objects.push({ x: rnd(80, 860), y: -20, r: 16, vy: (160 + gameState.level * 12) * difficultyFor().speed });
+      gameState.spawn = rnd(0.48, 0.78) / clamp(gameState.intensity, 1, 1.65);
+      const lane = Math.floor(rnd(0, 4));
+      gameState.objects.push({ x: gameState.modeData.lanes?.[lane] || 170 + lane * 210, lane, y: -20, r: 16, vy: (158 + gameState.level * 10) * difficultyFor().speed });
     }
     gameState.objects.forEach((note) => note.y += note.vy * dt);
-    if (keys.has(" ") || keys.has("Spacebar")) {
-      keys.delete(" ");
+    if (consumeActionPress()) {
       const target = gameState.objects.find((note) => Math.abs(note.y - gameState.modeData.hitLine) < 34);
       if (target) {
         target.dead = true;
-        addScore(35 * gameState.combo, "Perfect beat.");
+        const offset = Math.abs(target.y - gameState.modeData.hitLine);
+        gameState.modeData.hits += 1;
+        addScore((offset < 12 ? 48 : 30) * gameState.combo, offset < 12 ? "Perfect beat." : "Good beat.");
+        gameFeel(offset < 12 ? "perfect" : "hit", target.x, target.y, offset < 12 ? "PERFECT" : "GOOD");
       } else {
-        gameState.lives -= 1;
-        addScore(-8, "Lệch nhịp.");
+        gameState.modeData.misses += 1;
+        registerDamage("Lệch nhịp reactor.", WORLD_WIDTH / 2, gameState.modeData.hitLine);
+        gameState.score = Math.max(0, gameState.score - 8);
       }
     }
     gameState.objects = gameState.objects.filter((note) => {
       if (note.dead) return false;
       if (note.y > 500) {
-        gameState.lives -= 1;
+        gameState.modeData.misses += 1;
+        registerDamage("Bỏ lỡ nhịp reactor.", note.x, gameState.modeData.hitLine);
         return false;
       }
       return true;
@@ -1002,21 +1276,31 @@
     const r = gameState.resources;
     if (mode === "pet") {
       r.love = clamp(r.love - dt * 0.8, 0, 150);
+      gameState.modeData.mood = clamp((gameState.modeData.mood || 70) - dt * 0.16, 0, 100);
       gameState.score += dt * Math.max(1, r.love / 18);
     } else if (mode === "fishing") {
       gameState.energy = clamp(gameState.energy + dt * 2, 0, 120);
-      gameState.score += dt * 3;
+      gameState.modeData.depth = clamp((gameState.modeData.depth || 1) + dt * 0.08, 1, 99);
+      gameState.score += dt * 1.2;
+    } else if (mode === "farm") {
+      gameState.modeData.growth = clamp((gameState.modeData.growth || 0) + (gameState.modeData.watered || 0) * dt * 1.7, 0, 100);
+      r.food = clamp(r.food + (gameState.modeData.harvested || 0) * dt * 0.08, 0, 9999);
+      r.coins = clamp(r.coins + (gameState.modeData.harvested || 0) * dt * 0.18, 0, 9999);
+      gameState.score += dt * (1 + (gameState.modeData.harvested || 0));
     } else {
       r.coins = clamp(r.coins + dt * (2 + gameState.slots.length), 0, 9999);
       r.power = clamp(r.power - dt * 0.8 + gameState.slots.length * dt * 0.2, 0, 180);
+      gameState.modeData.income = Math.round(2 + gameState.slots.length * 1.8);
+      gameState.modeData.stability = clamp((gameState.modeData.stability || 100) + (r.power > 12 ? dt * 0.25 : -dt * 7), 0, 100);
+      if (gameState.modeData.stability <= 0) gameState.energy = Math.max(0, gameState.energy - dt * 22);
       gameState.score += dt * (3 + gameState.slots.length);
     }
   }
 
   function movePlayer(dt, speed) {
     const p = gameState.player;
-    const x = (keys.has("ArrowRight") || keys.has("d") ? 1 : 0) - (keys.has("ArrowLeft") || keys.has("a") ? 1 : 0);
-    const y = (keys.has("ArrowDown") || keys.has("s") ? 1 : 0) - (keys.has("ArrowUp") || keys.has("w") ? 1 : 0);
+    const x = (keyActive("ArrowRight", "d", "D") ? 1 : 0) - (keyActive("ArrowLeft", "a", "A") ? 1 : 0);
+    const y = (keyActive("ArrowDown", "s", "S") ? 1 : 0) - (keyActive("ArrowUp", "w", "W") ? 1 : 0);
     p.vx = (p.vx + x * speed * dt) * 0.86;
     p.vy = (p.vy + y * speed * dt) * 0.86;
     p.x = clamp(p.x + p.vx, 24, 930);
@@ -1040,7 +1324,7 @@
     playTone("action");
     const mode = game().mode;
     if (mode === "colony") buildResource(value, { solar: 25, mine: 35, farm: 30, shield: 50 }, "Xây module thuộc địa");
-    else if (mode === "farm") buildResource(value, { seed: 18, water: 12, harvest: 0, lab: 44 }, "Nông trại thiên hà");
+    else if (mode === "farm") farmAction(value);
     else if (mode === "builder") buildResource(value, { core: 20, ocean: 24, forest: 24, city: 42 }, "Đã ghép hành tinh");
     else if (mode === "pet") petAction(value);
     else if (mode === "dungeon") dungeonAction(value);
@@ -1071,34 +1355,104 @@
     if (gameState.resources.coins >= cost) gameState.resources.coins -= cost;
     else gameState.resources.ore -= cost;
     gameState.slots.push({ action, at: Date.now() });
+    gameState.resources.power = clamp(gameState.resources.power + (action === "solar" || action === "core" ? 24 : -4), 0, 180);
+    gameState.resources.food = clamp(gameState.resources.food + (action === "farm" || action === "forest" ? 14 : -1), 0, 9999);
+    gameState.modeData.streak = (gameState.modeData.streak || 0) + 1;
     addScore(cost * 2, message);
   }
 
+  function farmAction(action) {
+    const data = gameState.modeData;
+    const r = gameState.resources;
+    if (action === "seed") {
+      if (r.coins < 18) { gameState.message = "Cần 18 coin để gieo hạt."; return; }
+      r.coins -= 18;
+      data.planted += 1;
+      data.growth = Math.max(0, data.growth || 0);
+      gameState.slots.push({ action: "seed", at: Date.now() });
+      addScore(24, "Đã gieo hạt tinh vân.");
+    } else if (action === "water") {
+      if (!data.planted) { gameState.message = "Hãy gieo hạt trước khi tưới."; return; }
+      if (r.coins < 12) { gameState.message = "Không đủ coin cho hệ tưới."; return; }
+      r.coins -= 12;
+      data.watered = clamp((data.watered || 0) + 1, 0, data.planted);
+      data.growth = clamp((data.growth || 0) + 24, 0, 100);
+      addScore(30, "Cây đang phát sáng và lớn lên.");
+    } else if (action === "harvest") {
+      if ((data.growth || 0) < 70 || !data.planted) { gameState.message = `Mùa vụ mới đạt ${Math.round(data.growth || 0)}%.`; return; }
+      data.harvested += data.planted;
+      r.food += data.planted * 22;
+      r.coins += data.planted * 16;
+      addScore(65 * data.planted, `Thu hoạch ${data.planted} cụm sao.`);
+      data.planted = 0; data.watered = 0; data.growth = 0; data.season += 1;
+    } else if (action === "lab") {
+      if (r.coins < 44) { gameState.message = "Gene Lab cần 44 coin."; return; }
+      r.coins -= 44;
+      data.growth = clamp((data.growth || 0) + 42, 0, 100);
+      addScore(58, "Gene Lab tăng tốc mùa vụ.");
+    }
+    gameState.slots = Array.from({ length: data.harvested || 0 }, (_, index) => ({ action: "harvest", at: index })).slice(0, 20);
+  }
+
   function petAction(action) {
-    const gain = { feed: 18, play: 25, train: 35, evolve: 80 }[action] || 12;
+    const data = gameState.modeData;
+    if (action === "evolve" && gameState.resources.love < 100) {
+      gameState.message = `Cần 100 tình cảm để tiến hóa · hiện có ${Math.round(gameState.resources.love)}.`;
+      return;
+    }
+    const gain = { feed: 18, play: 25, train: 35, evolve: 32 }[action] || 12;
     gameState.resources.love = clamp(gameState.resources.love + gain, 0, 150);
-    addScore(gain * 2, action === "evolve" ? "Pet tiến hóa." : "Pet vui hơn.");
+    data.mood = clamp((data.mood || 70) + (action === "feed" ? 14 : action === "play" ? 22 : 8), 0, 100);
+    if (action === "feed") data.fed += 1;
+    if (action === "train") data.trained += 1;
+    if (action === "evolve") data.stage += 1;
+    addScore(gain * 2, action === "evolve" ? `Pet tiến hóa cấp ${data.stage}.` : "Pet vui hơn.");
   }
 
   function dungeonAction(action) {
+    const data = gameState.modeData;
+    if (action === "heal") {
+      if (data.mana < 24) { gameState.message = "Không đủ mana để hồi phục."; return; }
+      data.mana -= 24;
+      gameState.lives = Math.min(difficultyFor().lives, gameState.lives + 1);
+      addScore(20, "Hồi phục tại đài sao.");
+      return;
+    }
+    if (action === "magic" && data.mana < 18) { gameState.message = "Không đủ mana."; return; }
+    if (action === "magic") data.mana -= 18;
     const roll = Math.random();
-    if (roll > 0.25) {
+    const success = action === "magic" ? 0.88 : action === "slash" ? 0.74 : action === "loot" ? 0.62 : 0.7;
+    if (roll < success) {
       addScore({ slash: 42, magic: 56, loot: 70, heal: 28 }[action] || 35, "Qua phòng dungeon.");
       gameState.slots.push(action);
+      data.room = gameState.slots.length + 1;
+      data.mana = clamp(data.mana + 7, 0, 100);
     } else {
-      gameState.lives -= 1;
-      addScore(-12, "Bẫy sao.");
+      registerDamage("Dính bẫy sao trong dungeon.", 480, 270);
+      gameState.score = Math.max(0, gameState.score - 12);
     }
   }
 
   function fishingAction(action) {
-    if (gameState.energy < 12) {
-      gameState.message = "Cần hồi năng lượng.";
+    const data = gameState.modeData;
+    if (action === "scan") {
+      if (gameState.energy < 6) { gameState.message = "Cần hồi năng lượng để quét."; return; }
+      gameState.energy -= 6;
+      data.scanned = true;
+      data.depth = clamp(data.depth + 4, 1, 99);
+      addScore(16, "Đã phát hiện đàn cá lượng tử.");
       return;
     }
-    gameState.energy -= 12;
-    const rare = Math.random() > 0.7;
-    addScore(rare ? 120 : 38, rare ? "Câu được cá lượng tử hiếm." : "Câu được cá sao.");
+    const cost = action === "net" ? 24 : action === "bait" ? 18 : 12;
+    if (gameState.energy < cost) { gameState.message = "Cần hồi năng lượng."; return; }
+    gameState.energy -= cost;
+    const chance = 0.2 + (data.scanned ? 0.18 : 0) + (action === "bait" ? 0.2 : action === "net" ? 0.1 : 0);
+    const rare = Math.random() < chance;
+    const amount = action === "net" ? 3 : 1;
+    data.caught += amount;
+    if (rare) data.rare += 1;
+    data.scanned = false;
+    addScore((rare ? 110 : 36) * amount, rare ? "Câu được cá lượng tử hiếm." : `Thu được ${amount} cá sao.`);
   }
 
   function cipherAction(value) {
@@ -1113,6 +1467,7 @@
       addScore(90 + data.sequence.length * 8, "Mở khóa thành công.");
       data.sequence.push(pick(["H", "A", "S", "T", "R", "13"]));
       data.input = [];
+      data.revealUntil = Date.now() + 2600;
     }
   }
 
@@ -1131,6 +1486,7 @@
   }
 
   function matchAction(index) {
+    if (gameState.slots[index] === "☆") return;
     if (gameState.selected === null) {
       gameState.selected = index;
       return;
@@ -1140,6 +1496,7 @@
     if (a !== b && gameState.slots[a] === gameState.slots[b]) {
       gameState.slots[a] = "☆";
       gameState.slots[b] = "☆";
+      gameState.modeData.matches = (gameState.modeData.matches || 0) + 1;
       addScore(65, "Ghép tinh vân.");
     } else {
       addScore(-5, "Chưa khớp.");
@@ -1154,6 +1511,12 @@
     }
     if (gameState.selected !== null) {
       const from = gameState.selected;
+      const distance = Math.abs(Math.floor(from / 5) - Math.floor(index / 5)) + Math.abs((from % 5) - (index % 5));
+      if (distance !== 1) {
+        gameState.selected = null;
+        gameState.message = "Chỉ được di chuyển sang ô kề cạnh.";
+        return;
+      }
       if (!gameState.slots[index]) {
         gameState.slots[index] = gameState.slots[from];
         gameState.slots[from] = "";
@@ -1161,19 +1524,30 @@
       } else if (from !== index) {
         gameState.slots[index] = gameState.slots[from];
         gameState.slots[from] = "";
+        gameState.modeData.captures = (gameState.modeData.captures || 0) + 1;
         addScore(85, "Chiếm ô.");
       }
+      gameState.modeData.turn = (gameState.modeData.turn || 1) + 1;
       gameState.selected = null;
     }
   }
 
   function cardAction(action) {
     const data = gameState.modeData;
-    const damage = { strike: 38, shield: 12, draw: 22 }[action] || 24;
-    if (action === "shield") data.playerHp += 25;
+    const cost = { strike: 2, shield: 1, draw: 0 }[action] ?? 1;
+    if (data.energy < cost) { gameState.message = "Không đủ năng lượng cho lá bài này."; return; }
+    data.energy -= cost;
+    const damage = { strike: 38, shield: 0, draw: 18 }[action] || 24;
+    if (action === "shield") data.shield = clamp((data.shield || 0) + 28, 0, 60);
     else data.enemyHp -= damage;
-    data.playerHp -= Math.max(5, 20 - gameState.combo);
-    addScore(damage * 2, "Lượt bài vũ trụ.");
+    if (action === "draw") data.energy = clamp(data.energy + 2, 0, 5);
+    const retaliation = Math.max(6, 21 - gameState.combo);
+    const absorbed = Math.min(data.shield || 0, retaliation);
+    data.shield -= absorbed;
+    data.playerHp -= retaliation - absorbed;
+    data.energy = clamp(data.energy + 1, 0, 5);
+    data.turn += 1;
+    addScore(action === "shield" ? 18 : damage * 2, "Lượt bài vũ trụ.");
     if (data.enemyHp <= 0) finishRound("Thắng trận thẻ bài");
     if (data.playerHp <= 0) {
       gameState.lives = 0;
@@ -1189,10 +1563,10 @@
   function updateSandbox(dt) {
     const player = gameState.player;
     const speed = 150 * dt;
-    if (keys.has("ArrowLeft") || keys.has("a") || keys.has("A")) player.x -= speed;
-    if (keys.has("ArrowRight") || keys.has("d") || keys.has("D")) player.x += speed;
-    if (keys.has("ArrowUp") || keys.has("w") || keys.has("W")) player.y -= speed;
-    if (keys.has("ArrowDown") || keys.has("s") || keys.has("S")) player.y += speed;
+    if (keyActive("ArrowLeft", "a", "A")) player.x -= speed;
+    if (keyActive("ArrowRight", "d", "D")) player.x += speed;
+    if (keyActive("ArrowUp", "w", "W")) player.y -= speed;
+    if (keyActive("ArrowDown", "s", "S")) player.y += speed;
     player.x = clamp(player.x, 18, 942);
     player.y = clamp(player.y, 18, 522);
     gameState.slots.forEach((item) => {
@@ -1267,6 +1641,17 @@
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
+  function worldViewport(width, height) {
+    const safeWidth = Math.max(1, Number(width) || WORLD_WIDTH);
+    const safeHeight = Math.max(1, Number(height) || WORLD_HEIGHT);
+    const scale = Math.min(safeWidth / WORLD_WIDTH, safeHeight / WORLD_HEIGHT);
+    return {
+      scale,
+      x: (safeWidth - WORLD_WIDTH * scale) / 2,
+      y: (safeHeight - WORLD_HEIGHT * scale) / 2
+    };
+  }
+
   function draw() {
     if (!canvas || !ctx) return;
     const rect = canvas.getBoundingClientRect();
@@ -1275,9 +1660,20 @@
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
     }
+    const cssWidth = rect.width || WORLD_WIDTH;
+    const cssHeight = rect.height || WORLD_HEIGHT;
+    const viewport = worldViewport(cssWidth, cssHeight);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const w = rect.width || 960;
-    const h = rect.height || 540;
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+    ctx.fillStyle = "#030712";
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
+    ctx.save();
+    ctx.translate(viewport.x, viewport.y);
+    ctx.scale(viewport.scale, viewport.scale);
+    const shake = effectsEnabled() ? clamp(gameState.shake || 0, 0, 9) : 0;
+    if (shake) ctx.translate(rnd(-shake, shake), rnd(-shake, shake));
+    const w = WORLD_WIDTH;
+    const h = WORLD_HEIGHT;
     drawBackground(w, h);
     const mode = game().mode;
     if (["runner", "escape", "survival"].includes(mode)) drawRunner(w, h, mode);
@@ -1286,7 +1682,18 @@
     else if (mode === "rhythm") drawRhythm(w, h);
     else if (["sandbox", "builder"].includes(mode)) drawSandbox();
     else drawPanelPreview(w, h);
+    if ((gameState.flash || 0) > 0) {
+      ctx.fillStyle = `rgba(255,92,133,${clamp(gameState.flash, 0, 0.22)})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+    const vignette = ctx.createRadialGradient(w / 2, h / 2, h * 0.18, w / 2, h / 2, w * 0.66);
+    vignette.addColorStop(0, "rgba(0,0,0,0)");
+    vignette.addColorStop(1, "rgba(0,0,0,.42)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, w, h);
+    drawGameFeel();
     drawHud();
+    ctx.restore();
   }
 
   function drawBackground(w, h) {
@@ -1298,46 +1705,121 @@
     ctx.fillRect(0, 0, w, h);
     const t = gameState.timer || 0;
     const quality = gameState.performance?.quality || "high";
+    if (quality !== "low" && !saveData.settings?.reducedEffects) {
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      const nebula = ctx.createLinearGradient(0, h, w, 0);
+      nebula.addColorStop(0, "rgba(103,242,255,.02)");
+      nebula.addColorStop(0.46, `${game().color}22`);
+      nebula.addColorStop(1, "rgba(255,99,201,.03)");
+      ctx.fillStyle = nebula;
+      ctx.beginPath();
+      ctx.ellipse(w * 0.58, h * 0.48, w * 0.42, h * 0.16, -0.18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
     const starCount = quality === "low" || saveData.settings?.reducedEffects ? 28 : quality === "medium" ? 52 : 80;
     for (let i = 0; i < starCount; i += 1) {
       ctx.globalAlpha = 0.18 + (i % 5) * 0.08;
       ctx.fillStyle = i % 7 ? "#67f2ff" : "#ff63c9";
-      ctx.fillRect((i * 97 + t * 28 * (i % 3 + 1)) % w, (i * 43) % h, 2, 2);
+      const depth = i % 3 + 1;
+      ctx.fillRect((i * 97 + t * 18 * depth) % w, (i * 43 + Math.sin(t * 0.3 + i) * depth) % h, depth === 3 ? 2.4 : 1.4, depth === 3 ? 2.4 : 1.4);
     }
     ctx.globalAlpha = 1;
+    ctx.strokeStyle = "rgba(103,242,255,.055)";
+    ctx.lineWidth = 1;
+    for (let y = 360; y < h; y += 34) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    for (let x = -w; x <= w * 2; x += 74) {
+      ctx.beginPath(); ctx.moveTo(w / 2, 330); ctx.lineTo(x, h); ctx.stroke();
+    }
   }
 
   function drawRunner(w) {
     const p = gameState.player;
-    gameState.objects.forEach((obj) => drawCircle(obj.x, obj.y, obj.r, obj.type === "reward" ? "#ffe66f" : "#ff63c9"));
-    drawShip(p.x, p.y, game().color);
-    if (game().mode === "escape") {
-      ctx.strokeStyle = "rgba(181,140,255,.7)";
-      ctx.lineWidth = 18;
-      ctx.beginPath();
-      ctx.arc(8, p.y, 85, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillStyle = "#b58cff";
-      ctx.fillText("Hố đen", 26, 44);
+    ctx.strokeStyle = "rgba(103,242,255,.14)";
+    ctx.lineWidth = 2;
+    [120, 270, 420].forEach((y) => { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); });
+    if (effectsEnabled() && running) {
+      ctx.strokeStyle = "rgba(255,255,255,.15)";
+      for (let i = 0; i < 16; i += 1) {
+        const x = (i * 83 - gameState.timer * 360 * gameState.intensity) % (w + 120);
+        const y = 40 + (i * 73) % 450;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 44, y); ctx.stroke();
+      }
     }
-    if (p.x < 30) p.x = w - 80;
+    gameState.objects.forEach((obj) => {
+      if (obj.type === "reward") {
+        ctx.save(); ctx.translate(obj.x, obj.y); ctx.rotate(gameState.timer * 2.5); ctx.strokeStyle = "#ffe66f"; ctx.lineWidth = 4;
+        ctx.strokeRect(-obj.r * 0.65, -obj.r * 0.65, obj.r * 1.3, obj.r * 1.3); ctx.restore();
+      } else {
+        ctx.strokeStyle = "rgba(255,99,201,.45)"; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(obj.x, obj.y, obj.r + 7 + Math.sin(gameState.timer * 4 + obj.x) * 3, 0, Math.PI * 2); ctx.stroke();
+        drawCircle(obj.x, obj.y, obj.r, "#ff63c9");
+      }
+    });
+    ctx.globalAlpha = gameState.hitCooldown > 0 && Math.floor(gameState.timer * 16) % 2 ? 0.35 : 1;
+    drawShip(p.x, p.y, game().color);
+    ctx.globalAlpha = 1;
+    if (game().mode === "escape") {
+      const hole = ctx.createRadialGradient(16, p.y, 8, 16, p.y, 112);
+      hole.addColorStop(0, "#000"); hole.addColorStop(.45, "rgba(32,5,58,.96)"); hole.addColorStop(.72, "rgba(181,140,255,.72)"); hole.addColorStop(1, "rgba(181,140,255,0)");
+      ctx.fillStyle = hole; ctx.beginPath(); ctx.arc(16, p.y, 115, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#d7b3ff"; ctx.font = "900 13px system-ui"; ctx.fillText("HỐ ĐEN", 24, 42);
+    } else if (game().mode === "survival") {
+      ctx.strokeStyle = "rgba(157,255,251,.42)"; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(820, 270, 96 + Math.sin(gameState.timer) * 5, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = "rgba(157,255,251,.16)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(820, 270, 132, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#9dfffb"; ctx.font = "900 13px system-ui";
+      ctx.fillText(`CỨU HỘ ${Math.max(0, Math.ceil(gameState.timeLimit - gameState.timer))}s`, 754, 270);
+    }
   }
 
   function drawShooter() {
-    gameState.enemies.forEach((mob) => drawCircle(mob.x, mob.y, mob.r, game().mode === "boss" ? "#ff4f5e" : "#ff8b5d"));
-    gameState.bullets.forEach((bullet) => drawCircle(bullet.x, bullet.y, bullet.r, "#ffe66f"));
+    const mode = game().mode;
+    gameState.enemies.forEach((mob, index) => {
+      ctx.save(); ctx.translate(mob.x, mob.y); ctx.rotate(gameState.timer * (index % 2 ? 1 : -1));
+      ctx.strokeStyle = mode === "boss" ? "#ff4f5e" : "#ff8b5d"; ctx.lineWidth = 3;
+      ctx.strokeRect(-mob.r, -mob.r, mob.r * 2, mob.r * 2); ctx.restore();
+      drawCircle(mob.x, mob.y, Math.max(5, mob.r * 0.48), mode === "boss" ? "#ff4f5e" : "#ff8b5d");
+    });
+    gameState.enemyBullets.forEach((bullet) => drawCircle(bullet.x, bullet.y, bullet.r, "#ff63c9"));
+    gameState.bullets.forEach((bullet) => {
+      ctx.strokeStyle = "rgba(255,230,111,.58)"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(bullet.x - 22, bullet.y); ctx.lineTo(bullet.x, bullet.y); ctx.stroke();
+      drawCircle(bullet.x, bullet.y, bullet.r, "#ffe66f");
+    });
+    ctx.globalAlpha = gameState.hitCooldown > 0 && Math.floor(gameState.timer * 16) % 2 ? 0.35 : 1;
     drawShip(gameState.player.x, gameState.player.y, "#67f2ff");
-    if (game().mode === "boss") {
+    ctx.globalAlpha = 1;
+    if (mode === "boss") {
+      const pulse = 46 + Math.sin(gameState.timer * 3) * 5;
+      ctx.strokeStyle = "rgba(255,79,94,.5)"; ctx.lineWidth = 9;
+      ctx.beginPath(); ctx.arc(820, 270, pulse, 0, Math.PI * 2); ctx.stroke();
+      drawCircle(820, 270, 27, "#ff4f5e");
       ctx.fillStyle = "rgba(255,255,255,.14)";
       ctx.fillRect(320, 28, 300, 10);
       ctx.fillStyle = "#ff4f5e";
-      ctx.fillRect(320, 28, clamp(gameState.bossHp / 340, 0, 1) * 300, 10);
+      const maxBoss = 220 + gameState.level * 40;
+      ctx.fillRect(320, 28, clamp(gameState.bossHp / maxBoss, 0, 1) * 300, 10);
     }
   }
 
   function drawClicker() {
-    gameState.objects.forEach((obj) => {
-      drawCircle(obj.x, obj.y, obj.r, obj.hp > 1 ? "#8c7350" : "#ffe66f");
+    gameState.objects.forEach((obj, index) => {
+      ctx.save(); ctx.translate(obj.x, obj.y); ctx.rotate(gameState.timer * 0.08 * (index % 2 ? 1 : -1));
+      ctx.fillStyle = obj.hp > 1 ? "#5f5365" : "#ffe66f";
+      ctx.strokeStyle = obj.hp > 1 ? "#a48cae" : "#fff4ad"; ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let point = 0; point < 9; point += 1) {
+        const angle = point / 9 * Math.PI * 2;
+        const radius = obj.r * (0.78 + ((point * 7 + index) % 4) * 0.08);
+        const px = Math.cos(angle) * radius; const py = Math.sin(angle) * radius;
+        if (!point) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
       ctx.fillStyle = "#07101a";
       ctx.font = "800 12px system-ui";
       ctx.textAlign = "center";
@@ -1348,16 +1830,45 @@
 
   function drawRhythm(w) {
     const line = gameState.modeData.hitLine || 430;
+    const lanes = gameState.modeData.lanes || [170, 380, 590, 800];
+    lanes.forEach((x, index) => {
+      ctx.fillStyle = index % 2 ? "rgba(255,99,201,.035)" : "rgba(103,242,255,.035)";
+      ctx.fillRect(x - 92, 42, 184, line - 42);
+      ctx.strokeStyle = "rgba(255,255,255,.09)"; ctx.lineWidth = 1;
+      ctx.strokeRect(x - 92, 42, 184, line - 42);
+    });
     ctx.strokeStyle = "#ffe66f";
-    ctx.lineWidth = 3;
+    ctx.shadowColor = "#ffe66f"; ctx.shadowBlur = 15; ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(46, line);
     ctx.lineTo(w - 46, line);
     ctx.stroke();
-    gameState.objects.forEach((note) => drawCircle(note.x, note.y, note.r, "#ff63c9"));
+    ctx.shadowBlur = 0;
+    gameState.objects.forEach((note) => {
+      const proximity = 1 - clamp(Math.abs(note.y - line) / 180, 0, 1);
+      drawCircle(note.x, note.y, note.r + proximity * 5, note.lane % 2 ? "#ff63c9" : "#67f2ff");
+    });
   }
 
   function drawSandbox() {
+    if (game().mode === "builder") {
+      const actions = new Set((gameState.slots || []).map((item) => item.action));
+      const cx = 480; const cy = 274;
+      ctx.strokeStyle = "rgba(103,242,255,.18)"; ctx.lineWidth = 2;
+      [142, 186].forEach((radius) => { ctx.beginPath(); ctx.ellipse(cx, cy, radius * 1.7, radius * 0.45, -0.16, 0, Math.PI * 2); ctx.stroke(); });
+      const planet = ctx.createRadialGradient(cx - 52, cy - 58, 12, cx, cy, 145);
+      planet.addColorStop(0, "#dfffa1"); planet.addColorStop(.45, actions.has("forest") ? "#4fbf67" : "#596b7a"); planet.addColorStop(.72, actions.has("ocean") ? "#2789d8" : "#303e58"); planet.addColorStop(1, "#10172d");
+      ctx.fillStyle = planet; ctx.beginPath(); ctx.arc(cx, cy, actions.has("core") ? 138 : 105, 0, Math.PI * 2); ctx.fill();
+      if (actions.has("city")) {
+        for (let i = 0; i < 18; i += 1) {
+          const angle = i / 18 * Math.PI * 2; const radius = 82 + (i % 3) * 12;
+          drawCircle(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius, 3, "#ffe66f");
+        }
+      }
+      ctx.fillStyle = "#eef8ff"; ctx.font = "900 20px system-ui"; ctx.textAlign = "center";
+      ctx.fillText(`ỔN ĐỊNH ${Math.round(gameState.modeData.stability || 100)}%`, cx, 472); ctx.textAlign = "left";
+      return;
+    }
     const colors = { spawn: "#7cffb2", goal: "#ffe66f", platform: "#79a7ff", hazard: "#ff6f91", coin: "#ffc857", ship: "#67f2ff", planet: "#b6ff6b", gate: "#c7a2ff", station: "#ff9fe5" };
     (gameState.slots || []).forEach((item, index) => {
       drawCircle(item.x || 120 + index * 42, item.y || 220, item.type === "platform" ? 22 : 16, colors[item.type] || "#67f2ff");
@@ -1369,31 +1880,115 @@
   }
 
   function drawPanelPreview(w, h) {
-    ctx.fillStyle = "rgba(255,255,255,.9)";
-    ctx.font = "900 28px system-ui";
-    ctx.textAlign = "center";
-    ctx.fillText(game().title, w / 2, h / 2 - 10);
-    ctx.font = "700 15px system-ui";
-    ctx.fillStyle = "rgba(238,248,255,.64)";
-    ctx.fillText("Dùng các nút tác vụ bên dưới để chơi mode này.", w / 2, h / 2 + 24);
+    const mode = game().mode;
+    const t = gameState.timer || 0;
+    ctx.save();
+    if (mode === "colony" || mode === "tycoon") {
+      const cx = 480; const cy = 280;
+      ctx.strokeStyle = `${game().color}66`; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(cx, cy, 300, 112, -0.08, 0, Math.PI * 2); ctx.stroke();
+      drawCircle(cx, cy, 70, mode === "colony" ? "#7cffb2" : "#6fffc6");
+      const slots = gameState.slots || [];
+      const total = Math.max(4, slots.length);
+      Array.from({ length: total }).forEach((_, index) => {
+        const angle = t * 0.18 + index / total * Math.PI * 2;
+        const x = cx + Math.cos(angle) * 270; const y = cy + Math.sin(angle) * 104;
+        drawCircle(x, y, slots[index] ? 14 : 7, slots[index] ? "#ffe66f" : "rgba(255,255,255,.18)");
+      });
+      ctx.fillStyle = "#07101a"; ctx.fillRect(382, 250, 196, 60);
+      ctx.fillStyle = "#eef8ff"; ctx.font = "900 17px system-ui"; ctx.textAlign = "center";
+      ctx.fillText(mode === "colony" ? "COLONY CORE" : "TYCOON HUB", cx, 276);
+      ctx.fillStyle = "#7cffb2"; ctx.font = "800 13px system-ui";
+      ctx.fillText(`+${gameState.modeData.income || 0} coin/s · ${gameState.slots.length} module`, cx, 298);
+    } else if (mode === "farm") {
+      const data = gameState.modeData;
+      const growth = clamp(data.growth || 0, 0, 100);
+      ctx.fillStyle = "rgba(73,149,102,.12)"; ctx.fillRect(80, 105, 800, 330);
+      for (let row = 0; row < 3; row += 1) {
+        for (let col = 0; col < 8; col += 1) {
+          const x = 140 + col * 96; const y = 176 + row * 94;
+          ctx.strokeStyle = "rgba(147,255,117,.2)"; ctx.beginPath(); ctx.moveTo(x - 30, y + 24); ctx.lineTo(x + 30, y + 24); ctx.stroke();
+          if (col + row * 8 < data.planted) {
+            ctx.strokeStyle = "#93ff75"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y + 20); ctx.lineTo(x, y + 20 - growth * .52); ctx.stroke();
+            drawCircle(x, y + 18 - growth * .52, 5 + growth * .08, "#ffe66f");
+          }
+        }
+      }
+      drawGauge(250, 464, 460, 16, growth / 100, "#93ff75", `Mùa ${data.season || 1} · Sinh trưởng ${Math.round(growth)}%`);
+    } else if (mode === "fishing") {
+      const water = ctx.createLinearGradient(0, 90, 0, h);
+      water.addColorStop(0, "rgba(102,217,255,.05)"); water.addColorStop(1, "rgba(12,52,102,.68)");
+      ctx.fillStyle = water; ctx.fillRect(0, 90, w, h - 90);
+      ctx.strokeStyle = "#66d9ff"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(230, 110); ctx.quadraticCurveTo(480, 180, 520, 360); ctx.stroke();
+      drawCircle(520, 360, 9, gameState.modeData.scanned ? "#ffe66f" : "#eef8ff");
+      for (let i = 0; i < 15; i += 1) {
+        const x = (i * 83 + t * (18 + i % 3 * 9)) % 900 + 30; const y = 180 + (i * 47) % 270;
+        ctx.fillStyle = i % 5 ? "rgba(102,217,255,.62)" : "#ffe66f";
+        ctx.beginPath(); ctx.ellipse(x, y, 12 + i % 4 * 2, 6, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = "#eef8ff"; ctx.font = "900 18px system-ui"; ctx.fillText(`ĐỘ SÂU ${Math.round(gameState.modeData.depth || 1)} · ĐÃ CÂU ${gameState.modeData.caught || 0}`, 36, 64);
+    } else if (mode === "pet") {
+      const mood = clamp(gameState.modeData.mood || 0, 0, 100);
+      const cx = 480; const cy = 270 + Math.sin(t * 2) * 8;
+      ctx.fillStyle = "rgba(255,159,229,.08)"; ctx.beginPath(); ctx.ellipse(cx, 380, 230, 60, 0, 0, Math.PI * 2); ctx.fill();
+      drawCircle(cx, cy, 92, "#ff9fe5");
+      drawCircle(cx - 34, cy - 15, 13, "#07101a"); drawCircle(cx + 34, cy - 15, 13, "#07101a");
+      ctx.strokeStyle = "#07101a"; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(cx, cy + 18, 30, 0.15, Math.PI - .15); ctx.stroke();
+      for (let i = 0; i < (gameState.modeData.stage || 1); i += 1) {
+        ctx.strokeStyle = "#ffe66f"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(cx, cy, 112 + i * 14, t + i, t + i + 2.4); ctx.stroke();
+      }
+      drawGauge(260, 448, 440, 15, mood / 100, "#ff9fe5", `Tâm trạng ${Math.round(mood)}% · Tiến hóa ${gameState.modeData.stage || 1}`);
+    } else if (mode === "dungeon") {
+      ctx.strokeStyle = "rgba(215,179,255,.22)"; ctx.lineWidth = 4;
+      for (let i = 0; i < 7; i += 1) {
+        const size = 440 - i * 52; ctx.strokeRect((w - size) / 2, 72 + i * 24, size, 360 - i * 42);
+      }
+      drawCircle(480, 272, 48, "#d7b3ff");
+      ctx.fillStyle = "#eef8ff"; ctx.font = "900 24px system-ui"; ctx.textAlign = "center"; ctx.fillText(`PHÒNG ${gameState.modeData.room || 1}`, 480, 280);
+      ctx.font = "800 14px system-ui"; ctx.fillStyle = "#c7a2ff"; ctx.fillText(`Mana ${Math.round(gameState.modeData.mana || 0)} · Mạng ${gameState.lives}`, 480, 330);
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.font = "900 28px system-ui"; ctx.textAlign = "center";
+      ctx.fillText(game().title, w / 2, h / 2 - 10);
+      ctx.font = "700 15px system-ui"; ctx.fillStyle = "rgba(238,248,255,.64)";
+      ctx.fillText("Dùng các nút tác vụ để hoàn thành nhiệm vụ.", w / 2, h / 2 + 24);
+    }
+    ctx.restore();
     ctx.textAlign = "left";
   }
 
-  function drawHud() {
-    ctx.fillStyle = "rgba(4,8,16,.72)";
-    ctx.fillRect(12, 12, 310, 54);
-    ctx.fillStyle = "#eef8ff";
-    ctx.font = "900 14px system-ui";
-    ctx.fillText(`Score ${Math.floor(gameState.score || 0)}   Combo x${gameState.combo || 1}`, 26, 34);
-    ctx.fillStyle = "#9bb7c9";
-    ctx.fillText(`Level ${gameState.level || 1}   Mạng ${gameState.lives ?? 3}   Năng lượng ${Math.floor(gameState.energy ?? 100)}`, 26, 56);
+  function drawGauge(x, y, width, height, ratio, color, label) {
+    ctx.fillStyle = "rgba(255,255,255,.1)"; ctx.fillRect(x, y, width, height);
+    ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 12; ctx.fillRect(x, y, width * clamp(ratio, 0, 1), height); ctx.shadowBlur = 0;
+    ctx.fillStyle = "#eef8ff"; ctx.font = "800 13px system-ui"; ctx.textAlign = "center"; ctx.fillText(label, x + width / 2, y - 10); ctx.textAlign = "left";
   }
 
-  function drawCircle(x, y, r, color) {
+  function drawHud() {
+    const progress = clamp((gameState.score || 0) / Math.max(1, gameState.target || 1), 0, 1);
+    const timeLeft = gameState.timeLimit ? Math.max(0, Math.ceil(gameState.timeLimit - gameState.timer)) : null;
+    ctx.fillStyle = "rgba(4,8,16,.82)";
+    ctx.fillRect(12, 12, 338, 72);
+    ctx.fillStyle = "#eef8ff";
+    ctx.font = "900 14px system-ui";
+    ctx.fillText(`SCORE ${Math.floor(gameState.score || 0)}   COMBO x${gameState.combo || 1}`, 26, 35);
+    ctx.fillStyle = "#9bb7c9";
+    ctx.fillText(`LEVEL ${gameState.level || 1}   MẠNG ${gameState.lives ?? 3}   NL ${Math.floor(gameState.energy ?? 100)}${timeLeft === null ? "" : `   ${timeLeft}s`}`, 26, 57);
+    ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fillRect(26, 68, 304, 5);
+    ctx.fillStyle = game().color; ctx.fillRect(26, 68, 304 * progress, 5);
+    if ((gameState.combo || 1) > 2) {
+      ctx.fillStyle = "rgba(4,8,16,.8)"; ctx.fillRect(760, 16, 182, 50);
+      ctx.fillStyle = "#ffe66f"; ctx.font = "1000 23px system-ui"; ctx.textAlign = "right";
+      ctx.fillText(`x${gameState.combo} COMBO`, 928, 47); ctx.textAlign = "left";
+    }
+  }
+
+  function drawCircle(x, y, r, color, glow = true) {
     ctx.save();
     ctx.fillStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 16;
+    if (glow) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 16;
+    }
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
@@ -1419,28 +2014,36 @@
   function canvasPointer(event) {
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
+    const viewport = worldViewport(rect.width, rect.height);
     pointer = {
-      x: (event.clientX - rect.left) * (960 / Math.max(1, rect.width)),
-      y: (event.clientY - rect.top) * (540 / Math.max(1, rect.height)),
-      down: event.type !== "pointerup"
+      x: clamp((event.clientX - rect.left - viewport.x) / viewport.scale, 0, WORLD_WIDTH),
+      y: clamp((event.clientY - rect.top - viewport.y) / viewport.scale, 0, WORLD_HEIGHT),
+      down: event.type !== "pointerup" && event.type !== "pointercancel"
     };
     const mode = game().mode;
+    if (event.type === "pointerup" || event.type === "pointercancel") {
+      keys.delete(" ");
+      return;
+    }
     if (event.type === "pointerdown") {
+      canvas.setPointerCapture?.(event.pointerId);
       if (["shooter", "arena", "boss", "rhythm"].includes(mode)) keys.add(" ");
       if (mode === "clicker") clickAsteroid(pointer.x, pointer.y);
       if (mode === "sandbox") placeSandboxObject(sandboxTool, pointer.x, pointer.y);
-      if (mode === "builder") {
-        gameState.slots.push({ type: "platform", x: pointer.x, y: pointer.y });
-        addScore(24, "Đặt vật thể.");
-        draw();
-      }
+      if (mode === "builder") gameState.message = "Chọn Lõi, Biển, Rừng hoặc Thành phố để xây đúng tài nguyên.";
     }
   }
 
   function clickAsteroid(x, y) {
+    if (gameState.phase !== "playing") {
+      gameState.message = "Bấm Chơi trước khi khai thác asteroid.";
+      renderStatus();
+      return;
+    }
     const hit = gameState.objects.find((obj) => Math.hypot(obj.x - x, obj.y - y) < obj.r + 8);
     if (!hit) return;
     hit.hp -= 1;
+    gameFeel("hit", hit.x, hit.y, "DRILL");
     addScore(12, "Khoan asteroid.");
     if (hit.hp <= 0) {
       addScore(70, "Nhận quặng hiếm.");
@@ -1472,22 +2075,22 @@
     if (mode === "cipher") {
       const seq = gameState.modeData.sequence || [];
       const input = gameState.modeData.input || [];
-      return `<div class="ag-card ag-span"><h4>Mã hiện tại</h4><p class="ag-code">${seq.join(" ")}</p><p>Đã nhập: ${input.join(" ") || "..."}</p><div class="ag-grid">${["H", "A", "S", "T", "R", "13"].map((x) => `<button data-ag-action="cipher" data-value="${x}" class="ag-tile">${x}</button>`).join("")}</div></div>`;
+      return `<div class="ag-card ag-span ag-puzzle-stage"><div class="ag-puzzle-head"><span>Firewall cấp ${seq.length}</span><span>${gameState.lives} mạng</span></div><h4>Ghi nhớ và nhập đúng chuỗi</h4><p class="ag-code" aria-label="Chuỗi mã hiện tại">${seq.join(" ")}</p><p>Đã nhập: <b>${input.join(" ") || "Chưa nhập"}</b> · ${input.length}/${seq.length}</p><div class="ag-grid">${["H", "A", "S", "T", "R", "13"].map((x) => `<button data-ag-action="cipher" data-value="${x}" class="ag-tile">${x}</button>`).join("")}</div></div>`;
     }
     if (mode === "quiz") {
       const data = gameState.modeData;
       const q = questions[(data.question || 0) % questions.length];
-      return `<div class="ag-card ag-span"><h4>${q.q}</h4><div class="ag-grid">${q.choices.map((choice, index) => `<button data-ag-action="quiz" data-value="${index}" class="ag-tile">${choice}</button>`).join("")}</div><p>Đúng: ${data.correct || 0}/${data.question || 0}</p></div>`;
+      return `<div class="ag-card ag-span ag-puzzle-stage"><div class="ag-puzzle-head"><span>Câu ${Math.min(8, (data.question || 0) + 1)}/8</span><span>Đúng ${data.correct || 0}</span></div><div class="ag-question-meter"><i style="width:${clamp((data.question || 0) / 8 * 100, 0, 100)}%"></i></div><h4>${q.q}</h4><div class="ag-grid">${q.choices.map((choice, index) => `<button data-ag-action="quiz" data-value="${index}" class="ag-tile">${choice}</button>`).join("")}</div></div>`;
     }
     if (mode === "match") {
-      return `<div class="ag-card ag-span"><h4>Nebula Puzzle</h4><div class="ag-board">${gameState.slots.map((cell, index) => `<button data-ag-action="match" data-value="${index}" class="ag-cell ${gameState.selected === index ? "is-selected" : ""}">${cell}</button>`).join("")}</div></div>`;
+      return `<div class="ag-card ag-span ag-puzzle-stage"><div class="ag-puzzle-head"><span>Nebula Puzzle</span><span>${gameState.modeData.matches || 0}/10 cặp</span></div><div class="ag-board">${gameState.slots.map((cell, index) => `<button data-ag-action="match" data-value="${index}" ${cell === "☆" ? "disabled" : ""} class="ag-cell ${cell === "☆" ? "is-matched" : ""} ${gameState.selected === index ? "is-selected" : ""}">${cell}</button>`).join("")}</div></div>`;
     }
     if (mode === "board") {
-      return `<div class="ag-card ag-span"><h4>Space Chess</h4><div class="ag-board">${gameState.slots.map((cell, index) => `<button data-ag-action="board" data-value="${index}" class="ag-cell ${gameState.selected === index ? "is-selected" : ""}">${cell}</button>`).join("")}</div></div>`;
+      return `<div class="ag-card ag-span ag-puzzle-stage"><div class="ag-puzzle-head"><span>Space Chess · Lượt ${gameState.modeData.turn || 1}</span><span>${gameState.modeData.captures || 0} lần chiếm</span></div><div class="ag-board ag-chess-board">${gameState.slots.map((cell, index) => `<button data-ag-action="board" data-value="${index}" class="ag-cell ${cell ? "has-piece" : ""} ${gameState.selected === index ? "is-selected" : ""}">${cell}</button>`).join("")}</div><p>Chọn quân rồi di chuyển sang ô kề cạnh. Chiếm quân để tăng điểm nhanh.</p></div>`;
     }
     if (mode === "card") {
       const data = gameState.modeData;
-      return `<div class="ag-card ag-span"><h4>Cosmic Card Battle</h4><p>Bạn: ${data.playerHp} HP - Đối thủ: ${data.enemyHp} HP</p><div class="ag-grid">${[["strike", "Nova Strike"], ["shield", "Shield Bloom"], ["draw", "Comet Draw"]].map(([id, label]) => `<button data-ag-action="card" data-value="${id}" class="ag-tile">${label}</button>`).join("")}</div></div>`;
+      return `<div class="ag-card ag-span ag-card-arena"><div class="ag-versus"><div><small>BẠN · HP</small><b>${Math.max(0, data.playerHp)}</b><i style="--hp:${clamp(data.playerHp / 130, 0, 1)}"></i></div><strong>VS</strong><div><small>ĐỐI THỦ · HP</small><b>${Math.max(0, data.enemyHp)}</b><i style="--hp:${clamp(data.enemyHp / 160, 0, 1)}"></i></div></div><p>Năng lượng <b>${data.energy}/5</b> · Khiên <b>${data.shield || 0}</b> · Lượt ${data.turn || 1}</p><div class="ag-grid">${[["strike", "Nova Strike · 2 NL"], ["shield", "Shield Bloom · 1 NL"], ["draw", "Comet Draw · +NL"]].map(([id, label]) => `<button data-ag-action="card" data-value="${id}" class="ag-tile">${label}</button>`).join("")}</div></div>`;
     }
     if (mode === "sandbox") {
       const level = activeLevel();
@@ -1521,7 +2124,30 @@
       tycoon: [["shop", "Cửa hàng"], ["hotel", "Khách sạn"], ["dock", "Bến tàu"], ["ad", "Quảng cáo"]],
       sandbox: [["ship", "Tàu"], ["planet", "Hành tinh"], ["gate", "Cổng"], ["station", "Trạm"]]
     };
-    return `<div class="ag-panel">${(actionsByMode[mode] || []).map(([id, label]) => `<div class="ag-card"><h4>${label}</h4><p>Tác vụ riêng của ${game().title}. Tài nguyên và điểm tăng theo lượt.</p><button data-ag-action="${mode}" data-value="${id}">Dùng</button></div>`).join("")}</div><canvas class="ag-canvas ag-mini-canvas" data-ag-canvas tabindex="0"></canvas>`;
+    const status = modeTelemetry(mode);
+    return `<div class="ag-mode-dashboard">
+      <div class="ag-mode-telemetry">${status.map(([label, value]) => `<span><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></span>`).join("")}</div>
+      <div class="ag-panel">${(actionsByMode[mode] || []).map(([id, label]) => {
+        const info = ACTION_INFO[id] || [label, `Tác vụ riêng của ${game().title}`];
+        return `<div class="ag-card" style="--card-accent:${game().color}"><span class="ag-card-signal" aria-hidden="true"></span><h4>${escapeHtml(info[0])}</h4><p>${escapeHtml(info[1])}</p><button data-ag-action="${mode}" data-value="${id}">Kích hoạt</button></div>`;
+      }).join("")}</div>
+      <canvas class="ag-canvas ag-mini-canvas" data-ag-canvas tabindex="0" aria-label="Mô phỏng trực quan ${escapeHtml(game().title)}"></canvas>
+    </div>`;
+  }
+
+  function modeTelemetry(mode) {
+    const labels = MODE_STATUS[mode] || ["Tiến độ", "Tài nguyên"];
+    const data = gameState.modeData || {};
+    const values = {
+      colony: [`${Math.round(gameState.resources.power)}%`, `${gameState.slots.length}/${gameState.target}`],
+      farm: [`${Math.round(data.growth || 0)}%`, `${data.harvested || 0}/${gameState.target}`],
+      fishing: [`${Math.round(data.depth || 1)}m`, `${data.rare || 0} hiếm`],
+      builder: [`${Math.round(data.stability || 100)}%`, `${gameState.slots.length}/${gameState.target}`],
+      pet: [`${Math.round(gameState.resources.love)}`, `Cấp ${data.stage || 1}`],
+      dungeon: [`${data.room || 1}/${gameState.target}`, `${gameState.lives} mạng`],
+      tycoon: [`+${data.income || 0}/s`, `${gameState.slots.length}/${gameState.target}`]
+    }[mode] || [`${Math.round(gameState.score)}`, `${Math.round(gameState.energy)}%`];
+    return [[labels[0], String(values[0])], [labels[1], String(values[1])], ["Tài nguyên", `${Math.round(gameState.resources.coins)} coin`], ["Checkpoint", `${Math.round(clamp(gameState.score / Math.max(1, gameState.target), 0, 1) * 100)}%`]];
   }
 
   function overlayMarkup() {
@@ -1530,10 +2156,10 @@
       return `<div class="ag-overlay" role="dialog" aria-modal="true" aria-labelledby="ag-tutorial-title">
         <div class="ag-modal ag-tutorial">
           <p class="ag-kicker">${engineFor().toUpperCase()} ENGINE</p>
-          <h3 id="ag-tutorial-title">Huong dan ${escapeHtml(game().title)}</h3>
+          <h3 id="ag-tutorial-title">Hướng dẫn ${escapeHtml(game().title)}</h3>
           <p>${escapeHtml(rule.objective)}</p>
           <ol>${rule.tutorial.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>
-          <div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-tutorial-start>Bat dau</button><button type="button" data-ag-tutorial-skip>Bo qua lan sau</button></div>
+          <div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-tutorial-start>Bắt đầu</button><button type="button" data-ag-tutorial-skip>Bỏ qua lần sau</button></div>
         </div>
       </div>`;
     }
@@ -1542,14 +2168,14 @@
       return `<div class="ag-overlay" role="dialog" aria-modal="true" aria-labelledby="ag-settings-title">
         <div class="ag-modal">
           <p class="ag-kicker">GAME SETTINGS</p>
-          <h3 id="ag-settings-title">Cai dat phien choi</h3>
-          <label class="ag-setting-row">Do kho<select data-ag-setting="difficulty">${Object.values(DIFFICULTIES).map((item) => `<option value="${item.id}" ${settings.difficulty === item.id ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
-          <label class="ag-setting-row">Am luong<input type="range" min="0" max="1" step="0.05" value="${settings.volume ?? 0.55}" data-ag-setting="volume"><output data-ag-volume>${Math.round((settings.volume ?? 0.55) * 100)}%</output></label>
-          <label class="ag-setting-check"><input type="checkbox" data-ag-setting="muted" ${settings.muted ? "checked" : ""}> Tat am thanh</label>
-          <label class="ag-setting-check"><input type="checkbox" data-ag-setting="reducedEffects" ${settings.reducedEffects ? "checked" : ""}> Giam hieu ung</label>
-          <label class="ag-setting-row">Chat luong<select data-ag-setting="quality">${["auto", "low", "medium", "high"].map((item) => `<option value="${item}" ${settings.quality === item ? "selected" : ""}>${item}</option>`).join("")}</select></label>
-          <p class="ag-help">FPS hien tai: <b data-ag-modal-fps>${Math.round(fpsValue)}</b>. Gamepad duoc tu nhan dien neu trinh duyet ho tro.</p>
-          <div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-settings-close>Dong</button></div>
+          <h3 id="ag-settings-title">Cài đặt phiên chơi</h3>
+          <label class="ag-setting-row">Độ khó<select data-ag-setting="difficulty">${Object.values(DIFFICULTIES).map((item) => `<option value="${item.id}" ${settings.difficulty === item.id ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
+          <label class="ag-setting-row">Âm lượng<input type="range" min="0" max="1" step="0.05" value="${settings.volume ?? 0.55}" data-ag-setting="volume"><output data-ag-volume>${Math.round((settings.volume ?? 0.55) * 100)}%</output></label>
+          <label class="ag-setting-check"><input type="checkbox" data-ag-setting="muted" ${settings.muted ? "checked" : ""}> Tắt âm thanh</label>
+          <label class="ag-setting-check"><input type="checkbox" data-ag-setting="reducedEffects" ${settings.reducedEffects ? "checked" : ""}> Giảm hiệu ứng</label>
+          <label class="ag-setting-row">Chất lượng<select data-ag-setting="quality">${["auto", "low", "medium", "high"].map((item) => `<option value="${item}" ${settings.quality === item ? "selected" : ""}>${item}</option>`).join("")}</select></label>
+          <p class="ag-help">FPS hiện tại: <b data-ag-modal-fps>${Math.round(fpsValue)}</b>. Gamepad được tự nhận diện nếu trình duyệt hỗ trợ.</p>
+          <div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-settings-close>Đóng</button></div>
         </div>
       </div>`;
     }
@@ -1557,9 +2183,9 @@
       return `<div class="ag-overlay" role="alertdialog" aria-modal="true" aria-labelledby="ag-error-title">
         <div class="ag-modal ag-error">
           <p class="ag-kicker">RUNTIME ERROR</p>
-          <h3 id="ag-error-title">Game gap su co</h3>
+          <h3 id="ag-error-title">Game gặp sự cố</h3>
           <p>${escapeHtml(runtimeError.message)}</p>
-          <div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-runtime-retry>Thu lai</button><button type="button" data-ag-runtime-dismiss>Dong</button></div>
+          <div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-runtime-retry>Thử lại</button><button type="button" data-ag-runtime-dismiss>Đóng</button></div>
         </div>
       </div>`;
     }
@@ -1568,16 +2194,16 @@
       return `<div class="ag-overlay" role="dialog" aria-modal="true" aria-labelledby="ag-result-title">
         <div class="ag-modal ag-result ${won ? "is-win" : "is-loss"}">
           <p class="ag-kicker">${won ? "MISSION COMPLETE" : "ROUND OVER"}</p>
-          <h3 id="ag-result-title">${won ? "Chien thang" : "Ket thuc luot choi"}</h3>
+          <h3 id="ag-result-title">${won ? "Chiến thắng" : "Kết thúc lượt chơi"}</h3>
           <p>${escapeHtml(gameState.resultReason || gameState.message || "")}</p>
           <div class="ag-result-grid"><b>${Math.floor(gameState.score || 0)}<small>Score</small></b><b>${Math.round((gameState.level || 1) * difficultyFor().reward * 10)}<small>XP</small></b><b>${gameState.performance?.fps || 60}<small>FPS</small></b></div>
-          <div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-result-restart>Choi lai</button><button type="button" data-ag-result-close>Ve danh sach</button></div>
+          <div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-result-restart>Chơi lại</button><button type="button" data-ag-result-close>Về danh sách</button></div>
         </div>
       </div>`;
     }
     if (gameState.phase === "paused") {
       return `<div class="ag-overlay" role="dialog" aria-modal="true" aria-labelledby="ag-pause-title">
-        <div class="ag-modal"><p class="ag-kicker">PAUSED</p><h3 id="ag-pause-title">Tam dung</h3><p>Checkpoint da duoc luu tren thiet bi. Ban co the tiep tuc hoac choi lai.</p><div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-resume>Tiep tuc</button><button type="button" data-ag-result-restart>Choi lai</button></div></div>
+        <div class="ag-modal"><p class="ag-kicker">PAUSED</p><h3 id="ag-pause-title">Tạm dừng</h3><p>Checkpoint đã được lưu trên thiết bị. Bạn có thể tiếp tục hoặc chơi lại.</p><div class="ag-modal-actions"><button type="button" class="is-primary" data-ag-resume>Tiếp tục</button><button type="button" data-ag-result-restart>Chơi lại</button></div></div>
       </div>`;
     }
     return "";
@@ -1642,6 +2268,42 @@
       tutorialVisible = !saveData.tutorials[active];
       render();
     });
+    const overlay = slot.querySelector(".ag-overlay");
+    const shell = root.querySelector(".hh-arcade");
+    Array.from(shell?.children || []).forEach((child) => {
+      if (child === slot) return;
+      child.inert = Boolean(overlay);
+      if (overlay) child.setAttribute("aria-hidden", "true");
+      else child.removeAttribute("aria-hidden");
+    });
+    if (!overlay) {
+      slot.onkeydown = null;
+      if (gameState.phase === "playing") canvas?.focus({ preventScroll: true });
+      return;
+    }
+    const modal = overlay.querySelector(".ag-modal");
+    if (modal) modal.tabIndex = -1;
+    const focusableSelector = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const initialFocus = overlay.querySelector(focusableSelector) || modal;
+    initialFocus?.focus({ preventScroll: true });
+    slot.onkeydown = (event) => {
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(overlay.querySelectorAll(focusableSelector)).filter((item) => !item.hidden);
+      if (!focusable.length) {
+        event.preventDefault();
+        modal?.focus({ preventScroll: true });
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
+    };
   }
 
   function setDifficulty(value) {
@@ -1663,7 +2325,8 @@
       fps: root.querySelector("[data-ag-fps]"),
       target: root.querySelector("[data-ag-target]"),
       save: root.querySelector("[data-ag-save]"),
-      network: root.querySelector("[data-ag-network]")
+      network: root.querySelector("[data-ag-network]"),
+      progress: root.querySelector("[data-ag-progress]")
     };
     if (nodes.score) nodes.score.textContent = Math.floor(gameState.score || 0);
     if (nodes.combo) nodes.combo.textContent = `x${gameState.combo || 1}`;
@@ -1675,6 +2338,7 @@
     if (nodes.target) nodes.target.textContent = `${Math.floor(gameState.score || 0)} / ${gameState.target || targetFor()}`;
     if (nodes.save) nodes.save.textContent = networkOnline && opts.cloudConfirmed === true ? "Cloud confirmed" : "Local device";
     if (nodes.network) nodes.network.textContent = networkOnline ? "Online" : "Offline";
+    if (nodes.progress) nodes.progress.style.width = `${clamp((gameState.score || 0) / Math.max(1, gameState.target || 1) * 100, 0, 100)}%`;
   }
 
   function renderPlayfield() {
@@ -1711,6 +2375,7 @@
           <span class="ag-runtime-chip" data-ag-save>${opts.cloudConfirmed === true ? "Cloud confirmed" : "Local device"}</span>
           <span class="ag-runtime-chip" data-ag-fps>60 FPS</span>
           <button type="button" data-ag-settings>Cài đặt</button>
+          <button type="button" data-ag-fullscreen aria-label="Mở game toàn màn hình">⛶</button>
         </div>
         <div class="ag-toolbar">
           <input data-ag-search aria-label="Tìm game Arcade" value="${escapeHtml(query)}" placeholder="Tìm game, thể loại, mode...">
@@ -1732,15 +2397,15 @@
                 <button class="is-primary" type="button" data-ag-start>${gameState.phase === "paused" ? "Tiếp tục" : "Chơi"}</button>
                 <button type="button" data-ag-pause>Tạm dừng</button>
                 <button type="button" data-ag-reset>Chơi lại</button>
-                <button type="button" data-ag-end>Lưu điểm & XP</button>
+                <button type="button" data-ag-end>Kết thúc lượt</button>
                 ${canContinue() && gameState.phase === "ready" ? `<button type="button" data-ag-continue>Khôi phục</button>` : ""}
                 <label class="ag-inline-select">Độ khó<select data-ag-difficulty>${Object.values(DIFFICULTIES).map((item) => `<option value="${item.id}" ${difficultyFor().id === item.id ? "selected" : ""}>${item.label}</option>`).join("")}</select></label>
               </div>
             </div>
             <div class="ag-playfield" data-ag-playfield>${playfieldMarkup()}</div>
-            <div class="ag-touch" aria-label="Điều khiển cảm ứng">
-              <button type="button" data-ag-key="ArrowLeft" aria-label="Trái">←</button><button type="button" data-ag-key="ArrowUp" aria-label="Lên">↑</button><button type="button" data-ag-key="ArrowDown" aria-label="Xuống">↓</button><button type="button" data-ag-key="ArrowRight" aria-label="Phải">→</button><button type="button" data-ag-key=" ">Bắn/Beat</button>
-            </div>
+            ${["runner", "shooter", "rhythm", "survival", "arena", "escape", "boss", "sandbox"].includes(g.mode) ? `<div class="ag-touch" aria-label="Điều khiển cảm ứng">
+              <button type="button" data-ag-key="ArrowLeft" aria-label="Trái">←</button><button type="button" data-ag-key="ArrowUp" aria-label="Lên">↑</button><button type="button" data-ag-key="ArrowDown" aria-label="Xuống">↓</button><button type="button" data-ag-key="ArrowRight" aria-label="Phải">→</button><button type="button" data-ag-key=" ">Hành động</button>
+            </div>` : ""}
           </main>
           <aside class="ag-side">
             <button class="ag-fav ${favs.has(g.id) ? "is-active" : ""}" data-ag-favorite>${favs.has(g.id) ? "Đã yêu thích" : "Yêu thích"}</button>
@@ -1749,13 +2414,13 @@
             <p><span class="ag-mode-label">Lưu local · ${SCHEMA}</span></p>
             <p class="ag-objective"><b>Mục tiêu</b><br>${escapeHtml(ruleFor().objective)}</p>
             <button type="button" data-ag-replay ${latestReplay() ? "" : "disabled"}>Xem replay local gần nhất</button>
-            <div class="ag-progress"><span style="width:${clamp((gameState.score || 0) % 100, 0, 100)}%"></span></div>
+            <div class="ag-progress" aria-label="Tiến độ mục tiêu"><span data-ag-progress style="width:${clamp((gameState.score || 0) / Math.max(1, gameState.target || 1) * 100, 0, 100)}%"></span></div>
             <h3>Gần đây</h3>
             <div class="ag-log">${(saveData.recent || []).slice(0, 6).map((id) => `<div>${gameById(id).title}: ${saveData[id]?.high || 0}</div>`).join("") || "<div>Chưa có lượt chơi.</div>"}</div>
             <h3>Nhiệm vụ</h3>
             <div class="ag-mission-list"><span>Hôm nay: ${saveData.missions?.dailyPlays || 0}/3 lượt</span><span>Thắng: ${saveData.missions?.dailyWins || 0}/1</span><span>Tuần: ${saveData.missions?.weeklyScore || 0} điểm</span></div>
             <h3>Mẹo điều khiển</h3>
-            <p id="ag-keyboard-help">WASD/phím mũi tên, Space, cảm ứng hoặc gamepad. Canvas có focus để nhận phím. Hết mạng chỉ ảnh hưởng dịch vụ cloud/realtime; chơi local vẫn tiếp tục.</p>
+            <p id="ag-keyboard-help">WASD/phím mũi tên để di chuyển · Space hành động/boost · P hoặc Esc tạm dừng · R chơi lại · Enter bắt đầu. Có cảm ứng và gamepad.</p>
           </aside>
         </div>
         <div class="ag-overlay-slot" data-ag-overlay>${overlayMarkup()}</div>
@@ -1763,12 +2428,15 @@
     bindDom();
     bindPlayfield();
     draw();
+    updateFullscreenLabel();
   }
 
   function bindDom() {
     root.querySelectorAll("[data-ag-game]").forEach((button) => button.addEventListener("click", () => {
+      saveCheckpoint(true);
       stopLoop();
       active = button.dataset.agGame;
+      syncActiveRoute(active);
       recordRecent(active);
       resetGame();
       tutorialVisible = !saveData.tutorials[active];
@@ -1781,12 +2449,16 @@
     }));
     root.querySelector("[data-ag-search]")?.addEventListener("input", (event) => {
       query = event.target.value;
+      const caret = event.target.selectionStart ?? query.length;
       render();
+      const nextSearch = root?.querySelector("[data-ag-search]");
+      nextSearch?.focus({ preventScroll: true });
+      nextSearch?.setSelectionRange?.(caret, caret);
     });
     root.querySelector("[data-ag-start]")?.addEventListener("click", () => { start(); canvas?.focus(); });
     root.querySelector("[data-ag-pause]")?.addEventListener("click", pause);
     root.querySelector("[data-ag-reset]")?.addEventListener("click", restart);
-    root.querySelector("[data-ag-end]")?.addEventListener("click", () => finishRound("Đã nhận thưởng"));
+    root.querySelector("[data-ag-end]")?.addEventListener("click", () => finishRound("Đã kết thúc lượt chơi", "quit"));
     root.querySelector("[data-ag-favorite]")?.addEventListener("click", () => toggleFavorite(active));
     root.querySelector("[data-ag-replay]")?.addEventListener("click", startLocalReplay);
     root.querySelector("[data-ag-continue]")?.addEventListener("click", continueSavedGame);
@@ -1795,6 +2467,7 @@
       tutorialVisible = false;
       renderOverlay();
     });
+    root.querySelector("[data-ag-fullscreen]")?.addEventListener("click", toggleFullscreen);
     root.querySelector("[data-ag-difficulty]")?.addEventListener("change", (event) => setDifficulty(event.target.value));
     root.querySelectorAll("[data-ag-key]").forEach((button) => {
       button.addEventListener("pointerdown", () => keys.add(button.dataset.agKey));
@@ -1812,8 +2485,7 @@
       canvas.addEventListener("pointerdown", canvasPointer);
       canvas.addEventListener("pointermove", canvasPointer);
       canvas.addEventListener("pointerup", canvasPointer);
-      canvas.addEventListener("keydown", keyDown);
-      canvas.addEventListener("keyup", keyUp);
+      canvas.addEventListener("pointercancel", canvasPointer);
       canvas.addEventListener("blur", () => keys.clear());
     }
     root.querySelectorAll("[data-ag-action]").forEach((button) => {
@@ -1832,6 +2504,32 @@
 
   function gameById(id) {
     return games.find((item) => item.id === id) || games[0];
+  }
+
+  function syncActiveRoute(gameId) {
+    if (!window.location?.hash?.startsWith("#/entertainment/arcade")) return;
+    const nextHash = `#/entertainment/arcade/${encodeURIComponent(gameId)}`;
+    if (window.location.hash === nextHash) return;
+    window.history?.replaceState?.(window.history.state, document.title, `${window.location.pathname}${window.location.search}${nextHash}`);
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (root?.requestFullscreen) await root.requestFullscreen();
+      else throw new Error("Thiết bị không hỗ trợ toàn màn hình.");
+    } catch (error) {
+      gameState.message = cleanText(error?.message || "Không thể mở toàn màn hình.", 120);
+      renderStatus();
+    }
+  }
+
+  function updateFullscreenLabel() {
+    const button = root?.querySelector("[data-ag-fullscreen]");
+    if (!button) return;
+    const activeFullscreen = document.fullscreenElement === root;
+    button.setAttribute("aria-label", activeFullscreen ? "Thoát toàn màn hình" : "Mở game toàn màn hình");
+    button.title = activeFullscreen ? "Thoát toàn màn hình" : "Mở toàn màn hình";
   }
 
   function escapeHtml(value) {
@@ -1856,6 +2554,9 @@
       return;
     }
     if (["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName)) return;
+    if ((event.key === "p" || event.key === "P") && sessionStartedAt) { event.preventDefault(); pause(); return; }
+    if ((event.key === "r" || event.key === "R") && sessionStartedAt) { event.preventDefault(); restart(); return; }
+    if (event.key === "Enter" && gameState.phase === "ready") { event.preventDefault(); start(); return; }
     keys.add(event.key);
     if ([" ", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) event.preventDefault();
   }
@@ -1879,26 +2580,38 @@
     root.className = "hh-arcade-root";
     hostNode.appendChild(root);
     root.addEventListener("keydown", keyDown);
-    active = options.initialGameId || active;
+    root.addEventListener("keyup", keyUp);
+    active = games.some((item) => item.id === options.initialGameId) ? options.initialGameId : active;
     saveData = load();
     ensureMissionWindow();
     runtimeBridge = createRuntimeBridge();
     networkOnline = typeof navigator === "undefined" ? true : navigator.onLine !== false;
     window.addEventListener("online", onlineHandler);
     window.addEventListener("offline", offlineHandler);
+    document.addEventListener("visibilitychange", visibilityHandler);
+    document.addEventListener("fullscreenchange", fullscreenHandler);
     resetGame();
     tutorialVisible = !saveData.tutorials[active];
     settingsVisible = false;
     render();
+    updateFullscreenLabel();
+    gamepadMonitorRaf = requestAnimationFrame(monitorGamepad);
     window.dispatchEvent(new CustomEvent("hh:game-arcade-ready", { detail: inspect() }));
     return inspect();
   }
 
   function destroy() {
+    saveCheckpoint(true);
     stopLoop();
     cancelAnimationFrame(raf);
+    cancelAnimationFrame(gamepadMonitorRaf);
+    gamepadMonitorRaf = 0;
     keys.clear();
     gamepadButtons.clear();
+    gamepadJustPressed.clear();
+    gamepadPhysicalButtons.clear();
+    if (audioContext && typeof audioContext.close === "function") audioContext.close().catch(() => {});
+    audioContext = null;
     callRuntimeBridge("destroy");
   }
 
@@ -1906,6 +2619,8 @@
     destroy();
     window.removeEventListener("online", onlineHandler);
     window.removeEventListener("offline", offlineHandler);
+    document.removeEventListener("visibilitychange", visibilityHandler);
+    document.removeEventListener("fullscreenchange", fullscreenHandler);
     callRuntimeBridge("unmount");
     if (root?.parentNode) root.parentNode.removeChild(root);
     root = null;

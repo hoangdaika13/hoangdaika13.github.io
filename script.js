@@ -6023,6 +6023,7 @@ function initAppShell() {
     document.body.classList.toggle("app-comic-motion-route", route === "/comic-motion-studio");
     document.body.classList.toggle("app-comic-reader-route", route === "/comic-reader");
     document.body.classList.toggle("app-cinematic-game-route", route === "/entertainment/cinematic-arcade" || route.startsWith("/entertainment/cinematic-arcade/"));
+    document.body.classList.toggle("app-arcade-game-route", route === "/entertainment/arcade" || route.startsWith("/entertainment/arcade/"));
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));

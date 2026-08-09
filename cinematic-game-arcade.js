@@ -1,7 +1,7 @@
 (function bootstrapHHCinematicGameArcade(global) {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "2.0.0";
   const STORAGE_SCHEMA = "hh.cinematic.arcade.v1";
   const CAMERA_MODES = ["chase", "shoulder", "flight", "lock-on", "orbit", "broadcast", "cinematic"];
   const QUALITY_LEVELS = {
@@ -9,6 +9,11 @@
     medium: { pixelRatio: 1.25, stars: 850, shadows: true, antialias: true, power: "default" },
     high: { pixelRatio: 1.75, stars: 1500, shadows: true, antialias: true, power: "high-performance" }
   };
+  const DIFFICULTIES = Object.freeze({
+    story: { id: "story", label: "Khám phá", time: 1.28, enemySpeed: 0.78, damage: 0.68, reward: 0.82 },
+    normal: { id: "normal", label: "Tiêu chuẩn", time: 1, enemySpeed: 1, damage: 1, reward: 1 },
+    veteran: { id: "veteran", label: "Điện ảnh+", time: 0.84, enemySpeed: 1.28, damage: 1.24, reward: 1.38 }
+  });
   const BLOCKED_KEYS = new Set(["__proto__", "prototype", "constructor"]);
   const GAME_DEFINITIONS = [
     {
@@ -250,6 +255,9 @@
       const labels = { auto: "Tự động", high: "Điện ảnh", medium: "Cân bằng", low: "Hiệu năng" };
       return `<option value="${quality}"${runtime.qualityPreference === quality ? " selected" : ""}>${labels[quality]}</option>`;
     }).join("");
+    const difficultyOptions = Object.values(DIFFICULTIES).map((difficulty) =>
+      `<option value="${difficulty.id}"${runtime.difficultyId === difficulty.id ? " selected" : ""}>${difficulty.label}</option>`
+    ).join("");
 
     runtime.root.innerHTML = `<section class="cga-app" data-cga-phase="loading" aria-label="Trung tâm game điện ảnh 3D">
       <header class="cga-topbar">
@@ -274,16 +282,17 @@
                 <span><small>ĐIỂM</small><strong data-cga-score>0</strong></span>
               </div>
             </div>
-            <div class="cga-health" aria-label="Sinh lực"><span data-cga-health></span></div>
+            <div class="cga-health" role="progressbar" aria-label="Sinh lực" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span data-cga-health></span></div>
+            <div class="cga-boost-meter" aria-label="Năng lượng tăng tốc"><span>BOOST</span><i role="progressbar" aria-label="Năng lượng boost" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><b data-cga-boost-fill></b></i><strong data-cga-boost-value>100</strong></div>
             <div class="cga-crosshair" aria-hidden="true"><i></i><i></i></div>
             <div class="cga-camera-badge"><span>CAM</span><strong data-cga-camera>CHASE</strong></div>
             <div class="cga-message" data-cga-message aria-live="assertive" hidden></div>
-            <div class="cga-start-overlay" data-cga-overlay>
+            <div class="cga-start-overlay" data-cga-overlay role="dialog" aria-modal="true" aria-labelledby="cga-overlay-title">
               <span class="cga-kicker" data-cga-overlay-kicker>SẴN SÀNG TRIỂN KHAI</span>
-              <h2 data-cga-overlay-title></h2>
+              <h2 id="cga-overlay-title" data-cga-overlay-title></h2>
               <p data-cga-overlay-copy></p>
               <button class="cga-primary" type="button" data-cga-action="start">Bắt đầu nhiệm vụ</button>
-              <small>WASD / Mũi tên · Space hành động · Shift tăng tốc · C đổi camera · Esc tạm dừng</small>
+              <small>WASD / Mũi tên · Gamepad · Space hành động · Shift tăng tốc · C đổi camera · Esc tạm dừng</small>
             </div>
             <div class="cga-touch-controls" data-cga-touch aria-label="Điều khiển cảm ứng">
               <div class="cga-touch-pad">
@@ -304,6 +313,8 @@
               <button type="button" data-cga-action="camera">Đổi camera <kbd>C</kbd></button>
               <button type="button" data-cga-action="pause">Tạm dừng <kbd>Esc</kbd></button>
               <button type="button" data-cga-action="restart">Chơi lại</button>
+              <button type="button" data-cga-action="mute" aria-label="Bật hoặc tắt âm thanh"><span data-cga-audio-label>Âm</span></button>
+              <button type="button" data-cga-action="fullscreen" aria-label="Mở toàn màn hình">⛶</button>
             </div>
           </div>
         </main>
@@ -313,7 +324,7 @@
             <h3 data-cga-mission-title></h3>
             <p data-cga-mission-copy></p>
             <div class="cga-progress-row"><span>Tiến độ</span><strong data-cga-progress-label>0%</strong></div>
-            <div class="cga-progress"><span data-cga-progress></span></div>
+            <div class="cga-progress" role="progressbar" aria-label="Tiến độ nhiệm vụ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span data-cga-progress></span></div>
             <div class="cga-reward"><span>Phần thưởng tối đa</span><strong data-cga-reward></strong></div>
           </div>
           <div class="cga-control-card">
@@ -323,8 +334,10 @@
           </div>
           <div class="cga-settings-card">
             <div class="cga-setting"><label for="cga-quality">Chất lượng hình ảnh</label><select id="cga-quality" data-cga-quality>${qualityOptions}</select></div>
+            <div class="cga-setting"><label for="cga-difficulty">Độ khó nhiệm vụ</label><select id="cga-difficulty" data-cga-difficulty>${difficultyOptions}</select></div>
             <div class="cga-setting"><span>FPS thời gian thực</span><strong data-cga-fps>--</strong></div>
             <div class="cga-setting"><span>Đồ họa đang dùng</span><strong data-cga-quality-label>--</strong></div>
+            <div class="cga-setting"><span>Thiết bị điều khiển</span><strong data-cga-input>Bàn phím / chạm</strong></div>
             <div class="cga-setting"><span>Giảm chuyển động</span><strong data-cga-motion>${runtime.reducedMotion ? "Bật" : "Tắt"}</strong></div>
           </div>
         </aside>
@@ -342,7 +355,10 @@
       overlayCopy: query("[data-cga-overlay-copy]"), tip: query("[data-cga-tip]"), missionTitle: query("[data-cga-mission-title]"),
       missionCopy: query("[data-cga-mission-copy]"), progressLabel: query("[data-cga-progress-label]"),
       progress: query("[data-cga-progress]"), reward: query("[data-cga-reward]"), controls: query("[data-cga-controls]"),
-      fps: query("[data-cga-fps]"), qualityLabel: query("[data-cga-quality-label]"), quality: query("[data-cga-quality]")
+      fps: query("[data-cga-fps]"), qualityLabel: query("[data-cga-quality-label]"), quality: query("[data-cga-quality]"),
+      difficulty: query("[data-cga-difficulty]"), input: query("[data-cga-input]"), audioLabel: query("[data-cga-audio-label]"),
+      boostFill: query("[data-cga-boost-fill]"), boostValue: query("[data-cga-boost-value]"),
+      fullscreen: query('[data-cga-action="fullscreen"]')
     };
   }
 
@@ -437,6 +453,7 @@
   }
 
   function bindRendererLifecycle(runtime, renderer) {
+    if (runtime.rendererCleanup) runtime.rendererCleanup();
     const onContextLost = (event) => {
       event.preventDefault();
       if (runtime.destroyed || renderer !== runtime.renderer) return;
@@ -448,8 +465,13 @@
       if (runtime.destroyed || renderer !== runtime.renderer) return;
       mount(runtime.host, runtime.options);
     };
-    addListener(runtime, renderer.domElement, "webglcontextlost", onContextLost);
-    addListener(runtime, renderer.domElement, "webglcontextrestored", onContextRestored);
+    renderer.domElement.addEventListener("webglcontextlost", onContextLost);
+    renderer.domElement.addEventListener("webglcontextrestored", onContextRestored);
+    runtime.rendererCleanup = () => {
+      renderer.domElement.removeEventListener("webglcontextlost", onContextLost);
+      renderer.domElement.removeEventListener("webglcontextrestored", onContextRestored);
+      if (runtime.rendererCleanup) runtime.rendererCleanup = null;
+    };
   }
 
   function resize(runtime) {
@@ -671,13 +693,15 @@
     runtime.effects = [];
     runtime.game = gameById(runtime.gameId);
     runtime.elapsed = 0;
-    runtime.timeLeft = runtime.game.time;
+    runtime.timeLeft = Math.round(runtime.game.time * runtime.difficulty.time);
     runtime.score = 0;
     runtime.objective = 0;
     runtime.health = 100;
     runtime.damageCooldown = 0;
     runtime.actionCooldown = 0;
     runtime.boostEnergy = 100;
+    runtime.gamepadBoost = false;
+    runtime.boostingPrevious = false;
     runtime.boss = null;
     runtime.ball = null;
     runtime.enemyScore = 0;
@@ -687,6 +711,7 @@
     runtime.cameraShake = 0;
     runtime.phase = "ready";
     runtime.ui.app.dataset.cgaPhase = "ready";
+    runtime.ui.app.classList.remove("is-boosting", "is-damaged");
     runtime.scene.clear();
     runtime.scene.background.set(0x02040d);
     runtime.scene.fog.color.set(runtime.game.id === "dragon-sky" ? 0x132140 : 0x050716);
@@ -782,7 +807,7 @@
     runtime.ui.overlay.hidden = false;
     runtime.ui.overlayKicker.textContent = "SẴN SÀNG TRIỂN KHAI";
     runtime.ui.overlayTitle.textContent = runtime.game.name;
-    runtime.ui.overlayCopy.textContent = runtime.game.objective;
+    runtime.ui.overlayCopy.textContent = `${runtime.game.objective} · ${runtime.difficulty.label}`;
     const button = runtime.ui.overlay.querySelector('[data-cga-action="start"]');
     if (button) button.textContent = "Bắt đầu nhiệm vụ";
   }
@@ -795,9 +820,11 @@
     runtime.ui.missionCopy.textContent = game.objective;
     runtime.ui.controls.textContent = game.controls;
     runtime.ui.tip.textContent = game.controls;
-    runtime.ui.reward.textContent = `${game.reward} coin + XP`;
+    runtime.ui.reward.textContent = `${Math.round(game.reward * runtime.difficulty.reward)} coin + XP`;
     runtime.ui.camera.textContent = runtime.cameraMode.toUpperCase();
     runtime.ui.qualityLabel.textContent = runtime.resolvedQuality === "high" ? "Điện ảnh" : runtime.resolvedQuality === "medium" ? "Cân bằng" : "Hiệu năng";
+    runtime.ui.difficulty.value = runtime.difficultyId;
+    runtime.ui.audioLabel.textContent = runtime.muted ? "Tắt âm" : "Âm";
     runtime.root.querySelectorAll("[data-cga-game]").forEach((button) => {
       const active = button.dataset.cgaGame === runtime.gameId;
       button.classList.toggle("is-active", active);
@@ -818,6 +845,7 @@
       runtime.ui.overlay.hidden = true;
       runtime.ui.status.textContent = "Nhiệm vụ đang diễn ra";
       runtime.ui.canvasShell.focus({ preventScroll: true });
+      playSfx(runtime, "start");
       return;
     }
     if (runtime.phase === "won" || runtime.phase === "lost") createGameWorld(runtime);
@@ -825,6 +853,7 @@
     runtime.autoPaused = false;
     runtime.ui.overlay.hidden = true;
     runtime.ui.status.textContent = "Nhiệm vụ đang diễn ra";
+    playSfx(runtime, "start");
     const record = runtime.progress.games[runtime.gameId] || { wins: 0, plays: 0, bestScore: 0, bestTime: 0 };
     record.plays += 1;
     runtime.progress.games[runtime.gameId] = record;
@@ -872,6 +901,119 @@
     }, runtime.reducedMotion ? 1200 : 2200);
   }
 
+  function ensureAudio(runtime) {
+    if (!runtime || runtime.muted) return null;
+    const AudioCtor = global.AudioContext || global.webkitAudioContext;
+    if (!AudioCtor) return null;
+    try {
+      if (!runtime.audioContext) runtime.audioContext = new AudioCtor();
+      if (runtime.audioContext.state === "suspended") runtime.audioContext.resume().catch(() => {});
+      return runtime.audioContext;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function playSfx(runtime, kind = "action") {
+    const context = ensureAudio(runtime);
+    if (!context) return;
+    const profile = {
+      start: [260, 520, 0.14, "sine"],
+      action: [620, 180, 0.09, "sawtooth"],
+      boost: [150, 360, 0.12, "triangle"],
+      hit: [110, 54, 0.16, "square"],
+      score: [520, 880, 0.16, "sine"],
+      win: [420, 980, 0.32, "triangle"],
+      loss: [180, 62, 0.3, "sawtooth"]
+    }[kind] || [420, 240, 0.1, "sine"];
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = profile[3];
+    oscillator.frequency.setValueAtTime(profile[0], now);
+    oscillator.frequency.exponentialRampToValueAtTime(Math.max(24, profile[1]), now + profile[2]);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.055, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + profile[2]);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + profile[2] + 0.02);
+  }
+
+  function toggleAudio(runtime) {
+    runtime.muted = !runtime.muted;
+    try { global.localStorage?.setItem(`${STORAGE_SCHEMA}.muted`, String(runtime.muted)); } catch (error) { /* Optional setting. */ }
+    if (runtime.ui.audioLabel) runtime.ui.audioLabel.textContent = runtime.muted ? "Tắt âm" : "Âm";
+    if (!runtime.muted) playSfx(runtime, "start");
+    toast(runtime, runtime.muted ? "Đã tắt âm thanh game" : "Đã bật âm thanh game");
+  }
+
+  function deadzone(value, threshold = 0.16) {
+    const number = Number(value) || 0;
+    if (Math.abs(number) < threshold) return 0;
+    return clamp((Math.abs(number) - threshold) / (1 - threshold) * Math.sign(number), -1, 1);
+  }
+
+  function pollGamepad(runtime) {
+    const pads = typeof global.navigator?.getGamepads === "function" ? Array.from(global.navigator.getGamepads() || []) : [];
+    const pad = pads.find(Boolean);
+    const wasConnected = runtime.gamepadConnected;
+    runtime.gamepadConnected = Boolean(pad);
+    if (!pad) {
+      runtime.gamepadAxes.x = 0;
+      runtime.gamepadAxes.y = 0;
+      runtime.gamepadBoost = false;
+      runtime.gamepadButtons.clear();
+      if (wasConnected && runtime.ui.input) runtime.ui.input.textContent = "Bàn phím / chạm";
+      return;
+    }
+    runtime.gamepadAxes.x = deadzone(pad.axes?.[0]);
+    runtime.gamepadAxes.y = -deadzone(pad.axes?.[1]);
+    const pressed = new Set();
+    (pad.buttons || []).forEach((button, index) => { if (button?.pressed || button?.value > 0.55) pressed.add(index); });
+    const rising = (index) => pressed.has(index) && !runtime.gamepadButtons.has(index);
+    if (rising(0)) {
+      if (["ready", "won", "lost"].includes(runtime.phase)) startGame(runtime);
+      else performAction(runtime);
+    }
+    if (rising(4)) cycleCamera(runtime);
+    if (rising(9)) {
+      if (["ready", "won", "lost"].includes(runtime.phase)) startGame(runtime);
+      else togglePause(runtime);
+    }
+    runtime.gamepadBoost = pressed.has(1) || pressed.has(7);
+    runtime.gamepadButtons = pressed;
+    if (!wasConnected && runtime.ui.input) {
+      runtime.ui.input.textContent = String(pad.id || "Gamepad").slice(0, 28);
+      toast(runtime, "Đã kết nối gamepad");
+    }
+  }
+
+  async function toggleFullscreen(runtime) {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (runtime.root.requestFullscreen) await runtime.root.requestFullscreen();
+      else throw new Error("Thiết bị không hỗ trợ toàn màn hình.");
+    } catch (error) {
+      toast(runtime, error?.message || "Không thể mở toàn màn hình.");
+    }
+  }
+
+  function updateFullscreenLabel(runtime) {
+    if (!runtime?.ui?.fullscreen) return;
+    const activeFullscreen = document.fullscreenElement === runtime.root;
+    runtime.ui.fullscreen.setAttribute("aria-label", activeFullscreen ? "Thoát toàn màn hình" : "Mở toàn màn hình");
+    runtime.ui.fullscreen.title = activeFullscreen ? "Thoát toàn màn hình" : "Mở toàn màn hình";
+  }
+
+  function syncSelectedGameRoute(gameId) {
+    if (!global.location?.hash?.startsWith("#/entertainment/cinematic-arcade")) return;
+    const nextHash = `#/entertainment/cinematic-arcade/${encodeURIComponent(gameId)}`;
+    if (global.location.hash === nextHash) return;
+    global.history?.replaceState?.(global.history.state, document.title, `${global.location.pathname}${global.location.search}${nextHash}`);
+  }
+
   function isControlTarget(target) {
     if (!target || !target.tagName) return false;
     return /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName) || target.isContentEditable;
@@ -911,23 +1053,34 @@
       else if (name === "restart") createGameWorld(runtime);
       else if (name === "camera") cycleCamera(runtime);
       else if (name === "fire") performAction(runtime);
+      else if (name === "mute") toggleAudio(runtime);
+      else if (name === "fullscreen") toggleFullscreen(runtime);
     };
     const onPointerDown = (event) => {
       const keyButton = event.target.closest("[data-cga-key]");
       if (!keyButton || !runtime.root.contains(keyButton)) return;
       event.preventDefault();
-      runtime.keys.add(keyButton.dataset.cgaKey);
+      const key = keyButton.dataset.cgaKey;
+      runtime.touchPointers.set(event.pointerId, key);
+      runtime.keys.add(key);
       keyButton.setPointerCapture && keyButton.setPointerCapture(event.pointerId);
       keyButton.classList.add("is-pressed");
     };
     const releasePointer = (event) => {
       const keyButton = event.target && event.target.closest ? event.target.closest("[data-cga-key]") : null;
+      const key = runtime.touchPointers.get(event.pointerId) || keyButton?.dataset.cgaKey;
+      runtime.touchPointers.delete(event.pointerId);
+      if (key && !Array.from(runtime.touchPointers.values()).includes(key)) runtime.keys.delete(key);
       if (keyButton) {
-        runtime.keys.delete(keyButton.dataset.cgaKey);
         keyButton.classList.remove("is-pressed");
-      } else if (event.type === "blur") runtime.keys.clear();
+      } else if (event.type === "blur") {
+        runtime.keys.clear();
+        runtime.touchPointers.clear();
+      }
     };
+    const onFullscreenChange = () => updateFullscreenLabel(runtime);
     const onQuality = () => changeQuality(runtime, runtime.ui.quality.value);
+    const onDifficulty = () => changeDifficulty(runtime, runtime.ui.difficulty.value);
     const onPointerMove = (event) => {
       if (!runtime.pointerDown || runtime.cameraMode !== "orbit") return;
       runtime.orbitAngle += event.movementX * 0.004;
@@ -937,20 +1090,34 @@
     addListener(runtime, global, "keyup", onKeyUp);
     addListener(runtime, global, "blur", releasePointer);
     addListener(runtime, document, "visibilitychange", onVisibility);
+    addListener(runtime, document, "fullscreenchange", onFullscreenChange);
     addListener(runtime, runtime.root, "click", onClick);
     addListener(runtime, runtime.root, "pointerdown", onPointerDown, { passive: false });
     addListener(runtime, runtime.root, "pointerup", releasePointer);
     addListener(runtime, runtime.root, "pointercancel", releasePointer);
     addListener(runtime, runtime.ui.quality, "change", onQuality);
+    addListener(runtime, runtime.ui.difficulty, "change", onDifficulty);
     addListener(runtime, runtime.ui.canvasShell, "pointerdown", () => { runtime.pointerDown = true; });
-    addListener(runtime, global, "pointerup", () => { runtime.pointerDown = false; runtime.keys.clear(); });
+    addListener(runtime, global, "pointerup", (event) => { runtime.pointerDown = false; releasePointer(event); });
+    addListener(runtime, global, "pointercancel", (event) => { runtime.pointerDown = false; releasePointer(event); });
     addListener(runtime, runtime.ui.canvasShell, "pointermove", onPointerMove);
+    updateFullscreenLabel(runtime);
   }
 
   function selectGame(runtime, gameId) {
     if (!GAME_DEFINITIONS.some((game) => game.id === gameId) || gameId === runtime.gameId) return;
     runtime.gameId = gameId;
+    syncSelectedGameRoute(gameId);
     createGameWorld(runtime);
+  }
+
+  function changeDifficulty(runtime, difficultyId) {
+    if (!DIFFICULTIES[difficultyId] || runtime.difficultyId === difficultyId) return;
+    runtime.difficultyId = difficultyId;
+    runtime.difficulty = DIFFICULTIES[difficultyId];
+    try { global.localStorage?.setItem(`${STORAGE_SCHEMA}.difficulty`, difficultyId); } catch (error) { /* Optional setting. */ }
+    createGameWorld(runtime);
+    toast(runtime, `Độ khó: ${runtime.difficulty.label}`);
   }
 
   function changeQuality(runtime, preference) {
@@ -970,9 +1137,11 @@
   async function initializeGraphics(runtime) {
     if (!runtime.THREE) runtime.THREE = await loadThree(runtime);
     if (runtime.renderer) {
+      if (runtime.rendererCleanup) runtime.rendererCleanup();
       if (runtime.resizeObserver) runtime.resizeObserver.disconnect();
       disposeWorld(runtime);
       runtime.renderer.dispose();
+      if (typeof runtime.renderer.forceContextLoss === "function") runtime.renderer.forceContextLoss();
       runtime.renderer.domElement.remove();
       runtime.renderer = null;
     }
@@ -988,11 +1157,14 @@
 
   function updatePlayer(runtime, dt) {
     const THREE = runtime.THREE;
-    const horizontal = inputAxis(runtime, ["KeyD", "ArrowRight"], ["KeyA", "ArrowLeft"]);
-    const vertical = inputAxis(runtime, ["KeyW", "ArrowUp"], ["KeyS", "ArrowDown"]);
-    const boosting = runtime.keys.has("ShiftLeft") || runtime.keys.has("ShiftRight");
+    const horizontal = clamp(inputAxis(runtime, ["KeyD", "ArrowRight"], ["KeyA", "ArrowLeft"]) + runtime.gamepadAxes.x, -1, 1);
+    const vertical = clamp(inputAxis(runtime, ["KeyW", "ArrowUp"], ["KeyS", "ArrowDown"]) + runtime.gamepadAxes.y, -1, 1);
+    const boosting = runtime.keys.has("ShiftLeft") || runtime.keys.has("ShiftRight") || runtime.gamepadBoost;
     const baseSpeed = runtime.gameId === "neon-skyline-rush" ? 14 : runtime.gameId === "dragon-sky" ? 12 : runtime.gameId === "hoverball-arena" ? 10 : 8.5;
     const boost = boosting && runtime.boostEnergy > 1 ? 1.65 : 1;
+    if (boost > 1 && !runtime.boostingPrevious) playSfx(runtime, "boost");
+    runtime.boostingPrevious = boost > 1;
+    runtime.ui.app.classList.toggle("is-boosting", boost > 1 && !runtime.reducedMotion);
     if (boosting && runtime.boostEnergy > 0) runtime.boostEnergy = Math.max(0, runtime.boostEnergy - dt * 24);
     else runtime.boostEnergy = Math.min(100, runtime.boostEnergy + dt * 13);
     const target = new THREE.Vector3(horizontal, 0, -vertical);
@@ -1027,6 +1199,7 @@
 
   function performAction(runtime) {
     if (!runtime || runtime.phase !== "running" || runtime.actionCooldown > 0) return;
+    playSfx(runtime, runtime.gameId === "neon-skyline-rush" || runtime.gameId === "hoverball-arena" ? "boost" : "action");
     if (runtime.gameId === "crystal-expedition") {
       runtime.radarUntil = runtime.elapsed + 3.5;
       runtime.actionCooldown = 4.5;
@@ -1062,7 +1235,7 @@
       ? runtime.boss.mesh.position.clone().sub(start)
       : runtime.player.direction;
     const velocity = direction ? direction.clone().normalize() : autoAim.clone().normalize();
-    velocity.multiplyScalar(hostile ? 11 : runtime.gameId === "dragon-sky" ? 22 : 25);
+    velocity.multiplyScalar(hostile ? 11 * runtime.difficulty.enemySpeed : runtime.gameId === "dragon-sky" ? 22 : 25);
     const entity = addEntity(runtime, hostile ? "enemy-projectile" : "projectile", bolt, { radius: 0.35 * scale, velocity, ttl: hostile ? 5 : 3.5, value: hostile ? 12 : (runtime.gameId === "titan-protocol" ? 13 : 1) });
     runtime.projectiles.push(entity);
   }
@@ -1077,9 +1250,16 @@
 
   function hitPlayer(runtime, amount, message) {
     if (runtime.damageCooldown > 0 || runtime.phase !== "running") return;
-    runtime.health = Math.max(0, runtime.health - amount);
+    const adjustedDamage = Math.max(1, Math.round(amount * runtime.difficulty.damage));
+    runtime.health = Math.max(0, runtime.health - adjustedDamage);
     runtime.damageCooldown = 0.75;
     runtime.cameraShake = runtime.reducedMotion ? 0 : Math.min(1, amount / 30);
+    runtime.ui.app.classList.remove("is-damaged");
+    if (!runtime.reducedMotion) {
+      void runtime.ui.app.offsetWidth;
+      runtime.ui.app.classList.add("is-damaged");
+    }
+    playSfx(runtime, "hit");
     toast(runtime, message || `Giáp giảm ${amount}%`);
     pulseEffect(runtime, runtime.player.mesh.position, "#ff315e", 3);
     if (runtime.health <= 0) finishGame(runtime, false, "Giáp chiến đấu đã cạn năng lượng.");
@@ -1122,6 +1302,7 @@
         removeEntity(runtime, entity);
         runtime.objective += 1;
         runtime.score += 120 + Math.round(runtime.player.velocity.length() * 4);
+        playSfx(runtime, "score");
         pulseEffect(runtime, playerPosition, runtime.game.color, 5);
         toast(runtime, `Cổng lượng tử ${runtime.objective}/${runtime.game.goal}`);
         if (runtime.objective >= runtime.game.goal) finishGame(runtime, true);
@@ -1139,12 +1320,12 @@
       const direction = runtime.player.mesh.position.clone().sub(enemy.mesh.position);
       const distance = direction.length();
       direction.normalize();
-      enemy.mesh.position.addScaledVector(direction, dt * (distance > 9 ? 2.4 : -0.7));
+      enemy.mesh.position.addScaledVector(direction, dt * (distance > 9 ? 2.4 : -0.7) * runtime.difficulty.enemySpeed);
       enemy.mesh.rotation.y += dt * 1.6;
       enemy.cooldown -= dt;
       if (enemy.cooldown <= 0 && distance < 22) {
         fireProjectile(runtime, true, 1, enemy.mesh.position, direction);
-        enemy.cooldown = random(1.6, 3.1);
+        enemy.cooldown = random(1.6, 3.1) / runtime.difficulty.enemySpeed;
       }
       if (distance < enemy.radius + runtime.player.radius) hitPlayer(runtime, 12, "Drone va vào giáp máy chiến");
     });
@@ -1161,6 +1342,7 @@
         removeEntity(runtime, entity);
         runtime.objective += 1;
         runtime.score += 145;
+        playSfx(runtime, "score");
         toast(runtime, `Vòng gió ${runtime.objective}/${runtime.game.goal}`);
         if (runtime.objective >= runtime.game.goal) finishGame(runtime, true);
       } else if (entity.type === "obstacle" && distanceCollision(playerPosition, entity.mesh.position, runtime.player.radius + entity.radius)) {
@@ -1183,7 +1365,7 @@
         const shotDirection = direction.clone().applyAxisAngle(new runtime.THREE.Vector3(0, 1, 0), angle);
         fireProjectile(runtime, true, boss.health < boss.maxHealth * 0.45 ? 1.35 : 1, boss.mesh.position, shotDirection);
       });
-      boss.cooldown = boss.health < boss.maxHealth * 0.45 ? 0.9 : 1.55;
+      boss.cooldown = (boss.health < boss.maxHealth * 0.45 ? 0.9 : 1.55) / runtime.difficulty.enemySpeed;
     }
     runtime.objective = Math.round((1 - boss.health / boss.maxHealth) * 100);
   }
@@ -1199,13 +1381,14 @@
           removeEntity(runtime, entity);
           runtime.objective += 1;
           runtime.score += 160;
+          playSfx(runtime, "score");
           toast(runtime, `Tinh thể cổ ${runtime.objective}/${runtime.game.goal}`);
           if (runtime.objective >= runtime.game.goal) finishGame(runtime, true);
         }
       } else if (entity.type === "guardian") {
         const direction = playerPosition.clone().sub(entity.mesh.position);
         const distance = direction.length();
-        if (distance < (runtime.elapsed < runtime.radarUntil ? 10 : 16)) entity.mesh.position.addScaledVector(direction.normalize(), dt * 2.35);
+        if (distance < (runtime.elapsed < runtime.radarUntil ? 10 : 16)) entity.mesh.position.addScaledVector(direction.normalize(), dt * 2.35 * runtime.difficulty.enemySpeed);
         if (distance < entity.radius + runtime.player.radius) hitPlayer(runtime, 14, "Vệ binh bóng tối đã chạm vào bạn");
       }
     });
@@ -1231,13 +1414,13 @@
     const aiTarget = ball.mesh.position.clone();
     aiTarget.z = Math.min(-2, ball.mesh.position.z - 1.8);
     const aiDirection = aiTarget.sub(runtime.ai.position).setY(0);
-    if (aiDirection.lengthSq() > 0.2) runtime.aiVelocity.lerp(aiDirection.normalize().multiplyScalar(7), 1 - Math.exp(-dt * 6));
+    if (aiDirection.lengthSq() > 0.2) runtime.aiVelocity.lerp(aiDirection.normalize().multiplyScalar(7 * runtime.difficulty.enemySpeed), 1 - Math.exp(-dt * 6));
     runtime.ai.position.addScaledVector(runtime.aiVelocity, dt);
     runtime.ai.position.x = clamp(runtime.ai.position.x, -25, 25);
     runtime.ai.position.z = clamp(runtime.ai.position.z, -27, -2);
     if (runtime.ai.position.distanceTo(ball.mesh.position) < 2.3) {
       const impulse = ball.mesh.position.clone().sub(runtime.ai.position).setY(0).normalize();
-      ball.velocity.addScaledVector(impulse, 9);
+      ball.velocity.addScaledVector(impulse, 9 * runtime.difficulty.enemySpeed);
     }
     if (ball.mesh.position.z < -29.2) scoreHoverball(runtime, true);
     else if (ball.mesh.position.z > 29.2) scoreHoverball(runtime, false);
@@ -1247,6 +1430,7 @@
     if (playerScored) {
       runtime.objective += 1;
       runtime.score += 350;
+      playSfx(runtime, "score");
       toast(runtime, `NOVA GOAL! ${runtime.objective}/${runtime.game.goal}`);
       if (runtime.objective >= runtime.game.goal) {
         finishGame(runtime, true);
@@ -1304,6 +1488,7 @@
         } else if (runtime.gameId === "mecha-frontier") {
           runtime.objective += 1;
           runtime.score += 180;
+          playSfx(runtime, "score");
           toast(runtime, `Drone bị phá hủy ${runtime.objective}/${runtime.game.goal}`);
           if (runtime.objective >= runtime.game.goal) finishGame(runtime, true);
         } else runtime.score += 80;
@@ -1399,8 +1584,12 @@
     runtime.ui.score.textContent = Math.round(runtime.score).toLocaleString("vi-VN");
     runtime.ui.health.style.width = `${clamp(runtime.health, 0, 100)}%`;
     runtime.ui.health.parentElement.setAttribute("aria-valuenow", String(Math.round(runtime.health)));
+    runtime.ui.boostFill.style.width = `${clamp(runtime.boostEnergy, 0, 100)}%`;
+    runtime.ui.boostFill.parentElement.setAttribute("aria-valuenow", String(Math.round(runtime.boostEnergy)));
+    runtime.ui.boostValue.textContent = String(Math.round(runtime.boostEnergy));
     const progress = clamp(goal ? current / goal : 0, 0, 1);
     runtime.ui.progress.style.width = `${progress * 100}%`;
+    runtime.ui.progress.parentElement.setAttribute("aria-valuenow", String(Math.round(progress * 100)));
     runtime.ui.progressLabel.textContent = `${Math.round(progress * 100)}%`;
   }
 
@@ -1414,13 +1603,14 @@
     const button = runtime.ui.overlay.querySelector('[data-cga-action="start"]');
     if (button) button.textContent = "Chơi lại";
     runtime.ui.status.textContent = won ? "Nhiệm vụ hoàn thành" : "Nhiệm vụ thất bại";
+    playSfx(runtime, won ? "win" : "loss");
     if (won) grantReward(runtime);
   }
 
   function grantReward(runtime) {
     const timeBonus = Math.round(runtime.timeLeft * 0.7);
     const healthBonus = Math.round(runtime.health * 0.45);
-    const coins = runtime.game.reward + timeBonus + healthBonus;
+    const coins = Math.round((runtime.game.reward + timeBonus + healthBonus) * runtime.difficulty.reward);
     const xp = Math.round(coins * 1.35 + runtime.score * 0.03);
     const record = runtime.progress.games[runtime.gameId] || { wins: 0, plays: 1, bestScore: 0, bestTime: 0 };
     record.wins += 1;
@@ -1443,6 +1633,7 @@
       coins,
       xp,
       score: Math.round(runtime.score),
+      difficulty: runtime.difficultyId,
       completedAt: new Date().toISOString()
     });
     try {
@@ -1455,6 +1646,10 @@
   function frame(runtime, now) {
     if (!runtime || runtime.destroyed || instance !== runtime) return;
     runtime.raf = global.requestAnimationFrame((timestamp) => frame(runtime, timestamp));
+    if (document.hidden) {
+      runtime.lastFrame = now;
+      return;
+    }
     const dt = Math.min(0.05, Math.max(0.001, (now - runtime.lastFrame) / 1000 || 0.016));
     runtime.lastFrame = now;
     runtime.hudAccumulator += dt;
@@ -1466,6 +1661,7 @@
       runtime.fpsFrames = 0;
       runtime.fpsAccumulator = 0;
     }
+    pollGamepad(runtime);
     if (runtime.phase === "running" && !document.hidden && !runtime.contextLost) updateGame(runtime, dt);
     if (runtime.phase !== "paused") animateDecor(runtime, runtime.reducedMotion ? dt * 0.35 : dt);
     updateCamera(runtime, dt);
@@ -1511,8 +1707,15 @@
     root.className = "cga-root";
     host.replaceChildren(root);
     let savedQuality = "auto";
-    try { savedQuality = global.localStorage && global.localStorage.getItem(`${STORAGE_SCHEMA}.quality`) || "auto"; } catch (error) { /* Use auto. */ }
+    let savedDifficulty = "normal";
+    let savedMuted = false;
+    try {
+      savedQuality = global.localStorage && global.localStorage.getItem(`${STORAGE_SCHEMA}.quality`) || "auto";
+      savedDifficulty = global.localStorage && global.localStorage.getItem(`${STORAGE_SCHEMA}.difficulty`) || "normal";
+      savedMuted = global.localStorage && global.localStorage.getItem(`${STORAGE_SCHEMA}.muted`) === "true";
+    } catch (error) { /* Use safe defaults. */ }
     if (!QUALITY_LEVELS[savedQuality] && savedQuality !== "auto") savedQuality = "auto";
+    if (!DIFFICULTIES[savedDifficulty]) savedDifficulty = "normal";
     const ownerId = resolveOwnerId(options);
     const runtime = {
       host,
@@ -1525,10 +1728,21 @@
       qualityPreference: savedQuality,
       resolvedQuality: savedQuality === "auto" ? detectQuality() : savedQuality,
       quality: null,
+      difficultyId: savedDifficulty,
+      difficulty: DIFFICULTIES[savedDifficulty],
+      muted: savedMuted,
+      audioContext: null,
       reducedMotion: Boolean(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches),
       phase: "loading",
       keys: new Set(),
+      gamepadAxes: { x: 0, y: 0 },
+      gamepadButtons: new Set(),
+      gamepadConnected: false,
+      gamepadBoost: false,
+      boostingPrevious: false,
       listeners: [],
+      rendererCleanup: null,
+      touchPointers: new Map(),
       entities: [],
       animators: [],
       decor: [],
@@ -1575,6 +1789,7 @@
     runtime.listeners.splice(0).forEach((remove) => {
       try { remove(); } catch (error) { /* Listener may already be gone. */ }
     });
+    if (runtime.rendererCleanup) runtime.rendererCleanup();
     if (runtime.resizeObserver) runtime.resizeObserver.disconnect();
     disposeWorld(runtime);
     if (runtime.renderer) {
@@ -1582,7 +1797,10 @@
       if (typeof runtime.renderer.forceContextLoss === "function") runtime.renderer.forceContextLoss();
       if (runtime.renderer.domElement) runtime.renderer.domElement.remove();
     }
+    if (runtime.audioContext && typeof runtime.audioContext.close === "function") runtime.audioContext.close().catch(() => {});
     runtime.keys.clear();
+    runtime.gamepadButtons.clear();
+    runtime.touchPointers.clear();
     if (runtime.root && runtime.root.parentNode) runtime.root.remove();
     instance = null;
   }
@@ -1596,6 +1814,7 @@
       gameId: instance.gameId,
       phase: instance.phase,
       cameraMode: instance.cameraMode,
+      difficulty: instance.difficultyId,
       qualityPreference: instance.qualityPreference,
       resolvedQuality: instance.resolvedQuality,
       reducedMotion: instance.reducedMotion,
@@ -1604,6 +1823,9 @@
       health: Math.round(instance.health || 0),
       timeLeft: Math.round(instance.timeLeft || 0),
       fps: instance.fps || 0,
+      boostEnergy: Math.round(instance.boostEnergy || 0),
+      muted: instance.muted,
+      gamepadConnected: instance.gamepadConnected,
       entityCount: instance.entities.length,
       storageAvailable: instance.storageAvailable,
       progress: instance.progress,

@@ -59,15 +59,37 @@ test("progress, quality and lifecycle stay bounded and recoverable", () => {
   assert.match(source, /window\.HHCinematicGameArcade\s*=\s*Object\.freeze\(\{[\s\S]*?mount[\s\S]*?unmount[\s\S]*?inspect/);
 });
 
+test("Cinematic Arcade V2 upgrades every game with difficulty, audio, gamepad and fullscreen", () => {
+  const source = read("cinematic-game-arcade.js");
+  const css = read("cinematic-game-arcade.css");
+  assert.match(source, /const VERSION = "2\.0\.0"/);
+  for (const level of ["story", "normal", "veteran"]) assert.match(source, new RegExp(`${level}:\\s*\\{`));
+  assert.match(source, /data-cga-difficulty/);
+  assert.match(source, /navigator\?\.getGamepads|navigator\.getGamepads/);
+  assert.match(source, /AudioContext|webkitAudioContext/);
+  assert.match(source, /requestFullscreen/);
+  assert.match(source, /history\?\.replaceState|history\.replaceState/);
+  assert.match(source, /data-cga-boost-fill/);
+  assert.match(css, /\.cga-app\.is-boosting/);
+  assert.match(css, /\.cga-app\.is-damaged/);
+  assert.match(css, /\.cga-root:fullscreen/);
+  assert.match(source, /touchPointers: new Map\(\)/);
+  assert.match(source, /function updateFullscreenLabel\(/);
+  assert.match(source, /rendererCleanup/);
+  assert.match(source, /if \(document\.hidden\)/);
+  assert.match(css, /\.cga-stage-actions button:first-child/);
+  assert.doesNotMatch(css, /\.cga-stage-actions button:first-child,\s*\.cga-stage-actions button:nth-child\(2\)/);
+});
+
 test("Cinematic Arcade is a dedicated lazy route and remains offline-ready", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const shell = read("script.js");
   const center = read("game-center.js");
-  assert.match(loader, /"cinematic-game":\s*\{[\s\S]*?cinematic-game-arcade\.css\?v=5[\s\S]*?cinematic-game-arcade\.js\?v=2/);
+  assert.match(loader, /"cinematic-game":\s*\{[\s\S]*?cinematic-game-arcade\.css\?v=6[\s\S]*?cinematic-game-arcade\.js\?v=3/);
   assert.ok(loader.indexOf('value.startsWith("/entertainment/cinematic-arcade")') < loader.indexOf('value.startsWith("/entertainment")'));
-  assert.match(worker, /\.\/cinematic-game-arcade\.css\?v=5/);
-  assert.match(worker, /\.\/cinematic-game-arcade\.js\?v=2/);
+  assert.match(worker, /\.\/cinematic-game-arcade\.css\?v=6/);
+  assert.match(worker, /\.\/cinematic-game-arcade\.js\?v=3/);
   assert.match(shell, /HHCinematicGameArcade\?\.mount/);
   assert.match(shell, /HHCinematicGameArcade\?\.unmount/);
   assert.match(shell, /route\.startsWith\("\/entertainment\/cinematic-arcade\/"\)/);
@@ -88,4 +110,13 @@ test("the one-screen game HUD is keyboard-visible, mobile-safe and motion-aware"
   assert.match(css, /:focus-visible/);
   assert.match(css, /@media\s*\(max-width:\s*480px\)/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
+});
+
+test("Cinematic HUD exposes dialog and progress semantics", () => {
+  const source = read("cinematic-game-arcade.js");
+  assert.match(source, /data-cga-overlay role="dialog" aria-modal="true"/);
+  assert.match(source, /class="cga-health" role="progressbar"/);
+  assert.match(source, /aria-label="Tiến độ nhiệm vụ"/);
+  assert.match(source, /boostFill\.parentElement\.setAttribute\("aria-valuenow"/);
+  assert.match(source, /progress\.parentElement\.setAttribute\("aria-valuenow"/);
 });
