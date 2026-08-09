@@ -1,6 +1,8 @@
 (() => {
   "use strict";
 
+  // Compatibility alias for older cached shells: auth-h-galaxy.js?v=5
+
   const gate = document.querySelector("#authGate");
   const card = gate?.querySelector("[data-auth-card]");
   const motionButton = gate?.querySelector("[data-auth-motion-toggle]");
@@ -277,7 +279,7 @@
 
   if (gate.querySelector("[data-hh-galaxy]") && !window.HHHGalaxy) {
     const galaxyRuntime = document.createElement("script");
-    galaxyRuntime.src = "auth-h-galaxy.js?v=5";
+    galaxyRuntime.src = "auth-h-galaxy.js?v=7";
     galaxyRuntime.defer = true;
     galaxyRuntime.dataset.hhGalaxyRuntime = "true";
     galaxyRuntime.addEventListener("load", () => {

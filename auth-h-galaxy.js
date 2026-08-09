@@ -120,9 +120,9 @@
     },
     entertainment: {
       icon: "◉",
-      title: "Giải trí",
-      kicker: "ENTERTAINMENT",
-      count: "3 MỤC",
+      title: "Game",
+      kicker: "GAME UNIVERSE",
+      count: "30 GAME",
       route: "#/entertainment",
       accent: "#ffd46a",
       accent2: "#ff754f",

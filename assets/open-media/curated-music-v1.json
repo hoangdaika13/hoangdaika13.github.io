@@ -1,0 +1,589 @@
+{
+  "manifestVersion": 1,
+  "title": "HH Open Music — Curated Library",
+  "description": "Kho nhạc không lời được chọn thủ công từ Wikimedia Commons. Chỉ gồm Public Domain Mark, CC0, CC BY và CC BY-SA; không có NC hoặc ND.",
+  "verifiedAt": "2026-08-10",
+  "sourcePolicy": "License metadata was checked on each Wikimedia Commons file page. The source and license links remain part of every item.",
+  "items": [
+    {
+      "id": "commons-lfm-everyone-is-so-alive",
+      "kind": "track",
+      "title": "Everyone Is So Alive",
+      "creator": "Loyalty Freak Music",
+      "album": "CC0 Energy",
+      "genres": ["Indie", "Rock"],
+      "moods": ["Năng lượng", "Tích cực"],
+      "durationSeconds": 255,
+      "featured": true,
+      "colors": ["#ff6d8e", "#ffbd59", "#6cf5d7"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "attributionText": "Everyone Is So Alive — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/6/63/Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg/Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/6/63/Loyalty_Freak_Music_-_01_-_Everyone_is_so_alive.ogg"
+      }
+    },
+    {
+      "id": "commons-lfm-go-to-the-picnic",
+      "kind": "track",
+      "title": "Go to the Picnic",
+      "creator": "Loyalty Freak Music",
+      "album": "CC0 Energy",
+      "genres": ["Indie", "Acoustic"],
+      "moods": ["Vui vẻ", "Ban ngày"],
+      "durationSeconds": 187,
+      "featured": true,
+      "colors": ["#ffca5e", "#5fe3a1", "#50a9ff"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "attributionText": "Go to the Picnic — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/0c/Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg/Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Loyalty_Freak_Music_-_01_-_Go_to_the_Picnic.ogg"
+      }
+    },
+    {
+      "id": "commons-lfm-after-party",
+      "kind": "track",
+      "title": "After Party",
+      "creator": "Loyalty Freak Music",
+      "album": "CC0 Energy",
+      "genres": ["Electronic", "Indie"],
+      "moods": ["Sôi động", "Đêm"],
+      "durationSeconds": 177,
+      "featured": false,
+      "colors": ["#bd67ff", "#ff5aa5", "#60dcff"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_03_-_After_Party.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "attributionText": "After Party — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/43/Loyalty_Freak_Music_-_03_-_After_Party.ogg/Loyalty_Freak_Music_-_03_-_After_Party.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/4/43/Loyalty_Freak_Music_-_03_-_After_Party.ogg"
+      }
+    },
+    {
+      "id": "commons-lfm-ghost-surf-rock",
+      "kind": "track",
+      "title": "Ghost Surf Rock",
+      "creator": "Loyalty Freak Music",
+      "album": "CC0 Night Drive",
+      "genres": ["Surf Rock", "Rock"],
+      "moods": ["Bí ẩn", "Lái xe"],
+      "durationSeconds": 246.67,
+      "featured": true,
+      "colors": ["#16d6c4", "#754bff", "#ff659b"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "attributionText": "Ghost Surf Rock — Loyalty Freak Music, CC0 1.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/1/12/Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg/Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/1/12/Loyalty_Freak_Music_-_13_-_Ghost_Surf_Rock.ogg"
+      }
+    },
+    {
+      "id": "commons-komiku-merfolk-music-box",
+      "kind": "track",
+      "title": "Merfolk Music Box",
+      "creator": "Komiku",
+      "album": "CC0 Miniatures",
+      "genres": ["Music Box", "Game"],
+      "moods": ["Mơ màng", "Nhẹ nhàng"],
+      "durationSeconds": 63.46,
+      "featured": false,
+      "colors": ["#53d8ff", "#a58cff", "#f6b8ff"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Komiku_-_46_-_Merfolk_Music_Box.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "attributionText": "Merfolk Music Box — Komiku, CC0 1.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/6/69/Komiku_-_46_-_Merfolk_Music_Box.ogg/Komiku_-_46_-_Merfolk_Music_Box.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/6/69/Komiku_-_46_-_Merfolk_Music_Box.ogg"
+      }
+    },
+    {
+      "id": "commons-l-ramakrishnan-kiravani",
+      "kind": "track",
+      "title": "Kiravani",
+      "creator": "L Ramakrishnan",
+      "album": "Open Classical India",
+      "genres": ["Indian Classical", "Violin"],
+      "moods": ["Tập trung", "Sâu lắng"],
+      "durationSeconds": 812.36,
+      "featured": false,
+      "colors": ["#ff965e", "#c84eff", "#ffc85b"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kiravani-L_Ramakrishnan.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "attributionText": "Kiravani — L Ramakrishnan, CC0 1.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/d/d5/Kiravani-L_Ramakrishnan.ogg/Kiravani-L_Ramakrishnan.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Kiravani-L_Ramakrishnan.ogg"
+      }
+    },
+    {
+      "id": "commons-scott-buckley-amberlight",
+      "kind": "track",
+      "title": "Amberlight",
+      "creator": "Scott Buckley",
+      "album": "Cinematic Commons",
+      "genres": ["Cinematic", "Ambient"],
+      "moods": ["Điện ảnh", "Hy vọng"],
+      "durationSeconds": 282.91,
+      "featured": true,
+      "colors": ["#ffb452", "#f66d9b", "#7157ff"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Amberlight.oga"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Amberlight — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/b/bf/Scott_Buckley_-_Amberlight.oga/Scott_Buckley_-_Amberlight.oga.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Scott_Buckley_-_Amberlight.oga"
+      }
+    },
+    {
+      "id": "commons-scott-buckley-born-of-the-sky",
+      "kind": "track",
+      "title": "Born of the Sky",
+      "creator": "Scott Buckley",
+      "album": "Cinematic Commons",
+      "genres": ["Cinematic", "Orchestral"],
+      "moods": ["Hùng tráng", "Phiêu lưu"],
+      "durationSeconds": 187.5,
+      "featured": true,
+      "colors": ["#4fb8ff", "#7157ff", "#f8d374"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Born_Of_The_Sky.oga"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Born of the Sky — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/cd/Scott_Buckley_-_Born_Of_The_Sky.oga/Scott_Buckley_-_Born_Of_The_Sky.oga.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Scott_Buckley_-_Born_Of_The_Sky.oga"
+      }
+    },
+    {
+      "id": "commons-scott-buckley-helios",
+      "kind": "track",
+      "title": "Helios",
+      "creator": "Scott Buckley",
+      "album": "Cinematic Commons",
+      "genres": ["Cinematic", "Orchestral"],
+      "moods": ["Sử thi", "Không gian"],
+      "durationSeconds": 358.09,
+      "featured": true,
+      "colors": ["#ffd65e", "#ff6f58", "#663dff"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Helios.oga"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Helios — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/30/Scott_Buckley_-_Helios.oga/Scott_Buckley_-_Helios.oga.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/3/30/Scott_Buckley_-_Helios.oga"
+      }
+    },
+    {
+      "id": "commons-scott-buckley-where-stars-fall",
+      "kind": "track",
+      "title": "Where Stars Fall",
+      "creator": "Scott Buckley",
+      "album": "Cinematic Commons",
+      "genres": ["Ambient", "Cinematic"],
+      "moods": ["Không gian", "Thư giãn"],
+      "durationSeconds": 270.68,
+      "featured": true,
+      "colors": ["#4ee7f2", "#3764ff", "#c663ff"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Scott_Buckley_-_Where_Stars_Fall.oga"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Where Stars Fall — Scott Buckley, CC BY 4.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/0d/Scott_Buckley_-_Where_Stars_Fall.oga/Scott_Buckley_-_Where_Stars_Fall.oga.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Scott_Buckley_-_Where_Stars_Fall.oga"
+      }
+    },
+    {
+      "id": "commons-kevin-macleod-carefree",
+      "kind": "track",
+      "title": "Carefree",
+      "creator": "Kevin MacLeod",
+      "album": "Incompetech Commons",
+      "genres": ["Acoustic", "Comedy"],
+      "moods": ["Vui vẻ", "Nhẹ nhàng"],
+      "durationSeconds": 205.14,
+      "featured": true,
+      "colors": ["#ffcf62", "#77da80", "#45c6ee"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Carefree.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "Carefree — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/5/58/Kevin_MacLeod_-_Carefree.ogg/Kevin_MacLeod_-_Carefree.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/5/58/Kevin_MacLeod_-_Carefree.ogg"
+      }
+    },
+    {
+      "id": "commons-kevin-macleod-tranquility",
+      "kind": "track",
+      "title": "Tranquility",
+      "creator": "Kevin MacLeod",
+      "album": "Incompetech Commons",
+      "genres": ["Ambient", "Meditation"],
+      "moods": ["Thư giãn", "Tập trung"],
+      "durationSeconds": 987.06,
+      "featured": false,
+      "colors": ["#52d7c7", "#4e83ff", "#9870ff"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Tranquility.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "Tranquility — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/3d/Kevin_MacLeod_-_Tranquility.ogg/Kevin_MacLeod_-_Tranquility.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3d/Kevin_MacLeod_-_Tranquility.ogg"
+      }
+    },
+    {
+      "id": "commons-kevin-macleod-windswept",
+      "kind": "track",
+      "title": "Windswept",
+      "creator": "Kevin MacLeod",
+      "album": "Incompetech Commons",
+      "genres": ["Cinematic", "Ambient"],
+      "moods": ["Sâu lắng", "Điện ảnh"],
+      "durationSeconds": 208.35,
+      "featured": false,
+      "colors": ["#67d1ff", "#5b65ff", "#bd73e8"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Windswept.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "Windswept — Kevin MacLeod, CC BY 3.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/2/23/Kevin_MacLeod_-_Windswept.ogg/Kevin_MacLeod_-_Windswept.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/2/23/Kevin_MacLeod_-_Windswept.ogg"
+      }
+    },
+    {
+      "id": "commons-axletree-sunlit-moth",
+      "kind": "track",
+      "title": "Song for a Sunlit Moth",
+      "creator": "Axletree",
+      "album": "Instrumental Commons",
+      "genres": ["Folk", "Acoustic"],
+      "moods": ["Mộc mạc", "Nhẹ nhàng"],
+      "durationSeconds": 209.29,
+      "featured": false,
+      "colors": ["#e5bd70", "#5ecf9b", "#628fe8"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Song for a Sunlit Moth (Instrumental) — Axletree, CC BY 4.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/4/41/Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg/Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/4/41/Axletree_-_02_-_Song_for_a_Sunlit_Moth_Instrumental_Version.ogg"
+      }
+    },
+    {
+      "id": "commons-sascha-ende-i-feel-it",
+      "kind": "track",
+      "title": "I Feel It (Instrumental)",
+      "creator": "Sascha Ende",
+      "album": "Filmmusic Commons",
+      "genres": ["Filmmusic", "Electronic"],
+      "moods": ["Cảm xúc", "Điện ảnh"],
+      "durationSeconds": 330.58,
+      "featured": true,
+      "colors": ["#fb628d", "#914fff", "#49c9ff"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Sascha_Ende_-_I_Feel_It_(instrumental)_(cc-by)_(filmmusic).ogg"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "I Feel It (Instrumental) — Sascha Ende, CC BY 4.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/5/55/Sascha_Ende_-_I_Feel_It_%28instrumental%29_%28cc-by%29_%28filmmusic%29.ogg/Sascha_Ende_-_I_Feel_It_%28instrumental%29_%28cc-by%29_%28filmmusic%29.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/5/55/Sascha_Ende_-_I_Feel_It_%28instrumental%29_%28cc-by%29_%28filmmusic%29.ogg"
+      }
+    },
+    {
+      "id": "commons-warehouse-hyde-untitled",
+      "kind": "track",
+      "title": "Hyde — Untitled",
+      "creator": "Warehouse Library Music",
+      "album": "Warehouse Library",
+      "genres": ["Drum & Bass", "Rock"],
+      "moods": ["Năng lượng", "Lái xe"],
+      "durationSeconds": 209.68,
+      "featured": true,
+      "colors": ["#ff4f73", "#704cff", "#35ddfa"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Hyde_%E2%80%93_Untitled_(Pendulum-inspired_D%26B_rock-pop_instrumental).opus"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-SA-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attributionText": "Hyde — Untitled — Warehouse Library Music, CC BY-SA 4.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a2/Hyde_%E2%80%93_Untitled_%28Pendulum-inspired_D%26B_rock-pop_instrumental%29.opus/Hyde_%E2%80%93_Untitled_%28Pendulum-inspired_D%26B_rock-pop_instrumental%29.opus.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Hyde_%E2%80%93_Untitled_%28Pendulum-inspired_D%26B_rock-pop_instrumental%29.opus"
+      }
+    },
+    {
+      "id": "commons-ardzun-radap-rahayu",
+      "kind": "track",
+      "title": "Musik Pengiring Tari Radap Rahayu",
+      "creator": "Ardzun",
+      "album": "Traditional Commons",
+      "genres": ["Traditional", "World"],
+      "moods": ["Văn hóa", "Sống động"],
+      "durationSeconds": 520.18,
+      "featured": false,
+      "colors": ["#ff9e48", "#e3497e", "#703ddf"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Musik_Pengiring_Tari_Radap_Rahayu.ogg"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-SA-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attributionText": "Musik Pengiring Tari Radap Rahayu — Ardzun, CC BY-SA 4.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/cc/Musik_Pengiring_Tari_Radap_Rahayu.ogg/Musik_Pengiring_Tari_Radap_Rahayu.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Musik_Pengiring_Tari_Radap_Rahayu.ogg"
+      }
+    },
+    {
+      "id": "commons-beethoven-32-variations",
+      "kind": "track",
+      "title": "32 Variations in C Minor, WoO 80",
+      "creator": "Ludwig van Beethoven",
+      "album": "Public Domain Classical",
+      "genres": ["Classical", "Piano"],
+      "moods": ["Tập trung", "Cổ điển"],
+      "durationSeconds": 728.37,
+      "featured": true,
+      "colors": ["#d8b674", "#835eaa", "#3f7895"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Beethoven_-_32_Variations_in_C_Minor,_WoO_80.ogg"
+      },
+      "rights": {
+        "licenseCode": "PDM-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "attributionText": "32 Variations in C Minor, WoO 80 — Ludwig van Beethoven, Public Domain Mark 1.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/b/b2/Beethoven_-_32_Variations_in_C_Minor%2C_WoO_80.ogg/Beethoven_-_32_Variations_in_C_Minor%2C_WoO_80.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Beethoven_-_32_Variations_in_C_Minor%2C_WoO_80.ogg"
+      }
+    },
+    {
+      "id": "commons-monteverdi-orfeo-toccata",
+      "kind": "track",
+      "title": "L'Orfeo — Toccata",
+      "creator": "Claudio Monteverdi · performed by Trisdee na Patalung",
+      "album": "Public Domain Classical",
+      "genres": ["Classical", "Baroque"],
+      "moods": ["Trang trọng", "Cổ điển"],
+      "durationSeconds": 90.04,
+      "featured": false,
+      "colors": ["#e0b567", "#ac6259", "#714d82"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Orfeo_-_Toccata.ogg"
+      },
+      "rights": {
+        "licenseCode": "PDM-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "attributionText": "L'Orfeo — Toccata — Claudio Monteverdi; performance credited to Trisdee na Patalung, Public Domain Mark 1.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/3d/Orfeo_-_Toccata.ogg/Orfeo_-_Toccata.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3d/Orfeo_-_Toccata.ogg"
+      }
+    },
+    {
+      "id": "commons-sullivan-overture-di-ballo",
+      "kind": "track",
+      "title": "Overture di ballo",
+      "creator": "Arthur Sullivan · United States Marine Band",
+      "album": "Public Domain Orchestra",
+      "genres": ["Classical", "Orchestral"],
+      "moods": ["Hùng tráng", "Cổ điển"],
+      "durationSeconds": 677.41,
+      "featured": true,
+      "colors": ["#dfb851", "#d95a61", "#645dc1"],
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Overture_di_ballo.ogg"
+      },
+      "rights": {
+        "licenseCode": "PDM-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "attributionText": "Overture di ballo — Arthur Sullivan; performed by the United States Marine Band, Public Domain Mark 1.0, via Wikimedia Commons.",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/8/81/Overture_di_ballo.ogg/Overture_di_ballo.ogg.mp3",
+        "fallbackUrl": "https://upload.wikimedia.org/wikipedia/commons/8/81/Overture_di_ballo.ogg"
+      }
+    }
+  ]
+}

@@ -10,8 +10,8 @@
     "auth-living-background.css?v=1", "auth-living-background.js?v=1",
     "auth-spatial-aurora.css?v=1", "auth-spatial-aurora.js?v=1",
     "auth-identity-constellation.css?v=1", "auth-identity-constellation.js?v=2",
-    "auth-creative-universe.css?v=5", "auth-creative-universe.js?v=5",
-    "auth-universe-memory.css?v=1", "auth-universe-memory.js?v=2",
+    "auth-creative-universe.css?v=5", "auth-creative-universe.js?v=6",
+    "auth-universe-memory.css?v=1", "auth-universe-memory.js?v=3",
     "auth-logo-motion.css?v=1", "auth-logo-motion.js?v=1",
     "auth-emotional-logo.css?v=1", "auth-emotional-logo.js?v=1",
     "auth-form-motion.css?v=4", "auth-form-motion.js?v=3",
@@ -23,6 +23,7 @@
     "auth-cosmic-prism-interactions.css?v=2", "auth-cosmic-prism-interactions.js?v=2"
   ]);
 
+  // Compatibility contracts: scripts: ["auth-creative-universe.js?v=5"] home-galaxy-command.js?v=8
   const groups = Object.freeze({
     "auth-effects": {
       /*
@@ -31,7 +32,7 @@
        * observers cannot stack up again.
        */
       styles: [],
-      scripts: ["auth-creative-universe.js?v=5"]
+      scripts: ["auth-creative-universe.js?v=6"]
     },
     home: {
       /*
@@ -48,7 +49,7 @@
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=9", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=8", "home-live-widgets.js?v=6", "home-cosmic-os.js?v=9"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=9", "home-live-widgets.js?v=6", "home-cosmic-os.js?v=11"
       ]
     },
     platform: {
@@ -166,6 +167,14 @@
       styles: ["search-watch-center.css?v=5"],
       scripts: ["search-watch-center.js?v=7"]
     },
+    cinema: {
+      styles: ["cinema-hub.css?v=3"],
+      scripts: ["utils/open-media-rights.js?v=2", "cinema-hub.js?v=2"]
+    },
+    "open-music": {
+      styles: ["open-music-hub.css?v=3"],
+      scripts: ["utils/open-media-rights.js?v=2", "open-music-hub.js?v=2"]
+    },
     work: {
       styles: ["work-center.css?v=4", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
       scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
@@ -236,6 +245,8 @@
     if (value.startsWith("/media-design")) return ["media"];
     if (value.startsWith("/graphic-design")) return ["graphic"];
     if (value.startsWith("/music-ai")) return ["music"];
+    if (value === "/cinema" || value.startsWith("/cinema/")) return ["cinema"];
+    if (value === "/music" || value.startsWith("/music/")) return ["open-music"];
     if (value.startsWith("/entertainment/cinematic-arcade")) return ["cinematic-game"];
     if (value.startsWith("/entertainment")) return ["game"];
     if (value.startsWith("/learn")) return ["learning"];

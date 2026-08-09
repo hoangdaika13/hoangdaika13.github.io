@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "hh.open-media.films.v1",
+  "updatedAt": "2026-08-10T00:00:00.000Z",
+  "policy": {
+    "publishedLicenses": [
+      "PDM-1.0",
+      "CC0-1.0",
+      "CC-BY-2.5",
+      "CC-BY-3.0",
+      "CC-BY-4.0",
+      "CC-BY-SA-3.0",
+      "CC-BY-SA-4.0"
+    ],
+    "notice": "Chỉ phát hành nội dung Public Domain hoặc Creative Commons cho phép phân phối. Quyền được kiểm tra theo từng mục; người xem luôn có thể mở trang nguồn và giấy phép gốc."
+  },
+  "items": [
+    {
+      "id": "big-buck-bunny",
+      "kind": "film",
+      "title": "Big Buck Bunny",
+      "originalTitle": "Big Buck Bunny",
+      "creator": "Blender Foundation",
+      "year": 2008,
+      "durationSeconds": 635,
+      "genres": ["Hoạt hình", "Hài", "Gia đình"],
+      "languages": ["Không lời"],
+      "description": "Một chú thỏ hiền lành đối đầu với ba kẻ phá phách trong phim hoạt hình mở nổi tiếng của Blender.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Big_Buck_Bunny_4K.webm/960px--Big_Buck_Bunny_4K.webm.jpg",
+      "source": {
+        "provider": "Blender Open Movies",
+        "landingUrl": "https://studio.blender.org/films/big-buck-bunny/",
+        "playbackMirror": "Wikimedia Commons"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "© 2008 Blender Foundation | www.bigbuckbunny.org — CC BY 3.0",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/c0/Big_Buck_Bunny_4K.webm/Big_Buck_Bunny_4K.webm.480p.vp9.webm",
+        "mimeType": "video/webm"
+      }
+    },
+    {
+      "id": "sintel",
+      "kind": "film",
+      "title": "Sintel",
+      "originalTitle": "Sintel",
+      "creator": "Blender Foundation",
+      "year": 2010,
+      "durationSeconds": 888,
+      "genres": ["Hoạt hình", "Phiêu lưu", "Kỳ ảo"],
+      "languages": ["Tiếng Anh"],
+      "description": "Một nữ chiến binh trẻ băng qua vùng đất khắc nghiệt để tìm lại người bạn rồng đã mất.",
+      "poster": "https://archive.org/services/img/Sintel",
+      "source": {
+        "provider": "Blender Open Movies",
+        "landingUrl": "https://studio.blender.org/films/sintel/",
+        "playbackMirror": "Internet Archive"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "© Blender Foundation | durian.blender.org — CC BY 3.0",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://archive.org/download/Sintel/sintel-2048-stereo_512kb.mp4",
+        "mimeType": "video/mp4"
+      }
+    },
+    {
+      "id": "elephants-dream",
+      "kind": "film",
+      "title": "Elephants Dream",
+      "originalTitle": "Elephants Dream",
+      "creator": "Orange Open Movie Project Studio",
+      "year": 2006,
+      "durationSeconds": 653,
+      "genres": ["Hoạt hình", "Khoa học viễn tưởng", "Siêu thực"],
+      "languages": ["Tiếng Anh"],
+      "description": "Hai nhân vật khám phá một cỗ máy khổng lồ, kỳ lạ trong bộ phim mở đầu tiên của Blender.",
+      "poster": "https://archive.org/services/img/ElephantsDream",
+      "source": {
+        "provider": "Blender Open Movies",
+        "landingUrl": "https://studio.blender.org/films/elephants-dream/",
+        "playbackMirror": "Internet Archive"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-2.5",
+        "licenseUrl": "https://creativecommons.org/licenses/by/2.5/",
+        "attributionText": "© 2006 Blender Foundation / Netherlands Media Art Institute / www.elephantsdream.org — CC BY 2.5",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
+        "mimeType": "video/mp4"
+      }
+    },
+    {
+      "id": "tears-of-steel",
+      "kind": "film",
+      "title": "Tears of Steel",
+      "originalTitle": "Tears of Steel",
+      "creator": "Blender Foundation",
+      "year": 2012,
+      "durationSeconds": 734,
+      "genres": ["Khoa học viễn tưởng", "Hành động", "VFX"],
+      "languages": ["Tiếng Anh"],
+      "description": "Một nhóm chiến binh và nhà khoa học cố thay đổi quá khứ để cứu Amsterdam khỏi robot hủy diệt.",
+      "poster": "https://archive.org/services/img/Tears-of-Steel",
+      "source": {
+        "provider": "Blender Open Movies",
+        "landingUrl": "https://studio.blender.org/films/tears-of-steel/",
+        "playbackMirror": "Internet Archive"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "© Blender Foundation | mango.blender.org — CC BY 3.0",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
+        "mimeType": "video/mp4"
+      }
+    },
+    {
+      "id": "great-train-robbery-1903",
+      "kind": "film",
+      "title": "The Great Train Robbery",
+      "originalTitle": "The Great Train Robbery",
+      "creator": "Edwin S. Porter / Edison Manufacturing Company",
+      "year": 1903,
+      "durationSeconds": 701,
+      "genres": ["Kinh điển", "Viễn Tây", "Phim câm"],
+      "languages": ["Phim câm"],
+      "description": "Tác phẩm điện ảnh thời kỳ đầu kể về một vụ cướp tàu và cuộc truy đuổi những tên cướp.",
+      "poster": "https://tile.loc.gov/storage-services/service/mbrs/ntscrm/00000765/00000765.gif",
+      "source": {
+        "provider": "Library of Congress",
+        "landingUrl": "https://www.loc.gov/item/00694220/"
+      },
+      "rights": {
+        "licenseCode": "PDM-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "attributionText": "Library of Congress, Motion Picture, Broadcasting and Recorded Sound Division",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://tile.loc.gov/storage-services/service/mbrs/ntscrm/00000765/00000765.mp4",
+        "mimeType": "video/mp4"
+      }
+    },
+    {
+      "id": "duck-and-cover-1951",
+      "kind": "film",
+      "title": "Duck and Cover",
+      "originalTitle": "Duck and Cover",
+      "creator": "Archer Productions",
+      "year": 1951,
+      "durationSeconds": 568,
+      "genres": ["Tư liệu", "Giáo dục", "Lịch sử"],
+      "languages": ["Tiếng Anh"],
+      "description": "Phim giáo dục thời Chiến tranh Lạnh, được Library of Congress công bố trong bộ phim Public Domain.",
+      "poster": "https://tile.loc.gov/storage-services/service/mbrs/ntscrm/01836081/01836081.jpg",
+      "source": {
+        "provider": "Library of Congress",
+        "landingUrl": "https://www.loc.gov/item/2022604365/"
+      },
+      "rights": {
+        "licenseCode": "PDM-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "attributionText": "Library of Congress, Motion Picture, Broadcasting and Recorded Sound Division",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://tile.loc.gov/storage-services/service/mbrs/ntscrm/01836081/01836081.mp4",
+        "mimeType": "video/mp4"
+      }
+    },
+    {
+      "id": "le-voyage-dans-la-lune",
+      "kind": "film",
+      "title": "Chuyến du hành lên Mặt Trăng",
+      "originalTitle": "Le Voyage dans la Lune",
+      "creator": "Georges Méliès",
+      "year": 1902,
+      "durationSeconds": 766,
+      "genres": ["Kinh điển", "Khoa học viễn tưởng", "Phim câm"],
+      "languages": ["Phim câm"],
+      "description": "Kiệt tác kỳ ảo tiên phong đưa một nhóm nhà thiên văn lên Mặt Trăng bằng một viên đạn khổng lồ.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Le_Voyage_dans_la_Lune_%281902%29.webm/960px--Le_Voyage_dans_la_Lune_%281902%29.webm.jpg",
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Le_Voyage_dans_la_Lune_(1902).webm"
+      },
+      "rights": {
+        "licenseCode": "PDM-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "attributionText": "Le Voyage dans la Lune — Georges Méliès — Wikimedia Commons",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Le_Voyage_dans_la_Lune_%281902%29.webm",
+        "mimeType": "video/webm"
+      }
+    },
+    {
+      "id": "the-general-1926",
+      "kind": "film",
+      "title": "The General",
+      "originalTitle": "The General",
+      "creator": "Buster Keaton / Clyde Bruckman",
+      "year": 1926,
+      "durationSeconds": 4552,
+      "genres": ["Kinh điển", "Hài", "Phiêu lưu"],
+      "languages": ["Phim câm"],
+      "description": "Buster Keaton lao vào cuộc truy đuổi bằng đầu máy hơi nước trong một trong những phim hài câm nổi tiếng nhất.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/The_General_%281926%29.webm/960px--The_General_%281926%29.webm.jpg",
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:The_General_(1926).webm"
+      },
+      "rights": {
+        "licenseCode": "PDM-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "attributionText": "The General — Buster Keaton / Clyde Bruckman — Wikimedia Commons",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/The_General_%281926%29.webm",
+        "mimeType": "video/webm"
+      }
+    },
+    {
+      "id": "nosferatu-1922",
+      "kind": "film",
+      "title": "Nosferatu",
+      "originalTitle": "Nosferatu, eine Symphonie des Grauens",
+      "creator": "F. W. Murnau / Henrik Galeen",
+      "year": 1922,
+      "durationSeconds": 5519,
+      "genres": ["Kinh điển", "Kinh dị", "Phim câm"],
+      "languages": ["Phim câm"],
+      "description": "Bản phim kinh dị biểu hiện chủ nghĩa Đức với Bá tước Orlok và những hình ảnh đã trở thành biểu tượng điện ảnh.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Nosferatu_%281922%29.webm/960px--Nosferatu_%281922%29.webm.jpg",
+      "source": {
+        "provider": "Wikimedia Commons",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Nosferatu_(1922).webm"
+      },
+      "rights": {
+        "licenseCode": "PDM-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "attributionText": "Nosferatu — F. W. Murnau / Henrik Galeen — Wikimedia Commons",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/7/78/Nosferatu_%281922%29.webm",
+        "mimeType": "video/webm"
+      }
+    },
+    {
+      "id": "about-bananas-1935",
+      "kind": "film",
+      "title": "About Bananas",
+      "originalTitle": "About Bananas",
+      "creator": "Castle Films",
+      "year": 1935,
+      "durationSeconds": 660,
+      "genres": ["Tư liệu", "Lịch sử", "Giáo dục"],
+      "languages": ["Tiếng Anh"],
+      "description": "Phim tư liệu lưu trữ về hành trình của chuối từ nông trại nhiệt đới đến thị trường Hoa Kỳ.",
+      "poster": "https://archive.org/services/img/AboutBan1935",
+      "source": {
+        "provider": "Prelinger Archives / Internet Archive",
+        "landingUrl": "https://archive.org/details/AboutBan1935"
+      },
+      "rights": {
+        "licenseCode": "PDM-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "attributionText": "Archival footage supplied by Internet Archive in association with Prelinger Archives",
+        "verifiedAt": "2026-08-10",
+        "commercialAllowed": true,
+        "derivativesAllowed": true
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://archive.org/download/AboutBan1935/AboutBan1935_512kb.mp4",
+        "mimeType": "video/mp4"
+      }
+    }
+  ]
+}
