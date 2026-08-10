@@ -1,5 +1,6 @@
 const crypto = require("crypto");
-const { clean, isOwnerUser } = require("./platform");
+const { ObjectId } = require("mongodb");
+const { clean, isOwnerUser, withDatabaseTransaction } = require("./platform");
 
 const POWER_PERMISSIONS = Object.freeze([
   "permissions.simulate",
@@ -52,7 +53,7 @@ const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
   super_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export", ...POWER_PERMISSIONS],
   admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
-  security_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "sessions.revoke", "platform.view", "audit.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "security.waf.manage", "security.rate-limits.manage", "security.network-blocks.manage", "security.providers.disable", "observability.view", "observability.logs.view", "observability.traces.view", "observability.alerts.manage"],
+  security_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "sessions.revoke", "platform.view", "audit.view", "audit.network-metadata.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "security.waf.manage", "security.rate-limits.manage", "security.network-blocks.manage", "security.providers.disable", "observability.view", "observability.logs.view", "observability.traces.view", "observability.alerts.manage"],
   release_manager: ["dashboard.view", "incidents.view", "platform.view", "platform.manage", "config.manage", "flags.manage", "audit.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "platform.deployments.view", "platform.production.promote", "platform.production.rollback", "platform.cron.manage", "platform.webhooks.manage", "platform.maintenance.manage", "observability.view"],
   content_moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
   moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
@@ -205,9 +206,66 @@ function requirePermission(user, permission) {
 
 function auditSafe(value, depth = 0) {
   if (value == null || depth > 5) return value == null ? null : "[truncated]";
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  if (value instanceof ObjectId || (value?._bsontype === "ObjectId" && typeof value.toHexString === "function")) {
+    return clean(value.toHexString(), 24);
+  }
   if (Array.isArray(value)) return value.slice(0, 100).map((item) => auditSafe(item, depth + 1));
   if (typeof value !== "object") return typeof value === "string" ? clean(value, 1000) : value;
   return Object.fromEntries(Object.entries(value).filter(([key]) => !/(password|hash|token|secret|credential|privateMessage|messageText)/i.test(key)).slice(0, 120).map(([key, item]) => [key, auditSafe(item, depth + 1)]));
+}
+
+function canonicalAuditValue(value) {
+  if (value == null) return value;
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) return value.map(canonicalAuditValue);
+  if (typeof value !== "object") return value;
+  if (typeof value.toHexString === "function") return value.toHexString();
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalAuditValue(value[key])]));
+}
+
+function auditHashPayload(record = {}) {
+  const payload = { ...record };
+  delete payload._id;
+  delete payload.recordHash;
+  return JSON.stringify(canonicalAuditValue(payload));
+}
+
+function computeAdminAuditHash(record = {}) {
+  return crypto.createHash("sha256").update(auditHashPayload(record)).digest("hex");
+}
+
+function maskIp(value) {
+  const ip = clean(value, 120);
+  if (!ip) return "";
+  if (ip.includes(":")) {
+    const parts = ip.split(":").filter(Boolean);
+    return parts.length ? `${parts.slice(0, 3).join(":")}:…` : "masked";
+  }
+  const parts = ip.split(".");
+  return parts.length === 4 ? `${parts[0]}.${parts[1]}.x.x` : "masked";
+}
+
+function maskUserAgent(value) {
+  const ua = clean(value, 500);
+  if (!ua) return "";
+  const browser = ua.match(/(Firefox|Edg|Chrome|Safari)\/[\d.]+/i)?.[1] || "Browser";
+  const platform = /Android/i.test(ua) ? "Android" : /iPhone|iPad/i.test(ua) ? "iOS" : /Windows/i.test(ua) ? "Windows" : /Mac OS/i.test(ua) ? "macOS" : /Linux/i.test(ua) ? "Linux" : "Unknown OS";
+  return `${browser} · ${platform}`;
+}
+
+function presentAdminAuditRecord(record = {}, { revealNetwork = false } = {}) {
+  const safe = auditSafe(record);
+  return {
+    ...safe,
+    id: String(record._id || ""),
+    _id: undefined,
+    recordHash: clean(record.recordHash, 128),
+    previousHash: clean(record.previousHash, 128),
+    ip: revealNetwork ? clean(record.ip, 120) : maskIp(record.ip),
+    userAgent: revealNetwork ? clean(record.userAgent, 500) : maskUserAgent(record.userAgent),
+    networkMetadata: revealNetwork ? "revealed_after_step_up" : "masked"
+  };
 }
 
 function requestMeta(req) {
@@ -217,11 +275,15 @@ function requestMeta(req) {
   };
 }
 
-async function writeAdminAudit(db, req, admin, entry = {}) {
+async function appendAdminAuditRecord(db, session, req, admin, entry, access) {
   const now = new Date();
-  const access = accessFor(admin);
-  const previous = await db.collection("communityAdminAuditLogs").findOne({}, { projection: { recordHash: 1 }, sort: { createdAt: -1 } });
+  const stateCollection = db.collection("communityAdminAuditState");
+  const logs = db.collection("communityAdminAuditLogs");
+  const head = await stateCollection.findOne({ _id: "global" }, { session }) || { sequence: 0, recordHash: "genesis" };
+  const previousSequence = Math.max(0, Number(head.sequence || 0));
+  const sequence = previousSequence + 1;
   const record = {
+    sequence,
     adminId: admin._id,
     admin: { id: String(admin._id), name: clean(admin.name, 120), email: clean(admin.email, 180) },
     roles: access.roles,
@@ -231,14 +293,62 @@ async function writeAdminAudit(db, req, admin, entry = {}) {
     reason: clean(entry.reason, 1000),
     before: auditSafe(entry.before),
     after: auditSafe(entry.after),
-    previousHash: clean(previous?.recordHash || "genesis", 128),
-    integrityVersion: "sha256-chain-v1",
+    previousHash: clean(head.recordHash || "genesis", 128),
+    integrityVersion: "sha256-chain-v2",
     ...requestMeta(req),
     createdAt: now
   };
-  record.recordHash = crypto.createHash("sha256").update(JSON.stringify(record)).digest("hex");
-  await db.collection("communityAdminAuditLogs").insertOne(record);
+  record.recordHash = computeAdminAuditHash(record);
+  const claimed = await stateCollection.updateOne(
+    { _id: "global", sequence: previousSequence, recordHash: head.recordHash || "genesis" },
+    { $set: { sequence, recordHash: record.recordHash, updatedAt: now }, $setOnInsert: { createdAt: now } },
+    { upsert: previousSequence === 0, session }
+  );
+  if (!claimed.matchedCount && !claimed.upsertedCount) {
+    const error = new Error("Audit ledger head changed during append.");
+    error.statusCode = 503;
+    error.code = "AUDIT_LEDGER_CONFLICT";
+    throw error;
+  }
+  await logs.insertOne(record, { session });
   return record;
+}
+
+async function writeAdminAudit(_db, req, admin, entry = {}) {
+  const access = accessFor(admin);
+  return withDatabaseTransaction((db, session) => appendAdminAuditRecord(db, session, req, admin, entry, access));
+}
+
+async function verifyAdminAuditChain(db, { limit = 5000 } = {}) {
+  const cappedLimit = Math.max(1, Math.min(20000, Number(limit || 5000)));
+  const records = await db.collection("communityAdminAuditLogs").find({ sequence: { $exists: true } }).sort({ sequence: 1 }).limit(cappedLimit).toArray();
+  let previousHash = "genesis";
+  let previousSequence = 0;
+  const issues = [];
+  for (const record of records) {
+    const sequence = Number(record.sequence || 0);
+    if (sequence !== previousSequence + 1) issues.push({ sequence, code: "sequence_gap", expected: previousSequence + 1 });
+    if (record.previousHash !== previousHash) issues.push({ sequence, code: "previous_hash_mismatch" });
+    if (record.recordHash !== computeAdminAuditHash(record)) issues.push({ sequence, code: "record_hash_mismatch" });
+    previousSequence = sequence;
+    previousHash = record.recordHash || "";
+    if (issues.length >= 100) break;
+  }
+  const head = await db.collection("communityAdminAuditState").findOne({ _id: "global" });
+  const completeToHead = !head || Number(head.sequence || 0) <= previousSequence;
+  if (records.length && head && completeToHead && (Number(head.sequence || 0) !== previousSequence || head.recordHash !== previousHash)) issues.push({ sequence: previousSequence, code: "head_mismatch" });
+  const segmentValid = issues.length === 0;
+  return {
+    valid: segmentValid && completeToHead,
+    segmentValid,
+    checked: records.length,
+    firstSequence: records[0]?.sequence || null,
+    lastSequence: records.at(-1)?.sequence || null,
+    headSequence: Number(head?.sequence || 0),
+    completeToHead,
+    mode: "sha256-chain-v2",
+    issues
+  };
 }
 
 module.exports = {
@@ -249,12 +359,17 @@ module.exports = {
   ROLE_PERMISSIONS,
   ROLE_RANK,
   accessFor,
+  auditSafe,
   canGrantRole,
+  computeAdminAuditHash,
   hasPermission,
   highestRole,
   normalizePermissions,
+  presentAdminAuditRecord,
   requirePermission,
   rolesFor,
   simulatePermissions,
-  writeAdminAudit
+  verifyAdminAuditChain,
+  writeAdminAudit,
+  __test: Object.freeze({ appendAdminAuditRecord })
 };

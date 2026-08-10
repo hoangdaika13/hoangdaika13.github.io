@@ -46,7 +46,7 @@ test("navigation uses immediate positioning and calm assets are cache-busted", (
   assert.match(english, /const scrollContainers = \[/);
   assert.match(english, /root\.scrollTo\?\.\(\{ top: 0, left: 0, behavior: "auto" \}\)/);
   assert.doesNotMatch(english.slice(english.indexOf("const focusCurrentView"), english.indexOf("const render", english.indexOf("const focusCurrentView"))), /scrollIntoView/);
-  for (const asset of ["motion-comfort.css?v=1", "script.js?v=179", "english-learning.css?v=17", "english-learning.js?v=22", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=4", "english-vocabulary.css?v=1", "english-vocabulary.js?v=1", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "auth-experience.js?v=8"]) {
+  for (const asset of ["motion-comfort.css?v=1", "script.js?v=180", "english-learning.css?v=17", "english-learning.js?v=22", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=4", "english-vocabulary.css?v=1", "english-vocabulary.js?v=1", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "auth-experience.js?v=8"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

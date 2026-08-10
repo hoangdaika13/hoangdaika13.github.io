@@ -1557,3 +1557,196 @@
 @media (prefers-reduced-motion: reduce) {
   .home-neon .hh-admin-root-crown > span.active > i { animation: none; }
 }
+
+/* HH Operations Command Center V4 */
+.home-neon .hh-admin-v4 {
+  --v4-border: rgba(114, 216, 236, .18);
+  --v4-panel: rgba(7, 14, 24, .96);
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  font-size: 13px;
+}
+.home-neon .hh-admin-v4 :where(small, em, time, code, p, dt, dd, td, th, label, input, select, textarea, button) { font-size: 12px !important; }
+.home-neon .hh-admin-v4 :where(button, input, select) { min-height: 40px !important; }
+.home-neon .hh-admin-v4 textarea { min-height: 88px; }
+.home-neon .hh-admin-v4 .hh-admin-galaxy-header { min-height: 72px; padding: 10px 14px; }
+.home-neon .hh-admin-v4 .hh-admin-galaxy-brand p { max-width: 70ch; line-height: 1.35; }
+.home-neon .hh-admin-v4 .hh-admin-root-crown { position: static; min-height: 46px; }
+
+.home-neon .hh-admin-command-bar {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto auto minmax(180px, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 48px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--v4-border);
+  background: rgba(5, 11, 19, .98);
+}
+.home-neon .hh-admin-command-bar > span { display: grid; grid-template-columns: 8px auto; column-gap: 7px; align-items: center; min-width: 128px; }
+.home-neon .hh-admin-command-bar > span i { grid-row: 1 / 3; width: 7px; height: 7px; border-radius: 50%; background: #65efae; box-shadow: 0 0 12px rgba(101,239,174,.55); }
+.home-neon .hh-admin-command-bar .freshness.delayed i { background: #ffd868; box-shadow: 0 0 12px rgba(255,216,104,.45); }
+.home-neon .hh-admin-command-bar .freshness.stale i { background: #ff647f; box-shadow: 0 0 12px rgba(255,100,127,.45); }
+.home-neon .hh-admin-command-bar span small { grid-column: 2; color: #78909b; }
+.home-neon .hh-admin-command-bar .saved-views { display: flex; min-width: 0; gap: 5px; overflow-x: auto; scrollbar-width: thin; }
+.home-neon .hh-admin-command-bar .saved-views > button { flex: 0 0 auto; min-height: 38px !important; }
+
+.home-neon .hh-admin-v4 .hh-admin-command-layout {
+  display: grid;
+  grid-template-columns: minmax(174px, 205px) minmax(360px, 1fr) minmax(240px, 292px);
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+}
+.home-neon .hh-admin-v4 .hh-admin-command-layout > .hh-admin-planets,
+.home-neon .hh-admin-v4 .hh-admin-command-layout > main,
+.home-neon .hh-admin-context-inspector { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.home-neon .hh-admin-v4 .hh-admin-command-layout > main { padding: 10px; }
+.home-neon .hh-admin-v4 .hh-admin-mission { grid-template-columns: minmax(0, 1.35fr) minmax(230px, .65fr); }
+.home-neon .hh-admin-v4 .hh-admin-mission > * { min-width: 0; }
+.home-neon .hh-admin-context-inspector { display: grid; grid-template-rows: auto minmax(0,1fr) auto; border-left: 1px solid var(--v4-border); background: linear-gradient(180deg, rgba(99,230,238,.035), transparent 28%), var(--v4-panel); }
+.home-neon .hh-admin-context-inspector > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-bottom: 1px solid var(--v4-border); }
+.home-neon .hh-admin-context-inspector > header span { display: grid; gap: 3px; }
+.home-neon .hh-admin-context-inspector > header small { color: var(--galaxy-cyan); font-weight: 900; letter-spacing: .08em; }
+.home-neon .hh-admin-context-inspector > header b { padding: 5px 7px; border-radius: 999px; background: rgba(101,239,174,.08); color: #65efae; }
+.home-neon .hh-admin-context-inspector > header b:is(.stale,.failed,.critical) { background: rgba(255,100,127,.09); color: #ff829b; }
+.home-neon .hh-admin-context-inspector > header b.delayed { background: rgba(255,216,104,.08); color: #ffd868; }
+.home-neon .hh-admin-context-inspector > section { padding: 13px; }
+.home-neon .hh-admin-context-inspector > section > strong { display: block; color: #f0f8fa; font-size: 16px; }
+.home-neon .hh-admin-context-inspector p { color: #8ca0aa; line-height: 1.55; }
+.home-neon .hh-admin-context-inspector dl { display: grid; gap: 1px; margin: 12px 0 0; background: var(--v4-border); }
+.home-neon .hh-admin-context-inspector dl > div { display: grid; grid-template-columns: minmax(78px,.7fr) minmax(0,1fr); gap: 7px; padding: 9px; background: #08111b; }
+.home-neon .hh-admin-context-inspector dt { color: #78909b; }
+.home-neon .hh-admin-context-inspector dd { margin: 0; overflow-wrap: anywhere; color: #cfe1e7; text-align: right; }
+.home-neon .hh-admin-context-inspector > footer { padding: 10px 12px; border-top: 1px solid var(--v4-border); color: #758b96; line-height: 1.5; }
+
+.home-neon .hh-admin-job-tray { position: relative; z-index: 4; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 8px; min-height: 58px; padding: 6px 10px; border-top: 1px solid var(--v4-border); background: rgba(4,9,16,.99); }
+.home-neon .hh-admin-job-tray > span { display: grid; min-width: 150px; }
+.home-neon .hh-admin-job-tray > span small { color: var(--galaxy-cyan); font-weight: 900; }
+.home-neon .hh-admin-job-tray > div { display: flex; min-width: 0; gap: 6px; overflow-x: auto; }
+.home-neon .hh-admin-job-tray > div > button { display: grid; grid-template-columns: 8px minmax(100px,1fr); align-items: center; gap: 7px; flex: 0 0 auto; min-width: 160px; text-align: left; }
+.home-neon .hh-admin-job-tray button i { width: 7px; height: 7px; border-radius: 50%; background: #65efae; }
+.home-neon .hh-admin-job-tray button i.failed { background: #ff647f; }
+.home-neon .hh-admin-job-tray button i.paused { background: #ffd868; }
+.home-neon .hh-admin-job-tray button span { display: grid; min-width: 0; }
+.home-neon .hh-admin-job-tray button :is(strong,small) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.home-neon .hh-admin-domain-rack { display: grid; grid-template-columns: repeat(5,minmax(140px,1fr)); gap: 7px; margin: 8px 0; overflow-x: auto; }
+.home-neon .hh-admin-domain-rack > button { display: grid; grid-template-columns: 34px minmax(0,1fr); align-items: center; gap: 8px; min-height: 78px !important; padding: 9px; text-align: left; }
+.home-neon .hh-admin-domain-rack > button > i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(99,230,238,.08); color: var(--galaxy-cyan); font-style: normal; }
+.home-neon .hh-admin-domain-rack button span { display: grid; min-width: 0; gap: 2px; }
+.home-neon .hh-admin-domain-rack button small { color: #7be3eb; font-weight: 900; }
+.home-neon .hh-admin-domain-rack button em { overflow: hidden; color: #718995; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.home-neon .hh-admin-intelligence-strip { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; margin-bottom: 8px; }
+.home-neon .hh-admin-intelligence-strip > article { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 8px; min-height: 82px; padding: 10px; border: 1px solid var(--v4-border); border-radius: 10px; background: rgba(7,15,25,.9); }
+.home-neon .hh-admin-intelligence-strip article > i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: rgba(168,121,255,.09); color: var(--galaxy-violet); font-style: normal; font-weight: 900; }
+.home-neon .hh-admin-intelligence-strip article > span { display: grid; gap: 2px; min-width: 0; }
+.home-neon .hh-admin-intelligence-strip small { color: #b28cfb; font-weight: 900; }
+.home-neon .hh-admin-intelligence-strip p { margin: 2px 0 0; color: #748b96; line-height: 1.4; }
+
+.home-neon .hh-admin-rights-console { margin-bottom: 9px; overflow: hidden; border: 1px solid rgba(255,216,104,.22); border-radius: 11px; background: rgba(255,216,104,.035); }
+.home-neon .hh-admin-rights-console > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid rgba(255,216,104,.16); }
+.home-neon .hh-admin-rights-console header span { display: grid; }
+.home-neon .hh-admin-rights-console header small { color: #ffd868; font-weight: 900; }
+.home-neon .hh-admin-rights-console > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; }
+.home-neon .hh-admin-rights-console p { margin: 0; color: #91a4ad; line-height: 1.45; }
+
+.hh-admin-modal .hh-admin-role-diff { overflow: hidden; border: 1px solid rgba(99,230,238,.25); border-radius: 10px; background: rgba(99,230,238,.035); }
+.hh-admin-modal .hh-admin-role-diff > header { display: flex; justify-content: space-between; gap: 8px; padding: 10px; border-bottom: 1px solid rgba(99,230,238,.16); }
+.hh-admin-modal .hh-admin-role-diff > div { display: grid; grid-template-columns: minmax(0,1fr) 24px minmax(0,1fr); align-items: center; gap: 7px; padding: 10px; }
+.hh-admin-modal .hh-admin-role-diff span { display: grid; gap: 4px; min-width: 0; }
+.hh-admin-modal .hh-admin-role-diff code { overflow-wrap: anywhere; color: #c5f6f9; }
+.hh-admin-modal .hh-admin-role-diff i { color: var(--admin-cyan); font-style: normal; text-align: center; }
+.hh-admin-modal .hh-admin-confirm-change { display: flex !important; align-items: center; min-height: 44px; padding: 9px; border: 1px solid rgba(255,216,104,.24); border-radius: 8px; background: rgba(255,216,104,.04); }
+.hh-admin-modal .hh-admin-confirm-change input { min-height: auto; }
+.hh-admin-modal :where(small, em, time, code, p, label, input, select, textarea, button) { font-size: 12px !important; }
+.hh-admin-modal :where(button, input, select) { min-height: 40px; }
+
+@media (max-width: 1180px) {
+  .home-neon .hh-admin-v4 .hh-admin-command-layout { grid-template-columns: 190px minmax(330px,1fr) 240px; }
+  .home-neon .hh-admin-v4 .hh-admin-planets > button { min-height: 62px !important; }
+  .home-neon .hh-admin-v4 .hh-admin-planets > button span { min-width: 0; }
+  .home-neon .hh-admin-v4 .hh-admin-planets > button :is(small,strong) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .home-neon .hh-admin-domain-rack { grid-template-columns: repeat(5,170px); }
+  .home-neon .hh-admin-intelligence-strip { grid-template-columns: repeat(3,230px); overflow-x: auto; }
+}
+@media (max-width: 900px) {
+  .home-neon .hh-admin-v4 { grid-template-rows: auto auto auto minmax(0,1fr) auto; }
+  .home-neon .hh-admin-command-bar { grid-template-columns: 1fr 1fr auto; }
+  .home-neon .hh-admin-command-bar .saved-views { grid-column: 1 / -1; grid-row: 2; }
+  .home-neon .hh-admin-v4 .hh-admin-command-layout { grid-template-columns: 1fr; grid-template-rows: auto minmax(280px,1fr) minmax(150px,.55fr); }
+  .home-neon .hh-admin-v4 .hh-admin-mission { grid-template-columns: 1fr; }
+  .home-neon .hh-admin-v4 .hh-admin-action-queue { min-height: 240px; }
+  .home-neon .hh-admin-v4 .hh-admin-command-layout > .hh-admin-planets { display: flex; max-height: 66px; overflow-x: auto; }
+  .home-neon .hh-admin-v4 .hh-admin-command-layout > .hh-admin-planets > button { flex: 0 0 168px; }
+  .home-neon .hh-admin-context-inspector { border-top: 1px solid var(--v4-border); border-left: 0; }
+  .home-neon .hh-admin-context-inspector > section { overflow: auto; }
+}
+@media (max-width: 620px) {
+  .home-neon .hh-admin-v4 .hh-admin-galaxy-header { display: none; }
+  .home-neon .hh-admin-v4 .hh-admin-root-crown { display: none; }
+  .home-neon .hh-admin-command-bar { grid-template-columns: 1fr 1fr; }
+  .home-neon .hh-admin-command-bar > button { min-width: 0; }
+  .home-neon .hh-admin-command-bar .saved-views { grid-column: 1 / -1; }
+  .home-neon .hh-admin-v4 .hh-admin-command-layout { grid-template-rows: auto minmax(300px,1fr) 170px; }
+  .home-neon .hh-admin-v4 .hh-admin-command-layout > main { padding: 7px; }
+  .home-neon .hh-admin-job-tray { grid-template-columns: 1fr auto; }
+  .home-neon .hh-admin-job-tray > div { grid-column: 1 / -1; grid-row: 2; }
+  .home-neon .hh-admin-job-tray > span { min-width: 0; }
+  .home-neon .hh-admin-domain-rack { grid-template-columns: repeat(5,180px); }
+  .home-neon .hh-admin-rights-console > div { align-items: stretch; flex-direction: column; }
+  .home-neon .hh-admin-v4 .hh-admin-table { border: 0; overflow: visible; }
+  .home-neon .hh-admin-v4 .hh-admin-table :is(table,tbody,tr,td) { display: block; width: 100%; }
+  .home-neon .hh-admin-v4 .hh-admin-table thead { display: none; }
+  .home-neon .hh-admin-v4 .hh-admin-table tr { margin-bottom: 8px; overflow: hidden; border: 1px solid var(--v4-border); border-radius: 10px; background: #0b151f; }
+  .home-neon .hh-admin-v4 .hh-admin-table td { display: grid; grid-template-columns: minmax(84px,.45fr) minmax(0,1fr); gap: 8px; min-height: 40px; padding: 8px 10px; overflow-wrap: anywhere; }
+  .home-neon .hh-admin-v4 .hh-admin-table td::before { color: #708994; font-weight: 800; }
+  .home-neon .hh-admin-v4 .hh-admin-table td:nth-child(1)::before { content: "Đối tượng"; }
+  .home-neon .hh-admin-v4 .hh-admin-table td:nth-child(2)::before { content: "Trạng thái"; }
+  .home-neon .hh-admin-v4 .hh-admin-table td:nth-child(3)::before { content: "Thông tin"; }
+  .home-neon .hh-admin-v4 .hh-admin-table td:nth-child(4)::before { content: "Quyền / IP"; }
+  .home-neon .hh-admin-v4 .hh-admin-table td:nth-child(5)::before { content: "Thời gian"; }
+  .home-neon .hh-admin-v4 .hh-admin-table td:nth-child(6)::before { content: "Thao tác"; }
+  .hh-admin-modal .hh-admin-role-diff > div { grid-template-columns: 1fr; }
+  .hh-admin-modal .hh-admin-role-diff i { transform: rotate(90deg); }
+}
+@media (max-width: 375px) {
+  .home-neon .hh-admin-command-bar { gap: 4px; padding: 4px; }
+  .home-neon .hh-admin-command-bar > span { min-width: 0; }
+  .home-neon .hh-admin-command-bar > button { padding-inline: 7px; }
+  .home-neon .hh-admin-v4 .hh-admin-command-layout > .hh-admin-planets > button { flex-basis: 148px; }
+  .home-neon .hh-admin-v4 .hh-admin-orbit-system { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-neon .hh-admin-context-inspector dl > div { grid-template-columns: 1fr; }
+  .home-neon .hh-admin-context-inspector dd { text-align: left; }
+}
+@media (max-height: 700px) and (min-width: 901px) {
+  .home-neon .hh-admin-v4 .hh-admin-galaxy-header {
+    display: grid;
+    grid-template-columns: minmax(250px, .8fr) minmax(0, 2fr);
+    height: 64px;
+    min-height: 64px;
+    padding: 5px 10px;
+    overflow: hidden;
+  }
+  .home-neon .hh-admin-v4 .hh-admin-core-mark { width: 42px; height: 42px; }
+  .home-neon .hh-admin-v4 .hh-admin-galaxy-brand h5 { font-size: 20px; white-space: nowrap; }
+  .home-neon .hh-admin-v4 .hh-admin-galaxy-brand p { display: none; }
+  .home-neon .hh-admin-v4 .hh-admin-galaxy-controls { min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+  .home-neon .hh-admin-v4 .hh-admin-galaxy-controls > * { flex: 0 0 auto; }
+  .home-neon .hh-admin-v4 .hh-admin-root-crown {
+    grid-template-columns: repeat(4, minmax(110px, 1fr)) auto !important;
+    height: 46px;
+    min-height: 46px;
+    overflow: hidden;
+  }
+  .home-neon .hh-admin-v4 .hh-admin-root-crown > span { min-height: 46px; padding: 4px 8px; }
+  .home-neon .hh-admin-v4 .hh-admin-root-crown > button { grid-row: auto !important; grid-column: auto !important; min-height: 46px !important; }
+  .home-neon .hh-admin-v4 .hh-admin-job-tray { min-height: 56px; padding-block: 4px; }
+}

@@ -1,4 +1,5 @@
 const { ObjectId } = require("mongodb");
+const crypto = require("crypto");
 const { adminEmails, adminUserIds, clean, currentUser, enforceRateLimit, isOwnerUser, withApi } = require("./platform");
 const {
   PERMISSION_CATALOG,
@@ -9,9 +10,11 @@ const {
   hasPermission,
   highestRole,
   normalizePermissions,
+  presentAdminAuditRecord,
   requirePermission,
   rolesFor,
   simulatePermissions,
+  verifyAdminAuditChain,
   writeAdminAudit
 } = require("./community-admin");
 
@@ -41,6 +44,7 @@ const INCIDENT_STATUSES = new Set(["new", "investigating", "mitigated", "resolve
 const JOB_ACTIONS = new Set(["pause", "retry", "cancel", "duplicate"]);
 const CONTENT_COLLECTIONS = Object.freeze({ post: "communityPosts", story: "communityStories" });
 const PRIVILEGE_DURATIONS = new Set([15, 30, 60]);
+const APPROVAL_EXECUTION_LEASE_MS = 5 * 60 * 1000;
 const CONTROL_ACTIONS = Object.freeze([
   { id: "platform.maintenance", group: "Platform", label: "Bật/tắt Maintenance Mode", permission: "platform.maintenance.manage", tier: "elevated", adapter: "internal" },
   { id: "platform.promote", group: "Platform", label: "Promote deployment", permission: "platform.production.promote", tier: "elevated", adapter: "vercel" },
@@ -77,6 +81,7 @@ function ensureAdminIndexes(db) {
     adminIndexesPromise = Promise.all([
       db.collection("communityAdminAuditLogs").createIndex({ createdAt: -1 }),
       db.collection("communityAdminAuditLogs").createIndex({ adminId: 1, createdAt: -1 }),
+      db.collection("communityAdminAuditLogs").createIndex({ sequence: 1 }, { unique: true, sparse: true }),
       db.collection("communityFeatureFlags").createIndex({ key: 1 }, { unique: true }),
       db.collection("communitySystemConfig").createIndex({ key: 1 }, { unique: true }),
       db.collection("communityEmailTemplates").createIndex({ key: 1 }, { unique: true }),
@@ -98,6 +103,8 @@ function ensureAdminIndexes(db) {
       db.collection("communityPrivilegeActivations").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       db.collection("communityApprovalRequests").createIndex({ status: 1, createdAt: -1 }),
       db.collection("communityApprovalRequests").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      db.collection("communityApprovalRequests").createIndex({ requestKey: 1 }, { unique: true, sparse: true }),
+      db.collection("communityQueueJobs").createIndex({ adminOperationKey: 1 }, { unique: true, sparse: true }),
       db.collection("communityControlPolicies").createIndex({ key: 1 }, { unique: true })
     ]).catch((error) => {
       adminIndexesPromise = null;
@@ -130,6 +137,59 @@ function requiredReason(body) {
     throw error;
   }
   return reason;
+}
+
+function stableKey(value) {
+  const stable = (item) => {
+    if (item == null || typeof item !== "object") return item;
+    if (Array.isArray(item)) return item.map(stable);
+    return Object.fromEntries(Object.keys(item).sort().map((key) => [key, stable(item[key])]));
+  };
+  return crypto.createHash("sha256").update(JSON.stringify(stable(value))).digest("hex");
+}
+
+function idempotencyKey(req, body, scope) {
+  const supplied = clean(req.headers["x-idempotency-key"] || body.idempotencyKey, 160);
+  if (supplied && /^[a-zA-Z0-9_.:-]{8,160}$/.test(supplied)) return `${scope}:${supplied}`;
+  return "";
+}
+
+function approvalClaimFilter(requestId, adminId, now = new Date()) {
+  return { _id: requestId, status: "pending", expiresAt: { $gt: now }, "approvals.id": { $ne: adminId } };
+}
+
+function configuredProviderStatus(configured, health = {}, now = new Date()) {
+  if (!configured) return "not_configured";
+  const checkedAt = health?.lastCheckedAt ? new Date(health.lastCheckedAt) : null;
+  const expiresAt = health?.expiresAt ? new Date(health.expiresAt) : null;
+  if (expiresAt && !Number.isNaN(expiresAt.getTime()) && expiresAt <= now) return "credential_expired";
+  if (!checkedAt || Number.isNaN(checkedAt.getTime()) || now.getTime() - checkedAt.getTime() > 15 * 60 * 1000) return "health_stale";
+  return health?.status === "operational" ? "verified_operational" : "configured_not_verified";
+}
+
+async function recoverStaleApprovalClaims(db, now = new Date()) {
+  const staleBefore = new Date(now.getTime() - APPROVAL_EXECUTION_LEASE_MS);
+  const result = await db.collection("communityApprovalRequests").updateMany(
+    { status: "executing", executionClaimedAt: { $lte: staleBefore } },
+    {
+      $set: {
+        status: "reconciliation_required",
+        recoveryDetectedAt: now,
+        result: {
+          status: "reconciliation_required",
+          detail: "Execution lease expired. Automatic replay is blocked until another privileged administrator verifies the external side effect.",
+          affected: 0
+        }
+      }
+    }
+  );
+  return Number(result.modifiedCount || 0);
+}
+
+function setAdminReadCache(res, view) {
+  const shortPrivateViews = new Set(["mission", "incidents", "platform", "operations"]);
+  res.setHeader?.("Cache-Control", shortPrivateViews.has(view) ? "private, max-age=5, stale-while-revalidate=10" : "private, no-store");
+  res.setHeader?.("Vary", "Origin, Cookie, Authorization");
 }
 
 function isPrivilegedAdmin(user) {
@@ -228,28 +288,49 @@ function presentApproval(item = {}) {
     } : null,
     createdAt: item.createdAt || null,
     expiresAt: item.expiresAt || null,
-    completedAt: item.completedAt || null
+    completedAt: item.completedAt || null,
+    execution: {
+      claimId: item.executionClaimId ? clean(item.executionClaimId, 120) : "",
+      claimedAt: item.executionClaimedAt || null,
+      leaseExpiresAt: item.executionClaimedAt ? new Date(new Date(item.executionClaimedAt).getTime() + APPROVAL_EXECUTION_LEASE_MS) : null,
+      state: clean(item.status, 40),
+      idempotent: true
+    }
   };
 }
 
 function approvalForAdmin(item, admin) {
+  const claimAt = item.executionClaimedAt ? new Date(item.executionClaimedAt) : null;
+  const staleExecuting = item.status === "executing"
+    && claimAt
+    && !Number.isNaN(claimAt.getTime())
+    && claimAt.getTime() <= Date.now() - APPROVAL_EXECUTION_LEASE_MS;
+  const effective = staleExecuting ? {
+    ...item,
+    status: "reconciliation_required",
+    result: item.result || { status: "reconciliation_required", detail: "Execution lease expired. Automatic replay is blocked pending manual verification.", affected: 0 }
+  } : item;
   return {
-    ...presentApproval(item),
-    canApprove: item.status === "pending"
+    ...presentApproval(effective),
+    canApprove: effective.status === "pending"
       && isPrivilegedAdmin(admin)
-      && !(item.approvals || []).some((approval) => String(approval.id) === String(admin._id))
+      && !(effective.approvals || []).some((approval) => String(approval.id) === String(admin._id)),
+    canReconcile: effective.status === "reconciliation_required"
+      && isPrivilegedAdmin(admin)
+      && String(effective.executionClaimedBy || "") !== String(admin._id || "")
   };
 }
 
-async function executeControlAction(db, admin, capability, input, now = new Date()) {
+async function executeControlAction(db, admin, capability, input, now = new Date(), executionKey = "") {
   const adapter = adapterStates()[capability.adapter] || { connected: false, label: capability.adapter };
   if (!adapter.connected) return { status: "approved_waiting_adapter", detail: `${adapter.label} chưa được kết nối; yêu cầu đã được phê duyệt nhưng chưa chạy.`, affected: 0 };
   if (capability.id === "security.logout-all") {
-    const [sessions, users] = await Promise.all([
+    const [authSessions, legacySessions, users] = await Promise.all([
       db.collection("authSessions").updateMany({ revokedAt: null }, { $set: { revokedAt: now, revokeReason: "admin-global-revoke", revokedBy: admin._id } }),
+      db.collection("sessions").updateMany({ endedAt: null }, { $set: { endedAt: now, revokedAt: now, revokeReason: "admin-global-revoke", revokedBy: admin._id } }),
       db.collection("users").updateMany({ status: { $nin: ["deleted", "banned"] } }, { $inc: { tokenVersion: 1 }, $set: { sessionsRevokedAt: now } })
     ]);
-    return { status: "executed", detail: "Đã thu hồi toàn bộ phiên đăng nhập hợp lệ.", affected: Number(sessions.modifiedCount || 0) + Number(users.modifiedCount || 0) };
+    return { status: "executed", detail: "Đã thu hồi toàn bộ phiên đăng nhập hợp lệ.", affected: Number(authSessions.modifiedCount || 0) + Number(legacySessions.modifiedCount || 0) + Number(users.modifiedCount || 0), executionKey };
   }
   if (capability.id === "database.indexes") {
     const indexes = await db.collection("users").indexes();
@@ -271,7 +352,7 @@ async function executeControlAction(db, admin, capability, input, now = new Date
   if (key) {
     await db.collection("communityControlPolicies").updateOne(
       { key },
-      { $set: { key, value: input.value, note: input.note, updatedAt: now, updatedBy: admin._id }, $setOnInsert: { createdAt: now } },
+      { $set: { key, value: input.value, note: input.note, updatedAt: now, updatedBy: admin._id, ...(executionKey ? { lastExecutionKey: executionKey } : {}) }, $setOnInsert: { createdAt: now } },
       { upsert: true }
     );
     return { status: "policy_recorded", detail: "Chính sách đã được lưu trong HH control plane và ghi audit.", affected: 1 };
@@ -338,12 +419,56 @@ function statusFromCount(count, warningAt = 1, criticalAt = 10) {
   return value >= criticalAt ? "critical" : value >= warningAt ? "warning" : "operational";
 }
 
+function presentQueueJob(item = {}) {
+  return {
+    id: String(item._id || ""),
+    type: clean(item.type || item.kind || "background-job", 100),
+    status: clean(item.status || "queued", 40),
+    provider: clean(item.provider || "internal", 80),
+    attempts: Math.max(0, Number(item.attempts || 0)),
+    progress: Math.max(0, Math.min(100, Number(item.progress || 0))),
+    runnable: item.runnable !== false && !["blocked_missing_payload", "cancelled", "paused"].includes(item.status),
+    sourceJobId: item.sourceJobId ? String(item.sourceJobId) : "",
+    sanitizedError: clean(item.sanitizedError || item.errorCode, 240),
+    createdAt: item.createdAt || null,
+    updatedAt: item.updatedAt || null
+  };
+}
+
+function buildDuplicateJob(source = {}, { now = new Date(), reason = "", sourceJobId = "", operationKey = "" } = {}) {
+  const hasPayload = source.payload != null && (typeof source.payload === "object"
+    ? (Array.isArray(source.payload) ? source.payload.length > 0 : Object.keys(source.payload).length > 0)
+    : String(source.payload).length > 0);
+  return {
+    type: clean(source.type || source.kind || "background-job", 100),
+    kind: clean(source.kind || source.type || "background-job", 100),
+    provider: clean(source.provider || "internal", 80),
+    queue: clean(source.queue || "default", 80),
+    priority: Math.max(0, Math.min(100, Number(source.priority || 0))),
+    ...(source.ownerId ? { ownerId: source.ownerId } : {}),
+    ...(source.userId ? { userId: source.userId } : {}),
+    ...(hasPayload ? { payload: source.payload } : {}),
+    ...(source.checkpoint != null ? { checkpoint: source.checkpoint } : {}),
+    status: hasPayload ? "queued" : "blocked_missing_payload",
+    runnable: hasPayload,
+    progress: 0,
+    attempts: 0,
+    sourceJobId,
+    createdAt: now,
+    updatedAt: now,
+    adminReason: clean(reason, 1000),
+    ...(operationKey ? { adminOperationKey: operationKey } : {})
+  };
+}
+
 function safeIncident(item = {}) {
+  const severity = ["critical", "high", "medium", "low"].includes(item.severity) ? item.severity : "low";
   return {
     signalKey: clean(item.signalKey, 100),
     title: clean(item.title, 180),
     description: clean(item.description, 500),
-    severity: ["critical", "high", "medium", "low"].includes(item.severity) ? item.severity : "low",
+    severity,
+    severityLevel: ({ critical: "SEV-0", high: "SEV-1", medium: "SEV-2", low: "SEV-3" })[severity],
     source: clean(item.source || "system", 80),
     targetType: clean(item.targetType || "system", 80),
     targetId: clean(item.targetId || "platform", 160),
@@ -352,6 +477,10 @@ function safeIncident(item = {}) {
     status: INCIDENT_STATUSES.has(item.status) ? item.status : "new",
     assignee: clean(item.assignee, 180),
     resolution: clean(item.resolution, 1000),
+    impact: clean(item.impact, 1000),
+    runbookId: clean(item.runbookId, 100),
+    commander: clean(item.commander || item.assignee, 180),
+    nextUpdateAt: item.nextUpdateAt || null,
     detectedAt: item.detectedAt || item.createdAt || null,
     updatedAt: item.updatedAt || null,
     timeline: Array.isArray(item.timeline) ? item.timeline.slice(-20).map((entry) => ({
@@ -495,12 +624,16 @@ async function assertTargetAllowed(admin, target) {
   }
 }
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {
     const admin = await currentUser(req);
     if (!admin) return res.status(401).json({ error: "Bạn cần đăng nhập để truy cập Community Admin." });
     const view = clean(req.query.view || "me", 40);
     const access = accessFor(admin);
+    if (req.method === "GET") {
+      setAdminReadCache(res, view);
+      await enforceRateLimit(db, `community:admin-read:${admin._id}`, 600, 10 * 60 * 1000);
+    }
 
     if (req.method === "GET" && view === "me") {
       return res.status(200).json({ ok: true, access, privilege: await privilegeState(db, admin), user: presentUser(admin), privacy: { privateMessagesVisibleToAdmin: false, passwordsVisibleToAdmin: false } });
@@ -650,7 +783,9 @@ module.exports = async function handler(req, res) {
           reasonRequiredForSensitiveActions: true,
           temporaryElevationMinutes: [...PRIVILEGE_DURATIONS],
           criticalActionApprovals: 2,
-          immutableAuditChain: true
+          tamperEvidentAuditChain: true,
+          immutableAuditChain: false,
+          externalAuditAnchor: false
         }
       });
     }
@@ -659,7 +794,7 @@ module.exports = async function handler(req, res) {
       requirePermission(admin, "dashboard.view");
       const now = new Date();
       const [approvals, policies, databaseCollections] = await Promise.all([
-        db.collection("communityApprovalRequests").find({ status: { $in: ["pending", "approved_waiting_adapter"] }, expiresAt: { $gt: now } }).sort({ createdAt: -1 }).limit(30).toArray(),
+        db.collection("communityApprovalRequests").find({ status: { $in: ["pending", "approved_waiting_adapter", "executing", "reconciliation_required"] } }).sort({ createdAt: -1 }).limit(30).toArray(),
         db.collection("communityControlPolicies").find({}, { projection: { key: 1, value: 1, note: 1, updatedAt: 1 } }).sort({ key: 1 }).limit(100).toArray(),
         db.listCollections({}, { nameOnly: true }).toArray()
       ]);
@@ -679,6 +814,151 @@ module.exports = async function handler(req, res) {
           environment: clean(process.env.VERCEL_ENV || "production", 40)
         },
         privacy: { secretsReturned: false, tokensReturned: false, privateDataReturned: false }
+      });
+    }
+
+    if (req.method === "GET" && view === "operations") {
+      requirePermission(admin, "dashboard.view");
+      const now = new Date();
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const canPlatform = hasPermission(admin, "platform.view");
+      const canIncidents = hasPermission(admin, "incidents.view");
+      const canGrowth = hasPermission(admin, "growth.view");
+      const canRights = hasPermission(admin, "content.manage") || hasPermission(admin, "reports.manage");
+      const [jobSummary, incidentSummary, donationSummary, aiSummary, rightsCases, activeRestrictions, integrationHealth] = await Promise.all([
+        canPlatform ? db.collection("communityQueueJobs").aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { _id: 1 } }]).toArray() : [],
+        canIncidents ? db.collection("communityIncidents").aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { _id: 1 } }]).toArray() : [],
+        canGrowth ? db.collection("donations").aggregate([{ $match: { createdAt: { $gte: monthAgo } } }, { $group: { _id: "$status", count: { $sum: 1 }, amount: { $sum: "$amount" } } }, { $sort: { _id: 1 } }]).toArray() : [],
+        canGrowth ? db.collection("gatewayAuditLogs").aggregate([{ $match: { createdAt: { $gte: monthAgo } } }, { $group: { _id: "$provider", requests: { $sum: 1 }, costUnits: { $sum: "$cost" }, failures: { $sum: { $cond: [{ $eq: ["$outcome", "failed"] }, 1, 0] } } } }, { $sort: { requests: -1 } }]).toArray() : [],
+        canRights ? db.collection("openMediaNotices").aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { _id: 1 } }]).toArray() : [],
+        canRights ? db.collection("openMediaRestrictions").countDocuments({ blocked: true }) : 0,
+        canPlatform ? db.collection("communityIntegrationHealth").find({}, { projection: { provider: 1, status: 1, lastCheckedAt: 1, lastSuccessAt: 1, errorCode: 1, expiresAt: 1 } }).sort({ provider: 1 }).limit(100).toArray() : []
+      ]);
+      const configuredProviders = {
+        googleOAuth: envReady("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"),
+        email: envReady("RESEND_API_KEY", "EMAIL_FROM"),
+        youtube: Boolean(process.env.YOUTUBE_API_KEY),
+        facebook: envReady("META_APP_ID", "META_APP_SECRET"),
+        openai: Boolean(process.env.OPENAI_API_KEYS || process.env.OPENAI_API_KEY),
+        gemini: Boolean(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
+        payos: envReady("PAYOS_CLIENT_ID", "PAYOS_API_KEY", "PAYOS_CHECKSUM_KEY"),
+        vercel: envReady("VERCEL_API_TOKEN", "VERCEL_PROJECT_ID"),
+        cloudflare: envReady("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ZONE_ID"),
+        mongodb: Boolean(process.env.MONGODB_URI),
+        objectStorage: Boolean(process.env.BLOB_READ_WRITE_TOKEN || envReady("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"))
+      };
+      const healthByProvider = new Map(integrationHealth.map((item) => [clean(item.provider, 80), item]));
+      return res.status(200).json({
+        ok: true,
+        generatedAt: now,
+        freshness: { source: "database-and-runtime", status: "live", generatedAt: now },
+        integrations: canPlatform ? Object.entries(configuredProviders).map(([provider, configured]) => {
+          const health = healthByProvider.get(provider);
+          return {
+            provider,
+            configured,
+            status: configuredProviderStatus(configured, health, now),
+            lastCheckedAt: health?.lastCheckedAt || null,
+            lastSuccessAt: health?.lastSuccessAt || null,
+            expiresAt: health?.expiresAt || null,
+            errorCode: clean(health?.errorCode, 80),
+            secretsReturned: false
+          };
+        }) : null,
+        jobs: canPlatform ? {
+          byStatus: jobSummary.map((item) => ({ status: clean(item._id || "unknown", 40), count: Number(item.count || 0) })),
+          payloadsReturned: false,
+          controls: ["pause", "retry", "cancel", "duplicate"]
+        } : null,
+        incidents: canIncidents ? {
+          byStatus: incidentSummary.map((item) => ({ status: clean(item._id || "new", 40), count: Number(item.count || 0) })),
+          workflow: ["new", "investigating", "mitigated", "resolved"],
+          runbooksCollection: "communityIncidentRunbooks"
+        } : null,
+        rights: canRights ? {
+          byStatus: rightsCases.map((item) => ({ status: clean(item._id || "unknown", 40), count: Number(item.count || 0) })),
+          activeRestrictions: Number(activeRestrictions || 0),
+          emergencySuspensionSupported: true,
+          evidenceRequiredToRestore: true
+        } : null,
+        finance: canGrowth ? {
+          periodDays: 30,
+          byStatus: donationSummary.map((item) => ({ status: clean(item._id || "unknown", 40), count: Number(item.count || 0), amount: Number(item.amount || 0) })),
+          paymentDetailsReturned: false
+        } : null,
+        aiCost: canGrowth ? {
+          periodDays: 30,
+          byProvider: aiSummary.map((item) => ({ provider: clean(item._id || "unknown", 80), requests: Number(item.requests || 0), costUnits: Number(item.costUnits || 0), failures: Number(item.failures || 0) })),
+          currency: "provider_units",
+          rawPromptsReturned: false
+        } : null,
+        privacy: { secretsReturned: false, tokensReturned: false, jobPayloadsReturned: false, rawPromptsReturned: false }
+      });
+    }
+
+    if (req.method === "GET" && view === "intelligence") {
+      requirePermission(admin, "observability.view");
+      const now = new Date();
+      const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const sevenHoursAgo = new Date(now.getTime() - 7 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const replayKey = clean(req.query.signalKey || req.query.correlationId, 100).toLowerCase();
+      const [currentErrors, baselineErrors, failedJobs, staleJobs, paymentDays, usageDays, policies, policyEvidence, incident, auditTimeline, jobTimeline] = await Promise.all([
+        db.collection("events").countDocuments({ type: { $regex: /error|failure|exception/i }, createdAt: { $gte: hourAgo } }),
+        db.collection("events").countDocuments({ type: { $regex: /error|failure|exception/i }, createdAt: { $gte: sevenHoursAgo, $lt: hourAgo } }),
+        db.collection("communityQueueJobs").countDocuments({ status: "failed" }),
+        db.collection("communityQueueJobs").countDocuments({ status: { $in: ["queued", "running"] }, updatedAt: { $lt: hourAgo } }),
+        db.collection("donations").aggregate([{ $match: { createdAt: { $gte: thirtyDaysAgo }, status: { $in: ["paid", "completed", "success"] } } }, { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, amount: { $sum: "$amount" }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }]).toArray(),
+        db.collection("gatewayAuditLogs").aggregate([{ $match: { createdAt: { $gte: thirtyDaysAgo } } }, { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, requests: { $sum: 1 }, costUnits: { $sum: "$cost" } } }, { $sort: { _id: 1 } }]).toArray(),
+        db.collection("communityControlPolicies").find({}, { projection: { key: 1, value: 1, note: 1, updatedAt: 1, lastExecutionKey: 1 } }).sort({ key: 1 }).limit(200).toArray(),
+        db.collection("communityPolicyEnforcementHealth").find({}, { projection: { key: 1, status: 1, lastCheckedAt: 1, enforcementPoint: 1 } }).sort({ key: 1 }).limit(200).toArray(),
+        replayKey ? db.collection("communityIncidents").findOne({ signalKey: replayKey }) : null,
+        replayKey ? db.collection("communityAdminAuditLogs").find({ $or: [{ targetId: replayKey }, { "after.signalKey": replayKey }] }).sort({ createdAt: 1 }).limit(100).toArray() : [],
+        replayKey ? db.collection("communityQueueJobs").find({ $or: [{ incidentKey: replayKey }, { correlationId: replayKey }, { targetId: replayKey }] }, { projection: { payload: 0, secret: 0, token: 0, credentials: 0 } }).sort({ createdAt: 1 }).limit(100).toArray() : []
+      ]);
+      const baselinePerHour = Number(baselineErrors || 0) / 6;
+      const errorThreshold = Math.max(3, Math.ceil(baselinePerHour * 3));
+      const anomalies = [
+        { id: "errors.rate", title: "API error rate", value: Number(currentErrors || 0), baseline: Number(baselinePerHour.toFixed(2)), threshold: errorThreshold, detected: Number(currentErrors || 0) >= errorThreshold, method: "current_1h_vs_previous_6h" },
+        { id: "queue.failed", title: "Failed background jobs", value: Number(failedJobs || 0), baseline: 0, threshold: 1, detected: Number(failedJobs || 0) >= 1, method: "fixed_operational_threshold" },
+        { id: "queue.stale", title: "Stale runnable jobs", value: Number(staleJobs || 0), baseline: 0, threshold: 1, detected: Number(staleJobs || 0) >= 1, method: "queued_or_running_over_60m" }
+      ];
+      const forecast = (rows, valueKey, label) => {
+        const samples = rows.map((item) => Number(item[valueKey] || 0)).filter(Number.isFinite);
+        if (samples.length < 7) return { metric: label, status: "insufficient_data", sampleDays: samples.length, minimumSampleDays: 7, estimate: null };
+        const recent = samples.slice(-7);
+        return { metric: label, status: "estimate", sampleDays: samples.length, horizonDays: 7, method: "seven_day_moving_average", dailyAverage: Number((recent.reduce((sum, value) => sum + value, 0) / recent.length).toFixed(2)), estimate: Number(recent.reduce((sum, value) => sum + value, 0).toFixed(2)) };
+      };
+      const evidenceByKey = new Map(policyEvidence.map((item) => [clean(item.key, 120), item]));
+      const replay = [
+        ...(incident?.timeline || []).map((item) => ({ type: "incident", at: item.at || incident.updatedAt || incident.createdAt, status: clean(item.status, 40), detail: clean(item.note, 500) })),
+        ...auditTimeline.map((item) => ({ type: /deploy|rollback|promote/i.test(item.action) ? "deployment" : "audit", at: item.createdAt, status: clean(item.action, 100), detail: clean(item.reason, 500), record: presentAdminAuditRecord(item) })),
+        ...jobTimeline.map((item) => ({ type: "job", at: item.updatedAt || item.createdAt, status: clean(item.status, 40), detail: clean(item.sanitizedError || item.errorCode, 240), job: presentQueueJob(item) }))
+      ].sort((left, right) => new Date(left.at || 0) - new Date(right.at || 0)).slice(-200);
+      return res.status(200).json({
+        ok: true,
+        generatedAt: now,
+        engine: { type: "deterministic_rules", autonomousMutation: false, artificialIntelligenceUsed: false },
+        anomalies,
+        forecasts: [forecast(paymentDays, "amount", "donation_amount"), forecast(usageDays, "requests", "ai_requests"), forecast(usageDays, "costUnits", "ai_cost_units")],
+        policyRegistry: policies.map((item) => {
+          const evidence = evidenceByKey.get(clean(item.key, 120));
+          return {
+            key: clean(item.key, 120),
+            value: typeof item.value === "string" ? clean(item.value, 240) : item.value,
+            updatedAt: item.updatedAt || null,
+            status: evidence?.status === "verified" ? "enforced_verified" : "recorded_unverified",
+            enforcementPoint: clean(evidence?.enforcementPoint, 120),
+            lastCheckedAt: evidence?.lastCheckedAt || null
+          };
+        }),
+        incidentReplay: { signalKey: replayKey, available: Boolean(replayKey), incident: incident ? safeIncident(incident) : null, timeline: replay },
+        sandbox: {
+          configured: Boolean(process.env.ADMIN_SANDBOX_DATABASE || process.env.ADMIN_SANDBOX_URL),
+          status: process.env.ADMIN_SANDBOX_DATABASE || process.env.ADMIN_SANDBOX_URL ? "configured_not_verified" : "not_configured",
+          mutationsAllowedFromThisView: false
+        },
+        privacy: { secretsReturned: false, rawPromptsReturned: false, rawNetworkMetadataReturned: false, jobPayloadsReturned: false }
       });
     }
 
@@ -745,17 +1025,7 @@ module.exports = async function handler(req, res) {
           gemini: providerState(Boolean(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY), "Google AI"),
           objectStorage: providerState(Boolean(process.env.BLOB_READ_WRITE_TOKEN || envReady("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")), "Vercel Blob hoặc S3/R2")
         },
-        jobs: jobs.map((item) => ({
-          id: String(item._id),
-          type: clean(item.type || item.kind || "background-job", 100),
-          status: clean(item.status || "queued", 30),
-          provider: clean(item.provider || "internal", 80),
-          attempts: Math.max(0, Number(item.attempts || 0)),
-          progress: Math.max(0, Math.min(100, Number(item.progress || 0))),
-          sanitizedError: clean(item.sanitizedError || item.errorCode, 240),
-          createdAt: item.createdAt || null,
-          updatedAt: item.updatedAt || null
-        })),
+        jobs: jobs.map(presentQueueJob),
         flags: flags.map((item) => ({ ...item, id: String(item._id), _id: undefined })),
         gatewayUsage,
         capabilities: {
@@ -1076,16 +1346,28 @@ module.exports = async function handler(req, res) {
           }
         } : {})
       };
+      const privilege = await privilegeState(db, admin);
+      const revealNetwork = req.query.revealNetwork === "true"
+        && hasPermission(admin, "audit.network-metadata.view")
+        && privilege.active
+        && recentGoogleVerification(admin);
       const [items, total] = await Promise.all([
         db.collection("communityAdminAuditLogs").find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
         db.collection("communityAdminAuditLogs").countDocuments(filter)
       ]);
       return res.status(200).json({
         ok: true,
-        items: items.map((item) => ({ ...item, id: String(item._id), _id: undefined })),
+        items: items.map((item) => presentAdminAuditRecord(item, { revealNetwork })),
         pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
-        integrity: { mode: "sha256-chain-v1", chainedEntries: items.filter((item) => item.recordHash && item.previousHash).length, secretsIncluded: false }
+        integrity: { mode: "sha256-chain-v2", chainedEntries: items.filter((item) => item.recordHash && item.previousHash).length, verificationEndpoint: "?view=audit-integrity", tamperEvident: true, immutable: false, externalAnchor: false, secretsIncluded: false },
+        networkAccess: { revealed: revealNetwork, permission: "audit.network-metadata.view", requiresSecurityAdminOrOwner: true, requiresStepUp: true, requiresRecentGoogleVerification: true }
       });
+    }
+
+    if (req.method === "GET" && view === "audit-integrity") {
+      requirePermission(admin, "audit.view");
+      const verification = await verifyAdminAuditChain(db, { limit: Math.min(20000, Math.max(100, Number(req.query.limit || 5000))) });
+      return res.status(200).json({ ok: true, verification: { ...verification, tamperEvident: true, immutable: false, externalAnchor: false }, generatedAt: new Date(), privacy: { networkMetadataReturned: false, secretsReturned: false } });
     }
 
     if (req.method === "GET" && view === "settings") {
@@ -1114,11 +1396,11 @@ module.exports = async function handler(req, res) {
 
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
     await enforceRateLimit(db, `community:admin:${admin._id}`, 120, 10 * 60 * 1000);
+    await recoverStaleApprovalClaims(db);
     const action = clean(body.action, 60);
 
     if (action === "privilege:activate") {
       requirePermission(admin, "privileges.activate");
-      if (!isPrivilegedAdmin(admin)) return res.status(403).json({ error: "Chỉ Super Admin được kích hoạt quyền nâng cao." });
       const reason = requiredReason(body);
       const durationMinutes = Number(body.durationMinutes || 30);
       if (!PRIVILEGE_DURATIONS.has(durationMinutes)) return res.status(400).json({ error: "Thời hạn nâng quyền chỉ được chọn 15, 30 hoặc 60 phút." });
@@ -1214,7 +1496,6 @@ module.exports = async function handler(req, res) {
 
     if (action === "approval:request") {
       requirePermission(admin, "approvals.request");
-      if (!isPrivilegedAdmin(admin)) return res.status(403).json({ error: "Chỉ Super Admin được tạo yêu cầu tối quan trọng." });
       await requireElevation(db, admin);
       const capability = CONTROL_ACTION_BY_ID.get(clean(body.actionId, 100));
       if (!capability || capability.tier !== "critical") return res.status(400).json({ error: "Hành động này không thuộc tầng phê duyệt kép." });
@@ -1223,7 +1504,13 @@ module.exports = async function handler(req, res) {
       const input = safeControlInput(body);
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const suppliedRequestKey = idempotencyKey(req, body, "approval-request");
+      if (!suppliedRequestKey) return res.status(400).json({ error: "Yêu cầu tối quan trọng bắt buộc có idempotency key.", code: "IDEMPOTENCY_KEY_REQUIRED" });
+      const requestKey = suppliedRequestKey;
+      const replay = await db.collection("communityApprovalRequests").findOne({ requestKey });
+      if (replay) return res.status(200).json({ ok: true, idempotentReplay: true, approval: presentApproval(replay) });
       const request = {
+        requestKey,
         actionId: capability.id,
         label: capability.label,
         group: capability.group,
@@ -1239,7 +1526,12 @@ module.exports = async function handler(req, res) {
         createdAt: now,
         expiresAt
       };
-      const result = await db.collection("communityApprovalRequests").insertOne(request);
+      const result = await db.collection("communityApprovalRequests").insertOne(request).catch(async (error) => {
+        if (error?.code !== 11000) throw error;
+        const replay = await db.collection("communityApprovalRequests").findOne({ requestKey });
+        return { replay };
+      });
+      if (result.replay) return res.status(200).json({ ok: true, idempotentReplay: true, approval: presentApproval(result.replay) });
       await writeAdminAudit(db, req, admin, { action, targetType: "critical-request", targetId: String(result.insertedId), reason, before: null, after: { actionId: capability.id, approvals: 1, requiredApprovals: 2, input } });
       return res.status(201).json({ ok: true, approval: presentApproval({ ...request, _id: result.insertedId }) });
     }
@@ -1251,27 +1543,86 @@ module.exports = async function handler(req, res) {
       const reason = requiredReason(body);
       const requestId = idOf(body.requestId);
       const collection = db.collection("communityApprovalRequests");
-      const before = requestId ? await collection.findOne({ _id: requestId, status: "pending", expiresAt: { $gt: new Date() } }) : null;
-      if (!before) return res.status(404).json({ error: "Yêu cầu không tồn tại, đã xử lý hoặc đã hết hạn." });
-      if ((before.approvals || []).some((approval) => String(approval.id) === String(admin._id))) return res.status(409).json({ error: "Cần một Super Admin khác phê duyệt yêu cầu này." });
       const now = new Date();
       if (action === "approval:reject") {
-        await collection.updateOne({ _id: requestId, status: "pending" }, { $set: { status: "rejected", rejectedAt: now, rejectedBy: admin._id, rejectionReason: reason } });
-        const after = await collection.findOne({ _id: requestId });
-        await writeAdminAudit(db, req, admin, { action, targetType: "critical-request", targetId: String(requestId), reason, before: presentApproval(before), after: presentApproval(after) });
+        const rejectedResult = requestId ? await collection.findOneAndUpdate(
+          approvalClaimFilter(requestId, admin._id, now),
+          { $set: { status: "rejected", rejectedAt: now, rejectedBy: admin._id, rejectionReason: reason } },
+          { returnDocument: "after" }
+        ) : null;
+        const after = rejectedResult?.value || rejectedResult;
+        if (!after) {
+          const existing = requestId ? await collection.findOne({ _id: requestId }) : null;
+          if (existing && existing.status !== "pending" && (existing.approvals || []).some((approval) => String(approval.id) === String(admin._id))) return res.status(200).json({ ok: true, idempotentReplay: true, approval: presentApproval(existing) });
+          if (existing?.status === "pending" && (existing.approvals || []).some((approval) => String(approval.id) === String(admin._id))) return res.status(409).json({ error: "Cần một Super Admin khác quyết định yêu cầu này." });
+          return res.status(409).json({ error: "Yêu cầu đã được xử lý, hết hạn hoặc đang được một quản trị viên khác thực thi." });
+        }
+        await writeAdminAudit(db, req, admin, { action, targetType: "critical-request", targetId: String(requestId), reason, before: null, after: presentApproval(after) });
         return res.status(200).json({ ok: true, approval: presentApproval(after) });
       }
-      const capability = CONTROL_ACTION_BY_ID.get(before.actionId);
-      if (!capability) return res.status(409).json({ error: "Capability của yêu cầu không còn hợp lệ." });
-      const approvals = [...(before.approvals || []), { id: admin._id, email: clean(admin.email, 180), at: now }];
-      const execution = approvals.length >= Number(before.requiredApprovals || 2)
-        ? await executeControlAction(db, admin, capability, before.input || {}, now)
-        : null;
-      const status = execution?.status === "approved_waiting_adapter" ? "approved_waiting_adapter" : execution ? "executed" : "pending";
-      await collection.updateOne({ _id: requestId, status: "pending" }, { $set: { approvals, status, result: execution, ...(execution ? { completedAt: now, completedBy: admin._id } : {}) } });
-      const after = await collection.findOne({ _id: requestId });
-      await writeAdminAudit(db, req, admin, { action, targetType: "critical-request", targetId: String(requestId), reason, before: presentApproval(before), after: presentApproval(after) });
-      return res.status(200).json({ ok: true, approval: presentApproval(after) });
+      const executionClaimId = crypto.randomUUID();
+      const claimedResult = requestId ? await collection.findOneAndUpdate(
+        approvalClaimFilter(requestId, admin._id, now),
+        {
+          $push: { approvals: { id: admin._id, email: clean(admin.email, 180), at: now } },
+          $set: { status: "executing", executionClaimId, executionClaimedAt: now, executionClaimedBy: admin._id }
+        },
+        { returnDocument: "after" }
+      ) : null;
+      const claimed = claimedResult?.value || claimedResult;
+      if (!claimed) {
+        const existing = requestId ? await collection.findOne({ _id: requestId }) : null;
+        if (existing && existing.status !== "pending" && (existing.approvals || []).some((approval) => String(approval.id) === String(admin._id))) return res.status(200).json({ ok: true, idempotentReplay: true, approval: presentApproval(existing) });
+        if (existing?.status === "pending" && (existing.approvals || []).some((approval) => String(approval.id) === String(admin._id))) return res.status(409).json({ error: "Cần một Super Admin khác phê duyệt yêu cầu này." });
+        return res.status(409).json({ error: "Yêu cầu đã được xử lý, hết hạn hoặc đang được một quản trị viên khác thực thi." });
+      }
+      const capability = CONTROL_ACTION_BY_ID.get(claimed.actionId);
+      if (!capability) {
+        await collection.updateOne({ _id: requestId, status: "executing", executionClaimId }, { $set: { status: "execution_failed", completedAt: now, result: { status: "execution_failed", detail: "Capability is no longer registered.", affected: 0 } } });
+        return res.status(409).json({ error: "Capability của yêu cầu không còn hợp lệ." });
+      }
+      let execution;
+      try {
+        execution = await executeControlAction(db, admin, capability, claimed.input || {}, now, executionClaimId);
+      } catch (error) {
+        execution = { status: "execution_failed", detail: "Adapter execution failed; inspect sanitized server logs before retrying.", affected: 0, errorCode: clean(error?.code || error?.name || "ADAPTER_ERROR", 80) };
+      }
+      const status = execution.status === "approved_waiting_adapter" ? "approved_waiting_adapter" : execution.status === "execution_failed" ? "execution_failed" : "executed";
+      const finalizedResult = await collection.findOneAndUpdate(
+        { _id: requestId, status: "executing", executionClaimId },
+        { $set: { status, result: execution, completedAt: new Date(), completedBy: admin._id } },
+        { returnDocument: "after" }
+      );
+      const after = finalizedResult?.value || finalizedResult || await collection.findOne({ _id: requestId });
+      await writeAdminAudit(db, req, admin, { action, targetType: "critical-request", targetId: String(requestId), reason, before: null, after: presentApproval(after) });
+      return res.status(status === "execution_failed" ? 502 : 200).json({ ok: status !== "execution_failed", approval: presentApproval(after) });
+    }
+
+    if (action === "approval:reconcile") {
+      requirePermission(admin, "approvals.approve");
+      if (!isPrivilegedAdmin(admin)) return res.status(403).json({ error: "Chỉ Super Admin khác người thực thi được đối soát yêu cầu này." });
+      await requireElevation(db, admin);
+      const reason = requiredReason(body);
+      const resolution = clean(body.resolution, 40);
+      if (!new Set(["mark_executed", "mark_failed"]).has(resolution)) return res.status(400).json({ error: "Kết quả đối soát không hợp lệ." });
+      const requestId = idOf(body.requestId);
+      const now = new Date();
+      const status = resolution === "mark_executed" ? "executed" : "execution_failed";
+      const result = {
+        status,
+        detail: clean(body.evidence || reason, 500),
+        affected: Math.max(0, Number(body.affected || 0)),
+        reconciledManually: true
+      };
+      const updatedResult = requestId ? await db.collection("communityApprovalRequests").findOneAndUpdate(
+        { _id: requestId, status: "reconciliation_required", executionClaimedBy: { $ne: admin._id } },
+        { $set: { status, result, reconciledAt: now, reconciledBy: admin._id, reconciliationReason: reason, completedAt: now, completedBy: admin._id } },
+        { returnDocument: "after" }
+      ) : null;
+      const after = updatedResult?.value || updatedResult;
+      if (!after) return res.status(409).json({ error: "Yêu cầu không còn chờ đối soát hoặc cần một Super Admin khác xử lý." });
+      await writeAdminAudit(db, req, admin, { action, targetType: "critical-request", targetId: String(requestId), reason, before: null, after: presentApproval(after) });
+      return res.status(200).json({ ok: true, approval: presentApproval(after), automaticReplayPerformed: false });
     }
 
     if (action === "incident:update") {
@@ -1286,11 +1637,16 @@ module.exports = async function handler(req, res) {
       const now = new Date();
       const assignee = clean(body.assignee || admin.email, 180);
       const resolution = clean(body.resolution, 1000);
+      const impact = clean(body.impact, 1000);
+      const runbookId = clean(body.runbookId, 100).toLowerCase();
+      if (runbookId && !/^[a-z0-9][a-z0-9_.:-]{2,99}$/.test(runbookId)) return res.status(400).json({ error: "Mã runbook không hợp lệ." });
+      const nextUpdateAtValue = body.nextUpdateAt ? new Date(body.nextUpdateAt) : null;
+      const nextUpdateAt = nextUpdateAtValue && !Number.isNaN(nextUpdateAtValue.getTime()) ? nextUpdateAtValue : null;
       const timelineEntry = { status, note: reason, admin: clean(admin.email, 180), at: now };
       await collection.updateOne(
         { signalKey },
         {
-          $set: { signalKey, status, assignee, resolution, updatedAt: now, updatedBy: admin._id },
+          $set: { signalKey, status, assignee, commander: clean(body.commander || assignee, 180), resolution, impact, runbookId, nextUpdateAt, updatedAt: now, updatedBy: admin._id },
           $setOnInsert: { createdAt: now },
           $push: { timeline: { $each: [timelineEntry], $slice: -50 } }
         },
@@ -1307,25 +1663,23 @@ module.exports = async function handler(req, res) {
       if (!JOB_ACTIONS.has(operation)) return res.status(400).json({ error: "Thao tác queue không hợp lệ." });
       const jobId = idOf(body.jobId);
       const collection = db.collection("communityQueueJobs");
-      const before = jobId ? await collection.findOne({ _id: jobId }, { projection: { payload: 0, secret: 0, token: 0 } }) : null;
-      if (!before) return res.status(404).json({ error: "Không tìm thấy background job." });
+      const source = jobId ? await collection.findOne({ _id: jobId }) : null;
+      if (!source) return res.status(404).json({ error: "Không tìm thấy background job." });
+      const before = presentQueueJob(source);
       const reason = requiredReason(body);
       const now = new Date();
       let targetId = String(jobId);
+      let runnable = source.runnable !== false;
       if (operation === "duplicate") {
-        const duplicate = { ...before };
-        delete duplicate._id;
-        delete duplicate.error;
-        delete duplicate.sanitizedError;
-        duplicate.status = "queued";
-        duplicate.progress = 0;
-        duplicate.attempts = 0;
-        duplicate.sourceJobId = jobId;
-        duplicate.createdAt = now;
-        duplicate.updatedAt = now;
-        duplicate.adminReason = reason;
-        const result = await collection.insertOne(duplicate);
-        targetId = String(result.insertedId);
+        const operationKey = idempotencyKey(req, body, `queue-duplicate:${jobId}`);
+        if (!operationKey) return res.status(400).json({ error: "Nhân bản job bắt buộc có idempotency key.", code: "IDEMPOTENCY_KEY_REQUIRED" });
+        const duplicate = buildDuplicateJob(source, { now, reason, sourceJobId: jobId, operationKey });
+        runnable = duplicate.runnable;
+        const result = await collection.insertOne(duplicate).catch(async (error) => {
+          if (error?.code !== 11000 || !operationKey) throw error;
+          return { replay: await collection.findOne({ adminOperationKey: operationKey }) };
+        });
+        targetId = String(result.replay?._id || result.insertedId);
       } else {
         const status = operation === "pause" ? "paused" : operation === "cancel" ? "cancelled" : "queued";
         const update = {
@@ -1342,9 +1696,10 @@ module.exports = async function handler(req, res) {
         };
         await collection.updateOne({ _id: jobId }, update);
       }
-      const after = await collection.findOne({ _id: idOf(targetId) }, { projection: { payload: 0, secret: 0, token: 0 } });
+      const afterRecord = await collection.findOne({ _id: idOf(targetId) }, { projection: { payload: 0, secret: 0, token: 0, credentials: 0 } });
+      const after = presentQueueJob(afterRecord);
       await writeAdminAudit(db, req, admin, { action: `queue-job:${operation}`, targetType: "queue-job", targetId, reason, before, after });
-      return res.status(200).json({ ok: true, operation, jobId: targetId });
+      return res.status(200).json({ ok: true, operation, jobId: targetId, runnable, status: after.status, duplicateBlockedReason: operation === "duplicate" && !runnable ? "missing_payload" : "" });
     }
 
     if (["user:status", "user:verify", "user:revoke-sessions", "user:roles", "user:feature-access"].includes(action)) {
@@ -1387,7 +1742,10 @@ module.exports = async function handler(req, res) {
         update = { $set: { restrictedFeatures, featureAccessUpdatedAt: now, updatedAt: now } };
       }
       await db.collection("users").updateOne({ _id: targetId }, update);
-      if (action === "user:revoke-sessions") await db.collection("sessions").updateMany({ userId: targetId, endedAt: null }, { $set: { endedAt: now, revokedAt: now, revokedBy: admin._id } });
+      if (action === "user:revoke-sessions") await Promise.all([
+        db.collection("authSessions").updateMany({ userId: { $in: [targetId, String(targetId)] }, revokedAt: null }, { $set: { revokedAt: now, revokeReason: "admin-user-revoke", revokedBy: admin._id } }),
+        db.collection("sessions").updateMany({ userId: { $in: [targetId, String(targetId)] }, endedAt: null }, { $set: { endedAt: now, revokedAt: now, revokeReason: "admin-user-revoke", revokedBy: admin._id } })
+      ]);
       const afterDoc = await db.collection("users").findOne({ _id: targetId }, { projection: USER_PROJECTION });
       const after = presentUser(afterDoc);
       await writeAdminAudit(db, req, admin, { action, targetType: "user", targetId: String(targetId), reason, before, after });
@@ -1459,4 +1817,16 @@ module.exports = async function handler(req, res) {
 
     return res.status(400).json({ error: "Thao tác quản trị chưa được hỗ trợ." });
   });
-};
+}
+
+handler.__test = Object.freeze({
+  approvalClaimFilter,
+  buildDuplicateJob,
+  configuredProviderStatus,
+  idempotencyKey,
+  presentQueueJob,
+  recoverStaleApprovalClaims,
+  stableKey
+});
+
+module.exports = handler;

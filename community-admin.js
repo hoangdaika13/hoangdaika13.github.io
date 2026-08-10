@@ -18,6 +18,18 @@
   let privilege = { active: false, tier: "standing", minutesRemaining: 0, googleReauthRecent: false };
   const REQUEST_TIMEOUT_MS = 12000;
   const PREFERENCES_KEY = "hh.admin-galaxy.preferences.v1";
+  const SAVED_VIEWS_KEY = "hh.admin-galaxy.saved-views.v1";
+  const INSPECTOR_DEFAULT = Object.freeze({
+    kind: "workspace",
+    title: "Chưa chọn đối tượng",
+    detail: "Chọn một incident, người dùng, job hoặc dịch vụ để xem ngữ cảnh tại đây.",
+    status: "live",
+    fields: []
+  });
+  let inspectorContext = { ...INSPECTOR_DEFAULT };
+  let jobTrayItems = [];
+  let dataFreshness = { state: "stale", label: "Chưa đồng bộ", at: null };
+  let entityIndex = [];
   const PLANETS = Object.freeze([
     { id: "dashboard", icon: "MC", label: "Mission Control", eyebrow: "Điều hành", color: "#63e6ee", permission: "dashboard.view" },
     { id: "identity", icon: "IA", label: "Identity & Access", eyebrow: "Danh tính", color: "#a879ff", permission: "users.view" },
@@ -75,6 +87,14 @@
   };
   let preferences = readPreferences();
 
+  const readSavedViews = () => {
+    try {
+      const value = JSON.parse(localStorage.getItem(SAVED_VIEWS_KEY) || "[]");
+      return Array.isArray(value) ? value.filter((item) => item && item.view && item.label).slice(0, 8) : [];
+    } catch { return []; }
+  };
+  let savedViews = readSavedViews();
+
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const dateText = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("vi-VN"); };
   const durationText = (seconds) => { const value = Math.max(0, Number(seconds || 0)); return value < 60 ? `${value}s` : value < 3600 ? `${Math.floor(value / 60)}m ${value % 60}s` : `${Math.floor(value / 3600)}h ${Math.floor(value % 3600 / 60)}m`; };
@@ -84,9 +104,53 @@
   };
   const moneyText = (value) => `${Math.max(0, Number(value || 0)).toLocaleString("vi-VN")} ₫`;
   const notice = (message, type = "success") => window.HHCommunity?.notice?.(message, type);
+  const mutationKey = (scope = "admin") => `${scope}:${window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
+  const withSubmitLock = async (form, task) => {
+    if (!form || form.dataset.submitting === "true") return;
+    form.dataset.submitting = "true";
+    const submit = form.querySelector('[type="submit"]');
+    if (submit) submit.disabled = true;
+    try { return await task(); }
+    finally {
+      if (form.isConnected) form.dataset.submitting = "false";
+      if (submit?.isConnected) submit.disabled = false;
+    }
+  };
+  const maskIp = (value) => {
+    const ip = String(value || "").trim();
+    if (!ip) return "-";
+    if (ip.includes(":")) return `${ip.split(":").slice(0, 2).join(":")}:…`;
+    const parts = ip.split(".");
+    return parts.length === 4 ? `${parts[0]}.${parts[1]}.×.×` : "Đã ẩn";
+  };
+  const maskUserAgent = (value) => {
+    const ua = String(value || "").trim();
+    if (!ua) return "-";
+    const browser = ua.match(/(Edg|Chrome|Firefox|Safari)\/[\d.]+/i)?.[0] || "Trình duyệt";
+    const platform = ua.match(/(Windows NT [\d.]+|Android [\d.]+|iPhone OS [\d_]+|Mac OS X [\d_]+)/i)?.[0] || "Thiết bị đã ẩn";
+    return `${browser} · ${platform}`;
+  };
+  const freshnessFrom = (value) => {
+    const at = new Date(value || 0);
+    const age = Date.now() - at.getTime();
+    if (!Number.isFinite(age) || age < 0) return { state: "stale", label: "Không rõ nguồn", at: null };
+    if (age <= 60_000) return { state: "live", label: "Live", at: at.toISOString() };
+    if (age <= 15 * 60_000) return { state: "delayed", label: "Delayed", at: at.toISOString() };
+    return { state: "stale", label: "Stale", at: at.toISOString() };
+  };
+  const registerEntities = (items) => {
+    entityIndex = (items || []).filter(Boolean).slice(0, 100).map((item) => ({
+      id: String(item.id || item.signalKey || item.key || item.name || ""),
+      kind: String(item.kind || item.type || "entity"),
+      title: String(item.title || item.name || item.label || item.type || "Đối tượng"),
+      detail: String(item.detail || item.description || item.status || ""),
+      status: String(item.status || "live"),
+      fields: Array.isArray(item.fields) ? item.fields : []
+    }));
+  };
   const has = (permission) => Boolean(access?.permissions?.includes("*") || access?.permissions?.includes(permission));
   const planetForView = (view) => VIEW_PLANETS[view] || "dashboard";
-  const statusLabel = (status) => ({ operational: "Ổn định", warning: "Cần theo dõi", critical: "Nghiêm trọng", "not-configured": "Chưa kết nối", new: "Mới", investigating: "Đang điều tra", mitigated: "Đã giảm thiểu", resolved: "Đã giải quyết", queued: "Đang chờ", running: "Đang chạy", paused: "Tạm dừng", failed: "Thất bại", cancelled: "Đã hủy" }[status] || String(status || "Không rõ"));
+  const statusLabel = (status) => ({ operational: "Ổn định", verified_operational: "Đã xác minh hoạt động", configured_not_verified: "Đã cấu hình, chưa xác minh", not_configured: "Chưa cấu hình", health_stale: "Health check đã cũ", credential_expired: "Thông tin kết nối đã hết hạn", warning: "Cần theo dõi", critical: "Nghiêm trọng", "not-configured": "Chưa kết nối", new: "Mới", investigating: "Đang điều tra", mitigated: "Đã giảm thiểu", resolved: "Đã giải quyết", reconciliation_required: "Cần đối soát thủ công", execution_failed: "Thực thi thất bại", executed: "Đã thực thi", queued: "Đang chờ", running: "Đang chạy", paused: "Tạm dừng", failed: "Thất bại", cancelled: "Đã hủy", live: "Live", delayed: "Delayed", stale: "Stale" }[status] || String(status || "Không rõ"));
 
   async function api(view = "me", options = {}) {
     if (!API_BASE) throw new Error("Backend Community Admin chưa được cấu hình.");
@@ -99,7 +163,7 @@
     try {
       response = await fetch(`${API_BASE}/api/community-admin?${query}`, {
         method: options.method || "GET",
-        headers: { Authorization: `Bearer ${token}`, ...(options.body ? { "Content-Type": "application/json" } : {}) },
+        headers: { Authorization: `Bearer ${token}`, ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.idempotencyKey ? { "X-Idempotency-Key": options.idempotencyKey } : {}) },
         body: options.body ? JSON.stringify(options.body) : undefined,
         cache: "no-store",
         signal: controller.signal
@@ -144,7 +208,11 @@
     const textOptions = TEXT_SCALES.map(([id, label]) => `<option value="${id}" ${preferences.textScale === id ? "selected" : ""}>Chữ: ${esc(label)}</option>`).join("");
     const densityOptions = DENSITY_LEVELS.map(([id, label]) => `<option value="${id}" ${preferences.density === id ? "selected" : ""}>Bảng: ${esc(label)}</option>`).join("");
     const privilegeMinutes = privilege.expiresAt ? Math.max(0, Math.ceil((new Date(privilege.expiresAt).getTime() - Date.now()) / 60000)) : 0;
-    return `<section class="hh-admin-app hh-admin-galaxy" data-admin-theme="${esc(preferences.theme)}" data-admin-motion="${esc(preferences.motion)}" data-admin-text="${esc(preferences.textScale)}" data-admin-density="${esc(preferences.density)}" data-admin-planet="${esc(activePlanet)}">
+    const inspector = inspectorContext || INSPECTOR_DEFAULT;
+    const inspectorFields = (inspector.fields || []).map((item) => `<div><dt>${esc(item.label || item[0])}</dt><dd>${esc(item.value ?? item[1] ?? "-")}</dd></div>`).join("");
+    const tray = jobTrayItems.slice(0, 5).map((item) => `<button type="button" data-admin-inspect="${esc(item.id)}"><i class="${esc(item.status || "queued")}"></i><span><strong>${esc(item.type || "Background job")}</strong><small>${esc(statusLabel(item.status))}${item.progress == null ? (item.count == null ? "" : ` · ${Number(item.count)} job`) : ` · ${Number(item.progress || 0)}%`}</small></span></button>`).join("");
+    const saved = savedViews.map((item) => `<button type="button" data-admin-view="${esc(item.view)}" title="${esc(item.label)}">${esc(item.label)}</button>`).join("");
+    return `<section class="hh-admin-app hh-admin-galaxy hh-admin-v4" data-admin-theme="${esc(preferences.theme)}" data-admin-motion="${esc(preferences.motion)}" data-admin-text="${esc(preferences.textScale)}" data-admin-density="${esc(preferences.density)}" data-admin-planet="${esc(activePlanet)}">
       <span class="hh-admin-stardust" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       <header class="hh-admin-galaxy-header">
         <div class="hh-admin-galaxy-brand"><span class="hh-admin-core-mark" aria-hidden="true">HH<i></i></span><div><small>HH ADMIN GALAXY · SERVER RBAC</small><h5>${esc(title)}</h5><p>${esc(description)}</p></div></div>
@@ -158,6 +226,13 @@
           ${has("reports.export") ? '<button type="button" data-admin-export>⇩ Xuất báo cáo</button>' : ""}
         </div>
       </header>
+      <section class="hh-admin-command-bar" aria-label="Trạng thái vận hành">
+        <span class="environment"><i></i><strong>PRODUCTION</strong><small>hoang8.com</small></span>
+        <span class="freshness ${esc(dataFreshness.state)}"><i></i><strong>${esc(dataFreshness.label)}</strong><small>${dataFreshness.at ? dateText(dataFreshness.at) : "Chưa có thời gian nguồn"}</small></span>
+        <div class="saved-views" aria-label="Góc nhìn đã lưu">${saved || "<small>Chưa có góc nhìn đã lưu</small>"}</div>
+        <button type="button" data-admin-save-view>＋ Lưu góc nhìn</button>
+        <button type="button" data-admin-command aria-keyshortcuts="Control+K">Ctrl K · Tìm thực thể</button>
+      </section>
       <section class="hh-admin-root-crown" aria-label="Root Authority status">
         <span><i></i><small>PRODUCTION</small><strong>hoang8.com</strong></span>
         <span><i></i><small>AUTHORITY</small><strong>${esc(access?.tier === "root" ? "Root Super Admin" : access?.tier === "super" ? "Super Admin" : "Delegated Admin")}</strong></span>
@@ -165,10 +240,16 @@
         <span><i></i><small>APPROVAL POLICY</small><strong>2 Super Admin</strong></span>
         ${has("privileges.activate") && !privilege.active ? '<button type="button" data-admin-privilege-activate>⚡ Kích hoạt quyền nâng cao</button>' : '<button type="button" data-admin-view="power">Mở Root Console →</button>'}
       </section>
-      <div class="hh-admin-galaxy-layout">
+      <div class="hh-admin-galaxy-layout hh-admin-command-layout">
         <nav class="hh-admin-planets" aria-label="Bảy khu vực quản trị">${planets.map((planet, index) => `<button type="button" data-admin-view="${planet.id}" class="${activePlanet === planet.id ? "active" : ""}" style="--planet:${planet.color}" aria-current="${activePlanet === planet.id ? "page" : "false"}"><i><b>${planet.icon}</b><em></em></i><span><small>0${index + 1} · ${esc(planet.eyebrow)}</small><strong>${esc(planet.label)}</strong></span></button>`).join("")}<footer><i>◈</i><span><strong>Privacy boundary</strong><small>Không hiển thị secret, mật khẩu, raw prompt hoặc tin nhắn riêng.</small></span></footer></nav>
         <main data-admin-content tabindex="-1">${content}</main>
+        <aside class="hh-admin-context-inspector" aria-label="Entity context inspector">
+          <header><span><small>${esc(inspector.kind.toUpperCase())}</small><strong>Context Inspector</strong></span><b class="${esc(inspector.status)}">${esc(statusLabel(inspector.status))}</b></header>
+          <section><strong>${esc(inspector.title)}</strong><p>${esc(inspector.detail)}</p><dl>${inspectorFields || "<div><dt>Nguồn</dt><dd>Chọn đối tượng trong workspace</dd></div>"}</dl></section>
+          <footer><small>Inspector chỉ hiển thị dữ liệu đã làm sạch; secret, IP đầy đủ và raw payload luôn bị ẩn.</small></footer>
+        </aside>
       </div>
+      <footer class="hh-admin-job-tray"><span><small>UNIVERSAL JOB TRAY</small><strong>${jobTrayItems.length ? `${jobTrayItems.length} tác vụ gần nhất` : "Chưa có tác vụ runtime"}</strong></span><div>${tray || "<small>Queue sẽ xuất hiện khi backend trả về jobs.</small>"}</div><button type="button" data-admin-view="platform">Mở Job Center →</button></footer>
     </section>`;
   }
 
@@ -183,7 +264,32 @@
   async function renderDashboard(initialData = null) {
     panelRef.innerHTML = shell(loading("Đang đồng bộ Mission Control..."));
     const data = initialData || await api("mission");
+    const [operations, intelligence] = await Promise.all([
+      api("operations").catch(() => null),
+      api("intelligence").catch(() => null)
+    ]);
     if (data.access?.admin) access = data.access;
+    dataFreshness = operations?.freshness?.generatedAt ? { ...freshnessFrom(operations.freshness.generatedAt), state: operations.freshness.status || freshnessFrom(operations.freshness.generatedAt).state } : freshnessFrom(data.generatedAt);
+    const totalByStatus = (group) => (group?.byStatus || []).reduce((sum, item) => sum + Number(item.count || 0), 0);
+    const integrationReady = (operations?.integrations || []).filter((item) => item.status === "verified_operational").length;
+    const integrationConfigured = (operations?.integrations || []).filter((item) => item.configured).length;
+    const financeTotal = (operations?.finance?.byStatus || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const aiRequests = (operations?.aiCost?.byProvider || []).reduce((sum, item) => sum + Number(item.requests || 0), 0);
+    const detectedAnomalies = (intelligence?.anomalies || []).filter((item) => item.detected);
+    const readyForecasts = (intelligence?.forecasts || []).filter((item) => item.status === "estimate");
+    jobTrayItems = operations?.jobs?.byStatus?.map((item) => ({ id: `jobs-${item.status}`, kind: "job-summary", type: `${Number(item.count || 0)} job ${statusLabel(item.status)}`, status: item.status, count: item.count, detail: "Số liệu tổng hợp; mở Job Center để xem từng tác vụ.", fields: [["Số lượng", item.count], ["Nguồn", "communityQueueJobs"]] })) || jobTrayItems;
+    inspectorContext = {
+      kind: "production",
+      title: "HH Platform",
+      detail: "Tổng quan vận hành lấy từ Mission API; dữ liệu thiếu được ghi rõ thay vì ước đoán.",
+      status: dataFreshness.state,
+      fields: [
+        ["Môi trường", data.deployment?.environment || "production"],
+        ["Commit", (data.deployment?.commitSha || "Chưa cung cấp").slice(0, 12)],
+        ["Nguồn", data.generatedAt ? dateText(data.generatedAt) : "Backend chưa cung cấp"]
+      ]
+    };
+    registerEntities([...(data.actionQueue || []).map((item) => ({ ...item, id: item.id || item.signalKey || item.title, kind: "incident" })), ...(operations?.integrations || data.services || []).map((item) => ({ ...item, id: item.provider || item.name, kind: "integration", title: item.provider || item.name, detail: item.detail || item.status, fields: [["Cấu hình", item.configured == null ? "Backend chưa cung cấp" : item.configured ? "Đã khai báo" : "Chưa khai báo"], ["Kiểm tra cuối", item.lastCheckedAt ? dateText(item.lastCheckedAt) : "Chưa xác minh"]] })), ...jobTrayItems]);
     const score = Math.max(0, Math.min(100, Number(data.healthScore || 0)));
     const healthState = score >= 90 ? "operational" : score >= 65 ? "warning" : "critical";
     const metrics = [
@@ -222,6 +328,14 @@
       <article class="hh-admin-service-reactor"><header><span><small>LIVE SERVICE MATRIX</small><strong>Sức khỏe nền tảng</strong></span><time>${dateText(data.generatedAt)}</time></header><div>${services}</div></article>
       <article class="hh-admin-change-stream"><header><span><small>AUDITED CHANGE STREAM</small><strong>Thay đổi gần nhất</strong></span><button type="button" data-admin-view="audit">Mở audit</button></header><div>${changes}</div></article>
     </section>
+    <section class="hh-admin-domain-rack" aria-label="Operations domains">
+      <button type="button" class="incidents" data-admin-view="security"><i>!</i><span><small>INCIDENT CENTER</small><strong>${operations?.incidents ? `${totalByStatus(operations.incidents)} hồ sơ` : "Chưa có quyền/số liệu"}</strong><em>${operations?.incidents?.runbooksCollection ? "Runbook registry sẵn sàng" : "Không suy đoán trạng thái"}</em></span></button>
+      <button type="button" class="integrations" data-admin-view="platform"><i>↗</i><span><small>INTEGRATIONS CENTER</small><strong>${operations?.integrations ? `${integrationReady}/${integrationConfigured} đã xác minh` : "Chưa có quyền/số liệu"}</strong><em>${operations?.integrations?.length || 0} provider trong registry</em></span></button>
+      <button type="button" class="rights" data-admin-view="trust"><i>©</i><span><small>RIGHTS & COPYRIGHT</small><strong>${operations?.rights ? `${totalByStatus(operations.rights)} khiếu nại` : "Chưa có quyền/số liệu"}</strong><em>${operations?.rights ? `${Number(operations.rights.activeRestrictions || 0)} nội dung đang tạm ẩn` : "Không suy đoán trạng thái"}</em></span></button>
+      <button type="button" class="finance" data-admin-view="growth"><i>₫</i><span><small>FINANCE CENTER</small><strong>${operations?.finance ? moneyText(financeTotal) : "Chưa có quyền/số liệu"}</strong><em>${operations?.finance ? `${totalByStatus(operations.finance)} giao dịch · ${operations.finance.periodDays}d` : "Chi tiết bị giới hạn quyền"}</em></span></button>
+      <button type="button" class="ai-cost" data-admin-view="growth"><i>AI</i><span><small>AI COST CENTER</small><strong>${operations?.aiCost ? `${aiRequests.toLocaleString("vi-VN")} requests` : "Chưa có quyền/số liệu"}</strong><em>${operations?.aiCost ? `${operations.aiCost.byProvider.length} provider · provider units` : "Không quy đổi tiền khi thiếu bảng giá"}</em></span></button>
+    </section>
+    <section class="hh-admin-intelligence-strip"><article><i>AI</i><span><small>ADMIN COPILOT · READ-ONLY</small><strong>${intelligence ? `${detectedAnomalies.length} bất thường · ${readyForecasts.length} dự báo đủ dữ liệu` : "Chưa có quyền/số liệu"}</strong><p>${intelligence?.engine?.artificialIntelligenceUsed ? "AI chỉ giải thích và đề xuất." : "Hiện dùng rule engine xác định, chưa gọi AI."} Mọi thay đổi phải theo Plan → Dry-run → Approval; không tự thực thi.</p></span></article><article><i>↺</i><span><small>BACKUP & RESTORE DRILL</small><strong>${operations?.backup?.status || "Backend chưa cung cấp trạng thái"}</strong><p>${operations?.backup?.lastDrillAt ? `Diễn tập gần nhất ${dateText(operations.backup.lastDrillAt)}` : "Không hiển thị 'sẵn sàng' nếu chưa có kiểm chứng restore."}</p></span></article><article><i>▤</i><span><small>POLICY & SANDBOX</small><strong>${intelligence ? `${intelligence.policyRegistry?.length || 0} policy · ${intelligence.sandbox?.status || "không rõ"}` : "Backend chưa cung cấp"}</strong><p>${intelligence?.sandbox?.configured ? "Sandbox đã khai báo nhưng vẫn cần xác minh trước mutation." : "Không cho phép mutation từ màn hình read-only này."}</p></span></article></section>
     <section class="hh-admin-deploy-strip"><span><i></i><strong>${esc(data.deployment?.provider || "Deployment")}</strong><small>${esc(data.deployment?.environment || "production")} · ${esc((data.deployment?.commitSha || "commit chưa xác định").slice(0, 8))}</small></span><p>${esc(data.deployment?.commitMessage || "Thông tin deployment được đọc từ runtime, không phỏng đoán.")}</p><button type="button" data-admin-view="platform">Platform & Release →</button></section>`;
     panelRef.innerHTML = shell(content, "Galaxy Mission Control", "Sức khỏe website, incident, hành động ưu tiên và thay đổi production trong một quỹ đạo.");
   }
@@ -242,7 +356,7 @@
       ["Owner từ môi trường server", data.policy?.ownerSource === "server-environment"],
       ["Chặn quản trị tài khoản ngang/cao hơn", data.policy?.equalOrHigherRoleProtection],
       ["Bắt buộc lý do cho hành động nhạy cảm", data.policy?.reasonRequiredForSensitiveActions],
-      ["Audit bất biến theo chuỗi SHA-256", data.policy?.immutableAuditChain],
+      ["Audit phát hiện chỉnh sửa bằng chuỗi SHA-256", data.policy?.tamperEvidentAuditChain],
       ["Hai người duyệt thao tác tối quan trọng", Number(data.policy?.criticalActionApprovals || 0) === 2]
     ].map(([label, ready]) => `<span class="${ready ? "ready" : "missing"}"><i>${ready ? "✓" : "!"}</i>${esc(label)}</span>`).join("");
     const content = `${subnav([["identity", "Tổng quan IAM"], ["power", "Root Authority", "dashboard.view"], ["users", "Người dùng", "users.view"], ["audit", "Audit quyền", "audit.view"]])}
@@ -265,7 +379,14 @@
       return `<article class="hh-admin-power-sector"><header><span><small>${esc(group.toUpperCase())}</small><strong>${esc(group)}</strong></span><b>${items.filter((item) => item.connected).length}/${items.length} adapter</b></header><div>${items.map((item) => `<section class="${esc(item.tier)} ${item.connected ? "connected" : "adapter-needed"}"><i>${item.tier === "critical" ? "!" : item.connected ? "✓" : "◇"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.adapterLabel)} · ${item.tier === "critical" ? "phê duyệt kép" : "quyền tạm thời"}</small></span>${item.allowed ? `<button type="button" data-admin-control="${esc(item.id)}" data-control-tier="${esc(item.tier)}" data-control-connected="${item.connected ? "true" : "false"}">${item.tier === "critical" ? "Tạo yêu cầu" : "Điều khiển"}</button>` : '<b class="denied">Không có quyền</b>'}</section>`).join("")}</div></article>`;
     }).join("");
     const adapters = (data.adapters || []).map((item, index) => `<article class="${item.connected ? "connected" : "missing"}" style="--satellite-index:${index}"><i>${item.connected ? "✓" : "◇"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.id)} · ${item.connected ? "đã kết nối" : "cần cấu hình server"}</small></span></article>`).join("");
-    const approvals = (data.approvals || []).map((item) => `<article class="${esc(item.status)}"><i>${item.tier === "critical" ? "!" : "◇"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.requestedBy?.email)} · ${Number(item.approvals?.length || 0)}/${Number(item.requiredApprovals || 2)} phê duyệt</small><p>${esc(item.reason)}</p></span><div><b>${esc(item.status)}</b>${item.canApprove && has("approvals.approve") ? `<button type="button" data-admin-approval="${esc(item.id)}" data-approval-decision="approve">Phê duyệt</button><button type="button" data-admin-approval="${esc(item.id)}" data-approval-decision="reject">Từ chối</button>` : item.status === "pending" ? "<small>Chờ Super Admin còn lại</small>" : ""}</div></article>`).join("") || '<p class="hh-admin-empty">Không có yêu cầu tối quan trọng đang chờ.</p>';
+    const approvals = (data.approvals || []).map((item) => {
+      const controls = item.canApprove && has("approvals.approve")
+        ? `<button type="button" data-admin-approval="${esc(item.id)}" data-approval-decision="approve">Phê duyệt</button><button type="button" data-admin-approval="${esc(item.id)}" data-approval-decision="reject">Từ chối</button>`
+        : item.canReconcile && has("approvals.approve")
+          ? `<button type="button" data-admin-reconcile="${esc(item.id)}" data-reconcile-resolution="mark_executed">Đã xác minh thực thi</button><button type="button" data-admin-reconcile="${esc(item.id)}" data-reconcile-resolution="mark_failed">Xác nhận chưa thực thi</button>`
+          : item.status === "pending" ? "<small>Chờ Super Admin còn lại</small>" : "";
+      return `<article class="${esc(item.status)}"><i>${item.tier === "critical" ? "!" : "◇"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.requestedBy?.email)} · ${Number(item.approvals?.length || 0)}/${Number(item.requiredApprovals || 2)} phê duyệt</small><p>${esc(item.result?.detail || item.reason)}</p></span><div><b>${esc(item.status)}</b>${controls}</div></article>`;
+    }).join("") || '<p class="hh-admin-empty">Không có yêu cầu tối quan trọng đang chờ.</p>';
     const policies = (data.policies || []).map((item) => `<article><i>◆</i><span><strong>${esc(item.key)}</strong><small>${esc(String(item.value))} · ${dateText(item.updatedAt)}</small></span></article>`).join("") || '<p class="hh-admin-empty">Chưa có chính sách điều khiển tùy chỉnh.</p>';
     const permissionGroups = [...new Set((identity.permissionCatalog || []).map((item) => item.group))].map((group, index) => {
       const permissions = (identity.permissionCatalog || []).filter((item) => item.group === group);
@@ -273,7 +394,7 @@
       return `<article style="--constellation-index:${index}"><i>${String(index + 1).padStart(2, "0")}</i><span><strong>${esc(group)}</strong><small>${permissions.length} quyền · ${critical} tối quan trọng</small></span><b>${critical ? "!" : "✓"}</b></article>`;
     }).join("");
     const roles = customAdminRoles.map((role) => `<article><span><strong>${esc(role.name)}</strong><small>custom:${esc(role.key)} · ${role.permissions.length} quyền</small></span><b class="${Number(role.simulation?.riskScore || 0) >= 50 ? "high" : ""}">Risk ${Number(role.simulation?.riskScore || 0)}</b></article>`).join("") || '<p class="hh-admin-empty">Chưa tạo vai trò tùy chỉnh.</p>';
-    const content = `${subnav([["identity", "IAM Overview"], ["power", "Root Authority"], ["users", "Người dùng", "users.view"], ["audit", "Immutable Audit", "audit.view"]])}
+    const content = `${subnav([["identity", "IAM Overview"], ["power", "Root Authority"], ["users", "Người dùng", "users.view"], ["audit", "Tamper-evident Audit", "audit.view"]])}
       <section class="hh-admin-root-hero">
         <div><small>ROOT AUTHORITY SESSION</small><strong>${privilege.active ? `Quyền nâng cao đang hoạt động · ${Number(privilege.minutesRemaining || 0)} phút` : "Đang dùng quyền thường trực"}</strong><p>Quyền nâng cao cần đăng nhập Google gần đây; thao tác tối quan trọng cần hai Super Admin khác nhau.</p><span><b>${privilege.googleReauthRecent ? "Google reauth sẵn sàng" : "Cần đăng nhập lại Google"}</b><b>Audit SHA-256 chain</b></span></div>
         <aside><i>⚡</i><strong>Privilege Elevation</strong><p>15, 30 hoặc 60 phút. Tự hết hạn và luôn lưu lý do.</p>${privilege.active ? `<b>Hết hạn ${dateText(privilege.expiresAt)}</b>` : '<button type="button" data-admin-privilege-activate>Kích hoạt quyền nâng cao</button>'}</aside>
@@ -294,6 +415,14 @@
   async function renderSecurity() {
     panelRef.innerHTML = shell(loading("Đang hợp nhất phát hiện bảo mật..."), "Security Command Center");
     const [data, incidents] = await Promise.all([api("security"), api("incidents")]);
+    dataFreshness = freshnessFrom(incidents.generatedAt || data.generatedAt);
+    registerEntities((incidents.findings || []).map((item) => ({
+      ...item,
+      id: item.signalKey,
+      kind: "incident",
+      fields: [["Severity", item.severity], ["Phụ trách", item.assignee || "Chưa phân công"], ["Phát hiện", dateText(item.detectedAt)]]
+    })));
+    if (incidents.findings?.[0]) inspectorContext = entityIndex[0];
     const postureLabels = {
       ownerAllowlistConfigured: ["Owner allowlist", "Chỉ cấp owner từ biến môi trường"],
       jwtConfigured: ["JWT secret", "Secret tối thiểu 32 ký tự"],
@@ -394,7 +523,7 @@
     const data = await api("user", { query: { id: userId } });
     const item = data.user;
     const moderation = (data.moderation || []).map((entry) => `<article><i></i><span><strong>${esc(entry.action)}</strong><small>${esc(entry.admin?.name || "Admin")} · ${dateText(entry.createdAt)}</small><p>${esc(entry.reason || "Không có ghi chú")}</p></span></article>`).join("") || "<p>Chưa có lịch sử kiểm duyệt.</p>";
-    const actions = `${has("users.moderate") ? `<button type="button" data-admin-user-action="status" data-user-id="${esc(item.id)}">Đổi trạng thái</button><button type="button" data-admin-user-action="verify" data-user-id="${esc(item.id)}" data-user-verified="${item.verified ? "true" : "false"}">${item.verified ? "Bỏ xác minh" : "Xác minh"}</button>` : ""}${has("sessions.revoke") ? `<button type="button" data-admin-user-action="revoke" data-user-id="${esc(item.id)}">Thu hồi mọi phiên</button>` : ""}${has("users.features") ? `<button type="button" data-admin-user-action="features" data-user-id="${esc(item.id)}" data-user-features="${esc((item.restrictedFeatures || []).join(","))}">Giới hạn tính năng</button>` : ""}${has("users.roles") ? `<button type="button" data-admin-user-action="roles" data-user-id="${esc(item.id)}">Phân quyền</button>` : ""}`;
+    const actions = `${has("users.moderate") ? `<button type="button" data-admin-user-action="status" data-user-id="${esc(item.id)}">Đổi trạng thái</button><button type="button" data-admin-user-action="verify" data-user-id="${esc(item.id)}" data-user-verified="${item.verified ? "true" : "false"}">${item.verified ? "Bỏ xác minh" : "Xác minh"}</button>` : ""}${has("sessions.revoke") ? `<button type="button" data-admin-user-action="revoke" data-user-id="${esc(item.id)}">Thu hồi mọi phiên</button>` : ""}${has("users.features") ? `<button type="button" data-admin-user-action="features" data-user-id="${esc(item.id)}" data-user-features="${esc((item.restrictedFeatures || []).join(","))}">Giới hạn tính năng</button>` : ""}${has("users.roles") && !(item.roles || []).includes("owner") ? `<button type="button" data-admin-user-action="roles" data-user-id="${esc(item.id)}" data-user-roles="${esc((item.roles || []).join(","))}">Phân quyền</button>` : ""}`;
     const sessions = (data.sessions || []).map((entry) => `<article><i><b></b></i><span><strong>${esc(entry.device)} · ${esc(entry.browser)}</strong><small>${esc(entry.route)} · ${durationText(entry.activeSeconds)} · ${dateText(entry.lastSeenAt)}</small></span></article>`).join("") || "<p>Chưa ghi nhận phiên gần đây.</p>";
     const activity = (data.activity || []).slice(0, 20).map((entry) => `<article><i class="${esc(entry.type)}"></i><span><strong>${esc(entry.label || entry.action || entry.type)}</strong><small>${esc(entry.module)} · ${esc(entry.route)}${metaText(entry.meta) ? ` · ${esc(metaText(entry.meta))}` : ""} · ${dateText(entry.createdAt)}</small></span></article>`).join("") || "<p>Chưa có sự kiện chi tiết hoặc người dùng chưa đồng ý analytics.</p>";
     const restricted = (item.restrictedFeatures || []).map((feature) => `<b>${esc(feature)}</b>`).join("") || "<span>Không giới hạn module nào.</span>";
@@ -402,15 +531,28 @@
     dialog.querySelector("footer .primary")?.addEventListener("click", () => { dialog.close(); dialog.remove(); });
   }
 
-  async function userAction(userId, mode, currentVerified = false, currentFeatures = []) {
+  async function userAction(userId, mode, currentVerified = false, currentFeatures = [], currentRoles = []) {
     if (mode === "roles") await ensurePermissionCatalog();
     const labels = { status: "Cập nhật trạng thái", verify: "Xác minh tài khoản", revoke: "Thu hồi toàn bộ phiên", roles: "Phân quyền hệ thống", features: "Giới hạn quyền dùng tính năng" };
     const roleChoices = [
-      ...["super_admin","admin","security_admin","release_manager","content_moderator","support","analyst"].map((role) => [role, role]),
+      ...["super_admin","admin","security_admin","release_manager","content_moderator","moderator","support","analyst"].map((role) => [role, role]),
       ...customAdminRoles.map((role) => [`custom:${role.key}`, `${role.name} · custom`])
     ];
-    const content = `${mode === "status" ? '<label><span>Trạng thái</span><select name="status"><option value="active">Hoạt động / mở khóa</option><option value="locked">Khóa</option><option value="suspended">Tạm đình chỉ</option><option value="banned">Cấm</option></select></label><label><span>Đình chỉ đến</span><input name="suspendedUntil" type="datetime-local"></label>' : ""}${mode === "verify" ? `<label><span>Trạng thái xác minh</span><select name="verified"><option value="true" ${currentVerified ? "" : "selected"}>Xác minh tài khoản</option><option value="false" ${currentVerified ? "selected" : ""}>Bỏ xác minh</option></select></label>` : ""}${mode === "roles" ? `<section class="hh-admin-role-picker">${roleChoices.map(([role, label]) => `<label><input name="roles" type="checkbox" value="${esc(role)}"><span>${esc(label)}</span></label>`).join("")}</section>` : ""}${mode === "features" ? `<label class="wide"><span>ID module cần giới hạn</span><textarea name="restrictedFeatures" maxlength="4000" placeholder="Ví dụ: ai-center, media-center, music-ai">${esc(currentFeatures.join("\n"))}</textarea><small>Mỗi dòng hoặc dấu phẩy là một ID module. Để trống để mở lại toàn bộ.</small></label>` : ""}<label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`;
+    const normalizedCurrentRoles = currentRoles.map(String);
+    const content = `${mode === "status" ? '<label><span>Trạng thái</span><select name="status"><option value="active">Hoạt động / mở khóa</option><option value="locked">Khóa</option><option value="suspended">Tạm đình chỉ</option><option value="banned">Cấm</option></select></label><label><span>Đình chỉ đến</span><input name="suspendedUntil" type="datetime-local"></label>' : ""}${mode === "verify" ? `<label><span>Trạng thái xác minh</span><select name="verified"><option value="true" ${currentVerified ? "selected" : ""}>Xác minh tài khoản</option><option value="false" ${currentVerified ? "" : "selected"}>Bỏ xác minh</option></select></label>` : ""}${mode === "roles" ? `<section class="wide hh-admin-role-diff" data-admin-role-diff><header><strong>Preview thay đổi quyền</strong><small>Chưa có thay đổi</small></header><div><span><b>Hiện tại</b><code>${esc(normalizedCurrentRoles.join(", ") || "member")}</code></span><i>→</i><span><b>Sau khi lưu</b><code data-admin-role-after>${esc(normalizedCurrentRoles.join(", ") || "member")}</code></span></div></section><section class="hh-admin-role-picker">${roleChoices.map(([role, label]) => `<label><input name="roles" type="checkbox" value="${esc(role)}" ${normalizedCurrentRoles.includes(role) ? "checked" : ""}><span>${esc(label)}</span></label>`).join("")}</section><label class="wide hh-admin-confirm-change"><input type="checkbox" name="confirmRoleChange" required><span>Tôi đã kiểm tra phần quyền thêm/bỏ phía trên.</span></label>` : ""}${mode === "features" ? `<label class="wide"><span>ID module cần giới hạn</span><textarea name="restrictedFeatures" maxlength="4000" placeholder="Ví dụ: ai-center, media-center, music-ai">${esc(currentFeatures.join("\n"))}</textarea><small>Mỗi dòng hoặc dấu phẩy là một ID module. Để trống để mở lại toàn bộ.</small></label>` : ""}<label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`;
     const dialog = modal(labels[mode], content, "Thực hiện");
+    const updateRoleDiff = () => {
+      if (mode !== "roles") return;
+      const selected = [...dialog.querySelectorAll('input[name="roles"]:checked')].map((input) => input.value);
+      const added = selected.filter((role) => !normalizedCurrentRoles.includes(role));
+      const removed = normalizedCurrentRoles.filter((role) => !selected.includes(role));
+      const summary = dialog.querySelector("[data-admin-role-diff] header small");
+      const after = dialog.querySelector("[data-admin-role-after]");
+      if (after) after.textContent = selected.join(", ") || "member";
+      if (summary) summary.textContent = `${added.length ? `+ ${added.join(", ")}` : "Không thêm"} · ${removed.length ? `− ${removed.join(", ")}` : "Không bỏ"}`;
+    };
+    dialog.querySelectorAll('input[name="roles"]').forEach((input) => input.addEventListener("change", updateRoleDiff));
+    updateRoleDiff();
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
       const form = new FormData(event.currentTarget);
@@ -445,6 +587,7 @@
     ].sort((left, right) => new Date(left.createdAt || 0) - new Date(right.createdAt || 0)).slice(0, 16).map((item) => `<article><i>${item.kind === "reports" ? "!" : "↺"}</i><span><small>${esc(item.label)} · ${esc(item.targetType || "Hồ sơ")}</small><strong>${esc(item.category || item.reason || "Yêu cầu kiểm duyệt")}</strong><p>${esc(item.description || item.message || "Không có mô tả")}</p></span><div><b class="${esc(item.status || "pending")}">${esc(item.status || "pending")}</b><time>${dateText(item.createdAt)}</time>${has(item.kind === "reports" ? "reports.manage" : "appeals.manage") ? `<button type="button" data-admin-resolve="${esc(item.id)}" data-kind="${item.kind}">Xử lý</button>` : ""}</div></article>`).join("") || '<p class="hh-admin-empty">Không có hồ sơ cần xử lý.</p>';
     const previews = contentItems.slice(0, 8).map((item) => `<article><header><span><strong>${esc(item.author?.name || "Thành viên HH")}</strong><small>${dateText(item.createdAt)} · ${esc(item.privacy || "public")}</small></span><b>${esc(item.mediaType || "post")}</b></header><p>${esc(item.content || "Nội dung media")}</p><footer><button type="button" data-admin-view="content">Mở kiểm duyệt</button></footer></article>`).join("") || '<p class="hh-admin-empty">Chưa có nội dung.</p>';
     const content = `${subnav([["trust", "Trust Queue"], ["reports", "Reports", "reports.manage"], ["appeals", "Appeals", "appeals.manage"], ["content", "Nội dung", "content.manage"]])}
+      <section class="hh-admin-rights-console"><header><span><small>RIGHTS & COPYRIGHT CONSOLE</small><strong>Quyền nội dung và khiếu nại</strong></span><b>Registry chuyên biệt</b></header><div><p>Hồ sơ giấy phép, bằng chứng, lãnh thổ và thao tác tạm gỡ được quản lý tại Copyright Center. Trust Queue không tự suy diễn trạng thái bản quyền khi API chưa cung cấp.</p><button type="button" data-admin-route="/copyright">Mở Copyright Center →</button></div></section>
       <section class="hh-admin-trust-metrics">${metrics}</section>
       <section class="hh-admin-trust-grid">
         <article class="hh-admin-unified-queue"><header><span><small>UNIFIED DECISION QUEUE</small><strong>Report và kháng nghị</strong></span><b>${openReports.length + openAppeals.length} chờ</b></header><div>${queue}</div></article>
@@ -486,24 +629,31 @@
     panelRef.innerHTML = shell(loading(), "Audit log");
     const data = await api("audit", { query: auditQuery });
     auditEntries = data.items || [];
-    const rows = auditEntries.map((item) => `<tr><td><strong>${esc(item.action)}</strong><small>${esc(item.targetType)} · ${esc(item.targetId)}</small></td><td>${esc(item.admin?.name || "Admin")}<small>${esc(item.admin?.email || "")}</small></td><td>${esc(item.reason || "-")}</td><td>${esc(item.ip || "-")}</td><td>${dateText(item.createdAt)}</td><td><button type="button" data-admin-audit-open="${esc(item.id)}">Chi tiết</button></td></tr>`).join("") || '<tr><td colspan="6">Chưa có audit log.</td></tr>';
+    const rows = auditEntries.map((item) => `<tr><td><strong>${esc(item.action)}</strong><small>${esc(item.targetType)} · ${esc(item.targetId)}</small></td><td>${esc(item.admin?.name || "Admin")}<small>${esc(item.admin?.email || "")}</small></td><td>${esc(item.reason || "-")}</td><td title="IP được che trong giao diện">${esc(maskIp(item.ip))}</td><td>${dateText(item.createdAt)}</td><td><button type="button" data-admin-audit-open="${esc(item.id)}">Chi tiết</button></td></tr>`).join("") || '<tr><td colspan="6">Chưa có audit log.</td></tr>';
     const filters = `<form class="hh-admin-toolbar hh-admin-audit-filters" data-admin-audit-filter><label><span>⌕</span><input name="q" value="${esc(auditQuery.q || "")}" placeholder="Tìm toàn bộ audit"></label><input name="actor" value="${esc(auditQuery.actor || "")}" placeholder="Email admin"><input name="action" value="${esc(auditQuery.action || "")}" placeholder="Hành động"><input name="target" value="${esc(auditQuery.target || "")}" placeholder="Đối tượng"><input name="from" type="date" value="${esc(auditQuery.from || "")}" aria-label="Từ ngày"><input name="to" type="date" value="${esc(auditQuery.to || "")}" aria-label="Đến ngày"><button type="submit">Lọc audit</button></form>`;
-    const integrity = `<section class="hh-admin-audit-integrity"><i>◆</i><span><strong>Immutable Audit Chain</strong><small>${Number(data.integrity?.chainedEntries || 0)} bản ghi trang này có SHA-256 chain · không chứa secret</small></span><button type="button" data-admin-access-review>Hoàn tất Access Review tháng</button></section>`;
-    panelRef.innerHTML = shell(`${subnav([["identity", "Identity & Access", "users.view"], ["power", "Root Authority", "dashboard.view"], ["security", "Security", "security.view"], ["platform", "Platform", "platform.view"], ["audit", "Audit log"]])}${filters}${integrity}<section class="hh-admin-table"><table><thead><tr><th>Hành động</th><th>Admin</th><th>Lý do</th><th>IP</th><th>Thời gian</th><th></th></tr></thead><tbody>${rows}</tbody></table></section>`, "Immutable Audit Log", "Lọc theo admin, hành động, đối tượng và thời gian; xem dữ liệu trước/sau đã loại bỏ secret.");
+    const integrity = `<section class="hh-admin-audit-integrity"><i>◆</i><span><strong>Tamper-evident Audit Chain</strong><small>${Number(data.integrity?.chainedEntries || 0)} bản ghi trang này có SHA-256 chain · chưa tuyên bố WORM/external anchor</small></span><button type="button" data-admin-access-review>Hoàn tất Access Review tháng</button></section>`;
+    panelRef.innerHTML = shell(`${subnav([["identity", "Identity & Access", "users.view"], ["power", "Root Authority", "dashboard.view"], ["security", "Security", "security.view"], ["platform", "Platform", "platform.view"], ["audit", "Audit log"]])}${filters}${integrity}<section class="hh-admin-table"><table><thead><tr><th>Hành động</th><th>Admin</th><th>Lý do</th><th>IP</th><th>Thời gian</th><th></th></tr></thead><tbody>${rows}</tbody></table></section>`, "Tamper-evident Audit Log", "Lọc theo admin, hành động, đối tượng và thời gian; xem dữ liệu trước/sau đã loại bỏ secret. SHA-256 chain phát hiện chỉnh sửa nhưng chưa phải WORM.");
   }
 
   function openAudit(id) {
     const item = auditEntries.find((entry) => String(entry.id) === String(id));
     if (!item) return;
     const pretty = (value) => esc(JSON.stringify(value ?? null, null, 2));
-    const dialog = modal("Chi tiết audit log", `<section class="wide hh-admin-audit-detail"><div><span><small>Admin</small><strong>${esc(item.admin?.name || "Admin")}</strong><code>${esc(item.admin?.email || "")}</code></span><span><small>Vai trò</small><strong>${esc((item.roles || []).join(", "))}</strong></span><span><small>IP</small><strong>${esc(item.ip || "-")}</strong></span><span><small>Thời gian</small><strong>${dateText(item.createdAt)}</strong></span></div><p><b>${esc(item.action)}</b> · ${esc(item.targetType)} / ${esc(item.targetId)}</p><p>${esc(item.reason || "Không có lý do")}</p><label><span>User agent</span><code>${esc(item.userAgent || "-")}</code></label><section><article><strong>Trước thay đổi</strong><pre>${pretty(item.before)}</pre></article><article><strong>Sau thay đổi</strong><pre>${pretty(item.after)}</pre></article></section></section>`, "Đóng");
+    const dialog = modal("Chi tiết audit log", `<section class="wide hh-admin-audit-detail"><div><span><small>Admin</small><strong>${esc(item.admin?.name || "Admin")}</strong><code>${esc(item.admin?.email || "")}</code></span><span><small>Vai trò</small><strong>${esc((item.roles || []).join(", "))}</strong></span><span><small>IP đã che</small><strong>${esc(maskIp(item.ip))}</strong></span><span><small>Thời gian</small><strong>${dateText(item.createdAt)}</strong></span></div><p><b>${esc(item.action)}</b> · ${esc(item.targetType)} / ${esc(item.targetId)}</p><p>${esc(item.reason || "Không có lý do")}</p><label><span>User agent đã rút gọn</span><code>${esc(maskUserAgent(item.userAgent))}</code></label><section><article><strong>Trước thay đổi</strong><pre>${pretty(item.before)}</pre></article><article><strong>Sau thay đổi</strong><pre>${pretty(item.after)}</pre></article></section></section>`, "Đóng");
     dialog.querySelector("footer .primary")?.addEventListener("click", () => { dialog.close(); dialog.remove(); });
   }
 
   async function renderPlatform() {
     panelRef.innerHTML = shell(loading("Đang kiểm tra deployment, provider và queue..."), "Platform & Release");
     const data = await api("platform");
+    dataFreshness = freshnessFrom(data.generatedAt);
     featureFlags = data.flags || [];
+    jobTrayItems = (data.jobs || []).slice(0, 12);
+    registerEntities([
+      ...(data.jobs || []).map((item) => ({ ...item, kind: "job", title: item.type, detail: item.sanitizedError || `${item.provider || "provider"} · ${Number(item.progress || 0)}%`, fields: [["Provider", item.provider || "-"], ["Attempts", item.attempts || 0], ["Cập nhật", dateText(item.updatedAt || item.createdAt)]] })),
+      ...Object.entries(data.providers || {}).map(([key, item]) => ({ ...item, id: key, kind: "integration", title: key, detail: item.detail, status: item.status || (item.configured ? "operational" : "not-configured"), fields: [["Kết nối", item.configured ? "Đã khai báo" : "Chưa khai báo"], ["Adapter", item.adapterStatus || "Backend chưa cung cấp"]] }))
+    ]);
+    inspectorContext = entityIndex[0] || { ...INSPECTOR_DEFAULT, kind: "platform", title: "Platform & Release" };
     const services = (data.services || []).map((item) => `<article class="${esc(item.status)}"><i></i><span><strong>${esc(item.name)}</strong><small>${esc(item.detail)}</small></span><b>${esc(statusLabel(item.status))}</b></article>`).join("");
     const providers = Object.entries(data.providers || {}).map(([key, item]) => `<article class="${item.configured ? "operational" : "not-configured"}"><i>${item.configured ? "✓" : "＋"}</i><span><strong>${esc(key)}</strong><small>${esc(item.detail)}</small></span><b>${esc(statusLabel(item.status))}</b></article>`).join("");
     const jobs = (data.jobs || []).map((item) => {
@@ -512,7 +662,7 @@
         ...(["failed", "paused", "cancelled"].includes(item.status) ? [["retry", "Retry"]] : []),
         ["duplicate", "Duplicate"]
       ];
-      return `<article class="${esc(item.status)}"><header><span><i></i><strong>${esc(item.type)}</strong></span><b>${esc(statusLabel(item.status))}</b></header><div><span><small>Provider</small><strong>${esc(item.provider)}</strong></span><span><small>Attempts</small><strong>${Number(item.attempts || 0)}</strong></span><span><small>Progress</small><strong>${Number(item.progress || 0)}%</strong></span><time>${dateText(item.updatedAt || item.createdAt)}</time></div>${item.sanitizedError ? `<p>${esc(item.sanitizedError)}</p>` : ""}<footer>${has("platform.manage") ? controls.map(([operation, label]) => `<button type="button" data-admin-job="${esc(item.id)}" data-job-operation="${operation}">${label}</button>`).join("") : ""}</footer></article>`;
+      return `<article class="${esc(item.status)}" data-admin-inspect="${esc(item.id)}"><header><span><i></i><strong>${esc(item.type)}</strong></span><b>${esc(statusLabel(item.status))}</b></header><div><span><small>Provider</small><strong>${esc(item.provider)}</strong></span><span><small>Attempts</small><strong>${Number(item.attempts || 0)}</strong></span><span><small>Progress</small><strong>${Number(item.progress || 0)}%</strong></span><time>${dateText(item.updatedAt || item.createdAt)}</time></div>${item.sanitizedError ? `<p>${esc(item.sanitizedError)}</p>` : ""}<footer>${has("platform.manage") ? controls.map(([operation, label]) => `<button type="button" data-admin-job="${esc(item.id)}" data-job-operation="${operation}">${label}</button>`).join("") : ""}</footer></article>`;
     }).join("") || '<p class="hh-admin-empty">Queue hiện không có background job.</p>';
     const flags = featureFlags.map((item) => `<article><span><i class="${item.enabled ? "on" : ""}"></i><strong>${esc(item.key)}</strong><small>${esc(item.description || "Feature flag runtime")}</small></span><div><b>${item.enabled ? "Bật" : "Tắt"} · ${Number(item.rollout || 0)}%</b>${has("flags.manage") ? `<button type="button" data-admin-flag-toggle="${esc(item.key)}">${item.enabled ? "Kill switch" : "Bật lại"}</button>` : ""}</div></article>`).join("") || '<p class="hh-admin-empty">Chưa có feature flag.</p>';
     const usage = (data.gatewayUsage || []).map((item) => `<article><span><strong>${esc(item.provider || "provider")}</strong><small>${esc(item.outcome || "unknown")}</small></span><b>${Number(item.requests || 0)} requests</b><em>${Number(item.units || 0).toLocaleString("vi-VN")} units</em></article>`).join("") || '<p class="hh-admin-empty">Chưa có lưu lượng gateway trong 24 giờ.</p>';
@@ -523,7 +673,7 @@
       </section>
       <section class="hh-admin-platform-grid">
         <article class="hh-admin-platform-services"><header><span><small>INFRASTRUCTURE MATRIX</small><strong>Dịch vụ nền tảng</strong></span><time>${dateText(data.generatedAt)}</time></header><div>${services}</div></article>
-        <article class="hh-admin-provider-grid"><header><span><small>PROVIDER ROUTER</small><strong>Kết nối production</strong></span><b>Không hiển thị khóa</b></header><div>${providers}</div></article>
+        <article class="hh-admin-provider-grid hh-admin-integrations-console"><header><span><small>INTEGRATIONS CENTER</small><strong>Kết nối production</strong></span><b>Không hiển thị khóa</b></header><div>${providers}</div></article>
       </section>
       <section class="hh-admin-job-console"><header><span><small>BACKGROUND OPERATIONS</small><strong>Render & Generation Queue</strong></span><b>Pause · Retry · Cancel · Duplicate</b></header><div>${jobs}</div></section>
       <section class="hh-admin-platform-lower">
@@ -558,8 +708,8 @@
         <article class="hh-admin-growth-routes"><header><span><small>DISCOVERY</small><strong>Top routes</strong></span><b>${Number(data.metrics?.events30d || 0).toLocaleString("vi-VN")} events</b></header>${rankingMarkup(data.topRoutes)}</article>
       </section>
       <section class="hh-admin-business-grid">
-        <article class="hh-admin-payment-health"><header><span><small>PAYOS · 30D</small><strong>Thanh toán & đối soát</strong></span><b class="${data.payments?.configured ? "ready" : "missing"}">${data.payments?.configured ? "Đã kết nối" : "Chưa kết nối"}</b></header><div>${payments}</div><footer>Không trả về email, orderCode, số tài khoản hoặc chi tiết giao dịch cá nhân.</footer></article>
-        <article class="hh-admin-ai-cost"><header><span><small>AI PROVIDER USAGE · 30D</small><strong>Chi phí theo usage unit</strong></span><b>Không phỏng đoán tiền</b></header><div>${aiUsage}</div></article>
+        <article class="hh-admin-payment-health hh-admin-finance-console"><header><span><small>FINANCE CENTER · PAYOS · 30D</small><strong>Thanh toán & đối soát</strong></span><b class="${data.payments?.configured ? "ready" : "missing"}">${data.payments?.configured ? "Đã kết nối" : "Chưa kết nối"}</b></header><div>${payments}</div><footer>Không trả về email, orderCode, số tài khoản hoặc chi tiết giao dịch cá nhân.</footer></article>
+        <article class="hh-admin-ai-cost hh-admin-ai-cost-console"><header><span><small>AI COST CENTER · 30D</small><strong>Chi phí theo usage unit</strong></span><b>Không phỏng đoán tiền</b></header><div>${aiUsage}</div></article>
         <article class="hh-admin-search-console"><i>G</i><span><small>SEARCH CONSOLE</small><strong>${data.searchConsole?.configured ? "Đã khai báo property" : "Chưa kết nối dữ liệu SEO"}</strong><p>${esc(data.searchConsole?.note)}</p>${data.searchConsole?.property ? `<code>${esc(data.searchConsole.property)}</code>` : ""}</span></article>
       </section>
       <section class="hh-admin-data-boundary"><i>◈</i><span><strong>Aggregate-only analytics</strong><small>Không trả về danh tính, raw prompt, chi tiết thanh toán hoặc dữ liệu riêng tư trong Growth & Data.</small></span>${has("reports.export") ? '<button type="button" data-admin-export>Xuất báo cáo an toàn</button>' : ""}</section>`;
@@ -661,7 +811,7 @@
         await api("action", { method: "POST", body });
         dialog.close();
         dialog.remove();
-        notice("Vai trò tùy chỉnh đã được lưu và ghi immutable audit.");
+        notice("Vai trò tùy chỉnh đã được lưu vào tamper-evident audit chain.");
         await renderPower();
       } catch (error) {
         notice(error.message, "error");
@@ -677,23 +827,27 @@
     const dialog = modal(tier === "critical" ? "Tạo yêu cầu phê duyệt kép" : "Điều khiển Root Console", `<section class="wide hh-admin-control-preview ${esc(tier)}"><header><span><small>${esc(tier.toUpperCase())}</small><strong>${esc(actionId)}</strong></span><b>${connected ? "Adapter sẵn sàng" : "Cần adapter server"}</b></header><div><article><small>TRƯỚC</small><strong>Cấu hình production hiện tại</strong><p>Giá trị bí mật không được tải về trình duyệt.</p></article><i>→</i><article><small>SAU</small><strong>Thay đổi theo yêu cầu bên dưới</strong><p>${tier === "critical" ? "Chỉ chạy sau phê duyệt của Super Admin thứ hai." : "Cần privilege session còn hiệu lực."}</p></article></div></section><label><span>Đối tượng</span><input name="target" maxlength="160" placeholder="provider, domain, môi trường hoặc resource ID"></label>${valueField}<label class="wide"><span>Ghi chú runbook</span><textarea name="note" maxlength="500"></textarea></label><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, tier === "critical" ? "Gửi yêu cầu 2 người" : "Preview và thực hiện");
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
-      const values = Object.fromEntries(new FormData(event.currentTarget));
-      if (booleanActions.has(actionId)) values.value = values.value === "true";
-      const apiAction = tier === "critical" ? "approval:request" : "control:execute";
-      try {
-        const data = await api("action", { method: "POST", body: { action: apiAction, actionId, ...values } });
-        dialog.close();
-        dialog.remove();
-        notice(tier === "critical" ? "Đã tạo yêu cầu; cần Super Admin còn lại phê duyệt." : data.result?.detail || "Điều khiển đã được ghi nhận.");
-        await renderPower();
-      } catch (error) {
-        notice(error.message, "error");
-      }
+      const form = event.currentTarget;
+      await withSubmitLock(form, async () => {
+        const values = Object.fromEntries(new FormData(form));
+        if (booleanActions.has(actionId)) values.value = values.value === "true";
+        const apiAction = tier === "critical" ? "approval:request" : "control:execute";
+        const idempotencyKey = tier === "critical" ? (form.dataset.idempotencyKey ||= mutationKey(`approval-${actionId}`)) : "";
+        try {
+          const data = await api("action", { method: "POST", idempotencyKey, body: { action: apiAction, actionId, ...values, ...(idempotencyKey ? { idempotencyKey } : {}) } });
+          dialog.close();
+          dialog.remove();
+          notice(tier === "critical" ? "Đã tạo yêu cầu; cần Super Admin còn lại phê duyệt." : data.result?.detail || "Điều khiển đã được ghi nhận.");
+          await renderPower();
+        } catch (error) {
+          notice(error.message, "error");
+        }
+      });
     });
   }
 
   function decideApproval(requestId, decision) {
-    const dialog = modal(decision === "approve" ? "Phê duyệt thao tác tối quan trọng" : "Từ chối yêu cầu", `<section class="wide hh-admin-kill-switch"><strong>${esc(requestId)}</strong><p>Super Admin yêu cầu và Super Admin quyết định phải là hai tài khoản khác nhau.</p><span>Quyết định này sẽ được nối vào immutable audit chain.</span></section><label class="wide"><span>Lý do quyết định</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, decision === "approve" ? "Phê duyệt và thực thi" : "Từ chối");
+    const dialog = modal(decision === "approve" ? "Phê duyệt thao tác tối quan trọng" : "Từ chối yêu cầu", `<section class="wide hh-admin-kill-switch"><strong>${esc(requestId)}</strong><p>Super Admin yêu cầu và Super Admin quyết định phải là hai tài khoản khác nhau.</p><span>Quyết định này sẽ được nối vào tamper-evident audit chain.</span></section><label class="wide"><span>Lý do quyết định</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, decision === "approve" ? "Phê duyệt và thực thi" : "Từ chối");
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
       const reason = new FormData(event.currentTarget).get("reason");
@@ -706,6 +860,27 @@
       } catch (error) {
         notice(error.message, "error");
       }
+    });
+  }
+
+  function reconcileApproval(requestId, resolution) {
+    const executed = resolution === "mark_executed";
+    const dialog = modal("Đối soát thao tác bị gián đoạn", `<section class="wide hh-admin-kill-switch"><strong>${esc(requestId)}</strong><p>Lease thực thi đã hết hạn. Hệ thống không tự chạy lại để tránh tác dụng phụ lặp.</p><span>Chỉ xác nhận sau khi đã kiểm tra provider, log và kết quả thực tế. Người đối soát phải khác người đã nhận execution claim.</span></section><label class="wide"><span>Bằng chứng đối soát</span><textarea name="evidence" required minlength="10" maxlength="500" placeholder="Mã deployment, log provider, thời gian và kết quả đã kiểm tra..."></textarea></label><label class="wide"><span>Lý do quyết định</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, executed ? "Xác nhận đã thực thi" : "Xác nhận chưa thực thi");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      await withSubmitLock(form, async () => {
+        const values = Object.fromEntries(new FormData(form));
+        try {
+          const data = await api("action", { method: "POST", body: { action: "approval:reconcile", requestId, resolution, ...values } });
+          dialog.close();
+          dialog.remove();
+          notice(data.approval?.result?.detail || "Đã lưu kết quả đối soát; không tự động phát lại thao tác.");
+          await renderPower();
+        } catch (error) {
+          notice(error.message, "error");
+        }
+      });
     });
   }
 
@@ -733,11 +908,16 @@
       ["identity", "Identity & Access", "Vai trò và danh tính Google"],
       ["users", "Tìm người dùng", "Khóa, xác minh và thu hồi phiên"],
       ["security", "Security Findings", "Điều tra cảnh báo production"],
+      ["security", "Incident Center", "SEV, owner, timeline và runbook"],
       ["platform", "Platform & Release", "Deployment, queue và provider"],
-      ["audit", "Immutable Audit", "Lọc hành động trước/sau"],
-      ["growth", "Growth & Data", "PayOS, funnel và AI usage"]
+      ["platform", "Integrations Center", "OAuth, webhook, adapter và hạn token"],
+      ["trust", "Rights & Copyright", "Quarantine, evidence và khiếu nại"],
+      ["audit", "Tamper-evident Audit", "Lọc hành động trước/sau"],
+      ["growth", "Finance Center", "PayOS, donate và đối soát"],
+      ["growth", "AI Cost Center", "Usage, failure và ngân sách theo provider"]
     ];
-    const dialog = modal("Admin Command Palette", `<label class="wide hh-admin-command-search"><span>⌕</span><input data-admin-command-search autofocus placeholder="Tìm người dùng, incident, deployment hoặc công cụ"></label><section class="wide hh-admin-command-results">${commands.map(([view, label, detail]) => `<button type="button" data-admin-view="${view}" data-command-text="${esc(`${label} ${detail}`.toLowerCase())}"><i>→</i><span><strong>${esc(label)}</strong><small>${esc(detail)}</small></span></button>`).join("")}</section>`, "Đóng");
+    const entityResults = entityIndex.map((item) => `<button type="button" data-admin-inspect="${esc(item.id)}" data-command-text="${esc(`${item.kind} ${item.title} ${item.detail}`.toLowerCase())}"><i>◎</i><span><strong>${esc(item.title)}</strong><small>${esc(item.kind)} · ${esc(item.detail || statusLabel(item.status))}</small></span></button>`).join("");
+    const dialog = modal("Admin Command Palette", `<label class="wide hh-admin-command-search"><span>⌕</span><input data-admin-command-search autofocus placeholder="Tìm người dùng, incident, deployment hoặc công cụ"></label><section class="wide hh-admin-command-results">${commands.map(([view, label, detail]) => `<button type="button" data-admin-view="${view}" data-command-text="${esc(`${label} ${detail}`.toLowerCase())}"><i>→</i><span><strong>${esc(label)}</strong><small>${esc(detail)}</small></span></button>`).join("")}${entityResults}</section>`, "Đóng");
     dialog.querySelector("[data-admin-command-search]")?.addEventListener("input", (event) => {
       const query = String(event.target.value || "").trim().toLowerCase();
       dialog.querySelectorAll("[data-command-text]").forEach((button) => { button.hidden = Boolean(query && !button.dataset.commandText.includes(query)); });
@@ -768,16 +948,20 @@
     const dialog = modal(labels[operation] || "Cập nhật job", `<section class="wide hh-admin-kill-switch"><strong>${esc(jobId)}</strong><p>Payload, token và secret của job không được hiển thị trong Admin Panel.</p><span>Thao tác ${esc(operation)} sẽ được ghi đầy đủ vào audit log.</span></section><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, "Xác nhận");
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
-      const reason = new FormData(event.currentTarget).get("reason");
-      try {
-        await api("action", { method: "POST", body: { action: "queue-job:update", jobId, operation, reason } });
-        dialog.close();
-        dialog.remove();
-        notice("Background job đã được cập nhật.");
-        await renderPlatform();
-      } catch (error) {
-        notice(error.message, "error");
-      }
+      const form = event.currentTarget;
+      await withSubmitLock(form, async () => {
+        const reason = new FormData(form).get("reason");
+        const idempotencyKey = operation === "duplicate" ? (form.dataset.idempotencyKey ||= mutationKey(`job-${jobId}`)) : "";
+        try {
+          await api("action", { method: "POST", idempotencyKey, body: { action: "queue-job:update", jobId, operation, reason, ...(idempotencyKey ? { idempotencyKey } : {}) } });
+          dialog.close();
+          dialog.remove();
+          notice("Background job đã được cập nhật.");
+          await renderPlatform();
+        } catch (error) {
+          notice(error.message, "error");
+        }
+      });
     });
   }
 
@@ -843,15 +1027,37 @@
     if (!event.target.closest(".hh-admin-app, .hh-admin-modal")) return;
     const view = event.target.closest("[data-admin-view]"); if (view) { document.querySelector("[data-community-admin-modal]")?.remove(); await render(view.dataset.adminView).catch((error) => notice(error.message, "error")); return; }
     if (event.target.closest("[data-admin-command]")) { openCommandPalette(); return; }
+    if (event.target.closest("[data-admin-save-view]")) {
+      const label = PLANETS.find((item) => item.id === planetForView(activeView))?.label || activeView;
+      savedViews = [{ view: activeView, label }, ...savedViews.filter((item) => item.view !== activeView)].slice(0, 8);
+      try { localStorage.setItem(SAVED_VIEWS_KEY, JSON.stringify(savedViews)); } catch {}
+      notice(`Đã lưu góc nhìn ${label}.`);
+      await render(activeView).catch((error) => notice(error.message, "error"));
+      return;
+    }
+    const inspect = event.target.closest("[data-admin-inspect]");
+    if (inspect) {
+      const entity = entityIndex.find((item) => item.id === inspect.dataset.adminInspect);
+      if (entity) {
+        inspectorContext = entity;
+        const inspector = panelRef?.querySelector(".hh-admin-context-inspector");
+        if (inspector) {
+          inspector.innerHTML = `<header><span><small>${esc(entity.kind.toUpperCase())}</small><strong>Context Inspector</strong></span><b class="${esc(entity.status)}">${esc(statusLabel(entity.status))}</b></header><section><strong>${esc(entity.title)}</strong><p>${esc(entity.detail)}</p><dl>${(entity.fields || []).map((item) => `<div><dt>${esc(item.label || item[0])}</dt><dd>${esc(item.value ?? item[1] ?? "-")}</dd></div>`).join("") || "<div><dt>Trạng thái</dt><dd>Dữ liệu chi tiết chưa được backend cung cấp</dd></div>"}</dl></section><footer><small>Inspector chỉ hiển thị dữ liệu đã làm sạch; secret, IP đầy đủ và raw payload luôn bị ẩn.</small></footer>`;
+        }
+        document.querySelector("[data-community-admin-modal]")?.remove();
+      }
+      return;
+    }
     if (event.target.closest("[data-admin-privilege-activate]")) { activatePrivilege(); return; }
     if (event.target.closest("[data-admin-google-reauth]")) { startGoogleReauthentication(); return; }
     if (event.target.closest("[data-admin-permission-simulate]")) { await openPermissionSimulator().catch((error) => notice(error.message, "error")); return; }
     if (event.target.closest("[data-admin-custom-role]")) { await openCustomRole().catch((error) => notice(error.message, "error")); return; }
     const control = event.target.closest("[data-admin-control]"); if (control) { controlAction(control.dataset.adminControl, control.dataset.controlTier, control.dataset.controlConnected === "true"); return; }
     const approval = event.target.closest("[data-admin-approval]"); if (approval) { decideApproval(approval.dataset.adminApproval, approval.dataset.approvalDecision); return; }
+    const reconciliation = event.target.closest("[data-admin-reconcile]"); if (reconciliation) { reconcileApproval(reconciliation.dataset.adminReconcile, reconciliation.dataset.reconcileResolution); return; }
     if (event.target.closest("[data-admin-access-review]")) { completeAccessReview(); return; }
     const open = event.target.closest("[data-admin-user-open]"); if (open) { await openUser(open.dataset.adminUserOpen).catch((error) => notice(error.message, "error")); return; }
-    const action = event.target.closest("[data-admin-user-action]"); if (action) { document.querySelector("[data-community-admin-modal]")?.remove(); await userAction(action.dataset.userId, action.dataset.adminUserAction, action.dataset.userVerified === "true", String(action.dataset.userFeatures || "").split(",").filter(Boolean)).catch((error) => notice(error.message, "error")); return; }
+    const action = event.target.closest("[data-admin-user-action]"); if (action) { document.querySelector("[data-community-admin-modal]")?.remove(); await userAction(action.dataset.userId, action.dataset.adminUserAction, action.dataset.userVerified === "true", String(action.dataset.userFeatures || "").split(",").filter(Boolean), String(action.dataset.userRoles || "").split(",").filter(Boolean)).catch((error) => notice(error.message, "error")); return; }
     const page = event.target.closest("[data-admin-users-page]"); if (page) { await renderUsers({ page: page.dataset.adminUsersPage }); return; }
     const resolve = event.target.closest("[data-admin-resolve]"); if (resolve) { resolveRecord(resolve.dataset.adminResolve, resolve.dataset.kind); return; }
     const content = event.target.closest("[data-admin-content-action]"); if (content) { moderateContent(content.dataset.contentId, content.dataset.contentType, content.dataset.adminContentAction); return; }

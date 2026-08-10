@@ -246,7 +246,7 @@ test("copyright center is reachable from the shell and cached with aligned versi
   assert.match(loader, /utils\/open-media-rights\.js\?v=3/);
   assert.match(html, /performance-loader\.js\?v=263/);
   assert.match(html, /script\.js\?v=178/);
-  assert.match(serviceWorker, /hh-identity-portal-v533/);
+  assert.match(serviceWorker, /hh-identity-portal-v534/);
   for (const asset of [
     "open-media-governance.css?v=1",
     "open-media-governance.js?v=1",

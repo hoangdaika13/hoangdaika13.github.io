@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || "hoangdaika13_site";
 let cachedClient;
+let cachedClientPromise;
 let rateLimitIndexReady = false;
 
 const ADMIN_ROLES = new Set(["owner", "super_admin", "admin", "moderator", "support", "analyst"]);
@@ -71,13 +72,47 @@ function jwtSecret() {
   return secret;
 }
 
-async function database() {
+async function mongoClient() {
   if (!uri) throw new Error("Missing MONGODB_URI");
-  if (!cachedClient) {
-    cachedClient = new MongoClient(uri);
-    await cachedClient.connect();
+  if (cachedClient) return cachedClient;
+  if (!cachedClientPromise) {
+    const candidate = new MongoClient(uri);
+    cachedClientPromise = candidate.connect()
+      .then((client) => {
+        cachedClient = client;
+        return client;
+      })
+      .catch(async (error) => {
+        cachedClientPromise = undefined;
+        await candidate.close().catch(() => {});
+        throw error;
+      });
   }
-  return cachedClient.db(dbName);
+  return cachedClientPromise;
+}
+
+async function database() {
+  return (await mongoClient()).db(dbName);
+}
+
+async function withDatabaseTransaction(operation) {
+  if (typeof operation !== "function") throw new TypeError("Transaction operation must be a function");
+  const client = await mongoClient();
+  const session = client.startSession();
+  try {
+    let result;
+    await session.withTransaction(async () => {
+      result = await operation(client.db(dbName), session);
+    }, {
+      readConcern: { level: "snapshot" },
+      writeConcern: { w: "majority" },
+      readPreference: "primary",
+      maxCommitTimeMS: 10000
+    });
+    return result;
+  } finally {
+    await session.endSession();
+  }
 }
 
 function allowedOrigins() {
@@ -99,7 +134,7 @@ function setCors(req, res) {
   }
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-HH-CSRF");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-HH-CSRF, X-Idempotency-Key");
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -305,6 +340,7 @@ module.exports = {
   signOAuthState,
   signUser,
   verifyOAuthState,
+  withDatabaseTransaction,
   withApi,
   __test: Object.freeze({ allowedOrigins, assertTrustedMutation, requestCookie })
 };
