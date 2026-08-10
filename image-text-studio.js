@@ -168,7 +168,7 @@
     future: [],
     pendingProject: null,
     notices: [],
-    ai: { running: false, cancel: false, done: 0, total: 0, trendLabel: "", trendContext: "" }
+    ai: { running: false, cancel: false, done: 0, total: 0, trendLabel: "", trendContext: "", providerStatus: null, providerStatusLoading: false, fallbackNotice: "" }
   };
 
   const activeItem = () => state.items.find((item) => item.id === state.activeId) || null;
@@ -215,6 +215,34 @@
       toast.classList.remove("is-visible");
       setTimeout(() => toast.remove(), 250);
     }, 3200);
+  }
+
+  function aiProviderSummary() {
+    const gemini = state.ai.providerStatus?.providers?.gemini;
+    if (state.ai.fallbackNotice) return state.ai.fallbackNotice;
+    if (state.ai.providerStatusLoading) return "Đang kiểm tra kết nối AI…";
+    if (!state.ai.providerStatus) return "Tự chuyển dự phòng nếu Gemini tạm hết quota.";
+    if (!gemini?.configured) return "Gemini chưa được cấu hình trên server; Tool vẫn dùng chế độ dự phòng.";
+    if (Number(gemini.availableKeyCount || 0) < 1) return "Gemini đang tạm nghỉ do quota; Tool vẫn tạo title bằng chế độ dự phòng.";
+    return `Gemini sẵn sàng · ${gemini.defaultModel || "default model"} · tự dự phòng khi cần.`;
+  }
+
+  async function refreshAiProviderStatus({ quiet = false } = {}) {
+    if (state.ai.providerStatusLoading) return;
+    state.ai.providerStatusLoading = true;
+    if (root) renderInspector();
+    try {
+      const response = await fetch("/api/modules/image-text/actions", { credentials: "include", cache: "no-store", headers: { Accept: "application/json" } });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error || `AI status HTTP ${response.status}`);
+      state.ai.providerStatus = { providers: payload.providers || {}, configured: Boolean(payload.configured) };
+    } catch (error) {
+      state.ai.providerStatus = null;
+      if (!quiet) notify("Không đọc được trạng thái AI. Tool vẫn có thể tạo title dự phòng.", "info");
+    } finally {
+      state.ai.providerStatusLoading = false;
+      if (root) renderInspector();
+    }
   }
 
   function snapshotState() {
@@ -419,6 +447,7 @@
           <button type="button" class="is-primary" data-action="ai-generate" ${state.ai.running ? "disabled" : ""}>${state.ai.running ? "Đang tạo…" : "✦ Tạo title + chữ"}</button>
         </div>
         <div class="its-ai-options"><label><input type="checkbox" data-setting="aiSubtitle"${settings.aiSubtitle ? " checked" : ""}> Phụ đề</label><label><input type="checkbox" data-setting="structuredNames"${settings.structuredNames ? " checked" : ""}> Tên file 3 phần</label><label><input type="checkbox" data-setting="aiColor"${settings.aiColor ? " checked" : ""}> Màu chữ AI</label>${state.ai.running ? '<button type="button" data-action="ai-cancel">Dừng</button>' : ""}</div>
+        <div class="its-ai-status"><small>${escapeHtml(aiProviderSummary())}</small><button type="button" data-action="ai-refresh-status"${state.ai.providerStatusLoading ? " disabled" : ""}>Kiểm tra</button></div>
         <label class="its-youtube-title-field"><span>Title YouTube · ảnh đang xem</span><textarea rows="2" data-item-prop="youtubeTitle" placeholder="AI sẽ tạo title video tại đây…"${item ? "" : " disabled"}>${escapeHtml(item?.youtubeTitle || "")}</textarea></label>
         ${item ? `<code class="its-output-name-preview" title="Tên file khi xuất ZIP">${escapeHtml(outputName(item))}</code>` : ""}
       </section>
@@ -1166,7 +1195,7 @@
     if (!targets.length) return notify("Hãy thêm hoặc chọn ảnh trước khi dùng AI.", "error");
     if (state.ai.running) return;
     pushHistory();
-    state.ai = { running: true, cancel: false, done: 0, total: targets.length, trendLabel: "Đang lấy xu hướng…", trendContext: "" };
+    state.ai = { ...state.ai, running: true, cancel: false, done: 0, total: targets.length, trendLabel: "Đang lấy xu hướng…", trendContext: "", fallbackNotice: "" };
     renderInspector();
     notify(`Đang lấy title YouTube nổi bật trong ${state.settings.trendPeriod === "week" ? "7" : "30"} ngày gần đây.`, "info");
     try {
@@ -1189,16 +1218,22 @@
             input: [`Chủ đề: ${state.settings.youtubeTopic}`, `Khoảng xu hướng: ${state.settings.trendPeriod === "week" ? "7 ngày" : "30 ngày"}`, `Ngôn ngữ title: ${state.settings.titleLanguage}`, `Phong cách chữ: ${state.settings.aiPrompt}`].join("\n"),
             meta: {
               provider: state.settings.aiProvider,
-              requireProvider: true,
-              allowProviderFallback: state.settings.aiProvider === "auto",
+              requireProvider: false,
+              allowProviderFallback: true,
               useGoogleSearch: !state.ai.trendContext && offset === 0,
               context,
+              titleLanguage: state.settings.titleLanguage,
+              youtubeTopic: state.settings.youtubeTopic,
+              images: chunk.map((item, index) => ({ index: index + 1, filename: item.name })),
               attachments: [{ mimeType: "image/jpeg", data: attachment }]
             }
           })
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload?.ok) throw new Error(payload?.error || `AI backend phản hồi HTTP ${response.status}`);
+        if (payload.action?.provider === "local-image-text") {
+          state.ai.fallbackNotice = "Gemini đang hết quota; Tool đã tạo title dự phòng và vẫn tiếp tục batch.";
+        }
         let structured = payload.action?.structured;
         if (!structured && payload.action?.output) {
           try { structured = JSON.parse(payload.action.output); } catch {}
@@ -1222,7 +1257,8 @@
         renderLibrary();
         schedulePreview();
       }
-      notify(state.ai.cancel ? `Đã dừng sau ${state.ai.done}/${state.ai.total} ảnh.` : `Đã tạo Title YouTube và chữ thumbnail riêng cho ${state.ai.done.toLocaleString("vi-VN")} ảnh.`, state.ai.cancel ? "info" : "success");
+      const usedFallback = Boolean(state.ai.fallbackNotice);
+      notify(state.ai.cancel ? `Đã dừng sau ${state.ai.done}/${state.ai.total} ảnh.` : usedFallback ? `Đã tạo title cho ${state.ai.done.toLocaleString("vi-VN")} ảnh bằng chế độ dự phòng. Bạn vẫn có thể xuất ZIP ngay.` : `Đã tạo Title YouTube và chữ thumbnail riêng cho ${state.ai.done.toLocaleString("vi-VN")} ảnh.`, state.ai.cancel || usedFallback ? "info" : "success");
     } catch (error) {
       notify(error.message || "Không thể tạo chữ bằng AI.", "error");
     } finally {
@@ -1395,6 +1431,7 @@
       else if (name === "export-zip") exportZip();
       else if (name === "ai-generate") runAiTextBatch();
       else if (name === "ai-cancel") state.ai.cancel = true;
+      else if (name === "ai-refresh-status") refreshAiProviderStatus();
       else if (name === "cancel-export") state.cancelExport = true;
     });
     bindCanvas();
@@ -1417,6 +1454,7 @@
     buildShell();
     bindEvents();
     renderAll({ keepPage: true });
+    refreshAiProviderStatus({ quiet: true });
     global.dispatchEvent(new CustomEvent("hh:image-text-ready"));
   }
 

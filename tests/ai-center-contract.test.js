@@ -5,6 +5,7 @@ const path = require("node:path");
 const {
   GeminiKeyPool,
   canTryAnotherKey,
+  failureCooldown,
   parseGeminiKeys
 } = require("../utils/gemini-key-pool");
 
@@ -34,6 +35,7 @@ test("Gemini key pool cools failed keys without exposing their identity", () => 
   assert.equal(pool.availableCount(), 1);
   assert.deepEqual(pool.candidates(), [keys[1]]);
   assert.equal(canTryAnotherKey(429, "quota"), true);
+  assert.equal(failureCooldown(429, "You exceeded your current quota, please check your plan and billing details."), 30 * 60 * 1000);
   now += 80_000;
   assert.equal(pool.availableCount(), 2);
 });

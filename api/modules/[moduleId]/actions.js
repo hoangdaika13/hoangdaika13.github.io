@@ -90,6 +90,69 @@ const imageTextBatchSchema = {
   required: ["items"]
 };
 
+function imageTextBatchImages(meta = {}) {
+  const direct = Array.isArray(meta.images) ? meta.images : [];
+  const sanitized = direct.slice(0, 20).map((entry, position) => ({
+    index: Math.max(1, Math.min(20, Number(entry?.index) || position + 1)),
+    filename: clean(entry?.filename || entry?.name || `image-${position + 1}`, 180)
+  })).filter((entry) => entry.filename);
+  if (sanitized.length) return sanitized;
+  const list = String(meta.context || "").split(/DANH S[\s\S]*?NH/i).at(-1) || "";
+  return list.split(/\r?\n/).map((line, position) => {
+    const match = line.match(/^\s*(\d{1,3})\.\s+(.+?)\s*$/);
+    return match ? { index: Math.max(1, Math.min(20, Number(match[1]) || position + 1)), filename: clean(match[2], 180) } : null;
+  }).filter(Boolean).slice(0, 20);
+}
+
+function safeImageTextFilename(value = "") {
+  return clean(value, 180)
+    .replace(/\.[a-z0-9]{1,8}$/i, "")
+    .replace(/[^a-z0-9_-]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 86) || "thumbnail";
+}
+
+function localImageTextBatchOutput(input, meta = {}) {
+  const images = imageTextBatchImages(meta);
+  const language = clean(meta.titleLanguage, 12).toLowerCase();
+  const topic = clean(meta.youtubeTopic || String(input || "").replace(/^.*?:\s*/m, ""), 70) || "calm visual story";
+  const phraseSets = {
+    vi: ["Khoảnh khắc yên bình", "Nắng dịu buổi sớm", "Góc nhỏ bình yên", "Chậm lại một chút", "Bình yên rất gần", "Một ngày nhẹ nhàng"],
+    ja: ["穏やかな時間", "朝のやさしい光", "静かな暮らし", "小さな休息", "心ほどける景色", "ゆっくり深呼吸"],
+    ko: ["고요한 순간", "부드러운 아침", "느린 하루", "따뜻한 빛", "잠시의 휴식", "평온한 풍경"],
+    en: ["Quiet Moments", "Soft Morning", "Slow Living", "Golden Stillness", "A Gentle Escape", "Peaceful Light"]
+  };
+  const subtitles = {
+    vi: "Thở chậm và tận hưởng",
+    ja: "深呼吸して、ゆっくりと",
+    ko: "천천히 숨을 고르세요",
+    en: "Breathe slowly, stay awhile"
+  };
+  const selectedLanguage = phraseSets[language] ? language : "en";
+  const phrases = phraseSets[selectedLanguage];
+  const structured = {
+    items: images.map((image, position) => {
+      const phrase = phrases[position % phrases.length];
+      const textTitle = phrase.split(/\s+/).slice(0, 4).join(" ");
+      return {
+        index: image.index,
+        filename: image.filename,
+        title: textTitle,
+        youtubeTitle: `${phrase} | ${topic}`.replace(/\s+/g, " ").trim().slice(0, 100),
+        subtitle: subtitles[selectedLanguage],
+        outputName: `${safeImageTextFilename(image.filename)}-${safeImageTextFilename(phrase)}`.slice(0, 120),
+        textColor: "#FFFFFF"
+      };
+    })
+  };
+  return {
+    output: JSON.stringify(structured),
+    structured,
+    provider: "local-image-text",
+    model: "hh-thumbnail-local-v1"
+  };
+}
+
 function schemaForAction(actionType) {
   if (actionType === "content-pack") return contentPackSchema;
   if (actionType === "design-plan") return designPlanSchema;
@@ -838,6 +901,9 @@ async function youtubeResearchOutput(input, actionType) {
 }
 
 async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
+  if (["image-text-batch", "image-text-youtube-batch"].includes(actionType)) {
+    return localImageTextBatchOutput(input, meta);
+  }
   if (actionType === "content-pack") {
     const structured = localContentPack(input, meta);
     return {

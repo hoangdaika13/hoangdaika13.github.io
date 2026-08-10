@@ -12,8 +12,8 @@ test("Text on Image Studio is routed from the main Tool group", () => {
 
   assert.match(app, /id: "image-text"[\s\S]*?route: "\/davinci-resolve\/image-text"/);
   assert.match(app, /resolveView === "image-text"[\s\S]*?HHImageTextStudio\?\.mount/);
-  assert.match(loader, /image-text-studio\.css\?v=11/);
-  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=11/);
+  assert.match(loader, /image-text-studio\.css\?v=12/);
+  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=12/);
 });
 
 test("studio supports per-image AI text, optional color correction and secure providers", () => {
@@ -30,6 +30,10 @@ test("studio supports per-image AI text, optional color correction and secure pr
   assert.match(client, /\/api\/search\/youtube/);
   assert.match(client, /published,\s*\n\s*duration/);
   assert.match(client, /image-text-youtube-batch/);
+  assert.match(client, /requireProvider:\s*false/);
+  assert.match(client, /allowProviderFallback:\s*true/);
+  assert.match(client, /local-image-text/);
+  assert.match(client, /refreshAiProviderStatus/);
   assert.match(client, /item\.overrides\.title/);
   assert.match(client, /item\.youtubeTitle/);
   assert.match(client, /outputBaseName/);
@@ -47,6 +51,8 @@ test("studio supports per-image AI text, optional color correction and secure pr
   assert.match(backend, /"image-text"/);
   assert.match(backend, /image-text-batch/);
   assert.match(backend, /imageTextBatchSchema/);
+  assert.match(backend, /localImageTextBatchOutput/);
+  assert.match(backend, /provider:\s*"local-image-text"/);
   assert.match(backend, /youtubeTitle/);
 });
 

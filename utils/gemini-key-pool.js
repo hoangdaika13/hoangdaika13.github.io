@@ -19,6 +19,12 @@ function failureCooldown(status, message = "") {
   if (status === 401 || status === 403 || /leaked|invalid api key|api key not valid/.test(text)) {
     return 30 * 60 * 1000;
   }
+  // A billing or current-quota response cannot be fixed by retrying the same
+  // key for a few seconds. Keep it out of the warm pool long enough for the
+  // caller to use another provider or its local fallback instead.
+  if (status === 429 && /current quota|billing details|billing|daily quota|quota limit\s*[:=]?\s*0/.test(text)) {
+    return 30 * 60 * 1000;
+  }
   if (status === 429 || /quota|resource_exhausted|rate limit/.test(text)) {
     return 75 * 1000;
   }

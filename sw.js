@@ -1,7 +1,7 @@
-const CACHE = "hh-identity-portal-v533";
+const CACHE = "hh-identity-portal-v534";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
-// Image Text Studio compatibility: ./image-text-studio.css?v=10 ./image-text-studio.js?v=10
+// Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
 // Compatibility from v370 and v395-v408: hh-identity-portal-v370 script.js?v=159 script.js?v=160 performance-loader.js?v=139 performance-loader.js?v=140 hh-identity-portal-v395 hh-identity-portal-v396 hh-identity-portal-v397 hh-identity-portal-v403 hh-identity-portal-v404 hh-identity-portal-v405 hh-identity-portal-v406 hh-identity-portal-v407 hh-identity-portal-v408
 // script.js?v=141 script.js?v=145 performance-loader.js?v=51 performance-loader.js?v=52 performance-loader.js?v=57 performance-loader.js?v=58
 // AI Video Remake upgrade compatibility: script.js?v=172 performance-loader.js?v=249 performance-loader.js?v=250 performance-loader.js?v=251 hh-identity-portal-v517 hh-identity-portal-v518 hh-identity-portal-v519 ai-video-remake-studio.css?v=1 ai-video-remake-studio.css?v=2 ai-video-remake-studio.js?v=1
@@ -61,7 +61,7 @@ const RUNTIME_ASSETS = [
   "./h-cosmic-web-studio.css?v=2",
   "./video-editor-auto.css?v=1",
   "./youtube-creator-galaxy.css?v=20",
-  "./image-text-studio.css?v=11",
+  "./image-text-studio.css?v=12",
   "./facebook-page-command-center.css?v=4",
   "./ai-video-remake-studio.css?v=3",
   "./photo-editor-pro.css?v=4",
@@ -107,7 +107,7 @@ const RUNTIME_ASSETS = [
   "./youtube-publisher.css?v=4",
   "./youtube-publisher.js?v=7",
   "./youtube-creator-galaxy.js?v=24",
-  "./image-text-studio.js?v=11",
+  "./image-text-studio.js?v=12",
   "./facebook-page-command-center.js?v=4",
   "./ai-video-remake-studio.js?v=2",
   "./comic-motion-studio.js?v=10",
