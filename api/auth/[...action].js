@@ -32,6 +32,7 @@ const {
   tokenHash,
   webauthnServer
 } = require("../../utils/auth-security");
+const { loginThankYouEmail, welcomeEmail } = require("../../utils/auth-emails");
 
 const RESET_OTP_TTL_MS = 10 * 60 * 1000;
 const RESET_TOKEN_TTL_MS = 10 * 60 * 1000;
@@ -284,7 +285,7 @@ async function upsertOAuthUser(db, profile, provider) {
       { $set: fields },
       { returnDocument: "after" }
     );
-    return updated || { ...existing, ...fields };
+    return { ...(updated || { ...existing, ...fields }), __created: false };
   }
   delete fields[`oauth.${provider}.id`];
   delete fields["verifiedProviders.google"];
@@ -295,7 +296,7 @@ async function upsertOAuthUser(db, profile, provider) {
     consent: false, createdAt: now
   };
   const result = await users.insertOne(created);
-  return { ...created, _id: result.insertedId };
+  return { ...created, _id: result.insertedId, __created: true };
 }
 
 async function oauthCallback(req, res, db, provider, code, state) {
@@ -322,7 +323,7 @@ async function oauthCallback(req, res, db, provider, code, state) {
     const now = new Date();
     await db.collection("authChallenges").insertOne({
       type: "oauth-exchange", lookup: hmacHash(exchangeCode, "oauth-exchange"),
-      userId: user._id, provider, createdAt: now,
+      userId: user._id, provider, isNewUser: Boolean(user.__created), createdAt: now,
       expiresAt: new Date(now.getTime() + 2 * 60 * 1000), consumedAt: null
     });
     await settleOptionalTasks([
@@ -350,6 +351,30 @@ async function notifyNewDevice(db, user, req, session) {
     text: `Thiết bị mới đăng nhập HH Platform: ${device.label}, IP ${device.ip}. Nếu không phải bạn, hãy thu hồi phiên trong Trung tâm bảo mật.`
   });
   return { sent: Boolean(result.delivered), reason: result.configured ? "provider-result" : "provider-unavailable" };
+}
+
+async function sendWelcomeThankYou(user, { verificationPending = false } = {}) {
+  const message = welcomeEmail({ user, verificationPending });
+  return sendSecurityEmail({
+    to: user.email,
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+    idempotencyKey: `auth-welcome/${String(user._id)}`,
+    tags: [{ name: "category", value: "auth_welcome" }]
+  });
+}
+
+async function sendLoginThankYou(user, session, method) {
+  const message = loginThankYouEmail({ user, session, method });
+  return sendSecurityEmail({
+    to: user.email,
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+    idempotencyKey: `auth-login/${String(user._id)}/${String(session.sessionId)}`,
+    tags: [{ name: "category", value: "auth_login" }, { name: "method", value: String(method || session.type || "unknown").slice(0, 40) }]
+  });
 }
 
 async function passkeyRegistrationOptions(req, res, db) {
@@ -457,6 +482,7 @@ async function passkeyLoginVerify(req, res, db, body) {
   await Promise.all([
     db.collection("passkeys").updateOne({ _id: credential._id }, { $set: { counter: Number(verification.authenticationInfo?.newCounter ?? credential.counter), lastUsedAt: new Date() } }),
     db.collection("authChallenges").updateOne({ _id: challenge._id }, { $set: { consumedAt: new Date() } }),
+    sendLoginThankYou(user, session, "passkey"),
     recordLoginEvent(db, user, req, "passkey-login")
   ]);
   return res.status(200).json(authResponse(user, session));
@@ -501,6 +527,7 @@ module.exports = async function handler(req, res) {
       setSessionCookie(res, session.token, session.ttlSeconds);
       await settleOptionalTasks([
         notifyNewDevice(db, user, req, session),
+        challenge.isNewUser ? sendWelcomeThankYou(user) : sendLoginThankYou(user, session, challenge.provider || "google"),
         recordLoginEvent(db, user, req, `${challenge.provider || "google"}-login`)
       ], 350);
       return res.status(200).json(authResponse(user, session));
@@ -543,7 +570,10 @@ module.exports = async function handler(req, res) {
       const session = await createSession(db, user, req, { type: "register", remember: Boolean(body.remember) });
       setSessionCookie(res, session.token, session.ttlSeconds);
       const verificationCode = await issueOtp(db, { type: "email-verification", email, ttlMs: EMAIL_OTP_TTL_MS, purpose: "email-otp" });
-      const verificationDelivery = await sendSecurityEmail({ to: email, subject: "Xác minh email HH Platform", html: verificationEmailHtml(verificationCode), text: `Mã xác minh email HH Platform: ${verificationCode}. Mã hết hạn sau 15 phút.` });
+      const [verificationDelivery, welcomeDelivery] = await Promise.all([
+        sendSecurityEmail({ to: email, subject: "Xác minh email HH Platform", html: verificationEmailHtml(verificationCode), text: `Mã xác minh email HH Platform: ${verificationCode}. Mã hết hạn sau 15 phút.`, idempotencyKey: `auth-verification/${String(user._id)}/${verificationCode}`, tags: [{ name: "category", value: "auth_verification" }] }),
+        sendWelcomeThankYou(user, { verificationPending: true })
+      ]);
       await Promise.all([
         db.collection("events").insertOne({ type: "auth:register", userId: user._id, createdAt: now }),
         recordLoginEvent(db, user, req, "register")
@@ -552,6 +582,7 @@ module.exports = async function handler(req, res) {
       return res.status(201).json({
         ...authResponse(user, session), verificationRequired: true,
         verificationDelivery: verificationDelivery.delivered ? "sent" : "email-provider-unavailable",
+        welcomeDelivery: welcomeDelivery.delivered ? "sent" : "email-provider-unavailable",
         ...(developmentCode ? { developmentCode } : {})
       });
     }
@@ -592,6 +623,7 @@ module.exports = async function handler(req, res) {
       setSessionCookie(res, session.token, session.ttlSeconds);
       await settleOptionalTasks([
         notifyNewDevice(db, user, req, session),
+        sendLoginThankYou(user, session, "password"),
         recordLoginEvent(db, user, req, "login")
       ]);
       return res.status(200).json(authResponse(user, session));
@@ -780,7 +812,10 @@ module.exports = async function handler(req, res) {
       const consumed = await db.collection("authChallenges").updateOne({ _id: challenge._id, consumedAt: null }, { $set: { status: "consumed", consumedAt: new Date() } });
       if (!consumed.modifiedCount) return res.status(409).json({ error: "Mã QR đã được sử dụng." });
       setSessionCookie(res, session.token, session.ttlSeconds);
-      await recordLoginEvent(db, user, req, "qr-login");
+      await settleOptionalTasks([
+        sendLoginThankYou(user, session, "qr"),
+        recordLoginEvent(db, user, req, "qr-login")
+      ], 350);
       return res.status(200).json({ status: "approved", ...authResponse(user, session) });
     }
 

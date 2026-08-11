@@ -137,15 +137,17 @@ async function recordLoginEvent(db, user, req, type, extra = {}) {
   await db.collection("loginEvents").insertOne({ userId: user._id, type: clean(type, 60), ...device, success: extra.success !== false, reason: clean(extra.reason, 100), createdAt: now });
 }
 
-async function sendSecurityEmail({ to, subject, html, text }) {
+async function sendSecurityEmail({ to, subject, html, text, idempotencyKey, tags }) {
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return { configured: false, provider: null };
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 3500);
   try {
+    const headers = { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" };
+    if (idempotencyKey) headers["Idempotency-Key"] = String(idempotencyKey).slice(0, 256);
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html, text }),
+      headers,
+      body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html, text, ...(Array.isArray(tags) && tags.length ? { tags } : {}) }),
       signal: controller.signal
     });
     if (!response.ok) return { configured: true, delivered: false, provider: "resend" };
