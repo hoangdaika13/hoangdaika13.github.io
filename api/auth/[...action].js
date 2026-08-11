@@ -353,9 +353,26 @@ async function notifyNewDevice(db, user, req, session) {
   return { sent: Boolean(result.delivered), reason: result.configured ? "provider-result" : "provider-unavailable" };
 }
 
-async function sendWelcomeThankYou(user, { verificationPending = false } = {}) {
+async function rememberAuthEmailDelivery(db, user, kind, delivery) {
+  const now = new Date();
+  const prefix = kind === "welcome" ? "welcomeEmail" : "loginThankYouEmail";
+  await db.collection("users").updateOne(
+    { _id: user._id },
+    {
+      $set: {
+        [`${prefix}Status`]: delivery.delivered ? "sent" : delivery.configured ? "failed" : "not_configured",
+        [`${prefix}UpdatedAt`]: now,
+        ...(delivery.delivered ? { [`${prefix}SentAt`]: now, [`${prefix}ProviderId`]: clean(delivery.id, 120) } : {})
+      },
+      $inc: { [`${prefix}Attempts`]: 1 }
+    }
+  );
+  return delivery;
+}
+
+async function sendWelcomeThankYou(db, user, { verificationPending = false } = {}) {
   const message = welcomeEmail({ user, verificationPending });
-  return sendSecurityEmail({
+  const delivery = await sendSecurityEmail({
     to: user.email,
     subject: message.subject,
     html: message.html,
@@ -363,11 +380,12 @@ async function sendWelcomeThankYou(user, { verificationPending = false } = {}) {
     idempotencyKey: `auth-welcome/${String(user._id)}`,
     tags: [{ name: "category", value: "auth_welcome" }]
   });
+  return rememberAuthEmailDelivery(db, user, "welcome", delivery);
 }
 
-async function sendLoginThankYou(user, session, method) {
+async function sendLoginThankYou(db, user, session, method) {
   const message = loginThankYouEmail({ user, session, method });
-  return sendSecurityEmail({
+  const delivery = await sendSecurityEmail({
     to: user.email,
     subject: message.subject,
     html: message.html,
@@ -375,6 +393,7 @@ async function sendLoginThankYou(user, session, method) {
     idempotencyKey: `auth-login/${String(user._id)}/${String(session.sessionId)}`,
     tags: [{ name: "category", value: "auth_login" }, { name: "method", value: String(method || session.type || "unknown").slice(0, 40) }]
   });
+  return rememberAuthEmailDelivery(db, user, "login", delivery);
 }
 
 async function passkeyRegistrationOptions(req, res, db) {
@@ -479,7 +498,9 @@ async function passkeyLoginVerify(req, res, db, body) {
   if (!user || ["deleted", "suspended", "locked", "banned"].includes(String(user.status || "").toLowerCase())) return res.status(403).json({ error: "Tài khoản này hiện không được phép đăng nhập." });
   const session = await createSession(db, user, req, { type: "passkey", remember: Boolean(body.remember) });
   setSessionCookie(res, session.token, session.ttlSeconds);
-  const loginDelivery = await sendLoginThankYou(user, session, "passkey");
+  const loginDelivery = user.welcomeEmailSentAt
+    ? await sendLoginThankYou(db, user, session, "passkey")
+    : await sendWelcomeThankYou(db, user);
   await Promise.all([
     db.collection("passkeys").updateOne({ _id: credential._id }, { $set: { counter: Number(verification.authenticationInfo?.newCounter ?? credential.counter), lastUsedAt: new Date() } }),
     db.collection("authChallenges").updateOne({ _id: challenge._id }, { $set: { consumedAt: new Date() } }),
@@ -525,9 +546,9 @@ module.exports = async function handler(req, res) {
       if (!user) return res.status(400).json({ error: "Không tìm thấy tài khoản Google đã xác minh." });
       const session = await createSession(db, user, req, { type: challenge.provider || "google", remember: true });
       setSessionCookie(res, session.token, session.ttlSeconds);
-      const loginDelivery = challenge.isNewUser
-        ? await sendWelcomeThankYou(user)
-        : await sendLoginThankYou(user, session, challenge.provider || "google");
+      const loginDelivery = challenge.isNewUser || !user.welcomeEmailSentAt
+        ? await sendWelcomeThankYou(db, user)
+        : await sendLoginThankYou(db, user, session, challenge.provider || "google");
       await settleOptionalTasks([
         notifyNewDevice(db, user, req, session),
         recordLoginEvent(db, user, req, `${challenge.provider || "google"}-login`)
@@ -574,7 +595,7 @@ module.exports = async function handler(req, res) {
       const verificationCode = await issueOtp(db, { type: "email-verification", email, ttlMs: EMAIL_OTP_TTL_MS, purpose: "email-otp" });
       const [verificationDelivery, welcomeDelivery] = await Promise.all([
         sendSecurityEmail({ to: email, subject: "Xác minh email HH Platform", html: verificationEmailHtml(verificationCode), text: `Mã xác minh email HH Platform: ${verificationCode}. Mã hết hạn sau 15 phút.`, idempotencyKey: `auth-verification/${String(user._id)}/${verificationCode}`, tags: [{ name: "category", value: "auth_verification" }] }),
-        sendWelcomeThankYou(user, { verificationPending: true })
+        sendWelcomeThankYou(db, user, { verificationPending: true })
       ]);
       await Promise.all([
         db.collection("events").insertOne({ type: "auth:register", userId: user._id, createdAt: now }),
@@ -623,7 +644,9 @@ module.exports = async function handler(req, res) {
       await db.collection("users").updateOne({ _id: user._id }, { $set: { lastLoginAt: now, lastSeenAt: now, loginFailures: 0, loginLockedUntil: null } });
       const session = await createSession(db, user, req, { type: "password", remember: Boolean(body.remember) });
       setSessionCookie(res, session.token, session.ttlSeconds);
-      const loginDelivery = await sendLoginThankYou(user, session, "password");
+      const loginDelivery = user.welcomeEmailSentAt
+        ? await sendLoginThankYou(db, user, session, "password")
+        : await sendWelcomeThankYou(db, user);
       await settleOptionalTasks([
         notifyNewDevice(db, user, req, session),
         recordLoginEvent(db, user, req, "login")
@@ -814,7 +837,9 @@ module.exports = async function handler(req, res) {
       const consumed = await db.collection("authChallenges").updateOne({ _id: challenge._id, consumedAt: null }, { $set: { status: "consumed", consumedAt: new Date() } });
       if (!consumed.modifiedCount) return res.status(409).json({ error: "Mã QR đã được sử dụng." });
       setSessionCookie(res, session.token, session.ttlSeconds);
-      const loginDelivery = await sendLoginThankYou(user, session, "qr");
+      const loginDelivery = user.welcomeEmailSentAt
+        ? await sendLoginThankYou(db, user, session, "qr")
+        : await sendWelcomeThankYou(db, user);
       await settleOptionalTasks([
         recordLoginEvent(db, user, req, "qr-login")
       ], 350);

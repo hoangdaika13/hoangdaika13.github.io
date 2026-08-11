@@ -51,6 +51,11 @@ test("failed receipt delivery recovers automatically without duplicate email bur
   assert.match(api, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/);
   const client = read("support-platform.js");
   assert.doesNotMatch(client, /\["sent", "failed", "not_configured", "missing_email"\]\.includes/);
+  assert.doesNotMatch(client, /data-support-retry-receipt|receipt:retry-public/);
+  const config = read("vercel.json");
+  assert.match(config, /\/api\/donations\?cron=receipt-recovery/);
+  assert.match(api, /process\.env\.CRON_SECRET/);
+  assert.match(api, /sendDonationThankYou\(db, donations, donation, "cron_retry"\)/);
 });
 
 test("support UI requires email and exposes an embedded payOS journey", () => {

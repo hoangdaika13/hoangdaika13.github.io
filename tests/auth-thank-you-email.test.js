@@ -20,12 +20,14 @@ test("auth thank-you email templates are Gmail-safe and have text fallbacks", ()
 
 test("auth API sends welcome mail on registration and login mail on every successful method", () => {
   const source = read("api/auth/[...action].js");
-  assert.match(source, /sendWelcomeThankYou\(user/);
-  assert.match(source, /sendLoginThankYou\(user, session, "password"\)/);
-  assert.match(source, /sendLoginThankYou\(user, session, "passkey"\)/);
-  assert.match(source, /sendLoginThankYou\(user, session, "qr"\)/);
+  assert.match(source, /sendWelcomeThankYou\(db, user/);
+  assert.match(source, /sendLoginThankYou\(db, user, session, "password"\)/);
+  assert.match(source, /sendLoginThankYou\(db, user, session, "passkey"\)/);
+  assert.match(source, /sendLoginThankYou\(db, user, session, "qr"\)/);
   assert.match(source, /challenge\.isNewUser[\s\S]+sendWelcomeThankYou/);
-  assert.match(source, /sendLoginThankYou\(user, session, challenge\.provider/);
+  assert.match(source, /sendLoginThankYou\(db, user, session, challenge\.provider/);
+  assert.match(source, /welcomeEmailSentAt/);
+  assert.match(source, /rememberAuthEmailDelivery/);
 });
 
 test("auth email delivery uses Resend idempotency and categorised tags", () => {

@@ -81,7 +81,7 @@ test("auth bootstrap and security notifications cannot block on optional service
   assert.match(api, /Promise\.race\(\[[\s\S]*?Promise\.allSettled\(tasks\)/);
   assert.match(api, /settleOptionalTasks\(\[[\s\S]*?notifyNewDevice[\s\S]*?recordLoginEvent/);
   assert.match(security, /new AbortController\(\)/);
-  assert.match(security, /setTimeout\(\(\) => controller\.abort\(\), 3500\)/);
+  assert.match(security, /setTimeout\(\(\) => controller\.abort\(\), 6000\)/);
   assert.match(security, /signal:\s*controller\.signal/);
 });
 

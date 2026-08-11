@@ -5,6 +5,12 @@
       "maxDuration": 30
     }
   },
+  "crons": [
+    {
+      "path": "/api/donations?cron=receipt-recovery",
+      "schedule": "15 2 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/open-media/:openMediaAction",
