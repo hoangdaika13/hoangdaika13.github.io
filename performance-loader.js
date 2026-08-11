@@ -168,8 +168,8 @@
       scripts: ["search-watch-center.js?v=7"]
     },
     cinema: {
-      styles: ["cinema-hub.css?v=4"],
-      scripts: ["utils/open-media-rights.js?v=3", "cinema-hub.js?v=4"]
+      styles: ["cinema-hub.css?v=5"],
+      scripts: ["utils/open-media-rights.js?v=3", "cinema-hub.js?v=5"]
     },
     "open-music": {
       styles: ["open-music-hub.css?v=4"],

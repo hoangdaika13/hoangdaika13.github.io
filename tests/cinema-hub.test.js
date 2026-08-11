@@ -14,7 +14,7 @@ const sha256 = (value) => `sha256:${crypto.createHash("sha256").update(value).di
 test("Cinema V2 publishes only governance-approved films", () => {
   assert.equal(manifest.schemaVersion, 2);
   assert.equal(manifest.policy.mode, "fail-closed");
-  assert.equal(manifest.items.length, 16);
+  assert.equal(manifest.items.length, 26);
   assert.equal(new Set(manifest.items.map((item) => item.id)).size, manifest.items.length);
 
   manifest.items.forEach((item) => {
@@ -47,7 +47,7 @@ test("Cinema keeps every unresolved film in a no-playback quarantine", () => {
   });
   assert.equal(expected.size, 0);
   assert.equal(cinema.normalizeQuarantine(manifest.quarantineItems).length, 4);
-  assert.equal(cinema.normalizeCatalog([...manifest.items, ...manifest.quarantineItems], { territory: "VN" }).length, 16);
+  assert.equal(cinema.normalizeCatalog([...manifest.items, ...manifest.quarantineItems], { territory: "VN" }).length, 26);
 });
 
 test("Evidence hashes are reproducible records, upstream hashes are never invented", () => {
@@ -88,10 +88,10 @@ test("Risky restored or scored classics are not used", () => {
 });
 
 test("Cinema gates territory server-side and fails closed without geo evidence", () => {
-  assert.equal(cinema.VERSION, "2.1.0");
+  assert.equal(cinema.VERSION, "2.2.0");
   assert.equal(cinema.RIGHTS_STATUS_URL, "/api/open-media/rights");
-  assert.equal(cinema.normalizeCatalog(manifest.items).length, 14, "VN-only records must not be inferred from browser state");
-  assert.equal(cinema.normalizeCatalog(manifest.items, { territory: "VN" }).length, 16);
+  assert.equal(cinema.normalizeCatalog(manifest.items).length, 24, "VN-only records must not be inferred from browser state");
+  assert.equal(cinema.normalizeCatalog(manifest.items, { territory: "VN" }).length, 26);
   const suspended = cinema.applyEmergencySuspensions(manifest.items, {
     items: [{ id: "sintel", available: false, reviewStatus: "suspended" }]
   });
@@ -135,10 +135,24 @@ test("Cinema offers country, format and genre discovery filters", () => {
   const source = read("cinema-hub.js");
   assert.match(source, /data-cinema-filter="country"/);
   assert.match(source, /data-cinema-filter="format"/);
+  assert.match(source, /data-cinema-filter="length"/);
   assert.match(source, /countryOptions/);
   assert.match(source, /formatOptions/);
   assert.ok(new Set(manifest.items.flatMap((item) => item.genres)).size >= 10);
   assert.ok(new Set(manifest.items.flatMap((item) => item.countries)).size >= 3);
+});
+
+test("Cinema includes longer films and protects sensitive playback", () => {
+  const longFilms = manifest.items.filter((item) => item.durationSeconds >= 3600);
+  assert.ok(longFilms.length >= 2);
+  assert.ok(longFilms.some((item) => item.id === "paywall-business-scholarship"));
+  const dominion = manifest.items.find((item) => item.id === "dominion-2018");
+  assert.equal(dominion.sensitiveContent, true);
+  assert.equal(dominion.ageRating, "18+");
+  assert.ok(dominion.contentWarnings.length >= 2);
+  const source = read("cinema-hub.js");
+  assert.match(source, /data-cinema-content-consent/);
+  assert.match(source, /contentConsents: new Set/);
 });
 
 test("Cinema persists owner-isolated continue, favorites, watchlist and speed", () => {
@@ -159,7 +173,7 @@ test("Cinema exposes SPA lifecycle and compliance inspection", () => {
   assert.equal(typeof cinema.unmount, "function");
   assert.equal(typeof cinema.inspect, "function");
   assert.equal(typeof cinema.focusSearch, "function");
-  assert.deepEqual(cinema.inspect(), { version: "2.1.0", mounted: false, route: "/cinema", catalogCount: 0 });
+  assert.deepEqual(cinema.inspect(), { version: "2.2.0", mounted: false, route: "/cinema", catalogCount: 0 });
 });
 
 test("Cinema layout remains one-screen, 375px-safe and accessible", () => {

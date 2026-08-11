@@ -106,9 +106,11 @@ test("world cinema expansion is item-level verified and fail-closed", () => {
   const addedIds = new Set([
     "caminandes-llama-drama", "caminandes-gran-dillama", "cosmos-laundromat",
     "caminandes-llamigos", "agent-327-preview", "hero", "glass-half",
-    "sprite-fright", "charge", "wing-it"
+    "sprite-fright", "charge", "wing-it", "spring-open-movie", "coffee-run",
+    "daily-dweebs", "singularity-open-movie", "dream-vietnam-2021", "my-moon",
+    "blight-2018", "payload-2012", "paywall-business-scholarship", "dominion-2018"
   ]);
-  assert.equal(films.items.length, 16);
+  assert.equal(films.items.length, 26);
   assert.equal(registry.catalogSnapshot.films, films.items.length);
   assert.equal(registry.catalogSnapshot.total, registry.catalogSnapshot.films + registry.catalogSnapshot.tracks);
   for (const item of films.items) {
@@ -119,7 +121,7 @@ test("world cinema expansion is item-level verified and fail-closed", () => {
     if (addedIds.has(item.id)) {
       assert.deepEqual(item.rights.territories, ["WORLDWIDE"]);
       assert.equal(item.rights.evidence.mediaChecksumStatus, "verified-upstream");
-      assert.equal(item.rights.evidence.mediaChecksumScope, "original-file");
+      assert.ok(["original-file", "playback-media-bytes"].includes(item.rights.evidence.mediaChecksumScope));
       assert.match(item.rights.evidence.sourceRevision, /oldid=\d+$/);
     }
   }
@@ -269,15 +271,15 @@ test("copyright center is reachable from the shell and cached with aligned versi
   assert.match(shell, /nhhoang130803@gmail\.com/);
   assert.match(loader, /"open-media-governance"[\s\S]*?open-media-governance\.js\?v=1/);
   assert.match(loader, /utils\/open-media-rights\.js\?v=3/);
-  assert.match(html, /performance-loader\.js\?v=268/);
+  assert.match(html, /performance-loader\.js\?v=269/);
   assert.match(html, /script\.js\?v=178/);
-  assert.match(serviceWorker, /hh-identity-portal-v539/);
+  assert.match(serviceWorker, /hh-identity-portal-v540/);
   for (const asset of [
     "open-media-governance.css?v=1",
     "open-media-governance.js?v=1",
     "assets/open-media/rights-registry-v2.json",
-    "cinema-hub.css?v=4",
-    "cinema-hub.js?v=4",
+    "cinema-hub.css?v=5",
+    "cinema-hub.js?v=5",
     "open-music-hub.css?v=4",
     "open-music-hub.js?v=3"
   ]) assert.match(serviceWorker, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), asset);

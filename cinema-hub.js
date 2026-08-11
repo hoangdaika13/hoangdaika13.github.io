@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createCinemaHub(globalScope) {
   "use strict";
 
-  const VERSION = "2.1.0";
+  const VERSION = "2.2.0";
   const MANIFEST_URL = "/assets/open-media/curated-films-v1.json";
   const RIGHTS_STATUS_URL = "/api/open-media/rights";
   const STORAGE_SCHEMA = "hh.cinema.hub.v1";
@@ -135,6 +135,7 @@
       genre: String(raw.genre || "all"),
       country: String(raw.country || "all"),
       format: String(raw.format || "all"),
+      length: ["all", "short", "medium", "long"].includes(raw.length) ? raw.length : "all",
       sort: SORT_MODES.has(raw.sort) ? raw.sort : "featured"
     };
   }
@@ -207,6 +208,9 @@
       countries: Array.isArray(item.countries) ? item.countries.map(String) : [],
       regions: Array.isArray(item.regions) ? item.regions.map(String) : [],
       contentType: String(item.contentType || "Phim ngắn"),
+      ageRating: String(item.ageRating || "Mọi lứa tuổi"),
+      sensitiveContent: item.sensitiveContent === true,
+      contentWarnings: Array.isArray(item.contentWarnings) ? item.contentWarnings.map(String).filter(Boolean) : [],
       languages: Array.isArray(item.languages) ? item.languages.map(String) : [],
       year: Number(item.year) || 0,
       durationSeconds: Number(item.durationSeconds) || 0
@@ -318,6 +322,9 @@
       if (runtime.state.genre !== "all" && !item.genres.includes(runtime.state.genre)) return false;
       if (runtime.state.country !== "all" && !item.countries.includes(runtime.state.country)) return false;
       if (runtime.state.format !== "all" && item.contentType !== runtime.state.format) return false;
+      if (runtime.state.length === "short" && item.durationSeconds >= 600) return false;
+      if (runtime.state.length === "medium" && (item.durationSeconds < 600 || item.durationSeconds >= 2400)) return false;
+      if (runtime.state.length === "long" && item.durationSeconds < 2400) return false;
       if (!query) return true;
       return [item.title, item.originalTitle, item.creator, item.description, item.genres.join(" "), item.countries.join(" "), item.regions.join(" "), item.contentType, item.source.provider]
         .join(" ").toLocaleLowerCase("vi").includes(query);
@@ -394,7 +401,7 @@
     </section>`;
     runtime.root = runtime.host.querySelector("[data-cinema-hub]");
     const sortFilter = runtime.root.querySelector('[data-cinema-filter="sort"]')?.closest("label");
-    sortFilter?.insertAdjacentHTML("beforebegin", `<label><span>Quốc gia</span><select data-cinema-filter="country" aria-label="Lọc theo quốc gia"></select></label><label><span>Định dạng</span><select data-cinema-filter="format" aria-label="Lọc theo định dạng"></select></label>`);
+    sortFilter?.insertAdjacentHTML("beforebegin", `<label><span>Quốc gia</span><select data-cinema-filter="country" aria-label="Lọc theo quốc gia"></select></label><label><span>Định dạng</span><select data-cinema-filter="format" aria-label="Lọc theo định dạng"></select></label><label><span>Thời lượng</span><select data-cinema-filter="length" aria-label="Lọc theo thời lượng"><option value="all">Mọi thời lượng</option><option value="short">Dưới 10 phút</option><option value="medium">10–40 phút</option><option value="long">Trên 40 phút</option></select></label>`);
   }
 
   function updateToolbar(runtime) {
@@ -403,6 +410,7 @@
     const genre = runtime.root.querySelector('[data-cinema-filter="genre"]');
     const country = runtime.root.querySelector('[data-cinema-filter="country"]');
     const format = runtime.root.querySelector('[data-cinema-filter="format"]');
+    const length = runtime.root.querySelector('[data-cinema-filter="length"]');
     const sort = runtime.root.querySelector('[data-cinema-filter="sort"]');
     source.innerHTML = `<option value="all">Tất cả nguồn</option>${sourceOptions(runtime).map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
     license.innerHTML = `<option value="all">Mọi giấy phép</option>${licenseOptions(runtime).map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(licenseLabel(value))}</option>`).join("")}`;
@@ -414,6 +422,7 @@
     genre.value = genreOptions(runtime).includes(runtime.state.genre) ? runtime.state.genre : "all";
     country.value = countryOptions(runtime).includes(runtime.state.country) ? runtime.state.country : "all";
     format.value = formatOptions(runtime).includes(runtime.state.format) ? runtime.state.format : "all";
+    length.value = ["all", "short", "medium", "long"].includes(runtime.state.length) ? runtime.state.length : "all";
     sort.value = SORT_MODES.has(runtime.state.sort) ? runtime.state.sort : "featured";
     runtime.root.querySelectorAll("[data-cinema-view]").forEach((button) => {
       const active = button.dataset.cinemaView === runtime.state.view;
@@ -433,7 +442,7 @@
     const selected = runtime.selectedId === item.id;
     return `<article class="cinema-card ${selected ? "is-selected" : ""}" data-cinema-card="${escapeHtml(item.id)}">
       <button type="button" class="cinema-card__open" data-cinema-select="${escapeHtml(item.id)}" aria-label="Mở ${escapeHtml(item.title)}">
-        <span class="cinema-card__poster"><img src="${escapeHtml(safeUrl(item.poster))}" alt="" loading="lazy" referrerpolicy="no-referrer"><i>${escapeHtml(licenseLabel(item.rights.licenseCode))}</i>${ratio > 0 ? `<b style="--progress:${Math.round(ratio * 100)}%"></b>` : ""}</span>
+        <span class="cinema-card__poster"><img src="${escapeHtml(safeUrl(item.poster))}" alt="" loading="lazy" referrerpolicy="no-referrer"><i>${escapeHtml(licenseLabel(item.rights.licenseCode))}</i>${item.sensitiveContent ? `<u class="cinema-card__rating">${escapeHtml(item.ageRating)}</u>` : ""}${ratio > 0 ? `<b style="--progress:${Math.round(ratio * 100)}%"></b>` : ""}</span>
         <span class="cinema-card__copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(String(item.year))} · ${escapeHtml(formatDuration(item.durationSeconds))}</small><em>${escapeHtml(item.genres.slice(0, 2).join(" · "))}</em>${isContinuable(runtime, item) ? `<span>Tiếp tục từ ${escapeHtml(formatClock(progress.position))}</span>` : ""}</span>
       </button>
       <span class="cinema-card__actions">
@@ -455,10 +464,13 @@
     return runtime.catalog.find((item) => item.id === runtime.selectedId) || runtime.catalog[0] || null;
   }
 
-  function playerMarkup(item) {
+  function playerMarkup(runtime, item) {
     if (!item) return `<div class="cinema-player-empty"><span>◌</span><strong>Chưa có nguồn phim an toàn</strong><p>Không mục nào vượt qua bộ kiểm tra giấy phép.</p></div>`;
     const playbackUrl = safeUrl(item.playback.url);
     const poster = safeUrl(item.poster);
+    if (item.sensitiveContent && !runtime.contentConsents.has(item.id)) {
+      return `<div class="cinema-content-gate"><img src="${escapeHtml(poster)}" alt="" referrerpolicy="no-referrer"><div><small>${escapeHtml(item.ageRating || "18+")} · CẢNH BÁO NỘI DUNG</small><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.contentWarnings.join(" · ") || "Nội dung có thể không phù hợp với mọi người xem.")}</p><button type="button" data-cinema-content-consent="${escapeHtml(item.id)}">Tôi hiểu, tiếp tục xem</button></div></div>`;
+    }
     return `<video data-cinema-video controls playsinline preload="metadata" poster="${escapeHtml(poster)}" aria-label="Đang phát ${escapeHtml(item.title)}"><source src="${escapeHtml(playbackUrl)}" type="${escapeHtml(item.playback.mimeType || "video/mp4")}">Trình duyệt của bạn không hỗ trợ phát video.</video><div class="cinema-player-fallback" data-cinema-player-error hidden><strong>Nguồn phim tạm thời không tải được</strong><p>Tiến độ của bạn vẫn được giữ. Bạn có thể thử lại hoặc mở bản gốc.</p><div><button type="button" data-cinema-retry>Thử lại</button><a href="${escapeHtml(safeUrl(item.source.landingUrl))}" target="_blank" rel="noopener noreferrer">Mở tại nguồn ↗</a></div></div>`;
   }
 
@@ -561,7 +573,7 @@
     clearPlayerListeners(runtime);
     runtime.video?.pause?.();
     runtime.video = null;
-    runtime.root.querySelector("[data-cinema-player]").innerHTML = playerMarkup(item);
+    runtime.root.querySelector("[data-cinema-player]").innerHTML = playerMarkup(runtime, item);
     renderNow(runtime, item);
     runtime.root.querySelector("[data-cinema-rights]").innerHTML = rightsMarkup(item);
     bindPlayer(runtime, item);
@@ -737,6 +749,7 @@
     runtime.state.genre = "all";
     runtime.state.country = "all";
     runtime.state.format = "all";
+    runtime.state.length = "all";
     runtime.state.sort = "featured";
     const search = runtime.root.querySelector("[data-cinema-search]");
     if (search) search.value = "";
@@ -778,6 +791,8 @@
       const action = event.target.closest("[data-cinema-player-action]");
       if (action) { playerAction(runtime, action.dataset.cinemaPlayerAction); return; }
       if (event.target.closest("[data-cinema-retry]")) { renderPlayer(runtime, selectedItem(runtime)); return; }
+      const consent = event.target.closest("[data-cinema-content-consent]");
+      if (consent) { runtime.contentConsents.add(consent.dataset.cinemaContentConsent); renderPlayer(runtime, selectedItem(runtime)); return; }
       if (event.target.closest("[data-cinema-reset]")) { resetFilters(runtime); return; }
       if (event.target.closest("[data-cinema-clear-history]")) {
         runtime.state.history = [];
@@ -794,7 +809,7 @@
       const key = event.target.dataset.cinemaFilter;
       if (!key) return;
       if (key === "sort") runtime.state.sort = SORT_MODES.has(event.target.value) ? event.target.value : "featured";
-      else if (["source", "license", "genre", "country", "format"].includes(key)) runtime.state[key] = String(event.target.value || "all");
+      else if (["source", "license", "genre", "country", "format", "length"].includes(key)) runtime.state[key] = String(event.target.value || "all");
       renderCatalog(runtime); writeState(runtime);
     });
     addListener(runtime, runtime.document, "keydown", (event) => {
@@ -853,7 +868,8 @@
       territoriallyUnavailableCount: 0,
       territory: DEFAULT_TERRITORY,
       lastProgressWrite: 0,
-      toastTimer: 0
+      toastTimer: 0,
+      contentConsents: new Set()
     };
     runtime.state = readState(runtime.storage, runtime.ownerId);
     activeRuntime = runtime;
@@ -923,7 +939,7 @@
       territory: runtime.territory,
       selectedId: runtime.selectedId,
       query: runtime.query,
-      filters: { view: runtime.state.view, source: runtime.state.source, license: runtime.state.license, genre: runtime.state.genre, country: runtime.state.country, format: runtime.state.format, sort: runtime.state.sort },
+      filters: { view: runtime.state.view, source: runtime.state.source, license: runtime.state.license, genre: runtime.state.genre, country: runtime.state.country, format: runtime.state.format, length: runtime.state.length, sort: runtime.state.sort },
       favorites: [...runtime.state.favorites],
       watchlist: [...runtime.state.watchlist],
       playbackRate: runtime.state.playbackRate,

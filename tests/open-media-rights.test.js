@@ -93,7 +93,7 @@ test("verification date is a real YYYY-MM-DD date that cannot be in the future",
 
 test("curated film and music manifests contain only publishable licensed items", () => {
   const manifests = [
-    [readManifest("curated-films-v1.json"), "film", 6],
+    [readManifest("curated-films-v1.json"), "film", 26],
     [readManifest("curated-music-v1.json"), "track", 15]
   ];
 

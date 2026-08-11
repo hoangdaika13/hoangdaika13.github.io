@@ -5,9 +5,9 @@
   "publicContact": "nhhoang130803@gmail.com",
   "legalNotice": "Đây là hồ sơ vận hành nhằm giảm rủi ro, không phải bảo đảm rằng sẽ không phát sinh khiếu nại và không thay thế tư vấn pháp lý.",
   "catalogSnapshot": {
-    "films": 16,
+    "films": 26,
     "tracks": 20,
-    "total": 36,
+    "total": 46,
     "quarantineFilms": 4,
     "sourceManifests": [
       "/assets/open-media/curated-films-v1.json",
