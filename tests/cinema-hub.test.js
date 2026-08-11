@@ -14,7 +14,7 @@ const sha256 = (value) => `sha256:${crypto.createHash("sha256").update(value).di
 test("Cinema V2 publishes only governance-approved films", () => {
   assert.equal(manifest.schemaVersion, 2);
   assert.equal(manifest.policy.mode, "fail-closed");
-  assert.equal(manifest.items.length, 26);
+  assert.equal(manifest.items.length, 24);
   assert.equal(new Set(manifest.items.map((item) => item.id)).size, manifest.items.length);
 
   manifest.items.forEach((item) => {
@@ -23,19 +23,20 @@ test("Cinema V2 publishes only governance-approved films", () => {
     assert.equal(item.rights.streamAllowed, true);
     assert.equal(item.rights.rehostAllowed, false);
     assert.equal(item.rights.downloadAllowed, false);
+    assert.notEqual(item.rights.rightsBasis, "public-domain-mark");
     assert.equal(item.rights.shareAlike, /^CC-BY-SA-/.test(item.rights.licenseCode));
     assert.ok(Array.isArray(item.countries) && item.countries.length, `${item.id}: missing countries`);
     assert.ok(Array.isArray(item.regions) && item.regions.length, `${item.id}: missing regions`);
     assert.ok(item.contentType, `${item.id}: missing content type`);
     assert.ok(item.source.itemId && item.source.itemId !== item.id || item.source.provider === "Blender Open Movies");
-    const territory = item.rights.territories.includes("WORLDWIDE") ? "WORLDWIDE" : "VN";
-    const verdict = rightsEngine.validateGovernanceItem(item, { territory });
+    assert.deepEqual(item.rights.territories, ["WORLDWIDE"]);
+    const verdict = rightsEngine.validateGovernanceItem(item, { requiredTerritory: "WORLDWIDE" });
     assert.equal(verdict.publiclyAvailable, true, `${item.id}: ${verdict.errors.join(", ")}`);
   });
 });
 
 test("Cinema keeps every unresolved film in a no-playback quarantine", () => {
-  const expected = new Set(["great-train-robbery-1903", "duck-and-cover-1951", "about-bananas-1935", "the-general-1926"]);
+  const expected = new Set(["great-train-robbery-1903", "duck-and-cover-1951", "about-bananas-1935", "the-general-1926", "le-voyage-dans-la-lune", "nosferatu-1922"]);
   assert.equal(manifest.quarantineItems.length, expected.size);
   manifest.quarantineItems.forEach((item) => {
     assert.ok(expected.delete(item.id), `unexpected quarantine item ${item.id}`);
@@ -46,8 +47,8 @@ test("Cinema keeps every unresolved film in a no-playback quarantine", () => {
     assert.equal(Object.hasOwn(item, "playbackUrl"), false);
   });
   assert.equal(expected.size, 0);
-  assert.equal(cinema.normalizeQuarantine(manifest.quarantineItems).length, 4);
-  assert.equal(cinema.normalizeCatalog([...manifest.items, ...manifest.quarantineItems], { territory: "VN" }).length, 26);
+  assert.equal(cinema.normalizeQuarantine(manifest.quarantineItems).length, 6);
+  assert.equal(cinema.normalizeCatalog([...manifest.items, ...manifest.quarantineItems], { territory: "VN" }).length, 24);
 });
 
 test("Evidence hashes are reproducible records, upstream hashes are never invented", () => {
@@ -70,28 +71,29 @@ test("Evidence hashes are reproducible records, upstream hashes are never invent
       assert.equal(item.rights.manualReview.evidenceChecksum, sha256(item.rights.manualReview.decisionRecord));
     }
   });
-  assert.equal(byId.get("le-voyage-dans-la-lune").rights.evidence.mediaChecksum, "sha1:7c076c23184d475e31b94f5ee4443d73967653af");
-  assert.equal(byId.get("nosferatu-1922").rights.evidence.mediaChecksum, "sha1:4d78cee99f7e9b1576e4d72bd28af58875251e12");
+  assert.equal(byId.has("le-voyage-dans-la-lune"), false);
+  assert.equal(byId.has("nosferatu-1922"), false);
   assert.doesNotMatch(JSON.stringify(manifest), /sha(?:1|256):0{20,}/i);
 });
 
-test("Risky restored or scored classics are not used", () => {
-  const byId = new Map(manifest.items.map((item) => [item.id, item]));
-  const moon = byId.get("le-voyage-dans-la-lune");
-  const nosferatu = byId.get("nosferatu-1922");
-  assert.match(moon.playback.url, /black_and_white/);
-  assert.equal(moon.rights.layers.soundtrack.status, "not-applicable");
-  assert.match(nosferatu.playback.url, /English_titles_1947/);
-  assert.equal(nosferatu.rights.layers.soundtrack.status, "not-applicable");
-  assert.doesNotMatch(nosferatu.playback.url, /restoration|2006/i);
-  assert.match(nosferatu.description, /không dùng bản phục chế 2006/i);
+test("Territorial public-domain classics stay quarantined without playback", () => {
+  const quarantineById = new Map(manifest.quarantineItems.map((item) => [item.id, item]));
+  const moon = quarantineById.get("le-voyage-dans-la-lune");
+  const nosferatu = quarantineById.get("nosferatu-1922");
+  for (const item of [moon, nosferatu]) {
+    assert.ok(item);
+    assert.equal(item.reviewStatus, "quarantine");
+    assert.ok(item.reasonCodes.includes("worldwide-basis-missing"));
+    assert.equal(Object.hasOwn(item, "playback"), false);
+    assert.equal(Object.hasOwn(item, "playbackUrl"), false);
+  }
 });
 
 test("Cinema gates territory server-side and fails closed without geo evidence", () => {
-  assert.equal(cinema.VERSION, "2.2.0");
+  assert.equal(cinema.VERSION, "2.3.0");
   assert.equal(cinema.RIGHTS_STATUS_URL, "/api/open-media/rights");
   assert.equal(cinema.normalizeCatalog(manifest.items).length, 24, "VN-only records must not be inferred from browser state");
-  assert.equal(cinema.normalizeCatalog(manifest.items, { territory: "VN" }).length, 26);
+  assert.equal(cinema.normalizeCatalog(manifest.items, { territory: "VN" }).length, 24);
   const suspended = cinema.applyEmergencySuspensions(manifest.items, {
     items: [{ id: "sintel", available: false, reviewStatus: "suspended" }]
   });
@@ -173,7 +175,7 @@ test("Cinema exposes SPA lifecycle and compliance inspection", () => {
   assert.equal(typeof cinema.unmount, "function");
   assert.equal(typeof cinema.inspect, "function");
   assert.equal(typeof cinema.focusSearch, "function");
-  assert.deepEqual(cinema.inspect(), { version: "2.2.0", mounted: false, route: "/cinema", catalogCount: 0 });
+  assert.deepEqual(cinema.inspect(), { version: "2.3.0", mounted: false, route: "/cinema", catalogCount: 0 });
 });
 
 test("Cinema layout remains one-screen, 375px-safe and accessible", () => {

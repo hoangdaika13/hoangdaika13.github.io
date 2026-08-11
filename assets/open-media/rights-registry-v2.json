@@ -5,10 +5,10 @@
   "publicContact": "nhhoang130803@gmail.com",
   "legalNotice": "Đây là hồ sơ vận hành nhằm giảm rủi ro, không phải bảo đảm rằng sẽ không phát sinh khiếu nại và không thay thế tư vấn pháp lý.",
   "catalogSnapshot": {
-    "films": 26,
+    "films": 24,
     "tracks": 20,
-    "total": 46,
-    "quarantineFilms": 4,
+    "total": 44,
+    "quarantineFilms": 6,
     "sourceManifests": [
       "/assets/open-media/curated-films-v1.json",
       "/assets/open-media/curated-music-v1.json"
@@ -16,6 +16,9 @@
   },
   "policy": {
     "defaultDecision": "deny-until-cleared",
+    "requiredPublicationTerritory": "WORLDWIDE",
+    "allowTerritorialPublication": false,
+    "filmPublicDomainMarkPublication": "quarantine-only",
     "automaticAllowlist": [
       "CC0-1.0",
       "CC-BY-2.5",
@@ -187,6 +190,34 @@
       },
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_General_(1926).webm",
       "action": "Chỉ khôi phục sau khi có kết luận quyền WORLDWIDE hoặc geo enforcement được kiểm thử."
+    },
+    {
+      "id": "le-voyage-dans-la-lune",
+      "kind": "film",
+      "title": "Chuyến du hành lên Mặt Trăng",
+      "reviewStatus": "quarantine",
+      "rightsBasis": "public-domain-mark",
+      "jurisdiction": "territorial",
+      "territories": [],
+      "reasonCode": "worldwide-public-domain-basis-missing",
+      "reason": "Kết luận trước chỉ áp dụng cho Việt Nam và một số lãnh thổ, không đáp ứng chính sách WORLDWIDE mới.",
+      "requiredLayers": {"master": "manual-review", "soundtrack": "not-applicable", "poster": "manual-review", "subtitles": "not-applicable", "privacyPublicity": "manual-review"},
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Le_Voyage_dans_la_lune_(black_and_white,_1902).webm",
+      "action": "Chỉ khôi phục khi có kết luận quyền WORLDWIDE bằng văn bản và rà lại đúng bản master."
+    },
+    {
+      "id": "nosferatu-1922",
+      "kind": "film",
+      "title": "Nosferatu",
+      "reviewStatus": "quarantine",
+      "rightsBasis": "public-domain-mark",
+      "jurisdiction": "territorial",
+      "territories": [],
+      "reasonCode": "worldwide-film-and-intertitle-basis-missing",
+      "reason": "Chưa có kết luận quyền WORLDWIDE đồng nhất cho phim gốc, bản master và thẻ tiêu đề tiếng Anh năm 1947.",
+      "requiredLayers": {"master": "manual-review", "soundtrack": "not-applicable", "poster": "manual-review", "subtitles": "manual-review", "privacyPublicity": "manual-review"},
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nosferatu_(1922,_English_titles_1947).webm",
+      "action": "Chỉ khôi phục khi hồ sơ WORLDWIDE bao phủ riêng master, intertitles và mọi lớp phát hành."
     }
   ],
   "complaints": {

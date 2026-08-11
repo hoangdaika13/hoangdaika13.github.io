@@ -89,10 +89,13 @@ function governanceFilm(overrides = {}) {
 test("rights registry defaults to deny and quarantines every disputed legacy film", () => {
   assert.equal(registry.schemaVersion, 2);
   assert.equal(registry.policy.defaultDecision, "deny-until-cleared");
+  assert.equal(registry.policy.requiredPublicationTerritory, "WORLDWIDE");
+  assert.equal(registry.policy.allowTerritorialPublication, false);
+  assert.equal(registry.policy.filmPublicDomainMarkPublication, "quarantine-only");
   assert.equal(registry.publicContact, "nhhoang130803@gmail.com");
   assert.deepEqual(registry.policy.automaticAllowlist, rights.autoAllowedLicenses);
   const quarantineIds = new Set(registry.quarantineItems.map((item) => item.id));
-  for (const id of ["great-train-robbery-1903", "duck-and-cover-1951", "about-bananas-1935", "the-general-1926"]) {
+  for (const id of ["great-train-robbery-1903", "duck-and-cover-1951", "about-bananas-1935", "the-general-1926", "le-voyage-dans-la-lune", "nosferatu-1922"]) {
     assert.ok(quarantineIds.has(id), id);
   }
   for (const item of registry.quarantineItems) {
@@ -110,11 +113,12 @@ test("world cinema expansion is item-level verified and fail-closed", () => {
     "daily-dweebs", "singularity-open-movie", "dream-vietnam-2021", "my-moon",
     "blight-2018", "payload-2012", "paywall-business-scholarship", "dominion-2018"
   ]);
-  assert.equal(films.items.length, 26);
+  assert.equal(films.items.length, 24);
   assert.equal(registry.catalogSnapshot.films, films.items.length);
   assert.equal(registry.catalogSnapshot.total, registry.catalogSnapshot.films + registry.catalogSnapshot.tracks);
   for (const item of films.items) {
-    const verdict = rights.validateGovernanceItem(item, { territory: item.rights.territories.includes("WORLDWIDE") ? "WORLDWIDE" : "VN" });
+    assert.deepEqual(item.rights.territories, ["WORLDWIDE"]);
+    const verdict = rights.validateGovernanceItem(item, { requiredTerritory: "WORLDWIDE" });
     assert.equal(verdict.publiclyAvailable, true, `${item.id}: ${verdict.errors.join(", ")}`);
     assert.doesNotMatch(item.rights.licenseCode, /-NC|-ND|UNKNOWN/i);
     assert.ok(item.countries.length && item.regions.length && item.contentType);
@@ -138,7 +142,21 @@ test("governance gate publishes only a complete worldwide record", () => {
   const blocked = rights.validateGovernanceItem(restricted, { territory: "WORLDWIDE" });
   assert.equal(blocked.publiclyAvailable, false);
   assert.ok(blocked.errors.includes("territory-not-cleared"));
-  assert.equal(rights.validateGovernanceItem(restricted, { territory: "VN" }).publiclyAvailable, true);
+  assert.equal(rights.validateGovernanceItem(restricted, { territory: "VN" }).publiclyAvailable, false);
+
+  const mixedScope = governanceFilm({ rights: { territories: ["WORLDWIDE", "VN"] } });
+  const mixedScopeBlocked = rights.validateGovernanceItem(mixedScope);
+  assert.equal(mixedScopeBlocked.publiclyAvailable, false);
+  assert.ok(mixedScopeBlocked.errors.includes("worldwide-only-publication-required"));
+
+  const pdmFilm = governanceFilm({ rights: {
+    rightsBasis: "public-domain-mark",
+    licenseCode: "PDM-1.0",
+    licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/"
+  } });
+  const pdmFilmBlocked = rights.validateGovernanceItem(pdmFilm);
+  assert.equal(pdmFilmBlocked.publiclyAvailable, false);
+  assert.ok(pdmFilmBlocked.errors.includes("film-public-domain-mark-quarantine-only"));
 });
 
 test("unfingerprinted remote media can never be rehosted or downloaded", () => {
@@ -171,14 +189,21 @@ test("public rights record exposes fingerprint provenance without inventing a SH
   assert.match(record.evidence.mediaChecksum, /^sha1:[a-f0-9]{40}$/);
 });
 
-test("rights API is territory-aware and overlays quarantine before playback", () => {
+test("rights API records viewer territory but always enforces worldwide publication", () => {
   assert.equal(rightsApi.viewerTerritory({ headers: {} }), "WORLDWIDE");
   assert.equal(rightsApi.viewerTerritory({ headers: { "x-vercel-ip-country": "vn" } }), "VN");
   assert.equal(rightsApi.viewerTerritory({ headers: { "x-vercel-ip-country": "WORLDWIDE" } }), "WORLDWIDE");
   const summary = rightsApi.summary({ territory: "WORLDWIDE", restrictions: new Map() });
   assert.equal(summary.viewerTerritory, "WORLDWIDE");
+  assert.equal(summary.publicationTerritory, "WORLDWIDE");
+  assert.equal(rightsApi.PUBLICATION_TERRITORY, "WORLDWIDE");
   assert.equal(summary.items.length, summary.counts.total);
-  for (const id of ["great-train-robbery-1903", "duck-and-cover-1951", "about-bananas-1935", "the-general-1926"]) {
+  const territorial = rightsApi.publicCatalogRecord(governanceFilm({ rights: { territories: ["VN"] } }), { territory: "VN" });
+  assert.equal(territorial.viewerTerritory, "VN");
+  assert.equal(territorial.publicationTerritory, "WORLDWIDE");
+  assert.equal(territorial.available, false);
+  assert.ok(territorial.validationErrors.includes("territory-not-cleared"));
+  for (const id of ["great-train-robbery-1903", "duck-and-cover-1951", "about-bananas-1935", "the-general-1926", "le-voyage-dans-la-lune", "nosferatu-1922"]) {
     const item = summary.items.find((row) => row.id === id);
     if (!item) continue; // Removed items remain represented in the registry quarantine queue.
     assert.equal(item.available, false, id);
@@ -270,16 +295,17 @@ test("copyright center is reachable from the shell and cached with aligned versi
   assert.match(shell, /HHOpenMediaGovernance\?\.unmount/);
   assert.match(shell, /nhhoang130803@gmail\.com/);
   assert.match(loader, /"open-media-governance"[\s\S]*?open-media-governance\.js\?v=1/);
-  assert.match(loader, /utils\/open-media-rights\.js\?v=3/);
-  assert.match(html, /performance-loader\.js\?v=269/);
+  assert.match(loader, /utils\/open-media-rights\.js\?v=4/);
+  assert.doesNotMatch(loader, /utils\/open-media-rights\.js\?v=3/);
+  assert.match(html, /performance-loader\.js\?v=270/);
   assert.match(html, /script\.js\?v=178/);
-  assert.match(serviceWorker, /hh-identity-portal-v540/);
+  assert.match(serviceWorker, /hh-identity-portal-v541/);
   for (const asset of [
     "open-media-governance.css?v=1",
     "open-media-governance.js?v=1",
     "assets/open-media/rights-registry-v2.json",
     "cinema-hub.css?v=5",
-    "cinema-hub.js?v=5",
+    "cinema-hub.js?v=6",
     "open-music-hub.css?v=4",
     "open-music-hub.js?v=3"
   ]) assert.match(serviceWorker, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), asset);

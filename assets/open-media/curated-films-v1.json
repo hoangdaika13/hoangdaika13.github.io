@@ -2,12 +2,15 @@
   "schemaVersion": 2,
   "catalogId": "hh.open-media.films.v2",
   "updatedAt": "2026-08-12T00:00:00.000Z",
-  "servingTerritory": "VN",
+  "servingTerritory": "WORLDWIDE",
   "policy": {
     "mode": "fail-closed",
+    "requiredTerritory": "WORLDWIDE",
+    "allowTerritorialPublication": false,
+    "operationalLimits": ["whole-work-streaming", "no-endorsement", "no-extractive-likeness-use", "no-rehost", "no-download"],
     "reviewIntervalDays": 90,
     "publishedStatuses": ["published"],
-    "publishedLicenses": ["PDM-1.0", "CC0-1.0", "CC-BY-2.5", "CC-BY-3.0", "CC-BY-4.0", "CC-BY-SA-3.0", "CC-BY-SA-4.0"],
+    "publishedLicenses": ["CC0-1.0", "CC-BY-2.5", "CC-BY-3.0", "CC-BY-4.0", "CC-BY-SA-3.0", "CC-BY-SA-4.0"],
     "notice": "Chỉ phát nội dung đã vượt qua cổng quyền theo từng mục. Nội dung thiếu bằng chứng, sai lãnh thổ hoặc đang có khiếu nại phải ở khu cách ly và không có URL phát.",
     "copyrightPage": "/copyright"
   },
@@ -248,132 +251,6 @@
         }
       },
       "playback": {"type": "video", "url": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4", "mimeType": "video/mp4", "delivery": "remote-direct"}
-    },
-    {
-      "id": "le-voyage-dans-la-lune",
-      "kind": "film",
-      "title": "Chuyến du hành lên Mặt Trăng",
-      "originalTitle": "Le Voyage dans la Lune",
-      "creator": "Georges Méliès",
-      "year": 1902,
-      "durationSeconds": 772,
-      "countries": ["Pháp"],
-      "regions": ["Châu Âu"],
-      "contentType": "Phim câm kinh điển",
-      "genres": ["Kinh điển", "Khoa học viễn tưởng", "Phim câm"],
-      "languages": ["Phim câm"],
-      "description": "Bản đen trắng, không nhạc của kiệt tác kỳ ảo tiên phong về chuyến bay lên Mặt Trăng.",
-      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Le_Voyage_dans_la_lune_%28black_and_white%2C_1902%29.webm/960px--Le_Voyage_dans_la_lune_%28black_and_white%2C_1902%29.webm.jpg",
-      "source": {"provider": "Wikimedia Commons", "itemId": "File:Le Voyage dans la lune (black and white, 1902).webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Le_Voyage_dans_la_lune_(black_and_white,_1902).webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Le_Voyage_dans_la_lune_(black_and_white,_1902).webm"},
-      "rights": {
-        "reviewStatus": "published",
-        "rightsBasis": "public-domain-mark",
-        "licenseCode": "PDM-1.0",
-        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
-        "attributionText": "Le Voyage dans la Lune — Georges Méliès — Wikimedia Commons",
-        "verifiedAt": "2026-08-10",
-        "jurisdiction": "Vietnam; PDM source states country of origin and life+80-or-less territories",
-        "territories": ["VN"],
-        "commercialAllowed": true,
-        "derivativesAllowed": true,
-        "streamAllowed": true,
-        "rehostAllowed": false,
-        "downloadAllowed": false,
-        "shareAlike": false,
-        "changesMade": false,
-        "changesDescription": "Không chỉnh sửa, không thêm nhạc; phát trực tiếp đúng bản đen trắng không lời đã kiểm tra.",
-        "evidence": {
-          "sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Le_Voyage_dans_la_lune_(black_and_white,_1902).webm&oldid=1031262676",
-          "checkedAt": "2026-08-10",
-          "metadataRecord": "id=le-voyage-dans-la-lune\ncreator=Georges Melies\nlicense=PDM-1.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Le_Voyage_dans_la_lune_(black_and_white,_1902).webm&oldid=1031262676\ncheckedAt=2026-08-10",
-          "metadataChecksum": "sha256:6dd4c448708aab128989ab64d603dd2ef3f8e2ce397f4d5ab129b36f88b47993",
-          "metadataChecksumAlgorithm": "SHA-256",
-          "metadataChecksumScope": "embedded-evidence-record",
-          "mediaChecksum": "sha1:7c076c23184d475e31b94f5ee4443d73967653af",
-          "mediaChecksumStatus": "verified-upstream",
-          "mediaChecksumAlgorithm": "SHA-1",
-          "mediaChecksumScope": "playback-media-bytes",
-          "mediaChecksumSource": "Wikimedia Commons structured data"
-        },
-        "manualReview": {
-          "decision": "approved",
-          "reviewedAt": "2026-08-10",
-          "reviewerId": "hh-open-media-editorial",
-          "decisionRecord": "item=le-voyage-dans-la-lune\ndecision=approved\nreviewer=hh-open-media-editorial\nreviewedAt=2026-08-10\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Le_Voyage_dans_la_lune_(black_and_white,_1902).webm&oldid=1031262676",
-          "evidenceChecksum": "sha256:b9b2cda5ae7371b3f308fd7bbec89f5ec907d2644ed16cb4912ba32d54fa30e3"
-        },
-        "layers": {
-          "master": {"status": "cleared", "rightsBasis": "public-domain-mark", "attributionText": "Georges Méliès — Wikimedia Commons", "evidenceRef": "source.rightsEvidenceUrl"},
-          "soundtrack": {"status": "not-applicable", "reason": "Bản phát đã chọn không có âm thanh hoặc nhạc bổ sung."},
-          "poster": {"status": "cleared", "rightsBasis": "public-domain-mark", "attributionText": "Frame from Le Voyage dans la Lune — Georges Méliès", "evidenceRef": "source.rightsEvidenceUrl"},
-          "subtitles": {"status": "not-applicable", "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."},
-          "privacyPublicity": {"status": "cleared", "rightsBasis": "public-domain-mark", "attributionText": "PDM source states no known copyright or related-right restrictions", "evidenceRef": "source.rightsEvidenceUrl"}
-        }
-      },
-      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Le_Voyage_dans_la_lune_%28black_and_white%2C_1902%29.webm", "mimeType": "video/webm", "delivery": "remote-direct"}
-    },
-    {
-      "id": "nosferatu-1922",
-      "kind": "film",
-      "title": "Nosferatu",
-      "originalTitle": "Nosferatu, eine Symphonie des Grauens",
-      "creator": "F. W. Murnau / Henrik Galeen",
-      "year": 1922,
-      "durationSeconds": 5060,
-      "countries": ["Đức"],
-      "regions": ["Châu Âu"],
-      "contentType": "Phim câm kinh điển",
-      "genres": ["Kinh điển", "Kinh dị", "Phim câm"],
-      "languages": ["Phụ đề xen kẽ tiếng Anh", "Không âm thanh"],
-      "description": "Bản phim câm không âm thanh với thẻ tiêu đề tiếng Anh năm 1947; không dùng bản phục chế 2006 có lớp quyền bổ sung.",
-      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Nosferatu_%281922%2C_English_titles_1947%29.webm/500px--Nosferatu_%281922%2C_English_titles_1947%29.webm.jpg",
-      "source": {"provider": "Wikimedia Commons", "itemId": "File:Nosferatu (1922, English titles 1947).webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Nosferatu_(1922,_English_titles_1947).webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Nosferatu_(1922,_English_titles_1947).webm"},
-      "rights": {
-        "reviewStatus": "published",
-        "rightsBasis": "public-domain-mark",
-        "licenseCode": "PDM-1.0",
-        "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
-        "attributionText": "Nosferatu — F. W. Murnau / Henrik Galeen — Wikimedia Commons",
-        "verifiedAt": "2026-08-10",
-        "jurisdiction": "Vietnam; original film and anonymous 1947 intertitles reviewed separately",
-        "territories": ["VN"],
-        "commercialAllowed": true,
-        "derivativesAllowed": true,
-        "streamAllowed": true,
-        "rehostAllowed": false,
-        "downloadAllowed": false,
-        "shareAlike": false,
-        "changesMade": false,
-        "changesDescription": "Không chỉnh sửa, không thêm nhạc; phát trực tiếp bản 1947 không âm thanh, không dùng bản phục chế 2006.",
-        "evidence": {
-          "sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Nosferatu_(1922,_English_titles_1947).webm&oldid=1096285028",
-          "checkedAt": "2026-08-10",
-          "metadataRecord": "id=nosferatu-1922\ncreator=F. W. Murnau / Henrik Galeen\nlicense=PDM-1.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Nosferatu_(1922,_English_titles_1947).webm&oldid=1096285028\ncheckedAt=2026-08-10",
-          "metadataChecksum": "sha256:e9a49087a9517cbfb95d0b3a64239cc1dc31f2a325d21544d01fb2f9042a2067",
-          "metadataChecksumAlgorithm": "SHA-256",
-          "metadataChecksumScope": "embedded-evidence-record",
-          "mediaChecksum": "sha1:4d78cee99f7e9b1576e4d72bd28af58875251e12",
-          "mediaChecksumStatus": "verified-upstream",
-          "mediaChecksumAlgorithm": "SHA-1",
-          "mediaChecksumScope": "playback-media-bytes",
-          "mediaChecksumSource": "Wikimedia Commons structured data"
-        },
-        "manualReview": {
-          "decision": "approved",
-          "reviewedAt": "2026-08-10",
-          "reviewerId": "hh-open-media-editorial",
-          "decisionRecord": "item=nosferatu-1922\ndecision=approved\nreviewer=hh-open-media-editorial\nreviewedAt=2026-08-10\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Nosferatu_(1922,_English_titles_1947).webm&oldid=1096285028",
-          "evidenceChecksum": "sha256:bd5cf6098c60fe13116c2ab0e15e9c1cb8619b03e1229ea1f4600c3cd0c32961"
-        },
-        "layers": {
-          "master": {"status": "cleared", "rightsBasis": "public-domain-mark", "attributionText": "F. W. Murnau / Henrik Galeen — Wikimedia Commons", "evidenceRef": "source.rightsEvidenceUrl"},
-          "soundtrack": {"status": "not-applicable", "reason": "Bản phát đã chọn không có âm thanh hoặc nhạc bổ sung."},
-          "poster": {"status": "cleared", "rightsBasis": "public-domain-mark", "attributionText": "Frame from Nosferatu — Wikimedia Commons", "evidenceRef": "source.rightsEvidenceUrl"},
-          "subtitles": {"status": "not-applicable", "reason": "Không lưu trữ tệp phụ đề riêng; thẻ tiêu đề là một phần của master và được rà riêng trên trang nguồn."},
-          "privacyPublicity": {"status": "cleared", "rightsBasis": "public-domain-mark", "attributionText": "PDM source states no known copyright or related-right restrictions", "evidenceRef": "source.rightsEvidenceUrl"}
-        }
-      },
-      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/0/02/Nosferatu_%281922%2C_English_titles_1947%29.webm", "mimeType": "video/webm", "delivery": "remote-direct"}
     },
     {
       "id": "caminandes-llama-drama",
@@ -772,6 +649,28 @@
       "blockedAt": "2026-08-10",
       "reasonCodes": ["worldwide-basis-missing", "upstream-provenance-needs-review"],
       "note": "Trang nguồn chỉ nêu public domain tại Hoa Kỳ và một số lãnh thổ; website chưa có geo-enforcement. Không có URL phát trong bản ghi cách ly."
+    },
+    {
+      "id": "le-voyage-dans-la-lune",
+      "kind": "film",
+      "title": "Chuyến du hành lên Mặt Trăng",
+      "creator": "Georges Méliès",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Le Voyage dans la lune (black and white, 1902).webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Le_Voyage_dans_la_lune_(black_and_white,_1902).webm"},
+      "reviewStatus": "quarantine",
+      "blockedAt": "2026-08-12",
+      "reasonCodes": ["worldwide-basis-missing", "territorial-public-domain-unresolved"],
+      "note": "Bằng chứng trước đây chỉ đủ cho Việt Nam và một số lãnh thổ, chưa chứng minh quyền WORLDWIDE. Không có URL phát trong bản ghi cách ly."
+    },
+    {
+      "id": "nosferatu-1922",
+      "kind": "film",
+      "title": "Nosferatu",
+      "creator": "F. W. Murnau / Henrik Galeen",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Nosferatu (1922, English titles 1947).webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Nosferatu_(1922,_English_titles_1947).webm"},
+      "reviewStatus": "quarantine",
+      "blockedAt": "2026-08-12",
+      "reasonCodes": ["worldwide-basis-missing", "intertitle-rights-territorial-review"],
+      "note": "Bản phim và thẻ tiêu đề 1947 chưa có kết luận quyền WORLDWIDE thống nhất. Không có URL phát trong bản ghi cách ly."
     }
   ]
 }

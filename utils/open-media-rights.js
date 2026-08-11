@@ -1,7 +1,7 @@
 (function initHHOpenMediaRights(global) {
   "use strict";
 
-  const VERSION = "2.1.0";
+  const VERSION = "2.2.0";
   const AUTO_LICENSE_URLS = Object.freeze({
     "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/",
     "CC-BY-2.5": "https://creativecommons.org/licenses/by/2.5/",
@@ -36,6 +36,7 @@
   ]));
   const LAYER_STATUSES = Object.freeze(new Set(["cleared", "not-applicable", "manual-review", "blocked"]));
   const KIND_PLAYBACK_TYPES = Object.freeze({ film: "video", track: "audio" });
+  const REQUIRED_PUBLICATION_TERRITORY = "WORLDWIDE";
   const REQUIRED_LAYERS = Object.freeze({
     film: Object.freeze(["master", "soundtrack", "poster", "subtitles", "privacyPublicity"]),
     track: Object.freeze(["composition", "performance", "masterRecording", "artwork"])
@@ -256,6 +257,7 @@
     }
     if (!REVIEW_STATUSES.has(status)) errors.push("invalid-review-status");
     if (!RIGHTS_BASES.has(basis)) errors.push("invalid-rights-basis");
+    if (item.kind === "film" && basis === "public-domain-mark") errors.push("film-public-domain-mark-quarantine-only");
     if (!String(source.provider || "").trim()) errors.push("missing-source-provider");
     if (!String(source.itemId || "").trim()) errors.push("missing-source-item-id");
     if (!String(rights.jurisdiction || "").trim()) errors.push("missing-jurisdiction");
@@ -317,13 +319,20 @@
       errors.push("license-not-auto-allowed");
     }
 
-    if (!territoryEligible(territories, options.territory || "WORLDWIDE")) errors.push("territory-not-cleared");
+    // The public catalog is one global catalog. A viewer's current country must
+    // never relax publication rights: only records cleared WORLDWIDE may ship.
+    const publicationTerritory = normalizeTerritory(options.requiredTerritory || REQUIRED_PUBLICATION_TERRITORY);
+    if (!territoryEligible(territories, publicationTerritory)) errors.push("territory-not-cleared");
+    if (publicationTerritory === REQUIRED_PUBLICATION_TERRITORY && (territories.length !== 1 || territories[0] !== REQUIRED_PUBLICATION_TERRITORY)) {
+      errors.push("worldwide-only-publication-required");
+    }
 
     return {
       ok: errors.length === 0,
       errors: [...new Set(errors)],
       licenseCode: base.licenseCode,
       status,
+      publicationTerritory,
       manualReviewRequired: manual,
       publishable: errors.length === 0 && ["approved", "published"].includes(status),
       publiclyAvailable: errors.length === 0 && status === "published"
@@ -380,6 +389,7 @@
     autoAllowedLicenses: Object.freeze([...AUTO_ALLOWED_LICENSES]),
     reviewStatuses: Object.freeze([...REVIEW_STATUSES]),
     requiredLayers: REQUIRED_LAYERS,
+    requiredPublicationTerritory: REQUIRED_PUBLICATION_TERRITORY,
     normalizeLicenseCode,
     isAllowedLicense,
     isAutoApprovableLicense,

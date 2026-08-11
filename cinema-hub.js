@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createCinemaHub(globalScope) {
   "use strict";
 
-  const VERSION = "2.2.0";
+  const VERSION = "2.3.0";
   const MANIFEST_URL = "/assets/open-media/curated-films-v1.json";
   const RIGHTS_STATUS_URL = "/api/open-media/rights";
   const STORAGE_SCHEMA = "hh.cinema.hub.v1";
@@ -155,7 +155,7 @@
     const evidence = rights.evidence || {};
     const layers = rights.layers || {};
     const requiredLayers = ["master", "soundtrack", "poster", "subtitles", "privacyPublicity"];
-    const territoryAllowed = Array.isArray(rights.territories) && (rights.territories.includes("WORLDWIDE") || rights.territories.includes(DEFAULT_TERRITORY));
+    const territoryAllowed = Array.isArray(rights.territories) && rights.territories.length === 1 && rights.territories[0] === DEFAULT_TERRITORY;
     const mediaEvidenceAllowed = /^(?:sha1:[a-f0-9]{40}|sha256:[a-f0-9]{64})$/i.test(String(evidence.mediaChecksum || "")) || (
       evidence.mediaChecksum == null && evidence.mediaChecksumStatus === "unavailable" && rights.rehostAllowed === false && rights.downloadAllowed === false
     );
@@ -166,6 +166,7 @@
     return Boolean(
       item && item.kind === "film" && item.id && item.title &&
       rights.reviewStatus === "published" &&
+      rights.rightsBasis !== "public-domain-mark" &&
       ALLOWED_LICENSES.has(rights.licenseCode) &&
       safeUrl(rights.licenseUrl) === LICENSE_URLS[rights.licenseCode] &&
       validVerificationDate(rights.verifiedAt) && territoryAllowed && layersCleared && manualReviewAllowed &&
@@ -181,7 +182,7 @@
     const validator = globalScope.HHOpenMediaRights?.validateGovernanceItem;
     if (typeof validator === "function") {
       try {
-        const verdict = validator(item, { territory: options.territory || DEFAULT_TERRITORY });
+        const verdict = validator(item, { requiredTerritory: DEFAULT_TERRITORY });
         if (verdict === false) return false;
         if (verdict === true) return true;
         if (verdict && typeof verdict === "object") {

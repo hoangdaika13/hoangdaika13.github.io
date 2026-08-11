@@ -6,6 +6,7 @@ const { clean, withApi } = require("../platform");
 
 const catalog = Object.freeze([...(films.items || []), ...(music.items || [])]);
 const quarantined = new Map((registry.quarantineItems || []).map((item) => [String(item.id), item]));
+const PUBLICATION_TERRITORY = "WORLDWIDE";
 
 function viewerTerritory(req) {
   const country = clean(req.headers?.["x-vercel-ip-country"], 8).toUpperCase();
@@ -13,8 +14,8 @@ function viewerTerritory(req) {
 }
 
 function publicCatalogRecord(item, options = {}) {
-  const territory = options.territory || "WORLDWIDE";
-  const assessment = rightsEngine.validateGovernanceItem(item, { territory });
+  const viewerTerritory = options.territory || "WORLDWIDE";
+  const assessment = rightsEngine.validateGovernanceItem(item, { requiredTerritory: PUBLICATION_TERRITORY });
   const quarantine = quarantined.get(String(item?.id || ""));
   const restriction = options.restriction || null;
   const blocked = Boolean(restriction?.blocked);
@@ -37,7 +38,8 @@ function publicCatalogRecord(item, options = {}) {
     reviewStatus: blocked ? "suspended" : quarantine ? "quarantine" : assessment.status || "quarantine",
     available,
     territoryEligible: !assessment.errors.includes("territory-not-cleared"),
-    viewerTerritory: territory,
+    publicationTerritory: PUBLICATION_TERRITORY,
+    viewerTerritory,
     restriction: blocked ? {
       blocked: true,
       reasonCode: clean(restriction.reasonCode || "rights-notice", 80),
@@ -49,7 +51,7 @@ function publicCatalogRecord(item, options = {}) {
       action: quarantine.action,
       territories: quarantine.territories
     } : null,
-    evidence: rightsEngine.publicRightsRecord(item, { territory }).evidence,
+    evidence: rightsEngine.publicRightsRecord(item, { requiredTerritory: PUBLICATION_TERRITORY }).evidence,
     validationErrors: available ? [] : assessment.errors
   };
 }
@@ -71,6 +73,7 @@ function summary(options = {}) {
     available: false,
     territoryEligible: false,
     viewerTerritory: territory,
+    publicationTerritory: PUBLICATION_TERRITORY,
     restriction: null,
     quarantine: {
       reasonCode: clean(item.reasonCode, 80),
@@ -89,6 +92,7 @@ function summary(options = {}) {
     legalNotice: registry.legalNotice,
     publicContact: registry.publicContact,
     viewerTerritory: territory,
+    publicationTerritory: PUBLICATION_TERRITORY,
     counts: {
       total: allRecords.length,
       films: allRecords.filter((item) => item.kind === "film").length,
@@ -129,4 +133,4 @@ module.exports = async function handler(req, res) {
   });
 };
 
-module.exports.__test = Object.freeze({ viewerTerritory, publicCatalogRecord, summary });
+module.exports.__test = Object.freeze({ PUBLICATION_TERRITORY, viewerTerritory, publicCatalogRecord, summary });

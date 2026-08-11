@@ -169,15 +169,15 @@
     },
     cinema: {
       styles: ["cinema-hub.css?v=5"],
-      scripts: ["utils/open-media-rights.js?v=3", "cinema-hub.js?v=5"]
+      scripts: ["utils/open-media-rights.js?v=4", "cinema-hub.js?v=6"]
     },
     "open-music": {
       styles: ["open-music-hub.css?v=4"],
-      scripts: ["utils/open-media-rights.js?v=3", "vendor/jszip.min.js?v=3.10.1", "open-music-hub.js?v=3"]
+      scripts: ["utils/open-media-rights.js?v=4", "vendor/jszip.min.js?v=3.10.1", "open-music-hub.js?v=3"]
     },
     "open-media-governance": {
       styles: ["open-media-governance.css?v=1"],
-      scripts: ["utils/open-media-rights.js?v=3", "open-media-governance.js?v=1"]
+      scripts: ["utils/open-media-rights.js?v=4", "open-media-governance.js?v=1"]
     },
     work: {
       styles: ["work-center.css?v=4", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
