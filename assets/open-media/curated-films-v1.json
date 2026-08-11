@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "catalogId": "hh.open-media.films.v2",
-  "updatedAt": "2026-08-10T00:00:00.000Z",
+  "updatedAt": "2026-08-12T00:00:00.000Z",
   "servingTerritory": "VN",
   "policy": {
     "mode": "fail-closed",
@@ -20,6 +20,9 @@
       "creator": "Blender Foundation",
       "year": 2008,
       "durationSeconds": 635,
+      "countries": ["Hà Lan"],
+      "regions": ["Châu Âu"],
+      "contentType": "Phim ngắn hoạt hình",
       "genres": ["Hoạt hình", "Hài", "Gia đình"],
       "languages": ["Không lời"],
       "description": "Một chú thỏ hiền lành đối đầu với ba kẻ phá phách trong phim hoạt hình mở của Blender.",
@@ -86,6 +89,9 @@
       "creator": "Blender Foundation",
       "year": 2010,
       "durationSeconds": 888,
+      "countries": ["Hà Lan"],
+      "regions": ["Châu Âu"],
+      "contentType": "Phim ngắn hoạt hình",
       "genres": ["Hoạt hình", "Phiêu lưu", "Kỳ ảo"],
       "languages": ["Tiếng Anh"],
       "description": "Một nữ chiến binh trẻ băng qua vùng đất khắc nghiệt để tìm lại người bạn rồng đã mất.",
@@ -139,6 +145,9 @@
       "creator": "Orange Open Movie Project Studio",
       "year": 2006,
       "durationSeconds": 654,
+      "countries": ["Hà Lan"],
+      "regions": ["Châu Âu"],
+      "contentType": "Phim ngắn hoạt hình",
       "genres": ["Hoạt hình", "Khoa học viễn tưởng", "Siêu thực"],
       "languages": ["Tiếng Anh"],
       "description": "Hai nhân vật khám phá một cỗ máy khổng lồ và kỳ lạ trong bộ phim mở đầu tiên của Blender.",
@@ -192,6 +201,9 @@
       "creator": "Blender Foundation",
       "year": 2012,
       "durationSeconds": 734,
+      "countries": ["Hà Lan"],
+      "regions": ["Châu Âu"],
+      "contentType": "Phim ngắn kỹ xảo",
       "genres": ["Khoa học viễn tưởng", "Hành động", "VFX"],
       "languages": ["Tiếng Anh"],
       "description": "Một nhóm chiến binh và nhà khoa học cố thay đổi quá khứ để cứu Amsterdam khỏi robot hủy diệt.",
@@ -245,6 +257,9 @@
       "creator": "Georges Méliès",
       "year": 1902,
       "durationSeconds": 772,
+      "countries": ["Pháp"],
+      "regions": ["Châu Âu"],
+      "contentType": "Phim câm kinh điển",
       "genres": ["Kinh điển", "Khoa học viễn tưởng", "Phim câm"],
       "languages": ["Phim câm"],
       "description": "Bản đen trắng, không nhạc của kiệt tác kỳ ảo tiên phong về chuyến bay lên Mặt Trăng.",
@@ -305,6 +320,9 @@
       "creator": "F. W. Murnau / Henrik Galeen",
       "year": 1922,
       "durationSeconds": 5060,
+      "countries": ["Đức"],
+      "regions": ["Châu Âu"],
+      "contentType": "Phim câm kinh điển",
       "genres": ["Kinh điển", "Kinh dị", "Phim câm"],
       "languages": ["Phụ đề xen kẽ tiếng Anh", "Không âm thanh"],
       "description": "Bản phim câm không âm thanh với thẻ tiêu đề tiếng Anh năm 1947; không dùng bản phục chế 2006 có lớp quyền bổ sung.",
@@ -356,6 +374,237 @@
         }
       },
       "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/0/02/Nosferatu_%281922%2C_English_titles_1947%29.webm", "mimeType": "video/webm", "delivery": "remote-direct"}
+    },
+    {
+      "id": "caminandes-llama-drama",
+      "kind": "film",
+      "title": "Caminandes: Llama Drama",
+      "originalTitle": "Caminandes: Llama Drama",
+      "creator": "Pablo Vazquez, Beorn Leonard, Francesco Siddi",
+      "year": 2013,
+      "durationSeconds": 90,
+      "countries": ["Hà Lan"],
+      "regions": ["Châu Âu"],
+      "contentType": "Phim ngắn hoạt hình",
+      "genres": ["Hoạt hình", "Hài", "Gia đình", "Không lời"],
+      "languages": ["Không lời"],
+      "description": "Koro, một chú llama vùng Patagonia, tìm cách vượt hàng rào để đến với bãi cỏ ngon lành.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Caminandes-_Llama_Drama_-_Short_Movie.ogv/960px--Caminandes-_Llama_Drama_-_Short_Movie.ogv.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Caminandes- Llama Drama - Short Movie.ogv", "landingUrl": "https://commons.wikimedia.org/wiki/File:Caminandes-_Llama_Drama_-_Short_Movie.ogv", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:Caminandes-_Llama_Drama_-_Short_Movie.ogv&oldid=1127387462", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "Caminandes: Llama Drama — Pablo Vazquez, Beorn Leonard và Francesco Siddi; nhạc và âm thanh Jan Morgenstern — CC BY 3.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 3.0 Unported", "territories": ["WORLDWIDE"],
+        "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": false, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Caminandes-_Llama_Drama_-_Short_Movie.ogv&oldid=1127387462", "checkedAt": "2026-08-12", "metadataRecord": "id=caminandes-llama-drama\ncreator=Pablo Vazquez, Beorn Leonard, Francesco Siddi\nlicense=CC-BY-3.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Caminandes-_Llama_Drama_-_Short_Movie.ogv&oldid=1127387462\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:80852ddaa58a9a8c4fc6583fb4fe7b34d9b57f1235994acc935373d1f16ee030", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:c64f247c8fb73c96aa57285077ef9105948ae9dc", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Caminandes creators — CC BY 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Music and sound by Jan Morgenstern — CC BY 3.0 file record", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Frame from Caminandes: Llama Drama — CC BY 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không cung cấp tệp phụ đề riêng."},
+          "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/d/d0/Caminandes-_Llama_Drama_-_Short_Movie.ogv/Caminandes-_Llama_Drama_-_Short_Movie.ogv.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
+    },
+    {
+      "id": "caminandes-gran-dillama",
+      "kind": "film",
+      "title": "Caminandes: Gran Dillama",
+      "originalTitle": "Caminandes 2: Gran Dillama",
+      "creator": "Pablo Vazquez, Beorn Leonard, Francesco Siddi",
+      "year": 2013,
+      "durationSeconds": 146,
+      "countries": ["Hà Lan"], "regions": ["Châu Âu"], "contentType": "Phim ngắn hoạt hình",
+      "genres": ["Hoạt hình", "Hài", "Gia đình", "Không lời"], "languages": ["Không lời"],
+      "description": "Koro tiếp tục hành trình hài hước ở Patagonia và gặp một trở ngại lớn hơn mình tưởng.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Caminandes_-_Gran_Dillama_-_Blender_Foundation%27s_new_Open_Movie.webm/960px--Caminandes_-_Gran_Dillama_-_Blender_Foundation%27s_new_Open_Movie.webm.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Caminandes - Gran Dillama - Blender Foundation's new Open Movie.webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Caminandes_-_Gran_Dillama_-_Blender_Foundation%27s_new_Open_Movie.webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:Caminandes_-_Gran_Dillama_-_Blender_Foundation%27s_new_Open_Movie.webm&oldid=1212974632", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-SA-3.0", "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "attributionText": "Caminandes: Gran Dillama — Pablo Vazquez, Beorn Leonard và Francesco Siddi; soundtrack Jan Morgenstern — CC BY-SA 3.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 3.0 Unported", "territories": ["WORLDWIDE"],
+        "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": true, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Caminandes_-_Gran_Dillama_-_Blender_Foundation%27s_new_Open_Movie.webm&oldid=1212974632", "checkedAt": "2026-08-12", "metadataRecord": "id=caminandes-gran-dillama\ncreator=Pablo Vazquez, Beorn Leonard, Francesco Siddi\nlicense=CC-BY-SA-3.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Caminandes_-_Gran_Dillama_-_Blender_Foundation%27s_new_Open_Movie.webm&oldid=1212974632\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:2abca19cfd60258204fec0270d2d609a4a80bb1e0993084be344614a2aff42dd", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:46f274fb6d4499bb8e4ed1dea86a52bdc19d89e1", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-SA-3.0", "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/", "attributionText": "Caminandes creators — CC BY-SA 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-SA-3.0", "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/", "attributionText": "Soundtrack by Jan Morgenstern — CC BY-SA 3.0 file record", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-SA-3.0", "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/", "attributionText": "Frame from Gran Dillama — CC BY-SA 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không cung cấp tệp phụ đề riêng."}, "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/7c/Caminandes_-_Gran_Dillama_-_Blender_Foundation%27s_new_Open_Movie.webm/Caminandes_-_Gran_Dillama_-_Blender_Foundation%27s_new_Open_Movie.webm.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
+    },
+    {
+      "id": "cosmos-laundromat",
+      "kind": "film", "title": "Cosmos Laundromat: First Cycle", "originalTitle": "Cosmos Laundromat: First Cycle", "creator": "Blender Foundation", "year": 2015, "durationSeconds": 731,
+      "countries": ["Hà Lan"], "regions": ["Châu Âu"], "contentType": "Phim ngắn hoạt hình",
+      "genres": ["Hoạt hình", "Giả tưởng", "Phiêu lưu", "Tâm lý"], "languages": ["Tiếng Anh"],
+      "description": "Một chú cừu tuyệt vọng gặp người bán hàng bí ẩn và bị cuốn vào chuyến đi xuyên qua những thế giới kỳ lạ.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm/960px--Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Cosmos Laundromat - First Cycle - Official Blender Foundation release.webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm&oldid=1212974386", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-SA-3.0", "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/", "attributionText": "Cosmos Laundromat: First Cycle — Blender Foundation — CC BY-SA 3.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 3.0 Unported", "territories": ["WORLDWIDE"], "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": true, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm&oldid=1212974386", "checkedAt": "2026-08-12", "metadataRecord": "id=cosmos-laundromat\ncreator=Blender Foundation\nlicense=CC-BY-SA-3.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm&oldid=1212974386\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:8e846db7a83fd3e95c0831839909757777e4ad9599423f4b6d80892f8a36546b", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:2ecaa230b87df3b53ee31863aa7321d079e932b5", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-SA-3.0", "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/", "attributionText": "Blender Foundation — CC BY-SA 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-SA-3.0", "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/", "attributionText": "Cosmos Laundromat complete file — CC BY-SA 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-SA-3.0", "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/", "attributionText": "Frame from Cosmos Laundromat — CC BY-SA 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."}, "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
+    },
+    {
+      "id": "caminandes-llamigos",
+      "kind": "film", "title": "Caminandes 3: Llamigos", "originalTitle": "Caminandes 3: Llamigos", "creator": "Blender Foundation", "year": 2016, "durationSeconds": 150,
+      "countries": ["Hà Lan"], "regions": ["Châu Âu"], "contentType": "Phim ngắn hoạt hình", "genres": ["Hoạt hình", "Hài", "Gia đình", "Không lời"], "languages": ["Không lời"],
+      "description": "Koro gặp Oti và một cuộc tranh giành thức ăn biến thành màn rượt đuổi vui nhộn.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Caminandes_3_-_Llamigos_-_Blender_Animated_Short.webm/960px--Caminandes_3_-_Llamigos_-_Blender_Animated_Short.webm.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Caminandes 3 - Llamigos - Blender Animated Short.webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Caminandes_3_-_Llamigos_-_Blender_Animated_Short.webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:Caminandes_3_-_Llamigos_-_Blender_Animated_Short.webm&oldid=1212973680", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Caminandes 3: Llamigos — Blender Foundation — CC BY 3.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 3.0 Unported", "territories": ["WORLDWIDE"], "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": false, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Caminandes_3_-_Llamigos_-_Blender_Animated_Short.webm&oldid=1212973680", "checkedAt": "2026-08-12", "metadataRecord": "id=caminandes-llamigos\ncreator=Blender Foundation\nlicense=CC-BY-3.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Caminandes_3_-_Llamigos_-_Blender_Animated_Short.webm&oldid=1212973680\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:c77dea0630c5cdb3923391c5e128a77f85640971de3355faadb20b276a9bced6", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:9e2f3d5340e661947844ecd78874d42513d2fa49", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Blender Foundation — CC BY 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Caminandes 3 complete file — CC BY 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Frame from Caminandes 3 — CC BY 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không cung cấp tệp phụ đề riêng."}, "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/ab/Caminandes_3_-_Llamigos_-_Blender_Animated_Short.webm/Caminandes_3_-_Llamigos_-_Blender_Animated_Short.webm.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
+    },
+    {
+      "id": "agent-327-preview",
+      "kind": "film", "title": "Agent 327: Operation Barbershop", "originalTitle": "Agent 327: A Feature Film in Progress", "creator": "Blender Foundation", "year": 2017, "durationSeconds": 233,
+      "countries": ["Hà Lan"], "regions": ["Châu Âu"], "contentType": "Phim ngắn hoạt hình", "genres": ["Hoạt hình", "Hành động", "Điệp viên", "Hài"], "languages": ["Tiếng Anh"],
+      "description": "Đặc vụ 327 điều tra một tiệm cắt tóc đáng ngờ trong bản thử nghiệm phim truyện mở của Blender.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Agent_327_-_A_feature_film_in_progress.webm/960px--Agent_327_-_A_feature_film_in_progress.webm.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Agent 327 - A feature film in progress.webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Agent_327_-_A_feature_film_in_progress.webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:Agent_327_-_A_feature_film_in_progress.webm&oldid=1031518909", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Agent 327: A Feature Film in Progress — Blender Foundation — CC BY 3.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 3.0 Unported", "territories": ["WORLDWIDE"], "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": false, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Agent_327_-_A_feature_film_in_progress.webm&oldid=1031518909", "checkedAt": "2026-08-12", "metadataRecord": "id=agent-327-preview\ncreator=Blender Foundation\nlicense=CC-BY-3.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Agent_327_-_A_feature_film_in_progress.webm&oldid=1031518909\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:2e10bb819daa493ae9f611ac2878f2944034b476a746dd2b28eca92061541c62", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:37a12116a24b2a8b9a38802e6c20ed2080987c8a", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Blender Foundation — CC BY 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Agent 327 complete file — CC BY 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/", "attributionText": "Frame from Agent 327 — CC BY 3.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."}, "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/9/96/Agent_327_-_A_feature_film_in_progress.webm/Agent_327_-_A_feature_film_in_progress.webm.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
+    },
+    {
+      "id": "hero",
+      "kind": "film", "title": "HERO", "originalTitle": "HERO", "creator": "Blender Foundation", "year": 2018, "durationSeconds": 232,
+      "countries": ["Hà Lan"], "regions": ["Châu Âu"], "contentType": "Phim ngắn hoạt hình 2D/3D", "genres": ["Hoạt hình", "Giả tưởng", "Hành động", "Nghệ thuật"], "languages": ["Không lời"],
+      "description": "Một phim ngắn kết hợp Grease Pencil 2D và thế giới 3D, kể về cuộc đối đầu giàu chất hội họa.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/HERO_-_Blender_Open_Movie-full_movie.webm/960px--HERO_-_Blender_Open_Movie-full_movie.webm.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:HERO - Blender Open Movie-full movie.webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:HERO_-_Blender_Open_Movie-full_movie.webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:HERO_-_Blender_Open_Movie-full_movie.webm&oldid=1212966071", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "HERO — Blender Foundation — CC BY 4.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 4.0 International", "territories": ["WORLDWIDE"], "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": false, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:HERO_-_Blender_Open_Movie-full_movie.webm&oldid=1212966071", "checkedAt": "2026-08-12", "metadataRecord": "id=hero\ncreator=Blender Foundation\nlicense=CC-BY-4.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:HERO_-_Blender_Open_Movie-full_movie.webm&oldid=1212966071\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:ac1ba436b319675a63c7450315234071eacdddd66316b7f3b3a7aae5317049a1", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:ca8f1fbc65997ff8fed5b0cf105cf8a91198da17", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Blender Foundation — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "HERO complete file — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Frame from HERO — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không cung cấp tệp phụ đề riêng."}, "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a9/HERO_-_Blender_Open_Movie-full_movie.webm/HERO_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
+    },
+    {
+      "id": "glass-half",
+      "kind": "film", "title": "Glass Half", "originalTitle": "Glass Half", "creator": "Blender Foundation", "year": 2015, "durationSeconds": 195,
+      "countries": ["Hà Lan"], "regions": ["Châu Âu"], "contentType": "Phim ngắn hoạt hình", "genres": ["Hoạt hình", "Hài", "Nghệ thuật", "Đời sống"], "languages": ["Tiếng Anh"],
+      "description": "Hai nhà phê bình nghệ thuật tranh luận về một tác phẩm và bộc lộ hai cách nhìn hoàn toàn đối lập.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Glass_Half_-_Blender_Open_Movie-full_movie.webm/960px--Glass_Half_-_Blender_Open_Movie-full_movie.webm.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Glass Half - Blender Open Movie-full movie.webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Glass_Half_-_Blender_Open_Movie-full_movie.webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:Glass_Half_-_Blender_Open_Movie-full_movie.webm&oldid=1212966315", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Glass Half — Blender Foundation — CC BY 4.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 4.0 International", "territories": ["WORLDWIDE"], "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": false, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Glass_Half_-_Blender_Open_Movie-full_movie.webm&oldid=1212966315", "checkedAt": "2026-08-12", "metadataRecord": "id=glass-half\ncreator=Blender Foundation\nlicense=CC-BY-4.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Glass_Half_-_Blender_Open_Movie-full_movie.webm&oldid=1212966315\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:ed49547ed69de7ce50e3c5e5a049e3b28e16503aeec078e6f92814edd53d6fa7", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:579a9ce3f16b1dba47e3b4a44de41b89780f32d5", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Blender Foundation — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Glass Half complete file — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Frame from Glass Half — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."}, "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/02/Glass_Half_-_Blender_Open_Movie-full_movie.webm/Glass_Half_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
+    },
+    {
+      "id": "sprite-fright",
+      "kind": "film", "title": "Sprite Fright", "originalTitle": "Sprite Fright", "creator": "Blender Studio", "year": 2021, "durationSeconds": 630,
+      "countries": ["Hà Lan"], "regions": ["Châu Âu"], "contentType": "Phim ngắn hoạt hình", "genres": ["Hoạt hình", "Kinh dị", "Hài đen", "Phiêu lưu"], "languages": ["Tiếng Anh"],
+      "description": "Một nhóm thiếu niên đi sâu vào khu rừng và phát hiện những sinh vật nhỏ bé không hề hiền lành như vẻ ngoài.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Sprite_Fright_-_Blender_Open_Movie-full_movie.webm/960px--Sprite_Fright_-_Blender_Open_Movie-full_movie.webm.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Sprite Fright - Blender Open Movie-full movie.webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Sprite_Fright_-_Blender_Open_Movie-full_movie.webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:Sprite_Fright_-_Blender_Open_Movie-full_movie.webm&oldid=1212965558", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Sprite Fright — Blender Studio — CC BY 4.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 4.0 International", "territories": ["WORLDWIDE"], "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": false, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Sprite_Fright_-_Blender_Open_Movie-full_movie.webm&oldid=1212965558", "checkedAt": "2026-08-12", "metadataRecord": "id=sprite-fright\ncreator=Blender Studio\nlicense=CC-BY-4.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Sprite_Fright_-_Blender_Open_Movie-full_movie.webm&oldid=1212965558\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:3c0166349f44383a8b036e127dec031de791b352609909fd3488e3ff1d96a141", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:f34f648e6b5d2ae7341645005f5fb806d7bb34ed", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Blender Studio — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Sprite Fright complete file — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Frame from Sprite Fright — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."}, "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/76/Sprite_Fright_-_Blender_Open_Movie-full_movie.webm/Sprite_Fright_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
+    },
+    {
+      "id": "charge",
+      "kind": "film", "title": "Charge", "originalTitle": "Charge", "creator": "Blender Studio", "year": 2022, "durationSeconds": 263,
+      "countries": ["Hà Lan"], "regions": ["Châu Âu"], "contentType": "Phim ngắn hoạt hình", "genres": ["Hoạt hình", "Khoa học viễn tưởng", "Hành động", "Giật gân"], "languages": ["Không lời"],
+      "description": "Trong một nhà máy tương lai, một cuộc truy đuổi giữa người và máy mở ra câu chuyện hành động không lời.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Charge_-_Blender_Open_Movie-full_movie.webm/960px--Charge_-_Blender_Open_Movie-full_movie.webm.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:Charge - Blender Open Movie-full movie.webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:Charge_-_Blender_Open_Movie-full_movie.webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:Charge_-_Blender_Open_Movie-full_movie.webm&oldid=1212965276", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Charge — Blender Studio — CC BY 4.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 4.0 International", "territories": ["WORLDWIDE"], "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": false, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:Charge_-_Blender_Open_Movie-full_movie.webm&oldid=1212965276", "checkedAt": "2026-08-12", "metadataRecord": "id=charge\ncreator=Blender Studio\nlicense=CC-BY-4.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:Charge_-_Blender_Open_Movie-full_movie.webm&oldid=1212965276\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:35c074b0d2e322c4de0dd00d35d064d1da2d2eb4e86c892a6d905d5e69843bfe", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:b5b16910b48e4fdc5a68c94adba7101303189e2b", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Blender Studio — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Charge complete file — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Frame from Charge — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không cung cấp tệp phụ đề riêng."}, "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/7a/Charge_-_Blender_Open_Movie-full_movie.webm/Charge_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
+    },
+    {
+      "id": "wing-it",
+      "kind": "film", "title": "WING IT!", "originalTitle": "WING IT!", "creator": "Blender Studio", "year": 2023, "durationSeconds": 238,
+      "countries": ["Hà Lan"], "regions": ["Châu Âu"], "contentType": "Phim ngắn hoạt hình", "genres": ["Hoạt hình", "Khoa học viễn tưởng", "Hài", "Phiêu lưu"], "languages": ["Không lời"],
+      "description": "Một kỹ sư hậu đậu trên con tàu vũ trụ buộc phải ứng biến khi nhiệm vụ không diễn ra như kế hoạch.",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/WING_IT%21_-_Blender_Open_Movie-full_movie.webm/960px--WING_IT%21_-_Blender_Open_Movie-full_movie.webm.jpg",
+      "source": {"provider": "Wikimedia Commons", "itemId": "File:WING IT! - Blender Open Movie-full movie.webm", "landingUrl": "https://commons.wikimedia.org/wiki/File:WING_IT!_-_Blender_Open_Movie-full_movie.webm", "rightsEvidenceUrl": "https://commons.wikimedia.org/w/index.php?title=File:WING_IT!_-_Blender_Open_Movie-full_movie.webm&oldid=1251626019", "playbackMirror": "Wikimedia Commons"},
+      "rights": {
+        "reviewStatus": "published", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "WING IT! — Blender Studio — CC BY 4.0",
+        "verifiedAt": "2026-08-12", "jurisdiction": "Creative Commons 4.0 International", "territories": ["WORLDWIDE"], "commercialAllowed": true, "derivativesAllowed": true, "streamAllowed": true, "rehostAllowed": false, "downloadAllowed": false, "shareAlike": false, "changesMade": false,
+        "changesDescription": "Không biên tập nội dung; phát trực tiếp bản chuyển mã 1080p do Wikimedia Commons tạo từ tệp gốc đã xác minh.",
+        "evidence": {"sourceRevision": "https://commons.wikimedia.org/w/index.php?title=File:WING_IT!_-_Blender_Open_Movie-full_movie.webm&oldid=1251626019", "checkedAt": "2026-08-12", "metadataRecord": "id=wing-it\ncreator=Blender Studio\nlicense=CC-BY-4.0\nsourceRevision=https://commons.wikimedia.org/w/index.php?title=File:WING_IT!_-_Blender_Open_Movie-full_movie.webm&oldid=1251626019\ncheckedAt=2026-08-12", "metadataChecksum": "sha256:cb1d25ac115a212a2d2f6b8764bf585b3d115fe343d19e968f4c7360382189c1", "metadataChecksumAlgorithm": "SHA-256", "metadataChecksumScope": "embedded-evidence-record", "mediaChecksum": "sha1:ed4413be967c5333bb70251e3ddfdb38d42c7643", "mediaChecksumStatus": "verified-upstream", "mediaChecksumAlgorithm": "SHA-1", "mediaChecksumScope": "original-file", "mediaChecksumSource": "Wikimedia Commons structured data"},
+        "layers": {
+          "master": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Blender Studio — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "soundtrack": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "WING IT! complete file — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "poster": {"status": "cleared", "rightsBasis": "cc-license", "licenseCode": "CC-BY-4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/", "attributionText": "Frame from WING IT! — CC BY 4.0", "evidenceRef": "source.rightsEvidenceUrl"},
+          "subtitles": {"status": "not-applicable", "reason": "Không cung cấp tệp phụ đề riêng."}, "privacyPublicity": {"status": "not-applicable", "reason": "Phim hoạt hình không mô tả người thật có thể nhận diện."}
+        }
+      },
+      "playback": {"type": "video", "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/38/WING_IT%21_-_Blender_Open_Movie-full_movie.webm/WING_IT%21_-_Blender_Open_Movie-full_movie.webm.1080p.vp9.webm", "mimeType": "video/webm", "delivery": "remote-transcode", "quality": "1080p"}
     }
   ],
   "quarantineItems": [

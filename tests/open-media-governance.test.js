@@ -7,6 +7,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const registry = JSON.parse(read("assets/open-media/rights-registry-v2.json"));
+const films = JSON.parse(read("assets/open-media/curated-films-v1.json"));
 const rights = require(path.join(root, "utils", "open-media-rights.js"));
 const rightsApi = require(path.join(root, "utils", "open-media-server", "rights.js")).__test;
 const noticesApi = require(path.join(root, "utils", "open-media-server", "notices.js")).__test;
@@ -99,6 +100,30 @@ test("rights registry defaults to deny and quarantines every disputed legacy fil
     assert.ok(item.reasonCode && item.reason && item.action);
     assert.equal(item.requiredLayers.master, "manual-review");
   }
+});
+
+test("world cinema expansion is item-level verified and fail-closed", () => {
+  const addedIds = new Set([
+    "caminandes-llama-drama", "caminandes-gran-dillama", "cosmos-laundromat",
+    "caminandes-llamigos", "agent-327-preview", "hero", "glass-half",
+    "sprite-fright", "charge", "wing-it"
+  ]);
+  assert.equal(films.items.length, 16);
+  assert.equal(registry.catalogSnapshot.films, films.items.length);
+  assert.equal(registry.catalogSnapshot.total, registry.catalogSnapshot.films + registry.catalogSnapshot.tracks);
+  for (const item of films.items) {
+    const verdict = rights.validateGovernanceItem(item, { territory: item.rights.territories.includes("WORLDWIDE") ? "WORLDWIDE" : "VN" });
+    assert.equal(verdict.publiclyAvailable, true, `${item.id}: ${verdict.errors.join(", ")}`);
+    assert.doesNotMatch(item.rights.licenseCode, /-NC|-ND|UNKNOWN/i);
+    assert.ok(item.countries.length && item.regions.length && item.contentType);
+    if (addedIds.has(item.id)) {
+      assert.deepEqual(item.rights.territories, ["WORLDWIDE"]);
+      assert.equal(item.rights.evidence.mediaChecksumStatus, "verified-upstream");
+      assert.equal(item.rights.evidence.mediaChecksumScope, "original-file");
+      assert.match(item.rights.evidence.sourceRevision, /oldid=\d+$/);
+    }
+  }
+  assert.equal(addedIds.size, films.items.filter((item) => addedIds.has(item.id)).length);
 });
 
 test("governance gate publishes only a complete worldwide record", () => {
@@ -244,15 +269,15 @@ test("copyright center is reachable from the shell and cached with aligned versi
   assert.match(shell, /nhhoang130803@gmail\.com/);
   assert.match(loader, /"open-media-governance"[\s\S]*?open-media-governance\.js\?v=1/);
   assert.match(loader, /utils\/open-media-rights\.js\?v=3/);
-  assert.match(html, /performance-loader\.js\?v=263/);
+  assert.match(html, /performance-loader\.js\?v=268/);
   assert.match(html, /script\.js\?v=178/);
-  assert.match(serviceWorker, /hh-identity-portal-v536/);
+  assert.match(serviceWorker, /hh-identity-portal-v539/);
   for (const asset of [
     "open-media-governance.css?v=1",
     "open-media-governance.js?v=1",
     "assets/open-media/rights-registry-v2.json",
     "cinema-hub.css?v=4",
-    "cinema-hub.js?v=3",
+    "cinema-hub.js?v=4",
     "open-music-hub.css?v=4",
     "open-music-hub.js?v=3"
   ]) assert.match(serviceWorker, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), asset);

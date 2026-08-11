@@ -14,7 +14,7 @@ const sha256 = (value) => `sha256:${crypto.createHash("sha256").update(value).di
 test("Cinema V2 publishes only governance-approved films", () => {
   assert.equal(manifest.schemaVersion, 2);
   assert.equal(manifest.policy.mode, "fail-closed");
-  assert.equal(manifest.items.length, 6);
+  assert.equal(manifest.items.length, 16);
   assert.equal(new Set(manifest.items.map((item) => item.id)).size, manifest.items.length);
 
   manifest.items.forEach((item) => {
@@ -23,7 +23,10 @@ test("Cinema V2 publishes only governance-approved films", () => {
     assert.equal(item.rights.streamAllowed, true);
     assert.equal(item.rights.rehostAllowed, false);
     assert.equal(item.rights.downloadAllowed, false);
-    assert.equal(item.rights.shareAlike, false);
+    assert.equal(item.rights.shareAlike, /^CC-BY-SA-/.test(item.rights.licenseCode));
+    assert.ok(Array.isArray(item.countries) && item.countries.length, `${item.id}: missing countries`);
+    assert.ok(Array.isArray(item.regions) && item.regions.length, `${item.id}: missing regions`);
+    assert.ok(item.contentType, `${item.id}: missing content type`);
     assert.ok(item.source.itemId && item.source.itemId !== item.id || item.source.provider === "Blender Open Movies");
     const territory = item.rights.territories.includes("WORLDWIDE") ? "WORLDWIDE" : "VN";
     const verdict = rightsEngine.validateGovernanceItem(item, { territory });
@@ -44,7 +47,7 @@ test("Cinema keeps every unresolved film in a no-playback quarantine", () => {
   });
   assert.equal(expected.size, 0);
   assert.equal(cinema.normalizeQuarantine(manifest.quarantineItems).length, 4);
-  assert.equal(cinema.normalizeCatalog([...manifest.items, ...manifest.quarantineItems], { territory: "VN" }).length, 6);
+  assert.equal(cinema.normalizeCatalog([...manifest.items, ...manifest.quarantineItems], { territory: "VN" }).length, 16);
 });
 
 test("Evidence hashes are reproducible records, upstream hashes are never invented", () => {
@@ -85,10 +88,10 @@ test("Risky restored or scored classics are not used", () => {
 });
 
 test("Cinema gates territory server-side and fails closed without geo evidence", () => {
-  assert.equal(cinema.VERSION, "2.0.0");
+  assert.equal(cinema.VERSION, "2.1.0");
   assert.equal(cinema.RIGHTS_STATUS_URL, "/api/open-media/rights");
-  assert.equal(cinema.normalizeCatalog(manifest.items).length, 4, "VN-only records must not be inferred from browser state");
-  assert.equal(cinema.normalizeCatalog(manifest.items, { territory: "VN" }).length, 6);
+  assert.equal(cinema.normalizeCatalog(manifest.items).length, 14, "VN-only records must not be inferred from browser state");
+  assert.equal(cinema.normalizeCatalog(manifest.items, { territory: "VN" }).length, 16);
   const suspended = cinema.applyEmergencySuspensions(manifest.items, {
     items: [{ id: "sintel", available: false, reviewStatus: "suspended" }]
   });
@@ -128,6 +131,16 @@ test("Cinema player includes viewing controls and an always-accessible rights pa
   }
 });
 
+test("Cinema offers country, format and genre discovery filters", () => {
+  const source = read("cinema-hub.js");
+  assert.match(source, /data-cinema-filter="country"/);
+  assert.match(source, /data-cinema-filter="format"/);
+  assert.match(source, /countryOptions/);
+  assert.match(source, /formatOptions/);
+  assert.ok(new Set(manifest.items.flatMap((item) => item.genres)).size >= 10);
+  assert.ok(new Set(manifest.items.flatMap((item) => item.countries)).size >= 3);
+});
+
 test("Cinema persists owner-isolated continue, favorites, watchlist and speed", () => {
   const state = cinema.normalizeState({ favorites: ["a", "a"], watchlist: ["b", "b"], playbackRate: 1.5 });
   assert.deepEqual(state.favorites, ["a"]);
@@ -146,7 +159,7 @@ test("Cinema exposes SPA lifecycle and compliance inspection", () => {
   assert.equal(typeof cinema.unmount, "function");
   assert.equal(typeof cinema.inspect, "function");
   assert.equal(typeof cinema.focusSearch, "function");
-  assert.deepEqual(cinema.inspect(), { version: "2.0.0", mounted: false, route: "/cinema", catalogCount: 0 });
+  assert.deepEqual(cinema.inspect(), { version: "2.1.0", mounted: false, route: "/cinema", catalogCount: 0 });
 });
 
 test("Cinema layout remains one-screen, 375px-safe and accessible", () => {

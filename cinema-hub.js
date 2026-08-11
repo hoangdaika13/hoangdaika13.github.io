@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createCinemaHub(globalScope) {
   "use strict";
 
-  const VERSION = "2.0.0";
+  const VERSION = "2.1.0";
   const MANIFEST_URL = "/assets/open-media/curated-films-v1.json";
   const RIGHTS_STATUS_URL = "/api/open-media/rights";
   const STORAGE_SCHEMA = "hh.cinema.hub.v1";
@@ -133,6 +133,8 @@
       source: String(raw.source || "all"),
       license: String(raw.license || "all"),
       genre: String(raw.genre || "all"),
+      country: String(raw.country || "all"),
+      format: String(raw.format || "all"),
       sort: SORT_MODES.has(raw.sort) ? raw.sort : "featured"
     };
   }
@@ -202,6 +204,9 @@
       id: String(item.id),
       title: String(item.title),
       genres: Array.isArray(item.genres) ? item.genres.map(String) : [],
+      countries: Array.isArray(item.countries) ? item.countries.map(String) : [],
+      regions: Array.isArray(item.regions) ? item.regions.map(String) : [],
+      contentType: String(item.contentType || "Phim ngắn"),
       languages: Array.isArray(item.languages) ? item.languages.map(String) : [],
       year: Number(item.year) || 0,
       durationSeconds: Number(item.durationSeconds) || 0
@@ -311,8 +316,10 @@
       if (runtime.state.source !== "all" && item.source.provider !== runtime.state.source) return false;
       if (runtime.state.license !== "all" && item.rights.licenseCode !== runtime.state.license) return false;
       if (runtime.state.genre !== "all" && !item.genres.includes(runtime.state.genre)) return false;
+      if (runtime.state.country !== "all" && !item.countries.includes(runtime.state.country)) return false;
+      if (runtime.state.format !== "all" && item.contentType !== runtime.state.format) return false;
       if (!query) return true;
-      return [item.title, item.originalTitle, item.creator, item.description, item.genres.join(" "), item.source.provider]
+      return [item.title, item.originalTitle, item.creator, item.description, item.genres.join(" "), item.countries.join(" "), item.regions.join(" "), item.contentType, item.source.provider]
         .join(" ").toLocaleLowerCase("vi").includes(query);
     });
     if (runtime.state.view === "history") items.sort((a, b) => (historyIds.get(a.id) ?? 999) - (historyIds.get(b.id) ?? 999));
@@ -339,6 +346,14 @@
 
   function genreOptions(runtime) {
     return [...new Set(runtime.catalog.flatMap((item) => item.genres))].sort((a, b) => a.localeCompare(b, "vi"));
+  }
+
+  function countryOptions(runtime) {
+    return [...new Set(runtime.catalog.flatMap((item) => item.countries || []))].sort((a, b) => a.localeCompare(b, "vi"));
+  }
+
+  function formatOptions(runtime) {
+    return [...new Set(runtime.catalog.map((item) => item.contentType).filter(Boolean))].sort((a, b) => a.localeCompare(b, "vi"));
   }
 
   function renderShell(runtime) {
@@ -378,19 +393,27 @@
       <div class="cinema-toast" data-cinema-toast role="status" aria-live="polite" hidden></div>
     </section>`;
     runtime.root = runtime.host.querySelector("[data-cinema-hub]");
+    const sortFilter = runtime.root.querySelector('[data-cinema-filter="sort"]')?.closest("label");
+    sortFilter?.insertAdjacentHTML("beforebegin", `<label><span>Quốc gia</span><select data-cinema-filter="country" aria-label="Lọc theo quốc gia"></select></label><label><span>Định dạng</span><select data-cinema-filter="format" aria-label="Lọc theo định dạng"></select></label>`);
   }
 
   function updateToolbar(runtime) {
     const source = runtime.root.querySelector('[data-cinema-filter="source"]');
     const license = runtime.root.querySelector('[data-cinema-filter="license"]');
     const genre = runtime.root.querySelector('[data-cinema-filter="genre"]');
+    const country = runtime.root.querySelector('[data-cinema-filter="country"]');
+    const format = runtime.root.querySelector('[data-cinema-filter="format"]');
     const sort = runtime.root.querySelector('[data-cinema-filter="sort"]');
     source.innerHTML = `<option value="all">Tất cả nguồn</option>${sourceOptions(runtime).map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
     license.innerHTML = `<option value="all">Mọi giấy phép</option>${licenseOptions(runtime).map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(licenseLabel(value))}</option>`).join("")}`;
     genre.innerHTML = `<option value="all">Mọi thể loại</option>${genreOptions(runtime).map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+    country.innerHTML = `<option value="all">Mọi quốc gia</option>${countryOptions(runtime).map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+    format.innerHTML = `<option value="all">Mọi định dạng</option>${formatOptions(runtime).map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
     source.value = sourceOptions(runtime).includes(runtime.state.source) ? runtime.state.source : "all";
     license.value = licenseOptions(runtime).includes(runtime.state.license) ? runtime.state.license : "all";
     genre.value = genreOptions(runtime).includes(runtime.state.genre) ? runtime.state.genre : "all";
+    country.value = countryOptions(runtime).includes(runtime.state.country) ? runtime.state.country : "all";
+    format.value = formatOptions(runtime).includes(runtime.state.format) ? runtime.state.format : "all";
     sort.value = SORT_MODES.has(runtime.state.sort) ? runtime.state.sort : "featured";
     runtime.root.querySelectorAll("[data-cinema-view]").forEach((button) => {
       const active = button.dataset.cinemaView === runtime.state.view;
@@ -712,6 +735,8 @@
     runtime.state.source = "all";
     runtime.state.license = "all";
     runtime.state.genre = "all";
+    runtime.state.country = "all";
+    runtime.state.format = "all";
     runtime.state.sort = "featured";
     const search = runtime.root.querySelector("[data-cinema-search]");
     if (search) search.value = "";
@@ -769,7 +794,7 @@
       const key = event.target.dataset.cinemaFilter;
       if (!key) return;
       if (key === "sort") runtime.state.sort = SORT_MODES.has(event.target.value) ? event.target.value : "featured";
-      else if (["source", "license", "genre"].includes(key)) runtime.state[key] = String(event.target.value || "all");
+      else if (["source", "license", "genre", "country", "format"].includes(key)) runtime.state[key] = String(event.target.value || "all");
       renderCatalog(runtime); writeState(runtime);
     });
     addListener(runtime, runtime.document, "keydown", (event) => {
@@ -898,7 +923,7 @@
       territory: runtime.territory,
       selectedId: runtime.selectedId,
       query: runtime.query,
-      filters: { view: runtime.state.view, source: runtime.state.source, license: runtime.state.license, genre: runtime.state.genre, sort: runtime.state.sort },
+      filters: { view: runtime.state.view, source: runtime.state.source, license: runtime.state.license, genre: runtime.state.genre, country: runtime.state.country, format: runtime.state.format, sort: runtime.state.sort },
       favorites: [...runtime.state.favorites],
       watchlist: [...runtime.state.watchlist],
       playbackRate: runtime.state.playbackRate,

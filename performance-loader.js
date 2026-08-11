@@ -169,7 +169,7 @@
     },
     cinema: {
       styles: ["cinema-hub.css?v=4"],
-      scripts: ["utils/open-media-rights.js?v=3", "cinema-hub.js?v=3"]
+      scripts: ["utils/open-media-rights.js?v=3", "cinema-hub.js?v=4"]
     },
     "open-music": {
       styles: ["open-music-hub.css?v=4"],

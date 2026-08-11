@@ -1,13 +1,14 @@
 {
   "schemaVersion": 2,
   "registryId": "hh.open-media.rights.v2",
-  "updatedAt": "2026-08-10T00:00:00.000Z",
+  "updatedAt": "2026-08-12T00:00:00.000Z",
   "publicContact": "nhhoang130803@gmail.com",
   "legalNotice": "Đây là hồ sơ vận hành nhằm giảm rủi ro, không phải bảo đảm rằng sẽ không phát sinh khiếu nại và không thay thế tư vấn pháp lý.",
   "catalogSnapshot": {
-    "films": 10,
+    "films": 16,
     "tracks": 20,
-    "total": 30,
+    "total": 36,
+    "quarantineFilms": 4,
     "sourceManifests": [
       "/assets/open-media/curated-films-v1.json",
       "/assets/open-media/curated-music-v1.json"
