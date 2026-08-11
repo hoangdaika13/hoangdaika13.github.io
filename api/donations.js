@@ -656,6 +656,23 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "GET") {
+      if (String(req.query.recovery || "") === "receipts") {
+        const ip = clean(String(req.headers["x-forwarded-for"] || "").split(",")[0], 80) || "unknown";
+        await enforceRateLimit(db, `donation:automatic-receipt-recovery:${user?._id || ip}`, 6, 60 * 60 * 1000);
+        const now = new Date();
+        const candidate = await donations.findOne({
+          status: "verified",
+          "receipt.sentAt": { $exists: false },
+          "receipt.status": { $nin: ["missing_email"] },
+          $and: [
+            { $or: [{ "receipt.attempts": { $exists: false } }, { "receipt.attempts": { $lt: 12 } }] },
+            { $or: [{ "receipt.nextRetryAt": { $exists: false } }, { "receipt.nextRetryAt": { $lte: now } }] },
+            { $or: [{ "receipt.leaseUntil": { $exists: false } }, { "receipt.leaseUntil": { $lte: now } }] }
+          ]
+        }, { sort: { verifiedAt: 1 } });
+        const receipt = candidate ? await sendDonationThankYou(db, donations, candidate, "automatic_page_recovery") : null;
+        return res.status(200).json({ ok: true, recovered: receipt?.status === "sent" ? 1 : 0, checkedAt: new Date() });
+      }
       const lookupId = objectId(req.query.id);
       const lookupReference = clean(req.query.reference, 40);
       if (lookupId && lookupReference) {

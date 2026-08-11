@@ -56,6 +56,9 @@ test("failed receipt delivery recovers automatically without duplicate email bur
   assert.match(config, /\/api\/donations\?cron=receipt-recovery/);
   assert.match(api, /process\.env\.CRON_SECRET/);
   assert.match(api, /sendDonationThankYou\(db, donations, donation, "cron_retry"\)/);
+  assert.match(api, /automatic-receipt-recovery/);
+  assert.match(api, /sendDonationThankYou\(db, donations, candidate, "automatic_page_recovery"\)/);
+  assert.match(client, /api\("\?recovery=receipts"\)/);
 });
 
 test("support UI requires email and exposes an embedded payOS journey", () => {

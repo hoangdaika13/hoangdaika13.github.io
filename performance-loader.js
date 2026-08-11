@@ -221,7 +221,7 @@
     },
     support: {
       styles: ["support-platform.css?v=10"],
-      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=15"]
+      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=16"]
     }
   });
 

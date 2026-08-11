@@ -982,6 +982,11 @@
     updateAmount(100000);
     showStage("details", false);
     await Promise.all([loadPublic(), loadAdmin(), loadHistory()]);
+    // Recovery runs silently and never blocks the support workspace. The
+    // backend only retries verified receipts that are due and still unsent.
+    api("?recovery=receipts").then((result) => {
+      if (Number(result?.recovered || 0) > 0) loadPublic();
+    }).catch(() => {});
     try {
       const current = JSON.parse(sessionStorage.getItem(pendingKey) || "null");
       const legacy = JSON.parse(sessionStorage.getItem(LEGACY_STORAGE_KEY) || "null");
