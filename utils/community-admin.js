@@ -45,6 +45,7 @@ const POWER_PERMISSIONS = Object.freeze([
   "observability.traces.view",
   "observability.slo.manage",
   "observability.alerts.manage",
+  "audit.network.view",
   "audit.access-review"
 ]);
 
@@ -52,7 +53,7 @@ const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
   super_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export", ...POWER_PERMISSIONS],
   admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
-  security_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "sessions.revoke", "platform.view", "audit.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "security.waf.manage", "security.rate-limits.manage", "security.network-blocks.manage", "security.providers.disable", "observability.view", "observability.logs.view", "observability.traces.view", "observability.alerts.manage"],
+  security_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "sessions.revoke", "platform.view", "audit.view", "audit.network.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "security.waf.manage", "security.rate-limits.manage", "security.network-blocks.manage", "security.providers.disable", "observability.view", "observability.logs.view", "observability.traces.view", "observability.alerts.manage"],
   release_manager: ["dashboard.view", "incidents.view", "platform.view", "platform.manage", "config.manage", "flags.manage", "audit.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "platform.deployments.view", "platform.production.promote", "platform.production.rollback", "platform.cron.manage", "platform.webhooks.manage", "platform.maintenance.manage", "observability.view"],
   content_moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
   moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
@@ -205,9 +206,70 @@ function requirePermission(user, permission) {
 
 function auditSafe(value, depth = 0) {
   if (value == null || depth > 5) return value == null ? null : "[truncated]";
+  if (value instanceof Date) return new Date(value.getTime());
   if (Array.isArray(value)) return value.slice(0, 100).map((item) => auditSafe(item, depth + 1));
   if (typeof value !== "object") return typeof value === "string" ? clean(value, 1000) : value;
   return Object.fromEntries(Object.entries(value).filter(([key]) => !/(password|hash|token|secret|credential|privateMessage|messageText)/i.test(key)).slice(0, 120).map(([key, item]) => [key, auditSafe(item, depth + 1)]));
+}
+
+function maskAuditIp(value) {
+  const ip = clean(value, 120);
+  if (!ip) return "";
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(ip)) {
+    const parts = ip.split(".");
+    return `${parts[0]}.${parts[1]}.*.*`;
+  }
+  if (ip.includes(":")) return `${ip.split(":").slice(0, 3).join(":")}:*`;
+  return "masked";
+}
+
+function maskAuditUserAgent(value) {
+  const agent = clean(value, 500);
+  if (!agent) return "";
+  const family = /edg\//i.test(agent) ? "Edge" : /chrome\//i.test(agent) ? "Chrome" : /firefox\//i.test(agent) ? "Firefox" : /safari\//i.test(agent) ? "Safari" : "Browser";
+  return `${family} · metadata hidden`;
+}
+
+function auditHashPayload(record = {}) {
+  return Object.fromEntries(Object.entries(record).filter(([key]) => !["_id", "id", "recordHash"].includes(key)));
+}
+
+function auditRecordHash(record = {}) {
+  return crypto.createHash("sha256").update(JSON.stringify(auditHashPayload(record))).digest("hex");
+}
+
+function verifyAuditChain(records = [], options = {}) {
+  const ordered = [...records].sort((left, right) => new Date(left.createdAt || 0) - new Date(right.createdAt || 0));
+  const issues = [];
+  ordered.forEach((record, index) => {
+    if (!record?.recordHash || auditRecordHash(record) !== record.recordHash) issues.push({ index, type: "record-hash" });
+    if (index > 0 && record.previousHash !== ordered[index - 1].recordHash) issues.push({ index, type: "chain-link" });
+  });
+  const total = Math.max(ordered.length, Number(options.total || ordered.length));
+  const completeToHead = total === ordered.length;
+  return {
+    valid: issues.length === 0,
+    checkedEntries: ordered.length,
+    totalEntries: total,
+    completeToHead,
+    issues: issues.slice(0, 20),
+    mode: "tamper-evident-sha256-chain",
+    immutable: false,
+    externalAnchor: false
+  };
+}
+
+function presentAdminAuditRecord(record = {}, options = {}) {
+  const safe = auditSafe(record);
+  return {
+    ...safe,
+    id: String(record._id || record.id || ""),
+    _id: undefined,
+    ip: options.includeNetwork ? clean(record.ip, 120) : maskAuditIp(record.ip),
+    userAgent: options.includeNetwork ? clean(record.userAgent, 500) : maskAuditUserAgent(record.userAgent),
+    createdAt: record.createdAt || null,
+    networkMetadataMasked: !options.includeNetwork
+  };
 }
 
 function requestMeta(req) {
@@ -232,11 +294,11 @@ async function writeAdminAudit(db, req, admin, entry = {}) {
     before: auditSafe(entry.before),
     after: auditSafe(entry.after),
     previousHash: clean(previous?.recordHash || "genesis", 128),
-    integrityVersion: "sha256-chain-v1",
+    integrityVersion: "sha256-chain-v2",
     ...requestMeta(req),
     createdAt: now
   };
-  record.recordHash = crypto.createHash("sha256").update(JSON.stringify(record)).digest("hex");
+  record.recordHash = auditRecordHash(record);
   await db.collection("communityAdminAuditLogs").insertOne(record);
   return record;
 }
@@ -249,12 +311,16 @@ module.exports = {
   ROLE_PERMISSIONS,
   ROLE_RANK,
   accessFor,
+  auditRecordHash,
+  auditSafe,
   canGrantRole,
   hasPermission,
   highestRole,
   normalizePermissions,
+  presentAdminAuditRecord,
   requirePermission,
   rolesFor,
   simulatePermissions,
+  verifyAuditChain,
   writeAdminAudit
 };

@@ -1493,6 +1493,17 @@
 .home-neon .hh-admin-audit-integrity > i { display: grid; place-items: center; width: 33px; height: 33px; border-radius: 9px; background: rgba(101,239,174,.08); color: var(--galaxy-green); font-style: normal; }
 .home-neon .hh-admin-audit-integrity > span { display: grid; gap: 2px; }
 .home-neon .hh-admin-audit-integrity button { min-height: 32px; border: 1px solid rgba(101,239,174,.22); border-radius: 7px; background: rgba(101,239,174,.06); color: var(--galaxy-green); }
+.home-neon .hh-admin-audit-integrity.partial { border-color: rgba(255,216,104,.3); }
+.home-neon .hh-admin-audit-integrity.partial > i { color: var(--galaxy-gold); background: rgba(255,216,104,.09); }
+.home-neon .hh-admin-audit-integrity.critical { border-color: rgba(255,100,127,.42); }
+.home-neon .hh-admin-audit-integrity.critical > i { color: var(--galaxy-red); background: rgba(255,100,127,.1); }
+
+.home-neon .hh-admin-safety-strip { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; margin-bottom: 10px; }
+.home-neon .hh-admin-safety-strip article { display: grid; grid-template-columns: 30px minmax(0,1fr); align-items: center; gap: 8px; min-height: 66px; padding: 9px; border: 1px solid rgba(101,228,236,.18); border-radius: 9px; background: linear-gradient(145deg,rgba(101,228,236,.055),rgba(168,121,255,.035)); }
+.home-neon .hh-admin-safety-strip article > i { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 8px; color: var(--galaxy-cyan); background: rgba(101,228,236,.09); font-size: var(--admin-small-size); font-style: normal; font-weight: 900; }
+.home-neon .hh-admin-safety-strip article > span { display: grid; gap: 3px; min-width: 0; }
+.home-neon .hh-admin-safety-strip strong { color: #edf9fb; font-size: var(--admin-card-title-size); }
+.home-neon .hh-admin-safety-strip small { color: #8197a2; font-size: var(--admin-small-size); line-height: 1.35; }
 
 .home-neon .hh-admin-galaxy.hh-admin-app[data-admin-text="standard"] {
   --admin-reading-size: 10px;
@@ -1527,6 +1538,7 @@
   .home-neon .hh-admin-approval-grid { grid-template-columns: 1fr; }
   .home-neon .hh-admin-power-grid { grid-template-columns: 1fr; }
   .home-neon .hh-admin-custom-role-strip > div { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .home-neon .hh-admin-safety-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 620px) {
   .home-neon .hh-admin-root-crown { position: relative; grid-template-columns: 1fr 1fr; }
@@ -1542,6 +1554,7 @@
   .home-neon .hh-admin-approval-queue article > div { grid-column: 2; justify-self: start; }
   .home-neon .hh-admin-audit-filters { grid-template-columns: 1fr 1fr; }
   .hh-admin-modal .hh-admin-permission-picker { grid-template-columns: 1fr; }
+  .home-neon .hh-admin-safety-strip { grid-template-columns: 1fr; }
 }
 @media (max-width: 375px) {
   .home-neon .hh-admin-root-crown,

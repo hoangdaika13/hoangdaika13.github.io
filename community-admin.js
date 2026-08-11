@@ -86,7 +86,7 @@
   const notice = (message, type = "success") => window.HHCommunity?.notice?.(message, type);
   const has = (permission) => Boolean(access?.permissions?.includes("*") || access?.permissions?.includes(permission));
   const planetForView = (view) => VIEW_PLANETS[view] || "dashboard";
-  const statusLabel = (status) => ({ operational: "Ổn định", warning: "Cần theo dõi", critical: "Nghiêm trọng", "not-configured": "Chưa kết nối", new: "Mới", investigating: "Đang điều tra", mitigated: "Đã giảm thiểu", resolved: "Đã giải quyết", queued: "Đang chờ", running: "Đang chạy", paused: "Tạm dừng", failed: "Thất bại", cancelled: "Đã hủy" }[status] || String(status || "Không rõ"));
+  const statusLabel = (status) => ({ operational: "Ổn định", warning: "Cần theo dõi", critical: "Nghiêm trọng", "not-configured": "Chưa kết nối", new: "Mới", investigating: "Đang điều tra", mitigated: "Đã giảm thiểu", resolved: "Đã giải quyết", queued: "Đang chờ", running: "Đang chạy", paused: "Tạm dừng", failed: "Thất bại", cancelled: "Đã hủy", executing: "Đang thực thi", execution_failed: "Cần kiểm tra thủ công", approved_waiting_adapter: "Đã duyệt · chờ adapter", executed: "Đã thực thi" }[status] || String(status || "Không rõ"));
 
   async function api(view = "me", options = {}) {
     if (!API_BASE) throw new Error("Backend Community Admin chưa được cấu hình.");
@@ -134,6 +134,19 @@
     dialog.addEventListener("cancel", () => dialog.remove(), { once: true });
     dialog.showModal();
     return dialog;
+  }
+
+  function beginFormSubmission(form, pendingLabel = "Đang xử lý…") {
+    if (!form || form.dataset.submitting === "true") return null;
+    form.dataset.submitting = "true";
+    const button = form.querySelector('button[type="submit"]');
+    const originalLabel = button?.textContent || "";
+    if (button) { button.disabled = true; button.textContent = pendingLabel; }
+    return () => {
+      if (!form.isConnected) return;
+      form.dataset.submitting = "false";
+      if (button) { button.disabled = false; button.textContent = originalLabel; }
+    };
   }
 
   function shell(content, title = "Galaxy Mission Control", description = "Điều hành toàn bộ HH Platform bằng dữ liệu production đã được làm sạch.") {
@@ -273,10 +286,16 @@
       return `<article style="--constellation-index:${index}"><i>${String(index + 1).padStart(2, "0")}</i><span><strong>${esc(group)}</strong><small>${permissions.length} quyền · ${critical} tối quan trọng</small></span><b>${critical ? "!" : "✓"}</b></article>`;
     }).join("");
     const roles = customAdminRoles.map((role) => `<article><span><strong>${esc(role.name)}</strong><small>custom:${esc(role.key)} · ${role.permissions.length} quyền</small></span><b class="${Number(role.simulation?.riskScore || 0) >= 50 ? "high" : ""}">Risk ${Number(role.simulation?.riskScore || 0)}</b></article>`).join("") || '<p class="hh-admin-empty">Chưa tạo vai trò tùy chỉnh.</p>';
-    const content = `${subnav([["identity", "IAM Overview"], ["power", "Root Authority"], ["users", "Người dùng", "users.view"], ["audit", "Immutable Audit", "audit.view"]])}
+    const content = `${subnav([["identity", "IAM Overview"], ["power", "Root Authority"], ["users", "Người dùng", "users.view"], ["audit", "Tamper-evident Audit", "audit.view"]])}
       <section class="hh-admin-root-hero">
-        <div><small>ROOT AUTHORITY SESSION</small><strong>${privilege.active ? `Quyền nâng cao đang hoạt động · ${Number(privilege.minutesRemaining || 0)} phút` : "Đang dùng quyền thường trực"}</strong><p>Quyền nâng cao cần đăng nhập Google gần đây; thao tác tối quan trọng cần hai Super Admin khác nhau.</p><span><b>${privilege.googleReauthRecent ? "Google reauth sẵn sàng" : "Cần đăng nhập lại Google"}</b><b>Audit SHA-256 chain</b></span></div>
+        <div><small>ROOT AUTHORITY SESSION</small><strong>${privilege.active ? `Quyền nâng cao đang hoạt động · ${Number(privilege.minutesRemaining || 0)} phút` : "Đang dùng quyền thường trực"}</strong><p>Quyền nâng cao cần đăng nhập Google gần đây; thao tác tối quan trọng cần hai Super Admin khác nhau.</p><span><b>${privilege.googleReauthRecent ? "Google reauth sẵn sàng" : "Cần đăng nhập lại Google"}</b><b>Tamper-evident SHA-256 chain</b></span></div>
         <aside><i>⚡</i><strong>Privilege Elevation</strong><p>15, 30 hoặc 60 phút. Tự hết hạn và luôn lưu lý do.</p>${privilege.active ? `<b>Hết hạn ${dateText(privilege.expiresAt)}</b>` : '<button type="button" data-admin-privilege-activate>Kích hoạt quyền nâng cao</button>'}</aside>
+      </section>
+      <section class="hh-admin-safety-strip" aria-label="Bảo vệ vận hành Admin">
+        <article><i>01</i><span><strong>Atomic approval claim</strong><small>Một yêu cầu chỉ có một tiến trình được quyền thực thi.</small></span></article>
+        <article><i>02</i><span><strong>Network metadata shield</strong><small>IP và User-Agent mặc định được che theo quyền.</small></span></article>
+        <article><i>03</i><span><strong>Truthful audit integrity</strong><small>Phát hiện chỉnh sửa; chưa tuyên bố WORM hoặc immutable.</small></span></article>
+        <article><i>04</i><span><strong>Manual recovery state</strong><small>Lỗi adapter được giữ để điều tra, không tự chạy lại mù quáng.</small></span></article>
       </section>
       <section class="hh-admin-root-grid">
         <article class="hh-admin-permission-constellation"><header><span><small>PERMISSION CONSTELLATION</small><strong>Bản đồ quyền toàn hệ thống</strong></span><div><button type="button" data-admin-permission-simulate>Permission Simulator</button><button type="button" data-admin-custom-role>Tạo custom role</button></div></header><div>${permissionGroups}</div></article>
@@ -484,12 +503,15 @@
   async function renderAudit(query = {}) {
     auditQuery = { ...auditQuery, ...query };
     panelRef.innerHTML = shell(loading(), "Audit log");
-    const data = await api("audit", { query: auditQuery });
+    const [data, integrityData] = await Promise.all([api("audit", { query: auditQuery }), api("audit-integrity")]);
     auditEntries = data.items || [];
     const rows = auditEntries.map((item) => `<tr><td><strong>${esc(item.action)}</strong><small>${esc(item.targetType)} · ${esc(item.targetId)}</small></td><td>${esc(item.admin?.name || "Admin")}<small>${esc(item.admin?.email || "")}</small></td><td>${esc(item.reason || "-")}</td><td>${esc(item.ip || "-")}</td><td>${dateText(item.createdAt)}</td><td><button type="button" data-admin-audit-open="${esc(item.id)}">Chi tiết</button></td></tr>`).join("") || '<tr><td colspan="6">Chưa có audit log.</td></tr>';
     const filters = `<form class="hh-admin-toolbar hh-admin-audit-filters" data-admin-audit-filter><label><span>⌕</span><input name="q" value="${esc(auditQuery.q || "")}" placeholder="Tìm toàn bộ audit"></label><input name="actor" value="${esc(auditQuery.actor || "")}" placeholder="Email admin"><input name="action" value="${esc(auditQuery.action || "")}" placeholder="Hành động"><input name="target" value="${esc(auditQuery.target || "")}" placeholder="Đối tượng"><input name="from" type="date" value="${esc(auditQuery.from || "")}" aria-label="Từ ngày"><input name="to" type="date" value="${esc(auditQuery.to || "")}" aria-label="Đến ngày"><button type="submit">Lọc audit</button></form>`;
-    const integrity = `<section class="hh-admin-audit-integrity"><i>◆</i><span><strong>Immutable Audit Chain</strong><small>${Number(data.integrity?.chainedEntries || 0)} bản ghi trang này có SHA-256 chain · không chứa secret</small></span><button type="button" data-admin-access-review>Hoàn tất Access Review tháng</button></section>`;
-    panelRef.innerHTML = shell(`${subnav([["identity", "Identity & Access", "users.view"], ["power", "Root Authority", "dashboard.view"], ["security", "Security", "security.view"], ["platform", "Platform", "platform.view"], ["audit", "Audit log"]])}${filters}${integrity}<section class="hh-admin-table"><table><thead><tr><th>Hành động</th><th>Admin</th><th>Lý do</th><th>IP</th><th>Thời gian</th><th></th></tr></thead><tbody>${rows}</tbody></table></section>`, "Immutable Audit Log", "Lọc theo admin, hành động, đối tượng và thời gian; xem dữ liệu trước/sau đã loại bỏ secret.");
+    const auditIntegrity = integrityData.integrity || {};
+    const integrityState = auditIntegrity.valid === false ? "critical" : auditIntegrity.completeToHead ? "verified" : "partial";
+    const integrityLabel = auditIntegrity.valid === false ? "Phát hiện sai lệch" : auditIntegrity.completeToHead ? "Đã kiểm tra toàn chuỗi" : "Mẫu gần nhất hợp lệ";
+    const integrity = `<section class="hh-admin-audit-integrity ${integrityState}"><i>◆</i><span><strong>Tamper-evident Audit Chain · ${esc(integrityLabel)}</strong><small>${Number(auditIntegrity.checkedEntries || 0)}/${Number(auditIntegrity.totalEntries || 0)} bản ghi được kiểm tra · không phải WORM · chưa có external anchor</small></span><button type="button" data-admin-access-review>Hoàn tất Access Review tháng</button></section>`;
+    panelRef.innerHTML = shell(`${subnav([["identity", "Identity & Access", "users.view"], ["power", "Root Authority", "dashboard.view"], ["security", "Security", "security.view"], ["platform", "Platform", "platform.view"], ["audit", "Audit log"]])}${filters}${integrity}<section class="hh-admin-table"><table><thead><tr><th>Hành động</th><th>Admin</th><th>Lý do</th><th>${data.networkAccess?.raw ? "IP" : "IP đã che"}</th><th>Thời gian</th><th></th></tr></thead><tbody>${rows}</tbody></table></section>`, "Tamper-evident Audit Log", "Lọc theo admin, hành động, đối tượng và thời gian; dữ liệu mạng được che nếu không có quyền chuyên biệt.");
   }
 
   function openAudit(id) {
@@ -607,6 +629,8 @@
     const dialog = modal("Kích hoạt quyền nâng cao", `<section class="wide hh-admin-elevation-preview"><i>⚡</i><span><strong>Temporary Privilege Elevation</strong><p>Quyền tự hết hạn, không thay đổi vai trò thường trực và mọi hành động đều được ghi audit.</p>${reauth}</span></section><label><span>Thời hạn</span><select name="durationMinutes"><option value="15">15 phút</option><option value="30" selected>30 phút</option><option value="60">60 phút</option></select></label><label class="wide"><span>Lý do kích hoạt</span><textarea name="reason" required minlength="5" maxlength="1000" placeholder="Công việc cụ thể cần quyền nâng cao"></textarea></label>`, "Kích hoạt quyền");
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
+      const release = beginFormSubmission(event.currentTarget, "Đang kích hoạt…");
+      if (!release) return;
       const values = Object.fromEntries(new FormData(event.currentTarget));
       try {
         const data = await api("action", { method: "POST", body: { action: "privilege:activate", ...values, durationMinutes: Number(values.durationMinutes) } });
@@ -617,6 +641,8 @@
         await render(activeView);
       } catch (error) {
         notice(error.message, "error");
+      } finally {
+        release();
       }
     });
   }
@@ -661,7 +687,7 @@
         await api("action", { method: "POST", body });
         dialog.close();
         dialog.remove();
-        notice("Vai trò tùy chỉnh đã được lưu và ghi immutable audit.");
+        notice("Vai trò tùy chỉnh đã được lưu vào audit chain phát hiện chỉnh sửa.");
         await renderPower();
       } catch (error) {
         notice(error.message, "error");
@@ -677,6 +703,8 @@
     const dialog = modal(tier === "critical" ? "Tạo yêu cầu phê duyệt kép" : "Điều khiển Root Console", `<section class="wide hh-admin-control-preview ${esc(tier)}"><header><span><small>${esc(tier.toUpperCase())}</small><strong>${esc(actionId)}</strong></span><b>${connected ? "Adapter sẵn sàng" : "Cần adapter server"}</b></header><div><article><small>TRƯỚC</small><strong>Cấu hình production hiện tại</strong><p>Giá trị bí mật không được tải về trình duyệt.</p></article><i>→</i><article><small>SAU</small><strong>Thay đổi theo yêu cầu bên dưới</strong><p>${tier === "critical" ? "Chỉ chạy sau phê duyệt của Super Admin thứ hai." : "Cần privilege session còn hiệu lực."}</p></article></div></section><label><span>Đối tượng</span><input name="target" maxlength="160" placeholder="provider, domain, môi trường hoặc resource ID"></label>${valueField}<label class="wide"><span>Ghi chú runbook</span><textarea name="note" maxlength="500"></textarea></label><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, tier === "critical" ? "Gửi yêu cầu 2 người" : "Preview và thực hiện");
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
+      const release = beginFormSubmission(event.currentTarget, tier === "critical" ? "Đang tạo yêu cầu…" : "Đang thực thi…");
+      if (!release) return;
       const values = Object.fromEntries(new FormData(event.currentTarget));
       if (booleanActions.has(actionId)) values.value = values.value === "true";
       const apiAction = tier === "critical" ? "approval:request" : "control:execute";
@@ -688,14 +716,18 @@
         await renderPower();
       } catch (error) {
         notice(error.message, "error");
+      } finally {
+        release();
       }
     });
   }
 
   function decideApproval(requestId, decision) {
-    const dialog = modal(decision === "approve" ? "Phê duyệt thao tác tối quan trọng" : "Từ chối yêu cầu", `<section class="wide hh-admin-kill-switch"><strong>${esc(requestId)}</strong><p>Super Admin yêu cầu và Super Admin quyết định phải là hai tài khoản khác nhau.</p><span>Quyết định này sẽ được nối vào immutable audit chain.</span></section><label class="wide"><span>Lý do quyết định</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, decision === "approve" ? "Phê duyệt và thực thi" : "Từ chối");
+    const dialog = modal(decision === "approve" ? "Phê duyệt thao tác tối quan trọng" : "Từ chối yêu cầu", `<section class="wide hh-admin-kill-switch"><strong>${esc(requestId)}</strong><p>Super Admin yêu cầu và Super Admin quyết định phải là hai tài khoản khác nhau.</p><span>Quyết định được nối vào audit chain phát hiện chỉnh sửa; chỉ một tiến trình được quyền thực thi.</span></section><label class="wide"><span>Lý do quyết định</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, decision === "approve" ? "Phê duyệt và thực thi" : "Từ chối");
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
+      const release = beginFormSubmission(event.currentTarget, decision === "approve" ? "Đang nhận quyền thực thi…" : "Đang từ chối…");
+      if (!release) return;
       const reason = new FormData(event.currentTarget).get("reason");
       try {
         const data = await api("action", { method: "POST", body: { action: decision === "approve" ? "approval:approve" : "approval:reject", requestId, reason } });
@@ -705,6 +737,8 @@
         await renderPower();
       } catch (error) {
         notice(error.message, "error");
+      } finally {
+        release();
       }
     });
   }
@@ -734,7 +768,7 @@
       ["users", "Tìm người dùng", "Khóa, xác minh và thu hồi phiên"],
       ["security", "Security Findings", "Điều tra cảnh báo production"],
       ["platform", "Platform & Release", "Deployment, queue và provider"],
-      ["audit", "Immutable Audit", "Lọc hành động trước/sau"],
+      ["audit", "Tamper-evident Audit", "Lọc hành động trước/sau"],
       ["growth", "Growth & Data", "PayOS, funnel và AI usage"]
     ];
     const dialog = modal("Admin Command Palette", `<label class="wide hh-admin-command-search"><span>⌕</span><input data-admin-command-search autofocus placeholder="Tìm người dùng, incident, deployment hoặc công cụ"></label><section class="wide hh-admin-command-results">${commands.map(([view, label, detail]) => `<button type="button" data-admin-view="${view}" data-command-text="${esc(`${label} ${detail}`.toLowerCase())}"><i>→</i><span><strong>${esc(label)}</strong><small>${esc(detail)}</small></span></button>`).join("")}</section>`, "Đóng");

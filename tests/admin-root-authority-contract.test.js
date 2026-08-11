@@ -56,7 +56,7 @@ test("Root Authority API enforces elevation, dual approval and adapter truth", (
   assert.match(api, /communityCustomAdminRoles/);
   assert.match(api, /communityPrivilegeActivations/);
   assert.match(api, /communityApprovalRequests/);
-  assert.match(roles, /sha256-chain-v1/);
+  assert.match(roles, /sha256-chain-v2/);
   assert.doesNotMatch(api, /PAYOS_API_KEY\s*:/);
   assert.doesNotMatch(api, /VERCEL_API_TOKEN\s*:/);
 });
@@ -70,7 +70,7 @@ test("Root Authority UI includes command palette, constellation and responsive c
     "Permission Simulator",
     "Permission Constellation",
     "Live Infrastructure Map",
-    "Immutable Audit Chain",
+    "Tamper-evident Audit Chain",
     "Quantum Authority",
     "Solar Crown",
     "Aurora Command",

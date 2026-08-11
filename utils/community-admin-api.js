@@ -9,9 +9,11 @@ const {
   hasPermission,
   highestRole,
   normalizePermissions,
+  presentAdminAuditRecord,
   requirePermission,
   rolesFor,
   simulatePermissions,
+  verifyAuditChain,
   writeAdminAudit
 } = require("./community-admin");
 
@@ -109,6 +111,10 @@ function ensureAdminIndexes(db) {
 
 function idOf(value) {
   try { return new ObjectId(String(value || "")); } catch { return null; }
+}
+
+function updatedDocument(result) {
+  return result && Object.prototype.hasOwnProperty.call(result, "value") ? result.value : result;
 }
 
 function escapeRegex(value) {
@@ -803,7 +809,7 @@ module.exports = async function handler(req, res) {
         ]).toArray(),
         db.collection("gatewayAuditLogs").aggregate([
           { $match: { createdAt: { $gte: thirtyDaysAgo } } },
-          { $group: { _id: "$provider", requests: { $sum: 1 }, units: { $sum: "$cost" }, failures: { $sum: { $cond: [{ $eq: ["$outcome", "error"] }, 1, 0] } } } },
+          { $group: { _id: "$provider", requests: { $sum: 1 }, units: { $sum: "$cost" }, failures: { $sum: { $cond: [{ $in: ["$outcome", ["error", "failed"]] }, 1, 0] } } } },
           { $sort: { requests: -1 } }
         ]).toArray()
       ]);
@@ -1080,12 +1086,26 @@ module.exports = async function handler(req, res) {
         db.collection("communityAdminAuditLogs").find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
         db.collection("communityAdminAuditLogs").countDocuments(filter)
       ]);
+      const includeNetwork = hasPermission(admin, "audit.network.view");
       return res.status(200).json({
         ok: true,
-        items: items.map((item) => ({ ...item, id: String(item._id), _id: undefined })),
+        items: items.map((item) => presentAdminAuditRecord(item, { includeNetwork })),
         pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
-        integrity: { mode: "sha256-chain-v1", chainedEntries: items.filter((item) => item.recordHash && item.previousHash).length, secretsIncluded: false }
+        integrity: { mode: "tamper-evident-sha256-chain", chainedEntries: items.filter((item) => item.recordHash && item.previousHash).length, secretsIncluded: false, immutable: false, externalAnchor: false },
+        networkAccess: { raw: includeNetwork, requiresPermission: "audit.network.view" }
       });
+    }
+
+    if (req.method === "GET" && view === "audit-integrity") {
+      requirePermission(admin, "audit.view");
+      const collection = db.collection("communityAdminAuditLogs");
+      const limit = 500;
+      const [recent, total] = await Promise.all([
+        collection.find({ recordHash: { $exists: true }, previousHash: { $exists: true } }).sort({ createdAt: -1 }).limit(limit).toArray(),
+        collection.countDocuments({ recordHash: { $exists: true }, previousHash: { $exists: true } })
+      ]);
+      const integrity = verifyAuditChain(recent.reverse(), { total });
+      return res.status(200).json({ ok: true, integrity, checkedAt: new Date(), privacy: { recordsReturned: false, secretsReturned: false } });
     }
 
     if (req.method === "GET" && view === "settings") {
@@ -1251,27 +1271,55 @@ module.exports = async function handler(req, res) {
       const reason = requiredReason(body);
       const requestId = idOf(body.requestId);
       const collection = db.collection("communityApprovalRequests");
-      const before = requestId ? await collection.findOne({ _id: requestId, status: "pending", expiresAt: { $gt: new Date() } }) : null;
-      if (!before) return res.status(404).json({ error: "Yêu cầu không tồn tại, đã xử lý hoặc đã hết hạn." });
-      if ((before.approvals || []).some((approval) => String(approval.id) === String(admin._id))) return res.status(409).json({ error: "Cần một Super Admin khác phê duyệt yêu cầu này." });
+      let before = null;
       const now = new Date();
       if (action === "approval:reject") {
-        await collection.updateOne({ _id: requestId, status: "pending" }, { $set: { status: "rejected", rejectedAt: now, rejectedBy: admin._id, rejectionReason: reason } });
+        before = updatedDocument(await collection.findOneAndUpdate(
+          { _id: requestId, status: "pending", expiresAt: { $gt: now }, "approvals.id": { $ne: admin._id } },
+          { $set: { status: "rejected", rejectedAt: now, rejectedBy: admin._id, rejectionReason: reason, updatedAt: now } },
+          { returnDocument: "before" }
+        ));
+        if (!before) return res.status(409).json({ error: "Yêu cầu đã được xử lý, hết hạn hoặc bạn không thể tự quyết định yêu cầu của mình." });
         const after = await collection.findOne({ _id: requestId });
         await writeAdminAudit(db, req, admin, { action, targetType: "critical-request", targetId: String(requestId), reason, before: presentApproval(before), after: presentApproval(after) });
         return res.status(200).json({ ok: true, approval: presentApproval(after) });
       }
+      const claimId = new ObjectId().toHexString();
+      before = updatedDocument(await collection.findOneAndUpdate(
+        { _id: requestId, status: "pending", expiresAt: { $gt: now }, "approvals.id": { $ne: admin._id } },
+        {
+          $push: { approvals: { id: admin._id, email: clean(admin.email, 180), at: now } },
+          $set: { status: "executing", executionClaim: { claimId, approverId: admin._id, claimedAt: now, state: "claimed" }, updatedAt: now }
+        },
+        { returnDocument: "before" }
+      ));
+      if (!before) {
+        const existing = requestId ? await collection.findOne({ _id: requestId }) : null;
+        if (existing?.executionClaim?.claimId && String(existing.executionClaim.approverId) === String(admin._id)) {
+          return res.status(200).json({ ok: true, idempotentReplay: true, approval: presentApproval(existing), execution: { claimId: existing.executionClaim.claimId, state: clean(existing.executionClaim.state || existing.status, 40) } });
+        }
+        return res.status(409).json({ error: "Yêu cầu đã được admin khác nhận xử lý, đã hết hạn hoặc bạn không thể tự phê duyệt." });
+      }
       const capability = CONTROL_ACTION_BY_ID.get(before.actionId);
-      if (!capability) return res.status(409).json({ error: "Capability của yêu cầu không còn hợp lệ." });
-      const approvals = [...(before.approvals || []), { id: admin._id, email: clean(admin.email, 180), at: now }];
-      const execution = approvals.length >= Number(before.requiredApprovals || 2)
-        ? await executeControlAction(db, admin, capability, before.input || {}, now)
-        : null;
-      const status = execution?.status === "approved_waiting_adapter" ? "approved_waiting_adapter" : execution ? "executed" : "pending";
-      await collection.updateOne({ _id: requestId, status: "pending" }, { $set: { approvals, status, result: execution, ...(execution ? { completedAt: now, completedBy: admin._id } : {}) } });
+      if (!capability) {
+        await collection.updateOne({ _id: requestId, status: "executing", "executionClaim.claimId": claimId }, { $set: { status: "execution_failed", "executionClaim.state": "failed", "executionClaim.finishedAt": new Date(), result: { status: "execution_failed", detail: "Capability không còn hợp lệ.", affected: 0 } } });
+        return res.status(409).json({ error: "Capability của yêu cầu không còn hợp lệ." });
+      }
+      let execution;
+      try {
+        execution = await executeControlAction(db, admin, capability, before.input || {}, now);
+      } catch (error) {
+        await collection.updateOne({ _id: requestId, status: "executing", "executionClaim.claimId": claimId }, { $set: { status: "execution_failed", "executionClaim.state": "failed", "executionClaim.finishedAt": new Date(), result: { status: "execution_failed", detail: clean(error.message || "Adapter execution failed", 300), affected: 0 } } });
+        throw error;
+      }
+      const status = execution?.status === "approved_waiting_adapter" ? "approved_waiting_adapter" : "executed";
+      await collection.updateOne(
+        { _id: requestId, status: "executing", "executionClaim.claimId": claimId },
+        { $set: { status, result: execution, completedAt: new Date(), completedBy: admin._id, "executionClaim.state": "completed", "executionClaim.finishedAt": new Date() } }
+      );
       const after = await collection.findOne({ _id: requestId });
       await writeAdminAudit(db, req, admin, { action, targetType: "critical-request", targetId: String(requestId), reason, before: presentApproval(before), after: presentApproval(after) });
-      return res.status(200).json({ ok: true, approval: presentApproval(after) });
+      return res.status(200).json({ ok: true, approval: presentApproval(after), execution: { claimId, claimedAt: now, state: "completed", idempotent: true } });
     }
 
     if (action === "incident:update") {
