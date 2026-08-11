@@ -113,8 +113,8 @@
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "comic-motion-studio.js?v=10"]
     },
     "comic-reader": {
-      styles: ["comic-reader-hub.css?v=11"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-open-source-catalog.js?v=2", "comic-reader-hub.js?v=18"]
+      styles: ["comic-reader-hub.css?v=13"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-open-source-catalog.js?v=2", "comic-reader-hub.js?v=19"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],

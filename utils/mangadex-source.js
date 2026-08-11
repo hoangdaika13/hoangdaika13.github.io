@@ -5,6 +5,13 @@ const COVER_CDN = "https://uploads.mangadex.org/covers";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REQUEST_TIMEOUT_MS = 12_000;
 const ALLOWED_RATINGS = new Set(["safe", "suggestive"]);
+const FORMAT_LANGUAGES = Object.freeze({ Manga: ["ja"], Manhwa: ["ko"], Manhua: ["zh", "zh-hk"], Comic: ["en"] });
+const DEMOGRAPHICS = Object.freeze({ Shounen: "shounen", Shoujo: "shoujo", Seinen: "seinen", Josei: "josei" });
+const TAG_ALIASES = Object.freeze({
+  "Trinh Thám": "Mystery", "Xuyên Không": "Isekai", "Chuyển Sinh": "Reincarnation", "Cổ Đại": "Historical", "Ngôn Tình": "Romance",
+  "Việt Nam": "User Created", "Webtoon": "Long Strip", "Truyện Màu": "Full Color", "One shot": "Oneshot"
+});
+let tagCache = null;
 
 function fail(message, statusCode = 400, code = "MANGADEX_REQUEST_INVALID") {
   const error = new Error(message);
@@ -60,6 +67,8 @@ function mapSeries(entity) {
     status: clean(attributes.status, 40),
     year: Number(attributes.year) || null,
     contentRating: clean(attributes.contentRating || "safe", 40),
+    originalLanguage: clean(attributes.originalLanguage, 20),
+    publicationDemographic: clean(attributes.publicationDemographic, 40),
     tags: (Array.isArray(attributes.tags) ? attributes.tags : []).map((tag) => firstText(tag?.attributes?.name)).filter(Boolean).slice(0, 30),
     updatedAt: clean(attributes.updatedAt, 80),
     latestUploadedChapter: clean(attributes.latestUploadedChapter, 80),
@@ -107,7 +116,7 @@ async function mangaDexJson(path) {
   return payload;
 }
 
-function catalogPath(query) {
+function catalogPath(query, tagIds = []) {
   const limit = Math.min(48, Math.max(4, Number(query.limit) || 24));
   const offset = Math.min(10_000, Math.max(0, Number(query.offset) || 0));
   const title = clean(query.q, 120);
@@ -122,14 +131,40 @@ function catalogPath(query) {
   params.append("includes[]", "author");
   params.append("contentRating[]", "safe");
   params.append("contentRating[]", "suggestive");
+  const format = clean(query.format, 40);
+  const demographic = clean(query.demographic, 40);
+  for (const language of FORMAT_LANGUAGES[format] || []) params.append("originalLanguage[]", language);
+  if (DEMOGRAPHICS[demographic]) params.append("publicationDemographic[]", DEMOGRAPHICS[demographic]);
+  for (const tagId of tagIds) if (UUID.test(tagId)) params.append("includedTags[]", tagId);
+  if (tagIds.length) params.set("includedTagsMode", "AND");
   if (filter === "completed") params.append("status[]", "completed");
   else if (filter === "ongoing") params.append("status[]", "ongoing");
   if (title) params.set("title", title);
   return { path: `/manga?${params}`, limit, offset, sort, filter };
 }
 
+async function mangaDexTags() {
+  if (tagCache) return tagCache;
+  const payload = await mangaDexJson("/manga/tag");
+  tagCache = new Map((Array.isArray(payload.data) ? payload.data : []).map((tag) => [firstText(tag?.attributes?.name).toLocaleLowerCase("en-US"), clean(tag?.id, 80)]).filter(([, id]) => UUID.test(id)));
+  return tagCache;
+}
+
+async function selectedTagIds(query) {
+  const names = [];
+  const genre = clean(query.genre, 80);
+  const format = clean(query.format, 40);
+  if (genre && genre !== "Tất cả") names.push(TAG_ALIASES[genre] || genre);
+  if (["Webtoon", "Truyện Màu", "One shot"].includes(format)) names.push(TAG_ALIASES[format]);
+  if (!names.length) return [];
+  const tags = await mangaDexTags();
+  const ids = names.map((name) => tags.get(String(name).toLocaleLowerCase("en-US"))).filter(Boolean);
+  if (ids.length !== names.length) fail("MangaDex chưa có bộ lọc tương ứng cho thể loại đã chọn.", 404, "MANGADEX_TAG_NOT_FOUND");
+  return [...new Set(ids)];
+}
+
 async function catalog(query) {
-  const request = catalogPath(query);
+  const request = catalogPath(query, await selectedTagIds(query));
   const payload = await mangaDexJson(request.path);
   const items = (Array.isArray(payload.data) ? payload.data : []).filter((entry) => isAllowedRating(entry?.attributes?.contentRating)).map(mapSeries).filter((entry) => UUID.test(entry.id));
   if (request.sort === "chapters") items.sort((a, b) => { const band = (count) => count >= 10 ? 0 : count > 0 ? 1 : 2; return band(a.chapterCountEstimate) - band(b.chapterCountEstimate) || b.chapterCountEstimate - a.chapterCountEstimate || Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0); });
@@ -206,4 +241,4 @@ async function handleMangaDexSource(req, res, { db }) {
   return res.status(200).json({ ok: true, policy: { languages: ["vi"], contentRatings: ["safe", "suggestive"], storesImages: false, attributionRequired: true }, ...result });
 }
 
-module.exports = { handleMangaDexSource, mapSeries, mapChapter, catalogPath, isAllowedRating, UUID };
+module.exports = { handleMangaDexSource, mapSeries, mapChapter, catalogPath, selectedTagIds, isAllowedRating, UUID };

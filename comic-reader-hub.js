@@ -8,8 +8,35 @@
   const OTRUYEN_CDN = "https://img.otruyenapi.com";
   const OTRUYEN_PROXY_PATH = "/api/modules/comic-reader/actions";
   const MANGADEX_PROXY_PATH = "/api/modules/comic-reader/actions";
+  const OPEN_BOOKS_PROXY_PATH = "/api/modules/comic-reader/actions";
   const OTRUYEN_PAGES_PER_VIEW = 3;
-  const GENRES = ["Tất cả", "Hành động", "Phiêu lưu", "Fantasy", "Đời thường", "Bí ẩn", "Hài hước", "Lãng mạn", "Sci-fi", "Webtoon"];
+  const ALL_FILTER = "Tất cả";
+  const GENRE_GROUPS = Object.freeze([
+    { id: "popular", label: "Phổ biến", icon: "✦", genres: ["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Romance"] },
+    { id: "thrill", label: "Kịch tính", icon: "⌁", genres: ["Horror", "Mystery", "Psychological", "Supernatural", "Tragedy", "Trinh Thám"] },
+    { id: "worlds", label: "Thế giới mới", icon: "◈", genres: ["Sci-fi", "Historical", "Martial Arts", "Mecha", "Xuyên Không", "Chuyển Sinh", "Cổ Đại"] },
+    { id: "life", label: "Cuộc sống", icon: "☼", genres: ["Slice of Life", "School Life", "Sports", "Cooking", "Ngôn Tình", "Việt Nam"] }
+  ]);
+  const GENRE_LABELS = Object.freeze({
+    Action: "Hành động", Adventure: "Phiêu lưu", Comedy: "Hài hước", Drama: "Chính kịch", Fantasy: "Kỳ ảo", Romance: "Tình cảm",
+    Horror: "Kinh dị", Mystery: "Bí ẩn", Psychological: "Tâm lý", Supernatural: "Siêu nhiên", Tragedy: "Bi kịch", "Trinh Thám": "Trinh thám",
+    "Sci-fi": "Khoa học viễn tưởng", Historical: "Lịch sử", "Martial Arts": "Võ thuật", Mecha: "Robot / Mecha", "Xuyên Không": "Xuyên không",
+    "Chuyển Sinh": "Chuyển sinh", "Cổ Đại": "Cổ đại", "Slice of Life": "Đời thường", "School Life": "Học đường", Sports: "Thể thao",
+    Cooking: "Ẩm thực", "Ngôn Tình": "Ngôn tình", "Việt Nam": "Truyện Việt Nam"
+  });
+  const GENRES = Object.freeze([ALL_FILTER, ...GENRE_GROUPS.flatMap((group) => group.genres)]);
+  const FORMAT_FILTERS = Object.freeze([ALL_FILTER, "Manga", "Manhwa", "Manhua", "Webtoon", "Comic", "One shot", "Truyện Màu", "Sách mở"]);
+  const DEMOGRAPHIC_FILTERS = Object.freeze([ALL_FILTER, "Shounen", "Shoujo", "Seinen", "Josei", "Thiếu Nhi"]);
+  const BLOCKED_GENRE_KEYS = Object.freeze(new Set(["adult", "smut", "mature", "ecchi", "16+", "18+"]));
+  const OPEN_READING_SOURCES = Object.freeze([
+    { name: "StoryWeaver", url: "https://storyweaver.org.in/en/", license: "CC BY 4.0", note: "Hàng nghìn truyện thiếu nhi đa ngôn ngữ; có bản tiếng Việt, ghi công tác giả, họa sĩ và dịch giả." },
+    { name: "Wikibooks tiếng Việt", url: "https://vi.wikibooks.org/", license: "CC BY-SA 4.0", note: "Sách và tài liệu học tập mở; HH dùng API chính thức cho metadata và mở bài đọc tại nguồn." },
+    { name: "Pepper&Carrot", url: "https://www.peppercarrot.com/vi/", license: "CC BY 4.0", note: "Webcomic mở có bản dịch tiếng Việt; chỉ dùng tập và lớp nội dung có ghi công đầy đủ." },
+    { name: "Book Dash", url: "https://bookdash.org/books/", license: "CC BY 4.0", note: "Sách tranh thiếu nhi mở; kiểm tra trang credit của từng bản dịch trước khi nhập." },
+    { name: "OpenStax", url: "https://openstax.org/subjects", license: "Theo từng sách", note: "Giáo trình mở; chỉ nhận đầu sách xác nhận CC BY và lưu attribution theo phiên bản." },
+    { name: "DOAB", url: "https://directory.doabooks.org/", license: "Theo từng sách", note: "Danh mục sách học thuật mở; chỉ xuất bản mục vượt cổng CC0/BY/BY-SA, loại NC/ND." },
+    { name: "Wikimedia Commons", url: "https://commons.wikimedia.org/wiki/Category:Comics", license: "Theo từng tệp", note: "Chỉ là nguồn tìm ứng viên; mỗi trang và tệp phải qua kiểm tra giấy phép riêng." }
+  ]);
   const PALETTES = [
     ["#172d52", "#6ee7ff", "#a970ff"], ["#3d1838", "#ff7fb8", "#ffbd6c"], ["#143a35", "#65e8ad", "#76b9ff"],
     ["#40251d", "#ff9a5f", "#ffd66e"], ["#241943", "#8f7dff", "#ff73c9"], ["#142f43", "#5ed5ff", "#83ffc9"]
@@ -33,7 +60,9 @@
     readerWidth: "fit",
     readerTheme: "dark",
     query: "",
-    genre: "Tất cả",
+    genre: ALL_FILTER,
+    format: ALL_FILTER,
+    demographic: ALL_FILTER,
     sort: "smart",
     catalogPage: 1,
     catalogFilter: "all",
@@ -47,7 +76,8 @@
     remoteGenres: [],
     remoteGenreSlugs: new Map(),
     remote: { loading: false, page: 0, perPage: 72, total: 0, hasMore: true, context: "latest", error: "" },
-    mangadex: { loading: false, offset: 0, limit: 48, total: 0, hasMore: true, context: "latest", error: "" }
+    mangadex: { loading: false, offset: 0, limit: 48, total: 0, hasMore: true, context: "latest", error: "" },
+    openBooks: { loading: false, total: 0, error: "" }
   };
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -64,6 +94,45 @@
     return days < 30 ? `${days} ngày trước` : `${Math.floor(days / 30)} tháng trước`;
   };
   const stripHtml = (value) => String(value || "").replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
+  const genreKey = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLocaleLowerCase("en-US").replace(/[_\s/]+/g, "-").replace(/-+/g, "-");
+  const GENRE_ALIASES = Object.freeze({
+    "hanh-dong": "action", "phieu-luu": "adventure", "hai-huoc": "comedy", "chinh-kich": "drama", "ky-ao": "fantasy", "lang-man": "romance", "tinh-cam": "romance",
+    "kinh-di": "horror", "bi-an": "mystery", "tam-ly": "psychological", "sieu-nhien": "supernatural", "bi-kich": "tragedy", "trinh-tham": "trinh-tham",
+    "khoa-hoc-vien-tuong": "sci-fi", "lich-su": "historical", "vo-thuat": "martial-arts", "robot-mecha": "mecha", "doi-thuong": "slice-of-life",
+    "hoc-duong": "school-life", "the-thao": "sports", "am-thuc": "cooking", "truyen-viet-nam": "viet-nam", "one-shot": "one-shot", "oneshot": "one-shot",
+    "long-strip": "webtoon", "truyen-mau": "truyen-mau", "kids": "thieu-nhi", "children": "thieu-nhi"
+  });
+  function canonicalGenreKey(value) { const key = genreKey(value); return GENRE_ALIASES[key] || key; }
+  function genreLabel(value) { return GENRE_LABELS[value] || String(value || ""); }
+  function seriesGenreKeys(series) {
+    return new Set([...(series?.genres || []), series?.format, series?.demographic].filter(Boolean).map(canonicalGenreKey));
+  }
+  function isBlockedGenre(value) { return BLOCKED_GENRE_KEYS.has(canonicalGenreKey(value)); }
+  function hasBlockedGenres(values) { return (Array.isArray(values) ? values : []).some(isBlockedGenre); }
+  function allowedGenres(values) { return (Array.isArray(values) ? values : []).map(String).filter((value) => value && !isBlockedGenre(value)); }
+  function inferFormat(series) {
+    const keys = seriesGenreKeys(series);
+    if (keys.has("sach-mo")) return "Sách mở";
+    if (keys.has("webtoon") || keys.has("long-strip")) return "Webtoon";
+    if (keys.has("manhwa") || series?.originalLanguage === "ko") return "Manhwa";
+    if (keys.has("manhua") || ["zh", "zh-hk"].includes(series?.originalLanguage)) return "Manhua";
+    if (keys.has("manga") || series?.originalLanguage === "ja") return "Manga";
+    if (keys.has("comic") || series?.originalLanguage === "en") return "Comic";
+    if (keys.has("one-shot")) return "One shot";
+    if (keys.has("truyen-mau")) return "Truyện Màu";
+    return "Truyện tranh";
+  }
+  function inferDemographic(series) {
+    const keys = seriesGenreKeys(series);
+    for (const value of DEMOGRAPHIC_FILTERS.slice(1)) if (keys.has(canonicalGenreKey(value))) return value;
+    return "Mọi độc giả";
+  }
+  function matchesFacet(series, selected, kind) {
+    if (!selected || selected === ALL_FILTER) return true;
+    if (kind === "format") return canonicalGenreKey(inferFormat(series)) === canonicalGenreKey(selected) || seriesGenreKeys(series).has(canonicalGenreKey(selected));
+    if (kind === "demographic") return canonicalGenreKey(inferDemographic(series)) === canonicalGenreKey(selected) || seriesGenreKeys(series).has(canonicalGenreKey(selected));
+    return seriesGenreKeys(series).has(canonicalGenreKey(selected));
+  }
   const chapterNumberValue = (value) => {
     const match = String(value ?? "").replace(",", ".").match(/\d+(?:\.\d+)?/);
     return match ? Math.max(0, Number(match[0]) || 0) : /oneshot|one-shot/i.test(String(value || "")) ? 1 : 0;
@@ -96,6 +165,9 @@
   };
 
   function mapRemoteSeries(entry, domain = OTRUYEN_CDN) {
+    const rawGenres = Array.isArray(entry?.category) ? entry.category.map((category) => String(category.name || "")).filter(Boolean) : [];
+    if (hasBlockedGenres(rawGenres)) return null;
+    const genres = allowedGenres(rawGenres);
     const latestRows = Array.isArray(entry?.chaptersLatest) ? entry.chaptersLatest : [];
     const latest = [...latestRows].sort((a, b) => chapterNumberValue(b?.chapter_name) - chapterNumberValue(a?.chapter_name))[0];
     const number = String(latest?.chapter_name || "1");
@@ -106,7 +178,9 @@
       altTitles: Array.isArray(entry.origin_name) ? entry.origin_name.filter(Boolean) : [],
       author: "Đang cập nhật",
       cover: coverUrl(entry.thumb_url, domain),
-      genres: Array.isArray(entry.category) ? entry.category.map((category) => String(category.name || "")).filter(Boolean) : [],
+      genres,
+      format: inferFormat({ genres }),
+      demographic: inferDemographic({ genres }),
       status: entry.status === "completed" ? "Đã hoàn thành" : entry.status === "pending" ? "Tạm dừng" : "Đang cập nhật",
       description: "Nhấn vào truyện để tải mô tả và toàn bộ danh sách chương từ OTruyen API.",
       rating: 4.5,
@@ -141,8 +215,12 @@
       const payload = await fetchOTruyen("genres");
       const data = payload.data || {};
       const items = Array.isArray(data.items) ? data.items : [];
-      state.remoteGenres = items.map((item) => String(item.name || "")).filter(Boolean);
-      state.remoteGenreSlugs = new Map(items.map((item) => [String(item.name || ""), String(item.slug || "")]));
+      const safeItems = items.filter((item) => !isBlockedGenre(item?.name));
+      state.remoteGenres = safeItems.map((item) => String(item.name || "")).filter(Boolean);
+      state.remoteGenreSlugs = new Map(safeItems.flatMap((item) => {
+        const name = String(item.name || ""); const slug = String(item.slug || "");
+        return [[name, slug], [canonicalGenreKey(name), slug]];
+      }));
       if (root?.isConnected) render();
     } catch {}
   }
@@ -153,13 +231,14 @@
     state.remote.error = "";
     if (root?.isConnected) render();
     try {
-      const genreSlug = state.remoteGenreSlugs.get(state.genre) || "";
+      const primaryFacet = state.genre !== ALL_FILTER ? state.genre : state.format !== ALL_FILTER ? state.format : state.demographic !== ALL_FILTER ? state.demographic : "";
+      const genreSlug = state.remoteGenreSlugs.get(primaryFacet) || state.remoteGenreSlugs.get(canonicalGenreKey(primaryFacet)) || "";
       const upstreamFirstPage = (Math.max(1, Number(page) || 1) - 1) * OTRUYEN_PAGES_PER_VIEW + 1;
       const payloads = await Promise.all(Array.from({ length: OTRUYEN_PAGES_PER_VIEW }, (_, index) => fetchOTruyen("catalog", { page: upstreamFirstPage + index, q: state.query.trim(), genre: genreSlug, sort: state.sort, filter: state.catalogFilter })));
       const data = payloads[0]?.data || {};
       const domain = data.APP_DOMAIN_CDN_IMAGE || OTRUYEN_CDN;
       const unique = new Map(payloads.flatMap((payload) => payload?.data?.items || []).map((item) => [String(item.slug || ""), item]));
-      const mapped = [...unique.values()].map((item) => mapRemoteSeries(item, domain));
+      const mapped = [...unique.values()].map((item) => mapRemoteSeries(item, domain)).filter(Boolean);
       if (reset) {
         const incomingIds = new Set(mapped.map((series) => series.id));
         state.catalog = state.catalog.filter((series) => series.sourceType !== "otruyen" || state.follows.has(series.id) || state.progress[series.id] || incomingIds.has(series.id));
@@ -170,7 +249,7 @@
       state.remote.perPage = Number(pagination.totalItemsPerPage || 24) * OTRUYEN_PAGES_PER_VIEW;
       state.remote.total = Number(pagination.totalItems || mapped.length);
       state.remote.hasMore = state.remote.page * state.remote.perPage < state.remote.total;
-      state.remote.context = state.query.trim().length >= 2 ? "search" : state.genre !== "Tất cả" ? "genre" : "latest";
+      state.remote.context = state.query.trim().length >= 2 ? "search" : [state.genre, state.format, state.demographic].some((value) => value !== ALL_FILTER) ? "facet" : "latest";
     } catch (error) {
       state.remote.error = error.message || "Không thể kết nối backend OTruyen";
       notify(state.remote.error, "error");
@@ -186,6 +265,9 @@
     const data = payload.data || {};
     const item = data.item;
     if (!item) throw new Error("Không tìm thấy thông tin truyện trên OTruyen");
+    const rawGenres = Array.isArray(item.category) ? item.category.map((category) => String(category.name || "")).filter(Boolean) : [];
+    if (hasBlockedGenres(rawGenres)) throw new Error("Truyện này nằm ngoài bộ lọc nội dung an toàn của HH Comics");
+    const genres = allowedGenres(rawGenres);
     const chapterMap = new Map();
     (item.chapters || []).forEach((server) => (server.server_data || []).forEach((chapter, index) => {
       const number = String(chapter.chapter_name || index + 1);
@@ -204,7 +286,9 @@
       altTitles: Array.isArray(item.origin_name) ? item.origin_name.filter(Boolean) : [],
       author: Array.isArray(item.author) ? item.author.filter(Boolean).join(", ") || "Đang cập nhật" : String(item.author || "Đang cập nhật"),
       cover: coverUrl(item.thumb_url, data.APP_DOMAIN_CDN_IMAGE),
-      genres: Array.isArray(item.category) ? item.category.map((category) => String(category.name || "")).filter(Boolean) : series.genres,
+      genres: genres.length ? genres : series.genres,
+      format: inferFormat({ genres: genres.length ? genres : series.genres }),
+      demographic: inferDemographic({ genres: genres.length ? genres : series.genres }),
       status: item.status === "completed" ? "Đã hoàn thành" : item.status === "pending" ? "Tạm dừng" : "Đang cập nhật",
       description: stripHtml(item.content) || series.description,
       updatedAt: Date.parse(item.updatedAt) || series.updatedAt,
@@ -238,13 +322,21 @@
 
   function mapMangaDexSeries(entry, index = 0) {
     const remoteId = String(entry?.id || "");
+    const genres = allowedGenres(Array.isArray(entry?.tags) ? entry.tags : []);
+    const originalLanguage = String(entry?.originalLanguage || "");
+    const publicationDemographic = String(entry?.publicationDemographic || "");
+    const facets = { genres, originalLanguage, demographic: publicationDemographic };
     return {
       id: `mangadex:${remoteId}`,
       title: String(entry?.title || "Truyện chưa đặt tên"),
       altTitles: Array.isArray(entry?.altTitles) ? entry.altTitles.filter(Boolean) : [],
       author: String(entry?.author || "Đang cập nhật"),
       cover: String(entry?.cover || makeCover(entry?.title || "MangaDex", index)),
-      genres: ["MangaDex", ...(Array.isArray(entry?.tags) ? entry.tags : [])].filter(Boolean),
+      genres,
+      originalLanguage,
+      publicationDemographic,
+      format: inferFormat(facets),
+      demographic: inferDemographic({ ...facets, genres: [...genres, publicationDemographic] }),
       status: mangaDexStatus(entry?.status),
       description: String(entry?.description || "Dữ liệu truyện được phát trực tiếp từ MangaDex."),
       rating: 4.5,
@@ -289,7 +381,7 @@
     state.mangadex.error = "";
     if (root?.isConnected) render();
     try {
-      const payload = await fetchMangaDex("catalog", { offset, limit: state.mangadex.limit, q: state.query.trim(), sort: state.sort, filter: state.catalogFilter, catalogVersion: 2 });
+      const payload = await fetchMangaDex("catalog", { offset, limit: state.mangadex.limit, q: state.query.trim(), genre: state.genre, format: state.format, demographic: state.demographic, sort: state.sort, filter: state.catalogFilter, catalogVersion: 3 });
       const mapped = (payload.items || []).map(mapMangaDexSeries);
       if (reset) {
         const incomingIds = new Set(mapped.map((series) => series.id));
@@ -309,10 +401,68 @@
     }
   }
 
+  function mapOpenBookSeries(entry, index = 0) {
+    const remoteId = String(entry?.id || "");
+    const title = String(entry?.title || "Sách mở chưa đặt tên");
+    return {
+      id: `open-book:${remoteId}`,
+      title,
+      altTitles: [],
+      author: "Cộng đồng Wikibooks tiếng Việt",
+      cover: makeCover(title, index + 2),
+      genres: allowedGenres(entry?.genres || ["Sách mở", "Giáo dục"]),
+      format: "Sách mở",
+      demographic: "Mọi độc giả",
+      status: "Đọc tại nguồn",
+      description: String(entry?.description || "Sách và tài liệu học tập mở bằng tiếng Việt."),
+      rating: 4.5,
+      views: 0,
+      updatedAt: Date.parse(entry?.updatedAt) || Date.now(),
+      chapters: [],
+      chapterTotal: 0,
+      chapterCountEstimate: 0,
+      chaptersLoaded: true,
+      sourceType: "open-book",
+      sourceLabel: "Wikibooks tiếng Việt · CC BY-SA 4.0",
+      sourceUrl: String(entry?.sourceUrl || ""),
+      license: String(entry?.license?.code || "CC-BY-SA-4.0"),
+      attributionText: String(entry?.license?.attribution || "Các tác giả Wikibooks tiếng Việt")
+    };
+  }
+
+  async function loadOpenBooksCatalog({ reset = false } = {}) {
+    if (state.openBooks.loading || state.catalogPage > 1) return;
+    state.openBooks.loading = true;
+    state.openBooks.error = "";
+    try {
+      const base = String(global.HH_API_ORIGIN || global.location?.origin || "").replace(/\/$/, "");
+      const url = new URL(`${base}${OPEN_BOOKS_PROXY_PATH}`);
+      url.searchParams.set("provider", "open-books");
+      url.searchParams.set("action", "catalog");
+      url.searchParams.set("limit", "32");
+      if (state.query.trim()) url.searchParams.set("q", state.query.trim());
+      const response = await fetch(url, { credentials: "include", headers: { Accept: "application/json" } });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.ok !== true) throw new Error(payload?.error || `Backend sách mở phản hồi HTTP ${response.status}`);
+      const mapped = (payload.items || []).map(mapOpenBookSeries);
+      if (reset) state.catalog = state.catalog.filter((series) => series.sourceType !== "open-book" || state.follows.has(series.id));
+      mergeCatalog(mapped);
+      state.openBooks.total = Number(payload.total || mapped.length);
+    } catch (error) {
+      state.openBooks.error = error.message || "Không thể kết nối thư viện sách mở";
+    } finally {
+      state.openBooks.loading = false;
+      if (root?.isConnected) render();
+    }
+  }
+
   async function ensureMangaDexSeriesDetails(series) {
     if (!series || series.sourceType !== "mangadex" || series.chaptersLoaded) return series;
     const payload = await fetchMangaDex("series", { id: series.remoteId });
     const detail = payload.series || {};
+    const genres = allowedGenres(Array.isArray(detail.tags) ? detail.tags : []);
+    const originalLanguage = String(detail.originalLanguage || series.originalLanguage || "");
+    const publicationDemographic = String(detail.publicationDemographic || series.publicationDemographic || "");
     const chapters = (payload.chapters || []).map((entry) => ({
       id: `mangadex:chapter:${entry.id}`,
       remoteChapterId: String(entry.id || ""),
@@ -328,7 +478,11 @@
       altTitles: Array.isArray(detail.altTitles) ? detail.altTitles.filter(Boolean) : series.altTitles,
       author: String(detail.author || series.author),
       cover: String(detail.cover || series.cover),
-      genres: ["MangaDex", ...(Array.isArray(detail.tags) ? detail.tags : [])].filter(Boolean),
+      genres,
+      originalLanguage,
+      publicationDemographic,
+      format: inferFormat({ genres, originalLanguage }),
+      demographic: inferDemographic({ genres: [...genres, publicationDemographic], originalLanguage }),
       status: mangaDexStatus(detail.status),
       description: String(detail.description || series.description),
       updatedAt: Date.parse(detail.updatedAt) || series.updatedAt,
@@ -404,6 +558,9 @@
       state.readerMode = saved.readerMode === "page" ? "page" : "scroll";
       state.readerWidth = ["compact", "fit", "wide"].includes(saved.readerWidth) ? saved.readerWidth : "fit";
       state.readerTheme = ["dark", "black", "paper"].includes(saved.readerTheme) ? saved.readerTheme : "dark";
+      state.genre = typeof saved.browse?.genre === "string" ? saved.browse.genre.slice(0, 80) : ALL_FILTER;
+      state.format = FORMAT_FILTERS.includes(saved.browse?.format) ? saved.browse.format : ALL_FILTER;
+      state.demographic = DEMOGRAPHIC_FILTERS.includes(saved.browse?.demographic) ? saved.browse.demographic : ALL_FILTER;
       state.blockedPages = new Set(Array.isArray(saved.blockedPages) ? saved.blockedPages.slice(-500) : []);
       state.bookmarks = Array.isArray(saved.bookmarks) ? saved.bookmarks.filter((entry) => entry?.seriesId && entry?.chapterId && Number.isFinite(Number(entry.page))).slice(-200) : [];
       state.recentSeries = Array.isArray(saved.recentSeries) ? saved.recentSeries.filter((entry) => entry?.id && entry?.title && (entry?.sourceType === "otruyen" && entry?.remoteSlug || entry?.sourceType === "mangadex" && entry?.remoteId)).slice(-30) : [];
@@ -411,7 +568,7 @@
   }
 
   function saveLocalState() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ follows: [...state.follows], progress: state.progress, readerMode: state.readerMode, readerWidth: state.readerWidth, readerTheme: state.readerTheme, blockedPages: [...state.blockedPages].slice(-500), bookmarks: state.bookmarks.slice(-200), recentSeries: state.recentSeries.slice(-20) })); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ follows: [...state.follows], progress: state.progress, readerMode: state.readerMode, readerWidth: state.readerWidth, readerTheme: state.readerTheme, browse: { genre: state.genre, format: state.format, demographic: state.demographic }, blockedPages: [...state.blockedPages].slice(-500), bookmarks: state.bookmarks.slice(-200), recentSeries: state.recentSeries.slice(-20) })); } catch {}
   }
 
   function openDatabase() {
@@ -488,7 +645,8 @@
       genres: series.genres || [], status: series.status || "Đang cập nhật", description: series.description || "", rating: Number(series.rating || 4.5),
       views: Number(series.views || 0), updatedAt: Number(series.updatedAt || Date.now()), sourceType: series.sourceType, sourceLabel: series.sourceLabel || (isMangaDex ? "MangaDex · LIVE" : "OTruyen · LIVE"),
       chapterCountEstimate: seriesChapterCount(series), chapterTotal: Number(series.chapterTotal || 0),
-      remoteSlug: series.remoteSlug || "", remoteId: series.remoteId || "", sourceUrl: series.sourceUrl || "", contentRating: series.contentRating || "", chaptersLoaded: false,
+      remoteSlug: series.remoteSlug || "", remoteId: series.remoteId || "", sourceUrl: series.sourceUrl || "", contentRating: series.contentRating || "", originalLanguage: series.originalLanguage || "",
+      publicationDemographic: series.publicationDemographic || "", format: inferFormat(series), demographic: inferDemographic(series), chaptersLoaded: false,
       chapters: chapter ? [{ id: chapter.id, number: chapter.number, title: chapter.title || "", group: chapter.group || "", sourceUrl: chapter.sourceUrl || "", updatedAt: chapter.updatedAt || Date.now(), pages: [], apiUrl: chapter.apiUrl || "", remoteChapterId: chapter.remoteChapterId || "" }] : []
     };
     state.recentSeries = [...state.recentSeries.filter((entry) => entry.id !== snapshot.id), snapshot].slice(-30);
@@ -519,7 +677,17 @@
     url.searchParams.delete("comicSeries"); url.searchParams.delete("comicOpen"); url.searchParams.delete("comicMangaDex"); url.searchParams.delete("comicChapter"); url.searchParams.delete("comicPage");
     global.history.replaceState(global.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }
-  function availableGenres() { return ["Tất cả", ...new Set([...GENRES.slice(1), ...state.remoteGenres, ...state.catalog.flatMap((series) => Array.isArray(series.genres) ? series.genres : [])])]; }
+  function availableGenres() {
+    const excluded = new Set([...FORMAT_FILTERS.slice(1), ...DEMOGRAPHIC_FILTERS.slice(1), "MangaDex", "Nguồn mở"].map(canonicalGenreKey));
+    const values = [...GENRES.slice(1), ...state.remoteGenres, ...state.catalog.flatMap((series) => Array.isArray(series.genres) ? series.genres : [])];
+    const seen = new Set(); const result = [ALL_FILTER];
+    values.forEach((value) => {
+      const key = canonicalGenreKey(value);
+      if (!key || seen.has(key) || excluded.has(key) || isBlockedGenre(value)) return;
+      seen.add(key); result.push(String(value));
+    });
+    return result;
+  }
   function sidebarGenres() {
     const genres = availableGenres();
     if (state.genreExpanded || genres.length <= 15) return genres;
@@ -535,8 +703,9 @@
   }
 
   function catalogTotal() {
-    const openCount = state.catalogPage === 1 && !state.query && state.genre === "Tất cả" ? state.catalog.filter((series) => !["otruyen", "mangadex"].includes(series.sourceType)).length : 0;
-    return Math.max(0, state.remote.total) + Math.max(0, state.mangadex.total) + openCount;
+    const noFacet = [state.genre, state.format, state.demographic].every((value) => value === ALL_FILTER);
+    const openCount = state.catalogPage === 1 && !state.query && noFacet ? state.catalog.filter((series) => !["otruyen", "mangadex", "open-book"].includes(series.sourceType)).length : 0;
+    return Math.max(0, state.remote.total) + Math.max(0, state.mangadex.total) + Math.max(0, state.openBooks.total) + openCount;
   }
 
   async function loadCatalogPage(page = 1) {
@@ -547,17 +716,18 @@
     if (root?.isConnected) render();
     return Promise.allSettled([
       loadRemoteCatalog({ page: target, reset: true }),
-      loadMangaDexCatalog({ offset, reset: true })
+      loadMangaDexCatalog({ offset, reset: true }),
+      loadOpenBooksCatalog({ reset: true })
     ]);
   }
 
   function visibleCatalog() {
     const query = state.query.trim().toLocaleLowerCase();
-    let result = state.catalog.filter((series) => state.genre === "Tất cả" || series.genres?.includes(state.genre));
-    if (state.catalogPage > 1 && !query && state.genre === "Tất cả" && state.catalogFilter !== "followed") {
+    let result = state.catalog.filter((series) => matchesFacet(series, state.genre, "genre") && matchesFacet(series, state.format, "format") && matchesFacet(series, state.demographic, "demographic"));
+    if (state.catalogPage > 1 && !query && [state.genre, state.format, state.demographic].every((value) => value === ALL_FILTER) && state.catalogFilter !== "followed") {
       result = result.filter((series) => ["otruyen", "mangadex"].includes(series.sourceType) || state.follows.has(series.id) || state.progress[series.id]);
     }
-    if (query) result = result.filter((series) => `${series.title} ${series.author} ${(series.altTitles || []).join(" ")} ${(series.genres || []).join(" ")}`.toLocaleLowerCase().includes(query));
+    if (query) result = result.filter((series) => `${series.title} ${series.author} ${(series.altTitles || []).join(" ")} ${(series.genres || []).join(" ")} ${inferFormat(series)} ${inferDemographic(series)} ${series.description || ""}`.toLocaleLowerCase().includes(query));
     if (state.catalogFilter === "completed") result = result.filter((series) => series.status === "Đã hoàn thành");
     else if (state.catalogFilter === "ongoing") result = result.filter((series) => series.status !== "Đã hoàn thành");
     else if (state.catalogFilter === "followed") result = result.filter((series) => state.follows.has(series.id));
@@ -591,15 +761,44 @@
     setTimeout(() => { toast.classList.remove("is-visible"); setTimeout(() => toast.remove(), 220); }, 3300);
   }
 
+  function facetOptions(values, selected) {
+    return values.map((value) => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(value)}</option>`).join("");
+  }
+
+  function activeFacetSummary() {
+    const values = [state.genre === ALL_FILTER ? "" : genreLabel(state.genre), state.format === ALL_FILTER ? "" : state.format, state.demographic === ALL_FILTER ? "" : state.demographic].filter(Boolean);
+    return values.length ? values.join(" · ") : "Toàn bộ thể loại";
+  }
+
+  function genreExplorer() {
+    const available = availableGenres();
+    const presetKeys = new Set(GENRES.slice(1).map(canonicalGenreKey));
+    const extra = available.slice(1).filter((value) => !presetKeys.has(canonicalGenreKey(value)));
+    const activeCount = [state.genre, state.format, state.demographic].filter((value) => value !== ALL_FILTER).length;
+    const genreButtons = (genres) => genres.map((genre) => {
+      const count = state.catalog.filter((series) => matchesFacet(series, genre, "genre")).length;
+      return `<button type="button" data-genre="${escapeHtml(genre)}" class="${state.genre === genre ? "is-active" : ""}"><span>${escapeHtml(genreLabel(genre))}</span><small>${count || "•"}</small></button>`;
+    }).join("");
+    return `<section class="cr-genre-explorer">
+      <header><div><span>THƯ VIỆN ĐA THỂ LOẠI</span><strong>Khám phá ${available.length - 1}+ thể loại truyện</strong><small>Không chỉ hoạt hình: manga, manhwa, manhua, webtoon và comic được phân loại riêng.</small></div><button type="button" data-action="genre-more">${state.genreExpanded ? "Thu gọn" : `Tất cả thể loại · ${available.length - 1}`}</button></header>
+      <div class="cr-facet-toolbar"><label>Định dạng<select data-format-filter>${facetOptions(FORMAT_FILTERS, state.format)}</select></label><label>Độc giả<select data-demographic-filter>${facetOptions(DEMOGRAPHIC_FILTERS, state.demographic)}</select></label><span>${escapeHtml(activeFacetSummary())}</span><button type="button" data-action="reset-facets"${activeCount ? "" : " disabled"}>Xóa bộ lọc${activeCount ? ` · ${activeCount}` : ""}</button></div>
+      <div class="cr-genre-groups">${GENRE_GROUPS.map((group) => `<section><header><i>${group.icon}</i><strong>${escapeHtml(group.label)}</strong></header><div>${genreButtons(group.genres)}</div></section>`).join("")}</div>
+      ${state.genreExpanded && extra.length ? `<div class="cr-genre-extra"><strong>Thể loại khác từ nguồn trực tiếp</strong><div>${genreButtons(extra)}</div></div>` : ""}
+    </section>`;
+  }
+
   function seriesCard(series) {
     const latest = series.chapters?.at(-1);
     const chapterCount = seriesChapterCount(series);
     const progress = state.progress[series.id];
     const resumeChapterId = progress?.chapterId || latest?.id || "";
     const followed = state.follows.has(series.id);
+    const primaryAction = series.sourceType === "open-book"
+      ? `<button type="button" data-series="${escapeHtml(series.id)}">Xem sách mở</button>`
+      : `<button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(resumeChapterId)}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || chapterCount || "?"}`}</button>`;
     return `<article class="cr-series-card" data-series="${escapeHtml(series.id)}">
-      <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.sourceType === "github-open" ? "OPEN" : series.sourceType === "mangadex" ? "MDX" : series.status === "Đã hoàn thành" ? "FULL" : "NEW"}</span><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
-      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml((series.genres || []).slice(0, 2).join(" · "))}</p><div><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(resumeChapterId)}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || chapterCount || "?"}`}</button><small>${chapterCount ? `${chapterCount.toLocaleString("vi-VN")} chap · ` : "Chưa rõ số chap · "}${timeAgo(latest?.updatedAt || series.updatedAt)}</small></div></div>
+      <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.sourceType === "github-open" ? "OPEN" : series.sourceType === "mangadex" ? "MDX" : series.status === "Đã hoàn thành" ? "FULL" : "NEW"}</span><em class="cr-format-badge">${escapeHtml(inferFormat(series))}</em><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
+      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml([inferFormat(series), ...(series.genres || []).slice(0, 2).map(genreLabel)].join(" · "))}</p><div>${primaryAction}<small>${series.sourceType === "open-book" ? "CC BY-SA 4.0 · mở tại nguồn" : chapterCount ? `${chapterCount.toLocaleString("vi-VN")} chap · ${timeAgo(latest?.updatedAt || series.updatedAt)}` : `Chưa rõ số chap · ${timeAgo(latest?.updatedAt || series.updatedAt)}`}</small></div></div>
     </article>`;
   }
 
@@ -612,14 +811,14 @@
   function catalogPagination() {
     const pages = catalogPageCount();
     const page = clamp(state.catalogPage, 1, pages);
-    const busy = state.remote.loading || state.mangadex.loading;
+    const busy = state.remote.loading || state.mangadex.loading || state.openBooks.loading;
     return `<footer class="cr-pagination" aria-label="Phân trang toàn bộ kho truyện">
       <button type="button" data-catalog-page="1"${page <= 1 || busy ? " disabled" : ""} aria-label="Trang đầu">«</button>
       <button type="button" data-catalog-page="${page - 1}"${page <= 1 || busy ? " disabled" : ""} aria-label="Trang trước">‹</button>
       <label>Trang <input type="number" min="1" max="${pages}" value="${page}" data-catalog-page-input aria-label="Nhập số trang"> / ${pages.toLocaleString("vi-VN")}</label>
       <button type="button" data-catalog-page="${page + 1}"${page >= pages || busy ? " disabled" : ""} aria-label="Trang sau">›</button>
       <button type="button" data-catalog-page="${pages}"${page >= pages || busy ? " disabled" : ""} aria-label="Trang cuối">»</button>
-      <span>${busy ? "Backend đang tải trang…" : `${catalogTotal().toLocaleString("vi-VN")} truyện có thể duyệt · tối đa 72 OTruyen + 48 MangaDex mỗi trang`}</span>
+      <span>${busy ? "Backend đang tải trang…" : `${catalogTotal().toLocaleString("vi-VN")} truyện & sách có thể duyệt · tối đa 72 OTruyen + 48 MangaDex mỗi trang`}</span>
     </footer>`;
   }
 
@@ -629,16 +828,17 @@
     const rankings = [...state.catalog].sort((a, b) => seriesChapterCount(b) - seriesChapterCount(a) || smartCatalogCompare(a, b)).slice(0, 7);
     return `<div class="cr-home">
       <section class="cr-hero" style="--hero-cover:url('${escapeHtml(hero?.cover || "")}')">
-        <div class="cr-hero-copy"><span>HH COMICS · ORIGINAL & LICENSED</span><h1>${escapeHtml(hero?.title || "Thư viện truyện của bạn")}</h1><p>${escapeHtml(hero?.description || "Nhập catalog hoặc CBZ để bắt đầu đọc.")}</p><div>${hero ? `<button type="button" class="is-primary" data-read="${escapeHtml(hero.id)}" data-chapter="${escapeHtml(state.progress[hero.id]?.chapterId || hero.chapters?.[0]?.id || "")}">▶ Đọc ngay</button><button type="button" data-series="${escapeHtml(hero.id)}">Xem chi tiết</button>` : ""}</div></div>
+        <div class="cr-hero-copy"><span>HH COMICS · THƯ VIỆN ĐA THỂ LOẠI</span><h1>${escapeHtml(hero?.title || "Kho truyện tranh thế giới")}</h1><p>${escapeHtml(hero?.description || "Khám phá manga, manhwa, manhua, webtoon, truyện Việt và comic theo đúng sở thích.")}</p><div>${hero ? `<button type="button" class="is-primary" data-read="${escapeHtml(hero.id)}" data-chapter="${escapeHtml(state.progress[hero.id]?.chapterId || hero.chapters?.[0]?.id || "")}">▶ Đọc ngay</button><button type="button" data-series="${escapeHtml(hero.id)}">Xem chi tiết</button>` : ""}</div></div>
         <div class="cr-hero-cover">${hero ? `<img src="${escapeHtml(hero.cover)}" alt="" referrerpolicy="no-referrer">` : ""}</div>
       </section>
       ${continueShelf()}
-      <nav class="cr-discovery-tabs" aria-label="Lọc kho truyện"><button type="button" data-catalog-filter="all"${state.catalogFilter === "all" ? ' class="is-active"' : ""}>Tất cả</button><button type="button" data-catalog-filter="ongoing"${state.catalogFilter === "ongoing" ? ' class="is-active"' : ""}>Đang cập nhật</button><button type="button" data-catalog-filter="completed"${state.catalogFilter === "completed" ? ' class="is-active"' : ""}>Hoàn thành</button><button type="button" data-catalog-filter="followed"${state.catalogFilter === "followed" ? ' class="is-active"' : ""}>Đang theo dõi · ${state.follows.size}</button><span>${state.remote.loading || state.mangadex.loading ? "Đang đồng bộ dữ liệu…" : "OTruyen · MangaDex · GitHub Open"}</span></nav>
+      ${genreExplorer()}
+      <nav class="cr-discovery-tabs" aria-label="Lọc kho truyện"><button type="button" data-catalog-filter="all"${state.catalogFilter === "all" ? ' class="is-active"' : ""}>Tất cả</button><button type="button" data-catalog-filter="ongoing"${state.catalogFilter === "ongoing" ? ' class="is-active"' : ""}>Đang cập nhật</button><button type="button" data-catalog-filter="completed"${state.catalogFilter === "completed" ? ' class="is-active"' : ""}>Hoàn thành</button><button type="button" data-catalog-filter="followed"${state.catalogFilter === "followed" ? ' class="is-active"' : ""}>Đang theo dõi · ${state.follows.size}</button><span>${state.remote.loading || state.mangadex.loading || state.openBooks.loading ? "Đang đồng bộ dữ liệu…" : "Truyện · Manga · Webtoon · Sách mở"}</span></nav>
       <div class="cr-home-grid">
-        <section class="cr-catalog-section"><header><div><strong>${state.query || state.genre !== "Tất cả" ? "Kết quả tìm kiếm" : state.sort === "az" ? "Tên truyện A–Z" : state.sort === "za" ? "Tên truyện Z–A" : state.sort === "popular" ? "Phổ biến" : state.sort === "chapters" ? "Nhiều chap nhất" : state.sort === "updated" ? "Mới cập nhật" : "Cập nhật mạnh · nhiều chap"}</strong><small>${visible.length.toLocaleString("vi-VN")} truyện ở trang ${state.catalogPage.toLocaleString("vi-VN")}${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} OTruyen` : ""}${state.mangadex.total ? ` · ${state.mangadex.total.toLocaleString("vi-VN")} MangaDex tiếng Việt` : ""}</small></div><select data-sort aria-label="Sắp xếp toàn bộ kho truyện"><option value="smart">Ưu tiên cập nhật & nhiều chap</option><option value="chapters">Nhiều chap → ít chap</option><option value="updated">Mới cập nhật</option><option value="popular">Phổ biến</option><option value="az">Tên A–Z</option><option value="za">Tên Z–A</option></select></header>
+        <section class="cr-catalog-section"><header><div><strong>${state.query || [state.genre, state.format, state.demographic].some((value) => value !== ALL_FILTER) ? `Kết quả · ${escapeHtml(activeFacetSummary())}` : state.sort === "az" ? "Tên truyện A–Z" : state.sort === "za" ? "Tên truyện Z–A" : state.sort === "popular" ? "Phổ biến" : state.sort === "chapters" ? "Nhiều chap nhất" : state.sort === "updated" ? "Mới cập nhật" : "Cập nhật mạnh · nhiều chap"}</strong><small>${visible.length.toLocaleString("vi-VN")} truyện ở trang ${state.catalogPage.toLocaleString("vi-VN")}${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} OTruyen` : ""}${state.mangadex.total ? ` · ${state.mangadex.total.toLocaleString("vi-VN")} MangaDex tiếng Việt` : ""}</small></div><select data-sort aria-label="Sắp xếp toàn bộ kho truyện"><option value="smart">Ưu tiên cập nhật & nhiều chap</option><option value="chapters">Nhiều chap → ít chap</option><option value="updated">Mới cập nhật</option><option value="popular">Phổ biến</option><option value="az">Tên A–Z</option><option value="za">Tên Z–A</option></select></header>
           <div class="cr-series-grid">${visible.length ? visible.map(seriesCard).join("") : `<div class="cr-empty"><span>⌕</span><strong>Không tìm thấy truyện</strong><small>Thử từ khóa hoặc thể loại khác.</small></div>`}</div>
           ${catalogPagination()}
-          ${state.remote.error || state.mangadex.error ? `<footer class="cr-load-more"><span>${escapeHtml([state.remote.error, state.mangadex.error].filter(Boolean).join(" · "))}</span></footer>` : ""}
+          ${state.remote.error || state.mangadex.error || state.openBooks.error ? `<footer class="cr-load-more"><span>${escapeHtml([state.remote.error, state.mangadex.error, state.openBooks.error].filter(Boolean).join(" · "))}</span></footer>` : ""}
         </section>
         <aside class="cr-ranking"><header><strong>Top nhiều chap</strong><span>Đang cập nhật</span></header>${rankings.map((series, index) => `<button type="button" data-series="${escapeHtml(series.id)}"><b>${String(index + 1).padStart(2, "0")}</b><img src="${escapeHtml(series.cover)}" alt=""><span><strong>${escapeHtml(series.title)}</strong><small>${seriesChapterCount(series).toLocaleString("vi-VN")} chap · ${timeAgo(series.updatedAt)}</small></span></button>`).join("")}</aside>
       </div>
@@ -651,7 +851,7 @@
     const progress = state.progress[series.id];
     return `<div class="cr-detail">
       <button type="button" class="cr-back" data-nav="home">← Trở lại kho truyện</button>
-      <section class="cr-detail-hero"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" referrerpolicy="no-referrer"><div><span>${escapeHtml(series.sourceType === "original" ? "HH ORIGINALS" : series.sourceType === "otruyen" ? "OTRUYEN · LIVE" : series.sourceType === "mangadex" ? "MANGADEX · LIVE" : series.sourceType === "github-open" ? `GITHUB OPEN · ${series.license || "OPEN"}` : "THƯ VIỆN ĐÃ NHẬP")}</span><h1>${escapeHtml(series.title)}</h1><p class="cr-detail-author">Tác giả: <strong>${escapeHtml(series.author || "Đang cập nhật")}</strong></p><div class="cr-tags">${(series.genres || []).map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}">${escapeHtml(genre)}</button>`).join("")}</div><p>${escapeHtml(series.description || "Chưa có mô tả.")}</p><div class="cr-detail-actions"><button type="button" class="is-primary" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(progress?.chapterId || series.chapters?.[0]?.id || "")}"${series.chapters?.length || series.chaptersLoaded === false ? "" : " disabled"}>▶ ${progress ? "Đọc tiếp" : "Đọc từ đầu"}</button><button type="button" data-follow="${escapeHtml(series.id)}">${followed ? "✓ Đang theo dõi" : "♡ Theo dõi"}</button></div><dl><div><dt>Trạng thái</dt><dd>${escapeHtml(series.status || "Đang cập nhật")}</dd></div><div><dt>Đánh giá</dt><dd>★ ${Number(series.rating || 4.5).toFixed(1)}</dd></div><div><dt>Nguồn</dt><dd>${escapeHtml(series.sourceLabel || series.rights || "HH Comics")}</dd></div><div><dt>Số chương</dt><dd>${series.chaptersLoaded === false ? "Đang tải…" : series.chapterTotal && series.chapterTotal > series.chapters.length ? `${series.chapters.length}/${series.chapterTotal} mới nhất` : series.chapters?.length || 0}</dd></div></dl></div></section>
+      <section class="cr-detail-hero"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" referrerpolicy="no-referrer"><div><span>${escapeHtml(series.sourceType === "original" ? "HH ORIGINALS" : series.sourceType === "otruyen" ? "OTRUYEN · LIVE" : series.sourceType === "mangadex" ? "MANGADEX · LIVE" : series.sourceType === "github-open" ? `GITHUB OPEN · ${series.license || "OPEN"}` : "THƯ VIỆN ĐÃ NHẬP")}</span><h1>${escapeHtml(series.title)}</h1><p class="cr-detail-author">Tác giả: <strong>${escapeHtml(series.author || "Đang cập nhật")}</strong></p><div class="cr-tags">${(series.genres || []).map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}">${escapeHtml(genreLabel(genre))}</button>`).join("")}</div><p>${escapeHtml(series.description || "Chưa có mô tả.")}</p><div class="cr-detail-actions"><button type="button" class="is-primary" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(progress?.chapterId || series.chapters?.[0]?.id || "")}"${series.chapters?.length || series.chaptersLoaded === false ? "" : " disabled"}>▶ ${progress ? "Đọc tiếp" : "Đọc từ đầu"}</button><button type="button" data-follow="${escapeHtml(series.id)}">${followed ? "✓ Đang theo dõi" : "♡ Theo dõi"}</button>${series.sourceUrl ? `<a href="${escapeHtml(series.sourceUrl)}" target="_blank" rel="noopener noreferrer">Xem nguồn ↗</a>` : ""}</div><dl><div><dt>Định dạng</dt><dd>${escapeHtml(inferFormat(series))}</dd></div><div><dt>Độc giả</dt><dd>${escapeHtml(inferDemographic(series))}</dd></div><div><dt>Trạng thái</dt><dd>${escapeHtml(series.status || "Đang cập nhật")}</dd></div><div><dt>Đánh giá</dt><dd>★ ${Number(series.rating || 4.5).toFixed(1)}</dd></div><div><dt>Nguồn</dt><dd>${escapeHtml(series.sourceLabel || series.rights || "HH Comics")}</dd></div><div><dt>Số chương</dt><dd>${series.chaptersLoaded === false ? "Đang tải…" : series.chapterTotal && series.chapterTotal > series.chapters.length ? `${series.chapters.length}/${series.chapterTotal} mới nhất` : series.chapters?.length || 0}</dd></div></dl><aside class="cr-source-note">Ảnh chương được tải trực tiếp khi bạn mở truyện; HH Comics không sao chép kho ảnh nguồn vào máy chủ.</aside></div></section>
       <section class="cr-chapters"><header><div><strong>Danh sách chương</strong><small>${series.chapters?.length || 0} chương · lưu tiến độ tự động</small></div><input type="search" placeholder="Tìm chương…" data-chapter-search></header><div data-chapter-list>${[...(series.chapters || [])].reverse().map((chapter) => `<button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(chapter.id)}"><span><strong>Chương ${chapter.number}</strong><small>${escapeHtml(chapter.title || "")}</small></span><i>${timeAgo(chapter.updatedAt)}</i><b>${progress?.chapterId === chapter.id ? "Đang đọc" : "Đọc →"}</b></button>`).join("")}</div></section>
     </div>`;
   }
@@ -670,13 +870,16 @@
   function sourceView() {
     const openSources = Array.isArray(global.HHOpenComicSources) ? global.HHOpenComicSources : [];
     const openPages = openSources.reduce((total, entry) => total + Number(entry.pages || 0), 0);
+    const sourceCards = OPEN_READING_SOURCES.map((source) => `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer"><b>${escapeHtml(source.name)}</b><span>${escapeHtml(source.note)}</span><i>${escapeHtml(source.license)} · Mở nguồn ↗</i></a>`).join("");
     return `<div class="cr-source-view"><header><span>＋</span><div><h1>Thêm kho truyện của bạn</h1><p>Nhập nội dung do bạn sở hữu hoặc nguồn/API có quyền phân phối.</p></div></header><div class="cr-source-grid">
       <button type="button" data-genre="Nguồn mở"><b>GitHub Open Library · ${openSources.length} bộ</b><span>${openPages.toLocaleString("vi-VN")} trang có license rõ ràng; fan-art và file phụ đã được loại khỏi catalog.</span><i>Xem kho nguồn mở →</i></button>
       <button type="button" data-action="mangadex-refresh"><b>MangaDex tiếng Việt · ${state.mangadex.total ? state.mangadex.total.toLocaleString("vi-VN") : "đang kết nối"} truyện</b><span>Nguồn được TruyenDex sử dụng: chỉ lấy nội dung safe/suggestive, ghi nhóm dịch và phát ảnh trực tiếp khi mở chương.</span><i>${state.mangadex.loading ? "Đang đồng bộ…" : "Đồng bộ MangaDex →"}</i></button>
+      <button type="button" data-action="open-books-refresh"><b>Sách mở tiếng Việt · ${state.openBooks.total || "đang kết nối"} mục</b><span>Metadata từ API Wikibooks chính thức; không lưu toàn văn hoặc ảnh sách trên máy chủ HH.</span><i>${state.openBooks.loading ? "Đang đồng bộ…" : "Đồng bộ sách mở →"}</i></button>
       <button type="button" data-action="import-cbz"><b>CBZ / ZIP</b><span>Mỗi file thành một bộ truyện; ảnh được lưu offline trong IndexedDB.</span><i>Chọn file →</i></button>
       <button type="button" data-action="import-json"><b>Catalog JSON</b><span>Nhập series, chương, ảnh và metadata theo manifest.</span><i>Chọn JSON →</i></button>
       <button type="button" data-action="sample-json"><b>Tải JSON mẫu</b><span>Schema sẵn để kết nối website hoặc CMS thuộc quyền của bạn.</span><i>Tải mẫu →</i></button>
       <button type="button" data-action="remote-refresh"><b>Backend OTruyen · ${state.remote.total ? `${state.remote.total.toLocaleString("vi-VN")} truyện` : "đang kết nối"}</b><span>Backend HH phân trang toàn kho, tìm kiếm và tải chi tiết thật; ảnh chỉ tải khi người dùng mở chương.</span><i>${state.remote.loading ? "Đang đồng bộ…" : "Kiểm tra backend →"}</i></button>
+      ${sourceCards}
       <section><b>API / Feed được cấp phép</b><span>Dùng endpoint HTTPS có CORS và trả về cùng schema catalog.</span><div><input type="url" placeholder="https://your-domain.com/comics.json" data-feed-url><button type="button" data-action="import-feed">Kết nối</button></div></section>
     </div><aside><strong>Nguyên tắc nguồn</strong><p>HH Comics không tự vượt CAPTCHA, anti-bot, hotlink protection hoặc crawl hàng loạt website bên thứ ba. Bạn vẫn có thể nhập catalog/API của chính mình và đọc trực tiếp trên web.</p></aside></div>`;
   }
@@ -702,7 +905,7 @@
   function shellHtml(content) {
     return `<section class="cr-app${state.view === "reader" ? " is-reader-focus" : ""}">
       <header class="cr-topbar"><button type="button" class="cr-logo" data-nav="home"><span>CR</span><div><strong>HH Comics</strong><small>Đọc truyện online</small></div></button><label class="cr-search"><span>⌕</span><input type="search" value="${escapeHtml(state.query)}" placeholder="Tìm tên truyện, tác giả, thể loại…" data-search></label><nav><button type="button" data-nav="history">◷ Lịch sử</button><button type="button" data-nav="bookmarks">★ Dấu trang <i>${state.bookmarks.length}</i></button><button type="button" data-nav="follows">♡ Theo dõi <i>${state.follows.size}</i></button><button type="button" class="is-primary" data-nav="sources">＋ Thêm truyện</button></nav><input hidden type="file" accept=".cbz,.zip,application/zip" multiple data-cbz-input><input hidden type="file" accept=".json,application/json" data-json-input></header>
-      <div class="cr-layout"><aside class="cr-sidebar"><strong>Khám phá</strong><button type="button" data-nav="home" class="${state.view === "home" ? "is-active" : ""}">⌂ Trang chủ</button><button type="button" data-nav="follows" class="${state.view === "follows" ? "is-active" : ""}">♡ Theo dõi</button><button type="button" data-nav="bookmarks" class="${state.view === "bookmarks" ? "is-active" : ""}">★ Dấu trang</button><button type="button" data-nav="history" class="${state.view === "history" ? "is-active" : ""}">◷ Lịch sử</button><strong>Thể loại</strong>${sidebarGenres().map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}" class="${state.genre === genre && state.view === "home" ? "is-active" : ""}">${escapeHtml(genre)}</button>`).join("")}${availableGenres().length > 15 ? `<button type="button" class="cr-genre-more" data-action="genre-more">${state.genreExpanded ? "Thu gọn thể loại ↑" : `Xem thêm ${availableGenres().length - 15} thể loại ↓`}</button>` : ""}<footer><button type="button" data-nav="sources">＋ Quản lý nguồn</button><small>${catalogTotal().toLocaleString("vi-VN")} truyện toàn kho · trang ${state.catalogPage.toLocaleString("vi-VN")}</small></footer></aside><main class="cr-content">${content}</main></div>
+      <div class="cr-layout"><aside class="cr-sidebar"><strong>Khám phá</strong><button type="button" data-nav="home" class="${state.view === "home" ? "is-active" : ""}">⌂ Trang chủ</button><button type="button" data-nav="follows" class="${state.view === "follows" ? "is-active" : ""}">♡ Theo dõi</button><button type="button" data-nav="bookmarks" class="${state.view === "bookmarks" ? "is-active" : ""}">★ Dấu trang</button><button type="button" data-nav="history" class="${state.view === "history" ? "is-active" : ""}">◷ Lịch sử</button><strong>Thể loại</strong>${sidebarGenres().map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}" class="${state.genre === genre && state.view === "home" ? "is-active" : ""}">${escapeHtml(genreLabel(genre))}</button>`).join("")}${availableGenres().length > 15 ? `<button type="button" class="cr-genre-more" data-action="genre-more">${state.genreExpanded ? "Thu gọn thể loại ↑" : "Xem trung tâm thể loại ↓"}</button>` : ""}<footer><button type="button" data-nav="sources">＋ Quản lý nguồn</button><small>${catalogTotal().toLocaleString("vi-VN")} truyện toàn kho · trang ${state.catalogPage.toLocaleString("vi-VN")}</small></footer></aside><main class="cr-content">${content}</main></div>
       <div class="cr-toast-tray" data-cr-toast></div><div class="cr-importing" data-importing hidden><i></i><strong>Đang nhập truyện…</strong><span>Không đóng trang cho đến khi hoàn tất.</span></div>
     </section>`;
   }
@@ -1058,9 +1261,10 @@
     if (genre) {
       state.genre = genre.dataset.genre; state.query = ""; state.view = "home"; clearDeepLink(); render();
       state.catalogPage = 1;
+      saveLocalState();
       return loadCatalogPage(1);
     }
-    if (nav) { state.view = nav.dataset.nav; clearDeepLink(); if (state.view === "home") { state.query = ""; state.genre = "Tất cả"; } return render(); }
+    if (nav) { state.view = nav.dataset.nav; clearDeepLink(); if (state.view === "home") state.query = ""; return render(); }
     if (mode) { state.readerMode = mode.dataset.readerMode; saveLocalState(); return render(); }
     if (readerWidth) {
       state.readerWidth = readerWidth.dataset.readerWidth;
@@ -1089,7 +1293,12 @@
     else if (action.dataset.action === "remote-more") loadCatalogPage(state.catalogPage + 1);
     else if (action.dataset.action === "remote-refresh") loadCatalogPage(1);
     else if (action.dataset.action === "mangadex-refresh") { state.catalogPage = 1; loadMangaDexCatalog({ offset: 0, reset: true }); }
+    else if (action.dataset.action === "open-books-refresh") { state.catalogPage = 1; loadOpenBooksCatalog({ reset: true }); }
     else if (action.dataset.action === "genre-more") { state.genreExpanded = !state.genreExpanded; render(); }
+    else if (action.dataset.action === "reset-facets") {
+      state.genre = ALL_FILTER; state.format = ALL_FILTER; state.demographic = ALL_FILTER; state.catalogPage = 1; saveLocalState();
+      return loadCatalogPage(1);
+    }
     else if (action.dataset.action === "reader-settings") {
       const panel = root.querySelector(".cr-reader-settings");
       const button = root.querySelector('[data-action="reader-settings"]');
@@ -1132,7 +1341,7 @@
 
   function handleInput(event) {
     if (event.target.matches("[data-search]")) {
-      state.query = event.target.value; state.genre = "Tất cả"; state.view = "home"; clearDeepLink();
+      state.query = event.target.value; state.genre = ALL_FILTER; state.view = "home"; clearDeepLink();
       clearTimeout(handleInput.timer);
       handleInput.timer = setTimeout(() => {
         render();
@@ -1141,6 +1350,8 @@
       }, state.query.trim().length >= 2 ? 420 : 180);
     }
     else if (event.target.matches("[data-sort]")) { state.sort = event.target.value; state.catalogPage = 1; loadCatalogPage(1); }
+    else if (event.target.matches("[data-format-filter]")) { state.format = event.target.value; state.catalogPage = 1; saveLocalState(); loadCatalogPage(1); }
+    else if (event.target.matches("[data-demographic-filter]")) { state.demographic = event.target.value; state.catalogPage = 1; saveLocalState(); loadCatalogPage(1); }
     else if (event.target.matches("[data-catalog-page-input]") && event.type === "change") loadCatalogPage(Number(event.target.value));
     else if (event.target.matches("[data-reader-chapter]")) openReader(state.activeSeriesId, event.target.value);
     else if (event.target.matches("[data-reader-page-slider]")) {
@@ -1168,6 +1379,7 @@
     state.catalogPage = 1;
     state.remote = { loading: false, page: 0, perPage: 24, total: 0, hasMore: true, context: "latest", error: "" };
     state.mangadex = { loading: false, offset: 0, limit: 24, total: 0, hasMore: true, context: "latest", error: "" };
+    state.openBooks = { loading: false, total: 0, error: "" };
     state.remoteGenres = [];
     state.remoteGenreSlugs = new Map();
     state.view = "home";
@@ -1212,5 +1424,5 @@
     root = null;
   }
 
-  global.HHComicReaderHub = Object.freeze({ mount, unmount, version: "2.0.0" });
+  global.HHComicReaderHub = Object.freeze({ mount, unmount, version: "3.0.0" });
 })(window);

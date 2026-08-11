@@ -15,10 +15,10 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=11[\s\S]*?comic-open-source-catalog\.js\?v=2[\s\S]*?comic-reader-hub\.js\?v=18/);
-  assert.match(worker, /comic-reader-hub\.css\?v=11/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=13[\s\S]*?comic-open-source-catalog\.js\?v=2[\s\S]*?comic-reader-hub\.js\?v=19/);
+  assert.match(worker, /comic-reader-hub\.css\?v=13/);
   assert.match(worker, /comic-open-source-catalog\.js\?v=2/);
-  assert.match(worker, /comic-reader-hub\.js\?v=18/);
+  assert.match(worker, /comic-reader-hub\.js\?v=19/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -32,6 +32,31 @@ test("catalog includes discovery, detail, ranking, follow and history", () => {
   assert.match(client, /data-chapter-search/);
   assert.match(client, /data-sort/);
   assert.match(client, /data-genre/);
+});
+
+test("multi-genre discovery separates story genre, format and audience", () => {
+  const client = read("comic-reader-hub.js");
+  const css = read("comic-reader-hub.css");
+  for (const token of ["GENRE_GROUPS", "Hành động", "Kinh dị", "Trinh thám", "Khoa học viễn tưởng", "Đời thường", "Manga", "Manhwa", "Manhua", "Webtoon", "Sách mở"]) {
+    assert.match(client, new RegExp(token));
+  }
+  assert.match(client, /data-format-filter/);
+  assert.match(client, /data-demographic-filter/);
+  assert.match(client, /function genreExplorer/);
+  assert.match(client, /matchesFacet/);
+  assert.match(client, /catalogVersion: 3/);
+  assert.match(css, /\.cr-genre-explorer/);
+  assert.match(css, /\.cr-facet-toolbar/);
+  assert.match(css, /\.cr-genre-groups/);
+});
+
+test("open reading sources are license-labelled and never auto-imported", () => {
+  const client = read("comic-reader-hub.js");
+  for (const source of ["StoryWeaver", "Wikibooks tiếng Việt", "Pepper&Carrot", "Book Dash", "OpenStax", "DOAB", "Wikimedia Commons"]) assert.match(client, new RegExp(source.replace(/[&]/g, "\\&")));
+  assert.match(client, /CC BY 4\.0/);
+  assert.match(client, /CC BY-SA 4\.0/);
+  assert.match(client, /provider", "open-books"/);
+  assert.match(client, /fullTextStored: false|không lưu toàn văn/i);
 });
 
 test("reader supports vertical pages, page mode, navigation and progress", () => {
@@ -90,7 +115,7 @@ test("catalog exposes the entire backend inventory through real pagination and s
   assert.match(client, /chapterBand/);
   assert.match(client, /Chưa rõ số chap/);
   assert.match(client, /OTRUYEN_PAGES_PER_VIEW = 3/);
-  assert.match(client, /catalogVersion: 2/);
+  assert.match(client, /catalogVersion: 3/);
   assert.doesNotMatch(client, /sourceType === "otruyen" \? "API"/);
   assert.match(css, /\.cr-pagination/);
 });
@@ -144,7 +169,7 @@ test("reader v2 restores sessions, supports page bookmarks and resilient navigat
   assert.match(client, /preloadAdjacentPages/);
   assert.match(client, /function restoreReaderPosition/);
   assert.match(client, /target\.offsetTop - readerPages\.offsetTop/);
-  assert.match(client, /version: "2\.0\.0"/);
+  assert.match(client, /version: "3\.0\.0"/);
   assert.match(css, /\.cr-continue-shelf/);
   assert.match(css, /\.cr-bookmark-list/);
   assert.match(css, /\.cr-tap-zone/);

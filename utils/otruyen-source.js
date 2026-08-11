@@ -3,6 +3,7 @@ const { clean, enforceRateLimit } = require("./platform");
 const API = "https://otruyenapi.com/v1/api";
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const REQUEST_TIMEOUT_MS = 12_000;
+const BLOCKED_CATEGORY_KEYS = new Set(["adult", "smut", "mature", "ecchi", "16+", "18+"]);
 
 function fail(message, statusCode = 400, code = "OTRUYEN_REQUEST_INVALID") {
   const error = new Error(message);
@@ -13,6 +14,22 @@ function fail(message, statusCode = 400, code = "OTRUYEN_REQUEST_INVALID") {
 
 function requestIp(req) {
   return clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "guest").split(",")[0], 120);
+}
+
+function categoryKey(value) {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLocaleLowerCase("en-US");
+}
+
+function itemCategories(item) {
+  return (Array.isArray(item?.category) ? item.category : []).map((category) => categoryKey(category?.name));
+}
+
+function isAllowedItem(item) {
+  return !itemCategories(item).some((category) => BLOCKED_CATEGORY_KEYS.has(category));
+}
+
+function assertAllowedItem(item) {
+  if (!isAllowedItem(item)) fail("Truyện này nằm ngoài bộ lọc nội dung an toàn của HH Comics.", 403, "OTRUYEN_CONTENT_BLOCKED");
 }
 
 function catalogRequest(query) {
@@ -125,24 +142,29 @@ function sortItems(items, sort) {
 async function catalog(query) {
   const request = catalogRequest(query);
   const data = await upstream(request.path);
+  const safeItems = (Array.isArray(data.items) ? data.items : []).filter(isAllowedItem);
   return {
     provider: "otruyen",
     sourceUrl: "https://otruyenapi.com/",
     backend: true,
     backendSort: request.sort,
     page: request.page,
-    data: { ...data, items: sortItems(data.items, request.sort) }
+    data: { ...data, items: sortItems(safeItems, request.sort) },
+    policy: { blockedCategories: [...BLOCKED_CATEGORY_KEYS], storesImages: false, chapterImagesOnDemand: true }
   };
 }
 
 async function series(query) {
   const id = clean(query.id, 100).toLowerCase();
   if (!SLUG.test(id)) fail("Mã truyện OTruyen không hợp lệ.");
-  return { provider: "otruyen", backend: true, data: await upstream(`/truyen-tranh/${encodeURIComponent(id)}`) };
+  const data = await upstream(`/truyen-tranh/${encodeURIComponent(id)}`);
+  assertAllowedItem(data?.item);
+  return { provider: "otruyen", backend: true, data };
 }
 
 async function genres() {
-  return { provider: "otruyen", backend: true, data: await upstream("/the-loai") };
+  const data = await upstream("/the-loai");
+  return { provider: "otruyen", backend: true, data: { ...data, items: (Array.isArray(data.items) ? data.items : []).filter((item) => !BLOCKED_CATEGORY_KEYS.has(categoryKey(item?.name))) } };
 }
 
 async function handleOTruyenSource(req, res, { db }) {
@@ -159,4 +181,4 @@ async function handleOTruyenSource(req, res, { db }) {
   return res.status(200).json({ ok: true, ...result });
 }
 
-module.exports = { handleOTruyenSource, catalogRequest, sortItems, allowedChapterUrl, chapterPages, SLUG };
+module.exports = { handleOTruyenSource, catalogRequest, sortItems, allowedChapterUrl, chapterPages, isAllowedItem, BLOCKED_CATEGORY_KEYS, SLUG };

@@ -25,6 +25,7 @@ const { createHmac } = require("node:crypto");
 const { handleComicSource } = require("../../../utils/comic-source");
 const { handleMangaDexSource } = require("../../../utils/mangadex-source");
 const { handleOTruyenSource } = require("../../../utils/otruyen-source");
+const { handleOpenBooksSource } = require("../../../utils/open-books-source");
 
 const downloadHosts = [
   "youtube.com", "youtu.be", "tiktok.com", "facebook.com", "fb.watch",
@@ -1412,6 +1413,9 @@ module.exports = async function handler(req, res) {
     }
     if (moduleId === "comic-reader" && req.query.provider === "otruyen") {
       return handleOTruyenSource(req, res, { db });
+    }
+    if (moduleId === "comic-reader" && req.query.provider === "open-books") {
+      return handleOpenBooksSource(req, res, { db });
     }
     if (moduleId === "comic-motion" || req.query.comicSource === "1") {
       return handleComicSource(req, res, { db, body, user });

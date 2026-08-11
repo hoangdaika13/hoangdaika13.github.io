@@ -297,9 +297,9 @@ test("copyright center is reachable from the shell and cached with aligned versi
   assert.match(loader, /"open-media-governance"[\s\S]*?open-media-governance\.js\?v=1/);
   assert.match(loader, /utils\/open-media-rights\.js\?v=4/);
   assert.doesNotMatch(loader, /utils\/open-media-rights\.js\?v=3/);
-  assert.match(html, /performance-loader\.js\?v=270/);
+  assert.match(html, /performance-loader\.js\?v=272/);
   assert.match(html, /script\.js\?v=178/);
-  assert.match(serviceWorker, /hh-identity-portal-v541/);
+  assert.match(serviceWorker, /hh-identity-portal-v543/);
   for (const asset of [
     "open-media-governance.css?v=1",
     "open-media-governance.js?v=1",
