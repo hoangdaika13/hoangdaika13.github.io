@@ -24,7 +24,7 @@ test("auth API sends welcome mail on registration and login mail on every succes
   assert.match(source, /sendLoginThankYou\(user, session, "password"\)/);
   assert.match(source, /sendLoginThankYou\(user, session, "passkey"\)/);
   assert.match(source, /sendLoginThankYou\(user, session, "qr"\)/);
-  assert.match(source, /challenge\.isNewUser \? sendWelcomeThankYou/);
+  assert.match(source, /challenge\.isNewUser[\s\S]+sendWelcomeThankYou/);
   assert.match(source, /sendLoginThankYou\(user, session, challenge\.provider/);
 });
 

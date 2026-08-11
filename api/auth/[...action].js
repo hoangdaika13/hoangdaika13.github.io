@@ -479,13 +479,13 @@ async function passkeyLoginVerify(req, res, db, body) {
   if (!user || ["deleted", "suspended", "locked", "banned"].includes(String(user.status || "").toLowerCase())) return res.status(403).json({ error: "Tài khoản này hiện không được phép đăng nhập." });
   const session = await createSession(db, user, req, { type: "passkey", remember: Boolean(body.remember) });
   setSessionCookie(res, session.token, session.ttlSeconds);
+  const loginDelivery = await sendLoginThankYou(user, session, "passkey");
   await Promise.all([
     db.collection("passkeys").updateOne({ _id: credential._id }, { $set: { counter: Number(verification.authenticationInfo?.newCounter ?? credential.counter), lastUsedAt: new Date() } }),
     db.collection("authChallenges").updateOne({ _id: challenge._id }, { $set: { consumedAt: new Date() } }),
-    sendLoginThankYou(user, session, "passkey"),
     recordLoginEvent(db, user, req, "passkey-login")
   ]);
-  return res.status(200).json(authResponse(user, session));
+  return res.status(200).json({ ...authResponse(user, session), authEmailDelivery: loginDelivery.delivered ? "sent" : loginDelivery.configured ? "failed" : "not-configured" });
 }
 
 module.exports = async function handler(req, res) {
@@ -525,12 +525,14 @@ module.exports = async function handler(req, res) {
       if (!user) return res.status(400).json({ error: "Không tìm thấy tài khoản Google đã xác minh." });
       const session = await createSession(db, user, req, { type: challenge.provider || "google", remember: true });
       setSessionCookie(res, session.token, session.ttlSeconds);
+      const loginDelivery = challenge.isNewUser
+        ? await sendWelcomeThankYou(user)
+        : await sendLoginThankYou(user, session, challenge.provider || "google");
       await settleOptionalTasks([
         notifyNewDevice(db, user, req, session),
-        challenge.isNewUser ? sendWelcomeThankYou(user) : sendLoginThankYou(user, session, challenge.provider || "google"),
         recordLoginEvent(db, user, req, `${challenge.provider || "google"}-login`)
       ], 350);
-      return res.status(200).json(authResponse(user, session));
+      return res.status(200).json({ ...authResponse(user, session), authEmailDelivery: loginDelivery.delivered ? "sent" : loginDelivery.configured ? "failed" : "not-configured" });
     }
 
     if (route === "email-availability" && ["GET", "POST"].includes(req.method)) {
@@ -621,12 +623,12 @@ module.exports = async function handler(req, res) {
       await db.collection("users").updateOne({ _id: user._id }, { $set: { lastLoginAt: now, lastSeenAt: now, loginFailures: 0, loginLockedUntil: null } });
       const session = await createSession(db, user, req, { type: "password", remember: Boolean(body.remember) });
       setSessionCookie(res, session.token, session.ttlSeconds);
+      const loginDelivery = await sendLoginThankYou(user, session, "password");
       await settleOptionalTasks([
         notifyNewDevice(db, user, req, session),
-        sendLoginThankYou(user, session, "password"),
         recordLoginEvent(db, user, req, "login")
       ]);
-      return res.status(200).json(authResponse(user, session));
+      return res.status(200).json({ ...authResponse(user, session), authEmailDelivery: loginDelivery.delivered ? "sent" : loginDelivery.configured ? "failed" : "not-configured" });
     }
 
     if (["forgot-password/request", "otp/request"].includes(route) && req.method === "POST") {
@@ -812,11 +814,11 @@ module.exports = async function handler(req, res) {
       const consumed = await db.collection("authChallenges").updateOne({ _id: challenge._id, consumedAt: null }, { $set: { status: "consumed", consumedAt: new Date() } });
       if (!consumed.modifiedCount) return res.status(409).json({ error: "Mã QR đã được sử dụng." });
       setSessionCookie(res, session.token, session.ttlSeconds);
+      const loginDelivery = await sendLoginThankYou(user, session, "qr");
       await settleOptionalTasks([
-        sendLoginThankYou(user, session, "qr"),
         recordLoginEvent(db, user, req, "qr-login")
       ], 350);
-      return res.status(200).json({ status: "approved", ...authResponse(user, session) });
+      return res.status(200).json({ status: "approved", ...authResponse(user, session), authEmailDelivery: loginDelivery.delivered ? "sent" : loginDelivery.configured ? "failed" : "not-configured" });
     }
 
     const provider = action[0];
