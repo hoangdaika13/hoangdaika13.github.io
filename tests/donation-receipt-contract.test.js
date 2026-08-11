@@ -48,6 +48,9 @@ test("failed receipt delivery recovers automatically without duplicate email bur
   assert.match(api, /sendDonationThankYou\(db, donations, current, "payos_webhook_retry"\)/);
   assert.match(api, /sendDonationThankYou\(db, donations, item, "status_poll_recovery"\)/);
   assert.match(api, /if \(donation\.receipt\?\.sentAt\) return receiptView\(donation\)/);
+  assert.match(api, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/);
+  const client = read("support-platform.js");
+  assert.doesNotMatch(client, /\["sent", "failed", "not_configured", "missing_email"\]\.includes/);
 });
 
 test("support UI requires email and exposes an embedded payOS journey", () => {

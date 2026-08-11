@@ -139,25 +139,35 @@ async function recordLoginEvent(db, user, req, type, extra = {}) {
 
 async function sendSecurityEmail({ to, subject, html, text, idempotencyKey, tags }) {
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return { configured: false, provider: null };
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3500);
-  try {
-    const headers = { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" };
-    if (idempotencyKey) headers["Idempotency-Key"] = String(idempotencyKey).slice(0, 256);
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html, text, ...(Array.isArray(tags) && tags.length ? { tags } : {}) }),
-      signal: controller.signal
-    });
-    if (!response.ok) return { configured: true, delivered: false, provider: "resend" };
-    const result = await response.json();
-    return { configured: true, delivered: true, provider: "resend", id: clean(result.id, 120) };
-  } catch {
-    return { configured: true, delivered: false, provider: "resend" };
-  } finally {
-    clearTimeout(timeoutId);
+  const headers = { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" };
+  if (idempotencyKey) headers["Idempotency-Key"] = String(idempotencyKey).slice(0, 256);
+  let lastStatus = 0;
+  let lastError = "";
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html, text, ...(Array.isArray(tags) && tags.length ? { tags } : {}) }),
+        signal: controller.signal
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok && result.id) return { configured: true, delivered: true, provider: "resend", id: clean(result.id, 120) };
+      lastStatus = response.status;
+      lastError = clean(result.message || result.error || `HTTP ${response.status}`, 180);
+      // Retry transient provider/network failures with the same idempotency key.
+      if (response.status >= 400 && response.status < 500 && response.status !== 429) break;
+    } catch (error) {
+      lastError = clean(error?.name === "AbortError" ? "timeout" : error?.message || "network_error", 180);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 350));
   }
+  console.warn("[HH auth-email] Resend delivery failed", { status: lastStatus || "network", error: lastError || "unknown" });
+  return { configured: true, delivered: false, provider: "resend", status: lastStatus, error: lastError };
 }
 
 function webauthnServer() {

@@ -220,24 +220,31 @@ function createReceiptEmailAdapter() {
     provider: "resend",
     configured: receiptReady(),
     async send({ recipient, message, donationId }) {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        signal: AbortSignal.timeout(8000),
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-          "Idempotency-Key": `donation-thanks/${String(donationId)}`
-        },
-        body: JSON.stringify({
-          from: String(process.env.DONATION_FROM_EMAIL || process.env.EMAIL_FROM),
-          to: [recipient], subject: message.subject, html: message.html, text: message.text,
-          ...(process.env.DONATION_REPLY_TO ? { reply_to: String(process.env.DONATION_REPLY_TO) } : {}),
-          tags: [{ name: "category", value: "donation_receipt" }]
-        })
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.id) throw new Error(clean(result.message || result.error || `Email provider HTTP ${response.status}`, 240));
-      return { provider: "resend", providerId: clean(result.id, 160) };
+      const headers = {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `donation-thanks/${String(donationId)}`
+      };
+      const payload = {
+        from: String(process.env.DONATION_FROM_EMAIL || process.env.EMAIL_FROM),
+        to: [recipient], subject: message.subject, html: message.html, text: message.text,
+        ...(process.env.DONATION_REPLY_TO ? { reply_to: String(process.env.DONATION_REPLY_TO) } : {}),
+        tags: [{ name: "category", value: "donation_receipt" }]
+      };
+      let lastError = "";
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const response = await fetch("https://api.resend.com/emails", { method: "POST", signal: AbortSignal.timeout(8000), headers, body: JSON.stringify(payload) });
+          const result = await response.json().catch(() => ({}));
+          if (response.ok && result.id) return { provider: "resend", providerId: clean(result.id, 160) };
+          lastError = clean(result.message || result.error || `Email provider HTTP ${response.status}`, 240);
+          if (response.status >= 400 && response.status < 500 && response.status !== 429) break;
+        } catch (error) {
+          lastError = clean(error?.name === "TimeoutError" ? "Email provider timeout" : error?.message || "Email provider network error", 240);
+        }
+        if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+      throw new Error(lastError || "Không thể gửi email cảm ơn.");
     }
   };
 }
@@ -320,7 +327,7 @@ function receiptRetryDelay(attempts = 0) {
 }
 
 function receiptRetryDeferred(donation, trigger) {
-  if (trigger === "owner_retry") return false;
+  if (["owner_retry", "public_retry"].includes(trigger)) return false;
   const receipt = donation?.receipt || {};
   if (receipt.status !== "failed" || !receipt.lastAttemptAt) return false;
   const nextRetryAt = receipt.nextRetryAt ? new Date(receipt.nextRetryAt) : new Date(new Date(receipt.lastAttemptAt).getTime() + receiptRetryDelay(receipt.attempts));
@@ -793,6 +800,18 @@ module.exports = async function handler(req, res) {
         await donations.updateOne({ _id: result.insertedId }, { $set: { status: "payment_error", paymentError: clean(error?.message, 300), updatedAt: new Date() } });
         return res.status(502).json({ error: "payOS chưa thể tạo VietQR. Vui lòng thử lại sau." });
       }
+    }
+
+    if (action === "receipt:retry-public") {
+      const id = objectId(body.id);
+      const reference = clean(body.reference, 40);
+      if (!id || !reference) return res.status(400).json({ error: "Thiếu mã xác nhận giao dịch." });
+      const retryIdentity = createHash("sha256").update(`${id}:${reference}`).digest("hex").slice(0, 32);
+      await enforceRateLimit(db, `donation:receipt-public-retry:${retryIdentity}`, 3, 60 * 60 * 1000);
+      const donation = await donations.findOne({ _id: id, reference, status: "verified" });
+      if (!donation) return res.status(404).json({ error: "Chưa tìm thấy giao dịch đã được xác minh." });
+      const receipt = await sendDonationThankYou(db, donations, donation, "public_retry");
+      return res.status(receipt.status === "sent" ? 200 : 503).json({ ok: receipt.status === "sent", receipt: { status: receipt.status, recipient: receipt.recipient || maskEmail(donation.email), sentAt: receipt.sentAt || null, receiptId: receipt.receiptId || `HH-RCP-${donation.reference}` } });
     }
 
     if (action === "wallet:preferences") {

@@ -216,7 +216,7 @@
         <div class="support-receipt__icon support-hologram-envelope">✓</div>
         <div><span>XÁC NHẬN ỦNG HỘ</span><h3>Cảm ơn bạn đã đồng hành cùng Nhhoang</h3><p data-support-receipt-status>Đang hoàn tất thư cảm ơn.</p></div>
         <dl><div><dt>Mã xác nhận</dt><dd data-support-receipt-id>--</dd></div><div><dt>Số tiền</dt><dd data-support-receipt-amount>--</dd></div><div><dt>Email</dt><dd data-support-receipt-email>--</dd></div><div><dt>Xác nhận lúc</dt><dd data-support-receipt-time>--</dd></div></dl><small class="support-receipt__privacy">Email được che một phần trên giao diện công khai và chỉ dùng để gửi biên nhận.</small>
-        <div class="support-receipt__actions"><button type="button" data-support-download-receipt data-support-download-receipt-pdf data-format="pdf">Tải PDF</button><button type="button" data-support-download-receipt data-format="txt">Tải TXT</button><button type="button" data-support-download-card hidden>Thẻ PNG</button><button type="button" data-support-share-card hidden>Chia sẻ</button></div>
+        <div class="support-receipt__actions"><button type="button" data-support-retry-receipt hidden>Gửi lại email</button><button type="button" data-support-download-receipt data-support-download-receipt-pdf data-format="pdf">Tải PDF</button><button type="button" data-support-download-receipt data-format="txt">Tải TXT</button><button type="button" data-support-download-card hidden>Thẻ PNG</button><button type="button" data-support-share-card hidden>Chia sẻ</button></div>
       </section>
       </div>
 
@@ -499,12 +499,14 @@
       const messages = {
         sent: `Email cảm ơn đã được gửi tới ${receipt.recipient || "địa chỉ bạn cung cấp"}.`,
         sending: "Giao dịch đã xác minh. Máy chủ đang gửi email cảm ơn.",
-        failed: "Giao dịch đã xác minh nhưng email chưa gửi thành công. Quản trị viên có thể thử lại.",
+        failed: "Giao dịch đã xác minh nhưng email tạm thời chưa gửi thành công. Hệ thống sẽ tự thử lại trong lúc cửa sổ xác minh còn mở.",
         not_configured: "Giao dịch đã xác minh. Kênh email đang chờ quản trị viên kích hoạt.",
         missing_email: "Giao dịch đã xác minh nhưng chưa có email hợp lệ để gửi lời cảm ơn.",
         pending: "Giao dịch đã xác minh. Email cảm ơn đang được xếp hàng."
       };
       page.querySelector("[data-support-receipt-status]").textContent = messages[status] || messages.pending;
+      const retryButton = page.querySelector("[data-support-retry-receipt]");
+      if (retryButton) retryButton.hidden = !["failed", "pending"].includes(status);
       setJourney("email", status);
     };
     const checkCurrentDonation = async (quiet = false) => {
@@ -521,7 +523,10 @@
           checkButton.textContent = "Đã thanh toán";
           renderReceipt(currentDonation);
           const receiptSent = currentDonation.receipt?.status === "sent";
-          if (["sent", "failed", "not_configured", "missing_email"].includes(currentDonation.receipt?.status)) {
+          // Keep polling after a transient Resend failure so the backend can
+          // retry automatically. Permanent configuration/input failures stop
+          // here and remain visible for an administrator to repair.
+          if (["sent", "not_configured", "missing_email"].includes(currentDonation.receipt?.status)) {
             stopPaymentPolling();
             forgetPending();
           }
@@ -800,6 +805,22 @@
       if (event.target.closest("[data-support-refresh]")) return loadPublic();
       if (event.target.closest("[data-support-history-refresh]")) return loadHistory();
       if (event.target.closest("[data-support-admin-refresh]")) return loadAdmin();
+      const publicReceiptRetry = event.target.closest("[data-support-retry-receipt]");
+      if (publicReceiptRetry && currentDonation?.status === "verified") {
+        publicReceiptRetry.disabled = true;
+        publicReceiptRetry.textContent = "Đang gửi lại…";
+        try {
+          const data = await api("", { method: "POST", body: { action: "receipt:retry-public", id: currentDonation.id, reference: currentDonation.reference } });
+          currentDonation.receipt = { ...(currentDonation.receipt || {}), ...(data.receipt || {}) };
+          renderReceipt(currentDonation);
+          setFormStatus("Email cảm ơn đã được Resend tiếp nhận. Hãy kiểm tra Hộp thư đến, Quảng cáo và Spam.", "success");
+        } catch (error) {
+          setFormStatus(error.message || "Chưa thể gửi lại email cảm ơn.", "error");
+          publicReceiptRetry.disabled = false;
+          publicReceiptRetry.textContent = "Gửi lại email";
+        }
+        return;
+      }
       if (event.target.closest("[data-support-download-receipt]") && currentDonation?.status === "verified") {
         if (event.target.closest("[data-support-download-receipt]").dataset.format === "pdf") {
           try { await downloadReceiptPdf(currentDonation); setFormStatus("Đã tạo biên nhận PDF.", "success"); } catch (error) { setFormStatus(error.message, "error"); }

@@ -32,6 +32,8 @@ test("auth email delivery uses Resend idempotency and categorised tags", () => {
   const source = read("utils/auth-security.js");
   assert.match(source, /Idempotency-Key/);
   assert.match(source, /Array\.isArray\(tags\)/);
+  assert.match(source, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/);
+  assert.match(source, /Resend delivery failed/);
   const auth = read("api/auth/[...action].js");
   assert.match(auth, /auth-welcome\//);
   assert.match(auth, /auth-login\//);
